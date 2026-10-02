@@ -43,23 +43,8 @@ func _ready() -> void:
 		_al_recibir_drops
 	)
 
-	if GarliaAuth.has_signal("login_succeeded"):
-		GarliaAuth.login_succeeded.connect(
-			_al_autenticarse
-		)
-
-	if GarliaAuth.has_signal("session_restored"):
-		GarliaAuth.session_restored.connect(
-			_al_autenticarse
-		)
-
-	if GarliaAuth.has_signal("logged_out"):
-		GarliaAuth.logged_out.connect(
-			_al_cerrar_sesion
-		)
-
 	call_deferred(
-		"_inicializar"
+		"cargar_catalogo"
 	)
 
 
@@ -88,35 +73,8 @@ func _process(_delta: float) -> void:
 	)
 
 
-func _inicializar() -> void:
-	if not GarliaAuth.esta_autenticado():
-		return
-
-	cargar_catalogo()
-
-
-func _al_autenticarse(
-	_perfil: Dictionary = {}
-) -> void:
-	cargar_catalogo()
-
-
-func _al_cerrar_sesion() -> void:
-	catalogo.clear()
-
-	_eliminar_objetos_del_mundo()
-
-	_objetos_generados_en_escena = false
-
-
 func cargar_catalogo() -> void:
 	if _cargando:
-		return
-
-	if not GarliaAuth.esta_autenticado():
-		return
-
-	if GarliaAuth.access_token.is_empty():
 		return
 
 	_cargando = true
@@ -130,25 +88,14 @@ func cargar_catalogo() -> void:
 		+ "propiedades_fisicas,estado_fisico,"
 		+ "geometria_fisica,material_id,creador_id"
 		+ ")"
-		+ "&item.publicado=eq.true"
 		+ "&order=nombre.asc"
 	)
 
-	var headers := PackedStringArray()
-
-	headers.append(
+	var headers := PackedStringArray([
 		"apikey: "
-		+ GarliaAuth.SUPABASE_PUBLISHABLE_KEY
-	)
-
-	headers.append(
-		"Authorization: Bearer "
-		+ GarliaAuth.access_token
-	)
-
-	headers.append(
+			+ GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
 		"Accept: application/json"
-	)
+	])
 
 	var resultado := _request.request(
 		url,
@@ -199,10 +146,14 @@ func _al_recibir_catalogo(
 
 		return
 
+	var texto := body.get_string_from_utf8()
+
 	if response_code < 200 or response_code >= 300:
 		var mensaje := (
 			"Supabase respondió HTTP "
 			+ str(response_code)
+			+ ": "
+			+ texto
 		)
 
 		print(
@@ -215,8 +166,6 @@ func _al_recibir_catalogo(
 		)
 
 		return
-
-	var texto := body.get_string_from_utf8()
 
 	var datos = JSON.parse_string(
 		texto
@@ -306,7 +255,7 @@ func _al_recibir_catalogo(
 		)
 
 	print(
-		"GarliaWorldItems: catálogo cargado → ",
+		"GarliaWorldItems: catálogo público cargado → ",
 		catalogo.size(),
 		" items."
 	)
@@ -330,18 +279,7 @@ func generar_drops_criatura(
 
 		return
 
-	if not GarliaAuth.esta_autenticado():
-		print(
-			"GarliaWorldItems: no autenticado."
-		)
-
-		return
-
-	if GarliaAuth.access_token.is_empty():
-		return
-
 	_cargando_drops = true
-
 	_posicion_drops_pendiente = posicion
 
 	var url := (
@@ -362,25 +300,15 @@ func generar_drops_criatura(
 	)
 
 	print(
-		"GarliaWorldItems: consultando drops de criatura → ",
+		"GarliaWorldItems: consultando drops públicos → ",
 		criatura_id
 	)
 
-	var headers := PackedStringArray()
-
-	headers.append(
+	var headers := PackedStringArray([
 		"apikey: "
-		+ GarliaAuth.SUPABASE_PUBLISHABLE_KEY
-	)
-
-	headers.append(
-		"Authorization: Bearer "
-		+ GarliaAuth.access_token
-	)
-
-	headers.append(
+			+ GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
 		"Accept: application/json"
-	)
+	])
 
 	var resultado := _request_drops.request(
 		url,
@@ -552,10 +480,6 @@ func _al_recibir_drops(
 		else:
 			item["propiedades_game"] = {}
 
-		# criatura_drops actualmente no define
-		# cantidad mínima/máxima.
-		# Cada registro de drop representa
-		# una unidad del objeto.
 		item["cantidad"] = 1
 
 		resultado_drops.append(
@@ -668,7 +592,6 @@ func _generar_objetos_en_mundo(
 	_eliminar_objetos_del_mundo()
 
 	var contenedor := Node2D.new()
-
 	contenedor.name = "WorldItems"
 
 	escena.add_child(
