@@ -340,6 +340,14 @@ func _buscar_indice_objeto(objeto: Dictionary) -> int:
 	return -1
 
 
+func _al_eliminar_seleccionado() -> void:
+	if indice_seleccionado < 0:
+		return
+
+	if quitar_objeto(indice_seleccionado):
+		print("Inventory: objeto eliminado.")
+
+
 func _mostrar_informacion() -> void:
 	var nombre := str(
 		objeto_seleccionado.get(
@@ -390,7 +398,6 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 	items[indice_libre] = objeto
 
 	actualizar()
-	_actualizar_equipo_mostrado()
 
 	inventory_changed.emit()
 	_emitir_objeto_activo()
