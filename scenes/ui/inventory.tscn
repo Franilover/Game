@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://b8n60h62a5dd" path="res://scripts/ui/inventory.gd" id="1_inventory"]
 [ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/characters/Sprite-0004.png" id="2_skin"]
+[ext_resource type="Script" path="res://scripts/ui/encyclopedia.gd" id="3_encyclopedia"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_window"]
 bg_color = Color(0.1, 0.065, 0.04, 0.97)
@@ -85,12 +86,17 @@ vertical_alignment = 1
 [node name="Separator" type="HSeparator" parent="Window/Margin/Column" unique_id=1047904732]
 layout_mode = 2
 
-[node name="Content" type="HBoxContainer" parent="Window/Margin/Column" unique_id=1889075135]
+[node name="Tabs" type="TabContainer" parent="Window/Margin/Column" unique_id=3001000100]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Inventario" type="HBoxContainer" parent="Window/Margin/Column/Tabs" unique_id=1889075135]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 
-[node name="LeftPanel" type="VBoxContainer" parent="Window/Margin/Column/Content" unique_id=261778966]
+[node name="LeftPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario" unique_id=261778966]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -196,6 +202,37 @@ custom_minimum_size = Vector2(82, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 5
+
+[node name="Enciclopedia" type="Control" parent="Window/Margin/Column/Tabs" unique_id=3001000101]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("3_encyclopedia")
+
+[node name="Mapa" type="VBoxContainer" parent="Window/Margin/Column/Tabs" unique_id=3001000102]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Window/Margin/Column/Tabs/Mapa" unique_id=3001000103]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_font_sizes/font_size = 15
+text = "MAPA"
+
+[node name="Separator" type="HSeparator" parent="Window/Margin/Column/Tabs/Mapa" unique_id=3001000104]
+layout_mode = 2
+
+[node name="Center" type="CenterContainer" parent="Window/Margin/Column/Tabs/Mapa" unique_id=3001000105]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Text" type="Label" parent="Window/Margin/Column/Tabs/Mapa/Center" unique_id=3001000106]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
+theme_override_font_sizes/font_size = 12
+text = "El mapa de Garlia se revelará mientras explores."
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Hint" type="Label" parent="Window/Margin/Column" unique_id=827274201]
 layout_mode = 2
