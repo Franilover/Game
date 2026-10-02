@@ -9,6 +9,12 @@ var datos: Dictionary = {}
 @onready var icon: TextureRect = $Icon
 @onready var label: Label = $Label
 
+func obtener_clave() -> String:
+	return clave_equipo
+
+func obtener_datos() -> Dictionary:
+	return datos.duplicate(true)
+
 func configurar(clave: String, nombre: String) -> void:
 	clave_equipo = clave
 	label.text = nombre
