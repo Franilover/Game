@@ -352,7 +352,7 @@ func _procesar_atacando(delta: float) -> void:
 			_procesar_ataque_flaxis(delta)
 
 		Perfil.LIGNIANOS:
-			_procesar_ataque_lignianos()
+			_cambiar_estado(Estado.RECUPERANDO)
 
 		_:
 			_cambiar_estado(Estado.RECUPERANDO)
