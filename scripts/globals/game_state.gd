@@ -335,6 +335,11 @@ func guardar_partida() -> bool:
 	if jugador == null or not is_instance_valid(jugador):
 		return false
 
+	# Una muerte todavía no es un estado guardable.
+	# Esperamos a que el jugador reaparezca para persistir el estado.
+	if jugador.get("is_alive") == false:
+		return false
+
 	if get_tree().current_scene == null:
 		return false
 
