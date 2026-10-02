@@ -29,6 +29,7 @@ var _menu_interceptado: bool = false
 var _guardado_en_curso: bool = false
 
 signal enciclopedia_actualizada(criatura_id: String)
+signal mapa_exploracion_actualizada
 
 
 func _ready() -> void:
@@ -639,6 +640,85 @@ func obtener_criaturas_descubiertas() -> Dictionary:
 		return (registros_variant as Dictionary).duplicate(true)
 
 	return {}
+
+# ============================================================
+# MAPA / EXPLORACION
+# ============================================================
+
+func registrar_terreno_explorado(
+	tile: Vector2i,
+	radio: int = 6
+) -> bool:
+	var registros_variant: Variant = flags.get(
+		"mapa_terreno_explorado",
+		{}
+	)
+
+	var registros: Dictionary = {}
+
+	if registros_variant is Dictionary:
+		registros = (registros_variant as Dictionary).duplicate(true)
+
+	var nuevo: bool = false
+	var radio_efectivo: int = maxi(radio, 0)
+
+	for dy in range(-radio_efectivo, radio_efectivo + 1):
+		for dx in range(-radio_efectivo, radio_efectivo + 1):
+			if (dx * dx + dy * dy) > (
+				radio_efectivo * radio_efectivo
+			):
+				continue
+
+			var explorado: Vector2i = (
+				tile + Vector2i(dx, dy)
+			)
+
+			var clave: String = (
+				str(explorado.x) + "," + str(explorado.y)
+			)
+
+			if registros.has(clave):
+				continue
+
+			registros[clave] = true
+			nuevo = true
+
+	if not nuevo:
+		return false
+
+	flags["mapa_terreno_explorado"] = registros
+	mapa_exploracion_actualizada.emit()
+
+	return true
+
+
+func obtener_terreno_explorado() -> Dictionary:
+	var registros_variant: Variant = flags.get(
+		"mapa_terreno_explorado",
+		{}
+	)
+
+	if registros_variant is Dictionary:
+		return (registros_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func esta_explorado(tile: Vector2i) -> bool:
+	var registros_variant: Variant = flags.get(
+		"mapa_terreno_explorado",
+		{}
+	)
+
+	if not registros_variant is Dictionary:
+		return false
+
+	var clave: String = (
+		str(tile.x) + "," + str(tile.y)
+	)
+
+	return (registros_variant as Dictionary).has(clave)
+
 
 
 # ============================================================
