@@ -58,6 +58,7 @@ var _dash_cooldown_timer: float = 0.0
 
 var _action_direction: Vector2 = Vector2.DOWN
 var _base_visual_position: Vector2 = Vector2.ZERO
+var _ultima_exploracion_tile: Vector2i = Vector2i(2147483647, 2147483647)
 
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
@@ -92,6 +93,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_actualizar_cooldowns(delta)
+	_registrar_terreno_explorado()
 
 	# Si una interfaz está bloqueando el gameplay,
 	# no procesamos ningún input del jugador.
@@ -191,6 +193,34 @@ func _physics_process(delta: float) -> void:
 		delta,
 		is_running
 	)
+
+
+func _registrar_terreno_explorado() -> void:
+	var world_gen: Node = get_tree().get_first_node_in_group(
+		"world_generator"
+	)
+
+	if world_gen == null or not is_instance_valid(world_gen):
+		return
+
+	if not world_gen.has_method("get_tile_at"):
+		return
+
+	var tile_variant: Variant = world_gen.call(
+		"get_tile_at",
+		global_position
+	)
+
+	if not tile_variant is Vector2i:
+		return
+
+	var tile: Vector2i = tile_variant as Vector2i
+
+	if tile == _ultima_exploracion_tile:
+		return
+
+	_ultima_exploracion_tile = tile
+	GameState.registrar_terreno_explorado(tile)
 
 
 func _esta_bloqueado_por_interfaz() -> bool:
