@@ -8,6 +8,7 @@ var tiempo_vida: float = 3.0
 var radio_impacto: float = 9.0
 var danio: int = 8
 var propietario: Node = null
+var arma: Dictionary = {}
 
 var _tiempo_restante: float = 0.0
 
@@ -62,6 +63,13 @@ func configurar(
 		queue_redraw()
 
 
+func configurar_arma(nueva_arma: Dictionary) -> void:
+	if nueva_arma.is_empty():
+		arma.clear()
+	else:
+		arma = nueva_arma.duplicate(true)
+
+
 func _physics_process(delta: float) -> void:
 	var posicion_anterior: Vector2 = (
 		global_position
@@ -107,6 +115,25 @@ func _physics_process(delta: float) -> void:
 			and propietario.is_in_group("player")
 		):
 			GameState.registrar_criatura_derrotada(objetivo)
+
+		if (
+			not arma.is_empty()
+			and objetivo.is_in_group("creatures")
+			and "is_alive" in objetivo
+			and bool(objetivo.get("is_alive"))
+			and objetivo.has_node("AIController")
+		):
+			var ai: Node = objetivo.get_node_or_null(
+				"AIController"
+			)
+
+			if ai != null and ai.has_method(
+				"al_recibir_ataque_con_arma"
+			):
+				ai.call(
+					"al_recibir_ataque_con_arma",
+					arma
+				)
 
 		var visual: CanvasItem = (
 			objetivo as CanvasItem
