@@ -333,9 +333,9 @@ func _mostrar_criatura(indice: int) -> void:
 		)
 
 	var partes: Array[String] = []
-\tpartes.append(
-\t\t"[color=#8f754f]Derrotas registradas:[/color] " + str(derrotas)
-\t)
+	partes.append(
+		"[color=#8f754f]Derrotas registradas:[/color] " + str(derrotas)
+	)
 
 	_ficha.text = "\n\n".join(partes)
 
