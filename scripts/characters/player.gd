@@ -1,0 +1,632 @@
+extends Entity
+
+
+signal stamina_changed(current: float, maximum: float)
+
+
+@export_category("Movimiento")
+@export var move_speed: float = 90.0
+@export var run_multiplier: float = 1.5
+
+
+@export_category("Stamina")
+@export var max_stamina: float = 100.0
+@export var stamina_regeneration: float = 22.0
+@export var stamina_regeneration_delay: float = 0.8
+
+
+@export_category("Salto")
+@export var jump_distance: float = 28.0
+@export var jump_duration: float = 0.28
+@export var jump_cooldown: float = 0.55
+@export var jump_stamina_cost: float = 15.0
+
+
+@export_category("Dash")
+@export var dash_distance: float = 64.0
+@export var dash_duration: float = 0.12
+@export var dash_cooldown: float = 0.8
+@export var dash_stamina_cost: float = 25.0
+
+
+@export_category("Correr")
+@export var run_stamina_cost: float = 10.0
+
+
+enum State {
+	IDLE,
+	WALK,
+	RUN,
+	JUMP,
+	DASH
+}
+
+
+var state: State = State.IDLE
+var facing: Vector2 = Vector2.DOWN
+
+
+var stamina: float = 0.0
+var _stamina_regeneration_timer: float = 0.0
+
+
+var _jump_time: float = 0.0
+var _jump_cooldown_timer: float = 0.0
+
+var _dash_time: float = 0.0
+var _dash_cooldown_timer: float = 0.0
+
+var _action_direction: Vector2 = Vector2.DOWN
+var _base_visual_position: Vector2 = Vector2.ZERO
+
+
+@onready var anim: AnimationPlayer = $AnimationPlayer
+@onready var visual: Node2D = $Visual
+
+@onready var body_visual: ColorRect = $Visual/Body
+@onready var head_visual: ColorRect = $Visual/Head
+@onready var facing_marker: ColorRect = $Visual/FacingMarker
+
+
+func _ready() -> void:
+	super._ready()
+
+	add_to_group("player")
+
+	stamina = max_stamina
+
+	_base_visual_position = visual.position
+
+	_update_dir_marker()
+	_update_visual()
+
+	stamina_changed.emit(
+		stamina,
+		max_stamina
+	)
+
+
+func _physics_process(delta: float) -> void:
+	if not is_alive:
+		velocity = Vector2.ZERO
+		return
+
+	_actualizar_cooldowns(delta)
+
+	# Mientras hacemos una acción especial,
+	# esa acción toma el control del movimiento.
+	if state == State.JUMP:
+		_procesar_jump(delta)
+		return
+
+	if state == State.DASH:
+		_procesar_dash(delta)
+		return
+
+	# Magia IUM.
+	if Input.is_action_just_pressed("use_ium"):
+		_usar_proceso_ium()
+
+	# Salto.
+	if Input.is_action_just_pressed("jump"):
+		if _puede_hacer_jump():
+			_iniciar_jump()
+			return
+
+	# Dash.
+	if Input.is_action_just_pressed("dash"):
+		if _puede_hacer_dash():
+			_iniciar_dash()
+			return
+
+	# Movimiento normal.
+	var direction := Input.get_vector(
+		"move_left",
+		"move_right",
+		"move_up",
+		"move_down"
+	)
+
+	var is_running := (
+		Input.is_action_pressed("run")
+		and direction != Vector2.ZERO
+		and stamina > 0.0
+	)
+
+	# Consumo de stamina al correr.
+	if is_running:
+		_gastar_stamina(
+			run_stamina_cost * delta
+		)
+
+		_stamina_regeneration_timer = (
+			stamina_regeneration_delay
+		)
+
+	# Movimiento.
+	var speed: float
+
+	if is_running:
+		speed = move_speed * run_multiplier
+	else:
+		speed = move_speed
+
+	velocity = direction * speed
+
+	move_and_slide()
+
+	# Dirección.
+	if direction != Vector2.ZERO:
+		facing = direction.normalized()
+		_update_dir_marker()
+
+	# Estado visual.
+	var new_state: State
+
+	if direction == Vector2.ZERO:
+		new_state = State.IDLE
+	elif is_running:
+		new_state = State.RUN
+	else:
+		new_state = State.WALK
+
+	if new_state != state:
+		state = new_state
+		_update_visual()
+
+	_actualizar_regeneracion_stamina(
+		delta,
+		is_running
+	)
+
+
+func _actualizar_cooldowns(delta: float) -> void:
+	_jump_cooldown_timer = maxf(
+		_jump_cooldown_timer - delta,
+		0.0
+	)
+
+	_dash_cooldown_timer = maxf(
+		_dash_cooldown_timer - delta,
+		0.0
+	)
+
+
+func _actualizar_regeneracion_stamina(
+	delta: float,
+	esta_corriendo: bool
+) -> void:
+	if esta_corriendo:
+		return
+
+	if _stamina_regeneration_timer > 0.0:
+		_stamina_regeneration_timer = maxf(
+			_stamina_regeneration_timer - delta,
+			0.0
+		)
+
+		return
+
+	if stamina >= max_stamina:
+		return
+
+	stamina = minf(
+		stamina + stamina_regeneration * delta,
+		max_stamina
+	)
+
+	stamina_changed.emit(
+		stamina,
+		max_stamina
+	)
+
+
+func _gastar_stamina(cantidad: float) -> bool:
+	if cantidad <= 0.0:
+		return true
+
+	if stamina < cantidad:
+		return false
+
+	stamina = maxf(
+		stamina - cantidad,
+		0.0
+	)
+
+	_stamina_regeneration_timer = (
+		stamina_regeneration_delay
+	)
+
+	stamina_changed.emit(
+		stamina,
+		max_stamina
+	)
+
+	return true
+
+
+func _tiene_stamina(cantidad: float) -> bool:
+	return stamina >= cantidad
+
+
+# ============================================================
+# JUMP
+# ============================================================
+
+func _puede_hacer_jump() -> bool:
+	return (
+		_jump_cooldown_timer <= 0.0
+		and _dash_time <= 0.0
+		and _tiene_stamina(jump_stamina_cost)
+	)
+
+
+func _iniciar_jump() -> void:
+	if not _gastar_stamina(jump_stamina_cost):
+		return
+
+	_action_direction = _obtener_direccion_accion()
+
+	_jump_time = jump_duration
+	_jump_cooldown_timer = jump_cooldown
+
+	state = State.JUMP
+
+	_update_visual()
+
+	print(
+		"Player: salto. Stamina: ",
+		stamina,
+		"/",
+		max_stamina
+	)
+
+
+func _procesar_jump(delta: float) -> void:
+	var duracion: float = maxf(
+		jump_duration,
+		0.001
+	)
+
+	var progreso: float = (
+		1.0
+		- (_jump_time / duracion)
+	)
+
+	_jump_time -= delta
+
+	var velocidad: float = (
+		jump_distance
+		/ duracion
+	)
+
+	velocity = _action_direction * velocidad
+
+	move_and_slide()
+
+	# Elevación visual (proporcional al tile de 32 px).
+	var altura: float = (
+		sin(progreso * PI)
+		* 16.0
+	)
+
+	visual.position = (
+		_base_visual_position
+		+ Vector2(
+			0.0,
+			-altura
+		)
+	)
+
+	if _jump_time <= 0.0:
+		_jump_time = 0.0
+
+		velocity = Vector2.ZERO
+
+		visual.position = (
+			_base_visual_position
+		)
+
+		state = State.IDLE
+
+		_update_visual()
+
+
+# ============================================================
+# DASH
+# ============================================================
+
+func _puede_hacer_dash() -> bool:
+	return (
+		_dash_cooldown_timer <= 0.0
+		and _jump_time <= 0.0
+		and _tiene_stamina(dash_stamina_cost)
+	)
+
+
+func _iniciar_dash() -> void:
+	if not _gastar_stamina(dash_stamina_cost):
+		return
+
+	_action_direction = _obtener_direccion_accion()
+
+	_dash_time = dash_duration
+	_dash_cooldown_timer = dash_cooldown
+
+	state = State.DASH
+
+	_update_visual()
+
+	print(
+		"Player: dash. Stamina: ",
+		stamina,
+		"/",
+		max_stamina
+	)
+
+
+func _procesar_dash(delta: float) -> void:
+	var duracion: float = maxf(
+		dash_duration,
+		0.001
+	)
+
+	_dash_time -= delta
+
+	var velocidad: float = (
+		dash_distance
+		/ duracion
+	)
+
+	velocity = _action_direction * velocidad
+
+	move_and_slide()
+
+	if _dash_time <= 0.0:
+		_dash_time = 0.0
+
+		velocity = Vector2.ZERO
+
+		state = State.IDLE
+
+		_update_visual()
+
+
+func _obtener_direccion_accion() -> Vector2:
+	if facing.length_squared() > 0.01:
+		return facing.normalized()
+
+	return Vector2.DOWN
+
+
+# ============================================================
+# COMBATE / DAÑO
+# ============================================================
+
+func take_damage(cantidad: int) -> void:
+	if not is_alive:
+		return
+
+	# El dash permite esquivar daño.
+	if state == State.DASH:
+		return
+
+	super.take_damage(cantidad)
+
+	if not is_alive:
+		_morir_jugador()
+	else:
+		_recibir_golpe_visual()
+
+
+func _recibir_golpe_visual() -> void:
+	if visual == null:
+		return
+
+	var tween := create_tween()
+
+	tween.tween_property(
+		visual,
+		"modulate",
+		Color(
+			1.0,
+			0.35,
+			0.35
+		),
+		0.06
+	)
+
+	tween.tween_property(
+		visual,
+		"modulate",
+		Color.WHITE,
+		0.12
+	)
+
+
+func _morir_jugador() -> void:
+	velocity = Vector2.ZERO
+
+	set_physics_process(false)
+
+	if visual == null:
+		return
+
+	var tween := create_tween()
+
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		visual,
+		"modulate:a",
+		0.0,
+		0.35
+	)
+
+	tween.tween_property(
+		visual,
+		"scale",
+		Vector2(
+			0.75,
+			0.75
+		),
+		0.35
+	)
+
+
+# ============================================================
+# VISUAL / ANIMACIONES
+# ============================================================
+
+func _update_visual() -> void:
+	if anim == null:
+		return
+
+	var dir_name := _facing_name()
+	var anim_name := ""
+
+	match state:
+		State.IDLE:
+			anim_name = (
+				"idle_"
+				+ dir_name
+			)
+
+		State.WALK:
+			anim_name = (
+				"walk_"
+				+ dir_name
+			)
+
+		State.RUN:
+			anim_name = (
+				"run_"
+				+ dir_name
+			)
+
+		State.JUMP:
+			anim_name = (
+				"jump_"
+				+ dir_name
+			)
+
+		State.DASH:
+			anim_name = (
+				"dash_"
+				+ dir_name
+			)
+
+	if anim.has_animation(anim_name):
+		anim.play(anim_name)
+
+
+func _update_dir_marker() -> void:
+	if facing_marker == null:
+		return
+
+	var center := Vector2(
+		0,
+		-24
+	)
+
+	var offset := (
+		facing.normalized()
+		* 14.0
+	)
+
+	facing_marker.position = (
+		center
+		+ offset
+		- Vector2(
+			2,
+			2
+		)
+	)
+
+
+func _facing_name() -> String:
+	if abs(facing.y) >= abs(facing.x):
+		return (
+			"down"
+			if facing.y > 0.0
+			else "up"
+		)
+
+	return "side"
+
+
+# ============================================================
+# MAGIA IUM
+# ============================================================
+
+var _proceso_ium_equipado: Dictionary = {}
+var _ium_manager_ref: Node = null
+
+
+func equipar_proceso_ium(proceso: Dictionary) -> void:
+	_proceso_ium_equipado = proceso
+
+
+func _usar_proceso_ium() -> void:
+	if _proceso_ium_equipado.is_empty():
+		return
+
+	# Buscar IUM Manager para delegar
+	if _ium_manager_ref == null:
+		_ium_manager_ref = get_tree().get_first_node_in_group("ium_manager")
+		if _ium_manager_ref == null:
+			var systems := get_tree().current_scene.get_node_or_null("Systems")
+			if systems != null:
+				_ium_manager_ref = systems.get_node_or_null("IUMManager")
+
+	if _ium_manager_ref == null:
+		return
+
+	# Buscar criatura más cercana como objetivo
+	var objetivo: Node = _buscar_objetivo_cercano()
+	_ium_manager_ref.usar_proceso_equipado(objetivo)
+
+
+func _buscar_objetivo_cercano() -> Node:
+	var criaturas := get_tree().get_nodes_in_group("creatures")
+	var mas_cercana: Node = null
+	var dist_min := 160.0
+
+	for criatura in criaturas:
+		if not is_instance_valid(criatura):
+			continue
+		var dist := global_position.distance_to(criatura.global_position)
+		if dist < dist_min:
+			dist_min = dist
+			mas_cercana = criatura
+
+	return mas_cercana
+
+
+func aplicar_efecto_slow(duracion: float) -> void:
+	## Llamado por criaturas como Lignianos al contacto.
+	var speed_original := move_speed
+	move_speed = move_speed * 0.4
+
+	await get_tree().create_timer(duracion).timeout
+
+	if is_instance_valid(self):
+		move_speed = speed_original
+
+
+# ============================================================
+# SPAWN
+# ============================================================
+
+func set_spawn_from_world(
+	world_gen: Node
+) -> void:
+	if world_gen == null:
+		return
+
+	if world_gen.has_method(
+		"get_spawn_position"
+	):
+		global_position = (
+			world_gen.get_spawn_position()
+		)

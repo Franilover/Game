@@ -1,0 +1,439 @@
+Equipo,
+
+Dejo el estado actual del desarrollo de Garlia para que tengamos todos la misma referencia y podamos repartir el trabajo.
+
+## 1. Estado actual
+
+Ya conseguimos conectar el juego de Godot directamente con el mundo de Garlia almacenado en Supabase.
+
+El flujo actual es:
+
+Supabase
+↓
+SupabaseClient
+↓
+WorldData
+↓
+WorldGenerator
+↓
+Biomas
+↓
+Ecosistemas
+↓
+Habitats
+↓
+TileMap / mundo físico
+↓
+Player
+↓
+Creatures
+
+Esto ya funciona en ejecución.
+
+### Godot
+
+Tenemos:
+
+* Escena principal con `Main`, `World`, `Entities`, `UI` y `Systems`.
+* `SupabaseClient` como cliente de red.
+* `WorldData` como caché/índice de los datos canónicos del mundo.
+* `WorldGenerator` generando el terreno procedural.
+* TileMap con suelo y detalles.
+* Generación de regiones según los biomas reales de Supabase.
+* Distribución de ecosistemas dentro de los biomas.
+* Mapa interno de habitats.
+* `Player` funcionando y moviéndose.
+* `Entity` como clase base para entidades vivas.
+* `Creature` heredando de `Entity`.
+* Criaturas creadas desde los datos de Supabase.
+* Spawn limitado de criaturas.
+* Movimiento básico aleatorio de criaturas.
+
+La arquitectura base ya está, por tanto podemos empezar a desarrollar sistemas de juego reales en lugar de seguir haciendo únicamente pruebas de conexión.
+
+## 2. Estado actual de Supabase
+
+Los datos actuales del mundo contienen:
+
+* 8 biomas.
+* 14 ecosistemas.
+* 38 habitats.
+* 29 criaturas.
+* 12 relaciones bioma ↔ ecosistema.
+* 28 participantes de ecosistemas.
+* 34 relaciones participante ↔ habitat.
+* 16 relaciones de roles ecológicos.
+* 7 reglas de compatibilidad de habitat/participante.
+
+El RPC `get_mundo_inicial()` funciona para cliente y autenticado.
+
+Actualmente devuelve 8 biomas y 2 ecosistemas que todavía no tienen bioma asociado.
+
+Hay un detalle importante que debemos tener documentado:
+
+`ecosistema_criaturas` actualmente tiene 0 filas. Las relaciones que estamos utilizando para poblar el mundo provienen actualmente de la estructura de participantes/ecología (`ecosistema_participantes` + `ecosistema_participante_habitats` y relaciones asociadas).
+
+Esto significa que no deberíamos empezar a cambiar relaciones ecológicas “a ojo” ni crear otra estructura paralela. Antes de tocar eso, revisamos el modelo actual y mantenemos la regla de que SUPABASE MANDA.
+
+Hay 29 criaturas en catálogo, pero el mundo inicial actualmente expone 22 criaturas distintas mediante las relaciones que están siendo cargadas en el RPC.
+
+También hay 0 descubrimientos de criaturas actualmente, así que el sistema de descubrimiento todavía no participa del gameplay.
+
+## 3. Lo que está terminado a nivel de base
+
+La parte de infraestructura del mundo está suficientemente avanzada para dejar de considerarla un simple test.
+
+Tenemos:
+
+### Mundo
+
+Supabase → Godot funcionando.
+
+### Canon
+
+Los biomas, ecosistemas, habitats y criaturas no están duplicados manualmente como contenido independiente en Godot.
+
+### Generación procedural
+
+Godot interpreta los datos del mundo y genera físicamente el terreno.
+
+### Entidades
+
+`Entity` ya funciona como base compartida para Player, Creature y futuros NPCs.
+
+### Criaturas
+
+Las criaturas ya pueden existir físicamente dentro del mundo.
+
+## 4. Lo que todavía falta
+
+Ahora empieza la parte grande del videojuego.
+
+### Mundo
+
+El `WorldGenerator` todavía utiliza reglas visuales hardcodeadas para interpretar algunos nombres de biomas/ecosistemas.
+
+Eso sirve para el prototipo, pero a largo plazo debemos conseguir que la representación del mundo dependa cada vez más de datos estructurados de Supabase y menos de comprobaciones como `"bosque"` o `"desierto"` dentro de Godot.
+
+También falta:
+
+* mundo persistente;
+* mapas más grandes;
+* transición entre regiones;
+* generación más natural;
+* estructuras;
+* caminos;
+* ciudades;
+* interiores;
+* cuevas;
+* objetos del mundo;
+* recursos;
+* obstáculos;
+* colisiones físicas completas.
+
+### Habitats
+
+Ya sabemos en qué habitat está cada posición, pero todavía no usamos esa información para todo el gameplay.
+
+Falta que el habitat realmente controle:
+
+* spawn;
+* movimiento;
+* límites ecológicos;
+* comportamiento;
+* recursos;
+* encuentros;
+* condiciones ambientales.
+
+### Criaturas
+
+Ahora mismo las criaturas:
+
+* aparecen;
+* tienen sus datos de Supabase;
+* heredan de Entity;
+* se mueven aleatoriamente.
+
+Todavía falta:
+
+* IA;
+* percepción;
+* comportamiento según `comportamiento`;
+* desplazamiento restringido a su habitat;
+* estados;
+* interacción con otras criaturas;
+* alimentación;
+* relaciones ecológicas;
+* huida;
+* persecución;
+* territorialidad;
+* reproducción/población;
+* muerte real dentro del ecosistema;
+* loot/recursos;
+* animaciones;
+* sprites finales.
+
+### Player
+
+Tenemos movimiento básico y spawn.
+
+Falta construir:
+
+* interacción;
+* inventario;
+* objetos;
+* combate;
+* acciones;
+* análisis;
+* descubrimiento;
+* progresión;
+* estadísticas;
+* magia;
+* Eterium;
+* estados;
+* muerte/respawn;
+* guardado.
+
+### Combate
+
+Todavía no hemos conectado el sistema D&D al gameplay.
+
+Necesitamos construir:
+
+Player/Creature
+↓
+acciones
+↓
+objetivos
+↓
+tiradas / reglas
+↓
+daño / estados
+↓
+muerte
+
+Y debe reutilizar los datos que ya existen en Supabase, no crear una segunda definición de las criaturas en Godot.
+
+### Magia / IUM / Eterium
+
+Esta parte todavía está separada del gameplay.
+
+El backend de Garlia ya tiene una base muy avanzada para el sistema, pero falta conectar esa simulación con el juego:
+
+* jugador posee Eterium;
+* gasto;
+* reserva;
+* preparación;
+* IUMs;
+* configuraciones;
+* Oris;
+* procesos;
+* ejecución;
+* efectos físicos en el mundo;
+* objetos mágicos;
+* consecuencias;
+* aprendizaje/descubrimiento.
+
+### Persistencia
+
+Todavía no tenemos conectado el ciclo completo:
+
+Login
+↓
+Jugador
+↓
+Estado de partida
+↓
+Guardar
+↓
+Cargar
+
+También falta definir qué se guarda localmente y qué se guarda en Supabase.
+
+### Descubrimiento
+
+El sistema de descubrimiento existe en Supabase, pero aún no está conectado al gameplay.
+
+Necesitamos decidir qué acciones provocan descubrimientos y cómo progresa el conocimiento del jugador.
+
+### UI
+
+Todavía tenemos la infraestructura, pero falta construir la interfaz real:
+
+* HUD;
+* vida;
+* maná;
+* Eterium;
+* inventario;
+* interacción;
+* información de criaturas;
+* mapa;
+* descubrimientos;
+* magia;
+* combate;
+* menús;
+* diálogos.
+
+### Arte y audio
+
+El terreno actual utiliza el tileset placeholder.
+
+Falta integrar:
+
+* tileset definitivo;
+* sprites del player;
+* criaturas;
+* NPCs;
+* objetos;
+* animaciones;
+* efectos;
+* UI;
+* sonido;
+* música.
+
+## 5. Problemas técnicos que debemos evitar
+
+Hay varias reglas que deberíamos mantener para no terminar con dos versiones diferentes de Garlia.
+
+### SUPABASE MANDA
+
+Godot no debe convertirse en una copia paralela del canon.
+
+Godot interpreta datos y ejecuta el juego.
+
+Supabase define:
+
+* entidades;
+* relaciones;
+* reglas;
+* progreso;
+* conocimiento;
+* contenido;
+* sistemas canónicos.
+
+### No hardcodear contenido si ya existe en Supabase
+
+No crear arrays manuales de criaturas, habitats, IUMs, etc. en Godot cuando esos datos ya existen en el backend.
+
+### No convertir todo en texto libre
+
+Siempre que exista una estructura relacional o un catálogo, utilizar el dato estructurado.
+
+### No crear sistemas paralelos
+
+Antes de crear una nueva tabla, vista, recurso o clase, comprobar si ya existe algo equivalente.
+
+## 6. Orden que propongo para el desarrollo
+
+Ahora mismo yo dejaría de añadir más capas abstractas al mundo y pasaría a construir el gameplay alrededor de lo que ya tenemos.
+
+### Fase 1 — Mundo jugable
+
+Terminar:
+
+Bioma
+→ Ecosistema
+→ Habitat
+→ Spawn
+→ Criaturas
+→ Movimiento
+→ IA
+
+Objetivo: poder recorrer un ecosistema y encontrar criaturas que realmente pertenecen a ese lugar.
+
+### Fase 2 — Interacción
+
+Player
+→ detectar entidades
+→ interactuar
+→ analizar
+→ recoger
+→ usar objetos
+
+Objetivo: que el mundo deje de ser solamente “explorable” y empiece a responder al jugador.
+
+### Fase 3 — Combate
+
+Entity
+→ acciones
+→ ataques
+→ daño
+→ estados
+→ muerte
+
+Objetivo: primer combate completo Player vs Creature.
+
+### Fase 4 — Persistencia
+
+Auth
+→ partida
+→ progreso
+→ descubrimientos
+→ inventario
+→ guardado
+
+Objetivo: cerrar el ciclo de juego.
+
+### Fase 5 — Magia
+
+Eterium
+→ IUMs
+→ configuración
+→ Oris
+→ procesos
+→ efectos físicos
+
+Objetivo: que la magia canónica de Garlia pueda utilizarse realmente dentro del juego.
+
+### Fase 6 — Contenido
+
+Ciudades, NPCs, objetos, criaturas adicionales, misiones, mundo, historia, etc.
+
+### Fase 7 — Presentación
+
+Sprites definitivos, animaciones, UI final, efectos, sonido, optimización y polish.
+
+## 7. Prioridad inmediata
+
+Nuestro siguiente objetivo debería ser conseguir este ciclo completo:
+
+Explorar
+↓
+Entrar a un ecosistema
+↓
+Encontrar criaturas
+↓
+Detectarlas
+↓
+Interactuar
+↓
+Combatir
+↓
+Obtener consecuencias
+↓
+Guardar progreso
+
+Cuando eso funcione, ya tendremos un verdadero vertical slice de Garlia y podremos desarrollar el resto encima de una base jugable.
+
+## 8. Organización del equipo
+
+Propongo dividir el trabajo por sistemas y no por archivos.
+
+Un bloque para:
+
+* Mundo / generación / habitats.
+* Criaturas / IA / entidades.
+* Player / interacción / combate.
+* Magia / IUM / Eterium.
+* Supabase / persistencia / progreso.
+* UI.
+* Arte / animación / audio.
+
+La idea es que cada persona sea responsable de un sistema completo y que las conexiones entre sistemas estén documentadas antes de modificar el backend.
+
+Por ahora no necesitamos crear más infraestructura de la necesaria. Ya tenemos suficiente base para empezar a construir el juego encima.
+
+El objetivo de esta etapa es simple: pasar de “tenemos los sistemas conectados” a “podemos jugar una partida real de Garlia”.
+
+Franilover
+

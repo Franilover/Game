@@ -1,0 +1,306 @@
+extends Node2D
+class_name WorldGenerator
+
+signal mundo_generado
+
+@export var map_seed: int = 0
+@export var tile_size: int = 32
+@export var chunk_size_tiles: int = 32
+@export var load_radius_chunks: int = 2
+@export var unload_radius_chunks: int = 3
+@export var generation_cells_per_frame: int = 256
+
+var terrain: WorldTerrain
+var streamer: WorldStreamer
+var entity_spawner: WorldEntitySpawner
+
+var _world_ready: bool = false
+
+
+func _ready() -> void:
+	add_to_group("world_generator")
+
+	_crear_sistemas()
+
+	if WorldData.esta_cargado():
+		_inicializar_mundo()
+	else:
+		WorldData.mundo_listo.connect(
+			_inicializar_mundo,
+			CONNECT_ONE_SHOT
+		)
+
+
+func _process(_delta: float) -> void:
+	if not _world_ready:
+		return
+
+	if streamer != null:
+		streamer.procesar()
+
+
+func _crear_sistemas() -> void:
+	terrain = get_node_or_null("WorldTerrain") as WorldTerrain
+
+	if terrain == null:
+		terrain = WorldTerrain.new()
+		terrain.name = "WorldTerrain"
+		add_child(terrain)
+
+	streamer = get_node_or_null("WorldStreamer") as WorldStreamer
+
+	if streamer == null:
+		streamer = WorldStreamer.new()
+		streamer.name = "WorldStreamer"
+		add_child(streamer)
+
+	entity_spawner = get_node_or_null(
+		"WorldEntitySpawner"
+	) as WorldEntitySpawner
+
+	if entity_spawner == null:
+		entity_spawner = WorldEntitySpawner.new()
+		entity_spawner.name = "WorldEntitySpawner"
+		add_child(entity_spawner)
+
+
+func _inicializar_mundo() -> void:
+	if _world_ready:
+		return
+
+	if map_seed == 0:
+		map_seed = randi()
+
+	terrain.configurar(
+		map_seed,
+		tile_size,
+		chunk_size_tiles
+	)
+
+	terrain.cargar_datos_mundo()
+
+	entity_spawner.configurar(
+		terrain
+	)
+
+	streamer.configurar(
+		self,
+		terrain,
+		entity_spawner,
+		load_radius_chunks,
+		unload_radius_chunks,
+		generation_cells_per_frame
+	)
+
+	terrain.generar_chunk_completo(
+		Vector2i.ZERO
+	)
+
+	_world_ready = true
+
+	print("WorldGenerator: mundo inicial listo.")
+
+	mundo_generado.emit()
+
+
+func registrar_jugador(player: Node) -> void:
+	if not _world_ready:
+		return
+
+	streamer.registrar_jugador(
+		player
+	)
+
+
+func is_world_ready() -> bool:
+	return _world_ready
+
+
+func get_spawn_position() -> Vector2:
+	if terrain == null:
+		return Vector2.ZERO
+
+	return terrain.get_spawn_position()
+
+
+func is_walkable(tile: Vector2i) -> bool:
+	if terrain == null:
+		return false
+
+	return terrain.is_walkable(tile)
+
+
+func get_bioma_at(tile: Vector2i) -> Dictionary:
+	if terrain == null:
+		return {}
+
+	return terrain.get_bioma_at(tile)
+
+
+func get_ecosistema_at(tile: Vector2i) -> Dictionary:
+	if terrain == null:
+		return {}
+
+	return terrain.get_ecosistema_at(tile)
+
+
+func get_habitats_at(tile: Vector2i) -> Array:
+	if terrain == null:
+		return []
+
+	return terrain.get_habitats_at(tile)
+
+
+func get_criaturas_at(tile: Vector2i) -> Array:
+	if terrain == null:
+		return []
+
+	return terrain.get_criaturas_at(tile)
+
+
+func get_zona_at(tile: Vector2i) -> int:
+	if terrain == null:
+		return -1
+
+	return terrain.get_zona_at(tile)
+
+
+func get_contexto_at(posicion_global: Vector2) -> Dictionary:
+	if terrain == null:
+		return {}
+
+	if not _world_ready:
+		return {}
+
+	# Convertimos la posición global del jugador
+	# a las coordenadas locales de WorldTerrain.
+	var posicion_local: Vector2 = (
+		terrain.to_local(posicion_global)
+	)
+
+	var tamano_tile: int = maxi(
+		tile_size,
+		1
+	)
+
+	var tile := Vector2i(
+		floori(
+			posicion_local.x
+			/ float(tamano_tile)
+		),
+		floori(
+			posicion_local.y
+			/ float(tamano_tile)
+		)
+	)
+
+	var bioma: Dictionary = (
+		terrain.get_bioma_at(tile)
+	)
+
+	var ecosistema: Dictionary = (
+		terrain.get_ecosistema_at(tile)
+	)
+
+	var habitats: Array = (
+		terrain.get_habitats_at(tile)
+	)
+
+	var contexto := {
+		"bioma": _extraer_nombre(bioma),
+		"ecosistema": _extraer_nombre(ecosistema),
+		"habitat": _extraer_nombre_habitats(habitats)
+	}
+
+	return contexto
+
+
+func _extraer_nombre(
+	datos: Dictionary
+) -> String:
+	if datos.is_empty():
+		return "—"
+
+	var nombre := str(
+		datos.get(
+			"nombre",
+			""
+		)
+	)
+
+	if nombre.is_empty():
+		return "—"
+
+	return nombre
+
+
+func _extraer_nombre_habitats(
+	habitats: Array
+) -> String:
+	if habitats.is_empty():
+		return "—"
+
+	var nombres: Array[String] = []
+
+	for habitat_variant in habitats:
+		if not habitat_variant is Dictionary:
+			continue
+
+		var habitat: Dictionary = (
+			habitat_variant
+		)
+
+		var nombre := str(
+			habitat.get(
+				"nombre",
+				""
+			)
+		)
+
+		if nombre.is_empty():
+			var tipo_variant: Variant = (
+				habitat.get(
+					"tipo_habitat",
+					{}
+				)
+			)
+
+			if tipo_variant is Dictionary:
+				var tipo: Dictionary = (
+					tipo_variant
+				)
+
+				nombre = str(
+					tipo.get(
+						"nombre",
+						""
+					)
+				)
+
+				if nombre.is_empty():
+					nombre = str(
+						tipo.get(
+							"clave",
+							""
+						)
+					)
+
+					if not nombre.is_empty():
+						nombre = nombre.capitalize()
+
+		if nombre.is_empty():
+			continue
+
+		if nombre in nombres:
+			continue
+
+		nombres.append(
+			nombre
+		)
+
+	if nombres.is_empty():
+		return "—"
+
+	return " · ".join(
+		nombres
+	)

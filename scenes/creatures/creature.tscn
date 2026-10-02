@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://bgteq7p8owfwk"]
+
+[ext_resource type="Script" uid="uid://cqflshsao0svm" path="res://scripts/creatures/creature.gd" id="1_creature"]
+[ext_resource type="Script" uid="uid://bwgq314aiqc4" path="res://scripts/creatures/creature_movement.gd" id="2_movement"]
+[ext_resource type="Script" uid="uid://ccnmq5tlsefij" path="res://scripts/creatures/creature_ai.gd" id="3_ai"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_creature"]
+radius = 15.0
+
+[node name="Creature" type="CharacterBody2D" unique_id=1852558503]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_creature")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=400000001]
+position = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=262902508]
+position = Vector2(0, -12)
+shape = SubResource("CircleShape2D_creature")
+
+[node name="CreatureMovement" type="Node" parent="." unique_id=1803865840]
+script = ExtResource("2_movement")
+
+[node name="AIController" type="Node" parent="." unique_id=1121240266]
+script = ExtResource("3_ai")

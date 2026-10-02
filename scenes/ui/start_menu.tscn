@@ -1,0 +1,460 @@
+[gd_scene format=3 uid="uid://ssk4irewulhm"]
+
+[ext_resource type="Script" uid="uid://cmn23gd47tjqf" path="res://scripts/ui/start_menu.gd" id="1_start_menu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxProfileNormal"]
+bg_color = Color(0.29, 0.22, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.58, 0.46, 0.31, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxProfilePressed"]
+bg_color = Color(0.21, 0.16, 0.11, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.48, 0.37, 0.24, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxProfileHover"]
+bg_color = Color(0.38, 0.29, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.64, 0.43, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxSettingsNormal"]
+bg_color = Color(0.29, 0.22, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.58, 0.46, 0.31, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxSettingsPressed"]
+bg_color = Color(0.21, 0.16, 0.11, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.48, 0.37, 0.24, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxSettingsHover"]
+bg_color = Color(0.38, 0.29, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.64, 0.43, 1)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxLoginPanel"]
+bg_color = Color(0.2, 0.15, 0.1, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.58, 0.46, 0.31, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxInput"]
+bg_color = Color(0.1, 0.075, 0.05, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_color = Color(0.42, 0.33, 0.22, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxMultiplayerPanel"]
+bg_color = Color(0.2, 0.15, 0.1, 0.99)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.58, 0.46, 0.31, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="StartMenu" type="Control" unique_id=560386343]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_start_menu")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1169627170]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.067, 0.047, 0.035, 1)
+
+[node name="Paper" type="ColorRect" parent="." unique_id=1398223256]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -220.0
+offset_right = 260.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.25, 0.19, 0.13, 0.96)
+
+[node name="Inner" type="ColorRect" parent="Paper" unique_id=1484655391]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 512.0
+offset_bottom = 432.0
+mouse_filter = 2
+color = Color(0.72, 0.61, 0.45, 0.12)
+
+[node name="Center" type="VBoxContainer" parent="." unique_id=1822876475]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -170.0
+offset_right = 180.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center" unique_id=1252536823]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.82, 0.64, 1)
+theme_override_colors/font_shadow_color = Color(0.05, 0.03, 0.02, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 48
+text = "GARLIA"
+horizontal_alignment = 1
+
+[node name="HistoriaButton" type="Button" parent="Center" unique_id=1127389707]
+modulate = Color(1, 1, 1, 0.42)
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Historia — Próximamente"
+focus_mode = 1
+theme_override_font_sizes/font_size = 18
+disabled = true
+text = "Historia"
+
+[node name="StartButton" type="Button" parent="Center" unique_id=754464902]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+focus_mode = 1
+theme_override_font_sizes/font_size = 20
+text = "Aventura"
+
+[node name="MultiplayerButton" type="Button" parent="Center" unique_id=624144304]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Inicia sesión para usar el multijugador."
+focus_mode = 1
+theme_override_font_sizes/font_size = 17
+disabled = true
+text = "Multijugador"
+
+[node name="ExitButton" type="Button" parent="Center" unique_id=2011568682]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+focus_mode = 1
+theme_override_font_sizes/font_size = 17
+text = "Salir"
+
+[node name="Version" type="Label" parent="." unique_id=309791332]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -32.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 11
+text = "Garlia — Prototipo"
+horizontal_alignment = 2
+
+[node name="ProfileButton" type="Button" parent="." unique_id=1615126066]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -84.0
+offset_right = 84.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+tooltip_text = "Perfil / Iniciar sesión"
+focus_mode = 1
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxProfileNormal")
+theme_override_styles/pressed = SubResource("StyleBoxProfilePressed")
+theme_override_styles/hover = SubResource("StyleBoxProfileHover")
+text = "P"
+
+[node name="SettingsButton" type="Button" parent="." unique_id=1025445352]
+modulate = Color(1, 1, 1, 0.42)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -84.0
+offset_top = -84.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+tooltip_text = "Configuración — Próximamente"
+focus_mode = 1
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxSettingsNormal")
+theme_override_styles/pressed = SubResource("StyleBoxSettingsPressed")
+theme_override_styles/hover = SubResource("StyleBoxSettingsHover")
+disabled = true
+text = "⚙"
+
+[node name="LoginOverlay" type="ColorRect" parent="." unique_id=1220459436]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.015, 0.01, 0.72)
+
+[node name="LoginPanel" type="PanelContainer" parent="LoginOverlay" unique_id=2015400300]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -165.0
+offset_right = 190.0
+offset_bottom = 165.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxLoginPanel")
+
+[node name="Margin" type="MarginContainer" parent="LoginOverlay/LoginPanel" unique_id=1276907403]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="LoginOverlay/LoginPanel/Margin" unique_id=198965720]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=431027519]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Iniciar sesión"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1491292555]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Usa tu cuenta de Garlia."
+horizontal_alignment = 1
+
+[node name="EmailLabel" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=648128192]
+layout_mode = 2
+text = "Correo"
+
+[node name="EmailInput" type="LineEdit" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1874871142]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxInput")
+placeholder_text = "correo@ejemplo.com"
+
+[node name="PasswordLabel" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1008143552]
+layout_mode = 2
+text = "Contraseña"
+
+[node name="PasswordInput" type="LineEdit" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1460567700]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxInput")
+placeholder_text = "Contraseña"
+secret = true
+
+[node name="Message" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=439686178]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=333635625]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LoginButton" type="Button" parent="LoginOverlay/LoginPanel/Margin/Content/Buttons" unique_id=692716021]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Entrar"
+
+[node name="CloseButton" type="Button" parent="LoginOverlay/LoginPanel/Margin/Content/Buttons" unique_id=1886830411]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Volver"
+
+[node name="MultiplayerOverlay" type="ColorRect" parent="." unique_id=1081669390]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.015, 0.01, 0.78)
+
+[node name="MultiplayerPanel" type="PanelContainer" parent="MultiplayerOverlay" unique_id=1423139232]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -205.0
+offset_right = 220.0
+offset_bottom = 205.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxMultiplayerPanel")
+
+[node name="Margin" type="MarginContainer" parent="MultiplayerOverlay/MultiplayerPanel" unique_id=1249777574]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="MultiplayerOverlay/MultiplayerPanel/Margin" unique_id=1000467251]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=880093815]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Multijugador"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=2002603302]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Juega con otros exploradores de Garlia."
+horizontal_alignment = 1
+
+[node name="HostButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1334370356]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Crear partida"
+
+[node name="LocalIPLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=106304562]
+layout_mode = 2
+text = "Tu IP local: —"
+horizontal_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1690500757]
+layout_mode = 2
+
+[node name="IPLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1166416841]
+layout_mode = 2
+text = "Dirección del anfitrión"
+
+[node name="IPInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1604332809]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxInput")
+placeholder_text = "192.168.1.100"
+
+[node name="PortLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1552646489]
+layout_mode = 2
+text = "Puerto"
+
+[node name="PortInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=142787175]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxInput")
+text = "7777"
+
+[node name="JoinButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=208731829]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Unirse a partida"
+
+[node name="Status" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=659142770]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Desconectado"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=12111920]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Volver"

@@ -1,0 +1,144 @@
+[gd_scene format=3 uid="uid://bi6oqlrfq4scs"]
+
+[ext_resource type="Script" uid="uid://b8n60h62a5dd" path="res://scripts/ui/inventory.gd" id="1_inventory"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_window"]
+bg_color = Color(0.1, 0.065, 0.04, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.29, 0.17, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="Inventory" type="Control" unique_id=800900739]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_inventory")
+
+[node name="Dim" type="ColorRect" parent="." unique_id=906928284]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+color = Color(0.04, 0.025, 0.015, 0.55)
+
+[node name="Window" type="PanelContainer" parent="." unique_id=1322938373]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -260.0
+offset_right = 360.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBox_window")
+
+[node name="Margin" type="MarginContainer" parent="Window" unique_id=319582735]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 18
+
+[node name="Column" type="VBoxContainer" parent="Window/Margin" unique_id=446694475]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="HBoxContainer" parent="Window/Margin/Column" unique_id=167969704]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Window/Margin/Column/Header" unique_id=1828033531]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_outline_color = Color(0.075, 0.05, 0.035, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 20
+text = "INVENTARIO"
+
+[node name="CloseHint" type="Label" parent="Window/Margin/Column/Header" unique_id=796849284]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
+theme_override_font_sizes/font_size = 10
+text = "[ I ] Cerrar"
+vertical_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="Window/Margin/Column" unique_id=1047904732]
+layout_mode = 2
+
+[node name="Content" type="HBoxContainer" parent="Window/Margin/Column" unique_id=1889075135]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="SlotsPanel" type="VBoxContainer" parent="Window/Margin/Column/Content" unique_id=261778966]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="SlotsTitle" type="Label" parent="Window/Margin/Column/Content/SlotsPanel" unique_id=1200770226]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
+theme_override_font_sizes/font_size = 10
+text = "OBJETOS"
+
+[node name="Grid" type="GridContainer" parent="Window/Margin/Column/Content/SlotsPanel" unique_id=1707057280]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 8
+
+[node name="InfoPanel" type="VBoxContainer" parent="Window/Margin/Column/Content" unique_id=1747754024]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="InfoTitle" type="Label" parent="Window/Margin/Column/Content/InfoPanel" unique_id=305622098]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
+theme_override_font_sizes/font_size = 10
+text = "SELECCIONADO"
+
+[node name="ItemName" type="Label" parent="Window/Margin/Column/Content/InfoPanel" unique_id=1080046545]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_font_sizes/font_size = 16
+text = "Ningún objeto"
+
+[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Content/InfoPanel" unique_id=1325010840]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
+theme_override_font_sizes/font_size = 11
+text = "Selecciona un objeto para estudiar sus propiedades."
+vertical_alignment = 1
+autowrap_mode = 2
+
+
+[node name="Hint" type="Label" parent="Window/Margin/Column" unique_id=827274201]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
+theme_override_font_sizes/font_size = 10
+text = "I · abrir/cerrar     Esc · cerrar"
+horizontal_alignment = 1

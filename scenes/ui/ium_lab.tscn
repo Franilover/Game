@@ -1,0 +1,181 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/ium_lab.gd" id="1_iumlab"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.07, 0.07, 0.12, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.55, 0.85, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="IUMLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_iumlab")
+process_mode = 3
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.65)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -440.0
+offset_top = -290.0
+offset_right = 440.0
+offset_bottom = 290.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = -10.0
+offset_bottom = -8.0
+theme_override_constants/separation = 8
+
+[node name="TitleRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="Panel/VBox/TitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Simulador de IUMs"
+theme_override_font_sizes/font_size = 16
+
+[node name="BtnCerrar" type="Button" parent="Panel/VBox/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(30, 0)
+text = "X"
+
+[node name="HSep1" type="HSeparator" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="ContentRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="LeftCol" type="VBoxContainer" parent="Panel/VBox/ContentRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(155, 0)
+theme_override_constants/separation = 4
+
+[node name="LabelIUMs" type="Label" parent="Panel/VBox/ContentRow/LeftCol"]
+layout_mode = 2
+text = "IUMs disponibles"
+theme_override_font_sizes/font_size = 11
+
+[node name="ScrollIUMs" type="ScrollContainer" parent="Panel/VBox/ContentRow/LeftCol"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ListaIUMs" type="VBoxContainer" parent="Panel/VBox/ContentRow/LeftCol/ScrollIUMs"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="VSep" type="VSeparator" parent="Panel/VBox/ContentRow"]
+layout_mode = 2
+
+[node name="CenterCol" type="VBoxContainer" parent="Panel/VBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="LabelCanvas" type="Label" parent="Panel/VBox/ContentRow/CenterCol"]
+layout_mode = 2
+text = "Canvas - arrastra y conecta IUMs"
+theme_override_font_sizes/font_size = 11
+
+[node name="CanvasContainer" type="Panel" parent="Panel/VBox/ContentRow/CenterCol"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Canvas" type="Control" parent="Panel/VBox/ContentRow/CenterCol/CanvasContainer"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+clip_contents = true
+
+[node name="DrawLayer" type="Control" parent="Panel/VBox/ContentRow/CenterCol/CanvasContainer/Canvas"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="VSep2" type="VSeparator" parent="Panel/VBox/ContentRow"]
+layout_mode = 2
+
+[node name="RightCol" type="VBoxContainer" parent="Panel/VBox/ContentRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(155, 0)
+theme_override_constants/separation = 4
+
+[node name="LabelProcesos" type="Label" parent="Panel/VBox/ContentRow/RightCol"]
+layout_mode = 2
+text = "Procesos descubiertos"
+theme_override_font_sizes/font_size = 11
+
+[node name="ScrollProcesos" type="ScrollContainer" parent="Panel/VBox/ContentRow/RightCol"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ListaProcesos" type="VBoxContainer" parent="Panel/VBox/ContentRow/RightCol/ScrollProcesos"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="HSep2" type="HSeparator" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LabelEstado" type="Label" parent="Panel/VBox/BottomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Agrega IUMs desde la lista y conectalos para simular un proceso."
+theme_override_font_sizes/font_size = 11
+autowrap_mode = 3
+
+[node name="BtnLimpiar" type="Button" parent="Panel/VBox/BottomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+text = "Limpiar"
+
+[node name="BtnSimular" type="Button" parent="Panel/VBox/BottomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+text = "Simular"
