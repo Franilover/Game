@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bi6oqlrfq4scs"]
 
 [ext_resource type="Script" uid="uid://b8n60h62a5dd" path="res://scripts/ui/inventory.gd" id="1_inventory"]
+[ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/characters/Sprite-0004.png" id="2_skin"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_window"]
 bg_color = Color(0.1, 0.065, 0.04, 0.97)
@@ -89,44 +90,51 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
 
-[node name="SlotsPanel" type="VBoxContainer" parent="Window/Margin/Column/Content" unique_id=261778966]
+[node name="LeftPanel" type="VBoxContainer" parent="Window/Margin/Column/Content" unique_id=261778966]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
-[node name="SlotsTitle" type="Label" parent="Window/Margin/Column/Content/SlotsPanel" unique_id=1200770226]
+[node name="SlotsTitle" type="Label" parent="Window/Margin/Column/Content/LeftPanel" unique_id=1200770226]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
 theme_override_font_sizes/font_size = 10
 text = "OBJETOS"
 
-[node name="Grid" type="GridContainer" parent="Window/Margin/Column/Content/SlotsPanel" unique_id=1707057280]
+[node name="Grid" type="GridContainer" parent="Window/Margin/Column/Content/LeftPanel" unique_id=1707057280]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 6
 columns = 8
 
-[node name="InfoPanel" type="VBoxContainer" parent="Window/Margin/Column/Content" unique_id=1747754024]
-custom_minimum_size = Vector2(210, 0)
+[node name="InfoPanel" type="VBoxContainer" parent="Window/Margin/Column/Content/LeftPanel" unique_id=1747754024]
+custom_minimum_size = Vector2(0, 170)
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
-[node name="InfoTitle" type="Label" parent="Window/Margin/Column/Content/InfoPanel" unique_id=305622098]
+[node name="InfoTitle" type="Label" parent="Window/Margin/Column/Content/LeftPanel/InfoPanel" unique_id=305622098]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
 theme_override_font_sizes/font_size = 10
-text = "SELECCIONADO"
+text = "DESCRIPCIÓN"
 
-[node name="ItemName" type="Label" parent="Window/Margin/Column/Content/InfoPanel" unique_id=1080046545]
+[node name="ItemName" type="Label" parent="Window/Margin/Column/Content/LeftPanel/InfoPanel" unique_id=1080046545]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 16
 text = "Ningún objeto"
 
-[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Content/InfoPanel" unique_id=1325010840]
+[node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Content/LeftPanel/InfoPanel" unique_id=3001000001]
+custom_minimum_size = Vector2(96, 72)
+layout_mode = 2
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Content/LeftPanel/InfoPanel" unique_id=1325010840]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
@@ -135,6 +143,59 @@ text = "Selecciona un objeto para estudiar sus propiedades."
 vertical_alignment = 1
 autowrap_mode = 2
 
+[node name="DeleteButton" type="Button" parent="Window/Margin/Column/Content/LeftPanel/InfoPanel" unique_id=3001000002]
+layout_mode = 2
+text = "ELIMINAR OBJETO"
+disabled = true
+
+[node name="RightPanel" type="VBoxContainer" parent="Window/Margin/Column/Content" unique_id=1747754025]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="SkinTitle" type="Label" parent="Window/Margin/Column/Content/RightPanel" unique_id=3001000003]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
+theme_override_font_sizes/font_size = 10
+text = "SKIN DEL PERSONAJE"
+horizontal_alignment = 1
+
+[node name="SkinPanel" type="PanelContainer" parent="Window/Margin/Column/Content/RightPanel" unique_id=3001000004]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="Skin" type="TextureRect" parent="Window/Margin/Column/Content/RightPanel/SkinPanel" unique_id=3001000005]
+layout_mode = 2
+texture = ExtResource("2_skin")
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="EquipmentPanel" type="VBoxContainer" parent="Window/Margin/Column/Content/RightPanel" unique_id=3001000006]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 7
+
+[node name="EquipmentTitle" type="Label" parent="Window/Margin/Column/Content/RightPanel/EquipmentPanel" unique_id=3001000007]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
+theme_override_font_sizes/font_size = 10
+text = "EQUIPAMIENTO"
+
+[node name="EquipmentFilter" type="OptionButton" parent="Window/Margin/Column/Content/RightPanel/EquipmentPanel" unique_id=3001000008]
+layout_mode = 2
+selected = 0
+
+[node name="EquippedItemName" type="Label" parent="Window/Margin/Column/Content/RightPanel/EquipmentPanel" unique_id=3001000009]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_font_sizes/font_size = 12
+text = "Selecciona una categoría."
+vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="Hint" type="Label" parent="Window/Margin/Column" unique_id=827274201]
 layout_mode = 2
