@@ -495,6 +495,55 @@ func _morir_jugador() -> void:
 	)
 
 
+func reaparecer() -> void:
+	is_alive = true
+
+	health = max_health
+	mana = max_mana
+	stamina = max_stamina
+
+	velocity = Vector2.ZERO
+	state = State.IDLE
+
+	_jump_time = 0.0
+	_jump_cooldown_timer = 0.0
+	_dash_time = 0.0
+	_dash_cooldown_timer = 0.0
+	_stamina_regeneration_timer = 0.0
+
+	var world_gen := get_tree().current_scene.get_node_or_null(
+		"World/WorldGenerator"
+	)
+
+	if world_gen != null:
+		set_spawn_from_world(world_gen)
+
+	if visual != null:
+		visual.position = _base_visual_position
+		visual.modulate = Color.WHITE
+		visual.scale = Vector2.ONE
+
+	set_physics_process(true)
+
+	_update_dir_marker()
+	_update_visual()
+
+	health_changed.emit(
+		health,
+		max_health
+	)
+
+	mana_changed.emit(
+		mana,
+		max_mana
+	)
+
+	stamina_changed.emit(
+		stamina,
+		max_stamina
+	)
+
+
 # ============================================================
 # VISUAL / ANIMACIONES
 # ============================================================
