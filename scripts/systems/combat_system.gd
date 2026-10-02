@@ -324,87 +324,37 @@ func _disparar_proyectil(
 func _obtener_modo_ataque(
 	arma: Dictionary
 ) -> String:
-	var propiedades: Dictionary = (
-		_obtener_propiedades_game(
-			arma
-		)
+	var tipo_objeto_variant: Variant = arma.get(
+		"tipo_objeto",
+		{}
 	)
 
-	var modo_variant: Variant = (
-		propiedades.get(
-			"modo_ataque",
-			propiedades.get(
-				"tipo_ataque",
-				""
-			)
-		)
+	if not tipo_objeto_variant is Dictionary:
+		return "cuerpo"
+
+	var tipo_objeto := tipo_objeto_variant as Dictionary
+
+	var plantilla_variant: Variant = tipo_objeto.get(
+		"plantilla",
+		{}
 	)
 
-	if modo_variant is String:
-		var modo: String = (
-			modo_variant as String
-		).strip_edges().to_lower()
+	if not plantilla_variant is Dictionary:
+		return "cuerpo"
 
-		if (
-			modo == "distancia"
-			or modo == "rango"
-			or modo == "proyectil"
-			or modo == "a distancia"
-		):
-			return "distancia"
-
-		if modo == "cuerpo" or modo == "melee":
-			return "cuerpo"
-
-	var nombre: String = str(
-		arma.get(
-			"nombre",
+	var plantilla := plantilla_variant as Dictionary
+	var categoria_item: String = str(
+		plantilla.get(
+			"categoria",
 			""
 		)
-	).to_lower()
+	).strip_edges().to_lower()
 
-	var descripcion: String = str(
-		arma.get(
-			"descripcion",
-			""
-		)
-	).to_lower()
-
-	var geometria: String = ""
-
-	var geometria_variant: Variant = (
-		arma.get(
-			"geometria_fisica",
-			{}
-		)
-	)
-
-	if geometria_variant is Dictionary:
-		geometria = str(
-			(geometria_variant as Dictionary).get(
-				"forma",
-				""
-			)
-		).to_lower()
-
-	var texto: String = (
-		nombre
-		+ " "
-		+ descripcion
-		+ " "
-		+ geometria
-	)
-
-	# La clasificación se deriva del propio objeto canónico.
-	# No existe una lista de armas específica en el código.
-	if (
-		"proyectil" in texto
-		or "flecha" in texto
-		or "dispar" in texto
-		or "a distancia" in texto
-		or "arco" in texto
-	):
+	if categoria_item == "arma_distancia":
 		return "distancia"
+
+	if categoria_item.begins_with("arma_"):
+		return "cuerpo"
 
 	return "cuerpo"
 
