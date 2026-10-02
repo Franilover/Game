@@ -6,7 +6,7 @@ signal objeto_desequipado(slot: Button, datos: Dictionary)
 var clave_equipo: String = ""
 var datos: Dictionary = {}
 
-@onready var icon: TextureRect = $Icon
+@onready var icon_texture: TextureRect = $Icon
 @onready var label: Label = $Label
 
 func obtener_clave() -> String:
@@ -22,14 +22,14 @@ func configurar(clave: String, nombre: String) -> void:
 
 func _limpiar() -> void:
 	datos.clear()
-	icon.texture = null
-	icon.visible = false
+	icon_texture.texture = null
+	icon_texture.visible = false
 
 func configurar_objeto(nuevo_objeto: Dictionary) -> void:
 	datos = nuevo_objeto.duplicate(true)
 	var textura: Texture2D = ItemIconResolver.obtener_icono(datos)
-	icon.texture = textura
-	icon.visible = textura != null
+	icon_texture.texture = textura
+	icon_texture.visible = textura != null
 
 func _can_drop_data(_position: Vector2, data: Variant) -> bool:
 	if not data is Dictionary:
