@@ -28,11 +28,10 @@ var _arrastre_datos: Dictionary = {}
 
 
 @onready var grid: GridContainer = $Window/Margin/Column/Content/LeftPanel/Grid
-@onready var item_name: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemName
-@onready var item_description: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemDescription
+@onready var item_name: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/InfoText/ItemName
+@onready var item_description: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/InfoText/ItemDescription
 @onready var item_icon: TextureRect = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemIcon
-@onready var delete_button: Button = $Window/Margin/Column/Content/LeftPanel/InfoPanel/DeleteButton
-@onready var equipment_filter: OptionButton = $Window/Margin/Column/Content/RightPanel/EquipmentPanel/EquipmentFilter
+@onready var delete_button: Button = $Window/Margin/Column/Content/LeftPanel/InfoPanel/InfoText/DeleteButton
 @onready var equipment_item_name: Label = $Window/Margin/Column/Content/RightPanel/EquipmentPanel/EquippedItemName
 
 
@@ -43,10 +42,6 @@ func _ready() -> void:
 	_inicializar_items()
 	_inicializar_hotbar()
 	_crear_slots()
-	equipment_filter.clear()
-	for opcion in ["Todos", "Armadura", "Armas", "Herramientas", "Recursos", "Otros"]:
-		equipment_filter.add_item(opcion)
-	equipment_filter.item_selected.connect(_al_cambiar_filtro_equipamiento)
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_limpiar_informacion()
 
@@ -256,18 +251,10 @@ func seleccionar_slot(indice: int) -> void:
 	)
 
 
-func _al_cambiar_filtro_equipamiento(indice: int) -> void:
-	if indice < 0 or indice >= equipment_filter.item_count:
-		return
-
-	filtro_equipamiento = equipment_filter.get_item_text(indice)
-	_actualizar_equipo_mostrado()
-
-
 func _actualizar_equipo_mostrado() -> void:
 	var categoria := filtro_equipamiento.to_lower()
 	if categoria == "todos":
-		equipment_item_name.text = "Selecciona una categoría."
+		equipment_item_name.text = "Equipamiento disponible"
 		return
 
 	var encontrado: Dictionary = {}
