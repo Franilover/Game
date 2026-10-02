@@ -799,7 +799,7 @@ func _obtener_velocidad_ataque() -> float:
 		Perfil.CAMBIAFORMAS:
 			return velocidad_persecucion
 
-	Perfil.RANCRODEEN:
+		Perfil.RANCRODEEN:
 			return velocidad_persecucion
 
 	return velocidad_persecucion
