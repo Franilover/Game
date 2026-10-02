@@ -49,55 +49,110 @@ func _construir_indices() -> void:
 		_indexar_ecosistema(ecosistema)
 
 
-func _indexar_bioma(bioma: Dictionary) -> void:
-	var bioma_id: String = str(bioma.get("id", ""))
+func _indexar_bioma(
+	bioma: Dictionary
+) -> void:
+	var bioma_id: String = str(
+		bioma.get(
+			"id",
+			""
+		)
+	)
 
 	if bioma_id.is_empty():
 		return
 
 	_biomas_por_id[bioma_id] = bioma
 
-	var ecosistemas: Array = bioma.get("ecosistemas", [])
+	var ecosistemas: Array = (
+		bioma.get(
+			"ecosistemas",
+			[]
+		)
+	)
 
 	for ecosistema in ecosistemas:
-		_indexar_ecosistema(ecosistema)
+		_indexar_ecosistema(
+			ecosistema
+		)
 
 
-func _indexar_ecosistema(ecosistema: Dictionary) -> void:
-	var ecosistema_id: String = str(ecosistema.get("id", ""))
+func _indexar_ecosistema(
+	ecosistema: Dictionary
+) -> void:
+	var ecosistema_id: String = str(
+		ecosistema.get(
+			"id",
+			""
+		)
+	)
 
 	if ecosistema_id.is_empty():
 		return
 
-	_ecosistemas_por_id[ecosistema_id] = ecosistema
+	_ecosistemas_por_id[
+		ecosistema_id
+	] = ecosistema
 
-	var habitats: Array = ecosistema.get("habitats", [])
+	var habitats: Array = (
+		ecosistema.get(
+			"habitats",
+			[]
+		)
+	)
 
 	for habitat in habitats:
-		_indexar_habitat(habitat)
+		_indexar_habitat(
+			habitat
+		)
 
 
-func _indexar_habitat(habitat: Dictionary) -> void:
-	var habitat_id: String = str(habitat.get("id", ""))
+func _indexar_habitat(
+	habitat: Dictionary
+) -> void:
+	var habitat_id: String = str(
+		habitat.get(
+			"id",
+			""
+		)
+	)
 
 	if habitat_id.is_empty():
 		return
 
-	_habitats_por_id[habitat_id] = habitat
+	_habitats_por_id[
+		habitat_id
+	] = habitat
 
-	var criaturas: Array = habitat.get("criaturas", [])
+	var criaturas: Array = (
+		habitat.get(
+			"criaturas",
+			[]
+		)
+	)
 
 	for criatura in criaturas:
-		_indexar_criatura(criatura)
+		_indexar_criatura(
+			criatura
+		)
 
 
-func _indexar_criatura(criatura: Dictionary) -> void:
-	var criatura_id: String = str(criatura.get("id", ""))
+func _indexar_criatura(
+	criatura: Dictionary
+) -> void:
+	var criatura_id: String = str(
+		criatura.get(
+			"id",
+			""
+		)
+	)
 
 	if criatura_id.is_empty():
 		return
 
-	_criaturas_por_id[criatura_id] = criatura
+	_criaturas_por_id[
+		criatura_id
+	] = criatura
 
 
 # =========================================================
@@ -105,54 +160,132 @@ func _indexar_criatura(criatura: Dictionary) -> void:
 # =========================================================
 
 func obtener_biomas() -> Array:
-	return mundo.get("biomas", [])
+	return mundo.get(
+		"biomas",
+		[]
+	)
 
 
 func obtener_ecosistemas_sin_bioma() -> Array:
-	return mundo.get("ecosistemas_sin_bioma", [])
+	return mundo.get(
+		"ecosistemas_sin_bioma",
+		[]
+	)
 
 
-func obtener_bioma(bioma_id: String) -> Dictionary:
-	return _biomas_por_id.get(bioma_id, {})
+func obtener_bioma(
+	bioma_id: String
+) -> Dictionary:
+	return _biomas_por_id.get(
+		bioma_id,
+		{}
+	)
 
 
-func obtener_ecosistema(ecosistema_id: String) -> Dictionary:
-	return _ecosistemas_por_id.get(ecosistema_id, {})
+func obtener_ecosistema(
+	ecosistema_id: String
+) -> Dictionary:
+	return _ecosistemas_por_id.get(
+		ecosistema_id,
+		{}
+	)
 
 
-func obtener_habitat(habitat_id: String) -> Dictionary:
-	return _habitats_por_id.get(habitat_id, {})
+func obtener_habitat(
+	habitat_id: String
+) -> Dictionary:
+	return _habitats_por_id.get(
+		habitat_id,
+		{}
+	)
 
 
-func obtener_criatura(criatura_id: String) -> Dictionary:
-	return _criaturas_por_id.get(criatura_id, {})
+func obtener_criatura(
+	criatura_id: String
+) -> Dictionary:
+	return _criaturas_por_id.get(
+		criatura_id,
+		{}
+	)
 
 
-func obtener_ecosistemas_de_bioma(bioma_id: String) -> Array:
-	var bioma := obtener_bioma(bioma_id)
+func buscar_criatura_por_nombre(
+	nombre: String
+) -> Dictionary:
+	var buscado := nombre.strip_edges().to_lower()
+
+	if buscado.is_empty():
+		return {}
+
+	for criatura_variant in _criaturas_por_id.values():
+		if not criatura_variant is Dictionary:
+			continue
+
+		var criatura := (
+			criatura_variant as Dictionary
+		)
+
+		var nombre_criatura := str(
+			criatura.get(
+				"nombre",
+				""
+			)
+		)
+
+		if nombre_criatura.to_lower() == buscado:
+			return criatura.duplicate(
+				true
+			)
+
+	return {}
+
+
+func obtener_ecosistemas_de_bioma(
+	bioma_id: String
+) -> Array:
+	var bioma := obtener_bioma(
+		bioma_id
+	)
 
 	if bioma.is_empty():
 		return []
 
-	return bioma.get("ecosistemas", [])
+	return bioma.get(
+		"ecosistemas",
+		[]
+	)
 
 
-func obtener_habitats_de_ecosistema(ecosistema_id: String) -> Array:
-	var ecosistema := obtener_ecosistema(ecosistema_id)
+func obtener_habitats_de_ecosistema(
+	ecosistema_id: String
+) -> Array:
+	var ecosistema := obtener_ecosistema(
+		ecosistema_id
+	)
 
 	if ecosistema.is_empty():
 		return []
 
-	return ecosistema.get("habitats", [])
+	return ecosistema.get(
+		"habitats",
+		[]
+	)
 
 
-func obtener_criaturas_de_habitat(habitat_id: String) -> Array:
-	var habitat := obtener_habitat(habitat_id)
+func obtener_criaturas_de_habitat(
+	habitat_id: String
+) -> Array:
+	var habitat := obtener_habitat(
+		habitat_id
+	)
 
 	if habitat.is_empty():
 		return []
 
-	return habitat.get("criaturas", [])
+	return habitat.get(
+		"criaturas",
+		[]
+	)
 
 
 func esta_cargado() -> bool:

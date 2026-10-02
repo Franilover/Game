@@ -326,6 +326,167 @@ func spawn_chunk(
 		)
 
 
+func summon_criatura(
+	nombre: String,
+	posicion: Vector2
+) -> Dictionary:
+	var criatura_data := (
+		WorldData.buscar_criatura_por_nombre(
+			nombre
+		)
+	)
+
+	if criatura_data.is_empty():
+		return {
+			"ok": false,
+			"mensaje": (
+				"No existe una criatura llamada "
+				+ nombre
+			)
+		}
+
+	var current_scene: Node = (
+		get_tree().current_scene
+	)
+
+	if current_scene == null:
+		return {
+			"ok": false,
+			"mensaje": "No existe la escena actual."
+		}
+
+	var entities: Node = (
+		current_scene.get_node_or_null(
+			"Entities"
+		)
+	)
+
+	if entities == null:
+		return {
+			"ok": false,
+			"mensaje": (
+				"No existe el nodo Main/Entities."
+			)
+		}
+
+	var criatura: Node = (
+		CREATURE_SCENE.instantiate()
+	)
+
+	if criatura == null:
+		return {
+			"ok": false,
+			"mensaje": (
+				"No se pudo crear la escena "
+				+ "de la criatura."
+			)
+		}
+
+	entities.add_child(
+		criatura
+	)
+
+	criatura.global_position = (
+		posicion
+	)
+
+	if criatura is Creature:
+		var creature_node: Creature = (
+			criatura
+		)
+
+		creature_node.configurar(
+			criatura_data
+		)
+
+		if _terrain != null:
+			var tile_size := maxi(
+				_terrain.tile_size,
+				1
+			)
+
+			var posicion_local := (
+				_terrain.to_local(
+					posicion
+				)
+			)
+
+			var tile := Vector2i(
+				floori(
+					posicion_local.x
+					/ float(tile_size)
+				),
+				floori(
+					posicion_local.y
+					/ float(tile_size)
+				)
+			)
+
+			var chunk_coord := Vector2i(
+				floori(
+					float(tile.x)
+					/ float(
+						_terrain.chunk_size_tiles
+					)
+				),
+				floori(
+					float(tile.y)
+					/ float(
+						_terrain.chunk_size_tiles
+					)
+				)
+			)
+
+			var origin_x := (
+				chunk_coord.x
+				* _terrain.chunk_size_tiles
+			)
+
+			var origin_y := (
+				chunk_coord.y
+				* _terrain.chunk_size_tiles
+			)
+
+			var limites_chunk := Rect2(
+				float(
+					origin_x
+					* _terrain.tile_size
+				),
+				float(
+					origin_y
+					* _terrain.tile_size
+				),
+				float(
+					_terrain.chunk_size_tiles
+					* _terrain.tile_size
+				),
+				float(
+					_terrain.chunk_size_tiles
+					* _terrain.tile_size
+				)
+			)
+
+			creature_node.configurar_chunk(
+				chunk_coord,
+				limites_chunk
+			)
+
+			creature_node.configurar_entorno(
+				"general"
+			)
+
+	return {
+		"ok": true,
+		"nombre": str(
+			criatura_data.get(
+				"nombre",
+				nombre
+			)
+		),
+		"criatura": criatura
+	}
+
+
 func _elegir_candidato_ponderado(
 	candidatos: Array,
 	rng: RandomNumberGenerator
@@ -355,7 +516,6 @@ func _elegir_candidato_ponderado(
 
 	if peso_total <= 0.0:
 		return {}
-
 
 	var objetivo: float = (
 		rng.randf_range(

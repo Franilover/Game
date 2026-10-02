@@ -330,6 +330,15 @@ func _die() -> void:
 		return
 
 	is_alive = false
+
+	# Los drops se calculan usando criatura_drops de Supabase.
+	# La posición se captura antes de ocultar/eliminar la criatura.
+	if not criatura_id.is_empty():
+		GarliaWorldItems.generar_drops_criatura(
+			criatura_id,
+			global_position
+		)
+
 	died.emit()
 
 	if _movimiento != null:
@@ -507,10 +516,10 @@ func _dibujar_nombre() -> void:
 func _obtener_color() -> Color:
 	if criatura_id.is_empty():
 		return Color(
-		0.72,
-		0.55,
-		0.35
-	)
+			0.72,
+			0.55,
+			0.35
+		)
 
 	var valor: int = abs(
 		hash(criatura_id)
