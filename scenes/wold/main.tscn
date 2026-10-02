@@ -9,7 +9,7 @@
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/systems/interaction_system.gd" id="5_interaction"]
 [ext_resource type="PackedScene" uid="uid://bi6oqlrfq4scs" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/systems/combat_system.gd" id="8_combat"]
-[ext_resource type="Script" path="res://scripts/debug/admin_console.gd" id="9_admin"]
+[ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/debug/admin_console.gd" id="9_admin"]
 
 [node name="Main" type="Node2D" unique_id=109422602]
 script = ExtResource("3_main")
@@ -31,7 +31,8 @@ script = ExtResource("2_world_generator")
 
 [node name="Inventory" parent="UI" unique_id=1193147799 instance=ExtResource("6_inventory")]
 
-[node name="AdminConsole" parent="UI" instance=ExtResource("9_admin")]
+[node name="AdminConsole" type="CanvasLayer" parent="UI" unique_id=1465527241]
+script = ExtResource("9_admin")
 
 [node name="Systems" type="Node" parent="." unique_id=40830559]
 

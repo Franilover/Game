@@ -93,6 +93,17 @@ func _physics_process(delta: float) -> void:
 
 	_actualizar_cooldowns(delta)
 
+	# Si una interfaz está bloqueando el gameplay,
+	# no procesamos ningún input del jugador.
+	if _esta_bloqueado_por_interfaz():
+		velocity = Vector2.ZERO
+
+		if state != State.IDLE:
+			state = State.IDLE
+			_update_visual()
+
+		return
+
 	# Mientras hacemos una acción especial,
 	# esa acción toma el control del movimiento.
 	if state == State.JUMP:
@@ -178,6 +189,18 @@ func _physics_process(delta: float) -> void:
 		delta,
 		is_running
 	)
+
+
+func _esta_bloqueado_por_interfaz() -> bool:
+	var consola := get_tree().get_first_node_in_group(
+		"admin_console"
+	)
+
+	if consola != null:
+		if bool(consola.get("_abierto")):
+			return true
+
+	return get_tree().paused
 
 
 func _actualizar_cooldowns(delta: float) -> void:
@@ -304,7 +327,6 @@ func _procesar_jump(delta: float) -> void:
 
 	move_and_slide()
 
-	# Elevación visual (proporcional al tile de 32 px).
 	var altura: float = (
 		sin(progreso * PI)
 		* 16.0
@@ -407,7 +429,6 @@ func take_damage(cantidad: int) -> void:
 	if not is_alive:
 		return
 
-	# El dash permite esquivar daño.
 	if state == State.DASH:
 		return
 
@@ -571,19 +592,26 @@ func _usar_proceso_ium() -> void:
 	if _proceso_ium_equipado.is_empty():
 		return
 
-	# Buscar IUM Manager para delegar
 	if _ium_manager_ref == null:
-		_ium_manager_ref = get_tree().get_first_node_in_group("ium_manager")
+		_ium_manager_ref = get_tree().get_first_node_in_group(
+			"ium_manager"
+		)
+
 		if _ium_manager_ref == null:
-			var systems := get_tree().current_scene.get_node_or_null("Systems")
+			var systems := get_tree().current_scene.get_node_or_null(
+				"Systems"
+			)
+
 			if systems != null:
-				_ium_manager_ref = systems.get_node_or_null("IUMManager")
+				_ium_manager_ref = systems.get_node_or_null(
+					"IUMManager"
+				)
 
 	if _ium_manager_ref == null:
 		return
 
-	# Buscar criatura más cercana como objetivo
 	var objetivo: Node = _buscar_objetivo_cercano()
+
 	_ium_manager_ref.usar_proceso_equipado(objetivo)
 
 
@@ -595,7 +623,11 @@ func _buscar_objetivo_cercano() -> Node:
 	for criatura in criaturas:
 		if not is_instance_valid(criatura):
 			continue
-		var dist := global_position.distance_to(criatura.global_position)
+
+		var dist := global_position.distance_to(
+			criatura.global_position
+		)
+
 		if dist < dist_min:
 			dist_min = dist
 			mas_cercana = criatura
@@ -604,8 +636,8 @@ func _buscar_objetivo_cercano() -> Node:
 
 
 func aplicar_efecto_slow(duracion: float) -> void:
-	## Llamado por criaturas como Lignianos al contacto.
 	var speed_original := move_speed
+
 	move_speed = move_speed * 0.4
 
 	await get_tree().create_timer(duracion).timeout

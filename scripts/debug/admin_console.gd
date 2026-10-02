@@ -1,23 +1,21 @@
 extends CanvasLayer
 class_name AdminConsole
 
-
 var _panel: PanelContainer
 var _historial: RichTextLabel
 var _entrada: LineEdit
-
 var _abierto: bool = false
 
 
 func _ready() -> void:
 	layer = 100
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("admin_console")
 
 	_crear_interfaz()
-
 	visible = false
 
-
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if not event is InputEventKey:
 		return
 
@@ -26,50 +24,62 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not tecla.pressed or tecla.echo:
 		return
 
-	if tecla.keycode == KEY_T:
-		toggle()
-		get_viewport().set_input_as_handled()
+	# T abre la consola.
+	if not _abierto:
+		if tecla.keycode == KEY_T:
+			abrir()
+			get_viewport().set_input_as_handled()
 		return
 
-	if tecla.keycode == KEY_ESCAPE and _abierto:
+	# ESC cierra la consola.
+	if tecla.keycode == KEY_ESCAPE:
 		cerrar()
 		get_viewport().set_input_as_handled()
 
 
-func toggle() -> void:
-	if _abierto:
-		cerrar()
-	else:
-		abrir()
+func _shortcut_input(event: InputEvent) -> void:
+	if not _abierto:
+		return
+
+	# Este punto ocurre después de que los controles de UI
+	# hayan tenido oportunidad de recibir el texto.
+	#
+	# Si el evento llega aquí, ya no debe continuar hacia
+	# los inputs normales del juego.
+	get_viewport().set_input_as_handled()
 
 
 func abrir() -> void:
+	if _abierto:
+		return
+
 	_abierto = true
 	visible = true
+
+	get_tree().paused = true
 
 	_entrada.clear()
 	_entrada.grab_focus()
 
-	_agregar_linea(
-		"[ADMIN] Consola abierta."
-	)
+	_agregar_linea("[ADMIN] Consola abierta.")
 
 
 func cerrar() -> void:
+	if not _abierto:
+		return
+
 	_abierto = false
 	visible = false
 
 	_entrada.release_focus()
 
+	get_tree().paused = false
+
 
 func _crear_interfaz() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "AdminPanel"
-
-	_panel.set_anchors_preset(
-		Control.PRESET_TOP_WIDE
-	)
-
+	_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_panel.offset_left = 12.0
 	_panel.offset_top = 12.0
 	_panel.offset_right = -12.0
@@ -79,79 +89,51 @@ func _crear_interfaz() -> void:
 
 	var columna := VBoxContainer.new()
 	columna.name = "Column"
-
 	_panel.add_child(columna)
 
 	var titulo := Label.new()
 	titulo.text = "ADMIN CONSOLE"
-
-	titulo.add_theme_font_size_override(
-		"font_size",
-		12
-	)
-
+	titulo.add_theme_font_size_override("font_size", 12)
 	columna.add_child(titulo)
 
 	_historial = RichTextLabel.new()
 	_historial.name = "Historial"
-
 	_historial.bbcode_enabled = true
 	_historial.fit_content = true
-	_historial.custom_minimum_size = Vector2(
-		0.0,
-		48.0
-	)
-
+	_historial.custom_minimum_size = Vector2(0.0, 48.0)
 	_historial.text = (
 		"[color=#b4befe]"
 		+ "Garlia Admin"
 		+ "[/color]\n"
 		+ "Escribe /help para ver comandos."
 	)
-
 	columna.add_child(_historial)
 
 	_entrada = LineEdit.new()
 	_entrada.name = "CommandInput"
-
-	_entrada.placeholder_text = (
-		"/summon Aoris"
-	)
-
+	_entrada.placeholder_text = "/summon Aoris"
 	_entrada.clear_button_enabled = true
-
-	_entrada.text_submitted.connect(
-		_al_enviar_comando
-	)
-
+	_entrada.text_submitted.connect(_al_enviar_comando)
 	columna.add_child(_entrada)
 
 
-func _al_enviar_comando(
-	texto: String
-) -> void:
+func _al_enviar_comando(texto: String) -> void:
 	var comando := texto.strip_edges()
 
 	if comando.is_empty():
 		return
 
-	_agregar_linea(
-		"> " + comando
-	)
+	_agregar_linea("> " + comando)
 
 	_entrada.clear()
 
-	_ejecutar_comando(
-		comando
-	)
+	_ejecutar_comando(comando)
 
 	if _abierto:
 		_entrada.grab_focus()
 
 
-func _ejecutar_comando(
-	comando: String
-) -> void:
+func _ejecutar_comando(comando: String) -> void:
 	if not comando.begins_with("/"):
 		_agregar_linea(
 			"[color=#d88]"
@@ -160,10 +142,7 @@ func _ejecutar_comando(
 		)
 		return
 
-	var partes := comando.split(
-		" ",
-		false
-	)
+	var partes := comando.split(" ", false)
 
 	if partes.is_empty():
 		return
@@ -200,9 +179,7 @@ func _comando_help() -> void:
 	)
 
 
-func _comando_summon(
-	partes: Array[String]
-) -> void:
+func _comando_summon(partes: Array[String]) -> void:
 	if partes.size() < 2:
 		_agregar_linea(
 			"[color=#d88]"
@@ -227,9 +204,7 @@ func _comando_summon(
 		)
 		return
 
-	if not world_generator.has_method(
-		"summon_criatura"
-	):
+	if not world_generator.has_method("summon_criatura"):
 		_agregar_linea(
 			"[color=#d88]"
 			+ "WorldGenerator no tiene summon_criatura()."
@@ -247,12 +222,7 @@ func _comando_summon(
 	if resultado is Dictionary:
 		var datos := resultado as Dictionary
 
-		if bool(
-			datos.get(
-				"ok",
-				false
-			)
-		):
+		if bool(datos.get("ok", false)):
 			_agregar_linea(
 				"[color=#9fd18b]"
 				+ "Invocada: "
@@ -283,13 +253,10 @@ func _comando_summon(
 		)
 
 
-func _agregar_linea(
-	texto: String
-) -> void:
+func _agregar_linea(texto: String) -> void:
 	if not is_instance_valid(_historial):
 		return
 
 	_historial.append_text(
-		"\n"
-		+ texto
+		"\n" + texto
 	)
