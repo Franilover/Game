@@ -27,7 +27,7 @@ var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
 
 
-@onready var grid: GridContainer = $Window/Margin/Column/Content/SlotsPanel/Grid
+@onready var grid: GridContainer = $Window/Margin/Column/Content/LeftPanel/Grid
 @onready var item_name: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemName
 @onready var item_description: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemDescription
 @onready var item_icon: TextureRect = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemIcon
@@ -191,9 +191,7 @@ func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
 	if indice < 0 or indice >= items.size() or datos.is_empty():
 		return
 
-	var world_items := get_node_or_null("/root/GarliaWorldItems")
-	if world_items == null or not world_items.has_method("soltar_objeto_al_mundo"):
-		world_items = get_tree().get_first_node_in_group("world_items")
+	var world_items: Node = GarliaWorldItems
 
 	if world_items == null or not world_items.has_method("soltar_objeto_al_mundo"):
 		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
@@ -291,8 +289,19 @@ func _categoria_objeto(objeto: Dictionary) -> String:
 	if tipo_objeto_variant is Dictionary:
 		var tipo_objeto := tipo_objeto_variant as Dictionary
 		var categoria_canonica := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
-		if not categoria_canonica.is_empty():
-			return categoria_canonica
+		match categoria_canonica:
+			"arma":
+				return "armas"
+			"armadura":
+				return "armadura"
+			"herramienta":
+				return "herramientas"
+			"recurso":
+				return "recursos"
+			"otro", "pieza":
+				return "otros"
+			_:
+				pass
 
 	var tipo := str(objeto.get("tipo", "")).strip_edges().to_lower()
 	match tipo:
