@@ -505,6 +505,20 @@ func obtener_criatura(
 	)
 
 
+func obtener_criaturas() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+
+	for criatura_variant in _criaturas_por_id.values():
+		if not criatura_variant is Dictionary:
+			continue
+
+		resultado.append(
+			(criatura_variant as Dictionary).duplicate(true)
+		)
+
+	return resultado
+
+
 func buscar_criatura_por_nombre(
 	nombre: String
 ) -> Dictionary:
