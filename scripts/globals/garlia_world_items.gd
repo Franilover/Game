@@ -256,6 +256,10 @@ func _procesar_siguiente_drop() -> void:
 		+ "id,nombre,descripcion,origen,"
 		+ "propiedades_fisicas,estado_fisico,"
 		+ "geometria_fisica,material_id,creador_id,"
+		+ "tipo_objeto:worldbuilder_tipos_objeto!items_tipo_objeto_id_fkey("
+		+ "id,clave,nombre_humano,categoria_canonica,plantilla_id,"
+		+ "plantilla:plantillas_geometricas!worldbuilder_tipos_objeto_plantilla_id_fkey(categoria)"
+		+ " ),"
 		+ "items_game!inner("
 		+ "item_id,tipo,max_stack,propiedades"
 		+ ")"
@@ -353,6 +357,11 @@ func _al_recibir_drops(
 			continue
 
 		item["item_id"] = str(drop.get("item_id", item.get("id", "")))
+		var tipo_objeto_variant: Variant = item.get("tipo_objeto", null)
+		if tipo_objeto_variant is Dictionary:
+			item["tipo_objeto"] = (tipo_objeto_variant as Dictionary).duplicate(true)
+		else:
+			item["tipo_objeto"] = {}
 		item["tipo"] = str(item_game.get("tipo", ""))
 		item["max_stack"] = maxi(1, int(item_game.get("max_stack", 1)))
 
