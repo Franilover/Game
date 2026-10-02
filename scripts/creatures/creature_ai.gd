@@ -92,6 +92,7 @@ var _ataque_resuelto: bool = false
 
 var _movimiento: CreatureMovement = null
 var _velocidad_normal: float = 20.0
+var objeto_robado: Dictionary = {}
 
 
 func _ready() -> void:
@@ -309,6 +310,10 @@ func _procesar_idle() -> void:
 
 
 func _procesar_explorando() -> void:
+	if perfil == Perfil.LIGNIANOS and not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
 	if objetivo_detectado:
 		match _obtener_respuesta_a_objetivo():
 			"huir":
@@ -330,6 +335,14 @@ func _procesar_explorando() -> void:
 
 
 func _procesar_investigando() -> void:
+	if perfil == Perfil.LIGNIANOS and not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
+		if objetivo_detectado:
+			_cambiar_estado(Estado.ATACANDO)
+		return
+
 	if objetivo_detectado:
 		match _obtener_respuesta_a_objetivo():
 			"huir":
@@ -409,12 +422,7 @@ func _procesar_atacando(delta: float) -> void:
 			_procesar_ataque_lignianos()
 
 		Perfil.CAMBIAFORMAS:
-			_procesar_ataque_contacto(
-				delta,
-				_obtener_danio_ataque(),
-				_obtener_enfriamiento_ataque(),
-				true
-			)
+			_procesar_ataque_cambiaformas()
 
 		Perfil.ESPIRITU_ESTELAR:
 			_procesar_ataque_contacto(
@@ -623,7 +631,7 @@ func _obtener_respuesta_a_objetivo() -> String:
 			return "atacar"
 
 		Perfil.LIGNIANOS:
-			return "perseguir"
+			return "atacar"
 
 		Perfil.CAMBIAFORMAS:
 			return "perseguir"
@@ -705,6 +713,18 @@ func _obtener_distancia_deteccion() -> float:
 	return distancia_deteccion
 
 
+func _movimiento_permitido() -> bool:
+	var valor: Variant = configuracion_ia.get(
+		"movimiento_permitido",
+		true
+	)
+
+	if valor is bool:
+		return bool(valor)
+
+	return true
+
+
 func _obtener_distancia_maxima_persecucion() -> float:
 	if perfil == Perfil.LIGNIANOS:
 		return _obtener_distancia_deteccion() * 1.3
@@ -736,7 +756,13 @@ func _iniciar_ataque() -> void:
 		Perfil.LIGNIANOS:
 			_iniciar_ataque_ligniano()
 
-		Perfil.CAMBIAFORMAS, Perfil.ESPIRITU_ESTELAR:
+		Perfil.CAMBIAFORMAS:
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(
+				_obtener_velocidad_ataque()
+			)
+
+		Perfil.ESPIRITU_ESTELAR:
 			criatura.tomar_control_movimiento()
 			_establecer_velocidad(
 				_obtener_velocidad_ataque()
@@ -900,6 +926,15 @@ func _iniciar_ataque_ligniano() -> void:
 		return
 
 	criatura.detener_movimiento()
+	criatura.tomar_control_movimiento()
+
+	var distancia: float = criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia > distancia_contacto:
+		_iniciar_recuperacion(ligniano_enfriamiento)
+		return
 
 	if objetivo.has_method("take_damage"):
 		objetivo.call(
@@ -926,6 +961,199 @@ func _procesar_ataque_lignianos() -> void:
 # ============================================================
 # CAMBIAFORMAS
 # ============================================================
+
+func _procesar_ataque_cambiaformas() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	if _ataque_resuelto:
+		return
+
+	var arma: Dictionary = _obtener_arma_cambiaformas()
+
+	if arma.is_empty():
+		_iniciar_recuperacion(_obtener_enfriamiento_ataque())
+		return
+
+	var alcance: float = _obtener_alcance_arma_combate(arma)
+	var distancia: float = criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia > alcance:
+		criatura.tomar_control_movimiento()
+		_establecer_velocidad(
+			_obtener_velocidad_ataque()
+		)
+
+		var direccion: Vector2 = criatura.global_position.direction_to(
+			objetivo.global_position
+		)
+
+		criatura.establecer_direccion_movimiento(direccion)
+		return
+
+	_ataque_resuelto = true
+	criatura.detener_movimiento()
+
+	var combate: Node = _obtener_combat_system()
+
+	if combate == null or not combate.has_method(
+		"atacar_objetivo_con_arma"
+	):
+		_iniciar_recuperacion(_obtener_enfriamiento_ataque())
+		return
+
+	var ataque_realizado: Variant = combate.call(
+		"atacar_objetivo_con_arma",
+		criatura,
+		objetivo,
+		arma
+	)
+
+	if bool(ataque_realizado) and _copiar_skin_configurado():
+		criatura.copiar_skin_de(objetivo)
+		criatura.ocultar_nombre_debug()
+
+	_iniciar_recuperacion(_obtener_enfriamiento_ataque())
+
+
+func _obtener_arma_cambiaformas() -> Dictionary:
+	var ataque: Dictionary = _obtener_config_ataque()
+
+	var tipo: String = str(
+		ataque.get("tipo", "")
+	).strip_edges().to_lower()
+
+	if tipo != "arma":
+		return {}
+
+	var item_id: String = str(
+		ataque.get("item_id", "")
+	).strip_edges()
+
+	if item_id.is_empty():
+		return {}
+
+	if GarliaWorldItems != null and GarliaWorldItems.has_method(
+		"buscar_item_por_id"
+	):
+		var item: Dictionary = (
+			GarliaWorldItems.buscar_item_por_id(item_id)
+		)
+
+		if not item.is_empty():
+			return item
+
+	return {
+		"item_id": item_id,
+		"tipo": "arma"
+	}
+
+
+func _copiar_skin_configurado() -> bool:
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_golpear",
+		{}
+	)
+
+	if not reaccion_variant is Dictionary:
+		return false
+
+	return bool(
+		(reaccion_variant as Dictionary).get(
+			"copiar_skin",
+			false
+		)
+	)
+
+
+func _obtener_alcance_arma_combate(
+	arma: Dictionary
+) -> float:
+	var combate: Node = _obtener_combat_system()
+
+	if combate != null and combate.has_method(
+		"obtener_alcance_arma"
+	):
+		var alcance_variant: Variant = combate.call(
+			"obtener_alcance_arma",
+			arma
+		)
+
+		if alcance_variant is int or alcance_variant is float:
+			return maxf(float(alcance_variant), distancia_contacto)
+
+	return maxf(
+		distancia_contacto,
+		64.0
+	)
+
+
+func _obtener_combat_system() -> Node:
+	var escena: Node = get_tree().current_scene
+
+	if escena == null:
+		return null
+
+	return escena.get_node_or_null(
+		"Systems/CombatSystem"
+	) as Node
+
+
+func al_recibir_ataque_con_arma(arma: Dictionary) -> void:
+	if perfil != Perfil.ZLISH:
+		return
+
+	if arma.is_empty():
+		return
+
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_recibir_ataque",
+		{}
+	)
+
+	if not reaccion_variant is Dictionary:
+		return
+
+	var reaccion: Dictionary = (
+		reaccion_variant as Dictionary
+	)
+
+	if str(reaccion.get("tipo", "")).to_lower() != "huir_y_robar_arma":
+		return
+
+	if not objeto_robado.is_empty():
+		return
+
+	var inventario: Node = get_tree().get_first_node_in_group(
+		"inventory"
+	)
+
+	if inventario == null or not inventario.has_method(
+		"robar_objeto_equipado"
+	):
+		return
+
+	var robado_variant: Variant = inventario.call(
+		"robar_objeto_equipado",
+		"arma"
+	)
+
+	if not robado_variant is Dictionary:
+		return
+
+	var robado: Dictionary = (
+		robado_variant as Dictionary
+	)
+
+	if robado.is_empty():
+		return
+
+	objeto_robado = robado.duplicate(true)
+	_cambiar_estado(Estado.HUYENDO)
+
 
 func _copiar_skin_de_objetivo() -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
@@ -1286,6 +1514,14 @@ func _iniciar_huida() -> void:
 
 func _obtener_velocidad_huida() -> float:
 	if perfil == Perfil.ZLISH:
+		var velocidad_config: Variant = configuracion_ia.get(
+			"velocidad_huida",
+			zlish_velocidad_huida
+		)
+
+		if velocidad_config is int or velocidad_config is float:
+			return maxf(float(velocidad_config), 0.0)
+
 		return zlish_velocidad_huida
 
 	return maxf(
@@ -1296,6 +1532,27 @@ func _obtener_velocidad_huida() -> float:
 
 func _obtener_distancia_segura_huida() -> float:
 	if perfil == Perfil.ZLISH:
+		var distancia_config: Variant = configuracion_ia.get(
+			"al_recibir_ataque",
+			{}
+		)
+
+		if distancia_config is Dictionary:
+			var reaccion: Dictionary = (
+				distancia_config as Dictionary
+			)
+
+			var distancia_segura: Variant = reaccion.get(
+				"distancia_segura",
+				zlish_distancia_segura
+			)
+
+			if distancia_segura is int or distancia_segura is float:
+				return maxf(
+					float(distancia_segura),
+					0.0
+				)
+
 		return zlish_distancia_segura
 
 	return _obtener_distancia_deteccion()
