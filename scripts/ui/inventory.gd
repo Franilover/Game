@@ -456,8 +456,20 @@ func limpiar_inventario() -> void:
 	for i in range(items.size()):
 		items[i] = {}
 
+	equipo.clear()
+
+	for child in equipment_slots.get_children():
+		if child.has_method("limpiar_objeto"):
+			child.call("limpiar_objeto")
+
 	indice_seleccionado = -1
 	objeto_seleccionado.clear()
+
+	_arrastre_indice = -1
+	_arrastre_datos.clear()
+
+	_inicializar_hotbar()
+	indice_hotbar_activo = 0
 
 	actualizar()
 	_limpiar_informacion()
