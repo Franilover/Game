@@ -209,7 +209,7 @@ func actualizar() -> void:
 		_mostrar_sin_descubrimientos()
 		return
 
-	var registros := registros_variant as Dictionary
+	var registros: Dictionary = registros_variant as Dictionary
 	var candidatos: Array = []
 
 	for id_variant in registros.keys():
@@ -243,7 +243,7 @@ func actualizar() -> void:
 			continue
 
 		var criatura: Dictionary = criatura_variant as Dictionary
-		var id := str(criatura.get("id", ""))
+		var id: String = str(criatura.get("id", ""))
 
 		if id.is_empty():
 			continue
@@ -322,7 +322,7 @@ func _mostrar_criatura(indice: int) -> void:
 		{}
 	)
 
-	var derrotas := 0
+	var derrotas: int = 0
 
 	if registros_variant is Dictionary:
 		derrotas = int(
@@ -333,96 +333,11 @@ func _mostrar_criatura(indice: int) -> void:
 		)
 
 	var partes: Array[String] = []
-	partes.append(
-		"[color=#8f754f]Derrotas registradas:[/color] "
-		+ str(derrotas)
-	)
-
-	_agregar_campo(
-		partes,
-		criatura,
-		"biologia",
-		"Biología"
-	)
-
-	_agregar_campo(
-		partes,
-		criatura,
-		"comportamiento",
-		"Comportamiento"
-	)
-
-	_agregar_campo(
-		partes,
-		criatura,
-		"pensamiento",
-		"Pensamiento"
-	)
-
-	_agregar_campo(
-		partes,
-		criatura,
-		"alma",
-		"Alma"
-	)
-
-	_agregar_campo(
-		partes,
-		criatura,
-		"relacion",
-		"Relación"
-	)
-
-	_agregar_campo(
-		partes,
-		criatura,
-		"magia",
-		"Magia"
-	)
-
-	var stats_variant: Variant = criatura.get(
-		"stats_dnd",
-		{}
-	)
-
-	if stats_variant is Dictionary:
-		var stats: Dictionary = stats_variant as Dictionary
-		var hp: Variant = stats.get(
-			"hp_max",
-			null
-		)
-
-		if hp != null:
-			partes.append(
-				"[color=#8f754f]Vitalidad:[/color] "
-				+ str(hp)
-			)
+\tpartes.append(
+\t\t"[color=#8f754f]Derrotas registradas:[/color] " + str(derrotas)
+\t)
 
 	_ficha.text = "\n\n".join(partes)
-
-
-func _agregar_campo(
-	partes: Array[String],
-	criatura: Dictionary,
-	clave: String,
-	titulo: String
-) -> void:
-	var valor: String = str(
-		criatura.get(
-			clave,
-			""
-		)
-	).strip_edges()
-
-	if valor.is_empty():
-		return
-
-	partes.append(
-		"[color=#8f754f]"
-		+ titulo
-		+ ":[/color]\n"
-		+ valor
-	)
 
 
 func _mostrar_sin_descubrimientos() -> void:
