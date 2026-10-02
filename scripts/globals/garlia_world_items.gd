@@ -31,6 +31,8 @@ var _posicion_drops_pendiente: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	_request = HTTPRequest.new()
 	_request.timeout = HTTP_TIMEOUT
 	add_child(_request)
