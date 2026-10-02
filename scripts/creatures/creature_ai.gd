@@ -330,7 +330,7 @@ func _procesar_explorando() -> void:
 
 			_:
 				pass
-	else:
+	elif perfil != Perfil.LIGNIANOS or _movimiento_permitido():
 		criatura.liberar_control_movimiento()
 
 
