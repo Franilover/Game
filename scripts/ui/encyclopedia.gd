@@ -1,0 +1,348 @@
+extends Control
+
+
+var _ids_descubiertos: Array[String] = []
+
+
+var _lista: ItemList
+var _nombre: Label
+var _contador: Label
+var _ficha: RichTextLabel
+var _icono: TextureRect
+
+
+func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP
+
+	_crear_interfaz()
+
+	if not GameState.has_signal("enciclopedia_actualizada"):
+		push_error("Encyclopedia: GameState no tiene enciclopedia_actualizada.")
+		actualizar()
+		return
+
+	if not GameState.enciclopedia_actualizada.is_connected(
+		_al_descubrir_criatura
+	):
+		GameState.enciclopedia_actualizada.connect(
+			_al_descubrir_criatura
+		)
+
+	if not WorldData.mundo_listo.is_connected(
+		_al_mundo_actualizado
+	):
+		WorldData.mundo_listo.connect(
+			_al_mundo_actualizado
+		)
+
+	if not WorldData.mundo_actualizado.is_connected(
+		_al_mundo_actualizado
+	):
+		WorldData.mundo_actualizado.connect(
+			_al_mundo_actualizado
+		)
+
+	actualizar()
+
+
+func _crear_interfaz() -> void:
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	add_child(margin)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	margin.add_child(column)
+
+	var header := HBoxContainer.new()
+	column.add_child(header)
+
+	var title := Label.new()
+	title.text = "ENCICLOPEDIA DE CRIATURAS"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_color_override(
+		"font_color",
+		Color(0.9, 0.79, 0.58, 1.0)
+	)
+	title.add_theme_font_size_override("font_size", 15)
+	header.add_child(title)
+
+	_contador = Label.new()
+	_contador.add_theme_color_override(
+		"font_color",
+		Color(0.55, 0.43, 0.29, 1.0)
+	)
+	_contador.add_theme_font_size_override("font_size", 10)
+	header.add_child(_contador)
+
+	var separator := HSeparator.new()
+	column.add_child(separator)
+
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 10)
+	column.add_child(body)
+
+	_lista = ItemList.new()
+	_lista.custom_minimum_size = Vector2(190, 0)
+	_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_lista.add_theme_color_override(
+		"font_color",
+		Color(0.78, 0.66, 0.46, 1.0)
+	)
+	_lista.add_theme_color_override(
+		"font_selected_color",
+		Color(0.95, 0.88, 0.7, 1.0)
+	)
+	_lista.add_theme_font_size_override("font_size", 11)
+
+	var estilo_lista := StyleBoxFlat.new()
+	estilo_lista.bg_color = Color(0.075, 0.05, 0.035, 0.9)
+	estilo_lista.border_width_left = 1
+	estilo_lista.border_width_top = 1
+	estilo_lista.border_width_right = 1
+	estilo_lista.border_width_bottom = 1
+	estilo_lista.border_color = Color(0.29, 0.19, 0.12, 1.0)
+	_lista.add_theme_stylebox_override("panel", estilo_lista)
+
+	_lista.item_selected.connect(_al_seleccionar)
+	body.add_child(_lista)
+
+	var detail_panel := PanelContainer.new()
+	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var estilo_detalle := StyleBoxFlat.new()
+	estilo_detalle.bg_color = Color(0.075, 0.05, 0.035, 0.9)
+	estilo_detalle.border_width_left = 1
+	estilo_detalle.border_width_top = 1
+	estilo_detalle.border_width_right = 1
+	estilo_detalle.border_width_bottom = 1
+	estilo_detalle.border_color = Color(0.29, 0.19, 0.12, 1.0)
+	detail_panel.add_theme_stylebox_override("panel", estilo_detalle)
+	body.add_child(detail_panel)
+
+	var detail_margin := MarginContainer.new()
+	detail_margin.add_theme_constant_override("margin_left", 14)
+	detail_margin.add_theme_constant_override("margin_top", 12)
+	detail_margin.add_theme_constant_override("margin_right", 14)
+	detail_margin.add_theme_constant_override("margin_bottom", 12)
+	detail_panel.add_child(detail_margin)
+
+	var detail_column := VBoxContainer.new()
+	detail_column.add_theme_constant_override("separation", 8)
+	detail_margin.add_child(detail_column)
+
+	var top := HBoxContainer.new()
+	top.custom_minimum_size = Vector2(0, 92)
+	detail_column.add_child(top)
+
+	_icono = TextureRect.new()
+	_icono.custom_minimum_size = Vector2(92, 92)
+	_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.add_child(_icono)
+
+	var title_column := VBoxContainer.new()
+	title_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_column.alignment = BoxContainer.ALIGNMENT_CENTER
+	top.add_child(title_column)
+
+	_nombre = Label.new()
+	_nombre.text = "Ninguna criatura descubierta"
+	_nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_nombre.add_theme_color_override(
+		"font_color",
+		Color(0.9, 0.79, 0.58, 1.0)
+	)
+	_nombre.add_theme_font_size_override("font_size", 17)
+	title_column.add_child(_nombre)
+
+	var descubierto := Label.new()
+	descubierto.text = "Derrota una criatura para comenzar su registro."
+	descubierto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	descubierto.add_theme_color_override(
+		"font_color",
+		Color(0.55, 0.43, 0.29, 1.0)
+	)
+	descubierto.add_theme_font_size_override("font_size", 10)
+	title_column.add_child(descubierto)
+
+	_ficha = RichTextLabel.new()
+	_ficha.bbcode_enabled = true
+	_ficha.fit_content = false
+	_ficha.scroll_active = true
+	_ficha.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_ficha.add_theme_color_override(
+		"default_color",
+		Color(0.72, 0.61, 0.45, 1.0)
+	)
+	_ficha.add_theme_font_size_override("normal_font_size", 11)
+	detail_column.add_child(_ficha)
+
+
+func actualizar() -> void:
+	if _lista == null:
+		return
+
+	_lista.clear()
+	_ids_descubiertos.clear()
+
+	var registros_variant: Variant = GameState.flags.get(
+		"enciclopedia_criaturas",
+		{}
+	)
+
+	if not registros_variant is Dictionary:
+		_mostrar_sin_descubrimientos()
+		return
+
+	var registros := registros_variant as Dictionary
+	var candidatos: Array[Dictionary] = []
+
+	for id_variant in registros.keys():
+		var id := str(id_variant)
+		if id.is_empty():
+			continue
+
+		var derrotas := int(registros_variant.get(id_variant, 0))
+		if derrotas <= 0:
+			continue
+
+		var criatura := WorldData.obtener_criatura(id)
+		if criatura.is_empty():
+			continue
+
+		criatura["_derrotas_registradas"] = derrotas
+		candidatos.append(criatura)
+
+	candidatos.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return str(a.get("nombre", "")).naturalnocasecmp_to(
+				str(b.get("nombre", ""))
+			) < 0
+	)
+
+	for criatura in candidatos:
+		var id := str(criatura.get("id", ""))
+		_ids_descubiertos.append(id)
+		_lista.add_item(str(criatura.get("nombre", "Criatura")))
+
+	_contador.text = str(_ids_descubiertos.size()) + " descubiertas"
+
+	if _ids_descubiertos.is_empty():
+		_mostrar_sin_descubrimientos()
+		return
+
+	_lista.select(0)
+	_mostrar_criatura(0)
+
+
+func _al_seleccionar(indice: int) -> void:
+	_mostrar_criatura(indice)
+
+
+func _mostrar_criatura(indice: int) -> void:
+	if indice < 0 or indice >= _ids_descubiertos.size():
+		return
+
+	var criatura := WorldData.obtener_criatura(
+		_ids_descubiertos[indice]
+	)
+
+	if criatura.is_empty():
+		return
+
+	var nombre := str(criatura.get("nombre", "Criatura"))
+	_nombre.text = nombre
+
+	var ruta := "res://assets/art/creatures/" + nombre + ".png"
+	if ResourceLoader.exists(ruta):
+		_icono.texture = load(ruta)
+		_icono.visible = true
+	else:
+		_icono.texture = null
+		_icono.visible = false
+
+	var derrotas := int(
+		GameState.flags.get(
+			"enciclopedia_criaturas",
+			{}
+		).get(
+			_ids_descubiertos[indice],
+			0
+		)
+	)
+
+	var partes: Array[String] = []
+	partes.append("[color=#8f754f]Derrotas registradas:[/color] " + str(derrotas))
+
+	_agregar_campo(partes, criatura, "biologia", "Biología")
+	_agregar_campo(partes, criatura, "comportamiento", "Comportamiento")
+	_agregar_campo(partes, criatura, "pensamiento", "Pensamiento")
+	_agregar_campo(partes, criatura, "alma", "Alma")
+	_agregar_campo(partes, criatura, "relacion", "Relación")
+	_agregar_campo(partes, criatura, "magia", "Magia")
+
+	var stats_variant: Variant = criatura.get("stats_dnd", {})
+	if stats_variant is Dictionary:
+		var stats := stats_variant as Dictionary
+		var hp := stats.get("hp_max", null)
+		if hp != null:
+			partes.append(
+				"[color=#8f754f]Vitalidad:[/color] "
+				+ str(hp)
+			)
+
+	_ficha.text = "\n\n".join(partes)
+
+
+func _agregar_campo(
+	partes: Array[String],
+	criatura: Dictionary,
+	clave: String,
+	titulo: String
+) -> void:
+	var valor := str(
+		criatura.get(
+			clave,
+			""
+		)
+	).strip_edges()
+
+	if valor.is_empty():
+		return
+
+	partes.append(
+		"[color=#8f754f]"
+		+ titulo
+		+ ":[/color]\n"
+		+ valor
+	)
+
+
+func _mostrar_sin_descubrimientos() -> void:
+	_contador.text = "0 descubiertas"
+	_nombre.text = "Ninguna criatura descubierta"
+	_icono.texture = null
+	_icono.visible = false
+	_ficha.text = (
+		"[center]"
+		+ "[color=#8f754f]La enciclopedia está vacía.[/color]\n\n"
+		+ "Explora Garlia y derrota criaturas para registrar sus datos."
+		+ "[/center]"
+	)
+
+
+func _al_descubrir_criatura(_criatura_id: String) -> void:
+	actualizar()
+
+
+func _al_mundo_actualizado() -> void:
+	actualizar()
