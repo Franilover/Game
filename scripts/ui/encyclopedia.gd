@@ -40,7 +40,7 @@ func _ready() -> void:
 
 
 func _crear_interfaz() -> void:
-	var margin := MarginContainer.new()
+	var margin: MarginContainer = MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(
 		Control.PRESET_FULL_RECT
 	)
@@ -50,14 +50,14 @@ func _crear_interfaz() -> void:
 	margin.add_theme_constant_override("margin_bottom", 10)
 	add_child(margin)
 
-	var column := VBoxContainer.new()
+	var column: VBoxContainer = VBoxContainer.new()
 	column.add_theme_constant_override("separation", 8)
 	margin.add_child(column)
 
-	var header := HBoxContainer.new()
+	var header: HBoxContainer = HBoxContainer.new()
 	column.add_child(header)
 
-	var title := Label.new()
+	var title: Label = Label.new()
 	title.text = "ENCICLOPEDIA DE CRIATURAS"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_color_override(
@@ -77,7 +77,7 @@ func _crear_interfaz() -> void:
 
 	column.add_child(HSeparator.new())
 
-	var body := HBoxContainer.new()
+	var body: HBoxContainer = HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 10)
 	column.add_child(body)
@@ -95,7 +95,7 @@ func _crear_interfaz() -> void:
 	)
 	_lista.add_theme_font_size_override("font_size", 11)
 
-	var estilo_lista := StyleBoxFlat.new()
+	var estilo_lista: StyleBoxFlat = StyleBoxFlat.new()
 	estilo_lista.bg_color = Color(0.075, 0.05, 0.035, 0.9)
 	estilo_lista.border_width_left = 1
 	estilo_lista.border_width_top = 1
@@ -110,11 +110,11 @@ func _crear_interfaz() -> void:
 	_lista.item_selected.connect(_al_seleccionar)
 	body.add_child(_lista)
 
-	var detail_panel := PanelContainer.new()
+	var detail_panel: PanelContainer = PanelContainer.new()
 	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	var estilo_detalle := StyleBoxFlat.new()
+	var estilo_detalle: StyleBoxFlat = StyleBoxFlat.new()
 	estilo_detalle.bg_color = Color(0.075, 0.05, 0.035, 0.9)
 	estilo_detalle.border_width_left = 1
 	estilo_detalle.border_width_top = 1
@@ -127,18 +127,18 @@ func _crear_interfaz() -> void:
 	)
 	body.add_child(detail_panel)
 
-	var detail_margin := MarginContainer.new()
+	var detail_margin: MarginContainer = MarginContainer.new()
 	detail_margin.add_theme_constant_override("margin_left", 14)
 	detail_margin.add_theme_constant_override("margin_top", 12)
 	detail_margin.add_theme_constant_override("margin_right", 14)
 	detail_margin.add_theme_constant_override("margin_bottom", 12)
 	detail_panel.add_child(detail_margin)
 
-	var detail_column := VBoxContainer.new()
+	var detail_column: VBoxContainer = VBoxContainer.new()
 	detail_column.add_theme_constant_override("separation", 8)
 	detail_margin.add_child(detail_column)
 
-	var top := HBoxContainer.new()
+	var top: HBoxContainer = HBoxContainer.new()
 	top.custom_minimum_size = Vector2(0, 92)
 	detail_column.add_child(top)
 
@@ -150,7 +150,7 @@ func _crear_interfaz() -> void:
 	_icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_child(_icono)
 
-	var title_column := VBoxContainer.new()
+	var title_column: VBoxContainer = VBoxContainer.new()
 	title_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_column.alignment = BoxContainer.ALIGNMENT_CENTER
 	top.add_child(title_column)
@@ -165,7 +165,7 @@ func _crear_interfaz() -> void:
 	_nombre.add_theme_font_size_override("font_size", 17)
 	title_column.add_child(_nombre)
 
-	var descubierto := Label.new()
+	var descubierto: Label = Label.new()
 	descubierto.text = (
 		"Derrota una criatura para comenzar su registro."
 	)
@@ -213,12 +213,12 @@ func actualizar() -> void:
 	var candidatos: Array = []
 
 	for id_variant in registros.keys():
-		var id := str(id_variant)
+		var id: String = str(id_variant)
 
 		if id.is_empty():
 			continue
 
-		var derrotas := int(
+		var derrotas: int = int(
 			registros.get(
 				id_variant,
 				0
@@ -228,7 +228,7 @@ func actualizar() -> void:
 		if derrotas <= 0:
 			continue
 
-		var criatura := WorldData.obtener_criatura(id)
+		var criatura: Dictionary = WorldData.obtener_criatura(id)
 
 		if criatura.is_empty():
 			continue
@@ -242,7 +242,7 @@ func actualizar() -> void:
 		if not criatura_variant is Dictionary:
 			continue
 
-		var criatura := criatura_variant as Dictionary
+		var criatura: Dictionary = criatura_variant as Dictionary
 		var id := str(criatura.get("id", ""))
 
 		if id.is_empty():
@@ -275,8 +275,8 @@ func _ordenar_criaturas(
 	a: Dictionary,
 	b: Dictionary
 ) -> bool:
-	var nombre_a := str(a.get("nombre", "")).to_lower()
-	var nombre_b := str(b.get("nombre", "")).to_lower()
+	var nombre_a: String = str(a.get("nombre", "")).to_lower()
+	var nombre_b: String = str(b.get("nombre", "")).to_lower()
 
 	return nombre_a < nombre_b
 
@@ -289,13 +289,13 @@ func _mostrar_criatura(indice: int) -> void:
 	if indice < 0 or indice >= _ids_descubiertos.size():
 		return
 
-	var id := _ids_descubiertos[indice]
-	var criatura := WorldData.obtener_criatura(id)
+	var id: String = _ids_descubiertos[indice]
+	var criatura: Dictionary = WorldData.obtener_criatura(id)
 
 	if criatura.is_empty():
 		return
 
-	var nombre := str(
+	var nombre: String = str(
 		criatura.get(
 			"nombre",
 			"Criatura"
@@ -304,7 +304,7 @@ func _mostrar_criatura(indice: int) -> void:
 
 	_nombre.text = nombre
 
-	var ruta := (
+	var ruta: String = (
 		"res://assets/art/creatures/"
 		+ nombre
 		+ ".png"
@@ -386,7 +386,7 @@ func _mostrar_criatura(indice: int) -> void:
 	)
 
 	if stats_variant is Dictionary:
-		var stats := stats_variant as Dictionary
+		var stats: Dictionary = stats_variant as Dictionary
 		var hp: Variant = stats.get(
 			"hp_max",
 			null
@@ -407,7 +407,7 @@ func _agregar_campo(
 	clave: String,
 	titulo: String
 ) -> void:
-	var valor := str(
+	var valor: String = str(
 		criatura.get(
 			clave,
 			""
