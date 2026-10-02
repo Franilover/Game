@@ -438,12 +438,21 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 			for indice_variant in hotbar_variant as Array:
 				hotbar.append(int(indice_variant))
 
+		var equipment_state: Dictionary = {}
+		var equipment_variant: Variant = inventario.get("equipo")
+
+		if equipment_variant is Dictionary:
+			equipment_state = (
+				equipment_variant as Dictionary
+			).duplicate(true)
+
 		flags["inventario_estado"] = {
 			"items": inventory_items,
 			"hotbar_indices": hotbar,
 			"indice_hotbar_activo": int(
 				inventario.get("indice_hotbar_activo")
-			)
+			),
+			"equipo": equipment_state
 		}
 
 
@@ -729,6 +738,18 @@ func _cargar_inventario_al_juego(
 		"items",
 		nuevos_items
 	)
+
+	var equipo_variant: Variant = estado.get(
+		"equipo",
+		{}
+	)
+
+	if equipo_variant is Dictionary:
+		if inventario.has_method("establecer_equipo"):
+			inventario.call(
+				"establecer_equipo",
+				(equipo_variant as Dictionary).duplicate(true)
+			)
 
 	var hotbar_variant: Variant = estado.get(
 		"hotbar_indices",
