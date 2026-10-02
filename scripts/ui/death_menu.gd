@@ -14,7 +14,9 @@ var _esperando: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	# El menú permanece en la escena, pero cerrado no debe bloquear
+	# ningún click del juego ni de otras interfaces.
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	visible = true
 	overlay.visible = false
