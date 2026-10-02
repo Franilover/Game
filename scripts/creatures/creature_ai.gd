@@ -12,7 +12,9 @@ enum Estado {
 	PERSIGUIENDO,
 	ATACANDO,
 	HUYENDO,
-	RECUPERANDO
+	RECUPERANDO,
+	ADHERIDO,
+	SALTANDO_LEJOS
 }
 
 
@@ -20,7 +22,10 @@ enum Perfil {
 	GENERICO,
 	FLAXIS,
 	ZLISH,
-	LIGNIANOS
+	LIGNIANOS,
+	CAMBIAFORMAS,
+	ESPIRITU_ESTELAR,
+	RANCRODEEN
 }
 
 
@@ -28,9 +33,10 @@ enum Perfil {
 @export var estado_inicial: Estado = Estado.EXPLORANDO
 @export var mostrar_estado_debug: bool = false
 @export var intervalo_pensamiento: float = 0.12
+@export var duracion_investigacion: float = 1.20
 
 
-@export_category("Percepción")
+@export_category("Compatibilidad de IA antiguas")
 @export var distancia_deteccion: float = 150.0
 @export var distancia_contacto: float = 12.0
 
@@ -59,9 +65,10 @@ enum Perfil {
 
 var criatura: Creature = null
 var objetivo: Node2D = null
+var configuracion_ia: Dictionary = {}
 
 
-var estado: Estado = Estado.EXPLORANDO
+var estado: Estado = Estado.IDLE
 var perfil: Perfil = Perfil.GENERICO
 
 
@@ -73,9 +80,13 @@ var _tiempo_pensamiento: float = 0.0
 var _tiempo_estado: float = 0.0
 var _tiempo_accion: float = 0.0
 var _tiempo_recuperacion: float = 0.0
+var _tiempo_adherido: float = 0.0
+var _tiempo_danio_adherido: float = 0.0
+var _tiempo_teleport: float = 0.0
 
 
 var _objetivo_ataque: Vector2 = Vector2.ZERO
+var _direccion_salto: Vector2 = Vector2.ZERO
 var _ataque_resuelto: bool = false
 
 
@@ -94,12 +105,12 @@ func _ready() -> void:
 		return
 
 	_encontrar_movimiento()
-	_refrescar_perfil()
-	_cambiar_estado(estado_inicial)
+	_refrescar_configuracion()
+	_cambiar_estado_forzado(estado_inicial)
 
 
 func configurar_criatura() -> void:
-	_refrescar_perfil()
+	_refrescar_configuracion()
 
 	if criatura == null:
 		return
@@ -119,6 +130,11 @@ func _physics_process(delta: float) -> void:
 		if estado != Estado.IDLE:
 			_cambiar_estado(Estado.IDLE)
 		return
+
+	_tiempo_teleport = maxf(
+		_tiempo_teleport - delta,
+		0.0
+	)
 
 	_tiempo_pensamiento -= delta
 
@@ -165,6 +181,11 @@ func _cambiar_estado(nuevo_estado: Estado) -> void:
 		)
 
 
+func _cambiar_estado_forzado(nuevo_estado: Estado) -> void:
+	estado = Estado.IDLE
+	_cambiar_estado(nuevo_estado)
+
+
 func get_estado() -> Estado:
 	return estado
 
@@ -189,6 +210,10 @@ func _obtener_nombre_estado(valor: Estado) -> String:
 			return "HUYENDO"
 		Estado.RECUPERANDO:
 			return "RECUPERANDO"
+		Estado.ADHERIDO:
+			return "ADHERIDO"
+		Estado.SALTANDO_LEJOS:
+			return "SALTANDO_LEJOS"
 
 	return "DESCONOCIDO"
 
@@ -205,6 +230,7 @@ func _entrar_estado(nuevo_estado: Estado) -> void:
 		Estado.INVESTIGANDO:
 			_establecer_velocidad(_velocidad_normal)
 			criatura.tomar_control_movimiento()
+			_tiempo_estado = 0.0
 
 		Estado.PERSIGUIENDO:
 			_iniciar_persecucion()
@@ -218,10 +244,28 @@ func _entrar_estado(nuevo_estado: Estado) -> void:
 		Estado.RECUPERANDO:
 			criatura.detener_movimiento()
 
+		Estado.ADHERIDO:
+			_iniciar_estado_adherido()
+
+		Estado.SALTANDO_LEJOS:
+			_iniciar_estado_saltando_lejos()
+
 
 func _salir_estado(anterior: Estado) -> void:
 	match anterior:
-		Estado.PERSIGUIENDO, Estado.ATACANDO, Estado.HUYENDO, Estado.INVESTIGANDO:
+		Estado.INVESTIGANDO:
+			_establecer_velocidad(_velocidad_normal)
+
+		Estado.PERSIGUIENDO:
+			_establecer_velocidad(_velocidad_normal)
+
+		Estado.ATACANDO:
+			_establecer_velocidad(_velocidad_normal)
+
+		Estado.HUYENDO:
+			_establecer_velocidad(_velocidad_normal)
+
+		Estado.ADHERIDO:
 			_establecer_velocidad(_velocidad_normal)
 
 
@@ -250,6 +294,12 @@ func _procesar_estado(delta: float) -> void:
 		Estado.RECUPERANDO:
 			_procesar_recuperando(delta)
 
+		Estado.ADHERIDO:
+			_procesar_adherido(delta)
+
+		Estado.SALTANDO_LEJOS:
+			_procesar_saltando_lejos(delta)
+
 
 func _procesar_idle() -> void:
 	criatura.detener_movimiento()
@@ -259,30 +309,27 @@ func _procesar_idle() -> void:
 
 
 func _procesar_explorando() -> void:
-	criatura.liberar_control_movimiento()
+	if objetivo_detectado:
+		match _obtener_respuesta_a_objetivo():
+			"huir":
+				_cambiar_estado(Estado.HUYENDO)
 
-	if not objetivo_detectado:
-		return
+			"atacar":
+				_cambiar_estado(Estado.ATACANDO)
 
-	match _obtener_respuesta_a_objetivo():
-		"huir":
-			_cambiar_estado(Estado.HUYENDO)
+			"perseguir":
+				_cambiar_estado(Estado.PERSIGUIENDO)
 
-		"atacar":
-			_cambiar_estado(Estado.ATACANDO)
+			"investigar":
+				_cambiar_estado(Estado.INVESTIGANDO)
 
-		"perseguir":
-			_cambiar_estado(Estado.PERSIGUIENDO)
-
-		"investigar":
-			_cambiar_estado(Estado.INVESTIGANDO)
+			_:
+				pass
+	else:
+		criatura.liberar_control_movimiento()
 
 
 func _procesar_investigando() -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		_cambiar_estado(Estado.EXPLORANDO)
-		return
-
 	if objetivo_detectado:
 		match _obtener_respuesta_a_objetivo():
 			"huir":
@@ -296,6 +343,15 @@ func _procesar_investigando() -> void:
 
 			_:
 				_cambiar_estado(Estado.EXPLORANDO)
+
+		return
+
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	if _tiempo_estado >= duracion_investigacion:
+		_cambiar_estado(Estado.EXPLORANDO)
 		return
 
 	var direccion := criatura.global_position.direction_to(
@@ -306,13 +362,8 @@ func _procesar_investigando() -> void:
 		_cambiar_estado(Estado.EXPLORANDO)
 		return
 
+	criatura.tomar_control_movimiento()
 	criatura.establecer_direccion_movimiento(direccion)
-
-	if criatura.global_position.distance_to(
-		ultima_posicion_objetivo
-	) <= distancia_contacto:
-		criatura.detener_movimiento()
-		_cambiar_estado(Estado.EXPLORANDO)
 
 
 func _procesar_persiguiendo() -> void:
@@ -328,12 +379,15 @@ func _procesar_persiguiendo() -> void:
 		objetivo.global_position
 	)
 
-	if _obtener_distancia_maxima_persecucion() > 0.0:
-		if distancia > _obtener_distancia_maxima_persecucion():
-			_cambiar_estado(Estado.INVESTIGANDO)
-			return
+	var maxima := _obtener_distancia_maxima_persecucion()
 
-	_establecer_velocidad(velocidad_persecucion)
+	if maxima > 0.0 and distancia > maxima:
+		_cambiar_estado(Estado.INVESTIGANDO)
+		return
+
+	_establecer_velocidad(
+		_obtener_velocidad_persecucion()
+	)
 	criatura.tomar_control_movimiento()
 
 	var direccion := criatura.global_position.direction_to(
@@ -352,7 +406,26 @@ func _procesar_atacando(delta: float) -> void:
 			_procesar_ataque_flaxis(delta)
 
 		Perfil.LIGNIANOS:
-			_cambiar_estado(Estado.RECUPERANDO)
+			_procesar_ataque_lignianos()
+
+		Perfil.CAMBIAFORMAS:
+			_procesar_ataque_contacto(
+				delta,
+				_obtener_danio_ataque(),
+				_obtener_enfriamiento_ataque(),
+				true
+			)
+
+		Perfil.ESPIRITU_ESTELAR:
+			_procesar_ataque_contacto(
+				delta,
+				_obtener_danio_ataque(),
+				_obtener_enfriamiento_ataque(),
+				false
+			)
+
+		Perfil.RANCRODEEN:
+			_procesar_ataque_rancrodeen(delta)
 
 		_:
 			_cambiar_estado(Estado.RECUPERANDO)
@@ -367,11 +440,15 @@ func _procesar_huyendo() -> void:
 		objetivo.global_position
 	)
 
-	if distancia > _obtener_distancia_segura_huida():
+	var segura := _obtener_distancia_segura_huida()
+
+	if distancia > segura:
 		_cambiar_estado(Estado.EXPLORANDO)
 		return
 
-	_establecer_velocidad(_obtener_velocidad_huida())
+	_establecer_velocidad(
+		_obtener_velocidad_huida()
+	)
 	criatura.tomar_control_movimiento()
 
 	var direccion := objetivo.global_position.direction_to(
@@ -435,7 +512,9 @@ func _actualizar_percepcion() -> void:
 		objetivo.global_position
 	)
 
-	if distancia <= distancia_deteccion:
+	var deteccion := _obtener_distancia_deteccion()
+
+	if distancia <= deteccion:
 		objetivo_detectado = true
 		ultima_posicion_objetivo = objetivo.global_position
 
@@ -478,26 +557,88 @@ func _buscar_nodo_jugador(nodo: Node) -> Node:
 
 
 # ============================================================
-# DECISIÓN
+# CONFIGURACIÓN CANÓNICA
 # ============================================================
 
+func _refrescar_configuracion() -> void:
+	if criatura == null:
+		configuracion_ia = {}
+		perfil = Perfil.GENERICO
+		return
+
+	configuracion_ia = criatura.obtener_config_ia()
+
+	if not configuracion_ia.is_empty():
+		var perfil_texto := str(
+			configuracion_ia.get("perfil", "")
+		).strip_edges().to_lower()
+
+		perfil = _perfil_desde_texto(perfil_texto)
+
+		if perfil != Perfil.GENERICO:
+			return
+
+	var comportamiento := criatura.comportamiento.strip_edges().to_lower()
+
+	if comportamiento.is_empty():
+		match criatura.get_nombre().strip_edges().to_lower():
+			"flaxis":
+				perfil = Perfil.FLAXIS
+			"zlish":
+				perfil = Perfil.ZLISH
+			"lignianos":
+				perfil = Perfil.LIGNIANOS
+			_:
+				perfil = Perfil.GENERICO
+
+		return
+
+	perfil = _perfil_desde_texto(comportamiento)
+
+
+func _perfil_desde_texto(texto: String) -> Perfil:
+	match texto:
+		"flaxis":
+			return Perfil.FLAXIS
+		"zlish":
+			return Perfil.ZLISH
+		"lignianos":
+			return Perfil.LIGNIANOS
+		"cambiaformas":
+			return Perfil.CAMBIAFORMAS
+		"espiritu_estelar", "espiritu estelar":
+			return Perfil.ESPIRITU_ESTELAR
+		"rancrodeen":
+			return Perfil.RANCRODEEN
+
+	return Perfil.GENERICO
+
+
 func _obtener_respuesta_a_objetivo() -> String:
-	if perfil == Perfil.ZLISH:
-		return "huir"
+	match perfil:
+		Perfil.ZLISH:
+			return "huir"
 
-	if perfil == Perfil.FLAXIS:
-		return "atacar"
+		Perfil.FLAXIS:
+			return "atacar"
 
-	if perfil == Perfil.LIGNIANOS:
-		return "perseguir"
+		Perfil.LIGNIANOS:
+			return "perseguir"
+
+		Perfil.CAMBIAFORMAS:
+			return "perseguir"
+
+		Perfil.ESPIRITU_ESTELAR:
+			return "perseguir"
+
+		Perfil.RANCRODEEN:
+			return "perseguir"
 
 	var comportamiento := ""
 	if criatura != null:
 		comportamiento = criatura.comportamiento.strip_edges().to_lower()
 
 	if comportamiento.is_empty():
-		# Sin un comportamiento canónico definido en Supabase,
-		# la criatura no inventa una respuesta.
 		return ""
 
 	if (
@@ -517,55 +658,72 @@ func _obtener_respuesta_a_objetivo() -> String:
 	return ""
 
 
-func _obtener_distancia_maxima_persecucion() -> float:
-	if perfil == Perfil.LIGNIANOS:
-		return distancia_deteccion * 1.3
+func _obtener_config_ataque() -> Dictionary:
+	var valor: Variant = configuracion_ia.get(
+		"ataque",
+		{}
+	)
+
+	if valor is Dictionary:
+		return valor as Dictionary
+
+	return {}
+
+
+func _obtener_danio_ataque() -> int:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get("danio", dano_mordida)
+
+	if valor is int or valor is float:
+		return maxi(int(valor), 0)
+
+	return dano_mordida
+
+
+func _obtener_enfriamiento_ataque() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"enfriamiento",
+		enfriamiento_ataque
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return enfriamiento_ataque
+
+
+func _obtener_distancia_deteccion() -> float:
+	var valor: Variant = configuracion_ia.get(
+		"deteccion",
+		distancia_deteccion
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
 
 	return distancia_deteccion
 
 
-func _refrescar_perfil() -> void:
-	if criatura == null:
-		perfil = Perfil.GENERICO
-		return
+func _obtener_distancia_maxima_persecucion() -> float:
+	if perfil == Perfil.LIGNIANOS:
+		return _obtener_distancia_deteccion() * 1.3
 
-	var comportamiento := criatura.comportamiento.strip_edges().to_lower()
+	var ataque := _obtener_config_ataque()
 
-	# Compatibilidad con las tres IA prototipo actuales.
-	# Cuando Supabase tenga comportamiento estructurado,
-	# ese dato podrá tomar el control sin cambiar la máquina.
-	if comportamiento.is_empty():
-		match criatura.get_nombre().strip_edges().to_lower():
-			"flaxis":
-				perfil = Perfil.FLAXIS
+	if ataque.has("distancia_maxima_persecucion"):
+		var valor: Variant = ataque.get(
+			"distancia_maxima_persecucion"
+		)
 
-			"zlish":
-				perfil = Perfil.ZLISH
+		if valor is int or valor is float:
+			return maxf(float(valor), 0.0)
 
-			"lignianos":
-				perfil = Perfil.LIGNIANOS
-
-			_:
-				perfil = Perfil.GENERICO
-
-		return
-
-	match comportamiento:
-		"flaxis":
-			perfil = Perfil.FLAXIS
-
-		"zlish":
-			perfil = Perfil.ZLISH
-
-		"lignianos":
-			perfil = Perfil.LIGNIANOS
-
-		_:
-			perfil = Perfil.GENERICO
+	return _obtener_distancia_deteccion()
 
 
 # ============================================================
-# ATAQUES
+# ATAQUES BASE
 # ============================================================
 
 func _iniciar_ataque() -> void:
@@ -578,9 +736,82 @@ func _iniciar_ataque() -> void:
 		Perfil.LIGNIANOS:
 			_iniciar_ataque_ligniano()
 
+		Perfil.CAMBIAFORMAS, Perfil.ESPIRITU_ESTELAR:
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(
+				_obtener_velocidad_ataque()
+			)
+
+		Perfil.RANCRODEEN:
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(
+				_obtener_velocidad_ataque()
+			)
+
 		_:
 			_cambiar_estado(Estado.RECUPERANDO)
 
+
+func _procesar_ataque_contacto(
+	_delta: float,
+	danio: int,
+	enfriamiento: float,
+	copiar_skin: bool
+) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	var distancia := criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia > distancia_contacto:
+		_establecer_velocidad(
+			_obtener_velocidad_ataque()
+		)
+		criatura.tomar_control_movimiento()
+
+		var direccion := criatura.global_position.direction_to(
+			objetivo.global_position
+		)
+
+		criatura.establecer_direccion_movimiento(direccion)
+		return
+
+	if _ataque_resuelto:
+		return
+
+	_ataque_resuelto = true
+	criatura.detener_movimiento()
+
+	if objetivo.has_method("take_damage"):
+		objetivo.call("take_damage", danio)
+
+	if copiar_skin:
+		criatura.copiar_skin_de(objetivo)
+
+	_iniciar_recuperacion(enfriamiento)
+
+
+func _obtener_velocidad_ataque() -> float:
+	match perfil:
+		Perfil.CAMBIAFORMAS:
+			return velocidad_persecucion
+
+	Perfil.RANCRODEEN:
+			return velocidad_persecucion
+
+	return velocidad_persecucion
+
+
+func _iniciar_ataque_generico_contacto() -> void:
+	_cambiar_estado(Estado.ATACANDO)
+
+
+# ============================================================
+# FLAXIS
+# ============================================================
 
 func _iniciar_ataque_flaxis() -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
@@ -603,14 +834,6 @@ func _iniciar_ataque_flaxis() -> void:
 	)
 
 	criatura.establecer_direccion_movimiento(direccion)
-
-	if mostrar_estado_debug:
-		print(
-			criatura.get_nombre(),
-			" inicia ataque de salto → ",
-			_objetivo_ataque
-		)
-
 	_animar_salto()
 
 
@@ -661,19 +884,15 @@ func _resolver_ataque_flaxis() -> void:
 			dano_mordida
 		)
 
-		if mostrar_estado_debug:
-			print(
-				criatura.get_nombre(),
-				" impacta por ",
-				dano_mordida,
-				" de daño."
-			)
-
 		_iniciar_recuperacion(enfriamiento_ataque)
 		return
 
 	_iniciar_recuperacion(enfriamiento_fallido)
 
+
+# ============================================================
+# LIGNIANOS
+# ============================================================
 
 func _iniciar_ataque_ligniano() -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
@@ -694,18 +913,304 @@ func _iniciar_ataque_ligniano() -> void:
 				ligniano_duracion_slow
 			)
 
-		if mostrar_estado_debug:
-			print(
-				criatura.get_nombre(),
-				" golpea a ",
-				objetivo.name,
-				" por ",
-				ligniano_dano_contacto,
-				" y aplica slow."
-			)
-
 	_iniciar_recuperacion(ligniano_enfriamiento)
 
+
+func _procesar_ataque_lignianos() -> void:
+	if not _ataque_resuelto:
+		_ataque_resuelto = true
+
+	_cambiar_estado(Estado.RECUPERANDO)
+
+
+# ============================================================
+# CAMBIAFORMAS
+# ============================================================
+
+func _copiar_skin_de_objetivo() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		return
+
+	criatura.copiar_skin_de(objetivo)
+
+
+# ============================================================
+# RANCRODEEN
+# ============================================================
+
+func _procesar_ataque_rancrodeen(_delta: float) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	var distancia := criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia <= distancia_contacto:
+		_cambiar_estado(Estado.ADHERIDO)
+		return
+
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_velocidad_ataque()
+	)
+
+	var direccion := criatura.global_position.direction_to(
+		objetivo.global_position
+	)
+
+	criatura.establecer_direccion_movimiento(direccion)
+
+
+func _iniciar_estado_adherido() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	_tiempo_adherido = _obtener_float_ataque(
+		"duracion_adherido",
+		5.0
+	)
+
+	_tiempo_danio_adherido = 0.0
+
+	criatura.detener_movimiento()
+	criatura.establecer_colision(false)
+
+
+func _procesar_adherido(delta: float) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_desprender_rancrodeen()
+		return
+
+	_tiempo_adherido -= delta
+	_tiempo_danio_adherido -= delta
+
+	criatura.global_position = (
+		objetivo.global_position
+		+ Vector2(0.0, -16.0)
+	)
+
+	if _tiempo_danio_adherido <= 0.0:
+		_tiempo_danio_adherido = maxf(
+			_obtener_float_ataque(
+				"intervalo_danio",
+				1.0
+			),
+			0.05
+		)
+
+		if objetivo.has_method("take_damage"):
+			objetivo.call(
+				"take_damage",
+				_obtener_danio_ataque()
+			)
+
+	if _tiempo_adherido <= 0.0:
+		_iniciar_salto_lejos()
+
+
+func _desprender_rancrodeen() -> void:
+	criatura.establecer_colision(true)
+	_cambiar_estado(Estado.EXPLORANDO)
+
+
+func _iniciar_salto_lejos() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_desprender_rancrodeen()
+		return
+
+	var direccion := objetivo.global_position.direction_to(
+		criatura.global_position
+	)
+
+	if direccion.length_squared() <= 0.01:
+		direccion = Vector2.RIGHT.rotated(
+			randf_range(-PI, PI)
+		)
+
+	_direccion_salto = direccion.normalized()
+	_cambiar_estado(Estado.SALTANDO_LEJOS)
+
+
+func _iniciar_estado_saltando_lejos() -> void:
+	_tiempo_accion = maxf(
+		_obtener_float_ataque(
+			"duracion_salto",
+			0.38
+		),
+		0.01
+	)
+
+	var distancia := _obtener_float_ataque(
+		"distancia_salto",
+		72.0
+	)
+
+	_objetivo_ataque = (
+		criatura.global_position
+		+ _direccion_salto * distancia
+	)
+
+	criatura.establecer_colision(true)
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_float_ataque(
+			"velocidad_salto",
+			190.0
+		)
+	)
+	criatura.establecer_direccion_movimiento(
+		_direccion_salto
+	)
+
+
+func _procesar_saltando_lejos(delta: float) -> void:
+	_tiempo_accion -= delta
+
+	if (
+		criatura.global_position.distance_to(
+			_objetivo_ataque
+		) <= distancia_contacto
+		or _tiempo_accion <= 0.0
+	):
+		_establecer_velocidad(
+			_obtener_velocidad_ataque()
+		)
+		_cambiar_estado(Estado.PERSIGUIENDO)
+		return
+
+	var direccion := criatura.global_position.direction_to(
+		_objetivo_ataque
+	)
+
+	criatura.establecer_direccion_movimiento(direccion)
+
+
+# ============================================================
+# ESPIRITU ESTELAR
+# ============================================================
+
+func al_recibir_danio(_cantidad: int) -> void:
+	if perfil != Perfil.ESPIRITU_ESTELAR:
+		return
+
+	if _tiempo_teleport > 0.0:
+		return
+
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_recibir_danio",
+		{}
+	)
+
+	if not reaccion_variant is Dictionary:
+		return
+
+	var reaccion := reaccion_variant as Dictionary
+
+	if str(reaccion.get("tipo", "")).to_lower() != "teletransportarse":
+		return
+
+	_teletransportar_espiritu_estelar(reaccion)
+
+	_tiempo_teleport = maxf(
+		float(reaccion.get("inmunidad", 0.45)),
+		0.0
+	)
+
+
+func _teletransportar_espiritu_estelar(
+	reaccion: Dictionary
+) -> void:
+	var origen := criatura.global_position
+
+	var minimo := maxf(
+		float(reaccion.get("distancia_minima", 70.0)),
+		1.0
+	)
+
+	var maximo := maxf(
+		float(reaccion.get("distancia_maxima", 110.0)),
+		minimo
+	)
+
+	var direccion := Vector2.RIGHT
+
+	if objetivo != null and is_instance_valid(objetivo):
+		direccion = objetivo.global_position.direction_to(
+			origen
+		)
+
+	if direccion.length_squared() <= 0.01:
+		direccion = Vector2.RIGHT
+
+	direccion = direccion.rotated(
+		randf_range(-0.9, 0.9)
+	).normalized()
+
+	var destino := (
+		origen
+		+ direccion * randf_range(minimo, maximo)
+	)
+
+	if criatura.limites_chunk.size.x > 0.0:
+		var limites := criatura.limites_chunk.grow(-12.0)
+
+		destino.x = clampf(
+			destino.x,
+			limites.position.x,
+			limites.end.x
+		)
+
+		destino.y = clampf(
+			destino.y,
+			limites.position.y,
+			limites.end.y
+		)
+
+	var rastro_variant: Variant = reaccion.get(
+		"rastro",
+		{}
+	)
+
+	var rastro: Dictionary = {}
+
+	if rastro_variant is Dictionary:
+		rastro = rastro_variant as Dictionary
+
+	criatura.crear_rastro_teleport(
+		origen,
+		destino,
+		maxf(float(rastro.get("duracion", 0.7)), 0.1),
+		maxi(int(rastro.get("puntos", 18)), 4)
+	)
+
+	criatura.global_position = destino
+
+
+# ============================================================
+# HELPERS
+# ============================================================
+
+func _obtener_float_ataque(
+	clave: String,
+	por_defecto: float
+) -> float:
+	var ataque := _obtener_config_ataque()
+
+	var valor: Variant = ataque.get(
+		clave,
+		por_defecto
+	)
+
+	if valor is int or valor is float:
+		return maxf(
+			float(valor),
+			0.0
+		)
+
+	return por_defecto
 
 
 func _iniciar_recuperacion(duracion: float) -> void:
@@ -716,35 +1221,66 @@ func _iniciar_recuperacion(duracion: float) -> void:
 	_cambiar_estado(Estado.RECUPERANDO)
 
 
-# ============================================================
-# MOVIMIENTO
-# ============================================================
-
-func _encontrar_movimiento() -> void:
-	if criatura == null:
+func _iniciar_persecucion() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
 		return
 
-	_movimiento = criatura.get_node_or_null(
-		"CreatureMovement"
-	) as CreatureMovement
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_velocidad_persecucion()
+	)
 
-	if _movimiento != null:
-		_velocidad_normal = maxf(
-			_movimiento.move_speed,
+
+func _obtener_velocidad_persecucion() -> float:
+	match perfil:
+		Perfil.FLAXIS:
+			return velocidad_persecucion
+
+		Perfil.LIGNIANOS:
+			return ligniano_velocidad_carga
+
+		Perfil.CAMBIAFORMAS:
+			return _obtener_float_config(
+				"velocidad_persecucion",
+				velocidad_persecucion
+			)
+
+		Perfil.RANCRODEEN:
+			return _obtener_float_config(
+				"velocidad_persecucion",
+				velocidad_persecucion
+			)
+
+	return velocidad_persecucion
+
+
+func _obtener_float_config(
+	clave: String,
+	por_defecto: float
+) -> float:
+	var valor: Variant = configuracion_ia.get(
+		clave,
+		por_defecto
+	)
+
+	if valor is int or valor is float:
+		return maxf(
+			float(valor),
 			0.0
 		)
 
+	return por_defecto
 
-func _establecer_velocidad(nueva_velocidad: float) -> void:
-	if _movimiento == null:
-		_encontrar_movimiento()
 
-	if _movimiento == null:
+func _iniciar_huida() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
 		return
 
-	_movimiento.move_speed = maxf(
-		nueva_velocidad,
-		0.0
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_velocidad_huida()
 	)
 
 
@@ -762,12 +1298,42 @@ func _obtener_distancia_segura_huida() -> float:
 	if perfil == Perfil.ZLISH:
 		return zlish_distancia_segura
 
-	return distancia_deteccion
+	return _obtener_distancia_deteccion()
 
 
-# ============================================================
-# ANIMACIÓN
-# ============================================================
+func _establecer_velocidad(
+	nueva_velocidad: float
+) -> void:
+	if _movimiento == null:
+		_encontrar_movimiento()
+
+	if _movimiento == null:
+		return
+
+	_movimiento.move_speed = maxf(
+		nueva_velocidad,
+		0.0
+	)
+
+
+func _encontrar_movimiento() -> void:
+	if criatura == null:
+		return
+
+	_movimiento = criatura.get_node_or_null(
+		"CreatureMovement"
+	) as CreatureMovement
+
+	if _movimiento != null:
+		_velocidad_normal = maxf(
+			_movimiento.move_speed,
+			0.0
+		)
+
+
+func _configurar_desde_padre() -> void:
+	criatura = get_parent() as Creature
+
 
 func _animar_salto() -> void:
 	if criatura == null:
