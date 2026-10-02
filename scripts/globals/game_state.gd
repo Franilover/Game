@@ -28,6 +28,8 @@ var _partida_aplicada_en_escena: bool = false
 var _menu_interceptado: bool = false
 var _guardado_en_curso: bool = false
 
+signal enciclopedia_actualizada(criatura_id: String)
+
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(
@@ -582,6 +584,61 @@ func _aplicar_estado_memoria(
 		).duplicate(true)
 	else:
 		flags = {}
+
+
+# ============================================================
+# ENCICLOPEDIA
+# ============================================================
+
+func registrar_criatura_derrotada(criatura: Node) -> bool:
+	if criatura == null or not is_instance_valid(criatura):
+		return false
+
+	if not criatura.is_in_group("creatures"):
+		return false
+
+	var criatura_id := str(criatura.get("criatura_id"))
+	if criatura_id.is_empty() and criatura.has_method("get_id"):
+		criatura_id = str(criatura.call("get_id"))
+
+	if criatura_id.is_empty():
+		return false
+
+	var registros_variant: Variant = flags.get(
+		"enciclopedia_criaturas",
+		{}
+	)
+
+	var registros: Dictionary = {}
+	if registros_variant is Dictionary:
+		registros = (registros_variant as Dictionary).duplicate(true)
+
+	var derrotas := int(registros.get(criatura_id, 0)) + 1
+	registros[criatura_id] = derrotas
+	flags["enciclopedia_criaturas"] = registros
+
+	enciclopedia_actualizada.emit(criatura_id)
+
+	print(
+		"GameState: criatura descubierta → ",
+		criatura_id,
+		" | derrotas = ",
+		derrotas
+	)
+
+	return true
+
+
+func obtener_criaturas_descubiertas() -> Dictionary:
+	var registros_variant: Variant = flags.get(
+		"enciclopedia_criaturas",
+		{}
+	)
+
+	if registros_variant is Dictionary:
+		return (registros_variant as Dictionary).duplicate(true)
+
+	return {}
 
 
 # ============================================================
