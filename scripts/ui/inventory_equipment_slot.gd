@@ -31,6 +31,11 @@ func configurar_objeto(nuevo_objeto: Dictionary) -> void:
 	icon_texture.texture = textura
 	icon_texture.visible = textura != null
 
+
+func limpiar_objeto() -> void:
+	_limpiar()
+
+
 func _can_drop_data(_position: Vector2, data: Variant) -> bool:
 	if not data is Dictionary:
 		return false
