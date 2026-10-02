@@ -29,12 +29,12 @@ var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
 
 
-@onready var grid: GridContainer = $Window/Margin/Column/Content/LeftPanel/Grid
-@onready var item_name: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/InfoText/ItemName
-@onready var item_description: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/InfoText/ItemDescription
-@onready var item_icon: TextureRect = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemIcon
-@onready var delete_button: Button = $Window/Margin/Column/Content/LeftPanel/InfoPanel/InfoText/DeleteButton
-@onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Content/RightPanel/EquipmentArea/EquipmentSlots
+@onready var grid: GridContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
+@onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemName
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemDescription
+@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/ItemIcon
+@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/DeleteButton
+@onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea/EquipmentSlots
 
 
 func _ready() -> void:
