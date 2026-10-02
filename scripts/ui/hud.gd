@@ -176,34 +176,57 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _preparar_location() -> void:
-	var nodo := find_child("LocationLabel", true, false)
+	var nodo := find_child(
+		"LocationLabel",
+		true,
+		false
+	)
 
 	if nodo == null:
 		print("HUD: no se encontró LocationLabel.")
 		return
 
+	# LocationLabel ya es el Label que muestra el contexto.
+	if nodo is Label:
+		location_label = nodo as Label
+		location_panel = nodo as Control
+		return
+
 	if nodo is Control:
 		location_panel = nodo as Control
 
-		var label := location_panel.find_child("Label", true, false)
+		var label := location_panel.find_child(
+			"Label",
+			true,
+			false
+		)
 
 		if label is Label:
 			location_label = label as Label
 			return
 
-		label = location_panel.find_child("Text", true, false)
+		label = location_panel.find_child(
+			"Text",
+			true,
+			false
+		)
 
 		if label is Label:
 			location_label = label as Label
 			return
 
-		var primer_label := _buscar_primer_label(location_panel)
+		var primer_label := _buscar_primer_label(
+			location_panel
+		)
 
 		if primer_label != null:
 			location_label = primer_label
 			return
 
-	print("HUD: LocationLabel existe, pero no contiene ningún Label.")
+	print(
+		"HUD: LocationLabel existe, pero no es un Label "
+		+ "ni contiene ningún Label."
+	)
 
 
 func _buscar_primer_label(nodo: Node) -> Label:
