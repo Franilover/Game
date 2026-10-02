@@ -39,6 +39,7 @@ func _ready() -> void:
 	super._ready()
 
 	add_to_group("interactable")
+	add_to_group("creatures")
 
 	_rng.seed = abs(
 		hash(str(get_instance_id()))
@@ -244,6 +245,125 @@ func get_id() -> String:
 
 func get_datos() -> Dictionary:
 	return datos
+
+
+func obtener_config_ia() -> Dictionary:
+	var valor: Variant = datos.get(
+		"ia_config",
+		{}
+	)
+
+	if valor is Dictionary:
+		return (valor as Dictionary).duplicate(true)
+
+	return {}
+
+
+func take_damage(cantidad: int) -> void:
+	if not is_alive:
+		return
+
+	var salud_anterior := health
+
+	super.take_damage(cantidad)
+
+	if is_alive and health < salud_anterior:
+		var ai := get_node_or_null("AIController")
+
+		if ai != null and ai.has_method("al_recibir_danio"):
+			ai.call(
+				"al_recibir_danio",
+				salud_anterior - health
+			)
+
+
+func establecer_colision(activa: bool) -> void:
+	var collision := get_node_or_null(
+		"CollisionShape2D"
+	) as CollisionShape2D
+
+	if collision == null:
+		return
+
+	collision.set_deferred(
+		"disabled",
+		not activa
+	)
+
+
+func get_skin_visual() -> Sprite2D:
+	return get_node_or_null(
+		"Sprite2D"
+	) as Sprite2D
+
+
+func copiar_skin_de(origen: Node) -> bool:
+	if origen == null or not is_instance_valid(origen):
+		return false
+
+	var sprite_origen: Sprite2D = null
+
+	if origen is Creature:
+		sprite_origen = (
+			(origen as Creature).get_skin_visual()
+		)
+	else:
+		sprite_origen = origen.get_node_or_null(
+			"Visual/Sprite2D"
+		) as Sprite2D
+
+	if sprite_origen == null or sprite_origen.texture == null:
+		return false
+
+	var sprite_destino := get_node_or_null(
+		"Sprite2D"
+	) as Sprite2D
+
+	if sprite_destino == null:
+		return false
+
+	sprite_destino.texture = sprite_origen.texture
+	sprite_destino.position = sprite_origen.position
+	sprite_destino.scale = sprite_origen.scale
+	sprite_destino.rotation = sprite_origen.rotation
+	sprite_destino.flip_h = sprite_origen.flip_h
+	sprite_destino.flip_v = sprite_origen.flip_v
+
+	queue_redraw()
+
+	return true
+
+
+func crear_rastro_teleport(
+	origen: Vector2,
+	destino: Vector2,
+	duracion: float,
+	puntos: int
+) -> void:
+	var escena := get_tree().current_scene
+
+	if escena == null:
+		return
+
+	var script := load(
+		"res://scripts/creatures/creature_teleport_trail.gd"
+	)
+
+	if script == null:
+		return
+
+	var rastro := Line2D.new()
+	rastro.set_script(script)
+	escena.add_child(rastro)
+
+	rastro.call(
+		"configurar",
+		self,
+		origen,
+		destino,
+		duracion,
+		puntos
+	)
 
 
 func get_stats_dnd() -> Dictionary:
