@@ -21,10 +21,17 @@ var indice_seleccionado: int = -1
 var indice_hotbar_activo: int = 0
 var hotbar_indices: Array[int] = []
 
+var filtro_equipamiento: String = "Todos"
+var objeto_equipado_armadura: Dictionary = {}
+
 
 @onready var grid: GridContainer = $Window/Margin/Column/Content/SlotsPanel/Grid
-@onready var item_name: Label = $Window/Margin/Column/Content/InfoPanel/ItemName
-@onready var item_description: Label = $Window/Margin/Column/Content/InfoPanel/ItemDescription
+@onready var item_name: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemName
+@onready var item_description: Label = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemDescription
+@onready var item_icon: TextureRect = $Window/Margin/Column/Content/LeftPanel/InfoPanel/ItemIcon
+@onready var delete_button: Button = $Window/Margin/Column/Content/LeftPanel/InfoPanel/DeleteButton
+@onready var equipment_filter: OptionButton = $Window/Margin/Column/Content/RightPanel/EquipmentPanel/EquipmentFilter
+@onready var equipment_item_name: Label = $Window/Margin/Column/Content/RightPanel/EquipmentPanel/EquippedItemName
 
 
 func _ready() -> void:
@@ -34,6 +41,11 @@ func _ready() -> void:
 	_inicializar_items()
 	_inicializar_hotbar()
 	_crear_slots()
+	equipment_filter.clear()
+	for opcion in ["Todos", "Armadura", "Armas", "Herramientas", "Recursos", "Otros"]:
+		equipment_filter.add_item(opcion)
+	equipment_filter.item_selected.connect(_al_cambiar_filtro_equipamiento)
+	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_limpiar_informacion()
 
 
@@ -188,6 +200,64 @@ func seleccionar_slot(indice: int) -> void:
 	)
 
 
+func _al_cambiar_filtro_equipamiento(indice: int) -> void:
+	if indice < 0 or indice >= equipment_filter.item_count:
+		return
+
+	filtro_equipamiento = equipment_filter.get_item_text(indice)
+	_actualizar_equipo_mostrado()
+
+
+func _actualizar_equipo_mostrado() -> void:
+	var categoria := filtro_equipamiento.to_lower()
+	if categoria == "todos":
+		equipment_item_name.text = "Selecciona una categoría."
+		return
+
+	var encontrado: Dictionary = {}
+	for objeto in items:
+		if objeto.is_empty():
+			continue
+		if _categoria_objeto(objeto) == categoria:
+			encontrado = objeto
+			break
+
+	if encontrado.is_empty():
+		equipment_item_name.text = "Sin objetos de " + filtro_equipamiento.to_lower() + "."
+	else:
+		equipment_item_name.text = str(encontrado.get("nombre", "Objeto"))
+
+
+func _categoria_objeto(objeto: Dictionary) -> String:
+	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
+	if tipo_objeto_variant is Dictionary:
+		var tipo_objeto := tipo_objeto_variant as Dictionary
+		var categoria_canonica := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
+		if not categoria_canonica.is_empty():
+			return categoria_canonica
+
+	var tipo := str(objeto.get("tipo", "")).strip_edges().to_lower()
+	match tipo:
+		"arma":
+			return "armas"
+		"armadura":
+			return "armadura"
+		"herramienta":
+			return "herramientas"
+		"recurso":
+			return "recursos"
+		_:
+			return "otros"
+
+
+func _al_eliminar_seleccionado() -> void:
+	if indice_seleccionado < 0:
+		return
+
+	if quitar_objeto(indice_seleccionado):
+		print("Inventory: objeto eliminado.")
+
+
 func _mostrar_informacion() -> void:
 	var nombre := str(
 		objeto_seleccionado.get(
@@ -205,11 +275,19 @@ func _mostrar_informacion() -> void:
 
 	item_name.text = nombre
 	item_description.text = descripcion
+	delete_button.disabled = false
+
+	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
+	item_icon.texture = textura
+	item_icon.visible = textura != null
 
 
 func _limpiar_informacion() -> void:
 	item_name.text = "Ningún objeto"
 	item_description.text = "Selecciona un objeto para estudiar sus propiedades."
+	item_icon.texture = null
+	item_icon.visible = false
+	delete_button.disabled = true
 
 
 func agregar_objeto(datos_objeto: Dictionary) -> bool:
@@ -230,6 +308,7 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 	items[indice_libre] = objeto
 
 	actualizar()
+	_actualizar_equipo_mostrado()
 
 	inventory_changed.emit()
 	_emitir_objeto_activo()
@@ -259,6 +338,7 @@ func quitar_objeto(indice: int) -> bool:
 		_limpiar_informacion()
 
 	actualizar()
+	_actualizar_equipo_mostrado()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
