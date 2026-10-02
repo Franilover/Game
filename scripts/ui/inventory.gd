@@ -259,6 +259,7 @@ func _crear_slots_equipamiento() -> void:
 		child.queue_free()
 
 	var configuracion := [
+		["arma", "ARMA"],
 		["casco", "CASCO"],
 		["pechera", "PECHERA"],
 		["pantalones", "PANTALONES"],
@@ -484,6 +485,53 @@ func _buscar_slot_libre() -> int:
 			return i
 
 	return -1
+
+
+func obtener_objeto_equipado(clave: String) -> Dictionary:
+	var objeto_variant: Variant = equipo.get(clave, {})
+
+	if objeto_variant is Dictionary:
+		return (objeto_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func establecer_equipo(nuevo_equipo: Dictionary) -> void:
+	equipo.clear()
+
+	for clave_variant in nuevo_equipo.keys():
+		var clave := str(clave_variant)
+		var objeto_variant: Variant = nuevo_equipo.get(clave_variant, {})
+
+		if objeto_variant is Dictionary:
+			var objeto := objeto_variant as Dictionary
+
+			if not objeto.is_empty():
+				equipo[clave] = objeto.duplicate(true)
+
+	for child in equipment_slots.get_children():
+		if not child.has_method("obtener_clave"):
+			continue
+
+		if child.has_method("limpiar_objeto"):
+			child.call("limpiar_objeto")
+
+		var clave_slot := str(child.call("obtener_clave"))
+
+		if equipo.has(clave_slot) and child.has_method("configurar_objeto"):
+			child.call(
+				"configurar_objeto",
+				equipo[clave_slot]
+			)
+
+	if has_method("actualizar"):
+		actualizar()
+
+	if has_signal("inventory_changed"):
+		inventory_changed.emit()
+
+	if has_method("_emitir_objeto_activo"):
+		_emitir_objeto_activo()
 
 
 func obtener_objeto(indice: int) -> Dictionary:
