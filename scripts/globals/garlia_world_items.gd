@@ -183,6 +183,28 @@ func obtener_catalogo() -> Array[Dictionary]:
 	return catalogo.duplicate(true)
 
 
+func buscar_item_por_id(
+	item_id: String
+) -> Dictionary:
+	var buscado: String = item_id.strip_edges()
+
+	if buscado.is_empty():
+		return {}
+
+	for item in catalogo:
+		var actual_id: String = str(
+			item.get(
+				"item_id",
+				item.get("id", "")
+			)
+		).strip_edges()
+
+		if actual_id == buscado:
+			return item.duplicate(true)
+
+	return {}
+
+
 func buscar_item_por_nombre(
 	nombre: String
 ) -> Dictionary:
