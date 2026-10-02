@@ -153,6 +153,11 @@ func _al_recibir_catalogo(
 		var item := (item_variant as Dictionary).duplicate(true)
 
 		item["item_id"] = str(fila_game.get("item_id", item.get("id", "")))
+		var tipo_objeto_variant: Variant = item.get("tipo_objeto", null)
+		if tipo_objeto_variant is Dictionary:
+			item["tipo_objeto"] = (tipo_objeto_variant as Dictionary).duplicate(true)
+		else:
+			item["tipo_objeto"] = {}
 		item["tipo"] = str(fila_game.get("tipo", ""))
 		item["max_stack"] = maxi(1, int(fila_game.get("max_stack", 1)))
 
