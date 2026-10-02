@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://b8n60h62a5dd" path="res://scripts/ui/inventory.gd" id="1_inventory"]
 [ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/characters/Sprite-0004.png" id="2_skin"]
-[ext_resource type="PackedScene" path="res://scenes/ui/inventory_equipment_slot.tscn" id="3_equipment_slot"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_window"]
 bg_color = Color(0.1, 0.065, 0.04, 0.97)
@@ -199,7 +198,6 @@ size_flags_vertical = 3
 theme_override_constants/separation = 5
 
 [node name="Hint" type="Label" parent="Window/Margin/Column" unique_id=827274201]
- type="Label" parent="Window/Margin/Column" unique_id=827274201]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
 theme_override_font_sizes/font_size = 10
