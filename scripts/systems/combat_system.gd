@@ -471,10 +471,22 @@ func _aplicar_danio(
 	):
 		return
 
+	var vivo_antes := true
+	if "is_alive" in objetivo:
+		vivo_antes = bool(objetivo.get("is_alive"))
+
 	objetivo.call(
 		"take_damage",
 		danio
 	)
+
+	if (
+		vivo_antes
+		and "is_alive" in objetivo
+		and not bool(objetivo.get("is_alive"))
+		and objetivo.is_in_group("creatures")
+	):
+		GameState.registrar_criatura_derrotada(objetivo)
 
 	_animar_objetivo(
 		objetivo
