@@ -118,13 +118,15 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("use_ium"):
 		_usar_proceso_ium()
 
-	# Salto.
-	if Input.is_action_just_pressed("jump"):
-		if _puede_hacer_jump():
-			_iniciar_jump()
+	# Esquiva.
+	# Reutilizamos el DASH existente porque ya proporciona
+	# movimiento rápido e invulnerabilidad durante la acción.
+	if Input.is_action_just_pressed("dodge"):
+		if _puede_hacer_dash():
+			_iniciar_dash()
 			return
 
-	# Dash.
+	# Dash alternativo.
 	if Input.is_action_just_pressed("dash"):
 		if _puede_hacer_dash():
 			_iniciar_dash()
