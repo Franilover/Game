@@ -255,7 +255,9 @@ func _atacar_con_arma(
 				"nombre",
 				"Arma"
 			)
-		)
+		),
+		player,
+		arma
 	)
 
 
@@ -318,6 +320,11 @@ func _disparar_proyectil(
 		player
 	)
 
+	proyectil.call(
+		"configurar_arma",
+		arma
+	)
+
 	print(
 		"CombatSystem: proyectil disparado → ",
 		str(
@@ -365,6 +372,42 @@ func _obtener_modo_ataque(
 		return "cuerpo"
 
 	return "cuerpo"
+
+
+func atacar_objetivo_con_arma(
+	atacante: Node,
+	objetivo: Node,
+	arma: Dictionary
+) -> bool:
+	if atacante == null or not is_instance_valid(atacante):
+		return false
+
+	if objetivo == null or not is_instance_valid(objetivo):
+		return false
+
+	if arma.is_empty() or not _es_arma(arma):
+		return false
+
+	if not objetivo.has_method("take_damage"):
+		return false
+
+	var danio: int = _obtener_danio_arma(arma)
+
+	_aplicar_danio(
+		objetivo,
+		danio,
+		str(arma.get("nombre", "Arma")),
+		atacante,
+		arma
+	)
+
+	return true
+
+
+func obtener_alcance_arma(
+	arma: Dictionary
+) -> float:
+	return _obtener_alcance_arma(arma)
 
 
 func _obtener_danio_arma(
@@ -461,7 +504,9 @@ func _obtener_propiedades_game(
 func _aplicar_danio(
 	objetivo: Node,
 	danio: int,
-	origen: String
+	origen: String,
+	atacante: Node = null,
+	arma: Dictionary = {}
 ) -> void:
 	if not is_instance_valid(objetivo):
 		return
@@ -488,19 +533,43 @@ func _aplicar_danio(
 	):
 		GameState.registrar_criatura_derrotada(objetivo)
 
+	if (
+		not arma.is_empty()
+		and objetivo.is_in_group("creatures")
+		and "is_alive" in objetivo
+		and bool(objetivo.get("is_alive"))
+		and objetivo.has_node("AIController")
+	):
+		var ai: Node = objetivo.get_node_or_null(
+			"AIController"
+		)
+
+		if ai != null and ai.has_method(
+			"al_recibir_ataque_con_arma"
+		):
+			ai.call(
+				"al_recibir_ataque_con_arma",
+				arma
+			)
+
 	_animar_objetivo(
 		objetivo
 	)
 
+	var actor: Node = atacante
+
+	if actor == null:
+		actor = player
+
 	ataque_realizado.emit(
-		player,
+		actor,
 		objetivo,
 		danio
 	)
 
 	print(
 		"CombatSystem: ",
-		player.name,
+		actor.name,
 		" atacó a ",
 		objetivo.name,
 		" con ",
