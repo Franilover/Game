@@ -496,7 +496,9 @@ func _obtener_respuesta_a_objetivo() -> String:
 		comportamiento = criatura.comportamiento.strip_edges().to_lower()
 
 	if comportamiento.is_empty():
-		return "investigar"
+		# Sin un comportamiento canónico definido en Supabase,
+		# la criatura no inventa una respuesta.
+		return ""
 
 	if (
 		"huir" in comportamiento
@@ -512,7 +514,7 @@ func _obtener_respuesta_a_objetivo() -> String:
 	):
 		return "perseguir"
 
-	return "investigar"
+	return ""
 
 
 func _obtener_distancia_maxima_persecucion() -> float:
@@ -704,17 +706,6 @@ func _iniciar_ataque_ligniano() -> void:
 
 	_iniciar_recuperacion(ligniano_enfriamiento)
 
-
-func _procesar_ataque_lignianos() -> void:
-	if not _ataque_resuelto:
-		_ataque_resuelto = true
-		# El ataque se ejecuta al entrar al estado.
-		# El estado ATACANDO dura un frame lógico.
-		_cambiar_estado(Estado.RECUPERANDO)
-
-
-func _resolver_ataque_lignianos() -> void:
-	return
 
 
 func _iniciar_recuperacion(duracion: float) -> void:
