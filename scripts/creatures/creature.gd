@@ -188,6 +188,11 @@ func configurar(
 		)
 
 	_cargar_sprite()
+
+	var ai := get_node_or_null("AIController")
+	if ai != null and ai.has_method("configurar_criatura"):
+		ai.configurar_criatura()
+
 	queue_redraw()
 
 
