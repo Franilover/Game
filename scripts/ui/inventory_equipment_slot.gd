@@ -63,8 +63,25 @@ func _gui_input(event: InputEvent) -> void:
 			objeto_desequipado.emit(self, anterior)
 
 func _es_compatible(objeto: Dictionary) -> bool:
+	var tipo: String = str(
+		objeto.get(
+			"tipo",
+			""
+		)
+	).strip_edges().to_lower()
+
+	if clave_equipo == "arma":
+		return tipo == "arma"
+
 	var tipo_variant: Variant = objeto.get("tipo_objeto", {})
 	if not tipo_variant is Dictionary:
 		return false
-	var tipo := tipo_variant as Dictionary
-	return str(tipo.get("clave", "")).strip_edges().to_lower() == clave_equipo
+
+	var tipo_objeto := tipo_variant as Dictionary
+
+	return str(
+		tipo_objeto.get(
+			"clave",
+			""
+		)
+	).strip_edges().to_lower() == clave_equipo
