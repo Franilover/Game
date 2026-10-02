@@ -1,14 +1,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Franilover/Game — Build & Release con Godot 4
+# Franilover/Game — Build & Release con Godot 4.7
+# project.godot: config/features=PackedStringArray("4.7", "GL Compatibility")
 #
-# Se activa con:
-#   git tag v0.1 && git push --tags
-# O manualmente desde Actions → "Run workflow"
-#
-# Produce en GitHub Releases:
-#   Garlia.exe        (Windows)
-#   Garlia.x86_64     (Linux)
-#   Garlia.apk        (Android — descomentar cuando tengas el preset)
+# Disparar:  git tag v0.X && git push --tags
+# O:         Actions → Run workflow
 # ─────────────────────────────────────────────────────────────────────────────
 name: Build & Release
 
@@ -19,17 +14,20 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Nombre del release (ej: v0.1-beta)"
+        description: "Nombre del release (ej: v0.5-beta)"
         required: false
         default: "dev-build"
 
+permissions:
+  contents: write
+
 env:
-  GODOT_VERSION: "4.3"
+  GODOT_VERSION: "4.7"
   GODOT_RELEASE: "stable"
 
 jobs:
   build:
-    name: Export Godot → GitHub Releases
+    name: Export Godot ${{ env.GODOT_VERSION }} → GitHub Releases
     runs-on: ubuntu-latest
 
     steps:
@@ -38,65 +36,58 @@ jobs:
         with:
           lfs: true
 
-      # ── Instalar Godot headless ──────────────────────────────────────────
-      - name: Instalar Godot ${{ env.GODOT_VERSION }}
+      # ── Godot headless ───────────────────────────────────────────────────
+      - name: Instalar Godot ${{ env.GODOT_VERSION }}-${{ env.GODOT_RELEASE }}
         run: |
           FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
-          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${FILENAME}.zip"
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${FILENAME}.zip"
+          echo "Descargando: $URL"
+          wget -q "$URL"
           unzip -q "${FILENAME}.zip"
           mv "${FILENAME}" /usr/local/bin/godot
           chmod +x /usr/local/bin/godot
+          godot --version
 
       # ── Export templates ─────────────────────────────────────────────────
-      - name: Instalar export templates
+      - name: Instalar export templates ${{ env.GODOT_VERSION }}
         run: |
           TPZ="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
-          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
-          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
+          echo "Descargando templates: $URL"
+          wget -q "$URL"
+          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          mkdir -p "$TEMPLATE_DIR"
           unzip -q "${TPZ}" -d /tmp/templates
-          mv /tmp/templates/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}/
+          mv /tmp/templates/templates/* "$TEMPLATE_DIR/"
+          echo "Templates instalados en: $TEMPLATE_DIR"
+          ls "$TEMPLATE_DIR/" | head -10
 
-      # ── Crear carpeta de salida ──────────────────────────────────────────
+      # ── Export ───────────────────────────────────────────────────────────
       - name: Preparar carpeta EXPORT
         run: mkdir -p EXPORT
 
-      # ── Export Windows ───────────────────────────────────────────────────
-      - name: Export Windows
+      - name: Export Windows Desktop
         run: |
           godot --headless --export-release "Windows Desktop" EXPORT/Garlia.exe 2>&1
-        continue-on-error: false
+          echo "Windows: $(ls -lh EXPORT/Garlia.exe 2>/dev/null || echo 'FALLIDO')"
 
-      # ── Export Linux ─────────────────────────────────────────────────────
       - name: Export Linux
         run: |
           godot --headless --export-release "Linux" EXPORT/Garlia.x86_64 2>&1
           chmod +x EXPORT/Garlia.x86_64
-        continue-on-error: false
+          echo "Linux: $(ls -lh EXPORT/Garlia.x86_64 2>/dev/null || echo 'FALLIDO')"
 
-      # ── Export Android (descomentar cuando tengas el preset) ─────────────
-      # Para activar:
-      #   1. Configura el preset "Android" en export_presets.cfg (desde Godot local)
-      #   2. Añade KEYSTORE_BASE64 y KEYSTORE_PASSWORD en Settings → Secrets
-      #   3. Descomenta el bloque de abajo
-      #
-      # - name: Configurar keystore Android
-      #   run: |
-      #     echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > /tmp/garlia.keystore
-      #
+      # Android — activar cuando configures el preset desde Godot local:
+      #   Proyecto → Exportar → Añadir → Android → guardar → commit export_presets.cfg
       # - name: Export Android
-      #   env:
-      #     GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /tmp/garlia.keystore
-      #     GODOT_ANDROID_KEYSTORE_DEBUG_USER: ${{ secrets.KEYSTORE_USER }}
-      #     GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       #   run: |
       #     godot --headless --export-release "Android" EXPORT/Garlia.apk 2>&1
 
-      # ── Listar lo que se exportó ─────────────────────────────────────────
       - name: Verificar exports
         run: ls -lh EXPORT/
 
-      # ── Publicar en GitHub Releases ──────────────────────────────────────
-      - name: Publicar Release
+      # ── Publicar Release ─────────────────────────────────────────────────
+      - name: Publicar en GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name || inputs.tag_name || 'dev-build' }}
@@ -104,7 +95,6 @@ jobs:
           body: |
             ## Garlia — ${{ github.ref_name || inputs.tag_name }}
 
-            ### Descargas
             | Plataforma | Archivo |
             |------------|---------|
             | 🪟 Windows | `Garlia.exe` |
@@ -114,8 +104,7 @@ jobs:
           files: |
             EXPORT/Garlia.exe
             EXPORT/Garlia.x86_64
-            # EXPORT/Garlia.apk
           make_latest: true
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
