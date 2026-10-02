@@ -1,53 +1,127 @@
 extends Control
 
 
-const MAIN_SCENE_PATH: String = "res://scenes/wold/main.tscn"
+const MAIN_SCENE_PATH: String = (
+	"res://scenes/wold/main.tscn"
+)
 
 
-@onready var start_button: Button = $Center/StartButton
-@onready var multiplayer_button: Button = $Center/MultiplayerButton
-@onready var exit_button: Button = $Center/ExitButton
+@onready var start_button: Button = (
+	$Center/StartButton
+)
 
-@onready var profile_button: Button = $ProfileButton
+@onready var multiplayer_button: Button = (
+	$Center/MultiplayerButton
+)
 
-@onready var login_overlay: ColorRect = $LoginOverlay
-@onready var email_input: LineEdit = $LoginOverlay/LoginPanel/Margin/Content/EmailInput
-@onready var password_input: LineEdit = $LoginOverlay/LoginPanel/Margin/Content/PasswordInput
-@onready var message_label: Label = $LoginOverlay/LoginPanel/Margin/Content/Message
+@onready var exit_button: Button = (
+	$Center/ExitButton
+)
 
-@onready var login_button: Button = $LoginOverlay/LoginPanel/Margin/Content/Buttons/LoginButton
-@onready var close_button: Button = $LoginOverlay/LoginPanel/Margin/Content/Buttons/CloseButton
+@onready var profile_button: Button = (
+	$ProfileButton
+)
 
-@onready var multiplayer_overlay: ColorRect = $MultiplayerOverlay
-@onready var host_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/HostButton
-@onready var local_ip_label: Label = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/LocalIPLabel
-@onready var ip_input: LineEdit = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/IPInput
-@onready var port_input: LineEdit = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/PortInput
-@onready var join_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/JoinButton
-@onready var multiplayer_status: Label = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/Status
-@onready var multiplayer_close_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/CloseButton
+@onready var login_overlay: ColorRect = (
+	$LoginOverlay
+)
+
+@onready var email_input: LineEdit = (
+	$LoginOverlay/LoginPanel/Margin/Content/EmailInput
+)
+
+@onready var password_input: LineEdit = (
+	$LoginOverlay/LoginPanel/Margin/Content/PasswordInput
+)
+
+@onready var message_label: Label = (
+	$LoginOverlay/LoginPanel/Margin/Content/Message
+)
+
+@onready var login_button: Button = (
+	$LoginOverlay/LoginPanel/Margin/Content/Buttons/LoginButton
+)
+
+@onready var close_button: Button = (
+	$LoginOverlay/LoginPanel/Margin/Content/Buttons/CloseButton
+)
+
+@onready var multiplayer_overlay: ColorRect = (
+	$MultiplayerOverlay
+)
+
+@onready var host_button: Button = (
+	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/HostButton
+)
+
+@onready var local_ip_label: Label = (
+	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/LocalIPLabel
+)
+
+@onready var ip_input: LineEdit = (
+	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/IPInput
+)
+
+@onready var port_input: LineEdit = (
+	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/PortInput
+)
+
+@onready var join_button: Button = (
+	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/JoinButton
+)
+
+@onready var multiplayer_status: Label = (
+	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/Status
+)
+
+@onready var multiplayer_close_button: Button = (
+	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/CloseButton
+)
 
 
 var _login_en_curso: bool = false
 var _codigo_sala_actual: String = ""
 
+var _mundo_preparado: bool = false
+var _cargando_mundo: bool = false
+
 
 func _ready() -> void:
-	# Menú principal.
-	start_button.pressed.connect(_iniciar_partida)
-	multiplayer_button.pressed.connect(_abrir_multijugador)
-	exit_button.pressed.connect(_salir)
+	start_button.pressed.connect(
+		_iniciar_partida
+	)
 
-	# Cuenta.
-	profile_button.pressed.connect(_abrir_login)
+	multiplayer_button.pressed.connect(
+		_abrir_multijugador
+	)
 
-	login_button.pressed.connect(_intentar_login)
-	close_button.pressed.connect(_cerrar_login)
+	exit_button.pressed.connect(
+		_salir
+	)
 
-	# Auth.
-	GarliaAuth.login_started.connect(_login_empezado)
-	GarliaAuth.login_succeeded.connect(_login_exitoso)
-	GarliaAuth.login_failed.connect(_login_fallido)
+	profile_button.pressed.connect(
+		_abrir_login
+	)
+
+	login_button.pressed.connect(
+		_intentar_login
+	)
+
+	close_button.pressed.connect(
+		_cerrar_login
+	)
+
+	GarliaAuth.login_started.connect(
+		_login_empezado
+	)
+
+	GarliaAuth.login_succeeded.connect(
+		_login_exitoso
+	)
+
+	GarliaAuth.login_failed.connect(
+		_login_fallido
+	)
 
 	GarliaAuth.session_restored.connect(
 		_sesion_restaurada
@@ -59,19 +133,6 @@ func _ready() -> void:
 
 	GarliaAuth.logged_out.connect(
 		_sesion_cerrada
-	)
-
-	# Multijugador.
-	host_button.pressed.connect(
-		_crear_partida
-	)
-
-	join_button.pressed.connect(
-		_unirse_partida
-	)
-
-	multiplayer_close_button.pressed.connect(
-		_cerrar_multijugador
 	)
 
 	GarliaMultiplayer.status_changed.connect(
@@ -98,44 +159,143 @@ func _ready() -> void:
 		_servidor_desconectado
 	)
 
-	# Salas (códigos de sala vía Supabase).
-	GarliaSalas.sala_creada.connect(_on_sala_creada)
-	GarliaSalas.sala_unida.connect(_on_sala_unida)
-	GarliaSalas.sala_no_encontrada.connect(_on_sala_no_encontrada)
-	GarliaSalas.sala_llena.connect(_on_sala_llena)
-	GarliaSalas.error_sala.connect(_on_error_sala)
+	GarliaSalas.sala_creada.connect(
+		_on_sala_creada
+	)
+
+	GarliaSalas.sala_unida.connect(
+		_on_sala_unida
+	)
+
+	GarliaSalas.sala_no_encontrada.connect(
+		_on_sala_no_encontrada
+	)
+
+	GarliaSalas.sala_llena.connect(
+		_on_sala_llena
+	)
+
+	GarliaSalas.error_sala.connect(
+		_on_error_sala
+	)
+
+	if not WorldData.mundo_listo.is_connected(
+		_al_mundo_listo
+	):
+		WorldData.mundo_listo.connect(
+			_al_mundo_listo
+		)
+
+	if not SupabaseClient.error_conexion.is_connected(
+		_al_error_mundo
+	):
+		SupabaseClient.error_conexion.connect(
+			_al_error_mundo
+		)
 
 	start_button.grab_focus()
 
-	# Actualizar todo según el estado real de la cuenta.
 	_actualizar_estado_cuenta()
 
-	# Si la sesión aún se está restaurando, esperar.
 	if GarliaAuth.esta_restaurando_sesion():
 		login_button.disabled = true
 		multiplayer_button.disabled = true
 
+	_actualizar_estado_mundo()
+
+
+func _actualizar_estado_mundo() -> void:
+	if WorldData.esta_cargado():
+		_al_mundo_listo()
+		return
+
+	_mundo_preparado = false
+	_cargando_mundo = true
+
+	start_button.disabled = true
+	start_button.text = "Preparando mundo..."
+
+	print(
+		"StartMenu: esperando datos del mundo."
+	)
+
+
+func _al_mundo_listo() -> void:
+	_mundo_preparado = true
+	_cargando_mundo = false
+
+	start_button.disabled = false
+	start_button.text = "Aventura"
+
+	print(
+		"StartMenu: mundo listo para Aventura."
+	)
+
+
+func _al_error_mundo(
+	mensaje: String
+) -> void:
+	_cargando_mundo = false
+
+	# Si WorldData alcanzó a cargarse desde cache,
+	# no mostramos error como si el juego estuviera roto.
+	if WorldData.esta_cargado():
+		_al_mundo_listo()
+		return
+
+	_mundo_preparado = false
+
+	start_button.disabled = false
+	start_button.text = "Reintentar"
+
+	print(
+		"StartMenu: no se pudo preparar "
+		+ "el mundo → ",
+		mensaje
+	)
+
 
 func _iniciar_partida() -> void:
-	print("StartMenu: Iniciar partida")
+	if _cargando_mundo:
+		return
+
+	if not WorldData.esta_cargado():
+		_cargando_mundo = true
+		start_button.disabled = true
+		start_button.text = "Preparando mundo..."
+
+		SupabaseClient.cargar_mundo_inicial()
+
+		return
+
+	print(
+		"StartMenu: Iniciar partida"
+	)
 
 	start_button.disabled = true
 
-	var error: Error = get_tree().change_scene_to_file(
-		MAIN_SCENE_PATH
+	var error: Error = (
+		get_tree().change_scene_to_file(
+			MAIN_SCENE_PATH
+		)
 	)
 
 	if error != OK:
 		push_error(
-			"StartMenu: no se pudo abrir la escena principal. Error: "
+			"StartMenu: no se pudo abrir "
+			+ "la escena principal. Error: "
 			+ str(error)
 		)
 
 		start_button.disabled = false
+		start_button.text = "Aventura"
 
 
 func _salir() -> void:
-	print("StartMenu: Salir")
+	print(
+		"StartMenu: Salir"
+	)
+
 	get_tree().quit()
 
 
@@ -158,7 +318,9 @@ func _cerrar_login() -> void:
 
 func _actualizar_panel_cuenta() -> void:
 	if GarliaAuth.esta_autenticado():
-		var username: String = GarliaAuth.obtener_username()
+		var username: String = (
+			GarliaAuth.obtener_username()
+		)
 
 		if username.is_empty():
 			username = "Explorador"
@@ -198,7 +360,10 @@ func _actualizar_panel_cuenta() -> void:
 			+ "!"
 		)
 
-		login_button.text = "Cerrar sesión"
+		login_button.text = (
+			"Cerrar sesión"
+		)
+
 		close_button.text = "Volver"
 
 		login_button.disabled = false
@@ -259,16 +424,27 @@ func _intentar_login() -> void:
 
 		return
 
-	var email: String = email_input.text.strip_edges()
-	var password: String = password_input.text
+	var email: String = (
+		email_input.text.strip_edges()
+	)
+
+	var password: String = (
+		password_input.text
+	)
 
 	if email.is_empty():
-		message_label.text = "Introduce tu correo."
+		message_label.text = (
+			"Introduce tu correo."
+		)
+
 		email_input.grab_focus()
 		return
 
 	if password.is_empty():
-		message_label.text = "Introduce tu contraseña."
+		message_label.text = (
+			"Introduce tu contraseña."
+		)
+
 		password_input.grab_focus()
 		return
 
@@ -321,7 +497,6 @@ func _login_exitoso(
 	_actualizar_estado_cuenta()
 	_actualizar_panel_cuenta()
 
-	# Cerramos el panel después del login.
 	login_overlay.visible = false
 
 
@@ -378,7 +553,6 @@ func _actualizar_estado_cuenta() -> void:
 		GarliaAuth.esta_autenticado()
 	)
 
-	# Perfil.
 	if autenticado:
 		_actualizar_perfil_button()
 
@@ -386,27 +560,31 @@ func _actualizar_estado_cuenta() -> void:
 			"Cuenta de "
 			+ GarliaAuth.obtener_username()
 		)
+
 	else:
 		profile_button.text = "P"
+
 		profile_button.tooltip_text = (
 			"Perfil / Iniciar sesión"
 		)
 
-	# Multijugador.
 	if GarliaAuth.esta_restaurando_sesion():
 		multiplayer_button.disabled = true
+
 		multiplayer_button.tooltip_text = (
 			"Comprobando sesión..."
 		)
 
 	elif autenticado:
 		multiplayer_button.disabled = false
+
 		multiplayer_button.tooltip_text = (
 			"Jugar con otros exploradores"
 		)
 
 	else:
 		multiplayer_button.disabled = true
+
 		multiplayer_button.tooltip_text = (
 			"Inicia sesión para usar el multijugador."
 		)
@@ -451,14 +629,16 @@ func _abrir_multijugador() -> void:
 
 	_mostrar_ips_locales()
 
-	ip_input.placeholder_text = "Código de sala (ej: LUNA-4821)"
+	ip_input.placeholder_text = (
+		"Código de sala (ej: LUNA-4821)"
+	)
+
 	port_input.visible = false
 
 	ip_input.grab_focus()
 
 
 func _cerrar_multijugador() -> void:
-	# Si el jugador era anfitrión, cierra la sala en Supabase.
 	if not GarliaSalas.obtener_codigo_activo().is_empty():
 		GarliaSalas.cerrar_sala()
 
@@ -491,7 +671,9 @@ func _crear_partida() -> void:
 
 		return
 
-	var ips: Array[String] = GarliaMultiplayer.obtener_ips_locales()
+	var ips: Array[String] = (
+		GarliaMultiplayer.obtener_ips_locales()
+	)
 
 	if ips.is_empty():
 		multiplayer_status.text = (
@@ -503,19 +685,26 @@ func _crear_partida() -> void:
 	host_button.disabled = true
 	join_button.disabled = true
 
-	multiplayer_status.text = "Creando partida..."
+	multiplayer_status.text = (
+		"Creando partida..."
+	)
 
-	# Primero levanta el servidor ENet.
-	var creada: bool = GarliaMultiplayer.crear_partida()
+	var creada: bool = (
+		GarliaMultiplayer.crear_partida()
+	)
 
 	if not creada:
 		host_button.disabled = false
 		join_button.disabled = false
 		return
 
-	# Luego publica el código en Supabase.
-	multiplayer_status.text = "Publicando sala..."
-	await GarliaSalas.publicar_sala(ips[0])
+	multiplayer_status.text = (
+		"Publicando sala..."
+	)
+
+	await GarliaSalas.publicar_sala(
+		ips[0]
+	)
 
 
 func _unirse_partida() -> void:
@@ -526,23 +715,31 @@ func _unirse_partida() -> void:
 
 		return
 
-	var codigo: String = ip_input.text.strip_edges().to_upper()
+	var codigo: String = (
+		ip_input.text.strip_edges().to_upper()
+	)
 
 	if codigo.is_empty():
-		multiplayer_status.text = "Escribe el código de la sala."
+		multiplayer_status.text = (
+			"Escribe el código de la sala."
+		)
+
 		ip_input.grab_focus()
 		return
 
 	host_button.disabled = true
 	join_button.disabled = true
 
-	multiplayer_status.text = "Buscando sala..."
+	multiplayer_status.text = (
+		"Buscando sala..."
+	)
 
-	await GarliaSalas.buscar_sala(codigo)
+	await GarliaSalas.buscar_sala(
+		codigo
+	)
 
 
 func _partida_creada() -> void:
-	# Ahora la sala se muestra en _on_sala_creada cuando Supabase confirma.
 	_mostrar_ips_locales()
 
 	print(
@@ -550,26 +747,42 @@ func _partida_creada() -> void:
 	)
 
 
-# ---- Señales de GarliaSalas ----
-
-func _on_sala_creada(codigo: String) -> void:
+func _on_sala_creada(
+	codigo: String
+) -> void:
 	_codigo_sala_actual = codigo
 
 	host_button.disabled = false
 	join_button.disabled = false
 
 	multiplayer_status.text = (
-		"Sala creada. Comparte el código: " + codigo
+		"Sala creada. Comparte el código: "
+		+ codigo
 	)
 
-	local_ip_label.text = "Código de sala: " + codigo
+	local_ip_label.text = (
+		"Código de sala: "
+		+ codigo
+	)
 
-	print("StartMenu: sala publicada con código ", codigo)
+	print(
+		"StartMenu: sala publicada con código ",
+		codigo
+	)
 
 
-func _on_sala_unida(ip: String, puerto: int) -> void:
-	multiplayer_status.text = "Sala encontrada. Conectando..."
-	GarliaMultiplayer.unirse_partida(ip, puerto)
+func _on_sala_unida(
+	ip: String,
+	puerto: int
+) -> void:
+	multiplayer_status.text = (
+		"Sala encontrada. Conectando..."
+	)
+
+	GarliaMultiplayer.unirse_partida(
+		ip,
+		puerto
+	)
 
 
 func _on_sala_no_encontrada() -> void:
@@ -585,10 +798,14 @@ func _on_sala_llena() -> void:
 	host_button.disabled = false
 	join_button.disabled = false
 
-	multiplayer_status.text = "La sala está llena."
+	multiplayer_status.text = (
+		"La sala está llena."
+	)
 
 
-func _on_error_sala(mensaje: String) -> void:
+func _on_error_sala(
+	mensaje: String
+) -> void:
 	host_button.disabled = false
 	join_button.disabled = false
 
@@ -631,7 +848,6 @@ func _servidor_desconectado() -> void:
 		"El anfitrión cerró la partida."
 	)
 
-	# Cierra la sala si este jugador era el host.
 	if not GarliaSalas.obtener_codigo_activo().is_empty():
 		GarliaSalas.cerrar_sala()
 

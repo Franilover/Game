@@ -1,12 +1,18 @@
 extends Node
 
-const WORLD_ITEM_SCRIPT: Script = preload("res://scripts/world/world_item.gd")
+
+const WORLD_ITEM_SCRIPT: Script = preload(
+	"res://scripts/world/world_item.gd"
+)
+
 const MAX_OBJECTOS_EN_MUNDO: int = 3
+
 
 signal catalogo_cargado(items: Array)
 signal carga_fallida(mensaje: String)
 signal objeto_recogido(datos: Dictionary)
 signal drops_generados(drops: Array)
+
 
 var _request: HTTPRequest
 var _request_drops: HTTPRequest
@@ -18,28 +24,43 @@ var catalogo: Array[Dictionary] = []
 
 var _escena_actual: Node = null
 var _objetos_generados_en_escena: bool = false
+
 var _posicion_drops_pendiente: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
 	_request = HTTPRequest.new()
 	add_child(_request)
-	_request.request_completed.connect(_al_recibir_catalogo)
+
+	_request.request_completed.connect(
+		_al_recibir_catalogo
+	)
 
 	_request_drops = HTTPRequest.new()
 	add_child(_request_drops)
-	_request_drops.request_completed.connect(_al_recibir_drops)
+
+	_request_drops.request_completed.connect(
+		_al_recibir_drops
+	)
 
 	if GarliaAuth.has_signal("login_succeeded"):
-		GarliaAuth.login_succeeded.connect(_al_autenticarse)
+		GarliaAuth.login_succeeded.connect(
+			_al_autenticarse
+		)
 
 	if GarliaAuth.has_signal("session_restored"):
-		GarliaAuth.session_restored.connect(_al_autenticarse)
+		GarliaAuth.session_restored.connect(
+			_al_autenticarse
+		)
 
 	if GarliaAuth.has_signal("logged_out"):
-		GarliaAuth.logged_out.connect(_al_cerrar_sesion)
+		GarliaAuth.logged_out.connect(
+			_al_cerrar_sesion
+		)
 
-	call_deferred("_inicializar")
+	call_deferred(
+		"_inicializar"
+	)
 
 
 func _process(_delta: float) -> void:
@@ -55,12 +76,16 @@ func _process(_delta: float) -> void:
 	if _objetos_generados_en_escena:
 		return
 
-	var jugador := get_tree().get_first_node_in_group("player")
+	var jugador := get_tree().get_first_node_in_group(
+		"player"
+	)
 
 	if not jugador is Node2D:
 		return
 
-	_generar_objetos_en_mundo(jugador as Node2D)
+	_generar_objetos_en_mundo(
+		jugador as Node2D
+	)
 
 
 func _inicializar() -> void:
@@ -70,13 +95,17 @@ func _inicializar() -> void:
 	cargar_catalogo()
 
 
-func _al_autenticarse(_perfil: Dictionary = {}) -> void:
+func _al_autenticarse(
+	_perfil: Dictionary = {}
+) -> void:
 	cargar_catalogo()
 
 
 func _al_cerrar_sesion() -> void:
 	catalogo.clear()
+
 	_eliminar_objetos_del_mundo()
+
 	_objetos_generados_en_escena = false
 
 
@@ -108,14 +137,18 @@ func cargar_catalogo() -> void:
 	var headers := PackedStringArray()
 
 	headers.append(
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY
+		"apikey: "
+		+ GarliaAuth.SUPABASE_PUBLISHABLE_KEY
 	)
 
 	headers.append(
-		"Authorization: Bearer " + GarliaAuth.access_token
+		"Authorization: Bearer "
+		+ GarliaAuth.access_token
 	)
 
-	headers.append("Accept: application/json")
+	headers.append(
+		"Accept: application/json"
+	)
 
 	var resultado := _request.request(
 		url,
@@ -131,8 +164,14 @@ func cargar_catalogo() -> void:
 			+ str(resultado)
 		)
 
-		print("GarliaWorldItems: ", mensaje)
-		carga_fallida.emit(mensaje)
+		print(
+			"GarliaWorldItems: ",
+			mensaje
+		)
+
+		carga_fallida.emit(
+			mensaje
+		)
 
 
 func _al_recibir_catalogo(
@@ -149,8 +188,15 @@ func _al_recibir_catalogo(
 			+ str(resultado)
 		)
 
-		print("GarliaWorldItems: ", mensaje)
-		carga_fallida.emit(mensaje)
+		print(
+			"GarliaWorldItems: ",
+			mensaje
+		)
+
+		carga_fallida.emit(
+			mensaje
+		)
+
 		return
 
 	if response_code < 200 or response_code >= 300:
@@ -159,18 +205,37 @@ func _al_recibir_catalogo(
 			+ str(response_code)
 		)
 
-		print("GarliaWorldItems: ", mensaje)
-		carga_fallida.emit(mensaje)
+		print(
+			"GarliaWorldItems: ",
+			mensaje
+		)
+
+		carga_fallida.emit(
+			mensaje
+		)
+
 		return
 
 	var texto := body.get_string_from_utf8()
-	var datos = JSON.parse_string(texto)
+
+	var datos = JSON.parse_string(
+		texto
+	)
 
 	if not datos is Array:
-		var mensaje := "Supabase devolvió una respuesta inválida."
+		var mensaje := (
+			"Supabase devolvió una respuesta inválida."
+		)
 
-		print("GarliaWorldItems: ", mensaje)
-		carga_fallida.emit(mensaje)
+		print(
+			"GarliaWorldItems: ",
+			mensaje
+		)
+
+		carga_fallida.emit(
+			mensaje
+		)
+
 		return
 
 	catalogo.clear()
@@ -181,9 +246,11 @@ func _al_recibir_catalogo(
 
 		var fila_game := fila as Dictionary
 
-		var item_variant: Variant = fila_game.get(
-			"item",
-			null
+		var item_variant: Variant = (
+			fila_game.get(
+				"item",
+				null
+			)
 		)
 
 		if not item_variant is Dictionary:
@@ -196,7 +263,10 @@ func _al_recibir_catalogo(
 		item["item_id"] = str(
 			fila_game.get(
 				"item_id",
-				item.get("id", "")
+				item.get(
+					"id",
+					""
+				)
 			)
 		)
 
@@ -217,9 +287,11 @@ func _al_recibir_catalogo(
 			)
 		)
 
-		var propiedades: Variant = fila_game.get(
-			"propiedades",
-			{}
+		var propiedades: Variant = (
+			fila_game.get(
+				"propiedades",
+				{}
+			)
 		)
 
 		if propiedades is Dictionary:
@@ -229,7 +301,9 @@ func _al_recibir_catalogo(
 		else:
 			item["propiedades_game"] = {}
 
-		catalogo.append(item)
+		catalogo.append(
+			item
+		)
 
 	print(
 		"GarliaWorldItems: catálogo cargado → ",
@@ -253,48 +327,60 @@ func generar_drops_criatura(
 		print(
 			"GarliaWorldItems: ya hay una consulta de drops en curso."
 		)
+
 		return
 
 	if not GarliaAuth.esta_autenticado():
 		print(
 			"GarliaWorldItems: no autenticado."
 		)
+
 		return
 
 	if GarliaAuth.access_token.is_empty():
 		return
 
 	_cargando_drops = true
+
 	_posicion_drops_pendiente = posicion
 
 	var url := (
 		str(GarliaAuth.SUPABASE_URL)
 		+ "/rest/v1/criatura_drops"
 		+ "?select="
-		+ "item_id,cantidad_min,cantidad_max,probabilidad,"
-		+ "item:items_game!inner("
-		+ "item_id,tipo,max_stack,propiedades,"
+		+ "item_id,probabilidad,"
 		+ "item:items!inner("
 		+ "id,nombre,descripcion,origen,"
 		+ "propiedades_fisicas,estado_fisico,"
-		+ "geometria_fisica,material_id,creador_id"
+		+ "geometria_fisica,material_id,creador_id,"
+		+ "items_game!inner("
+		+ "item_id,tipo,max_stack,propiedades"
 		+ ")"
 		+ ")"
 		+ "&criatura_id=eq."
 		+ criatura_id
 	)
 
+	print(
+		"GarliaWorldItems: consultando drops de criatura → ",
+		criatura_id
+	)
+
 	var headers := PackedStringArray()
 
 	headers.append(
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY
+		"apikey: "
+		+ GarliaAuth.SUPABASE_PUBLISHABLE_KEY
 	)
 
 	headers.append(
-		"Authorization: Bearer " + GarliaAuth.access_token
+		"Authorization: Bearer "
+		+ GarliaAuth.access_token
 	)
 
-	headers.append("Accept: application/json")
+	headers.append(
+		"Accept: application/json"
+	)
 
 	var resultado := _request_drops.request(
 		url,
@@ -324,23 +410,31 @@ func _al_recibir_drops(
 			"GarliaWorldItems: falló consulta de drops → ",
 			resultado
 		)
+
 		return
+
+	var texto := body.get_string_from_utf8()
 
 	if response_code < 200 or response_code >= 300:
 		print(
 			"GarliaWorldItems: HTTP ",
 			response_code,
-			" al consultar drops."
+			" al consultar drops → ",
+			texto
 		)
+
 		return
 
-	var texto := body.get_string_from_utf8()
-	var datos = JSON.parse_string(texto)
+	var datos = JSON.parse_string(
+		texto
+	)
 
 	if not datos is Array:
 		print(
-			"GarliaWorldItems: respuesta de drops inválida."
+			"GarliaWorldItems: respuesta de drops inválida → ",
+			texto
 		)
+
 		return
 
 	var resultado_drops: Array = []
@@ -362,27 +456,16 @@ func _al_recibir_drops(
 			100.0
 		)
 
-		if randf_range(
-			0.0,
-			100.0
-		) > probabilidad:
+		var tirada := randf() * 100.0
+
+		if tirada >= probabilidad:
 			continue
 
-		var item_game_variant: Variant = drop.get(
-			"item",
-			null
-		)
-
-		if not item_game_variant is Dictionary:
-			continue
-
-		var item_game := (
-			item_game_variant as Dictionary
-		)
-
-		var item_variant: Variant = item_game.get(
-			"item",
-			null
+		var item_variant: Variant = (
+			drop.get(
+				"item",
+				null
+			)
 		)
 
 		if not item_variant is Dictionary:
@@ -392,15 +475,48 @@ func _al_recibir_drops(
 			item_variant as Dictionary
 		).duplicate(true)
 
+		var item_game_variant: Variant = (
+			item.get(
+				"items_game",
+				null
+			)
+		)
+
+		var item_game: Dictionary = {}
+
+		if item_game_variant is Dictionary:
+			item_game = (
+				item_game_variant as Dictionary
+			)
+
+		elif item_game_variant is Array:
+			var items_game := (
+				item_game_variant as Array
+			)
+
+			if items_game.is_empty():
+				continue
+
+			var primero: Variant = (
+				items_game[0]
+			)
+
+			if not primero is Dictionary:
+				continue
+
+			item_game = (
+				primero as Dictionary
+			)
+
+		else:
+			continue
+
 		item["item_id"] = str(
 			drop.get(
 				"item_id",
-				item_game.get(
-					"item_id",
-					item.get(
-						"id",
-						""
-					)
+				item.get(
+					"id",
+					""
 				)
 			)
 		)
@@ -422,9 +538,11 @@ func _al_recibir_drops(
 			)
 		)
 
-		var propiedades: Variant = item_game.get(
-			"propiedades",
-			{}
+		var propiedades: Variant = (
+			item_game.get(
+				"propiedades",
+				{}
+			)
 		)
 
 		if propiedades is Dictionary:
@@ -434,37 +552,36 @@ func _al_recibir_drops(
 		else:
 			item["propiedades_game"] = {}
 
-		var cantidad_min := maxi(
-			1,
-			int(
-				drop.get(
-					"cantidad_min",
-					1
-				)
-			)
+		# criatura_drops actualmente no define
+		# cantidad mínima/máxima.
+		# Cada registro de drop representa
+		# una unidad del objeto.
+		item["cantidad"] = 1
+
+		resultado_drops.append(
+			item
 		)
 
-		var cantidad_max := maxi(
-			cantidad_min,
-			int(
-				drop.get(
-					"cantidad_max",
-					cantidad_min
+		print(
+			"GarliaWorldItems: drop obtenido → ",
+			str(
+				item.get(
+					"nombre",
+					"Objeto"
 				)
-			)
-		)
-
-		item["cantidad"] = mini(
-			randi_range(
-				cantidad_min,
-				cantidad_max
 			),
-			int(
-				item["max_stack"]
-			)
+			" | ",
+			str(
+				item.get(
+					"tipo",
+					""
+				)
+			),
+			" | probabilidad=",
+			probabilidad,
+			" | tirada=",
+			tirada
 		)
-
-		resultado_drops.append(item)
 
 	print(
 		"GarliaWorldItems: drops generados → ",
@@ -489,6 +606,10 @@ func _generar_world_item(
 	var escena := get_tree().current_scene
 
 	if not is_instance_valid(escena):
+		print(
+			"GarliaWorldItems: no existe escena actual para crear WorldItem."
+		)
+
 		return
 
 	var objeto := Node2D.new()
@@ -497,7 +618,9 @@ func _generar_world_item(
 		WORLD_ITEM_SCRIPT
 	)
 
-	escena.add_child(objeto)
+	escena.add_child(
+		objeto
+	)
 
 	objeto.global_position = (
 		posicion
@@ -518,6 +641,18 @@ func _generar_world_item(
 		datos.duplicate(true)
 	)
 
+	print(
+		"GarliaWorldItems: WorldItem creado → ",
+		str(
+			datos.get(
+				"nombre",
+				"Objeto"
+			)
+		),
+		" en ",
+		objeto.global_position
+	)
+
 
 func _generar_objetos_en_mundo(
 	jugador: Node2D
@@ -533,9 +668,12 @@ func _generar_objetos_en_mundo(
 	_eliminar_objetos_del_mundo()
 
 	var contenedor := Node2D.new()
+
 	contenedor.name = "WorldItems"
 
-	escena.add_child(contenedor)
+	escena.add_child(
+		contenedor
+	)
 
 	var cantidad := mini(
 		MAX_OBJECTOS_EN_MUNDO,
@@ -549,7 +687,9 @@ func _generar_objetos_en_mundo(
 	]
 
 	for i in range(cantidad):
-		var datos := catalogo[i].duplicate(true)
+		var datos := (
+			catalogo[i].duplicate(true)
+		)
 
 		var objeto := Node2D.new()
 
@@ -557,7 +697,9 @@ func _generar_objetos_en_mundo(
 			WORLD_ITEM_SCRIPT
 		)
 
-		contenedor.add_child(objeto)
+		contenedor.add_child(
+			objeto
+		)
 
 		objeto.global_position = (
 			jugador.global_position
@@ -588,6 +730,7 @@ func intentar_recoger() -> void:
 		print(
 			"GarliaWorldItems: no se encontró el inventario."
 		)
+
 		return
 
 	var jugador_2d := jugador as Node2D

@@ -14,6 +14,8 @@ var datos: Dictionary = {}
 
 
 func _ready() -> void:
+	icon_texture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
 	pressed.connect(
 		_al_pulsar
 	)
@@ -53,20 +55,29 @@ func actualizar() -> void:
 
 	if datos.is_empty():
 		icon_texture.texture = null
+		icon_texture.visible = false
+
 		icon_placeholder.visible = true
+
 		quantity_label.text = ""
+
 		return
 
-	var textura: Variant = datos.get(
-		"icono",
-		null
+	var textura: Texture2D = (
+		ItemIconResolver.obtener_icono(
+			datos
+		)
 	)
 
-	if textura is Texture2D:
+	if textura != null:
 		icon_texture.texture = textura
+		icon_texture.visible = true
+
 		icon_placeholder.visible = false
 	else:
 		icon_texture.texture = null
+		icon_texture.visible = false
+
 		icon_placeholder.visible = true
 
 	var cantidad: int = int(
@@ -77,7 +88,9 @@ func actualizar() -> void:
 	)
 
 	if cantidad > 1:
-		quantity_label.text = str(cantidad)
+		quantity_label.text = str(
+			cantidad
+		)
 	else:
 		quantity_label.text = ""
 
@@ -88,16 +101,24 @@ func _al_pulsar() -> void:
 	)
 
 
-func _al_input_gui(event: InputEvent) -> void:
+func _al_input_gui(
+	event: InputEvent
+) -> void:
 	if datos.is_empty():
 		return
 
 	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
+		var mouse_event := (
+			event as InputEventMouseButton
+		)
 
 		if (
 			mouse_event.pressed
-			and mouse_event.button_index == MOUSE_BUTTON_RIGHT
+			and mouse_event.button_index
+			== MOUSE_BUTTON_RIGHT
 		):
-			equipar_solicitado.emit(self)
+			equipar_solicitado.emit(
+				self
+			)
+
 			accept_event()

@@ -1,44 +1,100 @@
-
 extends Node
+
 
 signal mundo_cargado(datos: Dictionary)
 signal error_conexion(mensaje: String)
 
-const SUPABASE_URL := "https://ftdxthnizdosaaavjhah.supabase.co"
-const RPC_MUNDO := "/rest/v1/rpc/get_mundo_inicial"
 
-# Reemplaza esto por tu clave pública de Supabase.
-# Nunca uses la service_role ni una clave secreta aquí.
-const SUPABASE_KEY := "sb_publishable_dZowBcHCW7PJ5tV8aDnAPQ_1URMyPbV"
+const SUPABASE_URL := (
+	"https://ftdxthnizdosaaavjhah.supabase.co"
+)
+
+const RPC_MUNDO := (
+	"/rest/v1/rpc/get_mundo_inicial"
+)
+
+const SUPABASE_KEY := (
+	"sb_publishable_dZowBcHCW7PJ5tV8aDnAPQ_1URMyPbV"
+)
+
+const HTTP_TIMEOUT: float = 15.0
+const MAX_INTENTOS_INICIALES: int = 3
+const RETRASO_REINTENTO: float = 1.5
+const INTERVALO_SINCRONIZACION: float = 60.0
+
 
 var _http: HTTPRequest
-var _solicitud_en_curso := false
+var _timer: Timer
+var _solicitud_en_curso: bool = false
+var _intento_actual: int = 0
+var _sincronizacion_inicial_realizada: bool = false
 
 
 func _ready() -> void:
 	_http = HTTPRequest.new()
-	_http.timeout = 30.0
-	add_child(_http)
-	_http.request_completed.connect(_al_completar_solicitud)
+	_http.timeout = HTTP_TIMEOUT
 
-	_test_conexion()
+	add_child(_http)
+
+	_http.request_completed.connect(
+		_al_completar_solicitud
+	)
+
+	_timer = Timer.new()
+	_timer.wait_time = INTERVALO_SINCRONIZACION
+	_timer.one_shot = true
+	add_child(_timer)
+
+	_timer.timeout.connect(
+		_al_timer_sincronizacion
+	)
+
+
+func iniciar_sincronizacion() -> void:
+	if _solicitud_en_curso:
+		return
+
+	_intento_actual = 0
+	_solicitar_mundo()
+
 
 func cargar_mundo_inicial() -> void:
+	iniciar_sincronizacion()
+
+
+func solicitar_actualizacion() -> void:
 	if _solicitud_en_curso:
-		push_warning("Ya hay una solicitud en curso.")
+		return
+
+	_intento_actual = 0
+	_solicitar_mundo()
+
+
+func _solicitar_mundo() -> void:
+	if _solicitud_en_curso:
 		return
 
 	if SUPABASE_KEY == "PEGA_AQUI_TU_CLAVE_PUBLICA":
-		error_conexion.emit("Falta configurar la clave pública de Supabase.")
+		error_conexion.emit(
+			"Falta configurar la clave pública de Supabase."
+		)
+
+		_programar_siguiente_sincronizacion()
 		return
+
+	if _intento_actual >= MAX_INTENTOS_INICIALES:
+		_solicitud_en_curso = false
+		_programar_siguiente_sincronizacion()
+		return
+
+	_intento_actual += 1
+	_solicitud_en_curso = true
 
 	var headers := PackedStringArray([
 		"apikey: " + SUPABASE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
-
-	_solicitud_en_curso = true
 
 	var resultado := _http.request(
 		SUPABASE_URL + RPC_MUNDO,
@@ -49,7 +105,10 @@ func cargar_mundo_inicial() -> void:
 
 	if resultado != OK:
 		_solicitud_en_curso = false
-		error_conexion.emit("No se pudo iniciar la solicitud HTTP: %s" % resultado)
+		_manejar_error(
+			"No se pudo iniciar la solicitud HTTP: "
+			+ str(resultado)
+		)
 
 
 func _al_completar_solicitud(
@@ -61,41 +120,116 @@ func _al_completar_solicitud(
 	_solicitud_en_curso = false
 
 	if resultado != HTTPRequest.RESULT_SUCCESS:
-		error_conexion.emit("Error de red: %s" % resultado)
+		_manejar_error(
+			"Error de red: "
+			+ str(resultado)
+		)
 		return
 
 	var texto := cuerpo.get_string_from_utf8()
 
 	if codigo_http < 200 or codigo_http >= 300:
-		error_conexion.emit("HTTP %s: %s" % [codigo_http, texto])
+		_manejar_error(
+			"HTTP "
+			+ str(codigo_http)
+			+ ": "
+			+ texto
+		)
 		return
 
 	var json := JSON.new()
 	var error_parseo := json.parse(texto)
 
 	if error_parseo != OK:
-		error_conexion.emit("La respuesta no es JSON válido.")
+		_manejar_error(
+			"La respuesta no es JSON válido."
+		)
 		return
 
 	if not json.data is Dictionary:
-		error_conexion.emit("La respuesta del mundo no es un objeto JSON.")
+		_manejar_error(
+			"La respuesta del mundo no es un objeto JSON."
+		)
 		return
 
 	var datos: Dictionary = json.data
 
-	if not datos.has("biomas") or not datos["biomas"] is Array:
-		error_conexion.emit("La respuesta no contiene una lista de biomas.")
+	if not _mundo_valido(datos):
+		_manejar_error(
+			"La respuesta no contiene los datos "
+			+ "necesarios del mundo."
+		)
 		return
 
-	print("Supabase conectado correctamente.")
-	print("Biomas recibidos: ", datos["biomas"].size())
+	_sincronizacion_inicial_realizada = true
+
 	print(
-		"Ecosistemas sin bioma: ",
-		datos.get("ecosistemas_sin_bioma", []).size()
+		"SupabaseClient: mundo remoto recibido. "
+		+ "Biomas = "
+		+ str(datos["biomas"].size())
 	)
 
-	mundo_cargado.emit(datos)
+	mundo_cargado.emit(
+		datos
+	)
 
-func _test_conexion() -> void:
-	cargar_mundo_inicial()
-	
+	_programar_siguiente_sincronizacion()
+
+
+func _mundo_valido(
+	datos: Dictionary
+) -> bool:
+	if not datos.has("biomas"):
+		return false
+
+	if not datos["biomas"] is Array:
+		return false
+
+	return true
+
+
+func _manejar_error(
+	mensaje: String
+) -> void:
+	print(
+		"SupabaseClient: ",
+		mensaje
+	)
+
+	if _intento_actual < MAX_INTENTOS_INICIALES:
+		await get_tree().create_timer(
+			RETRASO_REINTENTO
+		).timeout
+
+		if not is_inside_tree():
+			return
+
+		_solicitar_mundo()
+		return
+
+	error_conexion.emit(
+		mensaje
+	)
+
+	_programar_siguiente_sincronizacion()
+
+
+func _programar_siguiente_sincronizacion() -> void:
+	if _timer == null:
+		return
+
+	if not is_inside_tree():
+		return
+
+	_timer.start(
+		INTERVALO_SINCRONIZACION
+	)
+
+
+func _al_timer_sincronizacion() -> void:
+	if _solicitud_en_curso:
+		_programar_siguiente_sincronizacion()
+		return
+
+	_intento_actual = 0
+	_solicitar_mundo()

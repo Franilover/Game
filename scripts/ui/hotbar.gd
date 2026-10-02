@@ -1,7 +1,8 @@
 extends Control
 
+
 const SLOT_COUNT: int = 8
-const ICON_SIZE: int = 30
+
 
 var indice_seleccionado: int = 0
 var inventory: Node = null
@@ -9,20 +10,25 @@ var inventory: Node = null
 var slots_container: HBoxContainer = null
 var slot_nodes: Array[Button] = []
 
-var _icon_cache: Dictionary = {}
 var _inventario_conectado: bool = false
 
 
 func _ready() -> void:
-	var marco_fijo := get_node_or_null("Selection")
+	var marco_fijo := get_node_or_null(
+		"Selection"
+	)
 
 	if marco_fijo is Control:
 		(marco_fijo as Control).visible = false
 
-	slots_container = _buscar_hbox("Slots")
+	slots_container = _buscar_hbox(
+		"Slots"
+	)
 
 	if slots_container == null:
-		print("Hotbar: ERROR - no se encontró el nodo Slots.")
+		print(
+			"Hotbar: ERROR - no se encontró el nodo Slots."
+		)
 		return
 
 	_buscar_inventario()
@@ -32,7 +38,9 @@ func _ready() -> void:
 	_actualizar()
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _unhandled_input(
+	event: InputEvent
+) -> void:
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
 
@@ -42,30 +50,46 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if key_event.keycode >= KEY_1 and key_event.keycode <= KEY_8:
+		if (
+			key_event.keycode >= KEY_1
+			and key_event.keycode <= KEY_8
+		):
 			seleccionar_hotbar(
 				key_event.keycode - KEY_1
 			)
 
 			get_viewport().set_input_as_handled()
+
 			return
 
 	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
+		var mouse_event := (
+			event as InputEventMouseButton
+		)
 
 		if not mouse_event.pressed:
 			return
 
-		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+		if (
+			mouse_event.button_index
+			== MOUSE_BUTTON_WHEEL_UP
+		):
 			_mover_seleccion(-1)
+
 			get_viewport().set_input_as_handled()
 
-		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		elif (
+			mouse_event.button_index
+			== MOUSE_BUTTON_WHEEL_DOWN
+		):
 			_mover_seleccion(1)
+
 			get_viewport().set_input_as_handled()
 
 
-func _buscar_hbox(nombre: String) -> HBoxContainer:
+func _buscar_hbox(
+	nombre: String
+) -> HBoxContainer:
 	var nodo := find_child(
 		nombre,
 		true,
@@ -78,8 +102,13 @@ func _buscar_hbox(nombre: String) -> HBoxContainer:
 	return null
 
 
-func _process(_delta: float) -> void:
-	if inventory == null or not is_instance_valid(inventory):
+func _process(
+	_delta: float
+) -> void:
+	if (
+		inventory == null
+		or not is_instance_valid(inventory)
+	):
 		_buscar_inventario()
 
 		if inventory != null:
@@ -87,7 +116,9 @@ func _process(_delta: float) -> void:
 
 
 func _buscar_inventario() -> void:
-	inventory = get_tree().get_first_node_in_group("inventory")
+	inventory = get_tree().get_first_node_in_group(
+		"inventory"
+	)
 
 	if inventory == null:
 		_inventario_conectado = false
@@ -96,7 +127,9 @@ func _buscar_inventario() -> void:
 	if _inventario_conectado:
 		return
 
-	if inventory.has_signal("inventory_changed"):
+	if inventory.has_signal(
+		"inventory_changed"
+	):
 		if not inventory.is_connected(
 			"inventory_changed",
 			_actualizar
@@ -106,7 +139,9 @@ func _buscar_inventario() -> void:
 				_actualizar
 			)
 
-	if inventory.has_signal("active_item_changed"):
+	if inventory.has_signal(
+		"active_item_changed"
+	):
 		if not inventory.is_connected(
 			"active_item_changed",
 			_al_objeto_activo_cambiado
@@ -129,7 +164,9 @@ func _obtener_slots() -> void:
 		if child is Button:
 			var slot := child as Button
 
-			slot_nodes.append(slot)
+			slot_nodes.append(
+				slot
+			)
 
 			if not slot.pressed.is_connected(
 				_al_pulsar_slot
@@ -164,29 +201,53 @@ func _preparar_slots() -> void:
 		_configurar_estilo_seleccionado(slot)
 
 
-func _al_pulsar_slot(slot: Button) -> void:
-	var indice := slot_nodes.find(slot)
+func _al_pulsar_slot(
+	slot: Button
+) -> void:
+	var indice := slot_nodes.find(
+		slot
+	)
 
 	if indice < 0:
 		return
 
-	seleccionar_hotbar(indice)
+	seleccionar_hotbar(
+		indice
+	)
 
 
-func _crear_icono(slot: Button) -> TextureRect:
+func _crear_icono(
+	slot: Button
+) -> TextureRect:
 	var icon := slot.get_node_or_null(
 		"ItemIcon"
 	) as TextureRect
 
 	if icon != null:
+		icon.texture_filter = (
+			CanvasItem.TEXTURE_FILTER_NEAREST
+		)
+
 		return icon
 
 	icon = TextureRect.new()
 	icon.name = "ItemIcon"
 
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = (
+		Control.MOUSE_FILTER_IGNORE
+	)
+
+	icon.expand_mode = (
+		TextureRect.EXPAND_IGNORE_SIZE
+	)
+
+	icon.stretch_mode = (
+		TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	)
+
+	icon.texture_filter = (
+		CanvasItem.TEXTURE_FILTER_NEAREST
+	)
 
 	slot.add_child(icon)
 
@@ -199,7 +260,9 @@ func _crear_icono(slot: Button) -> TextureRect:
 	return icon
 
 
-func _crear_placeholder(slot: Button) -> Panel:
+func _crear_placeholder(
+	slot: Button
+) -> Panel:
 	var placeholder := slot.get_node_or_null(
 		"ItemPlaceholder"
 	) as Panel
@@ -210,7 +273,10 @@ func _crear_placeholder(slot: Button) -> Panel:
 	placeholder = Panel.new()
 	placeholder.name = "ItemPlaceholder"
 
-	placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	placeholder.mouse_filter = (
+		Control.MOUSE_FILTER_IGNORE
+	)
+
 	placeholder.z_index = -1
 
 	slot.add_child(placeholder)
@@ -250,7 +316,9 @@ func _crear_placeholder(slot: Button) -> Panel:
 	return placeholder
 
 
-func _crear_cantidad(slot: Button) -> Label:
+func _crear_cantidad(
+	slot: Button
+) -> Label:
 	var label := slot.get_node_or_null(
 		"ItemQuantity"
 	) as Label
@@ -261,7 +329,9 @@ func _crear_cantidad(slot: Button) -> Label:
 	label = Label.new()
 	label.name = "ItemQuantity"
 
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.mouse_filter = (
+		Control.MOUSE_FILTER_IGNORE
+	)
 
 	label.add_theme_font_size_override(
 		"font_size",
@@ -321,7 +391,9 @@ func _crear_cantidad(slot: Button) -> Label:
 	return label
 
 
-func _crear_numero(slot: Button) -> Label:
+func _crear_numero(
+	slot: Button
+) -> Label:
 	var label := slot.get_node_or_null(
 		"Number"
 	) as Label
@@ -336,7 +408,9 @@ func _crear_numero(slot: Button) -> Label:
 	label = Label.new()
 	label.name = "Number"
 
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.mouse_filter = (
+		Control.MOUSE_FILTER_IGNORE
+	)
 
 	label.text = str(
 		slot_nodes.find(slot) + 1
@@ -392,7 +466,9 @@ func _crear_numero(slot: Button) -> Label:
 	return label
 
 
-func _configurar_estilo_normal(slot: Button) -> void:
+func _configurar_estilo_normal(
+	slot: Button
+) -> void:
 	var estilo := StyleBoxFlat.new()
 
 	estilo.bg_color = Color(
@@ -430,7 +506,9 @@ func _configurar_estilo_normal(slot: Button) -> void:
 	)
 
 
-func _configurar_estilo_seleccionado(slot: Button) -> void:
+func _configurar_estilo_seleccionado(
+	slot: Button
+) -> void:
 	var estilo := StyleBoxFlat.new()
 
 	estilo.bg_color = Color(
@@ -498,9 +576,9 @@ func _actualizar() -> void:
 
 
 func _actualizar_vacios() -> void:
-	for i in range(slot_nodes.size()):
+	for slot in slot_nodes:
 		_configurar_slot(
-			slot_nodes[i],
+			slot,
 			{}
 		)
 
@@ -531,11 +609,17 @@ func _configurar_slot(
 
 		if cantidad:
 			cantidad.visible = false
+			cantidad.text = ""
 
 		slot.tooltip_text = ""
+
 		return
 
-	var textura := _obtener_icono(datos)
+	var textura := (
+		ItemIconResolver.obtener_icono(
+			datos
+		)
+	)
 
 	if icon:
 		icon.texture = textura
@@ -556,7 +640,9 @@ func _configurar_slot(
 			cantidad_objeto
 		)
 
-		cantidad.visible = cantidad_objeto > 1
+		cantidad.visible = (
+			cantidad_objeto > 1
+		)
 
 	slot.tooltip_text = str(
 		datos.get(
@@ -566,294 +652,10 @@ func _configurar_slot(
 	)
 
 
-func _obtener_icono(
-	datos: Dictionary
-) -> Texture2D:
-	var categoria := str(
-		datos.get(
-			"categoria",
-			"otro"
-		)
-	).to_lower()
-
-	if bool(datos.get("es_arma", false)):
-		categoria = "arma"
-	elif bool(datos.get("es_armadura", false)):
-		categoria = "armadura"
-	elif "armadura" in categoria:
-		categoria = "armadura"
-	elif "herramienta" in categoria:
-		categoria = "herramienta"
-
-	if _icon_cache.has(categoria):
-		return _icon_cache[categoria]
-
-	var textura: Texture2D
-
-	if "arma" in categoria:
-		textura = _crear_icono_arma()
-	elif "armadura" in categoria:
-		textura = _crear_icono_armadura()
-	elif "herramienta" in categoria:
-		textura = _crear_icono_herramienta()
-	else:
-		textura = _crear_icono_generico()
-
-	_icon_cache[categoria] = textura
-
-	return textura
-
-
-func _crear_imagen() -> Image:
-	var imagen := Image.create(
-		ICON_SIZE,
-		ICON_SIZE,
-		false,
-		Image.FORMAT_RGBA8
-	)
-
-	imagen.fill(
-		Color(
-			0,
-			0,
-			0,
-			0
-		)
-	)
-
-	return imagen
-
-
-func _crear_icono_arma() -> Texture2D:
-	var imagen := _crear_imagen()
-
-	var metal := Color(
-		0.78,
-		0.75,
-		0.65,
-		1
-	)
-
-	var oscuro := Color(
-		0.38,
-		0.32,
-		0.24,
-		1
-	)
-
-	var madera := Color(
-		0.36,
-		0.18,
-		0.08,
-		1
-	)
-
-	for y in range(3, 22):
-		var x := 21 - int(
-			float(y) * 0.55
-		)
-
-		imagen.set_pixel(
-			x,
-			y,
-			metal
-		)
-
-		if x + 1 < ICON_SIZE:
-			imagen.set_pixel(
-				x + 1,
-				y,
-				metal
-			)
-
-	for x in range(7, 20):
-		imagen.set_pixel(
-			x,
-			22,
-			oscuro
-		)
-
-	for y in range(23, 29):
-		imagen.set_pixel(
-			13,
-			y,
-			madera
-		)
-
-		imagen.set_pixel(
-			14,
-			y,
-			madera
-		)
-
-	return ImageTexture.create_from_image(
-		imagen
-	)
-
-
-func _crear_icono_armadura() -> Texture2D:
-	var imagen := _crear_imagen()
-
-	var metal := Color(
-		0.60,
-		0.61,
-		0.56,
-		1
-	)
-
-	var oscuro := Color(
-		0.25,
-		0.23,
-		0.19,
-		1
-	)
-
-	for y in range(6, 25):
-		var ancho := 4 + int(
-			absf(
-				float(y - 15) * 0.35
-			)
-		)
-
-		for x in range(
-			16 - ancho,
-			16 + ancho
-		):
-			if x >= 0 and x < ICON_SIZE:
-				imagen.set_pixel(
-					x,
-					y,
-					metal
-				)
-
-	for x in range(11, 21):
-		imagen.set_pixel(
-			x,
-			9,
-			oscuro
-		)
-
-	for y in range(12, 20):
-		imagen.set_pixel(
-			15,
-			y,
-			oscuro
-		)
-
-	return ImageTexture.create_from_image(
-		imagen
-	)
-
-
-func _crear_icono_herramienta() -> Texture2D:
-	var imagen := _crear_imagen()
-
-	var mango := Color(
-		0.45,
-		0.25,
-		0.11,
-		1
-	)
-
-	var metal := Color(
-		0.68,
-		0.64,
-		0.53,
-		1
-	)
-
-	for y in range(12, 29):
-		imagen.set_pixel(
-			14,
-			y,
-			mango
-		)
-
-		imagen.set_pixel(
-			15,
-			y,
-			mango
-		)
-
-	for x in range(7, 25):
-		for y in range(8, 13):
-			imagen.set_pixel(
-				x,
-				y,
-				metal
-			)
-
-	for x in range(11, 21):
-		imagen.set_pixel(
-			x,
-			6,
-			metal
-		)
-
-	return ImageTexture.create_from_image(
-		imagen
-	)
-
-
-func _crear_icono_generico() -> Texture2D:
-	var imagen := _crear_imagen()
-
-	var borde := Color(
-		0.34,
-		0.22,
-		0.11,
-		1
-	)
-
-	var relleno := Color(
-		0.69,
-		0.49,
-		0.23,
-		1
-	)
-
-	for y in range(8, 24):
-		var ancho := 6
-
-		for x in range(
-			16 - ancho,
-			16 + ancho
-		):
-			if x >= 0 and x < ICON_SIZE:
-				imagen.set_pixel(
-					x,
-					y,
-					borde
-				)
-
-	for y in range(10, 22):
-		for x in range(10, 22):
-			imagen.set_pixel(
-				x,
-				y,
-				relleno
-			)
-
-	for y in range(13, 19):
-		for x in range(13, 19):
-			imagen.set_pixel(
-				x,
-				y,
-				Color(
-					0.87,
-					0.72,
-					0.38,
-					1
-				)
-			)
-
-	return ImageTexture.create_from_image(
-		imagen
-	)
-
-
 func _actualizar_seleccion() -> void:
-	for i in range(slot_nodes.size()):
+	for i in range(
+		slot_nodes.size()
+	):
 		var slot := slot_nodes[i]
 
 		var normal = slot.get_meta(
@@ -866,7 +668,10 @@ func _actualizar_seleccion() -> void:
 			null
 		)
 
-		if i == indice_seleccionado and seleccionado is StyleBoxFlat:
+		if (
+			i == indice_seleccionado
+			and seleccionado is StyleBoxFlat
+		):
 			slot.add_theme_stylebox_override(
 				"normal",
 				seleccionado
@@ -885,7 +690,9 @@ func _al_objeto_activo_cambiado(
 	_actualizar_seleccion()
 
 
-func seleccionar_hotbar(indice: int) -> void:
+func seleccionar_hotbar(
+	indice: int
+) -> void:
 	if indice < 0 or indice >= SLOT_COUNT:
 		return
 
@@ -900,7 +707,9 @@ func seleccionar_hotbar(indice: int) -> void:
 	_actualizar()
 
 
-func _mover_seleccion(direccion: int) -> void:
+func _mover_seleccion(
+	direccion: int
+) -> void:
 	var nuevo_indice := (
 		indice_seleccionado
 		+ direccion
