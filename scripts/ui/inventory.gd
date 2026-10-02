@@ -283,27 +283,48 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 		return
 
 	var slot_script := slot as Button
+	var anterior: Dictionary = {}
 	if slot_script.has_method("obtener_datos"):
-		var anterior: Dictionary = slot_script.obtener_datos()
-		if not anterior.is_empty():
-			agregar_objeto(anterior)
+		anterior = slot_script.obtener_datos()
+
+	# Si estamos reemplazando, primero aseguramos que el objeto anterior
+	# tenga un lugar disponible antes de modificar el equipamiento.
+	if not anterior.is_empty():
+		var indice_libre := _buscar_slot_libre()
+		if indice_libre < 0 and source_index < 0:
+			return
 
 	var clave := ""
 	if slot_script.has_method("obtener_clave"):
 		clave = str(slot_script.obtener_clave())
 
+	if not anterior.is_empty():
+		items[source_index] = anterior.duplicate(true)
+	else:
+		items[source_index] = {}
+
 	equipo[clave] = objeto.duplicate(true)
 	slot_script.configurar_objeto(objeto)
-	quitar_objeto(source_index)
+
+	actualizar()
 	inventory_changed.emit()
+	_emitir_objeto_activo()
 
 
 func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
+	var indice_libre := _buscar_slot_libre()
+	if indice_libre < 0:
+		return
+
 	var clave := ""
 	if slot.has_method("obtener_clave"):
 		clave = str(slot.obtener_clave())
+
 	equipo.erase(clave)
-	agregar_objeto(objeto)
+	items[indice_libre] = objeto.duplicate(true)
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
 
 
 func _buscar_indice_objeto(objeto: Dictionary) -> int:
@@ -318,3 +339,242 @@ func _buscar_indice_objeto(objeto: Dictionary) -> int:
 			return i
 	return -1
 
+
+func _mostrar_informacion() -> void:
+	var nombre := str(
+		objeto_seleccionado.get(
+			"nombre",
+			"Objeto"
+		)
+	)
+
+	var descripcion := str(
+		objeto_seleccionado.get(
+			"descripcion",
+			"Sin descripción."
+		)
+	)
+
+	item_name.text = nombre
+	item_description.text = descripcion
+	delete_button.disabled = false
+
+	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
+	item_icon.texture = textura
+	item_icon.visible = textura != null
+
+
+func _limpiar_informacion() -> void:
+	item_name.text = "Ningún objeto"
+	item_description.text = "Selecciona un objeto para estudiar sus propiedades."
+	item_icon.texture = null
+	item_icon.visible = false
+	delete_button.disabled = true
+
+
+func agregar_objeto(datos_objeto: Dictionary) -> bool:
+	if datos_objeto.is_empty():
+		return false
+
+	var indice_libre := _buscar_slot_libre()
+
+	if indice_libre < 0:
+		print("Inventory: inventario lleno.")
+		return false
+
+	var objeto := datos_objeto.duplicate(true)
+
+	if not objeto.has("cantidad"):
+		objeto["cantidad"] = 1
+
+	items[indice_libre] = objeto
+
+	actualizar()
+	_actualizar_equipo_mostrado()
+
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+
+	print(
+		"Inventory: objeto añadido en slot ",
+		indice_libre + 1,
+		" → ",
+		str(objeto.get("nombre", "Objeto"))
+	)
+
+	return true
+
+
+func quitar_objeto(indice: int) -> bool:
+	if indice < 0 or indice >= items.size():
+		return false
+
+	if items[indice].is_empty():
+		return false
+
+	items[indice] = {}
+
+	if indice_seleccionado == indice:
+		indice_seleccionado = -1
+		objeto_seleccionado.clear()
+		_limpiar_informacion()
+
+	actualizar()
+	_actualizar_equipo_mostrado()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+
+	return true
+
+
+func establecer_objeto(
+	indice: int,
+	datos_objeto: Dictionary
+) -> bool:
+	if indice < 0 or indice >= items.size():
+		return false
+
+	if datos_objeto.is_empty():
+		items[indice] = {}
+	else:
+		items[indice] = datos_objeto.duplicate(true)
+
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+
+	return true
+
+
+func limpiar_inventario() -> void:
+	for i in range(items.size()):
+		items[i] = {}
+
+	indice_seleccionado = -1
+	objeto_seleccionado.clear()
+
+	actualizar()
+	_limpiar_informacion()
+
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+
+
+func _buscar_slot_libre() -> int:
+	for i in range(items.size()):
+		if items[i].is_empty():
+			return i
+
+	return -1
+
+
+func obtener_objeto(indice: int) -> Dictionary:
+	if indice < 0 or indice >= items.size():
+		return {}
+
+	if items[indice].is_empty():
+		return {}
+
+	return items[indice].duplicate(true)
+
+
+func esta_ocupado(indice: int) -> bool:
+	if indice < 0 or indice >= items.size():
+		return false
+
+	return not items[indice].is_empty()
+
+
+func obtener_objetos() -> Array[Dictionary]:
+	return items.duplicate(true)
+
+
+func obtener_objeto_seleccionado() -> Dictionary:
+	return objeto_seleccionado.duplicate(true)
+
+
+func obtener_indice_seleccionado() -> int:
+	return indice_seleccionado
+
+
+func obtener_objeto_hotbar(indice_hotbar: int) -> Dictionary:
+	if indice_hotbar < 0:
+		return {}
+
+	if indice_hotbar >= hotbar_indices.size():
+		return {}
+
+	var indice_inventario := hotbar_indices[indice_hotbar]
+
+	if indice_inventario < 0:
+		return {}
+
+	return obtener_objeto(indice_inventario)
+
+
+func obtener_indice_inventario_hotbar(
+	indice_hotbar: int
+) -> int:
+	if indice_hotbar < 0:
+		return -1
+
+	if indice_hotbar >= hotbar_indices.size():
+		return -1
+
+	return hotbar_indices[indice_hotbar]
+
+
+func establecer_hotbar_slot(
+	indice_hotbar: int,
+	indice_inventario: int
+) -> bool:
+	if indice_hotbar < 0:
+		return false
+
+	if indice_hotbar >= HOTBAR_SLOT_COUNT:
+		return false
+
+	if indice_inventario < 0:
+		return false
+
+	if indice_inventario >= items.size():
+		return false
+
+	hotbar_indices[indice_hotbar] = indice_inventario
+
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+
+	return true
+
+
+func seleccionar_hotbar(indice_hotbar: int) -> void:
+	if indice_hotbar < 0 or indice_hotbar >= HOTBAR_SLOT_COUNT:
+		return
+
+	indice_hotbar_activo = indice_hotbar
+
+	# La hotbar tiene su propia selección.
+	# NO seleccionamos el slot correspondiente del inventario.
+	_emitir_objeto_activo()
+
+
+func obtener_objeto_activo() -> Dictionary:
+	var indice_inventario := obtener_indice_inventario_hotbar(
+		indice_hotbar_activo
+	)
+
+	if indice_inventario < 0:
+		return {}
+
+	return obtener_objeto(indice_inventario)
+
+
+func obtener_indice_hotbar_activo() -> int:
+	return indice_hotbar_activo
+
+
+func _emitir_objeto_activo() -> void:
+	active_item_changed.emit(
+		obtener_objeto_activo()
+	)
