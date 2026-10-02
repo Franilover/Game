@@ -2,6 +2,7 @@ extends Button
 
 
 signal seleccionado(slot: Button)
+signal equipar_solicitado(slot: Button)
 
 
 var datos: Dictionary = {}
@@ -17,13 +18,17 @@ func _ready() -> void:
 		_al_pulsar
 	)
 
+	gui_input.connect(
+		_al_input_gui
+	)
+
 	actualizar()
 
 
 func configurar(
 	nuevos_datos: Dictionary
 ) -> void:
-	datos = nuevos_datos
+	datos = nuevos_datos.duplicate(true)
 
 	actualizar()
 
@@ -39,7 +44,7 @@ func esta_ocupado() -> bool:
 
 
 func obtener_datos() -> Dictionary:
-	return datos
+	return datos.duplicate(true)
 
 
 func actualizar() -> void:
@@ -51,7 +56,6 @@ func actualizar() -> void:
 		icon_placeholder.visible = true
 		quantity_label.text = ""
 		return
-
 
 	var textura: Variant = datos.get(
 		"icono",
@@ -65,7 +69,6 @@ func actualizar() -> void:
 		icon_texture.texture = null
 		icon_placeholder.visible = true
 
-
 	var cantidad: int = int(
 		datos.get(
 			"cantidad",
@@ -74,9 +77,7 @@ func actualizar() -> void:
 	)
 
 	if cantidad > 1:
-		quantity_label.text = str(
-			cantidad
-		)
+		quantity_label.text = str(cantidad)
 	else:
 		quantity_label.text = ""
 
@@ -85,3 +86,18 @@ func _al_pulsar() -> void:
 	seleccionado.emit(
 		self
 	)
+
+
+func _al_input_gui(event: InputEvent) -> void:
+	if datos.is_empty():
+		return
+
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+
+		if (
+			mouse_event.pressed
+			and mouse_event.button_index == MOUSE_BUTTON_RIGHT
+		):
+			equipar_solicitado.emit(self)
+			accept_event()

@@ -14,9 +14,8 @@ var _inventario_conectado: bool = false
 
 
 func _ready() -> void:
-	# El marco Selection de la escena es estático y siempre queda sobre el primer slot.
-	# La selección se dibuja directamente en cada botón.
 	var marco_fijo := get_node_or_null("Selection")
+
 	if marco_fijo is Control:
 		(marco_fijo as Control).visible = false
 
@@ -80,17 +79,16 @@ func _buscar_hbox(nombre: String) -> HBoxContainer:
 
 
 func _process(_delta: float) -> void:
-	# El HUD puede entrar al árbol antes que el inventario. Reintentar la
-	# búsqueda hasta encontrarlo garantiza que también recibamos la señal
-	# inventory_changed al recoger el primer objeto.
 	if inventory == null or not is_instance_valid(inventory):
 		_buscar_inventario()
+
 		if inventory != null:
 			_actualizar()
 
 
 func _buscar_inventario() -> void:
 	inventory = get_tree().get_first_node_in_group("inventory")
+
 	if inventory == null:
 		_inventario_conectado = false
 		return
@@ -99,12 +97,24 @@ func _buscar_inventario() -> void:
 		return
 
 	if inventory.has_signal("inventory_changed"):
-		if not inventory.is_connected("inventory_changed", _actualizar):
-			inventory.connect("inventory_changed", _actualizar)
+		if not inventory.is_connected(
+			"inventory_changed",
+			_actualizar
+		):
+			inventory.connect(
+				"inventory_changed",
+				_actualizar
+			)
 
-	if inventory.has_signal("inventory_selection_changed"):
-		if not inventory.is_connected("inventory_selection_changed", _al_cambio_seleccion_inventario):
-			inventory.connect("inventory_selection_changed", _al_cambio_seleccion_inventario)
+	if inventory.has_signal("active_item_changed"):
+		if not inventory.is_connected(
+			"active_item_changed",
+			_al_objeto_activo_cambiado
+		):
+			inventory.connect(
+				"active_item_changed",
+				_al_objeto_activo_cambiado
+			)
 
 	_inventario_conectado = true
 
@@ -117,9 +127,16 @@ func _obtener_slots() -> void:
 
 	for child in slots_container.get_children():
 		if child is Button:
-			slot_nodes.append(
-				child as Button
-			)
+			var slot := child as Button
+
+			slot_nodes.append(slot)
+
+			if not slot.pressed.is_connected(
+				_al_pulsar_slot
+			):
+				slot.pressed.connect(
+					_al_pulsar_slot.bind(slot)
+				)
 
 			if slot_nodes.size() >= SLOT_COUNT:
 				break
@@ -147,6 +164,15 @@ func _preparar_slots() -> void:
 		_configurar_estilo_seleccionado(slot)
 
 
+func _al_pulsar_slot(slot: Button) -> void:
+	var indice := slot_nodes.find(slot)
+
+	if indice < 0:
+		return
+
+	seleccionar_hotbar(indice)
+
+
 func _crear_icono(slot: Button) -> TextureRect:
 	var icon := slot.get_node_or_null(
 		"ItemIcon"
@@ -159,7 +185,6 @@ func _crear_icono(slot: Button) -> TextureRect:
 	icon.name = "ItemIcon"
 
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
@@ -394,7 +419,11 @@ func _configurar_estilo_normal(slot: Button) -> void:
 	estilo.corner_radius_bottom_left = 3
 	estilo.corner_radius_bottom_right = 3
 
-	slot.set_meta("normal_style", estilo)
+	slot.set_meta(
+		"normal_style",
+		estilo
+	)
+
 	slot.add_theme_stylebox_override(
 		"normal",
 		estilo
@@ -450,7 +479,10 @@ func _actualizar() -> void:
 		return
 
 	for i in range(
-		mini(SLOT_COUNT, slot_nodes.size())
+		mini(
+			SLOT_COUNT,
+			slot_nodes.size()
+		)
 	):
 		var datos: Dictionary = inventory.call(
 			"obtener_objeto_hotbar",
@@ -537,10 +569,18 @@ func _configurar_slot(
 func _obtener_icono(
 	datos: Dictionary
 ) -> Texture2D:
-	var categoria := str(datos.get("categoria", "otro")).to_lower()
+	var categoria := str(
+		datos.get(
+			"categoria",
+			"otro"
+		)
+	).to_lower()
+
 	if bool(datos.get("es_arma", false)):
 		categoria = "arma"
-	elif bool(datos.get("es_armadura", false)) or "armadura" in categoria:
+	elif bool(datos.get("es_armadura", false)):
+		categoria = "armadura"
+	elif "armadura" in categoria:
 		categoria = "armadura"
 	elif "herramienta" in categoria:
 		categoria = "herramienta"
@@ -671,8 +711,8 @@ func _crear_icono_armadura() -> Texture2D:
 	for y in range(6, 25):
 		var ancho := 4 + int(
 			absf(
-				float(y - 15)
-			) * 0.35
+				float(y - 15) * 0.35
+			)
 		)
 
 		for x in range(
@@ -815,18 +855,31 @@ func _crear_icono_generico() -> Texture2D:
 func _actualizar_seleccion() -> void:
 	for i in range(slot_nodes.size()):
 		var slot := slot_nodes[i]
-		var normal = slot.get_meta("normal_style", null)
-		var seleccionado = slot.get_meta("selected_style", null)
+
+		var normal = slot.get_meta(
+			"normal_style",
+			null
+		)
+
+		var seleccionado = slot.get_meta(
+			"selected_style",
+			null
+		)
 
 		if i == indice_seleccionado and seleccionado is StyleBoxFlat:
-			slot.add_theme_stylebox_override("normal", seleccionado)
+			slot.add_theme_stylebox_override(
+				"normal",
+				seleccionado
+			)
 		else:
 			if normal is StyleBoxFlat:
-				slot.add_theme_stylebox_override("normal", normal)
+				slot.add_theme_stylebox_override(
+					"normal",
+					normal
+				)
 
 
-func _al_cambio_seleccion_inventario(
-	_indice: int,
+func _al_objeto_activo_cambiado(
 	_datos: Dictionary
 ) -> void:
 	_actualizar_seleccion()
@@ -838,7 +891,7 @@ func seleccionar_hotbar(indice: int) -> void:
 
 	indice_seleccionado = indice
 
-	if inventory:
+	if inventory != null:
 		inventory.call(
 			"seleccionar_hotbar",
 			indice
@@ -872,10 +925,9 @@ func obtener_objeto_seleccionado() -> Dictionary:
 		return {}
 
 	return inventory.call(
-		"obtener_objeto_hotbar",
-		indice_seleccionado
+		"obtener_objeto_activo"
 	)
 
 
 func obtener_indice_seleccionado() -> int:
-	return indice_seleccionado 
+	return indice_seleccionado

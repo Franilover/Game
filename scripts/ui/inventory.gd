@@ -14,10 +14,13 @@ signal active_item_changed(datos: Dictionary)
 
 var items: Array[Dictionary] = []
 var slot_nodes: Array[Button] = []
+
 var objeto_seleccionado: Dictionary = {}
 var indice_seleccionado: int = -1
+
 var indice_hotbar_activo: int = 0
 var hotbar_indices: Array[int] = []
+
 
 @onready var grid: GridContainer = $Window/Margin/Column/Content/SlotsPanel/Grid
 @onready var item_name: Label = $Window/Margin/Column/Content/InfoPanel/ItemName
@@ -30,7 +33,6 @@ func _ready() -> void:
 
 	_inicializar_items()
 	_inicializar_hotbar()
-	# La hotbar determina el objeto activo; no existe equipamiento separado.
 	_crear_slots()
 	_limpiar_informacion()
 
@@ -251,7 +253,6 @@ func quitar_objeto(indice: int) -> bool:
 
 	items[indice] = {}
 
-
 	if indice_seleccionado == indice:
 		indice_seleccionado = -1
 		objeto_seleccionado.clear()
@@ -275,7 +276,6 @@ func establecer_objeto(
 		items[indice] = {}
 	else:
 		items[indice] = datos_objeto.duplicate(true)
-
 
 	actualizar()
 	inventory_changed.emit()
@@ -391,17 +391,20 @@ func seleccionar_hotbar(indice_hotbar: int) -> void:
 		return
 
 	indice_hotbar_activo = indice_hotbar
-	var indice_inventario := obtener_indice_inventario_hotbar(indice_hotbar)
-	active_item_changed.emit(obtener_objeto_activo())
 
-	if indice_inventario >= 0:
-		seleccionar_slot(indice_inventario)
+	# La hotbar tiene su propia selección.
+	# NO seleccionamos el slot correspondiente del inventario.
+	_emitir_objeto_activo()
 
 
 func obtener_objeto_activo() -> Dictionary:
-	var indice_inventario := obtener_indice_inventario_hotbar(indice_hotbar_activo)
+	var indice_inventario := obtener_indice_inventario_hotbar(
+		indice_hotbar_activo
+	)
+
 	if indice_inventario < 0:
 		return {}
+
 	return obtener_objeto(indice_inventario)
 
 
@@ -410,4 +413,6 @@ func obtener_indice_hotbar_activo() -> int:
 
 
 func _emitir_objeto_activo() -> void:
-	active_item_changed.emit(obtener_objeto_activo())
+	active_item_changed.emit(
+		obtener_objeto_activo()
+	)
