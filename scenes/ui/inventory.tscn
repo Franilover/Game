@@ -170,9 +170,15 @@ horizontal_alignment = 1
 [node name="SkinPanel" type="Control" parent="Window/Margin/Column/Content/RightPanel" unique_id=3001000004]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="Skin" type="TextureRect" parent="Window/Margin/Column/Content/RightPanel/SkinPanel" unique_id=3001000005]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = ExtResource("2_skin")
 texture_filter = 1
 expand_mode = 1
