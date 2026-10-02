@@ -2,7 +2,6 @@ extends Button
 
 
 signal seleccionado(slot: Button)
-signal equipar_solicitado(slot: Button)
 
 
 var datos: Dictionary = {}
@@ -107,18 +106,22 @@ func _al_input_gui(
 	if datos.is_empty():
 		return
 
-	if event is InputEventMouseButton:
-		var mouse_event := (
-			event as InputEventMouseButton
-		)
 
-		if (
-			mouse_event.pressed
-			and mouse_event.button_index
-			== MOUSE_BUTTON_RIGHT
-		):
-			equipar_solicitado.emit(
-				self
-			)
+func _get_drag_data(_position: Vector2) -> Variant:
+	if datos.is_empty():
+		return null
 
-			accept_event()
+	var preview := TextureRect.new()
+	preview.custom_minimum_size = Vector2(48, 48)
+	preview.size = Vector2(48, 48)
+	preview.texture = ItemIconResolver.obtener_icono(datos)
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_drag_preview(preview)
+
+	return {
+		"tipo": "inventario_objeto",
+		"indice": get_index(),
+		"datos": datos.duplicate(true)
+	}
