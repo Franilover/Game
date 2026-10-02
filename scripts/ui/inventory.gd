@@ -427,7 +427,6 @@ func quitar_objeto(indice: int) -> bool:
 		_limpiar_informacion()
 
 	actualizar()
-	_actualizar_equipo_mostrado()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
