@@ -78,7 +78,11 @@ func cargar_catalogo() -> void:
 		+ "item:items!inner("
 		+ "id,nombre,descripcion,origen,"
 		+ "propiedades_fisicas,estado_fisico,"
-		+ "geometria_fisica,material_id,creador_id"
+		+ "geometria_fisica,material_id,creador_id,"
+		+ "tipo_objeto:worldbuilder_tipos_objeto!items_tipo_objeto_id_fkey("
+		+ "id,clave,nombre_humano,categoria_canonica,plantilla_id,"
+		+ "plantilla:plantillas_geometricas!worldbuilder_tipos_objeto_plantilla_id_fkey(categoria)"
+		+ ")"
 		+ ")"
 	)
 
@@ -379,6 +383,16 @@ func _al_recibir_drops(
 
 	drops_generados.emit(resultado_drops.duplicate(true))
 	_procesar_siguiente_drop()
+
+
+func soltar_objeto_al_mundo(
+	datos: Dictionary,
+	posicion: Vector2
+) -> void:
+	if datos.is_empty():
+		return
+
+	_generar_world_item(datos.duplicate(true), posicion)
 
 
 func _generar_world_item(
