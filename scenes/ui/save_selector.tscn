@@ -1,0 +1,136 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/save_selector.gd" id="1_save_selector"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_overlay"]
+bg_color = Color(0.02, 0.015, 0.01, 0.78)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.20, 0.15, 0.10, 0.99)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.58, 0.46, 0.31, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_input"]
+bg_color = Color(0.10, 0.075, 0.05, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.33, 0.22, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="SaveSelector" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_save_selector")
+
+[node name="Overlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.015, 0.01, 0.78)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -250.0
+offset_right = 360.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_panel")
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 22
+
+[node name="Column" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/Margin/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Aventura"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Panel/Margin/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Elige una partida guardada en este dispositivo."
+horizontal_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="Panel/Margin/Column"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Panel/Margin/Column"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Partidas" type="VBoxContainer" parent="Panel/Margin/Column/Scroll"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NewTitle" type="Label" parent="Panel/Margin/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "NUEVA PARTIDA"
+
+[node name="NewRow" type="HBoxContainer" parent="Panel/Margin/Column"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NameInput" type="LineEdit" parent="Panel/Margin/Column/NewRow"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBox_input")
+placeholder_text = "Nombre de la partida"
+
+[node name="CreateButton" type="Button" parent="Panel/Margin/Column/NewRow"]
+custom_minimum_size = Vector2(120, 42)
+layout_mode = 2
+text = "Crear y jugar"
+
+[node name="Status" type="Label" parent="Panel/Margin/Column"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+theme_override_font_sizes/font_size = 10
+text = ""
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="Panel/Margin/Column"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Volver"
+
+[connection signal="pressed" from="Panel/Margin/Column/NewRow/CreateButton" to="." method="_on_create_pressed"]
+[connection signal="pressed" from="Panel/Margin/Column/BackButton" to="." method="_on_back_pressed"]
