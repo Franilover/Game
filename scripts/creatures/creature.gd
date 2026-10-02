@@ -296,6 +296,10 @@ func get_skin_visual() -> Sprite2D:
 		"Sprite2D"
 	) as Sprite2D
 
+func ocultar_nombre_debug() -> void:
+	mostrar_nombre_debug = false
+	queue_redraw()
+
 
 func copiar_skin_de(origen: Node) -> bool:
 	if origen == null or not is_instance_valid(origen):
