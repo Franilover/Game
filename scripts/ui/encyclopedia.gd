@@ -3,7 +3,6 @@ extends Control
 
 var _ids_descubiertos: Array[String] = []
 
-
 var _lista: ItemList
 var _nombre: Label
 var _contador: Label
@@ -13,20 +12,15 @@ var _icono: TextureRect
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
-
 	_crear_interfaz()
 
-	if not GameState.has_signal("enciclopedia_actualizada"):
-		push_error("Encyclopedia: GameState no tiene enciclopedia_actualizada.")
-		actualizar()
-		return
-
-	if not GameState.enciclopedia_actualizada.is_connected(
-		_al_descubrir_criatura
-	):
-		GameState.enciclopedia_actualizada.connect(
+	if GameState.has_signal("enciclopedia_actualizada"):
+		if not GameState.enciclopedia_actualizada.is_connected(
 			_al_descubrir_criatura
-		)
+		):
+			GameState.enciclopedia_actualizada.connect(
+				_al_descubrir_criatura
+			)
 
 	if not WorldData.mundo_listo.is_connected(
 		_al_mundo_actualizado
@@ -47,7 +41,9 @@ func _ready() -> void:
 
 func _crear_interfaz() -> void:
 	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.set_anchors_and_offsets_preset(
+		Control.PRESET_FULL_RECT
+	)
 	margin.add_theme_constant_override("margin_left", 10)
 	margin.add_theme_constant_override("margin_top", 10)
 	margin.add_theme_constant_override("margin_right", 10)
@@ -79,8 +75,7 @@ func _crear_interfaz() -> void:
 	_contador.add_theme_font_size_override("font_size", 10)
 	header.add_child(_contador)
 
-	var separator := HSeparator.new()
-	column.add_child(separator)
+	column.add_child(HSeparator.new())
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -107,7 +102,10 @@ func _crear_interfaz() -> void:
 	estilo_lista.border_width_right = 1
 	estilo_lista.border_width_bottom = 1
 	estilo_lista.border_color = Color(0.29, 0.19, 0.12, 1.0)
-	_lista.add_theme_stylebox_override("panel", estilo_lista)
+	_lista.add_theme_stylebox_override(
+		"panel",
+		estilo_lista
+	)
 
 	_lista.item_selected.connect(_al_seleccionar)
 	body.add_child(_lista)
@@ -123,7 +121,10 @@ func _crear_interfaz() -> void:
 	estilo_detalle.border_width_right = 1
 	estilo_detalle.border_width_bottom = 1
 	estilo_detalle.border_color = Color(0.29, 0.19, 0.12, 1.0)
-	detail_panel.add_theme_stylebox_override("panel", estilo_detalle)
+	detail_panel.add_theme_stylebox_override(
+		"panel",
+		estilo_detalle
+	)
 	body.add_child(detail_panel)
 
 	var detail_margin := MarginContainer.new()
@@ -165,7 +166,9 @@ func _crear_interfaz() -> void:
 	title_column.add_child(_nombre)
 
 	var descubierto := Label.new()
-	descubierto.text = "Derrota una criatura para comenzar su registro."
+	descubierto.text = (
+		"Derrota una criatura para comenzar su registro."
+	)
 	descubierto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	descubierto.add_theme_color_override(
 		"font_color",
@@ -183,7 +186,10 @@ func _crear_interfaz() -> void:
 		"default_color",
 		Color(0.72, 0.61, 0.45, 1.0)
 	)
-	_ficha.add_theme_font_size_override("normal_font_size", 11)
+	_ficha.add_theme_font_size_override(
+		"normal_font_size",
+		11
+	)
 	detail_column.add_child(_ficha)
 
 
@@ -204,37 +210,58 @@ func actualizar() -> void:
 		return
 
 	var registros := registros_variant as Dictionary
-	var candidatos: Array[Dictionary] = []
+	var candidatos: Array = []
 
 	for id_variant in registros.keys():
 		var id := str(id_variant)
+
 		if id.is_empty():
 			continue
 
-		var derrotas := int(registros_variant.get(id_variant, 0))
+		var derrotas := int(
+			registros.get(
+				id_variant,
+				0
+			)
+		)
+
 		if derrotas <= 0:
 			continue
 
 		var criatura := WorldData.obtener_criatura(id)
+
 		if criatura.is_empty():
 			continue
 
 		criatura["_derrotas_registradas"] = derrotas
 		candidatos.append(criatura)
 
-	candidatos.sort_custom(
-		func(a: Dictionary, b: Dictionary) -> bool:
-			return str(a.get("nombre", "")).naturalnocasecmp_to(
-				str(b.get("nombre", ""))
-			) < 0
-	)
+	candidatos.sort_custom(_ordenar_criaturas)
 
-	for criatura in candidatos:
+	for criatura_variant in candidatos:
+		if not criatura_variant is Dictionary:
+			continue
+
+		var criatura := criatura_variant as Dictionary
 		var id := str(criatura.get("id", ""))
-		_ids_descubiertos.append(id)
-		_lista.add_item(str(criatura.get("nombre", "Criatura")))
 
-	_contador.text = str(_ids_descubiertos.size()) + " descubiertas"
+		if id.is_empty():
+			continue
+
+		_ids_descubiertos.append(id)
+		_lista.add_item(
+			str(
+				criatura.get(
+					"nombre",
+					"Criatura"
+				)
+			)
+		)
+
+	_contador.text = (
+		str(_ids_descubiertos.size())
+		+ " descubiertas"
+	)
 
 	if _ids_descubiertos.is_empty():
 		_mostrar_sin_descubrimientos()
@@ -242,6 +269,16 @@ func actualizar() -> void:
 
 	_lista.select(0)
 	_mostrar_criatura(0)
+
+
+func _ordenar_criaturas(
+	a: Dictionary,
+	b: Dictionary
+) -> bool:
+	var nombre_a := str(a.get("nombre", "")).to_lower()
+	var nombre_b := str(b.get("nombre", "")).to_lower()
+
+	return nombre_a < nombre_b
 
 
 func _al_seleccionar(indice: int) -> void:
@@ -252,17 +289,27 @@ func _mostrar_criatura(indice: int) -> void:
 	if indice < 0 or indice >= _ids_descubiertos.size():
 		return
 
-	var criatura := WorldData.obtener_criatura(
-		_ids_descubiertos[indice]
-	)
+	var id := _ids_descubiertos[indice]
+	var criatura := WorldData.obtener_criatura(id)
 
 	if criatura.is_empty():
 		return
 
-	var nombre := str(criatura.get("nombre", "Criatura"))
+	var nombre := str(
+		criatura.get(
+			"nombre",
+			"Criatura"
+		)
+	)
+
 	_nombre.text = nombre
 
-	var ruta := "res://assets/art/creatures/" + nombre + ".png"
+	var ruta := (
+		"res://assets/art/creatures/"
+		+ nombre
+		+ ".png"
+	)
+
 	if ResourceLoader.exists(ruta):
 		_icono.texture = load(ruta)
 		_icono.visible = true
@@ -270,30 +317,81 @@ func _mostrar_criatura(indice: int) -> void:
 		_icono.texture = null
 		_icono.visible = false
 
-	var derrotas := int(
-		GameState.flags.get(
-			"enciclopedia_criaturas",
-			{}
-		).get(
-			_ids_descubiertos[indice],
-			0
-		)
+	var registros_variant: Variant = GameState.flags.get(
+		"enciclopedia_criaturas",
+		{}
 	)
 
+	var derrotas := 0
+
+	if registros_variant is Dictionary:
+		derrotas = int(
+			(registros_variant as Dictionary).get(
+				id,
+				0
+			)
+		)
+
 	var partes: Array[String] = []
-	partes.append("[color=#8f754f]Derrotas registradas:[/color] " + str(derrotas))
+	partes.append(
+		"[color=#8f754f]Derrotas registradas:[/color] "
+		+ str(derrotas)
+	)
 
-	_agregar_campo(partes, criatura, "biologia", "Biología")
-	_agregar_campo(partes, criatura, "comportamiento", "Comportamiento")
-	_agregar_campo(partes, criatura, "pensamiento", "Pensamiento")
-	_agregar_campo(partes, criatura, "alma", "Alma")
-	_agregar_campo(partes, criatura, "relacion", "Relación")
-	_agregar_campo(partes, criatura, "magia", "Magia")
+	_agregar_campo(
+		partes,
+		criatura,
+		"biologia",
+		"Biología"
+	)
 
-	var stats_variant: Variant = criatura.get("stats_dnd", {})
+	_agregar_campo(
+		partes,
+		criatura,
+		"comportamiento",
+		"Comportamiento"
+	)
+
+	_agregar_campo(
+		partes,
+		criatura,
+		"pensamiento",
+		"Pensamiento"
+	)
+
+	_agregar_campo(
+		partes,
+		criatura,
+		"alma",
+		"Alma"
+	)
+
+	_agregar_campo(
+		partes,
+		criatura,
+		"relacion",
+		"Relación"
+	)
+
+	_agregar_campo(
+		partes,
+		criatura,
+		"magia",
+		"Magia"
+	)
+
+	var stats_variant: Variant = criatura.get(
+		"stats_dnd",
+		{}
+	)
+
 	if stats_variant is Dictionary:
 		var stats := stats_variant as Dictionary
-		var hp := stats.get("hp_max", null)
+		var hp: Variant = stats.get(
+			"hp_max",
+			null
+		)
+
 		if hp != null:
 			partes.append(
 				"[color=#8f754f]Vitalidad:[/color] "
