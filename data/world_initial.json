@@ -1,1 +1,2307 @@
-{"biomas": [{"id": "fdc97953-f400-4f39-9b54-0a1c85f2c9a1", "orden": 10, "nombre": "Bosque", "afinidad": "Vegetación arbórea", "descripcion": "Bioma dominado por vegetación arbórea y una estructura vertical formada por suelo, sotobosque y cubierta vegetal. Puede variar en humedad, temperatura y composición sin dejar de mantener una cobertura forestal característica.", "ecosistemas": [{"id": "2040daab-f2d9-4658-8a46-27767b96f57e", "clima": "Húmedo y variable", "orden": 20, "nombre": "Bosque interior", "habitats": [{"id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4", "orden": 1, "nombre": "General", "criaturas": [{"id": "9f4d0c53-209a-4509-8229-cb2e61e48ab1", "alma": "Divina", "magia": null, "nombre": "Feerin", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": "/dibujos/personajes/sol_rostros.png", "descripcion": "Seres mágicos asociados a los bosques y a su protección. Nacen dentro de estos ambientes, desarrollan una conciencia individual y participan activamente en la defensa de otras criaturas que habitan el bosque. Cuando termina su ciclo, pueden reaparecer como otro Feerin conservando sus recuerdos, manteniendo la continuidad de su identidad a través de nuevas formas.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c", "nombre": "protector", "categoria": "funcional", "es_principal": true}], "biologia_calculada": {"masa": 1226.1123000000000000, "clado": "Feerin", "rango": "linaje", "estado": "anatomia_vegetal_no_canonizada", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.4978676801505049741337459355000000000000, "tejidos": 0, "clado_id": "6278cb42-f5c2-49bb-ba78-de8ecb7ac3a3", "organismo": "Feerin", "tipo_nodo": "filogenetico", "estabilidad": 0.5559650802866915208305835248000000000000, "flexibilidad": 0.284754227845524427083942557622000000000000, "organismo_id": "fa85d288-b775-4424-aad7-d9b590b9ddd6", "tipo_organismo": "especial_fisico", "estado_criatura": "anatomia_vegetal_no_canonizada", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 5, "rasgos_heredados": 5, "organos_heredados": 1, "sistemas_manuales": 0, "sistemas_heredados": 0, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "679a95a1-3e1e-4097-ba50-f7ca964e68cd", "alma": null, "magia": null, "nombre": "Lesfleeng", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres capaces de establecer una conexión estrecha con un huésped y alimentarse de su estado emocional para obtener y transformar recursos de Eterium. La relación puede funcionar de forma simbiótica: el Lesfleeng obtiene recursos del estado espiritual del huésped y, a cambio, puede devolverle Eterium utilizable. La estabilidad de la relación depende de la interacción sostenida entre ambos seres.", "pensamiento": null, "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "0519045b-e898-4293-9fee-c0703ffffeac", "nombre": "simbionte", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 607.6827000000000000, "clado": "Lesfleeng", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.49332828267943122290347226980000000000000000, "tejidos": 0, "clado_id": "c3faa6d2-1721-45e9-bdaa-b92cfa31dd28", "organismo": "Lesfleeng", "tipo_nodo": "filogenetico", "estabilidad": 0.55019007067750982543693005900000000000000000, "flexibilidad": 0.2837329867511449643029784313380000000000000000, "organismo_id": "c90246dd-1d2b-4605-b3a7-3320577f4b0e", "tipo_organismo": "especial_fisico", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 11, "rasgos_heredados": 11, "organos_heredados": 5, "sistemas_manuales": 0, "sistemas_heredados": 4, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "3ed167c5-d5c5-43fa-9d8f-9e461b8ba585", "alma": "Normal\n", "magia": null, "nombre": "Lignianos", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Árboles que desarrollaron conciencia con la ayuda de un Titán y asumieron la protección de sus bosques. Conservan una organización corporal vegetal mientras poseen pensamiento y comportamiento propios. Su identidad combina la vida vegetal con una función consciente de guardianía del ecosistema.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c", "nombre": "protector", "categoria": "funcional", "es_principal": true}, {"id": "71020565-4b81-4c79-9d80-b4cf22ec2da9", "nombre": "productor", "categoria": "trofico", "es_principal": false}], "biologia_calculada": {"masa": 1226.1123000000000000, "clado": "Lignianos", "rango": "rama_vegetal", "estado": "anatomia_vegetal_no_canonizada", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.4978676801505049741337459355000000000000, "tejidos": 0, "clado_id": "07ba4592-37dc-4cdd-bf75-f4ac40fbfc55", "organismo": "Lignianos", "tipo_nodo": "filogenetico", "estabilidad": 0.5559650802866915208305835248000000000000, "flexibilidad": 0.284754227845524427083942557622000000000000, "organismo_id": "16d49c23-50ae-4cc3-93a9-f39352b0d647", "tipo_organismo": "vegetal", "estado_criatura": "anatomia_vegetal_no_canonizada", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 5, "rasgos_heredados": 5, "organos_heredados": 1, "sistemas_manuales": 0, "sistemas_heredados": 0, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "b30032bf-79b4-4a78-82b5-afa70605f903", "alma": "", "magia": null, "nombre": "Seiloris", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres humanoides adaptados a desplazarse entre árboles mediante saltos y movimientos especializados de las piernas. Suelen habitar bosques y se alimentan de la esencia del Gran Árbol, estableciendo una relación estrecha con ese ecosistema. Su anatomía y cultura están condicionadas por la vida arbórea.", "pensamiento": "Consiente", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "ac8711c1-7b29-4a87-9cc1-74bdb866be93", "nombre": "consumidor_primario", "categoria": "trofico", "es_principal": true}], "biologia_calculada": {"masa": 1215.3654000000000000, "clado": "Linaje Seiloris", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.490676068999041769657559559109061304526194344515649367671648378339551215999999999999333, "tejidos": 0, "clado_id": "ea40f432-9724-48c0-aa70-1926bfabca70", "organismo": "Seiloris", "tipo_nodo": "filogenetico", "estabilidad": 0.549244787103544662367453175746377904126610811859544462924483451643431679999999999999333, "flexibilidad": 0.285497262830872280199090997276930480462912635163054666522512488836690595272829060297421664299477342369628097031560000000000001333, "organismo_id": "603a77e1-bf63-4611-8e6e-56fb0e5a63d9", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 12, "rasgos_heredados": 12, "organos_heredados": 17, "sistemas_manuales": 0, "sistemas_heredados": 5, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "c3880259-b89e-4839-b251-9c505be96496", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque interior.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4"}, {"id": "78099339-75c9-4929-b901-5d5f4b8678b0", "orden": 20, "nombre": "Sotobosque", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque interior.", "tipo_habitat": {"id": "be5e5f2f-7501-42b6-b012-09643abc3e66", "clave": "sotobosque", "nombre": "Sotobosque"}, "habitat_padre_id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4"}, {"id": "1a164462-b85e-4672-bde0-82cbe2db18d9", "orden": 30, "nombre": "Dosel", "criaturas": [{"id": "679a95a1-3e1e-4097-ba50-f7ca964e68cd", "alma": null, "magia": null, "nombre": "Lesfleeng", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres capaces de establecer una conexión estrecha con un huésped y alimentarse de su estado emocional para obtener y transformar recursos de Eterium. La relación puede funcionar de forma simbiótica: el Lesfleeng obtiene recursos del estado espiritual del huésped y, a cambio, puede devolverle Eterium utilizable. La estabilidad de la relación depende de la interacción sostenida entre ambos seres.", "pensamiento": null, "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [{"id": "0519045b-e898-4293-9fee-c0703ffffeac", "nombre": "simbionte", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 607.6827000000000000, "clado": "Lesfleeng", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.49332828267943122290347226980000000000000000, "tejidos": 0, "clado_id": "c3faa6d2-1721-45e9-bdaa-b92cfa31dd28", "organismo": "Lesfleeng", "tipo_nodo": "filogenetico", "estabilidad": 0.55019007067750982543693005900000000000000000, "flexibilidad": 0.2837329867511449643029784313380000000000000000, "organismo_id": "c90246dd-1d2b-4605-b3a7-3320577f4b0e", "tipo_organismo": "especial_fisico", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 11, "rasgos_heredados": 11, "organos_heredados": 5, "sistemas_manuales": 0, "sistemas_heredados": 4, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "3ed167c5-d5c5-43fa-9d8f-9e461b8ba585", "alma": "Normal\n", "magia": null, "nombre": "Lignianos", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Árboles que desarrollaron conciencia con la ayuda de un Titán y asumieron la protección de sus bosques. Conservan una organización corporal vegetal mientras poseen pensamiento y comportamiento propios. Su identidad combina la vida vegetal con una función consciente de guardianía del ecosistema.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c", "nombre": "protector", "categoria": "funcional", "es_principal": true}, {"id": "71020565-4b81-4c79-9d80-b4cf22ec2da9", "nombre": "productor", "categoria": "trofico", "es_principal": false}], "biologia_calculada": {"masa": 1226.1123000000000000, "clado": "Lignianos", "rango": "rama_vegetal", "estado": "anatomia_vegetal_no_canonizada", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.4978676801505049741337459355000000000000, "tejidos": 0, "clado_id": "07ba4592-37dc-4cdd-bf75-f4ac40fbfc55", "organismo": "Lignianos", "tipo_nodo": "filogenetico", "estabilidad": 0.5559650802866915208305835248000000000000, "flexibilidad": 0.284754227845524427083942557622000000000000, "organismo_id": "16d49c23-50ae-4cc3-93a9-f39352b0d647", "tipo_organismo": "vegetal", "estado_criatura": "anatomia_vegetal_no_canonizada", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 5, "rasgos_heredados": 5, "organos_heredados": 1, "sistemas_manuales": 0, "sistemas_heredados": 0, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "b30032bf-79b4-4a78-82b5-afa70605f903", "alma": "", "magia": null, "nombre": "Seiloris", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres humanoides adaptados a desplazarse entre árboles mediante saltos y movimientos especializados de las piernas. Suelen habitar bosques y se alimentan de la esencia del Gran Árbol, estableciendo una relación estrecha con ese ecosistema. Su anatomía y cultura están condicionadas por la vida arbórea.", "pensamiento": "Consiente", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "ac8711c1-7b29-4a87-9cc1-74bdb866be93", "nombre": "consumidor_primario", "categoria": "trofico", "es_principal": true}], "biologia_calculada": {"masa": 1215.3654000000000000, "clado": "Linaje Seiloris", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.490676068999041769657559559109061304526194344515649367671648378339551215999999999999333, "tejidos": 0, "clado_id": "ea40f432-9724-48c0-aa70-1926bfabca70", "organismo": "Seiloris", "tipo_nodo": "filogenetico", "estabilidad": 0.549244787103544662367453175746377904126610811859544462924483451643431679999999999999333, "flexibilidad": 0.285497262830872280199090997276930480462912635163054666522512488836690595272829060297421664299477342369628097031560000000000001333, "organismo_id": "603a77e1-bf63-4611-8e6e-56fb0e5a63d9", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 12, "rasgos_heredados": 12, "organos_heredados": 17, "sistemas_manuales": 0, "sistemas_heredados": 5, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque interior.", "tipo_habitat": {"id": "be2b5deb-7d13-4d15-a77f-e00a6cdbfbf2", "clave": "dosel", "nombre": "Dosel"}, "habitat_padre_id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4"}], "descripcion": "Zona interior de un bosque donde suelo, sotobosque, árboles y comunidades terrestres forman una red ecológica continua.", "mineral_ids": ["321cc69f-04da-40e9-9438-8b2e587d03ca"], "tipo_entorno": "natural", "criaturas_sin_habitat": []}, {"id": "9372cd47-1d83-4473-b2e4-e29d5600edf1", "clima": "Húmedo y cálido", "orden": 90, "nombre": "Bosque húmedo", "habitats": [{"id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d", "orden": 1, "nombre": "General", "criaturas": [], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "190adea1-edb1-4e5f-ade6-c5cd8f09b805", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque húmedo.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d"}, {"id": "8d3a6869-900b-444c-87ef-27f95dec3a08", "orden": 20, "nombre": "Sotobosque", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque húmedo.", "tipo_habitat": {"id": "be5e5f2f-7501-42b6-b012-09643abc3e66", "clave": "sotobosque", "nombre": "Sotobosque"}, "habitat_padre_id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d"}, {"id": "5fa661a2-1c60-4469-bda7-3e80cc50240a", "orden": 30, "nombre": "Dosel", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque húmedo.", "tipo_habitat": {"id": "be2b5deb-7d13-4d15-a77f-e00a6cdbfbf2", "clave": "dosel", "nombre": "Dosel"}, "habitat_padre_id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d"}], "descripcion": "Ambiente forestal con humedad alta, vegetación densa y disponibilidad de agua relativamente constante.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}, {"id": "b1680cca-9d39-4753-92b5-19794c4501c2", "clima": "Húmedo y variable", "orden": 100, "nombre": "Gran Saltus", "habitats": [{"id": "39c9497e-33d7-47e4-8006-82e1edcc713f", "orden": 1, "nombre": "General", "criaturas": [{"id": "3ed167c5-d5c5-43fa-9d8f-9e461b8ba585", "alma": "Normal\n", "magia": null, "nombre": "Lignianos", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Árboles que desarrollaron conciencia con la ayuda de un Titán y asumieron la protección de sus bosques. Conservan una organización corporal vegetal mientras poseen pensamiento y comportamiento propios. Su identidad combina la vida vegetal con una función consciente de guardianía del ecosistema.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c", "nombre": "protector", "categoria": "funcional", "es_principal": true}, {"id": "71020565-4b81-4c79-9d80-b4cf22ec2da9", "nombre": "productor", "categoria": "trofico", "es_principal": false}], "biologia_calculada": {"masa": 1226.1123000000000000, "clado": "Lignianos", "rango": "rama_vegetal", "estado": "anatomia_vegetal_no_canonizada", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.4978676801505049741337459355000000000000, "tejidos": 0, "clado_id": "07ba4592-37dc-4cdd-bf75-f4ac40fbfc55", "organismo": "Lignianos", "tipo_nodo": "filogenetico", "estabilidad": 0.5559650802866915208305835248000000000000, "flexibilidad": 0.284754227845524427083942557622000000000000, "organismo_id": "16d49c23-50ae-4cc3-93a9-f39352b0d647", "tipo_organismo": "vegetal", "estado_criatura": "anatomia_vegetal_no_canonizada", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 5, "rasgos_heredados": 5, "organos_heredados": 1, "sistemas_manuales": 0, "sistemas_heredados": 0, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Unidad raíz del ecosistema Gran Saltus.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "4d0ff009-0565-4ab6-9c3d-26803bf0662b", "orden": 2, "nombre": "Suelo", "criaturas": [], "descripcion": "Estrato terrestre donde se desarrollan raíces, materia orgánica, hongos y comunidades asociadas.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "39c9497e-33d7-47e4-8006-82e1edcc713f"}, {"id": "8250a3f7-1470-4583-bac4-8dc8349e442f", "orden": 3, "nombre": "Sotobosque", "criaturas": [{"id": "1724e00d-b491-4631-8a65-94c07f581ead", "alma": null, "magia": null, "nombre": "Feerin florales", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Feerin que nacen de semillas y desarrollan colores relacionados con las flores de las que surgen, adquiriendo propiedades asociadas a ellas.", "pensamiento": null, "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"clado": "Feerin florales", "rango": "linaje", "estado": "sin_organismo", "fuente": "ninguna", "clado_id": "187e430e-4f4c-411e-aee8-75c20eed66ed", "organismo": null, "tipo_nodo": "filogenetico", "organismo_id": null, "estado_criatura": "sin_organismo"}}], "descripcion": "Zona vegetal inferior bajo el dosel, con iluminación filtrada y alta interacción entre plantas, fauna y suelo.", "tipo_habitat": {"id": "be5e5f2f-7501-42b6-b012-09643abc3e66", "clave": "sotobosque", "nombre": "Sotobosque"}, "habitat_padre_id": "39c9497e-33d7-47e4-8006-82e1edcc713f"}, {"id": "fc34bb91-cc4d-47a6-8ece-d97f33ae56e2", "orden": 4, "nombre": "Dosel", "criaturas": [], "descripcion": "Estrato superior formado por las copas y estructuras vegetales expuestas a mayor radiación y circulación de aire.", "tipo_habitat": {"id": "be2b5deb-7d13-4d15-a77f-e00a6cdbfbf2", "clave": "dosel", "nombre": "Dosel"}, "habitat_padre_id": "39c9497e-33d7-47e4-8006-82e1edcc713f"}], "descripcion": "Bosque de enorme extensión donde suelo, sotobosque y dosel forman un continuo ecológico con múltiples comunidades vegetales y animales.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}]}, {"id": "4050b74b-0925-4666-9387-7322ff8ee1c6", "orden": 20, "nombre": "Pradera", "afinidad": "Espacios abiertos", "descripcion": "Bioma abierto dominado por gramíneas, hierbas y otras plantas bajas, con una cobertura arbórea limitada. Su estructura depende de la disponibilidad de agua, el clima y las perturbaciones naturales.", "ecosistemas": [{"id": "2a3291e5-162d-4dbe-bad6-f91846f33758", "clima": "Templado y estacional", "orden": 80, "nombre": "Pradera abierta", "habitats": [{"id": "af2f5255-8f0a-49da-9cad-9a5070980633", "orden": 1, "nombre": "General", "criaturas": [{"id": "704ccaf2-b1fd-44b7-b58b-2f64fbeb57ce", "alma": null, "magia": null, "nombre": "Flaxis", "biologia": null, "relacion": null, "stats_dnd": {"ca": 15, "rc": null, "tipo": "Alado", "stats": {"fuerza": 10, "carisma": 10, "destreza": 10, "sabiduria": 10, "constitucion": 10, "inteligencia": 10}, "hp_max": 41, "rasgos": [], "tamano": "Pequeño", "ca_nota": "Natural", "idiomas": null, "acciones": [{"id": "1784398210747-4mt45", "nombre": "Morder", "descripcion": "Amer \n"}, {"id": "1784398223601-jlgjq", "nombre": "Aliento de Fuego", "descripcion": "A\n"}], "hp_dados": "2d3 +3", "sentidos": null, "velocidad": {"nadar": null, "volar": null, "caminar": 30, "escalar": null, "excavar": null, "vuelo_estacionario": false}, "reacciones": [], "habilidades": [], "salvaciones": {}, "alineamiento": "CM", "resistencias": null, "bono_competencia": null, "inmunidades_dano": null, "vulnerabilidades": null, "percepcion_pasiva": null, "puntos_experiencia": null, "acciones_adicionales": [], "acciones_legendarias": [], "inmunidades_condicion": null, "acciones_legendarias_intro": null}, "imagen_url": "/dibujos/criaturas/vex.png", "descripcion": "Seres alados de comportamiento agresivo que atacan cuando perciben a una criatura indefensa. Su rasgo distintivo conocido es la combinación de locomoción aérea y una conducta depredadora oportunista frente a presas desarmadas.", "pensamiento": null, "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [{"id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754", "nombre": "depredador", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 1215.3654000000000000, "clado": "Aves", "rango": "rama_aviana", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.490676068999041769657559559109061304526194344515649367671648378339551215999999999999333, "tejidos": 0, "clado_id": "53420ba3-2c83-4d9f-9a8c-0b3b3666762d", "organismo": "Flaxis", "tipo_nodo": "filogenetico", "estabilidad": 0.549244787103544662367453175746377904126610811859544462924483451643431679999999999999333, "flexibilidad": 0.285497262830872280199090997276930480462912635163054666522512488836690595272829060297421664299477342369628097031560000000000001333, "organismo_id": "3f3558b3-4ea5-473b-a622-20c73ed206c5", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 11, "rasgos_heredados": 11, "organos_heredados": 18, "sistemas_manuales": 0, "sistemas_heredados": 5, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "92010e53-ad64-4ba8-8371-94ded4975de3", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Pradera abierta.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "af2f5255-8f0a-49da-9cad-9a5070980633"}], "descripcion": "Ambiente abierto dominado por vegetación herbácea, con árboles dispersos o ausentes y una fuerte exposición a las condiciones atmosféricas.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}]}, {"id": "bba5ce6d-a6b5-4536-b9ec-63777a580c07", "orden": 30, "nombre": "Desierto", "afinidad": "Aridez", "descripcion": "Bioma caracterizado por una disponibilidad de agua baja e irregular. La vegetación y la fauna están condicionadas por la aridez, las variaciones térmicas y la escasez de recursos hídricos.", "ecosistemas": [{"id": "c4520fdd-7211-492f-87a4-292c9dee8f1f", "clima": "Árido y seco", "orden": 70, "nombre": "Desierto arenoso", "habitats": [{"id": "495e3b7a-8ee8-4937-903e-d82814365cdc", "orden": 1, "nombre": "General", "criaturas": [], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "11f3205e-0bfb-4374-99ae-d9897abf2433", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Desierto arenoso.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "495e3b7a-8ee8-4937-903e-d82814365cdc"}], "descripcion": "Ambiente dominado por sustratos arenosos y disponibilidad de agua baja e irregular.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}, {"id": "a16a136a-e9a9-46e7-98da-ab0bb9738ef0", "clima": "Árido y seco", "orden": 100, "nombre": "Desierto pedregoso", "habitats": [{"id": "f1255e42-cd7c-4cc2-b651-fd97cd3c6c38", "orden": 1, "nombre": "General", "criaturas": [], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "72849104-3aa8-45af-998a-b6d6fe78988b", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Desierto pedregoso.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "f1255e42-cd7c-4cc2-b651-fd97cd3c6c38"}], "descripcion": "Ambiente desértico dominado por roca y grava, con poca cobertura vegetal y grandes variaciones térmicas.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}]}, {"id": "ee5da964-2274-40d0-abb4-009687b0a024", "orden": 35, "nombre": "Abismo", "afinidad": "Profundidad y oscuridad", "descripcion": "", "ecosistemas": [{"id": "95c9bc0b-b752-48f1-ba3b-2f738d047ed8", "clima": "Condiciones propias del Abismo", "orden": 10, "nombre": "Abismo", "habitats": [{"id": "e90e641c-34bf-407b-a774-fb919a49f7ae", "orden": 1, "nombre": "General", "criaturas": [{"id": "c8abd38f-be31-41f3-abe2-231657770710", "alma": "Impura", "magia": null, "nombre": "Cambiaformas", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres capaces de adoptar formas que parecen objetos para atraer a criaturas desprevenidas. Cuando una víctima entra en contacto con ellos, utilizan pequeños órganos punzantes para adormecer la zona y después emplean un aguijón para extraer sangre. Su estrategia combina mimetismo, inmovilización y alimentación por contacto.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [{"id": "ad30e9aa-f27c-496a-bfb8-b66d060da82b", "nombre": "parásito", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 607.6827000000000000, "clado": "Cambiaformas", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.49332828267943122290347226980000000000000000, "tejidos": 0, "clado_id": "28c50e96-07f2-4ce2-a0e3-d213dd22e6c9", "organismo": "Cambiaformas", "tipo_nodo": "filogenetico", "estabilidad": 0.55019007067750982543693005900000000000000000, "flexibilidad": 0.2837329867511449643029784313380000000000000000, "organismo_id": "d854bfa5-fe6d-48cf-8a09-3befe86a4c7e", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 15, "rasgos_heredados": 15, "organos_heredados": 8, "sistemas_manuales": 0, "sistemas_heredados": 6, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "a86bb4c2-b6ee-4006-abba-9343d600f303", "alma": "Impura", "magia": null, "nombre": "Demonio", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres físicos de forma amorfa que consumen criaturas y pueden incorporar a su cuerpo estructuras derivadas de aquello que han devorado. Se alimentan de carne y, al mismo tiempo, dependen del Eterium de otros seres: no pueden atraer Eterium de forma natural, porque su propio Eterium es demasiado inestable para generar una atracción eficaz. Pueden concentrarlo y contenerlo, por lo que buscan víctimas, las someten al dolor y a emociones negativas para desestabilizar su flujo de Eterium y después absorberlo, especialmente tras la muerte. El Eterium obtenido les proporciona el recurso que necesitan para sostenerse y facilitar la caza de nuevas presas.", "pensamiento": "Salvaje", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "b621b2f7-203c-4197-9850-0550ac77185e", "nombre": "carroñero", "categoria": "trofico", "es_principal": false}, {"id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754", "nombre": "depredador", "categoria": "interaccion", "es_principal": false}], "biologia_calculada": {"masa": 636.6199714285714286, "clado": "Demonios", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.49332828267943122290347226980000000000000000, "tejidos": 0, "clado_id": "0b565f86-2d0b-4de4-b8d4-6eada85a244c", "organismo": "Demonio", "tipo_nodo": "filogenetico", "estabilidad": 0.55019007067750982543693005900000000000000000, "flexibilidad": 0.2837329867511449643029784313380000000000000000, "organismo_id": "8b8b17ce-7ccd-42db-9f95-99dddec7a7e4", "tipo_organismo": "demonio", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 16, "rasgos_heredados": 13, "organos_heredados": 8, "sistemas_manuales": 0, "sistemas_heredados": 7, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "cc46b3f1-347c-4857-9a1d-214c688a0be2", "alma": "Normal", "magia": null, "nombre": "Dramarias", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Criaturas antiguas y de gran tamaño que desarrollaron su supervivencia principalmente mediante su estructura corporal. Al carecer de defensas mágicas especializadas, dependieron de músculos, huesos y resistencia física para soportar las condiciones de su entorno, dando origen a formas extremadamente robustas.", "pensamiento": "Salvaje", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"masa": 1316.6458500000000000, "clado": "Dramarias", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.490268036125135699927419142079686120607147320594980039621132744237943710769230769230000, "tejidos": 0, "clado_id": "7cfd64b9-6c28-4535-8944-eeab63fd3958", "organismo": "Dramarias", "tipo_nodo": "filogenetico", "estabilidad": 0.549099358861396175741379809091974504761474013684089764912865521127036553846153846153077, "flexibilidad": 0.285768689920061098029262161267535169764899194418909230602899025580796840699418146497024997268627702734186265805646153846153847692, "organismo_id": "a7d75787-6f2a-4b1f-929d-95928fb2bd2c", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 10, "rasgos_heredados": 10, "organos_heredados": 16, "sistemas_manuales": 0, "sistemas_heredados": 4, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "c36b8b7c-b62b-456f-ba02-7c35c6f54d4d", "alma": null, "magia": null, "nombre": "Hibridos", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres originados por la combinación de características de más de un linaje o tipo de criatura. Su estructura puede reunir rasgos heredados de distintos organismos y, dependiendo de su origen, presentar una anatomía y un funcionamiento que no coinciden completamente con ninguna de las formas de vida de procedencia.", "pensamiento": null, "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"clado": "Híbridos", "rango": "categoria_origen", "estado": "origen_sin_organismo", "fuente": "ninguna", "clado_id": "9dfdd60a-6eeb-4faf-b4df-f682f4a1fc3d", "organismo": null, "tipo_nodo": "origen", "organismo_id": null, "estado_criatura": "origen_sin_organismo"}}, {"id": "250d08a9-a57f-4463-8ef6-87bcddc91fa2", "alma": null, "magia": null, "nombre": "Quimera", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres producidos mediante rituales del Abismo que unen a un humano con otro ser u objeto. La combinación altera la organización del cuerpo y puede reunir componentes, tejidos o estructuras de procedencias diferentes. Su naturaleza depende de los elementos que participaron en la unión y del proceso utilizado para realizarla.", "pensamiento": null, "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"clado": "Quimeras rituales", "rango": "categoria_origen", "estado": "origen_sin_organismo", "fuente": "ninguna", "clado_id": "021988b9-e63f-45c1-98ad-a8f53dfa37eb", "organismo": null, "tipo_nodo": "origen", "organismo_id": null, "estado_criatura": "origen_sin_organismo"}}, {"id": "21a23da1-703b-43c7-aa2c-19085cc3080a", "alma": null, "magia": null, "nombre": "Rancrodeen", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres parasitarios especializados en copiar y ocupar estructuras neurológicas de otras criaturas. Pueden generar una copia del cerebro de su huésped y alimentarse de su memoria; cuando el cerebro original queda destruido, son capaces de regenerar una estructura equivalente, buscar otro cuerpo o generar uno nuevo y trasladarse a él. Su continuidad depende de conservar suficiente información para reconstruir su identidad funcional.", "pensamiento": null, "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [{"id": "ad30e9aa-f27c-496a-bfb8-b66d060da82b", "nombre": "parásito", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 648.1948800000000000, "clado": "Rancrodeen", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.49332828267943122290347226980000000000000000, "tejidos": 0, "clado_id": "6be883ad-be20-45b9-ba24-d93302988b85", "organismo": "Rancrodeen", "tipo_nodo": "filogenetico", "estabilidad": 0.55019007067750982543693005900000000000000000, "flexibilidad": 0.2837329867511449643029784313380000000000000000, "organismo_id": "4916accf-b417-4694-9c10-22a6402a6aca", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 15, "rasgos_heredados": 15, "organos_heredados": 7, "sistemas_manuales": 0, "sistemas_heredados": 5, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "471a380f-2bb5-4d30-bf54-8d63d98cc72a", "alma": "Impura", "magia": null, "nombre": "Vampiro", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": "/dibujos/personajes/aldruka_rostros.png", "descripcion": "Seres bípedos procedentes del Abismo. Se alimentan de carne y utilizan la sangre de sus víctimas principalmente como fuente de hidratación, una adaptación surgida en un ambiente con escasez de agua. Su piel y su pelo pueden adquirir la coloración asociada a la sangre de la que se alimentan.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754", "nombre": "depredador", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 1178.5361454545454545, "clado": "Vampiros", "rango": "divergencia_humana", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.492085057516748666694450686663622486496653598991710641096085177346664632499999999999688, "tejidos": 0, "clado_id": "1cc16563-25d3-4291-9374-3fe221bb860b", "organismo": "Vampiro", "tipo_nodo": "filogenetico", "estabilidad": 0.549746969002213655248112769974864642559348818059161466995851617957858599999999999999688, "flexibilidad": 0.284559991163517143629281196621873662716990297732681874932427729142198716534138622014416405140380004235763170483543750000000000625, "organismo_id": "19e93ec5-26a4-46b9-bb55-385a6aab46f3", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 23, "rasgos_heredados": 23, "organos_heredados": 36, "sistemas_manuales": 0, "sistemas_heredados": 11, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "9009a451-e947-4387-85e2-1c9913b3154f", "alma": null, "magia": null, "nombre": "Zlish", "biologia": null, "relacion": null, "stats_dnd": {"ca": null, "rc": null, "tipo": null, "stats": {"fuerza": 10, "carisma": 10, "destreza": 10, "sabiduria": 10, "constitucion": 10, "inteligencia": 10}, "hp_max": null, "rasgos": [], "tamano": null, "ca_nota": null, "idiomas": null, "acciones": [], "hp_dados": null, "sentidos": null, "velocidad": {"nadar": null, "volar": null, "caminar": 30, "escalar": null, "excavar": null, "vuelo_estacionario": false}, "reacciones": [], "habilidades": [], "salvaciones": {}, "alineamiento": null, "resistencias": null, "bono_competencia": null, "inmunidades_dano": null, "vulnerabilidades": null, "percepcion_pasiva": null, "puntos_experiencia": null, "acciones_adicionales": [], "acciones_legendarias": [], "inmunidades_condicion": null, "acciones_legendarias_intro": null}, "imagen_url": "/dibujos/criaturas/slime.png", "descripcion": "Seres de cuerpo predominantemente gelatinoso, capaces de mantener una forma propia sin depender de un esqueleto rígido. Su organización corporal permite deformarse y recuperar su configuración, por lo que su supervivencia depende de conservar la cohesión de la masa que forma el organismo.", "pensamiento": null, "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"masa": 607.6827000000000000, "clado": "Oculares Zlish", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.49332828267943122290347226980000000000000000, "tejidos": 0, "clado_id": "4d63e685-707a-4c22-bef5-514ab0a40e27", "organismo": "Zlish", "tipo_nodo": "filogenetico", "estabilidad": 0.55019007067750982543693005900000000000000000, "flexibilidad": 0.2837329867511449643029784313380000000000000000, "organismo_id": "a8afafc2-d359-49a1-a6af-767a7103d63d", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 9, "rasgos_heredados": 9, "organos_heredados": 5, "sistemas_manuales": 0, "sistemas_heredados": 4, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "7529c874-e490-4bbe-ac20-178a08f65ec0", "orden": 10, "nombre": "Cueva", "criaturas": [{"id": "b5e51519-1757-4fc2-b936-ae7eb17be904", "alma": "Impura", "magia": null, "nombre": "Necromanser", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": "/dibujos/personajes/asher_rostros.png", "descripcion": "Seres capaces de funcionar sin un alma propia y de aprovechar Eterium proveniente de las almas de otras criaturas. Utilizan ese recurso para reanimar cadáveres y dirigirlos según sus necesidades. Su existencia rompe la relación habitual entre cuerpo vivo, alma y control consciente, por lo que su biología y su interacción con Eterium deben tratarse como una adaptación especializada.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"masa": 1178.5361454545454545, "clado": "Necromanser", "rango": "divergencia_humana", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.492085057516748666694450686663622486496653598991710641096085177346664632499999999999688, "tejidos": 0, "clado_id": "9cdc288a-20da-49f9-ada2-a2dd0059d259", "organismo": "Necromanser", "tipo_nodo": "filogenetico", "estabilidad": 0.549746969002213655248112769974864642559348818059161466995851617957858599999999999999688, "flexibilidad": 0.284559991163517143629281196621873662716990297732681874932427729142198716534138622014416405140380004235763170483543750000000000625, "organismo_id": "01669f74-8e21-46d6-a20a-23341dc3d2b9", "tipo_organismo": "especial_fisico", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 26, "rasgos_heredados": 26, "organos_heredados": 36, "sistemas_manuales": 0, "sistemas_heredados": 11, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Abismo.", "tipo_habitat": {"id": "08d591da-5030-4a65-afdb-4005ddff79a2", "clave": "cueva", "nombre": "Cueva"}, "habitat_padre_id": "e90e641c-34bf-407b-a774-fb919a49f7ae"}, {"id": "a1cdd1d1-3144-4d4a-a786-572a47134720", "orden": 20, "nombre": "Subterráneo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Abismo.", "tipo_habitat": {"id": "21e10cd9-7243-4099-853d-42e0cce62d68", "clave": "subterraneo", "nombre": "Subterráneo"}, "habitat_padre_id": "e90e641c-34bf-407b-a774-fb919a49f7ae"}], "descripcion": "Entorno especial asociado al Abismo. Se mantiene separado de los biomas naturales porque su condición depende de la naturaleza del propio dominio y no de un clima o comunidad ecológica terrestre convencional.", "mineral_ids": [], "tipo_entorno": "especial", "criaturas_sin_habitat": []}]}, {"id": "c2ff5a5d-6727-4a94-a19d-3921f52bdfc7", "orden": 40, "nombre": "Montaña", "afinidad": "Altitud y relieve", "descripcion": "Bioma definido por un relieve elevado y un gradiente de altitud que modifica temperatura, presión, humedad y exposición. Puede contener varios ambientes locales desde las laderas hasta las zonas de cumbre.", "ecosistemas": [{"id": "6dd0a416-b88c-4377-82aa-bdfb17570166", "clima": "Variable con la altitud y la orientación", "orden": 50, "nombre": "Ladera montañosa", "habitats": [{"id": "6fda248a-790c-4c96-b5b8-679c9afa3bdf", "orden": 1, "nombre": "General", "criaturas": [{"id": "52d83162-0902-41f7-b28d-d96b8d6dc612", "alma": null, "magia": null, "nombre": "Espiritu Estelar", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": "/dibujos/personajes/stargirl_cuerpo_completo.png", "descripcion": "Espíritus vinculados al entorno estelar y formados sin un cuerpo físico convencional. Al igual que otros espíritus, su existencia se sostiene en Eterium coherente y su identidad depende de la conservación de ese estado. Su relación con las estrellas constituye la característica distintiva de este linaje espiritual.", "pensamiento": null, "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"clado": "Espíritus estelares", "rango": "linaje_espiritual", "estado": "ontologica_sin_organismo", "fuente": "ninguna", "clado_id": "24fdef85-f46b-4c0c-93db-59be3fe66a5d", "organismo": null, "tipo_nodo": "ontologico", "organismo_id": null, "estado_criatura": "ontologica_sin_organismo"}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "e85bd5c5-0cf1-42a1-9d1c-7d1b673caac2", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Ladera montañosa.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "6fda248a-790c-4c96-b5b8-679c9afa3bdf"}], "descripcion": "Ambiente de pendiente donde la altitud, la exposición y el relieve generan cambios locales de temperatura, humedad y vegetación.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}]}, {"id": "e853a12a-ddc0-471c-ad11-e05002229af1", "orden": 45, "nombre": "Agua dulce", "afinidad": "Agua continental", "descripcion": "Bioma dominado por aguas continentales con baja concentración de sales disueltas, incluyendo ríos, lagos, arroyos y otros sistemas interiores. Sus condiciones cambian según flujo, profundidad, temperatura, luz y características del entorno terrestre asociado.", "ecosistemas": []}, {"id": "4c7ac11b-98d2-4ef8-862c-6739f5b3ccec", "orden": 50, "nombre": "Marino", "afinidad": "Agua salina", "descripcion": "Bioma de aguas salinas conectado con mares y océanos. Su estructura ecológica cambia con la profundidad, la distancia a la costa, la luz disponible y las condiciones del agua.", "ecosistemas": [{"id": "faa68284-34cc-4a3f-a580-1796ff2579b5", "clima": "Marino costero", "orden": 40, "nombre": "Costa marina", "habitats": [{"id": "0fc76dfa-6a5b-4ba5-bcaa-3a72e50ba770", "orden": 1, "nombre": "General", "criaturas": [{"id": "41c058eb-1f75-48d3-912e-b6124f947b35", "alma": "Impura", "magia": null, "nombre": "Sirena", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres marinos que carecen de un alma propia estable y dependen del Eterium de las almas ajenas para obtener el recurso que necesitan para realizar fenómenos mágicos. Son carnívoras y defienden activamente su territorio, convirtiendo la presencia de otras criaturas en una posible fuente de alimento físico y espiritual.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754", "nombre": "depredador", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 1485.4466000000000000, "clado": "Sirenidae", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.489711627660718332113591300675992687990265015248612774097702334099388021818181818180909, "tejidos": 0, "clado_id": "41885472-d928-458d-a367-b0112aa504b5", "organismo": "Sirena", "tipo_nodo": "filogenetico", "estabilidad": 0.548901047622102784887643400017788051081742016172106085806113797695588654545454545453636, "flexibilidad": 0.286138817768954940524950112163814291540335411585983636167062484777305357190221445860120451317469103231311041406672727272727274545, "organismo_id": "a58cce8e-50db-4d0d-8d38-e87b9d224b2b", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 11, "rasgos_heredados": 11, "organos_heredados": 14, "sistemas_manuales": 0, "sistemas_heredados": 3, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "5712a93a-5baf-40af-9560-685abc0748d2", "orden": 10, "nombre": "Litoral", "criaturas": [{"id": "41c058eb-1f75-48d3-912e-b6124f947b35", "alma": "Impura", "magia": null, "nombre": "Sirena", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres marinos que carecen de un alma propia estable y dependen del Eterium de las almas ajenas para obtener el recurso que necesitan para realizar fenómenos mágicos. Son carnívoras y defienden activamente su territorio, convirtiendo la presencia de otras criaturas en una posible fuente de alimento físico y espiritual.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [{"id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754", "nombre": "depredador", "categoria": "interaccion", "es_principal": true}], "biologia_calculada": {"masa": 1485.4466000000000000, "clado": "Sirenidae", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.489711627660718332113591300675992687990265015248612774097702334099388021818181818180909, "tejidos": 0, "clado_id": "41885472-d928-458d-a367-b0112aa504b5", "organismo": "Sirena", "tipo_nodo": "filogenetico", "estabilidad": 0.548901047622102784887643400017788051081742016172106085806113797695588654545454545453636, "flexibilidad": 0.286138817768954940524950112163814291540335411585983636167062484777305357190221445860120451317469103231311041406672727272727274545, "organismo_id": "a58cce8e-50db-4d0d-8d38-e87b9d224b2b", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 11, "rasgos_heredados": 11, "organos_heredados": 14, "sistemas_manuales": 0, "sistemas_heredados": 3, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Costa marina.", "tipo_habitat": {"id": "47555aec-1ea7-400a-adc1-fc2f387c19af", "clave": "litoral", "nombre": "Litoral"}, "habitat_padre_id": "0fc76dfa-6a5b-4ba5-bcaa-3a72e50ba770"}], "descripcion": "Zona de transición entre tierra y mar donde la profundidad, el oleaje, la luz y el aporte continental producen condiciones ecológicas distintas de las del mar abierto.", "mineral_ids": [], "tipo_entorno": "acuatico", "criaturas_sin_habitat": []}, {"id": "aa1b3318-e242-4b30-8fff-8cdb6f8da7c1", "clima": "Marino y estable", "orden": 120, "nombre": "Mar abierto", "habitats": [{"id": "f5e6f6a4-ca80-4ecf-8473-52b0108e60e1", "orden": 1, "nombre": "General", "criaturas": [], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "c6de5ace-6529-442a-a628-50d015c81810", "orden": 10, "nombre": "Pelágico", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Mar abierto.", "tipo_habitat": {"id": "8a885221-a3ee-4b2c-9c40-ae9bc7ee1715", "clave": "pelagico", "nombre": "Pelágico"}, "habitat_padre_id": "f5e6f6a4-ca80-4ecf-8473-52b0108e60e1"}], "descripcion": "Zona marina alejada de la costa, con circulación de agua y comunidades condicionadas principalmente por profundidad y disponibilidad de luz.", "mineral_ids": [], "tipo_entorno": "acuatico", "criaturas_sin_habitat": []}, {"id": "b0df6256-3d81-44b3-acd7-f7832c4c0e2e", "clima": "Marino y oscuro", "orden": 130, "nombre": "Mar profundo", "habitats": [{"id": "6a069830-467e-4e60-8122-c0cb751d94ac", "orden": 1, "nombre": "General", "criaturas": [{"id": "5a8d6bd4-7192-451d-9574-413fd2f70305", "alma": "Divina", "magia": null, "nombre": "Waarin", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres bípedos adaptados a las profundidades marinas. Suelen permanecer ocultos en regiones profundas y mantienen una actitud neutral mientras no se invade su territorio. Su comportamiento territorial constituye una de sus principales características sociales conocidas.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"masa": 1485.4466000000000000, "clado": "Waarinidae", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.489711627660718332113591300675992687990265015248612774097702334099388021818181818180909, "tejidos": 0, "clado_id": "b5c35b07-5abe-43e2-99c6-8b4e75c089dd", "organismo": "Waarin", "tipo_nodo": "filogenetico", "estabilidad": 0.548901047622102784887643400017788051081742016172106085806113797695588654545454545453636, "flexibilidad": 0.286138817768954940524950112163814291540335411585983636167062484777305357190221445860120451317469103231311041406672727272727274545, "organismo_id": "be40372d-122b-494d-8139-d710992c24a2", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 9, "rasgos_heredados": 9, "organos_heredados": 14, "sistemas_manuales": 0, "sistemas_heredados": 3, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "b31472e3-2520-44dc-b775-dbeaa17630bd", "orden": 10, "nombre": "Pelágico", "criaturas": [{"id": "5a8d6bd4-7192-451d-9574-413fd2f70305", "alma": "Divina", "magia": null, "nombre": "Waarin", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres bípedos adaptados a las profundidades marinas. Suelen permanecer ocultos en regiones profundas y mantienen una actitud neutral mientras no se invade su territorio. Su comportamiento territorial constituye una de sus principales características sociales conocidas.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"masa": 1485.4466000000000000, "clado": "Waarinidae", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.489711627660718332113591300675992687990265015248612774097702334099388021818181818180909, "tejidos": 0, "clado_id": "b5c35b07-5abe-43e2-99c6-8b4e75c089dd", "organismo": "Waarin", "tipo_nodo": "filogenetico", "estabilidad": 0.548901047622102784887643400017788051081742016172106085806113797695588654545454545453636, "flexibilidad": 0.286138817768954940524950112163814291540335411585983636167062484777305357190221445860120451317469103231311041406672727272727274545, "organismo_id": "be40372d-122b-494d-8139-d710992c24a2", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 9, "rasgos_heredados": 9, "organos_heredados": 14, "sistemas_manuales": 0, "sistemas_heredados": 3, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Mar profundo.", "tipo_habitat": {"id": "8a885221-a3ee-4b2c-9c40-ae9bc7ee1715", "clave": "pelagico", "nombre": "Pelágico"}, "habitat_padre_id": "6a069830-467e-4e60-8122-c0cb751d94ac"}, {"id": "67096c9d-56c0-43c3-955c-ae548e5049bd", "orden": 20, "nombre": "Bentónico", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Mar profundo.", "tipo_habitat": {"id": "d22c735a-f48f-4b50-b8cc-344a52beab24", "clave": "bentonico", "nombre": "Bentónico"}, "habitat_padre_id": "6a069830-467e-4e60-8122-c0cb751d94ac"}], "descripcion": "Zona marina profunda con presión elevada, poca o ninguna luz y una disponibilidad de recursos distinta de las aguas superficiales.", "mineral_ids": [], "tipo_entorno": "acuatico", "criaturas_sin_habitat": []}]}, {"id": "81b63b96-02d9-484c-94b2-ed01951dd4ac", "orden": 60, "nombre": "Tundra", "afinidad": "Frío", "descripcion": "Bioma frío con vegetación baja o escasa, condicionado por temperaturas bajas y temporadas de crecimiento cortas. En Garlia puede aparecer también asociado a grandes alturas.", "ecosistemas": [{"id": "dfa7498a-f866-4834-a636-4a5364c119b1", "clima": "Frío y de alta altitud", "orden": 60, "nombre": "Cumbres frías", "habitats": [{"id": "f1378225-077e-491d-b1a7-dbd2c9019a2c", "orden": 1, "nombre": "General", "criaturas": [{"id": "b8674cbd-1336-41a8-ab99-2646ad935773", "alma": "Normal", "magia": null, "nombre": "Aoris", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres bípedos alados de climas fríos. Suelen ser orgullosos y mantener distancia de otras especies; algunos permanecen en Aelistan junto al Titán del Cielo, mientras la mayoría descendió para explorar el mundo inferior. Desarrollaron las Runas Aoris. Su anatomía incluye un pico córneo, por lo que su habla tiene limitaciones para producir sonidos bilabiales como B, M, P y F.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": "residente", "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"masa": 1178.5361454545454545, "clado": "Aoris", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.492085057516748666694450686663622486496653598991710641096085177346664632499999999999688, "tejidos": 0, "clado_id": "5a3e592f-7b2b-4df1-b597-f8760331d0ec", "organismo": "Aoris", "tipo_nodo": "filogenetico", "estabilidad": 0.549746969002213655248112769974864642559348818059161466995851617957858599999999999999688, "flexibilidad": 0.284559991163517143629281196621873662716990297732681874932427729142198716534138622014416405140380004235763170483543750000000000625, "organismo_id": "a38d1bde-2da5-4858-9568-03a0cfddbe94", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 23, "rasgos_heredados": 23, "organos_heredados": 41, "sistemas_manuales": 0, "sistemas_heredados": 11, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "7ab891c2-5ff5-43d3-96c0-89a877763507", "alma": "Impura", "magia": null, "nombre": "Errante", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": "/dibujos/personajes/errantes_froslia_cuerpo_completo.png", "descripcion": "Criatura cuyo rasgo más característico conocido es su existencia itinerante. El registro actual conserva su identidad y clasificación general, pero su linaje, anatomía y mecanismos de supervivencia todavía no están suficientemente documentados para asignarle propiedades específicas.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"clado": "Errantes", "rango": "categoria_origen", "estado": "origen_sin_organismo", "fuente": "ninguna", "clado_id": "33a33c09-e99f-417c-a5a4-719ebe407011", "organismo": null, "tipo_nodo": "origen", "organismo_id": null, "estado_criatura": "origen_sin_organismo"}}, {"id": "51cabb9f-cb8e-44fe-9172-2049c40f2276", "alma": "Normal", "magia": "Clases magicas: \n\nIniciado: Cuando estan en el colegio y aprenden cosas basicas como el flujo de mana \nAprendiz: Cuando ya domina toda la Teoria Basica y termina el colegio.\nDiscípulo: Al completar la prueba inicial se les asigna un mentor.\nAdepto: Logra dominar un hechizo a la perfeccion.\nMaestro: Logra dominar mas de un hechizo o tienen un gran control de su mana por lo que se le permite tomar un alumno.\nArchimago: Esta clase solo se entrega a quienes logran crear un hechizo.", "nombre": "Humano", "biologia": "Especie humana: organismo animal terrestre, bípede y pensante. Anatomía basada en 11 sistemas; incluye piel, uñas, aparato locomotor, circulación, respiración, digestión, excreción, reproducción, regulación endocrina, defensa inmunitaria y percepción sensorial. La composición de tejidos se mantiene en nivel biológico cualitativo cuando la cuantificación molecular no es necesaria para la especie.", "relacion": null, "stats_dnd": null, "imagen_url": "/dibujos/fanart/07.png", "descripcion": "Seres bípedos y pensantes especializados en la manipulación del entorno mediante herramientas, conocimiento y organización social. No poseen una capacidad natural especializada para canalizar Eterium de forma consciente, pero desarrollaron métodos propios para convertir Eterium, Garin y Oris en una práctica mágica acumulativa. Su desarrollo tecnológico y científico amplía sus capacidades más allá de sus limitaciones biológicas inmediatas.", "pensamiento": "Pensante", "comportamiento": null, "tipo_presencia": null, "descripcion_dnd": null, "roles_ecologicos": [], "biologia_calculada": {"masa": 1178.5361454545454545, "clado": "Humanidad", "rango": "linaje_humano", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.492085057516748666694450686663622486496653598991710641096085177346664632499999999999688, "tejidos": 0, "clado_id": "da056924-d419-45e1-b902-b700c018cc2b", "organismo": "Humano", "tipo_nodo": "filogenetico", "estabilidad": 0.549746969002213655248112769974864642559348818059161466995851617957858599999999999999688, "flexibilidad": 0.284559991163517143629281196621873662716990297732681874932427729142198716534138622014416405140380004235763170483543750000000000625, "organismo_id": "56cb620b-5f6b-4064-a4b1-497bb453531d", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 23, "rasgos_heredados": 23, "organos_heredados": 36, "sistemas_manuales": 0, "sistemas_heredados": 11, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "34bcf7a9-7f0c-4d9f-839b-73f6fed281c8", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Cumbres frías.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "f1378225-077e-491d-b1a7-dbd2c9019a2c"}, {"id": "e438c8c7-2faa-4ea2-a457-c4f622ddd8b3", "orden": 20, "nombre": "Hielo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Cumbres frías.", "tipo_habitat": {"id": "c49a39f4-8e65-432b-9ed6-7ddd0ae1be1a", "clave": "hielo", "nombre": "Hielo"}, "habitat_padre_id": "f1378225-077e-491d-b1a7-dbd2c9019a2c"}], "descripcion": "Ambiente de cumbre sometido a bajas temperaturas, viento y una temporada de crecimiento corta. Se trata como ecosistema de transición alpina dentro de la tundra de Garlia.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}]}, {"id": "3587ec2a-d960-4b04-bd57-2b1d3137001a", "orden": 70, "nombre": "Humedal", "afinidad": "Saturación hídrica", "descripcion": "Bioma donde el agua permanece o circula con suficiente frecuencia para modificar de forma estable el suelo, la vegetación y la disponibilidad de recursos.", "ecosistemas": [{"id": "f883a6ae-1a33-4870-9a98-8005ebb42c4d", "clima": "Húmedo y saturado", "orden": 110, "nombre": "Humedal continental", "habitats": [{"id": "2252d258-6be3-4b68-8b53-0460597e2a49", "orden": 1, "nombre": "General", "criaturas": [], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "9e359a61-b15e-4a24-a7e7-db788a2b99fa", "orden": 10, "nombre": "Suelo", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Humedal continental.", "tipo_habitat": {"id": "4607e548-fcaf-495e-a362-698bada3433c", "clave": "suelo", "nombre": "Suelo"}, "habitat_padre_id": "2252d258-6be3-4b68-8b53-0460597e2a49"}, {"id": "ef23125b-bf09-433e-b8c5-a98aac560566", "orden": 20, "nombre": "Ribera", "criaturas": [], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Humedal continental.", "tipo_habitat": {"id": "c0a92d2b-a219-4aa7-b565-3e27ccca7711", "clave": "ribera", "nombre": "Ribera"}, "habitat_padre_id": "2252d258-6be3-4b68-8b53-0460597e2a49"}], "descripcion": "Ambiente de transición donde el agua superficial o subterránea modifica de forma estable el suelo y la vegetación.", "mineral_ids": [], "tipo_entorno": "natural", "criaturas_sin_habitat": []}]}], "version": 1, "generado_en": "2026-10-02T18:14:42.138414+00:00", "ecosistemas_sin_bioma": [{"id": "10183593-692b-4ebe-9b93-3d0c560130eb", "clima": "Variable según altitud y región", "orden": 30, "nombre": "Capa aérea", "habitats": [{"id": "4cb83c32-f3a6-4c07-a378-f6cc3ece03e3", "orden": 1, "nombre": "General", "criaturas": [{"id": "b8674cbd-1336-41a8-ab99-2646ad935773", "alma": "Normal", "magia": null, "nombre": "Aoris", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres bípedos alados de climas fríos. Suelen ser orgullosos y mantener distancia de otras especies; algunos permanecen en Aelistan junto al Titán del Cielo, mientras la mayoría descendió para explorar el mundo inferior. Desarrollaron las Runas Aoris. Su anatomía incluye un pico córneo, por lo que su habla tiene limitaciones para producir sonidos bilabiales como B, M, P y F.", "pensamiento": "Pensante", "comportamiento": null, "descripcion_dnd": null, "biologia_calculada": {"masa": 1178.5361454545454545, "clado": "Aoris", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.492085057516748666694450686663622486496653598991710641096085177346664632499999999999688, "tejidos": 0, "clado_id": "5a3e592f-7b2b-4df1-b597-f8760331d0ec", "organismo": "Aoris", "tipo_nodo": "filogenetico", "estabilidad": 0.549746969002213655248112769974864642559348818059161466995851617957858599999999999999688, "flexibilidad": 0.284559991163517143629281196621873662716990297732681874932427729142198716534138622014416405140380004235763170483543750000000000625, "organismo_id": "a38d1bde-2da5-4858-9568-03a0cfddbe94", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 23, "rasgos_heredados": 23, "organos_heredados": 41, "sistemas_manuales": 0, "sistemas_heredados": 11, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "fd1166f3-596c-42d2-9bca-7561fa0b64ab", "alma": "Divina", "magia": null, "nombre": "Grifos", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres alados creados por el Titán del Cielo para proteger su reino. Actúan como guardianes territoriales y pueden provocar tormentas cuando detectan amenazas o invasores. Su existencia está vinculada a una función de protección deliberadamente establecida por su creador.", "pensamiento": "Pensante", "comportamiento": null, "descripcion_dnd": null, "biologia_calculada": {"masa": 1316.6458500000000000, "clado": "Grifos", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.490268036125135699927419142079686120607147320594980039621132744237943710769230769230000, "tejidos": 0, "clado_id": "30dc37b8-abff-4b99-95f2-2ea58c794d5f", "organismo": "Grifos", "tipo_nodo": "filogenetico", "estabilidad": 0.549099358861396175741379809091974504761474013684089764912865521127036553846153846153077, "flexibilidad": 0.285768689920061098029262161267535169764899194418909230602899025580796840699418146497024997268627702734186265805646153846153847692, "organismo_id": "9d41f1db-0779-4a28-bdc6-f09ddb8b8c4c", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 11, "rasgos_heredados": 11, "organos_heredados": 18, "sistemas_manuales": 0, "sistemas_heredados": 4, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat general del ecosistema.", "tipo_habitat": {"id": "1401bf4f-f307-4b41-858e-3f0e9fade036", "clave": "general", "nombre": "General"}, "habitat_padre_id": null}, {"id": "9d489841-8f41-4a5d-8d30-03176e9b345e", "orden": 10, "nombre": "Aéreo", "criaturas": [{"id": "b8674cbd-1336-41a8-ab99-2646ad935773", "alma": "Normal", "magia": null, "nombre": "Aoris", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres bípedos alados de climas fríos. Suelen ser orgullosos y mantener distancia de otras especies; algunos permanecen en Aelistan junto al Titán del Cielo, mientras la mayoría descendió para explorar el mundo inferior. Desarrollaron las Runas Aoris. Su anatomía incluye un pico córneo, por lo que su habla tiene limitaciones para producir sonidos bilabiales como B, M, P y F.", "pensamiento": "Pensante", "comportamiento": null, "descripcion_dnd": null, "biologia_calculada": {"masa": 1178.5361454545454545, "clado": "Aoris", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.492085057516748666694450686663622486496653598991710641096085177346664632499999999999688, "tejidos": 0, "clado_id": "5a3e592f-7b2b-4df1-b597-f8760331d0ec", "organismo": "Aoris", "tipo_nodo": "filogenetico", "estabilidad": 0.549746969002213655248112769974864642559348818059161466995851617957858599999999999999688, "flexibilidad": 0.284559991163517143629281196621873662716990297732681874932427729142198716534138622014416405140380004235763170483543750000000000625, "organismo_id": "a38d1bde-2da5-4858-9568-03a0cfddbe94", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 23, "rasgos_heredados": 23, "organos_heredados": 41, "sistemas_manuales": 0, "sistemas_heredados": 11, "organos_especializados": 0, "sistemas_especializados": 0}}, {"id": "fd1166f3-596c-42d2-9bca-7561fa0b64ab", "alma": "Divina", "magia": null, "nombre": "Grifos", "biologia": null, "relacion": null, "stats_dnd": null, "imagen_url": null, "descripcion": "Seres alados creados por el Titán del Cielo para proteger su reino. Actúan como guardianes territoriales y pueden provocar tormentas cuando detectan amenazas o invasores. Su existencia está vinculada a una función de protección deliberadamente establecida por su creador.", "pensamiento": "Pensante", "comportamiento": null, "descripcion_dnd": null, "biologia_calculada": {"masa": 1316.6458500000000000, "clado": "Grifos", "rango": "linaje", "estado": "trazable", "fuente": "organismo_principal", "celulas": 0, "rigidez": 0.490268036125135699927419142079686120607147320594980039621132744237943710769230769230000, "tejidos": 0, "clado_id": "30dc37b8-abff-4b99-95f2-2ea58c794d5f", "organismo": "Grifos", "tipo_nodo": "filogenetico", "estabilidad": 0.549099358861396175741379809091974504761474013684089764912865521127036553846153846153077, "flexibilidad": 0.285768689920061098029262161267535169764899194418909230602899025580796840699418146497024997268627702734186265805646153846153847692, "organismo_id": "9d41f1db-0779-4a28-bdc6-f09ddb8b8c4c", "tipo_organismo": "animal", "estado_criatura": "trazable", "estado_organismo": "calculado", "organos_manuales": 0, "rasgos_efectivos": 11, "rasgos_heredados": 11, "organos_heredados": 18, "sistemas_manuales": 0, "sistemas_heredados": 4, "organos_especializados": 0, "sistemas_especializados": 0}}], "descripcion": "Hábitat definido por la regla ecológica del ecosistema Capa aérea.", "tipo_habitat": {"id": "92a4c6c2-040b-4ff8-a5c4-794ba47beaf2", "clave": "aereo", "nombre": "Aéreo"}, "habitat_padre_id": "4cb83c32-f3a6-4c07-a378-f6cc3ece03e3"}], "descripcion": "Capa de aire utilizada de forma estable por organismos voladores. Puede atravesar distintos paisajes y por ello no se fuerza a pertenecer a un único bioma terrestre.", "tipo_entorno": "aereo"}]}
+{
+  "biomas": [
+    {
+      "id": "fdc97953-f400-4f39-9b54-0a1c85f2c9a1",
+      "orden": 10,
+      "nombre": "Bosque",
+      "afinidad": "Vegetación arbórea",
+      "descripcion": "Bioma dominado por vegetación arbórea y una estructura vertical formada por suelo, sotobosque y cubierta vegetal. Puede variar en humedad, temperatura y composición sin dejar de mantener una cobertura forestal característica.",
+      "ecosistemas": [
+        {
+          "id": "2040daab-f2d9-4658-8a46-27767b96f57e",
+          "clima": "Húmedo y variable",
+          "orden": 20,
+          "nombre": "Bosque interior",
+          "habitats": [
+            {
+              "id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "9f4d0c53-209a-4509-8229-cb2e61e48ab1",
+                  "alma": "Divina",
+                  "magia": null,
+                  "nombre": "Feerin",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": "/dibujos/personajes/sol_rostros.png",
+                  "descripcion": "Seres mágicos asociados a los bosques y a su protección. Nacen dentro de estos ambientes, desarrollan una conciencia individual y participan activamente en la defensa de otras criaturas que habitan el bosque. Cuando termina su ciclo, pueden reaparecer como otro Feerin conservando sus recuerdos, manteniendo la continuidad de su identidad a través de nuevas formas.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c",
+                      "nombre": "protector",
+                      "categoria": "funcional",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1226.1123,
+                    "clado": "Feerin",
+                    "rango": "linaje",
+                    "estado": "anatomia_vegetal_no_canonizada",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.497867680150505,
+                    "tejidos": 0,
+                    "clado_id": "6278cb42-f5c2-49bb-ba78-de8ecb7ac3a3",
+                    "organismo": "Feerin",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5559650802866916,
+                    "flexibilidad": 0.28475422784552445,
+                    "organismo_id": "fa85d288-b775-4424-aad7-d9b590b9ddd6",
+                    "tipo_organismo": "especial_fisico",
+                    "estado_criatura": "anatomia_vegetal_no_canonizada",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 5,
+                    "rasgos_heredados": 5,
+                    "organos_heredados": 1,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 0,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "679a95a1-3e1e-4097-ba50-f7ca964e68cd",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Lesfleeng",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres capaces de establecer una conexión estrecha con un huésped y alimentarse de su estado emocional para obtener y transformar recursos de Eterium. La relación puede funcionar de forma simbiótica: el Lesfleeng obtiene recursos del estado espiritual del huésped y, a cambio, puede devolverle Eterium utilizable. La estabilidad de la relación depende de la interacción sostenida entre ambos seres.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "0519045b-e898-4293-9fee-c0703ffffeac",
+                      "nombre": "simbionte",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 607.6827,
+                    "clado": "Lesfleeng",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49332828267943124,
+                    "tejidos": 0,
+                    "clado_id": "c3faa6d2-1721-45e9-bdaa-b92cfa31dd28",
+                    "organismo": "Lesfleeng",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5501900706775098,
+                    "flexibilidad": 0.28373298675114494,
+                    "organismo_id": "c90246dd-1d2b-4605-b3a7-3320577f4b0e",
+                    "tipo_organismo": "especial_fisico",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 11,
+                    "rasgos_heredados": 11,
+                    "organos_heredados": 5,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 4,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "3ed167c5-d5c5-43fa-9d8f-9e461b8ba585",
+                  "alma": "Normal\n",
+                  "magia": null,
+                  "nombre": "Lignianos",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Árboles que desarrollaron conciencia con la ayuda de un Titán y asumieron la protección de sus bosques. Conservan una organización corporal vegetal mientras poseen pensamiento y comportamiento propios. Su identidad combina la vida vegetal con una función consciente de guardianía del ecosistema.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c",
+                      "nombre": "protector",
+                      "categoria": "funcional",
+                      "es_principal": true
+                    },
+                    {
+                      "id": "71020565-4b81-4c79-9d80-b4cf22ec2da9",
+                      "nombre": "productor",
+                      "categoria": "trofico",
+                      "es_principal": false
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1226.1123,
+                    "clado": "Lignianos",
+                    "rango": "rama_vegetal",
+                    "estado": "anatomia_vegetal_no_canonizada",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.497867680150505,
+                    "tejidos": 0,
+                    "clado_id": "07ba4592-37dc-4cdd-bf75-f4ac40fbfc55",
+                    "organismo": "Lignianos",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5559650802866916,
+                    "flexibilidad": 0.28475422784552445,
+                    "organismo_id": "16d49c23-50ae-4cc3-93a9-f39352b0d647",
+                    "tipo_organismo": "vegetal",
+                    "estado_criatura": "anatomia_vegetal_no_canonizada",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 5,
+                    "rasgos_heredados": 5,
+                    "organos_heredados": 1,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 0,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "b30032bf-79b4-4a78-82b5-afa70605f903",
+                  "alma": "",
+                  "magia": null,
+                  "nombre": "Seiloris",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres humanoides adaptados a desplazarse entre árboles mediante saltos y movimientos especializados de las piernas. Suelen habitar bosques y se alimentan de la esencia del Gran Árbol, estableciendo una relación estrecha con ese ecosistema. Su anatomía y cultura están condicionadas por la vida arbórea.",
+                  "pensamiento": "Consiente",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "ac8711c1-7b29-4a87-9cc1-74bdb866be93",
+                      "nombre": "consumidor_primario",
+                      "categoria": "trofico",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1215.3654,
+                    "clado": "Linaje Seiloris",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49067606899904176,
+                    "tejidos": 0,
+                    "clado_id": "ea40f432-9724-48c0-aa70-1926bfabca70",
+                    "organismo": "Seiloris",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5492447871035446,
+                    "flexibilidad": 0.2854972628308723,
+                    "organismo_id": "603a77e1-bf63-4611-8e6e-56fb0e5a63d9",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 12,
+                    "rasgos_heredados": 12,
+                    "organos_heredados": 17,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 5,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "c3880259-b89e-4839-b251-9c505be96496",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque interior.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4"
+            },
+            {
+              "id": "78099339-75c9-4929-b901-5d5f4b8678b0",
+              "orden": 20,
+              "nombre": "Sotobosque",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque interior.",
+              "tipo_habitat": {
+                "id": "be5e5f2f-7501-42b6-b012-09643abc3e66",
+                "clave": "sotobosque",
+                "nombre": "Sotobosque"
+              },
+              "habitat_padre_id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4"
+            },
+            {
+              "id": "1a164462-b85e-4672-bde0-82cbe2db18d9",
+              "orden": 30,
+              "nombre": "Dosel",
+              "criaturas": [
+                {
+                  "id": "679a95a1-3e1e-4097-ba50-f7ca964e68cd",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Lesfleeng",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres capaces de establecer una conexión estrecha con un huésped y alimentarse de su estado emocional para obtener y transformar recursos de Eterium. La relación puede funcionar de forma simbiótica: el Lesfleeng obtiene recursos del estado espiritual del huésped y, a cambio, puede devolverle Eterium utilizable. La estabilidad de la relación depende de la interacción sostenida entre ambos seres.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "0519045b-e898-4293-9fee-c0703ffffeac",
+                      "nombre": "simbionte",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 607.6827,
+                    "clado": "Lesfleeng",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49332828267943124,
+                    "tejidos": 0,
+                    "clado_id": "c3faa6d2-1721-45e9-bdaa-b92cfa31dd28",
+                    "organismo": "Lesfleeng",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5501900706775098,
+                    "flexibilidad": 0.28373298675114494,
+                    "organismo_id": "c90246dd-1d2b-4605-b3a7-3320577f4b0e",
+                    "tipo_organismo": "especial_fisico",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 11,
+                    "rasgos_heredados": 11,
+                    "organos_heredados": 5,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 4,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "3ed167c5-d5c5-43fa-9d8f-9e461b8ba585",
+                  "alma": "Normal\n",
+                  "magia": null,
+                  "nombre": "Lignianos",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Árboles que desarrollaron conciencia con la ayuda de un Titán y asumieron la protección de sus bosques. Conservan una organización corporal vegetal mientras poseen pensamiento y comportamiento propios. Su identidad combina la vida vegetal con una función consciente de guardianía del ecosistema.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c",
+                      "nombre": "protector",
+                      "categoria": "funcional",
+                      "es_principal": true
+                    },
+                    {
+                      "id": "71020565-4b81-4c79-9d80-b4cf22ec2da9",
+                      "nombre": "productor",
+                      "categoria": "trofico",
+                      "es_principal": false
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1226.1123,
+                    "clado": "Lignianos",
+                    "rango": "rama_vegetal",
+                    "estado": "anatomia_vegetal_no_canonizada",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.497867680150505,
+                    "tejidos": 0,
+                    "clado_id": "07ba4592-37dc-4cdd-bf75-f4ac40fbfc55",
+                    "organismo": "Lignianos",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5559650802866916,
+                    "flexibilidad": 0.28475422784552445,
+                    "organismo_id": "16d49c23-50ae-4cc3-93a9-f39352b0d647",
+                    "tipo_organismo": "vegetal",
+                    "estado_criatura": "anatomia_vegetal_no_canonizada",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 5,
+                    "rasgos_heredados": 5,
+                    "organos_heredados": 1,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 0,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "b30032bf-79b4-4a78-82b5-afa70605f903",
+                  "alma": "",
+                  "magia": null,
+                  "nombre": "Seiloris",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres humanoides adaptados a desplazarse entre árboles mediante saltos y movimientos especializados de las piernas. Suelen habitar bosques y se alimentan de la esencia del Gran Árbol, estableciendo una relación estrecha con ese ecosistema. Su anatomía y cultura están condicionadas por la vida arbórea.",
+                  "pensamiento": "Consiente",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "ac8711c1-7b29-4a87-9cc1-74bdb866be93",
+                      "nombre": "consumidor_primario",
+                      "categoria": "trofico",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1215.3654,
+                    "clado": "Linaje Seiloris",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49067606899904176,
+                    "tejidos": 0,
+                    "clado_id": "ea40f432-9724-48c0-aa70-1926bfabca70",
+                    "organismo": "Seiloris",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5492447871035446,
+                    "flexibilidad": 0.2854972628308723,
+                    "organismo_id": "603a77e1-bf63-4611-8e6e-56fb0e5a63d9",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 12,
+                    "rasgos_heredados": 12,
+                    "organos_heredados": 17,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 5,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque interior.",
+              "tipo_habitat": {
+                "id": "be2b5deb-7d13-4d15-a77f-e00a6cdbfbf2",
+                "clave": "dosel",
+                "nombre": "Dosel"
+              },
+              "habitat_padre_id": "4e3aecbb-cb51-4cc4-b9df-fa2e70776bb4"
+            }
+          ],
+          "descripcion": "Zona interior de un bosque donde suelo, sotobosque, árboles y comunidades terrestres forman una red ecológica continua.",
+          "mineral_ids": [
+            "321cc69f-04da-40e9-9438-8b2e587d03ca"
+          ],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        },
+        {
+          "id": "9372cd47-1d83-4473-b2e4-e29d5600edf1",
+          "clima": "Húmedo y cálido",
+          "orden": 90,
+          "nombre": "Bosque húmedo",
+          "habitats": [
+            {
+              "id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "190adea1-edb1-4e5f-ade6-c5cd8f09b805",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque húmedo.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d"
+            },
+            {
+              "id": "8d3a6869-900b-444c-87ef-27f95dec3a08",
+              "orden": 20,
+              "nombre": "Sotobosque",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque húmedo.",
+              "tipo_habitat": {
+                "id": "be5e5f2f-7501-42b6-b012-09643abc3e66",
+                "clave": "sotobosque",
+                "nombre": "Sotobosque"
+              },
+              "habitat_padre_id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d"
+            },
+            {
+              "id": "5fa661a2-1c60-4469-bda7-3e80cc50240a",
+              "orden": 30,
+              "nombre": "Dosel",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Bosque húmedo.",
+              "tipo_habitat": {
+                "id": "be2b5deb-7d13-4d15-a77f-e00a6cdbfbf2",
+                "clave": "dosel",
+                "nombre": "Dosel"
+              },
+              "habitat_padre_id": "2a760ca3-c745-4bad-bab9-14fe2a5c760d"
+            }
+          ],
+          "descripcion": "Ambiente forestal con humedad alta, vegetación densa y disponibilidad de agua relativamente constante.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        },
+        {
+          "id": "b1680cca-9d39-4753-92b5-19794c4501c2",
+          "clima": "Húmedo y variable",
+          "orden": 100,
+          "nombre": "Gran Saltus",
+          "habitats": [
+            {
+              "id": "39c9497e-33d7-47e4-8006-82e1edcc713f",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "3ed167c5-d5c5-43fa-9d8f-9e461b8ba585",
+                  "alma": "Normal\n",
+                  "magia": null,
+                  "nombre": "Lignianos",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Árboles que desarrollaron conciencia con la ayuda de un Titán y asumieron la protección de sus bosques. Conservan una organización corporal vegetal mientras poseen pensamiento y comportamiento propios. Su identidad combina la vida vegetal con una función consciente de guardianía del ecosistema.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "2757d6f2-b6b7-4583-ad9b-1d9ae71a084c",
+                      "nombre": "protector",
+                      "categoria": "funcional",
+                      "es_principal": true
+                    },
+                    {
+                      "id": "71020565-4b81-4c79-9d80-b4cf22ec2da9",
+                      "nombre": "productor",
+                      "categoria": "trofico",
+                      "es_principal": false
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1226.1123,
+                    "clado": "Lignianos",
+                    "rango": "rama_vegetal",
+                    "estado": "anatomia_vegetal_no_canonizada",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.497867680150505,
+                    "tejidos": 0,
+                    "clado_id": "07ba4592-37dc-4cdd-bf75-f4ac40fbfc55",
+                    "organismo": "Lignianos",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5559650802866916,
+                    "flexibilidad": 0.28475422784552445,
+                    "organismo_id": "16d49c23-50ae-4cc3-93a9-f39352b0d647",
+                    "tipo_organismo": "vegetal",
+                    "estado_criatura": "anatomia_vegetal_no_canonizada",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 5,
+                    "rasgos_heredados": 5,
+                    "organos_heredados": 1,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 0,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Unidad raíz del ecosistema Gran Saltus.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "4d0ff009-0565-4ab6-9c3d-26803bf0662b",
+              "orden": 2,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Estrato terrestre donde se desarrollan raíces, materia orgánica, hongos y comunidades asociadas.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "39c9497e-33d7-47e4-8006-82e1edcc713f"
+            },
+            {
+              "id": "8250a3f7-1470-4583-bac4-8dc8349e442f",
+              "orden": 3,
+              "nombre": "Sotobosque",
+              "criaturas": [
+                {
+                  "id": "1724e00d-b491-4631-8a65-94c07f581ead",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Feerin florales",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Feerin que nacen de semillas y desarrollan colores relacionados con las flores de las que surgen, adquiriendo propiedades asociadas a ellas.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "clado": "Feerin florales",
+                    "rango": "linaje",
+                    "estado": "sin_organismo",
+                    "fuente": "ninguna",
+                    "clado_id": "187e430e-4f4c-411e-aee8-75c20eed66ed",
+                    "organismo": null,
+                    "tipo_nodo": "filogenetico",
+                    "organismo_id": null,
+                    "estado_criatura": "sin_organismo"
+                  }
+                }
+              ],
+              "descripcion": "Zona vegetal inferior bajo el dosel, con iluminación filtrada y alta interacción entre plantas, fauna y suelo.",
+              "tipo_habitat": {
+                "id": "be5e5f2f-7501-42b6-b012-09643abc3e66",
+                "clave": "sotobosque",
+                "nombre": "Sotobosque"
+              },
+              "habitat_padre_id": "39c9497e-33d7-47e4-8006-82e1edcc713f"
+            },
+            {
+              "id": "fc34bb91-cc4d-47a6-8ece-d97f33ae56e2",
+              "orden": 4,
+              "nombre": "Dosel",
+              "criaturas": [],
+              "descripcion": "Estrato superior formado por las copas y estructuras vegetales expuestas a mayor radiación y circulación de aire.",
+              "tipo_habitat": {
+                "id": "be2b5deb-7d13-4d15-a77f-e00a6cdbfbf2",
+                "clave": "dosel",
+                "nombre": "Dosel"
+              },
+              "habitat_padre_id": "39c9497e-33d7-47e4-8006-82e1edcc713f"
+            }
+          ],
+          "descripcion": "Bosque de enorme extensión donde suelo, sotobosque y dosel forman un continuo ecológico con múltiples comunidades vegetales y animales.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    },
+    {
+      "id": "4050b74b-0925-4666-9387-7322ff8ee1c6",
+      "orden": 20,
+      "nombre": "Pradera",
+      "afinidad": "Espacios abiertos",
+      "descripcion": "Bioma abierto dominado por gramíneas, hierbas y otras plantas bajas, con una cobertura arbórea limitada. Su estructura depende de la disponibilidad de agua, el clima y las perturbaciones naturales.",
+      "ecosistemas": [
+        {
+          "id": "2a3291e5-162d-4dbe-bad6-f91846f33758",
+          "clima": "Templado y estacional",
+          "orden": 80,
+          "nombre": "Pradera abierta",
+          "habitats": [
+            {
+              "id": "af2f5255-8f0a-49da-9cad-9a5070980633",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "704ccaf2-b1fd-44b7-b58b-2f64fbeb57ce",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Flaxis",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": {
+                    "ca": 15,
+                    "rc": null,
+                    "tipo": "Alado",
+                    "stats": {
+                      "fuerza": 10,
+                      "carisma": 10,
+                      "destreza": 10,
+                      "sabiduria": 10,
+                      "constitucion": 10,
+                      "inteligencia": 10
+                    },
+                    "hp_max": 41,
+                    "rasgos": [],
+                    "tamano": "Pequeño",
+                    "ca_nota": "Natural",
+                    "idiomas": null,
+                    "acciones": [
+                      {
+                        "id": "1784398210747-4mt45",
+                        "nombre": "Morder",
+                        "descripcion": "Amer \n"
+                      },
+                      {
+                        "id": "1784398223601-jlgjq",
+                        "nombre": "Aliento de Fuego",
+                        "descripcion": "A\n"
+                      }
+                    ],
+                    "hp_dados": "2d3 +3",
+                    "sentidos": null,
+                    "velocidad": {
+                      "nadar": null,
+                      "volar": null,
+                      "caminar": 30,
+                      "escalar": null,
+                      "excavar": null,
+                      "vuelo_estacionario": false
+                    },
+                    "reacciones": [],
+                    "habilidades": [],
+                    "salvaciones": {},
+                    "alineamiento": "CM",
+                    "resistencias": null,
+                    "bono_competencia": null,
+                    "inmunidades_dano": null,
+                    "vulnerabilidades": null,
+                    "percepcion_pasiva": null,
+                    "puntos_experiencia": null,
+                    "acciones_adicionales": [],
+                    "acciones_legendarias": [],
+                    "inmunidades_condicion": null,
+                    "acciones_legendarias_intro": null
+                  },
+                  "imagen_url": "/dibujos/criaturas/vex.png",
+                  "descripcion": "Seres alados de comportamiento agresivo que atacan cuando perciben a una criatura indefensa. Su rasgo distintivo conocido es la combinación de locomoción aérea y una conducta depredadora oportunista frente a presas desarmadas.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754",
+                      "nombre": "depredador",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1215.3654,
+                    "clado": "Aves",
+                    "rango": "rama_aviana",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49067606899904176,
+                    "tejidos": 0,
+                    "clado_id": "53420ba3-2c83-4d9f-9a8c-0b3b3666762d",
+                    "organismo": "Flaxis",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5492447871035446,
+                    "flexibilidad": 0.2854972628308723,
+                    "organismo_id": "3f3558b3-4ea5-473b-a622-20c73ed206c5",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 11,
+                    "rasgos_heredados": 11,
+                    "organos_heredados": 18,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 5,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "92010e53-ad64-4ba8-8371-94ded4975de3",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Pradera abierta.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "af2f5255-8f0a-49da-9cad-9a5070980633"
+            }
+          ],
+          "descripcion": "Ambiente abierto dominado por vegetación herbácea, con árboles dispersos o ausentes y una fuerte exposición a las condiciones atmosféricas.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    },
+    {
+      "id": "bba5ce6d-a6b5-4536-b9ec-63777a580c07",
+      "orden": 30,
+      "nombre": "Desierto",
+      "afinidad": "Aridez",
+      "descripcion": "Bioma caracterizado por una disponibilidad de agua baja e irregular. La vegetación y la fauna están condicionadas por la aridez, las variaciones térmicas y la escasez de recursos hídricos.",
+      "ecosistemas": [
+        {
+          "id": "c4520fdd-7211-492f-87a4-292c9dee8f1f",
+          "clima": "Árido y seco",
+          "orden": 70,
+          "nombre": "Desierto arenoso",
+          "habitats": [
+            {
+              "id": "495e3b7a-8ee8-4937-903e-d82814365cdc",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "11f3205e-0bfb-4374-99ae-d9897abf2433",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Desierto arenoso.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "495e3b7a-8ee8-4937-903e-d82814365cdc"
+            }
+          ],
+          "descripcion": "Ambiente dominado por sustratos arenosos y disponibilidad de agua baja e irregular.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        },
+        {
+          "id": "a16a136a-e9a9-46e7-98da-ab0bb9738ef0",
+          "clima": "Árido y seco",
+          "orden": 100,
+          "nombre": "Desierto pedregoso",
+          "habitats": [
+            {
+              "id": "f1255e42-cd7c-4cc2-b651-fd97cd3c6c38",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "72849104-3aa8-45af-998a-b6d6fe78988b",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Desierto pedregoso.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "f1255e42-cd7c-4cc2-b651-fd97cd3c6c38"
+            }
+          ],
+          "descripcion": "Ambiente desértico dominado por roca y grava, con poca cobertura vegetal y grandes variaciones térmicas.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    },
+    {
+      "id": "ee5da964-2274-40d0-abb4-009687b0a024",
+      "orden": 35,
+      "nombre": "Abismo",
+      "afinidad": "Profundidad y oscuridad",
+      "descripcion": "",
+      "ecosistemas": [
+        {
+          "id": "95c9bc0b-b752-48f1-ba3b-2f738d047ed8",
+          "clima": "Condiciones propias del Abismo",
+          "orden": 10,
+          "nombre": "Abismo",
+          "habitats": [
+            {
+              "id": "e90e641c-34bf-407b-a774-fb919a49f7ae",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "c8abd38f-be31-41f3-abe2-231657770710",
+                  "alma": "Impura",
+                  "magia": null,
+                  "nombre": "Cambiaformas",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {
+                    "ataque": {
+                      "tipo": "contacto",
+                      "danio": 8,
+                      "enfriamiento": 1.2
+                    },
+                    "perfil": "cambiaformas",
+                    "deteccion": 150,
+                    "al_golpear": {
+                      "copiar_skin": true
+                    }
+                  },
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres capaces de adoptar formas que parecen objetos para atraer a criaturas desprevenidas. Cuando una víctima entra en contacto con ellos, utilizan pequeños órganos punzantes para adormecer la zona y después emplean un aguijón para extraer sangre. Su estrategia combina mimetismo, inmovilización y alimentación por contacto.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "ad30e9aa-f27c-496a-bfb8-b66d060da82b",
+                      "nombre": "parásito",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 607.6827,
+                    "clado": "Cambiaformas",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49332828267943124,
+                    "tejidos": 0,
+                    "clado_id": "28c50e96-07f2-4ce2-a0e3-d213dd22e6c9",
+                    "organismo": "Cambiaformas",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5501900706775098,
+                    "flexibilidad": 0.28373298675114494,
+                    "organismo_id": "d854bfa5-fe6d-48cf-8a09-3befe86a4c7e",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 15,
+                    "rasgos_heredados": 15,
+                    "organos_heredados": 8,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 6,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "a86bb4c2-b6ee-4006-abba-9343d600f303",
+                  "alma": "Impura",
+                  "magia": null,
+                  "nombre": "Demonio",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres físicos de forma amorfa que consumen criaturas y pueden incorporar a su cuerpo estructuras derivadas de aquello que han devorado. Se alimentan de carne y, al mismo tiempo, dependen del Eterium de otros seres: no pueden atraer Eterium de forma natural, porque su propio Eterium es demasiado inestable para generar una atracción eficaz. Pueden concentrarlo y contenerlo, por lo que buscan víctimas, las someten al dolor y a emociones negativas para desestabilizar su flujo de Eterium y después absorberlo, especialmente tras la muerte. El Eterium obtenido les proporciona el recurso que necesitan para sostenerse y facilitar la caza de nuevas presas.",
+                  "pensamiento": "Salvaje",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "b621b2f7-203c-4197-9850-0550ac77185e",
+                      "nombre": "carroñero",
+                      "categoria": "trofico",
+                      "es_principal": false
+                    },
+                    {
+                      "id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754",
+                      "nombre": "depredador",
+                      "categoria": "interaccion",
+                      "es_principal": false
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 636.6199714285714,
+                    "clado": "Demonios",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49332828267943124,
+                    "tejidos": 0,
+                    "clado_id": "0b565f86-2d0b-4de4-b8d4-6eada85a244c",
+                    "organismo": "Demonio",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5501900706775098,
+                    "flexibilidad": 0.28373298675114494,
+                    "organismo_id": "8b8b17ce-7ccd-42db-9f95-99dddec7a7e4",
+                    "tipo_organismo": "demonio",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 16,
+                    "rasgos_heredados": 13,
+                    "organos_heredados": 8,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 7,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "cc46b3f1-347c-4857-9a1d-214c688a0be2",
+                  "alma": "Normal",
+                  "magia": null,
+                  "nombre": "Dramarias",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Criaturas antiguas y de gran tamaño que desarrollaron su supervivencia principalmente mediante su estructura corporal. Al carecer de defensas mágicas especializadas, dependieron de músculos, huesos y resistencia física para soportar las condiciones de su entorno, dando origen a formas extremadamente robustas.",
+                  "pensamiento": "Salvaje",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "masa": 1316.64585,
+                    "clado": "Dramarias",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.4902680361251357,
+                    "tejidos": 0,
+                    "clado_id": "7cfd64b9-6c28-4535-8944-eeab63fd3958",
+                    "organismo": "Dramarias",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5490993588613962,
+                    "flexibilidad": 0.2857686899200611,
+                    "organismo_id": "a7d75787-6f2a-4b1f-929d-95928fb2bd2c",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 10,
+                    "rasgos_heredados": 10,
+                    "organos_heredados": 16,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 4,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "c36b8b7c-b62b-456f-ba02-7c35c6f54d4d",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Hibridos",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres originados por la combinación de características de más de un linaje o tipo de criatura. Su estructura puede reunir rasgos heredados de distintos organismos y, dependiendo de su origen, presentar una anatomía y un funcionamiento que no coinciden completamente con ninguna de las formas de vida de procedencia.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "clado": "Híbridos",
+                    "rango": "categoria_origen",
+                    "estado": "origen_sin_organismo",
+                    "fuente": "ninguna",
+                    "clado_id": "9dfdd60a-6eeb-4faf-b4df-f682f4a1fc3d",
+                    "organismo": null,
+                    "tipo_nodo": "origen",
+                    "organismo_id": null,
+                    "estado_criatura": "origen_sin_organismo"
+                  }
+                },
+                {
+                  "id": "250d08a9-a57f-4463-8ef6-87bcddc91fa2",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Quimera",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres producidos mediante rituales del Abismo que unen a un humano con otro ser u objeto. La combinación altera la organización del cuerpo y puede reunir componentes, tejidos o estructuras de procedencias diferentes. Su naturaleza depende de los elementos que participaron en la unión y del proceso utilizado para realizarla.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "clado": "Quimeras rituales",
+                    "rango": "categoria_origen",
+                    "estado": "origen_sin_organismo",
+                    "fuente": "ninguna",
+                    "clado_id": "021988b9-e63f-45c1-98ad-a8f53dfa37eb",
+                    "organismo": null,
+                    "tipo_nodo": "origen",
+                    "organismo_id": null,
+                    "estado_criatura": "origen_sin_organismo"
+                  }
+                },
+                {
+                  "id": "21a23da1-703b-43c7-aa2c-19085cc3080a",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Rancrodeen",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {
+                    "ataque": {
+                      "tipo": "adherirse",
+                      "danio": 4,
+                      "enfriamiento": 0.35,
+                      "duracion_salto": 0.38,
+                      "distancia_salto": 72,
+                      "intervalo_danio": 1,
+                      "velocidad_salto": 190,
+                      "duracion_adherido": 5
+                    },
+                    "perfil": "rancrodeen",
+                    "deteccion": 150
+                  },
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres parasitarios especializados en copiar y ocupar estructuras neurológicas de otras criaturas. Pueden generar una copia del cerebro de su huésped y alimentarse de su memoria; cuando el cerebro original queda destruido, son capaces de regenerar una estructura equivalente, buscar otro cuerpo o generar uno nuevo y trasladarse a él. Su continuidad depende de conservar suficiente información para reconstruir su identidad funcional.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "ad30e9aa-f27c-496a-bfb8-b66d060da82b",
+                      "nombre": "parásito",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 648.19488,
+                    "clado": "Rancrodeen",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49332828267943124,
+                    "tejidos": 0,
+                    "clado_id": "6be883ad-be20-45b9-ba24-d93302988b85",
+                    "organismo": "Rancrodeen",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5501900706775098,
+                    "flexibilidad": 0.28373298675114494,
+                    "organismo_id": "4916accf-b417-4694-9c10-22a6402a6aca",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 15,
+                    "rasgos_heredados": 15,
+                    "organos_heredados": 7,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 5,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "471a380f-2bb5-4d30-bf54-8d63d98cc72a",
+                  "alma": "Impura",
+                  "magia": null,
+                  "nombre": "Vampiro",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": "/dibujos/personajes/aldruka_rostros.png",
+                  "descripcion": "Seres bípedos procedentes del Abismo. Se alimentan de carne y utilizan la sangre de sus víctimas principalmente como fuente de hidratación, una adaptación surgida en un ambiente con escasez de agua. Su piel y su pelo pueden adquirir la coloración asociada a la sangre de la que se alimentan.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754",
+                      "nombre": "depredador",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1178.5361454545455,
+                    "clado": "Vampiros",
+                    "rango": "divergencia_humana",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.4920850575167487,
+                    "tejidos": 0,
+                    "clado_id": "1cc16563-25d3-4291-9374-3fe221bb860b",
+                    "organismo": "Vampiro",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5497469690022136,
+                    "flexibilidad": 0.28455999116351716,
+                    "organismo_id": "19e93ec5-26a4-46b9-bb55-385a6aab46f3",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 23,
+                    "rasgos_heredados": 23,
+                    "organos_heredados": 36,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 11,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "9009a451-e947-4387-85e2-1c9913b3154f",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Zlish",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": {
+                    "ca": null,
+                    "rc": null,
+                    "tipo": null,
+                    "stats": {
+                      "fuerza": 10,
+                      "carisma": 10,
+                      "destreza": 10,
+                      "sabiduria": 10,
+                      "constitucion": 10,
+                      "inteligencia": 10
+                    },
+                    "hp_max": null,
+                    "rasgos": [],
+                    "tamano": null,
+                    "ca_nota": null,
+                    "idiomas": null,
+                    "acciones": [],
+                    "hp_dados": null,
+                    "sentidos": null,
+                    "velocidad": {
+                      "nadar": null,
+                      "volar": null,
+                      "caminar": 30,
+                      "escalar": null,
+                      "excavar": null,
+                      "vuelo_estacionario": false
+                    },
+                    "reacciones": [],
+                    "habilidades": [],
+                    "salvaciones": {},
+                    "alineamiento": null,
+                    "resistencias": null,
+                    "bono_competencia": null,
+                    "inmunidades_dano": null,
+                    "vulnerabilidades": null,
+                    "percepcion_pasiva": null,
+                    "puntos_experiencia": null,
+                    "acciones_adicionales": [],
+                    "acciones_legendarias": [],
+                    "inmunidades_condicion": null,
+                    "acciones_legendarias_intro": null
+                  },
+                  "imagen_url": "/dibujos/criaturas/slime.png",
+                  "descripcion": "Seres de cuerpo predominantemente gelatinoso, capaces de mantener una forma propia sin depender de un esqueleto rígido. Su organización corporal permite deformarse y recuperar su configuración, por lo que su supervivencia depende de conservar la cohesión de la masa que forma el organismo.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "masa": 607.6827,
+                    "clado": "Oculares Zlish",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.49332828267943124,
+                    "tejidos": 0,
+                    "clado_id": "4d63e685-707a-4c22-bef5-514ab0a40e27",
+                    "organismo": "Zlish",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5501900706775098,
+                    "flexibilidad": 0.28373298675114494,
+                    "organismo_id": "a8afafc2-d359-49a1-a6af-767a7103d63d",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 9,
+                    "rasgos_heredados": 9,
+                    "organos_heredados": 5,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 4,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "7529c874-e490-4bbe-ac20-178a08f65ec0",
+              "orden": 10,
+              "nombre": "Cueva",
+              "criaturas": [
+                {
+                  "id": "b5e51519-1757-4fc2-b936-ae7eb17be904",
+                  "alma": "Impura",
+                  "magia": null,
+                  "nombre": "Necromanser",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": "/dibujos/personajes/asher_rostros.png",
+                  "descripcion": "Seres capaces de funcionar sin un alma propia y de aprovechar Eterium proveniente de las almas de otras criaturas. Utilizan ese recurso para reanimar cadáveres y dirigirlos según sus necesidades. Su existencia rompe la relación habitual entre cuerpo vivo, alma y control consciente, por lo que su biología y su interacción con Eterium deben tratarse como una adaptación especializada.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "masa": 1178.5361454545455,
+                    "clado": "Necromanser",
+                    "rango": "divergencia_humana",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.4920850575167487,
+                    "tejidos": 0,
+                    "clado_id": "9cdc288a-20da-49f9-ada2-a2dd0059d259",
+                    "organismo": "Necromanser",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5497469690022136,
+                    "flexibilidad": 0.28455999116351716,
+                    "organismo_id": "01669f74-8e21-46d6-a20a-23341dc3d2b9",
+                    "tipo_organismo": "especial_fisico",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 26,
+                    "rasgos_heredados": 26,
+                    "organos_heredados": 36,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 11,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Abismo.",
+              "tipo_habitat": {
+                "id": "08d591da-5030-4a65-afdb-4005ddff79a2",
+                "clave": "cueva",
+                "nombre": "Cueva"
+              },
+              "habitat_padre_id": "e90e641c-34bf-407b-a774-fb919a49f7ae"
+            },
+            {
+              "id": "a1cdd1d1-3144-4d4a-a786-572a47134720",
+              "orden": 20,
+              "nombre": "Subterráneo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Abismo.",
+              "tipo_habitat": {
+                "id": "21e10cd9-7243-4099-853d-42e0cce62d68",
+                "clave": "subterraneo",
+                "nombre": "Subterráneo"
+              },
+              "habitat_padre_id": "e90e641c-34bf-407b-a774-fb919a49f7ae"
+            }
+          ],
+          "descripcion": "Entorno especial asociado al Abismo. Se mantiene separado de los biomas naturales porque su condición depende de la naturaleza del propio dominio y no de un clima o comunidad ecológica terrestre convencional.",
+          "mineral_ids": [],
+          "tipo_entorno": "especial",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    },
+    {
+      "id": "c2ff5a5d-6727-4a94-a19d-3921f52bdfc7",
+      "orden": 40,
+      "nombre": "Montaña",
+      "afinidad": "Altitud y relieve",
+      "descripcion": "Bioma definido por un relieve elevado y un gradiente de altitud que modifica temperatura, presión, humedad y exposición. Puede contener varios ambientes locales desde las laderas hasta las zonas de cumbre.",
+      "ecosistemas": [
+        {
+          "id": "6dd0a416-b88c-4377-82aa-bdfb17570166",
+          "clima": "Variable con la altitud y la orientación",
+          "orden": 50,
+          "nombre": "Ladera montañosa",
+          "habitats": [
+            {
+              "id": "6fda248a-790c-4c96-b5b8-679c9afa3bdf",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "52d83162-0902-41f7-b28d-d96b8d6dc612",
+                  "alma": null,
+                  "magia": null,
+                  "nombre": "Espiritu Estelar",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {
+                    "ataque": {
+                      "tipo": "contacto",
+                      "danio": 8,
+                      "enfriamiento": 1
+                    },
+                    "perfil": "espiritu_estelar",
+                    "deteccion": 150,
+                    "al_recibir_danio": {
+                      "tipo": "teletransportarse",
+                      "rastro": {
+                        "puntos": 18,
+                        "duracion": 0.7
+                      },
+                      "inmunidad": 0.45,
+                      "distancia_maxima": 110,
+                      "distancia_minima": 70
+                    }
+                  },
+                  "stats_dnd": null,
+                  "imagen_url": "/dibujos/personajes/stargirl_cuerpo_completo.png",
+                  "descripcion": "Espíritus vinculados al entorno estelar y formados sin un cuerpo físico convencional. Al igual que otros espíritus, su existencia se sostiene en Eterium coherente y su identidad depende de la conservación de ese estado. Su relación con las estrellas constituye la característica distintiva de este linaje espiritual.",
+                  "pensamiento": null,
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "clado": "Espíritus estelares",
+                    "rango": "linaje_espiritual",
+                    "estado": "ontologica_sin_organismo",
+                    "fuente": "ninguna",
+                    "clado_id": "24fdef85-f46b-4c0c-93db-59be3fe66a5d",
+                    "organismo": null,
+                    "tipo_nodo": "ontologico",
+                    "organismo_id": null,
+                    "estado_criatura": "ontologica_sin_organismo"
+                  }
+                }
+              ],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "e85bd5c5-0cf1-42a1-9d1c-7d1b673caac2",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Ladera montañosa.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "6fda248a-790c-4c96-b5b8-679c9afa3bdf"
+            }
+          ],
+          "descripcion": "Ambiente de pendiente donde la altitud, la exposición y el relieve generan cambios locales de temperatura, humedad y vegetación.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    },
+    {
+      "id": "e853a12a-ddc0-471c-ad11-e05002229af1",
+      "orden": 45,
+      "nombre": "Agua dulce",
+      "afinidad": "Agua continental",
+      "descripcion": "Bioma dominado por aguas continentales con baja concentración de sales disueltas, incluyendo ríos, lagos, arroyos y otros sistemas interiores. Sus condiciones cambian según flujo, profundidad, temperatura, luz y características del entorno terrestre asociado.",
+      "ecosistemas": []
+    },
+    {
+      "id": "4c7ac11b-98d2-4ef8-862c-6739f5b3ccec",
+      "orden": 50,
+      "nombre": "Marino",
+      "afinidad": "Agua salina",
+      "descripcion": "Bioma de aguas salinas conectado con mares y océanos. Su estructura ecológica cambia con la profundidad, la distancia a la costa, la luz disponible y las condiciones del agua.",
+      "ecosistemas": [
+        {
+          "id": "faa68284-34cc-4a3f-a580-1796ff2579b5",
+          "clima": "Marino costero",
+          "orden": 40,
+          "nombre": "Costa marina",
+          "habitats": [
+            {
+              "id": "0fc76dfa-6a5b-4ba5-bcaa-3a72e50ba770",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "41c058eb-1f75-48d3-912e-b6124f947b35",
+                  "alma": "Impura",
+                  "magia": null,
+                  "nombre": "Sirena",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres marinos que carecen de un alma propia estable y dependen del Eterium de las almas ajenas para obtener el recurso que necesitan para realizar fenómenos mágicos. Son carnívoras y defienden activamente su territorio, convirtiendo la presencia de otras criaturas en una posible fuente de alimento físico y espiritual.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754",
+                      "nombre": "depredador",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1485.4466,
+                    "clado": "Sirenidae",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.48971162766071835,
+                    "tejidos": 0,
+                    "clado_id": "41885472-d928-458d-a367-b0112aa504b5",
+                    "organismo": "Sirena",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5489010476221028,
+                    "flexibilidad": 0.28613881776895495,
+                    "organismo_id": "a58cce8e-50db-4d0d-8d38-e87b9d224b2b",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 11,
+                    "rasgos_heredados": 11,
+                    "organos_heredados": 14,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 3,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "5712a93a-5baf-40af-9560-685abc0748d2",
+              "orden": 10,
+              "nombre": "Litoral",
+              "criaturas": [
+                {
+                  "id": "41c058eb-1f75-48d3-912e-b6124f947b35",
+                  "alma": "Impura",
+                  "magia": null,
+                  "nombre": "Sirena",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres marinos que carecen de un alma propia estable y dependen del Eterium de las almas ajenas para obtener el recurso que necesitan para realizar fenómenos mágicos. Son carnívoras y defienden activamente su territorio, convirtiendo la presencia de otras criaturas en una posible fuente de alimento físico y espiritual.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [
+                    {
+                      "id": "5f0f7cb0-2a66-4f1c-a208-d6d51b556754",
+                      "nombre": "depredador",
+                      "categoria": "interaccion",
+                      "es_principal": true
+                    }
+                  ],
+                  "biologia_calculada": {
+                    "masa": 1485.4466,
+                    "clado": "Sirenidae",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.48971162766071835,
+                    "tejidos": 0,
+                    "clado_id": "41885472-d928-458d-a367-b0112aa504b5",
+                    "organismo": "Sirena",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5489010476221028,
+                    "flexibilidad": 0.28613881776895495,
+                    "organismo_id": "a58cce8e-50db-4d0d-8d38-e87b9d224b2b",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 11,
+                    "rasgos_heredados": 11,
+                    "organos_heredados": 14,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 3,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Costa marina.",
+              "tipo_habitat": {
+                "id": "47555aec-1ea7-400a-adc1-fc2f387c19af",
+                "clave": "litoral",
+                "nombre": "Litoral"
+              },
+              "habitat_padre_id": "0fc76dfa-6a5b-4ba5-bcaa-3a72e50ba770"
+            }
+          ],
+          "descripcion": "Zona de transición entre tierra y mar donde la profundidad, el oleaje, la luz y el aporte continental producen condiciones ecológicas distintas de las del mar abierto.",
+          "mineral_ids": [],
+          "tipo_entorno": "acuatico",
+          "criaturas_sin_habitat": []
+        },
+        {
+          "id": "aa1b3318-e242-4b30-8fff-8cdb6f8da7c1",
+          "clima": "Marino y estable",
+          "orden": 120,
+          "nombre": "Mar abierto",
+          "habitats": [
+            {
+              "id": "f5e6f6a4-ca80-4ecf-8473-52b0108e60e1",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "c6de5ace-6529-442a-a628-50d015c81810",
+              "orden": 10,
+              "nombre": "Pelágico",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Mar abierto.",
+              "tipo_habitat": {
+                "id": "8a885221-a3ee-4b2c-9c40-ae9bc7ee1715",
+                "clave": "pelagico",
+                "nombre": "Pelágico"
+              },
+              "habitat_padre_id": "f5e6f6a4-ca80-4ecf-8473-52b0108e60e1"
+            }
+          ],
+          "descripcion": "Zona marina alejada de la costa, con circulación de agua y comunidades condicionadas principalmente por profundidad y disponibilidad de luz.",
+          "mineral_ids": [],
+          "tipo_entorno": "acuatico",
+          "criaturas_sin_habitat": []
+        },
+        {
+          "id": "b0df6256-3d81-44b3-acd7-f7832c4c0e2e",
+          "clima": "Marino y oscuro",
+          "orden": 130,
+          "nombre": "Mar profundo",
+          "habitats": [
+            {
+              "id": "6a069830-467e-4e60-8122-c0cb751d94ac",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "5a8d6bd4-7192-451d-9574-413fd2f70305",
+                  "alma": "Divina",
+                  "magia": null,
+                  "nombre": "Waarin",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres bípedos adaptados a las profundidades marinas. Suelen permanecer ocultos en regiones profundas y mantienen una actitud neutral mientras no se invade su territorio. Su comportamiento territorial constituye una de sus principales características sociales conocidas.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "masa": 1485.4466,
+                    "clado": "Waarinidae",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.48971162766071835,
+                    "tejidos": 0,
+                    "clado_id": "b5c35b07-5abe-43e2-99c6-8b4e75c089dd",
+                    "organismo": "Waarin",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5489010476221028,
+                    "flexibilidad": 0.28613881776895495,
+                    "organismo_id": "be40372d-122b-494d-8139-d710992c24a2",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 9,
+                    "rasgos_heredados": 9,
+                    "organos_heredados": 14,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 3,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "b31472e3-2520-44dc-b775-dbeaa17630bd",
+              "orden": 10,
+              "nombre": "Pelágico",
+              "criaturas": [
+                {
+                  "id": "5a8d6bd4-7192-451d-9574-413fd2f70305",
+                  "alma": "Divina",
+                  "magia": null,
+                  "nombre": "Waarin",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres bípedos adaptados a las profundidades marinas. Suelen permanecer ocultos en regiones profundas y mantienen una actitud neutral mientras no se invade su territorio. Su comportamiento territorial constituye una de sus principales características sociales conocidas.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "masa": 1485.4466,
+                    "clado": "Waarinidae",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.48971162766071835,
+                    "tejidos": 0,
+                    "clado_id": "b5c35b07-5abe-43e2-99c6-8b4e75c089dd",
+                    "organismo": "Waarin",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5489010476221028,
+                    "flexibilidad": 0.28613881776895495,
+                    "organismo_id": "be40372d-122b-494d-8139-d710992c24a2",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 9,
+                    "rasgos_heredados": 9,
+                    "organos_heredados": 14,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 3,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Mar profundo.",
+              "tipo_habitat": {
+                "id": "8a885221-a3ee-4b2c-9c40-ae9bc7ee1715",
+                "clave": "pelagico",
+                "nombre": "Pelágico"
+              },
+              "habitat_padre_id": "6a069830-467e-4e60-8122-c0cb751d94ac"
+            },
+            {
+              "id": "67096c9d-56c0-43c3-955c-ae548e5049bd",
+              "orden": 20,
+              "nombre": "Bentónico",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Mar profundo.",
+              "tipo_habitat": {
+                "id": "d22c735a-f48f-4b50-b8cc-344a52beab24",
+                "clave": "bentonico",
+                "nombre": "Bentónico"
+              },
+              "habitat_padre_id": "6a069830-467e-4e60-8122-c0cb751d94ac"
+            }
+          ],
+          "descripcion": "Zona marina profunda con presión elevada, poca o ninguna luz y una disponibilidad de recursos distinta de las aguas superficiales.",
+          "mineral_ids": [],
+          "tipo_entorno": "acuatico",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    },
+    {
+      "id": "81b63b96-02d9-484c-94b2-ed01951dd4ac",
+      "orden": 60,
+      "nombre": "Tundra",
+      "afinidad": "Frío",
+      "descripcion": "Bioma frío con vegetación baja o escasa, condicionado por temperaturas bajas y temporadas de crecimiento cortas. En Garlia puede aparecer también asociado a grandes alturas.",
+      "ecosistemas": [
+        {
+          "id": "dfa7498a-f866-4834-a636-4a5364c119b1",
+          "clima": "Frío y de alta altitud",
+          "orden": 60,
+          "nombre": "Cumbres frías",
+          "habitats": [
+            {
+              "id": "f1378225-077e-491d-b1a7-dbd2c9019a2c",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [
+                {
+                  "id": "b8674cbd-1336-41a8-ab99-2646ad935773",
+                  "alma": "Normal",
+                  "magia": null,
+                  "nombre": "Aoris",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": null,
+                  "descripcion": "Seres bípedos alados de climas fríos. Suelen ser orgullosos y mantener distancia de otras especies; algunos permanecen en Aelistan junto al Titán del Cielo, mientras la mayoría descendió para explorar el mundo inferior. Desarrollaron las Runas Aoris. Su anatomía incluye un pico córneo, por lo que su habla tiene limitaciones para producir sonidos bilabiales como B, M, P y F.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": "residente",
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "masa": 1178.5361454545455,
+                    "clado": "Aoris",
+                    "rango": "linaje",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.4920850575167487,
+                    "tejidos": 0,
+                    "clado_id": "5a3e592f-7b2b-4df1-b597-f8760331d0ec",
+                    "organismo": "Aoris",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5497469690022136,
+                    "flexibilidad": 0.28455999116351716,
+                    "organismo_id": "a38d1bde-2da5-4858-9568-03a0cfddbe94",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 23,
+                    "rasgos_heredados": 23,
+                    "organos_heredados": 41,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 11,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                },
+                {
+                  "id": "7ab891c2-5ff5-43d3-96c0-89a877763507",
+                  "alma": "Impura",
+                  "magia": null,
+                  "nombre": "Errante",
+                  "biologia": null,
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": "/dibujos/personajes/errantes_froslia_cuerpo_completo.png",
+                  "descripcion": "Criatura cuyo rasgo más característico conocido es su existencia itinerante. El registro actual conserva su identidad y clasificación general, pero su linaje, anatomía y mecanismos de supervivencia todavía no están suficientemente documentados para asignarle propiedades específicas.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "clado": "Errantes",
+                    "rango": "categoria_origen",
+                    "estado": "origen_sin_organismo",
+                    "fuente": "ninguna",
+                    "clado_id": "33a33c09-e99f-417c-a5a4-719ebe407011",
+                    "organismo": null,
+                    "tipo_nodo": "origen",
+                    "organismo_id": null,
+                    "estado_criatura": "origen_sin_organismo"
+                  }
+                },
+                {
+                  "id": "51cabb9f-cb8e-44fe-9172-2049c40f2276",
+                  "alma": "Normal",
+                  "magia": "Clases magicas: \n\nIniciado: Cuando estan en el colegio y aprenden cosas basicas como el flujo de mana \nAprendiz: Cuando ya domina toda la Teoria Basica y termina el colegio.\nDiscípulo: Al completar la prueba inicial se les asigna un mentor.\nAdepto: Logra dominar un hechizo a la perfeccion.\nMaestro: Logra dominar mas de un hechizo o tienen un gran control de su mana por lo que se le permite tomar un alumno.\nArchimago: Esta clase solo se entrega a quienes logran crear un hechizo.",
+                  "nombre": "Humano",
+                  "biologia": "Especie humana: organismo animal terrestre, bípede y pensante. Anatomía basada en 11 sistemas; incluye piel, uñas, aparato locomotor, circulación, respiración, digestión, excreción, reproducción, regulación endocrina, defensa inmunitaria y percepción sensorial. La composición de tejidos se mantiene en nivel biológico cualitativo cuando la cuantificación molecular no es necesaria para la especie.",
+                  "relacion": null,
+                  "ia_config": {},
+                  "stats_dnd": null,
+                  "imagen_url": "/dibujos/fanart/07.png",
+                  "descripcion": "Seres bípedos y pensantes especializados en la manipulación del entorno mediante herramientas, conocimiento y organización social. No poseen una capacidad natural especializada para canalizar Eterium de forma consciente, pero desarrollaron métodos propios para convertir Eterium, Garin y Oris en una práctica mágica acumulativa. Su desarrollo tecnológico y científico amplía sus capacidades más allá de sus limitaciones biológicas inmediatas.",
+                  "pensamiento": "Pensante",
+                  "comportamiento": null,
+                  "tipo_presencia": null,
+                  "descripcion_dnd": null,
+                  "roles_ecologicos": [],
+                  "biologia_calculada": {
+                    "masa": 1178.5361454545455,
+                    "clado": "Humanidad",
+                    "rango": "linaje_humano",
+                    "estado": "trazable",
+                    "fuente": "organismo_principal",
+                    "celulas": 0,
+                    "rigidez": 0.4920850575167487,
+                    "tejidos": 0,
+                    "clado_id": "da056924-d419-45e1-b902-b700c018cc2b",
+                    "organismo": "Humano",
+                    "tipo_nodo": "filogenetico",
+                    "estabilidad": 0.5497469690022136,
+                    "flexibilidad": 0.28455999116351716,
+                    "organismo_id": "56cb620b-5f6b-4064-a4b1-497bb453531d",
+                    "tipo_organismo": "animal",
+                    "estado_criatura": "trazable",
+                    "estado_organismo": "calculado",
+                    "organos_manuales": 0,
+                    "rasgos_efectivos": 23,
+                    "rasgos_heredados": 23,
+                    "organos_heredados": 36,
+                    "sistemas_manuales": 0,
+                    "sistemas_heredados": 11,
+                    "organos_especializados": 0,
+                    "sistemas_especializados": 0
+                  }
+                }
+              ],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "34bcf7a9-7f0c-4d9f-839b-73f6fed281c8",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Cumbres frías.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "f1378225-077e-491d-b1a7-dbd2c9019a2c"
+            },
+            {
+              "id": "e438c8c7-2faa-4ea2-a457-c4f622ddd8b3",
+              "orden": 20,
+              "nombre": "Hielo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Cumbres frías.",
+              "tipo_habitat": {
+                "id": "c49a39f4-8e65-432b-9ed6-7ddd0ae1be1a",
+                "clave": "hielo",
+                "nombre": "Hielo"
+              },
+              "habitat_padre_id": "f1378225-077e-491d-b1a7-dbd2c9019a2c"
+            }
+          ],
+          "descripcion": "Ambiente de cumbre sometido a bajas temperaturas, viento y una temporada de crecimiento corta. Se trata como ecosistema de transición alpina dentro de la tundra de Garlia.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    },
+    {
+      "id": "3587ec2a-d960-4b04-bd57-2b1d3137001a",
+      "orden": 70,
+      "nombre": "Humedal",
+      "afinidad": "Saturación hídrica",
+      "descripcion": "Bioma donde el agua permanece o circula con suficiente frecuencia para modificar de forma estable el suelo, la vegetación y la disponibilidad de recursos.",
+      "ecosistemas": [
+        {
+          "id": "f883a6ae-1a33-4870-9a98-8005ebb42c4d",
+          "clima": "Húmedo y saturado",
+          "orden": 110,
+          "nombre": "Humedal continental",
+          "habitats": [
+            {
+              "id": "2252d258-6be3-4b68-8b53-0460597e2a49",
+              "orden": 1,
+              "nombre": "General",
+              "criaturas": [],
+              "descripcion": "Hábitat general del ecosistema.",
+              "tipo_habitat": {
+                "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+                "clave": "general",
+                "nombre": "General"
+              },
+              "habitat_padre_id": null
+            },
+            {
+              "id": "9e359a61-b15e-4a24-a7e7-db788a2b99fa",
+              "orden": 10,
+              "nombre": "Suelo",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Humedal continental.",
+              "tipo_habitat": {
+                "id": "4607e548-fcaf-495e-a362-698bada3433c",
+                "clave": "suelo",
+                "nombre": "Suelo"
+              },
+              "habitat_padre_id": "2252d258-6be3-4b68-8b53-0460597e2a49"
+            },
+            {
+              "id": "ef23125b-bf09-433e-b8c5-a98aac560566",
+              "orden": 20,
+              "nombre": "Ribera",
+              "criaturas": [],
+              "descripcion": "Hábitat definido por la regla ecológica del ecosistema Humedal continental.",
+              "tipo_habitat": {
+                "id": "c0a92d2b-a219-4aa7-b565-3e27ccca7711",
+                "clave": "ribera",
+                "nombre": "Ribera"
+              },
+              "habitat_padre_id": "2252d258-6be3-4b68-8b53-0460597e2a49"
+            }
+          ],
+          "descripcion": "Ambiente de transición donde el agua superficial o subterránea modifica de forma estable el suelo y la vegetación.",
+          "mineral_ids": [],
+          "tipo_entorno": "natural",
+          "criaturas_sin_habitat": []
+        }
+      ]
+    }
+  ],
+  "version": 1,
+  "generado_en": "2026-10-02T21:40:59.799085+00:00",
+  "ecosistemas_sin_bioma": [
+    {
+      "id": "10183593-692b-4ebe-9b93-3d0c560130eb",
+      "clima": "Variable según altitud y región",
+      "orden": 30,
+      "nombre": "Capa aérea",
+      "habitats": [
+        {
+          "id": "4cb83c32-f3a6-4c07-a378-f6cc3ece03e3",
+          "orden": 1,
+          "nombre": "General",
+          "criaturas": [
+            {
+              "id": "b8674cbd-1336-41a8-ab99-2646ad935773",
+              "alma": "Normal",
+              "magia": null,
+              "nombre": "Aoris",
+              "biologia": null,
+              "relacion": null,
+              "ia_config": {},
+              "stats_dnd": null,
+              "imagen_url": null,
+              "descripcion": "Seres bípedos alados de climas fríos. Suelen ser orgullosos y mantener distancia de otras especies; algunos permanecen en Aelistan junto al Titán del Cielo, mientras la mayoría descendió para explorar el mundo inferior. Desarrollaron las Runas Aoris. Su anatomía incluye un pico córneo, por lo que su habla tiene limitaciones para producir sonidos bilabiales como B, M, P y F.",
+              "pensamiento": "Pensante",
+              "comportamiento": null,
+              "descripcion_dnd": null,
+              "biologia_calculada": {
+                "masa": 1178.5361454545455,
+                "clado": "Aoris",
+                "rango": "linaje",
+                "estado": "trazable",
+                "fuente": "organismo_principal",
+                "celulas": 0,
+                "rigidez": 0.4920850575167487,
+                "tejidos": 0,
+                "clado_id": "5a3e592f-7b2b-4df1-b597-f8760331d0ec",
+                "organismo": "Aoris",
+                "tipo_nodo": "filogenetico",
+                "estabilidad": 0.5497469690022136,
+                "flexibilidad": 0.28455999116351716,
+                "organismo_id": "a38d1bde-2da5-4858-9568-03a0cfddbe94",
+                "tipo_organismo": "animal",
+                "estado_criatura": "trazable",
+                "estado_organismo": "calculado",
+                "organos_manuales": 0,
+                "rasgos_efectivos": 23,
+                "rasgos_heredados": 23,
+                "organos_heredados": 41,
+                "sistemas_manuales": 0,
+                "sistemas_heredados": 11,
+                "organos_especializados": 0,
+                "sistemas_especializados": 0
+              }
+            },
+            {
+              "id": "fd1166f3-596c-42d2-9bca-7561fa0b64ab",
+              "alma": "Divina",
+              "magia": null,
+              "nombre": "Grifos",
+              "biologia": null,
+              "relacion": null,
+              "ia_config": {},
+              "stats_dnd": null,
+              "imagen_url": null,
+              "descripcion": "Seres alados creados por el Titán del Cielo para proteger su reino. Actúan como guardianes territoriales y pueden provocar tormentas cuando detectan amenazas o invasores. Su existencia está vinculada a una función de protección deliberadamente establecida por su creador.",
+              "pensamiento": "Pensante",
+              "comportamiento": null,
+              "descripcion_dnd": null,
+              "biologia_calculada": {
+                "masa": 1316.64585,
+                "clado": "Grifos",
+                "rango": "linaje",
+                "estado": "trazable",
+                "fuente": "organismo_principal",
+                "celulas": 0,
+                "rigidez": 0.4902680361251357,
+                "tejidos": 0,
+                "clado_id": "30dc37b8-abff-4b99-95f2-2ea58c794d5f",
+                "organismo": "Grifos",
+                "tipo_nodo": "filogenetico",
+                "estabilidad": 0.5490993588613962,
+                "flexibilidad": 0.2857686899200611,
+                "organismo_id": "9d41f1db-0779-4a28-bdc6-f09ddb8b8c4c",
+                "tipo_organismo": "animal",
+                "estado_criatura": "trazable",
+                "estado_organismo": "calculado",
+                "organos_manuales": 0,
+                "rasgos_efectivos": 11,
+                "rasgos_heredados": 11,
+                "organos_heredados": 18,
+                "sistemas_manuales": 0,
+                "sistemas_heredados": 4,
+                "organos_especializados": 0,
+                "sistemas_especializados": 0
+              }
+            }
+          ],
+          "descripcion": "Hábitat general del ecosistema.",
+          "tipo_habitat": {
+            "id": "1401bf4f-f307-4b41-858e-3f0e9fade036",
+            "clave": "general",
+            "nombre": "General"
+          },
+          "habitat_padre_id": null
+        },
+        {
+          "id": "9d489841-8f41-4a5d-8d30-03176e9b345e",
+          "orden": 10,
+          "nombre": "Aéreo",
+          "criaturas": [
+            {
+              "id": "b8674cbd-1336-41a8-ab99-2646ad935773",
+              "alma": "Normal",
+              "magia": null,
+              "nombre": "Aoris",
+              "biologia": null,
+              "relacion": null,
+              "ia_config": {},
+              "stats_dnd": null,
+              "imagen_url": null,
+              "descripcion": "Seres bípedos alados de climas fríos. Suelen ser orgullosos y mantener distancia de otras especies; algunos permanecen en Aelistan junto al Titán del Cielo, mientras la mayoría descendió para explorar el mundo inferior. Desarrollaron las Runas Aoris. Su anatomía incluye un pico córneo, por lo que su habla tiene limitaciones para producir sonidos bilabiales como B, M, P y F.",
+              "pensamiento": "Pensante",
+              "comportamiento": null,
+              "descripcion_dnd": null,
+              "biologia_calculada": {
+                "masa": 1178.5361454545455,
+                "clado": "Aoris",
+                "rango": "linaje",
+                "estado": "trazable",
+                "fuente": "organismo_principal",
+                "celulas": 0,
+                "rigidez": 0.4920850575167487,
+                "tejidos": 0,
+                "clado_id": "5a3e592f-7b2b-4df1-b597-f8760331d0ec",
+                "organismo": "Aoris",
+                "tipo_nodo": "filogenetico",
+                "estabilidad": 0.5497469690022136,
+                "flexibilidad": 0.28455999116351716,
+                "organismo_id": "a38d1bde-2da5-4858-9568-03a0cfddbe94",
+                "tipo_organismo": "animal",
+                "estado_criatura": "trazable",
+                "estado_organismo": "calculado",
+                "organos_manuales": 0,
+                "rasgos_efectivos": 23,
+                "rasgos_heredados": 23,
+                "organos_heredados": 41,
+                "sistemas_manuales": 0,
+                "sistemas_heredados": 11,
+                "organos_especializados": 0,
+                "sistemas_especializados": 0
+              }
+            },
+            {
+              "id": "fd1166f3-596c-42d2-9bca-7561fa0b64ab",
+              "alma": "Divina",
+              "magia": null,
+              "nombre": "Grifos",
+              "biologia": null,
+              "relacion": null,
+              "ia_config": {},
+              "stats_dnd": null,
+              "imagen_url": null,
+              "descripcion": "Seres alados creados por el Titán del Cielo para proteger su reino. Actúan como guardianes territoriales y pueden provocar tormentas cuando detectan amenazas o invasores. Su existencia está vinculada a una función de protección deliberadamente establecida por su creador.",
+              "pensamiento": "Pensante",
+              "comportamiento": null,
+              "descripcion_dnd": null,
+              "biologia_calculada": {
+                "masa": 1316.64585,
+                "clado": "Grifos",
+                "rango": "linaje",
+                "estado": "trazable",
+                "fuente": "organismo_principal",
+                "celulas": 0,
+                "rigidez": 0.4902680361251357,
+                "tejidos": 0,
+                "clado_id": "30dc37b8-abff-4b99-95f2-2ea58c794d5f",
+                "organismo": "Grifos",
+                "tipo_nodo": "filogenetico",
+                "estabilidad": 0.5490993588613962,
+                "flexibilidad": 0.2857686899200611,
+                "organismo_id": "9d41f1db-0779-4a28-bdc6-f09ddb8b8c4c",
+                "tipo_organismo": "animal",
+                "estado_criatura": "trazable",
+                "estado_organismo": "calculado",
+                "organos_manuales": 0,
+                "rasgos_efectivos": 11,
+                "rasgos_heredados": 11,
+                "organos_heredados": 18,
+                "sistemas_manuales": 0,
+                "sistemas_heredados": 4,
+                "organos_especializados": 0,
+                "sistemas_especializados": 0
+              }
+            }
+          ],
+          "descripcion": "Hábitat definido por la regla ecológica del ecosistema Capa aérea.",
+          "tipo_habitat": {
+            "id": "92a4c6c2-040b-4ff8-a5c4-794ba47beaf2",
+            "clave": "aereo",
+            "nombre": "Aéreo"
+          },
+          "habitat_padre_id": "4cb83c32-f3a6-4c07-a378-f6cc3ece03e3"
+        }
+      ],
+      "descripcion": "Capa de aire utilizada de forma estable por organismos voladores. Puede atravesar distintos paisajes y por ello no se fuerza a pertenecer a un único bioma terrestre.",
+      "tipo_entorno": "aereo"
+    }
+  ]
+}
