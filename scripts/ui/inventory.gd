@@ -23,6 +23,8 @@ var hotbar_indices: Array[int] = []
 
 var filtro_equipamiento: String = "Todos"
 var objeto_equipado_armadura: Dictionary = {}
+var _arrastre_indice: int = -1
+var _arrastre_datos: Dictionary = {}
 
 
 @onready var grid: GridContainer = $Window/Margin/Column/Content/SlotsPanel/Grid
@@ -131,6 +133,12 @@ func _crear_slots() -> void:
 				_al_seleccionar_slot
 			)
 
+		if slot.has_signal("arrastre_iniciado"):
+			slot.connect(
+				"arrastre_iniciado",
+				_al_iniciar_arrastre
+			)
+
 		slot_nodes.append(slot)
 
 	actualizar()
@@ -148,6 +156,56 @@ func actualizar() -> void:
 			slot.limpiar()
 		else:
 			slot.configurar(items[i])
+
+
+func _al_iniciar_arrastre(slot: Button, datos: Dictionary) -> void:
+	_arrastre_indice = slot_nodes.find(slot)
+	_arrastre_datos = datos.duplicate(true)
+
+
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_DRAG_END:
+		return
+
+	if _arrastre_indice < 0 or _arrastre_datos.is_empty():
+		return
+
+	var indice := _arrastre_indice
+	var datos := _arrastre_datos.duplicate(true)
+	_arrastre_indice = -1
+	_arrastre_datos.clear()
+
+	if get_viewport().gui_is_drag_successful():
+		return
+
+	if not visible:
+		return
+
+	if not has_method("_soltar_objeto_al_mundo"):
+		return
+
+	_soltar_objeto_al_mundo(indice, datos)
+
+
+func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
+	if indice < 0 or indice >= items.size() or datos.is_empty():
+		return
+
+	var world_items := get_node_or_null("/root/GarliaWorldItems")
+	if world_items == null or not world_items.has_method("soltar_objeto_al_mundo"):
+		world_items = get_tree().get_first_node_in_group("world_items")
+
+	if world_items == null or not world_items.has_method("soltar_objeto_al_mundo"):
+		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
+		return
+
+	world_items.call(
+		"soltar_objeto_al_mundo",
+		datos,
+		get_global_mouse_position()
+	)
+
+	quitar_objeto(indice)
 
 
 func _al_seleccionar_slot(slot: Button) -> void:
