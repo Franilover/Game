@@ -89,10 +89,24 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if objetivo.has_method("take_damage"):
+		var vivo_antes := true
+		if "is_alive" in objetivo:
+			vivo_antes = bool(objetivo.get("is_alive"))
+
 		objetivo.call(
 			"take_damage",
 			danio
 		)
+
+		if (
+			vivo_antes
+			and "is_alive" in objetivo
+			and not bool(objetivo.get("is_alive"))
+			and objetivo.is_in_group("creatures")
+			and propietario != null
+			and propietario.is_in_group("player")
+		):
+			GameState.registrar_criatura_derrotada(objetivo)
 
 		var visual: CanvasItem = (
 			objetivo as CanvasItem
