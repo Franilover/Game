@@ -496,6 +496,42 @@ func obtener_objeto_equipado(clave: String) -> Dictionary:
 	return {}
 
 
+func robar_objeto_equipado(clave: String) -> Dictionary:
+	var objeto: Dictionary = obtener_objeto_equipado(clave)
+
+	if objeto.is_empty():
+		return {}
+
+	equipo.erase(clave)
+
+	for child in equipment_slots.get_children():
+		if not child.has_method("obtener_clave"):
+			continue
+
+		var clave_slot: String = str(
+			child.call("obtener_clave")
+		)
+
+		if clave_slot != clave:
+			continue
+
+		if child.has_method("limpiar_objeto"):
+			child.call("limpiar_objeto")
+
+		break
+
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+
+	print(
+		"Inventory: objeto robado → ",
+		str(objeto.get("nombre", "Objeto"))
+	)
+
+	return objeto
+
+
 func establecer_equipo(nuevo_equipo: Dictionary) -> void:
 	equipo.clear()
 
