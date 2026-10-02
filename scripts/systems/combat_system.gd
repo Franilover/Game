@@ -68,32 +68,40 @@ func usar_objeto_activo() -> void:
 	if player == null:
 		return
 
-	var objeto_activo: Dictionary = (
-		_obtener_objeto_activo()
-	)
+	# El combate es independiente de la selección de la hotbar.
+	# Si hay un arma equipada, esa es la que usa el ataque primario.
+	# Si no hay arma equipada, el jugador pelea con los puños.
+	var arma_equipada := _obtener_arma_equipada()
 
-	if objeto_activo.is_empty():
-		_atacar_desarmado()
+	if not arma_equipada.is_empty():
+		_atacar_con_arma(arma_equipada)
 		return
 
-	if _es_arma(objeto_activo):
-		_atacar_con_arma(objeto_activo)
-		return
+	_atacar_desarmado()
 
-	accion_contextual_solicitada.emit(
-		objeto_activo,
-		player
+
+func _obtener_arma_equipada() -> Dictionary:
+	var inventario := get_tree().get_first_node_in_group(
+		"inventory"
 	)
 
-	print(
-		"CombatSystem: usar objeto → ",
-		str(
-			objeto_activo.get(
-				"nombre",
-				"Objeto"
-			)
-		)
+	if inventario == null:
+		return {}
+
+	if not inventario.has_method(
+		"obtener_objeto_equipado"
+	):
+		return {}
+
+	var objeto: Variant = inventario.call(
+		"obtener_objeto_equipado",
+		"arma"
 	)
+
+	if objeto is Dictionary:
+		return objeto as Dictionary
+
+	return {}
 
 
 func _es_arma(
