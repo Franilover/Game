@@ -188,6 +188,35 @@ func get_zona_at(
 	return terrain.get_zona_at(tile)
 
 
+func get_tile_at(
+	posicion_global: Vector2
+) -> Vector2i:
+	if terrain == null:
+		return Vector2i.ZERO
+
+	var posicion_local: Vector2 = (
+		terrain.to_local(posicion_global)
+	)
+
+	var tamano_tile: int = maxi(
+		tile_size,
+		1
+	)
+
+	return Vector2i(
+		floori(
+			posicion_local.x / float(tamano_tile)
+		),
+		floori(
+			posicion_local.y / float(tamano_tile)
+		)
+	)
+
+
+func get_tile_size() -> int:
+	return maxi(tile_size, 1)
+
+
 func get_contexto_at(
 	posicion_global: Vector2
 ) -> Dictionary:
