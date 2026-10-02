@@ -1,7 +1,9 @@
 extends Node2D
 class_name WorldGenerator
 
+
 signal mundo_generado
+
 
 @export var map_seed: int = 0
 @export var tile_size: int = 32
@@ -9,6 +11,7 @@ signal mundo_generado
 @export var load_radius_chunks: int = 2
 @export var unload_radius_chunks: int = 3
 @export var generation_cells_per_frame: int = 256
+
 
 var terrain: WorldTerrain
 var streamer: WorldStreamer
@@ -40,14 +43,18 @@ func _process(_delta: float) -> void:
 
 
 func _crear_sistemas() -> void:
-	terrain = get_node_or_null("WorldTerrain") as WorldTerrain
+	terrain = get_node_or_null(
+		"WorldTerrain"
+	) as WorldTerrain
 
 	if terrain == null:
 		terrain = WorldTerrain.new()
 		terrain.name = "WorldTerrain"
 		add_child(terrain)
 
-	streamer = get_node_or_null("WorldStreamer") as WorldStreamer
+	streamer = get_node_or_null(
+		"WorldStreamer"
+	) as WorldStreamer
 
 	if streamer == null:
 		streamer = WorldStreamer.new()
@@ -98,12 +105,16 @@ func _inicializar_mundo() -> void:
 
 	_world_ready = true
 
-	print("WorldGenerator: mundo inicial listo.")
+	print(
+		"WorldGenerator: mundo inicial listo."
+	)
 
 	mundo_generado.emit()
 
 
-func registrar_jugador(player: Node) -> void:
+func registrar_jugador(
+	player: Node
+) -> void:
 	if not _world_ready:
 		return
 
@@ -123,59 +134,73 @@ func get_spawn_position() -> Vector2:
 	return terrain.get_spawn_position()
 
 
-func is_walkable(tile: Vector2i) -> bool:
+func is_walkable(
+	tile: Vector2i
+) -> bool:
 	if terrain == null:
 		return false
 
 	return terrain.is_walkable(tile)
 
 
-func get_bioma_at(tile: Vector2i) -> Dictionary:
+func get_bioma_at(
+	tile: Vector2i
+) -> Dictionary:
 	if terrain == null:
 		return {}
 
 	return terrain.get_bioma_at(tile)
 
 
-func get_ecosistema_at(tile: Vector2i) -> Dictionary:
+func get_ecosistema_at(
+	tile: Vector2i
+) -> Dictionary:
 	if terrain == null:
 		return {}
 
 	return terrain.get_ecosistema_at(tile)
 
 
-func get_habitats_at(tile: Vector2i) -> Array:
+func get_habitats_at(
+	tile: Vector2i
+) -> Array:
 	if terrain == null:
 		return []
 
 	return terrain.get_habitats_at(tile)
 
 
-func get_criaturas_at(tile: Vector2i) -> Array:
+func get_criaturas_at(
+	tile: Vector2i
+) -> Array:
 	if terrain == null:
 		return []
 
 	return terrain.get_criaturas_at(tile)
 
 
-func get_zona_at(tile: Vector2i) -> int:
+func get_zona_at(
+	tile: Vector2i
+) -> int:
 	if terrain == null:
 		return -1
 
 	return terrain.get_zona_at(tile)
 
 
-func get_contexto_at(posicion_global: Vector2) -> Dictionary:
+func get_contexto_at(
+	posicion_global: Vector2
+) -> Dictionary:
 	if terrain == null:
 		return {}
 
 	if not _world_ready:
 		return {}
 
-	# Convertimos la posición global del jugador
-	# a las coordenadas locales de WorldTerrain.
 	var posicion_local: Vector2 = (
-		terrain.to_local(posicion_global)
+		terrain.to_local(
+			posicion_global
+		)
 	)
 
 	var tamano_tile: int = maxi(
@@ -208,11 +233,69 @@ func get_contexto_at(posicion_global: Vector2) -> Dictionary:
 
 	var contexto := {
 		"bioma": _extraer_nombre(bioma),
-		"ecosistema": _extraer_nombre(ecosistema),
-		"habitat": _extraer_nombre_habitats(habitats)
+		"ecosistema": _extraer_nombre(
+			ecosistema
+		),
+		"habitat": _extraer_nombre_habitats(
+			habitats
+		)
 	}
 
 	return contexto
+
+
+func summon_criatura(
+	nombre: String
+) -> Dictionary:
+	if not _world_ready:
+		return {
+			"ok": false,
+			"mensaje": (
+				"El mundo todavía no está listo."
+			)
+		}
+
+	if entity_spawner == null:
+		return {
+			"ok": false,
+			"mensaje": (
+				"No existe WorldEntitySpawner."
+			)
+		}
+
+	var jugador := (
+		get_tree().get_first_node_in_group(
+			"player"
+		)
+	)
+
+	if jugador == null:
+		return {
+			"ok": false,
+			"mensaje": (
+				"No se encontró el jugador."
+			)
+		}
+
+	if not jugador is Node2D:
+		return {
+			"ok": false,
+			"mensaje": (
+				"El jugador no es Node2D."
+			)
+		}
+
+	var jugador_2d := jugador as Node2D
+
+	var posicion: Vector2 = (
+		jugador_2d.global_position
+		+ Vector2(32.0, 0.0)
+	)
+
+	return entity_spawner.summon_criatura(
+		nombre,
+		posicion
+	)
 
 
 func _extraer_nombre(
