@@ -2,6 +2,7 @@ extends Button
 
 
 signal seleccionado(slot: Button)
+signal arrastre_iniciado(slot: Button, datos: Dictionary)
 
 
 var datos: Dictionary = {}
@@ -119,6 +120,7 @@ func _get_drag_data(_position: Vector2) -> Variant:
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_drag_preview(preview)
+	arrastre_iniciado.emit(self, datos.duplicate(true))
 
 	return {
 		"tipo": "inventario_objeto",
