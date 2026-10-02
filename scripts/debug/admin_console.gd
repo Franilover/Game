@@ -1,6 +1,7 @@
 extends CanvasLayer
 class_name AdminConsole
 
+
 var _panel: PanelContainer
 var _historial: RichTextLabel
 var _entrada: LineEdit
@@ -10,10 +11,12 @@ var _abierto: bool = false
 func _ready() -> void:
 	layer = 100
 	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	add_to_group("admin_console")
 
 	_crear_interfaz()
 	visible = false
+
 
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey:
@@ -29,6 +32,7 @@ func _input(event: InputEvent) -> void:
 		if tecla.keycode == KEY_T:
 			abrir()
 			get_viewport().set_input_as_handled()
+
 		return
 
 	# ESC cierra la consola.
@@ -76,6 +80,10 @@ func cerrar() -> void:
 	get_tree().paused = false
 
 
+func esta_abierta() -> bool:
+	return _abierto
+
+
 func _crear_interfaz() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "AdminPanel"
@@ -93,27 +101,38 @@ func _crear_interfaz() -> void:
 
 	var titulo := Label.new()
 	titulo.text = "ADMIN CONSOLE"
-	titulo.add_theme_font_size_override("font_size", 12)
+	titulo.add_theme_font_size_override(
+		"font_size",
+		12
+	)
 	columna.add_child(titulo)
 
 	_historial = RichTextLabel.new()
 	_historial.name = "Historial"
 	_historial.bbcode_enabled = true
 	_historial.fit_content = true
-	_historial.custom_minimum_size = Vector2(0.0, 48.0)
+	_historial.custom_minimum_size = Vector2(
+		0.0,
+		48.0
+	)
+
 	_historial.text = (
 		"[color=#b4befe]"
 		+ "Garlia Admin"
 		+ "[/color]\n"
 		+ "Escribe /help para ver comandos."
 	)
+
 	columna.add_child(_historial)
 
 	_entrada = LineEdit.new()
 	_entrada.name = "CommandInput"
 	_entrada.placeholder_text = "/summon Aoris"
 	_entrada.clear_button_enabled = true
-	_entrada.text_submitted.connect(_al_enviar_comando)
+	_entrada.text_submitted.connect(
+		_al_enviar_comando
+	)
+
 	columna.add_child(_entrada)
 
 
@@ -123,7 +142,9 @@ func _al_enviar_comando(texto: String) -> void:
 	if comando.is_empty():
 		return
 
-	_agregar_linea("> " + comando)
+	_agregar_linea(
+		"> " + comando
+	)
 
 	_entrada.clear()
 
@@ -140,9 +161,13 @@ func _ejecutar_comando(comando: String) -> void:
 			+ "Los comandos deben comenzar con /"
 			+ "[/color]"
 		)
+
 		return
 
-	var partes := comando.split(" ", false)
+	var partes := comando.split(
+		" ",
+		false
+	)
 
 	if partes.is_empty():
 		return
@@ -186,6 +211,7 @@ func _comando_summon(partes: Array[String]) -> void:
 			+ "Uso: /summon <criatura>"
 			+ "[/color]"
 		)
+
 		return
 
 	var nombre := partes[1]
@@ -202,14 +228,19 @@ func _comando_summon(partes: Array[String]) -> void:
 			+ "No se encontró WorldGenerator."
 			+ "[/color]"
 		)
+
 		return
 
-	if not world_generator.has_method("summon_criatura"):
+	if not world_generator.has_method(
+		"summon_criatura"
+	):
 		_agregar_linea(
 			"[color=#d88]"
-			+ "WorldGenerator no tiene summon_criatura()."
+			+ "WorldGenerator no tiene "
+			+ "summon_criatura()."
 			+ "[/color]"
 		)
+
 		return
 
 	var resultado: Variant = (
