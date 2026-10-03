@@ -588,7 +588,7 @@ func _estado_base_partida(
 		"nombre": nombre,
 		"creado_en": creado_en,
 		"actualizado_en": actualizado_en,
-			"mundo_version": _obtener_version_mundo(),
+		"mundo_version": _obtener_version_mundo(),
 		"mundo": {
 			"semilla": semilla,
 			"generador_version": 1
@@ -998,8 +998,6 @@ func _aplicar_estado_al_juego() -> void:
 
 	jugador.set("is_alive", true)
 
-	player_tile_valido = false
-
 	if jugador.get("stamina") != null:
 		jugador.set("stamina", clampf(
 			player_stamina,
@@ -1051,7 +1049,7 @@ func _aplicar_estado_al_juego() -> void:
 				(proceso_variant as Dictionary).duplicate(true)
 			)
 
-if world_gen != null:
+	if world_gen != null:
 		var atmosphere := world_gen.get_node_or_null(
 			"WorldAtmosphere"
 		)
