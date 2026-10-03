@@ -59,6 +59,8 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("primary_action"):
+		if action_button != null and action_button.visible and event is InputEventMouseButton:
+			return
 		_avanzar()
 		get_viewport().set_input_as_handled()
 		return
