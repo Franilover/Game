@@ -16,6 +16,7 @@ signal mundo_generado
 var terrain: WorldTerrain
 var streamer: WorldStreamer
 var entity_spawner: WorldEntitySpawner
+var atmosphere: WorldAtmosphere
 
 var _world_ready: bool = false
 
@@ -40,6 +41,9 @@ func _process(_delta: float) -> void:
 
 	if streamer != null:
 		streamer.procesar()
+
+	if atmosphere != null:
+		atmosphere.procesar_jugador()
 
 
 func _crear_sistemas() -> void:
@@ -69,6 +73,12 @@ func _crear_sistemas() -> void:
 		entity_spawner = WorldEntitySpawner.new()
 		entity_spawner.name = "WorldEntitySpawner"
 		add_child(entity_spawner)
+
+	atmosphere = get_node_or_null("WorldAtmosphere") as WorldAtmosphere
+	if atmosphere == null:
+		atmosphere = WorldAtmosphere.new()
+		atmosphere.name = "WorldAtmosphere"
+		add_child(atmosphere)
 
 
 func _inicializar_mundo() -> void:
