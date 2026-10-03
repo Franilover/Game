@@ -823,7 +823,7 @@ func _obtener_mission_manager() -> Node:
 
 
 func _conectar_senales_misiones() -> void:
-	var manager := _obtener_mission_manager()
+	var manager: Node = _obtener_mission_manager()
 	if manager == null:
 		return
 
@@ -935,7 +935,7 @@ func _actualizar_panel_misiones() -> void:
 		return
 
 	for mision in misiones:
-		var estado_mision := manager.obtener_estado_mision(
+		var estado_mision: Dictionary = manager.obtener_estado_mision(
 			str(mision.get("id", ""))
 		)
 
