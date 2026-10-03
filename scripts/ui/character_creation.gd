@@ -55,6 +55,24 @@ func _on_gender_selected(index: int) -> void:
 	gender_free.visible = index == 3
 	_update_confirm()
 
+func _actualizar_genero_segun_especie() -> void:
+	if species.selected < 0:
+		return
+	var datos_variant: Variant = species.get_item_metadata(species.selected)
+	if not datos_variant is Dictionary:
+		return
+	var datos := datos_variant as Dictionary
+	var clave := str(datos.get("clave", "")).strip_edges().to_lower()
+	var es_feerin := clave == "feerin"
+	gender.visible = not es_feerin
+	gender_free.visible = not es_feerin and gender.selected == 3
+
+
+func _on_species_selected(_index: int) -> void:
+	_actualizar_genero_segun_especie()
+	_update_confirm()
+
+
 func _on_species_loaded(data: Array) -> void:
 	species.clear()
 	for item_variant in data:
@@ -64,8 +82,11 @@ func _on_species_loaded(data: Array) -> void:
 		species.add_item(str(item.get("nombre", "Especie")))
 		species.set_item_metadata(species.item_count - 1, item.duplicate(true))
 	species.disabled = species.item_count == 0
+	if not species.item_selected.is_connected(_on_species_selected):
+		species.item_selected.connect(_on_species_selected)
 	if species.item_count > 0:
 		species.select(0)
+		_actualizar_genero_segun_especie()
 		status.text = "Especies jugables cargadas desde Supabase."
 	else:
 		status.text = "No hay especies jugables disponibles."
@@ -113,6 +134,8 @@ func _on_confirm() -> void:
 		return
 	var skin_index: int = selected_skin[0]
 	var gender_value: String = gender.get_item_text(gender.selected)
+	if not gender.visible:
+		gender_value = "sin_genero"
 	if gender.selected == 3:
 		gender_value = gender_free.text.strip_edges()
 	var species_data: Dictionary = species.get_item_metadata(species.selected) as Dictionary
