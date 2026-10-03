@@ -34,8 +34,6 @@ border_width_bottom = 2
 border_color = Color(0.74, 0.62, 0.34, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
-expand_margin_left = 30.0
-expand_margin_right = 30.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_tab_unselected"]
 bg_color = Color(0.12, 0.075, 0.045, 0.95)
@@ -46,8 +44,6 @@ border_width_bottom = 1
 border_color = Color(0.29, 0.19, 0.12, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
-expand_margin_left = 30.0
-expand_margin_right = 30.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_tab_hovered"]
 bg_color = Color(0.19, 0.13, 0.08, 1)
@@ -58,9 +54,40 @@ border_width_bottom = 2
 border_color = Color(0.55, 0.40, 0.22, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
-expand_margin_left = 30.0
-expand_margin_right = 30.0
 
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_nav_selected"]
+bg_color = Color(0.28, 0.20, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.74, 0.62, 0.34, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_nav_unselected"]
+bg_color = Color(0.12, 0.075, 0.045, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.19, 0.12, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_nav_hovered"]
+bg_color = Color(0.19, 0.13, 0.08, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 2
+border_color = Color(0.55, 0.40, 0.22, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_tabs"]
+allow_unpress = false
 
 [sub_resource type="StyleBoxEmpty" id="StyleBox_tab_focus"]
 [node name="Inventory" type="Control" unique_id=800900739]
@@ -110,6 +137,58 @@ theme_override_constants/margin_bottom = 18
 [node name="Column" type="VBoxContainer" parent="Window/Margin" unique_id=446694475]
 layout_mode = 2
 theme_override_constants/separation = 14
+
+[node name="TabButtons" type="HBoxContainer" parent="Window/Margin/Column" unique_id=3001000200]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Inventario" type="Button" parent="Window/Margin/Column/TabButtons" unique_id=3001000201]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_colors/font_hovered_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBox_nav_unselected")
+theme_override_styles/hover = SubResource("StyleBox_nav_hovered")
+theme_override_styles/pressed = SubResource("StyleBox_nav_selected")
+theme_override_styles/focus = SubResource("StyleBox_tab_focus")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_tabs")
+text = "Inventario"
+
+[node name="Enciclopedia" type="Button" parent="Window/Margin/Column/TabButtons" unique_id=3001000202]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
+theme_override_colors/font_hovered_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBox_nav_unselected")
+theme_override_styles/hover = SubResource("StyleBox_nav_hovered")
+theme_override_styles/pressed = SubResource("StyleBox_nav_selected")
+theme_override_styles/focus = SubResource("StyleBox_tab_focus")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_tabs")
+text = "Enciclopedia"
+
+[node name="Mapa" type="Button" parent="Window/Margin/Column/TabButtons" unique_id=3001000203]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
+theme_override_colors/font_hovered_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBox_nav_unselected")
+theme_override_styles/hover = SubResource("StyleBox_nav_hovered")
+theme_override_styles/pressed = SubResource("StyleBox_nav_selected")
+theme_override_styles/focus = SubResource("StyleBox_tab_focus")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_tabs")
+text = "Mapa"
 
 [node name="Tabs" type="TabContainer" parent="Window/Margin/Column" unique_id=3001000100]
 layout_mode = 2
