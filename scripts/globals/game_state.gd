@@ -264,6 +264,9 @@ func iniciar_partida(id: String) -> bool:
 
 	var metadata := _extraer_metadata_partida(datos)
 
+	world_seed_valida = false
+	world_seed = 0
+
 	var mundo_variant: Variant = datos.get(
 		"mundo",
 		{}
@@ -622,6 +625,9 @@ func _estado_base_partida(
 func _aplicar_estado_memoria(
 	estado: Dictionary
 ) -> void:
+	player_tile_valido = false
+	player_tile = Vector2i.ZERO
+
 	var player_variant: Variant = estado.get(
 		"player",
 		{}
@@ -994,6 +1000,8 @@ func _aplicar_estado_al_juego() -> void:
 
 	jugador.set("is_alive", true)
 
+	player_tile_valido = false
+
 	if jugador.get("stamina") != null:
 		jugador.set("stamina", clampf(
 			player_stamina,
@@ -1045,11 +1053,7 @@ func _aplicar_estado_al_juego() -> void:
 				(proceso_variant as Dictionary).duplicate(true)
 			)
 
-	var world_gen := get_tree().current_scene.get_node_or_null(
-		"World/WorldGenerator"
-	)
-
-	if world_gen != null:
+if world_gen != null:
 		var atmosphere := world_gen.get_node_or_null(
 			"WorldAtmosphere"
 		)
