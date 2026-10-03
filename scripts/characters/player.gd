@@ -15,6 +15,12 @@ signal stamina_changed(current: float, maximum: float)
 @export var stamina_regeneration_delay: float = 0.8
 
 
+@export_category("Eterium")
+@export var eterium_heal_interval: float = 0.1
+@export var eterium_heal_amount: int = 2
+@export var eterium_heal_cost: int = 1
+
+
 @export_category("Salto")
 @export var jump_distance: float = 28.0
 @export var jump_duration: float = 0.28
@@ -48,6 +54,7 @@ var facing: Vector2 = Vector2.DOWN
 
 var stamina: float = 0.0
 var _stamina_regeneration_timer: float = 0.0
+var _eterium_heal_timer: float = 0.0
 
 
 var _jump_time: float = 0.0
@@ -115,6 +122,13 @@ func _physics_process(delta: float) -> void:
 	if state == State.DASH:
 		_procesar_dash(delta)
 		return
+
+	# Curación con Eterium mientras se mantiene Q.
+	if Input.is_action_pressed("focus"):
+		_procesar_curacion_eterium(delta)
+		return
+
+	_eterium_heal_timer = 0.0
 
 	# Magia IUM.
 	if Input.is_action_just_pressed("use_ium"):
@@ -343,6 +357,44 @@ func _gastar_stamina(cantidad: float) -> bool:
 
 func _tiene_stamina(cantidad: float) -> bool:
 	return stamina >= cantidad
+
+
+# ============================================================
+# CURACIÓN CON ETERIUM
+# ============================================================
+
+func _procesar_curacion_eterium(delta: float) -> void:
+	velocity = Vector2.ZERO
+
+	if state != State.IDLE:
+		state = State.IDLE
+		_update_visual()
+
+	if health >= max_health or mana < eterium_heal_cost:
+		_eterium_heal_timer = 0.0
+		return
+
+	_eterium_heal_timer -= delta
+
+	if _eterium_heal_timer > 0.0:
+		return
+
+	_eterium_heal_timer = maxf(
+		eterium_heal_interval,
+		0.01
+	)
+
+	var curacion := mini(
+		eterium_heal_amount,
+		max_health - health
+	)
+
+	if curacion <= 0:
+		return
+
+	heal(curacion)
+	mana = maxi(mana - eterium_heal_cost, 0)
+	mana_changed.emit(mana, max_mana)
 
 
 # ============================================================
