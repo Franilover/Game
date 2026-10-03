@@ -572,6 +572,190 @@ func _puede_apilar_con(
 	)
 
 
+func usar_objeto_activo(usuario: Node = null) -> bool:
+	var indice: int = obtener_indice_inventario_hotbar(
+		indice_hotbar_activo
+	)
+
+	if indice < 0:
+		return false
+
+	if indice >= items.size() or items[indice].is_empty():
+		return false
+
+	var objeto: Dictionary = items[indice]
+	var uso: Dictionary = _obtener_definicion_uso(objeto)
+
+	if uso.is_empty():
+		return false
+
+	var actor: Node = usuario
+	if actor == null:
+		actor = get_tree().get_first_node_in_group("player")
+
+	if actor == null or not is_instance_valid(actor):
+		return false
+
+	var efectos_aplicados: int = _aplicar_efectos_uso(
+		uso,
+		actor
+	)
+
+	if efectos_aplicados <= 0:
+		return false
+
+	quitar_cantidad(indice, 1)
+
+	Events.notification_pushed.emit(
+		"Usaste " + str(objeto.get("nombre", "Objeto"))
+	)
+
+	return true
+
+
+func _obtener_definicion_uso(objeto: Dictionary) -> Dictionary:
+	var propiedades_variant: Variant = objeto.get(
+		"propiedades_game",
+		{}
+	)
+
+	if not propiedades_variant is Dictionary:
+		return {}
+
+	var propiedades: Dictionary = propiedades_variant as Dictionary
+	var uso_variant: Variant = propiedades.get(
+		"uso",
+		{}
+	)
+
+	if not uso_variant is Dictionary:
+		return {}
+
+	var uso: Dictionary = uso_variant as Dictionary
+
+	if bool(uso.get("permitido", true)) == false:
+		return {}
+
+	var tipo: String = str(
+		uso.get("tipo", "")
+	).strip_edges().to_lower()
+
+	if tipo.is_empty():
+		return {}
+
+	return uso.duplicate(true)
+
+
+func _aplicar_efectos_uso(
+	uso: Dictionary,
+	actor: Node
+) -> int:
+	var aplicados: int = 0
+	var efectos_variant: Variant = uso.get(
+		"efectos",
+		null
+	)
+
+	if efectos_variant is Array:
+		for efecto_variant in efectos_variant as Array:
+			if not efecto_variant is Dictionary:
+				continue
+
+			if _aplicar_efecto_recurso(
+				efecto_variant as Dictionary,
+				actor
+			):
+				aplicados += 1
+
+		return aplicados
+
+	var efecto: Dictionary = uso.duplicate(true)
+
+	if _aplicar_efecto_recurso(efecto, actor):
+		aplicados += 1
+
+	return aplicados
+
+
+func _aplicar_efecto_recurso(
+	efecto: Dictionary,
+	actor: Node
+) -> bool:
+	var recurso: String = str(
+		efecto.get(
+			"recurso",
+			efecto.get("efecto", "")
+		)
+	).strip_edges().to_lower()
+
+	var magnitud_variant: Variant = efecto.get(
+		"magnitud",
+		efecto.get("cantidad", 0)
+	)
+
+	if not (
+		magnitud_variant is int
+		or magnitud_variant is float
+	):
+		return false
+
+	var magnitud: float = maxf(
+		float(magnitud_variant),
+		0.0
+	)
+
+	if magnitud <= 0.0:
+		return false
+
+	switch recurso:
+		case "vida", "salud", "health":
+			if not actor.has_method("heal"):
+				return false
+
+			if "health" not in actor or "max_health" not in actor:
+				return false
+
+			var antes: int = int(actor.get("health"))
+			var maximo: int = int(actor.get("max_health"))
+
+			if antes >= maximo:
+				return false
+
+			actor.call("heal", roundi(magnitud))
+			return int(actor.get("health")) > antes
+
+		case "stamina":
+			if not actor.has_method("restaurar_stamina"):
+				return false
+
+			var antes_stamina: float = float(actor.get("stamina"))
+			var max_stamina_actor: float = float(actor.get("max_stamina"))
+
+			if antes_stamina >= max_stamina_actor:
+				return false
+
+			actor.call("restaurar_stamina", magnitud)
+			return float(actor.get("stamina")) > antes_stamina
+
+		case "eterium", "mana":
+			if not actor.has_method("restaurar_eterium"):
+				return false
+
+			var antes_eterium: int = int(actor.get("mana"))
+			var max_eterium: int = int(actor.get("max_mana"))
+
+			if antes_eterium >= max_eterium:
+				return false
+
+			actor.call(
+				"restaurar_eterium",
+				magnitud
+			)
+			return int(actor.get("mana")) > antes_eterium
+
+	return false
+
+
 func quitar_objeto(indice: int) -> bool:
 	if indice < 0 or indice >= items.size():
 		return false
