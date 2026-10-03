@@ -1,19 +1,14 @@
 extends Control
 
 @onready var list_container: VBoxContainer = $Panel/Margin/Column/Scroll/Partidas
-@onready var name_input: LineEdit = $Panel/Margin/Column/NewRow/NameInput
-@onready var seed_input: LineEdit = $Panel/Margin/Column/SeedRow/SeedInput
 @onready var status_label: Label = $Panel/Margin/Column/Status
 @onready var character_creation: Control = $CharacterCreation
 
-var _pending_name: String = ""
-var _pending_seed: String = ""
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	actualizar_lista()
-	name_input.grab_focus()
 	if not character_creation.confirmed.is_connected(_on_character_confirmed):
 		character_creation.confirmed.connect(_on_character_confirmed)
 	if not character_creation.cancelled.is_connected(_on_character_cancelled):
@@ -36,7 +31,6 @@ func actualizar_lista() -> void:
 		for partida in partidas:
 			_crear_fila_partida(partida)
 
-	status_label.text = str(partidas.size()) + " partida(s) local(es)"
 
 
 func _crear_fila_partida(partida: Dictionary) -> void:
@@ -133,15 +127,6 @@ func _eliminar_partida(id: String) -> void:
 
 
 func _on_create_pressed() -> void:
-	_pending_name = name_input.text.strip_edges()
-	_pending_seed = seed_input.text.strip_edges()
-
-	if _pending_name.is_empty():
-		status_label.text = "Ponle un nombre a la partida."
-		name_input.grab_focus()
-		return
-
-	status_label.text = ""
 	character_creation.z_index = 10000
 	character_creation.open("nueva_partida")
 
@@ -159,9 +144,15 @@ func _on_character_confirmed(
 	config: Dictionary,
 	_action: String
 ) -> void:
+	var nombre_partida := str(config.get("nombre_partida", "")).strip_edges()
+	var semilla := str(config.get("semilla", "")).strip_edges()
+	if nombre_partida.is_empty():
+		status_label.text = "Ponle un nombre a la partida."
+		return
+
 	var id: String = GameState.crear_partida(
-		_pending_name,
-		_pending_seed,
+		nombre_partida,
+		semilla,
 		config
 	)
 
@@ -169,10 +160,6 @@ func _on_character_confirmed(
 		status_label.text = "No se pudo crear la partida."
 		return
 
-	name_input.text = ""
-	seed_input.text = ""
-	_pending_name = ""
-	_pending_seed = ""
 	visible = false
 
 	if not GameState.iniciar_partida(id):
