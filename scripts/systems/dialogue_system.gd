@@ -470,13 +470,28 @@ func _crear_interfaz() -> void:
 	text_label.add_theme_font_size_override("font_size", 13)
 	column.add_child(text_label)
 
+	_botones_accion = HBoxContainer.new()
+	_botones_accion.name = "DialogueActions"
+	_botones_accion.alignment = BoxContainer.ALIGNMENT_CENTER
+	_botones_accion.add_theme_constant_override("separation", 10)
+	column.add_child(_botones_accion)
+
 	action_button = Button.new()
 	action_button.name = "DialogueAction"
 	action_button.visible = false
-	action_button.custom_minimum_size = Vector2(0, 34)
+	action_button.custom_minimum_size = Vector2(180, 34)
 	action_button.add_theme_font_size_override("font_size", 11)
 	action_button.pressed.connect(_ejecutar_accion_dialogo)
-	column.add_child(action_button)
+	_botones_accion.add_child(action_button)
+
+	cancel_button = Button.new()
+	cancel_button.name = "DialogueCancel"
+	cancel_button.text = "Salir"
+	cancel_button.visible = false
+	cancel_button.custom_minimum_size = Vector2(120, 34)
+	cancel_button.add_theme_font_size_override("font_size", 11)
+	cancel_button.pressed.connect(cerrar)
+	_botones_accion.add_child(cancel_button)
 
 	hint_label = Label.new()
 	hint_label.name = "Hint"
