@@ -58,9 +58,13 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mouse := event as InputEventMouseButton
 		if mouse.pressed and mouse.button_index == MOUSE_BUTTON_RIGHT and not datos.is_empty():
-			var anterior := datos.duplicate(true)
-			_limpiar()
-			objeto_desequipado.emit(self, anterior)
+			# El inventario decide si el objeto puede volver.
+			# No limpiamos el slot antes de recibir esa confirmación.
+			objeto_desequipado.emit(
+				self,
+				datos.duplicate(true)
+			)
+
 
 func _es_compatible(objeto: Dictionary) -> bool:
 	var tipo: String = str(
