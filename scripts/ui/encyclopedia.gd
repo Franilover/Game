@@ -2,12 +2,15 @@ extends Control
 
 
 var _ids_descubiertos: Array[String] = []
+var _categoria_actual: String = "biomas"
+var _categoria_selector: OptionButton
 
 var _lista: ItemList
 var _nombre: Label
 var _contador: Label
 var _ficha: RichTextLabel
 var _icono: TextureRect
+var _subtitulo: Label
 
 
 func _ready() -> void:
@@ -65,8 +68,16 @@ func _crear_interfaz() -> void:
 	var header: HBoxContainer = HBoxContainer.new()
 	column.add_child(header)
 
+	_categoria_selector = OptionButton.new()
+	_categoria_selector.add_item("Biomas")
+	_categoria_selector.add_item("Ecosistemas")
+	_categoria_selector.add_item("Hábitats")
+	_categoria_selector.add_item("Criaturas")
+	_categoria_selector.item_selected.connect(_al_cambiar_categoria)
+	header.add_child(_categoria_selector)
+
 	var title: Label = Label.new()
-	title.text = "CRIATURAS DESCUBIERTAS"
+	title.text = "CONOCIMIENTOS DESCUBIERTOS"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_color_override(
 		"font_color",
@@ -175,7 +186,7 @@ func _crear_interfaz() -> void:
 
 	var descubierto: Label = Label.new()
 	descubierto.text = (
-		"Encuentra criaturas durante tus exploraciones para registrarlas."
+		"Explora Garlia para descubrir sus formas y lugares."
 	)
 	descubierto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	descubierto.add_theme_color_override(
@@ -209,146 +220,214 @@ func actualizar() -> void:
 	_ids_descubiertos.clear()
 
 	var descubrimientos := GameState.obtener_descubrimientos_mundo()
-	var criaturas_variant: Variant = descubrimientos.get(
-		"criaturas",
+	var registros_variant: Variant = descubrimientos.get(
+		_categoria_actual,
 		{}
 	)
 
-	if not criaturas_variant is Dictionary:
+	if not registros_variant is Dictionary:
 		_mostrar_sin_descubrimientos()
 		return
 
-	var criaturas_descubiertas: Dictionary = (
-		criaturas_variant as Dictionary
-	)
+	var registros := registros_variant as Dictionary
 	var candidatos: Array = []
 
-	for id_variant in criaturas_descubiertas.keys():
-		var id: String = str(id_variant)
-
+	for id_variant in registros.keys():
+		var id := str(id_variant)
 		if id.is_empty():
 			continue
 
-		var criatura: Dictionary = WorldData.obtener_criatura(id)
+		var registro: Dictionary = {}
+		match _categoria_actual:
+			"biomas":
+				registro = WorldData.obtener_bioma(id)
+			"ecosistemas":
+				registro = WorldData.obtener_ecosistema(id)
+			"habitats":
+				registro = WorldData.obtener_habitat(id)
+			"criaturas":
+				registro = WorldData.obtener_criatura(id)
 
-		if criatura.is_empty():
+		if registro.is_empty():
 			continue
 
-		candidatos.append(criatura)
+		candidatos.append(registro)
 
-	candidatos.sort_custom(_ordenar_criaturas)
+	candidatos.sort_custom(_ordenar_registros)
 
-	for criatura_variant in candidatos:
-		if not criatura_variant is Dictionary:
+	for registro_variant in candidatos:
+		if not registro_variant is Dictionary:
 			continue
 
-		var criatura: Dictionary = criatura_variant as Dictionary
-		var id: String = str(criatura.get("id", ""))
-
+		var registro := registro_variant as Dictionary
+		var id := str(registro.get("id", ""))
 		if id.is_empty():
 			continue
 
 		_ids_descubiertos.append(id)
-		_lista.add_item(
-			str(
-				criatura.get(
-					"nombre",
-					"Criatura"
-				)
-			)
-		)
+		_lista.add_item(str(registro.get("nombre", "Sin nombre")))
 
-	_contador.text = (
-		str(_ids_descubiertos.size())
-		+ " descubiertas"
-	)
+	_contador.text = str(_ids_descubiertos.size()) + " " + _nombre_categoria().to_lower()
 
 	if _ids_descubiertos.is_empty():
 		_mostrar_sin_descubrimientos()
 		return
 
 	_lista.select(0)
-	_mostrar_criatura(0)
+	_mostrar_registro(0)
 
 
-func _ordenar_criaturas(
-	a: Dictionary,
-	b: Dictionary
-) -> bool:
-	var nombre_a: String = str(a.get("nombre", "")).to_lower()
-	var nombre_b: String = str(b.get("nombre", "")).to_lower()
+func _ordenar_registros(a: Dictionary, b: Dictionary) -> bool:
+	return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 
-	return nombre_a < nombre_b
+
+func _al_cambiar_categoria(indice: int) -> void:
+	match indice:
+		0:
+			_categoria_actual = "biomas"
+		1:
+			_categoria_actual = "ecosistemas"
+		2:
+			_categoria_actual = "habitats"
+		3:
+			_categoria_actual = "criaturas"
+
+	actualizar()
 
 
 func _al_seleccionar(indice: int) -> void:
-	_mostrar_criatura(indice)
+	_mostrar_registro(indice)
 
 
-func _mostrar_criatura(indice: int) -> void:
+func _obtener_registro(id: String) -> Dictionary:
+	match _categoria_actual:
+		"biomas":
+			return WorldData.obtener_bioma(id)
+		"ecosistemas":
+			return WorldData.obtener_ecosistema(id)
+		"habitats":
+			return WorldData.obtener_habitat(id)
+		"criaturas":
+			return WorldData.obtener_criatura(id)
+	return {}
+
+
+func _mostrar_registro(indice: int) -> void:
 	if indice < 0 or indice >= _ids_descubiertos.size():
 		return
 
-	var id: String = _ids_descubiertos[indice]
-	var criatura: Dictionary = WorldData.obtener_criatura(id)
-
-	if criatura.is_empty():
+	var registro := _obtener_registro(_ids_descubiertos[indice])
+	if registro.is_empty():
 		return
 
-	var nombre: String = str(
-		criatura.get(
-			"nombre",
-			"Criatura"
-		)
-	)
-
-	_nombre.text = nombre
-
-	var ruta: String = (
-		"res://assets/art/creatures/"
-		+ nombre
-		+ ".png"
-	)
-
-	if ResourceLoader.exists(ruta):
-		_icono.texture = load(ruta)
-		_icono.visible = true
-	else:
-		_icono.texture = null
-		_icono.visible = false
-
-	var registros_variant: Variant = GameState.flags.get(
-		"enciclopedia_criaturas",
-		{}
-	)
-
-	var derrotas: int = 0
-
-	if registros_variant is Dictionary:
-		derrotas = int(
-			(registros_variant as Dictionary).get(
-				id,
-				0
-			)
-		)
+	_nombre.text = str(registro.get("nombre", "Sin nombre"))
+	_icono.texture = null
+	_icono.visible = false
 
 	var partes: Array[String] = []
-	partes.append(
-		"[color=#8f754f]Derrotas registradas:[/color] " + str(derrotas)
-	)
+	partes.append("[color=#8f754f]Tipo:[/color] " + _nombre_categoria_singular())
+
+	match _categoria_actual:
+		"biomas":
+			_agregar_ecosistemas_descubiertos(partes, registro)
+		"ecosistemas":
+			_agregar_habitats_descubiertos(partes, registro)
+		"habitats":
+			_agregar_criaturas_descubiertas(partes, registro)
+		"criaturas":
+			var derrotas := _obtener_derrotas(_ids_descubiertos[indice])
+			partes.append("[color=#8f754f]Encuentros registrados:[/color] " + str(derrotas))
 
 	_ficha.text = "\n\n".join(partes)
 
 
+func _agregar_ecosistemas_descubiertos(partes: Array[String], bioma: Dictionary) -> void:
+	var descubiertos := GameState.obtener_descubrimientos_mundo().get("ecosistemas", {})
+	var nombres: Array[String] = []
+	for eco_variant in bioma.get("ecosistemas", []):
+		if not eco_variant is Dictionary:
+			continue
+		var eco := eco_variant as Dictionary
+		var id := str(eco.get("id", ""))
+		if descubiertos is Dictionary and descubiertos.has(id):
+			nombres.append(str(eco.get("nombre", "Sin nombre")))
+	partes.append("[color=#8f754f]Ecosistemas conocidos:[/color] " + _lista_nombres(nombres))
+
+
+func _agregar_habitats_descubiertos(partes: Array[String], ecosistema: Dictionary) -> void:
+	var descubiertos := GameState.obtener_descubrimientos_mundo().get("habitats", {})
+	var nombres: Array[String] = []
+	for habitat_variant in ecosistema.get("habitats", []):
+		if not habitat_variant is Dictionary:
+			continue
+		var habitat := habitat_variant as Dictionary
+		var id := str(habitat.get("id", ""))
+		if descubiertos is Dictionary and descubiertos.has(id):
+			nombres.append(str(habitat.get("nombre", "Sin nombre")))
+	partes.append("[color=#8f754f]Hábitats conocidos:[/color] " + _lista_nombres(nombres))
+
+
+func _agregar_criaturas_descubiertas(partes: Array[String], habitat: Dictionary) -> void:
+	var descubiertos := GameState.obtener_descubrimientos_mundo().get("criaturas", {})
+	var nombres: Array[String] = []
+	for criatura_variant in habitat.get("criaturas", []):
+		if not criatura_variant is Dictionary:
+			continue
+		var criatura := criatura_variant as Dictionary
+		var id := str(criatura.get("id", ""))
+		if descubiertos is Dictionary and descubiertos.has(id):
+			nombres.append(str(criatura.get("nombre", "Sin nombre")))
+	partes.append("[color=#8f754f]Criaturas conocidas:[/color] " + _lista_nombres(nombres))
+
+
+func _lista_nombres(nombres: Array[String]) -> String:
+	if nombres.is_empty():
+		return "ninguno todavía"
+	return ", ".join(nombres)
+
+
+func _obtener_derrotas(id: String) -> int:
+	var registros_variant: Variant = GameState.flags.get("enciclopedia_criaturas", {})
+	if registros_variant is Dictionary:
+		return int((registros_variant as Dictionary).get(id, 0))
+	return 0
+
+
+func _nombre_categoria() -> String:
+	match _categoria_actual:
+		"biomas":
+			return "descubiertos"
+		"ecosistemas":
+			return "descubiertos"
+		"habitats":
+			return "descubiertos"
+		"criaturas":
+			return "descubiertas"
+	return "descubiertos"
+
+
+func _nombre_categoria_singular() -> String:
+	match _categoria_actual:
+		"biomas":
+			return "Bioma"
+		"ecosistemas":
+			return "Ecosistema"
+		"habitats":
+			return "Hábitat"
+		"criaturas":
+			return "Criatura"
+	return "Registro"
+
+
 func _mostrar_sin_descubrimientos() -> void:
-	_contador.text = "0 descubiertas"
-	_nombre.text = "Ninguna criatura descubierta"
+	_contador.text = "0 descubiertos"
+	_nombre.text = "Nada descubierto todavía"
 	_icono.texture = null
 	_icono.visible = false
 	_ficha.text = (
 		"[center]"
-		+ "[color=#8f754f]La enciclopedia está vacía.[/color]\n\n"
-		+ "Explora Garlia para descubrir criaturas y ampliar tus conocimientos."
+		+ "[color=#8f754f]Este registro está vacío.[/color]\\n\\n"
+		+ "Explora Garlia para descubrir nuevos conocimientos."
 		+ "[/center]"
 	)
 
