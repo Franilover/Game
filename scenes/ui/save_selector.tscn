@@ -90,9 +90,6 @@ theme_override_font_sizes/font_size = 12
 text = "Elige una partida guardada en este dispositivo."
 horizontal_alignment = 1
 
-[node name="Separator" type="HSeparator" parent="Panel/Margin/Column"]
-layout_mode = 2
-
 [node name="Scroll" type="ScrollContainer" parent="Panel/Margin/Column"]
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
@@ -102,45 +99,10 @@ size_flags_vertical = 3
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="NewTitle" type="Label" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 11
-text = "NUEVA PARTIDA"
-
-[node name="NewRow" type="HBoxContainer" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="NameInput" type="LineEdit" parent="Panel/Margin/Column/NewRow"]
+undefined[node name="CreateButton" type="Button" parent="Panel/Margin/Column"]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("StyleBox_input")
-placeholder_text = "Nombre de la partida"
-
-[node name="CreateButton" type="Button" parent="Panel/Margin/Column/NewRow"]
-custom_minimum_size = Vector2(120, 42)
-layout_mode = 2
-text = "Crear y jugar"
-
-[node name="SeedRow" type="HBoxContainer" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SeedLabel" type="Label" parent="Panel/Margin/Column/SeedRow"]
-custom_minimum_size = Vector2(92, 42)
-layout_mode = 2
-text = "Semilla"
-vertical_alignment = 1
-
-[node name="SeedInput" type="LineEdit" parent="Panel/Margin/Column/SeedRow"]
-custom_minimum_size = Vector2(0, 42)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("StyleBox_input")
-placeholder_text = "Vacío = semilla aleatoria"
-max_length = 20
-alignment = 1
+text = "＋ Crear nueva partida"
 
 [node name="Status" type="Label" parent="Panel/Margin/Column"]
 visible = false
@@ -155,7 +117,7 @@ custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 text = "Volver"
 
-[connection signal="pressed" from="Panel/Margin/Column/NewRow/CreateButton" to="." method="_on_create_pressed"]
+[connection signal="pressed" from="Panel/Margin/Column/CreateButton" to="." method="_on_create_pressed"]
 [connection signal="pressed" from="Panel/Margin/Column/BackButton" to="." method="_on_back_pressed"]
 
 
