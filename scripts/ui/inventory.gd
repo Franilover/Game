@@ -130,6 +130,13 @@ func toggle() -> void:
 func abrir() -> void:
 	visible = true
 	_actualizar_admin_tab()
+
+	# La tecla E siempre abre el inventario principal.
+	# La pestaña Admin solo se abre al pulsar su botón.
+	var tabs: TabContainer = $Window/Margin/Column/Tabs
+	tabs.current_tab = 0
+	$Window/Margin/Column/TabButtons/Inventario.button_pressed = true
+
 	actualizar()
 
 
