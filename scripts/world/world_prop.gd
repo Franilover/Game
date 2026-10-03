@@ -95,6 +95,79 @@ func can_interact(persona: Node) -> bool:
 	return distancia <= get_interaction_distance()
 
 
+func get_interaction_details() -> Dictionary:
+	var detalles: Dictionary = {
+		"titulo": tipo.capitalize(),
+		"accion": get_interaction_text(),
+		"bioma": bioma
+	}
+
+	var generador := get_tree().get_first_node_in_group(
+		"world_generator"
+	)
+
+	if generador != null and generador.has_method(
+		"get_contexto_at"
+	):
+		var contexto_variant: Variant = generador.call(
+			"get_contexto_at",
+			global_position
+		)
+
+		if contexto_variant is Dictionary:
+			var contexto := contexto_variant as Dictionary
+			var ecosistema_variant: Variant = contexto.get(
+				"ecosistema",
+				""
+			)
+			var habitat_variant: Variant = contexto.get(
+				"habitat",
+				""
+			)
+
+			if ecosistema_variant is String:
+				detalles["ecosistema"] = ecosistema_variant
+			elif ecosistema_variant is Dictionary:
+				detalles["ecosistema"] = str(
+					(ecosistema_variant as Dictionary).get(
+						"nombre",
+						""
+					)
+				)
+
+			if habitat_variant is String:
+				detalles["habitat"] = habitat_variant
+			elif habitat_variant is Dictionary:
+				detalles["habitat"] = str(
+					(habitat_variant as Dictionary).get(
+						"nombre",
+						""
+					)
+				)
+
+	var item_id := _obtener_item_id_recoleccion()
+	if not item_id.is_empty():
+		var item := GarliaWorldItems.buscar_item_por_id(
+			item_id
+		)
+
+		if not item.is_empty():
+			detalles["item_nombre"] = str(
+				item.get(
+					"nombre",
+					""
+				)
+			)
+			detalles["descripcion"] = str(
+				item.get(
+					"descripcion",
+					""
+				)
+			)
+
+	return detalles
+
+
 func interact(persona: Node) -> void:
 	if not can_interact(persona):
 		return
