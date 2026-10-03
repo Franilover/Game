@@ -160,58 +160,20 @@ func _al_descubrimiento_mundo(datos: Variant = null) -> void:
 
 
 func _preparar_location() -> void:
-	var nodo := find_child(
-		"LocationLabel",
-		true,
-		false
-	)
+	var panel := find_child("LocationPanel", true, false)
+	var label := find_child("LocationLabel", true, false)
 
-	if nodo == null:
+	if panel is Control:
+		location_panel = panel as Control
+
+	if label is Label:
+		location_label = label as Label
+
+	if location_panel == null:
+		print("HUD: no se encontró LocationPanel.")
+
+	if location_label == null:
 		print("HUD: no se encontró LocationLabel.")
-		return
-
-	# LocationLabel ya es el Label que muestra el contexto.
-	if nodo is Label:
-		location_label = nodo as Label
-		location_panel = nodo as Control
-		return
-
-	if nodo is Control:
-		location_panel = nodo as Control
-
-		var label := location_panel.find_child(
-			"Label",
-			true,
-			false
-		)
-
-		if label is Label:
-			location_label = label as Label
-			return
-
-		label = location_panel.find_child(
-			"Text",
-			true,
-			false
-		)
-
-		if label is Label:
-			location_label = label as Label
-			return
-
-		var primer_label := _buscar_primer_label(
-			location_panel
-		)
-
-		if primer_label != null:
-			location_label = primer_label
-			return
-
-	print(
-		"HUD: LocationLabel existe, pero no es un Label "
-		+ "ni contiene ningún Label."
-	)
-
 
 func _buscar_primer_label(nodo: Node) -> Label:
 	for child in nodo.get_children():
