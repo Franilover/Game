@@ -250,13 +250,13 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="Key" type="Label" parent="InteractionPrompt/Margin/Content" unique_id=117664528]
-custom_minimum_size = Vector2(34, 0)
+custom_minimum_size = Vector2(54, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_colors/font_outline_color = Color(0.075, 0.05, 0.035, 1)
 theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 12
-text = "[ E ]"
+text = "[ LMB ]"
 vertical_alignment = 1
 
 [node name="Action" type="Label" parent="InteractionPrompt/Margin/Content" unique_id=1157259527]
