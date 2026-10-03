@@ -86,7 +86,7 @@ func _intentar_cargar_calendario() -> void:
 	if not WorldData.esta_cargado():
 		return
 
-	var calendario := WorldData.obtener_calendario()
+	var calendario: Dictionary = WorldData.obtener_calendario()
 	if calendario.is_empty():
 		return
 
@@ -106,8 +106,8 @@ func _intentar_cargar_calendario() -> void:
 	if not estaciones_variant is Array:
 		return
 
-	var config := config_variant as Dictionary
-	var nuevas_estaciones := estaciones_variant as Array
+	var config: Dictionary = config_variant as Dictionary
+	var nuevas_estaciones: Array = estaciones_variant as Array
 
 	if nuevas_estaciones.is_empty():
 		return
@@ -229,13 +229,13 @@ func _actualizar_estacion() -> void:
 	if estaciones.is_empty():
 		return
 
-	var inicio_dia := 0
+	var inicio_dia: int = 0
 
 	for estacion_variant in estaciones:
 		if not estacion_variant is Dictionary:
 			continue
 
-		var estacion := (
+		var estacion: Dictionary = (
 			estacion_variant as Dictionary
 		)
 		var duracion := maxi(
