@@ -37,6 +37,28 @@ var _arrastre_datos: Dictionary = {}
 @onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea/EquipmentSlots
 
 
+func _inicializar_navegacion_tabs() -> void:
+	var tabs: TabContainer = $Window/Margin/Column/Tabs
+	var tab_bar: TabBar = tabs.get_tab_bar()
+	tab_bar.visible = false
+
+	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
+	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
+	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
+
+	boton_inventario.pressed.connect(func() -> void:
+		tabs.current_tab = 0
+	)
+	boton_enciclopedia.pressed.connect(func() -> void:
+		tabs.current_tab = 1
+	)
+	boton_mapa.pressed.connect(func() -> void:
+		tabs.current_tab = 2
+	)
+
+	boton_inventario.button_pressed = true
+
+
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_to_group("inventory")
@@ -46,6 +68,7 @@ func _ready() -> void:
 	_crear_slots()
 	_crear_slots_equipamiento()
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
+	_inicializar_navegacion_tabs()
 	_limpiar_informacion()
 
 
