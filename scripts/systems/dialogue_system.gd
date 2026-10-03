@@ -418,11 +418,18 @@ func _crear_interfaz() -> void:
 	dialogue_panel.visible = false
 	dialogue_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	dialogue_panel.z_index = 3000
-	dialogue_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	dialogue_panel.offset_left = -360.0
-	dialogue_panel.offset_top = -190.0
-	dialogue_panel.offset_right = 360.0
-	dialogue_panel.offset_bottom = -32.0
+	# El HUD es el Control raíz dentro del CanvasLayer. Usamos
+	# coordenadas relativas al centro inferior para no depender de
+	# tamaños heredados de otros paneles del HUD.
+	dialogue_panel.set_anchors_and_offsets_preset(
+		Control.PRESET_CENTER_BOTTOM,
+		Control.PRESET_MODE_MINSIZE,
+		32
+	)
+	dialogue_panel.custom_minimum_size = Vector2(720.0, 158.0)
+	dialogue_panel.size = Vector2(720.0, 158.0)
+	dialogue_panel.position = Vector2(-360.0, -190.0)
+	dialogue_panel.z_as_relative = false
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.075, 0.05, 0.032, 0.97)
@@ -505,3 +512,4 @@ func _crear_interfaz() -> void:
 	column.add_child(hint_label)
 
 	ui_root.add_child(dialogue_panel)
+	dialogue_panel.visible = false
