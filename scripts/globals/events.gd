@@ -24,3 +24,9 @@ signal dialog_closed
 
 @warning_ignore("unused_signal")
 signal notification_pushed(message: String)
+
+signal interaction_executed(
+	objeto: Node,
+	jugador: Node,
+	accion: String
+)
