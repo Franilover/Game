@@ -62,6 +62,7 @@ var _eterium_recovery_accumulator: float = 0.0
 var _eterium_sprint_cost_accumulator: float = 0.0
 var _world_generator_ref: Node = null
 var _admin_console_ref: Node = null
+var _exploration_check_timer: float = 0.0
 
 
 var _jump_time: float = 0.0
@@ -109,7 +110,10 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_actualizar_cooldowns(delta)
-	_registrar_terreno_explorado()
+	_exploration_check_timer -= delta
+	if _exploration_check_timer <= 0.0:
+		_exploration_check_timer = 0.08
+		_registrar_terreno_explorado()
 
 	# Si una interfaz está bloqueando el gameplay,
 	# no procesamos ningún input del jugador.
