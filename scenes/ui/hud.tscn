@@ -45,8 +45,8 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.20392157, 0.23921569, 0.44313726, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
-bg_color = Color(0.15, 0.095, 0.06, 0.78)
+[sub_resource type="StyleBoxFlat" id="StyleBox_debug_panel"]
+bg_color = Color(0.075, 0.05, 0.035, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -57,19 +57,33 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="HUD" type="Control" unique_id=879875712]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("1_hud")
-
-[node name="LocationLabel" type="Label" parent="." unique_id=1932044061]
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.15, 0.095, 0.06, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color[node name="LocationPanel" type="Panel" parent="." unique_id=1932044061]
 visible = false
 layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 326.0
+offset_bottom = 260.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_debug_panel")
+
+[node name="LocationLabel" type="Label" parent="LocationPanel"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 300.0
+offset_bottom = 236.0
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_outline_color = Color(0.075, 0.05, 0.035, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 10
+text = "RENDIMIENTO" = 0
 offset_left = 28.0
 offset_top = 16.0
 offset_right = 520.0
