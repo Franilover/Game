@@ -287,19 +287,23 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 				var mission_manager: Node = get_node_or_null("/root/MissionManager")
 				if mission_manager == null:
 					continue
-				var mision: Dictionary = mission_manager.call("buscar_mision_por_clave", mision_clave)
-				if not mision.is_empty():
-					var mision_id := str(mision.get("id", ""))
-					var estado_actual := str(
-						mission_manager.call("obtener_estado_mision", mision_id).get(
-							"estado",
-							"disponible"
-						)
-					).to_lower()
 
-					if estado_actual == estado_requerido:
-						return variante
-			continue
+				var mision: Dictionary = mission_manager.call("buscar_mision_por_clave", mision_clave)
+				if mision.is_empty():
+					continue
+
+				var mision_id := str(mision.get("id", ""))
+				var estado_actual := str(
+					mission_manager.call("obtener_estado_mision", mision_id).get(
+						"estado",
+						"disponible"
+					)
+				).to_lower()
+
+				if estado_actual == estado_requerido:
+					return variante
+
+				continue
 
 		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
 			principal = variante
