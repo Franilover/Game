@@ -614,6 +614,10 @@ func _finalizar_chunk() -> void:
 		Zone.DIRT
 	)
 	_refrescar_dual(celdas_grass, celdas_dirt)
+	_promover_chunk_a_dual(
+		coord,
+		zonas_finales
+	)
 
 	_generation_task.clear()
 
@@ -1014,18 +1018,27 @@ func _pintar_tile(
 ) -> void:
 	match zona:
 		Zone.GRASS:
-			if tilemap_dual_grass != null:
-				tilemap_dual_grass.draw_cell(tile, 1)
+			# Mostrar inmediatamente el terreno base mientras TileMapDual
+			# termina de calcular sus transiciones. Esto evita que el mundo
+			# quede vacío durante la generación de los chunks.
+			tilemap_ground.set_cell(
+				tile,
+				0,
+				T_GRASS
+			)
 			if tilemap_dual_dirt != null:
 				tilemap_dual_dirt.erase_cell(tile)
-			tilemap_ground.erase_cell(tile)
 
 		Zone.DIRT:
-			if tilemap_dual_dirt != null:
-				tilemap_dual_dirt.draw_cell(tile, 1)
+			# Igual que Grass: primero aparece el tile base y después
+			# TileMapDual lo reemplaza visualmente por la transición correcta.
+			tilemap_ground.set_cell(
+				tile,
+				0,
+				T_DIRT
+			)
 			if tilemap_dual_grass != null:
 				tilemap_dual_grass.erase_cell(tile)
-			tilemap_ground.erase_cell(tile)
 
 		_:
 			if tilemap_dual_grass != null:
@@ -1118,6 +1131,30 @@ func _refrescar_dual(
 
 	if tilemap_dual_dirt != null and not celdas_dirt.is_empty():
 		tilemap_dual_dirt._update_cells(celdas_dirt, false)
+
+
+func _promover_chunk_a_dual(
+	coord: Vector2i,
+	zonas: Array
+) -> void:
+	# El GroundLegacy ya cumplió su función de placeholder inmediato.
+	# Una vez calculado TileMapDual, retiramos únicamente los tiles base
+	# que pertenecen a este chunk.
+	for y in range(chunk_size_tiles):
+		for x in range(chunk_size_tiles):
+			var padded_x: int = x + CHUNK_PADDING
+			var padded_y: int = y + CHUNK_PADDING
+			var zona: int = int(zonas[padded_y][padded_x])
+
+			if zona != Zone.GRASS and zona != Zone.DIRT:
+				continue
+
+			var cell := Vector2i(
+				coord.x * chunk_size_tiles + x,
+				coord.y * chunk_size_tiles + y
+			)
+
+			tilemap_ground.erase_cell(cell)
 
 
 func _celdas_dual_del_chunk(
