@@ -53,24 +53,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if player == null:
 		return
 
-	# Click derecho queda reservado para usar el objeto de la hotbar
-	# cuando ese objeto define un uso consumible.
-	if event.is_action_pressed("secondary_action"):
-		var inventario := get_tree().get_first_node_in_group(
-			"inventory"
-		)
-
-		if inventario != null and inventario.has_method(
-			"usar_objeto_activo"
-		):
-			var usado_variant: Variant = inventario.call(
-				"usar_objeto_activo",
-				player
-			)
-
-			if bool(usado_variant):
-				get_viewport().set_input_as_handled()
-				return
+	if _accion_bloqueada():
+		return
 
 	if not event.is_action_pressed("primary_action"):
 		return
@@ -81,6 +65,26 @@ func _unhandled_input(event: InputEvent) -> void:
 	usar_objeto_activo()
 
 	get_viewport().set_input_as_handled()
+
+
+func _accion_bloqueada() -> bool:
+	if get_tree().paused:
+		return true
+
+	var inventory := get_tree().get_first_node_in_group("inventory")
+	if inventory is CanvasItem and bool((inventory as CanvasItem).visible):
+		return true
+
+	var admin_console := get_tree().get_first_node_in_group("admin_console")
+	if admin_console is CanvasItem and bool((admin_console as CanvasItem).visible):
+		return true
+
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("esta_mostrando_panel_interaccion"):
+		if bool(hud.call("esta_mostrando_panel_interaccion")):
+			return true
+
+	return false
 
 
 func usar_objeto_activo() -> void:
