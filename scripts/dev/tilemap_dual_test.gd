@@ -36,7 +36,7 @@ func _dibujar_prueba() -> void:
             tilemap.draw_cell(Vector2i(x, y), 1)
 
     # Entrantes y huecos para forzar esquinas y transiciones diferentes.
-    for cell in [
+    for cell_variant in [
         Vector2i(-4, -5),
         Vector2i(-3, -5),
         Vector2i(3, -5),
@@ -46,6 +46,7 @@ func _dibujar_prueba() -> void:
         Vector2i(7, 2),
         Vector2i(7, 3),
     ]:
+        var cell: Vector2i = cell_variant
         tilemap.draw_cell(cell, 0)
 
 
@@ -140,7 +141,8 @@ func _crear_tileset_grass() -> TileSet:
         data.terrain_set = 0
 
         var bits: int = index
-        for neighbor in neighbors:
+        for neighbor_index in range(neighbors.size()):
+            var neighbor: TileSet.CellNeighbor = neighbors[neighbor_index]
             var terrain: int = 1 if (bits & 1) != 0 else 0
             data.set_terrain_peering_bit(
                 neighbor,
