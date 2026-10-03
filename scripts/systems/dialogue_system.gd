@@ -83,13 +83,17 @@ func esta_abierto() -> bool:
 
 
 func abrir_desde(fuente: Node) -> bool:
+	print("DialogueSystem: abrir_desde() → ", fuente.name if is_instance_valid(fuente) else "<invalido>")
 	if fuente == null or not is_instance_valid(fuente):
+		print("DialogueSystem: fuente invalida.")
 		return false
 
 	if not fuente.has_method("get_dialogue_data"):
+		print("DialogueSystem: la fuente no tiene get_dialogue_data().")
 		return false
 
 	var datos_variant: Variant = fuente.call("get_dialogue_data")
+	print("DialogueSystem: datos recibidos = ", datos_variant is Dictionary, " | claves = ", datos_variant.keys() if datos_variant is Dictionary else [])
 	if not datos_variant is Dictionary:
 		return false
 
@@ -97,10 +101,21 @@ func abrir_desde(fuente: Node) -> bool:
 
 
 func abrir(datos: Dictionary, fuente: Node = null) -> bool:
+	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
 	var datos_seleccionados := _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
 
+	print(
+		"DialogueSystem: variante = ",
+		str(datos_seleccionados.get("clave", "<sin clave>")),
+		" | lineas = ",
+		lineas.size(),
+		" | acciones = ",
+		str(datos_seleccionados.get("acciones", [])).size()
+	)
+
 	if lineas.is_empty():
+		print("DialogueSystem: ABORTADO → no hay lineas normalizadas.")
 		return false
 
 	if dialogue_panel == null:
@@ -148,6 +163,14 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 			_fuente.call("tomar_control_movimiento")
 
 	dialogue_panel.visible = true
+	print(
+		"DialogueSystem: PANEL VISIBLE → ",
+		dialogue_panel.get_path(),
+		" | pos=",
+		dialogue_panel.position,
+		" | size=",
+		dialogue_panel.size
+	)
 	_mostrar_linea_actual()
 
 	var hablante := str(_lineas[0].get("hablante", "")).strip_edges()
@@ -421,14 +444,14 @@ func _crear_interfaz() -> void:
 	# El HUD es el Control raíz dentro del CanvasLayer. Usamos
 	# coordenadas relativas al centro inferior para no depender de
 	# tamaños heredados de otros paneles del HUD.
-	dialogue_panel.set_anchors_and_offsets_preset(
-		Control.PRESET_CENTER_BOTTOM,
-		Control.PRESET_MODE_MINSIZE,
-		32
-	)
-	dialogue_panel.custom_minimum_size = Vector2(720.0, 158.0)
-	dialogue_panel.size = Vector2(720.0, 158.0)
-	dialogue_panel.position = Vector2(-360.0, -190.0)
+	dialogue_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	dialogue_panel.offset_left = -360.0
+	dialogue_panel.offset_top = -238.0
+	dialogue_panel.offset_right = 360.0
+	dialogue_panel.offset_bottom = -18.0
+	dialogue_panel.custom_minimum_size = Vector2(720.0, 220.0)
+	dialogue_panel.size = Vector2(720.0, 220.0)
+	dialogue_panel.clip_contents = false
 	dialogue_panel.z_as_relative = false
 
 	var style := StyleBoxFlat.new()
@@ -469,7 +492,7 @@ func _crear_interfaz() -> void:
 	text_label = Label.new()
 	text_label.name = "Text"
 	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text_label.custom_minimum_size = Vector2(0, 92)
+	text_label.custom_minimum_size = Vector2(0, 76)
 	text_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	text_label.add_theme_color_override(
 		"font_color",
