@@ -48,13 +48,12 @@ func _ready() -> void:
 		_al_cambiar_escena
 	)
 
+	call_deferred("_revisar_escena_actual")
+
 
 func _process(delta: float) -> void:
 	elapsed_time += delta
 	_autosave_timer += delta
-
-	_supervisar_menu_aventura()
-	_supervisar_partida_activa()
 
 	if _autosave_timer >= AUTOSAVE_INTERVAL:
 		_autosave_timer = 0.0
@@ -945,31 +944,49 @@ func esta_explorado(tile: Vector2i) -> bool:
 # APLICAR A LA ESCENA
 # ============================================================
 
-func _supervisar_partida_activa() -> void:
-	if active_save_id.is_empty():
+func _revisar_escena_actual() -> void:
+	var escena := get_tree().current_scene
+	if escena == null:
 		return
 
-	var escena := get_tree().current_scene
+	if escena.name == "StartMenu":
+		_supervisar_menu_aventura()
+	else:
+		_menu_interceptado = false
 
-	if escena == null:
+	if active_save_id.is_empty() or _partida_aplicada_en_escena:
 		return
 
 	var world_gen := escena.get_node_or_null(
 		"World/WorldGenerator"
 	)
-
 	if world_gen == null:
 		return
 
-	if not _partida_aplicada_en_escena:
-		if world_gen.has_method("is_world_ready"):
-			if not bool(world_gen.call("is_world_ready")):
-				return
+	if world_gen.has_method("is_world_ready"):
+		if not bool(world_gen.call("is_world_ready")):
+			var callback := Callable(
+				self,
+				"_al_mundo_generado_para_aplicar"
+			)
+			if world_gen.has_signal("mundo_generado") and not world_gen.is_connected(
+				"mundo_generado",
+				callback
+			):
+				world_gen.connect(
+					"mundo_generado",
+					callback,
+					CONNECT_ONE_SHOT
+				)
+			return
 
-		_aplicar_estado_al_juego()
-		return
+	_aplicar_estado_al_juego()
 
-	
+
+func _al_mundo_generado_para_aplicar() -> void:
+	call_deferred("_revisar_escena_actual")
+
+
 func _aplicar_estado_al_juego() -> void:
 	var jugador := get_tree().get_first_node_in_group(
 		"player"
@@ -1194,9 +1211,10 @@ func _abrir_escena_principal() -> void:
 
 func _al_cambiar_escena() -> void:
 	_partida_aplicada_en_escena = false
-	current_scene = str(
-		get_tree().current_scene.scene_file_path
-	)
+	var escena := get_tree().current_scene
+	if escena != null:
+		current_scene = str(escena.scene_file_path)
+	call_deferred("_revisar_escena_actual")
 
 
 # ============================================================
