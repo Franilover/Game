@@ -126,6 +126,10 @@ func _buscar_nodos_hud() -> void:
 	if nodo is Label:
 		eterium_value = nodo as Label
 
+	nodo = find_child("HeartIcon", true, false)
+	if nodo is Control:
+		heart_icon = nodo as Control
+
 	nodo = find_child("InteractionPrompt", true, false)
 	if nodo is PanelContainer:
 		interaction_prompt = nodo as PanelContainer
@@ -288,6 +292,31 @@ func _al_recibir_cambio_mana(actual: int, maximo: int) -> void:
 		actual,
 		maximo
 	)
+
+
+func _al_fisiologia_cambiada(_vida_eterium_compartidos: bool) -> void:
+	_actualizar_ui_especie()
+
+
+func _actualizar_ui_especie() -> void:
+	if not is_instance_valid(player):
+		return
+
+	var compartido := false
+	if player.has_method("_eterium_vida_compartida"):
+		compartido = bool(player.call("_eterium_vida_compartida"))
+
+	var visible_vida := not compartido
+
+	if health_bar != null:
+		health_bar.visible = visible_vida
+	if health_value != null:
+		health_value.visible = visible_vida
+	if heart_icon != null:
+		heart_icon.visible = visible_vida
+
+	if compartido:
+		_actualizar_eterium()
 
 
 func _actualizar_vida() -> void:
