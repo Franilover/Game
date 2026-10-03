@@ -536,13 +536,21 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 				equipment_variant as Dictionary
 			).duplicate(true)
 
+		var rol_partida := "explorador"
+		var admin_variant: Variant = flags.get("personaje_admin", {})
+		if admin_variant is Dictionary:
+			rol_partida = str(
+				(admin_variant as Dictionary).get("rol", "explorador")
+			).to_lower()
+
 		flags["inventario_estado"] = {
 			"items": inventory_items,
 			"hotbar_indices": hotbar,
 			"indice_hotbar_activo": int(
 				inventario.get("indice_hotbar_activo")
 			),
-			"equipo": equipment_state
+			"equipo": equipment_state,
+			"rol_partida": rol_partida
 		}
 
 
@@ -1124,10 +1132,23 @@ func _cargar_inventario_al_juego(
 		return
 
 	var estado := estado_variant as Dictionary
+
+	var rol_guardado := str(
+		estado.get("rol_partida", "")
+	).to_lower()
+	if rol_guardado == "admin" or rol_guardado == "explorador":
+		var admin_guardado: Dictionary = {}
+		var admin_actual: Variant = flags.get("personaje_admin", {})
+		if admin_actual is Dictionary:
+			admin_guardado = (admin_actual as Dictionary).duplicate(true)
+		admin_guardado["rol"] = rol_guardado
+		if rol_guardado == "explorador":
+			admin_guardado["capacidades"] = []
+		flags["personaje_admin"] = admin_guardado
+
 	var items_variant: Variant = estado.get(
 		"items",
-		[]
-	)
+		[])
 
 	var nuevos_items: Array[Dictionary] = []
 
