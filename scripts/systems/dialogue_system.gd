@@ -108,14 +108,6 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 		return false
 
 	_fuente = fuente
-	_lineas = lineas
-	_acciones.clear()
-
-	var acciones_variant: Variant = datos_seleccionados.get("acciones", [])
-	if acciones_variant is Array:
-		for accion_variant in acciones_variant as Array:
-			if accion_variant is Dictionary:
-				_acciones.append((accion_variant as Dictionary).duplicate(true))
 
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
@@ -125,6 +117,22 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 				str(datos_seleccionados.get("clave", "principal")),
 				_fuente
 			)
+			var datos_actualizados := _seleccionar_dialogo(datos)
+			if str(datos_actualizados.get("clave", "")) != str(datos_seleccionados.get("clave", "")):
+				datos_seleccionados = datos_actualizados
+				lineas = _normalizar_lineas(datos_seleccionados)
+				if lineas.is_empty():
+					return false
+
+	_lineas = lineas
+	_acciones.clear()
+
+	var acciones_variant: Variant = datos_seleccionados.get("acciones", [])
+	if acciones_variant is Array:
+		for accion_variant in acciones_variant as Array:
+			if accion_variant is Dictionary:
+				_acciones.append((accion_variant as Dictionary).duplicate(true))
+
 	_indice_linea = 0
 	_abierto = true
 
