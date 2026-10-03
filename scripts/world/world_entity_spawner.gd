@@ -1018,7 +1018,7 @@ func _construir_asset_path_prop(prop: Dictionary) -> String:
 	if nombre.is_empty():
 		return ""
 
-	return "res://assets/art/Props/" + nombre + ".png"
+	return "res://assets/art/props/" + nombre + ".png"
 
 
 func _elegir_prop_ponderado(
