@@ -6,7 +6,6 @@ var world_generator: Node = null
 
 var mostrar_contexto_mundo: bool = false
 
-var _tiempo_debug: float = 0.0
 var _tiempo_contexto: float = 0.0
 
 var location_panel: Control = null
@@ -190,29 +189,11 @@ func _process(delta: float) -> void:
 		if _discovery_notice_timer <= 0.0 and discovery_notice:
 			discovery_notice.visible = false
 
-	_actualizar_vida()
-	_actualizar_stamina()
-	_actualizar_eterium()
-
 	_tiempo_contexto += delta
 
 	if _tiempo_contexto >= 0.25:
 		_tiempo_contexto = 0.0
 		_actualizar_contexto()
-
-	_tiempo_debug += delta
-
-	if _tiempo_debug >= 0.5:
-		_tiempo_debug = 0.0
-
-		print(
-			"HUD DEBUG → Vida: ",
-			_obtener_entero(player, "health", 0),
-			" | Stamina: ",
-			_obtener_float(player, "stamina", 0.0),
-			" | Eterium: ",
-			_obtener_float(player, "mana", 0.0)
-		)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -460,7 +441,9 @@ func _actualizar_barra(
 	barra.value = actual
 
 	if texto != null:
-		texto.text = str(actual) + " / " + str(maximo)
+		var nuevo_texto := str(actual) + " / " + str(maximo)
+		if texto.text != nuevo_texto:
+			texto.text = nuevo_texto
 
 
 func _actualizar_barra_float(
@@ -476,7 +459,9 @@ func _actualizar_barra_float(
 	barra.value = actual
 
 	if texto != null:
-		texto.text = str(roundi(actual)) + " / " + str(roundi(maximo))
+		var nuevo_texto := str(roundi(actual)) + " / " + str(roundi(maximo))
+		if texto.text != nuevo_texto:
+			texto.text = nuevo_texto
 
 
 func _actualizar_contexto() -> void:
