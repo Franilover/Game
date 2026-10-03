@@ -55,7 +55,7 @@ func _process(delta: float) -> void:
 		_cambiar_objetivo(null)
 
 
-func _input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if player == null or not player.is_alive:
 		return
 
