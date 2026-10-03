@@ -222,6 +222,47 @@ func _registrar_terreno_explorado() -> void:
 	_ultima_exploracion_tile = tile
 	GameState.registrar_terreno_explorado(tile)
 
+	if not world_gen.has_method("get_bioma_at"):
+		return
+
+	var bioma_variant: Variant = world_gen.call(
+		"get_bioma_at",
+		tile
+	)
+	var ecosistema_variant: Variant = world_gen.call(
+		"get_ecosistema_at",
+		tile
+	)
+	var habitats_variant: Variant = world_gen.call(
+		"get_habitats_at",
+		tile
+	)
+	var criaturas_variant: Variant = world_gen.call(
+		"get_criaturas_at",
+		tile
+	)
+
+	if not bioma_variant is Dictionary:
+		return
+
+	if not ecosistema_variant is Dictionary:
+		return
+
+	var habitats: Array = []
+	if habitats_variant is Array:
+		habitats = habitats_variant as Array
+
+	var criaturas: Array = []
+	if criaturas_variant is Array:
+		criaturas = criaturas_variant as Array
+
+	GameState.registrar_descubrimiento_mundo(
+		bioma_variant as Dictionary,
+		ecosistema_variant as Dictionary,
+		habitats,
+		criaturas
+	)
+
 
 func _esta_bloqueado_por_interfaz() -> bool:
 	var consola := get_tree().get_first_node_in_group(
