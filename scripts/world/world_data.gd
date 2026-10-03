@@ -369,6 +369,21 @@ func _construir_indices() -> void:
 	_personajes_game.clear()
 	_dialogos_game.clear()
 	_misiones_game.clear()
+	_reinos_game.clear()
+
+	var reinos_variant: Variant = mundo.get(
+		"reinos_game",
+		[]
+	)
+
+	if reinos_variant is Array:
+		for reino_variant in reinos_variant:
+			if not reino_variant is Dictionary:
+				continue
+
+			_reinos_game.append(
+				(reino_variant as Dictionary).duplicate(true)
+			)
 
 	var misiones_variant: Variant = mundo.get(
 		"misiones_game",
