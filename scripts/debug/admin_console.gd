@@ -224,9 +224,14 @@ func _actualizar_sugerencias() -> void:
 
 	if _es_comando_con_sugerencias(texto, COMANDO_SUMMON):
 		var nombre_parcial: String = _extraer_argumento(texto, COMANDO_SUMMON)
+		var nombres_summon: Array[String] = _obtener_nombres_criaturas()
+		nombres_summon.append_array(
+			_obtener_nombres_personajes_game()
+		)
+		nombres_summon = _deduplicar_nombres(nombres_summon)
 		_mostrar_sugerencias(
 			_filtrar_nombres(
-				_obtener_nombres_criaturas(),
+				nombres_summon,
 				nombre_parcial
 			),
 			COMANDO_SUMMON
@@ -325,6 +330,51 @@ func _obtener_nombres_criaturas() -> Array[String]:
 
 	nombres.sort()
 	return nombres
+
+
+func _obtener_nombres_personajes_game() -> Array[String]:
+	var nombres: Array[String] = []
+
+	if not WorldData.has_method("obtener_personajes_game"):
+		return nombres
+
+	var personajes: Array[Dictionary] = (
+		WorldData.obtener_personajes_game()
+	)
+
+	for personaje in personajes:
+		var nombre: String = str(
+			personaje.get(
+				"nombre",
+				""
+			)
+		).strip_edges()
+
+		if nombre.is_empty():
+			continue
+
+		nombres.append(nombre)
+
+	nombres.sort()
+	return nombres
+
+
+func _deduplicar_nombres(
+	nombres: Array[String]
+) -> Array[String]:
+	var resultado: Array[String] = []
+
+	for nombre in nombres:
+		if nombre.is_empty():
+			continue
+
+		if nombre in resultado:
+			continue
+
+		resultado.append(nombre)
+
+	resultado.sort()
+	return resultado
 
 
 func _obtener_nombres_objetos() -> Array[String]:
