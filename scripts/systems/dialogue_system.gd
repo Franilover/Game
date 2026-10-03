@@ -104,6 +104,10 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
 	var datos_seleccionados := _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
+	var acciones_debug: Array = []
+	var acciones_variant_debug: Variant = datos_seleccionados.get("acciones", [])
+	if acciones_variant_debug is Array:
+		acciones_debug = acciones_variant_debug
 
 	print(
 		"DialogueSystem: variante = ",
@@ -111,7 +115,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 		" | lineas = ",
 		lineas.size(),
 		" | acciones = ",
-		_obtener_acciones(datos_seleccionados).size()
+		acciones_debug.size()
 	)
 
 	if lineas.is_empty():
