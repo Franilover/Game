@@ -109,6 +109,18 @@ func _ready() -> void:
 		_abrir_multijugador
 	)
 
+	host_button.pressed.connect(
+		_crear_partida
+	)
+
+	join_button.pressed.connect(
+		_unirse_partida
+	)
+
+	multiplayer_close_button.pressed.connect(
+		_cerrar_multijugador
+	)
+
 	exit_button.pressed.connect(
 		_salir
 	)
