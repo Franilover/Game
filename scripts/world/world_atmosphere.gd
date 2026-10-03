@@ -254,7 +254,7 @@ func _actualizar_estacion() -> void:
 		if dia_del_anio < inicio_dia + duracion:
 			estacion_actual = estacion.duplicate(true)
 			estacion_actual["dia_de_estacion"] = (
-			 dia_del_anio - inicio_dia + 1
+			dia_del_anio - inicio_dia + 1
 		)
 		return
 
