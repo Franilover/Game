@@ -321,6 +321,15 @@ func _obtener_hora_texto() -> String:
 	]
 
 
+func obtener_estacion_id() -> String:
+	return str(
+		estacion_actual.get(
+			"id",
+			""
+		)
+	)
+
+
 func obtener_tiempo() -> Dictionary:
 	var estacion := estacion_actual.duplicate(true)
 	return {
