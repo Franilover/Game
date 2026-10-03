@@ -1049,6 +1049,10 @@ func _aplicar_estado_al_juego() -> void:
 				(proceso_variant as Dictionary).duplicate(true)
 			)
 
+	var world_gen := get_tree().current_scene.get_node_or_null(
+		"World/WorldGenerator"
+	)
+
 	if world_gen != null:
 		var atmosphere := world_gen.get_node_or_null(
 			"WorldAtmosphere"
@@ -1275,6 +1279,12 @@ func _extraer_metadata_partida(
 		),
 		"actualizado_en": str(
 			datos.get("actualizado_en", "")
+		),
+		"semilla": int(
+			datos.get("mundo", {}).get(
+				"semilla",
+				0
+			)
 		),
 		"mundo_version": int(
 			datos.get("mundo_version", 0)
