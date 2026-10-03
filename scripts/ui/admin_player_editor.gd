@@ -24,6 +24,8 @@ const CAPACIDADES := [
 func abrir(objetivo: Node) -> void:
 	jugador = objetivo
 	visible = true
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().paused = true
 	_cargar_datos()
 	_nombre.grab_focus()
 
@@ -236,7 +238,12 @@ func _guardar() -> void:
 
 	GameState.flags["personaje_admin"] = {
 		"rol": "admin" if _admin.button_pressed else "jugador",
-		"capacidades": capacidades
+		"capacidades": capacidades,
+		"maximos": {
+			"vida": int(_vida.value),
+			"eterium": int(_eterium.value),
+			"energia": float(_energia.value)
+		}
 	}
 
 	GameState.guardar_partida()
@@ -245,3 +252,4 @@ func _guardar() -> void:
 
 func _cerrar() -> void:
 	visible = false
+	get_tree().paused = false
