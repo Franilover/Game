@@ -857,9 +857,11 @@ func registrar_descubrimiento_mundo(
 		descubrimientos["ecosistemas"] = ecosistemas
 
 	var habitats_variant: Variant = descubrimientos.get("habitats", {})
-	var habitats_descubiertos: Dictionary = {}
+	var habitats_descubiertos: Dictionary
 	if habitats_variant is Dictionary:
-		habitats_descubiertos = (habitats_variant as Dictionary).duplicate(true)
+		habitats_descubiertos = habitats_variant as Dictionary
+	else:
+		habitats_descubiertos = {}
 
 	for habitat_variant in habitats:
 		if not habitat_variant is Dictionary:
