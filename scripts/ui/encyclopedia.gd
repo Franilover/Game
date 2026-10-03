@@ -54,25 +54,8 @@ func _crear_interfaz() -> void:
 	var header: HBoxContainer = HBoxContainer.new()
 	column.add_child(header)
 
-	var title: Label = Label.new()
-	title.text = "CONOCIMIENTOS DESCUBIERTOS"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_color_override(
-		"font_color",
-		Color(0.9, 0.79, 0.58, 1.0)
-	)
-	title.add_theme_font_size_override("font_size", 15)
-	header.add_child(title)
 
-	_contador = Label.new()
-	_contador.add_theme_color_override(
-		"font_color",
-		Color(0.55, 0.43, 0.29, 1.0)
-	)
-	_contador.add_theme_font_size_override("font_size", 10)
-	header.add_child(_contador)
 
-	column.add_child(HSeparator.new())
 
 	var body: HBoxContainer = HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -288,7 +271,6 @@ func actualizar() -> void:
 						if primero == null:
 							primero = criatura_item
 
-	_contador.text = str(total) + " conocimientos"
 
 	if primero == null:
 		_mostrar_sin_descubrimientos()
@@ -521,7 +503,6 @@ func _obtener_derrotas(id: String) -> int:
 
 
 func _mostrar_sin_descubrimientos() -> void:
-	_contador.text = "0 conocimientos"
 	_nombre.text = "Nada descubierto todavía"
 	_icono.texture = null
 	_icono.visible = false
