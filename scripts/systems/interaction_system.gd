@@ -14,6 +14,7 @@ var hud: Control = null
 var objetivo_actual: Node = null
 
 var _scan_timer: float = 0.0
+var _interaction_distance_sq: float = 0.0
 
 
 func configurar(
@@ -22,6 +23,7 @@ func configurar(
 ) -> void:
 	player = nuevo_player
 	hud = nuevo_hud
+	_interaction_distance_sq = interaction_distance * interaction_distance
 
 	print(
 		"InteractionSystem: configurado."
@@ -43,7 +45,7 @@ func _process(delta: float) -> void:
 
 	_scan_timer -= delta
 	if _scan_timer <= 0.0:
-		_scan_timer = scan_interval
+		_scan_timer = maxf(scan_interval, 0.05)
 		_buscar_objetivo()
 
 	if objetivo_actual != null and not is_instance_valid(objetivo_actual):
@@ -64,9 +66,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _buscar_objetivo() -> void:
 	var mejor_objetivo: Node = null
 
-	var mejor_distancia: float = (
-		interaction_distance
-	)
+	var mejor_distancia_sq: float = _interaction_distance_sq
 
 	var candidatos: Array[Node] = (
 		get_tree().get_nodes_in_group(
@@ -106,17 +106,15 @@ func _buscar_objetivo() -> void:
 			candidato as Node2D
 		)
 
-		var distancia: float = (
-			player.global_position.distance_to(
-				candidato_2d.global_position
-			)
+		var distancia_sq := player.global_position.distance_squared_to(
+			candidato_2d.global_position
 		)
 
-		if distancia > interaction_distance:
+		if distancia_sq > _interaction_distance_sq:
 			continue
 
-		if distancia < mejor_distancia:
-			mejor_distancia = distancia
+		if distancia_sq < mejor_distancia_sq:
+			mejor_distancia_sq = distancia_sq
 			mejor_objetivo = candidato
 
 	_cambiar_objetivo(
