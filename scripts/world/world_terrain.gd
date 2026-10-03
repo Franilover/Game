@@ -436,7 +436,8 @@ func _procesar_pintado_chunk(
 
 		_pintar_tile(
 			tile,
-			zona_final
+			zona_final,
+			int(biomas[padded_y][padded_x])
 		)
 
 		_pintado_desde_flush += 1
@@ -592,13 +593,24 @@ func _agua_toca_tierra_en_array(
 	)
 func _pintar_tile(
 	tile: Vector2i,
-	zona: int
+	zona: int,
+	bioma_index: int
 ) -> void:
 	if visual == null:
 		return
+
+	var bioma_nombre := ""
+	if bioma_index >= 0 and bioma_index < _biomas.size():
+		var bioma_variant: Variant = _biomas[bioma_index]
+		if bioma_variant is Dictionary:
+			bioma_nombre = str(
+				(bioma_variant as Dictionary).get("nombre", "")
+			)
+
 	visual.set_zone(
 		tile,
-		zona
+		zona,
+		bioma_nombre
 	)
 func get_zona_at(
 	tile: Vector2i
