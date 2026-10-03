@@ -108,7 +108,7 @@ func _on_confirm() -> void:
 	_update_confirm()
 	if confirm_button.disabled:
 		return
-	var selected_skin: Array[int] = skins.get_selected_items()
+	var selected_skin: PackedInt32Array = skins.get_selected_items()
 	if selected_skin.is_empty():
 		return
 	var skin_index: int = selected_skin[0]
