@@ -19,6 +19,9 @@ var _player_chunk: Vector2i = Vector2i(
 
 var _queue: Array = []
 
+var _initial_queue: Array = []
+var _initializing: bool = false
+
 
 func configurar(
 	world_generator: WorldGenerator,
@@ -43,6 +46,83 @@ func registrar_jugador(
 	_player = player
 
 	_actualizar_streaming()
+
+
+func iniciar_carga_inicial(
+	centro: Vector2i,
+	radio: int
+) -> void:
+	_initial_queue.clear()
+	_initializing = true
+
+	var nuevos: Array = []
+
+	for dy in range(-radio, radio + 1):
+		for dx in range(-radio, radio + 1):
+			nuevos.append(
+				centro + Vector2i(dx, dy)
+			)
+
+	nuevos.sort_custom(
+		func(a: Vector2i, b: Vector2i) -> bool:
+			var da: int = (
+				abs(a.x - centro.x)
+				+ abs(a.y - centro.y)
+			)
+
+			var db: int = (
+				abs(b.x - centro.x)
+				+ abs(b.y - centro.y)
+			)
+
+			return da < db
+	)
+
+	_initial_queue.append_array(nuevos)
+
+
+func procesar_carga_inicial() -> bool:
+	if not _initializing:
+		return true
+
+	if _terrain.tiene_generacion_activa():
+		var terminado: bool = (
+			_terrain.procesar_generacion(
+				_cells_per_frame * 2
+			)
+		)
+
+		if terminado:
+			var chunk_coord: Vector2i = (
+				_terrain.ultimo_chunk_generado()
+			)
+
+			_entity_spawner.spawn_chunk(
+				chunk_coord
+			)
+
+		return false
+
+	if _initial_queue.is_empty():
+		_initializing = false
+		return true
+
+	var chunk_coord: Vector2i = (
+		_initial_queue.pop_front()
+	)
+
+	if _terrain.chunk_cargado(chunk_coord):
+		return false
+
+	_terrain.iniciar_generacion_chunk(
+		chunk_coord
+	)
+
+	return false
+
+
+func esta_cargando_inicio() -> bool:
+	return _initializing
 
 
 func procesar() -> void:
