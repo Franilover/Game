@@ -978,7 +978,8 @@ func mostrar_panel_interaccion(datos: Dictionary) -> void:
 	if lineas.is_empty():
 		lineas.append("No hay información adicional registrada.")
 
-	interaction_body.text = "\n".join(lineas)
+	interaction_body.text = "
+".join(lineas)
 	interaction_panel.visible = true
 	_interaction_panel_open = true
 
