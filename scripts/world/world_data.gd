@@ -28,6 +28,7 @@ var _biomas_por_id: Dictionary = {}
 var _ecosistemas_por_id: Dictionary = {}
 var _habitats_por_id: Dictionary = {}
 var _criaturas_por_id: Dictionary = {}
+var _personajes_game: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -362,6 +363,21 @@ func _construir_indices() -> void:
 	_ecosistemas_por_id.clear()
 	_habitats_por_id.clear()
 	_criaturas_por_id.clear()
+	_personajes_game.clear()
+
+	var personajes_variant: Variant = mundo.get(
+		"personajes_game",
+		[]
+	)
+
+	if personajes_variant is Array:
+		for personaje_variant in personajes_variant:
+			if not personaje_variant is Dictionary:
+				continue
+
+			_personajes_game.append(
+				(personaje_variant as Dictionary).duplicate(true)
+			)
 
 	for bioma in obtener_biomas():
 		if bioma is Dictionary:
@@ -544,6 +560,63 @@ func buscar_criatura_por_nombre(
 			return criatura.duplicate(true)
 
 	return {}
+
+
+func obtener_personajes_game() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+
+	for personaje in _personajes_game:
+		resultado.append(
+			personaje.duplicate(true)
+		)
+
+	return resultado
+
+
+func buscar_personaje_game_por_nombre(
+	nombre: String
+) -> Dictionary:
+	var buscado := nombre.strip_edges().to_lower()
+
+	if buscado.is_empty():
+		return {}
+
+	for personaje in _personajes_game:
+		var nombre_personaje := str(
+			personaje.get(
+				"nombre",
+				""
+			)
+		)
+
+		if nombre_personaje.to_lower() == buscado:
+			return personaje.duplicate(true)
+
+	return {}
+
+
+func obtener_personajes_game_de_criatura(
+	criatura_id: String
+) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+
+	if criatura_id.is_empty():
+		return resultado
+
+	for personaje in _personajes_game:
+		if str(
+			personaje.get(
+				"criatura_id",
+				""
+			)
+		) != criatura_id:
+			continue
+
+		resultado.append(
+			personaje.duplicate(true)
+		)
+
+	return resultado
 
 
 func obtener_ecosistemas_de_bioma(
