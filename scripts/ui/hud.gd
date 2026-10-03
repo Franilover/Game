@@ -61,6 +61,20 @@ func _ready() -> void:
 
 	print("HUD: iniciado.")
 
+func _process(delta: float) -> void:
+	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
+		_tiempo_contexto += delta
+		if _tiempo_contexto >= 0.15:
+			_tiempo_contexto = 0.0
+			_actualizar_contexto()
+	else:
+		_tiempo_contexto = 0.0
+
+	if discovery_notice != null and discovery_notice.visible:
+		_discovery_notice_timer -= delta
+		if _discovery_notice_timer <= 0.0:
+			discovery_notice.visible = false
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
