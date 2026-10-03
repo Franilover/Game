@@ -652,6 +652,109 @@ func obtener_factor_ambiental_habitat(
 	return {}
 
 
+func obtener_ambiente_estacional(
+	estacion_id: String
+) -> Dictionary:
+	if estacion_id.is_empty():
+		return {}
+
+	var ambiente_variant: Variant = mundo.get(
+		"ambiente_estacional",
+		{}
+	)
+
+	if not ambiente_variant is Dictionary:
+		return {}
+
+	var estacion_variant: Variant = (
+		(ambiente_variant as Dictionary).get(
+			estacion_id,
+			{}
+		)
+	)
+
+	if estacion_variant is Dictionary:
+		return (estacion_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func obtener_ambiente_estacional_ecosistema(
+	estacion_id: String,
+	ecosistema_id: String
+) -> Dictionary:
+	var estacion := obtener_ambiente_estacional(
+		estacion_id
+	)
+
+	if estacion.is_empty():
+		return {}
+
+	var ecosistemas_variant: Variant = estacion.get(
+		"ecosistemas",
+		{}
+	)
+
+	if not ecosistemas_variant is Dictionary:
+		return {}
+
+	var factores_variant: Variant = (
+		(ecosistemas_variant as Dictionary).get(
+			ecosistema_id,
+			{}
+		)
+	)
+
+	if factores_variant is Dictionary:
+		return (factores_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func obtener_ambiente_estacional_habitat(
+	estacion_id: String,
+	habitat_id: String
+) -> Dictionary:
+	var estacion := obtener_ambiente_estacional(
+		estacion_id
+	)
+
+	if estacion.is_empty():
+		return {}
+
+	var habitats_variant: Variant = estacion.get(
+		"habitats",
+		{}
+	)
+
+	if not habitats_variant is Dictionary:
+		return {}
+
+	var factores_variant: Variant = (
+		(habitats_variant as Dictionary).get(
+			habitat_id,
+			{}
+		)
+	)
+
+	if factores_variant is Dictionary:
+		return (factores_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func obtener_modificadores_estacionales() -> Array:
+	var modificadores_variant: Variant = mundo.get(
+		"modificadores_estacionales",
+		[]
+	)
+
+	if modificadores_variant is Array:
+		return (modificadores_variant as Array).duplicate(true)
+
+	return []
+
+
 func obtener_definiciones_factores_abioticos() -> Array:
 	var factores_variant: Variant = mundo.get(
 		"factores_abioticos",
