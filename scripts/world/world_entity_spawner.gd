@@ -44,6 +44,8 @@ var peso_destacadas: float = 4.0
 var _terrain: WorldTerrain
 
 var _creatures_by_chunk: Dictionary = {}
+var _characters_by_chunk: Dictionary = {}
+var _spawned_characters: Dictionary = {}
 
 
 func configurar(
@@ -314,6 +316,12 @@ func spawn_chunk(
 
 	_creatures_by_chunk[chunk_coord] = (
 		creadas
+	)
+
+	_spawn_characters_in_chunk(
+		chunk_coord,
+		limite_chunk,
+		rng
 	)
 
 	if not creadas.is_empty():
@@ -761,6 +769,139 @@ func despawn_chunk(
 	_creatures_by_chunk.erase(
 		chunk_coord
 	)
+
+	if _characters_by_chunk.has(chunk_coord):
+		var personajes_variant: Variant = _characters_by_chunk[chunk_coord]
+		if personajes_variant is Array:
+			for personaje_variant in personajes_variant:
+				if not personaje_variant is Node:
+					continue
+
+				var personaje := personaje_variant as Node
+				if not is_instance_valid(personaje):
+					continue
+
+				var personaje_id := str(personaje.get_meta("personaje_game_id", ""))
+				if not personaje_id.is_empty():
+					_spawned_characters.erase(personaje_id)
+				personaje.queue_free()
+
+	_characters_by_chunk.erase(chunk_coord)
+
+
+func _spawn_characters_in_chunk(
+	chunk_coord: Vector2i,
+	limite_chunk: Rect2,
+	rng: RandomNumberGenerator
+) -> void:
+	var personajes := WorldData.obtener_personajes_game()
+	if personajes.is_empty():
+		return
+
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		return
+
+	var entities: Node = current_scene.get_node_or_null("Entities")
+	if entities == null:
+		return
+
+	var creados: Array = []
+
+	for personaje_variant in personajes:
+		if not personaje_variant is Dictionary:
+			continue
+
+		var personaje := personaje_variant as Dictionary
+		var personaje_id := str(personaje.get("id", ""))
+		var reino_game_id := str(personaje.get("reino_game_id", ""))
+		var bioma_ids_variant: Variant = personaje.get("bioma_ids", [])
+
+		if personaje_id.is_empty() or reino_game_id.is_empty():
+			continue
+		if _spawned_characters.has(personaje_id):
+			continue
+		if not bioma_ids_variant is Array:
+			continue
+
+		var bioma_ids := bioma_ids_variant as Array
+		if bioma_ids.is_empty():
+			continue
+
+		var tile := _buscar_tile_para_personaje(chunk_coord, bioma_ids, rng)
+		if tile == Vector2i(2147483647, 2147483647):
+			continue
+
+		var criatura_id := str(personaje.get("criatura_id", ""))
+		if criatura_id.is_empty():
+			continue
+
+		var criatura_data := WorldData.obtener_criatura(criatura_id).duplicate(true)
+		if criatura_data.is_empty():
+			continue
+
+		criatura_data["nombre_individual"] = str(personaje.get("nombre", ""))
+		criatura_data["personaje_game_id"] = personaje_id
+		criatura_data["reino_game_id"] = reino_game_id
+		criatura_data["reino_nombre"] = str(personaje.get("reino_nombre", ""))
+
+		var dialogo := WorldData.obtener_dialogo_game(personaje_id)
+		if not dialogo.is_empty():
+			criatura_data["dialogo"] = dialogo
+		else:
+			criatura_data.erase("dialogo")
+
+		var criatura: Node = CREATURE_SCENE.instantiate()
+		if criatura == null:
+			continue
+
+		entities.add_child(criatura)
+		criatura.global_position = Vector2(
+			(float(tile.x) + 0.5) * _terrain.tile_size,
+			(float(tile.y) + 0.5) * _terrain.tile_size
+		)
+		criatura.set_meta("personaje_game_id", personaje_id)
+
+		if criatura is Creature:
+			var creature_node := criatura as Creature
+			creature_node.configurar(criatura_data)
+			creature_node.configurar_chunk(chunk_coord, limite_chunk)
+			creature_node.configurar_entorno("general")
+
+		_spawned_characters[personaje_id] = criatura
+		creados.append(criatura)
+
+	if not creados.is_empty():
+		_characters_by_chunk[chunk_coord] = creados
+		print("WorldEntitySpawner: personajes en reino → chunk ", chunk_coord, " → ", creados.size())
+
+
+func _buscar_tile_para_personaje(
+	chunk_coord: Vector2i,
+	bioma_ids: Array,
+	rng: RandomNumberGenerator
+) -> Vector2i:
+	var origen_x := chunk_coord.x * _terrain.chunk_size_tiles
+	var origen_y := chunk_coord.y * _terrain.chunk_size_tiles
+	var candidatos: Array[Vector2i] = []
+
+	for y in range(_terrain.chunk_size_tiles):
+		for x in range(_terrain.chunk_size_tiles):
+			var tile := Vector2i(origen_x + x, origen_y + y)
+			if not _terrain.is_walkable(tile):
+				continue
+
+			var bioma := _terrain.get_bioma_at(tile)
+			if bioma.is_empty():
+				continue
+
+			if str(bioma.get("id", "")) in bioma_ids:
+				candidatos.append(tile)
+
+	if candidatos.is_empty():
+		return Vector2i(2147483647, 2147483647)
+
+	return candidatos[rng.randi_range(0, candidatos.size() - 1)]
 
 
 func _obtener_candidatos(
