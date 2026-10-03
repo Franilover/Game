@@ -74,8 +74,8 @@ func _es_compatible(objeto: Dictionary) -> bool:
 		)
 	).strip_edges().to_lower()
 
-	if clave_equipo == "arma":
-		return tipo == "arma"
+	if clave_equipo == "mano_secundaria":
+		return tipo == "arma" or tipo == "herramienta"
 
 	var tipo_variant: Variant = objeto.get("tipo_objeto", {})
 	if not tipo_variant is Dictionary:
