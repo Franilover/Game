@@ -827,7 +827,8 @@ func _cargar_skins_personaje() -> void:
 
 		_skins_disponibles.append(ruta)
 		var nombre := archivo.get_basename()
-		_personaje_skins.add_icon_item(textura as Texture2D, nombre)
+		_personaje_skins.add_icon_item(textura as Texture2D, true)
+		_personaje_skins.set_item_text(_personaje_skins.item_count - 1, nombre)
 
 	if _personaje_skins.item_count > 0:
 		_personaje_skins.select(0)
