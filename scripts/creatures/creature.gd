@@ -108,30 +108,35 @@ func configurar(
 			"biologia",
 			""
 		)
+	)
 
 	pensamiento = str(
 		datos_criatura.get(
 			"pensamiento",
 			""
 		)
+	)
 
 	alma = str(
 		datos_criatura.get(
 			"alma",
 			""
 		)
+	)
 
 	relacion = str(
 		datos_criatura.get(
 			"relacion",
 			""
 		)
+	)
 
 	magia = str(
 		datos_criatura.get(
 			"magia",
 			""
 		)
+	)
 
 	var stats_variant: Variant = datos_criatura.get(
 		"stats_dnd",
