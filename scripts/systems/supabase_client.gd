@@ -4,6 +4,7 @@ extends Node
 signal mundo_cargado(datos: Dictionary)
 signal eterium_runtime_cargado(datos: Dictionary)
 signal especies_jugables_cargadas(especies: Array)
+signal especie_eterium_game_cargado(reglas: Array)
 signal error_conexion(mensaje: String)
 
 
@@ -29,16 +30,21 @@ const RPC_ETERIUM_RUNTIME := (
 const API_ESPECIES_JUGABLES := (
 	"/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
 )
+const API_ESPECIE_ETERIUM_GAME := (
+	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
+)
 
 
 var _http: HTTPRequest
 var _http_eterium: HTTPRequest
 var _http_especies: HTTPRequest
+var _http_especie_eterium_game: HTTPRequest
 var _timer: Timer
 var _solicitud_en_curso: bool = false
 var _intento_actual: int = 0
 var _sincronizacion_inicial_realizada: bool = false
 var _eterium_runtime: Dictionary = {}
+var _especie_eterium_game: Array = []
 
 
 func _ready() -> void:
@@ -65,7 +71,15 @@ func _ready() -> void:
 		_al_completar_especies_jugables
 	)
 
+	_http_especie_eterium_game = HTTPRequest.new()
+	_http_especie_eterium_game.timeout = HTTP_TIMEOUT
+	add_child(_http_especie_eterium_game)
+	_http_especie_eterium_game.request_completed.connect(
+		_al_completar_especie_eterium_game
+	)
+
 	call_deferred("cargar_eterium_runtime")
+	call_deferred("cargar_especie_eterium_game")
 	call_deferred("cargar_especies_jugables")
 
 	_timer = Timer.new()
@@ -133,6 +147,57 @@ func _al_completar_especies_jugables(
 
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
 	especies_jugables_cargadas.emit(especies)
+
+
+func cargar_especie_eterium_game() -> void:
+	if not _especie_eterium_game.is_empty():
+		return
+	if _http_especie_eterium_game == null:
+		return
+	var headers := PackedStringArray([
+		"apikey: " + SUPABASE_KEY,
+		"Content-Type: application/json",
+		"Accept: application/json"
+	])
+	var resultado := _http_especie_eterium_game.request(
+		SUPABASE_URL + API_ESPECIE_ETERIUM_GAME,
+		headers,
+		HTTPClient.METHOD_GET
+	)
+	if resultado != OK:
+		print("SupabaseClient: no se pudo solicitar reglas Eterium de especies → ", resultado)
+
+
+func _al_completar_especie_eterium_game(
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		print("SupabaseClient: error de red cargando reglas Eterium de especies.")
+		return
+	if codigo_http < 200 or codigo_http >= 300:
+		print("SupabaseClient: HTTP ", codigo_http, " cargando reglas Eterium de especies → ", cuerpo.get_string_from_utf8())
+		return
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:
+		print("SupabaseClient: reglas Eterium de especies no son una lista JSON válida.")
+		return
+	_especie_eterium_game.clear()
+	for regla_variant in json.data as Array:
+		if regla_variant is Dictionary:
+			_especie_eterium_game.append((regla_variant as Dictionary).duplicate(true))
+	print("SupabaseClient: reglas Eterium de especies cargadas → ", _especie_eterium_game.size())
+	especie_eterium_game_cargado.emit(_especie_eterium_game.duplicate(true))
+
+
+func tiene_especie_eterium_game() -> bool:
+	return not _especie_eterium_game.is_empty()
+
+
+func obtener_especie_eterium_game() -> Array:
+	return _especie_eterium_game.duplicate(true)
 
 
 func cargar_eterium_runtime() -> void:
