@@ -643,7 +643,18 @@ func _preparar_creador_personaje() -> void:
 func _mostrar_creacion_personaje(accion: String) -> void:
 	if _character_creation == null:
 		_preparar_creador_personaje()
+
+	# El creador debe quedar por encima de cualquier overlay del menú.
+	multiplayer_overlay.visible = false
+	login_overlay.visible = false
+	_character_creation.z_index = 10000
+	_character_creation.show()
 	_character_creation.open(accion)
+
+	print(
+		"StartMenu: abriendo creación de personaje → ",
+		accion
+	)
 
 func _on_character_cancelled() -> void:
 	print("StartMenu: creación de personaje cancelada.")
