@@ -84,7 +84,7 @@ func _unhandled_input(event: InputEvent) -> void:
 						world_items.call(
 							"colocar_objeto",
 							objeto_activo,
-							get_global_mouse_position()
+							(player as Node2D).get_global_mouse_position()
 						)
 					)
 					if colocado:
