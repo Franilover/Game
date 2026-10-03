@@ -331,9 +331,6 @@ func _procesar_datos_chunk(
 
 	_generation_task["cursor"] = cursor
 
-	if visual != null:
-		visual.flush()
-
 	if cursor < total:
 		return false
 
@@ -440,6 +437,9 @@ func _procesar_pintado_chunk(
 		cursor += 1
 
 	_generation_task["cursor"] = cursor
+
+	if visual != null:
+		visual.flush()
 
 	if cursor < total:
 		return false
