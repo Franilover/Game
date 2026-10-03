@@ -1375,6 +1375,120 @@ func _aplicar_configuracion_personaje() -> void:
 	)
 
 
+
+func admin_obtener_configuracion() -> Dictionary:
+	return {
+		"nombre": personaje_nombre,
+		"especie": personaje_especie.duplicate(true),
+		"vida_maxima": max_health,
+		"eterium_maximo": max_mana,
+		"energia_maxima": max_stamina
+	}
+
+
+func admin_cambiar_nombre(nuevo_nombre: String) -> bool:
+	var nombre := nuevo_nombre.strip_edges()
+	if nombre.is_empty():
+		return false
+
+	personaje_nombre = nombre
+	var personaje_variant: Variant = GameState.flags.get("personaje", {})
+	var personaje: Dictionary = {}
+	if personaje_variant is Dictionary:
+		personaje = (personaje_variant as Dictionary).duplicate(true)
+
+	personaje["nombre"] = nombre
+	personaje["especie"] = personaje_especie.duplicate(true)
+	personaje["skin"] = personaje_skin
+	GameState.flags["personaje"] = personaje
+	return true
+
+
+func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
+	var especie_id := str(nueva_especie.get("id", "")).strip_edges()
+	if especie_id.is_empty():
+		return false
+
+	personaje_especie = nueva_especie.duplicate(true)
+
+	var personaje_variant: Variant = GameState.flags.get("personaje", {})
+	var personaje: Dictionary = {}
+	if personaje_variant is Dictionary:
+		personaje = (personaje_variant as Dictionary).duplicate(true)
+
+	personaje["nombre"] = personaje_nombre
+	personaje["genero"] = personaje_genero
+	personaje["especie"] = personaje_especie.duplicate(true)
+	personaje["skin"] = personaje_skin
+	GameState.flags["personaje"] = personaje
+
+	var reglas: Array = SupabaseClient.obtener_especie_eterium_game()
+	if not reglas.is_empty():
+		_aplicar_especie_eterium_game(reglas)
+
+	return true
+
+
+func admin_establecer_maximos(
+	vida: int,
+	eterium: int,
+	energia: float
+) -> bool:
+	max_health = maxi(1, vida)
+	max_mana = maxi(1, eterium)
+	max_stamina = maxf(1.0, energia)
+
+	health = mini(health, max_health)
+	mana = mini(mana, max_mana)
+	stamina = minf(stamina, max_stamina)
+
+	health_changed.emit(health, max_health)
+	mana_changed.emit(mana, max_mana)
+	stamina_changed.emit(stamina, max_stamina)
+	return true
+
+
+func admin_restaurar_defaults() -> bool:
+	var reglas: Array = SupabaseClient.obtener_especie_eterium_game()
+	var especie_id := str(personaje_especie.get("id", ""))
+	var eterium_default := 100
+	var vida_default := 100
+
+	for regla_variant in reglas:
+		if not regla_variant is Dictionary:
+			continue
+		var regla := regla_variant as Dictionary
+		var padre_variant: Variant = regla.get("especie_eterium_v1", {})
+		if not padre_variant is Dictionary:
+			continue
+		var padre := padre_variant as Dictionary
+		if str(padre.get("especie_id", "")) != especie_id:
+			continue
+		eterium_default = maxi(1, roundi(float(padre.get("capacidad_base", 100))))
+		if bool(regla.get("vida_eterium_compartidos", false)):
+			vida_default = eterium_default
+		break
+
+	admin_establecer_maximos(
+		vida_default,
+		eterium_default,
+		100.0
+	)
+	return true
+
+
+func admin_guardar_estado() -> void:
+	GameState.flags["personaje_admin"] = {
+		"rol": "admin" if bool(GameState.flags.get("personaje_admin", {}).get("rol", "") == "admin") else "jugador",
+		"capacidades": GameState.flags.get("personaje_admin", {}).get("capacidades", []).duplicate(true),
+		"maximos": {
+			"vida": max_health,
+			"eterium": max_mana,
+			"energia": max_stamina
+		}
+	}
+	GameState.guardar_partida()
+
 func _update_visual() -> void:
 	if anim == null:
 		return
