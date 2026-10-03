@@ -74,11 +74,16 @@ func _crear_ui() -> void:
 	contenido.add_theme_constant_override("separation", 28)
 	columna.add_child(contenido)
 
+	var scroll_izquierda := ScrollContainer.new()
+	scroll_izquierda.custom_minimum_size = Vector2(390, 0)
+	scroll_izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_izquierda.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	contenido.add_child(scroll_izquierda)
+
 	var izquierda := VBoxContainer.new()
-	izquierda.custom_minimum_size = Vector2(390, 0)
 	izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	izquierda.add_theme_constant_override("separation", 7)
-	contenido.add_child(izquierda)
+	scroll_izquierda.add_child(izquierda)
 
 	_nombre = LineEdit.new()
 	_nombre.custom_minimum_size = Vector2(0, 36)
@@ -104,11 +109,16 @@ func _crear_ui() -> void:
 	defaults.pressed.connect(_restaurar_defaults)
 	izquierda.add_child(defaults)
 
+	var scroll_derecha := ScrollContainer.new()
+	scroll_derecha.custom_minimum_size = Vector2(390, 0)
+	scroll_derecha.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_derecha.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	contenido.add_child(scroll_derecha)
+
 	var derecha := VBoxContainer.new()
-	derecha.custom_minimum_size = Vector2(390, 0)
 	derecha.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	derecha.add_theme_constant_override("separation", 5)
-	contenido.add_child(derecha)
+	scroll_derecha.add_child(derecha)
 
 	_admin = CheckBox.new()
 	_admin.text = "Rol de admin en esta partida"
@@ -226,7 +236,7 @@ func _al_cambiar_admin(activo: bool) -> void:
 	for clave in _capacidades:
 		var check: CheckBox = _capacidades[clave]
 		check.button_pressed = activo
-	_estado.text = "Admin: capacidades habilitadas." if activo else "Explorador: funciones administrativas deshabilitadas."
+	_estado.text = "Capacidades habilitadas." if activo else "Funciones administrativas deshabilitadas."
 
 
 func _al_cambiar_capacidad(_clave: String, _activo: bool) -> void:
