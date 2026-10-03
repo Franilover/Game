@@ -873,6 +873,13 @@ func _aplicar_efecto_recurso(
 	return false
 
 
+func consumir_objeto_activo(cantidad: int = 1) -> bool:
+	var indice := obtener_indice_inventario_hotbar(indice_hotbar_activo)
+	if indice < 0:
+		return false
+	return quitar_cantidad(indice, maxi(1, cantidad))
+
+
 func quitar_objeto(indice: int) -> bool:
 	if indice < 0 or indice >= items.size():
 		return false
