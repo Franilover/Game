@@ -3,6 +3,7 @@ extends Button
 
 signal seleccionado(slot: Button)
 signal arrastre_iniciado(slot: Button, datos: Dictionary)
+signal arrastre_recibido(slot: Button, datos: Dictionary)
 
 
 var datos: Dictionary = {}
@@ -106,6 +107,22 @@ func _al_input_gui(
 ) -> void:
 	if datos.is_empty():
 		return
+
+
+func _can_drop_data(_position: Vector2, data: Variant) -> bool:
+	if not data is Dictionary:
+		return false
+
+	var datos_arrastre: Dictionary = data as Dictionary
+	return str(datos_arrastre.get("tipo", "")) == "inventario_objeto"
+
+
+func _drop_data(_position: Vector2, data: Variant) -> void:
+	if not _can_drop_data(_position, data):
+		return
+
+	var datos_arrastre: Dictionary = data as Dictionary
+	arrastre_recibido.emit(self, datos_arrastre)
 
 
 func _get_drag_data(_position: Vector2) -> Variant:
