@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cbvnmltw5ki5y"
-path="res://.godot/imported/Water.png-27d957a399157eada5b7797d22cb3803.ctex"
+uid="uid://cm2bgdt5cmk0n"
+path="res://.godot/imported/Sofia.png-7b6bc857bc5daa4552404c006c99f8fb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tilesets/Water.png"
-dest_files=["res://.godot/imported/Water.png-27d957a399157eada5b7797d22cb3803.ctex"]
+source_file="res://assets/art/characters/Sofia.png"
+dest_files=["res://.godot/imported/Sofia.png-7b6bc857bc5daa4552404c006c99f8fb.ctex"]
 
 [params]
 

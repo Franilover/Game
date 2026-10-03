@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cbvnmltw5ki5y"
-path="res://.godot/imported/Water.png-27d957a399157eada5b7797d22cb3803.ctex"
+uid="uid://dv15rwrv4os2u"
+path="res://.godot/imported/Abel.png-7fab429519cbf2cb407bbbd12c67d136.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tilesets/Water.png"
-dest_files=["res://.godot/imported/Water.png-27d957a399157eada5b7797d22cb3803.ctex"]
+source_file="res://assets/art/characters/Abel.png"
+dest_files=["res://.godot/imported/Abel.png-7fab429519cbf2cb407bbbd12c67d136.ctex"]
 
 [params]
 

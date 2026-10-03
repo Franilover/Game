@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cbvnmltw5ki5y"
-path="res://.godot/imported/Water.png-27d957a399157eada5b7797d22cb3803.ctex"
+uid="uid://dcjim4n5fo3k3"
+path="res://.godot/imported/Waarin.png-a3cae2b1af72874aa482c24bf117969f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tilesets/Water.png"
-dest_files=["res://.godot/imported/Water.png-27d957a399157eada5b7797d22cb3803.ctex"]
+source_file="res://assets/art/creatures/Waarin.png"
+dest_files=["res://.godot/imported/Waarin.png-a3cae2b1af72874aa482c24bf117969f.ctex"]
 
 [params]
 

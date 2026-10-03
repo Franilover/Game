@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://bcrdgcnddob75" path="res://scripts/world/world_entity_spawner.gd" id="3_pg0he"]
 [ext_resource type="PackedScene" uid="uid://dvbsydjnksfcv" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/systems/interaction_system.gd" id="5_interaction"]
-[ext_resource type="PackedScene" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
+[ext_resource type="PackedScene" uid="uid://bi6oqlrfq4scs" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/systems/combat_system.gd" id="8_combat"]
 [ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/debug/admin_console.gd" id="9_admin"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="10_pause"]
