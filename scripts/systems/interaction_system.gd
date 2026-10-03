@@ -37,6 +37,7 @@ func configurar(
 	)
 
 	_cambiar_objetivo(null)
+	_buscar_objetivo()
 
 
 func _process(delta: float) -> void:
@@ -57,19 +58,37 @@ func _process(delta: float) -> void:
 		_cambiar_objetivo(null)
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if player == null or not player.is_alive:
 		return
 
 	if _interaccion_bloqueada():
 		return
 
-	if not event.is_action_pressed("interact"):
+	if not _es_evento_interactuar(event):
 		return
+
 	if event is InputEventKey and (event as InputEventKey).echo:
 		return
+
 	_interactuar()
 	get_viewport().set_input_as_handled()
+
+
+func _es_evento_interactuar(event: InputEvent) -> bool:
+	if event.is_action_pressed("interact"):
+		return true
+
+	# Respaldo directo para E. Mantiene la interacción funcional
+	# incluso si otra capa modifica el InputMap durante la partida.
+	if event is InputEventKey:
+		var tecla := event as InputEventKey
+		return (
+			tecla.pressed
+			and tecla.physical_keycode == KEY_E
+		)
+
+	return false
 
 
 func _interaccion_bloqueada() -> bool:
