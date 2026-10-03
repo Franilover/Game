@@ -22,6 +22,14 @@ func _ready() -> void:
 				_al_descubrir_criatura
 			)
 
+	if GameState.has_signal("descubrimientos_mundo_actualizados"):
+		if not GameState.descubrimientos_mundo_actualizados.is_connected(
+			_al_descubrimiento_mundo_actualizado
+		):
+			GameState.descubrimientos_mundo_actualizados.connect(
+				_al_descubrimiento_mundo_actualizado
+			)
+
 	if not WorldData.mundo_listo.is_connected(
 		_al_mundo_actualizado
 	):
@@ -58,7 +66,7 @@ func _crear_interfaz() -> void:
 	column.add_child(header)
 
 	var title: Label = Label.new()
-	title.text = "ENCICLOPEDIA DE CRIATURAS"
+	title.text = "CRIATURAS DESCUBIERTAS"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_color_override(
 		"font_color",
@@ -167,7 +175,7 @@ func _crear_interfaz() -> void:
 
 	var descubierto: Label = Label.new()
 	descubierto.text = (
-		"Derrota una criatura para comenzar su registro."
+		"Encuentra criaturas durante tus exploraciones para registrarlas."
 	)
 	descubierto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	descubierto.add_theme_color_override(
@@ -200,32 +208,25 @@ func actualizar() -> void:
 	_lista.clear()
 	_ids_descubiertos.clear()
 
-	var registros_variant: Variant = GameState.flags.get(
-		"enciclopedia_criaturas",
+	var descubrimientos := GameState.obtener_descubrimientos_mundo()
+	var criaturas_variant: Variant = descubrimientos.get(
+		"criaturas",
 		{}
 	)
 
-	if not registros_variant is Dictionary:
+	if not criaturas_variant is Dictionary:
 		_mostrar_sin_descubrimientos()
 		return
 
-	var registros: Dictionary = registros_variant as Dictionary
+	var criaturas_descubiertas: Dictionary = (
+		criaturas_variant as Dictionary
+	)
 	var candidatos: Array = []
 
-	for id_variant in registros.keys():
+	for id_variant in criaturas_descubiertas.keys():
 		var id: String = str(id_variant)
 
 		if id.is_empty():
-			continue
-
-		var derrotas: int = int(
-			registros.get(
-				id_variant,
-				0
-			)
-		)
-
-		if derrotas <= 0:
 			continue
 
 		var criatura: Dictionary = WorldData.obtener_criatura(id)
@@ -233,7 +234,6 @@ func actualizar() -> void:
 		if criatura.is_empty():
 			continue
 
-		criatura["_derrotas_registradas"] = derrotas
 		candidatos.append(criatura)
 
 	candidatos.sort_custom(_ordenar_criaturas)
@@ -348,12 +348,16 @@ func _mostrar_sin_descubrimientos() -> void:
 	_ficha.text = (
 		"[center]"
 		+ "[color=#8f754f]La enciclopedia está vacía.[/color]\n\n"
-		+ "Explora Garlia y derrota criaturas para registrar sus datos."
+		+ "Explora Garlia para descubrir criaturas y ampliar tus conocimientos."
 		+ "[/center]"
 	)
 
 
 func _al_descubrir_criatura(_criatura_id: String) -> void:
+	actualizar()
+
+
+func _al_descubrimiento_mundo_actualizado() -> void:
 	actualizar()
 
 
