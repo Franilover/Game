@@ -10,7 +10,6 @@ const PROJECTILE_SCRIPT: Script = preload(
 	"res://scripts/systems/combat_projectile.gd"
 )
 
-
 @export_category("Ataque")
 @export var alcance_desarmado: float = 48.0
 @export var ancho_ataque: float = 48.0
@@ -59,12 +58,39 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("primary_action"):
 		return
 
+	# La interacción contextual tiene prioridad sobre el combate.
+	# Si hay un objetivo (por ejemplo, un personaje dialogable), no
+	# permitimos que este mismo click termine convertido en un golpe.
+	if _hay_interaccion_contextual():
+		return
+
 	if _tiempo_desde_ataque > 0.0:
 		return
 
 	usar_objeto_activo()
 
 	get_viewport().set_input_as_handled()
+
+
+func _hay_interaccion_contextual() -> bool:
+	var interaction_system := get_tree().get_first_node_in_group(
+		"interaction_system"
+	)
+
+	if interaction_system == null:
+		interaction_system = get_node_or_null(
+		"../InteractionSystem"
+	)
+
+	if interaction_system == null:
+		return false
+
+	if not "objetivo_actual" in interaction_system:
+		return false
+
+	var objetivo: Variant = interaction_system.get("objetivo_actual")
+
+	return objetivo != null and is_instance_valid(objetivo)
 
 
 func _accion_bloqueada() -> bool:
