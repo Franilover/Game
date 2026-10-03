@@ -99,7 +99,7 @@ size_flags_vertical = 3
 layout_mode = 2
 theme_override_constants/separation = 6
 
-undefined[node name="CreateButton" type="Button" parent="Panel/Margin/Column"]
+[node name="CreateButton" type="Button" parent="Panel/Margin/Column"]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 text = "＋ Crear nueva partida"
