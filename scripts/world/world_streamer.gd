@@ -8,9 +8,9 @@ var _entity_spawner: WorldEntitySpawner
 
 var _player: Node = null
 
-var _load_radius: int = 2
-var _unload_radius: int = 3
-var _cells_per_frame: int = 256
+var _load_radius: int = 1
+var _unload_radius: int = 2
+var _cells_per_frame: int = 512
 
 var _player_chunk: Vector2i = Vector2i(
 	999999,
@@ -93,6 +93,21 @@ func _actualizar_streaming() -> void:
 
 	_player_chunk = centro
 
+	# Si el jugador cambió de chunk rápidamente, no sigamos cargando chunks
+	# que ya quedaron fuera del radio de trabajo.
+	var cola_filtrada: Array = []
+	for queued_variant in _queue:
+		if not queued_variant is Vector2i:
+			continue
+		var queued: Vector2i = queued_variant
+		var distancia: int = maxi(
+			abs(queued.x - centro.x),
+			abs(queued.y - centro.y)
+		)
+		if distancia <= _load_radius:
+			cola_filtrada.append(queued)
+	_queue = cola_filtrada
+
 	var nuevos: Array = []
 
 	for dy in range(
@@ -147,6 +162,24 @@ func _actualizar_streaming() -> void:
 		_queue.append(
 			nuevos[i]
 		)
+
+	_queue.sort_custom(
+		func(
+			a: Vector2i,
+			b: Vector2i
+		) -> bool:
+			var da: int = (
+				abs(a.x - centro.x)
+				+ abs(a.y - centro.y)
+			)
+
+			var db: int = (
+				abs(b.x - centro.x)
+				+ abs(b.y - centro.y)
+			)
+
+			return da < db
+	)
 
 	_descargar_lejanos(
 		centro
