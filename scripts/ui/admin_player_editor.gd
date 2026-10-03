@@ -40,65 +40,90 @@ func _crear_ui() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var fondo := ColorRect.new()
-	fondo.color = Color(0.03, 0.03, 0.05, 0.82)
+	fondo.color = Color(0.02, 0.015, 0.01, 0.82)
 	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fondo.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(fondo)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(430, 0)
+	panel.custom_minimum_size = Vector2(880, 0)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position -= panel.custom_minimum_size * 0.5
+	panel.position = Vector2(-440, -210)
+	panel.size = Vector2(880, 420)
 	add_child(panel)
 
 	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 18)
-	margen.add_theme_constant_override("margin_right", 18)
-	margen.add_theme_constant_override("margin_top", 16)
-	margen.add_theme_constant_override("margin_bottom", 16)
+	margen.add_theme_constant_override("margin_left", 26)
+	margen.add_theme_constant_override("margin_right", 26)
+	margen.add_theme_constant_override("margin_top", 20)
+	margen.add_theme_constant_override("margin_bottom", 20)
 	panel.add_child(margen)
 
 	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 8)
+	columna.add_theme_constant_override("separation", 10)
 	margen.add_child(columna)
 
 	var titulo := Label.new()
 	titulo.text = "Editar jugador"
-	titulo.add_theme_font_size_override("font_size", 20)
+	titulo.add_theme_font_size_override("font_size", 24)
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	columna.add_child(titulo)
 
+	var contenido := HBoxContainer.new()
+	contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	contenido.add_theme_constant_override("separation", 28)
+	columna.add_child(contenido)
+
+	var izquierda := VBoxContainer.new()
+	izquierda.custom_minimum_size = Vector2(390, 0)
+	izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	izquierda.add_theme_constant_override("separation", 7)
+	contenido.add_child(izquierda)
+
 	_nombre = LineEdit.new()
-	_nombre.placeholder_text = "Nombre"
-	columna.add_child(_campo("Renombrar", _nombre))
+	_nombre.custom_minimum_size = Vector2(0, 36)
+	_nombre.placeholder_text = "Nombre del personaje"
+	izquierda.add_child(_campo("Renombrar", _nombre))
 
 	_species = OptionButton.new()
-	columna.add_child(_campo("Especie", _species))
+	_species.custom_minimum_size = Vector2(0, 36)
+	izquierda.add_child(_campo("Especie", _species))
 
 	_vida = _crear_spin(1, 999999)
-	columna.add_child(_campo("Vida máxima", _vida))
+	izquierda.add_child(_campo("Vida máxima", _vida))
 
 	_eterium = _crear_spin(1, 999999)
-	columna.add_child(_campo("Eterium máximo", _eterium))
+	izquierda.add_child(_campo("Eterium máximo", _eterium))
 
 	_energia = _crear_spin(1, 999999)
-	columna.add_child(_campo("Energía máxima", _energia))
+	izquierda.add_child(_campo("Energía máxima", _energia))
 
 	var defaults := Button.new()
 	defaults.text = "Restablecer valores por defecto"
+	defaults.custom_minimum_size = Vector2(0, 36)
 	defaults.pressed.connect(_restaurar_defaults)
-	columna.add_child(defaults)
+	izquierda.add_child(defaults)
 
-	var separador := HSeparator.new()
-	columna.add_child(separador)
+	var derecha := VBoxContainer.new()
+	derecha.custom_minimum_size = Vector2(390, 0)
+	derecha.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	derecha.add_theme_constant_override("separation", 5)
+	contenido.add_child(derecha)
 
 	_admin = CheckBox.new()
 	_admin.text = "Rol de admin en esta partida"
 	_admin.toggled.connect(_al_cambiar_admin)
-	columna.add_child(_admin)
+	derecha.add_child(_admin)
 
 	var subtitulo := Label.new()
 	subtitulo.text = "Capacidades únicas de esta partida"
 	subtitulo.add_theme_font_size_override("font_size", 13)
-	columna.add_child(subtitulo)
+	derecha.add_child(subtitulo)
+
+	var capacidades_grid := GridContainer.new()
+	capacidades_grid.columns = 2
+	capacidades_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	derecha.add_child(capacidades_grid)
 
 	for capacidad in CAPACIDADES:
 		var check := CheckBox.new()
@@ -106,24 +131,30 @@ func _crear_ui() -> void:
 		check.set_meta("capacidad", str(capacidad["clave"]))
 		check.toggled.connect(_al_cambiar_capacidad.bind(str(capacidad["clave"])))
 		_capacidades[str(capacidad["clave"])] = check
-		columna.add_child(check)
+		capacidades_grid.add_child(check)
 
 	_estado = Label.new()
-	columna.add_child(_estado)
+	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_estado.custom_minimum_size = Vector2(0, 28)
+	derecha.add_child(_estado)
 
 	var botones := HBoxContainer.new()
 	botones.alignment = BoxContainer.ALIGNMENT_END
+	botones.add_theme_constant_override("separation", 10)
+
 	var cancelar := Button.new()
 	cancelar.text = "Cancelar"
+	cancelar.custom_minimum_size = Vector2(130, 42)
 	cancelar.pressed.connect(_cerrar)
 	botones.add_child(cancelar)
 
 	var guardar := Button.new()
 	guardar.text = "Guardar"
+	guardar.custom_minimum_size = Vector2(130, 42)
 	guardar.pressed.connect(_guardar)
 	botones.add_child(guardar)
-	columna.add_child(botones)
 
+	columna.add_child(botones)
 
 func _campo(etiqueta: String, control: Control) -> Control:
 	var fila := VBoxContainer.new()
