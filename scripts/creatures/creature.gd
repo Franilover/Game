@@ -94,6 +94,8 @@ func configurar(
 		)
 	)
 
+	nombre_individual = _obtener_nombre_individual()
+
 	comportamiento = str(
 		datos_criatura.get(
 			"comportamiento",
@@ -203,13 +205,38 @@ func _cargar_sprite() -> void:
 	if sprite == null:
 		return
 
-	var ruta := "res://assets/art/creatures/" + criatura_nombre + ".png"
+	var rutas: Array[String] = []
 
-	if ResourceLoader.exists(ruta):
+	# Los humanos pueden tener una identidad individual distinta
+	# de la especie. Su skin se resuelve por ese nombre.
+	if _es_humano() and not nombre_individual.is_empty():
+		rutas.append(
+			"res://assets/art/creatures/humanos/"
+			+ nombre_individual
+			+ ".png"
+		)
+		rutas.append(
+			"res://assets/art/creatures/"
+			+ nombre_individual
+			+ ".png"
+		)
+
+	# Fallback universal: sprite definido por la especie.
+	rutas.append(
+		"res://assets/art/creatures/"
+		+ criatura_nombre
+		+ ".png"
+	)
+
+	for ruta in rutas:
+		if not ResourceLoader.exists(ruta):
+			continue
+
 		sprite.texture = load(ruta)
-	else:
-		sprite.texture = null
-		# Sin sprite → _draw() mostrará los círculos de debug
+		return
+
+	sprite.texture = null
+	# Sin sprite → _draw() mostrará los círculos de debug
 
 
 func configurar_chunk(
@@ -237,6 +264,13 @@ func configurar_entorno(
 
 
 func get_nombre() -> String:
+	return criatura_nombre
+
+
+func get_nombre_visual() -> String:
+	if not nombre_individual.is_empty():
+		return nombre_individual
+
 	return criatura_nombre
 
 
@@ -672,7 +706,9 @@ func _draw() -> void:
 
 
 func _dibujar_nombre() -> void:
-	if criatura_nombre.is_empty():
+	var nombre_visual := get_nombre_visual()
+
+	if nombre_visual.is_empty():
 		return
 
 	var font: Font = (
@@ -681,7 +717,7 @@ func _dibujar_nombre() -> void:
 
 	var ancho: float = float(
 		font.get_string_size(
-			criatura_nombre,
+			nombre_visual,
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1.0,
 			nombre_font_size
