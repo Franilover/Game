@@ -458,8 +458,10 @@ func _actualizar_sprite(asset_path: String) -> void:
 	)
 	add_child(sprite)
 
+
+func _actualizar_profundidad() -> void:
 	z_index = clampi(
-		int(global_position.y / 8.0),
+		1000 + int(global_position.y),
 		-4096,
 		4096
 	)
@@ -469,11 +471,11 @@ func _ready() -> void:
 	add_to_group("world_props")
 	if not GarliaWorldItems.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
 		GarliaWorldItems.catalogo_cargado.connect(_al_cargar_catalogo_items)
-	z_index = clampi(
-		int(global_position.y / 8.0),
-		-4096,
-		4096
-	)
+	_actualizar_profundidad()
+
+
+func _process(_delta: float) -> void:
+	_actualizar_profundidad()
 
 
 func _al_cargar_catalogo_items(_items: Array) -> void:
