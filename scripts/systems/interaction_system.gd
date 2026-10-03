@@ -29,7 +29,7 @@ func configurar(
 
 	print(
 		"InteractionSystem: recolectables actuales = ",
-		_contar_recolectables()
+		_contar_objetivos_contextuales()
 	)
 
 	_cambiar_objetivo(null)
