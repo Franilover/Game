@@ -18,6 +18,7 @@ const COMANDO_SUMMON: String = "/summon"
 const COMANDO_GIVE: String = "/give"
 const COMANDO_TIME: String = "/time"
 const COMANDO_TP: String = "/tp"
+const COMANDO_PLAYER: String = "/player"
 const MAX_SUGERENCIAS_VISIBLES: int = 8
 const ANCHO_SUGERENCIAS: float = 320.0
 const ALTURA_SUGERENCIAS_POR_FILA: float = 22.0
