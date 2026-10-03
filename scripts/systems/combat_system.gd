@@ -65,8 +65,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var arma: Dictionary = {}
 
-	# Click izquierdo = usar el objeto seleccionado en la hotbar.
+	# Click izquierdo: una interacción contextual siempre tiene prioridad.
+	# Así recoger/hablar no puede convertirse accidentalmente en colocar
+	# un objeto o atacar con el objeto de la hotbar.
 	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+		if _hay_interaccion_contextual():
+			return
+
 		var objeto_activo := _obtener_objeto_activo()
 
 		if objeto_activo.is_empty():
@@ -95,6 +100,27 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		_atacar_con_arma(arma)
 		get_viewport().set_input_as_handled()
+
+
+func _hay_interaccion_contextual() -> bool:
+	var interaction_system := get_tree().get_first_node_in_group(
+		"interaction_system"
+	)
+
+	if interaction_system == null:
+		interaction_system = get_node_or_null(
+			"../InteractionSystem"
+		)
+
+	if interaction_system == null:
+		return false
+
+	if not "objetivo_actual" in interaction_system:
+		return false
+
+	var objetivo: Variant = interaction_system.get("objetivo_actual")
+
+	return objetivo != null and is_instance_valid(objetivo)
 
 
 func _accion_bloqueada() -> bool:
