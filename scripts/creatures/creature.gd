@@ -34,6 +34,9 @@ var entorno: String = "tierra"
 var _movimiento: CreatureMovement = null
 
 var _rng := RandomNumberGenerator.new()
+var _siguiendo_jugador: bool = false
+var _jugador_seguimiento: Node = null
+var _distancia_seguimiento: float = 24.0
 
 
 func _ready() -> void:
@@ -425,6 +428,9 @@ func get_stats_dnd() -> Dictionary:
 
 
 func _physics_process(delta: float) -> void:
+	if _siguiendo_jugador:
+		_procesar_seguimiento()
+
 	if not is_alive:
 		if _movimiento != null:
 			_movimiento.detener()
@@ -437,6 +443,54 @@ func _physics_process(delta: float) -> void:
 		_movimiento.procesar(delta)
 	else:
 		velocity = Vector2.ZERO
+
+
+func iniciar_seguimiento_jugador(nuevo_jugador: Node) -> bool:
+	if nuevo_jugador == null or not is_instance_valid(nuevo_jugador):
+		return false
+
+	_jugador_seguimiento = nuevo_jugador
+	_siguiendo_jugador = true
+
+	if _movimiento != null:
+		_movimiento.tomar_control()
+
+	return true
+
+
+func detener_seguimiento_jugador() -> void:
+	_siguiendo_jugador = false
+	_jugador_seguimiento = null
+
+	if _movimiento != null:
+		_movimiento.liberar_control()
+
+
+func esta_siguiendo_jugador() -> bool:
+	return (
+		_siguiendo_jugador
+		and is_instance_valid(_jugador_seguimiento)
+	)
+
+
+func _procesar_seguimiento() -> void:
+	if not esta_siguiendo_jugador():
+		_siguiendo_jugador = false
+		return
+
+	var distancia := global_position.distance_to(
+		_jugador_seguimiento.global_position
+	)
+
+	if distancia <= _distancia_seguimiento:
+		_movimiento.establecer_direccion_movimiento(Vector2.ZERO) if false else _movimiento.establecer_direccion(Vector2.ZERO)
+		return
+
+	var direccion := global_position.direction_to(
+		_jugador_seguimiento.global_position
+	)
+	_movimiento.establecer_direccion(direccion)
+	_movimiento.tomar_control()
 
 
 func tomar_control_movimiento() -> void:
