@@ -599,16 +599,21 @@ func _finalizar_chunk() -> void:
 
 	_ultimo_chunk_generado = coord
 
-	var celdas_dual: Array[Vector2i] = []
-	for y in range(chunk_size_tiles):
-		for x in range(chunk_size_tiles):
-			celdas_dual.append(
-				Vector2i(
-					coord.x * chunk_size_tiles + x,
-					coord.y * chunk_size_tiles + y
-				)
-			)
-	_refrescar_dual(celdas_dual)
+	# TileMapDual solo recalcula las celdas de su propio terreno.
+	# Antes actualizábamos Grass + Dirt con las 1024 celdas completas
+	# del chunk, duplicando el trabajo del addon.
+	var zonas_finales: Array = _generation_task["zonas"]
+	var celdas_grass: Array[Vector2i] = _celdas_dual_del_chunk(
+		coord,
+		zonas_finales,
+		Zone.GRASS
+	)
+	var celdas_dirt: Array[Vector2i] = _celdas_dual_del_chunk(
+		coord,
+		zonas_finales,
+		Zone.DIRT
+	)
+	_refrescar_dual(celdas_grass, celdas_dirt)
 
 	_generation_task.clear()
 
@@ -688,16 +693,12 @@ func descargar_chunk(
 		chunk_coord
 	)
 
-	var celdas_dual: Array[Vector2i] = []
-	for y in range(chunk_size_tiles):
-		for x in range(chunk_size_tiles):
-			celdas_dual.append(
-				Vector2i(
-					origin_x + x,
-					origin_y + y
-				)
-			)
-	_refrescar_dual(celdas_dual)
+	# Al descargar, solo recalculamos la frontera del chunk.
+	# Esto permite que los vecinos pierdan correctamente las transiciones.
+	var celdas_frontera: Array[Vector2i] = _celdas_frontera_chunk(
+		chunk_coord
+	)
+	_refrescar_dual(celdas_frontera, celdas_frontera)
 
 
 func _bioma_index_at_tile(
@@ -1109,16 +1110,99 @@ func _crear_tileset_dual(
 
 
 func _refrescar_dual(
-	celdas: Array[Vector2i]
+	celdas_grass: Array[Vector2i],
+	celdas_dirt: Array[Vector2i]
 ) -> void:
-	if celdas.is_empty():
+	if tilemap_dual_grass != null and not celdas_grass.is_empty():
+		tilemap_dual_grass._update_cells(celdas_grass, false)
+
+	if tilemap_dual_dirt != null and not celdas_dirt.is_empty():
+		tilemap_dual_dirt._update_cells(celdas_dirt, false)
+
+
+func _celdas_dual_del_chunk(
+	coord: Vector2i,
+	zonas: Array,
+	terreno: int
+) -> Array[Vector2i]:
+	var resultado: Array[Vector2i] = []
+	var vistos: Dictionary = {}
+
+	for y in range(chunk_size_tiles):
+		for x in range(chunk_size_tiles):
+			var padded_x: int = x + CHUNK_PADDING
+			var padded_y: int = y + CHUNK_PADDING
+
+			if int(zonas[padded_y][padded_x]) != terreno:
+				continue
+
+			var cell := Vector2i(
+				coord.x * chunk_size_tiles + x,
+				coord.y * chunk_size_tiles + y
+			)
+			_agregar_celda_dual_unica(resultado, vistos, cell)
+
+			# Solo añadimos vecinos fuera del chunk. Los cambios internos
+			# ya están cubiertos por las propias celdas modificadas.
+			if x == 0:
+				_agregar_celda_dual_unica(
+					resultado, vistos, cell + Vector2i(-1, 0)
+				)
+			if x == chunk_size_tiles - 1:
+				_agregar_celda_dual_unica(
+					resultado, vistos, cell + Vector2i(1, 0)
+				)
+			if y == 0:
+				_agregar_celda_dual_unica(
+					resultado, vistos, cell + Vector2i(0, -1)
+				)
+			if y == chunk_size_tiles - 1:
+				_agregar_celda_dual_unica(
+					resultado, vistos, cell + Vector2i(0, 1)
+				)
+
+	return resultado
+
+
+func _celdas_frontera_chunk(
+	chunk_coord: Vector2i
+) -> Array[Vector2i]:
+	var resultado: Array[Vector2i] = []
+	var vistos: Dictionary = {}
+
+	var ox: int = chunk_coord.x * chunk_size_tiles
+	var oy: int = chunk_coord.y * chunk_size_tiles
+
+	for i in range(chunk_size_tiles):
+		var c1 := Vector2i(ox + i, oy)
+		var c2 := Vector2i(
+			ox + i,
+			oy + chunk_size_tiles - 1
+		)
+		var c3 := Vector2i(ox, oy + i)
+		var c4 := Vector2i(
+			ox + chunk_size_tiles - 1,
+			oy + i
+		)
+
+		_agregar_celda_dual_unica(resultado, vistos, c1)
+		_agregar_celda_dual_unica(resultado, vistos, c2)
+		_agregar_celda_dual_unica(resultado, vistos, c3)
+		_agregar_celda_dual_unica(resultado, vistos, c4)
+
+	return resultado
+
+
+func _agregar_celda_dual_unica(
+	resultado: Array[Vector2i],
+	vistos: Dictionary,
+	cell: Vector2i
+) -> void:
+	if vistos.has(cell):
 		return
 
-	if tilemap_dual_grass != null:
-		tilemap_dual_grass._update_cells(celdas, false)
-
-	if tilemap_dual_dirt != null:
-		tilemap_dual_dirt._update_cells(celdas, false)
+	vistos[cell] = true
+	resultado.append(cell)
 
 
 func _tile_for_zone(
