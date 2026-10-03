@@ -79,6 +79,11 @@ func _accion_bloqueada() -> bool:
 	if admin_console is CanvasItem and bool((admin_console as CanvasItem).visible):
 		return true
 
+	var dialogue_system := get_tree().get_first_node_in_group("dialogue_system")
+	if dialogue_system != null and dialogue_system.has_method("esta_abierto"):
+		if bool(dialogue_system.call("esta_abierto")):
+			return true
+
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud != null and hud.has_method("esta_mostrando_panel_interaccion"):
 		if bool(hud.call("esta_mostrando_panel_interaccion")):
