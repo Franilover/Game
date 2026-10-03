@@ -31,18 +31,6 @@ func _crear_interfaz() -> void:
 	columna.add_theme_constant_override("separation", 8)
 	margen.add_child(columna)
 
-	var titulo := Label.new()
-	titulo.text = "Crafteo"
-	titulo.add_theme_font_size_override("font_size", 18)
-	titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58))
-	columna.add_child(titulo)
-
-	var descripcion := Label.new()
-	descripcion.text = "Combina materiales del inventario para crear objetos."
-	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	descripcion.add_theme_font_size_override("font_size", 11)
-	descripcion.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35))
-	columna.add_child(descripcion)
 
 	_estado = Label.new()
 	_estado.text = "Cargando recetas..."
@@ -155,6 +143,19 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	fila.add_theme_constant_override("separation", 12)
 	margen.add_child(fila)
 
+	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
+	var icono := TextureRect.new()
+	icono.custom_minimum_size = Vector2(56, 56)
+	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icono.texture = ItemIconResolver.obtener_icono(
+		GarliaWorldItems.buscar_item_por_id(str(resultado.get("item_id", "")))
+	)
+	fila.add_child(icono)
+
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fila.add_child(info)
@@ -178,7 +179,6 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	materiales.add_theme_font_size_override("font_size", 10)
 	info.add_child(materiales)
 
-	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var salida := Label.new()
 	salida.text = "Resultado: " + _nombre_item(str(resultado.get("item_id", ""))) + " x" + str(int(resultado.get("cantidad", 1)))
 	salida.add_theme_font_size_override("font_size", 10)
