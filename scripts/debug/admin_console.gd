@@ -17,6 +17,7 @@ var _sugerencias: Array[String] = []
 const COMANDO_SUMMON: String = "/summon"
 const COMANDO_GIVE: String = "/give"
 const COMANDO_TIME: String = "/time"
+const COMANDO_TP: String = "/tp"
 const MAX_SUGERENCIAS_VISIBLES: int = 8
 const ANCHO_SUGERENCIAS: float = 320.0
 const ALTURA_SUGERENCIAS_POR_FILA: float = 22.0
@@ -226,6 +227,10 @@ func _actualizar_sugerencias() -> void:
 		_mostrar_sugerencias_summon(texto)
 		return
 
+	if _es_comando_con_sugerencias(texto, COMANDO_TP):
+		_mostrar_sugerencias_tp(texto)
+		return
+
 	if _es_comando_con_sugerencias(texto, COMANDO_GIVE):
 		if GarliaWorldItems.catalogo.is_empty():
 			GarliaWorldItems.cargar_catalogo()
@@ -242,6 +247,45 @@ func _actualizar_sugerencias() -> void:
 
 	_ocultar_sugerencias()
 
+
+func _mostrar_sugerencias_tp(texto: String) -> void:
+	var argumento := _extraer_argumento(texto, COMANDO_TP)
+	var partes := argumento.split(" ", false)
+	var tipos: Array[String] = ["criatura", "reino", "jugador", "humano"]
+
+	if partes.is_empty():
+		_mostrar_sugerencias(tipos, COMANDO_TP)
+		return
+
+	if partes.size() == 1 and not texto.ends_with(" "):
+		_mostrar_sugerencias(_filtrar_nombres(tipos, partes[0]), COMANDO_TP)
+		return
+
+	var tipo := partes[0].to_lower()
+	var parcial := ""
+	if partes.size() >= 2:
+		parcial = partes[1]
+
+	var nombres: Array[String] = []
+	match tipo:
+		"criatura":
+			nombres = _obtener_nombres_criaturas()
+		"humano":
+			nombres = _obtener_nombres_personajes_game()
+		"reino":
+			for reino in WorldData.obtener_reinos_game():
+				var nombre := str(reino.get("nombre", "")).strip_edges()
+				if not nombre.is_empty():
+					nombres.append(nombre)
+		"jugador":
+			var jugador := get_tree().get_first_node_in_group("player")
+			if jugador != null:
+				nombres.append(jugador.name)
+		_:
+			_mostrar_sugerencias([], COMANDO_TP)
+			return
+
+	_mostrar_sugerencias(_filtrar_nombres(nombres, parcial), COMANDO_TP)
 
 func _mostrar_sugerencias_summon(
 	texto: String
@@ -581,6 +625,9 @@ func _comando_actual() -> String:
 	if _es_comando_con_sugerencias(texto, COMANDO_GIVE):
 		return COMANDO_GIVE
 
+	if _es_comando_con_sugerencias(texto, COMANDO_TP):
+		return COMANDO_TP
+
 	return ""
 
 
@@ -643,6 +690,9 @@ func _ejecutar_comando(comando: String) -> void:
 		"/time":
 			_comando_time(argumentos)
 
+		"/tp":
+			_comando_tp(argumentos)
+
 		_:
 			_agregar_linea(
 				"[color=#d88]"
@@ -668,6 +718,12 @@ func _comando_help() -> void:
 	_agregar_linea(
 		"[color=#b4befe]"
 		+ "/time <lock|day|night|restart>"
+		+ "[/color]"
+	)
+
+	_agregar_linea(
+		"[color=#b4befe]"
+		+ "/tp <criatura|reino|jugador|humano> <nombre>"
 		+ "[/color]"
 	)
 
@@ -761,6 +817,58 @@ func _comando_summon(nombre: String) -> void:
 			+ "[/color]"
 		)
 
+
+func _comando_tp(argumentos: String) -> void:
+	var partes := argumentos.split(" ", false)
+	if partes.size() < 2:
+		_agregar_linea("[color=#d88]Uso: /tp <criatura|reino|jugador|humano> <nombre>[/color]")
+		return
+
+	var tipo := partes[0].strip_edges().to_lower()
+	var nombre := " ".join(partes.slice(1)).strip_edges()
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	if jugador == null:
+		_agregar_linea("[color=#d88]No se encontró el jugador.[/color]")
+		return
+
+	var posicion := Vector2.INF
+
+	match tipo:
+		"criatura":
+			for nodo in get_tree().get_nodes_in_group("creatures"):
+				if nodo is Creature:
+					var criatura := nodo as Creature
+					if criatura.get_nombre_visual().to_lower() == nombre.to_lower() or criatura.get_nombre().to_lower() == nombre.to_lower():
+						posicion = criatura.global_position
+						break
+
+		"humano":
+			for nodo in get_tree().get_nodes_in_group("creatures"):
+				if nodo is Creature:
+					var humano := nodo as Creature
+					if humano.get_nombre().to_lower() == "humano" and humano.get_nombre_visual().to_lower() == nombre.to_lower():
+						posicion = humano.global_position
+						break
+
+		"jugador":
+			if jugador.name.to_lower() == nombre.to_lower() or nombre.to_lower() == "player" or nombre.to_lower() == "jugador":
+				posicion = jugador.global_position
+
+		"reino":
+			var world_generator := get_tree().get_first_node_in_group("world_generator")
+			if world_generator != null and world_generator.has_method("buscar_posicion_reino"):
+				posicion = world_generator.call("buscar_posicion_reino", nombre)
+
+		_:
+			_agregar_linea("[color=#d88]Tipo desconocido. Usa criatura, reino, jugador o humano.[/color]")
+			return
+
+	if posicion.is_equal_approx(Vector2.INF):
+		_agregar_linea("[color=#d88]No encontré " + tipo + ": " + nombre + ".[/color]")
+		return
+
+	jugador.global_position = posicion
+	_agregar_linea("[color=#9fd18b]Teletransportado a " + tipo + ": " + nombre + ".[/color]")
 
 func _comando_give(nombre: String) -> void:
 	var nombre_objeto: String = nombre.strip_edges()
