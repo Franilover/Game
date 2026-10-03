@@ -30,6 +30,7 @@ var _habitats_por_id: Dictionary = {}
 var _criaturas_por_id: Dictionary = {}
 var _personajes_game: Array[Dictionary] = []
 var _dialogos_game: Array[Dictionary] = []
+var _misiones_game: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -366,6 +367,21 @@ func _construir_indices() -> void:
 	_criaturas_por_id.clear()
 	_personajes_game.clear()
 	_dialogos_game.clear()
+	_misiones_game.clear()
+
+	var misiones_variant: Variant = mundo.get(
+		"misiones_game",
+		[]
+	)
+
+	if misiones_variant is Array:
+		for mision_variant in misiones_variant:
+			if not mision_variant is Dictionary:
+				continue
+
+			_misiones_game.append(
+				(mision_variant as Dictionary).duplicate(true)
+			)
 
 	var personajes_variant: Variant = mundo.get(
 		"personajes_game",
@@ -574,6 +590,30 @@ func buscar_criatura_por_nombre(
 
 		if nombre_criatura.to_lower() == buscado:
 			return criatura.duplicate(true)
+
+	return {}
+
+
+func obtener_misiones_game() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+
+	for mision in _misiones_game:
+		resultado.append(mision.duplicate(true))
+
+	return resultado
+
+
+func buscar_mision_game_por_clave(
+	clave: String
+) -> Dictionary:
+	var buscada := clave.strip_edges().to_lower()
+
+	if buscada.is_empty():
+		return {}
+
+	for mision in _misiones_game:
+		if str(mision.get("clave", "")).to_lower() == buscada:
+			return mision.duplicate(true)
 
 	return {}
 
