@@ -82,8 +82,13 @@ func _inicializar_mundo() -> void:
 	if _world_ready:
 		return
 
-	if map_seed == 0:
+	if GameState.tiene_semilla_mundo():
+		map_seed = GameState.obtener_semilla_mundo()
+	elif map_seed == 0:
 		map_seed = randi()
+
+		if not GameState.active_save_id.is_empty():
+			GameState.establecer_semilla_mundo(map_seed)
 
 	terrain.configurar(
 		map_seed,
