@@ -231,6 +231,10 @@ func _actualizar_sugerencias() -> void:
 		_mostrar_sugerencias_tp(texto)
 		return
 
+	if _es_comando_con_sugerencias(texto, COMANDO_PLAYER):
+		_mostrar_sugerencias(_obtener_nombres_jugadores(), COMANDO_PLAYER)
+		return
+
 	if _es_comando_con_sugerencias(texto, COMANDO_GIVE):
 		if GarliaWorldItems.catalogo.is_empty():
 			GarliaWorldItems.cargar_catalogo()
@@ -645,6 +649,9 @@ func _comando_actual() -> String:
 	if _es_comando_con_sugerencias(texto, COMANDO_TP):
 		return COMANDO_TP
 
+	if _es_comando_con_sugerencias(texto, COMANDO_PLAYER):
+		return COMANDO_PLAYER
+
 	return ""
 
 
@@ -710,6 +717,9 @@ func _ejecutar_comando(comando: String) -> void:
 		"/tp":
 			_comando_tp(argumentos)
 
+		"/player":
+			_comando_player(argumentos)
+
 		_:
 			_agregar_linea(
 				"[color=#d88]"
@@ -741,6 +751,12 @@ func _comando_help() -> void:
 	_agregar_linea(
 		"[color=#b4befe]"
 		+ "/tp <criatura|reino|jugador|humano> <nombre>"
+		+ "[/color]"
+	)
+
+	_agregar_linea(
+		"[color=#b4befe]"
+		+ "/player <nombre> — editar jugador"
 		+ "[/color]"
 	)
 
@@ -855,6 +871,57 @@ func _comando_summon(nombre: String) -> void:
 		+ "No se pudo ejecutar /summon."
 		+ "[/color]"
 	)
+
+func _obtener_nombres_jugadores() -> Array[String]:
+	var nombres: Array[String] = []
+	var jugador := get_tree().get_first_node_in_group("player")
+	if jugador != null:
+		var nombre := str(jugador.get("personaje_nombre")).strip_edges()
+		if nombre.is_empty():
+			nombre = jugador.name
+		nombres.append(nombre)
+	return nombres
+
+
+func _comando_player(nombre: String) -> void:
+	var nombre_solicitado := nombre.strip_edges()
+	if nombre_solicitado.is_empty():
+		_agregar_linea("[color=#d88]Uso: /player <nombre>[/color]")
+		return
+
+	var jugador := get_tree().get_first_node_in_group("player")
+	if jugador == null:
+		_agregar_linea("[color=#d88]No se encontró el jugador.[/color]")
+		return
+
+	var nombre_actual := str(jugador.get("personaje_nombre")).strip_edges()
+	if nombre_actual.is_empty():
+		nombre_actual = jugador.name
+
+	if nombre_solicitado.to_lower() != nombre_actual.to_lower() and nombre_solicitado.to_lower() not in ["player", "jugador"]:
+		_agregar_linea("[color=#d88]No encontré al jugador: " + nombre_solicitado + ".[/color]")
+		return
+
+	var editor := get_tree().current_scene.get_node_or_null("AdminPlayerEditor")
+	if editor == null:
+		var script := load("res://scripts/ui/admin_player_editor.gd")
+		if script == null:
+			_agregar_linea("[color=#d88]No se pudo cargar el editor de jugador.[/color]")
+			return
+		editor = Control.new()
+		editor.name = "AdminPlayerEditor"
+		editor.set_script(script)
+		get_tree().current_scene.add_child(editor)
+
+	if not editor.has_method("abrir"):
+		_agregar_linea("[color=#d88]El editor de jugador no es válido.[/color]")
+		return
+
+	get_tree().paused = false
+	_abierto = false
+	visible = false
+	editor.call("abrir", jugador)
+
 
 
 func _comando_tp(argumentos: String) -> void:
