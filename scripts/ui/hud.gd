@@ -877,7 +877,7 @@ func _preparar_panel_misiones() -> void:
 	margin.add_child(column)
 
 	var title := Label.new()
-	title.text = "MISIÓNES"
+	title.text = "MISIONES"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
 	title.add_theme_font_size_override("font_size", 18)
@@ -1158,9 +1158,6 @@ func cerrar_panel_interaccion() -> void:
 	if interaction_close != null:
 		interaction_close.release_focus()
 
-
-func esta_mostrando_panel_interaccion() -> bool:
-	return _interaction_panel_open
 
 func esta_mostrando_panel_interaccion() -> bool:
 	return _interaction_panel_open or _mission_panel_open
