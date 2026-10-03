@@ -1110,7 +1110,7 @@ func take_damage(cantidad: int) -> void:
 
 		danio_recibido = maxi(
 			0,
-			ceil_to_int(
+			ceili(
 				float(danio_recibido)
 				- defensa
 			)
