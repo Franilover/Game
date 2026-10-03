@@ -707,7 +707,7 @@ func _aplicar_efecto_recurso(
 	if magnitud <= 0.0:
 		return false
 
-	switch recurso:
+	match recurso:
 		case "vida", "salud", "health":
 			if not actor.has_method("heal"):
 				return false
