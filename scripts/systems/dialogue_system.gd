@@ -13,6 +13,7 @@ var speaker_label: Label = null
 var text_label: Label = null
 var hint_label: Label = null
 var action_button: Button = null
+var cancel_button: Button = null
 
 var _acciones: Array[Dictionary] = []
 
@@ -182,6 +183,8 @@ func cerrar() -> void:
 
 	if action_button != null:
 		action_button.visible = false
+	if cancel_button != null:
+		cancel_button.visible = false
 
 	if dialogue_panel != null:
 		dialogue_panel.visible = false
@@ -285,16 +288,22 @@ func _actualizar_boton_accion() -> void:
 
 	if _acciones.is_empty():
 		action_button.visible = false
+		if cancel_button != null:
+			cancel_button.visible = false
 		return
 
 	var texto_completo := _texto_completo.length()
 	if _indice_caracter < texto_completo:
 		action_button.visible = false
+		if cancel_button != null:
+			cancel_button.visible = false
 		return
 
 	var accion: Dictionary = _acciones[0]
 	action_button.text = str(accion.get("texto", "Aceptar"))
 	action_button.visible = true
+	if cancel_button != null:
+		cancel_button.visible = true
 
 
 func _ejecutar_accion_dialogo() -> void:
