@@ -283,7 +283,7 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if not personaje_id.is_empty():
 		var social := get_node_or_null("/root/RelationshipSystem")
 		if social != null and social.has_method("seleccionar_variante_dialogo"):
-			var seleccion := social.call("seleccionar_variante_dialogo", variantes_variant as Array, personaje_id)
+			var seleccion: Variant = social.call("seleccionar_variante_dialogo", variantes_variant as Array, personaje_id)
 			if seleccion is Dictionary and not (seleccion as Dictionary).is_empty():
 				return (seleccion as Dictionary).duplicate(true)
 
