@@ -870,12 +870,7 @@ func _actualizar_boton_personaje() -> void:
 	var especie_valida := _personaje_especie.item_count > 0 and _personaje_especie.selected >= 0
 	var skin_valida := _personaje_skins.item_count > 0 and _personaje_skins.get_selected_items().size() > 0
 
-	_personaje_confirmar.disabled = not (
-		nombre_valido
-		and genero_valido
-		especie_valida
-		skin_valida
-	)
+	_personaje_confirmar.disabled = not (nombre_valido and genero_valido and especie_valida and skin_valida)
 
 func _guardar_configuracion_personaje() -> void:
 	var especie := _personaje_especie.get_item_metadata(_personaje_especie.selected)
