@@ -74,6 +74,10 @@ var _dash_cooldown_timer: float = 0.0
 var _action_direction: Vector2 = Vector2.DOWN
 var _base_visual_position: Vector2 = Vector2.ZERO
 var _ultima_exploracion_tile: Vector2i = Vector2i(2147483647, 2147483647)
+var personaje_nombre: String = ""
+var personaje_genero: String = ""
+var personaje_especie: Dictionary = {}
+var personaje_skin: String = ""
 
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
@@ -95,6 +99,7 @@ func _ready() -> void:
 
 	_base_visual_position = visual.position
 
+	_aplicar_configuracion_personaje()
 	_update_dir_marker()
 	_update_visual()
 
@@ -1247,6 +1252,42 @@ func reaparecer() -> void:
 # ============================================================
 # VISUAL / ANIMACIONES
 # ============================================================
+
+func _aplicar_configuracion_personaje() -> void:
+	if not is_instance_valid(GameState):
+		return
+
+	var personaje_variant: Variant = GameState.flags.get("personaje", {})
+	if not personaje_variant is Dictionary:
+		return
+
+	var personaje := personaje_variant as Dictionary
+	personaje_nombre = str(personaje.get("nombre", "")).strip_edges()
+	personaje_genero = str(personaje.get("genero", "")).strip_edges()
+	personaje_skin = str(personaje.get("skin", "")).strip_edges()
+
+	var especie_variant: Variant = personaje.get("especie", {})
+	if especie_variant is Dictionary:
+		personaje_especie = (especie_variant as Dictionary).duplicate(true)
+
+	if personaje_skin.is_empty():
+		return
+
+	var textura := load(personaje_skin)
+	if textura is Texture2D:
+		var sprite := get_node_or_null("Visual/Sprite2D")
+		if sprite is Sprite2D:
+			(sprite as Sprite2D).texture = textura as Texture2D
+
+	print(
+		"Player: personaje aplicado → ",
+		personaje_nombre,
+		" | especie=",
+		str(personaje_especie.get("nombre", "—")),
+		" | skin=",
+		personaje_skin
+	)
+
 
 func _update_visual() -> void:
 	if anim == null:
