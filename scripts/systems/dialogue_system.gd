@@ -102,6 +102,11 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 
 	_fuente = fuente
 	_lineas = lineas
+
+	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
+		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
+		if not personaje_id.is_empty():
+			MissionManager.registrar_dialogo(personaje_id)
 	_indice_linea = 0
 	_abierto = true
 
