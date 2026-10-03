@@ -119,10 +119,7 @@ func _buscar_objetivo() -> void:
 		if not candidato.is_inside_tree():
 			continue
 
-		if not candidato.has_method("es_recolectable"):
-			continue
-
-		if not bool(candidato.call("es_recolectable")):
+		if not _es_objetivo_contextual(candidato):
 			continue
 
 		var puede: bool = true
@@ -166,17 +163,23 @@ func _buscar_objetivo() -> void:
 	_cambiar_objetivo(mejor_objetivo)
 
 
-func _contar_recolectables() -> int:
+func _es_objetivo_contextual(candidato: Node) -> bool:
+	if candidato.has_method("es_recolectable"):
+		if bool(candidato.call("es_recolectable")):
+			return true
+
+	if candidato.has_method("es_dialogable"):
+		if bool(candidato.call("es_dialogable")):
+			return true
+
+	return false
+
+
+func _contar_objetivos_contextuales() -> int:
 	var cantidad := 0
 
 	for candidato in get_tree().get_nodes_in_group("interactable"):
-		if not is_instance_valid(candidato):
-			continue
-
-		if not candidato.has_method("es_recolectable"):
-			continue
-
-		if bool(candidato.call("es_recolectable")):
+		if is_instance_valid(candidato) and _es_objetivo_contextual(candidato):
 			cantidad += 1
 
 	return cantidad
