@@ -5,6 +5,7 @@ signal mundo_cargado(datos: Dictionary)
 signal eterium_runtime_cargado(datos: Dictionary)
 signal especies_jugables_cargadas(especies: Array)
 signal especie_eterium_game_cargado(reglas: Array)
+signal personaje_social_cargado(reglas: Array)
 signal error_conexion(mensaje: String)
 
 
@@ -30,6 +31,9 @@ const RPC_ETERIUM_RUNTIME := (
 const API_ESPECIES_JUGABLES := (
 	"/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
 )
+const API_PERSONAJE_SOCIAL := (
+	"/rest/v1/personaje_social_v1?select=personaje_game_id,amistad_inicial,confianza_inicial,respeto_inicial,afecto_inicial,sociabilidad,curiosidad,generosidad,prudencia,agresividad,activo&activo=eq.true"
+)
 const API_ESPECIE_ETERIUM_GAME := (
 	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
 )
@@ -39,12 +43,14 @@ var _http: HTTPRequest
 var _http_eterium: HTTPRequest
 var _http_especies: HTTPRequest
 var _http_especie_eterium_game: HTTPRequest
+var _http_personaje_social: HTTPRequest
 var _timer: Timer
 var _solicitud_en_curso: bool = false
 var _intento_actual: int = 0
 var _sincronizacion_inicial_realizada: bool = false
 var _eterium_runtime: Dictionary = {}
 var _especie_eterium_game: Array = []
+var _personaje_social: Array = []
 
 
 func _ready() -> void:
@@ -78,8 +84,16 @@ func _ready() -> void:
 		_al_completar_especie_eterium_game
 	)
 
+	_http_personaje_social = HTTPRequest.new()
+	_http_personaje_social.timeout = HTTP_TIMEOUT
+	add_child(_http_personaje_social)
+	_http_personaje_social.request_completed.connect(
+		_al_completar_personaje_social
+	)
+
 	call_deferred("cargar_eterium_runtime")
 	call_deferred("cargar_especie_eterium_game")
+	call_deferred("cargar_personaje_social")
 	call_deferred("cargar_especies_jugables")
 
 	_timer = Timer.new()
@@ -147,6 +161,64 @@ func _al_completar_especies_jugables(
 
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
 	especies_jugables_cargadas.emit(especies)
+
+
+func cargar_personaje_social() -> void:
+	if not _personaje_social.is_empty() or _http_personaje_social == null:
+		return
+
+	var headers := PackedStringArray([
+		"apikey: " + SUPABASE_KEY,
+		"Content-Type: application/json",
+		"Accept: application/json"
+	])
+
+	var resultado := _http_personaje_social.request(
+		SUPABASE_URL + API_PERSONAJE_SOCIAL,
+		headers,
+		HTTPClient.METHOD_GET
+	)
+
+	if resultado != OK:
+		print("SupabaseClient: no se pudo solicitar reglas sociales → ", resultado)
+
+
+func _al_completar_personaje_social(
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		print("SupabaseClient: error de red cargando reglas sociales.")
+		return
+	if codigo_http < 200 or codigo_http >= 300:
+		print("SupabaseClient: HTTP ", codigo_http, " cargando reglas sociales → ", cuerpo.get_string_from_utf8())
+		return
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:
+		print("SupabaseClient: reglas sociales no son una lista JSON válida.")
+		return
+	_personaje_social.clear()
+	for regla_variant in json.data as Array:
+		if regla_variant is Dictionary:
+			_personaje_social.append((regla_variant as Dictionary).duplicate(true))
+	print("SupabaseClient: reglas sociales cargadas → ", _personaje_social.size())
+	personaje_social_cargado.emit(_personaje_social.duplicate(true))
+
+
+func obtener_personaje_social() -> Array:
+	return _personaje_social.duplicate(true)
+
+
+func obtener_regla_social_personaje(personaje_id: String) -> Dictionary:
+	for regla_variant in _personaje_social:
+		if not regla_variant is Dictionary:
+			continue
+		var regla := regla_variant as Dictionary
+		if str(regla.get("personaje_game_id", "")) == personaje_id:
+			return regla.duplicate(true)
+	return {}
 
 
 func cargar_especie_eterium_game() -> void:
