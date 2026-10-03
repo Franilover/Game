@@ -76,11 +76,53 @@ func cargar_datos(biomas: Array, ecosistemas: Array, ecosistema_indices: Diction
 						indices.append(indice)
 		_bioma_ecosistemas.append(indices)
 
+# Distribución mundial. Pradera es el bioma de superficie dominante;
+# los biomas especiales ocupan porciones menores. Los pesos se aplican
+# por tipo de bioma, no por el orden de las filas de Supabase.
+const BIOME_WEIGHTS: Dictionary = {
+	BiomeKind.PRADERA: 0.30,
+	BiomeKind.BOSQUE: 0.18,
+	BiomeKind.MONTANA: 0.10,
+	BiomeKind.DESIERTO: 0.10,
+	BiomeKind.MARINO: 0.10,
+	BiomeKind.AGUA_DULCE: 0.07,
+	BiomeKind.HUMEDAL: 0.07,
+	BiomeKind.TUNDRA: 0.05,
+	BiomeKind.ABISMO: 0.03,
+	BiomeKind.OTHER: 0.00,
+}
+
 func bioma_index_at_tile(tile: Vector2i) -> int:
 	if _biomas.is_empty() or _biome_noise == null:
 		return -1
-	var normalizado := (_biome_noise.get_noise_2d(tile.x, tile.y) + 1.0) * 0.5
-	return clampi(floori(normalizado * _biomas.size()), 0, _biomas.size() - 1)
+
+	var normalizado := (
+		_biome_noise.get_noise_2d(tile.x, tile.y)
+		+ 1.0
+	) * 0.5
+
+	var acumulado := 0.0
+	var ultimo_indice := 0
+
+	for indice in range(_biomas.size()):
+		var kind := BiomeKind.OTHER
+		if indice < _bioma_kinds.size():
+			kind = int(_bioma_kinds[indice])
+
+		var peso := float(
+			BIOME_WEIGHTS.get(kind, 0.0)
+		)
+
+		if peso <= 0.0:
+			continue
+
+		acumulado += peso
+		ultimo_indice = indice
+
+		if normalizado < acumulado:
+			return indice
+
+	return ultimo_indice
 
 func ecosistema_index_at_tile(tile: Vector2i, bioma_index: int) -> int:
 	if bioma_index < 0 or bioma_index >= _bioma_ecosistemas.size():
