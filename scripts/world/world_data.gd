@@ -32,6 +32,7 @@ var _personajes_game: Array[Dictionary] = []
 var _dialogos_game: Array[Dictionary] = []
 var _misiones_game: Array[Dictionary] = []
 var _reinos_game: Array[Dictionary] = []
+var _props_game: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -370,6 +371,7 @@ func _construir_indices() -> void:
 	_dialogos_game.clear()
 	_misiones_game.clear()
 	_reinos_game.clear()
+	_props_game.clear()
 
 	var reinos_variant: Variant = mundo.get(
 		"reinos_game",
@@ -383,6 +385,20 @@ func _construir_indices() -> void:
 
 			_reinos_game.append(
 				(reino_variant as Dictionary).duplicate(true)
+			)
+
+	var props_variant: Variant = mundo.get(
+		"props_game",
+		[]
+	)
+
+	if props_variant is Array:
+		for prop_variant in props_variant:
+			if not prop_variant is Dictionary:
+				continue
+
+			_props_game.append(
+				(prop_variant as Dictionary).duplicate(true)
 			)
 
 	var misiones_variant: Variant = mundo.get(
@@ -608,6 +624,15 @@ func buscar_criatura_por_nombre(
 			return criatura.duplicate(true)
 
 	return {}
+
+
+func obtener_props_game() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+
+	for prop in _props_game:
+		resultado.append(prop.duplicate(true))
+
+	return resultado
 
 
 func obtener_reinos_game() -> Array[Dictionary]:
