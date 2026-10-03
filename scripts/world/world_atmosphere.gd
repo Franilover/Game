@@ -258,7 +258,7 @@ func _actualizar_estacion() -> void:
 		)
 		return
 
-	inicio_dia += duracion
+		inicio_dia += duracion
 
 
 func _actualizar_iluminacion() -> void:
