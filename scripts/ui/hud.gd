@@ -818,15 +818,23 @@ func ocultar_interaccion() -> void:
 	interaction_prompt.visible = false
 
 
+func _obtener_mission_manager() -> Node:
+	return get_node_or_null("/root/MissionManager")
+
+
 func _conectar_senales_misiones() -> void:
-	if not MissionManager.misiones_cargadas.is_connected(_actualizar_panel_misiones):
-		MissionManager.misiones_cargadas.connect(_actualizar_panel_misiones)
+	var manager := _obtener_mission_manager()
+	if manager == null:
+		return
 
-	if not MissionManager.progreso_actualizado.is_connected(_al_progreso_mision):
-		MissionManager.progreso_actualizado.connect(_al_progreso_mision)
+	if not manager.misiones_cargadas.is_connected(_actualizar_panel_misiones):
+		manager.misiones_cargadas.connect(_actualizar_panel_misiones)
 
-	if not MissionManager.mision_completada.is_connected(_al_mision_completada):
-		MissionManager.mision_completada.connect(_al_mision_completada)
+	if not manager.progreso_actualizado.is_connected(_al_progreso_mision):
+		manager.progreso_actualizado.connect(_al_progreso_mision)
+
+	if not manager.mision_completada.is_connected(_al_mision_completada):
+		manager.mision_completada.connect(_al_mision_completada)
 
 
 func _al_progreso_mision(
@@ -913,7 +921,11 @@ func _actualizar_panel_misiones() -> void:
 
 	_limpiar_lista_misiones()
 
-	var misiones: Array[Dictionary] = MissionManager.obtener_misiones()
+	var manager := _obtener_mission_manager()
+	if manager == null:
+		return
+
+	var misiones: Array[Dictionary] = manager.obtener_misiones()
 	if misiones.is_empty():
 		var vacio := Label.new()
 		vacio.text = "No hay misiones registradas."
@@ -923,7 +935,7 @@ func _actualizar_panel_misiones() -> void:
 		return
 
 	for mision in misiones:
-		var estado_mision := MissionManager.obtener_estado_mision(
+		var estado_mision := manager.obtener_estado_mision(
 			str(mision.get("id", ""))
 		)
 
