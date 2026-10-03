@@ -77,6 +77,16 @@ func _es_compatible(objeto: Dictionary) -> bool:
 	if clave_equipo == "mano_secundaria":
 		return tipo == "arma" or tipo == "herramienta"
 
+	if tipo != "armadura":
+		return false
+
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+
+	var propiedades := propiedades_variant as Dictionary
+	return str(propiedades.get("ranura_equipamiento", "")).strip_edges().to_lower() == clave_equipo
+
 	var tipo_variant: Variant = objeto.get("tipo_objeto", {})
 	if not tipo_variant is Dictionary:
 		return false
