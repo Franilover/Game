@@ -36,6 +36,7 @@ signal stamina_changed(current: float, maximum: float)
 
 @export_category("Correr")
 @export var run_stamina_cost: float = 10.0
+@export var shift_run_hold_threshold: float = 0.18
 
 
 enum State {
@@ -70,6 +71,8 @@ var _jump_cooldown_timer: float = 0.0
 
 var _dash_time: float = 0.0
 var _dash_cooldown_timer: float = 0.0
+var _shift_hold_timer: float = 0.0
+var _shift_was_pressed: bool = false
 
 var _action_direction: Vector2 = Vector2.DOWN
 var _base_visual_position: Vector2 = Vector2.ZERO
@@ -143,19 +146,28 @@ func _physics_process(delta: float) -> void:
 
 	_eterium_heal_timer = 0.0
 
-	# Esquiva.
-	# Reutilizamos el DASH existente porque ya proporciona
-	# movimiento rápido e invulnerabilidad durante la acción.
-	if Input.is_action_just_pressed("dodge"):
-		if _puede_hacer_dash():
-			_iniciar_dash()
-			return
+	# Shift tiene dos funciones:
+	# toque corto = dash
+	# mantenerlo = correr
+	var shift_pressed := Input.is_action_pressed("run")
 
-	# Dash alternativo.
-	if Input.is_action_just_pressed("dash"):
-		if _puede_hacer_dash():
-			_iniciar_dash()
-			return
+	if shift_pressed:
+		_shift_hold_timer += delta
+	else:
+		if (
+			_shift_was_pressed
+			and _shift_hold_timer < shift_run_hold_threshold
+			and state == State.IDLE
+		):
+			if _puede_hacer_dash():
+				_iniciar_dash()
+				_shift_hold_timer = 0.0
+				_shift_was_pressed = false
+				return
+
+		_shift_hold_timer = 0.0
+
+	_shift_was_pressed = shift_pressed
 
 	# Movimiento normal.
 	var direction := Input.get_vector(
@@ -166,11 +178,12 @@ func _physics_process(delta: float) -> void:
 	)
 
 	var eterium_sprint := false
-	if Input.is_action_pressed("use_ium") and direction != Vector2.ZERO:
+	if Input.is_action_pressed("eterium_sprint") and direction != Vector2.ZERO:
 		eterium_sprint = _procesar_carrera_eterium(delta)
 
 	var is_running := (
-		Input.is_action_pressed("run")
+		shift_pressed
+		and _shift_hold_timer >= shift_run_hold_threshold
 		and direction != Vector2.ZERO
 		and stamina > 0.0
 		and not eterium_sprint
@@ -312,6 +325,10 @@ func _esta_bloqueado_por_interfaz() -> bool:
 	if is_instance_valid(_admin_console_ref):
 		if bool(_admin_console_ref.get("_abierto")):
 			return true
+
+	var inventory := get_tree().get_first_node_in_group("inventory")
+	if inventory is CanvasItem and bool((inventory as CanvasItem).visible):
+		return true
 
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud != null and hud.has_method(
