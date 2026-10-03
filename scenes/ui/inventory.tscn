@@ -34,6 +34,8 @@ border_width_bottom = 2
 border_color = Color(0.74, 0.62, 0.34, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
+expand_margin_left = 30.0
+expand_margin_right = 30.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_tab_unselected"]
 bg_color = Color(0.12, 0.075, 0.045, 0.95)
@@ -44,6 +46,8 @@ border_width_bottom = 1
 border_color = Color(0.29, 0.19, 0.12, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
+expand_margin_left = 30.0
+expand_margin_right = 30.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_tab_hovered"]
 bg_color = Color(0.19, 0.13, 0.08, 1)
@@ -54,6 +58,8 @@ border_width_bottom = 2
 border_color = Color(0.55, 0.40, 0.22, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
+expand_margin_left = 30.0
+expand_margin_right = 30.0
 
 
 [sub_resource type="StyleBoxEmpty" id="StyleBox_tab_focus"]
@@ -104,28 +110,6 @@ theme_override_constants/margin_bottom = 18
 [node name="Column" type="VBoxContainer" parent="Window/Margin" unique_id=446694475]
 layout_mode = 2
 theme_override_constants/separation = 14
-
-[node name="Header" type="HBoxContainer" parent="Window/Margin/Column" unique_id=167969704]
-layout_mode = 2
-
-[node name="Title" type="Label" parent="Window/Margin/Column/Header" unique_id=1828033531]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
-theme_override_colors/font_outline_color = Color(0.075, 0.05, 0.035, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 20
-text = "INVENTARIO"
-
-[node name="CloseHint" type="Label" parent="Window/Margin/Column/Header" unique_id=796849284]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
-theme_override_font_sizes/font_size = 10
-text = "[ I ] Cerrar"
-vertical_alignment = 1
-
-[node name="Separator" type="HSeparator" parent="Window/Margin/Column" unique_id=1047904732]
-layout_mode = 2
 
 [node name="Tabs" type="TabContainer" parent="Window/Margin/Column" unique_id=3001000100]
 layout_mode = 2
