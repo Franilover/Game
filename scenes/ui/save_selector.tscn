@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/save_selector.gd" id="1_save_selector"]
+[ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_overlay"]
 bg_color = Color(0.02, 0.015, 0.01, 0.78)
@@ -153,3 +154,6 @@ text = "Volver"
 
 [connection signal="pressed" from="Panel/Margin/Column/NewRow/CreateButton" to="." method="_on_create_pressed"]
 [connection signal="pressed" from="Panel/Margin/Column/BackButton" to="." method="_on_back_pressed"]
+
+
+[node name="CharacterCreation" parent="." instance=ExtResource("2_character_creation")]
