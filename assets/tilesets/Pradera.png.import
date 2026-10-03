@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bfyr57pq2ym8x"
-path="res://.godot/imported/Dirt.png-a6d9a94974fc055d06c76e7a7d0f9eea.ctex"
+uid="uid://uauvarvrj8u7"
+path="res://.godot/imported/Pradera.png-8aebf9afca1b56a9ca9e4a1c8cab4eee.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tilesets/Dirt.png"
-dest_files=["res://.godot/imported/Dirt.png-a6d9a94974fc055d06c76e7a7d0f9eea.ctex"]
+source_file="res://assets/tilesets/Pradera.png"
+dest_files=["res://.godot/imported/Pradera.png-8aebf9afca1b56a9ca9e4a1c8cab4eee.ctex"]
 
 [params]
 

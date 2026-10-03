@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://biofaeghx0im0"
-path="res://.godot/imported/Mountain.png-7103c08f8e9b058df1fa3542fe47714f.ctex"
+path="res://.godot/imported/Montaña.png-c75650964715693dd353d8f1e2fb7282.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tilesets/Mountain.png"
-dest_files=["res://.godot/imported/Mountain.png-7103c08f8e9b058df1fa3542fe47714f.ctex"]
+source_file="res://assets/tilesets/Montaña.png"
+dest_files=["res://.godot/imported/Montaña.png-c75650964715693dd353d8f1e2fb7282.ctex"]
 
 [params]
 

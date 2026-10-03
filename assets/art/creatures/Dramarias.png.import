@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c2rxfr6ky0hms"
-path="res://.godot/imported/Forest.png-6ace853b4c8c6e95a0ceea33bb915411.ctex"
+uid="uid://bh5bq51qk5yba"
+path="res://.godot/imported/Dramarias.png-aa6747c49c7b25a114de380c2d4ccc34.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tilesets/Forest.png"
-dest_files=["res://.godot/imported/Forest.png-6ace853b4c8c6e95a0ceea33bb915411.ctex"]
+source_file="res://assets/art/creatures/Dramarias.png"
+dest_files=["res://.godot/imported/Dramarias.png-aa6747c49c7b25a114de380c2d4ccc34.ctex"]
 
 [params]
 

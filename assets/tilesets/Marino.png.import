@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cw1ibf0j658kg"
-path="res://.godot/imported/world_tileset.png-a558ce5668feb977163096060c4516db.ctex"
+uid="uid://cbvnmltw5ki5y"
+path="res://.godot/imported/Marino.png-1c62fd23a42a25df9e8fd969d67b73ad.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/tilesets/world_tileset.png"
-dest_files=["res://.godot/imported/world_tileset.png-a558ce5668feb977163096060c4516db.ctex"]
+source_file="res://assets/tilesets/Marino.png"
+dest_files=["res://.godot/imported/Marino.png-1c62fd23a42a25df9e8fd969d67b73ad.ctex"]
 
 [params]
 

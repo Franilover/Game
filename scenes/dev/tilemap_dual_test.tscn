@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://rdij4p20xc7b" path="res://scripts/dev/tilemap_dual_test.gd" id="1_test"]
 [ext_resource type="Script" uid="uid://cnorbhdwg6btn" path="res://addons/TileMapDual/tile_map_dual.gd" id="2_dual"]
 [ext_resource type="Material" uid="uid://cmbcfxlkxxnwq" path="res://addons/TileMapDual/ghost_material.tres" id="2_x2tdu"]
-[ext_resource type="Texture2D" uid="uid://uauvarvrj8u7" path="res://assets/tilesets/Grass.png" id="3_fm74f"]
+[ext_resource type="Texture2D" uid="uid://uauvarvrj8u7" path="res://assets/tilesets/Pasto.png" id="3_fm74f"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4ap8x"]
 texture = ExtResource("3_fm74f")
