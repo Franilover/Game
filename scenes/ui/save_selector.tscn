@@ -120,6 +120,25 @@ custom_minimum_size = Vector2(120, 42)
 layout_mode = 2
 text = "Crear y jugar"
 
+[node name="SeedRow" type="HBoxContainer" parent="Panel/Margin/Column"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SeedLabel" type="Label" parent="Panel/Margin/Column/SeedRow"]
+custom_minimum_size = Vector2(92, 42)
+layout_mode = 2
+text = "Semilla"
+vertical_alignment = 1
+
+[node name="SeedInput" type="LineEdit" parent="Panel/Margin/Column/SeedRow"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBox_input")
+placeholder_text = "Vacío = semilla aleatoria"
+max_length = 20
+alignment = 1
+
 [node name="Status" type="Label" parent="Panel/Margin/Column"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
