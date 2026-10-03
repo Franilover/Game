@@ -107,6 +107,15 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 
 	var relacion: Dictionary = relacion_variant as Dictionary
 
+	var skin := TextureRect.new()
+	var ruta_skin := "res://assets/art/characters/" + nombre + ".png"
+	if ResourceLoader.exists(ruta_skin):
+		skin.texture = load(ruta_skin)
+		skin.custom_minimum_size = Vector2(0, 96)
+		skin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		skin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		detalle.add_child(skin)
+
 	var titulo := Label.new()
 	titulo.text = nombre
 	titulo.add_theme_font_size_override("font_size", 20)
