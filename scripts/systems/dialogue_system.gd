@@ -14,6 +14,7 @@ var text_label: Label = null
 var hint_label: Label = null
 var action_button: Button = null
 var cancel_button: Button = null
+var _botones_accion: HBoxContainer = null
 
 var _acciones: Array[Dictionary] = []
 
