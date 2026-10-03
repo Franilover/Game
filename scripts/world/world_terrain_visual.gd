@@ -44,6 +44,7 @@ var _base_tiles: Dictionary = {}
 var _next_source_id: int = 0
 var _dirty_cells: Array[Vector2i] = []
 var _dirty_lookup: Dictionary = {}
+const UPDATE_NEIGHBORS: Array[Vector2i] = [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
@@ -59,7 +60,7 @@ func configurar(nuevo_tile_size: int) -> void:
 	z_as_relative = false
 	z_index = -1000
 	tilemap_dual.z_as_relative = false
-	tilemap_dual.z_index = -1000
+	tilemap_dual.z_index = -4096
 	tilemap_dual.rendering_quadrant_size = 32
 
 	# Primero entra al árbol con un TileSet vacío. TileMapDual inicializa
@@ -177,11 +178,16 @@ func set_zone(cell: Vector2i, zone: int, bioma_nombre: String = "") -> void:
 		return
 
 	var data: Dictionary = _base_tiles[clave]
+	# Una celda de terreno siempre tiene una sola representación.
+	tilemap_dual.erase_cell(cell)
 	tilemap_dual.set_cell(cell, int(data["source_id"]), data["atlas"])
 
-	if not _dirty_lookup.has(cell):
-		_dirty_lookup[cell] = true
-		_dirty_cells.append(cell)
+	for offset: Vector2i in UPDATE_NEIGHBORS:
+		var dirty_cell := cell + offset
+		if _dirty_lookup.has(dirty_cell):
+			continue
+		_dirty_lookup[dirty_cell] = true
+		_dirty_cells.append(dirty_cell)
 
 func _clave_tile(bioma_nombre: String, zone: int) -> String:
 	return bioma_nombre.strip_edges() + "::" + str(zone)
