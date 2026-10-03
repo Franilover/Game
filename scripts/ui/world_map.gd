@@ -183,17 +183,6 @@ func _draw() -> void:
 		Color("#fff2c2")
 	)
 
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(8.0, 21.0),
-		"MAPA  ·  TERRENO DESCUBIERTO: "
-		+ str(_explorado.size()),
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1.0,
-		11,
-		Color("#d0ad73")
-	)
-
 
 func _color_zona(tile: Vector2i) -> Color:
 	if _world_generator == null:
