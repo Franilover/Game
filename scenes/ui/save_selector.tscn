@@ -77,12 +77,14 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="Title" type="Label" parent="Panel/Margin/Column"]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Aventura"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Panel/Margin/Column"]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Elige una partida guardada en este dispositivo."
@@ -141,6 +143,7 @@ max_length = 20
 alignment = 1
 
 [node name="Status" type="Label" parent="Panel/Margin/Column"]
+visible = false
 layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
 theme_override_font_sizes/font_size = 10
