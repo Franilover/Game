@@ -342,20 +342,26 @@ func _mostrar_registro(indice: int) -> void:
 
 
 func _agregar_ecosistemas_descubiertos(partes: Array[String], bioma: Dictionary) -> void:
-	var descubiertos := GameState.obtener_descubrimientos_mundo().get("ecosistemas", {})
+	var descubiertos_variant: Variant = GameState.obtener_descubrimientos_mundo().get("ecosistemas", {})
+	var descubiertos: Dictionary = {}
+	if descubiertos_variant is Dictionary:
+		descubiertos = (descubiertos_variant as Dictionary).duplicate(true)
 	var nombres: Array[String] = []
 	for eco_variant in bioma.get("ecosistemas", []):
 		if not eco_variant is Dictionary:
 			continue
 		var eco := eco_variant as Dictionary
 		var id := str(eco.get("id", ""))
-		if descubiertos is Dictionary and descubiertos.has(id):
+		if descubiertos.has(id):
 			nombres.append(str(eco.get("nombre", "Sin nombre")))
 	partes.append("[color=#8f754f]Ecosistemas conocidos:[/color] " + _lista_nombres(nombres))
 
 
 func _agregar_habitats_descubiertos(partes: Array[String], ecosistema: Dictionary) -> void:
-	var descubiertos := GameState.obtener_descubrimientos_mundo().get("habitats", {})
+	var descubiertos_variant: Variant = GameState.obtener_descubrimientos_mundo().get("habitats", {})
+	var descubiertos: Dictionary = {}
+	if descubiertos_variant is Dictionary:
+		descubiertos = (descubiertos_variant as Dictionary).duplicate(true)
 	var nombres: Array[String] = []
 	for habitat_variant in ecosistema.get("habitats", []):
 		if not habitat_variant is Dictionary:
@@ -368,7 +374,10 @@ func _agregar_habitats_descubiertos(partes: Array[String], ecosistema: Dictionar
 
 
 func _agregar_criaturas_descubiertas(partes: Array[String], habitat: Dictionary) -> void:
-	var descubiertos := GameState.obtener_descubrimientos_mundo().get("criaturas", {})
+	var descubiertos_variant: Variant = GameState.obtener_descubrimientos_mundo().get("criaturas", {})
+	var descubiertos: Dictionary = {}
+	if descubiertos_variant is Dictionary:
+		descubiertos = (descubiertos_variant as Dictionary).duplicate(true)
 	var nombres: Array[String] = []
 	for criatura_variant in habitat.get("criaturas", []):
 		if not criatura_variant is Dictionary:
