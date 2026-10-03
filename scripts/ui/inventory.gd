@@ -201,6 +201,12 @@ func _crear_slots() -> void:
 				_al_iniciar_arrastre
 			)
 
+		if slot.has_signal("arrastre_recibido"):
+			slot.connect(
+				"arrastre_recibido",
+				_al_recibir_arrastre
+			)
+
 		slot_nodes.append(slot)
 
 	actualizar()
@@ -218,6 +224,55 @@ func actualizar() -> void:
 			slot.limpiar()
 		else:
 			slot.configurar(items[i])
+
+
+func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
+	var indice_destino: int = slot_nodes.find(slot)
+	var indice_origen: int = int(datos_arrastre.get("indice", -1))
+
+	if indice_origen < 0 or indice_origen >= items.size():
+		return
+	if indice_destino < 0 or indice_destino >= items.size():
+		return
+	if indice_origen == indice_destino:
+		return
+	if items[indice_origen].is_empty():
+		return
+
+	var origen: Dictionary = items[indice_origen].duplicate(true)
+	var destino: Dictionary = items[indice_destino].duplicate(true)
+
+	# Si son objetos apilables del mismo tipo, llenamos primero el destino.
+	if not destino.is_empty() and _puede_apilar_con(destino, origen):
+		var max_stack: int = maxi(1, int(destino.get("max_stack", 1)))
+		var cantidad_destino: int = maxi(1, int(destino.get("cantidad", 1)))
+		var cantidad_origen: int = maxi(1, int(origen.get("cantidad", 1)))
+		var espacio: int = max_stack - cantidad_destino
+
+		if espacio > 0:
+			var movido: int = mini(espacio, cantidad_origen)
+			destino["cantidad"] = cantidad_destino + movido
+			cantidad_origen -= movido
+
+			if cantidad_origen <= 0:
+				items[indice_origen] = {}
+			else:
+				origen["cantidad"] = cantidad_origen
+				items[indice_origen] = origen
+
+			items[indice_destino] = destino
+			actualizar()
+			inventory_changed.emit()
+			_emitir_objeto_activo()
+			return
+
+	# Si no se pueden apilar, intercambiamos ambos slots.
+	items[indice_origen] = destino
+	items[indice_destino] = origen
+
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
 
 
 func _al_iniciar_arrastre(slot: Button, datos: Dictionary) -> void:
