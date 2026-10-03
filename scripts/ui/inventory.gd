@@ -82,7 +82,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if key_event.keycode == KEY_I:
+		if event.is_action_pressed("inventory"):
 			toggle()
 			get_viewport().set_input_as_handled()
 
