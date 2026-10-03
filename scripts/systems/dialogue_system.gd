@@ -12,6 +12,9 @@ var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
 var text_label: Label = null
 var hint_label: Label = null
+var action_button: Button = null
+
+var _acciones: Array[Dictionary] = []
 
 var _abierto: bool = false
 var _lineas: Array[Dictionary] = []
@@ -48,6 +51,7 @@ func _process(delta: float) -> void:
 	_temporizador_texto = _intervalo_caracter
 	_indice_caracter += 1
 	text_label.text = _texto_completo.substr(0, _indice_caracter)
+	_actualizar_boton_accion()
 
 
 func _input(event: InputEvent) -> void:
@@ -89,7 +93,8 @@ func abrir_desde(fuente: Node) -> bool:
 
 
 func abrir(datos: Dictionary, fuente: Node = null) -> bool:
-	var lineas := _normalizar_lineas(datos)
+	var datos_seleccionados := _seleccionar_dialogo(datos)
+	var lineas := _normalizar_lineas(datos_seleccionados)
 
 	if lineas.is_empty():
 		return false
@@ -102,11 +107,22 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 
 	_fuente = fuente
 	_lineas = lineas
+	_acciones.clear()
+
+	var acciones_variant: Variant = datos_seleccionados.get("acciones", [])
+	if acciones_variant is Array:
+		for accion_variant in acciones_variant as Array:
+			if accion_variant is Dictionary:
+				_acciones.append((accion_variant as Dictionary).duplicate(true))
 
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id.is_empty():
-			MissionManager.registrar_dialogo(personaje_id)
+			MissionManager.registrar_dialogo_desde_fuente(
+				personaje_id,
+				str(datos_seleccionados.get("clave", "principal")),
+				_fuente
+			)
 	_indice_linea = 0
 	_abierto = true
 
@@ -149,6 +165,10 @@ func cerrar() -> void:
 			_fuente.call("liberar_control_movimiento")
 
 	_fuente = null
+	_acciones.clear()
+
+	if action_button != null:
+		action_button.visible = false
 
 	if dialogue_panel != null:
 		dialogue_panel.visible = false
@@ -198,6 +218,99 @@ func _mostrar_linea_actual() -> void:
 	_temporizador_texto = 0.0
 	text_label.text = ""
 	hint_label.text = "[ LMB ] Continuar · [ ESC ] Cerrar"
+	_actualizar_boton_accion()
+
+
+func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
+	var variantes_variant: Variant = datos.get("variantes", [])
+	if not variantes_variant is Array:
+		return datos.duplicate(true)
+
+	var principal: Dictionary = {}
+	for variante_variant in variantes_variant as Array:
+		if not variante_variant is Dictionary:
+			continue
+
+		var variante := (variante_variant as Dictionary).duplicate(true)
+		var requisito_variant: Variant = variante.get("requisito", {})
+
+		if requisito_variant is Dictionary:
+			var requisito := requisito_variant as Dictionary
+			var mision_clave := str(requisito.get("mision_clave", "")).strip_edges()
+			var estado_requerido := str(requisito.get("estado", "")).strip_edges().to_lower()
+
+			if not mision_clave.is_empty() and not estado_requerido.is_empty():
+				var mision := MissionManager.buscar_mision_por_clave(mision_clave)
+				if not mision.is_empty():
+					var mision_id := str(mision.get("id", ""))
+					var estado_actual := str(
+						MissionManager.obtener_estado_mision(mision_id).get(
+							"estado",
+							"disponible"
+						)
+					).to_lower()
+
+					if estado_actual == estado_requerido:
+						return variante
+			continue
+
+		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
+			principal = variante
+
+	if not principal.is_empty():
+		return principal
+
+	return datos.duplicate(true)
+
+
+func _actualizar_boton_accion() -> void:
+	if action_button == null:
+		return
+
+	if _acciones.is_empty():
+		action_button.visible = false
+		return
+
+	var texto_completo := _texto_completo.length()
+	if _indice_caracter < texto_completo:
+		action_button.visible = false
+		return
+
+	var accion: Dictionary = _acciones[0]
+	action_button.text = str(accion.get("texto", "Aceptar"))
+	action_button.visible = true
+
+
+func _ejecutar_accion_dialogo() -> void:
+	if _acciones.is_empty():
+		return
+
+	var accion: Dictionary = _acciones[0]
+	var tipo := str(accion.get("tipo", "")).strip_edges().to_lower()
+
+	match tipo:
+		"aceptar_mision":
+			var clave := str(accion.get("mision_clave", "")).strip_edges()
+			if clave.is_empty():
+				return
+
+			if MissionManager.aceptar_mision(clave):
+				_acciones.clear()
+				action_button.visible = false
+				hint_label.text = "Misión aceptada · [ LMB ] Continuar"
+				Events.notification_pushed.emit(
+					"Misión aceptada: "
+					+ str(MissionManager.buscar_mision_por_clave(clave).get("nombre", clave))
+				)
+				return
+
+		"seguir_jugador":
+			if is_instance_valid(_fuente) and _fuente.has_method("iniciar_seguimiento_jugador"):
+				if _fuente.call("iniciar_seguimiento_jugador", player):
+					_acciones.clear()
+					action_button.visible = false
+					hint_label.text = "Abel te está siguiendo · [ LMB ] Cerrar"
+					return
 
 
 func _normalizar_lineas(datos: Dictionary) -> Array[Dictionary]:
@@ -330,6 +443,14 @@ func _crear_interfaz() -> void:
 	)
 	text_label.add_theme_font_size_override("font_size", 13)
 	column.add_child(text_label)
+
+	action_button = Button.new()
+	action_button.name = "DialogueAction"
+	action_button.visible = false
+	action_button.custom_minimum_size = Vector2(0, 34)
+	action_button.add_theme_font_size_override("font_size", 11)
+	action_button.pressed.connect(_ejecutar_accion_dialogo)
+	column.add_child(action_button)
 
 	hint_label = Label.new()
 	hint_label.name = "Hint"
