@@ -46,6 +46,7 @@ var _terrain: WorldTerrain
 var _creatures_by_chunk: Dictionary = {}
 var _characters_by_chunk: Dictionary = {}
 var _spawned_characters: Dictionary = {}
+var _props_by_chunk: Dictionary = {}
 
 
 func configurar(
@@ -319,6 +320,11 @@ func spawn_chunk(
 	)
 
 	_spawn_characters_in_chunk(
+		chunk_coord,
+		limite_chunk,
+		rng
+	)
+	_spawn_props_in_chunk(
 		chunk_coord,
 		limite_chunk,
 		rng
@@ -788,6 +794,19 @@ func despawn_chunk(
 
 	_characters_by_chunk.erase(chunk_coord)
 
+	if _props_by_chunk.has(chunk_coord):
+		var props_variant: Variant = _props_by_chunk[chunk_coord]
+		if props_variant is Array:
+			for prop_variant in props_variant:
+				if not prop_variant is Node:
+					continue
+
+				var prop := prop_variant as Node
+				if is_instance_valid(prop):
+					prop.queue_free()
+
+		_props_by_chunk.erase(chunk_coord)
+
 
 func _spawn_characters_in_chunk(
 	chunk_coord: Vector2i,
@@ -874,6 +893,136 @@ func _spawn_characters_in_chunk(
 	if not creados.is_empty():
 		_characters_by_chunk[chunk_coord] = creados
 		print("WorldEntitySpawner: personajes en reino → chunk ", chunk_coord, " → ", creados.size())
+
+
+func _spawn_props_in_chunk(
+	chunk_coord: Vector2i,
+	limite_chunk: Rect2,
+	rng: RandomNumberGenerator
+) -> void:
+	var props := WorldData.obtener_props_game()
+	if props.is_empty():
+		return
+
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		return
+
+	var entities: Node = current_scene.get_node_or_null("Entities")
+	if entities == null:
+		return
+
+	var creados: Array = []
+	var max_props := 6
+	var intentos := 48
+
+	for _intento in range(intentos):
+		if creados.size() >= max_props:
+			break
+
+		var tile := Vector2i(
+			chunk_coord.x * _terrain.chunk_size_tiles
+			+ rng.randi_range(0, _terrain.chunk_size_tiles - 1),
+			chunk_coord.y * _terrain.chunk_size_tiles
+			+ rng.randi_range(0, _terrain.chunk_size_tiles - 1)
+		)
+
+		if not _terrain.is_walkable(tile):
+			continue
+
+		var reino_ids := _obtener_reinos_game_ids_at(tile)
+		if reino_ids.is_empty():
+			continue
+
+		var candidatos: Array[Dictionary] = []
+		for prop_variant in props:
+			if not prop_variant is Dictionary:
+				continue
+
+			var prop := prop_variant as Dictionary
+			var reino_game_id := str(prop.get("reino_game_id", ""))
+			if reino_game_id.is_empty() or reino_game_id not in reino_ids:
+				continue
+
+			var asset_path := str(prop.get("asset_path", "")).strip_edges()
+			if asset_path.is_empty():
+				continue
+
+			candidatos.append(prop)
+
+		if candidatos.is_empty():
+			continue
+
+		var elegido := _elegir_prop_ponderado(candidatos, rng)
+		if elegido.is_empty():
+			continue
+
+		var prop_node: Node = preload("res://scenes/wold/world_prop.tscn").instantiate()
+		if prop_node == null:
+			continue
+
+		entities.add_child(prop_node)
+		prop_node.global_position = Vector2(
+			(float(tile.x) + 0.5) * _terrain.tile_size,
+			(float(tile.y) + 0.5) * _terrain.tile_size
+		)
+
+		if prop_node is WorldProp:
+			var world_prop := prop_node as WorldProp
+			world_prop.configurar_desde_game_data(elegido)
+			world_prop.configurar_chunk(chunk_coord, limite_chunk)
+
+		creados.append(prop_node)
+
+	if not creados.is_empty():
+		_props_by_chunk[chunk_coord] = creados
+		print(
+			"WorldEntitySpawner: props canonicos → chunk ",
+			chunk_coord,
+			" → ",
+			creados.size()
+		)
+
+
+func _obtener_reinos_game_ids_at(tile: Vector2i) -> Array[String]:
+	var resultado: Array[String] = []
+	var bioma := _terrain.get_bioma_at(tile)
+	if bioma.is_empty():
+		return resultado
+
+	var bioma_id := str(bioma.get("id", ""))
+	if bioma_id.is_empty():
+		return resultado
+
+	for reino in WorldData.obtener_reinos_game_de_bioma(bioma_id):
+		var reino_id := str(reino.get("id", ""))
+		if not reino_id.is_empty():
+			resultado.append(reino_id)
+
+	return resultado
+
+
+func _elegir_prop_ponderado(
+	candidatos: Array[Dictionary],
+	rng: RandomNumberGenerator
+) -> Dictionary:
+	var peso_total := 0.0
+
+	for prop in candidatos:
+		peso_total += maxf(float(prop.get("peso", 1.0)), 0.0)
+
+	if peso_total <= 0.0:
+		return {}
+
+	var objetivo := rng.randf_range(0.0, peso_total)
+	var acumulado := 0.0
+
+	for prop in candidatos:
+		acumulado += maxf(float(prop.get("peso", 1.0)), 0.0)
+		if objetivo <= acumulado:
+			return prop
+
+	return candidatos.back()
 
 
 func _buscar_tile_para_personaje(
