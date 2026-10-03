@@ -44,7 +44,7 @@ func _ready() -> void:
 		location_panel.visible = false
 
 	if interaction_prompt:
-	interaction_prompt.visible = false
+		interaction_prompt.visible = false
 
 	_buscar_player()
 	_buscar_world_generator()
