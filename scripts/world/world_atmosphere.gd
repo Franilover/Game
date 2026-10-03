@@ -29,43 +29,6 @@ func _process(delta: float) -> void:
 	_actualizar_iluminacion()
 
 
-func procesar_jugador() -> void:
-	if _world_generator == null or _etiqueta == null:
-		return
-	var jugador := get_tree().get_first_node_in_group("player")
-	if not jugador is Node2D:
-		return
-	if not _world_generator.has_method("get_tile_at") or not _world_generator.has_method("get_contexto_at"):
-		return
-	var tile_variant: Variant = _world_generator.call("get_tile_at", jugador.global_position)
-	if not tile_variant is Vector2i:
-		return
-	var tile := tile_variant as Vector2i
-	if tile == _ultimo_tile:
-		return
-	_ultimo_tile = tile
-	var contexto_variant: Variant = _world_generator.call("get_contexto_at", jugador.global_position)
-	if not contexto_variant is Dictionary:
-		return
-	var contexto := contexto_variant as Dictionary
-	_etiqueta.text = "%s  |  %s\nBioma: %s\nEcosistema: %s\nHábitat: %s" % [
-		_obtener_periodo(),
-		_obtener_hora_texto(),
-		str(contexto.get("bioma", "—")),
-		str(contexto.get("ecosistema", "—")),
-		str(contexto.get("habitat", "—"))
-	]
-
-
-func _actualizar_etiqueta_hora() -> void:
-	if _etiqueta_hora == null:
-		return
-	_etiqueta_hora.text = "%s  %s\nF3: ocultar" % [
-		_obtener_hora_texto(),
-		_obtener_periodo()
-	]
-
-
 func _actualizar_iluminacion() -> void:
 	if _modulacion == null or not is_instance_valid(_modulacion):
 		return
