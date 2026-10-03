@@ -5,7 +5,7 @@ extends Node
 ## Cada partida corresponde a un JSON independiente en user://partidas/.
 
 const SAVE_DIRECTORY := "user://partidas"
-const SAVE_VERSION: int = 1
+const SAVE_VERSION: int = 2
 const AUTOSAVE_INTERVAL: float = 5.0
 
 var player_health: int = 100
@@ -416,6 +416,27 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 		flags["proceso_ium_equipado"] = (
 			player_flags_variant as Dictionary
 		).duplicate(true)
+
+	var world_gen := get_tree().current_scene.get_node_or_null(
+		"World/WorldGenerator"
+	)
+
+	if world_gen != null:
+		var atmosphere := world_gen.get_node_or_null(
+			"WorldAtmosphere"
+		)
+
+		if atmosphere != null and atmosphere.has_method(
+			"obtener_estado_guardado"
+		):
+			var tiempo_variant: Variant = atmosphere.call(
+				"obtener_estado_guardado"
+			)
+
+			if tiempo_variant is Dictionary:
+				flags["tiempo_mundo"] = (
+					tiempo_variant as Dictionary
+				).duplicate(true)
 
 	var inventario := get_tree().get_first_node_in_group(
 		"inventory"
@@ -927,6 +948,29 @@ func _aplicar_estado_al_juego() -> void:
 				"equipar_proceso_ium",
 				(proceso_variant as Dictionary).duplicate(true)
 			)
+
+	var world_gen := get_tree().current_scene.get_node_or_null(
+		"World/WorldGenerator"
+	)
+
+	if world_gen != null:
+		var atmosphere := world_gen.get_node_or_null(
+			"WorldAtmosphere"
+		)
+
+		var tiempo_variant: Variant = flags.get(
+			"tiempo_mundo",
+			{}
+		)
+
+		if atmosphere != null and tiempo_variant is Dictionary:
+			if atmosphere.has_method(
+				"establecer_estado_guardado"
+			):
+				atmosphere.call(
+					"establecer_estado_guardado",
+					(tiempo_variant as Dictionary).duplicate(true)
+				)
 
 	_partida_aplicada_en_escena = true
 
