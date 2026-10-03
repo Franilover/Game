@@ -279,11 +279,6 @@ func _puede_recolectar(persona: Node) -> bool:
 	)
 
 
-func _tiene_recoleccion_canonica() -> bool:
-	var item_id := _obtener_item_id_recoleccion()
-	return not item_id.is_empty()
-
-
 func _obtener_item_id_recoleccion() -> String:
 	var item_id := str(datos.get("item_id", "")).strip_edges()
 	if not item_id.is_empty():
