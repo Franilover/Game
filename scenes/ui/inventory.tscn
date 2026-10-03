@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://scripts/ui/encyclopedia.gd" id="3_encyclopedia"]
 [ext_resource type="Script" path="res://scripts/ui/world_map.gd" id="4_world_map"]
 [ext_resource type="Script" path="res://scripts/ui/relationships.gd" id="5_relationships"]
+[ext_resource type="Script" path="res://scripts/ui/admin_inventory.gd" id="6_admin_inventory"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_window"]
 bg_color = Color(0.1, 0.065, 0.04, 0.97)
@@ -207,6 +208,22 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_tabs")
 text = "Relaciones"
 
+[node name="Admin" type="Button" parent="Window/Margin/Column/TabButtons" unique_id=3001000205]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
+theme_override_colors/font_hovered_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBox_nav_unselected")
+theme_override_styles/hover = SubResource("StyleBox_nav_hovered")
+theme_override_styles/pressed = SubResource("StyleBox_nav_selected")
+theme_override_styles/focus = SubResource("StyleBox_tab_focus")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_tabs")
+text = "Admin"
+
 [node name="Tabs" type="TabContainer" parent="Window/Margin/Column" unique_id=3001000100]
 layout_mode = 2
 size_flags_vertical = 3
@@ -330,6 +347,11 @@ script = ExtResource("4_world_map")
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("5_relationships")
+
+[node name="Admin" type="Control" parent="Window/Margin/Column/Tabs" unique_id=3001000104]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("6_admin_inventory")
 
 [node name="Hint" type="Label" parent="Window/Margin/Column" unique_id=827274201]
 layout_mode = 2
