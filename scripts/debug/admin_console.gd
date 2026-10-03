@@ -752,33 +752,15 @@ func _comando_help() -> void:
 
 
 func _comando_summon(nombre: String) -> void:
-	var nombre_criatura: String = nombre.strip_edges()
+	var nombre_solicitado: String = nombre.strip_edges()
 
-	if nombre_criatura.is_empty():
+	if nombre_solicitado.is_empty():
 		_agregar_linea(
 			"[color=#d88]"
-			+ "Uso: /summon <criatura>"
-			+ " o /summon Humano <personaje>"
+			+ "Uso: /summon <criatura> o /summon Humano <personaje>"
 			+ "[/color]"
 		)
 		return
-
-	var partes: PackedStringArray = nombre_criatura.split(
-		" ",
-		false
-	)
-
-	if partes.size() >= 2:
-		if partes[0].to_lower() != "humano":
-			_agregar_linea(
-				"[color=#d88]"
-				+ "La forma de invocar un personaje individual es "
-				+ "/summon Humano <personaje>."
-				+ "[/color]"
-			)
-			return
-
-		nombre_criatura = partes[1]
 
 	var world_generator: Node = (
 		get_tree().get_first_node_in_group(
@@ -804,10 +786,13 @@ func _comando_summon(nombre: String) -> void:
 		)
 		return
 
+	# Primero intentamos el texto completo. Esto permite criaturas
+	# cuyos nombres tienen espacios y evita interpretar sus nombres
+	# como si fueran argumentos especiales de Humano.
 	var resultado: Variant = (
 		world_generator.call(
 			"summon_criatura",
-			nombre_criatura
+			nombre_solicitado
 		)
 	)
 
@@ -818,21 +803,58 @@ func _comando_summon(nombre: String) -> void:
 			_agregar_linea(
 				"[color=#9fd18b]"
 				+ "Invocada: "
-				+ str(datos.get("nombre", nombre_criatura))
+				+ str(datos.get("nombre", nombre_solicitado))
 				+ "[/color]"
 			)
-		else:
-			_agregar_linea(
-				"[color=#d88]"
-				+ str(datos.get("mensaje", "No se pudo invocar."))
-				+ "[/color]"
-			)
-	else:
+			return
+
+		# Si no era una criatura/personaje directo, probamos la sintaxis
+		# explícita /summon Humano <personaje>.
+		var partes: PackedStringArray = nombre_solicitado.split(" ", false)
+
+		if partes.size() >= 2 and partes[0].to_lower() == "humano":
+			var nombre_personaje := " ".join(
+				partes.slice(1)
+			).strip_edges()
+
+			if not nombre_personaje.is_empty():
+				resultado = world_generator.call(
+					"summon_criatura",
+					nombre_personaje
+				)
+
+				if resultado is Dictionary:
+					datos = resultado as Dictionary
+
+					if bool(datos.get("ok", false)):
+						_agregar_linea(
+							"[color=#9fd18b]"
+							+ "Invocado: "
+							+ str(datos.get(
+								"nombre",
+								nombre_personaje
+							))
+							+ "[/color]"
+						)
+						return
+
 		_agregar_linea(
 			"[color=#d88]"
-			+ "No se pudo ejecutar /summon."
+			+ str(
+				datos.get(
+					"mensaje",
+					"No se pudo invocar."
+				)
+			)
 			+ "[/color]"
 		)
+		return
+
+	_agregar_linea(
+		"[color=#d88]"
+		+ "No se pudo ejecutar /summon."
+		+ "[/color]"
+	)
 
 
 func _comando_tp(argumentos: String) -> void:
