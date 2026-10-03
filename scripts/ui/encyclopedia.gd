@@ -132,12 +132,14 @@ func _crear_interfaz() -> void:
 	detail_column.add_theme_constant_override("separation", 8)
 	detail_margin.add_child(detail_column)
 
-	var top: HBoxContainer = HBoxContainer.new()
-	top.custom_minimum_size = Vector2(0, 92)
+	var top: VBoxContainer = VBoxContainer.new()
+	top.custom_minimum_size = Vector2(0, 150)
+	top.alignment = BoxContainer.ALIGNMENT_CENTER
+	top.add_theme_constant_override("separation", 5)
 	detail_column.add_child(top)
 
 	_icono = TextureRect.new()
-	_icono.custom_minimum_size = Vector2(92, 92)
+	_icono.custom_minimum_size = Vector2(128, 112)
 	_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -411,6 +413,21 @@ func _mostrar_item(item: TreeItem) -> void:
 	_nombre.text = str(registro.get("nombre", "Sin nombre"))
 	_icono.texture = null
 	_icono.visible = false
+
+	if nivel == "criatura":
+		var nombre_criatura: String = str(
+			registro.get("nombre", "")
+		)
+		var ruta_imagen: String = (
+			"res://assets/art/creatures/"
+			+ nombre_criatura
+			+ ".png"
+		)
+		if ResourceLoader.exists(ruta_imagen):
+			var textura: Texture2D = load(ruta_imagen) as Texture2D
+			if textura != null:
+				_icono.texture = textura
+				_icono.visible = true
 
 	var partes: Array[String] = []
 	partes.append(
