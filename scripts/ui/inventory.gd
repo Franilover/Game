@@ -46,6 +46,7 @@ func _inicializar_navegacion_tabs() -> void:
 	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
+	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
 
 	boton_inventario.pressed.connect(func() -> void:
 		tabs.current_tab = 0
@@ -59,8 +60,15 @@ func _inicializar_navegacion_tabs() -> void:
 	boton_relaciones.pressed.connect(func() -> void:
 		tabs.current_tab = 3
 	)
+	boton_admin.pressed.connect(func() -> void:
+		tabs.current_tab = 4
+		var admin_tab := $Window/Margin/Column/Tabs/Admin as Control
+		if admin_tab.has_method("abrir"):
+			admin_tab.call("abrir", get_tree().get_first_node_in_group("player"))
+	)
 
 	boton_inventario.button_pressed = true
+	_actualizar_admin_tab()
 
 
 func _ready() -> void:
@@ -96,6 +104,22 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 
+func _actualizar_admin_tab() -> void:
+	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
+	var admin_tab := $Window/Margin/Column/Tabs/Admin as Control
+	var jugador := get_tree().get_first_node_in_group("player")
+	var es_admin := false
+	var datos_variant: Variant = GameState.flags.get("personaje_admin", {})
+	if datos_variant is Dictionary:
+		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
+	boton_admin.visible = es_admin
+	admin_tab.visible = es_admin
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 4:
+		$Window/Margin/Column/Tabs.current_tab = 0
+	if es_admin and admin_tab.has_method("abrir"):
+		admin_tab.call("abrir", jugador)
+
+
 func toggle() -> void:
 	if visible:
 		cerrar()
@@ -105,6 +129,7 @@ func toggle() -> void:
 
 func abrir() -> void:
 	visible = true
+	_actualizar_admin_tab()
 	actualizar()
 
 
