@@ -28,6 +28,11 @@ var interaction_body: Label = null
 var interaction_close: Button = null
 var _interaction_panel_open: bool = false
 
+var mission_panel: PanelContainer = null
+var mission_list: VBoxContainer = null
+var mission_hint: Label = null
+var _mission_panel_open: bool = false
+
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 
@@ -39,6 +44,8 @@ func _ready() -> void:
 	_preparar_location()
 	_preparar_aviso_descubrimiento()
 	_preparar_panel_interaccion()
+	_preparar_panel_misiones()
+	_conectar_senales_misiones()
 
 	if location_panel:
 		location_panel.visible = false
@@ -811,6 +818,200 @@ func ocultar_interaccion() -> void:
 	interaction_prompt.visible = false
 
 
+func _conectar_senales_misiones() -> void:
+	if not MissionManager.misiones_cargadas.is_connected(_actualizar_panel_misiones):
+		MissionManager.misiones_cargadas.connect(_actualizar_panel_misiones)
+
+	if not MissionManager.progreso_actualizado.is_connected(_al_progreso_mision):
+		MissionManager.progreso_actualizado.connect(_al_progreso_mision)
+
+	if not MissionManager.mision_completada.is_connected(_al_mision_completada):
+		MissionManager.mision_completada.connect(_al_mision_completada)
+
+
+func _al_progreso_mision(
+	_mision_id: String,
+	_objetivo_id: String,
+	_progreso: int,
+	_requerido: int
+) -> void:
+	if _mission_panel_open:
+		_actualizar_panel_misiones()
+
+
+func _al_mision_completada(_mision: Dictionary) -> void:
+	if _mission_panel_open:
+		_actualizar_panel_misiones()
+
+
+func _preparar_panel_misiones() -> void:
+	mission_panel = PanelContainer.new()
+	mission_panel.name = "MissionPanel"
+	mission_panel.visible = false
+	mission_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	mission_panel.z_index = 2500
+	mission_panel.set_anchors_preset(Control.PRESET_CENTER)
+	mission_panel.position = Vector2(-280.0, -210.0)
+	mission_panel.size = Vector2(560.0, 420.0)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.055, 0.035, 0.98)
+	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
+	style.set_border_width_all(2)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	mission_panel.add_theme_stylebox_override("panel", style)
+
+	var margin := MarginContainer.new()
+	margin.name = "Margin"
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	mission_panel.add_child(margin)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 10)
+	margin.add_child(column)
+
+	var title := Label.new()
+	title.text = "MISIÓNES"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
+	title.add_theme_font_size_override("font_size", 18)
+	column.add_child(title)
+
+	mission_list = VBoxContainer.new()
+	mission_list.name = "MissionList"
+	mission_list.add_theme_constant_override("separation", 8)
+	mission_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(mission_list)
+
+	mission_hint = Label.new()
+	mission_hint.text = "F · Cerrar    ESC · Cerrar"
+	mission_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mission_hint.add_theme_color_override("font_color", Color(0.62, 0.53, 0.42, 1.0))
+	mission_hint.add_theme_font_size_override("font_size", 10)
+	column.add_child(mission_hint)
+
+	add_child(mission_panel)
+
+
+func _limpiar_lista_misiones() -> void:
+	if mission_list == null:
+		return
+
+	for child in mission_list.get_children():
+		child.queue_free()
+
+
+func _actualizar_panel_misiones() -> void:
+	if mission_list == null:
+		return
+
+	_limpiar_lista_misiones()
+
+	var misiones: Array[Dictionary] = MissionManager.obtener_misiones()
+	if misiones.is_empty():
+		var vacio := Label.new()
+		vacio.text = "No hay misiones registradas."
+		vacio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vacio.add_theme_color_override("font_color", Color(0.72, 0.64, 0.52, 1.0))
+		mission_list.add_child(vacio)
+		return
+
+	for mision in misiones:
+		var estado_mision := MissionManager.obtener_estado_mision(
+			str(mision.get("id", ""))
+		)
+
+		var estado := str(estado_mision.get("estado", "disponible"))
+		var titulo_texto := str(mision.get("nombre", "Misión"))
+
+		var bloque := VBoxContainer.new()
+		bloque.add_theme_constant_override("separation", 3)
+		mission_list.add_child(bloque)
+
+		var encabezado := Label.new()
+		var indicador := "✓" if estado == "completada" else "○"
+		var estado_texto := "COMPLETADA" if estado == "completada" else ("EN CURSO" if estado == "activa" else "NO INICIADA")
+		encabezado.text = indicador + "  " + titulo_texto + "  ·  " + estado_texto
+		encabezado.add_theme_color_override(
+			"font_color",
+			Color(0.82, 0.92, 0.68, 1.0) if estado == "completada" else Color(0.9, 0.79, 0.58, 1.0)
+		)
+		encabezado.add_theme_font_size_override("font_size", 13)
+		bloque.add_child(encabezado)
+
+		var descripcion := str(mision.get("descripcion", "")).strip_edges()
+		if not descripcion.is_empty():
+			var desc_label := Label.new()
+			desc_label.text = "   " + descripcion
+			desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			desc_label.add_theme_color_override("font_color", Color(0.70, 0.63, 0.51, 1.0))
+			desc_label.add_theme_font_size_override("font_size", 10)
+			bloque.add_child(desc_label)
+
+		var objetivos_variant: Variant = estado_mision.get("objetivos", [])
+		if objetivos_variant is Array:
+			for objetivo_variant in objetivos_variant as Array:
+				if not objetivo_variant is Dictionary:
+					continue
+
+				var objetivo := objetivo_variant as Dictionary
+				var progreso := int(objetivo.get("progreso", 0))
+				var requerido := maxi(1, int(objetivo.get("cantidad_requerida", 1)))
+				var objetivo_completado := bool(objetivo.get("completado", false))
+				var objetivo_indicador := "✓" if objetivo_completado else "•"
+				var objetivo_texto := str(objetivo.get("descripcion", "Objetivo"))
+				var linea := "   " + objetivo_indicador + " " + objetivo_texto
+				linea += "  [" + str(progreso) + "/" + str(requerido) + "]"
+
+				var objetivo_label := Label.new()
+				objetivo_label.text = linea
+				objetivo_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				objetivo_label.add_theme_color_override(
+					"font_color",
+					Color(0.76, 0.88, 0.65, 1.0) if objetivo_completado else Color(0.78, 0.70, 0.57, 1.0)
+				)
+				objetivo_label.add_theme_font_size_override("font_size", 11)
+				bloque.add_child(objetivo_label)
+
+
+func mostrar_panel_misiones() -> void:
+	if mission_panel == null:
+		return
+
+	if _interaction_panel_open:
+		cerrar_panel_interaccion()
+
+	_actualizar_panel_misiones()
+	mission_panel.visible = true
+	_mission_panel_open = true
+	get_viewport().set_input_as_handled()
+
+
+func cerrar_panel_misiones() -> void:
+	if mission_panel == null:
+		return
+
+	mission_panel.visible = false
+	_mission_panel_open = false
+
+
+func _toggle_panel_misiones() -> void:
+	if _mission_panel_open:
+		cerrar_panel_misiones()
+	else:
+		mostrar_panel_misiones()
+
+
+func esta_mostrando_panel_misiones() -> bool:
+	return _mission_panel_open
+
+
 func _preparar_panel_interaccion() -> void:
 	interaction_panel = PanelContainer.new()
 	interaction_panel.name = "InteractionPanel"
@@ -961,8 +1162,24 @@ func cerrar_panel_interaccion() -> void:
 func esta_mostrando_panel_interaccion() -> bool:
 	return _interaction_panel_open
 
+func esta_mostrando_panel_interaccion() -> bool:
+	return _interaction_panel_open or _mission_panel_open
+
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if key_event.pressed and not key_event.echo:
+			if key_event.keycode == KEY_F:
+				_toggle_panel_misiones()
+				get_viewport().set_input_as_handled()
+				return
+
+			if key_event.keycode == KEY_ESCAPE and _mission_panel_open:
+				cerrar_panel_misiones()
+				get_viewport().set_input_as_handled()
+				return
+
 	if not _interaction_panel_open:
 		return
 
