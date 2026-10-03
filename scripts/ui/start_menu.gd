@@ -691,7 +691,7 @@ func _preparar_panel_personaje() -> void:
 	column.add_child(_personaje_status)
 
 	_personaje_nombre = LineEdit.new()
-	_personaje_nombre.text_changed.connect(func(_texto: String): _actualizar_boton_personaje())
+	_personaje_nombre.text_changed.connect(_al_nombre_personaje_cambiado)
 	_personaje_nombre.placeholder_text = "Nombre"
 	_personaje_nombre.custom_minimum_size = Vector2(0, 34)
 	column.add_child(_personaje_nombre)
@@ -709,7 +709,7 @@ func _preparar_panel_personaje() -> void:
 	column.add_child(_personaje_genero)
 
 	_personaje_genero_libre = LineEdit.new()
-	_personaje_genero_libre.text_changed.connect(func(_texto: String): _actualizar_boton_personaje())
+	_personaje_genero_libre.text_changed.connect(_al_genero_libre_cambiado)
 	_personaje_genero_libre.placeholder_text = "Escribe tu género"
 	_personaje_genero_libre.custom_minimum_size = Vector2(0, 32)
 	_personaje_genero_libre.visible = false
@@ -779,6 +779,13 @@ func _mostrar_creacion_personaje(accion: String) -> void:
 func _cancelar_creacion_personaje() -> void:
 	_accion_personaje_pendiente = ""
 	_personaje_overlay.visible = false
+
+
+func _al_nombre_personaje_cambiado(_texto: String) -> void:
+	_actualizar_boton_personaje()
+
+func _al_genero_libre_cambiado(_texto: String) -> void:
+	_actualizar_boton_personaje()
 
 func _al_cambiar_genero(indice: int) -> void:
 	_personaje_genero_libre.visible = indice == 3
