@@ -611,7 +611,9 @@ func _die() -> void:
 	is_alive = false
 
 	if not criatura_id.is_empty():
-		MissionManager.registrar_muerte(criatura_id, 1)
+		var mission_manager: Node = get_node_or_null("/root/MissionManager")
+		if mission_manager != null:
+			mission_manager.call("registrar_muerte", criatura_id, 1)
 		GarliaWorldItems.generar_drops_criatura(
 			criatura_id,
 			global_position
