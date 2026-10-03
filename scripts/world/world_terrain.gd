@@ -196,10 +196,13 @@ func _crear_capas() -> void:
 		tilemap_dual_dirt.godot_4_3_compatibility = false
 		add_child(tilemap_dual_dirt)
 
-	tilemap_ground.z_index = 0
-	tilemap_dual_grass.z_index = 1
-	tilemap_dual_dirt.z_index = 1
-	tilemap_detail.z_index = 2
+	# El terreno siempre queda detrás de personajes, criaturas y entidades.
+	# Las capas Dual reemplazan visualmente al GroundLegacy para los terrenos
+	# que ya tienen sprites de transición.
+	tilemap_ground.z_index = -2
+	tilemap_dual_grass.z_index = -1
+	tilemap_dual_dirt.z_index = -1
+	tilemap_detail.z_index = 0
 
 
 func _crear_tileset() -> void:
