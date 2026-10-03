@@ -708,7 +708,7 @@ func _aplicar_efecto_recurso(
 		return false
 
 	match recurso:
-		case "vida", "salud", "health":
+		"vida", "salud", "health":
 			if not actor.has_method("heal"):
 				return false
 
@@ -724,7 +724,7 @@ func _aplicar_efecto_recurso(
 			actor.call("heal", roundi(magnitud))
 			return int(actor.get("health")) > antes
 
-		case "stamina":
+		"stamina":
 			if not actor.has_method("restaurar_stamina"):
 				return false
 
@@ -737,7 +737,7 @@ func _aplicar_efecto_recurso(
 			actor.call("restaurar_stamina", magnitud)
 			return float(actor.get("stamina")) > antes_stamina
 
-		case "eterium", "mana":
+		"eterium", "mana":
 			if not actor.has_method("restaurar_eterium"):
 				return false
 
