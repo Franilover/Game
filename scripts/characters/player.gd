@@ -1089,7 +1089,34 @@ func take_damage(cantidad: int) -> void:
 	if state == State.DASH:
 		return
 
-	super.take_damage(cantidad)
+	var danio_recibido: int = maxi(cantidad, 0)
+	var inventario := get_tree().get_first_node_in_group(
+		"inventory"
+	)
+
+	if inventario != null and inventario.has_method(
+		"obtener_estadistica_equipo"
+	):
+		var defensa: float = maxf(
+			float(
+				inventario.call(
+					"obtener_estadistica_equipo",
+					"defensa",
+					0.0
+			)
+			),
+			0.0
+		)
+
+		danio_recibido = maxi(
+			0,
+			ceil_to_int(
+				float(danio_recibido)
+				- defensa
+			)
+		)
+
+	super.take_damage(danio_recibido)
 
 	if not is_alive:
 		_morir_jugador()
