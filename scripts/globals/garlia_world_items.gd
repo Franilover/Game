@@ -418,6 +418,76 @@ func _al_recibir_drops(
 	_procesar_siguiente_drop()
 
 
+func obtener_prop_por_id(prop_id: String) -> Dictionary:
+	var buscado := prop_id.strip_edges()
+	if buscado.is_empty():
+		return {}
+
+	for prop in WorldData.obtener_props_game():
+		if str(prop.get("id", "")).strip_edges() == buscado:
+			return prop.duplicate(true)
+
+	return {}
+
+
+func es_objeto_colocable(datos: Dictionary) -> bool:
+	if datos.is_empty():
+		return false
+
+	var propiedades_variant: Variant = datos.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+
+	var propiedades := propiedades_variant as Dictionary
+	var prop_id := str(propiedades.get("prop_id", "")).strip_edges()
+	return bool(propiedades.get("colocable", false)) and not prop_id.is_empty()
+
+
+func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
+	if not es_objeto_colocable(datos):
+		return false
+
+	var propiedades := datos.get("propiedades_game", {}) as Dictionary
+	var prop_id := str(propiedades.get("prop_id", "")).strip_edges()
+	var prop := obtener_prop_por_id(prop_id)
+
+	if prop.is_empty():
+		print("GarliaWorldItems: no existe el prop canónico → ", prop_id)
+		return false
+
+	var escena := get_tree().current_scene
+	if not is_instance_valid(escena):
+		return false
+
+	var entities := escena.get_node_or_null("Entities")
+	if entities == null:
+		return false
+
+	var prop_node := preload("res://scenes/wold/world_prop.tscn").instantiate()
+	if prop_node == null:
+		return false
+
+	var datos_prop := prop.duplicate(true)
+	datos_prop["asset_path"] = "res://assets/art/props/" + str(prop.get("nombre", "")) + ".png"
+	datos_prop["item_id"] = str(datos.get("item_id", datos.get("id", "")))
+	datos_prop["colocado_por_jugador"] = true
+
+	entities.add_child(prop_node)
+	prop_node.global_position = posicion
+
+	if prop_node is WorldProp:
+		(prop_node as WorldProp).configurar_desde_game_data(datos_prop)
+
+	print(
+		"GarliaWorldItems: prop colocado → ",
+		str(prop.get("nombre", "Prop")),
+		" | posición=",
+		posicion
+	)
+
+	return true
+
+
 func soltar_objeto_al_mundo(
 	datos: Dictionary,
 	posicion: Vector2
