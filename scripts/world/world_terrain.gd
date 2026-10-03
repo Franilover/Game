@@ -37,6 +37,7 @@ var _loaded_chunks: Dictionary = {}
 
 var _generation_task: Dictionary = {}
 var _pintado_desde_flush: int = 0
+@export var visual_flush_cells: int = 256
 
 var _ultimo_chunk_generado: Vector2i = Vector2i.ZERO
 
