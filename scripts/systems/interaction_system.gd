@@ -65,33 +65,42 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("primary_action"):
 		return
 
-	# El objeto activo de la hotbar representa lo que el jugador
-	# tiene en la mano. Los props colocables usan el mismo click
-	# de acción primaria, sin interferir con armas ni interacciones.
 	var inventory: Node = get_tree().get_first_node_in_group("inventory")
+	var objeto_activo: Dictionary = {}
+
 	if inventory != null and inventory.has_method("obtener_objeto_activo"):
 		var objeto_activo_variant: Variant = inventory.call("obtener_objeto_activo")
 		if objeto_activo_variant is Dictionary:
-			var objeto_activo := objeto_activo_variant as Dictionary
-			var world_items: Node = GarliaWorldItems
-			if (
-				world_items != null
-				and world_items.has_method("es_objeto_colocable")
-				and bool(world_items.call("es_objeto_colocable", objeto_activo))
-			):
-				if world_items.has_method("colocar_objeto"):
-					var colocado: bool = bool(
-						world_items.call(
-							"colocar_objeto",
-							objeto_activo,
-							(player as Node2D).get_global_mouse_position()
-						)
+			objeto_activo = (objeto_activo_variant as Dictionary).duplicate(true)
+
+	# Los objetos colocables se usan con el click izquierdo de la hotbar.
+	# Si hay otro objeto en la hotbar, no convertimos ese click en una
+	# interacción contextual accidental.
+	if not objeto_activo.is_empty():
+		var world_items: Node = GarliaWorldItems
+		if (
+			world_items != null
+			and world_items.has_method("es_objeto_colocable")
+			and bool(world_items.call("es_objeto_colocable", objeto_activo))
+		):
+			if world_items.has_method("colocar_objeto"):
+				var colocado: bool = bool(
+					world_items.call(
+						"colocar_objeto",
+						objeto_activo,
+						(player as Node2D).get_global_mouse_position()
 					)
-					if colocado:
-						if inventory.has_method("consumir_objeto_activo"):
-							inventory.call("consumir_objeto_activo", 1)
-						get_viewport().set_input_as_handled()
-						return
+				)
+				if colocado:
+					if inventory.has_method("consumir_objeto_activo"):
+						inventory.call("consumir_objeto_activo", 1)
+					get_viewport().set_input_as_handled()
+					return
+
+		# Un objeto seleccionado en la hotbar pertenece a la acción
+		# primaria. Solo los objetos sin selección dejan pasar la
+		# interacción contextual.
+		return
 
 	if objetivo_actual == null or not is_instance_valid(objetivo_actual):
 		return
