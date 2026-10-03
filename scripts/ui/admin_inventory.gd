@@ -68,12 +68,6 @@ func _crear_ui() -> void:
     encabezado.add_theme_constant_override("separation", 6)
     titulo_columna.add_child(encabezado)
 
-    _titulo = Label.new()
-    _titulo.text = "Administración"
-    _titulo.add_theme_font_size_override("font_size", 16)
-    _titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    encabezado.add_child(_titulo)
-
     for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"]]:
         var boton := Button.new()
         boton.text = str(entrada[1])
@@ -100,6 +94,7 @@ func _crear_ui() -> void:
 
     _lista = VBoxContainer.new()
     _lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    _lista.custom_minimum_size = Vector2(0, 600)
     _lista.add_theme_constant_override("separation", 3)
     scroll.add_child(_lista)
 
