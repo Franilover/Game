@@ -65,8 +65,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _buscar_objetivo() -> void:
 	var mejor_objetivo: Node = null
-
-	var mejor_distancia_sq: float = _interaction_distance_sq
+	var mejor_prioridad: int = -2147483648
+	var mejor_distancia_sq: float = INF
 
 	var candidatos: Array[Node] = (
 		get_tree().get_nodes_in_group(
@@ -89,9 +89,7 @@ func _buscar_objetivo() -> void:
 		if not candidato.is_inside_tree():
 			continue
 
-		if candidato.has_method(
-			"can_interact"
-		):
+		if candidato.has_method("can_interact"):
 			var puede: bool = bool(
 				candidato.call(
 					"can_interact",
@@ -102,18 +100,42 @@ func _buscar_objetivo() -> void:
 			if not puede:
 				continue
 
-		var candidato_2d := (
-			candidato as Node2D
-		)
+		var candidato_2d := candidato as Node2D
+
+		var distancia_maxima: float = interaction_distance
+		if candidato.has_method("get_interaction_distance"):
+			distancia_maxima = maxf(
+				float(
+					candidato.call(
+						"get_interaction_distance"
+					)
+				),
+				0.0
+			)
 
 		var distancia_sq: float = player.global_position.distance_squared_to(
 			candidato_2d.global_position
 		)
 
-		if distancia_sq > _interaction_distance_sq:
+		if distancia_sq > distancia_maxima * distancia_maxima:
 			continue
 
-		if distancia_sq < mejor_distancia_sq:
+		var prioridad: int = 0
+		if candidato.has_method("get_interaction_priority"):
+			prioridad = int(
+				candidato.call(
+					"get_interaction_priority"
+				)
+			)
+
+		if (
+			prioridad > mejor_prioridad
+			or (
+				prioridad == mejor_prioridad
+				and distancia_sq < mejor_distancia_sq
+			)
+		):
+			mejor_prioridad = prioridad
 			mejor_distancia_sq = distancia_sq
 			mejor_objetivo = candidato
 
@@ -211,6 +233,22 @@ func _interactuar() -> void:
 		objetivo_actual.call(
 			"interact",
 			player
+		)
+
+		var accion: String = "Interactuar"
+		if objetivo_actual.has_method(
+			"get_interaction_text"
+		):
+			accion = str(
+				objetivo_actual.call(
+					"get_interaction_text"
+				)
+			)
+
+		Events.interaction_executed.emit(
+			objetivo_actual,
+			player,
+			accion
 		)
 
 	# No volver a disparar inmediatamente.
