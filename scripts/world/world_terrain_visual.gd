@@ -371,21 +371,23 @@ func flush() -> void:
 		if not cells_variant is Array:
 			continue
 
-		var cells: Array[Vector2i] = []
-		for cell_variant in cells_variant:
-			if cell_variant is Vector2i:
-				cells.append(cell_variant)
-		if cells.is_empty():
-			continue
-
 		var layer := _layers_by_bioma[clave] as TileMapDual
 		if layer == null:
 			continue
 
-		layer._update_cells(
-			cells,
-			false
-		)
+		# TileMapDual expone draw_cell() como API pública. Usamos esa API
+		# en lugar de llamar a _update_cells(), cuya firma tipada interna
+		# rechaza Arrays que llegan desde Dictionary como Variant.
+		for cell_variant in cells_variant:
+			if not cell_variant is Vector2i:
+				continue
+
+			var cell := cell_variant as Vector2i
+			if layer.get_cell_source_id(cell) == -1:
+				continue
+
+			var terreno := layer.get_cell(cell)
+			layer.draw_cell(cell, terreno)
 
 		_dirty_cells_by_bioma[clave] = []
 		_dirty_lookup_by_bioma[clave] = {}
