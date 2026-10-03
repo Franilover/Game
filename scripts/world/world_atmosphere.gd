@@ -24,6 +24,8 @@ var estacion_actual: Dictionary = {}
 
 var _calendario_cargado: bool = false
 var _estado_guardado_pendiente: Dictionary = {}
+var _tiempo_bloqueado: bool = false
+var _anio_inicio: int = 0
 
 var _modulacion: CanvasModulate
 
@@ -53,6 +55,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not _calendario_cargado:
+		return
+
+	if _tiempo_bloqueado:
+		_actualizar_iluminacion()
 		return
 
 	var duracion_real_segundos := maxf(
@@ -158,6 +164,7 @@ func _intentar_cargar_calendario() -> void:
 				0
 			)
 		)
+		_anio_inicio = anio
 		hora_del_dia = clampf(
 			hora_inicial,
 			0.0,
@@ -320,6 +327,53 @@ func _obtener_hora_texto() -> String:
 		minutos
 	]
 
+
+
+func bloquear_tiempo() -> void:
+	_tiempo_bloqueado = true
+
+
+func desbloquear_tiempo() -> void:
+	_tiempo_bloqueado = false
+
+
+func esta_bloqueado() -> bool:
+	return _tiempo_bloqueado
+
+
+func establecer_dia() -> bool:
+	if not _calendario_cargado:
+		return false
+
+	hora_del_dia = horas_por_dia * 0.5
+	_actualizar_iluminacion()
+	return true
+
+
+func establecer_noche() -> bool:
+	if not _calendario_cargado:
+		return false
+
+	hora_del_dia = 0.0
+	_actualizar_iluminacion()
+	return true
+
+
+func reiniciar_tiempo() -> bool:
+	if not _calendario_cargado:
+		return false
+
+	_tiempo_bloqueado = false
+	hora_del_dia = clampf(
+		hora_inicial,
+		0.0,
+		1.0
+	) * horas_por_dia
+	dia_del_anio = 0
+	anio = _anio_inicio
+	_actualizar_estacion()
+	_actualizar_iluminacion()
+	return true
 
 func obtener_estacion_id() -> String:
 	return str(
