@@ -691,7 +691,7 @@ func _comando_time(argumentos: String) -> void:
 		)
 		return
 
-	switch subcomando:
+	match subcomando:
 		"lock":
 			if not atmosfera.has_method("bloquear_tiempo"):
 				_agregar_linea(
@@ -771,7 +771,7 @@ func _comando_time(argumentos: String) -> void:
 				_agregar_linea(
 					"[color=#d88]"
 					+ "El calendario todavía no está cargado."
-				[/color]
+					+ "[/color]"
 				)
 
 		_:
