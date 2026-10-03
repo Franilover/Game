@@ -438,49 +438,16 @@ func _atacar_con_arma(
 		arma
 	)
 
-	var objetivo: Node = _buscar_objetivo(
-		direccion,
-		alcance,
-		ancho
-	)
-
 	_mostrar_area_ataque(
 		direccion,
 		alcance,
 		ancho
 	)
 
-	if objetivo == null:
-		ataque_sin_objetivo.emit(
-			player
-		)
-
-		print(
-			"CombatSystem: ataque sin objetivo → ",
-			str(
-				arma.get(
-					"nombre",
-					"Arma"
-				)
-			)
-		)
-
-		return
-
-	var danio: int = _obtener_danio_arma(
-		arma
-	)
-
-	_aplicar_danio(
-		objetivo,
-		danio,
-		str(
-			arma.get(
-				"nombre",
-				"Arma"
-			)
-		),
-		player,
+	_crear_hitbox_melee(
+		direccion,
+		alcance,
+		ancho,
 		arma
 	)
 
