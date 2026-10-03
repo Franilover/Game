@@ -313,6 +313,17 @@ func _esta_bloqueado_por_interfaz() -> bool:
 		if bool(_admin_console_ref.get("_abierto")):
 			return true
 
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method(
+		"esta_mostrando_panel_interaccion"
+	):
+		if bool(
+			hud.call(
+				"esta_mostrando_panel_interaccion"
+			)
+		):
+			return true
+
 	return get_tree().paused
 
 
