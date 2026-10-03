@@ -5,7 +5,7 @@ extends Node
 ## Cada partida corresponde a un JSON independiente en user://partidas/.
 
 const SAVE_DIRECTORY := "user://partidas"
-const SAVE_VERSION: int = 2
+const SAVE_VERSION: int = 3
 const AUTOSAVE_INTERVAL: float = 5.0
 
 var player_health: int = 100
@@ -14,6 +14,8 @@ var player_position: Vector2 = Vector2.ZERO
 var player_stamina: float = 100.0
 var player_facing: Vector2 = Vector2.DOWN
 var player_position_valida: bool = false
+var player_tile: Vector2i = Vector2i.ZERO
+var player_tile_valido: bool = false
 
 var current_scene: String = ""
 var elapsed_time: float = 0.0
@@ -22,6 +24,9 @@ var flags: Dictionary = {}
 
 var active_save_id: String = ""
 var active_save_name: String = ""
+
+var world_seed: int = 0
+var world_seed_valida: bool = false
 
 var _autosave_timer: float = 0.0
 var _partida_aplicada_en_escena: bool = false
@@ -194,7 +199,10 @@ func obtener_partidas() -> Array[Dictionary]:
 	return resultado
 
 
-func crear_partida(nombre: String) -> String:
+func crear_partida(
+	nombre: String,
+	semilla_texto: String = ""
+) -> String:
 	var nombre_limpio := nombre.strip_edges()
 
 	if nombre_limpio.is_empty():
@@ -203,6 +211,18 @@ func crear_partida(nombre: String) -> String:
 	var ahora := Time.get_datetime_string_from_system(
 		true
 	)
+
+	var semilla: int
+	if semilla_texto.strip_edges().is_empty():
+		semilla = _generar_semilla_mundo()
+	else:
+		if not _texto_es_semilla_valida(semilla_texto):
+			print(
+				"GameState: semilla inválida → ",
+				semilla_texto
+			)
+			return ""
+		semilla = int(semilla_texto.strip_edges())
 
 	var id := "save_" + str(
 		Time.get_unix_time_from_system()
@@ -214,7 +234,8 @@ func crear_partida(nombre: String) -> String:
 		id,
 		nombre_limpio,
 		ahora,
-		ahora
+		ahora,
+		semilla
 	)
 
 	if not _escribir_archivo_partida(id, datos):
@@ -242,6 +263,32 @@ func iniciar_partida(id: String) -> bool:
 		return false
 
 	var metadata := _extraer_metadata_partida(datos)
+
+	var mundo_variant: Variant = datos.get(
+		"mundo",
+		{}
+	)
+
+	if mundo_variant is Dictionary:
+		var mundo: Dictionary = mundo_variant as Dictionary
+		if mundo.has("semilla"):
+			world_seed = int(mundo.get("semilla", 0))
+			world_seed_valida = true
+
+	if not world_seed_valida:
+		# Migración de partidas creadas antes del sistema de semillas.
+		# La semilla se crea una sola vez y se persiste inmediatamente.
+		world_seed = _generar_semilla_mundo()
+		world_seed_valida = true
+		datos["mundo"] = {
+			"semilla": world_seed,
+			"generador_version": 1
+		}
+		datos["version"] = SAVE_VERSION
+		_escribir_archivo_partida(
+			id,
+			datos
+		)
 
 	active_save_id = id
 	active_save_name = str(
@@ -361,6 +408,10 @@ func guardar_partida() -> bool:
 	datos["version"] = SAVE_VERSION
 	datos["nombre"] = active_save_name
 	datos["actualizado_en"] = _ahora()
+	datos["mundo"] = {
+		"semilla": world_seed,
+		"generador_version": 1
+	}
 	datos["estado"] = _serializar_estado()
 
 	var resultado := _escribir_archivo_partida(
@@ -393,6 +444,20 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 
 	player_position = jugador.global_position
 	player_position_valida = true
+
+	var world_gen := get_tree().current_scene.get_node_or_null(
+		"World/WorldGenerator"
+	)
+
+	if world_gen != null and world_gen.has_method("get_tile_at"):
+		var tile_variant: Variant = world_gen.call(
+			"get_tile_at",
+			player_position
+		)
+
+		if tile_variant is Vector2i:
+			player_tile = tile_variant as Vector2i
+			player_tile_valido = true
 
 	var stamina_variant: Variant = jugador.get(
 		"stamina"
@@ -492,6 +557,11 @@ func _serializar_estado() -> Dictionary:
 				"x": player_position.x,
 				"y": player_position.y
 			},
+			"tile_valid": player_tile_valido,
+			"tile": {
+				"x": player_tile.x,
+				"y": player_tile.y
+			},
 			"stamina": player_stamina,
 			"facing": {
 				"x": player_facing.x,
@@ -508,7 +578,8 @@ func _estado_base_partida(
 	id: String,
 	nombre: String,
 	creado_en: String,
-	actualizado_en: String
+	actualizado_en: String,
+	semilla: int
 ) -> Dictionary:
 	return {
 		"version": SAVE_VERSION,
@@ -516,7 +587,11 @@ func _estado_base_partida(
 		"nombre": nombre,
 		"creado_en": creado_en,
 		"actualizado_en": actualizado_en,
-		"mundo_version": _obtener_version_mundo(),
+			"mundo_version": _obtener_version_mundo(),
+		"mundo": {
+			"semilla": semilla,
+			"generador_version": 1
+		},
 		"estado": {
 			"player": {
 				"health": 100,
@@ -525,6 +600,11 @@ func _estado_base_partida(
 				"position": {
 					"x": 0.0,
 					"y": 0.0
+				},
+				"tile_valid": false,
+				"tile": {
+					"x": 0,
+					"y": 0
 				},
 				"stamina": 100.0,
 				"facing": {
@@ -576,6 +656,22 @@ func _aplicar_estado_memoria(
 			player_position = Vector2(
 				float(posicion.get("x", 0.0)),
 				float(posicion.get("y", 0.0))
+			)
+
+		player_tile_valido = bool(
+			datos_player.get("tile_valid", false)
+		)
+
+		var tile_variant: Variant = datos_player.get(
+			"tile",
+			{}
+		)
+
+		if tile_variant is Dictionary and player_tile_valido:
+			var tile_datos := tile_variant as Dictionary
+			player_tile = Vector2i(
+				int(tile_datos.get("x", 0)),
+				int(tile_datos.get("y", 0))
 			)
 
 		var facing_variant: Variant = datos_player.get(
@@ -1190,6 +1286,35 @@ func _extraer_metadata_partida(
 			)
 		)
 	}
+
+
+func tiene_semilla_mundo() -> bool:
+	return world_seed_valida
+
+
+func obtener_semilla_mundo() -> int:
+	return world_seed
+
+
+func establecer_semilla_mundo(semilla: int) -> void:
+	world_seed = semilla
+	world_seed_valida = true
+
+
+func _generar_semilla_mundo() -> int:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return rng.randi()
+
+
+func _texto_es_semilla_valida(texto: String) -> bool:
+	var limpio := texto.strip_edges()
+	if limpio.is_empty():
+		return false
+
+	var regex := RegEx.new()
+	regex.compile("^-?\\d+$")
+	return regex.search(limpio) != null
 
 
 func _obtener_version_mundo() -> int:
