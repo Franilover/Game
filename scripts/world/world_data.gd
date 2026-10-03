@@ -29,6 +29,7 @@ var _ecosistemas_por_id: Dictionary = {}
 var _habitats_por_id: Dictionary = {}
 var _criaturas_por_id: Dictionary = {}
 var _personajes_game: Array[Dictionary] = []
+var _dialogos_game: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -364,6 +365,7 @@ func _construir_indices() -> void:
 	_habitats_por_id.clear()
 	_criaturas_por_id.clear()
 	_personajes_game.clear()
+	_dialogos_game.clear()
 
 	var personajes_variant: Variant = mundo.get(
 		"personajes_game",
@@ -377,6 +379,20 @@ func _construir_indices() -> void:
 
 			_personajes_game.append(
 				(personaje_variant as Dictionary).duplicate(true)
+			)
+
+	var dialogos_variant: Variant = mundo.get(
+		"dialogos_game",
+		[]
+	)
+
+	if dialogos_variant is Array:
+		for dialogo_variant in dialogos_variant:
+			if not dialogo_variant is Dictionary:
+				continue
+
+			_dialogos_game.append(
+				(dialogo_variant as Dictionary).duplicate(true)
 			)
 
 	for bioma in obtener_biomas():
@@ -593,6 +609,45 @@ func buscar_personaje_game_por_nombre(
 			return personaje.duplicate(true)
 
 	return {}
+
+
+func obtener_dialogo_game(
+	personaje_id: String,
+	clave: String = "principal"
+) -> Dictionary:
+	if personaje_id.is_empty():
+		return {}
+
+	for dialogo in _dialogos_game:
+		if str(dialogo.get("personaje_id", "")) != personaje_id:
+			continue
+		if str(dialogo.get("clave", "principal")) != clave:
+			continue
+
+		var contenido: Variant = dialogo.get("dialogo", {})
+		if contenido is Dictionary:
+			return (contenido as Dictionary).duplicate(true)
+		if contenido is Array:
+			return {"lineas": (contenido as Array).duplicate(true)}
+
+	return {}
+
+
+func obtener_dialogos_game_de_personaje(
+	personaje_id: String
+) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+
+	if personaje_id.is_empty():
+		return resultado
+
+	for dialogo in _dialogos_game:
+		if str(dialogo.get("personaje_id", "")) != personaje_id:
+			continue
+
+		resultado.append(dialogo.duplicate(true))
+
+	return resultado
 
 
 func obtener_personajes_game_de_criatura(
