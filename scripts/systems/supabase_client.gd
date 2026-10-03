@@ -55,6 +55,7 @@ var _intento_actual: int = 0
 var _sincronizacion_inicial_realizada: bool = false
 var _eterium_runtime: Dictionary = {}
 var _especie_eterium_game: Array = []
+var _especies_jugables: Array = []
 var _personaje_social: Array = []
 var _personaje_regalos: Array = []
 
@@ -173,8 +174,9 @@ func _al_completar_especies_jugables(
 		if especie_variant is Dictionary:
 			especies.append((especie_variant as Dictionary).duplicate(true))
 
+	_especies_jugables = especies
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
-	especies_jugables_cargadas.emit(especies)
+	especies_jugables_cargadas.emit(especies.duplicate(true))
 
 
 
