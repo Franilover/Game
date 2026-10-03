@@ -3,6 +3,7 @@ extends Node
 
 signal mundo_cargado(datos: Dictionary)
 signal eterium_runtime_cargado(datos: Dictionary)
+signal especies_jugables_cargadas(especies: Array)
 signal error_conexion(mensaje: String)
 
 
@@ -25,10 +26,14 @@ const INTERVALO_SINCRONIZACION: float = 60.0
 const RPC_ETERIUM_RUNTIME := (
 	"/rest/v1/rpc/get_eterium_runtime_v1"
 )
+const API_ESPECIES_JUGABLES := (
+	"/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
+)
 
 
 var _http: HTTPRequest
 var _http_eterium: HTTPRequest
+var _http_especies: HTTPRequest
 var _timer: Timer
 var _solicitud_en_curso: bool = false
 var _intento_actual: int = 0
@@ -53,7 +58,15 @@ func _ready() -> void:
 		_al_completar_eterium_runtime
 	)
 
+	_http_especies = HTTPRequest.new()
+	_http_especies.timeout = HTTP_TIMEOUT
+	add_child(_http_especies)
+	_http_especies.request_completed.connect(
+		_al_completar_especies_jugables
+	)
+
 	call_deferred("cargar_eterium_runtime")
+	call_deferred("cargar_especies_jugables")
 
 	_timer = Timer.new()
 	_timer.wait_time = INTERVALO_SINCRONIZACION
@@ -63,6 +76,63 @@ func _ready() -> void:
 	_timer.timeout.connect(
 		_al_timer_sincronizacion
 	)
+
+
+func cargar_especies_jugables() -> void:
+	if _http_especies == null:
+		return
+
+	var headers := PackedStringArray([
+		"apikey: " + SUPABASE_KEY,
+		"Content-Type: application/json",
+		"Accept: application/json"
+	])
+
+	var resultado := _http_especies.request(
+		SUPABASE_URL + API_ESPECIES_JUGABLES,
+		headers,
+		HTTPClient.METHOD_GET
+	)
+
+	if resultado != OK:
+		print("SupabaseClient: no se pudo solicitar especies jugables → ", resultado)
+
+
+func _al_completar_especies_jugables(
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		print("SupabaseClient: error de red cargando especies jugables.")
+		return
+
+	if codigo_http < 200 or codigo_http >= 300:
+		print(
+			"SupabaseClient: HTTP ",
+			codigo_http,
+			" cargando especies jugables → ",
+			cuerpo.get_string_from_utf8()
+		)
+		return
+
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK:
+		print("SupabaseClient: especies jugables no son JSON válido.")
+		return
+
+	if not json.data is Array:
+		print("SupabaseClient: especies jugables no son una lista.")
+		return
+
+	var especies: Array = []
+	for especie_variant in json.data as Array:
+		if especie_variant is Dictionary:
+			especies.append((especie_variant as Dictionary).duplicate(true))
+
+	print("SupabaseClient: especies jugables cargadas → ", especies.size())
+	especies_jugables_cargadas.emit(especies)
 
 
 func cargar_eterium_runtime() -> void:
