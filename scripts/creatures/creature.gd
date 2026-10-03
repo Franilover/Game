@@ -207,16 +207,11 @@ func _cargar_sprite() -> void:
 
 	var rutas: Array[String] = []
 
-	# Los humanos pueden tener una identidad individual distinta
-	# de la especie. Su skin se resuelve por ese nombre.
+	# Los humanos tienen una apariencia individual.
+	# Sus sprites viven junto a los demás personajes del juego.
 	if _es_humano() and not nombre_individual.is_empty():
 		rutas.append(
-			"res://assets/art/creatures/humanos/"
-			+ nombre_individual
-			+ ".png"
-		)
-		rutas.append(
-			"res://assets/art/creatures/"
+			"res://assets/art/characters/"
 			+ nombre_individual
 			+ ".png"
 		)
