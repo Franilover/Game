@@ -10,10 +10,6 @@ class_name WorldAtmosphere
 
 var hora_del_dia: float = 0.28
 var _modulacion: CanvasModulate
-var _etiqueta: Label
-var _etiqueta_hora: Label
-var _mostrar_hora: bool = false
-var _ultimo_tile: Vector2i = Vector2i(2147483647, 2147483647)
 var _world_generator: Node
 
 
@@ -23,48 +19,14 @@ func _ready() -> void:
 	_modulacion.name = "DayNightModulation"
 	get_tree().current_scene.add_child.call_deferred(_modulacion)
 
-	var capa := CanvasLayer.new()
-	capa.name = "WorldContextLayer"
-	get_tree().current_scene.add_child.call_deferred(capa)
-
-	_etiqueta = Label.new()
-	_etiqueta.name = "WorldContextLabel"
-	_etiqueta.position = Vector2(12.0, 12.0)
-	_etiqueta.add_theme_font_size_override("font_size", 12)
-	_etiqueta.add_theme_color_override("font_color", Color(0.93, 0.91, 0.84))
-	_etiqueta.add_theme_color_override("font_shadow_color", Color(0.08, 0.07, 0.12, 0.9))
-	_etiqueta.add_theme_constant_override("shadow_offset_x", 1)
-	_etiqueta.add_theme_constant_override("shadow_offset_y", 1)
-	capa.add_child.call_deferred(_etiqueta)
-
-	_etiqueta_hora = Label.new()
-	_etiqueta_hora.name = "WorldTimeLabel"
-	_etiqueta_hora.position = Vector2(12.0, 12.0)
-	_etiqueta_hora.add_theme_font_size_override("font_size", 16)
-	_etiqueta_hora.add_theme_color_override("font_color", Color(0.93, 0.91, 0.84))
-	_etiqueta_hora.add_theme_color_override("font_shadow_color", Color(0.08, 0.07, 0.12, 0.9))
-	_etiqueta_hora.add_theme_constant_override("shadow_offset_x", 1)
-	_etiqueta_hora.add_theme_constant_override("shadow_offset_y", 1)
-	_etiqueta_hora.visible = false
-	capa.add_child.call_deferred(_etiqueta_hora)
-
 	_world_generator = get_parent()
 	_actualizar_iluminacion()
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F3:
-		_mostrar_hora = not _mostrar_hora
-		if _etiqueta_hora != null:
-			_etiqueta_hora.visible = _mostrar_hora
-		get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
 	var duracion := maxf(minutos_por_dia * 60.0, 1.0)
 	hora_del_dia = fposmod(hora_del_dia + delta / duracion, 1.0)
 	_actualizar_iluminacion()
-	_actualizar_etiqueta_hora()
 
 
 func procesar_jugador() -> void:
@@ -137,3 +99,10 @@ func _obtener_hora_texto() -> String:
 	var horas := int(floor(float(minutos_totales) / 60.0))
 	var minutos := minutos_totales % 60
 	return "%02d:%02d" % [horas, minutos]
+
+
+func obtener_tiempo() -> Dictionary:
+	return {
+		"hora": _obtener_hora_texto(),
+		"periodo": _obtener_periodo()
+	}
