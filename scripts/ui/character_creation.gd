@@ -6,6 +6,8 @@ signal cancelled
 var _action: String = ""
 var _skins: Array[String] = []
 
+@onready var partida_name_input: LineEdit = $Panel/Margin/Column/PartidaName
+@onready var seed_input: LineEdit = $Panel/Margin/Column/SeedInput
 @onready var name_input: LineEdit = $Panel/Margin/Column/NameInput
 @onready var gender: OptionButton = $Panel/Margin/Column/Gender
 @onready var gender_free: LineEdit = $Panel/Margin/Column/GenderFree
@@ -22,6 +24,7 @@ func _ready() -> void:
 	gender.add_item("Agenero")
 	gender.add_item("Texto libre")
 	gender.item_selected.connect(_on_gender_selected)
+	partida_name_input.text_changed.connect(_update_confirm)
 	name_input.text_changed.connect(_update_confirm)
 	gender_free.text_changed.connect(_update_confirm)
 	skins.item_selected.connect(_update_confirm)
@@ -34,6 +37,8 @@ func _ready() -> void:
 
 func open(action: String) -> void:
 	_action = action
+	partida_name_input.text = ""
+	seed_input.text = ""
 	name_input.text = ""
 	gender.select(0)
 	gender_free.text = ""
@@ -119,11 +124,12 @@ func _load_skins() -> void:
 func _update_confirm(_index: int = -1) -> void:
 	if confirm_button == null:
 		return
+	var partida_name_ok: bool = not partida_name_input.text.strip_edges().is_empty()
 	var name_ok: bool = not name_input.text.strip_edges().is_empty()
 	var gender_ok: bool = gender.selected != 3 or not gender_free.text.strip_edges().is_empty()
 	var species_ok: bool = species.item_count > 0 and species.selected >= 0
 	var skin_ok: bool = skins.item_count > 0 and skins.get_selected_items().size() > 0
-	confirm_button.disabled = not (name_ok and gender_ok and species_ok and skin_ok)
+	confirm_button.disabled = not (partida_name_ok and name_ok and gender_ok and species_ok and skin_ok)
 
 func _on_confirm() -> void:
 	_update_confirm()
@@ -140,6 +146,8 @@ func _on_confirm() -> void:
 		gender_value = gender_free.text.strip_edges()
 	var species_data: Dictionary = species.get_item_metadata(species.selected) as Dictionary
 	var config: Dictionary = {
+		"nombre_partida": partida_name_input.text.strip_edges(),
+		"semilla": seed_input.text.strip_edges(),
 		"nombre": name_input.text.strip_edges(),
 		"genero": gender_value,
 		"especie": species_data.duplicate(true),
