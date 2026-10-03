@@ -478,6 +478,11 @@ func _die() -> void:
 	set_physics_process(false)
 	set_process(false)
 
+	var ai_controller := get_node_or_null("AIController")
+	if ai_controller != null:
+		ai_controller.set_physics_process(false)
+		ai_controller.set_process(false)
+
 	remove_from_group("damageable")
 	remove_from_group("interactable")
 
