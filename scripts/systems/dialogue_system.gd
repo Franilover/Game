@@ -112,11 +112,14 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id.is_empty():
-			MissionManager.registrar_dialogo_desde_fuente(
-				personaje_id,
-				str(datos_seleccionados.get("clave", "principal")),
-				_fuente
-			)
+			var mission_manager: Node = get_node_or_null("/root/MissionManager")
+			if mission_manager != null:
+				mission_manager.call(
+					"registrar_dialogo_desde_fuente",
+					personaje_id,
+					str(datos_seleccionados.get("clave", "principal")),
+					_fuente
+				)
 			var datos_actualizados := _seleccionar_dialogo(datos)
 			if str(datos_actualizados.get("clave", "")) != str(datos_seleccionados.get("clave", "")):
 				datos_seleccionados = datos_actualizados
@@ -250,11 +253,14 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			var estado_requerido := str(requisito.get("estado", "")).strip_edges().to_lower()
 
 			if not mision_clave.is_empty() and not estado_requerido.is_empty():
-				var mision := MissionManager.buscar_mision_por_clave(mision_clave)
+				var mission_manager: Node = get_node_or_null("/root/MissionManager")
+				if mission_manager == null:
+					continue
+				var mision: Dictionary = mission_manager.call("buscar_mision_por_clave", mision_clave)
 				if not mision.is_empty():
 					var mision_id := str(mision.get("id", ""))
 					var estado_actual := str(
-						MissionManager.obtener_estado_mision(mision_id).get(
+						mission_manager.call("obtener_estado_mision", mision_id).get(
 							"estado",
 							"disponible"
 						)
@@ -304,13 +310,14 @@ func _ejecutar_accion_dialogo() -> void:
 			if clave.is_empty():
 				return
 
-			if MissionManager.aceptar_mision(clave):
+			var mission_manager: Node = get_node_or_null("/root/MissionManager")
+			if mission_manager != null and bool(mission_manager.call("aceptar_mision", clave)):
 				_acciones.clear()
 				action_button.visible = false
 				hint_label.text = "Misión aceptada · [ LMB ] Continuar"
 				Events.notification_pushed.emit(
 					"Misión aceptada: "
-					+ str(MissionManager.buscar_mision_por_clave(clave).get("nombre", clave))
+					+ str(mission_manager.call("buscar_mision_por_clave", clave).get("nombre", clave))
 				)
 				return
 
