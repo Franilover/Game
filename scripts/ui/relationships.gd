@@ -78,6 +78,10 @@ func _actualizar() -> void:
 		var personaje_variant: Variant = regla.get("personajes_game", {})
 		if personaje_variant is Dictionary:
 			nombre = str((personaje_variant as Dictionary).get("nombre", "")).strip_edges()
+		elif personaje_variant is Array:
+			var personajes: Array = personaje_variant as Array
+			if not personajes.is_empty() and personajes[0] is Dictionary:
+				nombre = str((personajes[0] as Dictionary).get("nombre", "")).strip_edges()
 		if nombre.is_empty():
 			nombre = personaje_id
 
