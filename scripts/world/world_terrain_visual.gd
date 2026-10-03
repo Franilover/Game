@@ -23,16 +23,19 @@ const ZONE_TEXTURES: Dictionary = {
 	0: "res://assets/tilesets/Grass.png",
 	1: "res://assets/tilesets/Dirt.png",
 	2: "res://assets/tilesets/Mountain.png",
-	3: "res://assets/tilesets/BASE.png",
+	3: "res://assets/tilesets/Desert.png",
 	4: "res://assets/tilesets/Water.png",
 	5: "res://assets/tilesets/Water.png",
 	6: "res://assets/tilesets/Water.png",
 	7: "res://assets/tilesets/BASE.png",
+	8: "res://assets/tilesets/Forest.png",
+	9: "res://assets/tilesets/Desert.png",
 }
 
 const TERRAIN_NAMES: PackedStringArray = [
 	"Grass", "Dirt", "Stone", "Sand",
 	"Water", "Deep Water", "Shore", "Ice",
+	"Forest", "Desert",
 ]
 
 var tile_size: int = 32
@@ -76,7 +79,7 @@ func _crear_tileset() -> TileSet:
 
 	var next_source_id := 0
 
-	for zone in range(8):
+	for zone in range(ZONE_TEXTURES.size()):
 		var texture := _cargar_textura_zone(zone)
 		if texture == null:
 			push_error(
