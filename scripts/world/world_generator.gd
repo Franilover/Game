@@ -42,9 +42,6 @@ func _process(_delta: float) -> void:
 	if streamer != null:
 		streamer.procesar()
 
-	if atmosphere != null:
-		atmosphere.procesar_jugador()
-
 
 func _crear_sistemas() -> void:
 	terrain = get_node_or_null(
