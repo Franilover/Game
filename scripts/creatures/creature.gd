@@ -406,29 +406,29 @@ func crear_rastro_teleport(
 
 
 func _es_humano() -> bool:
-\treturn criatura_nombre.strip_edges().to_lower() == "humano"
+	return criatura_nombre.strip_edges().to_lower() == "humano"
 
 
 func _obtener_nombre_individual() -> String:
-\tvar claves: Array[String] = [
-\t\t"nombre_individual",
-\t\t"nombre_personaje",
-\t\t"nombre_npc",
-\t\t"identidad"
-\t]
+	var claves: Array[String] = [
+		"nombre_individual",
+		"nombre_personaje",
+		"nombre_npc",
+		"identidad"
+	]
 
-\tfor clave in claves:
-\t\tvar valor: String = str(
-\t\t\tdatos.get(
-\t\t\t\tclave,
-\t\t\t\t""
-\t\t\t)
-\t\t).strip_edges()
+	for clave in claves:
+		var valor: String = str(
+			datos.get(
+				clave,
+				""
+			)
+		).strip_edges()
 
-\t\tif not valor.is_empty():
-\t\t\treturn valor
+		if not valor.is_empty():
+			return valor
 
-\treturn ""
+	return ""
 
 
 func get_stats_dnd() -> Dictionary:
@@ -732,7 +732,7 @@ func _dibujar_nombre() -> void:
 	font.draw_string_outline(
 		get_canvas_item(),
 		posicion,
-		criatura_nombre,
+		nombre_visual,
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1.0,
 		nombre_font_size,
@@ -747,7 +747,7 @@ func _dibujar_nombre() -> void:
 	font.draw_string(
 		get_canvas_item(),
 		posicion,
-		criatura_nombre,
+		nombre_visual,
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1.0,
 		nombre_font_size,
