@@ -379,6 +379,7 @@ func _crear_slots_equipamiento() -> void:
 
 	var configuracion := [
 		["arma", "ARMA"],
+		["herramienta", "HERRAMIENTA"],
 		["casco", "CASCO"],
 		["pechera", "PECHERA"],
 		["pantalones", "PANTALONES"],
