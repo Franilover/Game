@@ -60,6 +60,8 @@ var _eterium_runtime_ready: bool = false
 var _eterium_heal_timer: float = 0.0
 var _eterium_recovery_accumulator: float = 0.0
 var _eterium_sprint_cost_accumulator: float = 0.0
+var _world_generator_ref: Node = null
+var _admin_console_ref: Node = null
 
 
 var _jump_time: float = 0.0
@@ -226,9 +228,12 @@ func _physics_process(delta: float) -> void:
 
 
 func _registrar_terreno_explorado() -> void:
-	var world_gen: Node = get_tree().get_first_node_in_group(
-		"world_generator"
-	)
+	if not is_instance_valid(_world_generator_ref):
+		_world_generator_ref = get_tree().get_first_node_in_group(
+			"world_generator"
+		)
+
+	var world_gen: Node = _world_generator_ref
 
 	if world_gen == null or not is_instance_valid(world_gen):
 		return
@@ -295,12 +300,13 @@ func _registrar_terreno_explorado() -> void:
 
 
 func _esta_bloqueado_por_interfaz() -> bool:
-	var consola := get_tree().get_first_node_in_group(
-		"admin_console"
-	)
+	if not is_instance_valid(_admin_console_ref):
+		_admin_console_ref = get_tree().get_first_node_in_group(
+			"admin_console"
+		)
 
-	if consola != null:
-		if bool(consola.get("_abierto")):
+	if is_instance_valid(_admin_console_ref):
+		if bool(_admin_console_ref.get("_abierto")):
 			return true
 
 	return get_tree().paused
