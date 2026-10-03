@@ -59,7 +59,6 @@ var _eterium_organismos: Dictionary = {}
 var _eterium_runtime_ready: bool = false
 var _eterium_heal_timer: float = 0.0
 var _eterium_recovery_accumulator: float = 0.0
-var _eterium_heal_timer: float = 0.0
 
 
 var _jump_time: float = 0.0
