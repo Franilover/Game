@@ -6,6 +6,7 @@ signal eterium_runtime_cargado(datos: Dictionary)
 signal especies_jugables_cargadas(especies: Array)
 signal especie_eterium_game_cargado(reglas: Array)
 signal personaje_social_cargado(reglas: Array)
+signal personaje_regalos_cargados(regalos: Array)
 signal error_conexion(mensaje: String)
 
 
@@ -31,6 +32,9 @@ const RPC_ETERIUM_RUNTIME := (
 const API_ESPECIES_JUGABLES := (
 	"/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
 )
+const API_PERSONAJE_REGALOS := (
+	"/rest/v1/personaje_regalos_v1?select=id,personaje_game_id,item_id,reaccion,amistad,confianza,respeto,afecto,activo&activo=eq.true"
+)
 const API_PERSONAJE_SOCIAL := (
 	"/rest/v1/personaje_social_v1?select=personaje_game_id,amistad_inicial,confianza_inicial,respeto_inicial,afecto_inicial,sociabilidad,curiosidad,generosidad,prudencia,agresividad,activo&activo=eq.true"
 )
@@ -44,6 +48,7 @@ var _http_eterium: HTTPRequest
 var _http_especies: HTTPRequest
 var _http_especie_eterium_game: HTTPRequest
 var _http_personaje_social: HTTPRequest
+var _http_personaje_regalos: HTTPRequest
 var _timer: Timer
 var _solicitud_en_curso: bool = false
 var _intento_actual: int = 0
@@ -51,6 +56,7 @@ var _sincronizacion_inicial_realizada: bool = false
 var _eterium_runtime: Dictionary = {}
 var _especie_eterium_game: Array = []
 var _personaje_social: Array = []
+var _personaje_regalos: Array = []
 
 
 func _ready() -> void:
@@ -91,9 +97,17 @@ func _ready() -> void:
 		_al_completar_personaje_social
 	)
 
+	_http_personaje_regalos = HTTPRequest.new()
+	_http_personaje_regalos.timeout = HTTP_TIMEOUT
+	add_child(_http_personaje_regalos)
+	_http_personaje_regalos.request_completed.connect(
+		_al_completar_personaje_regalos
+	)
+
 	call_deferred("cargar_eterium_runtime")
 	call_deferred("cargar_especie_eterium_game")
 	call_deferred("cargar_personaje_social")
+	call_deferred("cargar_personaje_regalos")
 	call_deferred("cargar_especies_jugables")
 
 	_timer = Timer.new()
@@ -161,6 +175,51 @@ func _al_completar_especies_jugables(
 
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
 	especies_jugables_cargadas.emit(especies)
+
+
+func cargar_personaje_regalos() -> void:
+	if not _personaje_regalos.is_empty() or _http_personaje_regalos == null:
+		return
+	var headers := PackedStringArray([
+		"apikey: " + SUPABASE_KEY,
+		"Content-Type: application/json",
+		"Accept: application/json"
+	])
+	var resultado := _http_personaje_regalos.request(
+		SUPABASE_URL + API_PERSONAJE_REGALOS,
+		headers,
+		HTTPClient.METHOD_GET
+	)
+	if resultado != OK:
+		print("SupabaseClient: no se pudo solicitar preferencias de regalos → ", resultado)
+
+
+func _al_completar_personaje_regalos(
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		print("SupabaseClient: error de red cargando preferencias de regalos.")
+		return
+	if codigo_http < 200 or codigo_http >= 300:
+		print("SupabaseClient: HTTP ", codigo_http, " cargando preferencias de regalos → ", cuerpo.get_string_from_utf8())
+		return
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:
+		print("SupabaseClient: preferencias de regalos no son JSON válido.")
+		return
+	_personaje_regalos.clear()
+	for regalo_variant in json.data as Array:
+		if regalo_variant is Dictionary:
+			_personaje_regalos.append((regalo_variant as Dictionary).duplicate(true))
+	print("SupabaseClient: preferencias de regalos cargadas → ", _personaje_regalos.size())
+	personaje_regalos_cargados.emit(_personaje_regalos.duplicate(true))
+
+
+func obtener_personaje_regalos() -> Array:
+	return _personaje_regalos.duplicate(true)
 
 
 func cargar_personaje_social() -> void:
