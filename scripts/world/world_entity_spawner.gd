@@ -375,12 +375,20 @@ func summon_criatura(
 				nombre_solicitado
 			)
 		)
-		criatura_data["personaje_game_id"] = str(
+		var personaje_id := str(
 			personaje_game.get(
 				"id",
 				""
 			)
 		)
+
+		criatura_data["personaje_game_id"] = personaje_id
+
+		var dialogo_personaje := WorldData.obtener_dialogo_game(
+			personaje_id
+		)
+		if not dialogo_personaje.is_empty():
+			criatura_data["dialogo"] = dialogo_personaje
 
 		nombre_inicial = str(
 			personaje_game.get(
@@ -438,12 +446,20 @@ func summon_criatura(
 						""
 					)
 				)
-				criatura_data["personaje_game_id"] = str(
+				var personaje_id := str(
 					elegido.get(
 						"id",
 						""
 					)
 				)
+
+				criatura_data["personaje_game_id"] = personaje_id
+
+				var dialogo_personaje := WorldData.obtener_dialogo_game(
+					personaje_id
+				)
+				if not dialogo_personaje.is_empty():
+					criatura_data["dialogo"] = dialogo_personaje
 
 				nombre_inicial = str(
 					elegido.get(
