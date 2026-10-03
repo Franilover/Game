@@ -770,13 +770,15 @@ func registrar_terreno_explorado(
 ) -> bool:
 	var registros_variant: Variant = flags.get(
 		"mapa_terreno_explorado",
-		{}
+		null
 	)
 
-	var registros: Dictionary = {}
-
+	var registros: Dictionary
 	if registros_variant is Dictionary:
-		registros = (registros_variant as Dictionary).duplicate(true)
+		registros = registros_variant as Dictionary
+	else:
+		registros = {}
+		flags["mapa_terreno_explorado"] = registros
 
 	var nuevo: bool = false
 	var radio_efectivo: int = maxi(radio, 0)
@@ -818,19 +820,24 @@ func registrar_descubrimiento_mundo(
 	habitats: Array,
 	criaturas: Array
 ) -> bool:
-	var descubrimientos_variant: Variant = flags.get("descubrimientos_mundo", {})
-	var descubrimientos: Dictionary = {}
+	var descubrimientos_variant: Variant = flags.get("descubrimientos_mundo", null)
+	var descubrimientos: Dictionary
 	if descubrimientos_variant is Dictionary:
-		descubrimientos = (descubrimientos_variant as Dictionary).duplicate(true)
+		descubrimientos = descubrimientos_variant as Dictionary
+	else:
+		descubrimientos = {}
+		flags["descubrimientos_mundo"] = descubrimientos
 
 	var nuevos: Array[Dictionary] = []
 
 	var bioma_id := str(bioma.get("id", ""))
 	if not bioma_id.is_empty():
 		var biomas_variant: Variant = descubrimientos.get("biomas", {})
-		var biomas: Dictionary = {}
+		var biomas: Dictionary
 		if biomas_variant is Dictionary:
-			biomas = (biomas_variant as Dictionary).duplicate(true)
+			biomas = biomas_variant as Dictionary
+		else:
+			biomas = {}
 		if not biomas.has(bioma_id):
 			biomas[bioma_id] = true
 			nuevos.append({"nivel": "bioma", "id": bioma_id})
@@ -839,9 +846,11 @@ func registrar_descubrimiento_mundo(
 	var ecosistema_id := str(ecosistema.get("id", ""))
 	if not ecosistema_id.is_empty():
 		var ecosistemas_variant: Variant = descubrimientos.get("ecosistemas", {})
-		var ecosistemas: Dictionary = {}
+		var ecosistemas: Dictionary
 		if ecosistemas_variant is Dictionary:
-			ecosistemas = (ecosistemas_variant as Dictionary).duplicate(true)
+			ecosistemas = ecosistemas_variant as Dictionary
+		else:
+			ecosistemas = {}
 		if not ecosistemas.has(ecosistema_id):
 			ecosistemas[ecosistema_id] = true
 			nuevos.append({"nivel": "ecosistema", "id": ecosistema_id})
@@ -865,9 +874,11 @@ func registrar_descubrimiento_mundo(
 	descubrimientos["habitats"] = habitats_descubiertos
 
 	var criaturas_variant: Variant = descubrimientos.get("criaturas", {})
-	var criaturas_descubiertas: Dictionary = {}
+	var criaturas_descubiertas: Dictionary
 	if criaturas_variant is Dictionary:
-		criaturas_descubiertas = (criaturas_variant as Dictionary).duplicate(true)
+		criaturas_descubiertas = criaturas_variant as Dictionary
+	else:
+		criaturas_descubiertas = {}
 
 	for criatura_variant in criaturas:
 		if not criatura_variant is Dictionary:
