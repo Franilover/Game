@@ -371,7 +371,10 @@ func flush() -> void:
 		if not cells_variant is Array:
 			continue
 
-		var cells: Array = cells_variant
+		var cells: Array[Vector2i] = []
+		for cell_variant in cells_variant:
+			if cell_variant is Vector2i:
+				cells.append(cell_variant)
 		if cells.is_empty():
 			continue
 
