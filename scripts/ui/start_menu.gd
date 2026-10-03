@@ -86,18 +86,7 @@ var _mundo_preparado: bool = false
 var _cargando_mundo: bool = false
 
 # Creación de personaje antes de entrar a cualquier partida.
-var _personaje_overlay: ColorRect = null
-var _personaje_nombre: LineEdit = null
-var _personaje_genero: OptionButton = null
-var _personaje_genero_libre: LineEdit = null
-var _personaje_especie: OptionButton = null
-var _personaje_skins: ItemList = null
-var _personaje_status: Label = null
-var _personaje_confirmar: Button = null
-var _personaje_cancelar: Button = null
-var _especies_jugables: Array = []
-var _skins_disponibles: Array[String] = []
-var _accion_personaje_pendiente: String = ""
+var _character_creation: Control = null
 
 
 func _ready() -> void:
@@ -212,8 +201,7 @@ func _ready() -> void:
 			_al_especies_jugables_cargadas
 		)
 
-	_preparar_panel_personaje()
-	SupabaseClient.cargar_especies_jugables()
+	_preparar_creador_personaje()
 
 	if not WorldData.mundo_listo.is_connected(
 		_al_mundo_listo
@@ -654,259 +642,30 @@ func _actualizar_perfil_button() -> void:
 # CREACIÓN DE PERSONAJE
 # ============================================================
 
-func _preparar_panel_personaje() -> void:
-	_personaje_overlay = ColorRect.new()
-	_personaje_overlay.name = "CharacterCreationOverlay"
-	_personaje_overlay.visible = false
-	_personaje_overlay.color = Color(0.02, 0.015, 0.01, 0.82)
-	_personaje_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_personaje_overlay.z_index = 3000
-	add_child(_personaje_overlay)
-
-	var panel := PanelContainer.new()
-	panel.name = "CharacterPanel"
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-260.0, -245.0)
-	panel.size = Vector2(520.0, 490.0)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.2, 0.15, 0.1, 0.99)
-	style.border_color = Color(0.58, 0.46, 0.31, 1.0)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 8
-	style.corner_radius_top_right = 8
-	style.corner_radius_bottom_left = 8
-	style.corner_radius_bottom_right = 8
-	panel.add_theme_stylebox_override("panel", style)
-	_personaje_overlay.add_child(panel)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_top", 18)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_bottom", 18)
-	panel.add_child(margin)
-
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 8)
-	margin.add_child(column)
-
-	var title := Label.new()
-	title.text = "Crear personaje"
-	title.add_theme_font_size_override("font_size", 24)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(title)
-
-	_personaje_status = Label.new()
-	_personaje_status.text = "Completa los datos para entrar a la partida."
-	_personaje_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_personaje_status.add_theme_font_size_override("font_size", 10)
-	column.add_child(_personaje_status)
-
-	_personaje_nombre = LineEdit.new()
-	_personaje_nombre.text_changed.connect(_al_nombre_personaje_cambiado)
-	_personaje_nombre.placeholder_text = "Nombre"
-	_personaje_nombre.custom_minimum_size = Vector2(0, 34)
-	column.add_child(_personaje_nombre)
-
-	var genero_label := Label.new()
-	genero_label.text = "Género"
-	column.add_child(genero_label)
-
-	_personaje_genero = OptionButton.new()
-	_personaje_genero.add_item("Hombre")
-	_personaje_genero.add_item("Mujer")
-	_personaje_genero.add_item("Agenero")
-	_personaje_genero.add_item("Texto libre")
-	_personaje_genero.item_selected.connect(_al_cambiar_genero)
-	column.add_child(_personaje_genero)
-
-	_personaje_genero_libre = LineEdit.new()
-	_personaje_genero_libre.text_changed.connect(_al_genero_libre_cambiado)
-	_personaje_genero_libre.placeholder_text = "Escribe tu género"
-	_personaje_genero_libre.custom_minimum_size = Vector2(0, 32)
-	_personaje_genero_libre.visible = false
-	column.add_child(_personaje_genero_libre)
-
-	var especie_label := Label.new()
-	especie_label.text = "Especie"
-	column.add_child(especie_label)
-
-	_personaje_especie = OptionButton.new()
-	_personaje_especie.custom_minimum_size = Vector2(0, 34)
-	_personaje_especie.disabled = true
-	column.add_child(_personaje_especie)
-
-	var skin_label := Label.new()
-	skin_label.text = "Skin"
-	column.add_child(skin_label)
-
-	_personaje_skins = ItemList.new()
-	_personaje_skins.custom_minimum_size = Vector2(0, 112)
-	_personaje_skins.fixed_column_width = 76
-	_personaje_skins.max_columns = 5
-	_personaje_skins.icon_mode = ItemList.ICON_MODE_TOP
-	_personaje_skins.fixed_icon_size = Vector2i(64, 64)
-	_personaje_skins.allow_reselect = true
-	_personaje_skins.select_mode = ItemList.SELECT_SINGLE
-	column.add_child(_personaje_skins)
-
-	var buttons := HBoxContainer.new()
-	buttons.add_theme_constant_override("separation", 10)
-	column.add_child(buttons)
-
-	_personaje_confirmar = Button.new()
-	_personaje_confirmar.text = "Entrar"
-	_personaje_confirmar.custom_minimum_size = Vector2(0, 40)
-	_personaje_confirmar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_personaje_confirmar.disabled = true
-	_personaje_confirmar.pressed.connect(_confirmar_creacion_personaje)
-	buttons.add_child(_personaje_confirmar)
-
-	_personaje_cancelar = Button.new()
-	_personaje_cancelar.text = "Cancelar"
-	_personaje_cancelar.custom_minimum_size = Vector2(0, 40)
-	_personaje_cancelar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_personaje_cancelar.pressed.connect(_cancelar_creacion_personaje)
-	buttons.add_child(_personaje_cancelar)
-
-	_cargar_skins_personaje()
+func _preparar_creador_personaje() -> void:
+	var scene: PackedScene = preload("res://scenes/ui/character_creation.tscn")
+	_character_creation = scene.instantiate()
+	_character_creation.confirmed.connect(_on_character_confirmed)
+	_character_creation.cancelled.connect(_on_character_cancelled)
+	add_child(_character_creation)
 
 func _mostrar_creacion_personaje(accion: String) -> void:
-	_accion_personaje_pendiente = accion
-	_personaje_nombre.text = ""
-	_personaje_genero.select(0)
-	_personaje_genero_libre.text = ""
-	_personaje_genero_libre.visible = false
+	if _character_creation == null:
+		_preparar_creador_personaje()
+	_character_creation.open(accion)
 
-	if _personaje_especie.item_count > 0:
-		_personaje_especie.select(0)
+func _on_character_cancelled() -> void:
+	print("StartMenu: creación de personaje cancelada.")
 
-	if _personaje_skins.item_count > 0:
-		_personaje_skins.select(0)
-
-	_personaje_overlay.visible = true
-	_personaje_nombre.grab_focus()
-	_actualizar_boton_personaje()
-
-func _cancelar_creacion_personaje() -> void:
-	_accion_personaje_pendiente = ""
-	_personaje_overlay.visible = false
-
-
-func _al_nombre_personaje_cambiado(_texto: String) -> void:
-	_actualizar_boton_personaje()
-
-func _al_genero_libre_cambiado(_texto: String) -> void:
-	_actualizar_boton_personaje()
-
-func _al_cambiar_genero(indice: int) -> void:
-	_personaje_genero_libre.visible = indice == 3
-	_actualizar_boton_personaje()
-
-func _cargar_skins_personaje() -> void:
-	_personaje_skins.clear()
-	_skins_disponibles.clear()
-
-	var directorio := DirAccess.open("res://assets/art/characters/skins/")
-	if directorio == null:
-		_personaje_status.text = "No se encontró la carpeta de skins."
-		return
-
-	var archivos := directorio.get_files()
-	archivos.sort()
-
-	for archivo in archivos:
-		var extension := archivo.get_extension().to_lower()
-		if extension not in ["png", "webp", "jpg", "jpeg"]:
-			continue
-
-		var ruta := "res://assets/art/characters/skins/" + archivo
-		var textura := load(ruta)
-		if not textura is Texture2D:
-			continue
-
-		_skins_disponibles.append(ruta)
-		var nombre := archivo.get_basename()
-		_personaje_skins.add_icon_item(textura as Texture2D, true)
-		_personaje_skins.set_item_text(_personaje_skins.item_count - 1, nombre)
-
-	if _personaje_skins.item_count > 0:
-		_personaje_skins.select(0)
-
-	_actualizar_boton_personaje()
-
-func _al_especies_jugables_cargadas(especies: Array) -> void:
-	_especies_jugables = especies.duplicate(true)
-	_personaje_especie.clear()
-
-	for especie_variant in _especies_jugables:
-		if not especie_variant is Dictionary:
-			continue
-		var especie := especie_variant as Dictionary
-		_personaje_especie.add_item(str(especie.get("nombre", "Especie")))
-		_personaje_especie.set_item_metadata(
-			_personaje_especie.item_count - 1,
-			especie.duplicate(true)
-		)
-
-	_personaje_especie.disabled = _personaje_especie.item_count == 0
-	if _personaje_especie.item_count > 0:
-		_personaje_especie.select(0)
-
-	if _personaje_especie.item_count > 0:
-		_personaje_status.text = "Especies jugables cargadas desde Supabase."
-	else:
-		_personaje_status.text = "No hay especies jugables disponibles."
-	_actualizar_boton_personaje()
-
-func _actualizar_boton_personaje() -> void:
-	if _personaje_confirmar == null:
-		return
-
-	var nombre_valido := not _personaje_nombre.text.strip_edges().is_empty()
-	var genero_valido := (
-		_personaje_genero.selected != 3
-		or not _personaje_genero_libre.text.strip_edges().is_empty()
-	)
-	var especie_valida := _personaje_especie.item_count > 0 and _personaje_especie.selected >= 0
-	var skin_valida := _personaje_skins.item_count > 0 and _personaje_skins.get_selected_items().size() > 0
-
-	_personaje_confirmar.disabled = not (nombre_valido and genero_valido and especie_valida and skin_valida)
-
-func _guardar_configuracion_personaje() -> void:
-	var especie: Dictionary = _personaje_especie.get_item_metadata(_personaje_especie.selected) as Dictionary
-	var skin_index: int = _personaje_skins.get_selected_items()[0]
-	var genero := _personaje_genero.get_item_text(_personaje_genero.selected)
-	if _personaje_genero.selected == 3:
-		genero = _personaje_genero_libre.text.strip_edges()
-
-	GameState.flags["personaje"] = {
-		"nombre": _personaje_nombre.text.strip_edges(),
-		"genero": genero,
-		"especie": especie.duplicate(true),
-		"skin": _skins_disponibles[skin_index]
-	}
-	GameState.flags["personaje"]["skin_nombre"] = (
-		_skins_disponibles[skin_index].get_file().get_basename()
-	)
-
-func _confirmar_creacion_personaje() -> void:
-	_actualizar_boton_personaje()
-	if _personaje_confirmar.disabled:
-		return
-
-	_guardar_configuracion_personaje()
-	_personaje_overlay.visible = false
-
-	match _accion_personaje_pendiente:
+func _on_character_confirmed(config: Dictionary, action: String) -> void:
+	GameState.flags["personaje"] = config
+	match action:
 		"aventura":
 			_iniciar_aventura_con_personaje()
 		"host":
 			_crear_partida_real()
 		"join":
 			_unirse_partida_real()
-
-	_accion_personaje_pendiente = ""
 
 # ============================================================
 # MULTIJUGADOR
