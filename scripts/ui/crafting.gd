@@ -178,7 +178,7 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	materiales.add_theme_font_size_override("font_size", 10)
 	info.add_child(materiales)
 
-	var resultado := receta.get("resultado", {})
+	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var salida := Label.new()
 	salida.text = "Resultado: " + _nombre_item(str(resultado.get("item_id", ""))) + " x" + str(int(resultado.get("cantidad", 1)))
 	salida.add_theme_font_size_override("font_size", 10)
