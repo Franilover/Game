@@ -20,7 +20,8 @@ var stamina_value: Label = null
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
 
-var interaction_prompt: Label = null
+var interaction_prompt: PanelContainer = null
+var interaction_prompt_action: Label = null
 var interaction_panel: PanelContainer = null
 var interaction_title: Label = null
 var interaction_body: Label = null
@@ -43,7 +44,7 @@ func _ready() -> void:
 		location_panel.visible = false
 
 	if interaction_prompt:
-		interaction_prompt.visible = false
+	interaction_prompt.visible = false
 
 	_buscar_player()
 	_buscar_world_generator()
@@ -148,7 +149,12 @@ func _buscar_nodos_hud() -> void:
 	eterium_bar = _buscar_nodo_tipo("EteriumBar", ProgressBar)
 	eterium_value = _buscar_nodo_tipo("EteriumValue", Label)
 
-	interaction_prompt = _buscar_nodo_tipo("InteractionPrompt", Label)
+	var interaction_prompt_node := find_child("InteractionPrompt", true, false)
+	if interaction_prompt_node is PanelContainer:
+		interaction_prompt = interaction_prompt_node as PanelContainer
+		interaction_prompt_action = _buscar_nodo_tipo_desde(interaction_prompt, "Action", Label)
+	else:
+		print("HUD: InteractionPrompt no es un PanelContainer.")
 
 	print(
 		"HUD: nodos → ",
@@ -158,8 +164,32 @@ func _buscar_nodos_hud() -> void:
 		" StaminaValue=", stamina_value != null,
 		" EteriumBar=", eterium_bar != null,
 		" EteriumValue=", eterium_value != null,
-		" InteractionPrompt=", interaction_prompt != null
+		" InteractionPrompt=", interaction_prompt != null,
+		" InteractionAction=", interaction_prompt_action != null
 	)
+
+
+func _buscar_nodo_tipo_desde(raiz: Node, nombre: String, tipo: Variant) -> Variant:
+	if raiz == null:
+		return null
+
+	var nodo := raiz.find_child(nombre, true, false)
+	if nodo == null:
+		print("HUD: no se encontró nodo → ", nombre)
+		return null
+
+	if not is_instance_of(nodo, tipo):
+		print(
+			"HUD: nodo ",
+			nombre,
+			" existe pero es ",
+			nodo.get_class(),
+			" y no ",
+			str(tipo)
+		)
+		return null
+
+	return nodo
 
 
 func _buscar_nodo_tipo(nombre: String, tipo: Variant) -> Variant:
@@ -768,7 +798,8 @@ func mostrar_interaccion(texto: String) -> void:
 	if interaction_prompt == null:
 		return
 
-	interaction_prompt.text = texto
+	if interaction_prompt_action != null:
+		interaction_prompt_action.text = texto
 	interaction_prompt.visible = true
 	interaction_prompt.z_index = 1000
 
