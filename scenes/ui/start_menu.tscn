@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ssk4irewulhm"]
 
 [ext_resource type="Script" uid="uid://cmn23gd47tjqf" path="res://scripts/ui/start_menu.gd" id="1_start_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxProfileNormal"]
 bg_color = Color(0.29, 0.22, 0.15, 1)
@@ -458,3 +459,6 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 text = "Volver"
+
+
+[node name="CharacterCreation" parent="." instance=ExtResource("2_character_creation")]
