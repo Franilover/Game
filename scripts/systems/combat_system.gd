@@ -55,42 +55,46 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _accion_bloqueada():
 		return
 
-	if not event.is_action_pressed("primary_action"):
+	if not event is InputEventMouseButton:
 		return
 
-	# La interacción contextual tiene prioridad sobre el combate.
-	# Si hay un objetivo (por ejemplo, un personaje dialogable), no
-	# permitimos que este mismo click termine convertido en un golpe.
-	if _hay_interaccion_contextual():
+	var mouse_event := event as InputEventMouseButton
+
+	if not mouse_event.pressed:
 		return
 
-	if _tiempo_desde_ataque > 0.0:
+	var arma: Dictionary = {}
+
+	# Click izquierdo = usar el objeto seleccionado en la hotbar.
+	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+		var objeto_activo := _obtener_objeto_activo()
+
+		if objeto_activo.is_empty():
+			return
+
+		if _tiempo_desde_ataque > 0.0:
+			return
+
+		if not _es_arma(objeto_activo):
+			return
+
+		_atacar_con_arma(objeto_activo)
+		get_viewport().set_input_as_handled()
 		return
 
-	usar_objeto_activo()
+	# Click derecho = usar exclusivamente el arma equipada en
+	# el slot de arma del inventario, sin importar la hotbar.
+	if mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+		arma = _obtener_arma_equipada()
 
-	get_viewport().set_input_as_handled()
+		if arma.is_empty():
+			return
 
+		if _tiempo_desde_ataque > 0.0:
+			return
 
-func _hay_interaccion_contextual() -> bool:
-	var interaction_system := get_tree().get_first_node_in_group(
-		"interaction_system"
-	)
-
-	if interaction_system == null:
-		interaction_system = get_node_or_null(
-		"../InteractionSystem"
-	)
-
-	if interaction_system == null:
-		return false
-
-	if not "objetivo_actual" in interaction_system:
-		return false
-
-	var objetivo: Variant = interaction_system.get("objetivo_actual")
-
-	return objetivo != null and is_instance_valid(objetivo)
+		_atacar_con_arma(arma)
+		get_viewport().set_input_as_handled()
 
 
 func _accion_bloqueada() -> bool:
@@ -122,16 +126,17 @@ func usar_objeto_activo() -> void:
 	if player == null:
 		return
 
-	# El combate es independiente de la selección de la hotbar.
-	# Si hay un arma equipada, esa es la que usa el ataque primario.
-	# Si no hay arma equipada, el jugador pelea con los puños.
-	var arma_equipada := _obtener_arma_equipada()
+	# Compatibilidad para llamadas internas: este método representa
+	# exclusivamente el objeto seleccionado en la hotbar.
+	var objeto_activo := _obtener_objeto_activo()
 
-	if not arma_equipada.is_empty():
-		_atacar_con_arma(arma_equipada)
+	if objeto_activo.is_empty():
 		return
 
-	_atacar_desarmado()
+	if not _es_arma(objeto_activo):
+		return
+
+	_atacar_con_arma(objeto_activo)
 
 
 func _obtener_arma_equipada() -> Dictionary:
