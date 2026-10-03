@@ -13,7 +13,9 @@ enum Zone {
 	WATER,
 	DEEP_WATER,
 	SHORE,
-	ICE
+	ICE,
+	FOREST,
+	DESERT
 }
 
 
