@@ -94,7 +94,7 @@ func _seguir_jugador() -> void:
 	if _player == null or _camera == null:
 		return
 
-	var posicion := _player.global_position
+	var posicion: Vector2 = _player.global_position
 	if posicion == _ultima_posicion_camara:
 		return
 
