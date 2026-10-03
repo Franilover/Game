@@ -46,19 +46,22 @@ var _dirty_lookup: Dictionary = {}
 
 func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
-	_crear_tilemap()
-	tilemap_dual.tile_set = _crear_tileset()
-	tilemap_dual.z_index = -1
-	tilemap_dual.rendering_quadrant_size = 32
-	tilemap_dual._changed()
 
-func _crear_tilemap() -> void:
 	if tilemap_dual != null:
 		return
+
 	tilemap_dual = TileMapDual.new()
 	tilemap_dual.name = "TerrainDual"
 	tilemap_dual.godot_4_3_compatibility = false
+	tilemap_dual.tile_set = _crear_tileset()
+	tilemap_dual.z_index = -1
+	tilemap_dual.rendering_quadrant_size = 32
+
+	# El TileMapDual configura su Display en _ready() y hace su
+	# primera actualización en el siguiente frame. No necesitamos
+	# forzar _changed() manualmente.
 	add_child(tilemap_dual)
+
 
 func _crear_tileset() -> TileSet:
 	var tile_set := TileSet.new()
