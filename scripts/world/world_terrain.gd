@@ -47,6 +47,11 @@ func configurar(
 	nuevo_tile_size: int,
 	nuevo_chunk_size: int
 ) -> void:
+	# WorldTerrain es una capa puramente visual de suelo. Nunca debe
+	# quedar por encima de entidades aunque el padre tenga otro z_index.
+	z_as_relative = false
+	z_index = -4096
+
 	map_seed = nuevo_seed
 	tile_size = nuevo_tile_size
 	chunk_size_tiles = nuevo_chunk_size
