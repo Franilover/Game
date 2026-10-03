@@ -216,12 +216,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="SlotsTitle" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel" unique_id=1200770226]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
-theme_override_font_sizes/font_size = 10
-text = "OBJETOS"
-
 [node name="Grid" type="GridContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel" unique_id=1707057280]
 layout_mode = 2
 size_flags_vertical = 3
@@ -248,12 +242,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="InfoTitle" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText" unique_id=305622098]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
-theme_override_font_sizes/font_size = 10
-text = "DESCRIPCIÓN"
-
 [node name="ItemName" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText" unique_id=1080046545]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
@@ -279,13 +267,6 @@ custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
-
-[node name="SkinTitle" type="Label" parent="Window/Margin/Column/Tabs/Inventario/RightPanel" unique_id=3001000003]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
-theme_override_font_sizes/font_size = 10
-text = "SKIN DEL PERSONAJE"
-horizontal_alignment = 1
 
 [node name="EquipmentArea" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/RightPanel" unique_id=3001000011]
 layout_mode = 2
