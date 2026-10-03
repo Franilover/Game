@@ -36,7 +36,7 @@ const API_PERSONAJE_REGALOS := (
 	"/rest/v1/personaje_regalos_v1?select=id,personaje_game_id,item_id,reaccion,amistad,confianza,respeto,afecto,activo&activo=eq.true"
 )
 const API_PERSONAJE_SOCIAL := (
-	"/rest/v1/personaje_social_v1?select=personaje_game_id,amistad_inicial,confianza_inicial,respeto_inicial,afecto_inicial,sociabilidad,curiosidad,generosidad,prudencia,agresividad,activo,personajes_game!inner(nombre)&activo=eq.true"
+	"/rest/v1/personaje_social_v1?select=personaje_game_id,amistad_inicial,confianza_inicial,respeto_inicial,afecto_inicial,sociabilidad,curiosidad,generosidad,prudencia,agresividad,activo,personajes_game(nombre)&activo=eq.true"
 )
 const API_ESPECIE_ETERIUM_GAME := (
 	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
