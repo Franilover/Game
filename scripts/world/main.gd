@@ -12,6 +12,9 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _interaction_system: Node = $Systems/InteractionSystem
 @onready var _combat_system: Node = $Systems/CombatSystem
 
+# Sistemas de interacción narrativa
+var _dialogue_system: Node = null
+
 # IUM Lab
 var _ium_manager: Node = null
 var _ium_lab: Control = null
@@ -52,6 +55,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_interaccion()
 	_configurar_combate()
 	_configurar_inventario()
+	_inicializar_dialogo()
 	_configurar_pantalla()
 
 	# Inicializar IUM con jugador (jugador_id puede venir de auth en el futuro)
@@ -137,6 +141,35 @@ func _configurar_inventario() -> void:
 	if _inventory == null:
 		push_error("Main: no se encontró UI/Inventory.")
 		return
+
+
+func _inicializar_dialogo() -> void:
+	var systems := get_node_or_null("Systems")
+	if systems == null:
+		push_error("Main: no se encontró nodo Systems para DialogueSystem.")
+		return
+
+	var dialogue_script := load(
+		"res://scripts/systems/dialogue_system.gd"
+	)
+	if dialogue_script == null:
+		push_error("Main: no se pudo cargar dialogue_system.gd.")
+		return
+
+	_dialogue_system = Node.new()
+	_dialogue_system.name = "DialogueSystem"
+	_dialogue_system.set_script(dialogue_script)
+	systems.add_child(_dialogue_system)
+
+	var ui := get_node_or_null("UI")
+	if _dialogue_system.has_method("configurar"):
+		_dialogue_system.call(
+			"configurar",
+			_player,
+			ui
+		)
+
+	print("Main: DialogueSystem inicializado.")
 
 
 func _configurar_pantalla() -> void:
