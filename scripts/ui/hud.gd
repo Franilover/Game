@@ -293,9 +293,10 @@ func _buscar_player() -> void:
 
 	player = encontrado
 
-	print("HUD: Player asignado → ", player.name)
-
 	_conectar_senales_player()
+	_actualizar_vida()
+	_actualizar_stamina()
+	_actualizar_eterium()
 
 
 func _buscar_world_generator() -> void:
