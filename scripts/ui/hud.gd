@@ -468,12 +468,31 @@ func _actualizar_contexto() -> void:
 		"habitat"
 	)
 
+	var tiempo := _obtener_tiempo_mundo()
+	var hora := str(tiempo.get("hora", "00:00"))
+	var periodo := str(tiempo.get("periodo", "Día"))
+
 	location_label.text = (
-		"Bioma: " + bioma +
+		"Hora: " + hora + " — " + periodo +
+		"\nBioma: " + bioma +
 		"\nEcosistema: " + ecosistema +
 		"\nHábitat: " + habitat
 	)
 
+
+func _obtener_tiempo_mundo() -> Dictionary:
+	if not is_instance_valid(world_generator):
+		return {}
+
+	var atmosfera = world_generator.get_node_or_null("WorldAtmosphere")
+	if atmosfera == null or not atmosfera.has_method("obtener_tiempo"):
+		return {}
+
+	var resultado = atmosfera.call("obtener_tiempo")
+	if resultado is Dictionary:
+		return resultado
+
+	return {}
 
 func _obtener_contexto_mundo(posicion: Vector2) -> Dictionary:
 	if not is_instance_valid(world_generator):
