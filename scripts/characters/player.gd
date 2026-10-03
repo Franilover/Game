@@ -98,11 +98,11 @@ func _ready() -> void:
 	stamina = max_stamina
 
 	_configurar_eterium_desde_supabase()
-	_configurar_especie_eterium_game_desde_supabase()
 
 	_base_visual_position = visual.position
 
 	_aplicar_configuracion_personaje()
+	_configurar_especie_eterium_game_desde_supabase()
 	_update_dir_marker()
 	_update_visual()
 
@@ -507,13 +507,16 @@ func _aplicar_especie_eterium_game(reglas: Array) -> void:
 			continue
 		_especie_eterium_game = regla.duplicate(true)
 		_especie_eterium_game_ready = true
+		var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana))))
+		max_mana = capacidad
+		mana = mini(mana, max_mana)
 		if bool(regla.get("vida_eterium_compartidos", false)):
-			var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana))))
-			max_mana = capacidad
 			max_health = capacidad
 			health = capacidad
 			mana = capacidad
 			health_changed.emit(health, max_health)
+			mana_changed.emit(mana, max_mana)
+		else:
 			mana_changed.emit(mana, max_mana)
 		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", bool(regla.get("vida_eterium_compartidos", false)), " | capacidad=", max_mana)
 		return
