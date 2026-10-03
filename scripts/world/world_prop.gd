@@ -16,11 +16,21 @@ func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nu
 	semilla = nueva_semilla
 	datos = nuevos_datos.duplicate(true)
 
-	interactuable = tipo == "recurso" or tipo == "planta"
+	interactuable = (
+		tipo == "recurso"
+		or tipo == "planta"
+		or tipo == "flor"
+		or tipo == "cueva"
+		or tipo == "estructura"
+	)
 
+	remove_from_group("interactable")
 	remove_from_group("world_resource")
 	remove_from_group("world_cave")
 	remove_from_group("world_structure")
+
+	if interactuable:
+		add_to_group("interactable")
 
 	if tipo == "recurso" or tipo == "planta":
 		add_to_group("world_resource")
@@ -36,6 +46,82 @@ func obtener_tipo() -> String:
 
 func obtener_datos() -> Dictionary:
 	return datos.duplicate(true)
+
+
+func get_interaction_distance() -> float:
+	return 58.0
+
+
+func get_interaction_priority() -> int:
+	match tipo:
+		"recurso", "planta", "flor":
+			return 30
+		"cueva", "estructura":
+			return 20
+		_:
+			return 0
+
+
+func get_interaction_text() -> String:
+	match tipo:
+		"recurso", "planta", "flor":
+			return "Investigar"
+		"cueva":
+			return "Explorar"
+		"estructura":
+			return "Examinar"
+		_:
+			return "Examinar"
+
+
+func can_interact(persona: Node) -> bool:
+	if not interactuable:
+		return false
+
+	if not persona is Node2D:
+		return false
+
+	if not is_instance_valid(persona):
+		return false
+
+	var persona_2d := persona as Node2D
+	var distancia := global_position.distance_to(
+		persona_2d.global_position
+	)
+
+	return distancia <= get_interaction_distance()
+
+
+func interact(persona: Node) -> void:
+	if not can_interact(persona):
+		return
+
+	var accion := get_interaction_text()
+	var categoria: String = tipo.capitalize()
+
+	if tipo == "cueva":
+		categoria = "Entrada"
+	elif tipo == "recurso":
+		categoria = "Recurso"
+
+	var mensaje := accion + " " + categoria
+
+	if not bioma.is_empty():
+		mensaje += " · " + bioma
+
+	Events.notification_pushed.emit(
+		mensaje
+	)
+
+	print(
+		"WorldProp: interacción → ",
+		accion,
+		" | tipo=",
+		tipo,
+		" | bioma=",
+		bioma
+	)
+
 
 func _ready() -> void:
 	z_index = clampi(int(global_position.y / 8.0), -4096, 4096)
