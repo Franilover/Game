@@ -24,9 +24,9 @@ const ZONE_TEXTURES: Dictionary = {
 	1: "res://assets/tilesets/Dirt.png",
 	2: "res://assets/tilesets/Mountain.png",
 	3: "res://assets/tilesets/BASE.png",
-	4: "res://assets/tilesets/Waters.png",
-	5: "res://assets/tilesets/Waters.png",
-	6: "res://assets/tilesets/Waters.png",
+	4: "res://assets/tilesets/Water.png",
+	5: "res://assets/tilesets/Water.png",
+	6: "res://assets/tilesets/Water.png",
 	7: "res://assets/tilesets/BASE.png",
 }
 
