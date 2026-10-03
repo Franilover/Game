@@ -605,17 +605,38 @@ func _pintar_tile(
 		return
 
 	var bioma_nombre := ""
+	var bioma_textura := ""
+
 	if bioma_index >= 0 and bioma_index < _biomas.size():
 		var bioma_variant: Variant = _biomas[bioma_index]
+
 		if bioma_variant is Dictionary:
+			var bioma := bioma_variant as Dictionary
+
 			bioma_nombre = str(
-				(bioma_variant as Dictionary).get("nombre", "")
+				bioma.get("nombre", "")
 			)
+
+			var generacion_variant: Variant = (
+				bioma.get(
+					"generacion",
+					{}
+				)
+			)
+
+			if generacion_variant is Dictionary:
+				bioma_textura = str(
+					(generacion_variant as Dictionary).get(
+						"textura",
+						""
+					)
+				)
 
 	visual.set_zone(
 		tile,
 		zona,
-		bioma_nombre
+		bioma_nombre,
+		bioma_textura
 	)
 func get_zona_at(
 	tile: Vector2i
