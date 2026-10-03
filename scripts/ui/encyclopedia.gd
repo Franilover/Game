@@ -2,15 +2,11 @@ extends Control
 
 
 var _ids_descubiertos: Array[String] = []
-var _categoria_actual: String = "biomas"
-var _categoria_selector: OptionButton
-
-var _lista: ItemList
+var _arbol: Tree
 var _nombre: Label
 var _contador: Label
 var _ficha: RichTextLabel
 var _icono: TextureRect
-var _subtitulo: Label
 
 
 func _ready() -> void:
@@ -33,28 +29,18 @@ func _ready() -> void:
 				_al_descubrimiento_mundo_actualizado
 			)
 
-	if not WorldData.mundo_listo.is_connected(
-		_al_mundo_actualizado
-	):
-		WorldData.mundo_listo.connect(
-			_al_mundo_actualizado
-		)
+	if not WorldData.mundo_listo.is_connected(_al_mundo_actualizado):
+		WorldData.mundo_listo.connect(_al_mundo_actualizado)
 
-	if not WorldData.mundo_actualizado.is_connected(
-		_al_mundo_actualizado
-	):
-		WorldData.mundo_actualizado.connect(
-			_al_mundo_actualizado
-		)
+	if not WorldData.mundo_actualizado.is_connected(_al_mundo_actualizado):
+		WorldData.mundo_actualizado.connect(_al_mundo_actualizado)
 
 	actualizar()
 
 
 func _crear_interfaz() -> void:
 	var margin: MarginContainer = MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(
-		Control.PRESET_FULL_RECT
-	)
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 10)
 	margin.add_theme_constant_override("margin_top", 10)
 	margin.add_theme_constant_override("margin_right", 10)
@@ -67,14 +53,6 @@ func _crear_interfaz() -> void:
 
 	var header: HBoxContainer = HBoxContainer.new()
 	column.add_child(header)
-
-	_categoria_selector = OptionButton.new()
-	_categoria_selector.add_item("Biomas")
-	_categoria_selector.add_item("Ecosistemas")
-	_categoria_selector.add_item("Hábitats")
-	_categoria_selector.add_item("Criaturas")
-	_categoria_selector.item_selected.connect(_al_cambiar_categoria)
-	header.add_child(_categoria_selector)
 
 	var title: Label = Label.new()
 	title.text = "CONOCIMIENTOS DESCUBIERTOS"
@@ -101,33 +79,32 @@ func _crear_interfaz() -> void:
 	body.add_theme_constant_override("separation", 10)
 	column.add_child(body)
 
-	_lista = ItemList.new()
-	_lista.custom_minimum_size = Vector2(190, 0)
-	_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_lista.add_theme_color_override(
+	_arbol = Tree.new()
+	_arbol.custom_minimum_size = Vector2(250, 0)
+	_arbol.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_arbol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_arbol.hide_root = true
+	_arbol.columns = 1
+	_arbol.add_theme_color_override(
 		"font_color",
 		Color(0.78, 0.66, 0.46, 1.0)
 	)
-	_lista.add_theme_color_override(
+	_arbol.add_theme_color_override(
 		"font_selected_color",
 		Color(0.95, 0.88, 0.7, 1.0)
 	)
-	_lista.add_theme_font_size_override("font_size", 11)
+	_arbol.add_theme_font_size_override("font_size", 11)
 
-	var estilo_lista: StyleBoxFlat = StyleBoxFlat.new()
-	estilo_lista.bg_color = Color(0.075, 0.05, 0.035, 0.9)
-	estilo_lista.border_width_left = 1
-	estilo_lista.border_width_top = 1
-	estilo_lista.border_width_right = 1
-	estilo_lista.border_width_bottom = 1
-	estilo_lista.border_color = Color(0.29, 0.19, 0.12, 1.0)
-	_lista.add_theme_stylebox_override(
-		"panel",
-		estilo_lista
-	)
-
-	_lista.item_selected.connect(_al_seleccionar)
-	body.add_child(_lista)
+	var estilo_arbol: StyleBoxFlat = StyleBoxFlat.new()
+	estilo_arbol.bg_color = Color(0.075, 0.05, 0.035, 0.9)
+	estilo_arbol.border_width_left = 1
+	estilo_arbol.border_width_top = 1
+	estilo_arbol.border_width_right = 1
+	estilo_arbol.border_width_bottom = 1
+	estilo_arbol.border_color = Color(0.29, 0.19, 0.12, 1.0)
+	_arbol.add_theme_stylebox_override("panel", estilo_arbol)
+	_arbol.item_selected.connect(_al_seleccionar)
+	body.add_child(_arbol)
 
 	var detail_panel: PanelContainer = PanelContainer.new()
 	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -140,10 +117,7 @@ func _crear_interfaz() -> void:
 	estilo_detalle.border_width_right = 1
 	estilo_detalle.border_width_bottom = 1
 	estilo_detalle.border_color = Color(0.29, 0.19, 0.12, 1.0)
-	detail_panel.add_theme_stylebox_override(
-		"panel",
-		estilo_detalle
-	)
+	detail_panel.add_theme_stylebox_override("panel", estilo_detalle)
 	body.add_child(detail_panel)
 
 	var detail_margin: MarginContainer = MarginContainer.new()
@@ -167,6 +141,7 @@ func _crear_interfaz() -> void:
 	_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_icono.visible = false
 	top.add_child(_icono)
 
 	var title_column: VBoxContainer = VBoxContainer.new()
@@ -175,7 +150,7 @@ func _crear_interfaz() -> void:
 	top.add_child(title_column)
 
 	_nombre = Label.new()
-	_nombre.text = "Ninguna criatura descubierta"
+	_nombre.text = "Nada descubierto todavía"
 	_nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_nombre.add_theme_color_override(
 		"font_color",
@@ -185,9 +160,7 @@ func _crear_interfaz() -> void:
 	title_column.add_child(_nombre)
 
 	var descubierto: Label = Label.new()
-	descubierto.text = (
-		"Explora Garlia para descubrir sus formas y lugares."
-	)
+	descubierto.text = "Explora Garlia para descubrir sus formas y lugares."
 	descubierto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	descubierto.add_theme_color_override(
 		"font_color",
@@ -205,118 +178,220 @@ func _crear_interfaz() -> void:
 		"default_color",
 		Color(0.72, 0.61, 0.45, 1.0)
 	)
-	_ficha.add_theme_font_size_override(
-		"normal_font_size",
-		11
-	)
+	_ficha.add_theme_font_size_override("normal_font_size", 11)
 	detail_column.add_child(_ficha)
 
 
 func actualizar() -> void:
-	if _lista == null:
+	if _arbol == null:
 		return
 
-	_lista.clear()
-	_ids_descubiertos.clear()
+	_arbol.clear()
 
-	var descubrimientos := GameState.obtener_descubrimientos_mundo()
-	var registros_variant: Variant = descubrimientos.get(
-		_categoria_actual,
-		{}
-	)
+	var descubrimientos: Dictionary = GameState.obtener_descubrimientos_mundo()
+	var raiz: TreeItem = _arbol.create_item()
 
-	if not registros_variant is Dictionary:
+	var total: int = 0
+	var primero: TreeItem = null
+
+	var biomas_variant: Variant = descubrimientos.get("biomas", {})
+	if biomas_variant is Dictionary:
+		var biomas: Dictionary = biomas_variant as Dictionary
+		var registros_biomas: Array[Dictionary] = _obtener_registros(
+			biomas,
+			"bioma"
+		)
+		registros_biomas.sort_custom(_ordenar_registros)
+
+		for bioma in registros_biomas:
+			var bioma_item: TreeItem = _agregar_item(
+				raiz,
+				bioma,
+				"bioma"
+			)
+			total += 1
+			if primero == null:
+				primero = bioma_item
+
+			var ecosistemas_variant: Variant = bioma.get("ecosistemas", [])
+			if not ecosistemas_variant is Array:
+				continue
+
+			var ecosistemas_descubiertos: Dictionary = _obtener_descubiertos(
+				descubrimientos,
+				"ecosistemas"
+			)
+			var ecosistemas: Array[Dictionary] = _filtrar_descubiertos(
+				ecosistemas_variant as Array,
+				ecosistemas_descubiertos
+			)
+			ecosistemas.sort_custom(_ordenar_registros)
+
+			for ecosistema in ecosistemas:
+				var eco_item: TreeItem = _agregar_item(
+					bioma_item,
+					ecosistema,
+					"ecosistema"
+				)
+				total += 1
+				if primero == null:
+					primero = eco_item
+
+				var habitats_variant: Variant = ecosistema.get("habitats", [])
+				if not habitats_variant is Array:
+					continue
+
+				var habitats_descubiertos: Dictionary = _obtener_descubiertos(
+					descubrimientos,
+					"habitats"
+				)
+				var habitats: Array[Dictionary] = _filtrar_descubiertos(
+					habitats_variant as Array,
+					habitats_descubiertos
+				)
+				habitats.sort_custom(_ordenar_registros)
+
+				for habitat in habitats:
+					var habitat_item: TreeItem = _agregar_item(
+						eco_item,
+						habitat,
+						"habitat"
+					)
+					total += 1
+					if primero == null:
+						primero = habitat_item
+
+					var criaturas_variant: Variant = habitat.get("criaturas", [])
+					if not criaturas_variant is Array:
+						continue
+
+					var criaturas_descubiertas: Dictionary = _obtener_descubiertos(
+						descubrimientos,
+						"criaturas"
+					)
+					var criaturas: Array[Dictionary] = _filtrar_descubiertos(
+						criaturas_variant as Array,
+						criaturas_descubiertas
+					)
+					criaturas.sort_custom(_ordenar_registros)
+
+					for criatura in criaturas:
+						var criatura_item: TreeItem = _agregar_item(
+							habitat_item,
+							criatura,
+							"criatura"
+						)
+						total += 1
+						if primero == null:
+							primero = criatura_item
+
+	_contador.text = str(total) + " conocimientos"
+
+	if primero == null:
 		_mostrar_sin_descubrimientos()
 		return
 
-	var registros := registros_variant as Dictionary
-	var candidatos: Array = []
+	_arbol.set_selected(primero, 0)
+	_mostrar_item(primero)
+
+
+func _obtener_registros(registros: Dictionary, nivel: String) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
 
 	for id_variant in registros.keys():
-		var id := str(id_variant)
+		var id: String = str(id_variant)
 		if id.is_empty():
 			continue
 
-		var registro: Dictionary = {}
-		match _categoria_actual:
-			"biomas":
-				registro = WorldData.obtener_bioma(id)
-			"ecosistemas":
-				registro = WorldData.obtener_ecosistema(id)
-			"habitats":
-				registro = WorldData.obtener_habitat(id)
-			"criaturas":
-				registro = WorldData.obtener_criatura(id)
-
+		var registro: Dictionary = _obtener_registro_por_nivel(nivel, id)
 		if registro.is_empty():
 			continue
 
-		candidatos.append(registro)
+		resultado.append(registro)
 
-	candidatos.sort_custom(_ordenar_registros)
+	return resultado
 
-	for registro_variant in candidatos:
+
+func _obtener_registro_por_nivel(nivel: String, id: String) -> Dictionary:
+	match nivel:
+		"bioma":
+			return WorldData.obtener_bioma(id)
+		"ecosistema":
+			return WorldData.obtener_ecosistema(id)
+		"habitat":
+			return WorldData.obtener_habitat(id)
+		"criatura":
+			return WorldData.obtener_criatura(id)
+	return {}
+
+
+func _obtener_descubiertos(
+	descubrimientos: Dictionary,
+	categoria: String
+) -> Dictionary:
+	var registros_variant: Variant = descubrimientos.get(categoria, {})
+	if registros_variant is Dictionary:
+		return registros_variant as Dictionary
+	return {}
+
+
+func _filtrar_descubiertos(
+	registros: Array,
+	descubiertos: Dictionary
+) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+
+	for registro_variant in registros:
 		if not registro_variant is Dictionary:
 			continue
 
-		var registro := registro_variant as Dictionary
-		var id := str(registro.get("id", ""))
-		if id.is_empty():
+		var registro: Dictionary = registro_variant as Dictionary
+		var id: String = str(registro.get("id", ""))
+		if id.is_empty() or not descubiertos.has(id):
 			continue
 
-		_ids_descubiertos.append(id)
-		_lista.add_item(str(registro.get("nombre", "Sin nombre")))
+		resultado.append(registro)
 
-	_contador.text = str(_ids_descubiertos.size()) + " " + _nombre_categoria().to_lower()
+	return resultado
 
-	if _ids_descubiertos.is_empty():
-		_mostrar_sin_descubrimientos()
-		return
 
-	_lista.select(0)
-	_mostrar_registro(0)
+func _agregar_item(
+	padre: TreeItem,
+	registro: Dictionary,
+	nivel: String
+) -> TreeItem:
+	var item: TreeItem = _arbol.create_item(padre)
+	var nombre: String = str(registro.get("nombre", "Sin nombre"))
+	item.set_text(0, nombre)
+	item.set_metadata(0, {
+		"nivel": nivel,
+		"id": str(registro.get("id", ""))
+	})
+	item.set_tooltip_text(0, _nombre_nivel(nivel))
+	return item
 
 
 func _ordenar_registros(a: Dictionary, b: Dictionary) -> bool:
 	return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 
 
-func _al_cambiar_categoria(indice: int) -> void:
-	match indice:
-		0:
-			_categoria_actual = "biomas"
-		1:
-			_categoria_actual = "ecosistemas"
-		2:
-			_categoria_actual = "habitats"
-		3:
-			_categoria_actual = "criaturas"
-
-	actualizar()
+func _al_seleccionar(item: TreeItem, _columna: int) -> void:
+	_mostrar_item(item)
 
 
-func _al_seleccionar(indice: int) -> void:
-	_mostrar_registro(indice)
-
-
-func _obtener_registro(id: String) -> Dictionary:
-	match _categoria_actual:
-		"biomas":
-			return WorldData.obtener_bioma(id)
-		"ecosistemas":
-			return WorldData.obtener_ecosistema(id)
-		"habitats":
-			return WorldData.obtener_habitat(id)
-		"criaturas":
-			return WorldData.obtener_criatura(id)
-	return {}
-
-
-func _mostrar_registro(indice: int) -> void:
-	if indice < 0 or indice >= _ids_descubiertos.size():
+func _mostrar_item(item: TreeItem) -> void:
+	var metadata_variant: Variant = item.get_metadata(0)
+	if not metadata_variant is Dictionary:
 		return
 
-	var registro := _obtener_registro(_ids_descubiertos[indice])
+	var metadata: Dictionary = metadata_variant as Dictionary
+	var nivel: String = str(metadata.get("nivel", ""))
+	var id: String = str(metadata.get("id", ""))
+
+	if nivel.is_empty() or id.is_empty():
+		return
+
+	var registro: Dictionary = _obtener_registro_por_nivel(nivel, id)
 	if registro.is_empty():
 		return
 
@@ -325,111 +400,98 @@ func _mostrar_registro(indice: int) -> void:
 	_icono.visible = false
 
 	var partes: Array[String] = []
-	partes.append("[color=#8f754f]Tipo:[/color] " + _nombre_categoria_singular())
+	partes.append(
+		"[color=#8f754f]Tipo:[/color] " + _nombre_nivel(nivel)
+	)
 
-	match _categoria_actual:
-		"biomas":
-			_agregar_ecosistemas_descubiertos(partes, registro)
-		"ecosistemas":
-			_agregar_habitats_descubiertos(partes, registro)
-		"habitats":
-			_agregar_criaturas_descubiertas(partes, registro)
-		"criaturas":
-			var derrotas := _obtener_derrotas(_ids_descubiertos[indice])
-			partes.append("[color=#8f754f]Encuentros registrados:[/color] " + str(derrotas))
+	match nivel:
+		"bioma":
+			partes.append(
+				"[color=#8f754f]Ecosistemas descubiertos:[/color] "
+				+ str(_contar_hijos_descubiertos(
+					registro.get("ecosistemas", []),
+					_obtener_descubiertos(
+						GameState.obtener_descubrimientos_mundo(),
+						"ecosistemas"
+					)
+				))
+			)
+		"ecosistema":
+			partes.append(
+				"[color=#8f754f]Hábitats descubiertos:[/color] "
+				+ str(_contar_hijos_descubiertos(
+					registro.get("habitats", []),
+					_obtener_descubiertos(
+						GameState.obtener_descubrimientos_mundo(),
+						"habitats"
+					)
+				))
+			)
+		"habitat":
+			partes.append(
+				"[color=#8f754f]Criaturas descubiertas:[/color] "
+				+ str(_contar_hijos_descubiertos(
+					registro.get("criaturas", []),
+					_obtener_descubiertos(
+						GameState.obtener_descubrimientos_mundo(),
+						"criaturas"
+					)
+				))
+			)
+		"criatura":
+			partes.append(
+				"[color=#8f754f]Encuentros registrados:[/color] "
+				+ str(_obtener_derrotas(id))
+			)
 
 	_ficha.text = "\n\n".join(partes)
 
 
-func _agregar_ecosistemas_descubiertos(partes: Array[String], bioma: Dictionary) -> void:
-	var descubiertos_variant: Variant = GameState.obtener_descubrimientos_mundo().get("ecosistemas", {})
-	var descubiertos: Dictionary = {}
-	if descubiertos_variant is Dictionary:
-		descubiertos = (descubiertos_variant as Dictionary).duplicate(true)
-	var nombres: Array[String] = []
-	for eco_variant in bioma.get("ecosistemas", []):
-		if not eco_variant is Dictionary:
+func _contar_hijos_descubiertos(
+	registros_variant: Variant,
+	descubiertos: Dictionary
+) -> int:
+	if not registros_variant is Array:
+		return 0
+
+	var total: int = 0
+	for registro_variant in registros_variant as Array:
+		if not registro_variant is Dictionary:
 			continue
-		var eco := eco_variant as Dictionary
-		var id := str(eco.get("id", ""))
-		if descubiertos.has(id):
-			nombres.append(str(eco.get("nombre", "Sin nombre")))
-	partes.append("[color=#8f754f]Ecosistemas conocidos:[/color] " + _lista_nombres(nombres))
+
+		var registro: Dictionary = registro_variant as Dictionary
+		var id: String = str(registro.get("id", ""))
+		if not id.is_empty() and descubiertos.has(id):
+			total += 1
+
+	return total
 
 
-func _agregar_habitats_descubiertos(partes: Array[String], ecosistema: Dictionary) -> void:
-	var descubiertos_variant: Variant = GameState.obtener_descubrimientos_mundo().get("habitats", {})
-	var descubiertos: Dictionary = {}
-	if descubiertos_variant is Dictionary:
-		descubiertos = (descubiertos_variant as Dictionary).duplicate(true)
-	var nombres: Array[String] = []
-	for habitat_variant in ecosistema.get("habitats", []):
-		if not habitat_variant is Dictionary:
-			continue
-		var habitat := habitat_variant as Dictionary
-		var id := str(habitat.get("id", ""))
-		if descubiertos is Dictionary and descubiertos.has(id):
-			nombres.append(str(habitat.get("nombre", "Sin nombre")))
-	partes.append("[color=#8f754f]Hábitats conocidos:[/color] " + _lista_nombres(nombres))
-
-
-func _agregar_criaturas_descubiertas(partes: Array[String], habitat: Dictionary) -> void:
-	var descubiertos_variant: Variant = GameState.obtener_descubrimientos_mundo().get("criaturas", {})
-	var descubiertos: Dictionary = {}
-	if descubiertos_variant is Dictionary:
-		descubiertos = (descubiertos_variant as Dictionary).duplicate(true)
-	var nombres: Array[String] = []
-	for criatura_variant in habitat.get("criaturas", []):
-		if not criatura_variant is Dictionary:
-			continue
-		var criatura := criatura_variant as Dictionary
-		var id := str(criatura.get("id", ""))
-		if descubiertos is Dictionary and descubiertos.has(id):
-			nombres.append(str(criatura.get("nombre", "Sin nombre")))
-	partes.append("[color=#8f754f]Criaturas conocidas:[/color] " + _lista_nombres(nombres))
-
-
-func _lista_nombres(nombres: Array[String]) -> String:
-	if nombres.is_empty():
-		return "ninguno todavía"
-	return ", ".join(nombres)
+func _nombre_nivel(nivel: String) -> String:
+	match nivel:
+		"bioma":
+			return "Bioma"
+		"ecosistema":
+			return "Ecosistema"
+		"habitat":
+			return "Hábitat"
+		"criatura":
+			return "Criatura"
+	return "Conocimiento"
 
 
 func _obtener_derrotas(id: String) -> int:
-	var registros_variant: Variant = GameState.flags.get("enciclopedia_criaturas", {})
+	var registros_variant: Variant = GameState.flags.get(
+		"enciclopedia_criaturas",
+		{}
+	)
 	if registros_variant is Dictionary:
 		return int((registros_variant as Dictionary).get(id, 0))
 	return 0
 
 
-func _nombre_categoria() -> String:
-	match _categoria_actual:
-		"biomas":
-			return "descubiertos"
-		"ecosistemas":
-			return "descubiertos"
-		"habitats":
-			return "descubiertos"
-		"criaturas":
-			return "descubiertas"
-	return "descubiertos"
-
-
-func _nombre_categoria_singular() -> String:
-	match _categoria_actual:
-		"biomas":
-			return "Bioma"
-		"ecosistemas":
-			return "Ecosistema"
-		"habitats":
-			return "Hábitat"
-		"criaturas":
-			return "Criatura"
-	return "Registro"
-
-
 func _mostrar_sin_descubrimientos() -> void:
-	_contador.text = "0 descubiertos"
+	_contador.text = "0 conocimientos"
 	_nombre.text = "Nada descubierto todavía"
 	_icono.texture = null
 	_icono.visible = false
