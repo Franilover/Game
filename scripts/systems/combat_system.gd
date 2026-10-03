@@ -64,6 +64,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	var arma: Dictionary = {}
+	var objeto_ataque: Dictionary = {}
 
 	# Click izquierdo: una interacción contextual siempre tiene prioridad.
 	# Así recoger/hablar no puede convertirse accidentalmente en colocar
@@ -80,15 +81,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _tiempo_desde_ataque > 0.0:
 			return
 
-		if not _es_arma(objeto_activo):
+		if not _es_objeto_ataque(objeto_activo):
 			return
 
-		_atacar_con_arma(objeto_activo)
+		objeto_ataque = objeto_activo
+		_atacar_con_objeto(objeto_ataque)
 		get_viewport().set_input_as_handled()
 		return
 
-	# Click derecho = usar exclusivamente el arma equipada en
-	# el slot de arma del inventario, sin importar la hotbar.
+	# Click derecho = usar exclusivamente el objeto equipado en
+	# MANO SECUNDARIA, sin importar la hotbar.
 	if mouse_event.button_index == MOUSE_BUTTON_RIGHT:
 		arma = _obtener_arma_equipada()
 
@@ -148,6 +150,143 @@ func _accion_bloqueada() -> bool:
 	return false
 
 
+func _es_herramienta(objeto: Dictionary) -> bool:
+	var tipo: String = str(objeto.get("tipo", "")).strip_edges().to_lower()
+	return tipo == "herramienta"
+
+
+func _es_objeto_ataque(objeto: Dictionary) -> bool:
+	return _es_arma(objeto) or _es_herramienta(objeto)
+
+
+func _atacar_con_objeto(objeto: Dictionary) -> void:
+	if objeto.is_empty():
+		return
+
+	var tipo: String = str(objeto.get("tipo", "")).strip_edges().to_lower()
+	if tipo == "herramienta":
+		_atacar_con_herramienta(objeto)
+		return
+
+	_atacar_con_arma(objeto)
+
+
+func _atacar_con_herramienta(herramienta: Dictionary) -> void:
+	var direccion: Vector2 = _obtener_direccion_ataque()
+	var alcance: float = _obtener_alcance_arma(herramienta)
+	var ancho: float = _obtener_ancho_arma(herramienta)
+
+	_mostrar_area_ataque(direccion, alcance, ancho)
+	_crear_hitbox_melee(direccion, alcance, ancho, herramienta)
+
+
+func _crear_hitbox_melee(
+	direccion: Vector2,
+	alcance: float,
+	ancho: float,
+	objeto: Dictionary
+) -> void:
+	if player == null:
+		return
+
+	var hitbox := Area2D.new()
+	hitbox.name = "AttackHitbox"
+	hitbox.collision_layer = 0
+	hitbox.collision_mask = 2
+	hitbox.monitoring = true
+	hitbox.monitorable = false
+	hitbox.set_meta("attacker", player)
+	hitbox.set_meta("attack_object", objeto.duplicate(true))
+
+	var shape := CollisionShape2D.new()
+	shape.name = "CollisionShape2D"
+	var rectangle := RectangleShape2D.new()
+	rectangle.size = Vector2(maxf(alcance, 1.0), maxf(ancho, 1.0))
+	shape.shape = rectangle
+	shape.position = Vector2(8.0 + alcance * 0.5, 0.0)
+	hitbox.add_child(shape)
+
+	player.add_child(hitbox)
+	hitbox.rotation = direccion.angle()
+
+	var afectados: Array[Node] = []
+	hitbox.area_entered.connect(
+		_al_recibir_hurtbox.bind(hitbox, afectados)
+	)
+
+	await get_tree().physics_frame
+
+	if not is_instance_valid(hitbox):
+		return
+
+	for area_variant in hitbox.get_overlapping_areas():
+		if area_variant is Area2D:
+			_al_recibir_hurtbox(
+				area_variant as Area2D,
+				hitbox,
+				afectados
+			)
+
+	await get_tree().create_timer(duracion_ataque).timeout
+
+	if is_instance_valid(hitbox):
+		hitbox.queue_free()
+
+
+func _al_recibir_hurtbox(
+	hurtbox: Area2D,
+	hitbox: Area2D,
+	afectados: Array[Node]
+) -> void:
+	if hurtbox == null or not is_instance_valid(hurtbox):
+		return
+
+	var objetivo_variant: Variant = hurtbox.get_meta(
+		"damageable_owner",
+		null
+	)
+	if not objetivo_variant is Node:
+		return
+
+	var objetivo := objetivo_variant as Node
+	if objetivo == player or not is_instance_valid(objetivo):
+		return
+
+	if objetivo in afectados:
+		return
+
+	if not objetivo.is_in_group("damageable"):
+		return
+
+	if "is_alive" in objetivo and not bool(objetivo.get("is_alive")):
+		return
+
+	afectados.append(objetivo)
+
+	var objeto_variant: Variant = hitbox.get_meta("attack_object", {})
+	var objeto: Dictionary = {}
+	if objeto_variant is Dictionary:
+		objeto = objeto_variant as Dictionary
+
+	var danio: int = _obtener_danio_arma(objeto)
+	if _es_herramienta(objeto) and danio <= 0:
+		print(
+			"CombatSystem: hitbox de herramienta detectó → ",
+			objetivo.name,
+			" | sin daño configurado en Supabase."
+		)
+		return
+
+	_aplicar_danio(
+		objetivo,
+		danio,
+		str(objeto.get("nombre", "Objeto")),
+		player,
+		objeto
+	)
+
+
+
 func usar_objeto_activo() -> void:
 	if player == null:
 		return
@@ -159,10 +298,10 @@ func usar_objeto_activo() -> void:
 	if objeto_activo.is_empty():
 		return
 
-	if not _es_arma(objeto_activo):
+	if not _es_objeto_ataque(objeto_activo):
 		return
 
-	_atacar_con_arma(objeto_activo)
+	_atacar_con_objeto(objeto_activo)
 
 
 func _obtener_arma_equipada() -> Dictionary:
