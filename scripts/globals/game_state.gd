@@ -6,7 +6,7 @@ extends Node
 
 const SAVE_DIRECTORY := "user://partidas"
 const SAVE_VERSION: int = 3
-const AUTOSAVE_INTERVAL: float = 5.0
+const AUTOSAVE_INTERVAL: float = 10.0
 
 var player_health: int = 100
 var player_mana: int = 100
