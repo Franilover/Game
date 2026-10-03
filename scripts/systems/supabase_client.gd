@@ -371,5 +371,15 @@ func _al_timer_sincronizacion() -> void:
 		_programar_siguiente_sincronizacion()
 		return
 
+	# El mundo completo (~0.86 MB actualmente) no se necesita en tiempo real
+	# durante una partida. Evitamos descargar y parsear ese snapshot mientras
+	# el jugador está jugando para no provocar picos de CPU/IO.
+	var escena := get_tree().current_scene
+	if escena != null and escena.get_node_or_null(
+		"World/WorldGenerator"
+	) != null:
+		_programar_siguiente_sincronizacion()
+		return
+
 	_intento_actual = 0
 	_solicitar_mundo()
