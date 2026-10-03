@@ -385,6 +385,73 @@ func _tiene_stamina(cantidad: float) -> bool:
 	return stamina >= cantidad
 
 
+func restaurar_stamina(cantidad: float) -> bool:
+	if not is_alive:
+		return false
+
+	var recuperacion: float = maxf(
+		cantidad,
+		0.0
+	)
+
+	if recuperacion <= 0.0:
+		return false
+
+	var antes: float = stamina
+
+	if antes >= max_stamina:
+		return false
+
+	stamina = minf(
+		stamina + recuperacion,
+		max_stamina
+	)
+
+	if stamina <= antes:
+		return false
+
+	_stamina_regeneration_timer = 0.0
+
+	stamina_changed.emit(
+		stamina,
+		max_stamina
+	)
+
+	return true
+
+
+func restaurar_eterium(cantidad: float) -> bool:
+	if not is_alive or not _eterium_runtime_ready:
+		return false
+
+	var recuperacion: int = maxi(
+		1,
+		roundi(cantidad)
+	)
+
+	if mana >= max_mana:
+		return false
+
+	var antes: int = mana
+
+	mana = mini(
+		mana + recuperacion,
+		max_mana
+	)
+
+	if mana <= antes:
+		return false
+
+	_eterium_recovery_accumulator = 0.0
+
+	mana_changed.emit(
+		mana,
+		max_mana
+	)
+
+	return true
+
+
 # ============================================================
 # ETERIUM
 # ============================================================
