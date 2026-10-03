@@ -111,7 +111,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 		" | lineas = ",
 		lineas.size(),
 		" | acciones = ",
-		str(datos_seleccionados.get("acciones", [])).size()
+		_obtener_acciones(datos_seleccionados).size()
 	)
 
 	if lineas.is_empty():
