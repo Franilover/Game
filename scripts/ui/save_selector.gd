@@ -96,8 +96,10 @@ func _texto_detalle(partida: Dictionary) -> String:
 
 	var semilla := str(partida.get("semilla", "—"))
 
-	return tiempo + "    ·    Semilla: " + semilla
+	return (
+		tiempo + "    ·    Semilla: " + semilla
 		+ "    ·    Último guardado: " + actualizado
+	)
 
 
 func _jugar_partida(id: String) -> void:
