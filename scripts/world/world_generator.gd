@@ -274,10 +274,57 @@ func get_contexto_at(
 		),
 		"habitat": _extraer_nombre_habitats(
 			habitats
+		),
+		"clima": str(ecosistema.get(
+			"clima",
+			""
+		)),
+		"factores_abioticos": get_factores_ambientales_at(
+			posicion_global
 		)
 	}
 
 	return contexto
+
+
+func get_factores_ambientales_at(
+	posicion_global: Vector2
+) -> Dictionary:
+	if terrain == null or not _world_ready:
+		return {}
+
+	var posicion_local: Vector2 = terrain.to_local(
+		posicion_global
+	)
+
+	var tamano_tile: int = maxi(tile_size, 1)
+	var tile := Vector2i(
+		floori(posicion_local.x / float(tamano_tile)),
+		floori(posicion_local.y / float(tamano_tile))
+	)
+
+	var habitats := terrain.get_habitats_at(tile)
+	for habitat_variant in habitats:
+		if not habitat_variant is Dictionary:
+			continue
+
+		var habitat := habitat_variant as Dictionary
+		var habitat_id := str(habitat.get("id", ""))
+		if not habitat_id.is_empty():
+			var factores_habitat := WorldData.obtener_factores_ambientales_habitat(
+				habitat_id
+			)
+			if not factores_habitat.is_empty():
+				return factores_habitat
+
+	var ecosistema := terrain.get_ecosistema_at(tile)
+	var ecosistema_id := str(ecosistema.get("id", ""))
+	if ecosistema_id.is_empty():
+		return {}
+
+	return WorldData.obtener_factores_ambientales_ecosistema(
+		ecosistema_id
+	)
 
 
 func summon_criatura(
