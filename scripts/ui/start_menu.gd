@@ -745,7 +745,7 @@ func _preparar_panel_personaje() -> void:
 	_personaje_skins.fixed_column_width = 76
 	_personaje_skins.max_columns = 5
 	_personaje_skins.icon_mode = ItemList.ICON_MODE_TOP
-	_personaje_skins.icon_max_width = 64
+	_personaje_skins.fixed_icon_size = Vector2i(64, 64)
 	_personaje_skins.allow_reselect = true
 	_personaje_skins.select_mode = ItemList.SELECT_SINGLE
 	column.add_child(_personaje_skins)
