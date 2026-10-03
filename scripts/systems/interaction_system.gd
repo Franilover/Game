@@ -53,6 +53,7 @@ func _process(delta: float) -> void:
 	if _scan_timer <= 0.0:
 		_scan_timer = maxf(scan_interval, 0.05)
 		_buscar_objetivo()
+		_actualizar_prompt_actual()
 
 	if objetivo_actual != null and not is_instance_valid(objetivo_actual):
 		_cambiar_objetivo(null)
@@ -94,6 +95,16 @@ func _es_evento_interactuar(event: InputEvent) -> bool:
 func _interaccion_bloqueada() -> bool:
 	if get_tree().paused:
 		return true
+
+	if hud != null and hud.has_method(
+		"esta_mostrando_panel_interaccion"
+	):
+		if bool(
+			hud.call(
+				"esta_mostrando_panel_interaccion"
+			)
+		):
+			return true
 
 	var inventory: Node = get_tree().get_first_node_in_group(
 		"inventory"
@@ -191,6 +202,30 @@ func _buscar_objetivo() -> void:
 	_cambiar_objetivo(
 		mejor_objetivo
 	)
+
+
+func _actualizar_prompt_actual() -> void:
+	if hud == null:
+		return
+
+	if objetivo_actual == null or not is_instance_valid(objetivo_actual):
+		if hud.has_method("ocultar_interaccion"):
+			hud.call("ocultar_interaccion")
+		return
+
+	var texto: String = "Examinar"
+	if objetivo_actual.has_method("get_interaction_text"):
+		texto = str(
+			objetivo_actual.call(
+				"get_interaction_text"
+			)
+		)
+
+	if hud.has_method("mostrar_interaccion"):
+		hud.call(
+			"mostrar_interaccion",
+			texto
+		)
 
 
 func _cambiar_objetivo(
@@ -293,6 +328,20 @@ func _interactuar() -> void:
 					"get_interaction_text"
 				)
 			)
+
+		if objetivo_actual.has_method(
+			"get_interaction_details"
+		) and hud != null and hud.has_method(
+			"mostrar_panel_interaccion"
+		):
+			var detalles_variant: Variant = objetivo_actual.call(
+				"get_interaction_details"
+			)
+			if detalles_variant is Dictionary:
+				hud.call(
+					"mostrar_panel_interaccion",
+					detalles_variant as Dictionary
+				)
 
 		Events.interaction_executed.emit(
 			objetivo_actual,
