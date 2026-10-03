@@ -53,7 +53,12 @@ func configurar(nuevo_tile_size: int) -> void:
 	tilemap_dual = TileMapDual.new()
 	tilemap_dual.name = "TerrainDual"
 	tilemap_dual.godot_4_3_compatibility = false
-	tilemap_dual.z_index = -1
+	# El terreno debe quedar detrás de jugadores, criaturas y objetos,
+	# incluso si TileMapDual crea capas internas de representación.
+	z_as_relative = false
+	z_index = -1000
+	tilemap_dual.z_as_relative = false
+	tilemap_dual.z_index = -1000
 	tilemap_dual.rendering_quadrant_size = 32
 
 	# Primero entra al árbol con un TileSet vacío. TileMapDual inicializa
