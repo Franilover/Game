@@ -199,6 +199,9 @@ func _al_cambiar_capacidad(_clave: String, _activo: bool) -> void:
 func _restaurar_defaults() -> void:
 	if jugador != null and jugador.has_method("admin_restaurar_defaults"):
 		jugador.call("admin_restaurar_defaults")
+		var admin_variant: Variant = GameState.flags.get("personaje_admin", {})
+		if admin_variant is Dictionary:
+			(admin_variant as Dictionary).erase("maximos")
 		_cargar_datos()
 		_estado.text = "Valores por defecto restaurados."
 		GameState.guardar_partida()
