@@ -48,6 +48,10 @@ func obtener_datos() -> Dictionary:
 	return datos.duplicate(true)
 
 
+func es_recolectable() -> bool:
+	return _tiene_recoleccion_canonica()
+
+
 func get_interaction_distance() -> float:
 	return 58.0
 
