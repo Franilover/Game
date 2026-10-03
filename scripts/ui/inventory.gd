@@ -302,6 +302,9 @@ func _crear_slots_equipamiento() -> void:
 
 
 func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
+	if objeto.is_empty():
+		return
+
 	var source_index := _buscar_indice_objeto(objeto)
 	if source_index < 0:
 		return
@@ -311,16 +314,14 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if slot_script.has_method("obtener_datos"):
 		anterior = slot_script.obtener_datos()
 
-	# Si estamos reemplazando, primero aseguramos que el objeto anterior
-	# tenga un lugar disponible antes de modificar el equipamiento.
-	if not anterior.is_empty():
-		var indice_libre := _buscar_slot_libre()
-		if indice_libre < 0 and source_index < 0:
-			return
-
+	# El objeto arrastrado ocupa su lugar del inventario.
+	# Si había otro equipado, ese objeto vuelve exactamente a ese slot.
 	var clave := ""
 	if slot_script.has_method("obtener_clave"):
-		clave = str(slot_script.obtener_clave())
+		clave = str(slot_script.call("obtener_clave"))
+
+	if clave.is_empty():
+		return
 
 	if not anterior.is_empty():
 		items[source_index] = anterior.duplicate(true)
@@ -336,19 +337,106 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 
 
 func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
+	if objeto.is_empty():
+		return
+
+	# El slot visual no se limpia hasta confirmar que el objeto
+	# pudo volver al inventario.
 	var indice_libre := _buscar_slot_libre()
 	if indice_libre < 0:
+		print(
+			"Inventory: no hay espacio para desequipar → ",
+			str(objeto.get("nombre", "Objeto"))
+		)
 		return
 
 	var clave := ""
 	if slot.has_method("obtener_clave"):
-		clave = str(slot.obtener_clave())
+		clave = str(slot.call("obtener_clave"))
+
+	if clave.is_empty():
+		return
 
 	equipo.erase(clave)
 	items[indice_libre] = objeto.duplicate(true)
+
+	if slot.has_method("limpiar_objeto"):
+		slot.call("limpiar_objeto")
+
 	actualizar()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
+
+
+func obtener_estadistica_equipo(
+	clave: String,
+	valor_por_defecto: float = 0.0
+) -> float:
+	var buscada: String = clave.strip_edges()
+	if buscada.is_empty():
+		return valor_por_defecto
+
+	var total: float = valor_por_defecto
+
+	for objeto_variant in equipo.values():
+		if not objeto_variant is Dictionary:
+			continue
+
+		var objeto := objeto_variant as Dictionary
+		var propiedades_variant: Variant = objeto.get(
+			"propiedades_game",
+			{}
+		)
+
+		if not propiedades_variant is Dictionary:
+			continue
+
+		var propiedades := propiedades_variant as Dictionary
+		var valor: Variant = propiedades.get(
+			buscada,
+			null
+		)
+
+		if valor is int or valor is float:
+			total += float(valor)
+
+	return total
+
+
+func obtener_estadisticas_equipo() -> Dictionary:
+	var estadisticas: Dictionary = {}
+
+	for objeto_variant in equipo.values():
+		if not objeto_variant is Dictionary:
+			continue
+
+		var objeto := objeto_variant as Dictionary
+		var propiedades_variant: Variant = objeto.get(
+			"propiedades_game",
+			{}
+		)
+
+		if not propiedades_variant is Dictionary:
+			continue
+
+		var propiedades := propiedades_variant as Dictionary
+
+		for clave_variant in propiedades.keys():
+			var clave: String = str(clave_variant)
+			var valor: Variant = propiedades.get(
+				clave_variant,
+				null
+			)
+
+			if not (valor is int or valor is float):
+				continue
+
+			estadisticas[clave] = (
+				float(estadisticas.get(clave, 0.0))
+				+ float(valor)
+			)
+
+	return estadisticas
 
 
 func _buscar_indice_objeto(objeto: Dictionary) -> int:
