@@ -57,6 +57,8 @@ var _stamina_regeneration_timer: float = 0.0
 var _eterium_reglas: Dictionary = {}
 var _eterium_organismos: Dictionary = {}
 var _eterium_runtime_ready: bool = false
+var _especie_eterium_game: Dictionary = {}
+var _especie_eterium_game_ready: bool = false
 var _eterium_heal_timer: float = 0.0
 var _eterium_recovery_accumulator: float = 0.0
 var _eterium_sprint_cost_accumulator: float = 0.0
@@ -96,6 +98,7 @@ func _ready() -> void:
 	stamina = max_stamina
 
 	_configurar_eterium_desde_supabase()
+	_configurar_especie_eterium_game_desde_supabase()
 
 	_base_visual_position = visual.position
 
@@ -477,6 +480,63 @@ func restaurar_eterium(cantidad: float) -> bool:
 # ETERIUM
 # ============================================================
 
+func _configurar_especie_eterium_game_desde_supabase() -> void:
+	if not SupabaseClient.especie_eterium_game_cargado.is_connected(_al_especie_eterium_game_cargado):
+		SupabaseClient.especie_eterium_game_cargado.connect(_al_especie_eterium_game_cargado)
+	if SupabaseClient.tiene_especie_eterium_game():
+		_aplicar_especie_eterium_game(SupabaseClient.obtener_especie_eterium_game())
+
+
+func _al_especie_eterium_game_cargado(reglas: Array) -> void:
+	_aplicar_especie_eterium_game(reglas)
+
+
+func _aplicar_especie_eterium_game(reglas: Array) -> void:
+	var especie_id := str(personaje_especie.get("id", ""))
+	if especie_id.is_empty():
+		return
+	for regla_variant in reglas:
+		if not regla_variant is Dictionary:
+			continue
+		var regla := regla_variant as Dictionary
+		var padre_variant: Variant = regla.get("especie_eterium_v1", {})
+		if not padre_variant is Dictionary:
+			continue
+		var padre := padre_variant as Dictionary
+		if str(padre.get("especie_id", "")) != especie_id:
+			continue
+		_especie_eterium_game = regla.duplicate(true)
+		_especie_eterium_game_ready = true
+		if bool(regla.get("vida_eterium_compartidos", false)):
+			var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana))))
+			max_mana = capacidad
+			max_health = capacidad
+			health = capacidad
+			mana = capacidad
+			health_changed.emit(health, max_health)
+			mana_changed.emit(mana, max_mana)
+		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", bool(regla.get("vida_eterium_compartidos", false)), " | capacidad=", max_mana)
+		return
+
+
+func _eterium_vida_compartida() -> bool:
+	return _especie_eterium_game_ready and bool(_especie_eterium_game.get("vida_eterium_compartidos", false))
+
+
+func _gastar_eterium(cantidad: int) -> bool:
+	var gasto := maxi(cantidad, 0)
+	if gasto <= 0 or mana < gasto:
+		return false
+	mana -= gasto
+	mana_changed.emit(mana, max_mana)
+	if _eterium_vida_compartida():
+		health = mana
+		health_changed.emit(health, max_health)
+		if health <= 0:
+			_die()
+	return true
+
+
 func _configurar_eterium_desde_supabase() -> void:
 	if not SupabaseClient.eterium_runtime_cargado.is_connected(
 		_al_eterium_runtime_cargado
@@ -711,13 +771,9 @@ func _procesar_carrera_eterium(delta: float) -> bool:
 
 	if unidades_a_gastar > 0:
 		var gastadas := mini(unidades_a_gastar, mana)
-		mana -= gastadas
-		_eterium_sprint_cost_accumulator -= gastadas
-
-		mana_changed.emit(
-			mana,
-			max_mana
-		)
+		if gastadas > 0:
+			_gastar_eterium(gastadas)
+			_eterium_sprint_cost_accumulator -= gastadas
 
 	if mana <= 0:
 		_eterium_sprint_cost_accumulator = 0.0
@@ -811,14 +867,7 @@ func _procesar_curacion_eterium(delta: float) -> void:
 		return
 
 	heal(curacion)
-	mana = maxi(
-		mana - costo_runtime,
-		0
-	)
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
+	_gastar_eterium(costo_runtime)
 
 
 func absorber_eterium_de_criatura(criatura: Node) -> int:
@@ -1137,7 +1186,16 @@ func take_damage(cantidad: int) -> void:
 			)
 		)
 
-	super.take_damage(danio_recibido)
+	if _eterium_vida_compartida():
+		mana = maxi(mana - danio_recibido, 0)
+		health = mana
+		mana_changed.emit(mana, max_mana)
+		health_changed.emit(health, max_health)
+		print(name, " recibió ", danio_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
+		if health <= 0:
+			_die()
+	else:
+		super.take_damage(danio_recibido)
 
 	if not is_alive:
 		_morir_jugador()
