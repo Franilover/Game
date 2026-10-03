@@ -92,10 +92,7 @@ func _supervisar_menu_aventura() -> void:
 	if _menu_interceptado:
 		return
 
-	var original := Callable(
-		escena,
-		"_iniciar_partida"
-	)
+	var original := Callable(escena, "_iniciar_partida")
 
 	if button.pressed.is_connected(original):
 		button.pressed.disconnect(original)
