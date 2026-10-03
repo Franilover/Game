@@ -194,13 +194,6 @@ func _ready() -> void:
 		_on_error_sala
 	)
 
-	if not SupabaseClient.especies_jugables_cargadas.is_connected(
-		_al_especies_jugables_cargadas
-	):
-		SupabaseClient.especies_jugables_cargadas.connect(
-			_al_especies_jugables_cargadas
-		)
-
 	_preparar_creador_personaje()
 
 	if not WorldData.mundo_listo.is_connected(
