@@ -440,11 +440,13 @@ func _procesar_pintado_chunk(
 
 	_generation_task["cursor"] = cursor
 
-	if visual != null:
-		visual.flush()
-
 	if cursor < total:
 		return false
+
+	if visual != null:
+		# Publicar el chunk de una sola vez. Esto evita que TileMapDual
+		# reconstruya visualmente el mismo chunk por partes.
+		visual.flush()
 
 	_finalizar_chunk()
 
