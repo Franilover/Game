@@ -214,30 +214,39 @@ func _tiene_recoleccion_canonica() -> bool:
 
 
 func _obtener_item_id_recoleccion() -> String:
-	var item_id := str(
-		datos.get(
-			"item_id",
-			""
-		)
-	).strip_edges()
-
+	var item_id := str(datos.get("item_id", "")).strip_edges()
 	if not item_id.is_empty():
 		return item_id
 
-	var recoleccion_variant: Variant = datos.get(
-		"recoleccion",
-		{}
-	)
+	var recoleccion_variant: Variant = datos.get("recoleccion", {})
+	if recoleccion_variant is Dictionary:
+		item_id = str((recoleccion_variant as Dictionary).get("item_id", "")).strip_edges()
+		if not item_id.is_empty():
+			return item_id
 
-	if not recoleccion_variant is Dictionary:
+	# props_game y items_game están relacionados en Supabase mediante
+	# props_game.item_id; WorldData puede no incluir esa columna en su
+	# consulta. En ese caso resolvemos el vínculo por propiedades_game.prop_id,
+	# que también viene definido en el registro canónico de items_game.
+	var prop_id := str(datos.get("id", "")).strip_edges()
+	if prop_id.is_empty():
+		prop_id = str(datos.get("prop_id", "")).strip_edges()
+	if prop_id.is_empty():
 		return ""
 
-	return str(
-		(recoleccion_variant as Dictionary).get(
-			"item_id",
-			""
-		)
-	).strip_edges()
+	for item_variant in GarliaWorldItems.obtener_catalogo():
+		if not item_variant is Dictionary:
+			continue
+		var item := item_variant as Dictionary
+		var propiedades_variant: Variant = item.get("propiedades_game", {})
+		if not propiedades_variant is Dictionary:
+			continue
+		var propiedades := propiedades_variant as Dictionary
+		if str(propiedades.get("prop_id", "")).strip_edges() != prop_id:
+			continue
+		return str(item.get("item_id", item.get("id", ""))).strip_edges()
+
+	return ""
 
 
 func _obtener_cantidad_recoleccion() -> int:
