@@ -52,13 +52,10 @@ func _ready() -> void:
 
 
 func _crear_movimiento() -> void:
-	# Usamos el nodo que existe físicamente en creature.tscn.
 	_movimiento = get_node_or_null(
 		"CreatureMovement"
 	) as CreatureMovement
 
-	# Respaldo por si alguna criatura se crea desde otra escena
-	# que todavía no tenga el nodo.
 	if _movimiento == null:
 		_movimiento = CreatureMovement.new()
 		_movimiento.name = "CreatureMovement"
@@ -138,11 +135,9 @@ func configurar(
 		)
 	)
 
-	var stats_variant: Variant = (
-		datos_criatura.get(
-			"stats_dnd",
-			{}
-		)
+	var stats_variant: Variant = datos_criatura.get(
+		"stats_dnd",
+		{}
 	)
 
 	if stats_variant is Dictionary:
@@ -150,11 +145,9 @@ func configurar(
 	else:
 		stats_dnd = {}
 
-	var hp_variant: Variant = (
-		stats_dnd.get(
-			"hp_max",
-			null
-		)
+	var hp_variant: Variant = stats_dnd.get(
+		"hp_max",
+		null
 	)
 
 	if hp_variant != null:
@@ -207,8 +200,6 @@ func _cargar_sprite() -> void:
 
 	var rutas: Array[String] = []
 
-	# Los humanos tienen una apariencia individual.
-	# Sus sprites viven junto a los demás personajes del juego.
 	if _es_humano() and not nombre_individual.is_empty():
 		rutas.append(
 			"res://assets/art/characters/"
@@ -216,7 +207,6 @@ func _cargar_sprite() -> void:
 			+ ".png"
 		)
 
-	# Fallback universal: sprite definido por la especie.
 	rutas.append(
 		"res://assets/art/creatures/"
 		+ criatura_nombre
@@ -231,7 +221,6 @@ func _cargar_sprite() -> void:
 		return
 
 	sprite.texture = null
-	# Sin sprite → _draw() mostrará los círculos de debug
 
 
 func configurar_chunk(
@@ -326,6 +315,7 @@ func get_skin_visual() -> Sprite2D:
 		"Sprite2D"
 	) as Sprite2D
 
+
 func ocultar_nombre_debug() -> void:
 	mostrar_nombre_debug = false
 	queue_redraw()
@@ -417,7 +407,8 @@ func _obtener_nombre_individual() -> String:
 			datos.get(
 				clave,
 				""
-			).strip_edges()
+			)
+		).strip_edges()
 
 		if not valor.is_empty():
 			return valor
@@ -428,10 +419,6 @@ func _obtener_nombre_individual() -> String:
 func get_stats_dnd() -> Dictionary:
 	return stats_dnd
 
-
-# ============================================================
-# MOVIMIENTO
-# ============================================================
 
 func _physics_process(delta: float) -> void:
 	if not is_alive:
@@ -480,10 +467,6 @@ func detener_movimiento() -> void:
 	_movimiento.detener()
 
 
-# ============================================================
-# INTERACCIÓN
-# ============================================================
-
 func can_interact(
 	_actor: Node
 ) -> bool:
@@ -495,10 +478,7 @@ func es_dialogable() -> bool:
 
 
 func get_dialogue_data() -> Dictionary:
-	# Un personaje individual tiene autoridad sobre su propio diálogo.
-	# Si existe personaje_game_id, NO heredamos diálogo de la especie
-	# ni de ia_config. Así Aurora/Liam pueden existir sin ser hablables
-	# aunque Humano tenga otra configuración de IA o diálogo histórico.
+	# Los personajes_game no heredan diálogo de su especie.
 	if datos.has("personaje_game_id"):
 		var dialogo_personaje: Variant = datos.get("dialogo", {})
 
@@ -518,14 +498,15 @@ func get_dialogue_data() -> Dictionary:
 	if dialogo_variant is Array:
 		return {"lineas": (dialogo_variant as Array).duplicate(true)}
 
-	# Compatibilidad: permite almacenar el diálogo dentro de ia_config
-	# para criaturas que todavía no usan personajes_game.
+	# Compatibilidad para criaturas que todavía no usan personajes_game.
 	var ia_variant: Variant = datos.get("ia_config", {})
 	if ia_variant is Dictionary:
 		var ia_config := ia_variant as Dictionary
 		var ia_dialogo_variant: Variant = ia_config.get("dialogo", {})
+
 		if ia_dialogo_variant is Dictionary:
 			return (ia_dialogo_variant as Dictionary).duplicate(true)
+
 		if ia_dialogo_variant is Array:
 			return {"lineas": (ia_dialogo_variant as Array).duplicate(true)}
 
@@ -565,18 +546,12 @@ func interact(
 		)
 
 
-# ============================================================
-# MUERTE
-# ============================================================
-
 func _die() -> void:
 	if not is_alive:
 		return
 
 	is_alive = false
 
-	# Los drops se calculan usando criatura_drops de Supabase.
-	# La posición se captura antes de ocultar/eliminar la criatura.
 	if not criatura_id.is_empty():
 		GarliaWorldItems.generar_drops_criatura(
 			criatura_id,
@@ -627,19 +602,13 @@ func _ocultar_muerto() -> void:
 	visible = false
 
 
-# ============================================================
-# DEBUG VISUAL
-# ============================================================
-
 func _draw() -> void:
-	# Si hay un Sprite2D asignado, no dibujamos el placeholder.
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite != null and sprite.texture != null:
 		if mostrar_nombre_debug:
 			_dibujar_nombre()
 		return
 
-	# Placeholder de debug (círculos) cuando no hay sprite.
 	var color: Color = (
 		_obtener_color()
 	)
