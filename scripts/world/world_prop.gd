@@ -178,6 +178,15 @@ func interact(persona: Node) -> void:
 		return
 
 	if _tiene_recoleccion_canonica():
+		if not _puede_recolectar(persona):
+			var requisito := _obtener_requisito_herramienta()
+			var tipo_herramienta: String = str(requisito.get("tipo", "herramienta"))
+			var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
+			Events.notification_pushed.emit(
+				"Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido)
+			)
+			return
+
 		if _recolectar(persona):
 			return
 
@@ -205,6 +214,68 @@ func interact(persona: Node) -> void:
 		tipo,
 		" | bioma=",
 		bioma
+	)
+
+
+func _tiene_recoleccion_canonica() -> bool:
+	var item_id := _obtener_item_id_recoleccion()
+	return not item_id.is_empty()
+
+
+func _obtener_requisito_herramienta() -> Dictionary:
+	var requisito_variant: Variant = datos.get("herramienta_recoleccion", {})
+	if requisito_variant is Dictionary:
+		return (requisito_variant as Dictionary).duplicate(true)
+
+	var propiedades_variant: Variant = datos.get("propiedades", {})
+	if propiedades_variant is Dictionary:
+		var propiedades := propiedades_variant as Dictionary
+		requisito_variant = propiedades.get("herramienta_recoleccion", {})
+		if requisito_variant is Dictionary:
+			return (requisito_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func _puede_recolectar(persona: Node) -> bool:
+	var requisito := _obtener_requisito_herramienta()
+	if requisito.is_empty():
+		return true
+
+	var inventario: Node = get_tree().get_first_node_in_group("inventory")
+	if inventario == null or not inventario.has_method("obtener_objeto_equipado"):
+		return false
+
+	var herramienta_variant: Variant = inventario.call(
+		"obtener_objeto_equipado",
+		"arma"
+	)
+	if not herramienta_variant is Dictionary:
+		return false
+
+	var herramienta := herramienta_variant as Dictionary
+	var propiedades_variant: Variant = herramienta.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+
+	var propiedades := propiedades_variant as Dictionary
+	var herramienta_recoleccion_variant: Variant = propiedades.get(
+		"herramienta_recoleccion",
+		{}
+	)
+	if not herramienta_recoleccion_variant is Dictionary:
+		return false
+
+	var herramienta_recoleccion := herramienta_recoleccion_variant as Dictionary
+	var tipo_requerido := str(requisito.get("tipo", "")).strip_edges().to_lower()
+	var tipo_actual := str(herramienta_recoleccion.get("tipo", "")).strip_edges().to_lower()
+	var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
+	var nivel_actual: int = int(herramienta_recoleccion.get("nivel", 0))
+
+	return (
+		not tipo_requerido.is_empty()
+		and tipo_actual == tipo_requerido
+		and nivel_actual >= nivel_requerido
 	)
 
 
