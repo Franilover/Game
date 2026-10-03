@@ -417,8 +417,7 @@ func _obtener_nombre_individual() -> String:
 			datos.get(
 				clave,
 				""
-			)
-		).strip_edges()
+			).strip_edges()
 
 		if not valor.is_empty():
 			return valor
@@ -496,6 +495,21 @@ func es_dialogable() -> bool:
 
 
 func get_dialogue_data() -> Dictionary:
+	# Un personaje individual tiene autoridad sobre su propio diálogo.
+	# Si existe personaje_game_id, NO heredamos diálogo de la especie
+	# ni de ia_config. Así Aurora/Liam pueden existir sin ser hablables
+	# aunque Humano tenga otra configuración de IA o diálogo histórico.
+	if datos.has("personaje_game_id"):
+		var dialogo_personaje: Variant = datos.get("dialogo", {})
+
+		if dialogo_personaje is Dictionary:
+			return (dialogo_personaje as Dictionary).duplicate(true)
+
+		if dialogo_personaje is Array:
+			return {"lineas": (dialogo_personaje as Array).duplicate(true)}
+
+		return {}
+
 	var dialogo_variant: Variant = datos.get("dialogo", {})
 
 	if dialogo_variant is Dictionary:
@@ -505,7 +519,7 @@ func get_dialogue_data() -> Dictionary:
 		return {"lineas": (dialogo_variant as Array).duplicate(true)}
 
 	# Compatibilidad: permite almacenar el diálogo dentro de ia_config
-	# sin hacer que toda criatura sea hablable por defecto.
+	# para criaturas que todavía no usan personajes_game.
 	var ia_variant: Variant = datos.get("ia_config", {})
 	if ia_variant is Dictionary:
 		var ia_config := ia_variant as Dictionary
