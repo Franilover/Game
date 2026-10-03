@@ -7,6 +7,7 @@ var world_generator: Node = null
 var mostrar_contexto_mundo: bool = false
 
 var _tiempo_contexto: float = 0.0
+var _ultima_tile_contexto: Vector2i = Vector2i(2147483647, 2147483647)
 
 var location_panel: Control = null
 var location_label: Label = null
@@ -64,7 +65,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
 		_tiempo_contexto += delta
-		if _tiempo_contexto >= 0.15:
+		if _tiempo_contexto >= 0.5:
 			_tiempo_contexto = 0.0
 			_actualizar_contexto()
 	else:
@@ -405,14 +406,21 @@ func _actualizar_contexto() -> void:
 		location_label.text = "Sin WorldGenerator"
 		return
 
+	var tile_actual := Vector2i.ZERO
+	if world_generator.has_method("get_tile_at"):
+		tile_actual = world_generator.call("get_tile_at", player.global_position)
+
+	if tile_actual == _ultima_tile_contexto and location_label.text != "RENDIMIENTO":
+		return
+
+	_ultima_tile_contexto = tile_actual
+
 	var contexto := _obtener_contexto_mundo(player.global_position)
 	var bioma := _obtener_nombre_contexto(contexto, "bioma")
 	var ecosistema := _obtener_nombre_contexto(contexto, "ecosistema")
 	var habitat := _obtener_nombre_contexto(contexto, "habitat")
 
-	var tile := Vector2i.ZERO
-	if world_generator.has_method("get_tile_at"):
-		tile = world_generator.call("get_tile_at", player.global_position)
+	var tile := tile_actual
 
 	var chunk_size := maxi(int(world_generator.get("chunk_size_tiles")), 1)
 	var chunk := Vector2i(
