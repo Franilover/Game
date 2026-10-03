@@ -153,6 +153,93 @@ func registrar_dialogo(
 	)
 
 
+func registrar_dialogo_desde_fuente(
+	personaje_id: String,
+	clave: String,
+	fuente: Node
+) -> void:
+	if personaje_id.is_empty():
+		return
+
+	if _registrar_entrega_personaje(personaje_id, fuente):
+		return
+
+	registrar_dialogo(personaje_id, clave)
+
+
+func _registrar_entrega_personaje(
+	destino_personaje_id: String,
+	destino: Node
+) -> bool:
+	if destino == null or not is_instance_valid(destino):
+		return false
+
+	var jugador := get_tree().get_first_node_in_group("player")
+	if jugador == null:
+		return false
+
+	for mision in _misiones:
+		var mision_id := str(mision.get("id", ""))
+		if str(_estado.get(mision_id, "disponible")) != "activa":
+			continue
+
+		var objetivos_variant: Variant = mision.get("objetivos", [])
+		if not objetivos_variant is Array:
+			continue
+
+		for objetivo_variant in objetivos_variant as Array:
+			if not objetivo_variant is Dictionary:
+				continue
+
+			var objetivo := objetivo_variant as Dictionary
+			if str(objetivo.get("tipo", "")).strip_edges().to_lower() != "entregar_personaje":
+				continue
+
+			if str(objetivo.get("personaje_id", "")).strip_edges() != destino_personaje_id:
+				continue
+
+			var datos_variant: Variant = objetivo.get("datos", {})
+			if not datos_variant is Dictionary:
+				continue
+
+			var datos := datos_variant as Dictionary
+			var personaje_entregado_id := str(datos.get("personaje_entregado_id", "")).strip_edges()
+			if personaje_entregado_id.is_empty():
+				continue
+
+			for criatura_variant in get_tree().get_nodes_in_group("creatures"):
+				if not criatura_variant is Node:
+					continue
+
+				var criatura := criatura_variant as Node
+				if not is_instance_valid(criatura):
+					continue
+
+				if not criatura.has_method("get_personaje_game_id"):
+					continue
+
+				if str(criatura.call("get_personaje_game_id")).strip_edges() != personaje_entregado_id:
+					continue
+
+				if not criatura.has_method("esta_siguiendo_jugador"):
+					continue
+
+				if not bool(criatura.call("esta_siguiendo_jugador")):
+					continue
+
+				if criatura.global_position.distance_to(destino.global_position) > 56.0:
+					continue
+
+				_registrar_evento(
+					"entregar_personaje",
+					destino_personaje_id,
+					1
+				)
+				return true
+
+	return false
+
+
 func registrar_recoleccion(
 	item_id: String,
 	cantidad: int = 1
