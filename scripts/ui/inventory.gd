@@ -43,6 +43,7 @@ func _inicializar_navegacion_tabs() -> void:
 	tab_bar.visible = false
 
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
+	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
 	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
@@ -51,17 +52,21 @@ func _inicializar_navegacion_tabs() -> void:
 	boton_inventario.pressed.connect(func() -> void:
 		tabs.current_tab = 0
 	)
-	boton_enciclopedia.pressed.connect(func() -> void:
+	boton_crafteo.pressed.connect(func() -> void:
 		tabs.current_tab = 1
 	)
-	boton_mapa.pressed.connect(func() -> void:
+
+	boton_enciclopedia.pressed.connect(func() -> void:
 		tabs.current_tab = 2
 	)
-	boton_relaciones.pressed.connect(func() -> void:
+	boton_mapa.pressed.connect(func() -> void:
 		tabs.current_tab = 3
 	)
-	boton_admin.pressed.connect(func() -> void:
+	boton_relaciones.pressed.connect(func() -> void:
 		tabs.current_tab = 4
+	)
+	boton_admin.pressed.connect(func() -> void:
+		tabs.current_tab = 5
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as Control
 		if admin_tab.has_method("abrir"):
 			admin_tab.call("abrir", get_tree().get_first_node_in_group("player"))
@@ -114,7 +119,7 @@ func _actualizar_admin_tab() -> void:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
 	boton_admin.visible = es_admin
 	admin_tab.visible = es_admin
-	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 4:
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin and admin_tab.has_method("abrir"):
 		admin_tab.call("abrir", jugador)
