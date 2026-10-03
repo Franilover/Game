@@ -59,6 +59,7 @@ var _eterium_organismos: Dictionary = {}
 var _eterium_runtime_ready: bool = false
 var _eterium_heal_timer: float = 0.0
 var _eterium_recovery_accumulator: float = 0.0
+var _eterium_sprint_cost_accumulator: float = 0.0
 
 
 var _jump_time: float = 0.0
@@ -136,10 +137,6 @@ func _physics_process(delta: float) -> void:
 
 	_eterium_heal_timer = 0.0
 
-	# Magia IUM.
-	if Input.is_action_just_pressed("use_ium"):
-		_usar_proceso_ium()
-
 	# Esquiva.
 	# Reutilizamos el DASH existente porque ya proporciona
 	# movimiento rápido e invulnerabilidad durante la acción.
@@ -162,10 +159,15 @@ func _physics_process(delta: float) -> void:
 		"move_down"
 	)
 
+	var eterium_sprint := false
+	if Input.is_action_pressed("use_ium") and direction != Vector2.ZERO:
+		eterium_sprint = _procesar_carrera_eterium(delta)
+
 	var is_running := (
 		Input.is_action_pressed("run")
 		and direction != Vector2.ZERO
 		and stamina > 0.0
+		and not eterium_sprint
 	)
 
 	# La recuperación natural ocurre únicamente mientras el jugador espera.
@@ -174,7 +176,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		_eterium_recovery_accumulator = 0.0
 
-	# Consumo de stamina al correr.
+	# Consumo de stamina al correr normalmente.
 	if is_running:
 		_gastar_stamina(
 			run_stamina_cost * delta
@@ -187,7 +189,9 @@ func _physics_process(delta: float) -> void:
 	# Movimiento.
 	var speed: float
 
-	if is_running:
+	if eterium_sprint:
+		speed = move_speed * run_multiplier * _eterium_carrera_multiplicador()
+	elif is_running:
 		speed = move_speed * run_multiplier
 	else:
 		speed = move_speed
@@ -540,6 +544,99 @@ func _actualizar_recuperacion_eterium(delta: float) -> void:
 		mana,
 		max_mana
 	)
+
+
+func _eterium_carrera_costo_por_segundo() -> float:
+	return maxf(
+		float(
+			_eterium_reglas.get(
+				"carrera_eterium_costo_s_por_segundo",
+				0.0
+			)
+		),
+		0.0
+	)
+
+
+func _eterium_carrera_multiplicador() -> float:
+	return maxf(
+		float(
+			_eterium_reglas.get(
+				"carrera_eterium_multiplicador_velocidad",
+				1.0
+			)
+		),
+		1.0
+	)
+
+
+func _eterium_carrera_recuperacion_stamina() -> float:
+	return maxf(
+		float(
+			_eterium_reglas.get(
+				"carrera_eterium_recuperacion_stamina_por_segundo",
+				0.0
+			)
+		),
+		0.0
+	)
+
+
+func _procesar_carrera_eterium(delta: float) -> bool:
+	if not _eterium_runtime_ready:
+		_eterium_sprint_cost_accumulator = 0.0
+		return false
+
+	if mana <= 0:
+		_eterium_sprint_cost_accumulator = 0.0
+		return false
+
+	var costo_s_por_segundo := _eterium_carrera_costo_por_segundo()
+	var recuperacion_stamina := _eterium_carrera_recuperacion_stamina()
+	var escala := _eterium_escala_runtime()
+
+	if costo_s_por_segundo <= 0.0:
+		return false
+
+	_eterium_recovery_accumulator = 0.0
+
+	# El Eterium alimenta directamente la carrera y reemplaza el gasto de stamina.
+	_eterium_sprint_cost_accumulator += (
+		costo_s_por_segundo
+		* escala
+		* delta
+	)
+
+	var unidades_a_gastar := floori(
+		_eterium_sprint_cost_accumulator
+	)
+
+	if unidades_a_gastar > 0:
+		var gastadas := mini(unidades_a_gastar, mana)
+		mana -= gastadas
+		_eterium_sprint_cost_accumulator -= gastadas
+
+		mana_changed.emit(
+			mana,
+			max_mana
+		)
+
+	if mana <= 0:
+		_eterium_sprint_cost_accumulator = 0.0
+		return false
+
+	if recuperacion_stamina > 0.0 and stamina < max_stamina:
+		stamina = minf(
+			stamina + recuperacion_stamina * delta,
+			max_stamina
+		)
+		_stamina_regeneration_timer = 0.0
+		stamina_changed.emit(
+			stamina,
+			max_stamina
+		)
+
+	return true
 
 
 func _procesar_curacion_eterium(delta: float) -> void:
