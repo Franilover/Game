@@ -86,7 +86,7 @@ var _mundo_preparado: bool = false
 var _cargando_mundo: bool = false
 
 # Creación de personaje antes de entrar a cualquier partida.
-var _character_creation: Control = null
+@onready var _character_creation: Control = $CharacterCreation
 
 
 func _ready() -> void:
@@ -194,7 +194,10 @@ func _ready() -> void:
 		_on_error_sala
 	)
 
-	_preparar_creador_personaje()
+	if not _character_creation.confirmed.is_connected(_on_character_confirmed):
+		_character_creation.confirmed.connect(_on_character_confirmed)
+	if not _character_creation.cancelled.is_connected(_on_character_cancelled):
+		_character_creation.cancelled.connect(_on_character_cancelled)
 
 	if not WorldData.mundo_listo.is_connected(
 		_al_mundo_listo
@@ -633,17 +636,7 @@ func _actualizar_perfil_button() -> void:
 # CREACIÓN DE PERSONAJE
 # ============================================================
 
-func _preparar_creador_personaje() -> void:
-	var scene: PackedScene = preload("res://scenes/ui/character_creation.tscn")
-	_character_creation = scene.instantiate()
-	_character_creation.confirmed.connect(_on_character_confirmed)
-	_character_creation.cancelled.connect(_on_character_cancelled)
-	add_child(_character_creation)
-
 func _mostrar_creacion_personaje(accion: String) -> void:
-	if _character_creation == null:
-		_preparar_creador_personaje()
-
 	# El creador debe quedar por encima de cualquier overlay del menú.
 	multiplayer_overlay.visible = false
 	login_overlay.visible = false
