@@ -596,48 +596,48 @@ func buscar_criatura_por_nombre(
 
 
 func obtener_reinos_game() -> Array[Dictionary]:
-\tvar resultado: Array[Dictionary] = []
+	var resultado: Array[Dictionary] = []
 
-\tfor reino in _reinos_game:
-\t\tresultado.append(reino.duplicate(true))
+	for reino in _reinos_game:
+		resultado.append(reino.duplicate(true))
 
-\treturn resultado
+	return resultado
 
 
 func buscar_reino_game_por_clave(
-\tclave: String
+	clave: String
 ) -> Dictionary:
-\tvar buscada := clave.strip_edges().to_lower()
+	var buscada := clave.strip_edges().to_lower()
 
-\tif buscada.is_empty():
-\t\treturn {}
+	if buscada.is_empty():
+		return {}
 
-\tfor reino in _reinos_game:
-\t\tif str(reino.get("clave", "")).to_lower() == buscada:
-\t\t\treturn reino.duplicate(true)
+	for reino in _reinos_game:
+		if str(reino.get("clave", "")).to_lower() == buscada:
+			return reino.duplicate(true)
 
-\treturn {}
+	return {}
 
 
 func obtener_reinos_game_de_bioma(
-\tbioma_id: String
+	bioma_id: String
 ) -> Array[Dictionary]:
-\tvar resultado: Array[Dictionary] = []
+	var resultado: Array[Dictionary] = []
 
-\tif bioma_id.is_empty():
-\t\treturn resultado
+	if bioma_id.is_empty():
+		return resultado
 
-\tfor reino in _reinos_game:
-\t\tvar bioma_ids_variant: Variant = reino.get("bioma_ids", [])
-\t\tif not bioma_ids_variant is Array:
-\t\t\tcontinue
+	for reino in _reinos_game:
+		var bioma_ids_variant: Variant = reino.get("bioma_ids", [])
+		if not bioma_ids_variant is Array:
+			continue
 
-\t\tif bioma_id not in (bioma_ids_variant as Array):
-\t\t\tcontinue
+		if bioma_id not in (bioma_ids_variant as Array):
+			continue
 
-\t\tresultado.append(reino.duplicate(true))
+		resultado.append(reino.duplicate(true))
 
-\treturn resultado
+	return resultado
 
 
 func obtener_misiones_game() -> Array[Dictionary]:
