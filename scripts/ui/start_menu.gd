@@ -288,8 +288,6 @@ func _iniciar_aventura_con_personaje() -> void:
 
 		return
 
-	_guardar_configuracion_personaje()
-
 	print(
 		"StartMenu: Iniciar partida con personaje"
 	)
