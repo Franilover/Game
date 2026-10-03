@@ -435,19 +435,64 @@ func can_interact(
 	return is_alive
 
 
+func es_dialogable() -> bool:
+	return not get_dialogue_data().is_empty()
+
+
+func get_dialogue_data() -> Dictionary:
+	var dialogo_variant: Variant = datos.get("dialogo", {})
+
+	if dialogo_variant is Dictionary:
+		return (dialogo_variant as Dictionary).duplicate(true)
+
+	if dialogo_variant is Array:
+		return {"lineas": (dialogo_variant as Array).duplicate(true)}
+
+	# Compatibilidad: permite almacenar el diálogo dentro de ia_config
+	# sin hacer que toda criatura sea hablable por defecto.
+	var ia_variant: Variant = datos.get("ia_config", {})
+	if ia_variant is Dictionary:
+		var ia_config := ia_variant as Dictionary
+		var ia_dialogo_variant: Variant = ia_config.get("dialogo", {})
+		if ia_dialogo_variant is Dictionary:
+			return (ia_dialogo_variant as Dictionary).duplicate(true)
+		if ia_dialogo_variant is Array:
+			return {"lineas": (ia_dialogo_variant as Array).duplicate(true)}
+
+	return {}
+
+
+func get_interaction_priority() -> int:
+	if es_dialogable():
+		return 60
+
+	return 0
+
+
 func get_interaction_text() -> String:
+	if es_dialogable():
+		return "Hablar"
+
 	return "Examinar"
 
 
 func interact(
 	_actor: Node
 ) -> void:
-	print(
-		"Interacción con criatura: ",
-		criatura_nombre,
-		" | id=",
-		criatura_id
+	if not es_dialogable():
+		return
+
+	var dialogue_system := get_tree().get_first_node_in_group(
+		"dialogue_system"
 	)
+
+	if dialogue_system != null and dialogue_system.has_method(
+		"abrir_desde"
+	):
+		dialogue_system.call(
+			"abrir_desde",
+			self
+		)
 
 
 # ============================================================
