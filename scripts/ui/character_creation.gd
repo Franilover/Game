@@ -6,13 +6,13 @@ signal cancelled
 var _action: String = ""
 var _skins: Array[String] = []
 
-@onready var partida_name_input: LineEdit = $Panel/Margin/Column/PartidaName
-@onready var seed_input: LineEdit = $Panel/Margin/Column/SeedInput
-@onready var name_input: LineEdit = $Panel/Margin/Column/NameInput
-@onready var gender: OptionButton = $Panel/Margin/Column/Gender
-@onready var gender_free: LineEdit = $Panel/Margin/Column/GenderFree
-@onready var species: OptionButton = $Panel/Margin/Column/Species
-@onready var skins: ItemList = $Panel/Margin/Column/Skins
+@onready var partida_name_input: LineEdit = $Panel/Margin/Column/Content/Fields/PartidaName
+@onready var seed_input: LineEdit = $Panel/Margin/Column/Content/Fields/SeedInput
+@onready var name_input: LineEdit = $Panel/Margin/Column/Content/Fields/NameInput
+@onready var gender: OptionButton = $Panel/Margin/Column/Content/Fields/Gender
+@onready var gender_free: LineEdit = $Panel/Margin/Column/Content/Fields/GenderFree
+@onready var species: OptionButton = $Panel/Margin/Column/Content/Fields/Species
+@onready var skins: ItemList = $Panel/Margin/Column/Content/Appearance/Skins
 @onready var status: Label = $Panel/Margin/Column/Status
 @onready var confirm_button: Button = $Panel/Margin/Column/Buttons/Confirm
 @onready var cancel_button: Button = $Panel/Margin/Column/Buttons/Cancel
@@ -72,11 +72,9 @@ func _actualizar_genero_segun_especie() -> void:
 	gender.visible = not es_feerin
 	gender_free.visible = not es_feerin and gender.selected == 3
 
-
 func _on_species_selected(_index: int) -> void:
 	_actualizar_genero_segun_especie()
 	_update_confirm()
-
 
 func _on_species_loaded(data: Array) -> void:
 	species.clear()
@@ -92,7 +90,6 @@ func _on_species_loaded(data: Array) -> void:
 	if species.item_count > 0:
 		species.select(0)
 		_actualizar_genero_segun_especie()
-		status.text = "Especies jugables cargadas desde Supabase."
 	else:
 		status.text = "No hay especies jugables disponibles."
 	_update_confirm()
@@ -126,7 +123,7 @@ func _update_confirm(_index: int = -1) -> void:
 		return
 	var partida_name_ok: bool = not partida_name_input.text.strip_edges().is_empty()
 	var name_ok: bool = not name_input.text.strip_edges().is_empty()
-	var gender_ok: bool = gender.selected != 3 or not gender_free.text.strip_edges().is_empty()
+	var gender_ok: bool = not gender.visible or gender.selected != 3 or not gender_free.text.strip_edges().is_empty()
 	var species_ok: bool = species.item_count > 0 and species.selected >= 0
 	var skin_ok: bool = skins.item_count > 0 and skins.get_selected_items().size() > 0
 	confirm_button.disabled = not (partida_name_ok and name_ok and gender_ok and species_ok and skin_ok)
