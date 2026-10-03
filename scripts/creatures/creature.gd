@@ -483,7 +483,7 @@ func _procesar_seguimiento() -> void:
 	)
 
 	if distancia <= _distancia_seguimiento:
-		_movimiento.establecer_direccion_movimiento(Vector2.ZERO) if false else _movimiento.establecer_direccion(Vector2.ZERO)
+		_movimiento.establecer_direccion(Vector2.ZERO)
 		return
 
 	var direccion := global_position.direction_to(
