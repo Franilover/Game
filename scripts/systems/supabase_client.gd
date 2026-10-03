@@ -10,7 +10,7 @@ const SUPABASE_URL := (
 )
 
 const RPC_MUNDO := (
-	"/rest/v1/rpc/get_mundo_inicial_ambiental_v1"
+	"/rest/v1/rpc/get_mundo_inicial_ambiental_v2"
 )
 
 const SUPABASE_KEY := (
