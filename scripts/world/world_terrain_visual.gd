@@ -316,7 +316,6 @@ func _cargar_textura_bioma(
 			return bioma_texture
 
 	return null
-}
 
 func _cargar_textura_zone(zone: int) -> Texture2D:
 	var path := str(
