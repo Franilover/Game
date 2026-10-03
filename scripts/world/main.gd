@@ -161,7 +161,7 @@ func _inicializar_dialogo() -> void:
 	_dialogue_system.set_script(dialogue_script)
 	systems.add_child(_dialogue_system)
 
-	var ui := get_node_or_null("UI")
+	var ui: Control = _hud
 	if _dialogue_system.has_method("configurar"):
 		_dialogue_system.call(
 			"configurar",
