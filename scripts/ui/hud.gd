@@ -21,14 +21,23 @@ var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
 
 var interaction_prompt: Label = null
+var interaction_panel: PanelContainer = null
+var interaction_title: Label = null
+var interaction_body: Label = null
+var interaction_close: Button = null
+var _interaction_panel_open: bool = false
+
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group("hud")
+
 	_buscar_nodos_hud()
 	_preparar_location()
 	_preparar_aviso_descubrimiento()
+	_preparar_panel_interaccion()
 
 	if location_panel:
 		location_panel.visible = false
@@ -761,6 +770,7 @@ func mostrar_interaccion(texto: String) -> void:
 
 	interaction_prompt.text = texto
 	interaction_prompt.visible = true
+	interaction_prompt.z_index = 1000
 
 
 func ocultar_interaccion() -> void:
@@ -768,3 +778,168 @@ func ocultar_interaccion() -> void:
 		return
 
 	interaction_prompt.visible = false
+
+
+func _preparar_panel_interaccion() -> void:
+	interaction_panel = PanelContainer.new()
+	interaction_panel.name = "InteractionPanel"
+	interaction_panel.visible = false
+	interaction_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	interaction_panel.z_index = 2000
+
+	interaction_panel.set_anchors_preset(Control.PRESET_CENTER)
+	interaction_panel.position = Vector2(-230.0, -150.0)
+	interaction_panel.size = Vector2(460.0, 300.0)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.055, 0.035, 0.98)
+	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
+	style.set_border_width_all(2)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	interaction_panel.add_theme_stylebox_override(
+		"panel",
+		style
+	)
+
+	var margin := MarginContainer.new()
+	margin.name = "Margin"
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 20)
+	interaction_panel.add_child(margin)
+
+	var column := VBoxContainer.new()
+	column.name = "Column"
+	column.add_theme_constant_override("separation", 12)
+	margin.add_child(column)
+
+	interaction_title = Label.new()
+	interaction_title.name = "Title"
+	interaction_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	interaction_title.add_theme_color_override(
+		"font_color",
+		Color(0.93, 0.84, 0.65, 1.0)
+	)
+	interaction_title.add_theme_font_size_override(
+		"font_size",
+		18
+	)
+	column.add_child(interaction_title)
+
+	interaction_body = Label.new()
+	interaction_body.name = "Body"
+	interaction_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	interaction_body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	interaction_body.custom_minimum_size = Vector2(0, 160)
+	interaction_body.add_theme_color_override(
+		"font_color",
+		Color(0.78, 0.70, 0.57, 1.0)
+	)
+	interaction_body.add_theme_font_size_override(
+		"font_size",
+		12
+	)
+	column.add_child(interaction_body)
+
+	interaction_close = Button.new()
+	interaction_close.name = "Close"
+	interaction_close.text = "Cerrar"
+	interaction_close.custom_minimum_size = Vector2(0, 34)
+	interaction_close.focus_mode = Control.FOCUS_NONE
+	interaction_close.pressed.connect(
+		cerrar_panel_interaccion
+	)
+	column.add_child(interaction_close)
+
+	add_child(interaction_panel)
+
+
+func mostrar_panel_interaccion(datos: Dictionary) -> void:
+	if interaction_panel == null:
+		return
+
+	var titulo: String = str(
+		datos.get(
+			"titulo",
+			"Interacción"
+		)
+	)
+
+	var accion: String = str(
+		datos.get(
+			"accion",
+			""
+		)
+	)
+
+	if not accion.is_empty():
+		interaction_title.text = accion + " · " + titulo
+	else:
+		interaction_title.text = titulo
+
+	var lineas: Array[String] = []
+
+	var bioma: String = str(datos.get("bioma", "")).strip_edges()
+	if not bioma.is_empty():
+		lineas.append("Bioma: " + bioma)
+
+	var ecosistema: String = str(datos.get("ecosistema", "")).strip_edges()
+	if not ecosistema.is_empty():
+		lineas.append("Ecosistema: " + ecosistema)
+
+	var habitat: String = str(datos.get("habitat", "")).strip_edges()
+	if not habitat.is_empty():
+		lineas.append("Hábitat: " + habitat)
+
+	var item_nombre: String = str(datos.get("item_nombre", "")).strip_edges()
+	if not item_nombre.is_empty():
+		lineas.append("Objeto relacionado: " + item_nombre)
+
+	var descripcion: String = str(datos.get("descripcion", "")).strip_edges()
+	if not descripcion.is_empty():
+		lineas.append("")
+		lineas.append(descripcion)
+
+	if lineas.is_empty():
+		lineas.append("No hay información adicional registrada.")
+
+	interaction_body.text = "
+".join(lineas)
+	interaction_panel.visible = true
+	_interaction_panel_open = true
+
+	if interaction_close != null:
+		interaction_close.grab_focus()
+
+
+func cerrar_panel_interaccion() -> void:
+	if interaction_panel == null:
+		return
+
+	interaction_panel.visible = false
+	_interaction_panel_open = false
+
+	if interaction_close != null:
+		interaction_close.release_focus()
+
+
+func esta_mostrando_panel_interaccion() -> bool:
+	return _interaction_panel_open
+
+
+func _input(event: InputEvent) -> void:
+	if not _interaction_panel_open:
+		return
+
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if not key_event.pressed or key_event.echo:
+			return
+
+		if key_event.keycode == KEY_ESCAPE:
+			cerrar_panel_interaccion()
+			get_viewport().set_input_as_handled()
