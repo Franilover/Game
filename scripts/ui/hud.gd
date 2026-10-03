@@ -20,6 +20,7 @@ var stamina_value: Label = null
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
+var heart_icon: Control = null
 
 var interaction_prompt: PanelContainer = null
 var interaction_prompt_action: Label = null
@@ -215,6 +216,7 @@ func _buscar_player() -> void:
 	_actualizar_vida()
 	_actualizar_stamina()
 	_actualizar_eterium()
+	_actualizar_ui_especie()
 
 
 func _buscar_world_generator() -> void:
@@ -255,6 +257,10 @@ func _conectar_senales_player() -> void:
 	if player.has_signal("mana_changed"):
 		if not player.mana_changed.is_connected(_al_recibir_cambio_mana):
 			player.mana_changed.connect(_al_recibir_cambio_mana)
+
+	if player.has_signal("fisiologia_changed"):
+		if not player.fisiologia_changed.is_connected(_al_fisiologia_cambiada):
+			player.fisiologia_changed.connect(_al_fisiologia_cambiada)
 
 
 func _al_recibir_cambio_vida(actual: int, maximo: int) -> void:
