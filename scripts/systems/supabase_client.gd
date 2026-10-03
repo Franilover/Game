@@ -177,6 +177,10 @@ func _al_completar_especies_jugables(
 	especies_jugables_cargadas.emit(especies)
 
 
+
+func obtener_especies_jugables() -> Array:
+	return _especies_jugables.duplicate(true)
+
 func cargar_personaje_regalos() -> void:
 	if not _personaje_regalos.is_empty() or _http_personaje_regalos == null:
 		return
