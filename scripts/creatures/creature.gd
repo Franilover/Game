@@ -262,6 +262,10 @@ func get_id() -> String:
 	return criatura_id
 
 
+func get_personaje_game_id() -> String:
+	return str(datos.get("personaje_game_id", "")).strip_edges()
+
+
 func get_datos() -> Dictionary:
 	return datos
 
