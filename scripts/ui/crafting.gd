@@ -298,7 +298,7 @@ func _craftear(receta: Dictionary) -> void:
 			if restante <= 0:
 				break
 
-			var objeto := inventario.obtener_objeto(indice)
+			var objeto: Dictionary = inventario.obtener_objeto(indice)
 			if objeto.is_empty():
 				continue
 
