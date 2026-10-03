@@ -2,6 +2,7 @@ extends Entity
 
 
 signal stamina_changed(current: float, maximum: float)
+signal fisiologia_changed(vida_eterium_compartidos: bool)
 
 
 @export_category("Movimiento")
@@ -145,7 +146,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# Curación con Eterium mientras se mantiene Q.
-	if Input.is_action_pressed("focus"):
+	if Input.is_action_pressed("focus") and not _eterium_vida_compartida():
 		_procesar_curacion_eterium(delta)
 		return
 
@@ -518,7 +519,9 @@ func _aplicar_especie_eterium_game(reglas: Array) -> void:
 			mana_changed.emit(mana, max_mana)
 		else:
 			mana_changed.emit(mana, max_mana)
-		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", bool(regla.get("vida_eterium_compartidos", false)), " | capacidad=", max_mana)
+		var compartido := bool(regla.get("vida_eterium_compartidos", false))
+		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", compartido, " | capacidad=", max_mana)
+		fisiologia_changed.emit(compartido)
 		return
 
 
@@ -657,6 +660,11 @@ func _eterium_escala_runtime() -> float:
 func _actualizar_recuperacion_eterium(delta: float) -> void:
 	if not _eterium_runtime_ready:
 		return
+
+	if _eterium_vida_compartida():
+		if mana >= max_mana:
+			_eterium_recovery_accumulator = 0.0
+			return
 
 	if mana >= max_mana:
 		_eterium_recovery_accumulator = 0.0
