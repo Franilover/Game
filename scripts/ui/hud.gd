@@ -515,7 +515,6 @@ func _actualizar_contexto() -> void:
 	if not mostrar_contexto_mundo:
 		if location_panel:
 			location_panel.visible = false
-
 		return
 
 	if location_panel:
@@ -535,72 +534,81 @@ func _actualizar_contexto() -> void:
 		location_label.text = "Sin WorldGenerator"
 		return
 
-	var contexto := _obtener_contexto_mundo(
-		player.global_position
+	var contexto := _obtener_contexto_mundo(player.global_position)
+	var bioma := _obtener_nombre_contexto(contexto, "bioma")
+	var ecosistema := _obtener_nombre_contexto(contexto, "ecosistema")
+	var habitat := _obtener_nombre_contexto(contexto, "habitat")
+
+	var tile := Vector2i.ZERO
+	if world_generator.has_method("get_tile_at"):
+		tile = world_generator.call("get_tile_at", player.global_position)
+
+	var chunk_size := maxi(int(world_generator.get("chunk_size_tiles")), 1)
+	var chunk := Vector2i(
+		floori(float(tile.x) / float(chunk_size)),
+		floori(float(tile.y) / float(chunk_size))
 	)
 
-	if contexto.is_empty():
-		location_label.text = "Sin información del mundo"
-		print(
-			"HUD: get_contexto_at() no devolvió información para ",
+	var reinos: Array[Dictionary] = []
+	if world_generator.has_method("get_reinos_at_position"):
+		var reinos_variant: Variant = world_generator.call(
+			"get_reinos_at_position",
 			player.global_position
 		)
-		return
+		if reinos_variant is Array:
+			for reino_variant in reinos_variant:
+				if reino_variant is Dictionary:
+					reinos.append(reino_variant as Dictionary)
 
-	var bioma = _obtener_nombre_contexto(
-		contexto,
-		"bioma"
-	)
+	var nombres_reinos: Array[String] = []
+	for reino in reinos:
+		var nombre_reino := str(reino.get("nombre", "")).strip_edges()
+		if nombre_reino.is_empty():
+			nombre_reino = str(reino.get("clave", "")).strip_edges()
+		if not nombre_reino.is_empty() and nombre_reino not in nombres_reinos:
+			nombres_reinos.append(nombre_reino)
 
-	var ecosistema = _obtener_nombre_contexto(
-		contexto,
-		"ecosistema"
-	)
+	var reino_texto := "Sin reino"
+	if not nombres_reinos.is_empty():
+		reino_texto = " · ".join(nombres_reinos)
 
-	var habitat = _obtener_nombre_contexto(
-		contexto,
-		"habitat"
-	)
+	var seed := str(world_generator.get("map_seed"))
+	var version := str(WorldData.mundo.get("version", "—"))
+	var supabase_estado := "Connected"
+	if SupabaseClient.has_method("esta_conectado") and not SupabaseClient.call("esta_conectado"):
+		supabase_estado = "Offline"
 
-	var tiempo := _obtener_tiempo_mundo()
-	var hora := str(tiempo.get("hora", "00:00"))
-	var periodo := str(tiempo.get("periodo", "Día"))
-	var dia := int(tiempo.get("dia", 1))
-	var anio := int(tiempo.get("anio", 0))
-	var estacion := str(tiempo.get("estacion", "—"))
-	var dia_estacion := int(tiempo.get(
-		"dia_de_estacion",
-		0
-	))
-	var clima := str(contexto.get("clima", ""))
+	var fps := Engine.get_frames_per_second()
+	var frame_ms := 1000.0 / float(maxi(fps, 1))
+	var criaturas := get_tree().get_nodes_in_group("creatures").size()
+	var props := get_tree().get_nodes_in_group("world_props").size()
+	var entidades := criaturas + props
 
-	var linea_estacion := "Estación: " + estacion
-	if dia_estacion > 0:
-		linea_estacion += " · día " + str(dia_estacion)
+	var chunks_cargados := 0
+	var terrain := world_generator.get_node_or_null("WorldTerrain")
+	if terrain != null and terrain.has_method("chunks_cargados"):
+		chunks_cargados = terrain.call("chunks_cargados").size()
 
 	location_label.text = (
-		"Día " + str(dia) + " · Año " + str(anio) +
-		"\nHora: " + hora + " — " + periodo +
-		"\n" + linea_estacion +
-		"\nBioma: " + bioma +
-		"\nEcosistema: " + ecosistema +
-		"\nHábitat: " + habitat
+		"RENDIMIENTO\n"
+		+ "FPS: " + str(fps) + "    Frame: " + ("%.1f" % frame_ms) + " ms\n\n"
+		+ "MUNDO\n"
+		+ "Reino: " + reino_texto + "\n"
+		+ "Seed: " + seed + "\n"
+		+ "World version: " + version + "\n"
+		+ "Supabase: " + supabase_estado + "\n\n"
+		+ "UBICACIÓN\n"
+		+ "Posición: " + str(tile.x) + ", " + str(tile.y) + "\n"
+		+ "Chunk: " + str(chunk.x) + ", " + str(chunk.y) + "\n"
+		+ "Bioma: " + bioma + "\n"
+		+ "Ecosistema: " + ecosistema + "\n"
+		+ "Hábitat: " + habitat + "\n\n"
+		+ "ENTIDADES\n"
+		+ "Criaturas: " + str(criaturas) + "\n"
+		+ "Props: " + str(props) + "\n"
+		+ "Entidades: " + str(entidades) + "\n"
+		+ "Chunks cargados: " + str(chunks_cargados)
 	)
-
-	if not clima.is_empty():
-		location_label.text += "\nClima: " + clima
-
-	var factores_variant: Variant = contexto.get(
-		"factores_abioticos",
-		{}
-	)
-
-	if factores_variant is Dictionary:
-		var factores := factores_variant as Dictionary
-		var ambiente := _formatear_ambiente_efectivo(factores)
-		if not ambiente.is_empty():
-			location_label.text += "\n" + ambiente
-
 
 func _formatear_ambiente_efectivo(
 	factores: Dictionary
