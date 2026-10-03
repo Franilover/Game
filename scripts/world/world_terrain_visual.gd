@@ -41,6 +41,7 @@ const TERRAIN_NAMES: PackedStringArray = [
 var tile_size: int = 32
 var tilemap_dual: TileMapDual
 var _base_tiles: Dictionary = {}
+var _next_source_id: int = 0
 var _dirty_cells: Array[Vector2i] = []
 var _dirty_lookup: Dictionary = {}
 
@@ -85,8 +86,6 @@ func _crear_tileset() -> TileSet:
 			TERRAIN_NAMES[terrain_id - 1]
 		)
 
-	var next_source_id := 0
-
 	for zone in range(ZONE_TEXTURES.size()):
 		var texture := _cargar_textura_zone(zone)
 		if texture == null:
@@ -103,7 +102,7 @@ func _crear_tileset() -> TileSet:
 		for sequence_pos in TILE_SEQUENCE:
 			atlas.create_tile(sequence_pos)
 
-		tile_set.add_source(atlas, next_source_id)
+		tile_set.add_source(atlas, _next_source_id)
 
 		var terrain_id := zone + 1
 
@@ -131,11 +130,11 @@ func _crear_tileset() -> TileSet:
 		).terrain = terrain_id
 
 		_base_tiles[zone] = {
-			"source_id": next_source_id,
+			"source_id": _next_source_id,
 			"atlas": TILE_SEQUENCE[15],
 		}
 
-		next_source_id += 1
+		_next_source_id += 1
 
 	return tile_set
 
@@ -169,21 +168,65 @@ func _cargar_textura_zone(zone: int) -> Texture2D:
 
 	return null
 
-func set_zone(cell: Vector2i, zone: int) -> void:
-	if not _base_tiles.has(zone):
+func set_zone(cell: Vector2i, zone: int, bioma_nombre: String = "") -> void:
+	var clave := _clave_tile(bioma_nombre, zone)
+	if not _base_tiles.has(clave):
+		_crear_base_tile(clave, bioma_nombre, zone)
+
+	if not _base_tiles.has(clave):
 		return
 
-	var data: Dictionary = _base_tiles[zone]
-
-	tilemap_dual.set_cell(
-		cell,
-		int(data["source_id"]),
-		data["atlas"]
-	)
+	var data: Dictionary = _base_tiles[clave]
+	tilemap_dual.set_cell(cell, int(data["source_id"]), data["atlas"])
 
 	if not _dirty_lookup.has(cell):
 		_dirty_lookup[cell] = true
 		_dirty_cells.append(cell)
+
+func _clave_tile(bioma_nombre: String, zone: int) -> String:
+	return bioma_nombre.strip_edges() + "::" + str(zone)
+
+func _crear_base_tile(clave: String, bioma_nombre: String, zone: int) -> void:
+	if zone < 0 or zone >= ZONE_TEXTURES.size():
+		return
+
+	var texture := _cargar_textura_bioma(bioma_nombre, zone)
+	if texture == null:
+		push_error("WorldTerrainVisual: no se pudo cargar textura para bioma " + bioma_nombre + " y zona " + str(zone))
+		return
+
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = texture
+	atlas.texture_region_size = Vector2i(tile_size, tile_size)
+	for sequence_pos in TILE_SEQUENCE:
+		atlas.create_tile(sequence_pos)
+
+	tilemap_dual.tile_set.add_source(atlas, _next_source_id)
+	var terrain_id := zone + 1
+	for index in range(TILE_SEQUENCE.size()):
+		var data := atlas.get_tile_data(TILE_SEQUENCE[index], 0)
+		data.terrain_set = 0
+		var bits := index
+		for neighbor in CORNER_NEIGHBORS:
+			var neighbor_terrain := terrain_id if (bits & 1) != 0 else 0
+			data.set_terrain_peering_bit(neighbor, neighbor_terrain)
+			bits >>= 1
+
+	atlas.get_tile_data(TILE_SEQUENCE[15], 0).terrain = terrain_id
+	_base_tiles[clave] = {"source_id": _next_source_id, "atlas": TILE_SEQUENCE[15]}
+	_next_source_id += 1
+
+func _cargar_textura_bioma(bioma_nombre: String, zone: int) -> Texture2D:
+	if not bioma_nombre.strip_edges().is_empty():
+		var bioma_path := "res://assets/tilesets/" + bioma_nombre.strip_edges() + ".png"
+		var bioma_texture := load(bioma_path) as Texture2D
+		if _textura_valida(bioma_texture):
+			return bioma_texture
+
+	return _cargar_textura_zone(zone)
+
+func _textura_valida(texture: Texture2D) -> bool:
+	return texture != null and texture.get_width() >= tile_size * 4 and texture.get_height() >= tile_size * 4
 
 func flush() -> void:
 	if _dirty_cells.is_empty():
