@@ -5,7 +5,6 @@ extends Control
 @onready var character_creation: Control = $CharacterCreation
 
 
-
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	actualizar_lista()
@@ -30,7 +29,6 @@ func actualizar_lista() -> void:
 	else:
 		for partida in partidas:
 			_crear_fila_partida(partida)
-
 
 
 func _crear_fila_partida(partida: Dictionary) -> void:
@@ -137,7 +135,6 @@ func _on_back_pressed() -> void:
 
 func _on_character_cancelled() -> void:
 	status_label.text = "Creación de personaje cancelada."
-	name_input.grab_focus()
 
 
 func _on_character_confirmed(
