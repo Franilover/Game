@@ -408,32 +408,168 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 	if datos_objeto.is_empty():
 		return false
 
-	var indice_libre := _buscar_slot_libre()
-
-	if indice_libre < 0:
-		print("Inventory: inventario lleno.")
-		return false
-
 	var objeto := datos_objeto.duplicate(true)
+	var cantidad: int = maxi(
+		1,
+		int(objeto.get("cantidad", 1))
+	)
+	var max_stack: int = maxi(
+		1,
+		int(objeto.get("max_stack", 1))
+	)
 
-	if not objeto.has("cantidad"):
-		objeto["cantidad"] = 1
+	objeto["cantidad"] = cantidad
+	objeto["max_stack"] = max_stack
 
-	items[indice_libre] = objeto
+	# Comprobamos primero que pueda entrar TODO el lote.
+	# Así nunca destruimos un objeto del mundo dejando una parte sin recoger.
+	var cantidad_pendiente: int = cantidad
+	var espacios_libres: int = 0
+
+	if max_stack > 1:
+		for existente in items:
+			if existente.is_empty():
+				espacios_libres += 1
+				continue
+
+			if not _puede_apilar_con(existente, objeto):
+				continue
+
+			var ocupacion: int = maxi(
+				0,
+				int(existente.get("cantidad", 1))
+			)
+
+			cantidad_pendiente -= mini(
+				cantidad_pendiente,
+				max_stack - ocupacion
+			)
+
+			if cantidad_pendiente <= 0:
+				break
+	else:
+		for existente in items:
+			if existente.is_empty():
+				espacios_libres += 1
+
+		if espacios_libres < cantidad_pendiente:
+			print("Inventory: no hay espacio suficiente para ", cantidad, " objetos.")
+			return false
+
+		cantidad_pendiente = 0
+
+	if cantidad_pendiente > 0:
+		var stacks_necesarios: int = ceili(
+			float(cantidad_pendiente)
+			/ float(max_stack)
+		)
+		if espacios_libres < stacks_necesarios:
+			print("Inventory: no hay espacio suficiente para completar el lote.")
+			return false
+
+	# 1) Llenamos primero stacks existentes.
+	var restante: int = cantidad
+
+	if max_stack > 1:
+		for i in range(items.size()):
+			if restante <= 0:
+				break
+
+			if not _puede_apilar_con(items[i], objeto):
+				continue
+
+			var ocupacion: int = maxi(
+				1,
+				int(items[i].get("cantidad", 1))
+			)
+			var capacidad: int = max_stack - ocupacion
+
+			if capacidad <= 0:
+				continue
+
+			var anadido: int = mini(restante, capacidad)
+			items[i]["cantidad"] = ocupacion + anadido
+			restante -= anadido
+
+	# 2) Lo restante ocupa nuevos slots.
+	if restante > 0:
+		for i in range(items.size()):
+			if restante <= 0:
+				break
+
+			if not items[i].is_empty():
+				continue
+
+			var lote: int = mini(restante, max_stack)
+			var nuevo_objeto: Dictionary = objeto.duplicate(true)
+			nuevo_objeto["cantidad"] = lote
+			items[i] = nuevo_objeto
+			restante -= lote
 
 	actualizar()
-
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
 	print(
-		"Inventory: objeto añadido en slot ",
-		indice_libre + 1,
-		" → ",
-		str(objeto.get("nombre", "Objeto"))
+		"Inventory: añadido → ",
+		str(objeto.get("nombre", "Objeto")),
+		" x",
+		str(cantidad),
+		" | max_stack=",
+		str(max_stack)
 	)
 
-	return true
+	return restante <= 0
+
+
+func _puede_apilar_con(
+	existente: Dictionary,
+	nuevo_objeto: Dictionary
+) -> bool:
+	if existente.is_empty() or nuevo_objeto.is_empty():
+		return false
+
+	var max_stack_existente: int = maxi(
+		1,
+		int(existente.get("max_stack", 1))
+	)
+	var max_stack_nuevo: int = maxi(
+		1,
+		int(nuevo_objeto.get("max_stack", 1))
+	)
+
+	if max_stack_existente <= 1 or max_stack_nuevo <= 1:
+		return false
+
+	var id_existente: String = str(
+		existente.get(
+			"id",
+			existente.get("item_id", "")
+		)
+	).strip_edges()
+
+	var id_nuevo: String = str(
+		nuevo_objeto.get(
+			"id",
+			nuevo_objeto.get("item_id", "")
+		)
+	).strip_edges()
+
+	if not id_existente.is_empty() and not id_nuevo.is_empty():
+		return id_existente == id_nuevo
+
+	var nombre_existente: String = str(
+		existente.get("nombre", "")
+	).strip_edges().to_lower()
+
+	var nombre_nuevo: String = str(
+		nuevo_objeto.get("nombre", "")
+	).strip_edges().to_lower()
+
+	return (
+		nombre_existente == nombre_nuevo
+		and not nombre_existente.is_empty()
+	)
 
 
 func quitar_objeto(indice: int) -> bool:
@@ -443,12 +579,48 @@ func quitar_objeto(indice: int) -> bool:
 	if items[indice].is_empty():
 		return false
 
-	items[indice] = {}
+	var cantidad: int = maxi(
+		1,
+		int(items[indice].get("cantidad", 1))
+	)
+
+	return quitar_cantidad(indice, cantidad)
+
+
+func quitar_cantidad(
+	indice: int,
+	cantidad: int
+) -> bool:
+	if indice < 0 or indice >= items.size():
+		return false
+
+	if items[indice].is_empty():
+		return false
+
+	var cantidad_a_quitar: int = maxi(
+		1,
+		cantidad
+	)
+	var cantidad_actual: int = maxi(
+		1,
+		int(items[indice].get("cantidad", 1))
+	)
+
+	if cantidad_a_quitar >= cantidad_actual:
+		items[indice] = {}
+	else:
+		items[indice]["cantidad"] = (
+			cantidad_actual - cantidad_a_quitar
+		)
 
 	if indice_seleccionado == indice:
-		indice_seleccionado = -1
-		objeto_seleccionado.clear()
-		_limpiar_informacion()
+		if items[indice].is_empty():
+			indice_seleccionado = -1
+			objeto_seleccionado.clear()
+			_limpiar_informacion()
+		else:
+			objeto_seleccionado = items[indice].duplicate(true)
+			_mostrar_informacion()
 
 	actualizar()
 	inventory_changed.emit()
