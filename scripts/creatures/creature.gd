@@ -108,35 +108,30 @@ func configurar(
 			"biologia",
 			""
 		)
-	)
 
 	pensamiento = str(
 		datos_criatura.get(
 			"pensamiento",
 			""
 		)
-	)
 
 	alma = str(
 		datos_criatura.get(
 			"alma",
 			""
 		)
-	)
 
 	relacion = str(
 		datos_criatura.get(
 			"relacion",
 			""
 		)
-	)
 
 	magia = str(
 		datos_criatura.get(
 			"magia",
 			""
 		)
-	)
 
 	var stats_variant: Variant = datos_criatura.get(
 		"stats_dnd",
@@ -536,17 +531,17 @@ func es_dialogable() -> bool:
 
 
 func get_dialogue_data() -> Dictionary:
-	# Los personajes_game no heredan diálogo de su especie.
-	if datos.has("personaje_game_id"):
-		var dialogo_personaje: Variant = datos.get("dialogo", {})
+	var personaje_id := get_personaje_game_id()
 
-		if dialogo_personaje is Dictionary:
-			return (dialogo_personaje as Dictionary).duplicate(true)
-
-		if dialogo_personaje is Array:
-			return {"lineas": (dialogo_personaje as Array).duplicate(true)}
-
-		return {}
+	# El diálogo de un personaje siempre se resuelve por su ID canónico.
+	# El snapshot de la criatura solo sirve como respaldo para evitar
+	# que una instancia quede muda si todavía no tiene el registro anidado.
+	if not personaje_id.is_empty():
+		var dialogo_canonico: Dictionary = WorldData.obtener_dialogo_game(
+			personaje_id
+		)
+		if not dialogo_canonico.is_empty():
+			return dialogo_canonico
 
 	var dialogo_variant: Variant = datos.get("dialogo", {})
 
@@ -576,6 +571,13 @@ func get_interaction_priority() -> int:
 		return 60
 
 	return 0
+
+
+func get_interaction_distance() -> float:
+	if es_dialogable():
+		return 64.0
+
+	return 48.0
 
 
 func get_interaction_text() -> String:
