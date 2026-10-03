@@ -167,7 +167,6 @@ func _physics_process(delta: float) -> void:
 
 	var is_running := (
 		shift_pressed
-		and _shift_hold_timer >= shift_run_hold_threshold
 		and direction != Vector2.ZERO
 		and stamina > 0.0
 		and not eterium_sprint
