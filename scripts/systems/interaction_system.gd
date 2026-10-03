@@ -106,7 +106,7 @@ func _buscar_objetivo() -> void:
 			candidato as Node2D
 		)
 
-		var distancia_sq := player.global_position.distance_squared_to(
+		var distancia_sq: float = player.global_position.distance_squared_to(
 			candidato_2d.global_position
 		)
 
