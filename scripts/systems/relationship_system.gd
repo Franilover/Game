@@ -11,6 +11,7 @@ const FLAGS_KEY := "relaciones_sociales"
 const RECUERDOS_KEY := "recuerdos_sociales"
 
 var _reglas: Dictionary = {}
+var _regalos: Array = []
 var _cargado: bool = false
 
 
@@ -18,15 +19,24 @@ func _ready() -> void:
 	add_to_group("relationship_system")
 	if not SupabaseClient.personaje_social_cargado.is_connected(_al_reglas_cargadas):
 		SupabaseClient.personaje_social_cargado.connect(_al_reglas_cargadas)
+	if not SupabaseClient.personaje_regalos_cargados.is_connected(_al_regalos_cargados):
+		SupabaseClient.personaje_regalos_cargados.connect(_al_regalos_cargados)
 	call_deferred("_cargar_reglas_disponibles")
 
 
 func _cargar_reglas_disponibles() -> void:
+	_regalos = SupabaseClient.obtener_personaje_regalos()
+	if _regalos.is_empty():
+		SupabaseClient.cargar_personaje_regalos()
 	var reglas := SupabaseClient.obtener_personaje_social()
 	if not reglas.is_empty():
 		_al_reglas_cargadas(reglas)
 	else:
 		SupabaseClient.cargar_personaje_social()
+
+
+func _al_regalos_cargados(regalos: Array) -> void:
+	_regalos = regalos.duplicate(true)
 
 
 func _al_reglas_cargadas(reglas: Array) -> void:
@@ -136,6 +146,47 @@ func obtener_recuerdos(personaje_id: String) -> Array:
 	if lista_variant is Array:
 		return (lista_variant as Array).duplicate(true)
 	return []
+
+
+func evaluar_regalo(personaje_id: String, item_id: String) -> Dictionary:
+	for regalo_variant in _regalos:
+		if not regalo_variant is Dictionary:
+			continue
+		var regalo := regalo_variant as Dictionary
+		if str(regalo.get("personaje_game_id", "")) != personaje_id:
+			continue
+		if str(regalo.get("item_id", "")) != item_id:
+			continue
+		return regalo.duplicate(true)
+
+	return {
+		"reaccion": "neutral",
+		"amistad": 0.0,
+		"confianza": 0.0,
+		"respeto": 0.0,
+		"afecto": 0.0
+	}
+
+
+func registrar_regalo(personaje_id: String, item_id: String) -> Dictionary:
+	if personaje_id.is_empty() or item_id.is_empty():
+		return {}
+
+	var regalo := evaluar_regalo(personaje_id, item_id)
+	var cambios := {
+		"amistad": float(regalo.get("amistad", 0.0)),
+		"confianza": float(regalo.get("confianza", 0.0)),
+		"respeto": float(regalo.get("respeto", 0.0)),
+		"afecto": float(regalo.get("afecto", 0.0))
+	}
+	var recuerdo := {
+		"tipo": "regalo",
+		"item_id": item_id,
+		"reaccion": str(regalo.get("reaccion", "neutral")),
+		"importancia": 2.0,
+		"momento": Time.get_datetime_string_from_system(true)
+	}
+	return modificar_relacion(personaje_id, cambios, recuerdo)
 
 
 func obtener_personalidad(personaje_id: String) -> Dictionary:
