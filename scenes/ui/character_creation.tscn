@@ -31,110 +31,133 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -215.0
-offset_right = 300.0
-offset_bottom = 215.0
+offset_left = -440.0
+offset_top = -230.0
+offset_right = 440.0
+offset_bottom = 230.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("Panel")
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 20
 
 [node name="Column" type="VBoxContainer" parent="Panel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="Title" type="Label" parent="Panel/Margin/Column"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Crear personaje"
+text = "Crear partida"
 horizontal_alignment = 1
 
-[node name="PartidaLabel" type="Label" parent="Panel/Margin/Column"]
+[node name="Content" type="HBoxContainer" parent="Panel/Margin/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 28
+
+[node name="Fields" type="VBoxContainer" parent="Panel/Margin/Column/Content"]
+custom_minimum_size = Vector2(390, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 7
+
+[node name="PartidaLabel" type="Label" parent="Panel/Margin/Column/Content/Fields"]
 layout_mode = 2
 text = "Partida"
 
-[node name="PartidaName" type="LineEdit" parent="Panel/Margin/Column"]
-custom_minimum_size = Vector2(0, 34)
+[node name="PartidaName" type="LineEdit" parent="Panel/Margin/Column/Content/Fields"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 placeholder_text = "Nombre de la partida"
 
-[node name="SeedLabel" type="Label" parent="Panel/Margin/Column"]
+[node name="SeedLabel" type="Label" parent="Panel/Margin/Column/Content/Fields"]
 layout_mode = 2
 text = "Semilla (opcional)"
 
-[node name="SeedInput" type="LineEdit" parent="Panel/Margin/Column"]
-custom_minimum_size = Vector2(0, 34)
+[node name="SeedInput" type="LineEdit" parent="Panel/Margin/Column/Content/Fields"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 placeholder_text = "Vacío = semilla aleatoria"
 max_length = 20
 
-[node name="Status" type="Label" parent="Panel/Margin/Column"]
+[node name="NameLabel" type="Label" parent="Panel/Margin/Column/Content/Fields"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Completa los datos para entrar a la partida."
-horizontal_alignment = 1
+text = "Personaje"
 
-[node name="NameInput" type="LineEdit" parent="Panel/Margin/Column"]
-custom_minimum_size = Vector2(0, 34)
+[node name="NameInput" type="LineEdit" parent="Panel/Margin/Column/Content/Fields"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-placeholder_text = "Nombre"
+placeholder_text = "Nombre del personaje"
 
-[node name="GenderLabel" type="Label" parent="Panel/Margin/Column"]
+[node name="GenderLabel" type="Label" parent="Panel/Margin/Column/Content/Fields"]
 layout_mode = 2
 text = "Género"
 
-[node name="Gender" type="OptionButton" parent="Panel/Margin/Column"]
-custom_minimum_size = Vector2(0, 34)
+[node name="Gender" type="OptionButton" parent="Panel/Margin/Column/Content/Fields"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="GenderFree" type="LineEdit" parent="Panel/Margin/Column"]
-custom_minimum_size = Vector2(0, 32)
+[node name="GenderFree" type="LineEdit" parent="Panel/Margin/Column/Content/Fields"]
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 visible = false
 placeholder_text = "Escribe tu género"
 
-[node name="SpeciesLabel" type="Label" parent="Panel/Margin/Column"]
+[node name="SpeciesLabel" type="Label" parent="Panel/Margin/Column/Content/Fields"]
 layout_mode = 2
 text = "Especie"
 
-[node name="Species" type="OptionButton" parent="Panel/Margin/Column"]
-custom_minimum_size = Vector2(0, 34)
+[node name="Species" type="OptionButton" parent="Panel/Margin/Column/Content/Fields"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 disabled = true
 
-[node name="SkinLabel" type="Label" parent="Panel/Margin/Column"]
+[node name="Appearance" type="VBoxContainer" parent="Panel/Margin/Column/Content"]
+custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
-text = "Skin"
+size_flags_horizontal = 3
+theme_override_constants/separation = 7
 
-[node name="Skins" type="ItemList" parent="Panel/Margin/Column"]
-custom_minimum_size = Vector2(0, 72)
+[node name="SkinLabel" type="Label" parent="Panel/Margin/Column/Content/Appearance"]
 layout_mode = 2
+text = "Aspecto"
+
+[node name="Skins" type="ItemList" parent="Panel/Margin/Column/Content/Appearance"]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_vertical = 3
 fixed_column_width = 76
-max_columns = 5
+max_columns = 4
 icon_mode = 1
 fixed_icon_size = Vector2i(64, 64)
 allow_reselect = true
 select_mode = 0
+
+[node name="Status" type="Label" parent="Panel/Margin/Column"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = ""
+horizontal_alignment = 1
 
 [node name="Buttons" type="HBoxContainer" parent="Panel/Margin/Column"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="Confirm" type="Button" parent="Panel/Margin/Column/Buttons"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Entrar"
+text = "Crear partida"
 
 [node name="Cancel" type="Button" parent="Panel/Margin/Column/Buttons"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cancelar"
