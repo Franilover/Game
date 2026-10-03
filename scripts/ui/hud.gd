@@ -83,6 +83,82 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+func _buscar_nodos_hud() -> void:
+	# Los elementos base del HUD viven en hud.tscn.
+	# Se buscan por nombre para que el script no dependa de rutas rígidas.
+	var nodo: Node = find_child("HealthBar", true, false)
+	if nodo is ProgressBar:
+		health_bar = nodo as ProgressBar
+
+	nodo = find_child("HealthValue", true, false)
+	if nodo is Label:
+		health_value = nodo as Label
+
+	nodo = find_child("StaminaBar", true, false)
+	if nodo is ProgressBar:
+		stamina_bar = nodo as ProgressBar
+
+	nodo = find_child("StaminaValue", true, false)
+	if nodo is Label:
+		stamina_value = nodo as Label
+
+	nodo = find_child("EteriumBar", true, false)
+	if nodo is ProgressBar:
+		eterium_bar = nodo as ProgressBar
+
+	nodo = find_child("EteriumValue", true, false)
+	if nodo is Label:
+		eterium_value = nodo as Label
+
+	nodo = find_child("InteractionPrompt", true, false)
+	if nodo is PanelContainer:
+		interaction_prompt = nodo as PanelContainer
+
+	nodo = find_child("Action", true, false)
+	if nodo is Label:
+		interaction_prompt_action = nodo as Label
+
+
+func _preparar_aviso_descubrimiento() -> void:
+	# Aviso creado por código para no añadir otra dependencia al .tscn.
+	discovery_notice = Label.new()
+	discovery_notice.name = "DiscoveryNotice"
+	discovery_notice.visible = false
+	discovery_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	discovery_notice.z_index = 3000
+	discovery_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	discovery_notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	discovery_notice.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	discovery_notice.position = Vector2(-260.0, 28.0)
+	discovery_notice.size = Vector2(520.0, 48.0)
+	discovery_notice.add_theme_color_override(
+		"font_color",
+		Color(0.93, 0.84, 0.65, 1.0)
+	)
+	discovery_notice.add_theme_color_override(
+		"font_outline_color",
+		Color(0.075, 0.05, 0.035, 1.0)
+	)
+	discovery_notice.add_theme_constant_override("outline_size", 3)
+	discovery_notice.add_theme_font_size_override("font_size", 16)
+	add_child(discovery_notice)
+
+
+func _al_descubrimiento_mundo(datos: Variant = null) -> void:
+	if discovery_notice == null:
+		return
+
+	var texto := "Nuevo descubrimiento"
+	if datos is Dictionary:
+		texto = str(datos.get("nombre", datos.get("titulo", texto)))
+	elif datos != null:
+		texto = str(datos)
+
+	discovery_notice.text = texto
+	discovery_notice.visible = true
+	_discovery_notice_timer = 4.0
+
+
 func _preparar_location() -> void:
 	var nodo := find_child(
 		"LocationLabel",
