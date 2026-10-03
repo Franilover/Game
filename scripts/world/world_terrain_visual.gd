@@ -25,7 +25,7 @@ const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
 const ZONE_TEXTURES: Dictionary = {
 	# Fallbacks usando únicamente atlas que existen actualmente en el repo.
 	0: "res://assets/tilesets/Pradera.png",
-	1: "res://assets/tilesets/Pradera.png",
+	1: "res://assets/tilesets/Tierra.png",
 	2: "res://assets/tilesets/Montaña.png",
 	3: "res://assets/tilesets/Desierto.png",
 	4: "res://assets/tilesets/Marino.png",
@@ -283,7 +283,14 @@ func _cargar_textura_bioma(
 	bioma_nombre: String,
 	zone: int,
 	bioma_textura: String = ""
-) -> Texture2D:
+) -> Texture2D {
+	# La zona manda sobre el aspecto visual. Supabase determina si
+	# la celda es grass, dirt, stone, etc.; cada zona tiene su atlas.
+	var textura_zona := _cargar_textura_zone(zone)
+	if textura_zona != null:
+		return textura_zona
+
+	# Compatibilidad para datos antiguos o zonas sin atlas propio.
 	if not bioma_textura.strip_edges().is_empty():
 		var textura_canonica := load(
 			bioma_textura.strip_edges()
@@ -308,8 +315,8 @@ func _cargar_textura_bioma(
 		if _textura_valida(bioma_texture):
 			return bioma_texture
 
-	return _cargar_textura_zone(zone)
-
+	return null
+}
 
 func _cargar_textura_zone(zone: int) -> Texture2D:
 	var path := str(
