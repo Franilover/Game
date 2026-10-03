@@ -447,6 +447,7 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 
 	player_position = jugador.global_position
 	player_position_valida = true
+	player_tile_valido = false
 
 	var world_gen := get_tree().current_scene.get_node_or_null(
 		"World/WorldGenerator"
@@ -485,9 +486,6 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 			player_flags_variant as Dictionary
 		).duplicate(true)
 
-	var world_gen := get_tree().current_scene.get_node_or_null(
-		"World/WorldGenerator"
-	)
 
 	if world_gen != null:
 		var atmosphere := world_gen.get_node_or_null(
