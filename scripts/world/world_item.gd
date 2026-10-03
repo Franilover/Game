@@ -209,4 +209,7 @@ func interact(persona: Node) -> void:
 		datos["cantidad"] = 1
 	
 	if bool(inventario.call("agregar_objeto", datos)):
+		var item_id := str(datos.get("id", datos.get("item_id", ""))).strip_edges()
+		if not item_id.is_empty():
+			MissionManager.registrar_recoleccion(item_id, int(datos.get("cantidad", 1)))
 		queue_free()
