@@ -54,6 +54,14 @@ func _dibujar_prueba() -> void:
         var cell: Vector2i = cell_variant
         tilemap.draw_cell(cell, 0)
 
+    _refrescar_dual(tilemap.get_used_cells())
+
+
+func _refrescar_dual(celdas: Array[Vector2i]) -> void:
+    if celdas.is_empty():
+        return
+    tilemap._update_cells(celdas, false)
+
 
 func _crear_tileset_grass() -> TileSet:
     var texture: Texture2D = load(
@@ -192,5 +200,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
     if mouse_event.button_index == MOUSE_BUTTON_LEFT:
         tilemap.draw_cell(cell, 1)
+        _refrescar_dual([cell])
     elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
         tilemap.draw_cell(cell, 0)
+        _refrescar_dual([cell])
