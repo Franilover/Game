@@ -14,7 +14,6 @@ var hud: Control = null
 var objetivo_actual: Node = null
 
 var _scan_timer: float = 0.0
-var _interaction_distance_sq: float = 0.0
 
 
 func configurar(
@@ -23,17 +22,14 @@ func configurar(
 ) -> void:
 	player = nuevo_player
 	hud = nuevo_hud
-	_interaction_distance_sq = interaction_distance * interaction_distance
 
 	print(
 		"InteractionSystem: configurado."
 	)
 
 	print(
-		"InteractionSystem: interactuables actuales = ",
-		get_tree().get_nodes_in_group(
-			"interactable"
-		).size()
+		"InteractionSystem: recolectables actuales = ",
+		_contar_recolectables()
 	)
 
 	_cambiar_objetivo(null)
@@ -66,59 +62,37 @@ func _input(event: InputEvent) -> void:
 	if _interaccion_bloqueada():
 		return
 
-	if not _es_evento_interactuar(event):
+	if not event.is_action_pressed("primary_action"):
 		return
 
-	if event is InputEventKey and (event as InputEventKey).echo:
+	if objetivo_actual == null or not is_instance_valid(objetivo_actual):
 		return
 
-	_interactuar()
+	if not objetivo_actual.has_method("interact"):
+		return
+
+	objetivo_actual.call("interact", player)
 	get_viewport().set_input_as_handled()
-
-
-func _es_evento_interactuar(event: InputEvent) -> bool:
-	if event.is_action_pressed("interact"):
-		return true
-
-	# Respaldo directo para E. Mantiene la interacción funcional
-	# incluso si otra capa modifica el InputMap durante la partida.
-	if event is InputEventKey:
-		var tecla := event as InputEventKey
-		return (
-			tecla.pressed
-			and tecla.physical_keycode == KEY_E
-		)
-
-	return false
 
 
 func _interaccion_bloqueada() -> bool:
 	if get_tree().paused:
 		return true
 
-	if hud != null and hud.has_method(
-		"esta_mostrando_panel_interaccion"
-	):
-		if bool(
-			hud.call(
-				"esta_mostrando_panel_interaccion"
-			)
-		):
-			return true
+	var inventory: Node = get_tree().get_first_node_in_group("inventory")
+	if inventory is CanvasItem and bool((inventory as CanvasItem).visible):
+		return true
 
-	var inventory: Node = get_tree().get_first_node_in_group(
-		"inventory"
-	)
-	if inventory != null and inventory is CanvasItem:
-		if bool((inventory as CanvasItem).visible):
-			return true
+	var admin_console: Node = get_tree().get_first_node_in_group("admin_console")
+	if admin_console is CanvasItem and bool((admin_console as CanvasItem).visible):
+		return true
 
-	var admin_console: Node = get_tree().get_first_node_in_group(
-		"admin_console"
-	)
-	if admin_console != null and admin_console is CanvasItem:
-		if bool((admin_console as CanvasItem).visible):
-			return true
+	var hud_modal: Variant = null
+	if hud != null and hud.has_method("esta_mostrando_panel_interaccion"):
+		hud_modal = hud.call("esta_mostrando_panel_interaccion")
+
+	if hud_modal != null and bool(hud_modal):
+		return true
 
 	return false
 
@@ -129,15 +103,11 @@ func _buscar_objetivo() -> void:
 	var mejor_distancia_sq: float = INF
 
 	var candidatos: Array[Node] = (
-		get_tree().get_nodes_in_group(
-			"interactable"
-		)
+		get_tree().get_nodes_in_group("interactable")
 	)
 
 	for candidato in candidatos:
-		if not is_instance_valid(
-			candidato
-		):
+		if not is_instance_valid(candidato):
 			continue
 
 		if candidato == player:
@@ -149,31 +119,29 @@ func _buscar_objetivo() -> void:
 		if not candidato.is_inside_tree():
 			continue
 
-		if candidato.has_method("can_interact"):
-			var puede: bool = bool(
-				candidato.call(
-					"can_interact",
-					player
-				)
-			)
+		if not candidato.has_method("es_recolectable"):
+			continue
 
-			if not puede:
-				continue
+		if not bool(candidato.call("es_recolectable")):
+			continue
+
+		var puede: bool = true
+		if candidato.has_method("can_interact"):
+			puede = bool(candidato.call("can_interact", player))
+
+		if not puede:
+			continue
 
 		var candidato_2d := candidato as Node2D
-
 		var distancia_maxima: float = interaction_distance
+
 		if candidato.has_method("get_interaction_distance"):
 			distancia_maxima = maxf(
-				float(
-					candidato.call(
-						"get_interaction_distance"
-					)
-				),
+				float(candidato.call("get_interaction_distance")),
 				0.0
 			)
 
-		var distancia_sq: float = player.global_position.distance_squared_to(
+		var distancia_sq := player.global_position.distance_squared_to(
 			candidato_2d.global_position
 		)
 
@@ -182,11 +150,7 @@ func _buscar_objetivo() -> void:
 
 		var prioridad: int = 0
 		if candidato.has_method("get_interaction_priority"):
-			prioridad = int(
-				candidato.call(
-					"get_interaction_priority"
-				)
-			)
+			prioridad = int(candidato.call("get_interaction_priority"))
 
 		if (
 			prioridad > mejor_prioridad
@@ -199,9 +163,23 @@ func _buscar_objetivo() -> void:
 			mejor_distancia_sq = distancia_sq
 			mejor_objetivo = candidato
 
-	_cambiar_objetivo(
-		mejor_objetivo
-	)
+	_cambiar_objetivo(mejor_objetivo)
+
+
+func _contar_recolectables() -> int:
+	var cantidad := 0
+
+	for candidato in get_tree().get_nodes_in_group("interactable"):
+		if not is_instance_valid(candidato):
+			continue
+
+		if not candidato.has_method("es_recolectable"):
+			continue
+
+		if bool(candidato.call("es_recolectable")):
+			cantidad += 1
+
+	return cantidad
 
 
 func _actualizar_prompt_actual() -> void:
@@ -213,141 +191,38 @@ func _actualizar_prompt_actual() -> void:
 			hud.call("ocultar_interaccion")
 		return
 
-	var texto: String = "Examinar"
+	var texto := "Recoger"
+
 	if objetivo_actual.has_method("get_interaction_text"):
-		texto = str(
-			objetivo_actual.call(
-				"get_interaction_text"
-			)
-		)
+		texto = str(objetivo_actual.call("get_interaction_text"))
 
 	if hud.has_method("mostrar_interaccion"):
-		hud.call(
-			"mostrar_interaccion",
-			texto
-		)
+		hud.call("mostrar_interaccion", texto)
 
 
-func _cambiar_objetivo(
-	nuevo_objetivo: Node
-) -> void:
+func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
 	if objetivo_actual == nuevo_objetivo:
 		return
 
 	objetivo_actual = nuevo_objetivo
-
-	objetivo_cambiado.emit(
-		objetivo_actual
-	)
+	objetivo_cambiado.emit(objetivo_actual)
 
 	if objetivo_actual == null:
-		print(
-			"InteractionSystem: sin objetivo."
-		)
-
-		if hud != null:
-			if hud.has_method(
-				"ocultar_interaccion"
-			):
-				hud.call(
-					"ocultar_interaccion"
-				)
-
+		if hud != null and hud.has_method("ocultar_interaccion"):
+			hud.call("ocultar_interaccion")
 		return
 
-	var nombre: String = (
-		objetivo_actual.name
-	)
+	var texto := "Recoger"
 
-	var texto: String = (
-		"Examinar"
-	)
-
-	if objetivo_actual.has_method(
-		"get_nombre"
-	):
-		texto = str(
-			objetivo_actual.call(
-				"get_nombre"
-			)
-		)
-
-	elif objetivo_actual.has_method(
-		"get_interaction_text"
-	):
-		texto = str(
-			objetivo_actual.call(
-				"get_interaction_text"
-			)
-		)
+	if objetivo_actual.has_method("get_interaction_text"):
+		texto = str(objetivo_actual.call("get_interaction_text"))
 
 	print(
-		"InteractionSystem: objetivo = ",
-		nombre
-	)
-
-	print(
-		"InteractionSystem: texto = ",
+		"InteractionSystem: recolectable = ",
+		objetivo_actual.name,
+		" | accion = ",
 		texto
 	)
 
-	if hud != null:
-		if hud.has_method(
-			"mostrar_interaccion"
-		):
-			hud.call(
-				"mostrar_interaccion",
-				texto
-			)
-
-
-func _interactuar() -> void:
-	if objetivo_actual == null:
-		return
-
-	if not is_instance_valid(
-		objetivo_actual
-	):
-		_cambiar_objetivo(null)
-		return
-
-	if objetivo_actual.has_method(
-		"interact"
-	):
-		objetivo_actual.call(
-			"interact",
-			player
-		)
-
-		var accion: String = "Interactuar"
-		if objetivo_actual.has_method(
-			"get_interaction_text"
-		):
-			accion = str(
-				objetivo_actual.call(
-					"get_interaction_text"
-				)
-			)
-
-		if objetivo_actual.has_method(
-			"get_interaction_details"
-		) and hud != null and hud.has_method(
-			"mostrar_panel_interaccion"
-		):
-			var detalles_variant: Variant = objetivo_actual.call(
-				"get_interaction_details"
-			)
-			if detalles_variant is Dictionary:
-				hud.call(
-					"mostrar_panel_interaccion",
-					detalles_variant as Dictionary
-				)
-
-		Events.interaction_executed.emit(
-			objetivo_actual,
-			player,
-			accion
-		)
-
-	# No volver a disparar inmediatamente.
-	await get_tree().process_frame
+	if hud != null and hud.has_method("mostrar_interaccion"):
+		hud.call("mostrar_interaccion", texto)
