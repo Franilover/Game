@@ -874,8 +874,8 @@ func _actualizar_boton_personaje() -> void:
 	_personaje_confirmar.disabled = not (nombre_valido and genero_valido and especie_valida and skin_valida)
 
 func _guardar_configuracion_personaje() -> void:
-	var especie := _personaje_especie.get_item_metadata(_personaje_especie.selected)
-	var skin_index := _personaje_skins.get_selected_items()[0]
+	var especie: Dictionary = _personaje_especie.get_item_metadata(_personaje_especie.selected) as Dictionary
+	var skin_index: int = _personaje_skins.get_selected_items()[0]
 	var genero := _personaje_genero.get_item_text(_personaje_genero.selected)
 	if _personaje_genero.selected == 3:
 		genero = _personaje_genero_libre.text.strip_edges()
