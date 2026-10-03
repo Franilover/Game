@@ -26,6 +26,7 @@ GarliaAuth="*uid://dkyg06kgibana"
 GarliaMultiplayer="*uid://dy1ypxqjxvg7x"
 GarliaWorldItems="*uid://bofhgy132htd8"
 GarliaSalas="*uid://txc18ojymio3"
+MissionManager="*res://scripts/systems/mission_manager.gd"
 
 [display]
 
