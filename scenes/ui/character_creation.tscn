@@ -31,10 +31,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -260.0
-offset_top = -165.0
-offset_right = 260.0
-offset_bottom = 165.0
+offset_left = -300.0
+offset_top = -215.0
+offset_right = 300.0
+offset_bottom = 215.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("Panel")
@@ -55,6 +55,25 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Crear personaje"
 horizontal_alignment = 1
+
+[node name="PartidaLabel" type="Label" parent="Panel/Margin/Column"]
+layout_mode = 2
+text = "Partida"
+
+[node name="PartidaName" type="LineEdit" parent="Panel/Margin/Column"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+placeholder_text = "Nombre de la partida"
+
+[node name="SeedLabel" type="Label" parent="Panel/Margin/Column"]
+layout_mode = 2
+text = "Semilla (opcional)"
+
+[node name="SeedInput" type="LineEdit" parent="Panel/Margin/Column"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+placeholder_text = "Vacío = semilla aleatoria"
+max_length = 20
 
 [node name="Status" type="Label" parent="Panel/Margin/Column"]
 layout_mode = 2
