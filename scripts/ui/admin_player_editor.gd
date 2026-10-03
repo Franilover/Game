@@ -212,15 +212,21 @@ func _cargar_datos() -> void:
 	if admin_variant is Dictionary:
 		admin_data = admin_variant as Dictionary
 
-	_admin.button_pressed = str(admin_data.get("rol", "jugador")) == "admin"
+	_admin.button_pressed = str(admin_data.get("rol", "explorador")).to_lower() == "admin"
 	var capacidades: Array = admin_data.get("capacidades", [])
+	if _admin.button_pressed and capacidades.is_empty():
+		for clave in _capacidades:
+			capacidades.append(clave)
 	for clave in _capacidades:
 		var check: CheckBox = _capacidades[clave]
 		check.button_pressed = clave in capacidades
 
 
 func _al_cambiar_admin(activo: bool) -> void:
-	_estado.text = "Admin se guardará solo en esta partida." if activo else "Rol de jugador."
+	for clave in _capacidades:
+		var check: CheckBox = _capacidades[clave]
+		check.button_pressed = activo
+	_estado.text = "Admin: capacidades habilitadas." if activo else "Explorador: funciones administrativas deshabilitadas."
 
 
 func _al_cambiar_capacidad(_clave: String, _activo: bool) -> void:
@@ -271,7 +277,7 @@ func _guardar() -> void:
 			capacidades.append(clave)
 
 	GameState.flags["personaje_admin"] = {
-		"rol": "admin" if _admin.button_pressed else "jugador",
+		"rol": "admin" if _admin.button_pressed else "explorador",
 		"capacidades": capacidades,
 		"maximos": {
 			"vida": int(_vida.value),
