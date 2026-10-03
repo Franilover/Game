@@ -85,11 +85,11 @@ func _load_skins() -> void:
 		if extension not in ["png", "webp", "jpg", "jpeg"]:
 			continue
 		var path := "res://assets/art/characters/skins/" + file_name
-		var texture = load(path)
-		if not texture is Texture2D:
+		var texture: Texture2D = load(path) as Texture2D
+		if texture == null:
 			continue
 		_skins.append(path)
-		skins.add_icon_item(texture as Texture2D, true)
+		skins.add_icon_item(texture, true)
 		skins.set_item_text(skins.item_count - 1, file_name.get_basename())
 	if skins.item_count > 0:
 		skins.select(0)
