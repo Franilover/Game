@@ -903,16 +903,23 @@ func _comando_player(nombre: String) -> void:
 		_agregar_linea("[color=#d88]No encontré al jugador: " + nombre_solicitado + ".[/color]")
 		return
 
-	var editor := get_tree().current_scene.get_node_or_null("AdminPlayerEditor")
+	var ui := get_tree().current_scene.get_node_or_null("UI")
+	if ui == null:
+		_agregar_linea("[color=#d88]No se encontró la capa UI de la escena principal.[/color]")
+		return
+
+	var editor := ui.get_node_or_null("AdminPlayerEditor")
 	if editor == null:
 		var script := load("res://scripts/ui/admin_player_editor.gd")
 		if script == null:
 			_agregar_linea("[color=#d88]No se pudo cargar el editor de jugador.[/color]")
 			return
+
 		editor = Control.new()
 		editor.name = "AdminPlayerEditor"
 		editor.set_script(script)
-		get_tree().current_scene.add_child(editor)
+		editor.z_index = 100
+		ui.add_child(editor)
 
 	if not editor.has_method("abrir"):
 		_agregar_linea("[color=#d88]El editor de jugador no es válido.[/color]")
