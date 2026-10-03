@@ -246,10 +246,18 @@ func _puede_recolectar(persona: Node) -> bool:
 	if inventario == null or not inventario.has_method("obtener_objeto_equipado"):
 		return false
 
+	# Las herramientas tienen su propio slot de equipamiento.
+	# Mantenemos "arma" como fallback para partidas antiguas.
 	var herramienta_variant: Variant = inventario.call(
 		"obtener_objeto_equipado",
-		"arma"
+		"herramienta"
 	)
+	if not herramienta_variant is Dictionary or (herramienta_variant as Dictionary).is_empty():
+		herramienta_variant = inventario.call(
+			"obtener_objeto_equipado",
+			"arma"
+		)
+
 	if not herramienta_variant is Dictionary:
 		return false
 
