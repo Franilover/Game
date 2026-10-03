@@ -209,9 +209,6 @@ func interact(persona: Node) -> void:
 
 
 func _tiene_recoleccion_canonica() -> bool:
-	if tipo != "recurso" and tipo != "planta" and tipo != "flor":
-		return false
-
 	var item_id := _obtener_item_id_recoleccion()
 	return not item_id.is_empty()
 
@@ -334,7 +331,7 @@ func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	tipo = str(datos.get("tipo", "decoracion"))
 	bioma = ""
 	var asset_path := str(datos.get("asset_path", "")).strip_edges()
-	interactuable = tipo != "decoracion"
+	interactuable = _tiene_recoleccion_canonica() or tipo != "decoracion"
 
 	if interactuable:
 		add_to_group("interactable")
