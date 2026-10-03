@@ -283,7 +283,7 @@ func _cargar_textura_bioma(
 	bioma_nombre: String,
 	zone: int,
 	bioma_textura: String = ""
-) -> Texture2D {
+) -> Texture2D:
 	# La zona manda sobre el aspecto visual. Supabase determina si
 	# la celda es grass, dirt, stone, etc.; cada zona tiene su atlas.
 	var textura_zona := _cargar_textura_zone(zone)
