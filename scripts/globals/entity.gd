@@ -18,9 +18,37 @@ func _ready() -> void:
 	mana = max_mana
 
 	add_to_group("damageable")
+	_crear_hurtbox()
 
 	health_changed.emit(health, max_health)
 	mana_changed.emit(mana, max_mana)
+
+
+func _crear_hurtbox() -> void:
+	if get_node_or_null("Hurtbox") != null:
+		return
+
+	var collision := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision == null or collision.shape == null:
+		return
+
+	var hurtbox := Area2D.new()
+	hurtbox.name = "Hurtbox"
+	hurtbox.collision_layer = 2
+	hurtbox.collision_mask = 0
+	hurtbox.monitoring = true
+	hurtbox.monitorable = true
+	hurtbox.set_meta("damageable_owner", self)
+	add_child(hurtbox)
+
+	var shape := CollisionShape2D.new()
+	shape.name = "CollisionShape2D"
+	shape.shape = collision.shape.duplicate(true)
+	shape.position = collision.position
+	hurtbox.add_child(shape)
+
+	print("Entity: Hurtbox creada → ", name)
+
 
 
 func take_damage(cantidad: int) -> void:
