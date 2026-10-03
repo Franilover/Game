@@ -7,6 +7,7 @@ const PROP_SCENE = preload("res://scenes/wold/world_prop.tscn")
 @export var tamano_celda: float = 72.0
 @export var probabilidad_base: float = 0.78
 @export var maximo_props: int = 180
+@export var props_por_frame: int = 8
 
 var player = null
 var world_generator = null
@@ -14,6 +15,9 @@ var world_generator = null
 var celdas = {}
 var ultima_celda_jugador = Vector2i(999999, 999999)
 var contador_actualizacion = 0.0
+var _cola_generacion: Array[Vector2i] = []
+var _cursor_generacion: int = 0
+var _especiales_pendientes: bool = false
 
 func _ready() -> void:
 	call_deferred("_inicializar")
@@ -29,6 +33,15 @@ func _process(delta: float) -> void:
 		_buscar_referencias()
 
 	if player == null or not is_instance_valid(player):
+		return
+
+	if not _cola_generacion.is_empty():
+		_procesar_cola_generacion()
+		return
+
+	if _especiales_pendientes:
+		_especiales_pendientes = false
+		_asegurar_especiales(_obtener_celda(player.global_position))
 		return
 
 	contador_actualizacion += delta
@@ -95,10 +108,35 @@ func _generar_alrededor_del_jugador() -> void:
 				celdas[celda] = null
 				continue
 
-			var prop_creado = _crear_prop_en(posicion, celda)
-			celdas[celda] = prop_creado
+			# Reservamos la celda y diferimos la instanciación para repartir
+			# el coste entre varios frames.
+			celdas[celda] = null
+			_cola_generacion.append(celda)
 
-	_asegurar_especiales(centro)
+	_especiales_pendientes = true
+
+
+func _procesar_cola_generacion() -> void:
+	var presupuesto := maxi(props_por_frame, 1)
+	var procesadas := 0
+
+	while _cursor_generacion < _cola_generacion.size() and procesadas < presupuesto:
+		var celda := _cola_generacion[_cursor_generacion]
+		_cursor_generacion += 1
+		procesadas += 1
+
+		if not celdas.has(celda):
+			continue
+
+		if celdas[celda] != null:
+			continue
+
+		var posicion := _posicion_celda(celda)
+		celdas[celda] = _crear_prop_en(posicion, celda)
+
+	if _cursor_generacion >= _cola_generacion.size():
+		_cola_generacion.clear()
+		_cursor_generacion = 0
 
 func _asegurar_especiales(centro: Vector2i) -> void:
 	if celdas.size() >= maximo_props:
@@ -358,11 +396,12 @@ func _limpiar_lejos() -> void:
 
 	var celdas_a_borrar = []
 
+	var radio_limpieza_sq := radio_limpieza * radio_limpieza
 	for celda in celdas:
 		var nodo = celdas[celda]
 		var posicion = _posicion_celda(celda)
 
-		if posicion.distance_to(player.global_position) <= radio_limpieza:
+		if posicion.distance_squared_to(player.global_position) <= radio_limpieza_sq:
 			continue
 
 		if nodo != null and is_instance_valid(nodo):
