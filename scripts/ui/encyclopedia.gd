@@ -104,6 +104,7 @@ func _crear_interfaz() -> void:
 	estilo_arbol.border_color = Color(0.29, 0.19, 0.12, 1.0)
 	_arbol.add_theme_stylebox_override("panel", estilo_arbol)
 	_arbol.item_selected.connect(_al_seleccionar)
+	_arbol.item_mouse_selected.connect(_al_click_arbol)
 	body.add_child(_arbol)
 
 	var detail_panel: PanelContainer = PanelContainer.new()
@@ -376,6 +377,18 @@ func _ordenar_registros(a: Dictionary, b: Dictionary) -> bool:
 
 
 func _al_seleccionar(item: TreeItem, _columna: int) -> void:
+	_mostrar_item(item)
+
+
+func _al_click_arbol(posicion: Vector2, boton: int) -> void:
+	if boton != MOUSE_BUTTON_LEFT:
+		return
+
+	var item: TreeItem = _arbol.get_item_at_position(posicion)
+	if item == null:
+		return
+
+	_arbol.set_selected(item, 0)
 	_mostrar_item(item)
 
 
