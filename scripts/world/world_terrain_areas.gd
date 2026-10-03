@@ -3,6 +3,8 @@ class_name WorldTerrainAreas
 
 enum BiomeKind {
 	OTHER,
+	ABISMO,
+	BOSQUE,
 	MARINO,
 	AGUA_DULCE,
 	HUMEDAL,
@@ -98,6 +100,21 @@ func zona_base_at_tile(tile: Vector2i, bioma_index: int, ecosistema_index: int) 
 		ecosistema_nombre = _ecosistema_nombres[ecosistema_index]
 
 	match kind:
+		BiomeKind.ABISMO:
+			# Todavía no existe un atlas propio para Abismo.
+			# Conservamos un terreno físico coherente con el ruido hasta
+			# que exista su representación visual canónica.
+			if terreno > 0.45:
+				return 2
+			if terreno < -0.45:
+				return 1
+			return 0
+		BiomeKind.BOSQUE:
+			if terreno > 0.70:
+				return 2
+			if terreno < -0.35:
+				return 1
+			return 8
 		BiomeKind.MARINO:
 			if "profundo" in ecosistema_nombre or terreno < -0.20:
 				return 5
@@ -115,7 +132,7 @@ func zona_base_at_tile(tile: Vector2i, bioma_index: int, ecosistema_index: int) 
 		BiomeKind.DESIERTO:
 			if terreno > 0.65:
 				return 2
-			return 3
+			return 9
 		BiomeKind.MONTANA:
 			if terreno > 0.30:
 				return 2
@@ -160,6 +177,10 @@ func agua_toca_tierra_en_array(zonas: Array, x: int, y: int) -> bool:
 	return false
 
 func _clasificar_bioma(nombre: String) -> int:
+	if "abismo" in nombre:
+		return BiomeKind.ABISMO
+	if "bosque" in nombre:
+		return BiomeKind.BOSQUE
 	if "marino" in nombre:
 		return BiomeKind.MARINO
 	if "agua dulce" in nombre:
