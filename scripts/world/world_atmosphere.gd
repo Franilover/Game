@@ -351,6 +351,12 @@ func obtener_tiempo() -> Dictionary:
 				0
 			)
 		),
+		"estacion_id": str(
+			estacion.get(
+			"id",
+				""
+			)
+		),
 		"estacion": str(
 			estacion.get(
 				"nombre",
@@ -365,7 +371,8 @@ func obtener_estado_guardado() -> Dictionary:
 	return {
 		"hora_del_dia": hora_del_dia,
 		"dia_del_anio": dia_del_anio,
-		"anio": anio
+		"anio": anio,
+		"estacion_id": obtener_estacion_id()
 	}
 
 
@@ -384,14 +391,15 @@ func establecer_estado_guardado(
 func _aplicar_estado_guardado(
 	estado: Dictionary
 ) -> void:
-	hora_del_dia = clampf(
-		float(
-			estado.get(
-				"hora_del_dia",
-				hora_del_dia
-			)
-		),
-		0.0,
+	var hora_guardada := float(
+		estado.get(
+			"hora_del_dia",
+			hora_del_dia
+		)
+	)
+
+	hora_del_dia = fposmod(
+		hora_guardada,
 		horas_por_dia
 	)
 
