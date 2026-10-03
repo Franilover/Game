@@ -533,13 +533,30 @@ func _actualizar_contexto() -> void:
 	var tiempo := _obtener_tiempo_mundo()
 	var hora := str(tiempo.get("hora", "00:00"))
 	var periodo := str(tiempo.get("periodo", "Día"))
+	var dia := int(tiempo.get("dia", 1))
+	var anio := int(tiempo.get("anio", 0))
+	var estacion := str(tiempo.get("estacion", "—"))
+	var dia_estacion := int(tiempo.get(
+		"dia_de_estacion",
+		0
+	))
+	var clima := str(contexto.get("clima", ""))
+
+	var linea_estacion := "Estación: " + estacion
+	if dia_estacion > 0:
+		linea_estacion += " · día " + str(dia_estacion)
 
 	location_label.text = (
-		"Hora: " + hora + " — " + periodo +
+		"Día " + str(dia) + " · Año " + str(anio) +
+		"\nHora: " + hora + " — " + periodo +
+		"\n" + linea_estacion +
 		"\nBioma: " + bioma +
 		"\nEcosistema: " + ecosistema +
 		"\nHábitat: " + habitat
 	)
+
+	if not clima.is_empty():
+		location_label.text += "\nClima: " + clima
 
 
 func _obtener_tiempo_mundo() -> Dictionary:
