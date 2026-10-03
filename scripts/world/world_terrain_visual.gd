@@ -69,7 +69,7 @@ func _crear_tileset() -> TileSet:
 	tile_set.add_terrain(0)
 	tile_set.set_terrain_name(0, 0, "<any>")
 
-	for terrain_id in range(1, 9):
+	for terrain_id in range(1, ZONE_TEXTURES.size() + 1):
 		tile_set.add_terrain(0)
 		tile_set.set_terrain_name(
 			0,
