@@ -60,6 +60,7 @@ var _eterium_organismos: Dictionary = {}
 var _eterium_runtime_ready: bool = false
 var _especie_eterium_game: Dictionary = {}
 var _especie_eterium_game_ready: bool = false
+var _eterium_recupera: bool = true
 var _eterium_heal_timer: float = 0.0
 var _eterium_recovery_accumulator: float = 0.0
 var _eterium_sprint_cost_accumulator: float = 0.0
@@ -520,6 +521,7 @@ func _aplicar_especie_eterium_game(reglas: Array) -> void:
 		else:
 			mana_changed.emit(mana, max_mana)
 		var compartido := bool(regla.get("vida_eterium_compartidos", false))
+		_eterium_recupera = bool(regla.get("recuperacion_eterium", true))
 		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", compartido, " | capacidad=", max_mana)
 		fisiologia_changed.emit(compartido)
 		return
@@ -527,6 +529,17 @@ func _aplicar_especie_eterium_game(reglas: Array) -> void:
 
 func _eterium_vida_compartida() -> bool:
 	return _especie_eterium_game_ready and bool(_especie_eterium_game.get("vida_eterium_compartidos", false))
+
+
+func _obtener_eterium_por_muerte(cantidad: int) -> void:
+	var ganancia := maxi(cantidad, 0)
+	if ganancia <= 0:
+		return
+	mana = mini(mana + ganancia, max_mana)
+	mana_changed.emit(mana, max_mana)
+	if _eterium_vida_compartida():
+		health = mana
+		health_changed.emit(health, max_health)
 
 
 func _gastar_eterium(cantidad: int) -> bool:
@@ -659,6 +672,10 @@ func _eterium_escala_runtime() -> float:
 
 func _actualizar_recuperacion_eterium(delta: float) -> void:
 	if not _eterium_runtime_ready:
+		return
+
+	if not _eterium_recupera:
+		_eterium_recovery_accumulator = 0.0
 		return
 
 	if _eterium_vida_compartida():
