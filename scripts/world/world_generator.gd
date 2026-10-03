@@ -303,6 +303,15 @@ func get_factores_ambientales_at(
 		floori(posicion_local.y / float(tamano_tile))
 	)
 
+	var estacion_id := ""
+	var atmosfera := get_node_or_null("WorldAtmosphere")
+	if atmosfera != null and atmosfera.has_method(
+		"obtener_estacion_id"
+	):
+		estacion_id = str(
+			atmosfera.call("obtener_estacion_id")
+		)
+
 	var habitats := terrain.get_habitats_at(tile)
 	for habitat_variant in habitats:
 		if not habitat_variant is Dictionary:
@@ -310,17 +319,41 @@ func get_factores_ambientales_at(
 
 		var habitat := habitat_variant as Dictionary
 		var habitat_id := str(habitat.get("id", ""))
-		if not habitat_id.is_empty():
-			var factores_habitat := WorldData.obtener_factores_ambientales_habitat(
+		if habitat_id.is_empty():
+			continue
+
+		if not estacion_id.is_empty():
+			var estacional := (
+				WorldData.obtener_ambiente_estacional_habitat(
+					estacion_id,
+					habitat_id
+				)
+			)
+			if not estacional.is_empty():
+				return estacional
+
+		var base_habitat := (
+			WorldData.obtener_factores_ambientales_habitat(
 				habitat_id
 			)
-			if not factores_habitat.is_empty():
-				return factores_habitat
+		)
+		if not base_habitat.is_empty():
+			return base_habitat
 
 	var ecosistema := terrain.get_ecosistema_at(tile)
 	var ecosistema_id := str(ecosistema.get("id", ""))
 	if ecosistema_id.is_empty():
 		return {}
+
+	if not estacion_id.is_empty():
+		var estacional_ecosistema := (
+			WorldData.obtener_ambiente_estacional_ecosistema(
+				estacion_id,
+				ecosistema_id
+			)
+		)
+		if not estacional_ecosistema.is_empty():
+			return estacional_ecosistema
 
 	return WorldData.obtener_factores_ambientales_ecosistema(
 		ecosistema_id
