@@ -5,6 +5,7 @@ extends Node2D
 
 var _player: Node = null
 var _camera: Camera2D = null
+var _ultima_posicion_camara: Vector2 = Vector2.INF
 
 @onready var _hud: Control = $UI/HUD
 @onready var _inventory: Control = $UI/Inventory
@@ -80,6 +81,7 @@ func _configurar_camara() -> void:
 	_camera.position = Vector2.ZERO
 	_camera.offset = Vector2.ZERO
 	_camera.position_smoothing_enabled = false
+	_ultima_posicion_camara = Vector2.INF
 	_camera.drag_horizontal_enabled = false
 	_camera.drag_vertical_enabled = false
 	_camera.limit_enabled = false
@@ -89,13 +91,15 @@ func _configurar_camara() -> void:
 
 
 func _seguir_jugador() -> void:
-	if _player == null:
+	if _player == null or _camera == null:
 		return
 
-	if _camera == null:
+	var posicion := _player.global_position
+	if posicion == _ultima_posicion_camara:
 		return
 
-	_camera.global_position = _player.global_position
+	_camera.global_position = posicion
+	_ultima_posicion_camara = posicion
 
 
 func _configurar_hud(world_gen: Node) -> void:
@@ -182,14 +186,14 @@ func _inicializar_ium() -> void:
 	if _ium_lab.has_method("configurar"):
 		_ium_lab.call("configurar", _ium_manager)
 
-	# Conectar proceso equipado → player puede usar magia
+	# Conectar proceso equipado → el jugador puede usar magia con R.
 	_ium_manager.proceso_equipado_signal.connect(_al_equipar_proceso)
 
 	print("Main: IUM Lab inicializado.")
 
 
 func _al_equipar_proceso(proceso: Dictionary) -> void:
-	# Guardar en player para que pueda usarlo con F
+	# Guardar en player para que pueda usarlo con R
 	if _player != null and _player.has_method("equipar_proceso_ium"):
 		_player.call("equipar_proceso_ium", proceso)
 	else:
