@@ -190,6 +190,9 @@ func obtener_eterium_organismo(organismo_id: String) -> Dictionary:
 	return {}
 
 
+func esta_conectado() -> bool:
+	return _sincronizacion_inicial_realizada
+
 func iniciar_sincronizacion() -> void:
 	if _solicitud_en_curso:
 		return
