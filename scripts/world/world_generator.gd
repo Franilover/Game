@@ -164,6 +164,22 @@ func get_bioma_at(
 	return terrain.get_bioma_at(tile)
 
 
+func get_reinos_at(tile: Vector2i) -> Array[Dictionary]:
+	var bioma := get_bioma_at(tile)
+	if bioma.is_empty():
+		return []
+
+	var bioma_id := str(bioma.get("id", ""))
+	if bioma_id.is_empty():
+		return []
+
+	return WorldData.obtener_reinos_game_de_bioma(bioma_id)
+
+
+func get_reinos_at_position(posicion_global: Vector2) -> Array[Dictionary]:
+	return get_reinos_at(get_tile_at(posicion_global))
+
+
 func get_ecosistema_at(
 	tile: Vector2i
 ) -> Dictionary:
