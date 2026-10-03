@@ -197,7 +197,8 @@ func obtener_partidas() -> Array[Dictionary]:
 
 func crear_partida(
 	nombre: String,
-	semilla_texto: String = ""
+	semilla_texto: String = "",
+	personaje: Dictionary = {}
 ) -> String:
 	var nombre_limpio := nombre.strip_edges()
 
@@ -231,7 +232,8 @@ func crear_partida(
 		nombre_limpio,
 		ahora,
 		ahora,
-		semilla
+		semilla,
+		personaje
 	)
 
 	if not _escribir_archivo_partida(id, datos):
@@ -576,7 +578,8 @@ func _estado_base_partida(
 	nombre: String,
 	creado_en: String,
 	actualizado_en: String,
-	semilla: int
+	semilla: int,
+	personaje: Dictionary = {}
 ) -> Dictionary:
 	return {
 		"version": SAVE_VERSION,
@@ -610,7 +613,9 @@ func _estado_base_partida(
 				}
 			},
 			"elapsed_time": 0.0,
-			"flags": {},
+			"flags": {
+				"personaje": personaje.duplicate(true)
+			} if not personaje.is_empty() else {},
 			"scene": "res://scenes/wold/main.tscn"
 		}
 	}
