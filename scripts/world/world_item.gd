@@ -37,6 +37,14 @@ func obtener_datos() -> Dictionary:
 	return datos_objeto.duplicate(true)
 
 
+func get_interaction_distance() -> float:
+	return DISTANCIA_INTERACCION
+
+
+func get_interaction_priority() -> int:
+	return 100
+
+
 func esta_cerca(persona: Node2D) -> bool:
 	if not is_instance_valid(persona):
 		return false
