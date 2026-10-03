@@ -61,6 +61,16 @@ func _ready() -> void:
 
 	print("HUD: iniciado.")
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F3:
+			mostrar_contexto_mundo = not mostrar_contexto_mundo
+			if location_panel != null:
+				location_panel.visible = mostrar_contexto_mundo
+			if mostrar_contexto_mundo:
+				_actualizar_contexto()
+			get_viewport().set_input_as_handled()
+
 
 func configurar(jugador: Node = null, generador: Node = null) -> void:
 	# Main.gd utiliza este método para entregar al HUD
