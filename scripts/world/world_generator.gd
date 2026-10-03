@@ -37,6 +37,19 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if not _world_ready:
+		if streamer != null and streamer.esta_cargando_inicio():
+			if streamer.procesar_carga_inicial():
+				if terrain != null and terrain.visual != null:
+					terrain.visual.visible = true
+
+				_world_ready = true
+
+				print(
+					"WorldGenerator: mundo inicial listo."
+				)
+
+				mundo_generado.emit()
+
 		return
 
 	if streamer != null:
@@ -91,6 +104,11 @@ func _inicializar_mundo() -> void:
 		chunk_size_tiles
 	)
 
+	# El terreno permanece oculto mientras se preparan todos los chunks
+	# iniciales. Así nunca se muestra el chunk central antes que el resto.
+	if terrain.visual != null:
+		terrain.visual.visible = false
+
 	terrain.cargar_datos_mundo()
 
 	entity_spawner.configurar(
@@ -106,17 +124,10 @@ func _inicializar_mundo() -> void:
 		generation_cells_per_frame
 	)
 
-	terrain.generar_chunk_completo(
-		Vector2i.ZERO
+	streamer.iniciar_carga_inicial(
+		Vector2i.ZERO,
+		load_radius_chunks
 	)
-
-	_world_ready = true
-
-	print(
-		"WorldGenerator: mundo inicial listo."
-	)
-
-	mundo_generado.emit()
 
 
 func registrar_jugador(
