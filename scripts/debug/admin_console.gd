@@ -223,19 +223,7 @@ func _actualizar_sugerencias() -> void:
 	var texto: String = _entrada.text
 
 	if _es_comando_con_sugerencias(texto, COMANDO_SUMMON):
-		var nombre_parcial: String = _extraer_argumento(texto, COMANDO_SUMMON)
-		var nombres_summon: Array[String] = _obtener_nombres_criaturas()
-		nombres_summon.append_array(
-			_obtener_nombres_personajes_game()
-		)
-		nombres_summon = _deduplicar_nombres(nombres_summon)
-		_mostrar_sugerencias(
-			_filtrar_nombres(
-				nombres_summon,
-				nombre_parcial
-			),
-			COMANDO_SUMMON
-		)
+		_mostrar_sugerencias_summon(texto)
 		return
 
 	if _es_comando_con_sugerencias(texto, COMANDO_GIVE):
@@ -253,6 +241,108 @@ func _actualizar_sugerencias() -> void:
 		return
 
 	_ocultar_sugerencias()
+
+
+func _mostrar_sugerencias_summon(
+	texto: String
+) -> void:
+	var argumento_crudo: String = texto.substr(
+		COMANDO_SUMMON.length()
+	)
+
+	var argumento: String = argumento_crudo.strip_edges()
+	var partes: Array[String] = []
+
+	if not argumento.is_empty():
+		partes = argumento.split(
+			" ",
+			false
+		)
+
+	# Una segunda palabra después de "Humano" significa que
+	# el usuario está eligiendo un personaje individual.
+	var es_humano: bool = (
+		not partes.is_empty()
+		and partes[0].to_lower() == "humano"
+	)
+
+	if es_humano and (
+		partes.size() >= 2
+		or texto.ends_with(" ")
+	):
+		var nombre_parcial: String = ""
+
+		if partes.size() >= 2:
+			nombre_parcial = partes[1]
+
+		var criatura_humana: Dictionary = (
+			WorldData.buscar_criatura_por_nombre(
+				"Humano"
+			)
+		)
+
+		var nombres_personajes: Array[String] = []
+
+		if not criatura_humana.is_empty():
+			var personajes: Array[Dictionary] = (
+				WorldData.obtener_personajes_game_de_criatura(
+					str(
+						criatura_humana.get(
+							"id",
+							""
+						)
+					)
+				)
+			)
+
+			for personaje in personajes:
+				var nombre_personaje: String = str(
+					personaje.get(
+						"nombre",
+						""
+					)
+				).strip_edges()
+
+				if nombre_personaje.is_empty():
+					continue
+
+				nombres_personajes.append(
+					nombre_personaje
+				)
+
+		_mostrar_sugerencias(
+				_filtrar_nombres(
+					nombres_personajes,
+					nombre_parcial
+				),
+			COMANDO_SUMMON
+		)
+		return
+
+	var nombre_parcial: String = _extraer_argumento(
+		texto,
+		COMANDO_SUMMON
+	)
+
+	var nombres_summon: Array[String] = (
+		_obtener_nombres_criaturas()
+	)
+
+	nombres_summon.append_array(
+		_obtener_nombres_personajes_game()
+	)
+
+	nombres_summon = _deduplicar_nombres(
+		nombres_summon
+	)
+
+	_mostrar_sugerencias(
+		_filtrar_nombres(
+			nombres_summon,
+			nombre_parcial
+		),
+		COMANDO_SUMMON
+	)
 
 
 func _mostrar_sugerencias(
@@ -452,7 +542,31 @@ func _completar_sugerencia(nombre: String) -> void:
 	if comando.is_empty():
 		return
 
-	_entrada.text = comando + " " + nombre
+	var prefijo: String = comando + " "
+
+	if comando == COMANDO_SUMMON:
+		var argumento_crudo: String = _entrada.text.substr(
+			COMANDO_SUMMON.length()
+		)
+		var partes: Array[String] = []
+
+		if not argumento_crudo.strip_edges().is_empty():
+			partes = argumento_crudo.strip_edges().split(
+				" ",
+				false
+			)
+
+		if (
+			not partes.is_empty()
+			and partes[0].to_lower() == "humano"
+			and (
+				partes.size() >= 2
+				or _entrada.text.ends_with(" ")
+			)
+		):
+			prefijo = COMANDO_SUMMON + " Humano "
+
+	_entrada.text = prefijo + nombre
 	_entrada.caret_column = _entrada.text.length()
 	_actualizar_sugerencias()
 	_entrada.grab_focus()
@@ -571,9 +685,27 @@ func _comando_summon(nombre: String) -> void:
 		_agregar_linea(
 			"[color=#d88]"
 			+ "Uso: /summon <criatura>"
+			+ " o /summon Humano <personaje>"
 			+ "[/color]"
 		)
 		return
+
+	var partes: Array[String] = nombre_criatura.split(
+		" ",
+		false
+	)
+
+	if partes.size() >= 2:
+		if partes[0].to_lower() != "humano":
+			_agregar_linea(
+				"[color=#d88]"
+				+ "La forma de invocar un personaje individual es "
+				+ "/summon Humano <personaje>."
+				+ "[/color]"
+			)
+			return
+
+		nombre_criatura = partes[1]
 
 	var world_generator: Node = (
 		get_tree().get_first_node_in_group(
