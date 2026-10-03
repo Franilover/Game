@@ -100,7 +100,7 @@ func _crear_etiqueta() -> void:
 	
 	_etiqueta = Label.new()
 	_etiqueta.name = "InteractionLabel"
-		_etiqueta.text = "[ LMB ] · " + nombre
+	_etiqueta.text = "[ LMB ] · " + nombre
 	_etiqueta.position = Vector2(-80.0, -42.0)
 	_etiqueta.size = Vector2(160.0, 24.0)
 	_etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
