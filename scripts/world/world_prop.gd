@@ -340,12 +340,7 @@ func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	tipo = str(datos.get("tipo", "decoracion"))
 	bioma = ""
 	var asset_path := str(datos.get("asset_path", "")).strip_edges()
-	interactuable = _tiene_recoleccion_canonica() or tipo != "decoracion"
-
-	if interactuable:
-		add_to_group("interactable")
-	else:
-		remove_from_group("interactable")
+	_actualizar_estado_interaccion()
 
 	remove_from_group("world_resource")
 	remove_from_group("world_cave")
@@ -405,11 +400,25 @@ func _actualizar_sprite(asset_path: String) -> void:
 
 func _ready() -> void:
 	add_to_group("world_props")
+	if not GarliaWorldItems.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
+		GarliaWorldItems.catalogo_cargado.connect(_al_cargar_catalogo_items)
 	z_index = clampi(
 		int(global_position.y / 8.0),
 		-4096,
 		4096
 	)
+
+
+func _al_cargar_catalogo_items(_items: Array) -> void:
+	_actualizar_estado_interaccion()
+
+
+func _actualizar_estado_interaccion() -> void:
+	interactuable = _tiene_recoleccion_canonica() or tipo != "decoracion"
+	if interactuable:
+		add_to_group("interactable")
+	else:
+		remove_from_group("interactable")
 
 
 func _draw() -> void:
