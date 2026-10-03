@@ -715,6 +715,18 @@ func obtener_personajes_game() -> Array[Dictionary]:
 	return resultado
 
 
+func obtener_personaje_game_por_id(personaje_id: String) -> Dictionary:
+	var buscado := personaje_id.strip_edges()
+	if buscado.is_empty():
+		return {}
+
+	for personaje in _personajes_game:
+		if str(personaje.get("id", "")) == buscado:
+			return personaje.duplicate(true)
+
+	return {}
+
+
 func buscar_personaje_game_por_nombre(
 	nombre: String
 ) -> Dictionary:
