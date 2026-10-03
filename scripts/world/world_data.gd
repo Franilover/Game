@@ -592,5 +592,125 @@ func obtener_criaturas_de_habitat(
 	)
 
 
+func obtener_calendario() -> Dictionary:
+	var calendario_variant: Variant = mundo.get(
+		"calendario",
+		{}
+	)
+	if calendario_variant is Dictionary:
+		return (calendario_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func obtener_estaciones() -> Array:
+	var calendario := obtener_calendario()
+	var estaciones_variant: Variant = calendario.get(
+		"estaciones",
+		[]
+	)
+	if estaciones_variant is Array:
+		return (estaciones_variant as Array).duplicate(true)
+
+	return []
+
+
+func obtener_factores_ambientales_ecosistema(
+	ecosistema_id: String
+) -> Dictionary:
+	return _obtener_factores_ambientales(
+		"ecosistemas",
+		ecosistema_id
+	)
+
+
+func obtener_factores_ambientales_habitat(
+	habitat_id: String
+) -> Dictionary:
+	return _obtener_factores_ambientales(
+		"habitats",
+		habitat_id
+	)
+
+
+func obtener_factor_ambiental_habitat(
+	habitat_id: String,
+	clave: String
+) -> Dictionary:
+	var factores := obtener_factores_ambientales_habitat(
+		habitat_id
+	)
+
+	var valor_variant: Variant = factores.get(
+		clave,
+		{}
+	)
+
+	if valor_variant is Dictionary:
+		return (valor_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
+func obtener_definiciones_factores_abioticos() -> Array:
+	var factores_variant: Variant = mundo.get(
+		"factores_abioticos",
+		{}
+	)
+
+	if not factores_variant is Dictionary:
+		return []
+
+	var definiciones_variant: Variant = (
+		(factores_variant as Dictionary).get(
+			"definiciones",
+			[]
+		)
+	)
+
+	if definiciones_variant is Array:
+		return (definiciones_variant as Array).duplicate(true)
+
+	return []
+
+
+func _obtener_factores_ambientales(
+	nivel: String,
+	id: String
+) -> Dictionary:
+	if id.is_empty():
+		return {}
+
+	var factores_ambientales_variant: Variant = mundo.get(
+		"factores_abioticos",
+		{}
+	)
+
+	if not factores_ambientales_variant is Dictionary:
+		return {}
+
+	var niveles_variant: Variant = (
+		(factores_ambientales_variant as Dictionary).get(
+			nivel,
+			{}
+		)
+	)
+
+	if not niveles_variant is Dictionary:
+		return {}
+
+	var factores_variant: Variant = (
+		(niveles_variant as Dictionary).get(
+			id,
+			{}
+		)
+	)
+
+	if factores_variant is Dictionary:
+		return (factores_variant as Dictionary).duplicate(true)
+
+	return {}
+
+
 func esta_cargado() -> bool:
 	return cargado
