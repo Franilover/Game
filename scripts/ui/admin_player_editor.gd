@@ -76,12 +76,14 @@ func _crear_ui() -> void:
 
 	var scroll_izquierda := ScrollContainer.new()
 	scroll_izquierda.custom_minimum_size = Vector2(390, 0)
+	scroll_izquierda.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll_izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_izquierda.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	contenido.add_child(scroll_izquierda)
 
 	var izquierda := VBoxContainer.new()
 	izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	izquierda.custom_minimum_size = Vector2(0, 520)
 	izquierda.add_theme_constant_override("separation", 7)
 	scroll_izquierda.add_child(izquierda)
 
@@ -111,12 +113,14 @@ func _crear_ui() -> void:
 
 	var scroll_derecha := ScrollContainer.new()
 	scroll_derecha.custom_minimum_size = Vector2(390, 0)
+	scroll_derecha.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll_derecha.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_derecha.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	contenido.add_child(scroll_derecha)
 
 	var derecha := VBoxContainer.new()
 	derecha.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	derecha.custom_minimum_size = Vector2(0, 520)
 	derecha.add_theme_constant_override("separation", 5)
 	scroll_derecha.add_child(derecha)
 
