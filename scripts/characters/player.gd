@@ -59,6 +59,7 @@ var _eterium_organismos: Dictionary = {}
 var _eterium_runtime_ready: bool = false
 var _eterium_heal_timer: float = 0.0
 var _eterium_recovery_accumulator: float = 0.0
+var _eterium_heal_timer: float = 0.0
 
 
 var _jump_time: float = 0.0
@@ -754,6 +755,443 @@ func absorber_eterium_de_criatura(criatura: Node) -> int:
 
 
 
+
 # ============================================================
 # JUMP
 # ============================================================
+
+func _puede_hacer_jump() -> bool:
+	return (
+		_jump_cooldown_timer <= 0.0
+		and _dash_time <= 0.0
+		and _tiene_stamina(jump_stamina_cost)
+	)
+
+
+func _iniciar_jump() -> void:
+	if not _gastar_stamina(jump_stamina_cost):
+		return
+
+	_action_direction = _obtener_direccion_accion()
+
+	_jump_time = jump_duration
+	_jump_cooldown_timer = jump_cooldown
+
+	state = State.JUMP
+
+	_update_visual()
+
+	print(
+		"Player: salto. Stamina: ",
+		stamina,
+		"/",
+		max_stamina
+	)
+
+
+func _procesar_jump(delta: float) -> void:
+	var duracion: float = maxf(
+		jump_duration,
+		0.001
+	)
+
+	var progreso: float = (
+		1.0
+		- (_jump_time / duracion)
+	)
+
+	_jump_time -= delta
+
+	var velocidad: float = (
+		jump_distance
+		/ duracion
+	)
+
+	velocity = _action_direction * velocidad
+
+	move_and_slide()
+
+	var altura: float = (
+		sin(progreso * PI)
+		* 16.0
+	)
+
+	visual.position = (
+		_base_visual_position
+		+ Vector2(
+			0.0,
+			-altura
+		)
+	)
+
+	if _jump_time <= 0.0:
+		_jump_time = 0.0
+
+		velocity = Vector2.ZERO
+
+		visual.position = (
+			_base_visual_position
+		)
+
+		state = State.IDLE
+
+		_update_visual()
+
+
+# ============================================================
+# DASH
+# ============================================================
+
+func _puede_hacer_dash() -> bool:
+	return (
+		_dash_cooldown_timer <= 0.0
+		and _jump_time <= 0.0
+		and _tiene_stamina(dash_stamina_cost)
+	)
+
+
+func _iniciar_dash() -> void:
+	if not _gastar_stamina(dash_stamina_cost):
+		return
+
+	_action_direction = _obtener_direccion_accion()
+
+	_dash_time = dash_duration
+	_dash_cooldown_timer = dash_cooldown
+
+	state = State.DASH
+
+	_update_visual()
+
+	print(
+		"Player: dash. Stamina: ",
+		stamina,
+		"/",
+		max_stamina
+	)
+
+
+func _procesar_dash(delta: float) -> void:
+	var duracion: float = maxf(
+		dash_duration,
+		0.001
+	)
+
+	_dash_time -= delta
+
+	var velocidad: float = (
+		dash_distance
+		/ duracion
+	)
+
+	velocity = _action_direction * velocidad
+
+	move_and_slide()
+
+	if _dash_time <= 0.0:
+		_dash_time = 0.0
+
+		velocity = Vector2.ZERO
+
+		state = State.IDLE
+
+		_update_visual()
+
+
+func _obtener_direccion_accion() -> Vector2:
+	if facing.length_squared() > 0.01:
+		return facing.normalized()
+
+	return Vector2.DOWN
+
+
+# ============================================================
+# COMBATE / DAÑO
+# ============================================================
+
+func take_damage(cantidad: int) -> void:
+	if not is_alive:
+		return
+
+	if state == State.DASH:
+		return
+
+	super.take_damage(cantidad)
+
+	if not is_alive:
+		_morir_jugador()
+	else:
+		_recibir_golpe_visual()
+
+
+func _recibir_golpe_visual() -> void:
+	if visual == null:
+		return
+
+	var tween := create_tween()
+
+	tween.tween_property(
+		visual,
+		"modulate",
+		Color(
+			1.0,
+			0.35,
+			0.35
+		),
+		0.06
+	)
+
+	tween.tween_property(
+		visual,
+		"modulate",
+		Color.WHITE,
+		0.12
+	)
+
+
+func _morir_jugador() -> void:
+	velocity = Vector2.ZERO
+
+	set_physics_process(false)
+
+	if visual == null:
+		return
+
+	var tween := create_tween()
+
+	tween.set_parallel(true)
+
+	tween.tween_property(
+		visual,
+		"modulate:a",
+		0.0,
+		0.35
+	)
+
+	tween.tween_property(
+		visual,
+		"scale",
+		Vector2(
+			0.75,
+			0.75
+		),
+		0.35
+	)
+
+
+func reaparecer() -> void:
+	is_alive = true
+
+	health = max_health
+	mana = max_mana
+	stamina = max_stamina
+
+	velocity = Vector2.ZERO
+	state = State.IDLE
+
+	_jump_time = 0.0
+	_jump_cooldown_timer = 0.0
+	_dash_time = 0.0
+	_dash_cooldown_timer = 0.0
+	_stamina_regeneration_timer = 0.0
+
+	var world_gen := get_tree().current_scene.get_node_or_null(
+		"World/WorldGenerator"
+	)
+
+	if world_gen != null:
+		set_spawn_from_world(world_gen)
+
+	if visual != null:
+		visual.position = _base_visual_position
+		visual.modulate = Color.WHITE
+		visual.scale = Vector2.ONE
+
+	set_physics_process(true)
+
+	_update_dir_marker()
+	_update_visual()
+
+	health_changed.emit(
+		health,
+		max_health
+	)
+
+	mana_changed.emit(
+		mana,
+		max_mana
+	)
+
+	stamina_changed.emit(
+		stamina,
+		max_stamina
+	)
+
+
+# ============================================================
+# VISUAL / ANIMACIONES
+# ============================================================
+
+func _update_visual() -> void:
+	if anim == null:
+		return
+
+	var dir_name := _facing_name()
+	var anim_name := ""
+
+	match state:
+		State.IDLE:
+			anim_name = (
+				"idle_"
+				+ dir_name
+			)
+
+		State.WALK:
+			anim_name = (
+				"walk_"
+				+ dir_name
+			)
+
+		State.RUN:
+			anim_name = (
+				"run_"
+				+ dir_name
+			)
+
+		State.JUMP:
+			anim_name = (
+				"jump_"
+				+ dir_name
+			)
+
+		State.DASH:
+			anim_name = (
+				"dash_"
+				+ dir_name
+			)
+
+	if anim.has_animation(anim_name):
+		anim.play(anim_name)
+
+
+func _update_dir_marker() -> void:
+	if facing_marker == null:
+		return
+
+	var center := Vector2(
+		0,
+		-24
+	)
+
+	var offset := (
+		facing.normalized()
+		* 14.0
+	)
+
+	facing_marker.position = (
+		center
+		+ offset
+		- Vector2(
+			2,
+			2
+		)
+	)
+
+
+func _facing_name() -> String:
+	if abs(facing.y) >= abs(facing.x):
+		return (
+			"down"
+			if facing.y > 0.0
+			else "up"
+		)
+
+	return "side"
+
+
+# ============================================================
+# MAGIA IUM
+# ============================================================
+
+var _proceso_ium_equipado: Dictionary = {}
+var _ium_manager_ref: Node = null
+
+
+func equipar_proceso_ium(proceso: Dictionary) -> void:
+	_proceso_ium_equipado = proceso
+
+
+func _usar_proceso_ium() -> void:
+	if _proceso_ium_equipado.is_empty():
+		return
+
+	if _ium_manager_ref == null:
+		_ium_manager_ref = get_tree().get_first_node_in_group(
+			"ium_manager"
+		)
+
+		if _ium_manager_ref == null:
+			var systems := get_tree().current_scene.get_node_or_null(
+				"Systems"
+			)
+
+			if systems != null:
+				_ium_manager_ref = systems.get_node_or_null(
+					"IUMManager"
+				)
+
+	if _ium_manager_ref == null:
+		return
+
+	var objetivo: Node = _buscar_objetivo_cercano()
+
+	_ium_manager_ref.usar_proceso_equipado(objetivo)
+
+
+func _buscar_objetivo_cercano() -> Node:
+	var criaturas := get_tree().get_nodes_in_group("creatures")
+	var mas_cercana: Node = null
+	var dist_min := 160.0
+
+	for criatura in criaturas:
+		if not is_instance_valid(criatura):
+			continue
+
+		var dist := global_position.distance_to(
+			criatura.global_position
+		)
+
+		if dist < dist_min:
+			dist_min = dist
+			mas_cercana = criatura
+
+	return mas_cercana
+
+
+func aplicar_efecto_slow(duracion: float) -> void:
+	var speed_original := move_speed
+
+	move_speed = move_speed * 0.4
+
+	await get_tree().create_timer(duracion).timeout
+
+	if is_instance_valid(self):
+		move_speed = speed_original
+
+
+# ============================================================
+# SPAWN
+# ============================================================
+
+func set_spawn_from_world(
+	world_gen: Node
+) -> void:
+	if world_gen == null:
+		return
+
+	if world_gen.has_method(
+		"get_spawn_position"
+	):
+		global_position = (
+			world_gen.get_spawn_position()
+		)
