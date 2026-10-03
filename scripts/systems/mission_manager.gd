@@ -1,5 +1,4 @@
 extends Node
-class_name MissionManager
 
 
 signal misiones_cargadas
@@ -230,8 +229,8 @@ func _registrar_evento(
 			if not _objetivo_coincide(objetivo, objetivo_id, clave):
 				continue
 
-			var objetivo_id := str(objetivo.get("id", ""))
-			if objetivo_id.is_empty():
+			var id_objetivo := str(objetivo.get("id", ""))
+			if id_objetivo.is_empty():
 				continue
 
 			var progreso_mision: Dictionary = _progreso.get(
@@ -239,7 +238,7 @@ func _registrar_evento(
 				{}
 			)
 
-			var actual := int(progreso_mision.get(objetivo_id, 0))
+			var actual := int(progreso_mision.get(id_objetivo, 0))
 			var requerido := maxi(
 				1,
 				int(objetivo.get("cantidad_requerida", 1))
@@ -253,12 +252,12 @@ func _registrar_evento(
 				actual + cantidad
 			)
 
-			progreso_mision[objetivo_id] = nuevo
+			progreso_mision[id_objetivo] = nuevo
 			_progreso[mision_id] = progreso_mision
 
 			progreso_actualizado.emit(
 				mision_id,
-				objetivo_id,
+				id_objetivo,
 				nuevo,
 				requerido
 			)
