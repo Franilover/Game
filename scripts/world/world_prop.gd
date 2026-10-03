@@ -63,6 +63,9 @@ func get_interaction_priority() -> int:
 
 
 func get_interaction_text() -> String:
+	if _tiene_recoleccion_canonica():
+		return "Recolectar"
+
 	match tipo:
 		"recurso", "planta", "flor":
 			return "Investigar"
@@ -96,6 +99,10 @@ func interact(persona: Node) -> void:
 	if not can_interact(persona):
 		return
 
+	if _tiene_recoleccion_canonica():
+		if _recolectar(persona):
+			return
+
 	var accion := get_interaction_text()
 	var categoria: String = tipo.capitalize()
 
@@ -121,6 +128,125 @@ func interact(persona: Node) -> void:
 		" | bioma=",
 		bioma
 	)
+
+
+func _tiene_recoleccion_canonica() -> bool:
+	if tipo != "recurso" and tipo != "planta" and tipo != "flor":
+		return false
+
+	var item_id := _obtener_item_id_recoleccion()
+	return not item_id.is_empty()
+
+
+func _obtener_item_id_recoleccion() -> String:
+	var item_id := str(
+		datos.get(
+			"item_id",
+			""
+		)
+	).strip_edges()
+
+	if not item_id.is_empty():
+		return item_id
+
+	var recoleccion_variant: Variant = datos.get(
+		"recoleccion",
+		{}
+	)
+
+	if not recoleccion_variant is Dictionary:
+		return ""
+
+	return str(
+		(recoleccion_variant as Dictionary).get(
+			"item_id",
+			""
+		)
+	).strip_edges()
+
+
+func _obtener_cantidad_recoleccion() -> int:
+	var cantidad: int = 1
+	var recoleccion_variant: Variant = datos.get(
+		"recoleccion",
+		{}
+	)
+
+	if recoleccion_variant is Dictionary:
+		cantidad = maxi(
+			1,
+			int(
+				(recoleccion_variant as Dictionary).get(
+					"cantidad",
+					1
+				)
+			)
+		)
+
+	return cantidad
+
+
+func _recolectar(persona: Node) -> bool:
+	var inventario: Node = get_tree().get_first_node_in_group(
+		"inventory"
+	)
+	if inventario == null or not inventario.has_method(
+		"agregar_objeto"
+	):
+		return false
+
+	var item_id := _obtener_item_id_recoleccion()
+	if item_id.is_empty():
+		return false
+
+	var item := GarliaWorldItems.buscar_item_por_id(
+		item_id
+	)
+	if item.is_empty():
+		print(
+			"WorldProp: el item canónico no está cargado → ",
+			item_id
+		)
+		return false
+
+	item["cantidad"] = _obtener_cantidad_recoleccion()
+
+	var agregado: bool = bool(
+		inventario.call(
+			"agregar_objeto",
+			item
+		)
+	)
+	if not agregado:
+		return false
+
+	Events.notification_pushed.emit(
+		"Recolectaste " + str(
+			item.get(
+				"nombre",
+				"Objeto"
+			)
+		) + " x" + str(
+			item.get(
+				"cantidad",
+				1
+			)
+		)
+	)
+
+	print(
+		"WorldProp: recurso recolectado → ",
+		str(item.get("nombre", "Objeto")),
+		" x",
+		str(item.get("cantidad", 1)),
+		" | item_id=",
+		item_id,
+		" | bioma=",
+		bioma
+	)
+
+	queue_free()
+	return true
 
 
 func _ready() -> void:
