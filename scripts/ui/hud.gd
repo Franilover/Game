@@ -575,14 +575,14 @@ func _formatear_ambiente_efectivo(
 ) -> String:
 	var partes: Array[String] = []
 
-	var temperatura := _obtener_valor_factor(
+	var temperatura: Variant = _obtener_valor_factor(
 		factores,
 		"temperatura_media"
 	)
 	if temperatura != null:
 		partes.append("T: " + _formatear_numero(float(temperatura)))
 
-	var humedad := _obtener_valor_factor(
+	var humedad: Variant = _obtener_valor_factor(
 		factores,
 		"humedad_relativa"
 	)
@@ -593,7 +593,7 @@ func _formatear_ambiente_efectivo(
 			) + "%"
 		)
 
-	var agua := _obtener_valor_factor(
+	var agua: Variant = _obtener_valor_factor(
 		factores,
 		"disponibilidad_agua"
 	)
@@ -622,7 +622,7 @@ func _obtener_valor_factor(
 	if not factor_variant is Dictionary:
 		return null
 
-	var factor := factor_variant as Dictionary
+	var factor: Dictionary = factor_variant as Dictionary
 
 	if not factor.has("valor"):
 		return null
