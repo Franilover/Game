@@ -329,6 +329,7 @@ func _recolectar(persona: Node) -> bool:
 
 
 func configurar_desde_game_data(datos_game: Dictionary) -> void:
+	add_to_group("world_props")
 	datos = datos_game.duplicate(true)
 	tipo = str(datos.get("tipo", "decoracion"))
 	bioma = ""
@@ -397,6 +398,7 @@ func _actualizar_sprite(asset_path: String) -> void:
 
 
 func _ready() -> void:
+	add_to_group("world_props")
 	z_index = clampi(
 		int(global_position.y / 8.0),
 		-4096,
