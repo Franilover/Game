@@ -43,6 +43,11 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 
+	if _interaccion_bloqueada():
+		if objetivo_actual != null:
+			_cambiar_objetivo(null)
+		return
+
 	_scan_timer -= delta
 	if _scan_timer <= 0.0:
 		_scan_timer = maxf(scan_interval, 0.05)
@@ -55,12 +60,37 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if player == null or not player.is_alive:
 		return
+
+	if _interaccion_bloqueada():
+		return
+
 	if not event.is_action_pressed("interact"):
 		return
 	if event is InputEventKey and (event as InputEventKey).echo:
 		return
 	_interactuar()
 	get_viewport().set_input_as_handled()
+
+
+func _interaccion_bloqueada() -> bool:
+	if get_tree().paused:
+		return true
+
+	var inventory: Node = get_tree().get_first_node_in_group(
+		"inventory"
+	)
+	if inventory != null and inventory is CanvasItem:
+		if bool((inventory as CanvasItem).visible):
+			return true
+
+	var admin_console: Node = get_tree().get_first_node_in_group(
+		"admin_console"
+	)
+	if admin_console != null and admin_console is CanvasItem:
+		if bool((admin_console as CanvasItem).visible):
+			return true
+
+	return false
 
 
 func _buscar_objetivo() -> void:
