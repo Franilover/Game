@@ -179,6 +179,44 @@ func get_reinos_at(tile: Vector2i) -> Array[Dictionary]:
 func get_reinos_at_position(posicion_global: Vector2) -> Array[Dictionary]:
 	return get_reinos_at(get_tile_at(posicion_global))
 
+func buscar_posicion_reino(nombre: String) -> Vector2:
+	if terrain == null or not _world_ready:
+		return Vector2.INF
+
+	var buscado := nombre.strip_edges().to_lower()
+	if buscado.is_empty():
+		return Vector2.INF
+
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	if jugador == null:
+		return Vector2.INF
+
+	var centro := get_tile_at(jugador.global_position)
+	var radio := 64
+
+	for distancia in range(radio + 1):
+		for dy in range(-distancia, distancia + 1):
+			for dx in range(-distancia, distancia + 1):
+				if maxi(abs(dx), abs(dy)) != distancia:
+					continue
+
+				var tile := centro + Vector2i(dx, dy)
+				if not terrain.is_walkable(tile):
+					continue
+
+				for reino in get_reinos_at(tile):
+					var clave := str(reino.get("clave", "")).to_lower()
+					var nombre_reino := str(reino.get("nombre", "")).to_lower()
+					if clave != buscado and nombre_reino != buscado:
+						continue
+
+					return Vector2(
+						(float(tile.x) + 0.5) * tile_size,
+						(float(tile.y) + 0.5) * tile_size
+					)
+
+	return Vector2.INF
+
 
 func get_ecosistema_at(
 	tile: Vector2i
