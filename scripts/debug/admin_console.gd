@@ -16,6 +16,7 @@ var _sugerencias: Array[String] = []
 
 const COMANDO_SUMMON: String = "/summon"
 const COMANDO_GIVE: String = "/give"
+const COMANDO_TIME: String = "/time"
 const MAX_SUGERENCIAS_VISIBLES: int = 8
 const ANCHO_SUGERENCIAS: float = 320.0
 const ALTURA_SUGERENCIAS_POR_FILA: float = 22.0
@@ -475,6 +476,9 @@ func _ejecutar_comando(comando: String) -> void:
 		"/give":
 			_comando_give(argumentos)
 
+		"/time":
+			_comando_time(argumentos)
+
 		_:
 			_agregar_linea(
 				"[color=#d88]"
@@ -494,6 +498,12 @@ func _comando_help() -> void:
 	_agregar_linea(
 		"[color=#b4befe]"
 		+ "/give <objeto>"
+		+ "[/color]"
+	)
+
+	_agregar_linea(
+		"[color=#b4befe]"
+		+ "/time <lock|day|night|restart>"
 		+ "[/color]"
 	)
 
@@ -642,6 +652,134 @@ func _comando_give(nombre: String) -> void:
 		+ str(item.get("nombre", nombre_objeto))
 		+ "[/color]"
 	)
+
+
+func _comando_time(argumentos: String) -> void:
+	var subcomando: String = argumentos.strip_edges().to_lower()
+
+	if subcomando.is_empty():
+		_agregar_linea(
+			"[color=#d88]"
+			+ "Uso: /time <lock|day|night|restart>"
+			+ "[/color]"
+		)
+		return
+
+	var world_generator: Node = (
+		get_tree().get_first_node_in_group(
+			"world_generator"
+		)
+	)
+
+	if world_generator == null:
+		_agregar_linea(
+			"[color=#d88]"
+			+ "No se encontró WorldGenerator."
+			+ "[/color]"
+		)
+		return
+
+	var atmosfera: Node = world_generator.get_node_or_null(
+		"WorldAtmosphere"
+	)
+
+	if atmosfera == null:
+		_agregar_linea(
+			"[color=#d88]"
+			+ "No se encontró WorldAtmosphere."
+			+ "[/color]"
+		)
+		return
+
+	switch subcomando:
+		"lock":
+			if not atmosfera.has_method("bloquear_tiempo"):
+				_agregar_linea(
+					"[color=#d88]"
+					+ "WorldAtmosphere no admite /time lock."
+					+ "[/color]"
+				)
+				return
+
+			atmosfera.call("bloquear_tiempo")
+			_agregar_linea(
+				"[color=#9fd18b]"
+				+ "Tiempo bloqueado."
+				+ "[/color]"
+			)
+
+		"day":
+			if not atmosfera.has_method("establecer_dia"):
+				_agregar_linea(
+					"[color=#d88]"
+					+ "WorldAtmosphere no admite /time day."
+					+ "[/color]"
+				)
+				return
+
+			if bool(atmosfera.call("establecer_dia")):
+				_agregar_linea(
+					"[color=#9fd18b]"
+					+ "Hora establecida: 12:00."
+					+ "[/color]"
+				)
+			else:
+				_agregar_linea(
+					"[color=#d88]"
+					+ "El calendario todavía no está cargado."
+					+ "[/color]"
+				)
+
+		"night":
+			if not atmosfera.has_method("establecer_noche"):
+				_agregar_linea(
+					"[color=#d88]"
+					+ "WorldAtmosphere no admite /time night."
+					+ "[/color]"
+				)
+				return
+
+			if bool(atmosfera.call("establecer_noche")):
+				_agregar_linea(
+					"[color=#9fd18b]"
+					+ "Hora establecida: 00:00."
+					+ "[/color]"
+				)
+			else:
+				_agregar_linea(
+					"[color=#d88]"
+					+ "El calendario todavía no está cargado."
+					+ "[/color]"
+				)
+
+		"restart":
+			if not atmosfera.has_method("reiniciar_tiempo"):
+				_agregar_linea(
+					"[color=#d88]"
+					+ "WorldAtmosphere no admite /time restart."
+					+ "[/color]"
+				)
+				return
+
+			if bool(atmosfera.call("reiniciar_tiempo")):
+				_agregar_linea(
+					"[color=#9fd18b]"
+					+ "Tiempo reiniciado al inicio del calendario y desbloqueado."
+					+ "[/color]"
+				)
+			else:
+				_agregar_linea(
+					"[color=#d88]"
+					+ "El calendario todavía no está cargado."
+				[/color]
+				)
+
+		_:
+			_agregar_linea(
+				"[color=#d88]"
+				+ "Subcomando desconocido. Usa /time lock, /time day, /time night o /time restart."
+				+ "[/color]"
+			)
 
 
 func _agregar_linea(texto: String) -> void:
