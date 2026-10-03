@@ -251,7 +251,7 @@ func _mostrar_sugerencias_summon(
 	)
 
 	var argumento: String = argumento_crudo.strip_edges()
-	var partes: Array[String] = []
+	var partes: PackedStringArray = PackedStringArray()
 
 	if not argumento.is_empty():
 		partes = argumento.split(
@@ -548,7 +548,7 @@ func _completar_sugerencia(nombre: String) -> void:
 		var argumento_crudo: String = _entrada.text.substr(
 			COMANDO_SUMMON.length()
 		)
-		var partes: Array[String] = []
+		var partes: PackedStringArray = PackedStringArray()
 
 		if not argumento_crudo.strip_edges().is_empty():
 			partes = argumento_crudo.strip_edges().split(
@@ -690,7 +690,7 @@ func _comando_summon(nombre: String) -> void:
 		)
 		return
 
-	var partes: Array[String] = nombre_criatura.split(
+	var partes: PackedStringArray = nombre_criatura.split(
 		" ",
 		false
 	)
