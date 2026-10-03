@@ -31,6 +31,7 @@ var _guardado_en_curso: bool = false
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
 signal descubrimientos_mundo_actualizados
+signal descubrimiento_mundo(nivel: String, id: String)
 
 
 func _ready() -> void:
@@ -700,118 +701,85 @@ func registrar_descubrimiento_mundo(
 	habitats: Array,
 	criaturas: Array
 ) -> bool:
-	var descubrimientos_variant: Variant = flags.get(
-		"descubrimientos_mundo",
-		{}
-	)
-
+	var descubrimientos_variant: Variant = flags.get("descubrimientos_mundo", {})
 	var descubrimientos: Dictionary = {}
 	if descubrimientos_variant is Dictionary:
-		descubrimientos = (
-			descubrimientos_variant as Dictionary
-		).duplicate(true)
+		descubrimientos = (descubrimientos_variant as Dictionary).duplicate(true)
 
-	var nuevo: bool = false
+	var nuevos: Array[Dictionary] = []
 
 	var bioma_id := str(bioma.get("id", ""))
 	if not bioma_id.is_empty():
-		var biomas_variant: Variant = descubrimientos.get(
-			"biomas",
-			{}
-		)
+		var biomas_variant: Variant = descubrimientos.get("biomas", {})
 		var biomas: Dictionary = {}
 		if biomas_variant is Dictionary:
 			biomas = (biomas_variant as Dictionary).duplicate(true)
-
 		if not biomas.has(bioma_id):
 			biomas[bioma_id] = true
-			nuevo = true
-
+			nuevos.append({"nivel": "bioma", "id": bioma_id})
 		descubrimientos["biomas"] = biomas
 
 	var ecosistema_id := str(ecosistema.get("id", ""))
 	if not ecosistema_id.is_empty():
-		var ecosistemas_variant: Variant = descubrimientos.get(
-			"ecosistemas",
-			{}
-		)
+		var ecosistemas_variant: Variant = descubrimientos.get("ecosistemas", {})
 		var ecosistemas: Dictionary = {}
 		if ecosistemas_variant is Dictionary:
-			ecosistemas = (
-				ecosistemas_variant as Dictionary
-			).duplicate(true)
-
+			ecosistemas = (ecosistemas_variant as Dictionary).duplicate(true)
 		if not ecosistemas.has(ecosistema_id):
 			ecosistemas[ecosistema_id] = true
-			nuevo = true
-
+			nuevos.append({"nivel": "ecosistema", "id": ecosistema_id})
 		descubrimientos["ecosistemas"] = ecosistemas
 
-	var habitats_descubiertos_variant: Variant = descubrimientos.get(
-		"habitats",
-		{}
-	)
+	var habitats_variant: Variant = descubrimientos.get("habitats", {})
 	var habitats_descubiertos: Dictionary = {}
-	if habitats_descubiertos_variant is Dictionary:
-		habitats_descubiertos = (
-			habitats_descubiertos_variant as Dictionary
-		).duplicate(true)
+	if habitats_variant is Dictionary:
+		habitats_descubiertos = (habitats_variant as Dictionary).duplicate(true)
 
 	for habitat_variant in habitats:
 		if not habitat_variant is Dictionary:
 			continue
-
 		var habitat: Dictionary = habitat_variant
 		var habitat_id := str(habitat.get("id", ""))
-
-		if habitat_id.is_empty():
+		if habitat_id.is_empty() or habitats_descubiertos.has(habitat_id):
 			continue
-
-		if habitats_descubiertos.has(habitat_id):
-			continue
-
 		habitats_descubiertos[habitat_id] = true
-		nuevo = true
+		nuevos.append({"nivel": "habitat", "id": habitat_id})
 
 	descubrimientos["habitats"] = habitats_descubiertos
 
-	var criaturas_descubiertas_variant: Variant = descubrimientos.get(
-		"criaturas",
-		{}
-	)
+	var criaturas_variant: Variant = descubrimientos.get("criaturas", {})
 	var criaturas_descubiertas: Dictionary = {}
-	if criaturas_descubiertas_variant is Dictionary:
-		criaturas_descubiertas = (
-			criaturas_descubiertas_variant as Dictionary
-		).duplicate(true)
+	if criaturas_variant is Dictionary:
+		criaturas_descubiertas = (criaturas_variant as Dictionary).duplicate(true)
 
 	for criatura_variant in criaturas:
 		if not criatura_variant is Dictionary:
 			continue
-
 		var criatura: Dictionary = criatura_variant
 		var criatura_id := str(criatura.get("id", ""))
-
-		if criatura_id.is_empty():
+		if criatura_id.is_empty() or criaturas_descubiertas.has(criatura_id):
 			continue
-
-		if criaturas_descubiertas.has(criatura_id):
-			continue
-
 		criaturas_descubiertas[criatura_id] = true
-		nuevo = true
+		nuevos.append({"nivel": "criatura", "id": criatura_id})
 
 	descubrimientos["criaturas"] = criaturas_descubiertas
 
-	if not nuevo:
+	if nuevos.is_empty():
 		return false
 
 	flags["descubrimientos_mundo"] = descubrimientos
+
+	for descubrimiento_variant in nuevos:
+		if not descubrimiento_variant is Dictionary:
+			continue
+		var descubrimiento: Dictionary = descubrimiento_variant
+		descubrimiento_mundo.emit(
+			str(descubrimiento.get("nivel", "")),
+			str(descubrimiento.get("id", ""))
+		)
+
 	descubrimientos_mundo_actualizados.emit()
-
 	return true
-
-
 func obtener_descubrimientos_mundo() -> Dictionary:
 	var registros_variant: Variant = flags.get(
 		"descubrimientos_mundo",
