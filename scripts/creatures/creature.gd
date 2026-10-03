@@ -13,6 +13,7 @@ class_name Creature
 
 var criatura_id: String = ""
 var criatura_nombre: String = ""
+var nombre_individual: String = ""
 
 var datos: Dictionary = {}
 
@@ -368,6 +369,32 @@ func crear_rastro_teleport(
 		duracion,
 		puntos
 	)
+
+
+func _es_humano() -> bool:
+\treturn criatura_nombre.strip_edges().to_lower() == "humano"
+
+
+func _obtener_nombre_individual() -> String:
+\tvar claves: Array[String] = [
+\t\t"nombre_individual",
+\t\t"nombre_personaje",
+\t\t"nombre_npc",
+\t\t"identidad"
+\t]
+
+\tfor clave in claves:
+\t\tvar valor: String = str(
+\t\t\tdatos.get(
+\t\t\t\tclave,
+\t\t\t\t""
+\t\t\t)
+\t\t).strip_edges()
+
+\t\tif not valor.is_empty():
+\t\t\treturn valor
+
+\treturn ""
 
 
 func get_stats_dnd() -> Dictionary:
