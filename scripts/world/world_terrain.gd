@@ -36,6 +36,7 @@ var _ecosistema_indices: Dictionary = {}
 var _loaded_chunks: Dictionary = {}
 
 var _generation_task: Dictionary = {}
+var _pintado_desde_flush: int = 0
 
 var _ultimo_chunk_generado: Vector2i = Vector2i.ZERO
 
@@ -201,6 +202,8 @@ func iniciar_generacion_chunk(
 		zonas.append(fila_zonas)
 		biomas.append(fila_biomas)
 		ecosistemas.append(fila_ecosistemas)
+
+	_pintado_desde_flush = 0
 
 	_generation_task = {
 		"coord": chunk_coord,
@@ -435,6 +438,12 @@ func _procesar_pintado_chunk(
 			zona_final
 		)
 
+		_pintado_desde_flush += 1
+		var lote := maxi(visual_flush_cells, 1)
+		if _pintado_desde_flush >= lote:
+			if visual != null:
+				visual.flush()
+			_pintado_desde_flush = 0
 
 		cursor += 1
 
@@ -444,10 +453,10 @@ func _procesar_pintado_chunk(
 		return false
 
 	if visual != null:
-		# Publicar el chunk de una sola vez. Esto evita que TileMapDual
-		# reconstruya visualmente el mismo chunk por partes.
+		# Publicar cualquier celda restante del lote final.
 		visual.flush()
 
+	_pintado_desde_flush = 0
 	_finalizar_chunk()
 
 	return true
