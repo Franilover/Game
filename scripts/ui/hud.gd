@@ -558,6 +558,87 @@ func _actualizar_contexto() -> void:
 	if not clima.is_empty():
 		location_label.text += "\nClima: " + clima
 
+	var factores_variant: Variant = contexto.get(
+		"factores_abioticos",
+		{}
+	)
+
+	if factores_variant is Dictionary:
+		var factores := factores_variant as Dictionary
+		var ambiente := _formatear_ambiente_efectivo(factores)
+		if not ambiente.is_empty():
+			location_label.text += "\n" + ambiente
+
+
+func _formatear_ambiente_efectivo(
+	factores: Dictionary
+) -> String:
+	var partes: Array[String] = []
+
+	var temperatura := _obtener_valor_factor(
+		factores,
+		"temperatura_media"
+	)
+	if temperatura != null:
+		partes.append("T: " + _formatear_numero(float(temperatura)))
+
+	var humedad := _obtener_valor_factor(
+		factores,
+		"humedad_relativa"
+	)
+	if humedad != null:
+		partes.append(
+			"H: " + _formatear_numero(
+				float(humedad) * 100.0
+			) + "%"
+		)
+
+	var agua := _obtener_valor_factor(
+		factores,
+		"disponibilidad_agua"
+	)
+	if agua != null:
+		partes.append(
+			"Agua: " + _formatear_numero(
+				float(agua) * 100.0
+			) + "%"
+		)
+
+	if partes.is_empty():
+		return ""
+
+	return "Ambiente: " + " · ".join(partes)
+
+
+func _obtener_valor_factor(
+	factores: Dictionary,
+	clave: String
+) -> Variant:
+	var factor_variant: Variant = factores.get(
+		clave,
+		null
+	)
+
+	if not factor_variant is Dictionary:
+		return null
+
+	var factor := factor_variant as Dictionary
+
+	if not factor.has("valor"):
+		return null
+
+	var valor: Variant = factor.get("valor")
+	if valor == null:
+		return null
+
+	return valor
+
+
+func _formatear_numero(
+	valor: float
+) -> String:
+	return "%.2f" % valor
+
 
 func _obtener_tiempo_mundo() -> Dictionary:
 	if not is_instance_valid(world_generator):
