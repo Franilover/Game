@@ -523,9 +523,37 @@ func _aplicar_especie_eterium_game(reglas: Array) -> void:
 			mana_changed.emit(mana, max_mana)
 		var compartido := bool(regla.get("vida_eterium_compartidos", false))
 		_eterium_recupera = bool(regla.get("recuperacion_eterium", true))
+		_aplicar_admin_maximos_guardados()
 		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", compartido, " | capacidad=", max_mana)
 		fisiologia_changed.emit(compartido)
 		return
+
+func _aplicar_admin_maximos_guardados() -> void:
+	var admin_variant: Variant = GameState.flags.get("personaje_admin", {})
+	if not admin_variant is Dictionary:
+		return
+
+	var admin_data := admin_variant as Dictionary
+	var maximos_variant: Variant = admin_data.get("maximos", {})
+	if not maximos_variant is Dictionary:
+		return
+
+	var maximos := maximos_variant as Dictionary
+	if maximos.has("vida"):
+		max_health = maxi(1, int(maximos.get("vida", max_health)))
+	if maximos.has("eterium"):
+		max_mana = maxi(1, int(maximos.get("eterium", max_mana)))
+	if maximos.has("energia"):
+		max_stamina = maxf(1.0, float(maximos.get("energia", max_stamina)))
+
+	health = mini(health, max_health)
+	mana = mini(mana, max_mana)
+	stamina = minf(stamina, max_stamina)
+
+	health_changed.emit(health, max_health)
+	mana_changed.emit(mana, max_mana)
+	stamina_changed.emit(stamina, max_stamina)
+
 
 
 func _eterium_vida_compartida() -> bool:
