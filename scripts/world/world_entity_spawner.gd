@@ -930,8 +930,29 @@ func _spawn_props_in_chunk(
 		if not _terrain.is_walkable(tile):
 			continue
 
-		var reino_ids := _obtener_reinos_game_ids_at(tile)
-		if reino_ids.is_empty():
+		var bioma := _terrain.get_bioma_at(tile)
+		var ecosistema := _terrain.get_ecosistema_at(tile)
+		var habitats := _terrain.get_habitats_at(tile)
+
+		if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
+			continue
+
+		var bioma_id := str(bioma.get("id", ""))
+		var ecosistema_id := str(ecosistema.get("id", ""))
+		if bioma_id.is_empty() or ecosistema_id.is_empty():
+			continue
+
+		var habitat_ids: Array[String] = []
+		for habitat_variant in habitats:
+			if not habitat_variant is Dictionary:
+				continue
+
+			var habitat := habitat_variant as Dictionary
+			var habitat_id := str(habitat.get("id", ""))
+			if not habitat_id.is_empty() and habitat_id not in habitat_ids:
+				habitat_ids.append(habitat_id)
+
+		if habitat_ids.is_empty():
 			continue
 
 		var candidatos: Array[Dictionary] = []
@@ -940,15 +961,23 @@ func _spawn_props_in_chunk(
 				continue
 
 			var prop := prop_variant as Dictionary
-			var reino_game_id := str(prop.get("reino_game_id", ""))
-			if reino_game_id.is_empty() or reino_game_id not in reino_ids:
+			if str(prop.get("bioma_id", "")) != bioma_id:
+				continue
+			if str(prop.get("ecosistema_id", "")) != ecosistema_id:
+				continue
+			if str(prop.get("habitat_id", "")) not in habitat_ids:
 				continue
 
-			var asset_path := str(prop.get("asset_path", "")).strip_edges()
-			if asset_path.is_empty():
+			var nombre := str(prop.get("nombre", "")).strip_edges()
+			if nombre.is_empty():
 				continue
 
-			candidatos.append(prop)
+			var datos_prop := prop.duplicate(true)
+			datos_prop["asset_path"] = _construir_asset_path_prop(datos_prop)
+			if datos_prop["asset_path"] == "":
+				continue
+
+			candidatos.append(datos_prop)
 
 		if candidatos.is_empty():
 			continue
@@ -984,22 +1013,24 @@ func _spawn_props_in_chunk(
 		)
 
 
-func _obtener_reinos_game_ids_at(tile: Vector2i) -> Array[String]:
-	var resultado: Array[String] = []
-	var bioma := _terrain.get_bioma_at(tile)
-	if bioma.is_empty():
-		return resultado
+func _construir_asset_path_prop(prop: Dictionary) -> String:
+	var bioma := str(prop.get("bioma_nombre", "")).strip_edges()
+	var ecosistema := str(prop.get("ecosistema_nombre", "")).strip_edges()
+	var habitat := str(prop.get("habitat_nombre", "")).strip_edges()
+	var nombre := str(prop.get("nombre", "")).strip_edges()
 
-	var bioma_id := str(bioma.get("id", ""))
-	if bioma_id.is_empty():
-		return resultado
+	if bioma.is_empty() or ecosistema.is_empty():
+		return ""
+	if habitat.is_empty() or nombre.is_empty():
+		return ""
 
-	for reino in WorldData.obtener_reinos_game_de_bioma(bioma_id):
-		var reino_id := str(reino.get("id", ""))
-		if not reino_id.is_empty():
-			resultado.append(reino_id)
-
-	return resultado
+	return (
+		"res://assets/art/props/"
+		+ bioma + "/"
+		+ ecosistema + "/"
+		+ habitat + "/"
+		+ nombre + ".png"
+	)
 
 
 func _elegir_prop_ponderado(
