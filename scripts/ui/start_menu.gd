@@ -852,11 +852,10 @@ func _al_especies_jugables_cargadas(especies: Array) -> void:
 	if _personaje_especie.item_count > 0:
 		_personaje_especie.select(0)
 
-	_personaje_status.text = (
-		"Especies jugables cargadas desde Supabase."
-		if _personaje_especie.item_count > 0
-		else "No hay especies jugables disponibles."
-	)
+	if _personaje_especie.item_count > 0:
+		_personaje_status.text = "Especies jugables cargadas desde Supabase."
+	else:
+		_personaje_status.text = "No hay especies jugables disponibles."
 	_actualizar_boton_personaje()
 
 func _actualizar_boton_personaje() -> void:
