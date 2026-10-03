@@ -707,16 +707,20 @@ func _ejecutar_comando(comando: String) -> void:
 			_comando_help()
 
 		"/summon":
-			_comando_summon(argumentos)
+			if _puede_usar_capacidad("invocar"):
+				_comando_summon(argumentos)
 
 		"/give":
-			_comando_give(argumentos)
+			if _puede_usar_capacidad("dar_objetos"):
+				_comando_give(argumentos)
 
 		"/time":
-			_comando_time(argumentos)
+			if _puede_usar_capacidad("controlar_tiempo"):
+				_comando_time(argumentos)
 
 		"/tp":
-			_comando_tp(argumentos)
+			if _puede_usar_capacidad("teletransportar"):
+				_comando_tp(argumentos)
 
 		"/player":
 			_comando_player(argumentos)
@@ -728,6 +732,25 @@ func _ejecutar_comando(comando: String) -> void:
 				+ nombre_comando
 				+ "[/color]"
 			)
+
+
+func _puede_usar_capacidad(clave: String) -> bool:
+	var datos_variant: Variant = GameState.flags.get("personaje_admin", {})
+	if not datos_variant is Dictionary:
+		_agregar_linea("[color=#d88]Necesitas rol Admin para usar este comando.[/color]")
+		return false
+
+	var datos := datos_variant as Dictionary
+	if str(datos.get("rol", "explorador")).to_lower() != "admin":
+		_agregar_linea("[color=#d88]Necesitas rol Admin para usar este comando.[/color]")
+		return false
+
+	var capacidades_variant: Variant = datos.get("capacidades", [])
+	if capacidades_variant is Array and clave in (capacidades_variant as Array):
+		return true
+
+	_agregar_linea("[color=#d88]Tu rol Admin no tiene la capacidad: " + clave + ".[/color]")
+	return false
 
 
 func _comando_help() -> void:
@@ -884,10 +907,10 @@ func _obtener_nombres_jugadores() -> Array[String]:
 	return nombres
 
 
-func _comando_player(nombre: String) -> void:
-	var nombre_solicitado := nombre.strip_edges()
-	if nombre_solicitado.is_empty():
-		_agregar_linea("[color=#d88]Uso: /player <nombre>[/color]")
+func _comando_player(argumentos: String) -> void:
+	var texto := argumentos.strip_edges()
+	if texto.is_empty():
+		_agregar_linea("[color=#d88]Uso: /player <nombre> [Explorador|Admin][/color]")
 		return
 
 	var jugador := get_tree().get_first_node_in_group("player")
@@ -899,8 +922,47 @@ func _comando_player(nombre: String) -> void:
 	if nombre_actual.is_empty():
 		nombre_actual = jugador.name
 
+	var partes := texto.split(" ", false)
+	var rol := ""
+	if partes.size() >= 2:
+		var posible_rol := partes[partes.size() - 1].to_lower()
+		if posible_rol in ["admin", "explorador"]:
+			rol = posible_rol
+			partes.remove_at(partes.size() - 1)
+
+	var nombre_solicitado := " ".join(partes).strip_edges()
+	if nombre_solicitado.is_empty():
+		nombre_solicitado = nombre_actual
+
 	if nombre_solicitado.to_lower() != nombre_actual.to_lower() and nombre_solicitado.to_lower() not in ["player", "jugador"]:
 		_agregar_linea("[color=#d88]No encontré al jugador: " + nombre_solicitado + ".[/color]")
+		return
+
+	if not rol.is_empty():
+		var capacidades: Array[String] = []
+		if rol == "admin":
+			capacidades = [
+				"teletransportar",
+				"invocar",
+				"editar_jugadores",
+				"controlar_tiempo",
+				"dar_objetos",
+				"modo_dios"
+			]
+
+		GameState.flags["personaje_admin"] = {
+			"rol": rol,
+			"capacidades": capacidades
+		}
+		GameState.guardar_partida()
+
+		_agregar_linea(
+			"[color=#9fd18b]Jugador "
+			+ nombre_actual
+			+ " → "
+			+ ("Admin" if rol == "admin" else "Explorador")
+			+ ".[/color]"
+		)
 		return
 
 	var ui := get_tree().current_scene.get_node_or_null("UI")
