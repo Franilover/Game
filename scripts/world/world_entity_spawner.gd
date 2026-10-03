@@ -330,20 +330,127 @@ func summon_criatura(
 	nombre: String,
 	posicion: Vector2
 ) -> Dictionary:
-	var criatura_data := (
-		WorldData.buscar_criatura_por_nombre(
-			nombre
+	var nombre_solicitado: String = nombre.strip_edges()
+
+	if nombre_solicitado.is_empty():
+		return {
+			"ok": false,
+			"mensaje": "Debes indicar una criatura o personaje."
+		}
+
+	var personaje_game: Dictionary = (
+		WorldData.buscar_personaje_game_por_nombre(
+			nombre_solicitado
 		)
 	)
 
-	if criatura_data.is_empty():
-		return {
-			"ok": false,
-			"mensaje": (
-				"No existe una criatura llamada "
-				+ nombre
+	var criatura_data: Dictionary = {}
+	var nombre_inicial: String = nombre_solicitado
+
+	if not personaje_game.is_empty():
+		var criatura_id: String = str(
+			personaje_game.get(
+				"criatura_id",
+				""
 			)
-		}
+		)
+
+		criatura_data = WorldData.obtener_criatura(
+			criatura_id
+		)
+
+		if criatura_data.is_empty():
+			return {
+				"ok": false,
+				"mensaje": (
+					"El personaje "
+					+ str(personaje_game.get("nombre", nombre_solicitado))
+					+ " apunta a una criatura que no está en el mundo."
+				)
+			}
+
+		criatura_data["nombre_individual"] = str(
+			personaje_game.get(
+				"nombre",
+				nombre_solicitado
+			)
+		)
+		criatura_data["personaje_game_id"] = str(
+			personaje_game.get(
+				"id",
+				""
+			)
+		)
+
+		nombre_inicial = str(
+			personaje_game.get(
+				"nombre",
+				nombre_solicitado
+			)
+		)
+	else:
+		criatura_data = WorldData.buscar_criatura_por_nombre(
+			nombre_solicitado
+		)
+
+		if criatura_data.is_empty():
+			return {
+				"ok": false,
+				"mensaje": (
+					"No existe una criatura o personaje llamado "
+					+ nombre_solicitado
+				)
+			}
+
+		# /summon Humano crea un personaje individual de la tabla
+		# personajes_game, usando la especie Humano como cuerpo base.
+		if str(
+			criatura_data.get(
+				"nombre",
+				""
+			)
+		).strip_edges().to_lower() == "humano":
+			var personajes_humanos: Array[Dictionary] = (
+				WorldData.obtener_personajes_game_de_criatura(
+					str(
+						criatura_data.get(
+							"id",
+							""
+						)
+					)
+				)
+			)
+
+			if not personajes_humanos.is_empty():
+				var rng_personaje := RandomNumberGenerator.new()
+				rng_personaje.randomize()
+
+				var elegido: Dictionary = personajes_humanos[
+					rng_personaje.randi_range(
+						0,
+						personajes_humanos.size() - 1
+					)
+				]
+
+				criatura_data["nombre_individual"] = str(
+					elegido.get(
+						"nombre",
+						""
+					)
+				)
+				criatura_data["personaje_game_id"] = str(
+					elegido.get(
+						"id",
+						""
+					)
+				)
+
+				nombre_inicial = str(
+					elegido.get(
+						"nombre",
+						"Humano"
+					)
+				)
 
 	var current_scene: Node = (
 		get_tree().current_scene
@@ -364,9 +471,7 @@ func summon_criatura(
 	if entities == null:
 		return {
 			"ok": false,
-			"mensaje": (
-				"No existe el nodo Main/Entities."
-			)
+			"mensaje": "No existe el nodo Main/Entities."
 		}
 
 	var criatura: Node = (
@@ -477,12 +582,8 @@ func summon_criatura(
 
 	return {
 		"ok": true,
-		"nombre": str(
-			criatura_data.get(
-				"nombre",
-				nombre
-			)
-		),
+		"nombre": nombre_inicial,
+		"es_personaje_game": not personaje_game.is_empty(),
 		"criatura": criatura
 	}
 
