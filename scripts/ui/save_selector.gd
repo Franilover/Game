@@ -2,6 +2,7 @@ extends Control
 
 @onready var list_container: VBoxContainer = $Panel/Margin/Column/Scroll/Partidas
 @onready var name_input: LineEdit = $Panel/Margin/Column/NewRow/NameInput
+@onready var seed_input: LineEdit = $Panel/Margin/Column/SeedRow/SeedInput
 @onready var status_label: Label = $Panel/Margin/Column/Status
 
 
@@ -93,7 +94,10 @@ func _texto_detalle(partida: Dictionary) -> String:
 		partida.get("actualizado_en", "")
 	)
 
-	return tiempo + "    ·    Último guardado: " + actualizado
+	var semilla := str(partida.get("semilla", "—"))
+
+	return tiempo + "    ·    Semilla: " + semilla
+		+ "    ·    Último guardado: " + actualizado
 
 
 func _jugar_partida(id: String) -> void:
@@ -120,13 +124,18 @@ func _eliminar_partida(id: String) -> void:
 
 func _on_create_pressed() -> void:
 	var nombre := name_input.text.strip_edges()
-	var id := GameState.crear_partida(nombre)
+	var semilla := seed_input.text.strip_edges()
+	var id := GameState.crear_partida(
+		nombre,
+		semilla
+	)
 
 	if id.is_empty():
 		status_label.text = "No se pudo crear la partida."
 		return
 
 	name_input.text = ""
+	seed_input.text = ""
 	visible = false
 
 	if not GameState.iniciar_partida(id):
