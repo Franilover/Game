@@ -1014,23 +1014,11 @@ func _spawn_props_in_chunk(
 
 
 func _construir_asset_path_prop(prop: Dictionary) -> String:
-	var bioma := str(prop.get("bioma_nombre", "")).strip_edges()
-	var ecosistema := str(prop.get("ecosistema_nombre", "")).strip_edges()
-	var habitat := str(prop.get("habitat_nombre", "")).strip_edges()
 	var nombre := str(prop.get("nombre", "")).strip_edges()
-
-	if bioma.is_empty() or ecosistema.is_empty():
-		return ""
-	if habitat.is_empty() or nombre.is_empty():
+	if nombre.is_empty():
 		return ""
 
-	return (
-		"res://assets/art/props/"
-		+ bioma + "/"
-		+ ecosistema + "/"
-		+ habitat + "/"
-		+ nombre + ".png"
-	)
+	return "res://assets/art/Props/" + nombre + ".png"
 
 
 func _elegir_prop_ponderado(
