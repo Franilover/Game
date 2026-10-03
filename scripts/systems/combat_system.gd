@@ -533,6 +533,20 @@ func _aplicar_danio(
 	):
 		GameState.registrar_criatura_derrotada(objetivo)
 
+		var actor_eterium: Node = atacante
+		if actor_eterium == null:
+			actor_eterium = player
+
+		if (
+			actor_eterium != null
+			and actor_eterium.is_in_group("player")
+			and actor_eterium.has_method("absorber_eterium_de_criatura")
+		):
+			actor_eterium.call(
+				"absorber_eterium_de_criatura",
+				objetivo
+			)
+
 	if (
 		not arma.is_empty()
 		and objetivo.is_in_group("creatures")
