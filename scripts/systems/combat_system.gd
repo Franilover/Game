@@ -180,7 +180,7 @@ func _obtener_arma_equipada() -> Dictionary:
 
 	var objeto: Variant = inventario.call(
 		"obtener_objeto_equipado",
-		"arma"
+		"mano_secundaria"
 	)
 
 	if objeto is Dictionary:
