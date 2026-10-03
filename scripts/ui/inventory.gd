@@ -378,12 +378,7 @@ func _crear_slots_equipamiento() -> void:
 		child.queue_free()
 
 	var configuracion := [
-		["arma", "ARMA"],
-		["herramienta", "HERRAMIENTA"],
-		["casco", "CASCO"],
-		["pechera", "PECHERA"],
-		["pantalones", "PANTALONES"],
-		["botas", "BOTAS"]
+		["mano_secundaria", "MANO SECUNDARIA"]
 	]
 
 	for entrada in configuracion:
