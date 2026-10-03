@@ -23,18 +23,17 @@ const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
 # Cada familia visual tiene su propia textura base. La capa de bioma
 # se encarga de aislarla de los atlas de los demás biomas.
 const ZONE_TEXTURES: Dictionary = {
-	0: "res://assets/tilesets/Grass.png",
-	1: "res://assets/tilesets/Dirt.png",
-	2: "res://assets/tilesets/Mountain.png",
-	3: "res://assets/tilesets/Desert.png",
-	4: "res://assets/tilesets/Water.png",
-	5: "res://assets/tilesets/Water.png",
-	6: "res://assets/tilesets/Water.png",
-	# No usamos BASE.png como representación de terreno:
-	# era el origen de los tiles grises cuando aparecía Tundra/Ice.
-	7: "res://assets/tilesets/Mountain.png",
-	8: "res://assets/tilesets/Forest.png",
-	9: "res://assets/tilesets/Desert.png",
+	# Fallbacks usando únicamente atlas que existen actualmente en el repo.
+	0: "res://assets/tilesets/Pradera.png",
+	1: "res://assets/tilesets/Pradera.png",
+	2: "res://assets/tilesets/Montaña.png",
+	3: "res://assets/tilesets/Desierto.png",
+	4: "res://assets/tilesets/Marino.png",
+	5: "res://assets/tilesets/Marino.png",
+	6: "res://assets/tilesets/Marino.png",
+	7: "res://assets/tilesets/Montaña.png",
+	8: "res://assets/tilesets/Bosque.png",
+	9: "res://assets/tilesets/Desierto.png",
 }
 
 const TERRAIN_NAMES: PackedStringArray = [
@@ -132,7 +131,8 @@ func _crear_tileset() -> TileSet:
 func set_zone(
 	cell: Vector2i,
 	zone: int,
-	bioma_nombre: String = ""
+	bioma_nombre: String = "",
+	bioma_textura: String = ""
 ) -> void:
 	if zone < 0 or zone >= ZONE_TEXTURES.size():
 		return
@@ -146,7 +146,8 @@ func set_zone(
 			clave,
 			tile_key,
 			zone,
-			layer
+			layer,
+			bioma_textura
 		)
 
 	if not _base_tiles.has(tile_key):
@@ -197,11 +198,13 @@ func _crear_base_tile(
 	bioma_nombre: String,
 	tile_key: String,
 	zone: int,
-	layer: TileMapDual
+	layer: TileMapDual,
+	bioma_textura: String = ""
 ) -> void:
 	var texture := _cargar_textura_bioma(
 		bioma_nombre,
-		zone
+		zone,
+		bioma_textura
 	)
 
 	if texture == null:
@@ -278,8 +281,17 @@ func _crear_base_tile(
 
 func _cargar_textura_bioma(
 	bioma_nombre: String,
-	zone: int
+	zone: int,
+	bioma_textura: String = ""
 ) -> Texture2D:
+	if not bioma_textura.strip_edges().is_empty():
+		var textura_canonica := load(
+			bioma_textura.strip_edges()
+		) as Texture2D
+
+		if _textura_valida(textura_canonica):
+			return textura_canonica
+
 	var nombre := bioma_nombre.strip_edges()
 
 	if not nombre.is_empty():
@@ -313,7 +325,7 @@ func _cargar_textura_zone(zone: int) -> Texture2D:
 		return texture
 
 	var fallback := load(
-		"res://assets/tilesets/world_tileset.png"
+		"res://assets/tilesets/Pradera.png"
 	) as Texture2D
 
 	if _textura_valida(fallback):
