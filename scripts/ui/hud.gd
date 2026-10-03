@@ -22,11 +22,14 @@ var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
 
 var interaction_prompt: Label = null
+var discovery_notice: Label = null
+var _discovery_notice_timer: float = 0.0
 
 
 func _ready() -> void:
 	_buscar_nodos_hud()
 	_preparar_location()
+	_preparar_aviso_descubrimiento()
 
 	if location_panel:
 		location_panel.visible = false
@@ -36,6 +39,9 @@ func _ready() -> void:
 
 	_buscar_player()
 	_buscar_world_generator()
+
+	if GameState.has_signal("descubrimiento_mundo"):
+		GameState.descubrimiento_mundo.connect(_al_descubrimiento_mundo)
 
 	print("HUD: iniciado.")
 
@@ -71,6 +77,57 @@ func configurar(jugador: Node = null, generador: Node = null) -> void:
 
 	if mostrar_contexto_mundo:
 		_actualizar_contexto()
+
+
+func _preparar_aviso_descubrimiento() -> void:
+	discovery_notice = Label.new()
+	discovery_notice.name = "DiscoveryNotice"
+	discovery_notice.text = ""
+	discovery_notice.visible = false
+	discovery_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	discovery_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	discovery_notice.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1.0))
+	discovery_notice.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+	discovery_notice.add_theme_constant_override("shadow_offset_x", 1)
+	discovery_notice.add_theme_constant_override("shadow_offset_y", 1)
+	discovery_notice.add_theme_font_size_override("font_size", 14)
+	discovery_notice.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	discovery_notice.position.y = 34
+	discovery_notice.size = Vector2(360, 30)
+	add_child(discovery_notice)
+
+
+func _al_descubrimiento_mundo(nivel: String, id: String) -> void:
+	var nombre := ""
+	match nivel:
+		"bioma":
+			nombre = str(WorldData.obtener_bioma(id).get("nombre", ""))
+		"ecosistema":
+			nombre = str(WorldData.obtener_ecosistema(id).get("nombre", ""))
+		"habitat":
+			nombre = str(WorldData.obtener_habitat(id).get("nombre", ""))
+		"criatura":
+			nombre = str(WorldData.obtener_criatura(id).get("nombre", ""))
+
+	if nombre.is_empty():
+		return
+
+	var tipo := nivel.capitalize()
+	if nivel == "habitat":
+		tipo = "Hábitat"
+	elif nivel == "criatura":
+		tipo = "Criatura"
+	elif nivel == "bioma":
+		tipo = "Bioma"
+	elif nivel == "ecosistema":
+		tipo = "Ecosistema"
+
+	if discovery_notice == null:
+		return
+
+	discovery_notice.text = "Nuevo conocimiento descubierto\n" + tipo + ": " + nombre
+	discovery_notice.visible = true
+	_discovery_notice_timer = 3.0
 
 
 func _buscar_nodos_hud() -> void:
@@ -127,6 +184,11 @@ func _process(delta: float) -> void:
 
 	if not is_instance_valid(player):
 		return
+
+	if _discovery_notice_timer > 0.0:
+		_discovery_notice_timer = maxf(_discovery_notice_timer - delta, 0.0)
+		if _discovery_notice_timer <= 0.0 and discovery_notice:
+			discovery_notice.visible = false
 
 	_actualizar_vida()
 	_actualizar_stamina()
