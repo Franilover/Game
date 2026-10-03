@@ -19,7 +19,12 @@ func _preparar_prueba() -> void:
     if tilemap.tile_set == null:
         tilemap.tile_set = _crear_tileset_grass()
 
-    call_deferred("_dibujar_prueba")
+    # El TileMapDual necesita un frame para construir el watcher,
+    # leer las peering bits del atlas y generar las reglas DualGrid.
+    await get_tree().process_frame
+    tilemap._changed()
+    await get_tree().process_frame
+    _dibujar_prueba()
 
 
 func _dibujar_prueba() -> void:
