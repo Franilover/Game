@@ -309,12 +309,11 @@ func get_factores_ambientales_at(
 	)
 
 	var estacion_id := ""
-	var atmosfera := get_node_or_null("WorldAtmosphere")
-	if atmosfera != null and atmosfera.has_method(
+	if atmosphere != null and atmosphere.has_method(
 		"obtener_estacion_id"
 	):
 		estacion_id = str(
-			atmosfera.call("obtener_estacion_id")
+			atmosphere.call("obtener_estacion_id")
 		)
 
 	var habitats := terrain.get_habitats_at(tile)
