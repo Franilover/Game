@@ -45,6 +45,7 @@ func _inicializar_navegacion_tabs() -> void:
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
+	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
 
 	boton_inventario.pressed.connect(func() -> void:
 		tabs.current_tab = 0
@@ -54,6 +55,9 @@ func _inicializar_navegacion_tabs() -> void:
 	)
 	boton_mapa.pressed.connect(func() -> void:
 		tabs.current_tab = 2
+	)
+	boton_relaciones.pressed.connect(func() -> void:
+		tabs.current_tab = 3
 	)
 
 	boton_inventario.button_pressed = true
