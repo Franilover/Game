@@ -8,6 +8,8 @@ var health: int
 var mana: int
 var is_alive: bool = true
 
+const PROFUNDIDAD_BASE: int = 1000
+
 signal health_changed(current: int, maximum: int)
 signal mana_changed(current: int, maximum: int)
 signal died
@@ -19,9 +21,25 @@ func _ready() -> void:
 
 	add_to_group("damageable")
 	_crear_hurtbox()
+	_actualizar_profundidad()
 
 	health_changed.emit(health, max_health)
 	mana_changed.emit(mana, max_mana)
+
+
+func _process(_delta: float) -> void:
+	_actualizar_profundidad()
+
+
+func _actualizar_profundidad() -> void:
+	# El punto de apoyo del personaje está unos píxeles por debajo
+	# del origen. La profundidad se calcula con ese punto, no con
+	# el centro visual del sprite.
+	z_index = clampi(
+		PROFUNDIDAD_BASE + int(global_position.y + 2.0),
+		-4096,
+		4096
+	)
 
 
 func _crear_hurtbox() -> void:
