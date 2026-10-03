@@ -510,8 +510,9 @@ func _aplicar_especie_eterium_game(reglas: Array) -> void:
 		_especie_eterium_game = regla.duplicate(true)
 		_especie_eterium_game_ready = true
 		var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana))))
+		var eterium_inicial := clampi(int(regla.get("eterium_inicial", capacidad)), 0, capacidad)
 		max_mana = capacidad
-		mana = capacidad
+		mana = eterium_inicial
 		if bool(regla.get("vida_eterium_compartidos", false)):
 			max_health = capacidad
 			health = capacidad
