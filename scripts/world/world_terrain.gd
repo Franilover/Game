@@ -38,6 +38,8 @@ var chunk_size_tiles: int = 32
 
 var tilemap_ground: TileMapLayer
 var tilemap_detail: TileMapLayer
+var tilemap_dual_grass: TileMapDual
+var tilemap_dual_dirt: TileMapDual
 
 
 var _biomas: Array = []
@@ -174,7 +176,7 @@ func cargar_datos_mundo() -> void:
 func _crear_capas() -> void:
 	if tilemap_ground == null:
 		tilemap_ground = TileMapLayer.new()
-		tilemap_ground.name = "Ground"
+		tilemap_ground.name = "GroundLegacy"
 		add_child(tilemap_ground)
 
 	if tilemap_detail == null:
@@ -182,8 +184,22 @@ func _crear_capas() -> void:
 		tilemap_detail.name = "Detail"
 		add_child(tilemap_detail)
 
+	if tilemap_dual_grass == null:
+		tilemap_dual_grass = TileMapDual.new()
+		tilemap_dual_grass.name = "TileMapDual_Grass"
+		tilemap_dual_grass.godot_4_3_compatibility = false
+		add_child(tilemap_dual_grass)
+
+	if tilemap_dual_dirt == null:
+		tilemap_dual_dirt = TileMapDual.new()
+		tilemap_dual_dirt.name = "TileMapDual_Dirt"
+		tilemap_dual_dirt.godot_4_3_compatibility = false
+		add_child(tilemap_dual_dirt)
+
 	tilemap_ground.z_index = 0
-	tilemap_detail.z_index = 1
+	tilemap_dual_grass.z_index = 1
+	tilemap_dual_dirt.z_index = 1
+	tilemap_detail.z_index = 2
 
 
 func _crear_tileset() -> void:
@@ -235,6 +251,19 @@ func _crear_tileset() -> void:
 
 	tilemap_ground.tile_set = tileset
 	tilemap_detail.tile_set = tileset
+
+	var grass_tileset := _crear_tileset_dual(
+		"res://assets/tilesets/Grass.png"
+	)
+	var dirt_tileset := _crear_tileset_dual(
+		"res://assets/tilesets/Dirt.png"
+	)
+
+	if tilemap_dual_grass != null:
+		tilemap_dual_grass.tile_set = grass_tileset
+
+	if tilemap_dual_dirt != null:
+		tilemap_dual_dirt.tile_set = dirt_tileset
 
 
 func _crear_noises() -> void:
@@ -567,6 +596,17 @@ func _finalizar_chunk() -> void:
 
 	_ultimo_chunk_generado = coord
 
+	var celdas_dual: Array[Vector2i] = []
+	for y in range(chunk_size_tiles):
+		for x in range(chunk_size_tiles):
+			celdas_dual.append(
+				Vector2i(
+					coord.x * chunk_size_tiles + x,
+					coord.y * chunk_size_tiles + y
+				)
+			)
+	_refrescar_dual(celdas_dual)
+
 	_generation_task.clear()
 
 
@@ -635,9 +675,26 @@ func descargar_chunk(
 				cell
 			)
 
+			if tilemap_dual_grass != null:
+				tilemap_dual_grass.erase_cell(cell)
+
+			if tilemap_dual_dirt != null:
+				tilemap_dual_dirt.erase_cell(cell)
+
 	_loaded_chunks.erase(
 		chunk_coord
 	)
+
+	var celdas_dual: Array[Vector2i] = []
+	for y in range(chunk_size_tiles):
+		for x in range(chunk_size_tiles):
+			celdas_dual.append(
+				Vector2i(
+					origin_x + x,
+					origin_y + y
+				)
+			)
+	_refrescar_dual(celdas_dual)
 
 
 func _bioma_index_at_tile(
@@ -951,15 +1008,114 @@ func _pintar_tile(
 	tile: Vector2i,
 	zona: int
 ) -> void:
-	var atlas_coord: Vector2i = (
-		_tile_for_zone(zona)
-	)
+	match zona:
+		Zone.GRASS:
+			if tilemap_dual_grass != null:
+				tilemap_dual_grass.draw_cell(tile, 1)
+			if tilemap_dual_dirt != null:
+				tilemap_dual_dirt.erase_cell(tile)
+			tilemap_ground.erase_cell(tile)
 
-	tilemap_ground.set_cell(
-		tile,
+		Zone.DIRT:
+			if tilemap_dual_dirt != null:
+				tilemap_dual_dirt.draw_cell(tile, 1)
+			if tilemap_dual_grass != null:
+				tilemap_dual_grass.erase_cell(tile)
+			tilemap_ground.erase_cell(tile)
+
+		_:
+			if tilemap_dual_grass != null:
+				tilemap_dual_grass.erase_cell(tile)
+			if tilemap_dual_dirt != null:
+				tilemap_dual_dirt.erase_cell(tile)
+
+			var atlas_coord: Vector2i = _tile_for_zone(zona)
+			tilemap_ground.set_cell(tile, 0, atlas_coord)
+
+
+func _crear_tileset_dual(
+	texture_path: String
+) -> TileSet:
+	var texture: Texture2D = load(texture_path) as Texture2D
+
+	if texture == null:
+		push_error(
+			"WorldTerrain: no se pudo cargar " + texture_path
+		)
+		return TileSet.new()
+
+	var tile_set := TileSet.new()
+	tile_set.tile_size = Vector2i(tile_size, tile_size)
+
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = texture
+	atlas.texture_region_size = Vector2i(tile_size, tile_size)
+
+	var tiles_x: int = texture.get_width() / tile_size
+	var tiles_y: int = texture.get_height() / tile_size
+
+	for y in range(tiles_y):
+		for x in range(tiles_x):
+			atlas.create_tile(Vector2i(x, y))
+
+	tile_set.add_source(atlas, 0)
+	tile_set.add_terrain_set()
+	tile_set.set_terrain_set_mode(
 		0,
-		atlas_coord
+		TileSet.TERRAIN_MODE_MATCH_CORNERS
 	)
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 0, "<any>")
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 1, "Terrain")
+
+	var sequence: Array[Vector2i] = [
+		Vector2i(0, 3), Vector2i(3, 3),
+		Vector2i(0, 2), Vector2i(1, 2),
+		Vector2i(0, 0), Vector2i(3, 2),
+		Vector2i(2, 3), Vector2i(3, 1),
+		Vector2i(1, 3), Vector2i(0, 1),
+		Vector2i(1, 0), Vector2i(2, 2),
+		Vector2i(3, 0), Vector2i(2, 0),
+		Vector2i(1, 1), Vector2i(2, 1),
+	]
+
+	var neighbors: Array[TileSet.CellNeighbor] = [
+		TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
+		TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
+		TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
+		TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
+	]
+
+	for index in range(sequence.size()):
+		var data: TileData = atlas.get_tile_data(sequence[index], 0)
+		data.terrain_set = 0
+		var bits: int = index
+		for neighbor_index in range(neighbors.size()):
+			var terrain: int = 1 if (bits & 1) != 0 else 0
+			data.set_terrain_peering_bit(
+				neighbors[neighbor_index],
+				terrain
+			)
+			bits >>= 1
+
+	atlas.get_tile_data(Vector2i(0, 3), 0).terrain = 0
+	atlas.get_tile_data(Vector2i(2, 1), 0).terrain = 1
+
+	return tile_set
+
+
+func _refrescar_dual(
+	celdas: Array[Vector2i]
+) -> void:
+	if celdas.is_empty():
+		return
+
+	if tilemap_dual_grass != null:
+		tilemap_dual_grass._update_cells(celdas, false)
+
+	if tilemap_dual_dirt != null:
+		tilemap_dual_dirt._update_cells(celdas, false)
 
 
 func _tile_for_zone(
