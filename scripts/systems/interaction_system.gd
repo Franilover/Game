@@ -65,6 +65,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("primary_action"):
 		return
 
+	# La interacción contextual tiene prioridad absoluta.
+	# Si hay algo recogible/dialogable dentro del alcance, el click
+	# izquierdo se consume aquí antes de mirar la hotbar.
+	if objetivo_actual != null and is_instance_valid(objetivo_actual):
+		if objetivo_actual.has_method("interact"):
+			objetivo_actual.call("interact", player)
+			get_viewport().set_input_as_handled()
+		return
+
 	var inventory: Node = get_tree().get_first_node_in_group("inventory")
 	var objeto_activo: Dictionary = {}
 
@@ -73,9 +82,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if objeto_activo_variant is Dictionary:
 			objeto_activo = (objeto_activo_variant as Dictionary).duplicate(true)
 
-	# Los objetos colocables se usan con el click izquierdo de la hotbar.
-	# Si hay otro objeto en la hotbar, no convertimos ese click en una
-	# interacción contextual accidental.
+	# Sin interacción contextual, los objetos colocables se usan con
+	# el click izquierdo de la hotbar.
 	if not objeto_activo.is_empty():
 		var world_items: Node = GarliaWorldItems
 		if (
@@ -102,14 +110,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		# interacción contextual.
 		return
 
-	if objetivo_actual == null or not is_instance_valid(objetivo_actual):
-		return
-
-	if not objetivo_actual.has_method("interact"):
-		return
-
-	objetivo_actual.call("interact", player)
-	get_viewport().set_input_as_handled()
 
 
 func _interaccion_bloqueada() -> bool:
