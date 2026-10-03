@@ -357,7 +357,7 @@ func summon_criatura(
 
 		criatura_data = WorldData.obtener_criatura(
 			criatura_id
-		)
+		).duplicate(true)
 
 		if criatura_data.is_empty():
 			return {
@@ -389,6 +389,8 @@ func summon_criatura(
 		)
 		if not dialogo_personaje.is_empty():
 			criatura_data["dialogo"] = dialogo_personaje
+		else:
+			criatura_data.erase("dialogo")
 
 		nombre_inicial = str(
 			personaje_game.get(
@@ -410,8 +412,6 @@ func summon_criatura(
 				)
 			}
 
-		# /summon Humano crea un personaje individual de la tabla
-		# personajes_game, usando la especie Humano como cuerpo base.
 		if str(
 			criatura_data.get(
 				"nombre",
@@ -440,6 +440,7 @@ func summon_criatura(
 					)
 				]
 
+				criatura_data = criatura_data.duplicate(true)
 				criatura_data["nombre_individual"] = str(
 					elegido.get(
 						"nombre",
@@ -460,6 +461,8 @@ func summon_criatura(
 				)
 				if not dialogo_personaje.is_empty():
 					criatura_data["dialogo"] = dialogo_personaje
+				else:
+					criatura_data.erase("dialogo")
 
 				nombre_inicial = str(
 					elegido.get(
