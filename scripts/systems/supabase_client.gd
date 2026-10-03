@@ -31,7 +31,7 @@ const API_ESPECIES_JUGABLES := (
 	"/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
 )
 const API_ESPECIE_ETERIUM_GAME := (
-	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
+	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
 )
 
 
