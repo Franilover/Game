@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/dev/tilemap_dual_test.gd" id="1_test"]
+[ext_resource type="Script" path="res://addons/TileMapDual/tile_map_dual.gd" id="2_dual"]
 
 [node name="TileMapDualTest" type="Node2D"]
 script = ExtResource("1_test")
