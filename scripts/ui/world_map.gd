@@ -10,6 +10,7 @@ var _player: Node2D = null
 var _explorado: Dictionary = {}
 var _tile_size: int = 32
 var _ultima_actualizacion: Vector2i = Vector2i(2147483647, 2147483647)
+var _texturas: Dictionary = {}
 
 
 func _ready() -> void:
@@ -156,11 +157,7 @@ func _draw() -> void:
 				)
 				continue
 
-			draw_rect(
-				rect,
-				_color_zona(tile),
-				true
-			)
+			_dibujar_tile_real(tile, rect)
 
 	var posicion_jugador := Vector2(
 		mapa_rect.position.x
@@ -182,6 +179,63 @@ func _draw() -> void:
 		1.2,
 		Color("#fff2c2")
 	)
+
+
+func _dibujar_tile_real(tile: Vector2i, rect: Rect2) -> void:
+	if _world_generator == null:
+		return
+
+	var zona: int = int(_world_generator.call("get_zona_at", tile))
+	var textura: Texture2D = _obtener_textura_zona(tile, zona)
+	if textura == null:
+		draw_rect(rect, _color_zona(tile), true)
+		return
+
+	# El mundo usa atlas 4x4 de 32x32. Tomamos exactamente la misma
+	# celda base que WorldTerrainVisual usa para el terreno.
+	var region := Rect2(3.0 * float(_tile_size_real()), 3.0 * float(_tile_size_real()), float(_tile_size_real()), float(_tile_size_real()))
+	draw_texture_rect_region(textura, rect, region)
+
+
+func _tile_size_real() -> int:
+	if _world_generator != null and _world_generator.has_method("get_tile_size"):
+		return maxi(int(_world_generator.call("get_tile_size")), 1)
+	return maxi(_tile_size, 1)
+
+
+func _obtener_textura_zona(tile: Vector2i, zona: int) -> Texture2D:
+	var bioma_variant: Variant = _world_generator.call("get_bioma_at", tile)
+	var bioma_nombre := ""
+	if bioma_variant is Dictionary:
+		bioma_nombre = str((bioma_variant as Dictionary).get("nombre", "")).strip_edges()
+
+	var clave := bioma_nombre + "::" + str(zona)
+	if _texturas.has(clave):
+		return _texturas[clave]
+
+	var paths: Array[String] = []
+	if not bioma_nombre.is_empty():
+		paths.append("res://assets/tilesets/" + bioma_nombre + ".png")
+
+	var nombres := [
+		"Grass.png", "Dirt.png", "Mountain.png", "Desert.png",
+		"Water.png", "Water.png", "Water.png", "BASE.png",
+		"Forest.png", "Desert.png"
+	]
+	if zona >= 0 and zona < nombres.size():
+		paths.append("res://assets/tilesets/" + nombres[zona])
+
+	paths.append("res://assets/tilesets/world_tileset.png")
+
+	var textura: Texture2D = null
+	for path in paths:
+		textura = load(path) as Texture2D
+		if textura != null and textura.get_width() >= _tile_size_real() * 4 and textura.get_height() >= _tile_size_real() * 4:
+			break
+		textura = null
+
+	_texturas[clave] = textura
+	return textura
 
 
 func _color_zona(tile: Vector2i) -> Color:
