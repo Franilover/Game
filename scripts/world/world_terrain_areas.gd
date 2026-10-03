@@ -143,10 +143,15 @@ func zona_final_desde_array(zonas: Array, x: int, y: int, zona_base: int) -> int
 	return zona_base
 
 func agua_toca_tierra_en_array(zonas: Array, x: int, y: int) -> bool:
-	var direcciones := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
-	for direccion in direcciones:
-		var nx := x + direccion.x
-		var ny := y + direccion.y
+	var direcciones: Array[Vector2i] = [
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(0, 1),
+		Vector2i(0, -1)
+	]
+	for direccion: Vector2i in direcciones:
+		var nx: int = x + direccion.x
+		var ny: int = y + direccion.y
 		if ny < 0 or ny >= zonas.size() or nx < 0 or nx >= zonas[ny].size():
 			continue
 		var vecino := int(zonas[ny][nx])
