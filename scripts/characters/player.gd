@@ -157,7 +157,8 @@ func _physics_process(delta: float) -> void:
 		if (
 			_shift_was_pressed
 			and _shift_hold_timer < shift_run_hold_threshold
-			and state == State.IDLE
+			and state != State.JUMP
+			and state != State.DASH
 		):
 			if _puede_hacer_dash():
 				_iniciar_dash()
