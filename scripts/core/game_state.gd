@@ -449,14 +449,12 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	if facing_variant is Vector2:
 		player_facing = facing_variant as Vector2
 
-	var player_flags_variant: Variant = jugador.get(
-		"_proceso_ium_equipado"
-	)
-
-	if player_flags_variant is Dictionary:
-		flags["proceso_ium_equipado"] = (
-			player_flags_variant as Dictionary
-		).duplicate(true)
+	if jugador.has_method("obtener_estado_ium"):
+		var player_flags_variant: Variant = jugador.call("obtener_estado_ium")
+		if player_flags_variant is Dictionary:
+			flags["proceso_ium_equipado"] = (
+				player_flags_variant as Dictionary
+			).duplicate(true)
 
 
 	if world_gen != null:
@@ -1091,9 +1089,9 @@ func _aplicar_estado_al_juego() -> void:
 	if proceso_variant is Dictionary and not (
 		proceso_variant as Dictionary
 	).is_empty():
-		if jugador.has_method("equipar_proceso_ium"):
+		if jugador.has_method("cargar_estado_ium"):
 			jugador.call(
-				"equipar_proceso_ium",
+				"cargar_estado_ium",
 				(proceso_variant as Dictionary).duplicate(true)
 			)
 
