@@ -28,6 +28,7 @@ var visual: WorldTerrainVisual
 var areas: WorldTerrainAreas
 
 
+var _world_data: WorldDataService = null
 var _biomas: Array = []
 var _ecosistemas: Array = []
 
@@ -56,12 +57,18 @@ var _profiler_zone_ms: float = 0.0
 func configurar(
 	nuevo_seed: int,
 	nuevo_tile_size: int,
-	nuevo_chunk_size: int
+	nuevo_chunk_size: int,
+	nuevo_world_data: WorldDataService = null
 ) -> void:
 	# WorldTerrain es una capa puramente visual de suelo. Nunca debe
 	# quedar por encima de entidades aunque el padre tenga otro z_index.
 	z_as_relative = false
 	z_index = -4096
+
+	_world_data = nuevo_world_data
+	if _world_data == null:
+		push_error("WorldTerrain: WorldDataService inválido.")
+		return
 
 	map_seed = nuevo_seed
 	tile_size = nuevo_tile_size
@@ -77,7 +84,11 @@ func cargar_datos_mundo() -> void:
 	_ecosistemas.clear()
 	_ecosistema_indices.clear()
 
-	_biomas = WorldData.obtener_biomas()
+	if _world_data == null:
+		push_error("WorldTerrain: WorldDataService no configurado.")
+		return
+
+	_biomas = _world_data.obtener_biomas()
 
 	for i in range(_biomas.size()):
 		var bioma_variant: Variant = _biomas[i]
@@ -127,7 +138,7 @@ func cargar_datos_mundo() -> void:
 			)
 
 	var sin_bioma: Array = (
-		WorldData.obtener_ecosistemas_sin_bioma()
+		_world_data.obtener_ecosistemas_sin_bioma()
 	)
 
 	for i in range(sin_bioma.size()):
