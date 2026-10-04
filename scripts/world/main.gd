@@ -255,5 +255,7 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 
 
 func _configurar_social() -> void:
+	if SocialRepository.has_method("configurar"):
+		SocialRepository.call("configurar", _supabase_client)
 	if RelationshipSystem.has_method("configurar"):
 		RelationshipSystem.call("configurar", SocialRepository)
