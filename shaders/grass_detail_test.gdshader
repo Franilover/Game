@@ -17,7 +17,7 @@ float pixel_blade(vec2 uv, vec2 cell, float seed, float scale) {
     float r = hash21(cell + vec2(seed, seed * 2.17));
     float r2 = hash21(cell + vec2(seed + 19.7, seed + 43.1));
     float center = 0.5 + (r - 0.5) * 0.55;
-    float height = mix(0.34, 0.78, r2) * scale;
+    float height = mix(0.45, 0.95, r2) * scale;
     float y = 1.0 - uv.y;
 
     if (y <= 0.0 || y >= height) {
@@ -28,8 +28,8 @@ float pixel_blade(vec2 uv, vec2 cell, float seed, float scale) {
     float sway = sin(TIME * wind_speed + r * 6.28318) * wind_strength;
     float x = center + sway * progress;
 
-    float stepped_y = floor(progress * 5.0) / 5.0;
-    float stepped_width = mix(0.12, 0.028, stepped_y);
+    float stepped_y = floor(progress * 3.0) / 3.0;
+    float stepped_width = mix(0.16, 0.075, stepped_y);
     return step(abs(uv.x - x), stepped_width);
 }
 
