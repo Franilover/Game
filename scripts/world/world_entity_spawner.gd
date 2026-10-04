@@ -42,6 +42,7 @@ var peso_destacadas: float = 4.0
 
 
 var _terrain: WorldTerrain
+var _entities_root: Node = null
 
 var _creatures_by_chunk: Dictionary = {}
 var _characters_by_chunk: Dictionary = {}
@@ -50,9 +51,14 @@ var _props_by_chunk: Dictionary = {}
 
 
 func configurar(
-	terrain: WorldTerrain
+	terrain: WorldTerrain,
+	entities_root: Node
 ) -> void:
 	_terrain = terrain
+	_entities_root = entities_root
+
+	if _entities_root == null or not is_instance_valid(_entities_root):
+		push_error("WorldEntitySpawner: Entity root inválido.")
 
 
 func spawn_chunk(
@@ -63,24 +69,9 @@ func spawn_chunk(
 	):
 		return
 
-	var current_scene: Node = (
-		get_tree().current_scene
-	)
-
-	if current_scene == null:
-		return
-
-	var entities: Node = (
-		current_scene.get_node_or_null(
-			"Entities"
-		)
-	)
-
-	if entities == null:
-		push_warning(
-			"WorldEntitySpawner: no existe "
-			+ "Main/Entities."
-		)
+	var entities: Node = _entities_root
+	if entities == null or not is_instance_valid(entities):
+		push_warning("WorldEntitySpawner: Entity root no configurado.")
 		return
 
 	var rng := RandomNumberGenerator.new()
@@ -488,26 +479,11 @@ func summon_criatura(
 					)
 				)
 
-	var current_scene: Node = (
-		get_tree().current_scene
-	)
-
-	if current_scene == null:
+	var entities: Node = _entities_root
+	if entities == null or not is_instance_valid(entities):
 		return {
 			"ok": false,
-			"mensaje": "No existe la escena actual."
-		}
-
-	var entities: Node = (
-		current_scene.get_node_or_null(
-			"Entities"
-		)
-	)
-
-	if entities == null:
-		return {
-			"ok": false,
-			"mensaje": "No existe el nodo Main/Entities."
+			"mensaje": "Entity root no configurado."
 		}
 
 	var criatura: Node = (
@@ -808,12 +784,8 @@ func _spawn_characters_in_chunk(
 	if personajes.is_empty():
 		return
 
-	var current_scene: Node = get_tree().current_scene
-	if current_scene == null:
-		return
-
-	var entities: Node = current_scene.get_node_or_null("Entities")
-	if entities == null:
+	var entities: Node = _entities_root
+	if entities == null or not is_instance_valid(entities):
 		return
 
 	var creados: Array = []
