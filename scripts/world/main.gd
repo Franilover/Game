@@ -35,8 +35,7 @@ func _ready() -> void:
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
-	if WorldData.has_method("configurar_dependencias"):
-		WorldData.call("configurar_dependencias", _supabase_client)
+	WorldData.configurar_dependencias(_supabase_client)
 
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
@@ -90,8 +89,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	_configurar_interaccion(world_gen)
 	_configurar_combate(_world_context, world_gen)
 	_configurar_inventario()
-	if GameState.has_method("configurar_dependencias"):
-		GameState.call("configurar_dependencias", _inventory, _player, _world_context, _world_atmosphere, MissionManager)
+	GameState.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManager)
 	_configurar_dialogo()
 	MissionManager.configurar_dependencias(world_gen.entity_manager, WorldData)
 	_configurar_social()
@@ -161,8 +159,7 @@ func _configurar_interaccion(world_gen: WorldGenerator) -> void:
 	if not _interaction_system.objetivo_cambiado.is_connected(_al_cambio_objetivo_interaccion):
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
-	if _interaction_system.has_method("configurar"):
-		_interaction_system.configurar(_player, _inventory, _world_items, _input_router, world_gen.entity_manager)
+	_interaction_system.configurar(_player, _inventory, _world_items, _input_router, world_gen.entity_manager)
 	else:
 		push_error("Main: InteractionSystem no tiene configurar().")
 
@@ -215,10 +212,8 @@ func _configurar_inventario() -> void:
 	var router: Node = _input_router
 	if router != null:
 		_inventory.configurar_input_gate(router)
-	if _pause_menu.has_method("configurar"):
-		_pause_menu.call("configurar", _inventory)
-	if _death_menu.has_method("configurar"):
-		_death_menu.call("configurar", _player, _inventory)
+	_pause_menu.configurar(_inventory)
+	_death_menu.configurar(_player, _inventory)
 
 
 func _configurar_dialogo() -> void:
@@ -268,17 +263,14 @@ func _inicializar_ium() -> void:
 		push_error("Main: falta infraestructura Supabase/IUMRepository.")
 		return
 
-	if _ium_repository.has_method("configurar"):
-		_ium_repository.call("configurar", _supabase_client)
-	if _ium_manager.has_method("configurar"):
-		_ium_manager.call("configurar", _ium_repository, _player)
+	_ium_repository.configurar(_supabase_client)
+	_ium_manager.configurar(_ium_repository, _player)
 
 	if _ium_lab == null:
 		push_error("Main: no se encontró UI/IUMLab.")
 		return
 
-	if _ium_lab.has_method("configurar"):
-		_ium_lab.call("configurar", _ium_manager, _admin_console)
+	_ium_lab.configurar(_ium_manager, _admin_console)
 
 	if not _ium_manager.proceso_equipado_signal.is_connected(_al_equipar_proceso):
 		_ium_manager.proceso_equipado_signal.connect(_al_equipar_proceso)
@@ -298,10 +290,8 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 
 
 func _configurar_social() -> void:
-	if SocialRepository.has_method("configurar"):
-		SocialRepository.call("configurar", _supabase_client)
-	if RelationshipSystem.has_method("configurar"):
-		RelationshipSystem.call("configurar", SocialRepository, GameState)
+	SocialRepository.configurar(_supabase_client)
+	RelationshipSystem.configurar(SocialRepository, GameState)
 
 
 func _al_cargar_relaciones_ecologicas(relaciones: Array) -> void:
