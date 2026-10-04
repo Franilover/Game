@@ -12,9 +12,6 @@ var slots_container: HBoxContainer = null
 var slot_nodes: Array[Button] = []
 
 var _inventario_conectado: bool = false
-var _ultima_firma_inventario: String = ""
-var _tiempo_sincronizacion: float = 0.0
-const SINCRONIZACION_INTERVALO: float = 0.08
 
 
 func _ready() -> void:
@@ -86,16 +83,6 @@ func _unhandled_input(
 			_mover_seleccion(1)
 
 			get_viewport().set_input_as_handled()
-
-
-func _process(delta: float) -> void:
-	if inventory == null or not is_instance_valid(inventory):
-		return
-	_tiempo_sincronizacion -= delta
-	if _tiempo_sincronizacion > 0.0:
-		return
-	_tiempo_sincronizacion = SINCRONIZACION_INTERVALO
-	_actualizar()
 
 
 func configurar_inventario(nuevo_inventario: GarliaInventory) -> void:
