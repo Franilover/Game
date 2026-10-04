@@ -472,8 +472,6 @@ func _actualizar_contexto() -> void:
 	var frame_ms: float = 1000.0 / float(maxi(fps, 1))
 	var process_ms: float = float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
 	var physics_ms: float = float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
-	var draw_calls_2d: int = int(Performance.get_monitor(Performance.RENDER_2D_DRAW_CALLS_IN_FRAME))
-	var items_2d: int = int(Performance.get_monitor(Performance.RENDER_2D_ITEMS_IN_FRAME))
 	var total_draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 	var objects: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
 	var nodes: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
@@ -491,7 +489,6 @@ func _actualizar_contexto() -> void:
 		"RENDIMIENTO\n"
 		+ "FPS: " + str(fps) + "    Frame: " + ("%.1f" % frame_ms) + " ms\n"
 		+ "Proceso: " + ("%.2f" % process_ms) + " ms    Física: " + ("%.2f" % physics_ms) + " ms\n"
-		+ "Draw 2D: " + str(draw_calls_2d) + "    Items 2D: " + str(items_2d) + "\n"
 		+ "Draw total: " + str(total_draw_calls) + "    Objetos: " + str(objects) + "    Nodos: " + str(nodes) + "\n"
 		+ "Memoria estática: " + ("%.1f" % static_memory_mb) + " MB\n\n"
 		+ "MUNDO\n"
