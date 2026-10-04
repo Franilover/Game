@@ -31,9 +31,10 @@ var _modulacion: CanvasModulate
 
 
 func _ready() -> void:
-	_modulacion = CanvasModulate.new()
-	_modulacion.name = "DayNightModulation"
-	get_tree().current_scene.add_child.call_deferred(_modulacion)
+	_modulacion = get_node_or_null("DayNightModulation") as CanvasModulate
+	if _modulacion == null:
+		push_error("WorldAtmosphere: falta el nodo DayNightModulation en la escena.")
+		return
 
 	if not WorldData.mundo_listo.is_connected(
 		_al_mundo_listo
