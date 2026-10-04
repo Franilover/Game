@@ -1253,6 +1253,7 @@ func establecer_hotbar_slot(
 		return false
 
 	hotbar_indices[indice_hotbar] = indice_inventario
+	_sincronizar_runtime()
 
 	inventory_changed.emit()
 	_emitir_objeto_activo()
@@ -1265,6 +1266,7 @@ func seleccionar_hotbar(indice_hotbar: int) -> void:
 		return
 
 	indice_hotbar_activo = indice_hotbar
+	inventory_controller.seleccionar_hotbar(indice_hotbar)
 
 	# La hotbar tiene su propia selección.
 	# NO seleccionamos el slot correspondiente del inventario.
