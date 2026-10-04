@@ -161,3 +161,30 @@ func desequipar_a_inventario(slot: String) -> bool:
 	state.items[libre] = objeto.duplicate(true)
 	equipment.desequipar(slot)
 	return true
+
+func establecer_hotbar_slot(indice_hotbar: int, indice_inventario: int) -> bool:
+	if indice_hotbar < 0 or indice_hotbar >= hotbar.indices.size():
+		return false
+	if indice_inventario < 0 or indice_inventario >= state.items.size():
+		return false
+	hotbar.indices[indice_hotbar] = indice_inventario
+	return true
+
+func consumir_durabilidad(indice: int) -> bool:
+	if indice < 0 or indice >= state.items.size() or state.items[indice].is_empty():
+		return false
+	var objeto: Dictionary = state.items[indice]
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+	var propiedades: Dictionary = propiedades_variant as Dictionary
+	var maxima_variant: Variant = propiedades.get("durabilidad", null)
+	if not (maxima_variant is int or maxima_variant is float):
+		return false
+	var maxima := maxi(1, int(maxima_variant))
+	var actual := maxi(0, int(objeto.get("durabilidad_actual", maxima))) - 1
+	if actual <= 0:
+		state.items[indice] = {}
+	else:
+		state.items[indice]["durabilidad_actual"] = actual
+	return true
