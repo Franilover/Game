@@ -432,3 +432,8 @@ Se eliminó reflexión innecesaria en `GameplayInputRouter` y `Main`. `HUD` ahor
 ## Trigésima quinta barrida — AdminConsole y WorldData consolidan contratos
 
 `AdminConsole` ahora recibe contratos concretos para WorldContext, WorldEntitySpawner, WorldAtmosphere, Player, Inventory, EntityManager, AdminPlayerEditor y WorldItems. Sus comandos `/summon`, `/give`, `/time`, `/tp` y edición de jugador dejaron de usar reflexión runtime. `WorldData` ahora tiene `class_name` y sus consultas de criaturas/personajes son contratos concretos. `InventoryController` también dejó de configurarse mediante reflexión desde Inventory. Se mantiene reflexión únicamente en fronteras polimórficas aún no formalizadas, principalmente fuentes de diálogo y compatibilidad del GameState autoload.
+
+
+## Trigésima sexta barrida — Fronteras de interacción y diálogo formalizadas
+
+`DialogueSystem` ya no usa reflexión para su fuente: la fuente de diálogo canónica del gameplay es `Creature`, con acceso directo a datos, identidad, nombre, control de movimiento y seguimiento. `InteractionSystem` usa el contrato concreto de `Creature` para texto contextual. `Player` y `GameState` también dejaron de reflejar APIs de `Creature` para Eterium y registro de derrotas. La reflexión restante de Player hacia GameState se conserva deliberadamente mientras `GameState` siga siendo el autoload global sin `class_name`, evitando introducir una migración global innecesaria.
