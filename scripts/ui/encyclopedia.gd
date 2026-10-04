@@ -589,8 +589,8 @@ func _nombre_nivel(nivel: String) -> String:
 
 
 func _obtener_derrotas(id: String) -> int:
-    var registros := GameState.obtener_criaturas_descubiertas()
-    return int(registros.get(id, 0))
+	var registros := GameState.obtener_criaturas_descubiertas()
+	return int(registros.get(id, 0))
 
 
 func _mostrar_sin_descubrimientos() -> void:
