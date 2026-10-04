@@ -42,7 +42,7 @@ func _es_admin() -> bool:
     if _jugador == null or not is_instance_valid(_jugador):
         return false
 
-    var datos_variant: Variant = GameState.flags.get("personaje_admin", {})
+    var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
     if not datos_variant is Dictionary:
         return false
 
