@@ -28,6 +28,7 @@ var _player: Player = null
 var _world_context: WorldContext = null
 var _world_atmosphere: WorldAtmosphere = null
 var _mission_manager: MissionManagerService = null
+var _world_data: WorldDataService = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -40,13 +41,15 @@ func configurar_dependencias(
 	player: Player = null,
 	world_context: WorldContext = null,
 	world_atmosphere: WorldAtmosphere = null,
-	mission_manager: MissionManagerService = null
+	mission_manager: MissionManagerService = null,
+	world_data: WorldDataService = null
 ) -> void:
 	_inventory = inventory
 	_player = player
 	_world_context = world_context
 	_world_atmosphere = world_atmosphere
 	_mission_manager = mission_manager
+	_world_data = world_data
 
 	if active_save_id.is_empty():
 		return
@@ -961,10 +964,9 @@ func _texto_es_semilla_valida(texto: String) -> bool:
 
 
 func _obtener_version_mundo() -> int:
-	var mundo: Dictionary = WorldData.mundo
-	return int(
-		mundo.get("version", 0)
-	)
+	if _world_data == null:
+		return 0
+	return int(_world_data.mundo.get("version", 0))
 
 
 func _ahora() -> String:
