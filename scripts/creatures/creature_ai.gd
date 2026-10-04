@@ -578,7 +578,7 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 		var entidad := entidad_variant as Node2D
 		if entidad == criatura or not is_instance_valid(entidad):
 			continue
-		if not entidad.is_inside_tree() or not entidad.has_method("take_damage"):
+		if not entidad.is_inside_tree() or not entidad is Entity:
 			continue
 		if not entidad in candidatos:
 			candidatos.append(entidad)
@@ -1039,8 +1039,7 @@ func _procesar_ataque_contacto(
 	_ataque_resuelto = true
 	criatura.detener_movimiento()
 
-	if objetivo.has_method("take_damage"):
-		objetivo.call("take_damage", danio, "CreatureAI/Contacto")
+	_aplicar_danio_objetivo(objetivo, danio, "CreatureAI/Contacto")
 
 	if copiar_skin:
 		criatura.copiar_skin_de(objetivo)
@@ -1157,12 +1156,11 @@ func _procesar_ataque_dramarias() -> void:
 	_ataque_resuelto = true
 	criatura.detener_movimiento()
 
-	if objetivo.has_method("take_damage"):
-		objetivo.call(
-			"take_damage",
-			_obtener_danio_dramarias(),
-			"CreatureAI/Dramarias"
-		)
+	_aplicar_danio_objetivo(
+		objetivo,
+		_obtener_danio_dramarias(),
+		"CreatureAI/Dramarias"
+	)
 
 	_iniciar_recuperacion(_obtener_enfriamiento_dramarias())
 
@@ -1234,9 +1232,9 @@ func _resolver_ataque_flaxis() -> void:
 			objetivo.global_position
 		)
 
-		if distancia_impacto <= _obtener_distancia_contacto() and objetivo.has_method("take_damage"):
-			objetivo.call(
-				"take_damage",
+		if distancia_impacto <= _obtener_distancia_contacto():
+			_aplicar_danio_objetivo(
+				objetivo,
 				dano_mordida,
 				"CreatureAI/Flaxis"
 			)
@@ -1272,9 +1270,9 @@ func _iniciar_ataque_ligniano() -> void:
 		)
 		return
 
-	if objetivo.has_method("take_damage"):
-		objetivo.call(
-			"take_damage",
+	if _puede_recibir_danio(objetivo):
+		_aplicar_danio_objetivo(
+			objetivo,
 			_obtener_danio_ataque(),
 			"CreatureAI/Lignianos"
 		)
@@ -1476,6 +1474,18 @@ func al_recibir_ataque_con_arma(arma: Dictionary) -> void:
 
 	_direccion_salto = direccion.normalized()
 	_cambiar_estado(Estado.SALTANDO_LEJOS)
+
+
+
+func _puede_recibir_danio(objetivo_danio: Node) -> bool:
+	return objetivo_danio is Entity and is_instance_valid(objetivo_danio)
+
+
+func _aplicar_danio_objetivo(objetivo_danio: Node, cantidad: int, origen: String) -> void:
+	var entidad := objetivo_danio as Entity
+	if entidad == null or not is_instance_valid(entidad):
+		return
+	entidad.take_damage(cantidad, origen)
 
 
 func _obtener_float_reaccion(clave: String, por_defecto: float) -> float:
