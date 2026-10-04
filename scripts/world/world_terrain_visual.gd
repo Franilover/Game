@@ -48,6 +48,8 @@ const VARIACIONES_POR_BIOMA: Dictionary = {
 	},
 }
 
+# Identificadores técnicos de presentación. La semántica de la zona
+# proviene de Supabase; estos nombres sólo etiquetan el TileSet generado.
 const TERRAIN_NAMES: PackedStringArray = [
 	"Grass", "Dirt", "Stone", "Sand",
 	"Water", "Deep Water", "Shore", "Ice",
