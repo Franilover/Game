@@ -9,34 +9,7 @@ const CRIATURA_LIGNIANOS := 1 << 2
 
 
 @export_category("Aparición de criaturas")
-
 @export var max_creatures_per_chunk: int = 3
-
-@export_flags(
-	"Flaxis",
-	"Zlish",
-	"Lignianos"
-)
-var criaturas_destacadas: int = (
-	CRIATURA_FLAXIS
-	| CRIATURA_ZLISH
-	| CRIATURA_LIGNIANOS
-)
-
-@export_range(
-	0.0,
-	100.0,
-	0.1
-)
-var peso_normal: float = 1.0
-
-@export_range(
-	0.0,
-	100.0,
-	0.1
-)
-var peso_destacadas: float = 4.0
-
 
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
