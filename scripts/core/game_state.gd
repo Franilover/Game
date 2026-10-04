@@ -71,7 +71,10 @@ func _process(delta: float) -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+	if (
+		what == NOTIFICATION_WM_CLOSE_REQUEST
+		or what == NOTIFICATION_WM_GO_BACK_REQUEST
+	):
 		guardar_partida()
 
 
@@ -569,7 +572,7 @@ func _conectar_guardado_rapido() -> void:
 
 
 func _al_cambio_guardable(_a = null, _b = null, _c = null, _d = null) -> void:
-	if active_save_id.is_empty() or not _partida_aplicada_en_escena:
+	if active_save_id.is_empty():
 		return
 	if _guardado_rapido_pendiente:
 		return
@@ -579,7 +582,7 @@ func _al_cambio_guardable(_a = null, _b = null, _c = null, _d = null) -> void:
 
 func _ejecutar_guardado_rapido() -> void:
 	_guardado_rapido_pendiente = false
-	if active_save_id.is_empty() or not _partida_aplicada_en_escena:
+	if active_save_id.is_empty():
 		return
 	guardar_partida()
 
