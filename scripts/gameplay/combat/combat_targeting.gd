@@ -5,7 +5,7 @@ class_name CombatTargeting
 
 static func es_objetivo_valido(
 	atacante: Node,
-	objetivo: Node
+	objetivo: Entity
 ) -> bool:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
@@ -13,6 +13,6 @@ static func es_objetivo_valido(
 		return false
 	if not objetivo.is_in_group("damageable"):
 		return false
-	if "is_alive" in objetivo and not bool(objetivo.get("is_alive")):
+	if not objetivo.is_alive:
 		return false
 	return true
