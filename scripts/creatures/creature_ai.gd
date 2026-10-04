@@ -1158,23 +1158,19 @@ func _resolver_ataque_flaxis() -> void:
 	criatura.detener_movimiento()
 	_establecer_velocidad(_velocidad_normal)
 
-	var jugador_cerca := false
-
 	if objetivo != null and is_instance_valid(objetivo):
-		jugador_cerca = (
-			criatura.global_position.distance_to(
-				objetivo.global_position
-			) <= distancia_contacto
+		var distancia_impacto := criatura.global_position.distance_to(
+			objetivo.global_position
 		)
 
-	if jugador_cerca and objetivo.has_method("take_damage"):
-		objetivo.call(
-			"take_damage",
-			dano_mordida
-		)
+		if distancia_impacto <= distancia_contacto and objetivo.has_method("take_damage"):
+			objetivo.call(
+				"take_damage",
+				dano_mordida
+			)
 
-		_iniciar_recuperacion(enfriamiento_ataque)
-		return
+			_iniciar_recuperacion(enfriamiento_ataque)
+			return
 
 	_iniciar_recuperacion(enfriamiento_fallido)
 
