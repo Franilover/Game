@@ -410,3 +410,8 @@ CombatSystem ahora depende explícitamente de `GarliaInventory`, `CombatAttackAr
 ## Trigésima primera barrida — Hotbar y slots de equipamiento pasan a contratos concretos
 
 `InventoryHotbar` ahora tiene `class_name` y consume `GarliaInventory` directamente. Los slots `InventorySlot` e `InventoryEquipmentSlot` también exponen contratos concretos; `Inventory` dejó de usar reflexión para crear, consultar, configurar y limpiar slots de equipamiento. La separación inventario/equipamiento/hotbar se conserva: la selección de hotbar no determina el arma equipada.
+
+
+## Trigésima segunda barrida — GameState deja de tratar el runtime como Node genérico
+
+`GameState` ahora mantiene contratos concretos para `GarliaInventory`, `Player`, `WorldContext`, `WorldAtmosphere` y `MissionManager`. También consulta directamente `WorldContext.get_tile_at()` y `WorldAtmosphere.obtener_tiempo()`. Se mantiene `GameState` sin `class_name` por ahora para no alterar el contrato de autoload existente; el estado sigue siendo coordinador de guardado y no dueño de reglas canónicas.
