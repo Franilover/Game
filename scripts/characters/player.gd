@@ -63,7 +63,6 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 
 var _world_generator_ref: Node = null
-var _admin_console_ref: Node = null
 var _exploration_check_timer: float = 0.0
 
 
@@ -71,7 +70,6 @@ var _exploration_check_timer: float = 0.0
 
 var _action_direction: Vector2 = Vector2.DOWN
 var _base_visual_position: Vector2 = Vector2.ZERO
-var _ultima_exploracion_tile: Vector2i = Vector2i(2147483647, 2147483647)
 var personaje_nombre: String = ""
 var personaje_genero: String = ""
 var personaje_especie: Dictionary = {}
