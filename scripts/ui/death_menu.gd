@@ -1,5 +1,7 @@
 extends Control
 
+class_name DeathMenu
+
 const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
 
 @onready var overlay: ColorRect = $Overlay
