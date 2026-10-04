@@ -2,7 +2,6 @@ extends Node
 class_name WorldStreamer
 
 
-var _world_generator: WorldGenerator
 var _terrain: WorldTerrain
 var _entity_spawner: WorldEntitySpawner
 
@@ -23,14 +22,12 @@ var _queue: Array = []
 
 
 func configurar(
-	world_generator: WorldGenerator,
 	terrain: WorldTerrain,
 	entity_spawner: WorldEntitySpawner,
 	load_radius: int,
 	unload_radius: int,
 	cells_per_frame: int
 ) -> void:
-	_world_generator = world_generator
 	_terrain = terrain
 	_entity_spawner = entity_spawner
 
