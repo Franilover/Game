@@ -462,15 +462,11 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 		print("GarliaWorldItems: no existe el prop canónico → ", prop_id)
 		return false
 
-	var escena := get_tree().current_scene
-	if not is_instance_valid(escena):
+	var entities := _entities_root
+	if entities == null or not is_instance_valid(entities):
 		return false
 
-	var entities := escena.get_node_or_null("Entities")
-	if entities == null:
-		return false
-
-	var prop_node := preload("res://scenes/world/world_prop.tscn").instantiate()
+	var prop_node := preload("res://scenes/world/world_prop.tscn").instantiate() as WorldProp
 	if prop_node == null:
 		return false
 
@@ -479,11 +475,10 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 	datos_prop["item_id"] = str(datos.get("item_id", datos.get("id", "")))
 	datos_prop["colocado_por_jugador"] = true
 
+	prop_node.configurar_dependencias(_world_context, _inventory)
+	prop_node.configurar_desde_game_data(datos_prop)
 	entities.add_child(prop_node)
 	prop_node.global_position = posicion
-
-	if prop_node is WorldProp:
-		(prop_node as WorldProp).configurar_desde_game_data(datos_prop)
 
 	print(
 		"GarliaWorldItems: prop colocado → ",
@@ -509,15 +504,16 @@ func _generar_world_item(
 	datos: Dictionary,
 	posicion: Vector2
 ) -> void:
-	var escena := get_tree().current_scene
-
-	if not is_instance_valid(escena):
-		print("GarliaWorldItems: no existe escena actual para crear WorldItem.")
+	var entities := _entities_root
+	if entities == null or not is_instance_valid(entities):
+		print("GarliaWorldItems: no se configuró el root de entidades.")
 		return
 
 	var objeto := Node2D.new()
 	objeto.set_script(WORLD_ITEM_SCRIPT)
-	escena.add_child(objeto)
+	objeto.call("configurar_dependencias", _player, _inventory, _mission_manager)
+	entities.add_child(objeto)
+	_world_items.append(objeto)
 
 	objeto.global_position = posicion + Vector2(
 		randf_range(-10.0, 10.0),
