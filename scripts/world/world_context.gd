@@ -61,7 +61,7 @@ func get_reinos_at(tile: Vector2i) -> Array[Dictionary]:
 	if bioma.is_empty():
 		return []
 	var bioma_id := str(bioma.get("id", ""))
-	return [] if bioma_id.is_empty() else WorldData.obtener_reinos_game_de_bioma(bioma_id)
+	return [] if bioma_id.is_empty() else WorldDataService.obtener_reinos_game_de_bioma(bioma_id)
 
 func get_reinos_at_position(posicion_global: Vector2) -> Array[Dictionary]:
 	return get_reinos_at(get_tile_at(posicion_global))
@@ -112,10 +112,10 @@ func get_factores_ambientales_at(posicion_global: Vector2) -> Dictionary:
 		if id.is_empty():
 			continue
 		if not estacion_id.is_empty():
-			var estacional := WorldData.obtener_ambiente_estacional_habitat(estacion_id, id)
+			var estacional := WorldDataService.obtener_ambiente_estacional_habitat(estacion_id, id)
 			if not estacional.is_empty():
 				return estacional
-		var base := WorldData.obtener_factores_ambientales_habitat(id)
+		var base := WorldDataService.obtener_factores_ambientales_habitat(id)
 		if not base.is_empty():
 			return base
 	var ecosistema := get_ecosistema_at(tile)
@@ -123,10 +123,10 @@ func get_factores_ambientales_at(posicion_global: Vector2) -> Dictionary:
 	if id.is_empty():
 		return {}
 	if not estacion_id.is_empty():
-		var estacional := WorldData.obtener_ambiente_estacional_ecosistema(estacion_id, id)
+		var estacional := WorldDataService.obtener_ambiente_estacional_ecosistema(estacion_id, id)
 		if not estacional.is_empty():
 			return estacional
-	return WorldData.obtener_factores_ambientales_ecosistema(id)
+	return WorldDataService.obtener_factores_ambientales_ecosistema(id)
 
 func _nombre(datos: Dictionary) -> String:
 	var nombre := str(datos.get("nombre", ""))
