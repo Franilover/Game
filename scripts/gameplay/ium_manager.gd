@@ -14,10 +14,12 @@ var proceso_equipado: Dictionary = {}
 
 var _jugador_id: String = ""
 var _repository: IUMRepository = null
+var _player: Node = null
 
 
-func configurar(repository: IUMRepository) -> void:
+func configurar(repository: IUMRepository, jugador: Node = null) -> void:
 	_repository = repository
+	_player = jugador
 	if _repository == null:
 		push_error("IUMManager: IUMRepository no configurado.")
 		return
@@ -119,9 +121,8 @@ func usar_proceso_equipado(objetivo: Node = null) -> void:
 			if objetivo != null and objetivo.has_method("take_damage"):
 				objetivo.call("take_damage", int(magnitud))
 		"curar", "heal":
-			var player := get_tree().get_first_node_in_group("player")
-			if player != null and player.has_method("heal"):
-				player.call("heal", int(magnitud))
+			if _player != null and _player.has_method("heal"):
+				_player.call("heal", int(magnitud))
 		"slow":
 			if objetivo != null and objetivo.has_method("aplicar_efecto_slow"):
 				objetivo.call("aplicar_efecto_slow", magnitud)
