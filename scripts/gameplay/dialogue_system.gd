@@ -8,7 +8,7 @@ signal dialogue_finished
 
 var player: Node = null
 var ui_root: Node = null
-var mission_manager: Node = null
+var mission_manager: MissionManager = null
 var relationship_system: Node = null
 
 var dialogue_panel: PanelContainer = null
@@ -36,7 +36,7 @@ func _ready() -> void:
 	add_to_group("dialogue_system")
 
 
-func configurar(nuevo_player: Node, nuevo_ui_root: Node, nuevo_mission_manager: Node = null, nuevo_relationship_system: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_ui_root: Node, nuevo_mission_manager: MissionManager = null, nuevo_relationship_system: Node = null) -> void:
 	player = nuevo_player
 	ui_root = nuevo_ui_root
 	mission_manager = nuevo_mission_manager
@@ -305,17 +305,17 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			var estado_requerido := str(requisito.get("estado", "")).strip_edges().to_lower()
 
 			if not mision_clave.is_empty() and not estado_requerido.is_empty():
-				var mission_manager_local: Node = mission_manager
+				var mission_manager_local: MissionManager = mission_manager
 				if mission_manager_local == null:
 					continue
 
-				var mision: Dictionary = mission_manager_local.call("buscar_mision_por_clave", mision_clave)
+				var mision: Dictionary = mission_manager_local.buscar_mision_por_clave(mision_clave)
 				if mision.is_empty():
 					continue
 
 				var mision_id := str(mision.get("id", ""))
 				var estado_actual := str(
-					mission_manager_local.call("obtener_estado_mision", mision_id).get(
+					mission_manager_local.obtener_estado_mision(mision_id).get(
 						"estado",
 						"disponible"
 					)
@@ -372,14 +372,14 @@ func _ejecutar_accion_dialogo() -> void:
 			if clave.is_empty():
 				return
 
-			var mission_manager_local: Node = mission_manager
-			if mission_manager_local != null and bool(mission_manager_local.call("aceptar_mision", clave)):
+			var mission_manager_local: MissionManager = mission_manager
+			if mission_manager_local != null and mission_manager_local.aceptar_mision(clave):
 				_acciones.clear()
 				action_button.visible = false
 				hint_label.text = "Misión aceptada · [ LMB ] Continuar"
 				Events.notification_pushed.emit(
 					"Misión aceptada: "
-					+ str(mission_manager_local.call("buscar_mision_por_clave", clave).get("nombre", clave))
+					+ str(mission_manager_local.buscar_mision_por_clave(clave).get("nombre", clave))
 				)
 				return
 
