@@ -59,6 +59,11 @@ var _personaje_social: Array = []
 var _personaje_regalos: Array = []
 var _relaciones_ecologicas: Array = []
 var _mundo_activo_en_escena: bool = false
+var _auth: Node = null
+
+
+func configurar_dependencias(auth: Node) -> void:
+	_auth = auth
 
 
 func establecer_mundo_activo(activo: bool) -> void:
@@ -135,6 +140,10 @@ func _ready() -> void:
 
 ## Transporte REST/RPC compartido para repositories.
 func solicitar_rpc(nombre: String, payload: Dictionary = {}) -> int:
+	if _auth == null:
+		push_error("SupabaseClient: GarliaAuth no configurado.")
+		return -1
+
 	return _request_compartido("/rest/v1/rpc/" + nombre, HTTPClient.METHOD_POST, JSON.stringify(payload))
 
 func get_rest(recurso: String, query: String = "") -> int:
@@ -153,8 +162,8 @@ func _request_compartido(path: String, method: int, body: String) -> int:
 		request_completed.emit(request_id, resultado, codigo_http, cabeceras, cuerpo)
 		http.queue_free()
 	http.request_completed.connect(callback, CONNECT_ONE_SHOT)
-	var resultado := http.request(GarliaAuth.SUPABASE_URL + path, PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
+	var resultado := http.request(_auth.SUPABASE_URL + path, PackedStringArray([
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	]), method, body)
