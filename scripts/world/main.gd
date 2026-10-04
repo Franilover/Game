@@ -31,6 +31,9 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 
 
 func _ready() -> void:
+	if WorldData.has_method("configurar_dependencias"):
+		WorldData.call("configurar_dependencias", _supabase_client)
+
 	_supabase_client.establecer_mundo_activo(true)
 	var world_gen: WorldGenerator = _world_generator
 	if world_gen.has_method("configurar_entidades"):
