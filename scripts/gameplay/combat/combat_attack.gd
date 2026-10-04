@@ -4,7 +4,7 @@ class_name CombatAttack
 ## Instancia de una acción de combate.
 ## Describe el ataque; no decide cómo se aplica el daño.
 
-var attacker: Node = null
+var attacker: Entity = null
 var direction: Vector2 = Vector2.DOWN
 var object_data: Dictionary = {}
 var mode: String = "melee"
@@ -12,7 +12,7 @@ var damage: int = 0
 var origin: String = "Jugador/CombatController"
 
 func configurar(
-	attacker_node: Node,
+	attacker_node: Entity,
 	attack_direction: Vector2,
 	attack_object: Dictionary,
 	attack_mode: String,
