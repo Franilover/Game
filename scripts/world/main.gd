@@ -19,6 +19,7 @@ var _input_router: Node = GameplayInputRouter
 @onready var _ium_repository: Node = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
+@onready var _world_atmosphere: Node = $World/WorldGenerator/WorldAtmosphere
 
 
 func _ready() -> void:
@@ -61,7 +62,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_combate(world_gen)
 	_configurar_inventario()
 	if GameState.has_method("configurar_dependencias"):
-		GameState.call("configurar_dependencias", _inventory, _player, world_gen)
+		GameState.call("configurar_dependencias", _inventory, _player, world_gen, _world_atmosphere)
 	_configurar_dialogo()
 	if MissionManager.has_method("configurar_dependencias"):
 		MissionManager.call("configurar_dependencias", _player, world_gen.entity_manager)
