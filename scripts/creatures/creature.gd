@@ -37,7 +37,7 @@ var _entity_manager_dependency: WorldEntityManager = null
 var _inventory_dependency: GarliaInventory = null
 var _combat_system_dependency: CombatSystem = null
 var _dialogue_system_dependency: DialogueSystem = null
-var _mission_manager_dependency: MissionManagerService = null
+var _mission_manager_dependency: MissionManagerServiceService = null
 var _effects_root: Node = null
 var _world_items_dependency: GarliaWorldItems = null
 
@@ -54,7 +54,7 @@ func configurar_dependencias(
 	inventario: GarliaInventory,
 	combat_system: CombatSystem,
 	dialogue_system: DialogueSystem,
-	mission_manager: MissionManagerService,
+	mission_manager: MissionManagerServiceService,
 	effects_root: Node,
 	world_items: GarliaWorldItems,
 	relaciones_ecologicas: Array = []
