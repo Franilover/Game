@@ -242,6 +242,7 @@ func _sincronizar_runtime() -> void:
 			inventory_controller.equipar(clave, item_variant as Dictionary)
 
 func actualizar() -> void:
+	_sincronizar_runtime()
 	for i in range(slot_nodes.size()):
 		var slot := slot_nodes[i]
 
@@ -300,7 +301,6 @@ func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
 	items[indice_destino] = origen
 
 	actualizar()
-	_sincronizar_runtime()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
