@@ -937,7 +937,6 @@ func _extraer_metadata_partida(
 	}
 
 
-	return world_state.world_seed_valida
 
 
 func obtener_semilla_mundo() -> int:
