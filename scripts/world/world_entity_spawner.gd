@@ -235,8 +235,6 @@ func spawn_chunk(
 
 		if criatura is Creature:
 			var creature_node: Creature = criatura
-			creature_node.configurar(criatura_data)
-
 			creature_node.configurar_chunk(
 				chunk_coord,
 				limite_chunk
