@@ -29,7 +29,7 @@ var _input_router: Node = GameplayInputRouter
 
 func _ready() -> void:
 	_supabase_client.establecer_mundo_activo(true)
-	var world_gen := $World/WorldGenerator
+	var world_gen: WorldGenerator = _world_generator
 	if world_gen.has_method("configurar_entidades"):
 		world_gen.call("configurar_entidades", $Entities)
 
@@ -51,7 +51,7 @@ func _process(_delta: float) -> void:
 	_seguir_jugador()
 
 
-func _inicializar_jugador(world_gen: Node) -> void:
+func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	_player = $Entities/Player
 
 	if _player == null:
@@ -129,7 +129,7 @@ func _seguir_jugador() -> void:
 	_ultima_posicion_camara = posicion
 
 
-func _configurar_hud(world_context: Node, world_gen: Node) -> void:
+func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator) -> void:
 	if _hud == null:
 		push_error("Main: no se encontró UI/HUD.")
 		return
@@ -140,7 +140,7 @@ func _configurar_hud(world_context: Node, world_gen: Node) -> void:
 		push_error("Main: HUD no tiene configurar().")
 
 
-func _configurar_interaccion(world_gen: Node) -> void:
+func _configurar_interaccion(world_gen: WorldGenerator) -> void:
 	if _interaction_system == null:
 		push_error("Main: no se encontró Systems/InteractionSystem.")
 		return
@@ -170,7 +170,7 @@ func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 		_hud.call("mostrar_interaccion", texto)
 
 
-func _configurar_combate(world_context: Node) -> void:
+func _configurar_combate(world_context: WorldContext) -> void:
 	if _combat_system == null:
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
