@@ -462,3 +462,7 @@ La cadena de combate ahora mantiene el contrato `Entity` desde la detección has
 ## Cuadragésima segunda barrida — Router de input tipado
 
 `GameplayInputRouter` dejó de descubrir dinámicamente `InteractionSystem` y `CombatSystem`. Ambos contratos son concretos y ahora el router invoca directamente `procesar_accion_primaria()` y `procesar_accion_secundaria()`, manteniendo el router como única autoridad de entrada.
+
+## Cuadragésima tercera barrida — GameState tipado en Player
+
+`GameState` ahora tiene contrato explícito (`class_name GameState`) y `Player` dejó de depender de llamadas dinámicas para terreno, descubrimientos, configuración de personaje y guardado. La dependencia de estado de partida queda tipada desde la composición hasta el uso.
