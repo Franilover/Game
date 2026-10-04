@@ -125,7 +125,7 @@ func _eliminar_partida(id: String) -> void:
 
 
 func _on_create_pressed() -> void:
-	character_creation.z_index = 10000
+	character_creation.z_index = 4000
 	character_creation.open("nueva_partida")
 
 
