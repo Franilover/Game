@@ -317,3 +317,10 @@ No se creó todavía una capa de repositorios artificial: el siguiente paso es s
 Se detectó y corrigió una referencia residual incorrecta al acceso de credenciales (`_auth._auth.SUPABASE_URL`) dentro del transporte REST compartido. SupabaseClient vuelve a depender únicamente de la API pública de `GarliaAuth` (`SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`). También se centralizó la construcción de headers REST autenticados.
 
 La corrección mantiene a GarliaAuth como dueño de credenciales y evita que SupabaseClient conozca la implementación interna de autenticación.
+
+
+## Decimonovena barrida — CombatSystem entrega feedback a su frontera de presentación
+
+Se confirmó que `CombatFeedback` ya existía como componente `RefCounted`; no se creó un sistema paralelo ni se añadió otro nodo a Main. Su implementación ahora contiene el flash visual de impacto que antes vivía dentro de `CombatSystem`.
+
+`CombatSystem` conserva la resolución del ataque y el daño, pero delega la presentación del impacto a `CombatFeedback`. La composición principal no necesita conocer este detalle y no se introduce una nueva dependencia global.
