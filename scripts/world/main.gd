@@ -40,6 +40,8 @@ func _ready() -> void:
 
 	_supabase_client.establecer_mundo_activo(true)
 	var world_gen: WorldGenerator = _world_generator
+	if world_gen.has_method("configurar_dependencias"):
+		world_gen.call("configurar_dependencias", WorldData, GameState)
 	if world_gen.has_method("configurar_entidades"):
 		world_gen.call("configurar_entidades", $Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context)
 	if _world_items != null and _world_items.has_method("configurar_dependencias"):
