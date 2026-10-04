@@ -4,6 +4,7 @@ class_name AdminInventory
 var _jugador: Player = null
 var _world_entity_spawner: WorldEntitySpawner = null
 var _inventario: GarliaInventory = null
+var _world_items: GarliaWorldItems = null
 var _modo: String = "criaturas"
 var _seleccion: Dictionary = {}
 var _lista: VBoxContainer
@@ -21,7 +22,7 @@ func _ready() -> void:
     visible = false
 
 
-func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: GarliaInventory) -> void:
+func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: GarliaInventory, world_items: GarliaWorldItems = null) -> void:
     _jugador = jugador
     _world_entity_spawner = spawner
     _inventario = inventario
@@ -162,7 +163,7 @@ func _cargar_criaturas() -> void:
 
 
 func _cargar_objetos() -> void:
-    var catalogo: Array[Dictionary] = GarliaWorldItems.catalogo
+    var catalogo: Array[Dictionary] = _world_items.obtener_catalogo()
     var grupos: Dictionary = {}
 
     for item in catalogo:
