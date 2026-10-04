@@ -81,7 +81,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 
 	world_gen.registrar_jugador(_player)
 
-	_player.configurar_dependencias(_inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameState, GarliaAuth)
+	_player.configurar_dependencias(_inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameState)
 
 	_configurar_camara()
 	_configurar_hud(_world_context, world_gen)
