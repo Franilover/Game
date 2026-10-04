@@ -6,7 +6,7 @@ extends Node2D
 var _player: Node = null
 var _camera: Camera2D = null
 var _ultima_posicion_camara: Vector2 = Vector2.INF
-var _input_router: Node = GameplayInputRouter
+@onready var _input_router: Node = $Systems/GameplayInputRouter
 
 @onready var _hud: Control = $UI/HUD
 @onready var _inventory: Control = $UI/Inventory
@@ -184,7 +184,7 @@ func _configurar_combate(world_context: WorldContext) -> void:
 
 
 func _configurar_input_router() -> void:
-	var router: Node = GameplayInputRouter
+	var router: Node = _input_router
 	if router == null:
 		push_error("Main: no se encontró GameplayInputRouter.")
 		return
