@@ -78,7 +78,7 @@ func esta_entrada_bloqueada(arbol: SceneTree) -> bool:
 	if arbol.paused:
 		return true
 
- 	if _inventory_ui != null and _inventory_ui.has_method("esta_abierto"):
+	if _inventory_ui != null and _inventory_ui.has_method("esta_abierto"):
 		if bool(_inventory_ui.call("esta_abierto")):
 			return true
 
