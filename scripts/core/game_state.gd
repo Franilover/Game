@@ -923,6 +923,13 @@ func _extraer_metadata_partida(
 	}
 
 
+func obtener_configuracion_personaje() -> Dictionary:
+	var personaje_variant: Variant = world_state.flags.get("personaje", {})
+	if personaje_variant is Dictionary:
+		return (personaje_variant as Dictionary).duplicate(true)
+	return {}
+
+
 func tiene_semilla_mundo() -> bool:
 	return world_state.world_seed_valida
 
