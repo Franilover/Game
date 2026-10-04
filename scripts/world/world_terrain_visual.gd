@@ -85,12 +85,14 @@ var _variation_layers_by_bioma: Dictionary = {}
 var _variation_tilesets_by_bioma: Dictionary = {}
 var _batch_active: bool = false
 
+var _profiler_set_zone_ms: float = 0.0
 var _profiler_set_cell_ms: float = 0.0
 var _profiler_variation_ms: float = 0.0
 var _profiler_dirty_ms: float = 0.0
 var _profiler_set_cell_calls: int = 0
 
 func iniciar_profiler() -> void:
+	_profiler_set_zone_ms = 0.0
 	_profiler_set_cell_ms = 0.0
 	_profiler_variation_ms = 0.0
 	_profiler_dirty_ms = 0.0
@@ -98,6 +100,7 @@ func iniciar_profiler() -> void:
 
 func obtener_profiler() -> Dictionary:
 	return {
+		"set_zone_ms": _profiler_set_zone_ms,
 		"set_cell_ms": _profiler_set_cell_ms,
 		"variation_ms": _profiler_variation_ms,
 		"dirty_ms": _profiler_dirty_ms,
@@ -282,6 +285,7 @@ func set_zone(
 			cell + offset
 		)
 	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
+	_profiler_set_zone_ms += float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
 
 
 func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
