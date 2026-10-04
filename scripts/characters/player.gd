@@ -644,7 +644,7 @@ func _aplicar_configuracion_personaje() -> void:
 	if not is_instance_valid(GameState):
 		return
 
-	var personaje_variant: Variant = GameState.flags.get("personaje", {})
+	var personaje_variant: Variant = GameState.obtener_configuracion_personaje()
 	if not personaje_variant is Dictionary:
 		return
 
