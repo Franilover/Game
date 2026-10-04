@@ -428,7 +428,7 @@ func obtener_prop_por_id(prop_id: String) -> Dictionary:
 	if buscado.is_empty():
 		return {}
 
-	for prop in WorldDataService.obtener_props_game():
+	for prop in WorldData.obtener_props_game():
 		if str(prop.get("id", "")).strip_edges() == buscado:
 			return prop.duplicate(true)
 
