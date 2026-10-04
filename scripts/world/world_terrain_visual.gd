@@ -252,7 +252,7 @@ func _crear_tileset_variaciones(bioma_nombre: String) -> TileSet:
 	return tile_set
 
 
-func _actualizar_variacion_pradera(cell: Vector2i) -> void:
+func _actualizar_variacion(cell: Vector2i) -> void:
 	if not _cell_bioma.has(cell):
 		return
 
