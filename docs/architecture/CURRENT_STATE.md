@@ -100,7 +100,7 @@ WorldRuntime
 ```
 
 ### Prioridad 3
-Reducir GameState.
+Mantener GameState como coordinador de persistencia y ciclo de vida local.
 
 Ya no se busca crear otra fachada paralela. El objetivo es que `GameState` conserve únicamente la coordinación que realmente le pertenece:
 
