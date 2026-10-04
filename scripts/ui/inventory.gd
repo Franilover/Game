@@ -236,11 +236,6 @@ func _sincronizar_runtime() -> void:
 		items_runtime.append(item.duplicate(true))
 	inventory_controller.configurar_items(items_runtime, hotbar_indices)
 	inventory_controller.runtime.establecer_equipamiento(equipo)
-	for clave_variant in equipo.keys():
-		var clave := str(clave_variant)
-		var item_variant: Variant = equipo.get(clave, {})
-		if item_variant is Dictionary and not (item_variant as Dictionary).is_empty():
-			inventory_controller.equipar(clave, item_variant as Dictionary)
 
 func actualizar() -> void:
 	_sincronizar_runtime()
