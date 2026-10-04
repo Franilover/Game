@@ -463,7 +463,7 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 	if entities == null:
 		return false
 
-	var prop_node := preload("res://scenes/wold/world_prop.tscn").instantiate()
+	var prop_node := preload("res://scenes/world/world_prop.tscn").instantiate()
 	if prop_node == null:
 		return false
 
