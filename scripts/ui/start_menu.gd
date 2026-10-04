@@ -640,7 +640,7 @@ func _mostrar_creacion_personaje(accion: String) -> void:
 	# El creador debe quedar por encima de cualquier overlay del menú.
 	multiplayer_overlay.visible = false
 	login_overlay.visible = false
-	_character_creation.z_index = 10000
+	_character_creation.z_index = 4000
 	_character_creation.show()
 	_character_creation.open(accion)
 
