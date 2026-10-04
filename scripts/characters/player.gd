@@ -393,65 +393,9 @@ func _al_eterium_runtime_cargado(
 	)
 
 
-func _aplicar_eterium_runtime(
-	reglas: Dictionary,
-	organismos: Array
-) -> void:
-	if reglas.is_empty():
-		return
-
-	_eterium_reglas = reglas.duplicate(true)
-	_eterium_organismos.clear()
-
-	for organismo_variant in organismos:
-		if not organismo_variant is Dictionary:
-			continue
-
-		var organismo := organismo_variant as Dictionary
-		var organismo_id := str(
-			organismo.get("organismo_id", "")
-		)
-
-		if organismo_id.is_empty():
-			continue
-
-		_eterium_organismos[organismo_id] = (
-			organismo.duplicate(true)
-		)
-
-	var escala := _eterium_escala_runtime()
-	var limite_s := float(
-		_eterium_reglas.get(
-			"limite_estable_s",
-			0.0
-		)
-	)
-	var nuevo_max_mana := maxi(
-		1,
-		roundi(limite_s * escala)
-	)
-
-	max_mana = nuevo_max_mana
-	mana = clampi(
-		mana,
-		0,
-		max_mana
-	)
-
-	_eterium_runtime_ready = true
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
-
-	print(
-		"Player: Eterium canónico cargado → límite S=",
-		limite_s,
-		" | escala=",
-		escala,
-		" | runtime=",
-		max_mana
-	)
+func _aplicar_eterium_runtime(reglas: Dictionary, organismos: Array) -> void:
+	eterium.aplicar_runtime(reglas, organismos)
+	_sync_vital_desde_eterium()
 
 
 func absorber_eterium_de_criatura(criatura: Node) -> int:
