@@ -71,3 +71,45 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 	archivo.store_string(JSON.stringify(datos))
 	archivo.close()
 	return true
+
+
+
+func listar_ids_partidas() -> Array[String]:
+	var resultado: Array[String] = []
+	var entrada := DirAccess.open(directorio)
+	if entrada == null:
+		return resultado
+
+	entrada.list_dir_begin()
+	while true:
+		var nombre_archivo := entrada.get_next()
+		if nombre_archivo.is_empty():
+			break
+		if entrada.current_is_dir() or not nombre_archivo.ends_with(".json"):
+			continue
+		resultado.append(nombre_archivo.trim_suffix(".json"))
+	entrada.list_dir_end()
+	return resultado
+
+
+func eliminar_partida(id: String) -> bool:
+	if id.is_empty():
+		return false
+
+	var ruta := ruta_partida(id)
+	if not FileAccess.file_exists(ruta):
+		return false
+
+	var error := DirAccess.remove_absolute(
+		ProjectSettings.globalize_path(ruta)
+	)
+	if error != OK:
+		push_error(
+			"SaveFileRepository: no se pudo eliminar la partida "
+			+ id
+			+ " (error "
+			+ str(error)
+			+ ")"
+		)
+		return false
+	return true
