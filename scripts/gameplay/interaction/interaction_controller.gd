@@ -7,9 +7,9 @@ class_name InteractionController
 signal objetivo_cambiado(objetivo: Node)
 
 var objetivo_actual: Node = null
-var entity_manager: Node = null
+var entity_manager: WorldEntityManager = null
 
-func configurar_entidades(nuevo_entity_manager: Node) -> void:
+func configurar_entidades(nuevo_entity_manager: WorldEntityManager) -> void:
 	entity_manager = nuevo_entity_manager
 
 func buscar_objetivo(player: Node, distancia_base: float) -> Node:
@@ -22,8 +22,8 @@ func buscar_objetivo(player: Node, distancia_base: float) -> Node:
 	var mejor_distancia_sq: float = INF
 
 	var candidatos: Array = []
-	if entity_manager != null and is_instance_valid(entity_manager) and entity_manager.has_method("obtener_entidades_activas"):
-		candidatos = entity_manager.call("obtener_entidades_activas")
+	if entity_manager != null and is_instance_valid(entity_manager):
+		candidatos = entity_manager.obtener_entidades_activas()
 	for candidato_variant in candidatos:
 		if not candidato_variant is Node:
 			continue
