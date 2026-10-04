@@ -15,6 +15,7 @@ signal mana_changed(current: int, maximum: int)
 signal died
 
 var vital_state := VitalState.new()
+var _ultima_y_profundidad: int = 2147483647
 
 func _ready() -> void:
 	_configurar_estado_vital()
@@ -24,6 +25,11 @@ func _ready() -> void:
 	_emitir_estado_vital()
 
 func _process(_delta: float) -> void:
+	# La profundidad solo cambia cuando cambia Y.
+	var y_actual := int(global_position.y + 2.0)
+	if y_actual == _ultima_y_profundidad:
+		return
+	_ultima_y_profundidad = y_actual
 	_actualizar_profundidad()
 
 func _configurar_estado_vital() -> void:
@@ -40,6 +46,7 @@ func _emitir_estado_vital() -> void:
 	mana_changed.emit(mana, max_mana)
 
 func _actualizar_profundidad() -> void:
+	_ultima_y_profundidad = int(global_position.y + 2.0)
 	z_index = clampi(
 		PROFUNDIDAD_BASE + int(global_position.y + 2.0),
 		-4096,
