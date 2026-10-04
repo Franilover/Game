@@ -6,7 +6,10 @@ class_name GameplayInputGate
 ## Este nodo NO mantiene estado ni decide qué sistema recibe input.
 
 func esta_bloqueado() -> bool:
-	return GameplayInputRouterSingleton.esta_bloqueado(get_tree())
+	var router := get_tree().root.get_node_or_null("GameplayInputRouter")
+	if router == null:
+		return true
+	return bool(router.call("esta_bloqueado"))
 
 
 static func esta_entrada_bloqueada(arbol: SceneTree) -> bool:
