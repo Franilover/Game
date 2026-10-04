@@ -34,6 +34,8 @@ var _autosave_timer: float = 0.0
 var _partida_aplicada_en_escena: bool = false
 var _menu_interceptado: bool = false
 var _guardado_en_curso: bool = false
+var _guardado_rapido_conectado: bool = false
+var _guardado_rapido_pendiente: bool = false
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -512,6 +514,74 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 			"equipo": equipment_state,
 			"rol_partida": rol_partida
 		}
+
+	_capturar_estado_misiones()
+
+
+func _capturar_estado_misiones() -> void:
+	if not is_instance_valid(MissionManager):
+		return
+	if not MissionManager.has_method("serializar_estado_partida"):
+		return
+	flags["misiones_estado"] = MissionManager.call(
+		"serializar_estado_partida"
+	)
+
+
+func _aplicar_estado_misiones() -> void:
+	if not is_instance_valid(MissionManager):
+		return
+	if not MissionManager.has_method("cargar_estado_partida"):
+		return
+
+	var datos_variant: Variant = flags.get("misiones_estado", {})
+	if datos_variant is Dictionary:
+		MissionManager.call(
+			"cargar_estado_partida",
+			(datos_variant as Dictionary).duplicate(true)
+	)
+
+
+func _conectar_guardado_rapido() -> void:
+	if _guardado_rapido_conectado or active_save_id.is_empty():
+		return
+
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if inventario != null and inventario.has_signal("inventory_changed"):
+		var inventario_callback := Callable(self, "_al_cambio_guardable")
+		if not inventario.inventory_changed.is_connected(inventario_callback):
+			inventario.inventory_changed.connect(inventario_callback)
+
+	for nombre in ["mision_aceptada", "progreso_actualizado", "mision_completada"]:
+		if not MissionManager.has_signal(nombre):
+			continue
+		var callback := Callable(self, "_al_cambio_guardable")
+		var senal: Signal = MissionManager.get(nombre)
+		if not senal.is_connected(callback):
+			senal.connect(callback)
+
+	if not enciclopedia_actualizada.is_connected(_al_cambio_guardable):
+		enciclopedia_actualizada.connect(_al_cambio_guardable)
+	if not descubrimientos_mundo_actualizados.is_connected(_al_cambio_guardable):
+		descubrimientos_mundo_actualizados.connect(_al_cambio_guardable)
+
+	_guardado_rapido_conectado = true
+
+
+func _al_cambio_guardable(_a = null, _b = null, _c = null, _d = null) -> void:
+	if active_save_id.is_empty() or not _partida_aplicada_en_escena:
+		return
+	if _guardado_rapido_pendiente:
+		return
+	_guardado_rapido_pendiente = true
+	call_deferred("_ejecutar_guardado_rapido")
+
+
+func _ejecutar_guardado_rapido() -> void:
+	_guardado_rapido_pendiente = false
+	if active_save_id.is_empty() or not _partida_aplicada_en_escena:
+		return
+	guardar_partida()
 
 
 func _serializar_estado() -> Dictionary:
@@ -1035,6 +1105,8 @@ func _aplicar_estado_al_juego() -> void:
 			inventario
 		)
 
+	_aplicar_estado_misiones()
+
 	var proceso_variant: Variant = flags.get(
 		"proceso_ium_equipado",
 		{}
@@ -1073,6 +1145,8 @@ func _aplicar_estado_al_juego() -> void:
 				)
 
 	_partida_aplicada_en_escena = true
+	_guardado_rapido_conectado = false
+	_conectar_guardado_rapido()
 
 	print(
 		"GameState: partida cargada → ",
