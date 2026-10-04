@@ -500,6 +500,10 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	_emitir_objeto_activo()
 
 
+func obtener_equipamiento() -> Dictionary:
+	return inventory_controller.obtener_equipamiento()
+
+
 func obtener_estadistica_equipo(
 	clave: String,
 	valor_por_defecto: float = 0.0
