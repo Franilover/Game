@@ -181,3 +181,15 @@ La hotbar y el equipamiento son estados distintos. Seleccionar un índice de hot
 
 Si falla la apertura/bloqueo del inventario: `Main → Inventory → InventoryController → GameplayInputRouter`.
 Si falla qué objeto está equipado: revisar `InventoryRuntime/Equipment`, no la hotbar ni el HUD.
+
+
+## Combate y equipamiento — frontera
+
+El CombatSystem recibe Inventory desde Main y obtiene el arma desde obtener_equipamiento(). La hotbar no determina el arma utilizada por el ataque primario.
+
+Flujo: InventoryController → InventoryRuntime → InventoryEquipment → CombatSystem
+
+La durabilidad de un arma/herramienta equipada se consume sobre el slot equipado, no sobre el slot seleccionado de hotbar.
+
+Si un click ataca con el objeto equivocado: revisar CombatSystem._obtener_arma_equipada() y InventoryEquipment, no la UI de hotbar.
+Si el daño recibido ignora armadura: revisar Player._inventory_ref → obtener_equipamiento() → CombatDefense.
