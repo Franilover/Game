@@ -29,7 +29,7 @@ float pixel_blade(vec2 uv, vec2 cell, float seed, float scale) {
     float x = center + sway * progress;
 
     float stepped_y = floor(progress * 5.0) / 5.0;
-    float stepped_width = mix(0.055, 0.010, stepped_y);
+    float stepped_width = mix(0.12, 0.028, stepped_y);
     return step(abs(uv.x - x), stepped_width);
 }
 
