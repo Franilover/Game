@@ -37,6 +37,7 @@ var _rng := RandomNumberGenerator.new()
 var _siguiendo_jugador: bool = false
 var _jugador_seguimiento: Node = null
 var _distancia_seguimiento: float = 24.0
+var _muerte_procesada: bool = false
 
 
 func _ready() -> void:
@@ -615,9 +616,10 @@ func interact(
 
 
 func _die() -> void:
-	if not is_alive:
+	if _muerte_procesada:
 		return
 
+	_muerte_procesada = true
 	is_alive = false
 
 	if not criatura_id.is_empty():
