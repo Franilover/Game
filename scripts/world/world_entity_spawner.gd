@@ -982,7 +982,7 @@ func _spawn_props_in_chunk(
 		if elegido.is_empty():
 			continue
 
-		var prop_node: Node = preload("res://scenes/wold/world_prop.tscn").instantiate()
+		var prop_node: Node = preload("res://scenes/world/world_prop.tscn").instantiate()
 		if prop_node == null:
 			continue
 
