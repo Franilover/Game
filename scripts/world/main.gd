@@ -195,9 +195,8 @@ func _configurar_inventario() -> void:
 
 	_inventory.configurar(_player, _world_entity_spawner, _world_context, RelationshipSystem, _world_items)
 
-	var router: Node = _input_router
-	if router != null:
-		_inventory.configurar_input_gate(router)
+	if _input_router != null:
+		_inventory.configurar_input_router(_input_router)
 	_pause_menu.configurar(_inventory)
 	_death_menu.configurar(_player, _inventory)
 
