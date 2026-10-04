@@ -307,4 +307,4 @@ func _configurar_social() -> void:
 	if SocialRepository.has_method("configurar"):
 		SocialRepository.call("configurar", _supabase_client)
 	if RelationshipSystem.has_method("configurar"):
-		RelationshipSystem.call("configurar", SocialRepository)
+		RelationshipSystem.call("configurar", SocialRepository, GameState)
