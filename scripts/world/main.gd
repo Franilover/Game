@@ -150,7 +150,7 @@ func _inicializar_dialogo() -> void:
 		return
 
 	var dialogue_script := load(
-		"res://scripts/systems/dialogue_system.gd"
+		"res://scripts/gameplay/dialogue_system.gd"
 	)
 	if dialogue_script == null:
 		push_error("Main: no se pudo cargar dialogue_system.gd.")
@@ -190,7 +190,7 @@ func _inicializar_ium() -> void:
 		push_error("Main: no se encontró nodo Systems.")
 		return
 
-	var manager_script := load("res://scripts/systems/ium/ium_manager.gd")
+	var manager_script := load("res://scripts/gameplay/ium_manager.gd")
 	if manager_script == null:
 		push_error("Main: no se pudo cargar ium_manager.gd.")
 		return
