@@ -1,5 +1,5 @@
 extends RefCounted
-class_name InventoryHotbar
+class_name InventoryHotbarState
 
 var indices: Array[int] = []
 var indice_activo: int = 0
