@@ -235,6 +235,7 @@ func _sincronizar_runtime() -> void:
 	for item in items:
 		items_runtime.append(item.duplicate(true))
 	inventory_controller.configurar_items(items_runtime, hotbar_indices)
+	inventory_controller.runtime.establecer_equipamiento(equipo)
 	for clave_variant in equipo.keys():
 		var clave := str(clave_variant)
 		var item_variant: Variant = equipo.get(clave, {})
