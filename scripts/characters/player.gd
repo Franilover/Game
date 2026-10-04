@@ -194,7 +194,7 @@ func _physics_process(delta: float) -> void:
 	var speed: float
 
 	if eterium_sprint:
-		speed = move_speed * run_multiplier * eterium_runtime.multiplicador_carrera()
+		speed = move_speed * run_multiplier * eterium.multiplicador_carrera()
 	elif is_running:
 		speed = move_speed * run_multiplier
 	else:
