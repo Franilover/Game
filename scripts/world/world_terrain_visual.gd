@@ -90,6 +90,15 @@ func _crear_capa_bioma(bioma_nombre: String) -> TileMapDual:
 	layer.rendering_quadrant_size = 32
 	layer.tile_set = _crear_tileset()
 
+	# Test real: el shader se aplica a la capa, pero solo añade detalle
+	# cuando el atlas que se está dibujando es Pradera.png.
+	# Las demás zonas conservan su render normal.
+	var grass_shader := load("res://shaders/grass_detail_test.gdshader") as Shader
+	if grass_shader != null:
+		var grass_material := ShaderMaterial.new()
+		grass_material.shader = grass_shader
+		layer.material = grass_material
+
 	add_child(layer)
 
 	_layers_by_bioma[clave] = layer
