@@ -734,16 +734,7 @@ func _refrescar_configuracion() -> void:
 	var comportamiento := criatura.comportamiento.strip_edges().to_lower()
 
 	if comportamiento.is_empty():
-		match criatura.get_nombre().strip_edges().to_lower():
-			"flaxis":
-				perfil = Perfil.FLAXIS
-			"zlish":
-				perfil = Perfil.ZLISH
-			"lignianos":
-				perfil = Perfil.LIGNIANOS
-			_:
-				perfil = Perfil.GENERICO
-
+		perfil = Perfil.GENERICO
 		return
 
 	perfil = _perfil_desde_texto(comportamiento)
