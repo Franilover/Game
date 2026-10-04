@@ -34,7 +34,7 @@ const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
 var player: Node = null
-var inventory: Node = null
+var inventory: GarliaInventory = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
 var game_state: Node = null
@@ -43,7 +43,7 @@ var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
@@ -199,12 +199,9 @@ func _usar_pala() -> bool:
 
 
 func _consumir_durabilidad_herramienta() -> void:
-	var inventario: Node = self.inventory
-	if inventario == null:
+	if inventory == null:
 		return
-	if not inventario.has_method("consumir_durabilidad_equipo"):
-		return
-	inventario.call("consumir_durabilidad_equipo", _inventory_equipment_slot)
+	inventory.consumir_durabilidad_equipo(_inventory_equipment_slot)
 
 
 func _crear_ataque_melee(
@@ -217,9 +214,8 @@ func _crear_ataque_melee(
 	if player == null:
 		return
 
-	var ataque: Node2D = COMBAT_ATTACK_AREA_SCRIPT.new() as Node2D
-	ataque.call(
-		"configurar",
+	var ataque := CombatAttackArea.new()
+	ataque.configurar(
 		player,
 		direccion,
 		alcance,
@@ -306,11 +302,10 @@ func usar_objeto_activo() -> void:
 
 
 func _obtener_objeto_equipado_para_accion() -> Dictionary:
-	var inventario: Node = self.inventory
-	if inventario == null or not inventario.has_method("obtener_equipamiento"):
+	if inventory == null:
 		return {}
 
-	var equipo_variant: Variant = inventario.call("obtener_equipamiento")
+	var equipo_variant: Variant = inventory.obtener_equipamiento()
 	if not equipo_variant is Dictionary:
 		return {}
 	var equipo := equipo_variant as Dictionary
@@ -333,11 +328,10 @@ func _obtener_objeto_equipado_para_accion() -> Dictionary:
 
 
 func _obtener_arma_equipada(slot_preferido: String = "mano_principal") -> Dictionary:
-	var inventario: Node = self.inventory
-	if inventario == null or not inventario.has_method("obtener_equipamiento"):
+	if inventory == null:
 		return {}
 
-	var equipo_variant: Variant = inventario.call("obtener_equipamiento")
+	var equipo_variant: Variant = inventory.obtener_equipamiento()
 	if not equipo_variant is Dictionary:
 		return {}
 	var equipo := equipo_variant as Dictionary
@@ -486,8 +480,7 @@ func _disparar_proyectil(
 	raiz_proyectiles.add_child(proyectil)
 	proyectil.global_position = player.global_position + direccion * 14.0
 
-	proyectil.call(
-		"configurar",
+	(proyectil as CombatProjectile).configurar(
 		ataque,
 		direccion,
 		velocidad,
@@ -801,9 +794,8 @@ func _aplicar_danio(
 func _registrar_criatura_derrotada(objetivo: Node) -> void:
 	if game_state == null or not is_instance_valid(game_state):
 		return
-	if not game_state.has_method("registrar_criatura_derrotada"):
-		return
-	game_state.call("registrar_criatura_derrotada", objetivo)
+	if game_state != null:
+		game_state.registrar_criatura_derrotada(objetivo)
 
 
 func _obtener_direccion_ataque() -> Vector2:
