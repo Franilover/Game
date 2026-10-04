@@ -349,10 +349,9 @@ func _crear_base_tile(
 		source_id
 	)
 
-	# Los terrain ids son locales a esta capa. Como cada bioma tiene
-	# su propio TileMapDual, un atlas de Bosque jamás puede ser elegido
-	# por una celda de Pradera, Marino, etc.
-	var terrain_id := zone + 1
+	# Cada capa contiene una sola zona visual, así que el terreno activo
+	# siempre es el terrain 1 y 0 representa el exterior/vacío.
+	var terrain_id := 1
 
 	for index in range(TILE_SEQUENCE.size()):
 		var data := atlas.get_tile_data(
