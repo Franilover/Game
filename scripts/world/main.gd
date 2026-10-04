@@ -27,6 +27,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _world_atmosphere: WorldAtmosphere = $World/WorldGenerator/WorldAtmosphere
 @onready var _world_generator: WorldGenerator = $World/WorldGenerator
 @onready var _world_context: WorldContext = $World/WorldGenerator/WorldContext
+@onready var _world_items: Node = $Systems/WorldItems
 
 
 func _ready() -> void:
@@ -35,7 +36,7 @@ func _ready() -> void:
 	if world_gen.has_method("configurar_entidades"):
 		world_gen.call("configurar_entidades", $Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context)
 	if GarliaWorldItems.has_method("configurar_dependencias"):
-		GarliaWorldItems.call("configurar_dependencias", $Entities/Player, _inventory, $Entities, world_gen.entity_manager, _world_context, MissionManager)
+		_world_items.call("configurar_dependencias", $Entities/Player, _inventory, $Entities, world_gen.entity_manager, _world_context, MissionManager)
 
 	if world_gen.is_world_ready():
 		_inicializar_jugador(world_gen)
@@ -205,7 +206,7 @@ func _configurar_inventario() -> void:
 		return
 
 	if _inventory.has_method("configurar"):
-		_inventory.call("configurar", _player, _world_entity_spawner, _world_context, RelationshipSystem)
+		_inventory.call("configurar", _player, _world_entity_spawner, _world_context, RelationshipSystem, _world_items)
 
 	var router: Node = _input_router
 	if router != null and _inventory.has_method("configurar_input_gate"):
@@ -238,7 +239,8 @@ func _configurar_admin() -> void:
 			_player,
 			_inventory,
 			_world_generator.entity_manager,
-			_admin_player_editor
+			_admin_player_editor,
+			_world_items
 		)
 
 func _configurar_pantalla() -> void:
