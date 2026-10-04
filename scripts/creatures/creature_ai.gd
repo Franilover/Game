@@ -809,7 +809,7 @@ func _obtener_respuesta_a_objetivo() -> String:
 		Perfil.DRAMARIAS:
 			return "atacar"
 
-	Perfil.ZLISH:
+		Perfil.ZLISH:
 			return "huir"
 
 		Perfil.FLAXIS:
