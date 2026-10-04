@@ -1,5 +1,7 @@
 extends Control
 
+class_name WorldMapUI
+
 const MAP_TILE_PIXELS: float = 8.0
 const VIEW_TILES_X: int = 91
 const VIEW_TILES_Y: int = 43
