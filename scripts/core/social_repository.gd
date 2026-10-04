@@ -37,12 +37,12 @@ func _request(tipo: String, callback: Callable) -> void:
 	match tipo:
 		"reglas":
 			request_id = _client.get_rest(
-				"personajes_game",
-				"select=id,personalidad_social,amistad_inicial,confianza_inicial,respeto_inicial,afecto_inicial"
+				"personaje_social_v1",
+				"select=*"
 			)
 		"regalos":
 			request_id = _client.get_rest(
-				"personaje_regalos",
+				"personaje_regalos_v1",
 				"select=*"
 			)
 
