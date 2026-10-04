@@ -1,7 +1,7 @@
 extends Control
 class_name AdminPlayerEditor
 
-var jugador: Node
+var jugador: Player
 var _species: OptionButton
 var _nombre: LineEdit
 var _vida: SpinBox
