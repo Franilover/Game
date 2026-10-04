@@ -877,6 +877,15 @@ var _supabase_client_ref: GarliaSupabaseClient = null
 func equipar_proceso_ium(proceso: Dictionary) -> void:
 	_proceso_ium_equipado = proceso
 
+func obtener_estado_ium() -> Dictionary:
+	return _proceso_ium_equipado.duplicate(true)
+
+
+func cargar_estado_ium(proceso: Dictionary) -> void:
+	_proceso_ium_equipado = proceso.duplicate(true)
+
+
+
 
 func _usar_proceso_ium() -> void:
 	if _proceso_ium_equipado.is_empty():
