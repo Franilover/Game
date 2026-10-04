@@ -7,9 +7,6 @@ signal ataque_sin_objetivo(atacante: Node)
 signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 
 
-const PROJECTILE_SCRIPT: Script = preload(
-	"res://scripts/gameplay/combat/combat_projectile.gd"
-)
 const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 	"res://scripts/gameplay/combat/combat_attack_area.gd"
 )
@@ -475,12 +472,11 @@ func _disparar_proyectil(
 		"Jugador/Proyectil:" + str(arma.get("nombre", "Proyectil"))
 	)
 
-	var proyectil := Area2D.new()
-	proyectil.set_script(PROJECTILE_SCRIPT)
+	var proyectil := CombatProjectile.new()
 	raiz_proyectiles.add_child(proyectil)
 	proyectil.global_position = player.global_position + direccion * 14.0
 
-	(proyectil as CombatProjectile).configurar(
+	proyectil.configurar(
 		ataque,
 		direccion,
 		velocidad,
