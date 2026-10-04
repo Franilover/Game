@@ -7,6 +7,11 @@ var _recetas: Array[Dictionary] = []
 var _cargando: bool = false
 var _lista: VBoxContainer
 var _estado: Label
+var _inventory: Node = null
+
+
+func configurar(inventario: Node) -> void:
+	_inventory = inventario
 
 
 func _ready() -> void:
@@ -251,7 +256,7 @@ func _puede_craftear(receta: Dictionary, items: Array[Dictionary]) -> bool:
 
 
 func _craftear(receta: Dictionary) -> void:
-	var inventario := get_tree().get_first_node_in_group("inventory")
+	var inventario := _inventory
 
 	if inventario == null:
 		_estado.text = "No se encontró el inventario."
