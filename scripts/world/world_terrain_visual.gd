@@ -86,24 +86,45 @@ var _variation_tilesets_by_bioma: Dictionary = {}
 var _batch_active: bool = false
 
 var _profiler_set_zone_ms: float = 0.0
+var _profiler_set_zone_calls: int = 0
 var _profiler_set_cell_ms: float = 0.0
 var _profiler_variation_ms: float = 0.0
 var _profiler_dirty_ms: float = 0.0
+var _profiler_flush_convert_ms: float = 0.0
+var _profiler_flush_update_ms: float = 0.0
+var _profiler_flush_variation_ms: float = 0.0
+var _profiler_flush_update_calls: int = 0
+var _profiler_flush_cells: int = 0
+var _profiler_flush_variation_cells: int = 0
 var _profiler_set_cell_calls: int = 0
 
 func iniciar_profiler() -> void:
 	_profiler_set_zone_ms = 0.0
+	_profiler_set_zone_calls = 0
 	_profiler_set_cell_ms = 0.0
 	_profiler_variation_ms = 0.0
 	_profiler_dirty_ms = 0.0
+	_profiler_flush_convert_ms = 0.0
+	_profiler_flush_update_ms = 0.0
+	_profiler_flush_variation_ms = 0.0
+	_profiler_flush_update_calls = 0
+	_profiler_flush_cells = 0
+	_profiler_flush_variation_cells = 0
 	_profiler_set_cell_calls = 0
 
 func obtener_profiler() -> Dictionary:
 	return {
 		"set_zone_ms": _profiler_set_zone_ms,
+		"set_zone_calls": _profiler_set_zone_calls,
 		"set_cell_ms": _profiler_set_cell_ms,
 		"variation_ms": _profiler_variation_ms,
 		"dirty_ms": _profiler_dirty_ms,
+		"flush_convert_ms": _profiler_flush_convert_ms,
+		"flush_update_ms": _profiler_flush_update_ms,
+		"flush_variation_ms": _profiler_flush_variation_ms,
+		"flush_update_calls": _profiler_flush_update_calls,
+		"flush_cells": _profiler_flush_cells,
+		"flush_variation_cells": _profiler_flush_variation_cells,
 		"set_cell_calls": _profiler_set_cell_calls,
 	}
 
@@ -286,6 +307,7 @@ func set_zone(
 		)
 	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
 	_profiler_set_zone_ms += float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
+	_profiler_set_zone_calls += 1
 
 
 func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
@@ -557,13 +579,7 @@ func flush() -> void:
 	for clave_variant in _layers_by_zone.keys():
 		var clave := str(clave_variant)
 
-		var cells_variant: Variant = (
-			_dirty_cells_by_zone.get(
-				clave,
-				[]
-			)
-		)
-
+		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
 		if not cells_variant is Array:
 			continue
 
@@ -571,26 +587,32 @@ func flush() -> void:
 		if layer == null:
 			continue
 
-		# Durante el lote las señales estuvieron bloqueadas. Publicamos todas
-		# las celdas de esta capa en una sola actualización de TileMapDual.
+		var convert_start_usec := Time.get_ticks_usec()
 		var dirty: Array[Vector2i] = []
 		for cell_variant in cells_variant:
 			if cell_variant is Vector2i:
 				dirty.append(cell_variant as Vector2i)
+		_profiler_flush_convert_ms += float(Time.get_ticks_usec() - convert_start_usec) / 1000.0
 
 		if not dirty.is_empty():
+			var update_start_usec := Time.get_ticks_usec()
 			layer._update_cells(dirty, false)
+			_profiler_flush_update_ms += float(Time.get_ticks_usec() - update_start_usec) / 1000.0
+			_profiler_flush_update_calls += 1
+			_profiler_flush_cells += dirty.size()
 
 		_dirty_cells_by_zone[clave] = []
 		_dirty_lookup_by_zone[clave] = {}
 
-
 	if not _dirty_variations.is_empty():
+		var variation_start_usec := Time.get_ticks_usec()
 		var variaciones := _dirty_variations.keys()
+		_profiler_flush_variation_cells += variaciones.size()
 		_dirty_variations.clear()
 		for cell_variant in variaciones:
 			if cell_variant is Vector2i:
 				_actualizar_variacion(cell_variant as Vector2i)
+		_profiler_flush_variation_ms += float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
 
 
 func clear_chunk(
