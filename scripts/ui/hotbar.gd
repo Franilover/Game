@@ -110,10 +110,10 @@ func configurar_inventario(nuevo_inventario: GarliaInventory) -> void:
 func _conectar_inventario() -> void:
 	if inventory == null or not is_instance_valid(inventory) or _inventario_conectado:
 		return
-	if inventory.has_signal("inventory_changed") and not inventory.is_connected("inventory_changed", _actualizar):
-		inventory.connect("inventory_changed", _actualizar)
-	if inventory.has_signal("active_item_changed") and not inventory.is_connected("active_item_changed", _al_objeto_activo_cambiado):
-		inventory.connect("active_item_changed", _al_objeto_activo_cambiado)
+	if not inventory.inventory_changed.is_connected(_actualizar):
+		inventory.inventory_changed.connect(_actualizar)
+	if not inventory.active_item_changed.is_connected(_al_objeto_activo_cambiado):
+		inventory.active_item_changed.connect(_al_objeto_activo_cambiado)
 	_inventario_conectado = true
 
 
@@ -522,10 +522,7 @@ func _actualizar() -> void:
 			slot_nodes.size()
 		)
 	):
-		var datos: Dictionary = inventory.call(
-			"obtener_objeto_hotbar",
-			i
-		)
+		var datos: Dictionary = inventory.obtener_objeto_hotbar(i)
 
 		_configurar_slot(
 			slot_nodes[i],
@@ -659,10 +656,7 @@ func seleccionar_hotbar(
 	indice_seleccionado = indice
 
 	if inventory != null:
-		inventory.call(
-			"seleccionar_hotbar",
-			indice
-		)
+		inventory.seleccionar_hotbar(indice)
 
 	_actualizar()
 
@@ -690,9 +684,7 @@ func obtener_objeto_seleccionado() -> Dictionary:
 	if inventory == null:
 		return {}
 
-	return inventory.call(
-		"obtener_objeto_activo"
-	)
+	return inventory.obtener_objeto_activo()
 
 
 func obtener_indice_seleccionado() -> int:
