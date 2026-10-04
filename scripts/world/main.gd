@@ -169,10 +169,7 @@ func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 		_hud.ocultar_interaccion()
 		return
 
-	var texto := "Recoger"
-	if objetivo.has_method("get_interaction_text"):
-		texto = str(objetivo.call("get_interaction_text"))
-
+	var texto: String = _interaction_system.obtener_texto_interaccion()
 	_hud.mostrar_interaccion(texto)
 
 
