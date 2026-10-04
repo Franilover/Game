@@ -8,6 +8,9 @@
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/gameplay/interaction_system.gd" id="5_interaction"]
 [ext_resource type="PackedScene" uid="uid://bi6oqlrfq4scs" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/gameplay/combat_system.gd" id="8_combat"]
+[ext_resource type="Script" path="res://scripts/gameplay/dialogue_system.gd" id="12_dialogue"]
+[ext_resource type="Script" path="res://scripts/gameplay/ium_manager.gd" id="13_ium"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ium_lab.tscn" id="14_ium_lab"]
 [ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/dev/admin_console.gd" id="9_admin"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="10_pause"]
 [ext_resource type="PackedScene" path="res://scenes/ui/death_menu.tscn" id="11_death"]
@@ -32,6 +35,8 @@ z_index = 0
 
 [node name="Inventory" parent="UI" unique_id=1193147799 instance=ExtResource("6_inventory")]
 
+[node name="IUMLab" parent="UI" instance=ExtResource("14_ium_lab")]
+
 [node name="PauseMenu" parent="UI" unique_id=1900000001 instance=ExtResource("10_pause")]
 
 [node name="DeathMenu" parent="UI" unique_id=1900000002 instance=ExtResource("11_death")]
@@ -46,6 +51,12 @@ script = ExtResource("5_interaction")
 
 [node name="CombatSystem" type="Node" parent="Systems" unique_id=11404339]
 script = ExtResource("8_combat")
+
+[node name="DialogueSystem" type="Node" parent="Systems"]
+script = ExtResource("12_dialogue")
+
+[node name="IUMManager" type="Node" parent="Systems"]
+script = ExtResource("13_ium")
 
 [node name="WorldEntitySpawner" type="Node" parent="Systems" unique_id=2068384905]
 script = ExtResource("3_pg0he")
