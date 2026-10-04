@@ -136,6 +136,16 @@ func limpiar() -> void:
 	runtime.limpiar()
 	inventario_cambio.emit()
 
+func robar_objeto_equipado(slot: String) -> Dictionary:
+	if not puede_interactuar():
+		return {}
+	var objeto := runtime.robar_equipamiento(slot)
+	if objeto.is_empty():
+		return {}
+	equipo_cambio.emit(slot, {})
+	inventario_cambio.emit()
+	return objeto
+
 func consumir_durabilidad_equipo(slot: String) -> bool:
 	if not puede_interactuar():
 		return false
