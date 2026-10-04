@@ -160,8 +160,6 @@ func _configurar_interaccion(world_gen: WorldGenerator) -> void:
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
 	_interaction_system.configurar(_player, _inventory, _world_items, _input_router, world_gen.entity_manager)
-	else:
-		push_error("Main: InteractionSystem no tiene configurar().")
 
 func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 	if _hud == null:
@@ -187,20 +185,11 @@ func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator)
 
 
 func _configurar_input_router() -> void:
-	var router: Node = _input_router
-	if router == null:
+	if _input_router == null:
 		push_error("Main: no se encontró GameplayInputRouter.")
 		return
-	if router.has_method("configurar_sistemas"):
-		router.call("configurar_sistemas", _interaction_system, _combat_system)
-	if router.has_method("configurar_bloqueos"):
-		router.call(
-		"configurar_bloqueos",
-		_inventory,
-		$UI/AdminConsole,
-		_dialogue_system,
-		_hud
-	)
+	_input_router.configurar_sistemas(_interaction_system, _combat_system)
+	_input_router.configurar_bloqueos(_inventory, _admin_console, _dialogue_system, _hud)
 
 func _configurar_inventario() -> void:
 	if _inventory == null:
@@ -228,9 +217,7 @@ func _configurar_admin() -> void:
 	if _admin_console == null:
 		push_error("Main: no se encontró UI/AdminConsole.")
 		return
-	if _admin_console.has_method("configurar"):
-		_admin_console.call(
-			"configurar",
+	_admin_console.configurar(
 			_world_context,
 			_world_entity_spawner,
 			_world_atmosphere,
@@ -239,7 +226,7 @@ func _configurar_admin() -> void:
 			_world_generator.entity_manager,
 			_admin_player_editor,
 			_world_items
-		)
+	)
 
 func _configurar_pantalla() -> void:
 	if not pantalla_completa:
