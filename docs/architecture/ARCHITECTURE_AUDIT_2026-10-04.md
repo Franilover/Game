@@ -145,3 +145,41 @@ Esta pasada **no se debe considerar una eliminación global completa** de todos 
 4. Inyectar WorldContext/Player en WorldDecoration, WorldProp y WorldItem solo después de confirmar cuáles se instancian realmente.
 5. Auditar referencias a escenas/scripts para distinguir archivos muertos de código que se instancia por carga dinámica.
 6. Validar cada etapa en Godot. No hacer una migración masiva de la IA ni borrar archivos hasta conocer todos sus consumidores.
+
+
+## Fase de ciclo de vida de entidades — aplicada
+
+La Composition Root `Main` ahora configura `WorldGenerator` con referencias explícitas a Player, Inventory, CombatSystem, DialogueSystem, MissionManager y WorldContext antes de que comience la generación diferida del mundo.
+
+`WorldGenerator` pasa estas dependencias a `WorldEntityFactory`. La fábrica configura Creature y WorldProp **antes de registrarlos en el árbol**. Esto evita que `_ready()` y la IA empiecen con dependencias vacías y también evita volver a ejecutar `Creature.configurar()` después de que la criatura ya entró al árbol.
+
+### CreatureAI
+
+- Player, WorldEntityManager, Inventory y CombatSystem se inyectan explícitamente.
+- Los objetivos se enumeran desde WorldEntityManager y Player, en lugar de consultar grupos globales.
+- La selección de objetivos de Dramarias usa la misma fuente de entidades y filtra por daño/alive.
+- El alcance de armas consulta el CombatSystem inyectado.
+- La conducta Zlish recibe Player e Inventory inyectados.
+- Se eliminaron búsquedas de grupos y de `current_scene` en CreatureAI.
+
+### Creature
+
+- Recibe las dependencias de gameplay antes de entrar al árbol y las entrega a CreatureAI.
+- Diálogo y progreso de misiones usan referencias inyectadas.
+- Los rastros de teletransporte se agregan al root de entidades explícito en vez de `current_scene`.
+- Se quitó la reconfiguración redundante de criaturas después de `WorldEntityManager.registrar()`.
+
+### Props y objetos del mundo
+
+- WorldProp recibe WorldContext e Inventory explícitos.
+- WorldEntityFactory configura los datos canónicos del prop antes del registro; el spawner solo añade su chunk/posición después.
+- WorldItem recibe Player, Inventory y MissionManager explícitos.
+- GarliaWorldItems recibe Player, Inventory, Entities, WorldContext y MissionManager desde Main; la creación de drops, props colocados y objetos de muestra usa Entities como root, sin inspeccionar `current_scene`.
+- GarliaWorldItems mantiene referencias a los objetos creados para la recolección manual, en vez de buscar el grupo `world_item`.
+
+### Riesgos/validación pendiente
+
+- No se ejecutó Godot en esta pasada. Los cambios requieren prueba en editor/ejecución.
+- Verificar aparición de criaturas y personajes, detección ecológica, combate de criaturas, robo de Zlish, diálogo, misiones por muerte, drops, props recolectables y colocación de objetos.
+- `WorldDecoration` aún conserva búsqueda global, pero no está presente en `scenes/world/main.tscn`; antes de migrarlo o eliminarlo hay que confirmar si otra escena o carga dinámica lo usa.
+- `GarliaWorldItems.intentar_recoger()` conserva una ruta de recolección propia. Antes de eliminarla, verificar sus consumidores para no romper una ruta de interacción alternativa.
