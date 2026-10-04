@@ -48,7 +48,6 @@ var _entity_factory: WorldEntityFactory = null
 
 func configurar(
 	terrain: WorldTerrain,
-	entities_root: Node,
 	entity_manager: WorldEntityManager = null,
 	entity_factory: WorldEntityFactory = null
 ) -> void:
