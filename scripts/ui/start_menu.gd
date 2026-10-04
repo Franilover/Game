@@ -1,8 +1,8 @@
 extends Control
 
 
-const MAIN_SCENE_PATH: String = (
-	"res://scenes/world/main.tscn"
+const KINGDOM_SCENE_PATH: String = (
+	"res://scenes/kingdom/reino_torres.tscn"
 )
 
 
@@ -324,21 +324,7 @@ func _iniciar_aventura_con_personaje() -> void:
 
 	start_button.disabled = true
 
-	var error: Error = (
-		get_tree().change_scene_to_file(
-			MAIN_SCENE_PATH
-		)
-	)
-
-	if error != OK:
-		push_error(
-			"StartMenu: no se pudo abrir "
-			+ "la escena principal. Error: "
-			+ str(error)
-		)
-
-		start_button.disabled = false
-		start_button.text = "Aventura"
+	SceneManager.go_to(KINGDOM_SCENE_PATH)
 
 
 func _salir() -> void:
