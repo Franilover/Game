@@ -361,8 +361,8 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 		player_state.facing = facing_variant as Vector2
 
 	if jugador.has_method("obtener_estado_ium"):
-		var player_world_state.flags_variant: Variant = jugador.call("obtener_estado_ium")
-		if player_world_state.flags_variant is Dictionary:
+		var player_flags_variant: Variant = jugador.call("obtener_estado_ium")
+		if player_flags_variant is Dictionary:
 			world_state.flags["proceso_ium_equipado"] = (
 				player_world_state.flags_variant as Dictionary
 			).duplicate(true)
@@ -490,8 +490,8 @@ func _serializar_estado() -> Dictionary:
 				"y": player_state.facing.y
 			}
 		},
-		"world_state.elapsed_time": world_state.elapsed_time,
-		"world_state.flags": world_state.flags.duplicate(true),
+		"elapsed_time": world_state.elapsed_time,
+		"flags": world_state.flags.duplicate(true),
 		"scene": world_state.current_scene
 	}
 
@@ -535,8 +535,8 @@ func _estado_base_partida(
 					"y": 1.0
 				}
 			},
-			"world_state.elapsed_time": 0.0,
-			"world_state.flags": {
+			"elapsed_time": 0.0,
+			"flags": {
 				"personaje": personaje.duplicate(true)
 			} if not personaje.is_empty() else {},
 			"scene": "res://scenes/world/main.tscn"
@@ -616,17 +616,17 @@ func _aplicar_estado_memoria(
 
 	world_state.elapsed_time = float(
 		estado.get(
-			"world_state.elapsed_time",
+			"elapsed_time",
 			0.0
 		)
 	)
 
-	var world_state.flags_variant: Variant = estado.get(
-		"world_state.flags",
+	var flags_variant: Variant = estado.get(
+		"flags",
 		{}
 	)
 
-	if world_state.flags_variant is Dictionary:
+	if flags_variant is Dictionary:
 		world_state.flags = (
 			world_state.flags_variant as Dictionary
 		).duplicate(true)
