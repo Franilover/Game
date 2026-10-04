@@ -105,22 +105,22 @@ func _ready() -> void:
 
 	if _visual != null:
 		var tween := create_tween()
-	tween.set_parallel(true)
-	for visual in [_visual, _contorno]:
-		if visual == null:
-			continue
-		tween.tween_property(
-			visual,
-			"modulate:a",
-			0.0,
-			duracion
-		)
-		tween.tween_property(
-			visual,
-			"scale",
-			Vector2(1.08, 1.08),
-			duracion
-		)
+		tween.set_parallel(true)
+		for visual in [_visual, _contorno]:
+			if visual == null:
+				continue
+			tween.tween_property(
+				visual,
+				"modulate:a",
+				0.0,
+				duracion
+			)
+			tween.tween_property(
+				visual,
+				"scale",
+				Vector2(1.08, 1.08),
+				duracion
+			)
 
 	await get_tree().physics_frame
 	_revisar_areas_existentes()
@@ -129,7 +129,6 @@ func _ready() -> void:
 
 	if is_instance_valid(self):
 		queue_free()
-
 
 func _revisar_areas_existentes() -> void:
 	if not is_instance_valid(_area):
