@@ -90,6 +90,23 @@ func _crear_capa_bioma(bioma_nombre: String) -> TileMapDual:
 	layer.rendering_quadrant_size = 32
 	layer.tile_set = _crear_tileset()
 
+	# Prueba directa en el mundo principal: overlay grande y sutil sobre Pradera.
+	if clave == "Pradera":
+		var grass_shader := load(
+			"res://shaders/grass_overlay_test.gdshader"
+		) as Shader
+		var overlay_texture := load(
+			"res://assets/shader/grass_overlay_test.svg"
+		) as Texture2D
+
+		if grass_shader != null and overlay_texture != null:
+			var grass_material := ShaderMaterial.new()
+			grass_material.shader = grass_shader
+			grass_material.set_shader_parameter("overlay", overlay_texture)
+			grass_material.set_shader_parameter("pattern_size", 256.0)
+			grass_material.set_shader_parameter("strength", 0.75)
+			layer.material = grass_material
+
 
 	add_child(layer)
 
