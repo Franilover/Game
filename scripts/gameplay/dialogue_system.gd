@@ -138,7 +138,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id.is_empty():
 			if mission_manager != null:
-				mission_manager_local.call(
+				mission_manager.call(
 					"registrar_dialogo_desde_fuente",
 					personaje_id,
 					str(datos_seleccionados.get("clave", "principal")),
