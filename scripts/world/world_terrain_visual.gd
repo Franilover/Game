@@ -562,10 +562,10 @@ func clear_chunk(
 					bioma,
 					cell + offset
 				)
-			_actualizar_variacion_pradera(cell)
+			_actualizar_variacion(cell)
 			for offset: Vector2i in UPDATE_NEIGHBORS:
 				if offset != Vector2i.ZERO:
-					_actualizar_variacion_pradera(cell + offset)
+					_actualizar_variacion(cell + offset)
 
 	if not _dirty_cells_by_bioma.is_empty():
 		flush()
