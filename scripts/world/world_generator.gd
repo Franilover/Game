@@ -45,6 +45,8 @@ func _ready() -> void:
 func configurar_dependencias(world_data: WorldDataService, game_state: GameStateService) -> void:
 	_world_data = world_data
 	_game_state = game_state
+	if context != null:
+		context.configurar(terrain, atmosphere, _world_data)
 	_dependencias_configuradas = _world_data != null and _game_state != null
 	if not _dependencias_configuradas:
 		push_error("WorldGenerator: WorldDataService y GameState son obligatorios.")
