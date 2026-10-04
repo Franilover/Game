@@ -62,9 +62,12 @@ func _al_entrar_area(area: Area2D) -> void:
 func _procesar_objetivo(objetivo: Node) -> void:
 	if _impactado or attack == null:
 		return
-	if not CombatTargeting.es_objetivo_valido(attack.attacker, objetivo):
+	var entidad: Entity = objetivo as Entity
+	if entidad == null:
 		return
-	if not CombatDamage.aplicar(objetivo, attack.damage, attack.origin):
+	if not CombatTargeting.es_objetivo_valido(attack.attacker, entidad):
+		return
+	if not CombatDamage.aplicar(entidad, attack.damage, attack.origin):
 		return
 	_impactado = true
 	objetivo_impactado.emit(objetivo, attack)
