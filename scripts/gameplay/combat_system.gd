@@ -36,16 +36,18 @@ var player: Node = null
 var inventory: Node = null
 var world_generator: Node = null
 var projectile_root: Node = null
+var entity_manager: Node = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_generator: Node = null, nuevo_projectile_root: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_generator: Node = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_generator = nuevo_world_generator
 	projectile_root = nuevo_projectile_root
+	entity_manager = nuevo_entity_manager
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
@@ -787,11 +789,11 @@ func _buscar_objetivo(
 	var mejor_objetivo: Node = null
 	var mejor_distancia: float = INF
 
-	var candidatos: Array[Node] = (
-		get_tree().get_nodes_in_group(
-			"damageable"
-		)
-	)
+	var candidatos: Array[Node] = []
+	if entity_manager != null and entity_manager.has_method("obtener_entidades_activas"):
+		for entidad_variant in entity_manager.call("obtener_entidades_activas"):
+			if entidad_variant is Node and (entidad_variant as Node).is_in_group("damageable"):
+				candidatos.append(entidad_variant as Node)
 
 	var lado_medio: float = (
 		ancho * 0.5
