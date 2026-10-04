@@ -209,3 +209,13 @@ Los servicios que pertenecen a una partida activa deben declararse en Main y rec
 - Terminar el inventario de responsabilidades de Player, HUD, Inventory, AdminConsole y SupabaseClient antes de dividirlos.
 - Revisar WorldDecoration como posible sistema legacy antes de eliminarlo.
 - Después de terminar la reestructuración, ejecutar una única pasada de errores en Godot.
+
+
+## Sexta barrida — infraestructura de red y legado muerto
+
+- `GarliaSalas` ya no depende directamente de `GarliaAuth`; recibe la autenticación desde la composición.
+- `GarliaMultiplayer` ya no descubre `GarliaAuth` globalmente; recibe la dependencia explícita.
+- `SupabaseClient` ya no lee `GarliaAuth` directamente; la autenticación se inyecta desde `StartMenu` y `Main`.
+- `RelationshipSystem` dejó de registrarse en un grupo global; su API de configuración ya es la frontera de composición.
+- Se eliminó `WorldDecoration` y su escena porque la auditoría confirmó que no tenía consumidores; la generación real de props pertenece al pipeline actual de entidades/WorldItems.
+- La siguiente etapa debe seguir reduciendo monolitos por responsabilidad, especialmente `SupabaseClient`, `Player`, `HUD` y `CombatSystem`, antes de ejecutar la pasada única de errores de Godot.
