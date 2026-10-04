@@ -849,11 +849,16 @@ func _comando_summon(nombre: String) -> void:
 	# Primero intentamos el texto completo. Esto permite criaturas
 	# cuyos nombres tienen espacios y evita interpretar sus nombres
 	# como si fueran argumentos especiales de Humano.
-	var resultado: Variant = (
-		world_generator.call(
-			"summon_criatura",
-			nombre_solicitado
-		)
+	if player == null or not is_instance_valid(player):
+		_agregar_linea("[color=#d88]No se encontró el jugador para calcular dónde invocar.[/color]")
+		return
+
+	# Invocar cerca del jugador, sin buscarlo globalmente.
+	var posicion_invocacion: Vector2 = player.global_position + Vector2(32.0, 0.0)
+	var resultado: Variant = world_generator.call(
+		"summon_criatura",
+		nombre_solicitado,
+		posicion_invocacion
 	)
 
 	if resultado is Dictionary:
@@ -880,7 +885,8 @@ func _comando_summon(nombre: String) -> void:
 			if not nombre_personaje.is_empty():
 				resultado = world_generator.call(
 					"summon_criatura",
-					nombre_personaje
+					nombre_personaje,
+					posicion_invocacion
 				)
 
 				if resultado is Dictionary:
