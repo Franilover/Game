@@ -13,26 +13,36 @@ const RECUERDOS_KEY := "recuerdos_sociales"
 var _reglas: Dictionary = {}
 var _regalos: Array = []
 var _cargado: bool = false
+var _repository: Node = null
 
 
 func _ready() -> void:
 	add_to_group("relationship_system")
-	if not SupabaseClient.personaje_social_cargado.is_connected(_al_reglas_cargadas):
-		SupabaseClient.personaje_social_cargado.connect(_al_reglas_cargadas)
-	if not SupabaseClient.personaje_regalos_cargados.is_connected(_al_regalos_cargados):
-		SupabaseClient.personaje_regalos_cargados.connect(_al_regalos_cargados)
-	call_deferred("_cargar_reglas_disponibles")
+
+
+func configurar(repository: Node) -> void:
+	_repository = repository
+	if _repository == null:
+		push_error("RelationshipSystem: SocialRepository no configurado.")
+		return
+
+	if _repository.has_signal("reglas_cargadas"):
+		var reglas_signal: Signal = _repository.reglas_cargadas
+		if not reglas_signal.is_connected(_al_reglas_cargadas):
+			reglas_signal.connect(_al_reglas_cargadas)
+	if _repository.has_signal("regalos_cargados"):
+		var regalos_signal: Signal = _repository.regalos_cargados
+		if not regalos_signal.is_connected(_al_regalos_cargados):
+			regalos_signal.connect(_al_regalos_cargados)
+
+	_cargar_reglas_disponibles()
 
 
 func _cargar_reglas_disponibles() -> void:
-	_regalos = SupabaseClient.obtener_personaje_regalos()
-	if _regalos.is_empty():
-		SupabaseClient.cargar_personaje_regalos()
-	var reglas: Array = SupabaseClient.obtener_personaje_social()
-	if not reglas.is_empty():
-		_al_reglas_cargadas(reglas)
-	else:
-		SupabaseClient.cargar_personaje_social()
+	if _repository == null:
+		return
+	_repository.cargar_regalos()
+	_repository.cargar_reglas()
 
 
 func _al_regalos_cargados(regalos: Array) -> void:
