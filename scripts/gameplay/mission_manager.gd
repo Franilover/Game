@@ -13,6 +13,13 @@ var _misiones: Array[Dictionary] = []
 var _misiones_por_id: Dictionary = {}
 var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
+var _player: Node = null
+var _entity_manager: Node = null
+
+
+func configurar_dependencias(player: Node = null, entity_manager: Node = null) -> void:
+	_player = player
+	_entity_manager = entity_manager
 
 
 func _ready() -> void:
@@ -193,7 +200,7 @@ func _registrar_entrega_personaje(
 	if destino == null or not is_instance_valid(destino):
 		return false
 
-	var jugador := get_tree().get_first_node_in_group("player")
+	var jugador: Node = _player
 	if jugador == null:
 		return false
 
@@ -226,7 +233,10 @@ func _registrar_entrega_personaje(
 			if personaje_entregado_id.is_empty():
 				continue
 
-			for criatura_variant in get_tree().get_nodes_in_group("creatures"):
+			if _entity_manager == null or not _entity_manager.has_method("obtener_entidades_activas"):
+		return false
+
+		for criatura_variant in _entity_manager.call("obtener_entidades_activas"):
 				if not criatura_variant is Node:
 					continue
 
