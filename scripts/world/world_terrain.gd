@@ -48,6 +48,9 @@ var _profiler_flush_ms: float = 0.0
 var _profiler_data_calls: int = 0
 var _profiler_paint_calls: int = 0
 var _profiler_flushes: int = 0
+var _profiler_biome_ms: float = 0.0
+var _profiler_ecosystem_ms: float = 0.0
+var _profiler_zone_ms: float = 0.0
 
 
 func configurar(
@@ -193,6 +196,9 @@ func iniciar_generacion_chunk(
 	_profiler_data_calls = 0
 	_profiler_paint_calls = 0
 	_profiler_flushes = 0
+	_profiler_biome_ms = 0.0
+	_profiler_ecosystem_ms = 0.0
+	_profiler_zone_ms = 0.0
 
 	if not _generation_task.is_empty():
 		return
@@ -327,24 +333,24 @@ func _procesar_datos_chunk(
 			global_y
 		)
 
-		var bioma_index: int = (
-			_bioma_index_at_tile(tile)
-		)
+		var stage_start_usec: int = Time.get_ticks_usec()
+		var bioma_index: int = _bioma_index_at_tile(tile)
+		_profiler_biome_ms += float(Time.get_ticks_usec() - stage_start_usec) / 1000.0
 
-		var ecosistema_index: int = (
-			_ecosistema_index_at_tile(
-				tile,
-				bioma_index
-			)
+		stage_start_usec = Time.get_ticks_usec()
+		var ecosistema_index: int = _ecosistema_index_at_tile(
+			tile,
+			bioma_index
 		)
+		_profiler_ecosystem_ms += float(Time.get_ticks_usec() - stage_start_usec) / 1000.0
 
-		var zona: int = (
-			_zona_base_at_tile(
-				tile,
-				bioma_index,
-				ecosistema_index
-			)
+		stage_start_usec = Time.get_ticks_usec()
+		var zona: int = _zona_base_at_tile(
+			tile,
+			bioma_index,
+			ecosistema_index
 		)
+		_profiler_zone_ms += float(Time.get_ticks_usec() - stage_start_usec) / 1000.0
 
 		biomas[local_y][local_x] = (
 			bioma_index
@@ -548,7 +554,13 @@ func _finalizar_chunk() -> void:
 		"%.2f" % _profiler_data_ms,
 		" ms (",
 		_profiler_data_calls,
-		" pasos) | pintura=",
+		" pasos) | bioma=",
+		"%.2f" % _profiler_biome_ms,
+		" ms | ecosistema=",
+		"%.2f" % _profiler_ecosystem_ms,
+		" ms | zona=",
+		"%.2f" % _profiler_zone_ms,
+		" ms | pintura=",
 		"%.2f" % _profiler_paint_ms,
 		" ms (",
 		_profiler_paint_calls,
