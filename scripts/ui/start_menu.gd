@@ -90,6 +90,9 @@ var _cargando_mundo: bool = false
 
 
 func _ready() -> void:
+	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
+	GarliaSalas.configurar_dependencias(GarliaAuth)
+
 	if WorldData.has_method("configurar_dependencias"):
 		WorldData.call("configurar_dependencias", SupabaseClient)
 
