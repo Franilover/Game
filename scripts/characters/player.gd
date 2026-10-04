@@ -869,17 +869,6 @@ var _ium_manager_ref: Node = null
 var _entity_manager_ref: Node = null
 
 
-func configurar_dependencias(
-	inventory: Node = null,
-	world_generator: Node = null,
-	ium_manager: Node = null,
-	entity_manager: Node = null
-) -> void:
-	_inventory_ref = inventory
-	_world_generator_ref = world_generator
-	_ium_manager_ref = ium_manager
-	_entity_manager_ref = entity_manager
-
 func equipar_proceso_ium(proceso: Dictionary) -> void:
 	_proceso_ium_equipado = proceso
 
