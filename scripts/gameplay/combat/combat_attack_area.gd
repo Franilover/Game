@@ -13,6 +13,7 @@ var duracion: float = 0.10
 var _afectados: Array[Node] = []
 var _area: Area2D
 var _visual: Polygon2D
+var _contorno: Line2D
 
 
 func configurar(
@@ -69,7 +70,28 @@ func configurar(
 	])
 	_visual.color = color
 	_visual.z_index = 100
+	_visual.z_as_relative = true
 	add_child(_visual)
+
+	_contorno = Line2D.new()
+	_contorno.name = "AttackOutline"
+	_contorno.width = 2.0
+	_contorno.default_color = Color(
+		color.r,
+		color.g,
+		color.b,
+		minf(color.a + 0.25, 1.0)
+	)
+	_contorno.z_index = 101
+	_contorno.z_as_relative = true
+	_contorno.closed = true
+	_contorno.points = PackedVector2Array([
+		Vector2(inicio, -mitad),
+		Vector2(final, -mitad),
+		Vector2(final, mitad),
+		Vector2(inicio, mitad)
+	])
+	add_child(_contorno)
 
 	rotation = direccion.angle()
 
@@ -82,16 +104,19 @@ func _ready() -> void:
 		return
 
 	if _visual != null:
-		var tween := create_tween()
-		tween.set_parallel(true)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	for visual in [_visual, _contorno]:
+		if visual == null:
+			continue
 		tween.tween_property(
-			_visual,
+			visual,
 			"modulate:a",
 			0.0,
 			duracion
 		)
 		tween.tween_property(
-			_visual,
+			visual,
 			"scale",
 			Vector2(1.08, 1.08),
 			duracion
