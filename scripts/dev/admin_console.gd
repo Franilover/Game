@@ -12,14 +12,14 @@ var _sugerencias_lista: VBoxContainer
 
 var _abierto: bool = false
 var _sugerencias: Array[String] = []
-var world_context: Node = null
-var world_entity_spawner: Node = null
-var world_atmosphere: Node = null
-var player: Node = null
-var inventory: Node = null
-var entity_manager: Node = null
-var admin_player_editor: Control = null
-var world_items: Node = null
+var world_context: WorldContext = null
+var world_entity_spawner: WorldEntitySpawner = null
+var world_atmosphere: WorldAtmosphere = null
+var player: Player = null
+var inventory: GarliaInventory = null
+var entity_manager: WorldEntityManager = null
+var admin_player_editor: AdminPlayerEditor = null
+var world_items: GarliaWorldItems = null
 
 
 const COMANDO_SUMMON: String = "/summon"
@@ -33,14 +33,14 @@ const ALTURA_SUGERENCIAS_POR_FILA: float = 22.0
 
 
 func configurar(
-	nuevo_world_context: Node,
-	nuevo_entity_spawner: Node,
-	nuevo_world_atmosphere: Node,
-	nuevo_player: Node,
-	nuevo_inventory: Node,
-	nuevo_entity_manager: Node,
-	nuevo_admin_player_editor: Control,
-	nuevo_world_items: Node = null
+	nuevo_world_context: WorldContext,
+	nuevo_entity_spawner: WorldEntitySpawner,
+	nuevo_world_atmosphere: WorldAtmosphere,
+	nuevo_player: Player,
+	nuevo_inventory: GarliaInventory,
+	nuevo_entity_manager: WorldEntityManager,
+	nuevo_admin_player_editor: AdminPlayerEditor,
+	nuevo_world_items: GarliaWorldItems = null
 ) -> void:
 	world_context = nuevo_world_context
 	world_entity_spawner = nuevo_entity_spawner
@@ -65,10 +65,8 @@ func _ready() -> void:
 			_al_datos_disponibles
 		)
 
-	if world_items != null and world_items.has_signal("catalogo_cargado"):
-		world_items.catalogo_cargado.connect(
-			_al_datos_disponibles
-		)
+	if world_items != null:
+		world_items.catalogo_cargado.connect(_al_datos_disponibles)
 
 
 func _input(event: InputEvent) -> void:
