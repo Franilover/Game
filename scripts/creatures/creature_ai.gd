@@ -1975,3 +1975,5 @@ func _animar_salto() -> void:
 		escala_original,
 		0.14
 	)
+
+# Estado sincronizado: configuración de IA canónica en Supabase.
