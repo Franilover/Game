@@ -260,10 +260,6 @@ func _esta_bloqueado_por_interfaz() -> bool:
 	return input_gate.esta_bloqueado()
 
 
-func _actualizar_cooldowns(delta: float) -> void:
-	locomotion.actualizar_cooldowns(delta)
-
-
 func _actualizar_regeneracion_stamina(delta: float, esta_corriendo: bool) -> void:
 	if esta_corriendo:
 		return
