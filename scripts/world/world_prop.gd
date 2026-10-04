@@ -9,13 +9,13 @@ var variante = 0
 var semilla = 0
 var interactuable = false
 var datos = {}
-var _world_context: Node = null
-var _inventory: Node = null
+var _world_context: WorldContext = null
+var _inventory: GarliaInventory = null
 
 
 func configurar_dependencias(
-	nuevo_world_context: Node,
-	nuevo_inventory: Node
+	nuevo_world_context: WorldContext,
+	nuevo_inventory: GarliaInventory
 ) -> void:
 	_world_context = nuevo_world_context
 	_inventory = nuevo_inventory
@@ -120,11 +120,8 @@ func get_interaction_details() -> Dictionary:
 	}
 
 	var contexto_provider := _world_context
-	if contexto_provider != null and is_instance_valid(contexto_provider) and contexto_provider.has_method("get_contexto_at"):
-		var contexto_variant: Variant = contexto_provider.call(
-			"get_contexto_at",
-			global_position
-		)
+	if contexto_provider != null and is_instance_valid(contexto_provider):
+		var contexto_variant: Variant = contexto_provider.get_contexto_at(global_position)
 
 		if contexto_variant is Dictionary:
 			var contexto := contexto_variant as Dictionary
