@@ -694,7 +694,7 @@ func clear_chunk(
 					layer_key,
 					cell + offset
 				)
-			_marcar_variaciones_dirty(cell)
+			_marcar_variaciones_dirty(cell, "")
 
 	if not _dirty_cells_by_zone.is_empty():
 		flush()
