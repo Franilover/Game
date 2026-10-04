@@ -221,10 +221,7 @@ func _cargar_datos() -> void:
 	_eterium.value = float(config.get("eterium_maximo", 100))
 	_energia.value = float(config.get("energia_maxima", 100))
 
-	var admin_variant: Variant = GameState.flags.get("personaje_admin", {})
-	var admin_data: Dictionary = {}
-	if admin_variant is Dictionary:
-		admin_data = admin_variant as Dictionary
+	var admin_data: Dictionary = GameState.obtener_configuracion_personaje_admin()
 
 	_admin.button_pressed = str(admin_data.get("rol", "explorador")).to_lower() == "admin"
 	var capacidades: Array = admin_data.get("capacidades", [])
@@ -250,9 +247,9 @@ func _al_cambiar_capacidad(_clave: String, _activo: bool) -> void:
 func _restaurar_defaults() -> void:
 	if jugador != null and jugador.has_method("admin_restaurar_defaults"):
 		jugador.call("admin_restaurar_defaults")
-		var admin_variant: Variant = GameState.flags.get("personaje_admin", {})
-		if admin_variant is Dictionary:
-			(admin_variant as Dictionary).erase("maximos")
+		var admin_data: Dictionary = GameState.obtener_configuracion_personaje_admin()
+		admin_data.erase("maximos")
+		GameState.establecer_configuracion_personaje_admin(admin_data)
 		_cargar_datos()
 		_estado.text = "Valores por defecto restaurados."
 		GameState.guardar_partida()
