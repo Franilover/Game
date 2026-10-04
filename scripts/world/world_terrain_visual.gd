@@ -128,7 +128,7 @@ func _crear_tileset() -> TileSet:
 	tile_set.add_terrain(0)
 	tile_set.set_terrain_name(0, 0, "<any>")
 
-	# Cada zona tiene un terrain id estable dentro de la capa del bioma.
+	# Cada capa contiene un único terreno activo; el ID 1 representa esa zona.
 	for terrain_id in range(1, ZONE_TEXTURES.size() + 1):
 		tile_set.add_terrain(0)
 		tile_set.set_terrain_name(
@@ -172,8 +172,8 @@ func set_zone(
 	if not _base_tiles.has(tile_key):
 		return
 
-	# Si la celda antes pertenecía a otro bioma visual, se elimina de
-	# aquella TileMapDual. Esto evita restos al regenerar/reemplazar chunks.
+	# Si la celda cambia de zona, se elimina de la capa anterior para evitar
+	# restos visuales al regenerar o reemplazar chunks.
 	var layer_anterior := str(_cell_layer_key.get(cell, ""))
 	if layer_anterior != layer_key:
 		if _layers_by_zone.has(layer_anterior):
@@ -193,6 +193,15 @@ func set_zone(
 				)
 
 		_cell_layer_key[cell] = layer_key
+
+	# Si cambió el bioma pero no la zona, retirar su variante anterior.
+	var bioma_anterior := str(_cell_bioma.get(cell, ""))
+	if bioma_anterior != clave and _variation_layers_by_bioma.has(bioma_anterior):
+		var capa_variacion_anterior := (
+			_variation_layers_by_bioma[bioma_anterior] as TileMapLayer
+		)
+		if capa_variacion_anterior != null:
+			capa_variacion_anterior.erase_cell(cell)
 
 	# El bioma puede cambiar sin que cambie la zona visual.
 	_cell_bioma[cell] = clave
@@ -551,6 +560,17 @@ func clear_chunk(
 				continue
 
 			layer.erase_cell(cell)
+
+			# Las variantes no forman parte de TileMapDual; hay que retirarlas
+			# explícitamente antes de borrar la información de la celda.
+			var bioma_celda := str(_cell_bioma.get(cell, ""))
+			if _variation_layers_by_bioma.has(bioma_celda):
+				var capa_variacion := (
+					_variation_layers_by_bioma[bioma_celda] as TileMapLayer
+				)
+				if capa_variacion != null:
+					capa_variacion.erase_cell(cell)
+
 			_cell_bioma.erase(cell)
 			_cell_zone.erase(cell)
 			_cell_layer_key.erase(cell)
