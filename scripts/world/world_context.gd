@@ -3,10 +3,16 @@ class_name WorldContext
 
 var terrain: WorldTerrain
 var atmosphere: WorldAtmosphere
+var _world_data: WorldDataService = null
 
-func configurar(nuevo_terrain: WorldTerrain, nueva_atmosphere: WorldAtmosphere) -> void:
+func configurar(
+	nuevo_terrain: WorldTerrain,
+	nueva_atmosphere: WorldAtmosphere,
+	nuevo_world_data: WorldDataService = null
+) -> void:
 	terrain = nuevo_terrain
 	atmosphere = nueva_atmosphere
+	_world_data = nuevo_world_data
 
 func get_tile_at(posicion_global: Vector2) -> Vector2i:
 	if terrain == null:
@@ -61,7 +67,7 @@ func get_reinos_at(tile: Vector2i) -> Array[Dictionary]:
 	if bioma.is_empty():
 		return []
 	var bioma_id := str(bioma.get("id", ""))
-	return [] if bioma_id.is_empty() else WorldData.obtener_reinos_game_de_bioma(bioma_id)
+	return [] if bioma_id.is_empty() or _world_data == null else _world_data.obtener_reinos_game_de_bioma(bioma_id)
 
 func get_reinos_at_position(posicion_global: Vector2) -> Array[Dictionary]:
 	return get_reinos_at(get_tile_at(posicion_global))
@@ -112,10 +118,10 @@ func get_factores_ambientales_at(posicion_global: Vector2) -> Dictionary:
 		if id.is_empty():
 			continue
 		if not estacion_id.is_empty():
-			var estacional := WorldData.obtener_ambiente_estacional_habitat(estacion_id, id)
+			var estacional := _world_data.obtener_ambiente_estacional_habitat(estacion_id, id) if _world_data != null else {}
 			if not estacional.is_empty():
 				return estacional
-		var base := WorldData.obtener_factores_ambientales_habitat(id)
+		var base := _world_data.obtener_factores_ambientales_habitat(id) if _world_data != null else {}
 		if not base.is_empty():
 			return base
 	var ecosistema := get_ecosistema_at(tile)
@@ -123,10 +129,10 @@ func get_factores_ambientales_at(posicion_global: Vector2) -> Dictionary:
 	if id.is_empty():
 		return {}
 	if not estacion_id.is_empty():
-		var estacional := WorldData.obtener_ambiente_estacional_ecosistema(estacion_id, id)
+		var estacional := _world_data.obtener_ambiente_estacional_ecosistema(estacion_id, id) if _world_data != null else {}
 		if not estacional.is_empty():
 			return estacional
-	return WorldData.obtener_factores_ambientales_ecosistema(id)
+	return _world_data.obtener_factores_ambientales_ecosistema(id) if _world_data != null else {}
 
 func _nombre(datos: Dictionary) -> String:
 	var nombre := str(datos.get("nombre", ""))
