@@ -77,7 +77,7 @@ var jugador: Node2D = null
 var entity_manager: WorldEntityManager = null
 var inventory: Node = null
 var combat_system: CombatSystem = null
-var world_items: Node = null
+var world_items: GarliaWorldItems = null
 
 
 func configurar_dependencias(
@@ -85,7 +85,7 @@ func configurar_dependencias(
 	nuevo_entity_manager: WorldEntityManager,
 	nuevo_inventory: Node,
 	nuevo_combat_system: CombatSystem,
-	nuevo_world_items: Node,
+	nuevo_world_items: GarliaWorldItems,
 	nuevas_relaciones_ecologicas: Array = []
 ) -> void:
 	jugador = nuevo_jugador as Node2D
@@ -1376,12 +1376,8 @@ func _obtener_arma_cambiaformas() -> Dictionary:
 	if item_id.is_empty():
 		return {}
 
-	if world_items != null and is_instance_valid(world_items) and world_items.has_method(
-		"buscar_item_por_id"
-	):
-		var item: Dictionary = (
-			world_items.call("buscar_item_por_id", item_id)
-		)
+	if world_items != null and is_instance_valid(world_items):
+		var item: Dictionary = world_items.buscar_item_por_id(item_id)
 
 		if not item.is_empty():
 			return item
@@ -1426,7 +1422,7 @@ func _obtener_alcance_arma_combate(
 	)
 
 
-func _obtener_combat_system() -> Node:
+func _obtener_combat_system() -> CombatSystem:
 	if combat_system != null and is_instance_valid(combat_system):
 		return combat_system
 	return null
