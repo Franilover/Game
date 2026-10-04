@@ -1491,32 +1491,90 @@ func al_recibir_ataque_con_arma(arma: Dictionary) -> void:
 	if not objeto_robado.is_empty():
 		return
 
-	var inventario: Node = get_tree().get_first_node_in_group(
-		"inventory"
-	)
-
-	if inventario == null or not inventario.has_method(
-		"robar_objeto_equipado"
-	):
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	if jugador == null or not is_instance_valid(jugador):
 		return
 
-	var robado_variant: Variant = inventario.call(
-		"robar_objeto_equipado",
-		"arma"
-	)
+	objetivo = jugador
+	objetivo_detectado = true
+	ultima_posicion_objetivo = jugador.global_position
+	_objetivo_ataque = jugador.global_position
 
-	if not robado_variant is Dictionary:
+	var direccion := criatura.global_position.direction_to(
+		jugador.global_position
+	)
+	if direccion.length_squared() <= 0.01:
+		direccion = Vector2.DOWN
+
+	_direccion_salto = direccion.normalized()
+	_cambiar_estado(Estado.SALTANDO_LEJOS)
+
+
+func _obtener_float_reaccion(clave: String, por_defecto: float) -> float:
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_recibir_ataque",
+		{}
+	)
+	if not reaccion_variant is Dictionary:
+		return por_defecto
+
+	var reaccion: Dictionary = reaccion_variant as Dictionary
+	var valor: Variant = reaccion.get(clave, por_defecto)
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return por_defecto
+
+
+func _robar_objeto_zlish() -> void:
+	if perfil != Perfil.ZLISH or objetivo == null or not is_instance_valid(objetivo):
 		return
 
-	var robado: Dictionary = (
-		robado_variant as Dictionary
-	)
-
-	if robado.is_empty():
+	var inventario: Node = get_tree().get_first_node_in_group("inventory")
+	if inventario == null:
 		return
 
-	objeto_robado = robado.duplicate(true)
-	_cambiar_estado(Estado.HUYENDO)
+	var indice_hotbar := int(
+		inventario.call("obtener_indice_hotbar_activo")
+	)
+	var indice_inventario := int(
+		inventario.call("obtener_indice_inventario_hotbar", indice_hotbar)
+	)
+	var objeto_hotbar_variant: Variant = inventario.call(
+		"obtener_objeto",
+		indice_inventario
+	)
+
+	if objeto_hotbar_variant is Dictionary:
+		var objeto_hotbar: Dictionary = objeto_hotbar_variant as Dictionary
+		if not objeto_hotbar.is_empty():
+			if bool(inventario.call("quitar_objeto", indice_inventario)):
+				objeto_robado = objeto_hotbar.duplicate(true)
+				return
+
+	for clave in ["cabeza", "torso", "pies"]:
+		var objeto_armadura_variant: Variant = inventario.call(
+			"obtener_objeto_equipado",
+			clave
+		)
+		if not objeto_armadura_variant is Dictionary:
+			continue
+
+		var objeto_armadura: Dictionary = (
+			objeto_armadura_variant as Dictionary
+		)
+		if objeto_armadura.is_empty():
+			continue
+
+		var robado_variant: Variant = inventario.call(
+			"robar_objeto_equipado",
+			clave
+		)
+		if robado_variant is Dictionary:
+			var robado: Dictionary = robado_variant as Dictionary
+			if not robado.is_empty():
+				objeto_robado = robado.duplicate(true)
+				return
 
 
 func _copiar_skin_de_objetivo() -> void:
@@ -1560,10 +1618,16 @@ func _iniciar_estado_adherido() -> void:
 		_cambiar_estado(Estado.EXPLORANDO)
 		return
 
-	_tiempo_adherido = _obtener_float_ataque(
-		"duracion_adherido",
-		5.0
-	)
+	if perfil == Perfil.ZLISH:
+		_tiempo_adherido = _obtener_float_reaccion(
+			"duracion_adherido",
+			2.0
+		)
+	else:
+		_tiempo_adherido = _obtener_float_ataque(
+			"duracion_adherido",
+			5.0
+		)
 
 	_tiempo_danio_adherido = 0.0
 
@@ -1577,12 +1641,20 @@ func _procesar_adherido(delta: float) -> void:
 		return
 
 	_tiempo_adherido -= delta
-	_tiempo_danio_adherido -= delta
 
 	criatura.global_position = (
 		objetivo.global_position
 		+ Vector2(0.0, -16.0)
 	)
+
+	if perfil == Perfil.ZLISH:
+		if _tiempo_adherido <= 0.0:
+			_robar_objeto_zlish()
+			criatura.establecer_colision(true)
+			_cambiar_estado(Estado.HUYENDO)
+		return
+
+	_tiempo_danio_adherido -= delta
 
 	if _tiempo_danio_adherido <= 0.0:
 		_tiempo_danio_adherido = maxf(
@@ -1667,6 +1739,11 @@ func _procesar_saltando_lejos(delta: float) -> void:
 		) <= distancia_contacto
 		or _tiempo_accion <= 0.0
 	):
+		if perfil == Perfil.ZLISH:
+			_establecer_velocidad(0.0)
+			_cambiar_estado(Estado.ADHERIDO)
+			return
+
 		_establecer_velocidad(
 			_obtener_velocidad_ataque()
 		)
