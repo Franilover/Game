@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 
-	if GameplayInputRouter.esta_entrada_bloqueada(get_tree()):
+	if _entrada_bloqueada_por_router():
 		if objetivo_actual != null:
 			_cambiar_objetivo(null)
 		return
@@ -105,6 +105,13 @@ func procesar_accion_primaria() -> bool:
 
 	# Si no hubo interacción ni colocación, CombatSystem recibe la acción.
 	return false
+
+
+func _entrada_bloqueada_por_router() -> bool:
+	var router := get_tree().root.get_node_or_null("GameplayInputRouter")
+	if router == null:
+		return true
+	return bool(router.call("esta_entrada_bloqueada", get_tree()))
 
 
 func _buscar_objetivo() -> void:
