@@ -14,6 +14,14 @@ var _biome_bias: PackedFloat32Array = PackedFloat32Array()
 var _ecosystem_bias: PackedFloat32Array = PackedFloat32Array()
 var _biome_generation: Array[Dictionary] = []
 var _ecosystem_generation: Array[Dictionary] = []
+var _biome_enabled: PackedByteArray = PackedByteArray()
+var _ecosystem_enabled: PackedByteArray = PackedByteArray()
+var _biome_zone_thresholds: Array[PackedFloat32Array] = []
+var _biome_zone_values: Array[PackedInt32Array] = []
+var _biome_zone_fallbacks: PackedInt32Array = PackedInt32Array()
+var _ecosystem_zone_thresholds: Array[PackedFloat32Array] = []
+var _ecosystem_zone_values: Array[PackedInt32Array] = []
+var _ecosystem_zone_fallbacks: PackedInt32Array = PackedInt32Array()
 
 
 const ORTHOGONAL_DIRECTIONS: Array[Vector2i] = [
@@ -64,6 +72,14 @@ func cargar_datos(
 	_ecosystem_bias = PackedFloat32Array()
 	_biome_generation.clear()
 	_ecosystem_generation.clear()
+	_biome_enabled = PackedByteArray()
+	_ecosystem_enabled = PackedByteArray()
+	_biome_zone_thresholds.clear()
+	_biome_zone_values.clear()
+	_biome_zone_fallbacks = PackedInt32Array()
+	_ecosystem_zone_thresholds.clear()
+	_ecosystem_zone_values.clear()
+	_ecosystem_zone_fallbacks = PackedInt32Array()
 	for indice in range(_biomas.size()):
 		var biome_noise := FastNoiseLite.new()
 		biome_noise.seed = map_seed + 1001 + indice * 7919
@@ -72,7 +88,12 @@ func cargar_datos(
 		var generacion := _obtener_generacion_bioma(indice)
 		_biome_generation.append(generacion)
 		var peso := _peso_bioma(indice)
+		_biome_enabled.append(1 if peso > 0.0 else 0)
 		_biome_bias.append(log(maxf(peso, 0.000001)) * 0.35)
+		var zonas_compiladas := _compilar_zonas(generacion)
+		_biome_zone_thresholds.append(zonas_compiladas["thresholds"])
+		_biome_zone_values.append(zonas_compiladas["values"])
+		_biome_zone_fallbacks.append(int(zonas_compiladas["fallback"]))
 
 	for indice in range(_ecosistemas.size()):
 		var ecosystem_noise := FastNoiseLite.new()
@@ -82,7 +103,12 @@ func cargar_datos(
 		var generacion := _obtener_generacion_ecosistema(indice)
 		_ecosystem_generation.append(generacion)
 		var peso := _peso_ecosistema(indice)
+		_ecosystem_enabled.append(1 if peso > 0.0 else 0)
 		_ecosystem_bias.append(log(maxf(peso, 0.000001)) * 0.35)
+		var zonas_compiladas := _compilar_zonas(generacion)
+		_ecosystem_zone_thresholds.append(zonas_compiladas["thresholds"])
+		_ecosystem_zone_values.append(zonas_compiladas["values"])
+		_ecosystem_zone_fallbacks.append(int(zonas_compiladas["fallback"]))
 
 	for bioma_variant in _biomas:
 		var indices: Array[int] = []
@@ -125,8 +151,7 @@ func bioma_index_at_tile(tile: Vector2i) -> int:
 	var mejor_puntuacion := -INF
 
 	for indice in range(_biomas.size()):
-		var peso := _peso_bioma(indice)
-		if peso <= 0.0:
+		if _biome_enabled[indice] == 0:
 			continue
 
 		var ruido := (
@@ -203,8 +228,7 @@ func ecosistema_index_at_tile(
 		if indice >= _ecosystem_noises.size():
 			continue
 
-		var peso := _peso_ecosistema(indice)
-		if peso <= 0.0:
+		if _ecosystem_enabled[indice] == 0:
 			continue
 
 		var ruido := (
@@ -262,17 +286,24 @@ func zona_base_at_tile(
 
 	# Primero manda el ecosistema si tiene una configuración propia.
 	# Si no, manda la configuración del bioma.
-	var generacion: Dictionary = {}
-	if ecosistema_index >= 0 and ecosistema_index < _ecosystem_generation.size():
-		generacion = _ecosystem_generation[ecosistema_index]
+	if ecosistema_index >= 0 and ecosistema_index < _ecosystem_zone_thresholds.size():
+		if not _ecosystem_zone_thresholds[ecosistema_index].is_empty():
+			return _zona_desde_compilacion(
+				_ecosystem_zone_thresholds[ecosistema_index],
+				_ecosystem_zone_values[ecosistema_index],
+				_ecosystem_zone_fallbacks[ecosistema_index],
+				terreno_ruido
+			)
 
-	if generacion.is_empty() and bioma_index >= 0 and bioma_index < _biome_generation.size():
-		generacion = _biome_generation[bioma_index]
+	if bioma_index >= 0 and bioma_index < _biome_zone_thresholds.size():
+		return _zona_desde_compilacion(
+			_biome_zone_thresholds[bioma_index],
+			_biome_zone_values[bioma_index],
+			_biome_zone_fallbacks[bioma_index],
+			terreno_ruido
+		)
 
-	return _zona_desde_generacion(
-		generacion,
-		terreno_ruido
-	)
+	return 0
 
 
 func _obtener_generacion_bioma(
@@ -341,6 +372,70 @@ func _obtener_generacion_ecosistema(
 		return generacion
 
 	return {}
+
+
+func _compilar_zonas(generacion: Dictionary) -> Dictionary:
+	var thresholds := PackedFloat32Array()
+	var values := PackedInt32Array()
+	var fallback_hasta := -INF
+	var fallback_zona := 0
+
+	var zonas_variant: Variant = generacion.get("zonas", [])
+	if not zonas_variant is Array:
+		return {
+			"thresholds": thresholds,
+			"values": values,
+			"fallback": fallback_zona
+		}
+
+	for zona_variant in zonas_variant:
+		if not zona_variant is Dictionary:
+			continue
+
+		var zona_config := zona_variant as Dictionary
+		var hasta := clampf(
+			float(zona_config.get("hasta", 1.0)),
+			0.0,
+			1.0
+		)
+		var terreno := str(
+			zona_config.get("terreno", "grass")
+		).to_lower()
+		var zona := int(TERRENO_A_ZONA.get(terreno, 0))
+
+		thresholds.append(hasta)
+		values.append(zona)
+
+		if hasta > fallback_hasta:
+			fallback_hasta = hasta
+			fallback_zona = zona
+
+	return {
+		"thresholds": thresholds,
+		"values": values,
+		"fallback": fallback_zona
+	}
+
+
+func _zona_desde_compilacion(
+	thresholds: PackedFloat32Array,
+	values: PackedInt32Array,
+	fallback_zona: int,
+	valor_ruido: float
+) -> int:
+	var mejor_hasta := INF
+	var mejor_zona := 0
+
+	for indice in range(thresholds.size()):
+		var hasta := thresholds[indice]
+		if hasta >= valor_ruido and hasta < mejor_hasta:
+			mejor_hasta = hasta
+			mejor_zona = values[indice]
+
+	if mejor_hasta == INF:
+		return fallback_zona
+
+	return mejor_zona
 
 
 func _zona_desde_generacion(
