@@ -28,6 +28,8 @@ var active_save_name: String = ""
 var world_seed: int = 0
 var world_seed_valida: bool = false
 
+var save_repository := SaveFileRepository.new()
+
 var _autosave_timer: float = 0.0
 var _partida_aplicada_en_escena: bool = false
 var _menu_interceptado: bool = false
@@ -40,9 +42,8 @@ signal descubrimiento_mundo(nivel: String, id: String)
 
 
 func _ready() -> void:
-	DirAccess.make_dir_recursive_absolute(
-		ProjectSettings.globalize_path(SAVE_DIRECTORY)
-	)
+	save_repository.configurar(SAVE_DIRECTORY)
+	save_repository.asegurar_directorio()
 
 	get_tree().scene_changed.connect(
 		_al_cambiar_escena
@@ -1268,63 +1269,18 @@ func _al_cambiar_escena() -> void:
 # ============================================================
 
 func _ruta_partida(id: String) -> String:
-	return SAVE_DIRECTORY + "/" + id + ".json"
+	return save_repository.ruta_partida(id)
 
 
 func _leer_archivo_partida(id: String) -> Dictionary:
-	if id.is_empty():
-		return {}
-
-	var ruta := _ruta_partida(id)
-
-	if not FileAccess.file_exists(ruta):
-		return {}
-
-	var archivo := FileAccess.open(
-		ruta,
-		FileAccess.READ
-	)
-
-	if archivo == null:
-		return {}
-
-	var texto := archivo.get_as_text()
-	archivo.close()
-
-	var datos = JSON.parse_string(texto)
-
-	if not datos is Dictionary:
-		return {}
-
-	return (datos as Dictionary).duplicate(true)
+	return save_repository.leer_partida(id)
 
 
 func _escribir_archivo_partida(
 	id: String,
 	datos: Dictionary
 ) -> bool:
-	if id.is_empty():
-		return false
-
-	var ruta := _ruta_partida(id)
-	var archivo := FileAccess.open(
-		ruta,
-		FileAccess.WRITE
-	)
-
-	if archivo == null:
-		print(
-			"GameState: no se pudo abrir guardado → ",
-			ruta
-		)
-		return false
-
-	archivo.store_string(
-		JSON.stringify(datos)
-	)
-	archivo.close()
-
-	return true
+	return save_repository.escribir_partida(id, datos)
 
 
 func _extraer_metadata_partida(
