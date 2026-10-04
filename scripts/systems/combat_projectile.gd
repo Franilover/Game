@@ -103,7 +103,8 @@ func _physics_process(delta: float) -> void:
 
 		objetivo.call(
 			"take_damage",
-			danio
+			danio,
+			"Jugador/Proyectil"
 		)
 
 		if (
