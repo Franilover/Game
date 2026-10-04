@@ -159,7 +159,7 @@ func _configurar_interaccion(world_gen: WorldGenerator) -> void:
 	if not _interaction_system.objetivo_cambiado.is_connected(_al_cambio_objetivo_interaccion):
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
-	_interaction_system.configurar(_player, _inventory, _world_items, _input_router, world_gen.entity_manager)
+	_interaction_system.configurar(_player, _inventory, _world_items, _player.input_gate, world_gen.entity_manager)
 
 func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 	if _hud == null:
@@ -187,6 +187,8 @@ func _configurar_input_router() -> void:
 		return
 	_input_router.configurar_sistemas(_interaction_system, _combat_system)
 	_input_router.configurar_bloqueos(_inventory, _admin_console, _dialogue_system, _hud)
+	if _player != null:
+		_player.input_gate.configurar_router(_input_router)
 
 func _configurar_inventario() -> void:
 	if _inventory == null:
