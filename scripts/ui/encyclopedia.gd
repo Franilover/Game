@@ -285,7 +285,10 @@ func _ordenar_registros(a: Dictionary, b: Dictionary) -> bool:
 	return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 
 
-func _al_seleccionar(item: TreeItem, _columna: int) -> void:
+func _al_seleccionar() -> void:
+	var item := _arbol.get_selected()
+	if item == null:
+		return
 	_mostrar_item(item)
 
 
