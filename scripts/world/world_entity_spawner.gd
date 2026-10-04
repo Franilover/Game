@@ -39,8 +39,11 @@ func configurar(
 func spawn_chunk(
 	chunk_coord: Vector2i
 ) -> void:
-	if _entity_manager != null and _entity_manager.tiene_chunk(chunk_coord):
+	if _entity_manager == null:
 		return
+	if _entity_manager.tiene_chunk(chunk_coord):
+		return
+	_entity_manager.activar_chunk(chunk_coord)
 
 	var rng := RandomNumberGenerator.new()
 
