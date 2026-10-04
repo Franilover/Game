@@ -54,9 +54,9 @@ func _inicializar_jugador(world_gen: Node) -> void:
 
 	_configurar_camara()
 	_configurar_hud(world_gen)
+	_configurar_input_router()
 	_configurar_interaccion()
 	_configurar_combate(world_gen)
-	_configurar_input_router()
 	_configurar_inventario()
 	if GameState.has_method("configurar_dependencias"):
 		GameState.call("configurar_dependencias", _inventory, _player, world_gen)
