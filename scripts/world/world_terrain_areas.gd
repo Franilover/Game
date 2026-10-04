@@ -342,37 +342,42 @@ func _zona_desde_generacion(
 	if not zonas_variant is Array:
 		return 0
 
+	var mejor_config: Dictionary = {}
+	var mejor_hasta := INF
+	var config_mayor: Dictionary = {}
+	var umbral_mayor := -INF
+
 	for zona_variant in zonas_variant:
 		if not zona_variant is Dictionary:
 			continue
 
-		var zona_config := (
-			zona_variant as Dictionary
+		var zona_config := zona_variant as Dictionary
+		var hasta := clampf(
+			float(zona_config.get("hasta", 1.0)),
+			0.0,
+			1.0
 		)
 
-		var hasta := float(
-			zona_config.get(
-				"hasta",
-				1.0
-			)
-		)
+		if hasta > umbral_mayor:
+			umbral_mayor = hasta
+			config_mayor = zona_config
 
-		if valor_ruido <= hasta:
-			var terreno := str(
-				zona_config.get(
-					"terreno",
-					"grass"
-				)
-			).to_lower()
+		# No dependemos del orden en que Supabase devuelva los registros:
+		# se escoge el primer límite que cubre el valor de ruido.
+		if hasta >= valor_ruido and hasta < mejor_hasta:
+			mejor_hasta = hasta
+			mejor_config = zona_config
 
-			return int(
-				TERRENO_A_ZONA.get(
-					terreno,
-					0
-				)
-			)
+	if mejor_config.is_empty():
+		mejor_config = config_mayor
+	if mejor_config.is_empty():
+		return 0
 
-	return 0
+	var terreno := str(
+		mejor_config.get("terreno", "grass")
+	).to_lower()
+
+	return int(TERRENO_A_ZONA.get(terreno, 0))
 
 
 func zona_final_desde_array(
