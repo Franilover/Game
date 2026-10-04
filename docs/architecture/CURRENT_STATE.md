@@ -324,3 +324,10 @@ La corrección mantiene a GarliaAuth como dueño de credenciales y evita que Sup
 Se confirmó que `CombatFeedback` ya existía como componente `RefCounted`; no se creó un sistema paralelo ni se añadió otro nodo a Main. Su implementación ahora contiene el flash visual de impacto que antes vivía dentro de `CombatSystem`.
 
 `CombatSystem` conserva la resolución del ataque y el daño, pero delega la presentación del impacto a `CombatFeedback`. La composición principal no necesita conocer este detalle y no se introduce una nueva dependencia global.
+
+
+## Vigésima barrida — CombatSystem deja de consultar EntityManager para IA
+
+Se auditó la única ruta que usaba `WorldEntityManager` desde `CombatSystem`. El manager no expone actualmente una API de IA; la supuesta integración era sólo una búsqueda dinámica (`has_method/call`) con fallback al nodo `AIController` de la criatura. Se eliminó esa dependencia falsa y `CombatSystem` ahora consulta directamente el contrato estructural existente del objetivo.
+
+Esto refuerza la frontera: `WorldEntityManager` administra ciclo de vida/ubicación de entidades; `CombatSystem` no le pide información que no pertenece a ese dueño.
