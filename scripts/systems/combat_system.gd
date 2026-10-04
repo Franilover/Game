@@ -717,11 +717,13 @@ func _aplicar_danio(
 	if "is_alive" in objetivo:
 		vivo_antes = bool(objetivo.get("is_alive"))
 
-	objetivo.call(
-		"take_damage",
+	var aplicado := CombatDamage.aplicar(
+		objetivo,
 		danio,
 		"Jugador/CombatSystem:" + origen
 	)
+	if not aplicado:
+		return
 
 	if (
 		vivo_antes
