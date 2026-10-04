@@ -200,6 +200,7 @@ func seleccionar_variante_dialogo(variantes: Array, personaje_id: String) -> Dic
 	var relacion := obtener_relacion(personaje_id)
 	var mejor: Dictionary = {}
 	var mejor_prioridad := -2147483648
+	var hay_requisitos_sociales := false
 
 	for variante_variant in variantes:
 		if not variante_variant is Dictionary:
@@ -207,14 +208,26 @@ func seleccionar_variante_dialogo(variantes: Array, personaje_id: String) -> Dic
 
 		var variante := variante_variant as Dictionary
 		var requisito_variant: Variant = variante.get("requisito_social", {})
-		if requisito_variant is Dictionary:
-			if not _cumple_requisito_social(requisito_variant as Dictionary, relacion):
-				continue
+
+		if not requisito_variant is Dictionary:
+			continue
+
+		var requisito := requisito_variant as Dictionary
+		if requisito.is_empty():
+			continue
+
+		hay_requisitos_sociales = true
+
+		if not _cumple_requisito_social(requisito, relacion):
+			continue
 
 		var prioridad := int(variante.get("prioridad", 0))
 		if mejor.is_empty() or prioridad > mejor_prioridad:
 			mejor = variante.duplicate(true)
 			mejor_prioridad = prioridad
+
+	if not hay_requisitos_sociales:
+		return {}
 
 	return mejor
 
