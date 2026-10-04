@@ -46,6 +46,7 @@ var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
 var _player: Node = null
+var _world_items: Node = null
 
 
 @onready var grid: GridContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
@@ -99,9 +100,11 @@ func configurar(
 	player: Node = null,
 	world_entity_spawner: Node = null,
 	world_context: WorldContext = null,
-	relationship_system: Node = null
+	relationship_system: Node = null,
+	world_items: Node = null
 ) -> void:
 	_player = player
+	_world_items = world_items
 	_configurar_admin_inventory(world_entity_spawner)
 	_configurar_world_map(world_context)
 	_configurar_relationships(relationship_system)
@@ -386,7 +389,7 @@ func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
 	if indice < 0 or indice >= items.size() or datos.is_empty():
 		return
 
-	var world_items: Node = GarliaWorldItems
+	var world_items: Node = _world_items
 
 	if world_items == null or not world_items.has_method("soltar_objeto_al_mundo"):
 		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
