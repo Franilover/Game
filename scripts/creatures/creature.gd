@@ -422,19 +422,9 @@ func crear_rastro_teleport(
 	if raiz_efectos == null or not is_instance_valid(raiz_efectos):
 		return
 
-	var script := load(
-		"res://scripts/creatures/creature_teleport_trail.gd"
-	)
-
-	if script == null:
-		return
-
-	var rastro := Line2D.new()
-	rastro.set_script(script)
+	var rastro := CreatureTeleportTrail.new()
 	raiz_efectos.add_child(rastro)
-
-	rastro.call(
-		"configurar",
+	rastro.configurar(
 		self,
 		origen,
 		destino,
