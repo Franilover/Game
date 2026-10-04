@@ -75,10 +75,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	# La interacción contextual tiene prioridad absoluta.
 	# Si hay algo recogible/dialogable dentro del alcance, el click
 	# izquierdo se consume aquí antes de mirar la hotbar.
-	if objetivo_actual != null and is_instance_valid(objetivo_actual):
-		if objetivo_actual.has_method("interact"):
-			objetivo_actual.call("interact", player)
-			get_viewport().set_input_as_handled()
+	if interaction_controller.interactuar(player):
+		get_viewport().set_input_as_handled()
 		return
 
 	var inventory: Node = get_tree().get_first_node_in_group("inventory")
