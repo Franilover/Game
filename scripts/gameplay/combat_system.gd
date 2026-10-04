@@ -49,13 +49,6 @@ func configurar(nuevo_player: Node) -> void:
 	)
 
 
-func _ready() -> void:
-	if not combat_controller.is_inside_tree():
-		add_child(combat_controller)
-	if not combat_controller.ataque_solicitado.is_connected(_al_ataque_solicitado):
-		combat_controller.ataque_solicitado.connect(_al_ataque_solicitado)
-
-
 func _process(delta: float) -> void:
 	_tiempo_desde_ataque = maxf(
 		_tiempo_desde_ataque - delta,
