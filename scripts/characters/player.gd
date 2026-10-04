@@ -712,7 +712,7 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 
 	personaje_especie = nueva_especie.duplicate(true)
 
-	var personaje_variant: Variant = GameState.flags.get("personaje", {})
+	var personaje_variant: Variant = GameState.obtener_configuracion_personaje()
 	var personaje: Dictionary = {}
 	if personaje_variant is Dictionary:
 		personaje = (personaje_variant as Dictionary).duplicate(true)
@@ -721,7 +721,7 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 	personaje["genero"] = personaje_genero
 	personaje["especie"] = personaje_especie.duplicate(true)
 	personaje["skin"] = personaje_skin
-	GameState.flags["personaje"] = personaje
+	GameState.establecer_configuracion_personaje(personaje)
 
 	var reglas: Array = _supabase_client_ref.obtener_especie_eterium_game()
 	if not reglas.is_empty():
