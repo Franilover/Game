@@ -50,7 +50,7 @@ func configurar_entidades(root: Node) -> void:
 	_entities_root = root
 	if entity_spawner != null:
 		entity_manager.configurar(_entities_root)
-	entity_spawner.configurar(terrain, _entities_root, entity_manager, entity_factory)
+	entity_spawner.configurar(terrain, entity_manager, entity_factory)
 
 func _process(_delta: float) -> void:
 	if not _world_ready:
@@ -109,7 +109,6 @@ func _inicializar_mundo() -> void:
 	entity_manager.configurar(_entities_root)
 	entity_spawner.configurar(
 		terrain,
-		_entities_root,
 		entity_manager,
 		entity_factory
 	)
