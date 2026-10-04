@@ -7,6 +7,7 @@ signal cerrar_lab
 
 # ── Referencia al manager ─────────────────────────────────────
 var ium_manager: Node = null
+var _admin_console: Node = null
 
 # ── Estado del canvas ─────────────────────────────────────────
 var _nodos_canvas: Array = []
@@ -36,8 +37,9 @@ func _ready() -> void:
 	_draw_layer.draw.connect(_dibujar_conexiones)
 
 
-func configurar(manager: Node) -> void:
+func configurar(manager: Node, admin_console: Node) -> void:
 	ium_manager = manager
+	_admin_console = admin_console
 	ium_manager.iums_cargados.connect(_al_cargar_iums)
 	ium_manager.procesos_cargados.connect(_al_cargar_procesos)
 	ium_manager.proceso_descubierto.connect(_al_descubrir_proceso)
@@ -70,9 +72,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _consola_admin_abierta() -> bool:
-	var consola := get_tree().get_first_node_in_group(
-		"admin_console"
-	)
+	var consola := _admin_console
 
 	if consola == null:
 		return false
