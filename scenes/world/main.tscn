@@ -46,10 +46,10 @@ script = ExtResource("21_world_entity_factory")
 
 [node name="WorldSpawnRules" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("24_world_spawn_rules")
+peso_destacadas = 76.0
 
 [node name="WorldEntitySpawner" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("18_world_spawner")
-peso_destacadas = 76.0
 
 [node name="WorldAtmosphere" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("19_world_atmosphere")
