@@ -63,50 +63,48 @@ func _process(delta: float) -> void:
 	)
 
 
-func _input(event: InputEvent) -> void:
-	if player == null or _accion_bloqueada():
-		return
+func _ready() -> void:
+	add_to_group("combat_system")
 
-	if not event is InputEventMouseButton:
-		return
+	if not combat_controller.is_inside_tree():
+		add_child(combat_controller)
+	if not combat_controller.ataque_solicitado.is_connected(_al_ataque_solicitado):
+		combat_controller.ataque_solicitado.connect(_al_ataque_solicitado)
 
-	var mouse_event := event as InputEventMouseButton
-	if not mouse_event.pressed:
-		return
 
-	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
-		# Acción primaria: un arma/herramienta de la hotbar usa su acción.
-		# Cualquier otro objeto deja disponible el ataque desarmado.
-		var objeto_activo := _obtener_objeto_activo()
-		var modo := (
-			"objeto_activo"
-			if _es_objeto_ataque(objeto_activo)
-			else "desarmado"
-		)
+func procesar_accion_primaria() -> bool:
+	if player == null or not player.is_alive:
+		return false
 
-		if not combat_controller.solicitar_ataque(
-			_obtener_direccion_ataque(),
-			objeto_activo,
-			modo
-		):
-			return
+	# El router ya resolvió la prioridad de interacción.
+	# Aquí solo se decide la acción primaria de combate.
+	var objeto_activo := _obtener_objeto_activo()
+	var modo := (
+		"objeto_activo"
+		if _es_objeto_ataque(objeto_activo)
+		else "desarmado"
+	)
 
-		get_viewport().set_input_as_handled()
-		return
+	return combat_controller.solicitar_ataque(
+		_obtener_direccion_ataque(),
+		objeto_activo,
+		modo
+	)
 
-	if mouse_event.button_index == MOUSE_BUTTON_RIGHT:
-		var arma := _obtener_arma_equipada()
-		if arma.is_empty():
-			return
 
-		if not combat_controller.solicitar_ataque(
-			_obtener_direccion_ataque(),
-			arma,
-			"mano_secundaria"
-		):
-			return
+func procesar_accion_secundaria() -> bool:
+	if player == null or not player.is_alive:
+		return false
 
-		get_viewport().set_input_as_handled()
+	var arma := _obtener_arma_equipada()
+	if arma.is_empty():
+		return false
+
+	return combat_controller.solicitar_ataque(
+		_obtener_direccion_ataque(),
+		arma,
+		"mano_secundaria"
+	)
 
 
 func _al_ataque_solicitado(
@@ -131,37 +129,6 @@ func _al_ataque_solicitado(
 		if not _es_arma(objeto):
 			return
 		_atacar_con_arma(objeto)
-
-
-func _accion_bloqueada() -> bool:
-	var bloqueada: bool = not combat_controller.puede_actuar()
-	if bloqueada:
-		var inventory := get_tree().get_first_node_in_group("inventory")
-		var hud := get_tree().get_first_node_in_group("hud")
-		var dialogue := get_tree().get_first_node_in_group("dialogue_system")
-		print(
-			"CombatSystem: click bloqueado | ",
-			"paused=", get_tree().paused,
-			" inventory=",
-			str(
-				inventory != null
-				and inventory.has_method("esta_abierto")
-				and bool(inventory.call("esta_abierto"))
-			),
-			" hud_panel=",
-			str(
-				hud != null
-				and hud.has_method("esta_mostrando_panel_interaccion")
-				and bool(hud.call("esta_mostrando_panel_interaccion"))
-			),
-			" dialogue=",
-			str(
-				dialogue != null
-				and dialogue.has_method("esta_abierto")
-				and bool(dialogue.call("esta_abierto"))
-			)
-		)
-	return bloqueada
 
 
 func _es_herramienta(objeto: Dictionary) -> bool:
