@@ -251,6 +251,15 @@ func get_criaturas_at(
 	return terrain.get_criaturas_at(tile)
 
 
+func cambiar_zona_at(
+	tile: Vector2i,
+	nueva_zona: int
+) -> bool:
+	if terrain == null:
+		return false
+	return terrain.cambiar_zona_at(tile, nueva_zona)
+
+
 func get_zona_at(
 	tile: Vector2i
 ) -> int:
