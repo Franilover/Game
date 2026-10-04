@@ -75,9 +75,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
-		# Acción primaria: siempre usa el objeto seleccionado en la hotbar.
+		# Acción primaria: un arma/herramienta de la hotbar usa su acción.
+		# Cualquier otro objeto deja disponible el ataque desarmado.
 		var objeto_activo := _obtener_objeto_activo()
-		var modo := "objeto_activo" if not objeto_activo.is_empty() else "desarmado"
+		var modo := (
+			"objeto_activo"
+			if _es_objeto_ataque(objeto_activo)
+			else "desarmado"
+		)
 
 		if not combat_controller.solicitar_ataque(
 			_obtener_direccion_ataque(),
