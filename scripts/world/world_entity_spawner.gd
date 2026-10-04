@@ -244,12 +244,7 @@ func spawn_chunk(
 			ecosistema.get("id", "")
 		)
 
-		var criatura_data_factory := criatura_data.duplicate(true)
-		var criatura: Node = null
-		if _entity_factory != null:
-			criatura = _entity_factory.crear_criatura(criatura_data_factory)
-		else:
-			criatura = CREATURE_SCENE.instantiate()
+		var criatura: Node = _entity_factory.crear_criatura(criatura_data)
 
 		if criatura == null:
 			continue
@@ -257,8 +252,6 @@ func spawn_chunk(
 		if _entity_manager != null:
 			if not _entity_manager.registrar(criatura, chunk_coord):
 				continue
-		else:
-			entities.add_child(criatura)
 
 		criatura.global_position = Vector2(
 			(float(tile.x) + 0.5)
@@ -470,11 +463,7 @@ func summon_criatura(
 			"mensaje": "Entity manager no configurado."
 		}
 
-	var criatura: Node = null
-	if _entity_factory != null:
-		criatura = _entity_factory.crear_criatura(criatura_data)
-	else:
-		criatura = CREATURE_SCENE.instantiate()
+	var criatura: Node = _entity_factory.crear_criatura(criatura_data)
 
 	if criatura == null:
 		return {
@@ -640,11 +629,7 @@ func _spawn_characters_in_chunk(
 		else:
 			criatura_data.erase("dialogo")
 
-		var criatura: Node = null
-		if _entity_factory != null:
-			criatura = _entity_factory.crear_criatura(criatura_data)
-		else:
-			criatura = CREATURE_SCENE.instantiate()
+		var criatura: Node = _entity_factory.crear_criatura(criatura_data)
 		if criatura == null:
 			continue
 
@@ -680,7 +665,6 @@ func _spawn_props_in_chunk(
 	if props.is_empty():
 		return
 
-	var entities: Node = _entities_root
 	if entities == null or not is_instance_valid(entities):
 		return
 
@@ -765,8 +749,6 @@ func _spawn_props_in_chunk(
 		if _entity_manager != null:
 			if not _entity_manager.registrar(prop_node, chunk_coord):
 				continue
-		else:
-			entities.add_child(prop_node)
 		prop_node.global_position = Vector2(
 			(float(tile.x) + 0.5) * _terrain.tile_size,
 			(float(tile.y) + 0.5) * _terrain.tile_size
