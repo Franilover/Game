@@ -1,5 +1,7 @@
 extends Control
 
+class_name PauseMenu
+
 const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
 
 @onready var volver_button: Button = $Panel/Margin/Column/VolverButton
