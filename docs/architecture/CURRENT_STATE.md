@@ -405,3 +405,8 @@ CombatSystem ahora depende explícitamente de `GarliaInventory`, `CombatAttackAr
 ## Trigésima barrida — InteractionSystem e Input Router refuerzan contratos de gameplay
 
 `InteractionSystem` ahora expone `class_name` y recibe `Player`, `GarliaInventory`, `GarliaWorldItems` y `WorldEntityManager` con contratos concretos. La colocación y consumo de objetos ya no pasan por `has_method()/call()` cuando las APIs son propias y conocidas. `GameplayInputRouter` también expone `class_name` y tipa InteractionSystem, CombatSystem, GarliaInventory, DialogueSystem y HUD. Las interfaces todavía dinámicas externas (por ejemplo objetivos interactuables o AdminConsole) se mantienen hasta confirmar un contrato común real.
+
+
+## Trigésima primera barrida — Hotbar y slots de equipamiento pasan a contratos concretos
+
+`InventoryHotbar` ahora tiene `class_name` y consume `GarliaInventory` directamente. Los slots `InventorySlot` e `InventoryEquipmentSlot` también exponen contratos concretos; `Inventory` dejó de usar reflexión para crear, consultar, configurar y limpiar slots de equipamiento. La separación inventario/equipamiento/hotbar se conserva: la selección de hotbar no determina el arma equipada.
