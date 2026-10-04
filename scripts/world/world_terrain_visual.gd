@@ -106,7 +106,7 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	layer.name = "TerrainDual_Zone_" + clave
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -4096
+	layer.z_index = -4096 + (ZONE_TEXTURES.size() - zone)
 	layer.rendering_quadrant_size = 32
 	layer.tile_set = _crear_tileset()
 
