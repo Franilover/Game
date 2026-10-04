@@ -37,6 +37,8 @@ var _guardado_en_curso: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
 var _inventory: Node = null
+var _player: Node = null
+var _world_generator: Node = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -44,8 +46,10 @@ signal descubrimientos_mundo_actualizados
 signal descubrimiento_mundo(nivel: String, id: String)
 
 
-func configurar_dependencias(inventory: Node = null) -> void:
+func configurar_dependencias(inventory: Node = null, player: Node = null, world_generator: Node = null) -> void:
 	_inventory = inventory
+	_player = player
+	_world_generator = world_generator
 	if active_save_id.is_empty():
 		return
 	_guardado_rapido_conectado = false
@@ -355,9 +359,7 @@ func guardar_partida() -> bool:
 	if active_save_id.is_empty():
 		return false
 
-	var jugador := get_tree().get_first_node_in_group(
-		"player"
-	)
+	var jugador: Node = _player
 
 	if jugador == null or not is_instance_valid(jugador):
 		return false
@@ -421,9 +423,7 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	player_position_valida = true
 	player_tile_valido = false
 
-	var world_gen := get_tree().current_scene.get_node_or_null(
-		"World/WorldGenerator"
-	)
+	var world_gen: Node = _world_generator
 
 	if world_gen != null and world_gen.has_method("get_tile_at"):
 		var tile_variant: Variant = world_gen.call(
@@ -476,9 +476,7 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 					tiempo_variant as Dictionary
 				).duplicate(true)
 
-	var inventario := get_tree().get_first_node_in_group(
-		"inventory"
-	)
+	var inventario: Node = _inventory
 
 	if inventario != null and is_instance_valid(inventario):
 		var inventory_items: Array = []
