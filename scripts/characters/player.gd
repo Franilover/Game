@@ -693,7 +693,7 @@ func admin_cambiar_nombre(nuevo_nombre: String) -> bool:
 		return false
 
 	personaje_nombre = nombre
-	var personaje_variant: Variant = GameState.flags.get("personaje", {})
+	var personaje_variant: Variant = GameState.obtener_configuracion_personaje()
 	var personaje: Dictionary = {}
 	if personaje_variant is Dictionary:
 		personaje = (personaje_variant as Dictionary).duplicate(true)
@@ -701,7 +701,7 @@ func admin_cambiar_nombre(nuevo_nombre: String) -> bool:
 	personaje["nombre"] = nombre
 	personaje["especie"] = personaje_especie.duplicate(true)
 	personaje["skin"] = personaje_skin
-	GameState.flags["personaje"] = personaje
+	GameState.establecer_configuracion_personaje(personaje)
 	return true
 
 
@@ -779,9 +779,9 @@ func admin_restaurar_defaults() -> bool:
 
 
 func admin_guardar_estado() -> void:
-	GameState.flags["personaje_admin"] = {
-		"rol": "admin" if bool(GameState.flags.get("personaje_admin", {}).get("rol", "") == "admin") else "jugador",
-		"capacidades": GameState.flags.get("personaje_admin", {}).get("capacidades", []).duplicate(true),
+	GameState.establecer_configuracion_personaje_admin({
+		"rol": "admin" if bool(GameState.obtener_configuracion_personaje_admin().get("rol", "") == "admin") else "jugador",
+		"capacidades": GameState.obtener_configuracion_personaje_admin().get("capacidades", []).duplicate(true),
 		"maximos": {
 			"vida": max_health,
 			"eterium": max_mana,
