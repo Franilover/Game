@@ -36,19 +36,17 @@ var player: Node = null
 var inventory: Node = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
-var entity_manager: Node = null
 var game_state: Node = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null, nuevo_game_state: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
 	projectile_root = nuevo_projectile_root
-	entity_manager = nuevo_entity_manager
 	game_state = nuevo_game_state
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
@@ -542,14 +540,11 @@ func _al_recibir_impacto_proyectil(
 
 
 func _obtener_ai_controller(objetivo: Node) -> Node:
-	if entity_manager != null and is_instance_valid(entity_manager):
-		if entity_manager.has_method("obtener_entidad_ai"):
-			var ai_variant: Variant = entity_manager.call("obtener_entidad_ai", objetivo)
-			if ai_variant is Node:
-				return ai_variant as Node
-	if objetivo != null and objetivo.has_node("AIController"):
-		return objetivo.get_node_or_null("AIController")
-	return null
+	if objetivo == null or not is_instance_valid(objetivo):
+		return null
+	if not objetivo.has_node("AIController"):
+		return null
+	return objetivo.get_node_or_null("AIController")
 
 
 func _obtener_modo_ataque(
