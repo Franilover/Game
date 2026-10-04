@@ -241,6 +241,10 @@ func obtener_relaciones_ecologicas() -> Array:
 func cargar_especies_jugables() -> void:
 	if _http_especies == null:
 		return
+	if _http_especies.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+		return
+	if _http_especies.get_status() != HTTPRequest.STATUS_DISCONNECTED:
+		return
 
 	var headers := PackedStringArray([
 		"apikey: " + SUPABASE_KEY,
