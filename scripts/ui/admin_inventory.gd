@@ -37,7 +37,7 @@ func _es_admin() -> bool:
     if _jugador == null or not is_instance_valid(_jugador):
         return false
 
-    var datos_variant: Variant = GameStateService.obtener_configuracion_personaje_admin()
+    var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
     if not datos_variant is Dictionary:
         return false
 
@@ -149,7 +149,7 @@ func _cargar_lista() -> void:
 
 
 func _cargar_criaturas() -> void:
-    var criaturas: Array[Dictionary] = WorldDataService.obtener_criaturas()
+    var criaturas: Array[Dictionary] = WorldData.obtener_criaturas()
     criaturas.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
         return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
     )
