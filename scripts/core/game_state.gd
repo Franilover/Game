@@ -1,4 +1,5 @@
 extends Node
+class_name GameState
 ## GameState — estado de la partida y guardado local.
 ##
 ## Las partidas NO se guardan en Supabase.
