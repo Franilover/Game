@@ -19,6 +19,7 @@
 [ext_resource type="Script" path="res://scripts/infrastructure/garlia_world_items.gd" id="28_world_items"]
 [ext_resource type="PackedScene" uid="uid://bi6oqlrfq4scs" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/gameplay/combat_system.gd" id="8_combat"]
+[ext_resource type="Script" path="res://scripts/gameplay/combat/combat_feedback.gd" id="29_combat_feedback"]
 [ext_resource type="Script" path="res://scripts/gameplay/dialogue_system.gd" id="12_dialogue"]
 [ext_resource type="Script" path="res://scripts/gameplay/ium_manager.gd" id="13_ium"]
 [ext_resource type="Script" path="res://scripts/core/ium_repository.gd" id="23_ium_repository"]
@@ -108,6 +109,9 @@ script = ExtResource("5_interaction")
 
 [node name="CombatSystem" type="Node" parent="Systems" unique_id=11404339]
 script = ExtResource("8_combat")
+
+[node name="CombatFeedback" type="Node" parent="Systems"]
+script = ExtResource("29_combat_feedback")
 
 [node name="DialogueSystem" type="Node" parent="Systems"]
 script = ExtResource("12_dialogue")
