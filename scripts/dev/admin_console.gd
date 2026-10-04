@@ -19,6 +19,7 @@ var player: Node = null
 var inventory: Node = null
 var entity_manager: Node = null
 var admin_player_editor: Control = null
+var world_items: Node = null
 
 
 const COMANDO_SUMMON: String = "/summon"
@@ -38,7 +39,8 @@ func configurar(
 	nuevo_player: Node,
 	nuevo_inventory: Node,
 	nuevo_entity_manager: Node,
-	nuevo_admin_player_editor: Control
+	nuevo_admin_player_editor: Control,
+	nuevo_world_items: Node = null
 ) -> void:
 	world_context = nuevo_world_context
 	world_entity_spawner = nuevo_entity_spawner
@@ -47,6 +49,7 @@ func configurar(
 	inventory = nuevo_inventory
 	entity_manager = nuevo_entity_manager
 	admin_player_editor = nuevo_admin_player_editor
+	world_items = nuevo_world_items
 
 func _ready() -> void:
 	layer = 100
@@ -62,8 +65,8 @@ func _ready() -> void:
 			_al_datos_disponibles
 		)
 
-	if GarliaWorldItems.has_signal("catalogo_cargado"):
-		GarliaWorldItems.catalogo_cargado.connect(
+	if world_items != null and world_items.has_signal("catalogo_cargado"):
+		world_items.catalogo_cargado.connect(
 			_al_datos_disponibles
 		)
 
@@ -261,8 +264,8 @@ func _actualizar_sugerencias() -> void:
 		return
 
 	if _es_comando_con_sugerencias(texto, COMANDO_GIVE):
-		if GarliaWorldItems.catalogo.is_empty():
-			GarliaWorldItems.cargar_catalogo()
+		if world_items.catalogo.is_empty():
+			world_items.cargar_catalogo()
 
 		var nombre_parcial: String = _extraer_argumento(texto, COMANDO_GIVE)
 		_mostrar_sugerencias(
@@ -542,7 +545,7 @@ func _deduplicar_nombres(
 
 func _obtener_nombres_objetos() -> Array[String]:
 	var nombres: Array[String] = []
-	var catalogo: Array[Dictionary] = GarliaWorldItems.catalogo
+	var catalogo: Array[Dictionary] = world_items.catalogo
 
 	for item in catalogo:
 		var nombre: String = str(
@@ -1079,7 +1082,7 @@ func _comando_give(nombre: String) -> void:
 		return
 
 	var item: Dictionary = (
-		GarliaWorldItems.buscar_item_por_nombre(
+		world_items.buscar_item_por_nombre(
 			nombre_objeto
 		)
 	)
