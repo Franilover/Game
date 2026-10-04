@@ -764,6 +764,42 @@ func _aplicar_danio(
 	)
 
 
+
+
+## Daño genérico de entidades
+##
+## CombatSystem es el único punto de aplicación de daño del gameplay.
+## Las IA deciden cuándo atacar, pero no modifican directamente la salud.
+func aplicar_danio_desde_entidad(
+	atacante: Node,
+	objetivo: Entity,
+	danio: int,
+	origen: String = "CombatSystem/Entidad"
+) -> bool:
+	if atacante == null or not is_instance_valid(atacante):
+		return false
+	if objetivo == null or not is_instance_valid(objetivo):
+		return false
+	if danio <= 0 or not objetivo.is_alive:
+		return false
+
+	var vivo_antes: bool = objetivo.is_alive
+	var aplicado := CombatDamage.aplicar(
+		objetivo,
+		danio,
+		origen
+	)
+	if not aplicado:
+		return false
+
+	if vivo_antes and not objetivo.is_alive and objetivo.is_in_group("creatures"):
+		_registrar_criatura_derrotada(objetivo)
+
+	CombatFeedback.impacto(objetivo, danio)
+	ataque_realizado.emit(atacante, objetivo, danio)
+	return true
+
+
 func _registrar_criatura_derrotada(objetivo: Entity) -> void:
 	if game_state == null or not is_instance_valid(game_state):
 		return
