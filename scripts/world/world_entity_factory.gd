@@ -8,10 +8,10 @@ var _player: Node = null
 var _entity_manager: WorldEntityManager = null
 var _inventory: GarliaInventory = null
 var _combat_system: CombatSystem = null
-var _dialogue_system: Node = null
-var _mission_manager: Node = null
+var _dialogue_system: DialogueSystem = null
+var _mission_manager: MissionManager = null
 var _effects_root: Node = null
-var _world_context: Node = null
+var _world_context: WorldContext = null
 var _world_items: GarliaWorldItems = null
 var _relaciones_ecologicas: Array = []
 
@@ -21,10 +21,10 @@ func configurar_dependencias(
 	entity_manager: WorldEntityManager,
 	inventario: GarliaInventory,
 	combat_system: CombatSystem,
-	dialogue_system: Node,
-	mission_manager: Node,
+	dialogue_system: DialogueSystem,
+	mission_manager: MissionManager,
 	effects_root: Node,
-	world_context: Node,
+	world_context: WorldContext,
 	world_items: GarliaWorldItems,
 	relaciones_ecologicas: Array = []
 ) -> void:
