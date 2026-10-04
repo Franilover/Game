@@ -1062,7 +1062,7 @@ func _procesar_ataque_contacto(
 	criatura.detener_movimiento()
 
 	if objetivo.has_method("take_damage"):
-		objetivo.call("take_damage", danio)
+		objetivo.call("take_damage", danio, "CreatureAI/Contacto")
 
 	if copiar_skin:
 		criatura.copiar_skin_de(objetivo)
@@ -1182,7 +1182,8 @@ func _procesar_ataque_dramarias() -> void:
 	if objetivo.has_method("take_damage"):
 		objetivo.call(
 			"take_damage",
-			_obtener_danio_dramarias()
+			_obtener_danio_dramarias(),
+			"CreatureAI/Dramarias"
 		)
 
 	_iniciar_recuperacion(_obtener_enfriamiento_dramarias())
@@ -1258,7 +1259,8 @@ func _resolver_ataque_flaxis() -> void:
 		if distancia_impacto <= _obtener_distancia_contacto() and objetivo.has_method("take_damage"):
 			objetivo.call(
 				"take_damage",
-				dano_mordida
+				dano_mordida,
+				"CreatureAI/Flaxis"
 			)
 
 			_iniciar_recuperacion(enfriamiento_ataque)
@@ -1295,7 +1297,8 @@ func _iniciar_ataque_ligniano() -> void:
 	if objetivo.has_method("take_damage"):
 		objetivo.call(
 			"take_damage",
-			_obtener_danio_ataque()
+			_obtener_danio_ataque(),
+			"CreatureAI/Lignianos"
 		)
 
 		if objetivo.has_method("aplicar_efecto_slow"):
@@ -1668,7 +1671,8 @@ func _procesar_adherido(delta: float) -> void:
 		if objetivo.has_method("take_damage"):
 			objetivo.call(
 				"take_damage",
-				_obtener_danio_ataque()
+				_obtener_danio_ataque(),
+				"CreatureAI/Rancrodeen"
 			)
 
 	if _tiempo_adherido <= 0.0:
