@@ -67,7 +67,8 @@ func configurar_entidades(
 	combat_system: Node = null,
 	dialogue_system: Node = null,
 	mission_manager: Node = null,
-	world_context: Node = null
+	world_context: Node = null,
+	relaciones_ecologicas: Array = []
 ) -> void:
 	_entities_root = root
 	if entity_manager == null or entity_spawner == null or entity_factory == null or spawn_rules == null:
@@ -83,7 +84,8 @@ func configurar_entidades(
 		dialogue_system,
 		mission_manager,
 		_entities_root,
-		world_context
+		world_context,
+		relaciones_ecologicas
 	)
 	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules)
 
