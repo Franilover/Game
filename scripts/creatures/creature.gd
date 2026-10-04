@@ -59,16 +59,6 @@ func configurar_dependencias(
 	_world_items_dependency = world_items
 	_world_data_dependency = world_data
 
-	var ai := $AIController as CreatureAI
-	if ai != null:
-		ai.configurar_dependencias(
-			jugador,
-			entity_manager,
-			inventario,
-			combat_system,
-			world_items,
-			relaciones_ecologicas
-		)
 
 
 func _ready() -> void:
@@ -303,6 +293,28 @@ func get_personaje_game_id() -> String:
 
 func get_datos() -> Dictionary:
 	return datos
+
+
+func configurar_dependencias_ia(
+	jugador: Node,
+	entity_manager: WorldEntityManager,
+	inventario: GarliaInventory,
+	combat_system: CombatSystem,
+	world_items: GarliaWorldItems,
+	relaciones_ecologicas: Array = []
+) -> void:
+	var ai := get_node_or_null("AIController") as CreatureAI
+	if ai == null:
+		return
+
+	ai.configurar_dependencias(
+		jugador,
+		entity_manager,
+		inventario,
+		combat_system,
+		world_items,
+		relaciones_ecologicas
+	)
 
 
 func configurar_relaciones_ecologicas(relaciones_ecologicas: Array) -> void:
