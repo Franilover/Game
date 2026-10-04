@@ -30,16 +30,18 @@ var _posicion_drops_pendiente: Vector2 = Vector2.ZERO
 var _player: Node2D = null
 var _inventory: Node = null
 var _entities_root: Node = null
+var _entity_manager: Node = null
 var _world_context: Node = null
 var _mission_manager: Node = null
 var _world_items: Array[Node2D] = []
 
 
-func configurar_dependencias(jugador: Node, inventario: Node, entities_root: Node, world_context: Node, mission_manager: Node) -> void:
+func configurar_dependencias(jugador: Node, inventario: Node, entities_root: Node, entity_manager: Node, world_context: Node, mission_manager: Node) -> void:
 	var root_cambio := _entities_root != entities_root
 	_player = jugador as Node2D
 	_inventory = inventario
 	_entities_root = entities_root
+	_entity_manager = entity_manager
 	_world_context = world_context
 	_mission_manager = mission_manager
 	if root_cambio:
@@ -476,7 +478,10 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 
 	prop_node.configurar_dependencias(_world_context, _inventory)
 	prop_node.configurar_desde_game_data(datos_prop)
-	entities.add_child(prop_node)
+	if _entity_manager == null or not _entity_manager.has_method("registrar_global"):
+		return false
+	if not bool(_entity_manager.call("registrar_global", prop_node)):
+		return false
 	prop_node.global_position = posicion
 
 	print(
@@ -511,7 +516,10 @@ func _generar_world_item(
 	var objeto := Node2D.new()
 	objeto.set_script(WORLD_ITEM_SCRIPT)
 	objeto.call("configurar_dependencias", _player, _inventory, _mission_manager)
-	entities.add_child(objeto)
+	if _entity_manager == null or not _entity_manager.has_method("registrar_global"):
+		return
+	if not bool(_entity_manager.call("registrar_global", objeto)):
+		return
 	_world_items.append(objeto)
 
 	objeto.global_position = posicion + Vector2(
@@ -556,6 +564,8 @@ func _generar_objetos_en_mundo(jugador: Node2D) -> void:
 		objeto.set_script(WORLD_ITEM_SCRIPT)
 		objeto.call("configurar_dependencias", _player, _inventory, _mission_manager)
 		contenedor.add_child(objeto)
+		if _entity_manager != null and _entity_manager.has_method("registrar_global"):
+			_entity_manager.call("registrar_global", objeto)
 		_world_items.append(objeto)
 		objeto.global_position = jugador.global_position + posiciones[i]
 		objeto.call("configurar", datos)
