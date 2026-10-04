@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/world/world_entity_factory.gd" id="21_world_entity_factory"]
 [ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="24_world_spawn_rules"]
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="19_world_atmosphere"]
+[ext_resource type="Script" path="res://scripts/world/world_context.gd" id="25_world_context"]
 [ext_resource type="Script" path="res://scripts/world/main.gd" id="3_main"]
 [ext_resource type="PackedScene" uid="uid://dvbsydjnksfcv" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/gameplay/interaction_system.gd" id="5_interaction"]
@@ -61,6 +62,9 @@ script = ExtResource("18_world_spawner")
 
 [node name="WorldAtmosphere" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("19_world_atmosphere")
+
+[node name="WorldContext" type="Node" parent="World/WorldGenerator"]
+script = ExtResource("25_world_context")
 
 [node name="DayNightModulation" type="CanvasModulate" parent="World/WorldGenerator/WorldAtmosphere"]
 
