@@ -271,7 +271,7 @@ func _inicializar_ium() -> void:
 		return
 
 	if _ium_lab.has_method("configurar"):
-		_ium_lab.call("configurar", _ium_manager)
+		_ium_lab.call("configurar", _ium_manager, _admin_console)
 
 	if not _ium_manager.proceso_equipado_signal.is_connected(_al_equipar_proceso):
 		_ium_manager.proceso_equipado_signal.connect(_al_equipar_proceso)
