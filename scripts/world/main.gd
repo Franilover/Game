@@ -15,6 +15,8 @@ var _input_router: Node = GameplayInputRouter
 @onready var _dialogue_system: Node = $Systems/DialogueSystem
 @onready var _ium_manager: Node = $Systems/IUMManager
 @onready var _ium_lab: Control = $UI/IUMLab
+@onready var _admin_console: CanvasLayer = $UI/AdminConsole
+@onready var _world_entity_spawner: Node = $World/WorldGenerator/WorldEntitySpawner
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: Node = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
@@ -69,6 +71,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 		MissionManager.call("configurar_dependencias", _player, world_gen.entity_manager)
 	_configurar_social()
 	_inicializar_ium()
+	_configurar_admin()
 	_configurar_pantalla()
 
 	# Inicializar IUM con jugador (jugador_id puede venir de auth en el futuro)
@@ -205,6 +208,21 @@ func _configurar_dialogo() -> void:
 	if _dialogue_system.has_method("configurar"):
 		_dialogue_system.call("configurar", _player, _hud, MissionManager, RelationshipSystem)
 
+
+func _configurar_admin() -> void:
+	if _admin_console == null:
+		push_error("Main: no se encontró UI/AdminConsole.")
+		return
+	if _admin_console.has_method("configurar"):
+		_admin_console.call(
+			"configurar",
+			_world_context,
+			_world_entity_spawner,
+			_world_atmosphere,
+			_player,
+			_inventory,
+			world_gen.entity_manager
+		)
 
 func _configurar_pantalla() -> void:
 	if not pantalla_completa:
