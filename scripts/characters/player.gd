@@ -196,9 +196,6 @@ func _physics_process(delta: float) -> void:
 			run_stamina_cost * delta
 		)
 
-		_stamina_regeneration_timer = (
-			stamina_regeneration_delay
-		)
 
 	# Movimiento.
 	var speed: float
@@ -1217,7 +1214,7 @@ func reaparecer() -> void:
 
 	health = max_health
 	mana = max_mana
-	stamina = max_stamina
+	stamina_controller.reiniciar()
 
 	velocity = Vector2.ZERO
 	state = State.IDLE
@@ -1226,7 +1223,6 @@ func reaparecer() -> void:
 	_jump_cooldown_timer = 0.0
 	_dash_time = 0.0
 	_dash_cooldown_timer = 0.0
-	_stamina_regeneration_timer = 0.0
 
 	var world_gen := get_tree().current_scene.get_node_or_null(
 		"World/WorldGenerator"
