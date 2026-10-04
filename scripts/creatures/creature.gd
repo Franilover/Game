@@ -662,10 +662,13 @@ func _die() -> void:
 		var mission_manager := _mission_manager_dependency
 		if mission_manager != null and is_instance_valid(mission_manager):
 			mission_manager.call("registrar_muerte", criatura_id, 1)
-		GarliaWorldItems.generar_drops_criatura(
-			criatura_id,
-			global_position
-		)
+		if _world_items_dependency != null and is_instance_valid(_world_items_dependency):
+			if _world_items_dependency.has_method("generar_drops_criatura"):
+				_world_items_dependency.call(
+					"generar_drops_criatura",
+					criatura_id,
+					global_position
+				)
 
 	died.emit()
 
