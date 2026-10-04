@@ -515,8 +515,7 @@ func _al_recibir_impacto_proyectil(
 	if (
 		not arma.is_empty()
 		and objetivo.is_in_group("creatures")
-		and "is_alive" in objetivo
-		and bool(objetivo.get("is_alive"))
+		and objetivo.is_alive
 		and _obtener_ai_controller(objetivo) != null
 	):
 		var ai: CreatureAI = _obtener_ai_controller(objetivo)
@@ -705,11 +704,6 @@ func _aplicar_danio(
 	if not is_instance_valid(objetivo):
 		return
 
-	if not objetivo.has_method(
-		"take_damage"
-	):
-		return
-
 	var vivo_antes: bool = objetivo.is_alive
 
 	var aplicado := CombatDamage.aplicar(
@@ -722,8 +716,7 @@ func _aplicar_danio(
 
 	if (
 		vivo_antes
-		and "is_alive" in objetivo
-		and not bool(objetivo.get("is_alive"))
+		and not objetivo.is_alive
 		and objetivo.is_in_group("creatures")
 	):
 		_registrar_criatura_derrotada(objetivo)
@@ -745,8 +738,7 @@ func _aplicar_danio(
 	if (
 		not arma.is_empty()
 		and objetivo.is_in_group("creatures")
-		and "is_alive" in objetivo
-		and bool(objetivo.get("is_alive"))
+		and objetivo.is_alive
 		and objetivo.has_node("AIController")
 	):
 		var ai: CreatureAI = _obtener_ai_controller(objetivo)
