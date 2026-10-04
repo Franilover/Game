@@ -2,7 +2,7 @@ extends Control
 
 
 var player: Node = null
-var world_context: Node = null
+var world_context: WorldContext = null
 var mission_manager: Node = null
 var entity_manager: Node = null
 var supabase_client: Node = null
@@ -55,7 +55,7 @@ var _discovery_notice_timer: float = 0.0
 @onready var _hotbar_node: Control = $Hotbar
 
 
-func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null, nuevo_world_data: Node = null, nuevo_game_state: Node = null) -> void:
+func configurar(nuevo_player: Node = null, nuevo_world_context: WorldContext = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null, nuevo_world_data: Node = null, nuevo_game_state: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
@@ -397,9 +397,7 @@ func _actualizar_contexto() -> void:
 		location_label.text = "Sin WorldGenerator"
 		return
 
-	var tile_actual := Vector2i.ZERO
-	if world_context.has_method("get_tile_at"):
-		tile_actual = world_context.call("get_tile_at", player.global_position)
+	var tile_actual: Vector2i = world_context.get_tile_at(player.global_position)
 
 	var cambio_de_tile := tile_actual != _ultima_tile_contexto
 	_ultima_tile_contexto = tile_actual
@@ -424,22 +422,13 @@ func _actualizar_contexto() -> void:
 
 	var tile := tile_actual
 
-	var chunk_size := maxi(int(world_context.call("get_chunk_size_tiles")), 1)
+	var chunk_size: int = maxi(world_context.get_chunk_size_tiles(), 1)
 	var chunk := Vector2i(
 		floori(float(tile.x) / float(chunk_size)),
 		floori(float(tile.y) / float(chunk_size))
 	)
 
-	var reinos: Array[Dictionary] = []
-	if world_context.has_method("get_reinos_at_position"):
-		var reinos_variant: Variant = world_context.call(
-			"get_reinos_at_position",
-			player.global_position
-		)
-		if reinos_variant is Array:
-			for reino_variant in reinos_variant:
-				if reino_variant is Dictionary:
-					reinos.append(reino_variant as Dictionary)
+	var reinos: Array[Dictionary] = world_context.get_reinos_at_position(player.global_position)
 
 	var nombres_reinos: Array[String] = []
 	for reino in reinos:
@@ -453,7 +442,7 @@ func _actualizar_contexto() -> void:
 	if not nombres_reinos.is_empty():
 		reino_texto = " · ".join(nombres_reinos)
 
-	var seed := str(world_context.call("get_map_seed"))
+	var seed := str(world_context.get_map_seed())
 	var version := "—"
 	if world_data != null:
 		var mundo_variant: Variant = world_data.get("mundo")
@@ -481,10 +470,7 @@ func _actualizar_contexto() -> void:
 				props += 1
 	var entidades := criaturas + props
 
-	var chunks_cargados := 0
-	var chunks_variant: Variant = world_context.call("get_chunks_cargados")
-	if chunks_variant is Array:
-		chunks_cargados = (chunks_variant as Array).size()
+	var chunks_cargados: int = world_context.get_chunks_cargados().size()
 
 	location_label.text = (
 		"RENDIMIENTO\n"
@@ -583,50 +569,12 @@ func _formatear_numero(
 func _obtener_tiempo_mundo() -> Dictionary:
 	if not is_instance_valid(world_context):
 		return {}
-
-	var resultado: Variant = world_context.call("obtener_tiempo")
-	if resultado is Dictionary:
-		return resultado
-
-	return {}
+	return world_context.obtener_tiempo()
 
 func _obtener_contexto_mundo(posicion: Vector2) -> Dictionary:
 	if not is_instance_valid(world_context):
 		return {}
-
-	if world_context.has_method("get_contexto_at"):
-		var resultado = world_context.call(
-			"get_contexto_at",
-			posicion
-		)
-
-		if resultado is Dictionary:
-			return resultado
-
-	var contexto: Dictionary = {}
-
-	if world_context.has_method("get_bioma_at"):
-		contexto["bioma"] = world_context.call(
-			"get_bioma_at",
-			posicion
-		)
-
-	if world_context.has_method("get_ecosistema_at"):
-		contexto["ecosistema"] = world_context.call(
-			"get_ecosistema_at",
-			posicion
-		)
-
-	if world_context.has_method("get_habitats_at"):
-		var habitats = world_context.call(
-			"get_habitats_at",
-			posicion
-		)
-
-		if habitats is Array and not habitats.is_empty():
-			contexto["habitat"] = habitats[0]
-
-	return contexto
+	return world_context.get_contexto_at(posicion)
 
 
 func _obtener_nombre_contexto(
