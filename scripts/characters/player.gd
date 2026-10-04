@@ -63,6 +63,7 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 
 var _world_context_ref: Node = null
+var _game_state_ref: Node = null
 var _inventory_ref: Node = null
 var _exploration_check_timer: float = 0.0
 
@@ -88,13 +89,15 @@ func configurar_dependencias(
 	world_context: Node = null,
 	ium_manager: Node = null,
 	entity_manager: Node = null,
-	supabase_client: GarliaSupabaseClient = null
+	supabase_client: GarliaSupabaseClient = null,
+	game_state: Node = null
 ) -> void:
 	_inventory_ref = inventory
 	_world_context_ref = world_context
 	_ium_manager_ref = ium_manager
 	_entity_manager_ref = entity_manager
 	_supabase_client_ref = supabase_client
+	_game_state_ref = game_state
 	_configurar_eterium_desde_supabase()
 	_configurar_especie_eterium_game_desde_supabase()
 
@@ -272,13 +275,15 @@ func _registrar_terreno_explorado() -> void:
 	exploration_controller.revisar(global_position, _world_context_ref)
 
 func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void:
-	GameState.registrar_terreno_explorado(tile)
+	if _game_state_ref == null:
+		return
+	_game_state_ref.call("registrar_terreno_explorado", tile)
 	var bioma: Variant = descubrimiento.get("bioma", {})
 	var ecosistema: Variant = descubrimiento.get("ecosistema", {})
 	var habitats: Variant = descubrimiento.get("habitats", [])
 	var criaturas: Variant = descubrimiento.get("criaturas", [])
 	if bioma is Dictionary and ecosistema is Dictionary:
-		GameState.registrar_descubrimiento_mundo(
+		_game_state_ref.call("registrar_descubrimiento_mundo",
 			bioma as Dictionary,
 			ecosistema as Dictionary,
 			habitats as Array if habitats is Array else [],
@@ -641,10 +646,10 @@ func reaparecer() -> void:
 # ============================================================
 
 func _aplicar_configuracion_personaje() -> void:
-	if not is_instance_valid(GameState):
+	if _game_state_ref == null or not is_instance_valid(_game_state_ref):
 		return
 
-	var personaje_variant: Variant = GameState.obtener_configuracion_personaje()
+	var personaje_variant: Variant = _game_state_ref.call("obtener_configuracion_personaje")
 	if not personaje_variant is Dictionary:
 		return
 
@@ -701,7 +706,7 @@ func admin_cambiar_nombre(nuevo_nombre: String) -> bool:
 	personaje["nombre"] = nombre
 	personaje["especie"] = personaje_especie.duplicate(true)
 	personaje["skin"] = personaje_skin
-	GameState.establecer_configuracion_personaje(personaje)
+	_game_state_ref.call("establecer_configuracion_personaje", personaje)
 	return true
 
 
@@ -779,8 +784,8 @@ func admin_restaurar_defaults() -> bool:
 
 
 func admin_guardar_estado() -> void:
-	GameState.establecer_configuracion_personaje_admin({
-		"rol": "admin" if bool(GameState.obtener_configuracion_personaje_admin().get("rol", "") == "admin") else "jugador",
+	_game_state_ref.call("establecer_configuracion_personaje_admin", {
+		"rol": "admin" if bool(_game_state_ref.call("obtener_configuracion_personaje_admin").get("rol", "") == "admin") else "jugador",
 		"capacidades": GameState.obtener_configuracion_personaje_admin().get("capacidades", []).duplicate(true),
 		"maximos": {
 			"vida": max_health,
@@ -788,7 +793,7 @@ func admin_guardar_estado() -> void:
 			"energia": max_stamina
 		}
 	})
-	GameState.guardar_partida()
+	_game_state_ref.call("guardar_partida")
 
 func _update_visual() -> void:
 	if anim == null:
