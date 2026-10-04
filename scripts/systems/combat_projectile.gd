@@ -119,53 +119,34 @@ func _physics_process(delta: float) -> void:
 		and bool(objetivo.get("is_alive"))
 		and objetivo.has_node("AIController")
 	):
-			var ai: Node = objetivo.get_node_or_null(
-				"AIController"
-			)
+		var ai: Node = objetivo.get_node_or_null("AIController")
+		if ai != null and ai.has_method("al_recibir_ataque_con_arma"):
+			ai.call("al_recibir_ataque_con_arma", arma)
 
-			if ai != null and ai.has_method(
-				"al_recibir_ataque_con_arma"
-			):
-				ai.call(
-					"al_recibir_ataque_con_arma",
-					arma
-				)
-
-		var visual: CanvasItem = (
-			objetivo as CanvasItem
+	var visual: CanvasItem = objetivo as CanvasItem
+	if visual != null:
+		var original: Color = visual.modulate
+		var tween := create_tween()
+		tween.tween_property(
+			visual,
+			"modulate",
+			Color(1.0, 0.45, 0.45, original.a),
+			0.04
+		)
+		tween.tween_property(
+			visual,
+			"modulate",
+			original,
+			0.08
 		)
 
-		if visual != null:
-			var original: Color = visual.modulate
-
-			var tween := create_tween()
-
-			tween.tween_property(
-				visual,
-				"modulate",
-				Color(
-					1.0,
-					0.45,
-					0.45,
-					original.a
-				),
-				0.04
-			)
-
-			tween.tween_property(
-				visual,
-				"modulate",
-				original,
-				0.08
-			)
-
-		print(
-			"CombatProjectile: impacto → ",
-			objetivo.name,
-			" por ",
-			danio,
-			" de daño."
-		)
+	print(
+		"CombatProjectile: impacto → ",
+		objetivo.name,
+		" por ",
+		danio,
+		" de daño."
+	)
 
 	queue_free()
 
