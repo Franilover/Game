@@ -7,9 +7,6 @@ extends Node
 signal relacion_cambiada(personaje_id: String, relacion: Dictionary)
 signal recuerdo_registrado(personaje_id: String, recuerdo: Dictionary)
 
-const FLAGS_KEY := "relaciones_sociales"
-const RECUERDOS_KEY := "recuerdos_sociales"
-
 var _reglas: Dictionary = {}
 var _regalos: Array = []
 var _cargado: bool = false
