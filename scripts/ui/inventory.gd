@@ -1245,6 +1245,60 @@ func obtener_indice_hotbar_activo() -> int:
 	return indice_hotbar_activo
 
 
+
+func consumir_durabilidad_objeto_activo() -> bool:
+	var indice_inventario: int = obtener_indice_inventario_hotbar(
+		indice_hotbar_activo
+	)
+	if indice_inventario < 0 or indice_inventario >= items.size():
+		return false
+
+	var objeto: Dictionary = items[indice_inventario]
+	if objeto.is_empty():
+		return false
+
+	var propiedades_variant: Variant = objeto.get(
+		"propiedades_game",
+		{}
+	)
+	if not propiedades_variant is Dictionary:
+		return false
+
+	var propiedades: Dictionary = propiedades_variant as Dictionary
+	var durabilidad_maxima_variant: Variant = propiedades.get(
+		"durabilidad",
+		null
+	)
+	if not (durabilidad_maxima_variant is int or durabilidad_maxima_variant is float):
+		return false
+
+	var durabilidad_maxima: int = maxi(
+		1,
+		int(durabilidad_maxima_variant)
+	)
+	var durabilidad_actual: int = maxi(
+		0,
+		int(objeto.get("durabilidad_actual", durabilidad_maxima))
+	)
+	durabilidad_actual -= 1
+
+	if durabilidad_actual <= 0:
+		print(
+			"Inventory: herramienta rota → ",
+			str(objeto.get("nombre", "Herramienta"))
+		)
+		items[indice_inventario] = {}
+		actualizar()
+		inventory_changed.emit()
+		_emitir_objeto_activo()
+		return true
+
+	items[indice_inventario]["durabilidad_actual"] = durabilidad_actual
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+	return true
+
 func _emitir_objeto_activo() -> void:
 	active_item_changed.emit(
 		obtener_objeto_activo()
