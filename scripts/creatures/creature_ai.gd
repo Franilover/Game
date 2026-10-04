@@ -710,12 +710,6 @@ func _cargar_relaciones_ecologicas() -> void:
 			SupabaseClient.obtener_relaciones_ecologicas()
 		)
 
-	if not SupabaseClient.relaciones_ecologicas_cargadas.is_connected(
-		_al_recibir_relaciones_ecologicas
-	):
-		SupabaseClient.relaciones_ecologicas_cargadas.connect(
-			_al_recibir_relaciones_ecologicas
-		)
 
 
 func _al_recibir_relaciones_ecologicas(
