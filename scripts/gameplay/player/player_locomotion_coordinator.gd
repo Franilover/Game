@@ -98,6 +98,11 @@ func calcular_movimiento(
 		corriendo
 	)
 
+func obtener_direccion_accion(fallback: Vector2 = Vector2.DOWN) -> Vector2:
+	if actions == null:
+		return fallback
+	return actions.obtener_direccion()
+
 func obtener_estado_movimiento() -> PlayerMovementController.State:
 	if movement == null:
 		return PlayerMovementController.State.IDLE
