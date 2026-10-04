@@ -270,8 +270,8 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		return datos.duplicate(true)
 
 	var personaje_id := ""
-	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
-		personaje_id = str(_fuente.call("get_personaje_game_id")).strip_edges()
+	if is_instance_valid(_fuente):
+		personaje_id = _fuente.get_personaje_game_id().strip_edges()
 	if not personaje_id.is_empty():
 		var social: RelationshipSystem = relationship_system
 		if social != null:
