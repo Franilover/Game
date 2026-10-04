@@ -59,10 +59,10 @@ var _personaje_social: Array = []
 var _personaje_regalos: Array = []
 var _relaciones_ecologicas: Array = []
 var _mundo_activo_en_escena: bool = false
-var _auth: Node = null
+var _auth: GarliaAuth = null
 
 
-func configurar_dependencias(auth: Node) -> void:
+func configurar_dependencias(auth: GarliaAuth) -> void:
 	_auth = auth
 
 
@@ -162,7 +162,7 @@ func _request_compartido(path: String, method: int, body: String) -> int:
 		request_completed.emit(request_id, resultado, codigo_http, cabeceras, cuerpo)
 		http.queue_free()
 	http.request_completed.connect(callback, CONNECT_ONE_SHOT)
-	var resultado := http.request(_auth.SUPABASE_URL + path, PackedStringArray([
+	var resultado := http.request(_auth._auth.SUPABASE_URL + path, PackedStringArray([
 		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
@@ -177,17 +177,19 @@ func _emitir_request_fallida(request_id: int) -> void:
 
 
 func cargar_relaciones_ecologicas() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		return
 	if _http_relaciones_ecologicas == null:
 		return
 
 	var headers := PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
 
 	var resultado := _http_relaciones_ecologicas.request(
-		SUPABASE_URL + API_RELACIONES_ECOLOGICAS,
+		_auth.SUPABASE_URL + API_RELACIONES_ECOLOGICAS,
 		headers,
 		HTTPClient.METHOD_GET
 	)
@@ -247,19 +249,22 @@ func obtener_relaciones_ecologicas() -> Array:
 
 
 func cargar_especies_jugables() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		return
+
 	if _http_especies == null:
 		return
 	if _http_especies.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
 
 	var headers := PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
 
 	var resultado := _http_especies.request(
-		SUPABASE_URL + API_ESPECIES_JUGABLES,
+		_auth.SUPABASE_URL + API_ESPECIES_JUGABLES,
 		headers,
 		HTTPClient.METHOD_GET
 	)
@@ -311,15 +316,18 @@ func obtener_especies_jugables() -> Array:
 	return _especies_jugables.duplicate(true)
 
 func cargar_personaje_regalos() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		return
+
 	if not _personaje_regalos.is_empty() or _http_personaje_regalos == null:
 		return
 	var headers := PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
 	var resultado := _http_personaje_regalos.request(
-		SUPABASE_URL + API_PERSONAJE_REGALOS,
+		_auth.SUPABASE_URL + API_PERSONAJE_REGALOS,
 		headers,
 		HTTPClient.METHOD_GET
 	)
@@ -356,17 +364,20 @@ func obtener_personaje_regalos() -> Array:
 
 
 func cargar_personaje_social() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		return
+
 	if not _personaje_social.is_empty() or _http_personaje_social == null:
 		return
 
 	var headers := PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
 
 	var resultado := _http_personaje_social.request(
-		SUPABASE_URL + API_PERSONAJE_SOCIAL,
+		_auth.SUPABASE_URL + API_PERSONAJE_SOCIAL,
 		headers,
 		HTTPClient.METHOD_GET
 	)
@@ -414,17 +425,20 @@ func obtener_regla_social_personaje(personaje_id: String) -> Dictionary:
 
 
 func cargar_especie_eterium_game() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		return
+
 	if not _especie_eterium_game.is_empty():
 		return
 	if _http_especie_eterium_game == null:
 		return
 	var headers := PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
 	var resultado := _http_especie_eterium_game.request(
-		SUPABASE_URL + API_ESPECIE_ETERIUM_GAME,
+		_auth.SUPABASE_URL + API_ESPECIE_ETERIUM_GAME,
 		headers,
 		HTTPClient.METHOD_GET
 	)
@@ -465,23 +479,26 @@ func obtener_especie_eterium_game() -> Array:
 
 
 func cargar_eterium_runtime() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		return
+
 	if not _eterium_runtime.is_empty():
 		return
 
 	if _http_eterium == null:
 		return
 
-	if SUPABASE_KEY == "PEGA_AQUI_TU_CLAVE_PUBLICA":
+	if _auth.SUPABASE_PUBLISHABLE_KEY.is_empty():
 		return
 
 	var headers := PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
 
 	var resultado := _http_eterium.request(
-		SUPABASE_URL + RPC_ETERIUM_RUNTIME,
+		_auth.SUPABASE_URL + RPC_ETERIUM_RUNTIME,
 		headers,
 		HTTPClient.METHOD_POST,
 		"{}"
@@ -616,7 +633,7 @@ func _solicitar_mundo() -> void:
 	if _solicitud_en_curso:
 		return
 
-	if SUPABASE_KEY == "PEGA_AQUI_TU_CLAVE_PUBLICA":
+	if _auth.SUPABASE_PUBLISHABLE_KEY.is_empty():
 		error_conexion.emit(
 			"Falta configurar la clave pública de Supabase."
 		)
@@ -633,13 +650,13 @@ func _solicitar_mundo() -> void:
 	_solicitud_en_curso = true
 
 	var headers := PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	])
 
 	var resultado := _http.request(
-		SUPABASE_URL + RPC_MUNDO,
+		_auth.SUPABASE_URL + RPC_MUNDO,
 		headers,
 		HTTPClient.METHOD_POST,
 		"{}"
