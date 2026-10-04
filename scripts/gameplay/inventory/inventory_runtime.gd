@@ -188,3 +188,23 @@ func consumir_durabilidad(indice: int) -> bool:
 	else:
 		state.items[indice]["durabilidad_actual"] = actual
 	return true
+
+func consumir_durabilidad_equipo(slot: String) -> bool:
+	var objeto := equipment.obtener(slot)
+	if objeto.is_empty():
+		return false
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+	var propiedades := propiedades_variant as Dictionary
+	var maxima_variant: Variant = propiedades.get("durabilidad", null)
+	if not (maxima_variant is int or maxima_variant is float):
+		return false
+	var maxima := maxi(1, int(maxima_variant))
+	var actual := maxi(0, int(objeto.get("durabilidad_actual", maxima))) - 1
+	if actual <= 0:
+		equipment.desequipar(slot)
+	else:
+		objeto["durabilidad_actual"] = actual
+		equipment.equipar(slot, objeto)
+	return true
