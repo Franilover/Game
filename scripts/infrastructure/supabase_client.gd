@@ -99,6 +99,7 @@ func _ready() -> void:
 	call_deferred("cargar_personaje_social")
 	call_deferred("cargar_personaje_regalos")
 	call_deferred("cargar_especies_jugables")
+	call_deferred("cargar_relaciones_ecologicas")
 
 	_timer = Timer.new()
 	_timer.wait_time = INTERVALO_SINCRONIZACION
