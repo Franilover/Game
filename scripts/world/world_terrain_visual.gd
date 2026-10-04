@@ -376,6 +376,7 @@ func _crear_base_tile(
 		)
 
 		data.terrain_set = 0
+		data.terrain = terrain_id
 
 		var bits := index
 		for neighbor in CORNER_NEIGHBORS:
@@ -392,10 +393,6 @@ func _crear_base_tile(
 
 			bits >>= 1
 
-	atlas.get_tile_data(
-		TILE_SEQUENCE[15],
-		0
-	).terrain = terrain_id
 
 	_base_tiles[tile_key] = {
 		"source_id": source_id,
