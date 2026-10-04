@@ -33,7 +33,7 @@ var context: WorldContext
 
 var _world_ready: bool = false
 var _entities_root: Node = null
-var _world_data: Node = null
+var _world_data: WorldData = null
 var _game_state: Node = null
 var _dependencias_configuradas: bool = false
 
@@ -42,7 +42,7 @@ func _ready() -> void:
 	_crear_sistemas()
 
 
-func configurar_dependencias(world_data: Node, game_state: Node) -> void:
+func configurar_dependencias(world_data: WorldData, game_state: Node) -> void:
 	_world_data = world_data
 	_game_state = game_state
 	_dependencias_configuradas = _world_data != null and _game_state != null
