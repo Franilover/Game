@@ -28,6 +28,21 @@ var _tiempo_bloqueado: bool = false
 var _anio_inicio: int = 0
 
 var _modulacion: CanvasModulate
+var _world_data: WorldDataService = null
+
+
+func configurar_dependencias(world_data: WorldDataService) -> void:
+	_world_data = world_data
+	if _world_data == null:
+		push_error("WorldAtmosphere: WorldDataService es obligatorio.")
+		return
+
+	if not _world_data.mundo_listo.is_connected(_al_mundo_listo):
+		_world_data.mundo_listo.connect(_al_mundo_listo)
+	if not _world_data.mundo_actualizado.is_connected(_al_mundo_actualizado):
+		_world_data.mundo_actualizado.connect(_al_mundo_actualizado)
+
+	_intentar_cargar_calendario()
 
 
 func _ready() -> void:
@@ -35,20 +50,6 @@ func _ready() -> void:
 	if _modulacion == null:
 		push_error("WorldAtmosphere: falta el nodo DayNightModulation en la escena.")
 		return
-
-	if not WorldData.mundo_listo.is_connected(
-		_al_mundo_listo
-	):
-		WorldData.mundo_listo.connect(
-			_al_mundo_listo
-		)
-
-	if not WorldData.mundo_actualizado.is_connected(
-		_al_mundo_actualizado
-	):
-		WorldData.mundo_actualizado.connect(
-			_al_mundo_actualizado
-		)
 
 	_intentar_cargar_calendario()
 	_actualizar_iluminacion()
@@ -90,10 +91,10 @@ func _al_mundo_actualizado() -> void:
 
 
 func _intentar_cargar_calendario() -> void:
-	if not WorldData.esta_cargado():
+	if _world_data == null or not _world_data.esta_cargado():
 		return
 
-	var calendario: Dictionary = WorldData.obtener_calendario()
+	var calendario: Dictionary = _world_data.obtener_calendario()
 	if calendario.is_empty():
 		return
 
