@@ -235,43 +235,6 @@ func _buscar_primer_label(nodo: Node) -> Label:
 	return null
 
 
-func _buscar_player() -> void:
-	var encontrado := get_tree().get_first_node_in_group("player")
-
-	if encontrado == null:
-		return
-
-	player = encontrado
-
-	_conectar_senales_player()
-	_actualizar_vida()
-	_actualizar_stamina()
-	_actualizar_eterium()
-
-
-func _buscar_world_generator() -> void:
-	var mundo := get_tree().current_scene
-
-	if not is_instance_valid(mundo):
-		return
-
-	var encontrado := mundo.find_child(
-		"WorldGenerator",
-		true,
-		false
-	)
-
-	if encontrado == null:
-		return
-
-	world_generator = encontrado
-
-	print(
-		"HUD: WorldGenerator asignado → ",
-		world_generator.name
-	)
-
-
 func _conectar_senales_player() -> void:
 	if not is_instance_valid(player):
 		return
