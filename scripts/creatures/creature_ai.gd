@@ -563,7 +563,10 @@ func _refrescar_objetivo() -> void:
 			continue
 		if not candidato.has_method("take_damage"):
 			continue
-		if not _es_objetivo_ecologico_valido(candidato):
+
+		# Flaxis es un depredador oportunista: puede elegir criaturas
+		# cercanas aunque todavía no exista una relación ecológica cargada.
+		if perfil != Perfil.FLAXIS and not _es_objetivo_ecologico_valido(candidato):
 			continue
 
 		candidatos.append(candidato)
