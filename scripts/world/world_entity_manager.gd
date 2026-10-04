@@ -8,6 +8,7 @@ var _entities_root: Node = null
 
 var _by_chunk: Dictionary = {}
 var _persistent_by_key: Dictionary = {}
+var _global_entities: Array = []
 
 
 func configurar(entities_root: Node) -> void:
@@ -41,6 +42,22 @@ func registrar(
 	if not persistent_key.is_empty():
 		_persistent_by_key[persistent_key] = entity
 
+	return true
+
+
+func registrar_global(entity: Node, persistent_key: String = "") -> bool:
+	if entity == null or not is_instance_valid(entity):
+		return false
+	var entities := _entities_root
+	if entities == null or not is_instance_valid(entities):
+		push_error("WorldEntityManager: Entity root no configurado.")
+		return false
+	if entity.get_parent() == null:
+		entities.add_child(entity)
+	if not entity in _global_entities:
+		_global_entities.append(entity)
+	if not persistent_key.is_empty():
+		_persistent_by_key[persistent_key] = entity
 	return true
 
 
@@ -97,6 +114,7 @@ func limpiar_todo() -> void:
 		if chunk_variant is Vector2i:
 			despawn_chunk(chunk_variant)
 	_persistent_by_key.clear()
+	_global_entities.clear()
 
 
 func _remover_persistencia(entity: Node) -> void:
