@@ -256,10 +256,6 @@ func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void
 
 
 func _esta_bloqueado_por_interfaz() -> bool:
-	if not is_instance_valid(_admin_console_ref):
-		_admin_console_ref = get_tree().get_first_node_in_group("admin_console")
-	if is_instance_valid(_admin_console_ref) and bool(_admin_console_ref.get("_abierto")):
-		return true
 	return input_gate.esta_bloqueado()
 
 
