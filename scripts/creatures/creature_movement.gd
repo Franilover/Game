@@ -53,13 +53,31 @@ func procesar(delta: float) -> void:
 	if not _usar_direccion_externa and _move_timer <= 0.0:
 		_elegir_movimiento()
 
-	var direccion: Vector2 = (
+	var direccion_objetivo: Vector2 = (
 		_direccion_externa
 		if _usar_direccion_externa
 		else _move_direction
 	)
 
-	creature.velocity = direccion * move_speed
+	# El movimiento autónomo no cambia de dirección bruscamente cada vez
+	# que termina un ciclo de pensamiento. Se aproxima gradualmente al
+	# rumbo elegido para que la criatura se desplace de forma orgánica.
+	var direccion_actual := Vector2.ZERO
+	if move_speed > 0.0:
+		direccion_actual = creature.velocity / move_speed
+
+	if direccion_objetivo.length_squared() <= 0.001:
+		direccion_actual = direccion_actual.move_toward(
+			Vector2.ZERO,
+			maxf(delta * 3.5, 0.0)
+		)
+	else:
+		direccion_actual = direccion_actual.move_toward(
+			direccion_objetivo,
+			maxf(delta * 2.8, 0.0)
+		)
+
+	creature.velocity = direccion_actual * move_speed
 	creature.move_and_slide()
 
 	_mantener_en_chunk()
@@ -80,7 +98,6 @@ func tomar_control() -> void:
 func liberar_control() -> void:
 	_usar_direccion_externa = false
 	_direccion_externa = Vector2.ZERO
-	_move_timer = 0.0
 
 
 func detener() -> void:
