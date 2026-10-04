@@ -39,6 +39,7 @@ var _combat_system_dependency: Node = null
 var _dialogue_system_dependency: Node = null
 var _mission_manager_dependency: Node = null
 var _effects_root: Node = null
+var _world_items_dependency: Node = null
 
 var _rng := RandomNumberGenerator.new()
 var _siguiendo_jugador: bool = false
@@ -55,6 +56,7 @@ func configurar_dependencias(
 	dialogue_system: Node,
 	mission_manager: Node,
 	effects_root: Node,
+	world_items: Node,
 	relaciones_ecologicas: Array = []
 ) -> void:
 	_player_dependency = jugador
@@ -64,6 +66,7 @@ func configurar_dependencias(
 	_dialogue_system_dependency = dialogue_system
 	_mission_manager_dependency = mission_manager
 	_effects_root = effects_root
+	_world_items_dependency = world_items
 
 	var ai := $AIController as CreatureAI
 	if ai != null:
@@ -72,6 +75,7 @@ func configurar_dependencias(
 			entity_manager,
 			inventario,
 			combat_system,
+			world_items,
 			relaciones_ecologicas
 		)
 
