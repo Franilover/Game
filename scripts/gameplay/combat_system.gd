@@ -30,7 +30,7 @@ const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 @export var duracion_ataque: float = 0.20
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
-var player: Node = null
+var player: Player = null
 var inventory: GarliaInventory = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
@@ -40,7 +40,7 @@ var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: Node = null) -> void:
+func configurar(nuevo_player: Player, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
@@ -50,9 +50,7 @@ func configurar(nuevo_player: Node, nuevo_inventory: GarliaInventory = null, nue
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
 		add_child(combat_controller)
-	var gate_variant: Variant = player.get("input_gate")
-	if gate_variant is Node:
-		combat_controller.configurar_gate(gate_variant as Node)
+	combat_controller.configurar_gate(player.input_gate)
 
 	print(
 		"CombatSystem: configurado."
