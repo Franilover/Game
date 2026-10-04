@@ -500,6 +500,33 @@ func tiene_generacion_activa() -> bool:
 	return not _generation_task.is_empty()
 
 
+func cancelar_generacion_si_distante(
+	centro: Vector2i,
+	radio_maximo: int
+) -> bool:
+	if _generation_task.is_empty():
+		return false
+
+	var coord: Vector2i = _generation_task.get(
+		"coord",
+		Vector2i.ZERO
+	)
+	var distancia := maxi(
+		abs(coord.x - centro.x),
+		abs(coord.y - centro.y)
+	)
+	if distancia <= radio_maximo:
+		return false
+
+	# La generación puede haber pintado parte del chunk antes de que
+	# el jugador se alejara. Retirar esas celdas evita terreno fantasma.
+	if visual != null:
+		visual.clear_chunk(coord, chunk_size_tiles)
+	_generation_task.clear()
+	_pintado_desde_flush = 0
+	return true
+
+
 func chunk_en_generacion(
 	chunk_coord: Vector2i
 ) -> bool:
