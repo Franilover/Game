@@ -473,7 +473,7 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 	datos_prop["item_id"] = str(datos.get("item_id", datos.get("id", "")))
 	datos_prop["colocado_por_jugador"] = true
 
-	prop_node.configurar_dependencias(_world_context, _inventory)
+	prop_node.configurar_dependencias(_world_context, _inventory, self)
 	prop_node.configurar_desde_game_data(datos_prop)
 	if _entity_manager == null or not is_instance_valid(_entity_manager):
 		return false
