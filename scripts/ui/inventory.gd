@@ -279,51 +279,12 @@ func actualizar() -> void:
 func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
 	var indice_destino: int = slot_nodes.find(slot)
 	var indice_origen: int = int(datos_arrastre.get("indice", -1))
-
-	if indice_origen < 0 or indice_origen >= items.size():
+	if indice_origen < 0 or indice_destino < 0:
 		return
-	if indice_destino < 0 or indice_destino >= items.size():
-		return
-	if indice_origen == indice_destino:
-		return
-	if items[indice_origen].is_empty():
-		return
-
-	var origen: Dictionary = items[indice_origen].duplicate(true)
-	var destino: Dictionary = items[indice_destino].duplicate(true)
-
-	# Si son objetos apilables del mismo tipo, llenamos primero el destino.
-	if not destino.is_empty() and _puede_apilar_con(destino, origen):
-		var max_stack: int = maxi(1, int(destino.get("max_stack", 1)))
-		var cantidad_destino: int = maxi(1, int(destino.get("cantidad", 1)))
-		var cantidad_origen: int = maxi(1, int(origen.get("cantidad", 1)))
-		var espacio: int = max_stack - cantidad_destino
-
-		if espacio > 0:
-			var movido: int = mini(espacio, cantidad_origen)
-			destino["cantidad"] = cantidad_destino + movido
-			cantidad_origen -= movido
-
-			if cantidad_origen <= 0:
-				items[indice_origen] = {}
-			else:
-				origen["cantidad"] = cantidad_origen
-				items[indice_origen] = origen
-
-			items[indice_destino] = destino
-			actualizar()
-			inventory_changed.emit()
-			_emitir_objeto_activo()
-			return
-
-	# Si no se pueden apilar, intercambiamos ambos slots.
-	items[indice_origen] = destino
-	items[indice_destino] = origen
-
-	actualizar()
-	inventory_changed.emit()
-	_emitir_objeto_activo()
-
+	if inventory_controller.intercambiar_o_apilar(indice_origen, indice_destino):
+		actualizar()
+		inventory_changed.emit()
+		_emitir_objeto_activo()
 
 func _al_iniciar_arrastre(slot: Button, datos: Dictionary) -> void:
 	_arrastre_indice = slot_nodes.find(slot)
@@ -649,122 +610,12 @@ func _limpiar_informacion() -> void:
 
 
 func agregar_objeto(datos_objeto: Dictionary) -> bool:
-	if datos_objeto.is_empty():
-		return false
-
-	var objeto := datos_objeto.duplicate(true)
-	var cantidad: int = maxi(
-		1,
-		int(objeto.get("cantidad", 1))
-	)
-	var max_stack: int = maxi(
-		1,
-		int(objeto.get("max_stack", 1))
-	)
-
-	objeto["cantidad"] = cantidad
-	objeto["max_stack"] = max_stack
-
-	# Comprobamos primero que pueda entrar TODO el lote.
-	# Así nunca destruimos un objeto del mundo dejando una parte sin recoger.
-	var cantidad_pendiente: int = cantidad
-	var espacios_libres: int = 0
-
-	if max_stack > 1:
-		for existente in items:
-			if existente.is_empty():
-				espacios_libres += 1
-				continue
-
-			if not _puede_apilar_con(existente, objeto):
-				continue
-
-			var ocupacion: int = maxi(
-				0,
-				int(existente.get("cantidad", 1))
-			)
-
-			cantidad_pendiente -= mini(
-				cantidad_pendiente,
-				max_stack - ocupacion
-			)
-
-			if cantidad_pendiente <= 0:
-				break
-	else:
-		for existente in items:
-			if existente.is_empty():
-				espacios_libres += 1
-
-		if espacios_libres < cantidad_pendiente:
-			print("Inventory: no hay espacio suficiente para ", cantidad, " objetos.")
-			return false
-
-		cantidad_pendiente = 0
-
-	if cantidad_pendiente > 0:
-		var stacks_necesarios: int = ceili(
-			float(cantidad_pendiente)
-			/ float(max_stack)
-		)
-		if espacios_libres < stacks_necesarios:
-			print("Inventory: no hay espacio suficiente para completar el lote.")
-			return false
-
-	# 1) Llenamos primero stacks existentes.
-	var restante: int = cantidad
-
-	if max_stack > 1:
-		for i in range(items.size()):
-			if restante <= 0:
-				break
-
-			if not _puede_apilar_con(items[i], objeto):
-				continue
-
-			var ocupacion: int = maxi(
-				1,
-				int(items[i].get("cantidad", 1))
-			)
-			var capacidad: int = max_stack - ocupacion
-
-			if capacidad <= 0:
-				continue
-
-			var anadido: int = mini(restante, capacidad)
-			items[i]["cantidad"] = ocupacion + anadido
-			restante -= anadido
-
-	# 2) Lo restante ocupa nuevos slots.
-	if restante > 0:
-		for i in range(items.size()):
-			if restante <= 0:
-				break
-
-			if not items[i].is_empty():
-				continue
-
-			var lote: int = mini(restante, max_stack)
-			var nuevo_objeto: Dictionary = objeto.duplicate(true)
-			nuevo_objeto["cantidad"] = lote
-			items[i] = nuevo_objeto
-			restante -= lote
-
-	actualizar()
-	inventory_changed.emit()
-	_emitir_objeto_activo()
-
-	print(
-		"Inventory: añadido → ",
-		str(objeto.get("nombre", "Objeto")),
-		" x",
-		str(cantidad),
-		" | max_stack=",
-		str(max_stack)
-	)
-
-	return restante <= 0
-
+	var resultado: bool = inventory_controller.agregar_objeto(datos_objeto)
+	if resultado:
+		actualizar()
+		inventory_changed.emit()
+		_emitir_objeto_activo()
+	return resultado
 
 func _puede_apilar_con(
 	existente: Dictionary,
@@ -1022,66 +873,31 @@ func quitar_objeto(indice: int) -> bool:
 	return quitar_cantidad(indice, cantidad)
 
 
-func quitar_cantidad(
-	indice: int,
-	cantidad: int
-) -> bool:
-	if indice < 0 or indice >= items.size():
+func quitar_cantidad(indice: int, cantidad: int) -> bool:
+	var resultado: bool = inventory_controller.quitar_cantidad(indice, cantidad)
+	if not resultado:
 		return false
-
-	if items[indice].is_empty():
-		return false
-
-	var cantidad_a_quitar: int = maxi(
-		1,
-		cantidad
-	)
-	var cantidad_actual: int = maxi(
-		1,
-		int(items[indice].get("cantidad", 1))
-	)
-
-	if cantidad_a_quitar >= cantidad_actual:
-		items[indice] = {}
-	else:
-		items[indice]["cantidad"] = (
-			cantidad_actual - cantidad_a_quitar
-		)
-
 	if indice_seleccionado == indice:
-		if items[indice].is_empty():
+		var actualizado := obtener_objeto(indice)
+		if actualizado.is_empty():
 			indice_seleccionado = -1
 			objeto_seleccionado.clear()
 			_limpiar_informacion()
 		else:
-			objeto_seleccionado = items[indice].duplicate(true)
+			objeto_seleccionado = actualizado
 			_mostrar_informacion()
-
 	actualizar()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
-
 	return true
 
-
-func establecer_objeto(
-	indice: int,
-	datos_objeto: Dictionary
-) -> bool:
-	if indice < 0 or indice >= items.size():
-		return false
-
-	if datos_objeto.is_empty():
-		items[indice] = {}
-	else:
-		items[indice] = datos_objeto.duplicate(true)
-
-	actualizar()
-	inventory_changed.emit()
-	_emitir_objeto_activo()
-
-	return true
-
+func establecer_objeto(indice: int, datos_objeto: Dictionary) -> bool:
+	var resultado: bool = inventory_controller.establecer_objeto(indice, datos_objeto)
+	if resultado:
+		actualizar()
+		inventory_changed.emit()
+		_emitir_objeto_activo()
+	return resultado
 
 func limpiar_inventario() -> void:
 	for i in range(items.size()):
