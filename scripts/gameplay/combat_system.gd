@@ -7,7 +7,7 @@ signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 
 
 const PROJECTILE_SCRIPT: Script = preload(
-	"res://scripts/systems/combat_projectile.gd"
+	"res://scripts/gameplay/combat_projectile_legacy.gd"
 )
 
 @export_category("Ataque")
