@@ -119,10 +119,29 @@ func _configurar_interaccion() -> void:
 		push_error("Main: no se encontró Systems/InteractionSystem.")
 		return
 
+	if not _interaction_system.objetivo_cambiado.is_connected(_al_cambio_objetivo_interaccion):
+		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
+
 	if _interaction_system.has_method("configurar"):
-		_interaction_system.configurar(_player, _hud)
+		_interaction_system.configurar(_player)
 	else:
 		push_error("Main: InteractionSystem no tiene configurar().")
+
+func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
+	if _hud == null:
+		return
+
+	if objetivo == null or not is_instance_valid(objetivo):
+		if _hud.has_method("ocultar_interaccion"):
+			_hud.call("ocultar_interaccion")
+		return
+
+	var texto := "Recoger"
+	if objetivo.has_method("get_interaction_text"):
+		texto = str(objetivo.call("get_interaction_text"))
+
+	if _hud.has_method("mostrar_interaccion"):
+		_hud.call("mostrar_interaccion", texto)
 
 
 func _configurar_combate() -> void:
