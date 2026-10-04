@@ -6,6 +6,9 @@
 [ext_resource type="Script" path="res://scripts/world/world_terrain_visual.gd" id="16_world_terrain_visual"]
 [ext_resource type="Script" path="res://scripts/world/world_streamer.gd" id="17_world_streamer"]
 [ext_resource type="Script" uid="uid://bcrdgcnddob75" path="res://scripts/world/world_entity_spawner.gd" id="18_world_spawner"]
+[ext_resource type="Script" path="res://scripts/world/world_entity_manager.gd" id="20_world_entity_manager"]
+[ext_resource type="Script" path="res://scripts/world/world_entity_factory.gd" id="21_world_entity_factory"]
+[ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="24_world_spawn_rules"]
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="19_world_atmosphere"]
 [ext_resource type="Script" path="res://scripts/world/main.gd" id="3_main"]
 [ext_resource type="PackedScene" uid="uid://dvbsydjnksfcv" path="res://scenes/ui/hud.tscn" id="4_hud"]
@@ -14,7 +17,6 @@
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/gameplay/combat_system.gd" id="8_combat"]
 [ext_resource type="Script" path="res://scripts/gameplay/dialogue_system.gd" id="12_dialogue"]
 [ext_resource type="Script" path="res://scripts/gameplay/ium_manager.gd" id="13_ium"]
-[ext_resource type="Script" path="res://scripts/core/supabase_client.gd" id="22_supabase_client"]
 [ext_resource type="Script" path="res://scripts/core/ium_repository.gd" id="23_ium_repository"]
 [ext_resource type="PackedScene" path="res://scenes/ui/ium_lab.tscn" id="14_ium_lab"]
 [ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/dev/admin_console.gd" id="9_admin"]
@@ -88,12 +90,7 @@ script = ExtResource("8_combat")
 [node name="DialogueSystem" type="Node" parent="Systems"]
 script = ExtResource("12_dialogue")
 
-[node name="Infrastructure" type="Node" parent="Systems"]
-
-[node name="SupabaseClient" type="Node" parent="Systems/Infrastructure"]
-script = ExtResource("22_supabase_client")
-
-[node name="IUMRepository" type="Node" parent="Systems/Infrastructure"]
+[node name="IUMRepository" type="Node" parent="Systems"]
 script = ExtResource("23_ium_repository")
 
 [node name="IUMManager" type="Node" parent="Systems"]
