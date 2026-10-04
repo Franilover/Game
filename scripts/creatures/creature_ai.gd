@@ -74,21 +74,23 @@ var objetivo: Node2D = null
 var configuracion_ia: Dictionary = {}
 var relaciones_ecologicas: Array = []
 var jugador: Node2D = null
-var entity_manager: Node = null
+var entity_manager: WorldEntityManager = null
 var inventory: Node = null
 var combat_system: Node = null
 
 
 func configurar_dependencias(
 	nuevo_jugador: Node,
-	nuevo_entity_manager: Node,
+	nuevo_entity_manager: WorldEntityManager,
 	nuevo_inventory: Node,
-	nuevo_combat_system: Node
+	nuevo_combat_system: Node,
+	nuevas_relaciones_ecologicas: Array = []
 ) -> void:
 	jugador = nuevo_jugador as Node2D
 	entity_manager = nuevo_entity_manager
 	inventory = nuevo_inventory
 	combat_system = nuevo_combat_system
+	relaciones_ecologicas = nuevas_relaciones_ecologicas.duplicate(true)
 
 
 
@@ -565,14 +567,7 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 
 	if entity_manager == null or not is_instance_valid(entity_manager):
 		return candidatos
-	if not entity_manager.has_method("obtener_entidades_activas"):
-		return candidatos
-
-	var entidades_variant: Variant = entity_manager.call("obtener_entidades_activas")
-	if not entidades_variant is Array:
-		return candidatos
-
-	for entidad_variant in entidades_variant as Array:
+	for entidad_variant in entity_manager.obtener_entidades_activas():
 		if not entidad_variant is Node2D:
 			continue
 		var entidad := entidad_variant as Node2D
@@ -687,16 +682,6 @@ func _obtener_relacion_ecologica(
 			).strip_edges().to_lower()
 
 	return mejor_tipo
-
-
-func _cargar_relaciones_ecologicas() -> void:
-	if not is_instance_valid(SupabaseClient):
-		return
-
-	if SupabaseClient.has_method("obtener_relaciones_ecologicas"):
-		relaciones_ecologicas = (
-			SupabaseClient.obtener_relaciones_ecologicas()
-		)
 
 
 
