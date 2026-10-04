@@ -3,6 +3,7 @@ extends Control
 
 var player: Node = null
 var world_generator: Node = null
+var mission_manager: Node = null
 
 var mostrar_contexto_mundo: bool = false
 
@@ -38,13 +39,15 @@ var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 
 
-func configurar(nuevo_player: Node = null, nuevo_world_generator: Node = null) -> void:
+func configurar(nuevo_player: Node = null, nuevo_world_generator: Node = null, nuevo_mission_manager: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
 		player = nuevo_player
 	if nuevo_world_generator != null and is_instance_valid(nuevo_world_generator):
 		world_generator = nuevo_world_generator
+	if nuevo_mission_manager != null and is_instance_valid(nuevo_mission_manager):
+		mission_manager = nuevo_mission_manager
 	if is_inside_tree():
 		_conectar_senales_player()
 		_actualizar_vida()
@@ -77,8 +80,6 @@ func _ready() -> void:
 	if interaction_prompt:
 		interaction_prompt.visible = false
 
-	_buscar_player()
-	_buscar_world_generator()
 
 	if GameState.has_signal("descubrimiento_mundo"):
 		GameState.descubrimiento_mundo.connect(_al_descubrimiento_mundo)
@@ -749,7 +750,7 @@ func ocultar_interaccion() -> void:
 
 
 func _obtener_mission_manager() -> Node:
-	return get_node_or_null("/root/MissionManager")
+	return mission_manager
 
 
 func _conectar_senales_misiones() -> void:
