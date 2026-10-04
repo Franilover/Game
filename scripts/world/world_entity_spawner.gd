@@ -31,12 +31,14 @@ func configurar(
 		push_error("WorldEntitySpawner: Entity factory inválido.")
 	if _spawn_rules == null:
 		push_error("WorldEntitySpawner: Spawn rules inválidas.")
+	if _world_data == null:
+		push_error("WorldEntitySpawner: WorldDataService inválido.")
 
 
 func spawn_chunk(
 	chunk_coord: Vector2i
 ) -> void:
-	if _entity_manager == null:
+	if _entity_manager == null or _entity_factory == null or _spawn_rules == null or _world_data == null:
 		return
 	if _entity_manager.tiene_chunk(chunk_coord):
 		return
@@ -309,7 +311,7 @@ func summon_criatura(
 			)
 		)
 
-		criatura_data = WorldData.obtener_criatura(
+		criatura_data = _world_data.obtener_criatura(
 			criatura_id
 		).duplicate(true)
 
@@ -338,7 +340,7 @@ func summon_criatura(
 
 		criatura_data["personaje_game_id"] = personaje_id
 
-		var dialogo_personaje := WorldData.obtener_dialogo_game(
+		var dialogo_personaje := _world_data.obtener_dialogo_game(
 			personaje_id
 		)
 		if not dialogo_personaje.is_empty():
@@ -353,7 +355,7 @@ func summon_criatura(
 			)
 		)
 	else:
-		criatura_data = WorldData.buscar_criatura_por_nombre(
+		criatura_data = _world_data.buscar_criatura_por_nombre(
 			nombre_solicitado
 		)
 
@@ -373,7 +375,7 @@ func summon_criatura(
 			)
 		).strip_edges().to_lower() == "humano":
 			var personajes_humanos: Array[Dictionary] = (
-				WorldData.obtener_personajes_game_de_criatura(
+				_world_data.obtener_personajes_game_de_criatura(
 					str(
 						criatura_data.get(
 							"id",
@@ -410,7 +412,7 @@ func summon_criatura(
 
 				criatura_data["personaje_game_id"] = personaje_id
 
-				var dialogo_personaje := WorldData.obtener_dialogo_game(
+				var dialogo_personaje := _world_data.obtener_dialogo_game(
 					personaje_id
 				)
 				if not dialogo_personaje.is_empty():
@@ -548,7 +550,7 @@ func _spawn_characters_in_chunk(
 	limite_chunk: Rect2,
 	rng: RandomNumberGenerator
 ) -> void:
-	var personajes := WorldData.obtener_personajes_game()
+	var personajes := _world_data.obtener_personajes_game()
 	if personajes.is_empty():
 		return
 
@@ -582,7 +584,7 @@ func _spawn_characters_in_chunk(
 		if criatura_id.is_empty():
 			continue
 
-		var criatura_data := WorldData.obtener_criatura(criatura_id).duplicate(true)
+		var criatura_data := _world_data.obtener_criatura(criatura_id).duplicate(true)
 		if criatura_data.is_empty():
 			continue
 
@@ -591,7 +593,7 @@ func _spawn_characters_in_chunk(
 		criatura_data["reino_game_id"] = reino_game_id
 		criatura_data["reino_nombre"] = str(personaje.get("reino_nombre", ""))
 
-		var dialogo := WorldData.obtener_dialogo_game(personaje_id)
+		var dialogo := _world_data.obtener_dialogo_game(personaje_id)
 		if not dialogo.is_empty():
 			criatura_data["dialogo"] = dialogo
 		else:
@@ -625,7 +627,7 @@ func _spawn_props_in_chunk(
 	limite_chunk: Rect2,
 	rng: RandomNumberGenerator
 ) -> void:
-	var props := WorldData.obtener_props_game()
+	var props := _world_data.obtener_props_game()
 	if props.is_empty():
 		return
 
