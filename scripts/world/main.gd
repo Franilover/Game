@@ -147,7 +147,7 @@ func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator) -> 
 		return
 
 	if _hud.has_method("configurar"):
-		_hud.call("configurar", _player, world_context, MissionManager, world_gen.entity_manager, _supabase_client, _inventory)
+		_hud.call("configurar", _player, world_context, MissionManager, world_gen.entity_manager, _supabase_client, _inventory, WorldData)
 	else:
 		push_error("Main: HUD no tiene configurar().")
 
@@ -188,7 +188,7 @@ func _configurar_combate(world_context: WorldContext) -> void:
 		return
 
 	if _combat_system.has_method("configurar"):
-		_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles)
+		_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, world_gen.entity_manager)
 
 
 func _configurar_input_router() -> void:
