@@ -13,12 +13,12 @@ float hash21(vec2 p) {
     return fract(p.x * p.y);
 }
 
-float pixel_blade(vec2 uv, vec2 cell, float seed, float scale) {
+float pixel_blade(vec2 uv, vec2 cell, float seed, float scale, float width_scale, float y_offset) {
     float r = hash21(cell + vec2(seed, seed * 2.17));
     float r2 = hash21(cell + vec2(seed + 19.7, seed + 43.1));
-    float center = 0.5 + (r - 0.5) * 0.55;
+    float center = 0.5 + (r - 0.5) * 0.72;
     float height = mix(0.45, 0.95, r2) * scale;
-    float y = 1.0 - uv.y;
+    float y = 1.0 - uv.y + y_offset;
 
     if (y <= 0.0 || y >= height) {
         return 0.0;
@@ -29,7 +29,7 @@ float pixel_blade(vec2 uv, vec2 cell, float seed, float scale) {
     float x = center + sway * progress;
 
     float stepped_y = floor(progress * 3.0) / 3.0;
-    float stepped_width = mix(0.16, 0.075, stepped_y);
+    float stepped_width = mix(0.16, 0.075, stepped_y) * width_scale;
     return step(abs(uv.x - x), stepped_width);
 }
 
@@ -50,8 +50,14 @@ void fragment() {
         float ra = hash21(cell_a + 7.3);
         float rb = hash21(cell_b + 31.7);
 
-        float blades_a = pixel_blade(local_a, cell_a, 3.1, 1.0);
-        float blades_b = pixel_blade(local_b, cell_b, 8.7, 0.78);
+        float scale_a = mix(0.72, 1.28, hash21(cell_a + 114.2));
+        float width_a = mix(0.72, 1.35, hash21(cell_a + 52.6));
+        float offset_a = (hash21(cell_a + 77.1) - 0.5) * 0.18;
+        float blades_a = pixel_blade(local_a, cell_a, 3.1, scale_a, width_a, offset_a);
+        float scale_b = mix(0.60, 1.18, hash21(cell_b + 214.8));
+        float width_b = mix(0.65, 1.28, hash21(cell_b + 132.4));
+        float offset_b = (hash21(cell_b + 167.9) - 0.5) * 0.20;
+        float blades_b = pixel_blade(local_b, cell_b, 8.7, scale_b, width_b, offset_b);
 
         blades_a *= step(1.0 - density, ra);
         blades_b *= step(1.0 - density * 0.92, rb);
