@@ -17,7 +17,7 @@ func get_rest(recurso: String, query: String = "") -> int:
 		path += "?" + query
 	return _request(path, HTTPClient.METHOD_GET, "")
 
-func _request(path: String, method: HTTPClient.Method, body: String) -> int:
+func _request(path: String, method: int, body: String) -> int:
 	var request_id := _next_request_id
 	_next_request_id += 1
 	var http := HTTPRequest.new()
