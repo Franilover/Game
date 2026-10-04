@@ -337,7 +337,7 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 
 	var world_context: Node = _world_context
 
-	if world_gen != null and world_context.has_method("get_tile_at"):
+	if world_context != null and world_context.has_method("get_tile_at"):
 		var tile_variant: Variant = world_context.call(
 			"get_tile_at",
 			player_state.position
@@ -714,27 +714,8 @@ func _revisar_escena_actual() -> void:
 	if active_save_id.is_empty() or _partida_aplicada_en_escena:
 		return
 
-	var world_gen: Node = _world_generator
-	if world_gen == null or not is_instance_valid(world_gen):
-		return
-
-	if world_gen.has_method("is_world_ready"):
-		if not bool(world_gen.call("is_world_ready")):
-			var callback := Callable(
-				self,
-				"_al_mundo_generado_para_aplicar"
-			)
-			if world_gen.has_signal("mundo_generado") and not world_gen.is_connected(
-				"mundo_generado",
-				callback
-			):
-				world_gen.connect(
-					"mundo_generado",
-					callback,
-					CONNECT_ONE_SHOT
-				)
-			return
-
+	# GameState no depende del generador de mundo.
+	# Main configura esta dependencia después de que el mundo está listo.
 	_aplicar_estado_al_juego()
 
 
