@@ -9,6 +9,8 @@ const EQUIPMENT_SLOT_SCENE: PackedScene = preload(
 
 const HOTBAR_SLOT_COUNT: int = 8
 
+var inventory_controller := InventoryController.new()
+
 @export var slot_count: int = 24
 
 signal inventory_changed
@@ -80,6 +82,7 @@ func _inicializar_navegacion_tabs() -> void:
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_to_group("inventory")
+	add_child(inventory_controller)
 
 	_inicializar_items()
 	_inicializar_hotbar()
@@ -227,7 +230,15 @@ func _crear_slots() -> void:
 	actualizar()
 
 
+func _sincronizar_runtime() -> void:
+	var items_runtime: Array = []
+	for item in items:
+		items_runtime.append(item.duplicate(true))
+	inventory_controller.configurar_items(items_runtime, hotbar_indices)
+	inventory_controller.runtime.establecer_equipamiento(equipo)
+
 func actualizar() -> void:
+	_sincronizar_runtime()
 	for i in range(slot_nodes.size()):
 		var slot := slot_nodes[i]
 
@@ -483,6 +494,10 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	actualizar()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
+
+
+func obtener_equipamiento() -> Dictionary:
+	return inventory_controller.obtener_equipamiento()
 
 
 func obtener_estadistica_equipo(
@@ -1234,6 +1249,7 @@ func establecer_hotbar_slot(
 		return false
 
 	hotbar_indices[indice_hotbar] = indice_inventario
+	_sincronizar_runtime()
 
 	inventory_changed.emit()
 	_emitir_objeto_activo()
@@ -1246,6 +1262,7 @@ func seleccionar_hotbar(indice_hotbar: int) -> void:
 		return
 
 	indice_hotbar_activo = indice_hotbar
+	inventory_controller.seleccionar_hotbar(indice_hotbar)
 
 	# La hotbar tiene su propia selección.
 	# NO seleccionamos el slot correspondiente del inventario.
@@ -1311,6 +1328,7 @@ func consumir_durabilidad_objeto_activo() -> bool:
 		)
 		items[indice_inventario] = {}
 		actualizar()
+		_sincronizar_runtime()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
 		return true

@@ -53,31 +53,23 @@ var facing: Vector2 = Vector2.DOWN
 
 
 var stamina: float = 0.0
-var _stamina_regeneration_timer: float = 0.0
+var stamina_controller := PlayerStaminaController.new()
+var eterium_runtime := PlayerEteriumRuntime.new()
+var eterium := PlayerEteriumCoordinator.new()
+var input_gate := GameplayInputGate.new()
+var exploration_controller := PlayerExplorationController.new()
+var locomotion := PlayerLocomotionCoordinator.new()
+var movement_controller := PlayerMovementController.new()
+var action_controller := PlayerActionController.new()
 
-var _eterium_reglas: Dictionary = {}
-var _eterium_organismos: Dictionary = {}
-var _eterium_runtime_ready: bool = false
-var _especie_eterium_game: Dictionary = {}
-var _especie_eterium_game_ready: bool = false
-var _eterium_recupera: bool = true
-var _eterium_heal_timer: float = 0.0
-var _eterium_recovery_accumulator: float = 0.0
-var _eterium_sprint_cost_accumulator: float = 0.0
 var _world_generator_ref: Node = null
-var _admin_console_ref: Node = null
 var _exploration_check_timer: float = 0.0
 
 
-var _jump_time: float = 0.0
-var _jump_cooldown_timer: float = 0.0
 
-var _dash_time: float = 0.0
-var _dash_cooldown_timer: float = 0.0
 
 var _action_direction: Vector2 = Vector2.DOWN
 var _base_visual_position: Vector2 = Vector2.ZERO
-var _ultima_exploracion_tile: Vector2i = Vector2i(2147483647, 2147483647)
 var personaje_nombre: String = ""
 var personaje_genero: String = ""
 var personaje_especie: Dictionary = {}
@@ -97,7 +89,14 @@ func _ready() -> void:
 
 	add_to_group("player")
 
-	stamina = max_stamina
+	add_child(input_gate)
+	eterium.configurar(eterium_runtime, stamina_controller)
+	eterium.configurar_vital(vital_state)
+	exploration_controller.terreno_descubierto.connect(_al_terreno_descubierto)
+	locomotion.configurar(movement_controller, action_controller, stamina_controller)
+	stamina_controller.configurar(max_stamina)
+	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
+	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 
 	_configurar_eterium_desde_supabase()
 
@@ -119,7 +118,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
-	_actualizar_cooldowns(delta)
+	locomotion.actualizar_cooldowns(delta)
 	_exploration_check_timer -= delta
 	if _exploration_check_timer <= 0.0:
 		_exploration_check_timer = 0.08
@@ -129,15 +128,15 @@ func _physics_process(delta: float) -> void:
 	# no procesamos ningún input del jugador.
 	if _esta_bloqueado_por_interfaz():
 		velocity = Vector2.ZERO
-
 		if state != State.IDLE:
 			state = State.IDLE
+			locomotion.reiniciar()
 			_update_visual()
-
 		return
 
-	# Mientras hacemos una acción especial,
-	# esa acción toma el control del movimiento.
+	# El coordinador administra la ventana temporal de la acción.
+	locomotion.avanzar_accion(delta)
+
 	if state == State.JUMP:
 		_procesar_jump(delta)
 		return
@@ -147,11 +146,10 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# Curación con Eterium mientras se mantiene Q.
-	if Input.is_action_pressed("focus") and not _eterium_vida_compartida():
+	if Input.is_action_pressed("focus") and not eterium.vida_eterium_compartidos():
 		_procesar_curacion_eterium(delta)
 		return
 
-	_eterium_heal_timer = 0.0
 
 	# Shift tiene dos funciones:
 	# pulsarlo = dash inmediato
@@ -173,7 +171,7 @@ func _physics_process(delta: float) -> void:
 
 	var eterium_sprint := false
 	if Input.is_action_pressed("eterium_sprint") and direction != Vector2.ZERO:
-		eterium_sprint = _procesar_carrera_eterium(delta)
+		eterium_sprint = eterium.procesar_carrera(delta)
 
 	var is_running := (
 		shift_pressed
@@ -185,24 +183,16 @@ func _physics_process(delta: float) -> void:
 	# La recuperación natural ocurre únicamente mientras el jugador espera.
 	if direction == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
-	else:
-		_eterium_recovery_accumulator = 0.0
 
 	# Consumo de stamina al correr normalmente.
 	if is_running:
-		_gastar_stamina(
-			run_stamina_cost * delta
-		)
-
-		_stamina_regeneration_timer = (
-			stamina_regeneration_delay
-		)
+		_gastar_stamina(run_stamina_cost * delta)
 
 	# Movimiento.
 	var speed: float
 
 	if eterium_sprint:
-		speed = move_speed * run_multiplier * _eterium_carrera_multiplicador()
+		speed = move_speed * run_multiplier * eterium.multiplicador_carrera()
 	elif is_running:
 		speed = move_speed * run_multiplier
 	else:
@@ -239,242 +229,48 @@ func _physics_process(delta: float) -> void:
 
 func _registrar_terreno_explorado() -> void:
 	if not is_instance_valid(_world_generator_ref):
-		_world_generator_ref = get_tree().get_first_node_in_group(
-			"world_generator"
-		)
-
-	var world_gen: Node = _world_generator_ref
-
-	if world_gen == null or not is_instance_valid(world_gen):
+		_world_generator_ref = get_tree().get_first_node_in_group("world_generator")
+	if not is_instance_valid(_world_generator_ref):
 		return
+	exploration_controller.revisar(global_position, _world_generator_ref)
 
-	if not world_gen.has_method("get_tile_at"):
-		return
-
-	var tile_variant: Variant = world_gen.call(
-		"get_tile_at",
-		global_position
-	)
-
-	if not tile_variant is Vector2i:
-		return
-
-	var tile: Vector2i = tile_variant as Vector2i
-
-	if tile == _ultima_exploracion_tile:
-		return
-
-	_ultima_exploracion_tile = tile
+func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void:
 	GameState.registrar_terreno_explorado(tile)
-
-	if not world_gen.has_method("get_bioma_at"):
-		return
-
-	var bioma_variant: Variant = world_gen.call(
-		"get_bioma_at",
-		tile
-	)
-	var ecosistema_variant: Variant = world_gen.call(
-		"get_ecosistema_at",
-		tile
-	)
-	var habitats_variant: Variant = world_gen.call(
-		"get_habitats_at",
-		tile
-	)
-	var criaturas_variant: Variant = world_gen.call(
-		"get_criaturas_at",
-		tile
-	)
-
-	if not bioma_variant is Dictionary:
-		return
-
-	if not ecosistema_variant is Dictionary:
-		return
-
-	var habitats: Array = []
-	if habitats_variant is Array:
-		habitats = habitats_variant as Array
-
-	var criaturas: Array = []
-	if criaturas_variant is Array:
-		criaturas = criaturas_variant as Array
-
-	GameState.registrar_descubrimiento_mundo(
-		bioma_variant as Dictionary,
-		ecosistema_variant as Dictionary,
-		habitats,
-		criaturas
-	)
+	var bioma: Variant = descubrimiento.get("bioma", {})
+	var ecosistema: Variant = descubrimiento.get("ecosistema", {})
+	var habitats: Variant = descubrimiento.get("habitats", [])
+	var criaturas: Variant = descubrimiento.get("criaturas", [])
+	if bioma is Dictionary and ecosistema is Dictionary:
+		GameState.registrar_descubrimiento_mundo(
+			bioma as Dictionary,
+			ecosistema as Dictionary,
+			habitats as Array if habitats is Array else [],
+			criaturas as Array if criaturas is Array else []
+		)
 
 
 func _esta_bloqueado_por_interfaz() -> bool:
-	if not is_instance_valid(_admin_console_ref):
-		_admin_console_ref = get_tree().get_first_node_in_group(
-			"admin_console"
-		)
-
-	if is_instance_valid(_admin_console_ref):
-		if bool(_admin_console_ref.get("_abierto")):
-			return true
-
-	if GameState.esta_entrada_de_juego_bloqueada():
-		return true
-
-	var dialogue_system := get_tree().get_first_node_in_group("dialogue_system")
-	if dialogue_system != null and dialogue_system.has_method("esta_abierto"):
-		if bool(dialogue_system.call("esta_abierto")):
-			return true
-
-	var hud := get_tree().get_first_node_in_group("hud")
-	if hud != null and hud.has_method(
-		"esta_mostrando_panel_interaccion"
-	):
-		if bool(
-			hud.call(
-				"esta_mostrando_panel_interaccion"
-			)
-		):
-			return true
-
-	return get_tree().paused
+	return input_gate.esta_bloqueado()
 
 
-func _actualizar_cooldowns(delta: float) -> void:
-	_jump_cooldown_timer = maxf(
-		_jump_cooldown_timer - delta,
-		0.0
-	)
-
-	_dash_cooldown_timer = maxf(
-		_dash_cooldown_timer - delta,
-		0.0
-	)
-
-
-func _actualizar_regeneracion_stamina(
-	delta: float,
-	esta_corriendo: bool
-) -> void:
+func _actualizar_regeneracion_stamina(delta: float, esta_corriendo: bool) -> void:
 	if esta_corriendo:
 		return
-
-	if _stamina_regeneration_timer > 0.0:
-		_stamina_regeneration_timer = maxf(
-			_stamina_regeneration_timer - delta,
-			0.0
-		)
-
-		return
-
-	if stamina >= max_stamina:
-		return
-
-	stamina = minf(
-		stamina + stamina_regeneration * delta,
-		max_stamina
-	)
-
-	stamina_changed.emit(
-		stamina,
-		max_stamina
-	)
-
+	stamina_controller.actualizar(delta, true)
 
 func _gastar_stamina(cantidad: float) -> bool:
-	if cantidad <= 0.0:
-		return true
-
-	if stamina < cantidad:
-		return false
-
-	stamina = maxf(
-		stamina - cantidad,
-		0.0
-	)
-
-	_stamina_regeneration_timer = (
-		stamina_regeneration_delay
-	)
-
-	stamina_changed.emit(
-		stamina,
-		max_stamina
-	)
-
-	return true
-
+	return stamina_controller.gastar(cantidad)
 
 func _tiene_stamina(cantidad: float) -> bool:
-	return stamina >= cantidad
+	return stamina_controller.tiene(cantidad)
 
 
 func restaurar_stamina(cantidad: float) -> bool:
-	if not is_alive:
-		return false
+	return stamina_controller.restaurar(cantidad)
 
-	var recuperacion: float = maxf(
-		cantidad,
-		0.0
-	)
-
-	if recuperacion <= 0.0:
-		return false
-
-	var antes: float = stamina
-
-	if antes >= max_stamina:
-		return false
-
-	stamina = minf(
-		stamina + recuperacion,
-		max_stamina
-	)
-
-	if stamina <= antes:
-		return false
-
-	_stamina_regeneration_timer = 0.0
-
-	stamina_changed.emit(
-		stamina,
-		max_stamina
-	)
-
-	return true
-
-
-func restaurar_eterium(cantidad: float) -> bool:
-	if not is_alive or not _eterium_runtime_ready:
-		return false
-
-	var recuperacion: int = maxi(
-		1,
-		roundi(cantidad)
-	)
-
-	if mana >= max_mana:
-		return false
-
-	var antes: int = mana
-
-	mana = mini(
-		mana + recuperacion,
-		max_mana
-	)
-
-	if mana <= antes:
-		return false
-
-	_eterium_recovery_accumulator = 0.0
-
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
-
-	return true
+func _al_cambio_stamina(current: float, maximum: float) -> void:
+	stamina = current
+	stamina_changed.emit(current, maximum)
 
 
 # ============================================================
@@ -490,98 +286,6 @@ func _configurar_especie_eterium_game_desde_supabase() -> void:
 
 func _al_especie_eterium_game_cargado(reglas: Array) -> void:
 	_aplicar_especie_eterium_game(reglas)
-
-
-func _aplicar_especie_eterium_game(reglas: Array) -> void:
-	var especie_id := str(personaje_especie.get("id", ""))
-	if especie_id.is_empty():
-		return
-	for regla_variant in reglas:
-		if not regla_variant is Dictionary:
-			continue
-		var regla := regla_variant as Dictionary
-		var padre_variant: Variant = regla.get("especie_eterium_v1", {})
-		if not padre_variant is Dictionary:
-			continue
-		var padre := padre_variant as Dictionary
-		if str(padre.get("especie_id", "")) != especie_id:
-			continue
-		_especie_eterium_game = regla.duplicate(true)
-		_especie_eterium_game_ready = true
-		var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana))))
-		var eterium_inicial := clampi(int(regla.get("eterium_inicial", capacidad)), 0, capacidad)
-		max_mana = capacidad
-		mana = eterium_inicial
-		if bool(regla.get("vida_eterium_compartidos", false)):
-			max_health = capacidad
-			health = capacidad
-			mana = capacidad
-			health_changed.emit(health, max_health)
-			mana_changed.emit(mana, max_mana)
-		else:
-			mana_changed.emit(mana, max_mana)
-		var compartido := bool(regla.get("vida_eterium_compartidos", false))
-		_eterium_recupera = bool(regla.get("recuperacion_eterium", true))
-		_aplicar_admin_maximos_guardados()
-		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", compartido, " | capacidad=", max_mana)
-		fisiologia_changed.emit(compartido)
-		return
-
-func _aplicar_admin_maximos_guardados() -> void:
-	var admin_variant: Variant = GameState.flags.get("personaje_admin", {})
-	if not admin_variant is Dictionary:
-		return
-
-	var admin_data := admin_variant as Dictionary
-	var maximos_variant: Variant = admin_data.get("maximos", {})
-	if not maximos_variant is Dictionary:
-		return
-
-	var maximos := maximos_variant as Dictionary
-	if maximos.has("vida"):
-		max_health = maxi(1, int(maximos.get("vida", max_health)))
-	if maximos.has("eterium"):
-		max_mana = maxi(1, int(maximos.get("eterium", max_mana)))
-	if maximos.has("energia"):
-		max_stamina = maxf(1.0, float(maximos.get("energia", max_stamina)))
-
-	health = mini(health, max_health)
-	mana = mini(mana, max_mana)
-	stamina = minf(stamina, max_stamina)
-
-	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_mana)
-	stamina_changed.emit(stamina, max_stamina)
-
-
-
-func _eterium_vida_compartida() -> bool:
-	return _especie_eterium_game_ready and bool(_especie_eterium_game.get("vida_eterium_compartidos", false))
-
-
-func _obtener_eterium_por_muerte(cantidad: int) -> void:
-	var ganancia := maxi(cantidad, 0)
-	if ganancia <= 0:
-		return
-	mana = mini(mana + ganancia, max_mana)
-	mana_changed.emit(mana, max_mana)
-	if _eterium_vida_compartida():
-		health = mana
-		health_changed.emit(health, max_health)
-
-
-func _gastar_eterium(cantidad: int) -> bool:
-	var gasto := maxi(cantidad, 0)
-	if gasto <= 0 or mana < gasto:
-		return false
-	mana -= gasto
-	mana_changed.emit(mana, max_mana)
-	if _eterium_vida_compartida():
-		health = mana
-		health_changed.emit(health, max_health)
-		if health <= 0:
-			_die()
-	return true
 
 
 func _configurar_eterium_desde_supabase() -> void:
@@ -625,305 +329,9 @@ func _al_eterium_runtime_cargado(
 	)
 
 
-func _aplicar_eterium_runtime(
-	reglas: Dictionary,
-	organismos: Array
-) -> void:
-	if reglas.is_empty():
-		return
-
-	_eterium_reglas = reglas.duplicate(true)
-	_eterium_organismos.clear()
-
-	for organismo_variant in organismos:
-		if not organismo_variant is Dictionary:
-			continue
-
-		var organismo := organismo_variant as Dictionary
-		var organismo_id := str(
-			organismo.get("organismo_id", "")
-		)
-
-		if organismo_id.is_empty():
-			continue
-
-		_eterium_organismos[organismo_id] = (
-			organismo.duplicate(true)
-		)
-
-	var escala := _eterium_escala_runtime()
-	var limite_s := float(
-		_eterium_reglas.get(
-			"limite_estable_s",
-			0.0
-		)
-	)
-	var nuevo_max_mana := maxi(
-		1,
-		roundi(limite_s * escala)
-	)
-
-	max_mana = nuevo_max_mana
-	mana = clampi(
-		mana,
-		0,
-		max_mana
-	)
-
-	_eterium_runtime_ready = true
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
-
-	print(
-		"Player: Eterium canónico cargado → límite S=",
-		limite_s,
-		" | escala=",
-		escala,
-		" | runtime=",
-		max_mana
-	)
-
-
-func _eterium_escala_runtime() -> float:
-	return maxf(
-		float(
-			_eterium_reglas.get(
-				"escala_runtime",
-				0.0
-			)
-		),
-		0.001
-	)
-
-
-func _actualizar_recuperacion_eterium(delta: float) -> void:
-	if not _eterium_runtime_ready:
-		return
-
-	if not _eterium_recupera:
-		_eterium_recovery_accumulator = 0.0
-		return
-
-	if _eterium_vida_compartida():
-		if mana >= max_mana:
-			_eterium_recovery_accumulator = 0.0
-			return
-
-	if mana >= max_mana:
-		_eterium_recovery_accumulator = 0.0
-		return
-
-	var recuperacion_s := maxf(
-		float(
-			_eterium_reglas.get(
-				"recuperacion_pasiva_s_por_segundo",
-				0.0
-			)
-		),
-		0.0
-	)
-
-	if recuperacion_s <= 0.0:
-		return
-
-	_eterium_recovery_accumulator += (
-		recuperacion_s
-		* _eterium_escala_runtime()
-		* delta
-	)
-
-	var unidades := floori(
-		_eterium_recovery_accumulator
-	)
-
-	if unidades <= 0:
-		return
-
-	var espacio := max_mana - mana
-	var recuperadas := mini(
-		unidades,
-		espacio
-	)
-
-	if recuperadas <= 0:
-		_eterium_recovery_accumulator = 0.0
-		return
-
-	mana += recuperadas
-	_eterium_recovery_accumulator -= recuperadas
-
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
-
-
-func _eterium_carrera_costo_por_segundo() -> float:
-	return maxf(
-		float(
-			_eterium_reglas.get(
-				"carrera_eterium_costo_s_por_segundo",
-				0.0
-			)
-		),
-		0.0
-	)
-
-
-func _eterium_carrera_multiplicador() -> float:
-	return maxf(
-		float(
-			_eterium_reglas.get(
-				"carrera_eterium_multiplicador_velocidad",
-				1.0
-			)
-		),
-		1.0
-	)
-
-
-func _eterium_carrera_recuperacion_stamina() -> float:
-	return maxf(
-		float(
-			_eterium_reglas.get(
-				"carrera_eterium_recuperacion_stamina_por_segundo",
-				0.0
-			)
-		),
-		0.0
-	)
-
-
-func _procesar_carrera_eterium(delta: float) -> bool:
-	if not _eterium_runtime_ready:
-		_eterium_sprint_cost_accumulator = 0.0
-		return false
-
-	if mana <= 0:
-		_eterium_sprint_cost_accumulator = 0.0
-		return false
-
-	var costo_s_por_segundo := _eterium_carrera_costo_por_segundo()
-	var recuperacion_stamina := _eterium_carrera_recuperacion_stamina()
-	var escala := _eterium_escala_runtime()
-
-	if costo_s_por_segundo <= 0.0:
-		return false
-
-	_eterium_recovery_accumulator = 0.0
-
-	# El Eterium alimenta directamente la carrera y reemplaza el gasto de stamina.
-	_eterium_sprint_cost_accumulator += (
-		costo_s_por_segundo
-		* escala
-		* delta
-	)
-
-	var unidades_a_gastar := floori(
-		_eterium_sprint_cost_accumulator
-	)
-
-	if unidades_a_gastar > 0:
-		var gastadas := mini(unidades_a_gastar, mana)
-		if gastadas > 0:
-			_gastar_eterium(gastadas)
-			_eterium_sprint_cost_accumulator -= gastadas
-
-	if mana <= 0:
-		_eterium_sprint_cost_accumulator = 0.0
-		return false
-
-	if recuperacion_stamina > 0.0 and stamina < max_stamina:
-		stamina = minf(
-			stamina + recuperacion_stamina * delta,
-			max_stamina
-		)
-		_stamina_regeneration_timer = 0.0
-		stamina_changed.emit(
-			stamina,
-			max_stamina
-		)
-
-	return true
-
-
-func _procesar_curacion_eterium(delta: float) -> void:
-	velocity = Vector2.ZERO
-
-	if state != State.IDLE:
-		state = State.IDLE
-		_update_visual()
-
-	if not _eterium_runtime_ready:
-		_eterium_heal_timer = 0.0
-		return
-
-	if health >= max_health:
-		_eterium_heal_timer = 0.0
-		return
-
-	var escala := _eterium_escala_runtime()
-	var costo_s := maxf(
-		float(
-			_eterium_reglas.get(
-				"curacion_costo_s_por_tick",
-				0.0
-			)
-		),
-		0.0
-	)
-	var intervalo_s := maxf(
-		float(
-			_eterium_reglas.get(
-				"curacion_intervalo_s",
-				0.0
-			)
-		),
-		0.01
-	)
-	var curacion_por_s := maxf(
-		float(
-			_eterium_reglas.get(
-				"curacion_vida_por_s",
-				0.0
-			)
-		),
-		0.0
-	)
-
-	var costo_runtime := maxi(
-		1,
-		roundi(costo_s * escala)
-	)
-
-	if mana < costo_runtime:
-		_eterium_heal_timer = 0.0
-		return
-
-	_eterium_recovery_accumulator = 0.0
-	_eterium_heal_timer -= delta
-
-	if _eterium_heal_timer > 0.0:
-		return
-
-	_eterium_heal_timer = intervalo_s
-
-	var curacion := maxi(
-		1,
-		roundi(costo_s * curacion_por_s)
-	)
-	curacion = mini(
-		curacion,
-		max_health - health
-	)
-
-	if curacion <= 0:
-		return
-
-	heal(curacion)
-	_gastar_eterium(costo_runtime)
+func _aplicar_eterium_runtime(reglas: Dictionary, organismos: Array) -> void:
+	eterium.aplicar_runtime(reglas, organismos)
+	_sync_vital_desde_eterium()
 
 
 func absorber_eterium_de_criatura(criatura: Node) -> int:
@@ -1060,80 +468,29 @@ func absorber_eterium_de_criatura(criatura: Node) -> int:
 # ============================================================
 
 func _puede_hacer_jump() -> bool:
-	return (
-		_jump_cooldown_timer <= 0.0
-		and _dash_time <= 0.0
-		and _tiene_stamina(jump_stamina_cost)
-	)
+	return locomotion.puede_saltar(jump_stamina_cost)
 
 
 func _iniciar_jump() -> void:
-	if not _gastar_stamina(jump_stamina_cost):
+	if not locomotion.iniciar_salto(_obtener_direccion_accion(), jump_duration, jump_cooldown, jump_stamina_cost):
 		return
-
-	_action_direction = _obtener_direccion_accion()
-
-	_jump_time = jump_duration
-	_jump_cooldown_timer = jump_cooldown
-
+	_action_direction = locomotion.obtener_direccion_accion(_obtener_direccion_accion())
 	state = State.JUMP
-
 	_update_visual()
-
-	print(
-		"Player: salto. Stamina: ",
-		stamina,
-		"/",
-		max_stamina
-	)
 
 
 func _procesar_jump(delta: float) -> void:
-	var duracion: float = maxf(
-		jump_duration,
-		0.001
-	)
-
-	var progreso: float = (
-		1.0
-		- (_jump_time / duracion)
-	)
-
-	_jump_time -= delta
-
-	var velocidad: float = (
-		jump_distance
-		/ duracion
-	)
-
+	var duracion := maxf(jump_duration, 0.001)
+	var progreso := locomotion.obtener_progreso_salto(duracion)
+	var velocidad := locomotion.obtener_velocidad_accion(duracion, jump_distance)
 	velocity = _action_direction * velocidad
-
 	move_and_slide()
-
-	var altura: float = (
-		sin(progreso * PI)
-		* 16.0
-	)
-
-	visual.position = (
-		_base_visual_position
-		+ Vector2(
-			0.0,
-			-altura
-		)
-	)
-
-	if _jump_time <= 0.0:
-		_jump_time = 0.0
-
+	var altura := sin(progreso * PI) * 16.0
+	visual.position = _base_visual_position + Vector2(0.0, -altura)
+	if not locomotion.procesando_salto():
 		velocity = Vector2.ZERO
-
-		visual.position = (
-			_base_visual_position
-		)
-
+		visual.position = _base_visual_position
 		state = State.IDLE
-
 		_update_visual()
 
 
@@ -1142,58 +499,24 @@ func _procesar_jump(delta: float) -> void:
 # ============================================================
 
 func _puede_hacer_dash() -> bool:
-	return (
-		_dash_cooldown_timer <= 0.0
-		and _jump_time <= 0.0
-		and _tiene_stamina(dash_stamina_cost)
-	)
+	return locomotion.puede_hacer_dash(dash_stamina_cost)
 
 
 func _iniciar_dash() -> void:
-	if not _gastar_stamina(dash_stamina_cost):
+	if not locomotion.iniciar_dash(_obtener_direccion_accion(), dash_duration, dash_cooldown, dash_stamina_cost):
 		return
-
-	_action_direction = _obtener_direccion_accion()
-
-	_dash_time = dash_duration
-	_dash_cooldown_timer = dash_cooldown
-
+	_action_direction = locomotion.obtener_direccion_accion(_obtener_direccion_accion())
 	state = State.DASH
-
 	_update_visual()
-
-	print(
-		"Player: dash. Stamina: ",
-		stamina,
-		"/",
-		max_stamina
-	)
 
 
 func _procesar_dash(delta: float) -> void:
-	var duracion: float = maxf(
-		dash_duration,
-		0.001
-	)
-
-	_dash_time -= delta
-
-	var velocidad: float = (
-		dash_distance
-		/ duracion
-	)
-
+	var velocidad := locomotion.obtener_velocidad_accion(dash_duration, dash_distance)
 	velocity = _action_direction * velocidad
-
 	move_and_slide()
-
-	if _dash_time <= 0.0:
-		_dash_time = 0.0
-
+	if not locomotion.procesando_dash():
 		velocity = Vector2.ZERO
-
 		state = State.IDLE
-
 		_update_visual()
 
 
@@ -1209,53 +532,33 @@ func _obtener_direccion_accion() -> Vector2:
 # ============================================================
 
 func take_damage(cantidad: int, origen: String = "desconocido") -> void:
-	if not is_alive:
+	if not is_alive or state == State.DASH:
 		return
 
-	if state == State.DASH:
-		return
-
-	var danio_recibido: int = maxi(cantidad, 0)
-	var inventario := get_tree().get_first_node_in_group(
-		"inventory"
-	)
-
-	if inventario != null and inventario.has_method(
-		"obtener_estadistica_equipo"
-	):
-		var defensa: float = maxf(
-			float(
-				inventario.call(
-					"obtener_estadistica_equipo",
-					"defensa",
-					0.0
+	var dano_recibido := maxi(cantidad, 0)
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if inventario != null and inventario.has_method("obtener_equipamiento"):
+		var equipo_variant: Variant = inventario.call("obtener_equipamiento")
+		if equipo_variant is Dictionary:
+			dano_recibido = CombatDefense.aplicar(
+				dano_recibido,
+				CombatDefense.obtener_defensa(equipo_variant as Dictionary)
 			)
-			),
-			0.0
-		)
-
-		danio_recibido = maxi(
-			0,
-			ceili(
-				float(danio_recibido)
-				- defensa
-			)
-		)
 
 	if _eterium_vida_compartida():
-		mana = maxi(mana - danio_recibido, 0)
+		mana = maxi(mana - dano_recibido, 0)
 		health = mana
 		mana_changed.emit(mana, max_mana)
 		health_changed.emit(health, max_health)
-		print(name, " recibió ", danio_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
+		print(name, " recibió ", dano_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
 		if health <= 0:
 			_die()
 	else:
-		super.take_damage(danio_recibido, origen)
+		super.take_damage(dano_recibido, origen)
 
 	if not is_alive:
 		_morir_jugador()
-	else:
+	elif dano_recibido > 0:
 		_recibir_golpe_visual()
 
 
@@ -1319,16 +622,12 @@ func reaparecer() -> void:
 
 	health = max_health
 	mana = max_mana
-	stamina = max_stamina
+	stamina_controller.reiniciar()
 
 	velocity = Vector2.ZERO
 	state = State.IDLE
 
-	_jump_time = 0.0
-	_jump_cooldown_timer = 0.0
-	_dash_time = 0.0
-	_dash_cooldown_timer = 0.0
-	_stamina_regeneration_timer = 0.0
+	locomotion.reiniciar()
 
 	var world_gen := get_tree().current_scene.get_node_or_null(
 		"World/WorldGenerator"
@@ -1680,3 +979,13 @@ func set_spawn_from_world(
 		global_position = (
 			world_gen.get_spawn_position()
 		)
+
+
+func _sync_vital_desde_eterium() -> void:
+	if eterium_runtime == null:
+		return
+	health = vital_state.health
+	mana = vital_state.mana
+	max_health = vital_state.max_health
+	max_mana = vital_state.max_mana
+	is_alive = vital_state.is_alive
