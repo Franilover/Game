@@ -603,11 +603,8 @@ func _spawn_characters_in_chunk(
 		if criatura == null:
 			continue
 
-		if _entity_manager != null:
-			if not _entity_manager.registrar(criatura, chunk_coord, personaje_id):
-				continue
-		else:
-			entities.add_child(criatura)
+		if not _entity_manager.registrar(criatura, chunk_coord, personaje_id):
+			continue
 		criatura.global_position = Vector2(
 			(float(tile.x) + 0.5) * _terrain.tile_size,
 			(float(tile.y) + 0.5) * _terrain.tile_size
@@ -633,9 +630,6 @@ func _spawn_props_in_chunk(
 ) -> void:
 	var props := WorldData.obtener_props_game()
 	if props.is_empty():
-		return
-
-	if entities == null or not is_instance_valid(entities):
 		return
 
 	var creados: Array = []
