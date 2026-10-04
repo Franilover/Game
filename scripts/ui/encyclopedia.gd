@@ -589,10 +589,8 @@ func _nombre_nivel(nivel: String) -> String:
 
 
 func _obtener_derrotas(id: String) -> int:
-	var registros_variant: Variant = GameState.flags.get("enciclopedia_criaturas", {})
-	if registros_variant is Dictionary:
-		return int((registros_variant as Dictionary).get(id, 0))
-	return 0
+    var registros := GameState.obtener_criaturas_descubiertas()
+    return int(registros.get(id, 0))
 
 
 func _mostrar_sin_descubrimientos() -> void:
