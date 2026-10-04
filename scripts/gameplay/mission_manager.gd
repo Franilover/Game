@@ -15,15 +15,15 @@ var _misiones_por_id: Dictionary = {}
 var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
 var _entity_manager: WorldEntityManager = null
-var _world_data: WorldDataService = null
+var _world_data: WorldDataServiceService = null
 
 
-func configurar_dependencias(entity_manager: WorldEntityManager = null, world_data: WorldDataService = null) -> void:
+func configurar_dependencias(entity_manager: WorldEntityManager = null, world_data: WorldDataServiceService = null) -> void:
 	_entity_manager = entity_manager
 	_world_data = world_data
 
 	if _world_data == null:
-		push_error("MissionManager: WorldData no configurado.")
+		push_error("MissionManager: WorldDataService no configurado.")
 		return
 
 	if not _world_data.mundo_listo.is_connected(_al_mundo_listo):
