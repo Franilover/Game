@@ -34,15 +34,21 @@ func registrar(
 	if entity.get_parent() == null:
 		entities.add_child(entity)
 
+	_conectar_lifecycle(entity)
+
+	# Una entidad persistente no pertenece al ciclo de vida del chunk.
+	# Se registra como global para que el streaming nunca la destruya.
+	if not persistent_key.is_empty():
+		if not entity in _global_entities:
+			_global_entities.append(entity)
+		_persistent_by_key[persistent_key] = entity
+		return true
+
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 	var bucket: Array = bucket_variant if bucket_variant is Array else []
 	if not entity in bucket:
 		bucket.append(entity)
 	_by_chunk[chunk_coord] = bucket
-	_conectar_lifecycle(entity)
-
-	if not persistent_key.is_empty():
-		_persistent_by_key[persistent_key] = entity
 
 	return true
 
