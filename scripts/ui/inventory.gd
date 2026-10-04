@@ -141,7 +141,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _actualizar_admin_tab() -> void:
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
 	var admin_tab := $Window/Margin/Column/Tabs/Admin as Control
-	var jugador := get_tree().get_first_node_in_group("player")
+	var jugador := _player
 	var es_admin := false
 	var datos_variant: Variant = GameState.flags.get("personaje_admin", {})
 	if datos_variant is Dictionary:
@@ -417,65 +417,35 @@ func _crear_slots_equipamiento() -> void:
 func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if objeto.is_empty():
 		return
-
 	var source_index := _buscar_indice_objeto(objeto)
 	if source_index < 0:
 		return
-
-	var slot_script := slot as Button
-	var anterior: Dictionary = {}
-	if slot_script.has_method("obtener_datos"):
-		anterior = slot_script.obtener_datos()
-
-	# El objeto arrastrado ocupa su lugar del inventario.
-	# Si había otro equipado, ese objeto vuelve exactamente a ese slot.
 	var clave := ""
-	if slot_script.has_method("obtener_clave"):
-		clave = str(slot_script.call("obtener_clave"))
-
+	if slot.has_method("obtener_clave"):
+		clave = str(slot.call("obtener_clave"))
 	if clave.is_empty():
 		return
-
-	if not anterior.is_empty():
-		items[source_index] = anterior.duplicate(true)
-	else:
-		items[source_index] = {}
-
-	equipo[clave] = objeto.duplicate(true)
-	slot_script.configurar_objeto(objeto)
-
-	actualizar()
-	inventory_changed.emit()
-	_emitir_objeto_activo()
+	if inventory_controller.equipar_desde_inventario(clave, source_index, objeto):
+		if slot.has_method("configurar_objeto"):
+			slot.call("configurar_objeto", objeto)
+		actualizar()
+		inventory_changed.emit()
+		_emitir_objeto_activo()
 
 
 func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if objeto.is_empty():
 		return
-
-	# El slot visual no se limpia hasta confirmar que el objeto
-	# pudo volver al inventario.
-	var indice_libre := _buscar_slot_libre()
-	if indice_libre < 0:
-		print(
-			"Inventory: no hay espacio para desequipar → ",
-			str(objeto.get("nombre", "Objeto"))
-		)
-		return
-
 	var clave := ""
 	if slot.has_method("obtener_clave"):
 		clave = str(slot.call("obtener_clave"))
-
 	if clave.is_empty():
 		return
-
-	equipo.erase(clave)
-	items[indice_libre] = objeto.duplicate(true)
-
+	if not inventory_controller.desequipar_a_inventario(clave):
+		print("Inventory: no hay espacio para desequipar → ", str(objeto.get("nombre", "Objeto")))
+		return
 	if slot.has_method("limpiar_objeto"):
 		slot.call("limpiar_objeto")
-
 	actualizar()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
