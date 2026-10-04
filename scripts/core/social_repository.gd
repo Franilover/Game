@@ -6,11 +6,11 @@ signal reglas_cargadas(reglas: Array)
 signal regalos_cargados(regalos: Array)
 signal error_repositorio(mensaje: String)
 
-var _client: SupabaseClient = null
+var _client: GarliaSupabaseClient = null
 var _requests: Dictionary = {}
 
 
-func configurar(client: SupabaseClient) -> void:
+func configurar(client: GarliaSupabaseClient) -> void:
 	_client = client
 
 
