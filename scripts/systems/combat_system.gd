@@ -176,8 +176,12 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 	var alcance: float = _obtener_alcance_arma(herramienta)
 	var ancho: float = _obtener_ancho_arma(herramienta)
 
-	_mostrar_area_ataque(direccion, alcance, ancho)
-	_crear_hitbox_melee(direccion, alcance, ancho, herramienta)
+	_crear_ataque_melee(
+		direccion,
+		alcance,
+		ancho,
+		herramienta
+	)
 	_consumir_durabilidad_herramienta()
 
 
