@@ -190,7 +190,7 @@ func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator)
 		return
 
 	if _combat_system.has_method("configurar"):
-		_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, world_gen.entity_manager, GameState, $Systems/CombatFeedback)
+		_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, world_gen.entity_manager, GameState)
 
 
 func _configurar_input_router() -> void:
