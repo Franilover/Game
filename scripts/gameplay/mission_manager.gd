@@ -15,10 +15,10 @@ var _misiones_por_id: Dictionary = {}
 var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
 var _entity_manager: WorldEntityManager = null
-var _world_data: Node = null
+var _world_data: WorldData = null
 
 
-func configurar_dependencias(entity_manager: WorldEntityManager = null, world_data: Node = null) -> void:
+func configurar_dependencias(entity_manager: WorldEntityManager = null, world_data: WorldData = null) -> void:
 	_entity_manager = entity_manager
 	_world_data = world_data
 
