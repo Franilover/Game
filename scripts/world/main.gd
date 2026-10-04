@@ -6,22 +6,22 @@ extends Node2D
 var _player: Player = null
 var _camera: Camera2D = null
 var _ultima_posicion_camara: Vector2 = Vector2.INF
-@onready var _input_router: Node = $Systems/GameplayInputRouter
+@onready var _input_router: GameplayInputRouter = $Systems/GameplayInputRouter
 
 @onready var _hud: HUD = $UI/HUD
 @onready var _inventory: GarliaInventory = $UI/Inventory
-@onready var _interaction_system: Node = $Systems/InteractionSystem
+@onready var _interaction_system: InteractionSystem = $Systems/InteractionSystem
 @onready var _combat_system: CombatSystem = $Systems/CombatSystem
 @onready var _dialogue_system: DialogueSystem = $Systems/DialogueSystem
-@onready var _ium_manager: Node = $Systems/IUMManager
-@onready var _ium_lab: Control = $UI/IUMLab
-@onready var _admin_console: CanvasLayer = $UI/AdminConsole
+@onready var _ium_manager: IUMManager = $Systems/IUMManager
+@onready var _ium_lab: IUMLab = $UI/IUMLab
+@onready var _admin_console: AdminConsole = $UI/AdminConsole
 @onready var _admin_player_editor: Control = $UI/AdminPlayerEditor
-@onready var _pause_menu: Control = $UI/PauseMenu
-@onready var _death_menu: Control = $UI/DeathMenu
-@onready var _world_entity_spawner: Node = $World/WorldGenerator/WorldEntitySpawner
+@onready var _pause_menu: PauseMenu = $UI/PauseMenu
+@onready var _death_menu: DeathMenu = $UI/DeathMenu
+@onready var _world_entity_spawner: WorldEntitySpawner = $World/WorldGenerator/WorldEntitySpawner
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
-@onready var _ium_repository: Node = $Systems/IUMRepository
+@onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
 @onready var _world_atmosphere: WorldAtmosphere = $World/WorldGenerator/WorldAtmosphere
@@ -77,7 +77,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 		push_error("Main: no se encontró Entities/Player.")
 		return
 
-	_player.set_spawn_from_world(_world_context)
+	_player.set_spawn_from_world(world_gen)
 
 	world_gen.registrar_jugador(_player)
 
