@@ -1,6 +1,4 @@
 extends Node
-class_name GameplayInputRouter
-
 ## Única autoridad de entrada del gameplay.
 ##
 ## Orden de prioridad para acciones primarias:
