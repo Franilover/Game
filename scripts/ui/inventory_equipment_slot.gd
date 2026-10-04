@@ -1,4 +1,5 @@
 extends Button
+class_name InventoryEquipmentSlot
 
 signal objeto_equipado(slot: Button, datos: Dictionary)
 signal objeto_desequipado(slot: Button, datos: Dictionary)
