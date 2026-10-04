@@ -200,8 +200,7 @@ func _registrar_entrega_personaje(
 	if destino == null or not is_instance_valid(destino):
 		return false
 
-	var jugador: Node = _player
-	if jugador == null:
+	if _entity_manager == null or not _entity_manager.has_method("obtener_entidades_activas"):
 		return false
 
 	for mision in _misiones:
@@ -233,10 +232,7 @@ func _registrar_entrega_personaje(
 			if personaje_entregado_id.is_empty():
 				continue
 
-			if _entity_manager == null or not _entity_manager.has_method("obtener_entidades_activas"):
-		return false
-
-		for criatura_variant in _entity_manager.call("obtener_entidades_activas"):
+			for criatura_variant in _entity_manager.call("obtener_entidades_activas"):
 				if not criatura_variant is Node:
 					continue
 
