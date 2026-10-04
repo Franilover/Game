@@ -414,12 +414,12 @@ func absorber_eterium_de_criatura(criatura: Node) -> int:
 		return 0
 	if criatura == null or not is_instance_valid(criatura):
 		return 0
-	if not criatura.has_method("get_datos"):
+	if not criatura is Creature:
 		return 0
 	if criatura.has_meta("eterium_absorbido"):
 		return 0
 
-	var datos_variant: Variant = criatura.call("get_datos")
+	var datos_variant: Variant = (criatura as Creature).get_datos()
 	if not datos_variant is Dictionary:
 		return 0
 
