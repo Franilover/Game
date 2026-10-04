@@ -1,11 +1,12 @@
 extends Control
+class_name InventoryHotbar
 
 
 const SLOT_COUNT: int = 8
 
 
 var indice_seleccionado: int = 0
-var inventory: Node = null
+var inventory: GarliaInventory = null
 
 var slots_container: HBoxContainer = null
 var slot_nodes: Array[Button] = []
@@ -97,7 +98,7 @@ func _process(delta: float) -> void:
 	_actualizar()
 
 
-func configurar_inventario(nuevo_inventario: Node) -> void:
+func configurar_inventario(nuevo_inventario: GarliaInventory) -> void:
 	if inventory == nuevo_inventario and _inventario_conectado:
 		return
 	inventory = nuevo_inventario
