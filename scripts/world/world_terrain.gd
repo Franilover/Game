@@ -77,7 +77,7 @@ func cargar_datos_mundo() -> void:
 	_ecosistemas.clear()
 	_ecosistema_indices.clear()
 
-	_biomas = WorldDataService.obtener_biomas()
+	_biomas = WorldData.obtener_biomas()
 
 	for i in range(_biomas.size()):
 		var bioma_variant: Variant = _biomas[i]
@@ -127,7 +127,7 @@ func cargar_datos_mundo() -> void:
 			)
 
 	var sin_bioma: Array = (
-		WorldDataService.obtener_ecosistemas_sin_bioma()
+		WorldData.obtener_ecosistemas_sin_bioma()
 	)
 
 	for i in range(sin_bioma.size()):
