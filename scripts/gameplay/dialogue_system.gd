@@ -245,8 +245,6 @@ func _mostrar_linea_actual() -> void:
 	var hablante := str(linea.get("hablante", "")).strip_edges()
 	if hablante.is_empty() and is_instance_valid(_fuente):
 		hablante = _fuente.get_nombre()
-		else:
-			hablante = _fuente.name
 
 	var texto := str(
 		linea.get(
