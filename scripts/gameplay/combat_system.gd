@@ -9,6 +9,9 @@ signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 const PROJECTILE_SCRIPT: Script = preload(
 	"res://scripts/gameplay/combat_projectile_legacy.gd"
 )
+const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
+	"res://scripts/gameplay/combat/combat_attack_area.gd"
+)
 
 @export_category("Ataque")
 @export var alcance_desarmado: float = 48.0
@@ -212,8 +215,9 @@ func _crear_ataque_melee(
 	if player == null:
 		return
 
-	var ataque := CombatAttackArea.new()
-	ataque.configurar(
+	var ataque: Node2D = COMBAT_ATTACK_AREA_SCRIPT.new() as Node2D
+	ataque.call(
+		"configurar",
 		player,
 		direccion,
 		alcance,
@@ -224,9 +228,14 @@ func _crear_ataque_melee(
 	)
 
 	if danio_directo >= 0:
-		ataque.objeto_ataque["_damage_override"] = danio_directo
+		var objeto_ataque_variant: Variant = ataque.get("objeto_ataque")
+		if objeto_ataque_variant is Dictionary:
+			var objeto_ataque: Dictionary = objeto_ataque_variant as Dictionary
+			objeto_ataque["_damage_override"] = danio_directo
+			ataque.set("objeto_ataque", objeto_ataque)
 
-	ataque.objetivo_detectado.connect(
+	ataque.connect(
+		"objetivo_detectado",
 		_al_recibir_objetivo_de_ataque.bind(ataque)
 	)
 
