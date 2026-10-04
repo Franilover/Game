@@ -1,4 +1,5 @@
 extends Node
+class_name CombatSystem
 
 
 signal ataque_realizado(atacante: Node, objetivo: Node, danio: int)
