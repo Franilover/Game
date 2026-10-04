@@ -2,7 +2,7 @@ shader_type canvas_item;
 
 uniform vec4 blade_color : source_color = vec4(0.07, 0.15, 0.025, 1.0);
 uniform vec4 blade_light : source_color = vec4(0.24, 0.38, 0.055, 1.0);
-uniform float density : hint_range(0.0, 1.0) = 0.52;
+uniform float density : hint_range(0.0, 1.0) = 0.72;
 uniform float detail_strength : hint_range(0.0, 1.0) = 0.58;
 uniform float wind_strength : hint_range(0.0, 1.0) = 0.025;
 uniform float wind_speed : hint_range(0.0, 3.0) = 0.65;
@@ -39,8 +39,8 @@ void fragment() {
     if (base.a <= 0.01) {
         COLOR = base;
     } else {
-        vec2 grid_a = vec2(18.0, 10.0);
-        vec2 grid_b = vec2(28.0, 14.0);
+        vec2 grid_a = vec2(24.0, 14.0);
+        vec2 grid_b = vec2(38.0, 20.0);
 
         vec2 cell_a = floor(UV * grid_a);
         vec2 local_a = fract(UV * grid_a);
@@ -54,7 +54,7 @@ void fragment() {
         float blades_b = pixel_blade(local_b, cell_b, 8.7, 0.72);
 
         blades_a *= step(1.0 - density, ra);
-        blades_b *= step(1.0 - density * 0.65, rb);
+        blades_b *= step(1.0 - density * 0.82, rb);
 
         float mask = max(blades_a, blades_b * 0.7);
         float color_random = hash21(cell_a + 91.4);
