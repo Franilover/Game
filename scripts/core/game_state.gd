@@ -66,12 +66,6 @@ func _ready() -> void:
 	call_deferred("_revisar_escena_actual")
 
 
-## Estado centralizado de entrada de gameplay.
-## Los sistemas de interacción y combate consultan este método en lugar
-## de mantener cada uno su propia lista de ventanas/modales bloqueantes.
-func esta_entrada_de_juego_bloqueada() -> bool:
-	return GameplayInputGate.esta_entrada_bloqueada(get_tree())
-
 
 func _process(delta: float) -> void:
 	elapsed_time += delta
@@ -1098,9 +1092,6 @@ func _al_cambiar_escena() -> void:
 # ============================================================
 # ARCHIVOS
 # ============================================================
-
-func _ruta_partida(id: String) -> String:
-	return save_repository.ruta_partida(id)
 
 
 func _leer_archivo_partida(id: String) -> Dictionary:
