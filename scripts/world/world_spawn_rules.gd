@@ -100,8 +100,7 @@ func ubicacion_valida(
 	habitat_clave: String,
 	zona: int
 ) -> bool:
-	var nombre_bioma := str(bioma.get("nombre", "")).to_lower()
-	var acuatico := "marino" in nombre_bioma or "agua dulce" in nombre_bioma
+	var acuatico := _bioma_es_acuatico(bioma)
 	var tierra := zona != WorldTerrain.Zone.WATER and zona != WorldTerrain.Zone.DEEP_WATER
 	var agua := not tierra
 
@@ -123,6 +122,29 @@ func ubicacion_valida(
 			return true
 		_:
 			return tierra
+
+
+func _bioma_es_acuatico(bioma: Dictionary) -> bool:
+	var generacion_variant: Variant = bioma.get("generacion", {})
+	if not generacion_variant is Dictionary:
+		return false
+
+	var zonas_variant: Variant = (generacion_variant as Dictionary).get("zonas", [])
+	if not zonas_variant is Array:
+		return false
+
+	for zona_variant in zonas_variant:
+		if not zona_variant is Dictionary:
+			continue
+
+		var terreno := str(
+			(zona_variant as Dictionary).get("terreno", "")
+		).to_lower()
+
+		if terreno == "water" or terreno == "deep_water":
+			return true
+
+	return false
 
 
 func buscar_tile_para_personaje(
