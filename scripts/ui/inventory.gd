@@ -99,6 +99,32 @@ func configurar(player: Node = null) -> void:
 	_player = player
 
 
+func serializar_estado_partida() -> Dictionary:
+	return inventory_controller.serializar()
+
+
+func cargar_estado_partida(datos: Dictionary) -> void:
+	var items_variant: Variant = datos.get("items", [])
+	var hotbar_variant: Variant = datos.get("hotbar_indices", [])
+	var items: Array = items_variant as Array if items_variant is Array else []
+	var hotbar: Array = hotbar_variant as Array if hotbar_variant is Array else []
+	inventory_controller.configurar_items(items, hotbar)
+
+	var indice_activo := int(datos.get("indice_hotbar_activo", 0))
+	if indice_activo >= 0 and indice_activo < hotbar_indices.size():
+		inventory_controller.seleccionar_hotbar(indice_activo)
+
+	var equipo_variant: Variant = datos.get("equipo", {})
+	if equipo_variant is Dictionary:
+		for slot_variant in (equipo_variant as Dictionary).keys():
+			var slot := str(slot_variant)
+			var item_variant: Variant = (equipo_variant as Dictionary).get(slot, {})
+			if item_variant is Dictionary and not (item_variant as Dictionary).is_empty():
+				inventory_controller.equipar(slot, (item_variant as Dictionary).duplicate(true))
+
+	actualizar()
+
+
 func configurar_input_gate(gate: Node) -> void:
 	if inventory_controller.has_method("configurar_gate"):
 		inventory_controller.configurar_gate(gate)
