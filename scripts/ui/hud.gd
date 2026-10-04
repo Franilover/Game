@@ -38,6 +38,29 @@ var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 
 
+func configurar(nuevo_player: Node = null, nuevo_world_generator: Node = null) -> void:
+	if nuevo_player != null and is_instance_valid(nuevo_player):
+		if is_instance_valid(player) and player != nuevo_player:
+			_desconectar_senales_player()
+		player = nuevo_player
+	if nuevo_world_generator != null and is_instance_valid(nuevo_world_generator):
+		world_generator = nuevo_world_generator
+	if is_inside_tree():
+		_conectar_senales_player()
+		_actualizar_vida()
+		_actualizar_stamina()
+		_actualizar_eterium()
+
+func _desconectar_senales_player() -> void:
+	if not is_instance_valid(player):
+		return
+	if player.has_signal("health_changed") and player.health_changed.is_connected(_al_recibir_cambio_vida):
+		player.health_changed.disconnect(_al_recibir_cambio_vida)
+	if player.has_signal("stamina_changed") and player.stamina_changed.is_connected(_al_recibir_cambio_stamina):
+		player.stamina_changed.disconnect(_al_recibir_cambio_stamina)
+	if player.has_signal("mana_changed") and player.mana_changed.is_connected(_al_recibir_cambio_mana):
+		player.mana_changed.disconnect(_al_recibir_cambio_mana)
+
 func _ready() -> void:
 	add_to_group("hud")
 
