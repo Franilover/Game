@@ -543,10 +543,6 @@ func _generar_objetos_en_mundo(jugador: Node2D) -> void:
 
 	_eliminar_objetos_del_mundo()
 
-	var contenedor := Node2D.new()
-	contenedor.name = "WorldItems"
-	entities.add_child(contenedor)
-
 	var cantidad := mini(MAX_OBJECTOS_EN_MUNDO, catalogo.size())
 	var posiciones := [
 		Vector2(120.0, 0.0),
@@ -556,14 +552,10 @@ func _generar_objetos_en_mundo(jugador: Node2D) -> void:
 
 	for i in range(cantidad):
 		var datos := catalogo[i].duplicate(true)
-		var objeto := Node2D.new()
-		objeto.configurar_dependencias(_player, _inventory, _mission_manager)
-		contenedor.add_child(objeto)
-		if _entity_manager != null and is_instance_valid(_entity_manager):
-			_entity_manager.registrar_global(objeto)
-		_world_items.append(objeto)
-		objeto.global_position = jugador.global_position + posiciones[i]
-		objeto.configurar(datos)
+		_generar_world_item(
+			datos,
+			jugador.global_position + posiciones[i]
+		)
 
 	_objetos_generados_en_escena = true
 
@@ -615,16 +607,7 @@ func intentar_recoger() -> void:
 
 
 func _eliminar_objetos_del_mundo() -> void:
-	if not is_instance_valid(_entities_root):
-		return
-	var contenedor := _entities_root.get_node_or_null("WorldItems")
-	if contenedor != null:
-		contenedor.queue_free()
-	var restantes: Array[Node2D] = []
 	for item in _world_items:
-		if not is_instance_valid(item):
-			continue
-		if contenedor != null and item.get_parent() == contenedor:
-			continue
-		restantes.append(item)
-	_world_items = restantes
+		if is_instance_valid(item):
+			item.queue_free()
+	_world_items.clear()
