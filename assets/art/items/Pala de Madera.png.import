@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b4j8v0jocqw07"
-path="res://.godot/imported/Arbol.png-098022c9424fea439a57eff59b95e106.ctex"
+uid="uid://vwko0vee36et"
+path="res://.godot/imported/Pala de Madera.png-d6832294df3b3e66144a7e7fefb2de9a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/props/Arbol.png"
-dest_files=["res://.godot/imported/Arbol.png-098022c9424fea439a57eff59b95e106.ctex"]
+source_file="res://assets/art/items/Pala de Madera.png"
+dest_files=["res://.godot/imported/Pala de Madera.png-d6832294df3b3e66144a7e7fefb2de9a.ctex"]
 
 [params]
 
