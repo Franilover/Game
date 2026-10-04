@@ -23,6 +23,7 @@ enum Perfil {
 	FLAXIS,
 	ZLISH,
 	LIGNIANOS,
+	DRAMARIAS,
 	CAMBIAFORMAS,
 	ESPIRITU_ESTELAR,
 	RANCRODEEN
@@ -55,6 +56,11 @@ enum Perfil {
 @export var zlish_velocidad_huida: float = 65.0
 @export var zlish_distancia_segura: float = 220.0
 
+
+@export_category("Dramarias")
+@export var dramarias_distancia_ataque: float = 14.0
+@export var dramarias_dano_contacto: int = 6
+@export var dramarias_enfriamiento: float = 1.0
 
 @export_category("Lignianos")
 @export var ligniano_velocidad_carga: float = 45.0
@@ -415,6 +421,8 @@ func _procesar_persiguiendo() -> void:
 
 func _procesar_atacando(delta: float) -> void:
 	match perfil:
+		Perfil.DRAMARIAS:
+			_procesar_ataque_dramarias()
 		Perfil.FLAXIS:
 			_procesar_ataque_flaxis(delta)
 
@@ -528,6 +536,10 @@ func _actualizar_percepcion() -> void:
 
 
 func _refrescar_objetivo() -> void:
+	if perfil == Perfil.DRAMARIAS:
+		_objetivo_mas_cercano_dramarias()
+		return
+
 	if objetivo != null and is_instance_valid(objetivo):
 		return
 
@@ -549,6 +561,54 @@ func _refrescar_objetivo() -> void:
 		objetivo = encontrado as Node2D
 	else:
 		objetivo = null
+
+
+func _objetivo_mas_cercano_dramarias() -> void:
+	var candidatos: Array[Node] = []
+
+	for candidato_variant in get_tree().get_nodes_in_group("damageable"):
+		if candidato_variant is Node:
+			candidatos.append(candidato_variant as Node)
+
+	for candidato_variant in get_tree().get_nodes_in_group("player"):
+		if candidato_variant is Node:
+			var candidato := candidato_variant as Node
+			if not candidato in candidatos:
+				candidatos.append(candidato)
+
+	for candidato_variant in get_tree().get_nodes_in_group("creatures"):
+		if candidato_variant is Node:
+			var candidato := candidato_variant as Node
+			if not candidato in candidatos:
+				candidatos.append(candidato)
+
+	var mejor: Node2D = null
+	var mejor_distancia: float = INF
+
+	for candidato in candidatos:
+		if candidato == criatura:
+			continue
+		if not is_instance_valid(candidato):
+			continue
+		if not candidato is Node2D:
+			continue
+		if not candidato.is_inside_tree():
+			continue
+		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
+			continue
+		if not candidato.has_method("take_damage"):
+			continue
+
+		var candidato_2d := candidato as Node2D
+		var distancia := criatura.global_position.distance_to(
+			candidato_2d.global_position
+		)
+
+		if distancia < mejor_distancia:
+			mejor_distancia = distancia
+			mejor = candidato_2d
+
+	objetivo = mejor
 
 
 func _buscar_nodo_jugador(nodo: Node) -> Node:
@@ -606,6 +666,8 @@ func _refrescar_configuracion() -> void:
 
 func _perfil_desde_texto(texto: String) -> Perfil:
 	match texto:
+		"dramarias":
+			return Perfil.DRAMARIAS
 		"flaxis":
 			return Perfil.FLAXIS
 		"zlish":
@@ -624,6 +686,9 @@ func _perfil_desde_texto(texto: String) -> Perfil:
 
 func _obtener_respuesta_a_objetivo() -> String:
 	match perfil:
+		Perfil.DRAMARIAS:
+			return "atacar"
+
 		Perfil.ZLISH:
 			return "huir"
 
@@ -833,6 +898,44 @@ func _obtener_velocidad_ataque() -> float:
 
 func _iniciar_ataque_generico_contacto() -> void:
 	_cambiar_estado(Estado.ATACANDO)
+
+
+# ============================================================
+# DRAMARIAS
+# ============================================================
+
+func _procesar_ataque_dramarias() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	var distancia := criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia > dramarias_distancia_ataque:
+		_establecer_velocidad(_obtener_velocidad_persecucion())
+		criatura.tomar_control_movimiento()
+
+		var direccion := criatura.global_position.direction_to(
+			objetivo.global_position
+		)
+		criatura.establecer_direccion_movimiento(direccion)
+		return
+
+	if _ataque_resuelto:
+		return
+
+	_ataque_resuelto = true
+	criatura.detener_movimiento()
+
+	if objetivo.has_method("take_damage"):
+		objetivo.call(
+			"take_damage",
+			dramarias_dano_contacto
+		)
+
+	_iniciar_recuperacion(dramarias_enfriamiento)
 
 
 # ============================================================
