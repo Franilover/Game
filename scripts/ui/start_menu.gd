@@ -276,7 +276,27 @@ func _al_error_mundo(
 
 
 func _iniciar_partida() -> void:
-	_mostrar_creacion_personaje("aventura")
+	_abrir_selector_partidas()
+
+func _abrir_selector_partidas() -> void:
+	var selector_scene: PackedScene = load(
+		"res://scenes/ui/save_selector.tscn"
+	) as PackedScene
+
+	if selector_scene == null:
+		push_error(
+			"StartMenu: no se pudo cargar save_selector.tscn."
+		)
+		return
+
+	if get_node_or_null("LocalSaveSelector") != null:
+		return
+
+	var selector: Node = selector_scene.instantiate()
+	selector.name = "LocalSaveSelector"
+	add_child(selector)
+
+	print("StartMenu: selector de partidas abierto.")
 
 func _iniciar_aventura_con_personaje() -> void:
 	if _cargando_mundo:
