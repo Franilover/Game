@@ -209,7 +209,7 @@ func _actualizar_admin_tab() -> void:
 	var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 	var jugador := _player
 	var es_admin := false
-	var datos_variant: Variant = GameStateService.obtener_configuracion_personaje_admin()
+	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
 	if datos_variant is Dictionary:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
 	boton_admin.visible = es_admin
