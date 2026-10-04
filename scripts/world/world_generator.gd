@@ -68,7 +68,7 @@ func configurar_entidades(
 	dialogue_system: Node = null,
 	mission_manager: Node = null,
 	world_context: Node = null,
-	world_items: Node = null,
+	world_items: GarliaWorldItems = null,
 	relaciones_ecologicas: Array = []
 ) -> void:
 	_entities_root = root
