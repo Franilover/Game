@@ -16,6 +16,8 @@ signal mundo_generado
 var terrain: WorldTerrain
 var streamer: WorldStreamer
 var entity_spawner: WorldEntitySpawner
+var entity_manager: WorldEntityManager
+var entity_factory: WorldEntityFactory
 var atmosphere: WorldAtmosphere
 
 var _world_ready: bool = false
@@ -47,7 +49,8 @@ func _inicializar_mundo_si_corresponde() -> void:
 func configurar_entidades(root: Node) -> void:
 	_entities_root = root
 	if entity_spawner != null:
-		entity_spawner.configurar(terrain, _entities_root)
+		entity_manager.configurar(_entities_root)
+	entity_spawner.configurar(terrain, _entities_root, entity_manager, entity_factory)
 
 func _process(_delta: float) -> void:
 	if not _world_ready:
@@ -61,6 +64,8 @@ func _crear_sistemas() -> void:
 	terrain = get_node_or_null("WorldTerrain") as WorldTerrain
 	streamer = get_node_or_null("WorldStreamer") as WorldStreamer
 	entity_spawner = get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
+	entity_manager = get_node_or_null("WorldEntityManager") as WorldEntityManager
+	entity_factory = get_node_or_null("WorldEntityFactory") as WorldEntityFactory
 	atmosphere = get_node_or_null("WorldAtmosphere") as WorldAtmosphere
 
 	if terrain == null:
@@ -69,6 +74,10 @@ func _crear_sistemas() -> void:
 		push_error("WorldGenerator: falta WorldStreamer en la escena.")
 	if entity_spawner == null:
 		push_error("WorldGenerator: falta WorldEntitySpawner en la escena.")
+	if entity_manager == null:
+		push_error("WorldGenerator: falta WorldEntityManager en la escena.")
+	if entity_factory == null:
+		push_error("WorldGenerator: falta WorldEntityFactory en la escena.")
 	if atmosphere == null:
 		push_error("WorldGenerator: falta WorldAtmosphere en la escena.")
 
@@ -97,9 +106,12 @@ func _inicializar_mundo() -> void:
 		push_error("WorldGenerator: no se configuró Entity root antes de iniciar el mundo.")
 		return
 
+	entity_manager.configurar(_entities_root)
 	entity_spawner.configurar(
 		terrain,
-		_entities_root
+		_entities_root,
+		entity_manager,
+		entity_factory
 	)
 
 	streamer.configurar(
