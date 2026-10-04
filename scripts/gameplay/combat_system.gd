@@ -63,7 +63,7 @@ func _process(delta: float) -> void:
 	)
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if player == null or _accion_bloqueada():
 		return
 
