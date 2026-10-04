@@ -22,6 +22,7 @@ var _input_router: Node = GameplayInputRouter
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
 @onready var _world_atmosphere: Node = $World/WorldGenerator/WorldAtmosphere
+@onready var _world_generator: WorldGenerator = $World/WorldGenerator
 @onready var _world_context: Node = $World/WorldGenerator/WorldContext
 
 
@@ -221,7 +222,7 @@ func _configurar_admin() -> void:
 			_world_atmosphere,
 			_player,
 			_inventory,
-			world_gen.entity_manager
+			_world_generator.entity_manager
 		)
 
 func _configurar_pantalla() -> void:
