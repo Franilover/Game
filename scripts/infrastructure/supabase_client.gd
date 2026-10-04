@@ -71,56 +71,26 @@ func establecer_mundo_activo(activo: bool) -> void:
 
 
 func _ready() -> void:
-	_http = HTTPRequest.new()
-	_http.timeout = HTTP_TIMEOUT
+	_http = _crear_http_request()
+	_http.request_completed.connect(_al_completar_solicitud)
 
-	add_child(_http)
+	_http_eterium = _crear_http_request()
+	_http_eterium.request_completed.connect(_al_completar_eterium_runtime)
 
-	_http.request_completed.connect(
-		_al_completar_solicitud
-	)
+	_http_especies = _crear_http_request()
+	_http_especies.request_completed.connect(_al_completar_especies_jugables)
 
-	_http_eterium = HTTPRequest.new()
-	_http_eterium.timeout = HTTP_TIMEOUT
-	add_child(_http_eterium)
-	_http_eterium.request_completed.connect(
-		_al_completar_eterium_runtime
-	)
+	_http_especie_eterium_game = _crear_http_request()
+	_http_especie_eterium_game.request_completed.connect(_al_completar_especie_eterium_game)
 
-	_http_especies = HTTPRequest.new()
-	_http_especies.timeout = HTTP_TIMEOUT
-	add_child(_http_especies)
-	_http_especies.request_completed.connect(
-		_al_completar_especies_jugables
-	)
+	_http_personaje_social = _crear_http_request()
+	_http_personaje_social.request_completed.connect(_al_completar_personaje_social)
 
-	_http_especie_eterium_game = HTTPRequest.new()
-	_http_especie_eterium_game.timeout = HTTP_TIMEOUT
-	add_child(_http_especie_eterium_game)
-	_http_especie_eterium_game.request_completed.connect(
-		_al_completar_especie_eterium_game
-	)
+	_http_personaje_regalos = _crear_http_request()
+	_http_personaje_regalos.request_completed.connect(_al_completar_personaje_regalos)
 
-	_http_personaje_social = HTTPRequest.new()
-	_http_personaje_social.timeout = HTTP_TIMEOUT
-	add_child(_http_personaje_social)
-	_http_personaje_social.request_completed.connect(
-		_al_completar_personaje_social
-	)
-
-	_http_personaje_regalos = HTTPRequest.new()
-	_http_personaje_regalos.timeout = HTTP_TIMEOUT
-	add_child(_http_personaje_regalos)
-	_http_personaje_regalos.request_completed.connect(
-		_al_completar_personaje_regalos
-	)
-
-	_http_relaciones_ecologicas = HTTPRequest.new()
-	_http_relaciones_ecologicas.timeout = HTTP_TIMEOUT
-	add_child(_http_relaciones_ecologicas)
-	_http_relaciones_ecologicas.request_completed.connect(
-		_al_completar_relaciones_ecologicas
-	)
+	_http_relaciones_ecologicas = _crear_http_request()
+	_http_relaciones_ecologicas.request_completed.connect(_al_completar_relaciones_ecologicas)
 
 	call_deferred("cargar_eterium_runtime")
 	call_deferred("cargar_especie_eterium_game")
@@ -136,6 +106,13 @@ func _ready() -> void:
 	_timer.timeout.connect(
 		_al_timer_sincronizacion
 	)
+
+
+func _crear_http_request() -> HTTPRequest:
+	var request := HTTPRequest.new()
+	request.timeout = HTTP_TIMEOUT
+	add_child(request)
+	return request
 
 
 ## Transporte REST/RPC compartido para repositories.
