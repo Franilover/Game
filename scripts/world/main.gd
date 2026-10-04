@@ -35,7 +35,7 @@ func _ready() -> void:
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
-	WorldDataService.configurar_dependencias(_supabase_client)
+	WorldData.configurar_dependencias(_supabase_client)
 
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
@@ -89,9 +89,9 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	_configurar_interaccion(world_gen)
 	_configurar_combate(_world_context, world_gen)
 	_configurar_inventario()
-	GameStateService.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManagerService)
+	GameState.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManagerService)
 	_configurar_dialogo()
-	MissionManagerService.configurar_dependencias(world_gen.entity_manager, WorldDataService)
+	MissionManager.configurar_dependencias(world_gen.entity_manager, WorldDataService)
 	_configurar_social()
 	_inicializar_ium()
 	_configurar_admin()
@@ -266,7 +266,7 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 		_player.equipar_proceso_ium(proceso)
 	else:
 		# Guardar en game_state como fallback
-		GameStateService.establecer_proceso_ium_equipado(proceso)
+		GameState.establecer_proceso_ium_equipado(proceso)
 
 	var nombre: String = proceso.get("nombre", "Proceso")
 	print("Main: Proceso IUM equipado → ", nombre)
@@ -274,7 +274,7 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 
 func _configurar_social() -> void:
 	SocialRepository.configurar(_supabase_client)
-	RelationshipSystemService.configurar(SocialRepository, GameStateService)
+	RelationshipSystem.configurar(SocialRepository, GameStateService)
 
 
 func _al_cargar_relaciones_ecologicas(relaciones: Array) -> void:
