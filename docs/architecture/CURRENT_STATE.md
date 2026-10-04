@@ -310,3 +310,10 @@ Siguiente objetivo: continuar reduciendo descubrimiento dinámico en CombatSyste
 Se centralizó la creación de los HTTPRequest internos de SupabaseClient en una única función de infraestructura. Cada operación conserva su propio request y callback, pero la configuración común de timeout y pertenencia al nodo deja de repetirse siete veces.
 
 No se creó todavía una capa de repositorios artificial: el siguiente paso es separar responsabilidades por dominio sólo cuando el código real y sus consumidores justifiquen esa frontera.
+
+
+## Decimoctava barrida — SupabaseClient corrige frontera de credenciales REST
+
+Se detectó y corrigió una referencia residual incorrecta al acceso de credenciales (`_auth._auth.SUPABASE_URL`) dentro del transporte REST compartido. SupabaseClient vuelve a depender únicamente de la API pública de `GarliaAuth` (`SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`). También se centralizó la construcción de headers REST autenticados.
+
+La corrección mantiene a GarliaAuth como dueño de credenciales y evita que SupabaseClient conozca la implementación interna de autenticación.
