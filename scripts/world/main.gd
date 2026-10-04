@@ -270,7 +270,7 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 		_player.call("equipar_proceso_ium", proceso)
 	else:
 		# Guardar en game_state como fallback
-		GameState.flags["proceso_equipado"] = proceso
+		GameState.establecer_proceso_ium_equipado(proceso)
 
 	var nombre: String = proceso.get("nombre", "Proceso")
 	print("Main: Proceso IUM equipado → ", nombre)
