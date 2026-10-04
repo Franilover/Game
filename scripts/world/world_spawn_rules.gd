@@ -4,20 +4,6 @@ class_name WorldSpawnRules
 ## Reglas puras de selección de entidades.
 ## No instancia nodos y no administra su ciclo de vida.
 
-const CRIATURA_FLAXIS := 1 << 0
-const CRIATURA_ZLISH := 1 << 1
-const CRIATURA_LIGNIANOS := 1 << 2
-
-var _terrain: WorldTerrain
-
-@export_category("Pesos canónicos de aparición")
-@export_flags("Flaxis", "Zlish", "Lignianos")
-var criaturas_destacadas: int = CRIATURA_FLAXIS | CRIATURA_ZLISH | CRIATURA_LIGNIANOS
-@export_range(0.0, 100.0, 0.1)
-var peso_normal: float = 1.0
-@export_range(0.0, 100.0, 0.1)
-var peso_destacadas: float = 4.0
-
 
 func configurar(terrain: WorldTerrain) -> void:
 	_terrain = terrain
@@ -62,23 +48,13 @@ func elegir_criatura(
 
 
 func obtener_peso_criatura(candidato: Dictionary) -> float:
-	var criatura_variant: Variant = candidato.get("criatura", {})
-	if not criatura_variant is Dictionary:
-		return peso_normal
-
-	var nombre := str((criatura_variant as Dictionary).get("nombre", ""))
-	match nombre:
-		"Flaxis":
-			if (criaturas_destacadas & CRIATURA_FLAXIS) != 0:
-				return peso_destacadas
-		"Zlish":
-			if (criaturas_destacadas & CRIATURA_ZLISH) != 0:
-				return peso_destacadas
-		"Lignianos":
-			if (criaturas_destacadas & CRIATURA_LIGNIANOS) != 0:
-				return peso_destacadas
-
-	return peso_normal
+	# El peso de aparición no se decide por nombres hardcodeados en Godot.
+	# Si la fuente canónica aporta un peso, SpawnRules lo respeta; de lo
+	# contrario, cada candidato válido tiene el mismo peso.
+	var peso_variant: Variant = candidato.get("peso_spawn", 1.0)
+	if peso_variant is int or peso_variant is float:
+		return maxf(float(peso_variant), 0.0)
+	return 1.0
 
 
 func obtener_candidatos(ecosistema: Dictionary) -> Array:
