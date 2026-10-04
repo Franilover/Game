@@ -45,6 +45,7 @@ var indice_hotbar_activo: int:
 var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
+var _player: Node = null
 
 
 @onready var grid: GridContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
@@ -87,11 +88,20 @@ func _inicializar_navegacion_tabs() -> void:
 		tabs.current_tab = 5
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as Control
 		if admin_tab.has_method("abrir"):
-			admin_tab.call("abrir", get_tree().get_first_node_in_group("player"))
+			admin_tab.call("abrir", _player)
 	)
 
 	boton_inventario.button_pressed = true
 	_actualizar_admin_tab()
+
+
+func configurar(player: Node = null) -> void:
+	_player = player
+
+
+func configurar_input_gate(gate: Node) -> void:
+	if inventory_controller.has_method("configurar_gate"):
+		inventory_controller.configurar_gate(gate)
 
 
 func _ready() -> void:
@@ -825,7 +835,7 @@ func usar_objeto_activo(usuario: Node = null) -> bool:
 
 	var actor: Node = usuario
 	if actor == null:
-		actor = get_tree().get_first_node_in_group("player")
+		actor = _player
 
 	if actor == null or not is_instance_valid(actor):
 		return false
