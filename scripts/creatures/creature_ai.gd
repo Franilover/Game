@@ -135,14 +135,12 @@ func _ready() -> void:
 	_encontrar_movimiento()
 	_refrescar_configuracion()
 	_aplicar_configuracion_movimiento()
-	_cargar_relaciones_ecologicas()
 	_cambiar_estado_forzado(estado_inicial)
 
 
 func configurar_criatura() -> void:
 	_refrescar_configuracion()
 	_aplicar_configuracion_movimiento()
-	_cargar_relaciones_ecologicas()
 
 	if criatura == null:
 		return
