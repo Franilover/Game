@@ -1,4 +1,5 @@
 extends Button
+class_name InventorySlot
 
 
 signal seleccionado(slot: Button)
