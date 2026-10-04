@@ -534,53 +534,33 @@ func _obtener_direccion_accion() -> Vector2:
 # ============================================================
 
 func take_damage(cantidad: int, origen: String = "desconocido") -> void:
-	if not is_alive:
+	if not is_alive or state == State.DASH:
 		return
 
-	if state == State.DASH:
-		return
-
-	var danio_recibido: int = maxi(cantidad, 0)
-	var inventario := get_tree().get_first_node_in_group(
-		"inventory"
-	)
-
-	if inventario != null and inventario.has_method(
-		"obtener_estadistica_equipo"
-	):
-		var defensa: float = maxf(
-			float(
-				inventario.call(
-					"obtener_estadistica_equipo",
-					"defensa",
-					0.0
+	var dano_recibido := maxi(cantidad, 0)
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if inventario != null and inventario.has_method("obtener_equipamiento"):
+		var equipo_variant: Variant = inventario.call("obtener_equipamiento")
+		if equipo_variant is Dictionary:
+			dano_recibido = CombatDefense.aplicar(
+				dano_recibido,
+				CombatDefense.obtener_defensa(equipo_variant as Dictionary)
 			)
-			),
-			0.0
-		)
-
-		danio_recibido = maxi(
-			0,
-			ceili(
-				float(danio_recibido)
-				- defensa
-			)
-		)
 
 	if _eterium_vida_compartida():
-		mana = maxi(mana - danio_recibido, 0)
+		mana = maxi(mana - dano_recibido, 0)
 		health = mana
 		mana_changed.emit(mana, max_mana)
 		health_changed.emit(health, max_health)
-		print(name, " recibió ", danio_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
+		print(name, " recibió ", dano_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
 		if health <= 0:
 			_die()
 	else:
-		super.take_damage(danio_recibido, origen)
+		super.take_damage(dano_recibido, origen)
 
 	if not is_alive:
 		_morir_jugador()
-	else:
+	elif dano_recibido > 0:
 		_recibir_golpe_visual()
 
 
