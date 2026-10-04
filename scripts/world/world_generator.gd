@@ -33,25 +33,30 @@ var context: WorldContext
 
 var _world_ready: bool = false
 var _entities_root: Node = null
+var _world_data: Node = null
+var _game_state: Node = null
+var _dependencias_configuradas: bool = false
 
 
 func _ready() -> void:
 	_crear_sistemas()
 
-	if WorldData.esta_cargado():
-		# Main inyecta el root de entidades durante su _ready().
-		# Diferimos un ciclo para que la Composition Root complete
-		# las dependencias antes de iniciar el mundo.
+
+func configurar_dependencias(world_data: Node, game_state: Node) -> void:
+	_world_data = world_data
+	_game_state = game_state
+	_dependencias_configuradas = _world_data != null and _game_state != null
+	if not _dependencias_configuradas:
+		push_error("WorldGenerator: WorldData y GameState son obligatorios.")
+		return
+	if _world_data.esta_cargado():
 		call_deferred("_inicializar_mundo_si_corresponde")
-	else:
-		WorldData.mundo_listo.connect(
-			_inicializar_mundo,
-			CONNECT_ONE_SHOT
-		)
+	elif not _world_data.mundo_listo.is_connected(_inicializar_mundo):
+		_world_data.mundo_listo.connect(_inicializar_mundo, CONNECT_ONE_SHOT)
 
 
 func _inicializar_mundo_si_corresponde() -> void:
-	if _world_ready:
+	if _world_ready or not _dependencias_configuradas:
 		return
 	_inicializar_mundo()
 
@@ -106,13 +111,13 @@ func _inicializar_mundo() -> void:
 	if _world_ready:
 		return
 
-	if GameState.tiene_semilla_mundo():
-		map_seed = GameState.obtener_semilla_mundo()
+	if _game_state.tiene_semilla_mundo():
+		map_seed = _game_state.obtener_semilla_mundo()
 	elif map_seed == 0:
 		map_seed = randi()
 
-		if not GameState.active_save_id.is_empty():
-			GameState.establecer_semilla_mundo(map_seed)
+		if not _game_state.active_save_id.is_empty():
+			_game_state.establecer_semilla_mundo(map_seed)
 
 	terrain.configurar(
 		map_seed,
