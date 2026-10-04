@@ -111,7 +111,6 @@ func _crear_sistemas() -> void:
 	spawn_rules = _spawn_rules_node
 	atmosphere = _atmosphere_node
 	context = _context_node
-	context.configurar(terrain, atmosphere, _world_data)
 
 
 func _inicializar_mundo() -> void:
