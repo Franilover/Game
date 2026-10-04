@@ -113,30 +113,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _interaccion_bloqueada() -> bool:
-	if get_tree().paused:
-		return true
-
-	var inventory: Node = get_tree().get_first_node_in_group("inventory")
-	if inventory is CanvasItem and bool((inventory as CanvasItem).visible):
-		return true
-
-	var admin_console: Node = get_tree().get_first_node_in_group("admin_console")
-	if admin_console is CanvasItem and bool((admin_console as CanvasItem).visible):
-		return true
-
-	var dialogue_system := get_tree().get_first_node_in_group("dialogue_system")
-	if dialogue_system != null and dialogue_system.has_method("esta_abierto"):
-		if bool(dialogue_system.call("esta_abierto")):
-			return true
-
-	var hud_modal: Variant = null
-	if hud != null and hud.has_method("esta_mostrando_panel_interaccion"):
-		hud_modal = hud.call("esta_mostrando_panel_interaccion")
-
-	if hud_modal != null and bool(hud_modal):
-		return true
-
-	return false
+	return GameState.esta_entrada_de_juego_bloqueada()
 
 
 func _buscar_objetivo() -> void:
