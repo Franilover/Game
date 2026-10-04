@@ -36,11 +36,20 @@ var _menu_interceptado: bool = false
 var _guardado_en_curso: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
+var _inventory: Node = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
 signal descubrimientos_mundo_actualizados
 signal descubrimiento_mundo(nivel: String, id: String)
+
+
+func configurar_dependencias(inventory: Node = null) -> void:
+	_inventory = inventory
+	if active_save_id.is_empty():
+		return
+	_guardado_rapido_conectado = false
+	_conectar_guardado_rapido()
 
 
 func _ready() -> void:
@@ -549,7 +558,7 @@ func _conectar_guardado_rapido() -> void:
 	if _guardado_rapido_conectado or active_save_id.is_empty():
 		return
 
-	var inventario := get_tree().get_first_node_in_group("inventory")
+	var inventario: Node = _inventory
 	if inventario != null and inventario.has_signal("inventory_changed"):
 		var inventario_callback := Callable(self, "_al_cambio_guardable")
 		if not inventario.inventory_changed.is_connected(inventario_callback):
