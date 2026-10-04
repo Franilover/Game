@@ -12,6 +12,7 @@ var player: Node = null
 var inventory: Node = null
 var world_items: Node = null
 var input_gate: Node = null
+var entity_manager: Node = null
 
 var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
@@ -23,14 +24,17 @@ func configurar(
 	nuevo_player: Node,
 	nuevo_inventory: Node = null,
 	nuevo_world_items: Node = null,
-	nuevo_input_gate: Node = null
+	nuevo_input_gate: Node = null,
+	nuevo_entity_manager: Node = null
 ) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_items = nuevo_world_items
 	input_gate = nuevo_input_gate
+	entity_manager = nuevo_entity_manager
 	if not interaction_controller.objetivo_cambiado.is_connected(_cambiar_objetivo):
 		interaction_controller.objetivo_cambiado.connect(_cambiar_objetivo)
+	interaction_controller.configurar_entidades(entity_manager)
 
 	print(
 		"InteractionSystem: configurado."
