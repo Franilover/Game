@@ -1154,94 +1154,11 @@ func _cargar_inventario_al_juego(
 			admin_guardado["capacidades"] = []
 		flags["personaje_admin"] = admin_guardado
 
-	var items_variant: Variant = estado.get(
-		"items",
-		[])
-
-	var nuevos_items: Array[Dictionary] = []
-
-	if items_variant is Array:
-		for item_variant in items_variant as Array:
-			if item_variant is Dictionary:
-				nuevos_items.append(
-					(item_variant as Dictionary).duplicate(true)
-				)
-			else:
-				nuevos_items.append({})
-
-	var slot_count := int(inventario.get("slot_count"))
-
-	if slot_count > 0:
-		while nuevos_items.size() < slot_count:
-			nuevos_items.append({})
-
-		if nuevos_items.size() > slot_count:
-			nuevos_items.resize(slot_count)
-
-	inventario.set(
-		"items",
-		nuevos_items
-	)
-
-	var equipo_variant: Variant = estado.get(
-		"equipo",
-		{}
-	)
-
-	if equipo_variant is Dictionary:
-		if inventario.has_method("establecer_equipo"):
-			inventario.call(
-				"establecer_equipo",
-				(equipo_variant as Dictionary).duplicate(true)
-			)
-
-	var hotbar_variant: Variant = estado.get(
-		"hotbar_indices",
-		[]
-	)
-
-	var nuevos_hotbar: Array[int] = []
-
-	if hotbar_variant is Array:
-		for indice_variant in hotbar_variant as Array:
-			nuevos_hotbar.append(
-				int(indice_variant)
-			)
-
-	var hotbar_count := 8
-
-	while nuevos_hotbar.size() < hotbar_count:
-		nuevos_hotbar.append(
-			nuevos_hotbar.size() if nuevos_hotbar.size() < slot_count else -1
+	if inventario.has_method("cargar_estado_partida"):
+		inventario.call(
+			"cargar_estado_partida",
+			estado.duplicate(true)
 		)
-
-	if nuevos_hotbar.size() > hotbar_count:
-		nuevos_hotbar.resize(hotbar_count)
-
-	inventario.set(
-		"hotbar_indices",
-		nuevos_hotbar
-	)
-
-	var indice_activo := clampi(
-		int(estado.get("indice_hotbar_activo", 0)),
-		0,
-		hotbar_count - 1
-	)
-
-	inventario.set(
-		"indice_hotbar_activo",
-		indice_activo
-	)
-
-	if inventario.has_method("actualizar"):
-		inventario.call("actualizar")
-
-	if inventario.has_signal("inventory_changed"):
-		inventario.inventory_changed.emit()
-
-	if inventario.has_method("_emitir_objeto_activo"):
-		inventario.call("_emitir_objeto_activo")
 
 
 func _abrir_escena_principal() -> void:
