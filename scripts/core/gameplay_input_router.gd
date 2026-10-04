@@ -49,18 +49,19 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("primary_action"):
 		if _interaction_system != null and _interaction_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
-			print("GameplayInputRouter: primary_action → interacción")
 			return
 
 		if _combat_system != null and _combat_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
-			print("GameplayInputRouter: primary_action → combate")
 			return
 
 	if event.is_action_pressed("secondary_action"):
+		if _interaction_system != null and _interaction_system.procesar_accion_secundaria():
+			get_viewport().set_input_as_handled()
+			return
+
 		if _combat_system != null and _combat_system.procesar_accion_secundaria():
 			get_viewport().set_input_as_handled()
-			print("GameplayInputRouter: secondary_action → combate")
 			return
 
 
