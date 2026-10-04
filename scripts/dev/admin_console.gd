@@ -1083,22 +1083,9 @@ func _comando_give(nombre: String) -> void:
 		)
 		return
 
-	if not inventario.has_method("agregar_objeto"):
-		_agregar_linea(
-			"[color=#d88]"
-			+ "El inventario no puede recibir objetos."
-			+ "[/color]"
-		)
-		return
-
 	item["cantidad"] = 1
 
-	var agregado: bool = bool(
-		inventario.call(
-			"agregar_objeto",
-			item
-		)
-	)
+	var agregado: bool = inventario.agregar_objeto(item)
 
 	if not agregado:
 		_agregar_linea(
@@ -1139,15 +1126,7 @@ func _comando_time(argumentos: String) -> void:
 
 	match subcomando:
 		"lock":
-			if not atmosfera.has_method("bloquear_tiempo"):
-				_agregar_linea(
-					"[color=#d88]"
-					+ "WorldAtmosphere no admite /time lock."
-					+ "[/color]"
-				)
-				return
-
-			atmosfera.call("bloquear_tiempo")
+			atmosfera.bloquear_tiempo()
 			_agregar_linea(
 				"[color=#9fd18b]"
 				+ "Tiempo bloqueado."
@@ -1155,15 +1134,7 @@ func _comando_time(argumentos: String) -> void:
 			)
 
 		"day":
-			if not atmosfera.has_method("establecer_dia"):
-				_agregar_linea(
-					"[color=#d88]"
-					+ "WorldAtmosphere no admite /time day."
-					+ "[/color]"
-				)
-				return
-
-			if bool(atmosfera.call("establecer_dia")):
+			if atmosfera.establecer_dia():
 				_agregar_linea(
 					"[color=#9fd18b]"
 					+ "Hora establecida: 12:00."
@@ -1177,15 +1148,7 @@ func _comando_time(argumentos: String) -> void:
 				)
 
 		"night":
-			if not atmosfera.has_method("establecer_noche"):
-				_agregar_linea(
-					"[color=#d88]"
-					+ "WorldAtmosphere no admite /time night."
-					+ "[/color]"
-				)
-				return
-
-			if bool(atmosfera.call("establecer_noche")):
+			if atmosfera.establecer_noche():
 				_agregar_linea(
 					"[color=#9fd18b]"
 					+ "Hora establecida: 00:00."
@@ -1199,15 +1162,7 @@ func _comando_time(argumentos: String) -> void:
 				)
 
 		"restart":
-			if not atmosfera.has_method("reiniciar_tiempo"):
-				_agregar_linea(
-					"[color=#d88]"
-					+ "WorldAtmosphere no admite /time restart."
-					+ "[/color]"
-				)
-				return
-
-			if bool(atmosfera.call("reiniciar_tiempo")):
+			if atmosfera.reiniciar_tiempo():
 				_agregar_linea(
 					"[color=#9fd18b]"
 					+ "Tiempo reiniciado al inicio del calendario y desbloqueado."
