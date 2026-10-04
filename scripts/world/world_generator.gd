@@ -20,6 +20,7 @@ var entity_manager: WorldEntityManager
 var entity_factory: WorldEntityFactory
 var spawn_rules: WorldSpawnRules
 var atmosphere: WorldAtmosphere
+var context: WorldContext
 
 @onready var _terrain_node: WorldTerrain = $WorldTerrain
 @onready var _streamer_node: WorldStreamer = $WorldStreamer
@@ -28,6 +29,7 @@ var atmosphere: WorldAtmosphere
 @onready var _entity_factory_node: WorldEntityFactory = $WorldEntityFactory
 @onready var _spawn_rules_node: WorldSpawnRules = $WorldSpawnRules
 @onready var _atmosphere_node: WorldAtmosphere = $WorldAtmosphere
+@onready var _context_node: WorldContext = $WorldContext
 
 var _world_ready: bool = false
 var _entities_root: Node = null
@@ -81,6 +83,8 @@ func _crear_sistemas() -> void:
 	entity_factory = _entity_factory_node
 	spawn_rules = _spawn_rules_node
 	atmosphere = _atmosphere_node
+	context = _context_node
+	context.configurar(terrain, atmosphere)
 
 
 func _inicializar_mundo() -> void:
