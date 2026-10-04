@@ -8,7 +8,7 @@ var _ecosistemas: Array = []
 var _ecosistema_indices: Dictionary = {}
 var _bioma_ecosistemas: Array = []
 var _biome_noises: Array[FastNoiseLite] = []
-var _ecosystem_noise: FastNoiseLite
+var _ecosystem_noises: Array[FastNoiseLite] = []
 var _terrain_noise: FastNoiseLite
 
 
@@ -39,10 +39,6 @@ const TERRENO_A_ZONA: Dictionary = {
 func configurar(nuevo_seed: int) -> void:
 	map_seed = nuevo_seed
 
-	_ecosystem_noise = FastNoiseLite.new()
-	_ecosystem_noise.seed = map_seed + 2002
-	_ecosystem_noise.frequency = 0.020
-
 	_terrain_noise = FastNoiseLite.new()
 	_terrain_noise.seed = map_seed + 3003
 	_terrain_noise.frequency = 0.045
@@ -64,6 +60,12 @@ func cargar_datos(
 		biome_noise.seed = map_seed + 1001 + indice * 7919
 		biome_noise.frequency = 0.006
 		_biome_noises.append(biome_noise)
+
+	for indice in range(_ecosistemas.size()):
+		var ecosystem_noise := FastNoiseLite.new()
+		ecosystem_noise.seed = map_seed + 2002 + indice * 6151
+		ecosystem_noise.frequency = 0.014
+		_ecosystem_noises.append(ecosystem_noise)
 
 	for bioma_variant in _biomas:
 		var indices: Array[int] = []
@@ -169,22 +171,64 @@ func ecosistema_index_at_tile(
 		return -1
 
 	var indices: Array = _bioma_ecosistemas[bioma_index]
-
-	if indices.is_empty() or _ecosystem_noise == null:
+	if indices.is_empty():
 		return -1
 
-	var normalizado := (
-		_ecosystem_noise.get_noise_2d(tile.x, tile.y)
-		+ 1.0
-	) * 0.5
+	# Cada ecosistema tiene su propio campo espacial. Un único ruido
+	# dividido por índices producía bandas que dependían del orden
+	# de los registros en Supabase, no de sus identidades.
+	var mejor_indice := -1
+	var mejor_puntuacion := -INF
 
-	var local_index := clampi(
-		floori(normalizado * indices.size()),
-		0,
-		indices.size() - 1
+	for indice_variant in indices:
+		var indice := int(indice_variant)
+		if indice < 0 or indice >= _ecosistemas.size():
+			continue
+		if indice >= _ecosystem_noises.size():
+			continue
+
+		var peso := _peso_ecosistema(indice)
+		if peso <= 0.0:
+			continue
+
+		var ruido := (
+			_ecosystem_noises[indice].get_noise_2d(
+				tile.x,
+				tile.y
+			)
+			+ 1.0
+		) * 0.5
+		var puntuacion := ruido + log(peso) * 0.35
+
+		if puntuacion > mejor_puntuacion:
+			mejor_puntuacion = puntuacion
+			mejor_indice = indice
+
+	return mejor_indice
+
+
+func _peso_ecosistema(indice: int) -> float:
+	if indice < 0 or indice >= _ecosistemas.size():
+		return 0.0
+
+	var ecosistema_variant: Variant = _ecosistemas[indice]
+	if not ecosistema_variant is Dictionary:
+		return 0.0
+
+	var generacion_variant: Variant = (
+		(ecosistema_variant as Dictionary).get(
+			"generacion",
+			{}
+		)
 	)
+	if not generacion_variant is Dictionary:
+		return 1.0
 
-	return int(indices[local_index])
+	var generacion := generacion_variant as Dictionary
+	if not generacion.has("peso"):
+		return 1.0
+
+	return maxf(float(generacion.get("peso", 1.0)), 0.0)
 
 
 func zona_base_at_tile(
