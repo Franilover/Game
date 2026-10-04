@@ -961,7 +961,7 @@ func _texto_es_semilla_valida(texto: String) -> bool:
 
 
 func _obtener_version_mundo() -> int:
-	var mundo := WorldData.mundo
+	var mundo: Dictionary = WorldDataService.mundo
 	return int(
 		mundo.get("version", 0)
 	)
