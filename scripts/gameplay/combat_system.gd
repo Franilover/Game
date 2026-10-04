@@ -794,8 +794,9 @@ func _aplicar_danio(
 func _registrar_criatura_derrotada(objetivo: Node) -> void:
 	if game_state == null or not is_instance_valid(game_state):
 		return
-	if game_state != null:
-		game_state.registrar_criatura_derrotada(objetivo)
+	if game_state == null or not game_state.has_method("registrar_criatura_derrotada"):
+		return
+	game_state.call("registrar_criatura_derrotada", objetivo)
 
 
 func _obtener_direccion_ataque() -> Vector2:
