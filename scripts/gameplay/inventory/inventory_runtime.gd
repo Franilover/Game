@@ -5,7 +5,7 @@ class_name InventoryRuntime
 ## Objetos, hotbar y equipamiento son estados independientes.
 
 var state := InventoryState.new()
-var hotbar := InventoryHotbar.new()
+var hotbar := InventoryHotbarState.new()
 var equipment := InventoryEquipment.new()
 
 func limpiar() -> void:
