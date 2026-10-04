@@ -386,14 +386,14 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	if atmosphere != null and atmosphere.has_method(
 		"obtener_estado_guardado"
 	):
-			var tiempo_variant: Variant = atmosphere.call(
-				"obtener_estado_guardado"
-			)
+		var tiempo_variant: Variant = atmosphere.call(
+			"obtener_estado_guardado"
+		)
 
-			if tiempo_variant is Dictionary:
-				flags["tiempo_mundo"] = (
-					tiempo_variant as Dictionary
-				).duplicate(true)
+		if tiempo_variant is Dictionary:
+			flags["tiempo_mundo"] = (
+				tiempo_variant as Dictionary
+			).duplicate(true)
 
 	var inventario: Node = _inventory
 
