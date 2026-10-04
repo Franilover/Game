@@ -80,6 +80,22 @@ func _ready() -> void:
 	if _area == null:
 		return
 
+	if _visual != null:
+		var tween := create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(
+			_visual,
+			"modulate:a",
+			0.0,
+			duracion
+		)
+		tween.tween_property(
+			_visual,
+			"scale",
+			Vector2(1.08, 1.08),
+			duracion
+		)
+
 	await get_tree().physics_frame
 	_revisar_areas_existentes()
 
