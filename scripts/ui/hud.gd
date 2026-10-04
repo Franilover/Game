@@ -4,6 +4,8 @@ extends Control
 var player: Node = null
 var world_generator: Node = null
 var mission_manager: Node = null
+var entity_manager: Node = null
+var supabase_client: Node = null
 
 var mostrar_contexto_mundo: bool = false
 
@@ -39,7 +41,7 @@ var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 
 
-func configurar(nuevo_player: Node = null, nuevo_world_generator: Node = null, nuevo_mission_manager: Node = null) -> void:
+func configurar(nuevo_player: Node = null, nuevo_world_generator: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
@@ -48,6 +50,12 @@ func configurar(nuevo_player: Node = null, nuevo_world_generator: Node = null, n
 		world_generator = nuevo_world_generator
 	if nuevo_mission_manager != null and is_instance_valid(nuevo_mission_manager):
 		mission_manager = nuevo_mission_manager
+	if nuevo_entity_manager != null and is_instance_valid(nuevo_entity_manager):
+		entity_manager = nuevo_entity_manager
+	if nuevo_supabase_client != null and is_instance_valid(nuevo_supabase_client):
+		supabase_client = nuevo_supabase_client
+	if mission_manager != null:
+		_conectar_senales_misiones()
 	if is_inside_tree():
 		_conectar_senales_player()
 		_actualizar_vida()
@@ -489,7 +497,7 @@ func _actualizar_contexto() -> void:
 	var seed := str(world_generator.get("map_seed"))
 	var version := str(WorldData.mundo.get("version", "—"))
 	var supabase_estado := "Connected"
-	if SupabaseClient.has_method("esta_conectado") and not SupabaseClient.call("esta_conectado"):
+	if supabase_client != null and supabase_client.has_method("esta_conectado") and not supabase_client.call("esta_conectado"):
 		supabase_estado = "Offline"
 
 	var fps: int = Engine.get_frames_per_second()
@@ -500,8 +508,14 @@ func _actualizar_contexto() -> void:
 	var objects: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
 	var nodes: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	var static_memory_mb: float = float(Performance.get_monitor(Performance.MEMORY_STATIC)) / 1048576.0
-	var criaturas := get_tree().get_nodes_in_group("creatures").size()
-	var props := get_tree().get_nodes_in_group("world_props").size()
+	var criaturas := 0
+	var props := 0
+	if entity_manager != null and entity_manager.has_method("obtener_entidades_activas"):
+		for entidad in entity_manager.call("obtener_entidades_activas"):
+			if entidad is Node and entidad.is_in_group("creatures"):
+				criaturas += 1
+			elif entidad is Node and entidad.is_in_group("world_props"):
+				props += 1
 	var entidades := criaturas + props
 
 	var chunks_cargados := 0
