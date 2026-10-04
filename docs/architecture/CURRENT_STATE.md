@@ -102,7 +102,7 @@ WorldRuntime
 ### Prioridad 3
 Mantener GameState como coordinador de persistencia y ciclo de vida local.
 
-Ya no se busca crear otra fachada paralela. El objetivo es que `GameState` conserve únicamente la coordinación que realmente le pertenece:
+Ya no se busca crear otra fachada paralela. `GameState` ahora compone `PlayerState`, `WorldState` y `DiscoveryState`; estos objetos son los dueños de sus snapshots persistibles. GameState conserva únicamente la coordinación que realmente le pertenece:
 
 - ciclo de vida de la partida local
 - lectura/escritura del save
