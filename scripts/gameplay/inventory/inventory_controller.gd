@@ -97,3 +97,21 @@ func serializar() -> Dictionary:
 		"indice_hotbar_activo": runtime.hotbar.indice_activo,
 		"equipo": runtime.equipment.state.slots.duplicate(true)
 	}
+
+func equipar_desde_inventario(slot: String, indice: int, item: Dictionary) -> bool:
+	if not puede_interactuar():
+		return false
+	var resultado: bool = runtime.equipar_desde_inventario(slot, indice, item)
+	if resultado:
+		equipo_cambio.emit(slot, runtime.obtener_equipo(slot))
+		inventario_cambio.emit()
+	return resultado
+
+func desequipar_a_inventario(slot: String) -> bool:
+	if not puede_interactuar():
+		return false
+	var resultado: bool = runtime.desequipar_a_inventario(slot)
+	if resultado:
+		equipo_cambio.emit(slot, {})
+		inventario_cambio.emit()
+	return resultado
