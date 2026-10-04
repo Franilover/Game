@@ -422,3 +422,8 @@ CombatSystem ahora depende explícitamente de `GarliaInventory`, `CombatAttackAr
 Se eliminó reflexión innecesaria en `GameplayInputRouter` y `Main`. `HUD` ahora recibe contratos concretos para Player, MissionManager, WorldEntityManager, Supabase y Inventory; su Hotbar también es concreta. `Inventory` y `AdminInventory` pasaron a contratos concretos para Player, WorldEntitySpawner, GarliaWorldItems y las pestañas de mapa/crafteo/relaciones. `Player` ahora usa contratos concretos para WorldContext, Inventory, IUMManager y WorldEntityManager. Se añadieron contratos nominales para IUMLab, PauseMenu, DeathMenu, CraftingUI, RelationshipsUI, WorldMapUI, IUMManager y RelationshipSystem.
 
 `GameState` también eliminó reflexión de serialización/carga para Inventory, MissionManager, Player IUM y WorldAtmosphere. `Main` dejó de descubrir configuraciones mediante `has_method()/call()` en los sistemas que ya tienen contratos explícitos.
+
+
+## Trigésima cuarta barrida — Main y gameplay reducen reflexión residual
+
+`Main` quedó sin `has_method()/call()` para sus sistemas configurables; la única reflexión restante allí corresponde al contrato polimórfico de objetivos de interacción (`Creature`, `WorldItem`, `WorldProp`). `DialogueSystem` usa contratos concretos para Player, HUD, MissionManager y RelationshipSystem y llama directamente a las APIs sociales. `InteractionSystem` usa `GameplayInputGate` directamente. `GameState` quedó sin reflexión en guardado/carga de Inventory, MissionManager, Player IUM y WorldAtmosphere; permanece una frontera genérica para identificar criaturas derrotadas, porque `GameState` todavía acepta entidades polimórficas y no debe inventar un contrato único para todos los `damageable`.
