@@ -30,15 +30,28 @@ const PROJECTILE_SCRIPT: Script = preload(
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
 var player: Node = null
+var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
 func configurar(nuevo_player: Node) -> void:
 	player = nuevo_player
+	if not is_instance_valid(combat_controller):
+		combat_controller = CombatController.new()
+	if not combat_controller.is_inside_tree():
+		add_child(combat_controller)
+	var gate_variant: Variant = player.get("input_gate")
+	if gate_variant is Node:
+		combat_controller.configurar_gate(gate_variant as Node)
 
 	print(
 		"CombatSystem: configurado."
 	)
+
+
+func _ready() -> void:
+	if not combat_controller.is_inside_tree():
+		add_child(combat_controller)
 
 
 func _process(delta: float) -> void:
@@ -109,7 +122,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _accion_bloqueada() -> bool:
-	var bloqueada: bool = GameState.esta_entrada_de_juego_bloqueada()
+	var bloqueada: bool = not combat_controller.puede_actuar()
 	if bloqueada:
 		var inventory := get_tree().get_first_node_in_group("inventory")
 		var hud := get_tree().get_first_node_in_group("hud")
