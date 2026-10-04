@@ -537,7 +537,7 @@ func _al_recibir_impacto_proyectil(
 		if ai != null and ai.has_method("al_recibir_ataque_con_arma"):
 			ai.call("al_recibir_ataque_con_arma", arma)
 
-	_animar_objetivo(objetivo)
+	CombatFeedback.impacto(objetivo, ataque.damage)
 	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
 
 
@@ -836,23 +836,3 @@ func _notificar_feedback_impacto(objetivo: Node) -> void:
 		return
 	combat_feedback.mostrar_impacto(objetivo)
 
-
-func _animar_objetivo(objetivo: Node) -> void:
-	if not objetivo is CanvasItem:
-		return
-
-	var objetivo_visual := objetivo as CanvasItem
-	var modulate_original: Color = objetivo_visual.modulate
-	var tween := create_tween()
-	tween.tween_property(
-		objetivo_visual,
-		"modulate",
-		Color(1.0, 0.45, 0.45, modulate_original.a),
-		0.04
-	)
-	tween.tween_property(
-		objetivo_visual,
-		"modulate",
-		modulate_original,
-		0.08
-	)
