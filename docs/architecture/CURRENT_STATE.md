@@ -400,3 +400,8 @@ CombatSystem ahora depende explícitamente de `GarliaInventory`, `CombatAttackAr
 ## Vigésima novena barrida — Creature y proyectiles eliminan instanciación dinámica conocida
 
 `Creature.crear_rastro_teleport()` ahora instancia `CreatureTeleportTrail` directamente y configura su contrato concreto. `CombatSystem` hace lo mismo con `CombatProjectile`; se elimina `set_script()` para una clase que ya estaba declarada con `class_name`. Esto reduce reflexión y mantiene los recursos como dependencias tipadas cuando el contrato ya existe.
+
+
+## Trigésima barrida — InteractionSystem e Input Router refuerzan contratos de gameplay
+
+`InteractionSystem` ahora expone `class_name` y recibe `Player`, `GarliaInventory`, `GarliaWorldItems` y `WorldEntityManager` con contratos concretos. La colocación y consumo de objetos ya no pasan por `has_method()/call()` cuando las APIs son propias y conocidas. `GameplayInputRouter` también expone `class_name` y tipa InteractionSystem, CombatSystem, GarliaInventory, DialogueSystem y HUD. Las interfaces todavía dinámicas externas (por ejemplo objetivos interactuables o AdminConsole) se mantienen hasta confirmar un contrato común real.
