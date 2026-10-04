@@ -2,7 +2,7 @@ extends RefCounted
 class_name InventoryRuntime
 
 ## Estado runtime del inventario.
-## Hotbar y equipamiento son estados independientes.
+## Objetos, hotbar y equipamiento son estados independientes.
 
 var state := InventoryState.new()
 var hotbar := InventoryHotbar.new()
@@ -10,17 +10,11 @@ var equipment := InventoryEquipment.new()
 
 func limpiar() -> void:
 	state.limpiar()
-	hotbar.indices.clear()
-	hotbar.indice_activo = 0
-	equipment.state.slots.clear()
+	hotbar.configurar([])
+	equipment.limpiar()
 
 func establecer_items(items: Array) -> void:
-	state.items.clear()
-	for value in items:
-		if value is Dictionary:
-			state.items.append((value as Dictionary).duplicate(true))
-		else:
-			state.items.append({})
+	state.establecer_items(items)
 
 func obtener_item(indice: int) -> Dictionary:
 	return state.obtener_item(indice)
@@ -36,3 +30,6 @@ func desequipar(slot: String) -> Dictionary:
 
 func obtener_equipo(slot: String) -> Dictionary:
 	return equipment.obtener(slot)
+
+func obtener_equipamiento() -> Dictionary:
+	return equipment.state.slots.duplicate(true)
