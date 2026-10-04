@@ -121,7 +121,6 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_actualizar_cooldowns(delta)
-	locomotion.avanzar_accion(delta)
 	_exploration_check_timer -= delta
 	if _exploration_check_timer <= 0.0:
 		_exploration_check_timer = 0.08
@@ -131,15 +130,15 @@ func _physics_process(delta: float) -> void:
 	# no procesamos ningún input del jugador.
 	if _esta_bloqueado_por_interfaz():
 		velocity = Vector2.ZERO
-
 		if state != State.IDLE:
 			state = State.IDLE
+			locomotion.reiniciar()
 			_update_visual()
-
 		return
 
-	# Mientras hacemos una acción especial,
-	# esa acción toma el control del movimiento.
+	# El coordinador administra la ventana temporal de la acción.
+	locomotion.avanzar_accion(delta)
+
 	if state == State.JUMP:
 		_procesar_jump(delta)
 		return
