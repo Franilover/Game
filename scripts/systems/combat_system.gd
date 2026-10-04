@@ -75,13 +75,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
-		var objeto_activo := _obtener_objeto_activo()
-		var direccion := _obtener_direccion_ataque()
+		# La hotbar no decide el arma equipada.
+		# Primero InteractionSystem consume recogida/colocación contextual;
+		# si no lo hace, CombatSystem ataca con el equipo real.
+		var arma_equipada := _obtener_arma_equipada()
+		var modo := "mano_secundaria" if not arma_equipada.is_empty() else "desarmado"
 
 		if not combat_controller.solicitar_ataque(
-			direccion,
-			objeto_activo,
-			"objeto_activo" if not objeto_activo.is_empty() else "desarmado"
+			_obtener_direccion_ataque(),
+			arma_equipada,
+			modo
 		):
 			return
 
