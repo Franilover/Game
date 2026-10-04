@@ -185,20 +185,16 @@ func _physics_process(delta: float) -> void:
 	# La recuperación natural ocurre únicamente mientras el jugador espera.
 	if direction == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
-	else:
 
 	# Consumo de stamina al correr normalmente.
 	if is_running:
-		_gastar_stamina(
-			run_stamina_cost * delta
-		)
-
+		_gastar_stamina(run_stamina_cost * delta)
 
 	# Movimiento.
 	var speed: float
 
 	if eterium_sprint:
-		speed = move_speed * run_multiplier * 1.0
+		speed = move_speed * run_multiplier * eterium_runtime.multiplicador_carrera()
 	elif is_running:
 		speed = move_speed * run_multiplier
 	else:
