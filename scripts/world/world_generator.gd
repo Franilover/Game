@@ -55,13 +55,29 @@ func _inicializar_mundo_si_corresponde() -> void:
 		return
 	_inicializar_mundo()
 
-func configurar_entidades(root: Node) -> void:
+func configurar_entidades(
+	root: Node,
+	jugador: Node = null,
+	inventario: Node = null,
+	combat_system: Node = null,
+	dialogue_system: Node = null,
+	mission_manager: Node = null
+) -> void:
 	_entities_root = root
 	if entity_manager == null or entity_spawner == null or entity_factory == null or spawn_rules == null:
 		push_error("WorldGenerator: dependencias de entidades incompletas.")
 		return
 	entity_manager.configurar(_entities_root)
 	spawn_rules.configurar(terrain)
+	entity_factory.configurar_dependencias(
+		jugador,
+		entity_manager,
+		inventario,
+		combat_system,
+		dialogue_system,
+		mission_manager,
+		_entities_root
+	)
 	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules)
 
 func _process(_delta: float) -> void:
