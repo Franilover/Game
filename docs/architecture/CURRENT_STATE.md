@@ -221,3 +221,8 @@ Cambios de esta pasada:
 - Main utiliza tipos concretos `WorldContext` y `WorldAtmosphere` para esas dependencias.
 
 Pendientes estructurales principales: reducir responsabilidades de GameState, Player, HUD, AdminConsole y SupabaseClient después de inventariar sus consumidores; revisar los 13 autoloads por ownership; y completar la auditoría de scripts/escenas legacy. No se declara compilación validada hasta probar el proyecto en Godot.
+
+
+La segunda barrida también migró las dependencias de UI anidadas: Inventory compone sus pestañas de mapa, relaciones, crafteo y administración; HUD inyecta Inventory en Hotbar; Main inyecta Inventory en PauseMenu y DeathMenu; y Main inyecta AdminConsole en IUMLab. Encyclopedia usa la API de GameState y Relationships usa una API pública de RelationshipSystem en lugar de leer su diccionario privado.
+
+La deuda de descubrimiento global restante se concentra ahora principalmente en CreatureAI/Creature y en el flujo de WorldProp/WorldItem/GarliaWorldItems/WorldDecoration. Está enumerada en ARCHITECTURE_AUDIT_2026-10-04.md; no se debe interpretar esta pasada como una eliminación total de búsquedas por grupos.
