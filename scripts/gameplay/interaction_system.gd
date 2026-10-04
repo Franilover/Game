@@ -47,7 +47,6 @@ func _process(delta: float) -> void:
 	if _scan_timer <= 0.0:
 		_scan_timer = maxf(scan_interval, 0.05)
 		_buscar_objetivo()
-		_actualizar_prompt_actual()
 
 	if objetivo_actual != null and not is_instance_valid(objetivo_actual):
 		_cambiar_objetivo(null)
@@ -124,12 +123,6 @@ func _contar_objetivos_contextuales() -> int:
 			cantidad += 1
 
 	return cantidad
-
-
-func _actualizar_prompt_actual() -> void:
-	# El sistema sólo mantiene el objetivo; Presentation escucha
-	# objetivo_cambiado y decide cómo representarlo.
-	objetivo_cambiado.emit(objetivo_actual)
 
 
 func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
