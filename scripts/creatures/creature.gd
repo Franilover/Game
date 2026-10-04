@@ -35,11 +35,11 @@ var _movimiento: CreatureMovement = null
 var _player_dependency: Node = null
 var _entity_manager_dependency: WorldEntityManager = null
 var _inventory_dependency: Node = null
-var _combat_system_dependency: Node = null
+var _combat_system_dependency: CombatSystem = null
 var _dialogue_system_dependency: Node = null
 var _mission_manager_dependency: Node = null
 var _effects_root: Node = null
-var _world_items_dependency: Node = null
+var _world_items_dependency: GarliaWorldItems = null
 
 var _rng := RandomNumberGenerator.new()
 var _siguiendo_jugador: bool = false
@@ -52,11 +52,11 @@ func configurar_dependencias(
 	jugador: Node,
 	entity_manager: WorldEntityManager,
 	inventario: Node,
-	combat_system: Node,
+	combat_system: CombatSystem,
 	dialogue_system: Node,
 	mission_manager: Node,
 	effects_root: Node,
-	world_items: Node,
+	world_items: GarliaWorldItems,
 	relaciones_ecologicas: Array = []
 ) -> void:
 	_player_dependency = jugador
