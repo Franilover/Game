@@ -900,6 +900,45 @@ func _iniciar_ataque_generico_contacto() -> void:
 	_cambiar_estado(Estado.ATACANDO)
 
 
+func _obtener_distancia_ataque_dramarias() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"distancia_ataque",
+		dramarias_distancia_ataque
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 1.0)
+
+	return dramarias_distancia_ataque
+
+
+func _obtener_danio_dramarias() -> int:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"danio",
+		dramarias_dano_contacto
+	)
+
+	if valor is int or valor is float:
+		return maxi(int(valor), 0)
+
+	return dramarias_dano_contacto
+
+
+func _obtener_enfriamiento_dramarias() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"enfriamiento",
+		dramarias_enfriamiento
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return dramarias_enfriamiento
+
+
 # ============================================================
 # DRAMARIAS
 # ============================================================
@@ -912,8 +951,9 @@ func _procesar_ataque_dramarias() -> void:
 	var distancia := criatura.global_position.distance_to(
 		objetivo.global_position
 	)
+	var alcance := _obtener_distancia_ataque_dramarias()
 
-	if distancia > dramarias_distancia_ataque:
+	if distancia > alcance:
 		_establecer_velocidad(_obtener_velocidad_persecucion())
 		criatura.tomar_control_movimiento()
 
@@ -932,10 +972,10 @@ func _procesar_ataque_dramarias() -> void:
 	if objetivo.has_method("take_damage"):
 		objetivo.call(
 			"take_damage",
-			dramarias_dano_contacto
+			_obtener_danio_dramarias()
 		)
 
-	_iniciar_recuperacion(dramarias_enfriamiento)
+	_iniciar_recuperacion(_obtener_enfriamiento_dramarias())
 
 
 # ============================================================
