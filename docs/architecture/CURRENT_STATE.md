@@ -202,3 +202,8 @@ La selección de hotbar ya no define el arma utilizada por el ataque primario.
 La durabilidad de las herramientas usadas por combate se descuenta desde el equipamiento.
 
 El slot actual de combate es mano_secundaria, coincidiendo con el slot de equipamiento existente en la UI.
+
+
+### Limpieza estructural
+
+Auditoría del árbol Git actual: 470 archivos, 65 directorios derivados y **0 directorios vacíos**. No hay carpetas que borrar; Git no conserva directorios vacíos por sí mismos.
