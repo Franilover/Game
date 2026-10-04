@@ -133,12 +133,13 @@ Esta pasada **no se debe considerar una eliminación global completa** de todos 
 - `scripts/creatures/creature.gd`: busca DialogueSystem por grupo y MissionManager mediante `/root`; usa `current_scene` para colocar rastros de teletransporte.
 - `scripts/world/world_decoration.gd`: busca Player y WorldGenerator desde grupos/escena.
 - `scripts/world/world_prop.gd` y `scripts/world/world_item.gd`: todavía buscan Generator, Player e Inventory por grupos.
+- `scripts/infrastructure/garlia_world_items.gd`: todavía consulta `current_scene`, busca Player/Inventory por grupos y recorre objetos `world_item` mediante grupos; requiere separar la propiedad del catálogo/drops del root de presentación del mundo.
 - `scripts/gameplay/combat_system.gd`: consulta el hijo opcional `AIController` en objetivos concretos; esto no es búsqueda global, pero conviene sustituirlo por una interfaz/propiedad explícita si la entidad lo expone.
 - `scripts/ui/encyclopedia.gd`, `world_map.gd`, `hotbar.gd`, `crafting.gd`, `death_menu.gd`, `pause_menu.gd`, `relationships.gd`, `ium_lab.gd` ya recibieron la migración indicada arriba; falta validación de ejecución en Godot.
 
 ## Próxima fase segura
 
-1. Mapear el ciclo de vida de entidades: WorldEntitySpawner → WorldEntityFactory → Creature → CreatureAI.
+1. Mapear el ciclo de vida de entidades y drops: WorldEntitySpawner → WorldEntityFactory → Creature → CreatureAI; GarliaWorldItems → WorldProp/WorldItem.
 2. Diseñar una interfaz de dependencias de entidad para Player, WorldEntityManager, Inventory, CombatSystem, DialogueSystem y MissionManager, y configurarla antes de activar la IA.
 3. Cambiar CreatureAI de búsquedas globales a consultas sobre Player explícito y WorldEntityManager; evitar reemplazar grupos por otra búsqueda global.
 4. Inyectar WorldContext/Player en WorldDecoration, WorldProp y WorldItem solo después de confirmar cuáles se instancian realmente.
