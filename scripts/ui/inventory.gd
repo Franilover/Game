@@ -454,6 +454,9 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 func obtener_equipamiento() -> Dictionary:
 	return inventory_controller.obtener_equipamiento()
 
+func obtener_objeto_equipado(clave: String = "mano_secundaria") -> Dictionary:
+	return inventory_controller.obtener_objeto_equipado(clave)
+
 
 func obtener_estadistica_equipo(
 	clave: String,
