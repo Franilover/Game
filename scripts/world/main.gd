@@ -35,7 +35,7 @@ func _ready() -> void:
 	var world_gen: WorldGenerator = _world_generator
 	if world_gen.has_method("configurar_entidades"):
 		world_gen.call("configurar_entidades", $Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context)
-	if GarliaWorldItems.has_method("configurar_dependencias"):
+	if _world_items != null and _world_items.has_method("configurar_dependencias"):
 		_world_items.call("configurar_dependencias", $Entities/Player, _inventory, $Entities, world_gen.entity_manager, _world_context, MissionManager)
 
 	if world_gen.is_world_ready():
@@ -154,7 +154,7 @@ func _configurar_interaccion(world_gen: WorldGenerator) -> void:
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
 	if _interaction_system.has_method("configurar"):
-		_interaction_system.configurar(_player, _inventory, GarliaWorldItems, _input_router, world_gen.entity_manager)
+		_interaction_system.configurar(_player, _inventory, _world_items, _input_router, world_gen.entity_manager)
 	else:
 		push_error("Main: InteractionSystem no tiene configurar().")
 
