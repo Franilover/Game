@@ -12,6 +12,8 @@ var _requests: Dictionary = {}
 
 func configurar(client: GarliaSupabaseClient) -> void:
 	_client = client
+	if _client != null and not _client.request_completed.is_connected(_al_request_completed):
+		_client.request_completed.connect(_al_request_completed)
 
 
 func cargar_reglas() -> void:
@@ -54,11 +56,6 @@ func _request(tipo: String, callback: Callable) -> void:
 		"tipo": tipo,
 		"callback": callback
 	}
-
-
-func _ready() -> void:
-	if _client != null and not _client.request_completed.is_connected(_al_request_completed):
-		_client.request_completed.connect(_al_request_completed)
 
 
 func _al_request_completed(
