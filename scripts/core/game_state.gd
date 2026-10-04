@@ -396,10 +396,7 @@ func _aplicar_estado_misiones() -> void:
 		return
 	var datos_variant: Variant = world_state.flags.get("misiones_estado", {})
 	if datos_variant is Dictionary:
-		_mission_manager.call(
-			"cargar_estado_partida",
-			(datos_variant as Dictionary).duplicate(true)
-	)
+		_mission_manager.cargar_estado_partida((datos_variant as Dictionary).duplicate(true))
 
 
 func _conectar_guardado_rapido() -> void:
