@@ -118,7 +118,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
-	_actualizar_cooldowns(delta)
+	locomotion.actualizar_cooldowns(delta)
 	_exploration_check_timer -= delta
 	if _exploration_check_timer <= 0.0:
 		_exploration_check_timer = 0.08
