@@ -110,6 +110,12 @@ func _init(world: TileMapDual, tileset_watcher: TileSetWatcher) -> void:
 	terrain = TerrainDual.new(tileset_watcher)
 	terrain.changed.connect(_terrain_changed, 1)
 	world_tiles_changed.connect(_world_tiles_changed, 1)
+	# El Display es el renderer real de TileMapDual. Debe conservar el Z
+	# absoluto del TileMapDual que lo contiene; de lo contrario sus hijos
+	# pueden terminar en el Z por defecto del canvas.
+	self.z_as_relative = false
+	self.z_index = world.z_index
+
 	# let parent materal through to the displaylayers
 	use_parent_material = true
 	# Enable Y sorting
@@ -160,5 +166,10 @@ func _delete_layers() -> void:
 
 ## Activates when the properties of the parent TileMapDual have been edited.
 func _update_properties() -> void:
+	# TileMapDual puede cambiar su Z después de crear Display.
+	# Mantener el renderer real sincronizado evita que el addon vuelva
+	# a colocar el terreno en el Z por defecto.
+	self.z_as_relative = false
+	self.z_index = world.z_index
 	for child in get_children(true):
 		child.update_properties(world)
