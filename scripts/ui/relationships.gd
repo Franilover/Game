@@ -1,5 +1,7 @@
 extends Control
 
+class_name RelationshipsUI
+
 var lista: VBoxContainer
 var detalle: VBoxContainer
 var estado: Label
