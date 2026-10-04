@@ -347,3 +347,12 @@ Se eliminó la dependencia directa de CreatureAI sobre SupabaseClient para relac
 CreatureAI conserva únicamente la lectura y evaluación de esas relaciones durante el runtime. Ya no decide cómo obtenerlas ni conoce el transporte REST.
 
 Además, WorldEntityManager quedó tipado directamente en CreatureAI y su consulta de entidades activas ya no usa has_method()/call().
+
+
+## Vigésima tercera barrida — Relaciones ecológicas como dependencia inyectada y actualizable
+
+CreatureAI ya no consulta SupabaseClient. Las relaciones ecológicas se cargan en la infraestructura y se propagan por la composición: Main → WorldGenerator → WorldEntityFactory → Creature → CreatureAI.
+
+La carga es además reactiva: SupabaseClient emite `relaciones_ecologicas_cargadas` y WorldGenerator actualiza las criaturas activas mediante su factory. Así se evita que la IA conozca transporte, autenticación o cachés de infraestructura.
+
+Durante esta barrida también se corrigió una regresión en `_crear_headers()` de SupabaseClient que había quedado recursiva, y las cabeceras REST vuelven a construirse directamente desde `GarliaAuth`.
