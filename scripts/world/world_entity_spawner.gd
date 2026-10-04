@@ -747,7 +747,7 @@ func despawn_chunk(
 	chunk_coord: Vector2i
 ) -> void:
 	var criaturas_variant: Variant = (
-		_creatures_by_chunk[chunk_coord]
+		_creatures_by_chunk.get(chunk_coord, [])
 	)
 
 	if criaturas_variant is Array:
