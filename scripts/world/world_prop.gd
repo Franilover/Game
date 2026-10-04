@@ -495,7 +495,7 @@ func _actualizar_profundidad() -> void:
 func _ready() -> void:
 	add_to_group("world_props")
 	if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
-		GarliaWorldItems.catalogo_cargado.connect(_al_cargar_catalogo_items)
+		_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
 	_actualizar_profundidad()
 
 
