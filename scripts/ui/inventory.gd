@@ -451,6 +451,23 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	_emitir_objeto_activo()
 
 
+func _actualizar_slots_equipamiento() -> void:
+	for child in equipment_slots.get_children():
+		if not child.has_method("obtener_clave"):
+			continue
+
+		var clave_slot: String = str(child.call("obtener_clave"))
+		var objeto: Dictionary = obtener_objeto_equipado(clave_slot)
+
+		if objeto.is_empty():
+			if child.has_method("limpiar_objeto"):
+				child.call("limpiar_objeto")
+			continue
+
+		if child.has_method("configurar_objeto"):
+			child.call("configurar_objeto", objeto)
+
+
 func obtener_equipamiento() -> Dictionary:
 	return inventory_controller.obtener_equipamiento()
 
