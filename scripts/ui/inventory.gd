@@ -95,8 +95,16 @@ func _inicializar_navegacion_tabs() -> void:
 	_actualizar_admin_tab()
 
 
-func configurar(player: Node = null) -> void:
+func configurar(player: Node = null, world_entity_spawner: Node = null) -> void:
 	_player = player
+	_configurar_admin_inventory(world_entity_spawner)
+	_actualizar_admin_tab()
+
+
+func _configurar_admin_inventory(world_entity_spawner: Node) -> void:
+	var admin_tab: AdminInventory = $Window/Margin/Column/Tabs/Admin as AdminInventory
+	if admin_tab != null:
+		admin_tab.configurar(_player, world_entity_spawner, self)
 
 
 func serializar_estado_partida() -> Dictionary:
