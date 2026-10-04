@@ -92,14 +92,15 @@ func procesar_accion_secundaria() -> bool:
 	if player == null or not player.is_alive:
 		return false
 
-	var arma := _obtener_arma_equipada()
-	if arma.is_empty():
+	var objeto_equipado := _obtener_objeto_equipado_para_accion()
+	if objeto_equipado.is_empty():
 		return false
 
+	var modo := "arma_equipada" if _es_objeto_ataque(objeto_equipado) else "desarmado"
 	return combat_controller.solicitar_ataque(
 		_obtener_direccion_ataque(),
-		arma,
-		"mano_secundaria"
+		objeto_equipado,
+		modo
 	)
 
 
@@ -157,7 +158,7 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 
 	if tipo_herramienta == "pala":
 		if _usar_pala():
-			_consumir_durabilidad_herramienta()
+			_consumir_durabilidad_herramienta(_inventory_equipment_slot != "")
 		return
 
 	var direccion: Vector2 = _obtener_direccion_ataque()
@@ -193,10 +194,15 @@ func _usar_pala() -> bool:
 	return false
 
 
-func _consumir_durabilidad_herramienta() -> void:
+func _consumir_durabilidad_herramienta(en_equipo: bool = false) -> void:
 	if inventory == null:
 		return
-	inventory.consumir_durabilidad_equipo(_inventory_equipment_slot)
+	if en_equipo:
+		inventory.consumir_durabilidad_equipo(_inventory_equipment_slot)
+		return
+	var indice: int = inventory.obtener_indice_inventario_hotbar(inventory.indice_hotbar_activo)
+	if indice >= 0:
+		inventory.consumir_durabilidad(indice)
 
 
 func _crear_ataque_melee(
@@ -283,16 +289,9 @@ func usar_objeto_activo() -> void:
 	if player == null:
 		return
 
-	# Compatibilidad para llamadas internas: este método representa
-	# exclusivamente el objeto seleccionado en la hotbar.
-	var objeto_activo := _obtener_objeto_equipado_para_accion()
-
-	if objeto_activo.is_empty():
+	var objeto_activo := _obtener_objeto_activo_para_accion()
+	if objeto_activo.is_empty() or not _es_objeto_ataque(objeto_activo):
 		return
-
-	if not _es_objeto_ataque(objeto_activo):
-		return
-
 	_atacar_con_objeto(objeto_activo)
 
 
@@ -307,10 +306,10 @@ func _obtener_objeto_activo_para_accion() -> Dictionary:
 		return activo.duplicate(true)
 
 	# Compatibilidad con partidas antiguas que sólo tenían equipamiento.
-	return _obtener_objeto_equipado_para_accion_compatibilidad()
+	return _obtener_objeto_equipado_para_accion()
 
 
-func _obtener_objeto_equipado_para_accion_compatibilidad() -> Dictionary:
+func _obtener_objeto_equipado_para_accion() -> Dictionary:
 	var equipo_variant: Variant = inventory.obtener_equipamiento()
 	if not equipo_variant is Dictionary:
 		return {}
