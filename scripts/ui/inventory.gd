@@ -641,56 +641,6 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 		_emitir_objeto_activo()
 	return resultado
 
-func _puede_apilar_con(
-	existente: Dictionary,
-	nuevo_objeto: Dictionary
-) -> bool:
-	if existente.is_empty() or nuevo_objeto.is_empty():
-		return false
-
-	var max_stack_existente: int = maxi(
-		1,
-		int(existente.get("max_stack", 1))
-	)
-	var max_stack_nuevo: int = maxi(
-		1,
-		int(nuevo_objeto.get("max_stack", 1))
-	)
-
-	if max_stack_existente <= 1 or max_stack_nuevo <= 1:
-		return false
-
-	var id_existente: String = str(
-		existente.get(
-			"id",
-			existente.get("item_id", "")
-		)
-	).strip_edges()
-
-	var id_nuevo: String = str(
-		nuevo_objeto.get(
-			"id",
-			nuevo_objeto.get("item_id", "")
-		)
-	).strip_edges()
-
-	if not id_existente.is_empty() and not id_nuevo.is_empty():
-		return id_existente == id_nuevo
-
-	var nombre_existente: String = str(
-		existente.get("nombre", "")
-	).strip_edges().to_lower()
-
-	var nombre_nuevo: String = str(
-		nuevo_objeto.get("nombre", "")
-	).strip_edges().to_lower()
-
-	return (
-		nombre_existente == nombre_nuevo
-		and not nombre_existente.is_empty()
-	)
-
-
 func usar_objeto_activo(usuario: Node = null) -> bool:
 	var indice: int = obtener_indice_inventario_hotbar(
 		indice_hotbar_activo
