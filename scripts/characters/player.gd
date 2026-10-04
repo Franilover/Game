@@ -92,8 +92,7 @@ func configurar_dependencias(
 	ium_manager: IUMManager = null,
 	entity_manager: WorldEntityManager = null,
 	supabase_client: GarliaSupabaseClient = null,
-	game_state: GameStateService = null,
-	auth: Node = null
+	game_state: GameStateService = null
 ) -> void:
 	_inventory_ref = inventory
 	_world_context_ref = world_context
@@ -101,14 +100,13 @@ func configurar_dependencias(
 	_entity_manager_ref = entity_manager
 	_supabase_client_ref = supabase_client
 	_game_state_ref = game_state
-	_auth_ref = auth
 	_configurar_eterium_desde_supabase()
 	_configurar_especie_eterium_game_desde_supabase()
 
 
 func get_jugador_id() -> String:
-	if _auth_ref != null and is_instance_valid(_auth_ref) and _auth_ref.has_method("obtener_user_id"):
-		return str(_auth_ref.call("obtener_user_id"))
+	if GarliaAuth != null and GarliaAuth.has_method("obtener_user_id"):
+		return str(GarliaAuth.obtener_user_id())
 
 	return ""
 
