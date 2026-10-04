@@ -3,12 +3,12 @@ extends Node2D
 @export var pantalla_completa: bool = true
 @export var camera_zoom: float = 2.0
 
-var _player: Node = null
+var _player: Player = null
 var _camera: Camera2D = null
 var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _input_router: Node = $Systems/GameplayInputRouter
 
-@onready var _hud: Control = $UI/HUD
+@onready var _hud: HUD = $UI/HUD
 @onready var _inventory: GarliaInventory = $UI/Inventory
 @onready var _interaction_system: Node = $Systems/InteractionSystem
 @onready var _combat_system: CombatSystem = $Systems/CombatSystem
@@ -72,19 +72,17 @@ func _process(_delta: float) -> void:
 
 
 func _inicializar_jugador(world_gen: WorldGenerator) -> void:
-	_player = $Entities/Player
+	_player = $Entities/Player as Player
 
 	if _player == null:
 		push_error("Main: no se encontró Entities/Player.")
 		return
 
-	if _player.has_method("set_spawn_from_world"):
-		_player.set_spawn_from_world(_world_context)
+	_player.set_spawn_from_world(_world_context)
 
 	world_gen.registrar_jugador(_player)
 
-	if _player.has_method("configurar_dependencias"):
-		_player.call("configurar_dependencias", _inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameState)
+	_player.configurar_dependencias(_inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameState)
 
 	_configurar_camara()
 	_configurar_hud(_world_context, world_gen)
@@ -153,10 +151,7 @@ func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator) -> 
 		push_error("Main: no se encontró UI/HUD.")
 		return
 
-	if _hud.has_method("configurar"):
-		_hud.call("configurar", _player, world_context, MissionManager, world_gen.entity_manager, _supabase_client, _inventory, WorldData, GameState)
-	else:
-		push_error("Main: HUD no tiene configurar().")
+	_hud.configurar(_player, world_context, MissionManager, world_gen.entity_manager, _supabase_client, _inventory, WorldData, GameState)
 
 
 func _configurar_interaccion(world_gen: WorldGenerator) -> void:
@@ -177,16 +172,14 @@ func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 		return
 
 	if objetivo == null or not is_instance_valid(objetivo):
-		if _hud.has_method("ocultar_interaccion"):
-			_hud.call("ocultar_interaccion")
+		_hud.ocultar_interaccion()
 		return
 
 	var texto := "Recoger"
 	if objetivo.has_method("get_interaction_text"):
 		texto = str(objetivo.call("get_interaction_text"))
 
-	if _hud.has_method("mostrar_interaccion"):
-		_hud.call("mostrar_interaccion", texto)
+	_hud.mostrar_interaccion(texto)
 
 
 func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator) -> void:
@@ -218,12 +211,11 @@ func _configurar_inventario() -> void:
 		push_error("Main: no se encontró UI/Inventory.")
 		return
 
-	if _inventory.has_method("configurar"):
-		_inventory.call("configurar", _player, _world_entity_spawner, _world_context, RelationshipSystem, _world_items)
+	_inventory.configurar(_player, _world_entity_spawner, _world_context, RelationshipSystem, _world_items)
 
 	var router: Node = _input_router
-	if router != null and _inventory.has_method("configurar_input_gate"):
-		_inventory.call("configurar_input_gate", router)
+	if router != null:
+		_inventory.configurar_input_gate(router)
 	if _pause_menu.has_method("configurar"):
 		_pause_menu.call("configurar", _inventory)
 	if _death_menu.has_method("configurar"):
