@@ -28,6 +28,24 @@ var _escena_actual: Node = null
 var _objetos_generados_en_escena: bool = false
 
 var _posicion_drops_pendiente: Vector2 = Vector2.ZERO
+var _player: Node2D = null
+var _inventory: Node = null
+var _entities_root: Node = null
+var _world_context: Node = null
+var _mission_manager: Node = null
+var _world_items: Array[Node2D] = []
+
+
+func configurar_dependencias(jugador: Node, inventario: Node, entities_root: Node, world_context: Node, mission_manager: Node) -> void:
+	var root_cambio := _entities_root != entities_root
+	_player = jugador as Node2D
+	_inventory = inventario
+	_entities_root = entities_root
+	_world_context = world_context
+	_mission_manager = mission_manager
+	if root_cambio:
+		_objetos_generados_en_escena = false
+		_escena_actual = entities_root
 
 
 func _ready() -> void:
@@ -47,24 +65,13 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	var escena := get_tree().current_scene
-
-	if escena != _escena_actual:
-		_escena_actual = escena
-		_objetos_generados_en_escena = false
-
-	if catalogo.is_empty():
+	if catalogo.is_empty() or _objetos_generados_en_escena:
 		return
-
-	if _objetos_generados_en_escena:
+	if _player == null or not is_instance_valid(_player):
 		return
-
-	var jugador := get_tree().get_first_node_in_group("player")
-
-	if not jugador is Node2D:
+	if _entities_root == null or not is_instance_valid(_entities_root):
 		return
-
-	_generar_objetos_en_mundo(jugador as Node2D)
+	_generar_objetos_en_mundo(_player)
 
 
 func cargar_catalogo() -> void:
