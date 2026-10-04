@@ -7,10 +7,10 @@ signal simulacion_completada(proceso: Dictionary)
 signal simulacion_fallida(mensaje: String)
 signal registro_completado()
 
-var _client: SupabaseClient
+var _client: GarliaSupabaseClient
 var _requests: Dictionary = {}
 
-func configurar(client: SupabaseClient) -> void:
+func configurar(client: GarliaSupabaseClient) -> void:
 	_client = client
 	if _client != null and not _client.request_completed.is_connected(_al_request):
 		_client.request_completed.connect(_al_request)
@@ -18,18 +18,18 @@ func configurar(client: SupabaseClient) -> void:
 func cargar_iums() -> void:
 	if _client == null:
 		return
-	_registrar(_client.rpc("get_iums_disponibles"), "iums")
+	_registrar(_client.solicitar_rpc("get_iums_disponibles"), "iums")
 
 func cargar_procesos(jugador_id: String) -> void:
 	if _client == null or jugador_id.is_empty():
 		return
-	_registrar(_client.rpc("get_procesos_jugador", {"jugador_id": jugador_id}), "procesos")
+	_registrar(_client.solicitar_rpc("get_procesos_jugador", {"jugador_id": jugador_id}), "procesos")
 
 func simular(jugador_id: String, nodos: Array, enlaces: Array) -> void:
 	if _client == null:
 		simulacion_fallida.emit("Repositorio IUM no configurado.")
 		return
-	_registrar(_client.rpc("simular_organizacion_ium_v1", {
+	_registrar(_client.solicitar_rpc("simular_organizacion_ium_v1", {
 		"jugador_id": jugador_id,
 		"nodos": nodos,
 		"enlaces": enlaces
@@ -38,7 +38,7 @@ func simular(jugador_id: String, nodos: Array, enlaces: Array) -> void:
 func registrar_intento(jugador_id: String, proceso_id: String) -> void:
 	if _client == null or jugador_id.is_empty():
 		return
-	_registrar(_client.rpc("registrar_intento_simulador", {
+	_registrar(_client.solicitar_rpc("registrar_intento_simulador", {
 		"jugador_id": jugador_id,
 		"proceso_id": proceso_id,
 		"exitoso": true
