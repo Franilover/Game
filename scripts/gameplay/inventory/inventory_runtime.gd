@@ -22,6 +22,14 @@ func obtener_item(indice: int) -> Dictionary:
 func seleccionar_hotbar(indice: int) -> bool:
 	return hotbar.seleccionar(indice)
 
+func establecer_equipamiento(equipamiento: Dictionary) -> void:
+	equipment.limpiar()
+	for clave_variant in equipamiento.keys():
+		var clave := str(clave_variant)
+		var item_variant: Variant = equipamiento.get(clave, {})
+		if item_variant is Dictionary and not (item_variant as Dictionary).is_empty():
+			equipment.equipar(clave, item_variant as Dictionary)
+
 func equipar(slot: String, item: Dictionary) -> void:
 	equipment.equipar(slot, item)
 
