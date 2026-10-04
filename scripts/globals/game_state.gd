@@ -287,7 +287,7 @@ func iniciar_partida(id: String) -> bool:
 			estado_variant as Dictionary
 		)
 
-	current_scene = "res://scenes/wold/main.tscn"
+	current_scene = "res://scenes/world/main.tscn"
 	_partida_aplicada_en_escena = false
 	_autosave_timer = 0.0
 
@@ -584,7 +584,7 @@ func _estado_base_partida(
 			"flags": {
 				"personaje": personaje.duplicate(true)
 			} if not personaje.is_empty() else {},
-			"scene": "res://scenes/wold/main.tscn"
+			"scene": "res://scenes/world/main.tscn"
 		}
 	}
 
