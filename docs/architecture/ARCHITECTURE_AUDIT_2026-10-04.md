@@ -227,3 +227,13 @@ Los servicios que pertenecen a una partida activa deben declararse en Main y rec
 - `Main` compone explícitamente `MissionManager` con `WorldData` después de construir el contexto de juego.
 - Se mantiene `MissionManager` como servicio global por ahora porque su estado de progreso atraviesa la navegación; no se elimina un autoload sin demostrar que su ciclo de vida pueda migrarse sin romper la sesión.
 - La separación actual queda: datos canónicos en `WorldData`, estado/progreso en `MissionManager`, presentación en `HUD`.
+
+
+## Octava barrida — combate, interacción y HUD
+
+- `CombatSystem` ya no se registra como dependencia global mediante grupo; `Main` le inyecta `WorldEntityManager`.
+- El acceso al `AIController` quedó encapsulado en una única frontera interna de `CombatSystem`; se evita repetir la búsqueda en cada resolución de daño.
+- `HUD` deja de consultar `WorldData` directamente como global para su información de versión: recibe el snapshot desde `Main`.
+- `InteractionSystem` mantiene la selección contextual separada de `InteractionController`; el controller sigue sin conocer HUD, Supabase ni inventario.
+- `InventoryRuntime` conserva la separación explícita entre inventario, hotbar y equipamiento; no se fusionan porque la selección de hotbar no representa equipamiento.
+- Próxima revisión: `Player` y `WorldGenerator`, buscando sacar administración/configuración de personaje y reducir orquestación duplicada sin alterar el contrato canónico.
