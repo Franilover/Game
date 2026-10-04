@@ -1018,7 +1018,39 @@ func _construir_asset_path_prop(prop: Dictionary) -> String:
 	if nombre.is_empty():
 		return ""
 
-	return "res://assets/art/props/" + nombre + ".png"
+	var candidatos: Array[String] = [
+		"res://assets/art/props/" + nombre + ".png",
+		"res://assets/art/props/" + _quitar_acentos(nombre) + ".png"
+	]
+
+	# La clave canónica permite encontrar assets cuyo nombre visual no coincide
+	# exactamente con el nombre mostrado en Supabase (por ejemplo Árbol/Arbol).
+	var clave := str(prop.get("clave", "")).strip_edges()
+	if not clave.is_empty():
+		var clave_visual := clave.capitalize()
+		candidatos.append(
+			"res://assets/art/props/" + clave_visual + ".png"
+		)
+		candidatos.append(
+			"res://assets/art/props/" + _quitar_acentos(clave_visual) + ".png"
+		)
+
+	for ruta in candidatos:
+		if FileAccess.file_exists(ruta):
+			return ruta
+
+	return ""
+
+
+func _quitar_acentos(texto: String) -> String:
+	var resultado := texto
+	resultado = resultado.replace("á", "a").replace("Á", "A")
+	resultado = resultado.replace("é", "e").replace("É", "E")
+	resultado = resultado.replace("í", "i").replace("Í", "I")
+	resultado = resultado.replace("ó", "o").replace("Ó", "O")
+	resultado = resultado.replace("ú", "u").replace("Ú", "U")
+	resultado = resultado.replace("ñ", "n").replace("Ñ", "N")
+	return resultado
 
 
 func _elegir_prop_ponderado(
