@@ -65,7 +65,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_combate(_world_context)
 	_configurar_inventario()
 	if GameState.has_method("configurar_dependencias"):
-		GameState.call("configurar_dependencias", _inventory, _player, world_gen, _world_atmosphere)
+		GameState.call("configurar_dependencias", _inventory, _player, _world_context, _world_atmosphere)
 	_configurar_dialogo()
 	if MissionManager.has_method("configurar_dependencias"):
 		MissionManager.call("configurar_dependencias", _player, world_gen.entity_manager)
