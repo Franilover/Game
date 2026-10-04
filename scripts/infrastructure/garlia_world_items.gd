@@ -625,6 +625,11 @@ func _eliminar_objetos_del_mundo() -> void:
 	var contenedor := _entities_root.get_node_or_null("WorldItems")
 	if contenedor != null:
 		contenedor.queue_free()
-	_world_items = _world_items.filter(func(item: Node2D) -> bool:
-		return is_instance_valid(item) and item.get_parent() != contenedor
-	)
+	var restantes: Array[Node2D] = []
+	for item in _world_items:
+		if not is_instance_valid(item):
+			continue
+		if contenedor != null and item.get_parent() == contenedor:
+			continue
+		restantes.append(item)
+	_world_items = restantes
