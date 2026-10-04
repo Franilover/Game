@@ -531,20 +531,18 @@ func _al_recibir_impacto_proyectil(
 		and bool(objetivo.get("is_alive"))
 		and _obtener_ai_controller(objetivo) != null
 	):
-		var ai: Node = _obtener_ai_controller(objetivo)
-		if ai != null and ai.has_method("al_recibir_ataque_con_arma"):
-			ai.call("al_recibir_ataque_con_arma", arma)
+		var ai: CreatureAI = _obtener_ai_controller(objetivo)
+		if ai != null:
+			ai.al_recibir_ataque_con_arma(arma)
 
 	CombatFeedback.impacto(objetivo, ataque.damage)
 	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
 
 
-func _obtener_ai_controller(objetivo: Node) -> Node:
+func _obtener_ai_controller(objetivo: Node) -> CreatureAI:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return null
-	if not objetivo.has_node("AIController"):
-		return null
-	return objetivo.get_node_or_null("AIController")
+	return objetivo.get_node_or_null("AIController") as CreatureAI
 
 
 func _obtener_modo_ataque(
@@ -768,15 +766,10 @@ func _aplicar_danio(
 		and bool(objetivo.get("is_alive"))
 		and objetivo.has_node("AIController")
 	):
-		var ai: Node = _obtener_ai_controller(objetivo)
+		var ai: CreatureAI = _obtener_ai_controller(objetivo)
 
-		if ai != null and ai.has_method(
-			"al_recibir_ataque_con_arma"
-		):
-			ai.call(
-				"al_recibir_ataque_con_arma",
-				arma
-			)
+		if ai != null:
+			ai.al_recibir_ataque_con_arma(arma)
 
 	_notificar_feedback_impacto(objetivo)
 
