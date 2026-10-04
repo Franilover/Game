@@ -90,14 +90,29 @@ func _crear_capa_bioma(bioma_nombre: String) -> TileMapDual:
 	layer.rendering_quadrant_size = 32
 	layer.tile_set = _crear_tileset()
 
-	# Test real: el shader se aplica a la capa, pero solo añade detalle
-	# cuando el atlas que se está dibujando es Pradera.png.
-	# Las demás zonas conservan su render normal.
-	var grass_shader := load("res://shaders/grass_detail_test.gdshader") as Shader
-	if grass_shader != null:
-		var grass_material := ShaderMaterial.new()
-		grass_material.shader = grass_shader
-		layer.material = grass_material
+	# Test del overlay grande: se aplica únicamente a Pradera.
+	# El patrón se proyecta en coordenadas de mundo, así que no se reinicia
+	# en cada tile ni rompe las transiciones de TileMapDual.
+	if clave == "Pradera":
+		var grass_shader := load(
+			"res://shaders/grass_overlay_test.gdshader"
+		) as Shader
+		var overlay_texture := load(
+			"res://assets/shader/grass_overlay_test.svg"
+		) as Texture2D
+
+		if grass_shader != null and overlay_texture != null:
+			var grass_material := ShaderMaterial.new()
+			grass_material.shader = grass_shader
+			grass_material.set_shader_parameter(
+				"overlay",
+				overlay_texture
+			)
+			grass_material.set_shader_parameter(
+				"tile_size",
+				float(tile_size)
+			)
+			layer.material = grass_material
 
 	add_child(layer)
 
