@@ -547,6 +547,7 @@ func _finalizar_chunk() -> void:
 	_ultimo_chunk_generado = coord
 
 	var total_ms: float = _profiler_data_ms + _profiler_paint_ms
+	var visual_profile: Dictionary = visual.obtener_profiler() if visual != null else {}
 	print(
 		"World Profiler | chunk ",
 		coord,
@@ -571,15 +572,23 @@ func _finalizar_chunk() -> void:
 		" ms / ",
 		_profiler_flushes,
 		" | visual_set_zone=",
-		"%.2f" % float(visual.obtener_profiler().get("set_zone_ms", 0.0)),
-		" ms | visual_set_cell=",
-		"%.2f" % float(visual.obtener_profiler().get("set_cell_ms", 0.0)),
-		" ms | visual_variaciones=",
-		"%.2f" % float(visual.obtener_profiler().get("variation_ms", 0.0)),
+		"%.2f" % float(visual_profile.get("set_zone_ms", 0.0)),
+		" ms/", int(visual_profile.get("set_zone_calls", 0)), " llamadas",
+		" | visual_set_cell=",
+		"%.2f" % float(visual_profile.get("set_cell_ms", 0.0)),
+		" ms/", int(visual_profile.get("set_cell_calls", 0)), " llamadas",
+		" | visual_variaciones_dirty=",
+		"%.2f" % float(visual_profile.get("variation_ms", 0.0)),
 		" ms | visual_dirty=",
-		"%.2f" % float(visual.obtener_profiler().get("dirty_ms", 0.0)),
-		" ms | visual_set_calls=",
-		int(visual.obtener_profiler().get("set_cell_calls", 0)),
+		"%.2f" % float(visual_profile.get("dirty_ms", 0.0)),
+		" ms | flush_convert=",
+		"%.2f" % float(visual_profile.get("flush_convert_ms", 0.0)),
+		" ms | flush_update=",
+		"%.2f" % float(visual_profile.get("flush_update_ms", 0.0)),
+		" ms/", int(visual_profile.get("flush_update_calls", 0)), " updates/", int(visual_profile.get("flush_cells", 0)), " celdas",
+		" | flush_variaciones=",
+		"%.2f" % float(visual_profile.get("flush_variation_ms", 0.0)),
+		" ms/", int(visual_profile.get("flush_variation_cells", 0)), " celdas",
 	)
 
 	_generation_task.clear()
