@@ -13,8 +13,6 @@ var _cargado: bool = false
 var _repository: Node = null
 
 
-func _ready() -> void:
-	add_to_group("relationship_system")
 
 
 func configurar(repository: Node) -> void:
