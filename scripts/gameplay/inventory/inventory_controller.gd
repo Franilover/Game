@@ -135,3 +135,12 @@ func consumir_durabilidad(indice: int) -> bool:
 func limpiar() -> void:
 	runtime.limpiar()
 	inventario_cambio.emit()
+
+func consumir_durabilidad_equipo(slot: String) -> bool:
+	if not puede_interactuar():
+		return false
+	var resultado: bool = runtime.consumir_durabilidad_equipo(slot)
+	if resultado:
+		equipo_cambio.emit(slot, runtime.obtener_equipo(slot))
+		inventario_cambio.emit()
+	return resultado
