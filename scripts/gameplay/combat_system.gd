@@ -78,12 +78,12 @@ func procesar_accion_primaria() -> bool:
 
 	# El router ya resolvió la prioridad de interacción.
 	# Aquí solo se decide la acción primaria de combate.
-	var objeto_equipado := _obtener_objeto_equipado_para_accion()
-	var modo := "arma_equipada" if _es_objeto_ataque(objeto_equipado) else "desarmado"
+	var objeto_activo := _obtener_objeto_activo_para_accion()
+	var modo := "arma_equipada" if _es_objeto_ataque(objeto_activo) else "desarmado"
 
 	return combat_controller.solicitar_ataque(
 		_obtener_direccion_ataque(),
-		objeto_equipado,
+		objeto_activo,
 		modo
 	)
 
@@ -296,29 +296,31 @@ func usar_objeto_activo() -> void:
 	_atacar_con_objeto(objeto_activo)
 
 
-func _obtener_objeto_equipado_para_accion() -> Dictionary:
+func _obtener_objeto_activo_para_accion() -> Dictionary:
 	if inventory == null:
 		return {}
 
+	# La acción primaria usa el objeto seleccionado en la hotbar.
+	# Hotbar y equipamiento son estados distintos.
+	var activo := inventory.obtener_objeto_activo()
+	if not activo.is_empty():
+		return activo.duplicate(true)
+
+	# Compatibilidad con partidas antiguas que sólo tenían equipamiento.
+	return _obtener_objeto_equipado_para_accion_compatibilidad()
+
+
+func _obtener_objeto_equipado_para_accion_compatibilidad() -> Dictionary:
 	var equipo_variant: Variant = inventory.obtener_equipamiento()
 	if not equipo_variant is Dictionary:
 		return {}
 	var equipo := equipo_variant as Dictionary
-
 	for clave_variant in ["mano_principal", "mano_secundaria"]:
 		var clave := str(clave_variant)
 		var candidato_variant: Variant = equipo.get(clave, {})
 		if candidato_variant is Dictionary and _es_objeto_ataque(candidato_variant as Dictionary):
 			_inventory_equipment_slot = clave
 			return (candidato_variant as Dictionary).duplicate(true)
-
-	for clave_variant in equipo.keys():
-		var clave := str(clave_variant)
-		var candidato_variant: Variant = equipo.get(clave, {})
-		if candidato_variant is Dictionary and _es_objeto_ataque(candidato_variant as Dictionary):
-			_inventory_equipment_slot = clave
-			return (candidato_variant as Dictionary).duplicate(true)
-
 	return {}
 
 
