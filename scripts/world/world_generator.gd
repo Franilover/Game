@@ -28,13 +28,21 @@ func _ready() -> void:
 	_crear_sistemas()
 
 	if WorldData.esta_cargado():
-		_inicializar_mundo()
+		# Main inyecta el root de entidades durante su _ready().
+		# Diferimos un ciclo para que la Composition Root complete
+		# las dependencias antes de iniciar el mundo.
+		call_deferred("_inicializar_mundo_si_corresponde")
 	else:
 		WorldData.mundo_listo.connect(
 			_inicializar_mundo,
 			CONNECT_ONE_SHOT
 		)
 
+
+func _inicializar_mundo_si_corresponde() -> void:
+	if _world_ready:
+		return
+	_inicializar_mundo()
 
 func configurar_entidades(root: Node) -> void:
 	_entities_root = root
