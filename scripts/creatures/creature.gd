@@ -310,6 +310,12 @@ func get_datos() -> Dictionary:
 	return datos
 
 
+func configurar_relaciones_ecologicas(relaciones_ecologicas: Array) -> void:
+	var ai := get_node_or_null("AIController") as CreatureAI
+	if ai != null:
+		ai.configurar_relaciones_ecologicas(relaciones_ecologicas)
+
+
 func obtener_config_ia() -> Dictionary:
 	var valor: Variant = datos.get(
 		"ia_config",
