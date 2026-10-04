@@ -54,6 +54,9 @@ var facing: Vector2 = Vector2.DOWN
 
 var stamina: float = 0.0
 var stamina_controller := PlayerStaminaController.new()
+var eterium_runtime := PlayerEteriumRuntime.new()
+var eterium := PlayerEteriumCoordinator.new()
+var input_gate := GameplayInputGate.new()
 
 var _world_generator_ref: Node = null
 var _admin_console_ref: Node = null
@@ -88,6 +91,10 @@ func _ready() -> void:
 
 	add_to_group("player")
 
+	add_child(input_gate)
+	add_child(Node.new())
+	eterium.configurar(eterium_runtime, stamina_controller)
+	eterium.configurar_vital(vital_state)
 	stamina_controller.configurar(max_stamina)
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
 	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
@@ -140,7 +147,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# Curación con Eterium mientras se mantiene Q.
-	if Input.is_action_pressed("focus") and not _eterium_vida_compartida():
+	if Input.is_action_pressed("focus") and not eterium.vida_eterium_compartidos():
 		_procesar_curacion_eterium(delta)
 		return
 
@@ -165,7 +172,7 @@ func _physics_process(delta: float) -> void:
 
 	var eterium_sprint := false
 	if Input.is_action_pressed("eterium_sprint") and direction != Vector2.ZERO:
-		eterium_sprint = _procesar_carrera_eterium(delta)
+		eterium_sprint = eterium.procesar_carrera(delta)
 
 	var is_running := (
 		shift_pressed
@@ -190,7 +197,7 @@ func _physics_process(delta: float) -> void:
 	var speed: float
 
 	if eterium_sprint:
-		speed = move_speed * run_multiplier * _eterium_carrera_multiplicador()
+		speed = move_speed * run_multiplier * 1.0
 	elif is_running:
 		speed = move_speed * run_multiplier
 	else:
@@ -302,7 +309,7 @@ func _esta_bloqueado_por_interfaz() -> bool:
 		_admin_console_ref = get_tree().get_first_node_in_group("admin_console")
 	if is_instance_valid(_admin_console_ref) and bool(_admin_console_ref.get("_abierto")):
 		return true
-	return GameplayInputGate.new().esta_bloqueado()
+	return input_gate.esta_bloqueado()
 
 
 func _actualizar_cooldowns(delta: float) -> void:
@@ -1151,3 +1158,13 @@ func set_spawn_from_world(
 		global_position = (
 			world_gen.get_spawn_position()
 		)
+
+
+func _sync_vital_desde_eterium() -> void:
+	if eterium_runtime == null:
+		return
+	health = vital_state.health
+	mana = vital_state.mana
+	max_health = vital_state.max_health
+	max_mana = vital_state.max_mana
+	is_alive = vital_state.is_alive
