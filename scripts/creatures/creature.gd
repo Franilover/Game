@@ -32,10 +32,6 @@ var limites_chunk: Rect2 = Rect2()
 var entorno: String = "tierra"
 
 var _movimiento: CreatureMovement = null
-var _player_dependency: Node = null
-var _entity_manager_dependency: WorldEntityManager = null
-var _inventory_dependency: GarliaInventory = null
-var _combat_system_dependency: CombatSystem = null
 var _dialogue_system_dependency: DialogueSystem = null
 var _mission_manager_dependency: MissionManagerService = null
 var _effects_root: Node = null
@@ -50,10 +46,6 @@ var _muerte_procesada: bool = false
 
 
 func configurar_dependencias(
-	jugador: Node,
-	entity_manager: WorldEntityManager,
-	inventario: GarliaInventory,
-	combat_system: CombatSystem,
 	dialogue_system: DialogueSystem,
 	mission_manager: MissionManagerService,
 	effects_root: Node,
@@ -61,10 +53,6 @@ func configurar_dependencias(
 	world_data: WorldDataService,
 	relaciones_ecologicas: Array = []
 ) -> void:
-	_player_dependency = jugador
-	_entity_manager_dependency = entity_manager
-	_inventory_dependency = inventario
-	_combat_system_dependency = combat_system
 	_dialogue_system_dependency = dialogue_system
 	_mission_manager_dependency = mission_manager
 	_effects_root = effects_root
