@@ -97,8 +97,8 @@ func serializar() -> Dictionary:
 	}
 
 func equipar_desde_inventario(slot: String, indice: int, item: Dictionary) -> bool:
-	if not puede_interactuar():
-		return false
+	# Equipar desde la interfaz es una acción de inventario, no una entrada
+	# de gameplay. El gate bloquea movimiento/combate, no operaciones de UI.
 	var resultado: bool = runtime.equipar_desde_inventario(slot, indice, item)
 	if resultado:
 		equipo_cambio.emit(slot, runtime.obtener_equipo(slot))
@@ -106,8 +106,8 @@ func equipar_desde_inventario(slot: String, indice: int, item: Dictionary) -> bo
 	return resultado
 
 func desequipar_a_inventario(slot: String) -> bool:
-	if not puede_interactuar():
-		return false
+	# La interfaz debe poder devolver objetos al inventario aunque el gate
+	# esté bloqueando las acciones del personaje.
 	var resultado: bool = runtime.desequipar_a_inventario(slot)
 	if resultado:
 		equipo_cambio.emit(slot, {})
