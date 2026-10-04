@@ -521,10 +521,6 @@ func summon_criatura(
 			criatura
 		)
 
-		creature_node.configurar(
-			criatura_data
-		)
-
 		if _terrain != null:
 			var tile_size := maxi(
 				_terrain.tile_size,
@@ -842,7 +838,6 @@ func _spawn_characters_in_chunk(
 
 		if criatura is Creature:
 			var creature_node := criatura as Creature
-			creature_node.configurar(criatura_data)
 			creature_node.configurar_chunk(chunk_coord, limite_chunk)
 			creature_node.configurar_entorno("general")
 
@@ -961,7 +956,6 @@ func _spawn_props_in_chunk(
 
 		if prop_node is WorldProp:
 			var world_prop := prop_node as WorldProp
-			world_prop.configurar_desde_game_data(elegido)
 			world_prop.configurar_chunk(chunk_coord, limite_chunk)
 
 		creados.append(prop_node)
