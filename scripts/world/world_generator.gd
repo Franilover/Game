@@ -21,6 +21,14 @@ var entity_factory: WorldEntityFactory
 var spawn_rules: WorldSpawnRules
 var atmosphere: WorldAtmosphere
 
+@onready var _terrain_node: WorldTerrain = $WorldTerrain
+@onready var _streamer_node: WorldStreamer = $WorldStreamer
+@onready var _entity_spawner_node: WorldEntitySpawner = $WorldEntitySpawner
+@onready var _entity_manager_node: WorldEntityManager = $WorldEntityManager
+@onready var _entity_factory_node: WorldEntityFactory = $WorldEntityFactory
+@onready var _spawn_rules_node: WorldSpawnRules = $WorldSpawnRules
+@onready var _atmosphere_node: WorldAtmosphere = $WorldAtmosphere
+
 var _world_ready: bool = false
 var _entities_root: Node = null
 var _player_ref: Node2D = null
@@ -66,28 +74,13 @@ func _process(_delta: float) -> void:
 
 
 func _crear_sistemas() -> void:
-	terrain = get_node_or_null("WorldTerrain") as WorldTerrain
-	streamer = get_node_or_null("WorldStreamer") as WorldStreamer
-	entity_spawner = get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
-	entity_manager = get_node_or_null("WorldEntityManager") as WorldEntityManager
-	entity_factory = get_node_or_null("WorldEntityFactory") as WorldEntityFactory
-	spawn_rules = get_node_or_null("WorldSpawnRules") as WorldSpawnRules
-	atmosphere = get_node_or_null("WorldAtmosphere") as WorldAtmosphere
-
-	if terrain == null:
-		push_error("WorldGenerator: falta WorldTerrain en la escena.")
-	if streamer == null:
-		push_error("WorldGenerator: falta WorldStreamer en la escena.")
-	if entity_spawner == null:
-		push_error("WorldGenerator: falta WorldEntitySpawner en la escena.")
-	if entity_manager == null:
-		push_error("WorldGenerator: falta WorldEntityManager en la escena.")
-	if entity_factory == null:
-		push_error("WorldGenerator: falta WorldEntityFactory en la escena.")
-	if spawn_rules == null:
-		push_error("WorldGenerator: falta WorldSpawnRules en la escena.")
-	if atmosphere == null:
-		push_error("WorldGenerator: falta WorldAtmosphere en la escena.")
+	terrain = _terrain_node
+	streamer = _streamer_node
+	entity_spawner = _entity_spawner_node
+	entity_manager = _entity_manager_node
+	entity_factory = _entity_factory_node
+	spawn_rules = _spawn_rules_node
+	atmosphere = _atmosphere_node
 
 
 func _inicializar_mundo() -> void:
