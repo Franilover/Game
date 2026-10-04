@@ -31,6 +31,9 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 
 
 func _ready() -> void:
+	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
+	GarliaSalas.configurar_dependencias(GarliaAuth)
+
 	if WorldData.has_method("configurar_dependencias"):
 		WorldData.call("configurar_dependencias", _supabase_client)
 
