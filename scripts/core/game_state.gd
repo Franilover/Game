@@ -322,7 +322,7 @@ func guardar_partida() -> bool:
 	return resultado
 
 
-func capturar_estado_desde_juego(jugador: Node) -> void:
+func capturar_estado_desde_juego(jugador: Player) -> void:
 	if jugador == null or not is_instance_valid(jugador):
 		return
 
@@ -338,17 +338,11 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	player_state.position_valida = true
 	player_state.tile_valido = false
 
-	var world_context: Node = _world_context
+	var world_context: WorldContext = _world_context
 
-	if world_context != null and world_context.has_method("get_tile_at"):
-		var tile_variant: Variant = world_context.call(
-			"get_tile_at",
-			player_state.position
-		)
-
-		if tile_variant is Vector2i:
-			player_state.tile = tile_variant as Vector2i
-			player_state.tile_valido = true
+	if world_context != null:
+		player_state.tile = world_context.get_tile_at(player_state.position)
+		player_state.tile_valido = true
 
 	var stamina_variant: Variant = jugador.get(
 		"stamina"
@@ -364,35 +358,19 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	if facing_variant is Vector2:
 		player_state.facing = facing_variant as Vector2
 
-	if jugador.has_method("obtener_estado_ium"):
-		var player_flags_variant: Variant = jugador.call("obtener_estado_ium")
-		if player_flags_variant is Dictionary:
-			world_state.flags["proceso_ium_equipado"] = (
-				player_flags_variant as Dictionary
-			).duplicate(true)
+	var player_flags: Dictionary = jugador.obtener_estado_ium()
+	world_state.flags["proceso_ium_equipado"] = player_flags.duplicate(true)
 
 
-	var atmosphere: Node = _world_atmosphere
-	if atmosphere != null and atmosphere.has_method(
-		"obtener_estado_guardado"
-	):
-		var tiempo_variant: Variant = atmosphere.call(
-			"obtener_estado_guardado"
-		)
-
-		if tiempo_variant is Dictionary:
-			world_state.flags["tiempo_mundo"] = (
-				tiempo_variant as Dictionary
-			).duplicate(true)
+	var atmosphere: WorldAtmosphere = _world_atmosphere
+	if atmosphere != null:
+		world_state.flags["tiempo_mundo"] = atmosphere.obtener_estado_guardado().duplicate(true)
 
 	var inventario: GarliaInventory = _inventory
 
 	if inventario != null and is_instance_valid(inventario):
 		var estado_inventario: Dictionary = {}
-		if inventario.has_method("serializar_estado_partida"):
-			var estado_variant: Variant = inventario.call("serializar_estado_partida")
-			if estado_variant is Dictionary:
-				estado_inventario = (estado_variant as Dictionary).duplicate(true)
+		estado_inventario = inventario.serializar_estado_partida().duplicate(true)
 
 		var rol_partida := "explorador"
 		var admin_variant: Variant = world_state.flags.get("personaje_admin", {})
@@ -410,19 +388,12 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 func _capturar_estado_misiones() -> void:
 	if _mission_manager == null or not is_instance_valid(_mission_manager):
 		return
-	if not _mission_manager.has_method("serializar_estado_partida"):
-		return
-	world_state.flags["misiones_estado"] = _mission_manager.call(
-		"serializar_estado_partida"
-	)
+	world_state.flags["misiones_estado"] = _mission_manager.serializar_estado_partida()
 
 
 func _aplicar_estado_misiones() -> void:
 	if _mission_manager == null or not is_instance_valid(_mission_manager):
 		return
-	if not _mission_manager.has_method("cargar_estado_partida"):
-		return
-
 	var datos_variant: Variant = world_state.flags.get("misiones_estado", {})
 	if datos_variant is Dictionary:
 		_mission_manager.call(
@@ -435,7 +406,7 @@ func _conectar_guardado_rapido() -> void:
 	if _guardado_rapido_conectado or active_save_id.is_empty():
 		return
 
-	var inventario: Node = _inventory
+	var inventario: GarliaInventory = _inventory
 	if inventario != null and inventario.has_signal("inventory_changed"):
 		var inventario_callback := Callable(self, "_al_cambio_guardable")
 		if not inventario.inventory_changed.is_connected(inventario_callback):
@@ -775,7 +746,7 @@ func _al_mundo_generado_para_aplicar() -> void:
 
 
 func _aplicar_estado_al_juego() -> void:
-	var jugador: Node = _player
+	var jugador: Player = _player
 
 	if jugador == null or not is_instance_valid(jugador):
 		return
@@ -842,26 +813,16 @@ func _aplicar_estado_al_juego() -> void:
 	if proceso_variant is Dictionary and not (
 		proceso_variant as Dictionary
 	).is_empty():
-		if jugador.has_method("cargar_estado_ium"):
-			jugador.call(
-				"cargar_estado_ium",
-				(proceso_variant as Dictionary).duplicate(true)
-			)
+		jugador.cargar_estado_ium((proceso_variant as Dictionary).duplicate(true))
 
-	var atmosphere: Node = _world_atmosphere
+	var atmosphere: WorldAtmosphere = _world_atmosphere
 	var tiempo_variant: Variant = world_state.flags.get(
 		"tiempo_mundo",
 		{}
 	)
 
 	if atmosphere != null and tiempo_variant is Dictionary:
-		if atmosphere.has_method(
-			"establecer_estado_guardado"
-		):
-			atmosphere.call(
-				"establecer_estado_guardado",
-				(tiempo_variant as Dictionary).duplicate(true)
-			)
+		atmosphere.establecer_estado_guardado((tiempo_variant as Dictionary).duplicate(true))
 
 	_partida_aplicada_en_escena = true
 	_guardado_rapido_conectado = false
@@ -874,7 +835,7 @@ func _aplicar_estado_al_juego() -> void:
 
 
 func _cargar_inventario_al_juego(
-	inventario: Node
+	inventario: GarliaInventory
 ) -> void:
 	var estado_variant: Variant = world_state.flags.get(
 		"inventario_estado",
@@ -899,11 +860,7 @@ func _cargar_inventario_al_juego(
 			admin_guardado["capacidades"] = []
 		world_state.flags["personaje_admin"] = admin_guardado
 
-	if inventario.has_method("cargar_estado_partida"):
-		inventario.call(
-			"cargar_estado_partida",
-			estado.duplicate(true)
-		)
+	inventario.cargar_estado_partida(estado.duplicate(true))
 
 
 func _abrir_escena_principal() -> void:
