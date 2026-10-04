@@ -89,7 +89,7 @@ func configurar_entidades(
 		world_items,
 		relaciones_ecologicas
 	)
-	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules)
+	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules, _world_data)
 
 func _process(_delta: float) -> void:
 	if not _world_ready:
