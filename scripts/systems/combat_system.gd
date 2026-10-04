@@ -197,10 +197,10 @@ func _usar_pala() -> void:
 	if not world_gen.has_method("get_tile_at") or not world_gen.has_method("get_zona_at") or not world_gen.has_method("cambiar_zona_at"):
 		return
 
-	var direccion := _obtener_direccion_ataque()
-	var origen := player.global_position
-	var alcance := _obtener_alcance_arma({})
-	var objetivo_posicion := origen + direccion * maxf(alcance, 16.0)
+	var direccion: Vector2 = _obtener_direccion_ataque()
+	var origen: Vector2 = player.global_position
+	var alcance: float = _obtener_alcance_arma({})
+	var objetivo_posicion: Vector2 = origen + direccion * maxf(alcance, 16.0)
 	var tile: Vector2i = world_gen.call("get_tile_at", objetivo_posicion)
 	var zona: int = int(world_gen.call("get_zona_at", tile))
 
