@@ -65,6 +65,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("primary_action"):
 		return
 
+	# Revalidamos el objetivo justo al hacer click. Así un objeto que
+	# entró en alcance entre dos escaneos no pierde la interacción.
+	_buscar_objetivo()
+
 	# La interacción contextual tiene prioridad absoluta.
 	# Si hay algo recogible/dialogable dentro del alcance, el click
 	# izquierdo se consume aquí antes de mirar la hotbar.
