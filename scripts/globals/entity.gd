@@ -69,7 +69,7 @@ func _crear_hurtbox() -> void:
 
 
 
-func take_damage(cantidad: int) -> void:
+func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 	if not is_alive:
 		return
 
@@ -83,10 +83,13 @@ func take_damage(cantidad: int) -> void:
 	health_changed.emit(health, max_health)
 
 	print(
+		"Damage: ",
+		origen,
+		" → ",
 		name,
-		" recibió ",
+		" | -",
 		dano_real,
-		" de daño. Vida: ",
+		" | Vida: ",
 		health,
 		"/",
 		max_health
