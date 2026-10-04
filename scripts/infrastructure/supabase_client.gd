@@ -112,6 +112,9 @@ func _ready() -> void:
 
 
 func _crear_headers() -> PackedStringArray:
+	if _auth == null:
+		return PackedStringArray()
+
 	return PackedStringArray([
 		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
@@ -128,7 +131,7 @@ func _crear_http_request() -> HTTPRequest:
 
 ## Transporte REST/RPC compartido para repositories.
 func solicitar_rpc(nombre: String, payload: Dictionary = {}) -> int:
-	if _auth == null:
+	if not _esta_configurado():
 		push_error("SupabaseClient: GarliaAuth no configurado.")
 		return -1
 
@@ -141,6 +144,10 @@ func get_rest(recurso: String, query: String = "") -> int:
 	return _request_compartido(path, HTTPClient.METHOD_GET, "")
 
 func _request_compartido(path: String, method: int, body: String) -> int:
+	if not _esta_configurado():
+		push_error("SupabaseClient: no se puede realizar la solicitud sin GarliaAuth.")
+		return -1
+
 	var request_id := _next_request_id
 	_next_request_id += 1
 	var http := HTTPRequest.new()
@@ -158,6 +165,10 @@ func _request_compartido(path: String, method: int, body: String) -> int:
 
 func _emitir_request_fallida(request_id: int) -> void:
 	request_completed.emit(request_id, HTTPRequest.RESULT_REQUEST_FAILED, 0, PackedStringArray(), PackedByteArray())
+
+
+func _esta_configurado() -> bool:
+	return _auth != null and not _auth.SUPABASE_URL.is_empty() and not _auth.SUPABASE_PUBLISHABLE_KEY.is_empty()
 
 
 func cargar_relaciones_ecologicas() -> void:
@@ -595,9 +606,9 @@ func _solicitar_mundo() -> void:
 	if _solicitud_en_curso:
 		return
 
-	if _auth.SUPABASE_PUBLISHABLE_KEY.is_empty():
+	if not _esta_configurado():
 		error_conexion.emit(
-			"Falta configurar la clave pública de Supabase."
+			"Falta configurar las credenciales públicas de Supabase."
 		)
 
 		_programar_siguiente_sincronizacion()
