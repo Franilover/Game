@@ -338,3 +338,12 @@ Esto refuerza la frontera: `WorldEntityManager` administra ciclo de vida/ubicaci
 Se confirmó que la IA real del proyecto es `CreatureAI` (`scripts/creatures/creature_ai.gd`), no un `AIController` tipado como clase independiente. `CombatSystem` ahora resuelve el nodo `AIController` una sola vez y lo convierte al contrato `CreatureAI`, eliminando `has_method()/call()` para `al_recibir_ataque_con_arma`.
 
 La notificación de reacción al recibir un ataque sigue perteneciendo a la IA de la criatura, especialmente porque Zlish usa la información del arma para su comportamiento canónico.
+
+
+## Vigésima segunda barrida — CreatureAI sin acceso directo a Supabase
+
+Se eliminó la dependencia directa de CreatureAI sobre SupabaseClient para relaciones ecológicas. Main obtiene el snapshot disponible desde el cliente de infraestructura y lo entrega a WorldGenerator → WorldEntityFactory → Creature → CreatureAI durante la composición.
+
+CreatureAI conserva únicamente la lectura y evaluación de esas relaciones durante el runtime. Ya no decide cómo obtenerlas ni conoce el transporte REST.
+
+Además, WorldEntityManager quedó tipado directamente en CreatureAI y su consulta de entidades activas ya no usa has_method()/call().
