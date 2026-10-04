@@ -51,7 +51,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 		return
 
 	if _player.has_method("set_spawn_from_world"):
-		_player.set_spawn_from_world(world_gen)
+		_player.set_spawn_from_world(_world_context)
 
 	world_gen.registrar_jugador(_player)
 
