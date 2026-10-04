@@ -113,6 +113,9 @@ func limpiar_todo() -> void:
 	for chunk_variant in chunks:
 		if chunk_variant is Vector2i:
 			despawn_chunk(chunk_variant)
+	for entity_variant in _global_entities:
+		if entity_variant is Node and is_instance_valid(entity_variant):
+			(entity_variant as Node).queue_free()
 	_persistent_by_key.clear()
 	_global_entities.clear()
 
