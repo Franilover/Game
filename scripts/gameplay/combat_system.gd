@@ -534,7 +534,7 @@ func _al_recibir_impacto_proyectil(
 		and bool(objetivo.get("is_alive"))
 		and _obtener_ai_controller(objetivo) != null
 	):
-		var ai: Node = objetivo.get_node_or_null("AIController")
+		var ai: Node = _obtener_ai_controller(objetivo)
 		if ai != null and ai.has_method("al_recibir_ataque_con_arma"):
 			ai.call("al_recibir_ataque_con_arma", arma)
 
