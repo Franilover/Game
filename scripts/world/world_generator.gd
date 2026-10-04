@@ -18,6 +18,7 @@ var streamer: WorldStreamer
 var entity_spawner: WorldEntitySpawner
 var entity_manager: WorldEntityManager
 var entity_factory: WorldEntityFactory
+var spawn_rules: WorldSpawnRules
 var atmosphere: WorldAtmosphere
 
 var _world_ready: bool = false
@@ -48,11 +49,12 @@ func _inicializar_mundo_si_corresponde() -> void:
 
 func configurar_entidades(root: Node) -> void:
 	_entities_root = root
-	if entity_manager == null or entity_spawner == null or entity_factory == null:
+	if entity_manager == null or entity_spawner == null or entity_factory == null or spawn_rules == null:
 		push_error("WorldGenerator: dependencias de entidades incompletas.")
 		return
 	entity_manager.configurar(_entities_root)
-	entity_spawner.configurar(terrain, entity_manager, entity_factory)
+	spawn_rules.configurar(terrain)
+	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules)
 
 func _process(_delta: float) -> void:
 	if not _world_ready:
@@ -68,6 +70,7 @@ func _crear_sistemas() -> void:
 	entity_spawner = get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
 	entity_manager = get_node_or_null("WorldEntityManager") as WorldEntityManager
 	entity_factory = get_node_or_null("WorldEntityFactory") as WorldEntityFactory
+	spawn_rules = get_node_or_null("WorldSpawnRules") as WorldSpawnRules
 	atmosphere = get_node_or_null("WorldAtmosphere") as WorldAtmosphere
 
 	if terrain == null:
@@ -80,6 +83,8 @@ func _crear_sistemas() -> void:
 		push_error("WorldGenerator: falta WorldEntityManager en la escena.")
 	if entity_factory == null:
 		push_error("WorldGenerator: falta WorldEntityFactory en la escena.")
+	if spawn_rules == null:
+		push_error("WorldGenerator: falta WorldSpawnRules en la escena.")
 	if atmosphere == null:
 		push_error("WorldGenerator: falta WorldAtmosphere en la escena.")
 
