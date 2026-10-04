@@ -6,6 +6,7 @@ extends Node2D
 var _player: Node = null
 var _camera: Camera2D = null
 var _ultima_posicion_camara: Vector2 = Vector2.INF
+var _input_router: Node = null
 
 @onready var _hud: Control = $UI/HUD
 @onready var _inventory: Control = $UI/Inventory
@@ -49,7 +50,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	world_gen.registrar_jugador(_player)
 
 	if _player.has_method("configurar_dependencias"):
-		_player.call("configurar_dependencias", _inventory, world_gen)
+		_player.call("configurar_dependencias", _inventory, world_gen, _ium_manager, world_gen.entity_manager)
 
 	_configurar_camara()
 	_configurar_hud(world_gen)
@@ -120,7 +121,7 @@ func _configurar_hud(world_gen: Node) -> void:
 		return
 
 	if _hud.has_method("configurar"):
-		_hud.call("configurar", _player, world_gen)
+		_hud.call("configurar", _player, world_gen, MissionManager)
 	else:
 		push_error("Main: HUD no tiene configurar().")
 
@@ -134,7 +135,7 @@ func _configurar_interaccion() -> void:
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
 	if _interaction_system.has_method("configurar"):
-		_interaction_system.configurar(_player, _inventory, GarliaWorldItems)
+		_interaction_system.configurar(_player, _inventory, GarliaWorldItems, _input_router)
 	else:
 		push_error("Main: InteractionSystem no tiene configurar().")
 
@@ -166,6 +167,7 @@ func _configurar_combate(world_gen: Node) -> void:
 
 func _configurar_input_router() -> void:
 	var router := get_node_or_null("/root/GameplayInputRouter")
+	_input_router = router
 	if router == null:
 		push_error("Main: no se encontró GameplayInputRouter.")
 		return
@@ -188,7 +190,7 @@ func _configurar_inventario() -> void:
 	if _inventory.has_method("configurar"):
 		_inventory.call("configurar", _player)
 
-	var router := get_node_or_null("/root/GameplayInputRouter")
+	var router: Node = _input_router
 	if router != null and _inventory.has_method("configurar_input_gate"):
 		_inventory.call("configurar_input_gate", router)
 
