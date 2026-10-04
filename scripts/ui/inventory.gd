@@ -9,6 +9,8 @@ const EQUIPMENT_SLOT_SCENE: PackedScene = preload(
 
 const HOTBAR_SLOT_COUNT: int = 8
 
+var inventory_controller := InventoryController.new()
+
 @export var slot_count: int = 24
 
 signal inventory_changed
@@ -80,6 +82,7 @@ func _inicializar_navegacion_tabs() -> void:
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_to_group("inventory")
+	add_child(inventory_controller)
 
 	_inicializar_items()
 	_inicializar_hotbar()
@@ -227,6 +230,17 @@ func _crear_slots() -> void:
 	actualizar()
 
 
+func _sincronizar_runtime() -> void:
+	var items_runtime: Array = []
+	for item in items:
+		items_runtime.append(item.duplicate(true))
+	inventory_controller.configurar_items(items_runtime, hotbar_indices)
+	for clave_variant in equipo.keys():
+		var clave := str(clave_variant)
+		var item_variant: Variant = equipo.get(clave, {})
+		if item_variant is Dictionary and not (item_variant as Dictionary).is_empty():
+			inventory_controller.equipar(clave, item_variant as Dictionary)
+
 func actualizar() -> void:
 	for i in range(slot_nodes.size()):
 		var slot := slot_nodes[i]
@@ -286,6 +300,7 @@ func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
 	items[indice_destino] = origen
 
 	actualizar()
+	_sincronizar_runtime()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
@@ -1311,6 +1326,7 @@ func consumir_durabilidad_objeto_activo() -> bool:
 		)
 		items[indice_inventario] = {}
 		actualizar()
+		_sincronizar_runtime()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
 		return true
