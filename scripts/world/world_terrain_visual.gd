@@ -563,7 +563,7 @@ func _marcar_variaciones_dirty(
 	# deben revisarse porque pueden pasar a ser interiores o bordes.
 	# En ese caso no hace falta consultar cinco veces el diccionario: sabemos
 	# que la celda central es decorativa y añadimos directamente el vecindario.
-	if VARIACIONES_POR_BIOMA.has(bioma_actual):
+	if bioma_actual == "Pradera" or bioma_actual == "Bosque":
 		for offset: Vector2i in UPDATE_NEIGHBORS:
 			_dirty_variations[cell + offset] = true
 		return
