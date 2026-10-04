@@ -17,6 +17,7 @@ var _input_router: Node = GameplayInputRouter
 @onready var _ium_lab: Control = $UI/IUMLab
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: Node = $Systems/IUMRepository
+@onready var _game_camera: Camera2D = $GameCamera
 
 
 func _ready() -> void:
@@ -81,12 +82,11 @@ func _configurar_camara() -> void:
 	if camara_actual != null:
 		camara_actual.enabled = false
 
-	_camera = get_node_or_null("GameCamera") as Camera2D
+	_camera = _game_camera
 
 	if _camera == null:
-		_camera = Camera2D.new()
-		_camera.name = "GameCamera"
-		add_child(_camera)
+		push_error("Main: falta GameCamera en la escena.")
+		return
 
 	_camera.enabled = true
 	_camera.zoom = Vector2(camera_zoom, camera_zoom)
