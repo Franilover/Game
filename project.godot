@@ -17,8 +17,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-Events="*res://scripts/globals/events.gd"
-GameState="*res://scripts/globals/game_state.gd"
+Events="*res://scripts/core/events.gd"
+GameState="*res://scripts/core/game_state.gd"
 SceneManager="*uid://bfjh825dher2d"
 SupabaseClient="*uid://csnrdxlxcx6os"
 WorldData="*uid://g8wte3vf4083"
@@ -26,8 +26,8 @@ GarliaAuth="*uid://dkyg06kgibana"
 GarliaMultiplayer="*uid://dy1ypxqjxvg7x"
 GarliaWorldItems="*uid://bofhgy132htd8"
 GarliaSalas="*uid://txc18ojymio3"
-MissionManager="*res://scripts/systems/mission_manager.gd"
-RelationshipSystem="*res://scripts/systems/relationship_system.gd"
+MissionManager="*res://scripts/gameplay/mission_manager.gd"
+RelationshipSystem="*res://scripts/gameplay/relationship_system.gd"
 
 [display]
 
