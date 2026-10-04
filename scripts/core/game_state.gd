@@ -1,5 +1,5 @@
 extends Node
-class_name GameState
+class_name GameStateService
 ## GameState — estado de la partida y guardado local.
 ##
 ## Las partidas NO se guardan en Supabase.
@@ -27,7 +27,7 @@ var _inventory: GarliaInventory = null
 var _player: Player = null
 var _world_context: WorldContext = null
 var _world_atmosphere: WorldAtmosphere = null
-var _mission_manager: MissionManager = null
+var _mission_manager: MissionManagerService = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -40,7 +40,7 @@ func configurar_dependencias(
 	player: Player = null,
 	world_context: WorldContext = null,
 	world_atmosphere: WorldAtmosphere = null,
-	mission_manager: MissionManager = null
+	mission_manager: MissionManagerService = null
 ) -> void:
 	_inventory = inventory
 	_player = player
