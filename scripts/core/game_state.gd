@@ -27,7 +27,7 @@ var _inventory: GarliaInventory = null
 var _player: Player = null
 var _world_context: WorldContext = null
 var _world_atmosphere: WorldAtmosphere = null
-var _mission_manager: MissionManagerService = null
+var _mission_manager: MissionManagerServiceService = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -40,7 +40,7 @@ func configurar_dependencias(
 	player: Player = null,
 	world_context: WorldContext = null,
 	world_atmosphere: WorldAtmosphere = null,
-	mission_manager: MissionManagerService = null
+	mission_manager: MissionManagerServiceService = null
 ) -> void:
 	_inventory = inventory
 	_player = player
