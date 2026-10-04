@@ -395,9 +395,6 @@ func _actualizar_contexto() -> void:
 		return
 
 	if not is_instance_valid(world_generator):
-		_buscar_world_generator()
-
-	if not is_instance_valid(world_generator):
 		location_label.text = "Sin WorldGenerator"
 		return
 
