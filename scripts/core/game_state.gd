@@ -26,6 +26,7 @@ var _inventory: Node = null
 var _player: Node = null
 var _world_context: Node = null
 var _world_atmosphere: Node = null
+var _mission_manager: Node = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -37,12 +38,14 @@ func configurar_dependencias(
 	inventory: Node = null,
 	player: Node = null,
 	world_context: Node = null,
-	world_atmosphere: Node = null
+	world_atmosphere: Node = null,
+	mission_manager: Node = null
 ) -> void:
 	_inventory = inventory
 	_player = player
 	_world_context = world_context
 	_world_atmosphere = world_atmosphere
+	_mission_manager = mission_manager
 
 	if active_save_id.is_empty():
 		return
@@ -405,24 +408,24 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 
 
 func _capturar_estado_misiones() -> void:
-	if not is_instance_valid(MissionManager):
+	if _mission_manager == null or not is_instance_valid(_mission_manager):
 		return
-	if not MissionManager.has_method("serializar_estado_partida"):
+	if not _mission_manager.has_method("serializar_estado_partida"):
 		return
-	world_state.flags["misiones_estado"] = MissionManager.call(
+	world_state.flags["misiones_estado"] = _mission_manager.call(
 		"serializar_estado_partida"
 	)
 
 
 func _aplicar_estado_misiones() -> void:
-	if not is_instance_valid(MissionManager):
+	if _mission_manager == null or not is_instance_valid(_mission_manager):
 		return
-	if not MissionManager.has_method("cargar_estado_partida"):
+	if not _mission_manager.has_method("cargar_estado_partida"):
 		return
 
 	var datos_variant: Variant = world_state.flags.get("misiones_estado", {})
 	if datos_variant is Dictionary:
-		MissionManager.call(
+		_mission_manager.call(
 			"cargar_estado_partida",
 			(datos_variant as Dictionary).duplicate(true)
 	)
@@ -439,10 +442,10 @@ func _conectar_guardado_rapido() -> void:
 			inventario.inventory_changed.connect(inventario_callback)
 
 	for nombre in ["mision_aceptada", "progreso_actualizado", "mision_completada"]:
-		if not MissionManager.has_signal(nombre):
+		if _mission_manager == null or not _mission_manager.has_signal(nombre):
 			continue
 		var callback := Callable(self, "_al_cambio_guardable")
-		var senal: Signal = MissionManager.get(nombre)
+		var senal: Signal = _mission_manager.get(nombre)
 		if not senal.is_connected(callback):
 			senal.connect(callback)
 
