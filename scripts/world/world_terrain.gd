@@ -274,6 +274,9 @@ func _procesar_datos_chunk(
 		_generation_task["cursor"]
 	)
 
+	if cursor == 0 and visual != null:
+		visual.comenzar_lote()
+
 	var limite: int = mini(
 		cursor + cells,
 		total
@@ -460,7 +463,7 @@ func _procesar_pintado_chunk(
 		return false
 
 	if visual != null:
-		# Publicar cualquier celda restante del lote final.
+		visual.terminar_lote()
 		visual.flush()
 
 	_pintado_desde_flush = 0
@@ -521,6 +524,7 @@ func cancelar_generacion_si_distante(
 	# La generación puede haber pintado parte del chunk antes de que
 	# el jugador se alejara. Retirar esas celdas evita terreno fantasma.
 	if visual != null:
+		visual.terminar_lote()
 		visual.clear_chunk(coord, chunk_size_tiles)
 	_generation_task.clear()
 	_pintado_desde_flush = 0
