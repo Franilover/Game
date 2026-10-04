@@ -219,3 +219,11 @@ Los servicios que pertenecen a una partida activa deben declararse en Main y rec
 - `RelationshipSystem` dejó de registrarse en un grupo global; su API de configuración ya es la frontera de composición.
 - Se eliminó `WorldDecoration` y su escena porque la auditoría confirmó que no tenía consumidores; la generación real de props pertenece al pipeline actual de entidades/WorldItems.
 - La siguiente etapa debe seguir reduciendo monolitos por responsabilidad, especialmente `SupabaseClient`, `Player`, `HUD` y `CombatSystem`, antes de ejecutar la pasada única de errores de Godot.
+
+
+## Séptima barrida — dominio de misiones
+
+- `MissionManager` deja de consultar `WorldData` como global implícito y recibe el proveedor de datos mediante `configurar_dependencias`.
+- `Main` compone explícitamente `MissionManager` con `WorldData` después de construir el contexto de juego.
+- Se mantiene `MissionManager` como servicio global por ahora porque su estado de progreso atraviesa la navegación; no se elimina un autoload sin demostrar que su ciclo de vida pueda migrarse sin romper la sesión.
+- La separación actual queda: datos canónicos en `WorldData`, estado/progreso en `MissionManager`, presentación en `HUD`.
