@@ -311,7 +311,10 @@ func _invocar() -> void:
         return
 
     var nombre := str(_seleccion.get("nombre", "")).strip_edges()
-    var resultado: Variant = spawner.call("summon_criatura", nombre)
+    var posicion := Vector2.ZERO
+    if _jugador is Node2D and is_instance_valid(_jugador):
+        posicion = (_jugador as Node2D).global_position
+    var resultado: Variant = spawner.call("summon_criatura", nombre, posicion)
 
     if resultado is Dictionary and bool((resultado as Dictionary).get("ok", false)):
         _estado.text = "Invocada: " + str((resultado as Dictionary).get("nombre", nombre))
