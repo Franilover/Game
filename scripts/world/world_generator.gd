@@ -47,7 +47,7 @@ func configurar_dependencias(world_data: WorldDataService, game_state: GameState
 	_game_state = game_state
 	_dependencias_configuradas = _world_data != null and _game_state != null
 	if not _dependencias_configuradas:
-		push_error("WorldGenerator: WorldData y GameState son obligatorios.")
+		push_error("WorldGenerator: WorldDataService y GameState son obligatorios.")
 		return
 	if _world_data.esta_cargado():
 		call_deferred("_inicializar_mundo_si_corresponde")
