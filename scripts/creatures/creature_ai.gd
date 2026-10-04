@@ -587,34 +587,17 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 
 
 func _refrescar_objetivo() -> void:
-	if perfil == Perfil.DRAMARIAS:
-		_objetivo_mas_cercano_dramarias()
-		return
-
 	var candidatos: Array[Node2D] = []
 	for candidato in _obtener_candidatos_entidad():
 		if candidato == jugador:
 			candidatos.append(candidato)
 			continue
-		# Flaxis es un depredador oportunista; otros perfiles respetan
-		# las relaciones ecológicas canónicas cargadas para la criatura.
-		if perfil == Perfil.FLAXIS or _es_objetivo_ecologico_valido(candidato):
+		if _es_objetivo_permitido(candidato):
 			candidatos.append(candidato)
 
 	var mejor: Node2D = null
 	var mejor_distancia: float = INF
 	for candidato in candidatos:
-		var distancia := criatura.global_position.distance_to(candidato.global_position)
-		if distancia < mejor_distancia:
-			mejor_distancia = distancia
-			mejor = candidato
-	objetivo = mejor
-
-
-func _objetivo_mas_cercano_dramarias() -> void:
-	var mejor: Node2D = null
-	var mejor_distancia: float = INF
-	for candidato in _obtener_candidatos_entidad():
 		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
 			continue
 		var distancia := criatura.global_position.distance_to(candidato.global_position)
@@ -622,6 +605,20 @@ func _objetivo_mas_cercano_dramarias() -> void:
 			mejor_distancia = distancia
 			mejor = candidato
 	objetivo = mejor
+
+
+func _es_objetivo_permitido(candidato: Node2D) -> bool:
+	var objetivos := str(
+		configuracion_ia.get("objetivos", "")
+	).strip_edges().to_lower()
+
+	match objetivos:
+		"todo":
+			return true
+		"presa":
+			return _es_objetivo_ecologico_valido(candidato)
+		_:
+			return _es_objetivo_ecologico_valido(candidato)
 
 
 func _es_objetivo_ecologico_valido(candidato: Node2D) -> bool:
