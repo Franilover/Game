@@ -18,6 +18,8 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 
 func _ready() -> void:
 	var world_gen := $World/WorldGenerator
+	if world_gen.has_method("configurar_entidades"):
+		world_gen.call("configurar_entidades", $Entities)
 
 	if world_gen.is_world_ready():
 		_inicializar_jugador(world_gen)
