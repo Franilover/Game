@@ -138,6 +138,10 @@ func _ready() -> void:
 	_cambiar_estado_forzado(estado_inicial)
 
 
+func configurar_relaciones_ecologicas(nuevas_relaciones_ecologicas: Array) -> void:
+	relaciones_ecologicas = nuevas_relaciones_ecologicas.duplicate(true)
+
+
 func configurar_criatura() -> void:
 	_refrescar_configuracion()
 	_aplicar_configuracion_movimiento()
