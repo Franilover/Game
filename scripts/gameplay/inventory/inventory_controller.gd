@@ -21,6 +21,12 @@ func puede_interactuar() -> bool:
 		return not bool(input_gate.call("esta_bloqueado"))
 	return true
 
+func configurar_items(items: Array, hotbar_indices: Array = []) -> void:
+	runtime.establecer_items(items)
+	runtime.hotbar.configurar(hotbar_indices)
+	inventario_cambio.emit()
+	hotbar_cambio.emit(runtime.hotbar.indice_activo)
+
 func cargar_items(items: Array) -> void:
 	runtime.establecer_items(items)
 	inventario_cambio.emit()
