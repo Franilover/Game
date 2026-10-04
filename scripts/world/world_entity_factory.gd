@@ -79,7 +79,7 @@ func crear_prop(data: Dictionary) -> WorldProp:
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear WorldProp.")
 		return null
-	node.configurar_dependencias(_world_context, _inventory)
+	node.configurar_dependencias(_world_context, _inventory, _world_items)
 	node.configurar_desde_game_data(data)
 	return node
 
