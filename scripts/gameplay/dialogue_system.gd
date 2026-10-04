@@ -159,8 +159,8 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 		var personaje_id_social := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id_social.is_empty():
 			var social: RelationshipSystem = relationship_system
-			if social != null and social.has_method("registrar_dialogo"):
-				social.call("registrar_dialogo", personaje_id_social, str(datos_seleccionados.get("clave", "principal")))
+			if social != null:
+				social.registrar_dialogo(personaje_id_social, str(datos_seleccionados.get("clave", "principal")))
 
 	var acciones_variant: Variant = datos_seleccionados.get("acciones", [])
 	if acciones_variant is Array:
