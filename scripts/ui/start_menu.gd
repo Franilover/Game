@@ -2,7 +2,7 @@ extends Control
 
 
 const MAIN_SCENE_PATH: String = (
-	"res://scenes/wold/main.tscn"
+	"res://scenes/world/main.tscn"
 )
 
 
