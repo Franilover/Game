@@ -50,7 +50,8 @@ func crear_criatura(data: Dictionary) -> Creature:
 		_combat_system,
 		_dialogue_system,
 		_mission_manager,
-		_effects_root
+		_effects_root,
+		_relaciones_ecologicas
 	)
 	node.configurar(data)
 	return node
