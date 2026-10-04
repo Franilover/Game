@@ -670,6 +670,20 @@ func registrar_descubrimiento_mundo(
 	return true
 
 
+func obtener_configuracion_personaje() -> Dictionary:
+	var personaje_variant: Variant = world_state.flags.get("personaje", {})
+	if personaje_variant is Dictionary:
+		return (personaje_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func obtener_configuracion_personaje_admin() -> Dictionary:
+	var admin_variant: Variant = world_state.flags.get("personaje_admin", {})
+	if admin_variant is Dictionary:
+		return (admin_variant as Dictionary).duplicate(true)
+	return {}
+
+
 func obtener_descubrimientos_mundo() -> Dictionary:
 	return {
 		"biomas": discovery_state.biomes.duplicate(true),
