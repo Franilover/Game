@@ -128,3 +128,38 @@ Revisar autoloads y dejar sólo estado realmente global.
 No volver a corregir un síntoma de render, input, misión o generación modificando un sistema ajeno.
 
 Primero localizar el dueño del estado y seguir el grafo de dependencias definido en `GARLIA_ARCHITECTURE.md`.
+
+
+## Segunda etapa completada — Entity lifecycle e infraestructura IUM
+
+### Entidades
+
+La generación ya no es dueña del ciclo de vida de nodos.
+
+WorldEntitySpawner → decide QUÉ aparece
+WorldEntityFactory → crea QUÉ escena
+WorldEntityManager → decide DÓNDE vive y CUÁNDO se elimina
+
+El streamer continúa orquestando el momento de activar/desactivar chunks, pero la propiedad del registro y despawn está centralizada en WorldEntityManager.
+
+Se eliminó el estado duplicado de criaturas/props por chunk que mantenía WorldEntitySpawner.
+
+Las entidades invocadas manualmente se registran como globales y no dependen del streaming de chunks.
+
+### IUM / Supabase
+
+La ruta ahora es:
+
+IUMManager → IUMRepository → SupabaseClient → Supabase REST/RPC
+
+IUMManager ya no contiene URLs, API keys, HTTPRequest ni RPCs.
+IUMRepository traduce operaciones del dominio IUM a operaciones de Supabase.
+SupabaseClient es infraestructura genérica de transporte.
+
+### Regla nueva
+
+Un sistema de gameplay no debe importar ni construir HTTPRequest para hablar con Supabase.
+Un sistema de generación no debe administrar el ciclo de vida de nodos.
+Un factory no decide reglas de spawn.
+Un manager de entidades no decide qué criatura corresponde a un habitat.
+Cada frontera tiene un dueño.
