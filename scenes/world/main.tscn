@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="24_world_spawn_rules"]
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="19_world_atmosphere"]
 [ext_resource type="Script" path="res://scripts/world/world_context.gd" id="25_world_context"]
+[ext_resource type="Script" path="res://scripts/ui/admin_player_editor.gd" id="26_admin_player_editor"]
 [ext_resource type="Script" path="res://scripts/world/main.gd" id="3_main"]
 [ext_resource type="PackedScene" uid="uid://dvbsydjnksfcv" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/gameplay/interaction_system.gd" id="5_interaction"]
@@ -79,6 +80,9 @@ z_index = 0
 [node name="HUD" parent="UI" unique_id=253242616 instance=ExtResource("4_hud")]
 
 [node name="Inventory" parent="UI" unique_id=1193147799 instance=ExtResource("6_inventory")]
+[node name="AdminPlayerEditor" type="Control" parent="UI"]
+script = ExtResource("26_admin_player_editor")
+z_index = 100
 
 [node name="IUMLab" parent="UI" instance=ExtResource("14_ium_lab")]
 
