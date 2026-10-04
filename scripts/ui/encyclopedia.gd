@@ -15,19 +15,19 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_crear_interfaz()
 
-	if GameState.has_signal("enciclopedia_actualizada"):
-		if not GameState.enciclopedia_actualizada.is_connected(_al_descubrir_criatura):
-			GameState.enciclopedia_actualizada.connect(_al_descubrir_criatura)
+	if GameStateService.has_signal("enciclopedia_actualizada"):
+		if not GameStateService.enciclopedia_actualizada.is_connected(_al_descubrir_criatura):
+			GameStateService.enciclopedia_actualizada.connect(_al_descubrir_criatura)
 
-	if GameState.has_signal("descubrimientos_mundo_actualizados"):
-		if not GameState.descubrimientos_mundo_actualizados.is_connected(_al_descubrimiento_mundo_actualizado):
-			GameState.descubrimientos_mundo_actualizados.connect(_al_descubrimiento_mundo_actualizado)
+	if GameStateService.has_signal("descubrimientos_mundo_actualizados"):
+		if not GameStateService.descubrimientos_mundo_actualizados.is_connected(_al_descubrimiento_mundo_actualizado):
+			GameStateService.descubrimientos_mundo_actualizados.connect(_al_descubrimiento_mundo_actualizado)
 
-	if not WorldData.mundo_listo.is_connected(_al_mundo_actualizado):
-		WorldData.mundo_listo.connect(_al_mundo_actualizado)
+	if not WorldDataService.mundo_listo.is_connected(_al_mundo_actualizado):
+		WorldDataService.mundo_listo.connect(_al_mundo_actualizado)
 
-	if not WorldData.mundo_actualizado.is_connected(_al_mundo_actualizado):
-		WorldData.mundo_actualizado.connect(_al_mundo_actualizado)
+	if not WorldDataService.mundo_actualizado.is_connected(_al_mundo_actualizado):
+		WorldDataService.mundo_actualizado.connect(_al_mundo_actualizado)
 
 	actualizar()
 
@@ -176,14 +176,14 @@ func _mostrar_criaturas() -> void:
 func _construir_arbol_biomas() -> void:
 	_arbol.clear()
 	var raiz := _arbol.create_item()
-	var descubrimientos: Dictionary = GameState.obtener_descubrimientos_mundo()
+	var descubrimientos: Dictionary = GameStateService.obtener_descubrimientos_mundo()
 	var biomas_descubiertos := _obtener_descubiertos(descubrimientos, "biomas")
 	var ecosistemas_descubiertos := _obtener_descubiertos(descubrimientos, "ecosistemas")
 	var habitats_descubiertos := _obtener_descubiertos(descubrimientos, "habitats")
 
 	var primero: TreeItem = null
 
-	var biomas: Array[Dictionary] = _obtener_registros(WorldData.obtener_biomas(), biomas_descubiertos)
+	var biomas: Array[Dictionary] = _obtener_registros(WorldDataService.obtener_biomas(), biomas_descubiertos)
 	biomas.sort_custom(_ordenar_registros)
 
 	for bioma in biomas:
@@ -221,12 +221,12 @@ func _construir_lista_criaturas() -> void:
 	_arbol.clear()
 	var raiz := _arbol.create_item()
 	var criaturas_descubiertas := _obtener_descubiertos(
-		GameState.obtener_descubrimientos_mundo(),
+		GameStateService.obtener_descubrimientos_mundo(),
 		"criaturas"
 	)
 
 	var criaturas: Array[Dictionary] = _obtener_registros(
-		WorldData.obtener_criaturas(),
+		WorldDataService.obtener_criaturas(),
 		criaturas_descubiertas
 	)
 	criaturas.sort_custom(_ordenar_registros)
@@ -331,14 +331,14 @@ func _mostrar_item(item: TreeItem) -> void:
 		"bioma":
 			partes.append("[color=#8f754f]Ecosistemas:[/color] " + str(_contar_hijos_descubiertos(
 				registro.get("ecosistemas", []),
-				_obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "ecosistemas")
+				_obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "ecosistemas")
 			)))
 			partes.append("[color=#8f754f]Criaturas en este bioma:[/color]")
 			_agregar_criaturas_de_bioma(registro, partes)
 		"ecosistema":
 			partes.append("[color=#8f754f]Hábitats:[/color] " + str(_contar_hijos_descubiertos(
 				registro.get("habitats", []),
-				_obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "habitats")
+				_obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "habitats")
 			)))
 			partes.append("[color=#8f754f]Criaturas en este ecosistema:[/color]")
 			_agregar_criaturas_de_ecosistema(registro, partes)
@@ -387,7 +387,7 @@ func _agregar_criaturas_de_bioma(bioma: Dictionary, partes: Array[String]) -> vo
 				continue
 			_agregar_criaturas_unicas(habitat_variant.get("criaturas", []), criaturas)
 
-	var descubiertas := _obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "criaturas")
+	var descubiertas := _obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "criaturas")
 	criaturas = _filtrar_criaturas_descubiertas(criaturas, descubiertas)
 	criaturas.sort_custom(_ordenar_registros)
 	_agregar_lista_nombres(criaturas, partes)
@@ -401,7 +401,7 @@ func _agregar_criaturas_de_ecosistema(ecosistema: Dictionary, partes: Array[Stri
 			if habitat_variant is Dictionary:
 				_agregar_criaturas_unicas((habitat_variant as Dictionary).get("criaturas", []), criaturas)
 
-	var descubiertas := _obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "criaturas")
+	var descubiertas := _obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "criaturas")
 	criaturas = _filtrar_criaturas_descubiertas(criaturas, descubiertas)
 	criaturas.sort_custom(_ordenar_registros)
 	_agregar_lista_nombres(criaturas, partes)
@@ -410,7 +410,7 @@ func _agregar_criaturas_de_ecosistema(ecosistema: Dictionary, partes: Array[Stri
 func _agregar_criaturas_de_habitat(habitat: Dictionary, partes: Array[String]) -> void:
 	var criaturas := _filtrar_criaturas_descubiertas(
 		_obtener_diccionarios(habitat.get("criaturas", [])),
-		_obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "criaturas")
+		_obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "criaturas")
 	)
 	criaturas.sort_custom(_ordenar_registros)
 	_agregar_lista_nombres(criaturas, partes)
@@ -488,12 +488,12 @@ func _obtener_criatura_ids_en_bioma(bioma: Dictionary) -> Array[String]:
 
 func _obtener_biomas_de_criatura(criatura_id: String) -> String:
 	var nombres: Array[String] = []
-	for bioma_variant in WorldData.obtener_biomas():
+	for bioma_variant in WorldDataService.obtener_biomas():
 		if not bioma_variant is Dictionary:
 			continue
 		var bioma := bioma_variant as Dictionary
 		var ids := _obtener_criatura_ids_en_bioma(bioma)
-		if criatura_id in ids and str(bioma.get("id", "")) in _obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "biomas"):
+		if criatura_id in ids and str(bioma.get("id", "")) in _obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "biomas"):
 			nombres.append(str(bioma.get("nombre", "Sin nombre")))
 	nombres.sort()
 	return ", ".join(nombres) if not nombres.is_empty() else "Sin bioma descubierto"
@@ -501,8 +501,8 @@ func _obtener_biomas_de_criatura(criatura_id: String) -> String:
 
 func _obtener_ecosistemas_de_criatura(criatura_id: String) -> String:
 	var nombres: Array[String] = []
-	var descubiertos := _obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "ecosistemas")
-	for bioma_variant in WorldData.obtener_biomas():
+	var descubiertos := _obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "ecosistemas")
+	for bioma_variant in WorldDataService.obtener_biomas():
 		if not bioma_variant is Dictionary:
 			continue
 		var bioma := bioma_variant as Dictionary
@@ -526,8 +526,8 @@ func _obtener_ecosistemas_de_criatura(criatura_id: String) -> String:
 
 func _obtener_habitats_de_criatura(criatura_id: String) -> String:
 	var nombres: Array[String] = []
-	var descubiertos := _obtener_descubiertos(GameState.obtener_descubrimientos_mundo(), "habitats")
-	for bioma_variant in WorldData.obtener_biomas():
+	var descubiertos := _obtener_descubiertos(GameStateService.obtener_descubrimientos_mundo(), "habitats")
+	for bioma_variant in WorldDataService.obtener_biomas():
 		if not bioma_variant is Dictionary:
 			continue
 		var bioma := bioma_variant as Dictionary
@@ -553,13 +553,13 @@ func _obtener_habitats_de_criatura(criatura_id: String) -> String:
 func _obtener_registro_por_nivel(nivel: String, id: String) -> Dictionary:
 	match nivel:
 		"bioma":
-			return WorldData.obtener_bioma(id)
+			return WorldDataService.obtener_bioma(id)
 		"ecosistema":
-			return WorldData.obtener_ecosistema(id)
+			return WorldDataService.obtener_ecosistema(id)
 		"habitat":
-			return WorldData.obtener_habitat(id)
+			return WorldDataService.obtener_habitat(id)
 		"criatura":
-			return WorldData.obtener_criatura(id)
+			return WorldDataService.obtener_criatura(id)
 	return {}
 
 
@@ -589,7 +589,7 @@ func _nombre_nivel(nivel: String) -> String:
 
 
 func _obtener_derrotas(id: String) -> int:
-	var registros := GameState.obtener_criaturas_descubiertas()
+	var registros := GameStateService.obtener_criaturas_descubiertas()
 	return int(registros.get(id, 0))
 
 
