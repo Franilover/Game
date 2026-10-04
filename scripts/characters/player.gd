@@ -654,10 +654,7 @@ func reaparecer() -> void:
 	velocity = Vector2.ZERO
 	state = State.IDLE
 
-	_jump_time = 0.0
-	_jump_cooldown_timer = 0.0
-	_dash_time = 0.0
-	_dash_cooldown_timer = 0.0
+	locomotion.reiniciar()
 
 	var world_gen := get_tree().current_scene.get_node_or_null(
 		"World/WorldGenerator"
