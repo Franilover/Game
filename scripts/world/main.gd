@@ -161,6 +161,14 @@ func _configurar_input_router() -> void:
 		return
 	if router.has_method("configurar_sistemas"):
 		router.call("configurar_sistemas", _interaction_system, _combat_system)
+	if router.has_method("configurar_bloqueos"):
+		router.call(
+		"configurar_bloqueos",
+		_inventory,
+		$UI/AdminConsole,
+		_dialogue_system,
+		_hud
+	)
 
 func _configurar_inventario() -> void:
 	if _inventory == null:
