@@ -29,11 +29,11 @@ var _inventory: GarliaInventory = null
 var _entities_root: Node = null
 var _entity_manager: WorldEntityManager = null
 var _world_context: WorldContext = null
-var _mission_manager: MissionManagerService = null
+var _mission_manager: MissionManagerServiceService = null
 var _world_items: Array[Node2D] = []
 
 
-func configurar_dependencias(jugador: Player, inventario: GarliaInventory, entities_root: Node, entity_manager: WorldEntityManager, world_context: WorldContext, mission_manager: MissionManagerService) -> void:
+func configurar_dependencias(jugador: Player, inventario: GarliaInventory, entities_root: Node, entity_manager: WorldEntityManager, world_context: WorldContext, mission_manager: MissionManagerServiceService) -> void:
 	var root_cambio := _entities_root != entities_root
 	_player = jugador
 	_inventory = inventario
@@ -428,7 +428,7 @@ func obtener_prop_por_id(prop_id: String) -> Dictionary:
 	if buscado.is_empty():
 		return {}
 
-	for prop in WorldData.obtener_props_game():
+	for prop in WorldDataService.obtener_props_game():
 		if str(prop.get("id", "")).strip_edges() == buscado:
 			return prop.duplicate(true)
 
