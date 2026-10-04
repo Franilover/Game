@@ -312,7 +312,8 @@ func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
 	# Las variantes son una capa decorativa del suelo: deben quedar por
 	# encima de los terrenos base para que se vean, pero muy por debajo
 	# de las entidades/jugador.
-	# Debe quedar sobre Pradera (zona 0 = -4087) y sobre cualquier otra base.\n\tlayer.z_index = -4086
+	# Debe quedar sobre Pradera (zona 0 = -4087) y sobre cualquier otra base.
+	layer.z_index = -4086
 	layer.y_sort_enabled = false
 	layer.rendering_quadrant_size = 128
 	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
