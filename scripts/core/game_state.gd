@@ -24,7 +24,7 @@ var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
 var _inventory: Node = null
 var _player: Node = null
-var _world_generator: Node = null
+var _world_context: Node = null
 var _world_atmosphere: Node = null
 
 signal enciclopedia_actualizada(criatura_id: String)
@@ -36,12 +36,12 @@ signal descubrimiento_mundo(nivel: String, id: String)
 func configurar_dependencias(
 	inventory: Node = null,
 	player: Node = null,
-	world_generator: Node = null,
+	world_context: Node = null,
 	world_atmosphere: Node = null
 ) -> void:
 	_inventory = inventory
 	_player = player
-	_world_generator = world_generator
+	_world_context = world_context
 	_world_atmosphere = world_atmosphere
 
 	if active_save_id.is_empty():
@@ -335,10 +335,10 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	player_state.position_valida = true
 	player_state.tile_valido = false
 
-	var world_gen: Node = _world_generator
+	var world_context: Node = _world_context
 
-	if world_gen != null and world_gen.has_method("get_tile_at"):
-		var tile_variant: Variant = world_gen.call(
+	if world_gen != null and world_context.has_method("get_tile_at"):
+		var tile_variant: Variant = world_context.call(
 			"get_tile_at",
 			player_state.position
 		)
