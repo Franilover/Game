@@ -395,3 +395,8 @@ No se extendió esta conversión a sistemas cuyo contrato todavía es Node/globa
 ## Vigésima octava barrida — CombatSystem reduce reflexión en inventario y ataques
 
 CombatSystem ahora depende explícitamente de `GarliaInventory`, `CombatAttackArea` y `CombatProjectile` para las rutas de equipamiento, durabilidad, creación de hitboxes y proyectiles. Se retiraron `has_method()/call()` de esas fronteras ya tipadas. GameState conserva su llamada dinámica porque todavía no expone un `class_name` seguro y no se introduce una abstracción artificial solo para eliminar una línea dinámica.
+
+
+## Vigésima novena barrida — Creature y proyectiles eliminan instanciación dinámica conocida
+
+`Creature.crear_rastro_teleport()` ahora instancia `CreatureTeleportTrail` directamente y configura su contrato concreto. `CombatSystem` hace lo mismo con `CombatProjectile`; se elimina `set_script()` para una clase que ya estaba declarada con `class_name`. Esto reduce reflexión y mantiene los recursos como dependencias tipadas cuando el contrato ya existe.
