@@ -628,7 +628,7 @@ func _aplicar_estado_memoria(
 
 	if flags_variant is Dictionary:
 		world_state.flags = (
-			world_state.flags_variant as Dictionary
+			flags_variant as Dictionary
 		).duplicate(true)
 	else:
 		world_state.flags = {}
