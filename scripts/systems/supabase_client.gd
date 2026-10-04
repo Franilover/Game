@@ -197,9 +197,6 @@ func _al_completar_relaciones_ecologicas(
 		_relaciones_ecologicas.size()
 	)
 
-	relaciones_ecologicas_cargadas.emit(
-		_relaciones_ecologicas.duplicate(true)
-	)
 
 
 func obtener_relaciones_ecologicas() -> Array:
