@@ -36,6 +36,7 @@ var world_context: WorldContext = null
 var projectile_root: Node = null
 var game_state: GameStateService = null
 var _inventory_equipment_slot: String = "mano_secundaria"
+var _accion_en_equipo: bool = false
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
@@ -79,6 +80,7 @@ func procesar_accion_primaria() -> bool:
 	# El router ya resolvió la prioridad de interacción.
 	# Aquí solo se decide la acción primaria de combate.
 	var objeto_activo := _obtener_objeto_activo_para_accion()
+	_accion_en_equipo = false
 	var modo := "arma_equipada" if _es_objeto_ataque(objeto_activo) else "desarmado"
 
 	return combat_controller.solicitar_ataque(
@@ -93,6 +95,7 @@ func procesar_accion_secundaria() -> bool:
 		return false
 
 	var objeto_equipado := _obtener_objeto_equipado_para_accion()
+	_accion_en_equipo = true
 	if objeto_equipado.is_empty():
 		return false
 
@@ -158,7 +161,7 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 
 	if tipo_herramienta == "pala":
 		if _usar_pala():
-			_consumir_durabilidad_herramienta(_inventory_equipment_slot != "")
+			_consumir_durabilidad_herramienta()
 		return
 
 	var direccion: Vector2 = _obtener_direccion_ataque()
@@ -305,8 +308,9 @@ func _obtener_objeto_activo_para_accion() -> Dictionary:
 	if not activo.is_empty():
 		return activo.duplicate(true)
 
-	# Compatibilidad con partidas antiguas que sólo tenían equipamiento.
-	return _obtener_objeto_equipado_para_accion()
+	# Una hotbar vacía representa una mano vacía. La interacción contextual
+	# queda entonces a cargo de InteractionSystem.
+	return {}
 
 
 func _obtener_objeto_equipado_para_accion() -> Dictionary:
