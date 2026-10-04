@@ -420,7 +420,7 @@ func _procesar_persiguiendo() -> void:
 
 	criatura.establecer_direccion_movimiento(direccion)
 
-	if distancia <= distancia_contacto:
+	if distancia <= _obtener_distancia_contacto():
 		_cambiar_estado(Estado.ATACANDO)
 
 
@@ -1048,7 +1048,7 @@ func _procesar_ataque_contacto(
 		objetivo.global_position
 	)
 
-	if distancia > distancia_contacto:
+	if distancia > _obtener_distancia_contacto():
 		_establecer_velocidad(
 			_obtener_velocidad_ataque()
 		)
@@ -1108,6 +1108,38 @@ func _obtener_danio_dramarias() -> int:
 		return maxi(int(valor), 0)
 
 	return dramarias_dano_contacto
+
+
+func _obtener_distancia_contacto() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"distancia_contacto",
+		distancia_contacto
+	)
+
+	if perfil == Perfil.DRAMARIAS:
+		valor = ataque.get(
+			"distancia_ataque",
+			valor
+		)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 1.0)
+
+	return distancia_contacto
+
+
+func _obtener_enfriamiento_fallido() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"enfriamiento_fallido",
+		enfriamiento_fallido
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return enfriamiento_fallido
 
 
 func _obtener_enfriamiento_dramarias() -> float:
@@ -1202,7 +1234,7 @@ func _procesar_ataque_flaxis(delta: float) -> void:
 		_objetivo_ataque
 	)
 
-	if distancia_punto <= distancia_contacto:
+	if distancia_punto <= _obtener_distancia_contacto():
 		_resolver_ataque_flaxis()
 		return
 
@@ -1229,7 +1261,7 @@ func _resolver_ataque_flaxis() -> void:
 			objetivo.global_position
 		)
 
-		if distancia_impacto <= distancia_contacto and objetivo.has_method("take_damage"):
+		if distancia_impacto <= _obtener_distancia_contacto() and objetivo.has_method("take_damage"):
 			objetivo.call(
 				"take_damage",
 				dano_mordida
@@ -1238,7 +1270,7 @@ func _resolver_ataque_flaxis() -> void:
 			_iniciar_recuperacion(enfriamiento_ataque)
 			return
 
-	_iniciar_recuperacion(enfriamiento_fallido)
+	_iniciar_recuperacion(_obtener_enfriamiento_fallido())
 
 
 # ============================================================
@@ -1257,23 +1289,36 @@ func _iniciar_ataque_ligniano() -> void:
 		objetivo.global_position
 	)
 
-	if distancia > distancia_contacto:
-		_iniciar_recuperacion(ligniano_enfriamiento)
+	if distancia > _obtener_distancia_contacto():
+		_iniciar_recuperacion(
+			_obtener_float_ataque(
+				"enfriamiento",
+				ligniano_enfriamiento
+			)
+		)
 		return
 
 	if objetivo.has_method("take_damage"):
 		objetivo.call(
 			"take_damage",
-			ligniano_dano_contacto
+			_obtener_danio_ataque()
 		)
 
 		if objetivo.has_method("aplicar_efecto_slow"):
 			objetivo.call(
 				"aplicar_efecto_slow",
-				ligniano_duracion_slow
+				_obtener_float_ataque(
+					"duracion_slow",
+					ligniano_duracion_slow
+				)
 			)
 
-	_iniciar_recuperacion(ligniano_enfriamiento)
+	_iniciar_recuperacion(
+		_obtener_float_ataque(
+			"enfriamiento",
+			ligniano_enfriamiento
+		)
+	)
 
 
 func _procesar_ataque_lignianos() -> void:
@@ -1408,7 +1453,7 @@ func _obtener_alcance_arma_combate(
 		)
 
 		if alcance_variant is int or alcance_variant is float:
-			return maxf(float(alcance_variant), distancia_contacto)
+			return maxf(float(alcance_variant), _obtener_distancia_contacto())
 
 	return maxf(
 		distancia_contacto,
@@ -1500,7 +1545,7 @@ func _procesar_ataque_rancrodeen(_delta: float) -> void:
 		objetivo.global_position
 	)
 
-	if distancia <= distancia_contacto:
+	if distancia <= _obtener_distancia_contacto():
 		_cambiar_estado(Estado.ADHERIDO)
 		return
 
