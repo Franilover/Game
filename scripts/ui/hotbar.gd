@@ -106,7 +106,7 @@ func _buscar_hbox(
 
 
 func _process(
-	_delta: float
+	delta: float
 ) -> void:
 	if (
 		inventory == null
@@ -116,6 +116,14 @@ func _process(
 
 		if inventory != null:
 			_actualizar()
+		return
+
+	_tiempo_sincronizacion -= delta
+	if _tiempo_sincronizacion > 0.0:
+		return
+
+	_tiempo_sincronizacion = SINCRONIZACION_INTERVALO
+	_actualizar()
 
 
 func _buscar_inventario() -> void:
