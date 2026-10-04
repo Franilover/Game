@@ -74,34 +74,40 @@ func _ready() -> void:
 
 
 func procesar_accion_primaria() -> bool:
-	if player == null or not player.is_alive:
-		return false
-
-	# Revalidamos el objetivo justo al hacer click. Así un objeto que
-	# entró en alcance entre dos escaneos no pierde la interacción.
-	_buscar_objetivo()
-
-	# La interacción contextual tiene prioridad absoluta sobre combate.
-	if interaction_controller.interactuar(player):
-		return true
-
 	var objeto_activo: Dictionary = {}
 	if inventory != null:
 		objeto_activo = inventory.obtener_objeto_activo().duplicate(true)
 
-	# Los objetos colocables consumen la acción primaria antes del combate.
-	if not objeto_activo.is_empty():
-		if world_items != null and world_items.es_objeto_colocable(objeto_activo):
+	return _procesar_interaccion_de_mano(objeto_activo, true)
+
+
+func procesar_accion_secundaria() -> bool:
+	var objeto_equipado: Dictionary = {}
+	if inventory != null:
+		objeto_equipado = inventory.obtener_objeto_equipado("mano_secundaria").duplicate(true)
+
+	return _procesar_interaccion_de_mano(objeto_equipado, false)
+
+
+func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool) -> bool:
+	if player == null or not player.is_alive:
+		return false
+
+	# Una mano ocupada usa su objeto. La interacción contextual sólo aparece
+	# cuando esa mano está vacía. Ambas manos comparten exactamente esta ruta.
+	if not objeto.is_empty():
+		if permite_colocacion and world_items != null and world_items.es_objeto_colocable(objeto):
 			var colocado: bool = world_items.colocar_objeto(
-				objeto_activo,
+				objeto,
 				player.get_global_mouse_position()
 			)
-			if colocado:
+			if colocado and inventory != null:
 				inventory.consumir_objeto_activo(1)
 				return true
+		return false
 
-	# Si no hubo interacción ni colocación, CombatSystem recibe la acción.
-	return false
+	_buscar_objetivo()
+	return interaction_controller.interactuar(player)
 
 
 func _entrada_bloqueada_por_router() -> bool:
