@@ -1514,27 +1514,20 @@ func _robar_objeto_zlish() -> void:
 
 	if not objeto_hotbar.is_empty():
 		if inventario.quitar_objeto(indice_inventario):
-				objeto_robado = objeto_hotbar.duplicate(true)
-				return
+			objeto_robado = objeto_hotbar.duplicate(true)
+			return
 
 	for clave in ["cabeza", "torso", "pies"]:
-		var objeto_armadura_variant: Variant = inventario.call(
-			"obtener_objeto_equipado",
-			clave
-		)
+		var objeto_armadura: Dictionary = inventario.obtener_objeto_equipado(clave)
 		if objeto_armadura.is_empty():
 			continue
 
-		var robado_variant: Variant = inventario.call(
-			"robar_objeto_equipado",
-			clave
-		)
+		var robado_variant: Variant = inventario.robar_objeto_equipado(clave)
 		if robado_variant is Dictionary:
 			var robado: Dictionary = robado_variant as Dictionary
 			if not robado.is_empty():
 				objeto_robado = robado.duplicate(true)
 				return
-
 
 func _copiar_skin_de_objetivo() -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
