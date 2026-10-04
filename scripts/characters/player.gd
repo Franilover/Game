@@ -64,7 +64,7 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 
 var _world_context_ref: WorldContext = null
-var _game_state_ref: GameState = null
+var _game_state_ref: GameStateService = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
 
@@ -91,7 +91,7 @@ func configurar_dependencias(
 	ium_manager: IUMManager = null,
 	entity_manager: WorldEntityManager = null,
 	supabase_client: GarliaSupabaseClient = null,
-	game_state: GameState = null
+	game_state: GameStateService = null
 ) -> void:
 	_inventory_ref = inventory
 	_world_context_ref = world_context
