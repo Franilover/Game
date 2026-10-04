@@ -9,6 +9,8 @@ signal objetivo_cambiado(objetivo: Node)
 
 
 var player: Node = null
+var inventory: Node = null
+var world_items: Node = null
 
 var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
@@ -16,8 +18,10 @@ var objetivo_actual: Node = null
 var _scan_timer: float = 0.0
 
 
-func configurar(nuevo_player: Node) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_items: Node = null) -> void:
 	player = nuevo_player
+	inventory = nuevo_inventory
+	world_items = nuevo_world_items
 	if not interaction_controller.objetivo_cambiado.is_connected(_cambiar_objetivo):
 		interaction_controller.objetivo_cambiado.connect(_cambiar_objetivo)
 
@@ -68,7 +72,7 @@ func procesar_accion_primaria() -> bool:
 	if interaction_controller.interactuar(player):
 		return true
 
-	var inventory: Node = get_tree().get_first_node_in_group("inventory")
+	var inventory: Node = inventory
 	var objeto_activo: Dictionary = {}
 
 	if inventory != null and inventory.has_method("obtener_objeto_activo"):
@@ -78,7 +82,7 @@ func procesar_accion_primaria() -> bool:
 
 	# Los objetos colocables consumen la acción primaria antes del combate.
 	if not objeto_activo.is_empty():
-		var world_items: Node = GarliaWorldItems
+		var world_items: Node = world_items
 		if (
 			world_items != null
 			and world_items.has_method("es_objeto_colocable")
