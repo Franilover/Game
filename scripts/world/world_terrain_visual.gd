@@ -213,7 +213,8 @@ func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
 	var layer := TileMapLayer.new()
 	layer.name = "TerrainVariaciones_" + ("General" if bioma_nombre.is_empty() else bioma_nombre)
 	layer.z_as_relative = false
-	layer.z_index = -4095
+	layer.z_index = -4096
+	layer.y_sort_enabled = false
 	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
 	add_child(layer)
 	return layer
