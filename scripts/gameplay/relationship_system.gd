@@ -63,6 +63,10 @@ func esta_cargado() -> bool:
 	return _cargado
 
 
+func obtener_reglas_sociales() -> Dictionary:
+	return _reglas.duplicate(true)
+
+
 func obtener_relacion(personaje_id: String) -> Dictionary:
 	if personaje_id.is_empty():
 		return {}
