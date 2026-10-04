@@ -101,7 +101,7 @@ func configurar(
 	player: Player = null,
 	world_entity_spawner: WorldEntitySpawner = null,
 	world_context: WorldContext = null,
-	relationship_system: RelationshipSystemService = null,
+	relationship_system: RelationshipSystemServiceService = null,
 	world_items: GarliaWorldItems = null
 ) -> void:
 	_player = player
@@ -125,7 +125,7 @@ func _configurar_world_map(world_context: WorldContext) -> void:
 		mapa.configurar(_player, world_context)
 
 
-func _configurar_relationships(relationship_system: RelationshipSystemService) -> void:
+func _configurar_relationships(relationship_system: RelationshipSystemServiceService) -> void:
 	var relaciones: RelationshipsUI = $Window/Margin/Column/Tabs/Relaciones
 	if relationship_system != null:
 		relaciones.configurar(relationship_system)
@@ -209,7 +209,7 @@ func _actualizar_admin_tab() -> void:
 	var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 	var jugador := _player
 	var es_admin := false
-	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
+	var datos_variant: Variant = GameStateService.obtener_configuracion_personaje_admin()
 	if datos_variant is Dictionary:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
 	boton_admin.visible = es_admin
