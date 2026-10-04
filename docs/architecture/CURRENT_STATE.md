@@ -331,3 +331,10 @@ Se confirmó que `CombatFeedback` ya existía como componente `RefCounted`; no s
 Se auditó la única ruta que usaba `WorldEntityManager` desde `CombatSystem`. El manager no expone actualmente una API de IA; la supuesta integración era sólo una búsqueda dinámica (`has_method/call`) con fallback al nodo `AIController` de la criatura. Se eliminó esa dependencia falsa y `CombatSystem` ahora consulta directamente el contrato estructural existente del objetivo.
 
 Esto refuerza la frontera: `WorldEntityManager` administra ciclo de vida/ubicación de entidades; `CombatSystem` no le pide información que no pertenece a ese dueño.
+
+
+## Vigésima primera barrida — CombatSystem usa contrato concreto de CreatureAI
+
+Se confirmó que la IA real del proyecto es `CreatureAI` (`scripts/creatures/creature_ai.gd`), no un `AIController` tipado como clase independiente. `CombatSystem` ahora resuelve el nodo `AIController` una sola vez y lo convierte al contrato `CreatureAI`, eliminando `has_method()/call()` para `al_recibir_ataque_con_arma`.
+
+La notificación de reacción al recibir un ataque sigue perteneciendo a la IA de la criatura, especialmente porque Zlish usa la información del arma para su comportamiento canónico.
