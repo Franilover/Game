@@ -9,6 +9,18 @@ var variante = 0
 var semilla = 0
 var interactuable = false
 var datos = {}
+var _world_context: Node = null
+var _inventory: Node = null
+
+
+func configurar_dependencias(
+	nuevo_world_context: Node,
+	nuevo_inventory: Node
+) -> void:
+	_world_context = nuevo_world_context
+	_inventory = nuevo_inventory
+
+
 
 func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nueva_semilla: int, nuevos_datos: Dictionary = {}) -> void:
 	tipo = nuevo_tipo
@@ -107,14 +119,9 @@ func get_interaction_details() -> Dictionary:
 		"bioma": bioma
 	}
 
-	var generador := get_tree().get_first_node_in_group(
-		"world_generator"
-	)
-
-	if generador != null and generador.has_method(
-		"get_contexto_at"
-	):
-		var contexto_variant: Variant = generador.call(
+	var contexto_provider := _world_context
+	if contexto_provider != null and is_instance_valid(contexto_provider) and contexto_provider.has_method("get_contexto_at"):
+		var contexto_variant: Variant = contexto_provider.call(
 			"get_contexto_at",
 			global_position
 		)
@@ -242,7 +249,7 @@ func _puede_recolectar(persona: Node) -> bool:
 	if requisito.is_empty():
 		return true
 
-	var inventario: Node = get_tree().get_first_node_in_group("inventory")
+	var inventario: Node = _inventory
 	if inventario == null or not inventario.has_method("obtener_objeto_equipado"):
 		return false
 
@@ -338,9 +345,7 @@ func _obtener_cantidad_recoleccion() -> int:
 
 
 func _recolectar(persona: Node) -> bool:
-	var inventario: Node = get_tree().get_first_node_in_group(
-		"inventory"
-	)
+	var inventario: Node = _inventory
 	if inventario == null or not inventario.has_method(
 		"agregar_objeto"
 	):
