@@ -58,6 +58,9 @@ var eterium_runtime := PlayerEteriumRuntime.new()
 var eterium := PlayerEteriumCoordinator.new()
 var input_gate := GameplayInputGate.new()
 var exploration_controller := PlayerExplorationController.new()
+var locomotion := PlayerLocomotionCoordinator.new()
+var movement_controller := PlayerMovementController.new()
+var action_controller := PlayerActionController.new()
 
 var _world_generator_ref: Node = null
 var _admin_console_ref: Node = null
@@ -96,6 +99,7 @@ func _ready() -> void:
 	eterium.configurar(eterium_runtime, stamina_controller)
 	eterium.configurar_vital(vital_state)
 	exploration_controller.terreno_descubierto.connect(_al_terreno_descubierto)
+	locomotion.configurar(movement_controller, action_controller, stamina_controller)
 	stamina_controller.configurar(max_stamina)
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
 	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
@@ -260,15 +264,7 @@ func _esta_bloqueado_por_interfaz() -> bool:
 
 
 func _actualizar_cooldowns(delta: float) -> void:
-	_jump_cooldown_timer = maxf(
-		_jump_cooldown_timer - delta,
-		0.0
-	)
-
-	_dash_cooldown_timer = maxf(
-		_dash_cooldown_timer - delta,
-		0.0
-	)
+	locomotion.actualizar_cooldowns(delta)
 
 
 func _actualizar_regeneracion_stamina(delta: float, esta_corriendo: bool) -> void:
