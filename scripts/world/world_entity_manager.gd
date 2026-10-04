@@ -86,6 +86,21 @@ func tiene_chunk(chunk_coord: Vector2i) -> bool:
 	return false
 
 
+func obtener_entidades_activas() -> Array:
+	var resultado: Array = []
+	for bucket_variant in _by_chunk.values():
+		if not bucket_variant is Array:
+			continue
+		for entity_variant in bucket_variant as Array:
+			if entity_variant is Node and is_instance_valid(entity_variant):
+				resultado.append(entity_variant)
+	for entity_variant in _global_entities:
+		if entity_variant is Node and is_instance_valid(entity_variant):
+			if not entity_variant in resultado:
+				resultado.append(entity_variant)
+	return resultado
+
+
 func obtener_por_chunk(chunk_coord: Vector2i) -> Array:
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 	if bucket_variant is Array:
