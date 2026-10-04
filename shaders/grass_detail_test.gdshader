@@ -17,7 +17,7 @@ float pixel_blade(vec2 uv, vec2 cell, float seed, float scale) {
     float r = hash21(cell + vec2(seed, seed * 2.17));
     float r2 = hash21(cell + vec2(seed + 19.7, seed + 43.1));
     float center = 0.5 + (r - 0.5) * 0.55;
-    float height = mix(0.16, 0.43, r2) * scale;
+    float height = mix(0.28, 0.68, r2) * scale;
     float y = 1.0 - uv.y;
 
     if (y <= 0.0 || y >= height) {
@@ -29,7 +29,7 @@ float pixel_blade(vec2 uv, vec2 cell, float seed, float scale) {
     float x = center + sway * progress;
 
     float stepped_y = floor(progress * 5.0) / 5.0;
-    float stepped_width = mix(0.060, 0.010, stepped_y);
+    float stepped_width = mix(0.075, 0.014, stepped_y);
     return step(abs(uv.x - x), stepped_width);
 }
 
@@ -39,8 +39,8 @@ void fragment() {
     if (base.a <= 0.01) {
         COLOR = base;
     } else {
-        vec2 grid_a = vec2(34.0, 20.0);
-        vec2 grid_b = vec2(52.0, 30.0);
+        vec2 grid_a = vec2(28.0, 16.0);
+        vec2 grid_b = vec2(42.0, 24.0);
 
         vec2 cell_a = floor(UV * grid_a);
         vec2 local_a = fract(UV * grid_a);
@@ -51,7 +51,7 @@ void fragment() {
         float rb = hash21(cell_b + 31.7);
 
         float blades_a = pixel_blade(local_a, cell_a, 3.1, 1.0);
-        float blades_b = pixel_blade(local_b, cell_b, 8.7, 0.72);
+        float blades_b = pixel_blade(local_b, cell_b, 8.7, 0.78);
 
         blades_a *= step(1.0 - density, ra);
         blades_b *= step(1.0 - density * 0.92, rb);
