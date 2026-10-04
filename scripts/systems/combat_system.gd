@@ -213,98 +213,60 @@ func _consumir_durabilidad_herramienta() -> void:
 	inventario.call("consumir_durabilidad_objeto_activo")
 
 
-func _crear_hitbox_melee(
+func _crear_ataque_melee(
 	direccion: Vector2,
 	alcance: float,
 	ancho: float,
-	objeto: Dictionary
+	objeto: Dictionary,
+	danio_directo: int = -1
 ) -> void:
 	if player == null:
 		return
 
-	var hitbox := Area2D.new()
-	hitbox.name = "AttackHitbox"
-	hitbox.collision_layer = 0
-	hitbox.collision_mask = 2
-	hitbox.monitoring = true
-	hitbox.monitorable = false
-	hitbox.set_meta("attacker", player)
-	hitbox.set_meta("attack_object", objeto.duplicate(true))
-
-	var shape := CollisionShape2D.new()
-	shape.name = "CollisionShape2D"
-	var rectangle := RectangleShape2D.new()
-	rectangle.size = Vector2(maxf(alcance, 1.0), maxf(ancho, 1.0))
-	shape.shape = rectangle
-	shape.position = Vector2(8.0 + alcance * 0.5, 0.0)
-	hitbox.add_child(shape)
-
-	player.add_child(hitbox)
-	hitbox.rotation = direccion.angle()
-
-	var afectados: Array[Node] = []
-	hitbox.area_entered.connect(
-		_al_recibir_hurtbox.bind(hitbox, afectados)
+	var ataque := CombatAttackArea.new()
+	ataque.configurar(
+		player,
+		direccion,
+		alcance,
+		ancho,
+		objeto,
+		duracion_ataque,
+		color_ataque
 	)
 
-	await get_tree().physics_frame
+	if danio_directo >= 0:
+		ataque.objeto_ataque["_damage_override"] = danio_directo
 
-	if not is_instance_valid(hitbox):
-		return
+	ataque.objetivo_detectado.connect(
+		_al_recibir_objetivo_de_ataque.bind(ataque)
+	)
 
-	for area_variant in hitbox.get_overlapping_areas():
-		if area_variant is Area2D:
-			_al_recibir_hurtbox(
-				area_variant as Area2D,
-				hitbox,
-				afectados
-			)
-
-	await get_tree().create_timer(duracion_ataque).timeout
-
-	if is_instance_valid(hitbox):
-		hitbox.queue_free()
+	player.add_child(ataque)
 
 
-func _al_recibir_hurtbox(
-	hurtbox: Area2D,
-	hitbox: Area2D,
-	afectados: Array[Node]
+func _al_recibir_objetivo_de_ataque(
+	objetivo: Node,
+	ataque: CombatAttackArea
 ) -> void:
-	if hurtbox == null or not is_instance_valid(hurtbox):
+	if objetivo == null or not is_instance_valid(objetivo):
 		return
 
-	var objetivo_variant: Variant = hurtbox.get_meta(
-		"damageable_owner",
-		null
+	if ataque == null or not is_instance_valid(ataque):
+		return
+
+	var objeto := ataque.objeto_ataque
+	var danio := _obtener_danio_arma(objeto)
+
+	var override_variant: Variant = objeto.get(
+		"_damage_override",
+		-1
 	)
-	if not objetivo_variant is Node:
-		return
+	if override_variant is int and int(override_variant) >= 0:
+		danio = int(override_variant)
 
-	var objetivo := objetivo_variant as Node
-	if objetivo == player or not is_instance_valid(objetivo):
-		return
-
-	if objetivo in afectados:
-		return
-
-	if not objetivo.is_in_group("damageable"):
-		return
-
-	if "is_alive" in objetivo and not bool(objetivo.get("is_alive")):
-		return
-
-	afectados.append(objetivo)
-
-	var objeto_variant: Variant = hitbox.get_meta("attack_object", {})
-	var objeto: Dictionary = {}
-	if objeto_variant is Dictionary:
-		objeto = objeto_variant as Dictionary
-
-	var danio: int = _obtener_danio_arma(objeto)
 	if _es_herramienta(objeto) and danio <= 0:
 		print(
-			"CombatSystem: hitbox de herramienta detectó → ",
+			"CombatSystem: ataque de herramienta detectó → ",
 			objetivo.name,
 			" | sin daño configurado en Supabase."
 		)
@@ -317,8 +279,6 @@ func _al_recibir_hurtbox(
 		player,
 		objeto
 	)
-
-
 
 func usar_objeto_activo() -> void:
 	if player == null:
@@ -422,10 +382,12 @@ func _atacar_desarmado() -> void:
 		ancho_ataque
 	)
 
-	_mostrar_area_ataque(
+	_crear_ataque_melee(
 		direccion,
 		alcance_desarmado,
-		ancho_ataque
+		ancho_ataque,
+		{},
+		danio_desarmado
 	)
 
 	_tiempo_desde_ataque = enfriamiento_arma
@@ -471,13 +433,7 @@ func _atacar_con_arma(
 		arma
 	)
 
-	_mostrar_area_ataque(
-		direccion,
-		alcance,
-		ancho
-	)
-
-	_crear_hitbox_melee(
+	_crear_ataque_melee(
 		direccion,
 		alcance,
 		ancho,
@@ -908,95 +864,6 @@ func _buscar_objetivo(
 			mejor_objetivo = candidato
 
 	return mejor_objetivo
-
-
-func _mostrar_area_ataque(
-	direccion: Vector2,
-	alcance: float,
-	ancho: float
-) -> void:
-	if player == null:
-		return
-
-	var area_visual := Polygon2D.new()
-
-	var mitad: float = (
-		ancho * 0.5
-	)
-
-	var inicio: float = 8.0
-
-	var final: float = (
-		inicio
-		+ alcance
-	)
-
-	area_visual.polygon = PackedVector2Array([
-		Vector2(
-			inicio,
-			-mitad
-		),
-		Vector2(
-			final,
-			-mitad
-		),
-		Vector2(
-			final,
-			mitad
-		),
-		Vector2(
-			inicio,
-			mitad
-		)
-	])
-
-	area_visual.color = color_ataque
-	area_visual.z_index = 100
-
-	var escena_actual := (
-		get_tree().current_scene
-	)
-
-	if escena_actual == null:
-		area_visual.queue_free()
-		return
-
-	escena_actual.add_child(
-		area_visual
-	)
-
-	area_visual.global_position = (
-		player.global_position
-	)
-
-	area_visual.rotation = (
-		direccion.angle()
-	)
-
-	var tween := create_tween()
-
-	tween.set_parallel(true)
-
-	tween.tween_property(
-		area_visual,
-		"modulate:a",
-		0.0,
-		duracion_ataque
-	)
-
-	tween.tween_property(
-		area_visual,
-		"scale",
-		Vector2(
-			1.08,
-			1.08
-		),
-		duracion_ataque
-	)
-
-	tween.chain().tween_callback(
-		area_visual.queue_free
-	)
 
 
 func _animar_objetivo(
