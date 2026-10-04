@@ -442,3 +442,7 @@ Se eliminó reflexión innecesaria en `GameplayInputRouter` y `Main`. `HUD` ahor
 ## Trigésima séptima barrida — Contratos HUD/Combate endurecidos
 
 HUD tipa directamente `WorldData` y consume su snapshot mediante `world_data.mundo`, eliminando el acceso genérico `Node.get()`. `CombatSystem` tipa directamente `Player` y conecta `GameplayInputGate` mediante `player.input_gate`, eliminando la reflexión para descubrir esa dependencia. Se mantiene `GameState` como frontera global deliberada y no se amplían contratos polimórficos sin verificar sus implementaciones reales.
+
+## Trigésima octava barrida — Contratos de entrada y daño endurecidos
+
+`CombatController` ahora depende explícitamente de `GameplayInputGate` y llama su API concreta, eliminando la reflexión para consultar el bloqueo de entrada. `CombatDamage` ahora recibe `Entity` y usa directamente `is_alive`, `health` y `take_damage()`. La resolución de daño deja así de depender de descubrimiento dinámico dentro de la frontera de entidades.
