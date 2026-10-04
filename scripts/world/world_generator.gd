@@ -33,8 +33,8 @@ var context: WorldContext
 
 var _world_ready: bool = false
 var _entities_root: Node = null
-var _world_data: WorldData = null
-var _game_state: GameState = null
+var _world_data: WorldDataService = null
+var _game_state: GameStateService = null
 var _dependencias_configuradas: bool = false
 
 
@@ -42,7 +42,7 @@ func _ready() -> void:
 	_crear_sistemas()
 
 
-func configurar_dependencias(world_data: WorldData, game_state: GameState) -> void:
+func configurar_dependencias(world_data: WorldDataService, game_state: GameStateService) -> void:
 	_world_data = world_data
 	_game_state = game_state
 	_dependencias_configuradas = _world_data != null and _game_state != null
@@ -66,7 +66,7 @@ func configurar_entidades(
 	inventario: GarliaInventory = null,
 	combat_system: CombatSystem = null,
 	dialogue_system: DialogueSystem = null,
-	mission_manager: MissionManager = null,
+	mission_manager: MissionManagerService = null,
 	world_context: WorldContext = null,
 	world_items: GarliaWorldItems = null,
 	relaciones_ecologicas: Array = []
