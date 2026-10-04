@@ -34,17 +34,17 @@ const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 
 var player: Node = null
 var inventory: Node = null
-var world_generator: Node = null
+var world_context: Node = null
 var projectile_root: Node = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_generator: Node = null, nuevo_projectile_root: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: Node = null, nuevo_projectile_root: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
-	world_generator = nuevo_world_generator
+	world_context = nuevo_world_context
 	projectile_root = nuevo_projectile_root
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
@@ -177,21 +177,21 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 
 
 func _usar_pala() -> bool:
-	var world_gen: Node = world_generator
-	if world_gen == null or not is_instance_valid(world_gen):
+	var world_context_ref: Node = world_context
+	if world_context_ref == null or not is_instance_valid(world_context_ref):
 		return false
-	if not world_gen.has_method("get_tile_at") or not world_gen.has_method("get_zona_at") or not world_gen.has_method("cambiar_zona_at"):
+	if not world_context_ref.has_method("get_tile_at") or not world_context_ref.has_method("get_zona_at") or not world_context_ref.has_method("cambiar_zona_at"):
 		return false
 
 	var objetivo_posicion: Vector2 = player.global_position
-	var tile: Vector2i = world_gen.call("get_tile_at", objetivo_posicion)
-	var zona: int = int(world_gen.call("get_zona_at", tile))
+	var tile: Vector2i = world_context_ref.call("get_tile_at", objetivo_posicion)
+	var zona: int = int(world_context_ref.call("get_zona_at", tile))
 
 	# La pala transforma únicamente Pradera en Tierra.
 	if zona != 0:
 		return false
 
-	if bool(world_gen.call("cambiar_zona_at", tile, 1)):
+	if bool(world_context_ref.call("cambiar_zona_at", tile, 1)):
 		_tiempo_desde_ataque = enfriamiento_arma
 		print("CombatSystem: pala → Pradera convertida en Tierra en ", tile)
 		return true
