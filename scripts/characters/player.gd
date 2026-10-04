@@ -57,6 +57,7 @@ var stamina_controller := PlayerStaminaController.new()
 var eterium_runtime := PlayerEteriumRuntime.new()
 var eterium := PlayerEteriumCoordinator.new()
 var input_gate := GameplayInputGate.new()
+var exploration_controller := PlayerExplorationController.new()
 
 var _world_generator_ref: Node = null
 var _admin_console_ref: Node = null
@@ -94,6 +95,7 @@ func _ready() -> void:
 	add_child(input_gate)
 	eterium.configurar(eterium_runtime, stamina_controller)
 	eterium.configurar_vital(vital_state)
+	exploration_controller.terreno_descubierto.connect(_al_terreno_descubierto)
 	stamina_controller.configurar(max_stamina)
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
 	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
@@ -233,74 +235,24 @@ func _physics_process(delta: float) -> void:
 
 func _registrar_terreno_explorado() -> void:
 	if not is_instance_valid(_world_generator_ref):
-		_world_generator_ref = get_tree().get_first_node_in_group(
-			"world_generator"
-		)
-
-	var world_gen: Node = _world_generator_ref
-
-	if world_gen == null or not is_instance_valid(world_gen):
+		_world_generator_ref = get_tree().get_first_node_in_group("world_generator")
+	if not is_instance_valid(_world_generator_ref):
 		return
+	exploration_controller.revisar(global_position, _world_generator_ref)
 
-	if not world_gen.has_method("get_tile_at"):
-		return
-
-	var tile_variant: Variant = world_gen.call(
-		"get_tile_at",
-		global_position
-	)
-
-	if not tile_variant is Vector2i:
-		return
-
-	var tile: Vector2i = tile_variant as Vector2i
-
-	if tile == _ultima_exploracion_tile:
-		return
-
-	_ultima_exploracion_tile = tile
+func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void:
 	GameState.registrar_terreno_explorado(tile)
-
-	if not world_gen.has_method("get_bioma_at"):
-		return
-
-	var bioma_variant: Variant = world_gen.call(
-		"get_bioma_at",
-		tile
-	)
-	var ecosistema_variant: Variant = world_gen.call(
-		"get_ecosistema_at",
-		tile
-	)
-	var habitats_variant: Variant = world_gen.call(
-		"get_habitats_at",
-		tile
-	)
-	var criaturas_variant: Variant = world_gen.call(
-		"get_criaturas_at",
-		tile
-	)
-
-	if not bioma_variant is Dictionary:
-		return
-
-	if not ecosistema_variant is Dictionary:
-		return
-
-	var habitats: Array = []
-	if habitats_variant is Array:
-		habitats = habitats_variant as Array
-
-	var criaturas: Array = []
-	if criaturas_variant is Array:
-		criaturas = criaturas_variant as Array
-
-	GameState.registrar_descubrimiento_mundo(
-		bioma_variant as Dictionary,
-		ecosistema_variant as Dictionary,
-		habitats,
-		criaturas
-	)
+	var bioma: Variant = descubrimiento.get("bioma", {})
+	var ecosistema: Variant = descubrimiento.get("ecosistema", {})
+	var habitats: Variant = descubrimiento.get("habitats", [])
+	var criaturas: Variant = descubrimiento.get("criaturas", [])
+	if bioma is Dictionary and ecosistema is Dictionary:
+		GameState.registrar_descubrimiento_mundo(
+			bioma as Dictionary,
+			ecosistema as Dictionary,
+			habitats as Array if habitats is Array else [],
+			criaturas as Array if criaturas is Array else []
+		)
 
 
 func _esta_bloqueado_por_interfaz() -> bool:
