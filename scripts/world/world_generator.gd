@@ -50,38 +50,19 @@ func _process(_delta: float) -> void:
 
 
 func _crear_sistemas() -> void:
-	terrain = get_node_or_null(
-		"WorldTerrain"
-	) as WorldTerrain
+	terrain = get_node_or_null("WorldTerrain") as WorldTerrain
+	streamer = get_node_or_null("WorldStreamer") as WorldStreamer
+	entity_spawner = get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
+	atmosphere = get_node_or_null("WorldAtmosphere") as WorldAtmosphere
 
 	if terrain == null:
-		terrain = WorldTerrain.new()
-		terrain.name = "WorldTerrain"
-		add_child(terrain)
-
-	streamer = get_node_or_null(
-		"WorldStreamer"
-	) as WorldStreamer
-
+		push_error("WorldGenerator: falta WorldTerrain en la escena.")
 	if streamer == null:
-		streamer = WorldStreamer.new()
-		streamer.name = "WorldStreamer"
-		add_child(streamer)
-
-	entity_spawner = get_node_or_null(
-		"WorldEntitySpawner"
-	) as WorldEntitySpawner
-
+		push_error("WorldGenerator: falta WorldStreamer en la escena.")
 	if entity_spawner == null:
-		entity_spawner = WorldEntitySpawner.new()
-		entity_spawner.name = "WorldEntitySpawner"
-		add_child(entity_spawner)
-
-	atmosphere = get_node_or_null("WorldAtmosphere") as WorldAtmosphere
+		push_error("WorldGenerator: falta WorldEntitySpawner en la escena.")
 	if atmosphere == null:
-		atmosphere = WorldAtmosphere.new()
-		atmosphere.name = "WorldAtmosphere"
-		add_child(atmosphere)
+		push_error("WorldGenerator: falta WorldAtmosphere en la escena.")
 
 
 func _inicializar_mundo() -> void:
