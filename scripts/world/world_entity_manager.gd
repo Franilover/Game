@@ -39,6 +39,7 @@ func registrar(
 	if not entity in bucket:
 		bucket.append(entity)
 	_by_chunk[chunk_coord] = bucket
+	_conectar_lifecycle(entity)
 
 	if not persistent_key.is_empty():
 		_persistent_by_key[persistent_key] = entity
@@ -57,6 +58,7 @@ func registrar_global(entity: Node, persistent_key: String = "") -> bool:
 		entities.add_child(entity)
 	if not entity in _global_entities:
 		_global_entities.append(entity)
+	_conectar_lifecycle(entity)
 	if not persistent_key.is_empty():
 		_persistent_by_key[persistent_key] = entity
 	return true
@@ -84,6 +86,27 @@ func tiene_chunk(chunk_coord: Vector2i) -> bool:
 		if entity_variant is Node and is_instance_valid(entity_variant):
 			return true
 	return false
+
+
+func _conectar_lifecycle(entity: Node) -> void:
+	if not entity.tree_exiting.is_connected(_al_salir_entidad.bind(entity)):
+		entity.tree_exiting.connect(_al_salir_entidad.bind(entity))
+
+
+func _al_salir_entidad(entity: Node) -> void:
+	_global_entities.erase(entity)
+	for chunk_variant in _by_chunk.keys():
+		var chunk_coord: Vector2i = chunk_variant
+		var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
+		if not bucket_variant is Array:
+			continue
+		var bucket: Array = bucket_variant
+		bucket.erase(entity)
+		if bucket.is_empty():
+			_by_chunk.erase(chunk_coord)
+		else:
+			_by_chunk[chunk_coord] = bucket
+	_remover_persistencia(entity)
 
 
 func obtener_entidades_activas() -> Array:
