@@ -185,13 +185,16 @@ func _procesar_objetivo(objetivo: Node) -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return
 
-	if not CombatTargeting.es_objetivo_valido(atacante, objetivo):
+	var entidad: Entity = objetivo as Entity
+	if entidad == null:
+		return
+	if not CombatTargeting.es_objetivo_valido(atacante, entidad):
 		return
 
-	if objetivo in _afectados:
+	if entidad in _afectados:
 		return
 
-	_afectados.append(objetivo)
+	_afectados.append(entidad)
 	print(
 		"CombatAttackArea: objetivo detectado → ",
 		objetivo.name
