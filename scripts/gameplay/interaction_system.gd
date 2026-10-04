@@ -72,21 +72,21 @@ func procesar_accion_primaria() -> bool:
 	if interaction_controller.interactuar(player):
 		return true
 
-	var inventory: Node = inventory
+	var inventory_node: Node = self.inventory
 	var objeto_activo: Dictionary = {}
 
-	if inventory != null and inventory.has_method("obtener_objeto_activo"):
-		var objeto_activo_variant: Variant = inventory.call("obtener_objeto_activo")
+	if inventory_node != null and inventory_node.has_method("obtener_objeto_activo"):
+		var objeto_activo_variant: Variant = inventory_node.call("obtener_objeto_activo")
 		if objeto_activo_variant is Dictionary:
 			objeto_activo = (objeto_activo_variant as Dictionary).duplicate(true)
 
 	# Los objetos colocables consumen la acción primaria antes del combate.
 	if not objeto_activo.is_empty():
-		var world_items: Node = world_items
+		var world_items_node: Node = self.world_items
 		if (
-			world_items != null
-			and world_items.has_method("es_objeto_colocable")
-			and bool(world_items.call("es_objeto_colocable", objeto_activo))
+			world_items_node != null
+			and world_items_node.has_method("es_objeto_colocable")
+			and bool(world_items_node.call("es_objeto_colocable", objeto_activo))
 		):
 			if world_items.has_method("colocar_objeto"):
 				var colocado: bool = bool(
@@ -97,8 +97,8 @@ func procesar_accion_primaria() -> bool:
 					)
 				)
 				if colocado:
-					if inventory.has_method("consumir_objeto_activo"):
-						inventory.call("consumir_objeto_activo", 1)
+					if inventory_node.has_method("consumir_objeto_activo"):
+						inventory_node.call("consumir_objeto_activo", 1)
 					return true
 
 	# Si no hubo interacción ni colocación, CombatSystem recibe la acción.
