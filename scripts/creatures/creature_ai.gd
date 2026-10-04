@@ -1277,9 +1277,9 @@ func _iniciar_ataque_ligniano() -> void:
 			"CreatureAI/Lignianos"
 		)
 
-		if objetivo.has_method("aplicar_efecto_slow"):
-			objetivo.call(
-				"aplicar_efecto_slow",
+		var jugador_objetivo := objetivo as Player
+		if jugador_objetivo != null:
+			jugador_objetivo.aplicar_efecto_slow(
 				_obtener_float_ataque(
 					"duracion_slow",
 					ligniano_duracion_slow
