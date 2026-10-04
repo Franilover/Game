@@ -56,17 +56,17 @@ theme_override_colors/font_color = Color(0.92, 0.84, 0.67, 1)
 theme_override_font_sizes/font_size = 14
 
 [node name="RoadToWorld" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(420, -48, 960, -48, 960, 48, 420, 48)
+polygon = PackedVector2Array(420, -48, 1536, -48, 1536, 48, 420, 48)
 color = Color(0.38, 0.31, 0.22, 1)
 z_index = 1
 
 [node name="RoadEdgeTop" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(420, -52, 960, -52, 960, -48, 420, -48)
+polygon = PackedVector2Array(420, -52, 1536, -52, 1536, -48, 420, -48)
 color = Color(0.55, 0.45, 0.31, 1)
 z_index = 2
 
 [node name="RoadEdgeBottom" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(420, 48, 960, 48, 960, 52, 420, 52)
+polygon = PackedVector2Array(420, 48, 1536, 48, 1536, 52, 420, 52)
 color = Color(0.55, 0.45, 0.31, 1)
 z_index = 2
 
