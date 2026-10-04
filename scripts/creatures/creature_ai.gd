@@ -1643,12 +1643,11 @@ func _procesar_adherido(delta: float) -> void:
 			0.05
 		)
 
-		if objetivo.has_method("take_damage"):
-			objetivo.call(
-				"take_damage",
-				_obtener_danio_ataque(),
-				"CreatureAI/Rancrodeen"
-			)
+		_aplicar_danio_objetivo(
+			objetivo,
+			_obtener_danio_ataque(),
+			"CreatureAI/Rancrodeen"
+		)
 
 	if _tiempo_adherido <= 0.0:
 		_iniciar_salto_lejos()
