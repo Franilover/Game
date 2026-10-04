@@ -102,7 +102,7 @@ func procesar_accion_primaria() -> bool:
 func _entrada_bloqueada_por_router() -> bool:
 	if input_gate == null:
 		return true
-	return bool(input_gate.call("esta_entrada_bloqueada", get_tree()))
+	return input_gate.esta_entrada_bloqueada(get_tree())
 
 
 func _buscar_objetivo() -> void:
