@@ -11,6 +11,13 @@ extends Node
 ## Los sistemas de gameplay NO deben implementar _input para estas acciones.
 ## Así no existe una carrera entre InteractionSystem, CombatSystem y la UI.
 
+var _interaction_system: Node = null
+var _combat_system: Node = null
+
+func configurar_sistemas(interaction: Node, combat: Node) -> void:
+	_interaction_system = interaction
+	_combat_system = combat
+
 func _input(event: InputEvent) -> void:
 	if not _es_accion_primaria_o_secundaria(event):
 		return
