@@ -3,6 +3,7 @@ extends Node
 
 signal misiones_cargadas
 signal mision_aceptada(mision: Dictionary)
+signal mision_solicitada(mision: Dictionary)
 signal progreso_actualizado(mision_id: String, objetivo_id: String, progreso: int, requerido: int)
 signal mision_completada(mision: Dictionary)
 signal recompensa_disponible(mision: Dictionary, recompensas: Array[Dictionary])
