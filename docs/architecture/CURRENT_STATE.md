@@ -356,3 +356,17 @@ CreatureAI ya no consulta SupabaseClient. Las relaciones ecológicas se cargan e
 La carga es además reactiva: SupabaseClient emite `relaciones_ecologicas_cargadas` y WorldGenerator actualiza las criaturas activas mediante su factory. Así se evita que la IA conozca transporte, autenticación o cachés de infraestructura.
 
 Durante esta barrida también se corrigió una regresión en `_crear_headers()` de SupabaseClient que había quedado recursiva, y las cabeceras REST vuelven a construirse directamente desde `GarliaAuth`.
+
+
+## Vigésima cuarta barrida — WorldItems deja de ser dependencia global de criaturas
+
+Se eliminó la dependencia implícita de `GarliaWorldItems` dentro de `Creature` y `CreatureAI`.
+
+La composición queda:
+`Main → WorldGenerator → WorldEntityFactory → Creature → CreatureAI`.
+
+`WorldItems` se inyecta junto con el resto de dependencias del mundo. Esto evita que una criatura creada por el generador dependa de un autoload o nombre global para buscar objetos o generar drops.
+
+Además, `WorldEntityFactory` y `Creature` ahora mantienen el contrato concreto de `WorldEntityManager`, y `Creature` usa directamente el contrato tipado de `CreatureAI` para configuración y reacción al daño.
+
+La lógica canónica de objetos continúa fuera de la criatura: la criatura solicita al servicio inyectado la búsqueda/generación correspondiente y no conoce su ubicación global.
