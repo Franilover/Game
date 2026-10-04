@@ -12,6 +12,7 @@ var _dialogue_system: Node = null
 var _mission_manager: Node = null
 var _effects_root: Node = null
 var _world_context: Node = null
+var _world_items: Node = null
 var _relaciones_ecologicas: Array = []
 
 
@@ -24,6 +25,7 @@ func configurar_dependencias(
 	mission_manager: Node,
 	effects_root: Node,
 	world_context: Node,
+	world_items: Node,
 	relaciones_ecologicas: Array = []
 ) -> void:
 	_player = jugador
@@ -34,6 +36,7 @@ func configurar_dependencias(
 	_mission_manager = mission_manager
 	_effects_root = effects_root
 	_world_context = world_context
+	_world_items = world_items
 	_relaciones_ecologicas = relaciones_ecologicas.duplicate(true)
 
 
@@ -51,6 +54,7 @@ func crear_criatura(data: Dictionary) -> Creature:
 		_dialogue_system,
 		_mission_manager,
 		_effects_root,
+		_world_items,
 		_relaciones_ecologicas
 	)
 	node.configurar(data)
