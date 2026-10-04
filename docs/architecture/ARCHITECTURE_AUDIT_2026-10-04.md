@@ -237,3 +237,12 @@ Los servicios que pertenecen a una partida activa deben declararse en Main y rec
 - `InteractionSystem` mantiene la selección contextual separada de `InteractionController`; el controller sigue sin conocer HUD, Supabase ni inventario.
 - `InventoryRuntime` conserva la separación explícita entre inventario, hotbar y equipamiento; no se fusionan porque la selección de hotbar no representa equipamiento.
 - Próxima revisión: `Player` y `WorldGenerator`, buscando sacar administración/configuración de personaje y reducir orquestación duplicada sin alterar el contrato canónico.
+
+
+## Novena barrida — composición de mundo y Player
+
+- `WorldGenerator` ya no arranca leyendo `WorldData`/`GameState` directamente desde `_ready()`: `Main` inyecta ambos servicios y luego el generador puede iniciar.
+- `WorldGenerator` conserva su papel de orquestador: terreno, streaming, entidades, reglas, fábrica y contexto siguen siendo sistemas especializados, no se duplican dentro del generador.
+- `Player` deja de depender directamente de `GameState` para descubrimientos, configuración de personaje y guardado administrativo; recibe el servicio desde `Main`.
+- La lógica de movimiento, stamina, Eterium, exploración y acciones permanece delegada a sus controladores/coordinadores existentes; no se creó otra capa paralela.
+- Próxima barrida: revisar `SupabaseClient` y repositorios para separar infraestructura REST por dominio sin duplicar endpoints ni alterar el contrato canónico.
