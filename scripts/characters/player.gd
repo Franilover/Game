@@ -130,6 +130,16 @@ func _procesar_curacion_eterium(delta: float) -> void:
 	mana_changed.emit(mana, max_mana)
 
 
+func _actualizar_recuperacion_eterium(delta: float) -> void:
+	var recuperadas := eterium.actualizar_recuperacion(delta, true)
+	if recuperadas <= 0:
+		return
+	_sync_desde_vital()
+	mana_changed.emit(mana, max_mana)
+	if eterium.vida_eterium_compartidos():
+		health_changed.emit(health, max_health)
+
+
 func _physics_process(delta: float) -> void:
 	if not is_alive:
 		velocity = Vector2.ZERO
