@@ -24,9 +24,7 @@ func _ready() -> void:
 	if marco_fijo is Control:
 		(marco_fijo as Control).visible = false
 
-	slots_container = _buscar_hbox(
-		"Slots"
-	)
+	slots_container = $Slots
 
 	if slots_container == null:
 		print(
@@ -34,7 +32,6 @@ func _ready() -> void:
 		)
 		return
 
-	_buscar_inventario()
 	_obtener_slots()
 	_preparar_slots()
 
@@ -90,78 +87,32 @@ func _unhandled_input(
 			get_viewport().set_input_as_handled()
 
 
-func _buscar_hbox(
-	nombre: String
-) -> HBoxContainer:
-	var nodo := find_child(
-		nombre,
-		true,
-		false
-	)
-
-	if nodo is HBoxContainer:
-		return nodo as HBoxContainer
-
-	return null
-
-
-func _process(
-	delta: float
-) -> void:
-	if (
-		inventory == null
-		or not is_instance_valid(inventory)
-	):
-		_buscar_inventario()
-
-		if inventory != null:
-			_actualizar()
+func _process(delta: float) -> void:
+	if inventory == null or not is_instance_valid(inventory):
 		return
-
 	_tiempo_sincronizacion -= delta
 	if _tiempo_sincronizacion > 0.0:
 		return
-
 	_tiempo_sincronizacion = SINCRONIZACION_INTERVALO
 	_actualizar()
 
 
-func _buscar_inventario() -> void:
-	inventory = get_tree().get_first_node_in_group(
-		"inventory"
-	)
-
-	if inventory == null:
-		_inventario_conectado = false
+func configurar_inventario(nuevo_inventario: Node) -> void:
+	if inventory == nuevo_inventario and _inventario_conectado:
 		return
+	inventory = nuevo_inventario
+	_inventario_conectado = false
+	_conectar_inventario()
+	_actualizar()
 
-	if _inventario_conectado:
+
+func _conectar_inventario() -> void:
+	if inventory == null or not is_instance_valid(inventory) or _inventario_conectado:
 		return
-
-	if inventory.has_signal(
-		"inventory_changed"
-	):
-		if not inventory.is_connected(
-			"inventory_changed",
-			_actualizar
-		):
-			inventory.connect(
-				"inventory_changed",
-				_actualizar
-			)
-
-	if inventory.has_signal(
-		"active_item_changed"
-	):
-		if not inventory.is_connected(
-			"active_item_changed",
-			_al_objeto_activo_cambiado
-		):
-			inventory.connect(
-				"active_item_changed",
-				_al_objeto_activo_cambiado
-			)
-
+	if inventory.has_signal("inventory_changed") and not inventory.is_connected("inventory_changed", _actualizar):
+		inventory.connect("inventory_changed", _actualizar)
+	if inventory.has_signal("active_item_changed") and not inventory.is_connected("active_item_changed", _al_objeto_activo_cambiado):
+		inventory.connect("active_item_changed", _al_objeto_activo_cambiado)
 	_inventario_conectado = true
 
 
@@ -556,9 +507,6 @@ func _actualizar() -> void:
 	if not is_inside_tree():
 		return
 
-	if inventory == null:
-		_buscar_inventario()
-
 	if slot_nodes.is_empty():
 		_obtener_slots()
 
@@ -738,9 +686,6 @@ func _mover_seleccion(
 
 
 func obtener_objeto_seleccionado() -> Dictionary:
-	if inventory == null:
-		_buscar_inventario()
-
 	if inventory == null:
 		return {}
 
