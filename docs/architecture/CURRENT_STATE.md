@@ -254,3 +254,12 @@ La siguiente pasada continúa con infraestructura y gameplay, pero primero se au
 5. Autoloads restantes: clasificar ámbito global vs. partida activa antes de mover cualquiera.
 
 No se considera esta fase terminada hasta que el código y la documentación coincidan.
+
+
+## Duodécima barrida — cierre de contrato de credenciales Supabase
+
+Se corrigió una inconsistencia de composición detectada al validar `SupabaseClient`: tras mover la autoridad de credenciales a `GarliaAuth`, quedaban referencias a las antiguas constantes `SUPABASE_KEY` y `SUPABASE_URL`.
+
+Ahora el contrato es coherente: `Main → SupabaseClient → GarliaAuth (credenciales) → Supabase`. `SupabaseClient` no declara ni mantiene una segunda copia de la URL/clave.
+
+La división por dominio sigue deliberadamente pendiente hasta mapear consumidores; no se crearán repositorios paralelos sólo para reducir el tamaño del archivo.
