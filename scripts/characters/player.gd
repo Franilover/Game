@@ -284,7 +284,7 @@ func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void
 	var habitats: Variant = descubrimiento.get("habitats", [])
 	var criaturas: Variant = descubrimiento.get("criaturas", [])
 	if bioma is Dictionary and ecosistema is Dictionary:
-		_game_state_ref.call("registrar_descubrimiento_mundo",
+		_game_state_ref.registrar_descubrimiento_mundo(
 			bioma as Dictionary,
 			ecosistema as Dictionary,
 			habitats as Array if habitats is Array else [],
@@ -707,7 +707,7 @@ func admin_cambiar_nombre(nuevo_nombre: String) -> bool:
 		return false
 
 	personaje_nombre = nombre
-	var personaje_variant: Variant = _game_state_ref.call("obtener_configuracion_personaje")
+	var personaje_variant: Variant = _game_state_ref.obtener_configuracion_personaje()
 	var personaje: Dictionary = {}
 	if personaje_variant is Dictionary:
 		personaje = (personaje_variant as Dictionary).duplicate(true)
@@ -726,7 +726,7 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 
 	personaje_especie = nueva_especie.duplicate(true)
 
-	var personaje_variant: Variant = GameState.obtener_configuracion_personaje()
+	var personaje_variant: Variant = _game_state_ref.obtener_configuracion_personaje()
 	var personaje: Dictionary = {}
 	if personaje_variant is Dictionary:
 		personaje = (personaje_variant as Dictionary).duplicate(true)
@@ -735,7 +735,7 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 	personaje["genero"] = personaje_genero
 	personaje["especie"] = personaje_especie.duplicate(true)
 	personaje["skin"] = personaje_skin
-	_game_state_ref.call("establecer_configuracion_personaje", personaje)
+	_game_state_ref.establecer_configuracion_personaje(personaje)
 
 	var reglas: Array = _supabase_client_ref.obtener_especie_eterium_game()
 	if not reglas.is_empty():
