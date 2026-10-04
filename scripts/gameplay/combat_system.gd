@@ -738,7 +738,7 @@ func _aplicar_danio(
 		if ai != null:
 			ai.al_recibir_ataque_con_arma(arma)
 
-	_notificar_feedback_impacto(objetivo)
+	CombatFeedback.impacto(objetivo, danio)
 
 	var actor: Node = atacante
 
