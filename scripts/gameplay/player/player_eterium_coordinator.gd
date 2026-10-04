@@ -37,6 +37,12 @@ func mana() -> int:
 func max_mana() -> int:
 	return 0 if runtime == null else runtime.max_mana()
 
+func multiplicador_carrera() -> float:
+	if runtime == null:
+		return 1.0
+	return runtime.multiplicador_carrera()
+
+
 func gastar(cantidad: int) -> bool:
 	return runtime != null and runtime.gastar(cantidad)
 
