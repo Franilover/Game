@@ -974,7 +974,7 @@ func _movimiento_permitido() -> bool:
 
 func _obtener_distancia_maxima_persecucion() -> float:
 	if perfil == Perfil.LIGNIANOS:
-		var distancia_lignianos := _obtener_config_ataque().get("distancia_maxima_persecucion", null)
+		var distancia_lignianos: Variant = _obtener_config_ataque().get("distancia_maxima_persecucion", null)
 		if distancia_lignianos is int or distancia_lignianos is float:
 			return maxf(float(distancia_lignianos), 0.0)
 		return _obtener_distancia_deteccion() * 1.3
