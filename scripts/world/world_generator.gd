@@ -48,8 +48,10 @@ func _inicializar_mundo_si_corresponde() -> void:
 
 func configurar_entidades(root: Node) -> void:
 	_entities_root = root
-	if entity_spawner != null:
-		entity_manager.configurar(_entities_root)
+	if entity_manager == null or entity_spawner == null or entity_factory == null:
+		push_error("WorldGenerator: dependencias de entidades incompletas.")
+		return
+	entity_manager.configurar(_entities_root)
 	entity_spawner.configurar(terrain, entity_manager, entity_factory)
 
 func _process(_delta: float) -> void:
