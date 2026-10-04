@@ -17,22 +17,21 @@ Se detectaron especialmente:
 - `PlayerLocomotionController`, `PlayerActionController`, `PlayerStaminaController` y coordinadores de Eterium ya existen.
 - `WorldData` ya mantiene un snapshot/indexado del mundo.
 - `WorldGenerator` todavía funciona como fachada demasiado grande para Terrain + Streaming + Spawner + Atmosphere + consultas de mundo.
-- `WorldEntitySpawner` dependía directamente de `get_tree().current_scene/Entities`; esto ya fue eliminado mediante inyección del root de entidades desde Main.
-- `Main` creaba DialogueSystem e IUMManager dinámicamente; esto ya fue eliminado: ambos son nodos explícitos de la escena.
+- `WorldEntitySpawner` dejó de depender de `get_tree().current_scene/Entities` mediante inyección del root de entidades desde Main.
+- `Main` dejó de crear DialogueSystem e IUMManager dinámicamente; ambos son nodos explícitos de la escena.
 - `InteractionSystem` ya no conoce HUD; emite `objetivo_cambiado` y Main conecta la presentación.
-- WorldTerrain, WorldTerrainVisual, WorldStreamer, WorldEntitySpawner y WorldAtmosphere ahora son nodos explícitos de `main.tscn`; WorldGenerator ya no los crea dinámicamente.
-- WorldAtmosphere ya no busca `current_scene`; recibe su `CanvasModulate` como dependencia de escena.
+- WorldTerrain, WorldTerrainVisual, WorldStreamer, WorldEntitySpawner y WorldAtmosphere ahora son nodos explícitos de `main.tscn`.
+- WorldAtmosphere recibe su CanvasModulate como dependencia de escena.
 - GameplayInputRouter recibe explícitamente InteractionSystem y CombatSystem.
 - CombatSystem recibe explícitamente Inventory, WorldGenerator y root de proyectiles.
 - InteractionSystem recibe explícitamente Inventory y GarliaWorldItems.
 - `DialogueSystem` accede directamente a MissionManager y RelationshipSystem.
-- `CombatSystem` y `InteractionSystem` todavía encuentran algunos servicios mediante grupos.
-- `IUMManager` realiza HTTP directo contra Supabase en vez de pasar por la infraestructura común.
+- `IUMManager` ya usa `IUMRepository → SupabaseClient` para acceso remoto.
 - `GameState` sigue concentrando guardado, estado de jugador, descubrimientos y lógica de menú.
 
 ### Supabase
 
-El proyecto está activo y saludable, PostgreSQL 17.6.1.
+El proyecto está activo y saludable.
 
 Datos relevantes actuales:
 
@@ -59,23 +58,27 @@ La estructura canónica del juego ya refleja relaciones fuertes:
 
 Esto refuerza que Godot debe adaptar estos datos, no recrear otra base de reglas.
 
-Los advisors de Supabase también detectan múltiples políticas permisivas duplicadas y 3 índices duplicados. Son deuda del backend, pero no deben mezclarse con la refactorización del runtime de Godot.
+Los advisors de Supabase también detectan deuda independiente de backend. Esa limpieza no se mezcla con esta refactorización del runtime.
 
 ## Cambios realizados en esta fase
 
 1. Se creó `docs/architecture/GARLIA_ARCHITECTURE.md`.
-2. `Main` dejó de crear DialogueSystem dinámicamente.
-3. `Main` dejó de crear IUMManager dinámicamente.
+2. Main dejó de crear DialogueSystem dinámicamente.
+3. Main dejó de crear IUMManager dinámicamente.
 4. DialogueSystem e IUMManager ahora son nodos explícitos de `scenes/world/main.tscn`.
 5. IUMLab ahora también está declarado explícitamente en la escena.
-6. `WorldEntitySpawner` dejó de buscar `current_scene/Entities`.
-7. `WorldGenerator` ahora recibe explícitamente el root de entidades desde Main.
-8. Main actúa cada vez más como Composition Root: conecta dependencias en vez de descubrirlas durante la ejecución.
+6. WorldEntitySpawner dejó de buscar `current_scene/Entities`.
+7. WorldGenerator recibe explícitamente el root de entidades desde Main.
+8. Main actúa como Composition Root: conecta dependencias en vez de descubrirlas durante la ejecución.
+9. Inventory separó InventoryRuntime, InventoryState, InventoryHotbar e InventoryEquipment como una única frontera de estado.
+10. Combat usa la ruta canónica de ataque/proyectil y un root explícito de proyectiles.
+11. Interaction recibe WorldEntityManager en vez de descubrir interactuables mediante SceneTree.
+12. Se eliminó la capa no utilizada `GameStateFacade` y sus wrappers `PlayerRuntime`, `WorldRuntime` y `SaveState`. No eran consumidores del juego activo.
 
 ## Próximas fronteras
 
 ### Prioridad 1
-Eliminar búsquedas de SceneTree para dependencias estructurales:
+Eliminar búsquedas de SceneTree para dependencias estructurales que todavía queden:
 
 - Inventory → runtime/equipment explícitos
 - Combat → equipment explícito
@@ -97,31 +100,23 @@ WorldRuntime
 ```
 
 ### Prioridad 3
-Mover IUMManager a Infrastructure/adapter:
+Reducir GameState.
 
-```
-IUMGameplay
-↓
-IUMRepository
-↓
-SupabaseClient
-```
+Ya no se busca crear otra fachada paralela. El objetivo es que `GameState` conserve únicamente la coordinación que realmente le pertenece:
 
-Nunca HTTP directo desde gameplay.
+- ciclo de vida de la partida local
+- lectura/escritura del save
+- coordinación de carga inicial
+- metadatos de la partida
+- eventos de guardado/descubrimiento cuando no exista un dueño mejor
+
+Los estados de dominio nuevos sólo deben introducirse cuando exista un consumidor real y una autoridad clara.
 
 ### Prioridad 4
-Reducir GameState:
-
-```
-GameState (fachada temporal)
-├── SaveState
-├── PlayerState
-├── WorldState
-└── DiscoveryState
-```
+Revisar autoloads y dejar sólo estado realmente global.
 
 ### Prioridad 5
-Revisar autoloads y dejar sólo estado realmente global.
+Mantener la documentación sincronizada con el código real y continuar la eliminación de descubrimiento implícito.
 
 ## Regla de trabajo
 
@@ -129,15 +124,14 @@ No volver a corregir un síntoma de render, input, misión o generación modific
 
 Primero localizar el dueño del estado y seguir el grafo de dependencias definido en `GARLIA_ARCHITECTURE.md`.
 
-
 ## Segunda etapa completada — Entity lifecycle e infraestructura IUM
 
 ### Entidades
 
 La generación ya no es dueña del ciclo de vida de nodos.
 
-WorldEntitySpawner → decide QUÉ aparece
-WorldEntityFactory → crea QUÉ escena
+WorldEntitySpawner → decide QUÉ aparece  
+WorldEntityFactory → crea QUÉ escena  
 WorldEntityManager → decide DÓNDE vive y CUÁNDO se elimina
 
 El streamer continúa orquestando el momento de activar/desactivar chunks, pero la propiedad del registro y despawn está centralizada en WorldEntityManager.
@@ -148,11 +142,11 @@ Las entidades invocadas manualmente se registran como globales y no dependen del
 
 ### IUM / Supabase
 
-La ruta ahora es:
+La ruta es:
 
 IUMManager → IUMRepository → SupabaseClient → Supabase REST/RPC
 
-IUMManager ya no contiene URLs, API keys, HTTPRequest ni RPCs.
+IUMManager no debe contener URLs, API keys, HTTPRequest ni RPCs.
 IUMRepository traduce operaciones del dominio IUM a operaciones de Supabase.
 SupabaseClient es infraestructura genérica de transporte.
 
@@ -163,7 +157,6 @@ Un sistema de generación no debe administrar el ciclo de vida de nodos.
 Un factory no decide reglas de spawn.
 Un manager de entidades no decide qué criatura corresponde a un habitat.
 Cada frontera tiene un dueño.
-
 
 ## Tercera etapa — estado, diálogo y relaciones
 
@@ -182,12 +175,9 @@ Ruta de diálogo:
 
 Main → DialogueSystem → MissionManager / RelationshipSystem
 
-DialogueSystem ya no busca estos sistemas mediante /root/... .
+DialogueSystem ya no busca estos sistemas mediante `/root/...`.
 
 GameState ya no busca Player/Inventory/WorldGenerator mediante grupos o la escena actual durante guardado/aplicación del estado.
-
-El objetivo es que los sistemas de gameplay dependan de contratos suministrados por el Composition Root y no de la estructura global del SceneTree.
-
 
 ## Tercera etapa — Inventory state boundary
 
@@ -203,10 +193,12 @@ La hotbar continúa siendo selección independiente del equipamiento. Equipar un
 
 El Player también es una dependencia inyectada en la UI de inventario para usos de objetos y pestañas administrativas; ya no se descubre mediante grupos.
 
-
 ## Cuarta etapa — Combat ↔ Equipment
 
 CombatSystem ya consume el arma desde InventoryController.obtener_objeto_equipado().
+
 La selección de hotbar ya no define el arma utilizada por el ataque primario.
+
 La durabilidad de las herramientas usadas por combate se descuenta desde el equipamiento.
+
 El slot actual de combate es mano_secundaria, coincidiendo con el slot de equipamiento existente en la UI.
