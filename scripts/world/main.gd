@@ -162,7 +162,7 @@ func _configurar_combate(world_gen: Node) -> void:
 		return
 
 	if _combat_system.has_method("configurar"):
-		_combat_system.configurar(_player, _inventory, world_gen, self)
+		_combat_system.configurar(_player, _inventory, world_gen, self, world_gen.entity_manager)
 
 
 func _configurar_input_router() -> void:
