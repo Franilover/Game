@@ -72,9 +72,17 @@ func procesar() -> void:
 				_terrain.ultimo_chunk_generado()
 			)
 
-			_entity_spawner.spawn_chunk(
-				chunk_coord
+			# El jugador puede alejarse mientras se genera un chunk.
+			# No instanciar criaturas ni conservar terreno que ya quedó
+			# fuera del radio de streaming durante esa generación.
+			var distancia_chunk := maxi(
+				abs(chunk_coord.x - _player_chunk.x),
+				abs(chunk_coord.y - _player_chunk.y)
 			)
+			if distancia_chunk > _unload_radius:
+				_terrain.descargar_chunk(chunk_coord)
+			else:
+				_entity_spawner.spawn_chunk(chunk_coord)
 
 		return
 
