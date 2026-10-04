@@ -34,7 +34,7 @@ var entorno: String = "tierra"
 var _movimiento: CreatureMovement = null
 var _player_dependency: Node = null
 var _entity_manager_dependency: WorldEntityManager = null
-var _inventory_dependency: Node = null
+var _inventory_dependency: GarliaInventory = null
 var _combat_system_dependency: CombatSystem = null
 var _dialogue_system_dependency: Node = null
 var _mission_manager_dependency: Node = null
@@ -51,7 +51,7 @@ var _muerte_procesada: bool = false
 func configurar_dependencias(
 	jugador: Node,
 	entity_manager: WorldEntityManager,
-	inventario: Node,
+	inventario: GarliaInventory,
 	combat_system: CombatSystem,
 	dialogue_system: Node,
 	mission_manager: Node,
