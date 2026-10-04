@@ -28,7 +28,7 @@ func _cargar_reglas_disponibles() -> void:
 	_regalos = SupabaseClient.obtener_personaje_regalos()
 	if _regalos.is_empty():
 		SupabaseClient.cargar_personaje_regalos()
-	var reglas := SupabaseClient.obtener_personaje_social()
+	var reglas: Array = SupabaseClient.obtener_personaje_social()
 	if not reglas.is_empty():
 		_al_reglas_cargadas(reglas)
 	else:
