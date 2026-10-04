@@ -746,7 +746,8 @@ func _aplicar_danio(
 
 	objetivo.call(
 		"take_damage",
-		danio
+		danio,
+		"Jugador/CombatSystem:" + origen
 	)
 
 	if (
