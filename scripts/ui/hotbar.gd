@@ -740,3 +740,4 @@ func obtener_objeto_seleccionado() -> Dictionary:
 
 func obtener_indice_seleccionado() -> int:
 	return indice_seleccionado
+
