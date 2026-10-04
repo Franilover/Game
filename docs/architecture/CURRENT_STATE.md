@@ -427,3 +427,8 @@ Se eliminó reflexión innecesaria en `GameplayInputRouter` y `Main`. `HUD` ahor
 ## Trigésima cuarta barrida — Main y gameplay reducen reflexión residual
 
 `Main` quedó sin `has_method()/call()` para sus sistemas configurables; la única reflexión restante allí corresponde al contrato polimórfico de objetivos de interacción (`Creature`, `WorldItem`, `WorldProp`). `DialogueSystem` usa contratos concretos para Player, HUD, MissionManager y RelationshipSystem y llama directamente a las APIs sociales. `InteractionSystem` usa `GameplayInputGate` directamente. `GameState` quedó sin reflexión en guardado/carga de Inventory, MissionManager, Player IUM y WorldAtmosphere; permanece una frontera genérica para identificar criaturas derrotadas, porque `GameState` todavía acepta entidades polimórficas y no debe inventar un contrato único para todos los `damageable`.
+
+
+## Trigésima quinta barrida — AdminConsole y WorldData consolidan contratos
+
+`AdminConsole` ahora recibe contratos concretos para WorldContext, WorldEntitySpawner, WorldAtmosphere, Player, Inventory, EntityManager, AdminPlayerEditor y WorldItems. Sus comandos `/summon`, `/give`, `/time`, `/tp` y edición de jugador dejaron de usar reflexión runtime. `WorldData` ahora tiene `class_name` y sus consultas de criaturas/personajes son contratos concretos. `InventoryController` también dejó de configurarse mediante reflexión desde Inventory. Se mantiene reflexión únicamente en fronteras polimórficas aún no formalizadas, principalmente fuentes de diálogo y compatibilidad del GameState autoload.
