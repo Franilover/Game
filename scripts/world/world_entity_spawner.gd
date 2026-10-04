@@ -867,12 +867,8 @@ func _spawn_props_in_chunk(
 	if props.is_empty():
 		return
 
-	var current_scene: Node = get_tree().current_scene
-	if current_scene == null:
-		return
-
-	var entities: Node = current_scene.get_node_or_null("Entities")
-	if entities == null:
+	var entities: Node = _entities_root
+	if entities == null or not is_instance_valid(entities):
 		return
 
 	var creados: Array = []
