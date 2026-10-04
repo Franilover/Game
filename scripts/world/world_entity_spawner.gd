@@ -44,21 +44,26 @@ var peso_destacadas: float = 4.0
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
 var _entity_factory: WorldEntityFactory = null
+var _spawn_rules: WorldSpawnRules = null
 
 
 func configurar(
 	terrain: WorldTerrain,
 	entity_manager: WorldEntityManager = null,
-	entity_factory: WorldEntityFactory = null
+	entity_factory: WorldEntityFactory = null,
+	spawn_rules: WorldSpawnRules = null
 ) -> void:
 	_terrain = terrain
 	_entity_manager = entity_manager
 	_entity_factory = entity_factory
+	_spawn_rules = spawn_rules
 
 	if _entity_manager == null:
 		push_error("WorldEntitySpawner: Entity manager inválido.")
 	if _entity_factory == null:
 		push_error("WorldEntitySpawner: Entity factory inválido.")
+	if _spawn_rules == null:
+		push_error("WorldEntitySpawner: Spawn rules inválidas.")
 
 
 func spawn_chunk(
@@ -145,9 +150,7 @@ func spawn_chunk(
 			continue
 
 		var candidatos: Array = (
-			_obtener_candidatos(
-				ecosistema
-			)
+			_spawn_rules.obtener_candidatos(ecosistema)
 		)
 
 		if candidatos.is_empty():
@@ -207,11 +210,7 @@ func spawn_chunk(
 				_terrain.get_zona_at(tile)
 			)
 
-			if not _ubicacion_valida(
-				bioma,
-				habitat_clave,
-				zona
-			):
+			if not _spawn_rules.ubicacion_valida(bioma, habitat_clave, zona):
 				continue
 
 			validos.append(
@@ -222,10 +221,7 @@ func spawn_chunk(
 			continue
 
 		var elegido: Dictionary = (
-			_elegir_candidato_ponderado(
-				validos,
-				rng
-			)
+			_spawn_rules.elegir_criatura(validos, rng)
 		)
 
 		if elegido.is_empty():
@@ -585,125 +581,6 @@ func summon_criatura(
 	}
 
 
-func _elegir_candidato_ponderado(
-	candidatos: Array,
-	rng: RandomNumberGenerator
-) -> Dictionary:
-	var peso_total: float = 0.0
-
-	for i in range(candidatos.size()):
-		var candidato_variant: Variant = (
-			candidatos[i]
-		)
-
-		if not candidato_variant is Dictionary:
-			continue
-
-		var candidato: Dictionary = (
-			candidato_variant
-		)
-
-		var peso: float = (
-			_obtener_peso_candidato(
-				candidato
-			)
-		)
-
-		if peso > 0.0:
-			peso_total += peso
-
-	if peso_total <= 0.0:
-		return {}
-
-	var objetivo: float = (
-		rng.randf_range(
-			0.0,
-			peso_total
-		)
-	)
-
-	var acumulado: float = 0.0
-
-	for i in range(candidatos.size()):
-		var candidato_variant: Variant = (
-			candidatos[i]
-		)
-
-		if not candidato_variant is Dictionary:
-			continue
-
-		var candidato: Dictionary = (
-			candidato_variant
-		)
-
-		var peso: float = (
-			_obtener_peso_candidato(
-				candidato
-			)
-		)
-
-		if peso <= 0.0:
-			continue
-
-		acumulado += peso
-
-		if objetivo <= acumulado:
-			return candidato
-
-	return candidatos[
-		candidatos.size() - 1
-	]
-
-
-func _obtener_peso_candidato(
-	candidato: Dictionary
-) -> float:
-	var criatura_variant: Variant = (
-		candidato.get(
-			"criatura",
-			{}
-		)
-	)
-
-	if not criatura_variant is Dictionary:
-		return peso_normal
-
-	var criatura: Dictionary = (
-		criatura_variant
-	)
-
-	var nombre: String = str(
-		criatura.get(
-			"nombre",
-			""
-		)
-	)
-
-	match nombre:
-		"Flaxis":
-			if (
-				criaturas_destacadas
-				& CRIATURA_FLAXIS
-			) != 0:
-				return peso_destacadas
-
-		"Zlish":
-			if (
-				criaturas_destacadas
-				& CRIATURA_ZLISH
-			) != 0:
-				return peso_destacadas
-
-		"Lignianos":
-			if (
-				criaturas_destacadas
-				& CRIATURA_LIGNIANOS
-			) != 0:
-				return peso_destacadas
-
-	return peso_normal
-
-
 func despawn_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager != null:
 		_entity_manager.despawn_chunk(chunk_coord)
@@ -740,7 +617,7 @@ func _spawn_characters_in_chunk(
 		if bioma_ids.is_empty():
 			continue
 
-		var tile := _buscar_tile_para_personaje(chunk_coord, bioma_ids, rng)
+		var tile := _spawn_rules.buscar_tile_para_personaje(chunk_coord, bioma_ids, rng)
 		if tile == Vector2i(2147483647, 2147483647):
 			continue
 
@@ -868,7 +745,7 @@ func _spawn_props_in_chunk(
 				continue
 
 			var datos_prop := prop.duplicate(true)
-			datos_prop["asset_path"] = _construir_asset_path_prop(datos_prop)
+			datos_prop["asset_path"] = _spawn_rules.construir_asset_path_prop(datos_prop)
 			if datos_prop["asset_path"] == "":
 				continue
 
@@ -877,7 +754,7 @@ func _spawn_props_in_chunk(
 		if candidatos.is_empty():
 			continue
 
-		var elegido := _elegir_prop_ponderado(candidatos, rng)
+		var elegido := _spawn_rules.elegir_prop(candidatos, rng)
 		if elegido.is_empty():
 			continue
 
@@ -913,265 +790,3 @@ func _spawn_props_in_chunk(
 			" → ",
 			creados.size()
 		)
-
-
-func _construir_asset_path_prop(prop: Dictionary) -> String:
-	var nombre := str(prop.get("nombre", "")).strip_edges()
-	if nombre.is_empty():
-		return ""
-
-	var candidatos: Array[String] = [
-		"res://assets/art/props/" + nombre + ".png",
-		"res://assets/art/props/" + _quitar_acentos(nombre) + ".png"
-	]
-
-	# La clave canónica permite encontrar assets cuyo nombre visual no coincide
-	# exactamente con el nombre mostrado en Supabase (por ejemplo Árbol/Arbol).
-	var clave := str(prop.get("clave", "")).strip_edges()
-	if not clave.is_empty():
-		var clave_visual := clave.capitalize()
-		candidatos.append(
-			"res://assets/art/props/" + clave_visual + ".png"
-		)
-		candidatos.append(
-			"res://assets/art/props/" + _quitar_acentos(clave_visual) + ".png"
-		)
-
-	for ruta in candidatos:
-		if FileAccess.file_exists(ruta):
-			return ruta
-
-	return ""
-
-
-func _quitar_acentos(texto: String) -> String:
-	var resultado := texto
-	resultado = resultado.replace("á", "a").replace("Á", "A")
-	resultado = resultado.replace("é", "e").replace("É", "E")
-	resultado = resultado.replace("í", "i").replace("Í", "I")
-	resultado = resultado.replace("ó", "o").replace("Ó", "O")
-	resultado = resultado.replace("ú", "u").replace("Ú", "U")
-	resultado = resultado.replace("ñ", "n").replace("Ñ", "N")
-	return resultado
-
-
-func _elegir_prop_ponderado(
-	candidatos: Array[Dictionary],
-	rng: RandomNumberGenerator
-) -> Dictionary:
-	var peso_total := 0.0
-
-	for prop in candidatos:
-		peso_total += maxf(float(prop.get("peso", 1.0)), 0.0)
-
-	if peso_total <= 0.0:
-		return {}
-
-	var objetivo := rng.randf_range(0.0, peso_total)
-	var acumulado := 0.0
-
-	for prop in candidatos:
-		acumulado += maxf(float(prop.get("peso", 1.0)), 0.0)
-		if objetivo <= acumulado:
-			return prop
-
-	return candidatos.back()
-
-
-func _buscar_tile_para_personaje(
-	chunk_coord: Vector2i,
-	bioma_ids: Array,
-	rng: RandomNumberGenerator
-) -> Vector2i:
-	var origen_x := chunk_coord.x * _terrain.chunk_size_tiles
-	var origen_y := chunk_coord.y * _terrain.chunk_size_tiles
-	var candidatos: Array[Vector2i] = []
-
-	for y in range(_terrain.chunk_size_tiles):
-		for x in range(_terrain.chunk_size_tiles):
-			var tile := Vector2i(origen_x + x, origen_y + y)
-			if not _terrain.is_walkable(tile):
-				continue
-
-			var bioma := _terrain.get_bioma_at(tile)
-			if bioma.is_empty():
-				continue
-
-			if str(bioma.get("id", "")) in bioma_ids:
-				candidatos.append(tile)
-
-	if candidatos.is_empty():
-		return Vector2i(2147483647, 2147483647)
-
-	return candidatos[rng.randi_range(0, candidatos.size() - 1)]
-
-
-func _obtener_candidatos(
-	ecosistema: Dictionary
-) -> Array:
-	var resultado: Array = []
-
-	var habitats_variant: Variant = (
-		ecosistema.get(
-			"habitats",
-			[]
-		)
-	)
-
-	if not habitats_variant is Array:
-		return resultado
-
-	var habitats: Array = (
-		habitats_variant
-	)
-
-	var vistos: Dictionary = {}
-
-	for i in range(habitats.size()):
-		var habitat_variant: Variant = (
-			habitats[i]
-		)
-
-		if not habitat_variant is Dictionary:
-			continue
-
-		var habitat: Dictionary = (
-			habitat_variant
-		)
-
-		var tipo_variant: Variant = (
-			habitat.get(
-				"tipo_habitat",
-				{}
-			)
-		)
-
-		var habitat_clave: String = (
-			"general"
-		)
-
-		if tipo_variant is Dictionary:
-			var tipo: Dictionary = (
-				tipo_variant
-			)
-
-			habitat_clave = str(
-				tipo.get(
-					"clave",
-					"general"
-				)
-			).to_lower()
-
-		var criaturas_variant: Variant = (
-			habitat.get(
-				"criaturas",
-				[]
-			)
-		)
-
-		if not criaturas_variant is Array:
-			continue
-
-		var criaturas: Array = (
-			criaturas_variant
-		)
-
-		for j in range(criaturas.size()):
-			var criatura_variant: Variant = (
-				criaturas[j]
-			)
-
-			if not criatura_variant is Dictionary:
-				continue
-
-			var criatura: Dictionary = (
-				criatura_variant
-			)
-
-			var criatura_id: String = str(
-				criatura.get(
-					"id",
-					""
-				)
-			)
-
-			if criatura_id.is_empty():
-				continue
-
-			if vistos.has(
-				criatura_id
-			):
-				continue
-
-			vistos[criatura_id] = true
-
-			resultado.append({
-				"criatura": criatura,
-				"habitat_clave": habitat_clave
-			})
-
-	return resultado
-
-
-func _ubicacion_valida(
-	bioma: Dictionary,
-	habitat_clave: String,
-	zona: int
-) -> bool:
-	var nombre_bioma: String = str(
-		bioma.get(
-			"nombre",
-			""
-		)
-	).to_lower()
-
-	var acuatico: bool = (
-		"marino" in nombre_bioma
-		or "agua dulce" in nombre_bioma
-	)
-
-	var tierra: bool = (
-		zona != WorldTerrain.Zone.WATER
-		and zona != WorldTerrain.Zone.DEEP_WATER
-	)
-
-	var agua: bool = not tierra
-
-	if acuatico:
-		match habitat_clave:
-			"pelagico":
-				return agua
-
-			"bentonico":
-				return agua
-
-			"litoral":
-				return agua
-
-			"ribera":
-				return tierra
-
-			"aereo":
-				return true
-
-			"general":
-				return true
-
-			_:
-				return agua
-
-	match habitat_clave:
-		"pelagico":
-			return false
-
-		"bentonico":
-			return false
-
-		"litoral":
-			return false
-
-		"aereo":
-			return true
-
-		_:
-			return tierra
