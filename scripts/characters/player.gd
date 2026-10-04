@@ -361,16 +361,39 @@ func _aplicar_eterium_runtime(reglas: Dictionary, organismos: Array) -> void:
 	_sync_vital_desde_eterium()
 
 
-func absorber_eterium_de_criatura(criatura: Node) -> int:
-	if not _eterium_runtime_ready:
-		return 0
+func _aplicar_especie_eterium_game(reglas: Array) -> void:
+	var especie_id := str(personaje_especie.get("id", "")).strip_edges()
+	if especie_id.is_empty():
+		return
 
+	for regla_variant in reglas:
+		if not regla_variant is Dictionary:
+			continue
+		var regla := regla_variant as Dictionary
+		var padre_variant: Variant = regla.get("especie_eterium_v1", {})
+		if not padre_variant is Dictionary:
+			continue
+		var padre := padre_variant as Dictionary
+		if str(padre.get("especie_id", "")) != especie_id:
+			continue
+
+		if eterium.aplicar_especie(regla, especie_id):
+			_sync_vital_desde_eterium()
+			fisiologia_changed.emit(eterium.vida_eterium_compartidos())
+		return
+
+
+func _eterium_vida_compartida() -> bool:
+	return eterium.vida_eterium_compartidos()
+
+
+func absorber_eterium_de_criatura(criatura: Node) -> int:
+	if not eterium.esta_listo():
+		return 0
 	if criatura == null or not is_instance_valid(criatura):
 		return 0
-
 	if not criatura.has_method("get_datos"):
 		return 0
-
 	if criatura.has_meta("eterium_absorbido"):
 		return 0
 
@@ -378,117 +401,28 @@ func absorber_eterium_de_criatura(criatura: Node) -> int:
 	if not datos_variant is Dictionary:
 		return 0
 
-	var datos := datos_variant as Dictionary
-	var biologia_variant: Variant = datos.get(
-		"biologia_calculada",
-		{}
-	)
+	var cantidad := eterium.calcular_absorcion(datos_variant as Dictionary)
+	criatura.set_meta("eterium_absorbido", true)
 
-	if not biologia_variant is Dictionary:
+	if cantidad <= 0:
 		return 0
 
-	var biologia := biologia_variant as Dictionary
-	var organismo_id := str(
-		biologia.get(
-			"organismo_id",
-			""
-		)
-	)
-
-	if organismo_id.is_empty():
+	var absorbido := eterium.absorber(cantidad)
+	if absorbido <= 0:
 		return 0
 
-	var organismo_variant: Variant = _eterium_organismos.get(
-		organismo_id,
-		{}
-	)
-	if not organismo_variant is Dictionary:
-		return 0
-
-	var organismo := organismo_variant as Dictionary
-	if not bool(organismo.get("posee_eterium", false)):
-		return 0
-
-	var base := str(
-		organismo.get(
-			"base_eterium",
-			""
-		)
-	).strip_edges().to_lower()
-
-	if base.is_empty():
-		return 0
-
-	var rendimientos_variant: Variant = _eterium_reglas.get(
-		"rendimiento_por_base_s",
-		{}
-	)
-	if not rendimientos_variant is Dictionary:
-		return 0
-
-	var rendimiento_s := maxf(
-		float(
-			(rendimientos_variant as Dictionary).get(
-				base,
-				0.0
-			)
-		),
-		0.0
-	)
-	var eficiencia := clampf(
-		float(
-			_eterium_reglas.get(
-				"absorcion_eficiencia",
-				0.0
-			)
-		),
-		0.0,
-		1.0
-	)
-
-	var cantidad_runtime := roundi(
-		rendimiento_s
-		* eficiencia
-		* _eterium_escala_runtime()
-	)
-	var espacio := max_mana - mana
-	cantidad_runtime = clampi(
-		cantidad_runtime,
-		0,
-		espacio
-	)
-
-	criatura.set_meta(
-		"eterium_absorbido",
-		true
-	)
-
-	if cantidad_runtime <= 0:
-		return 0
-
-	mana += cantidad_runtime
-	_eterium_recovery_accumulator = 0.0
-
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
+	mana_changed.emit(mana, max_mana)
+	if eterium.vida_eterium_compartidos():
+		health_changed.emit(health, max_health)
 
 	print(
 		"Player: Eterium absorbido de ",
 		str(criatura.get("criatura_nombre")),
 		" → ",
-		cantidad_runtime,
-		" unidades runtime (",
-		rendimiento_s,
-		" S)."
+		absorbido,
+		" unidades runtime."
 	)
-
-	return cantidad_runtime
-
-
-
-
+	return absorbido
 
 # ============================================================
 # JUMP
