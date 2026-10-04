@@ -7,7 +7,7 @@ var _biomas: Array = []
 var _ecosistemas: Array = []
 var _ecosistema_indices: Dictionary = {}
 var _bioma_ecosistemas: Array = []
-var _biome_noise: FastNoiseLite
+var _biome_noises: Array[FastNoiseLite] = []
 var _ecosystem_noise: FastNoiseLite
 var _terrain_noise: FastNoiseLite
 
@@ -39,10 +39,6 @@ const TERRENO_A_ZONA: Dictionary = {
 func configurar(nuevo_seed: int) -> void:
 	map_seed = nuevo_seed
 
-	_biome_noise = FastNoiseLite.new()
-	_biome_noise.seed = map_seed + 1001
-	_biome_noise.frequency = 0.006
-
 	_ecosystem_noise = FastNoiseLite.new()
 	_ecosystem_noise.seed = map_seed + 2002
 	_ecosystem_noise.frequency = 0.020
@@ -61,6 +57,13 @@ func cargar_datos(
 	_ecosistemas = ecosistemas
 	_ecosistema_indices = ecosistema_indices
 	_bioma_ecosistemas = []
+
+	_biome_noises.clear()
+	for indice in range(_biomas.size()):
+		var biome_noise := FastNoiseLite.new()
+		biome_noise.seed = map_seed + 1001 + indice * 7919
+		biome_noise.frequency = 0.006
+		_biome_noises.append(biome_noise)
 
 	for bioma_variant in _biomas:
 		var indices: Array[int] = []
@@ -93,58 +96,66 @@ func cargar_datos(
 
 
 func bioma_index_at_tile(tile: Vector2i) -> int:
-	if _biomas.is_empty() or _biome_noise == null:
+	if _biomas.is_empty() or _biome_noises.size() != _biomas.size():
 		return -1
 
-	var valor := (
-		_biome_noise.get_noise_2d(tile.x, tile.y)
-		+ 1.0
-	) * 0.5
+	# Cada bioma tiene su propio campo de ruido. Elegir el máximo
+	# ponderado evita el error anterior: usar un único ruido con
+	# umbrales acumulados convertía los pesos en anillos concéntricos.
+	var mejor_indice := 0
+	var mejor_puntuacion := -INF
 
-	var pesos: Array[float] = []
-	var total_peso := 0.0
+	for indice in range(_biomas.size()):
+		var peso := _peso_bioma(indice)
+		if peso <= 0.0:
+			continue
 
-	for bioma_variant in _biomas:
-		var peso := 0.0
-
-		if bioma_variant is Dictionary:
-			var generacion_variant: Variant = (
-				(bioma_variant as Dictionary).get(
-					"generacion",
-					{}
-				)
+		var ruido := (
+			_biome_noises[indice].get_noise_2d(
+				tile.x,
+				tile.y
 			)
+			+ 1.0
+		) * 0.5
 
-			if generacion_variant is Dictionary:
-				peso = maxf(
-					float(
-						(generacion_variant as Dictionary).get(
-							"peso",
-							0.0
-						)
-					),
-					0.0
-				)
+		# El peso de Supabase actúa como sesgo de selección, mientras
+		# que el ruido independiente mantiene regiones espaciales suaves.
+		var puntuacion := ruido + log(peso) * 0.35
 
-		pesos.append(peso)
-		total_peso += peso
+		if puntuacion > mejor_puntuacion:
+			mejor_puntuacion = puntuacion
+			mejor_indice = indice
 
-	if total_peso <= 0.0:
-		return 0
+	return mejor_indice
 
-	var acumulado := 0.0
 
-	for indice in range(pesos.size()):
-		var peso_normalizado := (
-			pesos[indice] / total_peso
+func _peso_bioma(indice: int) -> float:
+	if indice < 0 or indice >= _biomas.size():
+		return 0.0
+
+	var bioma_variant: Variant = _biomas[indice]
+	if not bioma_variant is Dictionary:
+		return 0.0
+
+	var generacion_variant: Variant = (
+		(bioma_variant as Dictionary).get(
+			"generacion",
+			{}
 		)
+	)
 
-		acumulado += peso_normalizado
+	if not generacion_variant is Dictionary:
+		return 0.0
 
-		if valor < acumulado:
-			return indice
-
-	return pesos.size() - 1
+	return maxf(
+		float(
+			(generacion_variant as Dictionary).get(
+				"peso",
+				0.0
+			)
+		),
+		0.0
+	)
 
 
 func ecosistema_index_at_tile(
