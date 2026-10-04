@@ -389,16 +389,10 @@ func _obtener_objeto_activo() -> Dictionary:
 
 
 func _atacar_desarmado() -> void:
-	var direccion: Vector2 = (
-		_obtener_direccion_ataque()
-	)
+	var direccion: Vector2 = _obtener_direccion_ataque()
 
-	var objetivo: Node = _buscar_objetivo(
-		direccion,
-		alcance_desarmado,
-		ancho_ataque
-	)
-
+	# El hitbox es la única resolución del ataque melee.
+	# CombatAttackArea detecta el objetivo y CombatDamage aplica el daño.
 	_crear_ataque_melee(
 		direccion,
 		alcance_desarmado,
@@ -408,18 +402,6 @@ func _atacar_desarmado() -> void:
 	)
 
 	_tiempo_desde_ataque = enfriamiento_arma
-
-	if objetivo == null:
-		ataque_sin_objetivo.emit(
-			player
-		)
-		return
-
-	_aplicar_danio(
-		objetivo,
-		danio_desarmado,
-		"desarmado"
-	)
 
 
 func _atacar_con_arma(
