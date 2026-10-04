@@ -11,6 +11,7 @@ var _combat_system: Node = null
 var _dialogue_system: Node = null
 var _mission_manager: Node = null
 var _effects_root: Node = null
+var _world_context: Node = null
 
 
 func configurar_dependencias(
@@ -20,7 +21,8 @@ func configurar_dependencias(
 	combat_system: Node,
 	dialogue_system: Node,
 	mission_manager: Node,
-	effects_root: Node
+	effects_root: Node,
+	world_context: Node
 ) -> void:
 	_player = jugador
 	_entity_manager = entity_manager
@@ -29,6 +31,7 @@ func configurar_dependencias(
 	_dialogue_system = dialogue_system
 	_mission_manager = mission_manager
 	_effects_root = effects_root
+	_world_context = world_context
 
 
 func crear_criatura(data: Dictionary) -> Creature:
@@ -68,4 +71,6 @@ func crear_prop(data: Dictionary) -> WorldProp:
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear WorldProp.")
 		return null
+	node.configurar_dependencias(_world_context, _inventory)
+	node.configurar_desde_game_data(data)
 	return node
