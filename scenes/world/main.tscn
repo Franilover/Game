@@ -26,6 +26,8 @@
 [node name="Main" type="Node2D" unique_id=109422602]
 script = ExtResource("3_main")
 
+[node name="GameCamera" type="Camera2D" parent="."]
+
 [node name="World" type="Node2D" parent="." unique_id=334444401]
 
 [node name="WorldGenerator" type="Node2D" parent="World" unique_id=896457846]
