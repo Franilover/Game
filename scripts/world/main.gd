@@ -16,6 +16,7 @@ var _input_router: Node = GameplayInputRouter
 @onready var _ium_manager: Node = $Systems/IUMManager
 @onready var _ium_lab: Control = $UI/IUMLab
 @onready var _admin_console: CanvasLayer = $UI/AdminConsole
+@onready var _admin_player_editor: Control = $UI/AdminPlayerEditor
 @onready var _world_entity_spawner: Node = $World/WorldGenerator/WorldEntitySpawner
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: Node = $Systems/IUMRepository
@@ -228,7 +229,8 @@ func _configurar_admin() -> void:
 			_world_atmosphere,
 			_player,
 			_inventory,
-			_world_generator.entity_manager
+			_world_generator.entity_manager,
+			_admin_player_editor
 		)
 
 func _configurar_pantalla() -> void:
