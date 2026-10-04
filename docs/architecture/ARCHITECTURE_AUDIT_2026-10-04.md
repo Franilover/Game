@@ -109,3 +109,38 @@ No se eliminaron archivos basándose únicamente en su nombre. Una auditoría co
 - SupabaseClient ya no busca WorldGenerator en `current_scene`.
 - AdminConsole ya no busca ni crea AdminPlayerEditor dinámicamente.
 - No se afirma que el proyecto compile: los cambios requieren validación en Godot local.
+
+
+## Segunda barrida — dependencias implícitas adicionales encontradas
+
+La primera pasada de UI descubrió referencias que no aparecían en el grupo inicial de archivos centrales. Se migraron a dependencias explícitas:
+
+- `AdminInventory`: ya no busca Player, Inventory ni WorldGenerator por grupos; recibe Player, Inventory y WorldEntitySpawner. La invocación usa WorldEntitySpawner y pasa una posición.
+- `WorldMap`: recibe Player y WorldContext; dejó de buscar Player/WorldGenerator por grupos.
+- `Crafting`: recibe Inventory; dejó de buscarlo por grupo.
+- `Relationships`: recibe RelationshipSystem; dejó de buscar `/root/RelationshipSystem`.
+- `Hotbar`: recibe Inventory desde HUD y usa el nodo `Slots` explícito; se eliminó `find_child`.
+- `DeathMenu`: recibe Player e Inventory.
+- `PauseMenu`: recibe Inventory.
+- `IUMLab`: recibe AdminConsole en vez de buscarla por grupo.
+- `Encyclopedia`: usa `GameState.obtener_criaturas_descubiertas()` en vez de leer `GameState.flags`.
+
+### Deuda implícita aún identificada
+
+Esta pasada **no se debe considerar una eliminación global completa** de todos los descubrimientos implícitos. Sigue pendiente migrar o justificar:
+
+- `scripts/creatures/creature_ai.gd`: búsqueda global de Player, criaturas, objetivos dañables e Inventory; también busca CombatSystem mediante `current_scene`. Es un archivo grande (~2.000 líneas) y necesita una refactorización propia, no sustituciones mecánicas.
+- `scripts/creatures/creature.gd`: busca DialogueSystem por grupo y MissionManager mediante `/root`; usa `current_scene` para colocar rastros de teletransporte.
+- `scripts/world/world_decoration.gd`: busca Player y WorldGenerator desde grupos/escena.
+- `scripts/world/world_prop.gd` y `scripts/world/world_item.gd`: todavía buscan Generator, Player e Inventory por grupos.
+- `scripts/gameplay/combat_system.gd`: consulta el hijo opcional `AIController` en objetivos concretos; esto no es búsqueda global, pero conviene sustituirlo por una interfaz/propiedad explícita si la entidad lo expone.
+- `scripts/ui/encyclopedia.gd`, `world_map.gd`, `hotbar.gd`, `crafting.gd`, `death_menu.gd`, `pause_menu.gd`, `relationships.gd`, `ium_lab.gd` ya recibieron la migración indicada arriba; falta validación de ejecución en Godot.
+
+## Próxima fase segura
+
+1. Mapear el ciclo de vida de entidades: WorldEntitySpawner → WorldEntityFactory → Creature → CreatureAI.
+2. Diseñar una interfaz de dependencias de entidad para Player, WorldEntityManager, Inventory, CombatSystem, DialogueSystem y MissionManager, y configurarla antes de activar la IA.
+3. Cambiar CreatureAI de búsquedas globales a consultas sobre Player explícito y WorldEntityManager; evitar reemplazar grupos por otra búsqueda global.
+4. Inyectar WorldContext/Player en WorldDecoration, WorldProp y WorldItem solo después de confirmar cuáles se instancian realmente.
+5. Auditar referencias a escenas/scripts para distinguir archivos muertos de código que se instancia por carga dinámica.
+6. Validar cada etapa en Godot. No hacer una migración masiva de la IA ni borrar archivos hasta conocer todos sus consumidores.
