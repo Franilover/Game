@@ -308,7 +308,7 @@ func _mostrar_sugerencias_tp(texto: String) -> void:
 				if not nombre.is_empty():
 					nombres.append(nombre)
 		"jugador":
-			var jugador: Node = player
+			var jugador: Player = player
 			if jugador != null:
 				nombres.append(jugador.name)
 		_:
@@ -827,7 +827,7 @@ func _comando_summon(nombre: String) -> void:
 		)
 		return
 
-	var world_generator: Node = world_entity_spawner
+	var world_generator: WorldEntitySpawner = world_entity_spawner
 
 	if world_generator == null:
 		_agregar_linea(
@@ -1053,9 +1053,9 @@ func _comando_tp(argumentos: String) -> void:
 				posicion = jugador.global_position
 
 		"reino":
-			var world_generator: Node = world_context
-			if world_generator != null and world_generator.has_method("buscar_posicion_reino"):
-				posicion = world_generator.call("buscar_posicion_reino", nombre, player.global_position)
+			var world_generator: WorldContext = world_context
+			if world_generator != null:
+				posicion = world_generator.buscar_posicion_reino(nombre, player.global_position)
 
 		_:
 			_agregar_linea("[color=#d88]Tipo desconocido. Usa criatura, reino, jugador o humano.[/color]")
@@ -1095,7 +1095,7 @@ func _comando_give(nombre: String) -> void:
 		)
 		return
 
-	var inventario: Node = inventory
+	var inventario: GarliaInventory = inventory
 
 	if inventario == null:
 		_agregar_linea(
@@ -1149,7 +1149,7 @@ func _comando_time(argumentos: String) -> void:
 		)
 		return
 
-	var atmosfera: Node = world_atmosphere
+	var atmosfera: WorldAtmosphere = world_atmosphere
 
 	if atmosfera == null:
 		_agregar_linea(
