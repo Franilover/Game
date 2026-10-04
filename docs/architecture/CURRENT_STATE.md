@@ -163,3 +163,27 @@ Un sistema de generación no debe administrar el ciclo de vida de nodos.
 Un factory no decide reglas de spawn.
 Un manager de entidades no decide qué criatura corresponde a un habitat.
 Cada frontera tiene un dueño.
+
+
+## Tercera etapa — estado, diálogo y relaciones
+
+Se eliminó otra capa de descubrimiento implícito:
+
+- GameState recibe Player, Inventory y WorldGenerator desde Main.
+- DialogueSystem recibe MissionManager y RelationshipSystem.
+- RelationshipSystem recibe SocialRepository.
+- SocialRepository usa SupabaseClient para transportar datos sociales.
+
+Ruta social:
+
+Main → RelationshipSystem → SocialRepository → SupabaseClient → Supabase
+
+Ruta de diálogo:
+
+Main → DialogueSystem → MissionManager / RelationshipSystem
+
+DialogueSystem ya no busca estos sistemas mediante /root/... .
+
+GameState ya no busca Player/Inventory/WorldGenerator mediante grupos o la escena actual durante guardado/aplicación del estado.
+
+El objetivo es que los sistemas de gameplay dependan de contratos suministrados por el Composition Root y no de la estructura global del SceneTree.
