@@ -390,3 +390,8 @@ Esto evita accesos a _auth nulo durante arranques tempranos y mantiene a GarliaA
 Player y HUD ahora exponen clases explícitas para que Main pueda depender de sus contratos reales. Main dejó de usar reflexión para configurar al jugador, HUD e inventario en las rutas ya verificadas, y las llamadas directas a Player (`set_spawn_from_world`, `configurar_dependencias`, `get_jugador_id`, `equipar_proceso_ium`) sustituyen comprobaciones dinámicas.
 
 No se extendió esta conversión a sistemas cuyo contrato todavía es Node/global sin clase estable. La reflexión restante queda como deuda localizada, no como objetivo de eliminarla mecánicamente.
+
+
+## Vigésima octava barrida — CombatSystem reduce reflexión en inventario y ataques
+
+CombatSystem ahora depende explícitamente de `GarliaInventory`, `CombatAttackArea` y `CombatProjectile` para las rutas de equipamiento, durabilidad, creación de hitboxes y proyectiles. Se retiraron `has_method()/call()` de esas fronteras ya tipadas. GameState conserva su llamada dinámica porque todavía no expone un `class_name` seguro y no se introduce una abstracción artificial solo para eliminar una línea dinámica.
