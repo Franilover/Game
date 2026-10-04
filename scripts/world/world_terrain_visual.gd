@@ -92,7 +92,7 @@ func _crear_capa_bioma(bioma_nombre: String) -> TileMapDual:
 	)
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -10001
+	layer.z_index = -999990
 	layer.rendering_quadrant_size = 32
 	layer.tile_set = _crear_tileset()
 
