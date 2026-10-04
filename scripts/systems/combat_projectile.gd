@@ -94,34 +94,31 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 		return
 
-	if objetivo.has_method("take_damage"):
-		var vivo_antes := true
-		if "is_alive" in objetivo:
-			vivo_antes = bool(objetivo.get("is_alive"))
+	var aplicado := CombatDamage.aplicar(
+		objetivo,
+		danio,
+		"Jugador/Proyectil:" + str(arma.get("nombre", "Proyectil"))
+	)
+	if not aplicado:
+		queue_free()
+		return
 
-		objetivo.call(
-			"take_damage",
-			danio,
-			"Jugador/Proyectil"
-		)
+	if (
+		objetivo.is_in_group("creatures")
+		and "is_alive" in objetivo
+		and not bool(objetivo.get("is_alive"))
+		and propietario != null
+		and propietario.is_in_group("player")
+	):
+		GameState.registrar_criatura_derrotada(objetivo)
 
-		if (
-			vivo_antes
-			and "is_alive" in objetivo
-			and not bool(objetivo.get("is_alive"))
-			and objetivo.is_in_group("creatures")
-			and propietario != null
-			and propietario.is_in_group("player")
-		):
-			GameState.registrar_criatura_derrotada(objetivo)
-
-		if (
-			not arma.is_empty()
-			and objetivo.is_in_group("creatures")
-			and "is_alive" in objetivo
-			and bool(objetivo.get("is_alive"))
-			and objetivo.has_node("AIController")
-		):
+	if (
+		not arma.is_empty()
+		and objetivo.is_in_group("creatures")
+		and "is_alive" in objetivo
+		and bool(objetivo.get("is_alive"))
+		and objetivo.has_node("AIController")
+	):
 			var ai: Node = objetivo.get_node_or_null(
 				"AIController"
 			)
@@ -186,7 +183,7 @@ func _buscar_impacto(
 		if not is_instance_valid(candidato):
 			continue
 
-		if candidato == propietario:
+		if not CombatTargeting.es_objetivo_valido(propietario, candidato):
 			continue
 
 		if not candidato is Node2D:
