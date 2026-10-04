@@ -55,6 +55,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_input_router()
 	_configurar_inventario()
 	_configurar_dialogo()
+	_configurar_social()
 	_inicializar_ium()
 	_configurar_pantalla()
 
@@ -236,3 +237,8 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 
 	var nombre: String = proceso.get("nombre", "Proceso")
 	print("Main: Proceso IUM equipado → ", nombre)
+
+
+func _configurar_social() -> void:
+	if RelationshipSystem.has_method("configurar"):
+		RelationshipSystem.call("configurar", SocialRepository)
