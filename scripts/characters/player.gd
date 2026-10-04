@@ -144,7 +144,6 @@ func _physics_process(delta: float) -> void:
 		_procesar_curacion_eterium(delta)
 		return
 
-	_eterium_heal_timer = 0.0
 
 	# Shift tiene dos funciones:
 	# pulsarlo = dash inmediato
@@ -179,7 +178,6 @@ func _physics_process(delta: float) -> void:
 	if direction == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
 	else:
-		_eterium_recovery_accumulator = 0.0
 
 	# Consumo de stamina al correr normalmente.
 	if is_running:
@@ -352,98 +350,6 @@ func _configurar_especie_eterium_game_desde_supabase() -> void:
 
 func _al_especie_eterium_game_cargado(reglas: Array) -> void:
 	_aplicar_especie_eterium_game(reglas)
-
-
-func _aplicar_especie_eterium_game(reglas: Array) -> void:
-	var especie_id := str(personaje_especie.get("id", ""))
-	if especie_id.is_empty():
-		return
-	for regla_variant in reglas:
-		if not regla_variant is Dictionary:
-			continue
-		var regla := regla_variant as Dictionary
-		var padre_variant: Variant = regla.get("especie_eterium_v1", {})
-		if not padre_variant is Dictionary:
-			continue
-		var padre := padre_variant as Dictionary
-		if str(padre.get("especie_id", "")) != especie_id:
-			continue
-		_especie_eterium_game = regla.duplicate(true)
-		_especie_eterium_game_ready = true
-		var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana))))
-		var eterium_inicial := clampi(int(regla.get("eterium_inicial", capacidad)), 0, capacidad)
-		max_mana = capacidad
-		mana = eterium_inicial
-		if bool(regla.get("vida_eterium_compartidos", false)):
-			max_health = capacidad
-			health = capacidad
-			mana = capacidad
-			health_changed.emit(health, max_health)
-			mana_changed.emit(mana, max_mana)
-		else:
-			mana_changed.emit(mana, max_mana)
-		var compartido := bool(regla.get("vida_eterium_compartidos", false))
-		_eterium_recupera = bool(regla.get("recuperacion_eterium", true))
-		_aplicar_admin_maximos_guardados()
-		print("Player: fisiología Eterium cargada → especie=", especie_id, " | compartido=", compartido, " | capacidad=", max_mana)
-		fisiologia_changed.emit(compartido)
-		return
-
-func _aplicar_admin_maximos_guardados() -> void:
-	var admin_variant: Variant = GameState.flags.get("personaje_admin", {})
-	if not admin_variant is Dictionary:
-		return
-
-	var admin_data := admin_variant as Dictionary
-	var maximos_variant: Variant = admin_data.get("maximos", {})
-	if not maximos_variant is Dictionary:
-		return
-
-	var maximos := maximos_variant as Dictionary
-	if maximos.has("vida"):
-		max_health = maxi(1, int(maximos.get("vida", max_health)))
-	if maximos.has("eterium"):
-		max_mana = maxi(1, int(maximos.get("eterium", max_mana)))
-	if maximos.has("energia"):
-		max_stamina = maxf(1.0, float(maximos.get("energia", max_stamina)))
-
-	health = mini(health, max_health)
-	mana = mini(mana, max_mana)
-	stamina = minf(stamina, max_stamina)
-
-	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_mana)
-	stamina_changed.emit(stamina, max_stamina)
-
-
-
-func _eterium_vida_compartida() -> bool:
-	return _especie_eterium_game_ready and bool(_especie_eterium_game.get("vida_eterium_compartidos", false))
-
-
-func _obtener_eterium_por_muerte(cantidad: int) -> void:
-	var ganancia := maxi(cantidad, 0)
-	if ganancia <= 0:
-		return
-	mana = mini(mana + ganancia, max_mana)
-	mana_changed.emit(mana, max_mana)
-	if _eterium_vida_compartida():
-		health = mana
-		health_changed.emit(health, max_health)
-
-
-func _gastar_eterium(cantidad: int) -> bool:
-	var gasto := maxi(cantidad, 0)
-	if gasto <= 0 or mana < gasto:
-		return false
-	mana -= gasto
-	mana_changed.emit(mana, max_mana)
-	if _eterium_vida_compartida():
-		health = mana
-		health_changed.emit(health, max_health)
-		if health <= 0:
-			_die()
-	return true
 
 
 func _configurar_eterium_desde_supabase() -> void:
