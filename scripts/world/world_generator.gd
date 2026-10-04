@@ -128,7 +128,8 @@ func _inicializar_mundo() -> void:
 	terrain.configurar(
 		map_seed,
 		tile_size,
-		chunk_size_tiles
+		chunk_size_tiles,
+		_world_data
 	)
 
 	terrain.cargar_datos_mundo()
