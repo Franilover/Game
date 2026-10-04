@@ -114,12 +114,14 @@ func _ready() -> void:
 
 	_encontrar_movimiento()
 	_refrescar_configuracion()
+	_aplicar_configuracion_movimiento()
 	_cargar_relaciones_ecologicas()
 	_cambiar_estado_forzado(estado_inicial)
 
 
 func configurar_criatura() -> void:
 	_refrescar_configuracion()
+	_aplicar_configuracion_movimiento()
 	_cargar_relaciones_ecologicas()
 
 	if criatura == null:
@@ -854,6 +856,69 @@ func _obtener_respuesta_a_objetivo() -> String:
 	return ""
 
 
+func _obtener_config_movimiento() -> Dictionary:
+	var valor: Variant = configuracion_ia.get(
+		"movimiento",
+		{}
+	)
+
+	if valor is Dictionary:
+		return valor as Dictionary
+
+	return {}
+
+
+func _obtener_float_movimiento(
+	clave: String,
+	por_defecto: float
+) -> float:
+	var movimiento := _obtener_config_movimiento()
+	var valor: Variant = movimiento.get(
+		clave,
+		por_defecto
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return por_defecto
+
+
+func _aplicar_configuracion_movimiento() -> void:
+	if _movimiento == null:
+		_encontrar_movimiento()
+
+	if _movimiento == null:
+		return
+
+	var movimiento := _obtener_config_movimiento()
+
+	if movimiento.is_empty():
+		_velocidad_normal = maxf(
+			_movimiento.move_speed,
+			0.0
+		)
+		return
+
+	_velocidad_normal = _obtener_float_movimiento(
+		"velocidad",
+		_movimiento.move_speed
+	)
+
+	_movimiento.move_speed = _velocidad_normal
+	_movimiento.min_move_time = _obtener_float_movimiento(
+		"exploracion_min",
+		_movimiento.min_move_time
+	)
+	_movimiento.max_move_time = maxf(
+		_obtener_float_movimiento(
+			"exploracion_max",
+			_movimiento.max_move_time
+		),
+		_movimiento.min_move_time
+	)
+
+
 func _obtener_config_ataque() -> Dictionary:
 	var valor: Variant = configuracion_ia.get(
 		"ataque",
@@ -915,6 +980,9 @@ func _movimiento_permitido() -> bool:
 
 func _obtener_distancia_maxima_persecucion() -> float:
 	if perfil == Perfil.LIGNIANOS:
+		var distancia_lignianos := _obtener_config_ataque().get("distancia_maxima_persecucion", null)
+		if distancia_lignianos is int or distancia_lignianos is float:
+			return maxf(float(distancia_lignianos), 0.0)
 		return _obtener_distancia_deteccion() * 1.3
 
 	var ataque := _obtener_config_ataque()
@@ -1009,14 +1077,7 @@ func _procesar_ataque_contacto(
 
 
 func _obtener_velocidad_ataque() -> float:
-	match perfil:
-		Perfil.CAMBIAFORMAS:
-			return velocidad_persecucion
-
-		Perfil.RANCRODEEN:
-			return velocidad_persecucion
-
-	return velocidad_persecucion
+	return _obtener_velocidad_persecucion()
 
 
 func _iniciar_ataque_generico_contacto() -> void:
@@ -1111,7 +1172,7 @@ func _iniciar_ataque_flaxis() -> void:
 		return
 
 	_tiempo_accion = maxf(
-		duracion_lanzamiento,
+		_obtener_float_movimiento("duracion_lanzamiento", duracion_lanzamiento),
 		0.01
 	)
 
@@ -1119,7 +1180,9 @@ func _iniciar_ataque_flaxis() -> void:
 	ultima_posicion_objetivo = _objetivo_ataque
 
 	criatura.tomar_control_movimiento()
-	_establecer_velocidad(velocidad_lanzamiento)
+	_establecer_velocidad(
+		_obtener_float_movimiento("velocidad_lanzamiento", velocidad_lanzamiento)
+	)
 
 	var direccion := criatura.global_position.direction_to(
 		_objetivo_ataque
@@ -1723,24 +1786,14 @@ func _iniciar_persecucion() -> void:
 
 
 func _obtener_velocidad_persecucion() -> float:
-	match perfil:
-		Perfil.FLAXIS:
-			return velocidad_persecucion
+	var movimiento := _obtener_config_movimiento()
+	var valor: Variant = movimiento.get(
+		"velocidad_persecucion",
+		movimiento.get("velocidad", velocidad_persecucion)
+	)
 
-		Perfil.LIGNIANOS:
-			return ligniano_velocidad_carga
-
-		Perfil.CAMBIAFORMAS:
-			return _obtener_float_config(
-				"velocidad_persecucion",
-				velocidad_persecucion
-			)
-
-		Perfil.RANCRODEEN:
-			return _obtener_float_config(
-				"velocidad_persecucion",
-				velocidad_persecucion
-			)
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
 
 	return velocidad_persecucion
 
@@ -1776,7 +1829,8 @@ func _iniciar_huida() -> void:
 
 func _obtener_velocidad_huida() -> float:
 	if perfil == Perfil.ZLISH:
-		var velocidad_config: Variant = configuracion_ia.get(
+		var movimiento := _obtener_config_movimiento()
+		var velocidad_config: Variant = movimiento.get(
 			"velocidad_huida",
 			zlish_velocidad_huida
 		)
