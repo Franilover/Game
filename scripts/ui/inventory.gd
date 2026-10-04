@@ -901,22 +901,16 @@ func _buscar_slot_libre() -> int:
 	return -1
 
 
-func obtener_objeto_equipado(clave: String) -> Dictionary:
-	var objeto_variant: Variant = equipo.get(clave, {})
-
-	if objeto_variant is Dictionary:
-		return (objeto_variant as Dictionary).duplicate(true)
-
-	return {}
-
-
 func robar_objeto_equipado(clave: String) -> Dictionary:
 	var objeto: Dictionary = obtener_objeto_equipado(clave)
 
 	if objeto.is_empty():
 		return {}
 
-	equipo.erase(clave)
+	var objeto_retirado := inventory_controller.robar_objeto_equipado(clave)
+	if objeto_retirado.is_empty():
+		return {}
+	objeto = objeto_retirado
 
 	for child in equipment_slots.get_children():
 		if not child.has_method("obtener_clave"):
