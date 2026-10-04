@@ -199,6 +199,8 @@ func iniciar_generacion_chunk(
 	_profiler_biome_ms = 0.0
 	_profiler_ecosystem_ms = 0.0
 	_profiler_zone_ms = 0.0
+	if visual != null:
+		visual.iniciar_profiler()
 
 	if not _generation_task.is_empty():
 		return
@@ -567,7 +569,15 @@ func _finalizar_chunk() -> void:
 		" pasos) | flush=",
 		"%.2f" % _profiler_flush_ms,
 		" ms / ",
-		_profiler_flushes
+		_profiler_flushes,
+		" | visual_set_cell=",
+		"%.2f" % float(visual.obtener_profiler().get("set_cell_ms", 0.0)),
+		" ms | visual_variaciones=",
+		"%.2f" % float(visual.obtener_profiler().get("variation_ms", 0.0)),
+		" ms | visual_dirty=",
+		"%.2f" % float(visual.obtener_profiler().get("dirty_ms", 0.0)),
+		" ms | visual_set_calls=",
+		int(visual.obtener_profiler().get("set_cell_calls", 0)),
 	)
 
 	_generation_task.clear()
