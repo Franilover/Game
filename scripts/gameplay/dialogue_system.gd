@@ -7,6 +7,8 @@ signal dialogue_finished
 
 var player: Node = null
 var ui_root: Node = null
+var mission_manager: Node = null
+var relationship_system: Node = null
 
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
@@ -33,9 +35,11 @@ func _ready() -> void:
 	add_to_group("dialogue_system")
 
 
-func configurar(nuevo_player: Node, nuevo_ui_root: Node) -> void:
+func configurar(nuevo_player: Node, nuevo_ui_root: Node, nuevo_mission_manager: Node = null, nuevo_relationship_system: Node = null) -> void:
 	player = nuevo_player
 	ui_root = nuevo_ui_root
+	mission_manager = nuevo_mission_manager
+	relationship_system = nuevo_relationship_system
 	_crear_interfaz()
 
 
@@ -133,7 +137,6 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id.is_empty():
-			var mission_manager: Node = get_node_or_null("/root/MissionManager")
 			if mission_manager != null:
 				mission_manager.call(
 					"registrar_dialogo_desde_fuente",
@@ -154,7 +157,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		var personaje_id_social := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id_social.is_empty():
-			var social := get_node_or_null("/root/RelationshipSystem")
+			var social: Node = relationship_system
 			if social != null and social.has_method("registrar_dialogo"):
 				social.call("registrar_dialogo", personaje_id_social, str(datos_seleccionados.get("clave", "principal")))
 
@@ -281,7 +284,7 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		personaje_id = str(_fuente.call("get_personaje_game_id")).strip_edges()
 	if not personaje_id.is_empty():
-		var social := get_node_or_null("/root/RelationshipSystem")
+		var social: Node = relationship_system
 		if social != null and social.has_method("seleccionar_variante_dialogo"):
 			var seleccion: Variant = social.call("seleccionar_variante_dialogo", variantes_variant as Array, personaje_id)
 			if seleccion is Dictionary and not (seleccion as Dictionary).is_empty():
@@ -301,17 +304,17 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			var estado_requerido := str(requisito.get("estado", "")).strip_edges().to_lower()
 
 			if not mision_clave.is_empty() and not estado_requerido.is_empty():
-				var mission_manager: Node = get_node_or_null("/root/MissionManager")
-				if mission_manager == null:
+				var mission_manager_local: Node = mission_manager
+				if mission_manager_local == null:
 					continue
 
-				var mision: Dictionary = mission_manager.call("buscar_mision_por_clave", mision_clave)
+				var mision: Dictionary = mission_manager_local.call("buscar_mision_por_clave", mision_clave)
 				if mision.is_empty():
 					continue
 
 				var mision_id := str(mision.get("id", ""))
 				var estado_actual := str(
-					mission_manager.call("obtener_estado_mision", mision_id).get(
+					mission_manager_local.call("obtener_estado_mision", mision_id).get(
 						"estado",
 						"disponible"
 					)
@@ -368,14 +371,14 @@ func _ejecutar_accion_dialogo() -> void:
 			if clave.is_empty():
 				return
 
-			var mission_manager: Node = get_node_or_null("/root/MissionManager")
-			if mission_manager != null and bool(mission_manager.call("aceptar_mision", clave)):
+			var mission_manager_local: Node = mission_manager
+			if mission_manager_local != null and bool(mission_manager_local.call("aceptar_mision", clave)):
 				_acciones.clear()
 				action_button.visible = false
 				hint_label.text = "Misión aceptada · [ LMB ] Continuar"
 				Events.notification_pushed.emit(
 					"Misión aceptada: "
-					+ str(mission_manager.call("buscar_mision_por_clave", clave).get("nombre", clave))
+					+ str(mission_manager_local.call("buscar_mision_por_clave", clave).get("nombre", clave))
 				)
 				return
 
