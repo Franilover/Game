@@ -41,6 +41,9 @@ const API_PERSONAJE_SOCIAL := (
 const API_ESPECIE_ETERIUM_GAME := (
 	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,eterium_inicial,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
 )
+const API_RELACIONES_ECOLOGICAS := (
+	"/rest/v1/ecosistema_relaciones_criaturas?select=ecosistema_id,criatura_origen_id,criatura_destino_id,tipo_relacion,descripcion,origen"
+)
 
 
 var _http: HTTPRequest
@@ -49,6 +52,7 @@ var _http_especies: HTTPRequest
 var _http_especie_eterium_game: HTTPRequest
 var _http_personaje_social: HTTPRequest
 var _http_personaje_regalos: HTTPRequest
+var _http_relaciones_ecologicas: HTTPRequest
 var _timer: Timer
 var _solicitud_en_curso: bool = false
 var _intento_actual: int = 0
@@ -58,6 +62,7 @@ var _especie_eterium_game: Array = []
 var _especies_jugables: Array = []
 var _personaje_social: Array = []
 var _personaje_regalos: Array = []
+var _relaciones_ecologicas: Array = []
 
 
 func _ready() -> void:
@@ -105,6 +110,13 @@ func _ready() -> void:
 		_al_completar_personaje_regalos
 	)
 
+	_http_relaciones_ecologicas = HTTPRequest.new()
+	_http_relaciones_ecologicas.timeout = HTTP_TIMEOUT
+	add_child(_http_relaciones_ecologicas)
+	_http_relaciones_ecologicas.request_completed.connect(
+		_al_completar_relaciones_ecologicas
+	)
+
 	call_deferred("cargar_eterium_runtime")
 	call_deferred("cargar_especie_eterium_game")
 	call_deferred("cargar_personaje_social")
@@ -119,6 +131,79 @@ func _ready() -> void:
 	_timer.timeout.connect(
 		_al_timer_sincronizacion
 	)
+
+
+func cargar_relaciones_ecologicas() -> void:
+	if _http_relaciones_ecologicas == null:
+		return
+
+	var headers := PackedStringArray([
+		"apikey: " + SUPABASE_KEY,
+		"Content-Type: application/json",
+		"Accept: application/json"
+	])
+
+	var resultado := _http_relaciones_ecologicas.request(
+		SUPABASE_URL + API_RELACIONES_ECOLOGICAS,
+		headers,
+		HTTPClient.METHOD_GET
+	)
+
+	if resultado != OK:
+		print(
+			"SupabaseClient: no se pudo solicitar relaciones ecológicas → ",
+			resultado
+		)
+
+
+func _al_completar_relaciones_ecologicas(
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		print("SupabaseClient: error de red cargando relaciones ecológicas.")
+		return
+
+	if codigo_http < 200 or codigo_http >= 300:
+		print(
+			"SupabaseClient: HTTP ",
+			codigo_http,
+			" cargando relaciones ecológicas → ",
+			cuerpo.get_string_from_utf8()
+		)
+		return
+
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK:
+		print("SupabaseClient: relaciones ecológicas no son JSON válido.")
+		return
+
+	if not json.data is Array:
+		print("SupabaseClient: relaciones ecológicas no son una lista.")
+		return
+
+	_relaciones_ecologicas.clear()
+
+	for relacion_variant in json.data as Array:
+		if relacion_variant is Dictionary:
+			_relaciones_ecologicas.append(
+				(relacion_variant as Dictionary).duplicate(true)
+			)
+
+	print(
+		"SupabaseClient: relaciones ecológicas cargadas → ",
+		_relaciones_ecologicas.size()
+	)
+
+	relaciones_ecologicas_cargadas.emit(
+		_relaciones_ecologicas.duplicate(true)
+	)
+
+
+func obtener_relaciones_ecologicas() -> Array:
+	return _relaciones_ecologicas.duplicate(true)
 
 
 func cargar_especies_jugables() -> void:
