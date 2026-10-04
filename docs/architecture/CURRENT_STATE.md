@@ -383,3 +383,10 @@ La regla se mantiene: sólo se elimina has_method()/call() cuando el contrato re
 SupabaseClient ahora valida de forma centralizada que GarliaAuth esté inyectado y que las credenciales públicas necesarias existan antes de iniciar solicitudes REST/RPC compartidas o la sincronización del mundo. _crear_headers() también tolera una infraestructura todavía no configurada.
 
 Esto evita accesos a _auth nulo durante arranques tempranos y mantiene a GarliaAuth como único dueño de las credenciales. No se trasladó ninguna regla de dominio a SupabaseClient.
+
+
+## Vigésima séptima barrida — Player y HUD pasan a contratos concretos
+
+Player y HUD ahora exponen clases explícitas para que Main pueda depender de sus contratos reales. Main dejó de usar reflexión para configurar al jugador, HUD e inventario en las rutas ya verificadas, y las llamadas directas a Player (`set_spawn_from_world`, `configurar_dependencias`, `get_jugador_id`, `equipar_proceso_ium`) sustituyen comprobaciones dinámicas.
+
+No se extendió esta conversión a sistemas cuyo contrato todavía es Node/global sin clase estable. La reflexión restante queda como deuda localizada, no como objetivo de eliminarla mecánicamente.
