@@ -303,3 +303,10 @@ CombatSystem también dejó de tratar WorldContext como un Node genérico. La de
 Esto mantiene la regla de que las fronteras conocidas deben ser explícitas. No se movió todavía la lógica de inventario, ataque o daño: esas piezas se mantienen en sus dueños actuales para evitar una división artificial del sistema.
 
 Siguiente objetivo: continuar reduciendo descubrimiento dinámico en CombatSystem y revisar sus responsabilidades de presentación/IA antes de tocar la resolución de daño.
+
+
+## Decimoséptima barrida — SupabaseClient reduce duplicación de transporte
+
+Se centralizó la creación de los HTTPRequest internos de SupabaseClient en una única función de infraestructura. Cada operación conserva su propio request y callback, pero la configuración común de timeout y pertenencia al nodo deja de repetirse siete veces.
+
+No se creó todavía una capa de repositorios artificial: el siguiente paso es separar responsabilidades por dominio sólo cuando el código real y sus consumidores justifiquen esa frontera.
