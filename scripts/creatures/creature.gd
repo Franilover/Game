@@ -33,7 +33,7 @@ var entorno: String = "tierra"
 
 var _movimiento: CreatureMovement = null
 var _player_dependency: Node = null
-var _entity_manager_dependency: Node = null
+var _entity_manager_dependency: WorldEntityManager = null
 var _inventory_dependency: Node = null
 var _combat_system_dependency: Node = null
 var _dialogue_system_dependency: Node = null
@@ -226,8 +226,8 @@ func configurar(
 
 	_cargar_sprite()
 
-	var ai := get_node_or_null("AIController")
-	if ai != null and ai.has_method("configurar_criatura"):
+	var ai := get_node_or_null("AIController") as CreatureAI
+	if ai != null:
 		ai.configurar_criatura()
 
 	queue_redraw()
@@ -340,13 +340,10 @@ func take_damage(
 	super.take_damage(cantidad, origen)
 
 	if is_alive and health < salud_anterior:
-		var ai := get_node_or_null("AIController")
+		var ai := get_node_or_null("AIController") as CreatureAI
 
-		if ai != null and ai.has_method("al_recibir_danio"):
-			ai.call(
-				"al_recibir_danio",
-				salud_anterior - health
-			)
+		if ai != null:
+			ai.al_recibir_danio(salud_anterior - health)
 
 
 func establecer_colision(activa: bool) -> void:
