@@ -6,7 +6,7 @@ const WORLD_PROP_SCENE: PackedScene = preload("res://scenes/world/world_prop.tsc
 
 var _player: Node = null
 var _entity_manager: WorldEntityManager = null
-var _inventory: Node = null
+var _inventory: GarliaInventory = null
 var _combat_system: CombatSystem = null
 var _dialogue_system: Node = null
 var _mission_manager: Node = null
@@ -19,7 +19,7 @@ var _relaciones_ecologicas: Array = []
 func configurar_dependencias(
 	jugador: Node,
 	entity_manager: WorldEntityManager,
-	inventario: Node,
+	inventario: GarliaInventory,
 	combat_system: CombatSystem,
 	dialogue_system: Node,
 	mission_manager: Node,
