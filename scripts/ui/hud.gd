@@ -179,15 +179,11 @@ func _preparar_aviso_descubrimiento() -> void:
 	add_child(discovery_notice)
 
 
-func _al_descubrimiento_mundo(datos: Variant = null) -> void:
+func _al_descubrimiento_mundo(nivel: String, id: String) -> void:
 	if discovery_notice == null:
 		return
 
-	var texto := "Nuevo descubrimiento"
-	if datos is Dictionary:
-		texto = str(datos.get("nombre", datos.get("titulo", texto)))
-	elif datos != null:
-		texto = str(datos)
+	var texto := id if not id.is_empty() else "Nuevo descubrimiento"
 
 	discovery_notice.text = texto
 	discovery_notice.visible = true
