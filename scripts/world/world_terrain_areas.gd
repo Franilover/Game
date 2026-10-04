@@ -10,6 +10,10 @@ var _bioma_ecosistemas: Array = []
 var _biome_noises: Array[FastNoiseLite] = []
 var _ecosystem_noises: Array[FastNoiseLite] = []
 var _terrain_noise: FastNoiseLite
+var _biome_bias: PackedFloat32Array = PackedFloat32Array()
+var _ecosystem_bias: PackedFloat32Array = PackedFloat32Array()
+var _biome_generation: Array[Dictionary] = []
+var _ecosystem_generation: Array[Dictionary] = []
 
 
 const ORTHOGONAL_DIRECTIONS: Array[Vector2i] = [
@@ -56,17 +60,29 @@ func cargar_datos(
 
 	_biome_noises.clear()
 	_ecosystem_noises.clear()
+	_biome_bias = PackedFloat32Array()
+	_ecosystem_bias = PackedFloat32Array()
+	_biome_generation.clear()
+	_ecosystem_generation.clear()
 	for indice in range(_biomas.size()):
 		var biome_noise := FastNoiseLite.new()
 		biome_noise.seed = map_seed + 1001 + indice * 7919
 		biome_noise.frequency = 0.006
 		_biome_noises.append(biome_noise)
+		var generacion := _obtener_generacion_bioma(indice)
+		_biome_generation.append(generacion)
+		var peso := _peso_bioma(indice)
+		_biome_bias.append(log(maxf(peso, 0.000001)) * 0.35)
 
 	for indice in range(_ecosistemas.size()):
 		var ecosystem_noise := FastNoiseLite.new()
 		ecosystem_noise.seed = map_seed + 2002 + indice * 6151
 		ecosystem_noise.frequency = 0.014
 		_ecosystem_noises.append(ecosystem_noise)
+		var generacion := _obtener_generacion_ecosistema(indice)
+		_ecosystem_generation.append(generacion)
+		var peso := _peso_ecosistema(indice)
+		_ecosystem_bias.append(log(maxf(peso, 0.000001)) * 0.35)
 
 	for bioma_variant in _biomas:
 		var indices: Array[int] = []
@@ -123,7 +139,7 @@ func bioma_index_at_tile(tile: Vector2i) -> int:
 
 		# El peso de Supabase actúa como sesgo de selección, mientras
 		# que el ruido independiente mantiene regiones espaciales suaves.
-		var puntuacion := ruido + log(peso) * 0.35
+		var puntuacion := ruido + _biome_bias[indice]
 
 		if puntuacion > mejor_puntuacion:
 			mejor_puntuacion = puntuacion
@@ -198,7 +214,7 @@ func ecosistema_index_at_tile(
 			)
 			+ 1.0
 		) * 0.5
-		var puntuacion := ruido + log(peso) * 0.35
+		var puntuacion := ruido + _ecosystem_bias[indice]
 
 		if puntuacion > mejor_puntuacion:
 			mejor_puntuacion = puntuacion
@@ -246,14 +262,12 @@ func zona_base_at_tile(
 
 	# Primero manda el ecosistema si tiene una configuración propia.
 	# Si no, manda la configuración del bioma.
-	var generacion := _obtener_generacion_ecosistema(
-		ecosistema_index
-	)
+	var generacion: Dictionary = {}
+	if ecosistema_index >= 0 and ecosistema_index < _ecosystem_generation.size():
+		generacion = _ecosystem_generation[ecosistema_index]
 
-	if generacion.is_empty():
-		generacion = _obtener_generacion_bioma(
-			bioma_index
-		)
+	if generacion.is_empty() and bioma_index >= 0 and bioma_index < _biome_generation.size():
+		generacion = _biome_generation[bioma_index]
 
 	return _zona_desde_generacion(
 		generacion,
