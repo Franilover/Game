@@ -950,17 +950,12 @@ func aplicar_efecto_slow(duracion: float) -> void:
 # ============================================================
 
 func set_spawn_from_world(
-	world_gen: Node
+	world_gen: WorldGenerator
 ) -> void:
 	if world_gen == null:
 		return
 
-	if world_gen.has_method(
-		"get_spawn_position"
-	):
-		global_position = (
-			world_gen.get_spawn_position()
-		)
+	global_position = world_gen.get_spawn_position()
 
 
 func _sync_vital_desde_eterium() -> void:
