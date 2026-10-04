@@ -283,3 +283,14 @@ Siguiente frente: revisar HUD y CombatSystem por responsabilidades de presentaci
 HUD ya no consume directamente el autoload GameState para escuchar descubrimientos. Main inyecta GameState al HUD y HUD administra la conexión/desconexión de esa señal.
 
 Esto mantiene al HUD como capa de presentación: recibe estado y eventos explícitamente, sin descubrir dependencias globales. No se trasladó lógica de descubrimiento al HUD.
+
+
+## Decimoquinta barrida — HUD sobre contrato concreto de WorldContext
+
+Se corrigió además una regresión de ciclo de vida introducida en la barrida anterior: cuando Main inyecta GameState después de `_ready()`, HUD conecta inmediatamente la señal `descubrimiento_mundo`. Así la presentación de descubrimientos no depende del orden accidental de inicialización.
+
+HUD también dejó de tratar WorldContext como un objeto genérico con `has_method()/call()` para su API conocida. Ahora declara `WorldContext` explícitamente y utiliza sus métodos tipados para posición, chunk, seed, reinos, chunks cargados, tiempo y contexto ambiental.
+
+Esto elimina una capa de descubrimiento innecesaria y hace visible el contrato real: `Main → HUD → WorldContext`. La compatibilidad dinámica queda reservada para fronteras donde todavía no existe un contrato tipado claro.
+
+No se declara compilación validada hasta probar el proyecto en Godot.
