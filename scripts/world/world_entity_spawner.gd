@@ -614,7 +614,6 @@ func _spawn_characters_in_chunk(
 
 		if criatura is Creature:
 			var creature_node := criatura as Creature
-			creature_node.configurar(criatura_data)
 			creature_node.configurar_chunk(chunk_coord, limite_chunk)
 			creature_node.configurar_entorno("general")
 
