@@ -534,23 +534,16 @@ func _marcar_dirty(
 	layer_key: String,
 	cell: Vector2i
 ) -> void:
-	var clave := layer_key
-
-	if not _dirty_cells_by_zone.has(clave):
-		_dirty_cells_by_zone[clave] = []
-
-	if not _dirty_lookup_by_zone.has(clave):
-		_dirty_lookup_by_zone[clave] = {}
-
-	var lookup: Dictionary = _dirty_lookup_by_zone[clave]
+	# Las estructuras se crean para todas las zonas al configurar las capas.
+	# No comprobamos ni reasignamos el Array en cada llamada caliente.
+	var lookup: Dictionary = _dirty_lookup_by_zone[layer_key]
 	if lookup.has(cell):
 		return
 
 	lookup[cell] = true
 
-	var cells: Array = _dirty_cells_by_zone[clave]
+	var cells: Array = _dirty_cells_by_zone[layer_key]
 	cells.append(cell)
-	_dirty_cells_by_zone[clave] = cells
 
 
 func flush() -> void:
