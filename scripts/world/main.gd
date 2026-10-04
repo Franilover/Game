@@ -9,10 +9,10 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _input_router: Node = $Systems/GameplayInputRouter
 
 @onready var _hud: Control = $UI/HUD
-@onready var _inventory: Control = $UI/Inventory
+@onready var _inventory: GarliaInventory = $UI/Inventory
 @onready var _interaction_system: Node = $Systems/InteractionSystem
-@onready var _combat_system: Node = $Systems/CombatSystem
-@onready var _dialogue_system: Node = $Systems/DialogueSystem
+@onready var _combat_system: CombatSystem = $Systems/CombatSystem
+@onready var _dialogue_system: DialogueSystem = $Systems/DialogueSystem
 @onready var _ium_manager: Node = $Systems/IUMManager
 @onready var _ium_lab: Control = $UI/IUMLab
 @onready var _admin_console: CanvasLayer = $UI/AdminConsole
@@ -44,8 +44,14 @@ func _ready() -> void:
 	var world_gen: WorldGenerator = _world_generator
 	world_gen.configurar_dependencias(WorldData, GameState)
 	world_gen.configurar_entidades($Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context, _world_items, _supabase_client.obtener_relaciones_ecologicas())
-	if _world_items != null and _world_items.has_method("configurar_dependencias"):
-		_world_items.call("configurar_dependencias", $Entities/Player, _inventory, $Entities, world_gen.entity_manager, _world_context, MissionManager)
+	_world_items.configurar_dependencias(
+		$Entities/Player,
+		_inventory,
+		$Entities,
+		world_gen.entity_manager,
+		_world_context,
+		MissionManager
+	)
 
 	if world_gen.is_world_ready():
 		_inicializar_jugador(world_gen)
@@ -188,8 +194,7 @@ func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator)
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
 
-	if _combat_system.has_method("configurar"):
-		_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, GameState)
+	_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, GameState)
 
 
 func _configurar_input_router() -> void:
@@ -230,8 +235,7 @@ func _configurar_dialogo() -> void:
 		push_error("Main: no se encontró Systems/DialogueSystem.")
 		return
 
-	if _dialogue_system.has_method("configurar"):
-		_dialogue_system.call("configurar", _player, _hud, MissionManager, RelationshipSystem)
+	_dialogue_system.configurar(_player, _hud, MissionManager, RelationshipSystem)
 
 
 func _configurar_admin() -> void:
