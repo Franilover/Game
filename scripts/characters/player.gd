@@ -310,34 +310,10 @@ func _registrar_terreno_explorado() -> void:
 
 func _esta_bloqueado_por_interfaz() -> bool:
 	if not is_instance_valid(_admin_console_ref):
-		_admin_console_ref = get_tree().get_first_node_in_group(
-			"admin_console"
-		)
-
-	if is_instance_valid(_admin_console_ref):
-		if bool(_admin_console_ref.get("_abierto")):
-			return true
-
-	if GameState.esta_entrada_de_juego_bloqueada():
+		_admin_console_ref = get_tree().get_first_node_in_group("admin_console")
+	if is_instance_valid(_admin_console_ref) and bool(_admin_console_ref.get("_abierto")):
 		return true
-
-	var dialogue_system := get_tree().get_first_node_in_group("dialogue_system")
-	if dialogue_system != null and dialogue_system.has_method("esta_abierto"):
-		if bool(dialogue_system.call("esta_abierto")):
-			return true
-
-	var hud := get_tree().get_first_node_in_group("hud")
-	if hud != null and hud.has_method(
-		"esta_mostrando_panel_interaccion"
-	):
-		if bool(
-			hud.call(
-				"esta_mostrando_panel_interaccion"
-			)
-		):
-			return true
-
-	return get_tree().paused
+	return GameplayInputGate.new().esta_bloqueado()
 
 
 func _actualizar_cooldowns(delta: float) -> void:
