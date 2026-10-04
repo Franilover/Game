@@ -64,7 +64,7 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 
 var _world_context_ref: WorldContext = null
-var _game_state_ref: Node = null
+var _game_state_ref: GameState = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
 
@@ -91,7 +91,7 @@ func configurar_dependencias(
 	ium_manager: IUMManager = null,
 	entity_manager: WorldEntityManager = null,
 	supabase_client: GarliaSupabaseClient = null,
-	game_state: Node = null
+	game_state: GameState = null
 ) -> void:
 	_inventory_ref = inventory
 	_world_context_ref = world_context
@@ -278,7 +278,7 @@ func _registrar_terreno_explorado() -> void:
 func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void:
 	if _game_state_ref == null:
 		return
-	_game_state_ref.call("registrar_terreno_explorado", tile)
+	_game_state_ref.registrar_terreno_explorado(tile)
 	var bioma: Variant = descubrimiento.get("bioma", {})
 	var ecosistema: Variant = descubrimiento.get("ecosistema", {})
 	var habitats: Variant = descubrimiento.get("habitats", [])
@@ -658,7 +658,7 @@ func _aplicar_configuracion_personaje() -> void:
 	if _game_state_ref == null or not is_instance_valid(_game_state_ref):
 		return
 
-	var personaje_variant: Variant = _game_state_ref.call("obtener_configuracion_personaje")
+	var personaje_variant: Variant = _game_state_ref.obtener_configuracion_personaje()
 	if not personaje_variant is Dictionary:
 		return
 
@@ -715,7 +715,7 @@ func admin_cambiar_nombre(nuevo_nombre: String) -> bool:
 	personaje["nombre"] = nombre
 	personaje["especie"] = personaje_especie.duplicate(true)
 	personaje["skin"] = personaje_skin
-	_game_state_ref.call("establecer_configuracion_personaje", personaje)
+	_game_state_ref.establecer_configuracion_personaje(personaje)
 	return true
 
 
@@ -793,16 +793,16 @@ func admin_restaurar_defaults() -> bool:
 
 
 func admin_guardar_estado() -> void:
-	_game_state_ref.call("establecer_configuracion_personaje_admin", {
-		"rol": "admin" if bool(_game_state_ref.call("obtener_configuracion_personaje_admin").get("rol", "") == "admin") else "jugador",
-		"capacidades": _game_state_ref.call("obtener_configuracion_personaje_admin").get("capacidades", []).duplicate(true),
+	_game_state_ref.establecer_configuracion_personaje_admin({
+		"rol": "admin" if bool(_game_state_ref.obtener_configuracion_personaje_admin().get("rol", "") == "admin") else "jugador",
+		"capacidades": _game_state_ref.obtener_configuracion_personaje_admin().get("capacidades", []).duplicate(true),
 		"maximos": {
 			"vida": max_health,
 			"eterium": max_mana,
 			"energia": max_stamina
 		}
 	})
-	_game_state_ref.call("guardar_partida")
+	_game_state_ref.guardar_partida()
 
 func _update_visual() -> void:
 	if anim == null:
