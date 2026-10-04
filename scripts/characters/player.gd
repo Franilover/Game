@@ -83,9 +83,16 @@ var personaje_skin: String = ""
 @onready var facing_marker: ColorRect = $Visual/FacingMarker
 
 
-func configurar_dependencias(inventory: Node = null, world_generator: Node = null) -> void:
+func configurar_dependencias(
+	inventory: Node = null,
+	world_generator: Node = null,
+	ium_manager: Node = null,
+	entity_manager: Node = null
+) -> void:
 	_inventory_ref = inventory
 	_world_generator_ref = world_generator
+	_ium_manager_ref = ium_manager
+	_entity_manager_ref = entity_manager
 
 
 func _ready() -> void:
@@ -259,7 +266,6 @@ func _physics_process(delta: float) -> void:
 
 
 func _registrar_terreno_explorado() -> void:
-	if not is_instance_valid(_world_generator_ref):
 	if not is_instance_valid(_world_generator_ref):
 		return
 	exploration_controller.revisar(global_position, _world_generator_ref)
