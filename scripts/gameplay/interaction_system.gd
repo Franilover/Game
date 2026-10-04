@@ -1,4 +1,5 @@
 extends Node
+class_name InteractionSystem
 
 
 signal objetivo_cambiado(objetivo: Node)
@@ -8,11 +9,11 @@ signal objetivo_cambiado(objetivo: Node)
 @export var scan_interval: float = 0.10
 
 
-var player: Node = null
-var inventory: Node = null
-var world_items: Node = null
+var player: Player = null
+var inventory: GarliaInventory = null
+var world_items: GarliaWorldItems = null
 var input_gate: Node = null
-var entity_manager: Node = null
+var entity_manager: WorldEntityManager = null
 
 var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
@@ -21,11 +22,11 @@ var _scan_timer: float = 0.0
 
 
 func configurar(
-	nuevo_player: Node,
-	nuevo_inventory: Node = null,
-	nuevo_world_items: Node = null,
+	nuevo_player: Player,
+	nuevo_inventory: GarliaInventory = null,
+	nuevo_world_items: GarliaWorldItems = null,
 	nuevo_input_gate: Node = null,
-	nuevo_entity_manager: Node = null
+	nuevo_entity_manager: WorldEntityManager = null
 ) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
@@ -79,34 +80,20 @@ func procesar_accion_primaria() -> bool:
 	if interaction_controller.interactuar(player):
 		return true
 
-	var inventory_node: Node = self.inventory
 	var objeto_activo: Dictionary = {}
-
-	if inventory_node != null and inventory_node.has_method("obtener_objeto_activo"):
-		var objeto_activo_variant: Variant = inventory_node.call("obtener_objeto_activo")
-		if objeto_activo_variant is Dictionary:
-			objeto_activo = (objeto_activo_variant as Dictionary).duplicate(true)
+	if inventory != null:
+		objeto_activo = inventory.obtener_objeto_activo().duplicate(true)
 
 	# Los objetos colocables consumen la acción primaria antes del combate.
 	if not objeto_activo.is_empty():
-		var world_items_node: Node = self.world_items
-		if (
-			world_items_node != null
-			and world_items_node.has_method("es_objeto_colocable")
-			and bool(world_items_node.call("es_objeto_colocable", objeto_activo))
-		):
-			if world_items_node.has_method("colocar_objeto"):
-				var colocado: bool = bool(
-					world_items_node.call(
-						"colocar_objeto",
-						objeto_activo,
-						(player as Node2D).get_global_mouse_position()
-					)
-				)
-				if colocado:
-					if inventory_node.has_method("consumir_objeto_activo"):
-						inventory_node.call("consumir_objeto_activo", 1)
-					return true
+		if world_items != null and world_items.es_objeto_colocable(objeto_activo):
+			var colocado: bool = world_items.colocar_objeto(
+				objeto_activo,
+				player.get_global_mouse_position()
+			)
+			if colocado:
+				inventory.consumir_objeto_activo(1)
+				return true
 
 	# Si no hubo interacción ni colocación, CombatSystem recibe la acción.
 	return false
