@@ -10,6 +10,8 @@ var _player: Node = null
 
 var _load_radius: int = 1
 var _unload_radius: int = 2
+# Test de rendimiento: terreno y entidades usan radios independientes.
+var _entity_active_radius: int = 0
 var _cells_per_frame: int = 512
 
 var _player_chunk: Vector2i = Vector2i(
@@ -59,6 +61,7 @@ func procesar() -> void:
 		_player_chunk = nuevo_chunk
 
 		_actualizar_streaming()
+		_actualizar_entidades_activas(nuevo_chunk)
 
 	if _terrain.tiene_generacion_activa():
 		var terminado: bool = (
@@ -82,7 +85,8 @@ func procesar() -> void:
 			if distancia_chunk > _unload_radius:
 				_terrain.descargar_chunk(chunk_coord)
 			else:
-				_entity_spawner.spawn_chunk(chunk_coord)
+				if _distancia_chunk(chunk_coord, _player_chunk) <= _entity_active_radius:
+					_entity_spawner.spawn_chunk(chunk_coord)
 
 		return
 
@@ -199,6 +203,8 @@ func _actualizar_streaming() -> void:
 		centro
 	)
 
+	_actualizar_entidades_activas(centro)
+
 
 func _iniciar_siguiente_chunk() -> void:
 	if _queue.is_empty():
@@ -215,6 +221,34 @@ func _iniciar_siguiente_chunk() -> void:
 
 	_terrain.iniciar_generacion_chunk(
 		chunk_coord
+	)
+
+
+func _actualizar_entidades_activas(
+	centro: Vector2i
+) -> void:
+	var claves: Array = _terrain.chunks_cargados()
+
+	for chunk_variant in claves:
+		if not chunk_variant is Vector2i:
+			continue
+
+		var chunk_coord: Vector2i = chunk_variant
+		var distancia := _distancia_chunk(chunk_coord, centro)
+
+		if distancia <= _entity_active_radius:
+			_entity_spawner.spawn_chunk(chunk_coord)
+		else:
+			_entity_spawner.despawn_chunk(chunk_coord)
+
+
+func _distancia_chunk(
+	a: Vector2i,
+	b: Vector2i
+) -> int:
+	return maxi(
+		abs(a.x - b.x),
+		abs(a.y - b.y)
 	)
 
 
