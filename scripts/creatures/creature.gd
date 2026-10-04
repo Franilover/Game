@@ -64,6 +64,12 @@ func configurar_dependencias(
 func _ready() -> void:
 	super._ready()
 
+	# Las capas de TileMapDual pueden renderizar sus nodos Display internos
+	# fuera del orden visual del contenedor. Fijamos la criatura en una capa
+	# absoluta por encima del terreno y ordenamos entidades por el punto de apoyo.
+	z_as_relative = false
+	_actualizar_profundidad()
+
 	add_to_group("interactable")
 	add_to_group("creatures")
 
@@ -466,7 +472,28 @@ func get_stats_dnd() -> Dictionary:
 	return stats_dnd
 
 
+func _process(_delta: float) -> void:
+	_actualizar_profundidad()
+
+
+func _actualizar_profundidad() -> void:
+	z_as_relative = false
+	var profundidad_y := global_position.y
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+
+	if sprite != null and sprite.texture != null:
+		profundidad_y += sprite.position.y
+		profundidad_y += (
+			float(sprite.texture.get_height())
+			* 0.5
+			* absf(sprite.scale.y)
+		)
+
+	z_index = clampi(1000 + int(profundidad_y), 1, 4096)
+
+
 func _physics_process(delta: float) -> void:
+	_actualizar_profundidad()
 	if _siguiendo_jugador:
 		_procesar_seguimiento()
 
