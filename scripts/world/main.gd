@@ -28,6 +28,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _world_generator: WorldGenerator = $World/WorldGenerator
 @onready var _world_context: WorldContext = $World/WorldGenerator/WorldContext
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
+@onready var _reino_torres: Node2D = $World/ReinoTorres
 
 
 func _ready() -> void:
@@ -96,6 +97,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	_inicializar_ium()
 	_configurar_admin()
 	_configurar_pantalla()
+	_configurar_reino_torres()
 
 	# Inicializar IUM con jugador (jugador_id puede venir de auth en el futuro)
 	if _ium_manager != null:
@@ -225,6 +227,35 @@ func _configurar_admin() -> void:
 			_admin_player_editor,
 			_world_items
 	)
+
+func _configurar_reino_torres() -> void:
+	if _reino_torres == null or not is_instance_valid(_reino_torres):
+		push_error("Main: falta World/ReinoTorres.")
+		return
+
+	if _reino_torres.has_signal("salida_solicitada"):
+		var callback := Callable(self, "_al_salir_reino_torres")
+		if not _reino_torres.salida_solicitada.is_connected(callback):
+			_reino_torres.salida_solicitada.connect(callback)
+
+	if GameState.debe_iniciar_en_reino_torres():
+		_player.global_position = Vector2(0, 120)
+		print("Main: inicio canónico en Reino Torres.")
+	else:
+		print("Main: partida continúa fuera de Reino Torres.")
+
+
+func _al_salir_reino_torres() -> void:
+	if _player == null or not is_instance_valid(_player):
+		return
+
+	GameState.marcar_reino_torres_visitado()
+
+	# Transición de zona dentro del mismo runtime: no se destruye HUD,
+	# inventario, sistemas ni la escena canónica.
+	_player.global_position = Vector2(560, 120)
+	print("Main: Reino Torres → mundo abierto.")
+
 
 func _configurar_pantalla() -> void:
 	if not pantalla_completa:
