@@ -33,12 +33,18 @@ const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
 var player: Node = null
+var inventory: Node = null
+var world_generator: Node = null
+var projectile_root: Node = null
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_generator: Node = null, nuevo_projectile_root: Node = null) -> void:
 	player = nuevo_player
+	inventory = nuevo_inventory
+	world_generator = nuevo_world_generator
+	projectile_root = nuevo_projectile_root
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
@@ -174,7 +180,7 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 
 
 func _usar_pala() -> bool:
-	var world_gen := get_tree().get_first_node_in_group("world_generator")
+	var world_gen: Node = world_generator
 	if world_gen == null or not is_instance_valid(world_gen):
 		return false
 	if not world_gen.has_method("get_tile_at") or not world_gen.has_method("get_zona_at") or not world_gen.has_method("cambiar_zona_at"):
@@ -197,7 +203,7 @@ func _usar_pala() -> bool:
 
 
 func _consumir_durabilidad_herramienta() -> void:
-	var inventario := get_tree().get_first_node_in_group("inventory")
+	var inventario: Node = inventory
 	if inventario == null:
 		return
 	if not inventario.has_method("consumir_durabilidad_objeto_activo"):
@@ -304,9 +310,7 @@ func usar_objeto_activo() -> void:
 
 
 func _obtener_arma_equipada() -> Dictionary:
-	var inventario := get_tree().get_first_node_in_group(
-		"inventory"
-	)
+	var inventario: Node = inventory
 
 	if inventario == null:
 		return {}
@@ -444,9 +448,9 @@ func _disparar_proyectil(
 	if player == null:
 		return
 
-	var escena_actual := get_tree().current_scene
+	var escena_actual: Node = projectile_root
 
-	if escena_actual == null:
+	if escena_actual == null or not is_instance_valid(escena_actual):
 		return
 
 	var proyectil := Node2D.new()
