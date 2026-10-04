@@ -407,7 +407,7 @@ func _compilar_zonas(generacion: Dictionary) -> Dictionary:
 		var zona_config := zona_variant as Dictionary
 		var hasta := clampf(
 			float(zona_config.get("hasta", 1.0)),
-			0.0,
+			-1.0,
 			1.0
 		)
 		var terreno := str(
@@ -474,7 +474,7 @@ func _zona_desde_generacion(
 		var zona_config := zona_variant as Dictionary
 		var hasta := clampf(
 			float(zona_config.get("hasta", 1.0)),
-			0.0,
+			-1.0,
 			1.0
 		)
 
