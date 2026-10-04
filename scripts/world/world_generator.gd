@@ -63,11 +63,11 @@ func _inicializar_mundo_si_corresponde() -> void:
 func configurar_entidades(
 	root: Node,
 	jugador: Node = null,
-	inventario: Node = null,
-	combat_system: Node = null,
-	dialogue_system: Node = null,
-	mission_manager: Node = null,
-	world_context: Node = null,
+	inventario: GarliaInventory = null,
+	combat_system: CombatSystem = null,
+	dialogue_system: DialogueSystem = null,
+	mission_manager: MissionManager = null,
+	world_context: WorldContext = null,
 	world_items: GarliaWorldItems = null,
 	relaciones_ecologicas: Array = []
 ) -> void:
