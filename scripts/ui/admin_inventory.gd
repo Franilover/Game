@@ -1,9 +1,9 @@
 extends Control
 class_name AdminInventory
 
-var _jugador: Node = null
-var _world_entity_spawner: Node = null
-var _inventario: Node = null
+var _jugador: Player = null
+var _world_entity_spawner: WorldEntitySpawner = null
+var _inventario: GarliaInventory = null
 var _modo: String = "criaturas"
 var _seleccion: Dictionary = {}
 var _lista: VBoxContainer
@@ -21,7 +21,7 @@ func _ready() -> void:
     visible = false
 
 
-func configurar(jugador: Node, spawner: Node, inventario: Node) -> void:
+func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: GarliaInventory) -> void:
     _jugador = jugador
     _world_entity_spawner = spawner
     _inventario = inventario
