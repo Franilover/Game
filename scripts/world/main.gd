@@ -121,7 +121,7 @@ func _configurar_hud(world_gen: Node) -> void:
 		return
 
 	if _hud.has_method("configurar"):
-		_hud.call("configurar", _player, world_gen, MissionManager)
+		_hud.call("configurar", _player, world_gen, MissionManager, world_gen.entity_manager, _supabase_client)
 	else:
 		push_error("Main: HUD no tiene configurar().")
 
