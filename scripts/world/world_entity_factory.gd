@@ -4,12 +4,49 @@ class_name WorldEntityFactory
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
 const WORLD_PROP_SCENE: PackedScene = preload("res://scenes/world/world_prop.tscn")
 
+var _player: Node = null
+var _entity_manager: Node = null
+var _inventory: Node = null
+var _combat_system: Node = null
+var _dialogue_system: Node = null
+var _mission_manager: Node = null
+var _effects_root: Node = null
+
+
+func configurar_dependencias(
+	jugador: Node,
+	entity_manager: Node,
+	inventario: Node,
+	combat_system: Node,
+	dialogue_system: Node,
+	mission_manager: Node,
+	effects_root: Node
+) -> void:
+	_player = jugador
+	_entity_manager = entity_manager
+	_inventory = inventario
+	_combat_system = combat_system
+	_dialogue_system = dialogue_system
+	_mission_manager = mission_manager
+	_effects_root = effects_root
+
 
 func crear_criatura(data: Dictionary) -> Creature:
 	var node := CREATURE_SCENE.instantiate() as Creature
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear Creature.")
 		return null
+
+	node.configurar_dependencias(
+		_player,
+		_entity_manager,
+		_inventory,
+		_combat_system,
+		_dialogue_system,
+		_mission_manager,
+		_effects_root
+	)
+	node.configurar(data)
 	return node
 
 
