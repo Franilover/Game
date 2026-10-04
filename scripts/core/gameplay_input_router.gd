@@ -1,4 +1,5 @@
 extends Node
+class_name GameplayInputRouter
 ## Única autoridad de entrada del gameplay.
 ##
 ## Orden de prioridad para acciones primarias:
@@ -11,22 +12,22 @@ extends Node
 ## Los sistemas de gameplay NO deben implementar _input para estas acciones.
 ## Así no existe una carrera entre InteractionSystem, CombatSystem y la UI.
 
-var _interaction_system: Node = null
-var _combat_system: Node = null
-var _inventory_ui: Node = null
+var _interaction_system: InteractionSystem = null
+var _combat_system: CombatSystem = null
+var _inventory_ui: GarliaInventory = null
 var _admin_console: Node = null
-var _dialogue_system: Node = null
-var _hud: Node = null
+var _dialogue_system: DialogueSystem = null
+var _hud: HUD = null
 
-func configurar_sistemas(interaction: Node, combat: Node) -> void:
+func configurar_sistemas(interaction: InteractionSystem, combat: CombatSystem) -> void:
 	_interaction_system = interaction
 	_combat_system = combat
 
 func configurar_bloqueos(
-	inventory_ui: Node,
+	inventory_ui: GarliaInventory,
 	admin_console: Node,
-	dialogue_system: Node,
-	hud: Node
+	dialogue_system: DialogueSystem,
+	hud: HUD
 ) -> void:
 	_inventory_ui = inventory_ui
 	_admin_console = admin_console
