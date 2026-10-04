@@ -27,6 +27,7 @@ var hotbar_indices: Array[int] = []
 var equipo: Dictionary = {}
 var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
+var _abierto: bool = false
 
 
 @onready var grid: GridContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
@@ -126,13 +127,14 @@ func _actualizar_admin_tab() -> void:
 
 
 func toggle() -> void:
-	if visible:
+	if _abierto:
 		cerrar()
 	else:
 		abrir()
 
 
 func abrir() -> void:
+	_abierto = true
 	visible = true
 	_actualizar_admin_tab()
 
@@ -146,6 +148,8 @@ func abrir() -> void:
 
 
 func cerrar() -> void:
+	_abierto = false
+
 	# Al cerrar, ningún control del inventario debe conservar el foco GUI.
 	# Esto evita que un Button de equipamiento retenga la siguiente entrada
 	# del ratón y bloquee el flujo normal de _unhandled_input del juego.
@@ -162,7 +166,7 @@ func cerrar() -> void:
 
 
 func esta_abierto() -> bool:
-	return visible and is_visible_in_tree()
+	return _abierto
 
 
 func _inicializar_items() -> void:
@@ -292,6 +296,13 @@ func _al_iniciar_arrastre(slot: Button, datos: Dictionary) -> void:
 
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible and _abierto:
+		_abierto = false
+		_arrastre_indice = -1
+		_arrastre_datos.clear()
+		get_viewport().gui_release_focus()
+		return
+
 	if what != NOTIFICATION_DRAG_END:
 		return
 
