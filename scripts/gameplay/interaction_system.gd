@@ -36,10 +36,6 @@ func configurar(
 		"InteractionSystem: configurado."
 	)
 
-	print(
-		"InteractionSystem: recolectables actuales = ",
-		_contar_objetivos_contextuales()
-	)
 
 	_cambiar_objetivo(null)
 	_buscar_objetivo()
@@ -124,15 +120,6 @@ func _buscar_objetivo() -> void:
 		interaction_distance
 	)
 
-
-func _contar_objetivos_contextuales() -> int:
-	var cantidad := 0
-
-	for candidato in get_tree().get_nodes_in_group("interactable"):
-		if is_instance_valid(candidato) and interaction_controller.es_objetivo_contextual(candidato):
-			cantidad += 1
-
-	return cantidad
 
 
 func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
