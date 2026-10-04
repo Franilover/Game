@@ -285,13 +285,16 @@ func obtener_config_ia() -> Dictionary:
 	return {}
 
 
-func take_damage(cantidad: int) -> void:
+func take_damage(
+	cantidad: int,
+	origen: String = "desconocido"
+) -> void:
 	if not is_alive:
 		return
 
 	var salud_anterior := health
 
-	super.take_damage(cantidad)
+	super.take_damage(cantidad, origen)
 
 	if is_alive and health < salud_anterior:
 		var ai := get_node_or_null("AIController")
