@@ -81,11 +81,11 @@ func cargar_datos(
 	_ecosystem_zone_values.clear()
 	_ecosystem_zone_fallbacks = PackedInt32Array()
 	for indice in range(_biomas.size()):
+		var generacion := _obtener_generacion_bioma(indice)
 		var biome_noise := FastNoiseLite.new()
 		biome_noise.seed = map_seed + 1001 + indice * 7919
-		biome_noise.frequency = 0.006
+		biome_noise.frequency = _frecuencia_ruido(generacion, 0.006)
 		_biome_noises.append(biome_noise)
-		var generacion := _obtener_generacion_bioma(indice)
 		_biome_generation.append(generacion)
 		var peso := _peso_bioma(indice)
 		_biome_enabled.append(1 if peso > 0.0 else 0)
@@ -96,11 +96,11 @@ func cargar_datos(
 		_biome_zone_fallbacks.append(int(zonas_compiladas["fallback"]))
 
 	for indice in range(_ecosistemas.size()):
+		var generacion := _obtener_generacion_ecosistema(indice)
 		var ecosystem_noise := FastNoiseLite.new()
 		ecosystem_noise.seed = map_seed + 2002 + indice * 6151
-		ecosystem_noise.frequency = 0.014
+		ecosystem_noise.frequency = _frecuencia_ruido(generacion, 0.014)
 		_ecosystem_noises.append(ecosystem_noise)
-		var generacion := _obtener_generacion_ecosistema(indice)
 		_ecosystem_generation.append(generacion)
 		var peso := _peso_ecosistema(indice)
 		_ecosystem_enabled.append(1 if peso > 0.0 else 0)
@@ -171,6 +171,18 @@ func bioma_index_at_tile(tile: Vector2i) -> int:
 			mejor_indice = indice
 
 	return mejor_indice
+
+
+func _frecuencia_ruido(generacion: Dictionary, fallback: float) -> float:
+	var ruido_variant: Variant = generacion.get("ruido", {})
+	if not ruido_variant is Dictionary:
+		return fallback
+
+	var frecuencia := float((ruido_variant as Dictionary).get("frecuencia", fallback))
+	if frecuencia <= 0.0:
+		return fallback
+
+	return frecuencia
 
 
 func _peso_bioma(indice: int) -> float:
