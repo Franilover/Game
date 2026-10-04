@@ -1,7 +1,7 @@
 extends Node
+class_name GarliaSupabaseClient
 
 signal relaciones_ecologicas_cargadas(relaciones: Array)
-class_name GarliaSupabaseClient
 signal mundo_cargado(datos: Dictionary)
 signal eterium_runtime_cargado(datos: Dictionary)
 signal especies_jugables_cargadas(especies: Array)
