@@ -160,6 +160,12 @@ func set_zone(
 	var clave := _normalizar_bioma(bioma_nombre)
 	var layer_key := clave + "::" + str(zone)
 	var layer := _crear_capa_terreno(clave, zone)
+
+	# Crear la capa de variaciones una sola vez para los biomas que tienen atlas.
+	# Las celdas interiores se actualizan después de registrar su bioma y zona.
+	if VARIACIONES_POR_BIOMA.has(clave) and not _variation_layers_by_bioma.has(clave):
+		_variation_layers_by_bioma[clave] = _crear_capa_variaciones(clave)
+
 	var tile_key := layer_key
 
 	if not _base_tiles.has(tile_key):
