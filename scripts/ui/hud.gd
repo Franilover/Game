@@ -7,7 +7,7 @@ var world_context: WorldContext = null
 var mission_manager: MissionManager = null
 var entity_manager: WorldEntityManager = null
 var supabase_client: GarliaSupabaseClient = null
-var world_data: Node = null
+var world_data: WorldData = null
 var game_state: Node = null
 
 var mostrar_contexto_mundo: bool = false
@@ -56,7 +56,7 @@ var _discovery_notice_timer: float = 0.0
 @onready var _hotbar_node: InventoryHotbar = $Hotbar
 
 
-func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext = null, nuevo_mission_manager: MissionManager = null, nuevo_entity_manager: WorldEntityManager = null, nuevo_supabase_client: GarliaSupabaseClient = null, nuevo_inventory: GarliaInventory = null, nuevo_world_data: Node = null, nuevo_game_state: Node = null) -> void:
+func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext = null, nuevo_mission_manager: MissionManager = null, nuevo_entity_manager: WorldEntityManager = null, nuevo_supabase_client: GarliaSupabaseClient = null, nuevo_inventory: GarliaInventory = null, nuevo_world_data: WorldData = null, nuevo_game_state: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
