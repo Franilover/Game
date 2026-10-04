@@ -379,9 +379,6 @@ func _notification(what: int) -> void:
 	if not visible:
 		return
 
-	if not has_method("_soltar_objeto_al_mundo"):
-		return
-
 	_soltar_objeto_al_mundo(indice, datos)
 
 
@@ -389,17 +386,13 @@ func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
 	if indice < 0 or indice >= items.size() or datos.is_empty():
 		return
 
-	var world_items: Node = _world_items
+	var world_items: GarliaWorldItems = _world_items
 
-	if world_items == null or not world_items.has_method("soltar_objeto_al_mundo"):
+	if world_items == null:
 		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
 		return
 
-	world_items.call(
-		"soltar_objeto_al_mundo",
-		datos,
-		get_global_mouse_position()
-	)
+	world_items.soltar_objeto_al_mundo(datos, get_global_mouse_position())
 
 	quitar_objeto(indice)
 
@@ -940,18 +933,17 @@ func robar_objeto_equipado(clave: String) -> Dictionary:
 	objeto = objeto_retirado
 
 	for child in equipment_slots.get_children():
-		if not child.has_method("obtener_clave"):
+		if not child is InventoryEquipmentSlot:
 			continue
 
-		var clave_slot: String = str(
-			child.call("obtener_clave")
-		)
+		var equipment_slot := child as InventoryEquipmentSlot
+		var clave_slot: String = equipment_slot.obtener_clave()
 
 		if clave_slot != clave:
 			continue
 
-		if child.has_method("limpiar_objeto"):
-			child.call("limpiar_objeto")
+		if child is InventoryEquipmentSlot:
+			(child as InventoryEquipmentSlot).limpiar_objeto()
 
 		break
 
@@ -981,28 +973,21 @@ func establecer_equipo(nuevo_equipo: Dictionary) -> void:
 				equipo[clave] = objeto.duplicate(true)
 
 	for child in equipment_slots.get_children():
-		if not child.has_method("obtener_clave"):
+		if not child is InventoryEquipmentSlot:
 			continue
 
-		if child.has_method("limpiar_objeto"):
-			child.call("limpiar_objeto")
+		var equipment_slot := child as InventoryEquipmentSlot
+		equipment_slot.limpiar_objeto()
+		var clave_slot := equipment_slot.obtener_clave()
 
-		var clave_slot := str(child.call("obtener_clave"))
+		if equipo.has(clave_slot):
+			equipment_slot.configurar_objeto(equipo[clave_slot])
 
-		if equipo.has(clave_slot) and child.has_method("configurar_objeto"):
-			child.call(
-				"configurar_objeto",
-				equipo[clave_slot]
-			)
+	actualizar()
 
-	if has_method("actualizar"):
-		actualizar()
+	inventory_changed.emit()
 
-	if has_signal("inventory_changed"):
-		inventory_changed.emit()
-
-	if has_method("_emitir_objeto_activo"):
-		_emitir_objeto_activo()
+	_emitir_objeto_activo()
 
 
 func obtener_objeto(indice: int) -> Dictionary:
