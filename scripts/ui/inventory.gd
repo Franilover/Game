@@ -101,7 +101,7 @@ func configurar(
 	player: Player = null,
 	world_entity_spawner: WorldEntitySpawner = null,
 	world_context: WorldContext = null,
-	relationship_system: RelationshipSystemServiceService = null,
+	relationship_system: RelationshipSystemService = null,
 	world_items: GarliaWorldItems = null
 ) -> void:
 	_player = player
@@ -125,7 +125,7 @@ func _configurar_world_map(world_context: WorldContext) -> void:
 		mapa.configurar(_player, world_context)
 
 
-func _configurar_relationships(relationship_system: RelationshipSystemServiceService) -> void:
+func _configurar_relationships(relationship_system: RelationshipSystemService) -> void:
 	var relaciones: RelationshipsUI = $Window/Margin/Column/Tabs/Relaciones
 	if relationship_system != null:
 		relaciones.configurar(relationship_system)
