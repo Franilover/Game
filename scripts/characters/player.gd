@@ -63,9 +63,9 @@ var locomotion := PlayerLocomotionCoordinator.new()
 var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 
-var _world_context_ref: Node = null
+var _world_context_ref: WorldContext = null
 var _game_state_ref: Node = null
-var _inventory_ref: Node = null
+var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
 
 
@@ -86,10 +86,10 @@ var personaje_skin: String = ""
 
 
 func configurar_dependencias(
-	inventory: Node = null,
-	world_context: Node = null,
-	ium_manager: Node = null,
-	entity_manager: Node = null,
+	inventory: GarliaInventory = null,
+	world_context: WorldContext = null,
+	ium_manager: IUMManager = null,
+	entity_manager: WorldEntityManager = null,
 	supabase_client: GarliaSupabaseClient = null,
 	game_state: Node = null
 ) -> void:
@@ -878,8 +878,8 @@ func _facing_name() -> String:
 # ============================================================
 
 var _proceso_ium_equipado: Dictionary = {}
-var _ium_manager_ref: Node = null
-var _entity_manager_ref: Node = null
+var _ium_manager_ref: IUMManager = null
+var _entity_manager_ref: WorldEntityManager = null
 var _supabase_client_ref: GarliaSupabaseClient = null
 var _supabase_runtime_configurado: bool = false
 var _supabase_especie_configurada: bool = false
@@ -912,8 +912,8 @@ func _usar_proceso_ium() -> void:
 
 func _buscar_objetivo_cercano() -> Node:
 	var criaturas: Array = []
-	if _entity_manager_ref != null and _entity_manager_ref.has_method("obtener_entidades_activas"):
-		for entidad in _entity_manager_ref.call("obtener_entidades_activas"):
+	if _entity_manager_ref != null:
+		for entidad in _entity_manager_ref.obtener_entidades_activas():
 			if entidad is Node and entidad.is_in_group("creatures"):
 				criaturas.append(entidad)
 	var mas_cercana: Node = null
