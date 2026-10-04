@@ -17,16 +17,31 @@ signal inventory_changed
 signal inventory_selection_changed(indice: int, datos: Dictionary)
 signal active_item_changed(datos: Dictionary)
 
-var items: Array[Dictionary] = []
 var slot_nodes: Array[Button] = []
 
 var objeto_seleccionado: Dictionary = {}
 var indice_seleccionado: int = -1
 
-var indice_hotbar_activo: int = 0
-var hotbar_indices: Array[int] = []
+# El runtime es el único estado de inventario.
+# Estos accesores mantienen compatibilidad con la UI existente sin duplicar
+# items, hotbar o equipamiento en este nodo.
+var items: Array[Dictionary]:
+	get:
+		return inventory_controller.runtime.state.items
 
-var equipo: Dictionary = {}
+var hotbar_indices: Array[int]:
+	get:
+		return inventory_controller.runtime.hotbar.indices
+
+var equipo: Dictionary:
+	get:
+		return inventory_controller.runtime.equipment.state.slots
+
+var indice_hotbar_activo: int:
+	get:
+		return inventory_controller.runtime.hotbar.indice_activo
+	set(value):
+		inventory_controller.runtime.hotbar.indice_activo = value
 var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
@@ -230,15 +245,7 @@ func _crear_slots() -> void:
 	actualizar()
 
 
-func _sincronizar_runtime() -> void:
-	var items_runtime: Array = []
-	for item in items:
-		items_runtime.append(item.duplicate(true))
-	inventory_controller.configurar_items(items_runtime, hotbar_indices)
-	inventory_controller.runtime.establecer_equipamiento(equipo)
-
 func actualizar() -> void:
-	_sincronizar_runtime()
 	for i in range(slot_nodes.size()):
 		var slot := slot_nodes[i]
 
@@ -1249,8 +1256,6 @@ func establecer_hotbar_slot(
 		return false
 
 	hotbar_indices[indice_hotbar] = indice_inventario
-	_sincronizar_runtime()
-
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
@@ -1328,7 +1333,6 @@ func consumir_durabilidad_objeto_activo() -> bool:
 		)
 		items[indice_inventario] = {}
 		actualizar()
-		_sincronizar_runtime()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
 		return true
