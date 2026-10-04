@@ -83,7 +83,7 @@ func _actualizar() -> void:
 
 		var regla: Dictionary = regla_variant as Dictionary
 		var nombre := ""
-		var personaje := WorldData.obtener_personaje_game_por_id(personaje_id)
+		var personaje := WorldDataService.obtener_personaje_game_por_id(personaje_id)
 		if not personaje.is_empty():
 			nombre = str(personaje.get("nombre", "")).strip_edges()
 		if nombre.is_empty():
