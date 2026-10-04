@@ -36,18 +36,16 @@ var player: Node = null
 var inventory: Node = null
 var world_generator: Node = null
 var projectile_root: Node = null
-var entity_manager: Node = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_generator: Node = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_generator: Node = null, nuevo_projectile_root: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_generator = nuevo_world_generator
 	projectile_root = nuevo_projectile_root
-	entity_manager = nuevo_entity_manager
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
@@ -394,19 +392,8 @@ func _es_arma(
 	return "arma" in categoria
 
 
-func _obtener_objeto_activo() -> Dictionary:
-	# Compatibilidad legacy: el combate ya no usa la hotbar como autoridad.
-	return _obtener_arma_equipada()
-
-
 func _atacar_desarmado() -> void:
 	var direccion: Vector2 = _obtener_direccion_ataque()
-	var objetivo := _buscar_objetivo(
-		direccion,
-		alcance_desarmado,
-		ancho_ataque
-	)
-
 	# El hitbox es la única resolución del ataque melee.
 	# CombatAttackArea detecta el objetivo y CombatDamage aplica el daño.
 	_crear_ataque_melee(
@@ -419,8 +406,6 @@ func _atacar_desarmado() -> void:
 
 	_tiempo_desde_ataque = enfriamiento_arma
 
-	if objetivo == null:
-		ataque_sin_objetivo.emit(player)
 
 
 func _atacar_con_arma(
@@ -829,83 +814,6 @@ func _obtener_direccion_ataque() -> Vector2:
 
 	return Vector2.DOWN
 
-
-func _buscar_objetivo(
-	direccion: Vector2,
-	alcance: float,
-	ancho: float
-) -> Node:
-	var mejor_objetivo: Node = null
-	var mejor_distancia: float = INF
-
-	var candidatos: Array[Node] = []
-	if entity_manager != null and entity_manager.has_method("obtener_entidades_activas"):
-		for entidad_variant in entity_manager.call("obtener_entidades_activas"):
-			if entidad_variant is Node and (entidad_variant as Node).is_in_group("damageable"):
-				candidatos.append(entidad_variant as Node)
-
-	var lado_medio: float = (
-		ancho * 0.5
-	)
-
-	for candidato in candidatos:
-		if not is_instance_valid(candidato):
-			continue
-
-		if not CombatTargeting.es_objetivo_valido(player, candidato):
-			continue
-
-		if not candidato is Node2D:
-			continue
-
-		if not candidato.is_inside_tree():
-			continue
-
-		if "is_alive" in candidato:
-			if not bool(candidato.is_alive):
-				continue
-
-		var candidato_2d: Node2D = (
-			candidato as Node2D
-		)
-
-		var relativo: Vector2 = (
-			candidato_2d.global_position
-			- player.global_position
-		)
-
-		var frente: float = (
-			relativo.dot(direccion)
-		)
-
-		var lateral: float = abs(
-			relativo.cross(direccion)
-		)
-
-		var inicio: float = 8.0
-		var final: float = (
-			inicio
-			+ alcance
-		)
-
-		if frente < inicio:
-			continue
-
-		if frente > final:
-			continue
-
-		if lateral > lado_medio:
-			continue
-
-		var distancia: float = (
-			relativo.length()
-		)
-
-		if distancia < mejor_distancia:
-			mejor_distancia = distancia
-			mejor_objetivo = candidato
-
-	return mejor_objetivo
 
 
 func _animar_objetivo(
