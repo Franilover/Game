@@ -9,7 +9,6 @@ signal objetivo_cambiado(objetivo: Node)
 
 
 var player: Node = null
-var hud: Control = null
 
 var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
@@ -17,12 +16,8 @@ var objetivo_actual: Node = null
 var _scan_timer: float = 0.0
 
 
-func configurar(
-	nuevo_player: Node,
-	nuevo_hud: Control
-) -> void:
+func configurar(nuevo_player: Node) -> void:
 	player = nuevo_player
-	hud = nuevo_hud
 	if not interaction_controller.objetivo_cambiado.is_connected(_cambiar_objetivo):
 		interaction_controller.objetivo_cambiado.connect(_cambiar_objetivo)
 
@@ -132,21 +127,9 @@ func _contar_objetivos_contextuales() -> int:
 
 
 func _actualizar_prompt_actual() -> void:
-	if hud == null:
-		return
-
-	if objetivo_actual == null or not is_instance_valid(objetivo_actual):
-		if hud.has_method("ocultar_interaccion"):
-			hud.call("ocultar_interaccion")
-		return
-
-	var texto := "Recoger"
-
-	if objetivo_actual.has_method("get_interaction_text"):
-		texto = str(objetivo_actual.call("get_interaction_text"))
-
-	if hud.has_method("mostrar_interaccion"):
-		hud.call("mostrar_interaccion", texto)
+	# El sistema sólo mantiene el objetivo; Presentation escucha
+	# objetivo_cambiado y decide cómo representarlo.
+	objetivo_cambiado.emit(objetivo_actual)
 
 
 func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
@@ -157,12 +140,10 @@ func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
 	objetivo_cambiado.emit(objetivo_actual)
 
 	if objetivo_actual == null:
-		if hud != null and hud.has_method("ocultar_interaccion"):
-			hud.call("ocultar_interaccion")
+		print("InteractionSystem: objetivo contextual = <ninguno>")
 		return
 
 	var texto := "Recoger"
-
 	if objetivo_actual.has_method("get_interaction_text"):
 		texto = str(objetivo_actual.call("get_interaction_text"))
 
@@ -172,6 +153,3 @@ func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
 		" | accion = ",
 		texto
 	)
-
-	if hud != null and hud.has_method("mostrar_interaccion"):
-		hud.call("mostrar_interaccion", texto)
