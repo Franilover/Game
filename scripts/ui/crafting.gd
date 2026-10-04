@@ -1,5 +1,7 @@
 extends Control
 
+class_name CraftingUI
+
 const HTTP_TIMEOUT: float = 8.0
 
 var _request: HTTPRequest
