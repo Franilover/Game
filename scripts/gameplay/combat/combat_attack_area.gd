@@ -104,7 +104,7 @@ func _ready() -> void:
 		return
 
 	if _visual != null:
-	var tween := create_tween()
+		var tween := create_tween()
 	tween.set_parallel(true)
 	for visual in [_visual, _contorno]:
 		if visual == null:
