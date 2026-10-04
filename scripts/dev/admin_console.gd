@@ -837,17 +837,7 @@ func _comando_summon(nombre: String) -> void:
 		)
 		return
 
-	if not world_generator.has_method(
-		"summon_criatura"
-	):
-		_agregar_linea(
-			"[color=#d88]"
-			+ "El spawner de entidades no tiene summon_criatura()."
-			+ "[/color]"
-		)
-		return
-
-	# Primero intentamos el texto completo. Esto permite criaturas
+	# Primero intentamos  el texto completo. Esto permite criaturas
 	# cuyos nombres tienen espacios y evita interpretar sus nombres
 	# como si fueran argumentos especiales de Humano.
 	if player == null or not is_instance_valid(player):
