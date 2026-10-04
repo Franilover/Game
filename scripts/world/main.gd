@@ -84,7 +84,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	_configurar_hud(_world_context, world_gen)
 	_configurar_input_router()
 	_configurar_interaccion(world_gen)
-	_configurar_combate(_world_context)
+	_configurar_combate(_world_context, world_gen)
 	_configurar_inventario()
 	if GameState.has_method("configurar_dependencias"):
 		GameState.call("configurar_dependencias", _inventory, _player, _world_context, _world_atmosphere, MissionManager)
@@ -184,7 +184,7 @@ func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 		_hud.call("mostrar_interaccion", texto)
 
 
-func _configurar_combate(world_context: WorldContext) -> void:
+func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator) -> void:
 	if _combat_system == null:
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
