@@ -116,7 +116,7 @@ func configurar(
 func _configurar_admin_inventory(world_entity_spawner: WorldEntitySpawner) -> void:
 	var admin_tab: AdminInventory = $Window/Margin/Column/Tabs/Admin as AdminInventory
 	if admin_tab != null:
-		admin_tab.configurar(_player, world_entity_spawner, self)
+		admin_tab.configurar(_player, world_entity_spawner, self, _world_items)
 
 
 func _configurar_world_map(world_context: WorldContext) -> void:
