@@ -33,7 +33,7 @@ func _ready() -> void:
 	_supabase_client.establecer_mundo_activo(true)
 	var world_gen: WorldGenerator = _world_generator
 	if world_gen.has_method("configurar_entidades"):
-		world_gen.call("configurar_entidades", $Entities)
+		world_gen.call("configurar_entidades", $Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager)
 
 	if world_gen.is_world_ready():
 		_inicializar_jugador(world_gen)
