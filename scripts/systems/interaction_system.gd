@@ -130,23 +130,11 @@ func _buscar_objetivo() -> void:
 	)
 
 
-func _es_objetivo_contextual(candidato: Node) -> bool:
-	if candidato.has_method("es_recolectable"):
-		if bool(candidato.call("es_recolectable")):
-			return true
-
-	if candidato.has_method("es_dialogable"):
-		if bool(candidato.call("es_dialogable")):
-			return true
-
-	return false
-
-
 func _contar_objetivos_contextuales() -> int:
 	var cantidad := 0
 
 	for candidato in get_tree().get_nodes_in_group("interactable"):
-		if is_instance_valid(candidato) and _es_objetivo_contextual(candidato):
+		if is_instance_valid(candidato) and interaction_controller.es_objetivo_contextual(candidato):
 			cantidad += 1
 
 	return cantidad
