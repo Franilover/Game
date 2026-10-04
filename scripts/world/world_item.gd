@@ -1,13 +1,14 @@
 extends Node2D
+class_name WorldItem
 
 var datos_objeto: Dictionary = {}
 var nombre: String = "Objeto"
 
 const DISTANCIA_INTERACCION: float = 52.0
 
-var _jugador: Node2D = null
-var _inventario: Node = null
-var _mission_manager: Node = null
+var _jugador: Player = null
+var _inventario: GarliaInventory = null
+var _mission_manager: MissionManager = null
 var _etiqueta: Label = null
 var _icono: Sprite2D = null
 var _etiqueta_visible: bool = false
@@ -24,8 +25,8 @@ func _ready() -> void:
 	queue_redraw()
 
 
-func configurar_dependencias(jugador: Node, inventario: Node, mission_manager: Node) -> void:
-	_jugador = jugador as Node2D
+func configurar_dependencias(jugador: Player, inventario: GarliaInventory, mission_manager: MissionManager) -> void:
+	_jugador = jugador
 	_inventario = inventario
 	_mission_manager = mission_manager
 
@@ -200,8 +201,8 @@ func interact(persona: Node) -> void:
 	if not can_interact(persona):
 		return
 	
-	var inventario: Node = _inventario
-	if inventario == null or not inventario.has_method("agregar_objeto"):
+	var inventario: GarliaInventory = _inventario
+	if inventario == null or not is_instance_valid(inventario):
 		return
 	
 	var datos: Dictionary = obtener_datos()
@@ -211,9 +212,9 @@ func interact(persona: Node) -> void:
 	if not datos.has("cantidad"):
 		datos["cantidad"] = 1
 	
-	if bool(inventario.call("agregar_objeto", datos)):
+	if inventario.agregar_objeto(datos):
 		var item_id := str(datos.get("id", datos.get("item_id", ""))).strip_edges()
 		if not item_id.is_empty():
 			if _mission_manager != null and is_instance_valid(_mission_manager):
-				_mission_manager.call("registrar_recoleccion", item_id, int(datos.get("cantidad", 1)))
+				_mission_manager.registrar_recoleccion(item_id, int(datos.get("cantidad", 1)))
 		queue_free()
