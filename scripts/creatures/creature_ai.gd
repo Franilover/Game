@@ -72,6 +72,7 @@ enum Perfil {
 var criatura: Creature = null
 var objetivo: Node2D = null
 var configuracion_ia: Dictionary = {}
+var relaciones_ecologicas: Array = []
 
 
 var estado: Estado = Estado.IDLE
@@ -113,11 +114,13 @@ func _ready() -> void:
 
 	_encontrar_movimiento()
 	_refrescar_configuracion()
+	_cargar_relaciones_ecologicas()
 	_cambiar_estado_forzado(estado_inicial)
 
 
 func configurar_criatura() -> void:
 	_refrescar_configuracion()
+	_cargar_relaciones_ecologicas()
 
 	if criatura == null:
 		return
@@ -540,27 +543,44 @@ func _refrescar_objetivo() -> void:
 		_objetivo_mas_cercano_dramarias()
 		return
 
-	if objetivo != null and is_instance_valid(objetivo):
-		return
+	var candidatos: Array[Node2D] = []
 
 	var jugador := get_tree().get_first_node_in_group("player")
-
 	if jugador is Node2D:
-		objetivo = jugador as Node2D
-		return
+		candidatos.append(jugador as Node2D)
 
-	var escena := get_tree().current_scene
+	for candidato_variant in get_tree().get_nodes_in_group("creatures"):
+		if not candidato_variant is Node2D:
+			continue
 
-	if escena == null:
-		objetivo = null
-		return
+		var candidato := candidato_variant as Node2D
 
-	var encontrado := _buscar_nodo_jugador(escena)
+		if candidato == criatura:
+			continue
+		if not is_instance_valid(candidato):
+			continue
+		if not candidato.is_inside_tree():
+			continue
+		if not candidato.has_method("take_damage"):
+			continue
+		if not _es_objetivo_ecologico_valido(candidato):
+			continue
 
-	if encontrado is Node2D:
-		objetivo = encontrado as Node2D
-	else:
-		objetivo = null
+		candidatos.append(candidato)
+
+	var mejor: Node2D = null
+	var mejor_distancia: float = INF
+
+	for candidato in candidatos:
+		var distancia := criatura.global_position.distance_to(
+			candidato.global_position
+		)
+
+		if distancia < mejor_distancia:
+			mejor_distancia = distancia
+			mejor = candidato
+
+	objetivo = mejor
 
 
 func _objetivo_mas_cercano_dramarias() -> void:
@@ -609,6 +629,94 @@ func _objetivo_mas_cercano_dramarias() -> void:
 			mejor = candidato_2d
 
 	objetivo = mejor
+
+
+func _es_objetivo_ecologico_valido(candidato: Node2D) -> bool:
+	if candidato is Creature:
+		var tipo_relacion := _obtener_relacion_ecologica(
+			candidato as Creature
+		)
+
+		return tipo_relacion in [
+			"depredacion",
+			"parasitismo"
+		]
+
+	return false
+
+
+func _obtener_relacion_ecologica(
+	candidato: Creature
+) -> String:
+	if criatura == null or candidato == null:
+		return ""
+
+	var origen_id := criatura.criatura_id
+	var destino_id := candidato.criatura_id
+
+	if origen_id.is_empty() or destino_id.is_empty():
+		return ""
+
+	var ecosistema_id := str(
+		criatura.datos.get("ecosistema_id", "")
+	)
+
+	var mejor_tipo := ""
+	var mejor_prioridad := -1
+
+	for relacion_variant in relaciones_ecologicas:
+		if not relacion_variant is Dictionary:
+			continue
+
+		var relacion := relacion_variant as Dictionary
+
+		if str(relacion.get("criatura_origen_id", "")) != origen_id:
+			continue
+		if str(relacion.get("criatura_destino_id", "")) != destino_id:
+			continue
+
+		var relacion_ecosistema := str(
+			relacion.get("ecosistema_id", "")
+		)
+
+		var prioridad := 0
+		if not ecosistema_id.is_empty() and relacion_ecosistema == ecosistema_id:
+			prioridad = 2
+		elif relacion_ecosistema.is_empty():
+			prioridad = 1
+		else:
+			continue
+
+		if prioridad > mejor_prioridad:
+			mejor_prioridad = prioridad
+			mejor_tipo = str(
+				relacion.get("tipo_relacion", "")
+			).strip_edges().to_lower()
+
+	return mejor_tipo
+
+
+func _cargar_relaciones_ecologicas() -> void:
+	if not is_instance_valid(SupabaseClient):
+		return
+
+	if SupabaseClient.has_method("obtener_relaciones_ecologicas"):
+		relaciones_ecologicas = (
+			SupabaseClient.obtener_relaciones_ecologicas()
+		)
+
+	if not SupabaseClient.relaciones_ecologicas_cargadas.is_connected(
+		_al_recibir_relaciones_ecologicas
+	):
+		SupabaseClient.relaciones_ecologicas_cargadas.connect(
+			_al_recibir_relaciones_ecologicas
+		)
+
+
+func _al_recibir_relaciones_ecologicas(
+	relaciones: Array
+) -> void:
+	relaciones_ecologicas = relaciones.duplicate(true)
 
 
 func _buscar_nodo_jugador(nodo: Node) -> Node:
@@ -685,11 +793,23 @@ func _perfil_desde_texto(texto: String) -> Perfil:
 
 
 func _obtener_respuesta_a_objetivo() -> String:
+	if objetivo is Creature:
+		var relacion := _obtener_relacion_ecologica(
+			objetivo as Creature
+		)
+
+		match relacion:
+			"depredacion", "parasitismo":
+				return "atacar"
+
+			_:
+				pass
+
 	match perfil:
 		Perfil.DRAMARIAS:
 			return "atacar"
 
-		Perfil.ZLISH:
+	Perfil.ZLISH:
 			return "huir"
 
 		Perfil.FLAXIS:
