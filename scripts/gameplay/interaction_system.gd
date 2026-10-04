@@ -11,6 +11,7 @@ signal objetivo_cambiado(objetivo: Node)
 var player: Node = null
 var inventory: Node = null
 var world_items: Node = null
+var input_gate: Node = null
 
 var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
@@ -18,10 +19,16 @@ var objetivo_actual: Node = null
 var _scan_timer: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_items: Node = null) -> void:
+func configurar(
+	nuevo_player: Node,
+	nuevo_inventory: Node = null,
+	nuevo_world_items: Node = null,
+	nuevo_input_gate: Node = null
+) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_items = nuevo_world_items
+	input_gate = nuevo_input_gate
 	if not interaction_controller.objetivo_cambiado.is_connected(_cambiar_objetivo):
 		interaction_controller.objetivo_cambiado.connect(_cambiar_objetivo)
 
@@ -106,10 +113,9 @@ func procesar_accion_primaria() -> bool:
 
 
 func _entrada_bloqueada_por_router() -> bool:
-	var router := get_tree().root.get_node_or_null("GameplayInputRouter")
-	if router == null:
+	if input_gate == null:
 		return true
-	return bool(router.call("esta_entrada_bloqueada", get_tree()))
+	return bool(input_gate.call("esta_entrada_bloqueada", get_tree()))
 
 
 func _buscar_objetivo() -> void:
