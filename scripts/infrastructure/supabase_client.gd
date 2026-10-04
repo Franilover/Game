@@ -1,4 +1,6 @@
 extends Node
+
+signal relaciones_ecologicas_cargadas(relaciones: Array)
 class_name GarliaSupabaseClient
 signal mundo_cargado(datos: Dictionary)
 signal eterium_runtime_cargado(datos: Dictionary)
@@ -109,7 +111,11 @@ func _ready() -> void:
 
 
 func _crear_headers() -> PackedStringArray:
-	return _crear_headers()
+	return PackedStringArray([
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
+		"Content-Type: application/json",
+		"Accept: application/json"
+	])
 
 
 func _crear_http_request() -> HTTPRequest:
@@ -214,6 +220,8 @@ func _al_completar_relaciones_ecologicas(
 		"SupabaseClient: relaciones ecológicas cargadas → ",
 		_relaciones_ecologicas.size()
 	)
+
+	relaciones_ecologicas_cargadas.emit(_relaciones_ecologicas.duplicate(true))
 
 
 
