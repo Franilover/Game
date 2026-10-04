@@ -182,6 +182,13 @@ func _configurar_inventario() -> void:
 		push_error("Main: no se encontró UI/Inventory.")
 		return
 
+	if _inventory.has_method("configurar"):
+		_inventory.call("configurar", _player)
+
+	var router := get_node_or_null("/root/GameplayInputRouter")
+	if router != null and _inventory.has_method("configurar_input_gate"):
+		_inventory.call("configurar_input_gate", router)
+
 
 func _configurar_dialogo() -> void:
 	if _dialogue_system == null:
