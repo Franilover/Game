@@ -36,16 +36,18 @@ var player: Node = null
 var inventory: Node = null
 var world_context: Node = null
 var projectile_root: Node = null
+var entity_manager: Node = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: Node = null, nuevo_projectile_root: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: Node = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
 	projectile_root = nuevo_projectile_root
+	entity_manager = nuevo_entity_manager
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
@@ -67,7 +69,6 @@ func _process(delta: float) -> void:
 
 
 func _ready() -> void:
-	add_to_group("combat_system")
 
 	if not combat_controller.is_inside_tree():
 		add_child(combat_controller)
@@ -531,7 +532,7 @@ func _al_recibir_impacto_proyectil(
 		and objetivo.is_in_group("creatures")
 		and "is_alive" in objetivo
 		and bool(objetivo.get("is_alive"))
-		and objetivo.has_node("AIController")
+		and _obtener_ai_controller(objetivo) != null
 	):
 		var ai: Node = objetivo.get_node_or_null("AIController")
 		if ai != null and ai.has_method("al_recibir_ataque_con_arma"):
@@ -539,6 +540,17 @@ func _al_recibir_impacto_proyectil(
 
 	_animar_objetivo(objetivo)
 	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
+
+
+func _obtener_ai_controller(objetivo: Node) -> Node:
+	if entity_manager != null and is_instance_valid(entity_manager):
+		if entity_manager.has_method("obtener_entidad_ai"):
+			var ai_variant: Variant = entity_manager.call("obtener_entidad_ai", objetivo)
+			if ai_variant is Node:
+				return ai_variant as Node
+	if objetivo != null and objetivo.has_node("AIController"):
+		return objetivo.get_node_or_null("AIController")
+	return null
 
 
 func _obtener_modo_ataque(
@@ -762,9 +774,7 @@ func _aplicar_danio(
 		and bool(objetivo.get("is_alive"))
 		and objetivo.has_node("AIController")
 	):
-		var ai: Node = objetivo.get_node_or_null(
-			"AIController"
-		)
+		var ai: Node = _obtener_ai_controller(objetivo)
 
 		if ai != null and ai.has_method(
 			"al_recibir_ataque_con_arma"
