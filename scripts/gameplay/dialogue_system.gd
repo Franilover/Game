@@ -1,4 +1,5 @@
 extends Node
+class_name DialogueSystem
 
 
 signal dialogue_started(speaker: String)
