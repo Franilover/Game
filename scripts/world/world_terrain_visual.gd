@@ -264,8 +264,8 @@ func _actualizar_variacion_pradera(cell: Vector2i) -> void:
 
 
 func _es_interior_pradera(cell: Vector2i) -> bool:
-	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		var vecino := cell + offset
+	for offset: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var vecino: Vector2i = cell + offset
 		if _cell_bioma.get(vecino, "") != _cell_bioma.get(cell, ""):
 			return false
 		if _cell_zone.get(vecino, -1) != 0:
