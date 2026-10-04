@@ -22,11 +22,11 @@ var _partida_aplicada_en_escena: bool = false
 var _guardado_en_curso: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
-var _inventory: Node = null
-var _player: Node = null
-var _world_context: Node = null
-var _world_atmosphere: Node = null
-var _mission_manager: Node = null
+var _inventory: GarliaInventory = null
+var _player: Player = null
+var _world_context: WorldContext = null
+var _world_atmosphere: WorldAtmosphere = null
+var _mission_manager: MissionManager = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -35,11 +35,11 @@ signal descubrimiento_mundo(nivel: String, id: String)
 
 
 func configurar_dependencias(
-	inventory: Node = null,
-	player: Node = null,
-	world_context: Node = null,
-	world_atmosphere: Node = null,
-	mission_manager: Node = null
+	inventory: GarliaInventory = null,
+	player: Player = null,
+	world_context: WorldContext = null,
+	world_atmosphere: WorldAtmosphere = null,
+	mission_manager: MissionManager = null
 ) -> void:
 	_inventory = inventory
 	_player = player
@@ -274,7 +274,7 @@ func guardar_partida() -> bool:
 	if active_save_id.is_empty():
 		return false
 
-	var jugador: Node = _player
+	var jugador: Player = _player
 
 	if jugador == null or not is_instance_valid(jugador):
 		return false
@@ -385,7 +385,7 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 				tiempo_variant as Dictionary
 			).duplicate(true)
 
-	var inventario: Node = _inventory
+	var inventario: GarliaInventory = _inventory
 
 	if inventario != null and is_instance_valid(inventario):
 		var estado_inventario: Dictionary = {}
