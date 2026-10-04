@@ -519,9 +519,9 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 		return
 
 	var dano_recibido := maxi(cantidad, 0)
-	var inventario: Node = _inventory_ref
-	if inventario != null and inventario.has_method("obtener_equipamiento"):
-		var equipo_variant: Variant = inventario.call("obtener_equipamiento")
+	var inventario: GarliaInventory = _inventory_ref
+	if inventario != null:
+		var equipo_variant: Dictionary = inventario.obtener_equipamiento()
 		if equipo_variant is Dictionary:
 			dano_recibido = CombatDefense.aplicar(
 				dano_recibido,
