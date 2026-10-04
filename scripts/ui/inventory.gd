@@ -146,6 +146,13 @@ func abrir() -> void:
 
 
 func cerrar() -> void:
+	# Al cerrar, ningún control del inventario debe conservar el foco GUI.
+	# Esto evita que un Button de equipamiento retenga la siguiente entrada
+	# del ratón y bloquee el flujo normal de _unhandled_input del juego.
+	get_viewport().gui_release_focus()
+	_arrastre_indice = -1
+	_arrastre_datos.clear()
+
 	visible = false
 
 	objeto_seleccionado.clear()
