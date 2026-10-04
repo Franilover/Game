@@ -10,10 +10,14 @@ var _cargando: bool = false
 var _lista: VBoxContainer
 var _estado: Label
 var _inventory: Node = null
+var _world_items: GarliaWorldItems = null
 
 
-func configurar(inventario: Node) -> void:
+func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 	_inventory = inventario
+	_world_items = world_items
+	if _world_items != null and not _world_items.catalogo_cargado.is_connected(_al_catalogo_cargado):
+		_world_items.catalogo_cargado.connect(_al_catalogo_cargado)
 
 
 func _ready() -> void:
@@ -21,8 +25,6 @@ func _ready() -> void:
 	_crear_interfaz()
 	_cargar_recetas()
 
-	if GarliaWorldItems.has_signal("catalogo_cargado"):
-		GarliaWorldItems.catalogo_cargado.connect(_al_catalogo_cargado)
 
 
 func _crear_interfaz() -> void:
@@ -159,7 +161,7 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icono.texture = ItemIconResolver.obtener_icono(
-		GarliaWorldItems.buscar_item_por_id(str(resultado.get("item_id", "")))
+		_world_items.buscar_item_por_id(str(resultado.get("item_id", "")))
 	)
 	fila.add_child(icono)
 
