@@ -132,16 +132,10 @@ func _procesar_hurtbox(hurtbox: Area2D) -> void:
 
 	var objetivo := objetivo_variant as Node
 
-	if objetivo == atacante or not is_instance_valid(objetivo):
+	if not CombatTargeting.es_objetivo_valido(atacante, objetivo):
 		return
 
 	if objetivo in _afectados:
-		return
-
-	if not objetivo.is_in_group("damageable"):
-		return
-
-	if "is_alive" in objetivo and not bool(objetivo.get("is_alive")):
 		return
 
 	_afectados.append(objetivo)
