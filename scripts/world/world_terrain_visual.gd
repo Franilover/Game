@@ -277,7 +277,7 @@ func set_zone(
 	_cell_bioma[cell] = clave
 	_cell_zone[cell] = zone
 	var variation_start_usec := Time.get_ticks_usec()
-	_marcar_variaciones_dirty(cell)
+	_marcar_variaciones_dirty(cell, clave)
 	_profiler_variation_ms += float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
 
 	var data: Dictionary = _base_tiles[tile_key]
@@ -555,12 +555,24 @@ func _normalizar_bioma(nombre: String) -> String:
 	return nombre.strip_edges()
 
 
-func _marcar_variaciones_dirty(cell: Vector2i) -> void:
-	# Sólo las celdas de biomas con atlas decorativo pueden cambiar una
-	# variación. Marcar todas las celdas del mundo hacía que cada chunk
-	# recalculara ~1.150 decoraciones potenciales aunque la mayoría fueran
-	# de zonas sin variaciones (agua, roca, arena, etc.).
+func _marcar_variaciones_dirty(
+	cell: Vector2i,
+	bioma_actual: String
+) -> void:
+	# Cuando la celda actual tiene variaciones, sus cuatro vecinos también
+	# deben revisarse porque pueden pasar a ser interiores o bordes.
+	# En ese caso no hace falta consultar cinco veces el diccionario: sabemos
+	# que la celda central es decorativa y añadimos directamente el vecindario.
+	if VARIACIONES_POR_BIOMA.has(bioma_actual):
+		for offset: Vector2i in UPDATE_NEIGHBORS:
+			_dirty_variations[cell + offset] = true
+		return
+
+	# Para los biomas sin atlas decorativo, sólo interesa comprobar los cuatro
+	# vecinos: la celda central no puede tener una variación propia.
 	for offset: Vector2i in UPDATE_NEIGHBORS:
+		if offset == Vector2i.ZERO:
+			continue
 		var candidata := cell + offset
 		var bioma_candidato := str(_cell_bioma.get(candidata, ""))
 		if VARIACIONES_POR_BIOMA.has(bioma_candidato):
