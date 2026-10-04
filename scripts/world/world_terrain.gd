@@ -41,6 +41,14 @@ var _pintado_desde_flush: int = 0
 
 var _ultimo_chunk_generado: Vector2i = Vector2i.ZERO
 
+# Perfilador interno del pipeline de generación.
+var _profiler_data_ms: float = 0.0
+var _profiler_paint_ms: float = 0.0
+var _profiler_flush_ms: float = 0.0
+var _profiler_data_calls: int = 0
+var _profiler_paint_calls: int = 0
+var _profiler_flushes: int = 0
+
 
 func configurar(
 	nuevo_seed: int,
@@ -179,6 +187,13 @@ func iniciar_generacion_chunk(
 	if _loaded_chunks.has(chunk_coord):
 		return
 
+	_profiler_data_ms = 0.0
+	_profiler_paint_ms = 0.0
+	_profiler_flush_ms = 0.0
+	_profiler_data_calls = 0
+	_profiler_paint_calls = 0
+	_profiler_flushes = 0
+
 	if not _generation_task.is_empty():
 		return
 
@@ -245,6 +260,8 @@ func procesar_generacion(
 func _procesar_datos_chunk(
 	cells: int
 ) -> bool:
+	var profiler_start_usec: int = Time.get_ticks_usec()
+
 	var coord: Vector2i = (
 		_generation_task["coord"]
 	)
@@ -345,6 +362,11 @@ func _procesar_datos_chunk(
 
 	_generation_task["cursor"] = cursor
 
+	_profiler_data_ms += float(
+		Time.get_ticks_usec() - profiler_start_usec
+	) / 1000.0
+	_profiler_data_calls += 1
+
 	if cursor < total:
 		return false
 
@@ -357,6 +379,8 @@ func _procesar_datos_chunk(
 func _procesar_pintado_chunk(
 	cells: int
 ) -> bool:
+	var profiler_start_usec: int = Time.get_ticks_usec()
+
 	var coord: Vector2i = (
 		_generation_task["coord"]
 	)
@@ -452,19 +476,34 @@ func _procesar_pintado_chunk(
 		var lote := maxi(visual_flush_cells, 1)
 		if _pintado_desde_flush >= lote:
 			if visual != null:
+				var flush_start_usec: int = Time.get_ticks_usec()
 				visual.flush()
+				_profiler_flush_ms += float(
+					Time.get_ticks_usec() - flush_start_usec
+				) / 1000.0
+				_profiler_flushes += 1
 			_pintado_desde_flush = 0
 
 		cursor += 1
 
 	_generation_task["cursor"] = cursor
 
+	_profiler_paint_ms += float(
+		Time.get_ticks_usec() - profiler_start_usec
+	) / 1000.0
+	_profiler_paint_calls += 1
+
 	if cursor < total:
 		return false
 
 	if visual != null:
 		visual.terminar_lote()
+		var flush_start_usec: int = Time.get_ticks_usec()
 		visual.flush()
+		_profiler_flush_ms += float(
+			Time.get_ticks_usec() - flush_start_usec
+		) / 1000.0
+		_profiler_flushes += 1
 
 	_pintado_desde_flush = 0
 	_finalizar_chunk()
@@ -498,6 +537,27 @@ func _finalizar_chunk() -> void:
 	}
 
 	_ultimo_chunk_generado = coord
+
+	var total_ms: float = _profiler_data_ms + _profiler_paint_ms
+	print(
+		"World Profiler | chunk ",
+		coord,
+		" | total=",
+		"%.2f" % total_ms,
+		" ms | datos=",
+		"%.2f" % _profiler_data_ms,
+		" ms (",
+		_profiler_data_calls,
+		" pasos) | pintura=",
+		"%.2f" % _profiler_paint_ms,
+		" ms (",
+		_profiler_paint_calls,
+		" pasos) | flush=",
+		"%.2f" % _profiler_flush_ms,
+		" ms / ",
+		_profiler_flushes
+	)
+
 	_generation_task.clear()
 func tiene_generacion_activa() -> bool:
 	return not _generation_task.is_empty()
