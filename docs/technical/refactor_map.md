@@ -88,7 +88,6 @@ scripts/gameplay/
 ├── combat/
 ├── inventory/
 ├── player/
-├── eterium/
 └── sistemas jugables compartidos
 ```
 
