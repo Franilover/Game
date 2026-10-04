@@ -38,20 +38,18 @@ var world_context: WorldContext = null
 var projectile_root: Node = null
 var entity_manager: Node = null
 var game_state: Node = null
-var combat_feedback: CombatFeedback = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null, nuevo_game_state: Node = null, nuevo_combat_feedback: CombatFeedback = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null, nuevo_game_state: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
 	projectile_root = nuevo_projectile_root
 	entity_manager = nuevo_entity_manager
 	game_state = nuevo_game_state
-	combat_feedback = nuevo_combat_feedback
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
@@ -539,7 +537,7 @@ func _al_recibir_impacto_proyectil(
 		if ai != null and ai.has_method("al_recibir_ataque_con_arma"):
 			ai.call("al_recibir_ataque_con_arma", arma)
 
-	_notificar_feedback_impacto(objetivo)
+	_animar_objetivo(objetivo)
 	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
 
 
@@ -837,3 +835,24 @@ func _notificar_feedback_impacto(objetivo: Node) -> void:
 	if combat_feedback == null or not is_instance_valid(combat_feedback):
 		return
 	combat_feedback.mostrar_impacto(objetivo)
+
+
+func _animar_objetivo(objetivo: Node) -> void:
+	if not objetivo is CanvasItem:
+		return
+
+	var objetivo_visual := objetivo as CanvasItem
+	var modulate_original: Color = objetivo_visual.modulate
+	var tween := create_tween()
+	tween.tween_property(
+		objetivo_visual,
+		"modulate",
+		Color(1.0, 0.45, 0.45, modulate_original.a),
+		0.04
+	)
+	tween.tween_property(
+		objetivo_visual,
+		"modulate",
+		modulate_original,
+		0.08
+	)
