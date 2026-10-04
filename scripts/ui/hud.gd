@@ -7,6 +7,7 @@ var mission_manager: Node = null
 var entity_manager: Node = null
 var supabase_client: Node = null
 var world_data: Node = null
+var game_state: Node = null
 
 var mostrar_contexto_mundo: bool = false
 
@@ -54,7 +55,7 @@ var _discovery_notice_timer: float = 0.0
 @onready var _hotbar_node: Control = $Hotbar
 
 
-func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null, nuevo_world_data: Node = null) -> void:
+func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null, nuevo_world_data: Node = null, nuevo_game_state: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
@@ -68,6 +69,10 @@ func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nue
 	if nuevo_supabase_client != null and is_instance_valid(nuevo_supabase_client):
 		supabase_client = nuevo_supabase_client
 	world_data = nuevo_world_data
+	if nuevo_game_state != null and is_instance_valid(nuevo_game_state):
+		if is_instance_valid(game_state) and game_state != nuevo_game_state:
+			_desconectar_senal_game_state()
+		game_state = nuevo_game_state
 	if nuevo_inventory != null and is_instance_valid(nuevo_inventory) and _hotbar_node.has_method("configurar_inventario"):
 		_hotbar_node.call("configurar_inventario", nuevo_inventory)
 	if mission_manager != null:
@@ -105,10 +110,23 @@ func _ready() -> void:
 		interaction_prompt.visible = false
 
 
-	if GameState.has_signal("descubrimiento_mundo"):
-		GameState.descubrimiento_mundo.connect(_al_descubrimiento_mundo)
+	_conectar_senal_game_state()
 
 	print("HUD: iniciado.")
+
+func _desconectar_senal_game_state() -> void:
+	if not is_instance_valid(game_state):
+		return
+	if game_state.has_signal("descubrimiento_mundo") and game_state.descubrimiento_mundo.is_connected(_al_descubrimiento_mundo):
+		game_state.descubrimiento_mundo.disconnect(_al_descubrimiento_mundo)
+
+
+func _conectar_senal_game_state() -> void:
+	if not is_instance_valid(game_state):
+		return
+	if game_state.has_signal("descubrimiento_mundo") and not game_state.descubrimiento_mundo.is_connected(_al_descubrimiento_mundo):
+		game_state.descubrimiento_mundo.connect(_al_descubrimiento_mundo)
+
 
 func _process(delta: float) -> void:
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
