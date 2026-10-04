@@ -9,8 +9,6 @@ var player: Node = null
 var ui_root: Node = null
 var mission_manager: Node = null
 var relationship_system: Node = null
-var mission_manager: Node = null
-var relationship_system: Node = null
 
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
