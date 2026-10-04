@@ -43,17 +43,15 @@ float tuft(vec2 uv, vec2 cell) {
 void fragment() {
     vec4 base = texture(TEXTURE, UV);
 
-    if (base.a <= 0.01) {
-        COLOR = base;
-        return;
-    }
-
     // Keep the effect tied to the existing grass pixels.
     float green_base = base.g - max(base.r, base.b);
     float grass_surface = smoothstep(0.012, 0.070, green_base);
 
-    // Two different scales create natural clusters instead of a visible grid.
-    vec2 grid_a = vec2(12.0, 8.0);
+    if (base.a <= 0.01) {
+        COLOR = base;
+    } else {
+        // Two different scales create natural clusters instead of a visible grid.
+        vec2 grid_a = vec2(12.0, 8.0);
     vec2 grid_b = vec2(19.0, 13.0);
 
     vec2 cell_a = floor(UV * grid_a);
@@ -75,5 +73,6 @@ void fragment() {
     vec3 light = base.rgb + vec3(0.035, 0.045, 0.010);
     vec3 detail = mix(dark, light, step(0.52, variation));
 
-    COLOR = vec4(mix(base.rgb, detail, mask * detail_strength), base.a);
+        COLOR = vec4(mix(base.rgb, detail, mask * detail_strength), base.a);
+    }
 }
