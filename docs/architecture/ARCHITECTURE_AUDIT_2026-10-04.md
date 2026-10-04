@@ -246,3 +246,11 @@ Los servicios que pertenecen a una partida activa deben declararse en Main y rec
 - `Player` deja de depender directamente de `GameState` para descubrimientos, configuración de personaje y guardado administrativo; recibe el servicio desde `Main`.
 - La lógica de movimiento, stamina, Eterium, exploración y acciones permanece delegada a sus controladores/coordinadores existentes; no se creó otra capa paralela.
 - Próxima barrida: revisar `SupabaseClient` y repositorios para separar infraestructura REST por dominio sin duplicar endpoints ni alterar el contrato canónico.
+
+
+## Décima barrida — servicios sociales e infraestructura Supabase
+
+- `RelationshipSystem` ya no consulta `GameState` como singleton interno: `Main` le inyecta el estado persistente.
+- Se conserva la separación conceptual: Supabase/repository aporta reglas y regalos; `GameState` conserva relaciones y recuerdos modificados durante la partida; `RelationshipSystem` aplica las reglas.
+- `SupabaseClient` fue auditado como transporte + caché de varios dominios. Se detectó legado de constantes de credenciales en rutas REST antiguas mientras el transporte compartido ya usa `GarliaAuth`; queda marcado para la pasada consolidada de infraestructura, sin duplicar clientes ni endpoints durante el rediseño.
+- No se divide todavía `SupabaseClient` a ciegas: primero hay que clasificar sus consumidores por dominio para evitar crear repositorios paralelos.
