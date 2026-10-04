@@ -87,17 +87,17 @@ func esta_abierto() -> bool:
 	return _abierto
 
 
-func abrir_desde(fuente: Node) -> bool:
+func abrir_desde(fuente: Creature) -> bool:
 	print("DialogueSystem: abrir_desde() → ", fuente.name if is_instance_valid(fuente) else "<invalido>")
 	if fuente == null or not is_instance_valid(fuente):
 		print("DialogueSystem: fuente invalida.")
 		return false
 
-	if not fuente.has_method("get_dialogue_data"):
-		print("DialogueSystem: la fuente no tiene get_dialogue_data().")
+	if not fuente is Creature:
+		print("DialogueSystem: fuente de diálogo inválida.")
 		return false
 
-	var datos_variant: Variant = fuente.call("get_dialogue_data")
+	var datos_variant: Variant = fuente.get_dialogue_data()
 	print("DialogueSystem: datos recibidos = ", datos_variant is Dictionary, " | claves = ", datos_variant.keys() if datos_variant is Dictionary else [])
 	if not datos_variant is Dictionary:
 		return false
@@ -105,7 +105,7 @@ func abrir_desde(fuente: Node) -> bool:
 	return abrir(datos_variant as Dictionary, fuente)
 
 
-func abrir(datos: Dictionary, fuente: Node = null) -> bool:
+func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
 	var datos_seleccionados := _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
@@ -135,8 +135,8 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 
 	_fuente = fuente
 
-	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
-		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
+	if is_instance_valid(_fuente):
+		var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 		if not personaje_id.is_empty():
 			if mission_manager != null:
 				mission_manager.registrar_dialogo_desde_fuente(personaje_id, str(datos_seleccionados.get("clave", "principal")), _fuente)
@@ -151,7 +151,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 	_acciones.clear()
 
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
-		var personaje_id_social := str(_fuente.call("get_personaje_game_id")).strip_edges()
+		var personaje_id_social := _fuente.get_personaje_game_id().strip_edges()
 		if not personaje_id_social.is_empty():
 			var social: RelationshipSystem = relationship_system
 			if social != null:
@@ -167,10 +167,8 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 	_abierto = true
 
 	if is_instance_valid(_fuente):
-		if _fuente.has_method("detener_movimiento"):
-			_fuente.call("detener_movimiento")
-		if _fuente.has_method("tomar_control_movimiento"):
-			_fuente.call("tomar_control_movimiento")
+		_fuente.detener_movimiento()
+		_fuente.tomar_control_movimiento()
 
 	dialogue_panel.visible = true
 	print(
@@ -185,10 +183,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 
 	var hablante := str(_lineas[0].get("hablante", "")).strip_edges()
 	if hablante.is_empty() and is_instance_valid(_fuente):
-		if _fuente.has_method("get_nombre"):
-			hablante = str(_fuente.call("get_nombre"))
-		else:
-			hablante = _fuente.name
+		hablante = _fuente.get_nombre()
 
 	speaker_label.text = hablante
 	dialogue_started.emit(hablante)
@@ -209,8 +204,7 @@ func cerrar() -> void:
 	_temporizador_texto = 0.0
 
 	if is_instance_valid(_fuente):
-		if _fuente.has_method("liberar_control_movimiento"):
-			_fuente.call("liberar_control_movimiento")
+		_fuente.liberar_control_movimiento()
 
 	_fuente = null
 	_acciones.clear()
@@ -379,8 +373,8 @@ func _ejecutar_accion_dialogo() -> void:
 				return
 
 		"seguir_jugador":
-			if is_instance_valid(_fuente) and _fuente.has_method("iniciar_seguimiento_jugador"):
-				if _fuente.call("iniciar_seguimiento_jugador", player):
+			if is_instance_valid(_fuente):
+				if _fuente.iniciar_seguimiento_jugador(player):
 					_acciones.clear()
 					action_button.visible = false
 					hint_label.text = "Abel te está siguiendo · [ LMB ] Cerrar"
