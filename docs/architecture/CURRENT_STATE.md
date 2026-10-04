@@ -27,7 +27,7 @@ Se detectaron especialmente:
 - InteractionSystem recibe explícitamente Inventory y GarliaWorldItems.
 - `DialogueSystem` accede directamente a MissionManager y RelationshipSystem.
 - `IUMManager` ya usa `IUMRepository → SupabaseClient` para acceso remoto.
-- `GameState` sigue concentrando guardado, estado de jugador, descubrimientos y lógica de menú.
+- `GameState` coordina guardado/carga local; `PlayerState`, `WorldState` y `DiscoveryState` contienen los snapshots persistibles correspondientes.
 
 ### Supabase
 
