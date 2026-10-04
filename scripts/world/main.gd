@@ -18,6 +18,7 @@ var _input_router: Node = GameplayInputRouter
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: Node = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
+@onready var _combat_projectiles: Node2D = $CombatProjectiles
 
 
 func _ready() -> void:
