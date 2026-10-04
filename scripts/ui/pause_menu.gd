@@ -8,6 +8,11 @@ const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
 @onready var menu_button: Button = $Panel/Margin/Column/MenuButton
 
 var abierto: bool = false
+var _inventory: Node = null
+
+
+func configurar(inventario: Node) -> void:
+	_inventory = inventario
 
 
 func _ready() -> void:
@@ -39,7 +44,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	# El inventario conserva prioridad sobre la pausa.
-	var inventario := get_tree().get_first_node_in_group("inventory")
+	var inventario := _inventory
 
 	if not abierto and inventario != null:
 		if inventario is Control and (inventario as Control).visible:
