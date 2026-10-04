@@ -154,6 +154,10 @@ func cerrar() -> void:
 	_limpiar_informacion()
 
 
+func esta_abierto() -> bool:
+	return visible and is_visible_in_tree()
+
+
 func _inicializar_items() -> void:
 	items.clear()
 	items.resize(maxi(slot_count, 0))
