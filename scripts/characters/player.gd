@@ -482,32 +482,15 @@ func absorber_eterium_de_criatura(criatura: Node) -> int:
 # ============================================================
 
 func _puede_hacer_jump() -> bool:
-	return (
-		_jump_cooldown_timer <= 0.0
-		and _dash_time <= 0.0
-		and _tiene_stamina(jump_stamina_cost)
-	)
+	return locomotion.puede_saltar(jump_stamina_cost)
 
 
 func _iniciar_jump() -> void:
-	if not _gastar_stamina(jump_stamina_cost):
+	if not locomotion.iniciar_salto(_obtener_direccion_accion(), jump_duration, jump_cooldown, jump_stamina_cost):
 		return
-
-	_action_direction = _obtener_direccion_accion()
-
-	_jump_time = jump_duration
-	_jump_cooldown_timer = jump_cooldown
-
+	_action_direction = locomotion.obtener_direccion_accion(_obtener_direccion_accion())
 	state = State.JUMP
-
 	_update_visual()
-
-	print(
-		"Player: salto. Stamina: ",
-		stamina,
-		"/",
-		max_stamina
-	)
 
 
 func _procesar_jump(delta: float) -> void:
@@ -564,32 +547,15 @@ func _procesar_jump(delta: float) -> void:
 # ============================================================
 
 func _puede_hacer_dash() -> bool:
-	return (
-		_dash_cooldown_timer <= 0.0
-		and _jump_time <= 0.0
-		and _tiene_stamina(dash_stamina_cost)
-	)
+	return locomotion.puede_hacer_dash(dash_stamina_cost)
 
 
 func _iniciar_dash() -> void:
-	if not _gastar_stamina(dash_stamina_cost):
+	if not locomotion.iniciar_dash(_obtener_direccion_accion(), dash_duration, dash_cooldown, dash_stamina_cost):
 		return
-
-	_action_direction = _obtener_direccion_accion()
-
-	_dash_time = dash_duration
-	_dash_cooldown_timer = dash_cooldown
-
+	_action_direction = locomotion.obtener_direccion_accion(_obtener_direccion_accion())
 	state = State.DASH
-
 	_update_visual()
-
-	print(
-		"Player: dash. Stamina: ",
-		stamina,
-		"/",
-		max_stamina
-	)
 
 
 func _procesar_dash(delta: float) -> void:
