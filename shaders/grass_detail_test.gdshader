@@ -57,6 +57,14 @@ void fragment() {
         blades_b *= step(1.0 - density * 0.92, rb);
 
         float mask = max(blades_a, blades_b * 0.7);
+
+        // Durante esta prueba solo dibujamos sobre píxeles claramente verdes.
+        // No decide el mundo: es únicamente un filtro visual para evitar
+        // poner pasto sobre Tierra, Piedra, Agua, etc.
+        float green_base = base.g - max(base.r, base.b);
+        float grass_surface = smoothstep(0.015, 0.075, green_base);
+        mask *= grass_surface;
+
         float color_random = hash21(cell_a + 91.4);
         vec3 grass = mix(blade_color.rgb, blade_light.rgb, color_random);
 
