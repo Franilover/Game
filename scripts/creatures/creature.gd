@@ -472,10 +472,6 @@ func get_stats_dnd() -> Dictionary:
 	return stats_dnd
 
 
-func _process(_delta: float) -> void:
-	_actualizar_profundidad()
-
-
 func _actualizar_profundidad() -> void:
 	z_as_relative = false
 	var profundidad_y := global_position.y
