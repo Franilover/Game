@@ -146,7 +146,7 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 		lista = lista.slice(maxi(lista.size() - 32, 0))
 
 	recuerdos[personaje_id] = lista
-	GameState.flags[RECUERDOS_KEY] = recuerdos
+	GameState.guardar_recuerdos_sociales(recuerdos)
 	recuerdo_registrado.emit(personaje_id, recuerdo.duplicate(true))
 
 
@@ -253,18 +253,18 @@ func _cumple_requisito_social(requisito: Dictionary, relacion: Dictionary) -> bo
 
 
 func _obtener_relaciones_guardadas() -> Dictionary:
-	var variant: Variant = GameState.flags.get(FLAGS_KEY, {})
+	var variant: Variant = GameState.obtener_relaciones_sociales()
 	if variant is Dictionary:
 		return (variant as Dictionary).duplicate(true)
 	return {}
 
 
 func _guardar_relaciones(relaciones: Dictionary) -> void:
-	GameState.flags[FLAGS_KEY] = relaciones.duplicate(true)
+	GameState.guardar_relaciones_sociales(relaciones)
 
 
 func _obtener_recuerdos() -> Dictionary:
-	var variant: Variant = GameState.flags.get(RECUERDOS_KEY, {})
+	var variant: Variant = GameState.obtener_recuerdos_sociales()
 	if variant is Dictionary:
 		return (variant as Dictionary).duplicate(true)
 	return {}
