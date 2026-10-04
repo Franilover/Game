@@ -64,7 +64,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	elapsed_time += delta
+	world_state.elapsed_time += delta
 	_autosave_timer += delta
 
 	if _autosave_timer >= AUTOSAVE_INTERVAL:
@@ -169,8 +169,8 @@ func iniciar_partida(id: String) -> bool:
 
 	var metadata := _extraer_metadata_partida(datos)
 
-	world_seed_valida = false
-	world_seed = 0
+	world_state.world_state.world_seed_valida = false
+	world_state.world_seed = 0
 
 	var mundo_variant: Variant = datos.get(
 		"mundo",
@@ -180,16 +180,16 @@ func iniciar_partida(id: String) -> bool:
 	if mundo_variant is Dictionary:
 		var mundo: Dictionary = mundo_variant as Dictionary
 		if mundo.has("semilla"):
-			world_seed = int(mundo.get("semilla", 0))
-			world_seed_valida = true
+			world_state.world_seed = int(mundo.get("semilla", 0))
+			world_state.world_state.world_seed_valida = true
 
-	if not world_seed_valida:
+	if not world_state.world_state.world_seed_valida:
 		# Migración de partidas creadas antes del sistema de semillas.
 		# La semilla se crea una sola vez y se persiste inmediatamente.
-		world_seed = _generar_semilla_mundo()
-		world_seed_valida = true
+		world_state.world_seed = _generar_semilla_mundo()
+		world_state.world_state.world_seed_valida = true
 		datos["mundo"] = {
-			"semilla": world_seed,
+			"semilla": world_state.world_seed,
 			"generador_version": 1
 		}
 		datos["version"] = SAVE_VERSION
@@ -216,7 +216,7 @@ func iniciar_partida(id: String) -> bool:
 			estado_variant as Dictionary
 		)
 
-	current_scene = "res://scenes/world/main.tscn"
+	world_state.current_scene = "res://scenes/world/main.tscn"
 	_partida_aplicada_en_escena = false
 	_autosave_timer = 0.0
 
@@ -280,7 +280,7 @@ func guardar_partida() -> bool:
 	if jugador.get("is_alive") == false:
 		return false
 
-	if get_tree().current_scene == null:
+	if get_tree().world_state.current_scene == null:
 		return false
 
 	_guardado_en_curso = true
@@ -297,7 +297,7 @@ func guardar_partida() -> bool:
 	datos["nombre"] = active_save_name
 	datos["actualizado_en"] = _ahora()
 	datos["mundo"] = {
-		"semilla": world_seed,
+		"semilla": world_state.world_seed,
 		"generador_version": 1
 	}
 	datos["estado"] = _serializar_estado()
@@ -322,49 +322,49 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	if jugador == null or not is_instance_valid(jugador):
 		return
 
-	player_health = int(
+	player_state.health = int(
 		jugador.get("health")
 	)
 
-	player_mana = int(
+	player_state.mana = int(
 		jugador.get("mana")
 	)
 
-	player_position = jugador.global_position
-	player_position_valida = true
-	player_tile_valido = false
+	player_state.position = jugador.global_position
+	player_state.position_valida = true
+	player_state.tile_valido = false
 
 	var world_gen: Node = _world_generator
 
 	if world_gen != null and world_gen.has_method("get_tile_at"):
 		var tile_variant: Variant = world_gen.call(
 			"get_tile_at",
-			player_position
+			player_state.position
 		)
 
 		if tile_variant is Vector2i:
-			player_tile = tile_variant as Vector2i
-			player_tile_valido = true
+			player_state.tile = tile_variant as Vector2i
+			player_state.tile_valido = true
 
 	var stamina_variant: Variant = jugador.get(
 		"stamina"
 	)
 
 	if stamina_variant != null:
-		player_stamina = float(stamina_variant)
+		player_state.stamina = float(stamina_variant)
 
 	var facing_variant: Variant = jugador.get(
 		"facing"
 	)
 
 	if facing_variant is Vector2:
-		player_facing = facing_variant as Vector2
+		player_state.facing = facing_variant as Vector2
 
 	if jugador.has_method("obtener_estado_ium"):
-		var player_flags_variant: Variant = jugador.call("obtener_estado_ium")
-		if player_flags_variant is Dictionary:
-			flags["proceso_ium_equipado"] = (
-				player_flags_variant as Dictionary
+		var player_world_state.flags_variant: Variant = jugador.call("obtener_estado_ium")
+		if player_world_state.flags_variant is Dictionary:
+			world_state.flags["proceso_ium_equipado"] = (
+				player_world_state.flags_variant as Dictionary
 			).duplicate(true)
 
 
@@ -377,7 +377,7 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 		)
 
 		if tiempo_variant is Dictionary:
-			flags["tiempo_mundo"] = (
+			world_state.flags["tiempo_mundo"] = (
 				tiempo_variant as Dictionary
 			).duplicate(true)
 
@@ -391,14 +391,14 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 				estado_inventario = (estado_variant as Dictionary).duplicate(true)
 
 		var rol_partida := "explorador"
-		var admin_variant: Variant = flags.get("personaje_admin", {})
+		var admin_variant: Variant = world_state.flags.get("personaje_admin", {})
 		if admin_variant is Dictionary:
 			rol_partida = str(
 				(admin_variant as Dictionary).get("rol", "explorador")
 			).to_lower()
 
 		estado_inventario["rol_partida"] = rol_partida
-		flags["inventario_estado"] = estado_inventario
+		world_state.flags["inventario_estado"] = estado_inventario
 
 	_capturar_estado_misiones()
 
@@ -408,7 +408,7 @@ func _capturar_estado_misiones() -> void:
 		return
 	if not MissionManager.has_method("serializar_estado_partida"):
 		return
-	flags["misiones_estado"] = MissionManager.call(
+	world_state.flags["misiones_estado"] = MissionManager.call(
 		"serializar_estado_partida"
 	)
 
@@ -419,7 +419,7 @@ func _aplicar_estado_misiones() -> void:
 	if not MissionManager.has_method("cargar_estado_partida"):
 		return
 
-	var datos_variant: Variant = flags.get("misiones_estado", {})
+	var datos_variant: Variant = world_state.flags.get("misiones_estado", {})
 	if datos_variant is Dictionary:
 		MissionManager.call(
 			"cargar_estado_partida",
@@ -472,27 +472,27 @@ func _ejecutar_guardado_rapido() -> void:
 func _serializar_estado() -> Dictionary:
 	return {
 		"player": {
-			"health": player_health,
-			"mana": player_mana,
-			"position_valid": player_position_valida,
+			"health": player_state.health,
+			"mana": player_state.mana,
+			"position_valid": player_state.position_valida,
 			"position": {
-				"x": player_position.x,
-				"y": player_position.y
+				"x": player_state.position.x,
+				"y": player_state.position.y
 			},
-			"tile_valid": player_tile_valido,
+			"tile_valid": player_state.tile_valido,
 			"tile": {
-				"x": player_tile.x,
-				"y": player_tile.y
+				"x": player_state.tile.x,
+				"y": player_state.tile.y
 			},
-			"stamina": player_stamina,
+			"stamina": player_state.stamina,
 			"facing": {
-				"x": player_facing.x,
-				"y": player_facing.y
+				"x": player_state.facing.x,
+				"y": player_state.facing.y
 			}
 		},
-		"elapsed_time": elapsed_time,
-		"flags": flags.duplicate(true),
-		"scene": current_scene
+		"world_state.elapsed_time": world_state.elapsed_time,
+		"world_state.flags": world_state.flags.duplicate(true),
+		"scene": world_state.current_scene
 	}
 
 
@@ -535,8 +535,8 @@ func _estado_base_partida(
 					"y": 1.0
 				}
 			},
-			"elapsed_time": 0.0,
-			"flags": {
+			"world_state.elapsed_time": 0.0,
+			"world_state.flags": {
 				"personaje": personaje.duplicate(true)
 			} if not personaje.is_empty() else {},
 			"scene": "res://scenes/world/main.tscn"
@@ -547,8 +547,8 @@ func _estado_base_partida(
 func _aplicar_estado_memoria(
 	estado: Dictionary
 ) -> void:
-	player_tile_valido = false
-	player_tile = Vector2i.ZERO
+	player_state.tile_valido = false
+	player_state.tile = Vector2i.ZERO
 
 	var player_variant: Variant = estado.get(
 		"player",
@@ -558,19 +558,19 @@ func _aplicar_estado_memoria(
 	if player_variant is Dictionary:
 		var datos_player := player_variant as Dictionary
 
-		player_health = int(
+		player_state.health = int(
 			datos_player.get("health", 100)
 		)
 
-		player_mana = int(
+		player_state.mana = int(
 			datos_player.get("mana", 100)
 		)
 
-		player_stamina = float(
+		player_state.stamina = float(
 			datos_player.get("stamina", 100.0)
 		)
 
-		player_position_valida = bool(
+		player_state.position_valida = bool(
 			datos_player.get("position_valid", false)
 		)
 
@@ -579,14 +579,14 @@ func _aplicar_estado_memoria(
 			{}
 		)
 
-		if posicion_variant is Dictionary and player_position_valida:
+		if posicion_variant is Dictionary and player_state.position_valida:
 			var posicion := posicion_variant as Dictionary
-			player_position = Vector2(
+			player_state.position = Vector2(
 				float(posicion.get("x", 0.0)),
 				float(posicion.get("y", 0.0))
 			)
 
-		player_tile_valido = bool(
+		player_state.tile_valido = bool(
 			datos_player.get("tile_valid", false)
 		)
 
@@ -595,9 +595,9 @@ func _aplicar_estado_memoria(
 			{}
 		)
 
-		if tile_variant is Dictionary and player_tile_valido:
+		if tile_variant is Dictionary and player_state.tile_valido:
 			var tile_datos := tile_variant as Dictionary
-			player_tile = Vector2i(
+			player_state.tile = Vector2i(
 				int(tile_datos.get("x", 0)),
 				int(tile_datos.get("y", 0))
 			)
@@ -609,29 +609,29 @@ func _aplicar_estado_memoria(
 
 		if facing_variant is Dictionary:
 			var facing := facing_variant as Dictionary
-			player_facing = Vector2(
+			player_state.facing = Vector2(
 				float(facing.get("x", 0.0)),
 				float(facing.get("y", 1.0))
 			)
 
-	elapsed_time = float(
+	world_state.elapsed_time = float(
 		estado.get(
-			"elapsed_time",
+			"world_state.elapsed_time",
 			0.0
 		)
 	)
 
-	var flags_variant: Variant = estado.get(
-		"flags",
+	var world_state.flags_variant: Variant = estado.get(
+		"world_state.flags",
 		{}
 	)
 
-	if flags_variant is Dictionary:
-		flags = (
-			flags_variant as Dictionary
+	if world_state.flags_variant is Dictionary:
+		world_state.flags = (
+			world_state.flags_variant as Dictionary
 		).duplicate(true)
 	else:
-		flags = {}
+		world_state.flags = {}
 
 
 # ============================================================
@@ -652,7 +652,7 @@ func registrar_criatura_derrotada(criatura: Node) -> bool:
 	if criatura_id.is_empty():
 		return false
 
-	var registros_variant: Variant = flags.get(
+	var registros_variant: Variant = world_state.flags.get(
 		"enciclopedia_criaturas",
 		{}
 	)
@@ -663,7 +663,7 @@ func registrar_criatura_derrotada(criatura: Node) -> bool:
 
 	var derrotas := int(registros.get(criatura_id, 0)) + 1
 	registros[criatura_id] = derrotas
-	flags["enciclopedia_criaturas"] = registros
+	world_state.flags["enciclopedia_criaturas"] = registros
 
 	enciclopedia_actualizada.emit(criatura_id)
 
@@ -678,7 +678,7 @@ func registrar_criatura_derrotada(criatura: Node) -> bool:
 
 
 func obtener_criaturas_descubiertas() -> Dictionary:
-	var registros_variant: Variant = flags.get(
+	var registros_variant: Variant = world_state.flags.get(
 		"enciclopedia_criaturas",
 		{}
 	)
@@ -696,7 +696,7 @@ func registrar_terreno_explorado(
 	tile: Vector2i,
 	radio: int = 6
 ) -> bool:
-	var registros_variant: Variant = flags.get(
+	var registros_variant: Variant = world_state.flags.get(
 		"mapa_terreno_explorado",
 		null
 	)
@@ -706,7 +706,7 @@ func registrar_terreno_explorado(
 		registros = registros_variant as Dictionary
 	else:
 		registros = {}
-		flags["mapa_terreno_explorado"] = registros
+		world_state.flags["mapa_terreno_explorado"] = registros
 
 	var nuevo: bool = false
 	var radio_efectivo: int = maxi(radio, 0)
@@ -735,7 +735,7 @@ func registrar_terreno_explorado(
 	if not nuevo:
 		return false
 
-	flags["mapa_terreno_explorado"] = registros
+	world_state.flags["mapa_terreno_explorado"] = registros
 	mapa_exploracion_actualizada.emit()
 
 	return true
@@ -748,13 +748,13 @@ func registrar_descubrimiento_mundo(
 	habitats: Array,
 	criaturas: Array
 ) -> bool:
-	var descubrimientos_variant: Variant = flags.get("descubrimientos_mundo", null)
+	var descubrimientos_variant: Variant = world_state.flags.get("descubrimientos_mundo", null)
 	var descubrimientos: Dictionary
 	if descubrimientos_variant is Dictionary:
 		descubrimientos = descubrimientos_variant as Dictionary
 	else:
 		descubrimientos = {}
-		flags["descubrimientos_mundo"] = descubrimientos
+		world_state.flags["descubrimientos_mundo"] = descubrimientos
 
 	var nuevos: Array[Dictionary] = []
 
@@ -825,7 +825,7 @@ func registrar_descubrimiento_mundo(
 	if nuevos.is_empty():
 		return false
 
-	flags["descubrimientos_mundo"] = descubrimientos
+	world_state.flags["descubrimientos_mundo"] = descubrimientos
 
 	for descubrimiento_variant in nuevos:
 		if not descubrimiento_variant is Dictionary:
@@ -839,7 +839,7 @@ func registrar_descubrimiento_mundo(
 	descubrimientos_mundo_actualizados.emit()
 	return true
 func obtener_descubrimientos_mundo() -> Dictionary:
-	var registros_variant: Variant = flags.get(
+	var registros_variant: Variant = world_state.flags.get(
 		"descubrimientos_mundo",
 		{}
 	)
@@ -853,7 +853,7 @@ func obtener_descubrimientos_mundo() -> Dictionary:
 
 
 func obtener_terreno_explorado() -> Dictionary:
-	var registros_variant: Variant = flags.get(
+	var registros_variant: Variant = world_state.flags.get(
 		"mapa_terreno_explorado",
 		{}
 	)
@@ -865,7 +865,7 @@ func obtener_terreno_explorado() -> Dictionary:
 
 
 func esta_explorado(tile: Vector2i) -> bool:
-	var registros_variant: Variant = flags.get(
+	var registros_variant: Variant = world_state.flags.get(
 		"mapa_terreno_explorado",
 		{}
 	)
@@ -886,7 +886,7 @@ func esta_explorado(tile: Vector2i) -> bool:
 # ============================================================
 
 func _revisar_escena_actual() -> void:
-	var escena := get_tree().current_scene
+	var escena := get_tree().world_state.current_scene
 	if escena == null:
 		return
 
@@ -927,17 +927,17 @@ func _aplicar_estado_al_juego() -> void:
 	if jugador == null or not is_instance_valid(jugador):
 		return
 
-	if jugador is Node2D and player_position_valida:
-		(jugador as Node2D).global_position = player_position
+	if jugador is Node2D and player_state.position_valida:
+		(jugador as Node2D).global_position = player_state.position
 
 	jugador.set("health", clampi(
-		player_health,
+		player_state.health,
 		0,
 		int(jugador.get("max_health"))
 	))
 
 	jugador.set("mana", clampi(
-		player_mana,
+		player_state.mana,
 		0,
 		int(jugador.get("max_mana"))
 	))
@@ -946,13 +946,13 @@ func _aplicar_estado_al_juego() -> void:
 
 	if jugador.get("stamina") != null:
 		jugador.set("stamina", clampf(
-			player_stamina,
+			player_state.stamina,
 			0.0,
 			float(jugador.get("max_stamina"))
 		))
 
 	if jugador.get("facing") is Vector2:
-		jugador.set("facing", player_facing)
+		jugador.set("facing", player_state.facing)
 
 	if jugador.has_signal("health_changed"):
 		jugador.health_changed.emit(
@@ -981,7 +981,7 @@ func _aplicar_estado_al_juego() -> void:
 
 	_aplicar_estado_misiones()
 
-	var proceso_variant: Variant = flags.get(
+	var proceso_variant: Variant = world_state.flags.get(
 		"proceso_ium_equipado",
 		{}
 	)
@@ -996,7 +996,7 @@ func _aplicar_estado_al_juego() -> void:
 			)
 
 	var atmosphere: Node = _world_atmosphere
-	var tiempo_variant: Variant = flags.get(
+	var tiempo_variant: Variant = world_state.flags.get(
 		"tiempo_mundo",
 		{}
 	)
@@ -1023,7 +1023,7 @@ func _aplicar_estado_al_juego() -> void:
 func _cargar_inventario_al_juego(
 	inventario: Node
 ) -> void:
-	var estado_variant: Variant = flags.get(
+	var estado_variant: Variant = world_state.flags.get(
 		"inventario_estado",
 		{}
 	)
@@ -1038,13 +1038,13 @@ func _cargar_inventario_al_juego(
 	).to_lower()
 	if rol_guardado == "admin" or rol_guardado == "explorador":
 		var admin_guardado: Dictionary = {}
-		var admin_actual: Variant = flags.get("personaje_admin", {})
+		var admin_actual: Variant = world_state.flags.get("personaje_admin", {})
 		if admin_actual is Dictionary:
 			admin_guardado = (admin_actual as Dictionary).duplicate(true)
 		admin_guardado["rol"] = rol_guardado
 		if rol_guardado == "explorador":
 			admin_guardado["capacidades"] = []
-		flags["personaje_admin"] = admin_guardado
+		world_state.flags["personaje_admin"] = admin_guardado
 
 	if inventario.has_method("cargar_estado_partida"):
 		inventario.call(
@@ -1055,7 +1055,7 @@ func _cargar_inventario_al_juego(
 
 func _abrir_escena_principal() -> void:
 	var error := get_tree().change_scene_to_file(
-		current_scene
+		world_state.current_scene
 	)
 
 	if error != OK:
@@ -1067,9 +1067,9 @@ func _abrir_escena_principal() -> void:
 
 func _al_cambiar_escena() -> void:
 	_partida_aplicada_en_escena = false
-	var escena := get_tree().current_scene
+	var escena := get_tree().world_state.current_scene
 	if escena != null:
-		current_scene = str(escena.scene_file_path)
+		world_state.current_scene = str(escena.scene_file_path)
 	call_deferred("_revisar_escena_actual")
 
 
@@ -1114,7 +1114,7 @@ func _extraer_metadata_partida(
 		),
 		"play_time": float(
 			datos.get("estado", {}).get(
-				"elapsed_time",
+				"world_state.elapsed_time",
 				0.0
 			)
 		)
@@ -1122,16 +1122,16 @@ func _extraer_metadata_partida(
 
 
 func tiene_semilla_mundo() -> bool:
-	return world_seed_valida
+	return world_state.world_state.world_seed_valida
 
 
 func obtener_semilla_mundo() -> int:
-	return world_seed
+	return world_state.world_seed
 
 
 func establecer_semilla_mundo(semilla: int) -> void:
-	world_seed = semilla
-	world_seed_valida = true
+	world_state.world_seed = semilla
+	world_state.world_state.world_seed_valida = true
 
 
 func _generar_semilla_mundo() -> int:
