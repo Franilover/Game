@@ -87,12 +87,14 @@ func configurar_dependencias(
 	inventory: Node = null,
 	world_generator: Node = null,
 	ium_manager: Node = null,
-	entity_manager: Node = null
+	entity_manager: Node = null,
+	supabase_client: GarliaSupabaseClient = null
 ) -> void:
 	_inventory_ref = inventory
 	_world_generator_ref = world_generator
 	_ium_manager_ref = ium_manager
 	_entity_manager_ref = entity_manager
+	_supabase_client_ref = supabase_client
 
 
 func _ready() -> void:
@@ -314,7 +316,9 @@ func _al_cambio_stamina(current: float, maximum: float) -> void:
 # ============================================================
 
 func _configurar_especie_eterium_game_desde_supabase() -> void:
-	if not SupabaseClient.especie_eterium_game_cargado.is_connected(_al_especie_eterium_game_cargado):
+	if _supabase_client_ref == null:
+		return
+	if not _supabase_client_ref.especie_eterium_game_cargado.is_connected(_al_especie_eterium_game_cargado):
 		SupabaseClient.especie_eterium_game_cargado.connect(_al_especie_eterium_game_cargado)
 	if SupabaseClient.tiene_especie_eterium_game():
 		_aplicar_especie_eterium_game(SupabaseClient.obtener_especie_eterium_game())
@@ -867,6 +871,7 @@ func _facing_name() -> String:
 var _proceso_ium_equipado: Dictionary = {}
 var _ium_manager_ref: Node = null
 var _entity_manager_ref: Node = null
+var _supabase_client_ref: GarliaSupabaseClient = null
 
 
 func equipar_proceso_ium(proceso: Dictionary) -> void:
