@@ -180,3 +180,32 @@ La Composition Root `Main` ahora configura `WorldGenerator` con referencias expl
 - Verificar aparición de criaturas y personajes, detección ecológica, combate de criaturas, robo de Zlish, diálogo, misiones por muerte, drops, props recolectables y colocación de objetos.
 - `WorldDecoration` aún conserva búsqueda global, pero no está presente en `scenes/world/main.tscn`; antes de migrarlo o eliminarlo hay que confirmar si otra escena o carga dinámica lo usa.
 - `GarliaWorldItems.intentar_recoger()` conserva una ruta de recolección propia. Antes de eliminarla, verificar sus consumidores para no romper una ruta de interacción alternativa.
+
+
+## Quinta barrida — cierre de servicios de escena y persistencia
+
+Se continuó la reestructuración sin entrar todavía en corrección de errores de ejecución.
+
+### Servicios que ahora pertenecen a la escena de juego
+
+- `GameplayInputRouter` dejó de ser autoload y ahora vive en `scenes/world/main.tscn`.
+- `GarliaWorldItems` dejó de ser autoload y ahora vive en `Systems/WorldItems` dentro de Main.
+- Main inyecta WorldItems en InteractionSystem, Inventory y AdminConsole.
+- Esto evita mantener servicios específicos del gameplay como estado global entre escenas.
+
+### Persistencia
+
+- GameState ya recibe MissionManager explícitamente para serializar/cargar misiones y conectar sus señales de guardado rápido.
+- GameState conserva `current_scene` únicamente para ciclo de vida de escena y metadatos de la partida; no se usa para descubrir dependencias.
+- AdminPlayerEditor ya no modifica `GameState.flags` directamente; utiliza las APIs de configuración de GameState.
+
+### Regla de composición actualizada
+
+Los servicios que pertenecen a una partida activa deben declararse en Main y recibir dependencias desde Main. Un autoload se conserva solamente cuando representa estado o infraestructura realmente global entre escenas.
+
+### Pendiente de esta fase
+
+- Revisar los autoloads restantes uno por uno y mover sólo los que sean claramente de ámbito de partida.
+- Terminar el inventario de responsabilidades de Player, HUD, Inventory, AdminConsole y SupabaseClient antes de dividirlos.
+- Revisar WorldDecoration como posible sistema legacy antes de eliminarlo.
+- Después de terminar la reestructuración, ejecutar una única pasada de errores en Godot.
