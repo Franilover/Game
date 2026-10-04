@@ -150,10 +150,10 @@ func _request_compartido(path: String, method: int, body: String) -> int:
 	var http := HTTPRequest.new()
 	http.timeout = HTTP_TIMEOUT
 	add_child(http)
-	http.request_completed.connect(func(resultado: int, codigo_http: int, cabeceras: PackedStringArray, cuerpo: PackedByteArray) -> void:
+	var callback := func(resultado: int, codigo_http: int, cabeceras: PackedStringArray, cuerpo: PackedByteArray) -> void:
 		request_completed.emit(request_id, resultado, codigo_http, cabeceras, cuerpo)
 		http.queue_free()
-	, CONNECT_ONE_SHOT)
+	http.request_completed.connect(callback, CONNECT_ONE_SHOT)
 	var resultado := http.request(SUPABASE_URL + path, PackedStringArray([
 		"apikey: " + SUPABASE_KEY,
 		"Content-Type: application/json",
