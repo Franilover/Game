@@ -63,6 +63,7 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 
 var _world_generator_ref: Node = null
+var _inventory_ref: Node = null
 var _exploration_check_timer: float = 0.0
 
 
@@ -82,6 +83,11 @@ var personaje_skin: String = ""
 @onready var body_visual: ColorRect = $Visual/Body
 @onready var head_visual: ColorRect = $Visual/Head
 @onready var facing_marker: ColorRect = $Visual/FacingMarker
+
+
+func configurar_dependencias(inventory: Node = null, world_generator: Node = null) -> void:
+	_inventory_ref = inventory
+	_world_generator_ref = world_generator
 
 
 func _ready() -> void:
@@ -497,7 +503,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 		return
 
 	var dano_recibido := maxi(cantidad, 0)
-	var inventario := get_tree().get_first_node_in_group("inventory")
+	var inventario: Node = _inventory_ref
 	if inventario != null and inventario.has_method("obtener_equipamiento"):
 		var equipo_variant: Variant = inventario.call("obtener_equipamiento")
 		if equipo_variant is Dictionary:
@@ -590,10 +596,7 @@ func reaparecer() -> void:
 
 	locomotion.reiniciar()
 
-	var world_gen := get_tree().current_scene.get_node_or_null(
-		"World/WorldGenerator"
-	)
-
+	var world_gen: Node = _world_generator_ref
 	if world_gen != null:
 		set_spawn_from_world(world_gen)
 
