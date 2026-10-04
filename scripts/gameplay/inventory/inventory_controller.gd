@@ -9,17 +9,15 @@ signal hotbar_cambio(indice: int)
 signal equipo_cambio(slot: String, item: Dictionary)
 
 var runtime := InventoryRuntime.new()
-var input_gate: Node = null
+var input_gate: GameplayInputGate = null
 
-func configurar_gate(gate: Node) -> void:
+func configurar_gate(gate: GameplayInputGate) -> void:
 	input_gate = gate
 
 func puede_interactuar() -> bool:
 	if input_gate == null or not is_instance_valid(input_gate):
 		return true
-	if input_gate.has_method("esta_bloqueado"):
-		return not bool(input_gate.call("esta_bloqueado"))
-	return true
+	return not input_gate.esta_bloqueado()
 
 func configurar_items(items: Array, hotbar_indices: Array = []) -> void:
 	runtime.establecer_items(items)
