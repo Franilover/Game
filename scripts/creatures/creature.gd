@@ -49,12 +49,13 @@ var _muerte_procesada: bool = false
 
 func configurar_dependencias(
 	jugador: Node,
-	entity_manager: Node,
+	entity_manager: WorldEntityManager,
 	inventario: Node,
 	combat_system: Node,
 	dialogue_system: Node,
 	mission_manager: Node,
-	effects_root: Node
+	effects_root: Node,
+	relaciones_ecologicas: Array = []
 ) -> void:
 	_player_dependency = jugador
 	_entity_manager_dependency = entity_manager
@@ -70,7 +71,8 @@ func configurar_dependencias(
 			jugador,
 			entity_manager,
 			inventario,
-			combat_system
+			combat_system,
+			relaciones_ecologicas
 		)
 
 
