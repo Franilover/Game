@@ -18,5 +18,4 @@ func go_to(path: String) -> void:
 	get_tree().root.add_child(_current)
 	get_tree().current_scene = _current
 
-	GameState.current_scene = path
 	Events.scene_changed.emit(path)
