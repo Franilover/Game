@@ -93,7 +93,7 @@ func publicar_sala(ip: String, puerto: int = 7777) -> void:
 
 
 func buscar_sala(codigo: String) -> void:
-	if not _auth != null and _auth.esta_autenticado():
+	if _auth == null or not _auth.esta_autenticado():
 		error_sala.emit("Debes iniciar sesión para unirte a una sala.")
 		return
 
@@ -151,6 +151,10 @@ func buscar_sala(codigo: String) -> void:
 
 
 func cerrar_sala() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		_codigo_activo = ""
+		return
+
 	if _codigo_activo.is_empty():
 		return
 
