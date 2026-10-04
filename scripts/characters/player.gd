@@ -80,8 +80,6 @@ var personaje_skin: String = ""
 @onready var anim: AnimationPlayer = $AnimationPlayer
 @onready var visual: Node2D = $Visual
 
-@onready var body_visual: ColorRect = $Visual/Body
-@onready var head_visual: ColorRect = $Visual/Head
 @onready var facing_marker: ColorRect = $Visual/FacingMarker
 
 
