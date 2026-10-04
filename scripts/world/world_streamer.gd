@@ -101,6 +101,12 @@ func _actualizar_streaming() -> void:
 
 	_player_chunk = centro
 
+	# No gastar más frames en un chunk que quedó fuera del radio de carga.
+	_terrain.cancelar_generacion_si_distante(
+		centro,
+		_load_radius
+	)
+
 	# Si el jugador cambió de chunk rápidamente, no sigamos cargando chunks
 	# que ya quedaron fuera del radio de trabajo.
 	var cola_filtrada: Array = []
