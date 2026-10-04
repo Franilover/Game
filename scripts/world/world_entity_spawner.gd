@@ -38,11 +38,13 @@ func configurar(
 func spawn_chunk(
 	chunk_coord: Vector2i
 ) -> void:
+	if _terrain == null or not is_instance_valid(_terrain):
+		push_error("WorldEntitySpawner: Terrain no configurado.")
+		return
 	if _entity_manager == null or _entity_factory == null or _spawn_rules == null or _world_data == null:
 		return
 	if _entity_manager.tiene_chunk(chunk_coord):
 		return
-	_entity_manager.activar_chunk(chunk_coord)
 
 	var rng := RandomNumberGenerator.new()
 
@@ -271,6 +273,10 @@ func spawn_chunk(
 		limite_chunk,
 		rng
 	)
+
+	# El chunk se marca activo solo después de terminar todo el proceso
+	# de aparición. Así un fallo parcial no bloquea futuros reintentos.
+	_entity_manager.activar_chunk(chunk_coord)
 
 	if not creadas.is_empty():
 		print(
