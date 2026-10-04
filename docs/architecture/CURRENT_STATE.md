@@ -370,3 +370,16 @@ La composición queda:
 Además, `WorldEntityFactory` y `Creature` ahora mantienen el contrato concreto de `WorldEntityManager`, y `Creature` usa directamente el contrato tipado de `CreatureAI` para configuración y reacción al daño.
 
 La lógica canónica de objetos continúa fuera de la criatura: la criatura solicita al servicio inyectado la búsqueda/generación correspondiente y no conoce su ubicación global.
+
+
+## Vigésima quinta barrida — Main refuerza contratos concretos de composición
+
+Main dejó de tratar como Nodes genéricos tres dependencias cuyo contrato ya está confirmado: GarliaInventory, CombatSystem y DialogueSystem. También configura GarliaWorldItems directamente mediante su API concreta. Esto reduce reflexión innecesaria en el Composition Root sin convertir todavía en tipos artificiales los sistemas que aún no exponen un contrato de clase estable.
+
+La regla se mantiene: sólo se elimina has_method()/call() cuando el contrato real fue verificado en el código.
+
+## Vigésima sexta barrida — SupabaseClient endurece su frontera de credenciales
+
+SupabaseClient ahora valida de forma centralizada que GarliaAuth esté inyectado y que las credenciales públicas necesarias existan antes de iniciar solicitudes REST/RPC compartidas o la sincronización del mundo. _crear_headers() también tolera una infraestructura todavía no configurada.
+
+Esto evita accesos a _auth nulo durante arranques tempranos y mantiene a GarliaAuth como único dueño de las credenciales. No se trasladó ninguna regla de dominio a SupabaseClient.
