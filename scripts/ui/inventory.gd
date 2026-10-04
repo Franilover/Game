@@ -870,30 +870,17 @@ func establecer_objeto(indice: int, datos_objeto: Dictionary) -> bool:
 	return resultado
 
 func limpiar_inventario() -> void:
-	for i in range(items.size()):
-		items[i] = {}
-
-	equipo.clear()
-
-	for child in equipment_slots.get_children():
-		if child.has_method("limpiar_objeto"):
-			child.call("limpiar_objeto")
-
+	inventory_controller.limpiar()
 	indice_seleccionado = -1
 	objeto_seleccionado.clear()
-
 	_arrastre_indice = -1
 	_arrastre_datos.clear()
-
 	_inicializar_hotbar()
 	indice_hotbar_activo = 0
-
 	actualizar()
 	_limpiar_informacion()
-
 	inventory_changed.emit()
 	_emitir_objeto_activo()
-
 
 func _buscar_slot_libre() -> int:
 	for i in range(items.size()):
@@ -1042,28 +1029,15 @@ func obtener_indice_inventario_hotbar(
 	return hotbar_indices[indice_hotbar]
 
 
-func establecer_hotbar_slot(
-	indice_hotbar: int,
-	indice_inventario: int
-) -> bool:
-	if indice_hotbar < 0:
-		return false
-
-	if indice_hotbar >= HOTBAR_SLOT_COUNT:
-		return false
-
-	if indice_inventario < 0:
-		return false
-
-	if indice_inventario >= items.size():
-		return false
-
-	hotbar_indices[indice_hotbar] = indice_inventario
-	inventory_changed.emit()
-	_emitir_objeto_activo()
-
-	return true
-
+func establecer_hotbar_slot(indice_hotbar: int, indice_inventario: int) -> bool:
+	var resultado: bool = inventory_controller.establecer_hotbar_slot(
+		indice_hotbar,
+		indice_inventario
+	)
+	if resultado:
+		inventory_changed.emit()
+		_emitir_objeto_activo()
+	return resultado
 
 func seleccionar_hotbar(indice_hotbar: int) -> void:
 	if indice_hotbar < 0 or indice_hotbar >= HOTBAR_SLOT_COUNT:
@@ -1094,53 +1068,12 @@ func obtener_indice_hotbar_activo() -> int:
 
 
 func consumir_durabilidad_objeto_activo() -> bool:
-	var indice_inventario: int = obtener_indice_inventario_hotbar(
-		indice_hotbar_activo
-	)
-	if indice_inventario < 0 or indice_inventario >= items.size():
+	var indice_inventario: int = obtener_indice_inventario_hotbar(indice_hotbar_activo)
+	if indice_inventario < 0:
 		return false
-
-	var objeto: Dictionary = items[indice_inventario]
-	if objeto.is_empty():
+	var resultado: bool = inventory_controller.consumir_durabilidad(indice_inventario)
+	if not resultado:
 		return false
-
-	var propiedades_variant: Variant = objeto.get(
-		"propiedades_game",
-		{}
-	)
-	if not propiedades_variant is Dictionary:
-		return false
-
-	var propiedades: Dictionary = propiedades_variant as Dictionary
-	var durabilidad_maxima_variant: Variant = propiedades.get(
-		"durabilidad",
-		null
-	)
-	if not (durabilidad_maxima_variant is int or durabilidad_maxima_variant is float):
-		return false
-
-	var durabilidad_maxima: int = maxi(
-		1,
-		int(durabilidad_maxima_variant)
-	)
-	var durabilidad_actual: int = maxi(
-		0,
-		int(objeto.get("durabilidad_actual", durabilidad_maxima))
-	)
-	durabilidad_actual -= 1
-
-	if durabilidad_actual <= 0:
-		print(
-			"Inventory: herramienta rota → ",
-			str(objeto.get("nombre", "Herramienta"))
-		)
-		items[indice_inventario] = {}
-		actualizar()
-		inventory_changed.emit()
-		_emitir_objeto_activo()
-		return true
-
-	items[indice_inventario]["durabilidad_actual"] = durabilidad_actual
 	actualizar()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
