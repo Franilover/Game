@@ -8,7 +8,7 @@ class_name GameStateService
 const SAVE_DIRECTORY := "user://partidas"
 const SAVE_VERSION: int = 3
 const AUTOSAVE_INTERVAL: float = 10.0
-const KINGDOM_SCENE_PATH: String = "res://scenes/kingdom/reino_torres.tscn"
+const MAIN_SCENE_PATH: String = "res://scenes/world/main.tscn"
 
 var player_state := PlayerState.new()
 var world_state := WorldState.new()
@@ -225,7 +225,7 @@ func iniciar_partida(id: String) -> bool:
 			estado_variant as Dictionary
 		)
 
-	world_state.current_scene = "res://scenes/world/main.tscn"
+	world_state.current_scene = MAIN_SCENE_PATH
 	_partida_aplicada_en_escena = false
 	_autosave_timer = 0.0
 
@@ -646,6 +646,14 @@ func registrar_descubrimiento_mundo(
 	return true
 
 
+func debe_iniciar_en_reino_torres() -> bool:
+	return not bool(world_state.flags.get("reino_torres_visitado", false))
+
+
+func marcar_reino_torres_visitado() -> void:
+	world_state.flags["reino_torres_visitado"] = true
+
+
 func obtener_configuracion_personaje() -> Dictionary:
 	var personaje_variant: Variant = world_state.flags.get("personaje", {})
 	if personaje_variant is Dictionary:
@@ -866,13 +874,10 @@ func _cargar_inventario_al_juego(
 
 
 func _abrir_escena_principal() -> void:
-	# Toda partida nueva o cargada entra primero por Reino Torres.
-	# El mundo abierto sigue siendo el destino posterior a la salida
-	# del reino. SceneManager mantiene la autoridad sobre los cambios.
-	print(
-		"GameState: entrando a Reino Torres antes del mundo abierto."
-	)
-	SceneManager.go_to(KINGDOM_SCENE_PATH)
+	# La partida entra al runtime canónico. Reino Torres es una zona
+	# inicial del mismo runtime, no una escena paralela.
+	print("GameState: entrando al runtime canónico.")
+	SceneManager.go_to(MAIN_SCENE_PATH)
 
 
 func _al_cambiar_escena() -> void:
