@@ -57,8 +57,8 @@ func _request(tipo: String, callback: Callable) -> void:
 
 
 func _ready() -> void:
-	if not SupabaseClient.request_completed.is_connected(_al_request_completed):
-		SupabaseClient.request_completed.connect(_al_request_completed)
+	if _client != null and not _client.request_completed.is_connected(_al_request_completed):
+		_client.request_completed.connect(_al_request_completed)
 
 
 func _al_request_completed(
