@@ -437,3 +437,8 @@ Se eliminó reflexión innecesaria en `GameplayInputRouter` y `Main`. `HUD` ahor
 ## Trigésima sexta barrida — Fronteras de interacción y diálogo formalizadas
 
 `DialogueSystem` ya no usa reflexión para su fuente: la fuente de diálogo canónica del gameplay es `Creature`, con acceso directo a datos, identidad, nombre, control de movimiento y seguimiento. `InteractionSystem` usa el contrato concreto de `Creature` para texto contextual. `Player` y `GameState` también dejaron de reflejar APIs de `Creature` para Eterium y registro de derrotas. La reflexión restante de Player hacia GameState se conserva deliberadamente mientras `GameState` siga siendo el autoload global sin `class_name`, evitando introducir una migración global innecesaria.
+
+
+## Trigésima séptima barrida — Contratos HUD/Combate endurecidos
+
+HUD tipa directamente `WorldData` y consume su snapshot mediante `world_data.mundo`, eliminando el acceso genérico `Node.get()`. `CombatSystem` tipa directamente `Player` y conecta `GameplayInputGate` mediante `player.input_gate`, eliminando la reflexión para descubrir esa dependencia. Se mantiene `GameState` como frontera global deliberada y no se amplían contratos polimórficos sin verificar sus implementaciones reales.
