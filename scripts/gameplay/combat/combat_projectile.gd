@@ -70,3 +70,30 @@ func _procesar_objetivo(objetivo: Node) -> void:
 	objetivo_impactado.emit(objetivo, attack)
 	CombatFeedback.impacto(objetivo, attack.damage)
 	queue_free()
+
+
+func _draw() -> void:
+	var asta_color := Color(0.35, 0.20, 0.10, 1.0)
+	var punta_color := Color(0.78, 0.74, 0.62, 1.0)
+
+	draw_line(
+		Vector2(-12.0, 0.0),
+		Vector2(8.0, 0.0),
+		asta_color,
+		2.0
+	)
+	draw_colored_polygon(
+		PackedVector2Array([
+			Vector2(13.0, 0.0),
+			Vector2(6.0, -3.0),
+			Vector2(8.0, 0.0),
+			Vector2(6.0, 3.0)
+		]),
+		punta_color
+	)
+	draw_line(
+		Vector2(-7.0, -3.0),
+		Vector2(-7.0, 3.0),
+		punta_color,
+		1.0
+	)
