@@ -1481,7 +1481,17 @@ func _aplicar_danio_objetivo(objetivo_danio: Node, cantidad: int, origen: String
 	var entidad := objetivo_danio as Entity
 	if entidad == null or not is_instance_valid(entidad):
 		return
-	entidad.take_damage(cantidad, origen)
+
+	var combate := _obtener_combat_system()
+	if combate == null:
+		return
+
+	combate.aplicar_danio_desde_entidad(
+		criatura,
+		entidad,
+		cantidad,
+		origen
+	)
 
 
 func _obtener_float_reaccion(clave: String, por_defecto: float) -> float:
