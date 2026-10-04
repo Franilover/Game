@@ -95,7 +95,7 @@ func _ready() -> void:
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
 	if WorldData.has_method("configurar_dependencias"):
-		WorldData.call("configurar_dependencias", SupabaseClient)
+		WorldData.configurar_dependencias(SupabaseClient)
 
 	start_button.pressed.connect(
 		_iniciar_partida
