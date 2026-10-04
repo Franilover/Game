@@ -458,3 +458,7 @@ La cadena de combate ahora mantiene el contrato `Entity` desde la detección has
 ## Cuadragésima primera barrida — Texto de interacción centralizado
 
 `Main` ya no inspecciona dinámicamente el objetivo contextual para construir el texto del HUD. `InteractionSystem` expone `obtener_texto_interaccion()` y mantiene la responsabilidad de presentar el contrato contextual hacia la capa de UI.
+
+## Cuadragésima segunda barrida — Router de input tipado
+
+`GameplayInputRouter` dejó de descubrir dinámicamente `InteractionSystem` y `CombatSystem`. Ambos contratos son concretos y ahora el router invoca directamente `procesar_accion_primaria()` y `procesar_accion_secundaria()`, manteniendo el router como única autoridad de entrada.
