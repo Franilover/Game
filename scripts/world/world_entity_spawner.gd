@@ -746,11 +746,6 @@ func _obtener_peso_candidato(
 func despawn_chunk(
 	chunk_coord: Vector2i
 ) -> void:
-	if not _creatures_by_chunk.has(
-		chunk_coord
-	):
-		return
-
 	var criaturas_variant: Variant = (
 		_creatures_by_chunk[chunk_coord]
 	)
