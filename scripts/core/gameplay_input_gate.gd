@@ -5,15 +5,21 @@ class_name GameplayInputGate
 ## La autoridad real vive en el autoload GameplayInputRouter.
 ## Este nodo NO mantiene estado ni decide qué sistema recibe input.
 
+func _obtener_router() -> GameplayInputRouter:
+	return get_tree().get_first_node_in_group("gameplay_input_router") as GameplayInputRouter
+
+
 func esta_bloqueado() -> bool:
-	var router := get_tree().root.get_node_or_null("GameplayInputRouter")
-	if router == null:
+	var router := _obtener_router()
+	if router == null or not is_instance_valid(router):
 		return true
-	return bool(router.call("esta_bloqueado"))
+	return router.esta_bloqueado()
 
 
 static func esta_entrada_bloqueada(arbol: SceneTree) -> bool:
-	var router := arbol.root.get_node_or_null("GameplayInputRouter")
-	if router == null:
+	if arbol == null:
 		return true
-	return bool(router.call("esta_entrada_bloqueada", arbol))
+	var router := arbol.get_first_node_in_group("gameplay_input_router") as GameplayInputRouter
+	if router == null or not is_instance_valid(router):
+		return true
+	return router.esta_entrada_bloqueada(arbol)
