@@ -52,6 +52,8 @@ func configurar(nuevo_player: Node) -> void:
 func _ready() -> void:
 	if not combat_controller.is_inside_tree():
 		add_child(combat_controller)
+	if not combat_controller.ataque_solicitado.is_connected(_al_ataque_solicitado):
+		combat_controller.ataque_solicitado.connect(_al_ataque_solicitado)
 
 
 func _process(delta: float) -> void:
@@ -62,63 +64,67 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if player == null:
-		return
-
-	if _accion_bloqueada():
+	if player == null or _accion_bloqueada():
 		return
 
 	if not event is InputEventMouseButton:
 		return
 
 	var mouse_event := event as InputEventMouseButton
-
 	if not mouse_event.pressed:
 		return
 
-	var arma: Dictionary = {}
-	var objeto_ataque: Dictionary = {}
-
-	# InteractionSystem recibe este evento antes que CombatSystem en la escena.
-	# Si existe una interacción contextual, ese sistema la consume con
-	# set_input_as_handled(). CombatSystem solo llega aquí cuando el click
-	# quedó libre para combate.
 	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
 		var objeto_activo := _obtener_objeto_activo()
+		var direccion := _obtener_direccion_ataque()
 
-		if objeto_activo.is_empty():
-			# Sin arma/herramienta equipada, el click izquierdo sigue siendo
-			# un ataque cuerpo a cuerpo desarmado.
-			if _tiempo_desde_ataque > 0.0:
-				return
-			_atacar_desarmado()
-			get_viewport().set_input_as_handled()
+		if not combat_controller.solicitar_ataque(
+			direccion,
+			objeto_activo,
+			"objeto_activo" if not objeto_activo.is_empty() else "desarmado"
+		):
 			return
 
-		if _tiempo_desde_ataque > 0.0:
-			return
-
-		if not _es_objeto_ataque(objeto_activo):
-			return
-
-		objeto_ataque = objeto_activo
-		_atacar_con_objeto(objeto_ataque)
 		get_viewport().set_input_as_handled()
 		return
 
-	# Click derecho = usar exclusivamente el objeto equipado en
-	# MANO SECUNDARIA, sin importar la hotbar.
 	if mouse_event.button_index == MOUSE_BUTTON_RIGHT:
-		arma = _obtener_arma_equipada()
-
+		var arma := _obtener_arma_equipada()
 		if arma.is_empty():
 			return
 
-		if _tiempo_desde_ataque > 0.0:
+		if not combat_controller.solicitar_ataque(
+			_obtener_direccion_ataque(),
+			arma,
+			"mano_secundaria"
+		):
 			return
 
-		_atacar_con_arma(arma)
 		get_viewport().set_input_as_handled()
+
+
+func _al_ataque_solicitado(
+	direccion: Vector2,
+	objeto: Dictionary,
+	modo: String
+) -> void:
+	if player == null or _tiempo_desde_ataque > 0.0:
+		return
+
+	if modo == "desarmado":
+		_atacar_desarmado()
+		return
+
+	if modo == "objeto_activo":
+		if not _es_objeto_ataque(objeto):
+			return
+		_atacar_con_objeto(objeto)
+		return
+
+	if modo == "mano_secundaria":
+		if not _es_arma(objeto):
+			return
+		_atacar_con_arma(objeto)
 
 
 func _accion_bloqueada() -> bool:
