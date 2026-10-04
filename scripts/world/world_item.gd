@@ -6,6 +6,8 @@ var nombre: String = "Objeto"
 const DISTANCIA_INTERACCION: float = 52.0
 
 var _jugador: Node2D = null
+var _inventario: Node = null
+var _mission_manager: Node = null
 var _etiqueta: Label = null
 var _icono: Sprite2D = null
 var _etiqueta_visible: bool = false
@@ -20,6 +22,12 @@ func _ready() -> void:
 	_crear_etiqueta()
 	_actualizar_icono()
 	queue_redraw()
+
+
+func configurar_dependencias(jugador: Node, inventario: Node, mission_manager: Node) -> void:
+	_jugador = jugador as Node2D
+	_inventario = inventario
+	_mission_manager = mission_manager
 
 
 func configurar(nuevos_datos: Dictionary) -> void:
@@ -57,9 +65,6 @@ func esta_cerca(persona: Node2D) -> bool:
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_jugador):
-		var encontrado: Node = get_tree().get_first_node_in_group("player")
-		if encontrado is Node2D:
-			_jugador = encontrado as Node2D
 	
 	if not is_instance_valid(_jugador):
 		return
@@ -197,7 +202,7 @@ func interact(persona: Node) -> void:
 	if not can_interact(persona):
 		return
 	
-	var inventario: Node = get_tree().get_first_node_in_group("inventory")
+	var inventario: Node = _inventario
 	if inventario == null or not inventario.has_method("agregar_objeto"):
 		return
 	
@@ -211,5 +216,6 @@ func interact(persona: Node) -> void:
 	if bool(inventario.call("agregar_objeto", datos)):
 		var item_id := str(datos.get("id", datos.get("item_id", ""))).strip_edges()
 		if not item_id.is_empty():
-			MissionManager.registrar_recoleccion(item_id, int(datos.get("cantidad", 1)))
+			if _mission_manager != null and is_instance_valid(_mission_manager):
+				_mission_manager.call("registrar_recoleccion", item_id, int(datos.get("cantidad", 1)))
 		queue_free()
