@@ -8,8 +8,8 @@ signal dialogue_finished
 
 var player: Player = null
 var ui_root: HUD = null
-var mission_manager: MissionManager = null
-var relationship_system: RelationshipSystem = null
+var mission_manager: MissionManagerService = null
+var relationship_system: RelationshipSystemService = null
 
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
@@ -24,7 +24,7 @@ var _acciones: Array[Dictionary] = []
 var _abierto: bool = false
 var _lineas: Array[Dictionary] = []
 var _indice_linea: int = 0
-var _fuente: Node = null
+var _fuente: Creature = null
 
 var _texto_completo: String = ""
 var _indice_caracter: int = 0
@@ -36,7 +36,7 @@ func _ready() -> void:
 	add_to_group("dialogue_system")
 
 
-func configurar(nuevo_player: Player, nuevo_ui_root: HUD, nuevo_mission_manager: MissionManager = null, nuevo_relationship_system: RelationshipSystem = null) -> void:
+func configurar(nuevo_player: Player, nuevo_ui_root: HUD, nuevo_mission_manager: MissionManagerService = null, nuevo_relationship_system: RelationshipSystemService = null) -> void:
 	player = nuevo_player
 	ui_root = nuevo_ui_root
 	mission_manager = nuevo_mission_manager
@@ -153,7 +153,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	if is_instance_valid(_fuente):
 		var personaje_id_social := _fuente.get_personaje_game_id().strip_edges()
 		if not personaje_id_social.is_empty():
-			var social: RelationshipSystem = relationship_system
+			var social: RelationshipSystemService = relationship_system
 			if social != null:
 				social.registrar_dialogo(personaje_id_social, str(datos_seleccionados.get("clave", "principal")))
 
@@ -293,7 +293,7 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			var estado_requerido := str(requisito.get("estado", "")).strip_edges().to_lower()
 
 			if not mision_clave.is_empty() and not estado_requerido.is_empty():
-				var mission_manager_local: MissionManager = mission_manager
+				var mission_manager_local: MissionManagerService = mission_manager
 				if mission_manager_local == null:
 					continue
 
