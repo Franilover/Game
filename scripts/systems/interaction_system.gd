@@ -110,10 +110,9 @@ func _input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 					return
 
-		# Un objeto seleccionado en la hotbar pertenece a la acción
-		# primaria. Solo los objetos sin selección dejan pasar la
-		# interacción contextual.
-		return
+		# Si el objeto activo no es colocable, no lo consumimos aquí:
+		# CombatSystem debe ejecutar su acción primaria (arma/herramienta).
+		# No devolver ni marcar el evento como manejado.
 
 
 
