@@ -870,9 +870,8 @@ func _comando_summon(nombre: String) -> void:
 			).strip_edges()
 
 			if not nombre_personaje.is_empty():
-				resultado = world_generator.call(
-					"summon_criatura",
-					nombre_personaje,
+				resultado = world_generator.summon_criatura(
+nombre_personaje,
 					posicion_invocacion
 				)
 
@@ -912,10 +911,7 @@ func _comando_summon(nombre: String) -> void:
 func _obtener_entidades_activas() -> Array:
 	if entity_manager == null:
 		return []
-	if not entity_manager.has_method("obtener_entidades_activas"):
-		return []
-	var resultado: Variant = entity_manager.call("obtener_entidades_activas")
-	return resultado as Array if resultado is Array else []
+	return entity_manager.obtener_entidades_activas()
 
 func _obtener_nombres_jugadores() -> Array[String]:
 	var nombres: Array[String] = []
@@ -991,14 +987,10 @@ func _comando_player(argumentos: String) -> void:
 		_agregar_linea("[color=#d88]El editor de jugador no está configurado en Main.[/color]")
 		return
 
-	if not editor.has_method("abrir"):
-		_agregar_linea("[color=#d88]El editor de jugador no es válido.[/color]")
-		return
-
-	get_tree().paused = false
+		get_tree().paused = false
 	_abierto = false
 	visible = false
-	editor.call("abrir", jugador)
+	editor.abrir(jugador)
 
 
 
