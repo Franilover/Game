@@ -14,13 +14,11 @@ var _misiones: Array[Dictionary] = []
 var _misiones_por_id: Dictionary = {}
 var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
-var _player: Node = null
 var _entity_manager: WorldEntityManager = null
 var _world_data: Node = null
 
 
-func configurar_dependencias(player: Node = null, entity_manager: WorldEntityManager = null, world_data: Node = null) -> void:
-	_player = player
+func configurar_dependencias(entity_manager: WorldEntityManager = null, world_data: Node = null) -> void:
 	_entity_manager = entity_manager
 	_world_data = world_data
 
@@ -35,17 +33,6 @@ func configurar_dependencias(player: Node = null, entity_manager: WorldEntityMan
 
 	if _world_data.esta_cargado():
 		_cargar_desde_world_data()
-
-
-func _ready() -> void:
-	if not WorldData.mundo_listo.is_connected(_al_mundo_listo):
-		WorldData.mundo_listo.connect(_al_mundo_listo)
-
-	if not WorldData.mundo_actualizado.is_connected(_al_mundo_actualizado):
-		WorldData.mundo_actualizado.connect(_al_mundo_actualizado)
-
-	if WorldData.esta_cargado():
-		call_deferred("_cargar_desde_world_data")
 
 
 func _al_mundo_listo() -> void:
@@ -248,7 +235,7 @@ func _registrar_entrega_personaje(
 				continue
 
 			for criatura_variant in _entity_manager.obtener_entidades_activas():
-				if not criatura_variant is Node:
+				if not criatura_variant is Creature:
 					continue
 
 				var criatura := criatura_variant as Creature
