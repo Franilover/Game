@@ -698,7 +698,7 @@ func admin_cambiar_nombre(nuevo_nombre: String) -> bool:
 		return false
 
 	personaje_nombre = nombre
-	var personaje_variant: Variant = GameState.obtener_configuracion_personaje()
+	var personaje_variant: Variant = _game_state_ref.call("obtener_configuracion_personaje")
 	var personaje: Dictionary = {}
 	if personaje_variant is Dictionary:
 		personaje = (personaje_variant as Dictionary).duplicate(true)
@@ -726,7 +726,7 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 	personaje["genero"] = personaje_genero
 	personaje["especie"] = personaje_especie.duplicate(true)
 	personaje["skin"] = personaje_skin
-	GameState.establecer_configuracion_personaje(personaje)
+	_game_state_ref.call("establecer_configuracion_personaje", personaje)
 
 	var reglas: Array = _supabase_client_ref.obtener_especie_eterium_game()
 	if not reglas.is_empty():
@@ -786,7 +786,7 @@ func admin_restaurar_defaults() -> bool:
 func admin_guardar_estado() -> void:
 	_game_state_ref.call("establecer_configuracion_personaje_admin", {
 		"rol": "admin" if bool(_game_state_ref.call("obtener_configuracion_personaje_admin").get("rol", "") == "admin") else "jugador",
-		"capacidades": GameState.obtener_configuracion_personaje_admin().get("capacidades", []).duplicate(true),
+		"capacidades": _game_state_ref.call("obtener_configuracion_personaje_admin").get("capacidades", []).duplicate(true),
 		"maximos": {
 			"vida": max_health,
 			"eterium": max_mana,
