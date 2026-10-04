@@ -22,9 +22,9 @@ var _input_router: Node = GameplayInputRouter
 @onready var _ium_repository: Node = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
-@onready var _world_atmosphere: Node = $World/WorldGenerator/WorldAtmosphere
+@onready var _world_atmosphere: WorldAtmosphere = $World/WorldGenerator/WorldAtmosphere
 @onready var _world_generator: WorldGenerator = $World/WorldGenerator
-@onready var _world_context: Node = $World/WorldGenerator/WorldContext
+@onready var _world_context: WorldContext = $World/WorldGenerator/WorldContext
 
 
 func _ready() -> void:
