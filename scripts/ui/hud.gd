@@ -2,11 +2,11 @@ extends Control
 class_name HUD
 
 
-var player: Node = null
+var player: Player = null
 var world_context: WorldContext = null
-var mission_manager: Node = null
-var entity_manager: Node = null
-var supabase_client: Node = null
+var mission_manager: MissionManager = null
+var entity_manager: WorldEntityManager = null
+var supabase_client: GarliaSupabaseClient = null
 var world_data: Node = null
 var game_state: Node = null
 
@@ -53,10 +53,10 @@ var _discovery_notice_timer: float = 0.0
 @onready var _interaction_prompt_action_node: Label = $InteractionPrompt/Margin/Content/Action
 @onready var _location_panel_node: Panel = $LocationPanel
 @onready var _location_label_node: Label = $LocationPanel/LocationLabel
-@onready var _hotbar_node: Control = $Hotbar
+@onready var _hotbar_node: InventoryHotbar = $Hotbar
 
 
-func configurar(nuevo_player: Node = null, nuevo_world_context: WorldContext = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null, nuevo_world_data: Node = null, nuevo_game_state: Node = null) -> void:
+func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext = null, nuevo_mission_manager: MissionManager = null, nuevo_entity_manager: WorldEntityManager = null, nuevo_supabase_client: GarliaSupabaseClient = null, nuevo_inventory: GarliaInventory = null, nuevo_world_data: Node = null, nuevo_game_state: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
@@ -75,8 +75,8 @@ func configurar(nuevo_player: Node = null, nuevo_world_context: WorldContext = n
 			_desconectar_senal_game_state()
 		game_state = nuevo_game_state
 		_conectar_senal_game_state()
-	if nuevo_inventory != null and is_instance_valid(nuevo_inventory) and _hotbar_node.has_method("configurar_inventario"):
-		_hotbar_node.call("configurar_inventario", nuevo_inventory)
+	if nuevo_inventory != null and is_instance_valid(nuevo_inventory):
+		_hotbar_node.configurar_inventario(nuevo_inventory)
 	if mission_manager != null:
 		_conectar_senales_misiones()
 	if is_inside_tree():
@@ -450,7 +450,7 @@ func _actualizar_contexto() -> void:
 		if mundo_variant is Dictionary:
 			version = str((mundo_variant as Dictionary).get("version", "—"))
 	var supabase_estado := "Connected"
-	if supabase_client != null and supabase_client.has_method("esta_conectado") and not supabase_client.call("esta_conectado"):
+	if supabase_client != null and not supabase_client.esta_conectado():
 		supabase_estado = "Offline"
 
 	var fps: int = Engine.get_frames_per_second()
@@ -463,8 +463,8 @@ func _actualizar_contexto() -> void:
 	var static_memory_mb: float = float(Performance.get_monitor(Performance.MEMORY_STATIC)) / 1048576.0
 	var criaturas := 0
 	var props := 0
-	if entity_manager != null and entity_manager.has_method("obtener_entidades_activas"):
-		for entidad in entity_manager.call("obtener_entidades_activas"):
+	if entity_manager != null:
+		for entidad in entity_manager.obtener_entidades_activas():
 			if entidad is Node and entidad.is_in_group("creatures"):
 				criaturas += 1
 			elif entidad is Node and entidad.is_in_group("world_props"):
@@ -671,12 +671,12 @@ func ocultar_interaccion() -> void:
 	interaction_prompt.visible = false
 
 
-func _obtener_mission_manager() -> Node:
+func _obtener_mission_manager() -> MissionManager:
 	return mission_manager
 
 
 func _conectar_senales_misiones() -> void:
-	var manager: Node = _obtener_mission_manager()
+	var manager: MissionManager = _obtener_mission_manager()
 	if manager == null:
 		return
 
