@@ -12,6 +12,12 @@ var _sugerencias_lista: VBoxContainer
 
 var _abierto: bool = false
 var _sugerencias: Array[String] = []
+var world_context: Node = null
+var world_entity_spawner: Node = null
+var world_atmosphere: Node = null
+var player: Node = null
+var inventory: Node = null
+var entity_manager: Node = null
 
 
 const COMANDO_SUMMON: String = "/summon"
@@ -23,6 +29,21 @@ const MAX_SUGERENCIAS_VISIBLES: int = 8
 const ANCHO_SUGERENCIAS: float = 320.0
 const ALTURA_SUGERENCIAS_POR_FILA: float = 22.0
 
+
+func configurar(
+	nuevo_world_context: Node,
+	nuevo_entity_spawner: Node,
+	nuevo_world_atmosphere: Node,
+	nuevo_player: Node,
+	nuevo_inventory: Node,
+	nuevo_entity_manager: Node
+) -> void:
+	world_context = nuevo_world_context
+	world_entity_spawner = nuevo_entity_spawner
+	world_atmosphere = nuevo_world_atmosphere
+	player = nuevo_player
+	inventory = nuevo_inventory
+	entity_manager = nuevo_entity_manager
 
 func _ready() -> void:
 	layer = 100
@@ -283,7 +304,7 @@ func _mostrar_sugerencias_tp(texto: String) -> void:
 				if not nombre.is_empty():
 					nombres.append(nombre)
 		"jugador":
-			var jugador := get_tree().get_first_node_in_group("player")
+			var jugador: Node = player
 			if jugador != null:
 				nombres.append(jugador.name)
 		_:
@@ -802,11 +823,7 @@ func _comando_summon(nombre: String) -> void:
 		)
 		return
 
-	var world_generator: Node = (
-		get_tree().get_first_node_in_group(
-			"world_generator"
-		)
-	)
+	var world_generator: Node = world_entity_spawner
 
 	if world_generator == null:
 		_agregar_linea(
@@ -1002,7 +1019,7 @@ func _comando_tp(argumentos: String) -> void:
 
 	var tipo := partes[0].strip_edges().to_lower()
 	var nombre := " ".join(partes.slice(1)).strip_edges()
-	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	var jugador: Node2D = player as Node2D
 	if jugador == null:
 		_agregar_linea("[color=#d88]No se encontró el jugador.[/color]")
 		return
@@ -1011,7 +1028,7 @@ func _comando_tp(argumentos: String) -> void:
 
 	match tipo:
 		"criatura":
-			for nodo in get_tree().get_nodes_in_group("creatures"):
+			for nodo in entity_manager.obtener_entidades_activas() if entity_manager != null and entity_manager.has_method("obtener_entidades_activas") else []:
 				if nodo is Creature:
 					var criatura := nodo as Creature
 					if criatura.get_nombre_visual().to_lower() == nombre.to_lower() or criatura.get_nombre().to_lower() == nombre.to_lower():
@@ -1031,9 +1048,9 @@ func _comando_tp(argumentos: String) -> void:
 				posicion = jugador.global_position
 
 		"reino":
-			var world_generator := get_tree().get_first_node_in_group("world_generator")
+			var world_generator: Node = world_context
 			if world_generator != null and world_generator.has_method("buscar_posicion_reino"):
-				posicion = world_generator.call("buscar_posicion_reino", nombre)
+				posicion = world_generator.call("buscar_posicion_reino", nombre, player.global_position)
 
 		_:
 			_agregar_linea("[color=#d88]Tipo desconocido. Usa criatura, reino, jugador o humano.[/color]")
@@ -1073,11 +1090,7 @@ func _comando_give(nombre: String) -> void:
 		)
 		return
 
-	var inventario: Node = (
-		get_tree().get_first_node_in_group(
-			"inventory"
-		)
-	)
+	var inventario: Node = inventory
 
 	if inventario == null:
 		_agregar_linea(
@@ -1145,9 +1158,7 @@ func _comando_time(argumentos: String) -> void:
 		)
 		return
 
-	var atmosfera: Node = world_generator.get_node_or_null(
-		"WorldAtmosphere"
-	)
+	var atmosfera: Node = world_atmosphere
 
 	if atmosfera == null:
 		_agregar_linea(
