@@ -15,6 +15,20 @@ func get_tile_at(posicion_global: Vector2) -> Vector2i:
 	var tamano := maxi(terrain.tile_size, 1)
 	return Vector2i(floori(posicion_local.x / float(tamano)), floori(posicion_local.y / float(tamano)))
 
+func get_chunk_size_tiles() -> int:
+	return terrain.chunk_size_tiles if terrain != null else 1
+
+func get_map_seed() -> int:
+	return terrain.map_seed if terrain != null else 0
+
+func get_chunks_cargados() -> Array:
+	return terrain.chunks_cargados() if terrain != null else []
+
+func obtener_tiempo() -> Dictionary:
+	if atmosphere == null:
+		return {}
+	return atmosphere.obtener_tiempo()
+
 func get_tile_size() -> int:
 	return maxi(terrain.tile_size, 1) if terrain != null else 1
 
