@@ -781,9 +781,3 @@ func _obtener_direccion_ataque() -> Vector2:
 	return Vector2.DOWN
 
 
-
-func _notificar_feedback_impacto(objetivo: Entity) -> void:
-	if combat_feedback == null or not is_instance_valid(combat_feedback):
-		return
-	combat_feedback.mostrar_impacto(objetivo)
-
