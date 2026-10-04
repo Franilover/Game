@@ -19,8 +19,7 @@ void fragment() {
 
 	if (base.a <= 0.01) {
 		COLOR = base;
-		return;
-	}
+	} else {
 
 	// Grid independiente de la textura: cada celda recibe una pequeña
 	// variación determinista, evitando que el patrón sea idéntico en todos
@@ -49,4 +48,5 @@ void fragment() {
 	float amount = grass_mask * detail_strength;
 
 	COLOR = vec4(mix(base.rgb, detail_color, amount), base.a);
+	}
 }
