@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 
-	if _interaccion_bloqueada():
+	if GameplayInputRouter.esta_entrada_bloqueada(get_tree()):
 		if objetivo_actual != null:
 			_cambiar_objetivo(null)
 		return
@@ -58,26 +58,21 @@ func _process(delta: float) -> void:
 		_cambiar_objetivo(null)
 
 
-func _input(event: InputEvent) -> void:
+func _ready() -> void:
+	add_to_group("interaction_system")
+
+
+func procesar_accion_primaria() -> bool:
 	if player == null or not player.is_alive:
-		return
-
-	if _interaccion_bloqueada():
-		return
-
-	if not event.is_action_pressed("primary_action"):
-		return
+		return false
 
 	# Revalidamos el objetivo justo al hacer click. Así un objeto que
 	# entró en alcance entre dos escaneos no pierde la interacción.
 	_buscar_objetivo()
 
-	# La interacción contextual tiene prioridad absoluta.
-	# Si hay algo recogible/dialogable dentro del alcance, el click
-	# izquierdo se consume aquí antes de mirar la hotbar.
+	# La interacción contextual tiene prioridad absoluta sobre combate.
 	if interaction_controller.interactuar(player):
-		get_viewport().set_input_as_handled()
-		return
+		return true
 
 	var inventory: Node = get_tree().get_first_node_in_group("inventory")
 	var objeto_activo: Dictionary = {}
@@ -87,8 +82,7 @@ func _input(event: InputEvent) -> void:
 		if objeto_activo_variant is Dictionary:
 			objeto_activo = (objeto_activo_variant as Dictionary).duplicate(true)
 
-	# Sin interacción contextual, los objetos colocables se usan con
-	# el click izquierdo de la hotbar.
+	# Los objetos colocables consumen la acción primaria antes del combate.
 	if not objeto_activo.is_empty():
 		var world_items: Node = GarliaWorldItems
 		if (
@@ -107,17 +101,10 @@ func _input(event: InputEvent) -> void:
 				if colocado:
 					if inventory.has_method("consumir_objeto_activo"):
 						inventory.call("consumir_objeto_activo", 1)
-					get_viewport().set_input_as_handled()
-					return
+					return true
 
-		# Si el objeto activo no es colocable, no lo consumimos aquí:
-		# CombatSystem debe ejecutar su acción primaria (arma/herramienta).
-		# No devolver ni marcar el evento como manejado.
-
-
-
-func _interaccion_bloqueada() -> bool:
-	return GameState.esta_entrada_de_juego_bloqueada()
+	# Si no hubo interacción ni colocación, CombatSystem recibe la acción.
+	return false
 
 
 func _buscar_objetivo() -> void:
