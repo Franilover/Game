@@ -109,7 +109,34 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _accion_bloqueada() -> bool:
-	return GameState.esta_entrada_de_juego_bloqueada()
+	var bloqueada: bool = GameState.esta_entrada_de_juego_bloqueada()
+	if bloqueada:
+		var inventory := get_tree().get_first_node_in_group("inventory")
+		var hud := get_tree().get_first_node_in_group("hud")
+		var dialogue := get_tree().get_first_node_in_group("dialogue_system")
+		print(
+			"CombatSystem: click bloqueado | ",
+			"paused=", get_tree().paused,
+			" inventory=",
+			str(
+				inventory != null
+				and inventory.has_method("esta_abierto")
+				and bool(inventory.call("esta_abierto"))
+			),
+			" hud_panel=",
+			str(
+				hud != null
+				and hud.has_method("esta_mostrando_panel_interaccion")
+				and bool(hud.call("esta_mostrando_panel_interaccion"))
+			),
+			" dialogue=",
+			str(
+				dialogue != null
+				and dialogue.has_method("esta_abierto")
+				and bool(dialogue.call("esta_abierto"))
+			)
+		)
+	return bloqueada
 
 
 func _es_herramienta(objeto: Dictionary) -> bool:
