@@ -95,6 +95,8 @@ func configurar_dependencias(
 	_ium_manager_ref = ium_manager
 	_entity_manager_ref = entity_manager
 	_supabase_client_ref = supabase_client
+	_configurar_eterium_desde_supabase()
+	_configurar_especie_eterium_game_desde_supabase()
 
 
 func _ready() -> void:
@@ -111,12 +113,9 @@ func _ready() -> void:
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
 	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 
-	_configurar_eterium_desde_supabase()
-
 	_base_visual_position = visual.position
 
 	_aplicar_configuracion_personaje()
-	_configurar_especie_eterium_game_desde_supabase()
 	_update_dir_marker()
 	_update_visual()
 
@@ -316,8 +315,9 @@ func _al_cambio_stamina(current: float, maximum: float) -> void:
 # ============================================================
 
 func _configurar_especie_eterium_game_desde_supabase() -> void:
-	if _supabase_client_ref == null:
+	if _supabase_client_ref == null or _supabase_especie_configurada:
 		return
+	_supabase_especie_configurada = true
 	if not _supabase_client_ref.especie_eterium_game_cargado.is_connected(_al_especie_eterium_game_cargado):
 		_supabase_client_ref.especie_eterium_game_cargado.connect(_al_especie_eterium_game_cargado)
 	if _supabase_client_ref.tiene_especie_eterium_game():
@@ -329,6 +329,9 @@ func _al_especie_eterium_game_cargado(reglas: Array) -> void:
 
 
 func _configurar_eterium_desde_supabase() -> void:
+	if _supabase_client_ref == null or _supabase_runtime_configurado:
+		return
+	_supabase_runtime_configurado = true
 	if not _supabase_client_ref.eterium_runtime_cargado.is_connected(
 		_al_eterium_runtime_cargado
 	):
@@ -872,6 +875,8 @@ var _proceso_ium_equipado: Dictionary = {}
 var _ium_manager_ref: Node = null
 var _entity_manager_ref: Node = null
 var _supabase_client_ref: GarliaSupabaseClient = null
+var _supabase_runtime_configurado: bool = false
+var _supabase_especie_configurada: bool = false
 
 
 func equipar_proceso_ium(proceso: Dictionary) -> void:
