@@ -54,6 +54,8 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_combate(world_gen)
 	_configurar_input_router()
 	_configurar_inventario()
+	if GameState.has_method("configurar_dependencias"):
+		GameState.call("configurar_dependencias", _inventory)
 	_configurar_dialogo()
 	_configurar_social()
 	_inicializar_ium()
@@ -185,7 +187,7 @@ func _configurar_dialogo() -> void:
 		return
 
 	if _dialogue_system.has_method("configurar"):
-		_dialogue_system.call("configurar", _player, _hud)
+		_dialogue_system.call("configurar", _player, _hud, MissionManager, RelationshipSystem)
 
 
 func _configurar_pantalla() -> void:
