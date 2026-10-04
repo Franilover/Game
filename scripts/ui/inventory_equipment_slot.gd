@@ -87,16 +87,3 @@ func _es_compatible(objeto: Dictionary) -> bool:
 
 	var propiedades := propiedades_variant as Dictionary
 	return str(propiedades.get("ranura_equipamiento", "")).strip_edges().to_lower() == clave_equipo
-
-	var tipo_variant: Variant = objeto.get("tipo_objeto", {})
-	if not tipo_variant is Dictionary:
-		return false
-
-	var tipo_objeto := tipo_variant as Dictionary
-
-	return str(
-		tipo_objeto.get(
-			"clave",
-			""
-		)
-	).strip_edges().to_lower() == clave_equipo
