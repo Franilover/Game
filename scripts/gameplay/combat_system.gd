@@ -36,7 +36,7 @@ var player: Node = null
 var inventory: Node = null
 var world_generator: Node = null
 var projectile_root: Node = null
-var _inventory_equipment_slot: String = "mano_principal"
+var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
@@ -82,7 +82,7 @@ func procesar_accion_primaria() -> bool:
 	# El router ya resolvió la prioridad de interacción.
 	# Aquí solo se decide la acción primaria de combate.
 	var arma := _obtener_arma_equipada()
-	var modo := "objeto_activo" if _es_objeto_ataque(arma) else "desarmado"
+	var modo := "arma_equipada" if _es_objeto_ataque(arma) else "desarmado"
 
 	return combat_controller.solicitar_ataque(
 		_obtener_direccion_ataque(),
@@ -118,7 +118,7 @@ func _al_ataque_solicitado(
 		_atacar_desarmado()
 		return
 
-	if modo == "objeto_activo":
+	if modo == "arma_equipada":
 		if not _es_objeto_ataque(objeto):
 			return
 		_atacar_con_objeto(objeto)
