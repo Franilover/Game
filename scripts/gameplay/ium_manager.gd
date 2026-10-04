@@ -1,4 +1,6 @@
 extends Node
+class_name IUMManager
+
 ## IUMManager — dominio/runtime de IUM.
 ## No conoce HTTP ni URLs: delega persistencia al IUMRepository.
 
