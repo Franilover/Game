@@ -203,7 +203,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _actualizar_admin_tab() -> void:
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
-	var admin_tab := $Window/Margin/Column/Tabs/Admin as Control
+	var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 	var jugador := _player
 	var es_admin := false
 	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
@@ -213,8 +213,8 @@ func _actualizar_admin_tab() -> void:
 	admin_tab.visible = es_admin
 	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
 		$Window/Margin/Column/Tabs.current_tab = 0
-	if es_admin and admin_tab.has_method("abrir"):
-		admin_tab.call("abrir", jugador)
+	if es_admin:
+		admin_tab.abrir(jugador)
 
 
 func toggle() -> void:
