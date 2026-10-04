@@ -4,9 +4,15 @@ var lista: VBoxContainer
 var detalle: VBoxContainer
 var estado: Label
 var _botones: Array[Button] = []
+var _relationship_system: Node = null
 
 func _ready() -> void:
 	_crear_ui()
+	_actualizar()
+
+
+func configurar(sistema: Node) -> void:
+	_relationship_system = sistema
 	_actualizar()
 
 func _crear_ui() -> void:
@@ -52,7 +58,7 @@ func _crear_ui() -> void:
 func _actualizar() -> void:
 	_limpiar()
 
-	var sistema := get_node_or_null("/root/RelationshipSystem")
+	var sistema := _relationship_system
 	if sistema == null or not sistema.has_method("esta_cargado") or not sistema.call("esta_cargado"):
 		estado.text = "Las relaciones se cargarán desde Supabase."
 		return
@@ -97,7 +103,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 
 	_limpiar_detalle()
 
-	var sistema := get_node_or_null("/root/RelationshipSystem")
+	var sistema := _relationship_system
 	if sistema == null:
 		return
 
