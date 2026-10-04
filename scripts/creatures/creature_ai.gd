@@ -77,6 +77,7 @@ var jugador: Node2D = null
 var entity_manager: WorldEntityManager = null
 var inventory: Node = null
 var combat_system: Node = null
+var world_items: Node = null
 
 
 func configurar_dependencias(
@@ -84,12 +85,14 @@ func configurar_dependencias(
 	nuevo_entity_manager: WorldEntityManager,
 	nuevo_inventory: Node,
 	nuevo_combat_system: Node,
+	nuevo_world_items: Node,
 	nuevas_relaciones_ecologicas: Array = []
 ) -> void:
 	jugador = nuevo_jugador as Node2D
 	entity_manager = nuevo_entity_manager
 	inventory = nuevo_inventory
 	combat_system = nuevo_combat_system
+	world_items = nuevo_world_items
 	relaciones_ecologicas = nuevas_relaciones_ecologicas.duplicate(true)
 
 
@@ -1378,11 +1381,11 @@ func _obtener_arma_cambiaformas() -> Dictionary:
 	if item_id.is_empty():
 		return {}
 
-	if GarliaWorldItems != null and GarliaWorldItems.has_method(
+	if world_items != null and is_instance_valid(world_items) and world_items.has_method(
 		"buscar_item_por_id"
 	):
 		var item: Dictionary = (
-			GarliaWorldItems.buscar_item_por_id(item_id)
+			world_items.call("buscar_item_por_id", item_id)
 		)
 
 		if not item.is_empty():
