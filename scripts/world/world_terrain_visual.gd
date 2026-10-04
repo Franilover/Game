@@ -556,8 +556,15 @@ func _normalizar_bioma(nombre: String) -> String:
 
 
 func _marcar_variaciones_dirty(cell: Vector2i) -> void:
+	# Sólo las celdas de biomas con atlas decorativo pueden cambiar una
+	# variación. Marcar todas las celdas del mundo hacía que cada chunk
+	# recalculara ~1.150 decoraciones potenciales aunque la mayoría fueran
+	# de zonas sin variaciones (agua, roca, arena, etc.).
 	for offset: Vector2i in UPDATE_NEIGHBORS:
-		_dirty_variations[cell + offset] = true
+		var candidata := cell + offset
+		var bioma_candidato := str(_cell_bioma.get(candidata, ""))
+		if VARIACIONES_POR_BIOMA.has(bioma_candidato):
+			_dirty_variations[candidata] = true
 
 
 func _marcar_dirty(
