@@ -787,7 +787,7 @@ func admin_guardar_estado() -> void:
 			"eterium": max_mana,
 			"energia": max_stamina
 		}
-	}
+	})
 	GameState.guardar_partida()
 
 func _update_visual() -> void:
