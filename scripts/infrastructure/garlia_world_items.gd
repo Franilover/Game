@@ -1,4 +1,5 @@
 extends Node
+class_name GarliaWorldItems
 
 
 const WORLD_ITEM_SCRIPT: Script = preload(
