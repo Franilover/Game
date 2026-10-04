@@ -684,6 +684,40 @@ func obtener_configuracion_personaje_admin() -> Dictionary:
 	return {}
 
 
+func establecer_configuracion_personaje(personaje: Dictionary) -> void:
+	world_state.flags["personaje"] = personaje.duplicate(true)
+
+
+func establecer_configuracion_personaje_admin(configuracion: Dictionary) -> void:
+	world_state.flags["personaje_admin"] = configuracion.duplicate(true)
+
+
+func obtener_relaciones_sociales() -> Dictionary:
+	var relaciones_variant: Variant = world_state.flags.get("relaciones_sociales", {})
+	if relaciones_variant is Dictionary:
+		return (relaciones_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func guardar_relaciones_sociales(relaciones: Dictionary) -> void:
+	world_state.flags["relaciones_sociales"] = relaciones.duplicate(true)
+
+
+func obtener_recuerdos_sociales() -> Dictionary:
+	var recuerdos_variant: Variant = world_state.flags.get("recuerdos_sociales", {})
+	if recuerdos_variant is Dictionary:
+		return (recuerdos_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func guardar_recuerdos_sociales(recuerdos: Dictionary) -> void:
+	world_state.flags["recuerdos_sociales"] = recuerdos.duplicate(true)
+
+
+func establecer_proceso_ium_equipado(proceso: Dictionary) -> void:
+	world_state.flags["proceso_ium_equipado"] = proceso.duplicate(true)
+
+
 func obtener_descubrimientos_mundo() -> Dictionary:
 	return {
 		"biomas": discovery_state.biomes.duplicate(true),
