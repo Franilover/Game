@@ -762,15 +762,11 @@ func despawn_chunk(
 				criaturas[i]
 			)
 
-			if not criatura_variant is Node:
+			if not is_instance_valid(criatura_variant):
 				continue
 
-			var criatura: Node = (
-				criatura_variant
-			)
-
-			if is_instance_valid(criatura):
-				criatura.queue_free()
+			var criatura: Node = criatura_variant
+			criatura.queue_free()
 
 	_creatures_by_chunk.erase(
 		chunk_coord
@@ -780,12 +776,10 @@ func despawn_chunk(
 		var personajes_variant: Variant = _characters_by_chunk[chunk_coord]
 		if personajes_variant is Array:
 			for personaje_variant in personajes_variant:
-				if not personaje_variant is Node:
+				if not is_instance_valid(personaje_variant):
 					continue
 
 				var personaje := personaje_variant as Node
-				if not is_instance_valid(personaje):
-					continue
 
 				var personaje_id := str(personaje.get_meta("personaje_game_id", ""))
 				if not personaje_id.is_empty():
@@ -798,12 +792,11 @@ func despawn_chunk(
 		var props_variant: Variant = _props_by_chunk[chunk_coord]
 		if props_variant is Array:
 			for prop_variant in props_variant:
-				if not prop_variant is Node:
+				if not is_instance_valid(prop_variant):
 					continue
 
 				var prop := prop_variant as Node
-				if is_instance_valid(prop):
-					prop.queue_free()
+				prop.queue_free()
 
 		_props_by_chunk.erase(chunk_coord)
 
