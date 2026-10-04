@@ -140,7 +140,7 @@ func _nombres_habitats(habitats: Array) -> String:
 		var habitat := variante as Dictionary
 		var nombre := str(habitat.get("nombre", ""))
 		if nombre.is_empty():
-			var tipo := habitat.get("tipo_habitat", {})
+			var tipo: Variant = habitat.get("tipo_habitat", {})
 			if tipo is Dictionary:
 				nombre = str((tipo as Dictionary).get("nombre", ""))
 				if nombre.is_empty():
