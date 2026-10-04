@@ -179,3 +179,9 @@ func registrar_jugador(
 func is_world_ready() -> bool:
 	return _world_ready
 
+
+
+func actualizar_relaciones_ecologicas(relaciones_ecologicas: Array) -> void:
+	if entity_factory == null:
+		return
+	entity_factory.configurar_relaciones_ecologicas(relaciones_ecologicas)
