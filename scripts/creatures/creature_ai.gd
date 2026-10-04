@@ -375,10 +375,6 @@ func _procesar_investigando() -> void:
 		criatura.detener_movimiento()
 		criatura.tomar_control_movimiento()
 
-		if objetivo_detectado:
-			_cambiar_estado(Estado.ATACANDO)
-		return
-
 	if objetivo_detectado:
 		match _obtener_respuesta_a_objetivo():
 			"huir":
@@ -1223,11 +1219,11 @@ func _resolver_ataque_flaxis() -> void:
 		if distancia_impacto <= _obtener_distancia_contacto():
 			_aplicar_danio_objetivo(
 				objetivo,
-				dano_mordida,
+				_obtener_danio_ataque(),
 				"CreatureAI/Flaxis"
 			)
 
-			_iniciar_recuperacion(enfriamiento_ataque)
+			_iniciar_recuperacion(_obtener_enfriamiento_ataque())
 			return
 
 	_iniciar_recuperacion(_obtener_enfriamiento_fallido())
