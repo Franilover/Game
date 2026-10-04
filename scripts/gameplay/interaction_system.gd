@@ -125,8 +125,8 @@ func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
 		return
 
 	var texto := "Recoger"
-	if objetivo_actual.has_method("get_interaction_text"):
-		texto = str(objetivo_actual.call("get_interaction_text"))
+	if objetivo_actual is Creature:
+		texto = (objetivo_actual as Creature).get_interaction_text()
 
 	print(
 		"InteractionSystem: objetivo contextual = ",
