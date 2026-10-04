@@ -856,11 +856,7 @@ func _comando_summon(nombre: String) -> void:
 
 	# Invocar cerca del jugador, sin buscarlo globalmente.
 	var posicion_invocacion: Vector2 = player.global_position + Vector2(32.0, 0.0)
-	var resultado: Variant = world_generator.call(
-		"summon_criatura",
-		nombre_solicitado,
-		posicion_invocacion
-	)
+	var resultado: Dictionary = world_generator.summon_criatura(nombre_solicitado, posicion_invocacion)
 
 	if resultado is Dictionary:
 		var datos: Dictionary = resultado as Dictionary
