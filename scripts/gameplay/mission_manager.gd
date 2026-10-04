@@ -15,11 +15,25 @@ var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
 var _player: Node = null
 var _entity_manager: Node = null
+var _world_data: Node = null
 
 
-func configurar_dependencias(player: Node = null, entity_manager: Node = null) -> void:
+func configurar_dependencias(player: Node = null, entity_manager: Node = null, world_data: Node = null) -> void:
 	_player = player
 	_entity_manager = entity_manager
+	_world_data = world_data
+
+	if _world_data == null:
+		push_error("MissionManager: WorldData no configurado.")
+		return
+
+	if not _world_data.mundo_listo.is_connected(_al_mundo_listo):
+		_world_data.mundo_listo.connect(_al_mundo_listo)
+	if not _world_data.mundo_actualizado.is_connected(_al_mundo_actualizado):
+		_world_data.mundo_actualizado.connect(_al_mundo_actualizado)
+
+	if _world_data.esta_cargado():
+		_cargar_desde_world_data()
 
 
 func _ready() -> void:
@@ -47,7 +61,7 @@ func _cargar_desde_world_data() -> void:
 	_misiones.clear()
 	_misiones_por_id.clear()
 
-	for mision_variant in WorldData.obtener_misiones_game():
+	for mision_variant in _world_data.obtener_misiones_game():
 		if not mision_variant is Dictionary:
 			continue
 
