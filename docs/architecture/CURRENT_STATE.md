@@ -294,3 +294,12 @@ HUD también dejó de tratar WorldContext como un objeto genérico con `has_meth
 Esto elimina una capa de descubrimiento innecesaria y hace visible el contrato real: `Main → HUD → WorldContext`. La compatibilidad dinámica queda reservada para fronteras donde todavía no existe un contrato tipado claro.
 
 No se declara compilación validada hasta probar el proyecto en Godot.
+
+
+## Decimosexta barrida — CombatSystem sobre contrato concreto de WorldContext
+
+CombatSystem también dejó de tratar WorldContext como un Node genérico. La dependencia ahora está tipada como WorldContext y la pala utiliza directamente get_tile_at(), get_zona_at() y cambiar_zona_at().
+
+Esto mantiene la regla de que las fronteras conocidas deben ser explícitas. No se movió todavía la lógica de inventario, ataque o daño: esas piezas se mantienen en sus dueños actuales para evitar una división artificial del sistema.
+
+Siguiente objetivo: continuar reduciendo descubrimiento dinámico en CombatSystem y revisar sus responsabilidades de presentación/IA antes de tocar la resolución de daño.
