@@ -9,6 +9,8 @@ var player: Node = null
 var ui_root: Node = null
 var mission_manager: Node = null
 var relationship_system: Node = null
+var mission_manager: Node = null
+var relationship_system: Node = null
 
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
@@ -138,7 +140,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id.is_empty():
 			if mission_manager != null:
-				mission_manager.call(
+				mission_manager_local.call(
 					"registrar_dialogo_desde_fuente",
 					personaje_id,
 					str(datos_seleccionados.get("clave", "principal")),
