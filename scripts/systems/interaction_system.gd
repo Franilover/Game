@@ -11,6 +11,7 @@ signal objetivo_cambiado(objetivo: Node)
 var player: Node = null
 var hud: Control = null
 
+var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
 
 var _scan_timer: float = 0.0
@@ -121,69 +122,10 @@ func _interaccion_bloqueada() -> bool:
 
 
 func _buscar_objetivo() -> void:
-	var mejor_objetivo: Node = null
-	var mejor_prioridad: int = -2147483648
-	var mejor_distancia_sq: float = INF
-
-	var candidatos: Array[Node] = (
-		get_tree().get_nodes_in_group("interactable")
+	interaction_controller.buscar_objetivo(
+		player,
+		interaction_distance
 	)
-
-	for candidato in candidatos:
-		if not is_instance_valid(candidato):
-			continue
-
-		if candidato == player:
-			continue
-
-		if not candidato is Node2D:
-			continue
-
-		if not candidato.is_inside_tree():
-			continue
-
-		if not _es_objetivo_contextual(candidato):
-			continue
-
-		var puede: bool = true
-		if candidato.has_method("can_interact"):
-			puede = bool(candidato.call("can_interact", player))
-
-		if not puede:
-			continue
-
-		var candidato_2d := candidato as Node2D
-		var distancia_maxima: float = interaction_distance
-
-		if candidato.has_method("get_interaction_distance"):
-			distancia_maxima = maxf(
-				float(candidato.call("get_interaction_distance")),
-				0.0
-			)
-
-		var distancia_sq: float = player.global_position.distance_squared_to(
-			candidato_2d.global_position
-		)
-
-		if distancia_sq > distancia_maxima * distancia_maxima:
-			continue
-
-		var prioridad: int = 0
-		if candidato.has_method("get_interaction_priority"):
-			prioridad = int(candidato.call("get_interaction_priority"))
-
-		if (
-			prioridad > mejor_prioridad
-			or (
-				prioridad == mejor_prioridad
-				and distancia_sq < mejor_distancia_sq
-			)
-		):
-			mejor_prioridad = prioridad
-			mejor_distancia_sq = distancia_sq
-			mejor_objetivo = candidato
-
-	_cambiar_objetivo(mejor_objetivo)
 
 
 func _es_objetivo_contextual(candidato: Node) -> bool:
