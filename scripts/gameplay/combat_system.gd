@@ -37,17 +37,19 @@ var inventory: Node = null
 var world_context: Node = null
 var projectile_root: Node = null
 var entity_manager: Node = null
+var game_state: Node = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: Node = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null) -> void:
+func configurar(nuevo_player: Node, nuevo_inventory: Node = null, nuevo_world_context: Node = null, nuevo_projectile_root: Node = null, nuevo_entity_manager: Node = null, nuevo_game_state: Node = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
 	projectile_root = nuevo_projectile_root
 	entity_manager = nuevo_entity_manager
+	game_state = nuevo_game_state
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
@@ -525,7 +527,7 @@ func _al_recibir_impacto_proyectil(
 		and ataque.attacker != null
 		and ataque.attacker.is_in_group("player")
 	):
-		GameState.registrar_criatura_derrotada(objetivo)
+		_registrar_criatura_derrotada(objetivo)
 
 	if (
 		not arma.is_empty()
@@ -751,7 +753,7 @@ func _aplicar_danio(
 		and not bool(objetivo.get("is_alive"))
 		and objetivo.is_in_group("creatures")
 	):
-		GameState.registrar_criatura_derrotada(objetivo)
+		_registrar_criatura_derrotada(objetivo)
 
 		var actor_eterium: Node = atacante
 		if actor_eterium == null:
@@ -810,6 +812,14 @@ func _aplicar_danio(
 		danio,
 		" de daño."
 	)
+
+
+func _registrar_criatura_derrotada(objetivo: Node) -> void:
+	if game_state == null or not is_instance_valid(game_state):
+		return
+	if not game_state.has_method("registrar_criatura_derrotada"):
+		return
+	game_state.call("registrar_criatura_derrotada", objetivo)
 
 
 func _obtener_direccion_ataque() -> Vector2:
