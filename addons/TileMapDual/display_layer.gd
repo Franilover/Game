@@ -54,6 +54,12 @@ func update_properties(parent: TileMapDual) -> void:
 	# Canvas item properties
 	self.show_behind_parent = parent.show_behind_parent
 	self.top_level = parent.top_level
+	# DisplayLayer es quien realmente dibuja los tiles. No confiar en la
+	# herencia implícita de Z: TileMapDual puede usar z_as_relative=false.
+	# Copiamos la capa Z efectiva para que el display respete exactamente
+	# el orden del TileMapDual que lo contiene.
+	self.z_as_relative = false
+	self.z_index = parent.z_index
 	self.light_mask = parent.light_mask
 	self.visibility_layer = parent.visibility_layer
 	self.y_sort_enabled = parent.y_sort_enabled
