@@ -65,8 +65,6 @@ func esta_cerca(persona: Node2D) -> bool:
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_jugador):
-	
-	if not is_instance_valid(_jugador):
 		return
 	
 	var cerca: bool = esta_cerca(_jugador)
