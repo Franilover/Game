@@ -179,7 +179,8 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 	var tipo_herramienta := str(recoleccion.get("tipo", "")).strip_edges().to_lower()
 
 	if tipo_herramienta == "pala":
-		_usar_pala()
+		if _usar_pala():
+			_consumir_durabilidad_herramienta()
 		return
 
 	var direccion: Vector2 = _obtener_direccion_ataque()
@@ -188,14 +189,15 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 
 	_mostrar_area_ataque(direccion, alcance, ancho)
 	_crear_hitbox_melee(direccion, alcance, ancho, herramienta)
+	_consumir_durabilidad_herramienta()
 
 
-func _usar_pala() -> void:
+func _usar_pala() -> bool:
 	var world_gen := get_tree().get_first_node_in_group("world_generator")
 	if world_gen == null or not is_instance_valid(world_gen):
-		return
+		return false
 	if not world_gen.has_method("get_tile_at") or not world_gen.has_method("get_zona_at") or not world_gen.has_method("cambiar_zona_at"):
-		return
+		return false
 
 	var objetivo_posicion: Vector2 = player.global_position
 	var tile: Vector2i = world_gen.call("get_tile_at", objetivo_posicion)
@@ -203,11 +205,23 @@ func _usar_pala() -> void:
 
 	# La pala transforma únicamente Pradera en Tierra.
 	if zona != 0:
-		return
+		return false
 
 	if bool(world_gen.call("cambiar_zona_at", tile, 1)):
 		_tiempo_desde_ataque = enfriamiento_arma
 		print("CombatSystem: pala → Pradera convertida en Tierra en ", tile)
+		return true
+
+	return false
+
+
+func _consumir_durabilidad_herramienta() -> void:
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if inventario == null:
+		return
+	if not inventario.has_method("consumir_durabilidad_objeto_activo"):
+		return
+	inventario.call("consumir_durabilidad_objeto_activo")
 
 
 func _crear_hitbox_melee(
