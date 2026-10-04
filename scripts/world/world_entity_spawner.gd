@@ -44,12 +44,6 @@ var peso_destacadas: float = 4.0
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
 var _entity_factory: WorldEntityFactory = null
-var _entities_root: Node = null
-
-var _creatures_by_chunk: Dictionary = {}
-var _characters_by_chunk: Dictionary = {}
-var _spawned_characters: Dictionary = {}
-var _props_by_chunk: Dictionary = {}
 
 
 func configurar(
@@ -59,25 +53,19 @@ func configurar(
 	entity_factory: WorldEntityFactory = null
 ) -> void:
 	_terrain = terrain
-	_entities_root = entities_root
 	_entity_manager = entity_manager
 	_entity_factory = entity_factory
 
-	if _entities_root == null or not is_instance_valid(_entities_root):
-		push_error("WorldEntitySpawner: Entity root inválido.")
+	if _entity_manager == null:
+		push_error("WorldEntitySpawner: Entity manager inválido.")
+	if _entity_factory == null:
+		push_error("WorldEntitySpawner: Entity factory inválido.")
 
 
 func spawn_chunk(
 	chunk_coord: Vector2i
 ) -> void:
-	if _creatures_by_chunk.has(
-		chunk_coord
-	):
-		return
-
-	var entities: Node = _entities_root
-	if entities == null or not is_instance_valid(entities):
-		push_warning("WorldEntitySpawner: Entity root no configurado.")
+	if _entity_manager != null and _entity_manager.tiene_chunk(chunk_coord):
 		return
 
 	var rng := RandomNumberGenerator.new()
@@ -313,10 +301,6 @@ func spawn_chunk(
 		creadas.append(
 			criatura
 		)
-
-	_creatures_by_chunk[chunk_coord] = (
-		creadas
-	)
 
 	_spawn_characters_in_chunk(
 		chunk_coord,
@@ -720,39 +704,9 @@ func _obtener_peso_candidato(
 	return peso_normal
 
 
-func despawn_chunk(
-	chunk_coord: Vector2i
-) -> void:
+func despawn_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager != null:
 		_entity_manager.despawn_chunk(chunk_coord)
-	else:
-		var listas: Array = [
-			_creatures_by_chunk.get(chunk_coord, []),
-			_characters_by_chunk.get(chunk_coord, []),
-			_props_by_chunk.get(chunk_coord, [])
-		]
-		for lista_variant in listas:
-			if not lista_variant is Array:
-				continue
-			for entity_variant in lista_variant:
-				if entity_variant is Node and is_instance_valid(entity_variant):
-					(entity_variant as Node).queue_free()
-
-	var personajes_variant: Variant = _characters_by_chunk.get(chunk_coord, [])
-	if personajes_variant is Array:
-		for personaje_variant in personajes_variant:
-			if not personaje_variant is Node:
-				continue
-			var personaje := personaje_variant as Node
-			var personaje_id := str(
-				personaje.get_meta("personaje_game_id", "")
-			)
-			if not personaje_id.is_empty():
-				_spawned_characters.erase(personaje_id)
-
-	_creatures_by_chunk.erase(chunk_coord)
-	_characters_by_chunk.erase(chunk_coord)
-	_props_by_chunk.erase(chunk_coord)
 
 
 func _spawn_characters_in_chunk(
@@ -762,10 +716,6 @@ func _spawn_characters_in_chunk(
 ) -> void:
 	var personajes := WorldData.obtener_personajes_game()
 	if personajes.is_empty():
-		return
-
-	var entities: Node = _entities_root
-	if entities == null or not is_instance_valid(entities):
 		return
 
 	var creados: Array = []
@@ -781,7 +731,7 @@ func _spawn_characters_in_chunk(
 
 		if personaje_id.is_empty() or reino_game_id.is_empty():
 			continue
-		if _spawned_characters.has(personaje_id):
+		if _entity_manager != null and _entity_manager.existe_persistente(personaje_id):
 			continue
 		if not bioma_ids_variant is Array:
 			continue
@@ -837,11 +787,9 @@ func _spawn_characters_in_chunk(
 			creature_node.configurar_chunk(chunk_coord, limite_chunk)
 			creature_node.configurar_entorno("general")
 
-		_spawned_characters[personaje_id] = criatura
 		creados.append(criatura)
 
 	if not creados.is_empty():
-		_characters_by_chunk[chunk_coord] = creados
 		print("WorldEntitySpawner: personajes en reino → chunk ", chunk_coord, " → ", creados.size())
 
 
@@ -957,7 +905,6 @@ func _spawn_props_in_chunk(
 		creados.append(prop_node)
 
 	if not creados.is_empty():
-		_props_by_chunk[chunk_coord] = creados
 		print(
 			"WorldEntitySpawner: props canonicos → chunk ",
 			chunk_coord,
