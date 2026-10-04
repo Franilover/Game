@@ -9,8 +9,13 @@ const CRIATURA_ZLISH := 1 << 1
 const CRIATURA_LIGNIANOS := 1 << 2
 
 var _terrain: WorldTerrain
+
+@export_category("Pesos canónicos de aparición")
+@export_flags("Flaxis", "Zlish", "Lignianos")
 var criaturas_destacadas: int = CRIATURA_FLAXIS | CRIATURA_ZLISH | CRIATURA_LIGNIANOS
+@export_range(0.0, 100.0, 0.1)
 var peso_normal: float = 1.0
+@export_range(0.0, 100.0, 0.1)
 var peso_destacadas: float = 4.0
 
 
