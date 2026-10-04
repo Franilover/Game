@@ -7,6 +7,7 @@ class_name WorldEntityManager
 var _entities_root: Node = null
 
 var _by_chunk: Dictionary = {}
+var _active_chunks: Dictionary = {}
 var _persistent_by_key: Dictionary = {}
 var _global_entities: Array = []
 
@@ -69,7 +70,13 @@ func registrar_existente(
 	return registrar(entity, chunk_coord, persistent_key)
 
 
+func activar_chunk(chunk_coord: Vector2i) -> void:
+	_active_chunks[chunk_coord] = true
+
+
 func tiene_chunk(chunk_coord: Vector2i) -> bool:
+	if _active_chunks.has(chunk_coord):
+		return true
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 	if not bucket_variant is Array:
 		return false
@@ -116,6 +123,7 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 		entity.queue_free()
 
 	_by_chunk.erase(chunk_coord)
+	_active_chunks.erase(chunk_coord)
 
 
 func limpiar_todo() -> void:
@@ -128,6 +136,7 @@ func limpiar_todo() -> void:
 			(entity_variant as Node).queue_free()
 	_persistent_by_key.clear()
 	_global_entities.clear()
+	_active_chunks.clear()
 
 
 func _remover_persistencia(entity: Node) -> void:
