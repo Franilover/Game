@@ -60,8 +60,8 @@ func _ready() -> void:
 	_crear_interfaz()
 	visible = false
 
-	if WorldData.has_signal("mundo_listo"):
-		WorldData.mundo_listo.connect(
+	if WorldDataService.has_signal("mundo_listo"):
+		WorldDataService.mundo_listo.connect(
 			_al_datos_disponibles
 		)
 
@@ -303,7 +303,7 @@ func _mostrar_sugerencias_tp(texto: String) -> void:
 		"humano":
 			nombres = _obtener_nombres_personajes_game()
 		"reino":
-			for reino in WorldData.obtener_reinos_game():
+			for reino in WorldDataService.obtener_reinos_game():
 				var nombre := str(reino.get("nombre", "")).strip_edges()
 				if not nombre.is_empty():
 					nombres.append(nombre)
@@ -350,7 +350,7 @@ func _mostrar_sugerencias_summon(
 			nombre_parcial = partes[1]
 
 		var criatura_humana: Dictionary = (
-			WorldData.buscar_criatura_por_nombre(
+			WorldDataService.buscar_criatura_por_nombre(
 				"Humano"
 			)
 		)
@@ -359,7 +359,7 @@ func _mostrar_sugerencias_summon(
 
 		if not criatura_humana.is_empty():
 			var personajes: Array[Dictionary] = (
-				WorldData.obtener_personajes_game_de_criatura(
+				WorldDataService.obtener_personajes_game_de_criatura(
 					str(
 						criatura_humana.get(
 							"id",
@@ -475,7 +475,7 @@ func _obtener_nombres_criaturas() -> Array[String]:
 	var nombres: Array[String] = []
 
 
-	var criaturas: Array[Dictionary] = WorldData.obtener_criaturas()
+	var criaturas: Array[Dictionary] = WorldDataService.obtener_criaturas()
 
 	for criatura in criaturas:
 		var nombre: String = str(
@@ -499,7 +499,7 @@ func _obtener_nombres_personajes_game() -> Array[String]:
 
 
 	var personajes: Array[Dictionary] = (
-		WorldData.obtener_personajes_game()
+		WorldDataService.obtener_personajes_game()
 	)
 
 	for personaje in personajes:
@@ -756,7 +756,7 @@ func _ejecutar_comando(comando: String) -> void:
 
 
 func _puede_usar_capacidad(clave: String) -> bool:
-	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
+	var datos_variant: Variant = GameStateService.obtener_configuracion_personaje_admin()
 	if not datos_variant is Dictionary:
 		_agregar_linea("[color=#d88]Necesitas rol Admin para usar este comando.[/color]")
 		return false
@@ -963,11 +963,11 @@ func _comando_player(argumentos: String) -> void:
 				"modo_dios"
 			]
 
-		GameState.establecer_configuracion_personaje_admin({
+		GameStateService.establecer_configuracion_personaje_admin({
 			"rol": rol,
 			"capacidades": capacidades
 		})
-		GameState.guardar_partida()
+		GameStateService.guardar_partida()
 
 		_agregar_linea(
 			"[color=#9fd18b]Jugador "
