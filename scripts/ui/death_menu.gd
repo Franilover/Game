@@ -92,7 +92,7 @@ func _reaparecer() -> void:
 	get_tree().paused = false
 
 	# Persistimos inmediatamente la pérdida de objetos y el nuevo spawn.
-	GameStateService.guardar_partida()
+	GameState.guardar_partida()
 
 
 func _volver_al_menu() -> void:
