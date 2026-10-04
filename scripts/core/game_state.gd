@@ -499,25 +499,7 @@ func _estado_base_partida(
 			"generador_version": 1
 		},
 		"estado": {
-			"player": {
-				"health": 100,
-				"mana": 100,
-				"position_valid": false,
-				"position": {
-					"x": 0.0,
-					"y": 0.0
-				},
-				"tile_valid": false,
-				"tile": {
-					"x": 0,
-					"y": 0
-				},
-				"stamina": 100.0,
-				"facing": {
-					"x": 0.0,
-					"y": 1.0
-				}
-			},
+			"player": PlayerState.new().to_dictionary(),
 			"elapsed_time": 0.0,
 			"flags": {
 				"personaje": personaje.duplicate(true)
