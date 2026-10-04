@@ -50,6 +50,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_hud(world_gen)
 	_configurar_interaccion()
 	_configurar_combate()
+	_configurar_input_router()
 	_configurar_inventario()
 	_configurar_dialogo()
 	_inicializar_ium()
@@ -152,6 +153,14 @@ func _configurar_combate() -> void:
 	if _combat_system.has_method("configurar"):
 		_combat_system.configurar(_player, _inventory, world_gen, self)
 
+
+func _configurar_input_router() -> void:
+	var router := get_node_or_null("/root/GameplayInputRouter")
+	if router == null:
+		push_error("Main: no se encontró GameplayInputRouter.")
+		return
+	if router.has_method("configurar_sistemas"):
+		router.call("configurar_sistemas", _interaction_system, _combat_system)
 
 func _configurar_inventario() -> void:
 	if _inventory == null:
