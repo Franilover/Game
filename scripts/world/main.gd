@@ -43,7 +43,7 @@ func _ready() -> void:
 		_supabase_client.relaciones_ecologicas_cargadas.connect(_al_cargar_relaciones_ecologicas)
 	var world_gen: WorldGenerator = _world_generator
 	world_gen.configurar_dependencias(WorldData, GameState)
-	world_gen.configurar_entidades($Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context, _supabase_client.obtener_relaciones_ecologicas())
+	world_gen.configurar_entidades($Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context, _world_items, _supabase_client.obtener_relaciones_ecologicas())
 	if _world_items != null and _world_items.has_method("configurar_dependencias"):
 		_world_items.call("configurar_dependencias", $Entities/Player, _inventory, $Entities, world_gen.entity_manager, _world_context, MissionManager)
 
