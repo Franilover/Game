@@ -516,8 +516,8 @@ func registrar_criatura_derrotada(criatura: Node) -> bool:
 		return false
 
 	var criatura_id := str(criatura.get("criatura_id"))
-	if criatura_id.is_empty() and criatura.has_method("get_id"):
-		criatura_id = str(criatura.call("get_id"))
+	if criatura_id.is_empty() and criatura is Creature:
+		criatura_id = (criatura as Creature).get_id()
 
 	if criatura_id.is_empty():
 		return false
