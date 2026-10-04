@@ -46,8 +46,8 @@ var indice_hotbar_activo: int:
 var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
-var _player: Node = null
-var _world_items: Node = null
+var _player: Player = null
+var _world_items: GarliaWorldItems = null
 
 
 @onready var grid: GridContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
@@ -88,9 +88,9 @@ func _inicializar_navegacion_tabs() -> void:
 	)
 	boton_admin.pressed.connect(func() -> void:
 		tabs.current_tab = 5
-		var admin_tab := $Window/Margin/Column/Tabs/Admin as Control
-		if admin_tab.has_method("abrir"):
-			admin_tab.call("abrir", _player)
+		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
+		if admin_tab != null:
+			admin_tab.abrir(_player)
 	)
 
 	boton_inventario.button_pressed = true
@@ -98,11 +98,11 @@ func _inicializar_navegacion_tabs() -> void:
 
 
 func configurar(
-	player: Node = null,
-	world_entity_spawner: Node = null,
+	player: Player = null,
+	world_entity_spawner: WorldEntitySpawner = null,
 	world_context: WorldContext = null,
 	relationship_system: Node = null,
-	world_items: Node = null
+	world_items: GarliaWorldItems = null
 ) -> void:
 	_player = player
 	_world_items = world_items
@@ -113,28 +113,27 @@ func configurar(
 	_actualizar_admin_tab()
 
 
-func _configurar_admin_inventory(world_entity_spawner: Node) -> void:
+func _configurar_admin_inventory(world_entity_spawner: WorldEntitySpawner) -> void:
 	var admin_tab: AdminInventory = $Window/Margin/Column/Tabs/Admin as AdminInventory
 	if admin_tab != null:
 		admin_tab.configurar(_player, world_entity_spawner, self)
 
 
 func _configurar_world_map(world_context: WorldContext) -> void:
-	var mapa: Control = $Window/Margin/Column/Tabs/Mapa
-	if mapa.has_method("configurar") and _player is Node2D and world_context != null:
-		mapa.call("configurar", _player as Node2D, world_context)
+	var mapa: WorldMapUI = $Window/Margin/Column/Tabs/Mapa
+	if _player != null and world_context != null:
+		mapa.configurar(_player, world_context)
 
 
 func _configurar_relationships(relationship_system: Node) -> void:
-	var relaciones: Control = $Window/Margin/Column/Tabs/Relaciones
-	if relaciones.has_method("configurar") and relationship_system != null:
-		relaciones.call("configurar", relationship_system)
+	var relaciones: RelationshipsUI = $Window/Margin/Column/Tabs/Relaciones
+	if relationship_system != null:
+		relaciones.configurar(relationship_system)
 
 
 func _configurar_crafting() -> void:
-	var crafting: Control = $Window/Margin/Column/Tabs/Crafteo
-	if crafting.has_method("configurar"):
-		crafting.call("configurar", self)
+	var crafting: CraftingUI = $Window/Margin/Column/Tabs/Crafteo
+	crafting.configurar(self)
 
 
 func serializar_estado_partida() -> Dictionary:
