@@ -479,34 +479,11 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 	var inventario: Node = _inventory
 
 	if inventario != null and is_instance_valid(inventario):
-		var inventory_items: Array = []
-		var items_variant: Variant = inventario.get("items")
-
-		if items_variant is Array:
-			for item_variant in items_variant as Array:
-				if item_variant is Dictionary:
-					inventory_items.append(
-						(item_variant as Dictionary).duplicate(true)
-					)
-				else:
-					inventory_items.append({})
-
-		var hotbar: Array = []
-		var hotbar_variant: Variant = inventario.get(
-			"hotbar_indices"
-		)
-
-		if hotbar_variant is Array:
-			for indice_variant in hotbar_variant as Array:
-				hotbar.append(int(indice_variant))
-
-		var equipment_state: Dictionary = {}
-		var equipment_variant: Variant = inventario.get("equipo")
-
-		if equipment_variant is Dictionary:
-			equipment_state = (
-				equipment_variant as Dictionary
-			).duplicate(true)
+		var estado_inventario: Dictionary = {}
+		if inventario.has_method("serializar_estado_partida"):
+			var estado_variant: Variant = inventario.call("serializar_estado_partida")
+			if estado_variant is Dictionary:
+				estado_inventario = (estado_variant as Dictionary).duplicate(true)
 
 		var rol_partida := "explorador"
 		var admin_variant: Variant = flags.get("personaje_admin", {})
@@ -515,15 +492,8 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 				(admin_variant as Dictionary).get("rol", "explorador")
 			).to_lower()
 
-		flags["inventario_estado"] = {
-			"items": inventory_items,
-			"hotbar_indices": hotbar,
-			"indice_hotbar_activo": int(
-				inventario.get("indice_hotbar_activo")
-			),
-			"equipo": equipment_state,
-			"rol_partida": rol_partida
-		}
+		estado_inventario["rol_partida"] = rol_partida
+		flags["inventario_estado"] = estado_inventario
 
 	_capturar_estado_misiones()
 
