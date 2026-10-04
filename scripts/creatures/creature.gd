@@ -32,12 +32,46 @@ var limites_chunk: Rect2 = Rect2()
 var entorno: String = "tierra"
 
 var _movimiento: CreatureMovement = null
+var _player_dependency: Node = null
+var _entity_manager_dependency: Node = null
+var _inventory_dependency: Node = null
+var _combat_system_dependency: Node = null
+var _dialogue_system_dependency: Node = null
+var _mission_manager_dependency: Node = null
+var _effects_root: Node = null
 
 var _rng := RandomNumberGenerator.new()
 var _siguiendo_jugador: bool = false
 var _jugador_seguimiento: Node = null
 var _distancia_seguimiento: float = 24.0
 var _muerte_procesada: bool = false
+
+
+func configurar_dependencias(
+	jugador: Node,
+	entity_manager: Node,
+	inventario: Node,
+	combat_system: Node,
+	dialogue_system: Node,
+	mission_manager: Node,
+	effects_root: Node
+) -> void:
+	_player_dependency = jugador
+	_entity_manager_dependency = entity_manager
+	_inventory_dependency = inventario
+	_combat_system_dependency = combat_system
+	_dialogue_system_dependency = dialogue_system
+	_mission_manager_dependency = mission_manager
+	_effects_root = effects_root
+
+	var ai := $AIController as CreatureAI
+	if ai != null:
+		ai.configurar_dependencias(
+			jugador,
+			entity_manager,
+			inventario,
+			combat_system
+		)
 
 
 func _ready() -> void:
@@ -375,9 +409,8 @@ func crear_rastro_teleport(
 	duracion: float,
 	puntos: int
 ) -> void:
-	var escena := get_tree().current_scene
-
-	if escena == null:
+	var raiz_efectos := _effects_root
+	if raiz_efectos == null or not is_instance_valid(raiz_efectos):
 		return
 
 	var script := load(
@@ -389,7 +422,7 @@ func crear_rastro_teleport(
 
 	var rastro := Line2D.new()
 	rastro.set_script(script)
-	escena.add_child(rastro)
+	raiz_efectos.add_child(rastro)
 
 	rastro.call(
 		"configurar",
@@ -602,17 +635,11 @@ func interact(
 	if not es_dialogable():
 		return
 
-	var dialogue_system := get_tree().get_first_node_in_group(
-		"dialogue_system"
-	)
-
-	if dialogue_system != null and dialogue_system.has_method(
-		"abrir_desde"
-	):
-		dialogue_system.call(
-			"abrir_desde",
-			self
-		)
+	var dialogue_system := _dialogue_system_dependency
+	if dialogue_system == null or not is_instance_valid(dialogue_system):
+		return
+	if dialogue_system.has_method("abrir_desde"):
+		dialogue_system.call("abrir_desde", self)
 
 
 func _die() -> void:
@@ -623,8 +650,8 @@ func _die() -> void:
 	is_alive = false
 
 	if not criatura_id.is_empty():
-		var mission_manager: Node = get_node_or_null("/root/MissionManager")
-		if mission_manager != null:
+		var mission_manager := _mission_manager_dependency
+		if mission_manager != null and is_instance_valid(mission_manager):
 			mission_manager.call("registrar_muerte", criatura_id, 1)
 		GarliaWorldItems.generar_drops_criatura(
 			criatura_id,
