@@ -75,7 +75,10 @@ func _al_request(request_id: int, resultado: int, codigo_http: int, _cabeceras: 
 			else:
 				iums_cargados.emit([])
 		"procesos":
-			procesos_cargados.emit(datos if datos is Array else [])
+			if datos is Array:
+				procesos_cargados.emit(datos)
+			else:
+				procesos_cargados.emit([])
 		"simular":
 			var proceso := _extraer_proceso(datos)
 			if proceso.is_empty():
