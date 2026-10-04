@@ -157,41 +157,12 @@ func abrir_selector_partidas() -> void:
 
 func obtener_partidas() -> Array[Dictionary]:
 	var resultado: Array[Dictionary] = []
-	var directorio := DirAccess.open(SAVE_DIRECTORY)
 
-	if directorio == null:
-		return resultado
-
-	directorio.list_dir_begin()
-
-	while true:
-		var nombre_archivo := directorio.get_next()
-
-		if nombre_archivo.is_empty():
-			break
-
-		if directorio.current_is_dir():
-			continue
-
-		if not nombre_archivo.ends_with(
-			".json"
-		):
-			continue
-
-		var id := nombre_archivo.trim_suffix(
-			".json"
-		)
-
+	for id in save_repository.listar_ids_partidas():
 		var datos := _leer_archivo_partida(id)
-
 		if datos.is_empty():
 			continue
-
-		resultado.append(
-			_extraer_metadata_partida(datos)
-		)
-
-	directorio.list_dir_end()
+		resultado.append(_extraer_metadata_partida(datos))
 
 	resultado.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
@@ -199,7 +170,6 @@ func obtener_partidas() -> Array[Dictionary]:
 				b.get("actualizado_en", "")
 			)
 	)
-
 	return resultado
 
 
@@ -327,25 +297,7 @@ func iniciar_partida(id: String) -> bool:
 
 
 func eliminar_partida(id: String) -> bool:
-	if id.is_empty():
-		return false
-
-	var ruta := _ruta_partida(id)
-
-	if not FileAccess.file_exists(ruta):
-		return false
-
-	var error := DirAccess.remove_absolute(
-		ProjectSettings.globalize_path(ruta)
-	)
-
-	if error != OK:
-		print(
-			"GameState: no se pudo eliminar partida → ",
-			id,
-			" error=",
-			error
-		)
+	if not save_repository.eliminar_partida(id):
 		return false
 
 	if active_save_id == id:
