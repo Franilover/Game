@@ -721,7 +721,6 @@ func _spawn_props_in_chunk(
 
 		if prop_node is WorldProp:
 			var world_prop := prop_node as WorldProp
-			world_prop.configurar_desde_game_data(elegido)
 			world_prop.configurar_chunk(chunk_coord, limite_chunk)
 
 		creados.append(prop_node)
