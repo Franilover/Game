@@ -465,9 +465,14 @@ func _actualizar_sprite(asset_path: String) -> void:
 
 
 func _actualizar_profundidad() -> void:
-	# La profundidad usa el punto donde el prop toca el suelo,
-	# no el origen del nodo. Así los props altos pueden pasar
-	# por delante/detrás del jugador de forma natural.
+	# Los props viven bajo Entities, mientras el terreno usa capas
+	# TileMapDual internas. Usar z relativo podía sumar la profundidad
+	# al z del contenedor y dejar el resultado sujeto a la jerarquía.
+	# La profundidad del prop se establece en coordenadas absolutas.
+	z_as_relative = false
+
+	# El punto de apoyo es la base del sprite, no su centro. Así los
+	# objetos altos conservan una profundidad coherente con el jugador.
 	var profundidad_y := global_position.y
 	var sprite := get_node_or_null("Sprite") as Sprite2D
 
@@ -479,17 +484,12 @@ func _actualizar_profundidad() -> void:
 			* absf(sprite.scale.y)
 		)
 
-	# Permite ajustar el punto de apoyo de un prop concreto
-	# sin modificar su sprite.
-	profundidad_y += float(
-		datos.get("profundidad_offset_y", 0.0)
-	)
+	profundidad_y += float(datos.get("profundidad_offset_y", 0.0))
 
-	z_index = clampi(
-		1000 + int(profundidad_y),
-		-4096,
-		4096
-	)
+	# El margen positivo mantiene los props por delante del terreno,
+	# cuyas capas usan z_index negativo; el componente Y conserva
+	# el orden entre props según su punto de apoyo.
+	z_index = clampi(1000 + int(profundidad_y), 1, 4096)
 
 
 func _ready() -> void:
