@@ -756,7 +756,7 @@ func _ejecutar_comando(comando: String) -> void:
 
 
 func _puede_usar_capacidad(clave: String) -> bool:
-	var datos_variant: Variant = GameState.flags.get("personaje_admin", {})
+	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
 	if not datos_variant is Dictionary:
 		_agregar_linea("[color=#d88]Necesitas rol Admin para usar este comando.[/color]")
 		return false
@@ -975,10 +975,10 @@ func _comando_player(argumentos: String) -> void:
 				"modo_dios"
 			]
 
-		GameState.flags["personaje_admin"] = {
+		GameState.establecer_configuracion_personaje_admin({
 			"rol": rol,
 			"capacidades": capacidades
-		}
+		})
 		GameState.guardar_partida()
 
 		_agregar_linea(
