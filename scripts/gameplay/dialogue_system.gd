@@ -150,7 +150,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	_lineas = lineas
 	_acciones.clear()
 
-	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
+	if is_instance_valid(_fuente):
 		var personaje_id_social := _fuente.get_personaje_game_id().strip_edges()
 		if not personaje_id_social.is_empty():
 			var social: RelationshipSystem = relationship_system
@@ -244,8 +244,7 @@ func _mostrar_linea_actual() -> void:
 
 	var hablante := str(linea.get("hablante", "")).strip_edges()
 	if hablante.is_empty() and is_instance_valid(_fuente):
-		if _fuente.has_method("get_nombre"):
-			hablante = str(_fuente.call("get_nombre"))
+		hablante = _fuente.get_nombre()
 		else:
 			hablante = _fuente.name
 
