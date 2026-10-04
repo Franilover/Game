@@ -203,7 +203,7 @@ func _usar_pala() -> bool:
 
 
 func _consumir_durabilidad_herramienta() -> void:
-	var inventario: Node = inventory
+	var inventario: Node = self.inventory
 	if inventario == null:
 		return
 	if not inventario.has_method("consumir_durabilidad_objeto_activo"):
@@ -310,7 +310,7 @@ func usar_objeto_activo() -> void:
 
 
 func _obtener_arma_equipada() -> Dictionary:
-	var inventario: Node = inventory
+	var inventario: Node = self.inventory
 
 	if inventario == null:
 		return {}
