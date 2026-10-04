@@ -63,7 +63,7 @@ func _actualizar() -> void:
 		estado.text = "Las relaciones se cargarán desde Supabase."
 		return
 
-	var reglas_variant: Variant = sistema.get("_reglas")
+	var reglas_variant: Variant = sistema.call("obtener_reglas_sociales")
 	if not reglas_variant is Dictionary:
 		estado.text = "No hay relaciones descubiertas."
 		return
