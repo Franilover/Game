@@ -16,9 +16,14 @@ signal sala_llena
 signal error_sala(mensaje: String)
 
 
+var _auth: Node = null
 var _codigo_activo: String = ""
 var _request: HTTPRequest = null
 var _request_busy: bool = false
+
+
+func configurar_dependencias(auth: Node) -> void:
+	_auth = auth
 
 
 func _ready() -> void:
@@ -45,7 +50,7 @@ func generar_codigo() -> String:
 
 
 func publicar_sala(ip: String, puerto: int = 7777) -> void:
-	if not GarliaAuth.esta_autenticado():
+	if not _auth != null and _auth.esta_autenticado():
 		error_sala.emit("Debes iniciar sesión para crear una sala.")
 		return
 
@@ -56,12 +61,12 @@ func publicar_sala(ip: String, puerto: int = 7777) -> void:
 		"codigo": codigo,
 		"ip": ip,
 		"puerto": puerto,
-		"host_id": GarliaAuth.obtener_user_id(),
-		"host_username": GarliaAuth.obtener_username()
+		"host_id": _auth.obtener_user_id(),
+		"host_username": _auth.obtener_username()
 	}
 
 	var resultado: Variant = await _hacer_peticion(
-		GarliaAuth.SUPABASE_URL + TABLA,
+		_auth.SUPABASE_URL + TABLA,
 		HTTPClient.METHOD_POST,
 		_headers_auth(),
 		JSON.stringify(body)
@@ -88,14 +93,14 @@ func publicar_sala(ip: String, puerto: int = 7777) -> void:
 
 
 func buscar_sala(codigo: String) -> void:
-	if not GarliaAuth.esta_autenticado():
+	if not _auth != null and _auth.esta_autenticado():
 		error_sala.emit("Debes iniciar sesión para unirte a una sala.")
 		return
 
 	var codigo_limpio: String = codigo.strip_edges().to_upper()
 
 	var url: String = (
-		GarliaAuth.SUPABASE_URL
+		_auth.SUPABASE_URL
 		+ TABLA
 		+ "?select=ip,puerto,jugadores_actuales,max_jugadores"
 		+ "&codigo=eq." + codigo_limpio
@@ -150,7 +155,7 @@ func cerrar_sala() -> void:
 		return
 
 	var url: String = (
-		GarliaAuth.SUPABASE_URL
+		_auth.SUPABASE_URL
 		+ TABLA
 		+ "?codigo=eq." + _codigo_activo
 	)
@@ -179,8 +184,8 @@ func obtener_codigo_activo() -> String:
 func _headers_auth() -> PackedStringArray:
 	return PackedStringArray([
 		"Content-Type: application/json",
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Authorization: Bearer " + GarliaAuth.access_token,
+		"apikey: " + _auth.SUPABASE_PUBLISHABLE_KEY,
+		"Authorization: Bearer " + _auth.access_token,
 		"Prefer: return=minimal"
 	])
 
