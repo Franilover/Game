@@ -2,12 +2,6 @@ extends Node
 class_name WorldEntitySpawner
 
 
-
-const CRIATURA_FLAXIS := 1 << 0
-const CRIATURA_ZLISH := 1 << 1
-const CRIATURA_LIGNIANOS := 1 << 2
-
-
 @export_category("Aparición de criaturas")
 @export var max_creatures_per_chunk: int = 3
 
@@ -15,18 +9,21 @@ var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
 var _entity_factory: WorldEntityFactory = null
 var _spawn_rules: WorldSpawnRules = null
+var _world_data: WorldDataService = null
 
 
 func configurar(
 	terrain: WorldTerrain,
 	entity_manager: WorldEntityManager = null,
 	entity_factory: WorldEntityFactory = null,
-	spawn_rules: WorldSpawnRules = null
+	spawn_rules: WorldSpawnRules = null,
+	world_data: WorldDataService = null
 ) -> void:
 	_terrain = terrain
 	_entity_manager = entity_manager
 	_entity_factory = entity_factory
 	_spawn_rules = spawn_rules
+	_world_data = world_data
 
 	if _entity_manager == null:
 		push_error("WorldEntitySpawner: Entity manager inválido.")
@@ -296,7 +293,7 @@ func summon_criatura(
 		}
 
 	var personaje_game: Dictionary = (
-		WorldData.buscar_personaje_game_por_nombre(
+		_world_data.buscar_personaje_game_por_nombre(
 			nombre_solicitado
 		)
 	)
