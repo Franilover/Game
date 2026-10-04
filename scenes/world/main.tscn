@@ -28,6 +28,10 @@ script = ExtResource("3_main")
 
 [node name="GameCamera" type="Camera2D" parent="."]
 
+[node name="CombatProjectiles" type="Node2D" parent="."]
+z_as_relative = false
+z_index = 90
+
 [node name="World" type="Node2D" parent="." unique_id=334444401]
 
 [node name="WorldGenerator" type="Node2D" parent="World" unique_id=896457846]
