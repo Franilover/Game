@@ -673,7 +673,6 @@ func _on_character_cancelled() -> void:
 	print("StartMenu: creación de personaje cancelada.")
 
 func _on_character_confirmed(config: Dictionary, action: String) -> void:
-	GameState.flags["personaje"] = config
 	match action:
 		"aventura":
 			_iniciar_aventura_con_personaje()
