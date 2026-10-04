@@ -8,6 +8,7 @@ const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
 @onready var menu_button: Button = $Panel/Margin/Column/MenuButton
 
 var _player: Node = null
+var _inventory: Node = null
 var _abierto: bool = false
 var _esperando: bool = false
 
@@ -25,18 +26,12 @@ func _ready() -> void:
 	reaparecer_button.pressed.connect(_reaparecer)
 	menu_button.pressed.connect(_volver_al_menu)
 
-	_buscar_player()
 
 
-func _buscar_player() -> void:
-	var jugador := get_tree().get_first_node_in_group("player")
-
-	if jugador == null or not is_instance_valid(jugador):
-		return
-
+func configurar(jugador: Node, inventario: Node) -> void:
 	_player = jugador
-
-	if _player.has_signal("died"):
+	_inventory = inventario
+	if _player != null and is_instance_valid(_player) and _player.has_signal("died"):
 		if not _player.died.is_connected(_al_morir):
 			_player.died.connect(_al_morir)
 
@@ -45,7 +40,7 @@ func _al_morir() -> void:
 	if _abierto or _esperando:
 		return
 
-	var inventario := get_tree().get_first_node_in_group("inventory")
+	var inventario := _inventory
 
 	if inventario != null and is_instance_valid(inventario):
 		if inventario.has_method("cerrar"):
@@ -77,7 +72,7 @@ func _reaparecer() -> void:
 	if not _abierto:
 		return
 
-	var inventario := get_tree().get_first_node_in_group("inventory")
+	var inventario := _inventory
 
 	if inventario != null and is_instance_valid(inventario):
 		if inventario.has_method("limpiar_inventario"):
