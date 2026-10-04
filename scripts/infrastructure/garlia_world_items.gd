@@ -24,7 +24,6 @@ var _cola_drops: Array[Dictionary] = []
 
 var catalogo: Array[Dictionary] = []
 
-var _escena_actual: Node = null
 var _objetos_generados_en_escena: bool = false
 
 var _posicion_drops_pendiente: Vector2 = Vector2.ZERO
@@ -45,7 +44,7 @@ func configurar_dependencias(jugador: Node, inventario: Node, entities_root: Nod
 	_mission_manager = mission_manager
 	if root_cambio:
 		_objetos_generados_en_escena = false
-		_escena_actual = entities_root
+		_world_items.clear()
 
 
 func _ready() -> void:
