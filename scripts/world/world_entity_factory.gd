@@ -78,3 +78,13 @@ func crear_prop(data: Dictionary) -> WorldProp:
 	node.configurar_dependencias(_world_context, _inventory)
 	node.configurar_desde_game_data(data)
 	return node
+
+
+func configurar_relaciones_ecologicas(relaciones_ecologicas: Array) -> void:
+	_relaciones_ecologicas = relaciones_ecologicas.duplicate(true)
+	if _entity_manager == null or not is_instance_valid(_entity_manager):
+		return
+
+	for entidad in _entity_manager.obtener_entidades_activas():
+		if entidad is Creature:
+			(entidad as Creature).configurar_relaciones_ecologicas(_relaciones_ecologicas)
