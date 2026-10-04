@@ -202,3 +202,11 @@ La UI conserva responsabilidades de presentación y coordinación visual: actual
 La hotbar continúa siendo selección independiente del equipamiento. Equipar un objeto requiere una operación explícita de equipamiento; seleccionar una posición de hotbar no cambia el equipo.
 
 El Player también es una dependencia inyectada en la UI de inventario para usos de objetos y pestañas administrativas; ya no se descubre mediante grupos.
+
+
+## Cuarta etapa — Combat ↔ Equipment
+
+CombatSystem ya consume el arma desde InventoryController.obtener_objeto_equipado().
+La selección de hotbar ya no define el arma utilizada por el ataque primario.
+La durabilidad de las herramientas usadas por combate se descuenta desde el equipamiento.
+El slot actual de combate es mano_secundaria, coincidiendo con el slot de equipamiento existente en la UI.
