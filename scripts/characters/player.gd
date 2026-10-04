@@ -55,15 +55,6 @@ var facing: Vector2 = Vector2.DOWN
 var stamina: float = 0.0
 var stamina_controller := PlayerStaminaController.new()
 
-var _eterium_reglas: Dictionary = {}
-var _eterium_organismos: Dictionary = {}
-var _eterium_runtime_ready: bool = false
-var _especie_eterium_game: Dictionary = {}
-var _especie_eterium_game_ready: bool = false
-var _eterium_recupera: bool = true
-var _eterium_heal_timer: float = 0.0
-var _eterium_recovery_accumulator: float = 0.0
-var _eterium_sprint_cost_accumulator: float = 0.0
 var _world_generator_ref: Node = null
 var _admin_console_ref: Node = null
 var _exploration_check_timer: float = 0.0
@@ -555,99 +546,6 @@ func _aplicar_eterium_runtime(
 		" | runtime=",
 		max_mana
 	)
-
-
-func _eterium_escala_runtime() -> float:
-	return maxf(
-		float(
-			_eterium_reglas.get(
-				"escala_runtime",
-				0.0
-			)
-		),
-		0.001
-	)
-
-
-func _eterium_carrera_multiplicador() -> float:
-	return eterium_runtime.multiplicador_carrera()
-
-
-func _procesar_curacion_eterium(delta: float) -> void:
-	velocity = Vector2.ZERO
-
-	if state != State.IDLE:
-		state = State.IDLE
-		_update_visual()
-
-	if not _eterium_runtime_ready:
-		_eterium_heal_timer = 0.0
-		return
-
-	if health >= max_health:
-		_eterium_heal_timer = 0.0
-		return
-
-	var escala := _eterium_escala_runtime()
-	var costo_s := maxf(
-		float(
-			_eterium_reglas.get(
-				"curacion_costo_s_por_tick",
-				0.0
-			)
-		),
-		0.0
-	)
-	var intervalo_s := maxf(
-		float(
-			_eterium_reglas.get(
-				"curacion_intervalo_s",
-				0.0
-			)
-		),
-		0.01
-	)
-	var curacion_por_s := maxf(
-		float(
-			_eterium_reglas.get(
-				"curacion_vida_por_s",
-				0.0
-			)
-		),
-		0.0
-	)
-
-	var costo_runtime := maxi(
-		1,
-		roundi(costo_s * escala)
-	)
-
-	if mana < costo_runtime:
-		_eterium_heal_timer = 0.0
-		return
-
-	_eterium_recovery_accumulator = 0.0
-	_eterium_heal_timer -= delta
-
-	if _eterium_heal_timer > 0.0:
-		return
-
-	_eterium_heal_timer = intervalo_s
-
-	var curacion := maxi(
-		1,
-		roundi(costo_s * curacion_por_s)
-	)
-	curacion = mini(
-		curacion,
-		max_health - health
-	)
-
-	if curacion <= 0:
-		return
-
-	heal(curacion)
-	_gastar_eterium(costo_runtime)
 
 
 func absorber_eterium_de_criatura(criatura: Node) -> int:
