@@ -4,6 +4,7 @@ class_name WorldSpawnRules
 ## Reglas puras de selección de entidades.
 ## No instancia nodos y no administra su ciclo de vida.
 
+var _terrain: WorldTerrain
 
 func configurar(terrain: WorldTerrain) -> void:
 	_terrain = terrain
