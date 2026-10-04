@@ -484,11 +484,10 @@ func summon_criatura(
 					)
 				)
 
-	var entities: Node = _entities_root
-	if entities == null or not is_instance_valid(entities):
+	if _entity_manager == null:
 		return {
 			"ok": false,
-			"mensaje": "Entity root no configurado."
+			"mensaje": "Entity manager no configurado."
 		}
 
 	var criatura: Node = null
@@ -506,11 +505,8 @@ func summon_criatura(
 			)
 		}
 
-	if _entity_manager != null:
-		if not _entity_manager.registrar(criatura, Vector2i.ZERO):
-			return {"ok": false, "mensaje": "No se pudo registrar la criatura."}
-	else:
-		entities.add_child(criatura)
+	if not _entity_manager.registrar_global(criatura):
+		return {"ok": false, "mensaje": "No se pudo registrar la criatura."}
 
 	criatura.global_position = (
 		posicion
