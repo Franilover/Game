@@ -898,3 +898,186 @@ func robar_objeto_equipado(clave: String) -> Dictionary:
 	var objeto: Dictionary = obtener_objeto_equipado(clave)
 
 	if objeto.is_empty():
+		return {}
+
+	var objeto_retirado := inventory_controller.robar_objeto_equipado(clave)
+	if objeto_retirado.is_empty():
+		return {}
+	objeto = objeto_retirado
+
+	for child in equipment_slots.get_children():
+		if not child.has_method("obtener_clave"):
+			continue
+
+		var clave_slot: String = str(
+			child.call("obtener_clave")
+		)
+
+		if clave_slot != clave:
+			continue
+
+		if child.has_method("limpiar_objeto"):
+			child.call("limpiar_objeto")
+
+		break
+
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+
+	print(
+		"Inventory: objeto robado → ",
+		str(objeto.get("nombre", "Objeto"))
+	)
+
+	return objeto
+
+
+func establecer_equipo(nuevo_equipo: Dictionary) -> void:
+	equipo.clear()
+
+	for clave_variant in nuevo_equipo.keys():
+		var clave := str(clave_variant)
+		var objeto_variant: Variant = nuevo_equipo.get(clave_variant, {})
+
+		if objeto_variant is Dictionary:
+			var objeto := objeto_variant as Dictionary
+
+			if not objeto.is_empty():
+				equipo[clave] = objeto.duplicate(true)
+
+	for child in equipment_slots.get_children():
+		if not child.has_method("obtener_clave"):
+			continue
+
+		if child.has_method("limpiar_objeto"):
+			child.call("limpiar_objeto")
+
+		var clave_slot := str(child.call("obtener_clave"))
+
+		if equipo.has(clave_slot) and child.has_method("configurar_objeto"):
+			child.call(
+				"configurar_objeto",
+				equipo[clave_slot]
+			)
+
+	if has_method("actualizar"):
+		actualizar()
+
+	if has_signal("inventory_changed"):
+		inventory_changed.emit()
+
+	if has_method("_emitir_objeto_activo"):
+		_emitir_objeto_activo()
+
+
+func obtener_objeto(indice: int) -> Dictionary:
+	if indice < 0 or indice >= items.size():
+		return {}
+
+	if items[indice].is_empty():
+		return {}
+
+	return items[indice].duplicate(true)
+
+
+func esta_ocupado(indice: int) -> bool:
+	if indice < 0 or indice >= items.size():
+		return false
+
+	return not items[indice].is_empty()
+
+
+func obtener_objetos() -> Array[Dictionary]:
+	return items.duplicate(true)
+
+
+func obtener_objeto_seleccionado() -> Dictionary:
+	return objeto_seleccionado.duplicate(true)
+
+
+func obtener_indice_seleccionado() -> int:
+	return indice_seleccionado
+
+
+func obtener_objeto_hotbar(indice_hotbar: int) -> Dictionary:
+	if indice_hotbar < 0:
+		return {}
+
+	if indice_hotbar >= hotbar_indices.size():
+		return {}
+
+	var indice_inventario := hotbar_indices[indice_hotbar]
+
+	if indice_inventario < 0:
+		return {}
+
+	return obtener_objeto(indice_inventario)
+
+
+func obtener_indice_inventario_hotbar(
+	indice_hotbar: int
+) -> int:
+	if indice_hotbar < 0:
+		return -1
+
+	if indice_hotbar >= hotbar_indices.size():
+		return -1
+
+	return hotbar_indices[indice_hotbar]
+
+
+func establecer_hotbar_slot(indice_hotbar: int, indice_inventario: int) -> bool:
+	var resultado: bool = inventory_controller.establecer_hotbar_slot(
+		indice_hotbar,
+		indice_inventario
+	)
+	if resultado:
+		inventory_changed.emit()
+		_emitir_objeto_activo()
+	return resultado
+
+func seleccionar_hotbar(indice_hotbar: int) -> void:
+	if indice_hotbar < 0 or indice_hotbar >= HOTBAR_SLOT_COUNT:
+		return
+
+	indice_hotbar_activo = indice_hotbar
+	inventory_controller.seleccionar_hotbar(indice_hotbar)
+
+	# La hotbar tiene su propia selección.
+	# NO seleccionamos el slot correspondiente del inventario.
+	_emitir_objeto_activo()
+
+
+func obtener_objeto_activo() -> Dictionary:
+	var indice_inventario := obtener_indice_inventario_hotbar(
+		indice_hotbar_activo
+	)
+
+	if indice_inventario < 0:
+		return {}
+
+	return obtener_objeto(indice_inventario)
+
+
+func obtener_indice_hotbar_activo() -> int:
+	return indice_hotbar_activo
+
+
+
+func consumir_durabilidad_objeto_activo() -> bool:
+	var indice_inventario: int = obtener_indice_inventario_hotbar(indice_hotbar_activo)
+	if indice_inventario < 0:
+		return false
+	var resultado: bool = inventory_controller.consumir_durabilidad(indice_inventario)
+	if not resultado:
+		return false
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+	return true
+
+func _emitir_objeto_activo() -> void:
+	active_item_changed.emit(
+		obtener_objeto_activo()
+	)
