@@ -67,11 +67,7 @@ var _admin_console_ref: Node = null
 var _exploration_check_timer: float = 0.0
 
 
-var _jump_time: float = 0.0
-var _jump_cooldown_timer: float = 0.0
 
-var _dash_time: float = 0.0
-var _dash_cooldown_timer: float = 0.0
 
 var _action_direction: Vector2 = Vector2.DOWN
 var _base_visual_position: Vector2 = Vector2.ZERO
@@ -125,6 +121,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_actualizar_cooldowns(delta)
+	locomotion.avanzar_accion(delta)
 	_exploration_check_timer -= delta
 	if _exploration_check_timer <= 0.0:
 		_exploration_check_timer = 0.08
@@ -494,51 +491,17 @@ func _iniciar_jump() -> void:
 
 
 func _procesar_jump(delta: float) -> void:
-	var duracion: float = maxf(
-		jump_duration,
-		0.001
-	)
-
-	var progreso: float = (
-		1.0
-		- (_jump_time / duracion)
-	)
-
-	_jump_time -= delta
-
-	var velocidad: float = (
-		jump_distance
-		/ duracion
-	)
-
+	var duracion := maxf(jump_duration, 0.001)
+	var progreso := locomotion.obtener_progreso_salto(duracion)
+	var velocidad := locomotion.obtener_velocidad_accion(duracion, jump_distance)
 	velocity = _action_direction * velocidad
-
 	move_and_slide()
-
-	var altura: float = (
-		sin(progreso * PI)
-		* 16.0
-	)
-
-	visual.position = (
-		_base_visual_position
-		+ Vector2(
-			0.0,
-			-altura
-		)
-	)
-
-	if _jump_time <= 0.0:
-		_jump_time = 0.0
-
+	var altura := sin(progreso * PI) * 16.0
+	visual.position = _base_visual_position + Vector2(0.0, -altura)
+	if not locomotion.procesando_salto():
 		velocity = Vector2.ZERO
-
-		visual.position = (
-			_base_visual_position
-		)
-
+		visual.position = _base_visual_position
 		state = State.IDLE
-
 		_update_visual()
 
 
@@ -559,29 +522,12 @@ func _iniciar_dash() -> void:
 
 
 func _procesar_dash(delta: float) -> void:
-	var duracion: float = maxf(
-		dash_duration,
-		0.001
-	)
-
-	_dash_time -= delta
-
-	var velocidad: float = (
-		dash_distance
-		/ duracion
-	)
-
+	var velocidad := locomotion.obtener_velocidad_accion(dash_duration, dash_distance)
 	velocity = _action_direction * velocidad
-
 	move_and_slide()
-
-	if _dash_time <= 0.0:
-		_dash_time = 0.0
-
+	if not locomotion.procesando_dash():
 		velocity = Vector2.ZERO
-
 		state = State.IDLE
-
 		_update_visual()
 
 
