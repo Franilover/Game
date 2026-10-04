@@ -1,4 +1,6 @@
 extends Node
+class_name RelationshipSystem
+
 ## Relaciones sociales de la partida.
 ##
 ## Supabase define la personalidad y los valores iniciales.
