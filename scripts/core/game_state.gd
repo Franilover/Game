@@ -169,7 +169,7 @@ func iniciar_partida(id: String) -> bool:
 
 	var metadata := _extraer_metadata_partida(datos)
 
-	world_state.world_state.world_seed_valida = false
+	world_state.world_seed_valida = false
 	world_state.world_seed = 0
 
 	var mundo_variant: Variant = datos.get(
@@ -181,13 +181,13 @@ func iniciar_partida(id: String) -> bool:
 		var mundo: Dictionary = mundo_variant as Dictionary
 		if mundo.has("semilla"):
 			world_state.world_seed = int(mundo.get("semilla", 0))
-			world_state.world_state.world_seed_valida = true
+			world_state.world_seed_valida = true
 
-	if not world_state.world_state.world_seed_valida:
+	if not world_state.world_seed_valida:
 		# Migración de partidas creadas antes del sistema de semillas.
 		# La semilla se crea una sola vez y se persiste inmediatamente.
 		world_state.world_seed = _generar_semilla_mundo()
-		world_state.world_state.world_seed_valida = true
+		world_state.world_seed_valida = true
 		datos["mundo"] = {
 			"semilla": world_state.world_seed,
 			"generador_version": 1
@@ -280,7 +280,7 @@ func guardar_partida() -> bool:
 	if jugador.get("is_alive") == false:
 		return false
 
-	if get_tree().world_state.current_scene == null:
+	if get_tree().current_scene == null:
 		return false
 
 	_guardado_en_curso = true
@@ -886,7 +886,7 @@ func esta_explorado(tile: Vector2i) -> bool:
 # ============================================================
 
 func _revisar_escena_actual() -> void:
-	var escena := get_tree().world_state.current_scene
+	var escena := get_tree().current_scene
 	if escena == null:
 		return
 
@@ -1067,7 +1067,7 @@ func _abrir_escena_principal() -> void:
 
 func _al_cambiar_escena() -> void:
 	_partida_aplicada_en_escena = false
-	var escena := get_tree().world_state.current_scene
+	var escena := get_tree().current_scene
 	if escena != null:
 		world_state.current_scene = str(escena.scene_file_path)
 	call_deferred("_revisar_escena_actual")
@@ -1122,7 +1122,7 @@ func _extraer_metadata_partida(
 
 
 func tiene_semilla_mundo() -> bool:
-	return world_state.world_state.world_seed_valida
+	return world_state.world_seed_valida
 
 
 func obtener_semilla_mundo() -> int:
@@ -1131,7 +1131,7 @@ func obtener_semilla_mundo() -> int:
 
 func establecer_semilla_mundo(semilla: int) -> void:
 	world_state.world_seed = semilla
-	world_state.world_state.world_seed_valida = true
+	world_state.world_seed_valida = true
 
 
 func _generar_semilla_mundo() -> int:
