@@ -1,0 +1,100 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://scripts/world/reino_torres.gd" id="2_reino"]
+
+[sub_resource type="RectangleShape2D" id="ShapeWall"]
+size = Vector2(32, 520)
+
+[sub_resource type="RectangleShape2D" id="ShapeWallH"]
+size = Vector2(960, 32)
+
+[sub_resource type="RectangleShape2D" id="ShapeExit"]
+size = Vector2(48, 180)
+
+[sub_resource type="StyleBoxFlat" id="PanelStyle"]
+bg_color = Color(0.08, 0.055, 0.035, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.5, 0.3, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="ReinoTorres" type="Node2D"]
+script = ExtResource("2_reino")
+
+[node name="Ground" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-480, -260, 480, -260, 480, 260, -480, 260)
+color = Color(0.16, 0.22, 0.14, 1)
+
+[node name="Square" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-180, -90, 180, -90, 180, 90, -180, 90)
+color = Color(0.32, 0.27, 0.2, 1)
+
+[node name="Castle" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-70, -210, 70, -210, 70, -90, -70, -90)
+color = Color(0.34, 0.32, 0.28, 1)
+
+[node name="NorthTower" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-110, -235, -60, -235, -60, -150, -110, -150)
+color = Color(0.42, 0.39, 0.32, 1)
+
+[node name="SouthTower" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(60, -235, 110, -235, 110, -150, 60, -150)
+color = Color(0.42, 0.39, 0.32, 1)
+
+[node name="CastleLabel" type="Label" parent="."]
+position = Vector2(-58, -185)
+text = "TORRES"
+theme_override_colors/font_color = Color(0.9, 0.8, 0.6, 1)
+theme_override_font_sizes/font_size = 16
+
+[node name="Title" type="Label" parent="."]
+position = Vector2(-150, -25)
+text = "REINO TORRES"
+theme_override_colors/font_color = Color(0.92, 0.84, 0.67, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="ExitLabel" type="Label" parent="."]
+position = Vector2(390, -35)
+text = "SALIDA\nMUNDO ABIERTO"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.92, 0.84, 0.67, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="Exit" type="Area2D" parent="."]
+position = Vector2(456, 0)
+monitoring = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Exit"]
+shape = SubResource("ShapeExit")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(0, 120)
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(0, 120)
+zoom = Vector2(2, 2)
+position_smoothing_enabled = false
+
+[node name="Walls" type="StaticBody2D" parent="."]
+
+[node name="Left" type="CollisionShape2D" parent="Walls"]
+position = Vector2(-496, 0)
+shape = SubResource("ShapeWall")
+
+[node name="Right" type="CollisionShape2D" parent="Walls"]
+position = Vector2(496, 0)
+shape = SubResource("ShapeWall")
+
+[node name="Top" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, -276)
+shape = SubResource("ShapeWallH")
+
+[node name="Bottom" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, 276)
+shape = SubResource("ShapeWallH")
