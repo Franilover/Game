@@ -1,6 +1,4 @@
 extends Node2D
-class_name CombatProjectile
-
 
 var direccion: Vector2 = Vector2.RIGHT
 var velocidad: float = 280.0
