@@ -364,7 +364,7 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 		var player_flags_variant: Variant = jugador.call("obtener_estado_ium")
 		if player_flags_variant is Dictionary:
 			world_state.flags["proceso_ium_equipado"] = (
-				player_world_state.flags_variant as Dictionary
+				player_flags_variant as Dictionary
 			).duplicate(true)
 
 
@@ -1114,7 +1114,7 @@ func _extraer_metadata_partida(
 		),
 		"play_time": float(
 			datos.get("estado", {}).get(
-				"world_state.elapsed_time",
+				"elapsed_time",
 				0.0
 			)
 		)
