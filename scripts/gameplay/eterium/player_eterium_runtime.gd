@@ -1,5 +1,5 @@
 extends RefCounted
-class_name PlayerEteriumRuntime
+class_name LegacyPlayerEteriumRuntime
 
 ## Runtime de Eterium del jugador.
 ## Recibe reglas canónicas ya cargadas y expone operaciones de gameplay.
