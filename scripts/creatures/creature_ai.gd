@@ -1401,7 +1401,7 @@ func _obtener_alcance_arma_combate(
 		)
 
 	return maxf(
-		distancia_contacto,
+		_obtener_distancia_contacto(),
 		64.0
 	)
 
@@ -1682,7 +1682,7 @@ func _procesar_saltando_lejos(delta: float) -> void:
 	if (
 		criatura.global_position.distance_to(
 			_objetivo_ataque
-		) <= distancia_contacto
+		) <= _obtener_distancia_contacto()
 		or _tiempo_accion <= 0.0
 	):
 		if perfil == Perfil.ZLISH:
@@ -1903,7 +1903,7 @@ func _obtener_velocidad_huida() -> float:
 		return zlish_velocidad_huida
 
 	return maxf(
-		velocidad_persecucion,
+		_obtener_velocidad_persecucion(),
 		_velocidad_normal
 	)
 
