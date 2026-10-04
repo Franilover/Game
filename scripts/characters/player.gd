@@ -311,6 +311,14 @@ func _tiene_stamina(cantidad: float) -> bool:
 func restaurar_stamina(cantidad: float) -> bool:
 	return stamina_controller.restaurar(cantidad)
 
+func restaurar_eterium(cantidad: float) -> bool:
+	var antes: int = mana
+	mana = mini(maxi(mana + roundi(cantidad), 0), max_mana)
+	if mana == antes:
+		return false
+	mana_changed.emit(mana, max_mana)
+	return true
+
 func _al_cambio_stamina(current: float, maximum: float) -> void:
 	stamina = current
 	stamina_changed.emit(current, maximum)
