@@ -108,83 +108,31 @@ Herramientas de desarrollo, administración y diagnóstico.
 
 ## 2. Estructura objetivo
 
+La arquitectura conceptual sigue separando Core, Infrastructure, State, Gameplay, World y Presentation/UI, pero la estructura física del proyecto no crea una carpeta para cada concepto pequeño.
+
 ```
 scripts/
+├── characters/
+├── creatures/
 ├── core/
-│   ├── input/
-│   │   └── gameplay_input_gate.gd
-│   ├── events/
-│   │   └── game_events.gd
-│   └── contracts/
-│
-├── infrastructure/
-│   ├── supabase/
-│   │   ├── auth/
-│   │   ├── realtime/
-│   │   ├── loaders/
-│   │   └── repositories/
-│   ├── persistence/
-│   └── multiplayer/
-│
-├── domain/
-│   ├── entities/
-│   │   ├── entity.gd
-│   │   ├── player.gd
-│   │   └── creature.gd
-│   ├── items/
-│   │   ├── item_data.gd
-│   │   ├── equipment_state.gd
-│   │   └── inventory_state.gd
-│   ├── world/
-│   │   └── world_data.gd
-│   └── eterium/
-│
+├── dev/
 ├── gameplay/
 │   ├── combat/
-│   │   ├── combat_controller.gd
-│   │   ├── combat_attack.gd
-│   │   ├── combat_attack_area.gd
-│   │   ├── combat_targeting.gd
-│   │   ├── combat_damage.gd
-│   │   ├── combat_projectile.gd
-│   │   └── combat_feedback.gd
 │   ├── inventory/
-│   │   ├── inventory_runtime.gd
-│   │   ├── inventory_equipment.gd
-│   │   ├── inventory_hotbar.gd
-│   │   └── inventory_controller.gd
-│   ├── interaction/
-│   ├── dialogue/
-│   ├── quests/
-│   ├── exploration/
-│   └── eterium/
-│
-├── world/
-│   ├── generation/
-│   ├── terrain/
-│   ├── biomes/
-│   ├── ecosystems/
-│   ├── habitats/
-│   ├── spawning/
-│   ├── decoration/
-│   ├── streaming/
-│   └── atmosphere/
-│
-├── presentation/
-│   ├── hud/
-│   ├── inventory/
-│   ├── dialogue/
-│   ├── combat/
-│   ├── menus/
-│   └── world/
-│
-└── dev/
-    ├── admin/
-    ├── debug/
-    └── editor/
+│   └── player/
+├── infrastructure/
+├── state/
+├── ui/
+└── world/
 ```
 
----
+Criterio: una carpeta física solo se mantiene cuando agrupa varias piezas relacionadas o representa un límite claro del sistema.
+
+La separación conceptual sigue siendo:
+
+Supabase → Infrastructure → State/World → Gameplay → Characters/Creatures → UI
+
+No usamos `globals`, `domain`, `systems` o `presentation` como cajones genéricos.
 
 ## 3. Entity
 
