@@ -38,6 +38,7 @@ var _guardado_rapido_pendiente: bool = false
 var _inventory: Node = null
 var _player: Node = null
 var _world_generator: Node = null
+var _world_atmosphere: Node = null
 
 signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
@@ -45,14 +46,23 @@ signal descubrimientos_mundo_actualizados
 signal descubrimiento_mundo(nivel: String, id: String)
 
 
-func configurar_dependencias(inventory: Node = null, player: Node = null, world_generator: Node = null) -> void:
+func configurar_dependencias(
+	inventory: Node = null,
+	player: Node = null,
+	world_generator: Node = null,
+	world_atmosphere: Node = null
+) -> void:
 	_inventory = inventory
 	_player = player
 	_world_generator = world_generator
+	_world_atmosphere = world_atmosphere
+
 	if active_save_id.is_empty():
 		return
+
 	_guardado_rapido_conectado = false
 	_conectar_guardado_rapido()
+	call_deferred("_revisar_escena_actual")
 
 
 func _ready() -> void:
@@ -372,14 +382,10 @@ func capturar_estado_desde_juego(jugador: Node) -> void:
 			).duplicate(true)
 
 
-	if world_gen != null:
-		var atmosphere := world_gen.get_node_or_null(
-			"WorldAtmosphere"
-		)
-
-		if atmosphere != null and atmosphere.has_method(
-			"obtener_estado_guardado"
-		):
+	var atmosphere: Node = _world_atmosphere
+	if atmosphere != null and atmosphere.has_method(
+		"obtener_estado_guardado"
+	):
 			var tiempo_variant: Variant = atmosphere.call(
 				"obtener_estado_guardado"
 			)
@@ -901,10 +907,8 @@ func _revisar_escena_actual() -> void:
 	if active_save_id.is_empty() or _partida_aplicada_en_escena:
 		return
 
-	var world_gen := escena.get_node_or_null(
-		"World/WorldGenerator"
-	)
-	if world_gen == null:
+	var world_gen: Node = _world_generator
+	if world_gen == null or not is_instance_valid(world_gen):
 		return
 
 	if world_gen.has_method("is_world_ready"):
@@ -1005,26 +1009,20 @@ func _aplicar_estado_al_juego() -> void:
 				(proceso_variant as Dictionary).duplicate(true)
 			)
 
-	var world_gen: Node = _world_generator
+	var atmosphere: Node = _world_atmosphere
+	var tiempo_variant: Variant = flags.get(
+		"tiempo_mundo",
+		{}
+	)
 
-	if world_gen != null:
-		var atmosphere := world_gen.get_node_or_null(
-			"WorldAtmosphere"
-		)
-
-		var tiempo_variant: Variant = flags.get(
-			"tiempo_mundo",
-			{}
-		)
-
-		if atmosphere != null and tiempo_variant is Dictionary:
-			if atmosphere.has_method(
-				"establecer_estado_guardado"
-			):
-				atmosphere.call(
-					"establecer_estado_guardado",
-					(tiempo_variant as Dictionary).duplicate(true)
-				)
+	if atmosphere != null and tiempo_variant is Dictionary:
+		if atmosphere.has_method(
+			"establecer_estado_guardado"
+		):
+			atmosphere.call(
+				"establecer_estado_guardado",
+				(tiempo_variant as Dictionary).duplicate(true)
+			)
 
 	_partida_aplicada_en_escena = true
 	_guardado_rapido_conectado = false
