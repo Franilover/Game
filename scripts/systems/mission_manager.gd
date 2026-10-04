@@ -102,6 +102,24 @@ func buscar_mision_por_clave(clave: String) -> Dictionary:
 	return {}
 
 
+func solicitar_aceptacion(identificador: String) -> bool:
+	var mision := obtener_mision(identificador)
+	if mision.is_empty():
+		mision = buscar_mision_por_clave(identificador)
+	if mision.is_empty():
+		return false
+
+	var mision_id := str(mision.get("id", ""))
+	if mision_id.is_empty():
+		return false
+
+	if str(_estado.get(mision_id, "disponible")) != "disponible":
+		return false
+
+	mision_solicitada.emit(mision)
+	return true
+
+
 func aceptar_mision(identificador: String) -> bool:
 	var mision := obtener_mision(identificador)
 
