@@ -162,9 +162,8 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	actualizar()
 
 
-func configurar_input_gate(gate: Node) -> void:
-	if inventory_controller.has_method("configurar_gate"):
-		inventory_controller.configurar_gate(gate)
+func configurar_input_gate(gate: GameplayInputGate) -> void:
+	inventory_controller.configurar_gate(gate)
 
 
 func _ready() -> void:
