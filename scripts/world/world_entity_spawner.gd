@@ -731,57 +731,36 @@ func _obtener_peso_candidato(
 func despawn_chunk(
 	chunk_coord: Vector2i
 ) -> void:
-	var criaturas_variant: Variant = (
-		_creatures_by_chunk.get(chunk_coord, [])
-	)
-
-	if criaturas_variant is Array:
-		var criaturas: Array = (
-			criaturas_variant
-		)
-
-		for i in range(criaturas.size()):
-			var criatura_variant: Variant = (
-				criaturas[i]
-			)
-
-			if not is_instance_valid(criatura_variant):
+	if _entity_manager != null:
+		_entity_manager.despawn_chunk(chunk_coord)
+	else:
+		var listas: Array = [
+			_creatures_by_chunk.get(chunk_coord, []),
+			_characters_by_chunk.get(chunk_coord, []),
+			_props_by_chunk.get(chunk_coord, [])
+		]
+		for lista_variant in listas:
+			if not lista_variant is Array:
 				continue
+			for entity_variant in lista_variant:
+				if entity_variant is Node and is_instance_valid(entity_variant):
+					(entity_variant as Node).queue_free()
 
-			var criatura: Node = criatura_variant
-			criatura.queue_free()
+	var personajes_variant: Variant = _characters_by_chunk.get(chunk_coord, [])
+	if personajes_variant is Array:
+		for personaje_variant in personajes_variant:
+			if not personaje_variant is Node:
+				continue
+			var personaje := personaje_variant as Node
+			var personaje_id := str(
+				personaje.get_meta("personaje_game_id", "")
+			)
+			if not personaje_id.is_empty():
+				_spawned_characters.erase(personaje_id)
 
-	_creatures_by_chunk.erase(
-		chunk_coord
-	)
-
-	if _characters_by_chunk.has(chunk_coord):
-		var personajes_variant: Variant = _characters_by_chunk[chunk_coord]
-		if personajes_variant is Array:
-			for personaje_variant in personajes_variant:
-				if not is_instance_valid(personaje_variant):
-					continue
-
-				var personaje := personaje_variant as Node
-
-				var personaje_id := str(personaje.get_meta("personaje_game_id", ""))
-				if not personaje_id.is_empty():
-					_spawned_characters.erase(personaje_id)
-				personaje.queue_free()
-
+	_creatures_by_chunk.erase(chunk_coord)
 	_characters_by_chunk.erase(chunk_coord)
-
-	if _props_by_chunk.has(chunk_coord):
-		var props_variant: Variant = _props_by_chunk[chunk_coord]
-		if props_variant is Array:
-			for prop_variant in props_variant:
-				if not is_instance_valid(prop_variant):
-					continue
-
-				var prop := prop_variant as Node
-				prop.queue_free()
-
-		_props_by_chunk.erase(chunk_coord)
+	_props_by_chunk.erase(chunk_coord)
 
 
 func _spawn_characters_in_chunk(
