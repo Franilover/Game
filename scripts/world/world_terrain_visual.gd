@@ -85,6 +85,25 @@ var _variation_layers_by_bioma: Dictionary = {}
 var _variation_tilesets_by_bioma: Dictionary = {}
 var _batch_active: bool = false
 
+var _profiler_set_cell_ms: float = 0.0
+var _profiler_variation_ms: float = 0.0
+var _profiler_dirty_ms: float = 0.0
+var _profiler_set_cell_calls: int = 0
+
+func iniciar_profiler() -> void:
+	_profiler_set_cell_ms = 0.0
+	_profiler_variation_ms = 0.0
+	_profiler_dirty_ms = 0.0
+	_profiler_set_cell_calls = 0
+
+func obtener_profiler() -> Dictionary:
+	return {
+		"set_cell_ms": _profiler_set_cell_ms,
+		"variation_ms": _profiler_variation_ms,
+		"dirty_ms": _profiler_dirty_ms,
+		"set_cell_calls": _profiler_set_cell_calls,
+	}
+
 
 func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
@@ -176,6 +195,7 @@ func set_zone(
 	bioma_nombre: String = "",
 	bioma_textura: String = ""
 ) -> void:
+	var profiler_start_usec := Time.get_ticks_usec()
 	if zone < 0 or zone >= ZONE_TEXTURES.size():
 		return
 
@@ -236,18 +256,24 @@ func set_zone(
 	# El bioma puede cambiar sin que cambie la zona visual.
 	_cell_bioma[cell] = clave
 	_cell_zone[cell] = zone
+	var variation_start_usec := Time.get_ticks_usec()
 	_marcar_variaciones_dirty(cell)
+	_profiler_variation_ms += float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
 
 	var data: Dictionary = _base_tiles[tile_key]
 
 	# Evitar erase_cell + set_cell cuando la celda ya pertenece a esta capa.
 	if layer_anterior != layer_key:
+		var set_cell_start_usec := Time.get_ticks_usec()
 		layer.set_cell(
-		cell,
-		int(data["source_id"]),
-		data["atlas"]
-	)
+			cell,
+			int(data["source_id"]),
+			data["atlas"]
+		)
+		_profiler_set_cell_ms += float(Time.get_ticks_usec() - set_cell_start_usec) / 1000.0
+		_profiler_set_cell_calls += 1
 
+	var dirty_start_usec := Time.get_ticks_usec()
 	_marcar_dirty(layer_key, cell)
 
 	for offset: Vector2i in UPDATE_NEIGHBORS:
@@ -255,6 +281,7 @@ func set_zone(
 			layer_key,
 			cell + offset
 		)
+	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
 
 
 func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
