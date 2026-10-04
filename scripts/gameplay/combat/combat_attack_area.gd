@@ -74,6 +74,7 @@ func configurar(
 	rotation = direccion.angle()
 
 	_area.area_entered.connect(_al_entrar_area)
+	_area.body_entered.connect(_al_entrar_cuerpo)
 
 
 func _ready() -> void:
@@ -113,9 +114,17 @@ func _revisar_areas_existentes() -> void:
 		if area_variant is Area2D:
 			_procesar_hurtbox(area_variant as Area2D)
 
+	for body_variant in _area.get_overlapping_bodies():
+		if body_variant is Node:
+			_procesar_objetivo(body_variant as Node)
+
 
 func _al_entrar_area(hurtbox: Area2D) -> void:
 	_procesar_hurtbox(hurtbox)
+
+
+func _al_entrar_cuerpo(cuerpo: Node2D) -> void:
+	_procesar_objetivo(cuerpo)
 
 
 func _procesar_hurtbox(hurtbox: Area2D) -> void:
@@ -132,6 +141,13 @@ func _procesar_hurtbox(hurtbox: Area2D) -> void:
 
 	var objetivo := objetivo_variant as Node
 
+	_procesar_objetivo(objetivo)
+
+
+func _procesar_objetivo(objetivo: Node) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		return
+
 	if not CombatTargeting.es_objetivo_valido(atacante, objetivo):
 		return
 
@@ -139,4 +155,8 @@ func _procesar_hurtbox(hurtbox: Area2D) -> void:
 		return
 
 	_afectados.append(objetivo)
+	print(
+		"CombatAttackArea: objetivo detectado → ",
+		objetivo.name
+	)
 	objetivo_detectado.emit(objetivo)
