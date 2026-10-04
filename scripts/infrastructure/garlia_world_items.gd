@@ -534,15 +534,15 @@ func _generar_objetos_en_mundo(jugador: Node2D) -> void:
 	if not is_instance_valid(jugador):
 		return
 
-	var escena := get_tree().current_scene
-	if not is_instance_valid(escena):
+	var entities := _entities_root
+	if entities == null or not is_instance_valid(entities):
 		return
 
 	_eliminar_objetos_del_mundo()
 
 	var contenedor := Node2D.new()
 	contenedor.name = "WorldItems"
-	escena.add_child(contenedor)
+	entities.add_child(contenedor)
 
 	var cantidad := mini(MAX_OBJECTOS_EN_MUNDO, catalogo.size())
 	var posiciones := [
@@ -555,7 +555,9 @@ func _generar_objetos_en_mundo(jugador: Node2D) -> void:
 		var datos := catalogo[i].duplicate(true)
 		var objeto := Node2D.new()
 		objeto.set_script(WORLD_ITEM_SCRIPT)
+		objeto.call("configurar_dependencias", _player, _inventory, _mission_manager)
 		contenedor.add_child(objeto)
+		_world_items.append(objeto)
 		objeto.global_position = jugador.global_position + posiciones[i]
 		objeto.call("configurar", datos)
 
@@ -563,20 +565,17 @@ func _generar_objetos_en_mundo(jugador: Node2D) -> void:
 
 
 func intentar_recoger() -> void:
-	var jugador := get_tree().get_first_node_in_group("player")
-	if not jugador is Node2D:
+	var jugador_2d := _player
+	if jugador_2d == null or not is_instance_valid(jugador_2d):
 		return
-
-	var inventario := get_tree().get_first_node_in_group("inventory")
-	if inventario == null:
-		print("GarliaWorldItems: no se encontró el inventario.")
+	var inventario := _inventory
+	if inventario == null or not is_instance_valid(inventario):
 		return
-
-	var jugador_2d := jugador as Node2D
 	var objeto_cercano: Node2D = null
 	var distancia_menor := INF
 
-	for nodo in get_tree().get_nodes_in_group("world_item"):
+	for nodo_variant in _world_items:
+		var nodo: Node = nodo_variant
 		if not nodo is Node2D:
 			continue
 
@@ -612,9 +611,11 @@ func intentar_recoger() -> void:
 
 
 func _eliminar_objetos_del_mundo() -> void:
-	if not is_instance_valid(_escena_actual):
+	if not is_instance_valid(_entities_root):
 		return
-
-	var contenedor := _escena_actual.get_node_or_null("WorldItems")
-	if contenedor:
+	var contenedor := _entities_root.get_node_or_null("WorldItems")
+	if contenedor != null:
 		contenedor.queue_free()
+	_world_items = _world_items.filter(func(item: Node2D) -> bool:
+		return is_instance_valid(item) and item.get_parent() != contenedor
+	)
