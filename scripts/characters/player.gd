@@ -260,7 +260,6 @@ func _physics_process(delta: float) -> void:
 
 func _registrar_terreno_explorado() -> void:
 	if not is_instance_valid(_world_generator_ref):
-		_world_generator_ref = get_tree().get_first_node_in_group("world_generator")
 	if not is_instance_valid(_world_generator_ref):
 		return
 	exploration_controller.revisar(global_position, _world_generator_ref)
@@ -861,7 +860,19 @@ func _facing_name() -> String:
 
 var _proceso_ium_equipado: Dictionary = {}
 var _ium_manager_ref: Node = null
+var _entity_manager_ref: Node = null
 
+
+func configurar_dependencias(
+	inventory: Node = null,
+	world_generator: Node = null,
+	ium_manager: Node = null,
+	entity_manager: Node = null
+) -> void:
+	_inventory_ref = inventory
+	_world_generator_ref = world_generator
+	_ium_manager_ref = ium_manager
+	_entity_manager_ref = entity_manager
 
 func equipar_proceso_ium(proceso: Dictionary) -> void:
 	_proceso_ium_equipado = proceso
@@ -872,21 +883,6 @@ func _usar_proceso_ium() -> void:
 		return
 
 	if _ium_manager_ref == null:
-		_ium_manager_ref = get_tree().get_first_node_in_group(
-			"ium_manager"
-		)
-
-		if _ium_manager_ref == null:
-			var systems := get_tree().current_scene.get_node_or_null(
-				"Systems"
-			)
-
-			if systems != null:
-				_ium_manager_ref = systems.get_node_or_null(
-					"IUMManager"
-				)
-
-	if _ium_manager_ref == null:
 		return
 
 	var objetivo: Node = _buscar_objetivo_cercano()
@@ -895,7 +891,11 @@ func _usar_proceso_ium() -> void:
 
 
 func _buscar_objetivo_cercano() -> Node:
-	var criaturas := get_tree().get_nodes_in_group("creatures")
+	var criaturas: Array = []
+	if _entity_manager_ref != null and _entity_manager_ref.has_method("obtener_entidades_activas"):
+		for entidad in _entity_manager_ref.call("obtener_entidades_activas"):
+			if entidad is Node and entidad.is_in_group("creatures"):
+				criaturas.append(entidad)
 	var mas_cercana: Node = null
 	var dist_min := 160.0
 
