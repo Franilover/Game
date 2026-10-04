@@ -95,9 +95,17 @@ func _inicializar_navegacion_tabs() -> void:
 	_actualizar_admin_tab()
 
 
-func configurar(player: Node = null, world_entity_spawner: Node = null) -> void:
+func configurar(
+	player: Node = null,
+	world_entity_spawner: Node = null,
+	world_context: WorldContext = null,
+	relationship_system: Node = null
+) -> void:
 	_player = player
 	_configurar_admin_inventory(world_entity_spawner)
+	_configurar_world_map(world_context)
+	_configurar_relationships(relationship_system)
+	_configurar_crafting()
 	_actualizar_admin_tab()
 
 
@@ -105,6 +113,24 @@ func _configurar_admin_inventory(world_entity_spawner: Node) -> void:
 	var admin_tab: AdminInventory = $Window/Margin/Column/Tabs/Admin as AdminInventory
 	if admin_tab != null:
 		admin_tab.configurar(_player, world_entity_spawner, self)
+
+
+func _configurar_world_map(world_context: WorldContext) -> void:
+	var mapa: Control = $Window/Margin/Column/Tabs/Mapa
+	if mapa.has_method("configurar") and _player is Node2D and world_context != null:
+		mapa.call("configurar", _player as Node2D, world_context)
+
+
+func _configurar_relationships(relationship_system: Node) -> void:
+	var relaciones: Control = $Window/Margin/Column/Tabs/Relaciones
+	if relaciones.has_method("configurar") and relationship_system != null:
+		relaciones.call("configurar", relationship_system)
+
+
+func _configurar_crafting() -> void:
+	var crafting: Control = $Window/Margin/Column/Tabs/Crafteo
+	if crafting.has_method("configurar"):
+		crafting.call("configurar", self)
 
 
 func serializar_estado_partida() -> Dictionary:
