@@ -720,19 +720,12 @@ func _aplicar_danio(
 	):
 		_registrar_criatura_derrotada(objetivo)
 
-		var actor_eterium: Node = atacante
+		var actor_eterium: Player = atacante as Player
 		if actor_eterium == null:
 			actor_eterium = player
 
-		if (
-			actor_eterium != null
-			and actor_eterium.is_in_group("player")
-			and actor_eterium.has_method("absorber_eterium_de_criatura")
-		):
-			actor_eterium.call(
-				"absorber_eterium_de_criatura",
-				objetivo
-			)
+		if actor_eterium != null and is_instance_valid(actor_eterium):
+			actor_eterium.absorber_eterium_de_criatura(objetivo)
 
 	if (
 		not arma.is_empty()
