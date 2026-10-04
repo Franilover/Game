@@ -21,6 +21,11 @@ var is_host: bool = false
 var is_connected: bool = false
 
 var local_player_info: Dictionary = {}
+var _auth: Node = null
+
+
+func configurar_dependencias(auth: Node) -> void:
+	_auth = auth
 
 
 func _ready() -> void:
@@ -46,13 +51,13 @@ func _ready() -> void:
 
 
 func puede_usar_multijugador() -> bool:
-	return GarliaAuth.esta_autenticado()
+	return puede_usar_multijugador()
 
 
 func crear_partida(
 	puerto: int = DEFAULT_PORT
 ) -> bool:
-	if not GarliaAuth.esta_autenticado():
+	if not puede_usar_multijugador():
 		status_changed.emit(
 			"Debes iniciar sesión para crear una partida."
 		)
@@ -82,8 +87,8 @@ func crear_partida(
 	is_connected = true
 
 	local_player_info = {
-		"user_id": GarliaAuth.obtener_user_id(),
-		"username": GarliaAuth.obtener_username()
+		"user_id": _auth.obtener_user_id(),
+		"username": _auth.obtener_username()
 	}
 
 	status_changed.emit(
@@ -109,7 +114,7 @@ func unirse_partida(
 	direccion_ip: String,
 	puerto: int = DEFAULT_PORT
 ) -> bool:
-	if not GarliaAuth.esta_autenticado():
+	if not puede_usar_multijugador():
 		status_changed.emit(
 			"Debes iniciar sesión para unirte a una partida."
 		)
@@ -148,8 +153,8 @@ func unirse_partida(
 	is_connected = false
 
 	local_player_info = {
-		"user_id": GarliaAuth.obtener_user_id(),
-		"username": GarliaAuth.obtener_username()
+		"user_id": _auth.obtener_user_id(),
+		"username": _auth.obtener_username()
 	}
 
 	status_changed.emit(
