@@ -144,3 +144,6 @@ func consumir_durabilidad_equipo(slot: String) -> bool:
 		equipo_cambio.emit(slot, runtime.obtener_equipo(slot))
 		inventario_cambio.emit()
 	return resultado
+
+func obtener_objeto_equipado(slot: String = "mano_secundaria") -> Dictionary:
+	return runtime.obtener_equipo(slot)
