@@ -355,7 +355,7 @@ func _recolectar(persona: Node) -> bool:
 	if item_id.is_empty():
 		return false
 
-	var item := GarliaWorldItems.buscar_item_por_id(
+	var item := _world_items.buscar_item_por_id(
 		item_id
 	)
 	if item.is_empty():
