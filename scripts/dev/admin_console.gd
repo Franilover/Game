@@ -474,8 +474,6 @@ func _actualizar_posicion_sugerencias() -> void:
 func _obtener_nombres_criaturas() -> Array[String]:
 	var nombres: Array[String] = []
 
-	if not WorldData.has_method("obtener_criaturas"):
-		return nombres
 
 	var criaturas: Array[Dictionary] = WorldData.obtener_criaturas()
 
@@ -499,8 +497,6 @@ func _obtener_nombres_criaturas() -> Array[String]:
 func _obtener_nombres_personajes_game() -> Array[String]:
 	var nombres: Array[String] = []
 
-	if not WorldData.has_method("obtener_personajes_game"):
-		return nombres
 
 	var personajes: Array[Dictionary] = (
 		WorldData.obtener_personajes_game()
