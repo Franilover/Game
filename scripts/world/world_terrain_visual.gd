@@ -124,11 +124,14 @@ func _crear_tileset() -> TileSet:
 		TileSet.TERRAIN_MODE_MATCH_CORNERS
 	)
 
-	# Terrain 0 representa el vacío / cualquier cosa.
+	# Terrain 0 se conserva como ID libre. En Match Corners, el valor -1
+	# representa ausencia de terreno en el vecino; no usamos terrain 0
+	# como sustituto del vacío.
 	tile_set.add_terrain(0)
-	tile_set.set_terrain_name(0, 0, "<any>")
+	tile_set.set_terrain_name(0, 0, "<unused>")
 
 	# Cada capa contiene un único terreno activo; el ID 1 representa esa zona.
+	# Los demás IDs se reservan para mantener un TileSet común entre capas.
 	for terrain_id in range(1, ZONE_TEXTURES.size() + 1):
 		tile_set.add_terrain(0)
 		tile_set.set_terrain_name(
@@ -357,8 +360,9 @@ func _crear_base_tile(
 		source_id
 	)
 
-	# Cada capa contiene una sola zona visual, así que el terreno activo
-	# siempre es el terrain 1 y 0 representa el exterior/vacío.
+	# Cada capa contiene una sola zona visual, así que todos los 16 tiles
+	# pertenecen al terrain 1. Las esquinas ausentes se expresan como -1
+	# (espacio vacío), no como terrain 0.
 	var terrain_id := 1
 
 	for index in range(TILE_SEQUENCE.size()):
@@ -368,13 +372,14 @@ func _crear_base_tile(
 		)
 
 		data.terrain_set = 0
+		data.terrain = terrain_id
 
 		var bits := index
 		for neighbor in CORNER_NEIGHBORS:
 			var neighbor_terrain := (
 				terrain_id
 				if (bits & 1) != 0
-				else 0
+				else -1
 			)
 
 			data.set_terrain_peering_bit(
@@ -383,11 +388,6 @@ func _crear_base_tile(
 			)
 
 			bits >>= 1
-
-	atlas.get_tile_data(
-		TILE_SEQUENCE[15],
-		0
-	).terrain = terrain_id
 
 	_base_tiles[tile_key] = {
 		"source_id": source_id,
