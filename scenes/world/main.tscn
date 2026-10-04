@@ -2,8 +2,12 @@
 
 [ext_resource type="PackedScene" uid="uid://drmehcw40k0lc" path="res://scenes/characters/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/world/world_generator.gd" id="2_world_generator"]
+[ext_resource type="Script" path="res://scripts/world/world_terrain.gd" id="15_world_terrain"]
+[ext_resource type="Script" path="res://scripts/world/world_terrain_visual.gd" id="16_world_terrain_visual"]
+[ext_resource type="Script" path="res://scripts/world/world_streamer.gd" id="17_world_streamer"]
+[ext_resource type="Script" uid="uid://bcrdgcnddob75" path="res://scripts/world/world_entity_spawner.gd" id="18_world_spawner"]
+[ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="19_world_atmosphere"]
 [ext_resource type="Script" path="res://scripts/world/main.gd" id="3_main"]
-[ext_resource type="Script" uid="uid://bcrdgcnddob75" path="res://scripts/world/world_entity_spawner.gd" id="3_pg0he"]
 [ext_resource type="PackedScene" uid="uid://dvbsydjnksfcv" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/gameplay/interaction_system.gd" id="5_interaction"]
 [ext_resource type="PackedScene" uid="uid://bi6oqlrfq4scs" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
@@ -22,6 +26,23 @@ script = ExtResource("3_main")
 
 [node name="WorldGenerator" type="Node2D" parent="World" unique_id=896457846]
 script = ExtResource("2_world_generator")
+
+[node name="WorldTerrain" type="Node2D" parent="World/WorldGenerator"]
+script = ExtResource("15_world_terrain")
+
+[node name="WorldTerrainVisual" type="Node2D" parent="World/WorldGenerator/WorldTerrain"]
+script = ExtResource("16_world_terrain_visual")
+
+[node name="WorldStreamer" type="Node" parent="World/WorldGenerator"]
+script = ExtResource("17_world_streamer")
+
+[node name="WorldEntitySpawner" type="Node" parent="World/WorldGenerator"]
+script = ExtResource("18_world_spawner")
+
+[node name="WorldAtmosphere" type="Node" parent="World/WorldGenerator"]
+script = ExtResource("19_world_atmosphere")
+
+[node name="DayNightModulation" type="CanvasModulate" parent="World/WorldGenerator/WorldAtmosphere"]
 
 [node name="Entities" type="Node2D" parent="." unique_id=106774493]
 z_as_relative = false
@@ -58,6 +79,3 @@ script = ExtResource("12_dialogue")
 [node name="IUMManager" type="Node" parent="Systems"]
 script = ExtResource("13_ium")
 
-[node name="WorldEntitySpawner" type="Node" parent="Systems" unique_id=2068384905]
-script = ExtResource("3_pg0he")
-peso_destacadas = 76.0
