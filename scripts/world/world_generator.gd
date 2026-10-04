@@ -178,6 +178,34 @@ func registrar_jugador(
 	streamer.registrar_jugador(player)
 
 
+func get_spawn_position() -> Vector2:
+	if terrain == null:
+		return Vector2.ZERO
+
+	# El spawn inicial pertenece al chunk origen, que es el primer chunk generado.
+	# Buscamos una celda caminable usando las reglas canónicas de spawn.
+	if spawn_rules != null and _world_data != null:
+		var bioma_ids: Array = []
+		for bioma_variant in _world_data.obtener_biomas():
+			if bioma_variant is Dictionary:
+				var bioma_id := str((bioma_variant as Dictionary).get("id", ""))
+				if not bioma_id.is_empty():
+					bioma_ids.append(bioma_id)
+
+		var rng := RandomNumberGenerator.new()
+		rng.seed = map_seed if map_seed != 0 else 1
+		var tile := spawn_rules.buscar_tile_para_personaje(Vector2i.ZERO, bioma_ids, rng)
+		if tile.x != 2147483647:
+			return Vector2(
+				tile.x * tile_size + tile_size * 0.5,
+				tile.y * tile_size + tile_size * 0.5
+			)
+
+	# Fallback seguro: centro del chunk inicial.
+	var centro := float(chunk_size_tiles * tile_size) * 0.5
+	return Vector2(centro, centro)
+
+
 func is_world_ready() -> bool:
 	return _world_ready
 
