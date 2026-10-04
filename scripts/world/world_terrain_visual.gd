@@ -92,7 +92,7 @@ func _crear_capa_bioma(bioma_nombre: String) -> TileMapDual:
 	)
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -999990
+	layer.z_index = -4096
 	layer.rendering_quadrant_size = 32
 	layer.tile_set = _crear_tileset()
 
@@ -213,7 +213,7 @@ func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
 	var layer := TileMapLayer.new()
 	layer.name = "TerrainVariaciones_" + ("General" if bioma_nombre.is_empty() else bioma_nombre)
 	layer.z_as_relative = false
-	layer.z_index = -10000
+	layer.z_index = -4095
 	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
 	add_child(layer)
 	return layer
