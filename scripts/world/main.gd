@@ -48,6 +48,9 @@ func _inicializar_jugador(world_gen: Node) -> void:
 
 	world_gen.registrar_jugador(_player)
 
+	if _player.has_method("configurar_dependencias"):
+		_player.call("configurar_dependencias", _inventory, world_gen)
+
 	_configurar_camara()
 	_configurar_hud(world_gen)
 	_configurar_interaccion()
