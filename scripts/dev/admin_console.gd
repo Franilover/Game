@@ -18,6 +18,7 @@ var world_atmosphere: Node = null
 var player: Node = null
 var inventory: Node = null
 var entity_manager: Node = null
+var admin_player_editor: Control = null
 
 
 const COMANDO_SUMMON: String = "/summon"
@@ -36,7 +37,8 @@ func configurar(
 	nuevo_world_atmosphere: Node,
 	nuevo_player: Node,
 	nuevo_inventory: Node,
-	nuevo_entity_manager: Node
+	nuevo_entity_manager: Node,
+	nuevo_admin_player_editor: Control
 ) -> void:
 	world_context = nuevo_world_context
 	world_entity_spawner = nuevo_entity_spawner
@@ -44,6 +46,7 @@ func configurar(
 	player = nuevo_player
 	inventory = nuevo_inventory
 	entity_manager = nuevo_entity_manager
+	admin_player_editor = nuevo_admin_player_editor
 
 func _ready() -> void:
 	layer = 100
@@ -990,23 +993,10 @@ func _comando_player(argumentos: String) -> void:
 		)
 		return
 
-	var ui := get_tree().current_scene.get_node_or_null("UI")
-	if ui == null:
-		_agregar_linea("[color=#d88]No se encontró la capa UI de la escena principal.[/color]")
+	var editor := admin_player_editor
+	if editor == null or not is_instance_valid(editor):
+		_agregar_linea("[color=#d88]El editor de jugador no está configurado en Main.[/color]")
 		return
-
-	var editor := ui.get_node_or_null("AdminPlayerEditor")
-	if editor == null:
-		var script := load("res://scripts/ui/admin_player_editor.gd")
-		if script == null:
-			_agregar_linea("[color=#d88]No se pudo cargar el editor de jugador.[/color]")
-			return
-
-		editor = Control.new()
-		editor.name = "AdminPlayerEditor"
-		editor.set_script(script)
-		editor.z_index = 100
-		ui.add_child(editor)
 
 	if not editor.has_method("abrir"):
 		_agregar_linea("[color=#d88]El editor de jugador no es válido.[/color]")
