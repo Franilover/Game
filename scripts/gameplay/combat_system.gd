@@ -231,6 +231,14 @@ func _crear_ataque_melee(
 	)
 
 	player.add_child(ataque)
+	print(
+		"CombatSystem: área de ataque creada | dirección=",
+		direccion,
+		" alcance=",
+		alcance,
+		" ancho=",
+		ancho
+	)
 
 
 func _al_recibir_objetivo_de_ataque(
