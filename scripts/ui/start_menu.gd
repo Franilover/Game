@@ -90,6 +90,9 @@ var _cargando_mundo: bool = false
 
 
 func _ready() -> void:
+	if WorldData.has_method("configurar_dependencias"):
+		WorldData.call("configurar_dependencias", SupabaseClient)
+
 	start_button.pressed.connect(
 		_iniciar_partida
 	)
