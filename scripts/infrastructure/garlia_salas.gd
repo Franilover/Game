@@ -50,7 +50,7 @@ func generar_codigo() -> String:
 
 
 func publicar_sala(ip: String, puerto: int = 7777) -> void:
-	if not _auth != null and _auth.esta_autenticado():
+	if _auth == null or not _auth.esta_autenticado():
 		error_sala.emit("Debes iniciar sesión para crear una sala.")
 		return
 
