@@ -829,7 +829,7 @@ func _buscar_objetivo(
 		if not is_instance_valid(candidato):
 			continue
 
-		if candidato == player:
+		if not CombatTargeting.es_objetivo_valido(player, candidato):
 			continue
 
 		if not candidato is Node2D:
