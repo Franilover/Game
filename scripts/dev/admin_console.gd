@@ -61,7 +61,7 @@ func _ready() -> void:
 	visible = false
 
 	if WorldData.has_signal("mundo_listo"):
-		WorldData.mundo_listo.connect(
+		WorldDataService.mundo_listo.connect(
 			_al_datos_disponibles
 		)
 
