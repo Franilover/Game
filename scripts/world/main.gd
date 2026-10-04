@@ -11,18 +11,12 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _inventory: Control = $UI/Inventory
 @onready var _interaction_system: Node = $Systems/InteractionSystem
 @onready var _combat_system: Node = $Systems/CombatSystem
-
-# Sistemas de interacción narrativa
-var _dialogue_system: Node = null
-
-# IUM Lab
-var _ium_manager: Node = null
-var _ium_lab: Control = null
+@onready var _dialogue_system: Node = $Systems/DialogueSystem
+@onready var _ium_manager: Node = $Systems/IUMManager
+@onready var _ium_lab: Control = $UI/IUMLab
 
 
 func _ready() -> void:
-	_inicializar_ium()
-
 	var world_gen := $World/WorldGenerator
 
 	if world_gen.is_world_ready():
@@ -55,7 +49,8 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_interaccion()
 	_configurar_combate()
 	_configurar_inventario()
-	_inicializar_dialogo()
+	_configurar_dialogo()
+	_inicializar_ium()
 	_configurar_pantalla()
 
 	# Inicializar IUM con jugador (jugador_id puede venir de auth en el futuro)
@@ -143,33 +138,13 @@ func _configurar_inventario() -> void:
 		return
 
 
-func _inicializar_dialogo() -> void:
-	var systems := get_node_or_null("Systems")
-	if systems == null:
-		push_error("Main: no se encontró nodo Systems para DialogueSystem.")
+func _configurar_dialogo() -> void:
+	if _dialogue_system == null:
+		push_error("Main: no se encontró Systems/DialogueSystem.")
 		return
 
-	var dialogue_script := load(
-		"res://scripts/gameplay/dialogue_system.gd"
-	)
-	if dialogue_script == null:
-		push_error("Main: no se pudo cargar dialogue_system.gd.")
-		return
-
-	_dialogue_system = Node.new()
-	_dialogue_system.name = "DialogueSystem"
-	_dialogue_system.set_script(dialogue_script)
-	systems.add_child(_dialogue_system)
-
-	var ui: Control = _hud
 	if _dialogue_system.has_method("configurar"):
-		_dialogue_system.call(
-			"configurar",
-			_player,
-			ui
-		)
-
-	print("Main: DialogueSystem inicializado.")
+		_dialogue_system.call("configurar", _player, _hud)
 
 
 func _configurar_pantalla() -> void:
@@ -184,46 +159,23 @@ func _configurar_pantalla() -> void:
 # ============================================================
 
 func _inicializar_ium() -> void:
-	# Crear IUM Manager como nodo hijo de Systems
-	var systems := get_node_or_null("Systems")
-	if systems == null:
-		push_error("Main: no se encontró nodo Systems.")
+	# Compatibilidad de entrada: el sistema ya pertenece a la escena.
+	# Main sólo compone dependencias; no crea sistemas dinámicamente.
+	if _ium_manager == null:
+		push_error("Main: no se encontró Systems/IUMManager.")
 		return
 
-	var manager_script := load("res://scripts/gameplay/ium_manager.gd")
-	if manager_script == null:
-		push_error("Main: no se pudo cargar ium_manager.gd.")
+	if _ium_lab == null:
+		push_error("Main: no se encontró UI/IUMLab.")
 		return
 
-	_ium_manager = Node.new()
-	_ium_manager.name = "IUMManager"
-	_ium_manager.set_script(manager_script)
-	systems.add_child(_ium_manager)
-
-	# Cargar y añadir escena del IUM Lab a UI
-	var lab_scene := load("res://scenes/ui/ium_lab.tscn")
-	if lab_scene == null:
-		push_error("Main: no se pudo cargar ium_lab.tscn.")
-		return
-
-	_ium_lab = lab_scene.instantiate()
-	_ium_lab.name = "IUMLab"
-
-	var ui := get_node_or_null("UI")
-	if ui != null:
-		ui.add_child(_ium_lab)
-	else:
-		add_child(_ium_lab)
-
-	# Conectar lab con manager
 	if _ium_lab.has_method("configurar"):
 		_ium_lab.call("configurar", _ium_manager)
 
-	# Conectar proceso equipado → el jugador puede usar magia con R.
-	_ium_manager.proceso_equipado_signal.connect(_al_equipar_proceso)
+	if not _ium_manager.proceso_equipado_signal.is_connected(_al_equipar_proceso):
+		_ium_manager.proceso_equipado_signal.connect(_al_equipar_proceso)
 
-	print("Main: IUM Lab inicializado.")
-
+	print("Main: IUMManager e IUMLab conectados.")
 
 func _al_equipar_proceso(proceso: Dictionary) -> void:
 	# Guardar en player para que pueda usarlo con R
