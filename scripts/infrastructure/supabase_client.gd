@@ -64,6 +64,11 @@ var _especies_jugables: Array = []
 var _personaje_social: Array = []
 var _personaje_regalos: Array = []
 var _relaciones_ecologicas: Array = []
+var _mundo_activo_en_escena: bool = false
+
+
+func establecer_mundo_activo(activo: bool) -> void:
+	_mundo_activo_en_escena = activo
 
 
 func _ready() -> void:
@@ -768,10 +773,7 @@ func _al_timer_sincronizacion() -> void:
 	# El mundo completo (~0.86 MB actualmente) no se necesita en tiempo real
 	# durante una partida. Evitamos descargar y parsear ese snapshot mientras
 	# el jugador está jugando para no provocar picos de CPU/IO.
-	var escena := get_tree().current_scene
-	if escena != null and escena.get_node_or_null(
-		"World/WorldGenerator"
-	) != null:
+	if _mundo_activo_en_escena:
 		_programar_siguiente_sincronizacion()
 		return
 
