@@ -75,7 +75,7 @@ var configuracion_ia: Dictionary = {}
 var relaciones_ecologicas: Array = []
 var jugador: Node2D = null
 var entity_manager: WorldEntityManager = null
-var inventory: Node = null
+var inventory: GarliaInventory = null
 var combat_system: CombatSystem = null
 var world_items: GarliaWorldItems = null
 
@@ -83,7 +83,7 @@ var world_items: GarliaWorldItems = null
 func configurar_dependencias(
 	nuevo_jugador: Node,
 	nuevo_entity_manager: WorldEntityManager,
-	nuevo_inventory: Node,
+	nuevo_inventory: GarliaInventory,
 	nuevo_combat_system: CombatSystem,
 	nuevo_world_items: GarliaWorldItems,
 	nuevas_relaciones_ecologicas: Array = []
@@ -1504,25 +1504,16 @@ func _robar_objeto_zlish() -> void:
 	if perfil != Perfil.ZLISH or objetivo == null or not is_instance_valid(objetivo):
 		return
 
-	var inventario: Node = inventory
+	var inventario: GarliaInventory = inventory
 	if inventario == null:
 		return
 
-	var indice_hotbar := int(
-		inventario.call("obtener_indice_hotbar_activo")
-	)
-	var indice_inventario := int(
-		inventario.call("obtener_indice_inventario_hotbar", indice_hotbar)
-	)
-	var objeto_hotbar_variant: Variant = inventario.call(
-		"obtener_objeto",
-		indice_inventario
-	)
+	var indice_hotbar: int = inventario.obtener_indice_hotbar_activo()
+	var indice_inventario: int = inventario.obtener_indice_inventario_hotbar(indice_hotbar)
+	var objeto_hotbar: Dictionary = inventario.obtener_objeto(indice_inventario)
 
-	if objeto_hotbar_variant is Dictionary:
-		var objeto_hotbar: Dictionary = objeto_hotbar_variant as Dictionary
-		if not objeto_hotbar.is_empty():
-			if bool(inventario.call("quitar_objeto", indice_inventario)):
+	if not objeto_hotbar.is_empty():
+		if inventario.quitar_objeto(indice_inventario):
 				objeto_robado = objeto_hotbar.duplicate(true)
 				return
 
@@ -1530,12 +1521,6 @@ func _robar_objeto_zlish() -> void:
 		var objeto_armadura_variant: Variant = inventario.call(
 			"obtener_objeto_equipado",
 			clave
-		)
-		if not objeto_armadura_variant is Dictionary:
-			continue
-
-		var objeto_armadura: Dictionary = (
-			objeto_armadura_variant as Dictionary
 		)
 		if objeto_armadura.is_empty():
 			continue
