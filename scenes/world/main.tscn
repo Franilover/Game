@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://dvbsydjnksfcv" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/gameplay/interaction_system.gd" id="5_interaction"]
 [ext_resource type="Script" path="res://scripts/core/gameplay_input_router.gd" id="27_input_router"]
+[ext_resource type="Script" path="res://scripts/infrastructure/garlia_world_items.gd" id="28_world_items"]
 [ext_resource type="PackedScene" uid="uid://bi6oqlrfq4scs" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/gameplay/combat_system.gd" id="8_combat"]
 [ext_resource type="Script" path="res://scripts/gameplay/dialogue_system.gd" id="12_dialogue"]
@@ -98,6 +99,9 @@ script = ExtResource("9_admin")
 
 [node name="GameplayInputRouter" type="Node" parent="Systems"]
 script = ExtResource("27_input_router")
+
+[node name="WorldItems" type="Node" parent="Systems"]
+script = ExtResource("28_world_items")
 
 [node name="InteractionSystem" type="Node" parent="Systems" unique_id=2011123833]
 script = ExtResource("5_interaction")
