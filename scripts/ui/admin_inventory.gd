@@ -1,7 +1,9 @@
 extends Control
 class_name AdminInventory
 
-var _jugador: Node
+var _jugador: Node = null
+var _world_entity_spawner: Node = null
+var _inventario: Node = null
 var _modo: String = "criaturas"
 var _seleccion: Dictionary = {}
 var _lista: VBoxContainer
@@ -19,22 +21,15 @@ func _ready() -> void:
     visible = false
 
 
-func _process(_delta: float) -> void:
-    if not visible:
-        return
-
-    var jugador := get_tree().get_first_node_in_group("player")
-    if jugador != _jugador:
-        _jugador = jugador
-        _actualizar_visibilidad()
+func configurar(jugador: Node, spawner: Node, inventario: Node) -> void:
+    _jugador = jugador
+    _world_entity_spawner = spawner
+    _inventario = inventario
 
 
 func abrir(jugador: Node = null) -> void:
     if jugador != null:
         _jugador = jugador
-    else:
-        _jugador = get_tree().get_first_node_in_group("player")
-
     _actualizar_visibilidad()
 
 
@@ -310,13 +305,13 @@ func _ejecutar_accion() -> void:
 
 
 func _invocar() -> void:
-    var generator := get_tree().get_first_node_in_group("world_generator")
-    if generator == null or not generator.has_method("summon_criatura"):
-        _estado.text = "No se encontró WorldGenerator."
+    var spawner := _world_entity_spawner
+    if spawner == null or not is_instance_valid(spawner) or not spawner.has_method("summon_criatura"):
+        _estado.text = "No se encontró WorldEntitySpawner."
         return
 
     var nombre := str(_seleccion.get("nombre", "")).strip_edges()
-    var resultado: Variant = generator.call("summon_criatura", nombre)
+    var resultado: Variant = spawner.call("summon_criatura", nombre)
 
     if resultado is Dictionary and bool((resultado as Dictionary).get("ok", false)):
         _estado.text = "Invocada: " + str((resultado as Dictionary).get("nombre", nombre))
@@ -327,19 +322,13 @@ func _invocar() -> void:
 
 
 func _dar_objeto() -> void:
-    var jugador := get_tree().get_first_node_in_group("player")
-    if jugador == null:
+    var jugador := _jugador
+    if jugador == null or not is_instance_valid(jugador):
         _estado.text = "No se encontró el jugador."
         return
 
-    if not jugador.has_method("get_node_or_null"):
-        return
-
-    var inventario := jugador.get_node_or_null("Inventory")
-    if inventario == null:
-        inventario = get_tree().get_first_node_in_group("inventory")
-
-    if inventario == null or not inventario.has_method("agregar_objeto"):
+    var inventario := _inventario
+    if inventario == null or not is_instance_valid(inventario) or not inventario.has_method("agregar_objeto"):
         _estado.text = "No se encontró el inventario del jugador."
         return
 
