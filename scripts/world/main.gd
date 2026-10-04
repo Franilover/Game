@@ -27,7 +27,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _world_atmosphere: WorldAtmosphere = $World/WorldGenerator/WorldAtmosphere
 @onready var _world_generator: WorldGenerator = $World/WorldGenerator
 @onready var _world_context: WorldContext = $World/WorldGenerator/WorldContext
-@onready var _world_items: Node = $Systems/WorldItems
+@onready var _world_items: GarliaWorldItems = $Systems/WorldItems
 
 
 func _ready() -> void:
