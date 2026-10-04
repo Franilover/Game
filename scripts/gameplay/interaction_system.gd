@@ -50,6 +50,11 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 
+	# El objetivo contextual pierde validez en cuanto el jugador sale de alcance.
+	# Esto se comprueba incluso si otra interfaz está bloqueando temporalmente la entrada.
+	if objetivo_actual != null and not _objetivo_sigue_disponible():
+		_cambiar_objetivo(null)
+
 	if _entrada_bloqueada_por_router():
 		if objetivo_actual != null:
 			_cambiar_objetivo(null)
@@ -111,6 +116,17 @@ func _buscar_objetivo() -> void:
 		interaction_distance
 	)
 
+
+func _objetivo_sigue_disponible() -> bool:
+	if objetivo_actual == null or not is_instance_valid(objetivo_actual):
+		return false
+	if not objetivo_actual.is_inside_tree():
+		return false
+	if objetivo_actual.has_method("can_interact"):
+		return bool(objetivo_actual.call("can_interact", player))
+	if objetivo_actual is Node2D:
+		return player.global_position.distance_to((objetivo_actual as Node2D).global_position) <= interaction_distance
+	return false
 
 
 func obtener_texto_interaccion() -> String:
