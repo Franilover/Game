@@ -88,9 +88,9 @@ func procesar_accion_primaria() -> bool:
 			and world_items_node.has_method("es_objeto_colocable")
 			and bool(world_items_node.call("es_objeto_colocable", objeto_activo))
 		):
-			if world_items.has_method("colocar_objeto"):
+			if world_items_node.has_method("colocar_objeto"):
 				var colocado: bool = bool(
-					world_items.call(
+					world_items_node.call(
 						"colocar_objeto",
 						objeto_activo,
 						(player as Node2D).get_global_mouse_position()
