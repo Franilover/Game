@@ -2,7 +2,7 @@ extends Node
 class_name CombatSystem
 
 
-signal ataque_realizado(atacante: Node, objetivo: Node, danio: int)
+signal ataque_realizado(atacante: Node, objetivo: Entity, danio: int)
 signal ataque_sin_objetivo(atacante: Node)
 signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 
@@ -34,13 +34,13 @@ var player: Player = null
 var inventory: GarliaInventory = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
-var game_state: Node = null
+var game_state: GameState = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Player, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: Node = null) -> void:
+func configurar(nuevo_player: Player, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameState = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
@@ -494,7 +494,7 @@ func _disparar_proyectil(
 	)
 
 func _al_recibir_impacto_proyectil(
-	objetivo: Node,
+	objetivo: Entity,
 	ataque: CombatAttack
 ) -> void:
 	if objetivo == null or ataque == null:
@@ -505,8 +505,7 @@ func _al_recibir_impacto_proyectil(
 	if (
 		not arma.is_empty()
 		and objetivo.is_in_group("creatures")
-		and "is_alive" in objetivo
-		and not bool(objetivo.get("is_alive"))
+		and not objetivo.is_alive
 		and ataque.attacker != null
 		and ataque.attacker.is_in_group("player")
 	):
@@ -772,12 +771,10 @@ func _aplicar_danio(
 	)
 
 
-func _registrar_criatura_derrotada(objetivo: Node) -> void:
+func _registrar_criatura_derrotada(objetivo: Entity) -> void:
 	if game_state == null or not is_instance_valid(game_state):
 		return
-	if game_state == null or not game_state.has_method("registrar_criatura_derrotada"):
-		return
-	game_state.call("registrar_criatura_derrotada", objetivo)
+	game_state.registrar_criatura_derrotada(objetivo)
 
 
 func _obtener_direccion_ataque() -> Vector2:
@@ -792,7 +789,7 @@ func _obtener_direccion_ataque() -> Vector2:
 
 
 
-func _notificar_feedback_impacto(objetivo: Node) -> void:
+func _notificar_feedback_impacto(objetivo: Entity) -> void:
 	if combat_feedback == null or not is_instance_valid(combat_feedback):
 		return
 	combat_feedback.mostrar_impacto(objetivo)
