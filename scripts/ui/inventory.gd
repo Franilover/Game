@@ -133,7 +133,7 @@ func _configurar_relationships(relationship_system: RelationshipSystemService) -
 
 func _configurar_crafting() -> void:
 	var crafting: CraftingUI = $Window/Margin/Column/Tabs/Crafteo
-	crafting.configurar(self)
+	crafting.configurar(self, _world_items)
 
 
 func serializar_estado_partida() -> Dictionary:
