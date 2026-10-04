@@ -36,8 +36,18 @@ const ZONE_TEXTURES: Dictionary = {
 	9: "res://assets/tilesets/Desierto.png",
 }
 
-const PRADERA_VARIACIONES_TEXTURE: String = "res://assets/tilesets/Pradera_Variaciones.png"
-const PRADERA_VARIACIONES_COUNT: int = 16
+const VARIACIONES_POR_BIOMA: Dictionary = {
+	"Pradera": {
+		"texture": "res://assets/tilesets/Pradera_Variaciones.png",
+		"zone": 0,
+		"count": 16,
+	},
+	"Bosque": {
+		"texture": "res://assets/tilesets/Bosque_Variaciones.png",
+		"zone": 8,
+		"count": 16,
+	},
+}
 
 const TERRAIN_NAMES: PackedStringArray = [
 	"Grass", "Dirt", "Stone", "Sand",
@@ -185,10 +195,10 @@ func set_zone(
 		_cell_bioma[cell] = clave
 
 	_cell_zone[cell] = zone
-	_actualizar_variacion_pradera(cell)
+	_actualizar_variacion(cell)
 	for offset: Vector2i in UPDATE_NEIGHBORS:
 		if offset != Vector2i.ZERO:
-			_actualizar_variacion_pradera(cell + offset)
+			_actualizar_variacion(cell + offset)
 
 	var data: Dictionary = _base_tiles[tile_key]
 
@@ -224,7 +234,8 @@ func _crear_tileset_variaciones(bioma_nombre: String) -> TileSet:
 	var tile_set := TileSet.new()
 	tile_set.tile_size = Vector2i(tile_size, tile_size)
 
-	var texture := load(PRADERA_VARIACIONES_TEXTURE) as Texture2D
+	var config: Dictionary = VARIACIONES_POR_BIOMA.get(bioma_nombre, {})
+	var texture := load(str(config.get("texture", ""))) as Texture2D
 	if not _textura_valida(texture):
 		return tile_set
 
@@ -253,9 +264,16 @@ func _actualizar_variacion_pradera(cell: Vector2i) -> void:
 	if layer == null:
 		return
 
-	# Las variaciones sólo aparecen en interiores completos de Pradera.
+	var config: Dictionary = VARIACIONES_POR_BIOMA.get(bioma, {})
+	if config.is_empty():
+		layer.erase_cell(cell)
+		return
+
+	var zone := int(config.get("zone", -1))
+
+	# Las variaciones sólo aparecen en interiores completos del bioma.
 	# Si una celda toca otro bioma/zona, TileMapDual conserva la transición.
-	if _cell_zone.get(cell, -1) != 0 or not _es_interior_pradera(cell):
+	if _cell_zone.get(cell, -1) != zone or not _es_interior_bioma(cell, zone):
 		layer.erase_cell(cell)
 		return
 
@@ -264,12 +282,12 @@ func _actualizar_variacion_pradera(cell: Vector2i) -> void:
 	layer.set_cell(cell, 0, atlas, 0)
 
 
-func _es_interior_pradera(cell: Vector2i) -> bool:
+func _es_interior_bioma(cell: Vector2i, zone: int) -> bool:
 	for offset: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		var vecino: Vector2i = cell + offset
 		if _cell_bioma.get(vecino, "") != _cell_bioma.get(cell, ""):
 			return false
-		if _cell_zone.get(vecino, -1) != 0:
+		if _cell_zone.get(vecino, -1) != zone:
 			return false
 	return true
 
@@ -278,7 +296,10 @@ func _indice_variacion(cell: Vector2i) -> int:
 	# Selección determinista: el mismo mundo produce siempre la misma textura.
 	var valor := absi(cell.x * 928371 + cell.y * 689287)
 	valor = (valor ^ (valor >> 13)) * 1274126177
-	return absi(valor) % PRADERA_VARIACIONES_COUNT
+	var bioma := str(_cell_bioma.get(cell, ""))
+	var config: Dictionary = VARIACIONES_POR_BIOMA.get(bioma, {})
+	var count := int(config.get("count", 1))
+	return absi(valor) % count
 
 
 func _crear_base_tile(
