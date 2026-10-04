@@ -83,12 +83,12 @@ func procesar_accion_primaria() -> bool:
 
 	# El router ya resolvió la prioridad de interacción.
 	# Aquí solo se decide la acción primaria de combate.
-	var arma := _obtener_arma_equipada()
-	var modo := "arma_equipada" if _es_objeto_ataque(arma) else "desarmado"
+	var objeto_equipado := _obtener_objeto_equipado_para_accion()
+	var modo := "arma_equipada" if _es_objeto_ataque(objeto_equipado) else "desarmado"
 
 	return combat_controller.solicitar_ataque(
 		_obtener_direccion_ataque(),
-		arma,
+		objeto_equipado,
 		modo
 	)
 
@@ -297,7 +297,7 @@ func usar_objeto_activo() -> void:
 
 	# Compatibilidad para llamadas internas: este método representa
 	# exclusivamente el objeto seleccionado en la hotbar.
-	var objeto_activo := _obtener_objeto_activo()
+	var objeto_activo := _obtener_objeto_equipado_para_accion()
 
 	if objeto_activo.is_empty():
 		return
@@ -306,6 +306,33 @@ func usar_objeto_activo() -> void:
 		return
 
 	_atacar_con_objeto(objeto_activo)
+
+
+func _obtener_objeto_equipado_para_accion() -> Dictionary:
+	var inventario: Node = self.inventory
+	if inventario == null or not inventario.has_method("obtener_equipamiento"):
+		return {}
+
+	var equipo_variant: Variant = inventario.call("obtener_equipamiento")
+	if not equipo_variant is Dictionary:
+		return {}
+	var equipo := equipo_variant as Dictionary
+
+	for clave_variant in ["mano_principal", "mano_secundaria"]:
+		var clave := str(clave_variant)
+		var candidato_variant: Variant = equipo.get(clave, {})
+		if candidato_variant is Dictionary and _es_objeto_ataque(candidato_variant as Dictionary):
+			_inventory_equipment_slot = clave
+			return (candidato_variant as Dictionary).duplicate(true)
+
+	for clave_variant in equipo.keys():
+		var clave := str(clave_variant)
+		var candidato_variant: Variant = equipo.get(clave, {})
+		if candidato_variant is Dictionary and _es_objeto_ataque(candidato_variant as Dictionary):
+			_inventory_equipment_slot = clave
+			return (candidato_variant as Dictionary).duplicate(true)
+
+	return {}
 
 
 func _obtener_arma_equipada(slot_preferido: String = "mano_principal") -> Dictionary:
