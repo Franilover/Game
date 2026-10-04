@@ -21,6 +21,8 @@ script = ExtResource("3_main")
 script = ExtResource("2_world_generator")
 
 [node name="Entities" type="Node2D" parent="." unique_id=106774493]
+z_as_relative = false
+z_index = 0
 
 [node name="Player" parent="Entities" unique_id=338870233 instance=ExtResource("1_player")]
 
