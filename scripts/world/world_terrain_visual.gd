@@ -242,7 +242,10 @@ func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
 	var layer := TileMapLayer.new()
 	layer.name = "TerrainVariaciones_" + ("General" if bioma_nombre.is_empty() else bioma_nombre)
 	layer.z_as_relative = false
-	layer.z_index = -4096
+	# Las variantes son una capa decorativa del suelo: deben quedar por
+	# encima de los terrenos base para que se vean, pero muy por debajo
+	# de las entidades/jugador.
+	layer.z_index = -4090
 	layer.y_sort_enabled = false
 	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
 	add_child(layer)
