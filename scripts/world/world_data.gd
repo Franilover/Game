@@ -1,5 +1,5 @@
 extends Node
-class_name WorldData
+class_name WorldDataService
 
 
 
