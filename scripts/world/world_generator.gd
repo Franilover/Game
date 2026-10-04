@@ -117,7 +117,6 @@ func _inicializar_mundo() -> void:
 	)
 
 	streamer.configurar(
-		self,
 		terrain,
 		entity_spawner,
 		load_radius_chunks,
