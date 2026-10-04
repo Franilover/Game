@@ -87,6 +87,7 @@ func configurar_entidades(
 		_entities_root,
 		world_context,
 		world_items,
+		_world_data,
 		relaciones_ecologicas
 	)
 	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules, _world_data)
@@ -140,7 +141,8 @@ func _inicializar_mundo() -> void:
 		terrain,
 		entity_manager,
 		entity_factory,
-		spawn_rules
+		spawn_rules,
+		_world_data
 	)
 
 	streamer.configurar(
