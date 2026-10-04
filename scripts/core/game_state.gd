@@ -471,30 +471,11 @@ func _ejecutar_guardado_rapido() -> void:
 
 func _serializar_estado() -> Dictionary:
 	return {
-		"player": {
-			"health": player_state.health,
-			"mana": player_state.mana,
-			"position_valid": player_state.position_valida,
-			"position": {
-				"x": player_state.position.x,
-				"y": player_state.position.y
-			},
-			"tile_valid": player_state.tile_valido,
-			"tile": {
-				"x": player_state.tile.x,
-				"y": player_state.tile.y
-			},
-			"stamina": player_state.stamina,
-			"facing": {
-				"x": player_state.facing.x,
-				"y": player_state.facing.y
-			}
-		},
+		"player": player_state.to_dictionary(),
 		"elapsed_time": world_state.elapsed_time,
 		"flags": world_state.flags.duplicate(true),
 		"scene": world_state.current_scene
 	}
-
 
 func _estado_base_partida(
 	id: String,
@@ -547,85 +528,17 @@ func _estado_base_partida(
 func _aplicar_estado_memoria(
 	estado: Dictionary
 ) -> void:
-	player_state.tile_valido = false
-	player_state.tile = Vector2i.ZERO
-
-	var player_variant: Variant = estado.get(
-		"player",
-		{}
-	)
-
+	var player_variant: Variant = estado.get("player", {})
 	if player_variant is Dictionary:
-		var datos_player := player_variant as Dictionary
-
-		player_state.health = int(
-			datos_player.get("health", 100)
-		)
-
-		player_state.mana = int(
-			datos_player.get("mana", 100)
-		)
-
-		player_state.stamina = float(
-			datos_player.get("stamina", 100.0)
-		)
-
-		player_state.position_valida = bool(
-			datos_player.get("position_valid", false)
-		)
-
-		var posicion_variant: Variant = datos_player.get(
-			"position",
-			{}
-		)
-
-		if posicion_variant is Dictionary and player_state.position_valida:
-			var posicion := posicion_variant as Dictionary
-			player_state.position = Vector2(
-				float(posicion.get("x", 0.0)),
-				float(posicion.get("y", 0.0))
-			)
-
-		player_state.tile_valido = bool(
-			datos_player.get("tile_valid", false)
-		)
-
-		var tile_variant: Variant = datos_player.get(
-			"tile",
-			{}
-		)
-
-		if tile_variant is Dictionary and player_state.tile_valido:
-			var tile_datos := tile_variant as Dictionary
-			player_state.tile = Vector2i(
-				int(tile_datos.get("x", 0)),
-				int(tile_datos.get("y", 0))
-			)
-
-		var facing_variant: Variant = datos_player.get(
-			"facing",
-			{}
-		)
-
-		if facing_variant is Dictionary:
-			var facing := facing_variant as Dictionary
-			player_state.facing = Vector2(
-				float(facing.get("x", 0.0)),
-				float(facing.get("y", 1.0))
-			)
+		player_state.from_dictionary(player_variant as Dictionary)
+	else:
+		player_state = PlayerState.new()
 
 	world_state.elapsed_time = float(
-		estado.get(
-			"elapsed_time",
-			0.0
-		)
+		estado.get("elapsed_time", 0.0)
 	)
 
-	var flags_variant: Variant = estado.get(
-		"flags",
-		{}
-	)
-
+	var flags_variant: Variant = estado.get("flags", {})
 	if flags_variant is Dictionary:
 		world_state.flags = (
 			flags_variant as Dictionary
