@@ -161,3 +161,11 @@ Renderer → reglas de spawn
 5. ¿Quién administra su vida?
 6. ¿La dependencia ya está disponible para inyectarse?
 7. ¿Estoy arreglando la causa o sólo el síntoma?
+
+
+## Estado y misiones
+
+GameState conserva el guardado local, pero recibe Player, Inventory y WorldGenerator desde Main.
+MissionManager conserva progreso de la partida y recibe Player y WorldEntityManager.
+DialogueSystem coordina presentación y acciones de diálogo, pero recibe MissionManager y RelationshipSystem por inyección.
+RelationshipSystem conserva el estado social y recibe SocialRepository para los datos canónicos de Supabase.
