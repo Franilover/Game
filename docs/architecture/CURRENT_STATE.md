@@ -276,3 +276,10 @@ Se cerraron dos fugas de composición encontradas durante la revisión de Player
 No se movió la lógica de daño fuera de CombatDamage, ni se confundió la hotbar con el equipamiento. El objetivo de esta barrida es cerrar dependencias implícitas, no cambiar las reglas de combate.
 
 Siguiente frente: revisar HUD y CombatSystem por responsabilidades de presentación/feedback que todavía estén mezcladas, y después continuar con los autoloads restantes.
+
+
+## Decimocuarta barrida — HUD sin acceso global a GameState
+
+HUD ya no consume directamente el autoload GameState para escuchar descubrimientos. Main inyecta GameState al HUD y HUD administra la conexión/desconexión de esa señal.
+
+Esto mantiene al HUD como capa de presentación: recibe estado y eventos explícitamente, sin descubrir dependencias globales. No se trasladó lógica de descubrimiento al HUD.
