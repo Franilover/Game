@@ -573,7 +573,7 @@ func _obtener_modo_ataque(
 
 func atacar_objetivo_con_arma(
 	atacante: Node,
-	objetivo: Node,
+	objetivo: Entity,
 	arma: Dictionary
 ) -> bool:
 	if atacante == null or not is_instance_valid(atacante):
@@ -583,9 +583,6 @@ func atacar_objetivo_con_arma(
 		return false
 
 	if arma.is_empty() or not _es_arma(arma):
-		return false
-
-	if not objetivo.has_method("take_damage"):
 		return false
 
 	var danio: int = _obtener_danio_arma(arma)
@@ -699,7 +696,7 @@ func _obtener_propiedades_game(
 
 
 func _aplicar_danio(
-	objetivo: Node,
+	objetivo: Entity,
 	danio: int,
 	origen: String,
 	atacante: Node = null,
@@ -713,9 +710,7 @@ func _aplicar_danio(
 	):
 		return
 
-	var vivo_antes := true
-	if "is_alive" in objetivo:
-		vivo_antes = bool(objetivo.get("is_alive"))
+	var vivo_antes: bool = objetivo.is_alive
 
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
@@ -797,11 +792,9 @@ func _obtener_direccion_ataque() -> Vector2:
 	if player == null:
 		return Vector2.DOWN
 
-	if "facing" in player:
-		var direccion: Vector2 = player.facing
-
-		if direccion.length_squared() > 0.01:
-			return direccion.normalized()
+	var direccion: Vector2 = player.facing
+	if direccion.length_squared() > 0.01:
+		return direccion.normalized()
 
 	return Vector2.DOWN
 
