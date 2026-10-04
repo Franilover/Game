@@ -5,7 +5,7 @@ const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tsc
 const WORLD_PROP_SCENE: PackedScene = preload("res://scenes/world/world_prop.tscn")
 
 var _player: Node = null
-var _entity_manager: Node = null
+var _entity_manager: WorldEntityManager = null
 var _inventory: Node = null
 var _combat_system: Node = null
 var _dialogue_system: Node = null
@@ -17,7 +17,7 @@ var _relaciones_ecologicas: Array = []
 
 func configurar_dependencias(
 	jugador: Node,
-	entity_manager: Node,
+	entity_manager: WorldEntityManager,
 	inventario: Node,
 	combat_system: Node,
 	dialogue_system: Node,
