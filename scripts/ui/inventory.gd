@@ -1,4 +1,5 @@
 extends Control
+class_name GarliaInventory
 
 const SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_slot.tscn"
