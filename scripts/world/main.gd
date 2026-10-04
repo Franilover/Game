@@ -249,7 +249,7 @@ func _inicializar_ium() -> void:
 	if _ium_repository.has_method("configurar"):
 		_ium_repository.call("configurar", _supabase_client)
 	if _ium_manager.has_method("configurar"):
-		_ium_manager.call("configurar", _ium_repository)
+		_ium_manager.call("configurar", _ium_repository, _player)
 
 	if _ium_lab == null:
 		push_error("Main: no se encontró UI/IUMLab.")
