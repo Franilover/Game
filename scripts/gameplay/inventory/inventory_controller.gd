@@ -30,9 +30,44 @@ func configurar_items(items: Array, hotbar_indices: Array = []) -> void:
 func cargar_items(items: Array) -> void:
 	runtime.establecer_items(items)
 	inventario_cambio.emit()
-
+ 
 func obtener_item(indice: int) -> Dictionary:
 	return runtime.obtener_item(indice)
+
+func agregar_objeto(datos: Dictionary) -> bool:
+	if not puede_interactuar() or datos.is_empty():
+		return false
+	var resultado: bool = runtime.agregar_objeto(datos)
+	if resultado:
+		inventario_cambio.emit()
+	return resultado
+
+func quitar_cantidad(indice: int, cantidad: int = 1) -> bool:
+	if not puede_interactuar():
+		return false
+	var resultado: bool = runtime.quitar_cantidad(indice, cantidad)
+	if resultado:
+		inventario_cambio.emit()
+	return resultado
+
+func quitar_objeto(indice: int) -> bool:
+	return quitar_cantidad(indice, 999999)
+
+func establecer_objeto(indice: int, datos: Dictionary) -> bool:
+	if not puede_interactuar():
+		return false
+	var resultado: bool = runtime.establecer_objeto(indice, datos)
+	if resultado:
+		inventario_cambio.emit()
+	return resultado
+
+func intercambiar_o_apilar(origen: int, destino: int) -> bool:
+	if not puede_interactuar():
+		return false
+	var resultado: bool = runtime.intercambiar_o_apilar(origen, destino)
+	if resultado:
+		inventario_cambio.emit()
+	return resultado
 
 func seleccionar_hotbar(indice: int) -> bool:
 	if not runtime.seleccionar_hotbar(indice):
