@@ -482,6 +482,36 @@ func _completar_mision(mision: Dictionary) -> void:
 	)
 
 
+func serializar_estado_partida() -> Dictionary:
+	return {
+		"estado": _estado.duplicate(true),
+		"progreso": _progreso.duplicate(true)
+	}
+
+
+func cargar_estado_partida(datos: Dictionary) -> void:
+	_estado.clear()
+	_progreso.clear()
+
+	var estado_variant: Variant = datos.get("estado", {})
+	if estado_variant is Dictionary:
+		_estado = (estado_variant as Dictionary).duplicate(true)
+
+	var progreso_variant: Variant = datos.get("progreso", {})
+	if progreso_variant is Dictionary:
+		_progreso = (progreso_variant as Dictionary).duplicate(true)
+
+	for mision in _misiones:
+		var mision_id := str(mision.get("id", "")).strip_edges()
+		if mision_id.is_empty():
+			continue
+		if not _estado.has(mision_id):
+			_estado[mision_id] = "disponible"
+		if not _progreso.has(mision_id):
+			_progreso[mision_id] = {}
+
+
+
 func obtener_estado_mision(mision_id: String) -> Dictionary:
 	var mision := obtener_mision(mision_id)
 
