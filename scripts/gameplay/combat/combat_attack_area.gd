@@ -103,20 +103,33 @@ func _ready() -> void:
 	if _area == null:
 		return
 
-	if _visual != null:
+	if _visual != null or _contorno != null:
 		var tween := create_tween()
 		tween.set_parallel(true)
-		for visual in [_visual, _contorno]:
-			if visual == null:
-				continue
+
+		if _visual != null:
 			tween.tween_property(
-				visual,
+				_visual,
 				"modulate:a",
 				0.0,
 				duracion
 			)
 			tween.tween_property(
-				visual,
+				_visual,
+				"scale",
+				Vector2(1.08, 1.08),
+				duracion
+			)
+
+		if _contorno != null:
+			tween.tween_property(
+				_contorno,
+				"modulate:a",
+				0.0,
+				duracion
+			)
+			tween.tween_property(
+				_contorno,
 				"scale",
 				Vector2(1.08, 1.08),
 				duracion
