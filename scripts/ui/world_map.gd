@@ -5,7 +5,7 @@ const VIEW_TILES_X: int = 91
 const VIEW_TILES_Y: int = 43
 const EXPLORATION_RADIUS: int = 6
 
-var _world_generator: Node = null
+var _world_context: WorldContext = null
 var _player: Node2D = null
 var _explorado: Dictionary = {}
 var _tile_size: int = 32
@@ -21,45 +21,28 @@ func _ready() -> void:
 		_al_exploracion_actualizada
 	)
 
-	_buscar_dependencias()
+	_refrescar()
+
+
+func configurar(jugador: Node2D, contexto: WorldContext) -> void:
+	_player = jugador
+	_world_context = contexto
+	if _world_context != null:
+		_tile_size = maxi(_world_context.get_tile_size(), 1)
 	_refrescar()
 
 
 func _process(_delta: float) -> void:
-	if not visible:
+	if not visible or _world_context == null or _player == null:
 		return
 
-	if _world_generator == null or not is_instance_valid(_world_generator):
-		_buscar_dependencias()
-		_refrescar()
-		return
-
-	if _player == null or not is_instance_valid(_player):
-		_buscar_dependencias()
-		_refrescar()
+	if not is_instance_valid(_world_context) or not is_instance_valid(_player):
 		return
 
 	var tile: Vector2i = _obtener_tile_jugador()
-
 	if tile != _ultima_actualizacion:
 		_ultima_actualizacion = tile
 		_refrescar()
-
-
-func _buscar_dependencias() -> void:
-	_world_generator = get_tree().get_first_node_in_group(
-		"world_generator"
-	)
-	_player = get_tree().get_first_node_in_group(
-		"player"
-	) as Node2D
-
-	if _world_generator != null:
-		if _world_generator.has_method("get_tile_size"):
-			_tile_size = maxi(
-				int(_world_generator.call("get_tile_size")),
-				1
-			)
 
 
 func _refrescar() -> void:
@@ -75,13 +58,8 @@ func _obtener_tile_jugador() -> Vector2i:
 	if _player == null or not is_instance_valid(_player):
 		return Vector2i.ZERO
 
-	if _world_generator != null and _world_generator.has_method(
-		"get_tile_at"
-	):
-		var tile_variant: Variant = _world_generator.call(
-			"get_tile_at",
-			_player.global_position
-		)
+	if _world_context != null:
+		var tile_variant: Vector2i = _world_context.get_tile_at(_player.global_position)
 
 		if tile_variant is Vector2i:
 			return tile_variant as Vector2i
@@ -182,10 +160,10 @@ func _draw() -> void:
 
 
 func _dibujar_tile_real(tile: Vector2i, rect: Rect2) -> void:
-	if _world_generator == null:
+	if _world_context == null:
 		return
 
-	var zona: int = int(_world_generator.call("get_zona_at", tile))
+	var zona: int = _world_context.get_zona_at(tile)
 	var textura: Texture2D = _obtener_textura_zona(tile, zona)
 	if textura == null:
 		draw_rect(rect, _color_zona(tile), true)
@@ -198,13 +176,13 @@ func _dibujar_tile_real(tile: Vector2i, rect: Rect2) -> void:
 
 
 func _tile_size_real() -> int:
-	if _world_generator != null and _world_generator.has_method("get_tile_size"):
-		return maxi(int(_world_generator.call("get_tile_size")), 1)
+	if _world_context != null:
+		return maxi(_world_context.get_tile_size(), 1)
 	return maxi(_tile_size, 1)
 
 
 func _obtener_textura_zona(tile: Vector2i, zona: int) -> Texture2D:
-	var bioma_variant: Variant = _world_generator.call("get_bioma_at", tile)
+	var bioma_variant: Dictionary = _world_context.get_bioma_at(tile)
 	var bioma_nombre := ""
 	if bioma_variant is Dictionary:
 		bioma_nombre = str((bioma_variant as Dictionary).get("nombre", "")).strip_edges()
@@ -239,13 +217,10 @@ func _obtener_textura_zona(tile: Vector2i, zona: int) -> Texture2D:
 
 
 func _color_zona(tile: Vector2i) -> Color:
-	if _world_generator == null:
+	if _world_context == null:
 		return Color("#6b5138")
 
-	var zona_variant: Variant = _world_generator.call(
-		"get_zona_at",
-		tile
-	)
+	var zona_variant: int = _world_context.get_zona_at(tile)
 
 	if not zona_variant is int:
 		return Color("#6b5138")
