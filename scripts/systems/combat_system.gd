@@ -172,12 +172,45 @@ func _atacar_con_objeto(objeto: Dictionary) -> void:
 
 
 func _atacar_con_herramienta(herramienta: Dictionary) -> void:
+	var propiedades_variant: Variant = herramienta.get("propiedades_game", {})
+	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+	var recoleccion_variant: Variant = propiedades.get("herramienta_recoleccion", {})
+	var recoleccion: Dictionary = recoleccion_variant as Dictionary if recoleccion_variant is Dictionary else {}
+	var tipo_herramienta := str(recoleccion.get("tipo", "")).strip_edges().to_lower()
+
+	if tipo_herramienta == "pala":
+		_usar_pala()
+		return
+
 	var direccion: Vector2 = _obtener_direccion_ataque()
 	var alcance: float = _obtener_alcance_arma(herramienta)
 	var ancho: float = _obtener_ancho_arma(herramienta)
 
 	_mostrar_area_ataque(direccion, alcance, ancho)
 	_crear_hitbox_melee(direccion, alcance, ancho, herramienta)
+
+
+func _usar_pala() -> void:
+	var world_gen := get_tree().get_first_node_in_group("world_generator")
+	if world_gen == null or not is_instance_valid(world_gen):
+		return
+	if not world_gen.has_method("get_tile_at") or not world_gen.has_method("get_zona_at") or not world_gen.has_method("cambiar_zona_at"):
+		return
+
+	var direccion := _obtener_direccion_ataque()
+	var origen := player.global_position
+	var alcance := _obtener_alcance_arma({})
+	var objetivo_posicion := origen + direccion * maxf(alcance, 16.0)
+	var tile: Vector2i = world_gen.call("get_tile_at", objetivo_posicion)
+	var zona: int = int(world_gen.call("get_zona_at", tile))
+
+	# La pala transforma únicamente Pradera en Tierra.
+	if zona != 0:
+		return
+
+	if bool(world_gen.call("cambiar_zona_at", tile, 1)):
+		_tiempo_desde_ataque = enfriamiento_arma
+		print("CombatSystem: pala → Pradera convertida en Tierra en ", tile)
 
 
 func _crear_hitbox_melee(
