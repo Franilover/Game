@@ -12,6 +12,7 @@ var _dialogue_system: Node = null
 var _mission_manager: Node = null
 var _effects_root: Node = null
 var _world_context: Node = null
+var _relaciones_ecologicas: Array = []
 
 
 func configurar_dependencias(
@@ -22,7 +23,8 @@ func configurar_dependencias(
 	dialogue_system: Node,
 	mission_manager: Node,
 	effects_root: Node,
-	world_context: Node
+	world_context: Node,
+	relaciones_ecologicas: Array = []
 ) -> void:
 	_player = jugador
 	_entity_manager = entity_manager
@@ -32,6 +34,7 @@ func configurar_dependencias(
 	_mission_manager = mission_manager
 	_effects_root = effects_root
 	_world_context = world_context
+	_relaciones_ecologicas = relaciones_ecologicas.duplicate(true)
 
 
 func crear_criatura(data: Dictionary) -> Creature:
