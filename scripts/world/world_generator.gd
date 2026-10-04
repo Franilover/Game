@@ -19,6 +19,7 @@ var entity_spawner: WorldEntitySpawner
 var atmosphere: WorldAtmosphere
 
 var _world_ready: bool = false
+var _entities_root: Node = null
 
 
 func _ready() -> void:
@@ -34,6 +35,11 @@ func _ready() -> void:
 			CONNECT_ONE_SHOT
 		)
 
+
+func configurar_entidades(root: Node) -> void:
+	_entities_root = root
+	if entity_spawner != null:
+		entity_spawner.configurar(terrain, _entities_root)
 
 func _process(_delta: float) -> void:
 	if not _world_ready:
@@ -98,8 +104,13 @@ func _inicializar_mundo() -> void:
 
 	terrain.cargar_datos_mundo()
 
+	if _entities_root == null or not is_instance_valid(_entities_root):
+		push_error("WorldGenerator: no se configuró Entity root antes de iniciar el mundo.")
+		return
+
 	entity_spawner.configurar(
-		terrain
+		terrain,
+		_entities_root
 	)
 
 	streamer.configurar(
