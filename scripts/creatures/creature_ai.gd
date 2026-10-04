@@ -73,6 +73,24 @@ var criatura: Creature = null
 var objetivo: Node2D = null
 var configuracion_ia: Dictionary = {}
 var relaciones_ecologicas: Array = []
+var jugador: Node2D = null
+var entity_manager: Node = null
+var inventory: Node = null
+var combat_system: Node = null
+
+
+func configurar_dependencias(
+	nuevo_jugador: Node,
+	nuevo_entity_manager: Node,
+	nuevo_inventory: Node,
+	nuevo_combat_system: Node
+) -> void:
+	jugador = nuevo_jugador as Node2D
+	entity_manager = nuevo_entity_manager
+	inventory = nuevo_inventory
+	combat_system = nuevo_combat_system
+
+
 
 
 var estado: Estado = Estado.IDLE
@@ -540,99 +558,69 @@ func _actualizar_percepcion() -> void:
 		ultima_posicion_objetivo = objetivo.global_position
 
 
+func _obtener_candidatos_entidad() -> Array[Node2D]:
+	var candidatos: Array[Node2D] = []
+	if jugador != null and is_instance_valid(jugador) and jugador.is_inside_tree():
+		candidatos.append(jugador)
+
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		return candidatos
+	if not entity_manager.has_method("obtener_entidades_activas"):
+		return candidatos
+
+	var entidades_variant: Variant = entity_manager.call("obtener_entidades_activas")
+	if not entidades_variant is Array:
+		return candidatos
+
+	for entidad_variant in entidades_variant as Array:
+		if not entidad_variant is Node2D:
+			continue
+		var entidad := entidad_variant as Node2D
+		if entidad == criatura or not is_instance_valid(entidad):
+			continue
+		if not entidad.is_inside_tree() or not entidad.has_method("take_damage"):
+			continue
+		if not entidad in candidatos:
+			candidatos.append(entidad)
+
+	return candidatos
+
+
 func _refrescar_objetivo() -> void:
 	if perfil == Perfil.DRAMARIAS:
 		_objetivo_mas_cercano_dramarias()
 		return
 
 	var candidatos: Array[Node2D] = []
-
-	var jugador := get_tree().get_first_node_in_group("player")
-	if jugador is Node2D:
-		candidatos.append(jugador as Node2D)
-
-	for candidato_variant in get_tree().get_nodes_in_group("creatures"):
-		if not candidato_variant is Node2D:
+	for candidato in _obtener_candidatos_entidad():
+		if candidato == jugador:
+			candidatos.append(candidato)
 			continue
-
-		var candidato := candidato_variant as Node2D
-
-		if candidato == criatura:
-			continue
-		if not is_instance_valid(candidato):
-			continue
-		if not candidato.is_inside_tree():
-			continue
-		if not candidato.has_method("take_damage"):
-			continue
-
-		# Flaxis es un depredador oportunista: puede elegir criaturas
-		# cercanas aunque todavía no exista una relación ecológica cargada.
-		if perfil != Perfil.FLAXIS and not _es_objetivo_ecologico_valido(candidato):
-			continue
-
-		candidatos.append(candidato)
+		# Flaxis es un depredador oportunista; otros perfiles respetan
+		# las relaciones ecológicas canónicas cargadas para la criatura.
+		if perfil == Perfil.FLAXIS or _es_objetivo_ecologico_valido(candidato):
+			candidatos.append(candidato)
 
 	var mejor: Node2D = null
 	var mejor_distancia: float = INF
-
 	for candidato in candidatos:
-		var distancia := criatura.global_position.distance_to(
-			candidato.global_position
-		)
-
+		var distancia := criatura.global_position.distance_to(candidato.global_position)
 		if distancia < mejor_distancia:
 			mejor_distancia = distancia
 			mejor = candidato
-
 	objetivo = mejor
 
 
 func _objetivo_mas_cercano_dramarias() -> void:
-	var candidatos: Array[Node] = []
-
-	for candidato_variant in get_tree().get_nodes_in_group("damageable"):
-		if candidato_variant is Node:
-			candidatos.append(candidato_variant as Node)
-
-	for candidato_variant in get_tree().get_nodes_in_group("player"):
-		if candidato_variant is Node:
-			var candidato := candidato_variant as Node
-			if not candidato in candidatos:
-				candidatos.append(candidato)
-
-	for candidato_variant in get_tree().get_nodes_in_group("creatures"):
-		if candidato_variant is Node:
-			var candidato := candidato_variant as Node
-			if not candidato in candidatos:
-				candidatos.append(candidato)
-
 	var mejor: Node2D = null
 	var mejor_distancia: float = INF
-
-	for candidato in candidatos:
-		if candidato == criatura:
-			continue
-		if not is_instance_valid(candidato):
-			continue
-		if not candidato is Node2D:
-			continue
-		if not candidato.is_inside_tree():
-			continue
+	for candidato in _obtener_candidatos_entidad():
 		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
 			continue
-		if not candidato.has_method("take_damage"):
-			continue
-
-		var candidato_2d := candidato as Node2D
-		var distancia := criatura.global_position.distance_to(
-			candidato_2d.global_position
-		)
-
+		var distancia := criatura.global_position.distance_to(candidato.global_position)
 		if distancia < mejor_distancia:
 			mejor_distancia = distancia
-			mejor = candidato_2d
-
+			mejor = candidato
 	objetivo = mejor
 
 
@@ -1459,14 +1447,9 @@ func _obtener_alcance_arma_combate(
 
 
 func _obtener_combat_system() -> Node:
-	var escena: Node = get_tree().current_scene
-
-	if escena == null:
-		return null
-
-	return escena.get_node_or_null(
-		"Systems/CombatSystem"
-	) as Node
+	if combat_system != null and is_instance_valid(combat_system):
+		return combat_system
+	return null
 
 
 func al_recibir_ataque_con_arma(arma: Dictionary) -> void:
@@ -1494,17 +1477,17 @@ func al_recibir_ataque_con_arma(arma: Dictionary) -> void:
 	if not objeto_robado.is_empty():
 		return
 
-	var jugador := get_tree().get_first_node_in_group("player") as Node2D
-	if jugador == null or not is_instance_valid(jugador):
+	var jugador_actual := jugador
+	if jugador_actual == null or not is_instance_valid(jugador_actual):
 		return
 
-	objetivo = jugador
+	objetivo = jugador_actual
 	objetivo_detectado = true
-	ultima_posicion_objetivo = jugador.global_position
-	_objetivo_ataque = jugador.global_position
+	ultima_posicion_objetivo = jugador_actual.global_position
+	_objetivo_ataque = jugador_actual.global_position
 
 	var direccion := criatura.global_position.direction_to(
-		jugador.global_position
+		jugador_actual.global_position
 	)
 	if direccion.length_squared() <= 0.01:
 		direccion = Vector2.DOWN
@@ -1533,7 +1516,7 @@ func _robar_objeto_zlish() -> void:
 	if perfil != Perfil.ZLISH or objetivo == null or not is_instance_valid(objetivo):
 		return
 
-	var inventario: Node = get_tree().get_first_node_in_group("inventory")
+	var inventario: Node = inventory
 	if inventario == null:
 		return
 
