@@ -258,7 +258,10 @@ func spawn_chunk(
 			continue
 
 		var criatura_data: Dictionary = (
-			criatura_variant
+			criatura_variant.duplicate(true)
+		)
+		criatura_data["ecosistema_id"] = str(
+			ecosistema.get("id", "")
 		)
 
 		var criatura: Node = (
