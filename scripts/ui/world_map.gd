@@ -19,7 +19,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_process(true)
 
-	GameState.mapa_exploracion_actualizada.connect(
+	GameStateService.mapa_exploracion_actualizada.connect(
 		_al_exploracion_actualizada
 	)
 
@@ -48,7 +48,7 @@ func _process(_delta: float) -> void:
 
 
 func _refrescar() -> void:
-	_explorado = GameState.obtener_terreno_explorado()
+	_explorado = GameStateService.obtener_terreno_explorado()
 	queue_redraw()
 
 
