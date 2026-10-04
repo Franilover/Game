@@ -229,3 +229,28 @@ La deuda de descubrimiento global restante se concentra ahora principalmente en 
 
 
 La fase posterior a la auditoría de UI migró CreatureAI, Creature, WorldProp, WorldItem y GarliaWorldItems a dependencias explícitas. Main compone WorldGenerator/WorldEntityFactory con Player, Inventory, CombatSystem, DialogueSystem, MissionManager, WorldContext y el root Entities antes de iniciar la generación diferida. Las criaturas y props reciben datos antes de ser agregados al árbol, evitando inicialización incompleta y reconfiguración redundante después de `_ready()`. Detalles y validación pendiente en ARCHITECTURE_AUDIT_2026-10-04.md.
+
+
+## Undécima barrida — cierre de fronteras encontradas en composición
+
+Fecha: 2026-10-04
+
+Se corrigieron dos inconsistencias que sobrevivían en el código real aunque la arquitectura documentada ya las daba por resueltas:
+
+- `GarliaSalas.buscar_sala()` tenía la guarda de autenticación invertida. Ahora rechaza la operación cuando no existe `GarliaAuth` inyectado o no hay sesión válida.
+- `GarliaSalas.cerrar_sala()` ahora también exige una sesión válida antes de realizar el PATCH.
+- `Main._configurar_combate()` recibía sólo `WorldContext` pero utilizaba `world_gen` sin recibirlo como dependencia. Ahora la composición pasa explícitamente `WorldGenerator`.
+
+Esto refuerza la regla de esta fase: si una dependencia es necesaria para ejecutar una operación, debe aparecer en el contrato de composición; no debe existir como variable implícita ni recuperarse de otra parte.
+
+### Siguiente frontera
+
+La siguiente pasada continúa con infraestructura y gameplay, pero primero se auditarán contratos de composición concretos antes de dividir monolitos. El orden será:
+
+1. SupabaseClient: clasificar operaciones por dominio y distinguir transporte de operaciones de aplicación.
+2. CombatSystem: comprobar qué parte de su orquestación ya pertenece a CombatController/Attack/Targeting/Damage.
+3. Player: retirar sólo lógica que ya tenga dueño real.
+4. HUD: separar presentación únicamente donde exista una frontera funcional clara.
+5. Autoloads restantes: clasificar ámbito global vs. partida activa antes de mover cualquiera.
+
+No se considera esta fase terminada hasta que el código y la documentación coincidan.
