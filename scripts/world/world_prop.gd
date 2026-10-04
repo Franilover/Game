@@ -460,8 +460,28 @@ func _actualizar_sprite(asset_path: String) -> void:
 
 
 func _actualizar_profundidad() -> void:
+	# La profundidad usa el punto donde el prop toca el suelo,
+	# no el origen del nodo. Así los props altos pueden pasar
+	# por delante/detrás del jugador de forma natural.
+	var profundidad_y := global_position.y
+	var sprite := get_node_or_null("Sprite") as Sprite2D
+
+	if sprite != null and sprite.texture != null:
+		profundidad_y += sprite.position.y
+		profundidad_y += (
+			float(sprite.texture.get_height())
+			* 0.5
+			* absf(sprite.scale.y)
+		)
+
+	# Permite ajustar el punto de apoyo de un prop concreto
+	# sin modificar su sprite.
+	profundidad_y += float(
+		datos.get("profundidad_offset_y", 0.0)
+	)
+
 	z_index = clampi(
-		1000 + int(global_position.y),
+		1000 + int(profundidad_y),
 		-4096,
 		4096
 	)
