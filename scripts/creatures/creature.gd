@@ -40,6 +40,7 @@ var _dialogue_system_dependency: DialogueSystem = null
 var _mission_manager_dependency: MissionManagerService = null
 var _effects_root: Node = null
 var _world_items_dependency: GarliaWorldItems = null
+var _world_data_dependency: WorldDataService = null
 
 var _rng := RandomNumberGenerator.new()
 var _siguiendo_jugador: bool = false
@@ -57,6 +58,7 @@ func configurar_dependencias(
 	mission_manager: MissionManagerService,
 	effects_root: Node,
 	world_items: GarliaWorldItems,
+	world_data: WorldDataService,
 	relaciones_ecologicas: Array = []
 ) -> void:
 	_player_dependency = jugador
@@ -67,6 +69,7 @@ func configurar_dependencias(
 	_mission_manager_dependency = mission_manager
 	_effects_root = effects_root
 	_world_items_dependency = world_items
+	_world_data_dependency = world_data
 
 	var ai := $AIController as CreatureAI
 	if ai != null:
@@ -578,7 +581,7 @@ func get_dialogue_data() -> Dictionary:
 	# El snapshot de la criatura solo sirve como respaldo para evitar
 	# que una instancia quede muda si todavía no tiene el registro anidado.
 	if not personaje_id.is_empty():
-		var dialogo_canonico: Dictionary = WorldData.obtener_dialogo_game(
+		var dialogo_canonico: Dictionary = {}\n\t\tif _world_data_dependency != null and is_instance_valid(_world_data_dependency):\n\t\t\tdialogo_canonico = _world_data_dependency.obtener_dialogo_game(
 			personaje_id
 		)
 		if not dialogo_canonico.is_empty():
