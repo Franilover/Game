@@ -118,10 +118,14 @@ func get_factores_ambientales_at(posicion_global: Vector2) -> Dictionary:
 		if id.is_empty():
 			continue
 		if not estacion_id.is_empty():
-			var estacional := _world_data.obtener_ambiente_estacional_habitat(estacion_id, id) if _world_data != null else {}
+			var estacional: Dictionary = {}
+			if _world_data != null:
+				estacional = _world_data.obtener_ambiente_estacional_habitat(estacion_id, id)
 			if not estacional.is_empty():
 				return estacional
-		var base := _world_data.obtener_factores_ambientales_habitat(id) if _world_data != null else {}
+		var base: Dictionary = {}
+		if _world_data != null:
+			base = _world_data.obtener_factores_ambientales_habitat(id)
 		if not base.is_empty():
 			return base
 	var ecosistema := get_ecosistema_at(tile)
@@ -129,7 +133,9 @@ func get_factores_ambientales_at(posicion_global: Vector2) -> Dictionary:
 	if id.is_empty():
 		return {}
 	if not estacion_id.is_empty():
-		var estacional := _world_data.obtener_ambiente_estacional_ecosistema(estacion_id, id) if _world_data != null else {}
+		var estacional: Dictionary = {}
+		if _world_data != null:
+			estacional = _world_data.obtener_ambiente_estacional_ecosistema(estacion_id, id)
 		if not estacional.is_empty():
 			return estacional
 	return _world_data.obtener_factores_ambientales_ecosistema(id) if _world_data != null else {}
