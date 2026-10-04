@@ -35,3 +35,13 @@ func _request(path: String, method: HTTPClient.Method, body: String) -> int:
 		http.queue_free()
 		request_completed.emit(request_id, HTTPRequest.RESULT_REQUEST_FAILED, 0, PackedStringArray(), PackedByteArray())
 	return request_id
+
+
+func _emit_request_failed(request_id: int) -> void:
+	request_completed.emit(
+		request_id,
+		HTTPRequest.RESULT_REQUEST_FAILED,
+		0,
+		PackedStringArray(),
+		PackedByteArray()
+	)
