@@ -436,8 +436,10 @@ func _actualizar_contexto() -> void:
 
 	var seed := str(world_context.call("get_map_seed"))
 	var version := "—"
-	if world_data != null and "mundo" in world_data:
-		version = str(world_data.get("mundo").get("version", "—"))
+	if world_data != null:
+		var mundo_variant: Variant = world_data.get("mundo")
+		if mundo_variant is Dictionary:
+			version = str((mundo_variant as Dictionary).get("version", "—"))
 	var supabase_estado := "Connected"
 	if supabase_client != null and supabase_client.has_method("esta_conectado") and not supabase_client.call("esta_conectado"):
 		supabase_estado = "Offline"
