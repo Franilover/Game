@@ -73,6 +73,7 @@ func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nue
 		if is_instance_valid(game_state) and game_state != nuevo_game_state:
 			_desconectar_senal_game_state()
 		game_state = nuevo_game_state
+		_conectar_senal_game_state()
 	if nuevo_inventory != null and is_instance_valid(nuevo_inventory) and _hotbar_node.has_method("configurar_inventario"):
 		_hotbar_node.call("configurar_inventario", nuevo_inventory)
 	if mission_manager != null:
