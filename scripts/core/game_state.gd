@@ -32,7 +32,6 @@ var save_repository := SaveFileRepository.new()
 
 var _autosave_timer: float = 0.0
 var _partida_aplicada_en_escena: bool = false
-var _menu_interceptado: bool = false
 var _guardado_en_curso: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
@@ -89,84 +88,6 @@ func _notification(what: int) -> void:
 		or what == NOTIFICATION_WM_GO_BACK_REQUEST
 	):
 		guardar_partida()
-
-
-# ============================================================
-# MENÚ DE AVENTURA
-# ============================================================
-
-func _supervisar_menu_aventura() -> void:
-	var escena := get_tree().current_scene
-
-	if escena == null:
-		return
-
-	if escena.name != "StartMenu":
-		_menu_interceptado = false
-		return
-
-	var boton := escena.get_node_or_null(
-		"Center/StartButton"
-	)
-
-	if not boton is Button:
-		return
-
-	var button := boton as Button
-
-	if _menu_interceptado:
-		return
-
-	var original := Callable(escena, "_iniciar_partida")
-
-	if button.pressed.is_connected(original):
-		button.pressed.disconnect(original)
-
-	if not button.pressed.is_connected(
-		_al_pulsar_aventura
-	):
-		button.pressed.connect(
-			_al_pulsar_aventura
-		)
-
-	_menu_interceptado = true
-
-
-func _al_pulsar_aventura() -> void:
-	if not WorldData.esta_cargado():
-		return
-
-	abrir_selector_partidas()
-
-
-func abrir_selector_partidas() -> void:
-	var escena := get_tree().current_scene
-
-	if escena == null:
-		return
-
-	if escena.get_node_or_null(
-		"LocalSaveSelector"
-	) != null:
-		return
-
-	var selector_scene: PackedScene = load(
-		"res://scenes/ui/save_selector.tscn"
-	) as PackedScene
-
-	if selector_scene == null:
-		push_error(
-			"GameState: no se pudo cargar save_selector.tscn."
-		)
-		return
-
-	var selector: Node = selector_scene.instantiate()
-	selector.name = "LocalSaveSelector"
-	escena.add_child(selector)
-
-	print(
-		"GameState: selector de partidas abierto."
-	)
 
 
 # ============================================================
@@ -982,11 +903,6 @@ func _revisar_escena_actual() -> void:
 	var escena := get_tree().current_scene
 	if escena == null:
 		return
-
-	if escena.name == "StartMenu":
-		_supervisar_menu_aventura()
-	else:
-		_menu_interceptado = false
 
 	if active_save_id.is_empty() or _partida_aplicada_en_escena:
 		return
