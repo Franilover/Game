@@ -91,7 +91,7 @@ func _volver() -> void:
 func _volver_al_menu() -> void:
 	# El menú se ejecuta mientras el árbol está pausado,
 	# por eso el guardado debe ocurrir antes de reanudar.
-	GameStateService.guardar_partida()
+	GameState.guardar_partida()
 
 	abierto = false
 	$Overlay.visible = false
