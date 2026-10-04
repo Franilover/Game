@@ -14,8 +14,8 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _dialogue_system: Node = $Systems/DialogueSystem
 @onready var _ium_manager: Node = $Systems/IUMManager
 @onready var _ium_lab: Control = $UI/IUMLab
-@onready var _supabase_client: Node = $Systems/Infrastructure/SupabaseClient
-@onready var _ium_repository: Node = $Systems/Infrastructure/IUMRepository
+@onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
+@onready var _ium_repository: Node = $Systems/IUMRepository
 
 
 func _ready() -> void:
