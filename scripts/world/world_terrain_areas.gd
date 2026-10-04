@@ -55,6 +55,7 @@ func cargar_datos(
 	_bioma_ecosistemas = []
 
 	_biome_noises.clear()
+	_ecosystem_noises.clear()
 	for indice in range(_biomas.size()):
 		var biome_noise := FastNoiseLite.new()
 		biome_noise.seed = map_seed + 1001 + indice * 7919
