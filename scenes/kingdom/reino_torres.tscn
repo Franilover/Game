@@ -1,8 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/world/reino_torres.gd" id="2_reino"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="3_hud"]
 
 [sub_resource type="RectangleShape2D" id="ShapeWall"]
 size = Vector2(32, 520)
@@ -14,6 +12,8 @@ size = Vector2(960, 32)
 size = Vector2(48, 180)
 
 [node name="ReinoTorres" type="Node2D"]
+z_as_relative = false
+z_index = -4090
 script = ExtResource("2_reino")
 
 [node name="Ground" type="Polygon2D" parent="."]
@@ -55,6 +55,21 @@ horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.92, 0.84, 0.67, 1)
 theme_override_font_sizes/font_size = 14
 
+[node name="RoadToWorld" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(420, -48, 960, -48, 960, 48, 420, 48)
+color = Color(0.38, 0.31, 0.22, 1)
+z_index = 1
+
+[node name="RoadEdgeTop" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(420, -52, 960, -52, 960, -48, 420, -48)
+color = Color(0.55, 0.45, 0.31, 1)
+z_index = 2
+
+[node name="RoadEdgeBottom" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(420, 48, 960, 48, 960, 52, 420, 52)
+color = Color(0.55, 0.45, 0.31, 1)
+z_index = 2
+
 [node name="Exit" type="Area2D" parent="."]
 position = Vector2(456, 0)
 monitoring = true
@@ -62,27 +77,12 @@ monitoring = true
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Exit"]
 shape = SubResource("ShapeExit")
 
-[node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector2(0, 120)
-
-[node name="Camera" type="Camera2D" parent="."]
-position = Vector2(0, 120)
-zoom = Vector2(2, 2)
-position_smoothing_enabled = false
-
-[node name="UI" type="CanvasLayer" parent="."]
-
-[node name="HUD" parent="UI" instance=ExtResource("3_hud")]
-
 [node name="Walls" type="StaticBody2D" parent="."]
 
 [node name="Left" type="CollisionShape2D" parent="Walls"]
 position = Vector2(-496, 0)
 shape = SubResource("ShapeWall")
 
-[node name="Right" type="CollisionShape2D" parent="Walls"]
-position = Vector2(496, 0)
-shape = SubResource("ShapeWall")
 
 [node name="Top" type="CollisionShape2D" parent="Walls"]
 position = Vector2(0, -276)
