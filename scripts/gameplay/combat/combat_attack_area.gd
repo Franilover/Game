@@ -2,10 +2,10 @@ extends Node2D
 class_name CombatAttackArea
 
 
-signal objetivo_detectado(objetivo: Node)
+signal objetivo_detectado(objetivo: Entity)
 
 
-var atacante: Node = null
+var atacante: Entity = null
 var objeto_ataque: Dictionary = {}
 var duracion: float = 0.10
 
