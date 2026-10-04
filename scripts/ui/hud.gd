@@ -50,9 +50,10 @@ var _discovery_notice_timer: float = 0.0
 @onready var _interaction_prompt_action_node: Label = $InteractionPrompt/Margin/Content/Action
 @onready var _location_panel_node: Panel = $LocationPanel
 @onready var _location_label_node: Label = $LocationPanel/LocationLabel
+@onready var _hotbar_node: Control = $Hotbar
 
 
-func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null) -> void:
+func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
@@ -65,6 +66,8 @@ func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nue
 		entity_manager = nuevo_entity_manager
 	if nuevo_supabase_client != null and is_instance_valid(nuevo_supabase_client):
 		supabase_client = nuevo_supabase_client
+	if nuevo_inventory != null and is_instance_valid(nuevo_inventory) and _hotbar_node.has_method("configurar_inventario"):
+		_hotbar_node.call("configurar_inventario", nuevo_inventory)
 	if mission_manager != null:
 		_conectar_senales_misiones()
 	if is_inside_tree():
