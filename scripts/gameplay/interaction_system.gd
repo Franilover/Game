@@ -113,6 +113,10 @@ func _buscar_objetivo() -> void:
 
 
 
+func obtener_texto_interaccion() -> String:
+	return interaction_controller.obtener_texto()
+
+
 func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
 	if objetivo_actual == nuevo_objetivo:
 		return
