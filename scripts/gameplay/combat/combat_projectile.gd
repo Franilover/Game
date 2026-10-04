@@ -5,7 +5,7 @@ class_name CombatProjectile
 ## Transporta una instancia de ataque y resuelve el impacto mediante
 ## la capa canónica CombatDamage. No busca objetivos en el SceneTree.
 
-signal objetivo_impactado(objetivo: Node, ataque: CombatAttack)
+signal objetivo_impactado(objetivo: Entity, ataque: CombatAttack)
 
 var attack: CombatAttack = null
 var velocity: Vector2 = Vector2.ZERO
@@ -70,8 +70,8 @@ func _procesar_objetivo(objetivo: Node) -> void:
 	if not CombatDamage.aplicar(entidad, attack.damage, attack.origin):
 		return
 	_impactado = true
-	objetivo_impactado.emit(objetivo, attack)
-	CombatFeedback.impacto(objetivo, attack.damage)
+	objetivo_impactado.emit(entidad, attack)
+	CombatFeedback.impacto(entidad, attack.damage)
 	queue_free()
 
 
