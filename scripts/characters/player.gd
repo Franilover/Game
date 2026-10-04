@@ -92,7 +92,6 @@ func _ready() -> void:
 	add_to_group("player")
 
 	add_child(input_gate)
-	add_child(Node.new())
 	eterium.configurar(eterium_runtime, stamina_controller)
 	eterium.configurar_vital(vital_state)
 	stamina_controller.configurar(max_stamina)
