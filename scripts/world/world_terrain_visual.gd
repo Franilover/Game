@@ -36,6 +36,9 @@ const ZONE_TEXTURES: Dictionary = {
 	9: "res://assets/tilesets/Desierto.png",
 }
 
+const PRADERA_VARIACIONES_TEXTURE: String = "res://assets/tilesets/Pradera_Variaciones.png"
+const PRADERA_VARIACIONES_COUNT: int = 16
+
 const TERRAIN_NAMES: PackedStringArray = [
 	"Grass", "Dirt", "Stone", "Sand",
 	"Water", "Deep Water", "Shore", "Ice",
@@ -67,6 +70,9 @@ var _dirty_lookup_by_bioma: Dictionary = {}
 
 # Celda -> bioma visual que la posee actualmente.
 var _cell_bioma: Dictionary = {}
+var _cell_zone: Dictionary = {}
+var _variation_layers_by_bioma: Dictionary = {}
+var _variation_tilesets_by_bioma: Dictionary = {}
 
 
 func configurar(nuevo_tile_size: int) -> void:
@@ -98,6 +104,7 @@ func _crear_capa_bioma(bioma_nombre: String) -> TileMapDual:
 	_next_source_id_by_bioma[clave] = 0
 	_dirty_cells_by_bioma[clave] = []
 	_dirty_lookup_by_bioma[clave] = {}
+	_variation_layers_by_bioma[clave] = _crear_capa_variaciones(clave)
 
 	if tilemap_dual == null:
 		tilemap_dual = layer
@@ -177,6 +184,12 @@ func set_zone(
 
 		_cell_bioma[cell] = clave
 
+	_cell_zone[cell] = zone
+	_actualizar_variacion_pradera(cell)
+	for offset: Vector2i in UPDATE_NEIGHBORS:
+		if offset != Vector2i.ZERO:
+			_actualizar_variacion_pradera(cell + offset)
+
 	var data: Dictionary = _base_tiles[tile_key]
 
 	# Una celda sólo puede existir una vez en su capa.
@@ -194,6 +207,77 @@ func set_zone(
 			clave,
 			cell + offset
 		)
+
+
+func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
+	var layer := TileMapLayer.new()
+	layer.name = "TerrainVariaciones_" + ("General" if bioma_nombre.is_empty() else bioma_nombre)
+	layer.z_as_relative = false
+	layer.z_index = -4095
+	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
+	add_child(layer)
+	return layer
+
+
+func _crear_tileset_variaciones(bioma_nombre: String) -> TileSet:
+	var tile_set := TileSet.new()
+	tile_set.tile_size = Vector2i(tile_size, tile_size)
+
+	var texture := load(PRADERA_VARIACIONES_TEXTURE) as Texture2D
+	if not _textura_valida(texture):
+		return tile_set
+
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = texture
+	atlas.texture_region_size = Vector2i(tile_size, tile_size)
+
+	for y in range(4):
+		for x in range(4):
+			atlas.create_tile(Vector2i(x, y))
+
+	tile_set.add_source(atlas, 0)
+	_variation_tilesets_by_bioma[bioma_nombre] = tile_set
+	return tile_set
+
+
+func _actualizar_variacion_pradera(cell: Vector2i) -> void:
+	if not _cell_bioma.has(cell):
+		return
+
+	var bioma := str(_cell_bioma[cell])
+	if not _variation_layers_by_bioma.has(bioma):
+		return
+
+	var layer := _variation_layers_by_bioma[bioma] as TileMapLayer
+	if layer == null:
+		return
+
+	# Las variaciones sólo aparecen en interiores completos de Pradera.
+	# Si una celda toca otro bioma/zona, TileMapDual conserva la transición.
+	if _cell_zone.get(cell, -1) != 0 or not _es_interior_pradera(cell):
+		layer.erase_cell(cell)
+		return
+
+	var indice := _indice_variacion(cell)
+	var atlas := Vector2i(indice % 4, indice / 4)
+	layer.set_cell(cell, 0, atlas, 0)
+
+
+func _es_interior_pradera(cell: Vector2i) -> bool:
+	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var vecino := cell + offset
+		if _cell_bioma.get(vecino, "") != _cell_bioma.get(cell, ""):
+			return false
+		if _cell_zone.get(vecino, -1) != 0:
+			return false
+	return true
+
+
+func _indice_variacion(cell: Vector2i) -> int:
+	# Selección determinista: el mismo mundo produce siempre la misma textura.
+	var valor := absi(cell.x * 928371 + cell.y * 689287)
+	valor = (valor ^ (valor >> 13)) * 1274126177
+	return absi(valor) % PRADERA_VARIACIONES_COUNT
 
 
 func _crear_base_tile(
@@ -456,6 +540,10 @@ func clear_chunk(
 					bioma,
 					cell + offset
 				)
+			_actualizar_variacion_pradera(cell)
+			for offset: Vector2i in UPDATE_NEIGHBORS:
+				if offset != Vector2i.ZERO:
+					_actualizar_variacion_pradera(cell + offset)
 
 	if not _dirty_cells_by_bioma.is_empty():
 		flush()
