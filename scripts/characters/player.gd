@@ -319,9 +319,9 @@ func _configurar_especie_eterium_game_desde_supabase() -> void:
 	if _supabase_client_ref == null:
 		return
 	if not _supabase_client_ref.especie_eterium_game_cargado.is_connected(_al_especie_eterium_game_cargado):
-		SupabaseClient.especie_eterium_game_cargado.connect(_al_especie_eterium_game_cargado)
-	if SupabaseClient.tiene_especie_eterium_game():
-		_aplicar_especie_eterium_game(SupabaseClient.obtener_especie_eterium_game())
+		_supabase_client_ref.especie_eterium_game_cargado.connect(_al_especie_eterium_game_cargado)
+	if _supabase_client_ref.tiene_especie_eterium_game():
+		_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
 
 
 func _al_especie_eterium_game_cargado(reglas: Array) -> void:
@@ -329,20 +329,20 @@ func _al_especie_eterium_game_cargado(reglas: Array) -> void:
 
 
 func _configurar_eterium_desde_supabase() -> void:
-	if not SupabaseClient.eterium_runtime_cargado.is_connected(
+	if not _supabase_client_ref.eterium_runtime_cargado.is_connected(
 		_al_eterium_runtime_cargado
 	):
-		SupabaseClient.eterium_runtime_cargado.connect(
+		_supabase_client_ref.eterium_runtime_cargado.connect(
 			_al_eterium_runtime_cargado
 		)
 
-	if SupabaseClient.tiene_eterium_runtime():
+	if _supabase_client_ref.tiene_eterium_runtime():
 		_aplicar_eterium_runtime(
-			SupabaseClient.obtener_eterium_reglas(),
-			SupabaseClient.obtener_eterium_organismos()
+			_supabase_client_ref.obtener_eterium_reglas(),
+			_supabase_client_ref.obtener_eterium_organismos()
 		)
 	else:
-		SupabaseClient.cargar_eterium_runtime()
+		_supabase_client_ref.cargar_eterium_runtime()
 
 
 func _al_eterium_runtime_cargado(
@@ -720,7 +720,7 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 	personaje["skin"] = personaje_skin
 	GameState.flags["personaje"] = personaje
 
-	var reglas: Array = SupabaseClient.obtener_especie_eterium_game()
+	var reglas: Array = _supabase_client_ref.obtener_especie_eterium_game()
 	if not reglas.is_empty():
 		_aplicar_especie_eterium_game(reglas)
 
@@ -747,7 +747,7 @@ func admin_establecer_maximos(
 
 
 func admin_restaurar_defaults() -> bool:
-	var reglas: Array = SupabaseClient.obtener_especie_eterium_game()
+	var reglas: Array = _supabase_client_ref.obtener_especie_eterium_game()
 	var especie_id := str(personaje_especie.get("id", ""))
 	var eterium_default := 100
 	var vida_default := 100
