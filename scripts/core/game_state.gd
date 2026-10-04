@@ -10,6 +10,7 @@ const AUTOSAVE_INTERVAL: float = 10.0
 
 var player_state := PlayerState.new()
 var world_state := WorldState.new()
+var discovery_state := DiscoveryState.new()
 
 var active_save_id: String = ""
 var active_save_name: String = ""
@@ -470,6 +471,7 @@ func _ejecutar_guardado_rapido() -> void:
 
 
 func _serializar_estado() -> Dictionary:
+	_sincronizar_descubrimientos()
 	return {
 		"player": player_state.to_dictionary(),
 		"elapsed_time": world_state.elapsed_time,
@@ -546,6 +548,8 @@ func _aplicar_estado_memoria(
 	else:
 		world_state.flags = {}
 
+	discovery_state.from_dictionary(world_state.flags)
+
 
 # ============================================================
 # ENCICLOPEDIA
@@ -609,20 +613,8 @@ func registrar_terreno_explorado(
 	tile: Vector2i,
 	radio: int = 6
 ) -> bool:
-	var registros_variant: Variant = world_state.flags.get(
-		"mapa_terreno_explorado",
-		null
-	)
-
-	var registros: Dictionary
-	if registros_variant is Dictionary:
-		registros = registros_variant as Dictionary
-	else:
-		registros = {}
-		world_state.flags["mapa_terreno_explorado"] = registros
-
-	var nuevo: bool = false
-	var radio_efectivo: int = maxi(radio, 0)
+	var nuevo := false
+	var radio_efectivo := maxi(radio, 0)
 
 	for dy in range(-radio_efectivo, radio_efectivo + 1):
 		for dx in range(-radio_efectivo, radio_efectivo + 1):
@@ -631,28 +623,17 @@ func registrar_terreno_explorado(
 			):
 				continue
 
-			var explorado: Vector2i = (
+			if discovery_state.explorar(
 				tile + Vector2i(dx, dy)
-			)
-
-			var clave: String = (
-				str(explorado.x) + "," + str(explorado.y)
-			)
-
-			if registros.has(clave):
-				continue
-
-			registros[clave] = true
-			nuevo = true
+			):
+				nuevo = true
 
 	if not nuevo:
 		return false
 
-	world_state.flags["mapa_terreno_explorado"] = registros
+	_sincronizar_descubrimientos()
 	mapa_exploracion_actualizada.emit()
-
 	return true
-
 
 
 func registrar_descubrimiento_mundo(
@@ -661,84 +642,38 @@ func registrar_descubrimiento_mundo(
 	habitats: Array,
 	criaturas: Array
 ) -> bool:
-	var descubrimientos_variant: Variant = world_state.flags.get("descubrimientos_mundo", null)
-	var descubrimientos: Dictionary
-	if descubrimientos_variant is Dictionary:
-		descubrimientos = descubrimientos_variant as Dictionary
-	else:
-		descubrimientos = {}
-		world_state.flags["descubrimientos_mundo"] = descubrimientos
-
 	var nuevos: Array[Dictionary] = []
 
 	var bioma_id := str(bioma.get("id", ""))
-	if not bioma_id.is_empty():
-		var biomas_variant: Variant = descubrimientos.get("biomas", {})
-		var biomas: Dictionary
-		if biomas_variant is Dictionary:
-			biomas = biomas_variant as Dictionary
-		else:
-			biomas = {}
-		if not biomas.has(bioma_id):
-			biomas[bioma_id] = true
-			nuevos.append({"nivel": "bioma", "id": bioma_id})
-		descubrimientos["biomas"] = biomas
+	if discovery_state.registrar_bioma(bioma_id):
+		nuevos.append({"nivel": "bioma", "id": bioma_id})
 
 	var ecosistema_id := str(ecosistema.get("id", ""))
-	if not ecosistema_id.is_empty():
-		var ecosistemas_variant: Variant = descubrimientos.get("ecosistemas", {})
-		var ecosistemas: Dictionary
-		if ecosistemas_variant is Dictionary:
-			ecosistemas = ecosistemas_variant as Dictionary
-		else:
-			ecosistemas = {}
-		if not ecosistemas.has(ecosistema_id):
-			ecosistemas[ecosistema_id] = true
-			nuevos.append({"nivel": "ecosistema", "id": ecosistema_id})
-		descubrimientos["ecosistemas"] = ecosistemas
-
-	var habitats_variant: Variant = descubrimientos.get("habitats", {})
-	var habitats_descubiertos: Dictionary
-	if habitats_variant is Dictionary:
-		habitats_descubiertos = habitats_variant as Dictionary
-	else:
-		habitats_descubiertos = {}
+	if discovery_state.registrar_ecosistema(ecosistema_id):
+		nuevos.append({"nivel": "ecosistema", "id": ecosistema_id})
 
 	for habitat_variant in habitats:
 		if not habitat_variant is Dictionary:
 			continue
-		var habitat: Dictionary = habitat_variant
-		var habitat_id := str(habitat.get("id", ""))
-		if habitat_id.is_empty() or habitats_descubiertos.has(habitat_id):
-			continue
-		habitats_descubiertos[habitat_id] = true
-		nuevos.append({"nivel": "habitat", "id": habitat_id})
-
-	descubrimientos["habitats"] = habitats_descubiertos
-
-	var criaturas_variant: Variant = descubrimientos.get("criaturas", {})
-	var criaturas_descubiertas: Dictionary
-	if criaturas_variant is Dictionary:
-		criaturas_descubiertas = criaturas_variant as Dictionary
-	else:
-		criaturas_descubiertas = {}
+		var habitat_id := str(
+			(habitat_variant as Dictionary).get("id", "")
+		)
+		if discovery_state.registrar_habitat(habitat_id):
+			nuevos.append({"nivel": "habitat", "id": habitat_id})
 
 	for criatura_variant in criaturas:
 		if not criatura_variant is Dictionary:
 			continue
-		var criatura: Dictionary = criatura_variant
-		var criatura_id := str(criatura.get("id", ""))
-		if criatura_id.is_empty() or criaturas_descubiertas.has(criatura_id):
-			continue
-		criaturas_descubiertas[criatura_id] = true
-		nuevos.append({"nivel": "criatura", "id": criatura_id})
-
-	descubrimientos["criaturas"] = criaturas_descubiertas
+		var criatura_id := str(
+			(criatura_variant as Dictionary).get("id", "")
+		)
+		if discovery_state.registrar_criatura(criatura_id):
+			nuevos.append({"nivel": "criatura", "id": criatura_id})
 
 	if nuevos.is_empty():
 		return false
 
-	world_state.flags["descubrimientos_mundo"] = descubrimientos
+	_sincronizar_descubrimientos()
 
 	for descubrimiento_variant in nuevos:
 		if not descubrimiento_variant is Dictionary:
@@ -751,47 +686,38 @@ func registrar_descubrimiento_mundo(
 
 	descubrimientos_mundo_actualizados.emit()
 	return true
+
+
 func obtener_descubrimientos_mundo() -> Dictionary:
-	var registros_variant: Variant = world_state.flags.get(
-		"descubrimientos_mundo",
-		{}
-	)
-
-	if registros_variant is Dictionary:
-		return (
-			registros_variant as Dictionary
-		).duplicate(true)
-
-	return {}
+	return {
+		"biomas": discovery_state.biomes.duplicate(true),
+		"ecosistemas": discovery_state.ecosystems.duplicate(true),
+		"habitats": discovery_state.habitats.duplicate(true),
+		"criaturas": discovery_state.creatures.duplicate(true)
+	}
 
 
 func obtener_terreno_explorado() -> Dictionary:
-	var registros_variant: Variant = world_state.flags.get(
-		"mapa_terreno_explorado",
-		{}
-	)
-
-	if registros_variant is Dictionary:
-		return (registros_variant as Dictionary).duplicate(true)
-
-	return {}
+	return discovery_state.explored_tiles.duplicate(true)
 
 
 func esta_explorado(tile: Vector2i) -> bool:
-	var registros_variant: Variant = world_state.flags.get(
+	var clave := str(tile.x) + "," + str(tile.y)
+	return discovery_state.explored_tiles.has(clave)
+
+
+func _sincronizar_descubrimientos() -> void:
+	var datos := discovery_state.to_dictionary()
+	world_state.flags["descubrimientos_mundo"] = {
+		"biomas": datos.get("biomas", {}),
+		"ecosistemas": datos.get("ecosistemas", {}),
+		"habitats": datos.get("habitats", {}),
+		"criaturas": datos.get("criaturas", {})
+	}
+	world_state.flags["mapa_terreno_explorado"] = datos.get(
 		"mapa_terreno_explorado",
 		{}
 	)
-
-	if not registros_variant is Dictionary:
-		return false
-
-	var clave: String = (
-		str(tile.x) + "," + str(tile.y)
-	)
-
-	return (registros_variant as Dictionary).has(clave)
-
 
 
 # ============================================================
