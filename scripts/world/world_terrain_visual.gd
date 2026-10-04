@@ -486,6 +486,8 @@ func _marcar_dirty(
 
 
 func flush() -> void:
+	var dirty_world_cells: Dictionary = {}
+
 	for clave_variant in _layers_by_bioma.keys():
 		var clave := str(clave_variant)
 
@@ -511,6 +513,7 @@ func flush() -> void:
 				continue
 
 			var cell := cell_variant as Vector2i
+			dirty_world_cells[cell] = true
 			if layer.get_cell_source_id(cell) == -1:
 				continue
 
@@ -519,6 +522,63 @@ func flush() -> void:
 
 		_dirty_cells_by_bioma[clave] = []
 		_dirty_lookup_by_bioma[clave] = {}
+
+	_recomponer_display(dirty_world_cells.keys())
+
+
+func _recomponer_display(world_cells: Array) -> void:
+	# Varias TileMapDual son necesarias para separar terrenos, pero sus
+	# DisplayLayers ocupan el mismo espacio. Para cada celda dual dejamos
+	# visible una sola capa: la del terreno que realmente ocupa esa esquina.
+	var display_cells: Dictionary = {}
+	for world_cell_variant in world_cells:
+		if not world_cell_variant is Vector2i:
+			continue
+		var world_cell := world_cell_variant as Vector2i
+		for offset: Vector2i in [
+			Vector2i.ZERO,
+			Vector2i(-1, 0),
+			Vector2i(0, -1),
+			Vector2i(-1, -1),
+		]:
+			display_cells[world_cell + offset] = true
+
+	for display_cell_variant in display_cells.keys():
+		var display_cell := display_cell_variant as Vector2i
+		var counts: Dictionary = {}
+		for world_offset: Vector2i in [
+			Vector2i.ZERO,
+			Vector2i(-1, 0),
+			Vector2i(0, -1),
+			Vector2i(-1, -1),
+		]:
+			var key := str(_cell_layer_key.get(display_cell + world_offset, ""))
+			if not key.is_empty():
+				counts[key] = int(counts.get(key, 0)) + 1
+
+		var ganador := ""
+		var mejor_cuenta := -1
+		for key_variant in counts.keys():
+			var key := str(key_variant)
+			var cuenta := int(counts[key])
+			if cuenta > mejor_cuenta:
+				mejor_cuenta = cuenta
+				ganador = key
+
+		for key_variant in _layers_by_bioma.keys():
+			var key := str(key_variant)
+			var layer := _layers_by_bioma[key] as TileMapDual
+			if layer == null or not is_instance_valid(layer._display):
+				continue
+			var debe_mostrarse := key == ganador
+			for child in layer._display.get_children():
+				if not child is TileMapLayer:
+					continue
+				var display_layer := child as TileMapLayer
+				if debe_mostrarse:
+					# El TileMapDual ya calculó el tile correcto; no lo tocamos.
+					continue
+				display_layer.erase_cell(display_cell)
 
 
 func clear_chunk(
