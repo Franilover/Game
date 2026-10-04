@@ -10,17 +10,11 @@ signal error_conexion(mensaje: String)
 signal request_completed(request_id: int, resultado: int, codigo_http: int, cabeceras: PackedStringArray, cuerpo: PackedByteArray)
 
 
-const SUPABASE_URL := (
-	"https://ftdxthnizdosaaavjhah.supabase.co"
-)
 
 const RPC_MUNDO := (
 	"/rest/v1/rpc/get_mundo_inicial_ambiental_v2"
 )
 
-const SUPABASE_KEY := (
-	"sb_publishable_dZowBcHCW7PJ5tV8aDnAPQ_1URMyPbV"
-)
 
 const HTTP_TIMEOUT: float = 15.0
 const MAX_INTENTOS_INICIALES: int = 3
@@ -159,8 +153,8 @@ func _request_compartido(path: String, method: int, body: String) -> int:
 		request_completed.emit(request_id, resultado, codigo_http, cabeceras, cuerpo)
 		http.queue_free()
 	http.request_completed.connect(callback, CONNECT_ONE_SHOT)
-	var resultado := http.request(SUPABASE_URL + path, PackedStringArray([
-		"apikey: " + SUPABASE_KEY,
+	var resultado := http.request(GarliaAuth.SUPABASE_URL + path, PackedStringArray([
+		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
 		"Content-Type: application/json",
 		"Accept: application/json"
 	]), method, body)
