@@ -201,7 +201,7 @@ func _configurar_inventario() -> void:
 		return
 
 	if _inventory.has_method("configurar"):
-		_inventory.call("configurar", _player)
+		_inventory.call("configurar", _player, _world_entity_spawner)
 
 	var router: Node = _input_router
 	if router != null and _inventory.has_method("configurar_input_gate"):
