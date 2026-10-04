@@ -1,11 +1,18 @@
 extends Node
 class_name GameplayInputGate
 
+var _router: GameplayInputRouter = null
+
+func configurar_router(router: GameplayInputRouter) -> void:
+	_router = router
+
 ## Compatibilidad para sistemas antiguos.
 ## La autoridad real vive en el autoload GameplayInputRouter.
 ## Este nodo NO mantiene estado ni decide qué sistema recibe input.
 
 func _obtener_router() -> GameplayInputRouter:
+	if _router != null and is_instance_valid(_router):
+		return _router
 	return get_tree().get_first_node_in_group("gameplay_input_router") as GameplayInputRouter
 
 
