@@ -36,8 +36,8 @@ var _player_dependency: Node = null
 var _entity_manager_dependency: WorldEntityManager = null
 var _inventory_dependency: GarliaInventory = null
 var _combat_system_dependency: CombatSystem = null
-var _dialogue_system_dependency: Node = null
-var _mission_manager_dependency: Node = null
+var _dialogue_system_dependency: DialogueSystem = null
+var _mission_manager_dependency: MissionManager = null
 var _effects_root: Node = null
 var _world_items_dependency: GarliaWorldItems = null
 
@@ -53,8 +53,8 @@ func configurar_dependencias(
 	entity_manager: WorldEntityManager,
 	inventario: GarliaInventory,
 	combat_system: CombatSystem,
-	dialogue_system: Node,
-	mission_manager: Node,
+	dialogue_system: DialogueSystem,
+	mission_manager: MissionManager,
 	effects_root: Node,
 	world_items: GarliaWorldItems,
 	relaciones_ecologicas: Array = []
@@ -647,8 +647,8 @@ func interact(
 	var dialogue_system := _dialogue_system_dependency
 	if dialogue_system == null or not is_instance_valid(dialogue_system):
 		return
-	if dialogue_system.has_method("abrir_desde"):
-		dialogue_system.call("abrir_desde", self)
+	if dialogue_system != null:
+		dialogue_system.abrir_desde(self)
 
 
 func _die() -> void:
@@ -663,9 +663,8 @@ func _die() -> void:
 		if mission_manager != null and is_instance_valid(mission_manager):
 			mission_manager.call("registrar_muerte", criatura_id, 1)
 		if _world_items_dependency != null and is_instance_valid(_world_items_dependency):
-			if _world_items_dependency.has_method("generar_drops_criatura"):
-				_world_items_dependency.call(
-					"generar_drops_criatura",
+			if _world_items_dependency != null:
+				_world_items_dependency.generar_drops_criatura(
 					criatura_id,
 					global_position
 				)
