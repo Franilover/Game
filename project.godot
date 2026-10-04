@@ -24,7 +24,7 @@ SocialRepository="*res://scripts/core/social_repository.gd"
 WorldData="*uid://g8wte3vf4083"
 GarliaAuth="*uid://dkyg06kgibana"
 GarliaMultiplayer="*uid://dy1ypxqjxvg7x"
-GarliaWorldItems="*uid://bofhgy132htd8"
+
 GarliaSalas="*uid://txc18ojymio3"
 MissionManager="*res://scripts/gameplay/mission_manager.gd"
 RelationshipSystem="*res://scripts/gameplay/relationship_system.gd"
