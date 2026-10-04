@@ -23,6 +23,8 @@ func configurar(
 ) -> void:
 	player = nuevo_player
 	hud = nuevo_hud
+	if not interaction_controller.objetivo_cambiado.is_connected(_cambiar_objetivo):
+		interaction_controller.objetivo_cambiado.connect(_cambiar_objetivo)
 
 	print(
 		"InteractionSystem: configurado."
