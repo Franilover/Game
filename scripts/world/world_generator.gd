@@ -23,6 +23,7 @@ var atmosphere: WorldAtmosphere
 
 var _world_ready: bool = false
 var _entities_root: Node = null
+var _player_ref: Node2D = null
 
 
 func _ready() -> void:
@@ -152,12 +153,11 @@ func _inicializar_mundo() -> void:
 func registrar_jugador(
 	player: Node
 ) -> void:
+	if player is Node2D:
+		_player_ref = player as Node2D
 	if not _world_ready:
 		return
-
-	streamer.registrar_jugador(
-		player
-	)
+	streamer.registrar_jugador(player)
 
 
 func is_world_ready() -> bool:
@@ -212,7 +212,7 @@ func buscar_posicion_reino(nombre: String) -> Vector2:
 	if buscado.is_empty():
 		return Vector2.INF
 
-	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	var jugador := _player_ref
 	if jugador == null:
 		return Vector2.INF
 
@@ -471,11 +471,7 @@ func summon_criatura(
 			)
 		}
 
-	var jugador := (
-		get_tree().get_first_node_in_group(
-			"player"
-		)
-	)
+	var jugador := _player_ref
 
 	if jugador == null:
 		return {
