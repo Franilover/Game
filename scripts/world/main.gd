@@ -27,6 +27,7 @@ var _input_router: Node = GameplayInputRouter
 
 
 func _ready() -> void:
+	_supabase_client.establecer_mundo_activo(true)
 	var world_gen := $World/WorldGenerator
 	if world_gen.has_method("configurar_entidades"):
 		world_gen.call("configurar_entidades", $Entities)
@@ -38,6 +39,11 @@ func _ready() -> void:
 			_inicializar_jugador.bind(world_gen),
 			CONNECT_ONE_SHOT
 		)
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(_supabase_client):
+		_supabase_client.establecer_mundo_activo(false)
 
 
 func _process(_delta: float) -> void:
