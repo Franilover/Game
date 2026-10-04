@@ -35,21 +35,21 @@ func _ready() -> void:
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
-	WorldData.configurar_dependencias(_supabase_client)
+	WorldDataService.configurar_dependencias(_supabase_client)
 
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
 		_supabase_client.relaciones_ecologicas_cargadas.connect(_al_cargar_relaciones_ecologicas)
 	var world_gen: WorldGenerator = _world_generator
-	world_gen.configurar_dependencias(WorldData, GameState)
-	world_gen.configurar_entidades($Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context, _world_items, _supabase_client.obtener_relaciones_ecologicas())
+	world_gen.configurar_dependencias(WorldDataService, GameStateService)
+	world_gen.configurar_entidades($Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManagerService, _world_context, _world_items, _supabase_client.obtener_relaciones_ecologicas())
 	_world_items.configurar_dependencias(
 		$Entities/Player,
 		_inventory,
 		$Entities,
 		world_gen.entity_manager,
 		_world_context,
-		MissionManager
+		MissionManagerService
 	)
 
 	if world_gen.is_world_ready():
@@ -81,7 +81,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 
 	world_gen.registrar_jugador(_player)
 
-	_player.configurar_dependencias(_inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameState)
+	_player.configurar_dependencias(_inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameStateService)
 
 	_configurar_camara()
 	_configurar_hud(_world_context, world_gen)
@@ -89,9 +89,9 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	_configurar_interaccion(world_gen)
 	_configurar_combate(_world_context, world_gen)
 	_configurar_inventario()
-	GameState.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManager)
+	GameStateService.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManagerService)
 	_configurar_dialogo()
-	MissionManager.configurar_dependencias(world_gen.entity_manager, WorldData)
+	MissionManagerService.configurar_dependencias(world_gen.entity_manager, WorldDataService)
 	_configurar_social()
 	_inicializar_ium()
 	_configurar_admin()
@@ -148,7 +148,7 @@ func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator) -> 
 		push_error("Main: no se encontró UI/HUD.")
 		return
 
-	_hud.configurar(_player, world_context, MissionManager, world_gen.entity_manager, _supabase_client, _inventory, WorldData, GameState)
+	_hud.configurar(_player, world_context, MissionManagerService, world_gen.entity_manager, _supabase_client, _inventory, WorldDataService, GameStateService)
 
 
 func _configurar_interaccion(world_gen: WorldGenerator) -> void:
@@ -178,7 +178,7 @@ func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator)
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
 
-	_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, GameState)
+	_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, GameStateService)
 
 
 func _configurar_input_router() -> void:
@@ -193,7 +193,7 @@ func _configurar_inventario() -> void:
 		push_error("Main: no se encontró UI/Inventory.")
 		return
 
-	_inventory.configurar(_player, _world_entity_spawner, _world_context, RelationshipSystem, _world_items)
+	_inventory.configurar(_player, _world_entity_spawner, _world_context, RelationshipSystemService, _world_items)
 
 	if _input_router != null:
 		_inventory.configurar_input_router(_input_router)
@@ -206,7 +206,7 @@ func _configurar_dialogo() -> void:
 		push_error("Main: no se encontró Systems/DialogueSystem.")
 		return
 
-	_dialogue_system.configurar(_player, _hud, MissionManager, RelationshipSystem)
+	_dialogue_system.configurar(_player, _hud, MissionManagerService, RelationshipSystemService)
 
 
 func _configurar_admin() -> void:
@@ -266,7 +266,7 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 		_player.equipar_proceso_ium(proceso)
 	else:
 		# Guardar en game_state como fallback
-		GameState.establecer_proceso_ium_equipado(proceso)
+		GameStateService.establecer_proceso_ium_equipado(proceso)
 
 	var nombre: String = proceso.get("nombre", "Proceso")
 	print("Main: Proceso IUM equipado → ", nombre)
@@ -274,7 +274,7 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 
 func _configurar_social() -> void:
 	SocialRepository.configurar(_supabase_client)
-	RelationshipSystem.configurar(SocialRepository, GameState)
+	RelationshipSystemService.configurar(SocialRepository, GameStateService)
 
 
 func _al_cargar_relaciones_ecologicas(relaciones: Array) -> void:
