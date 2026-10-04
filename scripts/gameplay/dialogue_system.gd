@@ -6,10 +6,10 @@ signal dialogue_started(speaker: String)
 signal dialogue_finished
 
 
-var player: Node = null
-var ui_root: Node = null
+var player: Player = null
+var ui_root: HUD = null
 var mission_manager: MissionManager = null
-var relationship_system: Node = null
+var relationship_system: RelationshipSystem = null
 
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
@@ -36,7 +36,7 @@ func _ready() -> void:
 	add_to_group("dialogue_system")
 
 
-func configurar(nuevo_player: Node, nuevo_ui_root: Node, nuevo_mission_manager: MissionManager = null, nuevo_relationship_system: Node = null) -> void:
+func configurar(nuevo_player: Player, nuevo_ui_root: HUD, nuevo_mission_manager: MissionManager = null, nuevo_relationship_system: RelationshipSystem = null) -> void:
 	player = nuevo_player
 	ui_root = nuevo_ui_root
 	mission_manager = nuevo_mission_manager
@@ -158,7 +158,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		var personaje_id_social := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id_social.is_empty():
-			var social: Node = relationship_system
+			var social: RelationshipSystem = relationship_system
 			if social != null and social.has_method("registrar_dialogo"):
 				social.call("registrar_dialogo", personaje_id_social, str(datos_seleccionados.get("clave", "principal")))
 
