@@ -758,11 +758,7 @@ func _spawn_props_in_chunk(
 		if elegido.is_empty():
 			continue
 
-		var prop_node: Node = null
-		if _entity_factory != null:
-			prop_node = _entity_factory.crear_prop(elegido)
-		else:
-			prop_node = preload("res://scenes/world/world_prop.tscn").instantiate()
+		var prop_node: Node = _entity_factory.crear_prop(elegido)
 		if prop_node == null:
 			continue
 
