@@ -89,7 +89,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	_configurar_interaccion(world_gen)
 	_configurar_combate(_world_context, world_gen)
 	_configurar_inventario()
-	GameState.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManager)
+	GameState.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManager, WorldData)
 	_configurar_dialogo()
 	MissionManager.configurar_dependencias(world_gen.entity_manager, WorldData)
 	_configurar_social()
