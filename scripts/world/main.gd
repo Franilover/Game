@@ -123,7 +123,7 @@ func _configurar_interaccion() -> void:
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
 	if _interaction_system.has_method("configurar"):
-		_interaction_system.configurar(_player)
+		_interaction_system.configurar(_player, _inventory, GarliaWorldItems)
 	else:
 		push_error("Main: InteractionSystem no tiene configurar().")
 
@@ -150,7 +150,7 @@ func _configurar_combate() -> void:
 		return
 
 	if _combat_system.has_method("configurar"):
-		_combat_system.configurar(_player)
+		_combat_system.configurar(_player, _inventory, world_gen, self)
 
 
 func _configurar_inventario() -> void:
