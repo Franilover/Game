@@ -187,3 +187,18 @@ DialogueSystem ya no busca estos sistemas mediante /root/... .
 GameState ya no busca Player/Inventory/WorldGenerator mediante grupos o la escena actual durante guardado/aplicación del estado.
 
 El objetivo es que los sistemas de gameplay dependan de contratos suministrados por el Composition Root y no de la estructura global del SceneTree.
+
+
+## Tercera etapa — Inventory state boundary
+
+La frontera de inventario ya no es solamente estructural; las mutaciones principales pasan por el mismo flujo:
+
+Inventory UI → InventoryController → InventoryRuntime → InventoryState / InventoryHotbar / InventoryEquipment
+
+Las operaciones de añadir, quitar, intercambiar/apilar, durabilidad, hotbar y transferencias de equipamiento están centralizadas en Controller/Runtime.
+
+La UI conserva responsabilidades de presentación y coordinación visual: actualizar slots, mostrar información, gestionar drag & drop y reflejar señales.
+
+La hotbar continúa siendo selección independiente del equipamiento. Equipar un objeto requiere una operación explícita de equipamiento; seleccionar una posición de hotbar no cambia el equipo.
+
+El Player también es una dependencia inyectada en la UI de inventario para usos de objetos y pestañas administrativas; ya no se descubre mediante grupos.
