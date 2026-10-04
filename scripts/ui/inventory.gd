@@ -184,6 +184,13 @@ func cerrar() -> void:
 
 
 func esta_abierto() -> bool:
+	# El inventario solo puede bloquear gameplay mientras su ventana
+	# está realmente abierta. Esto evita que un estado interno antiguo
+	# sobreviva si la escena/UI fue ocultada por otro sistema.
+	if not visible:
+		_abierto = false
+		return false
+
 	return _abierto
 
 
