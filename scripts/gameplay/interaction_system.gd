@@ -107,7 +107,19 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool)
 		return false
 
 	_buscar_objetivo()
-	return interaction_controller.interactuar(player)
+	var objetivo_ejecutado := interaction_controller.objetivo_actual
+	var resultado := interaction_controller.interactuar(player)
+
+	# Una recolección exitosa puede llamar queue_free(), que no elimina el
+	# nodo hasta el final del frame. Limpiar el objetivo aquí oculta el prompt
+	# inmediatamente, sin esperar al siguiente escaneo de proximidad.
+	if (
+		is_instance_valid(objetivo_ejecutado)
+		and objetivo_ejecutado.is_queued_for_deletion()
+	):
+		interaction_controller.establecer_objetivo(null)
+
+	return resultado
 
 
 func _entrada_bloqueada_por_router() -> bool:
