@@ -6,7 +6,7 @@ class_name CombatDamage
 ## se aplican antes de entregar el daño a la entidad.
 
 static func aplicar(
-	objetivo: Node,
+	objetivo: Entity,
 	cantidad: int,
 	origen: String,
 	modificador: Callable = Callable()
