@@ -86,7 +86,7 @@ func procesar_accion_secundaria() -> bool:
 	if inventory != null:
 		objeto_equipado = inventory.obtener_objeto_equipado("mano_secundaria").duplicate(true)
 
-	return _procesar_interaccion_de_mano(objeto_equipado, false)
+	return _procesar_interaccion_de_mano(objeto_equipado, true)
 
 
 func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool) -> bool:
