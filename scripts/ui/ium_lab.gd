@@ -1,4 +1,6 @@
 extends Control
+class_name IUMLab
+
 ## IUMLab — menú del Simulador de IUMs.
 ## Se abre con [M], se cierra con [M] o [Escape].
 ## El jugador arrastra IUMs al canvas, los conecta y simula.
