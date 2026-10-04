@@ -69,6 +69,16 @@ func registrar_existente(
 	return registrar(entity, chunk_coord, persistent_key)
 
 
+func tiene_chunk(chunk_coord: Vector2i) -> bool:
+	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
+	if not bucket_variant is Array:
+		return false
+	for entity_variant in bucket_variant:
+		if entity_variant is Node and is_instance_valid(entity_variant):
+			return true
+	return false
+
+
 func obtener_por_chunk(chunk_coord: Vector2i) -> Array:
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 	if bucket_variant is Array:
