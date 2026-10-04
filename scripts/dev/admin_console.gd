@@ -828,7 +828,7 @@ func _comando_summon(nombre: String) -> void:
 	if world_generator == null:
 		_agregar_linea(
 			"[color=#d88]"
-			+ "No se encontró WorldGenerator."
+			+ "No se encontró el spawner de entidades."
 			+ "[/color]"
 		)
 		return
@@ -838,7 +838,7 @@ func _comando_summon(nombre: String) -> void:
 	):
 		_agregar_linea(
 			"[color=#d88]"
-			+ "WorldGenerator no tiene summon_criatura()."
+			+ "El spawner de entidades no tiene summon_criatura()."
 			+ "[/color]"
 		)
 		return
@@ -913,9 +913,17 @@ func _comando_summon(nombre: String) -> void:
 		+ "[/color]"
 	)
 
+func _obtener_entidades_activas() -> Array:
+	if entity_manager == null:
+		return []
+	if not entity_manager.has_method("obtener_entidades_activas"):
+		return []
+	var resultado: Variant = entity_manager.call("obtener_entidades_activas")
+	return resultado as Array if resultado is Array else []
+
 func _obtener_nombres_jugadores() -> Array[String]:
 	var nombres: Array[String] = []
-	var jugador := get_tree().get_first_node_in_group("player")
+	var jugador: Node = player
 	if jugador != null:
 		var nombre := str(jugador.get("personaje_nombre")).strip_edges()
 		if nombre.is_empty():
@@ -930,7 +938,7 @@ func _comando_player(argumentos: String) -> void:
 		_agregar_linea("[color=#d88]Uso: /player <nombre> [Explorador|Admin][/color]")
 		return
 
-	var jugador := get_tree().get_first_node_in_group("player")
+	var jugador: Node = player
 	if jugador == null:
 		_agregar_linea("[color=#d88]No se encontró el jugador.[/color]")
 		return
@@ -1028,7 +1036,7 @@ func _comando_tp(argumentos: String) -> void:
 
 	match tipo:
 		"criatura":
-			for nodo in entity_manager.obtener_entidades_activas() if entity_manager != null and entity_manager.has_method("obtener_entidades_activas") else []:
+			for nodo in _obtener_entidades_activas():
 				if nodo is Creature:
 					var criatura := nodo as Creature
 					if criatura.get_nombre_visual().to_lower() == nombre.to_lower() or criatura.get_nombre().to_lower() == nombre.to_lower():
@@ -1036,7 +1044,7 @@ func _comando_tp(argumentos: String) -> void:
 						break
 
 		"humano":
-			for nodo in get_tree().get_nodes_in_group("creatures"):
+			for nodo in _obtener_entidades_activas():
 				if nodo is Creature:
 					var humano := nodo as Creature
 					if humano.get_nombre().to_lower() == "humano" and humano.get_nombre_visual().to_lower() == nombre.to_lower():
@@ -1140,20 +1148,6 @@ func _comando_time(argumentos: String) -> void:
 		_agregar_linea(
 			"[color=#d88]"
 			+ "Uso: /time <lock|day|night|restart>"
-			+ "[/color]"
-		)
-		return
-
-	var world_generator: Node = (
-		get_tree().get_first_node_in_group(
-			"world_generator"
-		)
-	)
-
-	if world_generator == null:
-		_agregar_linea(
-			"[color=#d88]"
-			+ "No se encontró WorldGenerator."
 			+ "[/color]"
 		)
 		return
