@@ -1,4 +1,5 @@
 extends Entity
+class_name Player
 
 
 signal stamina_changed(current: float, maximum: float)
