@@ -20,6 +20,7 @@ var _input_router: Node = GameplayInputRouter
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
 @onready var _world_atmosphere: Node = $World/WorldGenerator/WorldAtmosphere
+@onready var _world_context: Node = $World/WorldGenerator/WorldContext
 
 
 func _ready() -> void:
@@ -53,13 +54,13 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	world_gen.registrar_jugador(_player)
 
 	if _player.has_method("configurar_dependencias"):
-		_player.call("configurar_dependencias", _inventory, world_gen, _ium_manager, world_gen.entity_manager, _supabase_client)
+		_player.call("configurar_dependencias", _inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client)
 
 	_configurar_camara()
-	_configurar_hud(world_gen)
+	_configurar_hud(_world_context, world_gen)
 	_configurar_input_router()
 	_configurar_interaccion(world_gen)
-	_configurar_combate(world_gen)
+	_configurar_combate(_world_context)
 	_configurar_inventario()
 	if GameState.has_method("configurar_dependencias"):
 		GameState.call("configurar_dependencias", _inventory, _player, world_gen, _world_atmosphere)
@@ -117,13 +118,13 @@ func _seguir_jugador() -> void:
 	_ultima_posicion_camara = posicion
 
 
-func _configurar_hud(world_gen: Node) -> void:
+func _configurar_hud(world_context: Node, world_gen: Node) -> void:
 	if _hud == null:
 		push_error("Main: no se encontró UI/HUD.")
 		return
 
 	if _hud.has_method("configurar"):
-		_hud.call("configurar", _player, world_gen, MissionManager, world_gen.entity_manager, _supabase_client)
+		_hud.call("configurar", _player, world_context, MissionManager, world_gen.entity_manager, _supabase_client)
 	else:
 		push_error("Main: HUD no tiene configurar().")
 
@@ -158,13 +159,13 @@ func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 		_hud.call("mostrar_interaccion", texto)
 
 
-func _configurar_combate(world_gen: Node) -> void:
+func _configurar_combate(world_context: Node) -> void:
 	if _combat_system == null:
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
 
 	if _combat_system.has_method("configurar"):
-		_combat_system.configurar(_player, _inventory, world_gen, _combat_projectiles)
+		_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles)
 
 
 func _configurar_input_router() -> void:
