@@ -667,7 +667,7 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 		_emitir_objeto_activo()
 	return resultado
 
-func usar_objeto_activo(usuario: Node = null) -> bool:
+func usar_objeto_activo(usuario: Player = null) -> bool:
 	var indice: int = obtener_indice_inventario_hotbar(
 		indice_hotbar_activo
 	)
@@ -684,7 +684,7 @@ func usar_objeto_activo(usuario: Node = null) -> bool:
 	if uso.is_empty():
 		return false
 
-	var actor: Node = usuario
+	var actor: Player = usuario
 	if actor == null:
 		actor = _player
 
@@ -743,7 +743,7 @@ func _obtener_definicion_uso(objeto: Dictionary) -> Dictionary:
 
 func _aplicar_efectos_uso(
 	uso: Dictionary,
-	actor: Node
+	actor: Player
 ) -> int:
 	var aplicados: int = 0
 	var efectos_variant: Variant = uso.get(
@@ -774,7 +774,7 @@ func _aplicar_efectos_uso(
 
 func _aplicar_efecto_recurso(
 	efecto: Dictionary,
-	actor: Node
+	actor: Player
 ) -> bool:
 	var recurso: String = str(
 		efecto.get(
@@ -804,49 +804,23 @@ func _aplicar_efecto_recurso(
 
 	match recurso:
 		"vida", "salud", "health":
-			if not actor.has_method("heal"):
+			var antes: int = actor.health
+			if antes >= actor.max_health:
 				return false
-
-			if "health" not in actor or "max_health" not in actor:
-				return false
-
-			var antes: int = int(actor.get("health"))
-			var maximo: int = int(actor.get("max_health"))
-
-			if antes >= maximo:
-				return false
-
-			actor.call("heal", roundi(magnitud))
-			return int(actor.get("health")) > antes
+			actor.heal(roundi(magnitud))
+			return actor.health > antes
 
 		"stamina":
-			if not actor.has_method("restaurar_stamina"):
+			var antes_stamina: float = actor.stamina
+			if antes_stamina >= actor.max_stamina:
 				return false
-
-			var antes_stamina: float = float(actor.get("stamina"))
-			var max_stamina_actor: float = float(actor.get("max_stamina"))
-
-			if antes_stamina >= max_stamina_actor:
-				return false
-
-			actor.call("restaurar_stamina", magnitud)
-			return float(actor.get("stamina")) > antes_stamina
+			return actor.restaurar_stamina(magnitud)
 
 		"eterium", "mana":
-			if not actor.has_method("restaurar_eterium"):
+			var antes_eterium: int = actor.mana
+			if antes_eterium >= actor.max_mana:
 				return false
-
-			var antes_eterium: int = int(actor.get("mana"))
-			var max_eterium: int = int(actor.get("max_mana"))
-
-			if antes_eterium >= max_eterium:
-				return false
-
-			actor.call(
-				"restaurar_eterium",
-				magnitud
-			)
-			return int(actor.get("mana")) > antes_eterium
+			return actor.restaurar_eterium(magnitud)
 
 	return false
 
