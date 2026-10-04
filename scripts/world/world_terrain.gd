@@ -178,12 +178,9 @@ func cargar_datos_mundo() -> void:
 
 
 func _crear_capas() -> void:
-	if visual != null:
-		return
-
-	visual = WorldTerrainVisual.new()
-	visual.name = "WorldTerrainVisual"
-	add_child(visual)
+	visual = get_node_or_null("WorldTerrainVisual") as WorldTerrainVisual
+	if visual == null:
+		push_error("WorldTerrain: falta el nodo WorldTerrainVisual en la escena.")
 func iniciar_generacion_chunk(
 	chunk_coord: Vector2i
 ) -> void:
