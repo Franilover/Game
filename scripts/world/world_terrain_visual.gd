@@ -75,6 +75,7 @@ var _next_source_id_by_zone: Dictionary = {}
 
 var _dirty_cells_by_zone: Dictionary = {}
 var _dirty_lookup_by_zone: Dictionary = {}
+var _dirty_variations: Dictionary = {}
 
 # Celda -> bioma visual que la posee actualmente.
 var _cell_bioma: Dictionary = {}
@@ -214,16 +215,13 @@ func set_zone(
 	# El bioma puede cambiar sin que cambie la zona visual.
 	_cell_bioma[cell] = clave
 	_cell_zone[cell] = zone
-	_actualizar_variacion(cell)
-	for offset: Vector2i in UPDATE_NEIGHBORS:
-		if offset != Vector2i.ZERO:
-			_actualizar_variacion(cell + offset)
+	_marcar_variaciones_dirty(cell)
 
 	var data: Dictionary = _base_tiles[tile_key]
 
-	# Una celda sólo puede existir una vez en su capa.
-	layer.erase_cell(cell)
-	layer.set_cell(
+	# Evitar erase_cell + set_cell cuando la celda ya pertenece a esta capa.
+	if layer_anterior != layer_key:
+		layer.set_cell(
 		cell,
 		int(data["source_id"]),
 		data["atlas"]
@@ -478,6 +476,11 @@ func _normalizar_bioma(nombre: String) -> String:
 	return nombre.strip_edges()
 
 
+func _marcar_variaciones_dirty(cell: Vector2i) -> void:
+	for offset: Vector2i in UPDATE_NEIGHBORS:
+		_dirty_variations[cell + offset] = true
+
+
 func _marcar_dirty(
 	layer_key: String,
 	cell: Vector2i
@@ -537,6 +540,14 @@ func flush() -> void:
 		_dirty_lookup_by_zone[clave] = {}
 
 
+	if not _dirty_variations.is_empty():
+		var variaciones := _dirty_variations.keys()
+		_dirty_variations.clear()
+		for cell_variant in variaciones:
+			if cell_variant is Vector2i:
+				_actualizar_variacion(cell_variant as Vector2i)
+
+
 func clear_chunk(
 	chunk_coord: Vector2i,
 	chunk_size_tiles: int
@@ -593,10 +604,7 @@ func clear_chunk(
 					layer_key,
 					cell + offset
 				)
-			_actualizar_variacion(cell)
-			for offset: Vector2i in UPDATE_NEIGHBORS:
-				if offset != Vector2i.ZERO:
-					_actualizar_variacion(cell + offset)
+			_marcar_variaciones_dirty(cell)
 
 	if not _dirty_cells_by_zone.is_empty():
 		flush()
