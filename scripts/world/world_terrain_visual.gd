@@ -20,8 +20,7 @@ const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
 	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
 ]
 
-# Cada familia visual tiene su propia textura base. La capa de bioma
-# se encarga de aislarla de los atlas de los demás biomas.
+# Cada zona usa su propio atlas y su propia capa de composición.
 const ZONE_TEXTURES: Dictionary = {
 	# Fallbacks usando únicamente atlas que existen actualmente en el repo.
 	0: "res://assets/tilesets/Pradera.png",
@@ -68,15 +67,14 @@ var tile_size: int = 32
 # Compatibilidad con código que pueda inspeccionar la capa principal.
 var tilemap_dual: TileMapDual
 
-# Una TileMapDual por bioma evita que TileMapDual mezcle atlas de biomas
-# distintos al resolver una transición. Dentro de cada capa, cada zona
-# tiene su propio terrain id.
-var _layers_by_bioma: Dictionary = {}
+# Una capa por zona permite que la misma zona continúe entre biomas.
+# Así un cambio de bioma no se interpreta como un borde de terreno.
+var _layers_by_zone: Dictionary = {}
 var _base_tiles: Dictionary = {}
-var _next_source_id_by_bioma: Dictionary = {}
+var _next_source_id_by_zone: Dictionary = {}
 
-var _dirty_cells_by_bioma: Dictionary = {}
-var _dirty_lookup_by_bioma: Dictionary = {}
+var _dirty_cells_by_zone: Dictionary = {}
+var _dirty_lookup_by_zone: Dictionary = {}
 
 # Celda -> bioma visual que la posee actualmente.
 var _cell_bioma: Dictionary = {}
@@ -90,20 +88,14 @@ func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
 
 
-func _crear_capa_terreno(bioma_nombre: String, zone: int) -> TileMapDual:
-	var bioma_clave := _normalizar_bioma(bioma_nombre)
-	var clave := bioma_clave + "::" + str(zone)
+func _crear_capa_terreno(zone: int) -> TileMapDual:
+	var clave := str(zone)
 
-	if _layers_by_bioma.has(clave):
-		return _layers_by_bioma[clave] as TileMapDual
+	if _layers_by_zone.has(clave):
+		return _layers_by_zone[clave] as TileMapDual
 
 	var layer := TileMapDual.new()
-	layer.name = (
-		"TerrainDual_"
-		+ ("General" if bioma_clave.is_empty() else bioma_clave)
-		+ "_"
-		+ str(zone)
-	)
+	layer.name = "TerrainDual_Zone_" + clave
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
 	layer.z_index = -4096
@@ -112,10 +104,10 @@ func _crear_capa_terreno(bioma_nombre: String, zone: int) -> TileMapDual:
 
 	add_child(layer)
 
-	_layers_by_bioma[clave] = layer
-	_next_source_id_by_bioma[clave] = 0
-	_dirty_cells_by_bioma[clave] = []
-	_dirty_lookup_by_bioma[clave] = {}
+	_layers_by_zone[clave] = layer
+	_next_source_id_by_zone[clave] = 0
+	_dirty_cells_by_zone[clave] = []
+	_dirty_lookup_by_zone[clave] = {}
 
 	if tilemap_dual == null:
 		tilemap_dual = layer
@@ -158,8 +150,8 @@ func set_zone(
 		return
 
 	var clave := _normalizar_bioma(bioma_nombre)
-	var layer_key := clave + "::" + str(zone)
-	var layer := _crear_capa_terreno(clave, zone)
+	var layer_key := str(zone)
+	var layer := _crear_capa_terreno(zone)
 
 	# Crear la capa de variaciones una sola vez para los biomas que tienen atlas.
 	# Las celdas interiores se actualizan después de registrar su bioma y zona.
@@ -184,9 +176,9 @@ func set_zone(
 	# aquella TileMapDual. Esto evita restos al regenerar/reemplazar chunks.
 	var layer_anterior := str(_cell_layer_key.get(cell, ""))
 	if layer_anterior != layer_key:
-		if _layers_by_bioma.has(layer_anterior):
+		if _layers_by_zone.has(layer_anterior):
 			var capa_anterior := (
-				_layers_by_bioma[layer_anterior] as TileMapDual
+				_layers_by_zone[layer_anterior] as TileMapDual
 			)
 			capa_anterior.erase_cell(cell)
 			_marcar_dirty(
@@ -201,8 +193,9 @@ func set_zone(
 				)
 
 		_cell_layer_key[cell] = layer_key
-		_cell_bioma[cell] = clave
 
+	# El bioma puede cambiar sin que cambie la zona visual.
+	_cell_bioma[cell] = clave
 	_cell_zone[cell] = zone
 	_actualizar_variacion(cell)
 	for offset: Vector2i in UPDATE_NEIGHBORS:
@@ -344,8 +337,8 @@ func _crear_base_tile(
 		atlas.create_tile(sequence_pos)
 
 	var source_id := int(
-		_next_source_id_by_bioma.get(
-			bioma_nombre,
+		_next_source_id_by_zone.get(
+			tile_key,
 			0
 		)
 	)
@@ -392,7 +385,7 @@ func _crear_base_tile(
 		"atlas": TILE_SEQUENCE[15],
 	}
 
-	_next_source_id_by_bioma[bioma_nombre] = source_id + 1
+	_next_source_id_by_zone[tile_key] = source_id + 1
 
 
 func _cargar_textura_bioma(
@@ -469,34 +462,34 @@ func _normalizar_bioma(nombre: String) -> String:
 
 
 func _marcar_dirty(
-	bioma_nombre: String,
+	layer_key: String,
 	cell: Vector2i
 ) -> void:
-	var clave := _normalizar_bioma(bioma_nombre)
+	var clave := layer_key
 
-	if not _dirty_cells_by_bioma.has(clave):
-		_dirty_cells_by_bioma[clave] = []
+	if not _dirty_cells_by_zone.has(clave):
+		_dirty_cells_by_zone[clave] = []
 
-	if not _dirty_lookup_by_bioma.has(clave):
-		_dirty_lookup_by_bioma[clave] = {}
+	if not _dirty_lookup_by_zone.has(clave):
+		_dirty_lookup_by_zone[clave] = {}
 
-	var lookup: Dictionary = _dirty_lookup_by_bioma[clave]
+	var lookup: Dictionary = _dirty_lookup_by_zone[clave]
 	if lookup.has(cell):
 		return
 
 	lookup[cell] = true
 
-	var cells: Array = _dirty_cells_by_bioma[clave]
+	var cells: Array = _dirty_cells_by_zone[clave]
 	cells.append(cell)
-	_dirty_cells_by_bioma[clave] = cells
+	_dirty_cells_by_zone[clave] = cells
 
 
 func flush() -> void:
-	for clave_variant in _layers_by_bioma.keys():
+	for clave_variant in _layers_by_zone.keys():
 		var clave := str(clave_variant)
 
 		var cells_variant: Variant = (
-			_dirty_cells_by_bioma.get(
+			_dirty_cells_by_zone.get(
 				clave,
 				[]
 			)
@@ -505,7 +498,7 @@ func flush() -> void:
 		if not cells_variant is Array:
 			continue
 
-		var layer := _layers_by_bioma[clave] as TileMapDual
+		var layer := _layers_by_zone[clave] as TileMapDual
 		if layer == null:
 			continue
 
@@ -523,8 +516,8 @@ func flush() -> void:
 			var terreno := layer.get_cell(cell)
 			layer.draw_cell(cell, terreno)
 
-		_dirty_cells_by_bioma[clave] = []
-		_dirty_lookup_by_bioma[clave] = {}
+		_dirty_cells_by_zone[clave] = []
+		_dirty_lookup_by_zone[clave] = {}
 
 
 func clear_chunk(
@@ -547,11 +540,11 @@ func clear_chunk(
 				_cell_layer_key.get(cell, "")
 			)
 
-			if not _layers_by_bioma.has(layer_key):
+			if not _layers_by_zone.has(layer_key):
 				continue
 
 			var layer := (
-				_layers_by_bioma[layer_key] as TileMapDual
+				_layers_by_zone[layer_key] as TileMapDual
 			)
 
 			if layer == null:
@@ -577,5 +570,5 @@ func clear_chunk(
 				if offset != Vector2i.ZERO:
 					_actualizar_variacion(cell + offset)
 
-	if not _dirty_cells_by_bioma.is_empty():
+	if not _dirty_cells_by_zone.is_empty():
 		flush()
