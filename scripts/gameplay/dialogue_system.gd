@@ -139,12 +139,7 @@ func abrir(datos: Dictionary, fuente: Node = null) -> bool:
 		var personaje_id := str(_fuente.call("get_personaje_game_id")).strip_edges()
 		if not personaje_id.is_empty():
 			if mission_manager != null:
-				mission_manager.call(
-					"registrar_dialogo_desde_fuente",
-					personaje_id,
-					str(datos_seleccionados.get("clave", "principal")),
-					_fuente
-				)
+				mission_manager.registrar_dialogo_desde_fuente(personaje_id, str(datos_seleccionados.get("clave", "principal")), _fuente)
 			var datos_actualizados := _seleccionar_dialogo(datos)
 			if str(datos_actualizados.get("clave", "")) != str(datos_seleccionados.get("clave", "")):
 				datos_seleccionados = datos_actualizados
@@ -285,9 +280,9 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if is_instance_valid(_fuente) and _fuente.has_method("get_personaje_game_id"):
 		personaje_id = str(_fuente.call("get_personaje_game_id")).strip_edges()
 	if not personaje_id.is_empty():
-		var social: Node = relationship_system
-		if social != null and social.has_method("seleccionar_variante_dialogo"):
-			var seleccion: Variant = social.call("seleccionar_variante_dialogo", variantes_variant as Array, personaje_id)
+		var social: RelationshipSystem = relationship_system
+		if social != null:
+			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_variant as Array, personaje_id)
 			if seleccion is Dictionary and not (seleccion as Dictionary).is_empty():
 				return (seleccion as Dictionary).duplicate(true)
 
