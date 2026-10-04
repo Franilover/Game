@@ -51,7 +51,7 @@ func _ready() -> void:
 
 
 func puede_usar_multijugador() -> bool:
-	return puede_usar_multijugador()
+	return _auth != null and _auth.esta_autenticado()
 
 
 func crear_partida(
