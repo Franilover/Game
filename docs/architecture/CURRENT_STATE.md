@@ -20,6 +20,11 @@ Se detectaron especialmente:
 - `WorldEntitySpawner` dependía directamente de `get_tree().current_scene/Entities`; esto ya fue eliminado mediante inyección del root de entidades desde Main.
 - `Main` creaba DialogueSystem e IUMManager dinámicamente; esto ya fue eliminado: ambos son nodos explícitos de la escena.
 - `InteractionSystem` ya no conoce HUD; emite `objetivo_cambiado` y Main conecta la presentación.
+- WorldTerrain, WorldTerrainVisual, WorldStreamer, WorldEntitySpawner y WorldAtmosphere ahora son nodos explícitos de `main.tscn`; WorldGenerator ya no los crea dinámicamente.
+- WorldAtmosphere ya no busca `current_scene`; recibe su `CanvasModulate` como dependencia de escena.
+- GameplayInputRouter recibe explícitamente InteractionSystem y CombatSystem.
+- CombatSystem recibe explícitamente Inventory, WorldGenerator y root de proyectiles.
+- InteractionSystem recibe explícitamente Inventory y GarliaWorldItems.
 - `DialogueSystem` accede directamente a MissionManager y RelationshipSystem.
 - `CombatSystem` y `InteractionSystem` todavía encuentran algunos servicios mediante grupos.
 - `IUMManager` realiza HTTP directo contra Supabase en vez de pasar por la infraestructura común.
