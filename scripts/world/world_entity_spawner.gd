@@ -2,9 +2,6 @@ extends Node
 class_name WorldEntitySpawner
 
 
-const CREATURE_SCENE: PackedScene = preload(
-	"res://scenes/creatures/creature.tscn"
-)
 
 const CRIATURA_FLAXIS := 1 << 0
 const CRIATURA_ZLISH := 1 << 1
