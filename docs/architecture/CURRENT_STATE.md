@@ -446,3 +446,7 @@ HUD tipa directamente `WorldData` y consume su snapshot mediante `world_data.mun
 ## Trigésima octava barrida — Contratos de entrada y daño endurecidos
 
 `CombatController` ahora depende explícitamente de `GameplayInputGate` y llama su API concreta, eliminando la reflexión para consultar el bloqueo de entrada. `CombatDamage` ahora recibe `Entity` y usa directamente `is_alive`, `health` y `take_damage()`. La resolución de daño deja así de depender de descubrimiento dinámico dentro de la frontera de entidades.
+
+## Trigésima novena barrida — Estado vital de combate tipado
+
+`CombatSystem` consolida `Entity` como contrato de objetivo para la aplicación de ataques y deja de consultar dinámicamente `take_damage`, `is_alive` y su estado vital. La resolución continúa centralizada en `CombatDamage`; las fronteras que siguen siendo polimórficas (atacantes genéricos, GameState y absorción de Eterium) no se fuerzan sin verificar todos sus consumidores.
