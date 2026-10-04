@@ -19,6 +19,9 @@ var _admin_console: Node = null
 var _dialogue_system: DialogueSystem = null
 var _hud: HUD = null
 
+func _ready() -> void:
+	add_to_group("gameplay_input_router")
+
 func configurar_sistemas(interaction: InteractionSystem, combat: CombatSystem) -> void:
 	_interaction_system = interaction
 	_combat_system = combat
