@@ -704,6 +704,43 @@ func _zona_directa(
 	)
 
 
+func cambiar_zona_at(
+	tile: Vector2i,
+	nueva_zona: int
+) -> bool:
+	var chunk_coord: Vector2i = _tile_to_chunk(tile)
+	var datos: Dictionary = _loaded_chunks.get(chunk_coord, {})
+	if datos.is_empty():
+		return false
+
+	var zonas_variant: Variant = datos.get("zonas", [])
+	if not zonas_variant is Array:
+		return false
+	var zonas: Array = zonas_variant as Array
+	var local := _tile_to_local(tile)
+	var x: int = local.x + CHUNK_PADDING
+	var y: int = local.y + CHUNK_PADDING
+	if y < 0 or y >= zonas.size():
+		return false
+	if not zonas[y] is Array or x < 0 or x >= (zonas[y] as Array).size():
+		return false
+
+	zonas[y][x] = nueva_zona
+	datos["zonas"] = zonas
+	_loaded_chunks[chunk_coord] = datos
+
+	var bioma_index := -1
+	var biomas_variant: Variant = datos.get("biomas", [])
+	if biomas_variant is Array:
+		var biomas: Array = biomas_variant as Array
+		if y >= 0 and y < biomas.size() and biomas[y] is Array and x >= 0 and x < (biomas[y] as Array).size():
+			bioma_index = int((biomas[y] as Array)[x])
+
+	_pintar_tile(tile, nueva_zona, bioma_index)
+	visual.flush()
+	return true
+
+
 func is_walkable(
 	tile: Vector2i
 ) -> bool:
