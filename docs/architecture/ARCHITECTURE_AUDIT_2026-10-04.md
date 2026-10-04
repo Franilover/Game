@@ -254,3 +254,19 @@ Los servicios que pertenecen a una partida activa deben declararse en Main y rec
 - Se conserva la separación conceptual: Supabase/repository aporta reglas y regalos; `GameState` conserva relaciones y recuerdos modificados durante la partida; `RelationshipSystem` aplica las reglas.
 - `SupabaseClient` fue auditado como transporte + caché de varios dominios. Se detectó legado de constantes de credenciales en rutas REST antiguas mientras el transporte compartido ya usa `GarliaAuth`; queda marcado para la pasada consolidada de infraestructura, sin duplicar clientes ni endpoints durante el rediseño.
 - No se divide todavía `SupabaseClient` a ciegas: primero hay que clasificar sus consumidores por dominio para evitar crear repositorios paralelos.
+
+
+## Undécima barrida — cierre de credenciales SupabaseClient
+
+La auditoría encontró un residuo de la migración de infraestructura: `SupabaseClient` ya había dejado de ser dueño de las credenciales, pero varias operaciones REST/RPC todavía referenciaban las antiguas constantes locales `SUPABASE_URL` y `SUPABASE_KEY`.
+
+Se corrigió sin crear otro cliente ni duplicar configuración:
+
+- `GarliaAuth` conserva `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`.
+- `SupabaseClient` recibe `GarliaAuth` explícitamente.
+- Las rutas REST/RPC usan las credenciales de la dependencia inyectada.
+- Las cargas de datos que requieren autenticación ya no intentan operar sin una sesión válida.
+
+Commit: `4477c181352d6fc47157503f67094779e4f21efc`.
+
+Esto no se considera todavía la separación definitiva de `SupabaseClient` por dominio. Esa separación sigue pendiente hasta terminar el inventario de consumidores y evitar repositorios duplicados.
