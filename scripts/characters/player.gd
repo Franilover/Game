@@ -62,7 +62,7 @@ var locomotion := PlayerLocomotionCoordinator.new()
 var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 
-var _world_generator_ref: Node = null
+var _world_context_ref: Node = null
 var _inventory_ref: Node = null
 var _exploration_check_timer: float = 0.0
 
@@ -85,13 +85,13 @@ var personaje_skin: String = ""
 
 func configurar_dependencias(
 	inventory: Node = null,
-	world_generator: Node = null,
+	world_context: Node = null,
 	ium_manager: Node = null,
 	entity_manager: Node = null,
 	supabase_client: GarliaSupabaseClient = null
 ) -> void:
 	_inventory_ref = inventory
-	_world_generator_ref = world_generator
+	_world_context_ref = world_context
 	_ium_manager_ref = ium_manager
 	_entity_manager_ref = entity_manager
 	_supabase_client_ref = supabase_client
@@ -267,9 +267,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _registrar_terreno_explorado() -> void:
-	if not is_instance_valid(_world_generator_ref):
+	if not is_instance_valid(_world_context_ref):
 		return
-	exploration_controller.revisar(global_position, _world_generator_ref)
+	exploration_controller.revisar(global_position, _world_context_ref)
 
 func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void:
 	GameState.registrar_terreno_explorado(tile)
@@ -606,7 +606,7 @@ func reaparecer() -> void:
 
 	locomotion.reiniciar()
 
-	var world_gen: Node = _world_generator_ref
+	var world_gen: Node = _world_context_ref
 	if world_gen != null:
 		set_spawn_from_world(world_gen)
 
