@@ -14,6 +14,8 @@
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/gameplay/combat_system.gd" id="8_combat"]
 [ext_resource type="Script" path="res://scripts/gameplay/dialogue_system.gd" id="12_dialogue"]
 [ext_resource type="Script" path="res://scripts/gameplay/ium_manager.gd" id="13_ium"]
+[ext_resource type="Script" path="res://scripts/core/supabase_client.gd" id="22_supabase_client"]
+[ext_resource type="Script" path="res://scripts/core/ium_repository.gd" id="23_ium_repository"]
 [ext_resource type="PackedScene" path="res://scenes/ui/ium_lab.tscn" id="14_ium_lab"]
 [ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/dev/admin_console.gd" id="9_admin"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="10_pause"]
@@ -82,6 +84,14 @@ script = ExtResource("8_combat")
 
 [node name="DialogueSystem" type="Node" parent="Systems"]
 script = ExtResource("12_dialogue")
+
+[node name="Infrastructure" type="Node" parent="Systems"]
+
+[node name="SupabaseClient" type="Node" parent="Systems/Infrastructure"]
+script = ExtResource("22_supabase_client")
+
+[node name="IUMRepository" type="Node" parent="Systems/Infrastructure"]
+script = ExtResource("23_ium_repository")
 
 [node name="IUMManager" type="Node" parent="Systems"]
 script = ExtResource("13_ium")
