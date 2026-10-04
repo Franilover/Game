@@ -40,7 +40,7 @@ func max_mana() -> int:
 func multiplicador_carrera() -> float:
 	if runtime == null:
 		return 1.0
-	return runtime.multiplicador_carrera()
+	return runtime.multiplicador_carrera_eterium()
 
 
 func gastar(cantidad: int) -> bool:
