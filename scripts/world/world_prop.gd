@@ -11,14 +11,17 @@ var interactuable = false
 var datos = {}
 var _world_context: WorldContext = null
 var _inventory: GarliaInventory = null
+var _world_items: GarliaWorldItems = null
 
 
 func configurar_dependencias(
 	nuevo_world_context: WorldContext,
-	nuevo_inventory: GarliaInventory
+	nuevo_inventory: GarliaInventory,
+	nuevo_world_items: GarliaWorldItems = null
 ) -> void:
 	_world_context = nuevo_world_context
 	_inventory = nuevo_inventory
+	_world_items = nuevo_world_items
 
 
 
@@ -156,7 +159,7 @@ func get_interaction_details() -> Dictionary:
 
 	var item_id := _obtener_item_id_recoleccion()
 	if not item_id.is_empty():
-		var item := GarliaWorldItems.buscar_item_por_id(
+		var item := _world_items.buscar_item_por_id(
 			item_id
 		)
 
@@ -305,7 +308,7 @@ func _obtener_item_id_recoleccion() -> String:
 	if prop_id.is_empty():
 		return ""
 
-	for item_variant in GarliaWorldItems.obtener_catalogo():
+	for item_variant in _world_items.obtener_catalogo():
 		if not item_variant is Dictionary:
 			continue
 		var item := item_variant as Dictionary
@@ -491,7 +494,7 @@ func _actualizar_profundidad() -> void:
 
 func _ready() -> void:
 	add_to_group("world_props")
-	if not GarliaWorldItems.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
+	if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
 		GarliaWorldItems.catalogo_cargado.connect(_al_cargar_catalogo_items)
 	_actualizar_profundidad()
 
