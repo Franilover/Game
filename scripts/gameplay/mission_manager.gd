@@ -15,11 +15,11 @@ var _misiones_por_id: Dictionary = {}
 var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
 var _player: Node = null
-var _entity_manager: Node = null
+var _entity_manager: WorldEntityManager = null
 var _world_data: Node = null
 
 
-func configurar_dependencias(player: Node = null, entity_manager: Node = null, world_data: Node = null) -> void:
+func configurar_dependencias(player: Node = null, entity_manager: WorldEntityManager = null, world_data: Node = null) -> void:
 	_player = player
 	_entity_manager = entity_manager
 	_world_data = world_data
@@ -215,7 +215,7 @@ func _registrar_entrega_personaje(
 	if destino == null or not is_instance_valid(destino):
 		return false
 
-	if _entity_manager == null or not _entity_manager.has_method("obtener_entidades_activas"):
+	if _entity_manager == null:
 		return false
 
 	for mision in _misiones:
@@ -247,24 +247,18 @@ func _registrar_entrega_personaje(
 			if personaje_entregado_id.is_empty():
 				continue
 
-			for criatura_variant in _entity_manager.call("obtener_entidades_activas"):
+			for criatura_variant in _entity_manager.obtener_entidades_activas():
 				if not criatura_variant is Node:
 					continue
 
-				var criatura := criatura_variant as Node
+				var criatura := criatura_variant as Creature
 				if not is_instance_valid(criatura):
 					continue
 
-				if not criatura.has_method("get_personaje_game_id"):
+				if str(criatura.get_personaje_game_id()).strip_edges() != personaje_entregado_id:
 					continue
 
-				if str(criatura.call("get_personaje_game_id")).strip_edges() != personaje_entregado_id:
-					continue
-
-				if not criatura.has_method("esta_siguiendo_jugador"):
-					continue
-
-				if not bool(criatura.call("esta_siguiendo_jugador")):
+				if not criatura.esta_siguiendo_jugador():
 					continue
 
 				if criatura.global_position.distance_to(destino.global_position) > 56.0:
