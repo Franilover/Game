@@ -8,6 +8,7 @@ class_name GameStateService
 const SAVE_DIRECTORY := "user://partidas"
 const SAVE_VERSION: int = 3
 const AUTOSAVE_INTERVAL: float = 10.0
+const KINGDOM_SCENE_PATH: String = "res://scenes/kingdom/reino_torres.tscn"
 
 var player_state := PlayerState.new()
 var world_state := WorldState.new()
@@ -865,15 +866,13 @@ func _cargar_inventario_al_juego(
 
 
 func _abrir_escena_principal() -> void:
-	var error := get_tree().change_scene_to_file(
-		world_state.current_scene
+	# Toda partida nueva o cargada entra primero por Reino Torres.
+	# El mundo abierto sigue siendo el destino posterior a la salida
+	# del reino. SceneManager mantiene la autoridad sobre los cambios.
+	print(
+		"GameState: entrando a Reino Torres antes del mundo abierto."
 	)
-
-	if error != OK:
-		print(
-			"GameState: error abriendo Aventura → ",
-			error
-		)
+	SceneManager.go_to(KINGDOM_SCENE_PATH)
 
 
 func _al_cambiar_escena() -> void:
