@@ -207,3 +207,17 @@ El slot actual de combate es mano_secundaria, coincidiendo con el slot de equipa
 ### Limpieza estructural
 
 Auditoría del árbol Git actual: 470 archivos, 65 directorios derivados y **0 directorios vacíos**. No hay carpetas que borrar; Git no conserva directorios vacíos por sí mismos.
+
+
+## Quinta etapa — auditoría de dependencias y estado
+
+Auditoría de seguimiento documentada en [ARCHITECTURE_AUDIT_2026-10-04.md](ARCHITECTURE_AUDIT_2026-10-04.md).
+
+Cambios de esta pasada:
+
+- Player, AdminConsole, RelationshipSystem y Main dejaron de acceder directamente a `GameState.flags`; GameState expone APIs de dominio para personaje, rol administrativo, relaciones, recuerdos y proceso IUM.
+- SupabaseClient ya no inspecciona `current_scene/World/WorldGenerator` durante la sincronización periódica. Main declara explícitamente cuándo el mundo está activo.
+- AdminPlayerEditor ahora es un nodo declarado en `scenes/world/main.tscn` y se inyecta a AdminConsole desde Main; ya no se busca ni crea dinámicamente.
+- Main utiliza tipos concretos `WorldContext` y `WorldAtmosphere` para esas dependencias.
+
+Pendientes estructurales principales: reducir responsabilidades de GameState, Player, HUD, AdminConsole y SupabaseClient después de inventariar sus consumidores; revisar los 13 autoloads por ownership; y completar la auditoría de scripts/escenas legacy. No se declara compilación validada hasta probar el proyecto en Godot.
