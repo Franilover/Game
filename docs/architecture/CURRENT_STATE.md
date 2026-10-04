@@ -226,3 +226,6 @@ Pendientes estructurales principales: reducir responsabilidades de GameState, Pl
 La segunda barrida también migró las dependencias de UI anidadas: Inventory compone sus pestañas de mapa, relaciones, crafteo y administración; HUD inyecta Inventory en Hotbar; Main inyecta Inventory en PauseMenu y DeathMenu; y Main inyecta AdminConsole en IUMLab. Encyclopedia usa la API de GameState y Relationships usa una API pública de RelationshipSystem en lugar de leer su diccionario privado.
 
 La deuda de descubrimiento global restante se concentra ahora principalmente en CreatureAI/Creature y en el flujo de WorldProp/WorldItem/GarliaWorldItems/WorldDecoration. Está enumerada en ARCHITECTURE_AUDIT_2026-10-04.md; no se debe interpretar esta pasada como una eliminación total de búsquedas por grupos.
+
+
+La fase posterior a la auditoría de UI migró CreatureAI, Creature, WorldProp, WorldItem y GarliaWorldItems a dependencias explícitas. Main compone WorldGenerator/WorldEntityFactory con Player, Inventory, CombatSystem, DialogueSystem, MissionManager, WorldContext y el root Entities antes de iniciar la generación diferida. Las criaturas y props reciben datos antes de ser agregados al árbol, evitando inicialización incompleta y reconfiguración redundante después de `_ready()`. Detalles y validación pendiente en ARCHITECTURE_AUDIT_2026-10-04.md.
