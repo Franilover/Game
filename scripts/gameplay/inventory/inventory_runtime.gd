@@ -189,6 +189,10 @@ func consumir_durabilidad(indice: int) -> bool:
 		state.items[indice]["durabilidad_actual"] = actual
 	return true
 
+func robar_equipamiento(slot: String) -> Dictionary:
+	var objeto := equipment.desequipar(slot)
+	return objeto
+
 func consumir_durabilidad_equipo(slot: String) -> bool:
 	var objeto := equipment.obtener(slot)
 	if objeto.is_empty():
