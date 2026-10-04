@@ -162,7 +162,11 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	actualizar()
 
 
-func configurar_input_gate(gate: GameplayInputGate) -> void:
+func configurar_input_router(router: GameplayInputRouter) -> void:
+	if router == null or not is_instance_valid(router):
+		return
+	var gate := GameplayInputGate.new()
+	gate.configurar_router(router)
 	inventory_controller.configurar_gate(gate)
 
 
