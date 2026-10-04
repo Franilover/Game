@@ -225,7 +225,9 @@ func set_zone(
 
 	var clave := _normalizar_bioma(bioma_nombre)
 	var layer_key := str(zone)
-	var layer := _crear_capa_terreno(zone)
+	# configurar() crea todas las capas antes de pintar. Evitar volver a
+	# resolver/validar la misma capa por cada una de las 1.024 celdas.
+	var layer := _layers_by_zone[layer_key] as TileMapDual
 
 	# Crear la capa de variaciones una sola vez para los biomas que tienen atlas.
 	# Las celdas interiores se actualizan después de registrar su bioma y zona.
@@ -242,9 +244,8 @@ func set_zone(
 			layer,
 			bioma_textura
 		)
-
-	if not _base_tiles.has(tile_key):
-		return
+		if not _base_tiles.has(tile_key):
+			return
 
 	# Si la celda cambia de zona, se elimina de la capa anterior para evitar
 	# restos visuales al regenerar o reemplazar chunks.
@@ -255,11 +256,6 @@ func set_zone(
 				_layers_by_zone[layer_anterior] as TileMapDual
 			)
 			capa_anterior.erase_cell(cell)
-			_marcar_dirty(
-				layer_anterior,
-				cell
-			)
-
 			for offset: Vector2i in UPDATE_NEIGHBORS:
 				_marcar_dirty(
 					layer_anterior,
@@ -298,8 +294,7 @@ func set_zone(
 		_profiler_set_cell_calls += 1
 
 	var dirty_start_usec := Time.get_ticks_usec()
-	_marcar_dirty(layer_key, cell)
-
+	# UPDATE_NEIGHBORS ya incluye ZERO; no marcar la celda central dos veces.
 	for offset: Vector2i in UPDATE_NEIGHBORS:
 		_marcar_dirty(
 			layer_key,
@@ -361,7 +356,7 @@ func _actualizar_variacion(cell: Vector2i) -> void:
 
 	var config: Dictionary = VARIACIONES_POR_BIOMA.get(bioma, {})
 	if config.is_empty():
-		layer.erase_cell(cell)
+		_borrar_variacion_si_existe(layer, cell)
 		return
 
 	var zone := int(config.get("zone", -1))
@@ -369,7 +364,7 @@ func _actualizar_variacion(cell: Vector2i) -> void:
 	# Las variaciones sólo aparecen en interiores completos del bioma.
 	# Si una celda toca otro bioma/zona, TileMapDual conserva la transición.
 	if _cell_zone.get(cell, -1) != zone or not _es_interior_bioma(cell, zone):
-		layer.erase_cell(cell)
+		_borrar_variacion_si_existe(layer, cell)
 		return
 
 	var indice := _indice_variacion(cell)
@@ -378,13 +373,22 @@ func _actualizar_variacion(cell: Vector2i) -> void:
 
 
 func _es_interior_bioma(cell: Vector2i, zone: int) -> bool:
-	for offset: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+	for offset: Vector2i in UPDATE_NEIGHBORS:
+		if offset == Vector2i.ZERO:
+			continue
 		var vecino: Vector2i = cell + offset
 		if _cell_bioma.get(vecino, "") != _cell_bioma.get(cell, ""):
 			return false
 		if _cell_zone.get(vecino, -1) != zone:
 			return false
 	return true
+
+
+func _borrar_variacion_si_existe(layer: TileMapLayer, cell: Vector2i) -> void:
+	# erase_cell() también se invocaba en miles de celdas que nunca tuvieron
+	# decoración. Consultar primero evita trabajo innecesario del TileMapLayer.
+	if layer.get_cell_source_id(cell) != -1:
+		layer.erase_cell(cell)
 
 
 func _indice_variacion(cell: Vector2i) -> int:
