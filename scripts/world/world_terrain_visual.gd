@@ -83,6 +83,7 @@ var _cell_zone: Dictionary = {}
 var _cell_layer_key: Dictionary = {}
 var _variation_layers_by_bioma: Dictionary = {}
 var _variation_tilesets_by_bioma: Dictionary = {}
+var _batch_active: bool = false
 
 
 func configurar(nuevo_tile_size: int) -> void:
@@ -95,6 +96,26 @@ func configurar(nuevo_tile_size: int) -> void:
 	# pueden no existir y sólo las capas de detalles terminan visibles.
 	for zone in range(ZONE_TEXTURES.size()):
 		_crear_capa_terreno(zone)
+
+
+func comenzar_lote() -> void:
+	if _batch_active:
+		return
+	_batch_active = true
+	for layer_variant in _layers_by_zone.values():
+		var layer := layer_variant as TileMapDual
+		if layer != null:
+			layer.set_block_signals(true)
+
+
+func terminar_lote() -> void:
+	if not _batch_active:
+		return
+	for layer_variant in _layers_by_zone.values():
+		var layer := layer_variant as TileMapDual
+		if layer != null:
+			layer.set_block_signals(false)
+	_batch_active = false
 
 
 func _crear_capa_terreno(zone: int) -> TileMapDual:
@@ -505,6 +526,9 @@ func _marcar_dirty(
 
 
 func flush() -> void:
+	if _batch_active:
+		return
+
 	for clave_variant in _layers_by_zone.keys():
 		var clave := str(clave_variant)
 
@@ -522,19 +546,15 @@ func flush() -> void:
 		if layer == null:
 			continue
 
-		# TileMapDual expone draw_cell() como API pública. Usamos esa API
-		# en lugar de llamar a _update_cells(), cuya firma tipada interna
-		# rechaza Arrays que llegan desde Dictionary como Variant.
+		# Durante el lote las señales estuvieron bloqueadas. Publicamos todas
+		# las celdas de esta capa en una sola actualización de TileMapDual.
+		var dirty: Array[Vector2i] = []
 		for cell_variant in cells_variant:
-			if not cell_variant is Vector2i:
-				continue
+			if cell_variant is Vector2i:
+				dirty.append(cell_variant as Vector2i)
 
-			var cell := cell_variant as Vector2i
-			if layer.get_cell_source_id(cell) == -1:
-				continue
-
-			var terreno := layer.get_cell(cell)
-			layer.draw_cell(cell, terreno)
+		if not dirty.is_empty():
+			layer._update_cells(dirty, false)
 
 		_dirty_cells_by_zone[clave] = []
 		_dirty_lookup_by_zone[clave] = {}
