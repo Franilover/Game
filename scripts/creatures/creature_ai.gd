@@ -76,7 +76,7 @@ var relaciones_ecologicas: Array = []
 var jugador: Node2D = null
 var entity_manager: WorldEntityManager = null
 var inventory: Node = null
-var combat_system: Node = null
+var combat_system: CombatSystem = null
 var world_items: Node = null
 
 
@@ -84,7 +84,7 @@ func configurar_dependencias(
 	nuevo_jugador: Node,
 	nuevo_entity_manager: WorldEntityManager,
 	nuevo_inventory: Node,
-	nuevo_combat_system: Node,
+	nuevo_combat_system: CombatSystem,
 	nuevo_world_items: Node,
 	nuevas_relaciones_ecologicas: Array = []
 ) -> void:
@@ -1342,22 +1342,19 @@ func _procesar_ataque_cambiaformas() -> void:
 	_ataque_resuelto = true
 	criatura.detener_movimiento()
 
-	var combate: Node = _obtener_combat_system()
+	var combate: CombatSystem = _obtener_combat_system()
 
-	if combate == null or not combate.has_method(
-		"atacar_objetivo_con_arma"
-	):
+	if combate == null:
 		_iniciar_recuperacion(_obtener_enfriamiento_ataque())
 		return
 
-	var ataque_realizado: Variant = combate.call(
-		"atacar_objetivo_con_arma",
+	var ataque_realizado: bool = combate.atacar_objetivo_con_arma(
 		criatura,
 		objetivo,
 		arma
 	)
 
-	if bool(ataque_realizado) and _copiar_skin_configurado():
+	if ataque_realizado and _copiar_skin_configurado():
 		criatura.copiar_skin_de(objetivo)
 		criatura.ocultar_nombre_debug()
 
@@ -1417,18 +1414,13 @@ func _copiar_skin_configurado() -> bool:
 func _obtener_alcance_arma_combate(
 	arma: Dictionary
 ) -> float:
-	var combate: Node = _obtener_combat_system()
+	var combate: CombatSystem = _obtener_combat_system()
 
-	if combate != null and combate.has_method(
-		"obtener_alcance_arma"
-	):
-		var alcance_variant: Variant = combate.call(
-			"obtener_alcance_arma",
-			arma
+	if combate != null:
+		return maxf(
+			combate.obtener_alcance_arma(arma),
+			_obtener_distancia_contacto()
 		)
-
-		if alcance_variant is int or alcance_variant is float:
-			return maxf(float(alcance_variant), _obtener_distancia_contacto())
 
 	return maxf(
 		distancia_contacto,
