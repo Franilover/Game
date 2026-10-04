@@ -147,18 +147,17 @@ func _peso_bioma(indice: int) -> float:
 		)
 	)
 
+	# Los snapshots antiguos pueden no incluir todavía la configuración
+	# de generación. En ese caso los biomas siguen participando por igual;
+	# sólo un peso explícito de cero desactiva un bioma.
 	if not generacion_variant is Dictionary:
-		return 0.0
+		return 1.0
 
-	return maxf(
-		float(
-			(generacion_variant as Dictionary).get(
-				"peso",
-				0.0
-			)
-		),
-		0.0
-	)
+	var generacion := generacion_variant as Dictionary
+	if not generacion.has("peso"):
+		return 1.0
+
+	return maxf(float(generacion.get("peso", 1.0)), 0.0)
 
 
 func ecosistema_index_at_tile(
