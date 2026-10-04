@@ -242,7 +242,9 @@ func obtener_relaciones_ecologicas() -> Array:
 
 
 func cargar_especies_jugables() -> void:
-	if _auth == null or not _auth.esta_autenticado():
+	# Las especies jugables son catálogo público del juego.
+	# Supabase RLS permite SELECT a anon y authenticated; no requieren sesión.
+	if _auth == null:
 		return
 
 	if _http_especies == null:
