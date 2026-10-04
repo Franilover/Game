@@ -450,3 +450,7 @@ HUD tipa directamente `WorldData` y consume su snapshot mediante `world_data.mun
 ## Trigésima novena barrida — Estado vital de combate tipado
 
 `CombatSystem` consolida `Entity` como contrato de objetivo para la aplicación de ataques y deja de consultar dinámicamente `take_damage`, `is_alive` y su estado vital. La resolución continúa centralizada en `CombatDamage`; las fronteras que siguen siendo polimórficas (atacantes genéricos, GameState y absorción de Eterium) no se fuerzan sin verificar todos sus consumidores.
+
+## Cuadragésima barrida — Targeting de combate tipado
+
+La cadena de combate ahora mantiene el contrato `Entity` desde la detección hasta la resolución: `CombatTargeting` valida entidades vivas, y `CombatAttackArea`/`CombatProjectile` convierten explícitamente sus candidatos a `Entity` antes de continuar. Esto evita que nodos arbitrarios alcancen `CombatDamage`.
