@@ -113,6 +113,23 @@ func _ready() -> void:
 	)
 
 
+func _procesar_curacion_eterium(delta: float) -> void:
+	var resultado := eterium.calcular_curacion(delta)
+	if resultado.is_empty():
+		return
+
+	var curacion := int(resultado.get("curacion", 0))
+	var costo := int(resultado.get("costo_eterium", 0))
+	if not eterium.aplicar_curacion(curacion, costo):
+		return
+
+	# El runtime trabaja sobre el VitalState compartido con Entity.
+	# Sincronizamos las propiedades públicas y notificamos a la presentación.
+	_sync_desde_vital()
+	health_changed.emit(health, max_health)
+	mana_changed.emit(mana, max_mana)
+
+
 func _physics_process(delta: float) -> void:
 	if not is_alive:
 		velocity = Vector2.ZERO
