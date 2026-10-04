@@ -11,6 +11,9 @@ var slots_container: HBoxContainer = null
 var slot_nodes: Array[Button] = []
 
 var _inventario_conectado: bool = false
+var _ultima_firma_inventario: String = ""
+var _tiempo_sincronizacion: float = 0.0
+const SINCRONIZACION_INTERVALO: float = 0.08
 
 
 func _ready() -> void:
