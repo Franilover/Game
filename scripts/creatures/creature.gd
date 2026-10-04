@@ -581,7 +581,9 @@ func get_dialogue_data() -> Dictionary:
 	# El snapshot de la criatura solo sirve como respaldo para evitar
 	# que una instancia quede muda si todavía no tiene el registro anidado.
 	if not personaje_id.is_empty():
-		var dialogo_canonico: Dictionary = {}\n\t\tif _world_data_dependency != null and is_instance_valid(_world_data_dependency):\n\t\t\tdialogo_canonico = _world_data_dependency.obtener_dialogo_game(
+		var dialogo_canonico: Dictionary = {}
+		if _world_data_dependency != null and is_instance_valid(_world_data_dependency):
+			dialogo_canonico = _world_data_dependency.obtener_dialogo_game(
 			personaje_id
 		)
 		if not dialogo_canonico.is_empty():
