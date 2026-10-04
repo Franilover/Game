@@ -88,11 +88,11 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 func _desconectar_senales_player() -> void:
 	if not is_instance_valid(player):
 		return
-	if player.has_signal("health_changed") and player.health_changed.is_connected(_al_recibir_cambio_vida):
+	if player.health_changed.is_connected(_al_recibir_cambio_vida):
 		player.health_changed.disconnect(_al_recibir_cambio_vida)
-	if player.has_signal("stamina_changed") and player.stamina_changed.is_connected(_al_recibir_cambio_stamina):
+	if player.stamina_changed.is_connected(_al_recibir_cambio_stamina):
 		player.stamina_changed.disconnect(_al_recibir_cambio_stamina)
-	if player.has_signal("mana_changed") and player.mana_changed.is_connected(_al_recibir_cambio_mana):
+	if player.mana_changed.is_connected(_al_recibir_cambio_mana):
 		player.mana_changed.disconnect(_al_recibir_cambio_mana)
 
 func _ready() -> void:
