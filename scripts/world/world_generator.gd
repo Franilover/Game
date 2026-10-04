@@ -33,12 +33,9 @@ var context: WorldContext
 
 var _world_ready: bool = false
 var _entities_root: Node = null
-var _player_ref: Node2D = null
 
 
 func _ready() -> void:
-	add_to_group("world_generator")
-
 	_crear_sistemas()
 
 	if WorldData.esta_cargado():
@@ -150,8 +147,6 @@ func _inicializar_mundo() -> void:
 func registrar_jugador(
 	player: Node
 ) -> void:
-	if player is Node2D:
-		_player_ref = player as Node2D
 	if not _world_ready:
 		return
 	streamer.registrar_jugador(player)
@@ -163,22 +158,3 @@ func is_world_ready() -> bool:
 
 func get_context() -> WorldContext:
 	return context
-
-func _extraer_nombre(
-	datos: Dictionary
-) -> String:
-	if datos.is_empty():
-		return "—"
-
-	var nombre := str(
-		datos.get(
-			"nombre",
-			""
-		)
-	)
-
-	if nombre.is_empty():
-		return "—"
-
-	return nombre
-
