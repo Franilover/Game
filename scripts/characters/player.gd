@@ -319,8 +319,7 @@ func _esta_bloqueado_por_interfaz() -> bool:
 		if bool(_admin_console_ref.get("_abierto")):
 			return true
 
-	var inventory := get_tree().get_first_node_in_group("inventory")
-	if inventory is CanvasItem and bool((inventory as CanvasItem).visible):
+	if GameState.esta_entrada_de_juego_bloqueada():
 		return true
 
 	var dialogue_system := get_tree().get_first_node_in_group("dialogue_system")
@@ -1209,7 +1208,7 @@ func _obtener_direccion_accion() -> Vector2:
 # COMBATE / DAÑO
 # ============================================================
 
-func take_damage(cantidad: int) -> void:
+func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 	if not is_alive:
 		return
 
@@ -1252,7 +1251,7 @@ func take_damage(cantidad: int) -> void:
 		if health <= 0:
 			_die()
 	else:
-		super.take_damage(danio_recibido)
+		super.take_damage(danio_recibido, origen)
 
 	if not is_alive:
 		_morir_jugador()
