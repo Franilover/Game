@@ -11,14 +11,16 @@ var _reglas: Dictionary = {}
 var _regalos: Array = []
 var _cargado: bool = false
 var _repository: Node = null
+var _game_state: Node = null
 
 
 
 
-func configurar(repository: Node) -> void:
+func configurar(repository: Node, game_state: Node = null) -> void:
 	_repository = repository
-	if _repository == null:
-		push_error("RelationshipSystem: SocialRepository no configurado.")
+	_game_state = game_state
+	if _repository == null or _game_state == null:
+		push_error("RelationshipSystem: dependencias no configuradas.")
 		return
 
 	if _repository.has_signal("reglas_cargadas"):
@@ -145,7 +147,7 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 		lista = lista.slice(maxi(lista.size() - 32, 0))
 
 	recuerdos[personaje_id] = lista
-	GameState.guardar_recuerdos_sociales(recuerdos)
+	_game_state.call("guardar_recuerdos_sociales", recuerdos)
 	recuerdo_registrado.emit(personaje_id, recuerdo.duplicate(true))
 
 
@@ -252,18 +254,18 @@ func _cumple_requisito_social(requisito: Dictionary, relacion: Dictionary) -> bo
 
 
 func _obtener_relaciones_guardadas() -> Dictionary:
-	var variant: Variant = GameState.obtener_relaciones_sociales()
+	var variant: Variant = _game_state.call("obtener_relaciones_sociales")
 	if variant is Dictionary:
 		return (variant as Dictionary).duplicate(true)
 	return {}
 
 
 func _guardar_relaciones(relaciones: Dictionary) -> void:
-	GameState.guardar_relaciones_sociales(relaciones)
+	_game_state.call("guardar_relaciones_sociales", relaciones)
 
 
 func _obtener_recuerdos() -> Dictionary:
-	var variant: Variant = GameState.obtener_recuerdos_sociales()
+	var variant: Variant = _game_state.call("obtener_recuerdos_sociales")
 	if variant is Dictionary:
 		return (variant as Dictionary).duplicate(true)
 	return {}
