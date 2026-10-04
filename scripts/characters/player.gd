@@ -53,7 +53,7 @@ var facing: Vector2 = Vector2.DOWN
 
 
 var stamina: float = 0.0
-var _stamina_regeneration_timer: float = 0.0
+var stamina_controller := PlayerStaminaController.new()
 
 var _eterium_reglas: Dictionary = {}
 var _eterium_organismos: Dictionary = {}
@@ -97,7 +97,9 @@ func _ready() -> void:
 
 	add_to_group("player")
 
-	stamina = max_stamina
+	stamina_controller.configurar(max_stamina)
+	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
+	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 
 	_configurar_eterium_desde_supabase()
 
@@ -353,128 +355,24 @@ func _actualizar_cooldowns(delta: float) -> void:
 	)
 
 
-func _actualizar_regeneracion_stamina(
-	delta: float,
-	esta_corriendo: bool
-) -> void:
+func _actualizar_regeneracion_stamina(delta: float, esta_corriendo: bool) -> void:
 	if esta_corriendo:
 		return
-
-	if _stamina_regeneration_timer > 0.0:
-		_stamina_regeneration_timer = maxf(
-			_stamina_regeneration_timer - delta,
-			0.0
-		)
-
-		return
-
-	if stamina >= max_stamina:
-		return
-
-	stamina = minf(
-		stamina + stamina_regeneration * delta,
-		max_stamina
-	)
-
-	stamina_changed.emit(
-		stamina,
-		max_stamina
-	)
-
+	stamina_controller.actualizar(delta, true)
 
 func _gastar_stamina(cantidad: float) -> bool:
-	if cantidad <= 0.0:
-		return true
-
-	if stamina < cantidad:
-		return false
-
-	stamina = maxf(
-		stamina - cantidad,
-		0.0
-	)
-
-	_stamina_regeneration_timer = (
-		stamina_regeneration_delay
-	)
-
-	stamina_changed.emit(
-		stamina,
-		max_stamina
-	)
-
-	return true
-
+	return stamina_controller.gastar(cantidad)
 
 func _tiene_stamina(cantidad: float) -> bool:
-	return stamina >= cantidad
+	return stamina_controller.tiene(cantidad)
 
 
 func restaurar_stamina(cantidad: float) -> bool:
-	if not is_alive:
-		return false
+	return stamina_controller.restaurar(cantidad)
 
-	var recuperacion: float = maxf(
-		cantidad,
-		0.0
-	)
-
-	if recuperacion <= 0.0:
-		return false
-
-	var antes: float = stamina
-
-	if antes >= max_stamina:
-		return false
-
-	stamina = minf(
-		stamina + recuperacion,
-		max_stamina
-	)
-
-	if stamina <= antes:
-		return false
-
-	_stamina_regeneration_timer = 0.0
-
-	stamina_changed.emit(
-		stamina,
-		max_stamina
-	)
-
-	return true
-
-
-func restaurar_eterium(cantidad: float) -> bool:
-	if not is_alive or not _eterium_runtime_ready:
-		return false
-
-	var recuperacion: int = maxi(
-		1,
-		roundi(cantidad)
-	)
-
-	if mana >= max_mana:
-		return false
-
-	var antes: int = mana
-
-	mana = mini(
-		mana + recuperacion,
-		max_mana
-	)
-
-	if mana <= antes:
-		return false
-
-	_eterium_recovery_accumulator = 0.0
-
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
-
-	return true
+func _al_cambio_stamina(current: float, maximum: float) -> void:
+	stamina = current
+	stamina_changed.emit(current, maximum)
 
 
 # ============================================================
