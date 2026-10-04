@@ -78,7 +78,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	world_gen.registrar_jugador(_player)
 
 	if _player.has_method("configurar_dependencias"):
-		_player.call("configurar_dependencias", _inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client)
+		_player.call("configurar_dependencias", _inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameState)
 
 	_configurar_camara()
 	_configurar_hud(_world_context, world_gen)
