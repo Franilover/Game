@@ -14,6 +14,8 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _dialogue_system: Node = $Systems/DialogueSystem
 @onready var _ium_manager: Node = $Systems/IUMManager
 @onready var _ium_lab: Control = $UI/IUMLab
+@onready var _supabase_client: Node = $Systems/Infrastructure/SupabaseClient
+@onready var _ium_repository: Node = $Systems/Infrastructure/IUMRepository
 
 
 func _ready() -> void:
@@ -49,7 +51,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_camara()
 	_configurar_hud(world_gen)
 	_configurar_interaccion()
-	_configurar_combate()
+	_configurar_combate(world_gen)
 	_configurar_input_router()
 	_configurar_inventario()
 	_configurar_dialogo()
@@ -145,7 +147,7 @@ func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 		_hud.call("mostrar_interaccion", texto)
 
 
-func _configurar_combate() -> void:
+func _configurar_combate(world_gen: Node) -> void:
 	if _combat_system == null:
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
@@ -202,6 +204,15 @@ func _inicializar_ium() -> void:
 	if _ium_manager == null:
 		push_error("Main: no se encontró Systems/IUMManager.")
 		return
+
+	if _supabase_client == null or _ium_repository == null:
+		push_error("Main: falta infraestructura Supabase/IUMRepository.")
+		return
+
+	if _ium_repository.has_method("configurar"):
+		_ium_repository.call("configurar", _supabase_client)
+	if _ium_manager.has_method("configurar"):
+		_ium_manager.call("configurar", _ium_repository)
 
 	if _ium_lab == null:
 		push_error("Main: no se encontró UI/IUMLab.")
