@@ -21,6 +21,7 @@ var cargado: bool = false
 var _mundo_bloqueado: bool = false
 var _mundo_pendiente: Dictionary = {}
 var _firma_actual: String = ""
+var _supabase_client: GarliaSupabaseClient = null
 
 
 # Índices rápidos.
@@ -35,20 +36,16 @@ var _reinos_game: Array[Dictionary] = []
 var _props_game: Array[Dictionary] = []
 
 
-func _ready() -> void:
-	if not SupabaseClient.mundo_cargado.is_connected(
-		_al_mundo_remoto
-	):
-		SupabaseClient.mundo_cargado.connect(
-			_al_mundo_remoto
-		)
+func configurar_dependencias(supabase_client: GarliaSupabaseClient) -> void:
+	_supabase_client = supabase_client
+	if _supabase_client == null:
+		return
+	if not _supabase_client.mundo_cargado.is_connected(_al_mundo_remoto):
+		_supabase_client.mundo_cargado.connect(_al_mundo_remoto)
+	if not _supabase_client.error_conexion.is_connected(_al_error_remoto):
+		_supabase_client.error_conexion.connect(_al_error_remoto)
 
-	if not SupabaseClient.error_conexion.is_connected(
-		_al_error_remoto
-	):
-		SupabaseClient.error_conexion.connect(
-			_al_error_remoto
-		)
+func _ready() -> void:
 
 	_cargar_fuente_local()
 
@@ -153,7 +150,8 @@ func _leer_mundo_local(
 
 
 func _solicitar_actualizacion_remota() -> void:
-	SupabaseClient.iniciar_sincronizacion()
+	if _supabase_client != null:
+		_supabase_client.iniciar_sincronizacion()
 
 
 func _al_mundo_remoto(
