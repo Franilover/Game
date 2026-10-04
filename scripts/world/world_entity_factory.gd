@@ -50,10 +50,6 @@ func crear_criatura(data: Dictionary) -> Creature:
 		return null
 
 	node.configurar_dependencias(
-		_player,
-		_entity_manager,
-		_inventory,
-		_combat_system,
 		_dialogue_system,
 		_mission_manager,
 		_effects_root,
