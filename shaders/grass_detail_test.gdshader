@@ -1,7 +1,7 @@
 shader_type canvas_item;
 
-uniform float density : hint_range(0.0, 1.0) = 0.34;
-uniform float detail_strength : hint_range(0.0, 1.0) = 0.22;
+uniform float density : hint_range(0.0, 1.0) = 0.52;
+uniform float detail_strength : hint_range(0.0, 1.0) = 0.38;
 uniform float wind_strength : hint_range(0.0, 1.0) = 0.012;
 uniform float wind_speed : hint_range(0.0, 3.0) = 0.55;
 
@@ -17,8 +17,8 @@ float tuft(vec2 uv, vec2 cell) {
     float r3 = hash21(cell + 91.2);
 
     // Small pixel-art tufts rather than tall procedural blades.
-    float height = mix(0.16, 0.34, r2);
-    float width = mix(0.035, 0.075, r3);
+    float height = mix(0.22, 0.44, r2);
+    float width = mix(0.055, 0.105, r3);
     float center = 0.5 + (r - 0.5) * 0.50;
 
     float y = 1.0 - uv.y;
