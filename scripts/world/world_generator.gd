@@ -111,6 +111,12 @@ func _inicializar_mundo() -> void:
 		generation_cells_per_frame
 	)
 
+	# TileMapDual necesita completar su _ready() para inicializar el
+	# compositor antes de que el primer chunk pinte sus celdas.
+	# Sin este frame de espera, el chunk inicial puede quedar vacío,
+	# mientras que los siguientes sí se generan correctamente.
+	await get_tree().process_frame
+
 	terrain.generar_chunk_completo(
 		Vector2i.ZERO
 	)
