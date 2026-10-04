@@ -76,6 +76,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		var objeto_activo := _obtener_objeto_activo()
 
 		if objeto_activo.is_empty():
+			# Sin arma/herramienta equipada, el click izquierdo sigue siendo
+			# un ataque cuerpo a cuerpo desarmado.
+			if _tiempo_desde_ataque > 0.0:
+				return
+			_atacar_desarmado()
+			get_viewport().set_input_as_handled()
 			return
 
 		if _tiempo_desde_ataque > 0.0:
