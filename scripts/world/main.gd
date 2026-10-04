@@ -58,7 +58,7 @@ func _inicializar_jugador(world_gen: Node) -> void:
 	_configurar_camara()
 	_configurar_hud(world_gen)
 	_configurar_input_router()
-	_configurar_interaccion()
+	_configurar_interaccion(world_gen)
 	_configurar_combate(world_gen)
 	_configurar_inventario()
 	if GameState.has_method("configurar_dependencias"):
@@ -128,7 +128,7 @@ func _configurar_hud(world_gen: Node) -> void:
 		push_error("Main: HUD no tiene configurar().")
 
 
-func _configurar_interaccion() -> void:
+func _configurar_interaccion(world_gen: Node) -> void:
 	if _interaction_system == null:
 		push_error("Main: no se encontró Systems/InteractionSystem.")
 		return
