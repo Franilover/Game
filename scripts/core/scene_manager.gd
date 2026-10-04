@@ -1,13 +1,20 @@
 extends Node
-## SceneManager — cambia de escena sin crashear.
-## Uso: SceneManager.go_to("res://scenes/world/main.tscn")
+## SceneManager — autoridad única para cambios de escena.
+## El cambio inicial también elimina la escena raíz que dejó el menú.
+## Las escenas de gameplay no deben crear una segunda escena paralela.
 
 var _current: Node = null
 
 func go_to(path: String) -> void:
-	if _current:
+	var escena_anterior: Node = get_tree().current_scene
+
+	if is_instance_valid(_current) and _current != escena_anterior:
 		_current.queue_free()
 		await _current.tree_exited
+
+	if is_instance_valid(escena_anterior):
+		escena_anterior.queue_free()
+		await escena_anterior.tree_exited
 
 	var packed := load(path) as PackedScene
 	if packed == null:
