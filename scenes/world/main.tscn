@@ -8,7 +8,7 @@
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/gameplay/interaction_system.gd" id="5_interaction"]
 [ext_resource type="PackedScene" uid="uid://bi6oqlrfq4scs" path="res://scenes/ui/inventory.tscn" id="6_inventory"]
 [ext_resource type="Script" uid="uid://urg1oxf82mu0" path="res://scripts/gameplay/combat_system.gd" id="8_combat"]
-[ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/debug/admin_console.gd" id="9_admin"]
+[ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/dev/admin_console.gd" id="9_admin"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="10_pause"]
 [ext_resource type="PackedScene" path="res://scenes/ui/death_menu.tscn" id="11_death"]
 
