@@ -222,7 +222,9 @@ func _texto_ingredientes(receta: Dictionary) -> String:
 
 
 func _nombre_item(item_id: String) -> String:
-	var item := GarliaWorldItems.buscar_item_por_id(item_id)
+	if _world_items == null:
+		return item_id
+	var item := _world_items.buscar_item_por_id(item_id)
 	if item.is_empty():
 		return item_id
 	return str(item.get("nombre", item_id))
@@ -280,7 +282,11 @@ func _craftear(receta: Dictionary) -> void:
 	var output_id := str(resultado.get("item_id", ""))
 	var output_cantidad := maxi(1, int(resultado.get("cantidad", 1)))
 
-	var objeto_resultado := GarliaWorldItems.buscar_item_por_id(output_id)
+	if _world_items == null:
+		_estado.text = "No está disponible el catálogo de objetos."
+		return
+
+	var objeto_resultado := _world_items.buscar_item_por_id(output_id)
 
 	if objeto_resultado.is_empty():
 		_estado.text = "El objeto resultado no está en el catálogo del juego."
