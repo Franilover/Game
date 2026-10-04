@@ -467,11 +467,9 @@ func _crear_slots_equipamiento() -> void:
 	]
 
 	for entrada in configuracion:
-		var slot_node := EQUIPMENT_SLOT_SCENE.instantiate()
-		if not slot_node is Button:
+		var slot := EQUIPMENT_SLOT_SCENE.instantiate() as InventoryEquipmentSlot
+		if slot == null:
 			continue
-
-		var slot := slot_node as Button
 		equipment_slots.add_child(slot)
 		slot.configurar(str(entrada[0]), str(entrada[1]))
 		slot.objeto_equipado.connect(_al_equipar_objeto)
@@ -484,14 +482,14 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	var source_index := _buscar_indice_objeto(objeto)
 	if source_index < 0:
 		return
-	var clave := ""
-	if slot.has_method("obtener_clave"):
-		clave = str(slot.call("obtener_clave"))
+	var equipment_slot := slot as InventoryEquipmentSlot
+	if equipment_slot == null:
+		return
+	var clave: String = equipment_slot.obtener_clave()
 	if clave.is_empty():
 		return
 	if inventory_controller.equipar_desde_inventario(clave, source_index, objeto):
-		if slot.has_method("configurar_objeto"):
-			slot.call("configurar_objeto", objeto)
+		equipment_slot.configurar_objeto(objeto)
 		actualizar()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
@@ -500,16 +498,16 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if objeto.is_empty():
 		return
-	var clave := ""
-	if slot.has_method("obtener_clave"):
-		clave = str(slot.call("obtener_clave"))
+	var equipment_slot := slot as InventoryEquipmentSlot
+	if equipment_slot == null:
+		return
+	var clave: String = equipment_slot.obtener_clave()
 	if clave.is_empty():
 		return
 	if not inventory_controller.desequipar_a_inventario(clave):
 		print("Inventory: no hay espacio para desequipar → ", str(objeto.get("nombre", "Objeto")))
 		return
-	if slot.has_method("limpiar_objeto"):
-		slot.call("limpiar_objeto")
+	equipment_slot.limpiar_objeto()
 	actualizar()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
@@ -517,19 +515,18 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 
 func _actualizar_slots_equipamiento() -> void:
 	for child in equipment_slots.get_children():
-		if not child.has_method("obtener_clave"):
+		var slot := child as InventoryEquipmentSlot
+		if slot == null:
 			continue
 
-		var clave_slot: String = str(child.call("obtener_clave"))
+		var clave_slot: String = slot.obtener_clave()
 		var objeto: Dictionary = obtener_objeto_equipado(clave_slot)
 
 		if objeto.is_empty():
-			if child.has_method("limpiar_objeto"):
-				child.call("limpiar_objeto")
+			slot.limpiar_objeto()
 			continue
 
-		if child.has_method("configurar_objeto"):
-			child.call("configurar_objeto", objeto)
+		slot.configurar_objeto(objeto)
 
 
 func obtener_equipamiento() -> Dictionary:
