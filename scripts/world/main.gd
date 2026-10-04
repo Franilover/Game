@@ -35,7 +35,7 @@ func _ready() -> void:
 	if world_gen.has_method("configurar_entidades"):
 		world_gen.call("configurar_entidades", $Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context)
 	if GarliaWorldItems.has_method("configurar_dependencias"):
-		GarliaWorldItems.call("configurar_dependencias", $Entities/Player, _inventory, $Entities, _world_context, MissionManager)
+		GarliaWorldItems.call("configurar_dependencias", $Entities/Player, _inventory, $Entities, world_gen.entity_manager, _world_context, MissionManager)
 
 	if world_gen.is_world_ready():
 		_inicializar_jugador(world_gen)
