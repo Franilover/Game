@@ -127,25 +127,21 @@ La primera pasada de UI descubrió referencias que no aparecían en el grupo ini
 
 ### Deuda implícita aún identificada
 
-Esta pasada **no se debe considerar una eliminación global completa** de todos los descubrimientos implícitos. Sigue pendiente migrar o justificar:
+La migración de ciclo de vida ya cubrió CreatureAI, Creature, WorldProp, WorldItem y GarliaWorldItems. No significa que todas las búsquedas globales del repositorio hayan desaparecido.
 
-- `scripts/creatures/creature_ai.gd`: búsqueda global de Player, criaturas, objetivos dañables e Inventory; también busca CombatSystem mediante `current_scene`. Es un archivo grande (~2.000 líneas) y necesita una refactorización propia, no sustituciones mecánicas.
-- `scripts/creatures/creature.gd`: busca DialogueSystem por grupo y MissionManager mediante `/root`; usa `current_scene` para colocar rastros de teletransporte.
-- `scripts/world/world_decoration.gd`: busca Player y WorldGenerator desde grupos/escena.
-- `scripts/world/world_prop.gd` y `scripts/world/world_item.gd`: todavía buscan Generator, Player e Inventory por grupos.
-- `scripts/infrastructure/garlia_world_items.gd`: todavía consulta `current_scene`, busca Player/Inventory por grupos y recorre objetos `world_item` mediante grupos; requiere separar la propiedad del catálogo/drops del root de presentación del mundo.
-- `scripts/gameplay/combat_system.gd`: consulta el hijo opcional `AIController` en objetivos concretos; esto no es búsqueda global, pero conviene sustituirlo por una interfaz/propiedad explícita si la entidad lo expone.
-- `scripts/ui/encyclopedia.gd`, `world_map.gd`, `hotbar.gd`, `crafting.gd`, `death_menu.gd`, `pause_menu.gd`, `relationships.gd`, `ium_lab.gd` ya recibieron la migración indicada arriba; falta validación de ejecución en Godot.
+Pendientes confirmados:
 
-## Próxima fase segura
+- `scripts/world/world_decoration.gd`: todavía busca Player y WorldGenerator mediante grupos/escena. No aparece como nodo en `scenes/world/main.tscn`; verificar referencias en otras escenas y carga dinámica antes de migrarlo o borrarlo.
+- `scripts/gameplay/combat_system.gd`: consulta el hijo opcional `AIController` en objetivos concretos. No es búsqueda global, pero se puede reemplazar por una interfaz/propiedad explícita si las entidades lo exponen.
+- Validación en ejecución de las migraciones de UI, entidades, drops y props; el repositorio no se ha ejecutado en Godot en esta pasada.
 
-1. Mapear el ciclo de vida de entidades y drops: WorldEntitySpawner → WorldEntityFactory → Creature → CreatureAI; GarliaWorldItems → WorldProp/WorldItem.
-2. Diseñar una interfaz de dependencias de entidad para Player, WorldEntityManager, Inventory, CombatSystem, DialogueSystem y MissionManager, y configurarla antes de activar la IA.
-3. Cambiar CreatureAI de búsquedas globales a consultas sobre Player explícito y WorldEntityManager; evitar reemplazar grupos por otra búsqueda global.
-4. Inyectar WorldContext/Player en WorldDecoration, WorldProp y WorldItem solo después de confirmar cuáles se instancian realmente.
-5. Auditar referencias a escenas/scripts para distinguir archivos muertos de código que se instancia por carga dinámica.
-6. Validar cada etapa en Godot. No hacer una migración masiva de la IA ni borrar archivos hasta conocer todos sus consumidores.
+Siguiente fase segura:
 
+1. Auditar referencias de escenas/scripts y confirmar si WorldDecoration está muerto o sigue teniendo consumidores.
+2. Revisar el límite de combate entre CombatSystem y CreatureAI, manteniendo CombatSystem como autoridad del daño.
+3. Revisar el flujo de recogida para asegurar que WorldItem.interact y GarliaWorldItems.intentar_recoger no se conviertan en dos rutas de mutación activas para la misma acción.
+4. Probar en Godot aparición de criaturas/personajes, IA ecológica, combate, diálogo, misiones, drops, props recolectables y colocación.
+5. No dividir la IA monolítica por especie hasta mapear sus estados compartidos y validar el comportamiento actual.
 
 ## Fase de ciclo de vida de entidades — aplicada
 
