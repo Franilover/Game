@@ -263,3 +263,16 @@ Se corrigió una inconsistencia de composición detectada al validar `SupabaseCl
 Ahora el contrato es coherente: `Main → SupabaseClient → GarliaAuth (credenciales) → Supabase`. `SupabaseClient` no declara ni mantiene una segunda copia de la URL/clave.
 
 La división por dominio sigue deliberadamente pendiente hasta mapear consumidores; no se crearán repositorios paralelos sólo para reducir el tamaño del archivo.
+
+
+## Decimotercera barrida — Player y CombatSystem sin estado global implícito
+
+Se cerraron dos fugas de composición encontradas durante la revisión de Player/CombatSystem:
+
+- Player ya no consulta GameState directamente en las operaciones administrativas; usa la referencia GameState inyectada en configurar_dependencias.
+- CombatSystem recibe GameState desde Main y centraliza mediante una pequeña frontera interna el registro de criaturas derrotadas.
+- Main queda como responsable de componer explícitamente esa dependencia.
+
+No se movió la lógica de daño fuera de CombatDamage, ni se confundió la hotbar con el equipamiento. El objetivo de esta barrida es cerrar dependencias implícitas, no cambiar las reglas de combate.
+
+Siguiente frente: revisar HUD y CombatSystem por responsabilidades de presentación/feedback que todavía estén mezcladas, y después continuar con los autoloads restantes.
