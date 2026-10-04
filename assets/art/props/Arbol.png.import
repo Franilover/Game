@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://diw8gg2nhhqtp"
-path="res://.godot/imported/Espada Madera.png-870233c937920460db5e2a67b5f626b5.ctex"
+uid="uid://b4j8v0jocqw07"
+path="res://.godot/imported/Arbol.png-098022c9424fea439a57eff59b95e106.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/items/Espada Madera.png"
-dest_files=["res://.godot/imported/Espada Madera.png-870233c937920460db5e2a67b5f626b5.ctex"]
+source_file="res://assets/art/props/Arbol.png"
+dest_files=["res://.godot/imported/Arbol.png-098022c9424fea439a57eff59b95e106.ctex"]
 
 [params]
 
