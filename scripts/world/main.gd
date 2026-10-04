@@ -89,8 +89,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	if GameState.has_method("configurar_dependencias"):
 		GameState.call("configurar_dependencias", _inventory, _player, _world_context, _world_atmosphere, MissionManager)
 	_configurar_dialogo()
-	if MissionManager.has_method("configurar_dependencias"):
-		MissionManager.call("configurar_dependencias", _player, world_gen.entity_manager, WorldData)
+	MissionManager.configurar_dependencias(world_gen.entity_manager, WorldData)
 	_configurar_social()
 	_inicializar_ium()
 	_configurar_admin()
