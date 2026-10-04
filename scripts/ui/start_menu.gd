@@ -94,8 +94,8 @@ func _ready() -> void:
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
-	if WorldDataService.has_method("configurar_dependencias"):
-		WorldDataService.call("configurar_dependencias", SupabaseClient)
+	if WorldData.has_method("configurar_dependencias"):
+		WorldData.call("configurar_dependencias", SupabaseClient)
 
 	start_button.pressed.connect(
 		_iniciar_partida
@@ -206,10 +206,10 @@ func _ready() -> void:
 	if not _character_creation.cancelled.is_connected(_on_character_cancelled):
 		_character_creation.cancelled.connect(_on_character_cancelled)
 
-	if not WorldDataService.mundo_listo.is_connected(
+	if not WorldData.mundo_listo.is_connected(
 		_al_mundo_listo
 	):
-		WorldDataService.mundo_listo.connect(
+		WorldData.mundo_listo.connect(
 			_al_mundo_listo
 		)
 
@@ -232,7 +232,7 @@ func _ready() -> void:
 
 
 func _actualizar_estado_mundo() -> void:
-	if WorldDataService.esta_cargado():
+	if WorldData.esta_cargado():
 		_al_mundo_listo()
 		return
 
@@ -266,7 +266,7 @@ func _al_error_mundo(
 
 	# Si WorldDataService alcanzó a cargarse desde cache,
 	# no mostramos error como si el juego estuviera roto.
-	if WorldDataService.esta_cargado():
+	if WorldData.esta_cargado():
 		_al_mundo_listo()
 		return
 
@@ -309,7 +309,7 @@ func _iniciar_aventura_con_personaje() -> void:
 	if _cargando_mundo:
 		return
 
-	if not WorldDataService.esta_cargado():
+	if not WorldData.esta_cargado():
 		_cargando_mundo = true
 		start_button.disabled = true
 		start_button.text = "Preparando mundo..."
