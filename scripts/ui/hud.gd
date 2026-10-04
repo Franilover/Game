@@ -65,7 +65,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
 		_tiempo_contexto += delta
-		if _tiempo_contexto >= 0.5:
+		if _tiempo_contexto >= 0.25:
 			_tiempo_contexto = 0.0
 			_actualizar_contexto()
 	else:
@@ -410,15 +410,26 @@ func _actualizar_contexto() -> void:
 	if world_generator.has_method("get_tile_at"):
 		tile_actual = world_generator.call("get_tile_at", player.global_position)
 
-	if tile_actual == _ultima_tile_contexto and location_label.text != "RENDIMIENTO":
-		return
-
+	var cambio_de_tile := tile_actual != _ultima_tile_contexto
 	_ultima_tile_contexto = tile_actual
 
-	var contexto := _obtener_contexto_mundo(player.global_position)
-	var bioma := _obtener_nombre_contexto(contexto, "bioma")
-	var ecosistema := _obtener_nombre_contexto(contexto, "ecosistema")
-	var habitat := _obtener_nombre_contexto(contexto, "habitat")
+	var bioma := "Desconocido"
+	var ecosistema := "Desconocido"
+	var habitat := "Desconocido"
+	if cambio_de_tile:
+		var contexto := _obtener_contexto_mundo(player.global_position)
+		bioma = _obtener_nombre_contexto(contexto, "bioma")
+		ecosistema = _obtener_nombre_contexto(contexto, "ecosistema")
+		habitat = _obtener_nombre_contexto(contexto, "habitat")
+	else:
+		var lineas_actuales: PackedStringArray = location_label.text.split("\n")
+		for linea in lineas_actuales:
+			if linea.begins_with("Bioma: "):
+				bioma = linea.trim_prefix("Bioma: ")
+			elif linea.begins_with("Ecosistema: "):
+				ecosistema = linea.trim_prefix("Ecosistema: ")
+			elif linea.begins_with("Hábitat: "):
+				habitat = linea.trim_prefix("Hábitat: ")
 
 	var tile := tile_actual
 
@@ -457,8 +468,16 @@ func _actualizar_contexto() -> void:
 	if SupabaseClient.has_method("esta_conectado") and not SupabaseClient.call("esta_conectado"):
 		supabase_estado = "Offline"
 
-	var fps := Engine.get_frames_per_second()
-	var frame_ms := 1000.0 / float(maxi(fps, 1))
+	var fps: int = Engine.get_frames_per_second()
+	var frame_ms: float = 1000.0 / float(maxi(fps, 1))
+	var process_ms: float = float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0
+	var physics_ms: float = float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0
+	var draw_calls_2d: int = int(Performance.get_monitor(Performance.RENDER_2D_DRAW_CALLS_IN_FRAME))
+	var items_2d: int = int(Performance.get_monitor(Performance.RENDER_2D_ITEMS_IN_FRAME))
+	var total_draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var objects: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
+	var nodes: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	var static_memory_mb: float = float(Performance.get_monitor(Performance.MEMORY_STATIC)) / 1048576.0
 	var criaturas := get_tree().get_nodes_in_group("creatures").size()
 	var props := get_tree().get_nodes_in_group("world_props").size()
 	var entidades := criaturas + props
@@ -470,7 +489,11 @@ func _actualizar_contexto() -> void:
 
 	location_label.text = (
 		"RENDIMIENTO\n"
-		+ "FPS: " + str(fps) + "    Frame: " + ("%.1f" % frame_ms) + " ms\n\n"
+		+ "FPS: " + str(fps) + "    Frame: " + ("%.1f" % frame_ms) + " ms\n"
+		+ "Proceso: " + ("%.2f" % process_ms) + " ms    Física: " + ("%.2f" % physics_ms) + " ms\n"
+		+ "Draw 2D: " + str(draw_calls_2d) + "    Items 2D: " + str(items_2d) + "\n"
+		+ "Draw total: " + str(total_draw_calls) + "    Objetos: " + str(objects) + "    Nodos: " + str(nodes) + "\n"
+		+ "Memoria estática: " + ("%.1f" % static_memory_mb) + " MB\n\n"
 		+ "MUNDO\n"
 		+ "Reino: " + reino_texto + "\n"
 		+ "Seed: " + seed + "\n"
