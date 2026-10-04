@@ -454,3 +454,7 @@ HUD tipa directamente `WorldData` y consume su snapshot mediante `world_data.mun
 ## Cuadragésima barrida — Targeting de combate tipado
 
 La cadena de combate ahora mantiene el contrato `Entity` desde la detección hasta la resolución: `CombatTargeting` valida entidades vivas, y `CombatAttackArea`/`CombatProjectile` convierten explícitamente sus candidatos a `Entity` antes de continuar. Esto evita que nodos arbitrarios alcancen `CombatDamage`.
+
+## Cuadragésima primera barrida — Texto de interacción centralizado
+
+`Main` ya no inspecciona dinámicamente el objetivo contextual para construir el texto del HUD. `InteractionSystem` expone `obtener_texto_interaccion()` y mantiene la responsabilidad de presentar el contrato contextual hacia la capa de UI.
