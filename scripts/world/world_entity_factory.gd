@@ -23,7 +23,7 @@ func configurar_dependencias(
 	inventario: GarliaInventory,
 	combat_system: CombatSystem,
 	dialogue_system: DialogueSystem,
-	mission_manager: MissionManager,
+	mission_manager: MissionManagerService,
 	effects_root: Node,
 	world_context: WorldContext,
 	world_items: GarliaWorldItems,
@@ -55,6 +55,14 @@ func crear_criatura(data: Dictionary) -> Creature:
 		_effects_root,
 		_world_items,
 		_world_data,
+		_relaciones_ecologicas
+	)
+	node.configurar_dependencias_ia(
+		_player,
+		_entity_manager,
+		_inventory,
+		_combat_system,
+		_world_items,
 		_relaciones_ecologicas
 	)
 	node.configurar(data)
