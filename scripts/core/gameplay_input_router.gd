@@ -79,21 +79,18 @@ func esta_entrada_bloqueada(arbol: SceneTree) -> bool:
 	if arbol.paused:
 		return true
 
-	if _inventory_ui != null and _inventory_ui.has_method("esta_abierto"):
-		if bool(_inventory_ui.call("esta_abierto")):
-			return true
+	if _inventory_ui != null and _inventory_ui.esta_abierto():
+		return true
 
 	if _admin_console != null and _admin_console is CanvasItem:
 		if bool((_admin_console as CanvasItem).visible):
 			return true
 
-	if _dialogue_system != null and _dialogue_system.has_method("esta_abierto"):
-		if bool(_dialogue_system.call("esta_abierto")):
-			return true
+	if _dialogue_system != null and _dialogue_system.esta_abierto():
+		return true
 
-	if _hud != null and _hud.has_method("esta_mostrando_panel_interaccion"):
-		if bool(_hud.call("esta_mostrando_panel_interaccion")):
-			return true
+	if _hud != null and _hud.esta_mostrando_panel_interaccion():
+		return true
 
 	return false
 
