@@ -129,7 +129,7 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
 	layer.z_index = -4096 + (ZONE_TEXTURES.size() - zone)
-	layer.rendering_quadrant_size = 32
+	layer.rendering_quadrant_size = 128
 	layer.tile_set = _crear_tileset()
 
 	add_child(layer)
@@ -266,6 +266,7 @@ func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
 	# de las entidades/jugador.
 	# Debe quedar sobre Pradera (zona 0 = -4087) y sobre cualquier otra base.\n\tlayer.z_index = -4086
 	layer.y_sort_enabled = false
+	layer.rendering_quadrant_size = 128
 	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
 	add_child(layer)
 	return layer
