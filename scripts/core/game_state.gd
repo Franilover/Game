@@ -8,25 +8,11 @@ const SAVE_DIRECTORY := "user://partidas"
 const SAVE_VERSION: int = 3
 const AUTOSAVE_INTERVAL: float = 10.0
 
-var player_health: int = 100
-var player_mana: int = 100
-var player_position: Vector2 = Vector2.ZERO
-var player_stamina: float = 100.0
-var player_facing: Vector2 = Vector2.DOWN
-var player_position_valida: bool = false
-var player_tile: Vector2i = Vector2i.ZERO
-var player_tile_valido: bool = false
-
-var current_scene: String = ""
-var elapsed_time: float = 0.0
-
-var flags: Dictionary = {}
+var player_state := PlayerState.new()
+var world_state := WorldState.new()
 
 var active_save_id: String = ""
 var active_save_name: String = ""
-
-var world_seed: int = 0
-var world_seed_valida: bool = false
 
 var save_repository := SaveFileRepository.new()
 
