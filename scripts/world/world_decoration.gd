@@ -1,6 +1,6 @@
 extends Node2D
 
-const PROP_SCENE = preload("res://scenes/wold/world_prop.tscn")
+const PROP_SCENE = preload("res://scenes/world/world_prop.tscn")
 
 @export var radio_generacion: float = 720.0
 @export var radio_limpieza: float = 850.0
