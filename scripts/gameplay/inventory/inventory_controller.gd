@@ -52,6 +52,9 @@ func desequipar(slot: String) -> Dictionary:
 func obtener_equipo(slot: String) -> Dictionary:
 	return runtime.obtener_equipo(slot)
 
+func obtener_equipamiento() -> Dictionary:
+	return runtime.obtener_equipamiento()
+
 func serializar() -> Dictionary:
 	return {
 		"items": runtime.state.items.duplicate(true),
