@@ -102,8 +102,7 @@ func _inicializar_jugador(world_gen: WorldGenerator) -> void:
 	# Inicializar IUM con jugador (jugador_id puede venir de auth en el futuro)
 	if _ium_manager != null:
 		var jugador_id: String = ""
-		if _player.has_method("get_jugador_id"):
-			jugador_id = _player.call("get_jugador_id")
+		jugador_id = _player.get_jugador_id()
 		_ium_manager.inicializar(jugador_id)
 
 
@@ -288,8 +287,8 @@ func _inicializar_ium() -> void:
 
 func _al_equipar_proceso(proceso: Dictionary) -> void:
 	# Guardar en player para que pueda usarlo con R
-	if _player != null and _player.has_method("equipar_proceso_ium"):
-		_player.call("equipar_proceso_ium", proceso)
+	if _player != null:
+		_player.equipar_proceso_ium(proceso)
 	else:
 		# Guardar en game_state como fallback
 		GameState.establecer_proceso_ium_equipado(proceso)
