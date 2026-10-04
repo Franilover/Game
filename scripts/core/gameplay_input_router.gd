@@ -44,28 +44,21 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("primary_action"):
-		if _interaction_system != null:
-			var interaction: Node = _interaction_system
-			if interaction.has_method("procesar_accion_primaria"):
-				if bool(interaction.call("procesar_accion_primaria")):
-					get_viewport().set_input_as_handled()
-					print("GameplayInputRouter: primary_action → interacción")
-					return
+		if _interaction_system != null and _interaction_system.procesar_accion_primaria():
+			get_viewport().set_input_as_handled()
+			print("GameplayInputRouter: primary_action → interacción")
+			return
 
-		var combat_primary: Node = _combat_system
-		if combat_primary != null and combat_primary.has_method("procesar_accion_primaria"):
-			if bool(combat_primary.call("procesar_accion_primaria")):
-				get_viewport().set_input_as_handled()
-				print("GameplayInputRouter: primary_action → combate")
-				return
+		if _combat_system != null and _combat_system.procesar_accion_primaria():
+			get_viewport().set_input_as_handled()
+			print("GameplayInputRouter: primary_action → combate")
+			return
 
 	if event.is_action_pressed("secondary_action"):
-		var combat_secondary: Node = _combat_system
-		if combat_secondary != null and combat_secondary.has_method("procesar_accion_secundaria"):
-			if bool(combat_secondary.call("procesar_accion_secundaria")):
-				get_viewport().set_input_as_handled()
-				print("GameplayInputRouter: secondary_action → combate")
-				return
+		if _combat_system != null and _combat_system.procesar_accion_secundaria():
+			get_viewport().set_input_as_handled()
+			print("GameplayInputRouter: secondary_action → combate")
+			return
 
 
 func esta_bloqueado() -> bool:
