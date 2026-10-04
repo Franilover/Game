@@ -38,6 +38,7 @@ script = ExtResource("17_world_streamer")
 
 [node name="WorldEntitySpawner" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("18_world_spawner")
+peso_destacadas = 76.0
 
 [node name="WorldAtmosphere" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("19_world_atmosphere")
