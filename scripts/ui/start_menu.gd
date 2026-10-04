@@ -1,11 +1,6 @@
 extends Control
 
 
-const KINGDOM_SCENE_PATH: String = (
-	"res://scenes/kingdom/reino_torres.tscn"
-)
-
-
 @onready var start_button: Button = (
 	$Center/StartButton
 )
@@ -305,7 +300,7 @@ func _abrir_selector_partidas() -> void:
 
 	print("StartMenu: selector de partidas abierto.")
 
-func _iniciar_aventura_con_personaje() -> void:
+func _iniciar_aventura_con_personaje(config: Dictionary = {}) -> void:
 	if _cargando_mundo:
 		return
 
@@ -313,18 +308,25 @@ func _iniciar_aventura_con_personaje() -> void:
 		_cargando_mundo = true
 		start_button.disabled = true
 		start_button.text = "Preparando mundo..."
-
 		SupabaseClient.cargar_mundo_inicial()
-
 		return
 
-	print(
-		"StartMenu: Iniciar partida con personaje"
-	)
+	print("StartMenu: creando partida desde personaje.")
+
+	var nombre_partida := str(config.get("nombre_partida", "Partida")).strip_edges()
+	var semilla := str(config.get("semilla", "")).strip_edges()
+
+	if nombre_partida.is_empty():
+		nombre_partida = "Partida"
+
+	var id := GameState.crear_partida(nombre_partida, semilla, config)
+	if id.is_empty():
+		start_button.disabled = false
+		return
 
 	start_button.disabled = true
-
-	SceneManager.go_to(KINGDOM_SCENE_PATH)
+	if not GameState.iniciar_partida(id):
+		start_button.disabled = false
 
 
 func _salir() -> void:
@@ -668,7 +670,7 @@ func _on_character_cancelled() -> void:
 func _on_character_confirmed(config: Dictionary, action: String) -> void:
 	match action:
 		"aventura":
-			_iniciar_aventura_con_personaje()
+			_iniciar_aventura_con_personaje(config)
 		"host":
 			_crear_partida_real()
 		"join":
