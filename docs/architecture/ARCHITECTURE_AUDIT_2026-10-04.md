@@ -171,6 +171,7 @@ La Composition Root `Main` ahora configura `WorldGenerator` con referencias expl
 - WorldEntityFactory configura los datos canónicos del prop antes del registro; el spawner solo añade su chunk/posición después.
 - WorldItem recibe Player, Inventory y MissionManager explícitos.
 - GarliaWorldItems recibe Player, Inventory, Entities, WorldContext y MissionManager desde Main; la creación de drops, props colocados y objetos de muestra usa Entities como root, sin inspeccionar `current_scene`.
+- WorldEntityManager escucha la salida del árbol de las entidades registradas y limpia sus referencias de chunk/globales/persistencia; drops y props colocados se registran también en el manager, por lo que InteractionSystem puede resolverlos por su fuente canónica de entidades.
 - GarliaWorldItems mantiene referencias a los objetos creados para la recolección manual, en vez de buscar el grupo `world_item`.
 
 ### Riesgos/validación pendiente
