@@ -2,11 +2,7 @@ extends Node
 class_name GarliaWorldItems
 
 
-const WORLD_ITEM_SCRIPT: Script = preload(
-	"res://scripts/world/world_item.gd"
-)
-
-const MAX_OBJECTOS_EN_MUNDO: int = 3
+ const MAX_OBJECTOS_EN_MUNDO: int = 3
 const HTTP_TIMEOUT: float = 8.0
 
 
@@ -28,18 +24,18 @@ var catalogo: Array[Dictionary] = []
 var _objetos_generados_en_escena: bool = false
 
 var _posicion_drops_pendiente: Vector2 = Vector2.ZERO
-var _player: Node2D = null
-var _inventory: Node = null
+var _player: Player = null
+var _inventory: GarliaInventory = null
 var _entities_root: Node = null
-var _entity_manager: Node = null
-var _world_context: Node = null
-var _mission_manager: Node = null
+var _entity_manager: WorldEntityManager = null
+var _world_context: WorldContext = null
+var _mission_manager: MissionManager = null
 var _world_items: Array[Node2D] = []
 
 
-func configurar_dependencias(jugador: Node, inventario: Node, entities_root: Node, entity_manager: Node, world_context: Node, mission_manager: Node) -> void:
+func configurar_dependencias(jugador: Player, inventario: GarliaInventory, entities_root: Node, entity_manager: WorldEntityManager, world_context: WorldContext, mission_manager: MissionManager) -> void:
 	var root_cambio := _entities_root != entities_root
-	_player = jugador as Node2D
+	_player = jugador
 	_inventory = inventario
 	_entities_root = entities_root
 	_entity_manager = entity_manager
@@ -479,9 +475,9 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 
 	prop_node.configurar_dependencias(_world_context, _inventory)
 	prop_node.configurar_desde_game_data(datos_prop)
-	if _entity_manager == null or not _entity_manager.has_method("registrar_global"):
+	if _entity_manager == null or not is_instance_valid(_entity_manager):
 		return false
-	if not bool(_entity_manager.call("registrar_global", prop_node)):
+	if not _entity_manager.registrar_global(prop_node):
 		return false
 	prop_node.global_position = posicion
 
@@ -514,12 +510,11 @@ func _generar_world_item(
 		print("GarliaWorldItems: no se configuró el root de entidades.")
 		return
 
-	var objeto := Node2D.new()
-	objeto.set_script(WORLD_ITEM_SCRIPT)
-	objeto.call("configurar_dependencias", _player, _inventory, _mission_manager)
-	if _entity_manager == null or not _entity_manager.has_method("registrar_global"):
+	var objeto := WorldItem.new()
+	objeto.configurar_dependencias(_player, _inventory, _mission_manager)
+	if _entity_manager == null or not is_instance_valid(_entity_manager):
 		return
-	if not bool(_entity_manager.call("registrar_global", objeto)):
+	if not _entity_manager.registrar_global(objeto):
 		return
 	_world_items.append(objeto)
 
@@ -528,7 +523,7 @@ func _generar_world_item(
 		randf_range(-10.0, 10.0)
 	)
 
-	objeto.call("configurar", datos.duplicate(true))
+	objeto.configurar(datos.duplicate(true))
 
 	print(
 		"GarliaWorldItems: WorldItem creado → ",
@@ -562,14 +557,13 @@ func _generar_objetos_en_mundo(jugador: Node2D) -> void:
 	for i in range(cantidad):
 		var datos := catalogo[i].duplicate(true)
 		var objeto := Node2D.new()
-		objeto.set_script(WORLD_ITEM_SCRIPT)
-		objeto.call("configurar_dependencias", _player, _inventory, _mission_manager)
+		objeto.configurar_dependencias(_player, _inventory, _mission_manager)
 		contenedor.add_child(objeto)
-		if _entity_manager != null and _entity_manager.has_method("registrar_global"):
-			_entity_manager.call("registrar_global", objeto)
+		if _entity_manager != null and is_instance_valid(_entity_manager):
+			_entity_manager.registrar_global(objeto)
 		_world_items.append(objeto)
 		objeto.global_position = jugador.global_position + posiciones[i]
-		objeto.call("configurar", datos)
+		objeto.configurar(datos)
 
 	_objetos_generados_en_escena = true
 
@@ -604,7 +598,7 @@ func intentar_recoger() -> void:
 	if objeto_cercano == null:
 		return
 
-	var datos: Variant = objeto_cercano.call("obtener_datos")
+	var datos: Dictionary = (objeto_cercano as WorldItem).obtener_datos()
 	if not datos is Dictionary:
 		return
 
@@ -612,7 +606,7 @@ func intentar_recoger() -> void:
 	if not datos_objeto.has("cantidad"):
 		datos_objeto["cantidad"] = 1
 
-	var agregado: bool = inventario.call("agregar_objeto", datos_objeto)
+	var agregado: bool = inventario.agregar_objeto(datos_objeto)
 	if not agregado:
 		return
 
