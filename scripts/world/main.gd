@@ -17,6 +17,8 @@ var _input_router: Node = GameplayInputRouter
 @onready var _ium_lab: Control = $UI/IUMLab
 @onready var _admin_console: CanvasLayer = $UI/AdminConsole
 @onready var _admin_player_editor: Control = $UI/AdminPlayerEditor
+@onready var _pause_menu: Control = $UI/PauseMenu
+@onready var _death_menu: Control = $UI/DeathMenu
 @onready var _world_entity_spawner: Node = $World/WorldGenerator/WorldEntitySpawner
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: Node = $Systems/IUMRepository
@@ -206,6 +208,10 @@ func _configurar_inventario() -> void:
 	var router: Node = _input_router
 	if router != null and _inventory.has_method("configurar_input_gate"):
 		_inventory.call("configurar_input_gate", router)
+	if _pause_menu.has_method("configurar"):
+		_pause_menu.call("configurar", _inventory)
+	if _death_menu.has_method("configurar"):
+		_death_menu.call("configurar", _player, _inventory)
 
 
 func _configurar_dialogo() -> void:
