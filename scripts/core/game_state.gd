@@ -1054,9 +1054,7 @@ func _al_mundo_generado_para_aplicar() -> void:
 
 
 func _aplicar_estado_al_juego() -> void:
-	var jugador := get_tree().get_first_node_in_group(
-		"player"
-	)
+	var jugador: Node = _player
 
 	if jugador == null or not is_instance_valid(jugador):
 		return
@@ -1106,9 +1104,7 @@ func _aplicar_estado_al_juego() -> void:
 			float(jugador.get("max_stamina"))
 		)
 
-	var inventario := get_tree().get_first_node_in_group(
-		"inventory"
-	)
+	var inventario: Node = _inventory
 
 	if inventario != null and is_instance_valid(inventario):
 		_cargar_inventario_al_juego(
@@ -1131,9 +1127,7 @@ func _aplicar_estado_al_juego() -> void:
 				(proceso_variant as Dictionary).duplicate(true)
 			)
 
-	var world_gen := get_tree().current_scene.get_node_or_null(
-		"World/WorldGenerator"
-	)
+	var world_gen: Node = _world_generator
 
 	if world_gen != null:
 		var atmosphere := world_gen.get_node_or_null(
