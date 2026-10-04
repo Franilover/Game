@@ -36,6 +36,12 @@ script = ExtResource("16_world_terrain_visual")
 [node name="WorldStreamer" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("17_world_streamer")
 
+[node name="WorldEntityManager" type="Node" parent="World/WorldGenerator"]
+script = ExtResource("20_world_entity_manager")
+
+[node name="WorldEntityFactory" type="Node" parent="World/WorldGenerator"]
+script = ExtResource("21_world_entity_factory")
+
 [node name="WorldEntitySpawner" type="Node" parent="World/WorldGenerator"]
 script = ExtResource("18_world_spawner")
 peso_destacadas = 76.0
