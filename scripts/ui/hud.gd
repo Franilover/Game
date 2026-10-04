@@ -40,6 +40,17 @@ var _mission_panel_open: bool = false
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 
+@onready var _health_bar_node: ProgressBar = $BottomLeft/HealthBar
+@onready var _health_value_node: Label = $BottomLeft/HealthValue
+@onready var _stamina_bar_node: ProgressBar = $BottomLeft/StaminaBar
+@onready var _stamina_value_node: Label = $BottomLeft/StaminaValue
+@onready var _eterium_bar_node: ProgressBar = $BottomRight/EteriumBar
+@onready var _eterium_value_node: Label = $BottomRight/EteriumValue
+@onready var _interaction_prompt_node: PanelContainer = $InteractionPrompt
+@onready var _interaction_prompt_action_node: Label = $InteractionPrompt/Margin/Content/Action
+@onready var _location_panel_node: Panel = $LocationPanel
+@onready var _location_label_node: Label = $LocationPanel/LocationLabel
+
 
 func configurar(nuevo_player: Node = null, nuevo_world_generator: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
@@ -75,7 +86,7 @@ func _desconectar_senales_player() -> void:
 func _ready() -> void:
 	add_to_group("hud")
 
-	_buscar_nodos_hud()
+	_configurar_referencias_ui()
 	_preparar_location()
 	_preparar_aviso_descubrimiento()
 	_preparar_panel_interaccion()
@@ -130,40 +141,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func _buscar_nodos_hud() -> void:
-	# Los elementos base del HUD viven en hud.tscn.
-	# Se buscan por nombre para que el script no dependa de rutas rígidas.
-	var nodo: Node = find_child("HealthBar", true, false)
-	if nodo is ProgressBar:
-		health_bar = nodo as ProgressBar
-
-	nodo = find_child("HealthValue", true, false)
-	if nodo is Label:
-		health_value = nodo as Label
-
-	nodo = find_child("StaminaBar", true, false)
-	if nodo is ProgressBar:
-		stamina_bar = nodo as ProgressBar
-
-	nodo = find_child("StaminaValue", true, false)
-	if nodo is Label:
-		stamina_value = nodo as Label
-
-	nodo = find_child("EteriumBar", true, false)
-	if nodo is ProgressBar:
-		eterium_bar = nodo as ProgressBar
-
-	nodo = find_child("EteriumValue", true, false)
-	if nodo is Label:
-		eterium_value = nodo as Label
-
-	nodo = find_child("InteractionPrompt", true, false)
-	if nodo is PanelContainer:
-		interaction_prompt = nodo as PanelContainer
-
-	nodo = find_child("Action", true, false)
-	if nodo is Label:
-		interaction_prompt_action = nodo as Label
+func _configurar_referencias_ui() -> void:
+	health_bar = _health_bar_node
+	health_value = _health_value_node
+	stamina_bar = _stamina_bar_node
+	stamina_value = _stamina_value_node
+	eterium_bar = _eterium_bar_node
+	eterium_value = _eterium_value_node
+	interaction_prompt = _interaction_prompt_node
+	interaction_prompt_action = _interaction_prompt_action_node
+	location_panel = _location_panel_node
+	location_label = _location_label_node
 
 
 func _preparar_aviso_descubrimiento() -> void:
@@ -207,20 +195,11 @@ func _al_descubrimiento_mundo(datos: Variant = null) -> void:
 
 
 func _preparar_location() -> void:
-	var panel := find_child("LocationPanel", true, false)
-	var label := find_child("LocationLabel", true, false)
-
-	if panel is Control:
-		location_panel = panel as Control
-
-	if label is Label:
-		location_label = label as Label
-
 	if location_panel == null:
-		print("HUD: no se encontró LocationPanel.")
+		push_error("HUD: falta LocationPanel en hud.tscn.")
 
 	if location_label == null:
-		print("HUD: no se encontró LocationLabel.")
+		push_error("HUD: falta LocationLabel en hud.tscn.")
 
 func _buscar_primer_label(nodo: Node) -> Label:
 	for child in nodo.get_children():
