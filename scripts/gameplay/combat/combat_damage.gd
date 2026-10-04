@@ -13,9 +13,7 @@ static func aplicar(
 ) -> bool:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
-	if not objetivo.has_method("take_damage"):
-		return false
-	if "is_alive" in objetivo and not bool(objetivo.get("is_alive")):
+	if not objetivo.is_alive:
 		return false
 
 	var dano := maxi(cantidad, 0)
@@ -25,14 +23,6 @@ static func aplicar(
 	if dano <= 0:
 		return false
 
-	var salud_antes := -1
-	if "health" in objetivo:
-		salud_antes = int(objetivo.get("health"))
-
-	objetivo.call("take_damage", dano, origen)
-
-	if "health" in objetivo:
-		var salud_despues := int(objetivo.get("health"))
-		return salud_despues < salud_antes
-
-	return true
+	var salud_antes: int = objetivo.health
+	objetivo.take_damage(dano, origen)
+	return objetivo.health < salud_antes
