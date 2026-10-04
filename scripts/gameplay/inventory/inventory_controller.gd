@@ -115,3 +115,23 @@ func desequipar_a_inventario(slot: String) -> bool:
 		equipo_cambio.emit(slot, {})
 		inventario_cambio.emit()
 	return resultado
+
+func establecer_hotbar_slot(indice_hotbar: int, indice_inventario: int) -> bool:
+	if not puede_interactuar():
+		return false
+	if not runtime.establecer_hotbar_slot(indice_hotbar, indice_inventario):
+		return false
+	hotbar_cambio.emit(indice_hotbar)
+	return true
+
+func consumir_durabilidad(indice: int) -> bool:
+	if not puede_interactuar():
+		return false
+	var resultado: bool = runtime.consumir_durabilidad(indice)
+	if resultado:
+		inventario_cambio.emit()
+	return resultado
+
+func limpiar() -> void:
+	runtime.limpiar()
+	inventario_cambio.emit()
