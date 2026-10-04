@@ -1,5 +1,5 @@
 extends Node
-class_name RelationshipSystem
+class_name RelationshipSystemService
 
 ## Relaciones sociales de la partida.
 ##
