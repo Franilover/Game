@@ -6,6 +6,7 @@ var world_context: Node = null
 var mission_manager: Node = null
 var entity_manager: Node = null
 var supabase_client: Node = null
+var world_data: Node = null
 
 var mostrar_contexto_mundo: bool = false
 
@@ -53,7 +54,7 @@ var _discovery_notice_timer: float = 0.0
 @onready var _hotbar_node: Control = $Hotbar
 
 
-func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null) -> void:
+func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nuevo_mission_manager: Node = null, nuevo_entity_manager: Node = null, nuevo_supabase_client: Node = null, nuevo_inventory: Node = null, nuevo_world_data: Node = null) -> void:
 	if nuevo_player != null and is_instance_valid(nuevo_player):
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
@@ -66,6 +67,7 @@ func configurar(nuevo_player: Node = null, nuevo_world_context: Node = null, nue
 		entity_manager = nuevo_entity_manager
 	if nuevo_supabase_client != null and is_instance_valid(nuevo_supabase_client):
 		supabase_client = nuevo_supabase_client
+	world_data = nuevo_world_data
 	if nuevo_inventory != null and is_instance_valid(nuevo_inventory) and _hotbar_node.has_method("configurar_inventario"):
 		_hotbar_node.call("configurar_inventario", nuevo_inventory)
 	if mission_manager != null:
@@ -433,7 +435,9 @@ func _actualizar_contexto() -> void:
 		reino_texto = " · ".join(nombres_reinos)
 
 	var seed := str(world_context.call("get_map_seed"))
-	var version := str(WorldData.mundo.get("version", "—"))
+	var version := "—"
+	if world_data != null and "mundo" in world_data:
+		version = str(world_data.get("mundo").get("version", "—"))
 	var supabase_estado := "Connected"
 	if supabase_client != null and supabase_client.has_method("esta_conectado") and not supabase_client.call("esta_conectado"):
 		supabase_estado = "Offline"
