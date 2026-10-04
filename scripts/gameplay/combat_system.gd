@@ -26,7 +26,7 @@ const PROJECTILE_SCRIPT: Script = preload(
 @export var radio_impacto_proyectil: float = 9.0
 
 @export_category("Visual")
-@export var duracion_ataque: float = 0.12
+@export var duracion_ataque: float = 0.20
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
 var player: Node = null
