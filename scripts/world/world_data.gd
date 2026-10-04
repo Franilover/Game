@@ -1,4 +1,6 @@
 extends Node
+class_name WorldData
+
 
 
 signal mundo_listo
