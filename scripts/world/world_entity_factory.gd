@@ -10,7 +10,6 @@ func crear_criatura(data: Dictionary) -> Creature:
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear Creature.")
 		return null
-	node.configurar(data)
 	return node
 
 
@@ -32,5 +31,4 @@ func crear_prop(data: Dictionary) -> WorldProp:
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear WorldProp.")
 		return null
-	node.configurar_desde_game_data(data)
 	return node
