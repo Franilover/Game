@@ -1,6 +1,5 @@
 extends Node
-
-
+class_name GarliaSupabaseClient
 signal mundo_cargado(datos: Dictionary)
 signal eterium_runtime_cargado(datos: Dictionary)
 signal especies_jugables_cargadas(especies: Array)
@@ -8,6 +7,7 @@ signal especie_eterium_game_cargado(reglas: Array)
 signal personaje_social_cargado(reglas: Array)
 signal personaje_regalos_cargados(regalos: Array)
 signal error_conexion(mensaje: String)
+signal request_completed(request_id: int, resultado: int, codigo_http: int, cabeceras: PackedStringArray, cuerpo: PackedByteArray)
 
 
 const SUPABASE_URL := (
@@ -53,6 +53,7 @@ var _http_especie_eterium_game: HTTPRequest
 var _http_personaje_social: HTTPRequest
 var _http_personaje_regalos: HTTPRequest
 var _http_relaciones_ecologicas: HTTPRequest
+var _next_request_id: int = 1
 var _timer: Timer
 var _solicitud_en_curso: bool = false
 var _intento_actual: int = 0
@@ -131,6 +132,40 @@ func _ready() -> void:
 	_timer.timeout.connect(
 		_al_timer_sincronizacion
 	)
+
+
+## Transporte REST/RPC compartido para repositories.
+func solicitar_rpc(nombre: String, payload: Dictionary = {}) -> int:
+	return _request_compartido("/rest/v1/rpc/" + nombre, HTTPClient.METHOD_POST, JSON.stringify(payload))
+
+func get_rest(recurso: String, query: String = "") -> int:
+	var path := "/rest/v1/" + recurso
+	if not query.is_empty():
+		path += "?" + query
+	return _request_compartido(path, HTTPClient.METHOD_GET, "")
+
+func _request_compartido(path: String, method: int, body: String) -> int:
+	var request_id := _next_request_id
+	_next_request_id += 1
+	var http := HTTPRequest.new()
+	http.timeout = HTTP_TIMEOUT
+	add_child(http)
+	var callback := func(resultado: int, codigo_http: int, cabeceras: PackedStringArray, cuerpo: PackedByteArray) -> void:
+		request_completed.emit(request_id, resultado, codigo_http, cabeceras, cuerpo)
+		http.queue_free()
+	http.request_completed.connect(callback, CONNECT_ONE_SHOT)
+	var resultado := http.request(SUPABASE_URL + path, PackedStringArray([
+		"apikey: " + SUPABASE_KEY,
+		"Content-Type: application/json",
+		"Accept: application/json"
+	]), method, body)
+	if resultado != OK:
+		http.queue_free()
+		call_deferred("_emitir_request_fallida", request_id)
+	return request_id
+
+func _emitir_request_fallida(request_id: int) -> void:
+	request_completed.emit(request_id, HTTPRequest.RESULT_REQUEST_FAILED, 0, PackedStringArray(), PackedByteArray())
 
 
 func cargar_relaciones_ecologicas() -> void:
