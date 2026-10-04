@@ -1,17 +1,21 @@
 extends RefCounted
 class_name InventoryState
 
-## Estado puro del inventario.
-## No conoce nodos, UI, input ni Supabase.
+## Estado puro de los objetos del inventario.
+## Hotbar y equipamiento tienen estados independientes.
 
 var items: Array[Dictionary] = []
-var hotbar_indices: Array[int] = []
-var equipment: Dictionary = {}
 
 func limpiar() -> void:
 	items.clear()
-	hotbar_indices.clear()
-	equipment.clear()
+
+func establecer_items(nuevos_items: Array) -> void:
+	items.clear()
+	for value in nuevos_items:
+		if value is Dictionary:
+			items.append((value as Dictionary).duplicate(true))
+		else:
+			items.append({})
 
 func obtener_item(indice: int) -> Dictionary:
 	if indice < 0 or indice >= items.size():
