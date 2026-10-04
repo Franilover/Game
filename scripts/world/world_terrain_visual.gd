@@ -87,6 +87,14 @@ var _variation_tilesets_by_bioma: Dictionary = {}
 func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
 
+	# Las capas TileMapDual necesitan ejecutar _ready() antes de recibir
+	# celdas. Se crean todas por adelantado porque el primer chunk se pinta
+	# justo después de que WorldGenerator les da un frame de inicialización.
+	# Si se crean durante el pintado del chunk, sus Display internos todavía
+	# pueden no existir y sólo las capas de detalles terminan visibles.
+	for zone in range(ZONE_TEXTURES.size()):
+		_crear_capa_terreno(zone)
+
 
 func _crear_capa_terreno(zone: int) -> TileMapDual:
 	var clave := str(zone)
