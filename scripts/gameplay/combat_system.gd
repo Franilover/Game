@@ -7,7 +7,7 @@ signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 
 
 const PROJECTILE_SCRIPT: Script = preload(
-	"res://scripts/gameplay/combat_projectile_legacy.gd"
+	"res://scripts/gameplay/combat/combat_projectile.gd"
 )
 const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 	"res://scripts/gameplay/combat/combat_attack_area.gd"
@@ -466,72 +466,94 @@ func _disparar_proyectil(
 	if player == null:
 		return
 
-	var escena_actual: Node = projectile_root
-
-	if escena_actual == null or not is_instance_valid(escena_actual):
+	var raiz_proyectiles: Node = projectile_root
+	if raiz_proyectiles == null or not is_instance_valid(raiz_proyectiles):
 		return
-
-	var proyectil := Node2D.new()
-
-	proyectil.set_script(
-		PROJECTILE_SCRIPT
-	)
-
-	escena_actual.add_child(
-		proyectil
-	)
-
-	proyectil.global_position = (
-		player.global_position
-		+ direccion * 14.0
-	)
 
 	var velocidad: float = _obtener_float_propiedad(
 		arma,
 		"velocidad_proyectil",
 		velocidad_proyectil
 	)
-
 	var vida: float = _obtener_float_propiedad(
 		arma,
 		"vida_proyectil",
 		vida_proyectil
 	)
-
 	var radio: float = _obtener_float_propiedad(
 		arma,
 		"radio_impacto",
 		radio_impacto_proyectil
 	)
+	var danio: int = _obtener_danio_arma(arma)
 
-	var danio: int = _obtener_danio_arma(
-		arma
+	var ataque := CombatAttack.new()
+	ataque.configurar(
+		player,
+		direccion,
+		arma,
+		"distancia",
+		danio,
+		"Jugador/Proyectil:" + str(arma.get("nombre", "Proyectil"))
 	)
+
+	var proyectil := Area2D.new()
+	proyectil.set_script(PROJECTILE_SCRIPT)
+	raiz_proyectiles.add_child(proyectil)
+	proyectil.global_position = player.global_position + direccion * 14.0
 
 	proyectil.call(
 		"configurar",
+		ataque,
 		direccion,
 		velocidad,
 		vida,
-		radio,
-		danio,
-		player
+		radio
 	)
 
-	proyectil.call(
-		"configurar_arma",
-		arma
-	)
+	if proyectil.has_signal("objetivo_impactado"):
+		proyectil.connect(
+			"objetivo_impactado",
+			_al_recibir_impacto_proyectil
+		)
 
 	print(
 		"CombatSystem: proyectil disparado → ",
-		str(
-			arma.get(
-				"nombre",
-				"Arma"
-			)
-		)
+		str(arma.get("nombre", "Arma"))
 	)
+
+func _al_recibir_impacto_proyectil(
+	objetivo: Node,
+	ataque: CombatAttack
+) -> void:
+	if objetivo == null or ataque == null:
+		return
+
+	var arma := ataque.object_data
+
+	if (
+		not arma.is_empty()
+		and objetivo.is_in_group("creatures")
+		and "is_alive" in objetivo
+		and not bool(objetivo.get("is_alive"))
+		and ataque.attacker != null
+		and ataque.attacker.is_in_group("player")
+	):
+		GameState.registrar_criatura_derrotada(objetivo)
+
+	if (
+		not arma.is_empty()
+		and objetivo.is_in_group("creatures")
+		and "is_alive" in objetivo
+		and bool(objetivo.get("is_alive"))
+		and objetivo.has_node("AIController")
+	):
+		var ai: Node = objetivo.get_node_or_null("AIController")
+		if ai != null and ai.has_method("al_recibir_ataque_con_arma"):
+			ai.call("al_recibir_ataque_con_arma", arma)
+
+	_animar_objetivo(objetivo)
+	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
 
 
 func _obtener_modo_ataque(
