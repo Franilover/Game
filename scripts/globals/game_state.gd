@@ -59,7 +59,10 @@ func esta_entrada_de_juego_bloqueada() -> bool:
 		return true
 
 	var inventory := get_tree().get_first_node_in_group("inventory")
-	if inventory is CanvasItem and bool((inventory as CanvasItem).visible):
+	if inventory != null and inventory.has_method("esta_abierto"):
+		if bool(inventory.call("esta_abierto")):
+			return true
+	elif inventory is CanvasItem and (inventory as CanvasItem).is_visible_in_tree():
 		return true
 
 	var admin_console := get_tree().get_first_node_in_group("admin_console")
