@@ -17,10 +17,11 @@ Se detectaron especialmente:
 - `PlayerLocomotionController`, `PlayerActionController`, `PlayerStaminaController` y coordinadores de Eterium ya existen.
 - `WorldData` ya mantiene un snapshot/indexado del mundo.
 - `WorldGenerator` todavía funciona como fachada demasiado grande para Terrain + Streaming + Spawner + Atmosphere + consultas de mundo.
-- `WorldEntitySpawner` dependía directamente de `get_tree().current_scene/Entities`.
-- `Main` creaba DialogueSystem e IUMManager dinámicamente, ocultando dependencias importantes del SceneTree.
+- `WorldEntitySpawner` dependía directamente de `get_tree().current_scene/Entities`; esto ya fue eliminado mediante inyección del root de entidades desde Main.
+- `Main` creaba DialogueSystem e IUMManager dinámicamente; esto ya fue eliminado: ambos son nodos explícitos de la escena.
+- `InteractionSystem` ya no conoce HUD; emite `objetivo_cambiado` y Main conecta la presentación.
 - `DialogueSystem` accede directamente a MissionManager y RelationshipSystem.
-- `CombatSystem` y `InteractionSystem` todavía encuentran otros sistemas mediante grupos.
+- `CombatSystem` y `InteractionSystem` todavía encuentran algunos servicios mediante grupos.
 - `IUMManager` realiza HTTP directo contra Supabase en vez de pasar por la infraestructura común.
 - `GameState` sigue concentrando guardado, estado de jugador, descubrimientos y lógica de menú.
 
