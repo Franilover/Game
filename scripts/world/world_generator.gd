@@ -117,7 +117,8 @@ func _inicializar_mundo() -> void:
 	entity_spawner.configurar(
 		terrain,
 		entity_manager,
-		entity_factory
+		entity_factory,
+		spawn_rules
 	)
 
 	streamer.configurar(
