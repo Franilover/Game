@@ -415,3 +415,10 @@ CombatSystem ahora depende explícitamente de `GarliaInventory`, `CombatAttackAr
 ## Trigésima segunda barrida — GameState deja de tratar el runtime como Node genérico
 
 `GameState` ahora mantiene contratos concretos para `GarliaInventory`, `Player`, `WorldContext`, `WorldAtmosphere` y `MissionManager`. También consulta directamente `WorldContext.get_tile_at()` y `WorldAtmosphere.obtener_tiempo()`. Se mantiene `GameState` sin `class_name` por ahora para no alterar el contrato de autoload existente; el estado sigue siendo coordinador de guardado y no dueño de reglas canónicas.
+
+
+## Trigésima tercera barrida — Main, HUD, Inventory y Player consolidan contratos concretos
+
+Se eliminó reflexión innecesaria en `GameplayInputRouter` y `Main`. `HUD` ahora recibe contratos concretos para Player, MissionManager, WorldEntityManager, Supabase y Inventory; su Hotbar también es concreta. `Inventory` y `AdminInventory` pasaron a contratos concretos para Player, WorldEntitySpawner, GarliaWorldItems y las pestañas de mapa/crafteo/relaciones. `Player` ahora usa contratos concretos para WorldContext, Inventory, IUMManager y WorldEntityManager. Se añadieron contratos nominales para IUMLab, PauseMenu, DeathMenu, CraftingUI, RelationshipsUI, WorldMapUI, IUMManager y RelationshipSystem.
+
+`GameState` también eliminó reflexión de serialización/carga para Inventory, MissionManager, Player IUM y WorldAtmosphere. `Main` dejó de descubrir configuraciones mediante `has_method()/call()` en los sistemas que ya tienen contratos explícitos.
