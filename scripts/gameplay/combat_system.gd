@@ -34,13 +34,13 @@ var player: Player = null
 var inventory: GarliaInventory = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
-var game_state: GameState = null
+var game_state: GameStateService = null
 var _inventory_equipment_slot: String = "mano_secundaria"
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Player, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameState = null) -> void:
+func configurar(nuevo_player: Player, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
