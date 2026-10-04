@@ -2,7 +2,7 @@ extends Node
 class_name GarliaWorldItems
 
 
- const MAX_OBJECTOS_EN_MUNDO: int = 3
+const MAX_OBJECTOS_EN_MUNDO: int = 3
 const HTTP_TIMEOUT: float = 8.0
 
 
@@ -29,11 +29,11 @@ var _inventory: GarliaInventory = null
 var _entities_root: Node = null
 var _entity_manager: WorldEntityManager = null
 var _world_context: WorldContext = null
-var _mission_manager: MissionManager = null
+var _mission_manager: MissionManagerService = null
 var _world_items: Array[Node2D] = []
 
 
-func configurar_dependencias(jugador: Player, inventario: GarliaInventory, entities_root: Node, entity_manager: WorldEntityManager, world_context: WorldContext, mission_manager: MissionManager) -> void:
+func configurar_dependencias(jugador: Player, inventario: GarliaInventory, entities_root: Node, entity_manager: WorldEntityManager, world_context: WorldContext, mission_manager: MissionManagerService) -> void:
 	var root_cambio := _entities_root != entities_root
 	_player = jugador
 	_inventory = inventario
