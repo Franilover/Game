@@ -154,6 +154,3 @@ func registrar_jugador(
 func is_world_ready() -> bool:
 	return _world_ready
 
-
-func get_context() -> WorldContext:
-	return context
