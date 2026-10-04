@@ -169,3 +169,15 @@ GameState conserva el guardado local, pero recibe Player, Inventory y WorldGener
 MissionManager conserva progreso de la partida y recibe Player y WorldEntityManager.
 DialogueSystem coordina presentación y acciones de diálogo, pero recibe MissionManager y RelationshipSystem por inyección.
 RelationshipSystem conserva el estado social y recibe SocialRepository para los datos canónicos de Supabase.
+
+
+## Inventario — frontera actual
+
+`Inventory` es Presentation/UI y recibe `Player` e `InputGate` desde `Main`.
+`InventoryController` coordina el `InventoryRuntime` y expone el contrato de estado.
+`InventoryRuntime` contiene el estado canónico separado en items, hotbar y equipment.
+
+La hotbar y el equipamiento son estados distintos. Seleccionar un índice de hotbar no equipa automáticamente el objeto de ese índice.
+
+Si falla la apertura/bloqueo del inventario: `Main → Inventory → InventoryController → GameplayInputRouter`.
+Si falla qué objeto está equipado: revisar `InventoryRuntime/Equipment`, no la hotbar ni el HUD.
