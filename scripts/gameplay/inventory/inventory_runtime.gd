@@ -43,7 +43,7 @@ func obtener_equipamiento() -> Dictionary:
 	return equipment.state.slots.duplicate(true)
 
 func agregar_objeto(datos: Dictionary) -> bool:
-	GarliaDebug.log("INVENTORY", "agregar_objeto solicitado", {"item_id": str(datos.get("item_id", datos.get("id", ""))), "nombre": str(datos.get("nombre", ""))})
+	GarliaDebug.registrar("INVENTORY", "agregar_objeto solicitado", {"item_id": str(datos.get("item_id", datos.get("id", ""))), "nombre": str(datos.get("nombre", ""))})
 	GarliaDebug.flujo_inicio("InventoryRuntime.agregar_objeto", {
 		"item_id": str(datos.get("item_id", datos.get("id", ""))),
 		"nombre": str(datos.get("nombre", "")),
