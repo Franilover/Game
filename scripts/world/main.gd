@@ -79,7 +79,7 @@ func _al_cambio_de_zona(tipo: String, zona: Node) -> void:
 			WorldData
 		)
 
-		_world_generator.configurar_dependencias(WorldData, GameState)
+		_world_generator.configurar_dependencias(WorldData, GameState, _world_context)
 		_world_generator.configurar_entidades(
 			$Entities,
 			$Entities/Player,
@@ -116,8 +116,20 @@ func _inicializar_runtime_de_zona() -> void:
 		return
 
 	if _zone_manager.obtener_tipo_actual() == ZoneManager.TIPO_MUNDO_ABIERTO and _world_generator != null:
-		_player.set_spawn_from_world(_world_generator)
+		if _zone_manager.consumir_salida_reino_pendiente():
+			_player.global_position = Vector2(560, 120)
+		else:
+			_player.set_spawn_from_world(_world_generator)
 		_world_generator.registrar_jugador(_player)
+
+	_world_items.configurar_dependencias(
+		$Entities/Player,
+		_inventory,
+		$Entities,
+		_world_generator.entity_manager if _world_generator != null else null,
+		_world_context,
+		MissionManager
+	)
 
 	_player.configurar_dependencias(
 		_inventory,
@@ -276,7 +288,7 @@ func _configurar_admin() -> void:
 			_world_atmosphere,
 			_player,
 			_inventory,
-			_world_generator.entity_manager,
+			_world_generator.entity_manager if _world_generator != null else null,
 			_admin_player_editor,
 			_world_items
 	)
