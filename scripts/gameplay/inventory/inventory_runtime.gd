@@ -43,7 +43,14 @@ func obtener_equipamiento() -> Dictionary:
 	return equipment.state.slots.duplicate(true)
 
 func agregar_objeto(datos: Dictionary) -> bool:
+	GarliaDebug.flujo_inicio("InventoryRuntime.agregar_objeto", {
+		"item_id": str(datos.get("item_id", datos.get("id", ""))),
+		"nombre": str(datos.get("nombre", "")),
+		"cantidad_solicitada": int(datos.get("cantidad", 1)),
+		"slots": state.items.size()
+	})
 	if datos.is_empty():
+		GarliaDebug.flujo_error("Inventario recibió un Dictionary vacío.")
 		return false
 	var objeto := datos.duplicate(true)
 	var cantidad: int = maxi(1, int(objeto.get("cantidad", 1)))
@@ -78,7 +85,21 @@ func agregar_objeto(datos: Dictionary) -> bool:
 			nuevo["cantidad"] = lote
 			state.items[i] = nuevo
 			restante -= lote
-	return restante <= 0
+	var exito := restante <= 0
+	if exito:
+		GarliaDebug.flujo_ok("Objeto insertado en inventario.", {"restante": restante})
+	else:
+		var libres := 0
+		for slot in state.items:
+			if slot is Dictionary and (slot as Dictionary).is_empty():
+				libres += 1
+		GarliaDebug.flujo_error("No hubo capacidad suficiente.", {
+				"restante": restante,
+				"slots": state.items.size(),
+				"slots_libres": libres,
+				"max_stack": max_stack
+			})
+	return exito
 
 func quitar_cantidad(indice: int, cantidad: int = 1) -> bool:
 	if indice < 0 or indice >= state.items.size() or state.items[indice].is_empty():
