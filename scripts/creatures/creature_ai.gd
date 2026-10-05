@@ -2085,6 +2085,48 @@ func _obtener_float_ataque(
 	return por_defecto
 
 
+func al_recibir_ataque_con_arma(arma: Dictionary) -> void:
+	if perfil != Perfil.ZLISH:
+		return
+
+	if arma.is_empty():
+		return
+
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_recibir_ataque",
+		{}
+	)
+
+	if not reaccion_variant is Dictionary:
+		return
+
+	var reaccion: Dictionary = reaccion_variant as Dictionary
+
+	if str(reaccion.get("tipo", "")).to_lower() != "huir_y_robar_arma":
+		return
+
+	if not objeto_robado.is_empty():
+		return
+
+	var jugador_actual := jugador
+	if jugador_actual == null or not is_instance_valid(jugador_actual):
+		return
+
+	objetivo = jugador_actual
+	objetivo_detectado = true
+	ultima_posicion_objetivo = jugador_actual.global_position
+	_objetivo_ataque = jugador_actual.global_position
+
+	var direccion := criatura.global_position.direction_to(
+		jugador_actual.global_position
+	)
+	if direccion.length_squared() <= 0.01:
+		direccion = Vector2.DOWN
+
+	_direccion_salto = direccion.normalized()
+	_cambiar_estado(Estado.SALTANDO_LEJOS)
+
+
 func _puede_recibir_danio(objetivo_danio: Node) -> bool:
 	return objetivo_danio is Entity and is_instance_valid(objetivo_danio)
 
