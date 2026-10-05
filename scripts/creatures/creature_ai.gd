@@ -1773,7 +1773,30 @@ func _procesar_adherido(delta: float) -> void:
 
 	if perfil == Perfil.ZLISH:
 		if _tiempo_adherido <= 0.0:
-			_robar_objeto_
+			_robar_objeto_zlish()
+			criatura.establecer_colision(true)
+			_cambiar_estado(Estado.HUYENDO)
+		return
+
+	_tiempo_danio_adherido -= delta
+
+	if _tiempo_danio_adherido <= 0.0:
+		_tiempo_danio_adherido = maxf(
+			_obtener_float_ataque(
+				"intervalo_danio",
+				1.0
+			),
+			0.05
+		)
+
+		_aplicar_danio_objetivo(
+			objetivo,
+			_obtener_danio_ataque(),
+			"CreatureAI/Rancrodeen"
+		)
+
+	if _tiempo_adherido <= 0.0:
+		_iniciar_salto_lejos()
 
 
 func _procesar_saltando_lejos(delta: float) -> void:
