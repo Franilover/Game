@@ -195,9 +195,30 @@ func _physics_process(delta: float) -> void:
 			intervalo_pensamiento,
 			0.01
 		)
-		_actualizar_percepcion()
+		_medir_debug_seccion("CreatureAI/Percepcion", func() -> void:
+			_actualizar_percepcion()
+		)
 
-	_procesar_estado(delta)
+	_medir_debug_seccion("CreatureAI/Estado", func() -> void:
+		_procesar_estado(delta)
+	)
+
+
+func _medir_debug_seccion(nombre: String, accion: Callable) -> void:
+	var debug := Engine.get_main_loop().root.get_node_or_null("GarliaDebug")
+	if debug == null or not debug.has_method("rendimiento_acumular"):
+		action_call(accion)
+		return
+
+	var inicio := Time.get_ticks_usec()
+	action_call(accion)
+	var milisegundos := float(Time.get_ticks_usec() - inicio) / 1000.0
+	debug.rendimiento_acumular(nombre, milisegundos)
+
+
+func action_call(accion: Callable) -> void:
+	if accion.is_valid():
+		action.call()
 
 
 # ============================================================
