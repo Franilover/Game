@@ -205,9 +205,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _medir_debug_seccion(nombre: String, accion: Callable) -> void:
-	var debug := Engine.get_main_loop().root.get_node_or_null("GarliaDebug")
+	var debug: Node = Engine.get_main_loop().root.get_node_or_null("GarliaDebug")
 	if debug == null or not debug.has_method("rendimiento_acumular"):
-		action_call(accion)
+		accion.call()
 		return
 
 	var inicio := Time.get_ticks_usec()
@@ -216,9 +216,6 @@ func _medir_debug_seccion(nombre: String, accion: Callable) -> void:
 	debug.rendimiento_acumular(nombre, milisegundos)
 
 
-func action_call(accion: Callable) -> void:
-	if accion.is_valid():
-		action.call()
 
 
 # ============================================================
