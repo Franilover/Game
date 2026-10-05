@@ -22,6 +22,7 @@ var _cola_drops: Array[Dictionary] = []
 var catalogo: Array[Dictionary] = []
 
 var _objetos_generados_en_escena: bool = false
+var _generacion_habilitada: bool = true
 
 var _posicion_drops_pendiente: Vector2 = Vector2.ZERO
 var _player: Player = null
@@ -62,7 +63,17 @@ func _ready() -> void:
 	call_deferred("cargar_catalogo")
 
 
+func establecer_generacion_habilitada(habilitada: bool) -> void:
+	_generacion_habilitada = habilitada
+	if not habilitada:
+		_objetos_generados_en_escena = true
+	else:
+		_objetos_generados_en_escena = false
+
+
 func _process(_delta: float) -> void:
+	if not _generacion_habilitada:
+		return
 	if catalogo.is_empty() or _objetos_generados_en_escena:
 		return
 	if _player == null or not is_instance_valid(_player):
