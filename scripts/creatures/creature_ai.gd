@@ -1641,29 +1641,10 @@ func _copiar_skin_configurado() -> bool:
 	)
 
 	if not reaccion_variant is Dictionary:
-	if entity_manager == null or not is_instance_valid(entity_manager):
-		return null
-	var horario_variant: Variant = configuracion_ia.get("horario", {})
-	var radio := 180.0
-	if horario_variant is Dictionary:
-		radio = maxf(float((horario_variant as Dictionary).get("radio_refugio", 180.0)), 1.0)
+		return false
 
-	var mejor: Creature = null
-	var mejor_distancia := INF
-	for entidad_variant in entity_manager.obtener_entidades_activas():
-		if not entidad_variant is Creature:
-			continue
-		var candidata := entidad_variant as Creature
-		if candidata == criatura or not is_instance_valid(candidata) or not candidata.is_alive:
-			continue
-		if not bool(candidata.get_meta("atractor_refugio", false)):
-			continue
-		var distancia := criatura.global_position.distance_to(candidata.global_position)
-		if distancia <= radio and distancia < mejor_distancia:
-			mejor = candidata
-			mejor_distancia = distancia
-	return mejor
-
+	var reaccion := reaccion_variant as Dictionary
+	return bool(reaccion.get("copiar_skin", false))
 
 func _buscar_amenaza_para_refugio() -> Creature:
 	if entity_manager == null or not is_instance_valid(entity_manager):
