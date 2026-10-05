@@ -711,7 +711,14 @@ func _spawn_props_in_chunk(
 		if elegido.is_empty():
 			continue
 
-		var prop_node: Node = _entity_factory.crear_prop(elegido)
+		if not _entity_factory.has_method("crear_prop"):
+			push_error("WorldEntitySpawner: WorldEntityFactory no expone crear_prop().")
+			continue
+
+		var prop_node_variant: Variant = _entity_factory.call("crear_prop", elegido)
+		if not prop_node_variant is Node:
+			continue
+		var prop_node: Node = prop_node_variant as Node
 		if prop_node == null:
 			continue
 
