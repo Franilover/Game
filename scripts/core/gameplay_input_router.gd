@@ -18,7 +18,7 @@ var _inventory_ui: GarliaInventory = null
 var _admin_console: Node = null
 var _dialogue_system: DialogueSystem = null
 var _hud: HUD = null
-var _debug_console: CanvasItem = null
+var _debug_console: Node = null
 
 func _ready() -> void:
 	add_to_group("gameplay_input_router")
@@ -32,7 +32,7 @@ func configurar_bloqueos(
 	admin_console: Node,
 	dialogue_system: DialogueSystem,
 	hud: HUD,
-	debug_console: CanvasItem = null
+	debug_console: Node = null
 ) -> void:
 	_inventory_ui = inventory_ui
 	_admin_console = admin_console
@@ -92,7 +92,7 @@ func esta_entrada_bloqueada(arbol: SceneTree) -> bool:
 	if _hud != null and _hud.esta_mostrando_panel_interaccion():
 		return true
 
-	if _debug_console != null and is_instance_valid(_debug_console) and _debug_console.visible:
+	if _debug_console != null and is_instance_valid(_debug_console) and bool(_debug_console.get("visible")):
 		return true
 
 	return false
