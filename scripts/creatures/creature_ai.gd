@@ -898,6 +898,7 @@ func _actualizar_rutina() -> void:
 					actividad_horaria = str(bloque.get("actividad", actividad_horaria)).strip_edges().to_lower()
 					break
 
+	criatura.set_meta("actividad_horaria", actividad_horaria)
 	_actualizar_atraccion_refugio(actividad_horaria in ["proteger", "atraer"])
 
 
