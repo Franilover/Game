@@ -9,7 +9,6 @@
 [ext_resource type="Script" path="res://scripts/world/world_entity_factory.gd" id="7_world_entity_factory"]
 [ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="8_world_spawn_rules"]
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="9_world_atmosphere"]
-[ext_resource type="Script" path="res://scripts/world/world_context.gd" id="10_world_context"]
 
 [node name="MundoAbierto" type="Node2D"]
 
@@ -40,8 +39,5 @@ script = ExtResource("5_world_spawner")
 
 [node name="WorldAtmosphere" type="Node" parent="WorldGenerator"]
 script = ExtResource("9_world_atmosphere")
-
-[node name="WorldContext" type="Node" parent="WorldGenerator"]
-script = ExtResource("10_world_context")
 
 [node name="DayNightModulation" type="CanvasModulate" parent="WorldGenerator/WorldAtmosphere"]
