@@ -1,9 +1,11 @@
 extends RefCounted
+class_name InventoryRuntime
 
 func _garlia_debug() -> Node:
 	return get_node_or_null("/root/GarliaDebug")
 
-class_name InventoryRuntime
+
+
 
 ## Estado runtime del inventario.
 ## Objetos, hotbar y equipamiento son estados independientes.
