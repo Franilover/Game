@@ -1846,6 +1846,36 @@ func _procesar_saltando_lejos(delta: float) -> void:
 
 # ============================================================
 # ESPIRITU ESTELAR
+
+func al_recibir_danio(_cantidad: int) -> void:
+	if perfil != Perfil.ESPIRITU_ESTELAR:
+		return
+
+	if _tiempo_teleport > 0.0:
+		return
+
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_recibir_danio",
+		{}
+	)
+
+	if not reaccion_variant is Dictionary:
+		return
+
+	var reaccion := reaccion_variant as Dictionary
+
+	if str(reaccion.get("tipo", "")).to_lower() != "teletransportarse":
+		return
+
+	_teletransportar_espiritu_estelar(reaccion)
+
+	_tiempo_teleport = maxf(
+		float(reaccion.get("inmunidad", 0.45)),
+		0.0
+	)
+
+
+
 # ============================================================
 
 
