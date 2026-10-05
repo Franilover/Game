@@ -78,6 +78,7 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 			_world_atmosphere,
 			WorldData
 		)
+		_world_items.establecer_generacion_habilitada(true)
 
 		_world_generator.configurar_dependencias(WorldData, GameState, _world_context)
 		_world_generator.configurar_entidades(
@@ -101,6 +102,7 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	else:
 		# Reino Torres no crea WorldGenerator ni entidades procedurales.
 		_world_context.configurar(null, null, WorldData)
+		_world_items.establecer_generacion_habilitada(false)
 		_inicializar_runtime_de_zona()
 
 
