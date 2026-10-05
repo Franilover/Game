@@ -26,6 +26,7 @@ GarliaAuth="*uid://dkyg06kgibana"
 GarliaMultiplayer="*uid://dy1ypxqjxvg7x"
 
 GarliaSalas="*uid://txc18ojymio3"
+GarliaDebug="*res://scripts/core/garlia_debug.gd"
 MissionManager="*res://scripts/gameplay/mission_manager.gd"
 RelationshipSystem="*res://scripts/gameplay/relationship_system.gd"
 
