@@ -29,7 +29,7 @@ var context: WorldContext
 @onready var _entity_factory_node: WorldEntityFactory = $WorldEntityFactory
 @onready var _spawn_rules_node: WorldSpawnRules = $WorldSpawnRules
 @onready var _atmosphere_node: WorldAtmosphere = $WorldAtmosphere
-@onready var _context_node: WorldContext = $WorldContext
+@onready var _context_node: WorldContext = get_node_or_null("WorldContext") as WorldContext
 
 var _world_ready: bool = false
 var _entities_root: Node = null
