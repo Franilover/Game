@@ -19,16 +19,16 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _admin_player_editor: Control = $UI/AdminPlayerEditor
 @onready var _pause_menu: PauseMenu = $UI/PauseMenu
 @onready var _death_menu: DeathMenu = $UI/DeathMenu
-@onready var _world_entity_spawner: WorldEntitySpawner = $World/WorldGenerator/WorldEntitySpawner
+var _world_entity_spawner: WorldEntitySpawner = null
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
-@onready var _world_atmosphere: WorldAtmosphere = $World/WorldGenerator/WorldAtmosphere
-@onready var _world_generator: WorldGenerator = $World/WorldGenerator
-@onready var _world_context: WorldContext = $World/WorldGenerator/WorldContext
+var _world_atmosphere: WorldAtmosphere = null
+var _world_generator: WorldGenerator = null
+@onready var _world_context: WorldContext = $Systems/WorldContext
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
-@onready var _reino_torres: Node2D = $World/ReinoTorres
+@onready var _zone_manager: ZoneManager = $World/ZoneManager
 
 
 func _ready() -> void:
@@ -41,25 +41,15 @@ func _ready() -> void:
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
 		_supabase_client.relaciones_ecologicas_cargadas.connect(_al_cargar_relaciones_ecologicas)
-	var world_gen: WorldGenerator = _world_generator
-	world_gen.configurar_dependencias(WorldData, GameState)
-	world_gen.configurar_entidades($Entities, $Entities/Player, _inventory, _combat_system, _dialogue_system, MissionManager, _world_context, _world_items, _supabase_client.obtener_relaciones_ecologicas())
-	_world_items.configurar_dependencias(
-		$Entities/Player,
-		_inventory,
-		$Entities,
-		world_gen.entity_manager,
-		_world_context,
-		MissionManager
-	)
 
-	if world_gen.is_world_ready():
-		_inicializar_jugador(world_gen)
-	else:
-		world_gen.mundo_generado.connect(
-			_inicializar_jugador.bind(world_gen),
-			CONNECT_ONE_SHOT
-		)
+	if _zone_manager == null:
+		push_error("Main: falta World/ZoneManager.")
+		return
+
+	if not _zone_manager.zona_cambiada.is_connected(_al_cambio_de_zona):
+		_zone_manager.zona_cambiada.connect(_al_cambio_de_zona)
+
+	_zone_manager.iniciar()
 
 
 func _exit_tree() -> void:
@@ -71,39 +61,102 @@ func _process(_delta: float) -> void:
 	_seguir_jugador()
 
 
-func _inicializar_jugador(world_gen: WorldGenerator) -> void:
+func _al_cambio_de_zona(tipo: String, zona: Node) -> void:
+	_world_generator = _zone_manager.obtener_world_generator()
+	_world_entity_spawner = null
+	_world_atmosphere = null
+
+	if tipo == ZoneManager.TIPO_MUNDO_ABIERTO:
+		if _world_generator == null:
+			push_error("Main: MundoAbierto no contiene WorldGenerator.")
+			return
+
+		_world_entity_spawner = _world_generator.get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
+		_world_atmosphere = _world_generator.get_node_or_null("WorldAtmosphere") as WorldAtmosphere
+		_world_context.configurar(
+			_world_generator.get_node_or_null("WorldTerrain") as WorldTerrain,
+			_world_atmosphere,
+			WorldData
+		)
+
+		_world_generator.configurar_dependencias(WorldData, GameState)
+		_world_generator.configurar_entidades(
+			$Entities,
+			$Entities/Player,
+			_inventory,
+			_combat_system,
+			_dialogue_system,
+			MissionManager,
+			_world_context,
+			_world_items,
+			_supabase_client.obtener_relaciones_ecologicas()
+		)
+
+		if _world_generator.is_world_ready():
+			_inicializar_runtime_de_zona()
+		else:
+			if not _world_generator.mundo_generado.is_connected(_al_mundo_generado):
+				_world_generator.mundo_generado.connect(_al_mundo_generado, CONNECT_ONE_SHOT)
+			return
+	else:
+		# Reino Torres no crea WorldGenerator ni entidades procedurales.
+		_world_context.configurar(null, null, WorldData)
+		_inicializar_runtime_de_zona()
+
+
+func _al_mundo_generado() -> void:
+	_inicializar_runtime_de_zona()
+
+
+func _inicializar_runtime_de_zona() -> void:
 	_player = $Entities/Player as Player
 
 	if _player == null:
 		push_error("Main: no se encontró Entities/Player.")
 		return
 
-	_player.set_spawn_from_world(world_gen)
+	if _zone_manager.obtener_tipo_actual() == ZoneManager.TIPO_MUNDO_ABIERTO and _world_generator != null:
+		_player.set_spawn_from_world(_world_generator)
+		_world_generator.registrar_jugador(_player)
 
-	world_gen.registrar_jugador(_player)
-
-	_player.configurar_dependencias(_inventory, _world_context, _ium_manager, world_gen.entity_manager, _supabase_client, GameState)
+	_player.configurar_dependencias(
+		_inventory,
+		_world_context,
+		_ium_manager,
+		_world_generator.entity_manager if _world_generator != null else null,
+		_supabase_client,
+		GameState
+	)
 
 	_configurar_camara()
-	_configurar_hud(_world_context, world_gen)
+	_configurar_hud(_world_context, _world_generator)
 	_configurar_input_router()
-	_configurar_interaccion(world_gen)
-	_configurar_combate(_world_context, world_gen)
+	_configurar_interaccion(_world_generator)
+	_configurar_combate(_world_context, _world_generator)
 	_configurar_inventario()
-	GameState.configurar_dependencias(_inventory, _player, _world_context, _world_atmosphere, MissionManager, WorldData)
+	GameState.configurar_dependencias(
+		_inventory,
+		_player,
+		_world_context,
+		_world_atmosphere,
+		MissionManager,
+		WorldData
+	)
 	_configurar_dialogo()
-	MissionManager.configurar_dependencias(world_gen.entity_manager, WorldData)
+	MissionManager.configurar_dependencias(
+		_world_generator.entity_manager if _world_generator != null else null,
+		WorldData
+	)
 	_configurar_social()
 	_inicializar_ium()
 	_configurar_admin()
 	_configurar_pantalla()
-	_configurar_reino_torres()
 
-	# Inicializar IUM con jugador (jugador_id puede venir de auth en el futuro)
-	if _ium_manager != null:
-		var jugador_id: String = ""
-		jugador_id = _player.get_jugador_id()
-		_ium_manager.inicializar(jugador_id)
+	if _zone_manager.obtener_tipo_actual() == ZoneManager.TIPO_REINO_TORRES:
+		_player.global_position = Vector2(0, 120)
+		print("Main: inicio en Reino Torres.")
+	else:
+		print("Main: mundo abierto listo.")
 
 
 func _configurar_camara() -> void:
@@ -145,15 +198,15 @@ func _seguir_jugador() -> void:
 	_ultima_posicion_camara = posicion
 
 
-func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator) -> void:
+func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator = null) -> void:
 	if _hud == null:
 		push_error("Main: no se encontró UI/HUD.")
 		return
 
-	_hud.configurar(_player, world_context, MissionManager, world_gen.entity_manager, _supabase_client, _inventory, WorldData, GameState)
+	_hud.configurar(_player, world_context, MissionManager, world_gen.entity_manager if world_gen != null else null, _supabase_client, _inventory, WorldData, GameState)
 
 
-func _configurar_interaccion(world_gen: WorldGenerator) -> void:
+func _configurar_interaccion(world_gen: WorldGenerator = null) -> void:
 	if _interaction_system == null:
 		push_error("Main: no se encontró Systems/InteractionSystem.")
 		return
@@ -161,7 +214,7 @@ func _configurar_interaccion(world_gen: WorldGenerator) -> void:
 	if not _interaction_system.objetivo_cambiado.is_connected(_al_cambio_objetivo_interaccion):
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
-	_interaction_system.configurar(_player, _inventory, _world_items, _player.input_gate, world_gen.entity_manager)
+	_interaction_system.configurar(_player, _inventory, _world_items, _player.input_gate, world_gen.entity_manager if world_gen != null else null)
 
 func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 	if _hud == null:
@@ -175,7 +228,7 @@ func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 	_hud.mostrar_interaccion(texto)
 
 
-func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator) -> void:
+func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator = null) -> void:
 	if _combat_system == null:
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
@@ -227,35 +280,6 @@ func _configurar_admin() -> void:
 			_admin_player_editor,
 			_world_items
 	)
-
-func _configurar_reino_torres() -> void:
-	if _reino_torres == null or not is_instance_valid(_reino_torres):
-		push_error("Main: falta World/ReinoTorres.")
-		return
-
-	if _reino_torres.has_signal("salida_solicitada"):
-		var callback := Callable(self, "_al_salir_reino_torres")
-		if not _reino_torres.salida_solicitada.is_connected(callback):
-			_reino_torres.salida_solicitada.connect(callback)
-
-	if GameState.debe_iniciar_en_reino_torres():
-		_player.global_position = Vector2(0, 120)
-		print("Main: inicio canónico en Reino Torres.")
-	else:
-		print("Main: partida continúa fuera de Reino Torres.")
-
-
-func _al_salir_reino_torres() -> void:
-	if _player == null or not is_instance_valid(_player):
-		return
-
-	GameState.marcar_reino_torres_visitado()
-
-	# Transición de zona dentro del mismo runtime: no se destruye HUD,
-	# inventario, sistemas ni la escena canónica.
-	_player.global_position = Vector2(560, 120)
-	print("Main: Reino Torres → mundo abierto.")
-
 
 func _configurar_pantalla() -> void:
 	if not pantalla_completa:
