@@ -971,6 +971,11 @@ func _buscar_amenaza_para_refugio() -> Creature:
 		for depredador in criaturas_activas:
 			if depredador == presa:
 				continue
+			var actividad_depredador := str(
+				depredador.get_meta("actividad_horaria", "explorar")
+			).to_lower()
+			if actividad_depredador in ["dormir", "reposar"]:
+				continue
 			if _es_cazador_por_configuracion(depredador):
 				var distancia_cazador := depredador.global_position.distance_to(presa.global_position)
 				if distancia_cazador <= radio and distancia_cazador < mejor_distancia:
