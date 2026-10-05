@@ -44,13 +44,10 @@ func _ready() -> void:
 
 func configurar_dependencias(
 	world_data: WorldDataService,
-	game_state: GameStateService,
-	world_context: WorldContext = null
+	game_state: GameStateService
 ) -> void:
 	_world_data = world_data
 	_game_state = game_state
-	if world_context != null:
-		context = world_context
 	if context != null:
 		context.configurar(terrain, atmosphere, _world_data)
 	if atmosphere != null:
@@ -69,6 +66,13 @@ func _inicializar_mundo_si_corresponde() -> void:
 	if _world_ready or not _dependencias_configuradas:
 		return
 	_inicializar_mundo()
+
+func configurar_contexto_compartido(world_context: WorldContext) -> void:
+	if world_context == null:
+		return
+	context = world_context
+	context.configurar(terrain, atmosphere, _world_data)
+
 
 func configurar_entidades(
 	root: Node,
