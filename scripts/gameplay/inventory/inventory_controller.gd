@@ -2,7 +2,7 @@ extends Node
 class_name InventoryController
 
 func _garlia_debug() -> Node:
-	return get_node_or_null("/root/GarliaDebug")
+	return Engine.get_main_loop().root.get_node_or_null("GarliaDebug")
 
 
 
