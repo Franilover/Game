@@ -1,0 +1,14 @@
+[remap]
+
+importer="aseprite_wizard.plugin.noop"
+type="PackedDataContainer"
+uid="uid://c2g5c5relctsm"
+path="res://.godot/imported/Zlish.aseprite-01d8bdef15604e35968aebdd80c18171.res"
+
+[deps]
+
+source_file="res://assets/art/creatures/Zlish/Zlish.aseprite"
+dest_files=["res://.godot/imported/Zlish.aseprite-01d8bdef15604e35968aebdd80c18171.res"]
+
+[params]
+

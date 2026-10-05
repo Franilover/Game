@@ -1,0 +1,14 @@
+[remap]
+
+importer="aseprite_wizard.plugin.noop"
+type="PackedDataContainer"
+uid="uid://drckvd2ek3wlk"
+path="res://.godot/imported/lignianos_attack.aseprite-87567eae3a21cac5a519e9628a3b8b8a.res"
+
+[deps]
+
+source_file="res://assets/art/creatures/Lignianos/lignianos_attack.aseprite"
+dest_files=["res://.godot/imported/lignianos_attack.aseprite-87567eae3a21cac5a519e9628a3b8b8a.res"]
+
+[params]
+
