@@ -571,8 +571,9 @@ func _detener_animacion_ataque() -> void:
 
 
 func _actualizar_animacion_caminando(delta: float) -> void:
-	# Por ahora solo Flaxis tiene una animación de caminar propia.
-	if criatura_nombre.strip_edges().to_lower() != "flaxis":
+	var nombre_normalizado := criatura_nombre.strip_edges().to_lower()
+	# Flaxis y Zlish tienen una animación de caminar propia.
+	if nombre_normalizado != "flaxis" and nombre_normalizado != "zlish":
 		return
 
 	if _ataque_animando:
@@ -606,7 +607,8 @@ func _actualizar_animacion_caminando(delta: float) -> void:
 
 
 func iniciar_animacion_caminando() -> bool:
-	if criatura_nombre.strip_edges().to_lower() != "flaxis":
+	var nombre_normalizado := criatura_nombre.strip_edges().to_lower()
+	if nombre_normalizado != "flaxis" and nombre_normalizado != "zlish":
 		return false
 	return _iniciar_animacion_caminando()
 
