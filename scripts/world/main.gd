@@ -61,7 +61,7 @@ func _process(_delta: float) -> void:
 	_seguir_jugador()
 
 
-func _al_cambio_de_zona(tipo: String, zona: Node) -> void:
+func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
 	_world_atmosphere = null
