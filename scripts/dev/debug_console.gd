@@ -4,8 +4,6 @@ class_name GarliaDebugConsole
 func _garlia_debug() -> Node:
 	return Engine.get_main_loop().root.get_node_or_null("GarliaDebug")
 
-
-
 var _panel: PanelContainer
 var _texto: RichTextLabel
 var _titulo: Label
@@ -113,7 +111,7 @@ func _crear_interfaz() -> void:
 	auto.text = "Auto-scroll"
 	auto.button_pressed = true
 	auto.mouse_filter = Control.MOUSE_FILTER_STOP
-auto.toggled.connect(_al_auto_scroll)
+	auto.toggled.connect(_al_auto_scroll)
 	botones.add_child(auto)
 
 	var cerrar_boton := Button.new()
