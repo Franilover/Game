@@ -17,6 +17,7 @@ const TIPO_MUNDO_ABIERTO := "mundo_abierto"
 var tipo_actual: String = ""
 var zona_actual: Node = null
 var _transicionando: bool = false
+var _salida_reino_pendiente: bool = false
 
 
 func iniciar() -> void:
@@ -39,7 +40,14 @@ func salir_de_reino_torres() -> void:
 		return
 
 	GameState.marcar_reino_torres_visitado()
+	_salida_reino_pendiente = true
 	entrar_mundo_abierto()
+
+
+func consumir_salida_reino_pendiente() -> bool:
+	var pendiente := _salida_reino_pendiente
+	_salida_reino_pendiente = false
+	return pendiente
 
 
 func obtener_tipo_actual() -> String:
@@ -79,6 +87,11 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 	zona_actual = packed.instantiate()
 	zona_actual.name = "ZonaActiva"
 	add_child(zona_actual)
+
+	if tipo == TIPO_REINO_TORRES and zona_actual.has_signal("salida_solicitada"):
+		var callback := Callable(self, "salir_de_reino_torres")
+		if not zona_actual.salida_solicitada.is_connected(callback):
+			zona_actual.salida_solicitada.connect(callback)
 
 	tipo_actual = tipo
 	_transicionando = false
