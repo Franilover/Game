@@ -26,7 +26,8 @@ enum Perfil {
 	DRAMARIAS,
 	CAMBIAFORMAS,
 	ESPIRITU_ESTELAR,
-	RANCRODEEN
+	RANCRODEEN,
+	GUARDIAN
 }
 
 
@@ -78,6 +79,10 @@ var entity_manager: WorldEntityManager = null
 var inventory: GarliaInventory = null
 var combat_system: CombatSystem = null
 var world_items: GarliaWorldItems = null
+var world_atmosphere: WorldAtmosphere = null
+
+var actividad_horaria: String = "explorar"
+var _brillo_horario_activo: bool = false
 
 
 func configurar_dependencias(
@@ -86,13 +91,15 @@ func configurar_dependencias(
 	nuevo_inventory: GarliaInventory,
 	nuevo_combat_system: CombatSystem,
 	nuevo_world_items: GarliaWorldItems,
-	nuevas_relaciones_ecologicas: Array = []
+	nuevas_relaciones_ecologicas: Array = [],
+	nuevo_world_atmosphere: WorldAtmosphere = null
 ) -> void:
 	jugador = nuevo_jugador as Node2D
 	entity_manager = nuevo_entity_manager
 	inventory = nuevo_inventory
 	combat_system = nuevo_combat_system
 	world_items = nuevo_world_items
+	world_atmosphere = nuevo_world_atmosphere
 	relaciones_ecologicas = nuevas_relaciones_ecologicas.duplicate(true)
 
 
@@ -172,6 +179,13 @@ func _physics_process(delta: float) -> void:
 		_tiempo_teleport - delta,
 		0.0
 	)
+
+	_actualizar_rutina()
+
+	if actividad_horaria in ["dormir", "reposar"]:
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+		return
 
 	_tiempo_pensamiento -= delta
 
@@ -309,6 +323,10 @@ func _salir_estado(anterior: Estado) -> void:
 func _procesar_estado(delta: float) -> void:
 	_tiempo_estado += delta
 
+	if actividad_horaria == "proteger":
+		_procesar_proteccion(delta)
+		return
+
 	match estado:
 		Estado.IDLE:
 			_procesar_idle()
@@ -424,6 +442,11 @@ func _procesar_persiguiendo() -> void:
 		objetivo.global_position
 	)
 
+	if _es_objetivo_refugio() and criatura.global_position.distance_to(objetivo.global_position) <= 28.0:
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+		return
+
 	var maxima := _obtener_distancia_maxima_persecucion()
 
 	if maxima > 0.0 and distancia > maxima:
@@ -447,8 +470,7 @@ func _procesar_persiguiendo() -> void:
 
 func _procesar_atacando(delta: float) -> void:
 	match perfil:
-		Perfil.DRAMARIAS:
-			_procesar_ataque_dramarias()
+		Perfil.DRAMARIAS:			_procesar_ataque_dramarias()
 		Perfil.FLAXIS:
 			_procesar_ataque_flaxis(delta)
 
@@ -468,6 +490,14 @@ func _procesar_atacando(delta: float) -> void:
 
 		Perfil.RANCRODEEN:
 			_procesar_ataque_rancrodeen(delta)
+
+		Perfil.GUARDIAN:
+			_procesar_ataque_contacto(
+				delta,
+				_obtener_danio_ataque(),
+				_obtener_enfriamiento_ataque(),
+				false
+			)
 
 		_:
 			_cambiar_estado(Estado.RECUPERANDO)
@@ -583,6 +613,16 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 
 
 func _refrescar_objetivo() -> void:
+	if actividad_horaria == "proteger":
+		objetivo = _buscar_amenaza_para_refugio()
+		return
+
+	if _debe_buscar_refugio():
+		var refugio := _buscar_refugio()
+		if refugio != null:
+			objetivo = refugio
+			return
+
 	var candidatos: Array[Node2D] = []
 	for candidato in _obtener_candidatos_entidad():
 		if candidato == jugador:
@@ -749,11 +789,16 @@ func _perfil_desde_texto(texto: String) -> Perfil:
 			return Perfil.ESPIRITU_ESTELAR
 		"rancrodeen":
 			return Perfil.RANCRODEEN
+		"guardian":
+			return Perfil.GUARDIAN
 
 	return Perfil.GENERICO
 
 
 func _obtener_respuesta_a_objetivo() -> String:
+	if _es_objetivo_refugio():
+		return "perseguir"
+
 	if objetivo is Creature:
 		var relacion := _obtener_relacion_ecologica(
 			objetivo as Creature
@@ -810,6 +855,182 @@ func _obtener_respuesta_a_objetivo() -> String:
 		return "perseguir"
 
 	return ""
+
+
+
+# ============================================================
+# RUTINAS Y RELOJ BIOLÓGICO
+# ============================================================
+
+func _actualizar_rutina() -> void:
+	var horario_variant: Variant = configuracion_ia.get("horario", {})
+	if not horario_variant is Dictionary:
+		actividad_horaria = "explorar"
+		_actualizar_atraccion_refugio(false)
+		return
+
+	var horario := horario_variant as Dictionary
+	var actividad_por_defecto := str(horario.get("actividad_por_defecto", "explorar")).strip_edges().to_lower()
+	actividad_horaria = actividad_por_defecto if not actividad_por_defecto.is_empty() else "explorar"
+
+	if world_atmosphere != null and is_instance_valid(world_atmosphere):
+		var tiempo := world_atmosphere.obtener_tiempo()
+		var hora := float(tiempo.get("hora_del_dia", 0.0))
+		var bloques_variant: Variant = horario.get("bloques", [])
+		if bloques_variant is Array:
+			for bloque_variant in bloques_variant as Array:
+				if not bloque_variant is Dictionary:
+					continue
+				var bloque := bloque_variant as Dictionary
+				var inicio := clampf(float(bloque.get("inicio", 0.0)), 0.0, 24.0)
+				var fin := clampf(float(bloque.get("fin", 24.0)), 0.0, 24.0)
+				if _hora_en_bloque(hora, inicio, fin):
+					actividad_horaria = str(bloque.get("actividad", actividad_horaria)).strip_edges().to_lower()
+					break
+
+	_actualizar_atraccion_refugio(actividad_horaria in ["proteger", "atraer"])
+
+
+func _hora_en_bloque(hora: float, inicio: float, fin: float) -> bool:
+	if is_equal_approx(inicio, fin):
+		return true
+	if inicio < fin:
+		return hora >= inicio and hora < fin
+	return hora >= inicio or hora < fin
+
+
+func _debe_buscar_refugio() -> bool:
+	var horario_variant: Variant = configuracion_ia.get("horario", {})
+	if not horario_variant is Dictionary:
+		return false
+	var horario := horario_variant as Dictionary
+	return bool(horario.get("buscar_refugio", false)) and actividad_horaria not in ["dormir", "reposar", "cazar"]
+
+
+func _es_objetivo_refugio() -> bool:
+	if objetivo == null or not is_instance_valid(objetivo) or not objetivo is Creature:
+		return false
+	return bool((objetivo as Creature).get_meta("atractor_refugio", false))
+
+
+func _buscar_refugio() -> Creature:
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		return null
+	var horario_variant: Variant = configuracion_ia.get("horario", {})
+	var radio := 180.0
+	if horario_variant is Dictionary:
+		radio = maxf(float((horario_variant as Dictionary).get("radio_refugio", 180.0)), 1.0)
+
+	var mejor: Creature = null
+	var mejor_distancia := INF
+	for entidad_variant in entity_manager.obtener_entidades_activas():
+		if not entidad_variant is Creature:
+			continue
+		var candidata := entidad_variant as Creature
+		if candidata == criatura or not is_instance_valid(candidata) or not candidata.is_alive:
+			continue
+		if not bool(candidata.get_meta("atractor_refugio", false)):
+			continue
+		var distancia := criatura.global_position.distance_to(candidata.global_position)
+		if distancia <= radio and distancia < mejor_distancia:
+			mejor = candidata
+			mejor_distancia = distancia
+	return mejor
+
+
+func _buscar_amenaza_para_refugio() -> Creature:
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		return null
+	var horario_variant: Variant = configuracion_ia.get("horario", {})
+	var radio := 180.0
+	if horario_variant is Dictionary:
+		radio = maxf(float((horario_variant as Dictionary).get("radio_proteccion", 180.0)), 1.0)
+
+	var criaturas_activas: Array[Creature] = []
+	for entidad_variant in entity_manager.obtener_entidades_activas():
+		if entidad_variant is Creature:
+			var candidata := entidad_variant as Creature
+			if candidata != criatura and is_instance_valid(candidata) and candidata.is_alive:
+				criaturas_activas.append(candidata)
+
+	var mejor: Creature = null
+	var mejor_distancia := INF
+	for presa in criaturas_activas:
+		if criatura.global_position.distance_to(presa.global_position) > radio:
+			continue
+		for depredador in criaturas_activas:
+			if depredador == presa:
+				continue
+			if depredador.global_position.distance_to(presa.global_position) > radio:
+				continue
+			if _obtener_relacion_ecologica_ids(depredador, presa) not in ["depredacion", "parasitismo"]:
+				continue
+			var distancia := depredador.global_position.distance_to(presa.global_position)
+			if distancia < mejor_distancia:
+				mejor = depredador
+				mejor_distancia = distancia
+	return mejor
+
+
+func _obtener_relacion_ecologica_ids(origen: Creature, destino: Creature) -> String:
+	if origen == null or destino == null:
+		return ""
+	var origen_id := origen.criatura_id
+	var destino_id := destino.criatura_id
+	if origen_id.is_empty() or destino_id.is_empty():
+		return ""
+	var ecosistema_id := str(origen.datos.get("ecosistema_id", ""))
+	var mejor_tipo := ""
+	var mejor_prioridad := -1
+	for relacion_variant in relaciones_ecologicas:
+		if not relacion_variant is Dictionary:
+			continue
+		var relacion := relacion_variant as Dictionary
+		if str(relacion.get("criatura_origen_id", "")) != origen_id:
+			continue
+		if str(relacion.get("criatura_destino_id", "")) != destino_id:
+			continue
+		var relacion_ecosistema := str(relacion.get("ecosistema_id", ""))
+		var prioridad := 0
+		if not ecosistema_id.is_empty() and relacion_ecosistema == ecosistema_id:
+			prioridad = 2
+		elif relacion_ecosistema.is_empty():
+			prioridad = 1
+		else:
+			continue
+		if prioridad > mejor_prioridad:
+			mejor_prioridad = prioridad
+			mejor_tipo = str(relacion.get("tipo_relacion", "")).strip_edges().to_lower()
+	return mejor_tipo
+
+
+func _procesar_proteccion(delta: float) -> void:
+	criatura.detener_movimiento()
+	var amenaza := _buscar_amenaza_para_refugio()
+	if amenaza == null:
+		objetivo = null
+		objetivo_detectado = false
+		return
+	objetivo = amenaza
+	objetivo_detectado = true
+	ultima_posicion_objetivo = amenaza.global_position
+	var distancia := criatura.global_position.distance_to(amenaza.global_position)
+	if distancia <= _obtener_distancia_contacto():
+		_procesar_atacando(delta)
+	else:
+		_establecer_velocidad(_obtener_velocidad_persecucion())
+		criatura.tomar_control_movimiento()
+		criatura.establecer_direccion_movimiento(criatura.global_position.direction_to(amenaza.global_position))
+
+
+func _actualizar_atraccion_refugio(activa: bool) -> void:
+	if criatura == null or not is_instance_valid(criatura):
+		return
+	criatura.set_meta("atractor_refugio", activa)
+	criatura.set_meta("brillo_horario", activa)
+	if _brillo_horario_activo != activa:
+		_brillo_horario_activo = activa
+		criatura.modulate = Color(1.0, 0.92, 0.55) if activa else Color.WHITE
 
 
 func _obtener_config_movimiento() -> Dictionary:
@@ -897,8 +1118,7 @@ func _obtener_danio_ataque() -> int:
 	return dano_mordida
 
 
-func _obtener_enfriamiento_ataque() -> float:
-	var ataque := _obtener_config_ataque()
+func _obtener_enfriamiento_ataque() -> float:	var ataque := _obtener_config_ataque()
 	var valor: Variant = ataque.get(
 		"enfriamiento",
 		enfriamiento_ataque
@@ -1347,8 +1567,7 @@ func _obtener_arma_cambiaformas() -> Dictionary:
 	var ataque: Dictionary = _obtener_config_ataque()
 
 	var tipo: String = str(
-		ataque.get("tipo", "")
-	).strip_edges().to_lower()
+		ataque.get("tipo", "")	).strip_edges().to_lower()
 
 	if tipo != "arma":
 		return {}
@@ -1598,405 +1817,3 @@ func _procesar_adherido(delta: float) -> void:
 			_robar_objeto_zlish()
 			criatura.establecer_colision(true)
 			_cambiar_estado(Estado.HUYENDO)
-		return
-
-	_tiempo_danio_adherido -= delta
-
-	if _tiempo_danio_adherido <= 0.0:
-		_tiempo_danio_adherido = maxf(
-			_obtener_float_ataque(
-				"intervalo_danio",
-				1.0
-			),
-			0.05
-		)
-
-		_aplicar_danio_objetivo(
-			objetivo,
-			_obtener_danio_ataque(),
-			"CreatureAI/Rancrodeen"
-		)
-
-	if _tiempo_adherido <= 0.0:
-		_iniciar_salto_lejos()
-
-
-func _desprender_rancrodeen() -> void:
-	criatura.establecer_colision(true)
-	_cambiar_estado(Estado.EXPLORANDO)
-
-
-func _iniciar_salto_lejos() -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		_desprender_rancrodeen()
-		return
-
-	var direccion := objetivo.global_position.direction_to(
-		criatura.global_position
-	)
-
-	if direccion.length_squared() <= 0.01:
-		direccion = Vector2.RIGHT.rotated(
-			randf_range(-PI, PI)
-		)
-
-	_direccion_salto = direccion.normalized()
-	_cambiar_estado(Estado.SALTANDO_LEJOS)
-
-
-func _iniciar_estado_saltando_lejos() -> void:
-	_tiempo_accion = maxf(
-		_obtener_float_ataque(
-			"duracion_salto",
-			0.38
-		),
-		0.01
-	)
-
-	var distancia := _obtener_float_ataque(
-		"distancia_salto",
-		72.0
-	)
-
-	_objetivo_ataque = (
-		criatura.global_position
-		+ _direccion_salto * distancia
-	)
-
-	criatura.establecer_colision(true)
-	criatura.tomar_control_movimiento()
-	_establecer_velocidad(
-		_obtener_float_ataque(
-			"velocidad_salto",
-			190.0
-		)
-	)
-	criatura.establecer_direccion_movimiento(
-		_direccion_salto
-	)
-
-
-func _procesar_saltando_lejos(delta: float) -> void:
-	_tiempo_accion -= delta
-
-	if (
-		criatura.global_position.distance_to(
-			_objetivo_ataque
-		) <= _obtener_distancia_contacto()
-		or _tiempo_accion <= 0.0
-	):
-		if perfil == Perfil.ZLISH:
-			_establecer_velocidad(0.0)
-			_cambiar_estado(Estado.ADHERIDO)
-			return
-
-		_establecer_velocidad(
-			_obtener_velocidad_ataque()
-		)
-		_cambiar_estado(Estado.PERSIGUIENDO)
-		return
-
-	var direccion := criatura.global_position.direction_to(
-		_objetivo_ataque
-	)
-
-	criatura.establecer_direccion_movimiento(direccion)
-
-
-# ============================================================
-# ESPIRITU ESTELAR
-# ============================================================
-
-func al_recibir_danio(_cantidad: int) -> void:
-	if perfil != Perfil.ESPIRITU_ESTELAR:
-		return
-
-	if _tiempo_teleport > 0.0:
-		return
-
-	var reaccion_variant: Variant = configuracion_ia.get(
-		"al_recibir_danio",
-		{}
-	)
-
-	if not reaccion_variant is Dictionary:
-		return
-
-	var reaccion := reaccion_variant as Dictionary
-
-	if str(reaccion.get("tipo", "")).to_lower() != "teletransportarse":
-		return
-
-	_teletransportar_espiritu_estelar(reaccion)
-
-	_tiempo_teleport = maxf(
-		float(reaccion.get("inmunidad", 0.45)),
-		0.0
-	)
-
-
-func _teletransportar_espiritu_estelar(
-	reaccion: Dictionary
-) -> void:
-	var origen := criatura.global_position
-
-	var minimo := maxf(
-		float(reaccion.get("distancia_minima", 70.0)),
-		1.0
-	)
-
-	var maximo := maxf(
-		float(reaccion.get("distancia_maxima", 110.0)),
-		minimo
-	)
-
-	var direccion := Vector2.RIGHT
-
-	if objetivo != null and is_instance_valid(objetivo):
-		direccion = objetivo.global_position.direction_to(
-			origen
-		)
-
-	if direccion.length_squared() <= 0.01:
-		direccion = Vector2.RIGHT
-
-	direccion = direccion.rotated(
-		randf_range(-0.9, 0.9)
-	).normalized()
-
-	var destino := (
-		origen
-		+ direccion * randf_range(minimo, maximo)
-	)
-
-	if criatura.limites_chunk.size.x > 0.0:
-		var limites := criatura.limites_chunk.grow(-12.0)
-
-		destino.x = clampf(
-			destino.x,
-			limites.position.x,
-			limites.end.x
-		)
-
-		destino.y = clampf(
-			destino.y,
-			limites.position.y,
-			limites.end.y
-		)
-
-	var rastro_variant: Variant = reaccion.get(
-		"rastro",
-		{}
-	)
-
-	var rastro: Dictionary = {}
-
-	if rastro_variant is Dictionary:
-		rastro = rastro_variant as Dictionary
-
-	criatura.crear_rastro_teleport(
-		origen,
-		destino,
-		maxf(float(rastro.get("duracion", 0.7)), 0.1),
-		maxi(int(rastro.get("puntos", 18)), 4)
-	)
-
-	criatura.global_position = destino
-
-
-# ============================================================
-# HELPERS
-# ============================================================
-
-func _obtener_float_ataque(
-	clave: String,
-	por_defecto: float
-) -> float:
-	var ataque := _obtener_config_ataque()
-
-	var valor: Variant = ataque.get(
-		clave,
-		por_defecto
-	)
-
-	if valor is int or valor is float:
-		return maxf(
-			float(valor),
-			0.0
-		)
-
-	return por_defecto
-
-
-func _iniciar_recuperacion(duracion: float) -> void:
-	_tiempo_recuperacion = maxf(
-		duracion,
-		0.0
-	)
-	_cambiar_estado(Estado.RECUPERANDO)
-
-
-func _iniciar_persecucion() -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		_cambiar_estado(Estado.EXPLORANDO)
-		return
-
-	criatura.tomar_control_movimiento()
-	_establecer_velocidad(
-		_obtener_velocidad_persecucion()
-	)
-
-
-func _obtener_velocidad_persecucion() -> float:
-	var movimiento := _obtener_config_movimiento()
-	var valor: Variant = movimiento.get(
-		"velocidad_persecucion",
-		movimiento.get("velocidad", velocidad_persecucion)
-	)
-
-	if valor is int or valor is float:
-		return maxf(float(valor), 0.0)
-
-	return velocidad_persecucion
-
-
-func _obtener_float_config(
-	clave: String,
-	por_defecto: float
-) -> float:
-	var valor: Variant = configuracion_ia.get(
-		clave,
-		por_defecto
-	)
-
-	if valor is int or valor is float:
-		return maxf(
-			float(valor),
-			0.0
-		)
-
-	return por_defecto
-
-
-func _iniciar_huida() -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		_cambiar_estado(Estado.EXPLORANDO)
-		return
-
-	criatura.tomar_control_movimiento()
-	_establecer_velocidad(
-		_obtener_velocidad_huida()
-	)
-
-
-func _obtener_velocidad_huida() -> float:
-	if perfil == Perfil.ZLISH:
-		var movimiento := _obtener_config_movimiento()
-		var velocidad_config: Variant = movimiento.get(
-			"velocidad_huida",
-			zlish_velocidad_huida
-		)
-
-		if velocidad_config is int or velocidad_config is float:
-			return maxf(float(velocidad_config), 0.0)
-
-		return zlish_velocidad_huida
-
-	return maxf(
-		_obtener_velocidad_persecucion(),
-		_velocidad_normal
-	)
-
-
-func _obtener_distancia_segura_huida() -> float:
-	if perfil == Perfil.ZLISH:
-		var distancia_config: Variant = configuracion_ia.get(
-			"al_recibir_ataque",
-			{}
-		)
-
-		if distancia_config is Dictionary:
-			var reaccion: Dictionary = (
-				distancia_config as Dictionary
-			)
-
-			var distancia_segura: Variant = reaccion.get(
-				"distancia_segura",
-				zlish_distancia_segura
-			)
-
-			if distancia_segura is int or distancia_segura is float:
-				return maxf(
-					float(distancia_segura),
-					0.0
-				)
-
-		return zlish_distancia_segura
-
-	return _obtener_distancia_deteccion()
-
-
-func _establecer_velocidad(
-	nueva_velocidad: float
-) -> void:
-	if _movimiento == null:
-		_encontrar_movimiento()
-
-	if _movimiento == null:
-		return
-
-	_movimiento.move_speed = maxf(
-		nueva_velocidad,
-		0.0
-	)
-
-
-func _encontrar_movimiento() -> void:
-	if criatura == null:
-		return
-
-	_movimiento = criatura.get_node_or_null(
-		"CreatureMovement"
-	) as CreatureMovement
-
-	if _movimiento != null:
-		_velocidad_normal = maxf(
-			_movimiento.move_speed,
-			0.0
-		)
-
-
-func _configurar_desde_padre() -> void:
-	criatura = get_parent() as Creature
-
-
-func _animar_salto() -> void:
-	if criatura == null:
-		return
-
-	var escala_original := criatura.scale
-
-	var tween := criatura.create_tween()
-
-	tween.tween_property(
-		criatura,
-		"scale",
-		escala_original * 1.18,
-		0.08
-	)
-
-	tween.tween_property(
-		criatura,
-		"scale",
-		escala_original * 0.92,
-		0.10
-	)
-
-	tween.tween_property(
-		criatura,
-		"scale",
-		escala_original,
-		0.14
-	)
-
-# Estado sincronizado: configuración de IA canónica en Supabase.
