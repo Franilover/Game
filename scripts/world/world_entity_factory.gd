@@ -14,6 +14,7 @@ var _effects_root: Node = null
 var _world_context: WorldContext = null
 var _world_items: GarliaWorldItems = null
 var _world_data: WorldDataService = null
+var _world_atmosphere: WorldAtmosphere = null
 var _relaciones_ecologicas: Array = []
 
 
@@ -28,7 +29,8 @@ func configurar_dependencias(
 	world_context: WorldContext,
 	world_items: GarliaWorldItems,
 	world_data: WorldDataService,
-	relaciones_ecologicas: Array = []
+	relaciones_ecologicas: Array = [],
+	world_atmosphere: WorldAtmosphere = null
 ) -> void:
 	_player = jugador
 	_entity_manager = entity_manager
@@ -40,6 +42,7 @@ func configurar_dependencias(
 	_world_context = world_context
 	_world_items = world_items
 	_world_data = world_data
+	_world_atmosphere = world_atmosphere
 	_relaciones_ecologicas = relaciones_ecologicas.duplicate(true)
 
 
@@ -63,7 +66,8 @@ func crear_criatura(data: Dictionary) -> Creature:
 		_inventory,
 		_combat_system,
 		_world_items,
-		_relaciones_ecologicas
+		_relaciones_ecologicas,
+		_world_atmosphere
 	)
 	node.configurar(data)
 	return node
