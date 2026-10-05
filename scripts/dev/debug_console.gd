@@ -16,6 +16,7 @@ var _tab_estado: Button
 var _abierto := false
 var _modo := "logs"
 var _auto_scroll := true
+var _actualizando_vista := false
 
 func _ready() -> void:
 	layer = 200
@@ -60,6 +61,8 @@ func _crear_interfaz() -> void:
 	_panel.offset_top = 20
 	_panel.offset_right = -24
 	_panel.offset_bottom = -20
+	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_panel.z_index = 1000
 	add_child(_panel)
 
 	var columna := VBoxContainer.new()
@@ -80,19 +83,13 @@ func _crear_interfaz() -> void:
 	var pestañas := HBoxContainer.new()
 	columna.add_child(pestañas)
 
-	_tab_logs = Button.new()
-	_tab_logs.text = "LOGS"
-	_tab_logs.pressed.connect(func(): _cambiar_modo("logs"))
+	_tab_logs = _crear_boton_pestana("LOGS", Callable(self, "_al_tab_logs"))
 	pestañas.add_child(_tab_logs)
 
-	_tab_flujo = Button.new()
-	_tab_flujo.text = "FLUJO"
-	_tab_flujo.pressed.connect(func(): _cambiar_modo("flujo"))
+	_tab_flujo = _crear_boton_pestana("FLUJO", Callable(self, "_al_tab_flujo"))
 	pestañas.add_child(_tab_flujo)
 
-	_tab_estado = Button.new()
-	_tab_estado.text = "ESTADO"
-	_tab_estado.pressed.connect(func(): _cambiar_modo("estado"))
+	_tab_estado = _crear_boton_pestana("ESTADO", Callable(self, "_al_tab_estado"))
 	pestañas.add_child(_tab_estado)
 
 	var botones := HBoxContainer.new()
@@ -100,22 +97,29 @@ func _crear_interfaz() -> void:
 
 	var copiar := Button.new()
 	copiar.text = "Copiar"
+	copiar.focus_mode = Control.FOCUS_NONE
+	copiar.mouse_filter = Control.MOUSE_FILTER_STOP
 	copiar.pressed.connect(_copiar_actual)
 	botones.add_child(copiar)
 
 	var limpiar := Button.new()
 	limpiar.text = "Limpiar"
+	limpiar.focus_mode = Control.FOCUS_NONE
+	limpiar.mouse_filter = Control.MOUSE_FILTER_STOP
 	limpiar.pressed.connect(_limpiar)
 	botones.add_child(limpiar)
 
 	var auto := CheckButton.new()
 	auto.text = "Auto-scroll"
 	auto.button_pressed = true
-	auto.toggled.connect(func(valor: bool): _auto_scroll = valor)
+	auto.mouse_filter = Control.MOUSE_FILTER_STOP
+auto.toggled.connect(_al_auto_scroll)
 	botones.add_child(auto)
 
 	var cerrar_boton := Button.new()
 	cerrar_boton.text = "Cerrar (Esc)"
+	cerrar_boton.focus_mode = Control.FOCUS_NONE
+	cerrar_boton.mouse_filter = Control.MOUSE_FILTER_STOP
 	cerrar_boton.pressed.connect(cerrar)
 	botones.add_child(cerrar_boton)
 
@@ -127,17 +131,50 @@ func _crear_interfaz() -> void:
 	_texto.custom_minimum_size = Vector2(0, 300)
 	columna.add_child(_texto)
 
+func _crear_boton_pestana(texto: String, accion: Callable) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.toggle_mode = true
+	boton.focus_mode = Control.FOCUS_NONE
+	boton.mouse_filter = Control.MOUSE_FILTER_STOP
+	boton.pressed.connect(accion)
+	return boton
+
+func _al_tab_logs() -> void:
+	_cambiar_modo("logs")
+
+func _al_tab_flujo() -> void:
+	_cambiar_modo("flujo")
+
+func _al_tab_estado() -> void:
+	_cambiar_modo("estado")
+
+func _al_auto_scroll(valor: bool) -> void:
+	_auto_scroll = valor
+
 func _cambiar_modo(modo: String) -> void:
+	if modo != "logs" and modo != "flujo" and modo != "estado":
+		return
 	_modo = modo
+	_actualizar_estado_pestanas()
 	_actualizar_vista()
+
+func _actualizar_estado_pestanas() -> void:
+	if is_instance_valid(_tab_logs):
+		_tab_logs.button_pressed = _modo == "logs"
+	if is_instance_valid(_tab_flujo):
+		_tab_flujo.button_pressed = _modo == "flujo"
+	if is_instance_valid(_tab_estado):
+		_tab_estado.button_pressed = _modo == "estado"
 
 func _al_evento(_evento: Dictionary) -> void:
 	if _abierto and _modo == "logs":
 		_actualizar_vista()
 
 func _actualizar_vista() -> void:
-	if not is_instance_valid(_texto):
+	if _actualizando_vista or not is_instance_valid(_texto):
 		return
+	_actualizando_vista = true
 	match _modo:
 		"logs":
 			_texto.text = _garlia_debug().call("obtener_logs_texto")
@@ -152,6 +189,7 @@ func _actualizar_vista() -> void:
 	]
 	if _auto_scroll:
 		_texto.scroll_to_line(maxi(0, _texto.get_line_count() - 1))
+	_actualizando_vista = false
 
 func _obtener_estado() -> String:
 	var salida := PackedStringArray()
