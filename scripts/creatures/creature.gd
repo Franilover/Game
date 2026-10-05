@@ -579,6 +579,8 @@ func _actualizar_animacion_caminando(delta: float) -> void:
 		_detener_animacion_caminando()
 		return
 
+	# La misma animación de Flaxis sirve para caminar, perseguir y huir.
+	# El ataque tiene prioridad y usa su propia animación cuando existe.
 	var esta_moviendo := velocity.length_squared() > 0.25
 	if not esta_moviendo:
 		_detener_animacion_caminando()
