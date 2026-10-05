@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://dtcec1crglqak" path="res://scripts/dev/admin_console.gd" id="9_admin"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="10_pause"]
 [ext_resource type="PackedScene" path="res://scenes/ui/death_menu.tscn" id="11_death"]
+[ext_resource type="Script" path="res://scripts/dev/debug_console.gd" id="31_debug_console"]
 
 [node name="Main" type="Node2D" unique_id=109422602]
 script = ExtResource("3_main")
@@ -57,6 +58,10 @@ z_index = 100
 
 [node name="AdminConsole" type="CanvasLayer" parent="UI" unique_id=1465527241]
 script = ExtResource("9_admin")
+
+[node name="DebugConsole" type="CanvasLayer" parent="UI" unique_id=1465527242]
+layer = 200
+script = ExtResource("31_debug_console")
 
 [node name="Systems" type="Node" parent="." unique_id=40830559]
 
