@@ -346,11 +346,11 @@ func _obtener_item_id_recoleccion() -> String:
 		if not item_variant is Dictionary:
 			continue
 		var item := item_variant as Dictionary
-		var propiedades_variant: Variant = item.get("propiedades_game", {})
-		if not propiedades_variant is Dictionary:
+		var propiedades_item_variant: Variant = item.get("propiedades_game", {})
+		if not propiedades_item_variant is Dictionary:
 			continue
-		var propiedades := propiedades_variant as Dictionary
-		if str(propiedades.get("prop_id", "")).strip_edges() != prop_id:
+		var propiedades_item := propiedades_item_variant as Dictionary
+		if str(propiedades_item.get("prop_id", "")).strip_edges() != prop_id:
 			continue
 		return str(item.get("item_id", item.get("id", ""))).strip_edges()
 
