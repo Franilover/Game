@@ -38,7 +38,9 @@ const API_PERSONAJE_SOCIAL := (
 const API_ESPECIE_ETERIUM_GAME := (
 	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,eterium_inicial,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
 )
-const API_REINOS_GAME := (\n\t"/rest/v1/reinos_game?select=id,reino_id,clave,nombre,activo,orden,propiedades&activo=eq.true&order=orden.asc"\n)\nconst API_RELACIONES_ECOLOGICAS := (
+const API_REINOS_GAME := (
+	"/rest/v1/reinos_game?select=id,reino_id,clave,nombre,activo,orden,propiedades&activo=eq.true&order=orden.asc"
+)\nconst API_RELACIONES_ECOLOGICAS := (
 	"/rest/v1/ecosistema_relaciones_criaturas?select=ecosistema_id,criatura_origen_id,criatura_destino_id,tipo_relacion,descripcion,origen"
 )
 
@@ -246,7 +248,67 @@ func _al_completar_relaciones_ecologicas(
 
 func obtener_relaciones_ecologicas() -> Array:
 	return _relaciones_ecologicas.duplicate(true)
-\n\nfunc cargar_reinos_game() -> void:\n\tif _auth == null:\n\t\treturn\n\tif _http_reinos_game == null:\n\t\treturn\n\tif not _reinos_game.is_empty():\n\t\treturn\n\n\tvar headers := _crear_headers()\n\tvar resultado := _http_reinos_game.request(\n\t\t_auth.SUPABASE_URL + API_REINOS_GAME,\n\t\theaders,\n\t\tHTTPClient.METHOD_GET\n\t)\n\n\tif resultado != OK:\n\t\tprint("SupabaseClient: no se pudo solicitar reinos_game → ", resultado)\n\n\nfunc _al_completar_reinos_game(\n\tresultado: int,\n\tcodigo_http: int,\n\t_cabeceras: PackedStringArray,\n\tcuerpo: PackedByteArray\n) -> void:\n\tif resultado != HTTPRequest.RESULT_SUCCESS:\n\t\tprint("SupabaseClient: error de red cargando reinos_game.")\n\t\treturn\n\tif codigo_http < 200 or codigo_http >= 300:\n\t\tprint("SupabaseClient: HTTP ", codigo_http, " cargando reinos_game → ", cuerpo.get_string_from_utf8())\n\t\treturn\n\n\tvar json := JSON.new()\n\tif json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:\n\t\tprint("SupabaseClient: reinos_game no son una lista JSON válida.")\n\t\treturn\n\n\t_reinos_game.clear()\n\tfor reino_variant in json.data as Array:\n\t\tif reino_variant is Dictionary:\n\t\t\t_reinos_game.append((reino_variant as Dictionary).duplicate(true))\n\n\tprint("SupabaseClient: reinos_game cargados → ", _reinos_game.size())\n\treinos_game_cargados.emit(_reinos_game.duplicate(true))\n\n\nfunc obtener_reinos_game() -> Array:\n\treturn _reinos_game.duplicate(true)\n\n\nfunc obtener_reino_game(clave: String) -> Dictionary:\n\tfor reino_variant in _reinos_game:\n\t\tif not reino_variant is Dictionary:\n\t\t\tcontinue\n\t\tvar reino := reino_variant as Dictionary\n\t\tif str(reino.get("clave", "")) == clave:\n\t\t\treturn reino.duplicate(true)\n\treturn {}\n
+
+
+func cargar_reinos_game() -> void:
+	if _auth == null:
+		return
+	if _http_reinos_game == null:
+		return
+	if not _reinos_game.is_empty():
+		return
+
+	var headers := _crear_headers()
+	var resultado := _http_reinos_game.request(
+		_auth.SUPABASE_URL + API_REINOS_GAME,
+		headers,
+		HTTPClient.METHOD_GET
+	)
+
+	if resultado != OK:
+		print("SupabaseClient: no se pudo solicitar reinos_game → ", resultado)
+
+
+func _al_completar_reinos_game(
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		print("SupabaseClient: error de red cargando reinos_game.")
+		return
+	if codigo_http < 200 or codigo_http >= 300:
+		print("SupabaseClient: HTTP ", codigo_http, " cargando reinos_game → ", cuerpo.get_string_from_utf8())
+		return
+
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:
+		print("SupabaseClient: reinos_game no son una lista JSON válida.")
+		return
+
+	_reinos_game.clear()
+	for reino_variant in json.data as Array:
+		if reino_variant is Dictionary:
+			_reinos_game.append((reino_variant as Dictionary).duplicate(true))
+
+	print("SupabaseClient: reinos_game cargados → ", _reinos_game.size())
+	reinos_game_cargados.emit(_reinos_game.duplicate(true))
+
+
+func obtener_reinos_game() -> Array:
+	return _reinos_game.duplicate(true)
+
+
+func obtener_reino_game(clave: String) -> Dictionary:
+	for reino_variant in _reinos_game:
+		if not reino_variant is Dictionary:
+			continue
+		var reino := reino_variant as Dictionary
+		if str(reino.get("clave", "")) == clave:
+			return reino.duplicate(true)
+	return {}
+
 
 func cargar_especies_jugables() -> void:
 	# Las especies jugables son catálogo público del juego.
