@@ -1,5 +1,4 @@
 extends Node2D
-class_name ZoneManager
 ## ZoneManager — autoridad de las zonas del runtime.
 ##
 ## Cada zona puede ser una escena independiente, pero comparte Player, HUD,
@@ -8,7 +7,6 @@ class_name ZoneManager
 
 signal zona_cambiada(tipo: String, zona: Node)
 
-const REINO_TORRES_PATH := "res://scenes/kingdom/reino_torres.tscn"
 const MUNDO_ABIERTO_PATH := "res://scenes/world/mundo_abierto.tscn"
 
 const TIPO_REINO_TORRES := "reino_torres"
@@ -18,17 +16,51 @@ var tipo_actual: String = ""
 var zona_actual: Node = null
 var _transicionando: bool = false
 var _salida_reino_pendiente: bool = false
+var _supabase_client: GarliaSupabaseClient = null
+
+
+func configurar_dependencias(supabase_client: GarliaSupabaseClient) -> void:
+	_supabase_client = supabase_client
 
 
 func iniciar() -> void:
+	if _supabase_client == null:
+		push_error("ZoneManager: falta SupabaseClient.")
+		return
+
 	if GameState.debe_iniciar_en_reino_torres():
-		entrar_reino_torres()
+		var regla := _supabase_client.obtener_reino_game("torres")
+		if regla.is_empty():
+			push_error("ZoneManager: Supabase no tiene un reino activo con clave 'torres'.")
+			return
+		entrar_reino_torres(regla)
 	else:
 		entrar_mundo_abierto()
 
 
-func entrar_reino_torres() -> void:
-	_cambiar_zona(REINO_TORRES_PATH, TIPO_REINO_TORRES)
+func entrar_reino_torres(regla: Dictionary = {}) -> void:
+	var regla_canonica := regla
+	if regla_canonica.is_empty() and _supabase_client != null:
+		regla_canonica = _supabase_client.obtener_reino_game("torres")
+
+	var propiedades_variant: Variant = regla_canonica.get("propiedades", {})
+	if not propiedades_variant is Dictionary:
+		push_error("ZoneManager: las propiedades de Torres no son un objeto JSON.")
+		return
+
+	var propiedades := propiedades_variant as Dictionary
+	if str(propiedades.get("tipo_zona", "")) != "escena_fija":
+		push_error("ZoneManager: Torres no está configurado como escena_fija en Supabase.")
+		return
+	if not bool(propiedades.get("usa_world_generator", false)) and not bool(propiedades.get("generacion_procedural", false)):
+		var escena := str(propiedades.get("escena", "")).strip_edges()
+		if escena.is_empty():
+			push_error("ZoneManager: Torres no tiene escena configurada en Supabase.")
+			return
+		_cambiar_zona(escena, TIPO_REINO_TORRES)
+		return
+
+	push_error("ZoneManager: Supabase exige WorldGenerator para Torres, pero esta zona está definida como fija.")
 
 
 func entrar_mundo_abierto() -> void:
