@@ -146,6 +146,7 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	var items: Array = items_variant as Array if items_variant is Array else []
 	var hotbar: Array = hotbar_variant as Array if hotbar_variant is Array else []
 	inventory_controller.configurar_items(items, hotbar)
+	_normalizar_capacidades_runtime()
 
 	var indice_activo := int(datos.get("indice_hotbar_activo", 0))
 	if indice_activo >= 0 and indice_activo < hotbar_indices.size():
@@ -160,6 +161,26 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 				inventory_controller.equipar(slot, (item_variant as Dictionary).duplicate(true))
 
 	actualizar()
+
+
+func _normalizar_capacidades_runtime() -> void:
+	# La capacidad pertenece a la configuración del inventario, no al archivo
+	# de guardado. Una partida antigua o recién creada puede tener "items: []";
+	# eso significa "sin objetos", no "0 slots".
+	var capacidad := maxi(slot_count, 0)
+	if items.size() < capacidad:
+		items.resize(capacidad)
+
+	# La hotbar mantiene siempre sus 8 posiciones aunque el guardado antiguo
+	# no tenga índices persistidos.
+	var indices_guardados := hotbar_indices.duplicate()
+	if indices_guardados.size() < HOTBAR_SLOT_COUNT:
+		hotbar_indices.resize(HOTBAR_SLOT_COUNT)
+		for i in range(HOTBAR_SLOT_COUNT):
+			if i < indices_guardados.size():
+				hotbar_indices[i] = int(indices_guardados[i])
+			else:
+				hotbar_indices[i] = i if i < items.size() else -1
 
 
 func configurar_input_router(router: GameplayInputRouter) -> void:
