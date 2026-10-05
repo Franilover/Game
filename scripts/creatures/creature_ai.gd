@@ -1799,6 +1799,24 @@ func _procesar_adherido(delta: float) -> void:
 		_iniciar_salto_lejos()
 
 
+func _iniciar_salto_lejos() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_desprender_rancrodeen()
+		return
+
+	var direccion := objetivo.global_position.direction_to(
+		criatura.global_position
+	)
+
+	if direccion.length_squared() <= 0.01:
+		direccion = Vector2.RIGHT.rotated(
+			randf_range(-PI, PI)
+		)
+
+	_direccion_salto = direccion.normalized()
+	_cambiar_estado(Estado.SALTANDO_LEJOS)
+
+
 func _procesar_saltando_lejos(delta: float) -> void:
 	_tiempo_accion -= delta
 
