@@ -257,6 +257,8 @@ func cargar_reinos_game() -> void:
 		return
 	if not _reinos_game.is_empty():
 		return
+	if _http_reinos_game.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+		return
 
 	var headers := _crear_headers()
 	var resultado := _http_reinos_game.request(
