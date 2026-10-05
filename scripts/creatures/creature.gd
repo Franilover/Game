@@ -397,8 +397,7 @@ func copiar_skin_de(origen: Node) -> bool:
 			(origen as Creature).get_skin_visual()
 		)
 	else:
-		sprite_origen = origen.get_node_or_null(
-			"Visual/Sprite2D"
+		sprite_origen = origen.get_node_or_null(			"Visual/Sprite2D"
 		) as Sprite2D
 
 	if sprite_origen == null or sprite_origen.texture == null:
@@ -733,6 +732,13 @@ func _ocultar_muerto() -> void:
 
 
 func _draw() -> void:
+	var brillo_horario := bool(
+		get_meta("brillo_horario", false)
+	)
+
+	if brillo_horario:
+		_dibujar_brillo_horario()
+
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite != null and sprite.texture != null:
 		if mostrar_nombre_debug:
@@ -797,8 +803,7 @@ func _draw() -> void:
 	)
 
 	draw_circle(
-		Vector2(
-			2.2,
+		Vector2(			2.2,
 			-1.5
 		),
 		0.45,
@@ -812,6 +817,22 @@ func _draw() -> void:
 	if mostrar_nombre_debug:
 		_dibujar_nombre()
 
+
+func _dibujar_brillo_horario() -> void:
+	var pulso := 0.82 + 0.18 * sin(
+		float(Time.get_ticks_msec()) / 260.0
+	)
+
+	draw_circle(
+		Vector2(0, -10),
+		22.0 * pulso,
+		Color(1.0, 0.88, 0.45, 0.10)
+	)
+	draw_circle(
+		Vector2(0, -10),
+		14.0 * pulso,
+		Color(1.0, 0.94, 0.62, 0.18)
+	)
 
 func _dibujar_nombre() -> void:
 	var nombre_visual := get_nombre_visual()
