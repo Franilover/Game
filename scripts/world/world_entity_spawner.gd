@@ -730,9 +730,8 @@ func _spawn_props_in_chunk(
 			(float(tile.y) + 0.5) * _terrain.tile_size
 		)
 
-		if prop_node is WorldProp:
-			var world_prop := prop_node as WorldProp
-			world_prop.configurar_chunk(chunk_coord, limite_chunk)
+		if prop_node.has_method("configurar_chunk"):
+			prop_node.call("configurar_chunk", chunk_coord, limite_chunk)
 
 		creados.append(prop_node)
 
