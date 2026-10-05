@@ -125,7 +125,7 @@ func cargar_catalogo() -> void:
 		_cargando = false
 		var mensaje := "Error iniciando consulta de items_game: " + str(resultado)
 		print("GarliaWorldItems: ", mensaje)
-		carga_fallida.emit(mensaje)
+		_cargar_catalogo_reintentando(mensaje)
 
 
 func _cargar_catalogo_reintentando(mensaje: String) -> void:
@@ -175,6 +175,7 @@ func _al_recibir_catalogo(
 		carga_fallida.emit(mensaje)
 		return
 
+	_intentos_catalogo = 0
 	catalogo.clear()
 
 	for fila in datos:
