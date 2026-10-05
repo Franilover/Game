@@ -1520,11 +1520,14 @@ func _es_cazador_por_configuracion(candidato: Creature) -> bool:
 
 
 func _procesar_proteccion(delta: float) -> void:
-	criatura.detener_movimiento()
 	var amenaza := _buscar_amenaza_para_refugio()
 	if amenaza == null:
+		# Proteger no significa quedarse inmóvil: el guardián patrulla
+		# autónomamente mientras no haya una amenaza que perseguir.
 		objetivo = null
 		objetivo_detectado = false
+		criatura.liberar_control_movimiento()
+		_establecer_velocidad(_velocidad_normal)
 		return
 	objetivo = amenaza
 	objetivo_detectado = true
