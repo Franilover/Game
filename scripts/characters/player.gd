@@ -281,6 +281,8 @@ func _physics_process(delta: float) -> void:
 func _registrar_terreno_explorado() -> void:
 	if not is_instance_valid(_world_context_ref):
 		return
+	if not _world_context_ref.tiene_mundo_activo():
+		return
 	exploration_controller.revisar(global_position, _world_context_ref)
 
 func _al_terreno_descubierto(tile: Vector2i, descubrimiento: Dictionary) -> void:
