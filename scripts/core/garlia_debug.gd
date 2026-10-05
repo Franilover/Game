@@ -12,6 +12,8 @@ var _pasos_abiertos: Array[String] = []
 var _rendimiento_acumulado: float = 0.0
 var _rendimiento_intervalo: float = 1.0
 var _secciones_rendimiento: Dictionary = {}
+var _ultimo_tiempo_process: float = 0.0
+var _ultimo_tiempo_physics: float = 0.0
 
 func _process(delta: float) -> void:
 	_rendimiento_acumulado += delta
@@ -19,6 +21,7 @@ func _process(delta: float) -> void:
 		return
 	_rendimiento_acumulado = 0.0
 	registrar("PERFORMANCE", "Snapshot", obtener_rendimiento())
+	_secciones_rendimiento.clear()
 
 func obtener_rendimiento() -> Dictionary:
 	var fps := Engine.get_frames_per_second()
@@ -26,8 +29,8 @@ func obtener_rendimiento() -> Dictionary:
 	return {
 		"fps": fps,
 		"frame_ms_aprox": snappedf(frame_ms, 0.1),
-		"process_ms": snappedf(float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0, 0.1),
-		"physics_ms": snappedf(float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0, 0.1),
+		"process_ms": _medir_tiempo_monitor(Performance.TIME_PROCESS, true),
+		"physics_ms": _medir_tiempo_monitor(Performance.TIME_PHYSICS_PROCESS, false),
 		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
 		"objects": Performance.get_monitor(Performance.OBJECT_COUNT),
 		"orphans": Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
@@ -42,6 +45,26 @@ func rendimiento_inicio(seccion: String) -> void:
 		"inicio": Time.get_ticks_usec(),
 		"ms": 0.0
 	}
+
+func rendimiento_acumular(seccion: String, milisegundos: float) -> void:
+	if not _secciones_rendimiento.has(seccion):
+		_secciones_rendimiento[seccion] = {
+			"inicio": 0,
+			"ms": 0.0
+		}
+	var datos: Dictionary = _secciones_rendimiento[seccion]
+	datos["ms"] = float(datos.get("ms", 0.0)) + milisegundos
+	datos["ms"] = snappedf(float(datos["ms"]), 0.01)
+	_secciones_rendimiento[seccion] = datos
+
+func _medir_tiempo_monitor(monitor: Performance.Monitor, es_process: bool) -> float:
+	var actual := float(Performance.get_monitor(monitor))
+	var anterior := _ultimo_tiempo_process if es_process else _ultimo_tiempo_physics
+	if es_process:
+		_ultimo_tiempo_process = actual
+	else:
+		_ultimo_tiempo_physics = actual
+	return snappedf(maxf(actual - anterior, 0.0) * 1000.0, 0.1)
 
 func rendimiento_fin(seccion: String) -> float:
 	if not _secciones_rendimiento.has(seccion):
