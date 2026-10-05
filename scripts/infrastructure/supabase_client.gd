@@ -40,7 +40,8 @@ const API_ESPECIE_ETERIUM_GAME := (
 )
 const API_REINOS_GAME := (
 	"/rest/v1/reinos_game?select=id,reino_id,clave,nombre,activo,orden,propiedades&activo=eq.true&order=orden.asc"
-)\nconst API_RELACIONES_ECOLOGICAS := (
+)
+const API_RELACIONES_ECOLOGICAS := (
 	"/rest/v1/ecosistema_relaciones_criaturas?select=ecosistema_id,criatura_origen_id,criatura_destino_id,tipo_relacion,descripcion,origen"
 )
 
