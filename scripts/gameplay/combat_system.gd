@@ -515,6 +515,8 @@ func _al_recibir_impacto_proyectil(
 		and ataque.attacker.is_in_group("player")
 	):
 		_registrar_criatura_derrotada(objetivo)
+		if objetivo is Creature:
+			_registrar_agresion_bosque(objetivo as Creature, true)
 
 	if (
 		not arma.is_empty()
@@ -718,6 +720,9 @@ func _aplicar_danio(
 	if not aplicado:
 		return
 
+	if atacante is Player and objetivo is Creature:
+		_registrar_agresion_bosque(objetivo as Creature, not objetivo.is_alive)
+
 	if (
 		vivo_antes
 		and not objetivo.is_alive
@@ -803,6 +808,21 @@ func aplicar_danio_desde_entidad(
 	CombatFeedback.impacto(objetivo, danio)
 	ataque_realizado.emit(atacante, objetivo, danio)
 	return true
+
+
+func _registrar_agresion_bosque(criatura: Creature, asesinada: bool) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	if criatura == null or not is_instance_valid(criatura):
+		return
+
+	var nombre := criatura.get_nombre().strip_edges().to_lower()
+	if nombre not in ["feerin", "lignianos", "seiloris"]:
+		return
+
+	player.set_meta("garlia_bosque_agresor", true)
+	if asesinada:
+		player.set_meta("garlia_bosque_asesino", true)
 
 
 func _registrar_criatura_derrotada(objetivo: Entity) -> void:
