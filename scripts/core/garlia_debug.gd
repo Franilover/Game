@@ -9,6 +9,50 @@ var eventos: Array[Dictionary] = []
 var flujo: Array[Dictionary] = []
 var _pasos_abiertos: Array[String] = []
 
+var _rendimiento_acumulado: float = 0.0
+var _rendimiento_intervalo: float = 1.0
+var _secciones_rendimiento: Dictionary = {}
+
+func _process(delta: float) -> void:
+	_rendimiento_acumulado += delta
+	if _rendimiento_acumulado < _rendimiento_intervalo:
+		return
+	_rendimiento_acumulado = 0.0
+	registrar("PERFORMANCE", "Snapshot", obtener_rendimiento())
+
+func obtener_rendimiento() -> Dictionary:
+	var fps := Engine.get_frames_per_second()
+	var frame_ms := 1000.0 / maxf(float(fps), 0.001)
+	return {
+		"fps": fps,
+		"frame_ms_aprox": snappedf(frame_ms, 0.1),
+		"process_ms": snappedf(float(Performance.get_monitor(Performance.TIME_PROCESS)) * 1000.0, 0.1),
+		"physics_ms": snappedf(float(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)) * 1000.0, 0.1),
+		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+		"objects": Performance.get_monitor(Performance.OBJECT_COUNT),
+		"orphans": Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
+		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		"render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+		"render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		"secciones_ms": _secciones_rendimiento.duplicate(true)
+	}
+
+func rendimiento_inicio(seccion: String) -> void:
+	_secciones_rendimiento[seccion] = {
+		"inicio": Time.get_ticks_usec(),
+		"ms": 0.0
+	}
+
+func rendimiento_fin(seccion: String) -> float:
+	if not _secciones_rendimiento.has(seccion):
+		return 0.0
+	var datos: Dictionary = _secciones_rendimiento[seccion]
+	var ms := float(Time.get_ticks_usec() - int(datos.get("inicio", 0))) / 1000.0
+	datos["ms"] = snappedf(ms, 0.01)
+	_secciones_rendimiento[seccion] = datos
+	return ms
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	registrar("DEBUG", "GarliaDebug iniciado.")
