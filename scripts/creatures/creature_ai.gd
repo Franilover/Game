@@ -1644,3 +1644,317 @@ func _obtener_enfriamiento_ataque() -> float:
 		return maxf(float(valor), 0.0)
 
 	return enfriamiento_ataque
+
+# ============================================================
+# HELPERS DE MOVIMIENTO, ESTADO Y COMBATE
+# ============================================================
+
+func _configurar_desde_padre() -> void:
+	criatura = get_parent() as Creature
+
+
+func _encontrar_movimiento() -> void:
+	if criatura == null:
+		return
+
+	_movimiento = criatura.get_node_or_null(
+		"CreatureMovement"
+	) as CreatureMovement
+
+	if _movimiento != null:
+		_velocidad_normal = maxf(
+			_movimiento.move_speed,
+			0.0
+		)
+
+
+func _establecer_velocidad(
+	nueva_velocidad: float
+) -> void:
+	if _movimiento == null:
+		_encontrar_movimiento()
+
+	if _movimiento == null:
+		return
+
+	_movimiento.move_speed = maxf(
+		nueva_velocidad,
+		0.0
+	)
+
+
+func _iniciar_persecucion() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_velocidad_persecucion()
+	)
+
+
+func _iniciar_huida() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_velocidad_huida()
+	)
+
+
+func _iniciar_estado_adherido() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	if perfil == Perfil.ZLISH:
+		_tiempo_adherido = _obtener_float_reaccion(
+			"duracion_adherido",
+			2.0
+		)
+	else:
+		_tiempo_adherido = _obtener_float_ataque(
+			"duracion_adherido",
+			5.0
+		)
+
+	_tiempo_danio_adherido = 0.0
+
+	criatura.detener_movimiento()
+	criatura.establecer_colision(false)
+
+
+func _iniciar_estado_saltando_lejos() -> void:
+	_tiempo_accion = maxf(
+		_obtener_float_ataque(
+			"duracion_salto",
+			0.38
+		),
+		0.01
+	)
+
+	var distancia := _obtener_float_ataque(
+		"distancia_salto",
+		72.0
+	)
+
+	_objetivo_ataque = (
+		criatura.global_position
+		+ _direccion_salto * distancia
+	)
+
+	criatura.establecer_colision(true)
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_float_ataque(
+			"velocidad_salto",
+			190.0
+		)
+	)
+	criatura.establecer_direccion_movimiento(
+		_direccion_salto
+	)
+
+
+func _procesar_adherido(delta: float) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_desprender_rancrodeen()
+		return
+
+	_tiempo_adherido -= delta
+
+	criatura.global_position = (
+		objetivo.global_position
+		+ Vector2(0.0, -16.0)
+	)
+
+	if perfil == Perfil.ZLISH:
+		if _tiempo_adherido <= 0.0:
+			_robar_objeto_
+
+
+func _procesar_saltando_lejos(delta: float) -> void:
+	_tiempo_accion -= delta
+
+	if (
+		criatura.global_position.distance_to(
+			_objetivo_ataque
+		) <= _obtener_distancia_contacto()
+		or _tiempo_accion <= 0.0
+	):
+		if perfil == Perfil.ZLISH:
+			_establecer_velocidad(0.0)
+			_cambiar_estado(Estado.ADHERIDO)
+			return
+
+		_establecer_velocidad(
+			_obtener_velocidad_ataque()
+		)
+		_cambiar_estado(Estado.PERSIGUIENDO)
+		return
+
+	var direccion := criatura.global_position.direction_to(
+		_objetivo_ataque
+	)
+
+	criatura.establecer_direccion_movimiento(direccion)
+
+
+# ============================================================
+# ESPIRITU ESTELAR
+# ============================================================
+
+
+func _procesar_ataque_rancrodeen(_delta: float) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	var distancia := criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia <= _obtener_distancia_contacto():
+		_cambiar_estado(Estado.ADHERIDO)
+		return
+
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_velocidad_ataque()
+	)
+
+	var direccion := criatura.global_position.direction_to(
+		objetivo.global_position
+	)
+
+	criatura.establecer_direccion_movimiento(direccion)
+
+
+func _obtener_distancia_segura_huida() -> float:
+	if perfil == Perfil.ZLISH:
+		var distancia_config: Variant = configuracion_ia.get(
+			"al_recibir_ataque",
+			{}
+		)
+
+		if distancia_config is Dictionary:
+			var reaccion: Dictionary = (
+				distancia_config as Dictionary
+			)
+
+			var distancia_segura: Variant = reaccion.get(
+				"distancia_segura",
+
+
+func _obtener_velocidad_huida() -> float:
+	if perfil == Perfil.ZLISH:
+		var movimiento := _obtener_config_movimiento()
+		var velocidad_config: Variant = movimiento.get(
+			"velocidad_huida",
+
+
+func _aplicar_danio_objetivo(objetivo_danio: Node, cantidad: int, origen: String) -> void:
+	var entidad := objetivo_danio as Entity
+	if entidad == null or not is_instance_valid(entidad):
+		return
+
+	var combate := _obtener_combat_system()
+	if combate == null:
+		return
+
+	combate.aplicar_danio_desde_entidad(
+		criatura,
+		entidad,
+		cantidad,
+		origen
+	)
+
+
+func _iniciar_recuperacion(duracion: float) -> void:
+	_tiempo_recuperacion = maxf(
+		duracion,
+		0.0
+	)
+	_cambiar_estado(Estado.RECUPERANDO)
+
+
+func _animar_salto() -> void:
+	if criatura == null:
+		return
+
+	var escala_original := criatura.scale
+
+	var tween := criatura.create_tween()
+
+	tween.tween_property(
+		criatura,
+		"scale",
+		escala_original * 1.18,
+		0.08
+	)
+
+	tween.tween_property(
+		criatura,
+		"scale",
+		escala_original * 0.92,
+		0.10
+	)
+
+	tween.tween_property(
+		criatura,
+		"scale",
+		escala_original,
+		0.14
+	)
+
+# Estado sincroni
+
+
+func _obtener_float_ataque(
+	clave: String,
+	por_defecto: float
+) -> float:
+	var ataque := _obtener_config_ataque()
+
+	var valor: Variant = ataque.get(
+		clave,
+		por_defecto
+	)
+
+	if valor is int or valor is float:
+		return maxf(
+			float(valor),
+			0.0
+		)
+
+	return por_defecto
+
+
+func _puede_recibir_danio(objetivo_danio: Node) -> bool:
+	return objetivo_danio is Entity and is_instance_valid(objetivo_danio)
+
+
+func _obtener_alcance_arma_combate(
+	arma: Dictionary
+) -> float:
+	var combate: CombatSystem = _obtener_combat_system()
+
+	if combate != null:
+		return maxf(
+			combate.obtener_alcance_arma(arma),
+			_obtener_distancia_contacto()
+		)
+
+	return maxf(
+		_obtener_distancia_contacto(),
+		64.0
+	)
+
+
+func _obtener_combat_system() -> CombatSystem:
+	if combat_system != null and is_instance_valid(combat_system):
+		return combat_system
+	return null
