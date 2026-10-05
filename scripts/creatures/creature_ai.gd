@@ -1966,3 +1966,85 @@ func _obtener_combat_system() -> CombatSystem:
 	if combat_system != null and is_instance_valid(combat_system):
 		return combat_system
 	return null
+
+func _obtener_velocidad_persecucion() -> float:
+	var movimiento := _obtener_config_movimiento()
+	var valor: Variant = movimiento.get(
+		"velocidad_persecucion",
+		movimiento.get("velocidad", velocidad_persecucion)
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return velocidad_persecucion
+
+
+func _obtener_velocidad_huida() -> float:
+	if perfil == Perfil.ZLISH:
+		var movimiento := _obtener_config_movimiento()
+		var velocidad_config: Variant = movimiento.get(
+			"velocidad_huida",
+			zlish_velocidad_huida
+		)
+
+		if velocidad_config is int or velocidad_config is float:
+			return maxf(float(velocidad_config), 0.0)
+
+		return zlish_velocidad_huida
+
+	return maxf(
+		_obtener_velocidad_persecucion(),
+		_velocidad_normal
+	)
+
+
+func _obtener_float_reaccion(clave: String, por_defecto: float) -> float:
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_recibir_ataque",
+		{}
+	)
+	if not reaccion_variant is Dictionary:
+		return por_defecto
+
+	var reaccion: Dictionary = reaccion_variant as Dictionary
+	var valor: Variant = reaccion.get(clave, por_defecto)
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return por_defecto
+
+
+func _desprender_rancrodeen() -> void:
+	criatura.establecer_colision(true)
+	_cambiar_estado(Estado.EXPLORANDO)
+
+
+func _robar_objeto_zlish() -> void:
+	if perfil != Perfil.ZLISH or objetivo == null or not is_instance_valid(objetivo):
+		return
+
+	var inventario: GarliaInventory = inventory
+	if inventario == null:
+		return
+
+	var indice_hotbar: int = inventario.obtener_indice_hotbar_activo()
+	var indice_inventario: int = inventario.obtener_indice_inventario_hotbar(indice_hotbar)
+	var objeto_hotbar: Dictionary = inventario.obtener_objeto(indice_inventario)
+
+	if not objeto_hotbar.is_empty():
+		if inventario.quitar_objeto(indice_inventario):
+			objeto_robado = objeto_hotbar.duplicate(true)
+			return
+
+	for clave in ["cabeza", "torso", "pies"]:
+		var objeto_armadura: Dictionary = inventario.obtener_objeto_equipado(clave)
+		if objeto_armadura.is_empty():
+			continue
+
+		var robado_variant: Variant = inventario.robar_objeto_equipado(clave)
+		if robado_variant is Dictionary:
+			var robado: Dictionary = robado_variant as Dictionary
+			if not robado.is_empty():
+				objeto_robado = robado.duplicate(true)
+				return
