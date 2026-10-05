@@ -47,15 +47,15 @@ func obtener_equipamiento() -> Dictionary:
 	return equipment.state.slots.duplicate(true)
 
 func agregar_objeto(datos: Dictionary) -> bool:
-	_garlia_debug().registrar("INVENTORY", "agregar_objeto solicitado", {"item_id": str(datos.get("item_id", datos.get("id", ""))), "nombre": str(datos.get("nombre", ""))})
-	_garlia_debug().flujo_inicio("InventoryRuntime.agregar_objeto", {
+	_garlia_debug().call("registrar", "INVENTORY", "agregar_objeto solicitado", {"item_id": str(datos.get("item_id", datos.get("id", ""))), "nombre": str(datos.get("nombre", ""))})
+	_garlia_debug().call("flujo_inicio", "InventoryRuntime.agregar_objeto", {
 		"item_id": str(datos.get("item_id", datos.get("id", ""))),
 		"nombre": str(datos.get("nombre", "")),
 		"cantidad_solicitada": int(datos.get("cantidad", 1)),
 		"slots": state.items.size()
 	})
 	if datos.is_empty():
-		_garlia_debug().flujo_error("Inventario recibió un Dictionary vacío.")
+		_garlia_debug().call("flujo_error", "Inventario recibió un Dictionary vacío.")
 		return false
 	var objeto := datos.duplicate(true)
 	var cantidad: int = maxi(1, int(objeto.get("cantidad", 1)))
@@ -92,15 +92,15 @@ func agregar_objeto(datos: Dictionary) -> bool:
 			restante -= lote
 	var exito := restante <= 0
 	if exito:
-		_garlia_debug().registrar("INVENTORY", "Objeto insertado correctamente.")
-		_garlia_debug().flujo_ok("Objeto insertado en inventario.", {"restante": restante})
+		_garlia_debug().call("registrar", "INVENTORY", "Objeto insertado correctamente.")
+		_garlia_debug().call("flujo_ok", "Objeto insertado en inventario.", {"restante": restante})
 	else:
 		var libres := 0
 		for slot in state.items:
 			if slot is Dictionary and (slot as Dictionary).is_empty():
 				libres += 1
-		_garlia_debug().registrar("INVENTORY", "Inserción rechazada: capacidad insuficiente.", {"restante": restante, "slots": state.items.size()})
-		_garlia_debug().flujo_error("No hubo capacidad suficiente.", {
+		_garlia_debug().call("registrar", "INVENTORY", "Inserción rechazada: capacidad insuficiente.", {"restante": restante, "slots": state.items.size()})
+		_garlia_debug().call("flujo_error", "No hubo capacidad suficiente.", {
 				"restante": restante,
 				"slots": state.items.size(),
 				"slots_libres": libres,
