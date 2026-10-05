@@ -1847,13 +1847,87 @@ func _obtener_distancia_segura_huida() -> float:
 
 			var distancia_segura: Variant = reaccion.get(
 				"distancia_segura",
+				zlish_distancia_segura
+			)
+
+			if distancia_segura is int or distancia_segura is float:
+				return maxf(
+					float(distancia_segura),
+					0.0
+				)
+
+		return zlish_distancia_segura
+
+	return _obtener_distancia_deteccion()
 
 
-func _obtener_velocidad_huida() -> float:
-	if perfil == Perfil.ZLISH:
-		var movimiento := _obtener_config_movimiento()
-		var velocidad_config: Variant = movimiento.get(
-			"velocidad_huida",
+func _establecer_velocidad(
+	nueva_velocidad: float
+) -> void:
+	if _movimiento == null:
+		_encontrar_movimiento()
+
+	if _movimiento == null:
+		return
+
+	_movimiento.move_speed = maxf(
+		nueva_velocidad,
+		0.0
+	)
+
+
+func _encontrar_movimiento() -> void:
+	if criatura == null:
+		return
+
+	_movimiento = criatura.get_node_or_null(
+		"CreatureMovement"
+	) as CreatureMovement
+
+	if _movimiento != null:
+		_velocidad_normal = maxf(
+			_movimiento.move_speed,
+			0.0
+		)
+
+
+func _configurar_desde_padre() -> void:
+	criatura = get_parent() as Creature
+
+
+func _animar_salto() -> void:
+	if criatura == null:
+		return
+
+	var escala_original := criatura.scale
+
+	var tween := criatura.create_tween()
+
+	tween.tween_property(
+		criatura,
+		"scale",
+		escala_original * 1.18,
+		0.08
+	)
+
+	tween.tween_property(
+		criatura,
+		"scale",
+		escala_original * 0.92,
+		0.10
+	)
+
+	tween.tween_property(
+		criatura,
+		"scale",
+		escala_original,
+		0.14
+	)
+
+# Estado sincronizado: configuración de IA canónica en Supabase.
+
+
+
 
 
 func _aplicar_danio_objetivo(objetivo_danio: Node, cantidad: int, origen: String) -> void:
