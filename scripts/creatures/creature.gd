@@ -257,18 +257,50 @@ func _cargar_sprite() -> void:
 			+ nombre_individual
 			+ ".png"
 		)
+		rutas.append(
+			"res://assets/art/characters/"
+			+ nombre_individual
+			+ ".PNG"
+		)
 
+	# Las criaturas pueden tener su sprite canónico en una carpeta propia
+	# o en la raíz de creatures. Ambos formatos son compatibles.
+	var nombre := criatura_nombre.strip_edges()
+	if not nombre.is_empty():
+		rutas.append(
+			"res://assets/art/creatures/"
+			+ nombre
+			+ "/"
+			+ nombre
+			+ ".png"
+		)
+		rutas.append(
+			"res://assets/art/creatures/"
+			+ nombre
+			+ "/"
+			+ nombre
+			+ ".PNG"
+		)
+	trutas.append(
+		"res://assets/art/creatures/"
+		+ nombre
+		+ ".png"
+	)
 	rutas.append(
 		"res://assets/art/creatures/"
-		+ criatura_nombre
-		+ ".png"
+		+ nombre
+		+ ".PNG"
 	)
 
 	for ruta in rutas:
 		if not ResourceLoader.exists(ruta):
 			continue
 
-		sprite.texture = load(ruta)
+		var textura := load(ruta) as Texture2D
+		if textura == null:
+			continue
+
+		sprite.texture = textura
 		return
 
 	sprite.texture = null
