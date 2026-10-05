@@ -10,7 +10,7 @@ var _player: Node = null
 var _load_radius: int = 1
 var _unload_radius: int = 2
 # Test de rendimiento: terreno y entidades usan radios independientes.
-var _entity_active_radius: int = 0
+var _entity_active_radius: int = 1
 var _cells_per_frame: int = 512
 
 var _player_chunk: Vector2i = Vector2i(
