@@ -42,9 +42,15 @@ func _ready() -> void:
 	_crear_sistemas()
 
 
-func configurar_dependencias(world_data: WorldDataService, game_state: GameStateService) -> void:
+func configurar_dependencias(
+	world_data: WorldDataService,
+	game_state: GameStateService,
+	world_context: WorldContext = null
+) -> void:
 	_world_data = world_data
 	_game_state = game_state
+	if world_context != null:
+		context = world_context
 	if context != null:
 		context.configurar(terrain, atmosphere, _world_data)
 	if atmosphere != null:
