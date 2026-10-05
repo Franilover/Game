@@ -571,9 +571,10 @@ func _detener_animacion_ataque() -> void:
 
 
 func _actualizar_animacion_caminando(delta: float) -> void:
-	var nombre_normalizado := criatura_nombre.strip_edges().to_lower()
-	# Flaxis y Zlish tienen una animación de caminar propia.
-	if nombre_normalizado != "flaxis" and nombre_normalizado != "zlish":
+	# La animación de movimiento se resuelve por el asset disponible,
+	# no por una lista fija de criaturas.
+	var nombre_normalizado := criatura_nombre.strip_edges()
+	if nombre_normalizado.is_empty():
 		return
 
 	if _ataque_animando:
@@ -607,8 +608,7 @@ func _actualizar_animacion_caminando(delta: float) -> void:
 
 
 func iniciar_animacion_caminando() -> bool:
-	var nombre_normalizado := criatura_nombre.strip_edges().to_lower()
-	if nombre_normalizado != "flaxis" and nombre_normalizado != "zlish":
+	if criatura_nombre.strip_edges().is_empty():
 		return false
 	return _iniciar_animacion_caminando()
 
@@ -620,6 +620,11 @@ func _iniciar_animacion_caminando() -> bool:
 
 	var nombre := criatura_nombre.strip_edges()
 	var rutas: Array[String] = [
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.PNG",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_walking.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_walking.PNG",
+		# Compatibilidad temporal con assets anteriores.
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.png",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.PNG"
 	]
