@@ -621,6 +621,11 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 
 
 func _refrescar_objetivo() -> void:
+	# La reacción de bosque tiene prioridad sobre la percepción ecológica normal.
+	if _jugador_debe_reaccionar_en_bosque():
+		objetivo = jugador
+		return
+
 	if actividad_horaria == "proteger":
 		objetivo = _buscar_amenaza_para_refugio()
 		return
@@ -649,6 +654,37 @@ func _refrescar_objetivo() -> void:
 			mejor_distancia = distancia
 			mejor = candidato
 	objetivo = mejor
+
+
+func _es_reactivo_bosque() -> bool:
+	var nombre := criatura.get_nombre().strip_edges().to_lower()
+	return nombre in ["feerin", "lignianos", "seiloris"]
+
+
+func _es_seiloris() -> bool:
+	return criatura.get_nombre().strip_edges().to_lower() == "seiloris"
+
+
+func _jugador_es_agresor_bosque() -> bool:
+	if jugador == null or not is_instance_valid(jugador):
+		return false
+	return bool(jugador.get_meta("garlia_bosque_agresor", false))
+
+
+func _jugador_es_asesino_bosque() -> bool:
+	if jugador == null or not is_instance_valid(jugador):
+		return false
+	return bool(jugador.get_meta("garlia_bosque_asesino", false))
+
+
+func _jugador_debe_reaccionar_en_bosque() -> bool:
+	if not _es_reactivo_bosque():
+		return false
+
+	if _es_seiloris():
+		return _jugador_es_agresor_bosque()
+
+	return _jugador_es_asesino_bosque()
 
 
 func _es_objetivo_permitido(candidato: Node2D) -> bool:
@@ -806,6 +842,12 @@ func _perfil_desde_texto(texto: String) -> Perfil:
 
 
 func _obtener_respuesta_a_objetivo() -> String:
+	if _es_reactivo_bosque() and objetivo == jugador:
+		if _jugador_es_asesino_bosque():
+			return "atacar"
+		if _jugador_es_agresor_bosque() and _es_seiloris():
+			return "huir"
+
 	if _es_objetivo_refugio():
 		return "perseguir"
 
