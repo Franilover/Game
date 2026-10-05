@@ -34,7 +34,7 @@ func obtener_item(indice: int) -> Dictionary:
 
 func agregar_objeto(datos: Dictionary) -> bool:
 	if not puede_interactuar():
-		GarliaDebug.log("INVENTORY", "agregar_objeto bloqueado por GameplayInputGate.")
+		GarliaDebug.registrar("INVENTORY", "agregar_objeto bloqueado por GameplayInputGate.")
 		GarliaDebug.flujo_error("InventoryController bloqueó agregar_objeto por GameplayInputGate.")
 		return false
 	if datos.is_empty():
