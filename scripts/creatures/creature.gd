@@ -307,7 +307,8 @@ func configurar_dependencias_ia(
 	inventario: GarliaInventory,
 	combat_system: CombatSystem,
 	world_items: GarliaWorldItems,
-	relaciones_ecologicas: Array = []
+	relaciones_ecologicas: Array = [],
+	world_atmosphere: WorldAtmosphere = null
 ) -> void:
 	var ai := get_node_or_null("AIController") as CreatureAI
 	if ai == null:
@@ -319,7 +320,8 @@ func configurar_dependencias_ia(
 		inventario,
 		combat_system,
 		world_items,
-		relaciones_ecologicas
+		relaciones_ecologicas,
+		world_atmosphere
 	)
 
 
