@@ -1861,40 +1861,6 @@ func _obtener_distancia_segura_huida() -> float:
 	return _obtener_distancia_deteccion()
 
 
-func _establecer_velocidad(
-	nueva_velocidad: float
-) -> void:
-	if _movimiento == null:
-		_encontrar_movimiento()
-
-	if _movimiento == null:
-		return
-
-	_movimiento.move_speed = maxf(
-		nueva_velocidad,
-		0.0
-	)
-
-
-func _encontrar_movimiento() -> void:
-	if criatura == null:
-		return
-
-	_movimiento = criatura.get_node_or_null(
-		"CreatureMovement"
-	) as CreatureMovement
-
-	if _movimiento != null:
-		_velocidad_normal = maxf(
-			_movimiento.move_speed,
-			0.0
-		)
-
-
-func _configurar_desde_padre() -> void:
-	criatura = get_parent() as Creature
-
-
 func _animar_salto() -> void:
 	if criatura == null:
 		return
@@ -1953,38 +1919,6 @@ func _iniciar_recuperacion(duracion: float) -> void:
 		0.0
 	)
 	_cambiar_estado(Estado.RECUPERANDO)
-
-
-func _animar_salto() -> void:
-	if criatura == null:
-		return
-
-	var escala_original := criatura.scale
-
-	var tween := criatura.create_tween()
-
-	tween.tween_property(
-		criatura,
-		"scale",
-		escala_original * 1.18,
-		0.08
-	)
-
-	tween.tween_property(
-		criatura,
-		"scale",
-		escala_original * 0.92,
-		0.10
-	)
-
-	tween.tween_property(
-		criatura,
-		"scale",
-		escala_original,
-		0.14
-	)
-
-# Estado sincroni
 
 
 func _obtener_float_ataque(
