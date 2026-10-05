@@ -14,6 +14,10 @@ func configurar(
 	atmosphere = nueva_atmosphere
 	_world_data = nuevo_world_data
 
+func tiene_mundo_activo() -> bool:
+	return terrain != null and is_instance_valid(terrain)
+
+
 func get_tile_at(posicion_global: Vector2) -> Vector2i:
 	if terrain == null:
 		return Vector2i.ZERO
