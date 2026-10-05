@@ -281,7 +281,7 @@ func _cargar_sprite() -> void:
 			+ nombre
 			+ ".PNG"
 		)
-	trutas.append(
+	rutas.append(
 		"res://assets/art/creatures/"
 		+ nombre
 		+ ".png"
