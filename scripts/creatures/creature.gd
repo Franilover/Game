@@ -54,6 +54,16 @@ var _ataque_frames_totales: int = 1
 var _ataque_tiempo: float = 0.0
 var _ataque_fps: float = 10.0
 
+var _caminando_animando: bool = false
+var _caminando_textura_base: Texture2D = null
+var _caminando_hframes_base: int = 1
+var _caminando_vframes_base: int = 1
+var _caminando_frame_base: int = 0
+var _caminando_frame_actual: int = 0
+var _caminando_frames_totales: int = 1
+var _caminando_tiempo: float = 0.0
+var _caminando_fps: float = 8.0
+
 
 func configurar_dependencias(
 	dialogue_system: DialogueSystem,
@@ -560,6 +570,111 @@ func _detener_animacion_ataque() -> void:
 	_sprite_textura_base = null
 
 
+func _actualizar_animacion_caminando(delta: float) -> void:
+	# Por ahora solo Flaxis tiene una animación de caminar propia.
+	if criatura_nombre.strip_edges().to_lower() != "flaxis":
+		return
+
+	if _ataque_animando:
+		_detener_animacion_caminando()
+		return
+
+	var esta_moviendo := velocity.length_squared() > 0.25
+	if not esta_moviendo:
+		_detener_animacion_caminando()
+		return
+
+	if not _caminando_animando:
+		if not _iniciar_animacion_caminando():
+			return
+
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		_detener_animacion_caminando()
+		return
+
+	_caminando_tiempo += delta
+	var intervalo := 1.0 / maxf(_caminando_fps, 1.0)
+	while _caminando_tiempo >= intervalo:
+		_caminando_tiempo -= intervalo
+		_caminando_frame_actual = (
+			(_caminando_frame_actual + 1) % _caminando_frames_totales
+		)
+		sprite.frame = _caminando_frame_actual
+
+
+func _iniciar_animacion_caminando() -> bool:
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null or sprite.texture == null:
+		return false
+
+	var nombre := criatura_nombre.strip_edges()
+	var rutas: Array[String] = [
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.PNG"
+	]
+
+	var textura: Texture2D = null
+	for ruta in rutas:
+		if ResourceLoader.exists(ruta):
+			textura = load(ruta) as Texture2D
+			if textura != null:
+				break
+
+	if textura == null:
+		return false
+
+	_caminando_textura_base = sprite.texture
+	_caminando_hframes_base = maxi(sprite.hframes, 1)
+	_caminando_vframes_base = maxi(sprite.vframes, 1)
+	_caminando_frame_base = sprite.frame
+
+	var ancho_frame := maxi(
+		int(_caminando_textura_base.get_width()) / _caminando_hframes_base,
+		1
+	)
+	var alto_frame := maxi(
+		int(_caminando_textura_base.get_height()) / _caminando_vframes_base,
+		1
+	)
+
+	var hframes := maxi(int(textura.get_width()) / ancho_frame, 1)
+	var vframes := maxi(int(textura.get_height()) / alto_frame, 1)
+	_caminando_frames_totales = maxi(hframes * vframes, 1)
+	_caminando_frame_actual = 0
+	_caminando_tiempo = 0.0
+	_caminando_animando = true
+
+	sprite.texture = textura
+	sprite.hframes = hframes
+	sprite.vframes = vframes
+	sprite.frame = 0
+
+	return true
+
+
+func _detener_animacion_caminando() -> void:
+	if not _caminando_animando:
+		return
+
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite != null and _caminando_textura_base != null:
+		sprite.texture = _caminando_textura_base
+		sprite.hframes = _caminando_hframes_base
+		sprite.vframes = _caminando_vframes_base
+		sprite.frame = clampi(
+			_caminando_frame_base,
+			0,
+			maxi(sprite.hframes * sprite.vframes - 1, 0)
+		)
+
+	_caminando_animando = false
+	_caminando_frame_actual = 0
+	_caminando_frames_totales = 1
+	_caminando_tiempo = 0.0
+	_caminando_textura_base = null
+
+
 func _es_humano() -> bool:
 	return criatura_nombre.strip_edges().to_lower() == "humano"
 
@@ -624,6 +739,8 @@ func _physics_process(delta: float) -> void:
 		_movimiento.procesar(delta)
 	else:
 		velocity = Vector2.ZERO
+
+	_actualizar_animacion_caminando(delta)
 
 
 func iniciar_seguimiento_jugador(nuevo_jugador: Node) -> bool:
@@ -790,6 +907,7 @@ func interact(
 
 func _die() -> void:
 	_detener_animacion_ataque()
+	_detener_animacion_caminando()
 
 	if _muerte_procesada:
 		return
