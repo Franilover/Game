@@ -49,13 +49,29 @@ func _ready() -> void:
 
 	if not _zone_manager.zona_cambiada.is_connected(_al_cambio_de_zona):
 		_zone_manager.zona_cambiada.connect(_al_cambio_de_zona)
+	if not _supabase_client.reinos_game_cargados.is_connected(_al_reinos_game_cargados):
+		_supabase_client.reinos_game_cargados.connect(_al_reinos_game_cargados)
 
-	_zone_manager.iniciar()
+	_supabase_client.cargar_reinos_game()
+	if not GameState.debe_iniciar_en_reino_torres():
+		_iniciar_zonas()
+	elif not _supabase_client.obtener_reinos_game().is_empty():
+		_iniciar_zonas()
 
 
 func _exit_tree() -> void:
 	if is_instance_valid(_supabase_client):
 		_supabase_client.establecer_mundo_activo(false)
+
+
+func _al_reinos_game_cargados(_reinos: Array) -> void:
+	if GameState.debe_iniciar_en_reino_torres():
+		_iniciar_zonas()
+
+
+func _iniciar_zonas() -> void:
+	_zone_manager.configurar_dependencias(_supabase_client)
+	_zone_manager.iniciar()
 
 
 func _process(_delta: float) -> void:
@@ -119,7 +135,7 @@ func _inicializar_runtime_de_zona() -> void:
 		push_error("Main: no se encontró Entities/Player.")
 		return
 
-	if _zone_manager.obtener_tipo_actual() == ZoneManager.TIPO_MUNDO_ABIERTO and _world_generator != null:
+	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
 		if _zone_manager.consumir_salida_reino_pendiente():
 			_player.global_position = Vector2(560, 120)
 		else:
