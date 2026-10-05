@@ -1,6 +1,4 @@
 extends Node
-class_name GarliaDebug
-
 signal evento_agregado(evento: Dictionary)
 signal flujo_actualizado
 
@@ -13,9 +11,9 @@ var _pasos_abiertos: Array[String] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	log("DEBUG", "GarliaDebug iniciado.")
+	registrar("DEBUG", "GarliaDebug iniciado.")
 
-func log(categoria: String, mensaje: String, datos: Dictionary = {}) -> void:
+func registrar(categoria: String, mensaje: String, datos: Dictionary = {}) -> void:
 	var evento := {
 		"tiempo": Time.get_time_string_from_system(),
 		"categoria": categoria,
@@ -80,7 +78,7 @@ func limpiar() -> void:
 	eventos.clear()
 	flujo.clear()
 	_pasos_abiertos.clear()
-	log("DEBUG", "Historial de debug limpiado.")
+	registrar("DEBUG", "Historial de debug limpiado.")
 
 func obtener_logs_texto() -> String:
 	var salida := PackedStringArray()
