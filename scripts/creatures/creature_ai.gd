@@ -924,51 +924,18 @@ func _es_objetivo_refugio() -> bool:
 
 
 func _buscar_refugio() -> Creature:
-	# Durante el descanso nocturno, Zlish y Feerin buscan a los
-	# Lignianos como refugio social/ecológico.
-	if _es_refugio_ligniano():
-		return _buscar_criatura_por_nombre("Lignianos")
-func _es_refugio_ligniano() -> bool:
-	var nombre := str(criatura.datos.get("nombre", "")).strip_edges().to_lower()
-	if nombre not in ["zlish", "feerín", "feerin"]:
-		return false
-	return actividad_horaria in ["dormir", "reposar", "buscar_refugio"]
-
-
-func _buscar_criatura_por_nombre(nombre_buscado: String) -> Creature:
 	if entity_manager == null or not is_instance_valid(entity_manager):
 		return null
-	var mejor: Creature = null
-	var mejor_distancia := INF
-	var radio := 180.0
+
 	var horario_variant: Variant = configuracion_ia.get("horario", {})
-	if horario_variant is Dictionary:
-		radio = maxf(float((horario_variant as Dictionary).get("radio_refugio", 180.0)), 1.0)
-
-	for entidad_variant in entity_manager.obtener_entidades_activas():
-		if not entidad_variant is Creature:
-			continue
-		var candidata := entidad_variant as Creature
-		if candidata == criatura or not candidata.is_alive:
-			continue
-		var nombre := str(candidata.datos.get("nombre", "")).strip_edges().to_lower()
-		if nombre != nombre_buscado.strip_edges().to_lower():
-			continue
-		var distancia := criatura.global_position.distance_to(candidata.global_position)
-		if distancia <= radio and distancia < mejor_distancia:
-			mejor = candidata
-			mejor_distancia = distancia
-	return mejor
-
-
-
-	if entity_manager == null or not is_instance_valid(entity_manager):
+	if not horario_variant is Dictionary:
 		return null
-	var horario_variant: Variant = configuracion_ia.get("horario", {})
-	var radio := 180.0
-	if horario_variant is Dictionary:
-		radio = maxf(float((horario_variant as Dictionary).get("radio_refugio", 180.0)), 1.0)
+	var horario := horario_variant as Dictionary
+	var nombre_refugio := str(horario.get("refugio_objetivo", "")).strip_edges()
+	if nombre_refugio.is_empty():
+		return null
 
+	var radio := maxf(float(horario.get("radio_refugio", 180.0)), 1.0)
 	var mejor: Creature = null
 	var mejor_distancia := INF
 	for entidad_variant in entity_manager.obtener_entidades_activas():
@@ -977,14 +944,14 @@ func _buscar_criatura_por_nombre(nombre_buscado: String) -> Creature:
 		var candidata := entidad_variant as Creature
 		if candidata == criatura or not is_instance_valid(candidata) or not candidata.is_alive:
 			continue
-		if not bool(candidata.get_meta("atractor_refugio", false)):
+		var nombre := str(candidata.datos.get("nombre", "")).strip_edges().to_lower()
+		if nombre != nombre_refugio.to_lower():
 			continue
 		var distancia := criatura.global_position.distance_to(candidata.global_position)
 		if distancia <= radio and distancia < mejor_distancia:
 			mejor = candidata
 			mejor_distancia = distancia
 	return mejor
-
 
 func _buscar_amenaza_para_refugio() -> Creature:
 	if entity_manager == null or not is_instance_valid(entity_manager):
