@@ -1,9 +1,11 @@
 extends Node
+class_name InventoryController
 
 func _garlia_debug() -> Node:
 	return get_node_or_null("/root/GarliaDebug")
 
-class_name InventoryController
+
+
 
 ## Coordina el runtime del inventario con una implementación de UI.
 ## No contiene el estado canónico de items, hotbar o equipamiento.
