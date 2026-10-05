@@ -180,9 +180,9 @@ func get_interaction_details() -> Dictionary:
 	return detalles
 
 
-func interact(persona: Node) -> void:
+func interact(persona: Node) -> bool:
 	if not can_interact(persona):
-		return
+		return false
 
 	if _tiene_recoleccion_canonica():
 		if not _puede_recolectar(persona):
@@ -192,10 +192,20 @@ func interact(persona: Node) -> void:
 			Events.notification_pushed.emit(
 				"Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido)
 			)
-			return
+			print(
+				"WorldProp: recolección bloqueada por herramienta → ",
+				tipo_herramienta,
+				" nivel ",
+				nivel_requerido
+			)
+			return true
 
 		if _recolectar(persona):
-			return
+			return true
+
+		# La interacción fue reconocida, pero la recolección falló.
+		# No dejamos que este caso caiga silenciosamente en combate.
+		return true
 
 	var accion := get_interaction_text()
 	var categoria: String = tipo.capitalize()
@@ -346,13 +356,24 @@ func _obtener_cantidad_recoleccion() -> int:
 
 func _recolectar(persona: Node) -> bool:
 	var inventario: Node = _inventory
-	if inventario == null or not inventario.has_method(
-		"agregar_objeto"
-	):
+	if inventario == null or not is_instance_valid(inventario):
+		print("WorldProp: no se puede recolectar → inventario inválido.")
+		return false
+	if not inventario.has_method("agregar_objeto"):
+		print("WorldProp: no se puede recolectar → inventario sin agregar_objeto.")
+		return false
+
+	if _world_items == null or not is_instance_valid(_world_items):
+		print("WorldProp: no se puede recolectar → GarliaWorldItems inválido.")
 		return false
 
 	var item_id := _obtener_item_id_recoleccion()
 	if item_id.is_empty():
+		print(
+			"WorldProp: no se puede recolectar → prop sin item_id canónico. ",
+			"datos=",
+			datos
+		)
 		return false
 
 	var item := _world_items.buscar_item_por_id(
@@ -374,6 +395,15 @@ func _recolectar(persona: Node) -> bool:
 		)
 	)
 	if not agregado:
+		print(
+			"WorldProp: recolección rechazada por inventario → ",
+			str(item.get("nombre", "Objeto")),
+			" | item_id=",
+			item_id,
+			" | slots=",
+			str(inventario.get("items").size() if inventario.get("items") is Array else -1)
+		)
+		Events.notification_pushed.emit("No tienes espacio en el inventario.")
 		return false
 
 	Events.notification_pushed.emit(
