@@ -19,6 +19,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _admin_player_editor: Control = $UI/AdminPlayerEditor
 @onready var _pause_menu: PauseMenu = $UI/PauseMenu
 @onready var _death_menu: DeathMenu = $UI/DeathMenu
+@onready var _debug_console: CanvasItem = $UI/DebugConsole
 var _world_entity_spawner: WorldEntitySpawner = null
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
@@ -273,7 +274,7 @@ func _configurar_input_router() -> void:
 		push_error("Main: no se encontró GameplayInputRouter.")
 		return
 	_input_router.configurar_sistemas(_interaction_system, _combat_system)
-	_input_router.configurar_bloqueos(_inventory, _admin_console, _dialogue_system, _hud)
+	_input_router.configurar_bloqueos(_inventory, _admin_console, _dialogue_system, _hud, _debug_console)
 	if _player != null:
 		_player.input_gate.configurar_router(_input_router)
 
