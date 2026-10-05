@@ -605,6 +605,12 @@ func _actualizar_animacion_caminando(delta: float) -> void:
 		sprite.frame = _caminando_frame_actual
 
 
+func iniciar_animacion_caminando() -> bool:
+	if criatura_nombre.strip_edges().to_lower() != "flaxis":
+		return false
+	return _iniciar_animacion_caminando()
+
+
 func _iniciar_animacion_caminando() -> bool:
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null or sprite.texture == null:
