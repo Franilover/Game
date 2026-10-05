@@ -44,6 +44,16 @@ var _jugador_seguimiento: Node = null
 var _distancia_seguimiento: float = 24.0
 var _muerte_procesada: bool = false
 
+var _sprite_textura_base: Texture2D = null
+var _sprite_hframes_base: int = 1
+var _sprite_vframes_base: int = 1
+var _sprite_frame_base: int = 0
+var _ataque_animando: bool = false
+var _ataque_frame_actual: int = 0
+var _ataque_frames_totales: int = 1
+var _ataque_tiempo: float = 0.0
+var _ataque_fps: float = 10.0
+
 
 func configurar_dependencias(
 	dialogue_system: DialogueSystem,
@@ -443,6 +453,113 @@ func crear_rastro_teleport(
 	)
 
 
+func iniciar_animacion_ataque() -> bool:
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return false
+
+	var textura_base := sprite.texture
+	if textura_base == null:
+		return false
+
+	var rutas: Array[String] = []
+	var nombre := criatura_nombre.strip_edges()
+	if nombre.is_empty():
+		return false
+
+	# Formato principal: una carpeta propia por criatura.
+	rutas.append("res://assets/art/creatures/" + nombre + "/" + nombre + "_ataque.png")
+	rutas.append("res://assets/art/creatures/" + nombre + "/" + nombre + "_ataque.PNG")
+	# Compatibilidad con el formato plano que ya usa el sistema de skins.
+	rutas.append("res://assets/art/creatures/" + nombre + "_ataque.png")
+	rutas.append("res://assets/art/creatures/" + nombre + "_ataque.PNG")
+
+	var textura_ataque: Texture2D = null
+	for ruta in rutas:
+		if ResourceLoader.exists(ruta):
+			textura_ataque = load(ruta) as Texture2D
+			if textura_ataque != null:
+				break
+
+	if textura_ataque == null:
+		return false
+
+	_sprite_textura_base = textura_base
+	_sprite_hframes_base = maxi(sprite.hframes, 1)
+	_sprite_vframes_base = maxi(sprite.vframes, 1)
+	_sprite_frame_base = sprite.frame
+
+	var ancho_frame := maxi(
+		int(textura_base.get_width()) / _sprite_hframes_base,
+		1
+	)
+	var alto_frame := maxi(
+		int(textura_base.get_height()) / _sprite_vframes_base,
+		1
+	)
+
+	var hframes := 1
+	var vframes := 1
+	if textura_ataque.get_width() >= ancho_frame and textura_ataque.get_height() >= alto_frame:
+		hframes = maxi(int(textura_ataque.get_width()) / ancho_frame, 1)
+		vframes = maxi(int(textura_ataque.get_height()) / alto_frame, 1)
+
+	_ataque_frames_totales = maxi(hframes * vframes, 1)
+	_ataque_frame_actual = 0
+	_ataque_fps = 10.0
+	_ataque_tiempo = 0.0
+	_ataque_animando = true
+
+	sprite.texture = textura_ataque
+	sprite.hframes = hframes
+	sprite.vframes = vframes
+	sprite.frame = 0
+
+	return true
+
+
+func _actualizar_animacion_ataque(delta: float) -> void:
+	if not _ataque_animando:
+		return
+
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		_detener_animacion_ataque()
+		return
+
+	_ataque_tiempo += delta
+	var intervalo := 1.0 / maxf(_ataque_fps, 1.0)
+	while _ataque_tiempo >= intervalo:
+		_ataque_tiempo -= intervalo
+		_ataque_frame_actual += 1
+		if _ataque_frame_actual >= _ataque_frames_totales:
+			_detener_animacion_ataque()
+			return
+		sprite.frame = _ataque_frame_actual
+
+
+func _detener_animacion_ataque() -> void:
+	if not _ataque_animando and _sprite_textura_base == null:
+		return
+
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite != null and _sprite_textura_base != null:
+		sprite.texture = _sprite_textura_base
+		sprite.hframes = _sprite_hframes_base
+		sprite.vframes = _sprite_vframes_base
+		sprite.frame = clampi(
+			_sprite_frame_base,
+			0,
+			maxi(sprite.hframes * sprite.vframes - 1, 0)
+		)
+
+	_ataque_animando = false
+	_ataque_frame_actual = 0
+	_ataque_frames_totales = 1
+	_ataque_tiempo = 0.0
+	_sprite_textura_base = null
+
+
 func _es_humano() -> bool:
 	return criatura_nombre.strip_edges().to_lower() == "humano"
 
@@ -490,6 +607,7 @@ func _actualizar_profundidad() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_actualizar_animacion_ataque(delta)
 	_actualizar_profundidad()
 	if _siguiendo_jugador:
 		_procesar_seguimiento()
@@ -671,6 +789,8 @@ func interact(
 
 
 func _die() -> void:
+	_detener_animacion_ataque()
+
 	if _muerte_procesada:
 		return
 
