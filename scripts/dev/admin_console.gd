@@ -1,4 +1,8 @@
 extends CanvasLayer
+
+func _garlia_debug() -> Node:
+	return get_node_or_null("/root/GarliaDebug")
+
 class_name AdminConsole
 
 
@@ -1043,12 +1047,12 @@ func _comando_tp(argumentos: String) -> void:
 	_agregar_linea("[color=#9fd18b]Teletransportado a " + tipo + ": " + nombre + ".[/color]")
 
 func _comando_give(nombre: String) -> void:
-	GarliaDebug.registrar("COMMAND", "/give " + nombre)
-	GarliaDebug.flujo_inicio("/give", {"argumento": nombre})
+	_garlia_debug().registrar("COMMAND", "/give " + nombre)
+	_garlia_debug().flujo_inicio("/give", {"argumento": nombre})
 	var nombre_objeto: String = nombre.strip_edges()
 
 	if nombre_objeto.is_empty():
-		GarliaDebug.flujo_error("/give sin objeto.")
+		_garlia_debug().flujo_error("/give sin objeto.")
 		_agregar_linea(
 			"[color=#d88]"
 			+ "Uso: /give <objeto>"
@@ -1056,7 +1060,7 @@ func _comando_give(nombre: String) -> void:
 		)
 		return
 
-	GarliaDebug.flujo_paso("Buscando objeto canónico.", {"nombre": nombre_objeto})
+	_garlia_debug().flujo_paso("Buscando objeto canónico.", {"nombre": nombre_objeto})
 	var item: Dictionary = (
 		world_items.buscar_item_por_nombre(
 			nombre_objeto
@@ -1064,7 +1068,7 @@ func _comando_give(nombre: String) -> void:
 	)
 
 	if item.is_empty():
-		GarliaDebug.flujo_error("Objeto no encontrado.", {"nombre": nombre_objeto})
+		_garlia_debug().flujo_error("Objeto no encontrado.", {"nombre": nombre_objeto})
 		_agregar_linea(
 			"[color=#d88]"
 			+ "No existe un objeto llamado "
@@ -1077,7 +1081,7 @@ func _comando_give(nombre: String) -> void:
 	var inventario: GarliaInventory = inventory
 
 	if inventario == null:
-		GarliaDebug.flujo_error("Inventario no configurado.")
+		_garlia_debug().flujo_error("Inventario no configurado.")
 		_agregar_linea(
 			"[color=#d88]"
 			+ "No se encontró el inventario."
@@ -1086,7 +1090,7 @@ func _comando_give(nombre: String) -> void:
 		return
 
 	item["cantidad"] = 1
-	GarliaDebug.flujo_paso("Objeto resuelto; enviando al inventario canónico.", {
+	_garlia_debug().flujo_paso("Objeto resuelto; enviando al inventario canónico.", {
 		"item_id": str(item.get("item_id", item.get("id", ""))),
 		"nombre": str(item.get("nombre", nombre_objeto)),
 		"max_stack": int(item.get("max_stack", 1))
@@ -1095,7 +1099,7 @@ func _comando_give(nombre: String) -> void:
 	var agregado: bool = inventario.agregar_objeto(item)
 
 	if not agregado:
-		GarliaDebug.flujo_error("Inventory rechazó /give.", {
+		_garlia_debug().flujo_error("Inventory rechazó /give.", {
 			"slots": inventario.items.size(),
 			"item_id": str(item.get("item_id", item.get("id", "")))
 		})
@@ -1106,7 +1110,7 @@ func _comando_give(nombre: String) -> void:
 		)
 		return
 
-	GarliaDebug.flujo_ok("/give completado.", {"item_id": str(item.get("item_id", item.get("id", "")))})
+	_garlia_debug().flujo_ok("/give completado.", {"item_id": str(item.get("item_id", item.get("id", "")))})
 	_agregar_linea(
 		"[color=#9fd18b]"
 		+ "Obtenido: "
