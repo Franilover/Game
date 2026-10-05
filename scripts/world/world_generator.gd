@@ -102,7 +102,8 @@ func configurar_entidades(
 		world_context,
 		world_items,
 		_world_data,
-		relaciones_ecologicas
+		relaciones_ecologicas,
+		atmosphere
 	)
 	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules, _world_data)
 
