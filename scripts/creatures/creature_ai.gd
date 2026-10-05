@@ -1051,10 +1051,12 @@ func _obtener_distancia_maxima_persecucion() -> float:
 func _iniciar_ataque() -> void:
 	_ataque_resuelto = false
 
-	# Si la criatura tiene <nombre>_ataque.png, Creature cambia temporalmente
-	# su Sprite2D a esa secuencia. Si no existe, el ataque sigue funcionando
-	# exactamente igual y conserva el sprite normal.
-	criatura.iniciar_animacion_ataque()
+	# Flaxis usa su animación de caminar también durante persecución y ataque.
+	# Las demás criaturas mantienen la animación específica <nombre>_ataque.png.
+	if perfil == Perfil.FLAXIS:
+		criatura.iniciar_animacion_caminando()
+	else:
+		criatura.iniciar_animacion_ataque()
 
 	match perfil:
 		Perfil.FLAXIS:
