@@ -820,5 +820,3 @@ func _obtener_direccion_ataque() -> Vector2:
 		return direccion.normalized()
 
 	return Vector2.DOWN
-
-
