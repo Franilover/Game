@@ -1043,6 +1043,7 @@ func _comando_tp(argumentos: String) -> void:
 	_agregar_linea("[color=#9fd18b]Teletransportado a " + tipo + ": " + nombre + ".[/color]")
 
 func _comando_give(nombre: String) -> void:
+	GarliaDebug.log("COMMAND", "/give " + nombre)
 	GarliaDebug.flujo_inicio("/give", {"argumento": nombre})
 	var nombre_objeto: String = nombre.strip_edges()
 
