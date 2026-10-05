@@ -93,8 +93,28 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool)
 	if player == null or not player.is_alive:
 		return false
 
-	# Una mano ocupada usa su objeto. La interacción contextual sólo aparece
-	# cuando esa mano está vacía. Ambas manos comparten exactamente esta ruta.
+	# La interacción contextual tiene prioridad real sobre el uso de la mano.
+	# Así un objeto recogible cercano se puede recoger aunque el jugador tenga
+	# un arma u otro objeto seleccionado en la mano.
+	_buscar_objetivo()
+	if interaction_controller.objetivo_actual != null:
+		var objetivo_ejecutado := interaction_controller.objetivo_actual
+		var resultado := interaction_controller.interactuar(player)
+
+		# Una recolección exitosa puede llamar queue_free(), que no elimina el
+		# nodo hasta el final del frame. Limpiar el objetivo aquí oculta el prompt
+		# inmediatamente, sin esperar al siguiente escaneo de proximidad.
+		if (
+			is_instance_valid(objetivo_ejecutado)
+			and objetivo_ejecutado.is_queued_for_deletion()
+		):
+			interaction_controller.establecer_objetivo(null)
+
+		if resultado:
+			return true
+
+	# Si no hay una interacción contextual válida, la mano puede colocar su
+	# objeto. El combate sigue después, en CombatSystem, si tampoco se colocó.
 	if not objeto.is_empty():
 		if permite_colocacion and world_items != null and world_items.es_objeto_colocable(objeto):
 			var colocado: bool = world_items.colocar_objeto(
@@ -104,22 +124,8 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool)
 			if colocado and inventory != null:
 				inventory.consumir_objeto_activo(1)
 				return true
-		return false
 
-	_buscar_objetivo()
-	var objetivo_ejecutado := interaction_controller.objetivo_actual
-	var resultado := interaction_controller.interactuar(player)
-
-	# Una recolección exitosa puede llamar queue_free(), que no elimina el
-	# nodo hasta el final del frame. Limpiar el objetivo aquí oculta el prompt
-	# inmediatamente, sin esperar al siguiente escaneo de proximidad.
-	if (
-		is_instance_valid(objetivo_ejecutado)
-		and objetivo_ejecutado.is_queued_for_deletion()
-	):
-		interaction_controller.establecer_objetivo(null)
-
-	return resultado
+	return false
 
 
 func _entrada_bloqueada_por_router() -> bool:
