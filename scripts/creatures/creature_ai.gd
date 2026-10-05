@@ -1029,6 +1029,14 @@ func _iniciar_ataque() -> void:
 				_obtener_velocidad_ataque()
 			)
 
+		Perfil.DRAMARIAS:
+			# Dramarias resuelve el ataque en _procesar_atacando().
+			# No debe pasar inmediatamente a RECUPERANDO.
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(
+				_obtener_velocidad_persecucion()
+			)
+
 		_:
 			_cambiar_estado(Estado.RECUPERANDO)
 
