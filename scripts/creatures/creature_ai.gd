@@ -27,7 +27,8 @@ enum Perfil {
 	CAMBIAFORMAS,
 	ESPIRITU_ESTELAR,
 	RANCRODEEN,
-	GUARDIAN
+	GUARDIAN,
+	CAZADOR
 }
 
 
@@ -448,7 +449,6 @@ func _procesar_persiguiendo() -> void:
 		return
 
 	var maxima := _obtener_distancia_maxima_persecucion()
-
 	if maxima > 0.0 and distancia > maxima:
 		_cambiar_estado(Estado.INVESTIGANDO)
 		return
@@ -492,6 +492,14 @@ func _procesar_atacando(delta: float) -> void:
 			_procesar_ataque_rancrodeen(delta)
 
 		Perfil.GUARDIAN:
+			_procesar_ataque_contacto(
+				delta,
+				_obtener_danio_ataque(),
+				_obtener_enfriamiento_ataque(),
+				false
+			)
+
+		Perfil.CAZADOR:
 			_procesar_ataque_contacto(
 				delta,
 				_obtener_danio_ataque(),
@@ -791,6 +799,8 @@ func _perfil_desde_texto(texto: String) -> Perfil:
 			return Perfil.RANCRODEEN
 		"guardian":
 			return Perfil.GUARDIAN
+		"cazador":
+			return Perfil.CAZADOR
 
 	return Perfil.GENERICO
 
@@ -898,7 +908,6 @@ func _hora_en_bloque(hora: float, inicio: float, fin: float) -> bool:
 		return hora >= inicio and hora < fin
 	return hora >= inicio or hora < fin
 
-
 func _debe_buscar_refugio() -> bool:
 	var horario_variant: Variant = configuracion_ia.get("horario", {})
 	if not horario_variant is Dictionary:
@@ -961,6 +970,12 @@ func _buscar_amenaza_para_refugio() -> Creature:
 		for depredador in criaturas_activas:
 			if depredador == presa:
 				continue
+			if _es_cazador_por_configuracion(depredador):
+				var distancia_cazador := depredador.global_position.distance_to(presa.global_position)
+				if distancia_cazador <= radio and distancia_cazador < mejor_distancia:
+					mejor = depredador
+					mejor_distancia = distancia_cazador
+				continue
 			if depredador.global_position.distance_to(presa.global_position) > radio:
 				continue
 			if _obtener_relacion_ecologica_ids(depredador, presa) not in ["depredacion", "parasitismo"]:
@@ -1002,6 +1017,23 @@ func _obtener_relacion_ecologica_ids(origen: Creature, destino: Creature) -> Str
 			mejor_prioridad = prioridad
 			mejor_tipo = str(relacion.get("tipo_relacion", "")).strip_edges().to_lower()
 	return mejor_tipo
+
+
+
+func _es_cazador_por_configuracion(candidato: Creature) -> bool:
+	if candidato == null:
+		return false
+
+	var config := candidato.obtener_config_ia()
+	if config.is_empty():
+		return false
+
+	var perfil_texto := str(config.get("perfil", "")).strip_edges().to_lower()
+	if perfil_texto in ["cazador", "flaxis"]:
+		return true
+
+	var objetivos := str(config.get("objetivos", "")).strip_edges().to_lower()
+	return objetivos == "presa"
 
 
 func _procesar_proteccion(delta: float) -> void:
@@ -1347,7 +1379,6 @@ func _procesar_ataque_dramarias() -> void:
 	if distancia > alcance:
 		_establecer_velocidad(_obtener_velocidad_persecucion())
 		criatura.tomar_control_movimiento()
-
 		var direccion := criatura.global_position.direction_to(
 			objetivo.global_position
 		)
@@ -1598,222 +1629,3 @@ func _copiar_skin_configurado() -> bool:
 	)
 
 	if not reaccion_variant is Dictionary:
-		return false
-
-	return bool(
-		(reaccion_variant as Dictionary).get(
-			"copiar_skin",
-			false
-		)
-	)
-
-
-func _obtener_alcance_arma_combate(
-	arma: Dictionary
-) -> float:
-	var combate: CombatSystem = _obtener_combat_system()
-
-	if combate != null:
-		return maxf(
-			combate.obtener_alcance_arma(arma),
-			_obtener_distancia_contacto()
-		)
-
-	return maxf(
-		_obtener_distancia_contacto(),
-		64.0
-	)
-
-
-func _obtener_combat_system() -> CombatSystem:
-	if combat_system != null and is_instance_valid(combat_system):
-		return combat_system
-	return null
-
-
-func al_recibir_ataque_con_arma(arma: Dictionary) -> void:
-	if perfil != Perfil.ZLISH:
-		return
-
-	if arma.is_empty():
-		return
-
-	var reaccion_variant: Variant = configuracion_ia.get(
-		"al_recibir_ataque",
-		{}
-	)
-
-	if not reaccion_variant is Dictionary:
-		return
-
-	var reaccion: Dictionary = (
-		reaccion_variant as Dictionary
-	)
-
-	if str(reaccion.get("tipo", "")).to_lower() != "huir_y_robar_arma":
-		return
-
-	if not objeto_robado.is_empty():
-		return
-
-	var jugador_actual := jugador
-	if jugador_actual == null or not is_instance_valid(jugador_actual):
-		return
-
-	objetivo = jugador_actual
-	objetivo_detectado = true
-	ultima_posicion_objetivo = jugador_actual.global_position
-	_objetivo_ataque = jugador_actual.global_position
-
-	var direccion := criatura.global_position.direction_to(
-		jugador_actual.global_position
-	)
-	if direccion.length_squared() <= 0.01:
-		direccion = Vector2.DOWN
-
-	_direccion_salto = direccion.normalized()
-	_cambiar_estado(Estado.SALTANDO_LEJOS)
-
-
-
-func _puede_recibir_danio(objetivo_danio: Node) -> bool:
-	return objetivo_danio is Entity and is_instance_valid(objetivo_danio)
-
-
-func _aplicar_danio_objetivo(objetivo_danio: Node, cantidad: int, origen: String) -> void:
-	var entidad := objetivo_danio as Entity
-	if entidad == null or not is_instance_valid(entidad):
-		return
-
-	var combate := _obtener_combat_system()
-	if combate == null:
-		return
-
-	combate.aplicar_danio_desde_entidad(
-		criatura,
-		entidad,
-		cantidad,
-		origen
-	)
-
-
-func _obtener_float_reaccion(clave: String, por_defecto: float) -> float:
-	var reaccion_variant: Variant = configuracion_ia.get(
-		"al_recibir_ataque",
-		{}
-	)
-	if not reaccion_variant is Dictionary:
-		return por_defecto
-
-	var reaccion: Dictionary = reaccion_variant as Dictionary
-	var valor: Variant = reaccion.get(clave, por_defecto)
-	if valor is int or valor is float:
-		return maxf(float(valor), 0.0)
-
-	return por_defecto
-
-
-func _robar_objeto_zlish() -> void:
-	if perfil != Perfil.ZLISH or objetivo == null or not is_instance_valid(objetivo):
-		return
-
-	var inventario: GarliaInventory = inventory
-	if inventario == null:
-		return
-
-	var indice_hotbar: int = inventario.obtener_indice_hotbar_activo()
-	var indice_inventario: int = inventario.obtener_indice_inventario_hotbar(indice_hotbar)
-	var objeto_hotbar: Dictionary = inventario.obtener_objeto(indice_inventario)
-
-	if not objeto_hotbar.is_empty():
-		if inventario.quitar_objeto(indice_inventario):
-			objeto_robado = objeto_hotbar.duplicate(true)
-			return
-
-	for clave in ["cabeza", "torso", "pies"]:
-		var objeto_armadura: Dictionary = inventario.obtener_objeto_equipado(clave)
-		if objeto_armadura.is_empty():
-			continue
-
-		var robado_variant: Variant = inventario.robar_objeto_equipado(clave)
-		if robado_variant is Dictionary:
-			var robado: Dictionary = robado_variant as Dictionary
-			if not robado.is_empty():
-				objeto_robado = robado.duplicate(true)
-				return
-
-func _copiar_skin_de_objetivo() -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		return
-
-	criatura.copiar_skin_de(objetivo)
-
-
-# ============================================================
-# RANCRODEEN
-# ============================================================
-
-func _procesar_ataque_rancrodeen(_delta: float) -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		_cambiar_estado(Estado.EXPLORANDO)
-		return
-
-	var distancia := criatura.global_position.distance_to(
-		objetivo.global_position
-	)
-
-	if distancia <= _obtener_distancia_contacto():
-		_cambiar_estado(Estado.ADHERIDO)
-		return
-
-	criatura.tomar_control_movimiento()
-	_establecer_velocidad(
-		_obtener_velocidad_ataque()
-	)
-
-	var direccion := criatura.global_position.direction_to(
-		objetivo.global_position
-	)
-
-	criatura.establecer_direccion_movimiento(direccion)
-
-
-func _iniciar_estado_adherido() -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		_cambiar_estado(Estado.EXPLORANDO)
-		return
-
-	if perfil == Perfil.ZLISH:
-		_tiempo_adherido = _obtener_float_reaccion(
-			"duracion_adherido",
-			2.0
-		)
-	else:
-		_tiempo_adherido = _obtener_float_ataque(
-			"duracion_adherido",
-			5.0
-		)
-
-	_tiempo_danio_adherido = 0.0
-
-	criatura.detener_movimiento()
-	criatura.establecer_colision(false)
-
-
-func _procesar_adherido(delta: float) -> void:
-	if objetivo == null or not is_instance_valid(objetivo):
-		_desprender_rancrodeen()
-		return
-
-	_tiempo_adherido -= delta
-
-	criatura.global_position = (
-		objetivo.global_position
-		+ Vector2(0.0, -16.0)
-	)
-
-	if perfil == Perfil.ZLISH:
-		if _tiempo_adherido <= 0.0:
-			_robar_objeto_zlish()
-			criatura.establecer_colision(true)
-			_cambiar_estado(Estado.HUYENDO)
