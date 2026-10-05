@@ -924,6 +924,755 @@ func _es_objetivo_refugio() -> bool:
 
 
 func _buscar_refugio() -> Creature:
+	# Durante el descanso nocturno, Zlish y Feerin buscan a los
+	# Lignianos como refugio social/ecológico.
+	if _es_refugio_ligniano():
+		return _buscar_criatura_por_nombre("Lignianos")
+func _es_refugio_ligniano() -> bool:
+	var nombre := str(criatura.datos.get("nombre", "")).strip_edges().to_lower()
+	if nombre not in ["zlish", "feerín", "feerin"]:
+		return false
+	return actividad_horaria in ["dormir", "reposar", "buscar_refugio"]
+
+
+func _buscar_criatura_por_nombre(nombre_buscado: String) -> Creature:
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		return null
+	var mejor: Creature = null
+	var mejor_distancia := INF
+	var radio := 180.0
+	var horario_variant: Variant = configuracion_ia.get("horario", {})
+	if horario_variant is Dictionary:
+		radio = maxf(float((horario_variant as Dictionary).get("radio_refugio", 180.0)), 1.0)
+
+	for entidad_variant in entity_manager.obtener_entidades_activas():
+		if not entidad_variant is Creature:
+			continue
+		var candidata := entidad_variant as Creature
+		if candidata == criatura or not candidata.is_alive:
+			continue
+		var nombre := str(candidata.datos.get("nombre", "")).strip_edges().to_lower()
+		if nombre != nombre_buscado.strip_edges().to_lower():
+			continue
+		var distancia := criatura.global_position.distance_to(candidata.global_position)
+		if distancia <= radio and distancia < mejor_distancia:
+			mejor = candidata
+			mejor_distancia = distancia
+	return mejor
+
+
+
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		return null
+	var horario_variant: Variant = configuracion_ia.get("horario", {})
+	var radio := 180.0
+	if horario_variant is Dictionary:
+		radio = maxf(float((horario_variant as Dictionary).get("radio_refugio", 180.0)), 1.0)
+
+	var mejor: Creature = null
+	var mejor_distancia := INF
+	for entidad_variant in entity_manager.obtener_entidades_activas():
+		if not entidad_variant is Creature:
+			continue
+		var candidata := entidad_variant as Creature
+		if candidata == criatura or not is_instance_valid(candidata) or not candidata.is_alive:
+			continue
+		if not bool(candidata.get_meta("atractor_refugio", false)):
+			continue
+		var distancia := criatura.global_position.distance_to(candidata.global_position)
+		if distancia <= radio and distancia < mejor_distancia:
+			mejor = candidata
+			mejor_distancia = distancia
+	return mejor
+
+
+func _buscar_amenaza_para_refugio() -> Creature:
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		return null
+	var horario_variant: Variant = configuracion_ia.get("horario", {})
+	var radio := 180.0
+	if horario_variant is Dictionary:
+		radio = maxf(float((horario_variant as Dictionary).get("radio_proteccion", 180.0)), 1.0)
+
+	var criaturas_activas: Array[Creature] = []
+	for entidad_variant in entity_manager.obtener_entidades_activas():
+		if entidad_variant is Creature:
+			var candidata := entidad_variant as Creature
+			if candidata != criatura and is_instance_valid(candidata) and candidata.is_alive:
+				criaturas_activas.append(candidata)
+
+	var mejor: Creature = null
+	var mejor_distancia := INF
+	for presa in criaturas_activas:
+		if criatura.global_position.distance_to(presa.global_position) > radio:
+			continue
+		for depredador in criaturas_activas:
+			if depredador == presa:
+				continue
+			var actividad_depredador := str(
+				depredador.get_meta("actividad_horaria", "explorar")
+			).to_lower()
+			if actividad_depredador in ["dormir", "reposar"]:
+				continue
+			if _es_cazador_por_configuracion(depredador):
+				var distancia_cazador := depredador.global_position.distance_to(presa.global_position)
+				if distancia_cazador <= radio and distancia_cazador < mejor_distancia:
+					mejor = depredador
+					mejor_distancia = distancia_cazador
+				continue
+			if depredador.global_position.distance_to(presa.global_position) > radio:
+				continue
+			if _obtener_relacion_ecologica_ids(depredador, presa) not in ["depredacion", "parasitismo"]:
+				continue
+			var distancia := depredador.global_position.distance_to(presa.global_position)
+			if distancia < mejor_distancia:
+				mejor = depredador
+				mejor_distancia = distancia
+	return mejor
+
+
+func _obtener_relacion_ecologica_ids(origen: Creature, destino: Creature) -> String:
+	if origen == null or destino == null:
+		return ""
+	var origen_id := origen.criatura_id
+	var destino_id := destino.criatura_id
+	if origen_id.is_empty() or destino_id.is_empty():
+		return ""
+	var ecosistema_id := str(origen.datos.get("ecosistema_id", ""))
+	var mejor_tipo := ""
+	var mejor_prioridad := -1
+	for relacion_variant in relaciones_ecologicas:
+		if not relacion_variant is Dictionary:
+			continue
+		var relacion := relacion_variant as Dictionary
+		if str(relacion.get("criatura_origen_id", "")) != origen_id:
+			continue
+		if str(relacion.get("criatura_destino_id", "")) != destino_id:
+			continue
+		var relacion_ecosistema := str(relacion.get("ecosistema_id", ""))
+		var prioridad := 0
+		if not ecosistema_id.is_empty() and relacion_ecosistema == ecosistema_id:
+			prioridad = 2
+		elif relacion_ecosistema.is_empty():
+			prioridad = 1
+		else:
+			continue
+		if prioridad > mejor_prioridad:
+			mejor_prioridad = prioridad
+			mejor_tipo = str(relacion.get("tipo_relacion", "")).strip_edges().to_lower()
+	return mejor_tipo
+
+
+
+func _es_cazador_por_configuracion(candidato: Creature) -> bool:
+	if candidato == null:
+		return false
+
+	var config := candidato.obtener_config_ia()
+	if config.is_empty():
+		return false
+
+	var perfil_texto := str(config.get("perfil", "")).strip_edges().to_lower()
+	if perfil_texto in ["cazador", "flaxis"]:
+		return true
+
+	var objetivos := str(config.get("objetivos", "")).strip_edges().to_lower()
+	return objetivos == "presa"
+
+
+func _procesar_proteccion(delta: float) -> void:
+	criatura.detener_movimiento()
+	var amenaza := _buscar_amenaza_para_refugio()
+	if amenaza == null:
+		objetivo = null
+		objetivo_detectado = false
+		return
+	objetivo = amenaza
+	objetivo_detectado = true
+	ultima_posicion_objetivo = amenaza.global_position
+	var distancia := criatura.global_position.distance_to(amenaza.global_position)
+	if distancia <= _obtener_distancia_contacto():
+		_procesar_atacando(delta)
+	else:
+		_establecer_velocidad(_obtener_velocidad_persecucion())
+		criatura.tomar_control_movimiento()
+		criatura.establecer_direccion_movimiento(criatura.global_position.direction_to(amenaza.global_position))
+
+
+func _actualizar_atraccion_refugio(activa: bool) -> void:
+	if criatura == null or not is_instance_valid(criatura):
+		return
+	criatura.set_meta("atractor_refugio", activa)
+	criatura.set_meta("brillo_horario", activa)
+	if _brillo_horario_activo != activa:
+		_brillo_horario_activo = activa
+		criatura.modulate = Color(1.0, 0.92, 0.55) if activa else Color.WHITE
+
+
+func _obtener_config_movimiento() -> Dictionary:
+	var valor: Variant = configuracion_ia.get(
+		"movimiento",
+		{}
+	)
+
+	if valor is Dictionary:
+		return valor as Dictionary
+
+	return {}
+
+
+func _obtener_float_movimiento(
+	clave: String,
+	por_defecto: float
+) -> float:
+	var movimiento := _obtener_config_movimiento()
+	var valor: Variant = movimiento.get(
+		clave,
+		por_defecto
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return por_defecto
+
+
+func _aplicar_configuracion_movimiento() -> void:
+	if _movimiento == null:
+		_encontrar_movimiento()
+
+	if _movimiento == null:
+		return
+
+	var movimiento := _obtener_config_movimiento()
+
+	if movimiento.is_empty():
+		_velocidad_normal = maxf(
+			_movimiento.move_speed,
+			0.0
+		)
+		return
+
+	_velocidad_normal = _obtener_float_movimiento(
+		"velocidad",
+		_movimiento.move_speed
+	)
+
+	_movimiento.move_speed = _velocidad_normal
+	_movimiento.min_move_time = _obtener_float_movimiento(
+		"exploracion_min",
+		_movimiento.min_move_time
+	)
+	_movimiento.max_move_time = maxf(
+		_obtener_float_movimiento(
+			"exploracion_max",
+			_movimiento.max_move_time
+		),
+		_movimiento.min_move_time
+	)
+
+
+func _obtener_config_ataque() -> Dictionary:
+	var valor: Variant = configuracion_ia.get(
+		"ataque",
+		{}
+	)
+
+	if valor is Dictionary:
+		return valor as Dictionary
+
+	return {}
+
+
+func _obtener_danio_ataque() -> int:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get("danio", dano_mordida)
+
+	if valor is int or valor is float:
+		return maxi(int(valor), 0)
+
+	return dano_mordida
+
+
+func _obtener_enfriamiento_ataque() -> float:	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"enfriamiento",
+		enfriamiento_ataque
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return enfriamiento_ataque
+
+
+func _obtener_distancia_deteccion() -> float:
+	var valor: Variant = configuracion_ia.get(
+		"deteccion",
+		distancia_deteccion
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return distancia_deteccion
+
+
+func _movimiento_permitido() -> bool:
+	var valor: Variant = configuracion_ia.get(
+		"movimiento_permitido",
+		true
+	)
+
+	if valor is bool:
+		return bool(valor)
+
+	return true
+
+
+func _obtener_distancia_maxima_persecucion() -> float:
+	if perfil == Perfil.LIGNIANOS:
+		var distancia_lignianos: Variant = _obtener_config_ataque().get("distancia_maxima_persecucion", null)
+		if distancia_lignianos is int or distancia_lignianos is float:
+			return maxf(float(distancia_lignianos), 0.0)
+		return _obtener_distancia_deteccion() * 1.3
+
+	var ataque := _obtener_config_ataque()
+
+	if ataque.has("distancia_maxima_persecucion"):
+		var valor: Variant = ataque.get(
+			"distancia_maxima_persecucion"
+		)
+
+		if valor is int or valor is float:
+			return maxf(float(valor), 0.0)
+
+	return _obtener_distancia_deteccion()
+
+
+# ============================================================
+# ATAQUES BASE
+# ============================================================
+
+func _iniciar_ataque() -> void:
+	_ataque_resuelto = false
+
+	match perfil:
+		Perfil.FLAXIS:
+			_iniciar_ataque_flaxis()
+
+		Perfil.LIGNIANOS:
+			_iniciar_ataque_ligniano()
+
+		Perfil.CAMBIAFORMAS:
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(
+				_obtener_velocidad_ataque()
+			)
+
+		Perfil.ESPIRITU_ESTELAR:
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(
+				_obtener_velocidad_ataque()
+			)
+
+		Perfil.RANCRODEEN:
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(
+				_obtener_velocidad_ataque()
+			)
+
+		_:
+			_cambiar_estado(Estado.RECUPERANDO)
+
+
+func _procesar_ataque_contacto(
+	_delta: float,
+	danio: int,
+	enfriamiento: float,
+	copiar_skin: bool
+) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	var distancia := criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia > _obtener_distancia_contacto():
+		_establecer_velocidad(
+			_obtener_velocidad_ataque()
+		)
+		criatura.tomar_control_movimiento()
+
+		var direccion := criatura.global_position.direction_to(
+			objetivo.global_position
+		)
+
+		criatura.establecer_direccion_movimiento(direccion)
+		return
+
+	if _ataque_resuelto:
+		return
+
+	_ataque_resuelto = true
+	criatura.detener_movimiento()
+
+	_aplicar_danio_objetivo(objetivo, danio, "CreatureAI/Contacto")
+
+	if copiar_skin:
+		criatura.copiar_skin_de(objetivo)
+
+	_iniciar_recuperacion(enfriamiento)
+
+
+func _obtener_velocidad_ataque() -> float:
+	return _obtener_velocidad_persecucion()
+
+
+func _iniciar_ataque_generico_contacto() -> void:
+	_cambiar_estado(Estado.ATACANDO)
+
+
+func _obtener_distancia_ataque_dramarias() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"distancia_ataque",
+		dramarias_distancia_ataque
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 1.0)
+
+	return dramarias_distancia_ataque
+
+
+func _obtener_danio_dramarias() -> int:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"danio",
+		dramarias_dano_contacto
+	)
+
+	if valor is int or valor is float:
+		return maxi(int(valor), 0)
+
+	return dramarias_dano_contacto
+
+
+func _obtener_distancia_contacto() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"distancia_contacto",
+		distancia_contacto
+	)
+
+	if perfil == Perfil.DRAMARIAS:
+		valor = ataque.get(
+			"distancia_ataque",
+			valor
+		)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 1.0)
+
+	return distancia_contacto
+
+
+func _obtener_enfriamiento_fallido() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"enfriamiento_fallido",
+		enfriamiento_fallido
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return enfriamiento_fallido
+
+
+func _obtener_enfriamiento_dramarias() -> float:
+	var ataque := _obtener_config_ataque()
+	var valor: Variant = ataque.get(
+		"enfriamiento",
+		dramarias_enfriamiento
+	)
+
+	if valor is int or valor is float:
+		return maxf(float(valor), 0.0)
+
+	return dramarias_enfriamiento
+
+
+# ============================================================
+# DRAMARIAS
+# ============================================================
+
+func _procesar_ataque_dramarias() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	var distancia := criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+	var alcance := _obtener_distancia_ataque_dramarias()
+
+	if distancia > alcance:
+		_establecer_velocidad(_obtener_velocidad_persecucion())
+		criatura.tomar_control_movimiento()
+		var direccion := criatura.global_position.direction_to(
+			objetivo.global_position
+		)
+		criatura.establecer_direccion_movimiento(direccion)
+		return
+
+	if _ataque_resuelto:
+		return
+
+	_ataque_resuelto = true
+	criatura.detener_movimiento()
+
+	_aplicar_danio_objetivo(
+		objetivo,
+		_obtener_danio_dramarias(),
+		"CreatureAI/Dramarias"
+	)
+
+	_iniciar_recuperacion(_obtener_enfriamiento_dramarias())
+
+
+# ============================================================
+# FLAXIS
+# ============================================================
+
+func _iniciar_ataque_flaxis() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	_tiempo_accion = maxf(
+		_obtener_float_movimiento("duracion_lanzamiento", duracion_lanzamiento),
+		0.01
+	)
+
+	_objetivo_ataque = objetivo.global_position
+	ultima_posicion_objetivo = _objetivo_ataque
+
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(
+		_obtener_float_movimiento("velocidad_lanzamiento", velocidad_lanzamiento)
+	)
+
+	var direccion := criatura.global_position.direction_to(
+		_objetivo_ataque
+	)
+
+	criatura.establecer_direccion_movimiento(direccion)
+	_animar_salto()
+
+
+func _procesar_ataque_flaxis(delta: float) -> void:
+	if _ataque_resuelto:
+		return
+
+	_tiempo_accion -= delta
+
+	var distancia_punto := criatura.global_position.distance_to(
+		_objetivo_ataque
+	)
+
+	if distancia_punto <= _obtener_distancia_contacto():
+		_resolver_ataque_flaxis()
+		return
+
+	var direccion := criatura.global_position.direction_to(
+		_objetivo_ataque
+	)
+
+	criatura.establecer_direccion_movimiento(direccion)
+
+	if _tiempo_accion <= 0.0:
+		_resolver_ataque_flaxis()
+
+
+func _resolver_ataque_flaxis() -> void:
+	if _ataque_resuelto:
+		return
+
+	_ataque_resuelto = true
+	criatura.detener_movimiento()
+	_establecer_velocidad(_velocidad_normal)
+
+	if objetivo != null and is_instance_valid(objetivo):
+		var distancia_impacto := criatura.global_position.distance_to(
+			objetivo.global_position
+		)
+
+		if distancia_impacto <= _obtener_distancia_contacto():
+			_aplicar_danio_objetivo(
+				objetivo,
+				_obtener_danio_ataque(),
+				"CreatureAI/Flaxis"
+			)
+
+			_iniciar_recuperacion(_obtener_enfriamiento_ataque())
+			return
+
+	_iniciar_recuperacion(_obtener_enfriamiento_fallido())
+
+
+# ============================================================
+# LIGNIANOS
+# ============================================================
+
+func _iniciar_ataque_ligniano() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	criatura.detener_movimiento()
+	criatura.tomar_control_movimiento()
+
+	var distancia: float = criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia > _obtener_distancia_contacto():
+		_iniciar_recuperacion(
+			_obtener_float_ataque(
+				"enfriamiento",
+				ligniano_enfriamiento
+			)
+		)
+		return
+
+	if _puede_recibir_danio(objetivo):
+		_aplicar_danio_objetivo(
+			objetivo,
+			_obtener_danio_ataque(),
+			"CreatureAI/Lignianos"
+		)
+
+		var jugador_objetivo := objetivo as Player
+		if jugador_objetivo != null:
+			jugador_objetivo.aplicar_efecto_slow(
+				_obtener_float_ataque(
+					"duracion_slow",
+					ligniano_duracion_slow
+				)
+			)
+
+	_iniciar_recuperacion(
+		_obtener_float_ataque(
+			"enfriamiento",
+			ligniano_enfriamiento
+		)
+	)
+
+
+func _procesar_ataque_lignianos() -> void:
+	if not _ataque_resuelto:
+		_ataque_resuelto = true
+
+	_cambiar_estado(Estado.RECUPERANDO)
+
+
+# ============================================================
+# CAMBIAFORMAS
+# ============================================================
+
+func _procesar_ataque_cambiaformas() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	if _ataque_resuelto:
+		return
+
+	var arma: Dictionary = _obtener_arma_cambiaformas()
+
+	if arma.is_empty():
+		_iniciar_recuperacion(_obtener_enfriamiento_ataque())
+		return
+
+	var alcance: float = _obtener_alcance_arma_combate(arma)
+	var distancia: float = criatura.global_position.distance_to(
+		objetivo.global_position
+	)
+
+	if distancia > alcance:
+		criatura.tomar_control_movimiento()
+		_establecer_velocidad(
+			_obtener_velocidad_ataque()
+		)
+
+		var direccion: Vector2 = criatura.global_position.direction_to(
+			objetivo.global_position
+		)
+
+		criatura.establecer_direccion_movimiento(direccion)
+		return
+
+	_ataque_resuelto = true
+	criatura.detener_movimiento()
+
+	var combate: CombatSystem = _obtener_combat_system()
+
+	if combate == null:
+		_iniciar_recuperacion(_obtener_enfriamiento_ataque())
+		return
+
+	var ataque_realizado: bool = combate.atacar_objetivo_con_arma(
+		criatura,
+		objetivo,
+		arma
+	)
+
+	if ataque_realizado and _copiar_skin_configurado():
+		criatura.copiar_skin_de(objetivo)
+		criatura.ocultar_nombre_debug()
+
+	_iniciar_recuperacion(_obtener_enfriamiento_ataque())
+
+
+func _obtener_arma_cambiaformas() -> Dictionary:
+	var ataque: Dictionary = _obtener_config_ataque()
+
+	var tipo: String = str(
+		ataque.get("tipo", "")	).strip_edges().to_lower()
+
+	if tipo != "arma":
+		return {}
+
+	var item_id: String = str(
+		ataque.get("item_id", "")
+	).strip_edges()
+
+	if item_id.is_empty():
+		return {}
+
+	if world_items != null and is_instance_valid(world_items):
+		var item: Dictionary = world_items.buscar_item_por_id(item_id)
+
+		if not item.is_empty():
+			return item
+
+	return {
+		"item_id": item_id,
+		"tipo": "arma"
+	}
+
+
+func _copiar_skin_configurado() -> bool:
+	var reaccion_variant: Variant = configuracion_ia.get(
+		"al_golpear",
+		{}
+	)
+
+	if not reaccion_variant is Dictionary:
 	if entity_manager == null or not is_instance_valid(entity_manager):
 		return null
 	var horario_variant: Variant = configuracion_ia.get("horario", {})
