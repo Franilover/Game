@@ -22,8 +22,36 @@ func buscar_objetivo(player: Node, distancia_base: float) -> Node:
 	var mejor_distancia_sq: float = INF
 
 	var candidatos: Array = []
+	var vistos: Dictionary = {}
+
+	# Fuente canónica principal: el EntityManager de la zona activa.
+	# Tras una transición de zona puede existir un pequeño intervalo en el que
+	# una entidad ya está en el SceneTree pero todavía no está registrada.
 	if entity_manager != null and is_instance_valid(entity_manager):
-		candidatos = entity_manager.obtener_entidades_activas()
+		for candidato_variant in entity_manager.obtener_entidades_activas():
+			if not candidato_variant is Node:
+				continue
+			var candidato_registrado := candidato_variant as Node
+			if is_instance_valid(candidato_registrado):
+				candidatos.append(candidato_registrado)
+				vistos[candidato_registrado.get_instance_id()] = true
+
+	# Fallback de runtime: las entidades interactuables siguen marcadas con
+	# "interactable". Esto evita perder la interacción durante cambios de zona
+	# si el registro del EntityManager todavía no se ha sincronizado.
+	var candidatos_grupo := player.get_tree().get_nodes_in_group("interactable")
+	for candidato_variant in candidatos_grupo:
+		if not candidato_variant is Node:
+			continue
+		var candidato_grupo := candidato_variant as Node
+		if not is_instance_valid(candidato_grupo):
+			continue
+		var instance_id := candidato_grupo.get_instance_id()
+		if vistos.has(instance_id):
+			continue
+		vistos[instance_id] = true
+		candidatos.append(candidato_grupo)
+
 	for candidato_variant in candidatos:
 		if not candidato_variant is Node:
 			continue
