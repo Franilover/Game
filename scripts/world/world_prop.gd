@@ -233,10 +233,25 @@ func interact(persona: Node) -> bool:
 		bioma
 	)
 
+	return true
+
 
 func _tiene_recoleccion_canonica() -> bool:
 	var item_id := _obtener_item_id_recoleccion()
-	return not item_id.is_empty()
+	if item_id.is_empty():
+		return false
+
+	# Supabase manda: un prop puede ser "decoracion" visualmente y aun así
+	# ser recolectable. La propiedad canónica es propiedades.recolectable.
+	var propiedades_variant: Variant = datos.get("propiedades", {})
+	if propiedades_variant is Dictionary:
+		var propiedades := propiedades_variant as Dictionary
+		if propiedades.has("recolectable"):
+			return bool(propiedades.get("recolectable", false))
+
+	# Compatibilidad con snapshots donde la propiedad aún no viene incluida:
+	# si existe un item_id canónico, el vínculo prop → item sigue siendo válido.
+	return true
 
 
 func _obtener_requisito_herramienta() -> Dictionary:
@@ -301,6 +316,15 @@ func _obtener_item_id_recoleccion() -> String:
 	var item_id := str(datos.get("item_id", "")).strip_edges()
 	if not item_id.is_empty():
 		return item_id
+
+	# El snapshot de props_game puede conservar el vínculo en
+	# propiedades.item_id aunque item_id no haya sido proyectado al nodo.
+	var propiedades_variant: Variant = datos.get("propiedades", {})
+	if propiedades_variant is Dictionary:
+		var propiedades := propiedades_variant as Dictionary
+		item_id = str(propiedades.get("item_id", "")).strip_edges()
+		if not item_id.is_empty():
+			return item_id
 
 	var recoleccion_variant: Variant = datos.get("recoleccion", {})
 	if recoleccion_variant is Dictionary:
