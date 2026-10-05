@@ -1648,6 +1648,76 @@ func _obtener_enfriamiento_ataque() -> float:
 
 	return enfriamiento_ataque
 
+func _teletransportar_espiritu_estelar(
+	reaccion: Dictionary
+) -> void:
+	var origen := criatura.global_position
+
+	var minimo := maxf(
+		float(reaccion.get("distancia_minima", 70.0)),
+		1.0
+	)
+
+	var maximo := maxf(
+		float(reaccion.get("distancia_maxima", 110.0)),
+		minimo
+	)
+
+	var direccion := Vector2.RIGHT
+
+	if objetivo != null and is_instance_valid(objetivo):
+		direccion = objetivo.global_position.direction_to(
+			origen
+		)
+
+	if direccion.length_squared() <= 0.01:
+		direccion = Vector2.RIGHT
+
+	direccion = direccion.rotated(
+		randf_range(-0.9, 0.9)
+	).normalized()
+
+	var destino := (
+		origen
+		+ direccion * randf_range(minimo, maximo)
+	)
+
+	if criatura.limites_chunk.size.x > 0.0:
+		var limites := criatura.limites_chunk.grow(-12.0)
+
+		destino.x = clampf(
+			destino.x,
+			limites.position.x,
+			limites.end.x
+		)
+
+		destino.y = clampf(
+			destino.y,
+			limites.position.y,
+			limites.end.y
+		)
+
+	var rastro_variant: Variant = reaccion.get(
+		"rastro",
+		{}
+	)
+
+	var rastro: Dictionary = {}
+
+	if rastro_variant is Dictionary:
+		rastro = rastro_variant as Dictionary
+
+	criatura.crear_rastro_teleport(
+		origen,
+		destino,
+		maxf(float(rastro.get("duracion", 0.7)), 0.1),
+		maxi(int(rastro.get("puntos", 18)), 4)
+	)
+
+	criatura.global_position = destino
+
+
+
 # ============================================================
 # HELPERS DE MOVIMIENTO, ESTADO Y COMBATE
 # ============================================================
