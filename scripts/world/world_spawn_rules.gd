@@ -209,11 +209,21 @@ func construir_asset_path_prop(prop: Dictionary) -> String:
 
 	var clave := str(prop.get("clave", "")).strip_edges()
 	if not clave.is_empty():
-		var clave_visual := clave.capitalize()
-		candidatos.append("res://assets/art/props/" + clave_visual + ".png")
-		candidatos.append("res://assets/art/props/" + clave_visual + ".PNG")
-		candidatos.append("res://assets/art/props/" + quitar_acentos(clave_visual) + ".png")
-		candidatos.append("res://assets/art/props/" + quitar_acentos(clave_visual) + ".PNG")
+		var clave_base := clave
+		var separador_entorno := clave_base.find("_bosque_")
+		if separador_entorno >= 0:
+			clave_base = clave_base.substr(0, separador_entorno)
+
+		var claves_visuales: Array[String] = [
+			clave,
+			clave_base
+		]
+		for clave_candidata in claves_visuales:
+			var clave_visual := clave_candidata.capitalize()
+			candidatos.append("res://assets/art/props/" + clave_visual + ".png")
+			candidatos.append("res://assets/art/props/" + clave_visual + ".PNG")
+			candidatos.append("res://assets/art/props/" + quitar_acentos(clave_visual) + ".png")
+			candidatos.append("res://assets/art/props/" + quitar_acentos(clave_visual) + ".PNG")
 
 	for ruta in candidatos:
 		if FileAccess.file_exists(ruta):
