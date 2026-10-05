@@ -28,7 +28,8 @@ var _world_atmosphere: WorldAtmosphere = null
 var _world_generator: WorldGenerator = null
 @onready var _world_context: WorldContext = $Systems/WorldContext
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
-@onready var _zone_manager: ZoneManager = $World/ZoneManager
+const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
+@onready var _zone_manager: Node2D = $World/ZoneManager
 
 
 func _ready() -> void:
@@ -66,7 +67,7 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	_world_entity_spawner = null
 	_world_atmosphere = null
 
-	if tipo == ZoneManager.TIPO_MUNDO_ABIERTO:
+	if tipo == "mundo_abierto":
 		if _world_generator == null:
 			push_error("Main: MundoAbierto no contiene WorldGenerator.")
 			return
@@ -80,7 +81,8 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		)
 		_world_items.establecer_generacion_habilitada(true)
 
-		_world_generator.configurar_dependencias(WorldData, GameState, _world_context)
+		_world_generator.configurar_dependencias(WorldData, GameState)
+		_world_generator.configurar_contexto_compartido(_world_context)
 		_world_generator.configurar_entidades(
 			$Entities,
 			$Entities/Player,
@@ -166,7 +168,7 @@ func _inicializar_runtime_de_zona() -> void:
 	_configurar_admin()
 	_configurar_pantalla()
 
-	if _zone_manager.obtener_tipo_actual() == ZoneManager.TIPO_REINO_TORRES:
+	if _zone_manager.obtener_tipo_actual() == "reino_torres":
 		_player.global_position = Vector2(0, 120)
 		print("Main: inicio en Reino Torres.")
 	else:
