@@ -210,3 +210,14 @@ Qué sistemas relacionados podrían verse afectados.
 > **Arreglar la arquitectura para que el caso correcto funcione de forma general.**
 
 > **SUPABASE MANDA. GODOT PRESENTA Y SIMULA. GITHUB VERSIONA.**
+
+## Zonas del runtime
+
+Las zonas pueden ser escenas independientes y deben cargarse exclusivamente mediante `ZoneManager`.
+
+- `Main` conserva Player, HUD, Inventory, InputRouter y sistemas compartidos.
+- `ReinoTorres.tscn` es una zona fija y no contiene generación procedural.
+- `MundoAbierto.tscn` contiene `WorldGenerator`, streaming y aparición procedural.
+- Sólo una zona está cargada a la vez.
+- Cambiar de zona no crea un segundo Player, HUD, inventario ni sistema.
+- El generador procedural no debe existir dentro de Reino Torres.
