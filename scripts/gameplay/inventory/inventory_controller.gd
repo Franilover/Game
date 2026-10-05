@@ -1,4 +1,8 @@
 extends Node
+
+func _garlia_debug() -> Node:
+	return get_node_or_null("/root/GarliaDebug")
+
 class_name InventoryController
 
 ## Coordina el runtime del inventario con una implementación de UI.
@@ -34,15 +38,15 @@ func obtener_item(indice: int) -> Dictionary:
 
 func agregar_objeto(datos: Dictionary) -> bool:
 	if not puede_interactuar():
-		GarliaDebug.registrar("INVENTORY", "agregar_objeto bloqueado por GameplayInputGate.")
-		GarliaDebug.flujo_error("InventoryController bloqueó agregar_objeto por GameplayInputGate.")
+		_garlia_debug().registrar("INVENTORY", "agregar_objeto bloqueado por GameplayInputGate.")
+		_garlia_debug().flujo_error("InventoryController bloqueó agregar_objeto por GameplayInputGate.")
 		return false
 	if datos.is_empty():
-		GarliaDebug.flujo_error("InventoryController recibió objeto vacío.")
+		_garlia_debug().flujo_error("InventoryController recibió objeto vacío.")
 		return false
 	var resultado: bool = runtime.agregar_objeto(datos)
 	if resultado:
-		GarliaDebug.flujo_paso("InventoryController aceptó el objeto.")
+		_garlia_debug().flujo_paso("InventoryController aceptó el objeto.")
 		inventario_cambio.emit()
 	return resultado
 
