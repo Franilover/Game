@@ -33,10 +33,15 @@ func obtener_item(indice: int) -> Dictionary:
 	return runtime.obtener_item(indice)
 
 func agregar_objeto(datos: Dictionary) -> bool:
-	if not puede_interactuar() or datos.is_empty():
+	if not puede_interactuar():
+		GarliaDebug.flujo_error("InventoryController bloqueó agregar_objeto por GameplayInputGate.")
+		return false
+	if datos.is_empty():
+		GarliaDebug.flujo_error("InventoryController recibió objeto vacío.")
 		return false
 	var resultado: bool = runtime.agregar_objeto(datos)
 	if resultado:
+		GarliaDebug.flujo_paso("InventoryController aceptó el objeto.")
 		inventario_cambio.emit()
 	return resultado
 
