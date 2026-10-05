@@ -1161,7 +1161,8 @@ func _obtener_danio_ataque() -> int:
 	return dano_mordida
 
 
-func _obtener_enfriamiento_ataque() -> float:	var ataque := _obtener_config_ataque()
+func _obtener_enfriamiento_ataque() -> float:
+	var ataque := _obtener_config_ataque()
 	var valor: Variant = ataque.get(
 		"enfriamiento",
 		enfriamiento_ataque
