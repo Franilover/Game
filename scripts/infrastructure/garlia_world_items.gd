@@ -3,7 +3,9 @@ class_name GarliaWorldItems
 
 
 const MAX_OBJECTOS_EN_MUNDO: int = 3
-const HTTP_TIMEOUT: float = 8.0
+const HTTP_TIMEOUT: float = 15.0
+const MAX_CATALOG_RETRIES: int = 3
+const CATALOG_RETRY_DELAY: float = 1.5
 
 
 signal catalogo_cargado(items: Array)
@@ -16,6 +18,7 @@ var _request: HTTPRequest
 var _request_drops: HTTPRequest
 
 var _cargando: bool = false
+var _intentos_catalogo: int = 0
 var _cargando_drops: bool = false
 var _cola_drops: Array[Dictionary] = []
 
@@ -88,6 +91,7 @@ func cargar_catalogo() -> void:
 		return
 
 	_cargando = true
+	_intentos_catalogo += 1
 
 	var url := (
 		str(GarliaAuth.SUPABASE_URL)
@@ -124,6 +128,17 @@ func cargar_catalogo() -> void:
 		carga_fallida.emit(mensaje)
 
 
+func _cargar_catalogo_reintentando(mensaje: String) -> void:
+	if _intentos_catalogo >= MAX_CATALOG_RETRIES:
+		carga_fallida.emit(mensaje)
+		return
+
+	print("GarliaWorldItems: reintentando catálogo → intento ", str(_intentos_catalogo + 1), "/", str(MAX_CATALOG_RETRIES), " en ", str(CATALOG_RETRY_DELAY), "s")
+	await get_tree().create_timer(CATALOG_RETRY_DELAY).timeout
+	if not _cargando and catalogo.is_empty():
+		cargar_catalogo()
+
+
 func _al_recibir_catalogo(
 	resultado: int,
 	response_code: int,
@@ -138,7 +153,7 @@ func _al_recibir_catalogo(
 			+ str(resultado)
 		)
 		print("GarliaWorldItems: ", mensaje)
-		carga_fallida.emit(mensaje)
+		_cargar_catalogo_reintentando(mensaje)
 		return
 
 	var texto := body.get_string_from_utf8()
