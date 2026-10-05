@@ -1,7 +1,9 @@
 extends CanvasLayer
 class_name GarliaDebugConsole
+
 func _garlia_debug() -> Node:
 	return get_node_or_null("/root/GarliaDebug")
+
 
 
 var _panel: PanelContainer
