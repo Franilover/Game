@@ -13,7 +13,7 @@ size = Vector2(48, 180)
 
 [node name="ReinoTorres" type="Node2D"]
 z_as_relative = false
-z_index = -4080
+z_index = 0
 script = ExtResource("2_reino")
 
 [node name="Ground" type="Polygon2D" parent="."]
