@@ -1,4 +1,7 @@
 extends CanvasLayer
+
+func _garlia_debug() -> Node:
+	return get_node_or_null("/root/GarliaDebug")
 class_name GarliaDebugConsole
 
 var _panel: PanelContainer
@@ -17,10 +20,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_crear_interfaz()
 	visible = false
-	if GarliaDebug.has_signal("evento_agregado"):
-		GarliaDebug.evento_agregado.connect(_al_evento)
-	if GarliaDebug.has_signal("flujo_actualizado"):
-		GarliaDebug.flujo_actualizado.connect(_actualizar_vista)
+	if _garlia_debug().has_signal("evento_agregado"):
+		_garlia_debug().connect("evento_agregado", Callable(self, "_al_evento"))
+	if _garlia_debug().has_signal("flujo_actualizado"):
+		_garlia_debug().connect("flujo_actualizado", Callable(self, "_actualizar_vista"))
 
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey:
@@ -135,15 +138,15 @@ func _actualizar_vista() -> void:
 		return
 	match _modo:
 		"logs":
-			_texto.text = GarliaDebug.obtener_logs_texto()
+			_texto.text = _garlia_debug().call("obtener_logs_texto")
 		"flujo":
-			_texto.text = GarliaDebug.obtener_flujo_texto()
+			_texto.text = _garlia_debug().call("obtener_flujo_texto")
 		"estado":
 			_texto.text = _obtener_estado()
 	_estado.text = "Modo: %s | Eventos: %d | Flujo: %d" % [
 		_modo.to_upper(),
-		GarliaDebug.eventos.size(),
-		GarliaDebug.flujo.size()
+		(_garlia_debug().get("eventos") as Array).size(),
+		(_garlia_debug().get("flujo") as Array).size()
 	]
 	if _auto_scroll:
 		_texto.scroll_to_line(maxi(0, _texto.get_line_count() - 1))
@@ -182,14 +185,14 @@ func _copiar_actual() -> void:
 	var texto_actual := ""
 	match _modo:
 		"logs":
-			texto_actual = GarliaDebug.obtener_logs_texto()
+			texto_actual = _garlia_debug().call("obtener_logs_texto")
 		"flujo":
-			texto_actual = GarliaDebug.obtener_flujo_texto()
+			texto_actual = _garlia_debug().call("obtener_flujo_texto")
 		"estado":
 			texto_actual = _obtener_estado()
 	DisplayServer.clipboard_set(texto_actual)
 	_estado.text = "Copiado al portapapeles"
 
 func _limpiar() -> void:
-	GarliaDebug.limpiar()
+	_garlia_debug().call("limpiar")
 	_actualizar_vista()
