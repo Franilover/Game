@@ -524,6 +524,8 @@ func _al_recibir_impacto_proyectil(
 		and objetivo.is_alive
 		and _obtener_ai_controller(objetivo) != null
 	):
+		if ataque.attacker != null and ataque.attacker.is_in_group("player") and objetivo is Creature:
+			_registrar_agresion_bosque(objetivo as Creature, false)
 		var ai: CreatureAI = _obtener_ai_controller(objetivo)
 		if ai != null:
 			ai.al_recibir_ataque_con_arma(arma)
