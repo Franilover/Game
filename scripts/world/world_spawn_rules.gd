@@ -200,11 +200,24 @@ func construir_asset_path_prop(prop: Dictionary) -> String:
 	if nombre.is_empty():
 		return ""
 
+	# Los registros especializados de Supabase pueden llamarse
+	# "Árbol (Bosque húmedo)" o "Flor Azul (Bosque interior)", pero el asset
+	# visual reutilizable es el prop base. El nombre canónico sigue siendo el
+	# de Supabase; sólo resolvemos aquí su representación visual.
+	var nombre_base := nombre
+	var parentesis := nombre_base.find(" (")
+	if parentesis >= 0:
+		nombre_base = nombre_base.substr(0, parentesis).strip_edges()
+
 	var candidatos: Array[String] = [
 		"res://assets/art/props/" + nombre + ".png",
 		"res://assets/art/props/" + nombre + ".PNG",
 		"res://assets/art/props/" + quitar_acentos(nombre) + ".png",
-		"res://assets/art/props/" + quitar_acentos(nombre) + ".PNG"
+		"res://assets/art/props/" + quitar_acentos(nombre) + ".PNG",
+		"res://assets/art/props/" + nombre_base + ".png",
+		"res://assets/art/props/" + nombre_base + ".PNG",
+		"res://assets/art/props/" + quitar_acentos(nombre_base) + ".png",
+		"res://assets/art/props/" + quitar_acentos(nombre_base) + ".PNG"
 	]
 
 	var clave := str(prop.get("clave", "")).strip_edges()
