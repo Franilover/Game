@@ -360,6 +360,9 @@ func _iniciar_siguiente_chunk() -> void:
 	):
 		return
 
+	_terrain.configurar_prioridad_generacion(
+		_player.global_position
+	)
 	_terrain.iniciar_generacion_chunk(
 		chunk_coord
 	)
