@@ -879,45 +879,22 @@ func procesar_flush(cells: int) -> bool:
 		var dirty: Array[Vector2i] = []
 		var convert_start_usec := Time.get_ticks_usec()
 
-		# Consumir una región contigua primero. TileMapDual puede resolver un
-		# lote de vecinos de una vez; enviar celdas lejanas mezcladas aumenta
-		# el trabajo de búsqueda de vecinos y rompe la localidad espacial.
+		# Consumir la cola directamente. La generación del chunk ya inserta
+		# las celdas en orden espacial, por lo que no necesitamos BFS ni
+		# búsquedas repetidas sobre todo el Array para construir cada lote.
+		# El BFS anterior convertía un flush de 1024 celdas en cientos de
+		# recorridos de diccionarios, especialmente caro con presupuestos
+		# pequeños.
 		var cursor := int(_dirty_cursor_by_zone.get(clave, 0))
-		var semilla_variant: Variant = null
-		while cursor < cells_variant.size():
-			var candidata_variant: Variant = cells_variant[cursor]
-			if candidata_variant is Vector2i and _dirty_lookup_by_zone[clave].has(candidata_variant):
-				semilla_variant = candidata_variant
-				break
+		var lookup: Dictionary = _dirty_lookup_by_zone[clave]
+		while cursor < cells_variant.size() and dirty.size() < take:
+			var cell_variant: Variant = cells_variant[cursor]
 			cursor += 1
-		_dirty_cursor_by_zone[clave] = cursor
-		if semilla_variant is Vector2i:
-			var pendientes: Array[Vector2i] = [semilla_variant as Vector2i]
-			var pendientes_cursor := 0
-			var vistas: Dictionary = {}
-			vistas[semilla_variant] = true
-			while pendientes_cursor < pendientes.size() and dirty.size() < take:
-				var actual: Vector2i = pendientes[pendientes_cursor]
-				pendientes_cursor += 1
-				if not _dirty_lookup_by_zone[clave].has(actual):
-					continue
-				dirty.append(actual)
-				_dirty_lookup_by_zone[clave].erase(actual)
-				for offset: Vector2i in CARDINAL_NEIGHBORS:
-					var vecino := actual + offset
-					if not vistas.has(vecino) and _dirty_lookup_by_zone[clave].has(vecino):
-						vistas[vecino] = true
-						pendientes.append(vecino)
+			if cell_variant is Vector2i and lookup.has(cell_variant):
+				dirty.append(cell_variant as Vector2i)
+				lookup.erase(cell_variant)
 
-		# Si la región era menor que el presupuesto, completar con las primeras
-		# celdas pendientes para no dejar una cola fragmentada indefinidamente.
-		if dirty.size() < take:
-			for cell_variant in cells_variant:
-				if dirty.size() >= take:
-					break
-				if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
-					dirty.append(cell_variant as Vector2i)
-					_dirty_lookup_by_zone[clave].erase(cell_variant)
+		_dirty_cursor_by_zone[clave] = cursor
 
 		_profiler_flush_convert_ms += float(
 			Time.get_ticks_usec() - convert_start_usec
@@ -938,22 +915,20 @@ func procesar_flush(cells: int) -> bool:
 			_profiler_flush_regions += 1
 			_profiler_flush_cells += dirty.size()
 
-		# El lookup marca las celdas consumidas y el cursor salta entradas
-		# obsoletas. Así evitamos reconstruir toda la cola en cada frame.
+		# Todo lo anterior al cursor ya fue consumido. Limpiar de inmediato
+		# cuando llegamos al final evita mantener Arrays/diccionarios muertos.
 		var nuevo_cursor := int(_dirty_cursor_by_zone.get(clave, 0))
-		while nuevo_cursor < cells_variant.size():
-			var pendiente_variant: Variant = cells_variant[nuevo_cursor]
-			if pendiente_variant is Vector2i and _dirty_lookup_by_zone[clave].has(pendiente_variant):
-				break
-			nuevo_cursor += 1
-		_dirty_cursor_by_zone[clave] = nuevo_cursor
-
-		# Compactar sólo cuando la parte consumida domina la cola.
-		if nuevo_cursor >= 256 and nuevo_cursor * 2 >= cells_variant.size():
+		if nuevo_cursor >= cells_variant.size():
+			_dirty_cells_by_zone[clave] = []
+			_dirty_lookup_by_zone[clave] = {}
+			_dirty_cursor_by_zone[clave] = 0
+		elif nuevo_cursor >= 256 and nuevo_cursor * 2 >= cells_variant.size():
+			# Compactar sólo cuando la parte consumida domina la cola.
 			var compactadas: Array = []
-			for cell_variant in cells_variant:
-				if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
-					compactadas.append(cell_variant)
+			for indice in range(nuevo_cursor, cells_variant.size()):
+				var pendiente_variant: Variant = cells_variant[indice]
+				if pendiente_variant is Vector2i and _dirty_lookup_by_zone[clave].has(pendiente_variant):
+					compactadas.append(pendiente_variant)
 			_dirty_cells_by_zone[clave] = compactadas
 			_dirty_cursor_by_zone[clave] = 0
 		presupuesto -= dirty.size()
