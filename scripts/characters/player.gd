@@ -73,6 +73,7 @@ var _exploration_check_timer: float = 0.0
 
 
 var _action_direction: Vector2 = Vector2.DOWN
+var _movement_input_direction: Vector2 = Vector2.ZERO
 var _base_visual_position: Vector2 = Vector2.ZERO
 var personaje_nombre: String = ""
 var personaje_genero: String = ""
@@ -178,6 +179,7 @@ func _physics_process(delta: float) -> void:
 	# Si una interfaz está bloqueando el gameplay,
 	# no procesamos ningún input del jugador.
 	if _esta_bloqueado_por_interfaz():
+		_movement_input_direction = Vector2.ZERO
 		velocity = Vector2.ZERO
 		if state != State.IDLE:
 			state = State.IDLE
@@ -219,6 +221,7 @@ func _physics_process(delta: float) -> void:
 		"move_up",
 		"move_down"
 	)
+	_movement_input_direction = direction
 
 	var eterium_sprint := false
 	if Input.is_action_pressed("eterium_sprint") and direction != Vector2.ZERO:
@@ -276,6 +279,10 @@ func _physics_process(delta: float) -> void:
 		delta,
 		is_running
 	)
+
+
+func obtener_direccion_movimiento() -> Vector2:
+	return _movement_input_direction
 
 
 func _registrar_terreno_explorado() -> void:
