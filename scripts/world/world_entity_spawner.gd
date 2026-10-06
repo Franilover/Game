@@ -346,16 +346,6 @@ func _spawn_chunk_interno(
 	}
 	return
 
-	if not creadas.is_empty():
-		print(
-			"WorldEntitySpawner: chunk ",
-			chunk_coord,
-			" → ",
-			creadas.size(),
-			" criaturas"
-		)
-
-
 func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	if _terrain == null or _entity_manager == null or _entity_factory == null:
 		return
@@ -389,7 +379,7 @@ func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	var inicio_usec := Time.get_ticks_usec()
 	var creado := _intentar_crear_prop(chunk_coord, limite_chunk, rng, creados)
 	if _render_manager != null and is_instance_valid(_render_manager):
-		_render_manager.call("registrar_trabajo_usec", "prop_spawn", inicio_usec)
+		_render_manager.call("registrar_trabajo", "prop_spawn", float(Time.get_ticks_usec() - inicio_usec) / 1000.0, 1)
 	if creado:
 		creados += 1
 	tarea["creados"] = creados
