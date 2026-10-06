@@ -77,6 +77,7 @@ var _next_source_id_by_zone: Dictionary = {}
 
 var _dirty_cells_by_zone: Dictionary = {}
 var _dirty_lookup_by_zone: Dictionary = {}
+var _dirty_cursor_by_zone: Dictionary = {}
 var _dirty_variations: Dictionary = {}
 
 # Celda -> bioma visual que la posee actualmente.
@@ -262,6 +263,7 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	_next_source_id_by_zone[clave] = 0
 	_dirty_cells_by_zone[clave] = []
 	_dirty_lookup_by_zone[clave] = {}
+	_dirty_cursor_by_zone[clave] = 0
 
 	if tilemap_dual == null:
 		tilemap_dual = layer
@@ -718,13 +720,23 @@ func procesar_flush(cells: int) -> bool:
 		# Consumir una región contigua primero. TileMapDual puede resolver un
 		# lote de vecinos de una vez; enviar celdas lejanas mezcladas aumenta
 		# el trabajo de búsqueda de vecinos y rompe la localidad espacial.
-		var semilla_variant: Variant = cells_variant[0]
+		var cursor := int(_dirty_cursor_by_zone.get(clave, 0))
+		var semilla_variant: Variant = null
+		while cursor < cells_variant.size():
+			var candidata_variant: Variant = cells_variant[cursor]
+			if candidata_variant is Vector2i and _dirty_lookup_by_zone[clave].has(candidata_variant):
+				semilla_variant = candidata_variant
+				break
+			cursor += 1
+		_dirty_cursor_by_zone[clave] = cursor
 		if semilla_variant is Vector2i:
 			var pendientes: Array[Vector2i] = [semilla_variant as Vector2i]
+			var pendientes_cursor := 0
 			var vistas: Dictionary = {}
 			vistas[semilla_variant] = true
-			while not pendientes.is_empty() and dirty.size() < take:
-				var actual: Vector2i = pendientes.pop_front()
+			while pendientes_cursor < pendientes.size() and dirty.size() < take:
+				var actual: Vector2i = pendientes[pendientes_cursor]
+				pendientes_cursor += 1
 				if not _dirty_lookup_by_zone[clave].has(actual):
 					continue
 				dirty.append(actual)
@@ -763,13 +775,24 @@ func procesar_flush(cells: int) -> bool:
 			_profiler_flush_update_calls += 1
 			_profiler_flush_cells += dirty.size()
 
-		# Reconstruir la lista a partir del lookup evita conservar entradas ya
-		# consumidas por la expansión de la región.
-		var restantes: Array = []
-		for cell_variant in cells_variant:
-			if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
-				restantes.append(cell_variant)
-		_dirty_cells_by_zone[clave] = restantes
+		# El lookup marca las celdas consumidas y el cursor salta entradas
+		# obsoletas. Así evitamos reconstruir toda la cola en cada frame.
+		var nuevo_cursor := int(_dirty_cursor_by_zone.get(clave, 0))
+		while nuevo_cursor < cells_variant.size():
+			var pendiente_variant: Variant = cells_variant[nuevo_cursor]
+			if pendiente_variant is Vector2i and _dirty_lookup_by_zone[clave].has(pendiente_variant):
+				break
+			nuevo_cursor += 1
+		_dirty_cursor_by_zone[clave] = nuevo_cursor
+
+		# Compactar sólo cuando la parte consumida domina la cola.
+		if nuevo_cursor >= 256 and nuevo_cursor * 2 >= cells_variant.size():
+			var compactadas: Array = []
+			for cell_variant in cells_variant:
+				if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
+					compactadas.append(cell_variant)
+			_dirty_cells_by_zone[clave] = compactadas
+			_dirty_cursor_by_zone[clave] = 0
 		presupuesto -= dirty.size()
 
 	if presupuesto > 0 and not _dirty_variations.is_empty():
