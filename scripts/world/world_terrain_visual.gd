@@ -86,6 +86,7 @@ var _cell_layer_key: Dictionary = {}
 var _variation_layers_by_bioma: Dictionary = {}
 var _variation_tilesets_by_bioma: Dictionary = {}
 var _batch_active: bool = false
+var _clear_task: Dictionary = {}
 
 var _profiler_set_zone_ms: float = 0.0
 var _profiler_set_zone_calls: int = 0
@@ -129,6 +130,72 @@ func obtener_profiler() -> Dictionary:
 		"flush_variation_cells": _profiler_flush_variation_cells,
 		"set_cell_calls": _profiler_set_cell_calls,
 	}
+
+
+func iniciar_clear_chunk(chunk_coord: Vector2i, chunk_size_tiles: int) -> void:
+	if not _clear_task.is_empty():
+		return
+	_clear_task = {
+		"coord": chunk_coord,
+		"size": chunk_size_tiles,
+		"cursor": 0,
+		"total": chunk_size_tiles * chunk_size_tiles,
+	}
+
+
+func tiene_clear_chunk_activo() -> bool:
+	return not _clear_task.is_empty()
+
+
+func procesar_clear_chunk(cells: int) -> bool:
+	if _clear_task.is_empty():
+		return true
+
+	var coord: Vector2i = _clear_task["coord"]
+	var size: int = int(_clear_task["size"])
+	var cursor: int = int(_clear_task["cursor"])
+	var total: int = int(_clear_task["total"])
+	var limite: int = mini(cursor + maxi(cells, 1), total)
+
+	while cursor < limite:
+		var local_y: int = cursor / size
+		var local_x: int = cursor % size
+		var cell := Vector2i(coord.x * size + local_x, coord.y * size + local_y)
+		_limpiar_celda_chunk(cell)
+		cursor += 1
+
+	_clear_task["cursor"] = cursor
+	flush()
+
+	if cursor < total:
+		return false
+
+	_clear_task.clear()
+	return true
+
+
+func _limpiar_celda_chunk(cell: Vector2i) -> void:
+	var layer_key := str(_cell_layer_key.get(cell, ""))
+	if not _layers_by_zone.has(layer_key):
+		return
+	var layer := _layers_by_zone[layer_key] as TileMapDual
+	if layer == null:
+		return
+	layer.erase_cell(cell)
+
+	var bioma_celda := str(_cell_bioma.get(cell, ""))
+	if _variation_layers_by_bioma.has(bioma_celda):
+		var capa_variacion := _variation_layers_by_bioma[bioma_celda] as TileMapLayer
+		if capa_variacion != null and capa_variacion.get_cell_source_id(cell) != -1:
+			capa_variacion.erase_cell(cell)
+
+	_cell_bioma.erase(cell)
+	_cell_zone.erase(cell)
+	_cell_layer_key.erase(cell)
+	_marcar_dirty(layer_key, cell)
+	for offset: Vector2i in UPDATE_NEIGHBORS:
+		_marcar_dirty(layer_key, cell + offset)
+	_marcar_variaciones_dirty(cell, "")
 
 
 func configurar(nuevo_tile_size: int) -> void:
