@@ -449,18 +449,12 @@ func set_zone(
 		_profiler_set_cell_ms += float(Time.get_ticks_usec() - set_cell_start_usec) / 1000.0
 		_profiler_set_cell_calls += 1
 
+	# Una sola pasada cubre la celda nueva y la frontera de las capas
+	# vecinas. La función deduplica mediante lookup, evitando dos recorridos
+	# sobre UPDATE_NEIGHBORS por cada celda del chunk.
 	var dirty_start_usec := Time.get_ticks_usec()
-	# UPDATE_NEIGHBORS ya incluye ZERO; no marcar la celda central dos veces.
-	for offset: Vector2i in UPDATE_NEIGHBORS:
-		_marcar_dirty(
-			layer_key,
-			cell + offset
-		)
-	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
-	# La llegada de una celda nueva invalida también la frontera de las
-	# capas vecinas. Esto evita que el chunk nuevo se vea bien mientras el
-	# chunk anterior conserva un tile de borde calculado con un vecindario vacío.
 	_marcar_frontera_por_celda_nueva(cell)
+	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
 
 	var set_zone_ms := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
 	_profiler_set_zone_ms += set_zone_ms
