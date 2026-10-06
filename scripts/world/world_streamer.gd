@@ -16,7 +16,7 @@ var _unload_radius: int = 1
 # Test de rendimiento: terreno y entidades usan radios independientes.
 var _entity_active_radius: int = 0
 var _cells_per_frame: int = 128
-var _prefetch_margin_tiles: int = 16
+var _prefetch_margin_tiles: int = 24
 var _last_player_position: Vector2 = Vector2.ZERO
 var _player_direction: Vector2 = Vector2.ZERO
 var _prefetch_chunk: Vector2i = Vector2i(999999, 999999)
@@ -164,6 +164,17 @@ func _presupuesto_entidades() -> int:
 
 func _presupuesto_generacion() -> int:
 	var base: int = maxi(_cells_per_frame, 1)
+	if _prefetch_chunk.x != 999999 and _terrain != null and _terrain.chunk_en_generacion(_prefetch_chunk):
+		# La generación predictiva se reparte más fina para evitar el tirón.
+		# Arranca lejos del borde y aumenta sólo cuando el jugador se acerca.
+		var local_x: int = floori(fposmod(_player.global_position.x, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
+		var local_y: int = floori(fposmod(_player.global_position.y, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
+		var distancia_borde: int = mini(local_x, _terrain.chunk_size_tiles - 1 - local_x)
+		distancia_borde = mini(distancia_borde, mini(local_y, _terrain.chunk_size_tiles - 1 - local_y)) if _player_direction.y != 0.0 else distancia_borde
+		if distancia_borde > 10:
+			base = mini(base, 24)
+		else:
+			base = mini(base, 48)
 	if _render_manager == null:
 		return base
 	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
@@ -218,6 +229,10 @@ func _actualizar_streaming() -> void:
 	for chunk in nuevos:
 		_queue.append(chunk)
 
+	# Calcular el destino predictivo antes de ordenar: la prioridad debe
+	# usar la dirección y posición del frame actual, no la del frame anterior.
+	_prefetch_chunk = _obtener_chunk_prefetch(centro)
+
 	_queue.sort_custom(
 		func(a: Vector2i, b: Vector2i) -> bool:
 			var prioridad_a: float = _prioridad_chunk(a, centro)
@@ -225,7 +240,6 @@ func _actualizar_streaming() -> void:
 			return prioridad_a < prioridad_b
 	)
 
-	_prefetch_chunk = _obtener_chunk_prefetch(centro)
 	_priorizar_prefetch(centro)
 
 	_descargar_lejanos(centro)
@@ -285,7 +299,9 @@ func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
 func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
 	var distancia: float = float(_distancia_chunk(chunk, centro))
 	if chunk == _prefetch_chunk:
-		return -100.0
+		# El prefetch debe adelantarse, pero no saltarse todo el resto:
+		# así empezamos pronto sin provocar un pico al acercarnos al borde.
+		return 0.35
 	if _player_direction.length_squared() > 0.01:
 		var relativo := Vector2(chunk - centro)
 		var alineacion: float = relativo.normalized().dot(_player_direction) if relativo.length_squared() > 0.01 else 0.0
