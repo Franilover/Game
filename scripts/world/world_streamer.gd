@@ -15,7 +15,7 @@ var _unload_radius: int = 1
 # completo: en TileMapDual cada celda genera trabajo de render.
 # Test de rendimiento: terreno y entidades usan radios independientes.
 var _entity_active_radius: int = 0
-var _cells_per_frame: int = 64
+var _cells_per_frame: int = 128
 var _prefetch_margin_tiles: int = 8
 
 var _player_chunk: Vector2i = Vector2i(
