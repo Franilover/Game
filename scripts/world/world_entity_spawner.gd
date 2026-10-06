@@ -13,6 +13,7 @@ var _world_data: WorldDataService = null
 var _spawn_queue: Array[Vector2i] = []
 var _spawn_queued: Dictionary = {}
 var _spawn_tasks: Dictionary = {}
+var _render_manager: Node = null
 
 
 func configurar(
@@ -36,6 +37,10 @@ func configurar(
 		push_error("WorldEntitySpawner: Spawn rules inválidas.")
 	if _world_data == null:
 		push_error("WorldEntitySpawner: WorldDataService inválido.")
+
+
+func configurar_render_manager(render_manager: Node) -> void:
+	_render_manager = render_manager
 
 
 func spawn_chunk(chunk_coord: Vector2i) -> void:
@@ -381,7 +386,11 @@ func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
 		_spawn_tasks.erase(chunk_coord)
 		_entity_manager.activar_chunk(chunk_coord)
 		return
-	if _intentar_crear_prop(chunk_coord, limite_chunk, rng, creados):
+	var inicio_usec := Time.get_ticks_usec()
+	var creado := _intentar_crear_prop(chunk_coord, limite_chunk, rng, creados)
+	if _render_manager != null and is_instance_valid(_render_manager):
+		_render_manager.call("registrar_trabajo_usec", "prop_spawn", inicio_usec)
+	if creado:
 		creados += 1
 	tarea["creados"] = creados
 	tarea["intento"] = intento + 1
