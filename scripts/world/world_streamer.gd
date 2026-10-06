@@ -94,6 +94,10 @@ func procesar() -> void:
 
 	_actualizar_streaming()
 
+	# Las variaciones son decoración secundaria. Se procesan fuera del
+	# pipeline de generación para que nunca retrasen la aparición del suelo.
+	_procesar_variaciones_si_hay_presupuesto()
+
 	# El terreno tiene prioridad: TileMapDual y su preparación son el trabajo
 	# visual más caro. Las entidades sólo entran cuando queda presupuesto real.
 	if _terrain.tiene_generacion_activa():
@@ -129,6 +133,27 @@ func procesar() -> void:
 
 	_iniciar_siguiente_chunk()
 	_procesar_entidades_si_hay_presupuesto()
+
+
+func _procesar_variaciones_si_hay_presupuesto() -> void:
+	if _terrain == null or _terrain.visual == null:
+		return
+	var disponible: float = 5.0
+	if _render_manager != null:
+		disponible = float(_render_manager.call("presupuesto_disponible_ms"))
+	if disponible < 1.0:
+		return
+
+	# Cuatro celdas como máximo por frame: suficientemente rápido para
+	# poblar decoración sin devolver el tirón de TileMapLayer.set_cell().
+	var limite: int = 4
+	if disponible >= 3.0:
+		limite = 6
+	var inicio_usec := Time.get_ticks_usec()
+	_terrain.visual.procesar_variaciones(limite)
+	var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
+	if _render_manager != null:
+		_render_manager.call("registrar_trabajo", "terrain_variation", ms, limite)
 
 
 func _procesar_entidades_si_hay_presupuesto() -> void:
