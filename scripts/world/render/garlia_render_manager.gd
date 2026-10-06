@@ -5,7 +5,7 @@ class_name GarliaRenderManager
 ## Fase 3: presupuesto para trabajo visual diferible. TileMapDual sigue siendo el backend de composición.
 
 @export var target_fps: float = 60.0
-@export var render_budget_ms: float = 3.0
+@export var render_budget_ms: float = 5.0
 
 var _frame_start_usec: int = 0
 var _frame_used_ms: float = 0.0
