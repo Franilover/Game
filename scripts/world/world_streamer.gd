@@ -43,6 +43,7 @@ func configurar(
 
 func configurar_render_manager(render_manager: Node) -> void:
 	_render_manager = render_manager
+	_registrar_debug()
 
 
 func registrar_jugador(
@@ -400,3 +401,26 @@ func _world_to_chunk(
 			/ _terrain.chunk_size_tiles
 		)
 	)
+
+
+func tiene_jugador() -> bool:
+	return _player != null and is_instance_valid(_player)
+
+func obtener_diagnostico() -> Dictionary:
+	return {
+		"jugador": tiene_jugador(),
+		"player_chunk": _player_chunk,
+		"cola_chunks": _queue.size(),
+		"cola": _queue.duplicate(),
+		"load_radius": _load_radius,
+		"unload_radius": _unload_radius,
+		"cells_per_frame": _cells_per_frame,
+		"generando": _terrain != null and _terrain.tiene_generacion_activa(),
+		"descargando": _terrain != null and _terrain.tiene_descarga_activa()
+	}
+
+func _registrar_debug() -> void:
+	var debug := get_node_or_null("/root/GarliaDebug")
+	if debug == null or not debug.has_method("registrar_proveedor"):
+		return
+	debug.registrar_proveedor("world_streamer", "WorldStreamer", self, "Cola de chunks, streaming y jugador.")
