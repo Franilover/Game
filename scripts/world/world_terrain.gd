@@ -593,6 +593,20 @@ func _procesar_flush_incremental() -> void:
 	var flush_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
 	_profiler_flush_ms += flush_ms
 	_profiler_flushes += 1
+	if visual != null:
+		var visual_profiler: Dictionary = visual.obtener_profiler()
+		var visible_cells_now := int(visual_profiler.get("flush_cells", 0))
+		if visible_cells_now > _profiler_visible_cells:
+			_profiler_visible_cells = visible_cells_now
+			var elapsed_ms := float(Time.get_ticks_usec() - _profiler_chunk_start_usec) / 1000.0
+			if _profiler_first_commit_ms < 0.0:
+				_profiler_first_commit_ms = elapsed_ms
+			if _profiler_visible_25_ms < 0.0 and visible_cells_now >= 256:
+				_profiler_visible_25_ms = elapsed_ms
+			if _profiler_visible_50_ms < 0.0 and visible_cells_now >= 512:
+				_profiler_visible_50_ms = elapsed_ms
+			if _profiler_visible_100_ms < 0.0 and visible_cells_now >= 1024:
+				_profiler_visible_100_ms = elapsed_ms
 	if _render_manager != null:
 		_render_manager.call(
 			"registrar_trabajo",
