@@ -562,16 +562,21 @@ func _procesar_flush_chunk(
 	# El renderer está funcionando con margen de FPS; permitimos lotes
 	# mayores para que el terreno aparezca antes, pero el RenderManager
 	# sigue regulando el trabajo real según el coste medido del frame.
-	var flush_cells: int = mini(cells, 96)
+	# FLUSH es el punto más sensible del renderer en equipos modestos:
+	# _update_cells() no tiene coste lineal y un lote grande puede producir
+	# un pico aunque el presupuesto global parezca disponible. Preferimos
+	# terminar el chunk unos frames después antes que bloquear el frame.
+	var flush_cells: int = mini(cells, 32)
 	if _render_manager != null:
 		flush_cells = int(_render_manager.call(
 			"presupuesto_unidades_adaptativo",
 			"terrain_flush",
 			flush_cells,
-			8,
-			96,
-			0.85
+			4,
+			32,
+			0.65
 		))
+		flush_cells = mini(flush_cells, 32)
 		if flush_cells <= 0:
 			return false
 	var terminado: bool = visual.procesar_flush(flush_cells)
@@ -1436,6 +1441,19 @@ func obtener_diagnostico() -> Dictionary:
 	estado["visual"] = visual != null
 	estado["ultimo_chunk"] = _ultimo_chunk_generado
 	estado["descarga_activa"] = tiene_descarga_activa()
+	# Diagnóstico explícito del pipeline para que F4 permita localizar el
+	# cuello sin depender de los prints de cada chunk.
+	estado["profiler_generacion"] = {
+		"datos_ms": _profiler_data_ms,
+		"bioma_ms": _profiler_biome_ms,
+		"ecosistema_ms": _profiler_ecosystem_ms,
+		"zona_ms": _profiler_zone_ms,
+		"pintado_ms": _profiler_paint_ms,
+		"flush_ms": _profiler_flush_ms,
+		"datos_llamadas": _profiler_data_calls,
+		"pintado_llamadas": _profiler_paint_calls,
+		"flush_llamadas": _profiler_flushes
+	}
 	estado["generacion_pausada"] = tiene_generacion_pausada()
 	if tiene_generacion_pausada():
 		estado["chunk_pausado"] = _paused_generation_task.get("coord", Vector2i.ZERO)
