@@ -178,6 +178,7 @@ func _inicializar_mundo() -> void:
 		spawn_rules,
 		_world_data
 	)
+	entity_spawner.configurar_render_manager(render_manager)
 
 	streamer.configurar(
 		terrain,
