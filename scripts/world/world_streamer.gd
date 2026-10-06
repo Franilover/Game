@@ -9,9 +9,13 @@ var _player: Node = null
 
 var _load_radius: int = 1
 var _unload_radius: int = 1
+# El terreno visible se limita al chunk actual y, como máximo, a los
+# vecinos necesarios para anticipar el movimiento. No mantener un 3x3
+# completo: en TileMapDual cada celda genera trabajo de render.
 # Test de rendimiento: terreno y entidades usan radios independientes.
 var _entity_active_radius: int = 0
-var _cells_per_frame: int = 128
+var _cells_per_frame: int = 64
+var _prefetch_margin_tiles: int = 8
 
 var _player_chunk: Vector2i = Vector2i(
 	999999,
@@ -131,59 +135,47 @@ func _actualizar_streaming() -> void:
 
 	var nuevos: Array = []
 
-	for dy in range(
-		-_load_radius,
-		_load_radius + 1
-	):
-		for dx in range(
-			-_load_radius,
-			_load_radius + 1
-		):
-			var chunk := Vector2i(
-				centro.x + dx,
-				centro.y + dy
-			)
+	# Prioridad absoluta: el chunk actual. El jugador no debe esperar a que
+	# termine un vecino que quedó primero en la cola.
+	_agregar_chunk_a_cola(centro, nuevos)
 
-			if _terrain.chunk_cargado(
-				chunk
-			):
-				continue
-
-			if _terrain.chunk_en_generacion(
-				chunk
-			):
-				continue
-
-			if chunk in _queue:
-				continue
-
-			nuevos.append(
-				chunk
-			)
-
-	nuevos.sort_custom(
-		func(
-			a: Vector2i,
-			b: Vector2i
-		) -> bool:
-			var da: int = (
-				abs(a.x - centro.x)
-				+ abs(a.y - centro.y)
-			)
-
-			var db: int = (
-				abs(b.x - centro.x)
-				+ abs(b.y - centro.y)
-			)
-
-			return da < db
+	# Sólo anticipamos los vecinos que realmente están cerca de entrar en
+	# pantalla. Con esto evitamos cargar 9 chunks aunque el radio lógico sea 1.
+	var tile_local_x: int = posmod(
+		floori(_player.global_position.x / _terrain.tile_size),
+		_terrain.chunk_size_tiles
+	)
+	var tile_local_y: int = posmod(
+		floori(_player.global_position.y / _terrain.tile_size),
+		_terrain.chunk_size_tiles
 	)
 
-	for i in range(nuevos.size()):
-		_queue.append(
-			nuevos[i]
+	if tile_local_x < _prefetch_margin_tiles:
+		_agregar_chunk_a_cola(
+			Vector2i(centro.x - 1, centro.y),
+			nuevos
+		)
+	elif tile_local_x >= _terrain.chunk_size_tiles - _prefetch_margin_tiles:
+		_agregar_chunk_a_cola(
+			Vector2i(centro.x + 1, centro.y),
+			nuevos
 		)
 
+	if tile_local_y < _prefetch_margin_tiles:
+		_agregar_chunk_a_cola(
+			Vector2i(centro.x, centro.y - 1),
+			nuevos
+		)
+	elif tile_local_y >= _terrain.chunk_size_tiles - _prefetch_margin_tiles:
+		_agregar_chunk_a_cola(
+			Vector2i(centro.x, centro.y + 1),
+			nuevos
+		)
+
+	for chunk in nuevos:
+		_queue.append(chunk)
+
+	# Mantener primero el chunk más cercano al jugador.
 	_queue.sort_custom(
 		func(
 			a: Vector2i,
@@ -193,12 +185,10 @@ func _actualizar_streaming() -> void:
 				abs(a.x - centro.x)
 				+ abs(a.y - centro.y)
 			)
-
 			var db: int = (
 				abs(b.x - centro.x)
 				+ abs(b.y - centro.y)
 			)
-
 			return da < db
 	)
 
@@ -207,6 +197,21 @@ func _actualizar_streaming() -> void:
 	)
 
 	_actualizar_entidades_activas(centro)
+
+
+func _agregar_chunk_a_cola(
+	chunk: Vector2i,
+	nuevos: Array
+) -> void:
+	if _terrain.chunk_cargado(chunk):
+		return
+	if _terrain.chunk_en_generacion(chunk):
+		return
+	if chunk in _queue:
+		return
+	if chunk in nuevos:
+		return
+	nuevos.append(chunk)
 
 
 func _iniciar_siguiente_chunk() -> void:
