@@ -60,8 +60,20 @@ func procesar() -> void:
 	# Las descargas de terreno tienen prioridad y se reparten entre frames.
 	# No mezclar limpieza pesada con la generación del siguiente chunk.
 	if _terrain.tiene_descarga_activa():
-		_terrain.procesar_descargas(mini(_cells_per_frame, 128))
-		return
+		var presupuesto_descarga := _presupuesto_descarga()
+		if presupuesto_descarga <= 0:
+			return
+		var descarga_inicio_usec := Time.get_ticks_usec()
+		var descarga_terminada := _terrain.procesar_descargas(presupuesto_descarga)
+		if _render_manager != null:
+			_render_manager.call(
+				"registrar_trabajo",
+				"terrain_clear",
+				float(Time.get_ticks_usec() - descarga_inicio_usec) / 1000.0,
+				maxi(presupuesto_descarga, 1)
+			)
+		if not descarga_terminada:
+			return
 
 	var nuevo_chunk: Vector2i = (
 		_world_to_chunk(
@@ -118,6 +130,20 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 	if limite <= 0:
 		return
 	_entity_spawner.procesar_spawn_queue(limite)
+
+func _presupuesto_descarga() -> int:
+	var base := mini(_cells_per_frame, 128)
+	if _render_manager == null:
+		return maxi(base, 1)
+	var presupuesto := int(_render_manager.call(
+		"presupuesto_unidades_adaptativo",
+		"terrain_clear",
+		base,
+		8,
+		128,
+		0.60
+	))
+	return presupuesto
 
 func _presupuesto_entidades() -> int:
 	if _render_manager == null:
