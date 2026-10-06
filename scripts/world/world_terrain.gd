@@ -558,6 +558,12 @@ func _procesar_pintado_chunk(
 	) / 1000.0
 	_profiler_paint_calls += 1
 
+	# El commit visual de este lote ocurre en el mismo frame que el pintado.
+	# Así la generación deja de tener una barrera artificial entre PINTADO y
+	# FLUSH, sin declarar terminado el chunk hasta que todas sus celdas estén
+	# realmente compuestas.
+	_procesar_flush_incremental()
+
 	if cursor < total:
 		return false
 
@@ -572,6 +578,41 @@ func _procesar_pintado_chunk(
 	_generation_task["cursor"] = 0
 
 	return false
+
+
+func _procesar_flush_incremental() -> void:
+	if visual == null or not visual.tiene_flush_pendiente():
+		return
+
+	var flush_cells := mini(_cells_presupuesto_flush_incremental(), visual_flush_cells)
+	if flush_cells <= 0:
+		return
+
+	var inicio_usec := Time.get_ticks_usec()
+	visual.procesar_flush(flush_cells)
+	var flush_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
+	_profiler_flush_ms += flush_ms
+	_profiler_flushes += 1
+	if _render_manager != null:
+		_render_manager.call(
+			"registrar_trabajo",
+			"terrain_flush",
+			flush_ms,
+			maxi(flush_cells, 1)
+		)
+
+
+func _cells_presupuesto_flush_incremental() -> int:
+	if _render_manager == null:
+		return 8
+	return int(_render_manager.call(
+		"presupuesto_unidades_terreno",
+		"terrain_flush",
+		16,
+		1,
+		visual_flush_cells,
+		0.85
+	))
 
 
 func _procesar_flush_chunk(
