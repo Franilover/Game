@@ -52,8 +52,13 @@ func presupuesto_unidades_adaptativo(nombre: String, base: int, minimo: int, max
 	if coste_por_unidad <= 0.0:
 		return mini(limite, maxi(minimo, 16))
 	var presupuesto_objetivo := minf(objetivo, disponible * 0.75)
-	var estimadas := maxi(1, floori(presupuesto_objetivo / coste_por_unidad))
-	return mini(limite, maxi(minimo, estimadas))
+	var estimadas := floori(presupuesto_objetivo / coste_por_unidad)
+	if estimadas <= 0:
+		return 0
+	# Una vez aprendido el coste real, respetar el tiempo disponible tiene
+	# prioridad sobre el mínimo nominal. Forzar el mínimo aquí podía convertir
+	# un frame casi agotado en un lote de 4+ celdas por encima del presupuesto.
+	return mini(limite, estimadas)
 
 func registrar_trabajo_usec(nombre: String, inicio_usec: int) -> float:
     var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
