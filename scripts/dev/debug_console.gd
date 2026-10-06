@@ -277,7 +277,10 @@ func _vista_arbol() -> String:
 	return "\n".join(out)
 
 func _buscar_por_nombre(nombre: String) -> Node:
-	var raiz := get_tree().current_scene
+	# El mundo abierto es una zona dinámica cargada por ZoneManager.
+	# No limitar la búsqueda a current_scene: la zona activa puede haber sido
+	# instanciada después de arrancar Main y seguir siendo un hijo del árbol raíz.
+	var raiz: Node = get_tree().root
 	if raiz == null:
 		return null
 	for nodo in _recorrer(raiz):
