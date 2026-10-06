@@ -217,6 +217,132 @@ func _obtener_script_path(nodo: Node) -> String:
 		return (script as Script).resource_path
 	return "<sin script>"
 
+func obtener_auditoria_engine() -> Dictionary:
+	var root: Node = get_tree().root
+	var nodos := _recorrer(root) if root != null else []
+	var problemas: Array[String] = []
+	var scripts: Dictionary = {}
+	var tipos: Dictionary = {}
+	var grupos: Dictionary = {}
+	var procesos: Array[Dictionary] = []
+	var timers: Array[Dictionary] = []
+	var canvas_layers: Array[Dictionary] = []
+	var subviewports: Array[Dictionary] = []
+	var conexiones: Array[Dictionary] = []
+	var nodos_invalidos: int = 0
+
+	for nodo in nodos:
+		if not is_instance_valid(nodo):
+			nodos_invalidos += 1
+			continue
+		var tipo: String = nodo.get_class()
+		tipos[tipo] = int(tipos.get(tipo, 0)) + 1
+		var script: Variant = nodo.get_script()
+		if script is Script:
+			var ruta: String = (script as Script).resource_path
+			scripts[ruta] = int(scripts.get(ruta, 0)) + 1
+		for grupo in nodo.get_groups():
+			var grupo_nombre: String = str(grupo)
+			grupos[grupo_nombre] = int(grupos.get(grupo_nombre, 0)) + 1
+		if nodo.is_processing() or nodo.is_physics_processing():
+			procesos.append({
+				"path": str(nodo.get_path()),
+				"type": tipo,
+				"process": nodo.is_processing(),
+				"physics": nodo.is_physics_processing(),
+				"mode": nodo.process_mode,
+				"priority": nodo.process_priority
+			})
+		if nodo is Timer:
+			var timer := nodo as Timer
+			timers.append({
+				"path": str(timer.get_path()),
+				"running": timer.is_stopped() == false,
+				"wait": timer.wait_time,
+				"left": timer.time_left,
+				"one_shot": timer.one_shot
+			})
+		if nodo is CanvasLayer:
+			var cl := nodo as CanvasLayer
+			canvas_layers.append({
+				"path": str(cl.get_path()),
+				"layer": cl.layer,
+				"visible": cl.visible,
+				"follow_viewport": cl.follow_viewport_enabled
+			})
+		if nodo is SubViewport:
+			var sv := nodo as SubViewport
+			subviewports.append({
+				"path": str(sv.get_path()),
+				"size": sv.size,
+				"visible": sv.is_visible_in_tree(),
+				"update_mode": sv.render_target_update_mode
+			})
+		for signal_data in nodo.get_signal_list():
+			var signal_name: String = str(signal_data.get("name", ""))
+			if nodo.get_signal_connection_list(signal_name).size() > 0:
+				conexiones.append({
+					"node": str(nodo.get_path()),
+					"signal": signal_name,
+					"connections": nodo.get_signal_connection_list(signal_name).size()
+				})
+
+	var viewport := get_viewport()
+	var renderer := RenderingServer.get_video_adapter_name()
+	var gpu_driver := RenderingServer.get_video_adapter_api_version()
+	var datos := {
+		"scene": str(get_tree().current_scene.scene_file_path) if get_tree().current_scene != null else "<ninguna>",
+		"paused": get_tree().paused,
+		"time_scale": Engine.time_scale,
+		"frame": Engine.get_process_frames(),
+		"physics_frame": Engine.get_physics_frames(),
+		"delta": get_process_delta_time(),
+		"physics_delta": get_physics_process_delta_time(),
+		"fps": Engine.get_frames_per_second(),
+		"node_count": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+		"object_count": Performance.get_monitor(Performance.OBJECT_COUNT),
+		"orphan_nodes": Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
+		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		"render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+		"render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		"viewport": str(viewport.get_visible_rect()),
+		"viewport_size": viewport.size,
+		"viewport_canvas": str(viewport.get_canvas_transform()),
+		"renderer": renderer,
+		"renderer_api": gpu_driver,
+		"nodes": nodos.size(),
+		"invalid_nodes": nodos_invalidos,
+		"scripts": scripts,
+		"types": tipos,
+		"groups": grupos,
+		"processing_nodes": procesos,
+		"timers": timers,
+		"canvas_layers": canvas_layers,
+		"subviewports": subviewports,
+		"signal_connections": conexiones
+	}
+
+	if Engine.time_scale <= 0.0:
+		problemas.append("Engine.time_scale <= 0")
+	if datos["fps"] <= 0:
+		problemas.append("FPS = 0")
+	if viewport.size.x <= 0 or viewport.size.y <= 0:
+		problemas.append("Viewport sin tamaño")
+	if int(datos["orphan_nodes"]) > 50:
+		problemas.append("Muchos orphan nodes: %d" % int(datos["orphan_nodes"]))
+	for layer in canvas_layers:
+		if not bool(layer["visible"]):
+			problemas.append("CanvasLayer invisible: %s" % layer["path"])
+	for sv in subviewports:
+		if int(sv["update_mode"]) == SubViewport.UPDATE_DISABLED:
+			problemas.append("SubViewport con UPDATE_DISABLED: %s" % sv["path"])
+
+	return {
+		"estado": "ERROR" if not problemas.is_empty() else "OK",
+		"problemas": problemas,
+		"datos": datos
+	}
+
 func obtener_auditoria_render() -> Dictionary:
 	var canvas_items: Array[Dictionary] = []
 	var tilemaps: Array[Dictionary] = []
