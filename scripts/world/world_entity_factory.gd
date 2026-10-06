@@ -17,6 +17,7 @@ var _world_data: WorldDataService = null
 var _world_atmosphere: WorldAtmosphere = null
 var _relaciones_ecologicas: Array = []
 var _creature_pool: Array[Creature] = []
+var _prop_pool: Array[WorldProp] = []
 
 
 func configurar_dependencias(
@@ -109,13 +110,34 @@ func crear_personaje(
 
 
 func crear_prop(data: Dictionary) -> WorldProp:
-	var node := WORLD_PROP_SCENE.instantiate() as WorldProp
+	var node: WorldProp = _tomar_prop_del_pool()
+	if node == null:
+		node = WORLD_PROP_SCENE.instantiate() as WorldProp
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear WorldProp.")
 		return null
 	node.configurar_dependencias(_world_context, _inventory, _world_items)
 	node.configurar_desde_game_data(data)
+	node.activar_como_proxy()
 	return node
+
+
+func reciclar_prop(node: WorldProp) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	node.desactivar_como_proxy()
+	if node.get_parent() != null:
+		node.get_parent().remove_child(node)
+	if not node in _prop_pool:
+		_prop_pool.append(node)
+
+
+func _tomar_prop_del_pool() -> WorldProp:
+	while not _prop_pool.is_empty():
+		var node := _prop_pool.pop_back()
+		if node != null and is_instance_valid(node):
+			return node
+	return null
 
 
 func configurar_relaciones_ecologicas(relaciones_ecologicas: Array) -> void:
