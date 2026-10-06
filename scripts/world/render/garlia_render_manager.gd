@@ -43,22 +43,22 @@ func registrar_trabajo(nombre: String, milisegundos: float, unidades: int = 1) -
         _work_unit_ms[nombre] = lerpf(coste_anterior, coste_unitario, 0.25)
 
 func presupuesto_unidades_adaptativo(nombre: String, base: int, minimo: int, maximo: int, objetivo_ms: float) -> int:
-	var limite := maxi(minimo, mini(base, maximo))
-	var disponible := presupuesto_disponible_ms()
-	if disponible <= 0.0:
-		return 0
-	var objetivo := maxf(objetivo_ms, 0.1)
-	var coste_por_unidad := float(_work_unit_ms.get(nombre, 0.0))
-	if coste_por_unidad <= 0.0:
-		return mini(limite, maxi(minimo, 16))
-	var presupuesto_objetivo := minf(objetivo, disponible * 0.75)
-	var estimadas := floori(presupuesto_objetivo / coste_por_unidad)
-	if estimadas <= 0:
-		return 0
-	# Una vez aprendido el coste real, respetar el tiempo disponible tiene
-	# prioridad sobre el mínimo nominal. Forzar el mínimo aquí podía convertir
-	# un frame casi agotado en un lote de 4+ celdas por encima del presupuesto.
-	return mini(limite, estimadas)
+    var limite := maxi(minimo, mini(base, maximo))
+    var disponible := presupuesto_disponible_ms()
+    if disponible <= 0.0:
+        return 0
+    var objetivo := maxf(objetivo_ms, 0.1)
+    var coste_por_unidad := float(_work_unit_ms.get(nombre, 0.0))
+    if coste_por_unidad <= 0.0:
+        return mini(limite, maxi(minimo, 16))
+    var presupuesto_objetivo := minf(objetivo, disponible * 0.75)
+    var estimadas := floori(presupuesto_objetivo / coste_por_unidad)
+    if estimadas <= 0:
+        return 0
+    # Una vez aprendido el coste real, respetar el tiempo disponible tiene
+    # prioridad sobre el mínimo nominal. Forzar el mínimo aquí podía convertir
+    # un frame casi agotado en un lote de 4+ celdas por encima del presupuesto.
+    return mini(limite, estimadas)
 
 func registrar_trabajo_usec(nombre: String, inicio_usec: int) -> float:
     var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
@@ -90,5 +90,5 @@ func obtener_estado() -> Dictionary:
         "work_ms": _work_ms.duplicate(),
         "work_calls": _work_calls.duplicate(),
         "frame_work_ms": _frame_work_ms.duplicate(),
-		"work_unit_ms": _work_unit_ms.duplicate(),
+        "work_unit_ms": _work_unit_ms.duplicate(),
     }
