@@ -76,6 +76,14 @@ func _crear_hurtbox() -> void:
 	shape.position = collision.position
 	hurtbox.add_child(shape)
 
+func restaurar_estado_vital(vida: int, vivo: bool) -> void:
+	var vida_segura := clampi(vida, 0, max_health)
+	vital_state.health = vida_segura
+	vital_state.is_alive = vivo and vida_segura > 0
+	_sync_desde_vital()
+	_emitir_estado_vital()
+
+
 func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 	if not is_alive:
 		return
