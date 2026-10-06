@@ -29,6 +29,7 @@ var areas: WorldTerrainAreas
 
 
 var _world_data: WorldDataService = null
+var _render_manager: Node = null
 var _biomas: Array = []
 var _ecosistemas: Array = []
 
@@ -80,6 +81,10 @@ func configurar(
 
 	_crear_capas()
 	visual.configurar(tile_size)
+func configurar_render_manager(render_manager: Node) -> void:
+	_render_manager = render_manager
+
+
 func cargar_datos_mundo() -> void:
 	_biomas.clear()
 	_ecosistemas.clear()
@@ -528,6 +533,11 @@ func _procesar_flush_chunk(
 	# cientos de celdas de display y provocar un frame de cientos de ms.
 	# Mantener la generación en 64, pero el renderer en micro-lotes.
 	var flush_cells: int = mini(cells, 32)
+	if _render_manager != null:
+		var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
+		if disponible < 0.75:
+			return false
+		flush_cells = mini(flush_cells, 16 if disponible < 1.5 else 32)
 	var terminado: bool = visual.procesar_flush(flush_cells)
 	_profiler_flush_ms += float(
 		Time.get_ticks_usec() - flush_start_usec
