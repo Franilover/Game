@@ -58,7 +58,7 @@ var _profiler_biome_ms: float = 0.0
 var _profiler_ecosystem_ms: float = 0.0
 var _profiler_zone_ms: float = 0.0
 var _profiler_chunk_start_usec: int = 0
-var _profiler_first_visible_ms: float = -1.0
+var _profiler_first_commit_ms: float = -1.0
 var _profiler_visible_25_ms: float = -1.0
 var _profiler_visible_50_ms: float = -1.0
 var _profiler_visible_100_ms: float = -1.0
@@ -235,7 +235,7 @@ func iniciar_generacion_chunk(
 	_profiler_ecosystem_ms = 0.0
 	_profiler_zone_ms = 0.0
 	_profiler_chunk_start_usec = Time.get_ticks_usec()
-	_profiler_first_visible_ms = -1.0
+	_profiler_first_commit_ms = -1.0
 	_profiler_visible_25_ms = -1.0
 	_profiler_visible_50_ms = -1.0
 	_profiler_visible_100_ms = -1.0
@@ -571,13 +571,8 @@ func _procesar_flush_chunk(
 	var flush_start_usec: int = Time.get_ticks_usec()
 	# TileMapDual no escala linealmente: mantener micro-lotes y dejar que
 	# el RenderManager corte el trabajo antes de consumir el frame.
-	# El renderer está funcionando con margen de FPS; permitimos lotes
-	# mayores para que el terreno aparezca antes, pero el RenderManager
-	# sigue regulando el trabajo real según el coste medido del frame.
-	# FLUSH es el punto más sensible del renderer en equipos modestos:
-	# _update_cells() no tiene coste lineal y un lote grande puede producir
-	# un pico aunque el presupuesto global parezca disponible. Preferimos
-	# terminar el chunk unos frames después antes que bloquear el frame.
+	# El objetivo es reducir la latencia del terreno visible sin quitarle al
+	# RenderManager la capacidad de recortar el trabajo cuando el frame está caro.
 	var flush_cells: int = mini(cells, visual_flush_cells)
 	if _render_manager != null:
 		flush_cells = int(_render_manager.call(
@@ -595,8 +590,8 @@ func _procesar_flush_chunk(
 	if visible_cells_now > _profiler_visible_cells:
 		_profiler_visible_cells = visible_cells_now
 		var elapsed_ms := float(Time.get_ticks_usec() - _profiler_chunk_start_usec) / 1000.0
-		if _profiler_first_visible_ms < 0.0:
-			_profiler_first_visible_ms = elapsed_ms
+		if _profiler_first_commit_ms < 0.0:
+			_profiler_first_commit_ms = elapsed_ms
 		if _profiler_visible_25_ms < 0.0 and visible_cells_now >= 256:
 			_profiler_visible_25_ms = elapsed_ms
 		if _profiler_visible_50_ms < 0.0 and visible_cells_now >= 512:
@@ -1476,7 +1471,7 @@ func obtener_diagnostico() -> Dictionary:
 		"datos_llamadas": _profiler_data_calls,
 		"pintado_llamadas": _profiler_paint_calls,
 		"flush_llamadas": _profiler_flushes,
-		"primer_tile_visible_ms": _profiler_first_visible_ms,
+		"primer_commit_visual_ms": _profiler_first_commit_ms,
 		"visible_25_ms": _profiler_visible_25_ms,
 		"visible_50_ms": _profiler_visible_50_ms,
 		"visible_100_ms": _profiler_visible_100_ms,
