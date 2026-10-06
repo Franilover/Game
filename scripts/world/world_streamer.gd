@@ -48,6 +48,12 @@ func procesar() -> void:
 	if _player == null:
 		return
 
+	# Las descargas de terreno tienen prioridad y se reparten entre frames.
+	# No mezclar limpieza pesada con la generación del siguiente chunk.
+	if _terrain.tiene_descarga_activa():
+		_terrain.procesar_descargas(mini(_cells_per_frame, 256))
+		return
+
 	var nuevo_chunk: Vector2i = (
 		_world_to_chunk(
 			_player.global_position
