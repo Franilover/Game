@@ -10,6 +10,7 @@ var _by_chunk: Dictionary = {}
 var _active_chunks: Dictionary = {}
 var _persistent_by_key: Dictionary = {}
 var _global_entities: Array = []
+var _runtime_state_by_key: Dictionary = {}
 
 
 func configurar(entities_root: Node) -> void:
@@ -150,6 +151,39 @@ func obtener_persistente(key: String) -> Node:
 	return null
 
 
+func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
+	if entity == null or not is_instance_valid(entity):
+		return
+	if not entity is Creature:
+		return
+	var criatura := entity as Creature
+	var criatura_id := criatura.get_id().strip_edges()
+	if criatura_id.is_empty():
+		return
+	var key := _runtime_key(chunk_coord, criatura_id)
+	_runtime_state_by_key[key] = {
+		"criatura_id": criatura_id,
+		"position": criatura.global_position,
+		"velocity": criatura.velocity,
+		"health": criatura.health,
+		"max_health": criatura.max_health,
+		"is_alive": criatura.is_alive,
+		"estado": criatura.get_meta("estado_mundo", "")
+	}
+
+
+func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String) -> Dictionary:
+	var key := _runtime_key(chunk_coord, criatura_id)
+	var estado: Variant = _runtime_state_by_key.get(key, {})
+	if estado is Dictionary:
+		return (estado as Dictionary).duplicate(true)
+	return {}
+
+
+func _runtime_key(chunk_coord: Vector2i, criatura_id: String) -> String:
+	return str(chunk_coord.x) + ":" + str(chunk_coord.y) + ":" + criatura_id
+
+
 func despawn_chunk(chunk_coord: Vector2i) -> void:
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 	if not bucket_variant is Array:
@@ -163,6 +197,7 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 		if not is_instance_valid(entity):
 			continue
 
+		guardar_estado_entidad(entity, chunk_coord)
 		_remover_persistencia(entity)
 		entity.queue_free()
 
