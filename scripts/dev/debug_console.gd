@@ -292,7 +292,7 @@ func _recorrer(raiz: Node) -> Array[Node]:
 	return resultado
 
 func _script(nodo: Node) -> String:
-	var script := nodo.get_script()
+	var script: Variant = nodo.get_script()
 	return script.resource_path if script is Script else "<sin script>"
 
 func _diagnostico_nodo(nodo: Node) -> Variant:
