@@ -16,8 +16,12 @@ var _world_items: GarliaWorldItems = null
 func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 	_inventory = inventario
 	_world_items = world_items
-	if _world_items != null and not _world_items.catalogo_cargado.is_connected(_al_catalogo_cargado):
-		_world_items.catalogo_cargado.connect(_al_catalogo_cargado)
+	if _world_items != null:
+		if not _world_items.catalogo_cargado.is_connected(_al_catalogo_cargado):
+			_world_items.catalogo_cargado.connect(_al_catalogo_cargado)
+		# El catálogo puede haber terminado de cargar antes de la inyección.
+		if not _world_items.catalogo.is_empty():
+			call_deferred("_renderizar_recetas")
 
 
 func _ready() -> void:
