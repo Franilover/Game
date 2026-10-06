@@ -271,13 +271,21 @@ func obtener_auditoria_render() -> Dictionary:
 				fila["tile_set"] = str(ts) if ts != null else ""
 				fila["tile_size"] = ts.tile_size if ts != null else Vector2i.ZERO
 				fila["source_count"] = ts.get_source_count() if ts != null else 0
+				fila["enabled"] = tm.enabled
+				fila["used_rect"] = tm.get_used_rect()
+				if used.size() > 0:
+					var sample_cell: Vector2i = used[0]
+					fila["sample_cell"] = sample_cell
+					fila["sample_source_id"] = tm.get_cell_source_id(sample_cell)
+					fila["sample_atlas"] = tm.get_cell_atlas_coords(sample_cell)
+					fila["sample_screen"] = viewport.get_canvas_transform() * tm.to_global(tm.map_to_local(sample_cell))
 				if ts != null:
 					var sources: Array[String] = []
 					for sid in ts.get_source_ids():
 						var source := ts.get_source(sid)
 						if source is TileSetAtlasSource:
 							var atlas := source as TileSetAtlasSource
-							sources.append("%d:%s:%d" % [sid, (atlas.texture as Texture2D).resource_path if atlas.texture != null else "<sin textura>", atlas.get_tiles_count()])
+							sources.append("%d:%s:%d:region=%s:texture=%s" % [sid, atlas.texture.resource_path if atlas.texture != null else "<sin textura>", atlas.get_tiles_count(), str(atlas.texture_region_size), str(atlas.texture.get_size()) if atlas.texture != null else "<sin textura>"])
 					fila["sources"] = sources
 				tilemaps.append(fila)
 			canvas_items.append(fila)
@@ -301,6 +309,8 @@ func obtener_auditoria_render() -> Dictionary:
 			tilemaps_con_celdas += 1
 			if not bool(tm.get("visible_tree", false)):
 				problemas.append("TileMapLayer con celdas pero invisible: %s" % tm["path"])
+			if not bool(tm.get("enabled", true)):
+				problemas.append("TileMapLayer con celdas pero enabled=false: %s" % tm["path"])
 			if int(tm.get("source_count", 0)) == 0:
 				problemas.append("TileMapLayer con celdas pero sin TileSet sources: %s" % tm["path"])
 			if float((tm.get("modulate", Color.WHITE) as Color).a) <= 0.001:
