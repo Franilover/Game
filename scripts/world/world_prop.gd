@@ -460,6 +460,23 @@ func _recolectar(persona: Node) -> bool:
 
 
 
+func activar_como_proxy() -> void:
+	visible = true
+	set_process(true)
+	_actualizar_estado_interaccion()
+	_actualizar_profundidad()
+	queue_redraw()
+
+
+func desactivar_como_proxy() -> void:
+	set_process(false)
+	remove_from_group("interactable")
+	remove_from_group("world_resource")
+	remove_from_group("world_cave")
+	remove_from_group("world_structure")
+	visible = false
+
+
 func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	add_to_group("world_props")
 	datos = datos_game.duplicate(true)
@@ -493,8 +510,8 @@ func configurar_chunk(
 
 func _actualizar_sprite(asset_path: String) -> void:
 	var anterior := get_node_or_null("Sprite")
-	if anterior != null:
-		anterior.queue_free()
+	if anterior != null and is_instance_valid(anterior):
+		anterior.free()
 
 	if asset_path.is_empty():
 		return
