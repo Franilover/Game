@@ -43,6 +43,7 @@ var _pintado_desde_flush: int = 0
 @export var visual_flush_cells: int = 512
 
 var _ultimo_chunk_generado: Vector2i = Vector2i.ZERO
+var _prioridad_generacion_posicion: Vector2 = Vector2.ZERO
 
 # Perfilador interno del pipeline de generación.
 var _profiler_data_ms: float = 0.0
@@ -198,6 +199,10 @@ func _crear_capas() -> void:
 	visual = get_node_or_null("WorldTerrainVisual") as WorldTerrainVisual
 	if visual == null:
 		push_error("WorldTerrain: falta el nodo WorldTerrainVisual en la escena.")
+func configurar_prioridad_generacion(posicion_mundo: Vector2) -> void:
+	_prioridad_generacion_posicion = posicion_mundo
+
+
 func iniciar_generacion_chunk(
 	chunk_coord: Vector2i
 ) -> void:
@@ -248,10 +253,15 @@ func iniciar_generacion_chunk(
 
 	_pintado_desde_flush = 0
 
+	var orden_datos := _crear_orden_generacion(padded_size, chunk_coord, true)
+	var orden_pintado := _crear_orden_generacion(chunk_size_tiles, chunk_coord, false)
+
 	_generation_task = {
 		"coord": chunk_coord,
 		"stage": 0,
 		"cursor": 0,
+		"orden_datos": orden_datos,
+		"orden_pintado": orden_pintado,
 		"zonas_base": zonas_base,
 		"zonas": zonas,
 		"biomas": biomas,
@@ -317,6 +327,7 @@ func _procesar_datos_chunk(
 	var cursor: int = int(
 		_generation_task["cursor"]
 	)
+	var orden: Array = _generation_task["orden_datos"]
 
 	if cursor == 0 and visual != null:
 		visual.comenzar_lote()
@@ -327,12 +338,13 @@ func _procesar_datos_chunk(
 	)
 
 	while cursor < limite:
+		var indice: int = int(orden[cursor])
 		var local_y: int = (
-			cursor / size
+			indice / size
 		)
 
 		var local_x: int = (
-			cursor % size
+			indice % size
 		)
 
 		var global_x: int = (
@@ -436,6 +448,7 @@ func _procesar_pintado_chunk(
 	var cursor: int = int(
 		_generation_task["cursor"]
 	)
+	var orden: Array = _generation_task["orden_pintado"]
 
 	var limite: int = mini(
 		cursor + cells,
@@ -443,12 +456,13 @@ func _procesar_pintado_chunk(
 	)
 
 	while cursor < limite:
+		var indice: int = int(orden[cursor])
 		var local_y: int = (
-			cursor / chunk_size_tiles
+			indice / chunk_size_tiles
 		)
 
 		var local_x: int = (
-			cursor % chunk_size_tiles
+			indice % chunk_size_tiles
 		)
 
 		var padded_x: int = (
@@ -738,6 +752,50 @@ func procesar_descargas(cells: int) -> bool:
 
 func tiene_descarga_activa() -> bool:
 	return not _unload_task.is_empty()
+func _crear_orden_generacion(
+	size: int,
+	chunk_coord: Vector2i,
+	con_padding: bool
+) -> Array:
+	var indices: Array = []
+	var total: int = size * size
+
+	for indice in range(total):
+		indices.append(indice)
+
+	var posicion_objetivo_tile := Vector2i(
+		floori(_prioridad_generacion_posicion.x / float(tile_size)),
+		floori(_prioridad_generacion_posicion.y / float(tile_size))
+	)
+
+	indices.sort_custom(
+		func(a: int, b: int) -> bool:
+			var ax: int = a % size
+			var ay: int = a / size
+			var bx: int = b % size
+			var by: int = b / size
+
+			var offset: int = CHUNK_PADDING if con_padding else 0
+			var atile := Vector2i(
+				chunk_coord.x * chunk_size_tiles + ax - offset,
+				chunk_coord.y * chunk_size_tiles + ay - offset
+			)
+			var btile := Vector2i(
+				chunk_coord.x * chunk_size_tiles + bx - offset,
+				chunk_coord.y * chunk_size_tiles + by - offset
+			)
+
+			var da: int = atile.distance_squared_to(posicion_objetivo_tile)
+			var db: int = btile.distance_squared_to(posicion_objetivo_tile)
+
+			if da == db:
+				return a < b
+			return da < db
+	)
+
+	return indices
+
+
 func _bioma_index_at_tile(tile: Vector2i) -> int:
 	if areas == null:
 		return -1
