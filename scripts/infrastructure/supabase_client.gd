@@ -179,6 +179,53 @@ func _emitir_request_fallida(request_id: int) -> void:
 	request_completed.emit(request_id, HTTPRequest.RESULT_REQUEST_FAILED, 0, PackedStringArray(), PackedByteArray())
 
 
+func obtener_diagnostico_debug() -> Dictionary:
+	var auth_ok: bool = _auth != null
+	var configurado: bool = _esta_configurado()
+	var autenticado: bool = _auth != null and _auth.esta_autenticado()
+	var solicitudes: Array[Dictionary] = []
+	for par in [
+		["mundo", _http],
+		["eterium", _http_eterium],
+		["especies", _http_especies],
+		["especie_eterium_game", _http_especie_eterium_game],
+		["personaje_social", _http_personaje_social],
+		["personaje_regalos", _http_personaje_regalos],
+		["relaciones_ecologicas", _http_relaciones_ecologicas],
+		["reinos_game", _http_reinos_game]
+	]:
+		var nombre: String = str(par[0])
+		var request: HTTPRequest = par[1] as HTTPRequest
+		solicitudes.append({
+			"nombre": nombre,
+			"existe": is_instance_valid(request),
+			"estado": request.get_http_client_status() if is_instance_valid(request) else -1
+		})
+	return {
+		"auth_node": auth_ok,
+		"configurado": configurado,
+		"autenticado": autenticado,
+		"url_configurada": _auth != null and not _auth.SUPABASE_URL.is_empty(),
+		"publishable_key_configurada": _auth != null and not _auth.SUPABASE_PUBLISHABLE_KEY.is_empty(),
+		"supabase_url": _auth.SUPABASE_URL if _auth != null else "<sin auth>",
+		"requests": solicitudes,
+		"cache": {
+			"reinos_game": _reinos_game.size(),
+			"especies_jugables": _especies_jugables.size(),
+			"especie_eterium_game": _especie_eterium_game.size(),
+			"personaje_social": _personaje_social.size(),
+			"personaje_regalos": _personaje_regalos.size(),
+			"relaciones_ecologicas": _relaciones_ecologicas.size(),
+			"eterium_runtime": not _eterium_runtime.is_empty(),
+			"mundo_activo": _mundo_activo_en_escena
+		}
+	}
+
+func probar_conexion_debug() -> int:
+	if not _esta_configurado():
+		return -1
+	return get_rest("reinos_game", "select=id,clave,activo,orden&activo=eq.true&limit=1")
+
 func _esta_configurado() -> bool:
 	return _auth != null and not _auth.SUPABASE_URL.is_empty() and not _auth.SUPABASE_PUBLISHABLE_KEY.is_empty()
 
