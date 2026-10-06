@@ -681,6 +681,89 @@ func _marcar_dirty(
 	cells.append(cell)
 
 
+func tiene_flush_pendiente() -> bool:
+	for clave_variant in _layers_by_zone.keys():
+		var clave := str(clave_variant)
+		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
+		if cells_variant is Array and not cells_variant.is_empty():
+			return true
+	return not _dirty_variations.is_empty()
+
+
+func procesar_flush(cells: int) -> bool:
+	if _batch_active:
+		return false
+
+	var presupuesto: int = maxi(cells, 1)
+
+	for clave_variant in _layers_by_zone.keys():
+		if presupuesto <= 0:
+			break
+
+		var clave := str(clave_variant)
+		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
+		if not cells_variant is Array or cells_variant.is_empty():
+			continue
+
+		var layer := _layers_by_zone[clave] as TileMapDual
+		if layer == null:
+			_dirty_cells_by_zone[clave] = []
+			_dirty_lookup_by_zone[clave] = {}
+			continue
+
+		var take: int = mini(presupuesto, cells_variant.size())
+		var dirty: Array[Vector2i] = []
+		var convert_start_usec := Time.get_ticks_usec()
+
+		for i in range(take):
+			var cell_variant: Variant = cells_variant[i]
+			if cell_variant is Vector2i:
+				dirty.append(cell_variant as Vector2i)
+				_dirty_lookup_by_zone[clave].erase(cell_variant)
+
+		_profiler_flush_convert_ms += float(
+			Time.get_ticks_usec() - convert_start_usec
+		) / 1000.0
+
+		if not dirty.is_empty():
+			var update_start_usec := Time.get_ticks_usec()
+			layer._update_cells(dirty, false)
+			var update_ms := float(
+				Time.get_ticks_usec() - update_start_usec
+			) / 1000.0
+			_profiler_flush_update_ms += update_ms
+			_profiler_flush_update_max_ms = maxf(
+				_profiler_flush_update_max_ms,
+				update_ms
+			)
+			_profiler_flush_update_calls += 1
+			_profiler_flush_cells += dirty.size()
+
+		cells_variant = cells_variant.slice(take)
+		_dirty_cells_by_zone[clave] = cells_variant
+		presupuesto -= take
+
+	if presupuesto > 0 and not _dirty_variations.is_empty():
+		var variation_start_usec := Time.get_ticks_usec()
+		var variaciones := _dirty_variations.keys()
+		var take_variaciones: int = mini(
+			presupuesto,
+			variaciones.size()
+		)
+		for i in range(take_variaciones):
+			var cell_variant: Variant = variaciones[i]
+			if cell_variant is Vector2i:
+				_actualizar_variacion(cell_variant as Vector2i)
+				_dirty_variations.erase(cell_variant)
+			_profiler_flush_variation_cells += 1
+			presupuesto -= 1
+		_profiler_flush_variation_ms += float(
+			Time.get_ticks_usec() - variation_start_usec
+			) / 1000.0
+
+	return not tiene_flush_pendiente()
+
+
 func flush() -> void:
 	var flush_total_start_usec := Time.get_ticks_usec()
 	if _batch_active:
