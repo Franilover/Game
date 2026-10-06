@@ -416,14 +416,22 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	if habitat_ids.is_empty():
 		return false
 	var candidatos: Array[Dictionary] = []
+	var candidatos_bioma: Array[Dictionary] = []
 	for prop_variant in props:
 		if not prop_variant is Dictionary:
 			continue
 		var prop := prop_variant as Dictionary
-		if str(prop.get("bioma_id", "")) != bioma_id or str(prop.get("ecosistema_id", "")) != ecosistema_id:
+		if str(prop.get("bioma_id", "")) != bioma_id:
 			continue
-		if str(prop.get("habitat_id", "")) not in habitat_ids:
-			continue
+
+		# El vínculo por bioma es la regla mínima canónica. Si existe una
+		# configuración exacta para ecosistema/hábitat la preferimos; si no,
+		# usamos otra configuración del mismo bioma. Así un prop no desaparece
+		# sólo porque el chunk use otro ecosistema válido del mismo bioma.
+		var coincide_contexto := (
+			str(prop.get("ecosistema_id", "")) == ecosistema_id
+			and str(prop.get("habitat_id", "")) in habitat_ids
+		)
 		var nombre := str(prop.get("nombre", "")).strip_edges()
 		if nombre.is_empty():
 			continue
@@ -431,7 +439,12 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 		datos_prop["asset_path"] = _spawn_rules.construir_asset_path_prop(datos_prop)
 		if str(datos_prop.get("asset_path", "")).is_empty():
 			continue
-		candidatos.append(datos_prop)
+		if coincide_contexto:
+			candidatos.append(datos_prop)
+		candidatos_bioma.append(datos_prop)
+
+	if candidatos.is_empty():
+		candidatos = candidatos_bioma
 	if candidatos.is_empty():
 		return false
 	var elegido := _spawn_rules.elegir_prop(candidatos, rng)
