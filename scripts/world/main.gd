@@ -151,8 +151,11 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		if _world_generator.is_world_ready():
 			_inicializar_runtime_de_zona()
 		else:
-			if not _world_generator.mundo_generado.is_connected(_al_mundo_generado):
-				_world_generator.mundo_generado.connect(_al_mundo_generado, CONNECT_ONE_SHOT)
+			# El runtime no debe esperar a que el primer chunk termine de
+			# renderizar. El jugador y el streamer se enlazan apenas el mundo
+			# queda estructuralmente listo; la generación visual continúa aparte.
+			if not _world_generator.mundo_inicializado.is_connected(_al_mundo_inicializado):
+				_world_generator.mundo_inicializado.connect(_al_mundo_inicializado, CONNECT_ONE_SHOT)
 			return
 	else:
 		# Reino Torres no crea WorldGenerator ni entidades procedurales.
@@ -161,8 +164,9 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_inicializar_runtime_de_zona()
 
 
-func _al_mundo_generado() -> void:
+func _al_mundo_inicializado() -> void:
 	_inicializar_runtime_de_zona()
+
 
 
 func _inicializar_runtime_de_zona() -> void:
