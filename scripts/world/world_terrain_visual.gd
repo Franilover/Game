@@ -917,8 +917,6 @@ func procesar_flush(cells: int) -> bool:
 			_dirty_cursor_by_zone[clave] = 0
 		presupuesto -= dirty.size()
 		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
-		presupuesto -= dirty.size()
-		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
 
 	if presupuesto > 0 and not _dirty_variations.is_empty():
 		var variation_start_usec := Time.get_ticks_usec()
