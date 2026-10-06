@@ -171,8 +171,12 @@ No seguir acumulando como solución definitiva cambios arbitrarios de cells_per_
 - Las criaturas fuera del chunk activo no mantienen proxies en el SceneTree.
 - La muerte persistente sigue evitando respawns automáticos.
 
-Pendiente menor de Fase 4:
-- Integrar un presupuesto/cola temporal explícita para spawn/despawn cuando una transición de chunk requiera muchas entidades simultáneamente. El pool reduce el coste de creación, pero no se considera cerrado hasta que esa cola sea independiente del spawn síncrono.
+Fase 4 cerrada:
+- WorldEntitySpawner mantiene una cola explícita de activación de chunks.
+- WorldStreamer entrega un presupuesto temporal al trabajo de entidades.
+- Como máximo se activa un chunk de entidades por turno de presupuesto.
+- Las solicitudes de chunks que dejan de ser relevantes se cancelan antes de instanciar.
+- El pooling reduce el coste de crear/destruir proxies; la cola evita ráfagas de instanciación durante cambios de chunk.
 
 ### Fase 5 — Props
 - Separar props lógicos de representación.
@@ -224,6 +228,6 @@ Pendiente dentro de esta fase:
 6. El pool no sustituye la lógica de interacción/recolección: los props interactivos siguen siendo WorldProp normales cuando están activos.
 
 Pendiente:
-- cola temporal explícita para spawn/despawn de props.
+- extender la cola de activación al trabajo interno de props si un chunk contiene una cantidad excepcionalmente grande.
 - separar definitivamente PropData de la representación Node si el profiling demuestra que el diccionario actual no es suficiente.
 - evaluación de MultiMesh sólo para decoración estática masiva.
