@@ -119,8 +119,26 @@ func _process(_delta: float) -> void:
 			render_manager.call("finalizar_frame")
 		return
 
-	if streamer != null:
-		streamer.procesar()
+	# La generación del chunk inicial no puede depender del WorldStreamer:
+	# el streamer necesita al jugador para actualizar su cola, mientras que el
+	# terreno inicial debe poder avanzar aunque el runtime del jugador todavía
+	# esté terminando de enlazarse.
+	if terrain != null and terrain.tiene_generacion_activa():
+		var presupuesto_inicial: int = generation_cells_per_frame
+		if render_manager != null:
+			var disponible: float = float(render_manager.call("presupuesto_disponible_ms"))
+			if disponible >= 4.0:
+				presupuesto_inicial = generation_cells_per_frame
+			elif disponible >= 2.5:
+				presupuesto_inicial = mini(generation_cells_per_frame, 32)
+			elif disponible >= 1.5:
+				presupuesto_inicial = mini(generation_cells_per_frame, 16)
+			else:
+				presupuesto_inicial = 8
+		terrain.procesar_generacion(maxi(presupuesto_inicial, 1))
+	else:
+		if streamer != null:
+			streamer.procesar()
 
 	if render_manager != null:
 		render_manager.call("finalizar_frame")
