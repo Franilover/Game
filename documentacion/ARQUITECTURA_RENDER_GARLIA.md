@@ -335,3 +335,137 @@ Pendiente:
 - Esto es necesario porque TileMapDual calcula cada capa con su propio vecindario; una celda que aparece en el borde puede cambiar la regla visual del chunk que ya estaba cargado.
 - Las invalidaciones siguen deduplicadas mediante lookup, por lo que la corrección no implica recalcular varias veces la misma celda dentro del mismo lote.
 - GarliaRenderManager ahora actualiza realmente el coste EMA por unidad de trabajo; el presupuesto adaptativo deja de depender de un valor no inicializado.
+
+
+# Port Android — Estado y plan de implementación
+
+## Punto exacto donde queda el proyecto
+
+El núcleo de streaming/renderizado queda estabilizado antes de comenzar el port:
+
+- WorldStreamer es el orquestador principal del trabajo de terreno cuando el jugador ya está registrado.
+- WorldGenerator._process() ya no procesa terreno en paralelo con WorldStreamer; esto evita bloquear la preempción.
+- La generación de terreno está dividida en DATOS → PINTADO → FLUSH.
+- La generación puede pausarse y reanudarse para dar prioridad al chunk que realmente necesita el jugador.
+- El streaming es direccional: la dirección de movimiento del Player alimenta la prioridad y existe prefetch del borde.
+- El borde del chunk del jugador se calcula una sola vez por frame mediante caché.
+- El flush visual es incremental y usa presupuesto adaptativo.
+- Las variaciones tienen cola/cursor propios para no reconstruir .keys() continuamente.
+- La limpieza de chunks también es incremental y no utiliza un flush() global como camino normal.
+- Criaturas y props tienen estado lógico separado de sus proxies visuales y activación incremental.
+- F4 ya expone diagnóstico del mundo, streaming, terreno, visual y rendimiento.
+- Último diagnóstico importante: el terreno ya llega a primer_commit_visual_ms ≈ 749 ms en una muestra, con flush visual incremental activo; el siguiente cuello de botella debe medirse en dispositivo móvil en vez de seguir aumentando microparámetros de PC.
+
+## Inicio del port Android
+
+El port se inicia sin duplicar el núcleo del juego.
+
+Arquitectura objetivo:
+
+NÚCLEO GARLIA
+  WorldData / Supabase
+  WorldGenerator / WorldStreamer
+  criaturas / props / inventario / combate
+  SceneManager / GameState / Auth
+        ↓
+  PC: teclado + mouse + debug completo
+  Android: touch + UI móvil + debug adaptado
+
+Android no tendrá una versión alternativa de la lógica del mundo. Sólo cambia la capa de entrada, presentación y configuración de plataforma.
+
+## Primera configuración Android
+
+Se añadió un preset Android en export_presets.cfg:
+
+- paquete: com.franilover.garlia
+- versión inicial: 0.1.0
+- arquitectura de desarrollo: ARM64
+- XR desactivado
+- immersive mode activado
+- soporte de tamaños Android activado
+- permiso de Internet activado para Supabase
+- salida prevista: EXPORT/Garlia.apk
+- Gradle desactivado inicialmente; no necesitamos código Android nativo para la primera prueba.
+
+La documentación oficial de Godot 4.7 recomienda OpenJDK 17 y Android SDK para exportar desde Linux/Windows/macOS. Para la primera iteración usaremos APK preconstruido; Gradle queda reservado para cuando necesitemos plugins Android o AAB de distribución.
+
+## Orden del port
+
+### Android 1 — Exportación mínima
+1. Instalar/configurar export templates Android.
+2. Configurar Java SDK y Android SDK en Godot.
+3. Detectar el teléfono mediante ADB.
+4. Exportar e instalar APK debug.
+5. Confirmar que abre el menú inicial.
+6. Confirmar login/Auth y conexión Supabase.
+7. Confirmar transición Reino Torres → Mundo Abierto.
+
+### Android 2 — Entrada táctil
+Crear una capa MobileInput que traduzca controles táctiles a las mismas acciones existentes:
+
+- movimiento → joystick virtual
+- interacción → botón
+- ataque primario → botón
+- ataque secundario → botón
+- dash → botón
+- salto → botón
+- inventario → botón
+- acciones contextuales → botones temporales
+
+Los sistemas de gameplay seguirán leyendo acciones (move_left, move_right, etc.) y no conocerán si la fuente fue teclado, mando o touch.
+
+### Android 3 — HUD
+Adaptar el HUD sin duplicarlo:
+
+- conservar barras, hotbar, misión e interacción;
+- añadir controles táctiles como una capa móvil;
+- usar área segura de pantalla;
+- evitar que los controles bloqueen accidentalmente la interacción del mundo;
+- mantener F4/debug disponible mediante gesto o botón de desarrollo sólo en builds debug.
+
+### Android 4 — Rendimiento
+F4 deberá comparar especialmente:
+
+- FPS / frame_ms
+- process_ms
+- physics_ms
+- draw_calls
+- render_objects
+- memoria
+- chunks cargados
+- chunk generándose
+- etapa de generación
+- dirty terrain
+- flush pendiente
+- variaciones pendientes
+- props/criaturas activas
+- trabajo diferido
+- coste EMA de terrain_flush / terrain_clear
+- tiempo hasta primer commit visual
+
+No se ajustará el streaming a ciegas. Primero se medirá en el teléfono.
+
+### Android 5 — Calidad móvil
+Después de conseguir una partida funcional:
+
+- revisar resolución y escala;
+- comprobar orientación;
+- comprobar teclado virtual y foco;
+- comprobar pausa/reanudación de la app;
+- comprobar pérdida temporal de red;
+- comprobar reconexión Supabase;
+- comprobar memoria al explorar muchos chunks;
+- revisar batería/temperatura;
+- crear perfil móvil de calidad si el profiling demuestra que hace falta.
+
+## Regla del port
+
+Primero compatibilidad, después controles, después rendimiento, después estética móvil.
+
+No crear una rama de lógica Android ni copiar sistemas de PC.
+
+## Estado actual
+
+PORT ANDROID: FASE 1 — EXPORTACIÓN MÍNIMA INICIADA
+
+El siguiente paso operativo es preparar el entorno de exportación y realizar el primer APK en el dispositivo. Una vez que arranque, el siguiente bloque de trabajo será MobileInput, no una reescritura del gameplay.
