@@ -87,6 +87,8 @@ var _dirty_lookup_by_zone: Dictionary = {}
 var _dirty_cursor_by_zone: Dictionary = {}
 var _dirty_zone_cursor: int = 0
 var _dirty_variations: Dictionary = {}
+var _dirty_variation_queue: Array = []
+var _dirty_variation_cursor: int = 0
 
 # Celda -> bioma visual que la posee actualmente.
 var _cell_bioma: Dictionary = {}
@@ -1115,6 +1117,8 @@ func flush() -> void:
 		var variaciones := _dirty_variations.keys()
 		_profiler_flush_variation_cells += variaciones.size()
 		_dirty_variations.clear()
+		_dirty_variation_queue.clear()
+		_dirty_variation_cursor = 0
 		for cell_variant in variaciones:
 			if cell_variant is Vector2i:
 				_actualizar_variacion(cell_variant as Vector2i)
