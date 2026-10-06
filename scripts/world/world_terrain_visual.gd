@@ -90,6 +90,7 @@ var _clear_task: Dictionary = {}
 
 var _profiler_set_zone_ms: float = 0.0
 var _profiler_set_zone_calls: int = 0
+var _profiler_set_zone_max_ms: float = 0.0
 var _profiler_set_cell_ms: float = 0.0
 var _profiler_variation_ms: float = 0.0
 var _profiler_dirty_ms: float = 0.0
@@ -99,11 +100,15 @@ var _profiler_flush_variation_ms: float = 0.0
 var _profiler_flush_update_calls: int = 0
 var _profiler_flush_cells: int = 0
 var _profiler_flush_variation_cells: int = 0
+var _profiler_flush_max_ms: float = 0.0
+var _profiler_flush_update_max_ms: float = 0.0
+var _profiler_variation_max_ms: float = 0.0
 var _profiler_set_cell_calls: int = 0
 
 func iniciar_profiler() -> void:
 	_profiler_set_zone_ms = 0.0
 	_profiler_set_zone_calls = 0
+	_profiler_set_zone_max_ms = 0.0
 	_profiler_set_cell_ms = 0.0
 	_profiler_variation_ms = 0.0
 	_profiler_dirty_ms = 0.0
@@ -113,12 +118,16 @@ func iniciar_profiler() -> void:
 	_profiler_flush_update_calls = 0
 	_profiler_flush_cells = 0
 	_profiler_flush_variation_cells = 0
+	_profiler_flush_max_ms = 0.0
+	_profiler_flush_update_max_ms = 0.0
+	_profiler_variation_max_ms = 0.0
 	_profiler_set_cell_calls = 0
 
 func obtener_profiler() -> Dictionary:
 	return {
 		"set_zone_ms": _profiler_set_zone_ms,
 		"set_zone_calls": _profiler_set_zone_calls,
+		"set_zone_max_ms": _profiler_set_zone_max_ms,
 		"set_cell_ms": _profiler_set_cell_ms,
 		"variation_ms": _profiler_variation_ms,
 		"dirty_ms": _profiler_dirty_ms,
@@ -128,6 +137,9 @@ func obtener_profiler() -> Dictionary:
 		"flush_update_calls": _profiler_flush_update_calls,
 		"flush_cells": _profiler_flush_cells,
 		"flush_variation_cells": _profiler_flush_variation_cells,
+		"flush_max_ms": _profiler_flush_max_ms,
+		"flush_update_max_ms": _profiler_flush_update_max_ms,
+		"variation_max_ms": _profiler_variation_max_ms,
 		"set_cell_calls": _profiler_set_cell_calls,
 	}
 
@@ -347,7 +359,9 @@ func set_zone(
 	_cell_zone[cell] = zone
 	var variation_start_usec := Time.get_ticks_usec()
 	_marcar_variaciones_dirty(cell, clave)
-	_profiler_variation_ms += float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
+	var variation_ms := float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
+	_profiler_variation_ms += variation_ms
+	_profiler_variation_max_ms = maxf(_profiler_variation_max_ms, variation_ms)
 
 	var data: Dictionary = _base_tiles[tile_key]
 
@@ -370,7 +384,9 @@ func set_zone(
 			cell + offset
 		)
 	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
-	_profiler_set_zone_ms += float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
+	var set_zone_ms := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
+	_profiler_set_zone_ms += set_zone_ms
+	_profiler_set_zone_max_ms = maxf(_profiler_set_zone_max_ms, set_zone_ms)
 	_profiler_set_zone_calls += 1
 
 
@@ -690,7 +706,9 @@ func flush() -> void:
 		if not dirty.is_empty():
 			var update_start_usec := Time.get_ticks_usec()
 			layer._update_cells(dirty, false)
-			_profiler_flush_update_ms += float(Time.get_ticks_usec() - update_start_usec) / 1000.0
+			var update_ms := float(Time.get_ticks_usec() - update_start_usec) / 1000.0
+			_profiler_flush_update_ms += update_ms
+			_profiler_flush_update_max_ms = maxf(_profiler_flush_update_max_ms, update_ms)
 			_profiler_flush_update_calls += 1
 			_profiler_flush_cells += dirty.size()
 
@@ -705,7 +723,9 @@ func flush() -> void:
 		for cell_variant in variaciones:
 			if cell_variant is Vector2i:
 				_actualizar_variacion(cell_variant as Vector2i)
-		_profiler_flush_variation_ms += float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
+		var variation_flush_ms := float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
+		_profiler_flush_variation_ms += variation_flush_ms
+		_profiler_variation_max_ms = maxf(_profiler_variation_max_ms, variation_flush_ms)
 
 
 func clear_chunk(
