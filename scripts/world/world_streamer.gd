@@ -11,7 +11,7 @@ var _load_radius: int = 1
 var _unload_radius: int = 1
 # Test de rendimiento: terreno y entidades usan radios independientes.
 var _entity_active_radius: int = 0
-var _cells_per_frame: int = 512
+var _cells_per_frame: int = 128
 
 var _player_chunk: Vector2i = Vector2i(
 	999999,
@@ -51,7 +51,7 @@ func procesar() -> void:
 	# Las descargas de terreno tienen prioridad y se reparten entre frames.
 	# No mezclar limpieza pesada con la generación del siguiente chunk.
 	if _terrain.tiene_descarga_activa():
-		_terrain.procesar_descargas(mini(_cells_per_frame, 256))
+		_terrain.procesar_descargas(mini(_cells_per_frame, 128))
 		return
 
 	var nuevo_chunk: Vector2i = (
