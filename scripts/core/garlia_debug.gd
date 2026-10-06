@@ -267,6 +267,8 @@ func _buscar_nodo_por_clase(nombre_clase: String) -> Node:
 	if raiz == null:
 		return null
 	for nodo in _recorrer(raiz):
+		if nodo.name == nombre_clase:
+			return nodo
 		if nodo.get_class() == nombre_clase or nodo.is_class(nombre_clase):
 			return nodo
 	return null
@@ -386,7 +388,10 @@ func obtener_auditoria_engine() -> Dictionary:
 		problemas.append("Muchos orphan nodes: %d" % int(datos["orphan_nodes"]))
 	for layer in canvas_layers:
 		if not bool(layer["visible"]):
-			problemas.append("CanvasLayer invisible: %s" % layer["path"])
+			var layer_path: String = str(layer["path"])
+			var layer_name: String = layer_path.get_file()
+			if layer_name not in ["AdminConsole", "DebugConsole"]:
+				problemas.append("CanvasLayer invisible: %s" % layer_path)
 	for sv in subviewports:
 		if int(sv["update_mode"]) == SubViewport.UPDATE_DISABLED:
 			problemas.append("SubViewport con UPDATE_DISABLED: %s" % sv["path"])
@@ -494,7 +499,16 @@ func obtener_auditoria_render() -> Dictionary:
 			if float((tm.get("modulate", Color.WHITE) as Color).a) <= 0.001:
 				problemas.append("TileMapLayer con alpha 0: %s" % tm["path"])
 			if str(tm.get("material", "")).contains("ghost_material"):
-				problemas.append("TileMapLayer visual usa ghost_material: %s" % tm["path"])
+				var nodo_tm: Node = get_node_or_null(str(tm["path"]))
+				var pertenece_a_tilemap_dual := false
+				var ancestro: Node = nodo_tm.get_parent() if nodo_tm != null else null
+				while ancestro != null:
+					if ancestro.get_class() == "TileMapDual" or ancestro.is_class("TileMapDual"):
+						pertenece_a_tilemap_dual = true
+						break
+					ancestro = ancestro.get_parent()
+				if not pertenece_a_tilemap_dual:
+					problemas.append("TileMapLayer visual usa ghost_material fuera de TileMapDual: %s" % tm["path"])
 
 	pruebas.append({
 			"prueba": "TileMaps con celdas",
