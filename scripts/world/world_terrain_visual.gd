@@ -78,6 +78,7 @@ var _next_source_id_by_zone: Dictionary = {}
 var _dirty_cells_by_zone: Dictionary = {}
 var _dirty_lookup_by_zone: Dictionary = {}
 var _dirty_cursor_by_zone: Dictionary = {}
+var _dirty_zone_cursor: int = 0
 var _dirty_variations: Dictionary = {}
 
 # Celda -> bioma visual que la posee actualmente.
@@ -99,6 +100,7 @@ var _profiler_flush_convert_ms: float = 0.0
 var _profiler_flush_update_ms: float = 0.0
 var _profiler_flush_variation_ms: float = 0.0
 var _profiler_flush_update_calls: int = 0
+var _profiler_flush_regions: int = 0
 var _profiler_flush_cells: int = 0
 var _profiler_flush_variation_cells: int = 0
 var _profiler_flush_max_ms: float = 0.0
@@ -117,6 +119,7 @@ func iniciar_profiler() -> void:
 	_profiler_flush_update_ms = 0.0
 	_profiler_flush_variation_ms = 0.0
 	_profiler_flush_update_calls = 0
+	_profiler_flush_regions = 0
 	_profiler_flush_cells = 0
 	_profiler_flush_variation_cells = 0
 	_profiler_flush_max_ms = 0.0
@@ -136,6 +139,7 @@ func obtener_profiler() -> Dictionary:
 		"flush_update_ms": _profiler_flush_update_ms,
 		"flush_variation_ms": _profiler_flush_variation_ms,
 		"flush_update_calls": _profiler_flush_update_calls,
+		"flush_regions": _profiler_flush_regions,
 		"flush_cells": _profiler_flush_cells,
 		"flush_variation_cells": _profiler_flush_variation_cells,
 		"flush_max_ms": _profiler_flush_max_ms,
@@ -768,11 +772,20 @@ func procesar_flush(cells: int) -> bool:
 
 	var presupuesto: int = maxi(cells, 1)
 
-	for clave_variant in _layers_by_zone.keys():
-		if presupuesto <= 0:
-			break
+	# Round-robin entre zonas: una capa con una cola grande no puede
+	# monopolizar todos los lotes y dejar otra frontera pendiente durante
+	# varios frames. El cursor se conserva entre llamadas.
+	var zonas := _layers_by_zone.keys()
+	var cantidad_zonas: int = zonas.size()
+	if cantidad_zonas == 0:
+		return not tiene_flush_pendiente()
 
+	var zonas_revisadas := 0
+	while zonas_revisadas < cantidad_zonas and presupuesto > 0:
+		var indice_zona: int = (_dirty_zone_cursor + zonas_revisadas) % cantidad_zonas
+		var clave_variant: Variant = zonas[indice_zona]
 		var clave := str(clave_variant)
+		zonas_revisadas += 1
 		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
 		if not cells_variant is Array or cells_variant.is_empty():
 			continue
@@ -843,6 +856,7 @@ func procesar_flush(cells: int) -> bool:
 				update_ms
 			)
 			_profiler_flush_update_calls += 1
+			_profiler_flush_regions += 1
 			_profiler_flush_cells += dirty.size()
 
 		# El lookup marca las celdas consumidas y el cursor salta entradas
@@ -864,6 +878,7 @@ func procesar_flush(cells: int) -> bool:
 			_dirty_cells_by_zone[clave] = compactadas
 			_dirty_cursor_by_zone[clave] = 0
 		presupuesto -= dirty.size()
+		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
 
 	if presupuesto > 0 and not _dirty_variations.is_empty():
 		var variation_start_usec := Time.get_ticks_usec()
