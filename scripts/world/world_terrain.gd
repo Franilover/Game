@@ -38,6 +38,8 @@ var _ecosistema_indices: Dictionary = {}
 var _loaded_chunks: Dictionary = {}
 
 var _generation_task: Dictionary = {}
+# Una sola tarea puede quedar pausada para ceder el generador al chunk prioritario.
+var _paused_generation_task: Dictionary = {}
 var _unload_task: Dictionary = {}
 var _pintado_desde_flush: int = 0
 @export var visual_flush_cells: int = 512
@@ -208,6 +210,14 @@ func iniciar_generacion_chunk(
 ) -> void:
 	if _loaded_chunks.has(chunk_coord):
 		return
+
+	# Reanudar exactamente el estado que fue pausado por prioridad.
+	if not _paused_generation_task.is_empty() and _generation_task.is_empty():
+		var paused_coord: Vector2i = _paused_generation_task.get("coord", Vector2i.ZERO)
+		if paused_coord == chunk_coord:
+			_generation_task = _paused_generation_task
+			_paused_generation_task.clear()
+			return
 
 	_profiler_data_ms = 0.0
 	_profiler_paint_ms = 0.0
@@ -656,6 +666,38 @@ func tiene_generacion_activa() -> bool:
 	return not _generation_task.is_empty()
 
 
+func obtener_chunk_en_generacion() -> Vector2i:
+	if _generation_task.is_empty():
+		return Vector2i(999999, 999999)
+	return _generation_task.get("coord", Vector2i(999999, 999999))
+
+
+func pausar_generacion_actual() -> bool:
+	if _generation_task.is_empty() or not _paused_generation_task.is_empty():
+		return false
+	_paused_generation_task = _generation_task
+	_generation_task = {}
+	return true
+
+
+func tiene_generacion_pausada() -> bool:
+	return not _paused_generation_task.is_empty()
+
+
+func descartar_generacion_pausada_si_distante(
+	centro: Vector2i,
+	radio_maximo: int
+) -> bool:
+	if _paused_generation_task.is_empty():
+		return false
+	var coord: Vector2i = _paused_generation_task.get("coord", Vector2i.ZERO)
+	var distancia := maxi(abs(coord.x - centro.x), abs(coord.y - centro.y))
+	if distancia <= radio_maximo:
+		return false
+	_paused_generation_task.clear()
+	return true
+
+
 func cancelar_generacion_si_distante(
 	centro: Vector2i,
 	radio_maximo: int
@@ -694,11 +736,7 @@ func chunk_en_generacion(
 ) -> bool:
 	if _generation_task.is_empty():
 		return false
-
-	return (
-		_generation_task["coord"]
-		== chunk_coord
-	)
+	return _generation_task.get("coord") == chunk_coord
 
 
 func chunk_cargado(
@@ -1368,6 +1406,11 @@ func obtener_diagnostico() -> Dictionary:
 	estado["visual"] = visual != null
 	estado["ultimo_chunk"] = _ultimo_chunk_generado
 	estado["descarga_activa"] = tiene_descarga_activa()
+	estado["generacion_pausada"] = tiene_generacion_pausada()
+	if tiene_generacion_pausada():
+		estado["chunk_pausado"] = _paused_generation_task.get("coord", Vector2i.ZERO)
+		estado["etapa_pausada"] = int(_paused_generation_task.get("stage", 0))
+		estado["cursor_pausado"] = int(_paused_generation_task.get("cursor", 0))
 	if visual != null and visual.has_method("obtener_profiler"):
 		estado["visual_profiler"] = visual.obtener_profiler()
 	return estado
