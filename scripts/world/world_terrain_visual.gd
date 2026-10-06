@@ -614,6 +614,13 @@ func _crear_base_tile(
 		source_id
 	)
 
+	# TileMapDual mantiene un renderer secundario (Display/DisplayLayer).
+	# Durante la generación inicial podemos añadir el atlas y pintar la celda
+	# antes de que el ciclo normal de _ready() haya procesado el TileSet.
+	# Forzamos aquí la sincronización una sola vez por zona para que el
+	# renderer real exista antes del primer flush incremental.
+	layer._changed()
+
 	# Cada capa contiene una sola zona visual, así que el terreno activo
 	# siempre es el terrain 1 y 0 representa el exterior/vacío.
 	var terrain_id := 1
