@@ -10,6 +10,8 @@ var _entity_manager: WorldEntityManager = null
 var _entity_factory: WorldEntityFactory = null
 var _spawn_rules: WorldSpawnRules = null
 var _world_data: WorldDataService = null
+var _spawn_queue: Array[Vector2i] = []
+var _spawn_queued: Dictionary = {}
 
 
 func configurar(
@@ -35,7 +37,34 @@ func configurar(
 		push_error("WorldEntitySpawner: WorldDataService inválido.")
 
 
-func spawn_chunk(
+func spawn_chunk(chunk_coord: Vector2i) -> void:
+	if _entity_manager == null:
+		return
+	if _entity_manager.tiene_chunk(chunk_coord):
+		return
+	if _spawn_queued.has(chunk_coord):
+		return
+	_spawn_queue.append(chunk_coord)
+	_spawn_queued[chunk_coord] = true
+
+
+func procesar_spawn_queue(max_chunks: int = 1) -> void:
+	var procesados := 0
+	while procesados < maxi(max_chunks, 1) and not _spawn_queue.is_empty():
+		var chunk_coord: Vector2i = _spawn_queue.pop_front()
+		_spawn_queued.erase(chunk_coord)
+		if _entity_manager != null and _entity_manager.tiene_chunk(chunk_coord):
+			continue
+		_spawn_chunk_interno(chunk_coord)
+		procesados += 1
+
+
+func cancelar_spawn_chunk(chunk_coord: Vector2i) -> void:
+	_spawn_queued.erase(chunk_coord)
+	_spawn_queue.erase(chunk_coord)
+
+
+func _spawn_chunk_interno(
 	chunk_coord: Vector2i
 ) -> void:
 	if _terrain == null or not is_instance_valid(_terrain):
