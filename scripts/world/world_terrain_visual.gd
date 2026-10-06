@@ -614,13 +614,6 @@ func _crear_base_tile(
 		source_id
 	)
 
-	# TileMapDual mantiene un renderer secundario (Display/DisplayLayer).
-	# Durante la generación inicial podemos añadir el atlas y pintar la celda
-	# antes de que el ciclo normal de _ready() haya procesado el TileSet.
-	# Forzamos aquí la sincronización una sola vez por zona para que el
-	# renderer real exista antes del primer flush incremental.
-	layer._changed()
-
 	# Cada capa contiene una sola zona visual, así que el terreno activo
 	# siempre es el terrain 1 y 0 representa el exterior/vacío.
 	var terrain_id := 1
@@ -656,6 +649,11 @@ func _crear_base_tile(
 	}
 
 	_next_source_id_by_zone[tile_key] = source_id + 1
+	# TileMapDual mantiene un renderer secundario (Display/DisplayLayer).
+	# La sincronización debe ocurrir DESPUÉS de configurar los terrenos y
+	# sus peering bits. Si se llama antes, Display puede conservar una copia
+	# incompleta del TileSet y el primer chunk queda invisible.
+	layer._changed()
 
 
 func _cargar_textura_bioma(
@@ -771,6 +769,72 @@ func _marcar_dirty(
 	cells.append(cell)
 
 
+func _registrar_debug() -> void:
+	var debug := get_node_or_null("/root/GarliaDebug")
+	if debug == null or not debug.has_method("registrar_proveedor"):
+		return
+	debug.registrar_proveedor(
+		"world_terrain_visual",
+		"WorldTerrainVisual",
+		self,
+		"Composición TileMapDual, variaciones, dirty queue y flush visual."
+	)
+
+
+func obtener_diagnostico() -> Dictionary:
+	var dirty_cells := 0
+	var dirty_zones := 0
+	for clave_variant in _dirty_cells_by_zone.keys():
+		var cells_variant: Variant = _dirty_cells_by_zone[clave_variant]
+		if cells_variant is Array and not (cells_variant as Array).is_empty():
+			dirty_zones += 1
+			dirty_cells += (cells_variant as Array).size()
+
+	var base_tiles_por_zona: Dictionary = {}
+	for clave_variant in _base_tiles.keys():
+		var data: Variant = _base_tiles[clave_variant]
+		if data is Dictionary:
+			base_tiles_por_zona[str(clave_variant)] = {
+				"source_id": int((data as Dictionary).get("source_id", -1)),
+				"atlas": str((data as Dictionary).get("atlas", Vector2i(-1, -1)))
+			}
+
+	var capas: Array[String] = []
+	for clave_variant in _layers_by_zone.keys():
+		var layer := _layers_by_zone[clave_variant] as TileMapDual
+		if layer != null:
+			capas.append("%s:%d" % [
+				str(clave_variant),
+				layer.get_used_cells().size()
+			])
+
+	var variaciones: Dictionary = {}
+	for bioma_variant in _variation_layers_by_bioma.keys():
+		var layer := _variation_layers_by_bioma[bioma_variant] as TileMapLayer
+		if layer != null:
+			variaciones[str(bioma_variant)] = layer.get_used_cells().size()
+
+	return {
+		"configurado": not _layers_by_zone.is_empty(),
+		"tile_size": tile_size,
+		"capas": capas,
+		"base_tiles": base_tiles_por_zona,
+		"celdas_registradas": _cell_layer_key.size(),
+		"biomas_registrados": _cell_bioma.size(),
+		"dirty_zonas": dirty_zones,
+		"dirty_celdas": dirty_cells,
+		"dirty_cursor_zona": _dirty_zone_cursor,
+		"dirty_variaciones": _dirty_variations.size(),
+		"flush_pendiente": tiene_flush_pendiente(),
+		"clear_chunk_activo": not _clear_task.is_empty(),
+		"profiler": obtener_profiler()
+	}
+
+
+func _ready() -> void:
+	_registrar_debug()
+
+
 func tiene_flush_pendiente() -> bool:
 	for clave_variant in _layers_by_zone.keys():
 		var clave := str(clave_variant)
@@ -778,248 +842,3 @@ func tiene_flush_pendiente() -> bool:
 		if cells_variant is Array and not cells_variant.is_empty():
 			return true
 	return not _dirty_variations.is_empty()
-
-
-func procesar_flush(cells: int) -> bool:
-	if _batch_active:
-		return false
-
-	var presupuesto: int = maxi(cells, 1)
-
-	# Round-robin entre zonas: una capa con una cola grande no puede
-	# monopolizar todos los lotes y dejar otra frontera pendiente durante
-	# varios frames. El cursor se conserva entre llamadas.
-	var zonas: Array = _layers_by_zone.keys()
-	var cantidad_zonas: int = zonas.size()
-	if cantidad_zonas == 0:
-		return not tiene_flush_pendiente()
-
-	var zonas_revisadas := 0
-	while zonas_revisadas < cantidad_zonas and presupuesto > 0:
-		var indice_zona: int = (_dirty_zone_cursor + zonas_revisadas) % cantidad_zonas
-		var clave_variant: Variant = zonas[indice_zona]
-		var clave := str(clave_variant)
-		zonas_revisadas += 1
-		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
-		if not cells_variant is Array or cells_variant.is_empty():
-			continue
-
-		var layer := _layers_by_zone[clave] as TileMapDual
-		if layer == null:
-			_dirty_cells_by_zone[clave] = []
-			_dirty_lookup_by_zone[clave] = {}
-			continue
-
-		var take: int = mini(presupuesto, cells_variant.size())
-		var dirty: Array[Vector2i] = []
-		var convert_start_usec := Time.get_ticks_usec()
-
-		# Consumir una región contigua primero. TileMapDual puede resolver un
-		# lote de vecinos de una vez; enviar celdas lejanas mezcladas aumenta
-		# el trabajo de búsqueda de vecinos y rompe la localidad espacial.
-		var cursor := int(_dirty_cursor_by_zone.get(clave, 0))
-		var semilla_variant: Variant = null
-		while cursor < cells_variant.size():
-			var candidata_variant: Variant = cells_variant[cursor]
-			if candidata_variant is Vector2i and _dirty_lookup_by_zone[clave].has(candidata_variant):
-				semilla_variant = candidata_variant
-				break
-			cursor += 1
-		_dirty_cursor_by_zone[clave] = cursor
-		if semilla_variant is Vector2i:
-			var pendientes: Array[Vector2i] = [semilla_variant as Vector2i]
-			var pendientes_cursor := 0
-			var vistas: Dictionary = {}
-			vistas[semilla_variant] = true
-			while pendientes_cursor < pendientes.size() and dirty.size() < take:
-				var actual: Vector2i = pendientes[pendientes_cursor]
-				pendientes_cursor += 1
-				if not _dirty_lookup_by_zone[clave].has(actual):
-					continue
-				dirty.append(actual)
-				_dirty_lookup_by_zone[clave].erase(actual)
-				for offset: Vector2i in CARDINAL_NEIGHBORS:
-					var vecino := actual + offset
-					if not vistas.has(vecino) and _dirty_lookup_by_zone[clave].has(vecino):
-						vistas[vecino] = true
-						pendientes.append(vecino)
-
-		# Si la región era menor que el presupuesto, completar con las primeras
-		# celdas pendientes para no dejar una cola fragmentada indefinidamente.
-		if dirty.size() < take:
-			for cell_variant in cells_variant:
-				if dirty.size() >= take:
-					break
-				if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
-					dirty.append(cell_variant as Vector2i)
-					_dirty_lookup_by_zone[clave].erase(cell_variant)
-
-		_profiler_flush_convert_ms += float(
-			Time.get_ticks_usec() - convert_start_usec
-		) / 1000.0
-
-		if not dirty.is_empty():
-			var update_start_usec := Time.get_ticks_usec()
-			layer._update_cells(dirty, false)
-			var update_ms := float(
-				Time.get_ticks_usec() - update_start_usec
-			) / 1000.0
-			_profiler_flush_update_ms += update_ms
-			_profiler_flush_update_max_ms = maxf(
-				_profiler_flush_update_max_ms,
-				update_ms
-			)
-			_profiler_flush_update_calls += 1
-			_profiler_flush_regions += 1
-			_profiler_flush_cells += dirty.size()
-
-		# El lookup marca las celdas consumidas y el cursor salta entradas
-		# obsoletas. Así evitamos reconstruir toda la cola en cada frame.
-		var nuevo_cursor := int(_dirty_cursor_by_zone.get(clave, 0))
-		while nuevo_cursor < cells_variant.size():
-			var pendiente_variant: Variant = cells_variant[nuevo_cursor]
-			if pendiente_variant is Vector2i and _dirty_lookup_by_zone[clave].has(pendiente_variant):
-				break
-			nuevo_cursor += 1
-		_dirty_cursor_by_zone[clave] = nuevo_cursor
-
-		# Compactar sólo cuando la parte consumida domina la cola.
-		if nuevo_cursor >= 256 and nuevo_cursor * 2 >= cells_variant.size():
-			var compactadas: Array = []
-			for cell_variant in cells_variant:
-				if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
-					compactadas.append(cell_variant)
-			_dirty_cells_by_zone[clave] = compactadas
-			_dirty_cursor_by_zone[clave] = 0
-		presupuesto -= dirty.size()
-		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
-
-	if presupuesto > 0 and not _dirty_variations.is_empty():
-		var variation_start_usec := Time.get_ticks_usec()
-		var variaciones: Array = _dirty_variations.keys()
-		var take_variaciones: int = mini(
-			presupuesto,
-			variaciones.size()
-		)
-		for i in range(take_variaciones):
-			var cell_variant: Variant = variaciones[i]
-			if cell_variant is Vector2i:
-				_actualizar_variacion(cell_variant as Vector2i)
-				_dirty_variations.erase(cell_variant)
-			_profiler_flush_variation_cells += 1
-			presupuesto -= 1
-		_profiler_flush_variation_ms += float(
-			Time.get_ticks_usec() - variation_start_usec
-			) / 1000.0
-
-	return not tiene_flush_pendiente()
-
-
-func flush() -> void:
-	var flush_total_start_usec := Time.get_ticks_usec()
-	if _batch_active:
-		return
-
-	for clave_variant in _layers_by_zone.keys():
-		var clave := str(clave_variant)
-
-		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
-		if not cells_variant is Array:
-			continue
-
-		var layer := _layers_by_zone[clave] as TileMapDual
-		if layer == null:
-			continue
-
-		var convert_start_usec := Time.get_ticks_usec()
-		var dirty: Array[Vector2i] = []
-		for cell_variant in cells_variant:
-			if cell_variant is Vector2i:
-				dirty.append(cell_variant as Vector2i)
-		_profiler_flush_convert_ms += float(Time.get_ticks_usec() - convert_start_usec) / 1000.0
-
-		if not dirty.is_empty():
-			var update_start_usec := Time.get_ticks_usec()
-			layer._update_cells(dirty, false)
-			var update_ms := float(Time.get_ticks_usec() - update_start_usec) / 1000.0
-			_profiler_flush_update_ms += update_ms
-			_profiler_flush_update_max_ms = maxf(_profiler_flush_update_max_ms, update_ms)
-			_profiler_flush_update_calls += 1
-			_profiler_flush_cells += dirty.size()
-
-		_dirty_cells_by_zone[clave] = []
-		_dirty_lookup_by_zone[clave] = {}
-
-	if not _dirty_variations.is_empty():
-		var variation_start_usec := Time.get_ticks_usec()
-		var variaciones := _dirty_variations.keys()
-		_profiler_flush_variation_cells += variaciones.size()
-		_dirty_variations.clear()
-		for cell_variant in variaciones:
-			if cell_variant is Vector2i:
-				_actualizar_variacion(cell_variant as Vector2i)
-		var variation_flush_ms := float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
-		_profiler_flush_variation_ms += variation_flush_ms
-		_profiler_variation_max_ms = maxf(_profiler_variation_max_ms, variation_flush_ms)
-
-
-func clear_chunk(
-	chunk_coord: Vector2i,
-	chunk_size_tiles: int
-) -> void:
-	var origin := Vector2i(
-		chunk_coord.x * chunk_size_tiles,
-		chunk_coord.y * chunk_size_tiles
-	)
-
-	for y in range(chunk_size_tiles):
-		for x in range(chunk_size_tiles):
-			var cell := Vector2i(
-				origin.x + x,
-				origin.y + y
-			)
-
-			var layer_key := str(
-				_cell_layer_key.get(cell, "")
-			)
-
-			if not _layers_by_zone.has(layer_key):
-				continue
-
-			var layer := (
-				_layers_by_zone[layer_key] as TileMapDual
-			)
-
-			if layer == null:
-				continue
-
-			layer.erase_cell(cell)
-
-			# Las variantes no forman parte de TileMapDual; hay que retirarlas
-			# explícitamente antes de borrar la información de la celda.
-			var bioma_celda := str(_cell_bioma.get(cell, ""))
-			if _variation_layers_by_bioma.has(bioma_celda):
-				var capa_variacion := (
-					_variation_layers_by_bioma[bioma_celda] as TileMapLayer
-				)
-				if capa_variacion != null:
-					capa_variacion.erase_cell(cell)
-
-			_cell_bioma.erase(cell)
-			_cell_zone.erase(cell)
-			_cell_layer_key.erase(cell)
-
-			_marcar_dirty(
-				layer_key,
-				cell
-			)
-
-			for offset: Vector2i in UPDATE_NEIGHBORS:
-				_marcar_dirty(
-					layer_key,
-					cell + offset
-				)
-			_marcar_variaciones_dirty(cell, "")
-
-	if not _dirty_cells_by_zone.is_empty():
-		flush()
