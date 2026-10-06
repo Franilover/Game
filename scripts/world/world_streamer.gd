@@ -66,23 +66,17 @@ func procesar() -> void:
 	if _player == null:
 		return
 
-	# Las descargas de terreno tienen prioridad y se reparten entre frames.
-	# No mezclar limpieza pesada con la generación del siguiente chunk.
-	if _terrain.tiene_descarga_activa():
-		var presupuesto_descarga := _presupuesto_descarga()
-		if presupuesto_descarga <= 0:
-			return
-		var descarga_inicio_usec := Time.get_ticks_usec()
-		var descarga_terminada := _terrain.procesar_descargas(presupuesto_descarga)
-		if _render_manager != null:
-			_render_manager.call(
-				"registrar_trabajo",
-				"terrain_clear",
-				float(Time.get_ticks_usec() - descarga_inicio_usec) / 1000.0,
-				maxi(presupuesto_descarga, 1)
-			)
-		if not descarga_terminada:
-			return
+	# El streaming de terreno no puede quedar bloqueado por un unload.
+	# Antes la descarga tenía prioridad absoluta y hacía:
+	#   clear 1024 celdas -> return -> repetir
+	# durante varios frames antes de permitir que el siguiente chunk avanzara.
+	# Eso producía exactamente el síntoma actual: pantalla fluida, pero el
+	# mundo que viene detrás del jugador tardaba demasiado en aparecer.
+	#
+	# La limpieza sigue teniendo presupuesto propio, pero se ejecuta después
+	# de la generación. Así un chunk visible nunca espera a que termine de
+	# borrarse otro que ya quedó atrás.
+	var descarga_pendiente := _terrain.tiene_descarga_activa()
 
 	var nuevo_chunk: Vector2i = (
 		_world_to_chunk(
@@ -101,8 +95,7 @@ func procesar() -> void:
 	# pipeline de generación para que nunca retrasen la aparición del suelo.
 	_procesar_variaciones_si_hay_presupuesto()
 
-	# El terreno tiene prioridad: TileMapDual y su preparación son el trabajo
-	# visual más caro. Las entidades sólo entran cuando queda presupuesto real.
+	# El terreno visible tiene prioridad sobre la limpieza de chunks lejanos.
 	if _terrain.tiene_generacion_activa():
 		var presupuesto_celdas := _presupuesto_generacion()
 		if presupuesto_celdas <= 0:
@@ -136,6 +129,23 @@ func procesar() -> void:
 
 	_iniciar_siguiente_chunk()
 	_procesar_entidades_si_hay_presupuesto()
+
+	# Sólo cuando no hay generación activa cedemos el frame al unload.
+	# Mantenerlo fuera del camino crítico evita que el jugador atraviese un
+	# borde y tenga que esperar varios frames mientras se limpian 1024 celdas.
+	if descarga_pendiente and _terrain.tiene_descarga_activa():
+		var presupuesto_descarga := _presupuesto_descarga()
+		if presupuesto_descarga > 0:
+			var descarga_inicio_usec := Time.get_ticks_usec()
+			_terrain.procesar_descargas(presupuesto_descarga)
+			if _render_manager != null:
+				_render_manager.call(
+					"registrar_trabajo",
+					"terrain_clear",
+					float(Time.get_ticks_usec() - descarga_inicio_usec) / 1000.0,
+					maxi(presupuesto_descarga, 1)
+				)
+
 
 
 func _procesar_variaciones_si_hay_presupuesto() -> void:
