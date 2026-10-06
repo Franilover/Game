@@ -673,11 +673,13 @@ func obtener_chunk_en_generacion() -> Vector2i:
 
 
 func puede_pausar_generacion_actual() -> bool:
-	if _generation_task.is_empty() or not _paused_generation_task.is_empty():
-		return false
-	# Durante DATOS/PINTADO el visual mantiene un lote abierto. Sólo
-	# preemptamos en FLUSH, donde el estado visual ya está desacoplado.
-	return int(_generation_task.get("stage", 0)) == 2
+	# La preempción de FLUSH queda desactivada deliberadamente.
+	# FLUSH es la última barrera que convierte el chunk en cargado; si se
+	# interrumpe aquí, el chunk actual nunca entra en _loaded_chunks y el
+	# streamer puede encadenar pausas antes de mostrar terreno.
+	# La prioridad ya se aplica al ORDEN DE LA COLA antes de iniciar cada
+	# chunk. Eso mantiene el camino estable sin sacrificar visibilidad.
+	return false
 
 
 func pausar_generacion_actual() -> bool:
