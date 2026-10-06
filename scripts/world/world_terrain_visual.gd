@@ -247,17 +247,17 @@ func _marcar_borde_chunk_dirty(coord: Vector2i, size: int) -> void:
 	var x1 := x0 + size - 1
 	var y1 := y0 + size - 1
 	for x in range(x0, x1 + 1):
-		_marcar_dirty_si_existe(Vector2i(x, y0), Vector2i(0, 0))
-		_marcar_dirty_si_existe(Vector2i(x, y1), Vector2i(0, 0))
+		_marcar_dirty_si_existe(Vector2i(x, y0))
+		_marcar_dirty_si_existe(Vector2i(x, y1))
 		_marcar_dirty_vecinos_externos(Vector2i(x, y0))
 		_marcar_dirty_vecinos_externos(Vector2i(x, y1))
 	for y in range(y0 + 1, y1):
-		_marcar_dirty_si_existe(Vector2i(x0, y), Vector2i(0, 0))
-		_marcar_dirty_si_existe(Vector2i(x1, y), Vector2i(0, 0))
+		_marcar_dirty_si_existe(Vector2i(x0, y))
+		_marcar_dirty_si_existe(Vector2i(x1, y))
 		_marcar_dirty_vecinos_externos(Vector2i(x0, y))
 		_marcar_dirty_vecinos_externos(Vector2i(x1, y))
 
-func _marcar_dirty_si_existe(cell: Vector2i, _unused: Vector2i) -> void:
+func _marcar_dirty_si_existe(cell: Vector2i) -> void:
 	var layer_key := str(_cell_layer_key.get(cell, ""))
 	if _layers_by_zone.has(layer_key) and _cell_layer_key.has(cell):
 		_marcar_dirty(layer_key, cell)
