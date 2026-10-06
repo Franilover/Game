@@ -240,7 +240,10 @@ Pendiente dentro de esta fase:
 7. La activación de props se reparte entre frames mediante una tarea incremental por chunk.
 8. WorldStreamer puede cancelar la tarea cuando el chunk deja de ser relevante.
 
+Métricas añadidas:
+- `prop_spawn` se registra en `GarliaRenderManager` por intento de activación.
+- `frame_work_ms` permite observar el coste de props junto al terreno en cada frame.
+
 Pendiente:
-- métricas específicas de prop queue.
 - separar PropData sólo si el profiling lo justifica.
 - evaluación de MultiMesh únicamente para decoración estática masiva.
