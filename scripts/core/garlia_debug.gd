@@ -500,10 +500,6 @@ func obtener_auditoria_render() -> Dictionary:
 				problemas.append("TileMapLayer con celdas pero sin TileSet sources: %s" % tm["path"])
 			if float((tm.get("modulate", Color.WHITE) as Color).a) <= 0.001:
 				problemas.append("TileMapLayer con alpha 0: %s" % tm["path"])
-			if str(tm.get("material", "")).contains("ghost_material"):
-				# TileMapDual usa ghost_material deliberadamente en el World Layer.
-				# La comprobación correcta es la existencia y contenido de su DisplayLayer,
-				# no marcar el material invisible como error.
 
 	pruebas.append({
 			"prueba": "TileMaps con celdas",
