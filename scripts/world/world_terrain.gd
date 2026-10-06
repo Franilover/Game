@@ -659,9 +659,14 @@ func cancelar_generacion_si_distante(
 
 	# La generación puede haber pintado parte del chunk antes de que
 	# el jugador se alejara. Retirar esas celdas evita terreno fantasma.
+	# La retirada también debe ser diferible: cancelar una generación no
+	# puede convertir un frame de streaming en un flush de 1024 celdas.
 	if visual != null:
 		visual.terminar_lote()
-		visual.clear_chunk(coord, chunk_size_tiles)
+		visual.iniciar_clear_chunk(coord, chunk_size_tiles)
+		_unload_task = {
+			"coord": coord,
+		}
 	_generation_task.clear()
 	_pintado_desde_flush = 0
 	return true
