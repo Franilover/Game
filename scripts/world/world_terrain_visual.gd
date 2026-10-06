@@ -907,8 +907,8 @@ func marcar_region_generada_dirty(
 						vecino
 					)
 		var bioma := str(_cell_bioma.get(cell, ""))
-			if bioma == "Pradera" or bioma == "Bosque":
-				_marcar_variaciones_dirty(cell, bioma)
+		if bioma == "Pradera" or bioma == "Bosque":
+			_marcar_variaciones_dirty(cell, bioma)
 
 
 func marcar_borde_chunk_generado_dirty(
