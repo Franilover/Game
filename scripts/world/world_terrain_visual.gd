@@ -682,6 +682,7 @@ func _marcar_dirty(
 
 
 func flush() -> void:
+	var flush_total_start_usec := Time.get_ticks_usec()
 	if _batch_active:
 		return
 
