@@ -42,7 +42,9 @@ const API_REINOS_GAME := (
 	"/rest/v1/reinos_game?select=id,reino_id,clave,nombre,activo,orden,propiedades&activo=eq.true&order=orden.asc"
 )
 const API_RELACIONES_ECOLOGICAS := (
-	"/rest/v1/ecosistema_relaciones_criaturas?select=ecosistema_id,criatura_origen_id,criatura_destino_id,tipo_relacion,descripcion,origen"
+	"/rest/v1/ecosistema_relaciones_criaturas?select=ecosistema_id,criatura_origen_id,criatura_destino_id,tipo_relacion,descripcion,origen,"
+	+ "criatura_origen:criaturas!ecosistema_relaciones_criaturas_criatura_origen_id_fkey(id,nombre),"
+	+ "criatura_destino:criaturas!ecosistema_relaciones_criaturas_criatura_destino_id_fkey(id,nombre)"
 )
 
 
