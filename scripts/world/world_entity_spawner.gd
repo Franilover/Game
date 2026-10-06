@@ -246,8 +246,10 @@ func spawn_chunk(
 			criatura.velocity = estado_previo.get("velocity", Vector2.ZERO)
 			if criatura is Entity:
 				var entidad := criatura as Entity
-				entidad.health = clampi(int(estado_previo.get("health", entidad.health)), 0, entidad.max_health)
-				entidad.is_alive = bool(estado_previo.get("is_alive", true))
+				entidad.restaurar_estado_vital(
+					int(estado_previo.get("health", entidad.health)),
+					bool(estado_previo.get("is_alive", true))
+				)
 				if estado_previo.has("estado"):
 					criatura.set_meta("estado_mundo", estado_previo.get("estado", ""))
 
