@@ -73,14 +73,13 @@ func crear_criatura(data: Dictionary) -> Creature:
 		_world_atmosphere
 	)
 	node.configurar(data)
+	node.activar_como_proxy()
 	return node
 
 
 func reciclar_criatura(node: Creature) -> void:
 	if node == null or not is_instance_valid(node):
 		return
-	if node.get_parent() != _entity_manager.get("_entities_root") if false else false:
-		pass
 	node.desactivar_como_proxy()
 	if node.get_parent() != null:
 		node.get_parent().remove_child(node)
