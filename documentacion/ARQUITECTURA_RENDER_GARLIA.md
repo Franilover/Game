@@ -1,7 +1,9 @@
 # Arquitectura de Renderizado y Optimización de Garlia
 
 ## Estado
-Fase actual: diseño + instrumentación base.
+Fase actual: **Fase 3 — Render Manager + Terrain Render Queue operativa**.
+
+La primera implementación completa del presupuesto y la cola espacial ya está en GitHub. TileMapDual se conserva como backend visual y no se aumenta la carga de assets.
 
 Este documento define la arquitectura que sustituye progresivamente los parches aislados de streaming y renderizado.
 
@@ -133,23 +135,31 @@ Implementarlo sólo si el profiling demuestra beneficio.
 No seguir acumulando como solución definitiva cambios arbitrarios de cells_per_frame, radios, flushes, erase_cell o más Nodes. Estos parámetros pueden existir como controles de seguridad, pero no son el diseño.
 
 ## Plan de implementación
-### Fase 1 — Render Manager e instrumentación
-- Crear GarliaRenderManager.
-- Medir presupuesto temporal por frame.
-- Registrar trabajo de render diferible.
-- Separar métricas de streaming y renderer.
+### Fase 1 — Render Manager e instrumentación — COMPLETADA
+- GarliaRenderManager creado.
+- Presupuesto temporal por frame.
+- Registro acumulado y por frame del trabajo visual.
+- Separación de métricas de streaming/renderer.
+
+### Fase 2 — Desacoplamiento — COMPLETADA
+- WorldStreamer decide qué chunks necesitan trabajo.
+- RenderManager decide cuánto trabajo puede entrar en el frame.
+- WorldTerrain recibe el presupuesto sin convertirse en dueño del streaming.
+- La carga inicial sigue usando el mismo backend visual.
+
+### Fase 3 — Terrain Render Queue — COMPLETADA
+- Trabajo de terreno dividido en preparación, pintura y flush.
+- Presupuesto adaptativo según tiempo restante del frame.
+- Dirty cells deduplicadas mediante lookup.
+- Consumo espacial por regiones contiguas antes de completar el lote.
+- Flush de TileMapDual limitado por presupuesto.
+- Métricas `terrain_flush` registradas en RenderManager.
+- Sin reemplazar TileMapDual ni aumentar la cantidad de assets necesarios.
 
 ### Fase 2 — Desacoplamiento
 - WorldStreamer decide qué chunks necesitan trabajo.
 - GarliaRenderManager decide qué trabajo visual se ejecuta.
 - WorldTerrain deja de conocer detalles del presupuesto gráfico.
-
-### Fase 3 — Terrain Renderer
-- Renderer por chunk.
-- Precalcular visualización antes de tocar TileMapLayer.
-- Agrupar dirty cells en regiones.
-- Minimizar actualizaciones TileMap.
-- Comparar contra TileMapDual con profiling reproducible.
 
 ### Fase 4 — Entity Renderer
 - Estado lógico de criaturas.
@@ -183,3 +193,14 @@ Además: FPS, frame_ms, draw_calls, render_objects, render_primitives, physics_m
 MEDIR → IDENTIFICAR CUELLO DE BOTELLA → CAMBIAR ARQUITECTURA → MEDIR DE NUEVO → CONSERVAR SÓLO SI MEJORA.
 
 Garlia no debe convertirse en una colección de microparches de rendimiento.
+
+## Siguiente fase
+
+### Fase 4 — Entity Render Manager
+1. Separar definitivamente CreatureData del CreatureRenderProxy.
+2. Mantener posición, vida y estado lógico aunque el Node sea destruido.
+3. Activar proxies sólo en el chunk de simulación/render actual.
+4. Añadir pooling de proxies para evitar instantiate/free repetitivo.
+5. Hacer que el RenderManager controle el presupuesto de spawn/despawn.
+
+Después seguirá la **Fase 5 — Props**, con el mismo principio: estado lógico separado de representación y pooling sólo donde el profiling lo justifique.
