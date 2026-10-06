@@ -161,7 +161,7 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icono.texture = ItemIconResolver.obtener_icono(
-		_world_items.buscar_item_por_id(str(resultado.get("item_id", "")))
+		_buscar_item_catalogo(str(resultado.get("item_id", "")))
 	)
 	fila.add_child(icono)
 
@@ -221,10 +221,16 @@ func _texto_ingredientes(receta: Dictionary) -> String:
 	return "Materiales: " + ", ".join(partes)
 
 
+func _buscar_item_catalogo(item_id: String) -> Dictionary:
+	if _world_items == null or not is_instance_valid(_world_items):
+		return {}
+	return _world_items.buscar_item_por_id(item_id)
+
+
 func _nombre_item(item_id: String) -> String:
 	if _world_items == null:
 		return item_id
-	var item := _world_items.buscar_item_por_id(item_id)
+	var item := _buscar_item_catalogo(item_id)
 	if item.is_empty():
 		return item_id
 	return str(item.get("nombre", item_id))
