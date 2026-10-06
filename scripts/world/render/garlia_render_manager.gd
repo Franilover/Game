@@ -43,16 +43,16 @@ func registrar_trabajo(nombre: String, milisegundos: float, unidades: int = 1) -
         _work_unit_ms[nombre] = lerpf(coste_anterior, coste_unitario, 0.25)
 
 func presupuesto_unidades_adaptativo(nombre: String, base: int, minimo: int, maximo: int, objetivo_ms: float) -> int:
-    var limite := maxi(minimo, mini(base, maximo))
-    var disponible := presupuesto_disponible_ms()
+    var limite: int = maxi(minimo, mini(base, maximo))
+    var disponible: float = presupuesto_disponible_ms()
     if disponible <= 0.0:
         return 0
-    var objetivo := maxf(objetivo_ms, 0.1)
-    var coste_por_unidad := float(_work_unit_ms.get(nombre, 0.0))
+    var objetivo: float = maxf(objetivo_ms, 0.1)
+    var coste_por_unidad: float = float(_work_unit_ms.get(nombre, 0.0))
     if coste_por_unidad <= 0.0:
         return mini(limite, maxi(minimo, 16))
-    var presupuesto_objetivo := minf(objetivo, disponible * 0.75)
-    var estimadas := floori(presupuesto_objetivo / coste_por_unidad)
+    var presupuesto_objetivo: float = minf(objetivo, disponible * 0.75)
+    var estimadas: int = floori(presupuesto_objetivo / coste_por_unidad)
     if estimadas <= 0:
         return 0
     # Una vez aprendido el coste real, respetar el tiempo disponible tiene
