@@ -461,7 +461,8 @@ func obtener_auditoria_render() -> Dictionary:
 					fila["sample_screen"] = viewport.get_canvas_transform() * tm.to_global(tm.map_to_local(sample_cell))
 				if ts != null:
 					var sources: Array[String] = []
-					for sid in ts.get_source_ids():
+					for source_index in range(ts.get_source_count()):
+						var sid: int = ts.get_source_id(source_index)
 						var source := ts.get_source(sid)
 						if source is TileSetAtlasSource:
 							var atlas := source as TileSetAtlasSource
