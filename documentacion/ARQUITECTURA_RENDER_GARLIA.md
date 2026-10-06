@@ -270,3 +270,11 @@ Pendiente:
 - Al finalizar una generación, se permite procesar entidades únicamente con el presupuesto restante.
 - `WorldGenerator._process()` sigue siendo el dueño del ciclo de frame del `GarliaRenderManager`: iniciar → streaming → finalizar.
 - Se eliminó un bloque de depuración inalcanzable del spawner incremental.
+
+
+### Fase 6 — Descarga adaptativa y cambios de borde
+- La descarga de chunks usa el mismo presupuesto adaptativo que la generación.
+- `terrain_clear` aprende su coste por celda y ajusta el lote entre 8 y 128 celdas.
+- La descarga conserva prioridad exclusiva mientras está activa para evitar competir con TileMapDual de generación.
+- Un frame sin presupuesto visual puede pausar la limpieza sin bloquear la consistencia lógica del mundo.
+- Las entidades del chunk lejano se liberan antes de iniciar la limpieza visual.
