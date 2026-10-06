@@ -153,6 +153,7 @@ func iniciar_clear_chunk(chunk_coord: Vector2i, chunk_size_tiles: int) -> void:
 		"size": chunk_size_tiles,
 		"cursor": 0,
 		"total": chunk_size_tiles * chunk_size_tiles,
+		"stage": 0,
 	}
 
 
@@ -168,19 +169,32 @@ func procesar_clear_chunk(cells: int) -> bool:
 	var size: int = int(_clear_task["size"])
 	var cursor: int = int(_clear_task["cursor"])
 	var total: int = int(_clear_task["total"])
-	var limite: int = mini(cursor + maxi(cells, 1), total)
+	var stage: int = int(_clear_task.get("stage", 0))
 
-	while cursor < limite:
-		var local_y: int = cursor / size
-		var local_x: int = cursor % size
-		var cell := Vector2i(coord.x * size + local_x, coord.y * size + local_y)
-		_limpiar_celda_chunk(cell)
-		cursor += 1
+	if stage == 0:
+		var limite: int = mini(cursor + maxi(cells, 1), total)
+		while cursor < limite:
+			var local_y: int = cursor / size
+			var local_x: int = cursor % size
+			var cell := Vector2i(
+				coord.x * size + local_x,
+				coord.y * size + local_y
+			)
+			_limpiar_celda_chunk(cell)
+			cursor += 1
 
-	_clear_task["cursor"] = cursor
-	flush()
+		_clear_task["cursor"] = cursor
+		if cursor < total:
+			# Limpiar primero; la composición se procesa gradualmente en
+			# la siguiente fase para no convertir el unload en un flush gigante.
+			return false
+		_clear_task["stage"] = 1
 
-	if cursor < total:
+	# Fase 1: resolver únicamente una parte de las regiones dirty generadas
+	# por erase_cell(). Nunca llamar flush() aquí: flush() vacía toda la cola.
+	var flush_cells: int = mini(maxi(cells, 1), 32)
+	var terminado_flush := procesar_flush(flush_cells)
+	if not terminado_flush:
 		return false
 
 	_clear_task.clear()
