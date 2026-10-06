@@ -99,6 +99,11 @@ func _crear_interfaz() -> void:
 
 	var botones := HBoxContainer.new()
 	columna.add_child(botones)
+	var copiar_errores := Button.new()
+	copiar_errores.text = "Copiar errores"
+	copiar_errores.focus_mode = Control.FOCUS_NONE
+	copiar_errores.pressed.connect(_copiar_errores)
+	botones.add_child(copiar_errores)
 	var copiar := Button.new()
 	copiar.text = "Copiar diagnóstico"
 	copiar.focus_mode = Control.FOCUS_NONE
@@ -200,6 +205,8 @@ func _vista_resumen() -> String:
 	out.append("GRUPOS ACTIVOS")
 	for grupo in ["player", "creatures", "world_props", "inventory"]:
 		out.append("  %-18s %d" % [grupo, get_tree().get_nodes_in_group(grupo).size()])
+	out.append("")
+	out.append(_errores_globales())
 	return "\n".join(out)
 
 func _estado_linea(p: Dictionary) -> String:
@@ -468,6 +475,41 @@ func _diagnostico_nodo(nodo: Node) -> Variant:
 	if nodo.has_method("diagnostico_debug"):
 		return nodo.call("diagnostico_debug")
 	return null
+
+func _errores_globales() -> String:
+	var out := _encabezado("PROBLEMAS DETECTADOS EN TODAS LAS PESTAÑAS")
+	var hallazgos: Array[String] = []
+	var vistas := {
+		"SISTEMAS": _vista_sistemas(),
+		"MUNDO": _vista_mundo(),
+		"ENTIDADES": _vista_entidades(),
+		"DATOS": _vista_datos(),
+		"RENDIMIENTO": _vista_rendimiento(),
+		"ÁRBOL": _vista_arbol(),
+		"RENDER": _vista_render(),
+		"ENGINE": _vista_engine(),
+		"SUPABASE": _vista_supabase(),
+		"LOGS": str(_garlia_debug().call("obtener_logs_texto")),
+		"FLUJO": str(_garlia_debug().call("obtener_flujo_texto"))
+	}
+	for nombre_tab in vistas:
+		for linea in str(vistas[nombre_tab]).split("\n"):
+			var limpia := linea.strip_edges()
+			var mayus := limpia.to_upper()
+			if mayus.contains("[FAIL]") or mayus.contains("[ERROR]") or mayus.contains("[!]") or mayus.contains("ERROR:") or mayus.contains("PARSE ERROR"):
+				hallazgos.append("[%s] %s" % [nombre_tab, limpia])
+	if hallazgos.is_empty():
+		out.append("  Ningún error explícito detectado.")
+	else:
+		out.append("  Total: %d" % hallazgos.size())
+		for hallazgo in hallazgos:
+			out.append("  " + hallazgo)
+	return "\n".join(out)
+
+func _copiar_errores() -> void:
+	var texto_errores := _errores_globales()
+	DisplayServer.clipboard_set(texto_errores)
+	_estado.text = "Errores copiados"
 
 func _copiar_actual() -> void:
 	DisplayServer.clipboard_set(_texto.text)
