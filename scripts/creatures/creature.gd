@@ -126,6 +126,11 @@ func _crear_movimiento() -> void:
 func configurar(
 	datos_criatura: Dictionary
 ) -> void:
+	_muerte_procesada = false
+	visible = true
+	modulate = Color.WHITE
+	scale = Vector2.ONE
+	velocity = Vector2.ZERO
 	datos = datos_criatura
 
 	criatura_id = str(
