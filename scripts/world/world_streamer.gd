@@ -196,28 +196,32 @@ func _presupuesto_entidades() -> int:
 
 func _presupuesto_generacion() -> int:
 	var base: int = maxi(_cells_per_frame, 1)
-	if _prefetch_chunk.x != 999999 and _terrain != null and _terrain.chunk_en_generacion(_prefetch_chunk):
-		# La generación predictiva se reparte más fina para evitar el tirón.
-		# Arranca lejos del borde y aumenta sólo cuando el jugador se acerca.
-		var local_x: int = floori(fposmod(_player.global_position.x, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
-		var local_y: int = floori(fposmod(_player.global_position.y, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
-		var distancia_borde: int = mini(local_x, _terrain.chunk_size_tiles - 1 - local_x)
-		distancia_borde = mini(distancia_borde, mini(local_y, _terrain.chunk_size_tiles - 1 - local_y)) if _player_direction.y != 0.0 else distancia_borde
-		# El RenderManager ya limita el trabajo por presupuesto. Este
-		# prefetch no debe volver a convertir la generación en un goteo de
-		# 24/48 celdas por frame: eso mantenía una cola de ~20 chunks durante
-		# demasiado tiempo aunque la pantalla estuviera fluida.
-		if distancia_borde > 10:
-			base = mini(base, 64)
-		else:
-			base = mini(base, 96)
+
+	# DATOS y PINTADO son trabajo de preparación del mundo, no FLUSH del
+	# renderer. Antes ambos compartían el presupuesto visual de 5 ms y, en
+	# frames donde el HUD/TileMap ya había consumido ese presupuesto,
+	# terminábamos generando 1/8/16/32 celdas. Eso explica diagnósticos como
+	# 33/1156 en DATOS: la cola no estaba lenta por Supabase ni por la lógica
+	# de chunks, sino por una compuerta visual aplicada al generador.
+	#
+	# Mantener el límite en _cells_per_frame evita un bucle gigante, pero
+	# permite que cada chunk avance de forma sostenida. FLUSH conserva su
+	# presupuesto adaptativo porque ahí sí estamos tocando la composición
+	# visible de TileMapDual.
+	if _terrain != null:
+		var estado: Dictionary = _terrain.obtener_estado_generacion()
+		var etapa := str(estado.get("etapa", "IDLE"))
+		if etapa == "DATOS":
+			return mini(base, 128)
+		if etapa == "PINTADO":
+			return mini(base, 64)
+
+	# FLUSH: aquí sí manda el presupuesto visual.
 	if _render_manager == null:
-		return base
+		return mini(base, 96)
+
 	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
 	if disponible < 0.75:
-		# Nunca bloquear el pipeline de terreno por presupuesto agotado.
-		# El RenderManager ya limita el flush a una unidad cuando no queda
-		# tiempo; devolver 1 aquí evita que la generación quede congelada.
 		return 1
 	if disponible < 1.5:
 		return mini(base, 8)
@@ -225,7 +229,7 @@ func _presupuesto_generacion() -> int:
 		return mini(base, 16)
 	if disponible < 4.0:
 		return mini(base, 32)
-	return base
+	return mini(base, 96)
 
 
 func _actualizar_streaming() -> void:
