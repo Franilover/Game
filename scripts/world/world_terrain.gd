@@ -537,6 +537,10 @@ func _procesar_pintado_chunk(
 
 	if visual != null:
 		visual.terminar_lote()
+		visual.marcar_chunk_generado_dirty(
+			coord,
+			chunk_size_tiles
+		)
 
 	_pintado_desde_flush = 0
 	_generation_task["stage"] = 2
