@@ -278,3 +278,6 @@ Pendiente:
 - La descarga conserva prioridad exclusiva mientras está activa para evitar competir con TileMapDual de generación.
 - Un frame sin presupuesto visual puede pausar la limpieza sin bloquear la consistencia lógica del mundo.
 - Las entidades del chunk lejano se liberan antes de iniciar la limpieza visual.
+
+- La descarga de un chunk ya no llama a `flush()` global: usa el mismo procesamiento incremental de TileMapDual.
+- Al eliminar un chunk completo, no se marca cada celda interior como dirty; sólo se recomponen los vecinos externos del borde. Esto evita trabajo inútil sobre celdas que también desaparecieron.
