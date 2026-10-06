@@ -39,6 +39,7 @@ var _entities_root: Node = null
 var _world_data: WorldDataService = null
 var _game_state: GameStateService = null
 var _dependencias_configuradas: bool = false
+var _mundo_inicial_listo_emitido: bool = false
 
 
 func _ready() -> void:
@@ -136,7 +137,15 @@ func _process(_delta: float) -> void:
 				presupuesto_inicial = mini(generation_cells_per_frame, 16)
 			else:
 				presupuesto_inicial = 8
+		var generando: bool = terrain.tiene_generacion_activa()
 		terrain.procesar_generacion(maxi(presupuesto_inicial, 1))
+		# mundo_generado significa que el primer chunk ya terminó realmente.
+		# Antes se emitía justo después de iniciar la tarea, haciendo que Main
+		# colocara al jugador y registrara el streamer mientras el suelo aún
+		# estaba vacío.
+		if generando and not terrain.tiene_generacion_activa() and not _mundo_inicial_listo_emitido:
+			_mundo_inicial_listo_emitido = true
+			mundo_generado.emit()
 	else:
 		if streamer != null:
 			streamer.procesar()
@@ -222,12 +231,11 @@ func _inicializar_mundo() -> void:
 	terrain.iniciar_generacion_chunk(Vector2i.ZERO)
 
 	_world_ready = true
+	_mundo_inicial_listo_emitido = false
 
 	print(
 		"WorldGenerator: mundo inicial iniciado; generación incremental activa."
 	)
-
-	mundo_generado.emit()
 
 
 func registrar_jugador(
