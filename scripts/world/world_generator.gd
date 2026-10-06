@@ -196,14 +196,16 @@ func _inicializar_mundo() -> void:
 	# mientras que los siguientes sí se generan correctamente.
 	await get_tree().process_frame
 
-	terrain.generar_chunk_completo(
-		Vector2i.ZERO
-	)
+	# El chunk inicial también entra al pipeline incremental. No usar
+	# generar_chunk_completo() aquí: esa función es síncrona y puede mantener
+	# el mismo frame ocupado mientras el presupuesto de render ya está agotado.
+	# El WorldStreamer continuará la generación en frames sucesivos.
+	terrain.iniciar_generacion_chunk(Vector2i.ZERO)
 
 	_world_ready = true
 
 	print(
-		"WorldGenerator: mundo inicial listo."
+		"WorldGenerator: mundo inicial iniciado; generación incremental activa."
 	)
 
 	mundo_generado.emit()
