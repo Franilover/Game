@@ -531,15 +531,18 @@ func _procesar_flush_chunk(
 	var flush_start_usec: int = Time.get_ticks_usec()
 	# TileMapDual no escala linealmente: mantener micro-lotes y dejar que
 	# el RenderManager corte el trabajo antes de consumir el frame.
-	var flush_cells: int = mini(cells, 32)
+	# El renderer está funcionando con margen de FPS; permitimos lotes
+	# mayores para que el terreno aparezca antes, pero el RenderManager
+	# sigue regulando el trabajo real según el coste medido del frame.
+	var flush_cells: int = mini(cells, 96)
 	if _render_manager != null:
 		flush_cells = int(_render_manager.call(
 			"presupuesto_unidades_adaptativo",
 			"terrain_flush",
 			flush_cells,
-			4,
-			32,
-			0.75
+			8,
+			96,
+			0.85
 		))
 		if flush_cells <= 0:
 			return false
