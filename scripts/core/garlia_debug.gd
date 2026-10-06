@@ -37,6 +37,10 @@ func obtener_rendimiento() -> Dictionary:
 		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		"render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
 		"render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		"physics_2d_active": Performance.get_monitor(Performance.PHYSICS_2D_ACTIVE_OBJECTS),
+		"physics_2d_pairs": Performance.get_monitor(Performance.PHYSICS_2D_COLLISION_PAIRS),
+		"creatures": get_tree().get_nodes_in_group("creatures").size(),
+		"world_props": get_tree().get_nodes_in_group("world_props").size(),
 		"secciones_ms": _secciones_rendimiento.duplicate(true)
 	}
 
