@@ -90,7 +90,7 @@ func reciclar_criatura(node: Creature) -> void:
 
 func _tomar_criatura_del_pool() -> Creature:
 	while not _creature_pool.is_empty():
-		var node := _creature_pool.pop_back()
+		var node: Creature = _creature_pool.pop_back() as Creature
 		if node != null and is_instance_valid(node):
 			return node
 	return null
