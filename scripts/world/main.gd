@@ -91,7 +91,9 @@ func _verificar_inicio_de_zona() -> void:
 	if not reinos.is_empty():
 		_iniciar_zonas()
 		return
-	call_deferred("_verificar_inicio_de_zona")
+	await get_tree().create_timer(0.5).timeout
+	if is_inside_tree():
+		_verificar_inicio_de_zona
 
 
 func _iniciar_zonas() -> void:
