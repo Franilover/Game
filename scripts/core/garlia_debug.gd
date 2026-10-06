@@ -248,6 +248,20 @@ func obtener_auditoria_supabase() -> Dictionary:
 		"datos": datos
 	}
 
+func _recorrer(raiz: Node) -> Array[Node]:
+	var salida: Array[Node] = []
+	if not is_instance_valid(raiz):
+		return salida
+	var pendientes: Array[Node] = [raiz]
+	while not pendientes.is_empty():
+		var nodo: Node = pendientes.pop_back()
+		if not is_instance_valid(nodo):
+			continue
+		salida.append(nodo)
+		for hijo in nodo.get_children():
+			pendientes.append(hijo as Node)
+	return salida
+
 func _buscar_nodo_por_clase(nombre_clase: String) -> Node:
 	var raiz: Node = get_tree().root
 	if raiz == null:
