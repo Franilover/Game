@@ -2,8 +2,7 @@ extends Control
 class_name GarliaMobileControls
 
 ## Capa de entrada táctil.
-## Traduce botones físicos de pantalla a las mismas acciones de InputMap
-## que ya utiliza el gameplay de PC/mando. No contiene lógica de juego.
+## Android -> InputMap existente. No contiene lógica de gameplay.
 
 @export var solo_android: bool = true
 
@@ -12,8 +11,10 @@ var _acciones_presionadas: Dictionary = {}
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	if solo_android and not OS.has_feature("android"):
 		hide()
+		return
 
 	_configurar_boton($Movement/Up, "move_up")
 	_configurar_boton($Movement/Down, "move_down")
@@ -23,13 +24,14 @@ func _ready() -> void:
 	_configurar_boton($Actions/Interact, "interact")
 	_configurar_boton($Actions/Primary, "primary_action")
 	_configurar_boton($Actions/Secondary, "secondary_action")
-	_configurar_boton($Actions/Dash, "dash")
+	# El jugador usa "run" para iniciar el dash y luego mantener la carrera.
+	_configurar_boton($Actions/Dash, "run")
 	_configurar_boton($Actions/Jump, "jump")
 	_configurar_boton($Actions/Inventory, "inventory")
 
 
 func _configurar_boton(boton: BaseButton, accion: String) -> void:
-	if boton == null:
+	if boton == null or not InputMap.has_action(accion):
 		return
 
 	boton.button_down.connect(func() -> void:
@@ -37,10 +39,6 @@ func _configurar_boton(boton: BaseButton, accion: String) -> void:
 	)
 	boton.button_up.connect(func() -> void:
 		_soltar_accion(accion)
-	)
-	boton.mouse_exited.connect(func() -> void:
-		if Input.is_action_pressed(accion):
-			_soltar_accion(accion)
 	)
 
 
@@ -58,7 +56,18 @@ func _soltar_accion(accion: String) -> void:
 	Input.action_release(accion)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_liberar_todas_las_acciones()
+
+
 func _exit_tree() -> void:
+	_liberar_todas_las_acciones()
+
+
+func _liberar_todas_las_acciones() -> void:
 	for accion_variant in _acciones_presionadas.keys():
-		Input.action_release(str(accion_variant))
+		var accion := str(accion_variant)
+		if InputMap.has_action(accion):
+			Input.action_release(accion)
 	_acciones_presionadas.clear()
