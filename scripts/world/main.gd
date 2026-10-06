@@ -76,6 +76,16 @@ func _iniciar_zonas() -> void:
 
 
 func _process(_delta: float) -> void:
+	# La cámara debe seguir funcionando aunque la zona tarde en terminar de inicializar.
+	if _player == null:
+		var jugador_en_escena: Player = get_node_or_null("Entities/Player") as Player
+		if jugador_en_escena != null:
+			_player = jugador_en_escena
+	if _camera == null:
+		var camara_en_escena: Camera2D = get_node_or_null("GameCamera") as Camera2D
+		if camara_en_escena != null:
+			_camera = camara_en_escena
+			_configurar_camara()
 	_seguir_jugador()
 
 
@@ -206,8 +216,8 @@ func _configurar_camara() -> void:
 
 	_camera.enabled = true
 	_camera.zoom = Vector2(camera_zoom, camera_zoom)
-	_camera.anchor_mode = Camera2D.ANCHOR_MODE_DRAG_CENTER
 	_camera.position = Vector2.ZERO
+	_camera.anchor_mode = Camera2D.ANCHOR_MODE_DRAG_CENTER
 	_camera.offset = Vector2.ZERO
 	_camera.position_smoothing_enabled = false
 	_ultima_posicion_camara = Vector2.INF
