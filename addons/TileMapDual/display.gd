@@ -116,8 +116,10 @@ func _init(world: TileMapDual, tileset_watcher: TileSetWatcher) -> void:
 	self.z_as_relative = false
 	self.z_index = world.z_index
 
-	# let parent materal through to the displaylayers
-	use_parent_material = true
+	# El World Layer usa ghost_material para ocultarse. El DisplayLayer
+	# debe conservar su propio display_material; si hereda el material del
+	# padre, también hereda ghost_material y el terreno queda invisible.
+	use_parent_material = false
 	# Enable Y sorting
 	y_sort_enabled = true
 
