@@ -2,7 +2,7 @@ extends Node
 class_name GarliaRenderManager
 
 ## Orquestador central del trabajo visual diferible.
-## Fase 1: instrumentación y presupuesto. No cambia todavía el backend de terreno.
+## Fase 3: presupuesto para trabajo visual diferible. TileMapDual sigue siendo el backend de composición.
 
 @export var target_fps: float = 60.0
 @export var render_budget_ms: float = 3.0
@@ -12,10 +12,12 @@ var _frame_used_ms: float = 0.0
 var _work_ms: Dictionary = {}
 var _work_calls: Dictionary = {}
 var _deferred_work: int = 0
+var _frame_work_ms: Dictionary = {}
 
 func iniciar_frame() -> void:
     _frame_start_usec = Time.get_ticks_usec()
     _frame_used_ms = 0.0
+    _frame_work_ms.clear()
 
 func finalizar_frame() -> void:
     if _frame_start_usec == 0:
@@ -23,8 +25,10 @@ func finalizar_frame() -> void:
     _frame_used_ms = float(Time.get_ticks_usec() - _frame_start_usec) / 1000.0
 
 func registrar_trabajo(nombre: String, milisegundos: float) -> void:
-    _work_ms[nombre] = float(_work_ms.get(nombre, 0.0)) + milisegundos
+    var ms := maxf(milisegundos, 0.0)
+    _work_ms[nombre] = float(_work_ms.get(nombre, 0.0)) + ms
     _work_calls[nombre] = int(_work_calls.get(nombre, 0)) + 1
+    _frame_work_ms[nombre] = float(_frame_work_ms.get(nombre, 0.0)) + ms
 
 func registrar_trabajo_usec(nombre: String, inicio_usec: int) -> float:
     var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
@@ -55,4 +59,5 @@ func obtener_estado() -> Dictionary:
         "deferred_work": _deferred_work,
         "work_ms": _work_ms.duplicate(),
         "work_calls": _work_calls.duplicate(),
+        "frame_work_ms": _frame_work_ms.duplicate(),
     }
