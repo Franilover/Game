@@ -840,6 +840,8 @@ func obtener_diagnostico() -> Dictionary:
 		"dirty_celdas": dirty_cells,
 		"dirty_cursor_zona": _dirty_zone_cursor,
 		"dirty_variaciones": _dirty_variations.size(),
+		"dirty_variaciones_queue": _dirty_variation_queue.size(),
+		"dirty_variaciones_cursor": _dirty_variation_cursor,
 		"flush_pendiente": tiene_flush_pendiente(),
 		"display": display,
 		"clear_chunk_activo": not _clear_task.is_empty(),
