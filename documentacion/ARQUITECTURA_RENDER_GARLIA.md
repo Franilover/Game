@@ -215,11 +215,15 @@ Pendiente dentro de esta fase:
 - presupuesto explícito para spawn/despawn de entidades.
 - soporte de más de una instancia natural de la misma criatura por chunk mediante una clave estable de instancia.
 
-### Fase 5 — Props — EN PROGRESO
-1. Separar estado lógico de prop y representación.
-2. Reutilizar representación para props dinámicos.
-3. Mantener props_game.item_id como vínculo canónico con items.
-4. Evaluar MultiMesh sólo para decoración estática masiva, sin sustituir props interactivos.
-5. Aplicar presupuesto de representación para evitar ráfagas al entrar en un chunk.
+### Fase 5 — Props — PARCIALMENTE COMPLETADA
+1. WorldProp conserva datos canónicos de props_game y sigue siendo sólo la representación activa.
+2. WorldEntityManager guarda estado runtime de props fuera del ciclo de vida del Node.
+3. WorldEntityFactory reutiliza WorldProp mediante pool.
+4. Las claves prop:<slot>:<prop_id> permiten distinguir instancias dentro del chunk.
+5. props_game.item_id continúa siendo el vínculo canónico con items.
+6. El pool no sustituye la lógica de interacción/recolección: los props interactivos siguen siendo WorldProp normales cuando están activos.
 
-Siguiente: construir PropData/PropRenderProxy, pool de WorldProp y cola temporal de representación; después evaluar decoración masiva.
+Pendiente:
+- cola temporal explícita para spawn/despawn de props.
+- separar definitivamente PropData de la representación Node si el profiling demuestra que el diccionario actual no es suficiente.
+- evaluación de MultiMesh sólo para decoración estática masiva.
