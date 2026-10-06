@@ -9,6 +9,11 @@ var eventos: Array[Dictionary] = []
 var flujo: Array[Dictionary] = []
 var _pasos_abiertos: Array[String] = []
 
+# Registro universal de diagnósticos. Cualquier sistema puede publicar un
+# proveedor sin crear otra consola de debug.
+var _proveedores: Dictionary = {}
+var _marcadores: Dictionary = {}
+
 var _rendimiento_acumulado: float = 0.0
 var _rendimiento_intervalo: float = 1.0
 var _secciones_rendimiento: Dictionary = {}
@@ -144,6 +149,101 @@ func flujo_paso(mensaje: String, datos: Dictionary = {}) -> void:
 	})
 	_recortar_flujo()
 	flujo_actualizado.emit()
+
+func registrar_proveedor(id: String, sistema: String, nodo: Node, descripcion: String = "") -> void:
+	if id.is_empty() or not is_instance_valid(nodo):
+		return
+	_proveedores[id] = {
+		"id": id,
+		"sistema": sistema,
+		"nodo": nodo,
+		"descripcion": descripcion
+	}
+	flujo_actualizado.emit()
+
+func quitar_proveedor(id: String) -> void:
+	_proveedores.erase(id)
+	flujo_actualizado.emit()
+
+func marcar(id: String, estado: String, detalle: String = "", datos: Dictionary = {}) -> void:
+	_marcadores[id] = {
+		"estado": estado,
+		"detalle": detalle,
+		"datos": datos.duplicate(true),
+		"tiempo": Time.get_time_string_from_system()
+	}
+	flujo_actualizado.emit()
+
+func obtener_proveedores() -> Array[Dictionary]:
+	var salida: Array[Dictionary] = []
+	var borrar: Array[String] = []
+	for id in _proveedores:
+		var proveedor: Dictionary = _proveedores[id]
+		var nodo: Node = proveedor.get("nodo") as Node
+		if not is_instance_valid(nodo):
+			borrar.append(id)
+			continue
+		var fila := {
+			"id": id,
+			"sistema": str(proveedor.get("sistema", id)),
+			"descripcion": str(proveedor.get("descripcion", "")),
+			"node_path": str(nodo.get_path()),
+			"script": _obtener_script_path(nodo),
+			"estado": "OK"
+		}
+		var datos: Variant = null
+		if nodo.has_method("obtener_diagnostico"):
+			datos = nodo.call("obtener_diagnostico")
+		elif nodo.has_method("diagnostico_debug"):
+			datos = nodo.call("diagnostico_debug")
+		if datos is Dictionary:
+			fila["datos"] = datos
+		if _marcadores.has(id):
+			var marcador: Dictionary = _marcadores[id]
+			fila["estado"] = str(marcador.get("estado", "OK"))
+			fila["detalle"] = str(marcador.get("detalle", ""))
+			fila["marcador"] = marcador.get("datos", {})
+		salida.append(fila)
+	for id in borrar:
+		_proveedores.erase(id)
+	return salida
+
+func obtener_marcadores() -> Dictionary:
+	return _marcadores.duplicate(true)
+
+func _obtener_script_path(nodo: Node) -> String:
+	var script := nodo.get_script()
+	if script is Script:
+		return (script as Script).resource_path
+	return "<sin script>"
+
+func obtener_arbol_diagnostico(raiz: Node = null) -> Array[Dictionary]:
+	var origen := raiz if is_instance_valid(raiz) else get_tree().current_scene
+	var salida: Array[Dictionary] = []
+	if not is_instance_valid(origen):
+		return salida
+	var pendientes: Array[Dictionary] = [{"nodo": origen, "nivel": 0}]
+	while not pendientes.is_empty():
+		var entrada: Dictionary = pendientes.pop_front()
+		var nodo: Node = entrada["nodo"] as Node
+		var nivel: int = int(entrada["nivel"])
+		if not is_instance_valid(nodo):
+			continue
+		var script := nodo.get_script()
+		salida.append({
+			"nivel": nivel,
+			"nombre": nodo.name,
+			"tipo": nodo.get_class(),
+			"ruta": str(nodo.get_path()),
+			"script": script.resource_path if script is Script else "",
+			"process": nodo.is_processing(),
+			"physics": nodo.is_physics_processing()
+		})
+		for hijo in nodo.get_children():
+			pendientes.append({"nodo": hijo, "nivel": nivel + 1})
+		if salida.size() >= 800:
+			break
+	return salida
 
 func limpiar() -> void:
 	eventos.clear()
