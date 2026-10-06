@@ -218,6 +218,13 @@ func spawn_chunk(
 			ecosistema.get("id", "")
 		)
 
+		var estado_previo: Dictionary = _entity_manager.obtener_estado_criatura(
+			chunk_coord,
+			str(criatura_data.get("id", ""))
+		)
+		if not estado_previo.is_empty() and not bool(estado_previo.get("is_alive", true)):
+			continue
+
 		var criatura: Node = _entity_factory.crear_criatura(criatura_data)
 
 		if criatura == null:
@@ -233,6 +240,16 @@ func spawn_chunk(
 			(float(tile.y) + 0.5)
 			* _terrain.tile_size
 		)
+
+		if not estado_previo.is_empty():
+			criatura.global_position = estado_previo.get("position", criatura.global_position)
+			criatura.velocity = estado_previo.get("velocity", Vector2.ZERO)
+			if criatura is Entity:
+				var entidad := criatura as Entity
+				entidad.health = clampi(int(estado_previo.get("health", entidad.health)), 0, entidad.max_health)
+				entidad.is_alive = bool(estado_previo.get("is_alive", true))
+				if estado_previo.has("estado"):
+					criatura.set_meta("estado_mundo", estado_previo.get("estado", ""))
 
 		if criatura is Creature:
 			var creature_node: Creature = criatura
