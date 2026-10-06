@@ -197,6 +197,7 @@ func _actualizar_streaming() -> void:
 	_player_chunk = centro
 
 	_terrain.cancelar_generacion_si_distante(centro, _load_radius)
+	_terrain.descartar_generacion_pausada_si_distante(centro, _load_radius)
 
 	# Mantener únicamente trabajo que todavía está dentro del radio.
 	var cola_filtrada: Array = []
@@ -236,6 +237,7 @@ func _actualizar_streaming() -> void:
 	)
 
 	_priorizar_prefetch(centro)
+	_ceder_generacion_si_hay_prioridad(centro)
 
 	_descargar_lejanos(centro)
 	_actualizar_entidades_activas(centro)
@@ -351,6 +353,38 @@ func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
 		prioridad -= 0.75
 
 	return prioridad
+
+
+func _ceder_generacion_si_hay_prioridad(centro: Vector2i) -> void:
+	if _terrain == null or not _terrain.tiene_generacion_activa():
+		return
+	if _queue.is_empty():
+		return
+
+	var activo: Vector2i = _terrain.obtener_chunk_en_generacion()
+	var siguiente: Variant = _queue[0]
+	if not siguiente is Vector2i:
+		return
+	var siguiente_chunk: Vector2i = siguiente
+
+	# Sólo interrumpir cuando el siguiente chunk es claramente más útil.
+	# Así evitamos alternar tareas por diferencias mínimas de prioridad.
+	var prioridad_activo: float = _prioridad_chunk(activo, centro)
+	var prioridad_siguiente: float = _prioridad_chunk(siguiente_chunk, centro)
+	if prioridad_activo <= prioridad_siguiente + 0.50:
+		return
+
+	if _terrain.pausar_generacion_actual():
+		print(
+			"WorldStreamer: generacion pausada por prioridad | activo=",
+			activo,
+			" prioridad=",
+			"%.2f" % prioridad_activo,
+			" -> siguiente=",
+			siguiente_chunk,
+			" prioridad=",
+			"%.2f" % prioridad_siguiente
+		)
 
 
 func _priorizar_prefetch(_centro: Vector2i) -> void:
