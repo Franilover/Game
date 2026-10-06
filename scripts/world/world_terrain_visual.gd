@@ -64,6 +64,13 @@ const UPDATE_NEIGHBORS: Array[Vector2i] = [
 	Vector2i(0, -1),
 ]
 
+const CARDINAL_NEIGHBORS: Array[Vector2i] = [
+	Vector2i(1, 0),
+	Vector2i(-1, 0),
+	Vector2i(0, 1),
+	Vector2i(0, -1),
+]
+
 var tile_size: int = 32
 
 # Compatibilidad con código que pueda inspeccionar la capa principal.
@@ -824,7 +831,7 @@ func procesar_flush(cells: int) -> bool:
 					continue
 				dirty.append(actual)
 				_dirty_lookup_by_zone[clave].erase(actual)
-				for offset: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				for offset: Vector2i in CARDINAL_NEIGHBORS:
 					var vecino := actual + offset
 					if not vistas.has(vecino) and _dirty_lookup_by_zone[clave].has(vecino):
 						vistas[vecino] = true
