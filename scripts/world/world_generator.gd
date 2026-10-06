@@ -5,6 +5,7 @@ const RENDER_MANAGER_SCRIPT = preload("res://scripts/world/render/garlia_render_
 
 
 signal mundo_generado
+signal mundo_inicializado
 
 
 @export var map_seed: int = 0
@@ -232,6 +233,10 @@ func _inicializar_mundo() -> void:
 
 	_world_ready = true
 	_mundo_inicial_listo_emitido = false
+
+	# Señal de estructura lista: Main puede registrar al jugador y activar el
+	# streamer sin esperar a que el primer chunk termine su flush visual.
+	mundo_inicializado.emit()
 
 	print(
 		"WorldGenerator: mundo inicial iniciado; generación incremental activa."
