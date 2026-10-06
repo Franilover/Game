@@ -37,6 +37,7 @@ var _ecosistema_indices: Dictionary = {}
 var _loaded_chunks: Dictionary = {}
 
 var _generation_task: Dictionary = {}
+var _unload_task: Dictionary = {}
 var _pintado_desde_flush: int = 0
 @export var visual_flush_cells: int = 512
 
@@ -663,20 +664,38 @@ func ultimo_chunk_generado() -> Vector2i:
 func descargar_chunk(
 	chunk_coord: Vector2i
 ) -> void:
-	if not _loaded_chunks.has(
-		chunk_coord
-	):
+	if not _loaded_chunks.has(chunk_coord):
+		return
+	if not _unload_task.is_empty():
 		return
 
+	_unload_task = {
+		"coord": chunk_coord,
+	}
 	if visual != null:
-		visual.clear_chunk(
-			chunk_coord,
-			chunk_size_tiles
-		)
+		visual.iniciar_clear_chunk(chunk_coord, chunk_size_tiles)
 
-	_loaded_chunks.erase(
-		chunk_coord
-	)
+
+func procesar_descargas(cells: int) -> bool:
+	if _unload_task.is_empty():
+		return true
+
+	if visual == null:
+		_loaded_chunks.erase(_unload_task["coord"])
+		_unload_task.clear()
+		return true
+
+	var terminado: bool = visual.procesar_clear_chunk(cells)
+	if not terminado:
+		return false
+
+	_loaded_chunks.erase(_unload_task["coord"])
+	_unload_task.clear()
+	return true
+
+
+func tiene_descarga_activa() -> bool:
+	return not _unload_task.is_empty()
 func _bioma_index_at_tile(tile: Vector2i) -> int:
 	if areas == null:
 		return -1
