@@ -146,9 +146,9 @@ func _procesar_variaciones_si_hay_presupuesto() -> void:
 
 	# Cuatro celdas como máximo por frame: suficientemente rápido para
 	# poblar decoración sin devolver el tirón de TileMapLayer.set_cell().
-	var limite: int = 4
+	var limite: int = 8
 	if disponible >= 3.0:
-		limite = 6
+		limite = 16
 	var inicio_usec := Time.get_ticks_usec()
 	_terrain.visual.procesar_variaciones(limite)
 	var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
@@ -182,8 +182,12 @@ func _presupuesto_entidades() -> int:
 	if _render_manager == null:
 		return 1
 	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
-	if disponible < 1.5:
+	if disponible < 1.0:
 		return 0
+	if disponible >= 3.0:
+		return 3
+	if disponible >= 2.0:
+		return 2
 	return 1
 
 
