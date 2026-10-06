@@ -73,6 +73,7 @@ func procesar() -> void:
 		_player_chunk = nuevo_chunk
 
 	_actualizar_streaming()
+	_entity_spawner.procesar_spawn_queue(_presupuesto_entidades())
 
 	if _terrain.tiene_generacion_activa():
 		var presupuesto_celdas := _presupuesto_generacion()
@@ -105,6 +106,15 @@ func procesar() -> void:
 		return
 
 	_iniciar_siguiente_chunk()
+
+
+func _presupuesto_entidades() -> int:
+	if _render_manager == null:
+		return 1
+	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
+	if disponible < 0.75:
+		return 0
+	return 1
 
 
 func _presupuesto_generacion() -> int:
