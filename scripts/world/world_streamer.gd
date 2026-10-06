@@ -249,11 +249,20 @@ func _actualizar_direccion_jugador() -> void:
 	var delta_posicion: Vector2 = posicion - _last_player_position
 	_last_player_position = posicion
 
-	var direccion := delta_posicion
-	if _player is CharacterBody2D:
-		var velocidad: Vector2 = (_player as CharacterBody2D).velocity
-		if velocidad.length_squared() > 4.0:
-			direccion = velocidad
+	# La fuente primaria es el input real del Player.
+	var direccion := Vector2.ZERO
+	if _player.has_method("obtener_direccion_movimiento"):
+		var input_direccion: Variant = _player.call("obtener_direccion_movimiento")
+		if input_direccion is Vector2 and input_direccion.length_squared() > 0.01:
+			direccion = input_direccion
+
+	# Fallback para jugadores/entidades sin interfaz de input.
+	if direccion.length_squared() <= 0.01:
+		direccion = delta_posicion
+		if _player is CharacterBody2D:
+			var velocidad: Vector2 = (_player as CharacterBody2D).velocity
+			if velocidad.length_squared() > 4.0:
+				direccion = velocidad
 
 	if direccion.length_squared() > 0.25:
 		_player_direction = direccion.normalized()
@@ -292,26 +301,35 @@ func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
 
 
 func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
+	# La cola representa trabajo pendiente, no una orden fija de carga.
+	# Se prepara primero el corredor que coincide con el movimiento.
+	if chunk == centro:
+		return 0.0
+
+	var relativo := Vector2(chunk - centro)
 	var distancia: float = float(_distancia_chunk(chunk, centro))
+	if _player_direction.length_squared() <= 0.01:
+		return distancia
+
+	var alineacion: float = relativo.normalized().dot(_player_direction)
+	var prioridad: float = distancia * 1.5 - alineacion * 1.75
+
+	# Detrás queda como reserva, pero no consume el generador mientras
+	# haya trabajo útil por delante.
+	if alineacion < -0.25:
+		prioridad += 2.0
+
+	# El prefetch ayuda, pero nunca bloquea la trayectoria.
 	if chunk == _prefetch_chunk:
-		# El chunk que queda directamente en la trayectoria se adelanta,
-		# pero no se fuerza al frente: debe poder prepararse con anticipación.
-	if _player_direction.length_squared() > 0.01:
-		var relativo := Vector2(chunk - centro)
-		var alineacion: float = relativo.normalized().dot(_player_direction) if relativo.length_squared() > 0.01 else 0.0
-		return distancia - alineacion * 0.75
-	return distancia
+		prioridad -= 0.75
+
+	return prioridad
 
 
-func _priorizar_prefetch(centro: Vector2i) -> void:
-	if _prefetch_chunk.x == 999999:
-		return
-	if _terrain.chunk_cargado(_prefetch_chunk) or _terrain.chunk_en_generacion(_prefetch_chunk):
-		return
-	var indice: int = _queue.find(_prefetch_chunk)
-	if indice > 0:
-		_queue.remove_at(indice)
-		_queue.push_front(_prefetch_chunk)
+func _priorizar_prefetch(_centro: Vector2i) -> void:
+	# La prioridad direccional ya se aplica al ordenar la cola.
+	# No mover el prefetch a la fuerza al frente: evita tirones en el borde.
+	return
 
 
 func _agregar_chunk_a_cola(
