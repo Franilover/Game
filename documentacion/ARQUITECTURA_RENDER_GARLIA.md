@@ -222,6 +222,47 @@ MEDIR → IDENTIFICAR CUELLO DE BOTELLA → CAMBIAR ARQUITECTURA → MEDIR DE NU
 
 Garlia no debe convertirse en una colección de microparches de rendimiento.
 
+## Fase 6 — Estado consolidado de la cola dirty
+
+La cola de terreno fue afinada para que el coste no dependa únicamente del número bruto de celdas pendientes:
+
+- Las celdas dirty siguen deduplicadas por Dictionary y conservan un cursor para no reconstruir la cola completa en cada lote.
+- procesar_flush() busca primero una región conectada mediante vecinos cardinales. Esto mantiene localidad espacial y entrega un único _update_cells() por lote.
+- La cola ahora usa planificación **round-robin por zona**. Una zona con cientos de celdas dirty no puede monopolizar todos los lotes mientras otra zona espera.
+- Se evita crear el mismo arreglo de vecinos cardinales durante cada visita del BFS; el conjunto es una constante reutilizable.
+- El profiler distingue flush_update_calls, flush_regions y flush_cells, permitiendo comprobar si una reducción de celdas también reduce la cantidad de regiones que TileMapDual debe resolver.
+- Las variaciones de bioma siguen siendo trabajo diferible y no se mezclan con la recomposición de terreno hasta que queda presupuesto.
+
+### Presupuesto adaptativo endurecido
+
+GarliaRenderManager ya no fuerza el mínimo nominal de unidades cuando el coste aprendido indica que ese mínimo excedería el tiempo disponible.
+
+- Si todavía no existe una estimación, se usa el lote inicial conservador.
+- Una vez aprendido el coste por unidad mediante EMA, el lote se calcula con el tiempo realmente disponible.
+- Si no cabe ni una unidad en el presupuesto, se devuelve 0 y el trabajo espera al siguiente frame.
+- Esto evita que el propio mínimo de seguridad introduzca un exceso de presupuesto durante un frame que ya viene cargado.
+
+### Descarga y cancelación sin flush gigante
+
+Cancelar una generación que quedó lejos del jugador ya no llama al clear_chunk() síncrono.
+
+La cancelación:
+
+1. detiene la generación lógica;
+2. finaliza el lote visual si estaba activo;
+3. crea una tarea incremental de limpieza;
+4. deja que WorldStreamer procese esa limpieza con el mismo presupuesto adaptativo de terrain_clear.
+
+Así, tanto una descarga normal como una generación cancelada respetan el mismo camino de salida y no convierten una decisión de streaming en un trabajo de cientos de milisegundos.
+
+### Regla de mantenimiento
+
+No sustituir esta cola por más llamadas a flush() global. Si el profiling vuelve a mostrar un pico, medir primero:
+
+dirty_ms → flush_convert_ms → flush_update_ms → flush_regions → flush_cells → coste EMA
+
+La optimización siguiente sólo debe cambiar el algoritmo si esos datos demuestran que el coste restante está realmente en la conversión/agrupación y no dentro de TileMapDual.
+
 ## Siguiente fase
 
 ### Fase 4 — Entity Render Manager — COMPLETADA
