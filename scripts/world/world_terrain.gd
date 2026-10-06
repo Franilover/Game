@@ -269,7 +269,12 @@ func procesar_generacion(
 			cells
 		)
 
-	return _procesar_pintado_chunk(
+	if stage == 1:
+		return _procesar_pintado_chunk(
+			cells
+		)
+
+	return _procesar_flush_chunk(
 		cells
 	)
 
@@ -489,18 +494,6 @@ func _procesar_pintado_chunk(
 			int(biomas[padded_y][padded_x])
 		)
 
-		_pintado_desde_flush += 1
-		var lote := maxi(visual_flush_cells, 1)
-		if _pintado_desde_flush >= lote:
-			if visual != null:
-				var flush_start_usec: int = Time.get_ticks_usec()
-				visual.flush()
-				_profiler_flush_ms += float(
-					Time.get_ticks_usec() - flush_start_usec
-				) / 1000.0
-				_profiler_flushes += 1
-			_pintado_desde_flush = 0
-
 		cursor += 1
 
 	_generation_task["cursor"] = cursor
@@ -515,16 +508,32 @@ func _procesar_pintado_chunk(
 
 	if visual != null:
 		visual.terminar_lote()
-		var flush_start_usec: int = Time.get_ticks_usec()
-		visual.flush()
-		_profiler_flush_ms += float(
-			Time.get_ticks_usec() - flush_start_usec
-		) / 1000.0
-		_profiler_flushes += 1
 
 	_pintado_desde_flush = 0
-	_finalizar_chunk()
+	_generation_task["stage"] = 2
+	_generation_task["cursor"] = 0
 
+	return false
+
+
+func _procesar_flush_chunk(
+	cells: int
+) -> bool:
+	if visual == null:
+		_finalizar_chunk()
+		return true
+
+	var flush_start_usec: int = Time.get_ticks_usec()
+	var terminado: bool = visual.procesar_flush(cells)
+	_profiler_flush_ms += float(
+		Time.get_ticks_usec() - flush_start_usec
+	) / 1000.0
+	_profiler_flushes += 1
+
+	if not terminado:
+		return false
+
+	_finalizar_chunk()
 	return true
 
 
