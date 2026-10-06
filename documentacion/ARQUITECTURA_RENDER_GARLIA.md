@@ -281,3 +281,11 @@ Pendiente:
 
 - La descarga de un chunk ya no llama a `flush()` global: usa el mismo procesamiento incremental de TileMapDual.
 - Al eliminar un chunk completo, no se marca cada celda interior como dirty; sólo se recomponen los vecinos externos del borde. Esto evita trabajo inútil sobre celdas que también desaparecieron.
+
+
+### Fase 6 — Recomputación de frontera al entrar un chunk
+- Al pintar una celda nueva, la invalidación dirty ya no se limita a la capa de la celda nueva.
+- También se invalidan las celdas vecinas que pertenecen a otras capas/zona.
+- Esto es necesario porque TileMapDual calcula cada capa con su propio vecindario; una celda que aparece en el borde puede cambiar la regla visual del chunk que ya estaba cargado.
+- Las invalidaciones siguen deduplicadas mediante lookup, por lo que la corrección no implica recalcular varias veces la misma celda dentro del mismo lote.
+- GarliaRenderManager ahora actualiza realmente el coste EMA por unidad de trabajo; el presupuesto adaptativo deja de depender de un valor no inicializado.
