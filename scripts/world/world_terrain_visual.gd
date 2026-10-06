@@ -262,6 +262,26 @@ func _marcar_dirty_vecinos_externos(cell: Vector2i) -> void:
 			_marcar_variaciones_dirty(vecino, str(_cell_bioma.get(vecino, "")))
 
 
+func _marcar_frontera_por_celda_nueva(cell: Vector2i) -> void:
+	# Una celda nueva puede cambiar la regla de TileMapDual de un vecino
+	# aunque ese vecino pertenezca a otra capa/zona. Por eso la invalidación
+	# debe seguir la capa de cada vecino, no sólo la capa de la celda nueva.
+	var layer_key := str(_cell_layer_key.get(cell, ""))
+	if _layers_by_zone.has(layer_key):
+		_marcar_dirty(layer_key, cell)
+		_marcar_variaciones_dirty(cell, str(_cell_bioma.get(cell, "")))
+
+	for offset: Vector2i in UPDATE_NEIGHBORS:
+		if offset == Vector2i.ZERO:
+			continue
+		var vecino := cell + offset
+		if not _cell_layer_key.has(vecino):
+			continue
+		var vecino_layer_key := str(_cell_layer_key[vecino])
+		_marcar_dirty(vecino_layer_key, vecino)
+		_marcar_variaciones_dirty(vecino, str(_cell_bioma.get(vecino, "")))
+
+
 func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
 
@@ -437,6 +457,11 @@ func set_zone(
 			cell + offset
 		)
 	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
+	# La llegada de una celda nueva invalida también la frontera de las
+	# capas vecinas. Esto evita que el chunk nuevo se vea bien mientras el
+	# chunk anterior conserva un tile de borde calculado con un vecindario vacío.
+	_marcar_frontera_por_celda_nueva(cell)
+
 	var set_zone_ms := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
 	_profiler_set_zone_ms += set_zone_ms
 	_profiler_set_zone_max_ms = maxf(_profiler_set_zone_max_ms, set_zone_ms)
