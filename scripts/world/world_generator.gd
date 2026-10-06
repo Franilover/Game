@@ -21,6 +21,7 @@ var entity_factory: WorldEntityFactory
 var spawn_rules: WorldSpawnRules
 var atmosphere: WorldAtmosphere
 var context: WorldContext
+var render_manager: GarliaRenderManager
 
 @onready var _terrain_node: WorldTerrain = $WorldTerrain
 @onready var _streamer_node: WorldStreamer = $WorldStreamer
@@ -108,14 +109,28 @@ func configurar_entidades(
 	entity_spawner.configurar(terrain, entity_manager, entity_factory, spawn_rules, _world_data)
 
 func _process(_delta: float) -> void:
+	if render_manager != null:
+		render_manager.iniciar_frame()
+
 	if not _world_ready:
+		if render_manager != null:
+			render_manager.finalizar_frame()
 		return
 
 	if streamer != null:
 		streamer.procesar()
 
+	if render_manager != null:
+		render_manager.finalizar_frame()
+
 
 func _crear_sistemas() -> void:
+	render_manager = get_node_or_null("GarliaRenderManager") as GarliaRenderManager
+	if render_manager == null:
+		render_manager = GarliaRenderManager.new()
+		render_manager.name = "GarliaRenderManager"
+		add_child(render_manager)
+
 	terrain = _terrain_node
 	streamer = _streamer_node
 	entity_spawner = _entity_spawner_node
