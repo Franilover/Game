@@ -207,8 +207,13 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 
 		guardar_estado_entidad(entity, chunk_coord)
 		_remover_persistencia(entity)
-		if entity is Creature and _entity_factory != null and is_instance_valid(_entity_factory):
-			_entity_factory.reciclar_criatura(entity as Creature)
+		if _entity_factory != null and is_instance_valid(_entity_factory):
+			if entity is Creature:
+				_entity_factory.reciclar_criatura(entity as Creature)
+			elif entity is WorldProp:
+				_entity_factory.reciclar_prop(entity as WorldProp)
+			else:
+				entity.queue_free()
 		else:
 			entity.queue_free()
 
