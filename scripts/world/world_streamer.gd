@@ -91,11 +91,9 @@ func procesar() -> void:
 
 	_actualizar_streaming()
 
-	# Las variaciones son decoración secundaria. Se procesan fuera del
-	# pipeline de generación para que nunca retrasen la aparición del suelo.
-	_procesar_variaciones_si_hay_presupuesto()
-
-	# El terreno visible tiene prioridad sobre la limpieza de chunks lejanos.
+	# El terreno base recibe el primer turno visual. Las variaciones son
+	# decoración secundaria y nunca deben consumir el servicio reservado
+	# antes del commit del suelo.
 	if _terrain.tiene_generacion_activa():
 		var presupuesto_celdas := _presupuesto_generacion()
 		if presupuesto_celdas <= 0:
@@ -107,6 +105,8 @@ func procesar() -> void:
 		)
 
 		if terminado:
+			# El chunk base ya terminó. Sólo ahora se permite trabajo secundario.
+			_procesar_variaciones_si_hay_presupuesto()
 			_procesar_entidades_si_hay_presupuesto()
 			var chunk_coord: Vector2i = (
 				_terrain.ultimo_chunk_generado()
@@ -132,6 +132,10 @@ func procesar() -> void:
 	# en el mismo frame y producir el tirón que todavía se observa aunque
 	# el unload ya no bloquee la cola.
 	var inicio_generacion := _iniciar_siguiente_chunk()
+	if not inicio_generacion:
+		# Si no hay generación activa, las decoraciones pendientes pueden usar
+		# el presupuesto que quedó libre después del terreno base.
+		_procesar_variaciones_si_hay_presupuesto()
 	_procesar_entidades_si_hay_presupuesto()
 
 	# Sólo cuando no arrancamos generación en este frame cedemos el frame al
