@@ -122,31 +122,26 @@ func _process(_delta: float) -> void:
 			render_manager.call("finalizar_frame")
 		return
 
-	# La generación del chunk inicial no puede depender del WorldStreamer:
-	# el streamer necesita al jugador para actualizar su cola, mientras que el
-	# terreno inicial debe poder avanzar aunque el runtime del jugador todavía
-	# esté terminando de enlazarse.
-	if terrain != null and terrain.tiene_generacion_activa():
+	# Una vez que el jugador está registrado, WorldStreamer es el único
+	# orquestador del pipeline de terreno. Esto permite que pueda evaluar
+	# prioridades y pausar una tarea FLUSH antes de consumir más celdas.
+	# Antes WorldGenerator procesaba el terreno directamente y el streamer
+	# sólo recibía turno cuando la tarea terminaba, haciendo imposible la
+	# preempción.
+	if streamer != null and streamer.tiene_jugador():
+		streamer.procesar()
+	elif terrain != null and terrain.tiene_generacion_activa():
+		# Fallback para el breve intervalo anterior al registro del jugador.
 		var presupuesto_inicial: int = generation_cells_per_frame
 		if render_manager != null:
 			var disponible: float = float(render_manager.call("presupuesto_disponible_ms"))
-			if disponible >= 4.0:
-				presupuesto_inicial = generation_cells_per_frame
-			elif disponible >= 2.5:
-				presupuesto_inicial = mini(generation_cells_per_frame, 32)
-			elif disponible >= 1.5:
-				presupuesto_inicial = mini(generation_cells_per_frame, 16)
-			else:
+			if disponible < 4.0:
+				presupuesto_inicial = mini(presupuesto_inicial, 32)
+			if disponible < 2.5:
+				presupuesto_inicial = mini(presupuesto_inicial, 16)
+			if disponible < 1.5:
 				presupuesto_inicial = 8
-		var generando: bool = terrain.tiene_generacion_activa()
 		terrain.procesar_generacion(maxi(presupuesto_inicial, 1))
-		# mundo_generado significa que el primer chunk ya terminó realmente.
-		# Antes se emitía justo después de iniciar la tarea, haciendo que Main
-		# colocara al jugador y registrara el streamer mientras el suelo aún
-		# estaba vacío.
-		if generando and not terrain.tiene_generacion_activa() and not _mundo_inicial_listo_emitido:
-			_mundo_inicial_listo_emitido = true
-			mundo_generado.emit()
 	else:
 		if streamer != null:
 			streamer.procesar()
