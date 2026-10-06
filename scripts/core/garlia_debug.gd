@@ -218,7 +218,7 @@ func _obtener_script_path(nodo: Node) -> String:
 	return "<sin script>"
 
 func obtener_arbol_diagnostico(raiz: Node = null) -> Array[Dictionary]:
-	var origen := raiz if is_instance_valid(raiz) else get_tree().current_scene
+	var origen: Node = raiz if is_instance_valid(raiz) else get_tree().current_scene
 	var salida: Array[Dictionary] = []
 	if not is_instance_valid(origen):
 		return salida
