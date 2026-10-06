@@ -277,7 +277,7 @@ func obtener_auditoria_render() -> Dictionary:
 						var source := ts.get_source(sid)
 						if source is TileSetAtlasSource:
 							var atlas := source as TileSetAtlasSource
-							sources.append("%d:%s:%d" % [sid, str(atlas.texture), atlas.get_tiles_count()])
+							sources.append("%d:%s:%d" % [sid, (atlas.texture as Texture2D).resource_path if atlas.texture != null else "<sin textura>", atlas.get_tiles_count()])
 					fila["sources"] = sources
 				tilemaps.append(fila)
 			canvas_items.append(fila)
@@ -303,6 +303,8 @@ func obtener_auditoria_render() -> Dictionary:
 				problemas.append("TileMapLayer con celdas pero invisible: %s" % tm["path"])
 			if int(tm.get("source_count", 0)) == 0:
 				problemas.append("TileMapLayer con celdas pero sin TileSet sources: %s" % tm["path"])
+			if float((tm.get("modulate", Color.WHITE) as Color).a) <= 0.001:
+				problemas.append("TileMapLayer con alpha 0: %s" % tm["path"])
 			if str(tm.get("material", "")).contains("ghost_material"):
 				problemas.append("TileMapLayer visual usa ghost_material: %s" % tm["path"])
 
