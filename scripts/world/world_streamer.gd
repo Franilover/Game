@@ -358,6 +358,8 @@ func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
 func _ceder_generacion_si_hay_prioridad(centro: Vector2i) -> void:
 	if _terrain == null or not _terrain.tiene_generacion_activa():
 		return
+	if not _terrain.puede_pausar_generacion_actual():
+		return
 	if _queue.is_empty():
 		return
 
