@@ -13,6 +13,7 @@ var _work_ms: Dictionary = {}
 var _work_calls: Dictionary = {}
 var _deferred_work: int = 0
 var _frame_work_ms: Dictionary = {}
+var _work_unit_ms: Dictionary = {}
 
 func iniciar_frame() -> void:
     _frame_start_usec = Time.get_ticks_usec()
@@ -24,11 +25,24 @@ func finalizar_frame() -> void:
         return
     _frame_used_ms = float(Time.get_ticks_usec() - _frame_start_usec) / 1000.0
 
-func registrar_trabajo(nombre: String, milisegundos: float) -> void:
+func registrar_trabajo(nombre: String, milisegundos: float, unidades: int = 1) -> void:
     var ms := maxf(milisegundos, 0.0)
     _work_ms[nombre] = float(_work_ms.get(nombre, 0.0)) + ms
     _work_calls[nombre] = int(_work_calls.get(nombre, 0)) + 1
     _frame_work_ms[nombre] = float(_frame_work_ms.get(nombre, 0.0)) + ms
+
+func presupuesto_unidades_adaptativo(nombre: String, base: int, minimo: int, maximo: int, objetivo_ms: float) -> int:
+	var limite := maxi(minimo, mini(base, maximo))
+	var disponible := presupuesto_disponible_ms()
+	if disponible <= 0.0:
+		return 0
+	var objetivo := maxf(objetivo_ms, 0.1)
+	var coste_por_unidad := float(_work_unit_ms.get(nombre, 0.0))
+	if coste_por_unidad <= 0.0:
+		return mini(limite, maxi(minimo, 16))
+	var presupuesto_objetivo := minf(objetivo, disponible * 0.75)
+	var estimadas := maxi(1, floori(presupuesto_objetivo / coste_por_unidad))
+	return mini(limite, maxi(minimo, estimadas))
 
 func registrar_trabajo_usec(nombre: String, inicio_usec: int) -> float:
     var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
@@ -60,4 +74,5 @@ func obtener_estado() -> Dictionary:
         "work_ms": _work_ms.duplicate(),
         "work_calls": _work_calls.duplicate(),
         "frame_work_ms": _frame_work_ms.duplicate(),
+		"work_unit_ms": _work_unit_ms.duplicate(),
     }
