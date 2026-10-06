@@ -16,7 +16,10 @@ var _unload_radius: int = 1
 # Test de rendimiento: terreno y entidades usan radios independientes.
 var _entity_active_radius: int = 0
 var _cells_per_frame: int = 128
-var _prefetch_margin_tiles: int = 8
+var _prefetch_margin_tiles: int = 16
+var _last_player_position: Vector2 = Vector2.ZERO
+var _player_direction: Vector2 = Vector2.ZERO
+var _prefetch_chunk: Vector2i = Vector2i(999999, 999999)
 
 var _player_chunk: Vector2i = Vector2i(
 	999999,
@@ -50,6 +53,8 @@ func registrar_jugador(
 	player: Node
 ) -> void:
 	_player = player
+	_last_player_position = _player.global_position
+	_player_direction = Vector2.ZERO
 
 	_actualizar_streaming()
 
@@ -81,6 +86,8 @@ func procesar() -> void:
 			_player.global_position
 		)
 	)
+
+	_actualizar_direccion_jugador()
 
 	if nuevo_chunk != _player_chunk:
 		_player_chunk = nuevo_chunk
@@ -213,13 +220,88 @@ func _actualizar_streaming() -> void:
 
 	_queue.sort_custom(
 		func(a: Vector2i, b: Vector2i) -> bool:
-			var da: int = abs(a.x - centro.x) + abs(a.y - centro.y)
-			var db: int = abs(b.x - centro.x) + abs(b.y - centro.y)
-			return da < db
+			var prioridad_a: float = _prioridad_chunk(a, centro)
+			var prioridad_b: float = _prioridad_chunk(b, centro)
+			return prioridad_a < prioridad_b
 	)
+
+	_prefetch_chunk = _obtener_chunk_prefetch(centro)
+	_priorizar_prefetch(centro)
 
 	_descargar_lejanos(centro)
 	_actualizar_entidades_activas(centro)
+
+
+func _actualizar_direccion_jugador() -> void:
+	if _player == null:
+		return
+
+	var posicion: Vector2 = _player.global_position
+	var delta_posicion: Vector2 = posicion - _last_player_position
+	_last_player_position = posicion
+
+	var direccion := delta_posicion
+	if _player is CharacterBody2D:
+		var velocidad: Vector2 = (_player as CharacterBody2D).velocity
+		if velocidad.length_squared() > 4.0:
+			direccion = velocidad
+
+	if direccion.length_squared() > 0.25:
+		_player_direction = direccion.normalized()
+
+
+func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
+	if _player == null or _player_direction.length_squared() <= 0.01:
+		return Vector2i(999999, 999999)
+
+	var tile_local_x: int = floori(fposmod(_player.global_position.x, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
+	var tile_local_y: int = floori(fposmod(_player.global_position.y, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
+	var margen: int = clampi(_prefetch_margin_tiles, 1, _terrain.chunk_size_tiles - 1)
+
+	var candidato := centro
+	var distancia_borde: int = _terrain.chunk_size_tiles
+
+	if _player_direction.x > 0.15 and tile_local_x >= _terrain.chunk_size_tiles - margen:
+		candidato = centro + Vector2i.RIGHT
+		distancia_borde = _terrain.chunk_size_tiles - 1 - tile_local_x
+	elif _player_direction.x < -0.15 and tile_local_x < margen:
+		candidato = centro + Vector2i.LEFT
+		distancia_borde = tile_local_x
+
+	if _player_direction.y > 0.15 and tile_local_y >= _terrain.chunk_size_tiles - margen:
+		if abs(_player_direction.y) >= abs(_player_direction.x):
+			candidato = centro + Vector2i.DOWN
+			distancia_borde = _terrain.chunk_size_tiles - 1 - tile_local_y
+	elif _player_direction.y < -0.15 and tile_local_y < margen:
+		if abs(_player_direction.y) >= abs(_player_direction.x):
+			candidato = centro + Vector2i.UP
+			distancia_borde = tile_local_y
+
+	if candidato == centro or distancia_borde > margen:
+		return Vector2i(999999, 999999)
+	return candidato
+
+
+func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
+	var distancia: float = float(_distancia_chunk(chunk, centro))
+	if chunk == _prefetch_chunk:
+		return -100.0
+	if _player_direction.length_squared() > 0.01:
+		var relativo := Vector2(chunk - centro)
+		var alineacion: float = relativo.normalized().dot(_player_direction) if relativo.length_squared() > 0.01 else 0.0
+		return distancia - alineacion * 0.75
+	return distancia
+
+
+func _priorizar_prefetch(centro: Vector2i) -> void:
+	if _prefetch_chunk.x == 999999:
+		return
+	if _terrain.chunk_cargado(_prefetch_chunk) or _terrain.chunk_en_generacion(_prefetch_chunk):
+		return
+	var indice: int = _queue.find(_prefetch_chunk)
+	if indice > 0:
+		_queue.remove_at(indice)
+		_queue.push_front(_prefetch_chunk)
 
 
 func _agregar_chunk_a_cola(
@@ -368,7 +450,10 @@ func obtener_diagnostico() -> Dictionary:
 		"unload_radius": _unload_radius,
 		"cells_per_frame": _cells_per_frame,
 		"generando": _terrain != null and _terrain.tiene_generacion_activa(),
-		"descargando": _terrain != null and _terrain.tiene_descarga_activa()
+		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
+		"player_direction": _player_direction,
+		"prefetch_margin_tiles": _prefetch_margin_tiles,
+		"prefetch_chunk": _prefetch_chunk
 	}
 
 func _registrar_debug() -> void:
