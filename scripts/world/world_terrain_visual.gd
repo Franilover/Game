@@ -876,6 +876,57 @@ func procesar_variaciones(cells: int = 4) -> bool:
 	return _dirty_variations.is_empty()
 
 
+func marcar_region_generada_dirty(
+	chunk_coord: Vector2i,
+	orden: Array,
+	inicio: int,
+	fin: int
+) -> void:
+	# Marca únicamente las celdas que ya fueron pintadas en este lote.
+	# Los vecinos que ya existen también se invalidan para mantener las
+	# transiciones correctas mientras el chunk se completa progresivamente.
+	var total := mini(fin, orden.size())
+	var primero := maxi(inicio, 0)
+	for indice_cursor in range(primero, total):
+		var indice := int(orden[indice_cursor])
+		var local_y := indice / 32
+		var local_x := indice % 32
+		var cell := Vector2i(
+			chunk_coord.x * 32 + local_x,
+			chunk_coord.y * 32 + local_y
+		)
+		var layer_key := str(_cell_layer_key.get(cell, ""))
+		if _layers_by_zone.has(layer_key):
+			_marcar_dirty(layer_key, cell)
+			for offset: Vector2i in UPDATE_NEIGHBORS:
+				var vecino := cell + offset
+				if _cell_layer_key.has(vecino):
+					_marcar_dirty(
+						str(_cell_layer_key[vecino]),
+						vecino
+					)
+		var bioma := str(_cell_bioma.get(cell, ""))
+			if bioma == "Pradera" or bioma == "Bosque":
+				_marcar_variaciones_dirty(cell, bioma)
+
+
+func marcar_borde_chunk_generado_dirty(
+	chunk_coord: Vector2i,
+	chunk_size_tiles: int
+) -> void:
+	# Sólo el borde externo necesita invalidar celdas de chunks vecinos.
+	var x0 := chunk_coord.x * chunk_size_tiles
+	var y0 := chunk_coord.y * chunk_size_tiles
+	var x1 := x0 + chunk_size_tiles - 1
+	var y1 := y0 + chunk_size_tiles - 1
+	for x in range(x0, x1 + 1):
+		_marcar_dirty_vecinos_externos(Vector2i(x, y0))
+		_marcar_dirty_vecinos_externos(Vector2i(x, y1))
+	for y in range(y0 + 1, y1):
+		_marcar_dirty_vecinos_externos(Vector2i(x0, y))
+		_marcar_dirty_vecinos_externos(Vector2i(x1, y))
+
+
 func marcar_chunk_generado_dirty(chunk_coord: Vector2i, chunk_size_tiles: int) -> void:
 	# Durante la generación no invalidamos 5 vecinos por cada celda.
 	# Todas las celdas del chunk ya fueron pintadas, así que basta con una
