@@ -740,12 +740,21 @@ func _spawn_props_in_chunk(
 			push_error("WorldEntitySpawner: WorldEntityFactory no expone crear_prop().")
 			continue
 
+		var prop_id := str(elegido.get("id", "")).strip_edges()
+		var prop_instance_key := "prop:" + str(creados.size()) + ":" + prop_id
+		var estado_prop_previo := _entity_manager.obtener_estado_prop(
+			chunk_coord,
+			prop_instance_key
+		)
+
 		var prop_node_variant: Variant = _entity_factory.call("crear_prop", elegido)
 		if not prop_node_variant is Node:
 			continue
 		var prop_node: Node = prop_node_variant as Node
 		if prop_node == null:
 			continue
+
+		prop_node.set_meta("runtime_instance_key", prop_instance_key)
 
 		if _entity_manager != null:
 			if not _entity_manager.registrar(prop_node, chunk_coord):
@@ -754,6 +763,8 @@ func _spawn_props_in_chunk(
 			(float(tile.x) + 0.5) * _terrain.tile_size,
 			(float(tile.y) + 0.5) * _terrain.tile_size
 		)
+		if not estado_prop_previo.is_empty():
+			prop_node.global_position = estado_prop_previo.get("position", prop_node.global_position)
 
 		if prop_node.has_method("configurar_chunk"):
 			prop_node.call("configurar_chunk", chunk_coord, limite_chunk)
