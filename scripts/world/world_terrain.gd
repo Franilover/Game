@@ -529,9 +529,8 @@ func _procesar_flush_chunk(
 		return true
 
 	var flush_start_usec: int = Time.get_ticks_usec()
-	# TileMapDual no escala linealmente: 128 celdas pueden implicar
-	# cientos de celdas de display y provocar un frame de cientos de ms.
-	# Mantener la generación en 64, pero el renderer en micro-lotes.
+	# TileMapDual no escala linealmente: mantener micro-lotes y dejar que
+	# el RenderManager corte el trabajo antes de consumir el frame.
 	var flush_cells: int = mini(cells, 32)
 	if _render_manager != null:
 		var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
@@ -539,10 +538,11 @@ func _procesar_flush_chunk(
 			return false
 		flush_cells = mini(flush_cells, 16 if disponible < 1.5 else 32)
 	var terminado: bool = visual.procesar_flush(flush_cells)
-	_profiler_flush_ms += float(
-		Time.get_ticks_usec() - flush_start_usec
-	) / 1000.0
+	var flush_ms := float(Time.get_ticks_usec() - flush_start_usec) / 1000.0
+	_profiler_flush_ms += flush_ms
 	_profiler_flushes += 1
+	if _render_manager != null:
+		_render_manager.call("registrar_trabajo", "terrain_flush", flush_ms)
 
 	if not terminado:
 		return false
