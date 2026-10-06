@@ -24,10 +24,14 @@ func _ready() -> void:
 	gender.add_item("Agenero")
 	gender.add_item("Texto libre")
 	gender.item_selected.connect(_on_gender_selected)
-	partida_name_input.text_changed.connect(_update_confirm)
-	name_input.text_changed.connect(_update_confirm)
-	gender_free.text_changed.connect(_update_confirm)
-	skins.item_selected.connect(_update_confirm)
+	partida_name_input.text_changed.connect(func(_text: String) -> void:
+		_update_confirm())
+	name_input.text_changed.connect(func(_text: String) -> void:
+		_update_confirm())
+	gender_free.text_changed.connect(func(_text: String) -> void:
+		_update_confirm())
+	skins.item_selected.connect(func(_index: int) -> void:
+		_update_confirm())
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
 	_load_skins()
