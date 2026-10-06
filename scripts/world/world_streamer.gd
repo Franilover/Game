@@ -127,13 +127,17 @@ func procesar() -> void:
 
 		return
 
-	_iniciar_siguiente_chunk()
+	# Si arrancamos un chunk nuevo este mismo frame, no mezclamos generación
+	# y clear de TileMap. En el Celeron esto puede sumar dos trabajos caros
+	# en el mismo frame y producir el tirón que todavía se observa aunque
+	# el unload ya no bloquee la cola.
+	var inicio_generacion := _iniciar_siguiente_chunk()
 	_procesar_entidades_si_hay_presupuesto()
 
-	# Sólo cuando no hay generación activa cedemos el frame al unload.
-	# Mantenerlo fuera del camino crítico evita que el jugador atraviese un
-	# borde y tenga que esperar varios frames mientras se limpian 1024 celdas.
-	if descarga_pendiente and _terrain.tiene_descarga_activa():
+	# Sólo cuando no arrancamos generación en este frame cedemos el frame al
+	# unload. La limpieza sigue progresando, pero nunca compite con el primer
+	# avance del siguiente chunk visible.
+	if not inicio_generacion and descarga_pendiente and _terrain.tiene_descarga_activa():
 		var presupuesto_descarga := _presupuesto_descarga()
 		if presupuesto_descarga > 0:
 			var descarga_inicio_usec := Time.get_ticks_usec()
@@ -465,9 +469,9 @@ func _agregar_chunk_a_cola(
 	nuevos.append(chunk)
 
 
-func _iniciar_siguiente_chunk() -> void:
+func _iniciar_siguiente_chunk() -> bool:
 	if _queue.is_empty():
-		return
+		return false
 
 	var chunk_coord: Vector2i = (
 		_queue.pop_front()
@@ -476,7 +480,7 @@ func _iniciar_siguiente_chunk() -> void:
 	if _terrain.chunk_cargado(
 		chunk_coord
 	):
-		return
+		return false
 
 	_terrain.configurar_prioridad_generacion(
 		_player.global_position
@@ -484,6 +488,7 @@ func _iniciar_siguiente_chunk() -> void:
 	_terrain.iniciar_generacion_chunk(
 		chunk_coord
 	)
+	return _terrain.tiene_generacion_activa()
 
 
 func _actualizar_entidades_activas(
