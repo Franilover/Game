@@ -469,8 +469,7 @@ func obtener_auditoria_render() -> Dictionary:
 					fila["sources"] = sources
 				tilemaps.append(fila)
 			canvas_items.append(fila)
-		else:
-			if nodo is CanvasItem:
+			else:
 				canvas_items.append(fila)
 
 	for cam in cameras:
@@ -498,7 +497,7 @@ func obtener_auditoria_render() -> Dictionary:
 			if str(tm.get("material", "")).contains("ghost_material"):
 				problemas.append("TileMapLayer visual usa ghost_material: %s" % tm["path"])
 
-		pruebas.append({
+	pruebas.append({
 			"prueba": "TileMaps con celdas",
 			"ok": tilemaps_con_celdas > 0,
 			"detalle": "%d TileMapLayer con celdas" % tilemaps_con_celdas
