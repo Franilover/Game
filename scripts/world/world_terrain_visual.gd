@@ -879,22 +879,18 @@ func procesar_flush(cells: int) -> bool:
 		var dirty: Array[Vector2i] = []
 		var convert_start_usec := Time.get_ticks_usec()
 
-		# Consumir la cola directamente. La generación del chunk ya inserta
-		# las celdas en orden espacial, por lo que no necesitamos BFS ni
-		# búsquedas repetidas sobre todo el Array para construir cada lote.
-		# El BFS anterior convertía un flush de 1024 celdas en cientos de
-		# recorridos de diccionarios, especialmente caro con presupuestos
-		# pequeños.
-		var cursor := int(_dirty_cursor_by_zone.get(clave, 0))
+		# Consumir desde el final: las celdas del chunk que acaba de generarse
+		# fueron añadidas más recientemente y deben llegar al renderer antes
+		# que trabajo visual antiguo de chunks lejanos. Esto hace que el chunk
+		# que el jugador está viendo aparezca primero sin ordenar toda la cola.
 		var lookup: Dictionary = _dirty_lookup_by_zone[clave]
-		while cursor < cells_variant.size() and dirty.size() < take:
-			var cell_variant: Variant = cells_variant[cursor]
-			cursor += 1
+		while not cells_variant.is_empty() and dirty.size() < take:
+			var cell_variant: Variant = cells_variant.pop_back()
 			if cell_variant is Vector2i and lookup.has(cell_variant):
 				dirty.append(cell_variant as Vector2i)
 				lookup.erase(cell_variant)
 
-		_dirty_cursor_by_zone[clave] = cursor
+		_dirty_cursor_by_zone[clave] = 0
 
 		_profiler_flush_convert_ms += float(
 			Time.get_ticks_usec() - convert_start_usec
@@ -915,22 +911,12 @@ func procesar_flush(cells: int) -> bool:
 			_profiler_flush_regions += 1
 			_profiler_flush_cells += dirty.size()
 
-		# Todo lo anterior al cursor ya fue consumido. Limpiar de inmediato
-		# cuando llegamos al final evita mantener Arrays/diccionarios muertos.
-		var nuevo_cursor := int(_dirty_cursor_by_zone.get(clave, 0))
-		if nuevo_cursor >= cells_variant.size():
+		if cells_variant.is_empty():
 			_dirty_cells_by_zone[clave] = []
 			_dirty_lookup_by_zone[clave] = {}
 			_dirty_cursor_by_zone[clave] = 0
-		elif nuevo_cursor >= 256 and nuevo_cursor * 2 >= cells_variant.size():
-			# Compactar sólo cuando la parte consumida domina la cola.
-			var compactadas: Array = []
-			for indice in range(nuevo_cursor, cells_variant.size()):
-				var pendiente_variant: Variant = cells_variant[indice]
-				if pendiente_variant is Vector2i and _dirty_lookup_by_zone[clave].has(pendiente_variant):
-					compactadas.append(pendiente_variant)
-			_dirty_cells_by_zone[clave] = compactadas
-			_dirty_cursor_by_zone[clave] = 0
+		presupuesto -= dirty.size()
+		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
 		presupuesto -= dirty.size()
 		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
 
