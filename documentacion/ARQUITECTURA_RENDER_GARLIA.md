@@ -1,7 +1,7 @@
 # Arquitectura de Renderizado y Optimización de Garlia
 
 ## Estado
-Fase actual: **Fase 5 — estado lógico y representación de props en progreso**.
+Fase actual: **Fase 5 — estado lógico y representación de props prácticamente completada**.
 
 Las fases 1–3 están implementadas. TileMapDual se conserva como backend visual y no se aumenta la carga de assets.
 
@@ -178,10 +178,21 @@ Fase 4 cerrada:
 - Las solicitudes de chunks que dejan de ser relevantes se cancelan antes de instanciar.
 - El pooling reduce el coste de crear/destruir proxies; la cola evita ráfagas de instanciación durante cambios de chunk.
 
-### Fase 5 — Props
-- Separar props lógicos de representación.
-- Pooling para props dinámicos.
-- Evaluar MultiMesh para decoración estática masiva.
+### Fase 5 — Props Renderer — PRÁCTICAMENTE COMPLETADA
+- `WorldProp` sigue siendo la representación activa de `props_game`, sin duplicar la autoridad canónica.
+- `WorldEntityManager` conserva el estado runtime de props al descargar chunks.
+- `WorldEntityFactory` reutiliza proxies mediante pool.
+- Las instancias usan claves estables `prop:<slot>:<prop_id>`.
+- La activación de un chunk ya no instancia todos sus props en una sola ráfaga.
+- `WorldEntitySpawner` mantiene una tarea incremental por chunk: cada turno puede resolver como máximo un intento de prop antes de continuar en otro frame.
+- La tarea conserva RNG, progreso y límite de intentos entre frames.
+- Si el chunk deja de ser relevante, `WorldStreamer` cancela la tarea antes de seguir instanciando props.
+- `props_game.item_id` continúa siendo el vínculo canónico con `items`; el renderer no crea ni duplica items.
+
+Pendiente:
+- registrar métricas específicas de `prop_spawn` en `GarliaRenderManager`.
+- separar `PropData` de `WorldProp` sólo si el profiling demuestra que el diccionario actual no es suficiente.
+- evaluar MultiMesh únicamente para decoración estática masiva, nunca para props interactivos.
 
 ### Fase 6 — Optimización avanzada
 Si los datos lo justifican: representación simplificada, instancing, Servers o técnicas de caché espacial/clipmaps.
@@ -207,7 +218,7 @@ Garlia no debe convertirse en una colección de microparches de rendimiento.
 
 ## Siguiente fase
 
-### Fase 4 — Entity Render Manager — PARCIALMENTE COMPLETADA
+### Fase 4 — Entity Render Manager — COMPLETADA
 1. Estado runtime de criaturas separado del ciclo de vida del Node.
 2. WorldEntityManager conserva posición, velocidad, vida y estado al descargar un chunk.
 3. Al recargar, WorldEntitySpawner restaura ese estado en lugar de tratar la criatura como nueva.
@@ -219,15 +230,17 @@ Pendiente dentro de esta fase:
 - presupuesto explícito para spawn/despawn de entidades.
 - soporte de más de una instancia natural de la misma criatura por chunk mediante una clave estable de instancia.
 
-### Fase 5 — Props — PARCIALMENTE COMPLETADA
+### Fase 5 — Props Renderer — PRÁCTICAMENTE COMPLETADA
 1. WorldProp conserva datos canónicos de props_game y sigue siendo sólo la representación activa.
 2. WorldEntityManager guarda estado runtime de props fuera del ciclo de vida del Node.
 3. WorldEntityFactory reutiliza WorldProp mediante pool.
 4. Las claves prop:<slot>:<prop_id> permiten distinguir instancias dentro del chunk.
-5. props_game.item_id continúa siendo el vínculo canónico con items.
-6. El pool no sustituye la lógica de interacción/recolección: los props interactivos siguen siendo WorldProp normales cuando están activos.
+5. `props_game.item_id` continúa siendo el vínculo canónico con items.
+6. La interacción/recolección sigue perteneciendo al WorldProp activo y consulta el item canónico.
+7. La activación de props se reparte entre frames mediante una tarea incremental por chunk.
+8. WorldStreamer puede cancelar la tarea cuando el chunk deja de ser relevante.
 
 Pendiente:
-- extender la cola de activación al trabajo interno de props si un chunk contiene una cantidad excepcionalmente grande.
-- separar definitivamente PropData de la representación Node si el profiling demuestra que el diccionario actual no es suficiente.
-- evaluación de MultiMesh sólo para decoración estática masiva.
+- métricas específicas de prop queue.
+- separar PropData sólo si el profiling lo justifica.
+- evaluación de MultiMesh únicamente para decoración estática masiva.
