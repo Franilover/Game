@@ -345,6 +345,42 @@ func get_id() -> String:
 	return criatura_id
 
 
+func activar_como_proxy() -> void:
+	visible = true
+	modulate = Color.WHITE
+	scale = Vector2.ONE
+	set_process(true)
+	set_physics_process(true)
+	var ai := get_node_or_null("AIController")
+	if ai != null:
+		ai.set_process(true)
+		ai.set_physics_process(true)
+	establecer_colision(true)
+	add_to_group("interactable")
+	add_to_group("creatures")
+	if is_alive:
+		add_to_group("damageable")
+	_actualizar_profundidad()
+	queue_redraw()
+
+
+func desactivar_como_proxy() -> void:
+	if _movimiento != null:
+		_movimiento.detener()
+	velocity = Vector2.ZERO
+	set_process(false)
+	set_physics_process(false)
+	var ai := get_node_or_null("AIController")
+	if ai != null:
+		ai.set_process(false)
+		ai.set_physics_process(false)
+	establecer_colision(false)
+	remove_from_group("interactable")
+	remove_from_group("creatures")
+	remove_from_group("damageable")
+	visible = false
+
+
 func get_personaje_game_id() -> String:
 	return str(datos.get("personaje_game_id", "")).strip_edges()
 
