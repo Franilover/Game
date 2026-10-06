@@ -12,6 +12,7 @@ var _spawn_rules: WorldSpawnRules = null
 var _world_data: WorldDataService = null
 var _spawn_queue: Array[Vector2i] = []
 var _spawn_queued: Dictionary = {}
+var _spawn_tasks: Dictionary = {}
 
 
 func configurar(
@@ -49,19 +50,27 @@ func spawn_chunk(chunk_coord: Vector2i) -> void:
 
 
 func procesar_spawn_queue(max_chunks: int = 1) -> void:
+	var limite := maxi(max_chunks, 1)
 	var procesados := 0
-	while procesados < maxi(max_chunks, 1) and not _spawn_queue.is_empty():
+	for chunk_variant in _spawn_tasks.keys():
+		if procesados >= limite:
+			break
+		if chunk_variant is Vector2i:
+			_procesar_tarea_spawn(chunk_variant as Vector2i)
+			procesados += 1
+	while procesados < limite and not _spawn_queue.is_empty():
 		var chunk_coord: Vector2i = _spawn_queue.pop_front()
 		_spawn_queued.erase(chunk_coord)
 		if _entity_manager != null and _entity_manager.tiene_chunk(chunk_coord):
 			continue
-		_spawn_chunk_interno(chunk_coord)
+		_iniciar_tarea_spawn(chunk_coord)
 		procesados += 1
 
 
 func cancelar_spawn_chunk(chunk_coord: Vector2i) -> void:
 	_spawn_queued.erase(chunk_coord)
 	_spawn_queue.erase(chunk_coord)
+	_spawn_tasks.erase(chunk_coord)
 
 
 func _spawn_chunk_interno(
@@ -321,15 +330,16 @@ func _spawn_chunk_interno(
 		limite_chunk,
 		rng
 	)
-	_spawn_props_in_chunk(
-		chunk_coord,
-		limite_chunk,
-		rng
-	)
-
-	# El chunk se marca activo solo después de terminar todo el proceso
-	# de aparición. Así un fallo parcial no bloquea futuros reintentos.
-	_entity_manager.activar_chunk(chunk_coord)
+	# Props: se continúan en frames posteriores para evitar una ráfaga.
+	_spawn_tasks[chunk_coord] = {
+		"limite_chunk": limite_chunk,
+		"rng": rng,
+		"intento": 0,
+		"creados": 0,
+		"max_props": 6,
+		"intentos_maximos": 48
+	}
+	return
 
 	if not creadas.is_empty():
 		print(
@@ -340,6 +350,110 @@ func _spawn_chunk_interno(
 			" criaturas"
 		)
 
+
+func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
+	if _terrain == null or _entity_manager == null or _entity_factory == null:
+		return
+	if _entity_manager.tiene_chunk(chunk_coord) or _spawn_tasks.has(chunk_coord):
+		return
+	_spawn_chunk_interno(chunk_coord)
+
+func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
+	var tarea_variant: Variant = _spawn_tasks.get(chunk_coord, {})
+	if not tarea_variant is Dictionary:
+		_spawn_tasks.erase(chunk_coord)
+		return
+	var tarea := tarea_variant as Dictionary
+	if _entity_manager == null or _entity_manager.tiene_chunk(chunk_coord):
+		_spawn_tasks.erase(chunk_coord)
+		return
+	var rng_variant: Variant = tarea.get("rng", null)
+	if not rng_variant is RandomNumberGenerator:
+		_spawn_tasks.erase(chunk_coord)
+		return
+	var rng := rng_variant as RandomNumberGenerator
+	var intento := int(tarea.get("intento", 0))
+	var creados := int(tarea.get("creados", 0))
+	var max_props := int(tarea.get("max_props", 6))
+	var max_intentos := int(tarea.get("intentos_maximos", 48))
+	var limite_chunk: Rect2 = tarea.get("limite_chunk", Rect2())
+	if creados >= max_props or intento >= max_intentos:
+		_spawn_tasks.erase(chunk_coord)
+		_entity_manager.activar_chunk(chunk_coord)
+		return
+	if _intentar_crear_prop(chunk_coord, limite_chunk, rng, creados):
+		creados += 1
+	tarea["creados"] = creados
+	tarea["intento"] = intento + 1
+	if creados >= max_props or int(tarea["intento"]) >= max_intentos:
+		_spawn_tasks.erase(chunk_coord)
+		_entity_manager.activar_chunk(chunk_coord)
+	else:
+		_spawn_tasks[chunk_coord] = tarea
+
+func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: RandomNumberGenerator, slot: int) -> bool:
+	var props := _world_data.obtener_props_game()
+	if props.is_empty():
+		return false
+	var tile := Vector2i(chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1), chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1))
+	if not _terrain.is_walkable(tile):
+		return false
+	var bioma := _terrain.get_bioma_at(tile)
+	var ecosistema := _terrain.get_ecosistema_at(tile)
+	var habitats := _terrain.get_habitats_at(tile)
+	if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
+		return false
+	var bioma_id := str(bioma.get("id", ""))
+	var ecosistema_id := str(ecosistema.get("id", ""))
+	if bioma_id.is_empty() or ecosistema_id.is_empty():
+		return false
+	var habitat_ids: Array[String] = []
+	for habitat_variant in habitats:
+		if habitat_variant is Dictionary:
+			var habitat := habitat_variant as Dictionary
+			var habitat_id := str(habitat.get("id", ""))
+			if not habitat_id.is_empty() and habitat_id not in habitat_ids:
+				habitat_ids.append(habitat_id)
+	if habitat_ids.is_empty():
+		return false
+	var candidatos: Array[Dictionary] = []
+	for prop_variant in props:
+		if not prop_variant is Dictionary:
+			continue
+		var prop := prop_variant as Dictionary
+		if str(prop.get("bioma_id", "")) != bioma_id or str(prop.get("ecosistema_id", "")) != ecosistema_id:
+			continue
+		if str(prop.get("habitat_id", "")) not in habitat_ids:
+			continue
+		var nombre := str(prop.get("nombre", "")).strip_edges()
+		if nombre.is_empty():
+			continue
+		var datos_prop := prop.duplicate(true)
+		datos_prop["asset_path"] = _spawn_rules.construir_asset_path_prop(datos_prop)
+		if str(datos_prop.get("asset_path", "")).is_empty():
+			continue
+		candidatos.append(datos_prop)
+	if candidatos.is_empty():
+		return false
+	var elegido := _spawn_rules.elegir_prop(candidatos, rng)
+	if elegido.is_empty() or not _entity_factory.has_method("crear_prop"):
+		return false
+	var prop_id := str(elegido.get("id", "")).strip_edges()
+	var prop_instance_key := "prop:" + str(slot) + ":" + prop_id
+	var estado := _entity_manager.obtener_estado_prop(chunk_coord, prop_instance_key)
+	var prop_variant: Variant = _entity_factory.call("crear_prop", elegido)
+	if not prop_variant is Node:
+		return false
+	var prop_node := prop_variant as Node
+	prop_node.set_meta("runtime_instance_key", prop_instance_key)
+	if not _entity_manager.registrar(prop_node, chunk_coord):
+		return false
+	prop_node.global_position = Vector2((float(tile.x) + 0.5) * _terrain.tile_size, (float(tile.y) + 0.5) * _terrain.tile_size)
+	if not estado.is_empty():
+		prop_node.global_position = estado.get("position", prop_node.global_position)
+	if prop_node.has_method("configurar_chunk"):
+		prop_node.call("configurar_chunk", chunk_coord, limite_chunk)
+	return true
 
 func summon_criatura(
 	nombre: String,
@@ -682,128 +796,3 @@ func _spawn_characters_in_chunk(
 		print("WorldEntitySpawner: personajes en reino → chunk ", chunk_coord, " → ", creados.size())
 
 
-func _spawn_props_in_chunk(
-	chunk_coord: Vector2i,
-	limite_chunk: Rect2,
-	rng: RandomNumberGenerator
-) -> void:
-	var props := _world_data.obtener_props_game()
-	if props.is_empty():
-		return
-
-	var creados: Array = []
-	var max_props := 6
-	var intentos := 48
-
-	for _intento in range(intentos):
-		if creados.size() >= max_props:
-			break
-
-		var tile := Vector2i(
-			chunk_coord.x * _terrain.chunk_size_tiles
-			+ rng.randi_range(0, _terrain.chunk_size_tiles - 1),
-			chunk_coord.y * _terrain.chunk_size_tiles
-			+ rng.randi_range(0, _terrain.chunk_size_tiles - 1)
-		)
-
-		if not _terrain.is_walkable(tile):
-			continue
-
-		var bioma := _terrain.get_bioma_at(tile)
-		var ecosistema := _terrain.get_ecosistema_at(tile)
-		var habitats := _terrain.get_habitats_at(tile)
-
-		if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
-			continue
-
-		var bioma_id := str(bioma.get("id", ""))
-		var ecosistema_id := str(ecosistema.get("id", ""))
-		if bioma_id.is_empty() or ecosistema_id.is_empty():
-			continue
-
-		var habitat_ids: Array[String] = []
-		for habitat_variant in habitats:
-			if not habitat_variant is Dictionary:
-				continue
-
-			var habitat := habitat_variant as Dictionary
-			var habitat_id := str(habitat.get("id", ""))
-			if not habitat_id.is_empty() and habitat_id not in habitat_ids:
-				habitat_ids.append(habitat_id)
-
-		if habitat_ids.is_empty():
-			continue
-
-		var candidatos: Array[Dictionary] = []
-		for prop_variant in props:
-			if not prop_variant is Dictionary:
-				continue
-
-			var prop := prop_variant as Dictionary
-			if str(prop.get("bioma_id", "")) != bioma_id:
-				continue
-			if str(prop.get("ecosistema_id", "")) != ecosistema_id:
-				continue
-			if str(prop.get("habitat_id", "")) not in habitat_ids:
-				continue
-
-			var nombre := str(prop.get("nombre", "")).strip_edges()
-			if nombre.is_empty():
-				continue
-
-			var datos_prop := prop.duplicate(true)
-			datos_prop["asset_path"] = _spawn_rules.construir_asset_path_prop(datos_prop)
-			if datos_prop["asset_path"] == "":
-				continue
-
-			candidatos.append(datos_prop)
-
-		if candidatos.is_empty():
-			continue
-
-		var elegido := _spawn_rules.elegir_prop(candidatos, rng)
-		if elegido.is_empty():
-			continue
-
-		if not _entity_factory.has_method("crear_prop"):
-			push_error("WorldEntitySpawner: WorldEntityFactory no expone crear_prop().")
-			continue
-
-		var prop_id := str(elegido.get("id", "")).strip_edges()
-		var prop_instance_key := "prop:" + str(creados.size()) + ":" + prop_id
-		var estado_prop_previo := _entity_manager.obtener_estado_prop(
-			chunk_coord,
-			prop_instance_key
-		)
-
-		var prop_node_variant: Variant = _entity_factory.call("crear_prop", elegido)
-		if not prop_node_variant is Node:
-			continue
-		var prop_node: Node = prop_node_variant as Node
-		if prop_node == null:
-			continue
-
-		prop_node.set_meta("runtime_instance_key", prop_instance_key)
-
-		if _entity_manager != null:
-			if not _entity_manager.registrar(prop_node, chunk_coord):
-				continue
-		prop_node.global_position = Vector2(
-			(float(tile.x) + 0.5) * _terrain.tile_size,
-			(float(tile.y) + 0.5) * _terrain.tile_size
-		)
-		if not estado_prop_previo.is_empty():
-			prop_node.global_position = estado_prop_previo.get("position", prop_node.global_position)
-
-		if prop_node.has_method("configurar_chunk"):
-			prop_node.call("configurar_chunk", chunk_coord, limite_chunk)
-
-		creados.append(prop_node)
-
-	if not creados.is_empty():
-		print(
-			"WorldEntitySpawner: props canonicos → chunk ",
-			chunk_coord,
-			" → ",
-			creados.size()
-		)
