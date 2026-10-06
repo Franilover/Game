@@ -15,6 +15,17 @@ var _spawn_queued: Dictionary = {}
 var _spawn_tasks: Dictionary = {}
 var _render_manager: Node = null
 
+# Diagnóstico universal del pipeline de entidades. No decide el spawn;
+# sólo deja visible en F4 dónde se está descartando el trabajo.
+var _diag_chunks_iniciados: int = 0
+var _diag_prop_intentos: int = 0
+var _diag_prop_creados: int = 0
+var _diag_prop_sin_datos: int = 0
+var _diag_prop_sin_contexto: int = 0
+var _diag_prop_sin_candidato: int = 0
+var _diag_prop_factory: int = 0
+var _diag_prop_registro: int = 0
+
 
 func configurar(
 	terrain: WorldTerrain,
@@ -41,6 +52,32 @@ func configurar(
 
 func configurar_render_manager(render_manager: Node) -> void:
 	_render_manager = render_manager
+
+
+func obtener_diagnostico() -> Dictionary:
+	return {
+		"cola_chunks": _spawn_queue.size(),
+		"tareas_props": _spawn_tasks.size(),
+		"chunks_iniciados": _diag_chunks_iniciados,
+		"prop_intentos": _diag_prop_intentos,
+		"prop_creados": _diag_prop_creados,
+		"prop_sin_datos": _diag_prop_sin_datos,
+		"prop_sin_contexto": _diag_prop_sin_contexto,
+		"prop_sin_candidato": _diag_prop_sin_candidato,
+		"prop_factory_fallo": _diag_prop_factory,
+		"prop_registro_fallo": _diag_prop_registro
+	}
+
+
+func _ready() -> void:
+	var debug: Node = get_node_or_null("/root/GarliaDebug")
+	if debug != null and debug.has_method("registrar_proveedor"):
+		debug.registrar_proveedor(
+			"world_entity_spawner",
+			"WorldEntitySpawner",
+			self,
+			"Spawn de props y criaturas por chunk."
+		)
 
 
 func spawn_chunk(chunk_coord: Vector2i) -> void:
@@ -81,6 +118,7 @@ func cancelar_spawn_chunk(chunk_coord: Vector2i) -> void:
 func _spawn_chunk_interno(
 	chunk_coord: Vector2i
 ) -> void:
+	_diag_chunks_iniciados += 1
 	if _terrain == null or not is_instance_valid(_terrain):
 		push_error("WorldEntitySpawner: Terrain no configurado.")
 		return
@@ -391,8 +429,10 @@ func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
 		_spawn_tasks[chunk_coord] = tarea
 
 func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: RandomNumberGenerator, slot: int) -> bool:
+	_diag_prop_intentos += 1
 	var props := _world_data.obtener_props_game()
 	if props.is_empty():
+		_diag_prop_sin_datos += 1
 		return false
 	var tile := Vector2i(chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1), chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1))
 	if not _terrain.is_walkable(tile):
@@ -401,6 +441,7 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	var ecosistema := _terrain.get_ecosistema_at(tile)
 	var habitats := _terrain.get_habitats_at(tile)
 	if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
+		_diag_prop_sin_contexto += 1
 		return false
 	var bioma_id := str(bioma.get("id", ""))
 	var ecosistema_id := str(ecosistema.get("id", ""))
@@ -446,9 +487,11 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	if candidatos.is_empty():
 		candidatos = candidatos_bioma
 	if candidatos.is_empty():
+		_diag_prop_sin_candidato += 1
 		return false
 	var elegido := _spawn_rules.elegir_prop(candidatos, rng)
 	if elegido.is_empty() or not _entity_factory.has_method("crear_prop"):
+		_diag_prop_factory += 1
 		return false
 	var prop_id := str(elegido.get("id", "")).strip_edges()
 	var prop_instance_key := "prop:" + str(slot) + ":" + prop_id
@@ -459,12 +502,14 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	var prop_node := prop_variant as Node
 	prop_node.set_meta("runtime_instance_key", prop_instance_key)
 	if not _entity_manager.registrar(prop_node, chunk_coord):
+		_diag_prop_registro += 1
 		return false
 	prop_node.global_position = Vector2((float(tile.x) + 0.5) * _terrain.tile_size, (float(tile.y) + 0.5) * _terrain.tile_size)
 	if not estado.is_empty():
 		prop_node.global_position = estado.get("position", prop_node.global_position)
 	if prop_node.has_method("configurar_chunk"):
 		prop_node.call("configurar_chunk", chunk_coord, limite_chunk)
+	_diag_prop_creados += 1
 	return true
 
 func summon_criatura(
