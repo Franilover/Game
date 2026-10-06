@@ -93,7 +93,7 @@ func _verificar_inicio_de_zona() -> void:
 		return
 	await get_tree().create_timer(0.5).timeout
 	if is_inside_tree():
-		_verificar_inicio_de_zona
+		_verificar_inicio_de_zona()
 
 
 func _iniciar_zonas() -> void:
