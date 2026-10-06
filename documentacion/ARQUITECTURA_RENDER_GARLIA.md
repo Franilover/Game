@@ -195,6 +195,12 @@ Pendiente:
 - evaluar MultiMesh únicamente para decoración estática masiva, nunca para props interactivos.
 
 ### Fase 6 — Optimización avanzada
+- TileMapDual se mantiene como backend de transición y composición.
+- La cola dirty de terreno usa cursor + lookup para evitar reconstruir arrays completos después de cada lote.
+- La región espacial sigue procesándose de forma contigua para favorecer localidad.
+- `GarliaRenderManager` mantiene el presupuesto temporal y las métricas por tipo de trabajo.
+
+
 Si los datos lo justifican: representación simplificada, instancing, Servers o técnicas de caché espacial/clipmaps.
 
 ## Métricas mínimas
