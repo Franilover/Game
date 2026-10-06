@@ -524,7 +524,11 @@ func _procesar_flush_chunk(
 		return true
 
 	var flush_start_usec: int = Time.get_ticks_usec()
-	var terminado: bool = visual.procesar_flush(cells)
+	# TileMapDual no escala linealmente: 128 celdas pueden implicar
+	# cientos de celdas de display y provocar un frame de cientos de ms.
+	# Mantener la generación en 64, pero el renderer en micro-lotes.
+	var flush_cells: int = mini(cells, 32)
+	var terminado: bool = visual.procesar_flush(flush_cells)
 	_profiler_flush_ms += float(
 		Time.get_ticks_usec() - flush_start_usec
 	) / 1000.0
