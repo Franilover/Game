@@ -36,6 +36,10 @@ enum Perfil {
 @export var estado_inicial: Estado = Estado.EXPLORANDO
 @export var mostrar_estado_debug: bool = false
 @export var intervalo_pensamiento: float = 0.12
+## La máquina de estados no necesita recalcularse cada frame.
+## El movimiento continúa a la frecuencia física normal; aquí sólo
+## reducimos la frecuencia de las decisiones costosas.
+@export var intervalo_estado: float = 0.08
 @export var duracion_investigacion: float = 1.20
 
 
@@ -116,6 +120,7 @@ var objetivo_detectado: bool = false
 
 var _tiempo_pensamiento: float = 0.0
 var _tiempo_estado: float = 0.0
+var _tiempo_estado_proceso: float = 0.0
 var _tiempo_accion: float = 0.0
 var _tiempo_recuperacion: float = 0.0
 var _tiempo_adherido: float = 0.0
@@ -199,9 +204,16 @@ func _physics_process(delta: float) -> void:
 			_actualizar_percepcion()
 		)
 
-	_medir_debug_seccion("CreatureAI/Estado", func() -> void:
-		_procesar_estado(delta)
-	)
+	# El movimiento de CreatureMovement sigue ejecutándose en cada
+	# physics frame. Sólo la lógica de decisión se agrupa en ticks.
+	_tiempo_estado_proceso += delta
+	var intervalo_decision := maxf(intervalo_estado, 0.02)
+	if _tiempo_estado_proceso >= intervalo_decision:
+		var delta_decision := _tiempo_estado_proceso
+		_tiempo_estado_proceso = 0.0
+		_medir_debug_seccion("CreatureAI/Estado", func() -> void:
+			_procesar_estado(delta_decision)
+		)
 
 
 func _medir_debug_seccion(nombre: String, accion: Callable) -> void:
