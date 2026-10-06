@@ -180,7 +180,7 @@ func procesar_clear_chunk(cells: int) -> bool:
 				coord.x * size + local_x,
 				coord.y * size + local_y
 			)
-			_limpiar_celda_chunk(cell)
+			_limpiar_celda_chunk(cell, false)
 			cursor += 1
 
 		_clear_task["cursor"] = cursor
@@ -188,6 +188,7 @@ func procesar_clear_chunk(cells: int) -> bool:
 			# Limpiar primero; la composición se procesa gradualmente en
 			# la siguiente fase para no convertir el unload en un flush gigante.
 			return false
+		_marcar_borde_chunk_dirty(coord, size)
 		_clear_task["stage"] = 1
 
 	# Fase 1: resolver únicamente una parte de las regiones dirty generadas
@@ -201,7 +202,7 @@ func procesar_clear_chunk(cells: int) -> bool:
 	return true
 
 
-func _limpiar_celda_chunk(cell: Vector2i) -> void:
+func _limpiar_celda_chunk(cell: Vector2i, marcar_dirty: bool = true) -> void:
 	var layer_key := str(_cell_layer_key.get(cell, ""))
 	if not _layers_by_zone.has(layer_key):
 		return
@@ -219,10 +220,46 @@ func _limpiar_celda_chunk(cell: Vector2i) -> void:
 	_cell_bioma.erase(cell)
 	_cell_zone.erase(cell)
 	_cell_layer_key.erase(cell)
-	_marcar_dirty(layer_key, cell)
+	if marcar_dirty:
+		_marcar_dirty(layer_key, cell)
+		for offset: Vector2i in UPDATE_NEIGHBORS:
+			_marcar_dirty(layer_key, cell + offset)
+		_marcar_variaciones_dirty(cell, "")
+
+
+func _marcar_borde_chunk_dirty(coord: Vector2i, size: int) -> void:
+	# Al descargar un bloque completo, las celdas interiores ya no pueden
+	# afectar a ninguna celda que siga visible. Sólo el borde del chunk y
+	# sus vecinos externos necesitan recomposición.
+	var x0 := coord.x * size
+	var y0 := coord.y * size
+	var x1 := x0 + size - 1
+	var y1 := y0 + size - 1
+	for x in range(x0, x1 + 1):
+		_marcar_dirty_si_existe(Vector2i(x, y0), Vector2i(0, 0))
+		_marcar_dirty_si_existe(Vector2i(x, y1), Vector2i(0, 0))
+		_marcar_dirty_vecinos_externos(Vector2i(x, y0))
+		_marcar_dirty_vecinos_externos(Vector2i(x, y1))
+	for y in range(y0 + 1, y1):
+		_marcar_dirty_si_existe(Vector2i(x0, y), Vector2i(0, 0))
+		_marcar_dirty_si_existe(Vector2i(x1, y), Vector2i(0, 0))
+		_marcar_dirty_vecinos_externos(Vector2i(x0, y))
+		_marcar_dirty_vecinos_externos(Vector2i(x1, y))
+
+func _marcar_dirty_si_existe(cell: Vector2i, _unused: Vector2i) -> void:
+	var layer_key := str(_cell_layer_key.get(cell, ""))
+	if _layers_by_zone.has(layer_key) and _cell_layer_key.has(cell):
+		_marcar_dirty(layer_key, cell)
+
+func _marcar_dirty_vecinos_externos(cell: Vector2i) -> void:
 	for offset: Vector2i in UPDATE_NEIGHBORS:
-		_marcar_dirty(layer_key, cell + offset)
-	_marcar_variaciones_dirty(cell, "")
+		if offset == Vector2i.ZERO:
+			continue
+		var vecino := cell + offset
+		if _cell_layer_key.has(vecino):
+			var layer_key := str(_cell_layer_key[vecino])
+			_marcar_dirty(layer_key, vecino)
+			_marcar_variaciones_dirty(vecino, str(_cell_bioma.get(vecino, "")))
 
 
 func configurar(nuevo_tile_size: int) -> void:
