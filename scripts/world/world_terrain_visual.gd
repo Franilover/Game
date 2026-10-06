@@ -441,11 +441,16 @@ func set_zone(
 	# El bioma puede cambiar sin que cambie la zona visual.
 	_cell_bioma[cell] = clave
 	_cell_zone[cell] = zone
-	var variation_start_usec := Time.get_ticks_usec()
-	_marcar_variaciones_dirty(cell, clave)
-	var variation_ms := float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
-	_profiler_variation_ms += variation_ms
-	_profiler_variation_max_ms = maxf(_profiler_variation_max_ms, variation_ms)
+	# Durante el pintado de un chunk no invalidamos vecinos celda por celda.
+	# El lote ya conoce exactamente qué bloque acaba de cambiar y hará una
+	# única invalidación conjunta al terminar. Esto evita ~5 operaciones de
+	# Dictionary por cada una de las 1.024 celdas.
+	if not _batch_active:
+		var variation_start_usec := Time.get_ticks_usec()
+		_marcar_variaciones_dirty(cell, clave)
+		var variation_ms := float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
+		_profiler_variation_ms += variation_ms
+		_profiler_variation_max_ms = maxf(_profiler_variation_max_ms, variation_ms)
 
 	var data: Dictionary = _base_tiles[tile_key]
 
@@ -463,9 +468,10 @@ func set_zone(
 	# Una sola pasada cubre la celda nueva y la frontera de las capas
 	# vecinas. La función deduplica mediante lookup, evitando dos recorridos
 	# sobre UPDATE_NEIGHBORS por cada celda del chunk.
-	var dirty_start_usec := Time.get_ticks_usec()
-	_marcar_frontera_por_celda_nueva(cell)
-	_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
+	if not _batch_active:
+		var dirty_start_usec := Time.get_ticks_usec()
+		_marcar_frontera_por_celda_nueva(cell)
+		_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
 
 	var set_zone_ms := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
 	_profiler_set_zone_ms += set_zone_ms
