@@ -174,3 +174,35 @@ func _changed() -> void:
 func _update_cells(coords: Array[Vector2i], _forced_cleanup: bool) -> void:
 	if is_instance_valid(_display):
 		_display.update(coords)
+
+
+func obtener_diagnostico() -> Dictionary:
+	var display_children: int = 0
+	var display_cells: int = 0
+	var display_layers: Array[String] = []
+	var terrain_layers: int = 0
+	var cached_cells: int = 0
+	var renderer_valid: bool = is_instance_valid(_display)
+
+	if renderer_valid:
+		display_children = _display.get_child_count()
+		cached_cells = _display.cached_cells.cells.size()
+		if _display.terrain != null:
+			terrain_layers = _display.terrain.layers.size()
+		for child in _display.get_children():
+			if child is TileMapLayer:
+				var display_layer: TileMapLayer = child as TileMapLayer
+				var count: int = display_layer.get_used_cells().size()
+				display_cells += count
+				display_layers.append("%s:%d" % [display_layer.name, count])
+
+	return {
+		"renderer_valid": renderer_valid,
+		"display_node_path": str(_display.get_path()) if renderer_valid else "",
+		"display_children": display_children,
+		"display_layers": display_layers,
+		"display_cells": display_cells,
+		"cached_cells": cached_cells,
+		"terrain_layers": terrain_layers,
+		"world_cells": get_used_cells().size(),
+	}
