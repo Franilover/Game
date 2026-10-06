@@ -467,10 +467,8 @@ func obtener_auditoria_render() -> Dictionary:
 							var atlas := source as TileSetAtlasSource
 							sources.append("%d:%s:%d:region=%s:texture=%s" % [sid, atlas.texture.resource_path if atlas.texture != null else "<sin textura>", atlas.get_tiles_count(), str(atlas.texture_region_size), str(atlas.texture.get_size()) if atlas.texture != null else "<sin textura>"])
 					fila["sources"] = sources
-				tilemaps.append(fila)
+					tilemaps.append(fila)
 			canvas_items.append(fila)
-			else:
-				canvas_items.append(fila)
 
 	for cam in cameras:
 		if bool(cam["enabled"]) and not bool(cam["visible"]):
