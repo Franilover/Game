@@ -672,8 +672,16 @@ func obtener_chunk_en_generacion() -> Vector2i:
 	return _generation_task.get("coord", Vector2i(999999, 999999))
 
 
-func pausar_generacion_actual() -> bool:
+func puede_pausar_generacion_actual() -> bool:
 	if _generation_task.is_empty() or not _paused_generation_task.is_empty():
+		return false
+	# Durante DATOS/PINTADO el visual mantiene un lote abierto. Sólo
+	# preemptamos en FLUSH, donde el estado visual ya está desacoplado.
+	return int(_generation_task.get("stage", 0)) == 2
+
+
+func pausar_generacion_actual() -> bool:
+	if not puede_pausar_generacion_actual():
 		return false
 	_paused_generation_task = _generation_task
 	_generation_task = {}
@@ -1385,7 +1393,23 @@ func _tile_to_local(
 
 func obtener_estado_generacion() -> Dictionary:
 	if _generation_task.is_empty():
-		return {"activa": false, "etapa": "IDLE", "cursor": 0, "total": 0}
+		if not _paused_generation_task.is_empty():
+			var etapa_pausada := "DATOS"
+			match int(_paused_generation_task.get("stage", 0)):
+				1: etapa_pausada = "PINTADO"
+				2: etapa_pausada = "FLUSH"
+			return {
+				"activa": false,
+				"pausada": true,
+				"etapa": etapa_pausada,
+				"cursor": int(_paused_generation_task.get("cursor", 0)),
+				"total": chunk_size_tiles * chunk_size_tiles,
+				"chunk": _paused_generation_task.get("coord", Vector2i.ZERO),
+				"chunks_cargados": _loaded_chunks.size(),
+				"biomas": _biomas.size(),
+				"ecosistemas": _ecosistemas.size()
+			}
+		return {"activa": false, "pausada": false, "etapa": "IDLE", "cursor": 0, "total": 0}
 	var etapa := "DATOS"
 	match int(_generation_task.get("stage", 0)):
 		1: etapa = "PINTADO"
