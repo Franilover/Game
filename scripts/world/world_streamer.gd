@@ -6,6 +6,7 @@ var _terrain: WorldTerrain
 var _entity_spawner: WorldEntitySpawner
 
 var _player: Node = null
+var _render_manager: Node = null
 
 var _load_radius: int = 1
 var _unload_radius: int = 1
@@ -40,6 +41,10 @@ func configurar(
 	_cells_per_frame = cells_per_frame
 
 
+func configurar_render_manager(render_manager: Node) -> void:
+	_render_manager = render_manager
+
+
 func registrar_jugador(
 	player: Node
 ) -> void:
@@ -70,9 +75,12 @@ func procesar() -> void:
 	_actualizar_streaming()
 
 	if _terrain.tiene_generacion_activa():
+		var presupuesto_celdas := _presupuesto_generacion()
+		if presupuesto_celdas <= 0:
+			return
 		var terminado: bool = (
 			_terrain.procesar_generacion(
-				_cells_per_frame
+				presupuesto_celdas
 			)
 		)
 
@@ -97,6 +105,22 @@ func procesar() -> void:
 		return
 
 	_iniciar_siguiente_chunk()
+
+
+func _presupuesto_generacion() -> int:
+	var base: int = maxi(_cells_per_frame, 1)
+	if _render_manager == null:
+		return base
+	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
+	if disponible < 0.75:
+		return 0
+	if disponible < 1.5:
+		return mini(base, 8)
+	if disponible < 2.5:
+		return mini(base, 16)
+	if disponible < 4.0:
+		return mini(base, 32)
+	return base
 
 
 func _actualizar_streaming() -> void:
