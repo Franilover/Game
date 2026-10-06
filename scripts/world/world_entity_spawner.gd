@@ -3,7 +3,7 @@ class_name WorldEntitySpawner
 
 
 @export_category("Aparición de criaturas")
-@export var max_creatures_per_chunk: int = 3
+@export var max_creatures_per_chunk: int = 5
 
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
