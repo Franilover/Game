@@ -13,7 +13,7 @@ signal mundo_inicializado
 @export var chunk_size_tiles: int = 32
 @export var load_radius_chunks: int = 1
 @export var unload_radius_chunks: int = 1
-@export var generation_cells_per_frame: int = 64
+@export var generation_cells_per_frame: int = 128
 
 
 var terrain: WorldTerrain
