@@ -804,13 +804,16 @@ func obtener_diagnostico() -> Dictionary:
 		var display_node: Node = terrain_layer.get_node_or_null("Display")
 		var display_layers: Array[String] = []
 		var display_cells: int = 0
+		var renderer_diag: Dictionary = {}
+		if terrain_layer.has_method("obtener_diagnostico"):
+			renderer_diag = terrain_layer.call("obtener_diagnostico") as Dictionary
 		if display_node != null:
 			for child in display_node.get_children():
 				if child is TileMapLayer:
 					var display_layer: TileMapLayer = child as TileMapLayer
 					display_layers.append("%s:%d" % [display_layer.name, display_layer.get_used_cells().size()])
 					display_cells += display_layer.get_used_cells().size()
-		display[str(clave_variant)] = {"dual_cells": terrain_layer.get_used_cells().size(), "display_exists": display_node != null, "display_layers": display_layers, "display_cells": display_cells}
+		display[str(clave_variant)] = {"dual_cells": terrain_layer.get_used_cells().size(), "display_exists": display_node != null, "display_layers": display_layers, "display_cells": display_cells, "renderer": renderer_diag}
 
 	var variaciones: Dictionary = {}
 	for bioma_variant in _variation_layers_by_bioma.keys():
