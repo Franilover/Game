@@ -156,6 +156,19 @@ func _godot_is_below_4_4():
 
 ## Called by signals when the tileset changes,
 ## or by _process inside the editor.
+## Fuerza una reconstruccion completa del renderer Dual despues de modificar
+## el atlas y sus terrain_peering_bits durante runtime.
+## El watcher del addon puede consumir su señal de TileSet una sola vez,
+## por lo que una modificacion programatica posterior puede no reconstruir
+## los DisplayLayer automaticamente.
+func reconstruir_renderer_dual() -> void:
+	if not is_instance_valid(_display):
+		return
+	if _display.terrain == null:
+		return
+	_display.terrain._changed()
+
+
 func _changed() -> void:
 	_tileset_watcher.update(tile_set)
 
