@@ -27,9 +27,20 @@ func finalizar_frame() -> void:
 
 func registrar_trabajo(nombre: String, milisegundos: float, unidades: int = 1) -> void:
     var ms := maxf(milisegundos, 0.0)
+    var unidades_validas := maxi(unidades, 1)
+    var coste_unitario := ms / float(unidades_validas)
+
     _work_ms[nombre] = float(_work_ms.get(nombre, 0.0)) + ms
     _work_calls[nombre] = int(_work_calls.get(nombre, 0)) + 1
     _frame_work_ms[nombre] = float(_frame_work_ms.get(nombre, 0.0)) + ms
+
+    # EMA: el presupuesto debe reaccionar al coste reciente sin quedar
+    # dominado por un único pico de TileMapDual durante un cambio de chunk.
+    var coste_anterior := float(_work_unit_ms.get(nombre, 0.0))
+    if coste_anterior <= 0.0:
+        _work_unit_ms[nombre] = coste_unitario
+    else:
+        _work_unit_ms[nombre] = lerpf(coste_anterior, coste_unitario, 0.25)
 
 func presupuesto_unidades_adaptativo(nombre: String, base: int, minimo: int, maximo: int, objetivo_ms: float) -> int:
 	var limite := maxi(minimo, mini(base, maximo))
