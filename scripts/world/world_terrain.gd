@@ -547,8 +547,8 @@ func _procesar_pintado_chunk(
 		visual.terminar_lote()
 		visual.marcar_region_generada_dirty(
 			coord,
-			chunk_size_tiles,
 			orden,
+			chunk_size_tiles,
 			cursor_inicio_lote,
 			cursor
 		)
