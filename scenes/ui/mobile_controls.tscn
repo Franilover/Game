@@ -1,0 +1,141 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/mobile_controls.gd" id="1_mobile"]
+
+[node name="MobileControls" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_mobile")
+
+[node name="Movement" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -220.0
+offset_right = 260.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Up" type="Button" parent="Movement"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 0
+offset_left = 91.0
+offset_top = 0.0
+offset_right = 149.0
+offset_bottom = 58.0
+mouse_filter = 0
+text = "▲"
+
+[node name="Down" type="Button" parent="Movement"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 0
+offset_left = 91.0
+offset_top = 116.0
+offset_right = 149.0
+offset_bottom = 174.0
+mouse_filter = 0
+text = "▼"
+
+[node name="Left" type="Button" parent="Movement"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 0
+offset_left = 20.0
+offset_top = 58.0
+offset_right = 78.0
+offset_bottom = 116.0
+mouse_filter = 0
+text = "◀"
+
+[node name="Right" type="Button" parent="Movement"]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 0
+offset_left = 162.0
+offset_top = 58.0
+offset_right = 220.0
+offset_bottom = 116.0
+mouse_filter = 0
+text = "▶"
+
+[node name="Actions" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -230.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Primary" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(70, 70)
+layout_mode = 0
+offset_left = 185.0
+offset_top = 60.0
+offset_right = 255.0
+offset_bottom = 130.0
+mouse_filter = 0
+text = "A"
+
+[node name="Secondary" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+offset_left = 120.0
+offset_top = 125.0
+offset_right = 182.0
+offset_bottom = 187.0
+mouse_filter = 0
+text = "B"
+
+[node name="Interact" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+offset_left = 55.0
+offset_top = 125.0
+offset_right = 117.0
+offset_bottom = 187.0
+mouse_filter = 0
+text = "E"
+
+[node name="Dash" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+offset_left = 120.0
+offset_top = 60.0
+offset_right = 182.0
+offset_bottom = 122.0
+mouse_filter = 0
+text = "D"
+
+[node name="Jump" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+offset_left = 185.0
+offset_top = 130.0
+offset_right = 247.0
+offset_bottom = 192.0
+mouse_filter = 0
+text = "J"
+
+[node name="Inventory" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+offset_left = 55.0
+offset_top = 60.0
+offset_right = 117.0
+offset_bottom = 122.0
+mouse_filter = 0
+text = "I"
