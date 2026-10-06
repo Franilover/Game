@@ -870,6 +870,35 @@ func procesar_variaciones(cells: int = 4) -> bool:
 	return _dirty_variations.is_empty()
 
 
+func marcar_chunk_generado_dirty(chunk_coord: Vector2i, chunk_size_tiles: int) -> void:
+	# Durante la generación no invalidamos 5 vecinos por cada celda.
+	# Todas las celdas del chunk ya fueron pintadas, así que basta con una
+	# invalidación conjunta del bloque y su borde. Esto reduce miles de
+	# operaciones Dictionary por chunk.
+	var x0 := chunk_coord.x * chunk_size_tiles
+	var y0 := chunk_coord.y * chunk_size_tiles
+	var x1 := x0 + chunk_size_tiles - 1
+	var y1 := y0 + chunk_size_tiles - 1
+
+	for y in range(y0, y1 + 1):
+		for x in range(x0, x1 + 1):
+			var cell := Vector2i(x, y)
+			var layer_key := str(_cell_layer_key.get(cell, ""))
+			if _layers_by_zone.has(layer_key):
+				_marcar_dirty(layer_key, cell)
+			var bioma := str(_cell_bioma.get(cell, ""))
+			if bioma == "Pradera" or bioma == "Bosque":
+				_marcar_variaciones_dirty(cell, bioma)
+
+	# Sólo el borde necesita invalidar vecinos externos del chunk.
+	for x in range(x0, x1 + 1):
+		_marcar_dirty_vecinos_externos(Vector2i(x, y0))
+		_marcar_dirty_vecinos_externos(Vector2i(x, y1))
+	for y in range(y0 + 1, y1):
+		_marcar_dirty_vecinos_externos(Vector2i(x0, y))
+		_marcar_dirty_vecinos_externos(Vector2i(x1, y))
+
+
 func tiene_flush_pendiente() -> bool:
 	for clave_variant in _layers_by_zone.keys():
 		var clave := str(clave_variant)
