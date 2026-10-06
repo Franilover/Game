@@ -39,7 +39,7 @@ const API_ESPECIE_ETERIUM_GAME := (
 	"/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,eterium_inicial,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
 )
 const API_REINOS_GAME := (
-	"/rest/v1/reinos_game?select=id,reino_id,clave,nombre,activo,orden,propiedades&activo=eq.true&order=orden.asc"
+	"/rest/v1/reinos_game?select=id,reino_id,clave,activo,orden,propiedades&activo=eq.true&order=orden.asc"
 )
 const API_RELACIONES_ECOLOGICAS := (
 	"/rest/v1/ecosistema_relaciones_criaturas?select=ecosistema_id,criatura_origen_id,criatura_destino_id,tipo_relacion,descripcion,origen,"
