@@ -217,6 +217,123 @@ func _obtener_script_path(nodo: Node) -> String:
 		return (script as Script).resource_path
 	return "<sin script>"
 
+func obtener_auditoria_render() -> Dictionary:
+	var canvas_items: Array[Dictionary] = []
+	var tilemaps: Array[Dictionary] = []
+	var cameras: Array[Dictionary] = []
+	var problemas: Array[String] = []
+	var pruebas: Array[Dictionary] = []
+	var raiz: Node = get_tree().root
+	if raiz == null:
+		return {"estado": "ERROR", "problemas": ["SceneTree.root es null"], "pruebas": []}
+
+	var viewport := get_viewport()
+	var canvas_transform := viewport.get_canvas_transform()
+	pruebas.append({
+		"prueba": "Viewport valido",
+		"ok": is_instance_valid(viewport),
+		"detalle": "%dx%d" % [viewport.get_visible_rect().size.x, viewport.get_visible_rect().size.y]
+	})
+	pruebas.append({
+		"prueba": "Canvas transform valido",
+		"ok": not canvas_transform.is_equal_approx(Transform2D()),
+		"detalle": str(canvas_transform)
+	})
+
+	for nodo in _recorrer(raiz):
+		if nodo is Camera2D:
+			var cam := nodo as Camera2D
+			cameras.append({
+				"path": str(cam.get_path()), "enabled": cam.enabled,
+				"position": cam.global_position, "zoom": cam.zoom,
+				"visible": cam.is_visible_in_tree()
+			})
+		if nodo is CanvasItem:
+			var item := nodo as CanvasItem
+			var fila := {
+				"path": str(item.get_path()),
+				"type": item.get_class(),
+				"visible": item.visible,
+				"visible_tree": item.is_visible_in_tree(),
+				"modulate": item.modulate,
+				"self_modulate": item.self_modulate,
+				"z_index": item.z_index,
+				"z_relative": item.z_as_relative,
+				"global_position": item.global_position,
+				"material": str(item.material) if item.material != null else "",
+				"top_level": item.top_level
+			}
+			if item is TileMapLayer:
+				var tm := item as TileMapLayer
+				var used := tm.get_used_cells()
+				var ts := tm.tile_set
+				fila["used_cells"] = used.size()
+				fila["tile_set"] = str(ts) if ts != null else ""
+				fila["tile_size"] = ts.tile_size if ts != null else Vector2i.ZERO
+				fila["source_count"] = ts.get_source_count() if ts != null else 0
+				if ts != null:
+					var sources: Array[String] = []
+					for sid in ts.get_source_ids():
+						var source := ts.get_source(sid)
+						if source is TileSetAtlasSource:
+							var atlas := source as TileSetAtlasSource
+							sources.append("%d:%s:%d" % [sid, str(atlas.texture), atlas.get_tiles_count()])
+					fila["sources"] = sources
+				tilemaps.append(fila)
+			canvas_items.append(fila)
+		else:
+			if nodo is CanvasItem:
+				canvas_items.append(fila)
+
+	for cam in cameras:
+		if bool(cam["enabled"]) and not bool(cam["visible"]):
+			problemas.append("Camera2D habilitada pero no visible en el arbol: %s" % cam["path"])
+		var pos: Vector2 = cam["position"]
+		if not pos.is_finite():
+			problemas.append("Camera2D con posicion invalida: %s" % cam["path"])
+		var zoom: Vector2 = cam["zoom"]
+		if zoom.x <= 0.0 or zoom.y <= 0.0:
+			problemas.append("Camera2D con zoom invalido: %s" % cam["path"])
+
+	var tilemaps_con_celdas := 0
+	for tm in tilemaps:
+		if int(tm.get("used_cells", 0)) > 0:
+			tilemaps_con_celdas += 1
+			if not bool(tm.get("visible_tree", false)):
+				problemas.append("TileMapLayer con celdas pero invisible: %s" % tm["path"])
+			if int(tm.get("source_count", 0)) == 0:
+				problemas.append("TileMapLayer con celdas pero sin TileSet sources: %s" % tm["path"])
+			if str(tm.get("material", "")).contains("ghost_material"):
+				problemas.append("TileMapLayer visual usa ghost_material: %s" % tm["path"])
+
+		pruebas.append({
+			"prueba": "TileMaps con celdas",
+			"ok": tilemaps_con_celdas > 0,
+			"detalle": "%d TileMapLayer con celdas" % tilemaps_con_celdas
+		})
+
+	if cameras.is_empty():
+		problemas.append("No existe Camera2D en el arbol.")
+	pruebas.append({
+		"prueba": "Camera2D habilitada",
+		"ok": cameras.any(func(c): return bool(c["enabled"])),
+		"detalle": JSON.stringify(cameras)
+	})
+
+	var estado := "ERROR" if not problemas.is_empty() else "OK"
+	return {
+		"estado": estado,
+		"problemas": problemas,
+		"pruebas": pruebas,
+		"cameras": cameras,
+		"tilemaps": tilemaps,
+		"canvas_items": canvas_items,
+		"viewport": {
+			"size": viewport.get_visible_rect().size,
+			"canvas_transform": str(canvas_transform)
+		}
+	}
+
 func obtener_arbol_diagnostico(raiz: Node = null) -> Array[Dictionary]:
 	var origen: Node = raiz if is_instance_valid(raiz) else get_tree().current_scene
 	var salida: Array[Dictionary] = []
