@@ -614,13 +614,6 @@ func _crear_base_tile(
 		source_id
 	)
 
-	# TileMapDual mantiene un renderer secundario (Display/DisplayLayer).
-	# Durante la generación inicial podemos añadir el atlas y pintar la celda
-	# antes de que el ciclo normal de _ready() haya procesado el TileSet.
-	# Forzamos aquí la sincronización una sola vez por zona para que el
-	# renderer real exista antes del primer flush incremental.
-	layer._changed()
-
 	# Cada capa contiene una sola zona visual, así que el terreno activo
 	# siempre es el terrain 1 y 0 representa el exterior/vacío.
 	var terrain_id := 1
@@ -656,9 +649,9 @@ func _crear_base_tile(
 	}
 
 	_next_source_id_by_zone[tile_key] = source_id + 1
-	# TileMapDual sincroniza su renderer secundario una vez que terrain y
-	# peering bits ya están completamente configurados.
-	layer._changed()
+	# Reconstruir el renderer sólo cuando el atlas y todos sus peering bits
+	# ya están completos. Así Display/TerrainDual lee una configuración final.
+	layer.reconstruir_renderer_dual()
 
 
 func _cargar_textura_bioma(
