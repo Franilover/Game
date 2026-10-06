@@ -185,6 +185,8 @@ func _inicializar_mundo() -> void:
 		generation_cells_per_frame
 	)
 
+	streamer.configurar_render_manager(render_manager)
+
 	# TileMapDual necesita completar su _ready() para inicializar el
 	# compositor antes de que el primer chunk pinte sus celdas.
 	# Sin este frame de espera, el chunk inicial puede quedar vacío,
