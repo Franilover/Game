@@ -598,6 +598,11 @@ func _finalizar_chunk() -> void:
 		" | flush_variaciones=",
 		"%.2f" % float(visual_profile.get("flush_variation_ms", 0.0)),
 		" ms/", int(visual_profile.get("flush_variation_cells", 0)), " celdas",
+		" | MAX set_zone=", "%.2f" % float(visual_profile.get("set_zone_max_ms", 0.0)),
+		" ms | MAX flush=", "%.2f" % float(visual_profile.get("flush_max_ms", 0.0)),
+		" ms | MAX flush_update=", "%.2f" % float(visual_profile.get("flush_update_max_ms", 0.0)),
+		" ms | MAX variaciones=", "%.2f" % float(visual_profile.get("variation_max_ms", 0.0)),
+		" ms",
 	)
 
 	_generation_task.clear()
