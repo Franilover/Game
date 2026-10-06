@@ -836,6 +836,40 @@ func _ready() -> void:
 	_registrar_debug()
 
 
+func _tiene_flush_base_pendiente() -> bool:
+	for clave_variant in _layers_by_zone.keys():
+		var clave := str(clave_variant)
+		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
+		if cells_variant is Array and not (cells_variant as Array).is_empty():
+			return true
+	return false
+
+
+func procesar_variaciones(cells: int = 4) -> bool:
+	# Trabajo visual secundario: nunca debe retener el chunk base.
+	if _batch_active:
+		return false
+	if _dirty_variations.is_empty():
+		return true
+
+	var limite: int = mini(maxi(cells, 1), _dirty_variations.size())
+	var variaciones: Array = _dirty_variations.keys()
+	var inicio_usec := Time.get_ticks_usec()
+
+	for i in range(limite):
+		var cell_variant: Variant = variaciones[i]
+		if cell_variant is Vector2i:
+			_actualizar_variacion(cell_variant as Vector2i)
+			_dirty_variations.erase(cell_variant)
+		_profiler_flush_variation_cells += 1
+
+	_profiler_flush_variation_ms += float(
+		Time.get_ticks_usec() - inicio_usec
+	) / 1000.0
+
+	return _dirty_variations.is_empty()
+
+
 func tiene_flush_pendiente() -> bool:
 	for clave_variant in _layers_by_zone.keys():
 		var clave := str(clave_variant)
@@ -918,25 +952,12 @@ func procesar_flush(cells: int) -> bool:
 		presupuesto -= dirty.size()
 		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
 
-	if presupuesto > 0 and not _dirty_variations.is_empty():
-		var variation_start_usec := Time.get_ticks_usec()
-		var variaciones: Array = _dirty_variations.keys()
-		var take_variaciones: int = mini(
-			presupuesto,
-			variaciones.size()
-		)
-		for i in range(take_variaciones):
-			var cell_variant: Variant = variaciones[i]
-			if cell_variant is Vector2i:
-				_actualizar_variacion(cell_variant as Vector2i)
-				_dirty_variations.erase(cell_variant)
-			_profiler_flush_variation_cells += 1
-			presupuesto -= 1
-		_profiler_flush_variation_ms += float(
-			Time.get_ticks_usec() - variation_start_usec
-			) / 1000.0
-
-	return not tiene_flush_pendiente()
+	# Las variaciones NO bloquean la finalización del chunk.
+	# TileMapLayer.set_cell() para decoración puede ser mucho más caro que
+	# la composición base; dejarlo dentro de la barrera de FLUSH hacía que
+	# un chunk quedara "generando" aunque sus tiles base ya fueran visibles.
+	# Las variaciones se procesan aparte y de forma diferida por el streamer.
+	return not _tiene_flush_base_pendiente()
 
 
 func flush() -> void:
