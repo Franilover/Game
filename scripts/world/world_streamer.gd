@@ -73,8 +73,9 @@ func procesar() -> void:
 		_player_chunk = nuevo_chunk
 
 	_actualizar_streaming()
-	_entity_spawner.procesar_spawn_queue(_presupuesto_entidades())
 
+	# El terreno tiene prioridad: TileMapDual y su preparación son el trabajo
+	# visual más caro. Las entidades sólo entran cuando queda presupuesto real.
 	if _terrain.tiene_generacion_activa():
 		var presupuesto_celdas := _presupuesto_generacion()
 		if presupuesto_celdas <= 0:
@@ -86,6 +87,7 @@ func procesar() -> void:
 		)
 
 		if terminado:
+			_procesar_entidades_si_hay_presupuesto()
 			var chunk_coord: Vector2i = (
 				_terrain.ultimo_chunk_generado()
 			)
@@ -106,13 +108,22 @@ func procesar() -> void:
 		return
 
 	_iniciar_siguiente_chunk()
+	_procesar_entidades_si_hay_presupuesto()
 
+
+func _procesar_entidades_si_hay_presupuesto() -> void:
+	if _entity_spawner == null:
+		return
+	var limite := _presupuesto_entidades()
+	if limite <= 0:
+		return
+	_entity_spawner.procesar_spawn_queue(limite)
 
 func _presupuesto_entidades() -> int:
 	if _render_manager == null:
 		return 1
 	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
-	if disponible < 0.75:
+	if disponible < 1.5:
 		return 0
 	return 1
 
