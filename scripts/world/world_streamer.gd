@@ -67,8 +67,7 @@ func procesar() -> void:
 	if nuevo_chunk != _player_chunk:
 		_player_chunk = nuevo_chunk
 
-		_actualizar_streaming()
-		_actualizar_entidades_activas(nuevo_chunk)
+	_actualizar_streaming()
 
 	if _terrain.tiene_generacion_activa():
 		var terminado: bool = (
