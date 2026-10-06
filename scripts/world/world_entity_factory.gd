@@ -134,7 +134,7 @@ func reciclar_prop(node: WorldProp) -> void:
 
 func _tomar_prop_del_pool() -> WorldProp:
 	while not _prop_pool.is_empty():
-		var node := _prop_pool.pop_back()
+		var node: WorldProp = _prop_pool.pop_back() as WorldProp
 		if node != null and is_instance_valid(node):
 			return node
 	return null
