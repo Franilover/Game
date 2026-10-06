@@ -16,7 +16,7 @@ var _actualizando_vista := false
 
 const MODOS := [
 	"resumen", "sistemas", "mundo", "entidades", "datos",
-	"rendimiento", "arbol", "render", "logs", "flujo"
+	"rendimiento", "arbol", "render", "engine", "logs", "flujo"
 ]
 
 func _ready() -> void:
@@ -160,6 +160,8 @@ func _actualizar_vista() -> void:
 			_texto.text = _vista_arbol()
 		"render":
 			_texto.text = _vista_render()
+		"engine":
+			_texto.text = _vista_engine()
 		"logs":
 			_texto.text = str(_garlia_debug().call("obtener_logs_texto"))
 		"flujo":
@@ -324,6 +326,65 @@ func _vista_render() -> String:
 			str(item.get("z_index", 0)), str(item.get("global_position", Vector2.ZERO)),
 			str(item.get("material", ""))
 		])
+	return "\n".join(out)
+
+func _vista_engine() -> String:
+	var out := _encabezado("AUDITORIA UNIVERSAL DEL MOTOR")
+	var datos: Dictionary = _garlia_debug().call("obtener_auditoria_engine")
+	out.append("ESTADO GLOBAL: " + str(datos.get("estado", "DESCONOCIDO")))
+	out.append("")
+	out.append("PROBLEMAS")
+	var problemas: Array = datos.get("problemas", [])
+	if problemas.is_empty():
+		out.append("  Ninguno detectado.")
+	else:
+		for problema in problemas:
+			out.append("  [!] " + str(problema))
+	var d: Dictionary = datos.get("datos", {})
+	out.append("")
+	out.append("RUNTIME")
+	for clave in ["scene","paused","time_scale","frame","physics_frame","delta","physics_delta","fps","node_count","object_count","orphan_nodes","draw_calls","render_objects","render_primitives","renderer","renderer_api","viewport_size"]:
+		out.append("  %-22s %s" % [clave, JSON.stringify(d.get(clave, "<n/a>"))])
+	out.append("")
+	out.append("GRUPOS")
+	for grupo in d.get("groups", {}):
+		out.append("  %-28s %s" % [str(grupo), str(d["groups"][grupo])])
+	out.append("")
+	out.append("PROCESAMIENTO")
+	for fila in d.get("processing_nodes", []):
+		out.append("  %s | %s | process=%s physics=%s mode=%s priority=%s" % [
+			str(fila["path"]), str(fila["type"]), str(fila["process"]),
+			str(fila["physics"]), str(fila["mode"]), str(fila["priority"])
+		])
+	out.append("")
+	out.append("TIMERS")
+	for timer in d.get("timers", []):
+		out.append("  %s | running=%s left=%.3f wait=%.3f one_shot=%s" % [
+			str(timer["path"]), str(timer["running"]), float(timer["left"]),
+			float(timer["wait"]), str(timer["one_shot"])
+		])
+	out.append("")
+	out.append("CANVAS LAYERS")
+	for layer in d.get("canvas_layers", []):
+		out.append("  %s | layer=%s visible=%s follow=%s" % [
+			str(layer["path"]), str(layer["layer"]), str(layer["visible"]), str(layer["follow_viewport"])
+		])
+	out.append("")
+	out.append("SUBVIEWPORTS")
+	for sv in d.get("subviewports", []):
+		out.append("  %s | size=%s visible=%s update=%s" % [
+			str(sv["path"]), str(sv["size"]), str(sv["visible"]), str(sv["update_mode"])
+		])
+	out.append("")
+	out.append("SEÑALES CONECTADAS")
+	for conexion in d.get("signal_connections", []):
+		out.append("  %s :: %s -> %s conexión(es)" % [
+			str(conexion["node"]), str(conexion["signal"]), str(conexion["connections"])
+		])
+	out.append("")
+	out.append("SCRIPTS CARGADOS")
+	for script in d.get("scripts", {}):
+		out.append("  %s | instancias=%s" % [str(script), str(d["scripts"][script])])
 	return "\n".join(out)
 
 func _vista_arbol() -> String:
