@@ -217,6 +217,46 @@ func _obtener_script_path(nodo: Node) -> String:
 		return (script as Script).resource_path
 	return "<sin script>"
 
+func obtener_auditoria_supabase() -> Dictionary:
+	var cliente: Node = _buscar_nodo_por_clase("GarliaSupabaseClient")
+	if cliente == null:
+		return {"estado": "ERROR", "problemas": ["GarliaSupabaseClient no encontrado en el SceneTree."]}
+	var datos: Variant = cliente.call("obtener_diagnostico_debug") if cliente.has_method("obtener_diagnostico_debug") else null
+	if not datos is Dictionary:
+		return {"estado": "ERROR", "problemas": ["El cliente Supabase no expone diagnostico_debug()."]}
+	var problemas: Array[String] = []
+	if not bool(datos.get("auth_node", false)):
+		problemas.append("SupabaseClient no tiene GarliaAuth inyectado.")
+	if not bool(datos.get("configurado", false)):
+		problemas.append("Supabase URL o publishable key no configuradas.")
+	if not bool(datos.get("autenticado", false)):
+		problemas.append("No hay sesión autenticada; las consultas protegidas pueden fallar.")
+	var cache: Dictionary = datos.get("cache", {})
+	if int(cache.get("reinos_game", 0)) <= 0:
+		problemas.append("Cache reinos_game vacía.")
+	if int(cache.get("especies_jugables", 0)) <= 0:
+		problemas.append("Cache especies_jugables vacía.")
+	var requests: Array = datos.get("requests", [])
+	for request in requests:
+		if not bool(request.get("existe", false)):
+			problemas.append("HTTPRequest inexistente: %s" % request.get("nombre", ""))
+	return {
+		"estado": "ERROR" if not problemas.is_empty() else "OK",
+		"problemas": problemas,
+		"cliente_path": str(cliente.get_path()),
+		"script": _obtener_script_path(cliente),
+		"datos": datos
+	}
+
+func _buscar_nodo_por_clase(nombre_clase: String) -> Node:
+	var raiz: Node = get_tree().root
+	if raiz == null:
+		return null
+	for nodo in _recorrer(raiz):
+		if nodo.get_class() == nombre_clase or nodo.is_class(nombre_clase):
+			return nodo
+	return null
+
 func obtener_auditoria_engine() -> Dictionary:
 	var root: Node = get_tree().root
 	var nodos := _recorrer(root) if root != null else []
