@@ -6,6 +6,12 @@ class_name GarliaRenderManager
 
 @export var target_fps: float = 60.0
 @export var render_budget_ms: float = 5.0
+## Fracción del presupuesto visual reservada para que el terreno base
+## siempre reciba servicio aunque otro sistema haya consumido el resto.
+## No aumenta el presupuesto total por defecto: define una garantía de servicio.
+@export_range(0.05, 0.50, 0.05) var terrain_service_fraction: float = 0.25
+@export var terrain_service_min_ms: float = 0.75
+@export var terrain_service_max_ms: float = 1.50
 
 var _frame_start_usec: int = 0
 var _frame_used_ms: float = 0.0
@@ -52,6 +58,39 @@ func registrar_trabajo(
 			coste_unitario,
 			0.25
 		)
+
+
+func presupuesto_unidades_terreno(
+	nombre: String,
+	base: int,
+	minimo: int,
+	maximo: int,
+	objetivo_ms: float
+) -> int:
+	# El terreno base tiene una garantía de servicio independiente del trabajo
+	# visual secundario. Si el presupuesto restante ya alcanzó la reserva, se
+	# usa normalmente; si no, se concede sólo la reserva calculada para evitar
+	# que la cola quede varios segundos sin un commit visual.
+	var limite: int = maxi(minimo, mini(base, maximo))
+	var reserva: float = clampf(
+		render_budget_ms * terrain_service_fraction,
+		terrain_service_min_ms,
+		terrain_service_max_ms
+	)
+	var disponible: float = presupuesto_disponible_ms()
+	var presupuesto_servicio: float = maxf(disponible, reserva)
+	var objetivo: float = minf(maxf(objetivo_ms, 0.1), presupuesto_servicio)
+	var coste_por_unidad: float = float(_work_unit_ms.get(nombre, 0.0))
+
+	if coste_por_unidad <= 0.0:
+		return mini(limite, maxi(minimo, 1))
+
+	var estimadas: int = floori(objetivo / coste_por_unidad)
+	if estimadas <= 0:
+		# Garantía de progreso: una unidad puede superar el objetivo por un
+		# pico puntual de TileMapDual, pero no deja la cola bloqueada.
+		return 1
+	return mini(limite, estimadas)
 
 
 func presupuesto_unidades_adaptativo(
@@ -152,6 +191,7 @@ func obtener_estado() -> Dictionary:
 		"render_budget_ms": render_budget_ms,
 		"frame_used_ms": _frame_used_ms,
 		"budget_remaining_ms": presupuesto_disponible_ms(),
+		"terrain_service_reserve_ms": clampf(render_budget_ms * terrain_service_fraction, terrain_service_min_ms, terrain_service_max_ms),
 		"deferred_work": _deferred_work,
 		"work_ms": _work_ms.duplicate(),
 		"work_calls": _work_calls.duplicate(),
