@@ -743,7 +743,7 @@ func _marcar_variaciones_dirty(
 	# que la celda central es decorativa y añadimos directamente el vecindario.
 	if bioma_actual == "Pradera" or bioma_actual == "Bosque":
 		for offset: Vector2i in UPDATE_NEIGHBORS:
-			_dirty_variations[cell + offset] = true
+			_marcar_variacion_dirty(cell + offset)
 		return
 
 	# Para los biomas sin atlas decorativo, sólo interesa comprobar los cuatro
@@ -754,7 +754,14 @@ func _marcar_variaciones_dirty(
 		var candidata := cell + offset
 		var bioma_candidato := str(_cell_bioma.get(candidata, ""))
 		if VARIACIONES_POR_BIOMA.has(bioma_candidato):
-			_dirty_variations[candidata] = true
+			_marcar_variacion_dirty(candidata)
+
+
+func _marcar_variacion_dirty(cell: Vector2i) -> void:
+	if _dirty_variations.has(cell):
+		return
+	_dirty_variations[cell] = true
+	_dirty_variation_queue.append(cell)
 
 
 func _marcar_dirty(
@@ -859,15 +866,36 @@ func procesar_variaciones(cells: int = 4) -> bool:
 		return true
 
 	var limite: int = mini(maxi(cells, 1), _dirty_variations.size())
-	var variaciones: Array = _dirty_variations.keys()
 	var inicio_usec := Time.get_ticks_usec()
+	var procesadas := 0
 
-	for i in range(limite):
-		var cell_variant: Variant = variaciones[i]
+	while (
+		_dirty_variation_cursor < _dirty_variation_queue.size()
+		and procesadas < limite
+	):
+		var cell_variant: Variant = (
+			_dirty_variation_queue[_dirty_variation_cursor]
+		)
+		_dirty_variation_cursor += 1
+
+		if not _dirty_variations.has(cell_variant):
+			continue
+
 		if cell_variant is Vector2i:
 			_actualizar_variacion(cell_variant as Vector2i)
 			_dirty_variations.erase(cell_variant)
-		_profiler_flush_variation_cells += 1
+			procesadas += 1
+			_profiler_flush_variation_cells += 1
+
+	if _dirty_variation_cursor >= _dirty_variation_queue.size():
+		_dirty_variation_queue.clear()
+		_dirty_variation_cursor = 0
+	elif _dirty_variation_cursor >= 256 and _dirty_variation_cursor * 2 >= _dirty_variation_queue.size():
+		var cola_nueva: Array = []
+		for pendiente_variant in _dirty_variations.keys():
+			cola_nueva.append(pendiente_variant)
+		_dirty_variation_queue = cola_nueva
+		_dirty_variation_cursor = 0
 
 	_profiler_flush_variation_ms += float(
 		Time.get_ticks_usec() - inicio_usec
