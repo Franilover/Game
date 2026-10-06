@@ -471,11 +471,15 @@ func _procesar_pintado_chunk(
 		_generation_task["cursor"]
 	)
 	var orden: Array = _generation_task["orden_pintado"]
+	var cursor_inicio_lote: int = cursor
 
 	var limite: int = mini(
 		cursor + cells,
 		total
 	)
+
+	if visual != null:
+		visual.comenzar_lote()
 
 	while cursor < limite:
 		var indice: int = int(orden[cursor])
@@ -539,6 +543,16 @@ func _procesar_pintado_chunk(
 
 	_generation_task["cursor"] = cursor
 
+	if visual != null:
+		visual.terminar_lote()
+		visual.marcar_region_generada_dirty(
+			coord,
+			chunk_size_tiles,
+			orden,
+			cursor_inicio_lote,
+			cursor
+		)
+
 	_profiler_paint_ms += float(
 		Time.get_ticks_usec() - profiler_start_usec
 	) / 1000.0
@@ -548,8 +562,7 @@ func _procesar_pintado_chunk(
 		return false
 
 	if visual != null:
-		visual.terminar_lote()
-		visual.marcar_chunk_generado_dirty(
+		visual.marcar_borde_chunk_generado_dirty(
 			coord,
 			chunk_size_tiles
 		)
