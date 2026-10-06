@@ -218,9 +218,11 @@ func _obtener_script_path(nodo: Node) -> String:
 	return "<sin script>"
 
 func obtener_auditoria_supabase() -> Dictionary:
-	var cliente: Node = _buscar_nodo_por_clase("GarliaSupabaseClient")
+	var cliente: Node = get_node_or_null("/root/SupabaseClient")
 	if cliente == null:
-		return {"estado": "ERROR", "problemas": ["GarliaSupabaseClient no encontrado en el SceneTree."]}
+		cliente = _buscar_nodo_por_clase("GarliaSupabaseClient")
+	if cliente == null:
+		return {"estado": "ERROR", "problemas": ["SupabaseClient/GarliaSupabaseClient no encontrado."]}
 	var datos: Variant = cliente.call("obtener_diagnostico_debug") if cliente.has_method("obtener_diagnostico_debug") else null
 	if not datos is Dictionary:
 		return {"estado": "ERROR", "problemas": ["El cliente Supabase no expone diagnostico_debug()."]}
@@ -503,7 +505,9 @@ func obtener_auditoria_render() -> Dictionary:
 				var pertenece_a_tilemap_dual := false
 				var ancestro: Node = nodo_tm.get_parent() if nodo_tm != null else null
 				while ancestro != null:
-					if ancestro.get_class() == "TileMapDual" or ancestro.is_class("TileMapDual"):
+					var script_path := _obtener_script_path(ancestro)
+					var nombre_ancestro := str(ancestro.name)
+					if script_path.ends_with("/tile_map_dual.gd") or nombre_ancestro.begins_with("TerrainDual_"):
 						pertenece_a_tilemap_dual = true
 						break
 					ancestro = ancestro.get_parent()
