@@ -179,7 +179,10 @@ func _presupuesto_generacion() -> int:
 		return base
 	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
 	if disponible < 0.75:
-		return 0
+		# Nunca bloquear el pipeline de terreno por presupuesto agotado.
+		# El RenderManager ya limita el flush a una unidad cuando no queda
+		# tiempo; devolver 1 aquí evita que la generación quede congelada.
+		return 1
 	if disponible < 1.5:
 		return mini(base, 8)
 	if disponible < 2.5:
@@ -348,11 +351,13 @@ func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
 	if alineacion < -0.25:
 		prioridad += 2.0
 
-	# El prefetch ayuda, pero nunca bloquea la trayectoria.
+	# El prefetch ayuda, pero nunca puede adelantar al chunk donde
+	# está el jugador. Tampoco permitimos prioridades negativas para que
+	# el centro (prioridad 0) sea siempre el primer trabajo real.
 	if chunk == _prefetch_chunk:
 		prioridad -= 0.75
 
-	return prioridad
+	return maxf(prioridad, 0.10)
 
 
 func _ceder_generacion_si_hay_prioridad(centro: Vector2i) -> void:
