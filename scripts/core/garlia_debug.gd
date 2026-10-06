@@ -212,7 +212,7 @@ func obtener_marcadores() -> Dictionary:
 	return _marcadores.duplicate(true)
 
 func _obtener_script_path(nodo: Node) -> String:
-	var script := nodo.get_script()
+	var script: Variant = nodo.get_script()
 	if script is Script:
 		return (script as Script).resource_path
 	return "<sin script>"
