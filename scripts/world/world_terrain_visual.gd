@@ -796,6 +796,22 @@ func obtener_diagnostico() -> Dictionary:
 		if terrain_layer != null:
 			capas.append("%s:%d" % [str(clave_variant), terrain_layer.get_used_cells().size()])
 
+	var display: Dictionary = {}
+	for clave_variant in _layers_by_zone.keys():
+		var terrain_layer: TileMapDual = _layers_by_zone[clave_variant] as TileMapDual
+		if terrain_layer == null:
+			continue
+		var display_node: Node = terrain_layer.get_node_or_null("Display")
+		var display_layers: Array[String] = []
+		var display_cells: int = 0
+		if display_node != null:
+			for child in display_node.get_children():
+				if child is TileMapLayer:
+					var display_layer: TileMapLayer = child as TileMapLayer
+					display_layers.append("%s:%d" % [display_layer.name, display_layer.get_used_cells().size()])
+					display_cells += display_layer.get_used_cells().size()
+		display[str(clave_variant)] = {"dual_cells": terrain_layer.get_used_cells().size(), "display_exists": display_node != null, "display_layers": display_layers, "display_cells": display_cells}
+
 	var variaciones: Dictionary = {}
 	for bioma_variant in _variation_layers_by_bioma.keys():
 		var variation_layer: TileMapLayer = _variation_layers_by_bioma[bioma_variant] as TileMapLayer
@@ -814,6 +830,7 @@ func obtener_diagnostico() -> Dictionary:
 		"dirty_cursor_zona": _dirty_zone_cursor,
 		"dirty_variaciones": _dirty_variations.size(),
 		"flush_pendiente": tiene_flush_pendiente(),
+		"display": display,
 		"clear_chunk_activo": not _clear_task.is_empty(),
 		"profiler": obtener_profiler()
 	}
