@@ -16,7 +16,7 @@ var _actualizando_vista := false
 
 const MODOS := [
 	"resumen", "sistemas", "mundo", "entidades", "datos",
-	"rendimiento", "arbol", "logs", "flujo"
+	"rendimiento", "arbol", "render", "logs", "flujo"
 ]
 
 func _ready() -> void:
@@ -158,6 +158,8 @@ func _actualizar_vista() -> void:
 			_texto.text = _vista_rendimiento()
 		"arbol":
 			_texto.text = _vista_arbol()
+		"render":
+			_texto.text = _vista_render()
 		"logs":
 			_texto.text = str(_garlia_debug().call("obtener_logs_texto"))
 		"flujo":
@@ -268,6 +270,60 @@ func _vista_rendimiento() -> String:
 	var out := _encabezado("RENDIMIENTO")
 	for clave in datos:
 		out.append("%-24s %s" % [str(clave), JSON.stringify(datos[clave])])
+	return "\n".join(out)
+
+func _vista_render() -> String:
+	var out := _encabezado("AUDITORIA ABSOLUTA DE RENDER / VISIBILIDAD")
+	var datos: Dictionary = _garlia_debug().call("obtener_auditoria_render")
+	out.append("ESTADO GLOBAL: " + str(datos.get("estado", "DESCONOCIDO")))
+	out.append("")
+	out.append("PRUEBAS AUTOMATICAS")
+	for prueba in datos.get("pruebas", []):
+		var ok: bool = bool(prueba.get("ok", false))
+		out.append("  [%s] %s | %s" % [
+			"OK" if ok else "FAIL",
+			str(prueba.get("prueba", "")),
+			str(prueba.get("detalle", ""))
+		])
+	out.append("")
+	out.append("PROBLEMAS DETECTADOS")
+	var problemas: Array = datos.get("problemas", [])
+	if problemas.is_empty():
+		out.append("  Ninguno por las pruebas automaticas actuales.")
+	else:
+		for problema in problemas:
+			out.append("  [!] " + str(problema))
+	out.append("")
+	out.append("CAMARAS")
+	for cam in datos.get("cameras", []):
+		out.append("  %s | enabled=%s visible=%s pos=%s zoom=%s" % [
+			str(cam.get("path", "")), str(cam.get("enabled", false)),
+			str(cam.get("visible", false)), str(cam.get("position", Vector2.ZERO)),
+			str(cam.get("zoom", Vector2.ONE))
+		])
+	out.append("")
+	out.append("TILEMAPS / FUENTES / CELDAS")
+	for tm in datos.get("tilemaps", []):
+		if int(tm.get("used_cells", 0)) <= 0:
+			continue
+		out.append("  %s" % str(tm.get("path", "")))
+		out.append("      visible=%s tree=%s z=%s pos=%s cells=%s sources=%s tile_size=%s" % [
+			str(tm.get("visible", false)), str(tm.get("visible_tree", false)),
+			str(tm.get("z_index", 0)), str(tm.get("global_position", Vector2.ZERO)),
+			str(tm.get("used_cells", 0)), str(tm.get("source_count", 0)),
+			str(tm.get("tile_size", Vector2i.ZERO))
+		])
+		for source in tm.get("sources", []):
+			out.append("      source: " + str(source))
+	out.append("")
+	out.append("TODOS LOS CANVAS ITEMS")
+	for item in datos.get("canvas_items", []):
+		out.append("  %s | %s | visible=%s/tree=%s z=%s pos=%s material=%s" % [
+			str(item.get("type", "")), str(item.get("path", "")),
+			str(item.get("visible", false)), str(item.get("visible_tree", false)),
+			str(item.get("z_index", 0)), str(item.get("global_position", Vector2.ZERO)),
+			str(item.get("material", ""))
+		])
 	return "\n".join(out)
 
 func _vista_arbol() -> String:
