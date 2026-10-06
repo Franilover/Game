@@ -1282,3 +1282,31 @@ func _tile_to_local(
 		tile.y
 		- chunk.y * chunk_size_tiles
 	)
+
+
+func obtener_estado_generacion() -> Dictionary:
+	if _generation_task.is_empty():
+		return {"activa": false, "etapa": "IDLE", "cursor": 0, "total": 0}
+	var etapa := "DATOS"
+	match int(_generation_task.get("stage", 0)):
+		1: etapa = "PINTADO"
+		2: etapa = "FLUSH"
+	return {
+		"activa": true,
+		"etapa": etapa,
+		"cursor": int(_generation_task.get("cursor", 0)),
+		"total": (chunk_size_tiles + CHUNK_PADDING * 2) * (chunk_size_tiles + CHUNK_PADDING * 2) if etapa == "DATOS" else chunk_size_tiles * chunk_size_tiles,
+		"chunk": _generation_task.get("coord", Vector2i.ZERO),
+		"chunks_cargados": _loaded_chunks.size(),
+		"biomas": _biomas.size(),
+		"ecosistemas": _ecosistemas.size()
+	}
+
+func obtener_diagnostico() -> Dictionary:
+	var estado := obtener_estado_generacion()
+	estado["visual"] = visual != null
+	estado["ultimo_chunk"] = _ultimo_chunk_generado
+	estado["descarga_activa"] = tiene_descarga_activa()
+	if visual != null and visual.has_method("obtener_profiler"):
+		estado["visual_profiler"] = visual.obtener_profiler()
+	return estado
