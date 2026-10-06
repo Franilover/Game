@@ -12,6 +12,7 @@ var _active_chunks: Dictionary = {}
 var _persistent_by_key: Dictionary = {}
 var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
+var _runtime_prop_state_by_key: Dictionary = {}
 
 
 func configurar(entities_root: Node, entity_factory: WorldEntityFactory = null) -> void:
@@ -156,6 +157,19 @@ func obtener_persistente(key: String) -> Node:
 func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	if entity == null or not is_instance_valid(entity):
 		return
+	if entity is WorldProp:
+		var prop := entity as WorldProp
+		var prop_key := str(prop.get_meta("runtime_instance_key", "")).strip_edges()
+		if prop_key.is_empty():
+			var datos_prop := prop.obtener_datos()
+			prop_key = str(datos_prop.get("id", "prop")).strip_edges()
+		var prop_state_key := _runtime_key(chunk_coord, prop_key)
+		_runtime_prop_state_by_key[prop_state_key] = {
+			"position": prop.global_position,
+			"runtime_instance_key": prop_key,
+			"datos": prop.obtener_datos()
+		}
+		return
 	if not entity is Creature:
 		return
 	var criatura := entity as Creature
@@ -190,6 +204,14 @@ func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String, instanc
 
 func _runtime_key(chunk_coord: Vector2i, instance_key: String) -> String:
 	return str(chunk_coord.x) + ":" + str(chunk_coord.y) + ":" + instance_key
+
+
+func obtener_estado_prop(chunk_coord: Vector2i, instance_key: String) -> Dictionary:
+	var key := _runtime_key(chunk_coord, instance_key)
+	var estado: Variant = _runtime_prop_state_by_key.get(key, {})
+	if estado is Dictionary:
+		return (estado as Dictionary).duplicate(true)
+	return {}
 
 
 func despawn_chunk(chunk_coord: Vector2i) -> void:
