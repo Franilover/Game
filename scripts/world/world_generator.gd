@@ -43,6 +43,7 @@ var _dependencias_configuradas: bool = false
 
 func _ready() -> void:
 	_crear_sistemas()
+	_registrar_debug()
 
 
 func configurar_dependencias(
@@ -274,3 +275,30 @@ func actualizar_relaciones_ecologicas(relaciones_ecologicas: Array) -> void:
 	if entity_factory == null:
 		return
 	entity_factory.configurar_relaciones_ecologicas(relaciones_ecologicas)
+
+func _registrar_debug() -> void:
+	var debug := get_node_or_null("/root/GarliaDebug")
+	if debug == null or not debug.has_method("registrar_proveedor"):
+		return
+	debug.registrar_proveedor("world_generator", "WorldGenerator", self, "Orquestación de generación, streaming y entidades.")
+
+func obtener_diagnostico() -> Dictionary:
+	var etapa := "IDLE"
+	var cursor := 0
+	var total := chunk_size_tiles * chunk_size_tiles
+	if terrain != null and terrain.tiene_generacion_activa():
+		var task: Dictionary = terrain.obtener_estado_generacion()
+		etapa = str(task.get("etapa", "GENERANDO"))
+		cursor = int(task.get("cursor", 0))
+		if int(task.get("total", 0)) > 0:
+			total = int(task.get("total", total))
+	return {
+		"ready": _world_ready,
+		"dependencias": _dependencias_configuradas,
+		"seed": map_seed,
+		"chunk": terrain.ultimo_chunk_generado() if terrain != null else Vector2i.ZERO,
+		"generacion_activa": terrain.tiene_generacion_activa() if terrain != null else false,
+		"etapa": etapa,
+		"progreso": "%d/%d" % [cursor, total],
+		"jugador_registrado": streamer != null and streamer.tiene_jugador() if streamer != null else false
+	}
