@@ -57,6 +57,12 @@ var _profiler_flushes: int = 0
 var _profiler_biome_ms: float = 0.0
 var _profiler_ecosystem_ms: float = 0.0
 var _profiler_zone_ms: float = 0.0
+var _profiler_chunk_start_usec: int = 0
+var _profiler_first_visible_ms: float = -1.0
+var _profiler_visible_25_ms: float = -1.0
+var _profiler_visible_50_ms: float = -1.0
+var _profiler_visible_100_ms: float = -1.0
+var _profiler_visible_cells: int = 0
 
 
 func configurar(
@@ -228,6 +234,12 @@ func iniciar_generacion_chunk(
 	_profiler_biome_ms = 0.0
 	_profiler_ecosystem_ms = 0.0
 	_profiler_zone_ms = 0.0
+	_profiler_chunk_start_usec = Time.get_ticks_usec()
+	_profiler_first_visible_ms = -1.0
+	_profiler_visible_25_ms = -1.0
+	_profiler_visible_50_ms = -1.0
+	_profiler_visible_100_ms = -1.0
+	_profiler_visible_cells = 0
 	if visual != null:
 		visual.iniciar_profiler()
 
@@ -566,20 +578,31 @@ func _procesar_flush_chunk(
 	# _update_cells() no tiene coste lineal y un lote grande puede producir
 	# un pico aunque el presupuesto global parezca disponible. Preferimos
 	# terminar el chunk unos frames después antes que bloquear el frame.
-	var flush_cells: int = mini(cells, 32)
+	var flush_cells: int = mini(cells, visual_flush_cells)
 	if _render_manager != null:
 		flush_cells = int(_render_manager.call(
 			"presupuesto_unidades_adaptativo",
 			"terrain_flush",
 			flush_cells,
-			4,
-			32,
-			0.65
+			8,
+			visual_flush_cells,
+			0.85
 		))
-		flush_cells = mini(flush_cells, 32)
-		if flush_cells <= 0:
-			return false
+		flush_cells = mini(flush_cells, visual_flush_cells)
 	var terminado: bool = visual.procesar_flush(flush_cells)
+	var visual_profiler: Dictionary = visual.obtener_profiler()
+	var visible_cells_now := int(visual_profiler.get("flush_cells", 0))
+	if visible_cells_now > _profiler_visible_cells:
+		_profiler_visible_cells = visible_cells_now
+		var elapsed_ms := float(Time.get_ticks_usec() - _profiler_chunk_start_usec) / 1000.0
+		if _profiler_first_visible_ms < 0.0:
+			_profiler_first_visible_ms = elapsed_ms
+		if _profiler_visible_25_ms < 0.0 and visible_cells_now >= 256:
+			_profiler_visible_25_ms = elapsed_ms
+		if _profiler_visible_50_ms < 0.0 and visible_cells_now >= 512:
+			_profiler_visible_50_ms = elapsed_ms
+		if _profiler_visible_100_ms < 0.0 and visible_cells_now >= 1024:
+			_profiler_visible_100_ms = elapsed_ms
 	var flush_ms := float(Time.get_ticks_usec() - flush_start_usec) / 1000.0
 	_profiler_flush_ms += flush_ms
 	_profiler_flushes += 1
@@ -1452,7 +1475,12 @@ func obtener_diagnostico() -> Dictionary:
 		"flush_ms": _profiler_flush_ms,
 		"datos_llamadas": _profiler_data_calls,
 		"pintado_llamadas": _profiler_paint_calls,
-		"flush_llamadas": _profiler_flushes
+		"flush_llamadas": _profiler_flushes,
+		"primer_tile_visible_ms": _profiler_first_visible_ms,
+		"visible_25_ms": _profiler_visible_25_ms,
+		"visible_50_ms": _profiler_visible_50_ms,
+		"visible_100_ms": _profiler_visible_100_ms,
+		"visible_cells": _profiler_visible_cells
 	}
 	estado["generacion_pausada"] = tiene_generacion_pausada()
 	if tiene_generacion_pausada():
