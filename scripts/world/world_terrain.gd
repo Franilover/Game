@@ -533,16 +533,22 @@ func _procesar_flush_chunk(
 	# el RenderManager corte el trabajo antes de consumir el frame.
 	var flush_cells: int = mini(cells, 32)
 	if _render_manager != null:
-		var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
-		if disponible < 0.75:
+		flush_cells = int(_render_manager.call(
+			"presupuesto_unidades_adaptativo",
+			"terrain_flush",
+			flush_cells,
+			4,
+			32,
+			0.75
+		))
+		if flush_cells <= 0:
 			return false
-		flush_cells = mini(flush_cells, 16 if disponible < 1.5 else 32)
 	var terminado: bool = visual.procesar_flush(flush_cells)
 	var flush_ms := float(Time.get_ticks_usec() - flush_start_usec) / 1000.0
 	_profiler_flush_ms += flush_ms
 	_profiler_flushes += 1
 	if _render_manager != null:
-		_render_manager.call("registrar_trabajo", "terrain_flush", flush_ms)
+		_render_manager.call("registrar_trabajo", "terrain_flush", flush_ms, max(flush_cells, 1))
 
 	if not terminado:
 		return false
