@@ -92,7 +92,7 @@ func configurar_entidades(
 	if entity_manager == null or entity_spawner == null or entity_factory == null or spawn_rules == null:
 		push_error("WorldGenerator: dependencias de entidades incompletas.")
 		return
-	entity_manager.configurar(_entities_root)
+	entity_manager.configurar(_entities_root, entity_factory)
 	spawn_rules.configurar(terrain)
 	entity_factory.configurar_dependencias(
 		jugador,
