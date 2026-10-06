@@ -16,7 +16,7 @@ var _actualizando_vista := false
 
 const MODOS := [
 	"resumen", "sistemas", "mundo", "entidades", "datos",
-	"rendimiento", "arbol", "render", "engine", "logs", "flujo"
+	"rendimiento", "arbol", "render", "engine", "supabase", "logs", "flujo"
 ]
 
 func _ready() -> void:
@@ -162,6 +162,8 @@ func _actualizar_vista() -> void:
 			_texto.text = _vista_render()
 		"engine":
 			_texto.text = _vista_engine()
+		"supabase":
+			_texto.text = _vista_supabase()
 		"logs":
 			_texto.text = str(_garlia_debug().call("obtener_logs_texto"))
 		"flujo":
@@ -326,6 +328,44 @@ func _vista_render() -> String:
 			str(item.get("z_index", 0)), str(item.get("global_position", Vector2.ZERO)),
 			str(item.get("material", ""))
 		])
+	return "\n".join(out)
+
+func _vista_supabase() -> String:
+	var out := _encabezado("SUPABASE / CONEXION / CATALOGO / CACHES")
+	var datos: Dictionary = _garlia_debug().call("obtener_auditoria_supabase")
+	out.append("ESTADO: " + str(datos.get("estado", "DESCONOCIDO")))
+	out.append("CLIENTE: " + str(datos.get("cliente_path", "<ninguno>")))
+	out.append("SCRIPT: " + str(datos.get("script", "<ninguno>")))
+	out.append("")
+	out.append("PROBLEMAS")
+	var problemas: Array = datos.get("problemas", [])
+	if problemas.is_empty():
+		out.append("  Ninguno detectado por el monitor.")
+	else:
+		for problema in problemas:
+			out.append("  [!] " + str(problema))
+	var d: Dictionary = datos.get("datos", {})
+	out.append("")
+	out.append("CONFIGURACION")
+	for clave in ["auth_node","configurado","autenticado","url_configurada","publishable_key_configurada","supabase_url"]:
+		out.append("  %-28s %s" % [clave, JSON.stringify(d.get(clave, "<n/a>"))])
+	out.append("")
+	out.append("CACHES CANONICAS")
+	var cache: Dictionary = d.get("cache", {})
+	for clave in cache:
+		out.append("  %-28s %s" % [str(clave), str(cache[clave])])
+	out.append("")
+	out.append("HTTP REQUESTS")
+	for request in d.get("requests", []):
+		out.append("  %-28s existe=%s estado=%s" % [
+			str(request.get("nombre", "")),
+			str(request.get("existe", false)),
+			str(request.get("estado", -1))
+		])
+	out.append("")
+	out.append("PROBES DISPONIBLES")
+	out.append("  El cliente incluye prueba GET segura sobre reinos_game.")
+	out.append("  Para errores reales de backend: revisar HTTP status y logs de Supabase.")
 	return "\n".join(out)
 
 func _vista_engine() -> String:
