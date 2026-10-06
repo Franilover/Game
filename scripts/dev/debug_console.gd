@@ -221,6 +221,13 @@ func _vista_mundo() -> String:
 	var out := _encabezado("MUNDO / STREAMING / TERRENO")
 	for grupo in ["world_props", "creatures"]:
 		out.append("%s activos: %d" % [grupo, get_tree().get_nodes_in_group(grupo).size()])
+	var zona_manager: Node = _buscar_por_nombre("ZoneManager")
+	if zona_manager != null:
+		var zona_diag: Variant = _diagnostico_nodo(zona_manager)
+		if zona_diag is Dictionary:
+			out.append("ZONA ACTIVA: " + JSON.stringify(zona_diag))
+			out.append("")
+
 	var nombres := ["WorldGenerator", "WorldTerrain", "WorldTerrainVisual", "WorldStreamer", "WorldContext", "ZoneManager"]
 	for nombre in nombres:
 		var nodo := _buscar_por_nombre(nombre)
