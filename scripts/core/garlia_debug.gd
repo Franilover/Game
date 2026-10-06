@@ -229,7 +229,7 @@ func obtener_arbol_diagnostico(raiz: Node = null) -> Array[Dictionary]:
 		var nivel: int = int(entrada["nivel"])
 		if not is_instance_valid(nodo):
 			continue
-		var script := nodo.get_script()
+		var script: Variant = nodo.get_script()
 		salida.append({
 			"nivel": nivel,
 			"nombre": nodo.name,
