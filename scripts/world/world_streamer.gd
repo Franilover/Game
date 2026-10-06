@@ -8,15 +8,15 @@ var _entity_spawner: WorldEntitySpawner
 var _player: Node = null
 var _render_manager: Node = null
 
-var _load_radius: int = 1
-var _unload_radius: int = 1
+var _load_radius: int = 2
+var _unload_radius: int = 2
 # El terreno visible se limita al chunk actual y, como máximo, a los
 # vecinos necesarios para anticipar el movimiento. No mantener un 3x3
 # completo: en TileMapDual cada celda genera trabajo de render.
 # Test de rendimiento: terreno y entidades usan radios independientes.
 var _entity_active_radius: int = 0
 var _cells_per_frame: int = 128
-var _prefetch_margin_tiles: int = 24
+var _prefetch_margin_tiles: int = 28
 var _last_player_position: Vector2 = Vector2.ZERO
 var _player_direction: Vector2 = Vector2.ZERO
 var _prefetch_chunk: Vector2i = Vector2i(999999, 999999)
@@ -208,23 +208,18 @@ func _actualizar_streaming() -> void:
 			cola_filtrada.append(queued)
 	_queue = cola_filtrada
 
-	# Con radio 1, el mundo visible se prepara como máximo en 3x3:
-	# centro + vecinos. El centro siempre tiene prioridad.
+	# El radio 2 permite preparar terreno por delante con más margen.
+	# La prioridad sigue siendo direccional para no generar todo el anillo a la vez.
 	var nuevos: Array = []
 	_agregar_chunk_a_cola(centro, nuevos)
 
-	for offset in [
-		Vector2i(-1, 0),
-		Vector2i(1, 0),
-		Vector2i(0, -1),
-		Vector2i(0, 1),
-		Vector2i(-1, -1),
-		Vector2i(1, -1),
-		Vector2i(-1, 1),
-		Vector2i(1, 1)
-	]:
-		if _distancia_chunk(centro + offset, centro) <= _load_radius:
-			_agregar_chunk_a_cola(centro + offset, nuevos)
+	for dy in range(-_load_radius, _load_radius + 1):
+		for dx in range(-_load_radius, _load_radius + 1):
+			var offset := Vector2i(dx, dy)
+			if offset == Vector2i.ZERO:
+				continue
+			if _distancia_chunk(centro + offset, centro) <= _load_radius:
+				_agregar_chunk_a_cola(centro + offset, nuevos)
 
 	for chunk in nuevos:
 		_queue.append(chunk)
@@ -299,9 +294,8 @@ func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
 func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
 	var distancia: float = float(_distancia_chunk(chunk, centro))
 	if chunk == _prefetch_chunk:
-		# El prefetch debe adelantarse, pero no saltarse todo el resto:
-		# así empezamos pronto sin provocar un pico al acercarnos al borde.
-		return 0.35
+		# El chunk que queda directamente en la trayectoria se adelanta,
+		# pero no se fuerza al frente: debe poder prepararse con anticipación.
 	if _player_direction.length_squared() > 0.01:
 		var relativo := Vector2(chunk - centro)
 		var alineacion: float = relativo.normalized().dot(_player_direction) if relativo.length_squared() > 0.01 else 0.0
