@@ -280,6 +280,7 @@ func _actualizar_entidades_activas(
 		if distancia <= _entity_active_radius:
 			_entity_spawner.spawn_chunk(chunk_coord)
 		else:
+			_entity_spawner.cancelar_spawn_chunk(chunk_coord)
 			_entity_spawner.despawn_chunk(chunk_coord)
 
 
