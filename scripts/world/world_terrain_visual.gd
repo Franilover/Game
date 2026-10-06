@@ -879,6 +879,7 @@ func procesar_variaciones(cells: int = 4) -> bool:
 func marcar_region_generada_dirty(
 	chunk_coord: Vector2i,
 	orden: Array,
+	chunk_size_tiles: int,
 	inicio: int,
 	fin: int
 ) -> void:
@@ -889,11 +890,11 @@ func marcar_region_generada_dirty(
 	var primero := maxi(inicio, 0)
 	for indice_cursor in range(primero, total):
 		var indice := int(orden[indice_cursor])
-		var local_y := indice / 32
-		var local_x := indice % 32
+		var local_y := indice / chunk_size_tiles
+		var local_x := indice % chunk_size_tiles
 		var cell := Vector2i(
-			chunk_coord.x * 32 + local_x,
-			chunk_coord.y * 32 + local_y
+			chunk_coord.x * chunk_size_tiles + local_x,
+			chunk_coord.y * chunk_size_tiles + local_y
 		)
 		var layer_key := str(_cell_layer_key.get(cell, ""))
 		if _layers_by_zone.has(layer_key):
