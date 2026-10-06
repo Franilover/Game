@@ -576,10 +576,10 @@ func _procesar_flush_chunk(
 	var flush_cells: int = mini(cells, visual_flush_cells)
 	if _render_manager != null:
 		flush_cells = int(_render_manager.call(
-			"presupuesto_unidades_adaptativo",
+			"presupuesto_unidades_terreno",
 			"terrain_flush",
 			flush_cells,
-			8,
+			1,
 			visual_flush_cells,
 			0.85
 		))
