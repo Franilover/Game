@@ -623,7 +623,7 @@ func _finalizar_chunk() -> void:
 		"%.2f" % float(visual_profile.get("flush_convert_ms", 0.0)),
 		" ms | flush_update=",
 		"%.2f" % float(visual_profile.get("flush_update_ms", 0.0)),
-		" ms/", int(visual_profile.get("flush_update_calls", 0)), " updates/", int(visual_profile.get("flush_cells", 0)), " celdas",
+		" ms/", int(visual_profile.get("flush_update_calls", 0)), " updates/", int(visual_profile.get("flush_regions", 0)), " regiones/", int(visual_profile.get("flush_cells", 0)), " celdas",
 		" | flush_variaciones=",
 		"%.2f" % float(visual_profile.get("flush_variation_ms", 0.0)),
 		" ms/", int(visual_profile.get("flush_variation_cells", 0)), " celdas",
