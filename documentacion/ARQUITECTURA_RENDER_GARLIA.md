@@ -253,3 +253,11 @@ Métricas añadidas:
 Pendiente:
 - separar PropData sólo si el profiling lo justifica.
 - evaluación de MultiMesh únicamente para decoración estática masiva.
+
+
+### Fase 6 — Presupuesto adaptativo TileMapDual
+- `GarliaRenderManager` ahora aprende el coste medio por unidad de trabajo mediante EMA.
+- `terrain_flush` registra milisegundos por celda y el siguiente lote se calcula con ese coste real.
+- El objetivo inicial del flush es ~0.75 ms y el lote permanece acotado entre 4 y 32 celdas.
+- Un pico aislado no fija permanentemente el tamaño del lote: el coste se suaviza mediante EMA.
+- Se conserva TileMapDual y su ventaja de reducir la cantidad de arte manual.
