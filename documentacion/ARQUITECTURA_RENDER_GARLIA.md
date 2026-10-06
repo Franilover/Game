@@ -114,8 +114,13 @@ Objetivo inicial para 60 FPS: reservar aproximadamente 2–4 ms para trabajo de 
 ## Prioridades
 0 — chunk actual.
 1 — chunk que está entrando en pantalla.
-2 — prefetch inmediato.
-3 — trabajo de fondo.
+1 — chunks alineados con el movimiento del jugador.
+2 — chunks laterales cercanos y prefetch inmediato.
+3 — chunks que quedan detrás del jugador / trabajo de fondo.
+
+WorldStreamer usa la dirección de movimiento expuesta por Player como fuente primaria. No consulta Input directamente: Player conserva la autoridad sobre su input y expone una dirección para la anticipación espacial.
+
+La carga lógica permanece en una cola única, pero el trabajo visual se ejecuta en lotes presupuestados. WorldTerrain agrupa regiones/dirty cells contiguas y GarliaRenderManager decide cuánto de ese lote entra en cada frame. Esto es la “carga conjunta”: preparar trabajo espacialmente relacionado y procesarlo por lotes, no generar varios chunks simultáneamente.
 El trabajo de prioridad 0 nunca debe quedar bloqueado detrás de un chunk lejano.
 
 ## Pooling
