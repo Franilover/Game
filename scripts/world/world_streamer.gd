@@ -14,7 +14,10 @@ var _unload_radius: int = 2
 # vecinos necesarios para anticipar el movimiento. No mantener un 3x3
 # completo: en TileMapDual cada celda genera trabajo de render.
 # Test de rendimiento: terreno y entidades usan radios independientes.
-var _entity_active_radius: int = 0
+# Las entidades pueden aparecer en el chunk del jugador y sus vecinos
+# ya cargados. El terreno sigue siendo la autoridad: sólo se invoca al
+# spawner después de que un chunk terminó de generarse.
+var _entity_active_radius: int = 1
 var _cells_per_frame: int = 128
 var _prefetch_margin_tiles: int = 28
 var _last_player_position: Vector2 = Vector2.ZERO
