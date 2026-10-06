@@ -1,9 +1,9 @@
 # Arquitectura de Renderizado y Optimización de Garlia
 
 ## Estado
-Fase actual: **Fase 3 — Render Manager + Terrain Render Queue operativa**.
+Fase actual: **Fase 4 — estado lógico de criaturas y Render Proxy en progreso**.
 
-La primera implementación completa del presupuesto y la cola espacial ya está en GitHub. TileMapDual se conserva como backend visual y no se aumenta la carga de assets.
+Las fases 1–3 están implementadas. TileMapDual se conserva como backend visual y no se aumenta la carga de assets.
 
 Este documento define la arquitectura que sustituye progresivamente los parches aislados de streaming y renderizado.
 
@@ -196,11 +196,21 @@ Garlia no debe convertirse en una colección de microparches de rendimiento.
 
 ## Siguiente fase
 
-### Fase 4 — Entity Render Manager
-1. Separar definitivamente CreatureData del CreatureRenderProxy.
-2. Mantener posición, vida y estado lógico aunque el Node sea destruido.
-3. Activar proxies sólo en el chunk de simulación/render actual.
-4. Añadir pooling de proxies para evitar instantiate/free repetitivo.
-5. Hacer que el RenderManager controle el presupuesto de spawn/despawn.
+### Fase 4 — Entity Render Manager — PARCIALMENTE COMPLETADA
+1. Estado runtime de criaturas separado del ciclo de vida del Node.
+2. WorldEntityManager conserva posición, velocidad, vida y estado al descargar un chunk.
+3. Al recargar, WorldEntitySpawner restaura ese estado en lugar de tratar la criatura como nueva.
+4. Las criaturas fuera del chunk activo siguen sin Nodes activos.
+5. La muerte de una criatura se conserva y evita su reaparición automática.
 
-Después seguirá la **Fase 5 — Props**, con el mismo principio: estado lógico separado de representación y pooling sólo donde el profiling lo justifique.
+Pendiente dentro de esta fase:
+- pooling de proxies.
+- presupuesto explícito para spawn/despawn de entidades.
+- soporte de más de una instancia natural de la misma criatura por chunk mediante una clave estable de instancia.
+
+### Fase 5 — Props
+1. Separar estado lógico de prop y representación.
+2. Reutilizar representación para props dinámicos.
+3. Evaluar MultiMesh sólo para decoración estática masiva, sin sustituir props interactivos.
+
+Siguiente: terminar Fase 4 con pooling y claves estables; después completar Fase 5 de props.
