@@ -24,6 +24,13 @@ var _last_player_position: Vector2 = Vector2.ZERO
 var _player_direction: Vector2 = Vector2.ZERO
 var _prefetch_chunk: Vector2i = Vector2i.ZERO
 var _prefetch_activo: bool = false
+var _centro_cache: Vector2i = Vector2i.ZERO
+var _local_x_cache: int = 0
+var _local_y_cache: int = 0
+var _cerca_arriba_cache: bool = false
+var _cerca_abajo_cache: bool = false
+var _cerca_izquierda_cache: bool = false
+var _cerca_derecha_cache: bool = false
 
 var _player_chunk: Vector2i = Vector2i(
 	999999,
@@ -275,6 +282,7 @@ func _actualizar_streaming() -> void:
 
 	var centro: Vector2i = _world_to_chunk(_player.global_position)
 	_player_chunk = centro
+	_actualizar_cache_borde_jugador(centro)
 
 	_terrain.cancelar_generacion_si_distante(centro, _load_radius)
 	_terrain.descartar_generacion_pausada_si_distante(centro, _load_radius)
@@ -321,6 +329,38 @@ func _actualizar_streaming() -> void:
 
 	_descargar_lejanos(centro)
 	_actualizar_entidades_activas(centro)
+
+
+func _actualizar_cache_borde_jugador(centro: Vector2i) -> void:
+	_centro_cache = centro
+	_cerca_arriba_cache = false
+	_cerca_abajo_cache = false
+	_cerca_izquierda_cache = false
+	_cerca_derecha_cache = false
+
+	if _player == null or _terrain == null:
+		return
+
+	var tamano_chunk_pixeles: float = float(
+		_terrain.chunk_size_tiles * _terrain.tile_size
+	)
+	var margen_borde: int = clampi(
+		_prefetch_margin_tiles,
+		1,
+		_terrain.chunk_size_tiles - 1
+	)
+	_local_x_cache = floori(
+		fposmod(_player.global_position.x, tamano_chunk_pixeles)
+		/ _terrain.tile_size
+	)
+	_local_y_cache = floori(
+		fposmod(_player.global_position.y, tamano_chunk_pixeles)
+		/ _terrain.tile_size
+	)
+	_cerca_arriba_cache = _local_y_cache < margen_borde
+	_cerca_abajo_cache = _local_y_cache >= _terrain.chunk_size_tiles - margen_borde
+	_cerca_izquierda_cache = _local_x_cache < margen_borde
+	_cerca_derecha_cache = _local_x_cache >= _terrain.chunk_size_tiles - margen_borde
 
 
 func _actualizar_direccion_jugador() -> void:
@@ -403,26 +443,16 @@ func _prioridad_chunk(chunk: Vector2i, centro: Vector2i) -> float:
 	# Ejemplo: movimiento horizontal junto al borde superior -> el chunk de
 	# arriba no puede quedar detrás sólo porque el jugador no se mueve hacia él.
 	if _player != null and _terrain != null:
-		var tamano_chunk_pixeles := float(_terrain.chunk_size_tiles * _terrain.tile_size)
-		var margen_borde: int = clampi(_prefetch_margin_tiles, 1, _terrain.chunk_size_tiles - 1)
-		var local_x: int = floori(fposmod(_player.global_position.x, tamano_chunk_pixeles) / _terrain.tile_size)
-		var local_y: int = floori(fposmod(_player.global_position.y, tamano_chunk_pixeles) / _terrain.tile_size)
-
-		var cerca_arriba := local_y < margen_borde
-		var cerca_abajo := local_y >= _terrain.chunk_size_tiles - margen_borde
-		var cerca_izquierda := local_x < margen_borde
-		var cerca_derecha := local_x >= _terrain.chunk_size_tiles - margen_borde
-
 		if _player_direction.x != 0.0:
-			if cerca_arriba and chunk == centro + Vector2i.UP:
+			if _cerca_arriba_cache and chunk == centro + Vector2i.UP:
 				prioridad -= 2.5
-			elif cerca_abajo and chunk == centro + Vector2i.DOWN:
+			elif _cerca_abajo_cache and chunk == centro + Vector2i.DOWN:
 				prioridad -= 2.5
 
 		if _player_direction.y != 0.0:
-			if cerca_izquierda and chunk == centro + Vector2i.LEFT:
+			if _cerca_izquierda_cache and chunk == centro + Vector2i.LEFT:
 				prioridad -= 2.5
-			elif cerca_derecha and chunk == centro + Vector2i.RIGHT:
+			elif _cerca_derecha_cache and chunk == centro + Vector2i.RIGHT:
 				prioridad -= 2.5
 
 	# Detrás queda como reserva, pero no consume el generador mientras
@@ -633,7 +663,15 @@ func obtener_diagnostico() -> Dictionary:
 		"player_direction": _player_direction,
 		"prefetch_margin_tiles": _prefetch_margin_tiles,
 		"prefetch_activo": _prefetch_activo,
-		"prefetch_chunk": _prefetch_chunk if _prefetch_activo else null
+		"prefetch_chunk": _prefetch_chunk if _prefetch_activo else null,
+		"borde_cache": {
+			"x": _local_x_cache,
+			"y": _local_y_cache,
+			"arriba": _cerca_arriba_cache,
+			"abajo": _cerca_abajo_cache,
+			"izquierda": _cerca_izquierda_cache,
+			"derecha": _cerca_derecha_cache
+		}
 	}
 
 func _registrar_debug() -> void:
