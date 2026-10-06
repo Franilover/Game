@@ -162,6 +162,8 @@ func _inicializar_mundo() -> void:
 		_world_data
 	)
 
+	terrain.configurar_render_manager(render_manager)
+
 	terrain.cargar_datos_mundo()
 
 	if _entities_root == null or not is_instance_valid(_entities_root):
