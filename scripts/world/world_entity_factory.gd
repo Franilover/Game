@@ -16,6 +16,7 @@ var _world_items: GarliaWorldItems = null
 var _world_data: WorldDataService = null
 var _world_atmosphere: WorldAtmosphere = null
 var _relaciones_ecologicas: Array = []
+var _creature_pool: Array[Creature] = []
 
 
 func configurar_dependencias(
@@ -47,7 +48,9 @@ func configurar_dependencias(
 
 
 func crear_criatura(data: Dictionary) -> Creature:
-	var node := CREATURE_SCENE.instantiate() as Creature
+	var node: Creature = _tomar_criatura_del_pool()
+	if node == null:
+		node = CREATURE_SCENE.instantiate() as Creature
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear Creature.")
 		return null
@@ -71,6 +74,26 @@ func crear_criatura(data: Dictionary) -> Creature:
 	)
 	node.configurar(data)
 	return node
+
+
+func reciclar_criatura(node: Creature) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	if node.get_parent() != _entity_manager.get("_entities_root") if false else false:
+		pass
+	node.desactivar_como_proxy()
+	if node.get_parent() != null:
+		node.get_parent().remove_child(node)
+	if not node in _creature_pool:
+		_creature_pool.append(node)
+
+
+func _tomar_criatura_del_pool() -> Creature:
+	while not _creature_pool.is_empty():
+		var node := _creature_pool.pop_back()
+		if node != null and is_instance_valid(node):
+			return node
+	return null
 
 
 func crear_personaje(
