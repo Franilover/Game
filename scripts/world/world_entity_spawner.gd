@@ -218,9 +218,12 @@ func spawn_chunk(
 			ecosistema.get("id", "")
 		)
 
+		var criatura_id_actual := str(criatura_data.get("id", "")).strip_edges()
+		var instancia_key := "natural:" + str(creadas.size()) + ":" + criatura_id_actual
 		var estado_previo: Dictionary = _entity_manager.obtener_estado_criatura(
 			chunk_coord,
-			str(criatura_data.get("id", ""))
+			criatura_id_actual,
+			instancia_key
 		)
 		if not estado_previo.is_empty() and not bool(estado_previo.get("is_alive", true)):
 			continue
@@ -229,6 +232,8 @@ func spawn_chunk(
 
 		if criatura == null:
 			continue
+
+		criatura.set_meta("runtime_instance_key", instancia_key)
 
 		if _entity_manager != null:
 			if not _entity_manager.registrar(criatura, chunk_coord):
@@ -628,6 +633,7 @@ func _spawn_characters_in_chunk(
 		if criatura == null:
 			continue
 
+		criatura.set_meta("runtime_instance_key", "personaje:" + personaje_id)
 		if not _entity_manager.registrar(criatura, chunk_coord, personaje_id):
 			continue
 		criatura.global_position = Vector2(
