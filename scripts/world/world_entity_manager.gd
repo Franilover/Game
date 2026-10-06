@@ -5,6 +5,7 @@ class_name WorldEntityManager
 ## No decide qué debe aparecer: registra, agrupa, activa y elimina nodos.
 
 var _entities_root: Node = null
+var _entity_factory: WorldEntityFactory = null
 
 var _by_chunk: Dictionary = {}
 var _active_chunks: Dictionary = {}
@@ -13,8 +14,9 @@ var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
 
 
-func configurar(entities_root: Node) -> void:
+func configurar(entities_root: Node, entity_factory: WorldEntityFactory = null) -> void:
 	_entities_root = entities_root
+	_entity_factory = entity_factory
 	if _entities_root == null or not is_instance_valid(_entities_root):
 		push_error("WorldEntityManager: Entity root inválido.")
 
@@ -160,7 +162,10 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	var criatura_id := criatura.get_id().strip_edges()
 	if criatura_id.is_empty():
 		return
-	var key := _runtime_key(chunk_coord, criatura_id)
+	var instance_key := str(criatura.get_meta("runtime_instance_key", "")).strip_edges()
+	if instance_key.is_empty():
+		instance_key = _runtime_key(chunk_coord, criatura_id)
+	var key := _runtime_key(chunk_coord, instance_key)
 	_runtime_state_by_key[key] = {
 		"criatura_id": criatura_id,
 		"position": criatura.global_position,
@@ -172,16 +177,19 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	}
 
 
-func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String) -> Dictionary:
-	var key := _runtime_key(chunk_coord, criatura_id)
+func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String, instance_key: String = "") -> Dictionary:
+	var clave_instancia := instance_key.strip_edges()
+	if clave_instancia.is_empty():
+		clave_instancia = criatura_id
+	var key := _runtime_key(chunk_coord, clave_instancia)
 	var estado: Variant = _runtime_state_by_key.get(key, {})
 	if estado is Dictionary:
 		return (estado as Dictionary).duplicate(true)
 	return {}
 
 
-func _runtime_key(chunk_coord: Vector2i, criatura_id: String) -> String:
-	return str(chunk_coord.x) + ":" + str(chunk_coord.y) + ":" + criatura_id
+func _runtime_key(chunk_coord: Vector2i, instance_key: String) -> String:
+	return str(chunk_coord.x) + ":" + str(chunk_coord.y) + ":" + instance_key
 
 
 func despawn_chunk(chunk_coord: Vector2i) -> void:
@@ -199,7 +207,10 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 
 		guardar_estado_entidad(entity, chunk_coord)
 		_remover_persistencia(entity)
-		entity.queue_free()
+		if entity is Creature and _entity_factory != null and is_instance_valid(_entity_factory):
+			_entity_factory.reciclar_criatura(entity as Creature)
+		else:
+			entity.queue_free()
 
 	_by_chunk.erase(chunk_coord)
 	_active_chunks.erase(chunk_coord)
