@@ -53,6 +53,16 @@ func _ready() -> void:
 	if not _supabase_client.reinos_game_cargados.is_connected(_al_reinos_game_cargados):
 		_supabase_client.reinos_game_cargados.connect(_al_reinos_game_cargados)
 
+	# El Player existe en Main desde el primer frame. No debemos esperar a que
+	# termine la generación del mundo para vincularlo al HUD/cámara; esa espera
+	# hacía que F3 mostrara "Sin jugador" durante la inicialización.
+	_player = get_node_or_null("Entities/Player") as Player
+	if _player == null:
+		push_error("Main: Entities/Player existe en la escena pero no pudo obtenerse como Player.")
+	else:
+		_configurar_camara()
+		_configurar_hud(_world_context, null)
+
 	_supabase_client.cargar_reinos_game()
 	if not GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
