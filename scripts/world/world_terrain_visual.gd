@@ -782,7 +782,7 @@ func procesar_flush(cells: int) -> bool:
 	# Round-robin entre zonas: una capa con una cola grande no puede
 	# monopolizar todos los lotes y dejar otra frontera pendiente durante
 	# varios frames. El cursor se conserva entre llamadas.
-	var zonas := _layers_by_zone.keys()
+	var zonas: Array = _layers_by_zone.keys()
 	var cantidad_zonas: int = zonas.size()
 	if cantidad_zonas == 0:
 		return not tiene_flush_pendiente()
@@ -889,7 +889,7 @@ func procesar_flush(cells: int) -> bool:
 
 	if presupuesto > 0 and not _dirty_variations.is_empty():
 		var variation_start_usec := Time.get_ticks_usec()
-		var variaciones := _dirty_variations.keys()
+		var variaciones: Array = _dirty_variations.keys()
 		var take_variaciones: int = mini(
 			presupuesto,
 			variaciones.size()
