@@ -715,11 +715,35 @@ func procesar_flush(cells: int) -> bool:
 		var dirty: Array[Vector2i] = []
 		var convert_start_usec := Time.get_ticks_usec()
 
-		for i in range(take):
-			var cell_variant: Variant = cells_variant[i]
-			if cell_variant is Vector2i:
-				dirty.append(cell_variant as Vector2i)
-				_dirty_lookup_by_zone[clave].erase(cell_variant)
+		# Consumir una región contigua primero. TileMapDual puede resolver un
+		# lote de vecinos de una vez; enviar celdas lejanas mezcladas aumenta
+		# el trabajo de búsqueda de vecinos y rompe la localidad espacial.
+		var semilla_variant: Variant = cells_variant[0]
+		if semilla_variant is Vector2i:
+			var pendientes: Array[Vector2i] = [semilla_variant as Vector2i]
+			var vistas: Dictionary = {}
+			vistas[semilla_variant] = true
+			while not pendientes.is_empty() and dirty.size() < take:
+				var actual: Vector2i = pendientes.pop_front()
+				if not _dirty_lookup_by_zone[clave].has(actual):
+					continue
+				dirty.append(actual)
+				_dirty_lookup_by_zone[clave].erase(actual)
+				for offset: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					var vecino := actual + offset
+					if not vistas.has(vecino) and _dirty_lookup_by_zone[clave].has(vecino):
+						vistas[vecino] = true
+						pendientes.append(vecino)
+
+		# Si la región era menor que el presupuesto, completar con las primeras
+		# celdas pendientes para no dejar una cola fragmentada indefinidamente.
+		if dirty.size() < take:
+			for cell_variant in cells_variant:
+				if dirty.size() >= take:
+					break
+				if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
+					dirty.append(cell_variant as Vector2i)
+					_dirty_lookup_by_zone[clave].erase(cell_variant)
 
 		_profiler_flush_convert_ms += float(
 			Time.get_ticks_usec() - convert_start_usec
@@ -739,9 +763,14 @@ func procesar_flush(cells: int) -> bool:
 			_profiler_flush_update_calls += 1
 			_profiler_flush_cells += dirty.size()
 
-		cells_variant = cells_variant.slice(take)
-		_dirty_cells_by_zone[clave] = cells_variant
-		presupuesto -= take
+		# Reconstruir la lista a partir del lookup evita conservar entradas ya
+		# consumidas por la expansión de la región.
+		var restantes: Array = []
+		for cell_variant in cells_variant:
+			if cell_variant is Vector2i and _dirty_lookup_by_zone[clave].has(cell_variant):
+				restantes.append(cell_variant)
+		_dirty_cells_by_zone[clave] = restantes
+		presupuesto -= dirty.size()
 
 	if presupuesto > 0 and not _dirty_variations.is_empty():
 		var variation_start_usec := Time.get_ticks_usec()
