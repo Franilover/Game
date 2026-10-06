@@ -261,3 +261,12 @@ Pendiente:
 - El objetivo inicial del flush es ~0.75 ms y el lote permanece acotado entre 4 y 32 celdas.
 - Un pico aislado no fija permanentemente el tamaño del lote: el coste se suaviza mediante EMA.
 - Se conserva TileMapDual y su ventaja de reducir la cantidad de arte manual.
+
+
+### Fase 6 — Orquestación de trabajo por frame
+- `WorldStreamer` da prioridad al terreno antes de ejecutar trabajo de entidades.
+- La generación de terreno no comparte el frame indiscriminadamente con criaturas/props.
+- Las entidades sólo procesan su cola cuando queda al menos ~1.5 ms de presupuesto visual disponible.
+- Al finalizar una generación, se permite procesar entidades únicamente con el presupuesto restante.
+- `WorldGenerator._process()` sigue siendo el dueño del ciclo de frame del `GarliaRenderManager`: iniciar → streaming → finalizar.
+- Se eliminó un bloque de depuración inalcanzable del spawner incremental.
