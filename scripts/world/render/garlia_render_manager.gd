@@ -158,3 +158,7 @@ func obtener_estado() -> Dictionary:
 		"frame_work_ms": _frame_work_ms.duplicate(),
 		"work_unit_ms": _work_unit_ms.duplicate(),
 	}
+
+
+func obtener_diagnostico() -> Dictionary:
+	return obtener_estado()
