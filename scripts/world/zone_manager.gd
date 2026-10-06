@@ -16,8 +16,41 @@ var tipo_actual: String = ""
 var zona_actual: Node = null
 var _transicionando: bool = false
 var _salida_reino_pendiente: bool = false
+var _debug_registrado: bool = false
 var _supabase_client: GarliaSupabaseClient = null
 
+
+func _ready() -> void:
+	_registrar_debug()
+
+func _registrar_debug() -> void:
+	if _debug_registrado:
+		return
+	var debug: Node = get_node_or_null("/root/GarliaDebug")
+	if debug == null or not debug.has_method("registrar_proveedor"):
+		return
+	debug.registrar_proveedor(
+		"zone_manager",
+		"ZoneManager",
+		self,
+		"Zona activa, transición de escenas y presencia del WorldGenerator."
+	)
+	_debug_registrado = true
+
+func obtener_diagnostico() -> Dictionary:
+	var zona_valida: bool = is_instance_valid(zona_actual)
+	var world_generator: Node = null
+	if zona_valida:
+		world_generator = zona_actual.get_node_or_null("WorldGenerator")
+	return {
+		"tipo_actual": tipo_actual,
+		"zona_activa": zona_valida,
+		"zona_path": str(zona_actual.get_path()) if zona_valida else "",
+		"zona_nombre": str(zona_actual.name) if zona_valida else "",
+		"transicionando": _transicionando,
+		"world_generator": is_instance_valid(world_generator),
+		"salida_reino_pendiente": _salida_reino_pendiente
+	}
 
 func configurar_dependencias(supabase_client: GarliaSupabaseClient) -> void:
 	_supabase_client = supabase_client
