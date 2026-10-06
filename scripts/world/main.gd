@@ -64,10 +64,13 @@ func _ready() -> void:
 		_configurar_hud(_world_context, null)
 
 	_supabase_client.cargar_reinos_game()
+	# No dependemos de que la respuesta HTTP llegue antes de este frame.
 	if not GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
 	elif not _supabase_client.obtener_reinos_game().is_empty():
 		_iniciar_zonas()
+	else:
+		call_deferred("_verificar_inicio_de_zona")
 
 
 func _exit_tree() -> void:
@@ -78,6 +81,17 @@ func _exit_tree() -> void:
 func _al_reinos_game_cargados(_reinos: Array) -> void:
 	if GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
+
+func _verificar_inicio_de_zona() -> void:
+	if _zone_manager == null:
+		return
+	if _zone_manager.obtener_tipo_actual() != "" or is_instance_valid(_zone_manager.obtener_zona_actual()):
+		return
+	var reinos: Array = _supabase_client.obtener_reinos_game()
+	if not reinos.is_empty():
+		_iniciar_zonas()
+		return
+	call_deferred("_verificar_inicio_de_zona")
 
 
 func _iniciar_zonas() -> void:
