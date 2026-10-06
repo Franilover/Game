@@ -203,10 +203,14 @@ func _presupuesto_generacion() -> int:
 		var local_y: int = floori(fposmod(_player.global_position.y, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
 		var distancia_borde: int = mini(local_x, _terrain.chunk_size_tiles - 1 - local_x)
 		distancia_borde = mini(distancia_borde, mini(local_y, _terrain.chunk_size_tiles - 1 - local_y)) if _player_direction.y != 0.0 else distancia_borde
+		# El RenderManager ya limita el trabajo por presupuesto. Este
+		# prefetch no debe volver a convertir la generación en un goteo de
+		# 24/48 celdas por frame: eso mantenía una cola de ~20 chunks durante
+		# demasiado tiempo aunque la pantalla estuviera fluida.
 		if distancia_borde > 10:
-			base = mini(base, 24)
+			base = mini(base, 64)
 		else:
-			base = mini(base, 48)
+			base = mini(base, 96)
 	if _render_manager == null:
 		return base
 	var disponible: float = float(_render_manager.call("presupuesto_disponible_ms"))
