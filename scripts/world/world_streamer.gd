@@ -22,7 +22,8 @@ var _cells_per_frame: int = 128
 var _prefetch_margin_tiles: int = 28
 var _last_player_position: Vector2 = Vector2.ZERO
 var _player_direction: Vector2 = Vector2.ZERO
-var _prefetch_chunk: Vector2i = Vector2i(999999, 999999)
+var _prefetch_chunk: Vector2i = Vector2i.ZERO
+var _prefetch_activo: bool = false
 
 var _player_chunk: Vector2i = Vector2i(
 	999999,
@@ -159,22 +160,40 @@ func procesar() -> void:
 func _procesar_variaciones_si_hay_presupuesto() -> void:
 	if _terrain == null or _terrain.visual == null:
 		return
-	var disponible: float = 5.0
-	if _render_manager != null:
-		disponible = float(_render_manager.call("presupuesto_disponible_ms"))
-	if disponible < 1.0:
-		return
 
-	# Cuatro celdas como máximo por frame: suficientemente rápido para
-	# poblar decoración sin devolver el tirón de TileMapLayer.set_cell().
+	# Las variaciones son decoración secundaria. Ahora usan el mismo
+	# presupuesto adaptativo que el resto del trabajo visual, de modo que
+	# pueden acelerarse cuando TileMapDual está barato y reducirse
+	# automáticamente cuando set_cell() se encarece.
 	var limite: int = 8
-	if disponible >= 3.0:
-		limite = 16
+	if _render_manager != null:
+		limite = int(_render_manager.call(
+			"presupuesto_unidades_adaptativo",
+			"terrain_variation",
+			32,
+			1,
+			64,
+			0.60
+		))
+	else:
+		limite = 8
+
+	limite = maxi(limite, 1)
 	var inicio_usec := Time.get_ticks_usec()
-	_terrain.visual.procesar_variaciones(limite)
+	var terminado: bool = _terrain.visual.procesar_variaciones(limite)
 	var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
 	if _render_manager != null:
-		_render_manager.call("registrar_trabajo", "terrain_variation", ms, limite)
+		_render_manager.call(
+			"registrar_trabajo",
+			"terrain_variation",
+			ms,
+			limite
+		)
+
+	# Si la cola se vació, el siguiente frame puede dedicar el presupuesto
+	# liberado a entidades/streaming en lugar de volver a tocar variaciones.
+	if terminado:
+		return
 
 
 func _procesar_entidades_si_hay_presupuesto() -> void:
@@ -332,8 +351,9 @@ func _actualizar_direccion_jugador() -> void:
 
 
 func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
+	_prefetch_activo = false
 	if _player == null or _player_direction.length_squared() <= 0.01:
-		return Vector2i(999999, 999999)
+		return Vector2i.ZERO
 
 	var tile_local_x: int = floori(fposmod(_player.global_position.x, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
 	var tile_local_y: int = floori(fposmod(_player.global_position.y, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
@@ -359,7 +379,8 @@ func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
 			distancia_borde = tile_local_y
 
 	if candidato == centro or distancia_borde > margen:
-		return Vector2i(999999, 999999)
+		return Vector2i.ZERO
+	_prefetch_activo = true
 	return candidato
 
 
@@ -611,7 +632,8 @@ func obtener_diagnostico() -> Dictionary:
 		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
 		"player_direction": _player_direction,
 		"prefetch_margin_tiles": _prefetch_margin_tiles,
-		"prefetch_chunk": _prefetch_chunk
+		"prefetch_activo": _prefetch_activo,
+		"prefetch_chunk": _prefetch_chunk if _prefetch_activo else null
 	}
 
 func _registrar_debug() -> void:
