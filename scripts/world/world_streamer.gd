@@ -53,8 +53,6 @@ const LOD_TERRAIN: String = "TERRAIN"
 const LOD_FULL: String = "FULL"
 var _chunk_lod: Dictionary = {}
 var _lod_counts: Dictionary = {LOD_DATA: 0, LOD_TERRAIN: 0, LOD_FULL: 0}
-var _entity_data_queue: Array[Vector2i] = []
-var _entity_data_queued: Dictionary = {}
 
 
 func configurar(
@@ -117,7 +115,6 @@ func procesar() -> void:
 	_actualizar_streaming()
 	_actualizar_data_lod(_player_chunk)
 	_actualizar_lod_logico(_player_chunk)
-	_procesar_datos_entidades_si_hay_presupuesto()
 
 	# El terreno base recibe el primer turno visual. Las variaciones son
 	# decoración secundaria y nunca deben consumir el servicio reservado
@@ -361,7 +358,6 @@ func _actualizar_streaming() -> void:
 	_actualizar_data_lod(centro)
 	_actualizar_lod_logico(centro)
 	_actualizar_entidades_activas(centro)
-	_programar_datos_entidades()
 
 
 func _actualizar_cache_borde_jugador(centro: Vector2i) -> void:
@@ -616,29 +612,6 @@ func _actualizar_data_lod(centro: Vector2i) -> void:
 	while _data_chunk_cache.size() > MAX_DATA_CHUNKS:
 		var primero: Variant = _data_chunk_cache.keys()[0]
 		_data_chunk_cache.erase(primero)
-
-
-func _programar_datos_entidades() -> void:
-	for coord_variant in _data_chunk_cache.keys():
-		if not coord_variant is Vector2i:
-			continue
-		var coord: Vector2i = coord_variant
-		if _entity_data_queued.has(coord):
-			continue
-		if _entity_spawner != null and _entity_spawner.has_method("preparar_datos_props_chunk"):
-			if _distancia_chunk(coord, _player_chunk) > VISIBLE_RADIUS:
-				_entity_data_queue.append(coord)
-				_entity_data_queued[coord] = true
-
-
-func _procesar_datos_entidades_si_hay_presupuesto() -> void:
-	if _entity_data_queue.is_empty() or _entity_spawner == null:
-		return
-	var coord := _entity_data_queue.pop_front()
-	_entity_data_queued.erase(coord)
-	if _distancia_chunk(coord, _player_chunk) <= VISIBLE_RADIUS:
-		return
-	_entity_spawner.preparar_datos_props_chunk(coord)
 
 
 func _actualizar_lod_logico(centro: Vector2i) -> void:
