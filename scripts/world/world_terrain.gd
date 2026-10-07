@@ -36,6 +36,12 @@ var _ecosistemas: Array = []
 var _ecosistema_indices: Dictionary = {}
 
 var _loaded_chunks: Dictionary = {}
+# Caché de datos ya generados. No contiene lógica alternativa: conserva
+# exactamente las matrices producidas por este WorldTerrain para evitar
+# recalcular ruido/biomas/ecosistemas al volver a una zona reciente.
+@export var chunk_cache_max: int = 8
+var _chunk_cache: Dictionary = {}
+var _chunk_cache_order: Array[Vector2i] = []
 
 var _generation_task: Dictionary = {}
 # Una sola tarea puede quedar pausada para ceder el generador al chunk prioritario.
@@ -245,6 +251,31 @@ func iniciar_generacion_chunk(
 
 	if not _generation_task.is_empty():
 		return
+
+	# Volver a un chunk reciente reutiliza sus datos canónicos. Sólo hay que
+	# reconstruir la representación visual, que puede haber sido descargada.
+	if _chunk_cache.has(chunk_coord):
+		var cache_data: Variant = _chunk_cache[chunk_coord]
+		if cache_data is Dictionary:
+			var datos: Dictionary = cache_data as Dictionary
+			var orden_pintado_cache := _crear_orden_generacion(
+				chunk_size_tiles,
+				chunk_coord,
+				false
+			)
+			_generation_task = {
+				"coord": chunk_coord,
+				"stage": 1,
+				"cursor": 0,
+				"orden_pintado": orden_pintado_cache,
+				"zonas_base": datos.get("zonas_base", []),
+				"zonas": datos.get("zonas", []),
+				"biomas": datos.get("biomas", []),
+				"ecosistemas": datos.get("ecosistemas", [])
+			}
+			_chunk_cache.erase(chunk_coord)
+			_chunk_cache_order.erase(chunk_coord)
+			return
 
 	var padded_size: int = (
 		chunk_size_tiles
@@ -703,6 +734,10 @@ func _finalizar_chunk() -> void:
 		"biomas": _generation_task["biomas"],
 		"ecosistemas": _generation_task["ecosistemas"]
 	}
+	# Si el chunk venía de caché, mantenerlo como "más reciente" sólo después
+	# de que haya terminado de pintarse correctamente.
+	_chunk_cache.erase(coord)
+	_chunk_cache_order.erase(coord)
 
 	_ultimo_chunk_generado = coord
 
@@ -888,7 +923,18 @@ func procesar_descargas(cells: int) -> bool:
 	if not terminado:
 		return false
 
-	_loaded_chunks.erase(_unload_task["coord"])
+	var coord: Vector2i = _unload_task["coord"]
+	var datos_variant: Variant = _loaded_chunks.get(coord, {})
+	_loaded_chunks.erase(coord)
+
+	if datos_variant is Dictionary and chunk_cache_max > 0:
+		_chunk_cache[coord] = datos_variant
+		_chunk_cache_order.erase(coord)
+		_chunk_cache_order.append(coord)
+		while _chunk_cache_order.size() > chunk_cache_max:
+			var antiguo: Vector2i = _chunk_cache_order.pop_front()
+			_chunk_cache.erase(antiguo)
+
 	_unload_task.clear()
 	return true
 
