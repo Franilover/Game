@@ -65,9 +65,13 @@ func _crear_tileset_grass() -> TileSet:
     tile_set.add_terrain(0)
     tile_set.set_terrain_name(0, 0, "<any>")
     tile_set.add_terrain(0)
-    tile_set.set_terrain_name(0, 1, "Grass")
+    tile_set.set_terrain_name(0, 1, "Pradera")
     tile_set.add_terrain(0)
-    tile_set.set_terrain_name(0, 2, "Dirt")
+    tile_set.set_terrain_name(0, 2, "Tierra")
+    tile_set.add_terrain(0)
+    tile_set.set_terrain_name(0, 3, "Bosque")
+    tile_set.add_terrain(0)
+    tile_set.set_terrain_name(0, 4, "Desierto")
 
     var sequence: Array[Vector2i] = [
         Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
