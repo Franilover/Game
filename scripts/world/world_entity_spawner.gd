@@ -94,6 +94,81 @@ func spawn_chunk(chunk_coord: Vector2i) -> void:
 	_spawn_queued[chunk_coord] = true
 
 
+func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
+	if _entity_manager == null or _terrain == null or _world_data == null or _spawn_rules == null:
+		return
+	if _entity_manager.tiene_datos_chunk(chunk_coord, "props"):
+		return
+
+	var props := _world_data.obtener_props_game()
+	var datos: Array = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = abs(_terrain.map_seed + chunk_coord.x * 92837111 + chunk_coord.y * 689287499) + 1
+
+	for slot in range(6):
+		var encontrado := false
+		for intento in range(48):
+			var tile := Vector2i(
+				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
+				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
+			)
+			if not _terrain.is_walkable(tile):
+				continue
+			var bioma := _terrain.get_bioma_at(tile)
+			var ecosistema := _terrain.get_ecosistema_at(tile)
+			var habitats := _terrain.get_habitats_at(tile)
+			if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
+				continue
+			var bioma_id := str(bioma.get("id", ""))
+			var ecosistema_id := str(ecosistema.get("id", ""))
+			var habitat_ids: Array[String] = []
+			for habitat_variant in habitats:
+				if habitat_variant is Dictionary:
+					var habitat_id := str((habitat_variant as Dictionary).get("id", ""))
+					if not habitat_id.is_empty() and habitat_id not in habitat_ids:
+						habitat_ids.append(habitat_id)
+			if bioma_id.is_empty() or ecosistema_id.is_empty() or habitat_ids.is_empty():
+				continue
+
+			var candidatos: Array[Dictionary] = []
+			var candidatos_bioma: Array[Dictionary] = []
+			for prop_variant in props:
+				if not prop_variant is Dictionary:
+					continue
+				var prop := prop_variant as Dictionary
+				if str(prop.get("bioma_id", "")) != bioma_id:
+					continue
+				var coincide := str(prop.get("ecosistema_id", "")) == ecosistema_id and str(prop.get("habitat_id", "")) in habitat_ids
+				var nombre := str(prop.get("nombre", "")).strip_edges()
+				if nombre.is_empty():
+					continue
+				var copia := prop.duplicate(true)
+				copia["asset_path"] = _spawn_rules.construir_asset_path_prop(copia)
+				if str(copia.get("asset_path", "")).is_empty():
+					continue
+				if coincide:
+					candidatos.append(copia)
+				candidatos_bioma.append(copia)
+
+			if candidatos.is_empty():
+				candidatos = candidatos_bioma
+			if candidatos.is_empty():
+				continue
+			var elegido := _spawn_rules.elegir_prop(candidatos, rng)
+			if elegido.is_empty():
+				continue
+			elegido["runtime_instance_key"] = "prop:" + str(slot) + ":" + str(elegido.get("id", ""))
+			elegido["chunk"] = chunk_coord
+			elegido["position"] = Vector2((float(tile.x) + 0.5) * _terrain.tile_size, (float(tile.y) + 0.5) * _terrain.tile_size)
+			datos.append(elegido)
+			encontrado = true
+			break
+		if not encontrado:
+			continue
+
+	_entity_manager.reemplazar_datos_chunk(chunk_coord, "props", datos)
+
+
 func spawn_props_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager == null:
 		return
