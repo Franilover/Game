@@ -12,6 +12,9 @@ var offset: Vector2
 var _tileset_watcher: TileSetWatcher
 ## See [TerrainDual]
 var _terrain: TerrainLayer
+# Paths invertidos cacheados: el Dual-Grid los usa en cada actualización.
+# Evita reconstruir Arrays con map(Util.reverse_neighbor) para cada flush.
+var _reversed_display_paths: Array[Array] = []
 
 
 func _init(
@@ -25,6 +28,7 @@ func _init(
 	offset = fields.offset
 	_tileset_watcher = tileset_watcher
 	_terrain = layer
+	_rebuild_display_paths()
 	tile_set = tileset_watcher.tile_set
 	tileset_watcher.tileset_resized.connect(reposition, 1)
 	reposition()
@@ -79,27 +83,44 @@ func update_tiles_all(cache: TileCache) -> void:
 
 
 ## Update all display tiles affected by the world cells
-func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
-	#push_warning('updating tiles')
-	var already_updated := Set.new()
+func _rebuild_display_paths() -> void:
+	_reversed_display_paths.clear()
 	for path: Array in _terrain.display_to_world_neighborhood:
-		path = path.map(Util.reverse_neighbor)
+		var reversed_path: Array = []
+		for neighbor: TileSet.CellNeighbor in path:
+			reversed_path.append(Util.reverse_neighbor(neighbor))
+		_reversed_display_paths.append(reversed_path)
+
+
+func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
+	# Un cambio de una celda mundial puede afectar varias celdas del display.
+	# El conjunto evita recalcular la misma celda cuando los caminos convergen.
+	# Dictionary es suficiente aquí y evita crear un Set temporal con cada flush.
+	var already_updated: Dictionary = {}
+	for path: Array in _reversed_display_paths:
 		for world_cell: Vector2i in updated_world_cells:
 			var display_cell: Vector2i = follow_path(world_cell, path)
-			if already_updated.insert(display_cell):
+			if not already_updated.has(display_cell):
+				already_updated[display_cell] = true
 				update_tile(cache, display_cell)
 
 
 ## Updates a specific world cell.
 func update_tile(cache: TileCache, cell: Vector2i) -> void:
-	var get_cell_at_path: Callable = func(
-			path,
-	):
-		return cache.get_terrain_at(follow_path(cell, path))
-	var terrain_neighbors: Array = _terrain.display_to_world_neighborhood.map(get_cell_at_path)
+	# Evita una Callable + Array.map() por cada celda. El neighborhood del
+	# Dual-Grid es pequeño y fijo, por lo que un bucle directo reduce
+	# allocations durante la composición de chunks.
+	var terrain_neighbors: Array = []
+	terrain_neighbors.resize(_terrain.display_to_world_neighborhood.size())
+	for i in range(_terrain.display_to_world_neighborhood.size()):
+		var path: Array = _terrain.display_to_world_neighborhood[i]
+		terrain_neighbors[i] = cache.get_terrain_at(
+			follow_path(cell, path)
+		)
+
 	var mapping: Dictionary = _terrain.apply_rule(terrain_neighbors, cell)
-	var sid: int = mapping.sid
-	var tile: Vector2i = mapping.tile
+	var sid: int = int(mapping.get("sid", -1))
+	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
 	set_cell(cell, sid, tile)
 
 
