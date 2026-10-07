@@ -1,6 +1,9 @@
 extends Node2D
 class_name WorldTerrainVisual
 
+# Prueba de rendimiento: desactiva temporalmente las capas decorativas de variaciones.
+# El terreno base y sus transiciones TileMapDual siguen activos.
+const ENABLE_VARIATIONS: bool = false
 
 const TILE_SEQUENCE: Array[Vector2i] = [
 	Vector2i(0, 3), Vector2i(3, 3),
@@ -397,7 +400,7 @@ func set_zone(
 
 	# Crear la capa de variaciones una sola vez para los biomas que tienen atlas.
 	# Las celdas interiores se actualizan después de registrar su bioma y zona.
-	if VARIACIONES_POR_BIOMA.has(clave) and not _variation_layers_by_bioma.has(clave):
+	if ENABLE_VARIATIONS and VARIACIONES_POR_BIOMA.has(clave) and not _variation_layers_by_bioma.has(clave):
 		_variation_layers_by_bioma[clave] = _crear_capa_variaciones(clave)
 
 	var tile_key := layer_key
@@ -732,6 +735,8 @@ func _marcar_variaciones_dirty(
 	cell: Vector2i,
 	bioma_actual: String
 ) -> void:
+	if not ENABLE_VARIATIONS:
+		return
 	# Cuando la celda actual tiene variaciones, sus cuatro vecinos también
 	# deben revisarse porque pueden pasar a ser interiores o bordes.
 	# En ese caso no hace falta consultar cinco veces el diccionario: sabemos
@@ -753,6 +758,8 @@ func _marcar_variaciones_dirty(
 
 
 func _marcar_variacion_dirty(cell: Vector2i) -> void:
+	if not ENABLE_VARIATIONS:
+		return
 	if _dirty_variations.has(cell):
 		return
 	_dirty_variations[cell] = true
@@ -857,6 +864,8 @@ func _tiene_flush_base_pendiente() -> bool:
 
 func procesar_variaciones(cells: int = 4) -> bool:
 	# Trabajo visual secundario: nunca debe retener el chunk base.
+	if not ENABLE_VARIATIONS:
+		return true
 	if _batch_active:
 		return false
 	if _dirty_variations.is_empty():
@@ -970,7 +979,7 @@ func tiene_flush_pendiente() -> bool:
 		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
 		if cells_variant is Array and not cells_variant.is_empty():
 			return true
-	return not _dirty_variations.is_empty()
+	return ENABLE_VARIATIONS and not _dirty_variations.is_empty()
 
 
 func procesar_flush(cells: int) -> bool:
@@ -1089,7 +1098,7 @@ func flush() -> void:
 		_dirty_cells_by_zone[clave] = []
 		_dirty_lookup_by_zone[clave] = {}
 
-	if not _dirty_variations.is_empty():
+	if ENABLE_VARIATIONS and not _dirty_variations.is_empty():
 		var variation_start_usec := Time.get_ticks_usec()
 		var variaciones := _dirty_variations.keys()
 		_profiler_flush_variation_cells += variaciones.size()
