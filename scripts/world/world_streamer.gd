@@ -8,11 +8,12 @@ var _entity_spawner: WorldEntitySpawner
 var _player: Node = null
 var _render_manager: Node = null
 
-const MAX_VISIBLE_CHUNKS: int = 9
-const VISIBLE_RADIUS: int = 1
-# Anillo barato de conocimiento del mundo. No crea TileMap ni entidades.
-const DATA_RADIUS: int = 2
-const MAX_DATA_CHUNKS: int = 25
+const MAX_VISIBLE_CHUNKS: int = 25
+# TERRAIN ocupa 5x5. FULL ocupa 3x3 y DATA 7x7.
+const VISIBLE_RADIUS: int = 2
+const FULL_RADIUS: int = 1
+const DATA_RADIUS: int = 3
+const MAX_DATA_CHUNKS: int = 49
 
 var _load_radius: int = VISIBLE_RADIUS
 var _unload_radius: int = VISIBLE_RADIUS
@@ -23,8 +24,8 @@ var _unload_radius: int = VISIBLE_RADIUS
 # Las entidades pueden aparecer en el chunk del jugador y sus vecinos
 # ya cargados. El terreno sigue siendo la autoridad: sólo se invoca al
 # spawner después de que un chunk terminó de generarse.
-var _prop_active_radius: int = 1
-var _creature_active_radius: int = 0
+var _prop_active_radius: int = VISIBLE_RADIUS
+var _creature_active_radius: int = FULL_RADIUS
 var _cells_per_frame: int = 128
 var _prefetch_margin_tiles: int = 28
 var _last_player_position: Vector2 = Vector2.ZERO
@@ -633,16 +634,24 @@ func _actualizar_data_lod(centro: Vector2i) -> void:
 func _actualizar_data_entidades() -> void:
 	# DATA prepara registros, nunca Nodes. Se procesa como cola para que ampliar
 	# el radio no convierta 25 chunks en trabajo de un solo frame.
+	var activos: Dictionary = {}
 	for coord_variant in _chunk_lod.keys():
 		if not coord_variant is Vector2i:
 			continue
 		var coord := coord_variant as Vector2i
-		if str(_chunk_lod.get(coord, LOD_DATA)) != LOD_DATA:
-			continue
-		if _data_entity_queued.has(coord) or _data_entity_generated.has(coord):
-			continue
-		_data_entity_queue.append(coord)
-		_data_entity_queued[coord] = true
+		var lod := str(_chunk_lod.get(coord, LOD_DATA))
+		if lod == LOD_DATA:
+			activos[coord] = true
+			if _data_entity_queued.has(coord) or _data_entity_generated.has(coord):
+				continue
+			_data_entity_queue.append(coord)
+			_data_entity_queued[coord] = true
+	for coord_variant in _data_entity_generated.keys():
+		if coord_variant is Vector2i and not activos.has(coord_variant):
+			_data_entity_generated.erase(coord_variant)
+	for coord_variant in _data_entity_queued.keys():
+		if coord_variant is Vector2i and not activos.has(coord_variant):
+			_data_entity_queued.erase(coord_variant)
 
 func _actualizar_lod_logico(centro: Vector2i) -> void:
 	_chunk_lod.clear()
@@ -672,7 +681,9 @@ func obtener_estado_lod() -> Dictionary:
 		"chunks": _chunk_lod.duplicate(),
 		"data_radius": DATA_RADIUS,
 		"terrain_radius": VISIBLE_RADIUS,
-		"full_radius": _creature_active_radius
+		"full_radius": _creature_active_radius,
+		"data_queue": _data_entity_queue.size(),
+		"data_generated": _data_entity_generated.size()
 	}
 
 
