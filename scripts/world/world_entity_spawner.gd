@@ -219,11 +219,17 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
 			)
-			if not _terrain.is_walkable(tile):
+			var contexto := _terrain.obtener_contexto_data_at(tile)
+			if not bool(contexto.get("walkable", false)):
 				continue
-			var bioma := _terrain.get_bioma_at(tile)
-			var ecosistema := _terrain.get_ecosistema_at(tile)
-			var habitats := _terrain.get_habitats_at(tile)
+			var bioma_variant: Variant = contexto.get("bioma", {})
+			var ecosistema_variant: Variant = contexto.get("ecosistema", {})
+			var habitats_variant: Variant = contexto.get("habitats", [])
+			if not bioma_variant is Dictionary or not ecosistema_variant is Dictionary or not habitats_variant is Array:
+				continue
+			var bioma := bioma_variant as Dictionary
+			var ecosistema := ecosistema_variant as Dictionary
+			var habitats := habitats_variant as Array
 			if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
 				continue
 			var bioma_id := str(bioma.get("id", ""))
