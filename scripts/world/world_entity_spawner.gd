@@ -410,11 +410,42 @@ func _spawn_chunk_interno(
 func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	if _terrain == null or _entity_manager == null or _entity_factory == null:
 		return
-	if _entity_manager.tiene_chunk(chunk_coord) or _prop_spawn_tasks.has(chunk_coord):
+	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
 		return
 	_spawn_chunk_interno(chunk_coord)
 
-func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
+
+func _iniciar_tarea_prop_spawn(chunk_coord: Vector2i) -> void:
+	if _terrain == null or _entity_manager == null or _entity_factory == null:
+		return
+	if _entity_manager.tiene_props_chunk(chunk_coord) or _prop_spawn_tasks.has(chunk_coord):
+		return
+
+	var origin_x: int = chunk_coord.x * _terrain.chunk_size_tiles
+	var origin_y: int = chunk_coord.y * _terrain.chunk_size_tiles
+	var limite_chunk := Rect2(
+		float(origin_x * _terrain.tile_size),
+		float(origin_y * _terrain.tile_size),
+		float(_terrain.chunk_size_tiles * _terrain.tile_size),
+		float(_terrain.chunk_size_tiles * _terrain.tile_size)
+	)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = abs(
+		_terrain.map_seed
+		+ chunk_coord.x * 92837111
+		+ chunk_coord.y * 689287499
+	) + 1
+	_prop_spawn_tasks[chunk_coord] = {
+		"limite_chunk": limite_chunk,
+		"rng": rng,
+		"intento": 0,
+		"creados": 0,
+		"max_props": 6,
+		"intentos_maximos": 48
+	}
+
+
+func _procesar_tarea_prop_spawn(chunk_coord: Vector2i) -> void:
 	var tarea_variant: Variant = _prop_spawn_tasks.get(chunk_coord, {})
 	if not tarea_variant is Dictionary:
 		_prop_spawn_tasks.erase(chunk_coord)
@@ -447,7 +478,7 @@ func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	tarea["intento"] = intento + 1
 	if creados >= max_props or int(tarea["intento"]) >= max_intentos:
 		_prop_spawn_tasks.erase(chunk_coord)
-		_entity_manager.activar_chunk(chunk_coord)
+		_entity_manager.activar_props_chunk(chunk_coord)
 	else:
 		_prop_spawn_tasks[chunk_coord] = tarea
 
