@@ -8,8 +8,8 @@ var _entity_spawner: WorldEntitySpawner
 var _player: Node = null
 var _render_manager: Node = null
 
-const MAX_VISIBLE_CHUNKS: int = 9
-# TERRAIN mantiene un radio 5x5 de streaming; la representación TileMap se limita al 3x3 cercano.
+const MAX_VISIBLE_CHUNKS: int = 25
+# TERRAIN visual mantiene 5x5; FULL lógico mantiene 3x3.
 # TERRAIN ocupa 5x5. FULL ocupa 3x3 y DATA 7x7.
 const VISIBLE_RADIUS: int = 2
 const FULL_RADIUS: int = 1
@@ -17,7 +17,7 @@ const DATA_RADIUS: int = 3
 const MAX_DATA_CHUNKS: int = 49
 
 var _load_radius: int = VISIBLE_RADIUS
-var _unload_radius: int = FULL_RADIUS
+var _unload_radius: int = VISIBLE_RADIUS
 # El terreno visible se limita al chunk actual y, como máximo, a los
 # vecinos necesarios para anticipar el movimiento. No mantener un 3x3
 # completo: en TileMapDual cada celda genera trabajo de render.
@@ -70,8 +70,8 @@ func configurar(
 	_terrain = terrain
 	_entity_spawner = entity_spawner
 
-	_load_radius = clampi(load_radius, 0, FULL_RADIUS)
-	_unload_radius = FULL_RADIUS
+	_load_radius = clampi(load_radius, 0, VISIBLE_RADIUS)
+	_unload_radius = VISIBLE_RADIUS
 	_cells_per_frame = cells_per_frame
 
 
