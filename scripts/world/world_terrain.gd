@@ -959,15 +959,13 @@ func _crear_orden_generacion(
 	chunk_coord: Vector2i,
 	con_padding: bool
 ) -> Array:
-	# No ordenar 1.024/1.156 elementos con un comparador que crea Vector2i
-	# y calcula distancias para cada comparación. El objetivo real es sólo
-	# que las celdas cercanas al jugador se preparen primero.
-	#
-	# Anillos cuadrados dan exactamente esa propiedad en O(n), evitando el
-	# coste O(n log n) del sort_custom. Para el streaming visual la diferencia
-	# entre distancia euclidiana y Chebyshev no es relevante.
+	# Agrupar por distancia Chebyshev mantiene primero las celdas cercanas
+	# al jugador y evita el sort_custom O(n log n). Los buckets garantizan
+	# exactamente una entrada por celda, incluso cuando el objetivo está
+	# pegado a un borde del chunk.
+	var total: int = size * size
 	var indices: Array = []
-	indices.resize(size * size)
+	indices.resize(total)
 
 	var posicion_objetivo_tile := Vector2i(
 		floori(_prioridad_generacion_posicion.x / float(tile_size)),
@@ -983,36 +981,30 @@ func _crear_orden_generacion(
 	objetivo_local.x = clampi(objetivo_local.x, 0, size - 1)
 	objetivo_local.y = clampi(objetivo_local.y, 0, size - 1)
 
-	var cursor := 0
-	var radio_maximo := maxi(
+	var radio_maximo: int = maxi(
 		maxi(objetivo_local.x, size - 1 - objetivo_local.x),
 		maxi(objetivo_local.y, size - 1 - objetivo_local.y)
 	)
-
+	var buckets: Array[Array] = []
+	buckets.resize(radio_maximo + 1)
 	for radio in range(radio_maximo + 1):
-		var x0 := maxi(objetivo_local.x - radio, 0)
-		var x1 := mini(objetivo_local.x + radio, size - 1)
-		var y0 := maxi(objetivo_local.y - radio, 0)
-		var y1 := mini(objetivo_local.y + radio, size - 1)
+		buckets[radio] = []
 
-		# Borde superior e inferior. Con radio 0 sólo se añade una vez.
-		for x in range(x0, x1 + 1):
-			var indice_arriba := y0 * size + x
-			indices[cursor] = indice_arriba
+	for y in range(size):
+		for x in range(size):
+			var dx: int = absi(x - objetivo_local.x)
+			var dy: int = absi(y - objetivo_local.y)
+			var radio: int = maxi(dx, dy)
+			(buckets[radio] as Array).append(y * size + x)
+
+	var cursor: int = 0
+	for radio in range(buckets.size()):
+		var bucket: Array = buckets[radio]
+		for indice_variant in bucket:
+			if cursor >= total:
+				break
+			indices[cursor] = int(indice_variant)
 			cursor += 1
-			if y1 != y0:
-				var indice_abajo := y1 * size + x
-				indices[cursor] = indice_abajo
-				cursor += 1
-
-		# Laterales sin esquinas: ya fueron añadidas arriba/abajo.
-		if y1 - y0 > 1:
-			for y in range(y0 + 1, y1):
-				indices[cursor] = y * size + x0
-				cursor += 1
-				if x1 != x0:
-					indices[cursor] = y * size + x1
-					cursor += 1
 
 	return indices
 
