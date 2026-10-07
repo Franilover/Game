@@ -15,6 +15,9 @@ var _terrain: TerrainLayer
 # Paths invertidos cacheados: el Dual-Grid los usa en cada actualización.
 # Evita reconstruir Arrays con map(Util.reverse_neighbor) para cada flush.
 var _reversed_display_paths: Array[Array] = []
+# Buffer reutilizable: update_tile() se ejecuta miles de veces durante un flush.
+# Evita crear un Array temporal por cada celda recompuesta.
+var _terrain_neighbors_scratch: Array = []
 
 
 func _init(
@@ -110,15 +113,16 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	# Evita una Callable + Array.map() por cada celda. El neighborhood del
 	# Dual-Grid es pequeño y fijo, por lo que un bucle directo reduce
 	# allocations durante la composición de chunks.
-	var terrain_neighbors: Array = []
-	terrain_neighbors.resize(_terrain.display_to_world_neighborhood.size())
-	for i in range(_terrain.display_to_world_neighborhood.size()):
+	var neighborhood_size: int = _terrain.display_to_world_neighborhood.size()
+	if _terrain_neighbors_scratch.size() != neighborhood_size:
+		_terrain_neighbors_scratch.resize(neighborhood_size)
+	for i in range(neighborhood_size):
 		var path: Array = _terrain.display_to_world_neighborhood[i]
-		terrain_neighbors[i] = cache.get_terrain_at(
+		_terrain_neighbors_scratch[i] = cache.get_terrain_at(
 			follow_path(cell, path)
 		)
 
-	var mapping: Dictionary = _terrain.apply_rule(terrain_neighbors, cell)
+	var mapping: Dictionary = _terrain.apply_rule(_terrain_neighbors_scratch, cell)
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
 	set_cell(cell, sid, tile)
