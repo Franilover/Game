@@ -99,57 +99,33 @@ func update_tiles_all(cache: TileCache) -> void:
 
 
 ## Update all display tiles affected by the world cells
-func _rebuild_display_paths() -> void:
-	_reversed_display_offsets.clear()
-	_terrain_world_offsets.clear()
-
-	# Las rutas de vecinos son estáticas. Resolverlas una vez evita llamar
-	# get_neighbor_cell() por cada celda durante cada recomposición.
-	for path: Array in _terrain.display_to_world_neighborhood:
-		# Resolver la ruta con la misma semántica del addon original. Las
-		# relaciones de esquina pueden depender de la geometría del TileSet;
-		# no asumir que son sumas independientes de offsets.
-		_reversed_display_offsets.append(
-			follow_path(Vector2i.ZERO, path.map(Util.reverse_neighbor))
-		)
-		
-	for path: Array in _terrain.display_to_world_neighborhood:
-		_terrain_world_offsets.append(
-			follow_path(Vector2i.ZERO, path)
-		)
-
-
 func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
-	_diag_update_calls += 1
-	_diag_world_cells += updated_world_cells.size()
-	# Un cambio de una celda mundial puede afectar varias celdas del display.
-	# El conjunto evita recalcular la misma celda cuando los caminos convergen.
-	# Dictionary es suficiente aquí y evita crear un Set temporal con cada flush.
-	_already_updated.clear()
-	for offset: Vector2i in _reversed_display_offsets:
+	# Restaurar la semántica original del addon: cada DisplayLayer calcula
+	# la celda dual afectada siguiendo la ruta inversa exacta. La optimización
+	# por offsets precomputados puede alterar la semántica de las esquinas.
+	var already_updated: Dictionary = {}
+	for path: Array in _terrain.display_to_world_neighborhood:
+		var reverse_path: Array = path.map(Util.reverse_neighbor)
 		for world_cell: Vector2i in updated_world_cells:
-			var display_cell: Vector2i = world_cell + offset
-			if not _already_updated.has(display_cell):
-				_already_updated[display_cell] = true
+			var display_cell: Vector2i = follow_path(world_cell, reverse_path)
+			if not already_updated.has(display_cell):
+				already_updated[display_cell] = true
 				_diag_display_candidates += 1
 				update_tile(cache, display_cell)
 
 
 ## Updates a specific world cell.
 func update_tile(cache: TileCache, cell: Vector2i) -> void:
-	# Evita una Callable + Array.map() por cada celda. El neighborhood del
-	# Dual-Grid es pequeño y fijo, por lo que un bucle directo reduce
-	# allocations durante la composición de chunks.
-	var neighborhood_size: int = _terrain_world_offsets.size()
-	if _terrain_neighbors_scratch.size() != neighborhood_size:
-		_terrain_neighbors_scratch.resize(neighborhood_size)
-	for i in range(neighborhood_size):
-		_terrain_neighbors_scratch[i] = cache.get_terrain_at(
-			cell + _terrain_world_offsets[i]
+	var terrain_neighbors: Array = []
+	for path: Array in _terrain.display_to_world_neighborhood:
+		terrain_neighbors.append(
+			cache.get_terrain_at(follow_path(cell, path))
 		)
 
+	_diag_update_calls += 1
+	_diag_world_cells += 1
 	_diag_rule_evaluations += 1
-	var mapping: Dictionary = _terrain.apply_rule(_terrain_neighbors_scratch, cell)
+	var mapping: Dictionary = _terrain.apply_rule(terrain_neighbors, cell)
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
 
@@ -157,18 +133,9 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 		var atlas_key := str(tile)
 		_diag_atlas_tiles[atlas_key] = int(_diag_atlas_tiles.get(atlas_key, 0)) + 1
 
-	# El resultado puede no haber cambiado aunque la celda haya sido
-	# invalidada por un vecino. Evitar set_cell() elimina trabajo interno de
-	# TileMapLayer y, sobre todo, evita notificar cambios visuales redundantes.
 	var current_sid: int = get_cell_source_id(cell)
 	if current_sid == sid:
-		# Si ambos están vacíos, no necesitamos consultar las coordenadas Atlas.
-		# Este caso aparece con frecuencia en los bordes/celdas sin regla.
-		if sid == -1:
-			_diag_redundant_tiles += 1
-			return
-		var current_tile: Vector2i = get_cell_atlas_coords(cell)
-		if current_tile == tile:
+		if sid == -1 or get_cell_atlas_coords(cell) == tile:
 			_diag_redundant_tiles += 1
 			return
 
@@ -176,7 +143,6 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	set_cell(cell, sid, tile)
 
 
-## Finds the neighbor of a given cell by following a path of CellNeighbors
 func follow_path(cell: Vector2i, path: Array) -> Vector2i:
 	for neighbor: TileSet.CellNeighbor in path:
 		cell = get_neighbor_cell(cell, neighbor)
