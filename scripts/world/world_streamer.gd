@@ -147,9 +147,10 @@ func procesar() -> void:
 			if distancia_chunk > _unload_radius:
 				_terrain.descargar_chunk(chunk_coord)
 			else:
-				if _distancia_chunk(chunk_coord, _player_chunk) <= _prop_active_radius:
+				var lod_generado := obtener_lod_chunk(chunk_coord)
+				if lod_generado == LOD_TERRAIN or lod_generado == LOD_FULL:
 					_entity_spawner.spawn_props_chunk(chunk_coord)
-				if _distancia_chunk(chunk_coord, _player_chunk) <= _creature_active_radius:
+				if lod_generado == LOD_FULL:
 					_entity_spawner.spawn_chunk(chunk_coord)
 
 		return
@@ -655,17 +656,17 @@ func _actualizar_entidades_activas(
 			continue
 
 		var chunk_coord: Vector2i = chunk_variant
-		var distancia := _distancia_chunk(chunk_coord, centro)
+		var lod := obtener_lod_chunk(chunk_coord)
 
-		# Props: acompañan todo el terreno visible, pero tienen su propia cola.
-		if distancia <= _prop_active_radius:
+		# TERRAIN y FULL pueden tener props visuales. DATA nunca crea Nodes.
+		if lod == LOD_TERRAIN or lod == LOD_FULL:
 			_entity_spawner.spawn_props_chunk(chunk_coord)
 		else:
 			_entity_spawner.cancelar_prop_spawn_chunk(chunk_coord)
 			_entity_spawner.despawn_props_chunk(chunk_coord)
 
-		# Criaturas/IA: sólo representación FULL alrededor del jugador.
-		if distancia <= _creature_active_radius:
+		# Criaturas/IA sólo existen como Nodes en FULL.
+		if lod == LOD_FULL:
 			_entity_spawner.spawn_chunk(chunk_coord)
 		else:
 			_entity_spawner.cancelar_spawn_chunk(chunk_coord)
