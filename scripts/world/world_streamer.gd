@@ -177,10 +177,10 @@ func _procesar_variaciones_si_hay_presupuesto() -> void:
 		limite = int(_render_manager.call(
 			"presupuesto_unidades_adaptativo",
 			"terrain_variation",
-			32,
-			1,
 			64,
-			0.60
+			16,
+			64,
+			0.85
 		))
 	else:
 		limite = 8
