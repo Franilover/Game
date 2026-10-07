@@ -373,6 +373,32 @@ El núcleo de streaming/renderizado queda estabilizado antes de comenzar el port
 - F4 ya expone diagnóstico del mundo, streaming, terreno, visual y rendimiento.
 - Último diagnóstico importante: el terreno ya llega a primer_commit_visual_ms ≈ 749 ms en una muestra, con flush visual incremental activo; el siguiente cuello de botella debe medirse en dispositivo móvil en vez de seguir aumentando microparámetros de PC.
 
+## Pulido de streaming sostenido — ajuste posterior al profiling
+
+El profiling tras recorrer el mundo durante varios minutos encontró un segundo cuello de botella distinto al coste de generación inicial:
+
+- `unload_radius_chunks` estaba configurado en 2 desde `WorldGenerator`, por lo que el valor 3 del streamer no llegaba a utilizarse.
+- El FLUSH adaptativo podía aprender un coste unitario artificialmente alto cuando un frame sólo permitía un micro-lote de pocas celdas. Eso podía retroalimentarse y dejar el siguiente frame con todavía menos celdas.
+- Las variaciones acumulaban una cola grande (14k+ celdas en una sesión larga). Son trabajo secundario y no deben bloquear el chunk base, pero necesitan suficiente servicio para que la cola no crezca indefinidamente.
+
+Ajustes aplicados:
+
+- `WorldGenerator.unload_radius_chunks = 3` para introducir histéresis real entre carga y descarga.
+- FLUSH de terreno con lote base mayor y mínimo de servicio de 16 celdas, objetivo de 1.25 ms.
+- `GarliaRenderManager` ya no aprende la EMA de `terrain_flush` a partir de micro-lotes menores de 8 celdas.
+- Variaciones: servicio adaptativo aumentado a 16–64 celdas con objetivo de 0.85 ms.
+
+No se añadió `WorkerThreadPool` al pipeline visual. Las operaciones que tocan TileMap/SceneTree siguen en el hilo principal; el trabajo que eventualmente pueda pasar a background debe separarse primero en datos puros y luego volver al hilo principal para aplicar el resultado.
+
+El siguiente diagnóstico debe comprobar que, tras caminar en línea recta durante varios minutos:
+
+- `visible_100_ms` baja de los ~14 s observados;
+- `cola_chunks` no crece de forma sostenida;
+- `dirty_variaciones` deja de crecer indefinidamente;
+- `chunk_cache` empieza a reutilizarse;
+- `descarga_activa` no monopoliza el streaming;
+- no aparecen nuevos tirones al cruzar muchas fronteras de chunk.
+
 ## Inicio del port Android
 
 El port se inicia sin duplicar el núcleo del juego.
