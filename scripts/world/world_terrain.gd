@@ -384,10 +384,10 @@ func iniciar_generacion_chunk(
 		+ CHUNK_PADDING * 2
 	)
 
-	var zonas_base: Array = []
-	var zonas: Array = []
-	var biomas: Array = []
-	var ecosistemas: Array = []
+	var zonas_base: Array[PackedInt32Array] = []
+	var zonas: Array[PackedInt32Array] = []
+	var biomas: Array[PackedInt32Array] = []
+	var ecosistemas: Array[PackedInt32Array] = []
 
 	for y in range(padded_size):
 		# Los datos son índices enteros pequeños y se consultan miles de veces
@@ -506,17 +506,11 @@ func _procesar_datos_chunk(
 		_generation_task["coord"]
 	)
 
-	var zonas_base: Array = (
-		_generation_task["zonas_base"]
-	)
+	var zonas_base: PackedInt32Array = _generation_task["zonas_base"]
 
-	var biomas: Array = (
-		_generation_task["biomas"]
-	)
+	var biomas: PackedInt32Array = _generation_task["biomas"]
 
-	var ecosistemas: Array = (
-		_generation_task["ecosistemas"]
-	)
+	var ecosistemas: PackedInt32Array = _generation_task["ecosistemas"]
 
 	var size: int = (
 		chunk_size_tiles
@@ -641,9 +635,7 @@ func _procesar_pintado_chunk(
 		_generation_task["zonas_base"]
 	)
 
-	var zonas: Array = (
-		_generation_task["zonas"]
-	)
+	var zonas: PackedInt32Array = _generation_task["zonas"]
 
 	var biomas: Array = (
 		_generation_task["biomas"]
@@ -1372,134 +1364,40 @@ func is_walkable(
 			return true
 
 
-func get_bioma_at(
-	tile: Vector2i
-) -> Dictionary:
-	var chunk_coord: Vector2i = (
-		_tile_to_chunk(tile)
-	)
-
-	var datos: Dictionary = (
-		_loaded_chunks.get(
-			chunk_coord,
-			{}
-		)
-	)
-
-	if not datos.is_empty():
-		var biomas: Array = (
-			datos.get(
-				"biomas",
-				[]
-			)
-		)
-
+func get_bioma_at(tile: Vector2i) -> Dictionary:
+	var datos: Dictionary = _loaded_chunks.get(_tile_to_chunk(tile), {})
+	var valores: Variant = datos.get("biomas", null)
+	if valores is PackedInt32Array:
 		var local := _tile_to_local(tile)
-
-		var x: int = (
-			local.x + CHUNK_PADDING
-		)
-
-		var y: int = (
-			local.y + CHUNK_PADDING
-		)
-
-		if (
-			y >= 0
-			and y < biomas.size()
-			and x >= 0
-			and x < biomas[y].size()
-		):
-			var indice: int = int(
-				biomas[y][x]
-			)
-
-			if (
-				indice >= 0
-				and indice < _biomas.size()
-			):
-				return _biomas[indice]
-
-	var indice_directo: int = (
-		_bioma_index_at_tile(tile)
-	)
-
-	if (
-		indice_directo >= 0
-		and indice_directo < _biomas.size()
-	):
+		var size: int = chunk_size_tiles + CHUNK_PADDING * 2
+		var indice: int = (local.y + CHUNK_PADDING) * size + local.x + CHUNK_PADDING
+		var biomas: PackedInt32Array = valores
+		if indice >= 0 and indice < biomas.size():
+			var bioma_index: int = biomas[indice]
+			if bioma_index >= 0 and bioma_index < _biomas.size():
+				return _biomas[bioma_index]
+	var indice_directo: int = _bioma_index_at_tile(tile)
+	if indice_directo >= 0 and indice_directo < _biomas.size():
 		return _biomas[indice_directo]
-
 	return {}
 
-
-func get_ecosistema_at(
-	tile: Vector2i
-) -> Dictionary:
-	var chunk_coord: Vector2i = (
-		_tile_to_chunk(tile)
-	)
-
-	var datos: Dictionary = (
-		_loaded_chunks.get(
-			chunk_coord,
-			{}
-		)
-	)
-
-	if not datos.is_empty():
-		var ecosistemas: Array = (
-			datos.get(
-				"ecosistemas",
-				[]
-			)
-		)
-
+func get_ecosistema_at(tile: Vector2i) -> Dictionary:
+	var datos: Dictionary = _loaded_chunks.get(_tile_to_chunk(tile), {})
+	var valores: Variant = datos.get("ecosistemas", null)
+	if valores is PackedInt32Array:
 		var local := _tile_to_local(tile)
-
-		var x: int = (
-			local.x + CHUNK_PADDING
-		)
-
-		var y: int = (
-			local.y + CHUNK_PADDING
-		)
-
-		if (
-			y >= 0
-			and y < ecosistemas.size()
-			and x >= 0
-			and x < ecosistemas[y].size()
-		):
-			var indice: int = int(
-				ecosistemas[y][x]
-			)
-
-			if (
-				indice >= 0
-				and indice < _ecosistemas.size()
-			):
-				return _ecosistemas[indice]
-
-	var bioma_index: int = (
-		_bioma_index_at_tile(tile)
-	)
-
-	var indice_directo: int = (
-		_ecosistema_index_at_tile(
-			tile,
-			bioma_index
-		)
-	)
-
-	if (
-		indice_directo >= 0
-		and indice_directo < _ecosistemas.size()
-	):
+		var size: int = chunk_size_tiles + CHUNK_PADDING * 2
+		var indice: int = (local.y + CHUNK_PADDING) * size + local.x + CHUNK_PADDING
+		var ecosistemas: PackedInt32Array = valores
+		if indice >= 0 and indice < ecosistemas.size():
+			var ecosistema_index: int = ecosistemas[indice]
+			if ecosistema_index >= 0 and ecosistema_index < _ecosistemas.size():
+				return _ecosistemas[ecosistema_index]
+	var bioma_index: int = _bioma_index_at_tile(tile)
+	var indice_directo: int = _ecosistema_index_at_tile(tile, bioma_index)
+	if indice_directo >= 0 and indice_directo < _ecosistemas.size():
 		return _ecosistemas[indice_directo]
-
 	return {}
-
 
 func get_habitats_at(
 	tile: Vector2i
