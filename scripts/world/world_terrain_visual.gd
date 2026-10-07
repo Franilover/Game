@@ -660,9 +660,9 @@ func _crear_base_tile(
 	for sequence_pos in TILE_SEQUENCE:
 		atlas.create_tile(sequence_pos)
 
-	# Todas las zonas comparten un TileSet, por lo que el source_id también
-	# debe ser global dentro de esa capa. Cada zona tiene un atlas base propio.
-	var source_id := zone
+	# El atlas pertenece al BIOMA, no al ecosistema/zona.
+	# Todas las celdas del mismo bioma reutilizan el mismo source visual.
+	var source_id := bioma_index
 
 	layer.tile_set.add_source(
 		atlas,
