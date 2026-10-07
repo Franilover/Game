@@ -5,9 +5,14 @@ class_name WorldSpawnRules
 ## No instancia nodos y no administra su ciclo de vida.
 
 var _terrain: WorldTerrain
+# Los candidatos de un ecosistema son datos canónicos estables durante una
+# partida. Cachearlos evita reconstruir arrays/diccionarios en cada intento
+# de selección DATA.
+var _candidatos_por_ecosistema: Dictionary = {}
 
 func configurar(terrain: WorldTerrain) -> void:
 	_terrain = terrain
+	_candidatos_por_ecosistema.clear()
 
 
 func elegir_criatura(
@@ -59,6 +64,10 @@ func obtener_peso_criatura(candidato: Dictionary) -> float:
 
 
 func obtener_candidatos(ecosistema: Dictionary) -> Array:
+	var ecosistema_id := str(ecosistema.get("id", "")).strip_edges()
+	if not ecosistema_id.is_empty() and _candidatos_por_ecosistema.has(ecosistema_id):
+		return _candidatos_por_ecosistema[ecosistema_id]
+
 	var resultado: Array = []
 	var habitats_variant: Variant = ecosistema.get("habitats", [])
 	if not habitats_variant is Array:
@@ -92,8 +101,9 @@ func obtener_candidatos(ecosistema: Dictionary) -> Array:
 				"habitat_clave": habitat_clave
 			})
 
+	if not ecosistema_id.is_empty():
+		_candidatos_por_ecosistema[ecosistema_id] = resultado
 	return resultado
-
 
 func ubicacion_valida(
 	bioma: Dictionary,
