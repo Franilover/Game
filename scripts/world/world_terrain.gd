@@ -460,6 +460,71 @@ func procesar_generacion(
 	)
 
 
+func _copiar_dato_borde_vecino(
+	tile: Vector2i,
+	local_x: int,
+	local_y: int,
+	biomas: Array,
+	ecosistemas: Array,
+	zonas_base: Array
+) -> bool:
+	# El padding de un chunk coincide con tiles interiores de sus vecinos.
+	# Si ese vecino ya fue generado, reutilizamos exactamente sus datos en
+	# vez de volver a ejecutar todos los FastNoiseLite para esas coordenadas.
+	if not (
+		local_x == 0
+		or local_x == chunk_size_tiles + 1
+		or local_y == 0
+		or local_y == chunk_size_tiles + 1
+	):
+		return false
+
+	var vecino_coord: Vector2i = _tile_to_chunk(tile)
+	var datos_variant: Variant = _loaded_chunks.get(vecino_coord, null)
+	if datos_variant == null:
+		datos_variant = _chunk_cache.get(vecino_coord, null)
+	if not datos_variant is Dictionary:
+		return false
+
+	var datos: Dictionary = datos_variant as Dictionary
+	var vecino_local: Vector2i = _tile_to_local(tile)
+	var vecino_x: int = vecino_local.x + CHUNK_PADDING
+	var vecino_y: int = vecino_local.y + CHUNK_PADDING
+
+	var vecino_biomas_variant: Variant = datos.get("biomas", [])
+	var vecino_ecosistemas_variant: Variant = datos.get("ecosistemas", [])
+	var vecino_zonas_variant: Variant = datos.get("zonas_base", [])
+	if not vecino_biomas_variant is Array:
+		return false
+	if not vecino_ecosistemas_variant is Array:
+		return false
+	if not vecino_zonas_variant is Array:
+		return false
+
+	var vecino_biomas: Array = vecino_biomas_variant as Array
+	var vecino_ecosistemas: Array = vecino_ecosistemas_variant as Array
+	var vecino_zonas: Array = vecino_zonas_variant as Array
+	if (
+		vecino_y < 0
+		or vecino_y >= vecino_biomas.size()
+		or vecino_y >= vecino_ecosistemas.size()
+		or vecino_y >= vecino_zonas.size()
+	):
+		return false
+	if (
+		vecino_x < 0
+		or vecino_x >= vecino_biomas[vecino_y].size()
+		or vecino_x >= vecino_ecosistemas[vecino_y].size()
+		or vecino_x >= vecino_zonas[vecino_y].size()
+	):
+		return false
+
+	biomas[local_y][local_x] = vecino_biomas[vecino_y][vecino_x]
+	ecosistemas[local_y][local_x] = vecino_ecosistemas[vecino_y][vecino_x]
+	zonas_base[local_y][local_x] = vecino_zonas[vecino_y][vecino_x]
+	return true
+
+
 func _procesar_datos_chunk(
 	cells: int
 ) -> bool:
@@ -531,6 +596,19 @@ func _procesar_datos_chunk(
 			global_x,
 			global_y
 		)
+
+		# El borde puede ser una coordenada que ya pertenece al chunk vecino.
+		# Reutilizarlo elimina trabajo duplicado sin cambiar ningún resultado.
+		if _copiar_dato_borde_vecino(
+			tile,
+			local_x,
+			local_y,
+			biomas,
+			ecosistemas,
+			zonas_base
+		):
+			cursor += 1
+			continue
 
 		# Este es el camino caliente del generador. No medir cada llamada a
 		# FastNoiseLite: tres get_ticks_usec() por celda añadían miles de
