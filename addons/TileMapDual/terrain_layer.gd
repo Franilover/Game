@@ -64,29 +64,40 @@ func _init(fields: Dictionary) -> void:
 
 ## Returns the tile that should be used based on the surrounding terrain neighbors
 func apply_rule(terrain_neighbors: Array, cell: Vector2i) -> Dictionary:
-	var is_empty: bool = terrain_neighbors.all(func(terrain): return terrain == -1)
-	if is_empty:
-		return TILE_EMPTY
-	var normalized_neighbors = terrain_neighbors.map(normalize_terrain)
+	var node: Dictionary = _rules
+	var hay_terreno: bool = false
 
-	var node := _rules
-	for terrain in normalized_neighbors:
+	# Camino caliente sin map()/all(): el neighborhood es pequeño y fijo.
+	# Normalizamos directamente mientras recorremos el trie.
+	for terrain_variant in terrain_neighbors:
+		var terrain: int = int(terrain_variant)
+		if terrain != -1:
+			hay_terreno = true
+		else:
+			terrain = 0
+
 		if terrain not in node:
 			terrain = 0
 		if terrain not in node:
 			return TILE_EMPTY
 		node = node[terrain]
-	if 'mappings' not in node:
+
+	if not hay_terreno or not node.has("mappings"):
 		return TILE_EMPTY
 
-	#random tile selection
+	var mappings: Array = node["mappings"]
+	if mappings.size() == 1:
+		# La mayoría de reglas no necesita selección aleatoria.
+		return mappings[0]
+
+	# Sólo crear el vector de pesos cuando realmente hay varias variantes.
 	var weights: Array = []
-	var index: int = 0
-	for mapping in node.mappings:
-		weights.append(mapping.prob)
+	weights.resize(mappings.size())
+	for i in range(mappings.size()):
+		weights[i] = mappings[i].prob
+
 	rand.seed = hash(str(cell) + str(global_seed))
-	index = rand.rand_weighted(weights)
-	return node.mappings[index]
+	return mappings[rand.rand_weighted(weights)]
 
 
 ## Register a new rule for a specific tile in an atlas.
