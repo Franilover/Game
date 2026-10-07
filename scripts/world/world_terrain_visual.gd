@@ -1150,13 +1150,9 @@ func flush() -> void:
 		if layer == null:
 			continue
 
-		var convert_start_usec := Time.get_ticks_usec()
-		var dirty: Array[Vector2i] = []
-		for cell_variant in cells_variant:
-			if cell_variant is Vector2i:
-				dirty.append(cell_variant as Vector2i)
-		_profiler_flush_convert_ms += float(Time.get_ticks_usec() - convert_start_usec) / 1000.0
-
+		# _marcar_dirty() sólo inserta Vector2i. No hace falta reconstruir
+		# otra Array antes de cada actualización del Dual Grid.
+		var dirty: Array = cells_variant
 		if not dirty.is_empty():
 			var update_start_usec := Time.get_ticks_usec()
 			layer._update_cells(dirty, false)
