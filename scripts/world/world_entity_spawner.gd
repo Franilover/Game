@@ -176,11 +176,23 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			for candidato_variant in candidatos:
 				if not candidato_variant is Dictionary:
 					continue
-				var candidato := (candidato_variant as Dictionary).duplicate(true)
-				var criatura_id := str(candidato.get("id", candidato.get("criatura_id", ""))).strip_edges()
+				var candidato := candidato_variant as Dictionary
+				var criatura_variant: Variant = candidato.get("criatura", {})
+				if not criatura_variant is Dictionary:
+					continue
+				var criatura := (criatura_variant as Dictionary).duplicate(true)
+				var criatura_id := str(criatura.get("id", criatura.get("criatura_id", ""))).strip_edges()
+				var habitat_clave := str(candidato.get("habitat_clave", "general")).to_lower()
 				if criatura_id.is_empty() or especies.has(criatura_id):
 					continue
-				validos.append(candidato)
+				if not _spawn_rules.ubicacion_valida(
+					contexto.get("bioma", {}),
+					habitat_clave,
+					int(contexto.get("zona", -1))
+				):
+					continue
+			criatura["habitat_clave"] = habitat_clave
+				validos.append(criatura)
 			if validos.is_empty():
 				continue
 			var elegido := validos[rng.randi_range(0, validos.size() - 1)]
