@@ -412,12 +412,10 @@ func iniciar_generacion_chunk(
 		fila_zonas.resize(padded_size)
 		fila_biomas.resize(padded_size)
 		fila_ecosistemas.resize(padded_size)
-
-		for x in range(padded_size):
-			fila_zonas_base[x] = Zone.GRASS
-			fila_zonas[x] = Zone.GRASS
-			fila_biomas[x] = -1
-			fila_ecosistemas[x] = -1
+		fila_zonas_base.fill(Zone.GRASS)
+		fila_zonas.fill(Zone.GRASS)
+		fila_biomas.fill(-1)
+		fila_ecosistemas.fill(-1)
 
 		zonas_base.append(fila_zonas_base)
 		zonas.append(fila_zonas)
