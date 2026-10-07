@@ -1605,15 +1605,20 @@ func obtener_diagnostico() -> Dictionary:
 	estado["visual"] = visual != null
 	estado["ultimo_chunk"] = _ultimo_chunk_generado
 	estado["descarga_activa"] = tiene_descarga_activa()
+	estado["chunk_cache"] = _chunk_cache.size()
+	estado["chunk_cache_max"] = chunk_cache_max
 	# Diagnóstico explícito del pipeline para que F4 permita localizar el
 	# cuello sin depender de los prints de cada chunk.
 	estado["profiler_generacion"] = {
 		"datos_ms": _profiler_data_ms,
+		"datos_max_step_ms": _profiler_data_max_ms,
 		"bioma_ms": _profiler_biome_ms,
 		"ecosistema_ms": _profiler_ecosystem_ms,
 		"zona_ms": _profiler_zone_ms,
 		"pintado_ms": _profiler_paint_ms,
+		"pintado_max_step_ms": _profiler_paint_max_ms,
 		"flush_ms": _profiler_flush_ms,
+		"flush_max_step_ms": _profiler_flush_max_ms,
 		"datos_llamadas": _profiler_data_calls,
 		"pintado_llamadas": _profiler_paint_calls,
 		"flush_llamadas": _profiler_flushes,
