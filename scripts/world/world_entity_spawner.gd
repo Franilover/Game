@@ -17,6 +17,9 @@ var _prop_spawn_queued: Dictionary = {}
 var _prop_spawn_tasks: Dictionary = {}
 var _render_manager: Node = null
 
+var _props_por_bioma: Dictionary = {}
+var _asset_path_por_prop: Dictionary = {}
+
 # Diagnóstico universal del pipeline de entidades. No decide el spawn;
 # sólo deja visible en F4 dónde se está descartando el trabajo.
 var _diag_chunks_iniciados: int = 0
@@ -41,6 +44,22 @@ func configurar(
 	_entity_factory = entity_factory
 	_spawn_rules = spawn_rules
 	_world_data = world_data
+	_props_por_bioma.clear()
+	_asset_path_por_prop.clear()
+	if _world_data != null:
+		var props_catalogo := _world_data.obtener_props_game()
+		for prop_variant in props_catalogo:
+			if not prop_variant is Dictionary:
+				continue
+			var prop := prop_variant as Dictionary
+			var bioma_id := str(prop.get("bioma_id", "")).strip_edges()
+			var prop_id := str(prop.get("id", prop.get("clave", prop.get("nombre", "")))).strip_edges()
+			if bioma_id.is_empty() or prop_id.is_empty():
+				continue
+			if not _props_por_bioma.has(bioma_id):
+				_props_por_bioma[bioma_id] = []
+			(_props_por_bioma[bioma_id] as Array).append(prop)
+			_asset_path_por_prop[prop_id] = ""
 
 	if _entity_manager == null:
 		push_error("WorldEntitySpawner: Entity manager inválido.")
@@ -233,7 +252,6 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager.tiene_datos_chunk(chunk_coord, "props"):
 		return
 
-	var props := _world_data.obtener_props_game()
 	var datos: Array = []
 	var rng := RandomNumberGenerator.new()
 	rng.seed = abs(_terrain.map_seed + chunk_coord.x * 92837111 + chunk_coord.y * 689287499) + 1
@@ -270,33 +288,36 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 				continue
 
 			var candidatos: Array[Dictionary] = []
-			var candidatos_bioma: Array[Dictionary] = []
-			for prop_variant in props:
+			var candidatos_bioma: Array = _props_por_bioma.get(bioma_id, [])
+			for prop_variant in candidatos_bioma:
 				if not prop_variant is Dictionary:
 					continue
 				var prop := prop_variant as Dictionary
-				if str(prop.get("bioma_id", "")) != bioma_id:
-					continue
-				var coincide := str(prop.get("ecosistema_id", "")) == ecosistema_id and str(prop.get("habitat_id", "")) in habitat_ids
 				var nombre := str(prop.get("nombre", "")).strip_edges()
 				if nombre.is_empty():
 					continue
-				# La selección sólo necesita leer los datos canónicos. Evitar
-				# duplicar cada candidato; la copia completa se hace únicamente
-				# para el prop finalmente elegido.
+				var coincide := str(prop.get("ecosistema_id", "")) == ecosistema_id and str(prop.get("habitat_id", "")) in habitat_ids
 				if coincide:
 					candidatos.append(prop)
-				candidatos_bioma.append(prop)
 
 			if candidatos.is_empty():
-				candidatos = candidatos_bioma
+				for prop_variant in candidatos_bioma:
+					if prop_variant is Dictionary and not str((prop_variant as Dictionary).get("nombre", "")).strip_edges().is_empty():
+						candidatos.append(prop_variant as Dictionary)
 			if candidatos.is_empty():
 				continue
 			var elegido_base := _spawn_rules.elegir_prop(candidatos, rng)
 			if elegido_base.is_empty():
 				continue
 			var elegido := elegido_base.duplicate(true)
-			elegido["asset_path"] = _spawn_rules.construir_asset_path_prop(elegido)
+			var prop_id := str(elegido.get("id", elegido.get("clave", elegido.get("nombre", "")))).strip_edges()
+			var asset_path := str(_asset_path_por_prop.get(prop_id, ""))
+			if asset_path.is_empty():
+				asset_path = _spawn_rules.construir_asset_path_prop(elegido)
+				_asset_path_por_prop[prop_id] = asset_path
+			if asset_path.is_empty():
+				continue
+			elegido["asset_path"] = asset_path
 			if str(elegido.get("asset_path", "")).is_empty():
 				continue
 			elegido["runtime_instance_key"] = "prop:" + str(slot) + ":" + str(elegido.get("id", ""))
@@ -742,8 +763,7 @@ func _procesar_tarea_prop_spawn(chunk_coord: Vector2i) -> void:
 
 func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: RandomNumberGenerator, slot: int) -> bool:
 	_diag_prop_intentos += 1
-	var props := _world_data.obtener_props_game()
-	if props.is_empty():
+	if _props_por_bioma.is_empty():
 		_diag_prop_sin_datos += 1
 		return false
 	var tile := Vector2i(chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1), chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1))
@@ -769,43 +789,42 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	if habitat_ids.is_empty():
 		return false
 	var candidatos: Array[Dictionary] = []
-	var candidatos_bioma: Array[Dictionary] = []
-	for prop_variant in props:
+	var candidatos_bioma: Array = _props_por_bioma.get(bioma_id, [])
+	for prop_variant in candidatos_bioma:
 		if not prop_variant is Dictionary:
 			continue
 		var prop := prop_variant as Dictionary
-		if str(prop.get("bioma_id", "")) != bioma_id:
+		var nombre := str(prop.get("nombre", "")).strip_edges()
+		if nombre.is_empty():
 			continue
-
-		# El vínculo por bioma es la regla mínima canónica. Si existe una
-		# configuración exacta para ecosistema/hábitat la preferimos; si no,
-		# usamos otra configuración del mismo bioma. Así un prop no desaparece
-		# sólo porque el chunk use otro ecosistema válido del mismo bioma.
 		var coincide_contexto := (
 			str(prop.get("ecosistema_id", "")) == ecosistema_id
 			and str(prop.get("habitat_id", "")) in habitat_ids
 		)
-		var nombre := str(prop.get("nombre", "")).strip_edges()
-		if nombre.is_empty():
-			continue
-		var datos_prop := prop.duplicate(true)
-		datos_prop["asset_path"] = _spawn_rules.construir_asset_path_prop(datos_prop)
-		if str(datos_prop.get("asset_path", "")).is_empty():
-			continue
 		if coincide_contexto:
-			candidatos.append(datos_prop)
-		candidatos_bioma.append(datos_prop)
+			candidatos.append(prop)
 
 	if candidatos.is_empty():
-		candidatos = candidatos_bioma
+		for prop_variant in candidatos_bioma:
+			if prop_variant is Dictionary and not str((prop_variant as Dictionary).get("nombre", "")).strip_edges().is_empty():
+				candidatos.append(prop_variant as Dictionary)
 	if candidatos.is_empty():
 		_diag_prop_sin_candidato += 1
 		return false
-	var elegido := _spawn_rules.elegir_prop(candidatos, rng)
-	if elegido.is_empty() or not _entity_factory.has_method("crear_prop"):
+	var elegido_base := _spawn_rules.elegir_prop(candidatos, rng)
+	if elegido_base.is_empty() or not _entity_factory.has_method("crear_prop"):
 		_diag_prop_factory += 1
 		return false
-	var prop_id := str(elegido.get("id", "")).strip_edges()
+	var elegido := elegido_base.duplicate(true)
+	var prop_id := str(elegido.get("id", elegido.get("clave", elegido.get("nombre", "")))).strip_edges()
+	var asset_path := str(_asset_path_por_prop.get(prop_id, ""))
+	if asset_path.is_empty():
+		asset_path = _spawn_rules.construir_asset_path_prop(elegido)
+		_asset_path_por_prop[prop_id] = asset_path
+	if asset_path.is_empty():
+		_diag_prop_factory += 1
+		return false
+	elegido["asset_path"] = asset_path
 	var prop_instance_key := "prop:" + str(slot) + ":" + prop_id
 	var estado := _entity_manager.obtener_estado_prop(chunk_coord, prop_instance_key)
 	var prop_variant: Variant = _entity_factory.call("crear_prop", elegido)
