@@ -30,6 +30,10 @@ var _display: Display
 ## Keeps track of use_parent_material to see when it turns on or off.
 var _cached_use_parent_material = null
 var _timer: float = 0.0
+## Durante el pintado de chunks, WorldTerrain registra todas las celdas
+## y hace un único update del renderer en FLUSH. Evita reconstruir DisplayLayer
+## por cada set_cell() del lote.
+var _deferred_updates_blocked: bool = false
 
 
 # === External functions that don't exist once exported ===
@@ -184,7 +188,13 @@ func _changed() -> void:
 
 
 ## Called when the user draws on the map or presses undo/redo.
+func set_deferred_updates_blocked(blocked: bool) -> void:
+	_deferred_updates_blocked = blocked
+
+
 func _update_cells(coords: Array[Vector2i], _forced_cleanup: bool) -> void:
+	if _deferred_updates_blocked:
+		return
 	if is_instance_valid(_display):
 		_display.update(coords)
 
