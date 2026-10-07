@@ -82,6 +82,7 @@ var terrain: TerrainDual
 var cached_cells := TileCache.new()
 ## See [TileSetWatcher]
 var _tileset_watcher: TileSetWatcher
+var _last_synced_world_properties: Dictionary = {}
 
 
 # TODO: phase out GridShape and simply transpose everything when the offset axis is vertical
@@ -128,7 +129,7 @@ func _init(world: TileMapDual, tileset_watcher: TileSetWatcher) -> void:
 func update(updated: Array) -> void:
 	if _tileset_watcher.tile_set == null:
 		return
-	_update_properties()
+	_sync_properties_if_changed()
 	if not updated.is_empty():
 		cached_cells.update(world, updated)
 		world_tiles_changed.emit(updated)
@@ -183,6 +184,34 @@ func obtener_diagnostico() -> Dictionary:
 			for key in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells"]:
 				out[key] = int(out[key]) + int(diag.get(key, 0))
 	return out
+
+
+func _sync_properties_if_changed() -> void:
+	var state := {
+		"z_index": world.z_index,
+		"z_as_relative": world.z_as_relative,
+		"light_mask": world.light_mask,
+		"visibility_layer": world.visibility_layer,
+		"y_sort_enabled": world.y_sort_enabled,
+		"modulate": world.modulate,
+		"self_modulate": world.self_modulate,
+		"show_behind_parent": world.show_behind_parent,
+		"top_level": world.top_level,
+		"y_sort_origin": world.y_sort_origin,
+		"x_draw_order_reversed": world.x_draw_order_reversed,
+		"rendering_quadrant_size": world.rendering_quadrant_size,
+		"collision_enabled": world.collision_enabled,
+		"use_kinematic_bodies": world.use_kinematic_bodies,
+		"collision_visibility_mode": world.collision_visibility_mode,
+		"navigation_enabled": world.navigation_enabled,
+		"navigation_visibility_mode": world.navigation_visibility_mode,
+		"use_parent_material": world.use_parent_material,
+		"display_material": world.display_material,
+	}
+	if state == _last_synced_world_properties:
+		return
+	_update_properties()
+	_last_synced_world_properties = state
 
 
 func _update_properties() -> void:
