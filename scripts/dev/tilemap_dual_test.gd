@@ -52,7 +52,7 @@ func _crear_tileset_grass() -> TileSet:
     var dirt_texture: Texture2D = load("res://assets/tilesets/Tierra.png") as Texture2D
 
     if grass_texture == null or dirt_texture == null:
-        push_error("TileMapDualTest: no se pudieron cargar Grass.png y Tierra.png")
+        push_error("TileMapDualTest: no se pudieron cargar Pradera.png y Tierra.png")
         return TileSet.new()
 
     var tile_set: TileSet = TileSet.new()
@@ -81,10 +81,12 @@ func _crear_tileset_grass() -> TileSet:
         TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
     ]
 
-    for config_variant in [
+    var configs: Array[Dictionary] = [
         {"texture": grass_texture, "terrain": 1, "source_id": 1},
         {"texture": dirt_texture, "terrain": 2, "source_id": 2},
-    ]:
+    ]
+
+    for config_variant in configs:
         var config: Dictionary = config_variant
         var atlas: TileSetAtlasSource = TileSetAtlasSource.new()
         atlas.texture = config["texture"] as Texture2D
