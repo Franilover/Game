@@ -167,6 +167,24 @@ func _delete_layers() -> void:
 
 
 ## Activates when the properties of the parent TileMapDual have been edited.
+func obtener_diagnostico() -> Dictionary:
+	var out: Dictionary = {
+		"layers": get_child_count(),
+		"update_calls": 0,
+		"world_cells": 0,
+		"display_candidates": 0,
+		"rule_evaluations": 0,
+		"redundant_tiles": 0,
+		"set_cells": 0,
+	}
+	for child in get_children():
+		if child is DisplayLayer:
+			var diag: Dictionary = child.obtener_diagnostico()
+			for key in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells"]:
+				out[key] = int(out[key]) + int(diag.get(key, 0))
+	return out
+
+
 func _update_properties() -> void:
 	# TileMapDual puede cambiar su Z después de crear Display.
 	# Mantener el renderer real sincronizado evita que el addon vuelva
