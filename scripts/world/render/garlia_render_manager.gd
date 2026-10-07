@@ -9,9 +9,9 @@ class_name GarliaRenderManager
 ## Fracción del presupuesto visual reservada para que el terreno base
 ## siempre reciba servicio aunque otro sistema haya consumido el resto.
 ## No aumenta el presupuesto total por defecto: define una garantía de servicio.
-@export_range(0.05, 0.50, 0.05) var terrain_service_fraction: float = 0.25
-@export var terrain_service_min_ms: float = 0.75
-@export var terrain_service_max_ms: float = 1.50
+@export_range(0.05, 0.75, 0.05) var terrain_service_fraction: float = 0.50
+@export var terrain_service_min_ms: float = 1.50
+@export var terrain_service_max_ms: float = 2.50
 
 var _frame_start_usec: int = 0
 var _frame_used_ms: float = 0.0
