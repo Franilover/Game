@@ -29,6 +29,7 @@ var _diag_display_candidates: int = 0
 var _diag_rule_evaluations: int = 0
 var _diag_redundant_tiles: int = 0
 var _diag_set_cells: int = 0
+var _diag_atlas_tiles: Dictionary = {}
 
 
 func _init(
@@ -152,6 +153,10 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
 
+	if sid != -1:
+		var atlas_key := str(tile)
+		_diag_atlas_tiles[atlas_key] = int(_diag_atlas_tiles.get(atlas_key, 0)) + 1
+
 	# El resultado puede no haber cambiado aunque la celda haya sido
 	# invalidada por un vecino. Evitar set_cell() elimina trabajo interno de
 	# TileMapLayer y, sobre todo, evita notificar cambios visuales redundantes.
@@ -198,4 +203,5 @@ func obtener_diagnostico() -> Dictionary:
 		"write_ratio": (
 			float(writes) / float(maxi(_diag_rule_evaluations, 1))
 		),
+		"atlas_tiles": _diag_atlas_tiles,
 	}
