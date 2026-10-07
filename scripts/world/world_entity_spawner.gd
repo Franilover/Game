@@ -825,17 +825,21 @@ func summon_criatura(
 
 
 func despawn_chunk(chunk_coord: Vector2i) -> void:
+	cancelar_spawn_chunk(chunk_coord)
+	cancelar_prop_spawn_chunk(chunk_coord)
 	if _entity_manager != null:
 		_entity_manager.despawn_criaturas_chunk(chunk_coord)
 		_entity_manager.despawn_props_chunk(chunk_coord)
 
 
 func despawn_criaturas_chunk(chunk_coord: Vector2i) -> void:
+	cancelar_spawn_chunk(chunk_coord)
 	if _entity_manager != null:
 		_entity_manager.despawn_criaturas_chunk(chunk_coord)
 
 
 func despawn_props_chunk(chunk_coord: Vector2i) -> void:
+	cancelar_prop_spawn_chunk(chunk_coord)
 	if _entity_manager != null:
 		_entity_manager.despawn_props_chunk(chunk_coord)
 
