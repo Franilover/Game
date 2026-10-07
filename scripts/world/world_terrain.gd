@@ -659,10 +659,10 @@ func _cells_presupuesto_flush_incremental() -> int:
 	return int(_render_manager.call(
 		"presupuesto_unidades_terreno",
 		"terrain_flush",
+		32,
 		16,
-		1,
 		visual_flush_cells,
-		0.85
+		1.25
 	))
 
 
@@ -683,10 +683,10 @@ func _procesar_flush_chunk(
 		flush_cells = int(_render_manager.call(
 			"presupuesto_unidades_terreno",
 			"terrain_flush",
-			flush_cells,
-			1,
+			maxi(flush_cells, 32),
+			16,
 			visual_flush_cells,
-			0.85
+			1.25
 		))
 		flush_cells = mini(flush_cells, visual_flush_cells)
 	var terminado: bool = visual.procesar_flush(flush_cells)
