@@ -48,6 +48,7 @@ var _queue: Array = []
 var _data_chunk_cache: Dictionary = {}
 var _data_entity_queue: Array[Vector2i] = []
 var _data_entity_queued: Dictionary = {}
+var _data_entity_generated: Dictionary = {}
 
 # Estado logico de representacion por chunk.
 const LOD_DATA: String = "DATA"
@@ -241,6 +242,7 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 			_entity_spawner.preparar_datos_criaturas_chunk(data_coord)
 		if limite >= 2 and _entity_spawner.has_method("preparar_datos_props_chunk"):
 			_entity_spawner.preparar_datos_props_chunk(data_coord)
+		_data_entity_generated[data_coord] = true
 		return
 
 	# Las criaturas son el LOD caro: primero se conserva el presupuesto para
@@ -637,7 +639,7 @@ func _actualizar_data_entidades() -> void:
 		var coord := coord_variant as Vector2i
 		if str(_chunk_lod.get(coord, LOD_DATA)) != LOD_DATA:
 			continue
-		if _data_entity_queued.has(coord):
+		if _data_entity_queued.has(coord) or _data_entity_generated.has(coord):
 			continue
 		_data_entity_queue.append(coord)
 		_data_entity_queued[coord] = true
