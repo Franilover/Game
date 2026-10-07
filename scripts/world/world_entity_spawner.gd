@@ -11,8 +11,10 @@ var _entity_factory: WorldEntityFactory = null
 var _spawn_rules: WorldSpawnRules = null
 var _world_data: WorldDataService = null
 var _spawn_queue: Array[Vector2i] = []
+var _prop_spawn_queue: Array[Vector2i] = []
+var _prop_spawn_queued: Dictionary = {}
 var _spawn_queued: Dictionary = {}
-var _spawn_tasks: Dictionary = {}
+var _prop_spawn_tasks: Dictionary = {}
 var _render_manager: Node = null
 
 # Diagnóstico universal del pipeline de entidades. No decide el spawn;
@@ -57,7 +59,8 @@ func configurar_render_manager(render_manager: Node) -> void:
 func obtener_diagnostico() -> Dictionary:
 	return {
 		"cola_chunks": _spawn_queue.size(),
-		"tareas_props": _spawn_tasks.size(),
+		"tareas_props": _prop_spawn_tasks.size(),
+		"cola_props_chunks": _prop_spawn_queue.size(),
 		"chunks_iniciados": _diag_chunks_iniciados,
 		"prop_intentos": _diag_prop_intentos,
 		"prop_creados": _diag_prop_creados,
@@ -83,7 +86,7 @@ func _ready() -> void:
 func spawn_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager == null:
 		return
-	if _entity_manager.tiene_chunk(chunk_coord):
+	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
 		return
 	if _spawn_queued.has(chunk_coord):
 		return
@@ -91,28 +94,56 @@ func spawn_chunk(chunk_coord: Vector2i) -> void:
 	_spawn_queued[chunk_coord] = true
 
 
+func spawn_props_chunk(chunk_coord: Vector2i) -> void:
+	if _entity_manager == null:
+		return
+	if _entity_manager.tiene_props_chunk(chunk_coord):
+		return
+	if _prop_spawn_queued.has(chunk_coord) or _prop_spawn_tasks.has(chunk_coord):
+		return
+	_prop_spawn_queue.append(chunk_coord)
+	_prop_spawn_queued[chunk_coord] = true
+
+
 func procesar_spawn_queue(max_chunks: int = 1) -> void:
 	var limite := maxi(max_chunks, 1)
 	var procesados := 0
-	for chunk_variant in _spawn_tasks.keys():
-		if procesados >= limite:
-			break
-		if chunk_variant is Vector2i:
-			_procesar_tarea_spawn(chunk_variant as Vector2i)
-			procesados += 1
 	while procesados < limite and not _spawn_queue.is_empty():
 		var chunk_coord: Vector2i = _spawn_queue.pop_front()
 		_spawn_queued.erase(chunk_coord)
-		if _entity_manager != null and _entity_manager.tiene_chunk(chunk_coord):
+		if _entity_manager != null and _entity_manager.tiene_criaturas_chunk(chunk_coord):
 			continue
 		_iniciar_tarea_spawn(chunk_coord)
+		procesados += 1
+
+
+func procesar_prop_spawn_queue(max_chunks: int = 1) -> void:
+	var limite := maxi(max_chunks, 1)
+	var procesados := 0
+	for chunk_variant in _prop_spawn_tasks.keys():
+		if procesados >= limite:
+			break
+		if chunk_variant is Vector2i:
+			_procesar_tarea_prop_spawn(chunk_variant as Vector2i)
+			procesados += 1
+	while procesados < limite and not _prop_spawn_queue.is_empty():
+		var chunk_coord: Vector2i = _prop_spawn_queue.pop_front()
+		_prop_spawn_queued.erase(chunk_coord)
+		if _entity_manager != null and _entity_manager.tiene_props_chunk(chunk_coord):
+			continue
+		_iniciar_tarea_prop_spawn(chunk_coord)
 		procesados += 1
 
 
 func cancelar_spawn_chunk(chunk_coord: Vector2i) -> void:
 	_spawn_queued.erase(chunk_coord)
 	_spawn_queue.erase(chunk_coord)
-	_spawn_tasks.erase(chunk_coord)
+
+
+func cancelar_prop_spawn_chunk(chunk_coord: Vector2i) -> void:
+	_prop_spawn_queued.erase(chunk_coord)
+	_prop_spawn_queue.erase(chunk_coord)
+	_prop_spawn_tasks.erase(chunk_coord)
 
 
 func _spawn_chunk_interno(
@@ -124,7 +155,7 @@ func _spawn_chunk_interno(
 		return
 	if _entity_manager == null or _entity_factory == null or _spawn_rules == null or _world_data == null:
 		return
-	if _entity_manager.tiene_chunk(chunk_coord):
+	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
 		return
 
 	var rng := RandomNumberGenerator.new()
@@ -373,36 +404,28 @@ func _spawn_chunk_interno(
 		limite_chunk,
 		rng
 	)
-	# Props: se continúan en frames posteriores para evitar una ráfaga.
-	_spawn_tasks[chunk_coord] = {
-		"limite_chunk": limite_chunk,
-		"rng": rng,
-		"intento": 0,
-		"creados": 0,
-		"max_props": 6,
-		"intentos_maximos": 48
-	}
+	_entity_manager.activar_criaturas_chunk(chunk_coord)
 	return
 
 func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	if _terrain == null or _entity_manager == null or _entity_factory == null:
 		return
-	if _entity_manager.tiene_chunk(chunk_coord) or _spawn_tasks.has(chunk_coord):
+	if _entity_manager.tiene_chunk(chunk_coord) or _prop_spawn_tasks.has(chunk_coord):
 		return
 	_spawn_chunk_interno(chunk_coord)
 
 func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
-	var tarea_variant: Variant = _spawn_tasks.get(chunk_coord, {})
+	var tarea_variant: Variant = _prop_spawn_tasks.get(chunk_coord, {})
 	if not tarea_variant is Dictionary:
-		_spawn_tasks.erase(chunk_coord)
+		_prop_spawn_tasks.erase(chunk_coord)
 		return
 	var tarea := tarea_variant as Dictionary
-	if _entity_manager == null or _entity_manager.tiene_chunk(chunk_coord):
-		_spawn_tasks.erase(chunk_coord)
+	if _entity_manager == null or _entity_manager.tiene_props_chunk(chunk_coord):
+		_prop_spawn_tasks.erase(chunk_coord)
 		return
 	var rng_variant: Variant = tarea.get("rng", null)
 	if not rng_variant is RandomNumberGenerator:
-		_spawn_tasks.erase(chunk_coord)
+		_prop_spawn_tasks.erase(chunk_coord)
 		return
 	var rng := rng_variant as RandomNumberGenerator
 	var intento := int(tarea.get("intento", 0))
@@ -411,8 +434,8 @@ func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	var max_intentos := int(tarea.get("intentos_maximos", 48))
 	var limite_chunk: Rect2 = tarea.get("limite_chunk", Rect2())
 	if creados >= max_props or intento >= max_intentos:
-		_spawn_tasks.erase(chunk_coord)
-		_entity_manager.activar_chunk(chunk_coord)
+		_prop_spawn_tasks.erase(chunk_coord)
+		_entity_manager.activar_props_chunk(chunk_coord)
 		return
 	var inicio_usec := Time.get_ticks_usec()
 	var creado := _intentar_crear_prop(chunk_coord, limite_chunk, rng, creados)
@@ -423,10 +446,10 @@ func _procesar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	tarea["creados"] = creados
 	tarea["intento"] = intento + 1
 	if creados >= max_props or int(tarea["intento"]) >= max_intentos:
-		_spawn_tasks.erase(chunk_coord)
+		_prop_spawn_tasks.erase(chunk_coord)
 		_entity_manager.activar_chunk(chunk_coord)
 	else:
-		_spawn_tasks[chunk_coord] = tarea
+		_prop_spawn_tasks[chunk_coord] = tarea
 
 func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: RandomNumberGenerator, slot: int) -> bool:
 	_diag_prop_intentos += 1
@@ -772,84 +795,18 @@ func summon_criatura(
 
 func despawn_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager != null:
-		_entity_manager.despawn_chunk(chunk_coord)
+		_entity_manager.despawn_criaturas_chunk(chunk_coord)
+		_entity_manager.despawn_props_chunk(chunk_coord)
 
 
-func _spawn_characters_in_chunk(
-	chunk_coord: Vector2i,
-	limite_chunk: Rect2,
-	rng: RandomNumberGenerator
-) -> void:
-	var personajes := _world_data.obtener_personajes_game()
-	if personajes.is_empty():
-		return
+func despawn_criaturas_chunk(chunk_coord: Vector2i) -> void:
+	if _entity_manager != null:
+		_entity_manager.despawn_criaturas_chunk(chunk_coord)
 
-	var creados: Array = []
 
-	for personaje_variant in personajes:
-		if not personaje_variant is Dictionary:
-			continue
+func despawn_props_chunk(chunk_coord: Vector2i) -> void:
+	if _entity_manager != null:
+		_entity_manager.despawn_props_chunk(chunk_coord)
 
-		var personaje := personaje_variant as Dictionary
-		var personaje_id := str(personaje.get("id", ""))
-		var reino_game_id := str(personaje.get("reino_game_id", ""))
-		var bioma_ids_variant: Variant = personaje.get("bioma_ids", [])
-
-		if personaje_id.is_empty() or reino_game_id.is_empty():
-			continue
-		if _entity_manager != null and _entity_manager.existe_persistente(personaje_id):
-			continue
-		if not bioma_ids_variant is Array:
-			continue
-
-		var bioma_ids := bioma_ids_variant as Array
-		if bioma_ids.is_empty():
-			continue
-
-		var tile := _spawn_rules.buscar_tile_para_personaje(chunk_coord, bioma_ids, rng)
-		if tile == Vector2i(2147483647, 2147483647):
-			continue
-
-		var criatura_id := str(personaje.get("criatura_id", ""))
-		if criatura_id.is_empty():
-			continue
-
-		var criatura_data := _world_data.obtener_criatura(criatura_id).duplicate(true)
-		if criatura_data.is_empty():
-			continue
-
-		criatura_data["nombre_individual"] = str(personaje.get("nombre", ""))
-		criatura_data["personaje_game_id"] = personaje_id
-		criatura_data["reino_game_id"] = reino_game_id
-		criatura_data["reino_nombre"] = str(personaje.get("reino_nombre", ""))
-
-		var dialogo := _world_data.obtener_dialogo_game(personaje_id)
-		if not dialogo.is_empty():
-			criatura_data["dialogo"] = dialogo
-		else:
-			criatura_data.erase("dialogo")
-
-		var criatura: Node = _entity_factory.crear_criatura(criatura_data)
-		if criatura == null:
-			continue
-
-		criatura.set_meta("runtime_instance_key", "personaje:" + personaje_id)
-		if not _entity_manager.registrar(criatura, chunk_coord, personaje_id):
-			continue
-		criatura.global_position = Vector2(
-			(float(tile.x) + 0.5) * _terrain.tile_size,
-			(float(tile.y) + 0.5) * _terrain.tile_size
-		)
-		criatura.set_meta("personaje_game_id", personaje_id)
-
-		if criatura is Creature:
-			var creature_node := criatura as Creature
-			creature_node.configurar_chunk(chunk_coord, limite_chunk)
-			creature_node.configurar_entorno("general")
-
-		creados.append(criatura)
-
-	if not creados.is_empty():
-		print("WorldEntitySpawner: personajes en reino → chunk ", chunk_coord, " → ", creados.size())
 
 
