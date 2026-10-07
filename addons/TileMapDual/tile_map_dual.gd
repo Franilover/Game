@@ -206,6 +206,7 @@ func obtener_diagnostico() -> Dictionary:
 	var terrain_layers: int = 0
 	var cached_cells: int = 0
 	var renderer_valid: bool = is_instance_valid(_display)
+	var renderer_metrics: Dictionary = _display.obtener_diagnostico() if renderer_valid and _display.has_method("obtener_diagnostico") else {}
 
 	if renderer_valid:
 		display_children = _display.get_child_count()
@@ -228,4 +229,5 @@ func obtener_diagnostico() -> Dictionary:
 		"cached_cells": cached_cells,
 		"terrain_layers": terrain_layers,
 		"world_cells": get_used_cells().size(),
+		"renderer_metrics": renderer_metrics,
 	}
