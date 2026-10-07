@@ -515,6 +515,7 @@ func _procesar_datos_chunk(
 	if cursor == 0 and visual != null:
 		visual.comenzar_lote()
 
+	var cursor_inicio_lote: int = cursor
 	var limite: int = mini(
 		cursor + cells,
 		total
@@ -603,7 +604,7 @@ func _procesar_datos_chunk(
 			"registrar_trabajo",
 			"terrain_data",
 			data_ms_this_step,
-			maxi(limite - (cursor - (limite - cursor)), 1)
+			maxi(limite - cursor_inicio_lote, 1)
 		)
 
 	if cursor < total:
