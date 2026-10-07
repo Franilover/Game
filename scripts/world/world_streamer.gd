@@ -9,7 +9,7 @@ var _player: Node = null
 var _render_manager: Node = null
 
 var _load_radius: int = 2
-var _unload_radius: int = 2
+var _unload_radius: int = 3
 # El terreno visible se limita al chunk actual y, como máximo, a los
 # vecinos necesarios para anticipar el movimiento. No mantener un 3x3
 # completo: en TileMapDual cada celda genera trabajo de render.
@@ -297,8 +297,10 @@ func _actualizar_streaming() -> void:
 			cola_filtrada.append(queued)
 	_queue = cola_filtrada
 
-	# El radio 2 permite preparar terreno por delante con más margen.
-	# La prioridad sigue siendo direccional para no generar todo el anillo a la vez.
+	# El radio de carga sigue siendo 2. La descarga usa 3 para introducir
+	# histeresis: cruzar una frontera no obliga a borrar inmediatamente el
+	# chunk que acabamos de abandonar. Esto evita ciclos carga -> descarga
+	# -> carga al moverse alrededor de un borde.
 	var nuevos: Array = []
 	_agregar_chunk_a_cola(centro, nuevos)
 
@@ -395,8 +397,10 @@ func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
 	if _player == null or _player_direction.length_squared() <= 0.01:
 		return Vector2i.ZERO
 
-	var tile_local_x: int = floori(fposmod(_player.global_position.x, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
-	var tile_local_y: int = floori(fposmod(_player.global_position.y, float(_terrain.chunk_size_tiles * _terrain.tile_size)) / _terrain.tile_size)
+	# El cache de borde ya calculó estas coordenadas este mismo frame.
+	# Reutilizarlas evita repetir fposmod/floori al decidir el prefetch.
+	var tile_local_x: int = _local_x_cache
+	var tile_local_y: int = _local_y_cache
 	var margen: int = clampi(_prefetch_margin_tiles, 1, _terrain.chunk_size_tiles - 1)
 
 	var candidato := centro
