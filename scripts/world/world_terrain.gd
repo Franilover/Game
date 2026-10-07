@@ -384,33 +384,19 @@ func iniciar_generacion_chunk(
 		+ CHUNK_PADDING * 2
 	)
 
-	var zonas_base: Array[PackedInt32Array] = []
-	var zonas: Array[PackedInt32Array] = []
-	var biomas: Array[PackedInt32Array] = []
-	var ecosistemas: Array[PackedInt32Array] = []
-
-	for y in range(padded_size):
-		# Los datos son índices enteros pequeños y se consultan miles de veces
-		# por chunk. PackedInt32Array conserva el mismo acceso fila[x] pero
-		# reduce memoria y el coste de almacenamiento frente a Arrays de Variant.
-		var fila_zonas_base := PackedInt32Array()
-		var fila_zonas := PackedInt32Array()
-		var fila_biomas := PackedInt32Array()
-		var fila_ecosistemas := PackedInt32Array()
-		fila_zonas_base.resize(padded_size)
-		fila_zonas.resize(padded_size)
-		fila_biomas.resize(padded_size)
-		fila_ecosistemas.resize(padded_size)
-		fila_zonas_base.fill(Zone.GRASS)
-		fila_zonas.fill(Zone.GRASS)
-		fila_biomas.fill(-1)
-		fila_ecosistemas.fill(-1)
-
-		zonas_base.append(fila_zonas_base)
-		zonas.append(fila_zonas)
-		biomas.append(fila_biomas)
-		ecosistemas.append(fila_ecosistemas)
-
+	var total_padded_cells: int = padded_size * padded_size
+	var zonas_base := PackedInt32Array()
+	var zonas := PackedInt32Array()
+	var biomas := PackedInt32Array()
+	var ecosistemas := PackedInt32Array()
+	zonas_base.resize(total_padded_cells)
+	zonas.resize(total_padded_cells)
+	biomas.resize(total_padded_cells)
+	ecosistemas.resize(total_padded_cells)
+	zonas_base.fill(Zone.GRASS)
+	zonas.fill(Zone.GRASS)
+	biomas.fill(-1)
+	ecosistemas.fill(-1)
 	_pintado_desde_flush = 0
 
 	var orden_datos := _crear_orden_generacion(padded_size, chunk_coord, true)
