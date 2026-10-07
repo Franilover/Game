@@ -121,11 +121,6 @@ func procesar() -> void:
 		_player_chunk = nuevo_chunk
 
 	_actualizar_streaming()
-	var cambio_chunk := _player_chunk != _last_lod_center
-	if cambio_chunk:
-		_actualizar_data_lod(_player_chunk)
-		_actualizar_lod_logico(_player_chunk)
-		_last_lod_center = _player_chunk
 
 	# El terreno base recibe el primer turno visual. Las variaciones son
 	# decoración secundaria y nunca deben consumir el servicio reservado
