@@ -592,15 +592,15 @@ func _procesar_datos_chunk(
 			ecosistema_index
 		)
 
-		biomas[local_y][local_x] = (
+		biomas[local_y * size + local_x] = (
 			bioma_index
 		)
 
-		ecosistemas[local_y][local_x] = (
+		ecosistemas[local_y * size + local_x] = (
 			ecosistema_index
 		)
 
-		zonas_base[local_y][local_x] = (
+		zonas_base[local_y * size + local_x] = (
 			zona
 		)
 
@@ -700,7 +700,7 @@ func _procesar_pintado_chunk(
 		)
 
 		var zona_base: int = int(
-			zonas_base[padded_y][padded_x]
+			zonas_base[padded_y * (chunk_size_tiles + CHUNK_PADDING * 2) + padded_x]
 		)
 
 		var zona_final: int = (
@@ -713,14 +713,14 @@ func _procesar_pintado_chunk(
 			)
 		)
 
-		zonas[padded_y][padded_x] = (
+		zonas[padded_y * (chunk_size_tiles + CHUNK_PADDING * 2) + padded_x] = (
 			zona_final
 		)
 
 		_pintar_tile(
 			tile,
 			zona_final,
-			int(biomas[padded_y][padded_x])
+			int(biomas[padded_y * (chunk_size_tiles + CHUNK_PADDING * 2) + padded_x])
 		)
 
 		cursor += 1
