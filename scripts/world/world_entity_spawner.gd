@@ -281,20 +281,23 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 				var nombre := str(prop.get("nombre", "")).strip_edges()
 				if nombre.is_empty():
 					continue
-				var copia := prop.duplicate(true)
-				copia["asset_path"] = _spawn_rules.construir_asset_path_prop(copia)
-				if str(copia.get("asset_path", "")).is_empty():
-					continue
+				# La selección sólo necesita leer los datos canónicos. Evitar
+				# duplicar cada candidato; la copia completa se hace únicamente
+				# para el prop finalmente elegido.
 				if coincide:
-					candidatos.append(copia)
-				candidatos_bioma.append(copia)
+					candidatos.append(prop)
+				candidatos_bioma.append(prop)
 
 			if candidatos.is_empty():
 				candidatos = candidatos_bioma
 			if candidatos.is_empty():
 				continue
-			var elegido := _spawn_rules.elegir_prop(candidatos, rng)
-			if elegido.is_empty():
+			var elegido_base := _spawn_rules.elegir_prop(candidatos, rng)
+			if elegido_base.is_empty():
+				continue
+			var elegido := elegido_base.duplicate(true)
+			elegido["asset_path"] = _spawn_rules.construir_asset_path_prop(elegido)
+			if str(elegido.get("asset_path", "")).is_empty():
 				continue
 			elegido["runtime_instance_key"] = "prop:" + str(slot) + ":" + str(elegido.get("id", ""))
 			elegido["chunk"] = chunk_coord
