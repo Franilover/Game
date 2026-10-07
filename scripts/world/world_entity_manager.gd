@@ -9,6 +9,8 @@ var _entity_factory: WorldEntityFactory = null
 
 var _by_chunk: Dictionary = {}
 var _active_chunks: Dictionary = {}
+var _active_creature_chunks: Dictionary = {}
+var _active_prop_chunks: Dictionary = {}
 var _persistent_by_key: Dictionary = {}
 var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
@@ -84,18 +86,53 @@ func registrar_existente(
 
 func activar_chunk(chunk_coord: Vector2i) -> void:
 	_active_chunks[chunk_coord] = true
+	_active_creature_chunks[chunk_coord] = true
+	_active_prop_chunks[chunk_coord] = true
 
 
-func tiene_chunk(chunk_coord: Vector2i) -> bool:
-	if _active_chunks.has(chunk_coord):
+func activar_criaturas_chunk(chunk_coord: Vector2i) -> void:
+	_active_creature_chunks[chunk_coord] = true
+	_recalcular_chunk_activo(chunk_coord)
+
+
+func activar_props_chunk(chunk_coord: Vector2i) -> void:
+	_active_prop_chunks[chunk_coord] = true
+	_recalcular_chunk_activo(chunk_coord)
+
+
+func tiene_criaturas_chunk(chunk_coord: Vector2i) -> bool:
+	if _active_creature_chunks.has(chunk_coord):
 		return true
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 	if not bucket_variant is Array:
 		return false
 	for entity_variant in bucket_variant:
-		if entity_variant is Node and is_instance_valid(entity_variant):
+		if entity_variant is Creature and is_instance_valid(entity_variant):
 			return true
 	return false
+
+
+func tiene_props_chunk(chunk_coord: Vector2i) -> bool:
+	if _active_prop_chunks.has(chunk_coord):
+		return true
+	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
+	if not bucket_variant is Array:
+		return false
+	for entity_variant in bucket_variant:
+		if entity_variant is WorldProp and is_instance_valid(entity_variant):
+			return true
+	return false
+
+
+func tiene_chunk(chunk_coord: Vector2i) -> bool:
+	return tiene_criaturas_chunk(chunk_coord) or tiene_props_chunk(chunk_coord)
+
+
+func _recalcular_chunk_activo(chunk_coord: Vector2i) -> void:
+	if _active_creature_chunks.has(chunk_coord) and _active_prop_chunks.has(chunk_coord):
+		_active_chunks[chunk_coord] = true
+	else:
+		_active_chunks.erase(chunk_coord)
 
 
 func _conectar_lifecycle(entity: Node) -> void:
@@ -214,32 +251,73 @@ func obtener_estado_prop(chunk_coord: Vector2i, instance_key: String) -> Diction
 	return {}
 
 
-func despawn_chunk(chunk_coord: Vector2i) -> void:
+func despawn_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 	if not bucket_variant is Array:
-		_by_chunk.erase(chunk_coord)
+		_active_creature_chunks.erase(chunk_coord)
+		_recalcular_chunk_activo(chunk_coord)
 		return
 
-	for entity_variant in bucket_variant:
+	var restantes: Array = []
+	for entity_variant in bucket_variant as Array:
 		if not entity_variant is Node:
 			continue
 		var entity := entity_variant as Node
 		if not is_instance_valid(entity):
 			continue
-
+		if not entity is Creature:
+			restantes.append(entity)
+			continue
 		guardar_estado_entidad(entity, chunk_coord)
 		_remover_persistencia(entity)
 		if _entity_factory != null and is_instance_valid(_entity_factory):
-			if entity is Creature:
-				_entity_factory.reciclar_criatura(entity as Creature)
-			elif entity is WorldProp:
-				_entity_factory.reciclar_prop(entity as WorldProp)
-			else:
-				entity.queue_free()
+			_entity_factory.reciclar_criatura(entity as Creature)
 		else:
 			entity.queue_free()
 
-	_by_chunk.erase(chunk_coord)
+	if restantes.is_empty():
+		_by_chunk.erase(chunk_coord)
+	else:
+		_by_chunk[chunk_coord] = restantes
+	_active_creature_chunks.erase(chunk_coord)
+	_recalcular_chunk_activo(chunk_coord)
+
+
+func despawn_props_chunk(chunk_coord: Vector2i) -> void:
+	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
+	if not bucket_variant is Array:
+		_active_prop_chunks.erase(chunk_coord)
+		_recalcular_chunk_activo(chunk_coord)
+		return
+
+	var restantes: Array = []
+	for entity_variant in bucket_variant as Array:
+		if not entity_variant is Node:
+			continue
+		var entity := entity_variant as Node
+		if not is_instance_valid(entity):
+			continue
+		if not entity is WorldProp:
+			restantes.append(entity)
+			continue
+		guardar_estado_entidad(entity, chunk_coord)
+		_remover_persistencia(entity)
+		if _entity_factory != null and is_instance_valid(_entity_factory):
+			_entity_factory.reciclar_prop(entity as WorldProp)
+		else:
+			entity.queue_free()
+
+	if restantes.is_empty():
+		_by_chunk.erase(chunk_coord)
+	else:
+		_by_chunk[chunk_coord] = restantes
+	_active_prop_chunks.erase(chunk_coord)
+	_recalcular_chunk_activo(chunk_coord)
+
+
+func despawn_chunk(chunk_coord: Vector2i) -> void:
+	despawn_criaturas_chunk(chunk_coord)
+	despawn_props_chunk(chunk_coord)
 	_active_chunks.erase(chunk_coord)
 
 
@@ -254,6 +332,8 @@ func limpiar_todo() -> void:
 	_persistent_by_key.clear()
 	_global_entities.clear()
 	_active_chunks.clear()
+	_active_creature_chunks.clear()
+	_active_prop_chunks.clear()
 
 
 func _remover_persistencia(entity: Node) -> void:
