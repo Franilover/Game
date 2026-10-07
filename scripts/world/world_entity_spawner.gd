@@ -227,7 +227,7 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			if validos.is_empty():
 				continue
 			var candidato_elegido := validos[rng.randi_range(0, validos.size() - 1)] as Dictionary
-			var criatura_elegida := candidato_elegido.get("criatura", {})
+			var criatura_elegida: Variant = candidato_elegido.get("criatura", {})
 			if not criatura_elegida is Dictionary:
 				continue
 			var elegido := (criatura_elegida as Dictionary).duplicate(true)
@@ -266,7 +266,7 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
 			)
-			var contexto := _terrain.obtener_contexto_data_at(tile)
+			var contexto: Dictionary = _terrain.obtener_contexto_data_at(tile)
 			if not bool(contexto.get("walkable", false)):
 				continue
 			var bioma_variant: Variant = contexto.get("bioma", {})
