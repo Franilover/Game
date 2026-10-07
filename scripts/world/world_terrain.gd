@@ -63,6 +63,9 @@ var _profiler_flushes: int = 0
 var _profiler_biome_ms: float = 0.0
 var _profiler_ecosystem_ms: float = 0.0
 var _profiler_zone_ms: float = 0.0
+var _profiler_data_max_ms: float = 0.0
+var _profiler_paint_max_ms: float = 0.0
+var _profiler_flush_max_ms: float = 0.0
 var _profiler_chunk_start_usec: int = 0
 var _profiler_first_commit_ms: float = -1.0
 var _profiler_visible_25_ms: float = -1.0
@@ -240,6 +243,9 @@ func iniciar_generacion_chunk(
 	_profiler_biome_ms = 0.0
 	_profiler_ecosystem_ms = 0.0
 	_profiler_zone_ms = 0.0
+	_profiler_data_max_ms = 0.0
+	_profiler_paint_max_ms = 0.0
+	_profiler_flush_max_ms = 0.0
 	_profiler_chunk_start_usec = Time.get_ticks_usec()
 	_profiler_first_commit_ms = -1.0
 	_profiler_visible_25_ms = -1.0
@@ -454,9 +460,9 @@ func _procesar_datos_chunk(
 
 	_generation_task["cursor"] = cursor
 
-	_profiler_data_ms += float(
-		Time.get_ticks_usec() - profiler_start_usec
-	) / 1000.0
+	var data_ms_this_step := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
+	_profiler_data_ms += data_ms_this_step
+	_profiler_data_max_ms = maxf(_profiler_data_max_ms, data_ms_this_step)
 	_profiler_data_calls += 1
 
 	if cursor < total:
@@ -584,9 +590,9 @@ func _procesar_pintado_chunk(
 			cursor
 		)
 
-	_profiler_paint_ms += float(
-		Time.get_ticks_usec() - profiler_start_usec
-	) / 1000.0
+	var paint_ms_this_step := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
+	_profiler_paint_ms += paint_ms_this_step
+	_profiler_paint_max_ms = maxf(_profiler_paint_max_ms, paint_ms_this_step)
 	_profiler_paint_calls += 1
 
 	# El commit visual de este lote ocurre en el mismo frame que el pintado.
@@ -699,6 +705,7 @@ func _procesar_flush_chunk(
 			_profiler_visible_100_ms = elapsed_ms
 	var flush_ms := float(Time.get_ticks_usec() - flush_start_usec) / 1000.0
 	_profiler_flush_ms += flush_ms
+	_profiler_flush_max_ms = maxf(_profiler_flush_max_ms, flush_ms)
 	_profiler_flushes += 1
 	if _render_manager != null:
 		_render_manager.call("registrar_trabajo", "terrain_flush", flush_ms, max(flush_cells, 1))
@@ -750,6 +757,8 @@ func _finalizar_chunk() -> void:
 		"%.2f" % total_ms,
 		" ms | datos=",
 		"%.2f" % _profiler_data_ms,
+		" ms total / max_step=",
+		"%.2f" % _profiler_data_max_ms,
 		" ms (",
 		_profiler_data_calls,
 		" pasos) | bioma=",
@@ -760,10 +769,14 @@ func _finalizar_chunk() -> void:
 		"%.2f" % _profiler_zone_ms,
 		" ms | pintura=",
 		"%.2f" % _profiler_paint_ms,
+		" ms total / max_step=",
+		"%.2f" % _profiler_paint_max_ms,
 		" ms (",
 		_profiler_paint_calls,
 		" pasos) | flush=",
 		"%.2f" % _profiler_flush_ms,
+		" ms total / max_step=",
+		"%.2f" % _profiler_flush_max_ms,
 		" ms / ",
 		_profiler_flushes,
 		" | visual_set_zone=",
