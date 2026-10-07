@@ -33,11 +33,10 @@ func _dibujar_prueba() -> void:
 
     tilemap.clear()
 
-    # Prueba A: Tierra pura. Todo el mapa usa exclusivamente terrain 2.
-    # Esto aísla registro, atlas, textura y renderizado de Tierra.png.
+    # Prueba base: Pradera, que ya está validada en este laboratorio.
     for y in range(-5, 6):
         for x in range(-8, 9):
-            tilemap.draw_cell(Vector2i(x, y), 2)
+            tilemap.draw_cell(Vector2i(x, y), 1)
 
     _refrescar_dual(tilemap.get_used_cells())
 
