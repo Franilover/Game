@@ -259,11 +259,17 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 			var datos_prop := prop.obtener_datos()
 			prop_key = str(datos_prop.get("id", "prop")).strip_edges()
 		var prop_state_key := _runtime_key(chunk_coord, prop_key)
+		var datos_prop := prop.obtener_datos()
 		_runtime_prop_state_by_key[prop_state_key] = {
 			"position": prop.global_position,
 			"runtime_instance_key": prop_key,
-			"datos": prop.obtener_datos()
+			"datos": datos_prop
 		}
+		registrar_dato_chunk(chunk_coord, "props", {
+			"runtime_instance_key": prop_key,
+			"position": prop.global_position,
+			"datos": datos_prop
+		})
 		return
 	if not entity is Creature:
 		return
@@ -275,7 +281,7 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	if instance_key.is_empty():
 		instance_key = _runtime_key(chunk_coord, criatura_id)
 	var key := _runtime_key(chunk_coord, instance_key)
-	_runtime_state_by_key[key] = {
+	var datos_criatura := {
 		"criatura_id": criatura_id,
 		"position": criatura.global_position,
 		"velocity": criatura.velocity,
@@ -284,6 +290,8 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		"is_alive": criatura.is_alive,
 		"estado": criatura.get_meta("estado_mundo", "")
 	}
+	_runtime_state_by_key[key] = datos_criatura
+	registrar_dato_chunk(chunk_coord, "criaturas", datos_criatura)
 
 
 func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String, instance_key: String = "") -> Dictionary:
