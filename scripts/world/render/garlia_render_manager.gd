@@ -24,6 +24,9 @@ var _work_calls: Dictionary = {}
 var _deferred_work: int = 0
 var _frame_work_ms: Dictionary = {}
 var _work_unit_ms: Dictionary = {}
+var _work_max_ms: Dictionary = {}
+var _work_last_ms: Dictionary = {}
+var _work_last_units: Dictionary = {}
 
 
 func iniciar_frame() -> void:
@@ -54,6 +57,9 @@ func registrar_trabajo(
 	_work_ms[nombre] = float(_work_ms.get(nombre, 0.0)) + ms
 	_work_calls[nombre] = int(_work_calls.get(nombre, 0)) + 1
 	_frame_work_ms[nombre] = float(_frame_work_ms.get(nombre, 0.0)) + ms
+	_work_max_ms[nombre] = maxf(float(_work_max_ms.get(nombre, 0.0)), ms)
+	_work_last_ms[nombre] = ms
+	_work_last_units[nombre] = unidades_validas
 
 	# EMA: el presupuesto debe reaccionar al coste reciente sin quedar
 	# dominado por un único pico de TileMapDual durante un cambio de chunk.
@@ -227,6 +233,9 @@ func obtener_estado() -> Dictionary:
 		"work_calls": _work_calls.duplicate(),
 		"frame_work_ms": _frame_work_ms.duplicate(),
 		"work_unit_ms": _work_unit_ms.duplicate(),
+		"work_max_ms": _work_max_ms.duplicate(),
+		"work_last_ms": _work_last_ms.duplicate(),
+		"work_last_units": _work_last_units.duplicate(),
 	}
 
 
