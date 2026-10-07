@@ -231,38 +231,27 @@ func _crear_capas() -> void:
 	if visual == null:
 		push_error("WorldTerrain: falta el nodo WorldTerrainVisual en la escena.")
 func obtener_contexto_data_at(tile: Vector2i) -> Dictionary:
-	# Los chunks visuales ya contienen exactamente los índices canónicos calculados
-	# durante su generación. Reutilizarlos evita volver a evaluar FastNoiseLite
-	# para cada intento de spawn de entidades.
 	var chunk_coord := _tile_to_chunk(tile)
 	var datos_variant: Variant = _loaded_chunks.get(chunk_coord, null)
 	if datos_variant is Dictionary:
 		var datos := datos_variant as Dictionary
 		var local := _tile_to_local(tile)
-		var x := local.x + CHUNK_PADDING
-		var y := local.y + CHUNK_PADDING
-		var biomas_variant: Variant = datos.get("biomas", [])
-		var ecosistemas_variant: Variant = datos.get("ecosistemas", [])
-		var zonas_variant: Variant = datos.get("zonas", [])
-		if biomas_variant is Array and ecosistemas_variant is Array and zonas_variant is Array:
-			var biomas_array := biomas_variant as Array
-			var ecosistemas_array := ecosistemas_variant as Array
-			var zonas_array := zonas_variant as Array
-			if y >= 0 and y < biomas_array.size() and y < ecosistemas_array.size() and y < zonas_array.size():
-				if x >= 0 and x < biomas_array[y].size() and x < ecosistemas_array[y].size() and x < zonas_array[y].size():
-					return _construir_contexto_data(
-						tile,
-						int(biomas_array[y][x]),
-						int(ecosistemas_array[y][x]),
-						int(zonas_array[y][x])
-					)
+		var size: int = chunk_size_tiles + CHUNK_PADDING * 2
+		var indice: int = (local.y + CHUNK_PADDING) * size + local.x + CHUNK_PADDING
+		var biomas_variant: Variant = datos.get("biomas", null)
+		var ecosistemas_variant: Variant = datos.get("ecosistemas", null)
+		var zonas_variant: Variant = datos.get("zonas", null)
+		if biomas_variant is PackedInt32Array and ecosistemas_variant is PackedInt32Array and zonas_variant is PackedInt32Array:
+			var biomas: PackedInt32Array = biomas_variant
+			var ecosistemas: PackedInt32Array = ecosistemas_variant
+			var zonas: PackedInt32Array = zonas_variant
+			if indice >= 0 and indice < biomas.size() and indice < ecosistemas.size() and indice < zonas.size():
+				return _construir_contexto_data(tile, biomas[indice], ecosistemas[indice], zonas[indice])
 
-	# DATA puro para chunks que todavía no están materializados visualmente.
 	var bioma_index: int = _bioma_index_at_tile(tile)
 	var ecosistema_index: int = _ecosistema_index_at_tile(tile, bioma_index)
 	var zona: int = _zona_base_at_tile(tile, bioma_index, ecosistema_index)
 	return _construir_contexto_data(tile, bioma_index, ecosistema_index, zona)
-
 
 func _construir_contexto_data(
 	tile: Vector2i,
@@ -469,19 +458,11 @@ func _copiar_dato_borde_vecino(
 	tile: Vector2i,
 	local_x: int,
 	local_y: int,
-	biomas: Array,
-	ecosistemas: Array,
-	zonas_base: Array
+	biomas: PackedInt32Array,
+	ecosistemas: PackedInt32Array,
+	zonas_base: PackedInt32Array
 ) -> bool:
-	# El padding de un chunk coincide con tiles interiores de sus vecinos.
-	# Si ese vecino ya fue generado, reutilizamos exactamente sus datos en
-	# vez de volver a ejecutar todos los FastNoiseLite para esas coordenadas.
-	if not (
-		local_x == 0
-		or local_x == chunk_size_tiles + 1
-		or local_y == 0
-		or local_y == chunk_size_tiles + 1
-	):
+	if local_x != 0 and local_x != chunk_size_tiles + 1 and local_y != 0 and local_y != chunk_size_tiles + 1:
 		return false
 
 	var vecino_coord: Vector2i = _tile_to_chunk(tile)
@@ -493,42 +474,28 @@ func _copiar_dato_borde_vecino(
 
 	var datos: Dictionary = datos_variant as Dictionary
 	var vecino_local: Vector2i = _tile_to_local(tile)
+	var size: int = chunk_size_tiles + CHUNK_PADDING * 2
 	var vecino_x: int = vecino_local.x + CHUNK_PADDING
 	var vecino_y: int = vecino_local.y + CHUNK_PADDING
+	var indice_vecino: int = vecino_y * size + vecino_x
+	var indice_local: int = local_y * size + local_x
 
-	var vecino_biomas_variant: Variant = datos.get("biomas", [])
-	var vecino_ecosistemas_variant: Variant = datos.get("ecosistemas", [])
-	var vecino_zonas_variant: Variant = datos.get("zonas_base", [])
-	if not vecino_biomas_variant is Array:
-		return false
-	if not vecino_ecosistemas_variant is Array:
-		return false
-	if not vecino_zonas_variant is Array:
+	var vb: Variant = datos.get("biomas", null)
+	var ve: Variant = datos.get("ecosistemas", null)
+	var vz: Variant = datos.get("zonas_base", null)
+	if not vb is PackedInt32Array or not ve is PackedInt32Array or not vz is PackedInt32Array:
 		return false
 
-	var vecino_biomas: Array = vecino_biomas_variant as Array
-	var vecino_ecosistemas: Array = vecino_ecosistemas_variant as Array
-	var vecino_zonas: Array = vecino_zonas_variant as Array
-	if (
-		vecino_y < 0
-		or vecino_y >= vecino_biomas.size()
-		or vecino_y >= vecino_ecosistemas.size()
-		or vecino_y >= vecino_zonas.size()
-	):
-		return false
-	if (
-		vecino_x < 0
-		or vecino_x >= vecino_biomas[vecino_y].size()
-		or vecino_x >= vecino_ecosistemas[vecino_y].size()
-		or vecino_x >= vecino_zonas[vecino_y].size()
-	):
+	var vecino_biomas: PackedInt32Array = vb
+	var vecino_ecosistemas: PackedInt32Array = ve
+	var vecino_zonas: PackedInt32Array = vz
+	if indice_vecino < 0 or indice_vecino >= vecino_biomas.size() or indice_vecino >= vecino_ecosistemas.size() or indice_vecino >= vecino_zonas.size():
 		return false
 
-	biomas[local_y][local_x] = vecino_biomas[vecino_y][vecino_x]
-	ecosistemas[local_y][local_x] = vecino_ecosistemas[vecino_y][vecino_x]
-	zonas_base[local_y][local_x] = vecino_zonas[vecino_y][vecino_x]
+	biomas[indice_local] = vecino_biomas[indice_vecino]
+	ecosistemas[indice_local] = vecino_ecosistemas[indice_vecino]
+	zonas_base[indice_local] = vecino_zonas[indice_vecino]
 	return true
-
 
 func _procesar_datos_chunk(
 	cells: int
@@ -1268,50 +1235,21 @@ func _pintar_tile(
 		bioma_nombre,
 		bioma_textura
 	)
-func get_zona_at(
-	tile: Vector2i
-) -> int:
-	var chunk_coord: Vector2i = (
-		_tile_to_chunk(tile)
-	)
-
-	var datos: Dictionary = (
-		_loaded_chunks.get(
-			chunk_coord,
-			{}
-		)
-	)
-
-	if not datos.is_empty():
-		var zonas: Array = (
-			datos.get(
-				"zonas",
-				[]
-			)
-		)
-
-		var local := _tile_to_local(tile)
-
-		var x: int = (
-			local.x + CHUNK_PADDING
-		)
-
-		var y: int = (
-			local.y + CHUNK_PADDING
-		)
-
-		if (
-			y >= 0
-			and y < zonas.size()
-			and x >= 0
-			and x < zonas[y].size()
-		):
-			return int(
-				zonas[y][x]
-			)
-
+func get_zona_at(tile: Vector2i) -> int:
+	var chunk_coord := _tile_to_chunk(tile)
+	var datos: Dictionary = _loaded_chunks.get(chunk_coord, {})
+	if datos.is_empty():
+		return _zona_directa(tile)
+	var zonas_variant: Variant = datos.get("zonas", null)
+	if not zonas_variant is PackedInt32Array:
+		return _zona_directa(tile)
+	var zonas: PackedInt32Array = zonas_variant
+	var local := _tile_to_local(tile)
+	var size: int = chunk_size_tiles + CHUNK_PADDING * 2
+	var indice: int = (local.y + CHUNK_PADDING) * size + local.x + CHUNK_PADDING
+	if indice >= 0 and indice < zonas.size():
+		return zonas[indice]
 	return _zona_directa(tile)
-
 
 func _zona_directa(
 	tile: Vector2i
