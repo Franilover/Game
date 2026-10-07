@@ -11,9 +11,9 @@ var _entity_factory: WorldEntityFactory = null
 var _spawn_rules: WorldSpawnRules = null
 var _world_data: WorldDataService = null
 var _spawn_queue: Array[Vector2i] = []
+var _spawn_queued: Dictionary = {}
 var _prop_spawn_queue: Array[Vector2i] = []
 var _prop_spawn_queued: Dictionary = {}
-var _spawn_queued: Dictionary = {}
 var _prop_spawn_tasks: Dictionary = {}
 var _render_manager: Node = null
 
@@ -404,7 +404,15 @@ func _spawn_chunk_interno(
 		limite_chunk,
 		rng
 	)
-	_entity_manager.activar_criaturas_chunk(chunk_coord)
+	# Props: se continúan en frames posteriores para evitar una ráfaga.
+	_spawn_tasks[chunk_coord] = {
+		"limite_chunk": limite_chunk,
+		"rng": rng,
+		"intento": 0,
+		"creados": 0,
+		"max_props": 6,
+		"intentos_maximos": 48
+	}
 	return
 
 func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
@@ -481,6 +489,7 @@ func _procesar_tarea_prop_spawn(chunk_coord: Vector2i) -> void:
 		_entity_manager.activar_props_chunk(chunk_coord)
 	else:
 		_prop_spawn_tasks[chunk_coord] = tarea
+
 
 func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: RandomNumberGenerator, slot: int) -> bool:
 	_diag_prop_intentos += 1
@@ -842,6 +851,5 @@ func despawn_props_chunk(chunk_coord: Vector2i) -> void:
 	cancelar_prop_spawn_chunk(chunk_coord)
 	if _entity_manager != null:
 		_entity_manager.despawn_props_chunk(chunk_coord)
-
 
 
