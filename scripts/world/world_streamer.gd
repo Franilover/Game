@@ -23,7 +23,8 @@ var _unload_radius: int = VISIBLE_RADIUS
 # Las entidades pueden aparecer en el chunk del jugador y sus vecinos
 # ya cargados. El terreno sigue siendo la autoridad: sólo se invoca al
 # spawner después de que un chunk terminó de generarse.
-var _entity_active_radius: int = 1
+var _prop_active_radius: int = 1
+var _creature_active_radius: int = 0
 var _cells_per_frame: int = 128
 var _prefetch_margin_tiles: int = 28
 var _last_player_position: Vector2 = Vector2.ZERO
@@ -138,7 +139,9 @@ func procesar() -> void:
 			if distancia_chunk > _unload_radius:
 				_terrain.descargar_chunk(chunk_coord)
 			else:
-				if _distancia_chunk(chunk_coord, _player_chunk) <= _entity_active_radius:
+				if _distancia_chunk(chunk_coord, _player_chunk) <= _prop_active_radius:
+					_entity_spawner.spawn_props_chunk(chunk_coord)
+				if _distancia_chunk(chunk_coord, _player_chunk) <= _creature_active_radius:
 					_entity_spawner.spawn_chunk(chunk_coord)
 
 		return
@@ -217,7 +220,13 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 	var limite := _presupuesto_entidades()
 	if limite <= 0:
 		return
-	_entity_spawner.procesar_spawn_queue(limite)
+
+	# Las criaturas son el LOD caro: primero se conserva el presupuesto para
+	# el chunk donde está el jugador. Los props son decoración y avanzan en
+	# una cola independiente.
+	_entity_spawner.procesar_spawn_queue(1)
+	if limite >= 2:
+		_entity_spawner.procesar_prop_spawn_queue(1)
 
 func _presupuesto_descarga() -> int:
 	var base := mini(_cells_per_frame, 128)
@@ -607,11 +616,19 @@ func _actualizar_entidades_activas(
 		var chunk_coord: Vector2i = chunk_variant
 		var distancia := _distancia_chunk(chunk_coord, centro)
 
-		if distancia <= _entity_active_radius:
+		# Props: acompañan todo el terreno visible, pero tienen su propia cola.
+		if distancia <= _prop_active_radius:
+			_entity_spawner.spawn_props_chunk(chunk_coord)
+		else:
+			_entity_spawner.cancelar_prop_spawn_chunk(chunk_coord)
+			_entity_spawner.despawn_props_chunk(chunk_coord)
+
+		# Criaturas/IA: sólo representación FULL alrededor del jugador.
+		if distancia <= _creature_active_radius:
 			_entity_spawner.spawn_chunk(chunk_coord)
 		else:
 			_entity_spawner.cancelar_spawn_chunk(chunk_coord)
-			_entity_spawner.despawn_chunk(chunk_coord)
+			_entity_spawner.despawn_criaturas_chunk(chunk_coord)
 
 
 func _distancia_chunk(
@@ -704,14 +721,18 @@ func tiene_jugador() -> bool:
 func obtener_diagnostico() -> Dictionary:
 	var lod_data: int = _data_chunk_cache.size()
 	var lod_terrain: int = 0
+	var lod_props: int = 0
 	var lod_full: int = 0
 	if _terrain != null:
 		for chunk_variant in _terrain.chunks_cargados():
 			if not chunk_variant is Vector2i:
 				continue
 			var chunk_coord: Vector2i = chunk_variant
-			if _distancia_chunk(chunk_coord, _player_chunk) <= _entity_active_radius:
+			var distancia := _distancia_chunk(chunk_coord, _player_chunk)
+			if distancia <= _creature_active_radius:
 				lod_full += 1
+			elif distancia <= _prop_active_radius:
+				lod_props += 1
 			else:
 				lod_terrain += 1
 
@@ -728,7 +749,10 @@ func obtener_diagnostico() -> Dictionary:
 		"data_chunk_coords": _data_chunk_cache.keys(),
 		"lod_data": lod_data,
 		"lod_terrain": lod_terrain,
+		"lod_props": lod_props,
 		"lod_full": lod_full,
+		"prop_active_radius": _prop_active_radius,
+		"creature_active_radius": _creature_active_radius,
 		"cells_per_frame": _cells_per_frame,
 		"generando": _terrain != null and _terrain.tiene_generacion_activa(),
 		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
