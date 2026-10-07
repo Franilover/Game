@@ -676,6 +676,23 @@ func _actualizar_data_entidades(centro: Vector2i) -> void:
 	for coord in stale_queued:
 		_data_entity_queued.erase(coord)
 
+	# DATA también tiene prioridad espacial. Los chunks más cercanos al jugador
+	# se preparan primero; los remotos quedan como trabajo de fondo.
+	_data_entity_queue.sort_custom(
+		func(a: Vector2i, b: Vector2i) -> bool:
+			var distancia_a := _distancia_chunk(a, centro)
+			var distancia_b := _distancia_chunk(b, centro)
+			if distancia_a != distancia_b:
+				return distancia_a < distancia_b
+			if _player_direction.length_squared() <= 0.01:
+				return false
+			var relativo_a := Vector2(a - centro)
+			var relativo_b := Vector2(b - centro)
+			var alineacion_a := relativo_a.normalized().dot(_player_direction) if relativo_a.length_squared() > 0.0 else 0.0
+			var alineacion_b := relativo_b.normalized().dot(_player_direction) if relativo_b.length_squared() > 0.0 else 0.0
+			return alineacion_a > alineacion_b
+		)
+
 	if _entity_spawner != null and _entity_spawner.has_method("obtener_entity_manager"):
 		var manager: Variant = _entity_spawner.call("obtener_entity_manager")
 		if manager != null and manager.has_method("limpiar_datos_fuera_de_radio"):
