@@ -339,9 +339,8 @@ func _actualizar_streaming() -> void:
 			cola_filtrada.append(queued)
 	_queue = cola_filtrada
 
-	# El radio visual es 1: centro + sus 8 vecinos = máximo 9 chunks.
-	# No usamos histeresis visual: _loaded_chunks contiene representación
-	# TileMap real y debe respetar un límite duro de 9.
+	# TERRAIN mantiene un cuadrado 5x5: centro + 24 vecinos.
+	# FULL es un LOD lógico más pequeño y no cambia el límite visual.
 	var nuevos: Array = []
 	_agregar_chunk_a_cola(centro, nuevos)
 
@@ -580,7 +579,7 @@ func _iniciar_siguiente_chunk() -> bool:
 	if _terrain.tiene_descarga_activa():
 		return false
 
-	# Límite duro: nunca más de 9 chunks visuales cargados.
+	# Límite duro: nunca más de 25 chunks TERRAIN visuales cargados.
 	if _terrain.chunks_cargados().size() >= MAX_VISIBLE_CHUNKS:
 		return false
 
@@ -646,9 +645,6 @@ func _actualizar_data_entidades() -> void:
 				continue
 			_data_entity_queue.append(coord)
 			_data_entity_queued[coord] = true
-	for coord_variant in _data_entity_generated.keys():
-		if coord_variant is Vector2i and not activos.has(coord_variant):
-			_data_entity_generated.erase(coord_variant)
 	var stale_generated: Array[Vector2i] = []
 	for coord_variant in _data_entity_generated.keys():
 		if coord_variant is Vector2i and not activos.has(coord_variant):
