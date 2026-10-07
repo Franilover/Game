@@ -199,6 +199,10 @@ func iniciar_clear_chunk(chunk_coord: Vector2i, chunk_size_tiles: int) -> void:
 		"total": chunk_size_tiles * chunk_size_tiles,
 		"stage": 0,
 	}
+	# El borrado masivo no debe disparar recomposición por cada erase_cell().
+	# Mantenemos las actualizaciones diferidas durante toda la fase de limpieza
+	# y sólo reactivamos el renderer antes de procesar el dirty resultante.
+	comenzar_lote()
 
 
 func tiene_clear_chunk_activo() -> bool:
@@ -233,6 +237,7 @@ func procesar_clear_chunk(cells: int) -> bool:
 			# la siguiente fase para no convertir el unload en un flush gigante.
 			return false
 		_marcar_borde_chunk_dirty(coord, size)
+		terminar_lote()
 		_clear_task["stage"] = 1
 
 	# Fase 1: resolver únicamente una parte de las regiones dirty generadas
