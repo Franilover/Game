@@ -241,7 +241,7 @@ func _vista_mundo() -> String:
 			out.append("ZONA ACTIVA: " + JSON.stringify(zona_diag))
 			out.append("")
 
-	var nombres := ["WorldGenerator", "WorldTerrain", "WorldTerrainVisual", "WorldStreamer", "WorldContext", "ZoneManager"]
+	var nombres := ["WorldGenerator", "WorldTerrain", "WorldTerrainVisual", "WorldStreamer", "GarliaRenderManager", "WorldContext", "ZoneManager"]
 	for nombre in nombres:
 		var nodo := _buscar_por_nombre(nombre)
 		if nodo == null:
