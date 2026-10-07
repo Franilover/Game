@@ -81,6 +81,7 @@ func update_properties(parent: TileMapDual) -> void:
 	self.light_mask = parent.light_mask
 	self.visibility_layer = parent.visibility_layer
 	self.y_sort_enabled = parent.y_sort_enabled
+	self.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	self.modulate = parent.modulate
 	self.self_modulate = parent.self_modulate
 	# NOTE: parent material takes priority over the current shaders,
