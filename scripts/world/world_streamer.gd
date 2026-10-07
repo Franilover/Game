@@ -702,6 +702,19 @@ func tiene_jugador() -> bool:
 
 
 func obtener_diagnostico() -> Dictionary:
+	var lod_data: int = _data_chunk_cache.size()
+	var lod_terrain: int = 0
+	var lod_full: int = 0
+	if _terrain != null:
+		for chunk_variant in _terrain.chunks_cargados():
+			if not chunk_variant is Vector2i:
+				continue
+			var chunk_coord: Vector2i = chunk_variant
+			if _distancia_chunk(chunk_coord, _player_chunk) <= _entity_active_radius:
+				lod_full += 1
+			else:
+				lod_terrain += 1
+
 	return {
 		"jugador": tiene_jugador(),
 		"player_chunk": _player_chunk,
@@ -711,8 +724,11 @@ func obtener_diagnostico() -> Dictionary:
 		"unload_radius": _unload_radius,
 		"max_visible_chunks": MAX_VISIBLE_CHUNKS,
 		"data_radius": DATA_RADIUS,
-		"data_chunks": _data_chunk_cache.size(),
+		"data_chunks": lod_data,
 		"data_chunk_coords": _data_chunk_cache.keys(),
+		"lod_data": lod_data,
+		"lod_terrain": lod_terrain,
+		"lod_full": lod_full,
 		"cells_per_frame": _cells_per_frame,
 		"generando": _terrain != null and _terrain.tiene_generacion_activa(),
 		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
