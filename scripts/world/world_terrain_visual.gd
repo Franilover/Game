@@ -82,6 +82,7 @@ var tilemap_dual: TileMapDual
 # Una capa por zona permite que la misma zona continúe entre biomas.
 # Así un cambio de bioma no se interpreta como un borde de terreno.
 var _layers_by_zone: Dictionary = {}
+var _shared_terrain_layer: TileMapDual
 var _base_tiles: Dictionary = {}
 var _next_source_id_by_zone: Dictionary = {}
 
@@ -368,30 +369,38 @@ func terminar_lote() -> void:
 func _crear_capa_terreno(zone: int) -> TileMapDual:
 	var clave := str(zone)
 
-	if _layers_by_zone.has(clave):
-		var existente: Variant = _layers_by_zone[clave]
-		if is_instance_valid(existente) and existente is TileMapDual:
-			return existente as TileMapDual
-		_layers_by_zone.erase(clave)
+	# Los terrenos necesitan estar en la misma capa para que TileMapDual pueda
+	# consultar el terrain de los vecinos y escoger bordes/esquinas entre zonas.
+	# Los mapas por zona anteriores aislaban precisamente esa información.
+	if is_instance_valid(_shared_terrain_layer):
+		_layers_by_zone[clave] = _shared_terrain_layer
+		if not _next_source_id_by_zone.has(clave):
+			_next_source_id_by_zone[clave] = 0
+		if not _dirty_cells_by_zone.has(clave):
+			_dirty_cells_by_zone[clave] = []
+		if not _dirty_lookup_by_zone.has(clave):
+			_dirty_lookup_by_zone[clave] = {}
+		if not _dirty_cursor_by_zone.has(clave):
+			_dirty_cursor_by_zone[clave] = 0
+		return _shared_terrain_layer
 
 	var layer := TileMapDual.new()
-	layer.name = "TerrainDual_Zone_" + clave
+	layer.name = "TerrainDual_AllZones"
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -4096 + (ZONE_TEXTURES.size() - zone)
+	layer.z_index = -4096
 	layer.rendering_quadrant_size = 512
 	layer.tile_set = _crear_tileset()
 
 	add_child(layer)
 
+	_shared_terrain_layer = layer
 	_layers_by_zone[clave] = layer
 	_next_source_id_by_zone[clave] = 0
 	_dirty_cells_by_zone[clave] = []
 	_dirty_lookup_by_zone[clave] = {}
 	_dirty_cursor_by_zone[clave] = 0
-
-	if tilemap_dual == null:
-		tilemap_dual = layer
+	tilemap_dual = layer
 
 	return layer
 
@@ -656,9 +665,10 @@ func _crear_base_tile(
 		source_id
 	)
 
-	# Cada capa contiene una sola zona visual, así que el terreno activo
-	# siempre es el terrain 1 y 0 representa el exterior/vacío.
-	var terrain_id := 1
+	# Todas las zonas deben compartir el mismo TileMapDual para que el
+	# renderer pueda comparar el terreno de una celda con el de sus vecinos.
+	# Cada zona usa un terrain ID distinto dentro del mismo Terrain Set.
+	var terrain_id := zone + 1
 
 	for index in range(TILE_SEQUENCE.size()):
 		var data := atlas.get_tile_data(
