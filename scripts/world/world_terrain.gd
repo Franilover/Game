@@ -50,7 +50,7 @@ var _generation_task: Dictionary = {}
 var _paused_generation_task: Dictionary = {}
 var _unload_task: Dictionary = {}
 var _pintado_desde_flush: int = 0
-@export var visual_flush_cells: int = 512
+@export var visual_flush_cells: int = 256
 
 var _ultimo_chunk_generado: Vector2i = Vector2i.ZERO
 var _prioridad_generacion_posicion: Vector2 = Vector2.ZERO
@@ -726,10 +726,10 @@ func _cells_presupuesto_flush_incremental() -> int:
 	return int(_render_manager.call(
 		"presupuesto_unidades_terreno",
 		"terrain_flush",
-		512,
-		128,
+		256,
+		32,
 		visual_flush_cells,
-		4.0
+		3.0
 	))
 
 
@@ -750,10 +750,10 @@ func _procesar_flush_chunk(
 		flush_cells = int(_render_manager.call(
 			"presupuesto_unidades_terreno",
 			"terrain_flush",
-			maxi(flush_cells, 64),
+			maxi(flush_cells, 32),
 			16,
 			visual_flush_cells,
-			2.25
+			2.0
 		))
 		flush_cells = mini(flush_cells, visual_flush_cells)
 	var terminado: bool = visual.procesar_flush(flush_cells)
