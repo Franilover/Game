@@ -155,6 +155,11 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	# TileMapLayer y, sobre todo, evita notificar cambios visuales redundantes.
 	var current_sid: int = get_cell_source_id(cell)
 	if current_sid == sid:
+		# Si ambos están vacíos, no necesitamos consultar las coordenadas Atlas.
+		# Este caso aparece con frecuencia en los bordes/celdas sin regla.
+		if sid == -1:
+			_diag_redundant_tiles += 1
+			return
 		var current_tile: Vector2i = get_cell_atlas_coords(cell)
 		if current_tile == tile:
 			_diag_redundant_tiles += 1
@@ -172,11 +177,23 @@ func follow_path(cell: Vector2i, path: Array) -> Vector2i:
 
 
 func obtener_diagnostico() -> Dictionary:
+	var candidates: int = _diag_display_candidates
+	var redundant: int = _diag_redundant_tiles
+	var writes: int = _diag_set_cells
 	return {
 		"update_calls": _diag_update_calls,
 		"world_cells": _diag_world_cells,
-		"display_candidates": _diag_display_candidates,
+		"display_candidates": candidates,
 		"rule_evaluations": _diag_rule_evaluations,
-		"redundant_tiles": _diag_redundant_tiles,
-		"set_cells": _diag_set_cells,
+		"redundant_tiles": redundant,
+		"set_cells": writes,
+		"candidate_per_world_cell": (
+			float(candidates) / float(maxi(_diag_world_cells, 1))
+		),
+		"redundant_ratio": (
+			float(redundant) / float(maxi(_diag_rule_evaluations, 1))
+		),
+		"write_ratio": (
+			float(writes) / float(maxi(_diag_rule_evaluations, 1))
+		),
 	}
