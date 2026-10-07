@@ -55,6 +55,10 @@ func configurar(
 func configurar_render_manager(render_manager: Node) -> void:
 	_render_manager = render_manager
 
+func obtener_entity_manager() -> WorldEntityManager:
+	return _entity_manager
+
+
 
 func obtener_diagnostico() -> Dictionary:
 	return {
