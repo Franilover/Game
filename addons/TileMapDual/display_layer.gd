@@ -14,7 +14,8 @@ var _tileset_watcher: TileSetWatcher
 var _terrain: TerrainLayer
 # Paths invertidos cacheados: el Dual-Grid los usa en cada actualización.
 # Evita reconstruir Arrays con map(Util.reverse_neighbor) para cada flush.
-var _reversed_display_paths: Array[Array] = []
+var _reversed_display_offsets: Array[Vector2i] = []
+var _terrain_world_offsets: Array[Vector2i] = []
 # Buffer reutilizable: update_tile() se ejecuta miles de veces durante un flush.
 # Evita crear un Array temporal por cada celda recompuesta.
 var _terrain_neighbors_scratch: Array = []
@@ -97,12 +98,22 @@ func update_tiles_all(cache: TileCache) -> void:
 
 ## Update all display tiles affected by the world cells
 func _rebuild_display_paths() -> void:
-	_reversed_display_paths.clear()
+	_reversed_display_offsets.clear()
+	_terrain_world_offsets.clear()
+
+	# Las rutas de vecinos son estáticas. Resolverlas una vez evita llamar
+	# get_neighbor_cell() por cada celda durante cada recomposición.
 	for path: Array in _terrain.display_to_world_neighborhood:
-		var reversed_path: Array = []
+		var offset := Vector2i.ZERO
 		for neighbor: TileSet.CellNeighbor in path:
-			reversed_path.append(Util.reverse_neighbor(neighbor))
-		_reversed_display_paths.append(reversed_path)
+			offset += get_neighbor_cell(Vector2i.ZERO, Util.reverse_neighbor(neighbor))
+		_reversed_display_offsets.append(offset)
+			
+	for path: Array in _terrain.display_to_world_neighborhood:
+		var offset := Vector2i.ZERO
+		for neighbor: TileSet.CellNeighbor in path:
+			offset += get_neighbor_cell(Vector2i.ZERO, neighbor)
+		_terrain_world_offsets.append(offset)
 
 
 func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
@@ -112,9 +123,9 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 	# El conjunto evita recalcular la misma celda cuando los caminos convergen.
 	# Dictionary es suficiente aquí y evita crear un Set temporal con cada flush.
 	_already_updated.clear()
-	for path: Array in _reversed_display_paths:
+	for offset: Vector2i in _reversed_display_offsets:
 		for world_cell: Vector2i in updated_world_cells:
-			var display_cell: Vector2i = follow_path(world_cell, path)
+			var display_cell: Vector2i = world_cell + offset
 			if not _already_updated.has(display_cell):
 				_already_updated[display_cell] = true
 				_diag_display_candidates += 1
@@ -126,13 +137,12 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	# Evita una Callable + Array.map() por cada celda. El neighborhood del
 	# Dual-Grid es pequeño y fijo, por lo que un bucle directo reduce
 	# allocations durante la composición de chunks.
-	var neighborhood_size: int = _terrain.display_to_world_neighborhood.size()
+	var neighborhood_size: int = _terrain_world_offsets.size()
 	if _terrain_neighbors_scratch.size() != neighborhood_size:
 		_terrain_neighbors_scratch.resize(neighborhood_size)
 	for i in range(neighborhood_size):
-		var path: Array = _terrain.display_to_world_neighborhood[i]
 		_terrain_neighbors_scratch[i] = cache.get_terrain_at(
-			follow_path(cell, path)
+			cell + _terrain_world_offsets[i]
 		)
 
 	_diag_rule_evaluations += 1
