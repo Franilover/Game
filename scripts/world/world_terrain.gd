@@ -1649,4 +1649,6 @@ func obtener_diagnostico() -> Dictionary:
 		estado["cursor_pausado"] = int(_paused_generation_task.get("cursor", 0))
 	if visual != null and visual.has_method("obtener_profiler"):
 		estado["visual_profiler"] = visual.obtener_profiler()
+	if visual != null and visual.has_method("obtener_estado_flush"):
+		estado["flush_estado"] = visual.obtener_estado_flush()
 	return estado
