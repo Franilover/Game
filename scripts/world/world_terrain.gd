@@ -598,6 +598,13 @@ func _procesar_datos_chunk(
 	_profiler_data_ms += data_ms_this_step
 	_profiler_data_max_ms = maxf(_profiler_data_max_ms, data_ms_this_step)
 	_profiler_data_calls += 1
+	if _render_manager != null:
+		_render_manager.call(
+			"registrar_trabajo",
+			"terrain_data",
+			data_ms_this_step,
+			maxi(limite - (cursor - (limite - cursor)), 1)
+		)
 
 	if cursor < total:
 		return false
@@ -718,6 +725,13 @@ func _procesar_pintado_chunk(
 	_profiler_paint_ms += paint_ms_this_step
 	_profiler_paint_max_ms = maxf(_profiler_paint_max_ms, paint_ms_this_step)
 	_profiler_paint_calls += 1
+	if _render_manager != null:
+		_render_manager.call(
+			"registrar_trabajo",
+			"terrain_paint",
+			paint_ms_this_step,
+			maxi(cursor - cursor_inicio_lote, 1)
+		)
 
 	# El commit visual de este lote ocurre en el mismo frame que el pintado.
 	# Así la generación deja de tener una barrera artificial entre PINTADO y
