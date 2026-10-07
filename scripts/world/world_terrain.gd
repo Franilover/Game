@@ -1272,114 +1272,81 @@ func _zona_directa(
 	)
 
 
-func cambiar_zona_at(
-	tile: Vector2i,
-	nueva_zona: int
-) -> bool:
+func cambiar_zona_at(tile: Vector2i, nueva_zona: int) -> bool:
 	if nueva_zona < 0 or nueva_zona >= Zone.size():
 		return false
-
 	var chunk_coord := _tile_to_chunk(tile)
 	if not _loaded_chunks.has(chunk_coord):
 		return false
-
 	var datos: Dictionary = _loaded_chunks[chunk_coord]
-	var zonas_base_variant: Variant = datos.get("zonas_base", [])
-	if not zonas_base_variant is Array:
+	var zonas_base_variant: Variant = datos.get("zonas_base", null)
+	var zonas_variant: Variant = datos.get("zonas", null)
+	if not zonas_base_variant is PackedInt32Array or not zonas_variant is PackedInt32Array:
 		return false
-
-	var zonas_base: Array = zonas_base_variant as Array
+	var zonas_base: PackedInt32Array = zonas_base_variant
+	var zonas: PackedInt32Array = zonas_variant
 	var local := _tile_to_local(tile)
-	var x := local.x + CHUNK_PADDING
-	var y := local.y + CHUNK_PADDING
-	if y < 0 or y >= zonas_base.size():
+	var size: int = chunk_size_tiles + CHUNK_PADDING * 2
+	var indice: int = (local.y + CHUNK_PADDING) * size + local.x + CHUNK_PADDING
+	if indice < 0 or indice >= zonas_base.size() or indice >= zonas.size():
 		return false
-	if not zonas_base[y] is Array or x < 0 or x >= (zonas_base[y] as Array).size():
-		return false
-
-	(zonas_base[y] as Array)[x] = nueva_zona
+	zonas_base[indice] = nueva_zona
 	datos["zonas_base"] = zonas_base
 	_loaded_chunks[chunk_coord] = datos
-
-	# Al cambiar una celda también pueden cambiar las costas de sus vecinos.
-	# Recalcular desde el terreno base evita acumular "shore" antiguo.
-	var afectadas: Array[Vector2i] = [
-		tile,
-		tile + Vector2i.RIGHT,
-		tile + Vector2i.LEFT,
-		tile + Vector2i.UP,
-		tile + Vector2i.DOWN,
-	]
-	for celda in afectadas:
+	for celda in [tile, tile + Vector2i.RIGHT, tile + Vector2i.LEFT, tile + Vector2i.UP, tile + Vector2i.DOWN]:
 		_actualizar_zona_final_at_tile(celda)
-
 	if visual != null:
 		visual.flush()
 	return true
-
 
 func _obtener_zona_base_at_tile(tile: Vector2i) -> int:
 	var chunk_coord := _tile_to_chunk(tile)
 	var datos: Dictionary = _loaded_chunks.get(chunk_coord, {})
 	if not datos.is_empty():
-		var zonas_base_variant: Variant = datos.get("zonas_base", [])
-		if zonas_base_variant is Array:
-			var zonas_base: Array = zonas_base_variant as Array
+		var zonas_variant: Variant = datos.get("zonas_base", null)
+		if zonas_variant is PackedInt32Array:
+			var zonas_base: PackedInt32Array = zonas_variant
 			var local := _tile_to_local(tile)
-			var x := local.x + CHUNK_PADDING
-			var y := local.y + CHUNK_PADDING
-			if y >= 0 and y < zonas_base.size():
-				if zonas_base[y] is Array and x >= 0 and x < (zonas_base[y] as Array).size():
-					return int((zonas_base[y] as Array)[x])
-
+			var size: int = chunk_size_tiles + CHUNK_PADDING * 2
+			var indice: int = (local.y + CHUNK_PADDING) * size + local.x + CHUNK_PADDING
+			if indice >= 0 and indice < zonas_base.size():
+				return zonas_base[indice]
 	return _zona_directa(tile)
-
 
 func _actualizar_zona_final_at_tile(tile: Vector2i) -> void:
 	var chunk_coord := _tile_to_chunk(tile)
 	if not _loaded_chunks.has(chunk_coord):
 		return
-
 	var datos: Dictionary = _loaded_chunks[chunk_coord]
-	var zonas_variant: Variant = datos.get("zonas", [])
-	var zonas_base_variant: Variant = datos.get("zonas_base", [])
-	var biomas_variant: Variant = datos.get("biomas", [])
-	if not zonas_variant is Array or not zonas_base_variant is Array:
+	var zonas_variant: Variant = datos.get("zonas", null)
+	var zonas_base_variant: Variant = datos.get("zonas_base", null)
+	var biomas_variant: Variant = datos.get("biomas", null)
+	if not zonas_variant is PackedInt32Array or not zonas_base_variant is PackedInt32Array:
 		return
-
-	var zonas: Array = zonas_variant as Array
-	var zonas_base: Array = zonas_base_variant as Array
+	var zonas: PackedInt32Array = zonas_variant
+	var zonas_base: PackedInt32Array = zonas_base_variant
 	var local := _tile_to_local(tile)
-	var x := local.x + CHUNK_PADDING
-	var y := local.y + CHUNK_PADDING
-	if y < 0 or y >= zonas.size() or y >= zonas_base.size():
+	var size: int = chunk_size_tiles + CHUNK_PADDING * 2
+	var indice: int = (local.y + CHUNK_PADDING) * size + local.x + CHUNK_PADDING
+	if indice < 0 or indice >= zonas.size() or indice >= zonas_base.size():
 		return
-	if not zonas[y] is Array or not zonas_base[y] is Array:
-		return
-	if x < 0 or x >= (zonas[y] as Array).size() or x >= (zonas_base[y] as Array).size():
-		return
-
-	var zona_base := _obtener_zona_base_at_tile(tile)
-	var zona_final := zona_base
+	var zona_base: int = zonas_base[indice]
+	var zona_final: int = zona_base
 	if zona_base == Zone.WATER or zona_base == Zone.DEEP_WATER:
 		for direccion: Vector2i in WorldTerrainAreas.ORTHOGONAL_DIRECTIONS:
 			var zona_vecina := _obtener_zona_base_at_tile(tile + direccion)
 			if zona_vecina != Zone.WATER and zona_vecina != Zone.DEEP_WATER:
 				zona_final = Zone.SHORE
 				break
-
-	(zonas[y] as Array)[x] = zona_final
+	zonas[indice] = zona_final
 	datos["zonas"] = zonas
 	_loaded_chunks[chunk_coord] = datos
-
 	var bioma_index := -1
-	if biomas_variant is Array:
-		var biomas: Array = biomas_variant as Array
-		if y < biomas.size() and biomas[y] is Array and x < (biomas[y] as Array).size():
-			bioma_index = int((biomas[y] as Array)[x])
-
+	if biomas_variant is PackedInt32Array:
+		var biomas: PackedInt32Array = biomas_variant
+		if indice < biomas.size():
+			bioma_index = biomas[indice]
 	_pintar_tile(tile, zona_final, bioma_index)
-
 
 func is_walkable(
 	tile: Vector2i
