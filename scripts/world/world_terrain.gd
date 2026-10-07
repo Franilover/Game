@@ -1173,6 +1173,13 @@ func _zona_base_at_tile(
 		bioma_index,
 		ecosistema_index
 	)
+const ORTHOGONAL_DIRECTIONS: Array[Vector2i] = [
+	Vector2i.UP,
+	Vector2i.RIGHT,
+	Vector2i.DOWN,
+	Vector2i.LEFT,
+]
+
 func _zona_final_desde_array(
 	zonas: PackedInt32Array,
 	x: int,
