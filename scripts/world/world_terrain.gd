@@ -512,9 +512,8 @@ func _procesar_datos_chunk(
 	)
 	var orden: PackedInt32Array = _generation_task["orden_datos"]
 
-	if cursor == 0 and visual != null:
-		visual.comenzar_lote()
-
+	# DATA sólo modifica buffers PackedInt32Array. No hay celdas visuales
+	# que bloquear todavía; el lote visual comienza al entrar en PINTADO.
 	var cursor_inicio_lote: int = cursor
 	var limite: int = mini(
 		cursor + cells,
