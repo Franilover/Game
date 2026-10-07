@@ -565,7 +565,7 @@ func _procesar_datos_chunk(
 	var cursor: int = int(
 		_generation_task["cursor"]
 	)
-	var orden: Array = _generation_task["orden_datos"]
+	var orden: PackedInt32Array = _generation_task["orden_datos"]
 
 	if cursor == 0 and visual != null:
 		visual.comenzar_lote()
@@ -1153,7 +1153,7 @@ func _crear_orden_generacion(
 	# exactamente una entrada por celda, incluso cuando el objetivo está
 	# pegado a un borde del chunk.
 	var total: int = size * size
-	var indices: Array = []
+	var indices := PackedInt32Array()
 	indices.resize(total)
 
 	var posicion_objetivo_tile := Vector2i(
@@ -1174,25 +1174,25 @@ func _crear_orden_generacion(
 		maxi(objetivo_local.x, size - 1 - objetivo_local.x),
 		maxi(objetivo_local.y, size - 1 - objetivo_local.y)
 	)
-	var buckets: Array[Array] = []
+	var buckets: Array[PackedInt32Array] = []
 	buckets.resize(radio_maximo + 1)
 	for radio in range(radio_maximo + 1):
-		buckets[radio] = []
+		buckets[radio] = PackedInt32Array()
 
 	for y in range(size):
 		for x in range(size):
 			var dx: int = absi(x - objetivo_local.x)
 			var dy: int = absi(y - objetivo_local.y)
 			var radio: int = maxi(dx, dy)
-			(buckets[radio] as Array).append(y * size + x)
+			buckets[radio].append(y * size + x)
 
 	var cursor: int = 0
 	for radio in range(buckets.size()):
-		var bucket: Array = buckets[radio]
-		for indice_variant in bucket:
+		var bucket: PackedInt32Array = buckets[radio]
+		for indice in bucket:
 			if cursor >= total:
 				break
-			indices[cursor] = int(indice_variant)
+			indices[cursor] = indice
 			cursor += 1
 
 	return indices
