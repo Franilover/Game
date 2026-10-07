@@ -670,7 +670,10 @@ func _actualizar_entidades_activas(
 
 		# Criaturas/IA sólo existen como Nodes en FULL.
 		if lod == LOD_FULL:
-			_entity_spawner.spawn_chunk(chunk_coord)
+			if _entity_spawner.has_method("materializar_criaturas_datos_chunk") and _entity_spawner.materializar_criaturas_datos_chunk(chunk_coord):
+				pass
+			else:
+				_entity_spawner.spawn_chunk(chunk_coord)
 		else:
 			_entity_spawner.cancelar_spawn_chunk(chunk_coord)
 			_entity_spawner.despawn_criaturas_chunk(chunk_coord)
