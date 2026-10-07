@@ -33,12 +33,22 @@ func _dibujar_prueba() -> void:
 
     tilemap.clear()
 
-    # Prueba base: Pradera, que ya está validada en este laboratorio.
+    # Prueba mixta: Pradera base con huecos irregulares de Tierra.
+    # Se conserva una semilla fija para que el patrón sea reproducible.
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 48127
+
+    var celdas: Array[Vector2i] = []
     for y in range(-5, 6):
         for x in range(-8, 9):
-            tilemap.draw_cell(Vector2i(x, y), 1)
+            var cell := Vector2i(x, y)
+            var terrain := 1
+            if rng.randf() < 0.22:
+                terrain = 2
+            tilemap.draw_cell(cell, terrain)
+            celdas.append(cell)
 
-    _refrescar_dual(tilemap.get_used_cells())
+    _refrescar_dual(celdas)
 
 func _refrescar_dual(celdas: Array[Vector2i]) -> void:
     if celdas.is_empty():
