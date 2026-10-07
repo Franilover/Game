@@ -631,19 +631,10 @@ func _procesar_pintado_chunk(
 		_generation_task["coord"]
 	)
 
-	var zonas_base: Array = (
-		_generation_task["zonas_base"]
-	)
-
+	var zonas_base: PackedInt32Array = _generation_task["zonas_base"]
 	var zonas: PackedInt32Array = _generation_task["zonas"]
-
-	var biomas: Array = (
-		_generation_task["biomas"]
-	)
-
-	var ecosistemas: Array = (
-		_generation_task["ecosistemas"]
-	)
+	var biomas: PackedInt32Array = _generation_task["biomas"]
+	var ecosistemas: PackedInt32Array = _generation_task["ecosistemas"]
 
 	var total: int = (
 		chunk_size_tiles
