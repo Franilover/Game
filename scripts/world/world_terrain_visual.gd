@@ -1074,8 +1074,10 @@ func procesar_flush(cells: int) -> bool:
 
 	var layer := _layers_by_zone[clave] as TileMapDual
 	if layer == null:
-		_dirty_cells_by_zone[clave] = []
-		_dirty_lookup_by_zone[clave] = {}
+		# Reutilizar ambas estructuras evita asignar un Array y un Dictionary
+		# nuevos cada vez que termina un flush.
+		cells_variant.clear()
+		_dirty_lookup_by_zone[clave].clear()
 		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
 		return not tiene_flush_pendiente()
 
