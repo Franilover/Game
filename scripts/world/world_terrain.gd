@@ -900,41 +900,60 @@ func _crear_orden_generacion(
 	chunk_coord: Vector2i,
 	con_padding: bool
 ) -> Array:
+	# No ordenar 1.024/1.156 elementos con un comparador que crea Vector2i
+	# y calcula distancias para cada comparación. El objetivo real es sólo
+	# que las celdas cercanas al jugador se preparen primero.
+	#
+	# Anillos cuadrados dan exactamente esa propiedad en O(n), evitando el
+	# coste O(n log n) del sort_custom. Para el streaming visual la diferencia
+	# entre distancia euclidiana y Chebyshev no es relevante.
 	var indices: Array = []
-	var total: int = size * size
-
-	for indice in range(total):
-		indices.append(indice)
+	indices.resize(size * size)
 
 	var posicion_objetivo_tile := Vector2i(
 		floori(_prioridad_generacion_posicion.x / float(tile_size)),
 		floori(_prioridad_generacion_posicion.y / float(tile_size))
 	)
 
-	indices.sort_custom(
-		func(a: int, b: int) -> bool:
-			var ax: int = a % size
-			var ay: int = a / size
-			var bx: int = b % size
-			var by: int = b / size
-
-			var offset: int = CHUNK_PADDING if con_padding else 0
-			var atile := Vector2i(
-				chunk_coord.x * chunk_size_tiles + ax - offset,
-				chunk_coord.y * chunk_size_tiles + ay - offset
-			)
-			var btile := Vector2i(
-				chunk_coord.x * chunk_size_tiles + bx - offset,
-				chunk_coord.y * chunk_size_tiles + by - offset
-			)
-
-			var da: int = atile.distance_squared_to(posicion_objetivo_tile)
-			var db: int = btile.distance_squared_to(posicion_objetivo_tile)
-
-			if da == db:
-				return a < b
-			return da < db
+	var offset: int = CHUNK_PADDING if con_padding else 0
+	var origen_tile := Vector2i(
+		chunk_coord.x * chunk_size_tiles - offset,
+		chunk_coord.y * chunk_size_tiles - offset
 	)
+	var objetivo_local := posicion_objetivo_tile - origen_tile
+	objetivo_local.x = clampi(objetivo_local.x, 0, size - 1)
+	objetivo_local.y = clampi(objetivo_local.y, 0, size - 1)
+
+	var cursor := 0
+	var radio_maximo := maxi(
+		maxi(objetivo_local.x, size - 1 - objetivo_local.x),
+		maxi(objetivo_local.y, size - 1 - objetivo_local.y)
+	)
+
+	for radio in range(radio_maximo + 1):
+		var x0 := maxi(objetivo_local.x - radio, 0)
+		var x1 := mini(objetivo_local.x + radio, size - 1)
+		var y0 := maxi(objetivo_local.y - radio, 0)
+		var y1 := mini(objetivo_local.y + radio, size - 1)
+
+		# Borde superior e inferior. Con radio 0 sólo se añade una vez.
+		for x in range(x0, x1 + 1):
+			var indice_arriba := y0 * size + x
+			indices[cursor] = indice_arriba
+			cursor += 1
+			if y1 != y0:
+				var indice_abajo := y1 * size + x
+				indices[cursor] = indice_abajo
+				cursor += 1
+
+		# Laterales sin esquinas: ya fueron añadidas arriba/abajo.
+		if y1 - y0 > 1:
+			for y in range(y0 + 1, y1):
+				indices[cursor] = y * size + x0
+				cursor += 1
+				if x1 != x0:
+					indices[cursor] = y * size + x1
+					cursor += 1
 
 	return indices
 
