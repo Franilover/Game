@@ -689,7 +689,7 @@ func _actualizar_data_entidades(centro: Vector2i) -> void:
 			var alineacion_a := relativo_a.normalized().dot(_player_direction) if relativo_a.length_squared() > 0.0 else 0.0
 			var alineacion_b := relativo_b.normalized().dot(_player_direction) if relativo_b.length_squared() > 0.0 else 0.0
 			return alineacion_a > alineacion_b
-		)
+			)
 
 	if _entity_spawner != null and _entity_spawner.has_method("obtener_entity_manager"):
 		var manager: Variant = _entity_spawner.call("obtener_entity_manager")
