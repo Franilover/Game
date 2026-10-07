@@ -125,6 +125,16 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	var mapping: Dictionary = _terrain.apply_rule(_terrain_neighbors_scratch, cell)
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
+
+	# El resultado puede no haber cambiado aunque la celda haya sido
+	# invalidada por un vecino. Evitar set_cell() elimina trabajo interno de
+	# TileMapLayer y, sobre todo, evita notificar cambios visuales redundantes.
+	var current_sid: int = get_cell_source_id(cell)
+	if current_sid == sid:
+		var current_tile: Vector2i = get_cell_atlas_coords(cell)
+		if current_tile == tile:
+			return
+
 	set_cell(cell, sid, tile)
 
 
