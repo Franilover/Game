@@ -15,6 +15,64 @@ var _persistent_by_key: Dictionary = {}
 var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
 var _runtime_prop_state_by_key: Dictionary = {}
+var _data_by_chunk: Dictionary = {}
+
+
+func registrar_dato_chunk(chunk_coord: Vector2i, tipo: String, datos: Dictionary) -> void:
+	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
+	var bucket: Dictionary = bucket_variant if bucket_variant is Dictionary else {}
+	var lista_variant: Variant = bucket.get(tipo, [])
+	var lista: Array = lista_variant if lista_variant is Array else []
+	lista.append(datos.duplicate(true))
+	bucket[tipo] = lista
+	_data_by_chunk[chunk_coord] = bucket
+
+
+func reemplazar_datos_chunk(chunk_coord: Vector2i, tipo: String, datos: Array) -> void:
+	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
+	var bucket: Dictionary = bucket_variant if bucket_variant is Dictionary else {}
+	bucket[tipo] = datos.duplicate(true)
+	_data_by_chunk[chunk_coord] = bucket
+
+
+func obtener_datos_chunk(chunk_coord: Vector2i, tipo: String) -> Array:
+	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
+	if not bucket_variant is Dictionary:
+		return []
+	var datos_variant: Variant = (bucket_variant as Dictionary).get(tipo, [])
+	if datos_variant is Array:
+		return (datos_variant as Array).duplicate(true)
+	return []
+
+
+func limpiar_datos_chunk(chunk_coord: Vector2i) -> void:
+	_data_by_chunk.erase(chunk_coord)
+
+
+func tiene_datos_chunk(chunk_coord: Vector2i, tipo: String = "") -> bool:
+	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
+	if not bucket_variant is Dictionary:
+		return false
+	if tipo.is_empty():
+		return true
+	var datos_variant: Variant = (bucket_variant as Dictionary).get(tipo, [])
+	return datos_variant is Array and not (datos_variant as Array).is_empty()
+
+
+func obtener_diagnostico_datos() -> Dictionary:
+	var props := 0
+	var criaturas := 0
+	for bucket_variant in _data_by_chunk.values():
+		if not bucket_variant is Dictionary:
+			continue
+		var bucket := bucket_variant as Dictionary
+		var props_variant: Variant = bucket.get("props", [])
+		var criaturas_variant: Variant = bucket.get("criaturas", [])
+		if props_variant is Array:
+			props += (props_variant as Array).size()
+		if criaturas_variant is Array:
+			criaturas += (criaturas_variant as Array).size()
+	return {"chunks": _data_by_chunk.size(), "props": props, "criaturas": criaturas}
 
 
 func configurar(entities_root: Node, entity_factory: WorldEntityFactory = null) -> void:
@@ -334,6 +392,7 @@ func limpiar_todo() -> void:
 	_active_chunks.clear()
 	_active_creature_chunks.clear()
 	_active_prop_chunks.clear()
+	_data_by_chunk.clear()
 
 
 func _remover_persistencia(entity: Node) -> void:
