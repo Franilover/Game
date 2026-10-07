@@ -845,3 +845,81 @@ func despawn_props_chunk(chunk_coord: Vector2i) -> void:
 		_entity_manager.despawn_props_chunk(chunk_coord)
 
 
+
+
+func _spawn_characters_in_chunk(
+	chunk_coord: Vector2i,
+	limite_chunk: Rect2,
+	rng: RandomNumberGenerator
+) -> void:
+	var personajes := _world_data.obtener_personajes_game()
+	if personajes.is_empty():
+		return
+
+	var creados: Array = []
+
+	for personaje_variant in personajes:
+		if not personaje_variant is Dictionary:
+			continue
+
+		var personaje := personaje_variant as Dictionary
+		var personaje_id := str(personaje.get("id", ""))
+		var reino_game_id := str(personaje.get("reino_game_id", ""))
+		var bioma_ids_variant: Variant = personaje.get("bioma_ids", [])
+
+		if personaje_id.is_empty() or reino_game_id.is_empty():
+			continue
+		if _entity_manager != null and _entity_manager.existe_persistente(personaje_id):
+			continue
+		if not bioma_ids_variant is Array:
+			continue
+
+		var bioma_ids := bioma_ids_variant as Array
+		if bioma_ids.is_empty():
+			continue
+
+		var tile := _spawn_rules.buscar_tile_para_personaje(chunk_coord, bioma_ids, rng)
+		if tile == Vector2i(2147483647, 2147483647):
+			continue
+
+		var criatura_id := str(personaje.get("criatura_id", ""))
+		if criatura_id.is_empty():
+			continue
+
+		var criatura_data := _world_data.obtener_criatura(criatura_id).duplicate(true)
+		if criatura_data.is_empty():
+			continue
+
+		criatura_data["nombre_individual"] = str(personaje.get("nombre", ""))
+		criatura_data["personaje_game_id"] = personaje_id
+		criatura_data["reino_game_id"] = reino_game_id
+		criatura_data["reino_nombre"] = str(personaje.get("reino_nombre", ""))
+
+		var dialogo := _world_data.obtener_dialogo_game(personaje_id)
+		if not dialogo.is_empty():
+			criatura_data["dialogo"] = dialogo
+		else:
+			criatura_data.erase("dialogo")
+
+		var criatura: Node = _entity_factory.crear_criatura(criatura_data)
+		if criatura == null:
+			continue
+
+		criatura.set_meta("runtime_instance_key", "personaje:" + personaje_id)
+		if not _entity_manager.registrar(criatura, chunk_coord, personaje_id):
+			continue
+		criatura.global_position = Vector2(
+			(float(tile.x) + 0.5) * _terrain.tile_size,
+			(float(tile.y) + 0.5) * _terrain.tile_size
+		)
+		criatura.set_meta("personaje_game_id", personaje_id)
+
+		if criatura is Creature:
+			var creature_node := criatura as Creature
+			creature_node.configurar_chunk(chunk_coord, limite_chunk)
+			creature_node.configurar_entorno("general")
+
+		creados.append(criatura)
+
+	if not creados.is_empty():
+		print("WorldEntitySpawner: personajes en reino → chunk ", chunk_coord, " → ", creados.size())
