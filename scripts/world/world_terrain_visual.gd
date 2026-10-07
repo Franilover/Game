@@ -653,12 +653,9 @@ func _crear_base_tile(
 	for sequence_pos in TILE_SEQUENCE:
 		atlas.create_tile(sequence_pos)
 
-	var source_id := int(
-		_next_source_id_by_zone.get(
-			tile_key,
-			0
-		)
-	)
+	# Todas las zonas comparten un TileSet, por lo que el source_id también
+	# debe ser global dentro de esa capa. Cada zona tiene un atlas base propio.
+	var source_id := zone
 
 	layer.tile_set.add_source(
 		atlas,
