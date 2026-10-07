@@ -28,6 +28,26 @@ func registrar_dato_chunk(chunk_coord: Vector2i, tipo: String, datos: Dictionary
 	_data_by_chunk[chunk_coord] = bucket
 
 
+func guardar_dato_chunk(chunk_coord: Vector2i, tipo: String, datos: Dictionary) -> void:
+	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
+	var bucket: Dictionary = bucket_variant if bucket_variant is Dictionary else {}
+	var lista_variant: Variant = bucket.get(tipo, [])
+	var lista: Array = lista_variant if lista_variant is Array else []
+	var instance_key := str(datos.get("runtime_instance_key", ""))
+	var reemplazado := false
+	if not instance_key.is_empty():
+		for i in range(lista.size()):
+			var existente_variant: Variant = lista[i]
+			if existente_variant is Dictionary and str((existente_variant as Dictionary).get("runtime_instance_key", "")) == instance_key:
+				lista[i] = datos.duplicate(true)
+				reemplazado = true
+				break
+	if not reemplazado:
+		lista.append(datos.duplicate(true))
+	bucket[tipo] = lista
+	_data_by_chunk[chunk_coord] = bucket
+
+
 func reemplazar_datos_chunk(chunk_coord: Vector2i, tipo: String, datos: Array) -> void:
 	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
 	var bucket: Dictionary = bucket_variant if bucket_variant is Dictionary else {}
@@ -265,6 +285,10 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 			"runtime_instance_key": prop_key,
 			"datos": datos_prop
 		}
+		var registro_prop := datos_prop.duplicate(true)
+		registro_prop["runtime_instance_key"] = prop_key
+		registro_prop["position"] = prop.global_position
+		guardar_dato_chunk(chunk_coord, "props", registro_prop)
 		return
 	if not entity is Creature:
 		return
@@ -286,6 +310,9 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		"estado": criatura.get_meta("estado_mundo", "")
 	}
 	_runtime_state_by_key[key] = datos_criatura
+	var registro_criatura := datos_criatura.duplicate(true)
+	registro_criatura["runtime_instance_key"] = instance_key
+	guardar_dato_chunk(chunk_coord, "criaturas", registro_criatura)
 
 
 func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String, instance_key: String = "") -> Dictionary:
