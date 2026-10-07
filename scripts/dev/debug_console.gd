@@ -278,9 +278,31 @@ func _vista_datos() -> String:
 
 func _vista_rendimiento() -> String:
 	var datos: Dictionary = _garlia_debug().call("obtener_rendimiento")
-	var out := _encabezado("RENDIMIENTO")
-	for clave in datos:
-		out.append("%-24s %s" % [str(clave), JSON.stringify(datos[clave])])
+	var out := _encabezado("RENDIMIENTO / CUELLOS DE BOTELLA")
+	for clave in ["fps","frame_ms_aprox","process_ms","physics_ms","nodes","objects","orphans","draw_calls","render_objects","render_primitives","physics_2d_active","physics_2d_pairs"]:
+		if datos.has(clave):
+			out.append("%-24s %s" % [clave, JSON.stringify(datos[clave])])
+	out.append("")
+	out.append("TRABAJO ACUMULADO")
+	var work_ms: Dictionary = datos.get("work_ms", {})
+	var work_calls: Dictionary = datos.get("work_calls", {})
+	var work_unit: Dictionary = datos.get("work_unit_ms", {})
+	var work_max: Dictionary = datos.get("work_max_ms", {})
+	var work_last: Dictionary = datos.get("work_last_ms", {})
+	var claves: Array = work_ms.keys()
+	claves.sort_custom(func(a: Variant, b: Variant) -> bool: return float(work_ms.get(a, 0.0)) > float(work_ms.get(b, 0.0)))
+	for clave_variant in claves:
+		var clave := str(clave_variant)
+		out.append("  %-22s total=%8.2fms calls=%4d unit=%7.4fms max=%7.2fms last=%7.2fms" % [clave, float(work_ms.get(clave, 0.0)), int(work_calls.get(clave, 0)), float(work_unit.get(clave, 0.0)), float(work_max.get(clave, 0.0)), float(work_last.get(clave, 0.0))])
+	out.append("")
+	out.append("TRABAJO DEL FRAME")
+	var frame_work: Dictionary = datos.get("frame_work_ms", {})
+	for clave_variant in frame_work.keys():
+		out.append("  %-22s %8.3fms" % [str(clave_variant), float(frame_work.get(clave_variant, 0.0))])
+	out.append("")
+	out.append("PRESUPUESTO")
+	for clave in ["render_budget_ms","terrain_service_reserve_ms","frame_used_ms","budget_remaining_ms","deferred_work"]:
+		out.append("  %-22s %s" % [clave, JSON.stringify(datos.get(clave, "<n/a>"))])
 	return "\n".join(out)
 
 func _vista_render() -> String:
