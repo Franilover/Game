@@ -665,16 +665,11 @@ func _crear_base_tile(
 
 		data.terrain_set = 0
 
-		# TileMapDual usa terrain sólo para identificar los tiles lógicos
-		# que representan fondo y terreno lleno. Los otros 14 tiles son
-		# únicamente combinaciones de peering bits y no deben registrarse
-		# como terrenos independientes.
-		if index == 0:
-			data.terrain = 0
-		elif index == TILE_SEQUENCE.size() - 1:
-			data.terrain = terrain_id
-		else:
-			data.terrain = -1
+		# Las 15 variantes forman un único atlas de terreno.
+		# Todas deben conservar el terrain_id para que TileMapDual
+		# pueda resolver y seleccionar correctamente las variantes
+		# de transición mediante sus peering bits.
+		data.terrain = terrain_id
 
 		var bits := index
 		for neighbor in CORNER_NEIGHBORS:
