@@ -265,10 +265,6 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 			"runtime_instance_key": prop_key,
 			"datos": datos_prop
 		}
-		var registro_prop := datos_prop.duplicate(true)
-		registro_prop["runtime_instance_key"] = prop_key
-		registro_prop["position"] = prop.global_position
-		registrar_dato_chunk(chunk_coord, "props", registro_prop)
 		return
 	if not entity is Creature:
 		return
@@ -290,9 +286,6 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		"estado": criatura.get_meta("estado_mundo", "")
 	}
 	_runtime_state_by_key[key] = datos_criatura
-	var registro_criatura := datos_criatura.duplicate(true)
-	registro_criatura["runtime_instance_key"] = instance_key
-	registrar_dato_chunk(chunk_coord, "criaturas", registro_criatura)
 
 
 func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String, instance_key: String = "") -> Dictionary:
