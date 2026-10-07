@@ -8,8 +8,11 @@ var _entity_spawner: WorldEntitySpawner
 var _player: Node = null
 var _render_manager: Node = null
 
-var _load_radius: int = 2
-var _unload_radius: int = 3
+const MAX_VISIBLE_CHUNKS: int = 9
+const VISIBLE_RADIUS: int = 1
+
+var _load_radius: int = VISIBLE_RADIUS
+var _unload_radius: int = VISIBLE_RADIUS
 # El terreno visible se limita al chunk actual y, como máximo, a los
 # vecinos necesarios para anticipar el movimiento. No mantener un 3x3
 # completo: en TileMapDual cada celda genera trabajo de render.
@@ -50,8 +53,8 @@ func configurar(
 	_terrain = terrain
 	_entity_spawner = entity_spawner
 
-	_load_radius = load_radius
-	_unload_radius = unload_radius
+	_load_radius = clampi(load_radius, 0, VISIBLE_RADIUS)
+	_unload_radius = VISIBLE_RADIUS
 	_cells_per_frame = cells_per_frame
 
 
@@ -297,10 +300,9 @@ func _actualizar_streaming() -> void:
 			cola_filtrada.append(queued)
 	_queue = cola_filtrada
 
-	# El radio de carga sigue siendo 2. La descarga usa 3 para introducir
-	# histeresis: cruzar una frontera no obliga a borrar inmediatamente el
-	# chunk que acabamos de abandonar. Esto evita ciclos carga -> descarga
-	# -> carga al moverse alrededor de un borde.
+	# El radio visual es 1: centro + sus 8 vecinos = máximo 9 chunks.
+	# No usamos histeresis visual: _loaded_chunks contiene representación
+	# TileMap real y debe respetar un límite duro de 9.
 	var nuevos: Array = []
 	_agregar_chunk_a_cola(centro, nuevos)
 
@@ -532,6 +534,14 @@ func _iniciar_siguiente_chunk() -> bool:
 	if _queue.is_empty():
 		return false
 
+	# Un unload debe liberar el slot antes de crear otro chunk visual.
+	if _terrain.tiene_descarga_activa():
+		return false
+
+	# Límite duro: nunca más de 9 chunks visuales cargados.
+	if _terrain.chunks_cargados().size() >= MAX_VISIBLE_CHUNKS:
+		return false
+
 	var chunk_coord: Vector2i = (
 		_queue.pop_front()
 	)
@@ -618,68 +628,3 @@ func _descargar_lejanos(
 		_entity_spawner.despawn_chunk(
 			chunk_coord
 		)
-
-		_terrain.descargar_chunk(
-			chunk_coord
-		)
-
-
-func _world_to_chunk(
-	position: Vector2
-) -> Vector2i:
-	var tile := Vector2i(
-		floori(
-			position.x
-			/ _terrain.tile_size
-		),
-		floori(
-			position.y
-			/ _terrain.tile_size
-		)
-	)
-
-	return Vector2i(
-		floori(
-			float(tile.x)
-			/ _terrain.chunk_size_tiles
-		),
-		floori(
-			float(tile.y)
-			/ _terrain.chunk_size_tiles
-		)
-	)
-
-
-func tiene_jugador() -> bool:
-	return _player != null and is_instance_valid(_player)
-
-func obtener_diagnostico() -> Dictionary:
-	return {
-		"jugador": tiene_jugador(),
-		"player_chunk": _player_chunk,
-		"cola_chunks": _queue.size(),
-		"cola": _queue.duplicate(),
-		"load_radius": _load_radius,
-		"unload_radius": _unload_radius,
-		"cells_per_frame": _cells_per_frame,
-		"generando": _terrain != null and _terrain.tiene_generacion_activa(),
-		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
-		"player_direction": _player_direction,
-		"prefetch_margin_tiles": _prefetch_margin_tiles,
-		"prefetch_activo": _prefetch_activo,
-		"prefetch_chunk": _prefetch_chunk if _prefetch_activo else null,
-		"borde_cache": {
-			"x": _local_x_cache,
-			"y": _local_y_cache,
-			"arriba": _cerca_arriba_cache,
-			"abajo": _cerca_abajo_cache,
-			"izquierda": _cerca_izquierda_cache,
-			"derecha": _cerca_derecha_cache
-		}
-	}
-
-func _registrar_debug() -> void:
-	var debug := get_node_or_null("/root/GarliaDebug")
-	if debug == null or not debug.has_method("registrar_proveedor"):
-		return
-	debug.registrar_proveedor("world_streamer", "WorldStreamer", self, "Cola de chunks, streaming y jugador.")
