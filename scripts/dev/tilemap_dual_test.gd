@@ -33,27 +33,11 @@ func _dibujar_prueba() -> void:
 
     tilemap.clear()
 
-    # Prueba A/B mínima: dos terrenos reales compartiendo el mismo Terrain Set.
-    # A = Grass (terrain 1), B = Dirt (terrain 2).
+    # Prueba A: Tierra pura. Todo el mapa usa exclusivamente terrain 2.
+    # Esto aísla registro, atlas, textura y renderizado de Tierra.png.
     for y in range(-5, 6):
         for x in range(-8, 9):
-            var terrain: int = 1 if x < 0 else 2
-            tilemap.draw_cell(Vector2i(x, y), terrain)
-
-    # Entrantes para forzar transiciones, esquinas y cambios de sentido.
-    for cell_variant in [
-        Vector2i(-1, -5),
-        Vector2i(-1, -4),
-        Vector2i(0, -5),
-        Vector2i(0, -4),
-        Vector2i(-4, 0),
-        Vector2i(4, 0),
-        Vector2i(-1, 4),
-        Vector2i(0, 4),
-    ]:
-        var cell: Vector2i = cell_variant
-        var terrain: int = 2 if cell.x < 0 else 1
-        tilemap.draw_cell(cell, terrain)
+            tilemap.draw_cell(Vector2i(x, y), 2)
 
     _refrescar_dual(tilemap.get_used_cells())
 
