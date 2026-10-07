@@ -142,8 +142,9 @@ func cargar_datos(
 						_ecosistema_indices.get(id, -1)
 					)
 
-					if indice >= 0:
-						indices.append(indice)
+					if indice >= 0 and indice < _ecosystem_enabled.size():
+						if _ecosystem_enabled[indice] != 0:
+							indices.append(indice)
 
 		_bioma_ecosistemas.append(indices)
 
@@ -239,14 +240,10 @@ func ecosistema_index_at_tile(
 	var mejor_indice := -1
 	var mejor_puntuacion := -INF
 
-	for indice_variant in indices:
-		var indice := int(indice_variant)
+	for indice in indices:
 		if indice < 0 or indice >= _ecosistemas.size():
 			continue
 		if indice >= _ecosystem_noises.size():
-			continue
-
-		if _ecosystem_enabled[indice] == 0:
 			continue
 
 		var ruido := (
