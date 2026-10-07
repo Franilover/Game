@@ -234,7 +234,12 @@ func obtener_diagnostico() -> Dictionary:
 	return obtener_estado()
 
 
-func _ready() -> void:
+func _registrar_debug() -> void:
 	var debug := get_node_or_null("/root/GarliaDebug")
 	if debug != null and debug.has_method("registrar_proveedor"):
 		debug.registrar_proveedor("render_manager", "GarliaRenderManager", self, "Presupuesto visual, frames y trabajo diferido.")
+
+
+func _ready() -> void:
+	_registrar_debug()
+	call_deferred("_registrar_debug")
