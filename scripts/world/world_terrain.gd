@@ -231,14 +231,45 @@ func _crear_capas() -> void:
 	if visual == null:
 		push_error("WorldTerrain: falta el nodo WorldTerrainVisual en la escena.")
 func obtener_contexto_data_at(tile: Vector2i) -> Dictionary:
-	# Consulta DATA pura: reproduce las mismas funciones deterministas que usa
-	# la generación visual, pero no toca _loaded_chunks ni TileMap.
-	# Los datos canónicos se conservan por referencia: los consumidores DATA
-	# sólo los consultan y no deben mutarlos. Evitamos así duplicaciones
-	# profundas por cada intento de selección de entidades.
+	# Los chunks visuales ya contienen exactamente los índices canónicos calculados
+	# durante su generación. Reutilizarlos evita volver a evaluar FastNoiseLite
+	# para cada intento de spawn de entidades.
+	var chunk_coord := _tile_to_chunk(tile)
+	var datos_variant: Variant = _loaded_chunks.get(chunk_coord, null)
+	if datos_variant is Dictionary:
+		var datos := datos_variant as Dictionary
+		var local := _tile_to_local(tile)
+		var x := local.x + CHUNK_PADDING
+		var y := local.y + CHUNK_PADDING
+		var biomas_variant: Variant = datos.get("biomas", [])
+		var ecosistemas_variant: Variant = datos.get("ecosistemas", [])
+		var zonas_variant: Variant = datos.get("zonas", [])
+		if biomas_variant is Array and ecosistemas_variant is Array and zonas_variant is Array:
+			var biomas_array := biomas_variant as Array
+			var ecosistemas_array := ecosistemas_variant as Array
+			var zonas_array := zonas_variant as Array
+			if y >= 0 and y < biomas_array.size() and y < ecosistemas_array.size() and y < zonas_array.size():
+				if x >= 0 and x < biomas_array[y].size() and x < ecosistemas_array[y].size() and x < zonas_array[y].size():
+					return _construir_contexto_data(
+						tile,
+						int(biomas_array[y][x]),
+						int(ecosistemas_array[y][x]),
+						int(zonas_array[y][x])
+					)
+
+	# DATA puro para chunks que todavía no están materializados visualmente.
 	var bioma_index: int = _bioma_index_at_tile(tile)
 	var ecosistema_index: int = _ecosistema_index_at_tile(tile, bioma_index)
 	var zona: int = _zona_base_at_tile(tile, bioma_index, ecosistema_index)
+	return _construir_contexto_data(tile, bioma_index, ecosistema_index, zona)
+
+
+func _construir_contexto_data(
+	tile: Vector2i,
+	bioma_index: int,
+	ecosistema_index: int,
+	zona: int
+) -> Dictionary:
 	var bioma: Dictionary = {}
 	var ecosistema: Dictionary = {}
 	if bioma_index >= 0 and bioma_index < _biomas.size():
@@ -261,7 +292,6 @@ func obtener_contexto_data_at(tile: Vector2i) -> Dictionary:
 		"zona": zona,
 		"walkable": zona != Zone.WATER and zona != Zone.DEEP_WATER and zona != Zone.SHORE and zona != Zone.ICE
 	}
-
 
 func obtener_resumen_chunk(chunk_coord: Vector2i) -> Dictionary:
 	# LOD DATA: muestreo determinista pequeño. No genera matrices, no toca
