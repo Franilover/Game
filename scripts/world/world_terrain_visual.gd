@@ -990,72 +990,89 @@ func procesar_flush(cells: int) -> bool:
 
 	var presupuesto: int = maxi(cells, 1)
 
-	# Round-robin entre zonas: una capa con una cola grande no puede
-	# monopolizar todos los lotes y dejar otra frontera pendiente durante
-	# varios frames. El cursor se conserva entre llamadas.
+	# Time slicing real: una llamada a procesar_flush() ejecuta como máximo
+	# UNA actualización de TileMapDual. Antes el round-robin podía atravesar
+	# varias zonas dentro de la misma llamada, convirtiendo un presupuesto de
+	# celdas en varios costes independientes de DisplayLayer.
+	#
+	# Mantener una sola zona por llamada permite que WorldTerrain/RenderManager
+	# decidan cuándo volver a ceder el control al siguiente frame. Las colas de
+	# otras zonas permanecen intactas y el cursor garantiza equidad entre ellas.
 	var zonas: Array = _layers_by_zone.keys()
 	var cantidad_zonas: int = zonas.size()
 	if cantidad_zonas == 0:
 		return not tiene_flush_pendiente()
 
-	var zonas_revisadas := 0
-	while zonas_revisadas < cantidad_zonas and presupuesto > 0:
-		var indice_zona: int = (_dirty_zone_cursor + zonas_revisadas) % cantidad_zonas
-		var clave_variant: Variant = zonas[indice_zona]
-		var clave := str(clave_variant)
-		zonas_revisadas += 1
-		var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
-		if not cells_variant is Array or cells_variant.is_empty():
-			continue
+	var indice_zona: int = _dirty_zone_cursor % cantidad_zonas
+	var clave_variant: Variant = zonas[indice_zona]
+	var clave := str(clave_variant)
+	var cells_variant: Variant = _dirty_cells_by_zone.get(clave, [])
 
-		var layer := _layers_by_zone[clave] as TileMapDual
-		if layer == null:
-			_dirty_cells_by_zone[clave] = []
-			_dirty_lookup_by_zone[clave] = {}
-			continue
+	# Buscar la siguiente zona con trabajo, pero sin procesar dos zonas en
+	# este mismo frame/call. El cursor sólo avanza cuando encontramos trabajo.
+	if not cells_variant is Array or cells_variant.is_empty():
+		var encontrada := false
+		for desplazamiento in range(1, cantidad_zonas):
+			var candidato_indice := (indice_zona + desplazamiento) % cantidad_zonas
+			var candidato_clave := str(zonas[candidato_indice])
+			var candidato_cells: Variant = _dirty_cells_by_zone.get(candidato_clave, [])
+			if candidato_cells is Array and not candidato_cells.is_empty():
+				indice_zona = candidato_indice
+				clave = candidato_clave
+				cells_variant = candidato_cells
+				encontrada = true
+				break
+		if not encontrada:
+			return not tiene_flush_pendiente()
 
-		var take: int = mini(presupuesto, cells_variant.size())
-		var dirty: Array[Vector2i] = []
-		var convert_start_usec := Time.get_ticks_usec()
+	var layer := _layers_by_zone[clave] as TileMapDual
+	if layer == null:
+		_dirty_cells_by_zone[clave] = []
+		_dirty_lookup_by_zone[clave] = {}
+		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
+		return not tiene_flush_pendiente()
 
-		# Consumir desde el final: las celdas del chunk que acaba de generarse
-		# fueron añadidas más recientemente y deben llegar al renderer antes
-		# que trabajo visual antiguo de chunks lejanos. Esto hace que el chunk
-		# que el jugador está viendo aparezca primero sin ordenar toda la cola.
-		var lookup: Dictionary = _dirty_lookup_by_zone[clave]
-		while not cells_variant.is_empty() and dirty.size() < take:
-			var cell_variant: Variant = cells_variant.pop_back()
-			if cell_variant is Vector2i and lookup.has(cell_variant):
-				dirty.append(cell_variant as Vector2i)
-				lookup.erase(cell_variant)
+	var take: int = mini(presupuesto, cells_variant.size())
+	var dirty: Array[Vector2i] = []
+	var convert_start_usec := Time.get_ticks_usec()
 
+	# Consumir desde el final: las celdas del chunk que acaba de generarse
+	# fueron añadidas más recientemente y deben llegar al renderer antes
+	# que trabajo visual antiguo de chunks lejanos.
+	var lookup: Dictionary = _dirty_lookup_by_zone[clave]
+	while not cells_variant.is_empty() and dirty.size() < take:
+		var cell_variant: Variant = cells_variant.pop_back()
+		if cell_variant is Vector2i and lookup.has(cell_variant):
+			dirty.append(cell_variant as Vector2i)
+			lookup.erase(cell_variant)
+
+	_dirty_cursor_by_zone[clave] = 0
+
+	_profiler_flush_convert_ms += float(
+		Time.get_ticks_usec() - convert_start_usec
+	) / 1000.0
+
+	if not dirty.is_empty():
+		var update_start_usec := Time.get_ticks_usec()
+		layer._update_cells(dirty, false)
+		var update_ms := float(
+			Time.get_ticks_usec() - update_start_usec
+		) / 1000.0
+		_profiler_flush_update_ms += update_ms
+		_profiler_flush_update_max_ms = maxf(
+			_profiler_flush_update_max_ms,
+			update_ms
+		)
+		_profiler_flush_update_calls += 1
+		_profiler_flush_regions += 1
+		_profiler_flush_cells += dirty.size()
+
+	if cells_variant.is_empty():
+		_dirty_cells_by_zone[clave] = []
+		_dirty_lookup_by_zone[clave] = {}
 		_dirty_cursor_by_zone[clave] = 0
 
-		_profiler_flush_convert_ms += float(
-			Time.get_ticks_usec() - convert_start_usec
-		) / 1000.0
-
-		if not dirty.is_empty():
-			var update_start_usec := Time.get_ticks_usec()
-			layer._update_cells(dirty, false)
-			var update_ms := float(
-				Time.get_ticks_usec() - update_start_usec
-			) / 1000.0
-			_profiler_flush_update_ms += update_ms
-			_profiler_flush_update_max_ms = maxf(
-				_profiler_flush_update_max_ms,
-				update_ms
-			)
-			_profiler_flush_update_calls += 1
-			_profiler_flush_regions += 1
-			_profiler_flush_cells += dirty.size()
-
-		if cells_variant.is_empty():
-			_dirty_cells_by_zone[clave] = []
-			_dirty_lookup_by_zone[clave] = {}
-			_dirty_cursor_by_zone[clave] = 0
-		presupuesto -= dirty.size()
-		_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
+	_dirty_zone_cursor = (indice_zona + 1) % cantidad_zonas
 
 	# Las variaciones NO bloquean la finalización del chunk.
 	# TileMapLayer.set_cell() para decoración puede ser mucho más caro que
