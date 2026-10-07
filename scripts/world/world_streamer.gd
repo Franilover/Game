@@ -46,6 +46,8 @@ var _player_chunk: Vector2i = Vector2i(
 
 var _queue: Array = []
 var _data_chunk_cache: Dictionary = {}
+var _data_entity_queue: Array[Vector2i] = []
+var _data_entity_queued: Dictionary = {}
 
 # Estado logico de representacion por chunk.
 const LOD_DATA: String = "DATA"
@@ -230,6 +232,17 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 	if limite <= 0:
 		return
 
+	# Primero construimos DATA para un chunk remoto. Esto no crea Nodes y deja
+	# preparado el mundo para una futura transición instantánea a TERRAIN/FULL.
+	if not _data_entity_queue.is_empty():
+		var data_coord: Vector2i = _data_entity_queue.pop_front()
+		_data_entity_queued.erase(data_coord)
+		if _entity_spawner.has_method("preparar_datos_criaturas_chunk"):
+			_entity_spawner.preparar_datos_criaturas_chunk(data_coord)
+		if limite >= 2 and _entity_spawner.has_method("preparar_datos_props_chunk"):
+			_entity_spawner.preparar_datos_props_chunk(data_coord)
+		return
+
 	# Las criaturas son el LOD caro: primero se conserva el presupuesto para
 	# el chunk donde está el jugador. Los props son decoración y avanzan en
 	# una cola independiente.
@@ -358,6 +371,7 @@ func _actualizar_streaming() -> void:
 	_actualizar_data_lod(centro)
 	_actualizar_lod_logico(centro)
 	_actualizar_entidades_activas(centro)
+	_actualizar_data_entidades()
 
 
 func _actualizar_cache_borde_jugador(centro: Vector2i) -> void:
@@ -613,6 +627,20 @@ func _actualizar_data_lod(centro: Vector2i) -> void:
 		var primero: Variant = _data_chunk_cache.keys()[0]
 		_data_chunk_cache.erase(primero)
 
+
+func _actualizar_data_entidades() -> void:
+	# DATA prepara registros, nunca Nodes. Se procesa como cola para que ampliar
+	# el radio no convierta 25 chunks en trabajo de un solo frame.
+	for coord_variant in _chunk_lod.keys():
+		if not coord_variant is Vector2i:
+			continue
+		var coord := coord_variant as Vector2i
+		if str(_chunk_lod.get(coord, LOD_DATA)) != LOD_DATA:
+			continue
+		if _data_entity_queued.has(coord):
+			continue
+		_data_entity_queue.append(coord)
+		_data_entity_queued[coord] = true
 
 func _actualizar_lod_logico(centro: Vector2i) -> void:
 	_chunk_lod.clear()
