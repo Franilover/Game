@@ -401,16 +401,23 @@ func iniciar_generacion_chunk(
 	var ecosistemas: Array = []
 
 	for y in range(padded_size):
-		var fila_zonas_base: Array = []
-		var fila_zonas: Array = []
-		var fila_biomas: Array = []
-		var fila_ecosistemas: Array = []
+		# Los datos son índices enteros pequeños y se consultan miles de veces
+		# por chunk. PackedInt32Array conserva el mismo acceso fila[x] pero
+		# reduce memoria y el coste de almacenamiento frente a Arrays de Variant.
+		var fila_zonas_base := PackedInt32Array()
+		var fila_zonas := PackedInt32Array()
+		var fila_biomas := PackedInt32Array()
+		var fila_ecosistemas := PackedInt32Array()
+		fila_zonas_base.resize(padded_size)
+		fila_zonas.resize(padded_size)
+		fila_biomas.resize(padded_size)
+		fila_ecosistemas.resize(padded_size)
 
 		for x in range(padded_size):
-			fila_zonas_base.append(Zone.GRASS)
-			fila_zonas.append(Zone.GRASS)
-			fila_biomas.append(-1)
-			fila_ecosistemas.append(-1)
+			fila_zonas_base[x] = Zone.GRASS
+			fila_zonas[x] = Zone.GRASS
+			fila_biomas[x] = -1
+			fila_ecosistemas[x] = -1
 
 		zonas_base.append(fila_zonas_base)
 		zonas.append(fila_zonas)
