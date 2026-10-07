@@ -1154,7 +1154,7 @@ func flush() -> void:
 
 		# _marcar_dirty() sólo inserta Vector2i. No hace falta reconstruir
 		# otra Array antes de cada actualización del Dual Grid.
-		var dirty: Array = cells_variant
+		var dirty: Array[Vector2i] = cells_variant as Array[Vector2i]
 		if not dirty.is_empty():
 			var update_start_usec := Time.get_ticks_usec()
 			layer._update_cells(dirty, false)
