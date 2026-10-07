@@ -15,7 +15,9 @@ var _ecosystem_bias: PackedFloat32Array = PackedFloat32Array()
 var _biome_generation: Array[Dictionary] = []
 var _ecosystem_generation: Array[Dictionary] = []
 var _biome_enabled: PackedByteArray = PackedByteArray()
+var _biome_enabled_indices: Array[int] = []
 var _ecosystem_enabled: PackedByteArray = PackedByteArray()
+var _ecosystem_enabled_indices: Array[int] = []
 var _biome_zone_thresholds: Array[PackedFloat32Array] = []
 var _biome_zone_values: Array[PackedInt32Array] = []
 var _biome_zone_fallbacks: PackedInt32Array = PackedInt32Array()
@@ -74,6 +76,8 @@ func cargar_datos(
 	_ecosystem_generation.clear()
 	_biome_enabled = PackedByteArray()
 	_ecosystem_enabled = PackedByteArray()
+	_biome_enabled_indices.clear()
+	_ecosystem_enabled_indices.clear()
 	_biome_zone_thresholds.clear()
 	_biome_zone_values.clear()
 	_biome_zone_fallbacks = PackedInt32Array()
@@ -90,6 +94,8 @@ func cargar_datos(
 		var peso := _peso_bioma(indice)
 		_biome_enabled.append(1 if peso > 0.0 else 0)
 		_biome_bias.append(log(maxf(peso, 0.000001)) * 0.35)
+		if peso > 0.0:
+			_biome_enabled_indices.append(indice)
 		var zonas_compiladas := _compilar_zonas(generacion)
 		_biome_zone_thresholds.append(zonas_compiladas["thresholds"])
 		_biome_zone_values.append(zonas_compiladas["values"])
@@ -105,6 +111,8 @@ func cargar_datos(
 		var peso := _peso_ecosistema(indice)
 		_ecosystem_enabled.append(1 if peso > 0.0 else 0)
 		_ecosystem_bias.append(log(maxf(peso, 0.000001)) * 0.35)
+		if peso > 0.0:
+			_ecosystem_enabled_indices.append(indice)
 		var zonas_compiladas := _compilar_zonas(generacion)
 		_ecosystem_zone_thresholds.append(zonas_compiladas["thresholds"])
 		_ecosystem_zone_values.append(zonas_compiladas["values"])
@@ -150,9 +158,7 @@ func bioma_index_at_tile(tile: Vector2i) -> int:
 	var mejor_indice := 0
 	var mejor_puntuacion := -INF
 
-	for indice in range(_biomas.size()):
-		if _biome_enabled[indice] == 0:
-			continue
+	for indice in _biome_enabled_indices:
 
 		var ruido := (
 			_biome_noises[indice].get_noise_2d(
