@@ -628,3 +628,35 @@ func _descargar_lejanos(
 		_entity_spawner.despawn_chunk(
 			chunk_coord
 		)
+
+func _world_to_chunk(
+	position: Vector2
+) -> Vector2i:
+	var tile := Vector2i(
+		floori(
+			position.x
+			/ _terrain.tile_size
+		),
+		floori(
+			position.y
+			/ _terrain.tile_size
+		)
+	)
+
+	return Vector2i(
+		floori(
+			float(tile.x)
+			/ _terrain.chunk_size_tiles
+		),
+		floori(
+			float(tile.y)
+			/ _terrain.chunk_size_tiles
+		)
+	)
+
+
+func _registrar_debug() -> void:
+	var debug := get_node_or_null("/root/GarliaDebug")
+	if debug == null or not debug.has_method("registrar_proveedor"):
+		return
+	debug.registrar_proveedor("world_streamer", "WorldStreamer", self, "Cola de chunks, streaming y jugador.")
