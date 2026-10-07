@@ -49,15 +49,23 @@ func registrar_trabajo(
 
 	# EMA: el presupuesto debe reaccionar al coste reciente sin quedar
 	# dominado por un único pico de TileMapDual durante un cambio de chunk.
-	var coste_anterior := float(_work_unit_ms.get(nombre, 0.0))
-	if coste_anterior <= 0.0:
-		_work_unit_ms[nombre] = coste_unitario
-	else:
-		_work_unit_ms[nombre] = lerpf(
-			coste_anterior,
-			coste_unitario,
-			0.25
-		)
+	# terrain_flush nunca debe aprender un coste unitario a partir de
+	# un micro-lote forzado. Si un frame sólo pudo ejecutar 1-4 celdas,
+	# ese valor puede inflar artificialmente la EMA y hacer que el siguiente
+	# frame vuelva a elegir 1 celda, creando una espiral de lentitud.
+	var actualizar_coste := true
+	if nombre == "terrain_flush" and unidades_validas < 8:
+		actualizar_coste = false
+	if actualizar_coste:
+		var coste_anterior := float(_work_unit_ms.get(nombre, 0.0))
+		if coste_anterior <= 0.0:
+			_work_unit_ms[nombre] = coste_unitario
+		else:
+			_work_unit_ms[nombre] = lerpf(
+				coste_anterior,
+				coste_unitario,
+				0.25
+			)
 
 
 func presupuesto_unidades_terreno(
