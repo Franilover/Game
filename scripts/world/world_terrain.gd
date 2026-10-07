@@ -230,6 +230,36 @@ func _crear_capas() -> void:
 	visual = get_node_or_null("WorldTerrainVisual") as WorldTerrainVisual
 	if visual == null:
 		push_error("WorldTerrain: falta el nodo WorldTerrainVisual en la escena.")
+func obtener_resumen_chunk(chunk_coord: Vector2i) -> Dictionary:
+	# LOD DATA: muestreo determinista pequeño. No genera matrices, no toca
+	# TileMap y no crea entidades. Es la base para conocer el mundo más allá
+	# del radio visual sin pagar el coste de un chunk completo.
+	var muestras: int = 0
+	var conteo_biomas: Dictionary = {}
+	var conteo_ecosistemas: Dictionary = {}
+	var paso: int = maxi(chunk_size_tiles / 4, 1)
+
+	for local_y in range(0, chunk_size_tiles, paso):
+		for local_x in range(0, chunk_size_tiles, paso):
+			var tile := Vector2i(
+				chunk_coord.x * chunk_size_tiles + local_x,
+				chunk_coord.y * chunk_size_tiles + local_y
+			)
+			var bioma_index: int = _bioma_index_at_tile(tile)
+			var ecosistema_index: int = _ecosistema_index_at_tile(tile, bioma_index)
+			conteo_biomas[bioma_index] = int(conteo_biomas.get(bioma_index, 0)) + 1
+			conteo_ecosistemas[ecosistema_index] = int(conteo_ecosistemas.get(ecosistema_index, 0)) + 1
+			muestras += 1
+
+	return {
+		"chunk": chunk_coord,
+		"lod": "DATA",
+		"muestras": muestras,
+		"biomas": conteo_biomas,
+		"ecosistemas": conteo_ecosistemas
+	}
+
+
 func configurar_prioridad_generacion(posicion_mundo: Vector2) -> void:
 	_prioridad_generacion_posicion = posicion_mundo
 
