@@ -337,6 +337,23 @@ Pendiente:
 - GarliaRenderManager ahora actualiza realmente el coste EMA por unidad de trabajo; el presupuesto adaptativo deja de depender de un valor no inicializado.
 
 
+## Pulido de terreno — optimizaciones aplicadas
+
+Antes de continuar con Android se corrigieron tres puntos del pipeline sin cambiar la autoridad canónica:
+
+- El orden de generación de cada chunk dejó de usar `sort_custom` sobre ~1.000 celdas. Ahora usa anillos espaciales en O(n), manteniendo primero las celdas cercanas al jugador.
+- `WorldStreamer` conserva carga 2 y descarga 3. El tercer anillo funciona como histeresis para evitar borrar inmediatamente el chunk recién abandonado.
+- `WorldTerrain` conserva hasta 8 chunks recientes en caché de datos. Al volver a ellos se reutilizan las matrices ya generadas y sólo se reconstruye la representación visual.
+- El prefetch reutiliza las coordenadas de borde calculadas por el cache del jugador en lugar de repetir los cálculos de posición.
+- El profiler ahora distingue `datos_ms`, `pintado_ms` y `flush_ms` acumulados por chunk de sus respectivos `*_max_step_ms`. Esto permite comprobar el coste real por paso/frame y no confundirlo con el tiempo total de un chunk.
+- F4 también muestra el tamaño de la caché de chunks.
+
+No se sustituyó el FLUSH incremental por un commit atómico. TileMapDual depende de vecinos y transiciones; convertir todos los cambios en una sola actualización podría cambiar un coste repartido en varios frames por un pico mucho mayor. La siguiente optimización del renderer sólo se hará si el nuevo profiling demuestra que `flush_update_ms` sigue siendo el cuello.
+
+### Decisión sobre WorkerThreadPool
+
+La generación de datos sigue incremental en el hilo principal por ahora. Moverla directamente a `WorkerThreadPool` no es un parche seguro: `WorldTerrainAreas` contiene `FastNoiseLite`, estructuras canónicas derivadas de Supabase y lógica que debe permanecer aislada de la escena. Primero mediremos `datos_max_step_ms`; sólo si ese pico sigue acercándose al presupuesto de frame se diseñará un worker con un contexto de generación independiente y datos inmutables.
+
 # Port Android — Estado y plan de implementación
 
 ## Punto exacto donde queda el proyecto
