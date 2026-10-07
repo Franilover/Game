@@ -143,6 +143,64 @@ func spawn_chunk(chunk_coord: Vector2i) -> void:
 	_spawn_queued[chunk_coord] = true
 
 
+func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
+	if _entity_manager == null or _terrain == null or _world_data == null or _spawn_rules == null:
+		return
+	if _entity_manager.tiene_datos_chunk(chunk_coord, "criaturas"):
+		return
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = abs(_terrain.map_seed + chunk_coord.x * 92837111 + chunk_coord.y * 689287499) + 1
+	var datos: Array = []
+	var especies: Dictionary = {}
+	for slot in range(max_creatures_per_chunk):
+		var creado := false
+		for intento in range(32):
+			var tile := Vector2i(
+				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
+				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
+			)
+			var contexto := _terrain.obtener_contexto_data_at(tile)
+			if not bool(contexto.get("walkable", false)):
+				continue
+			var ecosistema_variant: Variant = contexto.get("ecosistema", {})
+			if not ecosistema_variant is Dictionary:
+				continue
+			var ecosistema := ecosistema_variant as Dictionary
+			if ecosistema.is_empty():
+				continue
+			var candidatos := _spawn_rules.obtener_candidatos(ecosistema)
+			if candidatos.is_empty():
+				continue
+			var validos: Array[Dictionary] = []
+			for candidato_variant in candidatos:
+				if not candidato_variant is Dictionary:
+					continue
+				var candidato := (candidato_variant as Dictionary).duplicate(true)
+				var criatura_id := str(candidato.get("id", candidato.get("criatura_id", ""))).strip_edges()
+				if criatura_id.is_empty() or especies.has(criatura_id):
+					continue
+				validos.append(candidato)
+			if validos.is_empty():
+				continue
+			var elegido := validos[rng.randi_range(0, validos.size() - 1)]
+			var criatura_id := str(elegido.get("id", elegido.get("criatura_id", ""))).strip_edges()
+			if criatura_id.is_empty():
+				continue
+			especies[criatura_id] = true
+			var registro := elegido.duplicate(true)
+			registro["criatura_id"] = criatura_id
+			registro["runtime_instance_key"] = "criatura:" + str(slot) + ":" + criatura_id
+			registro["chunk"] = chunk_coord
+			registro["position"] = Vector2((float(tile.x) + 0.5) * _terrain.tile_size, (float(tile.y) + 0.5) * _terrain.tile_size)
+			datos.append(registro)
+			creado = true
+			break
+		if not creado:
+			continue
+	_entity_manager.reemplazar_datos_chunk(chunk_coord, "criaturas", datos)
+
+
 func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager == null or _terrain == null or _world_data == null or _spawn_rules == null:
 		return
