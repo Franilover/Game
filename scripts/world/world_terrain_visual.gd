@@ -959,7 +959,7 @@ func marcar_chunk_generado_dirty(chunk_coord: Vector2i, chunk_size_tiles: int) -
 			if bioma == "Pradera" or bioma == "Bosque":
 				_marcar_variacion_dirty(cell)
 
-	_marcar_borde_chunk_generado_dirty(
+	marcar_borde_chunk_generado_dirty(
 		chunk_coord,
 		chunk_size_tiles
 	)
