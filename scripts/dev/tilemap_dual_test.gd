@@ -33,8 +33,8 @@ func _dibujar_prueba() -> void:
 
     tilemap.clear()
 
-    # Prueba mixta: Pradera base con huecos irregulares de Tierra.
-    # Se conserva una semilla fija para que el patrón sea reproducible.
+    # Prueba mixta: cuatro terrenos para comparar si el problema es específico
+    # de Tierra o de la integración de un terrain distinto de Pradera.
     var rng := RandomNumberGenerator.new()
     rng.seed = 48127
 
@@ -43,8 +43,13 @@ func _dibujar_prueba() -> void:
         for x in range(-8, 9):
             var cell := Vector2i(x, y)
             var terrain := 1
-            if rng.randf() < 0.22:
+            var roll := rng.randf()
+            if roll < 0.12:
                 terrain = 2
+            elif roll < 0.24:
+                terrain = 3
+            elif roll < 0.36:
+                terrain = 4
             tilemap.draw_cell(cell, terrain)
             celdas.append(cell)
 
@@ -90,9 +95,18 @@ func _crear_tileset_grass() -> TileSet:
         TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
     ]
 
+    var bosque_texture: Texture2D = load("res://assets/tilesets/Bosque.png") as Texture2D
+    var desierto_texture: Texture2D = load("res://assets/tilesets/Desierto.png") as Texture2D
+
+    if bosque_texture == null or desierto_texture == null:
+        push_error("TileMapDualTest: no se pudieron cargar Bosque.png y Desierto.png")
+        return tile_set
+
     var configs: Array[Dictionary] = [
         {"texture": grass_texture, "terrain": 1, "source_id": 1},
         {"texture": dirt_texture, "terrain": 2, "source_id": 2},
+        {"texture": bosque_texture, "terrain": 3, "source_id": 3},
+        {"texture": desierto_texture, "terrain": 4, "source_id": 4},
     ]
 
     for config_variant in configs:
