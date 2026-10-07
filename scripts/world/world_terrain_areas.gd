@@ -156,6 +156,9 @@ func bioma_index_at_tile(tile: Vector2i) -> int:
 	# Cada bioma tiene su propio campo de ruido. Elegir el máximo
 	# ponderado evita el error anterior: usar un único ruido con
 	# umbrales acumulados convertía los pesos en anillos concéntricos.
+	if _biome_enabled_indices.size() == 1:
+		return _biome_enabled_indices[0]
+
 	var mejor_indice := 0
 	var mejor_puntuacion := -INF
 
@@ -233,6 +236,8 @@ func ecosistema_index_at_tile(
 	var indices: Array = _bioma_ecosistemas[bioma_index]
 	if indices.is_empty():
 		return -1
+	if indices.size() == 1:
+		return int(indices[0])
 
 	# Cada ecosistema tiene su propio campo espacial. Un único ruido
 	# dividido por índices producía bandas que dependían del orden
