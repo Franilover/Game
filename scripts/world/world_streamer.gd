@@ -627,7 +627,7 @@ func _actualizar_data_lod(centro: Vector2i) -> void:
 			necesarios[coord] = true
 			if _data_chunk_cache.has(coord):
 				continue
-			_data_chunk_cache[coord] = _terrain.obtener_resumen_chunk(coord)
+			_data_chunk_cache[coord] = {"chunk": coord, "lod": LOD_DATA}
 
 	var para_borrar: Array[Vector2i] = []
 	for clave_variant in _data_chunk_cache.keys():
