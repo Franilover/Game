@@ -230,6 +230,32 @@ func _crear_capas() -> void:
 	visual = get_node_or_null("WorldTerrainVisual") as WorldTerrainVisual
 	if visual == null:
 		push_error("WorldTerrain: falta el nodo WorldTerrainVisual en la escena.")
+func obtener_contexto_data_at(tile: Vector2i) -> Dictionary:
+	# Consulta DATA pura: reproduce las mismas funciones deterministas que usa
+	# la generación visual, pero no toca _loaded_chunks ni TileMap.
+	var bioma_index := _bioma_index_at_tile(tile)
+	var ecosistema_index := _ecosistema_index_at_tile(tile, bioma_index)
+	var zona := _zona_base_at_tile(tile, bioma_index, ecosistema_index)
+	var bioma: Dictionary = {}
+	var ecosistema: Dictionary = {}
+	if bioma_index >= 0 and bioma_index < _biomas.size():
+		bioma = (_biomas[bioma_index] as Dictionary).duplicate(true) if _biomas[bioma_index] is Dictionary else {}
+	if ecosistema_index >= 0 and ecosistema_index < _ecosistemas.size():
+		ecosistema = (_ecosistemas[ecosistema_index] as Dictionary).duplicate(true) if _ecosistemas[ecosistema_index] is Dictionary else {}
+	var habitats: Array = []
+	var habitats_variant: Variant = ecosistema.get("habitats", [])
+	if habitats_variant is Array:
+		habitats = (habitats_variant as Array).duplicate(true)
+	return {
+		"tile": tile,
+		"bioma": bioma,
+		"ecosistema": ecosistema,
+		"habitats": habitats,
+		"zona": zona,
+		"walkable": zona != Zone.WATER and zona != Zone.DEEP_WATER and zona != Zone.SHORE and zona != Zone.ICE
+	}
+
+
 func obtener_resumen_chunk(chunk_coord: Vector2i) -> Dictionary:
 	# LOD DATA: muestreo determinista pequeño. No genera matrices, no toca
 	# TileMap y no crea entidades. Es la base para conocer el mundo más allá
