@@ -58,6 +58,8 @@ const LOD_TERRAIN: String = "TERRAIN"
 const LOD_FULL: String = "FULL"
 var _chunk_lod: Dictionary = {}
 var _lod_counts: Dictionary = {LOD_DATA: 0, LOD_TERRAIN: 0, LOD_FULL: 0}
+var _last_lod_center: Vector2i = Vector2i(999999, 999999)
+var _last_entity_lod_center: Vector2i = Vector2i(999999, 999999)
 
 
 func configurar(
@@ -371,9 +373,14 @@ func _actualizar_streaming() -> void:
 	_ceder_generacion_si_hay_prioridad(centro)
 
 	_descargar_lejanos(centro)
-	_actualizar_data_lod(centro)
-	_actualizar_lod_logico(centro)
-	_actualizar_entidades_activas(centro)
+	var cambio_chunk := centro != _last_lod_center
+	if cambio_chunk:
+		_actualizar_data_lod(centro)
+		_actualizar_lod_logico(centro)
+		_last_lod_center = centro
+	if cambio_chunk or centro != _last_entity_lod_center:
+		_actualizar_entidades_activas(centro)
+		_last_entity_lod_center = centro
 	_actualizar_data_entidades()
 
 
