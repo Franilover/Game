@@ -318,6 +318,7 @@ func comenzar_lote() -> void:
 		var layer := layer_variant as TileMapDual
 		if layer != null:
 			layer.set_block_signals(true)
+			layer.set_deferred_updates_blocked(true)
 
 
 func terminar_lote() -> void:
@@ -326,6 +327,7 @@ func terminar_lote() -> void:
 	for layer_variant in _layers_by_zone.values():
 		var layer := layer_variant as TileMapDual
 		if layer != null:
+			layer.set_deferred_updates_blocked(false)
 			layer.set_block_signals(false)
 	_batch_active = false
 
