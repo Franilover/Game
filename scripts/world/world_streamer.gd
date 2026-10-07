@@ -655,6 +655,37 @@ func _world_to_chunk(
 	)
 
 
+
+func tiene_jugador() -> bool:
+	return _player != null and is_instance_valid(_player)
+
+
+func obtener_diagnostico() -> Dictionary:
+	return {
+		"jugador": tiene_jugador(),
+		"player_chunk": _player_chunk,
+		"cola_chunks": _queue.size(),
+		"cola": _queue.duplicate(),
+		"load_radius": _load_radius,
+		"unload_radius": _unload_radius,
+		"max_visible_chunks": MAX_VISIBLE_CHUNKS,
+		"cells_per_frame": _cells_per_frame,
+		"generando": _terrain != null and _terrain.tiene_generacion_activa(),
+		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
+		"player_direction": _player_direction,
+		"prefetch_margin_tiles": _prefetch_margin_tiles,
+		"prefetch_activo": _prefetch_activo,
+		"prefetch_chunk": _prefetch_chunk if _prefetch_activo else null,
+		"borde_cache": {
+			"x": _local_x_cache,
+			"y": _local_y_cache,
+			"arriba": _cerca_arriba_cache,
+			"abajo": _cerca_abajo_cache,
+			"izquierda": _cerca_izquierda_cache,
+			"derecha": _cerca_derecha_cache
+		}
+	}
+
 func _registrar_debug() -> void:
 	var debug := get_node_or_null("/root/GarliaDebug")
 	if debug == null or not debug.has_method("registrar_proveedor"):
