@@ -265,6 +265,25 @@ func _vista_mundo() -> String:
 				if nombre == "WorldTerrain" and diag.has("flush_estado"):
 					var flush_estado: Dictionary = diag["flush_estado"]
 					out.append("     PIPELINE FLUSH: pendiente=%s total=%s ultima=%s/%s %.3fms (convert %.3f + update %.3f)" % [str(flush_estado.get("pendiente", false)), str(flush_estado.get("pendientes_total", 0)), str(flush_estado.get("ultima_zona", "")), str(flush_estado.get("ultima_cantidad", 0)), float(flush_estado.get("ultimo_ms", 0.0)), float(flush_estado.get("ultimo_convert_ms", 0.0)), float(flush_estado.get("ultimo_update_ms", 0.0))])
+
+	var dual := _diagnostico_dual_grid()
+	out.append("")
+	out.append("DUAL GRID / RECOMPOSICION")
+	out.append("  TileMapDual activos: %d | layers: %d" % [int(dual.get("tilemaps", 0)), int(dual.get("layers", 0))])
+	out.append("  update_calls=%d world_cells=%d candidates=%d rules=%d" % [
+		int(dual.get("update_calls", 0)),
+		int(dual.get("world_cells", 0)),
+		int(dual.get("display_candidates", 0)),
+		int(dual.get("rule_evaluations", 0))
+	])
+	out.append("  redundantes=%d set_cell=%d" % [
+		int(dual.get("redundant_tiles", 0)),
+		int(dual.get("set_cells", 0))
+	])
+	if int(dual.get("display_candidates", 0)) > 0:
+		var candidatos: float = float(dual.get("display_candidates", 0))
+		var set_count: float = float(dual.get("set_cells", 0))
+		out.append("  eficiencia: %.1f%% sin set_cell" % [100.0 * (1.0 - set_count / candidatos)])
 	return "\n".join(out)
 
 func _vista_entidades() -> String:
@@ -482,6 +501,36 @@ func _vista_arbol() -> String:
 		if not script.is_empty():
 			out.append("%s    script: %s" % [prefijo, script])
 	return "\n".join(out)
+
+func _diagnostico_dual_grid() -> Dictionary:
+	var out: Dictionary = {
+		"tilemaps": 0,
+		"layers": 0,
+		"update_calls": 0,
+		"world_cells": 0,
+		"display_candidates": 0,
+		"rule_evaluations": 0,
+		"redundant_tiles": 0,
+		"set_cells": 0,
+	}
+	var raiz: Node = get_tree().root
+	if raiz == null:
+		return out
+	for nodo in _recorrer(raiz):
+		if not nodo is TileMapDual:
+			continue
+		out["tilemaps"] = int(out["tilemaps"]) + 1
+		if not nodo.has_method("obtener_diagnostico"):
+			continue
+		var diag: Variant = nodo.call("obtener_diagnostico")
+		if not diag is Dictionary:
+			continue
+		var metricas: Dictionary = diag.get("renderer_metrics", {})
+		out["layers"] = int(out["layers"]) + int(metricas.get("layers", 0))
+		for clave in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells"]:
+			out[clave] = int(out[clave]) + int(metricas.get(clave, 0))
+	return out
+
 
 func _buscar_por_nombre(nombre: String) -> Node:
 	# El mundo abierto es una zona dinámica cargada por ZoneManager.
