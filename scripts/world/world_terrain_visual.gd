@@ -386,7 +386,6 @@ func set_zone(
 	bioma_nombre: String = "",
 	bioma_textura: String = ""
 ) -> void:
-	var profiler_start_usec := Time.get_ticks_usec()
 	if zone < 0 or zone >= ZONE_TEXTURES.size():
 		return
 
@@ -447,12 +446,9 @@ func set_zone(
 	# El lote ya conoce exactamente qué bloque acaba de cambiar y hará una
 	# única invalidación conjunta al terminar. Esto evita ~5 operaciones de
 	# Dictionary por cada una de las 1.024 celdas.
-	if not _batch_active:
-		var variation_start_usec := Time.get_ticks_usec()
-		_marcar_variaciones_dirty(cell, clave)
-		var variation_ms := float(Time.get_ticks_usec() - variation_start_usec) / 1000.0
-		_profiler_variation_ms += variation_ms
-		_profiler_variation_max_ms = maxf(_profiler_variation_max_ms, variation_ms)
+	# Las variaciones se difieren hasta que el chunk esté completo. Durante
+	# el streaming no tiene sentido recalcular interior/borde cinco veces por
+	# celda: los vecinos todavía pueden no existir.
 
 	var data: Dictionary = _base_tiles[tile_key]
 
@@ -470,14 +466,11 @@ func set_zone(
 	# Una sola pasada cubre la celda nueva y la frontera de las capas
 	# vecinas. La función deduplica mediante lookup, evitando dos recorridos
 	# sobre UPDATE_NEIGHBORS por cada celda del chunk.
+	# La invalidación se hace en marcar_region_generada_dirty() en modo lote.
+	# Fuera de un lote, mantener la semántica anterior para cambios puntuales.
 	if not _batch_active:
-		var dirty_start_usec := Time.get_ticks_usec()
 		_marcar_frontera_por_celda_nueva(cell)
-		_profiler_dirty_ms += float(Time.get_ticks_usec() - dirty_start_usec) / 1000.0
 
-	var set_zone_ms := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
-	_profiler_set_zone_ms += set_zone_ms
-	_profiler_set_zone_max_ms = maxf(_profiler_set_zone_max_ms, set_zone_ms)
 	_profiler_set_zone_calls += 1
 
 
@@ -915,9 +908,10 @@ func marcar_region_generada_dirty(
 	inicio: int,
 	fin: int
 ) -> void:
-	# Marca únicamente las celdas que ya fueron pintadas en este lote.
-	# Los vecinos que ya existen también se invalidan para mantener las
-	# transiciones correctas mientras el chunk se completa progresivamente.
+	# Cada lote sólo registra las celdas que acaba de pintar. Los vecinos
+	# internos pertenecen al mismo chunk y los externos se invalidan una sola
+	# vez al finalizarlo. Esto evita hasta cinco recorridos de Dictionary por
+	# cada celda generada.
 	var total := mini(fin, orden.size())
 	var primero := maxi(inicio, 0)
 	for indice_cursor in range(primero, total):
@@ -931,17 +925,6 @@ func marcar_region_generada_dirty(
 		var layer_key := str(_cell_layer_key.get(cell, ""))
 		if _layers_by_zone.has(layer_key):
 			_marcar_dirty(layer_key, cell)
-			for offset: Vector2i in UPDATE_NEIGHBORS:
-				var vecino := cell + offset
-				if _cell_layer_key.has(vecino):
-					_marcar_dirty(
-						str(_cell_layer_key[vecino]),
-						vecino
-					)
-		var bioma := str(_cell_bioma.get(cell, ""))
-		if bioma == "Pradera" or bioma == "Bosque":
-			_marcar_variaciones_dirty(cell, bioma)
-
 
 func marcar_borde_chunk_generado_dirty(
 	chunk_coord: Vector2i,
@@ -961,10 +944,9 @@ func marcar_borde_chunk_generado_dirty(
 
 
 func marcar_chunk_generado_dirty(chunk_coord: Vector2i, chunk_size_tiles: int) -> void:
-	# Durante la generación no invalidamos 5 vecinos por cada celda.
-	# Todas las celdas del chunk ya fueron pintadas, así que basta con una
-	# invalidación conjunta del bloque y su borde. Esto reduce miles de
-	# operaciones Dictionary por chunk.
+	# Las celdas base ya fueron registradas por lote. Aquí sólo hacemos el
+	# trabajo que no puede resolverse hasta que todos los vecinos existan:
+	# variaciones decorativas e invalidación del borde externo.
 	var x0 := chunk_coord.x * chunk_size_tiles
 	var y0 := chunk_coord.y * chunk_size_tiles
 	var x1 := x0 + chunk_size_tiles - 1
@@ -973,21 +955,14 @@ func marcar_chunk_generado_dirty(chunk_coord: Vector2i, chunk_size_tiles: int) -
 	for y in range(y0, y1 + 1):
 		for x in range(x0, x1 + 1):
 			var cell := Vector2i(x, y)
-			var layer_key := str(_cell_layer_key.get(cell, ""))
-			if _layers_by_zone.has(layer_key):
-				_marcar_dirty(layer_key, cell)
 			var bioma := str(_cell_bioma.get(cell, ""))
 			if bioma == "Pradera" or bioma == "Bosque":
-				_marcar_variaciones_dirty(cell, bioma)
+				_marcar_variacion_dirty(cell)
 
-	# Sólo el borde necesita invalidar vecinos externos del chunk.
-	for x in range(x0, x1 + 1):
-		_marcar_dirty_vecinos_externos(Vector2i(x, y0))
-		_marcar_dirty_vecinos_externos(Vector2i(x, y1))
-	for y in range(y0 + 1, y1):
-		_marcar_dirty_vecinos_externos(Vector2i(x0, y))
-		_marcar_dirty_vecinos_externos(Vector2i(x1, y))
-
+	_marcar_borde_chunk_generado_dirty(
+		chunk_coord,
+		chunk_size_tiles
+	)
 
 func tiene_flush_pendiente() -> bool:
 	for clave_variant in _layers_by_zone.keys():
