@@ -5,11 +5,15 @@ const TILE_SIZE: int = 32
 const GRASS_TEXTURE_PATH: String = "res://assets/tilesets/Pradera.png"
 
 var tilemap: TileMapDual
+var terreno_seleccionado: int = 1
+var selector: OptionButton
+var estado_label: Label
 
 
 func _ready() -> void:
     tilemap = get_node("TileMapDual") as TileMapDual
     call_deferred("_preparar_prueba")
+    _crear_menu_prueba()
 
 
 func _preparar_prueba() -> void:
@@ -33,27 +37,11 @@ func _dibujar_prueba() -> void:
 
     tilemap.clear()
 
-    # Prueba mixta: cuatro terrenos para comparar si el problema es específico
-    # de Tierra o de la integración de un terrain distinto de Pradera.
-    var rng := RandomNumberGenerator.new()
-    rng.seed = 48127
-
-    var celdas: Array[Vector2i] = []
     for y in range(-5, 6):
         for x in range(-8, 9):
-            var cell := Vector2i(x, y)
-            var terrain := 1
-            var roll := rng.randf()
-            if roll < 0.12:
-                terrain = 2
-            elif roll < 0.24:
-                terrain = 3
-            elif roll < 0.36:
-                terrain = 4
-            tilemap.draw_cell(cell, terrain)
-            celdas.append(cell)
+            tilemap.draw_cell(Vector2i(x, y), 1)
 
-    _refrescar_dual(celdas)
+    _refrescar_dual(tilemap.get_used_cells())
 
 func _refrescar_dual(celdas: Array[Vector2i]) -> void:
     if celdas.is_empty():
@@ -133,6 +121,114 @@ func _crear_tileset_grass() -> TileSet:
 
     return tile_set
 
+func _crear_menu_prueba() -> void:
+    var panel := PanelContainer.new()
+    panel.name = "MenuAssets"
+    panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+    panel.position = Vector2(-230, 20)
+    panel.size = Vector2(210, 330)
+    add_child(panel)
+
+    var margin := MarginContainer.new()
+    margin.add_theme_constant_override("margin_left", 12)
+    margin.add_theme_constant_override("margin_top", 12)
+    margin.add_theme_constant_override("margin_right", 12)
+    margin.add_theme_constant_override("margin_bottom", 12)
+    panel.add_child(margin)
+
+    var box := VBoxContainer.new()
+    box.add_theme_constant_override("separation", 8)
+    margin.add_child(box)
+
+    var title := Label.new()
+    title.text = "LABORATORIO — TERRENOS"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    box.add_child(title)
+
+    selector = OptionButton.new()
+    selector.name = "SelectorTerreno"
+    selector.add_item("Pradera", 1)
+    selector.add_item("Tierra", 2)
+    selector.add_item("Bosque", 3)
+    selector.add_item("Desierto", 4)
+    selector.selected = 0
+    selector.item_selected.connect(_seleccionar_terreno)
+    box.add_child(selector)
+
+    var separador := HSeparator.new()
+    box.add_child(separador)
+
+    var limpiar := Button.new()
+    limpiar.text = "Limpiar mapa"
+    limpiar.pressed.connect(_limpiar_mapa)
+    box.add_child(limpiar)
+
+    var bloque := Button.new()
+    bloque.text = "Rellenar con seleccionado"
+    bloque.pressed.connect(_rellenar_seleccionado)
+    box.add_child(bloque)
+
+    var mezcla := Button.new()
+    mezcla.text = "Generar mezcla aleatoria"
+    mezcla.pressed.connect(_generar_mezcla)
+    box.add_child(mezcla)
+
+    estado_label = Label.new()
+    estado_label.text = "Seleccionado: Pradera"
+    estado_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    box.add_child(estado_label)
+
+    var ayuda := Label.new()
+    ayuda.text = "Click izquierdo: pintar\nClick derecho: borrar"
+    box.add_child(ayuda)
+
+
+func _seleccionar_terreno(index: int) -> void:
+    terreno_seleccionado = selector.get_item_id(index)
+    estado_label.text = "Seleccionado: " + selector.get_item_text(index)
+
+
+func _limpiar_mapa() -> void:
+    if tilemap == null:
+        return
+    tilemap.clear()
+    _refrescar_dual(tilemap.get_used_cells())
+
+
+func _rellenar_seleccionado() -> void:
+    if tilemap == null:
+        return
+    var celdas: Array[Vector2i] = []
+    for y in range(-5, 6):
+        for x in range(-8, 9):
+            var cell := Vector2i(x, y)
+            tilemap.draw_cell(cell, terreno_seleccionado)
+            celdas.append(cell)
+    _refrescar_dual(celdas)
+
+
+func _generar_mezcla() -> void:
+    if tilemap == null:
+        return
+    tilemap.clear()
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 48127
+    var celdas: Array[Vector2i] = []
+    for y in range(-5, 6):
+        for x in range(-8, 9):
+            var cell := Vector2i(x, y)
+            var roll := rng.randf()
+            var terrain := 1
+            if roll < 0.12:
+                terrain = 2
+            elif roll < 0.24:
+                terrain = 3
+            elif roll < 0.36:
+                terrain = 4
+            tilemap.draw_cell(cell, terrain)
+            celdas.append(cell)
+    _refrescar_dual(celdas)
+
 func _unhandled_input(event: InputEvent) -> void:
     if tilemap == null:
         return
@@ -156,7 +252,7 @@ func _unhandled_input(event: InputEvent) -> void:
     )
 
     if mouse_event.button_index == MOUSE_BUTTON_LEFT:
-        tilemap.draw_cell(cell, 1)
+        tilemap.draw_cell(cell, terreno_seleccionado)
         _refrescar_dual([cell])
     elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
         tilemap.draw_cell(cell, 0)
