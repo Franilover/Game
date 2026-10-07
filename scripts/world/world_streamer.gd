@@ -390,7 +390,7 @@ func _actualizar_streaming() -> void:
 	if cambio_chunk or centro != _last_entity_lod_center:
 		_actualizar_entidades_activas(centro)
 		_last_entity_lod_center = centro
-	_actualizar_data_entidades()
+		_actualizar_data_entidades(centro)
 
 
 func _actualizar_cache_borde_jugador(centro: Vector2i) -> void:
@@ -647,7 +647,7 @@ func _actualizar_data_lod(centro: Vector2i) -> void:
 		_data_chunk_cache.erase(primero)
 
 
-func _actualizar_data_entidades() -> void:
+func _actualizar_data_entidades(centro: Vector2i) -> void:
 	# DATA prepara registros, nunca Nodes. Se procesa como cola para que ampliar
 	# el radio no convierta 25 chunks en trabajo de un solo frame.
 	var activos: Dictionary = {}
