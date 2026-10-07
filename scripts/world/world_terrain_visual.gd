@@ -433,6 +433,7 @@ func _crear_tileset() -> TileSet:
 func set_zone(
 	cell: Vector2i,
 	zone: int,
+	bioma_index: int,
 	bioma_nombre: String = "",
 	bioma_textura: String = ""
 ) -> void:
@@ -440,7 +441,11 @@ func set_zone(
 		return
 
 	var clave := _normalizar_bioma(bioma_nombre)
+	if bioma_index < 0 or bioma_index >= ZONE_TEXTURES.size():
+		push_warning("WorldTerrainVisual: bioma_index inválido: " + str(bioma_index))
+		return
 	var layer_key := str(zone)
+	var bioma_key := str(bioma_index)
 	# configurar() crea todas las capas antes de pintar. Evitar volver a
 	# resolver/validar la misma capa por cada una de las 1.024 celdas.
 	var layer := _layers_by_zone[layer_key] as TileMapDual
@@ -450,12 +455,13 @@ func set_zone(
 	if ENABLE_VARIATIONS and VARIACIONES_POR_BIOMA.has(clave) and not _variation_layers_by_bioma.has(clave):
 		_variation_layers_by_bioma[clave] = _crear_capa_variaciones(clave)
 
-	var tile_key := layer_key
+	var tile_key := bioma_key
 
 	if not _base_tiles.has(tile_key):
 		_crear_base_tile(
 			clave,
 			tile_key,
+			bioma_index,
 			zone,
 			layer,
 			bioma_textura
@@ -624,6 +630,7 @@ func _indice_variacion(cell: Vector2i) -> int:
 func _crear_base_tile(
 	bioma_nombre: String,
 	tile_key: String,
+	bioma_index: int,
 	zone: int,
 	layer: TileMapDual,
 	bioma_textura: String = ""
@@ -710,13 +717,8 @@ func _cargar_textura_bioma(
 	zone: int,
 	bioma_textura: String = ""
 ) -> Texture2D:
-	# La zona manda sobre el aspecto visual. Supabase determina si
-	# la celda es grass, dirt, stone, etc.; cada zona tiene su atlas.
-	var textura_zona := _cargar_textura_zone(zone)
-	if textura_zona != null:
-		return textura_zona
-
-	# Compatibilidad para datos antiguos o zonas sin atlas propio.
+	# La identidad visual la manda el BIOMA. La zona sólo queda como
+	# fallback de compatibilidad para datos antiguos sin textura de bioma.
 	if not bioma_textura.strip_edges().is_empty():
 		var textura_canonica := load(
 			bioma_textura.strip_edges()
@@ -741,7 +743,9 @@ func _cargar_textura_bioma(
 		if _textura_valida(bioma_texture):
 			return bioma_texture
 
-	return null
+	# Fallback heredado: no define la identidad visual cuando existe
+	# información canónica del bioma.
+	return _cargar_textura_zone(zone)
 
 func _cargar_textura_zone(zone: int) -> Texture2D:
 	var path := str(
