@@ -9,6 +9,10 @@ extends Control
 	$Center/MultiplayerButton
 )
 
+@onready var test_lab_button: Button = (
+	$Center/TestLabButton
+)
+
 @onready var exit_button: Button = (
 	$Center/ExitButton
 )
@@ -98,6 +102,10 @@ func _ready() -> void:
 
 	multiplayer_button.pressed.connect(
 		_abrir_multijugador
+	)
+
+	test_lab_button.pressed.connect(
+		_abrir_laboratorio
 	)
 
 	host_button.pressed.connect(
@@ -276,6 +284,15 @@ func _al_error_mundo(
 		mensaje
 	)
 
+
+func _abrir_laboratorio() -> void:
+	var lab_scene: String = "res://scenes/dev/test_lab.tscn"
+	var error: Error = get_tree().change_scene_to_file(lab_scene)
+	if error != OK:
+		push_error(
+			"StartMenu: no se pudo abrir el Laboratorio de Pruebas. Error: "
+			+ str(error)
+		)
 
 func _iniciar_partida() -> void:
 	_abrir_selector_partidas()
