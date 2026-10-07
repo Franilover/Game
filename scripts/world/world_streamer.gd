@@ -663,7 +663,7 @@ func _actualizar_lod_logico(centro: Vector2i) -> void:
 		var coord: Vector2i = coord_variant
 		var distancia := _distancia_chunk(coord, centro)
 		var lod: String = LOD_DATA
-		if distancia == 0:
+		if distancia <= FULL_RADIUS:
 			lod = LOD_FULL
 		elif distancia <= VISIBLE_RADIUS:
 			lod = LOD_TERRAIN
