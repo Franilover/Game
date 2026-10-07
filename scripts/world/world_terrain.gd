@@ -694,7 +694,7 @@ func _procesar_pintado_chunk(
 	var cursor: int = int(
 		_generation_task["cursor"]
 	)
-	var orden: Array = _generation_task["orden_pintado"]
+	var orden: PackedInt32Array = _generation_task["orden_pintado"]
 	var cursor_inicio_lote: int = cursor
 
 	var limite: int = mini(
@@ -749,7 +749,8 @@ func _procesar_pintado_chunk(
 				zonas_base,
 				padded_x,
 				padded_y,
-				zona_base
+				zona_base,
+				chunk_size_tiles + CHUNK_PADDING * 2
 			)
 		)
 
@@ -1223,31 +1224,27 @@ func _zona_base_at_tile(
 		ecosistema_index
 	)
 func _zona_final_desde_array(
-	zonas: Array,
+	zonas: PackedInt32Array,
 	x: int,
 	y: int,
-	zona_base: int
+	zona_base: int,
+	size: int
 ) -> int:
-	if areas == null:
+	if zona_base != Zone.WATER and zona_base != Zone.DEEP_WATER:
 		return zona_base
-	return areas.zona_final_desde_array(
-		zonas,
-		x,
-		y,
-		zona_base
-	)
-func _agua_toca_tierra_en_array(
-	zonas: Array,
-	x: int,
-	y: int
-) -> bool:
-	if areas == null:
-		return false
-	return areas.agua_toca_tierra_en_array(
-		zonas,
-		x,
-		y
-	)
+
+	for direccion: Vector2i in ORTHOGONAL_DIRECTIONS:
+		var nx: int = x + direccion.x
+		var ny: int = y + direccion.y
+		if nx < 0 or nx >= size or ny < 0 or ny >= size:
+			continue
+		var vecino: int = zonas[ny * size + nx]
+		if vecino != Zone.WATER and vecino != Zone.DEEP_WATER:
+			return Zone.SHORE
+
+	return zona_base
+
+
 func _pintar_tile(
 	tile: Vector2i,
 	zona: int,
