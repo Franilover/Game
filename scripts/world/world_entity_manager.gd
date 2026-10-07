@@ -79,6 +79,22 @@ func tiene_datos_chunk(chunk_coord: Vector2i, tipo: String = "") -> bool:
 	return datos_variant is Array and not (datos_variant as Array).is_empty()
 
 
+func limpiar_datos_fuera_de_radio(centro: Vector2i, radio: int) -> int:
+	var eliminados := 0
+	var para_borrar: Array[Vector2i] = []
+	for coord_variant in _data_by_chunk.keys():
+		if not coord_variant is Vector2i:
+			continue
+		var coord := coord_variant as Vector2i
+		var distancia := maxi(abs(coord.x - centro.x), abs(coord.y - centro.y))
+		if distancia > radio:
+			para_borrar.append(coord)
+	for coord in para_borrar:
+		_data_by_chunk.erase(coord)
+		eliminados += 1
+	return eliminados
+
+
 func obtener_diagnostico_datos() -> Dictionary:
 	var props := 0
 	var criaturas := 0
@@ -92,7 +108,7 @@ func obtener_diagnostico_datos() -> Dictionary:
 			props += (props_variant as Array).size()
 		if criaturas_variant is Array:
 			criaturas += (criaturas_variant as Array).size()
-	return {"chunks": _data_by_chunk.size(), "props": props, "criaturas": criaturas}
+	return {"chunks": _data_by_chunk.size(), "props": props, "criaturas": criaturas, "runtime_criaturas": _runtime_state_by_key.size(), "runtime_props": _runtime_prop_state_by_key.size()}
 
 
 func configurar(entities_root: Node, entity_factory: WorldEntityFactory = null) -> void:
