@@ -104,16 +104,17 @@ func _rebuild_display_paths() -> void:
 	# Las rutas de vecinos son estáticas. Resolverlas una vez evita llamar
 	# get_neighbor_cell() por cada celda durante cada recomposición.
 	for path: Array in _terrain.display_to_world_neighborhood:
-		var offset := Vector2i.ZERO
-		for neighbor: TileSet.CellNeighbor in path:
-			offset += get_neighbor_cell(Vector2i.ZERO, Util.reverse_neighbor(neighbor))
-		_reversed_display_offsets.append(offset)
-			
+		# Resolver la ruta con la misma semántica del addon original. Las
+		# relaciones de esquina pueden depender de la geometría del TileSet;
+		# no asumir que son sumas independientes de offsets.
+		_reversed_display_offsets.append(
+			follow_path(Vector2i.ZERO, path.map(Util.reverse_neighbor))
+		)
+		
 	for path: Array in _terrain.display_to_world_neighborhood:
-		var offset := Vector2i.ZERO
-		for neighbor: TileSet.CellNeighbor in path:
-			offset += get_neighbor_cell(Vector2i.ZERO, neighbor)
-		_terrain_world_offsets.append(offset)
+		_terrain_world_offsets.append(
+			follow_path(Vector2i.ZERO, path)
+		)
 
 
 func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
