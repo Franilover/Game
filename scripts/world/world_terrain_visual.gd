@@ -101,6 +101,12 @@ var _variation_layers_by_bioma: Dictionary = {}
 var _variation_tilesets_by_bioma: Dictionary = {}
 var _batch_active: bool = false
 var _clear_task: Dictionary = {}
+var _flush_last_zone: String = ""
+var _flush_last_cells: int = 0
+var _flush_last_ms: float = 0.0
+var _flush_last_convert_ms: float = 0.0
+var _flush_last_update_ms: float = 0.0
+var _flush_last_frame_cells: int = 0
 
 var _profiler_set_zone_ms: float = 0.0
 var _profiler_set_zone_calls: int = 0
@@ -138,6 +144,28 @@ func iniciar_profiler() -> void:
 	_profiler_flush_update_max_ms = 0.0
 	_profiler_variation_max_ms = 0.0
 	_profiler_set_cell_calls = 0
+
+func obtener_estado_flush() -> Dictionary:
+	var pendientes_por_zona: Dictionary = {}
+	var pendientes_total: int = 0
+	for clave_variant in _dirty_cells_by_zone.keys():
+		var clave := str(clave_variant)
+		var lista_variant: Variant = _dirty_cells_by_zone.get(clave, [])
+		var cantidad: int = lista_variant.size() if lista_variant is Array else 0
+		pendientes_por_zona[clave] = cantidad
+		pendientes_total += cantidad
+	return {
+		"pendiente": pendientes_total > 0,
+		"pendientes_total": pendientes_total,
+		"pendientes_por_zona": pendientes_por_zona,
+		"zonas": _layers_by_zone.size(),
+		"zona_cursor": _dirty_zone_cursor,
+		"ultima_zona": _flush_last_zone,
+		"ultima_cantidad": _flush_last_cells,
+		"ultimo_ms": _flush_last_ms,
+		"ultimo_convert_ms": _flush_last_convert_ms,
+		"ultimo_update_ms": _flush_last_update_ms,
+	}
 
 func obtener_profiler() -> Dictionary:
 	return {
@@ -1058,6 +1086,11 @@ func procesar_flush(cells: int) -> bool:
 		var update_ms := float(
 			Time.get_ticks_usec() - update_start_usec
 		) / 1000.0
+		_flush_last_zone = clave
+		_flush_last_cells = dirty.size()
+		_flush_last_convert_ms = float(Time.get_ticks_usec() - convert_start_usec) / 1000.0
+		_flush_last_update_ms = update_ms
+		_flush_last_ms = _flush_last_convert_ms + update_ms
 		_profiler_flush_update_ms += update_ms
 		_profiler_flush_update_max_ms = maxf(
 			_profiler_flush_update_max_ms,
