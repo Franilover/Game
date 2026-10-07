@@ -21,6 +21,14 @@ var _terrain_neighbors_scratch: Array = []
 # Reutilizado entre flushes para evitar crear un Dictionary por actualización.
 var _already_updated: Dictionary = {}
 
+# Diagnóstico acumulado del camino caliente del Dual Grid.
+var _diag_update_calls: int = 0
+var _diag_world_cells: int = 0
+var _diag_display_candidates: int = 0
+var _diag_rule_evaluations: int = 0
+var _diag_redundant_tiles: int = 0
+var _diag_set_cells: int = 0
+
 
 func _init(
 		world: TileMapDual,
@@ -98,6 +106,8 @@ func _rebuild_display_paths() -> void:
 
 
 func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
+	_diag_update_calls += 1
+	_diag_world_cells += updated_world_cells.size()
 	# Un cambio de una celda mundial puede afectar varias celdas del display.
 	# El conjunto evita recalcular la misma celda cuando los caminos convergen.
 	# Dictionary es suficiente aquí y evita crear un Set temporal con cada flush.
@@ -107,6 +117,7 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 			var display_cell: Vector2i = follow_path(world_cell, path)
 			if not _already_updated.has(display_cell):
 				_already_updated[display_cell] = true
+				_diag_display_candidates += 1
 				update_tile(cache, display_cell)
 
 
@@ -124,6 +135,7 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 			follow_path(cell, path)
 		)
 
+	_diag_rule_evaluations += 1
 	var mapping: Dictionary = _terrain.apply_rule(_terrain_neighbors_scratch, cell)
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
@@ -135,8 +147,10 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	if current_sid == sid:
 		var current_tile: Vector2i = get_cell_atlas_coords(cell)
 		if current_tile == tile:
+			_diag_redundant_tiles += 1
 			return
 
+	_diag_set_cells += 1
 	set_cell(cell, sid, tile)
 
 
@@ -145,3 +159,14 @@ func follow_path(cell: Vector2i, path: Array) -> Vector2i:
 	for neighbor: TileSet.CellNeighbor in path:
 		cell = get_neighbor_cell(cell, neighbor)
 	return cell
+
+
+func obtener_diagnostico() -> Dictionary:
+	return {
+		"update_calls": _diag_update_calls,
+		"world_cells": _diag_world_cells,
+		"display_candidates": _diag_display_candidates,
+		"rule_evaluations": _diag_rule_evaluations,
+		"redundant_tiles": _diag_redundant_tiles,
+		"set_cells": _diag_set_cells,
+	}
