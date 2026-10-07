@@ -629,6 +629,12 @@ func _descargar_lejanos(
 			chunk_coord
 		)
 
+		# El streamer decide qué chunks ya no pertenecen al radio visible,
+		# pero WorldTerrain ejecuta la descarga visual diferida.
+		# Sin esta llamada, _loaded_chunks conserva los chunks viejos y el
+		# límite de 9 bloquea permanentemente la entrada de nuevos chunks.
+		_terrain.descargar_chunk(chunk_coord)
+
 func _world_to_chunk(
 	position: Vector2
 ) -> Vector2i:
