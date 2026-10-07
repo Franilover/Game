@@ -18,6 +18,8 @@ var _reversed_display_paths: Array[Array] = []
 # Buffer reutilizable: update_tile() se ejecuta miles de veces durante un flush.
 # Evita crear un Array temporal por cada celda recompuesta.
 var _terrain_neighbors_scratch: Array = []
+# Reutilizado entre flushes para evitar crear un Dictionary por actualización.
+var _already_updated: Dictionary = {}
 
 
 func _init(
@@ -99,12 +101,12 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 	# Un cambio de una celda mundial puede afectar varias celdas del display.
 	# El conjunto evita recalcular la misma celda cuando los caminos convergen.
 	# Dictionary es suficiente aquí y evita crear un Set temporal con cada flush.
-	var already_updated: Dictionary = {}
+	_already_updated.clear()
 	for path: Array in _reversed_display_paths:
 		for world_cell: Vector2i in updated_world_cells:
 			var display_cell: Vector2i = follow_path(world_cell, path)
-			if not already_updated.has(display_cell):
-				already_updated[display_cell] = true
+			if not _already_updated.has(display_cell):
+				_already_updated[display_cell] = true
 				update_tile(cache, display_cell)
 
 
