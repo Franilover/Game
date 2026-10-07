@@ -31,6 +31,7 @@ var areas: WorldTerrainAreas
 var _world_data: WorldDataService = null
 var _render_manager: Node = null
 var _biomas: Array = []
+var _bioma_nombres: PackedStringArray = PackedStringArray()
 var _ecosistemas: Array = []
 
 var _ecosistema_indices: Dictionary = {}
@@ -113,6 +114,12 @@ func cargar_datos_mundo() -> void:
 		return
 
 	_biomas = _world_data.obtener_biomas()
+	_bioma_nombres = PackedStringArray()
+	_bioma_nombres.resize(_biomas.size())
+	for i in range(_biomas.size()):
+		var bioma_nombre_variant: Variant = _biomas[i]
+		if bioma_nombre_variant is Dictionary:
+			_bioma_nombres[i] = str((bioma_nombre_variant as Dictionary).get("nombre", ""))
 
 	for i in range(_biomas.size()):
 		var bioma_variant: Variant = _biomas[i]
@@ -1069,30 +1076,17 @@ func _pintar_tile(
 	var bioma_nombre := ""
 	var bioma_textura := ""
 
-	if bioma_index >= 0 and bioma_index < _biomas.size():
-		var bioma_variant: Variant = _biomas[bioma_index]
+	if bioma_index >= 0 and bioma_index < _bioma_nombres.size():
+		bioma_nombre = _bioma_nombres[bioma_index]
 
-		if bioma_variant is Dictionary:
-			var bioma := bioma_variant as Dictionary
-
-			bioma_nombre = str(
-				bioma.get("nombre", "")
-			)
-
-			var generacion_variant: Variant = (
-				bioma.get(
-					"generacion",
-					{}
-				)
-			)
-
-			if generacion_variant is Dictionary:
-				bioma_textura = str(
-					(generacion_variant as Dictionary).get(
-						"textura",
-						""
-					)
-				)
+		# El nombre ya está compilado. Sólo consultamos la textura como
+		# fallback, sin volver a resolver el nombre desde el Dictionary.
+		if bioma_index < _biomas.size():
+			var bioma_variant: Variant = _biomas[bioma_index]
+			if bioma_variant is Dictionary:
+				var generacion_variant: Variant = (bioma_variant as Dictionary).get("generacion", {})
+				if generacion_variant is Dictionary:
+					bioma_textura = str((generacion_variant as Dictionary).get("textura", ""))
 
 	visual.set_zone(
 		tile,
