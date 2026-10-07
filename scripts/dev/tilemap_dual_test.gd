@@ -33,29 +33,29 @@ func _dibujar_prueba() -> void:
 
     tilemap.clear()
 
-    # Mancha principal de grass para probar las 15 configuraciones.
+    # Prueba A/B mínima: dos terrenos reales compartiendo el mismo Terrain Set.
+    # A = Grass (terrain 1), B = Dirt (terrain 2).
     for y in range(-5, 6):
         for x in range(-8, 9):
-            if abs(x) == 8 and abs(y) >= 4:
-                continue
-            tilemap.draw_cell(Vector2i(x, y), 1)
+            var terrain: int = 1 if x < 0 else 2
+            tilemap.draw_cell(Vector2i(x, y), terrain)
 
-    # Entrantes y huecos para forzar esquinas y transiciones diferentes.
+    # Entrantes para forzar transiciones, esquinas y cambios de sentido.
     for cell_variant in [
-        Vector2i(-4, -5),
-        Vector2i(-3, -5),
-        Vector2i(3, -5),
-        Vector2i(4, -5),
-        Vector2i(-8, 0),
-        Vector2i(-8, 1),
-        Vector2i(7, 2),
-        Vector2i(7, 3),
+        Vector2i(-1, -5),
+        Vector2i(-1, -4),
+        Vector2i(0, -5),
+        Vector2i(0, -4),
+        Vector2i(-4, 0),
+        Vector2i(4, 0),
+        Vector2i(-1, 4),
+        Vector2i(0, 4),
     ]:
         var cell: Vector2i = cell_variant
-        tilemap.draw_cell(cell, 0)
+        var terrain: int = 2 if cell.x < 0 else 1
+        tilemap.draw_cell(cell, terrain)
 
     _refrescar_dual(tilemap.get_used_cells())
-
 
 func _refrescar_dual(celdas: Array[Vector2i]) -> void:
     if celdas.is_empty():
@@ -64,78 +64,30 @@ func _refrescar_dual(celdas: Array[Vector2i]) -> void:
 
 
 func _crear_tileset_grass() -> TileSet:
-    var texture: Texture2D = load(
-        GRASS_TEXTURE_PATH
-    ) as Texture2D
+    var grass_texture: Texture2D = load(GRASS_TEXTURE_PATH) as Texture2D
+    var dirt_texture: Texture2D = load("res://assets/tilesets/Tierra.png") as Texture2D
 
-    if texture == null:
-        push_error(
-            "TileMapDualTest: no se pudo cargar "
-            + GRASS_TEXTURE_PATH
-        )
+    if grass_texture == null or dirt_texture == null:
+        push_error("TileMapDualTest: no se pudieron cargar Grass.png y Tierra.png")
         return TileSet.new()
 
     var tile_set: TileSet = TileSet.new()
-    tile_set.tile_size = Vector2i(
-        TILE_SIZE,
-        TILE_SIZE
-    )
-
-    var atlas: TileSetAtlasSource = TileSetAtlasSource.new()
-    atlas.texture = texture
-    atlas.texture_region_size = Vector2i(
-        TILE_SIZE,
-        TILE_SIZE
-    )
-
-    for y in range(4):
-        for x in range(4):
-            atlas.create_tile(
-                Vector2i(x, y)
-            )
-
-    tile_set.add_source(
-        atlas,
-        0
-    )
-
+    tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
     tile_set.add_terrain_set()
-    tile_set.set_terrain_set_mode(
-        0,
-        TileSet.TERRAIN_MODE_MATCH_CORNERS
-    )
+    tile_set.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
 
     tile_set.add_terrain(0)
-    tile_set.set_terrain_name(
-        0,
-        0,
-        "<any>"
-    )
-
+    tile_set.set_terrain_name(0, 0, "<any>")
     tile_set.add_terrain(0)
-    tile_set.set_terrain_name(
-        0,
-        1,
-        "Grass"
-    )
+    tile_set.set_terrain_name(0, 1, "Grass")
+    tile_set.add_terrain(0)
+    tile_set.set_terrain_name(0, 2, "Dirt")
 
     var sequence: Array[Vector2i] = [
-        Vector2i(0, 3),
-        Vector2i(3, 3),
-        Vector2i(0, 2),
-        Vector2i(1, 2),
-        Vector2i(0, 0),
-        Vector2i(3, 2),
-        Vector2i(2, 3),
-        Vector2i(3, 1),
-        Vector2i(1, 3),
-        Vector2i(0, 1),
-        Vector2i(1, 0),
-        Vector2i(2, 2),
-        Vector2i(3, 0),
-        Vector2i(2, 0),
-        Vector2i(1, 1),
-        Vector2i(2, 1),
+        Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
+        Vector2i(0, 0), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 1),
+        Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2),
+        Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1),
     ]
 
     var neighbors: Array[TileSet.CellNeighbor] = [
@@ -145,36 +97,32 @@ func _crear_tileset_grass() -> TileSet:
         TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
     ]
 
-    for index in range(sequence.size()):
-        var data: TileData = atlas.get_tile_data(
-            sequence[index],
-            0
-        )
+    for config_variant in [
+        {"texture": grass_texture, "terrain": 1, "source_id": 1},
+        {"texture": dirt_texture, "terrain": 2, "source_id": 2},
+    ]:
+        var config: Dictionary = config_variant
+        var atlas: TileSetAtlasSource = TileSetAtlasSource.new()
+        atlas.texture = config["texture"] as Texture2D
+        atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 
-        data.terrain_set = 0
+        for sequence_pos in sequence:
+            atlas.create_tile(sequence_pos)
 
-        var bits: int = index
-        for neighbor_index in range(neighbors.size()):
-            var neighbor: TileSet.CellNeighbor = neighbors[neighbor_index]
-            var terrain: int = 1 if (bits & 1) != 0 else 0
-            data.set_terrain_peering_bit(
-                neighbor,
-                terrain
-            )
-            bits >>= 1
+        for index in range(sequence.size()):
+            var data: TileData = atlas.get_tile_data(sequence[index], 0)
+            data.terrain_set = 0
+            data.terrain = int(config["terrain"])
 
-    atlas.get_tile_data(
-        Vector2i(0, 3),
-        0
-    ).terrain = 0
+            var bits: int = index
+            for neighbor in neighbors:
+                var terrain: int = int(config["terrain"]) if (bits & 1) != 0 else 0
+                data.set_terrain_peering_bit(neighbor, terrain)
+                bits >>= 1
 
-    atlas.get_tile_data(
-        Vector2i(2, 1),
-        0
-    ).terrain = 1
+        tile_set.add_source(atlas, int(config["source_id"]))
 
     return tile_set
-
 
 func _unhandled_input(event: InputEvent) -> void:
     if tilemap == null:
