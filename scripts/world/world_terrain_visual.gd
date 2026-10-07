@@ -369,7 +369,10 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	var clave := str(zone)
 
 	if _layers_by_zone.has(clave):
-		return _layers_by_zone[clave] as TileMapDual
+		var existente: Variant = _layers_by_zone[clave]
+		if is_instance_valid(existente) and existente is TileMapDual:
+			return existente as TileMapDual
+		_layers_by_zone.erase(clave)
 
 	var layer := TileMapDual.new()
 	layer.name = "TerrainDual_Zone_" + clave
@@ -693,9 +696,6 @@ func _crear_base_tile(
 	}
 
 	_next_source_id_by_zone[tile_key] = source_id + 1
-	# Reconstruir el renderer sólo cuando el atlas y todos sus peering bits
-	# ya están completos. Así Display/TerrainDual lee una configuración final.
-	layer.reconstruir_renderer_dual()
 
 
 func _cargar_textura_bioma(
