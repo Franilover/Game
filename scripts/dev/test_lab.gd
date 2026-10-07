@@ -13,9 +13,9 @@ const TESTS: Array[Dictionary] = [
 
 
 func _ready() -> void:
-	$Center/BackButton.pressed.connect(_volver_al_menu)
+	$Paper/Margin/Center/BackButton.pressed.connect(_volver_al_menu)
 
-	var list: VBoxContainer = $Center/Tests
+	var list: VBoxContainer = $Paper/Margin/Center/Tests
 
 	for test: Dictionary in TESTS:
 		var button := Button.new()
@@ -39,7 +39,7 @@ func _ready() -> void:
 			var separator := HSeparator.new()
 			list.add_child(separator)
 
-	$Center/BackButton.grab_focus()
+	$Paper/Margin/Center/BackButton.grab_focus()
 
 
 func _abrir_test(scene_path: String) -> void:
