@@ -425,6 +425,19 @@ func _compilar_zonas(generacion: Dictionary) -> Dictionary:
 			fallback_hasta = hasta
 			fallback_zona = zona
 
+	# Ordenamos una sola vez al cargar. Runtime sólo necesita el primer
+	# umbral que cubra el ruido, por lo que puede salir inmediatamente.
+	for i in range(1, thresholds.size()):
+		var threshold_actual: float = thresholds[i]
+		var value_actual: int = values[i]
+		var j := i - 1
+		while j >= 0 and thresholds[j] > threshold_actual:
+			thresholds[j + 1] = thresholds[j]
+			values[j + 1] = values[j]
+			j -= 1
+		thresholds[j + 1] = threshold_actual
+		values[j + 1] = value_actual
+
 	return {
 		"thresholds": thresholds,
 		"values": values,
@@ -443,9 +456,10 @@ func _zona_desde_compilacion(
 
 	for indice in range(thresholds.size()):
 		var hasta := thresholds[indice]
-		if hasta >= valor_ruido and hasta < mejor_hasta:
+		if hasta >= valor_ruido:
 			mejor_hasta = hasta
 			mejor_zona = values[indice]
+			break
 
 	if mejor_hasta == INF:
 		return fallback_zona
