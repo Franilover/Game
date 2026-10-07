@@ -15,6 +15,10 @@ class_name GarliaRenderManager
 
 var _frame_start_usec: int = 0
 var _frame_used_ms: float = 0.0
+var _frame_count: int = 0
+var _frame_total_ms: float = 0.0
+var _frame_max_ms: float = 0.0
+var _frame_last_ms: float = 0.0
 var _work_ms: Dictionary = {}
 var _work_calls: Dictionary = {}
 var _deferred_work: int = 0
@@ -32,6 +36,10 @@ func finalizar_frame() -> void:
 	if _frame_start_usec == 0:
 		return
 	_frame_used_ms = float(Time.get_ticks_usec() - _frame_start_usec) / 1000.0
+	_frame_count += 1
+	_frame_total_ms += _frame_used_ms
+	_frame_max_ms = maxf(_frame_max_ms, _frame_used_ms)
+	_frame_last_ms = _frame_used_ms
 
 
 func registrar_trabajo(
@@ -196,9 +204,20 @@ func puede_ejecutar_trabajo(
 	return presupuesto_disponible_ms() > coste_estimado_ms
 
 
+func obtener_contador_frame() -> int:
+	return _frame_count
+
+
 func obtener_estado() -> Dictionary:
+	var frame_average_ms: float = 0.0
+	if _frame_count > 0:
+		frame_average_ms = _frame_total_ms / float(_frame_count)
 	return {
 		"target_fps": target_fps,
+		"frame_count": _frame_count,
+		"frame_last_ms": _frame_last_ms,
+		"frame_average_ms": frame_average_ms,
+		"frame_max_ms": _frame_max_ms,
 		"render_budget_ms": render_budget_ms,
 		"frame_used_ms": _frame_used_ms,
 		"budget_remaining_ms": presupuesto_disponible_ms(),
@@ -213,3 +232,9 @@ func obtener_estado() -> Dictionary:
 
 func obtener_diagnostico() -> Dictionary:
 	return obtener_estado()
+
+
+func _ready() -> void:
+	var debug := get_node_or_null("/root/GarliaDebug")
+	if debug != null and debug.has_method("registrar_proveedor"):
+		debug.registrar_proveedor("render_manager", "GarliaRenderManager", self, "Presupuesto visual, frames y trabajo diferido.")
