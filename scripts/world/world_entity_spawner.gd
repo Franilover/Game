@@ -83,6 +83,55 @@ func _ready() -> void:
 		)
 
 
+func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
+	if _entity_manager == null or _entity_factory == null or _world_data == null:
+		return false
+	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
+		return true
+	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "criaturas")
+	if datos.is_empty():
+		return false
+
+	var limite_chunk := Rect2(
+		float(chunk_coord.x * _terrain.chunk_size_tiles * _terrain.tile_size),
+		float(chunk_coord.y * _terrain.chunk_size_tiles * _terrain.tile_size),
+		float(_terrain.chunk_size_tiles * _terrain.tile_size),
+		float(_terrain.chunk_size_tiles * _terrain.tile_size)
+	)
+
+	for dato_variant in datos:
+		if not dato_variant is Dictionary:
+			continue
+		var dato := dato_variant as Dictionary
+		var criatura_id := str(dato.get("criatura_id", "")).strip_edges()
+		if criatura_id.is_empty():
+			continue
+		var criatura_data := _world_data.obtener_criatura(criatura_id).duplicate(true)
+		if criatura_data.is_empty():
+			continue
+		var criatura_variant: Variant = _entity_factory.crear_criatura(criatura_data)
+		if not criatura_variant is Node:
+			continue
+		var criatura := criatura_variant as Node
+		var instance_key := str(dato.get("runtime_instance_key", criatura_id))
+		criatura.set_meta("runtime_instance_key", instance_key)
+		if not _entity_manager.registrar(criatura, chunk_coord):
+			criatura.queue_free()
+			continue
+		criatura.global_position = dato.get("position", criatura.global_position)
+		if criatura is Creature:
+			var creature_node := criatura as Creature
+			creature_node.configurar_chunk(chunk_coord, limite_chunk)
+			creature_node.configurar_entorno("general")
+			var health := float(dato.get("health", creature_node.health))
+			creature_node.health = clampf(health, 0.0, creature_node.max_health)
+			if dato.has("velocity") and dato["velocity"] is Vector2:
+				creature_node.velocity = dato["velocity"]
+
+	_entity_manager.activar_criaturas_chunk(chunk_coord)
+	return true
+
+
 func spawn_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager == null:
 		return
