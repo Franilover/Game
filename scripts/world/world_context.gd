@@ -60,6 +60,12 @@ func get_habitats_at(tile: Vector2i) -> Array:
 func get_criaturas_at(tile: Vector2i) -> Array:
 	return terrain.get_criaturas_at(tile) if terrain != null else []
 
+func get_contexto_data_at(tile: Vector2i) -> Dictionary:
+	if terrain == null or not terrain.has_method("obtener_contexto_data_at"):
+		return {}
+	return terrain.obtener_contexto_data_at(tile)
+
+
 func get_zona_at(tile: Vector2i) -> int:
 	return terrain.get_zona_at(tile) if terrain != null else -1
 
