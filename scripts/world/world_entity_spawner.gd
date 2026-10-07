@@ -106,10 +106,16 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 	for dato_variant in datos:
 		if not dato_variant is Dictionary:
 			continue
-		var dato := dato_variant as Dictionary
+		var dato := (dato_variant as Dictionary).duplicate(true)
 		var criatura_id := str(dato.get("criatura_id", "")).strip_edges()
 		if criatura_id.is_empty():
 			continue
+		var instance_key := str(dato.get("runtime_instance_key", criatura_id)).strip_edges()
+		if _entity_manager.has_method("obtener_estado_criatura"):
+			var estado_runtime := _entity_manager.obtener_estado_criatura(chunk_coord, criatura_id, instance_key)
+			if not estado_runtime.is_empty():
+				for clave in estado_runtime.keys():
+					dato[clave] = estado_runtime[clave]
 		var criatura_data := _world_data.obtener_criatura(criatura_id).duplicate(true)
 		if criatura_data.is_empty():
 			continue
@@ -117,7 +123,7 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if not criatura_variant is Node:
 			continue
 		var criatura := criatura_variant as Node
-		var instance_key := str(dato.get("runtime_instance_key", criatura_id))
+		instance_key = str(dato.get("runtime_instance_key", criatura_id))
 		criatura.set_meta("runtime_instance_key", instance_key)
 		if not _entity_manager.registrar(criatura, chunk_coord):
 			criatura.queue_free()
