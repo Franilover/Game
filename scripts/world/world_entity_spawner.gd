@@ -19,6 +19,8 @@ var _render_manager: Node = null
 
 var _props_por_bioma: Dictionary = {}
 var _asset_path_por_prop: Dictionary = {}
+var _data_context_por_chunk: Dictionary = {}
+const MAX_DATA_CONTEXT_CHUNKS: int = 64
 
 # Diagnóstico universal del pipeline de entidades. No decide el spawn;
 # sólo deja visible en F4 dónde se está descartando el trabajo.
@@ -46,6 +48,7 @@ func configurar(
 	_world_data = world_data
 	_props_por_bioma.clear()
 	_asset_path_por_prop.clear()
+	_data_context_por_chunk.clear()
 	if _world_data != null:
 		var props_catalogo := _world_data.obtener_props_game()
 		for prop_variant in props_catalogo:
@@ -189,7 +192,7 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
 			)
-			var contexto := _terrain.obtener_contexto_data_at(tile)
+			var contexto := _obtener_contexto_data_cacheado(chunk_coord, tile)
 			if not bool(contexto.get("walkable", false)):
 				continue
 			var ecosistema_variant: Variant = contexto.get("ecosistema", {})
@@ -330,6 +333,28 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 			continue
 
 	_entity_manager.reemplazar_datos_chunk(chunk_coord, "props", datos)
+
+
+func _obtener_contexto_data_cacheado(
+	chunk_coord: Vector2i,
+	tile: Vector2i
+) -> Dictionary:
+	var cache_variant: Variant = _data_context_por_chunk.get(chunk_coord, null)
+	var cache: Dictionary
+	if cache_variant is Dictionary:
+		cache = cache_variant as Dictionary
+	else:
+		cache = {}
+		_data_context_por_chunk[chunk_coord] = cache
+		if _data_context_por_chunk.size() > MAX_DATA_CONTEXT_CHUNKS:
+			var claves := _data_context_por_chunk.keys()
+			if not claves.is_empty():
+				_data_context_por_chunk.erase(claves[0])
+	if cache.has(tile):
+		return cache[tile]
+	var contexto := _terrain.obtener_contexto_data_at(tile)
+	cache[tile] = contexto
+	return contexto
 
 
 func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
