@@ -1,0 +1,87 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/dev/test_lab.gd" id="1_lab"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
+bg_color = Color(0.25, 0.19, 0.13, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.58, 0.46, 0.31, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="TestLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lab")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.067, 0.047, 0.035, 1)
+
+[node name="Paper" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -215.0
+offset_right = 300.0
+offset_bottom = 215.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxPanel")
+
+[node name="Margin" type="MarginContainer" parent="Paper"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="Center" type="VBoxContainer" parent="Paper/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Paper/Margin/Center"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.82, 0.64, 1)
+theme_override_font_sizes/font_size = 30
+text = "Laboratorio de Pruebas"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Paper/Margin/Center"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.75, 0.64, 1)
+theme_override_font_sizes/font_size = 13
+text = "Escenas aisladas para probar un sistema sin pasar por el flujo normal."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Tests" type="VBoxContainer" parent="Paper/Margin/Center"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="BackButton" type="Button" parent="Paper/Margin/Center"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+focus_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Volver al menú"
