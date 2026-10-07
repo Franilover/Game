@@ -404,15 +404,7 @@ func _spawn_chunk_interno(
 		limite_chunk,
 		rng
 	)
-	# Props: se continúan en frames posteriores para evitar una ráfaga.
-	_spawn_tasks[chunk_coord] = {
-		"limite_chunk": limite_chunk,
-		"rng": rng,
-		"intento": 0,
-		"creados": 0,
-		"max_props": 6,
-		"intentos_maximos": 48
-	}
+	_entity_manager.activar_criaturas_chunk(chunk_coord)
 	return
 
 func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
