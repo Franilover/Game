@@ -169,6 +169,39 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 	_entity_manager.reemplazar_datos_chunk(chunk_coord, "props", datos)
 
 
+func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
+	if _entity_manager == null or _entity_factory == null:
+		return false
+	if _entity_manager.tiene_props_chunk(chunk_coord):
+		return true
+	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "props")
+	if datos.is_empty():
+		return false
+	var limite_chunk := Rect2(
+		float(chunk_coord.x * _terrain.chunk_size_tiles * _terrain.tile_size),
+		float(chunk_coord.y * _terrain.chunk_size_tiles * _terrain.tile_size),
+		float(_terrain.chunk_size_tiles * _terrain.tile_size),
+		float(_terrain.chunk_size_tiles * _terrain.tile_size)
+	)
+	for dato_variant in datos:
+		if not dato_variant is Dictionary:
+			continue
+		var dato := dato_variant as Dictionary
+		var prop_variant: Variant = _entity_factory.call("crear_prop", dato)
+		if not prop_variant is Node:
+			continue
+		var prop := prop_variant as Node
+		prop.set_meta("runtime_instance_key", str(dato.get("runtime_instance_key", "")))
+		if not _entity_manager.registrar(prop, chunk_coord):
+			prop.queue_free()
+			continue
+		prop.global_position = dato.get("position", prop.global_position)
+		if prop.has_method("configurar_chunk"):
+			prop.call("configurar_chunk", chunk_coord, limite_chunk)
+	_entity_manager.activar_props_chunk(chunk_coord)
+	return true
+
+
 func spawn_props_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager == null:
 		return
