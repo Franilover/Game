@@ -47,6 +47,13 @@ var _player_chunk: Vector2i = Vector2i(
 var _queue: Array = []
 var _data_chunk_cache: Dictionary = {}
 
+# Estado logico de representacion por chunk.
+const LOD_DATA: String = "DATA"
+const LOD_TERRAIN: String = "TERRAIN"
+const LOD_FULL: String = "FULL"
+var _chunk_lod: Dictionary = {}
+var _lod_counts: Dictionary = {LOD_DATA: 0, LOD_TERRAIN: 0, LOD_FULL: 0}
+
 
 func configurar(
 	terrain: WorldTerrain,
@@ -107,6 +114,7 @@ func procesar() -> void:
 
 	_actualizar_streaming()
 	_actualizar_data_lod(_player_chunk)
+	_actualizar_lod_logico(_player_chunk)
 
 	# El terreno base recibe el primer turno visual. Las variaciones son
 	# decoración secundaria y nunca deben consumir el servicio reservado
@@ -347,6 +355,7 @@ func _actualizar_streaming() -> void:
 
 	_descargar_lejanos(centro)
 	_actualizar_data_lod(centro)
+	_actualizar_lod_logico(centro)
 	_actualizar_entidades_activas(centro)
 
 
@@ -604,6 +613,38 @@ func _actualizar_data_lod(centro: Vector2i) -> void:
 		_data_chunk_cache.erase(primero)
 
 
+func _actualizar_lod_logico(centro: Vector2i) -> void:
+	_chunk_lod.clear()
+	_lod_counts = {LOD_DATA: 0, LOD_TERRAIN: 0, LOD_FULL: 0}
+
+	for coord_variant in _data_chunk_cache.keys():
+		if not coord_variant is Vector2i:
+			continue
+		var coord: Vector2i = coord_variant
+		var distancia := _distancia_chunk(coord, centro)
+		var lod: String = LOD_DATA
+		if distancia == 0:
+			lod = LOD_FULL
+		elif distancia <= VISIBLE_RADIUS:
+			lod = LOD_TERRAIN
+		_chunk_lod[coord] = lod
+		_lod_counts[lod] = int(_lod_counts.get(lod, 0)) + 1
+
+
+func obtener_lod_chunk(chunk_coord: Vector2i) -> String:
+	return str(_chunk_lod.get(chunk_coord, LOD_DATA))
+
+
+func obtener_estado_lod() -> Dictionary:
+	return {
+		"counts": _lod_counts.duplicate(),
+		"chunks": _chunk_lod.duplicate(),
+		"data_radius": DATA_RADIUS,
+		"terrain_radius": VISIBLE_RADIUS,
+		"full_radius": _creature_active_radius
+	}
+
+
 func _actualizar_entidades_activas(
 	centro: Vector2i
 ) -> void:
@@ -719,22 +760,11 @@ func tiene_jugador() -> bool:
 
 
 func obtener_diagnostico() -> Dictionary:
-	var lod_data: int = _data_chunk_cache.size()
-	var lod_terrain: int = 0
-	var lod_props: int = 0
-	var lod_full: int = 0
-	if _terrain != null:
-		for chunk_variant in _terrain.chunks_cargados():
-			if not chunk_variant is Vector2i:
-				continue
-			var chunk_coord: Vector2i = chunk_variant
-			var distancia := _distancia_chunk(chunk_coord, _player_chunk)
-			if distancia <= _creature_active_radius:
-				lod_full += 1
-			elif distancia <= _prop_active_radius:
-				lod_props += 1
-			else:
-				lod_terrain += 1
+	var lod_data: int = int(_lod_counts.get(LOD_DATA, 0))
+	var lod_terrain: int = int(_lod_counts.get(LOD_TERRAIN, 0))
+	var lod_full: int = int(_lod_counts.get(LOD_FULL, 0))
+	var lod_props: int = lod_terrain + lod_full
+
 
 	return {
 		"jugador": tiene_jugador(),
@@ -755,6 +785,7 @@ func obtener_diagnostico() -> Dictionary:
 		"lod_terrain": lod_terrain,
 		"lod_props": lod_props,
 		"lod_full": lod_full,
+		"lod_logico": obtener_estado_lod(),
 		"prop_active_radius": _prop_active_radius,
 		"creature_active_radius": _creature_active_radius,
 		"cells_per_frame": _cells_per_frame,
