@@ -455,7 +455,7 @@ func set_zone(
 	if ENABLE_VARIATIONS and VARIACIONES_POR_BIOMA.has(clave) and not _variation_layers_by_bioma.has(clave):
 		_variation_layers_by_bioma[clave] = _crear_capa_variaciones(clave)
 
-	var tile_key := bioma_key
+	var tile_key := bioma_key + "_" + str(zone)
 
 	if not _base_tiles.has(tile_key):
 		_crear_base_tile(
@@ -662,7 +662,7 @@ func _crear_base_tile(
 
 	# El atlas pertenece al BIOMA, no al ecosistema/zona.
 	# Todas las celdas del mismo bioma reutilizan el mismo source visual.
-	var source_id := bioma_index
+	var source_id := bioma_index * ZONE_TEXTURES.size() + zone
 
 	layer.tile_set.add_source(
 		atlas,
