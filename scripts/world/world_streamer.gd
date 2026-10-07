@@ -60,6 +60,7 @@ var _chunk_lod: Dictionary = {}
 var _lod_counts: Dictionary = {LOD_DATA: 0, LOD_TERRAIN: 0, LOD_FULL: 0}
 var _last_lod_center: Vector2i = Vector2i(999999, 999999)
 var _last_entity_lod_center: Vector2i = Vector2i(999999, 999999)
+var _last_stream_center: Vector2i = Vector2i(999999, 999999)
 
 
 func configurar(
@@ -330,7 +331,17 @@ func _actualizar_streaming() -> void:
 
 	var centro: Vector2i = _world_to_chunk(_player.global_position)
 	_player_chunk = centro
+	var cambio_stream := centro != _last_stream_center
 	_actualizar_cache_borde_jugador(centro)
+
+	# La cola de 5x5 y su orden no cambian mientras el jugador siga dentro
+	# del mismo chunk. El prefetch predictivo se recalcula más abajo sólo
+	# cuando realmente reconstruimos el destino de streaming.
+	if not cambio_stream:
+		_descargar_lejanos(centro)
+		return
+
+	_last_stream_center = centro
 
 	_terrain.cancelar_generacion_si_distante(centro, _load_radius)
 	_terrain.descartar_generacion_pausada_si_distante(centro, _load_radius)
