@@ -1010,12 +1010,13 @@ func marcar_chunk_generado_dirty(chunk_coord: Vector2i, chunk_size_tiles: int) -
 	var x1 := x0 + chunk_size_tiles - 1
 	var y1 := y0 + chunk_size_tiles - 1
 
-	for y in range(y0, y1 + 1):
-		for x in range(x0, x1 + 1):
-			var cell := Vector2i(x, y)
-			var bioma := str(_cell_bioma.get(cell, ""))
-			if bioma == "Pradera" or bioma == "Bosque":
-				_marcar_variacion_dirty(cell)
+	if ENABLE_VARIATIONS:
+		for y in range(y0, y1 + 1):
+			for x in range(x0, x1 + 1):
+				var cell := Vector2i(x, y)
+				var bioma := str(_cell_bioma.get(cell, ""))
+				if bioma == "Pradera" or bioma == "Bosque":
+					_marcar_variacion_dirty(cell)
 
 	marcar_borde_chunk_generado_dirty(
 		chunk_coord,
