@@ -649,9 +649,24 @@ func _actualizar_data_entidades() -> void:
 	for coord_variant in _data_entity_generated.keys():
 		if coord_variant is Vector2i and not activos.has(coord_variant):
 			_data_entity_generated.erase(coord_variant)
+	var stale_generated: Array[Vector2i] = []
+	for coord_variant in _data_entity_generated.keys():
+		if coord_variant is Vector2i and not activos.has(coord_variant):
+			stale_generated.append(coord_variant)
+	for coord in stale_generated:
+		_data_entity_generated.erase(coord)
+
+	var stale_queued: Array[Vector2i] = []
 	for coord_variant in _data_entity_queued.keys():
 		if coord_variant is Vector2i and not activos.has(coord_variant):
-			_data_entity_queued.erase(coord_variant)
+			stale_queued.append(coord_variant)
+	for coord in stale_queued:
+		_data_entity_queued.erase(coord)
+
+	if _entity_spawner != null and _entity_spawner.has_method("obtener_entity_manager"):
+		var manager: Variant = _entity_spawner.call("obtener_entity_manager")
+		if manager != null and manager.has_method("limpiar_datos_fuera_de_radio"):
+			manager.call("limpiar_datos_fuera_de_radio", centro, DATA_RADIUS)
 
 func _actualizar_lod_logico(centro: Vector2i) -> void:
 	_chunk_lod.clear()
