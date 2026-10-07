@@ -425,24 +425,21 @@ func _procesar_datos_chunk(
 			global_y
 		)
 
-		var stage_start_usec: int = Time.get_ticks_usec()
+		# Este es el camino caliente del generador. No medir cada llamada a
+		# FastNoiseLite: tres get_ticks_usec() por celda añadían miles de
+		# llamadas al profiler y contaminaban precisamente el rendimiento que
+		# estamos intentando medir. El costo total de DATOS se mide una vez
+		# por lote más abajo.
 		var bioma_index: int = _bioma_index_at_tile(tile)
-		_profiler_biome_ms += float(Time.get_ticks_usec() - stage_start_usec) / 1000.0
-
-		stage_start_usec = Time.get_ticks_usec()
 		var ecosistema_index: int = _ecosistema_index_at_tile(
 			tile,
 			bioma_index
 		)
-		_profiler_ecosystem_ms += float(Time.get_ticks_usec() - stage_start_usec) / 1000.0
-
-		stage_start_usec = Time.get_ticks_usec()
 		var zona: int = _zona_base_at_tile(
 			tile,
 			bioma_index,
 			ecosistema_index
 		)
-		_profiler_zone_ms += float(Time.get_ticks_usec() - stage_start_usec) / 1000.0
 
 		biomas[local_y][local_x] = (
 			bioma_index
@@ -605,7 +602,7 @@ func _procesar_pintado_chunk(
 		return false
 
 	if visual != null:
-		visual.marcar_borde_chunk_generado_dirty(
+		visual.marcar_chunk_generado_dirty(
 			coord,
 			chunk_size_tiles
 		)
