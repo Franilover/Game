@@ -670,10 +670,10 @@ func _cells_presupuesto_flush_incremental() -> int:
 	return int(_render_manager.call(
 		"presupuesto_unidades_terreno",
 		"terrain_flush",
-		32,
-		16,
+		256,
+		64,
 		visual_flush_cells,
-		1.25
+		4.0
 	))
 
 
