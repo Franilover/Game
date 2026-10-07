@@ -233,19 +233,26 @@ func _crear_capas() -> void:
 func obtener_contexto_data_at(tile: Vector2i) -> Dictionary:
 	# Consulta DATA pura: reproduce las mismas funciones deterministas que usa
 	# la generación visual, pero no toca _loaded_chunks ni TileMap.
-	var bioma_index := _bioma_index_at_tile(tile)
-	var ecosistema_index := _ecosistema_index_at_tile(tile, bioma_index)
-	var zona := _zona_base_at_tile(tile, bioma_index, ecosistema_index)
+	# Los datos canónicos se conservan por referencia: los consumidores DATA
+	# sólo los consultan y no deben mutarlos. Evitamos así duplicaciones
+	# profundas por cada intento de selección de entidades.
+	var bioma_index: int = _bioma_index_at_tile(tile)
+	var ecosistema_index: int = _ecosistema_index_at_tile(tile, bioma_index)
+	var zona: int = _zona_base_at_tile(tile, bioma_index, ecosistema_index)
 	var bioma: Dictionary = {}
 	var ecosistema: Dictionary = {}
 	if bioma_index >= 0 and bioma_index < _biomas.size():
-		bioma = (_biomas[bioma_index] as Dictionary).duplicate(true) if _biomas[bioma_index] is Dictionary else {}
+		var bioma_variant: Variant = _biomas[bioma_index]
+		if bioma_variant is Dictionary:
+			bioma = bioma_variant as Dictionary
 	if ecosistema_index >= 0 and ecosistema_index < _ecosistemas.size():
-		ecosistema = (_ecosistemas[ecosistema_index] as Dictionary).duplicate(true) if _ecosistemas[ecosistema_index] is Dictionary else {}
+		var ecosistema_variant: Variant = _ecosistemas[ecosistema_index]
+		if ecosistema_variant is Dictionary:
+			ecosistema = ecosistema_variant as Dictionary
 	var habitats: Array = []
 	var habitats_variant: Variant = ecosistema.get("habitats", [])
 	if habitats_variant is Array:
-		habitats = (habitats_variant as Array).duplicate(true)
+		habitats = habitats_variant as Array
 	return {
 		"tile": tile,
 		"bioma": bioma,
