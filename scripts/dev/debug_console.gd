@@ -203,6 +203,9 @@ func _vista_resumen() -> String:
 		out.append(_estado_linea(p))
 	out.append("")
 	out.append("GRUPOS ACTIVOS")
+	var entity_manager := _buscar_por_nombre("WorldEntityManager")
+	if entity_manager != null and entity_manager.has_method("obtener_diagnostico_datos"):
+		out.append("LOD DATA ENTIDADES: " + JSON.stringify(entity_manager.call("obtener_diagnostico_datos")))
 	for grupo in ["player", "creatures", "world_props", "inventory"]:
 		out.append("  %-18s %d" % [grupo, get_tree().get_nodes_in_group(grupo).size()])
 	out.append("")
