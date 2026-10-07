@@ -1222,6 +1222,7 @@ func _pintar_tile(
 	visual.set_zone(
 		tile,
 		zona,
+		bioma_index,
 		bioma_nombre,
 		bioma_textura
 	)
