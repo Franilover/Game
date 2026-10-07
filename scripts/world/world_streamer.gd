@@ -324,17 +324,15 @@ func _actualizar_streaming() -> void:
 	if _player == null:
 		return
 
-	var centro: Vector2i = _world_to_chunk(_player.global_position)
-	_player_chunk = centro
+	var centro: Vector2i = _player_chunk
 	var cambio_stream := centro != _last_stream_center
-	_actualizar_cache_borde_jugador(centro)
 
-	# La cola de 5x5 y su orden no cambian mientras el jugador siga dentro
-	# del mismo chunk. El prefetch predictivo se recalcula más abajo sólo
-	# cuando realmente reconstruimos el destino de streaming.
+	# Mientras el jugador siga en el mismo chunk, la topología del streaming
+	# no cambia: no hace falta recalcular bordes ni recorrer los 25 chunks.
 	if not cambio_stream:
-		_descargar_lejanos(centro)
 		return
+
+	_actualizar_cache_borde_jugador(centro)
 
 	_last_stream_center = centro
 
