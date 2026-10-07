@@ -251,6 +251,14 @@ func _vista_mundo() -> String:
 			var diag: Variant = _diagnostico_nodo(nodo)
 			if diag is Dictionary:
 				out.append("     " + JSON.stringify(diag))
+				if nombre == "WorldStreamer" and diag.has("lod_logico"):
+					var lod: Dictionary = diag["lod_logico"]
+					var counts: Dictionary = lod.get("counts", {})
+					out.append("     LOD LOGICO: FULL=%s TERRAIN=%s DATA=%s" % [
+						str(counts.get("FULL", 0)),
+						str(counts.get("TERRAIN", 0)),
+						str(counts.get("DATA", 0))
+					])
 				if nombre == "WorldTerrain" and diag.has("flush_estado"):
 					var flush_estado: Dictionary = diag["flush_estado"]
 					out.append("     PIPELINE FLUSH: pendiente=%s total=%s ultima=%s/%s %.3fms (convert %.3f + update %.3f)" % [str(flush_estado.get("pendiente", false)), str(flush_estado.get("pendientes_total", 0)), str(flush_estado.get("ultima_zona", "")), str(flush_estado.get("ultima_cantidad", 0)), float(flush_estado.get("ultimo_ms", 0.0)), float(flush_estado.get("ultimo_convert_ms", 0.0)), float(flush_estado.get("ultimo_update_ms", 0.0))])
