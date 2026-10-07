@@ -10,6 +10,9 @@ var _render_manager: Node = null
 
 const MAX_VISIBLE_CHUNKS: int = 9
 const VISIBLE_RADIUS: int = 1
+# Anillo barato de conocimiento del mundo. No crea TileMap ni entidades.
+const DATA_RADIUS: int = 2
+const MAX_DATA_CHUNKS: int = 25
 
 var _load_radius: int = VISIBLE_RADIUS
 var _unload_radius: int = VISIBLE_RADIUS
@@ -41,6 +44,7 @@ var _player_chunk: Vector2i = Vector2i(
 )
 
 var _queue: Array = []
+var _data_chunk_cache: Dictionary = {}
 
 
 func configurar(
@@ -101,6 +105,7 @@ func procesar() -> void:
 		_player_chunk = nuevo_chunk
 
 	_actualizar_streaming()
+	_actualizar_data_lod(_player_chunk)
 
 	# El terreno base recibe el primer turno visual. Las variaciones son
 	# decoración secundaria y nunca deben consumir el servicio reservado
@@ -332,6 +337,7 @@ func _actualizar_streaming() -> void:
 	_ceder_generacion_si_hay_prioridad(centro)
 
 	_descargar_lejanos(centro)
+	_actualizar_data_lod(centro)
 	_actualizar_entidades_activas(centro)
 
 
@@ -560,6 +566,35 @@ func _iniciar_siguiente_chunk() -> bool:
 	return _terrain.tiene_generacion_activa()
 
 
+func _actualizar_data_lod(centro: Vector2i) -> void:
+	if _terrain == null:
+		return
+
+	var necesarios: Dictionary = {}
+	for dy in range(-DATA_RADIUS, DATA_RADIUS + 1):
+		for dx in range(-DATA_RADIUS, DATA_RADIUS + 1):
+			var coord := centro + Vector2i(dx, dy)
+			necesarios[coord] = true
+			if _data_chunk_cache.has(coord):
+				continue
+			_data_chunk_cache[coord] = _terrain.obtener_resumen_chunk(coord)
+
+	var para_borrar: Array[Vector2i] = []
+	for clave_variant in _data_chunk_cache.keys():
+		if not clave_variant is Vector2i:
+			continue
+		var coord: Vector2i = clave_variant
+		if not necesarios.has(coord):
+			para_borrar.append(coord)
+
+	for coord in para_borrar:
+		_data_chunk_cache.erase(coord)
+
+	while _data_chunk_cache.size() > MAX_DATA_CHUNKS:
+		var primero: Variant = _data_chunk_cache.keys()[0]
+		_data_chunk_cache.erase(primero)
+
+
 func _actualizar_entidades_activas(
 	centro: Vector2i
 ) -> void:
@@ -675,6 +710,9 @@ func obtener_diagnostico() -> Dictionary:
 		"load_radius": _load_radius,
 		"unload_radius": _unload_radius,
 		"max_visible_chunks": MAX_VISIBLE_CHUNKS,
+		"data_radius": DATA_RADIUS,
+		"data_chunks": _data_chunk_cache.size(),
+		"data_chunk_coords": _data_chunk_cache.keys(),
 		"cells_per_frame": _cells_per_frame,
 		"generando": _terrain != null and _terrain.tiene_generacion_activa(),
 		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
