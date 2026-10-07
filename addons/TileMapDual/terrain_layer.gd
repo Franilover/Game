@@ -90,12 +90,8 @@ func apply_rule(terrain_neighbors: Array, cell: Vector2i) -> Dictionary:
 		# La mayoría de reglas no necesita selección aleatoria.
 		return mappings[0]
 
-	# Sólo crear el vector de pesos cuando realmente hay varias variantes.
-	var weights: Array = []
-	weights.resize(mappings.size())
-	for i in range(mappings.size()):
-		weights[i] = mappings[i].prob
-
+	# Los pesos dependen sólo del TileSet, no de la celda.
+	var weights: Array = node.get("_weights", [])
 	rand.seed = hash(str(cell) + str(global_seed))
 	return mappings[rand.rand_weighted(weights)]
 
@@ -130,6 +126,10 @@ func _register_rule(terrain_neighbors: Array, mapping: Dictionary) -> void:
 	if not 'mappings' in node:
 		node.mappings = []
 	node.mappings.append(mapping)
+	var weights: Array = []
+	for existing_mapping in node.mappings:
+		weights.append(existing_mapping.prob)
+	node["_weights"] = weights
 
 
 ## Utility function for easier printing
