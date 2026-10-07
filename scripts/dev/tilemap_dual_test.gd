@@ -2,7 +2,7 @@
 extends Node2D
 
 const TILE_SIZE: int = 32
-const GRASS_TEXTURE_PATH: String = "res://assets/tilesets/Grass.png"
+const GRASS_TEXTURE_PATH: String = "res://assets/tilesets/Pradera.png"
 
 var tilemap: TileMapDual
 
