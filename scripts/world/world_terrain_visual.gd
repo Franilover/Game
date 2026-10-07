@@ -864,6 +864,19 @@ func obtener_diagnostico() -> Dictionary:
 		if variation_layer != null:
 			variaciones[str(bioma_variant)] = variation_layer.get_used_cells().size()
 
+	var clear_diag: Dictionary = {}
+	if not _clear_task.is_empty():
+		clear_diag = {
+			"coord": _clear_task.get("coord", Vector2i.ZERO),
+			"cursor": int(_clear_task.get("cursor", 0)),
+			"total": int(_clear_task.get("total", 0)),
+			"stage": int(_clear_task.get("stage", 0)),
+			"progreso": (
+				float(int(_clear_task.get("cursor", 0)))
+				/ float(maxi(int(_clear_task.get("total", 1)), 1))
+			)
+		}
+
 	return {
 		"configurado": not _layers_by_zone.is_empty(),
 		"tile_size": tile_size,
@@ -880,6 +893,7 @@ func obtener_diagnostico() -> Dictionary:
 		"flush_pendiente": tiene_flush_pendiente(),
 		"display": display,
 		"clear_chunk_activo": not _clear_task.is_empty(),
+		"clear_chunk": clear_diag,
 		"profiler": obtener_profiler()
 	}
 
