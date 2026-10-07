@@ -43,7 +43,6 @@ func _init(
 	offset = fields.offset
 	_tileset_watcher = tileset_watcher
 	_terrain = layer
-	_rebuild_display_paths()
 	tile_set = tileset_watcher.tile_set
 	tileset_watcher.tileset_resized.connect(reposition, 1)
 	reposition()
