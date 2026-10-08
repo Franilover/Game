@@ -11,25 +11,37 @@ var estado_label: Label
 
 
 func _ready() -> void:
-    tilemap = get_node("TileMapDual") as TileMapDual
+    var escena_tilemap := get_node("TileMapDual") as TileMapDual
+    if escena_tilemap == null:
+        push_error("TileMapDualTest: falta el nodo TileMapDual de la escena")
+        return
+
+    # El renderer de TileMapDual se construye durante _ready() a partir del
+    # TileSet existente. Reemplazar el TileSet después de ese punto obliga al
+    # addon a reconstruir sus DisplayLayer de forma diferida y deja al
+    # laboratorio en un estado distinto al de Aventura.
+    #
+    # Creamos el TileMapDual de prueba con su TileSet definitivo ANTES de
+    # entrar al árbol. Así su _ready() construye directamente el renderer
+    # correcto y el laboratorio prueba exactamente el mismo pipeline.
+    tilemap = TileMapDual.new()
+    tilemap.name = "TileMapDualRuntime"
+    tilemap.material = escena_tilemap.material
+    tilemap.tile_set = _crear_tileset_grass()
+    tilemap.godot_4_3_compatibility = false
+    add_child(tilemap)
+    escena_tilemap.queue_free()
+
     call_deferred("_preparar_prueba")
     _crear_menu_prueba()
 
 
 func _preparar_prueba() -> void:
-    if tilemap == null:
+    if tilemap == null or tilemap.tile_set == null:
         return
 
-    # El TileMapDual de la escena conserva un TileSet de prueba antiguo.
-    # Este laboratorio debe ser completamente autocontenido: reemplazamos
-    # siempre el TileSet para garantizar que el catálogo actual de terrenos
-    # (Pradera/Tierra/Bosque/Desierto) sea el que usa el renderer.
-    tilemap.tile_set = _crear_tileset_grass()
-
-    # El TileMapDual necesita un frame para construir el watcher,
-    # leer las peering bits del atlas y generar las reglas DualGrid.
-    await get_tree().process_frame
-    tilemap._changed()
+    # El TileSet ya fue asignado antes de que TileMapDual entrara al árbol.
+    # Sólo esperamos a que termine su inicialización normal.
     await get_tree().process_frame
     _dibujar_prueba()
 
