@@ -121,12 +121,16 @@ func _crear_tileset_grass() -> TileSet:
 
 
 func _crear_menu_prueba() -> void:
+    var canvas_layer := CanvasLayer.new()
+    canvas_layer.name = "LabUI"
+    add_child(canvas_layer)
+
     var panel := PanelContainer.new()
     panel.name = "MenuAssets"
     panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
     panel.position = Vector2(20, 20)
     panel.size = Vector2(210, 330)
-    add_child(panel)
+    canvas_layer.add_child(panel)
 
     var margin := MarginContainer.new()
     margin.add_theme_constant_override("margin_left", 12)
