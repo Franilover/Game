@@ -129,7 +129,7 @@ func _crear_menu_prueba() -> void:
     panel.name = "MenuAssets"
     panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
     panel.position = Vector2(20, 20)
-    panel.size = Vector2(210, 330)
+    panel.size = Vector2(210, 360)
     canvas_layer.add_child(panel)
 
     var margin := MarginContainer.new()
@@ -186,13 +186,13 @@ func _crear_menu_prueba() -> void:
     copiar_logs.pressed.connect(_copiar_logs)
     box.add_child(copiar_logs)
 
-    var copiar_render := Button.new()
-    copiar_render.text = "Copiar render"
-    copiar_render.pressed.connect(_copiar_render)
-    box.add_child(copiar_render)
+    var copiar_diagnostico := Button.new()
+    copiar_diagnostico.text = "Copiar diagnóstico visual"
+    copiar_diagnostico.pressed.connect(_copiar_diagnostico_visual)
+    box.add_child(copiar_diagnostico)
 
     var ayuda := Label.new()
-    ayuda.text = "Click izquierdo: pintar\\nClick derecho: borrar\\nCopiar render: imagen al portapapeles"
+    ayuda.text = "Click izquierdo: pintar\\nClick derecho: borrar\\nDiagnóstico visual: texto del render"
     ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     box.add_child(ayuda)
 
@@ -221,22 +221,90 @@ func _copiar_logs() -> void:
     estado_label.text = "Logs copiados al portapapeles"
 
 
-func _copiar_render() -> void:
-    var image := get_viewport().get_texture().get_image()
-    if image == null:
-        estado_label.text = "No se pudo capturar el render"
+func _copiar_diagnostico_visual() -> void:
+    if tilemap == null or tilemap.tile_set == null:
+        estado_label.text = "No hay TileMapDual para diagnosticar"
         return
-    var path := "user://tilemap_dual_lab_render.png"
-    var error := image.save_png(path)
-    if error != OK:
-        estado_label.text = "Error guardando render: %s" % error
-        return
-    var absolute_path := ProjectSettings.globalize_path(path)
-    if FileAccess.file_exists("/usr/bin/wl-copy") or FileAccess.file_exists("/bin/wl-copy"):
-        OS.create_process("sh", ["-c", "wl-copy --type image/png < \"%s\"" % absolute_path])
-        estado_label.text = "Render enviado al portapapeles"
+
+    var lineas: Array[String] = []
+    lineas.append("=== DIAGNOSTICO VISUAL TILEMAP DUAL ===")
+    lineas.append("Este informe describe los tiles que realmente usa cada DisplayLayer.")
+    lineas.append("No es una captura: muestra coordenada, source_id y coordenada del atlas.")
+    lineas.append("")
+
+    var terrain_names: Dictionary = {
+        1: "Pradera",
+        2: "Tierra",
+        3: "Bosque",
+        4: "Desierto",
+    }
+
+    var world_cells := tilemap.get_used_cells()
+    lineas.append("=== TERRENO LOGICO DEL MUNDO ===")
+    if world_cells.is_empty():
+        lineas.append("(sin celdas)")
     else:
-        estado_label.text = "Render guardado en user://tilemap_dual_lab_render.png (wl-copy no disponible)"
+        var rect := tilemap.get_used_rect()
+        lineas.append("Rect: %s" % str(rect))
+        for y in range(rect.position.y, rect.end.y):
+            var row := ""
+            for x in range(rect.position.x, rect.end.x):
+                var terrain_id: int = tilemap.get_cell(Vector2i(x, y))
+                row += _terrain_symbol(terrain_id)
+            lineas.append(row)
+    lineas.append("")
+    lineas.append("Leyenda: P=Pradera T=Tierra B=Bosque D=Desierto .=vacío")
+    lineas.append("")
+
+    lineas.append("=== DISPLAYLAYERS REALES ===")
+    var display_layer_count := 0
+    for child in tilemap.get_children():
+        if not child is TileMapLayer:
+            continue
+        var display_layer: TileMapLayer = child as TileMapLayer
+        display_layer_count += 1
+        lineas.append("Capa: %s" % display_layer.name)
+        var cells := display_layer.get_used_cells()
+        lineas.append("  Celdas visibles: %d" % cells.size())
+        var atlas_counts: Dictionary = {}
+        for cell in cells:
+            var source_id: int = display_layer.get_cell_source_id(cell)
+            var atlas_coords: Vector2i = display_layer.get_cell_atlas_coords(cell)
+            var key := "%d:%s" % [source_id, str(atlas_coords)]
+            atlas_counts[key] = int(atlas_counts.get(key, 0)) + 1
+        for key in atlas_counts.keys():
+            lineas.append("  %s -> %d usos" % [key, atlas_counts[key]])
+        lineas.append("  Detalle:")
+        for cell in cells:
+            var source_id: int = display_layer.get_cell_source_id(cell)
+            var atlas_coords: Vector2i = display_layer.get_cell_atlas_coords(cell)
+            var terrain_name := terrain_names.get(source_id, "source_%d" % source_id)
+            lineas.append("    celda=%s terreno=%s source=%d atlas=%s" % [str(cell), terrain_name, source_id, str(atlas_coords)])
+        lineas.append("")
+
+    if display_layer_count == 0:
+        lineas.append("(No se encontraron DisplayLayers.)")
+
+    var renderer_diag: Dictionary = tilemap.obtener_diagnostico()
+    lineas.append("=== METRICAS DEL RENDERER ===")
+    lineas.append(str(renderer_diag))
+
+    DisplayServer.clipboard_set("\n".join(lineas))
+    estado_label.text = "Diagnóstico visual copiado al portapapeles"
+
+
+func _terrain_symbol(terrain_id: int) -> String:
+    match terrain_id:
+        1:
+            return "P"
+        2:
+            return "T"
+        3:
+            return "B"
+        4:
+            return "D"
+        _:
+            return "."
 
 
 func _seleccionar_terreno(index: int) -> void:
