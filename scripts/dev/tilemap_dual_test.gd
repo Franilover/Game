@@ -20,8 +20,11 @@ func _preparar_prueba() -> void:
     if tilemap == null:
         return
 
-    if tilemap.tile_set == null:
-        tilemap.tile_set = _crear_tileset_grass()
+    # El TileMapDual de la escena conserva un TileSet de prueba antiguo.
+    # Este laboratorio debe ser completamente autocontenido: reemplazamos
+    # siempre el TileSet para garantizar que el catálogo actual de terrenos
+    # (Pradera/Tierra/Bosque/Desierto) sea el que usa el renderer.
+    tilemap.tile_set = _crear_tileset_grass()
 
     # El TileMapDual necesita un frame para construir el watcher,
     # leer las peering bits del atlas y generar las reglas DualGrid.
