@@ -197,9 +197,77 @@ func _crear_menu_prueba() -> void:
     estado_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     box.add_child(estado_label)
 
+    var copiar_logs := Button.new()
+    copiar_logs.text = "Copiar logs"
+    copiar_logs.pressed.connect(_copiar_logs)
+    box.add_child(copiar_logs)
+
+    var copiar_render := Button.new()
+    copiar_render.text = "Copiar render"
+    copiar_render.pressed.connect(_copiar_render)
+    box.add_child(copiar_render)
+
     var ayuda := Label.new()
-    ayuda.text = "Click izquierdo: pintar\nClick derecho: borrar"
+    ayuda.text = "Click izquierdo: pintar\\nClick derecho: borrar\\nCopiar render: imagen al portapapeles"
+    ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     box.add_child(ayuda)
+
+
+func _copiar_logs() -> void:
+    var lineas: Array[String] = []
+    lineas.append("=== TILEMAP DUAL LAB ===")
+    lineas.append("Terreno seleccionado: %d (%s)" % [
+        terreno_seleccionado,
+        selector.get_item_text(selector.selected) if selector != null else "?"
+    ])
+    lineas.append("TileMapDual: %s" % ("OK" if tilemap != null else "NULL"))
+    lineas.append("TileSet: %s" % ("OK" if tilemap != null and tilemap.tile_set != null else "NULL"))
+
+    if tilemap != null:
+        var celdas := tilemap.get_used_cells()
+        lineas.append("Celdas usadas: %d" % celdas.size())
+        lineas.append("Rect usado: %s" % str(tilemap.get_used_rect()))
+        var conteo := {}
+        for cell in celdas:
+            var terrain := tilemap.get_cell_terrain_set(cell)
+            var terrain_id := tilemap.get_cell_terrain(cell)
+            var key := "%d/%d" % [terrain, terrain_id]
+            conteo[key] = int(conteo.get(key, 0)) + 1
+        lineas.append("Terrenos registrados por celda: %s" % str(conteo))
+
+    lineas.append("Atlas TILE_SEQUENCE:")
+    lineas.append(str([
+        Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
+        Vector2i(0, 0), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 1),
+        Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2),
+        Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1),
+    ]))
+    lineas.append("Atlas: Pradera.png / Tierra.png / Bosque.png / Desierto.png")
+    lineas.append("Tile size: %d" % TILE_SIZE)
+    DisplayServer.clipboard_set("\n".join(lineas))
+    estado_label.text = "Logs copiados al portapapeles"
+
+
+func _copiar_render() -> void:
+    var image := get_viewport().get_texture().get_image()
+    if image == null:
+        estado_label.text = "No se pudo capturar el render"
+        return
+
+    var path := "user://tilemap_dual_lab_render.png"
+    var error := image.save_png(path)
+    if error != OK:
+        estado_label.text = "Error guardando render: %s" % error
+        return
+
+    var absolute_path := ProjectSettings.globalize_path(path)
+    var command := "command -v wl-copy >/dev/null 2>&1 && wl-copy --type image/png < \"%s\"" % absolute_path
+    var exit_code := OS.execute("sh", ["-c", command], [], true)
+
+    if exit_code == 0:
+        estado_label.text = "Render copiado al portapapeles"
+    else:
+        estado_label.text = "Render guardado en user://tilemap_dual_lab_render.png (wl-copy no disponible)"
 
 
 func _seleccionar_terreno(index: int) -> void:
