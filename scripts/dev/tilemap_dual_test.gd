@@ -16,14 +16,6 @@ func _ready() -> void:
         push_error("TileMapDualTest: falta el nodo TileMapDual de la escena")
         return
 
-    # El renderer de TileMapDual se construye durante _ready() a partir del
-    # TileSet existente. Reemplazar el TileSet después de ese punto obliga al
-    # addon a reconstruir sus DisplayLayer de forma diferida y deja al
-    # laboratorio en un estado distinto al de Aventura.
-    #
-    # Creamos el TileMapDual de prueba con su TileSet definitivo ANTES de
-    # entrar al árbol. Así su _ready() construye directamente el renderer
-    # correcto y el laboratorio prueba exactamente el mismo pipeline.
     tilemap = TileMapDual.new()
     tilemap.name = "TileMapDualRuntime"
     tilemap.material = escena_tilemap.material
@@ -39,9 +31,6 @@ func _ready() -> void:
 func _preparar_prueba() -> void:
     if tilemap == null or tilemap.tile_set == null:
         return
-
-    # El TileSet ya fue asignado antes de que TileMapDual entrara al árbol.
-    # Sólo esperamos a que termine su inicialización normal.
     await get_tree().process_frame
     _dibujar_prueba()
 
@@ -49,14 +38,12 @@ func _preparar_prueba() -> void:
 func _dibujar_prueba() -> void:
     if tilemap == null or tilemap.tile_set == null:
         return
-
     tilemap.clear()
-
     for y in range(-5, 6):
         for x in range(-8, 9):
             tilemap.draw_cell(Vector2i(x, y), 1)
-
     _refrescar_dual(tilemap.get_used_cells())
+
 
 func _refrescar_dual(celdas: Array[Vector2i]) -> void:
     if celdas.is_empty():
@@ -67,7 +54,6 @@ func _refrescar_dual(celdas: Array[Vector2i]) -> void:
 func _crear_tileset_grass() -> TileSet:
     var grass_texture: Texture2D = load(GRASS_TEXTURE_PATH) as Texture2D
     var dirt_texture: Texture2D = load("res://assets/tilesets/Tierra.png") as Texture2D
-
     if grass_texture == null or dirt_texture == null:
         push_error("TileMapDualTest: no se pudieron cargar Pradera.png y Tierra.png")
         return TileSet.new()
@@ -94,7 +80,6 @@ func _crear_tileset_grass() -> TileSet:
         Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2),
         Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1),
     ]
-
     var neighbors: Array[TileSet.CellNeighbor] = [
         TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
         TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
@@ -104,7 +89,6 @@ func _crear_tileset_grass() -> TileSet:
 
     var bosque_texture: Texture2D = load("res://assets/tilesets/Bosque.png") as Texture2D
     var desierto_texture: Texture2D = load("res://assets/tilesets/Desierto.png") as Texture2D
-
     if bosque_texture == null or desierto_texture == null:
         push_error("TileMapDualTest: no se pudieron cargar Bosque.png y Desierto.png")
         return tile_set
@@ -121,30 +105,26 @@ func _crear_tileset_grass() -> TileSet:
         var atlas: TileSetAtlasSource = TileSetAtlasSource.new()
         atlas.texture = config["texture"] as Texture2D
         atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-
         for sequence_pos in sequence:
             atlas.create_tile(sequence_pos)
-
         for index in range(sequence.size()):
             var data: TileData = atlas.get_tile_data(sequence[index], 0)
             data.terrain_set = 0
             data.terrain = int(config["terrain"])
-
             var bits: int = index
             for neighbor in neighbors:
                 var terrain: int = int(config["terrain"]) if (bits & 1) != 0 else 0
                 data.set_terrain_peering_bit(neighbor, terrain)
                 bits >>= 1
-
         tile_set.add_source(atlas, int(config["source_id"]))
-
     return tile_set
+
 
 func _crear_menu_prueba() -> void:
     var panel := PanelContainer.new()
     panel.name = "MenuAssets"
-    panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-    panel.position = Vector2(-230, 20)
+    panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+    panel.position = Vector2(20, 20)
     panel.size = Vector2(210, 330)
     add_child(panel)
 
@@ -216,13 +196,9 @@ func _crear_menu_prueba() -> void:
 func _copiar_logs() -> void:
     var lineas: Array[String] = []
     lineas.append("=== TILEMAP DUAL LAB ===")
-    lineas.append("Terreno seleccionado: %d (%s)" % [
-        terreno_seleccionado,
-        selector.get_item_text(selector.selected) if selector != null else "?"
-    ])
+    lineas.append("Terreno seleccionado: %d (%s)" % [terreno_seleccionado, selector.get_item_text(selector.selected) if selector != null else "?"])
     lineas.append("TileMapDual: %s" % ("OK" if tilemap != null else "NULL"))
     lineas.append("TileSet: %s" % ("OK" if tilemap != null and tilemap.tile_set != null else "NULL"))
-
     if tilemap != null:
         var celdas := tilemap.get_used_cells()
         lineas.append("Celdas usadas: %d" % celdas.size())
@@ -234,14 +210,8 @@ func _copiar_logs() -> void:
             var key := "%d/%d" % [terrain, terrain_id]
             conteo[key] = int(conteo.get(key, 0)) + 1
         lineas.append("Terrenos registrados por celda: %s" % str(conteo))
-
     lineas.append("Atlas TILE_SEQUENCE:")
-    lineas.append(str([
-        Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
-        Vector2i(0, 0), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 1),
-        Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2),
-        Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1),
-    ]))
+    lineas.append(str([Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2), Vector2i(0, 0), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 1), Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2), Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1)]))
     lineas.append("Atlas: Pradera.png / Tierra.png / Bosque.png / Desierto.png")
     lineas.append("Tile size: %d" % TILE_SIZE)
     DisplayServer.clipboard_set("\n".join(lineas))
@@ -253,17 +223,14 @@ func _copiar_render() -> void:
     if image == null:
         estado_label.text = "No se pudo capturar el render"
         return
-
     var path := "user://tilemap_dual_lab_render.png"
     var error := image.save_png(path)
     if error != OK:
         estado_label.text = "Error guardando render: %s" % error
         return
-
     var absolute_path := ProjectSettings.globalize_path(path)
     var command := "command -v wl-copy >/dev/null 2>&1 && wl-copy --type image/png < \"%s\"" % absolute_path
     var exit_code := OS.execute("sh", ["-c", command], [], true)
-
     if exit_code == 0:
         estado_label.text = "Render copiado al portapapeles"
     else:
@@ -316,28 +283,17 @@ func _generar_mezcla() -> void:
             celdas.append(cell)
     _refrescar_dual(celdas)
 
+
 func _unhandled_input(event: InputEvent) -> void:
     if tilemap == null:
         return
-
     if not event is InputEventMouseButton:
         return
-
-    var mouse_event: InputEventMouseButton = (
-        event as InputEventMouseButton
-    )
-
+    var mouse_event: InputEventMouseButton = event as InputEventMouseButton
     if not mouse_event.pressed:
         return
-
-    var world_position: Vector2 = (
-        get_global_mouse_position()
-    )
-
-    var cell: Vector2i = tilemap.local_to_map(
-        tilemap.to_local(world_position)
-    )
-
+    var world_position: Vector2 = get_global_mouse_position()
+    var cell: Vector2i = tilemap.local_to_map(tilemap.to_local(world_position))
     if mouse_event.button_index == MOUSE_BUTTON_LEFT:
         tilemap.draw_cell(cell, terreno_seleccionado)
         _refrescar_dual([cell])
