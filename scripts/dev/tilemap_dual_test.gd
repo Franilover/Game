@@ -11,7 +11,7 @@ var estado_label: Label
 
 
 func _ready() -> void:
-    var escena_tilemap := get_node("TileMapDual") as TileMapDual
+    var escena_tilemap: TileMapDual = get_node("TileMapDual") as TileMapDual
     if escena_tilemap == null:
         push_error("TileMapDualTest: falta el nodo TileMapDual de la escena")
         return
@@ -121,29 +121,29 @@ func _crear_tileset_grass() -> TileSet:
 
 
 func _crear_menu_prueba() -> void:
-    var canvas_layer := CanvasLayer.new()
+    var canvas_layer: CanvasLayer = CanvasLayer.new()
     canvas_layer.name = "LabUI"
     add_child(canvas_layer)
 
-    var panel := PanelContainer.new()
+    var panel: PanelContainer = PanelContainer.new()
     panel.name = "MenuAssets"
     panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
     panel.position = Vector2(20, 20)
     panel.size = Vector2(210, 360)
     canvas_layer.add_child(panel)
 
-    var margin := MarginContainer.new()
+    var margin: MarginContainer = MarginContainer.new()
     margin.add_theme_constant_override("margin_left", 12)
     margin.add_theme_constant_override("margin_top", 12)
     margin.add_theme_constant_override("margin_right", 12)
     margin.add_theme_constant_override("margin_bottom", 12)
     panel.add_child(margin)
 
-    var box := VBoxContainer.new()
+    var box: VBoxContainer = VBoxContainer.new()
     box.add_theme_constant_override("separation", 8)
     margin.add_child(box)
 
-    var title := Label.new()
+    var title: Label = Label.new()
     title.text = "LABORATORIO — TERRENOS"
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     box.add_child(title)
@@ -158,20 +158,20 @@ func _crear_menu_prueba() -> void:
     selector.item_selected.connect(_seleccionar_terreno)
     box.add_child(selector)
 
-    var separador := HSeparator.new()
+    var separador: HSeparator = HSeparator.new()
     box.add_child(separador)
 
-    var limpiar := Button.new()
+    var limpiar: Button = Button.new()
     limpiar.text = "Limpiar mapa"
     limpiar.pressed.connect(_limpiar_mapa)
     box.add_child(limpiar)
 
-    var bloque := Button.new()
+    var bloque: Button = Button.new()
     bloque.text = "Rellenar con seleccionado"
     bloque.pressed.connect(_rellenar_seleccionado)
     box.add_child(bloque)
 
-    var mezcla := Button.new()
+    var mezcla: Button = Button.new()
     mezcla.text = "Generar mezcla aleatoria"
     mezcla.pressed.connect(_generar_mezcla)
     box.add_child(mezcla)
@@ -181,17 +181,17 @@ func _crear_menu_prueba() -> void:
     estado_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     box.add_child(estado_label)
 
-    var copiar_logs := Button.new()
+    var copiar_logs: Button = Button.new()
     copiar_logs.text = "Copiar logs"
     copiar_logs.pressed.connect(_copiar_logs)
     box.add_child(copiar_logs)
 
-    var copiar_diagnostico := Button.new()
+    var copiar_diagnostico: Button = Button.new()
     copiar_diagnostico.text = "Copiar diagnóstico visual"
     copiar_diagnostico.pressed.connect(_copiar_diagnostico_visual)
     box.add_child(copiar_diagnostico)
 
-    var ayuda := Label.new()
+    var ayuda: Label = Label.new()
     ayuda.text = "Click izquierdo: pintar\\nClick derecho: borrar\\nDiagnóstico visual: texto del render"
     ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     box.add_child(ayuda)
@@ -204,13 +204,13 @@ func _copiar_logs() -> void:
     lineas.append("TileMapDual: %s" % ("OK" if tilemap != null else "NULL"))
     lineas.append("TileSet: %s" % ("OK" if tilemap != null and tilemap.tile_set != null else "NULL"))
     if tilemap != null:
-        var celdas := tilemap.get_used_cells()
+        var celdas: Array[Vector2i] = tilemap.get_used_cells()
         lineas.append("Celdas usadas: %d" % celdas.size())
         lineas.append("Rect usado: %s" % str(tilemap.get_used_rect()))
-        var conteo := {}
+        var conteo: Dictionary = {}
         for cell in celdas:
             var terrain_id: int = tilemap.get_cell(cell)
-            var key := "0/%d" % terrain_id
+            var key: String = "0/%d" % terrain_id
             conteo[key] = int(conteo.get(key, 0)) + 1
         lineas.append("Terrenos registrados por celda: %s" % str(conteo))
     lineas.append("Atlas TILE_SEQUENCE:")
@@ -327,7 +327,7 @@ func _rellenar_seleccionado() -> void:
     var celdas: Array[Vector2i] = []
     for y in range(-5, 6):
         for x in range(-8, 9):
-            var cell := Vector2i(x, y)
+            var cell: Vector2i = Vector2i(x, y)
             tilemap.draw_cell(cell, terreno_seleccionado)
             celdas.append(cell)
     _refrescar_dual(celdas)
@@ -343,8 +343,8 @@ func _generar_mezcla() -> void:
     for y in range(-5, 6):
         for x in range(-8, 9):
             var cell := Vector2i(x, y)
-            var roll := rng.randf()
-            var terrain := 1
+            var roll: float = rng.randf()
+            var terrain: int = 1
             if roll < 0.12:
                 terrain = 2
             elif roll < 0.24:
