@@ -232,10 +232,9 @@ func _copiar_render() -> void:
         estado_label.text = "Error guardando render: %s" % error
         return
     var absolute_path := ProjectSettings.globalize_path(path)
-    var command := "command -v wl-copy >/dev/null 2>&1 && wl-copy --type image/png < \"%s\"" % absolute_path
-    var exit_code := OS.execute("sh", ["-c", command], [], true)
-    if exit_code == 0:
-        estado_label.text = "Render copiado al portapapeles"
+    if FileAccess.file_exists("/usr/bin/wl-copy") or FileAccess.file_exists("/bin/wl-copy"):
+        OS.create_process("sh", ["-c", "wl-copy --type image/png < \"%s\"" % absolute_path])
+        estado_label.text = "Render enviado al portapapeles"
     else:
         estado_label.text = "Render guardado en user://tilemap_dual_lab_render.png (wl-copy no disponible)"
 
