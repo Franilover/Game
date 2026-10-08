@@ -308,3 +308,67 @@ func _terrain_symbol(terrain_id: int) -> String:
             return "."
 
 
+
+func _seleccionar_terreno(index: int) -> void:
+    terreno_seleccionado = selector.get_item_id(index)
+    estado_label.text = "Seleccionado: " + selector.get_item_text(index)
+
+
+func _limpiar_mapa() -> void:
+    if tilemap == null:
+        return
+    tilemap.clear()
+    _refrescar_dual(tilemap.get_used_cells())
+
+
+func _rellenar_seleccionado() -> void:
+    if tilemap == null:
+        return
+    var celdas: Array[Vector2i] = []
+    for y in range(-5, 6):
+        for x in range(-8, 9):
+            var cell := Vector2i(x, y)
+            tilemap.draw_cell(cell, terreno_seleccionado)
+            celdas.append(cell)
+    _refrescar_dual(celdas)
+
+
+func _generar_mezcla() -> void:
+    if tilemap == null:
+        return
+    tilemap.clear()
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 48127
+    var celdas: Array[Vector2i] = []
+    for y in range(-5, 6):
+        for x in range(-8, 9):
+            var cell := Vector2i(x, y)
+            var roll := rng.randf()
+            var terrain := 1
+            if roll < 0.12:
+                terrain = 2
+            elif roll < 0.24:
+                terrain = 3
+            elif roll < 0.36:
+                terrain = 4
+            tilemap.draw_cell(cell, terrain)
+            celdas.append(cell)
+    _refrescar_dual(celdas)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+    if tilemap == null:
+        return
+    if not event is InputEventMouseButton:
+        return
+    var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+    if not mouse_event.pressed:
+        return
+    var world_position: Vector2 = get_global_mouse_position()
+    var cell: Vector2i = tilemap.local_to_map(tilemap.to_local(world_position))
+    if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+        tilemap.draw_cell(cell, terreno_seleccionado)
+        _refrescar_dual([cell])
+    elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+        tilemap.draw_cell(cell, 0)
+        _refrescar_dual([cell])
