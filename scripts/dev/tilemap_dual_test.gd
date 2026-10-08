@@ -239,15 +239,15 @@ func _copiar_diagnostico_visual() -> void:
         4: "Desierto",
     }
 
-    var world_cells := tilemap.get_used_cells()
+    var world_cells: Array[Vector2i] = tilemap.get_used_cells()
     lineas.append("=== TERRENO LOGICO DEL MUNDO ===")
     if world_cells.is_empty():
         lineas.append("(sin celdas)")
     else:
-        var rect := tilemap.get_used_rect()
+        var rect: Rect2i = tilemap.get_used_rect()
         lineas.append("Rect: %s" % str(rect))
         for y in range(rect.position.y, rect.end.y):
-            var row := ""
+            var row: String = ""
             for x in range(rect.position.x, rect.end.x):
                 var terrain_id: int = tilemap.get_cell(Vector2i(x, y))
                 row += _terrain_symbol(terrain_id)
@@ -257,28 +257,29 @@ func _copiar_diagnostico_visual() -> void:
     lineas.append("")
 
     lineas.append("=== DISPLAYLAYERS REALES ===")
-    var display_layer_count := 0
+    var display_layer_count: int = 0
     for child in tilemap.get_children():
         if not child is TileMapLayer:
             continue
         var display_layer: TileMapLayer = child as TileMapLayer
         display_layer_count += 1
         lineas.append("Capa: %s" % display_layer.name)
-        var cells := display_layer.get_used_cells()
+        var cells: Array[Vector2i] = display_layer.get_used_cells()
         lineas.append("  Celdas visibles: %d" % cells.size())
         var atlas_counts: Dictionary = {}
         for cell in cells:
             var source_id: int = display_layer.get_cell_source_id(cell)
             var atlas_coords: Vector2i = display_layer.get_cell_atlas_coords(cell)
-            var key := "%d:%s" % [source_id, str(atlas_coords)]
+            var key: String = "%d:%s" % [source_id, str(atlas_coords)]
             atlas_counts[key] = int(atlas_counts.get(key, 0)) + 1
         for key in atlas_counts.keys():
-            lineas.append("  %s -> %d usos" % [key, atlas_counts[key]])
+            var usage_count: int = int(atlas_counts[key])
+            lineas.append("  %s -> %d usos" % [key, usage_count])
         lineas.append("  Detalle:")
         for cell in cells:
             var source_id: int = display_layer.get_cell_source_id(cell)
             var atlas_coords: Vector2i = display_layer.get_cell_atlas_coords(cell)
-            var terrain_name := terrain_names.get(source_id, "source_%d" % source_id)
+            var terrain_name: String = str(terrain_names.get(source_id, "source_%d" % source_id))
             lineas.append("    celda=%s terreno=%s source=%d atlas=%s" % [str(cell), terrain_name, source_id, str(atlas_coords)])
         lineas.append("")
 
@@ -307,66 +308,3 @@ func _terrain_symbol(terrain_id: int) -> String:
             return "."
 
 
-func _seleccionar_terreno(index: int) -> void:
-    terreno_seleccionado = selector.get_item_id(index)
-    estado_label.text = "Seleccionado: " + selector.get_item_text(index)
-
-
-func _limpiar_mapa() -> void:
-    if tilemap == null:
-        return
-    tilemap.clear()
-    _refrescar_dual(tilemap.get_used_cells())
-
-
-func _rellenar_seleccionado() -> void:
-    if tilemap == null:
-        return
-    var celdas: Array[Vector2i] = []
-    for y in range(-5, 6):
-        for x in range(-8, 9):
-            var cell := Vector2i(x, y)
-            tilemap.draw_cell(cell, terreno_seleccionado)
-            celdas.append(cell)
-    _refrescar_dual(celdas)
-
-
-func _generar_mezcla() -> void:
-    if tilemap == null:
-        return
-    tilemap.clear()
-    var rng := RandomNumberGenerator.new()
-    rng.seed = 48127
-    var celdas: Array[Vector2i] = []
-    for y in range(-5, 6):
-        for x in range(-8, 9):
-            var cell := Vector2i(x, y)
-            var roll := rng.randf()
-            var terrain := 1
-            if roll < 0.12:
-                terrain = 2
-            elif roll < 0.24:
-                terrain = 3
-            elif roll < 0.36:
-                terrain = 4
-            tilemap.draw_cell(cell, terrain)
-            celdas.append(cell)
-    _refrescar_dual(celdas)
-
-
-func _unhandled_input(event: InputEvent) -> void:
-    if tilemap == null:
-        return
-    if not event is InputEventMouseButton:
-        return
-    var mouse_event: InputEventMouseButton = event as InputEventMouseButton
-    if not mouse_event.pressed:
-        return
-    var world_position: Vector2 = get_global_mouse_position()
-    var cell: Vector2i = tilemap.local_to_map(tilemap.to_local(world_position))
-    if mouse_event.button_index == MOUSE_BUTTON_LEFT:
-        tilemap.draw_cell(cell, terreno_seleccionado)
-        _refrescar_dual([cell])
-    elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
-        tilemap.draw_cell(cell, 0)
-        _refrescar_dual([cell])
