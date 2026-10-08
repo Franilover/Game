@@ -209,9 +209,8 @@ func _copiar_logs() -> void:
         lineas.append("Rect usado: %s" % str(tilemap.get_used_rect()))
         var conteo := {}
         for cell in celdas:
-            var terrain: int = tilemap.get_cell_terrain_set(cell)
-            var terrain_id: int = tilemap.get_cell_terrain(cell)
-            var key := "%d/%d" % [terrain, terrain_id]
+            var terrain_id: int = tilemap.get_cell(cell)
+            var key := "0/%d" % terrain_id
             conteo[key] = int(conteo.get(key, 0)) + 1
         lineas.append("Terrenos registrados por celda: %s" % str(conteo))
     lineas.append("Atlas TILE_SEQUENCE:")
