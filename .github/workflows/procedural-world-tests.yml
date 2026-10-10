@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "scripts/world/procedural/**"
+      - "scripts/world/world_terrain*.gd"
+      - "addons/TileMapDual/**"
       - "tests/world/**"
       - "project.godot"
       - ".github/workflows/procedural-world-tests.yml"
@@ -12,6 +14,8 @@ on:
     branches: [main]
     paths:
       - "scripts/world/procedural/**"
+      - "scripts/world/world_terrain*.gd"
+      - "addons/TileMapDual/**"
       - "tests/world/**"
       - "project.godot"
       - ".github/workflows/procedural-world-tests.yml"
