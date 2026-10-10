@@ -101,6 +101,11 @@ var _cell_layer_key: Dictionary = {}
 var _variation_layers_by_bioma: Dictionary = {}
 var _variation_tilesets_by_bioma: Dictionary = {}
 var _batch_active: bool = false
+# TileMapDual captura las reglas del TileSet en TerrainDual. Al añadir un
+# atlas en runtime, la señal del TileSet sólo marca al watcher como pendiente;
+# en juego el watcher no procesa esa señal por frame. Hay que reconstruir las
+# reglas una vez que termina el lote que registró atlas/terrenos nuevos.
+var _terrain_rules_dirty: bool = false
 var _clear_task: Dictionary = {}
 var _flush_last_zone: String = ""
 var _flush_last_cells: int = 0
@@ -357,6 +362,7 @@ func comenzar_lote() -> void:
 
 func terminar_lote() -> void:
 	if not _batch_active:
+		_reconstruir_reglas_terreno_si_necesario()
 		return
 	for layer_variant in _layers_by_zone.values():
 		var layer := layer_variant as TileMapDual
@@ -364,6 +370,18 @@ func terminar_lote() -> void:
 			layer.set_deferred_updates_blocked(false)
 			layer.set_block_signals(false)
 	_batch_active = false
+	_reconstruir_reglas_terreno_si_necesario()
+
+
+func _reconstruir_reglas_terreno_si_necesario() -> void:
+	if not _terrain_rules_dirty:
+		return
+	if not is_instance_valid(_shared_terrain_layer):
+		return
+	# Este método relee todos los atlas y sus peering bits, reconstruye el
+	# TerrainDual y repinta el Display desde las celdas reales ya registradas.
+	_shared_terrain_layer.reconstruir_renderer_dual()
+	_terrain_rules_dirty = false
 
 
 func _crear_capa_terreno(zone: int) -> TileMapDual:
@@ -528,6 +546,8 @@ func set_zone(
 		_marcar_frontera_por_celda_nueva(cell)
 
 	_profiler_set_zone_calls += 1
+	if not _batch_active:
+		_reconstruir_reglas_terreno_si_necesario()
 
 
 func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
@@ -711,6 +731,10 @@ func _crear_base_tile(
 
 			bits >>= 1
 
+	# El addon no vuelve a leer los peering bits de atlas agregados en runtime
+	# sólo porque cambie TileSet.changed. Marcamos las reglas para reconstruir
+	# el Dual Grid al cerrar este lote, no una vez por cada celda.
+	_terrain_rules_dirty = true
 
 	_base_tiles[tile_key] = {
 		"source_id": source_id,
