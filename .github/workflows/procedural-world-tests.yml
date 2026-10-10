@@ -1,0 +1,47 @@
+name: Procedural World Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/world/procedural/**"
+      - "tests/world/**"
+      - "project.godot"
+      - ".github/workflows/procedural-world-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/world/procedural/**"
+      - "tests/world/**"
+      - "project.godot"
+      - ".github/workflows/procedural-world-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  procedural-kernel:
+    name: Godot 4.7 headless kernel tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot 4.7
+        shell: bash
+        run: |
+          set -euo pipefail
+          filename="Godot_v4.7-stable_linux.x86_64"
+          wget -q "https://github.com/godotengine/godot/releases/download/4.7-stable/${filename}.zip"
+          unzip -q "${filename}.zip"
+          sudo install "${filename}" /usr/local/bin/godot
+          godot --version
+
+      - name: Import project resources
+        run: godot --headless --editor --path . --quit
+
+      - name: Run procedural kernel smoke tests
+        run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
