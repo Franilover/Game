@@ -669,10 +669,18 @@ func _crear_base_tile(
 		source_id
 	)
 
-	# Todas las zonas deben compartir el mismo TileMapDual para que el
-	# renderer pueda comparar el terreno de una celda con el de sus vecinos.
-	# Cada zona usa un terrain ID distinto dentro del mismo Terrain Set.
-	var terrain_id := zone + 1
+	# Cada combinación bioma/zona necesita identidad de terreno propia.
+	# Si sólo usamos zone + 1, Pradera y Bosque (por ejemplo) se consideran
+	# el mismo terreno aunque procedan de atlas diferentes: TileMapDual no
+	# detecta esa frontera y deja un corte recto entre ambas texturas.
+	# Reservamos el terreno 0 para el borde/fallback y creamos IDs estables
+	# derivados del índice de bioma y la zona visual.
+	var terrain_id := source_id + 1
+	while layer.tile_set.get_terrains_count(0) <= terrain_id:
+		var next_terrain_id := layer.tile_set.get_terrains_count(0)
+		layer.tile_set.add_terrain(0)
+		var terrain_label := "BiomeZone_%d" % (next_terrain_id - 1)
+		layer.tile_set.set_terrain_name(0, next_terrain_id, terrain_label)
 
 	for index in range(TILE_SEQUENCE.size()):
 		var data := atlas.get_tile_data(
