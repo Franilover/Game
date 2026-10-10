@@ -83,6 +83,9 @@ var tilemap_dual: TileMapDual
 # Así un cambio de bioma no se interpreta como un borde de terreno.
 var _layers_by_zone: Dictionary = {}
 var _shared_terrain_layer: TileMapDual
+# Relleno opaco bajo el Dual Grid. Si una regla de esquina no encuentra
+# variante exacta, esta capa evita que el fondo gris se vea por transparencias.
+var _terrain_underlay: TileMapLayer
 var _base_tiles: Dictionary = {}
 var _next_source_id_by_zone: Dictionary = {}
 
@@ -265,6 +268,8 @@ func _limpiar_celda_chunk(cell: Vector2i, marcar_dirty: bool = true) -> void:
 	if layer == null:
 		return
 	layer.erase_cell(cell)
+	if is_instance_valid(_terrain_underlay):
+		_terrain_underlay.erase_cell(cell)
 
 	var bioma_celda := str(_cell_bioma.get(cell, ""))
 	if _variation_layers_by_bioma.has(bioma_celda):
@@ -402,13 +407,27 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 			_dirty_cursor_by_zone[clave] = 0
 		return _shared_terrain_layer
 
+	var tile_set := _crear_tileset()
+
+	# El relleno usa el mismo atlas, pero dibuja una baldosa completa por celda.
+	# Debe quedar detrás del Dual Grid para cubrir huecos transparentes grises.
+	var underlay := TileMapLayer.new()
+	underlay.name = "TerrainUnderlay"
+	underlay.z_as_relative = false
+	underlay.z_index = -4097
+	underlay.rendering_quadrant_size = 512
+	underlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	underlay.tile_set = tile_set
+	add_child(underlay)
+	_terrain_underlay = underlay
+
 	var layer := TileMapDual.new()
 	layer.name = "TerrainDual_AllZones"
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
 	layer.z_index = -4096
 	layer.rendering_quadrant_size = 512
-	layer.tile_set = _crear_tileset()
+	layer.tile_set = tile_set
 
 	add_child(layer)
 
@@ -526,16 +545,29 @@ func set_zone(
 
 	var data: Dictionary = _base_tiles[tile_key]
 
-	# Evitar erase_cell + set_cell cuando la celda ya pertenece a esta capa.
-	if layer_anterior != layer_key:
+	# No basta con comprobar la capa: todos los biomas comparten TileMapDual.
+	# Si cambia el bioma dentro de la misma zona, también hay que cambiar el
+	# source_id y la baldosa del relleno, o se conservan píxeles del bioma viejo.
+	var source_id := int(data["source_id"])
+	var atlas_coords: Vector2i = data["atlas"]
+	var debe_actualizar_tile := (
+		layer.get_cell_source_id(cell) != source_id
+		or layer.get_cell_atlas_coords(cell) != atlas_coords
+	)
+	if debe_actualizar_tile:
 		var set_cell_start_usec := Time.get_ticks_usec()
-		layer.set_cell(
-			cell,
-			int(data["source_id"]),
-			data["atlas"]
-		)
+		layer.set_cell(cell, source_id, atlas_coords)
 		_profiler_set_cell_ms += float(Time.get_ticks_usec() - set_cell_start_usec) / 1000.0
 		_profiler_set_cell_calls += 1
+
+	# La baldosa de patrón completo es un respaldo opaco. Las partes
+	# transparentes de las esquinas de transición muestran el bioma de la celda.
+	if is_instance_valid(_terrain_underlay):
+		if (
+			_terrain_underlay.get_cell_source_id(cell) != source_id
+			or _terrain_underlay.get_cell_atlas_coords(cell) != TILE_SEQUENCE[15]
+		):
+			_terrain_underlay.set_cell(cell, source_id, TILE_SEQUENCE[15])
 
 	# Una sola pasada cubre la celda nueva y la frontera de las capas
 	# vecinas. La función deduplica mediante lookup, evitando dos recorridos
@@ -1262,6 +1294,8 @@ func clear_chunk(
 				continue
 
 			layer.erase_cell(cell)
+			if is_instance_valid(_terrain_underlay):
+				_terrain_underlay.erase_cell(cell)
 
 			# Las variantes no forman parte de TileMapDual; hay que retirarlas
 			# explícitamente antes de borrar la información de la celda.
