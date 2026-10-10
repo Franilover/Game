@@ -781,35 +781,30 @@ func _cargar_textura_bioma(
 	zone: int,
 	bioma_textura: String = ""
 ) -> Texture2D:
-	# La identidad visual la manda el BIOMA. La zona sólo queda como
-	# fallback de compatibilidad para datos antiguos sin textura de bioma.
+	# La zona determina el material del suelo. Dentro de una Pradera,
+	# por ejemplo, las celdas de zona Tierra deben usar Tierra.png y no
+	# repetir la textura de Pradera en todo el bioma.
+	var textura_zona := _cargar_textura_zone(zone)
+	if _textura_valida(textura_zona):
+		return textura_zona
+
+	# Si falta el atlas de la zona, usar la textura canónica del bioma
+	# como fallback; nunca sustituir una textura de zona válida por ella.
 	if not bioma_textura.strip_edges().is_empty():
 		var textura_canonica := load(
 			bioma_textura.strip_edges()
 		) as Texture2D
-
 		if _textura_valida(textura_canonica):
 			return textura_canonica
 
 	var nombre := bioma_nombre.strip_edges()
-
 	if not nombre.is_empty():
-		var bioma_path := (
-			"res://assets/tilesets/"
-			+ nombre
-			+ ".png"
-		)
-
-		var bioma_texture := (
-			load(bioma_path) as Texture2D
-		)
-
+		var bioma_path := "res://assets/tilesets/" + nombre + ".png"
+		var bioma_texture := load(bioma_path) as Texture2D
 		if _textura_valida(bioma_texture):
 			return bioma_texture
 
-	# Fallback heredado: no define la identidad visual cuando existe
-	# información canónica del bioma.
-	return _cargar_textura_zone(zone)
+	return null
 
 func _cargar_textura_zone(zone: int) -> Texture2D:
 	var path := str(
