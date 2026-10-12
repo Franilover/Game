@@ -49,3 +49,6 @@ jobs:
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
+
+      - name: Run TileMapDual terrain regression test
+        run: godot --headless --path . --script res://tests/world/test_world_terrain_visual.gd
