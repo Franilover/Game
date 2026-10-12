@@ -418,11 +418,13 @@ func terminar_lote() -> void:
 func _reconstruir_reglas_terreno_si_necesario() -> void:
 	if not _terrain_rules_dirty:
 		return
-	if not is_instance_valid(_shared_terrain_layer):
-		return
-	# Este método relee todos los atlas y sus peering bits, reconstruye el
-	# TerrainDual y repinta el Display desde las celdas reales ya registradas.
-	_shared_terrain_layer.reconstruir_renderer_dual()
+	# Las capas se inicializan por zona y cada una sólo contiene terreno 1.
+	# Releerlas es necesario una vez al preparar sus atlas, no durante el
+	# pintado normal ni una vez por celda.
+	for layer_variant in _layers_by_zone.values():
+		var layer := layer_variant as TileMapDual
+		if is_instance_valid(layer):
+			layer.reconstruir_renderer_dual()
 	_terrain_rules_dirty = false
 
 
