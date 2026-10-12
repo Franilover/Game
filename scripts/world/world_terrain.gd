@@ -615,6 +615,10 @@ func _procesar_datos_chunk(
 	# datos. No esperamos a calcular los 1.156 datos del chunk acolchado para
 	# mostrar las primeras celdas caminables.
 	_procesar_pintado_chunk(cells, true)
+	# Durante DATOS, el diagnóstico debe mostrar el cursor de datos, no el
+	# cursor de pintura intercalada.
+	_generation_task["cursor"] = cursor
+	_generation_task["datos_listos"] = datos_listos
 
 	var data_ms_this_step := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
 	_profiler_data_ms += data_ms_this_step
