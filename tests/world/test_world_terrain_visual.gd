@@ -168,7 +168,7 @@ func _find_mask_violation(texture: Texture2D) -> String:
 
 	var half := 16
 	for index in range(16):
-		var tile := VISUAL_SCRIPT.TILE_SEQUENCE[index] as Vector2i
+		var tile: Vector2i = VISUAL_SCRIPT.TILE_SEQUENCE[index]
 		var origin := tile * 32
 		var bits := index
 		for corner in range(4):
