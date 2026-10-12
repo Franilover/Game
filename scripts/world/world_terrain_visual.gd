@@ -696,32 +696,28 @@ func _crear_base_tile(
 	for sequence_pos in TILE_SEQUENCE:
 		atlas.create_tile(sequence_pos)
 
-	# Cada zona tiene su propio source_id, pero comparte el renderer.
-	# El terrain ID distingue las zonas; los cuadrantes que no pertenecen a
-	# esta zona quedan transparentes para que la capa vecina sea visible.
-	var source_id := zone
-	var terrain_id := zone + 1
-	if layer.tile_set.has_source(source_id):
-		layer.tile_set.remove_source(source_id)
-	layer.tile_set.add_source(atlas, source_id)
+	# Cada TileMapDual tiene un atlas binario: 0 = vacío, 1 = esta zona.
+	# La máscara alfa se normaliza antes de registrar el atlas para impedir
+	# que el arte de un terreno invada los cuadrantes de otro.
+	layer.tile_set.add_source(atlas, 0)
 	for index in range(TILE_SEQUENCE.size()):
 		var data := atlas.get_tile_data(TILE_SEQUENCE[index], 0)
 		data.terrain_set = 0
-		data.terrain = terrain_id
+		data.terrain = 1
 		var bits := index
 		for neighbor in CORNER_NEIGHBORS:
 			data.set_terrain_peering_bit(
 				neighbor,
-				terrain_id if (bits & 1) != 0 else 0
+				1 if (bits & 1) != 0 else 0
 			)
 			bits >>= 1
 
 	_terrain_rules_dirty = true
 	_base_tiles[tile_key] = {
-		"source_id": source_id,
+		"source_id": 0,
 		"atlas": TILE_SEQUENCE[15],
 	}
-	_next_source_id_by_zone[tile_key] = source_id + 1
+	_next_source_id_by_zone[tile_key] = 1
 
 func _normalizar_textura_dual(texture: Texture2D) -> Texture2D:
 	if not _textura_valida(texture):
@@ -752,7 +748,7 @@ func _normalizar_textura_dual(texture: Texture2D) -> Texture2D:
 				bits >>= 1
 				continue
 			var qx := corner % 2
-			var qy := corner / 2
+			var qy := corner >> 1
 			for py in range(origen.y + qy * mitad, origen.y + (qy + 1) * mitad):
 				for px in range(origen.x + qx * mitad, origen.x + (qx + 1) * mitad):
 					var color := image.get_pixel(px, py)
