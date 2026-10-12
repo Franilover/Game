@@ -16,6 +16,7 @@ func _run() -> void:
 	# TileMapDual's _ready() completes on the next frame. The zone atlases
 	# must already exist before the first terrain cell is written.
 	await process_frame
+	visual.finalizar_preparacion_renderer()
 
 	var layer: TileMapDual = visual.tilemap_dual
 	if layer == null or layer.tile_set == null:
