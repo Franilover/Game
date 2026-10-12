@@ -281,10 +281,17 @@ func _limpiar_celda_chunk(cell: Vector2i, marcar_dirty: bool = true) -> void:
 	_cell_bioma.erase(cell)
 	_cell_zone.erase(cell)
 	_cell_layer_key.erase(cell)
+	# La celda eliminada debe actualizarse incluso durante un unload por
+	# lotes: TileMapDual puede descartar _update_cells mientras las señales
+	# están bloqueadas. Sin esta entrada, el Display conserva tiles fantasma.
+	_marcar_dirty(layer_key, cell)
 	if marcar_dirty:
-		_marcar_dirty(layer_key, cell)
+		# Cada vecino se recompone en SU propia capa. Usar siempre layer_key
+		# deja residuos cuando el borde eliminado tocaba otra zona.
 		for offset: Vector2i in UPDATE_NEIGHBORS:
-			_marcar_dirty(layer_key, cell + offset)
+			if offset == Vector2i.ZERO:
+				continue
+			_marcar_dirty_si_existe(cell + offset)
 		_marcar_variaciones_dirty(cell, "")
 
 
@@ -1275,16 +1282,11 @@ func clear_chunk(
 			_cell_zone.erase(cell)
 			_cell_layer_key.erase(cell)
 
-			_marcar_dirty(
-				layer_key,
-				cell
-			)
-
+			_marcar_dirty(layer_key, cell)
 			for offset: Vector2i in UPDATE_NEIGHBORS:
-				_marcar_dirty(
-					layer_key,
-					cell + offset
-				)
+				if offset == Vector2i.ZERO:
+					continue
+				_marcar_dirty_si_existe(cell + offset)
 			_marcar_variaciones_dirty(cell, "")
 
 	if not _dirty_cells_by_zone.is_empty():
