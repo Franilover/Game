@@ -362,40 +362,32 @@ func configurar(nuevo_tile_size: int) -> void:
 
 
 func _preparar_atlas_zonas() -> void:
-	if not is_instance_valid(_shared_terrain_layer):
-		return
-
+	# Cada TileMapDual representa un único terreno binario (terreno propio/vacío).
+	# TileMapDual recomienda capas separadas para mezclas de más de dos terrenos.
+	# Los atlas y las reglas se preparan todos antes de pintar el primer chunk.
 	for zone in range(ZONE_TEXTURES.size()):
 		var tile_key := str(zone)
 		if _base_tiles.has(tile_key):
 			continue
-		_crear_base_tile(
-			"",
-			tile_key,
-			0,
-			zone,
-			_shared_terrain_layer,
-			""
-		)
-
-	# En la inicialización normal, TileMapDual todavía no ha terminado _ready();
-	# su _changed() inicial leerá todos los atlas ya registrados. No necesitamos
-	# volver a reconstruir el Display al terminar el primer lote de celdas.
-	_terrain_rules_dirty = false
+		var layer := _layers_by_zone.get(tile_key) as TileMapDual
+		if layer == null:
+			continue
+		_crear_base_tile("", tile_key, 0, zone, layer, "")
+	_terrain_rules_dirty = true
 
 
 func finalizar_preparacion_renderer() -> void:
-	# Se llama después de que TileMapDual haya terminado _ready(). Esto fuerza
-	# una sola lectura de los 10 atlas ya registrados y elimina cualquier
-	# dependencia del orden en que reanuden sus await de inicialización.
-	if not is_instance_valid(_shared_terrain_layer):
-		push_error("WorldTerrainVisual: TileMapDual no está listo al finalizar la preparación.")
-		return
-	var diagnostico: Dictionary = _shared_terrain_layer.obtener_diagnostico()
-	if not bool(diagnostico.get("renderer_valid", false)):
-		push_error("WorldTerrainVisual: el Display de TileMapDual no está inicializado.")
-		return
-	_shared_terrain_layer.reconstruir_renderer_dual()
+	# Cada capa debe terminar _ready() antes de leer su atlas binario.
+	for layer_variant in _layers_by_zone.values():
+		var layer := layer_variant as TileMapDual
+		if not is_instance_valid(layer):
+			push_error("WorldTerrainVisual: falta una capa TileMapDual.")
+			return
+		var diagnostico: Dictionary = layer.obtener_diagnostico()
+		if not bool(diagnostico.get("renderer_valid", false)):
+			push_error("WorldTerrainVisual: Display no inicializado en " + layer.name)
+			return
+		layer.reconstruir_renderer_dual()
 	_terrain_rules_dirty = false
 
 
@@ -436,81 +428,65 @@ func _reconstruir_reglas_terreno_si_necesario() -> void:
 
 func _crear_capa_terreno(zone: int) -> TileMapDual:
 	var clave := str(zone)
+	if _layers_by_zone.has(clave):
+		return _layers_by_zone[clave] as TileMapDual
 
-	# Los terrenos necesitan estar en la misma capa para que TileMapDual pueda
-	# consultar el terrain de los vecinos y escoger bordes/esquinas entre zonas.
-	# Los mapas por zona anteriores aislaban precisamente esa información.
-	if is_instance_valid(_shared_terrain_layer):
-		_layers_by_zone[clave] = _shared_terrain_layer
-		if not _next_source_id_by_zone.has(clave):
-			_next_source_id_by_zone[clave] = 0
-		if not _dirty_cells_by_zone.has(clave):
-			_dirty_cells_by_zone[clave] = []
-		if not _dirty_lookup_by_zone.has(clave):
-			_dirty_lookup_by_zone[clave] = {}
-		if not _dirty_cursor_by_zone.has(clave):
-			_dirty_cursor_by_zone[clave] = 0
-		return _shared_terrain_layer
+	# El underlay es un mapa opaco común con un atlas por zona. Se crea una
+	# sola vez, con todos los atlas ya registrados antes de entrar al árbol.
+	if not is_instance_valid(_terrain_underlay):
+		var underlay_tileset := TileSet.new()
+		underlay_tileset.tile_size = Vector2i(tile_size, tile_size)
+		for underlay_zone in range(ZONE_TEXTURES.size()):
+			var texture := _cargar_textura_zone(underlay_zone)
+			if texture == null:
+				push_error("WorldTerrainVisual: falta textura para underlay de zona " + str(underlay_zone))
+				continue
+			var underlay_atlas := TileSetAtlasSource.new()
+			underlay_atlas.texture = texture
+			underlay_atlas.texture_region_size = Vector2i(tile_size, tile_size)
+			for sequence_pos in TILE_SEQUENCE:
+				underlay_atlas.create_tile(sequence_pos)
+			underlay_tileset.add_source(underlay_atlas, underlay_zone)
 
-	var tile_set := _crear_tileset()
+		var underlay := TileMapLayer.new()
+		underlay.name = "TerrainUnderlay"
+		underlay.z_as_relative = false
+		underlay.z_index = -4096
+		underlay.rendering_quadrant_size = 16
+		underlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		underlay.tile_set = underlay_tileset
+		add_child(underlay)
+		_terrain_underlay = underlay
 
-	# El relleno usa el mismo atlas, pero dibuja una baldosa completa por celda.
-	# Debe quedar detrás del Dual Grid para cubrir huecos transparentes grises.
-	var underlay := TileMapLayer.new()
-	underlay.name = "TerrainUnderlay"
-	underlay.z_as_relative = false
-	underlay.z_index = -4096
-	underlay.rendering_quadrant_size = 512
-	underlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	underlay.tile_set = tile_set
-	add_child(underlay)
-	_terrain_underlay = underlay
+	# TileMapDual trabaja con terreno propio frente a vacío. Una capa por zona
+	# permite que cada atlas resuelva sus bordes sin comparar IDs incompatibles.
+	var tile_set := TileSet.new()
+	tile_set.tile_size = Vector2i(tile_size, tile_size)
+	tile_set.add_terrain_set()
+	tile_set.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 0, "<any>")
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 1, TERRAIN_NAMES[zone])
 
 	var layer := TileMapDual.new()
-	layer.name = "TerrainDual_AllZones"
+	layer.name = "TerrainDual_Zone_%02d" % zone
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -4095
-	layer.rendering_quadrant_size = 512
+	layer.z_index = -4095 + zone
+	layer.rendering_quadrant_size = 16
 	layer.tile_set = tile_set
-
 	add_child(layer)
 
-	_shared_terrain_layer = layer
 	_layers_by_zone[clave] = layer
 	_next_source_id_by_zone[clave] = 0
 	_dirty_cells_by_zone[clave] = []
 	_dirty_lookup_by_zone[clave] = {}
 	_dirty_cursor_by_zone[clave] = 0
-	tilemap_dual = layer
-
+	if not is_instance_valid(_shared_terrain_layer):
+		_shared_terrain_layer = layer
+		tilemap_dual = layer
 	return layer
-
-
-func _crear_tileset() -> TileSet:
-	var tile_set := TileSet.new()
-	tile_set.tile_size = Vector2i(tile_size, tile_size)
-	tile_set.add_terrain_set()
-	tile_set.set_terrain_set_mode(
-		0,
-		TileSet.TERRAIN_MODE_MATCH_CORNERS
-	)
-
-	# Terrain 0 representa el vacío / cualquier cosa.
-	tile_set.add_terrain(0)
-	tile_set.set_terrain_name(0, 0, "<any>")
-
-	# Cada capa contiene un único terreno activo; el ID 1 representa esa zona.
-	for terrain_id in range(1, ZONE_TEXTURES.size() + 1):
-		tile_set.add_terrain(0)
-		tile_set.set_terrain_name(
-			0,
-			terrain_id,
-			TERRAIN_NAMES[terrain_id - 1]
-		)
-
-	return tile_set
-
 
 func set_zone(
 	cell: Vector2i,
@@ -592,10 +568,10 @@ func set_zone(
 
 	var data: Dictionary = _base_tiles[tile_key]
 
-	# No basta con comprobar la capa: todos los biomas comparten TileMapDual.
-	# Si cambia el bioma dentro de la misma zona, también hay que cambiar el
-	# source_id y la baldosa del relleno, o se conservan píxeles del bioma viejo.
+	# Cada capa contiene un solo atlas con source_id 0. El underlay usa el
+	# identificador de zona para elegir la textura opaca de respaldo.
 	var source_id := int(data["source_id"])
+	var underlay_source_id := int(data["underlay_source_id"])
 	var atlas_coords: Vector2i = data["atlas"]
 	var debe_actualizar_tile := (
 		layer.get_cell_source_id(cell) != source_id
@@ -611,10 +587,10 @@ func set_zone(
 	# transparentes de las esquinas de transición muestran el bioma de la celda.
 	if is_instance_valid(_terrain_underlay):
 		if (
-			_terrain_underlay.get_cell_source_id(cell) != source_id
+			_terrain_underlay.get_cell_source_id(cell) != underlay_source_id
 			or _terrain_underlay.get_cell_atlas_coords(cell) != TILE_SEQUENCE[15]
 		):
-			_terrain_underlay.set_cell(cell, source_id, TILE_SEQUENCE[15])
+			_terrain_underlay.set_cell(cell, underlay_source_id, TILE_SEQUENCE[15])
 
 	# Una sola pasada cubre la celda nueva y la frontera de las capas
 	# vecinas. La función deduplica mediante lookup, evitando dos recorridos
@@ -734,86 +710,38 @@ func _crear_base_tile(
 	layer: TileMapDual,
 	bioma_textura: String = ""
 ) -> void:
-	var texture := _cargar_textura_bioma(
-		bioma_nombre,
-		zone,
-		bioma_textura
-	)
-
+	var texture := _cargar_textura_bioma(bioma_nombre, zone, bioma_textura)
 	if texture == null:
-		push_error(
-			"WorldTerrainVisual: no se pudo cargar textura para bioma "
-			+ bioma_nombre
-			+ " y zona "
-			+ str(zone)
-		)
+		push_error("WorldTerrainVisual: no se pudo cargar textura para bioma " + bioma_nombre + " y zona " + str(zone))
 		return
 
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = texture
-	atlas.texture_region_size = Vector2i(
-		tile_size,
-		tile_size
-	)
-
+	atlas.texture_region_size = Vector2i(tile_size, tile_size)
 	for sequence_pos in TILE_SEQUENCE:
 		atlas.create_tile(sequence_pos)
 
-	# ZONE_TEXTURES define un único material visual por zona. Crear un atlas
-	# y un terreno por cada pareja bioma/zona duplicaba las mismas texturas y
-	# añadía nuevas reglas al TileSet durante el juego.
-	var source_id := zone
-
-	layer.tile_set.add_source(
-		atlas,
-		source_id
-	)
-
-	# Los diez IDs ya están declarados en _crear_tileset() y corresponden
-	# directamente a las diez zonas. No añadir terrenos en tiempo de juego.
-	var terrain_id := zone + 1
-
+	# Un atlas/terreno binario por capa: 0 = vacío, 1 = esta zona.
+	layer.tile_set.add_source(atlas, 0)
 	for index in range(TILE_SEQUENCE.size()):
-		var data := atlas.get_tile_data(
-			TILE_SEQUENCE[index],
-			0
-		)
-
+		var data := atlas.get_tile_data(TILE_SEQUENCE[index], 0)
 		data.terrain_set = 0
-
-		# Las 15 variantes forman un único atlas de terreno.
-		# Todas deben conservar el terrain_id para que TileMapDual
-		# pueda resolver y seleccionar correctamente las variantes
-		# de transición mediante sus peering bits.
-		data.terrain = terrain_id
-
+		data.terrain = 1
 		var bits := index
 		for neighbor in CORNER_NEIGHBORS:
-			var neighbor_terrain := (
-				terrain_id
-				if (bits & 1) != 0
-				else 0
-			)
-
 			data.set_terrain_peering_bit(
 				neighbor,
-				neighbor_terrain
+				1 if (bits & 1) != 0 else 0
 			)
-
 			bits >>= 1
 
-	# El addon no vuelve a leer los peering bits de atlas agregados en runtime
-	# sólo porque cambie TileSet.changed. Marcamos las reglas para reconstruir
-	# el Dual Grid al cerrar este lote, no una vez por cada celda.
 	_terrain_rules_dirty = true
-
 	_base_tiles[tile_key] = {
-		"source_id": source_id,
+		"source_id": 0,
+		"underlay_source_id": zone,
 		"atlas": TILE_SEQUENCE[15],
 	}
-
-	_next_source_id_by_zone[tile_key] = source_id + 1
-
+	_next_source_id_by_zone[tile_key] = 1
 
 func _cargar_textura_bioma(
 	bioma_nombre: String,
