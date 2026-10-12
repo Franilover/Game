@@ -48,8 +48,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --editor --path . --quit 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
+          output="$(godot --headless --editor --path . --quit 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
           if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
             echo "Godot reported script compilation errors during import."
             exit 1
