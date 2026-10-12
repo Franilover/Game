@@ -624,7 +624,7 @@ func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
 	# Debe quedar sobre Pradera (zona 0 = -4087) y sobre cualquier otra base.
 	layer.z_index = -4086
 	layer.y_sort_enabled = false
-	layer.rendering_quadrant_size = 512
+	layer.rendering_quadrant_size = 16
 	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
 	add_child(layer)
 	return layer
