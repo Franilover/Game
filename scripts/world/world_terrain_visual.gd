@@ -734,7 +734,7 @@ func _normalizar_textura_dual(texture: Texture2D) -> Texture2D:
 		_terrain_texture_cache[cache_key] = texture
 		return texture
 
-	var mitad := tile_size / 2
+	var mitad := tile_size >> 1
 	# TILE_SEQUENCE y los peering bits comparten el orden TL, TR, BL, BR.
 	# Algunas imágenes (especialmente Pradera.png) tienen alfa visible en
 	# cuadrantes que la regla marca como vacíos. Al superponer capas, esos
