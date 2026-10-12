@@ -23,7 +23,8 @@ const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
 	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
 ]
 
-# Cada zona usa su propio atlas y su propia capa de composición.
+# Cada zona usa un atlas y un ID de terreno estables. Todas las zonas
+# comparten un único TileMapDual para resolver transiciones entre ellas.
 const ZONE_TEXTURES: Dictionary = {
 	# Fallbacks usando únicamente atlas que existen actualmente en el repo.
 	0: "res://assets/tilesets/Pradera.png",
@@ -353,6 +354,35 @@ func configurar(nuevo_tile_size: int) -> void:
 	for zone in range(ZONE_TEXTURES.size()):
 		_crear_capa_terreno(zone)
 
+	# Registrar todos los atlas antes de pintar la primera celda. TileMapDual
+	# reconstruye su TerrainDual al detectar cambios en el TileSet; añadir
+	# atlas de forma perezosa durante el streaming fuerza reconstrucciones
+	# completas repetidas del Display y su caché de celdas.
+	_preparar_atlas_zonas()
+
+
+func _preparar_atlas_zonas() -> void:
+	if not is_instance_valid(_shared_terrain_layer):
+		return
+
+	for zone in range(ZONE_TEXTURES.size()):
+		var tile_key := str(zone)
+		if _base_tiles.has(tile_key):
+			continue
+		_crear_base_tile(
+			"",
+			tile_key,
+			0,
+			zone,
+			_shared_terrain_layer,
+			""
+		)
+
+	# En la inicialización normal, TileMapDual todavía no ha terminado _ready();
+	# su _changed() inicial leerá todos los atlas ya registrados. No necesitamos
+	# volver a reconstruir el Display al terminar el primer lote de celdas.
+	_terrain_rules_dirty = false
+
 
 func comenzar_lote() -> void:
 	if _batch_active:
@@ -492,7 +522,9 @@ func set_zone(
 	if ENABLE_VARIATIONS and VARIACIONES_POR_BIOMA.has(clave) and not _variation_layers_by_bioma.has(clave):
 		_variation_layers_by_bioma[clave] = _crear_capa_variaciones(clave)
 
-	var tile_key := bioma_key + "_" + str(zone)
+	# La textura y el terreno dependen de la zona, no del índice de bioma.
+	# El bioma se conserva en _cell_bioma para datos/ecología y variaciones.
+	var tile_key := str(zone)
 
 	if not _base_tiles.has(tile_key):
 		_crear_base_tile(
@@ -712,27 +744,19 @@ func _crear_base_tile(
 	for sequence_pos in TILE_SEQUENCE:
 		atlas.create_tile(sequence_pos)
 
-	# El atlas pertenece al BIOMA, no al ecosistema/zona.
-	# Todas las celdas del mismo bioma reutilizan el mismo source visual.
-	var source_id := bioma_index * ZONE_TEXTURES.size() + zone
+	# ZONE_TEXTURES define un único material visual por zona. Crear un atlas
+	# y un terreno por cada pareja bioma/zona duplicaba las mismas texturas y
+	# añadía nuevas reglas al TileSet durante el juego.
+	var source_id := zone
 
 	layer.tile_set.add_source(
 		atlas,
 		source_id
 	)
 
-	# Cada combinación bioma/zona necesita identidad de terreno propia.
-	# Si sólo usamos zone + 1, Pradera y Bosque (por ejemplo) se consideran
-	# el mismo terreno aunque procedan de atlas diferentes: TileMapDual no
-	# detecta esa frontera y deja un corte recto entre ambas texturas.
-	# Reservamos el terreno 0 para el borde/fallback y creamos IDs estables
-	# derivados del índice de bioma y la zona visual.
-	var terrain_id := source_id + 1
-	while layer.tile_set.get_terrains_count(0) <= terrain_id:
-		var next_terrain_id := layer.tile_set.get_terrains_count(0)
-		layer.tile_set.add_terrain(0)
-		var terrain_label := "BiomeZone_%d" % (next_terrain_id - 1)
-		layer.tile_set.set_terrain_name(0, next_terrain_id, terrain_label)
+	# Los diez IDs ya están declarados en _crear_tileset() y corresponden
+	# directamente a las diez zonas. No añadir terrenos en tiempo de juego.
+	var terrain_id := zone + 1
 
 	for index in range(TILE_SEQUENCE.size()):
 		var data := atlas.get_tile_data(
