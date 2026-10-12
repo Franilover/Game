@@ -384,6 +384,21 @@ func _preparar_atlas_zonas() -> void:
 	_terrain_rules_dirty = false
 
 
+func finalizar_preparacion_renderer() -> void:
+	# Se llama después de que TileMapDual haya terminado _ready(). Esto fuerza
+	# una sola lectura de los 10 atlas ya registrados y elimina cualquier
+	# dependencia del orden en que reanuden sus await de inicialización.
+	if not is_instance_valid(_shared_terrain_layer):
+		push_error("WorldTerrainVisual: TileMapDual no está listo al finalizar la preparación.")
+		return
+	var diagnostico: Dictionary = _shared_terrain_layer.obtener_diagnostico()
+	if not bool(diagnostico.get("renderer_valid", false)):
+		push_error("WorldTerrainVisual: el Display de TileMapDual no está inicializado.")
+		return
+	_shared_terrain_layer.reconstruir_renderer_dual()
+	_terrain_rules_dirty = false
+
+
 func comenzar_lote() -> void:
 	if _batch_active:
 		return
