@@ -444,7 +444,7 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	var underlay := TileMapLayer.new()
 	underlay.name = "TerrainUnderlay"
 	underlay.z_as_relative = false
-	underlay.z_index = -4097
+	underlay.z_index = -4096
 	underlay.rendering_quadrant_size = 512
 	underlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	underlay.tile_set = tile_set
@@ -455,7 +455,7 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	layer.name = "TerrainDual_AllZones"
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -4096
+	layer.z_index = -4095
 	layer.rendering_quadrant_size = 512
 	layer.tile_set = tile_set
 
