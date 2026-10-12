@@ -219,6 +219,10 @@ func _inicializar_mundo() -> void:
 	# Sin este frame de espera, el chunk inicial puede quedar vacío,
 	# mientras que los siguientes sí se generan correctamente.
 	await get_tree().process_frame
+	# Los atlas se registran antes del primer frame; ahora que TileMapDual
+	# terminó _ready(), leer sus reglas una única vez antes de pintar terreno.
+	if terrain.visual != null:
+		terrain.visual.finalizar_preparacion_renderer()
 
 	# El chunk inicial también entra al pipeline incremental. No usar
 	# generar_chunk_completo() aquí: esa función es síncrona y puede mantener
