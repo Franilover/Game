@@ -64,6 +64,10 @@ func _run() -> void:
 		return
 	print("Renderer diagnostic: ", diagnostic)
 	print("World cells: ", layer.get_used_cells().size(), " | dirty pending: ", visual.tiene_flush_pendiente())
+	print("Terrain neighborhood: ", layer._display.terrain.layers[0].terrain_neighborhood, " | display-to-world: ", layer._display.terrain.layers[0].display_to_world_neighborhood)
+	for child in layer._display.get_children():
+		if child is DisplayLayer:
+			print("DisplayLayer neighborhood: ", (child as DisplayLayer)._terrain.display_to_world_neighborhood)
 	if int(diagnostic.get("display_cells", 0)) <= 0:
 		_fail("Terrain cells were not composed into the display layer.")
 		return
