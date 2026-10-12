@@ -88,6 +88,9 @@ var _shared_terrain_layer: TileMapDual
 # terreno con un cuadrado del mismo bioma e impediría ver la transición vecina.
 var _base_tiles: Dictionary = {}
 var _next_source_id_by_zone: Dictionary = {}
+# Atlas normalizados una sola vez: cada tile sólo puede pintar los cuadrantes
+# que representan sus peering bits. Evita que Pradera invada píxeles de Tierra.
+var _terrain_texture_cache: Dictionary = {}
 
 var _dirty_cells_by_zone: Dictionary = {}
 var _dirty_lookup_by_zone: Dictionary = {}
@@ -685,6 +688,7 @@ func _crear_base_tile(
 	if texture == null:
 		push_error("WorldTerrainVisual: no se pudo cargar textura para bioma " + bioma_nombre + " y zona " + str(zone))
 		return
+	texture = _normalizar_textura_dual(texture)
 
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = texture
@@ -692,26 +696,74 @@ func _crear_base_tile(
 	for sequence_pos in TILE_SEQUENCE:
 		atlas.create_tile(sequence_pos)
 
-	# Un atlas/terreno binario por capa: 0 = vacío, 1 = esta zona.
-	layer.tile_set.add_source(atlas, 0)
+	# Cada zona tiene su propio source_id, pero comparte el renderer.
+	# El terrain ID distingue las zonas; los cuadrantes que no pertenecen a
+	# esta zona quedan transparentes para que la capa vecina sea visible.
+	var source_id := zone
+	var terrain_id := zone + 1
+	if layer.tile_set.has_source(source_id):
+		layer.tile_set.remove_source(source_id)
+	layer.tile_set.add_source(atlas, source_id)
 	for index in range(TILE_SEQUENCE.size()):
 		var data := atlas.get_tile_data(TILE_SEQUENCE[index], 0)
 		data.terrain_set = 0
-		data.terrain = 1
+		data.terrain = terrain_id
 		var bits := index
 		for neighbor in CORNER_NEIGHBORS:
 			data.set_terrain_peering_bit(
 				neighbor,
-				1 if (bits & 1) != 0 else 0
+				terrain_id if (bits & 1) != 0 else 0
 			)
 			bits >>= 1
 
 	_terrain_rules_dirty = true
 	_base_tiles[tile_key] = {
-		"source_id": 0,
+		"source_id": source_id,
 		"atlas": TILE_SEQUENCE[15],
 	}
-	_next_source_id_by_zone[tile_key] = 1
+	_next_source_id_by_zone[tile_key] = source_id + 1
+
+func _normalizar_textura_dual(texture: Texture2D) -> Texture2D:
+	if not _textura_valida(texture):
+		return texture
+
+	var cache_key := texture.resource_path
+	if cache_key.is_empty():
+		cache_key = str(texture.get_instance_id())
+	if _terrain_texture_cache.has(cache_key):
+		return _terrain_texture_cache[cache_key] as Texture2D
+
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		_terrain_texture_cache[cache_key] = texture
+		return texture
+
+	var mitad := tile_size / 2
+	# TILE_SEQUENCE y los peering bits comparten el orden TL, TR, BL, BR.
+	# Algunas imágenes (especialmente Pradera.png) tienen alfa visible en
+	# cuadrantes que la regla marca como vacíos. Al superponer capas, esos
+	# píxeles se filtran sobre el terreno vecino. Los recortamos al mask real.
+	for index in range(TILE_SEQUENCE.size()):
+		var atlas_cell: Vector2i = TILE_SEQUENCE[index]
+		var origen := atlas_cell * tile_size
+		var bits := index
+		for corner in range(4):
+			if (bits & 1) != 0:
+				bits >>= 1
+				continue
+			var qx := corner % 2
+			var qy := corner / 2
+			for py in range(origen.y + qy * mitad, origen.y + (qy + 1) * mitad):
+				for px in range(origen.x + qx * mitad, origen.x + (qx + 1) * mitad):
+					var color := image.get_pixel(px, py)
+					if color.a > 0.0:
+						image.set_pixel(px, py, Color(0, 0, 0, 0))
+			bits >>= 1
+
+	var normalized := ImageTexture.create_from_image(image)
+	_terrain_texture_cache[cache_key] = normalized
+	return normalized
+
 
 func _cargar_textura_bioma(
 	bioma_nombre: String,
