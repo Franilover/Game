@@ -83,7 +83,31 @@ func _run() -> void:
 	if total_display_cells <= 0:
 		_fail("No terrain was composed into TileMapDual display layers.")
 		return
-	print("PASS: 10 isolated binary terrain layers, stable atlas counts, bounded flushes, and display composition.")
+
+	# Removing one cell must refresh the old layer and the actual neighboring
+	# zone layer. Otherwise streamed chunk unloads leave stale edge tiles.
+	visual._limpiar_celda_chunk(Vector2i(0, 0), true)
+	var adjacent_layer := visual._layers_by_zone["1"] as TileMapDual
+	if not visual._dirty_lookup_by_zone["1"].has(Vector2i(1, 0)):
+		_fail("Removing a zone-0 cell did not invalidate the adjacent zone-1 cell.")
+		return
+	safety = 0
+	while visual.tiene_flush_pendiente() and safety < 128:
+		visual.procesar_flush(64)
+		safety += 1
+	if visual.tiene_flush_pendiente():
+		_fail("Dirty queues did not drain after removing a terrain cell.")
+		return
+	await process_frame
+	var removed_layer := visual._layers_by_zone["0"] as TileMapDual
+	if removed_layer._display.cached_cells.cells.has(Vector2i(0, 0)):
+		_fail("Removed world cell remains in TileMapDual's logical display cache.")
+		return
+	if adjacent_layer.get_used_cells().is_empty():
+		_fail("Adjacent zone was incorrectly erased while refreshing its boundary.")
+		return
+
+	print("PASS: 10 binary terrain layers, stable atlases, bounded flushes, display composition, and cross-zone erase invalidation.")
 	quit()
 
 
