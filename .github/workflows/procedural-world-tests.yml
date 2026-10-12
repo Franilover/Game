@@ -44,8 +44,16 @@ jobs:
           sudo install "${filename}" /usr/local/bin/godot
           godot --version
 
-      - name: Import project resources
-        run: godot --headless --editor --path . --quit
+      - name: Import resources and reject script compilation errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --editor --path . --quit 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
+            echo "Godot reported script compilation errors during import."
+            exit 1
+          fi
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
