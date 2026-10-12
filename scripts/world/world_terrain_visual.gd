@@ -1226,8 +1226,6 @@ func clear_chunk(
 				continue
 
 			layer.erase_cell(cell)
-			if is_instance_valid(_terrain_underlay):
-				_terrain_underlay.erase_cell(cell)
 
 			# Las variantes no forman parte de TileMapDual; hay que retirarlas
 			# explícitamente antes de borrar la información de la celda.
