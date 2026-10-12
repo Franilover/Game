@@ -22,12 +22,8 @@ func _run() -> void:
 	if visual._layers_by_zone.size() != EXPECTED_ZONE_COUNT:
 		_fail("Expected one TileMapDual per zone.")
 		return
-	if visual._terrain_underlay == null or visual._terrain_underlay.tile_set == null:
-		_fail("Opaque underlay was not initialized.")
-		return
-	if visual._terrain_underlay.tile_set.get_source_count() != EXPECTED_ZONE_COUNT:
-		_fail("Underlay must pre-register one atlas for each of the 10 zones.")
-		return
+	# Transition composition must not have an opaque full-cell underlay.
+	# Such a tile fills transparent corners and hides the neighboring biome.
 
 	for zone in range(EXPECTED_ZONE_COUNT):
 		var layer := visual._layers_by_zone[str(zone)] as TileMapDual
@@ -58,6 +54,8 @@ func _run() -> void:
 	# Adjacent cells of different zones exercise cross-layer boundaries.
 	for zone in range(EXPECTED_ZONE_COUNT):
 		visual.set_zone(Vector2i(zone, 0), zone, 0)
+	# There is intentionally no opaque underlay; adjacent zones must compose
+	# through the TileMapDual corner rules instead of full-cell fallback tiles.
 	# Repainting the same zone with another biome must not add sources/rules.
 	visual.set_zone(Vector2i(0, 1), 0, EXPECTED_ZONE_COUNT - 1)
 	if visual._terrain_rules_dirty:
