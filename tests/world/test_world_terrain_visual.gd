@@ -128,7 +128,25 @@ func _run() -> void:
 		_fail("Adjacent zone was incorrectly erased while refreshing its boundary.")
 		return
 
-	print("PASS: 10 binary terrain layers, stable atlases, bounded flushes, display composition, and cross-zone erase invalidation.")
+	# The incremental chunk-unload path passes marcar_dirty=false. Even then,
+	# every erased interior cell must be queued so its old Display tile vanishes.
+	visual._limpiar_celda_chunk(Vector2i(0, 1), false)
+	if not visual._dirty_lookup_by_zone["0"].has(Vector2i(0, 1)):
+		_fail("Incremental unload did not queue the erased interior cell.")
+		return
+	safety = 0
+	while visual.tiene_flush_pendiente() and safety < 128:
+		visual.procesar_flush(64)
+		safety += 1
+	if visual.tiene_flush_pendiente():
+		_fail("Dirty queues did not drain after incremental unload.")
+		return
+	await process_frame
+	if removed_layer._display.cached_cells.cells.has(Vector2i(0, 1)):
+		_fail("Incrementally unloaded cell remains in TileMapDual's cache.")
+		return
+
+	print("PASS: 10 binary terrain layers, stable atlases, bounded flushes, display composition, cross-zone invalidation, and unload cache cleanup.")
 	quit()
 
 
