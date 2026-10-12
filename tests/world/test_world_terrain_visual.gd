@@ -62,6 +62,8 @@ func _run() -> void:
 	if not bool(diagnostic.get("renderer_valid", false)):
 		_fail("TileMapDual display renderer is not valid.")
 		return
+	print("Renderer diagnostic: ", diagnostic)
+	print("World cells: ", layer.get_used_cells().size(), " | dirty pending: ", visual.tiene_flush_pendiente())
 	if int(diagnostic.get("display_cells", 0)) <= 0:
 		_fail("Terrain cells were not composed into the display layer.")
 		return
