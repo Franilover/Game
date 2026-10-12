@@ -611,12 +611,7 @@ func _procesar_datos_chunk(
 	_generation_task["cursor_datos"] = cursor
 	_generation_task["cursor"] = cursor
 
-	# Pintar en cuanto las celdas cercanas y sus cuatro vecinos ya tienen
-	# datos. No esperamos a calcular los 1.156 datos del chunk acolchado para
-	# mostrar las primeras celdas caminables.
-	_procesar_pintado_chunk(cells, true)
-	# Durante DATOS, el diagnóstico debe mostrar el cursor de datos, no el
-	# cursor de pintura intercalada.
+	# Durante DATOS, el diagnóstico debe mostrar el cursor de datos.
 	_generation_task["cursor"] = cursor
 	_generation_task["datos_listos"] = datos_listos
 
@@ -631,6 +626,12 @@ func _procesar_datos_chunk(
 			data_ms_this_step,
 			maxi(limite - cursor_inicio_lote, 1)
 		)
+
+	# Pintar en cuanto las celdas cercanas y sus cuatro vecinos ya tienen
+	# datos. Se mide DATOS antes de entrar a pintura/flush para que el
+	# RenderManager no aprenda un coste unitario contaminado por trabajo visual.
+	_procesar_pintado_chunk(cells, true)
+	_generation_task["cursor"] = cursor
 
 	if cursor < total:
 		return false
