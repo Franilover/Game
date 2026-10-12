@@ -84,9 +84,8 @@ var tilemap_dual: TileMapDual
 # Así un cambio de bioma no se interpreta como un borde de terreno.
 var _layers_by_zone: Dictionary = {}
 var _shared_terrain_layer: TileMapDual
-# Relleno opaco bajo el Dual Grid. Si una regla de esquina no encuentra
-# variante exacta, esta capa evita que el fondo gris se vea por transparencias.
-var _terrain_underlay: TileMapLayer
+# No usar un underlay opaco: rellenaría las esquinas transparentes de cada
+# terreno con un cuadrado del mismo bioma e impediría ver la transición vecina.
 var _base_tiles: Dictionary = {}
 var _next_source_id_by_zone: Dictionary = {}
 
@@ -269,9 +268,6 @@ func _limpiar_celda_chunk(cell: Vector2i, marcar_dirty: bool = true) -> void:
 	if layer == null:
 		return
 	layer.erase_cell(cell)
-	if is_instance_valid(_terrain_underlay):
-		_terrain_underlay.erase_cell(cell)
-
 	var bioma_celda := str(_cell_bioma.get(cell, ""))
 	if _variation_layers_by_bioma.has(bioma_celda):
 		var capa_variacion := _variation_layers_by_bioma[bioma_celda] as TileMapLayer
@@ -440,33 +436,9 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	if _layers_by_zone.has(clave):
 		return _layers_by_zone[clave] as TileMapDual
 
-	# El underlay es un mapa opaco común con un atlas por zona. Se crea una
-	# sola vez, con todos los atlas ya registrados antes de entrar al árbol.
-	if not is_instance_valid(_terrain_underlay):
-		var underlay_tileset := TileSet.new()
-		underlay_tileset.tile_size = Vector2i(tile_size, tile_size)
-		for underlay_zone in range(ZONE_TEXTURES.size()):
-			var texture := _cargar_textura_zone(underlay_zone)
-			if texture == null:
-				push_error("WorldTerrainVisual: falta textura para underlay de zona " + str(underlay_zone))
-				continue
-			var underlay_atlas := TileSetAtlasSource.new()
-			underlay_atlas.texture = texture
-			underlay_atlas.texture_region_size = Vector2i(tile_size, tile_size)
-			for sequence_pos in TILE_SEQUENCE:
-				underlay_atlas.create_tile(sequence_pos)
-			underlay_tileset.add_source(underlay_atlas, underlay_zone)
-
-		var underlay := TileMapLayer.new()
-		underlay.name = "TerrainUnderlay"
-		underlay.z_as_relative = false
-		underlay.z_index = -4096
-		underlay.rendering_quadrant_size = 16
-		underlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		underlay.tile_set = underlay_tileset
-		add_child(underlay)
-		_terrain_underlay = underlay
-
+	# No hay underlay: los propios TileMapDual de cada zona componen las
+	# esquinas. Una baldosa opaca debajo rellenaría sus transparencias con
+	# un cuadrado completo y ocultaría las transiciones entre Pradera/Tierra.
 	# TileMapDual trabaja con terreno propio frente a vacío. Una capa por zona
 	# permite que cada atlas resuelva sus bordes sin comparar IDs incompatibles.
 	var tile_set := TileSet.new()
@@ -580,7 +552,6 @@ func set_zone(
 	# Cada capa contiene un solo atlas con source_id 0. El underlay usa el
 	# identificador de zona para elegir la textura opaca de respaldo.
 	var source_id := int(data["source_id"])
-	var underlay_source_id := int(data["underlay_source_id"])
 	var atlas_coords: Vector2i = data["atlas"]
 	var debe_actualizar_tile := (
 		layer.get_cell_source_id(cell) != source_id
@@ -591,15 +562,6 @@ func set_zone(
 		layer.set_cell(cell, source_id, atlas_coords)
 		_profiler_set_cell_ms += float(Time.get_ticks_usec() - set_cell_start_usec) / 1000.0
 		_profiler_set_cell_calls += 1
-
-	# La baldosa de patrón completo es un respaldo opaco. Las partes
-	# transparentes de las esquinas de transición muestran el bioma de la celda.
-	if is_instance_valid(_terrain_underlay):
-		if (
-			_terrain_underlay.get_cell_source_id(cell) != underlay_source_id
-			or _terrain_underlay.get_cell_atlas_coords(cell) != TILE_SEQUENCE[15]
-		):
-			_terrain_underlay.set_cell(cell, underlay_source_id, TILE_SEQUENCE[15])
 
 	# Una sola pasada cubre la celda nueva y la frontera de las capas
 	# vecinas. La función deduplica mediante lookup, evitando dos recorridos
@@ -747,7 +709,6 @@ func _crear_base_tile(
 	_terrain_rules_dirty = true
 	_base_tiles[tile_key] = {
 		"source_id": 0,
-		"underlay_source_id": zone,
 		"atlas": TILE_SEQUENCE[15],
 	}
 	_next_source_id_by_zone[tile_key] = 1
