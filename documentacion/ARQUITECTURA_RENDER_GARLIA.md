@@ -512,3 +512,27 @@ No crear una rama de lógica Android ni copiar sistemas de PC.
 PORT ANDROID: FASE 1 — EXPORTACIÓN MÍNIMA INICIADA
 
 El siguiente paso operativo es preparar el entorno de exportación y realizar el primer APK en el dispositivo. Una vez que arranque, el siguiente bloque de trabajo será MobileInput, no una reescritura del gameplay.
+
+## Auditoría de causa raíz — TileMapDual y streaming (2026-10-12)
+
+Esta sección documenta los hallazgos de la rama `fix/terrain-root-cause-v1`. No se aplican a `main` hasta revisar y fusionar el PR.
+
+### Hallazgos demostrados en código
+
+- `WorldTerrainVisual.set_zone()` podía crear atlas y reglas durante el streaming. `TileMapDual.Display._terrain_changed()` reconstruye la caché lógica y reemplaza los `DisplayLayer`; esta reconstrucción no debe ocurrir cuando sólo se pintan celdas.
+- Un único `TileMapDual` con diez IDs de terreno no modelaba correctamente las transiciones entre todos ellos: los atlas describían cada terreno frente al vacío. La solución de esta rama utiliza una capa binaria por zona (terreno propio/vacío), tal como recomienda el README del addon para múltiples terrenos.
+- Las capas de terreno y el underlay tenían `rendering_quadrant_size = 512`. Godot agrupa los tiles de un cuadrante en un solo elemento de canvas; el tamaño predeterminado es 16×16. Se vuelve a 16 para limitar el tamaño de las regiones que se actualizan durante el streaming.
+- El unload incremental borraba celdas mientras las actualizaciones del addon estaban bloqueadas. Sin marcar también las celdas borradas para recomposición, podían quedar tiles de presentación antiguos. La rama marca las celdas retiradas y a los vecinos existentes en su propia capa de zona.
+
+### Cambios en la rama
+
+- Registrar por adelantado los diez atlas del underlay y un atlas binario por cada capa de zona.
+- Reconstruir las reglas una sola vez después de que todos los nodos TileMapDual estén listos.
+- Mantener estable el número de atlas y reglas durante el pintado ordinario.
+- Invalidar correctamente las fronteras al borrar terreno y descargar chunks.
+- Corregir el UID del shader invisible del addon para evitar una advertencia de recurso obsoleto.
+- Añadir una prueba headless que verifica capas binarias, estabilidad de atlas, composición de DisplayLayer, colas dirty acotadas e invalidación entre zonas al borrar celdas.
+
+### Validación y límites
+
+La CI de Godot 4.7 en modo headless pasa las pruebas del núcleo procedural y la regresión del renderizador. Estas pruebas no sustituyen una comprobación visual real: aún hay que confirmar en el equipo objetivo que las transiciones no dejan huecos, que el orden de las capas es correcto y que los tirones al caminar han disminuido. No declarar la auditoría completa hasta realizar esa validación y revisar el resto de las rutas de carga/descarga con el profiler.
