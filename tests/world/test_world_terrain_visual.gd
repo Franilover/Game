@@ -17,6 +17,8 @@ func _run() -> void:
 	# must already exist before the first terrain cell is written.
 	await process_frame
 	visual.finalizar_preparacion_renderer()
+	# TileMapDual connects these rebuild notifications as deferred signals.
+	await process_frame
 
 	var layer: TileMapDual = visual.tilemap_dual
 	if layer == null or layer.tile_set == null:
@@ -59,6 +61,8 @@ func _run() -> void:
 		_fail("Dirty terrain cells did not drain in bounded flushes.")
 		return
 
+	# DisplayLayer updates are also deferred by the addon.
+	await process_frame
 	var diagnostic: Dictionary = layer.obtener_diagnostico()
 	if not bool(diagnostic.get("renderer_valid", false)):
 		_fail("TileMapDual display renderer is not valid.")
