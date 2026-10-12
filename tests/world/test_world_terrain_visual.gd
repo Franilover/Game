@@ -44,11 +44,25 @@ func _run() -> void:
 			_fail("TileMapDual renderer is invalid for zone %d." % zone)
 			return
 
+	# Preserve DisplayLayer identities across ordinary cell painting. A
+	# TileSet/rule rebuild during streaming would replace these nodes.
+	var display_ids_by_zone: Dictionary = {}
+	for zone in range(EXPECTED_ZONE_COUNT):
+		var layer := visual._layers_by_zone[str(zone)] as TileMapDual
+		var display_ids: Array[int] = []
+		for child in layer._display.get_children():
+			if child is DisplayLayer:
+				display_ids.append(child.get_instance_id())
+		display_ids_by_zone[zone] = display_ids
+
 	# Adjacent cells of different zones exercise cross-layer boundaries.
 	for zone in range(EXPECTED_ZONE_COUNT):
 		visual.set_zone(Vector2i(zone, 0), zone, 0)
 	# Repainting the same zone with another biome must not add sources/rules.
 	visual.set_zone(Vector2i(0, 1), 0, EXPECTED_ZONE_COUNT - 1)
+	if visual._terrain_rules_dirty:
+		_fail("Ordinary cell painting dirtied the static terrain rules.")
+		return
 
 	for zone in range(EXPECTED_ZONE_COUNT):
 		var layer := visual._layers_by_zone[str(zone)] as TileMapDual
@@ -74,6 +88,13 @@ func _run() -> void:
 	var total_display_cells := 0
 	for zone in range(EXPECTED_ZONE_COUNT):
 		var layer := visual._layers_by_zone[str(zone)] as TileMapDual
+		var current_display_ids: Array[int] = []
+		for child in layer._display.get_children():
+			if child is DisplayLayer:
+				current_display_ids.append(child.get_instance_id())
+		if current_display_ids != display_ids_by_zone[zone]:
+			_fail("DisplayLayer nodes were rebuilt during ordinary painting in zone %d." % zone)
+			return
 		var diagnostic: Dictionary = layer.obtener_diagnostico()
 		if int(diagnostic.get("display_cells", 0)) <= 0:
 			_fail("Zone %d has no composed display cells." % zone)
