@@ -40,6 +40,18 @@ func _run() -> void:
 			_fail("TileMapDual renderer is invalid for zone %d." % zone)
 			return
 
+		# Validate the actual texture assigned to this renderer, not just its
+		# TileSet metadata. Transparent quadrants must remain transparent so
+		# a higher-Z terrain cannot bleed into its neighbor.
+		var atlas := layer.tile_set.get_source(0) as TileSetAtlasSource
+		if atlas == null:
+			_fail("Zone %d has no atlas source." % zone)
+			return
+		var mask_error := _find_mask_violation(atlas.texture)
+		if not mask_error.is_empty():
+			_fail("Zone %d atlas mask is invalid: %s" % [zone, mask_error])
+			return
+
 	# Preserve DisplayLayer identities across ordinary cell painting. A
 	# TileSet/rule rebuild during streaming would replace these nodes.
 	var display_ids_by_zone: Dictionary = {}
@@ -146,6 +158,33 @@ func _run() -> void:
 
 	print("PASS: 10 binary terrain layers, stable atlases, bounded flushes, display composition, cross-zone invalidation, and unload cache cleanup.")
 	quit()
+
+
+
+func _find_mask_violation(texture: Texture2D) -> String:
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		return "texture image is unavailable"
+
+	var half := 16
+	for index in range(16):
+		var tile := VISUAL_SCRIPT.TILE_SEQUENCE[index] as Vector2i
+		var origin := tile * 32
+		var bits := index
+		for corner in range(4):
+			var owns_corner := (bits & 1) != 0
+			bits >>= 1
+			if owns_corner:
+				continue
+			var qx := corner % 2
+			var qy := corner >> 1
+			for y in range(origin.y + qy * half, origin.y + (qy + 1) * half):
+				for x in range(origin.x + qx * half, origin.x + (qx + 1) * half):
+					if image.get_pixel(x, y).a > 0.0:
+						return "tile %d (%d,%d) has opaque pixels in empty corner %d" % [
+							index, tile.x, tile.y, corner
+						]
+	return ""
 
 
 func _fail(message: String) -> void:
