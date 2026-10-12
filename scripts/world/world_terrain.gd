@@ -2,6 +2,13 @@ extends Node2D
 class_name WorldTerrain
 
 
+const CARDINAL_NEIGHBORS: Array[Vector2i] = [
+	Vector2i.RIGHT,
+	Vector2i.LEFT,
+	Vector2i.DOWN,
+	Vector2i.UP,
+]
+
 const CHUNK_PADDING: int = 1
 
 
