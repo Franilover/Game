@@ -110,7 +110,7 @@ func _crear_interfaz() -> void:
 	copiar.pressed.connect(_copiar_actual)
 	botones.add_child(copiar)
 	var copiar_terreno := Button.new()
-	copiar_terreno.text = "Copiar diagnóstico visual del terreno"
+	copiar_terreno.text = "Copiar terreno real"
 	copiar_terreno.focus_mode = Control.FOCUS_NONE
 	copiar_terreno.pressed.connect(_copiar_diagnostico_terreno_real)
 	botones.add_child(copiar_terreno)
