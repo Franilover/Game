@@ -72,8 +72,9 @@ func establecer_objeto(indice: int, datos: Dictionary) -> bool:
 	return resultado
 
 func intercambiar_o_apilar(origen: int, destino: int) -> bool:
-	if not puede_interactuar():
-		return false
+	# Mover/apilar ranuras es una operación de la UI. El input gate bloquea
+	# acciones del personaje mientras el inventario está abierto, así que no
+	# debe bloquear esta operación interna.
 	var resultado: bool = runtime.intercambiar_o_apilar(origen, destino)
 	if resultado:
 		inventario_cambio.emit()
