@@ -685,7 +685,8 @@ func _copiar_diagnostico_terreno_real() -> void:
 		if capa.tile_set == null:
 			out.append("TileSet: NULL")
 		else:
-			for source_id in capa.tile_set.get_source_ids():
+			for source_index in range(capa.tile_set.get_source_count()):
+				var source_id: int = capa.tile_set.get_source_id(source_index)
 				var source: TileSetSource = capa.tile_set.get_source(source_id)
 				if source is TileSetAtlasSource:
 					var atlas := source as TileSetAtlasSource
