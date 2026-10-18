@@ -71,6 +71,24 @@ func _run() -> void:
 			_fail("Zone %d atlas region size changed unexpectedly." % zone)
 			return
 
+		# Verify every authored atlas coordinate is registered with the mask
+		# represented by its TILE_SEQUENCE index, not just that 16 tiles exist.
+		for mask_index in range(VISUAL_SCRIPT.TILE_SEQUENCE.size()):
+			var coords: Vector2i = VISUAL_SCRIPT.TILE_SEQUENCE[mask_index]
+			var tile_data := atlas.get_tile_data(coords, 0)
+			if tile_data == null:
+				_fail("Zone %d is missing mask tile %s." % [zone, coords])
+				return
+			for bit_index in range(expected_bit_order.size()):
+				var expected_terrain := 1 if (mask_index & (1 << bit_index)) != 0 else 0
+				var actual_terrain := tile_data.get_terrain_peering_bit(expected_bit_order[bit_index])
+				if actual_terrain != expected_terrain:
+					_fail(
+						"Zone %d mask %d has wrong corner bit %d at %s."
+						% [zone, mask_index, bit_index, coords]
+					)
+					return
+
 	# Preserve DisplayLayer identities across ordinary cell painting. A
 	# TileSet/rule rebuild during streaming would replace these nodes.
 	var display_ids_by_zone: Dictionary = {}
