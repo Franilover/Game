@@ -15,6 +15,8 @@ const EXTENSIONES_IMAGEN: Array[String] = [
 
 static var _indice_listo: bool = false
 static var _rutas_por_nombre: Dictionary = {}
+static var _nombres_sin_icono: Dictionary = {}
+static var _texturas_por_ruta: Dictionary = {}
 static var _entradas: Array[Dictionary] = []
 
 
@@ -44,40 +46,28 @@ static func obtener_icono(
 
 	_asegurar_indice()
 
-	var clave := _normalizar_nombre(
-		nombre
-	)
+	var clave := _normalizar_nombre(nombre)
 
 	if _rutas_por_nombre.has(clave):
-		return _cargar_textura(
-			str(_rutas_por_nombre[clave])
-		)
+		return _cargar_textura(str(_rutas_por_nombre[clave]))
 
-	var tokens_item := _normalizar_tokens(
-		nombre
-	)
+	if _nombres_sin_icono.has(clave):
+		return null
+
+	var tokens_item := _normalizar_tokens(nombre)
 
 	for entrada in _entradas:
-		var tokens_sprite: Array[String] = entrada.get(
-			"tokens",
-			[]
-		)
-
-		if not _nombres_compatibles(
-			tokens_item,
-			tokens_sprite
-		):
+		var tokens_sprite: Array[String] = entrada.get("tokens", [])
+		if not _nombres_compatibles(tokens_item, tokens_sprite):
 			continue
 
-		return _cargar_textura(
-			str(
-				entrada.get(
-					"ruta",
-					""
-				)
-			)
-		)
+		var ruta := str(entrada.get("ruta", ""))
+		# Recordar también las coincidencias aproximadas. actualizar() vuelve
+		# a resolver los iconos de todas las ranuras en cada recogida.
+		_rutas_por_nombre[clave] = ruta
+		return _cargar_textura(ruta)
 
+	_nombres_sin_icono[clave] = true
 	return null
 
 
@@ -166,18 +156,18 @@ static func _es_imagen(
 	)
 
 
-static func _cargar_textura(
-	ruta: String
-) -> Texture2D:
+static func _cargar_textura(ruta: String) -> Texture2D:
 	if ruta.is_empty():
 		return null
 
-	var recurso := ResourceLoader.load(
-		ruta
-	)
+	if _texturas_por_ruta.has(ruta):
+		return _texturas_por_ruta[ruta] as Texture2D
 
+	var recurso := ResourceLoader.load(ruta)
 	if recurso is Texture2D:
-		return recurso as Texture2D
+		var textura := recurso as Texture2D
+		_texturas_por_ruta[ruta] = textura
+		return textura
 
 	return null
 
