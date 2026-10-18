@@ -16,11 +16,14 @@ const TILE_SEQUENCE: Array[Vector2i] = [
 	Vector2i(1, 1), Vector2i(2, 1),
 ]
 
+# Debe coincidir exactamente con el orden de bits del preset oficial
+# TileMapDual (assets/tileset/square.tres): bit 0 = BR, 1 = BL,
+# 2 = TL, 3 = TR. TILE_SEQUENCE indexa las máscaras en ese orden.
 const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
+	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
+	TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
 	TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
 	TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
-	TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
-	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
 ]
 
 # Cada zona usa un atlas y un ID de terreno estables. Todas las zonas
