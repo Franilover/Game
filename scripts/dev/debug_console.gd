@@ -109,6 +109,11 @@ func _crear_interfaz() -> void:
 	copiar.focus_mode = Control.FOCUS_NONE
 	copiar.pressed.connect(_copiar_actual)
 	botones.add_child(copiar)
+	var copiar_terreno := Button.new()
+	copiar_terreno.text = "Copiar diagnóstico visual del terreno"
+	copiar_terreno.focus_mode = Control.FOCUS_NONE
+	copiar_terreno.pressed.connect(_copiar_diagnostico_terreno_real)
+	botones.add_child(copiar_terreno)
 	var limpiar := Button.new()
 	limpiar.text = "Limpiar logs"
 	limpiar.focus_mode = Control.FOCUS_NONE
@@ -599,6 +604,146 @@ func _copiar_errores() -> void:
 func _copiar_actual() -> void:
 	DisplayServer.clipboard_set(_texto.text)
 	_estado.text = "Diagnóstico copiado"
+
+
+func _copiar_diagnostico_terreno_real() -> void:
+	# Lee exclusivamente los nodos y celdas del mundo vivo. No genera mapas,
+	# no altera tiles y no utiliza el generador aleatorio de dual_test.
+	var out := PackedStringArray()
+	var raiz: Node = get_tree().root
+	var nodos := _recorrer(raiz)
+	var jugador: Node2D = null
+	var camara: Camera2D = get_viewport().get_camera_2d()
+	var visual: Node = null
+	var terreno: Node = null
+
+	for nodo in nodos:
+		if nodo.name == "WorldTerrainVisual":
+			visual = nodo
+		elif nodo.name == "WorldTerrain":
+			terreno = nodo
+		if jugador == null and nodo.is_in_group("player") and nodo is Node2D:
+			jugador = nodo as Node2D
+
+	out.append("GARLIA — DIAGNÓSTICO VISUAL DEL TERRENO REAL")
+	out.append("Hora: %s | Frame: %d" % [Time.get_datetime_string_from_system(), Engine.get_process_frames()])
+	out.append("Escena: %s" % (get_tree().current_scene.scene_file_path if get_tree().current_scene != null else "<ninguna>"))
+	out.append("Renderer: %s | Viewport: %s" % [RenderingServer.get_video_adapter_name(), str(get_viewport().size)])
+	out.append("")
+
+	if is_instance_valid(jugador):
+		out.append("JUGADOR: path=%s global=%s" % [str(jugador.get_path()), str(jugador.global_position)])
+	else:
+		out.append("JUGADOR: no encontrado en grupo 'player'")
+	if is_instance_valid(camara):
+		out.append("CÁMARA: path=%s global=%s zoom=%s enabled=%s" % [str(camara.get_path()), str(camara.global_position), str(camara.zoom), str(camara.enabled)])
+	else:
+		out.append("CÁMARA: ninguna activa")
+	out.append("")
+
+	if is_instance_valid(terreno):
+		out.append("WORLD TERRAIN: %s | script=%s" % [str(terreno.get_path()), _script(terreno)])
+		var diag_terreno: Variant = _diagnostico_nodo(terreno)
+		if diag_terreno is Dictionary:
+			out.append("estado=" + JSON.stringify(diag_terreno))
+	else:
+		out.append("WORLD TERRAIN: no encontrado")
+
+	if is_instance_valid(visual):
+		out.append("")
+		out.append("WORLD TERRAIN VISUAL: %s | script=%s" % [str(visual.get_path()), _script(visual)])
+		for propiedad in ["tile_size", "_cell_bioma", "_cell_zone", "_cell_layer_key"]:
+			var valor: Variant = visual.get(propiedad)
+			if valor is Dictionary:
+				out.append("%s: entradas=%d" % [propiedad, valor.size()])
+			elif valor != null:
+				out.append("%s: %s" % [propiedad, str(valor)])
+		for propiedad_capas in ["_layers_by_zone", "_variation_layers_by_bioma"]:
+			var capas_variant: Variant = visual.get(propiedad_capas)
+			if capas_variant is Dictionary:
+				out.append("%s:" % propiedad_capas)
+				for clave in capas_variant:
+					var capa: Variant = capas_variant[clave]
+					out.append("  %s => %s" % [str(clave), str(capa.get_path()) if capa is Node else str(capa)])
+
+	out.append("")
+	out.append("CAPAS TILEMAPLAYER REALES Y CELDAS CERCA DEL JUGADOR")
+	var total_capas := 0
+	for nodo in nodos:
+		if not nodo is TileMapLayer:
+			continue
+		var capa := nodo as TileMapLayer
+		total_capas += 1
+		var celdas: Array[Vector2i] = capa.get_used_cells()
+		out.append("")
+		out.append("CAPA %d: %s" % [total_capas, str(capa.get_path())])
+		out.append("visible=%s visible_tree=%s z_index=%d y_sort=%s global=%s used_cells=%d tile_size=%s" % [
+			str(capa.visible), str(capa.is_visible_in_tree()), capa.z_index,
+			str(capa.y_sort_enabled), str(capa.global_position), celdas.size(),
+			str(capa.tile_set.tile_size if capa.tile_set != null else Vector2i.ZERO)
+		])
+		if capa.tile_set == null:
+			out.append("TileSet: NULL")
+		else:
+			for source_id in capa.tile_set.get_source_ids():
+				var source: TileSetSource = capa.tile_set.get_source(source_id)
+				if source is TileSetAtlasSource:
+					var atlas := source as TileSetAtlasSource
+					out.append("source=%d type=Atlas texture=%s region_size=%s tiles=%d" % [
+						source_id,
+						atlas.texture.resource_path if atlas.texture != null else "<sin textura>",
+						str(atlas.texture_region_size), atlas.get_tiles_count()
+					])
+				else:
+					out.append("source=%d type=%s" % [source_id, source.get_class() if source != null else "<null>"])
+
+		if not is_instance_valid(jugador):
+			out.append("Muestra de celdas omitida: sin jugador.")
+			continue
+		var centro: Vector2i = capa.local_to_map(capa.to_local(jugador.global_position))
+		out.append("centro_jugador_celda=%s" % str(centro))
+		var muestra := 0
+		for celda in celdas:
+			if absi(celda.x - centro.x) > 4 or absi(celda.y - centro.y) > 4:
+				continue
+			out.append("  cell=%s source=%d atlas=%s alternative=%d" % [
+				str(celda), capa.get_cell_source_id(celda),
+				str(capa.get_cell_atlas_coords(celda)),
+				capa.get_cell_alternative_tile(celda)
+			])
+			muestra += 1
+			if muestra >= 100:
+				out.append("  ... muestra limitada a 100 celdas por capa")
+				break
+		if muestra == 0:
+			out.append("  No hay celdas usadas dentro de radio 4 del jugador.")
+	if total_capas == 0:
+		out.append("No se encontraron TileMapLayer en el árbol actual.")
+
+	out.append("")
+	out.append("TILEMAPDUAL: DIAGNÓSTICOS DE LOS NODOS REALES")
+	var dual_count := 0
+	for nodo in nodos:
+		if nodo.get_class() != "TileMapDual" and not nodo.is_class("TileMapDual"):
+			continue
+		dual_count += 1
+		out.append("%s | visible=%s tree=%s z=%d" % [
+			str(nodo.get_path()), str(nodo.visible) if nodo is CanvasItem else "<n/a>",
+			str(nodo.is_visible_in_tree()), nodo.z_index if nodo is CanvasItem else 0
+		])
+		var dual_diag: Variant = _diagnostico_nodo(nodo)
+		if dual_diag is Dictionary:
+			out.append(JSON.stringify(dual_diag))
+	if dual_count == 0:
+		out.append("No se encontraron nodos TileMapDual.")
+
+	var texto_diagnostico := "\n".join(out)
+	DisplayServer.clipboard_set(texto_diagnostico)
+	_texto.text = texto_diagnostico
+	_modo = "mundo"
+	_actualizar_pestanas()
+	_estado.text = "Diagnóstico real del terreno copiado"
+
 
 func _limpiar() -> void:
 	_garlia_debug().call("limpiar")
