@@ -115,6 +115,44 @@ func _run() -> void:
 		_fail("No terrain was composed into TileMapDual display layers.")
 		return
 
+	# Corner-matched terrain depends on diagonals as well as cardinal cells.
+	if VISUAL_SCRIPT.UPDATE_NEIGHBORS.size() != 9:
+		_fail("Terrain invalidation must include the center and all eight neighbors.")
+		return
+
+	# Build a diagonal cross-zone neighbor, drain prior invalidations, then move
+	# the origin cell to another layer to verify both renderers are refreshed.
+	visual.set_zone(Vector2i(10, 0), 0, 0)
+	visual.set_zone(Vector2i(11, 1), 1, 0)
+	safety = 0
+	while visual.tiene_flush_pendiente() and safety < 128:
+		visual.procesar_flush(64)
+		safety += 1
+	if visual.tiene_flush_pendiente():
+		_fail("Dirty queues did not drain before zone-change regression.")
+		return
+	await process_frame
+
+	visual.set_zone(Vector2i(10, 0), 2, 0)
+	if not visual._dirty_lookup_by_zone["0"].has(Vector2i(10, 0)):
+		_fail("Changing zones did not invalidate the removed cell in its old layer.")
+		return
+	if not visual._dirty_lookup_by_zone["1"].has(Vector2i(11, 1)):
+		_fail("Changing zones did not invalidate a diagonal neighbor in its own layer.")
+		return
+	safety = 0
+	while visual.tiene_flush_pendiente() and safety < 128:
+		visual.procesar_flush(64)
+		safety += 1
+	if visual.tiene_flush_pendiente():
+		_fail("Dirty queues did not drain after changing a cell's zone.")
+		return
+	await process_frame
+	var previous_zone_layer := visual._layers_by_zone["0"] as TileMapDual
+	if previous_zone_layer._display.cached_cells.cells.has(Vector2i(10, 0)):
+		_fail("Zone change left a stale visual cell in the previous layer's display cache.")
+		return
+
 	# Removing one cell must refresh the old layer and the actual neighboring
 	# zone layer. Otherwise streamed chunk unloads leave stale edge tiles.
 	visual._limpiar_celda_chunk(Vector2i(0, 0), true)
