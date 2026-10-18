@@ -94,9 +94,6 @@ var _shared_terrain_layer: TileMapDual
 # terreno con un cuadrado del mismo bioma e impediría ver la transición vecina.
 var _base_tiles: Dictionary = {}
 var _next_source_id_by_zone: Dictionary = {}
-# Atlas normalizados una sola vez: cada tile sólo puede pintar los cuadrantes
-# que representan sus peering bits. Evita que Pradera invada píxeles de Tierra.
-var _terrain_texture_cache: Dictionary = {}
 
 var _dirty_cells_by_zone: Dictionary = {}
 var _dirty_lookup_by_zone: Dictionary = {}
@@ -698,7 +695,9 @@ func _crear_base_tile(
 	if texture == null:
 		push_error("WorldTerrainVisual: no se pudo cargar textura para bioma " + bioma_nombre + " y zona " + str(zone))
 		return
-	texture = _normalizar_textura_dual(texture)
+	# No recortar la imagen fuente por cuadrantes. Los bordes y formas del
+	# atlas son arte autoral; cortar la mitad transparente de cada máscara
+	# puede borrar contornos que deben sobresalir visualmente de la celda.
 
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = texture
@@ -728,48 +727,6 @@ func _crear_base_tile(
 		"atlas": TILE_SEQUENCE[15],
 	}
 	_next_source_id_by_zone[tile_key] = 1
-
-func _normalizar_textura_dual(texture: Texture2D) -> Texture2D:
-	if not _textura_valida(texture):
-		return texture
-
-	var cache_key := texture.resource_path
-	if cache_key.is_empty():
-		cache_key = str(texture.get_instance_id())
-	if _terrain_texture_cache.has(cache_key):
-		return _terrain_texture_cache[cache_key] as Texture2D
-
-	var image := texture.get_image()
-	if image == null or image.is_empty():
-		_terrain_texture_cache[cache_key] = texture
-		return texture
-
-	var mitad := tile_size >> 1
-	# TILE_SEQUENCE y los peering bits comparten el orden TL, TR, BL, BR.
-	# Algunas imágenes (especialmente Pradera.png) tienen alfa visible en
-	# cuadrantes que la regla marca como vacíos. Al superponer capas, esos
-	# píxeles se filtran sobre el terreno vecino. Los recortamos al mask real.
-	for index in range(TILE_SEQUENCE.size()):
-		var atlas_cell: Vector2i = TILE_SEQUENCE[index]
-		var origen := atlas_cell * tile_size
-		var bits := index
-		for corner in range(4):
-			if (bits & 1) != 0:
-				bits >>= 1
-				continue
-			var qx := corner % 2
-			var qy := corner >> 1
-			for py in range(origen.y + qy * mitad, origen.y + (qy + 1) * mitad):
-				for px in range(origen.x + qx * mitad, origen.x + (qx + 1) * mitad):
-					var color := image.get_pixel(px, py)
-					if color.a > 0.0:
-						image.set_pixel(px, py, Color(0, 0, 0, 0))
-			bits >>= 1
-
-	var normalized := ImageTexture.create_from_image(image)
-	_terrain_texture_cache[cache_key] = normalized
-	return normalized
-
 
 func _cargar_textura_bioma(
 	bioma_nombre: String,
