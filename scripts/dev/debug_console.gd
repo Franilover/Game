@@ -725,7 +725,14 @@ func _copiar_diagnostico_terreno_real() -> void:
 	out.append("TILEMAPDUAL: DIAGNÓSTICOS DE LOS NODOS REALES")
 	var dual_count := 0
 	for nodo in nodos:
-		if nodo.get_class() != "TileMapDual" and not nodo.is_class("TileMapDual"):
+		# TileMapDual es una clase GDScript que hereda de TileMapLayer.
+		# Object.get_class()/is_class() sólo detectan clases nativas, así que
+		# identificarlo por el nombre de instancia y su API de diagnóstico.
+		if not (nodo is TileMapLayer):
+			continue
+		if not str(nodo.name).begins_with("TerrainDual_Zone_"):
+			continue
+		if not nodo.has_method("obtener_diagnostico"):
 			continue
 		dual_count += 1
 		out.append("%s | visible=%s tree=%s z=%d" % [
