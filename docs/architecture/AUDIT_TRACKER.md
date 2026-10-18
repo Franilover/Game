@@ -31,7 +31,7 @@ Estados permitidos: **Abierto**, **En verificación**, **Corregido pendiente de 
 | ID | Prioridad | Área | Hallazgo y evidencia estática | Estado | Verificación pendiente |
 |---|---|---|---|---|---|
 | INV-01 | Alta | Inventario/recogida | Confirmado por lectura directa de `InventoryRuntime.agregar_objeto()`: primero modifica pilas compatibles y ocupa slots vacíos, y solo después calcula `exito = restante <= 0`; si queda remanente devuelve `false` sin revertir las modificaciones ya hechas. `WorldItem.interact()` y `GarliaWorldItems.intentar_recoger()` conservan el objeto del mundo cuando reciben `false`. Ejemplo reproducible por código: una pila de 9/10 y una recogida de 3 unidades dejan el inventario en 10, devuelven `false` con 2 pendientes y conservan el objeto del mundo con las 3 originales; al reintentar se pueden duplicar unidades. | En verificación | Ejecutar el caso mínimo en Godot y comprobar conteos; decidir contrato: operación atómica con rollback, o transferencia parcial que actualice la cantidad restante del objeto del mundo. |
-| ITEM-01 | Alta | Drops | `GarliaWorldItems` extrae la solicitud de la cola antes de completar la consulta de `criatura_drops`; los fallos no reponen esa solicitud ni tienen reintento equivalente visible. | Abierto | Simular desconexión y HTTP no exitoso; comprobar que la solicitud se conserva o se recupera. |
+| ITEM-01 | Alta | Drops | Confirmado por lectura directa de `generar_drops_criatura()` y `_procesar_siguiente_drop()`: la solicitud se añade a `_cola_drops`, pero se extrae con `pop_front()` antes de iniciar la consulta REST. Si `request()` falla al iniciar, el resultado HTTP falla, el status no es 2xx o el JSON no es un arreglo, se procesa la siguiente solicitud sin reponer la que falló ni reintentarla. En esa ruta no se generan los drops de esa criatura; el fallo puede perder el drop del combate. | En verificación | Probar fallo al iniciar request, desconexión/timeout, HTTP no-2xx y JSON inválido; verificar que el fallo se registra y la solicitud se reintenta o queda recuperable, sin duplicar drops exitosos. |
 | ITEM-03 | Alta | Soltar objetos desde inventario | `Inventory._soltar_objeto_al_mundo()` llama a `GarliaWorldItems.soltar_objeto_al_mundo()` y luego ejecuta `quitar_objeto(indice)` sin comprobar si se creó el `WorldItem`. La función de infraestructura retorna `void`; `_generar_world_item()` puede salir sin crear nada si falta `Entities` o `WorldEntityManager`/falla `registrar_global()`. En ese caso el objeto desaparece del inventario sin aparecer en el mundo. | Abierto | Prueba con `WorldEntityManager` ausente o `registrar_global()` fallido; definir resultado de creación y retirar el objeto solo tras éxito. |
 | ITEM-02 | Media | Catálogo de objetos | La generación inicial depende de `catalogo`; no se encontró un fallback local equivalente. Algunos fallos HTTP terminan en `carga_fallida` sin reintento. | Abierto | Arranque offline y reconexión; definir catálogo local versionado/snapshot sin duplicar la autoridad canónica. |
 | AUTH-01 | Alta | Supabase Auth | `GarliaSupabaseClient._crear_headers()` no incorpora el JWT de usuario como `Authorization: Bearer <user JWT>`; `GarliaAuth` usa la clave publicable como Bearer en el flujo inspeccionado. | En verificación | Revisar encabezados en todas las rutas, sesiones reales y políticas RLS. No asumir que todas las tablas fallan sin inspeccionar sus permisos. |
@@ -52,6 +52,36 @@ Estados permitidos: **Abierto**, **En verificación**, **Corregido pendiente de 
 | MISS-01 | Alta | Recompensas/ciclo de misiones | `WorldDataService` carga `misiones_game` y entrega copias profundas; `MissionManagerService` las usa para aceptar misiones y acumular progreso. Al completar, cambia directamente el estado a `completada`, copia `mision.recompensas` y emite `recompensa_disponible`. En la rama auditada, no aparece ningún consumidor de esa señal ni una función de reclamar/aplicar recompensas; la búsqueda de `recompensas` en código encuentra la declaración/emisión y la extracción de datos en `MissionManager`. `HUD` conecta `mision_completada` solo para refrescar la lista y no presenta recompensas ni acción de reclamación. `GameState` serializa/restaura solo `estado` y `progreso`; no existe estado separado de recompensa pendiente/reclamada en el contrato inspeccionado. La finalización sí dispara guardado rápido mediante `mision_completada`, por lo que el estado `completada` puede persistir aunque la recompensa no se aplique. Evidencia estática fuerte de un flujo de recompensa incompleto; no es aún confirmación de runtime. | En verificación | Prueba funcional con misión que otorgue un objeto: registrar inventario antes/después de completar, cerrar/recargar y comprobar estado y duplicación/pérdida. Antes de corregir, revisar definiciones reales de `recompensas` en datos locales/remotos y descartar consumidores indirectos fuera de las referencias localizadas. |
 | SOCIAL-01 | Media | Relaciones sociales | `RelationshipSystem` carga reglas y regalos desde `SocialRepository`; no se encontró fallback local. Si las reglas no cargan, `obtener_relacion()` puede devolver `{}` y `registrar_dialogo()` no modifica la relación. `SocialRepository` emite error y descarta la respuesta fallida sin reintento visible. | Abierto | Probar reglas/regalos con red ausente y restauración de conexión; definir caché local si se requiere gameplay social offline. |
 | CONFIG-01 | Baja | Configuración/perfilado | `project.godot` usa viewport base 960×540 y overrides de ventana 1920×1080; métricas anteriores tomadas con otra resolución no son comparables directamente. | Abierto | Fijar perfil de prueba, renderer, resolución y equipo antes de comparar rendimiento. |
+
+## Protocolo mínimo de pruebas de inventario y drops
+
+Estas pruebas son casos de verificación, no resultados ejecutados. Hacerlas con datos de prueba aislados y registrar inventario/objetos antes y después; no usar partidas importantes.
+
+### INV-01 — recogida parcial
+
+1. Preparar un inventario con una pila compatible de 9/10 y sin slots libres.
+2. Crear en el mundo una pila de 3 del mismo ID, con `max_stack=10`.
+3. Intentar recoger una vez; registrar retorno, cantidad del inventario y cantidad del objeto del mundo.
+4. Repetir una vez y comparar el total combinado.
+5. Criterio de aceptación: ninguna unidad se duplica ni desaparece; la cantidad transferida y el remanente del mundo concuerdan.
+
+### ITEM-03 — soltar objeto con infraestructura no disponible
+
+1. Tener un objeto en un slot y registrar su ID/cantidad.
+2. Probar con `_entities_root` ausente; repetir con `_entity_manager` ausente y con fallo controlado de `registrar_global()`.
+3. Soltar el objeto y comprobar si aparece un `WorldItem` registrado.
+4. Criterio de aceptación: el inventario solo descuenta el objeto si la creación/registro del objeto en mundo devuelve éxito; ante fallo, se conserva íntegro en inventario.
+
+### ITEM-01 — solicitud de drop fallida
+
+1. Encolar un drop de una criatura y provocar, por separado, fallo inmediato de `HTTPRequest.request()`, timeout/desconexión, respuesta HTTP no-2xx y JSON no-array.
+2. Registrar tamaño de cola, criatura solicitada, número de peticiones y número de objetos creados.
+3. Confirmar que la solicitud fallida se reintenta con límite/backoff o queda en una cola de fallos recuperable; las solicitudes posteriores deben continuar.
+4. Criterio de aceptación: no perder silenciosamente una solicitud y no crear duplicados cuando una respuesta exitosa se procese una sola vez.
+
+### Estado de ejecución
+
+La inspección disponible es estática. No se afirma que estos casos hayan sido ejecutados en Godot. El siguiente paso de ejecución requiere abrir la rama auditada en un entorno Godot y correr escenarios controlados con registro de cantidades y nodos creados.
 
 ## Estado del terreno
 
