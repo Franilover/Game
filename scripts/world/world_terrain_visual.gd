@@ -562,8 +562,8 @@ func set_zone(
 
 	var data: Dictionary = _base_tiles[tile_key]
 
-	# Cada capa contiene un solo atlas con source_id 0. El underlay usa el
-	# identificador de zona para elegir la textura opaca de respaldo.
+	# Cada capa contiene un solo atlas con source_id 0; las celdas
+	# transparentes permiten que se vea la transición de la capa vecina.
 	var source_id := int(data["source_id"])
 	var atlas_coords: Vector2i = data["atlas"]
 	var debe_actualizar_tile := (
