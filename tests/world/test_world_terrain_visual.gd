@@ -22,6 +22,19 @@ func _run() -> void:
 	if visual._layers_by_zone.size() != EXPECTED_ZONE_COUNT:
 		_fail("Expected one TileMapDual per zone.")
 		return
+	# Regression: TILE_SEQUENCE follows the upstream TileMapDual square
+	# preset. Its mask bit order is BR, BL, TL, TR (not TL, TR, BL, BR).
+	# A swapped order makes the renderer choose the wrong art at corners.
+	var expected_bit_order: Array[TileSet.CellNeighbor] = [
+		TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
+		TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
+		TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
+		TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
+	]
+	if VISUAL_SCRIPT.CORNER_NEIGHBORS != expected_bit_order:
+		_fail("TileMapDual mask bit order differs from the upstream square preset.")
+		return
+
 	# Transition composition must not have an opaque full-cell underlay.
 	# Such a tile fills transparent corners and hides the neighboring biome.
 
