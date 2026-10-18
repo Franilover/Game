@@ -60,12 +60,18 @@ const TERRAIN_NAMES: PackedStringArray = [
 	"Forest", "Desert",
 ]
 
+# MATCH_CORNERS evalúa los cuatro vértices de cada celda; una celda
+# diagonal también puede cambiar la máscara del atlas que debe mostrarse.
 const UPDATE_NEIGHBORS: Array[Vector2i] = [
 	Vector2i.ZERO,
-	Vector2i(1, 0),
-	Vector2i(-1, 0),
-	Vector2i(0, 1),
+	Vector2i(-1, -1),
 	Vector2i(0, -1),
+	Vector2i(1, -1),
+	Vector2i(-1, 0),
+	Vector2i(1, 0),
+	Vector2i(-1, 1),
+	Vector2i(0, 1),
+	Vector2i(1, 1),
 ]
 
 const CARDINAL_NEIGHBORS: Array[Vector2i] = [
@@ -522,11 +528,15 @@ func set_zone(
 				_layers_by_zone[layer_anterior] as TileMapDual
 			)
 			capa_anterior.erase_cell(cell)
+			# El Display mantiene una caché independiente del TileMapLayer.
+			# Invalidar la celda borrada elimina su tile visual residual.
+			_marcar_dirty(layer_anterior, cell)
+			# Los vecinos pueden pertenecer a otras zonas/capas. Marcar la
+			# antigua capa en coordenadas ajenas no actualiza esos renderers.
 			for offset: Vector2i in UPDATE_NEIGHBORS:
-				_marcar_dirty(
-					layer_anterior,
-					cell + offset
-				)
+				if offset == Vector2i.ZERO:
+					continue
+				_marcar_dirty_si_existe(cell + offset)
 
 		_cell_layer_key[cell] = layer_key
 
