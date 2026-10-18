@@ -149,6 +149,11 @@ func _al_evento(_evento: Dictionary) -> void:
 		_actualizar_vista()
 
 func _actualizar_vista() -> void:
+	# GarliaDebug emite señales también durante el gameplay normal. No volver a
+	# construir el resumen completo mientras la consola está oculta: las
+	# recogidas generan varios eventos de diagnóstico por objeto.
+	if not _abierto or not visible:
+		return
 	if _actualizando_vista or not is_instance_valid(_texto):
 		return
 	_actualizando_vista = true
