@@ -2,6 +2,13 @@ extends Node2D
 class_name WorldTerrain
 
 
+const CARDINAL_NEIGHBORS: Array[Vector2i] = [
+	Vector2i.RIGHT,
+	Vector2i.LEFT,
+	Vector2i.DOWN,
+	Vector2i.UP,
+]
+
 const CHUNK_PADDING: int = 1
 
 
@@ -369,6 +376,8 @@ func iniciar_generacion_chunk(
 				"coord": chunk_coord,
 				"stage": 1,
 				"cursor": 0,
+				"cursor_datos": 0,
+				"cursor_pintado": 0,
 				"orden_pintado": orden_pintado_cache,
 				"zonas_base": datos.get("zonas_base", []),
 				"zonas": datos.get("zonas", []),
@@ -402,10 +411,17 @@ func iniciar_generacion_chunk(
 	var orden_datos := _crear_orden_generacion(padded_size, chunk_coord, true)
 	var orden_pintado := _crear_orden_generacion(chunk_size_tiles, chunk_coord, false)
 
+	var datos_listos := PackedByteArray()
+	datos_listos.resize(total_padded_cells)
+	datos_listos.fill(0)
+
 	_generation_task = {
 		"coord": chunk_coord,
 		"stage": 0,
 		"cursor": 0,
+		"cursor_datos": 0,
+		"cursor_pintado": 0,
+		"datos_listos": datos_listos,
 		"orden_datos": orden_datos,
 		"orden_pintado": orden_pintado,
 		"zonas_base": zonas_base,
@@ -507,9 +523,8 @@ func _procesar_datos_chunk(
 		size * size
 	)
 
-	var cursor: int = int(
-		_generation_task["cursor"]
-	)
+	var cursor: int = int(_generation_task.get("cursor_datos", _generation_task.get("cursor", 0)))
+	var datos_listos: PackedByteArray = _generation_task["datos_listos"]
 	var orden: PackedInt32Array = _generation_task["orden_datos"]
 
 	# DATA sólo modifica buffers PackedInt32Array. No hay celdas visuales
@@ -551,6 +566,7 @@ func _procesar_datos_chunk(
 
 		# El borde puede ser una coordenada que ya pertenece al chunk vecino.
 		# Reutilizarlo elimina trabajo duplicado sin cambiar ningún resultado.
+		var indice_dato := local_y * size + local_x
 		if _copiar_dato_borde_vecino(
 			tile,
 			local_x,
@@ -559,6 +575,7 @@ func _procesar_datos_chunk(
 			ecosistemas,
 			zonas_base
 		):
+			datos_listos[indice_dato] = 1
 			cursor += 1
 			continue
 
@@ -586,13 +603,17 @@ func _procesar_datos_chunk(
 			ecosistema_index
 		)
 
-		zonas_base[local_y * size + local_x] = (
-			zona
-		)
+		zonas_base[indice_dato] = zona
+		datos_listos[indice_dato] = 1
 
 		cursor += 1
 
+	_generation_task["cursor_datos"] = cursor
 	_generation_task["cursor"] = cursor
+
+	# Durante DATOS, el diagnóstico debe mostrar el cursor de datos.
+	_generation_task["cursor"] = cursor
+	_generation_task["datos_listos"] = datos_listos
 
 	var data_ms_this_step := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
 	_profiler_data_ms += data_ms_this_step
@@ -606,17 +627,24 @@ func _procesar_datos_chunk(
 			maxi(limite - cursor_inicio_lote, 1)
 		)
 
+	# Pintar en cuanto las celdas cercanas y sus cuatro vecinos ya tienen
+	# datos. Se mide DATOS antes de entrar a pintura/flush para que el
+	# RenderManager no aprenda un coste unitario contaminado por trabajo visual.
+	_procesar_pintado_chunk(cells, true)
+	_generation_task["cursor"] = cursor
+
 	if cursor < total:
 		return false
 
 	_generation_task["stage"] = 1
-	_generation_task["cursor"] = 0
+	_generation_task["cursor"] = int(_generation_task.get("cursor_pintado", 0))
 
 	return false
 
 
 func _procesar_pintado_chunk(
-	cells: int
+	cells: int,
+	solo_datos_listos: bool = false
 ) -> bool:
 	var profiler_start_usec: int = Time.get_ticks_usec()
 
@@ -634,9 +662,8 @@ func _procesar_pintado_chunk(
 		* chunk_size_tiles
 	)
 
-	var cursor: int = int(
-		_generation_task["cursor"]
-	)
+	var cursor: int = int(_generation_task.get("cursor_pintado", 0))
+	var datos_listos: PackedByteArray = _generation_task.get("datos_listos", PackedByteArray())
 	var orden: PackedInt32Array = _generation_task["orden_pintado"]
 	var cursor_inicio_lote: int = cursor
 
@@ -665,6 +692,21 @@ func _procesar_pintado_chunk(
 		var padded_y: int = (
 			local_y + CHUNK_PADDING
 		)
+		var data_size := chunk_size_tiles + CHUNK_PADDING * 2
+		var data_index := padded_y * data_size + padded_x
+		if solo_datos_listos:
+			# La zona final (agua/orilla) depende de los cuatro vecinos. Si uno
+			# aún no se ha calculado, conservamos el orden de cercanía y esperamos.
+			if datos_listos.is_empty() or data_index >= datos_listos.size():
+				break
+			var vecinos_listos := true
+			for offset: Vector2i in CARDINAL_NEIGHBORS:
+				var neighbor_index := (padded_y + offset.y) * data_size + padded_x + offset.x
+				if neighbor_index < 0 or neighbor_index >= datos_listos.size() or datos_listos[neighbor_index] == 0:
+					vecinos_listos = false
+					break
+			if datos_listos[data_index] == 0 or not vecinos_listos:
+				break
 
 		var global_x: int = (
 			coord.x
@@ -709,6 +751,7 @@ func _procesar_pintado_chunk(
 
 		cursor += 1
 
+	_generation_task["cursor_pintado"] = cursor
 	_generation_task["cursor"] = cursor
 
 	if visual != null:
@@ -739,7 +782,7 @@ func _procesar_pintado_chunk(
 	# realmente compuestas.
 	_procesar_flush_incremental()
 
-	if cursor < total:
+	if cursor < total or solo_datos_listos:
 		return false
 
 	if visual != null:

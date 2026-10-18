@@ -16,6 +16,9 @@ const TILE_SEQUENCE: Array[Vector2i] = [
 	Vector2i(1, 1), Vector2i(2, 1),
 ]
 
+# El orden debe coincidir con TerrainDual.NEIGHBORHOOD_LAYERS.SQUARE
+# del addon incluido en este repositorio: TL, TR, BL, BR.
+# Cada índice de TILE_SEQUENCE codifica sus bits en este orden exacto.
 const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
 	TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
 	TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
@@ -23,7 +26,8 @@ const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
 	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
 ]
 
-# Cada zona usa su propio atlas y su propia capa de composición.
+# Cada zona usa un atlas y un ID de terreno estables. Todas las zonas
+# comparten un único TileMapDual para resolver transiciones entre ellas.
 const ZONE_TEXTURES: Dictionary = {
 	# Fallbacks usando únicamente atlas que existen actualmente en el repo.
 	0: "res://assets/tilesets/Pradera.png",
@@ -59,12 +63,18 @@ const TERRAIN_NAMES: PackedStringArray = [
 	"Forest", "Desert",
 ]
 
+# MATCH_CORNERS evalúa los cuatro vértices de cada celda; una celda
+# diagonal también puede cambiar la máscara del atlas que debe mostrarse.
 const UPDATE_NEIGHBORS: Array[Vector2i] = [
 	Vector2i.ZERO,
-	Vector2i(1, 0),
-	Vector2i(-1, 0),
-	Vector2i(0, 1),
+	Vector2i(-1, -1),
 	Vector2i(0, -1),
+	Vector2i(1, -1),
+	Vector2i(-1, 0),
+	Vector2i(1, 0),
+	Vector2i(-1, 1),
+	Vector2i(0, 1),
+	Vector2i(1, 1),
 ]
 
 const CARDINAL_NEIGHBORS: Array[Vector2i] = [
@@ -83,9 +93,8 @@ var tilemap_dual: TileMapDual
 # Así un cambio de bioma no se interpreta como un borde de terreno.
 var _layers_by_zone: Dictionary = {}
 var _shared_terrain_layer: TileMapDual
-# Relleno opaco bajo el Dual Grid. Si una regla de esquina no encuentra
-# variante exacta, esta capa evita que el fondo gris se vea por transparencias.
-var _terrain_underlay: TileMapLayer
+# No usar un underlay opaco: rellenaría las esquinas transparentes de cada
+# terreno con un cuadrado del mismo bioma e impediría ver la transición vecina.
 var _base_tiles: Dictionary = {}
 var _next_source_id_by_zone: Dictionary = {}
 
@@ -268,9 +277,6 @@ func _limpiar_celda_chunk(cell: Vector2i, marcar_dirty: bool = true) -> void:
 	if layer == null:
 		return
 	layer.erase_cell(cell)
-	if is_instance_valid(_terrain_underlay):
-		_terrain_underlay.erase_cell(cell)
-
 	var bioma_celda := str(_cell_bioma.get(cell, ""))
 	if _variation_layers_by_bioma.has(bioma_celda):
 		var capa_variacion := _variation_layers_by_bioma[bioma_celda] as TileMapLayer
@@ -280,10 +286,17 @@ func _limpiar_celda_chunk(cell: Vector2i, marcar_dirty: bool = true) -> void:
 	_cell_bioma.erase(cell)
 	_cell_zone.erase(cell)
 	_cell_layer_key.erase(cell)
+	# La celda eliminada debe actualizarse incluso durante un unload por
+	# lotes: TileMapDual puede descartar _update_cells mientras las señales
+	# están bloqueadas. Sin esta entrada, el Display conserva tiles fantasma.
+	_marcar_dirty(layer_key, cell)
 	if marcar_dirty:
-		_marcar_dirty(layer_key, cell)
+		# Cada vecino se recompone en SU propia capa. Usar siempre layer_key
+		# deja residuos cuando el borde eliminado tocaba otra zona.
 		for offset: Vector2i in UPDATE_NEIGHBORS:
-			_marcar_dirty(layer_key, cell + offset)
+			if offset == Vector2i.ZERO:
+				continue
+			_marcar_dirty_si_existe(cell + offset)
 		_marcar_variaciones_dirty(cell, "")
 
 
@@ -353,6 +366,42 @@ func configurar(nuevo_tile_size: int) -> void:
 	for zone in range(ZONE_TEXTURES.size()):
 		_crear_capa_terreno(zone)
 
+	# Registrar todos los atlas antes de pintar la primera celda. TileMapDual
+	# reconstruye su TerrainDual al detectar cambios en el TileSet; añadir
+	# atlas de forma perezosa durante el streaming fuerza reconstrucciones
+	# completas repetidas del Display y su caché de celdas.
+	_preparar_atlas_zonas()
+
+
+func _preparar_atlas_zonas() -> void:
+	# Cada TileMapDual representa un único terreno binario (terreno propio/vacío).
+	# TileMapDual recomienda capas separadas para mezclas de más de dos terrenos.
+	# Los atlas y las reglas se preparan todos antes de pintar el primer chunk.
+	for zone in range(ZONE_TEXTURES.size()):
+		var tile_key := str(zone)
+		if _base_tiles.has(tile_key):
+			continue
+		var layer := _layers_by_zone.get(tile_key) as TileMapDual
+		if layer == null:
+			continue
+		_crear_base_tile("", tile_key, 0, zone, layer, "")
+	_terrain_rules_dirty = true
+
+
+func finalizar_preparacion_renderer() -> void:
+	# Cada capa debe terminar _ready() antes de leer su atlas binario.
+	for layer_variant in _layers_by_zone.values():
+		var layer := layer_variant as TileMapDual
+		if not is_instance_valid(layer):
+			push_error("WorldTerrainVisual: falta una capa TileMapDual.")
+			return
+		var diagnostico: Dictionary = layer.obtener_diagnostico()
+		if not bool(diagnostico.get("renderer_valid", false)):
+			push_error("WorldTerrainVisual: Display no inicializado en " + layer.name)
+			return
+		layer.reconstruir_renderer_dual()
+	_terrain_rules_dirty = false
+
 
 func comenzar_lote() -> void:
 	if _batch_active:
@@ -381,91 +430,53 @@ func terminar_lote() -> void:
 func _reconstruir_reglas_terreno_si_necesario() -> void:
 	if not _terrain_rules_dirty:
 		return
-	if not is_instance_valid(_shared_terrain_layer):
-		return
-	# Este método relee todos los atlas y sus peering bits, reconstruye el
-	# TerrainDual y repinta el Display desde las celdas reales ya registradas.
-	_shared_terrain_layer.reconstruir_renderer_dual()
+	# Las capas se inicializan por zona y cada una sólo contiene terreno 1.
+	# Releerlas es necesario una vez al preparar sus atlas, no durante el
+	# pintado normal ni una vez por celda.
+	for layer_variant in _layers_by_zone.values():
+		var layer := layer_variant as TileMapDual
+		if is_instance_valid(layer):
+			layer.reconstruir_renderer_dual()
 	_terrain_rules_dirty = false
 
 
 func _crear_capa_terreno(zone: int) -> TileMapDual:
 	var clave := str(zone)
+	if _layers_by_zone.has(clave):
+		return _layers_by_zone[clave] as TileMapDual
 
-	# Los terrenos necesitan estar en la misma capa para que TileMapDual pueda
-	# consultar el terrain de los vecinos y escoger bordes/esquinas entre zonas.
-	# Los mapas por zona anteriores aislaban precisamente esa información.
-	if is_instance_valid(_shared_terrain_layer):
-		_layers_by_zone[clave] = _shared_terrain_layer
-		if not _next_source_id_by_zone.has(clave):
-			_next_source_id_by_zone[clave] = 0
-		if not _dirty_cells_by_zone.has(clave):
-			_dirty_cells_by_zone[clave] = []
-		if not _dirty_lookup_by_zone.has(clave):
-			_dirty_lookup_by_zone[clave] = {}
-		if not _dirty_cursor_by_zone.has(clave):
-			_dirty_cursor_by_zone[clave] = 0
-		return _shared_terrain_layer
-
-	var tile_set := _crear_tileset()
-
-	# El relleno usa el mismo atlas, pero dibuja una baldosa completa por celda.
-	# Debe quedar detrás del Dual Grid para cubrir huecos transparentes grises.
-	var underlay := TileMapLayer.new()
-	underlay.name = "TerrainUnderlay"
-	underlay.z_as_relative = false
-	underlay.z_index = -4097
-	underlay.rendering_quadrant_size = 512
-	underlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	underlay.tile_set = tile_set
-	add_child(underlay)
-	_terrain_underlay = underlay
+	# No hay underlay: los propios TileMapDual de cada zona componen las
+	# esquinas. Una baldosa opaca debajo rellenaría sus transparencias con
+	# un cuadrado completo y ocultaría las transiciones entre Pradera/Tierra.
+	# TileMapDual trabaja con terreno propio frente a vacío. Una capa por zona
+	# permite que cada atlas resuelva sus bordes sin comparar IDs incompatibles.
+	var tile_set := TileSet.new()
+	tile_set.tile_size = Vector2i(tile_size, tile_size)
+	tile_set.add_terrain_set()
+	tile_set.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 0, "<any>")
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 1, TERRAIN_NAMES[zone])
 
 	var layer := TileMapDual.new()
-	layer.name = "TerrainDual_AllZones"
+	layer.name = "TerrainDual_Zone_%02d" % zone
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -4096
-	layer.rendering_quadrant_size = 512
+	layer.z_index = -4095 + zone
+	layer.rendering_quadrant_size = 16
 	layer.tile_set = tile_set
-
 	add_child(layer)
 
-	_shared_terrain_layer = layer
 	_layers_by_zone[clave] = layer
 	_next_source_id_by_zone[clave] = 0
 	_dirty_cells_by_zone[clave] = []
 	_dirty_lookup_by_zone[clave] = {}
 	_dirty_cursor_by_zone[clave] = 0
-	tilemap_dual = layer
-
+	if not is_instance_valid(_shared_terrain_layer):
+		_shared_terrain_layer = layer
+		tilemap_dual = layer
 	return layer
-
-
-func _crear_tileset() -> TileSet:
-	var tile_set := TileSet.new()
-	tile_set.tile_size = Vector2i(tile_size, tile_size)
-	tile_set.add_terrain_set()
-	tile_set.set_terrain_set_mode(
-		0,
-		TileSet.TERRAIN_MODE_MATCH_CORNERS
-	)
-
-	# Terrain 0 representa el vacío / cualquier cosa.
-	tile_set.add_terrain(0)
-	tile_set.set_terrain_name(0, 0, "<any>")
-
-	# Cada capa contiene un único terreno activo; el ID 1 representa esa zona.
-	for terrain_id in range(1, ZONE_TEXTURES.size() + 1):
-		tile_set.add_terrain(0)
-		tile_set.set_terrain_name(
-			0,
-			terrain_id,
-			TERRAIN_NAMES[terrain_id - 1]
-		)
-
-	return tile_set
-
 
 func set_zone(
 	cell: Vector2i,
@@ -492,7 +503,9 @@ func set_zone(
 	if ENABLE_VARIATIONS and VARIACIONES_POR_BIOMA.has(clave) and not _variation_layers_by_bioma.has(clave):
 		_variation_layers_by_bioma[clave] = _crear_capa_variaciones(clave)
 
-	var tile_key := bioma_key + "_" + str(zone)
+	# La textura y el terreno dependen de la zona, no del índice de bioma.
+	# El bioma se conserva en _cell_bioma para datos/ecología y variaciones.
+	var tile_key := str(zone)
 
 	if not _base_tiles.has(tile_key):
 		_crear_base_tile(
@@ -515,11 +528,15 @@ func set_zone(
 				_layers_by_zone[layer_anterior] as TileMapDual
 			)
 			capa_anterior.erase_cell(cell)
+			# El Display mantiene una caché independiente del TileMapLayer.
+			# Invalidar la celda borrada elimina su tile visual residual.
+			_marcar_dirty(layer_anterior, cell)
+			# Los vecinos pueden pertenecer a otras zonas/capas. Marcar la
+			# antigua capa en coordenadas ajenas no actualiza esos renderers.
 			for offset: Vector2i in UPDATE_NEIGHBORS:
-				_marcar_dirty(
-					layer_anterior,
-					cell + offset
-				)
+				if offset == Vector2i.ZERO:
+					continue
+				_marcar_dirty_si_existe(cell + offset)
 
 		_cell_layer_key[cell] = layer_key
 
@@ -545,9 +562,8 @@ func set_zone(
 
 	var data: Dictionary = _base_tiles[tile_key]
 
-	# No basta con comprobar la capa: todos los biomas comparten TileMapDual.
-	# Si cambia el bioma dentro de la misma zona, también hay que cambiar el
-	# source_id y la baldosa del relleno, o se conservan píxeles del bioma viejo.
+	# Cada capa contiene un solo atlas con source_id 0; las celdas
+	# transparentes permiten que se vea la transición de la capa vecina.
 	var source_id := int(data["source_id"])
 	var atlas_coords: Vector2i = data["atlas"]
 	var debe_actualizar_tile := (
@@ -559,15 +575,6 @@ func set_zone(
 		layer.set_cell(cell, source_id, atlas_coords)
 		_profiler_set_cell_ms += float(Time.get_ticks_usec() - set_cell_start_usec) / 1000.0
 		_profiler_set_cell_calls += 1
-
-	# La baldosa de patrón completo es un respaldo opaco. Las partes
-	# transparentes de las esquinas de transición muestran el bioma de la celda.
-	if is_instance_valid(_terrain_underlay):
-		if (
-			_terrain_underlay.get_cell_source_id(cell) != source_id
-			or _terrain_underlay.get_cell_atlas_coords(cell) != TILE_SEQUENCE[15]
-		):
-			_terrain_underlay.set_cell(cell, source_id, TILE_SEQUENCE[15])
 
 	# Una sola pasada cubre la celda nueva y la frontera de las capas
 	# vecinas. La función deduplica mediante lookup, evitando dos recorridos
@@ -592,7 +599,7 @@ func _crear_capa_variaciones(bioma_nombre: String) -> TileMapLayer:
 	# Debe quedar sobre Pradera (zona 0 = -4087) y sobre cualquier otra base.
 	layer.z_index = -4086
 	layer.y_sort_enabled = false
-	layer.rendering_quadrant_size = 512
+	layer.rendering_quadrant_size = 16
 	layer.tile_set = _crear_tileset_variaciones(bioma_nombre)
 	add_child(layer)
 	return layer
@@ -687,94 +694,42 @@ func _crear_base_tile(
 	layer: TileMapDual,
 	bioma_textura: String = ""
 ) -> void:
-	var texture := _cargar_textura_bioma(
-		bioma_nombre,
-		zone,
-		bioma_textura
-	)
-
+	var texture := _cargar_textura_bioma(bioma_nombre, zone, bioma_textura)
 	if texture == null:
-		push_error(
-			"WorldTerrainVisual: no se pudo cargar textura para bioma "
-			+ bioma_nombre
-			+ " y zona "
-			+ str(zone)
-		)
+		push_error("WorldTerrainVisual: no se pudo cargar textura para bioma " + bioma_nombre + " y zona " + str(zone))
 		return
+	# No recortar la imagen fuente por cuadrantes. Los bordes y formas del
+	# atlas son arte autoral; cortar la mitad transparente de cada máscara
+	# puede borrar contornos que deben sobresalir visualmente de la celda.
 
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = texture
-	atlas.texture_region_size = Vector2i(
-		tile_size,
-		tile_size
-	)
-
+	atlas.texture_region_size = Vector2i(tile_size, tile_size)
 	for sequence_pos in TILE_SEQUENCE:
 		atlas.create_tile(sequence_pos)
 
-	# El atlas pertenece al BIOMA, no al ecosistema/zona.
-	# Todas las celdas del mismo bioma reutilizan el mismo source visual.
-	var source_id := bioma_index * ZONE_TEXTURES.size() + zone
-
-	layer.tile_set.add_source(
-		atlas,
-		source_id
-	)
-
-	# Cada combinación bioma/zona necesita identidad de terreno propia.
-	# Si sólo usamos zone + 1, Pradera y Bosque (por ejemplo) se consideran
-	# el mismo terreno aunque procedan de atlas diferentes: TileMapDual no
-	# detecta esa frontera y deja un corte recto entre ambas texturas.
-	# Reservamos el terreno 0 para el borde/fallback y creamos IDs estables
-	# derivados del índice de bioma y la zona visual.
-	var terrain_id := source_id + 1
-	while layer.tile_set.get_terrains_count(0) <= terrain_id:
-		var next_terrain_id := layer.tile_set.get_terrains_count(0)
-		layer.tile_set.add_terrain(0)
-		var terrain_label := "BiomeZone_%d" % (next_terrain_id - 1)
-		layer.tile_set.set_terrain_name(0, next_terrain_id, terrain_label)
-
+	# Cada TileMapDual tiene un atlas binario: 0 = vacío, 1 = esta zona.
+	# La máscara alfa se normaliza antes de registrar el atlas para impedir
+	# que el arte de un terreno invada los cuadrantes de otro.
+	layer.tile_set.add_source(atlas, 0)
 	for index in range(TILE_SEQUENCE.size()):
-		var data := atlas.get_tile_data(
-			TILE_SEQUENCE[index],
-			0
-		)
-
+		var data := atlas.get_tile_data(TILE_SEQUENCE[index], 0)
 		data.terrain_set = 0
-
-		# Las 15 variantes forman un único atlas de terreno.
-		# Todas deben conservar el terrain_id para que TileMapDual
-		# pueda resolver y seleccionar correctamente las variantes
-		# de transición mediante sus peering bits.
-		data.terrain = terrain_id
-
+		data.terrain = 1
 		var bits := index
 		for neighbor in CORNER_NEIGHBORS:
-			var neighbor_terrain := (
-				terrain_id
-				if (bits & 1) != 0
-				else 0
-			)
-
 			data.set_terrain_peering_bit(
 				neighbor,
-				neighbor_terrain
+				1 if (bits & 1) != 0 else 0
 			)
-
 			bits >>= 1
 
-	# El addon no vuelve a leer los peering bits de atlas agregados en runtime
-	# sólo porque cambie TileSet.changed. Marcamos las reglas para reconstruir
-	# el Dual Grid al cerrar este lote, no una vez por cada celda.
 	_terrain_rules_dirty = true
-
 	_base_tiles[tile_key] = {
-		"source_id": source_id,
+		"source_id": 0,
 		"atlas": TILE_SEQUENCE[15],
 	}
-
-	_next_source_id_by_zone[tile_key] = source_id + 1
-
+	_next_source_id_by_zone[tile_key] = 1
 
 func _cargar_textura_bioma(
 	bioma_nombre: String,
@@ -1289,8 +1244,6 @@ func clear_chunk(
 				continue
 
 			layer.erase_cell(cell)
-			if is_instance_valid(_terrain_underlay):
-				_terrain_underlay.erase_cell(cell)
 
 			# Las variantes no forman parte de TileMapDual; hay que retirarlas
 			# explícitamente antes de borrar la información de la celda.
@@ -1306,16 +1259,11 @@ func clear_chunk(
 			_cell_zone.erase(cell)
 			_cell_layer_key.erase(cell)
 
-			_marcar_dirty(
-				layer_key,
-				cell
-			)
-
+			_marcar_dirty(layer_key, cell)
 			for offset: Vector2i in UPDATE_NEIGHBORS:
-				_marcar_dirty(
-					layer_key,
-					cell + offset
-				)
+				if offset == Vector2i.ZERO:
+					continue
+				_marcar_dirty_si_existe(cell + offset)
 			_marcar_variaciones_dirty(cell, "")
 
 	if not _dirty_cells_by_zone.is_empty():
