@@ -21,6 +21,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _death_menu: DeathMenu = $UI/DeathMenu
 @onready var _debug_console: Node = $UI/DebugConsole
 var _world_entity_spawner: WorldEntitySpawner = null
+var _eterium_radial_menu: Control = null
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
@@ -30,6 +31,7 @@ var _world_generator: WorldGenerator = null
 @onready var _world_context: WorldContext = $Systems/WorldContext
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
 const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
+const ETERIUM_RADIAL_MENU_SCRIPT = preload("res://scripts/ui/eterium_radial_menu.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
 
 
@@ -384,11 +386,32 @@ func _inicializar_ium() -> void:
 		return
 
 	_ium_lab.configurar(_ium_manager, _admin_console)
+	_configurar_menu_radial_eterium()
 
 	if not _ium_manager.proceso_equipado_signal.is_connected(_al_equipar_proceso):
 		_ium_manager.proceso_equipado_signal.connect(_al_equipar_proceso)
 
 	print("Main: IUMManager e IUMLab conectados.")
+
+func _configurar_menu_radial_eterium() -> void:
+	if _eterium_radial_menu != null and is_instance_valid(_eterium_radial_menu):
+		return
+	var contenedor_ui := get_node_or_null("UI")
+	if contenedor_ui == null or _player == null:
+		push_error("Main: no se pudo inicializar el menú radial de Eterium.")
+		return
+	_eterium_radial_menu = Control.new()
+	_eterium_radial_menu.name = "EteriumRadialMenu"
+	_eterium_radial_menu.set_script(ETERIUM_RADIAL_MENU_SCRIPT)
+	contenedor_ui.add_child(_eterium_radial_menu)
+	_eterium_radial_menu.call(
+		"configurar",
+		_player,
+		_ium_lab,
+		_ium_manager,
+		_inventory,
+		_admin_console
+	)
 
 func _al_equipar_proceso(proceso: Dictionary) -> void:
 	# Guardar en player para que pueda usarlo con R
