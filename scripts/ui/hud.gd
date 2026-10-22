@@ -11,7 +11,7 @@ var world_data: WorldDataService = null
 var game_state: GameStateService = null
 var _inventory_ref: GarliaInventory = null
 var _hand_selector: PanelContainer = null
-var _hand_selector_grid: GridContainer = null
+var _hand_selector_grid: Control = null
 var _hand_selector_buttons: Array[Button] = []
 var _hand_selector_activo: String = ""
 
@@ -1069,8 +1069,8 @@ func _crear_selector_manos() -> void:
 	_hand_selector.name = "HandItemSelector"
 	_hand_selector.visible = false
 	_hand_selector.set_anchors_preset(Control.PRESET_CENTER)
-	_hand_selector.position = Vector2(-132, -106)
-	_hand_selector.size = Vector2(264, 212)
+	_hand_selector.position = Vector2(-150, -150)
+	_hand_selector.size = Vector2(300, 300)
 	_hand_selector.mouse_filter = Control.MOUSE_FILTER_STOP
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.10, 0.065, 0.04, 0.98)
@@ -1091,19 +1091,23 @@ func _crear_selector_manos() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
 	column.add_child(title)
-	_hand_selector_grid = GridContainer.new()
-	_hand_selector_grid.columns = 3
-	_hand_selector_grid.add_theme_constant_override("h_separation", 5)
-	_hand_selector_grid.add_theme_constant_override("v_separation", 5)
+	_hand_selector_grid = Control.new()
+	_hand_selector_grid.custom_minimum_size = Vector2(280, 220)
+	_hand_selector_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_child(_hand_selector_grid)
 	for i in range(6):
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(72, 66)
+		button.custom_minimum_size = Vector2(72, 48)
+		button.size = Vector2(72, 48)
 		button.focus_mode = Control.FOCUS_NONE
 		button.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
 		button.add_theme_font_size_override("font_size", 10)
 		button.pressed.connect(_al_pulsar_selector_mano.bind(i))
 		_hand_selector_grid.add_child(button)
+		var angle := -PI / 2.0 + TAU * float(i) / 6.0
+		var center := Vector2(140, 110)
+		var radial_position := center + Vector2(cos(angle), sin(angle)) * 72.0
+		button.position = radial_position - button.size * 0.5
 		_hand_selector_buttons.append(button)
 	var hint := Label.new()
 	hint.text = "Apunta a un espacio y suelta la tecla"
