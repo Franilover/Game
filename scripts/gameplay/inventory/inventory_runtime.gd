@@ -70,8 +70,12 @@ func agregar_objeto(datos: Dictionary) -> bool:
 	for item_antes in state.items:
 		items_antes.append(item_antes.duplicate(true))
 	var restante := cantidad
+	# Las recogidas y el apilamiento automático se dirigen a la mochila
+	# (ranuras 6–11). Las manos se llenan mediante movimientos explícitos.
+	var inicio_mochila := mini(6, state.items.size())
+	var fin_mochila := mini(12, state.items.size())
 	if max_stack > 1:
-		for i in range(state.items.size()):
+		for i in range(inicio_mochila, fin_mochila):
 			if restante <= 0:
 				break
 			var existente: Dictionary = state.items[i]
@@ -87,7 +91,7 @@ func agregar_objeto(datos: Dictionary) -> bool:
 			state.items[i]["cantidad"] = ocupacion + anadido
 			restante -= anadido
 	if restante > 0:
-		for i in range(state.items.size()):
+		for i in range(inicio_mochila, fin_mochila):
 			if restante <= 0:
 				break
 			if not state.items[i].is_empty():
