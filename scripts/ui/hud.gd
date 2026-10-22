@@ -1170,7 +1170,7 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 
-			if key_event.keycode == KEY_ESCAPE and _mission_panel_open:
+			if hand_key.keycode == KEY_ESCAPE and _mission_panel_open:
 				cerrar_panel_misiones()
 				get_viewport().set_input_as_handled()
 				return
