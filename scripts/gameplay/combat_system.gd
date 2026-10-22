@@ -543,37 +543,38 @@ func _obtener_ai_controller(objetivo: Node) -> CreatureAI:
 func _obtener_modo_ataque(
 	arma: Dictionary
 ) -> String:
-	var tipo_objeto_variant: Variant = arma.get(
-		"tipo_objeto",
-		{}
-	)
+	# La categoría canónica puede venir directamente del objeto, de su tipo
+	# enlazado o de la plantilla geométrica. Algunas partidas antiguas solo
+	# conservan una de esas capas.
+	var categorias: Array[String] = []
+	var categoria_directa := str(arma.get("categoria_canonica", arma.get("categoria", ""))).strip_edges().to_lower()
+	if not categoria_directa.is_empty():
+		categorias.append(categoria_directa)
 
-	if not tipo_objeto_variant is Dictionary:
-		return "cuerpo"
+	var tipo_objeto_variant: Variant = arma.get("tipo_objeto", {})
+	if tipo_objeto_variant is Dictionary:
+		var tipo_objeto := tipo_objeto_variant as Dictionary
+		var categoria_tipo := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
+		if not categoria_tipo.is_empty():
+			categorias.append(categoria_tipo)
 
-	var tipo_objeto := tipo_objeto_variant as Dictionary
+		var plantilla_variant: Variant = tipo_objeto.get("plantilla", {})
+		if plantilla_variant is Dictionary:
+			var plantilla := plantilla_variant as Dictionary
+			var categoria_plantilla := str(plantilla.get("categoria", "")).strip_edges().to_lower()
+			if not categoria_plantilla.is_empty():
+				categorias.append(categoria_plantilla)
 
-	var plantilla_variant: Variant = tipo_objeto.get(
-		"plantilla",
-		{}
-	)
-
-	if not plantilla_variant is Dictionary:
-		return "cuerpo"
-
-	var plantilla := plantilla_variant as Dictionary
-	var categoria_item: String = str(
-		plantilla.get(
-			"categoria",
-			""
-		)
-	).strip_edges().to_lower()
-
-	if categoria_item == "arma_distancia":
+	# También aceptar la declaración explícita de modalidad en propiedades
+	# del objeto, sin depender del nombre visible del arma.
+	var propiedades := _obtener_propiedades_game(arma)
+	var modo_explicito := str(propiedades.get("modo_ataque", propiedades.get("tipo_ataque", ""))).strip_edges().to_lower()
+	if modo_explicito in ["distancia", "ranged", "proyectil", "arma_distancia"]:
 		return "distancia"
 
-	if categoria_item.begins_with("arma_"):
-		return "cuerpo"
+	for categoria in categorias:
+		if categoria in ["arma_distancia", "arma_a_distancia", "arma_proyectil"]:
+			return "distancia"
 
 	return "cuerpo"
 
