@@ -345,6 +345,8 @@ func _mostrar_item(item: TreeItem) -> void:
 	_nombre.text = str(registro.get("nombre", "Sin nombre"))
 	_icono.texture = null
 	_icono.visible = false
+	if nivel in ["bioma", "ecosistema", "habitat"]:
+		_mostrar_sprite_terreno(nivel, registro)
 
 	var partes: Array[String] = []
 
@@ -372,6 +374,68 @@ func _mostrar_item(item: TreeItem) -> void:
 			_agregar_criaturas_de_habitat(registro, partes)
 
 	_ficha.text = "\n\n".join(partes)
+
+
+func _mostrar_sprite_terreno(nivel: String, registro: Dictionary) -> void:
+	# Prioriza la textura declarada por los datos canónicos del registro.
+	# Ecosistemas y hábitats pueden heredar la textura del bioma que los contiene.
+	var rutas: Array[String] = []
+	_agregar_ruta_textura(registro, rutas)
+
+	if nivel != "bioma":
+		var bioma_id := ""
+		if nivel == "ecosistema":
+			bioma_id = _buscar_bioma_de_ecosistema(str(registro.get("id", "")))
+		elif nivel == "habitat":
+			var contexto := _buscar_contexto_habitat(str(registro.get("id", "")))
+			bioma_id = str(contexto.get("bioma_id", ""))
+			_agregar_ruta_textura(contexto.get("ecosistema", {}), rutas)
+		if not bioma_id.is_empty():
+			_agregar_ruta_textura(WorldData.obtener_bioma(bioma_id), rutas)
+
+	for ruta in rutas:
+		if not ResourceLoader.exists(ruta):
+			continue
+		var recurso := load(ruta) as Texture2D
+		if recurso == null:
+			continue
+		_icono.texture = recurso
+		_icono.visible = true
+		return
+
+
+func _agregar_ruta_textura(registro: Dictionary, rutas: Array[String]) -> void:
+	var generacion_variant: Variant = registro.get("generacion", {})
+	if generacion_variant is Dictionary:
+		var ruta := str((generacion_variant as Dictionary).get("textura", "")).strip_edges()
+		if not ruta.is_empty() and not rutas.has(ruta):
+			rutas.append(ruta)
+
+
+func _buscar_bioma_de_ecosistema(ecosistema_id: String) -> String:
+	for bioma_variant in WorldData.obtener_biomas():
+		if not bioma_variant is Dictionary:
+			continue
+		var bioma := bioma_variant as Dictionary
+		for eco_variant in bioma.get("ecosistemas", []):
+			if eco_variant is Dictionary and str((eco_variant as Dictionary).get("id", "")) == ecosistema_id:
+				return str(bioma.get("id", ""))
+	return ""
+
+
+func _buscar_contexto_habitat(habitat_id: String) -> Dictionary:
+	for bioma_variant in WorldData.obtener_biomas():
+		if not bioma_variant is Dictionary:
+			continue
+		var bioma := bioma_variant as Dictionary
+		for eco_variant in bioma.get("ecosistemas", []):
+			if not eco_variant is Dictionary:
+				continue
+			var eco := eco_variant as Dictionary
+			for habitat_variant in eco.get("habitats", []):
+				if habitat_variant is Dictionary and str((habitat_variant as Dictionary).get("id", "")) == habitat_id:
+					return {"bioma_id": str(bioma.get("id", "")), "ecosistema": eco}
+	return {}
 
 
 func _mostrar_ficha_criatura(
