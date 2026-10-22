@@ -521,28 +521,32 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 func soltar_objeto_al_mundo(
 	datos: Dictionary,
 	posicion: Vector2
-) -> void:
+) -> bool:
 	if datos.is_empty():
-		return
+		return false
 
-	_generar_world_item(datos.duplicate(true), posicion)
+	return _generar_world_item(datos.duplicate(true), posicion)
 
 
 func _generar_world_item(
 	datos: Dictionary,
 	posicion: Vector2
-) -> void:
+) -> bool:
 	var entities := _entities_root
 	if entities == null or not is_instance_valid(entities):
 		print("GarliaWorldItems: no se configuró el root de entidades.")
-		return
+		return false
+
+	if _entity_manager == null or not is_instance_valid(_entity_manager):
+		print("GarliaWorldItems: no se configuró WorldEntityManager.")
+		return false
 
 	var objeto := WorldItem.new()
 	objeto.configurar_dependencias(_player, _inventory, _mission_manager)
-	if _entity_manager == null or not is_instance_valid(_entity_manager):
-		return
 	if not _entity_manager.registrar_global(objeto):
-		return
+		objeto.free()
+		print("GarliaWorldItems: WorldEntityManager rechazó el WorldItem.")
+		return false
 	_world_items.append(objeto)
 
 	objeto.global_position = posicion + Vector2(
@@ -558,6 +562,7 @@ func _generar_world_item(
 		" en ",
 		objeto.global_position
 	)
+	return true
 
 
 func _generar_objetos_en_mundo(jugador: Node2D) -> void:
