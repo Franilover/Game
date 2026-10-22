@@ -134,7 +134,8 @@ func _renderizar_recetas() -> void:
 		_estado.text = "No hay recetas disponibles."
 		return
 
-	_estado.text = str(_recetas.size()) + " recetas disponibles."
+	# El contador ocupaba una línea útil de la interfaz.
+	_estado.text = ""
 
 	for receta in _recetas:
 		_crear_tarjeta_receta(receta)
@@ -143,6 +144,8 @@ func _renderizar_recetas() -> void:
 func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(0, 82)
+	# Las recetas quedan integradas en la lista, sin una pastilla opaca detrás.
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_lista.add_child(panel)
 
 	var margen := MarginContainer.new()
