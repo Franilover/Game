@@ -54,7 +54,8 @@ var _player: Player = null
 var _world_items: GarliaWorldItems = null
 
 
-@onready var grid: GridContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
+@onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
+var _slot_grids: Array[GridContainer] = []
 @onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemName
 @onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemDescription
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/ItemIcon
@@ -335,39 +336,53 @@ func _crear_slots() -> void:
 	for slot in slot_nodes:
 		if is_instance_valid(slot):
 			slot.queue_free()
+	for child in grid.get_children():
+		child.queue_free()
 
 	slot_nodes.clear()
+	_slot_grids.clear()
+
+	var nombres_grupo := ["MANO IZQUIERDA", "MOCHILA", "MANO DERECHA"]
+	for grupo in range(3):
+		var panel_grupo := VBoxContainer.new()
+		panel_grupo.name = "Grupo_" + str(grupo)
+		panel_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		panel_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		panel_grupo.add_theme_constant_override("separation", 8)
+		grid.add_child(panel_grupo)
+
+		var titulo := Label.new()
+		titulo.text = nombres_grupo[grupo]
+		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		titulo.add_theme_font_size_override("font_size", 10)
+		titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1))
+		panel_grupo.add_child(titulo)
+
+		var rejilla := GridContainer.new()
+		rejilla.name = "Slots"
+		rejilla.columns = 3
+		rejilla.add_theme_constant_override("h_separation", 5)
+		rejilla.add_theme_constant_override("v_separation", 5)
+		rejilla.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		panel_grupo.add_child(rejilla)
+		_slot_grids.append(rejilla)
 
 	for visual_index in range(slot_count):
 		var slot_node := SLOT_SCENE.instantiate()
-
 		if not slot_node is Button:
 			continue
-
 		var slot := slot_node as Button
-		var indice_datos := _indice_datos_desde_visual(visual_index)
+		var indice_datos := visual_index
 		slot.set_meta("inventory_index", indice_datos)
-
-		grid.add_child(slot)
+		var grupo := int(visual_index / 6)
+		_slot_grids[grupo].add_child(slot)
 
 		if slot.has_signal("seleccionado"):
-			slot.connect(
-				"seleccionado",
-				_al_seleccionar_slot
-			)
-
+			slot.connect("seleccionado", _al_seleccionar_slot)
 		if slot.has_signal("arrastre_iniciado"):
-			slot.connect(
-				"arrastre_iniciado",
-				_al_iniciar_arrastre
-			)
-
+			slot.connect("arrastre_iniciado", _al_iniciar_arrastre)
 		if slot.has_signal("arrastre_recibido"):
-			slot.connect(
-				"arrastre_recibido",
-				_al_recibir_arrastre
-			)
-
+			slot.connect("arrastre_recibido", _al_recibir_arrastre)
 		slot_nodes.append(slot)
 
 	actualizar()
@@ -386,11 +401,8 @@ func actualizar() -> void:
 
 
 func _indice_datos_desde_visual(visual_index: int) -> int:
-	# Presentación vertical por columnas: izquierda, mochila, derecha.
-	# El almacenamiento permanece agrupado por función: 0–5, 6–11, 12–17.
-	var columna := visual_index % 3
-	var fila := int(visual_index / 3)
-	return columna * 6 + fila
+	# El orden de almacenamiento coincide con los grupos visibles: 6 por grupo.
+	return visual_index
 
 
 func _indice_datos_de_slot(slot: Button) -> int:
