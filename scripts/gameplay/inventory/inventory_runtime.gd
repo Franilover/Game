@@ -64,6 +64,11 @@ func agregar_objeto(datos: Dictionary) -> bool:
 	var max_stack: int = maxi(1, int(objeto.get("max_stack", 1)))
 	objeto["cantidad"] = cantidad
 	objeto["max_stack"] = max_stack
+	# La inserción debe ser atómica: una recogida rechazada no puede dejar
+	# unidades añadidas mientras el objeto del mundo sigue intacto.
+	var items_antes: Array[Dictionary] = []
+	for item_antes in state.items:
+		items_antes.append(item_antes.duplicate(true))
 	var restante := cantidad
 	if max_stack > 1:
 		for i in range(state.items.size()):
@@ -97,11 +102,13 @@ func agregar_objeto(datos: Dictionary) -> bool:
 		_garlia_debug().call("registrar", "INVENTORY", "Objeto insertado correctamente.")
 		_garlia_debug().call("flujo_ok", "Objeto insertado en inventario.", {"restante": restante})
 	else:
+		for i in range(mini(state.items.size(), items_antes.size())):
+			state.items[i] = items_antes[i].duplicate(true)
 		var libres := 0
 		for slot in state.items:
 			if slot is Dictionary and (slot as Dictionary).is_empty():
 				libres += 1
-		_garlia_debug().call("registrar", "INVENTORY", "Inserción rechazada: capacidad insuficiente.", {"restante": restante, "slots": state.items.size()})
+		_garlia_debug().call("registrar", "INVENTORY", "Inserción rechazada: capacidad insuficiente; se revirtió toda la operación.", {"restante": restante, "slots": state.items.size()})
 		_garlia_debug().call("flujo_error", "No hubo capacidad suficiente.", {
 				"restante": restante,
 				"slots": state.items.size(),
