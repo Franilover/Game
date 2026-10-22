@@ -168,7 +168,7 @@ func _al_recibir_catalogo(
 			+ str(response_code)
 		)
 		print("GarliaWorldItems: ", mensaje, " → ", texto)
-		carga_fallida.emit(mensaje)
+		_cargar_catalogo_reintentando(mensaje)
 		return
 
 	var datos: Variant = JSON.parse_string(texto)
@@ -176,7 +176,7 @@ func _al_recibir_catalogo(
 	if not datos is Array:
 		var mensaje := "Supabase devolvió una respuesta de catálogo inválida."
 		print("GarliaWorldItems: ", mensaje, " → ", texto)
-		carga_fallida.emit(mensaje)
+		_cargar_catalogo_reintentando(mensaje)
 		return
 
 	_intentos_catalogo = 0
