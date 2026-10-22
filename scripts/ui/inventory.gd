@@ -8,11 +8,11 @@ const EQUIPMENT_SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_equipment_slot.tscn"
 )
 
-const HOTBAR_SLOT_COUNT: int = 8
+const HOTBAR_SLOT_COUNT: int = 6
 
 var inventory_controller := InventoryController.new()
 
-@export var slot_count: int = 24
+@export var slot_count: int = 18
 
 signal inventory_changed
 signal inventory_selection_changed(indice: int, datos: Dictionary)
@@ -185,16 +185,16 @@ func _normalizar_capacidades_runtime() -> void:
 	if items.size() < capacidad:
 		items.resize(capacidad)
 
-	# La hotbar mantiene siempre sus 8 posiciones aunque el guardado antiguo
-	# no tenga índices persistidos.
+	# La hotbar nueva apunta exclusivamente a los seis espacios de mochila
+	# (índices 6–11). Las partidas anteriores se normalizan sin descartar objetos.
 	var indices_guardados := hotbar_indices.duplicate()
-	if indices_guardados.size() < HOTBAR_SLOT_COUNT:
-		hotbar_indices.resize(HOTBAR_SLOT_COUNT)
-		for i in range(HOTBAR_SLOT_COUNT):
-			if i < indices_guardados.size():
-				hotbar_indices[i] = int(indices_guardados[i])
-			else:
-				hotbar_indices[i] = i if i < items.size() else -1
+	hotbar_indices.resize(HOTBAR_SLOT_COUNT)
+	for i in range(HOTBAR_SLOT_COUNT):
+		var destino := 6 + i
+		if i < indices_guardados.size() and int(indices_guardados[i]) >= 6 and int(indices_guardados[i]) <= 11:
+			hotbar_indices[i] = int(indices_guardados[i])
+		else:
+			hotbar_indices[i] = destino if destino < items.size() else -1
 
 
 func configurar_input_router(router: GameplayInputRouter) -> void:
@@ -317,10 +317,8 @@ func _inicializar_hotbar() -> void:
 	hotbar_indices.clear()
 
 	for i in range(HOTBAR_SLOT_COUNT):
-		if i < slot_count:
-			hotbar_indices.append(i)
-		else:
-			hotbar_indices.append(-1)
+		var indice_mochila := 6 + i
+		hotbar_indices.append(indice_mochila if indice_mochila < slot_count else -1)
 
 
 func _crear_slots() -> void:
