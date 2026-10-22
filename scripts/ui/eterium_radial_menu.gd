@@ -52,13 +52,16 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
-		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_X:
-			if visible_menu:
-				_cerrar()
-			else:
+		if tecla.keycode == KEY_X and not tecla.echo:
+			if tecla.pressed and not visible_menu:
 				_abrir()
-			get_viewport().set_input_as_handled()
-			return
+				get_viewport().set_input_as_handled()
+				return
+			if not tecla.pressed and visible_menu:
+				_actualizar_cuadrante(get_viewport().get_mouse_position())
+				_ejecutar_seleccion()
+				get_viewport().set_input_as_handled()
+				return
 	if not visible_menu:
 		return
 	if event is InputEventMouseMotion:
