@@ -197,14 +197,6 @@ focus_mode = 1
 theme_override_font_sizes/font_size = 20
 text = "Aventura"
 
-[node name="TestLabButton" type="Button" parent="Center" unique_id=930000001]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-tooltip_text = "Pruebas técnicas sin pasar por el flujo de partida."
-focus_mode = 1
-theme_override_font_sizes/font_size = 17
-text = "Laboratorio"
-
 [node name="MultiplayerButton" type="Button" parent="Center" unique_id=624144304]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
@@ -220,21 +212,6 @@ layout_mode = 2
 focus_mode = 1
 theme_override_font_sizes/font_size = 17
 text = "Salir"
-
-[node name="Version" type="Label" parent="." unique_id=309791332]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -120.0
-offset_top = -32.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_font_sizes/font_size = 11
-text = "Garlia — Prototipo"
-horizontal_alignment = 2
 
 [node name="ProfileButton" type="Button" parent="." unique_id=1615126066]
 layout_mode = 1
@@ -318,12 +295,6 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Iniciar sesión"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1491292555]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Usa tu cuenta de Garlia."
 horizontal_alignment = 1
 
 [node name="EmailLabel" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=648128192]
