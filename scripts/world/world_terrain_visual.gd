@@ -463,7 +463,18 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	layer.name = "TerrainDual_Zone_%02d" % zone
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
-	layer.z_index = -4095 + zone
+	# Orden visual explícito para los dos atlas de suelo que se solapan:
+	# Pradera contiene píxeles opacos fuera de algunos cuadrantes de su máscara,
+	# por lo que debe dibujarse después de Tierra para conservar el sobresaliente.
+	# No se modifica el offset interno de Display ni se altera el orden de las
+	# demás zonas; Bosque y las zonas superiores mantienen su prioridad actual.
+	match zone:
+		0: # Pradera
+			layer.z_index = -4094
+		1: # Tierra
+			layer.z_index = -4095
+		_:
+			layer.z_index = -4095 + zone
 	layer.rendering_quadrant_size = 16
 	layer.tile_set = tile_set
 	add_child(layer)
