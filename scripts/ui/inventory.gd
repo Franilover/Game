@@ -416,7 +416,10 @@ func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
 		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
 		return
 
-	world_items.soltar_objeto_al_mundo(datos, get_global_mouse_position())
+	# El inventario solo descuenta el objeto si el WorldItem quedó registrado.
+	if not world_items.soltar_objeto_al_mundo(datos, get_global_mouse_position()):
+		print("Inventory: no se pudo crear el objeto en el mundo; se conserva en inventario.")
+		return
 
 	quitar_objeto(indice)
 
@@ -632,14 +635,17 @@ func obtener_estadisticas_equipo() -> Dictionary:
 
 
 func _buscar_indice_objeto(objeto: Dictionary) -> int:
-	var id := str(objeto.get("id", objeto.get("item_id", "")))
+	var id := str(objeto.get("id", objeto.get("item_id", ""))).strip_edges()
 	for i in range(items.size()):
 		if items[i].is_empty():
 			continue
-		var item_id := str(items[i].get("id", items[i].get("item_id", "")))
-		if not id.is_empty() and id == item_id:
-			return i
-		if items[i].get("nombre", "") == objeto.get("nombre", ""):
+		var item_id := str(items[i].get("id", items[i].get("item_id", ""))).strip_edges()
+		if not id.is_empty():
+			if id == item_id:
+				return i
+			continue
+		# Solo recurrir al nombre cuando ambos objetos carecen de ID.
+		if item_id.is_empty() and str(items[i].get("nombre", "")) == str(objeto.get("nombre", "")):
 			return i
 	return -1
 
