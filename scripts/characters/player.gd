@@ -12,9 +12,9 @@ signal fisiologia_changed(vida_eterium_compartidos: bool)
 
 
 @export_category("Stamina")
-@export var max_stamina: float = 100.0
-@export var stamina_regeneration: float = 22.0
-@export var stamina_regeneration_delay: float = 0.8
+@export var max_stamina: float = 3.0
+@export var stamina_regeneration: float = 0.0
+@export var stamina_regeneration_delay: float = 0.0
 
 
 @export_category("Eterium")
@@ -26,18 +26,18 @@ signal fisiologia_changed(vida_eterium_compartidos: bool)
 @export var jump_distance: float = 28.0
 @export var jump_duration: float = 0.28
 @export var jump_cooldown: float = 0.55
-@export var jump_stamina_cost: float = 15.0
+@export var jump_stamina_cost: float = 0.0
 
 
 @export_category("Dash")
 @export var dash_distance: float = 64.0
 @export var dash_duration: float = 0.12
 @export var dash_cooldown: float = 0.8
-@export var dash_stamina_cost: float = 25.0
+@export var dash_stamina_cost: float = 1.0
 
 
 @export_category("Correr")
-@export var run_stamina_cost: float = 10.0
+@export var run_stamina_cost: float = 0.0
 
 
 enum State {
@@ -230,17 +230,12 @@ func _physics_process(delta: float) -> void:
 	var is_running := (
 		shift_pressed
 		and direction != Vector2.ZERO
-		and stamina > 0.0
 		and not eterium_sprint
 	)
 
 	# La recuperación natural ocurre únicamente mientras el jugador espera.
 	if direction == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
-
-	# Consumo de stamina al correr normalmente.
-	if is_running:
-		_gastar_stamina(run_stamina_cost * delta)
 
 	# Movimiento.
 	var speed: float
@@ -327,6 +322,27 @@ func _tiene_stamina(cantidad: float) -> bool:
 
 func restaurar_stamina(cantidad: float) -> bool:
 	return stamina_controller.restaurar(cantidad)
+
+## Recupera cargas de dash pagando Eterium (10 unidades por carga).
+func recuperar_dash_con_eterium(cargas: int = 1, costo_por_carga: int = 10) -> int:
+	var faltantes := maxi(roundi(max_stamina - stamina), 0)
+	var cantidad := mini(maxi(cargas, 0), faltantes)
+	var costo_unitario := maxi(costo_por_carga, 0)
+	if cantidad <= 0:
+		return 0
+	if costo_unitario > 0:
+		var costo_total := cantidad * costo_unitario
+		if mana < costo_total or not eterium.gastar(costo_total):
+			return 0
+		_sync_desde_vital()
+		mana_changed.emit(mana, max_mana)
+	if not stamina_controller.restaurar(float(cantidad)):
+		return 0
+	return cantidad
+
+## Punto de entrada para sentarse en un banco, descansar o dormir.
+func recuperar_cargas_por_descanso() -> void:
+	stamina_controller.reiniciar()
 
 func restaurar_eterium(cantidad: float) -> bool:
 	var antes: int = mana
