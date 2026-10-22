@@ -160,10 +160,6 @@ func _abrir_laboratorio_ium() -> void:
 		Input.action_press("open_ium_lab")
 		Input.action_release("open_ium_lab")
 
-func _ium_lab_abrir() -> void:
-	if ium_lab.has_method("_abrir"):
-		_ium_lab.call("_abrir")
-
 func _usar_conjuro() -> void:
 	if ium_manager == null or not is_instance_valid(ium_manager):
 		_notificar("El sistema de IUMs no está disponible.")
