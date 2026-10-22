@@ -55,9 +55,11 @@ func _crear_interfaz() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	columna.add_child(scroll)
 
-	_lista = VBoxContainer.new()
+	_lista = GridContainer.new()
+	_lista.columns = 5
 	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista.add_theme_constant_override("separation", 8)
+	_lista.add_theme_constant_override("h_separation", 8)
+	_lista.add_theme_constant_override("v_separation", 8)
 	scroll.add_child(_lista)
 
 
@@ -142,26 +144,27 @@ func _renderizar_recetas() -> void:
 
 
 func _crear_tarjeta_receta(receta: Dictionary) -> void:
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(0, 82)
-	# Las recetas quedan integradas en la lista, sin una pastilla opaca detrás.
-	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	var panel := Button.new()
+	panel.custom_minimum_size = Vector2(64, 64)
+	panel.tooltip_text = _tooltip_receta(receta)
+	panel.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.11, 0.07, 0.045, 0.9), Color(0.29, 0.19, 0.12, 1), 1))
+	panel.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
+	panel.add_theme_stylebox_override("pressed", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
+	panel.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	panel.text = ""
+	panel.pressed.connect(func() -> void:
+		_craftear(receta)
+	)
 	_lista.add_child(panel)
-
-	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 10)
-	margen.add_theme_constant_override("margin_top", 8)
-	margen.add_theme_constant_override("margin_right", 10)
-	margen.add_theme_constant_override("margin_bottom", 8)
-	panel.add_child(margen)
-
-	var fila := HBoxContainer.new()
-	fila.add_theme_constant_override("separation", 12)
-	margen.add_child(fila)
 
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var icono := TextureRect.new()
-	icono.custom_minimum_size = Vector2(56, 56)
+	icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icono.offset_left = 6
+	icono.offset_top = 6
+	icono.offset_right = -6
+	icono.offset_bottom = -6
+	icono.custom_minimum_size = Vector2(52, 52)
 	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -170,53 +173,21 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	icono.texture = ItemIconResolver.obtener_icono(
 		_buscar_item_catalogo(str(resultado.get("item_id", "")))
 	)
-	fila.add_child(icono)
+	panel.add_child(icono)
 
-	var info := VBoxContainer.new()
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fila.add_child(info)
 
-	var nombre := Label.new()
-	nombre.text = str(receta.get("nombre", "Receta"))
-	nombre.add_theme_font_size_override("font_size", 14)
-	nombre.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58))
-	info.add_child(nombre)
 
-	var descripcion := Label.new()
-	descripcion.text = str(receta.get("descripcion", ""))
-	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	descripcion.add_theme_font_size_override("font_size", 10)
-	descripcion.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35))
-	info.add_child(descripcion)
-
-	var materiales := Label.new()
-	materiales.text = _texto_ingredientes(receta)
-	materiales.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	materiales.add_theme_font_size_override("font_size", 10)
-	info.add_child(materiales)
-
-	var salida := Label.new()
-	salida.text = "Resultado: " + _nombre_item(str(resultado.get("item_id", ""))) + " x" + str(int(resultado.get("cantidad", 1)))
-	salida.add_theme_font_size_override("font_size", 10)
-	salida.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46))
-	info.add_child(salida)
-
-	var boton := Button.new()
-	boton.custom_minimum_size = Vector2(100, 38)
-	boton.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1))
-	boton.add_theme_color_override("font_hover_color", Color(0.9, 0.79, 0.58, 1))
-	boton.add_theme_color_override("font_pressed_color", Color(0.95, 0.88, 0.7, 1))
-	boton.add_theme_font_size_override("font_size", 11)
-	boton.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.12, 0.075, 0.045, 0.95), Color(0.29, 0.19, 0.12, 1), 1))
-	boton.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
-	boton.add_theme_stylebox_override("pressed", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
-	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	boton.text = "CREAR"
-	boton.pressed.connect(func() -> void:
-		_craftear(receta)
-	)
-	fila.add_child(boton)
-
+func _tooltip_receta(receta: Dictionary) -> String:
+	var partes: Array[String] = [str(receta.get("nombre", "Receta"))]
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+	if ingredientes_variant is Array:
+		partes.append("Necesita:")
+		for ingrediente_variant in ingredientes_variant as Array:
+			if not ingrediente_variant is Dictionary:
+				continue
+			var ingrediente := ingrediente_variant as Dictionary
+			partes.append(_nombre_item(str(ingrediente.get("item_id", ""))) + " x" + str(maxi(1, int(ingrediente.get("cantidad", 1)))))
+	return "\n".join(partes)
 
 func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> StyleBoxFlat:
 	var estilo := StyleBoxFlat.new()
