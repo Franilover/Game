@@ -128,7 +128,7 @@ func _update_confirm(_index: int = -1) -> void:
 		return
 	var partida_name_ok: bool = not partida_name_input.text.strip_edges().is_empty()
 	var name_ok: bool = not name_input.text.strip_edges().is_empty()
-	var gender_ok: bool = not gender.visible or gender.selected != 3 or not gender_free.text.strip_edges().is_empty()
+	var gender_ok: bool = not gender.visible or gender.selected != 4 or not gender_free.text.strip_edges().is_empty()
 	var species_ok: bool = species.item_count > 0 and species.selected >= 0
 	var skin_ok: bool = skins.item_count > 0 and skins.get_selected_items().size() > 0
 	confirm_button.disabled = not (partida_name_ok and name_ok and gender_ok and species_ok and skin_ok)
