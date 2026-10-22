@@ -53,14 +53,14 @@ func _crear_interfaz() -> void:
 	_tab_biomas.text = "Biomas"
 	_tab_biomas.toggle_mode = true
 	_tab_biomas.button_pressed = true
-	_tab_biomas.custom_minimum_size = Vector2(100, 28)
+	_configurar_boton_seccion(_tab_biomas)
 	_tab_biomas.pressed.connect(_mostrar_biomas)
 	tabs.add_child(_tab_biomas)
 
 	_tab_criaturas = Button.new()
 	_tab_criaturas.text = "Criaturas"
 	_tab_criaturas.toggle_mode = true
-	_tab_criaturas.custom_minimum_size = Vector2(100, 28)
+	_configurar_boton_seccion(_tab_criaturas)
 	_tab_criaturas.pressed.connect(_mostrar_criaturas)
 	tabs.add_child(_tab_criaturas)
 
@@ -148,6 +148,29 @@ func _crear_interfaz() -> void:
 	_ficha.add_theme_font_size_override("normal_font_size", 11)
 	detail_column.add_child(_ficha)
 
+
+func _configurar_boton_seccion(boton: Button) -> void:
+	boton.custom_minimum_size = Vector2(0, 32)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1))
+	boton.add_theme_color_override("font_hover_color", Color(0.9, 0.79, 0.58, 1))
+	boton.add_theme_color_override("font_pressed_color", Color(0.95, 0.88, 0.7, 1))
+	boton.add_theme_font_size_override("font_size", 11)
+	boton.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.12, 0.075, 0.045, 0.95), Color(0.29, 0.19, 0.12, 1), 1))
+	boton.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
+	boton.add_theme_stylebox_override("pressed", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
+	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+
+func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = fondo
+	estilo.border_color = borde
+	estilo.set_border_width_all(1)
+	estilo.border_width_bottom = borde_inferior
+	estilo.corner_radius_top_left = 3
+	estilo.corner_radius_top_right = 3
+	return estilo
 
 func actualizar() -> void:
 	if _arbol == null:
