@@ -1116,6 +1116,14 @@ func seleccionar_slot_mano(mano: String, slot_index: int) -> bool:
 	return true
 
 
+func obtener_indice_mano_activa(mano: String) -> int:
+	if mano == "izquierda":
+		return mano_izquierda_activa
+	if mano == "derecha":
+		return 12 + mano_derecha_activa
+	return -1
+
+
 func obtener_objeto_mano_activa(mano: String) -> Dictionary:
 	if mano == "izquierda":
 		return obtener_objeto(mano_izquierda_activa)
