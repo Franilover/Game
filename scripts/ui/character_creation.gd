@@ -19,9 +19,10 @@ var _skins: Array[String] = []
 
 func _ready() -> void:
 	visible = false
-	gender.add_item("Hombre")
-	gender.add_item("Mujer")
-	gender.add_item("Agenero")
+	gender.add_item("El")
+	gender.add_item("Ella")
+	gender.add_item("Elle")
+	gender.add_item("Eso")
 	gender.add_item("Texto libre")
 	gender.item_selected.connect(_on_gender_selected)
 	partida_name_input.text_changed.connect(func(_text: String) -> void:
@@ -61,7 +62,7 @@ func _on_cancel() -> void:
 	cancelled.emit()
 
 func _on_gender_selected(index: int) -> void:
-	gender_free.visible = index == 3
+	gender_free.visible = index == 4
 	_update_confirm()
 
 func _actualizar_genero_segun_especie() -> void:
@@ -143,7 +144,7 @@ func _on_confirm() -> void:
 	var gender_value: String = gender.get_item_text(gender.selected)
 	if not gender.visible:
 		gender_value = "sin_genero"
-	if gender.selected == 3:
+	if gender.selected == 4:
 		gender_value = gender_free.text.strip_edges()
 	var species_data: Dictionary = species.get_item_metadata(species.selected) as Dictionary
 	var config: Dictionary = {
