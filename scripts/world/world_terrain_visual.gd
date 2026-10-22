@@ -59,12 +59,18 @@ const TERRAIN_NAMES: PackedStringArray = [
 	"Forest", "Desert",
 ]
 
+# MATCH_CORNERS necesita invalidar la celda central y las ocho
+# posiciones vecinas: las diagonales también cambian la máscara de esquina.
 const UPDATE_NEIGHBORS: Array[Vector2i] = [
 	Vector2i.ZERO,
 	Vector2i(1, 0),
 	Vector2i(-1, 0),
 	Vector2i(0, 1),
 	Vector2i(0, -1),
+	Vector2i(1, 1),
+	Vector2i(1, -1),
+	Vector2i(-1, 1),
+	Vector2i(-1, -1),
 ]
 
 const CARDINAL_NEIGHBORS: Array[Vector2i] = [
@@ -352,6 +358,37 @@ func configurar(nuevo_tile_size: int) -> void:
 	# pueden no existir y sólo las capas de detalles terminan visibles.
 	for zone in range(ZONE_TEXTURES.size()):
 		_crear_capa_terreno(zone)
+
+
+# Barrera explícita entre configuración y generación de chunks.
+# WorldGenerator debe llamar este método después de ceder al menos un frame
+# para que TileMapDual cree su Display interno en _ready().
+func finalizar_preparacion_renderer() -> bool:
+	if _layers_by_zone.size() != ZONE_TEXTURES.size():
+		push_error(
+			"WorldTerrainVisual: preparación incompleta; capas registradas=%d, esperadas=%d."
+			% [_layers_by_zone.size(), ZONE_TEXTURES.size()]
+		)
+		return false
+
+	if not is_instance_valid(_shared_terrain_layer):
+		push_error("WorldTerrainVisual: falta la instancia compartida de TileMapDual.")
+		return false
+
+	if not _shared_terrain_layer.has_method("obtener_diagnostico"):
+		push_error("WorldTerrainVisual: TileMapDual no expone obtener_diagnostico().")
+		return false
+
+	var estado: Dictionary = _shared_terrain_layer.obtener_diagnostico()
+	if not bool(estado.get("renderer_valid", false)):
+		push_error(
+			"WorldTerrainVisual: TileMapDual todavía no inicializó Display. "
+			+ "Esperaba que WorldGenerator cediera un frame antes de preparar el renderer."
+		)
+		return false
+
+	_reconstruir_reglas_terreno_si_necesario()
+	return true
 
 
 func comenzar_lote() -> void:
