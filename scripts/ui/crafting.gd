@@ -7,7 +7,7 @@ const HTTP_TIMEOUT: float = 8.0
 var _request: HTTPRequest
 var _recetas: Array[Dictionary] = []
 var _cargando: bool = false
-var _lista: VBoxContainer
+var _lista: GridContainer
 var _estado: Label
 var _inventory: Node = null
 var _world_items: GarliaWorldItems = null
