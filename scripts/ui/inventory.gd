@@ -141,7 +141,10 @@ func _configurar_crafting() -> void:
 
 
 func serializar_estado_partida() -> Dictionary:
-	return inventory_controller.serializar()
+	var datos := inventory_controller.serializar()
+	datos["mano_izquierda_activa"] = mano_izquierda_activa
+	datos["mano_derecha_activa"] = mano_derecha_activa
+	return datos
 
 
 func cargar_estado_partida(datos: Dictionary) -> void:
@@ -155,6 +158,9 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	var indice_activo := int(datos.get("indice_hotbar_activo", 0))
 	if indice_activo >= 0 and indice_activo < hotbar_indices.size():
 		inventory_controller.seleccionar_hotbar(indice_activo)
+
+	mano_izquierda_activa = clampi(int(datos.get("mano_izquierda_activa", 0)), 0, 5)
+	mano_derecha_activa = clampi(int(datos.get("mano_derecha_activa", 0)), 0, 5)
 
 	var equipo_variant: Variant = datos.get("equipo", {})
 	if equipo_variant is Dictionary:
