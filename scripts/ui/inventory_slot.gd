@@ -140,8 +140,9 @@ func _get_drag_data(_position: Vector2) -> Variant:
 	set_drag_preview(preview)
 	arrastre_iniciado.emit(self, datos)
 
+	var indice_datos := int(get_meta("inventory_index", get_index()))
 	return {
 		"tipo": "inventario_objeto",
-		"indice": get_index(),
+		"indice": indice_datos,
 		"datos": datos
 	}
