@@ -62,17 +62,17 @@ func _actualizar() -> void:
 
 	var sistema := _relationship_system
 	if sistema == null or not sistema.has_method("esta_cargado") or not sistema.call("esta_cargado"):
-		estado.text = "Las relaciones se cargarán desde Supabase."
+		estado.text = ""
 		return
 
 	var reglas_variant: Variant = sistema.call("obtener_reglas_sociales")
 	if not reglas_variant is Dictionary:
-		estado.text = "No hay relaciones descubiertas."
+		estado.text = ""
 		return
 
 	var reglas: Dictionary = reglas_variant as Dictionary
 	if reglas.is_empty():
-		estado.text = "No hay relaciones descubiertas."
+		estado.text = ""
 		return
 
 	for personaje_id_variant in reglas.keys():
@@ -97,7 +97,7 @@ func _actualizar() -> void:
 		lista.add_child(boton)
 		_botones.append(boton)
 
-	estado.text = str(reglas.size()) + " relaciones"
+	estado.text = ""
 
 func _seleccionar(personaje_id: String, nombre: String) -> void:
 	for boton in _botones:
