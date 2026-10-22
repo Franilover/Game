@@ -203,7 +203,8 @@ func _consumir_durabilidad_herramienta(en_equipo: bool = false) -> void:
 	if en_equipo:
 		inventory.consumir_durabilidad_equipo(_inventory_equipment_slot)
 		return
-	var indice: int = inventory.obtener_indice_inventario_hotbar(inventory.indice_hotbar_activo)
+	var mano := "izquierda" if _accion_en_equipo else "derecha"
+	var indice: int = inventory.obtener_indice_mano_activa(mano)
 	if indice >= 0:
 		inventory.consumir_durabilidad(indice)
 
@@ -301,30 +302,15 @@ func usar_objeto_activo() -> void:
 func _obtener_objeto_activo_para_accion() -> Dictionary:
 	if inventory == null:
 		return {}
-
-	# La acción primaria usa el objeto seleccionado en la hotbar.
-	# Hotbar y equipamiento son estados distintos.
-	var activo := inventory.obtener_objeto_activo()
-	if not activo.is_empty():
-		return activo.duplicate(true)
-
-	# Una hotbar vacía representa una mano vacía. La interacción contextual
-	# queda entonces a cargo de InteractionSystem.
-	return {}
+	# El ataque primario usa el objeto activo de la mano derecha.
+	return inventory.obtener_objeto_mano_activa("derecha")
 
 
 func _obtener_objeto_equipado_para_accion() -> Dictionary:
-	var equipo_variant: Variant = inventory.obtener_equipamiento()
-	if not equipo_variant is Dictionary:
+	if inventory == null:
 		return {}
-	var equipo := equipo_variant as Dictionary
-	for clave_variant in ["mano_principal", "mano_secundaria"]:
-		var clave := str(clave_variant)
-		var candidato_variant: Variant = equipo.get(clave, {})
-		if candidato_variant is Dictionary and _es_objeto_ataque(candidato_variant as Dictionary):
-			_inventory_equipment_slot = clave
-			return (candidato_variant as Dictionary).duplicate(true)
-	return {}
+	# El ataque secundario usa el objeto activo de la mano izquierda.
+	return inventory.obtener_objeto_mano_activa("izquierda")
 
 
 func _obtener_arma_equipada(slot_preferido: String = "mano_principal") -> Dictionary:
