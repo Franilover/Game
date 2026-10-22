@@ -549,7 +549,9 @@ func _configurar_slot(
 			icon.texture = null
 
 		if placeholder:
-			placeholder.visible = false
+			# Las ranuras vacías también deben tener presencia visual desde
+			# el primer frame; no esperar al primer objeto para dibujarlas.
+			placeholder.visible = true
 
 		if cantidad:
 			cantidad.visible = false
