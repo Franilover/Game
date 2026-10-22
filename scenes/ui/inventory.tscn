@@ -266,6 +266,36 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
+[node name="SlotGroupHeaders" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ManoIzquierda" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/SlotGroupHeaders"]
+custom_minimum_size = Vector2(64, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_font_sizes/font_size = 10
+text = "M. IZQ."
+
+[node name="Mochila" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/SlotGroupHeaders"]
+custom_minimum_size = Vector2(64, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_font_sizes/font_size = 10
+text = "MOCHILA"
+horizontal_alignment = 1
+
+[node name="ManoDerecha" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/SlotGroupHeaders"]
+custom_minimum_size = Vector2(64, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_font_sizes/font_size = 10
+text = "M. DER."
+horizontal_alignment = 2
+
 [node name="Grid" type="GridContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel" unique_id=1707057280]
 layout_mode = 2
 size_flags_vertical = 3
