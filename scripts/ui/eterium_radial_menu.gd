@@ -155,7 +155,7 @@ func _abrir_laboratorio_ium() -> void:
 		_notificar("El menú de IUMs no está disponible.")
 		return
 	if ium_lab.has_method("_abrir"):
-		_ium_lab_abrir()
+		ium_lab.call("_abrir")
 	else:
 		Input.action_press("open_ium_lab")
 		Input.action_release("open_ium_lab")
@@ -224,7 +224,7 @@ func _draw() -> void:
 		var color := Color(0.78, 0.66, 0.46, 0.95) if i == cuadrante else Color(0.45, 0.32, 0.21, 0.85)
 		draw_line(inicio, fin, color, 3.0, true)
 		draw_circle(fin, 5.0 if i == cuadrante else 3.5, color)
-		var texto := NOMBRES[i]
+		var texto: String = str(NOMBRES[i])
 		var caja := Rect2(fin + Vector2(-78, -23), Vector2(156, 46))
 		draw_rect(caja, Color(0.055, 0.038, 0.025, 0.78), true)
 		draw_rect(caja, color, false, 1.0)
