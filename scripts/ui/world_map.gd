@@ -2,7 +2,9 @@ extends Control
 
 class_name WorldMapUI
 
-const MAP_TILE_PIXELS: float = 8.0
+const MAP_TILE_PIXELS_BASE: float = 8.0
+const MAP_TILE_PIXELS_MIN: float = 4.0
+const MAP_TILE_PIXELS_MAX: float = 24.0
 const VIEW_TILES_X: int = 91
 const VIEW_TILES_Y: int = 43
 const EXPLORATION_RADIUS: int = 6
@@ -13,10 +15,11 @@ var _explorado: Dictionary = {}
 var _tile_size: int = 32
 var _ultima_actualizacion: Vector2i = Vector2i(2147483647, 2147483647)
 var _texturas: Dictionary = {}
+var _zoom: float = 1.0
 
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_process(true)
 
 	GameState.mapa_exploracion_actualizada.connect(
@@ -50,6 +53,24 @@ func _process(_delta: float) -> void:
 func _refrescar() -> void:
 	_explorado = GameState.obtener_terreno_explorado()
 	queue_redraw()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+		var rueda := event as InputEventMouseButton
+		if rueda.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_zoom = minf(_zoom + 0.125, MAP_TILE_PIXELS_MAX / MAP_TILE_PIXELS_BASE)
+			accept_event()
+			queue_redraw()
+		elif rueda.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom = maxf(_zoom - 0.125, MAP_TILE_PIXELS_MIN / MAP_TILE_PIXELS_BASE)
+			accept_event()
+			queue_redraw()
+	elif event is InputEventMagnifyGesture:
+		var gesto := event as InputEventMagnifyGesture
+		_zoom = clampf(_zoom * gesto.factor, MAP_TILE_PIXELS_MIN / MAP_TILE_PIXELS_BASE, MAP_TILE_PIXELS_MAX / MAP_TILE_PIXELS_BASE)
+		accept_event()
+		queue_redraw()
 
 
 func _al_exploracion_actualizada() -> void:
@@ -98,14 +119,9 @@ func _draw() -> void:
 	)
 
 	var centro := _obtener_tile_jugador()
-	var ancho: int = mini(
-		VIEW_TILES_X,
-		maxi(int(mapa_rect.size.x / MAP_TILE_PIXELS), 1)
-	)
-	var alto: int = mini(
-		VIEW_TILES_Y,
-		maxi(int(mapa_rect.size.y / MAP_TILE_PIXELS), 1)
-	)
+	var tile_pixels := MAP_TILE_PIXELS_BASE * _zoom
+	var ancho: int = maxi(int(mapa_rect.size.x / tile_pixels), 1)
+	var alto: int = maxi(int(mapa_rect.size.y / tile_pixels), 1)
 
 	var inicio_x: int = centro.x - ancho / 2
 	var inicio_y: int = centro.y - alto / 2
@@ -120,12 +136,12 @@ func _draw() -> void:
 			var rect := Rect2(
 				mapa_rect.position
 				+ Vector2(
-					float(x) * MAP_TILE_PIXELS,
-					float(y) * MAP_TILE_PIXELS
+					float(x) * tile_pixels,
+					float(y) * tile_pixels
 				),
 				Vector2(
-					MAP_TILE_PIXELS + 0.2,
-					MAP_TILE_PIXELS + 0.2
+					tile_pixels + 0.2,
+					tile_pixels + 0.2
 				)
 			)
 
@@ -168,7 +184,7 @@ func _dibujar_tile_real(tile: Vector2i, rect: Rect2) -> void:
 	var zona: int = _world_context.get_zona_at(tile)
 	var textura: Texture2D = _obtener_textura_zona(tile, zona)
 	if textura == null:
-		draw_rect(rect, _color_zona(tile), true)
+		draw_rect(rect, Color("#120b07"), true)
 		return
 
 	# El mundo usa atlas 4x4 de 32x32. Tomamos exactamente la misma
@@ -193,19 +209,25 @@ func _obtener_textura_zona(tile: Vector2i, zona: int) -> Texture2D:
 	if _texturas.has(clave):
 		return _texturas[clave]
 
+	# Reutiliza los atlas canónicos del renderer de terreno; no aproxima
+	# una zona con texturas genéricas de otro nombre.
 	var paths: Array[String] = []
 	if not bioma_nombre.is_empty():
 		paths.append("res://assets/tilesets/" + bioma_nombre + ".png")
-
-	var nombres := [
-		"Grass.png", "Dirt.png", "Mountain.png", "Desert.png",
-		"Water.png", "Water.png", "Water.png", "BASE.png",
-		"Forest.png", "Desert.png"
+	var rutas_zona: Array[String] = [
+		"res://assets/tilesets/Pradera.png",
+		"res://assets/tilesets/Tierra.png",
+		"res://assets/tilesets/Montaña.png",
+		"res://assets/tilesets/Desierto.png",
+		"res://assets/tilesets/Marino.png",
+		"res://assets/tilesets/Marino.png",
+		"res://assets/tilesets/Marino.png",
+		"res://assets/tilesets/Montaña.png",
+		"res://assets/tilesets/Bosque.png",
+		"res://assets/tilesets/Desierto.png"
 	]
-	if zona >= 0 and zona < nombres.size():
-		paths.append("res://assets/tilesets/" + nombres[zona])
-
-	paths.append("res://assets/tilesets/world_tileset.png")
+	if zona >= 0 and zona < rutas_zona.size():
+		paths.append(rutas_zona[zona])
 
 	var textura: Texture2D = null
 	for path in paths:
