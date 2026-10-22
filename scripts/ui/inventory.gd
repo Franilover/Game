@@ -529,8 +529,7 @@ func _crear_slots_equipamiento() -> void:
 	var configuracion := [
 		["cabeza", "CABEZA"],
 		["torso", "TORSO"],
-		["pies", "PIES"],
-		["mano_secundaria", "MANO SECUNDARIA"]
+		["pies", "PIES"]
 	]
 
 	for entrada in configuracion:
@@ -722,7 +721,8 @@ func _mostrar_informacion() -> void:
 	)
 
 	item_name.text = nombre
-	item_description.text = descripcion
+	item_description.text = ""
+	item_description.visible = false
 	delete_button.disabled = false
 
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
@@ -743,7 +743,8 @@ func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> Sty
 
 func _limpiar_informacion() -> void:
 	item_name.text = "Ningún objeto"
-	item_description.text = "Selecciona un objeto para estudiar sus propiedades."
+	item_description.text = ""
+	item_description.visible = false
 	item_icon.texture = null
 	item_icon.visible = false
 	delete_button.disabled = true
