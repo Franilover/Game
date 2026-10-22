@@ -9,6 +9,11 @@ var entity_manager: WorldEntityManager = null
 var supabase_client: GarliaSupabaseClient = null
 var world_data: WorldDataService = null
 var game_state: GameStateService = null
+var _inventory_ref: GarliaInventory = null
+var _hand_selector: PanelContainer = null
+var _hand_selector_grid: GridContainer = null
+var _hand_selector_buttons: Array[Button] = []
+var _hand_selector_activo: String = ""
 
 var mostrar_contexto_mundo: bool = false
 
@@ -77,6 +82,7 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 		game_state = nuevo_game_state
 		_conectar_senal_game_state()
 	if nuevo_inventory != null and is_instance_valid(nuevo_inventory):
+		_inventory_ref = nuevo_inventory
 		_hotbar_node.configurar_inventario(nuevo_inventory)
 	if mission_manager != null:
 		_conectar_senales_misiones()
@@ -100,6 +106,7 @@ func _ready() -> void:
 	add_to_group("hud")
 
 	_configurar_referencias_ui()
+	_crear_selector_manos()
 	_preparar_location()
 	_preparar_aviso_descubrimiento()
 	_preparar_panel_interaccion()
@@ -1057,11 +1064,108 @@ func esta_mostrando_panel_interaccion() -> bool:
 	return _interaction_panel_open or _mission_panel_open
 
 
+func _crear_selector_manos() -> void:
+	_hand_selector = PanelContainer.new()
+	_hand_selector.name = "HandItemSelector"
+	_hand_selector.visible = false
+	_hand_selector.set_anchors_preset(Control.PRESET_CENTER)
+	_hand_selector.position = Vector2(-132, -106)
+	_hand_selector.size = Vector2(264, 212)
+	_hand_selector.mouse_filter = Control.MOUSE_FILTER_STOP
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.10, 0.065, 0.04, 0.98)
+	panel_style.set_border_width_all(2)
+	panel_style.border_color = Color(0.42, 0.29, 0.17, 1)
+	panel_style.set_corner_radius_all(5)
+	panel_style.content_margin_left = 10
+	panel_style.content_margin_right = 10
+	panel_style.content_margin_top = 10
+	panel_style.content_margin_bottom = 10
+	_hand_selector.add_theme_stylebox_override("panel", panel_style)
+	add_child(_hand_selector)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	_hand_selector.add_child(column)
+	var title := Label.new()
+	title.name = "HandSelectorTitle"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
+	column.add_child(title)
+	_hand_selector_grid = GridContainer.new()
+	_hand_selector_grid.columns = 3
+	_hand_selector_grid.add_theme_constant_override("h_separation", 5)
+	_hand_selector_grid.add_theme_constant_override("v_separation", 5)
+	column.add_child(_hand_selector_grid)
+	for i in range(6):
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(72, 66)
+		button.focus_mode = Control.FOCUS_NONE
+		button.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
+		button.add_theme_font_size_override("font_size", 10)
+		button.pressed.connect(_al_pulsar_selector_mano.bind(i))
+		_hand_selector_grid.add_child(button)
+		_hand_selector_buttons.append(button)
+	var hint := Label.new()
+	hint.text = "Apunta a un espacio y suelta la tecla"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1))
+	hint.add_theme_font_size_override("font_size", 9)
+	column.add_child(hint)
+
+
+func _abrir_selector_mano(mano: String) -> void:
+	if _inventory_ref == null or not is_instance_valid(_inventory_ref):
+		return
+	_hand_selector_activo = mano
+	var title := _hand_selector.find_child("HandSelectorTitle", true, false) as Label
+	if title != null:
+		title.text = "MANO IZQUIERDA · Q" if mano == "izquierda" else "MANO DERECHA · E"
+	for i in range(6):
+		var indice := i if mano == "izquierda" else 12 + i
+		var datos := _inventory_ref.obtener_objeto(indice)
+		var button := _hand_selector_buttons[i]
+		button.text = str(i + 1) + "\n" + str(datos.get("nombre", "Vacío")) if not datos.is_empty() else str(i + 1) + "\n—"
+		button.icon = ItemIconResolver.obtener_icono(datos) if not datos.is_empty() else null
+		button.expand_icon = true
+	_hand_selector.visible = true
+	_hand_selector.move_to_front()
+
+
+func _confirmar_selector_mano(posicion: Vector2) -> void:
+	var mano := _hand_selector_activo
+	_hand_selector_activo = ""
+	_hand_selector.visible = false
+	if mano.is_empty() or _inventory_ref == null:
+		return
+	for i in range(_hand_selector_buttons.size()):
+		if _hand_selector_buttons[i].get_global_rect().has_point(posicion):
+			_inventory_ref.seleccionar_slot_mano(mano, i)
+			return
+
+
+func _al_pulsar_selector_mano(indice: int) -> void:
+	if _hand_selector_activo.is_empty() or _inventory_ref == null:
+		return
+	_inventory_ref.seleccionar_slot_mano(_hand_selector_activo, indice)
+	_hand_selector_activo = ""
+	_hand_selector.visible = false
+
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
-		var key_event := event as InputEventKey
-		if key_event.pressed and not key_event.echo:
-			if key_event.keycode == KEY_F:
+		var hand_key := event as InputEventKey
+		if hand_key.keycode == KEY_Q or hand_key.keycode == KEY_E:
+			if hand_key.pressed and not hand_key.echo:
+				if _hand_selector_activo.is_empty() and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
+					_abrir_selector_mano("izquierda" if hand_key.keycode == KEY_Q else "derecha")
+				get_viewport().set_input_as_handled()
+				return
+			elif not hand_key.pressed and not _hand_selector_activo.is_empty():
+				_confirmar_selector_mano(get_viewport().get_mouse_position())
+				get_viewport().set_input_as_handled()
+				return
+		if hand_key.pressed and not hand_key.echo:
+			if hand_key.keycode == KEY_F:
 				_toggle_panel_misiones()
 				get_viewport().set_input_as_handled()
 				return
