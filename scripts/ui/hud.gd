@@ -14,6 +14,8 @@ var _hand_selector: PanelContainer = null
 var _hand_selector_grid: Control = null
 var _hand_selector_buttons: Array[Button] = []
 var _hand_selector_activo: String = ""
+var _left_hand_display: Button = null
+var _right_hand_display: Button = null
 
 var mostrar_contexto_mundo: bool = false
 
@@ -82,8 +84,13 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 		game_state = nuevo_game_state
 		_conectar_senal_game_state()
 	if nuevo_inventory != null and is_instance_valid(nuevo_inventory):
+		if is_instance_valid(_inventory_ref) and _inventory_ref.hand_item_changed.is_connected(_actualizar_huecos_manos):
+			_inventory_ref.hand_item_changed.disconnect(_actualizar_huecos_manos)
 		_inventory_ref = nuevo_inventory
 		_hotbar_node.configurar_inventario(nuevo_inventory)
+		if not _inventory_ref.hand_item_changed.is_connected(_actualizar_huecos_manos):
+			_inventory_ref.hand_item_changed.connect(_actualizar_huecos_manos)
+		_actualizar_huecos_manos("", 0, {})
 	if mission_manager != null:
 		_conectar_senales_misiones()
 	if is_inside_tree():
@@ -107,6 +114,7 @@ func _ready() -> void:
 
 	_configurar_referencias_ui()
 	_crear_selector_manos()
+	_crear_huecos_manos()
 	_preparar_location()
 	_preparar_aviso_descubrimiento()
 	_preparar_panel_interaccion()
@@ -1064,6 +1072,72 @@ func esta_mostrando_panel_interaccion() -> bool:
 	return _interaction_panel_open or _mission_panel_open
 
 
+func _crear_huecos_manos() -> void:
+	_left_hand_display = _crear_hueco_mano("LeftHandSlot", "Q")
+	_right_hand_display = _crear_hueco_mano("RightHandSlot", "E")
+	_actualizar_huecos_manos("", 0, {})
+
+
+func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
+	var slot := Button.new()
+	slot.name = nombre
+	slot.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	slot.anchor_left = 0.5
+	slot.anchor_right = 0.5
+	slot.anchor_top = 1.0
+	slot.anchor_bottom = 1.0
+	slot.offset_top = -72.0
+	slot.offset_bottom = -24.0
+	slot.offset_left = -207.0 if tecla == "Q" else 159.0
+	slot.offset_right = -159.0 if tecla == "Q" else 207.0
+	slot.custom_minimum_size = Vector2(48, 48)
+	slot.focus_mode = Control.FOCUS_NONE
+	slot.mouse_filter = Control.MOUSE_FILTER_STOP
+	slot.expand_icon = true
+	slot.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	slot.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
+	slot.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
+	slot.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
+	slot.add_theme_stylebox_override("focus", _estilo_hueco_mano(false))
+	slot.tooltip_text = "Mano " + ("izquierda" if tecla == "Q" else "derecha") + " (" + tecla + ")"
+	var numero := Label.new()
+	numero.name = "HandKey"
+	numero.text = tecla
+	numero.position = Vector2(4, 2)
+	numero.size = Vector2(14, 12)
+	numero.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	numero.add_theme_font_size_override("font_size", 9)
+	numero.add_theme_color_override("font_color", Color(0.72, 0.64, 0.50, 1))
+	slot.add_child(numero)
+	add_child(slot)
+	return slot
+
+
+func _estilo_hueco_mano(seleccionado: bool) -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.34, 0.27, 0.14, 1.0) if seleccionado else Color(0.18, 0.115, 0.07, 0.98)
+	estilo.set_border_width_all(2)
+	estilo.border_color = Color(0.74, 0.62, 0.34, 1.0) if seleccionado else Color(0.42, 0.29, 0.17, 1.0)
+	estilo.set_corner_radius_all(3)
+	return estilo
+
+
+func _actualizar_huecos_manos(_mano: String, _slot_index: int, _datos: Dictionary) -> void:
+	if not is_instance_valid(_inventory_ref):
+		return
+	_actualizar_hueco_mano(_left_hand_display, "izquierda")
+	_actualizar_hueco_mano(_right_hand_display, "derecha")
+
+
+func _actualizar_hueco_mano(slot: Button, mano: String) -> void:
+	if not is_instance_valid(slot) or not is_instance_valid(_inventory_ref):
+		return
+	var datos: Dictionary = _inventory_ref.obtener_objeto_mano_activa(mano)
+	slot.icon = ItemIconResolver.obtener_icono(datos) if not datos.is_empty() else null
+	slot.text = "" if not datos.is_empty() else "—"
+	slot.tooltip_text = ("Mano izquierda (Q): " if mano == "izquierda" else "Mano derecha (E): ") + str(datos.get("nombre", "Vacía"))
+
+
 func _crear_selector_manos() -> void:
 	_hand_selector = PanelContainer.new()
 	_hand_selector.name = "HandItemSelector"
@@ -1158,6 +1232,22 @@ func _al_pulsar_selector_mano(indice: int) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var hand_key := event as InputEventKey
+		# Capturar Tab en _input para evitar que otro control consuma la entrada.
+		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_TAB:
+			var inventory_node := get_tree().get_first_node_in_group("inventory")
+			if inventory_node != null and inventory_node.has_method("toggle"):
+				inventory_node.call("toggle")
+				get_viewport().set_input_as_handled()
+				return
+		# Con Q/E mantenida, 1–6 selecciona esa mano y no la hotbar.
+		if hand_key.pressed and not hand_key.echo and not _hand_selector_activo.is_empty() and hand_key.keycode >= KEY_1 and hand_key.keycode <= KEY_6:
+			var indice_mano := hand_key.keycode - KEY_1
+			if is_instance_valid(_inventory_ref):
+				_inventory_ref.seleccionar_slot_mano(_hand_selector_activo, indice_mano)
+			_hand_selector_activo = ""
+			_hand_selector.visible = false
+			get_viewport().set_input_as_handled()
+			return
 		if hand_key.keycode == KEY_Q or hand_key.keycode == KEY_E:
 			if hand_key.pressed and not hand_key.echo:
 				if _hand_selector_activo.is_empty() and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
