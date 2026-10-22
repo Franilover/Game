@@ -307,7 +307,16 @@ vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="DeleteButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText" unique_id=3001000002]
+custom_minimum_size = Vector2(100, 38)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
+theme_override_colors/font_hover_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBox_nav_unselected")
+theme_override_styles/hover = SubResource("StyleBox_nav_hovered")
+theme_override_styles/pressed = SubResource("StyleBox_nav_selected")
+theme_override_styles/focus = SubResource("StyleBox_tab_focus")
 text = "ELIMINAR OBJETO"
 disabled = true
 
