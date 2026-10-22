@@ -222,14 +222,7 @@ func _inicializar_mundo() -> void:
 	# Los atlas se registran antes del primer frame; ahora que TileMapDual
 	# terminó _ready(), leer sus reglas una única vez antes de pintar terreno.
 	if terrain.visual != null:
-		if terrain.visual.has_method("finalizar_preparacion_renderer"):
-			terrain.visual.call("finalizar_preparacion_renderer")
-		else:
-			push_warning(
-				"WorldGenerator: WorldTerrainVisual no expone "
-				+ "finalizar_preparacion_renderer(); se conserva la preparación "
-				+ "del renderer de la versión restaurada."
-			)
+		terrain.visual.finalizar_preparacion_renderer()
 
 	# El chunk inicial también entra al pipeline incremental. No usar
 	# generar_chunk_completo() aquí: esa función es síncrona y puede mantener
