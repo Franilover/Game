@@ -371,18 +371,34 @@ func _es_arma(
 	if tipo == "arma":
 		return true
 
-	# Compatibilidad con partidas antiguas.
+	# Compatibilidad con partidas antiguas y objetos cuyo tipo de catálogo
+	# es genérico, pero cuya clasificación canónica sí declara que son armas.
 	if bool(objeto.get("es_arma", false)):
 		return true
 
-	var categoria: String = str(
-		objeto.get(
-			"categoria",
-			""
-		)
-	).strip_edges().to_lower()
+	var categorias: Array[String] = []
+	for clave in ["categoria", "categoria_canonica"]:
+		var valor := str(objeto.get(clave, "")).strip_edges().to_lower()
+		if not valor.is_empty():
+			categorias.append(valor)
 
-	return "arma" in categoria
+	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
+	if tipo_objeto_variant is Dictionary:
+		var tipo_objeto := tipo_objeto_variant as Dictionary
+		var categoria_tipo := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
+		if not categoria_tipo.is_empty():
+			categorias.append(categoria_tipo)
+		var plantilla_variant: Variant = tipo_objeto.get("plantilla", {})
+		if plantilla_variant is Dictionary:
+			var categoria_plantilla := str((plantilla_variant as Dictionary).get("categoria", "")).strip_edges().to_lower()
+			if not categoria_plantilla.is_empty():
+				categorias.append(categoria_plantilla)
+
+	for categoria in categorias:
+		if "arma" in categoria:
+			return true
+
+	return false
 
 
 func _atacar_desarmado() -> void:
