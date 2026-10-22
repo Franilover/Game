@@ -581,20 +581,32 @@ func _obtener_modo_ataque(
 			if not categoria_plantilla.is_empty():
 				categorias.append(categoria_plantilla)
 
-	# También aceptar la declaración explícita de modalidad en propiedades
-	# del objeto, sin depender del nombre visible del arma.
+	# El catálogo puede declarar el arco por modalidad, subtipo o familia.
+	# Revisar todas las etiquetas conocidas evita que una categoría genérica
+	# ("arma") haga que un arco termine ejecutando el ataque cuerpo a cuerpo.
 	var propiedades := _obtener_propiedades_game(arma)
-	for clave_modo in ["modo_ataque", "tipo_ataque", "modalidad_ataque", "modo_combate"]:
-		var modo_explicito := str(propiedades.get(clave_modo, "")).strip_edges().to_lower()
-		if modo_explicito in ["distancia", "ranged", "proyectil", "arma_distancia", "arma_a_distancia"]:
-			return "distancia"
-		if "proyectil" in modo_explicito or "distancia" in modo_explicito:
-			return "distancia"
+	var etiquetas: Array[String] = categorias.duplicate()
+	for fuente_variant in [arma, tipo_objeto_variant, propiedades]:
+		if not fuente_variant is Dictionary:
+			continue
+		var fuente := fuente_variant as Dictionary
+		for clave in [
+			"modo_ataque", "tipo_ataque", "modalidad_ataque", "modo_combate",
+			"tipo_arma", "clase_arma", "subtipo_arma", "familia_arma",
+			"tipo", "clase", "subtipo", "familia", "categoria"
+		]:
+			var etiqueta := str(fuente.get(clave, "")).strip_edges().to_lower()
+			if not etiqueta.is_empty():
+				etiquetas.append(etiqueta)
 
-	# El catálogo puede usar variantes como "armas_a_distancia" o
-	# "arma_proyectiles"; no depender de una única etiqueta literal.
-	for categoria in categorias:
-		if "proyectil" in categoria or "distancia" in categoria:
+	for etiqueta in etiquetas:
+		if (
+			"distancia" in etiqueta
+			or "proyectil" in etiqueta
+			or "ranged" in etiqueta
+			or "arco" in etiqueta
+			or etiqueta == "bow"
+		):
 			return "distancia"
 
 	return "cuerpo"
