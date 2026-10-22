@@ -157,11 +157,11 @@ func _draw() -> void:
 
 	var posicion_jugador := Vector2(
 		mapa_rect.position.x
-		+ float(centro.x - inicio_x) * MAP_TILE_PIXELS
-		+ MAP_TILE_PIXELS * 0.5,
+		+ float(centro.x - inicio_x) * tile_pixels
+		+ tile_pixels * 0.5,
 		mapa_rect.position.y
-		+ float(centro.y - inicio_y) * MAP_TILE_PIXELS
-		+ MAP_TILE_PIXELS * 0.5
+		+ float(centro.y - inicio_y) * tile_pixels
+		+ tile_pixels * 0.5
 	)
 
 	draw_circle(
