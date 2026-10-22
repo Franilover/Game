@@ -35,7 +35,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
-	_cent ro_inicializar()
+	_centro_inicializar()
 
 func _centro_inicializar() -> void:
 	_centro = get_viewport_rect().size * 0.5
