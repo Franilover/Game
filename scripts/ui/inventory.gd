@@ -368,17 +368,15 @@ func _crear_slots() -> void:
 
 
 func actualizar() -> void:
-	for i in range(slot_nodes.size()):
-		var slot := slot_nodes[i]
-
-		if i >= items.size():
+	for slot in slot_nodes:
+		var indice_datos := _indice_datos_de_slot(slot)
+		if indice_datos < 0 or indice_datos >= items.size():
 			slot.limpiar()
 			continue
-
-		if items[i].is_empty():
+		if items[indice_datos].is_empty():
 			slot.limpiar()
 		else:
-			slot.configurar(items[i])
+			slot.configurar(items[indice_datos])
 
 
 func _indice_datos_desde_visual(visual_index: int) -> int:
