@@ -195,7 +195,12 @@ func _al_recibir_catalogo(
 		var item := (item_variant as Dictionary).duplicate(true)
 
 		item["item_id"] = str(fila_game.get("item_id", item.get("id", "")))
-		var tipo_objeto_variant: Variant = item.get("tipo_objeto", null)
+		# tipo_objeto se selecciona como campo hermano de item en la consulta
+		# PostgREST; no necesariamente viene dentro de la fila items anidada.
+		var tipo_objeto_variant: Variant = fila_game.get(
+			"tipo_objeto",
+			item.get("tipo_objeto", null)
+		)
 		if tipo_objeto_variant is Dictionary:
 			item["tipo_objeto"] = (tipo_objeto_variant as Dictionary).duplicate(true)
 		else:
