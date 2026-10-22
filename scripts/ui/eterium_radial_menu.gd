@@ -166,13 +166,24 @@ func _usar_conjuro() -> void:
 		_notificar("El sistema de IUMs no está disponible.")
 		return
 	if ium_manager.has_method("usar_proceso_equipado"):
-		var objetivo: Node = null
-		if jugador != null and jugador.has_method("obtener_objetivo_combate"):
-			objetivo = jugador.call("obtener_objetivo_combate")
-			if objetivo != null:
-				_ium_manager_usar_conjuro(objetivo)
-				return
-		_ium_manager_usar_conjuro(null)
+		var objetivo := _buscar_objetivo_cercano()
+		_ium_manager_usar_conjuro(objetivo)
+
+func _buscar_objetivo_cercano() -> Node:
+	if jugador == null or not is_instance_valid(jugador):
+		return null
+	var mejor: Node = null
+	var mejor_distancia := 160.0
+	for candidato in get_tree().get_nodes_in_group("creatures"):
+		if candidato == null or not is_instance_valid(candidato):
+			continue
+		if not candidato is Node2D or not bool(candidato.get("is_alive")):
+			continue
+		var distancia := (candidato as Node2D).global_position.distance_to((jugador as Node2D).global_position)
+		if distancia <= mejor_distancia:
+			mejor_distancia = distancia
+			mejor = candidato
+	return mejor
 
 func _ium_manager_usar_conjuro(objetivo: Node) -> void:
 	if ium_manager.has_method("usar_proceso_equipado"):
