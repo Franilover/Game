@@ -44,11 +44,11 @@ var _mission_panel_open: bool = false
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 
-@onready var _health_bar_node: ProgressBar = $BottomLeft/HealthBar
+@onready var _health_bar_node: ProgressBar = $HealthBar
 @onready var _health_value_node: Label = $BottomLeft/HealthValue
 @onready var _stamina_bar_node: ProgressBar = $BottomLeft/StaminaBar
 @onready var _stamina_value_node: Label = $BottomLeft/StaminaValue
-@onready var _eterium_bar_node: ProgressBar = $BottomRight/EteriumBar
+@onready var _eterium_bar_node: ProgressBar = $EteriumBar
 @onready var _eterium_value_node: Label = $BottomRight/EteriumValue
 @onready var _interaction_prompt_node: PanelContainer = $InteractionPrompt
 @onready var _interaction_prompt_action_node: Label = $InteractionPrompt/Margin/Content/Action
