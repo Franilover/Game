@@ -23,6 +23,7 @@ var health_value: Label = null
 
 var stamina_bar: ProgressBar = null
 var stamina_value: Label = null
+var _stamina_pips: Array[Panel] = []
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
@@ -166,7 +167,46 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+func _preparar_puntos_dash() -> void:
+	if not is_instance_valid(_stamina_bar_node):
+		return
+	_stamina_bar_node.visible = false
+	_stamina_value_node.visible = false
+	var contenedor := HBoxContainer.new()
+	contenedor.name = "DashCharges"
+	contenedor.position = Vector2(42.0, 41.0)
+	contenedor.size = Vector2(88.0, 20.0)
+	contenedor.add_theme_constant_override("separation", 8)
+	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$BottomLeft.add_child(contenedor)
+	for i in range(3):
+		var pip := Panel.new()
+		pip.name = "DashCharge" + str(i + 1)
+		pip.custom_minimum_size = Vector2(15.0, 15.0)
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		contenedor.add_child(pip)
+		_stamina_pips.append(pip)
+	_actualizar_puntos_dash(3.0, 3.0)
+
+func _actualizar_puntos_dash(actual: float, maximo: float) -> void:
+	for i in range(_stamina_pips.size()):
+		var pip := _stamina_pips[i]
+		var activo := float(i) < actual
+		var estilo := StyleBoxFlat.new()
+		estilo.bg_color = Color(0.78, 0.66, 0.46, 1.0) if activo else Color(0.075, 0.05, 0.035, 0.95)
+		estilo.border_width_left = 2
+		estilo.border_width_top = 2
+		estilo.border_width_right = 2
+		estilo.border_width_bottom = 2
+		estilo.border_color = Color(0.93, 0.84, 0.65, 1.0) if activo else Color(0.29, 0.19, 0.12, 1.0)
+		estilo.corner_radius_top_left = 8
+		estilo.corner_radius_top_right = 8
+		estilo.corner_radius_bottom_left = 8
+		estilo.corner_radius_bottom_right = 8
+		pip.add_theme_stylebox_override("panel", estilo)
+
 func _configurar_referencias_ui() -> void:
+	_preparar_puntos_dash()
 	health_bar = _health_bar_node
 	health_value = _health_value_node
 	stamina_bar = _stamina_bar_node
@@ -262,12 +302,7 @@ func _al_recibir_cambio_vida(actual: int, maximo: int) -> void:
 
 
 func _al_recibir_cambio_stamina(actual: float, maximo: float) -> void:
-	_actualizar_barra_float(
-		stamina_bar,
-		stamina_value,
-		actual,
-		maximo
-	)
+	_actualizar_puntos_dash(actual, maximo)
 
 
 func _al_recibir_cambio_mana(actual: int, maximo: int) -> void:
@@ -313,12 +348,7 @@ func _actualizar_stamina() -> void:
 		100.0
 	)
 
-	_actualizar_barra_float(
-		stamina_bar,
-		stamina_value,
-		stamina_actual,
-		stamina_maxima
-	)
+	_actualizar_puntos_dash(stamina_actual, stamina_maxima)
 
 
 func _actualizar_eterium() -> void:
