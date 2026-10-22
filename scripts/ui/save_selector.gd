@@ -55,11 +55,6 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 	title.add_theme_font_size_override("font_size", 16)
 	info.add_child(title)
 
-	var detail := Label.new()
-	detail.text = _texto_detalle(partida)
-	detail.add_theme_font_size_override("font_size", 10)
-	info.add_child(detail)
-
 	var play := Button.new()
 	play.text = "Jugar"
 	play.custom_minimum_size = Vector2(90, 42)
@@ -77,29 +72,6 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 	row.add_child(delete)
 
 	list_container.add_child(panel)
-
-
-func _texto_detalle(partida: Dictionary) -> String:
-	var minutos := int(
-		float(partida.get("play_time", 0.0)) / 60.0
-	)
-	var horas := minutos / 60
-	var minutos_restantes := minutos % 60
-
-	var tiempo := "Tiempo: " + str(horas) + " h " + str(
-		minutos_restantes
-	) + " min"
-
-	var actualizado := str(
-		partida.get("actualizado_en", "")
-	)
-
-	var semilla := str(partida.get("semilla", "—"))
-
-	return (
-		tiempo + "    ·    Semilla: " + semilla
-		+ "    ·    Último guardado: " + actualizado
-	)
 
 
 func _jugar_partida(id: String) -> void:
