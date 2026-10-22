@@ -84,12 +84,17 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 		game_state = nuevo_game_state
 		_conectar_senal_game_state()
 	if nuevo_inventory != null and is_instance_valid(nuevo_inventory):
-		if is_instance_valid(_inventory_ref) and _inventory_ref.hand_item_changed.is_connected(_actualizar_huecos_manos):
-			_inventory_ref.hand_item_changed.disconnect(_actualizar_huecos_manos)
+		if is_instance_valid(_inventory_ref):
+			if _inventory_ref.hand_item_changed.is_connected(_actualizar_huecos_manos):
+				_inventory_ref.hand_item_changed.disconnect(_actualizar_huecos_manos)
+			if _inventory_ref.inventory_changed.is_connected(_al_cambiar_inventario_manos):
+				_inventory_ref.inventory_changed.disconnect(_al_cambiar_inventario_manos)
 		_inventory_ref = nuevo_inventory
 		_hotbar_node.configurar_inventario(nuevo_inventory)
 		if not _inventory_ref.hand_item_changed.is_connected(_actualizar_huecos_manos):
 			_inventory_ref.hand_item_changed.connect(_actualizar_huecos_manos)
+		if not _inventory_ref.inventory_changed.is_connected(_al_cambiar_inventario_manos):
+			_inventory_ref.inventory_changed.connect(_al_cambiar_inventario_manos)
 		_actualizar_huecos_manos("", 0, {})
 	if mission_manager != null:
 		_conectar_senales_misiones()
@@ -1120,6 +1125,10 @@ func _estilo_hueco_mano(seleccionado: bool) -> StyleBoxFlat:
 	estilo.border_color = Color(0.74, 0.62, 0.34, 1.0) if seleccionado else Color(0.42, 0.29, 0.17, 1.0)
 	estilo.set_corner_radius_all(3)
 	return estilo
+
+
+func _al_cambiar_inventario_manos() -> void:
+	_actualizar_huecos_manos("", 0, {})
 
 
 func _actualizar_huecos_manos(_mano: String, _slot_index: int, _datos: Dictionary) -> void:
