@@ -43,6 +43,20 @@ func _run() -> void:
 		if layer == null or layer.tile_set == null:
 			_fail("Missing TileMapDual for zone %d." % zone)
 			return
+		# Regression: Pradera has authored opaque overhang pixels outside
+		# some mask quadrants, so it must draw after Tierra. Keep all other
+		# zone priorities unchanged; this is a draw-order rule, not an atlas crop.
+		var expected_z := -4095 + zone
+		if zone == 0:
+			expected_z = -4094
+		elif zone == 1:
+			expected_z = -4095
+		if layer.z_index != expected_z:
+			_fail(
+				"Unexpected draw order for zone %d: expected z_index %d, got %d."
+				% [zone, expected_z, layer.z_index]
+			)
+			return
 		if layer.tile_set.get_source_count() != 1:
 			_fail("Zone %d must have exactly one atlas source." % zone)
 			return
