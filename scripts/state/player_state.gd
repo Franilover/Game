@@ -28,7 +28,12 @@ func to_dictionary() -> Dictionary:
 func from_dictionary(data: Dictionary) -> void:
 	health = int(data.get("health", 100))
 	mana = int(data.get("mana", 100))
-	stamina = float(data.get("stamina", 100.0))
+	var stamina_guardada := float(data.get("stamina", 3.0))
+	# Compatibilidad con partidas antiguas que guardaban stamina en escala 0..100.
+	if stamina_guardada > 3.0:
+		stamina = clampf(roundf(stamina_guardada / 100.0 * 3.0), 0.0, 3.0)
+	else:
+		stamina = clampf(roundf(stamina_guardada), 0.0, 3.0)
 	position_valida = bool(data.get("position_valid", false))
 	tile_valido = bool(data.get("tile_valid", false))
 
