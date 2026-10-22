@@ -46,6 +46,7 @@ func _crear_interfaz() -> void:
 	margin.add_child(column)
 
 	var tabs := HBoxContainer.new()
+	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tabs.add_theme_constant_override("separation", 4)
 	column.add_child(tabs)
 
@@ -152,6 +153,7 @@ func _crear_interfaz() -> void:
 func _configurar_boton_seccion(boton: Button) -> void:
 	boton.custom_minimum_size = Vector2(0, 32)
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.size_flags_stretch_ratio = 1.0
 	boton.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1))
 	boton.add_theme_color_override("font_hover_color", Color(0.9, 0.79, 0.58, 1))
 	boton.add_theme_color_override("font_pressed_color", Color(0.95, 0.88, 0.7, 1))
