@@ -18,6 +18,8 @@ static var _rutas_por_nombre: Dictionary = {}
 static var _nombres_sin_icono: Dictionary = {}
 static var _texturas_por_ruta: Dictionary = {}
 static var _entradas: Array[Dictionary] = []
+static var _regex_tokens: RegEx = RegEx.new()
+static var _regex_tokens_compilado: bool = false
 
 
 static func obtener_icono(
@@ -200,13 +202,13 @@ static func _normalizar_tokens(
 	texto = texto.replace("ü", "u")
 	texto = texto.replace("ñ", "n")
 
-	var regex := RegEx.new()
+	if not _regex_tokens_compilado:
+		var error_regex := _regex_tokens.compile("[^a-z0-9]+")
+		if error_regex != OK:
+			return []
+		_regex_tokens_compilado = true
 
-	regex.compile(
-		"[^a-z0-9]+"
-	)
-
-	texto = regex.sub(
+	texto = _regex_tokens.sub(
 		texto,
 		" ",
 		true
