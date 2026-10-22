@@ -115,11 +115,13 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="Panel" type="Panel" parent="BottomLeft" unique_id=1867830797]
+visible = false
 layout_mode = 0
 offset_right = 187.0
 offset_bottom = 83.0
 
 [node name="HeartIcon" type="TextureRect" parent="BottomLeft" unique_id=314292848]
+visible = false
 layout_mode = 0
 offset_right = 34.0
 offset_bottom = 34.0
@@ -135,12 +137,12 @@ offset_right = 38.0
 offset_bottom = 34.0
 texture = ExtResource("2_bo48s")
 
-[node name="HealthBar" type="ProgressBar" parent="BottomLeft" unique_id=725132572]
+[node name="HealthBar" type="ProgressBar" parent="." unique_id=725132572]
 layout_mode = 0
-offset_left = 40.0
-offset_top = 9.0
-offset_right = 170.0
-offset_bottom = 18.0
+offset_left = -203.0
+offset_top = -99.0
+offset_right = 0.0
+offset_bottom = -89.0
 mouse_filter = 2
 theme_override_styles/background = SubResource("StyleBox_bar_background")
 theme_override_styles/fill = SubResource("StyleBox_health")
@@ -148,6 +150,7 @@ value = 100.0
 show_percentage = false
 
 [node name="HealthValue" type="Label" parent="BottomLeft" unique_id=463424342]
+visible = false
 layout_mode = 0
 offset_left = 40.0
 offset_top = 19.0
@@ -198,11 +201,13 @@ grow_horizontal = 0
 grow_vertical = 0
 
 [node name="Panel" type="Panel" parent="BottomRight" unique_id=1533357122]
+visible = false
 layout_mode = 0
 offset_right = 193.0
 offset_bottom = 48.0
 
 [node name="EteriumIcon" type="TextureRect" parent="BottomRight" unique_id=1207176790]
+visible = false
 layout_mode = 0
 offset_left = 155.0
 offset_top = -1.0
@@ -213,12 +218,12 @@ texture = ExtResource("3_8qguk")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="EteriumBar" type="ProgressBar" parent="BottomRight" unique_id=316854426]
+[node name="EteriumBar" type="ProgressBar" parent="." unique_id=316854426]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 9.0
-offset_right = 151.0
-offset_bottom = 23.0
+offset_left = 0.0
+offset_top = -99.0
+offset_right = 205.0
+offset_bottom = -89.0
 mouse_filter = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_136eg")
 theme_override_styles/fill = SubResource("StyleBox_eterium")
@@ -226,6 +231,7 @@ value = 100.0
 show_percentage = false
 
 [node name="EteriumValue" type="Label" parent="BottomRight" unique_id=1948058690]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
