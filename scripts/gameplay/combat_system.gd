@@ -584,12 +584,17 @@ func _obtener_modo_ataque(
 	# También aceptar la declaración explícita de modalidad en propiedades
 	# del objeto, sin depender del nombre visible del arma.
 	var propiedades := _obtener_propiedades_game(arma)
-	var modo_explicito := str(propiedades.get("modo_ataque", propiedades.get("tipo_ataque", ""))).strip_edges().to_lower()
-	if modo_explicito in ["distancia", "ranged", "proyectil", "arma_distancia"]:
-		return "distancia"
+	for clave_modo in ["modo_ataque", "tipo_ataque", "modalidad_ataque", "modo_combate"]:
+		var modo_explicito := str(propiedades.get(clave_modo, "")).strip_edges().to_lower()
+		if modo_explicito in ["distancia", "ranged", "proyectil", "arma_distancia", "arma_a_distancia"]:
+			return "distancia"
+		if "proyectil" in modo_explicito or "distancia" in modo_explicito:
+			return "distancia"
 
+	# El catálogo puede usar variantes como "armas_a_distancia" o
+	# "arma_proyectiles"; no depender de una única etiqueta literal.
 	for categoria in categorias:
-		if categoria in ["arma_distancia", "arma_a_distancia", "arma_proyectil"]:
+		if "proyectil" in categoria or "distancia" in categoria:
 			return "distancia"
 
 	return "cuerpo"
