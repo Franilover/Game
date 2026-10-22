@@ -160,7 +160,21 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 			if item_variant is Dictionary and not (item_variant as Dictionary).is_empty():
 				inventory_controller.equipar(slot, (item_variant as Dictionary).duplicate(true))
 
+	# El estado de runtime ya cambió; notificar a la hotbar/HUD después de
+	# reconstruir los slots para que la carga no dependa de una interacción.
 	actualizar()
+	_actualizar_slots_equipamiento()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+	call_deferred("_refrescar_interfaz_cargada")
+
+
+func _refrescar_interfaz_cargada() -> void:
+	if not is_inside_tree():
+		return
+	actualizar()
+	_actualizar_slots_equipamiento()
+	_emitir_objeto_activo()
 
 
 func _normalizar_capacidades_runtime() -> void:
