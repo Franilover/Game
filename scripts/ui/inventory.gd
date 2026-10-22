@@ -328,13 +328,15 @@ func _crear_slots() -> void:
 
 	slot_nodes.clear()
 
-	for i in range(slot_count):
+	for visual_index in range(slot_count):
 		var slot_node := SLOT_SCENE.instantiate()
 
 		if not slot_node is Button:
 			continue
 
 		var slot := slot_node as Button
+		var indice_datos := _indice_datos_desde_visual(visual_index)
+		slot.set_meta("inventory_index", indice_datos)
 
 		grid.add_child(slot)
 
@@ -375,8 +377,22 @@ func actualizar() -> void:
 			slot.configurar(items[i])
 
 
+func _indice_datos_desde_visual(visual_index: int) -> int:
+	# Presentación vertical por columnas: izquierda, mochila, derecha.
+	# El almacenamiento permanece agrupado por función: 0–5, 6–11, 12–17.
+	var columna := visual_index % 3
+	var fila := int(visual_index / 3)
+	return columna * 6 + fila
+
+
+func _indice_datos_de_slot(slot: Button) -> int:
+	if slot != null and slot.has_meta("inventory_index"):
+		return int(slot.get_meta("inventory_index"))
+	return -1
+
+
 func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
-	var indice_destino: int = slot_nodes.find(slot)
+	var indice_destino: int = _indice_datos_de_slot(slot)
 	var indice_origen: int = int(datos_arrastre.get("indice", -1))
 	if indice_origen < 0 or indice_destino < 0:
 		return
@@ -386,7 +402,7 @@ func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
 		_emitir_objeto_activo()
 
 func _al_iniciar_arrastre(slot: Button, datos: Dictionary) -> void:
-	_arrastre_indice = slot_nodes.find(slot)
+	_arrastre_indice = _indice_datos_de_slot(slot)
 	_arrastre_datos = datos.duplicate(true)
 
 
@@ -437,7 +453,7 @@ func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
 
 
 func _al_seleccionar_slot(slot: Button) -> void:
-	var indice := slot_nodes.find(slot)
+	var indice := _indice_datos_de_slot(slot)
 
 	if indice < 0:
 		return
