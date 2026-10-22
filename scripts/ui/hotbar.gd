@@ -2,7 +2,7 @@ extends Control
 class_name InventoryHotbar
 
 
-const SLOT_COUNT: int = 8
+const SLOT_COUNT: int = 6
 
 
 var indice_seleccionado: int = 0
@@ -50,7 +50,7 @@ func _unhandled_input(
 
 		if (
 			key_event.keycode >= KEY_1
-			and key_event.keycode <= KEY_8
+			and key_event.keycode <= KEY_6
 		):
 			seleccionar_hotbar(
 				key_event.keycode - KEY_1
