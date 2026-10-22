@@ -138,10 +138,10 @@ func _get_drag_data(_position: Vector2) -> Variant:
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_drag_preview(preview)
-	arrastre_iniciado.emit(self, datos.duplicate(true))
+	arrastre_iniciado.emit(self, datos)
 
 	return {
 		"tipo": "inventario_objeto",
 		"indice": get_index(),
-		"datos": datos.duplicate(true)
+		"datos": datos
 	}
