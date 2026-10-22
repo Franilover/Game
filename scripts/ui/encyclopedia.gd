@@ -443,13 +443,37 @@ func _mostrar_ficha_criatura(
 	registro: Dictionary,
 	partes: Array[String]
 ) -> void:
-	var nombre_criatura := str(registro.get("nombre", ""))
-	var ruta_imagen := "res://assets/art/creatures/" + nombre_criatura + ".png"
-	if ResourceLoader.exists(ruta_imagen):
-		var textura := load(ruta_imagen) as Texture2D
-		if textura != null:
+	var nombre_criatura := str(registro.get("nombre", "")).strip_edges()
+	var rutas_sprite: Array[String] = []
+	if not nombre_criatura.is_empty():
+		# Mismo orden de búsqueda que Creature: sprite estático primero,
+		# hoja de caminar como respaldo si no existe imagen estática.
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".png")
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".PNG")
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + ".png")
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + ".PNG")
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_Walking.png")
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_Walking.PNG")
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_walking.png")
+		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_walking.PNG")
+
+	for ruta_sprite in rutas_sprite:
+		if not ResourceLoader.exists(ruta_sprite):
+			continue
+		var textura := load(ruta_sprite) as Texture2D
+		if textura == null:
+			continue
+		# Las hojas de caminar se muestran como un solo fotograma en la ficha.
+		if ruta_sprite.to_lower().contains("_walking"):
+			var atlas := AtlasTexture.new()
+			atlas.atlas = textura
+			var frame_ancho := maxi(1, textura.get_width() / 4)
+			atlas.region = Rect2(0, 0, frame_ancho, textura.get_height())
+			_icono.texture = atlas
+		else:
 			_icono.texture = textura
-			_icono.visible = true
+		_icono.visible = true
+		break
 
 	partes.append("[color=#8f754f]Bioma:[/color] " + _obtener_biomas_de_criatura(id))
 	partes.append("[color=#8f754f]Ecosistema:[/color] " + _obtener_ecosistemas_de_criatura(id))
