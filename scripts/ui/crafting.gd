@@ -203,12 +203,30 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 
 	var boton := Button.new()
 	boton.custom_minimum_size = Vector2(100, 38)
+	boton.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1))
+	boton.add_theme_color_override("font_hover_color", Color(0.9, 0.79, 0.58, 1))
+	boton.add_theme_color_override("font_pressed_color", Color(0.95, 0.88, 0.7, 1))
+	boton.add_theme_font_size_override("font_size", 11)
+	boton.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.12, 0.075, 0.045, 0.95), Color(0.29, 0.19, 0.12, 1), 1))
+	boton.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
+	boton.add_theme_stylebox_override("pressed", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
+	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	boton.text = "CREAR"
 	boton.pressed.connect(func() -> void:
 		_craftear(receta)
 	)
 	fila.add_child(boton)
 
+
+func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = fondo
+	estilo.border_color = borde
+	estilo.set_border_width_all(1)
+	estilo.border_width_bottom = borde_inferior
+	estilo.corner_radius_top_left = 3
+	estilo.corner_radius_top_right = 3
+	return estilo
 
 func _texto_ingredientes(receta: Dictionary) -> String:
 	var partes: Array[String] = []
