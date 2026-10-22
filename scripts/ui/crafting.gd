@@ -289,7 +289,7 @@ func _actualizar_panel_detalle() -> void:
 			partes.append("[color=" + color + "]" + _nombre_item(item_id) + "  " + str(disponible) + "/" + str(cantidad) + "[/color]")
 	else:
 		partes.append("No hay materiales definidos.")
-	_detalle_ingredientes.text = "\\n".join(partes)
+	_detalle_ingredientes.text = "\n".join(partes)
 	_boton_craftear.disabled = _inventory == null or not _puede_craftear(_receta_seleccionada, inventario_disponible)
 
 
