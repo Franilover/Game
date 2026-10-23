@@ -898,10 +898,11 @@ func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 		return ""
 
 	if _es_reactivo_bosque() and candidato == jugador:
-		if _jugador_es_asesino_bosque():
-			return "atacar"
-		if _jugador_es_agresor_bosque() and _es_seiloris():
-			return "huir"
+		# En estas especies, la reacción al jugador depende de su conducta
+		# en el bosque; el perfil genérico no debe saltarse esa condición.
+		if _es_seiloris():
+			return "huir" if _jugador_es_agresor_bosque() else ""
+		return "atacar" if _jugador_es_asesino_bosque() else ""
 
 	if candidato is Creature and bool((candidato as Creature).get_meta("atractor_refugio", false)):
 		return "perseguir"
