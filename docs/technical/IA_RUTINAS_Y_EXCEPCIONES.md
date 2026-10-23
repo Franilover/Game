@@ -32,8 +32,10 @@ El selector normal comparte la misma resolución de respuesta que usa la máquin
 - Las respuestas reconocidas en este momento son `atacar`, `huir`, `perseguir` e `investigar`. Si la especie no decide qué hacer con un candidato, este no desplaza a una presa o amenaza relevante.
 - Las reglas de agresión del bosque terminan la evaluación del jugador cuando no se cumple su condición; el perfil general no puede saltarse esa protección.
 - Las ramas dedicadas a `proteger` y a buscar refugio conservan sus selectores propios.
+- Los ataques de contacto de los perfiles `generico`, `guardian` y `cazador` conservan el estado `ATACANDO` durante la aproximación y solo entran en recuperación cuando el manejador resuelve el golpe.
+- La actividad `proteger` ahora mantiene el ciclo de estados: inicia ataques al alcanzar contacto y procesa `ATACANDO`, `RECUPERANDO` y estados especiales por sus manejadores, en lugar de invocar el golpe fuera de su estado.
 
-Este cambio corrige la selección de objetivos en el código, pero aún requiere validación en Godot con escenarios de varias criaturas, jugador cercano, refugios y criaturas en descanso. No afirma que el comportamiento ya haya sido verificado en ejecución.
+La regresión `tests/creatures/test_creature_ai_target_policy.gd` cubre neutralidad del objetivo, conducta agresiva, condición del bosque y estados de ataque de contacto. El flujo de CI de Godot 4.7 ahora incluye esos tests cuando cambia la IA de criaturas. Aún no tengo un resultado de ejecución que permita declarar la prueba aprobada.
 
 ## Contrato de configuración actual
 
