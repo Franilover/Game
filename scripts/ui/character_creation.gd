@@ -85,13 +85,16 @@ func _configurar_layout_responsive() -> void:
 	creation_content.add_theme_constant_override("separation", 10 if compacto else 20)
 	creation_fields.custom_minimum_size.x = 0
 	appearance_container.custom_minimum_size.x = 0
-	skins.custom_minimum_size.y = 96 if compacto else 120
+	skins.custom_minimum_size.y = 58 if compacto else 76
+	skins.fixed_icon_size = Vector2i(32, 32) if compacto else Vector2i(40, 40)
+	skins.fixed_column_width = 42 if compacto else 50
+	skins.max_columns = 0
 	for slot in CharacterAppearance.SLOTS:
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
 		if lista != null:
-			lista.custom_minimum_size.y = 54 if compacto else 68
-			lista.fixed_icon_size = Vector2i(32, 32) if compacto else Vector2i(42, 42)
-			lista.fixed_column_width = 48 if compacto else 60
+			lista.custom_minimum_size.y = 38 if compacto else 46
+			lista.fixed_icon_size = Vector2i(24, 24) if compacto else Vector2i(30, 30)
+			lista.fixed_column_width = 30 if compacto else 36
 
 func open(action: String) -> void:
 	_action = action
@@ -262,7 +265,7 @@ func _construir_controles_personalizacion() -> void:
 
 		var etiqueta := Label.new()
 		etiqueta.text = str(CharacterAppearance.SLOT_LABELS[slot])
-		etiqueta.custom_minimum_size.x = 104
+		etiqueta.custom_minimum_size.x = 78
 		etiqueta.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		fila.add_child(etiqueta)
 
@@ -276,12 +279,12 @@ func _construir_controles_personalizacion() -> void:
 		lista.icon_mode = ItemList.ICON_MODE_TOP
 		lista.select_mode = ItemList.SELECT_SINGLE
 		lista.same_column_width = true
-		lista.add_item("Ninguno")
+		lista.add_item("")
 		lista.set_item_metadata(0, "")
 		for pieza in CharacterAppearance.catalogo(slot):
 			lista.add_icon_item(pieza["textura"], true)
 			var indice := lista.item_count - 1
-			lista.set_item_text(indice, str(pieza["nombre"]))
+			lista.set_item_text(indice, "")
 			lista.set_item_metadata(indice, str(pieza["ruta"]))
 		lista.select(0)
 		lista.item_selected.connect(_al_seleccionar_pieza.bind(slot))
@@ -289,7 +292,7 @@ func _construir_controles_personalizacion() -> void:
 		_personalizacion_items[slot] = lista
 
 		var selector_color := ColorPickerButton.new()
-		selector_color.custom_minimum_size = Vector2(34, 30)
+		selector_color.custom_minimum_size = Vector2(28, 26)
 		selector_color.color = _color_inicial(slot)
 		selector_color.tooltip_text = "Color de " + str(CharacterAppearance.SLOT_LABELS[slot]).to_lower()
 		selector_color.color_changed.connect(_al_cambiar_color_pieza.bind(slot))
