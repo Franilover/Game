@@ -33,6 +33,9 @@ func configurar(
 	nuevos_datos: Dictionary
 ) -> void:
 	datos = nuevos_datos.duplicate(true)
+	var nombre := str(datos.get("nombre", "Objeto"))
+	var descripcion := str(datos.get("descripcion", "")).strip_edges()
+	tooltip_text = nombre if descripcion.is_empty() else nombre + "\n" + descripcion
 
 	actualizar()
 
