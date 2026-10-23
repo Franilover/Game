@@ -16,6 +16,10 @@ var _hand_selector_buttons: Array[Button] = []
 var _hand_selector_activo: String = ""
 var _left_hand_display: Button = null
 var _right_hand_display: Button = null
+var _world_atmosphere_ref: WorldAtmosphere = null
+var _calendar_panel: PanelContainer = null
+var _calendar_label: Label = null
+var _calendar_elapsed: float = 0.0
 
 var mostrar_contexto_mundo: bool = false
 
@@ -122,6 +126,7 @@ func _ready() -> void:
 	_preparar_aviso_descubrimiento()
 	_preparar_panel_interaccion()
 	_preparar_panel_misiones()
+	_preparar_reloj_calendario()
 	_conectar_senales_misiones()
 
 	if location_panel:
@@ -157,6 +162,11 @@ func _process(delta: float) -> void:
 			_actualizar_contexto()
 	else:
 		_tiempo_contexto = 0.0
+
+	_calendar_elapsed += delta
+	if _calendar_elapsed >= 0.2:
+		_calendar_elapsed = 0.0
+		_actualizar_reloj_calendario()
 
 	if discovery_notice != null and discovery_notice.visible:
 		_discovery_notice_timer -= delta
@@ -1305,3 +1315,64 @@ func _input(event: InputEvent) -> void:
 		if key_event.keycode == KEY_ESCAPE:
 			cerrar_panel_interaccion()
 			get_viewport().set_input_as_handled()
+
+
+func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
+	_world_atmosphere_ref = atmosfera
+	_actualizar_reloj_calendario()
+
+
+func _preparar_reloj_calendario() -> void:
+	_calendar_panel = PanelContainer.new()
+	_calendar_panel.name = "CalendarClock"
+	_calendar_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_calendar_panel.anchor_left = 1.0
+	_calendar_panel.anchor_right = 1.0
+	_calendar_panel.anchor_top = 0.0
+	_calendar_panel.anchor_bottom = 0.0
+	_calendar_panel.offset_left = -174.0
+	_calendar_panel.offset_top = 12.0
+	_calendar_panel.offset_right = -12.0
+	_calendar_panel.offset_bottom = 82.0
+	_calendar_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_calendar_panel.z_index = 100
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.075, 0.05, 0.035, 0.88)
+	estilo.set_border_width_all(1)
+	estilo.border_color = Color(0.42, 0.29, 0.17, 1.0)
+	estilo.set_corner_radius_all(4)
+	estilo.content_margin_left = 10
+	estilo.content_margin_right = 10
+	estilo.content_margin_top = 6
+	estilo.content_margin_bottom = 6
+	_calendar_panel.add_theme_stylebox_override("panel", estilo)
+	_calendar_label = Label.new()
+	_calendar_label.name = "CalendarText"
+	_calendar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_calendar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_calendar_label.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
+	_calendar_label.add_theme_color_override("font_outline_color", Color(0.075, 0.05, 0.035, 1.0))
+	_calendar_label.add_theme_constant_override("outline_size", 2)
+	_calendar_label.add_theme_font_size_override("font_size", 11)
+	_calendar_label.text = "GARLIA\nCargando calendario…"
+	_calendar_panel.add_child(_calendar_label)
+	add_child(_calendar_panel)
+
+
+func _actualizar_reloj_calendario() -> void:
+	if not is_instance_valid(_calendar_label):
+		return
+	if not is_instance_valid(_world_atmosphere_ref):
+		_calendar_label.text = "GARLIA\nCalendario no disponible"
+		return
+	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
+	if not bool(tiempo.get("calendario_cargado", false)):
+		_calendar_label.text = "GARLIA\nCargando calendario…"
+		return
+	var hora := str(tiempo.get("hora", "--:--"))
+	var periodo := str(tiempo.get("periodo", ""))
+	var estacion := str(tiempo.get("estacion", "—"))
+	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
+	var anio := int(tiempo.get("anio", 0))
+	var fecha := "Día %d · %s" % [dia_estacion, estacion] if dia_estacion > 0 else estacion
+	_calendar_label.text = "%s   %s\n%s · Año %d" % [hora, periodo, fecha, anio]
