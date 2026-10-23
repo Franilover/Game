@@ -3,11 +3,14 @@ extends Control
 @onready var list_container: VBoxContainer = $Panel/Margin/Column/Scroll/Partidas
 @onready var status_label: Label = $Panel/Margin/Column/Status
 @onready var character_creation: Control = $CharacterCreation
+var _confirmacion_borrado: ConfirmationDialog
+var _id_pendiente_borrar: String = ""
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	actualizar_lista()
+	_configurar_confirmacion_borrado()
 	if not character_creation.confirmed.is_connected(_on_character_confirmed):
 		character_creation.confirmed.connect(_on_character_confirmed)
 	if not character_creation.cancelled.is_connected(_on_character_cancelled):
@@ -33,6 +36,7 @@ func actualizar_lista() -> void:
 
 func _crear_fila_partida(partida: Dictionary) -> void:
 	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.custom_minimum_size = Vector2(0, 68)
 
 	var margin := MarginContainer.new()
@@ -44,10 +48,12 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_child(row)
 
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.size_flags_stretch_ratio = 1.0
 	row.add_child(info)
 
 	var title := Label.new()
@@ -85,7 +91,28 @@ func _jugar_partida(id: String) -> void:
 		status_label.text = "No se pudo abrir la partida."
 
 
+func _configurar_confirmacion_borrado() -> void:
+	_confirmacion_borrado = ConfirmationDialog.new()
+	_confirmacion_borrado.title = "Eliminar mundo"
+	_confirmacion_borrado.dialog_text = "Esta acción no se puede deshacer."
+	_confirmacion_borrado.ok_button_text = "Eliminar mundo"
+	_confirmacion_borrado.cancel_button_text = "Conservar mundo"
+	_confirmacion_borrado.confirmed.connect(_confirmar_borrado_partida)
+	_confirmacion_borrado.exclusive = true
+	add_child(_confirmacion_borrado)
+
+
 func _eliminar_partida(id: String) -> void:
+	if id.is_empty() or _confirmacion_borrado == null:
+		return
+	_id_pendiente_borrar = id
+	_confirmacion_borrado.dialog_text = "¿Seguro que quieres borrar el mundo «%s»? Esta acción no se puede deshacer." % _nombre_partida(id)
+	_confirmacion_borrado.popup_centered()
+
+
+func _confirmar_borrado_partida() -> void:
+	var id := _id_pendiente_borrar
+	_id_pendiente_borrar = ""
 	if id.is_empty():
 		return
 
@@ -94,6 +121,13 @@ func _eliminar_partida(id: String) -> void:
 		status_label.text = "Partida eliminada."
 	else:
 		status_label.text = "No se pudo eliminar la partida."
+
+
+func _nombre_partida(id: String) -> String:
+	for partida in GameState.obtener_partidas():
+		if str(partida.get("id", "")) == id:
+			return str(partida.get("nombre", "Partida"))
+	return "Partida"
 
 
 func _on_create_pressed() -> void:
