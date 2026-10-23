@@ -57,29 +57,29 @@ func _actualizar_visibilidad() -> void:
 func _crear_ui() -> void:
 	var titulo_columna := VBoxContainer.new()
 	titulo_columna.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	titulo_columna.add_theme_constant_override("separation", 8)
+	titulo_columna.add_theme_constant_override("separation", 4)
 	add_child(titulo_columna)
 
 	var encabezado := HBoxContainer.new()
-	encabezado.add_theme_constant_override("separation", 6)
+	encabezado.add_theme_constant_override("separation", 3)
 	titulo_columna.add_child(encabezado)
 
 	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"]]:
 		var boton := Button.new()
 		boton.text = str(entrada[1])
 		boton.toggle_mode = true
-		boton.custom_minimum_size = Vector2(110, 30)
+		boton.custom_minimum_size = Vector2(0, 24)
 		boton.pressed.connect(_cambiar_modo.bind(str(entrada[0])))
 		encabezado.add_child(boton)
 		_botones[str(entrada[0])] = boton
 
 	var contenido := HBoxContainer.new()
 	contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_theme_constant_override("separation", 14)
+	contenido.add_theme_constant_override("separation", 5)
 	titulo_columna.add_child(contenido)
 
 	var izquierda := VBoxContainer.new()
-	izquierda.custom_minimum_size = Vector2(300, 0)
+	izquierda.custom_minimum_size = Vector2(90, 0)
 	izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	contenido.add_child(izquierda)
 
@@ -90,14 +90,14 @@ func _crear_ui() -> void:
 
 	_lista = VBoxContainer.new()
 	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista.custom_minimum_size = Vector2(0, 600)
-	_lista.add_theme_constant_override("separation", 3)
+	_lista.custom_minimum_size = Vector2(0, 300)
+	_lista.add_theme_constant_override("separation", 2)
 	scroll.add_child(_lista)
 
 	_detalle = VBoxContainer.new()
-	_detalle.custom_minimum_size = Vector2(280, 0)
+	_detalle.custom_minimum_size = Vector2(90, 0)
 	_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_detalle.add_theme_constant_override("separation", 7)
+	_detalle.add_theme_constant_override("separation", 4)
 	contenido.add_child(_detalle)
 
 	_estado = Label.new()
@@ -105,7 +105,7 @@ func _crear_ui() -> void:
 	_detalle.add_child(_estado)
 
 	_boton_accion = Button.new()
-	_boton_accion.custom_minimum_size = Vector2(0, 36)
+	_boton_accion.custom_minimum_size = Vector2(0, 26)
 	_boton_accion.pressed.connect(_ejecutar_accion)
 	_detalle.add_child(_boton_accion)
 
@@ -114,7 +114,7 @@ func _crear_ui() -> void:
 	_cantidad.max_value = 999
 	_cantidad.step = 1
 	_cantidad.value = 1
-	_cantidad.custom_minimum_size = Vector2(0, 32)
+	_cantidad.custom_minimum_size = Vector2(0, 24)
 	_cantidad.visible = false
 	_detalle.add_child(_cantidad)
 
