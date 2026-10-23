@@ -706,23 +706,39 @@ func _al_eliminar_seleccionado() -> void:
 
 
 func _mostrar_informacion() -> void:
-	var nombre := str(
-		objeto_seleccionado.get(
-			"nombre",
-			"Objeto"
-		)
-	)
+	var nombre := str(objeto_seleccionado.get("nombre", "Objeto"))
+	var lineas: PackedStringArray = []
+	var descripcion := str(objeto_seleccionado.get("descripcion", "")).strip_edges()
+	if not descripcion.is_empty():
+		lineas.append(descripcion)
 
-	var descripcion := str(
-		objeto_seleccionado.get(
-			"descripcion",
-			"Sin descripción."
-		)
-	)
+	var cantidad := int(objeto_seleccionado.get("cantidad", 1))
+	if cantidad > 1:
+		lineas.append("Cantidad: %d" % cantidad)
+
+	var propiedades_variant: Variant = objeto_seleccionado.get("propiedades_game", {})
+	if propiedades_variant is Dictionary:
+		var propiedades := propiedades_variant as Dictionary
+		var etiquetas := {
+			"durabilidad": "Durabilidad",
+			"dureza": "Dureza",
+			"fractura": "Fractura",
+			"composicion": "Composición",
+			"material": "Material",
+			"ranura_equipamiento": "Ranura"
+		}
+		for clave_variant in etiquetas.keys():
+			var clave := str(clave_variant)
+			if not propiedades.has(clave):
+				continue
+			var valor: Variant = propiedades.get(clave)
+			if valor == null or str(valor).strip_edges().is_empty():
+				continue
+			lineas.append("%s: %s" % [str(etiquetas[clave]), str(valor)])
 
 	item_name.text = nombre
-	item_description.text = ""
-	item_description.visible = false
+	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción ni propiedades adicionales registradas."
+	item_description.visible = true
 	delete_button.disabled = false
 
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
