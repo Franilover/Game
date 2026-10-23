@@ -5,8 +5,8 @@ class_name WorldMapUI
 const MAP_TILE_PIXELS_BASE: float = 8.0
 const MAP_TILE_PIXELS_MIN: float = 4.0
 const MAP_TILE_PIXELS_MAX: float = 24.0
-const VIEW_TILES_X: int = 91
-const VIEW_TILES_Y: int = 43
+const VIEW_TILES_X: int = 45
+const VIEW_TILES_Y: int = 24
 const EXPLORATION_RADIUS: int = 6
 
 var _world_context: WorldContext = null
@@ -101,12 +101,12 @@ func _draw() -> void:
 		true
 	)
 
-	var margen: float = 8.0
+	var margen: float = 4.0
 	var mapa_rect := Rect2(
 		margen,
-		32.0,
+		20.0,
 		size.x - margen * 2.0,
-		size.y - 40.0
+		size.y - 24.0
 	)
 
 	if mapa_rect.size.x <= 0.0 or mapa_rect.size.y <= 0.0:
