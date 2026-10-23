@@ -4,7 +4,6 @@ signal confirmed(config: Dictionary, action: String)
 signal cancelled
 
 var _action: String = ""
-var _skin_base: String = ""
 var _personalizacion: Dictionary = {}
 var _personalizacion_items: Dictionary = {}
 var _personalizacion_colores: Dictionary = {}
@@ -48,7 +47,6 @@ func _ready() -> void:
 		_update_confirm())
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
-	_cargar_skin_base()
 	_crear_vista_previa()
 	_construir_controles_personalizacion()
 	_actualizar_vista_previa()
@@ -150,40 +148,11 @@ func _on_species_loaded(data: Array) -> void:
 		status.text = "No hay especies jugables disponibles."
 	_update_confirm()
 
-func _cargar_skin_base() -> void:
-	# Se conserva un cuerpo base por compatibilidad; ya no hay selector de sprites completos.
-	_skin_base = ""
-	var directorio := DirAccess.open("res://assets/art/characters/skins/")
-	if directorio == null:
-		status.text = "No se encontró la carpeta de skins."
-		return
-	var archivos := directorio.get_files()
-	archivos.sort()
-	for nombre_archivo in archivos:
-		if nombre_archivo.get_extension().to_lower() not in ["png", "webp", "jpg", "jpeg"]:
-			continue
-		var ruta := "res://assets/art/characters/skins/" + nombre_archivo
-		if load(ruta) is Texture2D:
-			_skin_base = ruta
-			break
-	if _skin_base.is_empty():
-		status.text = "No se encontró un sprite base de personaje."
-	_actualizar_vista_previa()
-
-
-
 func _crear_vista_previa() -> void:
 	_preview_container = Control.new()
 	_preview_container.name = "VistaPreviaPersonaje"
 	_preview_container.custom_minimum_size = Vector2(0, 84)
 	_preview_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_preview_base = TextureRect.new()
-	_preview_base.name = "CuerpoBase"
-	_preview_base.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_preview_base.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_preview_base.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_preview_base.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_preview_container.add_child(_preview_base)
 	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
 		var capa := TextureRect.new()
 		capa.name = "Preview_" + slot
@@ -201,7 +170,6 @@ func _crear_vista_previa() -> void:
 func _actualizar_vista_previa() -> void:
 	if _preview_base == null:
 		return
-	_preview_base.texture = load(_skin_base) as Texture2D if not _skin_base.is_empty() else null
 	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
 		var capa: TextureRect = _preview_layers.get(slot) as TextureRect
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
@@ -365,14 +333,11 @@ func _update_confirm(_index: int = -1) -> void:
 	var name_ok: bool = not name_input.text.strip_edges().is_empty()
 	var gender_ok: bool = not gender.visible or gender.selected != 4 or not gender_free.text.strip_edges().is_empty()
 	var species_ok: bool = species.item_count > 0 and species.selected >= 0
-	var skin_ok: bool = not _skin_base.is_empty()
-	confirm_button.disabled = not (partida_name_ok and name_ok and gender_ok and species_ok and skin_ok)
+	confirm_button.disabled = not (partida_name_ok and name_ok and gender_ok and species_ok)
 
 func _on_confirm() -> void:
 	_update_confirm()
 	if confirm_button.disabled:
-		return
-	if _skin_base.is_empty():
 		return
 	var gender_value: String = gender.get_item_text(gender.selected)
 	if not gender.visible:
@@ -386,8 +351,6 @@ func _on_confirm() -> void:
 		"nombre": name_input.text.strip_edges(),
 		"genero": gender_value,
 		"especie": species_data.duplicate(true),
-		"skin": _skin_base,
-		"skin_nombre": _skin_base.get_file().get_basename(),
 		"personalizacion": _obtener_personalizacion()
 	}
 	visible = false
