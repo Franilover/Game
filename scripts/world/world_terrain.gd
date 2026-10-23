@@ -346,7 +346,9 @@ func iniciar_generacion_chunk(
 		if paused_coord == chunk_coord:
 			_generation_task = _paused_generation_task
 			_generation_task_coord_guard = paused_coord
-			_paused_generation_task.clear()
+			# Reasignar el contenedor pausado; clear() mutaría también la
+			# referencia compartida que acaba de recibir _generation_task.
+			_paused_generation_task = {}
 			_paused_generation_coord_guard = INVALID_CHUNK_COORD
 			return
 
