@@ -707,6 +707,7 @@ func _actualizar_resumen_topologia() -> void:
 
 
 func _aplicar_topologia_seleccionada() -> void:
+	var claves_posicion := ["A", "N", "B", "C", "D"]
 	var seleccionados := _iums_seleccionados_en_huecos()
 	if seleccionados.is_empty():
 		if _selectores_huecos.size() > 0:
