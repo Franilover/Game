@@ -399,7 +399,21 @@ func _mostrar_sprite_terreno(nivel: String, registro: Dictionary) -> void:
 		var recurso := load(ruta) as Texture2D
 		if recurso == null:
 			continue
-		_icono.texture = recurso
+		# El atlas Dual-Grid no debe mostrarse completo en la enciclopedia.
+		# Recortamos una celda del atlas para usarla como muestra del terreno.
+		var ancho_celda := int(recurso.get_width() / 4)
+		var alto_celda := int(recurso.get_height() / 4)
+		if ancho_celda <= 0 or alto_celda <= 0:
+			continue
+		var muestra := AtlasTexture.new()
+		muestra.atlas = recurso
+		muestra.region = Rect2(
+			ancho_celda * 3,
+			alto_celda * 3,
+			ancho_celda,
+			alto_celda
+		)
+		_icono.texture = muestra
 		_icono.visible = true
 		return
 
