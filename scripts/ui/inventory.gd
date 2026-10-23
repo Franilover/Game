@@ -232,6 +232,24 @@ func _ready() -> void:
 	_limpiar_informacion()
 
 
+func _input(event: InputEvent) -> void:
+	# En Android, tocar fuera de la ventana cierra el inventario.
+	# Se consume el toque para evitar activar accidentalmente una acción del juego.
+	if not OS.has_feature("android") or not _abierto or not visible:
+		return
+	var posicion_toque := Vector2.INF
+	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+		posicion_toque = (event as InputEventScreenTouch).position
+	elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		posicion_toque = (event as InputEventMouseButton).position
+	if posicion_toque == Vector2.INF:
+		return
+	var ventana := $Window as Control
+	if not ventana.get_global_rect().has_point(posicion_toque):
+		cerrar()
+		get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
