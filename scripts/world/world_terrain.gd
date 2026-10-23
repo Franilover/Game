@@ -10,6 +10,7 @@ const CARDINAL_NEIGHBORS: Array[Vector2i] = [
 ]
 
 const CHUNK_PADDING: int = 1
+const INVALID_CHUNK_COORD: Vector2i = Vector2i(999999, 999999)
 
 
 enum Zone {
@@ -53,8 +54,12 @@ var _chunk_cache: Dictionary = {}
 var _chunk_cache_order: Array[Vector2i] = []
 
 var _generation_task: Dictionary = {}
+# Copia independiente de la coordenada real del trabajo activo. Permite limpiar
+# el chunk correcto aunque el diccionario de tarea se haya corrompido.
+var _generation_task_coord_guard: Vector2i = INVALID_CHUNK_COORD
 # Una sola tarea puede quedar pausada para ceder el generador al chunk prioritario.
 var _paused_generation_task: Dictionary = {}
+var _paused_generation_coord_guard: Vector2i = INVALID_CHUNK_COORD
 var _unload_task: Dictionary = {}
 var _pending_unload_tasks: Array[Dictionary] = []
 var _pintado_desde_flush: int = 0
@@ -327,15 +332,22 @@ func configurar_prioridad_generacion(posicion_mundo: Vector2) -> void:
 func iniciar_generacion_chunk(
 	chunk_coord: Vector2i
 ) -> void:
-	if _loaded_chunks.has(chunk_coord):
+	if _loaded_chunks.has(chunk_coord) or not _generation_task.is_empty():
 		return
 
-	# Reanudar exactamente el estado que fue pausado por prioridad.
-	if not _paused_generation_task.is_empty() and _generation_task.is_empty():
-		var paused_coord: Vector2i = _paused_generation_task.get("coord", Vector2i.ZERO)
+	# Reanudar exactamente el estado que fue pausado por prioridad. La
+	# coordenada guardada fuera del diccionario prevalece si éste está dañado.
+	if not _paused_generation_task.is_empty():
+		var paused_coord := _paused_generation_coord_guard
+		if paused_coord == INVALID_CHUNK_COORD:
+			var paused_coord_variant: Variant = _paused_generation_task.get("coord", null)
+			if paused_coord_variant is Vector2i:
+				paused_coord = paused_coord_variant
 		if paused_coord == chunk_coord:
 			_generation_task = _paused_generation_task
+			_generation_task_coord_guard = paused_coord
 			_paused_generation_task.clear()
+			_paused_generation_coord_guard = INVALID_CHUNK_COORD
 			return
 
 	_profiler_data_ms = 0.0
@@ -358,9 +370,6 @@ func iniciar_generacion_chunk(
 	_profiler_visible_cells = 0
 	if visual != null:
 		visual.iniciar_profiler()
-
-	if not _generation_task.is_empty():
-		return
 
 	var padded_size: int = (
 		chunk_size_tiles
@@ -408,6 +417,7 @@ func iniciar_generacion_chunk(
 				"biomas": datos["biomas"],
 				"ecosistemas": datos["ecosistemas"]
 			}
+			_generation_task_coord_guard = chunk_coord
 			_chunk_cache.erase(chunk_coord)
 			_chunk_cache_order.erase(chunk_coord)
 			return
@@ -449,6 +459,7 @@ func iniciar_generacion_chunk(
 		"biomas": biomas,
 		"ecosistemas": ecosistemas
 	}
+	_generation_task_coord_guard = chunk_coord
 
 
 func procesar_generacion(
@@ -483,6 +494,11 @@ func _validar_matrices_tarea_generacion() -> bool:
 	# corrupta podría borrar accidentalmente el chunk de origen del mundo.
 	var coord_variant: Variant = _generation_task.get("coord", null)
 	if not coord_variant is Vector2i:
+		return false
+	if (
+		_generation_task_coord_guard != INVALID_CHUNK_COORD
+		and coord_variant != _generation_task_coord_guard
+	):
 		return false
 
 	var padded_size: int = chunk_size_tiles + CHUNK_PADDING * 2
@@ -553,29 +569,29 @@ func _validar_matrices_tarea_generacion() -> bool:
 
 func _recuperar_tarea_generacion_invalida() -> bool:
 	var coord_variant: Variant = _generation_task.get("coord", null)
-	var coord_confiable := coord_variant is Vector2i
-	var coord_invalida := Vector2i.ZERO
-	if coord_confiable:
+	var coord_invalida := _generation_task_coord_guard
+	if coord_invalida == INVALID_CHUNK_COORD and coord_variant is Vector2i:
 		coord_invalida = coord_variant
+	var coord_confiable := coord_invalida != INVALID_CHUNK_COORD
 
 	push_warning(
 		"WorldTerrain: tarea de chunk inconsistente en "
 		+ str(coord_variant)
-		+ "; se limpiará y volverá a la cola de streaming si su coordenada es válida."
+		+ "; coordenada de recuperación="
+		+ str(coord_invalida)
+		+ ". Se limpiará y volverá a la cola de streaming."
 	)
 
-	# Incluso en la etapa DATA ya puede haberse pintado una parte del chunk:
-	# el pintado temprano ocurre antes de que DATA termine. Limpiar siempre
-	# evita residuos si el índice corrupto aparece a mitad de un lote.
+	# La coordenada guardada fuera del diccionario sobrevive a la corrupción
+	# de la tarea. Incluso durante DATA ya puede haber pintura anticipada.
 	_generation_task.clear()
+	_generation_task_coord_guard = INVALID_CHUNK_COORD
 	_pintado_desde_flush = 0
 	if coord_confiable:
 		_chunk_cache.erase(coord_invalida)
 		_chunk_cache_order.erase(coord_invalida)
 		_programar_limpieza_chunk(coord_invalida, false)
 
-	# Sin una coordenada validada no tocamos ninguna región visual/caché.
-	# El streamer tampoco reencolará el sentinel devuelto por el getter.
 	return false
 
 
@@ -1057,9 +1073,10 @@ func generar_chunk_completo(
 
 
 func _finalizar_chunk() -> void:
-	var coord: Vector2i = (
-		_generation_task["coord"]
-	)
+	var coord: Vector2i = obtener_chunk_en_generacion()
+	if coord == INVALID_CHUNK_COORD:
+		_recuperar_tarea_generacion_invalida()
+		return
 
 	_loaded_chunks[coord] = {
 		"zonas": _generation_task["zonas"],
@@ -1131,16 +1148,21 @@ func _finalizar_chunk() -> void:
 	)
 
 	_generation_task.clear()
+	_generation_task_coord_guard = INVALID_CHUNK_COORD
+
+
 func tiene_generacion_activa() -> bool:
 	return not _generation_task.is_empty()
 
 
 func obtener_chunk_en_generacion() -> Vector2i:
 	if _generation_task.is_empty():
-		return Vector2i(999999, 999999)
+		return INVALID_CHUNK_COORD
+	if _generation_task_coord_guard != INVALID_CHUNK_COORD:
+		return _generation_task_coord_guard
 	var coord_variant: Variant = _generation_task.get("coord", null)
 	if not coord_variant is Vector2i:
-		return Vector2i(999999, 999999)
+		return INVALID_CHUNK_COORD
 	return coord_variant
 
 
@@ -1158,7 +1180,9 @@ func pausar_generacion_actual() -> bool:
 	if not puede_pausar_generacion_actual():
 		return false
 	_paused_generation_task = _generation_task
+	_paused_generation_coord_guard = _generation_task_coord_guard
 	_generation_task = {}
+	_generation_task_coord_guard = INVALID_CHUNK_COORD
 	return true
 
 
@@ -1172,11 +1196,19 @@ func descartar_generacion_pausada_si_distante(
 ) -> bool:
 	if _paused_generation_task.is_empty():
 		return false
-	var coord: Vector2i = _paused_generation_task.get("coord", Vector2i.ZERO)
+	var coord := _paused_generation_coord_guard
+	if coord == INVALID_CHUNK_COORD:
+		var coord_variant: Variant = _paused_generation_task.get("coord", null)
+		if not coord_variant is Vector2i:
+			_paused_generation_task.clear()
+			_paused_generation_coord_guard = INVALID_CHUNK_COORD
+			return true
+		coord = coord_variant
 	var distancia := maxi(abs(coord.x - centro.x), abs(coord.y - centro.y))
 	if distancia <= radio_maximo:
 		return false
 	_paused_generation_task.clear()
+	_paused_generation_coord_guard = INVALID_CHUNK_COORD
 	return true
 
 
@@ -1187,10 +1219,15 @@ func cancelar_generacion_si_distante(
 	if _generation_task.is_empty():
 		return false
 
-	var coord: Vector2i = _generation_task.get(
-		"coord",
-		Vector2i.ZERO
-	)
+	var coord := obtener_chunk_en_generacion()
+	if coord == INVALID_CHUNK_COORD:
+		# No podemos asociar la pintura parcial a un chunk fiable. Descarta la
+		# tarea corrupta sin arriesgar un borrado en (0, 0) u otra región.
+		_generation_task.clear()
+		_generation_task_coord_guard = INVALID_CHUNK_COORD
+		_pintado_desde_flush = 0
+		return true
+
 	var distancia := maxi(
 		abs(coord.x - centro.x),
 		abs(coord.y - centro.y)
@@ -1208,6 +1245,7 @@ func cancelar_generacion_si_distante(
 		visual.terminar_lote()
 	_programar_limpieza_chunk(coord, false)
 	_generation_task.clear()
+	_generation_task_coord_guard = INVALID_CHUNK_COORD
 	_pintado_desde_flush = 0
 	return true
 
@@ -1217,7 +1255,7 @@ func chunk_en_generacion(
 ) -> bool:
 	if _generation_task.is_empty():
 		return false
-	return _generation_task.get("coord") == chunk_coord
+	return obtener_chunk_en_generacion() == chunk_coord
 
 
 func chunk_cargado(
