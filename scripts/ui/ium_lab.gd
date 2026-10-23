@@ -42,6 +42,7 @@ func _ready() -> void:
 	_btn_limpiar.pressed.connect(_limpiar_canvas)
 	_btn_cerrar.pressed.connect(_cerrar)
 	_btn_aplicar_topologia.pressed.connect(_aplicar_topologia_seleccionada)
+	_selector_topologia.item_selected.connect(_al_selector_topologia_cambiado)
 	_configurar_selector_topologia()
 
 	_draw_layer.draw.connect(_dibujar_conexiones)
@@ -605,6 +606,10 @@ func _configurar_selector_topologia() -> void:
 	_selector_topologia.add_item("Convergencia al último", 3)
 	_selector_topologia.add_item("Ciclo dirigido", 4)
 	_selector_topologia.select(0)
+
+
+func _al_selector_topologia_cambiado(_indice: int) -> void:
+	_actualizar_resumen_topologia()
 
 
 func _actualizar_resumen_topologia() -> void:
