@@ -126,7 +126,7 @@ func procesar() -> void:
 	# decoración secundaria y nunca deben consumir el servicio reservado
 	# antes del commit del suelo.
 	if _terrain.tiene_generacion_activa():
-		var coord_generacion := _terrain.obtener_coord_generacion_activa()
+		var coord_generacion := _terrain.obtener_chunk_en_generacion()
 		var presupuesto_celdas := _presupuesto_generacion()
 		if presupuesto_celdas <= 0:
 			return
