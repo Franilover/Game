@@ -75,7 +75,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 	if sprite_base == null:
 		return
 	var indice_z := 1
-	for slot in SLOTS:
+	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
 		var pieza_variant: Variant = apariencia.get(slot, {})
 		if not pieza_variant is Dictionary:
 			continue
