@@ -4,7 +4,7 @@ signal confirmed(config: Dictionary, action: String)
 signal cancelled
 
 var _action: String = ""
-var _skins: Array[String] = []
+var _skin_base: String = ""
 var _personalizacion: Dictionary = {}
 var _personalizacion_items: Dictionary = {}
 var _personalizacion_colores: Dictionary = {}
@@ -25,7 +25,6 @@ var _preview_layers: Dictionary = {}
 @onready var gender: OptionButton = $Panel/Margin/Column/Content/Fields/Gender
 @onready var gender_free: LineEdit = $Panel/Margin/Column/Content/Fields/GenderFree
 @onready var species: OptionButton = $Panel/Margin/Column/Content/Fields/Species
-@onready var skins: ItemList = $Panel/Margin/Column/Content/Appearance/Skins
 @onready var status: Label = $Panel/Margin/Column/Status
 @onready var confirm_button: Button = $Panel/Margin/Column/Buttons/Confirm
 @onready var cancel_button: Button = $Panel/Margin/Column/Buttons/Cancel
@@ -47,12 +46,9 @@ func _ready() -> void:
 		_update_confirm())
 	gender_free.text_changed.connect(func(_text: String) -> void:
 		_update_confirm())
-	skins.item_selected.connect(func(_index: int) -> void:
-		_update_confirm()
-		_actualizar_vista_previa())
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
-	_load_skins()
+	_cargar_skin_base()
 	_crear_vista_previa()
 	_construir_controles_personalizacion()
 	_actualizar_vista_previa()
@@ -86,10 +82,6 @@ func _configurar_layout_responsive() -> void:
 	creation_content.add_theme_constant_override("separation", 10 if compacto else 20)
 	creation_fields.custom_minimum_size.x = 0
 	appearance_container.custom_minimum_size.x = 0
-	skins.custom_minimum_size.y = 58 if compacto else 76
-	skins.fixed_icon_size = Vector2i(32, 32) if compacto else Vector2i(40, 40)
-	skins.fixed_column_width = 42 if compacto else 50
-	skins.max_columns = 0
 
 func open(action: String) -> void:
 	_action = action
@@ -101,8 +93,6 @@ func open(action: String) -> void:
 	gender_free.visible = false
 	if species.item_count > 0:
 		species.select(0)
-	if skins.item_count > 0:
-		skins.select(0)
 	for slot in CharacterAppearance.SLOTS:
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
 		if lista != null and lista.item_count > 0:
@@ -160,29 +150,25 @@ func _on_species_loaded(data: Array) -> void:
 		status.text = "No hay especies jugables disponibles."
 	_update_confirm()
 
-func _load_skins() -> void:
-	skins.clear()
-	_skins.clear()
-	var directory := DirAccess.open("res://assets/art/characters/skins/")
-	if directory == null:
+func _cargar_skin_base() -> void:
+	# Se conserva un cuerpo base por compatibilidad; ya no hay selector de sprites completos.
+	_skin_base = ""
+	var directorio := DirAccess.open("res://assets/art/characters/skins/")
+	if directorio == null:
 		status.text = "No se encontró la carpeta de skins."
 		return
-	var files := directory.get_files()
-	files.sort()
-	for file_name in files:
-		var extension := file_name.get_extension().to_lower()
-		if extension not in ["png", "webp", "jpg", "jpeg"]:
+	var archivos := directorio.get_files()
+	archivos.sort()
+	for nombre_archivo in archivos:
+		if nombre_archivo.get_extension().to_lower() not in ["png", "webp", "jpg", "jpeg"]:
 			continue
-		var path := "res://assets/art/characters/skins/" + file_name
-		var texture: Texture2D = load(path) as Texture2D
-		if texture == null:
-			continue
-		_skins.append(path)
-		skins.add_icon_item(texture, true)
-		skins.set_item_text(skins.item_count - 1, "")
-	if skins.item_count > 0:
-		skins.select(0)
-	_update_confirm()
+		var ruta := "res://assets/art/characters/skins/" + nombre_archivo
+		if load(ruta) is Texture2D:
+			_skin_base = ruta
+			break
+	if _skin_base.is_empty():
+		status.text = "No se encontró un sprite base de personaje."
+	_actualizar_vista_previa()
 
 
 
@@ -215,13 +201,7 @@ func _crear_vista_previa() -> void:
 func _actualizar_vista_previa() -> void:
 	if _preview_base == null:
 		return
-	var base_seleccionados := skins.get_selected_items()
-	if not base_seleccionados.is_empty():
-		var indice_base: int = base_seleccionados[0]
-		var ruta_base := str(skins.get_item_metadata(indice_base))
-		if ruta_base.is_empty() and indice_base < _skins.size():
-			ruta_base = _skins[indice_base]
-		_preview_base.texture = load(ruta_base) as Texture2D if not ruta_base.is_empty() else null
+	_preview_base.texture = load(_skin_base) as Texture2D if not _skin_base.is_empty() else null
 	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
 		var capa: TextureRect = _preview_layers.get(slot) as TextureRect
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
@@ -237,11 +217,10 @@ func _actualizar_vista_previa() -> void:
 		capa.visible = capa.texture != null
 
 func _construir_controles_personalizacion() -> void:
-	# Selector de piel base en miniaturas y carruseles compactos por categoría.
-	skins.visible = true
+	# Carruseles compactos por categoría; no se muestran sprites completos predefinidos.
 	var etiqueta_skin := appearance_container.get_node_or_null("SkinLabel") as Label
 	if etiqueta_skin != null:
-		etiqueta_skin.visible = true
+		etiqueta_skin.visible = false
 
 	_personalizacion_rows = VBoxContainer.new()
 	_personalizacion_rows.name = "FilasPersonalizacion"
@@ -386,17 +365,15 @@ func _update_confirm(_index: int = -1) -> void:
 	var name_ok: bool = not name_input.text.strip_edges().is_empty()
 	var gender_ok: bool = not gender.visible or gender.selected != 4 or not gender_free.text.strip_edges().is_empty()
 	var species_ok: bool = species.item_count > 0 and species.selected >= 0
-	var skin_ok: bool = skins.item_count > 0 and skins.get_selected_items().size() > 0
+	var skin_ok: bool = not _skin_base.is_empty()
 	confirm_button.disabled = not (partida_name_ok and name_ok and gender_ok and species_ok and skin_ok)
 
 func _on_confirm() -> void:
 	_update_confirm()
 	if confirm_button.disabled:
 		return
-	var selected_skin: PackedInt32Array = skins.get_selected_items()
-	if selected_skin.is_empty():
+	if _skin_base.is_empty():
 		return
-	var skin_index: int = selected_skin[0]
 	var gender_value: String = gender.get_item_text(gender.selected)
 	if not gender.visible:
 		gender_value = "sin_genero"
@@ -409,8 +386,8 @@ func _on_confirm() -> void:
 		"nombre": name_input.text.strip_edges(),
 		"genero": gender_value,
 		"especie": species_data.duplicate(true),
-		"skin": _skins[skin_index],
-		"skin_nombre": _skins[skin_index].get_file().get_basename(),
+		"skin": _skin_base,
+		"skin_nombre": _skin_base.get_file().get_basename(),
 		"personalizacion": _obtener_personalizacion()
 	}
 	visible = false
