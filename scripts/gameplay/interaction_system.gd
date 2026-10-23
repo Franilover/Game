@@ -77,9 +77,6 @@ func procesar_accion_primaria() -> bool:
 	var objeto_mano: Dictionary = {}
 	if inventory != null:
 		objeto_mano = inventory.obtener_objeto_mano_activa("izquierda").duplicate(true)
-		if inventory.usar_objeto_mano("izquierda", player):
-			return true
-
 	return _procesar_interaccion_de_mano(objeto_mano, true, "izquierda")
 
 
@@ -87,9 +84,6 @@ func procesar_accion_secundaria() -> bool:
 	var objeto_mano: Dictionary = {}
 	if inventory != null:
 		objeto_mano = inventory.obtener_objeto_mano_activa("derecha").duplicate(true)
-		if inventory.usar_objeto_mano("derecha", player):
-			return true
-
 	return _procesar_interaccion_de_mano(objeto_mano, true, "derecha")
 
 
@@ -116,6 +110,11 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool,
 
 		if resultado:
 			return true
+
+	# Primero se intenta usar un consumible de la mano seleccionada. Esto va
+	# después de la interacción contextual para no gastar objetos al recoger.
+	if inventory != null and inventory.usar_objeto_mano(mano, player):
+		return true
 
 	# Si no hay una interacción contextual válida, la mano puede colocar su
 	# objeto. El combate sigue después, en CombatSystem, si tampoco se colocó.
