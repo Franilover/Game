@@ -1366,7 +1366,10 @@ func _datos_chunk_cache_validos(datos: Dictionary) -> bool:
 
 
 func tiene_descarga_activa() -> bool:
-	return not _unload_task.is_empty()
+	# El streamer usa este estado para decidir si debe ceder presupuesto al clear.
+	# Una cola pendiente también es trabajo activo: si se informa false, la cola
+	# puede quedar dormida indefinidamente tras una recuperación/cancelación.
+	return not _unload_task.is_empty() or not _pending_unload_tasks.is_empty()
 func _crear_orden_generacion(
 	size: int,
 	chunk_coord: Vector2i,
