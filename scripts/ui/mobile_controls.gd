@@ -138,7 +138,13 @@ func _presionar_accion(accion: String) -> void:
 	if accion.is_empty() or not InputMap.has_action(accion):
 		return
 	_acciones_presionadas[accion] = true
-	Input.action_press(accion)
+	var evento := InputEventAction.new()
+	evento.action = accion
+	evento.pressed = true
+	evento.strength = 1.0
+	# Además de actualizar Input, esto entrega el evento al router de gameplay,
+	# que procesa las acciones primaria/secundaria desde _input(event).
+	Input.parse_input_event(evento)
 
 
 func _soltar_accion(accion: String) -> void:
@@ -146,7 +152,11 @@ func _soltar_accion(accion: String) -> void:
 		return
 	_acciones_presionadas.erase(accion)
 	if InputMap.has_action(accion):
-		Input.action_release(accion)
+		var evento := InputEventAction.new()
+		evento.action = accion
+		evento.pressed = false
+		evento.strength = 0.0
+		Input.parse_input_event(evento)
 
 
 func _notification(what: int) -> void:
@@ -162,5 +172,9 @@ func _liberar_todas_las_acciones() -> void:
 	for accion_variant in _acciones_presionadas.keys():
 		var accion := str(accion_variant)
 		if InputMap.has_action(accion):
-			Input.action_release(accion)
+			var evento := InputEventAction.new()
+			evento.action = accion
+			evento.pressed = false
+			evento.strength = 0.0
+			Input.parse_input_event(evento)
 	_acciones_presionadas.clear()
