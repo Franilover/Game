@@ -79,7 +79,7 @@ func procesar_accion_primaria() -> bool:
 
 	# El router ya resolvió la prioridad de interacción.
 	# Aquí solo se decide la acción primaria de combate.
-	var objeto_activo := _obtener_objeto_activo_para_accion()
+	var objeto_activo: Dictionary = inventory.obtener_objeto_mano_activa("izquierda") if inventory != null else {}
 	_accion_en_equipo = false
 	var modo := "arma_equipada" if _es_objeto_ataque(objeto_activo) else "desarmado"
 
@@ -309,8 +309,8 @@ func _obtener_objeto_activo_para_accion() -> Dictionary:
 func _obtener_objeto_equipado_para_accion() -> Dictionary:
 	if inventory == null:
 		return {}
-	# El ataque secundario usa el objeto activo de la mano izquierda.
-	return inventory.obtener_objeto_mano_activa("izquierda")
+	# El clic derecho usa el objeto activo de la mano derecha.
+	return inventory.obtener_objeto_mano_activa("derecha")
 
 
 func _obtener_arma_equipada(slot_preferido: String = "mano_principal") -> Dictionary:
