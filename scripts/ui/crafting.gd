@@ -46,7 +46,7 @@ func _crear_interfaz() -> void:
 	add_child(margen)
 
 	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 8)
+	columna.add_theme_constant_override("separation", 4)
 	margen.add_child(columna)
 
 
@@ -58,7 +58,7 @@ func _crear_interfaz() -> void:
 
 	var contenido := HBoxContainer.new()
 	contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_theme_constant_override("separation", 10)
+	contenido.add_theme_constant_override("separation", 5)
 	columna.add_child(contenido)
 
 	var scroll := ScrollContainer.new()
@@ -67,27 +67,27 @@ func _crear_interfaz() -> void:
 	contenido.add_child(scroll)
 
 	_lista = GridContainer.new()
-	_lista.columns = 5
+	_lista.columns = 3
 	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista.add_theme_constant_override("h_separation", 8)
-	_lista.add_theme_constant_override("v_separation", 8)
+	_lista.add_theme_constant_override("h_separation", 4)
+	_lista.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(_lista)
 
 	var panel_detalle := PanelContainer.new()
-	panel_detalle.custom_minimum_size = Vector2(210, 0)
+	panel_detalle.custom_minimum_size = Vector2(112, 0)
 	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	panel_detalle.add_theme_stylebox_override("panel", _crear_estilo_boton(Color(0.075, 0.05, 0.035, 0.95), Color(0.29, 0.19, 0.12, 1), 1))
 	contenido.add_child(panel_detalle)
 
 	var margen_detalle := MarginContainer.new()
-	margen_detalle.add_theme_constant_override("margin_left", 10)
-	margen_detalle.add_theme_constant_override("margin_top", 10)
-	margen_detalle.add_theme_constant_override("margin_right", 10)
-	margen_detalle.add_theme_constant_override("margin_bottom", 10)
+	margen_detalle.add_theme_constant_override("margin_left", 5)
+	margen_detalle.add_theme_constant_override("margin_top", 5)
+	margen_detalle.add_theme_constant_override("margin_right", 5)
+	margen_detalle.add_theme_constant_override("margin_bottom", 5)
 	panel_detalle.add_child(margen_detalle)
 
 	var columna_detalle := VBoxContainer.new()
-	columna_detalle.add_theme_constant_override("separation", 8)
+	columna_detalle.add_theme_constant_override("separation", 4)
 	margen_detalle.add_child(columna_detalle)
 
 	_detalle_nombre = Label.new()
@@ -99,7 +99,7 @@ func _crear_interfaz() -> void:
 	columna_detalle.add_child(_detalle_nombre)
 
 	_detalle_icono = TextureRect.new()
-	_detalle_icono.custom_minimum_size = Vector2(0, 104)
+	_detalle_icono.custom_minimum_size = Vector2(0, 58)
 	_detalle_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detalle_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_detalle_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -124,7 +124,7 @@ func _crear_interfaz() -> void:
 
 	_boton_craftear = Button.new()
 	_boton_craftear.text = "Craftear"
-	_boton_craftear.custom_minimum_size = Vector2(0, 34)
+	_boton_craftear.custom_minimum_size = Vector2(0, 26)
 	_boton_craftear.disabled = true
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
 	_boton_craftear.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
