@@ -126,6 +126,7 @@ func procesar() -> void:
 	# decoración secundaria y nunca deben consumir el servicio reservado
 	# antes del commit del suelo.
 	if _terrain.tiene_generacion_activa():
+		var coord_generacion := _terrain.obtener_coord_generacion_activa()
 		var presupuesto_celdas := _presupuesto_generacion()
 		if presupuesto_celdas <= 0:
 			return
@@ -158,6 +159,10 @@ func procesar() -> void:
 					_entity_spawner.spawn_props_chunk(chunk_coord)
 				if lod_generado == LOD_FULL:
 					_entity_spawner.spawn_chunk(chunk_coord)
+		elif not _terrain.tiene_generacion_activa():
+			# La tarea se abortó por una inconsistencia. No perder el chunk:
+			# reencolar sólo si todavía está cerca y no se cargó entretanto.
+			_reencolar_chunk_si_corresponde(coord_generacion)
 
 		return
 
@@ -607,6 +612,16 @@ func _agregar_chunk_a_cola(
 	if chunk in nuevos:
 		return
 	nuevos.append(chunk)
+
+
+func _reencolar_chunk_si_corresponde(chunk_coord: Vector2i) -> void:
+	if _terrain == null or _terrain.chunk_cargado(chunk_coord):
+		return
+	if _distancia_chunk(chunk_coord, _player_chunk) > _load_radius:
+		return
+	if chunk_coord in _queue:
+		return
+	_queue.push_front(chunk_coord)
 
 
 func _iniciar_siguiente_chunk() -> bool:
