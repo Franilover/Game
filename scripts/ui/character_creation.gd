@@ -254,14 +254,6 @@ func _construir_controles_personalizacion() -> void:
 		fila.add_child(lista)
 		_personalizacion_items[slot] = lista
 
-		var anterior := Button.new()
-		anterior.text = "‹"
-		anterior.custom_minimum_size = Vector2(34, 34)
-		anterior.focus_mode = Control.FOCUS_NONE
-		anterior.tooltip_text = "Opción anterior"
-		anterior.pressed.connect(_cambiar_opcion.bind(slot, -1))
-		fila.add_child(anterior)
-
 		var icono := TextureRect.new()
 		icono.name = "MiniaturaActual"
 		icono.custom_minimum_size = Vector2(38, 38)
@@ -272,6 +264,14 @@ func _construir_controles_personalizacion() -> void:
 		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		fila.add_child(icono)
 		_personalizacion_vistas[slot] = icono
+
+		var anterior := Button.new()
+		anterior.text = "‹"
+		anterior.custom_minimum_size = Vector2(34, 34)
+		anterior.focus_mode = Control.FOCUS_NONE
+		anterior.tooltip_text = "Opción anterior"
+		anterior.pressed.connect(_cambiar_opcion.bind(slot, -1))
+		fila.add_child(anterior)
 
 		var siguiente := Button.new()
 		siguiente.text = "›"
