@@ -586,11 +586,30 @@ func _dibujar_conexiones() -> void:
 
 func _simular() -> void:
 	if _nodos_canvas.is_empty():
-		_label_estado.text = (
-			"Añade IUMs al canvas primero."
-		)
-
+		_label_estado.text = "Añade IUMs al canvas primero."
 		return
+
+	if _conexiones.is_empty():
+		_label_estado.text = "La topología no tiene enlaces dirigidos; conecta los IUMs antes de simular."
+		return
+
+	# Evita enviar nodos aislados: el RPC coteja patrones a partir de enlaces y
+	# podría devolver una coincidencia sin tener en cuenta un IUM desconectado.
+	var grados: Array[int] = []
+	grados.resize(_nodos_canvas.size())
+	grados.fill(0)
+	for con in _conexiones:
+		var o_idx: int = int(con.get("origen", -1))
+		var d_idx: int = int(con.get("destino", -1))
+		if o_idx < 0 or d_idx < 0 or o_idx >= grados.size() or d_idx >= grados.size():
+			_label_estado.text = "La topología contiene un enlace con referencias inválidas; elimina y vuelve a crear esa conexión."
+			return
+		grados[o_idx] += 1
+		grados[d_idx] += 1
+	for i in grados.size():
+		if grados[i] == 0:
+			_label_estado.text = "Topología incompleta: conecta el IUM «%s» antes de simular." % str(_nodos_canvas[i]["ium"].get("nombre", "sin nombre"))
+			return
 
 	if ium_manager == null:
 		_label_estado.text = (
