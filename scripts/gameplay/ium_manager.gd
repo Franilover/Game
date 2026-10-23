@@ -75,9 +75,10 @@ func simular_organizacion(nodos: Array, enlaces: Array) -> void:
 	_repository.simular(_jugador_id, nodos, enlaces)
 
 
-func _al_simulacion_completada(proceso: Dictionary) -> void:
-	_registrar_descubrimiento(proceso)
-	proceso_descubierto.emit(proceso)
+func _al_simulacion_completada(resultado: Dictionary) -> void:
+	# La RPC devuelve candidatos experimentales, no un descubrimiento persistido.
+	# No registramos un proceso hasta que exista un flujo de persistencia compatible.
+	proceso_descubierto.emit(resultado)
 
 
 func _al_simulacion_fallida(mensaje: String) -> void:
