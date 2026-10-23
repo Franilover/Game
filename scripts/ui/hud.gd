@@ -217,8 +217,8 @@ func _preparar_puntos_dash() -> void:
 	contenedor.anchor_bottom = 1.0
 	contenedor.offset_left = -44.0
 	contenedor.offset_right = 44.0
-	contenedor.offset_top = -58.0
-	contenedor.offset_bottom = -38.0
+	contenedor.offset_top = -60.0
+	contenedor.offset_bottom = -45.0
 	contenedor.size = Vector2(88.0, 20.0)
 	contenedor.add_theme_constant_override("separation", 8)
 	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1115,8 +1115,8 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.anchor_right = 0.5
 	slot.anchor_top = 1.0
 	slot.anchor_bottom = 1.0
-	slot.offset_top = -34.0
-	slot.offset_bottom = -4.0
+	slot.offset_top = -60.0
+	slot.offset_bottom = -12.0
 	slot.offset_left = -126.0 if tecla == "Q" else 78.0
 	slot.offset_right = -78.0 if tecla == "Q" else 126.0
 	slot.custom_minimum_size = Vector2(48, 48)
