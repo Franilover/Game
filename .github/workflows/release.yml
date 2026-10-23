@@ -1,10 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Franilover/Game — Build & Release con Godot 4.7
-# project.godot: config/features=PackedStringArray("4.7", "GL Compatibility")
-#
-# Disparar:  git tag v0.X && git push --tags
-# O:         Actions → Run workflow
-# ─────────────────────────────────────────────────────────────────────────────
 name: Build & Release
 
 on:
@@ -27,7 +20,7 @@ env:
 
 jobs:
   build:
-    name: Export Godot 4.7 → GitHub Releases
+    name: Export Godot 4.7 — Windows, Linux y Android
     runs-on: ubuntu-latest
 
     steps:
@@ -36,74 +29,152 @@ jobs:
         with:
           lfs: true
 
-      # ── Godot headless ───────────────────────────────────────────────────
-      - name: Instalar Godot 4.7-stable
+      # Android necesita Java 17 y las herramientas del SDK.
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Instalar paquetes Android requeridos
         run: |
+          set -euo pipefail
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.1"
+
+      # Instalar Godot headless.
+      - name: Instalar Godot 4.7 stable
+        run: |
+          set -euo pipefail
           FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
           URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${FILENAME}.zip"
-          echo "Descargando: $URL"
           wget -q "$URL"
           unzip -q "${FILENAME}.zip"
-          mv "${FILENAME}" /usr/local/bin/godot
-          chmod +x /usr/local/bin/godot
+          sudo mv "${FILENAME}" /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
           godot --version
 
-      # ── Export templates ─────────────────────────────────────────────────
-      - name: Instalar export templates 4.7
+      - name: Instalar export templates Godot 4.7
         run: |
+          set -euo pipefail
           TPZ="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
           URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
-          echo "Descargando templates: $URL"
           wget -q "$URL"
-          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
-          mkdir -p "$TEMPLATE_DIR"
-          unzip -q "${TPZ}" -d /tmp/templates
-          mv /tmp/templates/templates/* "$TEMPLATE_DIR/"
-          echo "Templates instalados en: $TEMPLATE_DIR"
-          ls "$TEMPLATE_DIR/" | head -10
 
-      # ── Export ───────────────────────────────────────────────────────────
+          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          mkdir -p "$TEMPLATE_DIR" /tmp/godot-templates
+          unzip -q "$TPZ" -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
+
+          test -f "$TEMPLATE_DIR/android_debug.apk"
+          test -f "$TEMPLATE_DIR/android_release.apk"
+
       - name: Preparar carpeta EXPORT
         run: mkdir -p EXPORT
 
+      # Mantiene la misma firma de depuración entre ejecuciones, para poder
+      # actualizar una instalación de prueba en Android sin desinstalarla.
+      - name: Restaurar clave de depuración Android
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/garlia-debug.keystore
+          key: garlia-android-debug-keystore-v1
+
+      - name: Crear clave de depuración Android si no existe
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+
+          if [[ ! -f "$HOME/.android/garlia-debug.keystore" ]]; then
+            keytool -genkeypair -noprompt \
+              -keystore "$HOME/.android/garlia-debug.keystore" \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      # Godot obtiene estas rutas desde EditorSettings en CI; JAVA_HOME y
+      # ANDROID_HOME son los directorios configurados por las acciones anteriores.
+      - name: Configurar rutas Android en Godot
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.config/godot"
+
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "${ANDROID_HOME}"
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          export/android/debug_keystore = "${HOME}/.android/garlia-debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+
       - name: Export Windows Desktop
         run: |
-          godot --headless --export-release "Windows Desktop" EXPORT/Garlia.exe 2>&1
-          echo "Windows: $(ls -lh EXPORT/Garlia.exe 2>/dev/null || echo 'FALLIDO')"
+          set -euo pipefail
+          godot --headless --path . --export-release "Windows Desktop" EXPORT/Garlia.exe
+          test -s EXPORT/Garlia.exe
+          ls -lh EXPORT/Garlia.exe
 
       - name: Export Linux
         run: |
-          godot --headless --export-release "Linux" EXPORT/Garlia.x86_64 2>&1
+          set -euo pipefail
+          godot --headless --path . --export-release "Linux" EXPORT/Garlia.x86_64
           chmod +x EXPORT/Garlia.x86_64
-          echo "Linux: $(ls -lh EXPORT/Garlia.x86_64 2>/dev/null || echo 'FALLIDO')"
+          test -s EXPORT/Garlia.x86_64
+          ls -lh EXPORT/Garlia.x86_64
 
-      # Android — activar cuando configures el preset desde Godot local:
-      #   Proyecto → Exportar → Añadir → Android → guardar → commit export_presets.cfg
-      # - name: Export Android
-      #   run: |
-      #     godot --headless --export-release "Android" EXPORT/Garlia.apk 2>&1
+      - name: Export Android APK de prueba
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        run: |
+          set -euo pipefail
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$HOME/.android/garlia-debug.keystore"
+
+          godot --headless --path . --export-debug "Android" EXPORT/Garlia.apk
+          test -s EXPORT/Garlia.apk
+          ls -lh EXPORT/Garlia.apk
 
       - name: Verificar exports
-        run: ls -lh EXPORT/
+        run: |
+          set -euo pipefail
+          ls -lh EXPORT/
+          test -s EXPORT/Garlia.exe
+          test -s EXPORT/Garlia.x86_64
+          test -s EXPORT/Garlia.apk
 
-      # ── Publicar Release ─────────────────────────────────────────────────
       - name: Publicar en GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name || inputs.tag_name || 'dev-build' }}
-          name: "Garlia ${{ github.ref_name || inputs.tag_name || 'dev-build' }}"
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag_name || 'dev-build' }}
+          name: "Garlia ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag_name || 'dev-build' }}"
           body: |
-            ## Garlia — ${{ github.ref_name || inputs.tag_name }}
+            ## Garlia
 
             | Plataforma | Archivo |
-            |------------|---------|
-            | 🪟 Windows | `Garlia.exe` |
-            | 🐧 Linux   | `Garlia.x86_64` |
+            |---|---|
+            | Windows | `Garlia.exe` |
+            | Linux | `Garlia.x86_64` |
+            | Android (APK de prueba) | `Garlia.apk` |
 
-            > Android próximamente.
+            La APK está firmada con una clave de depuración para instalación y pruebas directas.
+            No está destinada a publicarse en Google Play.
           files: |
             EXPORT/Garlia.exe
             EXPORT/Garlia.x86_64
+            EXPORT/Garlia.apk
           make_latest: true
           fail_on_unmatched_files: true
         env:
