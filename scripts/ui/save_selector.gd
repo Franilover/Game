@@ -26,15 +26,25 @@ var _id_pendiente_editar: String = ""
 
 
 func _ready() -> void:
+	# SaveSelector se instancia dinamicamente dentro de StartMenu. Asegura
+	# que el Control raiz use el rectangulo de su padre antes de calcular margenes.
+	_normalizar_geometria_raiz()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	actualizar_lista()
 	_configurar_diseno_responsive()
 	get_viewport().size_changed.connect(_configurar_diseno_responsive)
+	call_deferred("_normalizar_geometria_raiz")
+	call_deferred("_configurar_diseno_responsive")
 	_configurar_confirmacion_borrado()
 	if not character_creation.confirmed.is_connected(_on_character_confirmed):
 		character_creation.confirmed.connect(_on_character_confirmed)
 	if not character_creation.cancelled.is_connected(_on_character_cancelled):
 		character_creation.cancelled.connect(_on_character_cancelled)
+
+
+func _normalizar_geometria_raiz() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	position = Vector2.ZERO
 
 
 func actualizar_lista() -> void:
