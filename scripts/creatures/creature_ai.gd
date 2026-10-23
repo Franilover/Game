@@ -682,17 +682,21 @@ func _refrescar_objetivo() -> void:
 
 	var candidatos: Array[Node2D] = []
 	for candidato in _obtener_candidatos_entidad():
-		if candidato == jugador:
-			candidatos.append(candidato)
+		if candidato != jugador and not _es_objetivo_permitido(candidato):
 			continue
-		if _es_objetivo_permitido(candidato):
-			candidatos.append(candidato)
+		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
+			continue
+
+		# Ser visible no convierte a una entidad en objetivo. Sólo se eligen
+		# candidatos para los que la especie tiene una respuesta ejecutable.
+		var respuesta := _obtener_respuesta_para_objetivo(candidato)
+		if respuesta not in ["atacar", "huir", "perseguir", "investigar"]:
+			continue
+		candidatos.append(candidato)
 
 	var mejor: Node2D = null
 	var mejor_distancia: float = INF
 	for candidato in candidatos:
-		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
-			continue
 		var distancia := criatura.global_position.distance_to(candidato.global_position)
 		if distancia < mejor_distancia:
 			mejor_distancia = distancia
@@ -886,18 +890,25 @@ func _perfil_desde_texto(texto: String) -> Perfil:
 
 
 func _obtener_respuesta_a_objetivo() -> String:
-	if _es_reactivo_bosque() and objetivo == jugador:
+	return _obtener_respuesta_para_objetivo(objetivo)
+
+
+func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
+	if candidato == null or not is_instance_valid(candidato):
+		return ""
+
+	if _es_reactivo_bosque() and candidato == jugador:
 		if _jugador_es_asesino_bosque():
 			return "atacar"
 		if _jugador_es_agresor_bosque() and _es_seiloris():
 			return "huir"
 
-	if _es_objetivo_refugio():
+	if candidato is Creature and bool((candidato as Creature).get_meta("atractor_refugio", false)):
 		return "perseguir"
 
-	if objetivo is Creature:
+	if candidato is Creature:
 		var relacion := _obtener_relacion_ecologica(
-			objetivo as Creature
+			candidato as Creature
 		)
 
 		match relacion:
