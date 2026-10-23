@@ -457,30 +457,22 @@ func procesar_generacion(
 	if _generation_task.is_empty():
 		return false
 
-	var stage: int = int(
-		_generation_task["stage"]
-	)
+	# Validar también FLUSH. Esta etapa se alcanzaba sin pasar por la barrera
+	# de matrices, y un stage desconocido caía accidentalmente al mismo camino.
+	if not _validar_matrices_tarea_generacion():
+		return _recuperar_tarea_generacion_invalida()
 
+	var stage: int = int(_generation_task["stage"])
 	if stage == 0:
-		if not _validar_matrices_tarea_generacion():
-			return _recuperar_tarea_generacion_invalida()
-		return _procesar_datos_chunk(
-			cells
-		)
+		return _procesar_datos_chunk(cells)
 
 	if stage == 1:
-		# Las tareas pausadas y la caché deben conservar el contrato de tamaño
-		# del chunk. Validarlo justo antes de PINTADO evita que un estado
-		# incompleto vuelva a provocar accesos fuera de rango.
-		if not _validar_matrices_tarea_generacion():
-			return _recuperar_tarea_generacion_invalida()
-		return _procesar_pintado_chunk(
-			cells
-		)
+		return _procesar_pintado_chunk(cells)
 
-	return _procesar_flush_chunk(
-		cells
-	)
+	if stage == 2:
+		return _procesar_flush_chunk(cells)
+
+	return _recuperar_tarea_generacion_invalida()
 
 
 func _validar_matrices_tarea_generacion() -> bool:
