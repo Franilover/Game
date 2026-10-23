@@ -4,13 +4,18 @@ extends Control
 @onready var status_label: Label = $Panel/Margin/Column/Status
 @onready var character_creation: Control = $CharacterCreation
 var _confirmacion_borrado: ConfirmationDialog
+var _dialogo_edicion: ConfirmationDialog
+var _nombre_edicion: LineEdit
+var _semilla_edicion: LineEdit
 var _id_pendiente_borrar: String = ""
+var _id_pendiente_editar: String = ""
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	actualizar_lista()
 	_configurar_confirmacion_borrado()
+	_configurar_dialogo_edicion()
 	if not character_creation.confirmed.is_connected(_on_character_confirmed):
 		character_creation.confirmed.connect(_on_character_confirmed)
 	if not character_creation.cancelled.is_connected(_on_character_cancelled):
@@ -60,6 +65,15 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 	title.text = str(partida.get("nombre", "Partida"))
 	title.add_theme_font_size_override("font_size", 16)
 	info.add_child(title)
+
+	var edit := Button.new()
+	edit.text = "✎"
+	edit.tooltip_text = "Editar nombre y configuración del mundo"
+	edit.custom_minimum_size = Vector2(44, 42)
+	edit.pressed.connect(
+		_editar_partida.bind(str(partida.get("id", "")))
+	)
+	row.add_child(edit)
 
 	var play := Button.new()
 	play.text = "Jugar"
@@ -128,6 +142,93 @@ func _nombre_partida(id: String) -> String:
 		if str(partida.get("id", "")) == id:
 			return str(partida.get("nombre", "Partida"))
 	return "Partida"
+
+
+func _configurar_dialogo_edicion() -> void:
+	_dialogo_edicion = ConfirmationDialog.new()
+	_dialogo_edicion.title = "Editar mundo"
+	_dialogo_edicion.ok_button_text = "Guardar cambios"
+	_dialogo_edicion.cancel_button_text = "Cancelar"
+	_dialogo_edicion.dialog_text = "Cambia el nombre o la semilla del mundo."
+	_dialogo_edicion.confirmed.connect(_guardar_edicion_partida)
+	_dialogo_edicion.exclusive = true
+
+	var contenido := VBoxContainer.new()
+	contenido.add_theme_constant_override("separation", 8)
+	_dialogo_edicion.add_child(contenido)
+
+	var nombre_label := Label.new()
+	nombre_label.text = "Nombre del mundo"
+	contenido.add_child(nombre_label)
+
+	_nombre_edicion = LineEdit.new()
+	_nombre_edicion.placeholder_text = "Nombre del mundo"
+	_nombre_edicion.max_length = 64
+	contenido.add_child(_nombre_edicion)
+
+	var semilla_label := Label.new()
+	semilla_label.text = "Semilla del mundo"
+	contenido.add_child(semilla_label)
+
+	_semilla_edicion = LineEdit.new()
+	_semilla_edicion.placeholder_text = "Número entero"
+	_semilla_edicion.max_length = 20
+	contenido.add_child(_semilla_edicion)
+
+	var aviso := Label.new()
+	aviso.text = "Cambiar la semilla modifica el terreno generado. Puede no coincidir con zonas exploradas previamente."
+	aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	contenido.add_child(aviso)
+
+	add_child(_dialogo_edicion)
+
+
+func _editar_partida(id: String) -> void:
+	if id.is_empty() or _dialogo_edicion == null:
+		return
+
+	var partida_encontrada: Dictionary = {}
+	for partida in GameState.obtener_partidas():
+		if str(partida.get("id", "")) == id:
+			partida_encontrada = partida
+			break
+
+	if partida_encontrada.is_empty():
+		status_label.visible = true
+		status_label.text = "No se encontró ese mundo."
+		return
+
+	_id_pendiente_editar = id
+	_nombre_edicion.text = str(partida_encontrada.get("nombre", "Partida"))
+	_semilla_edicion.text = str(partida_encontrada.get("semilla", ""))
+	_dialogo_edicion.popup_centered(Vector2i(520, 300))
+
+
+func _guardar_edicion_partida() -> void:
+	var id := _id_pendiente_editar
+	_id_pendiente_editar = ""
+	if id.is_empty():
+		return
+
+	var nombre := _nombre_edicion.text.strip_edges()
+	var semilla := _semilla_edicion.text.strip_edges()
+	status_label.visible = true
+	if nombre.is_empty():
+		status_label.text = "El nombre del mundo no puede estar vacío."
+		return
+
+	var regex := RegEx.new()
+	regex.compile("^-?[0-9]+$")
+	if semilla.is_empty() or regex.search(semilla) == null:
+		status_label.text = "La semilla debe ser un número entero."
+		return
+
+	if GameState.actualizar_configuracion_partida(id, nombre, semilla):
+		actualizar_lista()
+		status_label.visible = true
+		status_label.text = "Configuración del mundo guardada."
+	else:
+		status_label.text = "No se pudieron guardar los cambios."
 
 
 func _on_create_pressed() -> void:
