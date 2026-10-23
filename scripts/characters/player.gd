@@ -79,6 +79,7 @@ var personaje_nombre: String = ""
 var personaje_genero: String = ""
 var personaje_especie: Dictionary = {}
 var personaje_skin: String = ""
+var personaje_apariencia: Dictionary = {}
 
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
@@ -699,29 +700,29 @@ func _aplicar_configuracion_personaje() -> void:
 	personaje_nombre = str(personaje.get("nombre", "")).strip_edges()
 	personaje_genero = str(personaje.get("genero", "")).strip_edges()
 	personaje_skin = str(personaje.get("skin", "")).strip_edges()
-
 	var especie_variant: Variant = personaje.get("especie", {})
 	if especie_variant is Dictionary:
 		personaje_especie = (especie_variant as Dictionary).duplicate(true)
+	var apariencia_variant: Variant = personaje.get("personalizacion", {})
+	if apariencia_variant is Dictionary:
+		personaje_apariencia = (apariencia_variant as Dictionary).duplicate(true)
 
-	if personaje_skin.is_empty():
-		return
+	var sprite := get_node_or_null("Visual/Sprite2D") as Sprite2D
+	if sprite != null and not personaje_skin.is_empty() and ResourceLoader.exists(personaje_skin):
+		var textura := load(personaje_skin) as Texture2D
+		if textura != null:
+			sprite.texture = textura
 
-	var textura := load(personaje_skin)
-	if textura is Texture2D:
-		var sprite := get_node_or_null("Visual/Sprite2D")
-		if sprite is Sprite2D:
-			(sprite as Sprite2D).texture = textura as Texture2D
+	CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
 
 	print(
 		"Player: personaje aplicado → ",
 		personaje_nombre,
 		" | especie=",
 		str(personaje_especie.get("nombre", "—")),
-		" | skin=",
-		personaje_skin
+		" | capas=",
+		str(personaje_apariencia.size())
 	)
-
 
 
 func admin_obtener_configuracion() -> Dictionary:
