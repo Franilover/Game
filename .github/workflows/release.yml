@@ -144,6 +144,41 @@ jobs:
           test -s EXPORT/Garlia.x86_64
           ls -lh EXPORT/Garlia.x86_64
 
+      - name: Actualizar versión Android en export_presets.cfg
+        run: |
+          set -euo pipefail
+
+          # Obtener el tag: v0.1.5 desde push, o el input en workflow_dispatch
+          RAW_TAG="${{ github.ref_type == 'tag' && github.ref_name || inputs.tag_name || 'dev-build' }}"
+
+          # version/name: sacar la "v" del principio → "0.1.5"
+          VERSION_NAME="${RAW_TAG#v}"
+
+          # version/code: convertir X.Y.Z a un entero único → X*10000 + Y*100 + Z
+          # Ejemplo: 0.1.5 → 105 | 1.2.3 → 10203 | 0.10.0 → 1000
+          # Para tags que no sean semver (ej: dev-build) usa 1 como fallback.
+          if [[ "$VERSION_NAME" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+            VERSION_CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+            # versionCode mínimo es 1
+            [[ $VERSION_CODE -lt 1 ]] && VERSION_CODE=1
+          else
+            VERSION_CODE=1
+          fi
+
+          echo "Tag:          $RAW_TAG"
+          echo "version/name: $VERSION_NAME"
+          echo "version/code: $VERSION_CODE"
+
+          # Reemplazar en export_presets.cfg (solo en el preset de Android)
+          sed -i "s|^version/code=.*|version/code=${VERSION_CODE}|" export_presets.cfg
+          sed -i "s|^version/name=.*|version/name=\"${VERSION_NAME}\"|" export_presets.cfg
+
+          # Verificar que el reemplazo funcionó
+          grep "^version/" export_presets.cfg
+
       - name: Export Android APK de prueba
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
