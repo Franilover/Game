@@ -501,6 +501,10 @@ func _validar_matrices_tarea_generacion() -> bool:
 	var biomas: Variant = _generation_task.get("biomas", null)
 	var ecosistemas: Variant = _generation_task.get("ecosistemas", null)
 	var orden_pintado: Variant = _generation_task.get("orden_pintado", null)
+	var stage_variant: Variant = _generation_task.get("stage", null)
+	var cursor_variant: Variant = _generation_task.get("cursor", null)
+	var cursor_datos_variant: Variant = _generation_task.get("cursor_datos", null)
+	var cursor_pintado_variant: Variant = _generation_task.get("cursor_pintado", null)
 
 	if not (
 		zonas_base is PackedInt32Array
@@ -512,10 +516,22 @@ func _validar_matrices_tarea_generacion() -> bool:
 		and biomas.size() == expected_cells
 		and ecosistemas.size() == expected_cells
 		and _orden_generacion_valido(orden_pintado, expected_chunk_cells)
+		and stage_variant is int
+		and cursor_variant is int
+		and cursor_datos_variant is int
+		and cursor_pintado_variant is int
 	):
 		return false
 
-	var stage: int = int(_generation_task.get("stage", -1))
+	var stage := int(stage_variant)
+	var cursor := int(cursor_variant)
+	var cursor_datos := int(cursor_datos_variant)
+	var cursor_pintado := int(cursor_pintado_variant)
+	if cursor_datos < 0 or cursor_datos > expected_cells:
+		return false
+	if cursor_pintado < 0 or cursor_pintado > expected_chunk_cells:
+		return false
+
 	if stage == 0:
 		var datos_listos: Variant = _generation_task.get("datos_listos", null)
 		var orden_datos: Variant = _generation_task.get("orden_datos", null)
@@ -523,11 +539,18 @@ func _validar_matrices_tarea_generacion() -> bool:
 			datos_listos is PackedByteArray
 			and datos_listos.size() == expected_cells
 			and _orden_generacion_valido(orden_datos, expected_cells)
+			and cursor >= 0
+			and cursor <= expected_cells
+			and cursor == cursor_datos
 		)
 	if stage == 1:
-		return true
+		return (
+			cursor >= 0
+			and cursor <= expected_chunk_cells
+			and cursor == cursor_pintado
+		)
 	if stage == 2:
-		return true
+		return cursor == 0 and cursor_pintado == expected_chunk_cells
 	return false
 
 
@@ -744,6 +767,10 @@ func _procesar_datos_chunk(
 	# datos. Se mide DATOS antes de entrar a pintura/flush para que el
 	# RenderManager no aprenda un coste unitario contaminado por trabajo visual.
 	_procesar_pintado_chunk(cells, true)
+	# La pintura puede recuperar una tarea corrupta y vaciar el diccionario.
+	# No volver a insertar "cursor" ni convertir esa recuperación en otra tarea.
+	if _generation_task.is_empty():
+		return false
 	_generation_task["cursor"] = cursor
 
 	if cursor < total:
