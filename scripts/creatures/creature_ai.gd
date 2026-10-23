@@ -1673,23 +1673,59 @@ func _es_cazador_por_configuracion(candidato: Creature) -> bool:
 func _procesar_proteccion(delta: float) -> void:
 	var amenaza := _buscar_amenaza_para_refugio()
 	if amenaza == null:
-		# Proteger no significa quedarse inmóvil: el guardián patrulla
-		# autónomamente mientras no haya una amenaza que perseguir.
+		# Sin amenaza, cancelar acciones dirigidas a un objetivo inexistente y
+		# devolver el control a la patrulla. Los estados especiales se limpian
+		# con sus propios procesadores para no dejar un parásito adherido.
 		objetivo = null
 		objetivo_detectado = false
+		match estado:
+			Estado.RECUPERANDO:
+				_procesar_recuperando(delta)
+				return
+			Estado.ADHERIDO:
+				_procesar_adherido(delta)
+				return
+			Estado.SALTANDO_LEJOS:
+				_procesar_saltando_lejos(delta)
+				return
+			Estado.ATACANDO, Estado.PERSIGUIENDO, Estado.INVESTIGANDO, Estado.HUYENDO:
+				_cambiar_estado(Estado.EXPLORANDO)
 		criatura.liberar_control_movimiento()
 		_establecer_velocidad(_velocidad_normal)
 		return
+
 	objetivo = amenaza
 	objetivo_detectado = true
 	ultima_posicion_objetivo = amenaza.global_position
 	var distancia := criatura.global_position.distance_to(amenaza.global_position)
+
+	# La protección no debe saltarse los ciclos de ataque/recuperación:
+	# los procesadores especializados dependen de haber entrado en el estado.
+	match estado:
+		Estado.RECUPERANDO:
+			_procesar_recuperando(delta)
+			return
+		Estado.ADHERIDO:
+			_procesar_adherido(delta)
+			return
+		Estado.SALTANDO_LEJOS:
+			_procesar_saltando_lejos(delta)
+			return
+		Estado.ATACANDO:
+			_procesar_atacando(delta)
+			return
+
 	if distancia <= _obtener_distancia_contacto():
-		_procesar_atacando(delta)
-	else:
-		_establecer_velocidad(_obtener_velocidad_persecucion())
-		criatura.tomar_control_movimiento()
-		criatura.establecer_direccion_movimiento(criatura.global_position.direction_to(amenaza.global_position))
+		_cambiar_estado(Estado.ATACANDO)
+		return
+
+	if estado != Estado.PERSIGUIENDO:
+		_cambiar_estado(Estado.PERSIGUIENDO)
+	_establecer_velocidad(_obtener_velocidad_persecucion())
+	criatura.tomar_control_movimiento()
+	criatura.establecer_direccion_movimiento(
+		criatura.global_position.direction_to(amenaza.global_position)
+	)
 
 
 func _actualizar_atraccion_refugio(activa: bool) -> void:
