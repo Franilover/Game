@@ -26,6 +26,9 @@ var _conectando_desde: int = -1
 @onready var _btn_cerrar: Button = %BtnCerrar
 @onready var _label_estado: Label = %LabelEstado
 @onready var _panel_descubiertos: VBoxContainer = %ListaProcesos
+@onready var _selector_topologia: OptionButton = %SelectorTopologia
+@onready var _btn_aplicar_topologia: Button = %BtnAplicarTopologia
+@onready var _label_resumen_topologia: Label = %LabelResumenTopologia
 @onready var _draw_layer: Control = %DrawLayer
 
 
@@ -38,8 +41,11 @@ func _ready() -> void:
 	_btn_simular.pressed.connect(_simular)
 	_btn_limpiar.pressed.connect(_limpiar_canvas)
 	_btn_cerrar.pressed.connect(_cerrar)
+	_btn_aplicar_topologia.pressed.connect(_aplicar_topologia_seleccionada)
+	_configurar_selector_topologia()
 
 	_draw_layer.draw.connect(_dibujar_conexiones)
+	_actualizar_resumen_topologia()
 
 
 func _ajustar_panel_a_pantalla() -> void:
@@ -249,6 +255,7 @@ func _agregar_ium_al_canvas(
 	)
 
 	_draw_layer.queue_redraw()
+	_actualizar_resumen_topologia()
 
 
 func _crear_slot_canvas(
@@ -431,9 +438,8 @@ func _eliminar_nodo(idx: int) -> void:
 
 	_draw_layer.queue_redraw()
 
-	_label_estado.text = (
-		"IUM eliminada."
-	)
+	_label_estado.text = "IUM eliminada."
+	_actualizar_resumen_topologia()
 
 
 # ================================================================
@@ -510,6 +516,7 @@ func _agregar_conexion(
 			nombre_d
 		]
 	)
+	_actualizar_resumen_topologia()
 
 
 func _dibujar_conexiones() -> void:
@@ -816,6 +823,5 @@ func _limpiar_canvas() -> void:
 
 	_draw_layer.queue_redraw()
 
-	_label_estado.text = (
-		"Canvas limpiado."
-	)
+	_label_estado.text = "Canvas limpiado."
+	_actualizar_resumen_topologia()
