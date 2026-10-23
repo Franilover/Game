@@ -461,7 +461,7 @@ func _procesar_investigando() -> void:
 				_cambiar_estado(Estado.HUYENDO)
 
 			"atacar":
-				_cambiar_estado(Estado.ATACANDO)
+				_cambiar_a_respuesta_atacar()
 
 			"perseguir":
 				_cambiar_estado(Estado.PERSIGUIENDO)
@@ -627,7 +627,7 @@ func _procesar_recuperando(delta: float) -> void:
 				_cambiar_estado(Estado.HUYENDO)
 
 			"atacar":
-				_cambiar_estado(Estado.ATACANDO)
+				_cambiar_a_respuesta_atacar()
 
 			"perseguir":
 				_cambiar_estado(Estado.PERSIGUIENDO)
