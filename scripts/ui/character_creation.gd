@@ -10,7 +10,6 @@ var _personalizacion_colores: Dictionary = {}
 var _personalizacion_vistas: Dictionary = {}
 var _personalizacion_rows: VBoxContainer
 var _preview_container: Control
-var _preview_base: TextureRect
 var _preview_layers: Dictionary = {}
 @onready var appearance_container: VBoxContainer = $Panel/Margin/Column/Content/Appearance
 @onready var creation_margin: MarginContainer = $Panel/Margin
@@ -168,8 +167,6 @@ func _crear_vista_previa() -> void:
 
 
 func _actualizar_vista_previa() -> void:
-	if _preview_base == null:
-		return
 	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
 		var capa: TextureRect = _preview_layers.get(slot) as TextureRect
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
