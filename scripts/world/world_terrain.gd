@@ -361,12 +361,35 @@ func iniciar_generacion_chunk(
 	if not _generation_task.is_empty():
 		return
 
-	# Volver a un chunk reciente reutiliza sus datos canónicos. Sólo hay que
-	# reconstruir la representación visual, que puede haber sido descargada.
+	var padded_size: int = (
+		chunk_size_tiles
+		+ CHUNK_PADDING * 2
+	)
+	var total_padded_cells: int = padded_size * padded_size
+
+	# Reutilizar datos sólo si las cuatro matrices tienen el tamaño esperado
+	# para la configuración actual. Una caché antigua/incompleta (por ejemplo,
+	# de un chunk generado con otro tamaño) no puede entrar a PINTADO: sus
+	# índices parecen válidos hasta que una celda supera su longitud.
 	if _chunk_cache.has(chunk_coord):
 		var cache_data: Variant = _chunk_cache[chunk_coord]
+		var cache_valida := false
+		var datos: Dictionary = {}
 		if cache_data is Dictionary:
-			var datos: Dictionary = cache_data as Dictionary
+			datos = cache_data as Dictionary
+			var zb: Variant = datos.get("zonas_base", null)
+			var z: Variant = datos.get("zonas", null)
+			var b: Variant = datos.get("biomas", null)
+			var e: Variant = datos.get("ecosistemas", null)
+			cache_valida = (
+				zb is PackedInt32Array and z is PackedInt32Array
+				and b is PackedInt32Array and e is PackedInt32Array
+				and zb.size() == total_padded_cells
+				and z.size() == total_padded_cells
+				and b.size() == total_padded_cells
+				and e.size() == total_padded_cells
+			)
+		if cache_valida:
 			var orden_pintado_cache := _crear_orden_generacion(
 				chunk_size_tiles,
 				chunk_coord,
@@ -379,21 +402,17 @@ func iniciar_generacion_chunk(
 				"cursor_datos": 0,
 				"cursor_pintado": 0,
 				"orden_pintado": orden_pintado_cache,
-				"zonas_base": datos.get("zonas_base", []),
-				"zonas": datos.get("zonas", []),
-				"biomas": datos.get("biomas", []),
-				"ecosistemas": datos.get("ecosistemas", [])
+				"zonas_base": datos["zonas_base"],
+				"zonas": datos["zonas"],
+				"biomas": datos["biomas"],
+				"ecosistemas": datos["ecosistemas"]
 			}
 			_chunk_cache.erase(chunk_coord)
 			_chunk_cache_order.erase(chunk_coord)
 			return
-
-	var padded_size: int = (
-		chunk_size_tiles
-		+ CHUNK_PADDING * 2
-	)
-
-	var total_padded_cells: int = padded_size * padded_size
+		# Descartar sólo la entrada dañada; regenerar desde los datos canónicos.
+		_chunk_cache.erase(chunk_coord)
+		_chunk_cache_order.erase(chunk_coord)
 	var zonas_base := PackedInt32Array()
 	var zonas := PackedInt32Array()
 	var biomas := PackedInt32Array()
