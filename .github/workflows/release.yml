@@ -29,9 +29,8 @@ jobs:
         with:
           lfs: true
 
-      # Android necesita Java 17 y las herramientas del SDK.
       - name: Instalar Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -47,18 +46,10 @@ jobs:
             "cmdline-tools;latest" \
             "platform-tools" \
             "platforms;android-35" \
-            "build-tools;35.0.1" \
+            "build-tools;36.0.0" \
             "cmake;3.10.2.4988404" \
             "ndk;28.1.13356709"
 
-      - name: Inicializar ADB
-        run: |
-          set -euo pipefail
-          adb version
-          adb start-server
-          adb devices
-
-      # Instalar Godot headless.
       - name: Instalar Godot 4.7 stable
         run: |
           set -euo pipefail
@@ -88,8 +79,6 @@ jobs:
       - name: Preparar carpeta EXPORT
         run: mkdir -p EXPORT
 
-      # Mantiene la misma firma de depuración entre ejecuciones, para poder
-      # actualizar una instalación de prueba en Android sin desinstalarla.
       - name: Restaurar clave de depuración Android
         uses: actions/cache@v4
         with:
@@ -113,8 +102,6 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-      # Godot obtiene estas rutas desde EditorSettings en CI; JAVA_HOME y
-      # ANDROID_HOME son los directorios configurados por las acciones anteriores.
       - name: Configurar rutas Android en Godot
         run: |
           set -euo pipefail
@@ -126,7 +113,7 @@ jobs:
 
           mkdir -p "$HOME/.config/godot"
 
-          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<SETTINGS
           [gd_resource type="EditorSettings" format=3]
 
           [resource]
@@ -135,7 +122,7 @@ jobs:
           export/android/debug_keystore = "$HOME/.android/garlia-debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
-          EOF
+          SETTINGS
 
       - name: Importar recursos del proyecto
         run: |
@@ -178,6 +165,7 @@ jobs:
           test -s EXPORT/Garlia.apk
 
       - name: Publicar en GitHub Releases
+        timeout-minutes: 15
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag_name || 'dev-build' }}
@@ -199,5 +187,6 @@ jobs:
             EXPORT/Garlia.apk
           make_latest: true
           fail_on_unmatched_files: true
+          overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
