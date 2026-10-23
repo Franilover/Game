@@ -156,7 +156,7 @@ theme_override_constants/separation = 4
 
 [node name="LabelProcesos" type="Label" parent="Panel/VBox/ContentRow/RightCol"]
 layout_mode = 2
-text = "Procesos descubiertos"
+text = "Procesos y resultados"
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 11
 
