@@ -400,7 +400,7 @@ func iniciar_generacion_chunk(
 				"coord": chunk_coord,
 				"stage": 1,
 				"cursor": 0,
-				"cursor_datos": 0,
+				"cursor_datos": total_padded_cells,
 				"cursor_pintado": 0,
 				"orden_pintado": orden_pintado_cache,
 				"zonas_base": datos["zonas_base"],
@@ -545,12 +545,17 @@ func _validar_matrices_tarea_generacion() -> bool:
 		)
 	if stage == 1:
 		return (
-			cursor >= 0
+			cursor_datos == expected_cells
+			and cursor >= 0
 			and cursor <= expected_chunk_cells
 			and cursor == cursor_pintado
 		)
 	if stage == 2:
-		return cursor == 0 and cursor_pintado == expected_chunk_cells
+		return (
+			cursor_datos == expected_cells
+			and cursor == 0
+			and cursor_pintado == expected_chunk_cells
+		)
 	return false
 
 
