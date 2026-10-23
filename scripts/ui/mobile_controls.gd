@@ -46,7 +46,8 @@ func _ready() -> void:
 
 
 func _configurar_boton(boton: BaseButton, accion: String) -> void:
-	if boton == null or not InputMap.has_action(accion):
+	var acciones_ui := ["hand_q_use", "hand_e_use", "hand_q_select", "hand_e_select", "ium_menu"]
+	if boton == null or (not InputMap.has_action(accion) and not acciones_ui.has(accion) and accion != "inventory"):
 		push_warning("Control móvil: no existe la acción InputMap '%s'." % accion)
 		return
 	boton.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
