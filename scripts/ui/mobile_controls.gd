@@ -203,9 +203,16 @@ func _actualizar_acciones_joystick() -> void:
 
 
 func _solicitar_hud(accion: String) -> void:
+	# MobileControls puede estar anidado bajo un contenedor de UI, no directamente bajo el HUD.
 	var hud := get_parent()
 	if hud != null and hud.has_method("accion_controles_moviles"):
 		hud.call("accion_controles_moviles", accion)
+		return
+	for candidato in get_tree().get_nodes_in_group("hud"):
+		if is_instance_valid(candidato) and candidato.has_method("accion_controles_moviles"):
+			candidato.call("accion_controles_moviles", accion)
+			return
+	push_warning("Controles móviles: no se encontró un HUD para '%s'." % accion)
 
 
 func _posicionar(control: Control, posicion: Vector2, tamano: Vector2) -> void:
