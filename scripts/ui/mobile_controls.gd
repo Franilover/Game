@@ -136,21 +136,25 @@ func _distribuir_controles() -> void:
 	$Movement/JoystickKnob.size = $Movement/JoystickKnob.custom_minimum_size
 	_joystick_radio = joystick_size * 0.30
 	_actualizar_visual_joystick()
-	var a := float(tamano_accion - (8 if compacto else 0))
-	var gap := float(maxi(separacion - (2 if compacto else 0), 4))
+	# Disposición en dos zonas: utilidades arriba a la izquierda y combate abajo a la derecha.
+	var a := clampf(float(tamano_accion) - (8.0 if compacto else 0.0), 48.0, 68.0)
+	var gap := maxf(float(separacion), 12.0)
 	var right := viewport_size.x - margen
 	var bottom := viewport_size.y - margen
+	var small := a * 0.78
+	# Inventario, IUM y selección de mano quedan separados del joystick.
+	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
+	_posicionar($Actions/IUM, Vector2(margen + a + gap, margen), Vector2(a, a))
+	_posicionar($Actions/SlotQ, Vector2(margen + (a + gap) * 2.0, margen + (a - small) * 0.5), Vector2(small, small))
+	_posicionar($Actions/SlotE, Vector2(margen + (a + gap) * 2.0 + small + gap * 0.5, margen + (a - small) * 0.5), Vector2(small, small))
+	# Acciones de combate en bloque compacto, con separación real entre hitboxes.
 	_posicionar($Actions/Primary, Vector2(right - a, bottom - a), Vector2(a, a))
-	_posicionar($Actions/Jump, Vector2(right - a * 2.0 - gap, bottom - a * 1.55 - gap), Vector2(a, a))
+	_posicionar($Actions/Jump, Vector2(right - a * 2.0 - gap, bottom - a * 1.65 - gap), Vector2(a, a))
 	_posicionar($Actions/Secondary, Vector2(right - a * 2.0 - gap, bottom - a * 0.45), Vector2(a, a))
 	_posicionar($Actions/Interact, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 0.45), Vector2(a, a))
-	_posicionar($Actions/Dash, Vector2(right - a * 2.0 - gap, bottom - a * 2.65 - gap * 2.0), Vector2(a, a))
-	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
-	_posicionar($Actions/UseQ, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 1.55 - gap), Vector2(a, a))
-	_posicionar($Actions/UseE, Vector2(right - a * 2.0 - gap, bottom - a * 2.65 - gap * 2.0 - a - gap), Vector2(a, a))
-	_posicionar($Actions/SlotQ, Vector2(right - a * 2.0 - gap, margen), Vector2(a * 0.85, a * 0.85))
-	_posicionar($Actions/SlotE, Vector2(right - a - a * 0.85 - gap, margen), Vector2(a * 0.85, a * 0.85))
-	_posicionar($Actions/IUM, Vector2(margen + a + gap, margen), Vector2(a, a))
+	_posicionar($Actions/Dash, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 1.65 - gap), Vector2(a, a))
+	_posicionar($Actions/UseQ, Vector2(right - a * 2.0 - gap, bottom - a * 2.0 - gap * 2.0), Vector2(a, a))
+	_posicionar($Actions/UseE, Vector2(right - a, bottom - a * 2.0 - gap * 2.0), Vector2(a, a))
 
 
 func _input(event: InputEvent) -> void:
@@ -158,9 +162,13 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
-		if touch.pressed and _joystick_touch_index == -1 and $Movement/JoystickBase.get_global_rect().has_point(touch.position):
+		var punto_local: Vector2 = get_global_transform_with_canvas().affine_inverse() * touch.position
+		var base_rect := Rect2($Movement/JoystickBase.position, $Movement/JoystickBase.size)
+		# Captura el toque en el área del joystick, incluso con escala de viewport.
+		var zona_captura := base_rect.grow(24.0)
+		if touch.pressed and _joystick_touch_index == -1 and zona_captura.has_point(punto_local):
 			_joystick_touch_index = touch.index
-			_actualizar_joystick_desde_pantalla(touch.position)
+			_actualizar_joystick_desde_local(punto_local)
 			get_viewport().set_input_as_handled()
 		elif not touch.pressed and touch.index == _joystick_touch_index:
 			_joystick_touch_index = -1
@@ -171,14 +179,15 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
 		if drag.index == _joystick_touch_index:
-			_actualizar_joystick_desde_pantalla(drag.position)
+			var punto_local: Vector2 = get_global_transform_with_canvas().affine_inverse() * drag.position
+			_actualizar_joystick_desde_local(punto_local)
 			get_viewport().set_input_as_handled()
 
 
-func _actualizar_joystick_desde_pantalla(pantalla: Vector2) -> void:
-	var base_rect := $Movement/JoystickBase.get_global_rect()
+func _actualizar_joystick_desde_local(punto_local: Vector2) -> void:
+	var base_rect := Rect2($Movement/JoystickBase.position, $Movement/JoystickBase.size)
 	var centro := base_rect.position + base_rect.size * 0.5
-	var desplazamiento := pantalla - centro
+	var desplazamiento := punto_local - centro
 	_joystick_vector = desplazamiento.limit_length(_joystick_radio) / maxf(_joystick_radio, 1.0)
 	_actualizar_visual_joystick()
 	_actualizar_acciones_joystick()
@@ -201,6 +210,8 @@ func _actualizar_acciones_joystick() -> void:
 		"move_down": maxf(0.0, _joystick_vector.y),
 	}
 	for accion in valores:
+		if not InputMap.has_action(accion):
+			continue
 		var fuerza := float(valores[accion])
 		var evento := InputEventAction.new()
 		evento.action = accion
