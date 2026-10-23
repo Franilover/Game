@@ -88,6 +88,13 @@ func _input(event: InputEvent) -> void:
 		_cerrar()
 		get_viewport().set_input_as_handled()
 
+func toggle_menu() -> void:
+	if visible_menu:
+		_cerrar()
+	else:
+		_abrir()
+
+
 func _abrir() -> void:
 	if jugador == null or not is_instance_valid(jugador):
 		return
