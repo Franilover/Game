@@ -281,7 +281,8 @@ func _cargar_aspectos_edicion() -> void:
 		var textura := load(ruta) as Texture2D
 		if textura == null:
 			continue
-		var indice := _aspectos_list.add_icon_item(textura, true)
+		_aspectos_list.add_icon_item(textura, true)
+		var indice := _aspectos_list.item_count - 1
 		_aspectos_list.set_item_text(indice, archivo.get_basename())
 		_aspectos_list.set_item_metadata(indice, ruta)
 
