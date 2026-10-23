@@ -17,6 +17,8 @@ on:
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
+      - "scripts/creatures/**"
+      - "tests/creatures/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
       - "project.godot"
