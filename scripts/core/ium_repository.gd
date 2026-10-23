@@ -29,11 +29,15 @@ func simular(jugador_id: String, nodos: Array, enlaces: Array) -> void:
 	if _client == null:
 		simulacion_fallida.emit("Repositorio IUM no configurado.")
 		return
-	_registrar(_client.solicitar_rpc("simular_organizacion_ium_v1", {
+	var request_id := _client.solicitar_rpc("simular_organizacion_ium_v1", {
 		"p_componentes": nodos,
 		"p_enlaces": enlaces,
 		"p_contexto": {}
-	}), "simular")
+	})
+	if request_id < 0:
+		simulacion_fallida.emit("No se pudo iniciar la simulación: Supabase no está configurado o rechazó la solicitud.")
+		return
+	_registrar(request_id, "simular")
 
 func registrar_intento(jugador_id: String, proceso_id: String) -> void:
 	if _client == null or jugador_id.is_empty():
