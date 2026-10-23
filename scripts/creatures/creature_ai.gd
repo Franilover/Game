@@ -200,9 +200,14 @@ func _physics_process(delta: float) -> void:
 			_actualizar_percepcion()
 		)
 
-	# Dormir o reposar no desactiva la percepción: una amenaza puede
-	# interrumpir el descanso sin alterar la rutina horaria de la especie.
-	if en_descanso_programado and (objetivo == null or not is_instance_valid(objetivo)):
+	# Dormir o reposar no desactiva la percepción, pero un objetivo cualquiera
+	# tampoco basta para interrumpir el descanso: debe estar detectado y la
+	# especie debe tener una respuesta definida ante él.
+	var interrupcion_relevante := false
+	if objetivo_detectado and objetivo != null and is_instance_valid(objetivo):
+		var respuesta := _obtener_respuesta_a_objetivo()
+		interrupcion_relevante = respuesta in ["atacar", "huir", "perseguir", "investigar"]
+	if en_descanso_programado and not interrupcion_relevante:
 		criatura.detener_movimiento()
 		criatura.tomar_control_movimiento()
 		return
