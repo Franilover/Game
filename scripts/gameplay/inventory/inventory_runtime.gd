@@ -70,8 +70,8 @@ func agregar_objeto(datos: Dictionary) -> bool:
 	for item_antes in state.items:
 		items_antes.append(item_antes.duplicate(true))
 	var restante := cantidad
-	# Las recogidas y el apilamiento automático se dirigen a la mochila
-	# (ranuras 6–11). Las manos se llenan mediante movimientos explícitos.
+	# Primero se apila en la mochila (ranuras 6–11). Si no cabe todo,
+	# la fase de espacios vacíos continúa por las dos manos.
 	var inicio_mochila := mini(6, state.items.size())
 	var fin_mochila := mini(12, state.items.size())
 	if max_stack > 1:
