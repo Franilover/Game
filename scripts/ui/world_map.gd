@@ -178,66 +178,16 @@ func _draw() -> void:
 
 
 func _dibujar_tile_real(tile: Vector2i, rect: Rect2) -> void:
-	if _world_context == null:
-		return
+	# El mapa es una representación cartográfica ligera: no dibuja atlas ni
+	# crea un segundo TileMap. Cada celda explorada se pinta con el color de
+	# su zona real, usando los mismos datos que el terreno principal.
+	var color_zona := _color_zona(tile)
+	draw_rect(rect, color_zona, true)
 
-	var zona: int = _world_context.get_zona_at(tile)
-	var textura: Texture2D = _obtener_textura_zona(tile, zona)
-	if textura == null:
-		draw_rect(rect, Color("#120b07"), true)
-		return
-
-	# El mundo usa atlas 4x4 de 32x32. Tomamos exactamente la misma
-	# celda base que WorldTerrainVisual usa para el terreno.
-	var region := Rect2(3.0 * float(_tile_size_real()), 3.0 * float(_tile_size_real()), float(_tile_size_real()), float(_tile_size_real()))
-	draw_texture_rect_region(textura, rect, region)
-
-
-func _tile_size_real() -> int:
-	if _world_context != null:
-		return maxi(_world_context.get_tile_size(), 1)
-	return maxi(_tile_size, 1)
-
-
-func _obtener_textura_zona(tile: Vector2i, zona: int) -> Texture2D:
-	var bioma_variant: Dictionary = _world_context.get_bioma_at(tile)
-	var bioma_nombre := ""
-	if bioma_variant is Dictionary:
-		bioma_nombre = str((bioma_variant as Dictionary).get("nombre", "")).strip_edges()
-
-	var clave := bioma_nombre + "::" + str(zona)
-	if _texturas.has(clave):
-		return _texturas[clave]
-
-	# Reutiliza los atlas canónicos del renderer de terreno; no aproxima
-	# una zona con texturas genéricas de otro nombre.
-	var paths: Array[String] = []
-	if not bioma_nombre.is_empty():
-		paths.append("res://assets/tilesets/" + bioma_nombre + ".png")
-	var rutas_zona: Array[String] = [
-		"res://assets/tilesets/Pradera.png",
-		"res://assets/tilesets/Tierra.png",
-		"res://assets/tilesets/Montaña.png",
-		"res://assets/tilesets/Desierto.png",
-		"res://assets/tilesets/Marino.png",
-		"res://assets/tilesets/Marino.png",
-		"res://assets/tilesets/Marino.png",
-		"res://assets/tilesets/Montaña.png",
-		"res://assets/tilesets/Bosque.png",
-		"res://assets/tilesets/Desierto.png"
-	]
-	if zona >= 0 and zona < rutas_zona.size():
-		paths.append(rutas_zona[zona])
-
-	var textura: Texture2D = null
-	for path in paths:
-		textura = load(path) as Texture2D
-		if textura != null and textura.get_width() >= _tile_size_real() * 4 and textura.get_height() >= _tile_size_real() * 4:
-			break
-		textura = null
-
-	_texturas[clave] = textura
-	return textura
+	# Un borde discreto conserva la lectura de cuadrícula cuando hay espacio.
+	# A zoom mínimo lo omitimos para no gastar llamadas de dibujo innecesarias.
+	if rect.size.x >= 6.0 and rect.size.y >= 6.0:
+		draw_rect(rect, Color(0.08, 0.055, 0.035, 0.28), false, 0.6)
 
 
 func _color_zona(tile: Vector2i) -> Color:
