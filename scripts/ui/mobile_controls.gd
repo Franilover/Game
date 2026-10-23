@@ -61,9 +61,9 @@ func _configurar_boton(boton: BaseButton, accion: String) -> void:
 	boton.focus_mode = Control.FOCUS_NONE
 	boton.mouse_filter = Control.MOUSE_FILTER_STOP
 	if accion == "ium_menu":
-		boton.pressed.connect(func() -> void: _solicitar_hud("toggle_ium"))
+		boton.button_down.connect(func() -> void: _solicitar_hud("toggle_ium"))
 	elif accion == "inventory":
-		boton.pressed.connect(func() -> void: _solicitar_hud("toggle_inventory"))
+		boton.button_down.connect(func() -> void: _solicitar_inventario())
 	else:
 		boton.button_down.connect(func() -> void: _presionar_accion(accion))
 		boton.button_up.connect(func() -> void: _soltar_accion(accion))
