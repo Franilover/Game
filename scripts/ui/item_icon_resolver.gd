@@ -12,6 +12,31 @@ const EXTENSIONES_IMAGEN: Array[String] = [
 	"jpeg"
 ]
 
+# Referencias explícitas para que Godot incluya estos recursos en el PCK/APK.
+# Los archivos que solo se descubren con DirAccess pueden quedar fuera de una exportación.
+const TEXTURAS_INCLUIDAS: Array[Texture2D] = [
+	preload("res://assets/art/items/Arco Aoris.png"),
+	preload("res://assets/art/items/Botas de Hierro.png"),
+	preload("res://assets/art/items/Escudo.png"),
+	preload("res://assets/art/items/Espada de Madera.png"),
+	preload("res://assets/art/items/Espada de Piedra.png"),
+	preload("res://assets/art/items/Flecha de Madera.png"),
+	preload("res://assets/art/items/Manzana.png"),
+	preload("res://assets/art/items/Pala de Madera.png"),
+	preload("res://assets/art/items/Pala de Piedra.png"),
+	preload("res://assets/art/items/Pico de Madera.png"),
+	preload("res://assets/art/items/Pico de Piedra.png"),
+	preload("res://assets/art/items/Pluma Aoris.png"),
+	preload("res://assets/art/props/Arbusto Mediano.png"),
+	preload("res://assets/art/props/Arbusto Pequeño.png"),
+	preload("res://assets/art/props/Flor Azul.png"),
+	preload("res://assets/art/props/Flor Morada.png"),
+	preload("res://assets/art/props/Piedra Grande.png"),
+	preload("res://assets/art/props/Piedra Mediana.png"),
+	preload("res://assets/art/props/Piedra Pequeña.png"),
+	preload("res://assets/art/props/Árbol.png")
+]
+
 
 static var _indice_listo: bool = false
 static var _rutas_por_nombre: Dictionary = {}
@@ -80,7 +105,12 @@ static func _asegurar_indice() -> void:
 	_indice_listo = true
 
 	_rutas_por_nombre.clear()
+	_nombres_sin_icono.clear()
 	_entradas.clear()
+
+	# El manifiesto funciona también en APK/PCK, sin depender del listado del FS.
+	for textura in TEXTURAS_INCLUIDAS:
+		_indexar_textura_incluida(textura)
 
 	_indexar_directorio(
 		ITEMS_ASSET_ROOT
@@ -90,6 +120,29 @@ static func _asegurar_indice() -> void:
 	_indexar_directorio(
 		PROPS_ASSET_ROOT
 	)
+
+
+static func _indexar_textura_incluida(textura: Texture2D) -> void:
+	if textura == null:
+		return
+
+	var ruta := textura.resource_path
+	if ruta.is_empty():
+		return
+
+	var nombre_sin_extension := ruta.get_file().get_basename()
+	var clave := _normalizar_nombre(nombre_sin_extension)
+	if clave.is_empty():
+		return
+
+	if not _rutas_por_nombre.has(clave):
+		_rutas_por_nombre[clave] = ruta
+
+	_entradas.append({
+		"nombre": nombre_sin_extension,
+		"ruta": ruta,
+		"tokens": _normalizar_tokens(nombre_sin_extension)
+	})
 
 
 static func _indexar_directorio(
