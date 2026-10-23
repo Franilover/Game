@@ -32,10 +32,6 @@ func _ready() -> void:
 		"run": $Actions/Dash,
 		"jump": $Actions/Jump,
 		"inventory": $Actions/Inventory,
-		"hand_q_use": $Actions/UseQ,
-		"hand_e_use": $Actions/UseE,
-		"hand_q_select": $Actions/SlotQ,
-		"hand_e_select": $Actions/SlotE,
 		"ium_menu": $Actions/IUM,
 	}
 
@@ -57,25 +53,17 @@ func _configurar_estilo_joystick() -> void:
 
 
 func _configurar_boton(boton: BaseButton, accion: String) -> void:
-	var acciones_ui := ["hand_q_use", "hand_e_use", "hand_q_select", "hand_e_select", "ium_menu"]
+	var acciones_ui := ["ium_menu"]
 	if boton == null or (not InputMap.has_action(accion) and not acciones_ui.has(accion) and accion != "inventory"):
 		push_warning("Control móvil: no existe la acción InputMap '%s'." % accion)
 		return
 	boton.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
 	boton.focus_mode = Control.FOCUS_NONE
 	boton.mouse_filter = Control.MOUSE_FILTER_STOP
-	if accion == "hand_q_select":
-		boton.pressed.connect(func() -> void: _solicitar_hud("abrir_selector_q"))
-	elif accion == "hand_e_select":
-		boton.pressed.connect(func() -> void: _solicitar_hud("abrir_selector_e"))
-	elif accion == "ium_menu":
+	if accion == "ium_menu":
 		boton.pressed.connect(func() -> void: _solicitar_hud("toggle_ium"))
 	elif accion == "inventory":
 		boton.pressed.connect(func() -> void: _solicitar_hud("toggle_inventory"))
-	elif accion == "hand_q_use":
-		boton.pressed.connect(func() -> void: _usar_mano("izquierda"))
-	elif accion == "hand_e_use":
-		boton.pressed.connect(func() -> void: _usar_mano("derecha"))
 	else:
 		boton.button_down.connect(func() -> void: _presionar_accion(accion))
 		boton.button_up.connect(func() -> void: _soltar_accion(accion))
@@ -86,8 +74,7 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 		return
 	var nombres := {
 		"interact": "F", "primary_action": "A", "secondary_action": "B",
-		"run": "⇢", "jump": "↑", "inventory": "Tab",
-		"hand_q_use": "Q", "hand_e_use": "E", "hand_q_select": "Q ·", "hand_e_select": "E ·", "ium_menu": "X"
+		"run": "⇢", "jump": "↑", "inventory": "Tab", "ium_menu": "X"
 	}
 	boton.text = str(nombres.get(accion, "•"))
 	boton.add_theme_font_size_override("font_size", 18 if accion.begins_with("hand_") or accion == "ium_menu" else 22)
@@ -114,7 +101,7 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	boton.tooltip_text = str({
 		"interact": "Interactuar", "primary_action": "Acción principal",
 		"secondary_action": "Acción secundaria", "run": "Dash / correr",
-		"jump": "Saltar", "inventory": "Abrir inventario", "hand_q_use": "Usar objeto de Q", "hand_e_use": "Usar objeto de E", "hand_q_select": "Elegir objeto para Q", "hand_e_select": "Elegir objeto para E", "ium_menu": "Menú de IUMs"
+		"jump": "Saltar", "inventory": "Abrir inventario", "ium_menu": "Menú de IUMs"
 	}.get(accion, accion.capitalize()))
 
 
@@ -141,20 +128,15 @@ func _distribuir_controles() -> void:
 	var gap := maxf(float(separacion), 12.0)
 	var right := viewport_size.x - margen
 	var bottom := viewport_size.y - margen
-	var small := a * 0.78
-	# Inventario, IUM y selección de mano quedan separados del joystick.
+	# Inventario e IUM quedan separados del joystick; las ranuras de mano del HUD son seleccionables.
 	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
 	_posicionar($Actions/IUM, Vector2(margen + a + gap, margen), Vector2(a, a))
-	_posicionar($Actions/SlotQ, Vector2(margen + (a + gap) * 2.0, margen + (a - small) * 0.5), Vector2(small, small))
-	_posicionar($Actions/SlotE, Vector2(margen + (a + gap) * 2.0 + small + gap * 0.5, margen + (a - small) * 0.5), Vector2(small, small))
 	# Acciones de combate en bloque compacto, con separación real entre hitboxes.
 	_posicionar($Actions/Primary, Vector2(right - a, bottom - a), Vector2(a, a))
 	_posicionar($Actions/Jump, Vector2(right - a * 2.0 - gap, bottom - a * 1.65 - gap), Vector2(a, a))
 	_posicionar($Actions/Secondary, Vector2(right - a * 2.0 - gap, bottom - a * 0.45), Vector2(a, a))
 	_posicionar($Actions/Interact, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 0.45), Vector2(a, a))
 	_posicionar($Actions/Dash, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 1.65 - gap), Vector2(a, a))
-	_posicionar($Actions/UseQ, Vector2(right - a * 2.0 - gap, bottom - a * 2.0 - gap * 2.0), Vector2(a, a))
-	_posicionar($Actions/UseE, Vector2(right - a, bottom - a * 2.0 - gap * 2.0), Vector2(a, a))
 
 
 func _input(event: InputEvent) -> void:
@@ -224,12 +206,6 @@ func _solicitar_hud(accion: String) -> void:
 	var hud := get_parent()
 	if hud != null and hud.has_method("accion_controles_moviles"):
 		hud.call("accion_controles_moviles", accion)
-
-
-func _usar_mano(mano: String) -> void:
-	var inventario := get_tree().get_first_node_in_group("inventory")
-	if inventario != null and inventario.has_method("usar_objeto_mano"):
-		inventario.call("usar_objeto_mano", mano)
 
 
 func _posicionar(control: Control, posicion: Vector2, tamano: Vector2) -> void:
