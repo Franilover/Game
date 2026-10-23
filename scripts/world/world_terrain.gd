@@ -1273,7 +1273,8 @@ func procesar_descargas(cells: int) -> bool:
 
 
 func _datos_chunk_cache_validos(datos: Dictionary) -> bool:
-	var expected_size := (chunk_size_tiles + CHUNK_PADDING * 2) ** 2
+	var padded_size := chunk_size_tiles + CHUNK_PADDING * 2
+	var expected_size := padded_size * padded_size
 	for key in ["zonas", "zonas_base", "biomas", "ecosistemas"]:
 		var matriz: Variant = datos.get(key, null)
 		if not matriz is PackedInt32Array or matriz.size() != expected_size:
