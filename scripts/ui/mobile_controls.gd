@@ -162,8 +162,8 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
-		var punto_local: Vector2 = get_global_transform_with_canvas().affine_inverse() * touch.position
-		var base_rect := Rect2($Movement/JoystickBase.position, $Movement/JoystickBase.size)
+		var punto_local: Vector2 = $Movement.get_global_transform_with_canvas().affine_inverse() * touch.position
+		var base_rect: Rect2 = Rect2($Movement/JoystickBase.position, $Movement/JoystickBase.size)
 		# Captura el toque en el área del joystick, incluso con escala de viewport.
 		var zona_captura := base_rect.grow(24.0)
 		if touch.pressed and _joystick_touch_index == -1 and zona_captura.has_point(punto_local):
@@ -179,15 +179,15 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
 		if drag.index == _joystick_touch_index:
-			var punto_local: Vector2 = get_global_transform_with_canvas().affine_inverse() * drag.position
+			var punto_local: Vector2 = $Movement.get_global_transform_with_canvas().affine_inverse() * drag.position
 			_actualizar_joystick_desde_local(punto_local)
 			get_viewport().set_input_as_handled()
 
 
 func _actualizar_joystick_desde_local(punto_local: Vector2) -> void:
-	var base_rect := Rect2($Movement/JoystickBase.position, $Movement/JoystickBase.size)
-	var centro := base_rect.position + base_rect.size * 0.5
-	var desplazamiento := punto_local - centro
+	var base_rect: Rect2 = Rect2($Movement/JoystickBase.position, $Movement/JoystickBase.size)
+	var centro: Vector2 = base_rect.position + base_rect.size * 0.5
+	var desplazamiento: Vector2 = punto_local - centro
 	_joystick_vector = desplazamiento.limit_length(_joystick_radio) / maxf(_joystick_radio, 1.0)
 	_actualizar_visual_joystick()
 	_actualizar_acciones_joystick()
@@ -198,7 +198,7 @@ func _actualizar_visual_joystick() -> void:
 		return
 	var base := $Movement/JoystickBase
 	var knob := $Movement/JoystickKnob
-	var centro := base.position + base.size * 0.5
+	var centro: Vector2 = base.position + base.size * 0.5
 	knob.position = centro - knob.size * 0.5 + _joystick_vector * _joystick_radio
 
 
