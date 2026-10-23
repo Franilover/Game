@@ -116,7 +116,7 @@ func abrir() -> void:
 	_entrada.grab_focus()
 	_ocultar_sugerencias()
 
-	_agregar_linea("[ADMIN] Consola abierta.")
+	# La consola abre sin mensajes preinsertados.
 
 
 func cerrar() -> void:
@@ -151,14 +151,6 @@ func _crear_interfaz() -> void:
 	columna.name = "Column"
 	_panel.add_child(columna)
 
-	var titulo: Label = Label.new()
-	titulo.text = "ADMIN CONSOLE"
-	titulo.add_theme_font_size_override(
-		"font_size",
-		12
-	)
-	columna.add_child(titulo)
-
 	_historial = RichTextLabel.new()
 	_historial.name = "Historial"
 	_historial.bbcode_enabled = true
@@ -168,18 +160,13 @@ func _crear_interfaz() -> void:
 		48.0
 	)
 
-	_historial.text = (
-		"[color=#b4befe]"
-		+ "Garlia Admin"
-		+ "[/color]\n"
-		+ "Escribe /help para ver comandos."
-	)
+	_historial.clear()
 
 	columna.add_child(_historial)
 
 	_entrada = LineEdit.new()
 	_entrada.name = "CommandInput"
-	_entrada.placeholder_text = "/summon <criatura>"
+	_entrada.placeholder_text = ""
 	_entrada.clear_button_enabled = true
 	_entrada.text_submitted.connect(
 		_al_enviar_comando
