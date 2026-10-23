@@ -268,41 +268,81 @@ func renombrar_partida(
 	)
 
 
-func actualizar_configuracion_partida(
+func obtener_datos_edicion_partida(id: String) -> Dictionary:
+	var datos := _leer_archivo_partida(id)
+	if datos.is_empty():
+		return {}
+	var estado: Dictionary = {}
+	var estado_variant: Variant = datos.get("estado", {})
+	if estado_variant is Dictionary:
+		estado = estado_variant as Dictionary
+	var flags: Dictionary = {}
+	var flags_variant: Variant = estado.get("flags", {})
+	if flags_variant is Dictionary:
+		flags = flags_variant as Dictionary
+	var personaje: Dictionary = {}
+	var personaje_variant: Variant = flags.get("personaje", {})
+	if personaje_variant is Dictionary:
+		personaje = (personaje_variant as Dictionary).duplicate(true)
+	var mundo: Dictionary = {}
+	var mundo_variant: Variant = datos.get("mundo", {})
+	if mundo_variant is Dictionary:
+		mundo = mundo_variant as Dictionary
+	return {
+		"id": id,
+		"nombre_mundo": str(datos.get("nombre", "Partida")),
+		"semilla": str(mundo.get("semilla", "—")),
+		"personaje": personaje
+	}
+
+
+func actualizar_personaje_partida(
 	id: String,
-	nuevo_nombre: String,
-	semilla_texto: String
+	nuevo_nombre_mundo: String,
+	nombre_personaje: String,
+	genero: String,
+	skin_path: String
 ) -> bool:
 	var datos := _leer_archivo_partida(id)
 	if datos.is_empty():
 		return false
-
-	var nombre_limpio := nuevo_nombre.strip_edges()
-	var semilla_limpia := semilla_texto.strip_edges()
-	if nombre_limpio.is_empty() or not _texto_es_semilla_valida(semilla_limpia):
+	var mundo_limpio := nuevo_nombre_mundo.strip_edges()
+	var personaje_limpio := nombre_personaje.strip_edges()
+	if mundo_limpio.is_empty() or personaje_limpio.is_empty():
 		return false
 
-	var mundo_variant: Variant = datos.get("mundo", {})
-	var mundo: Dictionary = {}
-	if mundo_variant is Dictionary:
-		mundo = (mundo_variant as Dictionary).duplicate(true)
+	var estado: Dictionary = {}
+	var estado_variant: Variant = datos.get("estado", {})
+	if estado_variant is Dictionary:
+		estado = (estado_variant as Dictionary).duplicate(true)
+	var flags: Dictionary = {}
+	var flags_variant: Variant = estado.get("flags", {})
+	if flags_variant is Dictionary:
+		flags = (flags_variant as Dictionary).duplicate(true)
+	var personaje: Dictionary = {}
+	var personaje_variant: Variant = flags.get("personaje", {})
+	if personaje_variant is Dictionary:
+		personaje = (personaje_variant as Dictionary).duplicate(true)
+	if personaje.is_empty():
+		return false
 
-	mundo["semilla"] = int(semilla_limpia)
-	if not mundo.has("generador_version"):
-		mundo["generador_version"] = 1
-
-	datos["nombre"] = nombre_limpio
-	datos["mundo"] = mundo
+	# La especie y la semilla nunca se toman desde el formulario: se conserva
+	# la información existente y solo se modifican los campos permitidos.
+	personaje["nombre"] = personaje_limpio
+	personaje["genero"] = genero.strip_edges()
+	if not skin_path.strip_edges().is_empty():
+		personaje["skin"] = skin_path
+		personaje["skin_nombre"] = skin_path.get_file().get_basename()
+	flags["personaje"] = personaje
+	estado["flags"] = flags
+	datos["estado"] = estado
+	datos["nombre"] = mundo_limpio
 	datos["actualizado_en"] = _ahora()
-
 	if not _escribir_archivo_partida(id, datos):
 		return false
-
 	if active_save_id == id:
-		active_save_name = nombre_limpio
-		world_state.world_seed = int(semilla_limpia)
-		world_state.world_seed_valida = true
-
+		active_save_name = mundo_limpio
+		world_state.flags["personaje"] = personaje.duplicate(true)
 	return true
 
 
