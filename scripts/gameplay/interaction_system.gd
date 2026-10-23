@@ -74,22 +74,26 @@ func _ready() -> void:
 
 
 func procesar_accion_primaria() -> bool:
-	var objeto_activo: Dictionary = {}
+	var objeto_mano: Dictionary = {}
 	if inventory != null:
-		objeto_activo = inventory.obtener_objeto_activo().duplicate(true)
+		objeto_mano = inventory.obtener_objeto_mano_activa("izquierda").duplicate(true)
+		if inventory.usar_objeto_mano("izquierda", player):
+			return true
 
-	return _procesar_interaccion_de_mano(objeto_activo, true)
+	return _procesar_interaccion_de_mano(objeto_mano, true, "izquierda")
 
 
 func procesar_accion_secundaria() -> bool:
-	var objeto_equipado: Dictionary = {}
+	var objeto_mano: Dictionary = {}
 	if inventory != null:
-		objeto_equipado = inventory.obtener_objeto_equipado("mano_secundaria").duplicate(true)
+		objeto_mano = inventory.obtener_objeto_mano_activa("derecha").duplicate(true)
+		if inventory.usar_objeto_mano("derecha", player):
+			return true
 
-	return _procesar_interaccion_de_mano(objeto_equipado, true)
+	return _procesar_interaccion_de_mano(objeto_mano, true, "derecha")
 
 
-func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool) -> bool:
+func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool, mano: String) -> bool:
 	if player == null or not player.is_alive:
 		return false
 
@@ -122,7 +126,7 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool)
 				player.get_global_mouse_position()
 			)
 			if colocado and inventory != null:
-				inventory.consumir_objeto_activo(1)
+				inventory.consumir_objeto_mano(mano, 1)
 				return true
 
 	return false
