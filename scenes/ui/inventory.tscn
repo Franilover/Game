@@ -120,10 +120,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -360.0
-offset_top = -260.0
-offset_right = 360.0
-offset_bottom = 260.0
+offset_left = -310.0
+offset_top = -170.0
+offset_right = 310.0
+offset_bottom = 170.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
@@ -131,21 +131,21 @@ theme_override_styles/panel = SubResource("StyleBox_window")
 
 [node name="Margin" type="MarginContainer" parent="Window" unique_id=319582735]
 layout_mode = 2
-theme_override_constants/margin_left = 22
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 22
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
 [node name="Column" type="VBoxContainer" parent="Window/Margin" unique_id=446694475]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 6
 
 [node name="TabButtons" type="HBoxContainer" parent="Window/Margin/Column" unique_id=3001000200]
 layout_mode = 2
 theme_override_constants/separation = 2
 
 [node name="Inventario" type="Button" parent="Window/Margin/Column/TabButtons" unique_id=3001000201]
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.95, 0.88, 0.7, 1)
@@ -258,27 +258,27 @@ theme_override_styles/panel = SubResource("StyleBox_tabs_panel")
 [node name="Inventario" type="HBoxContainer" parent="Window/Margin/Column/Tabs" unique_id=1889075135]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 18
+theme_override_constants/separation = 8
 
 [node name="LeftPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario" unique_id=261778966]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 5
 
 [node name="Grid" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel" unique_id=1707057280]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-theme_override_constants/separation = 14
+theme_override_constants/separation = 8
 
 [node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel" unique_id=1747754024]
-custom_minimum_size = Vector2(0, 170)
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel" unique_id=3001000001]
-custom_minimum_size = Vector2(110, 110)
+custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 0
 texture_filter = 1
@@ -321,18 +321,18 @@ text = "ELIMINAR OBJETO"
 disabled = true
 
 [node name="RightPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario" unique_id=1747754025]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(174, 0)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 5
 
 [node name="EquipmentArea" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/RightPanel" unique_id=3001000011]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 5
 
 [node name="SkinPanel" type="Control" parent="Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea" unique_id=3001000004]
-custom_minimum_size = Vector2(155, 0)
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -351,10 +351,10 @@ stretch_mode = 5
 mouse_filter = 2
 
 [node name="EquipmentSlots" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea" unique_id=3001000012]
-custom_minimum_size = Vector2(82, 0)
+custom_minimum_size = Vector2(62, 0)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 5
+theme_override_constants/separation = 3
 
 [node name="Crafteo" type="Control" parent="Window/Margin/Column/Tabs" unique_id=3001000105]
 layout_mode = 2
