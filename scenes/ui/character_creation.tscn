@@ -128,17 +128,6 @@ theme_override_constants/separation = 7
 layout_mode = 2
 text = "Aspecto"
 
-[node name="Skins" type="ItemList" parent="Panel/Margin/Column/Content/Appearance"]
-custom_minimum_size = Vector2(0, 120)
-layout_mode = 2
-size_flags_vertical = 3
-fixed_column_width = 76
-max_columns = 4
-icon_mode = 1
-fixed_icon_size = Vector2i(64, 64)
-allow_reselect = true
-select_mode = 0
-
 [node name="Status" type="Label" parent="Panel/Margin/Column"]
 visible = false
 layout_mode = 2
