@@ -279,6 +279,8 @@ func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator = nu
 		return
 
 	_hud.configurar(_player, world_context, MissionManager, world_gen.entity_manager if world_gen != null else null, _supabase_client, _inventory, WorldData, GameState)
+	if is_instance_valid(_world_atmosphere):
+		_hud.configurar_reloj_calendario(_world_atmosphere)
 
 
 func _configurar_interaccion(world_gen: WorldGenerator = null) -> void:
