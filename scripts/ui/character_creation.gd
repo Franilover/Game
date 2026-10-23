@@ -90,7 +90,6 @@ func _configurar_layout_responsive() -> void:
 	skins.fixed_icon_size = Vector2i(32, 32) if compacto else Vector2i(40, 40)
 	skins.fixed_column_width = 42 if compacto else 50
 	skins.max_columns = 0
-	for slot in CharacterAppearance.SLOTS:
 
 func open(action: String) -> void:
 	_action = action
