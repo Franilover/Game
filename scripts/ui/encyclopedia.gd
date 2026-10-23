@@ -399,21 +399,37 @@ func _mostrar_sprite_terreno(nivel: String, registro: Dictionary) -> void:
 		var recurso := load(ruta) as Texture2D
 		if recurso == null:
 			continue
-		# El atlas Dual-Grid no debe mostrarse completo en la enciclopedia.
-		# Recortamos una celda del atlas para usarla como muestra del terreno.
+		# Componer una muestra 3x3 con el centro lleno y los cuatro bordes.
+		# El atlas Dual-Grid codifica TL, TR, BL y BR en 16 mascaras;
+		# este orden coincide con TILE_SEQUENCE de WorldTerrainVisual.
 		var ancho_celda := int(recurso.get_width() / 4)
 		var alto_celda := int(recurso.get_height() / 4)
 		if ancho_celda <= 0 or alto_celda <= 0:
 			continue
-		var muestra := AtlasTexture.new()
-		muestra.atlas = recurso
-		muestra.region = Rect2(
-			ancho_celda * 3,
-			alto_celda * 3,
-			ancho_celda,
-			alto_celda
-		)
-		_icono.texture = muestra
+		var imagen_atlas := recurso.get_image()
+		if imagen_atlas == null or imagen_atlas.is_empty():
+			continue
+		var secuencia: Array[Vector2i] = [
+			Vector2i(0, 3), Vector2i(3, 3),
+			Vector2i(0, 2), Vector2i(1, 2),
+			Vector2i(0, 0), Vector2i(3, 2),
+			Vector2i(2, 3), Vector2i(3, 1),
+			Vector2i(1, 3), Vector2i(0, 1),
+			Vector2i(1, 0), Vector2i(2, 2),
+			Vector2i(3, 0), Vector2i(2, 0),
+			Vector2i(1, 1), Vector2i(2, 1),
+		]
+		# Máscaras para: esquina sup. izq., borde superior, sup. der.,
+		# borde izquierdo, centro, borde derecho, inf. izq., borde inferior,
+		# esquina inf. der. (bits TL, TR, BL, BR).
+		var mascaras: Array[int] = [8, 12, 4, 10, 15, 5, 2, 3, 1]
+		var muestra := Image.create(ancho_celda * 3, alto_celda * 3, false, Image.FORMAT_RGBA8)
+		for indice in range(mascaras.size()):
+			var celda := secuencia[mascaras[indice]]
+			var origen := Rect2i(celda.x * ancho_celda, celda.y * alto_celda, ancho_celda, alto_celda)
+			var destino := Vector2i((indice % 3) * ancho_celda, int(indice / 3) * alto_celda)
+			muestra.blit_rect(imagen_atlas, origen, destino)
+		_icono.texture = ImageTexture.create_from_image(muestra)
 		_icono.visible = true
 		return
 
