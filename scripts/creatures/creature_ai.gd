@@ -951,31 +951,38 @@ func _obtener_respuesta_a_objetivo() -> String:
 # ============================================================
 
 func _actualizar_rutina() -> void:
+	# La rutina representa el ciclo propio de la criatura; los estímulos de IA
+	# pueden interrumpir su acción actual, pero no deben reescribir este horario.
 	var horario_variant: Variant = configuracion_ia.get("horario", {})
-	if not horario_variant is Dictionary:
-		actividad_horaria = "explorar"
-		_actualizar_atraccion_refugio(false)
-		return
-
-	var horario := horario_variant as Dictionary
+	var horario: Dictionary = horario_variant if horario_variant is Dictionary else {}
 	var actividad_por_defecto := str(horario.get("actividad_por_defecto", "explorar")).strip_edges().to_lower()
 	actividad_horaria = actividad_por_defecto if not actividad_por_defecto.is_empty() else "explorar"
 
-	if world_atmosphere != null and is_instance_valid(world_atmosphere):
-		var tiempo := world_atmosphere.obtener_tiempo()
-		var hora := float(tiempo.get("hora_del_dia", 0.0))
+	if not horario.is_empty() and world_atmosphere != null and is_instance_valid(world_atmosphere):
+		var tiempo: Dictionary = world_atmosphere.obtener_tiempo()
+		var hora := fposmod(float(tiempo.get("hora_del_dia", 0.0)), 24.0)
 		var bloques_variant: Variant = horario.get("bloques", [])
 		if bloques_variant is Array:
 			for bloque_variant in bloques_variant as Array:
 				if not bloque_variant is Dictionary:
 					continue
 				var bloque := bloque_variant as Dictionary
-				var inicio := clampf(float(bloque.get("inicio", 0.0)), 0.0, 24.0)
-				var fin := clampf(float(bloque.get("fin", 24.0)), 0.0, 24.0)
+				if not bloque.has("actividad"):
+					continue
+				var inicio := fposmod(float(bloque.get("inicio", 0.0)), 24.0)
+				var fin_bruto := float(bloque.get("fin", 24.0))
+				var fin := fposmod(fin_bruto, 24.0)
+				# 24:00 es el límite del día, no 00:00 si el bloque comienza antes.
+				if is_equal_approx(fin_bruto, 24.0):
+					fin = 24.0
 				if _hora_en_bloque(hora, inicio, fin):
-					actividad_horaria = str(bloque.get("actividad", actividad_horaria)).strip_edges().to_lower()
+					var actividad_bloque := str(bloque.get("actividad", "")).strip_edges().to_lower()
+					if not actividad_bloque.is_empty():
+						actividad_horaria = actividad_bloque
 					break
 
+	# Publicar siempre el estado horario, incluso si falta o está mal formada
+	# la configuración; así no quedan metadatos de una rutina anterior.
 	criatura.set_meta("actividad_horaria", actividad_horaria)
 	_actualizar_atraccion_refugio(actividad_horaria in ["proteger", "atraer"])
 
