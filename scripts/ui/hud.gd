@@ -1117,8 +1117,8 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.anchor_bottom = 1.0
 	slot.offset_top = -48.0
 	slot.offset_bottom = 0.0
-	slot.offset_left = -126.0 if tecla == "Q" else 78.0
-	slot.offset_right = -78.0 if tecla == "Q" else 126.0
+	slot.offset_left = -134.0 if tecla == "Q" else 86.0
+	slot.offset_right = -86.0 if tecla == "Q" else 134.0
 	slot.custom_minimum_size = Vector2(48, 48)
 	slot.focus_mode = Control.FOCUS_NONE
 	slot.mouse_filter = Control.MOUSE_FILTER_STOP
