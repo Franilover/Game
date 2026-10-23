@@ -24,6 +24,7 @@ func _ready() -> void:
 		hide()
 		return
 
+	_configurar_estilo_joystick()
 	_botones = {
 		"interact": $Actions/Interact,
 		"primary_action": $Actions/Primary,
@@ -43,6 +44,16 @@ func _ready() -> void:
 		_estilizar_boton(_botones[accion] as Button, str(accion))
 	get_viewport().size_changed.connect(_distribuir_controles)
 	_distribuir_controles()
+
+
+func _configurar_estilo_joystick() -> void:
+	for nodo in [$Movement/JoystickBase, $Movement/JoystickKnob]:
+		var estilo := StyleBoxFlat.new()
+		estilo.bg_color = Color(0.075, 0.065, 0.055, 0.58) if nodo.name == "JoystickBase" else Color(0.30, 0.25, 0.17, 0.92)
+		estilo.border_color = Color(0.72, 0.62, 0.43, 0.85)
+		estilo.set_border_width_all(2)
+		estilo.set_corner_radius_all(64 if nodo.name == "JoystickBase" else 32)
+		nodo.add_theme_stylebox_override("panel", estilo)
 
 
 func _configurar_boton(boton: BaseButton, accion: String) -> void:
