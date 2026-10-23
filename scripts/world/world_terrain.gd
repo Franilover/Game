@@ -487,6 +487,12 @@ func _validar_matrices_tarea_generacion() -> bool:
 	if _generation_task.is_empty():
 		return false
 
+	# Coord forma parte del contrato: usar un fallback a (0, 0) en una tarea
+	# corrupta podría borrar accidentalmente el chunk de origen del mundo.
+	var coord_variant: Variant = _generation_task.get("coord", null)
+	if not coord_variant is Vector2i:
+		return false
+
 	var padded_size: int = chunk_size_tiles + CHUNK_PADDING * 2
 	var expected_cells: int = padded_size * padded_size
 	var expected_chunk_cells: int = chunk_size_tiles * chunk_size_tiles
@@ -526,14 +532,16 @@ func _validar_matrices_tarea_generacion() -> bool:
 
 
 func _recuperar_tarea_generacion_invalida() -> bool:
-	var coord_invalida: Vector2i = _generation_task.get(
-		"coord",
-		Vector2i.ZERO
-	)
+	var coord_variant: Variant = _generation_task.get("coord", null)
+	var coord_confiable := coord_variant is Vector2i
+	var coord_invalida := Vector2i.ZERO
+	if coord_confiable:
+		coord_invalida = coord_variant
+
 	push_warning(
 		"WorldTerrain: tarea de chunk inconsistente en "
-		+ str(coord_invalida)
-		+ "; se limpiará y volverá a la cola de streaming."
+		+ str(coord_variant)
+		+ "; se limpiará y volverá a la cola de streaming si su coordenada es válida."
 	)
 
 	# Incluso en la etapa DATA ya puede haberse pintado una parte del chunk:
@@ -541,12 +549,13 @@ func _recuperar_tarea_generacion_invalida() -> bool:
 	# evita residuos si el índice corrupto aparece a mitad de un lote.
 	_generation_task.clear()
 	_pintado_desde_flush = 0
-	_chunk_cache.erase(coord_invalida)
-	_chunk_cache_order.erase(coord_invalida)
-	_programar_limpieza_chunk(coord_invalida, false)
+	if coord_confiable:
+		_chunk_cache.erase(coord_invalida)
+		_chunk_cache_order.erase(coord_invalida)
+		_programar_limpieza_chunk(coord_invalida, false)
 
-	# No iniciar aquí: el streamer conserva el contexto del jugador y puede
-	# volver a encolar sólo si el chunk sigue dentro del radio de carga.
+	# Sin una coordenada validada no tocamos ninguna región visual/caché.
+	# El streamer tampoco reencolará el sentinel devuelto por el getter.
 	return false
 
 
@@ -1105,7 +1114,10 @@ func tiene_generacion_activa() -> bool:
 func obtener_chunk_en_generacion() -> Vector2i:
 	if _generation_task.is_empty():
 		return Vector2i(999999, 999999)
-	return _generation_task.get("coord", Vector2i(999999, 999999))
+	var coord_variant: Variant = _generation_task.get("coord", null)
+	if not coord_variant is Vector2i:
+		return Vector2i(999999, 999999)
+	return coord_variant
 
 
 func puede_pausar_generacion_actual() -> bool:
