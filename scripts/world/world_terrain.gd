@@ -466,12 +466,56 @@ func procesar_generacion(
 		)
 
 	if stage == 1:
+		# Las tareas pausadas y la caché deben conservar el contrato de tamaño
+		# del chunk. Validarlo justo antes de PINTADO evita que un estado
+		# incompleto vuelva a provocar accesos fuera de rango.
+		if not _validar_matrices_tarea_generacion():
+			var coord_invalida: Vector2i = _generation_task.get(
+				"coord",
+				Vector2i.ZERO
+			)
+			push_warning(
+				"WorldTerrain: tarea de chunk inconsistente en "
+				+ str(coord_invalida)
+				+ "; se regenerará desde los datos del mundo."
+			)
+			_generation_task.clear()
+			_chunk_cache.erase(coord_invalida)
+			_chunk_cache_order.erase(coord_invalida)
+			iniciar_generacion_chunk(coord_invalida)
+			return false
 		return _procesar_pintado_chunk(
 			cells
 		)
 
 	return _procesar_flush_chunk(
 		cells
+	)
+
+
+func _validar_matrices_tarea_generacion() -> bool:
+	if _generation_task.is_empty():
+		return false
+
+	var padded_size: int = chunk_size_tiles + CHUNK_PADDING * 2
+	var expected_cells: int = padded_size * padded_size
+	var zonas_base: Variant = _generation_task.get("zonas_base", null)
+	var zonas: Variant = _generation_task.get("zonas", null)
+	var biomas: Variant = _generation_task.get("biomas", null)
+	var ecosistemas: Variant = _generation_task.get("ecosistemas", null)
+	var orden: Variant = _generation_task.get("orden_pintado", null)
+
+	return (
+		zonas_base is PackedInt32Array
+		and zonas is PackedInt32Array
+		and biomas is PackedInt32Array
+		and ecosistemas is PackedInt32Array
+		and orden is PackedInt32Array
+		and zonas_base.size() == expected_cells
+		and zonas.size() == expected_cells
+		and biomas.size() == expected_cells
+		and ecosistemas.size() == expected_cells
+		and orden.size() == chunk_size_tiles * chunk_size_tiles
 	)
 
 
