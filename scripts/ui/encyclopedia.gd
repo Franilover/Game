@@ -35,14 +35,14 @@ func _ready() -> void:
 func _crear_interfaz() -> void:
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
+	margin.add_theme_constant_override("margin_left", 5)
+	margin.add_theme_constant_override("margin_top", 5)
+	margin.add_theme_constant_override("margin_right", 5)
+	margin.add_theme_constant_override("margin_bottom", 5)
 	add_child(margin)
 
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 8)
+	column.add_theme_constant_override("separation", 4)
 	margin.add_child(column)
 
 	var tabs := HBoxContainer.new()
@@ -67,18 +67,18 @@ func _crear_interfaz() -> void:
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 10)
+	body.add_theme_constant_override("separation", 5)
 	column.add_child(body)
 
 	_arbol = Tree.new()
-	_arbol.custom_minimum_size = Vector2(260, 0)
+	_arbol.custom_minimum_size = Vector2(112, 0)
 	_arbol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_arbol.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_arbol.hide_root = true
 	_arbol.columns = 1
 	_arbol.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46, 1.0))
 	_arbol.add_theme_color_override("font_selected_color", Color(0.95, 0.88, 0.7, 1.0))
-	_arbol.add_theme_font_size_override("font_size", 11)
+	_arbol.add_theme_font_size_override("font_size", 9)
 
 	var estilo_arbol := StyleBoxFlat.new()
 	estilo_arbol.bg_color = Color(0.075, 0.05, 0.035, 0.9)
@@ -107,24 +107,24 @@ func _crear_interfaz() -> void:
 	body.add_child(detail_panel)
 
 	var detail_margin := MarginContainer.new()
-	detail_margin.add_theme_constant_override("margin_left", 14)
-	detail_margin.add_theme_constant_override("margin_top", 12)
-	detail_margin.add_theme_constant_override("margin_right", 14)
-	detail_margin.add_theme_constant_override("margin_bottom", 12)
+	detail_margin.add_theme_constant_override("margin_left", 5)
+	detail_margin.add_theme_constant_override("margin_top", 5)
+	detail_margin.add_theme_constant_override("margin_right", 5)
+	detail_margin.add_theme_constant_override("margin_bottom", 5)
 	detail_panel.add_child(detail_margin)
 
 	var detail_column := VBoxContainer.new()
-	detail_column.add_theme_constant_override("separation", 8)
+	detail_column.add_theme_constant_override("separation", 4)
 	detail_margin.add_child(detail_column)
 
 	var top := VBoxContainer.new()
-	top.custom_minimum_size = Vector2(0, 150)
+	top.custom_minimum_size = Vector2(0, 72)
 	top.alignment = BoxContainer.ALIGNMENT_CENTER
 	top.add_theme_constant_override("separation", 5)
 	detail_column.add_child(top)
 
 	_icono = TextureRect.new()
-	_icono.custom_minimum_size = Vector2(128, 112)
+	_icono.custom_minimum_size = Vector2(64, 54)
 	_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -137,7 +137,7 @@ func _crear_interfaz() -> void:
 	_nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_nombre.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1.0))
-	_nombre.add_theme_font_size_override("font_size", 17)
+	_nombre.add_theme_font_size_override("font_size", 12)
 	top.add_child(_nombre)
 
 	_ficha = RichTextLabel.new()
