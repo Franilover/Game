@@ -47,7 +47,8 @@ func _crear_interfaz() -> void:
 
 	var tabs := HBoxContainer.new()
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tabs.add_theme_constant_override("separation", 4)
+	tabs.alignment = BoxContainer.ALIGNMENT_BEGIN
+	tabs.add_theme_constant_override("separation", 3)
 	column.add_child(tabs)
 
 	_tab_biomas = Button.new()
@@ -151,16 +152,29 @@ func _crear_interfaz() -> void:
 
 
 func _configurar_boton_seccion(boton: Button) -> void:
-	boton.custom_minimum_size = Vector2(0, 32)
-	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	boton.size_flags_stretch_ratio = 1.0
-	boton.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1))
-	boton.add_theme_color_override("font_hover_color", Color(0.9, 0.79, 0.58, 1))
-	boton.add_theme_color_override("font_pressed_color", Color(0.95, 0.88, 0.7, 1))
-	boton.add_theme_font_size_override("font_size", 11)
-	boton.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.12, 0.075, 0.045, 0.95), Color(0.29, 0.19, 0.12, 1), 1))
-	boton.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
-	boton.add_theme_stylebox_override("pressed", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
+	# Son subpestañas de la Enciclopedia, no pestañas principales de la interfaz.
+	# Ocupan sólo el ancho de su etiqueta y usan menos altura y contraste.
+	boton.custom_minimum_size = Vector2(0, 23)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	boton.size_flags_stretch_ratio = 0.0
+	boton.add_theme_constant_override("h_separation", 2)
+	boton.add_theme_color_override("font_color", Color(0.61, 0.49, 0.34, 1))
+	boton.add_theme_color_override("font_hover_color", Color(0.82, 0.70, 0.51, 1))
+	boton.add_theme_color_override("font_pressed_color", Color(0.94, 0.85, 0.66, 1))
+	boton.add_theme_font_size_override("font_size", 9)
+	var normal := _crear_estilo_boton(Color(0.095, 0.065, 0.045, 0.72), Color(0.22, 0.15, 0.09, 0.8), 1)
+	var hover := _crear_estilo_boton(Color(0.15, 0.105, 0.065, 0.92), Color(0.39, 0.29, 0.17, 1), 1)
+	var activo := _crear_estilo_boton(Color(0.23, 0.17, 0.095, 0.96), Color(0.57, 0.44, 0.24, 1), 1)
+	for estilo in [normal, hover, activo]:
+		estilo.set_content_margin_all(7)
+		estilo.set_border_width_all(1)
+		estilo.corner_radius_top_left = 3
+		estilo.corner_radius_top_right = 3
+		estilo.corner_radius_bottom_left = 3
+		estilo.corner_radius_bottom_right = 3
+	boton.add_theme_stylebox_override("normal", normal)
+	boton.add_theme_stylebox_override("hover", hover)
+	boton.add_theme_stylebox_override("pressed", activo)
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 
