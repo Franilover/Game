@@ -151,8 +151,8 @@ layout_mode = 2
 
 [node name="RightCol" type="VBoxContainer" parent="Panel/VBox/ContentRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(155, 0)
-theme_override_constants/separation = 4
+custom_minimum_size = Vector2(205, 0)
+theme_override_constants/separation = 5
 
 [node name="LabelTopologia" type="Label" parent="Panel/VBox/ContentRow/RightCol"]
 layout_mode = 2
