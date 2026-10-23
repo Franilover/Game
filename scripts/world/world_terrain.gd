@@ -619,7 +619,7 @@ func _procesar_datos_chunk(
 
 	var cursor: int = int(_generation_task.get("cursor_datos", _generation_task.get("cursor", 0)))
 	var datos_listos: PackedByteArray = _generation_task["datos_listos"]
-	var orden: PackedInt32Array = _generation_task["orden_datos"]
+	var orden: Array = _generation_task["orden_datos"]
 
 	# DATA sólo modifica buffers PackedInt32Array. No hay celdas visuales
 	# que bloquear todavía; el lote visual comienza al entrar en PINTADO.
@@ -630,7 +630,11 @@ func _procesar_datos_chunk(
 	)
 
 	while cursor < limite:
+		if cursor < 0 or cursor >= orden.size():
+			return _recuperar_tarea_generacion_invalida()
 		var indice: int = int(orden[cursor])
+		if indice < 0 or indice >= total:
+			return _recuperar_tarea_generacion_invalida()
 		var local_y: int = (
 			indice / size
 		)
@@ -758,7 +762,7 @@ func _procesar_pintado_chunk(
 
 	var cursor: int = int(_generation_task.get("cursor_pintado", 0))
 	var datos_listos: PackedByteArray = _generation_task.get("datos_listos", PackedByteArray())
-	var orden: PackedInt32Array = _generation_task["orden_pintado"]
+	var orden: Array = _generation_task["orden_pintado"]
 	var cursor_inicio_lote: int = cursor
 
 	var limite: int = mini(
@@ -770,7 +774,15 @@ func _procesar_pintado_chunk(
 		visual.comenzar_lote()
 
 	while cursor < limite:
+		if cursor < 0 or cursor >= orden.size():
+			if visual != null:
+				visual.terminar_lote()
+			return _recuperar_tarea_generacion_invalida()
 		var indice: int = int(orden[cursor])
+		if indice < 0 or indice >= total:
+			if visual != null:
+				visual.terminar_lote()
+			return _recuperar_tarea_generacion_invalida()
 		var local_y: int = (
 			indice / chunk_size_tiles
 		)
