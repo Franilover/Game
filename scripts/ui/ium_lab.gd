@@ -19,6 +19,7 @@ var _arrastrando_ium: Dictionary = {}
 var _iums_disponibles: Array = []
 var _selectores_huecos: Array[OptionButton] = []
 var _conectando_desde: int = -1
+var _temporizador_simulacion: Timer = null
 
 # ── UI refs ───────────────────────────────────────────────────
 @onready var _panel_lista: VBoxContainer = %ListaIUMs
@@ -43,6 +44,13 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_ajustar_panel_a_pantalla)
 
 	_btn_simular.pressed.connect(_simular)
+	_temporizador_simulacion = Timer.new()
+	_temporizador_simulacion.name = "TemporizadorSimulacion"
+	_temporizador_simulacion.one_shot = true
+	_temporizador_simulacion.wait_time = 20.0
+	_temporizador_simulacion.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_temporizador_simulacion)
+	_temporizador_simulacion.timeout.connect(_al_timeout_simulacion)
 	_btn_limpiar.pressed.connect(_limpiar_canvas)
 	_btn_cerrar.pressed.connect(_cerrar)
 	_btn_aplicar_topologia.pressed.connect(_aplicar_topologia_seleccionada)
@@ -818,9 +826,10 @@ func _simular() -> void:
 				"tipo_union": "dirigida"
 			})
 
-	_label_estado.text = "Simulando..."
+	_label_estado.text = "Simulando… esperando respuesta del motor."
 
 	_btn_simular.disabled = true
+	_temporizador_simulacion.start()
 
 	ium_manager.simular_organizacion(
 		nodos,
@@ -832,7 +841,15 @@ func _simular() -> void:
 # CALLBACKS DEL MANAGER
 # ================================================================
 
+func _al_timeout_simulacion() -> void:
+	if not _btn_simular.disabled:
+		return
+	_btn_simular.disabled = false
+	_label_estado.text = "La simulación no respondió en 20 s. Revisa la conexión con Supabase y el registro de errores; puedes volver a intentarlo."
+
+
 func _al_descubrir_proceso(resultado: Dictionary) -> void:
+	_temporizador_simulacion.stop()
 	_btn_simular.disabled = false
 
 	if str(resultado.get("estado", "")) != "simulado":
@@ -886,6 +903,7 @@ func _mostrar_candidatos_simulacion(candidatos: Array) -> void:
 
 
 func _al_error(mensaje: String) -> void:
+	_temporizador_simulacion.stop()
 	_btn_simular.disabled = false
 
 	_label_estado.text = (
