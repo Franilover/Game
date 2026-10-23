@@ -208,6 +208,18 @@ func _crear_boton_ium(ium: Dictionary) -> Button:
 func _agregar_ium_al_canvas(
 	ium: Dictionary
 ) -> void:
+	var nuevo_id := str(ium.get("id", "")).strip_edges()
+	if nuevo_id.is_empty():
+		_label_estado.text = "No se puede añadir: el IUM no tiene un identificador válido."
+		return
+
+	# El RPC identifica los extremos por ium_id, no por instancia de componente.
+	# Repetir un IUM volvería ambiguas sus conexiones para el motor actual.
+	for entrada in _nodos_canvas:
+		if str(entrada["ium"].get("id", "")) == nuevo_id:
+			_label_estado.text = "Ese IUM ya está en el canvas; el motor actual no distingue instancias repetidas."
+			return
+
 	var slot := _crear_slot_canvas(
 		ium,
 		_nodos_canvas.size()
