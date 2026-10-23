@@ -202,6 +202,15 @@ func _actualizar_acciones_joystick() -> void:
 		Input.parse_input_event(evento)
 
 
+func _solicitar_inventario() -> void:
+	var inventarios := get_tree().get_nodes_in_group("inventory")
+	for nodo in inventarios:
+		if is_instance_valid(nodo) and nodo.has_method("toggle"):
+			nodo.call_deferred("toggle")
+			return
+	_solicitar_hud("toggle_inventory")
+
+
 func _solicitar_hud(accion: String) -> void:
 	# MobileControls puede estar anidado bajo un contenedor de UI, no directamente bajo el HUD.
 	var hud := get_parent()
