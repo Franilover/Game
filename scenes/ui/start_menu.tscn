@@ -445,5 +445,3 @@ layout_mode = 2
 text = "Volver"
 
 [node name="CharacterCreation" parent="." unique_id=1640942131 instance=ExtResource("2_character_creation")]
-layout_mode = 0
-anchors_preset = 0
