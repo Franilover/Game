@@ -73,14 +73,16 @@ Si es recolectable: prop del mundo → InteractionController → inventario. Reu
 ## 4. Flujo de objetos e inventario
 Supabase define el objeto. Los servicios canónicos cargan los datos. HUD/inventario los presentan. La acción usa el objeto seleccionado/equipado y sus propiedades canónicas.
 
-Manos:
-- Click izquierdo → objeto activo de hotbar / mano principal.
-- Click derecho → objeto equipado en `mano_secundaria`.
-- Ambos pasan por el mismo resolver contextual.
-- Si hay objeto utilizable, se intenta utilizar.
-- Si no hay objeto aplicable, se resuelve la interacción contextual normal.
+Manos y mochila:
+- Click izquierdo → objeto activo de la mano izquierda, seleccionada con `Q`.
+- Click derecho → objeto activo de la mano derecha, seleccionada con `E`.
+- La hotbar no forma parte de la interfaz ni decide qué objeto se usa.
+- Las recogidas intentan apilar/guardar primero en mochila (índices 6–11), luego ocupan ranuras libres de mano izquierda (0–5) y derecha (12–17).
+- Si no cabe el objeto completo, la operación se revierte y el objeto del mundo se conserva.
+- Ambos clics pasan por el mismo resolver contextual; después se intenta usar el objeto de la mano correspondiente, colocar y finalmente combatir.
+- Los campos de hotbar antiguos pueden leerse desde partidas guardadas para compatibilidad, pero no dirigen el gameplay actual.
 
-No duplicar lógica primaria y secundaria si la diferencia solo es la fuente del objeto.
+No duplicar lógica primaria y secundaria si la diferencia solo es la mano elegida.
 
 ## 5. Flujo del mundo
 Cadena: Supabase → WorldDataService / WorldData → WorldGenerator / WorldTerrain / WorldStreamer → WorldEntityManager / Factory / Spawner → entidades visuales → interacción/simulación.
