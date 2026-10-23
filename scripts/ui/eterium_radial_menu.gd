@@ -2,7 +2,7 @@ extends Control
 class_name EteriumRadialMenu
 
 ## Menú radial transparente de acciones de Eterium.
-## Mantén X, apunta con el ratón a un cuadrante y haz clic para ejecutar.
+## Pulsa X para abrir; selecciona con clic o con las teclas 1–4.
 
 const COSTO_CURACION: int = 10
 const COSTO_CARGA_DASH: int = 10
@@ -63,16 +63,13 @@ func _input(event: InputEvent) -> void:
 				_cerrar()
 				get_viewport().set_input_as_handled()
 				return
-		if tecla.keycode == KEY_X and not tecla.echo:
-			if tecla.pressed and not visible_menu:
+		if tecla.keycode == KEY_X and tecla.pressed and not tecla.echo:
+			if visible_menu:
+				_cerrar()
+			else:
 				_abrir()
-				get_viewport().set_input_as_handled()
-				return
-			if not tecla.pressed and visible_menu:
-				_actualizar_cuadrante(get_viewport().get_mouse_position())
-				_ejecutar_seleccion()
-				get_viewport().set_input_as_handled()
-				return
+			get_viewport().set_input_as_handled()
+			return
 	if not visible_menu:
 		return
 	if event is InputEventMouseMotion:
