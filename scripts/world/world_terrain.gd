@@ -56,6 +56,7 @@ var _generation_task: Dictionary = {}
 # Una sola tarea puede quedar pausada para ceder el generador al chunk prioritario.
 var _paused_generation_task: Dictionary = {}
 var _unload_task: Dictionary = {}
+var _pending_unload_tasks: Array[Dictionary] = []
 var _pintado_desde_flush: int = 0
 @export var visual_flush_cells: int = 256
 
@@ -1162,10 +1163,7 @@ func cancelar_generacion_si_distante(
 	# puede convertir un frame de streaming en un flush de 1024 celdas.
 	if visual != null:
 		visual.terminar_lote()
-		visual.iniciar_clear_chunk(coord, chunk_size_tiles)
-		_unload_task = {
-			"coord": coord,
-		}
+	_programar_limpieza_chunk(coord, false)
 	_generation_task.clear()
 	_pintado_desde_flush = 0
 	return true
@@ -1195,47 +1193,91 @@ func ultimo_chunk_generado() -> Vector2i:
 	return _ultimo_chunk_generado
 
 
+func _programar_limpieza_chunk(
+	chunk_coord: Vector2i,
+	conservar_datos: bool
+) -> void:
+	# Un solo clear visual puede avanzar a la vez. Encolar las demás limpiezas
+	# evita que una cancelación sobrescriba una descarga ya iniciada.
+	if not _unload_task.is_empty() and _unload_task.get("coord") == chunk_coord:
+		if conservar_datos:
+			_unload_task["conservar_datos"] = true
+		return
+	for pendiente in _pending_unload_tasks:
+		if pendiente.get("coord") == chunk_coord:
+			if conservar_datos:
+				pendiente["conservar_datos"] = true
+			return
+
+	var tarea := {
+		"coord": chunk_coord,
+		"conservar_datos": conservar_datos
+	}
+	if _unload_task.is_empty():
+		_iniciar_limpieza_chunk(tarea)
+	else:
+		_pending_unload_tasks.append(tarea)
+
+
+func _iniciar_limpieza_chunk(tarea: Dictionary) -> void:
+	_unload_task = tarea
+	if visual != null:
+		visual.iniciar_clear_chunk(
+			_unload_task["coord"],
+			chunk_size_tiles
+		)
+
+
 func descargar_chunk(
 	chunk_coord: Vector2i
 ) -> void:
 	if not _loaded_chunks.has(chunk_coord):
 		return
-	if not _unload_task.is_empty():
-		return
-
-	_unload_task = {
-		"coord": chunk_coord,
-	}
-	if visual != null:
-		visual.iniciar_clear_chunk(chunk_coord, chunk_size_tiles)
+	_programar_limpieza_chunk(chunk_coord, true)
 
 
 func procesar_descargas(cells: int) -> bool:
 	if _unload_task.is_empty():
-		return true
+		if not _pending_unload_tasks.is_empty():
+			_iniciar_limpieza_chunk(_pending_unload_tasks.pop_front())
+		else:
+			return true
 
-	if visual == null:
-		_loaded_chunks.erase(_unload_task["coord"])
-		_unload_task.clear()
-		return true
+	if visual != null:
+		var terminado: bool = visual.procesar_clear_chunk(cells)
+		if not terminado:
+			return false
 
-	var terminado: bool = visual.procesar_clear_chunk(cells)
-	if not terminado:
-		return false
-
-	var coord: Vector2i = _unload_task["coord"]
-	var datos_variant: Variant = _loaded_chunks.get(coord, {})
+	var coord: Vector2i = _unload_task.get("coord", Vector2i.ZERO)
+	var conservar_datos: bool = bool(_unload_task.get("conservar_datos", false))
+	var datos_variant: Variant = _loaded_chunks.get(coord, null)
 	_loaded_chunks.erase(coord)
 
-	if datos_variant is Dictionary and chunk_cache_max > 0:
-		_chunk_cache[coord] = datos_variant
-		_chunk_cache_order.erase(coord)
-		_chunk_cache_order.append(coord)
-		while _chunk_cache_order.size() > chunk_cache_max:
-			var antiguo: Vector2i = _chunk_cache_order.pop_front()
-			_chunk_cache.erase(antiguo)
+	# Una generación cancelada nunca llegó a _loaded_chunks. No insertar un
+	# diccionario vacío en caché: sólo guardar datos completos ya finalizados.
+	if conservar_datos and datos_variant is Dictionary and chunk_cache_max > 0:
+		var datos: Dictionary = datos_variant
+		var cache_valida := _datos_chunk_cache_validos(datos)
+		if cache_valida:
+			_chunk_cache[coord] = datos
+			_chunk_cache_order.erase(coord)
+			_chunk_cache_order.append(coord)
+			while _chunk_cache_order.size() > chunk_cache_max:
+				var antiguo: Vector2i = _chunk_cache_order.pop_front()
+				_chunk_cache.erase(antiguo)
 
 	_unload_task.clear()
+	if not _pending_unload_tasks.is_empty():
+		_iniciar_limpieza_chunk(_pending_unload_tasks.pop_front())
+	return _pending_unload_tasks.is_empty() and _unload_task.is_empty()
+
+
+func _datos_chunk_cache_validos(datos: Dictionary) -> bool:
+	var expected_size := (chunk_size_tiles + CHUNK_PADDING * 2) ** 2
+	for key in ["zonas", "zonas_base", "biomas", "ecosistemas"]:
+		var matriz: Variant = datos.get(key, null)
+		if not matriz is PackedInt32Array or matriz.size() != expected_size:
+			return false
 	return true
 
 
