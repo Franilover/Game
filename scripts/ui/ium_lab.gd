@@ -86,10 +86,14 @@ func _aplicar_estilo_interfaz() -> void:
 func configurar(manager: Node, admin_console: Node) -> void:
 	ium_manager = manager
 	_admin_console = admin_console
-	ium_manager.iums_cargados.connect(_al_cargar_iums)
-	ium_manager.procesos_cargados.connect(_al_cargar_procesos)
-	ium_manager.proceso_descubierto.connect(_al_descubrir_proceso)
-	ium_manager.error_ium.connect(_al_error)
+	if not ium_manager.iums_cargados.is_connected(_al_cargar_iums):
+		ium_manager.iums_cargados.connect(_al_cargar_iums)
+	if not ium_manager.procesos_cargados.is_connected(_al_cargar_procesos):
+		ium_manager.procesos_cargados.connect(_al_cargar_procesos)
+	if not ium_manager.proceso_descubierto.is_connected(_al_descubrir_proceso):
+		ium_manager.proceso_descubierto.connect(_al_descubrir_proceso)
+	if not ium_manager.error_ium.is_connected(_al_error):
+		ium_manager.error_ium.connect(_al_error)
 
 
 # ================================================================
@@ -582,14 +586,11 @@ func _simular() -> void:
 		var slot: Control = entrada["slot"]
 
 		nodos.append({
-			"ium_id": entrada["ium"].get(
-				"id",
-				""
-			),
-			"nombre": entrada["ium"].get(
-				"nombre",
-				""
-			),
+			"ium_id": entrada["ium"].get("id", ""),
+			"nombre": entrada["ium"].get("nombre", ""),
+			"orden": nodos.size() + 1,
+			"rol": "componente",
+			"posicion": "X",
 			"posicion_x": slot.position.x,
 			"posicion_y": slot.position.y
 		})
@@ -605,19 +606,9 @@ func _simular() -> void:
 			and d_idx < _nodos_canvas.size()
 		):
 			enlaces.append({
-				"origen_id": _nodos_canvas[
-					o_idx
-				]["ium"].get(
-					"id",
-					""
-				),
-				"destino_id": _nodos_canvas[
-					d_idx
-				]["ium"].get(
-					"id",
-					""
-				),
-				"tipo_enlace": "secuencial"
+				"origen": _nodos_canvas[o_idx]["ium"].get("id", ""),
+				"destino": _nodos_canvas[d_idx]["ium"].get("id", ""),
+				"tipo_union": "funcional"
 			})
 
 	_label_estado.text = "Simulando..."
@@ -634,24 +625,57 @@ func _simular() -> void:
 # CALLBACKS DEL MANAGER
 # ================================================================
 
-func _al_descubrir_proceso(
-	proceso: Dictionary
-) -> void:
+func _al_descubrir_proceso(resultado: Dictionary) -> void:
 	_btn_simular.disabled = false
 
-	var nombre: String = proceso.get(
-		"nombre",
-		"Proceso desconocido"
-	)
+	if str(resultado.get("estado", "")) != "simulado":
+		_label_estado.text = str(resultado.get("detalle", resultado.get("motivo", "La simulación no pudo resolverse.")))
+		return
 
-	_label_estado.text = (
-		"¡Proceso descubierto: %s!"
-		% nombre
-	)
+	var candidatos: Array = resultado.get("procesos_candidatos", [])
+	var principal := str(resultado.get("conjuracion_principal", ""))
+	var proceso_principal := str(resultado.get("proceso_principal", ""))
+	if candidatos.is_empty():
+		var salidas: Array = resultado.get("salidas", [])
+		_label_estado.text = "Simulación completada. Salidas: " + ", ".join(salidas)
+	else:
+		if not principal.is_empty():
+			_label_estado.text = "Coincidencia principal: %s · proceso: %s · candidatos: %d" % [principal, proceso_principal, candidatos.size()]
+		else:
+			_label_estado.text = "Simulación completada: %d candidatos; configuración ambigua." % candidatos.size()
 
-	_al_cargar_procesos(
-		ium_manager.procesos_conocidos
-	)
+	_mostrar_candidatos_simulacion(candidatos)
+
+
+func _mostrar_candidatos_simulacion(candidatos: Array) -> void:
+	for child in _panel_descubiertos.get_children():
+		child.queue_free()
+
+	if candidatos.is_empty():
+		var vacio := Label.new()
+		vacio.text = "No se encontró una conjuración compatible."
+		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_panel_descubiertos.add_child(vacio)
+		return
+
+	for candidato_variant in candidatos:
+		if not candidato_variant is Dictionary:
+			continue
+		var candidato := candidato_variant as Dictionary
+		var fila := VBoxContainer.new()
+		var nombre := Label.new()
+		var conjuracion := str(candidato.get("conjuracion", "Conjuración desconocida"))
+		var proceso := str(candidato.get("proceso", "Proceso sin nombre"))
+		nombre.text = conjuracion + (" · PRINCIPAL" if bool(candidato.get("es_principal", false)) else "")
+		nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		nombre.add_theme_color_override("font_color", Color(0.95, 0.88, 0.7, 1))
+		var detalle := Label.new()
+		detalle.text = proceso
+		detalle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detalle.add_theme_font_size_override("font_size", 10)
+		fila.add_child(nombre)
+		fila.add_child(detalle)
+		_panel_descubiertos.add_child(fila)
 
 
 func _al_error(mensaje: String) -> void:
