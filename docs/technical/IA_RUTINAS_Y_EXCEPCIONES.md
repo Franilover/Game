@@ -23,6 +23,18 @@ Cada criatura mantiene un ciclo diario reconocible. La percepción y los acontec
 - La actividad `proteger` es una decisión territorial con su propio selector de amenazas; no debe convertirse en una modificación del horario.
 - No se introducen efectos de IA dentro del sistema de daño. La IA propone acciones; el sistema de combate resuelve el resultado.
 
+## Selección de objetivos (implementada en Godot)
+
+El selector normal comparte la misma resolución de respuesta que usa la máquina de estados, mediante `_obtener_respuesta_para_objetivo(candidato)`. Una entidad no se convierte en objetivo solo por ser la más cercana:
+
+- Las criaturas no jugadoras deben cumplir el filtro de `objetivos` y la IA debe tener una respuesta ejecutable para ellas.
+- El jugador solo entra en la selección normal si el perfil, el comportamiento o una regla especial define una respuesta válida.
+- Las respuestas reconocidas en este momento son `atacar`, `huir`, `perseguir` e `investigar`. Si la especie no decide qué hacer con un candidato, este no desplaza a una presa o amenaza relevante.
+- Las reglas de agresión del bosque terminan la evaluación del jugador cuando no se cumple su condición; el perfil general no puede saltarse esa protección.
+- Las ramas dedicadas a `proteger` y a buscar refugio conservan sus selectores propios.
+
+Este cambio corrige la selección de objetivos en el código, pero aún requiere validación en Godot con escenarios de varias criaturas, jugador cercano, refugios y criaturas en descanso. No afirma que el comportamiento ya haya sido verificado en ejecución.
+
 ## Contrato de configuración actual
 
 El motor lee `criatura.ia_config` y utiliza, cuando existen, claves como:
