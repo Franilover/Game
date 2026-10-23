@@ -369,7 +369,7 @@ script = ExtResource("3_encyclopedia")
 [node name="Mapa" type="Control" parent="Window/Margin/Column/Tabs" unique_id=3001000102]
 layout_mode = 2
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 340)
+custom_minimum_size = Vector2(0, 0)
 script = ExtResource("4_world_map")
 
 [node name="Relaciones" type="Control" parent="Window/Margin/Column/Tabs" unique_id=3001000103]
