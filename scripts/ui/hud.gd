@@ -61,7 +61,6 @@ var _discovery_notice_timer: float = 0.0
 @onready var _interaction_prompt_action_node: Label = $InteractionPrompt/Margin/Content/Action
 @onready var _location_panel_node: Panel = $LocationPanel
 @onready var _location_label_node: Label = $LocationPanel/LocationLabel
-@onready var _hotbar_node: InventoryHotbar = $Hotbar
 
 
 func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext = null, nuevo_mission_manager: MissionManagerService = null, nuevo_entity_manager: WorldEntityManager = null, nuevo_supabase_client: GarliaSupabaseClient = null, nuevo_inventory: GarliaInventory = null, nuevo_world_data: WorldDataService = null, nuevo_game_state: GameStateService = null) -> void:
@@ -90,7 +89,6 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 			if _inventory_ref.inventory_changed.is_connected(_al_cambiar_inventario_manos):
 				_inventory_ref.inventory_changed.disconnect(_al_cambiar_inventario_manos)
 		_inventory_ref = nuevo_inventory
-		_hotbar_node.configurar_inventario(nuevo_inventory)
 		if not _inventory_ref.hand_item_changed.is_connected(_actualizar_huecos_manos):
 			_inventory_ref.hand_item_changed.connect(_actualizar_huecos_manos)
 		if not _inventory_ref.inventory_changed.is_connected(_al_cambiar_inventario_manos):
