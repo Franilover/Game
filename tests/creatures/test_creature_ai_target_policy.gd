@@ -61,7 +61,37 @@ func _run() -> void:
 		_fail("La respuesta al asesino del bosque debe ser atacar.")
 		return
 
-	print("CreatureAITargetPolicy: pruebas de selección completadas.")
+	# Los ataques de contacto deben acercarse antes de iniciar el golpe.
+	player.remove_meta("garlia_bosque_asesino")
+	actor.criatura_nombre = "Depredador de prueba"
+	actor.comportamiento = ""
+	ai.perfil = AIScript.Perfil.GENERICO
+	player.position = Vector2(140.0, 0.0)
+	ai.objetivo = player
+	ai._cambiar_a_respuesta_atacar()
+	if ai.estado != AIScript.Estado.PERSIGUIENDO:
+		_fail("Un ataque genérico fuera de alcance debe pasar a persecución.")
+		return
+
+	# GENÉRICO, GUARDIAN y CAZADOR ya tienen un manejador de contacto;
+	# entrar en ATACANDO no debe enviarlos directamente a RECUPERANDO.
+	for perfil_prueba in [
+		AIScript.Perfil.GENERICO,
+		AIScript.Perfil.GUARDIAN,
+		AIScript.Perfil.CAZADOR
+	]:
+		ai.perfil = perfil_prueba
+		ai._cambiar_estado(AIScript.Estado.ATACANDO)
+		if ai.estado != AIScript.Estado.ATACANDO:
+			_fail("Un perfil con ataque de contacto saltó a recuperación al entrar.")
+			return
+		ai._procesar_atacando(0.016)
+		if ai.estado != AIScript.Estado.ATACANDO:
+			_fail("Un perfil con ataque de contacto no mantuvo la aproximación.")
+			return
+		ai._cambiar_estado(AIScript.Estado.RECUPERANDO)
+
+	print("CreatureAITargetPolicy: pruebas de selección y contacto completadas.")
 	root.remove_child(player)
 	player.free()
 	actor.free()
