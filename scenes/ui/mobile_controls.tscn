@@ -25,45 +25,21 @@ grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
 
-[node name="Up" type="Button" parent="Movement"]
-custom_minimum_size = Vector2(58, 58)
+[node name="JoystickBase" type="Panel" parent="Movement"]
+custom_minimum_size = Vector2(136, 136)
 layout_mode = 0
-offset_left = 91.0
-offset_top = 0.0
-offset_right = 149.0
-offset_bottom = 58.0
-mouse_filter = 0
-text = "▲"
+offset_right = 136.0
+offset_bottom = 136.0
+mouse_filter = 2
 
-[node name="Down" type="Button" parent="Movement"]
-custom_minimum_size = Vector2(58, 58)
+[node name="JoystickKnob" type="Panel" parent="Movement"]
+custom_minimum_size = Vector2(56, 56)
 layout_mode = 0
-offset_left = 91.0
-offset_top = 116.0
-offset_right = 149.0
-offset_bottom = 174.0
-mouse_filter = 0
-text = "▼"
-
-[node name="Left" type="Button" parent="Movement"]
-custom_minimum_size = Vector2(58, 58)
-layout_mode = 0
-offset_left = 20.0
-offset_top = 58.0
-offset_right = 78.0
-offset_bottom = 116.0
-mouse_filter = 0
-text = "◀"
-
-[node name="Right" type="Button" parent="Movement"]
-custom_minimum_size = Vector2(58, 58)
-layout_mode = 0
-offset_left = 162.0
-offset_top = 58.0
-offset_right = 220.0
-offset_bottom = 116.0
-mouse_filter = 0
-text = "▶"
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 96.0
+offset_bottom = 96.0
+mouse_filter = 2
 
 [node name="Actions" type="Control" parent="."]
 layout_mode = 1
@@ -138,4 +114,34 @@ offset_top = 60.0
 offset_right = 117.0
 offset_bottom = 122.0
 mouse_filter = 0
-text = "I"
+text = "Tab"
+
+[node name="UseQ" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+mouse_filter = 0
+text = "Q"
+
+[node name="UseE" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+mouse_filter = 0
+text = "E"
+
+[node name="SlotQ" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 0
+mouse_filter = 0
+text = "Q ·"
+
+[node name="SlotE" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 0
+mouse_filter = 0
+text = "E ·"
+
+[node name="IUM" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(62, 62)
+layout_mode = 0
+mouse_filter = 0
+text = "X"
