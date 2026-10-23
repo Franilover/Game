@@ -8,6 +8,7 @@ var _skins: Array[String] = []
 var _personalizacion: Dictionary = {}
 var _personalizacion_items: Dictionary = {}
 var _personalizacion_colores: Dictionary = {}
+var _personalizacion_vistas: Dictionary = {}
 var _personalizacion_rows: VBoxContainer
 var _preview_container: Control
 var _preview_base: TextureRect
@@ -90,11 +91,6 @@ func _configurar_layout_responsive() -> void:
 	skins.fixed_column_width = 42 if compacto else 50
 	skins.max_columns = 0
 	for slot in CharacterAppearance.SLOTS:
-		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
-		if lista != null:
-			lista.custom_minimum_size.y = 38 if compacto else 46
-			lista.fixed_icon_size = Vector2i(24, 24) if compacto else Vector2i(30, 30)
-			lista.fixed_column_width = 30 if compacto else 36
 
 func open(action: String) -> void:
 	_action = action
@@ -242,7 +238,7 @@ func _actualizar_vista_previa() -> void:
 		capa.visible = capa.texture != null
 
 func _construir_controles_personalizacion() -> void:
-	# Mantener visible el selector de piel base, usando miniaturas sin texto.
+	# Selector de piel base en miniaturas y carruseles compactos por categoría.
 	skins.visible = true
 	var etiqueta_skin := appearance_container.get_node_or_null("SkinLabel") as Label
 	if etiqueta_skin != null:
@@ -251,8 +247,7 @@ func _construir_controles_personalizacion() -> void:
 	_personalizacion_rows = VBoxContainer.new()
 	_personalizacion_rows.name = "FilasPersonalizacion"
 	_personalizacion_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_personalizacion_rows.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_personalizacion_rows.add_theme_constant_override("separation", 5)
+	_personalizacion_rows.add_theme_constant_override("separation", 4)
 	appearance_container.add_child(_personalizacion_rows)
 	appearance_container.move_child(_personalizacion_rows, 2)
 
@@ -260,19 +255,15 @@ func _construir_controles_personalizacion() -> void:
 		var fila := HBoxContainer.new()
 		fila.name = "Fila_" + slot
 		fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		fila.add_theme_constant_override("separation", 6)
+		fila.alignment = BoxContainer.ALIGNMENT_CENTER
+		fila.add_theme_constant_override("separation", 8)
 		_personalizacion_rows.add_child(fila)
 
+		# La lista conserva rutas y selección, pero no se muestra: la interfaz
+		# presenta una sola miniatura con flechas para recorrer las opciones.
 		var lista := ItemList.new()
-		lista.name = "Catalogo"
-		lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lista.custom_minimum_size = Vector2(0, 46)
-		lista.max_columns = 0
-		lista.fixed_column_width = 36
-		lista.fixed_icon_size = Vector2i(30, 30)
-		lista.icon_mode = ItemList.ICON_MODE_TOP
-		lista.select_mode = ItemList.SELECT_SINGLE
-		lista.same_column_width = true
+		lista.name = "CatalogoInterno"
+		lista.visible = false
 		lista.add_item("")
 		lista.set_item_metadata(0, "")
 		for pieza in CharacterAppearance.catalogo(slot):
@@ -285,10 +276,37 @@ func _construir_controles_personalizacion() -> void:
 		fila.add_child(lista)
 		_personalizacion_items[slot] = lista
 
+		var anterior := Button.new()
+		anterior.text = "‹"
+		anterior.custom_minimum_size = Vector2(34, 34)
+		anterior.focus_mode = Control.FOCUS_NONE
+		anterior.tooltip_text = "Opción anterior"
+		anterior.pressed.connect(_cambiar_opcion.bind(slot, -1))
+		fila.add_child(anterior)
+
+		var icono := TextureRect.new()
+		icono.name = "MiniaturaActual"
+		icono.custom_minimum_size = Vector2(38, 38)
+		icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fila.add_child(icono)
+		_personalizacion_vistas[slot] = icono
+
+		var siguiente := Button.new()
+		siguiente.text = "›"
+		siguiente.custom_minimum_size = Vector2(34, 34)
+		siguiente.focus_mode = Control.FOCUS_NONE
+		siguiente.tooltip_text = "Opción siguiente"
+		siguiente.pressed.connect(_cambiar_opcion.bind(slot, 1))
+		fila.add_child(siguiente)
+
 		var selector_color := ColorPickerButton.new()
-		selector_color.custom_minimum_size = Vector2(28, 26)
+		selector_color.custom_minimum_size = Vector2(28, 28)
 		selector_color.color = _color_inicial(slot)
-		selector_color.tooltip_text = "Color de " + str(CharacterAppearance.SLOT_LABELS[slot]).to_lower()
+		selector_color.tooltip_text = "Cambiar color"
 		selector_color.color_changed.connect(_al_cambiar_color_pieza.bind(slot))
 		fila.add_child(selector_color)
 		_personalizacion_colores[slot] = selector_color
@@ -296,6 +314,28 @@ func _construir_controles_personalizacion() -> void:
 			"ruta": "",
 			"color": CharacterAppearance.color_a_html(selector_color.color)
 		}
+		_actualizar_icono_opcion(slot)
+
+
+func _cambiar_opcion(slot: String, direccion: int) -> void:
+	var lista: ItemList = _personalizacion_items.get(slot) as ItemList
+	if lista == null or lista.item_count == 0:
+		return
+	var seleccionados := lista.get_selected_items()
+	var indice_actual := seleccionados[0] if not seleccionados.is_empty() else 0
+	var nuevo_indice := posmod(indice_actual + direccion, lista.item_count)
+	lista.select(nuevo_indice)
+	_al_seleccionar_pieza(nuevo_indice, slot)
+
+
+func _actualizar_icono_opcion(slot: String) -> void:
+	var lista: ItemList = _personalizacion_items.get(slot) as ItemList
+	var icono: TextureRect = _personalizacion_vistas.get(slot) as TextureRect
+	if lista == null or icono == null:
+		return
+	var seleccionados := lista.get_selected_items()
+	var indice := seleccionados[0] if not seleccionados.is_empty() else 0
+	icono.texture = lista.get_item_icon(indice) if indice > 0 else null
 
 func _color_inicial(slot: String) -> Color:
 	match slot:
@@ -314,6 +354,7 @@ func _al_seleccionar_pieza(indice: int, slot: String) -> void:
 	var pieza: Dictionary = _personalizacion.get(slot, {}).duplicate(true)
 	pieza["ruta"] = str(lista.get_item_metadata(indice))
 	_personalizacion[slot] = pieza
+	_actualizar_icono_opcion(slot)
 	_actualizar_vista_previa()
 
 
