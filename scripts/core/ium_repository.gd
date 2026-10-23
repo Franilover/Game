@@ -53,7 +53,7 @@ func _al_request(request_id: int, resultado: int, codigo_http: int, _cabeceras: 
 
 	if resultado != HTTPRequest.RESULT_SUCCESS or codigo_http >= 300:
 		if tipo == "iums":
-			_registrar(_client.get_rest("iums", "select=id,nombre,descripcion,oris,topologia,tipo,nivel_minimo&order=nombre"), "iums_fallback")
+			_registrar(_client.get_rest("iums", "select=id,orden,nombre,detalle,extra&order=orden"), "iums_fallback")
 		elif tipo == "procesos":
 			procesos_cargados.emit([])
 		elif tipo == "simular":
@@ -68,10 +68,19 @@ func _al_request(request_id: int, resultado: int, codigo_http: int, _cabeceras: 
 			elif datos is Dictionary and (datos as Dictionary).has("iums"):
 				iums_cargados.emit((datos as Dictionary)["iums"])
 			else:
-				_registrar(_client.get_rest("iums", "select=id,nombre,descripcion,oris,topologia,tipo,nivel_minimo&order=nombre"), "iums_fallback")
+				_registrar(_client.get_rest("iums", "select=id,orden,nombre,detalle,extra&order=orden"), "iums_fallback")
 		"iums_fallback":
 			if datos is Array:
-				iums_cargados.emit(datos)
+				var normalizados: Array = []
+				for entrada_variant in datos:
+					if not entrada_variant is Dictionary:
+						continue
+					var entrada := (entrada_variant as Dictionary).duplicate(true)
+					entrada["descripcion"] = str(entrada.get("detalle", ""))
+					entrada["topologia"] = str(entrada.get("extra", ""))
+					entrada["oris"] = entrada.get("oris", [])
+					normalizados.append(entrada)
+				iums_cargados.emit(normalizados)
 			else:
 				iums_cargados.emit([])
 		"procesos":
