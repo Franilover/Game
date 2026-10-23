@@ -4,6 +4,7 @@ extends Control
 @onready var status_label: Label = $Panel/Margin/Column/Status
 @onready var character_creation: Control = $CharacterCreation
 @onready var column: VBoxContainer = $Panel/Margin/Column
+@onready var panel_margin: MarginContainer = $Panel/Margin
 @onready var scroll_container: ScrollContainer = $Panel/Margin/Column/Scroll
 @onready var create_button: Button = $Panel/Margin/Column/CreateButton
 @onready var title_label: Label = $Panel/Margin/Column/Title
@@ -11,6 +12,8 @@ extends Control
 @onready var back_button: Button = $Panel/Margin/Column/BackButton
 var _confirmacion_borrado: ConfirmationDialog
 var _editor_container: VBoxContainer
+var _editor_scroll: ScrollContainer
+var _editor_form: VBoxContainer
 var _nombre_mundo_input: LineEdit
 var _nombre_personaje_input: LineEdit
 var _genero_input: OptionButton
@@ -25,6 +28,8 @@ var _id_pendiente_editar: String = ""
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	actualizar_lista()
+	_configurar_diseno_responsive()
+	get_viewport().size_changed.connect(_configurar_diseno_responsive)
 	_configurar_confirmacion_borrado()
 	if not character_creation.confirmed.is_connected(_on_character_confirmed):
 		character_creation.confirmed.connect(_on_character_confirmed)
@@ -163,53 +168,92 @@ func _crear_estilo_panel_edicion() -> StyleBoxFlat:
 	return estilo
 
 
+func _configurar_diseno_responsive() -> void:
+	var viewport_size := get_viewport_rect().size
+	var compacto := viewport_size.x < 720.0 or viewport_size.y < 560.0
+	var margen_horizontal := 12 if viewport_size.x < 520.0 else (18 if compacto else 26)
+	var margen_vertical := 10 if viewport_size.y < 460.0 else (14 if compacto else 22)
+	panel_margin.add_theme_constant_override("margin_left", margen_horizontal)
+	panel_margin.add_theme_constant_override("margin_right", margen_horizontal)
+	panel_margin.add_theme_constant_override("margin_top", margen_vertical)
+	panel_margin.add_theme_constant_override("margin_bottom", margen_vertical)
+	column.add_theme_constant_override("separation", 8 if compacto else 12)
+	if _editor_container != null:
+		_editor_container.add_theme_constant_override("separation", 6 if compacto else 8)
+		if _aspectos_list != null:
+			var ancho_util := maxf(180.0, viewport_size.x - margen_horizontal * 2.0 - 80.0)
+			_aspectos_list.max_columns = clampi(int(ancho_util / 76.0), 2, 8)
+			_aspectos_list.fixed_column_width = clampi(int(ancho_util / float(_aspectos_list.max_columns)), 58, 84)
+			var alto_icono := 44 if compacto else 56
+			_aspectos_list.fixed_icon_size = Vector2i(alto_icono, alto_icono)
+			_aspectos_list.custom_minimum_size.y = 92 if compacto else 124
+
+
 func _construir_editor_partida() -> void:
 	_editor_container = VBoxContainer.new()
 	_editor_container.name = "WorldEditor"
 	_editor_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_editor_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_editor_container.add_theme_constant_override("separation", 8)
+
+	_editor_scroll = ScrollContainer.new()
+	_editor_scroll.name = "EditorScroll"
+	_editor_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_editor_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_editor_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_editor_container.add_child(_editor_scroll)
+
+	_editor_form = VBoxContainer.new()
+	_editor_form.name = "EditorFields"
+	_editor_form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_editor_form.add_theme_constant_override("separation", 8)
+	_editor_scroll.add_child(_editor_form)
 
 	var label_mundo := Label.new()
 	label_mundo.text = "Nombre del mundo"
-	_editor_container.add_child(label_mundo)
+	_editor_form.add_child(label_mundo)
 	_nombre_mundo_input = LineEdit.new()
 	_nombre_mundo_input.custom_minimum_size = Vector2(0, 36)
+	_nombre_mundo_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_nombre_mundo_input.max_length = 64
 	_nombre_mundo_input.add_theme_stylebox_override("normal", _crear_estilo_panel_edicion())
 	_nombre_mundo_input.add_theme_stylebox_override("focus", _crear_estilo_panel_edicion())
-	_editor_container.add_child(_nombre_mundo_input)
+	_editor_form.add_child(_nombre_mundo_input)
 
 	var label_personaje := Label.new()
 	label_personaje.text = "Nombre del personaje"
-	_editor_container.add_child(label_personaje)
+	_editor_form.add_child(label_personaje)
 	_nombre_personaje_input = LineEdit.new()
 	_nombre_personaje_input.custom_minimum_size = Vector2(0, 36)
+	_nombre_personaje_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_nombre_personaje_input.max_length = 48
 	_nombre_personaje_input.add_theme_stylebox_override("normal", _crear_estilo_panel_edicion())
 	_nombre_personaje_input.add_theme_stylebox_override("focus", _crear_estilo_panel_edicion())
-	_editor_container.add_child(_nombre_personaje_input)
+	_editor_form.add_child(_nombre_personaje_input)
 
 	var label_genero := Label.new()
 	label_genero.text = "Género"
-	_editor_container.add_child(label_genero)
+	_editor_form.add_child(label_genero)
 	_genero_input = OptionButton.new()
 	_genero_input.custom_minimum_size = Vector2(0, 36)
+	_genero_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for valor in ["El", "Ella", "Elle", "Eso", "Texto libre", "Sin género"]:
 		_genero_input.add_item(valor)
 	_genero_input.item_selected.connect(_al_cambiar_genero_edicion)
-	_editor_container.add_child(_genero_input)
+	_editor_form.add_child(_genero_input)
 
 	_genero_libre_input = LineEdit.new()
 	_genero_libre_input.custom_minimum_size = Vector2(0, 34)
+	_genero_libre_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_genero_libre_input.placeholder_text = "Escribe tu género"
 	_genero_libre_input.visible = false
 	_genero_libre_input.add_theme_stylebox_override("normal", _crear_estilo_panel_edicion())
 	_genero_libre_input.add_theme_stylebox_override("focus", _crear_estilo_panel_edicion())
-	_editor_container.add_child(_genero_libre_input)
+	_editor_form.add_child(_genero_libre_input)
 
 	var datos_fila := HBoxContainer.new()
-	datos_fila.add_theme_constant_override("separation", 18)
-	_editor_container.add_child(datos_fila)
+	datos_fila.add_theme_constant_override("separation", 12)
+	_editor_form.add_child(datos_fila)
 	var columna_semilla := VBoxContainer.new()
 	columna_semilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	datos_fila.add_child(columna_semilla)
@@ -217,6 +261,7 @@ func _construir_editor_partida() -> void:
 	label_semilla.text = "Semilla (solo lectura)"
 	columna_semilla.add_child(label_semilla)
 	_semilla_label = Label.new()
+	_semilla_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_semilla_label.add_theme_color_override("font_color", Color(0.78, 0.68, 0.52, 1))
 	columna_semilla.add_child(_semilla_label)
 
@@ -227,15 +272,14 @@ func _construir_editor_partida() -> void:
 	label_especie.text = "Especie (solo lectura)"
 	columna_especie.add_child(label_especie)
 	_especie_label = Label.new()
-	_especie_label.add_theme_color_override("font_color", Color(0.78, 0.68, 0.52, 1))
 	_especie_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_especie_label.add_theme_color_override("font_color", Color(0.78, 0.68, 0.52, 1))
 	columna_especie.add_child(_especie_label)
 
 	var label_aspecto := Label.new()
 	label_aspecto.text = "Aspecto del personaje"
-	_editor_container.add_child(label_aspecto)
+	_editor_form.add_child(label_aspecto)
 	_aspectos_list = ItemList.new()
-	_aspectos_list.custom_minimum_size = Vector2(0, 112)
 	_aspectos_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_aspectos_list.max_columns = 6
 	_aspectos_list.fixed_column_width = 72
@@ -243,20 +287,20 @@ func _construir_editor_partida() -> void:
 	_aspectos_list.icon_mode = ItemList.ICON_MODE_TOP
 	_aspectos_list.select_mode = ItemList.SELECT_SINGLE
 	_aspectos_list.add_theme_stylebox_override("panel", _crear_estilo_panel_edicion())
-	_editor_container.add_child(_aspectos_list)
+	_editor_form.add_child(_aspectos_list)
 	_cargar_aspectos_edicion()
 
 	var botones := HBoxContainer.new()
-	botones.add_theme_constant_override("separation", 10)
+	botones.add_theme_constant_override("separation", 8)
 	_editor_container.add_child(botones)
 	var guardar := Button.new()
-	guardar.text = "Guardar cambios"
+	guardar.text = "Guardar"
 	guardar.custom_minimum_size = Vector2(0, 42)
 	guardar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	guardar.pressed.connect(_guardar_edicion_partida)
 	botones.add_child(guardar)
 	var volver := Button.new()
-	volver.text = "Volver a partidas"
+	volver.text = "Volver"
 	volver.custom_minimum_size = Vector2(0, 42)
 	volver.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	volver.pressed.connect(_cancelar_edicion_partida)
@@ -265,7 +309,7 @@ func _construir_editor_partida() -> void:
 	column.add_child(_editor_container)
 	column.move_child(_editor_container, 2)
 	_editor_container.visible = false
-
+	_configurar_diseno_responsive()
 
 func _cargar_aspectos_edicion() -> void:
 	_aspectos_list.clear()
