@@ -1,18 +1,30 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/ium_lab.gd" id="1_iumlab"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.07, 0.07, 0.12, 0.96)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.25, 0.55, 0.85, 0.6)
+bg_color = Color(0.1, 0.065, 0.04, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.29, 0.17, 1)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_canvas"]
+bg_color = Color(0.055, 0.035, 0.022, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.19, 0.12, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="IUMLab" type="Control"]
 layout_mode = 3
@@ -27,7 +39,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.65)
+color = Color(0.04, 0.025, 0.015, 0.62)
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -61,6 +73,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Simulador de IUMs"
+theme_override_colors/font_color = Color(0.95, 0.88, 0.7, 1)
 theme_override_font_sizes/font_size = 16
 
 [node name="BtnCerrar" type="Button" parent="Panel/VBox/TitleRow"]
@@ -85,6 +98,7 @@ theme_override_constants/separation = 4
 [node name="LabelIUMs" type="Label" parent="Panel/VBox/ContentRow/LeftCol"]
 layout_mode = 2
 text = "IUMs disponibles"
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 11
 
 [node name="ScrollIUMs" type="ScrollContainer" parent="Panel/VBox/ContentRow/LeftCol"]
@@ -108,11 +122,13 @@ theme_override_constants/separation = 6
 [node name="LabelCanvas" type="Label" parent="Panel/VBox/ContentRow/CenterCol"]
 layout_mode = 2
 text = "Canvas - arrastra y conecta IUMs"
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 11
 
 [node name="CanvasContainer" type="Panel" parent="Panel/VBox/ContentRow/CenterCol"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBox_canvas")
 
 [node name="Canvas" type="Control" parent="Panel/VBox/ContentRow/CenterCol/CanvasContainer"]
 unique_name_in_owner = true
@@ -141,6 +157,7 @@ theme_override_constants/separation = 4
 [node name="LabelProcesos" type="Label" parent="Panel/VBox/ContentRow/RightCol"]
 layout_mode = 2
 text = "Procesos descubiertos"
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 11
 
 [node name="ScrollProcesos" type="ScrollContainer" parent="Panel/VBox/ContentRow/RightCol"]
@@ -165,6 +182,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Agrega IUMs desde la lista y conectalos para simular un proceso."
+theme_override_colors/font_color = Color(0.82, 0.75, 0.61, 1)
 theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
 
