@@ -163,6 +163,14 @@ func _process(delta: float) -> void:
 	else:
 		_tiempo_contexto = 0.0
 
+	# El calendario pertenece al HUD, pero nunca debe tapar ventanas modales.
+	var inventario_abierto := false
+	for nodo in get_tree().get_nodes_in_group("inventory"):
+		if nodo is CanvasItem and (nodo as CanvasItem).visible:
+			inventario_abierto = true
+			break
+	if is_instance_valid(_calendar_panel):
+		_calendar_panel.visible = not inventario_abierto
 	_calendar_elapsed += delta
 	if _calendar_elapsed >= 0.2:
 		_calendar_elapsed = 0.0
@@ -1335,7 +1343,6 @@ func _preparar_reloj_calendario() -> void:
 	_calendar_panel.offset_right = -12.0
 	_calendar_panel.offset_bottom = 82.0
 	_calendar_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_calendar_panel.z_index = 100
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = Color(0.075, 0.05, 0.035, 0.88)
 	estilo.set_border_width_all(1)
