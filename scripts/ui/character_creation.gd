@@ -184,7 +184,7 @@ func _load_skins() -> void:
 			continue
 		_skins.append(path)
 		skins.add_icon_item(texture, true)
-		skins.set_item_text(skins.item_count - 1, file_name.get_basename())
+		skins.set_item_text(skins.item_count - 1, "")
 	if skins.item_count > 0:
 		skins.select(0)
 	_update_confirm()
@@ -242,11 +242,11 @@ func _actualizar_vista_previa() -> void:
 		capa.visible = capa.texture != null
 
 func _construir_controles_personalizacion() -> void:
-	# El sprite base queda fijo: ya no se ofrece un catálogo de cuerpos completos.
-	skins.visible = false
+	# Mantener visible el selector de piel base, usando miniaturas sin texto.
+	skins.visible = true
 	var etiqueta_skin := appearance_container.get_node_or_null("SkinLabel") as Label
 	if etiqueta_skin != null:
-		etiqueta_skin.visible = false
+		etiqueta_skin.visible = true
 
 	_personalizacion_rows = VBoxContainer.new()
 	_personalizacion_rows.name = "FilasPersonalizacion"
@@ -263,19 +263,13 @@ func _construir_controles_personalizacion() -> void:
 		fila.add_theme_constant_override("separation", 6)
 		_personalizacion_rows.add_child(fila)
 
-		var etiqueta := Label.new()
-		etiqueta.text = str(CharacterAppearance.SLOT_LABELS[slot])
-		etiqueta.custom_minimum_size.x = 78
-		etiqueta.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		fila.add_child(etiqueta)
-
 		var lista := ItemList.new()
 		lista.name = "Catalogo"
 		lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lista.custom_minimum_size = Vector2(0, 68)
+		lista.custom_minimum_size = Vector2(0, 46)
 		lista.max_columns = 0
-		lista.fixed_column_width = 60
-		lista.fixed_icon_size = Vector2i(42, 42)
+		lista.fixed_column_width = 36
+		lista.fixed_icon_size = Vector2i(30, 30)
 		lista.icon_mode = ItemList.ICON_MODE_TOP
 		lista.select_mode = ItemList.SELECT_SINGLE
 		lista.same_column_width = true
