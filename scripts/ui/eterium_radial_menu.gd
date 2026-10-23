@@ -52,6 +52,17 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
+		if visible_menu and tecla.pressed and not tecla.echo:
+			# Atajos directos mientras el menú de Eterium está abierto.
+			if tecla.keycode >= KEY_1 and tecla.keycode <= KEY_4:
+				cuadrante = tecla.keycode - KEY_1
+				_ejecutar_seleccion()
+				get_viewport().set_input_as_handled()
+				return
+			if tecla.keycode == KEY_ESCAPE:
+				_cerrar()
+				get_viewport().set_input_as_handled()
+				return
 		if tecla.keycode == KEY_X and not tecla.echo:
 			if tecla.pressed and not visible_menu:
 				_abrir()
@@ -220,7 +231,7 @@ func _draw() -> void:
 		var color := Color(0.78, 0.66, 0.46, 0.95) if i == cuadrante else Color(0.45, 0.32, 0.21, 0.85)
 		draw_line(inicio, fin, color, 3.0, true)
 		draw_circle(fin, 5.0 if i == cuadrante else 3.5, color)
-		var texto: String = str(NOMBRES[i])
+		var texto: String = str(i + 1) + " · " + str(NOMBRES[i])
 		var caja := Rect2(fin + Vector2(-78, -23), Vector2(156, 46))
 		draw_rect(caja, Color(0.055, 0.038, 0.025, 0.78), true)
 		draw_rect(caja, color, false, 1.0)
