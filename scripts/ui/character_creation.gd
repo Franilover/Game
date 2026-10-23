@@ -8,7 +8,7 @@ var _skins: Array[String] = []
 var _personalizacion: Dictionary = {}
 var _personalizacion_items: Dictionary = {}
 var _personalizacion_colores: Dictionary = {}
-var _personalizacion_tabs: TabContainer
+var _personalizacion_rows: VBoxContainer
 var _preview_container: Control
 var _preview_base: TextureRect
 var _preview_layers: Dictionary = {}
@@ -86,12 +86,10 @@ func _configurar_layout_responsive() -> void:
 	creation_fields.custom_minimum_size.x = 0
 	appearance_container.custom_minimum_size.x = 0
 	skins.custom_minimum_size.y = 96 if compacto else 120
-	if _personalizacion_tabs != null:
-		_personalizacion_tabs.custom_minimum_size.y = 108 if compacto else 132
 	for slot in CharacterAppearance.SLOTS:
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
 		if lista != null:
-			lista.custom_minimum_size.y = 58 if compacto else 76
+			lista.custom_minimum_size.y = 54 if compacto else 68
 			lista.fixed_icon_size = Vector2i(32, 32) if compacto else Vector2i(42, 42)
 			lista.fixed_column_width = 48 if compacto else 60
 
@@ -241,60 +239,66 @@ func _actualizar_vista_previa() -> void:
 		capa.visible = capa.texture != null
 
 func _construir_controles_personalizacion() -> void:
-	_personalizacion_tabs = TabContainer.new()
-	_personalizacion_tabs.name = "Personalizacion"
-	_personalizacion_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_personalizacion_tabs.custom_minimum_size = Vector2(0, 132)
-	appearance_container.add_child(_personalizacion_tabs)
+	# El sprite base queda fijo: ya no se ofrece un catálogo de cuerpos completos.
+	skins.visible = false
+	var etiqueta_skin := appearance_container.get_node_or_null("SkinLabel") as Label
+	if etiqueta_skin != null:
+		etiqueta_skin.visible = false
+
+	_personalizacion_rows = VBoxContainer.new()
+	_personalizacion_rows.name = "FilasPersonalizacion"
+	_personalizacion_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_personalizacion_rows.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_personalizacion_rows.add_theme_constant_override("separation", 5)
+	appearance_container.add_child(_personalizacion_rows)
+	appearance_container.move_child(_personalizacion_rows, 2)
 
 	for slot in CharacterAppearance.SLOTS:
-		var pagina := VBoxContainer.new()
-		pagina.name = slot.capitalize()
-		pagina.add_theme_constant_override("separation", 4)
-		_personalizacion_tabs.add_child(pagina)
-		_personalizacion_tabs.set_tab_title(pagina.get_index(), str(CharacterAppearance.SLOT_LABELS[slot]))
+		var fila := HBoxContainer.new()
+		fila.name = "Fila_" + slot
+		fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		fila.add_theme_constant_override("separation", 6)
+		_personalizacion_rows.add_child(fila)
 
-		var catalogo: Array[Dictionary] = CharacterAppearance.catalogo(slot)
+		var etiqueta := Label.new()
+		etiqueta.text = str(CharacterAppearance.SLOT_LABELS[slot])
+		etiqueta.custom_minimum_size.x = 104
+		etiqueta.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		fila.add_child(etiqueta)
+
 		var lista := ItemList.new()
 		lista.name = "Catalogo"
-		lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		lista.custom_minimum_size = Vector2(0, 76)
-		lista.max_columns = 5
+		lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lista.custom_minimum_size = Vector2(0, 68)
+		lista.max_columns = 0
 		lista.fixed_column_width = 60
 		lista.fixed_icon_size = Vector2i(42, 42)
 		lista.icon_mode = ItemList.ICON_MODE_TOP
 		lista.select_mode = ItemList.SELECT_SINGLE
+		lista.same_column_width = true
 		lista.add_item("Ninguno")
 		lista.set_item_metadata(0, "")
-		for pieza in catalogo:
+		for pieza in CharacterAppearance.catalogo(slot):
 			lista.add_icon_item(pieza["textura"], true)
 			var indice := lista.item_count - 1
 			lista.set_item_text(indice, str(pieza["nombre"]))
 			lista.set_item_metadata(indice, str(pieza["ruta"]))
 		lista.select(0)
 		lista.item_selected.connect(_al_seleccionar_pieza.bind(slot))
-		pagina.add_child(lista)
+		fila.add_child(lista)
 		_personalizacion_items[slot] = lista
 
-		var fila_color := HBoxContainer.new()
-		fila_color.add_theme_constant_override("separation", 8)
-		pagina.add_child(fila_color)
-		var etiqueta := Label.new()
-		etiqueta.text = "Color"
-		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		fila_color.add_child(etiqueta)
 		var selector_color := ColorPickerButton.new()
-		selector_color.custom_minimum_size = Vector2(64, 30)
+		selector_color.custom_minimum_size = Vector2(34, 30)
 		selector_color.color = _color_inicial(slot)
 		selector_color.tooltip_text = "Color de " + str(CharacterAppearance.SLOT_LABELS[slot]).to_lower()
 		selector_color.color_changed.connect(_al_cambiar_color_pieza.bind(slot))
-		fila_color.add_child(selector_color)
+		fila.add_child(selector_color)
 		_personalizacion_colores[slot] = selector_color
 		_personalizacion[slot] = {
 			"ruta": "",
 			"color": CharacterAppearance.color_a_html(selector_color.color)
 		}
-
 
 func _color_inicial(slot: String) -> Color:
 	match slot:
