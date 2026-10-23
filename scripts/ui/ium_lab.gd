@@ -594,6 +594,62 @@ func _dibujar_conexiones() -> void:
 
 
 # ================================================================
+# SELECTOR DE TOPOLOGÍA
+# ================================================================
+
+func _configurar_selector_topologia() -> void:
+	_selector_topologia.clear()
+	_selector_topologia.add_item("Manual · conservar enlaces", 0)
+	_selector_topologia.add_item("Cadena dirigida", 1)
+	_selector_topologia.add_item("Ramificación desde el primero", 2)
+	_selector_topologia.add_item("Convergencia al último", 3)
+	_selector_topologia.add_item("Ciclo dirigido", 4)
+	_selector_topologia.select(0)
+
+
+func _actualizar_resumen_topologia() -> void:
+	if not is_instance_valid(_label_resumen_topologia):
+		return
+	var nombre := "Manual"
+	if is_instance_valid(_selector_topologia) and _selector_topologia.item_count > 0:
+		nombre = _selector_topologia.get_item_text(_selector_topologia.selected)
+	_label_resumen_topologia.text = "%s\n%d nodos · %d enlaces dirigidos" % [nombre, _nodos_canvas.size(), _conexiones.size()]
+
+
+func _aplicar_topologia_seleccionada() -> void:
+	var tipo := _selector_topologia.get_selected_id()
+	if tipo == 0:
+		_label_estado.text = "Modo manual: se conservan los enlaces actuales."
+		_actualizar_resumen_topologia()
+		return
+
+	var cantidad := _nodos_canvas.size()
+	if cantidad < 2:
+		_label_estado.text = "Añade al menos dos IUMs para aplicar una estructura topológica."
+		return
+
+	_conexiones.clear()
+	match tipo:
+		1: # Cadena: cada nodo apunta al siguiente.
+			for i in range(cantidad - 1):
+				_conexiones.append({"origen": i, "destino": i + 1})
+		2: # Ramificación: el primer nodo apunta a todos los demás.
+			for i in range(1, cantidad):
+				_conexiones.append({"origen": 0, "destino": i})
+		3: # Convergencia: todos los nodos anteriores apuntan al último.
+			for i in range(cantidad - 1):
+				_conexiones.append({"origen": i, "destino": cantidad - 1})
+		4: # Ciclo dirigido: cada nodo apunta al siguiente y el último al primero.
+			for i in range(cantidad):
+				_conexiones.append({"origen": i, "destino": (i + 1) % cantidad})
+
+	_conectando_desde = -1
+	_draw_layer.queue_redraw()
+	_actualizar_resumen_topologia()
+	_label_estado.text = "Estructura aplicada. Comprueba si coincide con un patrón funcional antes de simular."
+
+
+# ================================================================
 # SIMULAR
 # ================================================================
 
