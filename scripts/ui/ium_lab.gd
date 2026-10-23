@@ -320,7 +320,7 @@ func _crear_slot_canvas(
 
 	btn_conectar.pressed.connect(
 		func():
-			_iniciar_conexion(idx)
+			_iniciar_conexion(_indice_nodo_de_slot(panel))
 	)
 
 	var btn_eliminar := Button.new()
@@ -332,7 +332,7 @@ func _crear_slot_canvas(
 
 	btn_eliminar.pressed.connect(
 		func():
-			_eliminar_nodo(idx)
+			_eliminar_nodo(_indice_nodo_de_slot(panel))
 	)
 
 	hbox.add_child(btn_conectar)
@@ -353,6 +353,13 @@ func _crear_slot_canvas(
 	)
 
 	return panel
+
+
+func _indice_nodo_de_slot(slot: Control) -> int:
+	for i in _nodos_canvas.size():
+		if _nodos_canvas[i].get("slot") == slot:
+			return i
+	return -1
 
 
 func _mover_slot(
