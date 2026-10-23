@@ -1249,7 +1249,7 @@ func _input(event: InputEvent) -> void:
 				inventory_node.call("toggle")
 				get_viewport().set_input_as_handled()
 				return
-		# Con Q/E mantenida, 1–6 selecciona esa mano y no la hotbar.
+		# Mientras el selector de mano está abierto, 1–6 elige un objeto.
 		if hand_key.pressed and not hand_key.echo and not _hand_selector_activo.is_empty() and hand_key.keycode >= KEY_1 and hand_key.keycode <= KEY_6:
 			var indice_mano := hand_key.keycode - KEY_1
 			if is_instance_valid(_inventory_ref):
@@ -1260,12 +1260,13 @@ func _input(event: InputEvent) -> void:
 			return
 		if hand_key.keycode == KEY_Q or hand_key.keycode == KEY_E:
 			if hand_key.pressed and not hand_key.echo:
-				if _hand_selector_activo.is_empty() and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
-					_abrir_selector_mano("izquierda" if hand_key.keycode == KEY_Q else "derecha")
-				get_viewport().set_input_as_handled()
-				return
-			elif not hand_key.pressed and not _hand_selector_activo.is_empty():
-				_confirmar_selector_mano(get_viewport().get_mouse_position())
+				if not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
+					var mano_solicitada := "izquierda" if hand_key.keycode == KEY_Q else "derecha"
+					if _hand_selector_activo == mano_solicitada:
+						_hand_selector_activo = ""
+						_hand_selector.visible = false
+					else:
+						_abrir_selector_mano(mano_solicitada)
 				get_viewport().set_input_as_handled()
 				return
 		if hand_key.pressed and not hand_key.echo:
@@ -1276,6 +1277,20 @@ func _input(event: InputEvent) -> void:
 
 			if hand_key.keycode == KEY_ESCAPE and _mission_panel_open:
 				cerrar_panel_misiones()
+				get_viewport().set_input_as_handled()
+				return
+
+	if not _hand_selector_activo.is_empty() and event is InputEventMouseButton:
+		var click_selector := event as InputEventMouseButton
+		if click_selector.pressed and click_selector.button_index == MOUSE_BUTTON_LEFT:
+			var dentro_de_opcion := false
+			for boton_selector in _hand_selector_buttons:
+				if boton_selector.get_global_rect().has_point(click_selector.position):
+					dentro_de_opcion = true
+					break
+			if not dentro_de_opcion:
+				_hand_selector_activo = ""
+				_hand_selector.visible = false
 				get_viewport().set_input_as_handled()
 				return
 
