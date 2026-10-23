@@ -116,6 +116,7 @@ func open(action: String) -> void:
 		if selector_color != null:
 			selector_color.color = color_inicial
 		_personalizacion[slot] = {"ruta": "", "color": CharacterAppearance.color_a_html(color_inicial)}
+	_actualizar_vista_previa()
 	visible = true
 	name_input.grab_focus()
 	_update_confirm()
