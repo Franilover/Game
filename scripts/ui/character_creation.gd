@@ -10,6 +10,10 @@ var _personalizacion_items: Dictionary = {}
 var _personalizacion_colores: Dictionary = {}
 var _personalizacion_tabs: TabContainer
 @onready var appearance_container: VBoxContainer = $Panel/Margin/Column/Content/Appearance
+@onready var creation_margin: MarginContainer = $Panel/Margin
+@onready var creation_column: VBoxContainer = $Panel/Margin/Column
+@onready var creation_content: HBoxContainer = $Panel/Margin/Column/Content
+@onready var creation_fields: VBoxContainer = $Panel/Margin/Column/Content/Fields
 
 @onready var partida_name_input: LineEdit = $Panel/Margin/Column/Content/Fields/PartidaName
 @onready var seed_input: LineEdit = $Panel/Margin/Column/Content/Fields/SeedInput
@@ -24,6 +28,9 @@ var _personalizacion_tabs: TabContainer
 
 func _ready() -> void:
 	visible = false
+	_instalar_scroll_contenido()
+	get_viewport().size_changed.connect(_configurar_layout_responsive)
+	_configurar_layout_responsive()
 	gender.add_item("El")
 	gender.add_item("Ella")
 	gender.add_item("Elle")
@@ -46,6 +53,42 @@ func _ready() -> void:
 		SupabaseClient.especies_jugables_cargadas.connect(_on_species_loaded)
 	SupabaseClient.cargar_especies_jugables()
 
+
+func _instalar_scroll_contenido() -> void:
+	var scroll := ScrollContainer.new()
+	scroll.name = "CreationContentScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	creation_column.add_child(scroll)
+	creation_column.move_child(scroll, creation_content.get_index())
+	creation_column.remove_child(creation_content)
+	scroll.add_child(creation_content)
+	creation_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	creation_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+
+func _configurar_layout_responsive() -> void:
+	var tamano := get_viewport_rect().size
+	var compacto := tamano.x < 760.0 or tamano.y < 520.0
+	creation_margin.add_theme_constant_override("margin_left", 12 if tamano.x < 560.0 else 20)
+	creation_margin.add_theme_constant_override("margin_right", 12 if tamano.x < 560.0 else 20)
+	creation_margin.add_theme_constant_override("margin_top", 10 if tamano.y < 440.0 else 16)
+	creation_margin.add_theme_constant_override("margin_bottom", 10 if tamano.y < 440.0 else 16)
+	creation_column.add_theme_constant_override("separation", 6 if compacto else 10)
+	creation_content.add_theme_constant_override("separation", 10 if compacto else 20)
+	creation_fields.custom_minimum_size.x = 0
+	appearance_container.custom_minimum_size.x = 0
+	skins.custom_minimum_size.y = 96 if compacto else 120
+	if _personalizacion_tabs != null:
+		_personalizacion_tabs.custom_minimum_size.y = 108 if compacto else 132
+	for slot in CharacterAppearance.SLOTS:
+		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
+		if lista != null:
+			lista.custom_minimum_size.y = 58 if compacto else 76
+			lista.fixed_icon_size = Vector2i(32, 32) if compacto else Vector2i(42, 42)
+			lista.fixed_column_width = 48 if compacto else 60
+
 func open(action: String) -> void:
 	_action = action
 	partida_name_input.text = ""
@@ -62,7 +105,11 @@ func open(action: String) -> void:
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
 		if lista != null and lista.item_count > 0:
 			lista.select(0)
-		_personalizacion[slot] = {"ruta": "", "color": CharacterAppearance.color_a_html(_color_inicial(slot))}
+		var color_inicial := _color_inicial(slot)
+		var selector_color: ColorPickerButton = _personalizacion_colores.get(slot) as ColorPickerButton
+		if selector_color != null:
+			selector_color.color = color_inicial
+		_personalizacion[slot] = {"ruta": "", "color": CharacterAppearance.color_a_html(color_inicial)}
 	visible = true
 	name_input.grab_focus()
 	_update_confirm()
