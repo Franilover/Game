@@ -608,7 +608,7 @@ func _simular() -> void:
 			enlaces.append({
 				"origen": _nodos_canvas[o_idx]["ium"].get("id", ""),
 				"destino": _nodos_canvas[d_idx]["ium"].get("id", ""),
-				"tipo_union": "funcional"
+				"tipo_union": "dirigida"
 			})
 
 	_label_estado.text = "Simulando..."
