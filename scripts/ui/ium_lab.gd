@@ -16,6 +16,8 @@ var _nodos_canvas: Array = []
 var _conexiones: Array = []
 var _arrastrando: Node = null
 var _arrastrando_ium: Dictionary = {}
+var _iums_disponibles: Array = []
+var _selectores_huecos: Array[OptionButton] = []
 var _conectando_desde: int = -1
 
 # ── UI refs ───────────────────────────────────────────────────
@@ -29,6 +31,8 @@ var _conectando_desde: int = -1
 @onready var _selector_topologia: OptionButton = %SelectorTopologia
 @onready var _btn_aplicar_topologia: Button = %BtnAplicarTopologia
 @onready var _label_resumen_topologia: Label = %LabelResumenTopologia
+@onready var _selector_cantidad_huecos: OptionButton = %SelectorCantidadHuecos
+@onready var _lista_huecos_topologia: VBoxContainer = %ListaHuecosTopologia
 @onready var _draw_layer: Control = %DrawLayer
 
 
@@ -44,6 +48,8 @@ func _ready() -> void:
 	_btn_aplicar_topologia.pressed.connect(_aplicar_topologia_seleccionada)
 	_selector_topologia.item_selected.connect(_al_selector_topologia_cambiado)
 	_configurar_selector_topologia()
+	_selector_cantidad_huecos.item_selected.connect(_al_cambiar_cantidad_huecos)
+	_reconstruir_huecos_topologia()
 
 	_draw_layer.draw.connect(_dibujar_conexiones)
 	_actualizar_resumen_topologia()
@@ -163,12 +169,15 @@ func _cerrar() -> void:
 # ================================================================
 
 func _al_cargar_iums(iums: Array) -> void:
+	_iums_disponibles = iums.duplicate(true)
 	for child in _panel_lista.get_children():
 		child.queue_free()
 
 	for ium in iums:
 		var btn := _crear_boton_ium(ium)
 		_panel_lista.add_child(btn)
+
+	_reconstruir_huecos_topologia()
 
 
 func _crear_boton_ium(ium: Dictionary) -> Button:
@@ -607,9 +616,82 @@ func _configurar_selector_topologia() -> void:
 	_selector_topologia.add_item("Ciclo dirigido", 4)
 	_selector_topologia.select(0)
 
+	_selector_cantidad_huecos.clear()
+	_selector_cantidad_huecos.add_item("3 huecos", 3)
+	_selector_cantidad_huecos.add_item("4 huecos", 4)
+	_selector_cantidad_huecos.add_item("5 huecos", 5)
+	_selector_cantidad_huecos.select(0)
+
 
 func _al_selector_topologia_cambiado(_indice: int) -> void:
 	_actualizar_resumen_topologia()
+
+
+func _al_cambiar_cantidad_huecos(_indice: int) -> void:
+	_reconstruir_huecos_topologia()
+
+
+func _reconstruir_huecos_topologia() -> void:
+	if not is_instance_valid(_lista_huecos_topologia):
+		return
+	for child in _lista_huecos_topologia.get_children():
+		child.queue_free()
+	_selectores_huecos.clear()
+
+	var cantidad := _selector_cantidad_huecos.get_selected_id()
+	if cantidad < 2:
+		cantidad = 3
+
+	var posiciones := ["A", "N · núcleo", "B", "C", "D"]
+	for i in range(cantidad):
+		var fila := HBoxContainer.new()
+		fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		var etiqueta := Label.new()
+		etiqueta.text = "Hueco %s" % posiciones[i]
+		etiqueta.custom_minimum_size = Vector2(72, 0)
+		etiqueta.add_theme_font_size_override("font_size", 10)
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		fila.add_child(etiqueta)
+
+		var selector := OptionButton.new()
+		selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		selector.custom_minimum_size = Vector2(0, 28)
+		selector.add_item("— Elegir IUM —", -1)
+		for ium in _iums_disponibles:
+			if not ium is Dictionary:
+				continue
+			var nombre := str(ium.get("nombre", "IUM"))
+			var id_ium := str(ium.get("id", ""))
+			if id_ium.is_empty():
+				continue
+			selector.add_item(nombre)
+			selector.set_item_metadata(selector.item_count - 1, ium)
+		fila.add_child(selector)
+		_lista_huecos_topologia.add_child(fila)
+		_selectores_huecos.append(selector)
+
+
+func _iums_seleccionados_en_huecos() -> Array:
+	var seleccionados: Array = []
+	var ids_usados: Dictionary = {}
+	for i in range(_selectores_huecos.size()):
+		var selector := _selectores_huecos[i]
+		if selector.selected <= 0:
+			_label_estado.text = "Falta seleccionar un IUM en el hueco %d." % (i + 1)
+			return []
+		var ium_variant: Variant = selector.get_item_metadata(selector.selected)
+		if not ium_variant is Dictionary:
+			_label_estado.text = "El hueco %d no contiene un IUM válido." % (i + 1)
+			return []
+		var ium := ium_variant as Dictionary
+		var id_ium := str(ium.get("id", ""))
+		if ids_usados.has(id_ium):
+			_label_estado.text = "Cada IUM solo puede ocupar un hueco en esta versión del motor."
+			return []
+		ids_usados[id_ium] = true
+		seleccionados.append(ium)
+	return seleccionados
 
 
 func _actualizar_resumen_topologia() -> void:
@@ -622,15 +704,21 @@ func _actualizar_resumen_topologia() -> void:
 
 
 func _aplicar_topologia_seleccionada() -> void:
-	var tipo := _selector_topologia.get_selected_id()
-	if tipo == 0:
-		_label_estado.text = "Modo manual: se conservan los enlaces actuales."
-		_actualizar_resumen_topologia()
+	var seleccionados := _iums_seleccionados_en_huecos()
+	if seleccionados.is_empty():
+		if _selectores_huecos.size() > 0:
+			return
+		_label_estado.text = "Selecciona un IUM en cada hueco antes de aplicar la estructura."
 		return
 
+	var tipo := _selector_topologia.get_selected_id()
+	_limpiar_canvas()
+	for ium in seleccionados:
+		_agregar_ium_al_canvas(ium)
+
 	var cantidad := _nodos_canvas.size()
-	if cantidad < 2:
-		_label_estado.text = "Añade al menos dos IUMs para aplicar una estructura topológica."
+	if tipo != 0 and cantidad < 2:
+		_label_estado.text = "Selecciona al menos dos IUMs para aplicar una estructura topológica."
 		return
 
 	_conexiones.clear()
@@ -651,7 +739,10 @@ func _aplicar_topologia_seleccionada() -> void:
 	_conectando_desde = -1
 	_draw_layer.queue_redraw()
 	_actualizar_resumen_topologia()
-	_label_estado.text = "Estructura aplicada. Comprueba si coincide con un patrón funcional antes de simular."
+	if tipo == 0:
+		_label_estado.text = "IUMs colocados desde los huecos; conecta los enlaces manualmente."
+	else:
+		_label_estado.text = "IUMs y estructura aplicados desde los huecos. Verifica el patrón antes de simular."
 
 
 # ================================================================
