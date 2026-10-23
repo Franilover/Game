@@ -238,9 +238,16 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 
 	# Primero construimos DATA para un chunk remoto. Esto no crea Nodes y deja
 	# preparado el mundo para una futura transición instantánea a TERRAIN/FULL.
-	if not _data_entity_queue.is_empty():
+	while not _data_entity_queue.is_empty():
 		var data_coord: Vector2i = _data_entity_queue.pop_front()
 		_data_entity_queued.erase(data_coord)
+
+		# La posición del jugador puede cambiar mientras una coordenada espera
+		# en cola. Nunca preparar datos de criaturas/props para un chunk que ya
+		# salió del radio DATA; la cola puede sobrevivir varios frames.
+		if str(_chunk_lod.get(data_coord, "")) != LOD_DATA:
+			continue
+
 		if _entity_spawner.has_method("preparar_datos_criaturas_chunk"):
 			_entity_spawner.preparar_datos_criaturas_chunk(data_coord)
 		if limite >= 2 and _entity_spawner.has_method("preparar_datos_props_chunk"):
@@ -689,6 +696,7 @@ func _actualizar_data_entidades(centro: Vector2i) -> void:
 			stale_queued.append(coord_variant)
 	for coord in stale_queued:
 		_data_entity_queued.erase(coord)
+		_data_entity_queue.erase(coord)
 
 	# DATA también tiene prioridad espacial. Los chunks más cercanos al jugador
 	# se preparan primero; los remotos quedan como trabajo de fondo.
