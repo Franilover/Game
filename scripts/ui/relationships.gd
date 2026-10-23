@@ -27,18 +27,18 @@ func _crear_ui() -> void:
 	add_child(margen)
 
 	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 10)
+	columna.add_theme_constant_override("separation", 4)
 	margen.add_child(columna)
 
 	var contenido := HBoxContainer.new()
 	contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_theme_constant_override("separation", 18)
+	contenido.add_theme_constant_override("separation", 6)
 	columna.add_child(contenido)
 
 	lista = VBoxContainer.new()
-	lista.custom_minimum_size = Vector2(220, 0)
+	lista.custom_minimum_size = Vector2(100, 0)
 	lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	lista.add_theme_constant_override("separation", 5)
+	lista.add_theme_constant_override("separation", 2)
 	contenido.add_child(lista)
 
 	var separador := VSeparator.new()
@@ -91,7 +91,7 @@ func _actualizar() -> void:
 
 		var boton := Button.new()
 		boton.text = nombre
-		boton.custom_minimum_size = Vector2(0, 34)
+		boton.custom_minimum_size = Vector2(0, 24)
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
 		lista.add_child(boton)
@@ -119,14 +119,14 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var ruta_skin := "res://assets/art/characters/" + nombre + ".png"
 	if ResourceLoader.exists(ruta_skin):
 		skin.texture = load(ruta_skin)
-		skin.custom_minimum_size = Vector2(0, 96)
+		skin.custom_minimum_size = Vector2(0, 58)
 		skin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		skin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		detalle.add_child(skin)
 
 	var titulo := Label.new()
 	titulo.text = nombre
-	titulo.add_theme_font_size_override("font_size", 20)
+	titulo.add_theme_font_size_override("font_size", 13)
 	titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1.0))
 	detalle.add_child(titulo)
 
@@ -139,7 +139,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 		var valor := float(relacion.get(clave, 0.0))
 		var fila := Label.new()
 		fila.text = clave.capitalize() + ": " + str(roundi(valor))
-		fila.add_theme_font_size_override("font_size", 13)
+		fila.add_theme_font_size_override("font_size", 10)
 		detalle.add_child(fila)
 
 func _limpiar() -> void:
