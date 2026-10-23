@@ -1128,16 +1128,17 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
 	slot.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
 	slot.add_theme_stylebox_override("focus", _estilo_hueco_mano(false))
-	slot.tooltip_text = "Seleccionar objeto para " + tecla
-	slot.pressed.connect(func() -> void:
-		if not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
-			var mano := "izquierda" if tecla == "Q" else "derecha"
-			if _hand_selector_activo == mano:
-				_hand_selector_activo = ""
-				_hand_selector.visible = false
-			else:
-				_abrir_selector_mano(mano)
-	)
+	slot.tooltip_text = "Mano " + ("izquierda" if tecla == "Q" else "derecha") + " (" + tecla + ")"
+	if OS.has_feature("android"):
+		slot.pressed.connect(func() -> void:
+			if not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
+				var mano := "izquierda" if tecla == "Q" else "derecha"
+				if _hand_selector_activo == mano:
+					_hand_selector_activo = ""
+					_hand_selector.visible = false
+				else:
+					_abrir_selector_mano(mano)
+		)
 	var numero := Label.new()
 	numero.name = "HandKey"
 	numero.text = tecla
