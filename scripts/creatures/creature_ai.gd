@@ -187,11 +187,7 @@ func _physics_process(delta: float) -> void:
 	)
 
 	_actualizar_rutina()
-
-	if actividad_horaria in ["dormir", "reposar"]:
-		criatura.detener_movimiento()
-		criatura.tomar_control_movimiento()
-		return
+	var en_descanso_programado := actividad_horaria in ["dormir", "reposar"]
 
 	_tiempo_pensamiento -= delta
 
@@ -203,6 +199,13 @@ func _physics_process(delta: float) -> void:
 		_medir_debug_seccion("CreatureAI/Percepcion", func() -> void:
 			_actualizar_percepcion()
 		)
+
+	# Dormir o reposar no desactiva la percepción: una amenaza puede
+	# interrumpir el descanso sin alterar la rutina horaria de la especie.
+	if en_descanso_programado and (objetivo == null or not is_instance_valid(objetivo)):
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+		return
 
 	# El movimiento de CreatureMovement sigue ejecutándose en cada
 	# physics frame. Sólo la lógica de decisión se agrupa en ticks.
