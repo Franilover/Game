@@ -152,7 +152,7 @@ func _crear_vista_previa() -> void:
 	_preview_container.name = "VistaPreviaPersonaje"
 	_preview_container.custom_minimum_size = Vector2(0, 84)
 	_preview_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
+	for slot in ["body", "shoes", "pants", "shirt", "eyes", "hair"]:
 		var capa := TextureRect.new()
 		capa.name = "Preview_" + slot
 		capa.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -282,6 +282,7 @@ func _actualizar_icono_opcion(slot: String) -> void:
 
 func _color_inicial(slot: String) -> Color:
 	match slot:
+		"body": return Color("#d8a078")
 		"hair": return Color("#5b3828")
 		"eyes": return Color("#7a9e8a")
 		"shirt": return Color("#7896b5")
