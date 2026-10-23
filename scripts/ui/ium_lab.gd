@@ -222,7 +222,8 @@ func _crear_boton_ium(ium: Dictionary) -> Button:
 # ================================================================
 
 func _agregar_ium_al_canvas(
-	ium: Dictionary
+	ium: Dictionary,
+	posicion: String = "X"
 ) -> void:
 	var nuevo_id := str(ium.get("id", "")).strip_edges()
 	if nuevo_id.is_empty():
@@ -256,6 +257,7 @@ func _agregar_ium_al_canvas(
 	_nodos_canvas.append({
 		"ium": ium,
 		"slot": slot,
+		"posicion": posicion,
 		"idx": _nodos_canvas.size()
 	})
 
@@ -643,6 +645,7 @@ func _reconstruir_huecos_topologia() -> void:
 		cantidad = 3
 
 	var posiciones := ["A", "N · núcleo", "B", "C", "D"]
+	var claves_posicion := ["A", "N", "B", "C", "D"]
 	for i in range(cantidad):
 		var fila := HBoxContainer.new()
 		fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -713,8 +716,8 @@ func _aplicar_topologia_seleccionada() -> void:
 
 	var tipo := _selector_topologia.get_selected_id()
 	_limpiar_canvas()
-	for ium in seleccionados:
-		_agregar_ium_al_canvas(ium)
+	for i in range(seleccionados.size()):
+		_agregar_ium_al_canvas(seleccionados[i], claves_posicion[i])
 
 	var cantidad := _nodos_canvas.size()
 	if tipo != 0 and cantidad < 2:
@@ -793,7 +796,7 @@ func _simular() -> void:
 			"nombre": entrada["ium"].get("nombre", ""),
 			"orden": nodos.size() + 1,
 			"rol": "componente",
-			"posicion": "X",
+			"posicion": str(entrada.get("posicion", "X")),
 			"posicion_x": slot.position.x,
 			"posicion_y": slot.position.y
 		})
