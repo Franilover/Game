@@ -5,6 +5,11 @@ signal cancelled
 
 var _action: String = ""
 var _skins: Array[String] = []
+var _personalizacion: Dictionary = {}
+var _personalizacion_items: Dictionary = {}
+var _personalizacion_colores: Dictionary = {}
+var _personalizacion_tabs: TabContainer
+@onready var appearance_container: VBoxContainer = $Panel/Margin/Column/Content/Appearance
 
 @onready var partida_name_input: LineEdit = $Panel/Margin/Column/Content/Fields/PartidaName
 @onready var seed_input: LineEdit = $Panel/Margin/Column/Content/Fields/SeedInput
@@ -36,6 +41,7 @@ func _ready() -> void:
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
 	_load_skins()
+	_construir_controles_personalizacion()
 	if not SupabaseClient.especies_jugables_cargadas.is_connected(_on_species_loaded):
 		SupabaseClient.especies_jugables_cargadas.connect(_on_species_loaded)
 	SupabaseClient.cargar_especies_jugables()
@@ -52,6 +58,11 @@ func open(action: String) -> void:
 		species.select(0)
 	if skins.item_count > 0:
 		skins.select(0)
+	for slot in CharacterAppearance.SLOTS:
+		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
+		if lista != null and lista.item_count > 0:
+			lista.select(0)
+		_personalizacion[slot] = {"ruta": "", "color": CharacterAppearance.color_a_html(_color_inicial(slot))}
 	visible = true
 	name_input.grab_focus()
 	_update_confirm()
@@ -123,6 +134,103 @@ func _load_skins() -> void:
 		skins.select(0)
 	_update_confirm()
 
+
+func _construir_controles_personalizacion() -> void:
+	_personalizacion_tabs = TabContainer.new()
+	_personalizacion_tabs.name = "Personalizacion"
+	_personalizacion_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_personalizacion_tabs.custom_minimum_size = Vector2(0, 132)
+	appearance_container.add_child(_personalizacion_tabs)
+
+	for slot in CharacterAppearance.SLOTS:
+		var pagina := VBoxContainer.new()
+		pagina.name = slot.capitalize()
+		pagina.add_theme_constant_override("separation", 4)
+		_personalizacion_tabs.add_child(pagina)
+		_personalizacion_tabs.set_tab_title(pagina.get_index(), str(CharacterAppearance.SLOT_LABELS[slot]))
+
+		var catalogo: Array[Dictionary] = CharacterAppearance.catalogo(slot)
+		var lista := ItemList.new()
+		lista.name = "Catalogo"
+		lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		lista.custom_minimum_size = Vector2(0, 76)
+		lista.max_columns = 5
+		lista.fixed_column_width = 60
+		lista.fixed_icon_size = Vector2i(42, 42)
+		lista.icon_mode = ItemList.ICON_MODE_TOP
+		lista.select_mode = ItemList.SELECT_SINGLE
+		lista.add_item("Ninguno")
+		lista.set_item_metadata(0, "")
+		for pieza in catalogo:
+			lista.add_icon_item(pieza["textura"], true)
+			var indice := lista.item_count - 1
+			lista.set_item_text(indice, str(pieza["nombre"]))
+			lista.set_item_metadata(indice, str(pieza["ruta"]))
+		lista.select(0)
+		lista.item_selected.connect(_al_seleccionar_pieza.bind(slot))
+		pagina.add_child(lista)
+		_personalizacion_items[slot] = lista
+
+		var fila_color := HBoxContainer.new()
+		fila_color.add_theme_constant_override("separation", 8)
+		pagina.add_child(fila_color)
+		var etiqueta := Label.new()
+		etiqueta.text = "Color"
+		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		fila_color.add_child(etiqueta)
+		var selector_color := ColorPickerButton.new()
+		selector_color.custom_minimum_size = Vector2(64, 30)
+		selector_color.color = _color_inicial(slot)
+		selector_color.tooltip_text = "Color de " + str(CharacterAppearance.SLOT_LABELS[slot]).to_lower()
+		selector_color.color_changed.connect(_al_cambiar_color_pieza.bind(slot))
+		fila_color.add_child(selector_color)
+		_personalizacion_colores[slot] = selector_color
+		_personalizacion[slot] = {
+			"ruta": "",
+			"color": CharacterAppearance.color_a_html(selector_color.color)
+		}
+
+
+func _color_inicial(slot: String) -> Color:
+	match slot:
+		"hair": return Color("#5b3828")
+		"eyes": return Color("#7a9e8a")
+		"shirt": return Color("#7896b5")
+		"pants": return Color("#4b536d")
+		"shoes": return Color("#5a443b")
+	return Color.WHITE
+
+
+func _al_seleccionar_pieza(indice: int, slot: String) -> void:
+	var lista: ItemList = _personalizacion_items.get(slot) as ItemList
+	if lista == null:
+		return
+	var pieza: Dictionary = _personalizacion.get(slot, {}).duplicate(true)
+	pieza["ruta"] = str(lista.get_item_metadata(indice))
+	_personalizacion[slot] = pieza
+
+
+func _al_cambiar_color_pieza(color: Color, slot: String) -> void:
+	var pieza: Dictionary = _personalizacion.get(slot, {}).duplicate(true)
+	pieza["color"] = CharacterAppearance.color_a_html(color)
+	_personalizacion[slot] = pieza
+
+
+func _obtener_personalizacion() -> Dictionary:
+	var resultado: Dictionary = {}
+	for slot in CharacterAppearance.SLOTS:
+		var pieza: Dictionary = _personalizacion.get(slot, {}).duplicate(true)
+		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
+		var selector_color: ColorPickerButton = _personalizacion_colores.get(slot) as ColorPickerButton
+		if lista != null:
+			var seleccionados := lista.get_selected_items()
+			if not seleccionados.is_empty():
+				pieza["ruta"] = str(lista.get_item_metadata(seleccionados[0]))
+		if selector_color != null:
+			pieza["color"] = CharacterAppearance.color_a_html(selector_color.color)
+		resultado[slot] = pieza
+	return resultado
+
 func _update_confirm(_index: int = -1) -> void:
 	if confirm_button == null:
 		return
@@ -154,7 +262,8 @@ func _on_confirm() -> void:
 		"genero": gender_value,
 		"especie": species_data.duplicate(true),
 		"skin": _skins[skin_index],
-		"skin_nombre": _skins[skin_index].get_file().get_basename()
+		"skin_nombre": _skins[skin_index].get_file().get_basename(),
+		"personalizacion": _obtener_personalizacion()
 	}
 	visible = false
 	confirmed.emit(config, _action)
