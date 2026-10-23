@@ -116,30 +116,6 @@ offset_bottom = 122.0
 mouse_filter = 0
 text = "Tab"
 
-[node name="UseQ" type="Button" parent="Actions"]
-custom_minimum_size = Vector2(62, 62)
-layout_mode = 0
-mouse_filter = 0
-text = "Q"
-
-[node name="UseE" type="Button" parent="Actions"]
-custom_minimum_size = Vector2(62, 62)
-layout_mode = 0
-mouse_filter = 0
-text = "E"
-
-[node name="SlotQ" type="Button" parent="Actions"]
-custom_minimum_size = Vector2(52, 52)
-layout_mode = 0
-mouse_filter = 0
-text = "Q ·"
-
-[node name="SlotE" type="Button" parent="Actions"]
-custom_minimum_size = Vector2(52, 52)
-layout_mode = 0
-mouse_filter = 0
-text = "E ·"
-
 [node name="IUM" type="Button" parent="Actions"]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 0
