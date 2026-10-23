@@ -530,21 +530,20 @@ func _recuperar_tarea_generacion_invalida() -> bool:
 		"coord",
 		Vector2i.ZERO
 	)
-	var etapa_invalida := int(_generation_task.get("stage", 0))
 	push_warning(
 		"WorldTerrain: tarea de chunk inconsistente en "
 		+ str(coord_invalida)
 		+ "; se limpiará y volverá a la cola de streaming."
 	)
 
-	# Retirar primero el estado corrupto. Una tarea DATA aún no ha pintado
-	# celdas; una tarea PAINT/FLUSH puede haber dejado terreno parcial.
+	# Incluso en la etapa DATA ya puede haberse pintado una parte del chunk:
+	# el pintado temprano ocurre antes de que DATA termine. Limpiar siempre
+	# evita residuos si el índice corrupto aparece a mitad de un lote.
 	_generation_task.clear()
 	_pintado_desde_flush = 0
 	_chunk_cache.erase(coord_invalida)
 	_chunk_cache_order.erase(coord_invalida)
-	if etapa_invalida >= 1:
-		_programar_limpieza_chunk(coord_invalida, false)
+	_programar_limpieza_chunk(coord_invalida, false)
 
 	# No iniciar aquí: el streamer conserva el contexto del jugador y puede
 	# volver a encolar sólo si el chunk sigue dentro del radio de carga.
@@ -782,12 +781,12 @@ func _procesar_pintado_chunk(
 
 	while cursor < limite:
 		if cursor < 0 or cursor >= orden.size():
-			if visual != null:
+			if visual != null and not visual.tiene_clear_chunk_activo():
 				visual.terminar_lote()
 			return _recuperar_tarea_generacion_invalida()
 		var indice: int = int(orden[cursor])
 		if indice < 0 or indice >= total:
-			if visual != null:
+			if visual != null and not visual.tiene_clear_chunk_activo():
 				visual.terminar_lote()
 			return _recuperar_tarea_generacion_invalida()
 		var local_y: int = (
@@ -1175,12 +1174,6 @@ func cancelar_generacion_si_distante(
 	_generation_task.clear()
 	_pintado_desde_flush = 0
 	return true
-
-
-func obtener_coord_generacion_activa() -> Vector2i:
-	if _generation_task.is_empty():
-		return Vector2i.ZERO
-	return _generation_task.get("coord", Vector2i.ZERO)
 
 
 func chunk_en_generacion(
