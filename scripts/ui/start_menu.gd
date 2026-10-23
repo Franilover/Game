@@ -294,9 +294,18 @@ func _abrir_selector_partidas() -> void:
 	if get_node_or_null("LocalSaveSelector") != null:
 		return
 
-	var selector: Node = selector_scene.instantiate()
+	var selector := selector_scene.instantiate() as Control
+	if selector == null:
+		push_error("StartMenu: save_selector.tscn no tiene una raiz Control.")
+		return
 	selector.name = "LocalSaveSelector"
 	add_child(selector)
+	# La escena se agrega en tiempo de ejecucion: fuerza el rectangulo completo
+	# respecto al StartMenu, y vuelve a aplicar el layout tras el primer frame.
+	selector.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	selector.position = Vector2.ZERO
+	selector.call_deferred("set_anchors_and_offsets_preset", Control.PRESET_FULL_RECT)
+	selector.call_deferred("_configurar_diseno_responsive")
 
 	print("StartMenu: selector de partidas abierto.")
 
