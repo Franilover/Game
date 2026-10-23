@@ -1110,15 +1110,15 @@ func _crear_huecos_manos() -> void:
 func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	var slot := Button.new()
 	slot.name = nombre
-	slot.set_anchors_preset(Control.PRESET_BOTTOM_LEFT if tecla == "Q" else Control.PRESET_BOTTOM_RIGHT)
-	slot.anchor_left = 0.0 if tecla == "Q" else 1.0
-	slot.anchor_right = 0.0 if tecla == "Q" else 1.0
+	slot.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	slot.anchor_left = 0.5
+	slot.anchor_right = 0.5
 	slot.anchor_top = 1.0
 	slot.anchor_bottom = 1.0
-	slot.offset_top = -60.0
-	slot.offset_bottom = -12.0
-	slot.offset_left = 18.0 if tecla == "Q" else -66.0
-	slot.offset_right = 66.0 if tecla == "Q" else -18.0
+	slot.offset_top = -34.0
+	slot.offset_bottom = -4.0
+	slot.offset_left = -126.0 if tecla == "Q" else 78.0
+	slot.offset_right = -78.0 if tecla == "Q" else 126.0
 	slot.custom_minimum_size = Vector2(48, 48)
 	slot.focus_mode = Control.FOCUS_NONE
 	slot.mouse_filter = Control.MOUSE_FILTER_STOP
