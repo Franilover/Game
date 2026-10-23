@@ -30,9 +30,9 @@ func simular(jugador_id: String, nodos: Array, enlaces: Array) -> void:
 		simulacion_fallida.emit("Repositorio IUM no configurado.")
 		return
 	_registrar(_client.solicitar_rpc("simular_organizacion_ium_v1", {
-		"jugador_id": jugador_id,
-		"nodos": nodos,
-		"enlaces": enlaces
+		"p_componentes": nodos,
+		"p_enlaces": enlaces,
+		"p_contexto": {}
 	}), "simular")
 
 func registrar_intento(jugador_id: String, proceso_id: String) -> void:
@@ -80,11 +80,13 @@ func _al_request(request_id: int, resultado: int, codigo_http: int, _cabeceras: 
 			else:
 				procesos_cargados.emit([])
 		"simular":
-			var proceso := _extraer_proceso(datos)
-			if proceso.is_empty():
-				simulacion_fallida.emit("La configuración no coincide con ningún proceso conocido.")
+			if datos is Dictionary and str(datos.get("estado", "")) == "simulado":
+				simulacion_completada.emit(datos)
+			elif datos is Dictionary:
+				var motivo := str(datos.get("detalle", datos.get("motivo", "La simulación no pudo resolverse.")))
+				simulacion_fallida.emit(motivo)
 			else:
-				simulacion_completada.emit(proceso)
+				simulacion_fallida.emit("Respuesta inesperada del simulador IUM.")
 		"registrar":
 			registro_completado.emit()
 
