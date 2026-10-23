@@ -1169,13 +1169,13 @@ func obtener_chunk_en_generacion() -> Vector2i:
 
 
 func puede_pausar_generacion_actual() -> bool:
-	# La preempción de FLUSH queda desactivada deliberadamente.
-	# FLUSH es la última barrera que convierte el chunk en cargado; si se
-	# interrumpe aquí, el chunk actual nunca entra en _loaded_chunks y el
-	# streamer puede encadenar pausas antes de mostrar terreno.
-	# La prioridad ya se aplica al ORDEN DE LA COLA antes de iniciar cada
-	# chunk. Eso mantiene el camino estable sin sacrificar visibilidad.
-	return false
+	# DATA no ha escrito celdas visuales: es seguro conservar la tarea completa
+	# y ceder el generador a un chunk más prioritario sin necesitar un clear.
+	# PINTADO y FLUSH no se preemptan porque pueden dejar tiles parciales o
+	# interrumpir la barrera que registra el chunk como cargado.
+	if _generation_task.is_empty():
+		return false
+	return int(_generation_task.get("stage", -1)) == 0
 
 
 func pausar_generacion_actual() -> bool:
