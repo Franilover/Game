@@ -124,10 +124,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 7
 
-[node name="SkinLabel" type="Label" parent="Panel/Margin/Column/Content/Appearance"]
-layout_mode = 2
-text = "Aspecto"
-
 [node name="Status" type="Label" parent="Panel/Margin/Column"]
 visible = false
 layout_mode = 2
