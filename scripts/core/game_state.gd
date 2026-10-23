@@ -268,6 +268,44 @@ func renombrar_partida(
 	)
 
 
+func actualizar_configuracion_partida(
+	id: String,
+	nuevo_nombre: String,
+	semilla_texto: String
+) -> bool:
+	var datos := _leer_archivo_partida(id)
+	if datos.is_empty():
+		return false
+
+	var nombre_limpio := nuevo_nombre.strip_edges()
+	var semilla_limpia := semilla_texto.strip_edges()
+	if nombre_limpio.is_empty() or not _texto_es_semilla_valida(semilla_limpia):
+		return false
+
+	var mundo_variant: Variant = datos.get("mundo", {})
+	var mundo: Dictionary = {}
+	if mundo_variant is Dictionary:
+		mundo = (mundo_variant as Dictionary).duplicate(true)
+
+	mundo["semilla"] = int(semilla_limpia)
+	if not mundo.has("generador_version"):
+		mundo["generador_version"] = 1
+
+	datos["nombre"] = nombre_limpio
+	datos["mundo"] = mundo
+	datos["actualizado_en"] = _ahora()
+
+	if not _escribir_archivo_partida(id, datos):
+		return false
+
+	if active_save_id == id:
+		active_save_name = nombre_limpio
+		world_state.world_seed = int(semilla_limpia)
+		world_state.world_seed_valida = true
+
+	return true
+
+
 # ============================================================
 # GUARDADO
 # ============================================================
