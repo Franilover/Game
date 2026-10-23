@@ -4,8 +4,9 @@ class_name CharacterAppearance
 ## Capas visuales del personaje. Cada PNG debe compartir lienzo, pivote y escala
 ## con el sprite base para que las piezas coincidan sin ajustes por personaje.
 
-const SLOTS: Array[String] = ["hair", "eyes", "shirt", "pants", "shoes"]
+const SLOTS: Array[String] = ["body", "hair", "eyes", "shirt", "pants", "shoes"]
 const SLOT_DIRECTORIES := {
+	"body": "res://assets/art/characters/customization/body/",
 	"hair": "res://assets/art/characters/customization/hair/",
 	"eyes": "res://assets/art/characters/customization/eyes/",
 	"shirt": "res://assets/art/characters/customization/shirts/",
@@ -13,6 +14,7 @@ const SLOT_DIRECTORIES := {
 	"shoes": "res://assets/art/characters/customization/shoes/"
 }
 const SLOT_LABELS := {
+	"body": "Cuerpo",
 	"hair": "Cabello",
 	"eyes": "Ojos",
 	"shirt": "Parte superior",
@@ -75,7 +77,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 	if sprite_base == null:
 		return
 	var indice_z := 1
-	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
+	for slot in ["body", "shoes", "pants", "shirt", "eyes", "hair"]:
 		var pieza_variant: Variant = apariencia.get(slot, {})
 		if not pieza_variant is Dictionary:
 			continue
