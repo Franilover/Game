@@ -41,11 +41,22 @@ jobs:
 
       - name: Instalar paquetes Android requeridos
         run: |
-          set -euo pipefail
+          set -eu
+          yes | sdkmanager --licenses
           sdkmanager --install \
+            "cmdline-tools;latest" \
             "platform-tools" \
             "platforms;android-35" \
-            "build-tools;35.0.1"
+            "build-tools;35.0.1" \
+            "cmake;3.10.2.4988404" \
+            "ndk;28.1.13356709"
+
+      - name: Inicializar ADB
+        run: |
+          set -euo pipefail
+          adb version
+          adb start-server
+          adb devices
 
       # Instalar Godot headless.
       - name: Instalar Godot 4.7 stable
@@ -107,18 +118,29 @@ jobs:
       - name: Configurar rutas Android en Godot
         run: |
           set -euo pipefail
+
+          test -n "${ANDROID_HOME:-}"
+          test -n "${JAVA_HOME:-}"
+          test -x "$ANDROID_HOME/platform-tools/adb"
+          test -d "$JAVA_HOME"
+
           mkdir -p "$HOME/.config/godot"
 
           cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
           [gd_resource type="EditorSettings" format=3]
 
           [resource]
-          export/android/android_sdk_path = "${ANDROID_HOME}"
-          export/android/java_sdk_path = "${JAVA_HOME}"
-          export/android/debug_keystore = "${HOME}/.android/garlia-debug.keystore"
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$HOME/.android/garlia-debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
           EOF
+
+      - name: Importar recursos del proyecto
+        run: |
+          set -euo pipefail
+          godot --headless --editor --path . --import
 
       - name: Export Windows Desktop
         run: |
