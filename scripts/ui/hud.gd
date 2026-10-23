@@ -1148,72 +1148,75 @@ func _actualizar_hueco_mano(slot: Button, mano: String) -> void:
 
 
 func _crear_selector_manos() -> void:
+	# Selector compacto anclado encima del botón Q/E, sin panel centrado.
 	_hand_selector = PanelContainer.new()
 	_hand_selector.name = "HandItemSelector"
 	_hand_selector.visible = false
-	_hand_selector.set_anchors_preset(Control.PRESET_CENTER)
-	_hand_selector.position = Vector2(-150, -150)
-	_hand_selector.size = Vector2(300, 300)
+	_hand_selector.custom_minimum_size = Vector2(42, 0)
+	_hand_selector.size = Vector2(42, 0)
 	_hand_selector.mouse_filter = Control.MOUSE_FILTER_STOP
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.10, 0.065, 0.04, 0.98)
-	panel_style.set_border_width_all(2)
+	panel_style.set_border_width_all(1)
 	panel_style.border_color = Color(0.42, 0.29, 0.17, 1)
-	panel_style.set_corner_radius_all(5)
-	panel_style.content_margin_left = 10
-	panel_style.content_margin_right = 10
-	panel_style.content_margin_top = 10
-	panel_style.content_margin_bottom = 10
+	panel_style.set_corner_radius_all(3)
+	panel_style.content_margin_left = 3
+	panel_style.content_margin_right = 3
+	panel_style.content_margin_top = 3
+	panel_style.content_margin_bottom = 3
 	_hand_selector.add_theme_stylebox_override("panel", panel_style)
 	add_child(_hand_selector)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 8)
-	_hand_selector.add_child(column)
-	var title := Label.new()
-	title.name = "HandSelectorTitle"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
-	column.add_child(title)
-	_hand_selector_grid = Control.new()
-	_hand_selector_grid.custom_minimum_size = Vector2(280, 220)
-	_hand_selector_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_child(_hand_selector_grid)
+
+	_hand_selector_grid = VBoxContainer.new()
+	_hand_selector_grid.add_theme_constant_override("separation", 3)
+	_hand_selector.add_child(_hand_selector_grid)
 	for i in range(6):
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(72, 48)
-		button.size = Vector2(72, 48)
+		button.custom_minimum_size = Vector2(34, 32)
+		button.size = Vector2(34, 32)
 		button.focus_mode = Control.FOCUS_NONE
+		button.mouse_filter = Control.MOUSE_FILTER_STOP
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.expand_icon = true
 		button.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
-		button.add_theme_font_size_override("font_size", 10)
+		button.add_theme_font_size_override("font_size", 9)
+		button.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
+		button.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
+		button.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
 		button.pressed.connect(_al_pulsar_selector_mano.bind(i))
 		_hand_selector_grid.add_child(button)
-		var angle := -PI / 2.0 + TAU * float(i) / 6.0
-		var center := Vector2(140, 110)
-		var radial_position := center + Vector2(cos(angle), sin(angle)) * 72.0
-		button.position = radial_position - button.size * 0.5
 		_hand_selector_buttons.append(button)
-	var hint := Label.new()
-	hint.text = "Apunta a un espacio y suelta la tecla"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1))
-	hint.add_theme_font_size_override("font_size", 9)
-	column.add_child(hint)
 
 
 func _abrir_selector_mano(mano: String) -> void:
 	if _inventory_ref == null or not is_instance_valid(_inventory_ref):
 		return
 	_hand_selector_activo = mano
-	var title := _hand_selector.find_child("HandSelectorTitle", true, false) as Label
-	if title != null:
-		title.text = "MANO IZQUIERDA · Q" if mano == "izquierda" else "MANO DERECHA · E"
+	var boton_mano := _left_hand_display if mano == "izquierda" else _right_hand_display
+	if not is_instance_valid(boton_mano):
+		return
+
 	for i in range(6):
 		var indice := i if mano == "izquierda" else 12 + i
 		var datos := _inventory_ref.obtener_objeto(indice)
 		var button := _hand_selector_buttons[i]
-		button.text = str(i + 1) + "\n" + str(datos.get("nombre", "Vacío")) if not datos.is_empty() else str(i + 1) + "\n—"
+		button.text = str(i + 1)
 		button.icon = ItemIconResolver.obtener_icono(datos) if not datos.is_empty() else null
-		button.expand_icon = true
+		button.tooltip_text = str(i + 1) + " · " + str(datos.get("nombre", "Vacío")) if not datos.is_empty() else str(i + 1) + " · Vacío"
+
+	# Posición local respecto al HUD: justo encima del botón que abrió el selector.
+	_hand_selector.size = Vector2(42, 0)
+	_hand_selector.reset_size()
+	_hand_selector.size = Vector2(42, _hand_selector.get_combined_minimum_size().y)
+	var rect := boton_mano.get_global_rect()
+	var hud_rect := get_global_rect()
+	var x := rect.position.x + (rect.size.x - _hand_selector.size.x) * 0.5 - hud_rect.position.x
+	var y := rect.position.y - _hand_selector.size.y - 6.0 - hud_rect.position.y
+	_hand_selector.position = Vector2(
+		clampf(x, 4.0, maxf(4.0, size.x - _hand_selector.size.x - 4.0)),
+		clampf(y, 4.0, maxf(4.0, size.y - _hand_selector.size.y - 4.0))
+	)
 	_hand_selector.visible = true
 	_hand_selector.move_to_front()
 
