@@ -28,6 +28,10 @@ var _preview_layers: Dictionary = {}
 @onready var cancel_button: Button = $Panel/Margin/Column/Buttons/Cancel
 
 func _ready() -> void:
+	# Esta escena se instancia como hija desde start_menu y save_selector.
+	# Godot no siempre conserva el layout de raíz de una PackedScene al insertarla;
+	# normalizamos la geometría contra el Control padre antes de medir el layout.
+	_normalizar_geometria_raiz()
 	visible = false
 	_instalar_scroll_contenido()
 	get_viewport().size_changed.connect(_configurar_layout_responsive)
@@ -52,6 +56,17 @@ func _ready() -> void:
 	if not SupabaseClient.especies_jugables_cargadas.is_connected(_on_species_loaded):
 		SupabaseClient.especies_jugables_cargadas.connect(_on_species_loaded)
 	SupabaseClient.cargar_especies_jugables()
+
+
+func _normalizar_geometria_raiz() -> void:
+	# El panel es un overlay de pantalla completa; no debe depender de offsets
+	# heredados ni de una posición guardada en el editor.
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	position = Vector2.ZERO
+	if get_parent() is Control:
+		var contenedor := get_parent() as Control
+		if contenedor.size.x > 0.0 and contenedor.size.y > 0.0:
+			size = contenedor.size
 
 
 func _instalar_scroll_contenido() -> void:
@@ -108,6 +123,8 @@ func _ajustar_orientacion_contenido(vertical: bool) -> void:
 	creation_content = nuevo
 
 func open(action: String) -> void:
+	# Revalidar al abrir evita depender de cómo se añadió esta instancia.
+	_normalizar_geometria_raiz()
 	_action = action
 	partida_name_input.text = ""
 	seed_input.text = ""
