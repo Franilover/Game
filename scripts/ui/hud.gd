@@ -1286,11 +1286,12 @@ func accion_controles_moviles(accion: String) -> void:
 			if inventory_node != null and inventory_node.has_method("toggle"):
 				inventory_node.call("toggle")
 		"toggle_ium":
-			var lab: Node = get_tree().current_scene.find_child("IUMLab", true, false) if get_tree().current_scene != null else null
-			if lab != null:
-				lab.visible = not lab.visible
-				if lab.visible and lab.has_method("abrir"):
-					lab.call("abrir")
+			# X abre el menú de acciones de Eterium (curar, dash, IUM y conjuro).
+			var radial: Node = get_tree().current_scene.find_child("EteriumRadialMenu", true, false) if get_tree().current_scene != null else null
+			if radial != null and radial.has_method("toggle_menu"):
+				radial.call("toggle_menu")
+			else:
+				push_warning("HUD: no se encontró EteriumRadialMenu.")
 
 
 func _input(event: InputEvent) -> void:
