@@ -98,6 +98,10 @@ func _distribuir_controles() -> void:
 	var size := get_viewport_rect().size
 	if size.x <= 0.0 or size.y <= 0.0:
 		return
+	# Los contenedores ocupan el viewport completo; así las coordenadas de
+	# cada botón son absolutas respecto a la pantalla, no al anclaje antiguo.
+	_posicionar($Movement, Vector2.ZERO, size)
+	_posicionar($Actions, Vector2.ZERO, size)
 
 	var compacto := size.x < 700.0 or size.y < 420.0
 	var d := float(tamano_dpad - (8 if compacto else 0))
