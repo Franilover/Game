@@ -216,5 +216,7 @@ func _color_zona(tile: Vector2i) -> Color:
 			return Color("#8f7957")
 		7:
 			return Color("#b9b7a2")
+		8:
+			return Color("#254b2c")
 		_:
 			return Color("#6b5138")
