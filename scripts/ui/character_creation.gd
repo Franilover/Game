@@ -14,7 +14,7 @@ var _preview_layers: Dictionary = {}
 @onready var appearance_container: VBoxContainer = $Panel/Margin/Column/Content/Appearance
 @onready var creation_margin: MarginContainer = $Panel/Margin
 @onready var creation_column: VBoxContainer = $Panel/Margin/Column
-@onready var creation_content: HBoxContainer = $Panel/Margin/Column/Content
+@onready var creation_content: BoxContainer = $Panel/Margin/Column/Content
 @onready var creation_fields: VBoxContainer = $Panel/Margin/Column/Content/Fields
 
 @onready var partida_name_input: LineEdit = $Panel/Margin/Column/Content/Fields/PartidaName
@@ -71,14 +71,41 @@ func _instalar_scroll_contenido() -> void:
 func _configurar_layout_responsive() -> void:
 	var tamano := get_viewport_rect().size
 	var compacto := tamano.x < 760.0 or tamano.y < 520.0
-	creation_margin.add_theme_constant_override("margin_left", 12 if tamano.x < 560.0 else 20)
-	creation_margin.add_theme_constant_override("margin_right", 12 if tamano.x < 560.0 else 20)
-	creation_margin.add_theme_constant_override("margin_top", 10 if tamano.y < 440.0 else 16)
-	creation_margin.add_theme_constant_override("margin_bottom", 10 if tamano.y < 440.0 else 16)
+	creation_margin.add_theme_constant_override("margin_left", 10 if tamano.x < 560.0 else 20)
+	creation_margin.add_theme_constant_override("margin_right", 10 if tamano.x < 560.0 else 20)
+	creation_margin.add_theme_constant_override("margin_top", 8 if tamano.y < 440.0 else 16)
+	creation_margin.add_theme_constant_override("margin_bottom", 8 if tamano.y < 440.0 else 16)
 	creation_column.add_theme_constant_override("separation", 6 if compacto else 10)
-	creation_content.add_theme_constant_override("separation", 10 if compacto else 20)
 	creation_fields.custom_minimum_size.x = 0
 	appearance_container.custom_minimum_size.x = 0
+	_ajustar_orientacion_contenido(compacto)
+
+
+func _ajustar_orientacion_contenido(vertical: bool) -> void:
+	var ya_vertical := creation_content is VBoxContainer
+	if ya_vertical == vertical:
+		creation_content.add_theme_constant_override("separation", 8 if vertical else 20)
+		return
+
+	var padre := creation_content.get_parent()
+	if padre == null:
+		return
+	var indice := creation_content.get_index()
+	var nuevo: BoxContainer = VBoxContainer.new() if vertical else HBoxContainer.new()
+	nuevo.name = "Content"
+	nuevo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nuevo.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	nuevo.add_theme_constant_override("separation", 8 if vertical else 20)
+
+	# Conserva los mismos controles y conexiones; solo cambia su disposición.
+	creation_content.get_parent().remove_child(creation_content)
+	padre.add_child(nuevo)
+	padre.move_child(nuevo, indice)
+	for hijo in creation_content.get_children():
+		creation_content.remove_child(hijo)
+		nuevo.add_child(hijo)
+	creation_content.free()
+	creation_content = nuevo
 
 func open(action: String) -> void:
 	_action = action
