@@ -215,18 +215,18 @@ func _preparar_puntos_dash() -> void:
 	contenedor.anchor_right = 0.5
 	contenedor.anchor_top = 1.0
 	contenedor.anchor_bottom = 1.0
-	contenedor.offset_left = -44.0
-	contenedor.offset_right = 44.0
+	contenedor.offset_left = -31.0
+	contenedor.offset_right = 31.0
 	contenedor.offset_top = -60.0
-	contenedor.offset_bottom = -45.0
-	contenedor.size = Vector2(88.0, 20.0)
-	contenedor.add_theme_constant_override("separation", 8)
+	contenedor.offset_bottom = -48.0
+	contenedor.size = Vector2(62.0, 12.0)
+	contenedor.add_theme_constant_override("separation", 5)
 	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(contenedor)
 	for i in range(3):
 		var pip := Panel.new()
 		pip.name = "DashCharge" + str(i + 1)
-		pip.custom_minimum_size = Vector2(15.0, 15.0)
+		pip.custom_minimum_size = Vector2(9.0, 9.0)
 		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		contenedor.add_child(pip)
 		_stamina_pips.append(pip)
@@ -243,10 +243,10 @@ func _actualizar_puntos_dash(actual: float, maximo: float) -> void:
 		estilo.border_width_right = 2
 		estilo.border_width_bottom = 2
 		estilo.border_color = Color(0.93, 0.84, 0.65, 1.0) if activo else Color(0.29, 0.19, 0.12, 1.0)
-		estilo.corner_radius_top_left = 8
-		estilo.corner_radius_top_right = 8
-		estilo.corner_radius_bottom_left = 8
-		estilo.corner_radius_bottom_right = 8
+		estilo.corner_radius_top_left = 5
+		estilo.corner_radius_top_right = 5
+		estilo.corner_radius_bottom_left = 5
+		estilo.corner_radius_bottom_right = 5
 		pip.add_theme_stylebox_override("panel", estilo)
 
 func _configurar_referencias_ui() -> void:
