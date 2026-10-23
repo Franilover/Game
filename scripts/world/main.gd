@@ -389,6 +389,8 @@ func _inicializar_ium() -> void:
 
 	_ium_lab.configurar(_ium_manager, _admin_console)
 	_configurar_menu_radial_eterium()
+	# Configurar no inicia las consultas: inicializamos el catálogo explícitamente.
+	_ium_manager.inicializar(_player.get_jugador_id() if _player != null else "")
 
 	if not _ium_manager.proceso_equipado_signal.is_connected(_al_equipar_proceso):
 		_ium_manager.proceso_equipado_signal.connect(_al_equipar_proceso)
