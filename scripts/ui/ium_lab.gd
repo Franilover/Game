@@ -31,12 +31,56 @@ var _conectando_desde: int = -1
 
 func _ready() -> void:
 	visible = false
+	_aplicar_estilo_interfaz()
+	_ajustar_panel_a_pantalla()
+	get_viewport().size_changed.connect(_ajustar_panel_a_pantalla)
 
 	_btn_simular.pressed.connect(_simular)
 	_btn_limpiar.pressed.connect(_limpiar_canvas)
 	_btn_cerrar.pressed.connect(_cerrar)
 
 	_draw_layer.draw.connect(_dibujar_conexiones)
+
+
+func _ajustar_panel_a_pantalla() -> void:
+	var panel := $Panel as Control
+	var area := get_viewport_rect().size
+	var ancho := minf(area.x * 0.96, 1100.0)
+	var alto := minf(area.y * 0.94, 760.0)
+	panel.offset_left = -ancho * 0.5
+	panel.offset_right = ancho * 0.5
+	panel.offset_top = -alto * 0.5
+	panel.offset_bottom = alto * 0.5
+
+
+func _estilo_panel(fondo: Color, borde: Color, grosor: int = 1) -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = fondo
+	estilo.border_color = borde
+	estilo.set_border_width_all(grosor)
+	estilo.set_corner_radius_all(3)
+	return estilo
+
+
+func _estilizar_boton(boton: Button) -> void:
+	boton.add_theme_color_override("font_color", Color(0.82, 0.75, 0.61, 1))
+	boton.add_theme_color_override("font_hover_color", Color(0.95, 0.88, 0.7, 1))
+	boton.add_theme_color_override("font_pressed_color", Color(0.95, 0.88, 0.7, 1))
+	boton.add_theme_color_override("font_disabled_color", Color(0.42, 0.34, 0.24, 1))
+	boton.add_theme_stylebox_override("normal", _estilo_panel(Color(0.12, 0.075, 0.045, 0.98), Color(0.29, 0.19, 0.12, 1)))
+	boton.add_theme_stylebox_override("hover", _estilo_panel(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1)))
+	boton.add_theme_stylebox_override("pressed", _estilo_panel(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
+	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+
+func _aplicar_estilo_interfaz() -> void:
+	for control in find_children("*", "Control", true, false):
+		if control is Label:
+			(control as Label).add_theme_color_override("font_color", Color(0.82, 0.75, 0.61, 1))
+		elif control is Button:
+			_estilizar_boton(control as Button)
+		elif control is Panel:
+			(control as Panel).add_theme_stylebox_override("panel", _estilo_panel(Color(0.055, 0.035, 0.022, 0.96), Color(0.29, 0.19, 0.12, 1)))
 
 
 func configurar(manager: Node, admin_console: Node) -> void:
@@ -129,10 +173,10 @@ func _crear_boton_ium(ium: Dictionary) -> Button:
 		""
 	)
 
-	btn.custom_minimum_size = Vector2(
-		140,
-		36
-	)
+	btn.custom_minimum_size = Vector2(0, 32)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.clip_text = true
+	_estilizar_boton(btn)
 
 	var oris: Array = ium.get(
 		"oris",
@@ -197,10 +241,8 @@ func _crear_slot_canvas(
 ) -> Panel:
 	var panel := Panel.new()
 
-	panel.custom_minimum_size = Vector2(
-		100,
-		60
-	)
+	panel.custom_minimum_size = Vector2(100, 60)
+	panel.add_theme_stylebox_override("panel", _estilo_panel(Color(0.16, 0.105, 0.065, 0.98), Color(0.42, 0.29, 0.17, 1)))
 
 	var vbox := VBoxContainer.new()
 
@@ -243,11 +285,7 @@ func _crear_slot_canvas(
 
 	oris_label.add_theme_color_override(
 		"font_color",
-		Color(
-			0.7,
-			0.9,
-			1.0
-		)
+		Color(0.74, 0.62, 0.34, 1)
 	)
 
 	oris_label.add_theme_font_size_override(
@@ -273,10 +311,8 @@ func _crear_slot_canvas(
 		"Conectar desde aquí"
 	)
 
-	btn_conectar.custom_minimum_size = Vector2(
-		24,
-		20
-	)
+	btn_conectar.custom_minimum_size = Vector2(24, 20)
+	_estilizar_boton(btn_conectar)
 
 	btn_conectar.pressed.connect(
 		func():
@@ -287,10 +323,8 @@ func _crear_slot_canvas(
 
 	btn_eliminar.text = "✕"
 
-	btn_eliminar.custom_minimum_size = Vector2(
-		24,
-		20
-	)
+	btn_eliminar.custom_minimum_size = Vector2(24, 20)
+	_estilizar_boton(btn_eliminar)
 
 	btn_eliminar.pressed.connect(
 		func():
@@ -487,12 +521,7 @@ func _dibujar_conexiones() -> void:
 		_draw_layer.draw_line(
 			desde,
 			hasta,
-			Color(
-				0.4,
-				0.9,
-				1.0,
-				0.85
-			),
+			Color(0.74, 0.62, 0.34, 0.9),
 			2.0
 		)
 
@@ -653,11 +682,7 @@ func _al_cargar_procesos(
 
 		lbl.add_theme_color_override(
 			"font_color",
-			Color(
-				0.6,
-				0.6,
-				0.6
-			)
+			Color(0.65, 0.52, 0.35, 1)
 		)
 
 		_panel_descubiertos.add_child(lbl)
@@ -682,10 +707,8 @@ func _al_cargar_procesos(
 
 		btn_equipar.text = "Equipar"
 
-		btn_equipar.custom_minimum_size = Vector2(
-			70,
-			0
-		)
+		btn_equipar.custom_minimum_size = Vector2(70, 0)
+		_estilizar_boton(btn_equipar)
 
 		btn_equipar.pressed.connect(
 			func():
