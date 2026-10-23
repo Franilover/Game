@@ -6,6 +6,8 @@ on:
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
+      - "scripts/creatures/**"
+      - "tests/creatures/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
       - "project.godot"
@@ -54,6 +56,9 @@ jobs:
             echo "Godot reported script compilation errors during import."
             exit 1
           fi
+
+      - name: Run creature AI target policy regression test
+        run: godot --headless --path . --script res://tests/creatures/test_creature_ai_target_policy.gd
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
