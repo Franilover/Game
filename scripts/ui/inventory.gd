@@ -759,9 +759,14 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 	return resultado
 
 func usar_objeto_activo(usuario: Player = null) -> bool:
-	var indice: int = obtener_indice_inventario_hotbar(
-		indice_hotbar_activo
-	)
+	return usar_objeto_en_indice(obtener_indice_inventario_hotbar(indice_hotbar_activo), usuario)
+
+
+func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
+	return usar_objeto_en_indice(obtener_indice_mano_activa(mano), usuario)
+
+
+func usar_objeto_en_indice(indice: int, usuario: Player = null) -> bool:
 
 	if indice < 0:
 		return false
@@ -917,10 +922,11 @@ func _aplicar_efecto_recurso(
 
 
 func consumir_objeto_activo(cantidad: int = 1) -> bool:
-	var indice := obtener_indice_inventario_hotbar(indice_hotbar_activo)
-	if indice < 0:
-		return false
-	return quitar_cantidad(indice, maxi(1, cantidad))
+	return quitar_cantidad(obtener_indice_inventario_hotbar(indice_hotbar_activo), maxi(1, cantidad))
+
+
+func consumir_objeto_mano(mano: String, cantidad: int = 1) -> bool:
+	return quitar_cantidad(obtener_indice_mano_activa(mano), maxi(1, cantidad))
 
 
 func quitar_objeto(indice: int) -> bool:
