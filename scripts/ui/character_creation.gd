@@ -9,6 +9,9 @@ var _personalizacion: Dictionary = {}
 var _personalizacion_items: Dictionary = {}
 var _personalizacion_colores: Dictionary = {}
 var _personalizacion_tabs: TabContainer
+var _preview_container: Control
+var _preview_base: TextureRect
+var _preview_layers: Dictionary = {}
 @onready var appearance_container: VBoxContainer = $Panel/Margin/Column/Content/Appearance
 @onready var creation_margin: MarginContainer = $Panel/Margin
 @onready var creation_column: VBoxContainer = $Panel/Margin/Column
@@ -44,11 +47,14 @@ func _ready() -> void:
 	gender_free.text_changed.connect(func(_text: String) -> void:
 		_update_confirm())
 	skins.item_selected.connect(func(_index: int) -> void:
-		_update_confirm())
+		_update_confirm()
+		_actualizar_vista_previa())
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
 	_load_skins()
+	_crear_vista_previa()
 	_construir_controles_personalizacion()
+	_actualizar_vista_previa()
 	if not SupabaseClient.especies_jugables_cargadas.is_connected(_on_species_loaded):
 		SupabaseClient.especies_jugables_cargadas.connect(_on_species_loaded)
 	SupabaseClient.cargar_especies_jugables()
@@ -182,6 +188,57 @@ func _load_skins() -> void:
 	_update_confirm()
 
 
+
+func _crear_vista_previa() -> void:
+	_preview_container = Control.new()
+	_preview_container.name = "VistaPreviaPersonaje"
+	_preview_container.custom_minimum_size = Vector2(0, 84)
+	_preview_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_preview_base = TextureRect.new()
+	_preview_base.name = "CuerpoBase"
+	_preview_base.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_preview_base.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_preview_base.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_preview_base.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_preview_container.add_child(_preview_base)
+	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
+		var capa := TextureRect.new()
+		capa.name = "Preview_" + slot
+		capa.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		capa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		capa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		capa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_preview_container.add_child(capa)
+		_preview_layers[slot] = capa
+	appearance_container.add_child(_preview_container)
+	appearance_container.move_child(_preview_container, 1)
+
+
+func _actualizar_vista_previa() -> void:
+	if _preview_base == null:
+		return
+	var base_seleccionados := skins.get_selected_items()
+	if not base_seleccionados.is_empty():
+		var indice_base: int = base_seleccionados[0]
+		var ruta_base := str(skins.get_item_metadata(indice_base))
+		if ruta_base.is_empty() and indice_base < _skins.size():
+			ruta_base = _skins[indice_base]
+		_preview_base.texture = load(ruta_base) as Texture2D if not ruta_base.is_empty() else null
+	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
+		var capa: TextureRect = _preview_layers.get(slot) as TextureRect
+		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
+		var selector_color: ColorPickerButton = _personalizacion_colores.get(slot) as ColorPickerButton
+		if capa == null or lista == null:
+			continue
+		var seleccionados := lista.get_selected_items()
+		var ruta := ""
+		if not seleccionados.is_empty():
+			ruta = str(lista.get_item_metadata(seleccionados[0]))
+		capa.texture = load(ruta) as Texture2D if not ruta.is_empty() and ResourceLoader.exists(ruta) else null
+		capa.modulate = selector_color.color if selector_color != null else Color.WHITE
+		capa.visible = capa.texture != null
+
 func _construir_controles_personalizacion() -> void:
 	_personalizacion_tabs = TabContainer.new()
 	_personalizacion_tabs.name = "Personalizacion"
@@ -255,12 +312,14 @@ func _al_seleccionar_pieza(indice: int, slot: String) -> void:
 	var pieza: Dictionary = _personalizacion.get(slot, {}).duplicate(true)
 	pieza["ruta"] = str(lista.get_item_metadata(indice))
 	_personalizacion[slot] = pieza
+	_actualizar_vista_previa()
 
 
 func _al_cambiar_color_pieza(color: Color, slot: String) -> void:
 	var pieza: Dictionary = _personalizacion.get(slot, {}).duplicate(true)
 	pieza["color"] = CharacterAppearance.color_a_html(color)
 	_personalizacion[slot] = pieza
+	_actualizar_vista_previa()
 
 
 func _obtener_personalizacion() -> Dictionary:
