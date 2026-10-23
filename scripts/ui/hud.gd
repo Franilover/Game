@@ -1128,7 +1128,16 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
 	slot.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
 	slot.add_theme_stylebox_override("focus", _estilo_hueco_mano(false))
-	slot.tooltip_text = "Mano " + ("izquierda" if tecla == "Q" else "derecha") + " (" + tecla + ")"
+	slot.tooltip_text = "Seleccionar objeto para " + tecla
+	slot.pressed.connect(func() -> void:
+		if not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
+			var mano := "izquierda" if tecla == "Q" else "derecha"
+			if _hand_selector_activo == mano:
+				_hand_selector_activo = ""
+				_hand_selector.visible = false
+			else:
+				_abrir_selector_mano(mano)
+	)
 	var numero := Label.new()
 	numero.name = "HandKey"
 	numero.text = tecla
@@ -1263,6 +1272,26 @@ func _al_pulsar_selector_mano(indice: int) -> void:
 	_inventory_ref.seleccionar_slot_mano(_hand_selector_activo, indice)
 	_hand_selector_activo = ""
 	_hand_selector.visible = false
+
+
+func accion_controles_moviles(accion: String) -> void:
+	match accion:
+		"abrir_selector_q":
+			_abrir_selector_mano("izquierda")
+		"abrir_selector_e":
+			_abrir_selector_mano("derecha")
+		"toggle_inventory":
+			var inventory_node := get_tree().get_first_node_in_group("inventory")
+			if inventory_node != null and inventory_node.has_method("toggle"):
+				inventory_node.call("toggle")
+		"toggle_ium":
+			var lab := get_tree().get_first_node_in_group("ium_lab")
+			if lab == null:
+				lab = get_tree().get_first_node_in_group("ium_menu")
+			if lab != null:
+				lab.visible = not lab.visible
+				if lab.visible and lab.has_method("abrir"):
+					lab.call("abrir")
 
 
 func _input(event: InputEvent) -> void:
