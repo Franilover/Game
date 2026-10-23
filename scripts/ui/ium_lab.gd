@@ -443,28 +443,34 @@ func _eliminar_nodo(idx: int) -> void:
 func _iniciar_conexion(
 	desde_idx: int
 ) -> void:
+	if desde_idx < 0 or desde_idx >= _nodos_canvas.size():
+		return
+
 	if _conectando_desde == -1:
 		_conectando_desde = desde_idx
+		_label_estado.text = "Selecciona el IUM destino (presiona → en otro IUM)."
+		return
 
-		_label_estado.text = (
-			"Selecciona el IUM destino "
-			+ "(presiona → en otro IUM)"
-		)
-
-	else:
-		if _conectando_desde != desde_idx:
-			_agregar_conexion(
-				_conectando_desde,
-				desde_idx
-			)
-
+	if _conectando_desde == desde_idx:
+		_label_estado.text = "No se permite conectar un IUM consigo mismo en el editor."
 		_conectando_desde = -1
+		return
+
+	_agregar_conexion(_conectando_desde, desde_idx)
+	_conectando_desde = -1
 
 
 func _agregar_conexion(
 	origen: int,
 	destino: int
 ) -> void:
+	if origen < 0 or destino < 0 or origen >= _nodos_canvas.size() or destino >= _nodos_canvas.size():
+		_label_estado.text = "Conexión inválida: uno de los nodos ya no existe."
+		return
+	if origen == destino:
+		_label_estado.text = "No se permite una conexión de un nodo hacia sí mismo."
+		return
+
 	for con in _conexiones:
 		if (
 			con["origen"] == origen
