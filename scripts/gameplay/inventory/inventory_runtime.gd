@@ -91,7 +91,21 @@ func agregar_objeto(datos: Dictionary) -> bool:
 			state.items[i]["cantidad"] = ocupacion + anadido
 			restante -= anadido
 	if restante > 0:
+		# Prioridad de recogida: mochila, mano izquierda y mano derecha.
+		# La mochila ocupa los índices 6–11; las manos, 0–5 y 12–17.
+		var orden_destinos: Array[int] = []
 		for i in range(inicio_mochila, fin_mochila):
+			orden_destinos.append(i)
+		for i in range(mini(6, state.items.size())):
+			orden_destinos.append(i)
+		for i in range(12, mini(18, state.items.size())):
+			orden_destinos.append(i)
+		# Si el inventario está configurado con otra capacidad, también se
+		# consideran los slots restantes sin duplicar índices.
+		for i in range(state.items.size()):
+			if not orden_destinos.has(i):
+				orden_destinos.append(i)
+		for i in orden_destinos:
 			if restante <= 0:
 				break
 			if not state.items[i].is_empty():
