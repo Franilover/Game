@@ -67,7 +67,7 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 	panel.add_child(margin)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 6 if get_viewport_rect().size.x < 560.0 else 10)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_child(row)
 
@@ -84,7 +84,7 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 	var edit := Button.new()
 	edit.text = "✎"
 	edit.tooltip_text = "Editar nombre y configuración del mundo"
-	edit.custom_minimum_size = Vector2(44, 42)
+	edit.custom_minimum_size = Vector2(36 if get_viewport_rect().size.x < 560.0 else 44, 42)
 	edit.pressed.connect(
 		_editar_partida.bind(str(partida.get("id", "")))
 	)
@@ -92,7 +92,7 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 
 	var play := Button.new()
 	play.text = "Jugar"
-	play.custom_minimum_size = Vector2(90, 42)
+	play.custom_minimum_size = Vector2(66 if get_viewport_rect().size.x < 560.0 else 90, 42)
 	play.pressed.connect(
 		_jugar_partida.bind(str(partida.get("id", "")))
 	)
@@ -100,7 +100,7 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 
 	var delete := Button.new()
 	delete.text = "Eliminar"
-	delete.custom_minimum_size = Vector2(90, 42)
+	delete.custom_minimum_size = Vector2(70 if get_viewport_rect().size.x < 560.0 else 90, 42)
 	delete.pressed.connect(
 		_eliminar_partida.bind(str(partida.get("id", "")))
 	)
