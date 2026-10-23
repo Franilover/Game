@@ -152,19 +152,19 @@ func _crear_interfaz() -> void:
 
 
 func _configurar_boton_seccion(boton: Button) -> void:
-	# Son subpestañas de la Enciclopedia, no pestañas principales de la interfaz.
-	# Ocupan sólo el ancho de su etiqueta y usan menos altura y contraste.
+	# Subpestañas compactas que se reparten horizontalmente y sólo dibujan el borde.
 	boton.custom_minimum_size = Vector2(0, 23)
-	boton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	boton.size_flags_stretch_ratio = 0.0
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.size_flags_stretch_ratio = 1.0
 	boton.add_theme_constant_override("h_separation", 2)
 	boton.add_theme_color_override("font_color", Color(0.61, 0.49, 0.34, 1))
 	boton.add_theme_color_override("font_hover_color", Color(0.82, 0.70, 0.51, 1))
 	boton.add_theme_color_override("font_pressed_color", Color(0.94, 0.85, 0.66, 1))
 	boton.add_theme_font_size_override("font_size", 9)
-	var normal := _crear_estilo_boton(Color(0.095, 0.065, 0.045, 0.72), Color(0.22, 0.15, 0.09, 0.8), 1)
-	var hover := _crear_estilo_boton(Color(0.15, 0.105, 0.065, 0.92), Color(0.39, 0.29, 0.17, 1), 1)
-	var activo := _crear_estilo_boton(Color(0.23, 0.17, 0.095, 0.96), Color(0.57, 0.44, 0.24, 1), 1)
+	var transparente := Color(0, 0, 0, 0)
+	var normal := _crear_estilo_boton(transparente, Color(0.22, 0.15, 0.09, 0.8), 1)
+	var hover := _crear_estilo_boton(transparente, Color(0.39, 0.29, 0.17, 1), 1)
+	var activo := _crear_estilo_boton(transparente, Color(0.57, 0.44, 0.24, 1), 1)
 	for estilo in [normal, hover, activo]:
 		estilo.set_content_margin_all(7)
 		estilo.set_border_width_all(1)
