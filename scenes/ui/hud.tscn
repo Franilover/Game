@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://db5flocb1cn4w" path="res://scripts/ui/hud.gd" id="1_hud"]
 [ext_resource type="Texture2D" uid="uid://dkw2kwafs03sc" path="res://assets/art/UI/Heart..png" id="2_bo48s"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hotbar.tscn" id="2_hqnrr"]
 [ext_resource type="Texture2D" uid="uid://bkfsnyk1qt23q" path="res://assets/art/UI/Sprite-0008.png" id="3_8qguk"]
 [ext_resource type="PackedScene" path="res://scenes/ui/mobile_controls.tscn" id="4_mobile"]
 
@@ -309,15 +308,6 @@ theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 11
 text = "Examinar"
 vertical_alignment = 1
-
-[node name="Hotbar" parent="." unique_id=698715280 instance=ExtResource("2_hqnrr")]
-layout_mode = 1
-anchors_preset = 7
-offset_left = -153.0
-offset_top = -62.0
-offset_right = 153.0
-offset_bottom = 0.0
-
 
 [node name="MobileControls" parent="." instance=ExtResource("4_mobile")]
 layout_mode = 1
