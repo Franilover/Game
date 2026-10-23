@@ -408,6 +408,23 @@ func _procesar_idle() -> void:
 		_cambiar_estado(Estado.EXPLORANDO)
 
 
+func _cambiar_a_respuesta_atacar() -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
+	# Los ataques de contacto no deben empezar y terminar fuera de alcance.
+	# Flaxis, Dramarias, Cambiaformas, Espíritu Estelar y Rancrodeen conservan
+	# sus aproximaciones o ataques especializados.
+	if perfil in [Perfil.GENERICO, Perfil.LIGNIANOS, Perfil.GUARDIAN, Perfil.CAZADOR]:
+		var distancia := criatura.global_position.distance_to(objetivo.global_position)
+		if distancia > _obtener_distancia_contacto():
+			_cambiar_estado(Estado.PERSIGUIENDO)
+			return
+
+	_cambiar_estado(Estado.ATACANDO)
+
+
 func _procesar_explorando() -> void:
 	if perfil == Perfil.LIGNIANOS and not _movimiento_permitido():
 		criatura.detener_movimiento()
@@ -419,7 +436,7 @@ func _procesar_explorando() -> void:
 				_cambiar_estado(Estado.HUYENDO)
 
 			"atacar":
-				_cambiar_estado(Estado.ATACANDO)
+				_cambiar_a_respuesta_atacar()
 
 			"perseguir":
 				_cambiar_estado(Estado.PERSIGUIENDO)
@@ -544,6 +561,14 @@ func _procesar_atacando(delta: float) -> void:
 			)
 
 		Perfil.CAZADOR:
+			_procesar_ataque_contacto(
+				delta,
+				_obtener_danio_ataque(),
+				_obtener_enfriamiento_ataque(),
+				false
+			)
+
+		Perfil.GENERICO:
 			_procesar_ataque_contacto(
 				delta,
 				_obtener_danio_ataque(),
@@ -1148,6 +1173,12 @@ func _iniciar_ataque() -> void:
 			_establecer_velocidad(
 				_obtener_velocidad_persecucion()
 			)
+
+		Perfil.GENERICO, Perfil.GUARDIAN, Perfil.CAZADOR:
+			# Estos perfiles usan ataque de contacto; el selector se asegura
+			# de acercarlos antes de entrar en este estado.
+			criatura.tomar_control_movimiento()
+			_establecer_velocidad(_obtener_velocidad_ataque())
 
 		_:
 			_cambiar_estado(Estado.RECUPERANDO)
