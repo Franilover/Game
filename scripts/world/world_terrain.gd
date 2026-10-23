@@ -461,6 +461,8 @@ func procesar_generacion(
 	)
 
 	if stage == 0:
+		if not _validar_matrices_tarea_generacion():
+			return _recuperar_tarea_generacion_invalida()
 		return _procesar_datos_chunk(
 			cells
 		)
@@ -470,20 +472,7 @@ func procesar_generacion(
 		# del chunk. Validarlo justo antes de PINTADO evita que un estado
 		# incompleto vuelva a provocar accesos fuera de rango.
 		if not _validar_matrices_tarea_generacion():
-			var coord_invalida: Vector2i = _generation_task.get(
-				"coord",
-				Vector2i.ZERO
-			)
-			push_warning(
-				"WorldTerrain: tarea de chunk inconsistente en "
-				+ str(coord_invalida)
-				+ "; se regenerará desde los datos del mundo."
-			)
-			_generation_task.clear()
-			_chunk_cache.erase(coord_invalida)
-			_chunk_cache_order.erase(coord_invalida)
-			iniciar_generacion_chunk(coord_invalida)
-			return false
+			return _recuperar_tarea_generacion_invalida()
 		return _procesar_pintado_chunk(
 			cells
 		)
@@ -499,24 +488,66 @@ func _validar_matrices_tarea_generacion() -> bool:
 
 	var padded_size: int = chunk_size_tiles + CHUNK_PADDING * 2
 	var expected_cells: int = padded_size * padded_size
+	var expected_chunk_cells: int = chunk_size_tiles * chunk_size_tiles
 	var zonas_base: Variant = _generation_task.get("zonas_base", null)
 	var zonas: Variant = _generation_task.get("zonas", null)
 	var biomas: Variant = _generation_task.get("biomas", null)
 	var ecosistemas: Variant = _generation_task.get("ecosistemas", null)
-	var orden: Variant = _generation_task.get("orden_pintado", null)
+	var orden_pintado: Variant = _generation_task.get("orden_pintado", null)
 
-	return (
+	if not (
 		zonas_base is PackedInt32Array
 		and zonas is PackedInt32Array
 		and biomas is PackedInt32Array
 		and ecosistemas is PackedInt32Array
-		and orden is PackedInt32Array
 		and zonas_base.size() == expected_cells
 		and zonas.size() == expected_cells
 		and biomas.size() == expected_cells
 		and ecosistemas.size() == expected_cells
-		and orden.size() == chunk_size_tiles * chunk_size_tiles
+		and _orden_generacion_valido(orden_pintado, expected_chunk_cells)
+	):
+		return false
+
+	var stage: int = int(_generation_task.get("stage", -1))
+	if stage == 0:
+		var datos_listos: Variant = _generation_task.get("datos_listos", null)
+		var orden_datos: Variant = _generation_task.get("orden_datos", null)
+		return (
+			datos_listos is PackedByteArray
+			and datos_listos.size() == expected_cells
+			and _orden_generacion_valido(orden_datos, expected_cells)
+		)
+	if stage == 1:
+		return true
+	if stage == 2:
+		return true
+	return false
+
+
+func _recuperar_tarea_generacion_invalida() -> bool:
+	var coord_invalida: Vector2i = _generation_task.get(
+		"coord",
+		Vector2i.ZERO
 	)
+	push_warning(
+		"WorldTerrain: tarea de chunk inconsistente en "
+		+ str(coord_invalida)
+		+ "; se regenerará desde los datos del mundo."
+	)
+	_generation_task.clear()
+	_chunk_cache.erase(coord_invalida)
+	_chunk_cache_order.erase(coord_invalida)
+	# No iniciar otra tarea si hay una descarga visual activa: el renderer
+	# sólo puede limpiar un chunk a la vez. El streamer podrá reencolarlo.
+	if _unload_task.is_empty():
+		iniciar_generacion_chunk(coord_invalida)
+	return false
+
+
+func _orden_generacion_valido(orden: Variant, expected_size: int) -> bool:
+	if orden is Array or orden is PackedInt32Array:
+		return orden.size() == expected_size
+	return false
 
 
 func _copiar_dato_borde_vecino(
