@@ -57,8 +57,8 @@ var _discovery_notice_timer: float = 0.0
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
 @onready var _health_value_node: Label = $BottomLeft/HealthValue
-@onready var _stamina_bar_node: ProgressBar = $BottomLeft/StaminaBar
-@onready var _stamina_value_node: Label = $BottomLeft/StaminaValue
+@onready var _stamina_bar_node: ProgressBar = $StaminaBar
+@onready var _stamina_value_node: Label = $StaminaValue
 @onready var _eterium_bar_node: ProgressBar = $EteriumBar
 @onready var _eterium_value_node: Label = $BottomRight/EteriumValue
 @onready var _interaction_prompt_node: PanelContainer = $InteractionPrompt
@@ -210,11 +210,19 @@ func _preparar_puntos_dash() -> void:
 	_stamina_value_node.visible = false
 	var contenedor := HBoxContainer.new()
 	contenedor.name = "DashCharges"
-	contenedor.position = Vector2(42.0, 41.0)
+	contenedor.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	contenedor.anchor_left = 0.5
+	contenedor.anchor_right = 0.5
+	contenedor.anchor_top = 1.0
+	contenedor.anchor_bottom = 1.0
+	contenedor.offset_left = -44.0
+	contenedor.offset_right = 44.0
+	contenedor.offset_top = -58.0
+	contenedor.offset_bottom = -38.0
 	contenedor.size = Vector2(88.0, 20.0)
 	contenedor.add_theme_constant_override("separation", 8)
 	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	$BottomLeft.add_child(contenedor)
+	add_child(contenedor)
 	for i in range(3):
 		var pip := Panel.new()
 		pip.name = "DashCharge" + str(i + 1)
@@ -1102,15 +1110,15 @@ func _crear_huecos_manos() -> void:
 func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	var slot := Button.new()
 	slot.name = nombre
-	slot.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	slot.anchor_left = 0.5
-	slot.anchor_right = 0.5
+	slot.set_anchors_preset(Control.PRESET_BOTTOM_LEFT if tecla == "Q" else Control.PRESET_BOTTOM_RIGHT)
+	slot.anchor_left = 0.0 if tecla == "Q" else 1.0
+	slot.anchor_right = 0.0 if tecla == "Q" else 1.0
 	slot.anchor_top = 1.0
 	slot.anchor_bottom = 1.0
-	slot.offset_top = -72.0
-	slot.offset_bottom = -24.0
-	slot.offset_left = -207.0 if tecla == "Q" else 159.0
-	slot.offset_right = -159.0 if tecla == "Q" else 207.0
+	slot.offset_top = -60.0
+	slot.offset_bottom = -12.0
+	slot.offset_left = 18.0 if tecla == "Q" else -66.0
+	slot.offset_right = 66.0 if tecla == "Q" else -18.0
 	slot.custom_minimum_size = Vector2(48, 48)
 	slot.focus_mode = Control.FOCUS_NONE
 	slot.mouse_filter = Control.MOUSE_FILTER_STOP
