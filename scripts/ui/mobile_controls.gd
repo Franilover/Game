@@ -5,13 +5,16 @@ class_name GarliaMobileControls
 ## El layout se calcula en píxeles de viewport y se adapta a orientación/tamaño.
 
 @export var solo_android: bool = true
-@export_range(48, 96, 2) var tamano_dpad: int = 64
+@export_range(96, 180, 4) var tamano_joystick: int = 136
 @export_range(48, 96, 2) var tamano_accion: int = 68
 @export_range(8, 48, 2) var margen_borde: int = 20
 @export_range(4, 24, 2) var separacion: int = 10
 
 var _acciones_presionadas: Dictionary = {}
 var _botones: Dictionary = {}
+var _joystick_touch_index: int = -1
+var _joystick_vector := Vector2.ZERO
+var _joystick_radio: float = 54.0
 
 
 func _ready() -> void:
@@ -22,17 +25,19 @@ func _ready() -> void:
 		return
 
 	_botones = {
-		"move_up": $Movement/Up,
-		"move_down": $Movement/Down,
-		"move_left": $Movement/Left,
-		"move_right": $Movement/Right,
 		"interact": $Actions/Interact,
 		"primary_action": $Actions/Primary,
 		"secondary_action": $Actions/Secondary,
 		"run": $Actions/Dash,
 		"jump": $Actions/Jump,
 		"inventory": $Actions/Inventory,
+		"hand_q_use": $Actions/UseQ,
+		"hand_e_use": $Actions/UseE,
+		"hand_q_select": $Actions/SlotQ,
+		"hand_e_select": $Actions/SlotE,
+		"ium_menu": $Actions/IUM,
 	}
+
 	for accion in _botones:
 		_configurar_boton(_botones[accion] as BaseButton, str(accion))
 		_estilizar_boton(_botones[accion] as Button, str(accion))
@@ -47,24 +52,33 @@ func _configurar_boton(boton: BaseButton, accion: String) -> void:
 	boton.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
 	boton.focus_mode = Control.FOCUS_NONE
 	boton.mouse_filter = Control.MOUSE_FILTER_STOP
-	boton.button_down.connect(func() -> void:
-		_presionar_accion(accion)
-	)
-	boton.button_up.connect(func() -> void:
-		_soltar_accion(accion)
-	)
+	if accion == "hand_q_select":
+		boton.pressed.connect(func() -> void: _solicitar_hud("abrir_selector_q"))
+	elif accion == "hand_e_select":
+		boton.pressed.connect(func() -> void: _solicitar_hud("abrir_selector_e"))
+	elif accion == "ium_menu":
+		boton.pressed.connect(func() -> void: _solicitar_hud("toggle_ium"))
+	elif accion == "inventory":
+		boton.pressed.connect(func() -> void: _solicitar_hud("toggle_inventory"))
+	elif accion == "hand_q_use":
+		boton.pressed.connect(func() -> void: _usar_mano("izquierda"))
+	elif accion == "hand_e_use":
+		boton.pressed.connect(func() -> void: _usar_mano("derecha"))
+	else:
+		boton.button_down.connect(func() -> void: _presionar_accion(accion))
+		boton.button_up.connect(func() -> void: _soltar_accion(accion))
 
 
 func _estilizar_boton(boton: Button, accion: String) -> void:
 	if boton == null:
 		return
 	var nombres := {
-		"move_up": "▲", "move_down": "▼", "move_left": "◀", "move_right": "▶",
-		"interact": "E", "primary_action": "A", "secondary_action": "B",
-		"run": "⇢", "jump": "↑", "inventory": "▤"
+		"interact": "F", "primary_action": "A", "secondary_action": "B",
+		"run": "⇢", "jump": "↑", "inventory": "Tab",
+		"hand_q_use": "Q", "hand_e_use": "E", "hand_q_select": "Q ·", "hand_e_select": "E ·", "ium_menu": "X"
 	}
 	boton.text = str(nombres.get(accion, "•"))
-	boton.add_theme_font_size_override("font_size", 25 if accion.begins_with("move_") else 22)
+	boton.add_theme_font_size_override("font_size", 18 if accion.begins_with("hand_") or accion == "ium_menu" else 22)
 	boton.add_theme_color_override("font_color", Color("#eee8d5"))
 	boton.add_theme_color_override("font_hover_color", Color("#ffffff"))
 	boton.add_theme_color_override("font_pressed_color", Color("#b4cbe0"))
@@ -84,47 +98,115 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	boton.add_theme_stylebox_override("hover", normal)
 	boton.add_theme_stylebox_override("pressed", pressed)
 	boton.add_theme_stylebox_override("focus", normal)
-	boton.custom_minimum_size = Vector2(tamano_dpad, tamano_dpad) if accion.begins_with("move_") else Vector2(tamano_accion, tamano_accion)
+	boton.custom_minimum_size = Vector2(tamano_accion, tamano_accion)
 	boton.tooltip_text = str({
 		"interact": "Interactuar", "primary_action": "Acción principal",
 		"secondary_action": "Acción secundaria", "run": "Dash / correr",
-		"jump": "Saltar", "inventory": "Inventario"
+		"jump": "Saltar", "inventory": "Abrir inventario", "hand_q_use": "Usar objeto de Q", "hand_e_use": "Usar objeto de E", "hand_q_select": "Elegir objeto para Q", "hand_e_select": "Elegir objeto para E", "ium_menu": "Menú de IUMs"
 	}.get(accion, accion.capitalize()))
 
 
 func _distribuir_controles() -> void:
 	if not is_inside_tree() or (solo_android and not OS.has_feature("android")):
 		return
-	var size := get_viewport_rect().size
-	if size.x <= 0.0 or size.y <= 0.0:
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
-	# Los contenedores ocupan el viewport completo; así las coordenadas de
-	# cada botón son absolutas respecto a la pantalla, no al anclaje antiguo.
-	_posicionar($Movement, Vector2.ZERO, size)
-	_posicionar($Actions, Vector2.ZERO, size)
-
-	var compacto := size.x < 700.0 or size.y < 420.0
-	var d := float(tamano_dpad - (8 if compacto else 0))
+	_posicionar($Movement, Vector2.ZERO, viewport_size)
+	_posicionar($Actions, Vector2.ZERO, viewport_size)
+	var compacto := viewport_size.x < 700.0 or viewport_size.y < 420.0
+	var joystick_size := minf(float(tamano_joystick), minf(viewport_size.x * 0.32, viewport_size.y * 0.36))
+	joystick_size = maxf(96.0, joystick_size)
+	var margen := float(margen_borde)
+	var joystick_pos := Vector2(margen, viewport_size.y - margen - joystick_size)
+	_posicionar($Movement/JoystickBase, joystick_pos, Vector2(joystick_size, joystick_size))
+	$Movement/JoystickKnob.custom_minimum_size = Vector2(joystick_size * 0.42, joystick_size * 0.42)
+	$Movement/JoystickKnob.size = $Movement/JoystickKnob.custom_minimum_size
+	_joystick_radio = joystick_size * 0.30
+	_actualizar_visual_joystick()
 	var a := float(tamano_accion - (8 if compacto else 0))
 	var gap := float(maxi(separacion - (2 if compacto else 0), 4))
-	var margen := float(margen_borde)
-	var base_y := size.y - margen - d * 3.0 - gap * 2.0
-	var base_x := margen
-	# Cruceta compacta: mantiene objetivos táctiles grandes y permite diagonales.
-	_posicionar($Movement/Up, Vector2(base_x + d + gap, base_y), Vector2(d, d))
-	_posicionar($Movement/Left, Vector2(base_x, base_y + d + gap), Vector2(d, d))
-	_posicionar($Movement/Right, Vector2(base_x + (d + gap) * 2.0, base_y + d + gap), Vector2(d, d))
-	_posicionar($Movement/Down, Vector2(base_x + d + gap, base_y + (d + gap) * 2.0), Vector2(d, d))
-
-	# Acciones a la derecha, en arco: salto y acción principal quedan más accesibles.
-	var right := size.x - margen
-	var bottom := size.y - margen
+	var right := viewport_size.x - margen
+	var bottom := viewport_size.y - margen
 	_posicionar($Actions/Primary, Vector2(right - a, bottom - a), Vector2(a, a))
 	_posicionar($Actions/Jump, Vector2(right - a * 2.0 - gap, bottom - a * 1.55 - gap), Vector2(a, a))
 	_posicionar($Actions/Secondary, Vector2(right - a * 2.0 - gap, bottom - a * 0.45), Vector2(a, a))
 	_posicionar($Actions/Interact, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 0.45), Vector2(a, a))
 	_posicionar($Actions/Dash, Vector2(right - a * 2.0 - gap, bottom - a * 2.65 - gap * 2.0), Vector2(a, a))
-	_posicionar($Actions/Inventory, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 1.55 - gap), Vector2(a, a))
+	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
+	_posicionar($Actions/UseQ, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 1.55 - gap), Vector2(a, a))
+	_posicionar($Actions/UseE, Vector2(right - a * 2.0 - gap, bottom - a * 2.65 - gap * 2.0 - a - gap), Vector2(a, a))
+	_posicionar($Actions/SlotQ, Vector2(right - a * 2.0 - gap, margen), Vector2(a * 0.85, a * 0.85))
+	_posicionar($Actions/SlotE, Vector2(right - a - a * 0.85 - gap, margen), Vector2(a * 0.85, a * 0.85))
+	_posicionar($Actions/IUM, Vector2(margen + a + gap, margen), Vector2(a, a))
+
+
+func _input(event: InputEvent) -> void:
+	if solo_android and not OS.has_feature("android"):
+		return
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed and _joystick_touch_index == -1 and $Movement/JoystickBase.get_global_rect().has_point(touch.position):
+			_joystick_touch_index = touch.index
+			_actualizar_joystick_desde_pantalla(touch.position)
+			get_viewport().set_input_as_handled()
+		elif not touch.pressed and touch.index == _joystick_touch_index:
+			_joystick_touch_index = -1
+			_joystick_vector = Vector2.ZERO
+			_actualizar_visual_joystick()
+			_actualizar_acciones_joystick()
+			get_viewport().set_input_as_handled()
+	elif event is InputEventScreenDrag:
+		var drag := event as InputEventScreenDrag
+		if drag.index == _joystick_touch_index:
+			_actualizar_joystick_desde_pantalla(drag.position)
+			get_viewport().set_input_as_handled()
+
+
+func _actualizar_joystick_desde_pantalla(pantalla: Vector2) -> void:
+	var base_rect := $Movement/JoystickBase.get_global_rect()
+	var centro := base_rect.position + base_rect.size * 0.5
+	var desplazamiento := pantalla - centro
+	_joystick_vector = desplazamiento.limit_length(_joystick_radio) / maxf(_joystick_radio, 1.0)
+	_actualizar_visual_joystick()
+	_actualizar_acciones_joystick()
+
+
+func _actualizar_visual_joystick() -> void:
+	if not is_instance_valid($Movement/JoystickKnob):
+		return
+	var base := $Movement/JoystickBase
+	var knob := $Movement/JoystickKnob
+	var centro := base.position + base.size * 0.5
+	knob.position = centro - knob.size * 0.5 + _joystick_vector * _joystick_radio
+
+
+func _actualizar_acciones_joystick() -> void:
+	var valores := {
+		"move_left": maxf(0.0, -_joystick_vector.x),
+		"move_right": maxf(0.0, _joystick_vector.x),
+		"move_up": maxf(0.0, -_joystick_vector.y),
+		"move_down": maxf(0.0, _joystick_vector.y),
+	}
+	for accion in valores:
+		var fuerza := float(valores[accion])
+		var evento := InputEventAction.new()
+		evento.action = accion
+		evento.pressed = fuerza > 0.12
+		evento.strength = fuerza
+		Input.parse_input_event(evento)
+
+
+func _solicitar_hud(accion: String) -> void:
+	var hud := get_parent()
+	if hud != null and hud.has_method("accion_controles_moviles"):
+		hud.call("accion_controles_moviles", accion)
+
+
+func _usar_mano(mano: String) -> void:
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if inventario != null and inventario.has_method("usar_objeto_mano"):
+		inventario.call("usar_objeto_mano", mano)
 
 
 func _posicionar(control: Control, posicion: Vector2, tamano: Vector2) -> void:
