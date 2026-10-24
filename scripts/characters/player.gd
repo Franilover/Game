@@ -607,7 +607,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 
 
 func _especie_es_necromancer() -> bool:
-	# Identidad verificada contra public.especies_jugables en Supabase.
+	# Identidad canónica: Necromancer, validada por el UUID de especies_jugables.
 	const NECROMANCER_SPECIES_ID := "8481bf5a-f207-42d5-9616-2420d1514a00"
 	var especie_id := str(personaje_especie.get("id", "")).strip_edges().to_lower()
 	if especie_id == NECROMANCER_SPECIES_ID:
@@ -618,7 +618,6 @@ func _especie_es_necromancer() -> bool:
 		if identificador in ["necromancer", "necromancers"]:
 			return true
 
-	# La regla aplicada debe pertenecer al mismo ID seleccionado.
 	var padre_variant: Variant = eterium_runtime.especie_regla.get("especie_eterium_v1", {})
 	if padre_variant is Dictionary:
 		var padre := padre_variant as Dictionary
