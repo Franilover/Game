@@ -60,6 +60,28 @@ escalas por unidad están nulas. Por eso todavía no hay datos válidos para
 materializar lugares y no se han insertado coordenadas ni alterado lugares
 canónicos.
 
+### Calibración física frente a escala cartográfica
+
+La auditoría del registro físico canónico encontró en
+`v_cuerpo_celeste_ficha_fisica_v1` el radio medio de Garlia: `6400000`
+unidades `longitud_u`, cuyo factor SI registrado es 1. La conversión física
+resultante es `0.001 km por unidad de longitud`, si se confirma que la unidad
+SI corresponde a metros como define el sistema físico.
+
+Se añadió a esta rama
+`docs/contracts/propuesta_calibracion_longitud_garlia_v1.sql`, una propuesta
+transaccional con verificaciones previas para registrar únicamente esa
+conversión y cambiar el estado a `radio_calibrado`. **Está preparada para
+revisión y no se ha ejecutado.** No asigna `km_por_unidad_mapa` ni
+`proyeccion_mapa`, porque son decisiones cartográficas independientes.
+
+Para la futura ancla de un lugar, el criterio propuesto es una geometría
+`punto` en estado `validada`, vinculada al `lugar_id` mediante una relación
+con rol explícito, y con exactamente un vértice de coordenadas válido. El
+snapshot deberá rechazar relaciones ambiguas, puntos sin vértice o lugares con
+más de un ancla primaria. La proyección a coordenadas del juego se mantiene
+deshabilitada hasta decidir y calibrar la escala cartográfica.
+
 ## Assets
 
 `asset_key` es una clave lógica, no una ruta absoluta de archivo. El resolvedor visual debe validar la clave contra el registro de assets actual del juego. Esta implementación no modifica ni renombra assets.
