@@ -436,6 +436,34 @@ func obtener_config_ia() -> Dictionary:
 	return {}
 
 
+func crear_senuelo_ilusorio_azulado(duracion: float = 0.75) -> bool:
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null or sprite.texture == null:
+		return false
+
+	var raiz: Node = _effects_root if _effects_root != null and is_instance_valid(_effects_root) else get_parent()
+	if raiz == null:
+		return false
+
+	var senuelo := Sprite2D.new()
+	senuelo.texture = sprite.texture
+	senuelo.hframes = sprite.hframes
+	senuelo.vframes = sprite.vframes
+	senuelo.frame = sprite.frame
+	senuelo.global_position = sprite.global_position
+	senuelo.global_rotation = sprite.global_rotation
+	senuelo.global_scale = sprite.global_scale
+	senuelo.flip_h = sprite.flip_h
+	senuelo.flip_v = sprite.flip_v
+	senuelo.modulate = Color(0.42, 0.72, 1.0, 0.78)
+	senuelo.z_index = z_index
+	raiz.add_child(senuelo)
+	var tween := senuelo.create_tween()
+	tween.tween_property(senuelo, "modulate:a", 0.0, maxf(duracion, 0.1))
+	tween.tween_callback(senuelo.queue_free)
+	return true
+
+
 func take_damage(
 	cantidad: int,
 	origen: String = "desconocido"
