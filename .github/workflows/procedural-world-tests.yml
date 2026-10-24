@@ -2,7 +2,7 @@ name: Procedural World Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
