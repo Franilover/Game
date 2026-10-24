@@ -341,6 +341,12 @@ func _entrar_estado(nuevo_estado: Estado) -> void:
 		Estado.SALTANDO_LEJOS:
 			_iniciar_estado_saltando_lejos()
 
+	# Algunas entradas de estado toman el control o fijan una dirección.
+	# La política de inmovilidad se reafirma después de cada transición.
+	if not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
 
 func _salir_estado(anterior: Estado) -> void:
 	if anterior == Estado.ATACANDO and criatura != null and is_instance_valid(criatura):
@@ -366,6 +372,28 @@ func _salir_estado(anterior: Estado) -> void:
 
 
 func _procesar_estado(delta: float) -> void:
+	# Aplicar la política de movimiento antes de cualquier estado: explorar,
+	# investigar, perseguir, huir y rutinas especiales no pueden saltársela.
+	# Se conserva la percepción y se permite atacar únicamente desde el sitio.
+	if not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
+		if estado == Estado.ATACANDO:
+			_procesar_atacando(delta)
+		elif estado == Estado.RECUPERANDO:
+			_procesar_recuperando(delta)
+		elif (
+			objetivo_detectado
+			and objetivo != null
+			and is_instance_valid(objetivo)
+			and _obtener_respuesta_a_objetivo() == "atacar"
+			and criatura.global_position.distance_to(objetivo.global_position)
+				<= _obtener_distancia_contacto()
+		):
+			_cambiar_estado(Estado.ATACANDO)
+		return
+
 	_tiempo_estado += delta
 
 	if actividad_horaria == "proteger":
@@ -1096,15 +1124,20 @@ func _obtener_distancia_deteccion() -> float:
 
 
 func _movimiento_permitido() -> bool:
+	# La configuración canónica puede habilitar o deshabilitar explícitamente
+	# el movimiento. Si falta, Lignianos se mantiene inmóvil por seguridad:
+	# no debe inferirse permiso de movimiento por ausencia de datos.
 	var valor: Variant = configuracion_ia.get(
 		"movimiento_permitido",
-		true
+		perfil != Perfil.LIGNIANOS
 	)
 
 	if valor is bool:
 		return bool(valor)
 
-	return true
+	# Una configuración mal formada tampoco debe habilitar movimiento
+	# accidentalmente para Lignianos.
+	return perfil != Perfil.LIGNIANOS
 
 
 func _obtener_distancia_maxima_persecucion() -> float:
