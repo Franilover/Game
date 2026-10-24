@@ -727,6 +727,38 @@ func obtener_lugares_game() -> Array[Dictionary]:
 		resultado.append(lugar.duplicate(true))
 	return resultado
 
+## Diagnóstico de preparación espacial. El catálogo por sí solo no autoriza
+## a colocar un lugar: necesita un ancla geográfica validada y calibración.
+func obtener_diagnostico_lugares_game() -> Dictionary:
+	var con_ancla_valida := 0
+	var sin_ancla: Array[String] = []
+	for lugar_variant in _lugares_game:
+		if not lugar_variant is Dictionary:
+			continue
+		var lugar := lugar_variant as Dictionary
+		var ancla_variant: Variant = lugar.get("ancla_espacial", {})
+		if not ancla_variant is Dictionary:
+			sin_ancla.append(str(lugar.get("lugar_id", "")))
+			continue
+		var ancla := ancla_variant as Dictionary
+		if not ancla.has("latitud_deg") or not ancla.has("longitud_deg"):
+			sin_ancla.append(str(lugar.get("lugar_id", "")))
+			continue
+		var latitud := float(ancla.get("latitud_deg", 999.0))
+		var longitud := float(ancla.get("longitud_deg", 999.0))
+		if latitud < -90.0 or latitud > 90.0 or longitud < -180.0 or longitud > 180.0:
+			sin_ancla.append(str(lugar.get("lugar_id", "")))
+			continue
+		con_ancla_valida += 1
+	return {
+		"catalogo_activo": _lugares_game.size(),
+		"con_ancla_geografica_valida": con_ancla_valida,
+		"sin_ancla_geografica": sin_ancla.size(),
+		"ids_sin_ancla": sin_ancla,
+		"materializacion_espacial_habilitada": false,
+		"motivo": "Requiere ancla geográfica canónica y calibración planetaria confirmada por el motor geográfico."
+	}
+
 
 
 func obtener_reinos_game() -> Array[Dictionary]:
