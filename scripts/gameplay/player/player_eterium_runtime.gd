@@ -47,6 +47,7 @@ func aplicar_especie(regla: Dictionary, especie_id: String) -> bool:
 		return false
 	especie_regla = regla.duplicate(true)
 	especie_ready = true
+	recovery_accumulator = 0.0
 	var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana()))))
 	var eterium_inicial := clampi(int(regla.get("eterium_inicial", capacidad)), 0, capacidad)
 	_configurar_max_mana(capacidad)
@@ -111,7 +112,13 @@ func actualizar_recuperacion(delta: float, puede_recuperar: bool) -> int:
 	if vital_state == null or vital_state.mana >= vital_state.max_mana:
 		recovery_accumulator = 0.0
 		return 0
-	var recuperacion_s := maxf(float(reglas.get("recuperacion_pasiva_s_por_segundo", 0.0)), 0.0)
+	var recuperacion_global_s := maxf(float(reglas.get("recuperacion_pasiva_s_por_segundo", 0.0)), 0.0)
+	var recuperacion_especie := 1.0
+	var especie_v1_variant: Variant = especie_regla.get("especie_eterium_v1", {})
+	if especie_v1_variant is Dictionary:
+		var especie_v1 := especie_v1_variant as Dictionary
+		recuperacion_especie = maxf(float(especie_v1.get("recuperacion_base", 1.0)), 0.0)
+	var recuperacion_s := recuperacion_global_s * recuperacion_especie
 	if recuperacion_s <= 0.0:
 		return 0
 	recovery_accumulator += recuperacion_s * _escala_runtime() * maxf(delta, 0.0)
