@@ -115,6 +115,8 @@ func _desconectar_senales_player() -> void:
 		player.stamina_changed.disconnect(_al_recibir_cambio_stamina)
 	if player.mana_changed.is_connected(_al_recibir_cambio_mana):
 		player.mana_changed.disconnect(_al_recibir_cambio_mana)
+	if player.has_signal("fisiologia_changed") and player.fisiologia_changed.is_connected(_al_cambiar_fisiologia):
+		player.fisiologia_changed.disconnect(_al_cambiar_fisiologia)
 
 func _ready() -> void:
 	add_to_group("hud")
@@ -337,6 +339,45 @@ func _conectar_senales_player() -> void:
 	if player.has_signal("fisiologia_changed") and not player.fisiologia_changed.is_connected(_al_cambiar_fisiologia):
 		player.fisiologia_changed.connect(_al_cambiar_fisiologia)
 	_aplicar_presentacion_fisiologia(player._eterium_vida_compartida())
+
+
+func _al_cambiar_fisiologia(vida_eterium_compartidos: bool) -> void:
+	_aplicar_presentacion_fisiologia(vida_eterium_compartidos)
+	_actualizar_vida()
+	_actualizar_eterium()
+
+
+func _aplicar_presentacion_fisiologia(vida_eterium_compartidos: bool) -> void:
+	if not is_instance_valid(_health_bar_node) or not is_instance_valid(_eterium_bar_node):
+		return
+	if vida_eterium_compartidos:
+		_health_bar_node.visible = false
+		_eterium_bar_node.anchor_left = 0.0
+		_eterium_bar_node.anchor_right = 1.0
+		_eterium_bar_node.offset_left = 26.0
+		_eterium_bar_node.offset_right = -26.0
+		_eterium_bar_node.offset_top = -25.0
+		_eterium_bar_node.offset_bottom = -5.0
+		if is_instance_valid(_eterium_value_node):
+			_eterium_value_node.visible = true
+			_eterium_value_node.text = "Vida / Eterium"
+			_eterium_value_node.anchor_left = 0.0
+			_eterium_value_node.anchor_right = 1.0
+			_eterium_value_node.offset_left = 26.0
+			_eterium_value_node.offset_right = -26.0
+			_eterium_value_node.offset_top = -45.0
+			_eterium_value_node.offset_bottom = -27.0
+			_eterium_value_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else:
+		_health_bar_node.visible = true
+		_eterium_bar_node.anchor_left = 0.5
+		_eterium_bar_node.anchor_right = 0.5
+		_eterium_bar_node.offset_left = 3.0
+		_eterium_bar_node.offset_right = 82.0
+		_eterium_bar_node.offset_top = -12.0
+		_eterium_bar_node.offset_bottom = 0.0
+		if is_instance_valid(_eterium_value_node):
+			_eterium_value_node.visible = false
 
 
 func _al_recibir_cambio_vida(actual: int, maximo: int) -> void:
