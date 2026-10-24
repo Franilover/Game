@@ -4,7 +4,7 @@ const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
