@@ -725,6 +725,14 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 
 
 func _refrescar_objetivo() -> void:
+	# Los Lesfleeng liberados por un Ligniano protegen al objetivo que lo atacó.
+	var objetivo_liberacion: Variant = criatura.get_meta("garlia_objetivo_liberacion", null) if criatura != null else null
+	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion):
+		if not ("is_alive" in objetivo_liberacion) or bool(objetivo_liberacion.get("is_alive")):
+			objetivo = objetivo_liberacion as Node2D
+			return
+		criatura.remove_meta("garlia_objetivo_liberacion")
+
 	# La reacción de bosque tiene prioridad sobre la percepción ecológica normal.
 	if _jugador_debe_reaccionar_en_bosque():
 		objetivo = jugador
@@ -963,6 +971,10 @@ func _obtener_respuesta_a_objetivo() -> String:
 func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 	if candidato == null or not is_instance_valid(candidato):
 		return ""
+
+	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
+		if criatura.get_meta("garlia_objetivo_liberacion") == candidato:
+			return "atacar"
 
 	if _es_reactivo_bosque() and candidato == jugador:
 		# En estas especies, la reacción al jugador depende de su conducta
@@ -2154,9 +2166,59 @@ func _procesar_saltando_lejos(delta: float) -> void:
 # ============================================================
 # ESPIRITU ESTELAR
 
+func _liberar_lesfleengs_al_ser_atacado() -> void:
+	if criatura == null or not is_instance_valid(criatura):
+		return
+
+	var config_ia := criatura.obtener_config_ia()
+	var defensa_variant: Variant = config_ia.get("defensa", {})
+	if not defensa_variant is Dictionary:
+		return
+	var defensa := defensa_variant as Dictionary
+	var reaccion_variant: Variant = defensa.get("al_ser_atacado", {})
+	if not reaccion_variant is Dictionary:
+		return
+	var reaccion := reaccion_variant as Dictionary
+	if str(reaccion.get("evento", "")).strip_edges().to_lower() != "liberar_lesfleengs":
+		return
+
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		push_warning("CreatureAI: Lignianos recibió un ataque, pero WorldEntityManager no está disponible para liberar Lesfleeng.")
+		return
+	var factory := entity_manager._entity_factory as WorldEntityFactory
+	if factory == null or not is_instance_valid(factory):
+		push_warning("CreatureAI: no hay WorldEntityFactory para liberar Lesfleeng.")
+		return
+
+	var datos_lesfleeng := WorldData.buscar_criatura_por_nombre("Lesfleeng")
+	if datos_lesfleeng.is_empty():
+		push_warning("CreatureAI: Supabase/WorldData no entregó la ficha canónica de Lesfleeng.")
+		return
+
+	var lesfleeng := factory.crear_criatura(datos_lesfleeng)
+	if lesfleeng == null:
+		return
+
+	lesfleeng.chunk_coord = criatura.chunk_coord
+	if not entity_manager.registrar(lesfleeng, criatura.chunk_coord):
+		lesfleeng.queue_free()
+		return
+
+	# La cantidad y el radio aún figuran como por_definir en el canon.
+	# Hasta que se concreten, se libera un Lesfleeng junto al Ligniano.
+	var angulo := randf_range(0.0, TAU)
+	lesfleeng.global_position = criatura.global_position + Vector2.from_angle(angulo) * 18.0
+	if jugador != null and is_instance_valid(jugador):
+		lesfleeng.set_meta("garlia_objetivo_liberacion", jugador)
+
+	print("CreatureAI: Lignianos liberó un Lesfleeng al recibir un ataque.")
+
+
 func al_recibir_danio(cantidad: int) -> void:
 	if criatura != null and is_instance_valid(criatura):
 		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
+		if nombre_especie == "lignianos":
+			_liberar_lesfleengs_al_ser_atacado()
 		if nombre_especie in ["sirena", "gloarin"]:
 			var config_ia := criatura.obtener_config_ia()
 			var ilusiones_variant: Variant = config_ia.get("ilusiones", {})
