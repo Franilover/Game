@@ -334,6 +334,9 @@ func _conectar_senales_player() -> void:
 	if player.has_signal("mana_changed"):
 		if not player.mana_changed.is_connected(_al_recibir_cambio_mana):
 			player.mana_changed.connect(_al_recibir_cambio_mana)
+	if player.has_signal("fisiologia_changed") and not player.fisiologia_changed.is_connected(_al_cambiar_fisiologia):
+		player.fisiologia_changed.connect(_al_cambiar_fisiologia)
+	_aplicar_presentacion_fisiologia(player._eterium_vida_compartida())
 
 
 func _al_recibir_cambio_vida(actual: int, maximo: int) -> void:
