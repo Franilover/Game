@@ -44,7 +44,7 @@ peso_destacadas = 76.0
 [node name="WorldEntitySpawner" type="Node" parent="WorldGenerator"]
 script = ExtResource("5_world_spawner")
 
-[node name="WorldAtmosphere" type="Node2D" parent="WorldGenerator"]
+[node name="WorldAtmosphere" type="Node" parent="WorldGenerator"]
 script = ExtResource("9_world_atmosphere")
 
 [node name="DayNightModulation" type="CanvasModulate" parent="WorldGenerator/WorldAtmosphere"]
