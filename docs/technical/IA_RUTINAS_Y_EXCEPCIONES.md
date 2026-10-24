@@ -94,6 +94,51 @@ No combinar arreglos de bloques de manera implícita: una criatura que declare `
 - Interrupciones durante descanso y retorno al horario después de resolver el estímulo.
 - Asegurar que la selección de objetivo no convierta cualquier entidad cercana en una amenaza universal.
 
+
+## Contrato de sincronización verificado
+
+La ruta actual de datos del mundo es:
+
+1. `GarliaSupabaseClient` solicita el mundo mediante la RPC `get_mundo_inicial_ambiental_v2`.
+2. La respuesta JSON se emite por `mundo_cargado`.
+3. `WorldDataService` valida que exista `biomas`, guarda una copia remota en caché y aplica el diccionario completo.
+4. El índice de criaturas se construye recorriendo `biomas → ecosistemas → habitats → criaturas`.
+5. `Creature.configurar(datos_criatura)` conserva el diccionario recibido en `datos`; `obtener_config_ia()` devuelve una copia profunda de `datos.ia_config`.
+
+Consecuencias para las plantillas:
+
+- El juego no consulta directamente la tabla `criaturas` para cada entidad: consume el paquete agregado que entrega la RPC del mundo.
+- Añadir una tabla de plantillas por sí sola no hará que las plantillas lleguen al juego. Habría que extender de manera coordinada la salida RPC, la carga/cache y el resolvedor, o empaquetar las definiciones en un campo de la respuesta.
+- La caché local conserva el paquete de mundo completo. Cualquier nuevo campo debe tolerar snapshots antiguos donde ese campo no exista.
+- Las actualizaciones remotas pueden quedar pendientes mientras la partida está activa. La configuración efectiva de una criatura no debe cambiar de forma parcial durante una simulación.
+- Este contrato no prueba qué columnas o relaciones internas usa la RPC para construir cada criatura; eso debe auditarse en la definición SQL antes de diseñar una migración.
+
+## Cladograma: regla de uso para la IA
+
+El parentesco biológico es una señal para proponer capacidades compartidas, no una asignación automática de conducta. Antes de heredar un módulo, debe existir evidencia descriptiva del mecanismo común. Se deben mantener separados:
+
+- **Linaje biológico:** anatomía o rasgos heredados.
+- **Origen artificial, ritual o creado:** composición u origen compartido sin asumir parentesco evolutivo.
+- **Relación ecológica:** presa, depredador, refugio, huésped, protector o competidor; no implica parentesco.
+- **Capacidad individual:** habilidad exclusiva o variante que no debe propagarse a todo el clado.
+
+Si la descripción de una criatura contradice la descripción de su clado, registrar la discrepancia y evitar que la plantilla la resuelva silenciosamente. Los registros incompletos deben permanecer sin módulos especializados hasta contar con evidencia suficiente.
+
+## Contrato mínimo propuesto para un resolvedor futuro
+
+El resolvedor debe ser una función determinista que reciba la configuración de plantilla, la configuración específica y un esquema de claves permitido, y devuelva una configuración efectiva nueva sin mutar los datos de entrada.
+
+1. Ausencia de `plantilla`: conservar el comportamiento actual sin cambios.
+2. Plantilla inexistente o inválida: diagnóstico y fallback seguro, sin impedir cargar el mundo.
+3. Diccionarios: combinar recursivamente solo claves declaradas como heredables.
+4. Arreglos: reemplazar el arreglo completo; no concatenarlo automáticamente.
+5. Capacidades especiales: exigir soporte explícito en el motor; una clave de datos no crea por sí sola una habilidad.
+6. Validación: normalizar y registrar campos desconocidos, tipos incompatibles, rangos inválidos y conflictos entre módulos.
+7. Determinismo: para los mismos datos de entrada, producir la misma configuración efectiva.
+8. No mutación: ni la plantilla ni `ia_config` canónico se editan durante la resolución.
+
+Esta sección documenta el contrato de integración y la propuesta; no declara que el resolvedor o las plantillas estén implementados.
+
 ## Fuente de verdad y despliegue
 
 Supabase sigue siendo la fuente canónica. Este documento y el código de Godot no autorizan cambios de esquema ni de datos remotos. Antes de crear una tabla de plantillas o migrar configuraciones, inspeccionar el contrato de sincronización de `WorldDataService` y mostrar una propuesta no destructiva para revisión. Hasta entonces, la configuración existente debe seguir funcionando sin exigir el nuevo campo `plantilla`.
