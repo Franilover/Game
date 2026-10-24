@@ -2190,7 +2190,7 @@ func _liberar_lesfleengs_al_ser_atacado() -> void:
 		push_warning("CreatureAI: no hay WorldEntityFactory para liberar Lesfleeng.")
 		return
 
-	var datos_lesfleeng := WorldData.buscar_criatura_por_nombre("Lesfleeng")
+	var datos_lesfleeng: Dictionary = WorldData.buscar_criatura_por_nombre("Lesfleeng")
 	if datos_lesfleeng.is_empty():
 		push_warning("CreatureAI: Supabase/WorldData no entregó la ficha canónica de Lesfleeng.")
 		return
