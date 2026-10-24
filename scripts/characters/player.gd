@@ -604,7 +604,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 		_recibir_golpe_visual()
 
 
-func _especie_es_nigromante() -> bool:
+func _especie_es_necromancer() -> bool:
 	# Nombre canonico en ingles: Necromancer(s). No aceptar traducciones.
 	var identificadores := [
 		str(personaje_especie.get("clave", "")).strip_edges().to_lower(),
