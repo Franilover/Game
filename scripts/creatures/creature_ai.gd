@@ -919,6 +919,13 @@ func _refrescar_configuracion() -> void:
 	var comportamiento := criatura.comportamiento.strip_edges().to_lower()
 
 	if comportamiento.is_empty():
+		# En snapshots donde ia_config y comportamiento vienen vacíos, el
+		# nombre de especie sigue siendo una señal de identidad disponible.
+		# Evita que Lignianos caiga al perfil genérico y herede movimiento.
+		var nombre_criatura := criatura.get_nombre().strip_edges().to_lower()
+		perfil = _perfil_desde_texto(nombre_criatura)
+		if perfil != Perfil.GENERICO:
+			return
 		perfil = Perfil.GENERICO
 		return
 
