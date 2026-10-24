@@ -431,8 +431,9 @@ func _aplicar_eterium_runtime(reglas: Dictionary, organismos: Array) -> void:
 
 
 func _aplicar_especie_eterium_game(reglas: Array) -> void:
-	var especie_id := str(personaje_especie.get("id", "")).strip_edges()
+	var especie_id := _obtener_id_especie_personaje()
 	if especie_id.is_empty():
+		push_warning("Player: no se puede aplicar fisiología; la selección no contiene id/especie_id. Selección=" + str(personaje_especie))
 		return
 
 	for regla_variant in reglas:
@@ -586,17 +587,19 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 	else:
 		# Necromancer convierte su reserva de Eterium en una única segunda vida
 		# antes de que Entity emita died y bloquee el estado vital.
-		if _especie_es_necromancer() and not necromancer_second_life_used and health > 0 and dano_recibido >= health and mana > 0:
+		var golpe_mortal := health > 0 and dano_recibido >= health
+		if _especie_es_necromancer() and not necromancer_second_life_used and golpe_mortal and mana > 0:
+			# Consumir toda la reserva evita que Entity llegue a _die() en este golpe.
 			necromancer_second_life_used = true
 			var reserva := mana
 			var vida_convertida := mini(reserva, max_health)
 			vital_state.mana = 0
-			vital_state.health = vida_convertida
-			vital_state.is_alive = vida_convertida > 0
+			vital_state.health = maxi(vida_convertida, 1)
+			vital_state.is_alive = true
 			_sync_desde_vital()
 			mana_changed.emit(mana, max_mana)
 			health_changed.emit(health, max_health)
-			print(name, " activó su segunda vida: Eterium convertido en ", health, " de vida.")
+			print(name, " activó su segunda vida: convirtió ", reserva, " de Eterium en ", health, " de vida.")
 		else:
 			super.take_damage(dano_recibido, origen)
 
@@ -606,26 +609,31 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 		_recibir_golpe_visual()
 
 
+func _obtener_id_especie_personaje() -> String:
+	for campo in ["id", "especie_id"]:
+		var valor := str(personaje_especie.get(campo, "")).strip_edges()
+		if not valor.is_empty():
+			return valor
+	return ""
+
+
 func _especie_es_necromancer() -> bool:
-	# Identidad canónica: Necromancer, validada por el UUID de especies_jugables.
+	# Identidad canónica: Necromancer, validada primero por la regla aplicada.
 	const NECROMANCER_SPECIES_ID := "8481bf5a-f207-42d5-9616-2420d1514a00"
-	var especie_id := str(personaje_especie.get("id", "")).strip_edges().to_lower()
+	var especie_id := _obtener_id_especie_personaje().to_lower()
 	if especie_id == NECROMANCER_SPECIES_ID:
 		return true
+
+	var padre_variant: Variant = eterium_runtime.especie_regla.get("especie_eterium_v1", {})
+	if padre_variant is Dictionary:
+		var padre := padre_variant as Dictionary
+		if str(padre.get("especie_id", "")).strip_edges().to_lower() == NECROMANCER_SPECIES_ID:
+			return true
 
 	for campo in ["clave", "nombre", "nombre_canonico"]:
 		var identificador := str(personaje_especie.get(campo, "")).strip_edges().to_lower()
 		if identificador in ["necromancer", "necromancers"]:
 			return true
-
-	var padre_variant: Variant = eterium_runtime.especie_regla.get("especie_eterium_v1", {})
-	if padre_variant is Dictionary:
-		var padre := padre_variant as Dictionary
-		if str(padre.get("especie_id", "")).strip_edges().to_lower() == especie_id:
-			for campo in ["clave", "nombre", "nombre_canonico"]:
-				var identificador := str(padre.get(campo, "")).strip_edges().to_lower()
-				if identificador in ["necromancer", "necromancers"]:
-					return true
 	return false
 
 func _recibir_golpe_visual() -> void:
