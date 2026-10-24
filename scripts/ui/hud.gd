@@ -130,6 +130,13 @@ func _ready() -> void:
 	_preparar_panel_misiones()
 	_preparar_reloj_calendario()
 	_conectar_senales_misiones()
+	# configurar() puede ejecutarse antes de que HUD entre al árbol; conectar aquí también.
+	_conectar_senales_player()
+	if is_instance_valid(player):
+		_aplicar_presentacion_fisiologia(player._eterium_vida_compartida())
+		_actualizar_vida()
+		_actualizar_stamina()
+		_actualizar_eterium()
 
 	if location_panel:
 		location_panel.visible = false
