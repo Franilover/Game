@@ -828,6 +828,21 @@ func aplicar_danio_desde_entidad(
 		_registrar_criatura_derrotada(objetivo)
 
 	CombatFeedback.impacto(objetivo, danio)
+
+	# Robo de vida canónico: sólo cura al vampiro que acaba de infligir
+	# daño real; CombatDamage ya confirmó que la salud del objetivo bajó.
+	if atacante is Creature:
+		var criatura_atacante := atacante as Creature
+		if criatura_atacante.get_nombre().strip_edges().to_lower() == "vampiro":
+			var config_ia := criatura_atacante.obtener_config_ia()
+			var combate_variant: Variant = config_ia.get("combate", {})
+			if combate_variant is Dictionary:
+				var robo_variant: Variant = (combate_variant as Dictionary).get("robo_vida", {})
+				if robo_variant is Dictionary and bool((robo_variant as Dictionary).get("activo", false)):
+					var fraccion: float = float((robo_variant as Dictionary).get("fraccion_curacion", 0.5))
+					var curacion := maxi(1, int(ceil(float(danio) * clampf(fraccion, 0.0, 1.0))))
+					criatura_atacante.heal(curacion)
+
 	ataque_realizado.emit(atacante, objetivo, danio)
 	return true
 
