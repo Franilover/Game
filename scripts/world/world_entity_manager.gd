@@ -113,7 +113,10 @@ func obtener_diagnostico_datos() -> Dictionary:
 
 func configurar(entities_root: Node, entity_factory: WorldEntityFactory = null) -> void:
 	_entities_root = entities_root
-	_entity_factory = entity_factory
+	# Una configuración posterior puede actualizar sólo el root; no debe
+	# borrar la fábrica ya registrada si el argumento opcional viene vacío.
+	if entity_factory != null:
+		_entity_factory = entity_factory
 	if _entities_root == null or not is_instance_valid(_entities_root):
 		push_error("WorldEntityManager: Entity root inválido.")
 
