@@ -78,6 +78,7 @@ var _base_visual_position: Vector2 = Vector2.ZERO
 var personaje_nombre: String = ""
 var personaje_genero: String = ""
 var personaje_especie: Dictionary = {}
+var necromancer_second_life_used: bool = false
 var personaje_skin: String = ""
 var personaje_apariencia: Dictionary = {}
 
@@ -585,7 +586,8 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 	else:
 		# Necromancer convierte su reserva de Eterium en una única segunda vida
 		# antes de que Entity emita died y bloquee el estado vital.
-		if _especie_es_necromancer() and health > 0 and dano_recibido >= health and mana > 0:
+		if _especie_es_necromancer() and not necromancer_second_life_used and health > 0 and dano_recibido >= health and mana > 0:
+			necromancer_second_life_used = true
 			var reserva := mana
 			var vida_convertida := mini(reserva, max_health)
 			vital_state.mana = 0
@@ -683,6 +685,7 @@ func _morir_jugador() -> void:
 
 
 func reaparecer() -> void:
+	necromancer_second_life_used = false
 	is_alive = true
 
 	health = max_health
