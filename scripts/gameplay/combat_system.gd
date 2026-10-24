@@ -816,6 +816,7 @@ func aplicar_danio_desde_entidad(
 		return false
 
 	var vivo_antes: bool = objetivo.is_alive
+	var salud_objetivo_antes: int = objetivo.health
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
 		danio,
@@ -840,8 +841,10 @@ func aplicar_danio_desde_entidad(
 				var robo_variant: Variant = (combate_variant as Dictionary).get("robo_vida", {})
 				if robo_variant is Dictionary and bool((robo_variant as Dictionary).get("activo", false)):
 					var fraccion: float = float((robo_variant as Dictionary).get("fraccion_curacion", 0.5))
-					var curacion := maxi(1, int(ceil(float(danio) * clampf(fraccion, 0.0, 1.0))))
-					criatura_atacante.heal(curacion)
+					var danio_real := maxi(salud_objetivo_antes - objetivo.health, 0)
+					if fraccion > 0.0 and danio_real > 0:
+						var curacion := maxi(1, int(ceil(float(danio_real) * clampf(fraccion, 0.0, 1.0))))
+						criatura_atacante.heal(curacion)
 
 	ataque_realizado.emit(atacante, objetivo, danio)
 	return true
