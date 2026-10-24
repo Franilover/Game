@@ -486,7 +486,9 @@ func take_damage(
 
 	super.take_damage(cantidad, origen)
 
-	if is_alive and health < salud_anterior:
+	if health < salud_anterior:
+		# El evento de ataque también debe llegar a la IA cuando el golpe es
+		# letal: un Ligniano libera su defensa al ser atacado, no al sobrevivir.
 		var ai := get_node_or_null("AIController") as CreatureAI
 
 		if ai != null:
