@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
@@ -16,7 +16,7 @@ func _run() -> void:
 	actor.datos = {"id": actor.criatura_id, "nombre": actor.criatura_nombre}
 
 	var player := Node2D.new()
-	root.add_child(player)
+	get_tree().root.add_child(player)
 
 	var ai := AIScript.new() as CreatureAI
 	ai.criatura = actor
@@ -125,13 +125,13 @@ func _run() -> void:
 		ai._cambiar_estado(AIScript.Estado.RECUPERANDO)
 
 	print("CreatureAITargetPolicy: pruebas de selección y contacto completadas.")
-	root.remove_child(player)
+	get_tree().root.remove_child(player)
 	player.free()
 	actor.free()
 	ai.free()
-	quit(0)
+	get_tree().quit(0)
 
 
 func _fail(message: String) -> void:
 	push_error("CreatureAITargetPolicy: " + message)
-	quit(1)
+	get_tree().quit(1)
