@@ -36,6 +36,7 @@ var _dialogos_game: Array[Dictionary] = []
 var _misiones_game: Array[Dictionary] = []
 var _reinos_game: Array[Dictionary] = []
 var _props_game: Array[Dictionary] = []
+var _lugares_game: Array[Dictionary] = []
 
 
 func configurar_dependencias(supabase_client: GarliaSupabaseClient) -> void:
@@ -441,6 +442,7 @@ func _construir_indices() -> void:
 	_misiones_game.clear()
 	_reinos_game.clear()
 	_props_game.clear()
+	_lugares_game.clear()
 
 	var reinos_variant: Variant = mundo.get(
 		"reinos_game",
@@ -469,6 +471,22 @@ func _construir_indices() -> void:
 			_props_game.append(
 				(prop_variant as Dictionary).duplicate(true)
 			)
+
+	var lugares_variant: Variant = mundo.get(
+		"lugares_game",
+		[]
+	)
+
+	if lugares_variant is Array:
+		for lugar_variant in lugares_variant:
+			if not lugar_variant is Dictionary:
+				continue
+			var lugar := (lugar_variant as Dictionary).duplicate(true)
+			var lugar_id := str(lugar.get("lugar_id", "")).strip_edges()
+			var asset_key := str(lugar.get("asset_key", "")).strip_edges()
+			if lugar_id.is_empty() or asset_key.is_empty():
+				continue
+			_lugares_game.append(lugar)
 
 	var misiones_variant: Variant = mundo.get(
 		"misiones_game",
@@ -702,6 +720,13 @@ func obtener_props_game() -> Array[Dictionary]:
 		resultado.append(prop.duplicate(true))
 
 	return resultado
+
+func obtener_lugares_game() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	for lugar in _lugares_game:
+		resultado.append(lugar.duplicate(true))
+	return resultado
+
 
 
 func obtener_reinos_game() -> Array[Dictionary]:
