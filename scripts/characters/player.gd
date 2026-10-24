@@ -605,10 +605,25 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 
 
 func _especie_es_nigromante() -> bool:
-	var clave := str(personaje_especie.get("clave", "")).strip_edges().to_lower()
-	if clave.is_empty():
-		clave = str(personaje_especie.get("nombre", "")).strip_edges().to_lower()
-	return clave in ["necromancer", "nigromante", "nigromantes"]
+	# Nombre canonico en ingles: Necromancer(s). No aceptar traducciones.
+	var identificadores := [
+		str(personaje_especie.get("clave", "")).strip_edges().to_lower(),
+		str(personaje_especie.get("nombre", "")).strip_edges().to_lower(),
+		str(personaje_especie.get("nombre_canonico", "")).strip_edges().to_lower()
+	]
+	for identificador in identificadores:
+		if identificador in ["necromancer", "necromancers"]:
+			return true
+
+	# Si el selector solo trae el ID, consultar la regla aplicada desde Supabase.
+	var padre_variant: Variant = eterium_runtime.especie_regla.get("especie_eterium_v1", {})
+	if padre_variant is Dictionary:
+		var padre := padre_variant as Dictionary
+		for campo in ["clave", "nombre", "nombre_canonico"]:
+			var valor := str(padre.get(campo, "")).strip_edges().to_lower()
+			if valor in ["necromancer", "necromancers"]:
+				return true
+	return false
 
 
 func _recibir_golpe_visual() -> void:
