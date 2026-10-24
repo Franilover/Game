@@ -15,7 +15,7 @@ signal request_completed(request_id: int, resultado: int, codigo_http: int, cabe
 
 
 const RPC_MUNDO := (
-	"/rest/v1/rpc/get_mundo_inicial_ambiental_v2"
+	"/rest/v1/rpc/get_mundo_inicial_ambiental_v3"
 )
 
 
