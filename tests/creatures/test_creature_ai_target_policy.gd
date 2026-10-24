@@ -42,11 +42,27 @@ func _run() -> void:
 		_fail("La conducta agresiva debe traducirse en perseguir.")
 		return
 
-	# La regla especial del bosque no puede ser anulada por el fallback
-	# agresivo del perfil: Lignianos ignora al jugador sin marca de asesino.
+	# Lignianos debe fallar de forma segura: si Supabase/snapshot no
+	# entrega la clave, la IA no puede interpretar la ausencia como permiso.
 	actor.criatura_nombre = "Lignianos"
 	actor.comportamiento = ""
 	ai.perfil = AIScript.Perfil.LIGNIANOS
+	ai.configuracion_ia = {}
+	if ai._movimiento_permitido():
+		_fail("Lignianos permitió movimiento al faltar ia_config.")
+		return
+
+	# Una decisión explícita y válida de la configuración canónica prevalece.
+	ai.configuracion_ia = {"movimiento_permitido": true}
+	if not ai._movimiento_permitido():
+		_fail("La IA ignoró movimiento_permitido=true explícito.")
+		return
+	ai.configuracion_ia = {"movimiento_permitido": false}
+	if ai._movimiento_permitido():
+		_fail("La IA ignoró movimiento_permitido=false explícito.")
+		return
+
+	ai.configuracion_ia = {}
 	ai._refrescar_objetivo()
 	if ai.objetivo != null:
 		_fail("Lignianos reaccionó al jugador sin la marca de asesino.")
@@ -59,6 +75,18 @@ func _run() -> void:
 		return
 	if ai._obtener_respuesta_a_objetivo() != "atacar":
 		_fail("La respuesta al asesino del bosque debe ser atacar.")
+		return
+
+	# Una política explícita de inmovilidad también debe respetarse en
+	# perfiles genéricos, sin alterar su comportamiento cuando falta la clave.
+	ai.perfil = AIScript.Perfil.GENERICO
+	ai.configuracion_ia = {"movimiento_permitido": false}
+	if ai._movimiento_permitido():
+		_fail("La política explícita de inmovilidad no se aplicó al perfil genérico.")
+		return
+	ai.configuracion_ia = {}
+	if not ai._movimiento_permitido():
+		_fail("El perfil genérico perdió el comportamiento compatible por defecto.")
 		return
 
 	# Los ataques de contacto deben acercarse antes de iniciar el golpe.
