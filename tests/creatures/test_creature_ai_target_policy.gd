@@ -46,8 +46,13 @@ func _run() -> void:
 	# entrega la clave, la IA no puede interpretar la ausencia como permiso.
 	actor.criatura_nombre = "Lignianos"
 	actor.comportamiento = ""
-	ai.perfil = AIScript.Perfil.LIGNIANOS
+	actor.datos = {"id": actor.criatura_id, "nombre": "Lignianos", "ia_config": {}}
+	ai.perfil = AIScript.Perfil.GENERICO
 	ai.configuracion_ia = {}
+	ai._refrescar_configuracion()
+	if ai.perfil != AIScript.Perfil.LIGNIANOS:
+		_fail("La IA no identificó Lignianos por su nombre cuando faltaba el perfil.")
+		return
 	if ai._movimiento_permitido():
 		_fail("Lignianos permitió movimiento al faltar ia_config.")
 		return
