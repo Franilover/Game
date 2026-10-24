@@ -464,6 +464,17 @@ func crear_senuelo_ilusorio_azulado(duracion: float = 0.75) -> bool:
 	return true
 
 
+func ejecutar_muerte_simulada_visual(duracion: float = 1.0) -> void:
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	# La criatura permanece viva y dañable; sólo se atenúa su apariencia.
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate", Color(0.42, 0.72, 1.0, 0.12), 0.16)
+	tween.tween_interval(maxf(duracion, 0.1))
+	tween.tween_property(sprite, "modulate", Color.WHITE, 0.22)
+
+
 func take_damage(
 	cantidad: int,
 	origen: String = "desconocido"
