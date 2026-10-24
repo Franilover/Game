@@ -2107,9 +2107,7 @@ func _procesar_saltando_lejos(delta: float) -> void:
 # ============================================================
 # ESPIRITU ESTELAR
 
-func al_recibir_danio(_cantidad: int) -> void:
-	# Sirenas y Gloarin generan un señuelo azul tenue al recibir daño.
-	# El señuelo es puramente visual: no tiene colisión ni puede recibir daño.
+func al_recibir_danio(cantidad: int) -> void:
 	if criatura != null and is_instance_valid(criatura):
 		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
 		if nombre_especie in ["sirena", "gloarin"]:
@@ -2118,36 +2116,66 @@ func al_recibir_danio(_cantidad: int) -> void:
 			if ilusiones_variant is Dictionary:
 				var ilusiones := ilusiones_variant as Dictionary
 				if bool(ilusiones.get("activo", false)):
-					criatura.crear_senuelo_ilusorio_azulado(0.85)
+					_ejecutar_reaccion_ilusoria(ilusiones, cantidad)
 
 	if perfil != Perfil.ESPIRITU_ESTELAR:
 		return
+	if _tiempo_teleport > 0.0:
+		return
+	var reaccion_variant: Variant = configuracion_ia.get("al_recibir_danio", {})
+	if not reaccion_variant is Dictionary:
+		return
+	var reaccion := reaccion_variant as Dictionary
+	if str(reaccion.get("tipo", "")).to_lower() != "teletransportarse":
+		return
+	_teletransportar_espiritu_estelar(reaccion)
+	_tiempo_teleport = maxf(float(reaccion.get("inmunidad", 0.45)), 0.0)
 
+
+func _ejecutar_reaccion_ilusoria(ilusiones: Dictionary, cantidad: int) -> void:
+	if criatura == null or not is_instance_valid(criatura) or not criatura.is_alive:
+		return
 	if _tiempo_teleport > 0.0:
 		return
 
-	var reaccion_variant: Variant = configuracion_ia.get(
-		"al_recibir_danio",
-		{}
-	)
+	# La duplicación es visual y efímera; nunca crea una entidad jugable.
+	criatura.crear_senuelo_ilusorio_azulado(0.85)
 
-	if not reaccion_variant is Dictionary:
+	var formas_variant: Variant = ilusiones.get("formas", [])
+	var formas: Array = formas_variant if formas_variant is Array else []
+	var permite_muerte_simulada := formas.has("muerte_simulada")
+	var permite_escape := formas.has("señuelo_de_escape") or formas.has("senuelo_de_escape")
+	var salud_baja := criatura.max_health > 0 and float(criatura.health) / float(criatura.max_health) <= 0.35
+
+	# La muerte simulada sólo cambia la apariencia: no altera salud, estado vital,
+	# colisión ni recompensas. Se reserva para heridas graves y tiene duración breve.
+	if permite_muerte_simulada and salud_baja:
+		criatura.ejecutar_muerte_simulada_visual(1.0)
+		if permite_escape:
+			_iniciar_escape_ilusorio()
+		_tiempo_teleport = 2.5
 		return
 
-	var reaccion := reaccion_variant as Dictionary
+	if permite_escape:
+		_iniciar_escape_ilusorio()
+		_tiempo_teleport = 1.5
+	else:
+		_tiempo_teleport = 0.65
 
-	if str(reaccion.get("tipo", "")).to_lower() != "teletransportarse":
+
+func _iniciar_escape_ilusorio() -> void:
+	if criatura == null or not is_instance_valid(criatura):
 		return
-
-	_teletransportar_espiritu_estelar(reaccion)
-
-	_tiempo_teleport = maxf(
-		float(reaccion.get("inmunidad", 0.45)),
-		0.0
-	)
-
-
-
+	var referencia: Node2D = objetivo if objetivo != null and is_instance_valid(objetivo) else jugador
+	var direccion := Vector2.RIGHT
+	if referencia != null and is_instance_valid(referencia):
+		direccion = referencia.global_position.direction_to(criatura.global_position)
+	if direccion.length_squared() < 0.01:
+		direccion = Vector2.RIGHT
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(maxf(_obtener_velocidad_persecucion() * 1.35, 35.0))
+	criatura.establecer_direccion_movimiento(direccion.normalized())
+	_cambiar_estado(Estado.HUYENDO)
 # ============================================================
 
 
