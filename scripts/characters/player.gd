@@ -130,6 +130,10 @@ func _ready() -> void:
 	_base_visual_position = visual.position
 
 	_aplicar_configuracion_personaje()
+	# Las dependencias pueden cargar antes de que exista personaje_especie.
+	# Reaplicar ahora que la selección del personaje ya está disponible.
+	if _supabase_client_ref != null and _supabase_client_ref.tiene_especie_eterium_game():
+		_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
 	_update_dir_marker()
 	_update_visual()
 
@@ -579,12 +583,32 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 		if health <= 0:
 			_die()
 	else:
-		super.take_damage(dano_recibido, origen)
+		# Necromancer convierte su reserva de Eterium en una única segunda vida
+		# antes de que Entity emita died y bloquee el estado vital.
+		if _especie_es_nigromante() and health > 0 and dano_recibido >= health and mana > 0:
+			var reserva := mana
+			var vida_convertida := mini(reserva, max_health)
+			vital_state.mana = 0
+			vital_state.health = vida_convertida
+			vital_state.is_alive = vida_convertida > 0
+			_sync_desde_vital()
+			mana_changed.emit(mana, max_mana)
+			health_changed.emit(health, max_health)
+			print(name, " activó su segunda vida: Eterium convertido en ", health, " de vida.")
+		else:
+			super.take_damage(dano_recibido, origen)
 
 	if not is_alive:
 		_morir_jugador()
 	elif dano_recibido > 0:
 		_recibir_golpe_visual()
+
+
+func _especie_es_nigromante() -> bool:
+	var clave := str(personaje_especie.get("clave", "")).strip_edges().to_lower()
+	if clave.is_empty():
+		clave = str(personaje_especie.get("nombre", "")).strip_edges().to_lower()
+	return clave in ["necromancer", "nigromante", "nigromantes"]
 
 
 func _recibir_golpe_visual() -> void:
