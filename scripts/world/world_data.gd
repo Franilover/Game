@@ -36,6 +36,7 @@ var _dialogos_game: Array[Dictionary] = []
 var _misiones_game: Array[Dictionary] = []
 var _reinos_game: Array[Dictionary] = []
 var _props_game: Array[Dictionary] = []
+var _lugares_game: Array[Dictionary] = []
 
 
 func configurar_dependencias(supabase_client: GarliaSupabaseClient) -> void:
@@ -441,6 +442,7 @@ func _construir_indices() -> void:
 	_misiones_game.clear()
 	_reinos_game.clear()
 	_props_game.clear()
+	_lugares_game.clear()
 
 	var reinos_variant: Variant = mundo.get(
 		"reinos_game",
@@ -469,6 +471,22 @@ func _construir_indices() -> void:
 			_props_game.append(
 				(prop_variant as Dictionary).duplicate(true)
 			)
+
+	var lugares_variant: Variant = mundo.get(
+		"lugares_game",
+		[]
+	)
+
+	if lugares_variant is Array:
+		for lugar_variant in lugares_variant:
+			if not lugar_variant is Dictionary:
+				continue
+			var lugar := (lugar_variant as Dictionary).duplicate(true)
+			var lugar_id := str(lugar.get("lugar_id", "")).strip_edges()
+			var asset_key := str(lugar.get("asset_key", "")).strip_edges()
+			if lugar_id.is_empty() or asset_key.is_empty():
+				continue
+			_lugares_game.append(lugar)
 
 	var misiones_variant: Variant = mundo.get(
 		"misiones_game",
@@ -702,6 +720,45 @@ func obtener_props_game() -> Array[Dictionary]:
 		resultado.append(prop.duplicate(true))
 
 	return resultado
+
+func obtener_lugares_game() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	for lugar in _lugares_game:
+		resultado.append(lugar.duplicate(true))
+	return resultado
+
+## Diagnóstico de preparación espacial. El catálogo por sí solo no autoriza
+## a colocar un lugar: necesita un ancla geográfica validada y calibración.
+func obtener_diagnostico_lugares_game() -> Dictionary:
+	var con_ancla_valida := 0
+	var sin_ancla: Array[String] = []
+	for lugar_variant in _lugares_game:
+		if not lugar_variant is Dictionary:
+			continue
+		var lugar := lugar_variant as Dictionary
+		var ancla_variant: Variant = lugar.get("ancla_espacial", {})
+		if not ancla_variant is Dictionary:
+			sin_ancla.append(str(lugar.get("lugar_id", "")))
+			continue
+		var ancla := ancla_variant as Dictionary
+		if not ancla.has("latitud_deg") or not ancla.has("longitud_deg"):
+			sin_ancla.append(str(lugar.get("lugar_id", "")))
+			continue
+		var latitud := float(ancla.get("latitud_deg", 999.0))
+		var longitud := float(ancla.get("longitud_deg", 999.0))
+		if latitud < -90.0 or latitud > 90.0 or longitud < -180.0 or longitud > 180.0:
+			sin_ancla.append(str(lugar.get("lugar_id", "")))
+			continue
+		con_ancla_valida += 1
+	return {
+		"catalogo_activo": _lugares_game.size(),
+		"con_ancla_geografica_valida": con_ancla_valida,
+		"sin_ancla_geografica": sin_ancla.size(),
+		"ids_sin_ancla": sin_ancla,
+		"materializacion_espacial_habilitada": false,
+		"motivo": "Requiere ancla geográfica canónica y calibración planetaria confirmada por el motor geográfico."
+	}
+
 
 
 func obtener_reinos_game() -> Array[Dictionary]:

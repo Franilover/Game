@@ -190,6 +190,19 @@ func _inicializar_mundo() -> void:
 
 	terrain.cargar_datos_mundo()
 
+	# El catálogo de lugares se sincroniza, pero no se instancia hasta que
+	# exista un ancla geográfica canónica y calibración planetaria verificable.
+	var diagnostico_lugares := _world_data.obtener_diagnostico_lugares_game()
+	print(
+		"WorldGenerator: lugares activos = ",
+		diagnostico_lugares.get("catalogo_activo", 0),
+		" | con ancla geográfica = ",
+		diagnostico_lugares.get("con_ancla_geografica_valida", 0),
+		" | sin ancla = ",
+		diagnostico_lugares.get("sin_ancla_geografica", 0),
+		" | materialización espacial = bloqueada hasta calibración."
+	)
+
 	if _entities_root == null or not is_instance_valid(_entities_root):
 		push_error("WorldGenerator: no se configuró Entity root antes de iniciar el mundo.")
 		return
