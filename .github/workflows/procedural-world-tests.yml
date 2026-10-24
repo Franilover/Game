@@ -2,7 +2,7 @@ name: Procedural World Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
@@ -60,7 +60,15 @@ jobs:
           fi
 
       - name: Run creature AI target policy regression test
-        run: godot --headless --path . --script res://tests/creatures/test_creature_ai_target_policy.gd
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . res://tests/creatures/test_creature_ai_target_policy.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|Failed to load script|CreatureAITargetPolicy: FAIL:' <<<"$output"; then
+            echo "Creature AI regression test reported script or assertion errors."
+            exit 1
+          fi
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd

@@ -177,6 +177,12 @@ func _al_mundo_remoto(
 		if firma == _firma_actual:
 			return
 
+		# La geometría/ecología estructural espera a la próxima sesión, pero
+		# la IA necesita recibir ahora las reglas canónicas remotas. De otro
+		# modo, un cache antiguo con ia_config={} deja mudas sus habilidades.
+		if _partida_activa():
+			_actualizar_configuracion_ia_en_vivo(mundo_remoto)
+
 		_mundo_pendiente = mundo_remoto.duplicate(true)
 
 		print(
@@ -203,6 +209,69 @@ func _partida_activa() -> bool:
 		return false
 
 	return escena.get_node_or_null("World/WorldGenerator") != null
+
+
+func _actualizar_configuracion_ia_en_vivo(mundo_remoto: Dictionary) -> void:
+	var configuraciones: Dictionary = {}
+	_recopilar_configuraciones_ia(mundo_remoto, configuraciones)
+	if configuraciones.is_empty():
+		return
+
+	# Actualiza el índice usado por los próximos spawns sin reemplazar la
+	# topología del mundo que ya está generándose.
+	for criatura_id_variant in configuraciones.keys():
+		var criatura_id := str(criatura_id_variant)
+		var actual_variant: Variant = _criaturas_por_id.get(criatura_id, {})
+		if not actual_variant is Dictionary:
+			continue
+		var actual := (actual_variant as Dictionary).duplicate(true)
+		var config: Dictionary = configuraciones[criatura_id]
+		actual["ia_config"] = config.get("ia_config", {})
+		actual["comportamiento"] = config.get("comportamiento", null)
+		actual["magia"] = config.get("magia", null)
+		_criaturas_por_id[criatura_id] = actual
+
+	# Las criaturas que ya existen reciben la configuración nueva en caliente.
+	for entidad in get_tree().get_nodes_in_group("creatures"):
+		if not entidad is Creature or not is_instance_valid(entidad):
+			continue
+		var criatura := entidad as Creature
+		var id := criatura.criatura_id
+		if not configuraciones.has(id):
+			continue
+		var datos_actualizados := criatura.datos.duplicate(true)
+		var config: Dictionary = configuraciones[id]
+		datos_actualizados["ia_config"] = config.get("ia_config", {})
+		datos_actualizados["comportamiento"] = config.get("comportamiento", null)
+		datos_actualizados["magia"] = config.get("magia", null)
+		criatura.datos = datos_actualizados
+		criatura.comportamiento = str(datos_actualizados.get("comportamiento", ""))
+		criatura.magia = str(datos_actualizados.get("magia", ""))
+		var ai := criatura.get_node_or_null("AIController") as CreatureAI
+		if ai != null:
+			ai.configurar_criatura()
+
+	print("WorldData: configuraciones de IA canónicas sincronizadas en vivo → ", configuraciones.size(), " especies.")
+
+
+func _recopilar_configuraciones_ia(valor: Variant, salida: Dictionary) -> void:
+	if valor is Dictionary:
+		var diccionario := valor as Dictionary
+		if diccionario.has("id") and diccionario.has("nombre") and diccionario.has("ia_config"):
+			var id := str(diccionario.get("id", "")).strip_edges()
+			if not id.is_empty():
+				salida[id] = {
+					"ia_config": diccionario.get("ia_config", {}),
+					"comportamiento": diccionario.get("comportamiento", null),
+					"magia": diccionario.get("magia", null)
+				}
+		for hijo in diccionario.values():
+			if hijo is Dictionary or hijo is Array:
+				_recopilar_configuraciones_ia(hijo, salida)
+	elif valor is Array:
+		for hijo in valor as Array:
+			if hijo is Dictionary or hijo is Array:
+				_recopilar_configuraciones_ia(hijo, salida)
 
 
 func _al_error_remoto(

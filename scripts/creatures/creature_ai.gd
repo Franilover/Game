@@ -187,6 +187,13 @@ func _physics_process(delta: float) -> void:
 	)
 
 	_actualizar_rutina()
+
+	# La locomoción corre en otro nodo y en cada frame físico; detenerla aquí
+	# evita que avance entre dos ticks de decisión de la máquina de estados.
+	if not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
 	var en_descanso_programado := actividad_horaria in ["dormir", "reposar"]
 
 	_tiempo_pensamiento -= delta
@@ -341,6 +348,12 @@ func _entrar_estado(nuevo_estado: Estado) -> void:
 		Estado.SALTANDO_LEJOS:
 			_iniciar_estado_saltando_lejos()
 
+	# Algunas entradas de estado toman el control o fijan una dirección.
+	# La política de inmovilidad se reafirma después de cada transición.
+	if not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
 
 func _salir_estado(anterior: Estado) -> void:
 	if anterior == Estado.ATACANDO and criatura != null and is_instance_valid(criatura):
@@ -366,6 +379,28 @@ func _salir_estado(anterior: Estado) -> void:
 
 
 func _procesar_estado(delta: float) -> void:
+	# Aplicar la política de movimiento antes de cualquier estado: explorar,
+	# investigar, perseguir, huir y rutinas especiales no pueden saltársela.
+	# Se conserva la percepción y se permite atacar únicamente desde el sitio.
+	if not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
+		if estado == Estado.ATACANDO:
+			_procesar_atacando(delta)
+		elif estado == Estado.RECUPERANDO:
+			_procesar_recuperando(delta)
+		elif (
+			objetivo_detectado
+			and objetivo != null
+			and is_instance_valid(objetivo)
+			and _obtener_respuesta_a_objetivo() == "atacar"
+			and criatura.global_position.distance_to(objetivo.global_position)
+				<= _obtener_distancia_contacto()
+		):
+			_cambiar_estado(Estado.ATACANDO)
+		return
+
 	_tiempo_estado += delta
 
 	if actividad_horaria == "proteger":
@@ -690,6 +725,19 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 
 
 func _refrescar_objetivo() -> void:
+	# Los Lesfleeng liberados por un Ligniano protegen al objetivo que lo atacó.
+	var objetivo_liberacion: Variant = null
+	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
+		objetivo_liberacion = criatura.get_meta("garlia_objetivo_liberacion")
+	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion):
+		if not ("is_alive" in objetivo_liberacion) or bool(objetivo_liberacion.get("is_alive")):
+			objetivo = objetivo_liberacion as Node2D
+			return
+		if criatura.has_meta("garlia_objetivo_liberacion"):
+			criatura.remove_meta("garlia_objetivo_liberacion")
+	elif criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
+		criatura.remove_meta("garlia_objetivo_liberacion")
+
 	# La reacción de bosque tiene prioridad sobre la percepción ecológica normal.
 	if _jugador_debe_reaccionar_en_bosque():
 		objetivo = jugador
@@ -884,6 +932,13 @@ func _refrescar_configuracion() -> void:
 	var comportamiento := criatura.comportamiento.strip_edges().to_lower()
 
 	if comportamiento.is_empty():
+		# En snapshots donde ia_config y comportamiento vienen vacíos, el
+		# nombre de especie sigue siendo una señal de identidad disponible.
+		# Evita que Lignianos caiga al perfil genérico y herede movimiento.
+		var nombre_criatura := criatura.get_nombre().strip_edges().to_lower()
+		perfil = _perfil_desde_texto(nombre_criatura)
+		if perfil != Perfil.GENERICO:
+			return
 		perfil = Perfil.GENERICO
 		return
 
@@ -921,6 +976,10 @@ func _obtener_respuesta_a_objetivo() -> String:
 func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 	if candidato == null or not is_instance_valid(candidato):
 		return ""
+
+	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
+		if criatura.get_meta("garlia_objetivo_liberacion") == candidato:
+			return "atacar"
 
 	if _es_reactivo_bosque() and candidato == jugador:
 		# En estas especies, la reacción al jugador depende de su conducta
@@ -1096,15 +1155,20 @@ func _obtener_distancia_deteccion() -> float:
 
 
 func _movimiento_permitido() -> bool:
+	# La configuración canónica puede habilitar o deshabilitar explícitamente
+	# el movimiento. Si falta, Lignianos se mantiene inmóvil por seguridad:
+	# no debe inferirse permiso de movimiento por ausencia de datos.
 	var valor: Variant = configuracion_ia.get(
 		"movimiento_permitido",
-		true
+		perfil != Perfil.LIGNIANOS
 	)
 
 	if valor is bool:
 		return bool(valor)
 
-	return true
+	# Una configuración mal formada tampoco debe habilitar movimiento
+	# accidentalmente para Lignianos.
+	return perfil != Perfil.LIGNIANOS
 
 
 func _obtener_distancia_maxima_persecucion() -> float:
@@ -2107,35 +2171,129 @@ func _procesar_saltando_lejos(delta: float) -> void:
 # ============================================================
 # ESPIRITU ESTELAR
 
-func al_recibir_danio(_cantidad: int) -> void:
-	if perfil != Perfil.ESPIRITU_ESTELAR:
+func _liberar_lesfleengs_al_ser_atacado() -> void:
+	if criatura == null or not is_instance_valid(criatura):
 		return
 
+	var config_ia := criatura.obtener_config_ia()
+	var defensa_variant: Variant = config_ia.get("defensa", {})
+	if not defensa_variant is Dictionary:
+		return
+	var defensa := defensa_variant as Dictionary
+	var reaccion_variant: Variant = defensa.get("al_ser_atacado", {})
+	if not reaccion_variant is Dictionary:
+		return
+	var reaccion := reaccion_variant as Dictionary
+	if str(reaccion.get("evento", "")).strip_edges().to_lower() != "liberar_lesfleengs":
+		return
+
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		push_warning("CreatureAI: Lignianos recibió un ataque, pero WorldEntityManager no está disponible para liberar Lesfleeng.")
+		return
+	var factory := entity_manager._entity_factory as WorldEntityFactory
+	if factory == null or not is_instance_valid(factory):
+		push_warning("CreatureAI: no hay WorldEntityFactory para liberar Lesfleeng.")
+		return
+
+	var datos_lesfleeng: Dictionary = WorldData.buscar_criatura_por_nombre("Lesfleeng")
+	if datos_lesfleeng.is_empty():
+		push_warning("CreatureAI: Supabase/WorldData no entregó la ficha canónica de Lesfleeng.")
+		return
+
+	var lesfleeng := factory.crear_criatura(datos_lesfleeng)
+	if lesfleeng == null:
+		return
+
+	lesfleeng.chunk_coord = criatura.chunk_coord
+	if not entity_manager.registrar(lesfleeng, criatura.chunk_coord):
+		lesfleeng.queue_free()
+		return
+
+	# La cantidad y el radio aún figuran como por_definir en el canon.
+	# Hasta que se concreten, se libera un Lesfleeng junto al Ligniano.
+	var angulo := randf_range(0.0, TAU)
+	lesfleeng.global_position = criatura.global_position + Vector2.from_angle(angulo) * 18.0
+	if jugador != null and is_instance_valid(jugador):
+		lesfleeng.set_meta("garlia_objetivo_liberacion", jugador)
+
+	print("CreatureAI: Lignianos liberó un Lesfleeng al recibir un ataque.")
+
+
+func al_recibir_danio(cantidad: int) -> void:
+	if criatura != null and is_instance_valid(criatura):
+		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
+		if nombre_especie == "lignianos":
+			_liberar_lesfleengs_al_ser_atacado()
+		# Una Sirena sólo simula la muerte si sigue viva; las demás reacciones
+		# defensivas tampoco deben mover una criatura ya muerta.
+		if not criatura.is_alive:
+			return
+		if nombre_especie in ["sirena", "gloarin"]:
+			var config_ia := criatura.obtener_config_ia()
+			var ilusiones_variant: Variant = config_ia.get("ilusiones", {})
+			if ilusiones_variant is Dictionary:
+				var ilusiones := ilusiones_variant as Dictionary
+				if bool(ilusiones.get("activo", false)):
+					_ejecutar_reaccion_ilusoria(ilusiones, cantidad)
+
+	if perfil != Perfil.ESPIRITU_ESTELAR:
+		return
+	if _tiempo_teleport > 0.0:
+		return
+	var reaccion_variant: Variant = configuracion_ia.get("al_recibir_danio", {})
+	if not reaccion_variant is Dictionary:
+		return
+	var reaccion := reaccion_variant as Dictionary
+	if str(reaccion.get("tipo", "")).to_lower() != "teletransportarse":
+		return
+	_teletransportar_espiritu_estelar(reaccion)
+	_tiempo_teleport = maxf(float(reaccion.get("inmunidad", 0.45)), 0.0)
+
+
+func _ejecutar_reaccion_ilusoria(ilusiones: Dictionary, cantidad: int) -> void:
+	if criatura == null or not is_instance_valid(criatura) or not criatura.is_alive:
+		return
 	if _tiempo_teleport > 0.0:
 		return
 
-	var reaccion_variant: Variant = configuracion_ia.get(
-		"al_recibir_danio",
-		{}
-	)
+	# La duplicación es visual y efímera; nunca crea una entidad jugable.
+	criatura.crear_senuelo_ilusorio_azulado(0.85)
 
-	if not reaccion_variant is Dictionary:
+	var formas_variant: Variant = ilusiones.get("formas", [])
+	var formas: Array = formas_variant if formas_variant is Array else []
+	var permite_muerte_simulada := formas.has("muerte_simulada")
+	var permite_escape := formas.has("señuelo_de_escape") or formas.has("senuelo_de_escape")
+	var salud_baja := criatura.max_health > 0 and float(criatura.health) / float(criatura.max_health) <= 0.35
+
+	# La muerte simulada sólo cambia la apariencia: no altera salud, estado vital,
+	# colisión ni recompensas. Se reserva para heridas graves y tiene duración breve.
+	if permite_muerte_simulada and salud_baja:
+		criatura.ejecutar_muerte_simulada_visual(1.0)
+		if permite_escape:
+			_iniciar_escape_ilusorio()
+		_tiempo_teleport = 2.5
 		return
 
-	var reaccion := reaccion_variant as Dictionary
+	if permite_escape:
+		_iniciar_escape_ilusorio()
+		_tiempo_teleport = 1.5
+	else:
+		_tiempo_teleport = 0.65
 
-	if str(reaccion.get("tipo", "")).to_lower() != "teletransportarse":
+
+func _iniciar_escape_ilusorio() -> void:
+	if criatura == null or not is_instance_valid(criatura):
 		return
-
-	_teletransportar_espiritu_estelar(reaccion)
-
-	_tiempo_teleport = maxf(
-		float(reaccion.get("inmunidad", 0.45)),
-		0.0
-	)
-
-
-
+	var referencia: Node2D = objetivo if objetivo != null and is_instance_valid(objetivo) else jugador
+	var direccion := Vector2.RIGHT
+	if referencia != null and is_instance_valid(referencia):
+		direccion = referencia.global_position.direction_to(criatura.global_position)
+	if direccion.length_squared() < 0.01:
+		direccion = Vector2.RIGHT
+	criatura.tomar_control_movimiento()
+	_establecer_velocidad(maxf(_obtener_velocidad_persecucion() * 1.35, 35.0))
+	criatura.establecer_direccion_movimiento(direccion.normalized())
+	_cambiar_estado(Estado.HUYENDO)
 # ============================================================
 
 

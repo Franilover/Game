@@ -436,6 +436,45 @@ func obtener_config_ia() -> Dictionary:
 	return {}
 
 
+func crear_senuelo_ilusorio_azulado(duracion: float = 0.75) -> bool:
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null or sprite.texture == null:
+		return false
+
+	var raiz: Node = _effects_root if _effects_root != null and is_instance_valid(_effects_root) else get_parent()
+	if raiz == null:
+		return false
+
+	var senuelo := Sprite2D.new()
+	senuelo.texture = sprite.texture
+	senuelo.hframes = sprite.hframes
+	senuelo.vframes = sprite.vframes
+	senuelo.frame = sprite.frame
+	senuelo.global_position = sprite.global_position
+	senuelo.global_rotation = sprite.global_rotation
+	senuelo.global_scale = sprite.global_scale
+	senuelo.flip_h = sprite.flip_h
+	senuelo.flip_v = sprite.flip_v
+	senuelo.modulate = Color(0.42, 0.72, 1.0, 0.78)
+	senuelo.z_index = z_index
+	raiz.add_child(senuelo)
+	var tween := senuelo.create_tween()
+	tween.tween_property(senuelo, "modulate:a", 0.0, maxf(duracion, 0.1))
+	tween.tween_callback(senuelo.queue_free)
+	return true
+
+
+func ejecutar_muerte_simulada_visual(duracion: float = 1.0) -> void:
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	# La criatura permanece viva y dañable; sólo se atenúa su apariencia.
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate", Color(0.42, 0.72, 1.0, 0.12), 0.16)
+	tween.tween_interval(maxf(duracion, 0.1))
+	tween.tween_property(sprite, "modulate", Color.WHITE, 0.22)
+
+
 func take_damage(
 	cantidad: int,
 	origen: String = "desconocido"
@@ -447,7 +486,9 @@ func take_damage(
 
 	super.take_damage(cantidad, origen)
 
-	if is_alive and health < salud_anterior:
+	if health < salud_anterior:
+		# El evento de ataque también debe llegar a la IA cuando el golpe es
+		# letal: un Ligniano libera su defensa al ser atacado, no al sobrevivir.
 		var ai := get_node_or_null("AIController") as CreatureAI
 
 		if ai != null:

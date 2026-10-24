@@ -48,6 +48,22 @@ func procesar(delta: float) -> void:
 	if not is_instance_valid(creature):
 		return
 
+	# Supabase es la fuente canónica: una criatura configurada como inmóvil
+	# no puede desplazarse por la patrulla autónoma ni por órdenes de la IA.
+	# Se comprueban ambas formas de expresar la restricción para tolerar
+	# snapshots antiguos que solo contengan una de las claves.
+	if creature is Creature:
+		var configuracion: Dictionary = (creature as Creature).obtener_config_ia()
+		var movimiento_variant: Variant = configuracion.get("movimiento", {})
+		var movimiento: Dictionary = movimiento_variant if movimiento_variant is Dictionary else {}
+		var tipo_movimiento := str(movimiento.get("tipo", "")).strip_edges().to_lower()
+		var desplazamiento_propio: Variant = movimiento.get("desplazamiento_propio", true)
+		var movimiento_permitido: Variant = configuracion.get("movimiento_permitido", true)
+		if tipo_movimiento == "inmovil" or desplazamiento_propio == false or movimiento_permitido == false:
+			detener()
+			_move_timer = maxf(_move_timer, 0.1)
+			return
+
 	_move_timer -= delta
 
 	if not _usar_direccion_externa and _move_timer <= 0.0:
