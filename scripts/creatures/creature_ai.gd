@@ -187,6 +187,13 @@ func _physics_process(delta: float) -> void:
 	)
 
 	_actualizar_rutina()
+
+	# La locomoción corre en otro nodo y en cada frame físico; detenerla aquí
+	# evita que avance entre dos ticks de decisión de la máquina de estados.
+	if not _movimiento_permitido():
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+
 	var en_descanso_programado := actividad_horaria in ["dormir", "reposar"]
 
 	_tiempo_pensamiento -= delta
