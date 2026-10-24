@@ -585,7 +585,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 	else:
 		# Necromancer convierte su reserva de Eterium en una única segunda vida
 		# antes de que Entity emita died y bloquee el estado vital.
-		if _especie_es_nigromante() and health > 0 and dano_recibido >= health and mana > 0:
+		if _especie_es_necromancer() and health > 0 and dano_recibido >= health and mana > 0:
 			var reserva := mana
 			var vida_convertida := mini(reserva, max_health)
 			vital_state.mana = 0
