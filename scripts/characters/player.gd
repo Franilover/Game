@@ -605,26 +605,27 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 
 
 func _especie_es_necromancer() -> bool:
-	# Nombre canonico en ingles: Necromancer(s). No aceptar traducciones.
-	var identificadores := [
-		str(personaje_especie.get("clave", "")).strip_edges().to_lower(),
-		str(personaje_especie.get("nombre", "")).strip_edges().to_lower(),
-		str(personaje_especie.get("nombre_canonico", "")).strip_edges().to_lower()
-	]
-	for identificador in identificadores:
+	# Identidad verificada contra public.especies_jugables en Supabase.
+	const NECROMANCER_SPECIES_ID := "8481bf5a-f207-42d5-9616-2420d1514a00"
+	var especie_id := str(personaje_especie.get("id", "")).strip_edges().to_lower()
+	if especie_id == NECROMANCER_SPECIES_ID:
+		return true
+
+	for campo in ["clave", "nombre", "nombre_canonico"]:
+		var identificador := str(personaje_especie.get(campo, "")).strip_edges().to_lower()
 		if identificador in ["necromancer", "necromancers"]:
 			return true
 
-	# Si el selector solo trae el ID, consultar la regla aplicada desde Supabase.
+	# La regla aplicada debe pertenecer al mismo ID seleccionado.
 	var padre_variant: Variant = eterium_runtime.especie_regla.get("especie_eterium_v1", {})
 	if padre_variant is Dictionary:
 		var padre := padre_variant as Dictionary
-		for campo in ["clave", "nombre", "nombre_canonico"]:
-			var valor := str(padre.get(campo, "")).strip_edges().to_lower()
-			if valor in ["necromancer", "necromancers"]:
-				return true
+		if str(padre.get("especie_id", "")).strip_edges().to_lower() == especie_id:
+			for campo in ["clave", "nombre", "nombre_canonico"]:
+				var identificador := str(padre.get(campo, "")).strip_edges().to_lower()
+				if identificador in ["necromancer", "necromancers"]:
+					return true
 	return false
-
 
 func _recibir_golpe_visual() -> void:
 	if visual == null:
