@@ -124,7 +124,7 @@ func _run() -> void:
 			return
 		ai._cambiar_estado(AIScript.Estado.RECUPERANDO)
 
-	print("CreatureAITargetPolicy: pruebas de selección y contacto completadas.")
+	print("CreatureAITargetPolicy: PASS - selección y contacto.")
 	get_tree().root.remove_child(player)
 	player.free()
 	actor.free()
@@ -133,5 +133,5 @@ func _run() -> void:
 
 
 func _fail(message: String) -> void:
-	push_error("CreatureAITargetPolicy: " + message)
+	push_error("CreatureAITargetPolicy: FAIL: " + message)
 	get_tree().quit(1)
