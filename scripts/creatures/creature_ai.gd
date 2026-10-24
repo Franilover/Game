@@ -726,11 +726,16 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 
 func _refrescar_objetivo() -> void:
 	# Los Lesfleeng liberados por un Ligniano protegen al objetivo que lo atacó.
-	var objetivo_liberacion: Variant = criatura.get_meta("garlia_objetivo_liberacion", null) if criatura != null else null
+	var objetivo_liberacion: Variant = null
+	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
+		objetivo_liberacion = criatura.get_meta("garlia_objetivo_liberacion")
 	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion):
 		if not ("is_alive" in objetivo_liberacion) or bool(objetivo_liberacion.get("is_alive")):
 			objetivo = objetivo_liberacion as Node2D
 			return
+		if criatura.has_meta("garlia_objetivo_liberacion"):
+			criatura.remove_meta("garlia_objetivo_liberacion")
+	elif criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		criatura.remove_meta("garlia_objetivo_liberacion")
 
 	# La reacción de bosque tiene prioridad sobre la percepción ecológica normal.
