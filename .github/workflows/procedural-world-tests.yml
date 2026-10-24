@@ -7,6 +7,9 @@ on:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
       - "scripts/creatures/**"
+      - "tests/player/**"
+      - "scripts/gameplay/player/**"
+      - "scripts/characters/player.gd"
       - "tests/creatures/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
@@ -72,6 +75,17 @@ jobs:
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
+
+      - name: Run player dash charges regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . res://tests/player/test_player_dash_charges.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|Failed to load script|PlayerDashCharges: FAIL:' <<<"$output"; then
+            echo "Player dash charges regression test reported script or assertion errors."
+            exit 1
+          fi
 
       # Verifies stable atlas registration and real DisplayLayer composition.
       - name: Run TileMapDual terrain regression test
