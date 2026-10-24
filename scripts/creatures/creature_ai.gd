@@ -2108,6 +2108,18 @@ func _procesar_saltando_lejos(delta: float) -> void:
 # ESPIRITU ESTELAR
 
 func al_recibir_danio(_cantidad: int) -> void:
+	# Sirenas y Gloarin generan un señuelo azul tenue al recibir daño.
+	# El señuelo es puramente visual: no tiene colisión ni puede recibir daño.
+	if criatura != null and is_instance_valid(criatura):
+		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
+		if nombre_especie in ["sirena", "gloarin"]:
+			var config_ia := criatura.obtener_config_ia()
+			var ilusiones_variant: Variant = config_ia.get("ilusiones", {})
+			if ilusiones_variant is Dictionary:
+				var ilusiones := ilusiones_variant as Dictionary
+				if bool(ilusiones.get("activo", false)):
+					criatura.crear_senuelo_ilusorio_azulado(0.85)
+
 	if perfil != Perfil.ESPIRITU_ESTELAR:
 		return
 
