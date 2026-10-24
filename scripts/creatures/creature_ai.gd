@@ -2219,6 +2219,10 @@ func al_recibir_danio(cantidad: int) -> void:
 		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
 		if nombre_especie == "lignianos":
 			_liberar_lesfleengs_al_ser_atacado()
+		# Una Sirena sólo simula la muerte si sigue viva; las demás reacciones
+		# defensivas tampoco deben mover una criatura ya muerta.
+		if not criatura.is_alive:
+			return
 		if nombre_especie in ["sirena", "gloarin"]:
 			var config_ia := criatura.obtener_config_ia()
 			var ilusiones_variant: Variant = config_ia.get("ilusiones", {})
