@@ -1,12 +1,16 @@
 extends Sprite2D
 ## Casa temporal de integración visual. No forma parte del catálogo canónico.
-## Se coloca junto al spawn sólo para verificar el asset en el mapa jugable.
+## Se coloca junto al spawn para verificar el asset en el mapa jugable.
 
 const DISTANCIA_DESDE_SPAWN_TILES: int = 3
 const TILE_SIZE: int = 32
 
 
 func _ready() -> void:
+	# El terreno usa z_index=-4096 absoluto. Esta prueba debe quedar
+	# inequívocamente delante de él, independientemente del orden de nodos.
+	z_as_relative = false
+	z_index = 4096
 	visible = false
 	call_deferred("_colocar_junto_al_spawn")
 
@@ -23,9 +27,15 @@ func _colocar_junto_al_spawn() -> void:
 	if not is_instance_valid(generador):
 		return
 
-	global_position = generador.get_spawn_position() + Vector2(
-		DISTANCIA_DESDE_SPAWN_TILES * TILE_SIZE,
-		0
-	)
+	var spawn := generador.get_spawn_position()
+	global_position = spawn + Vector2(DISTANCIA_DESDE_SPAWN_TILES * TILE_SIZE, 0)
 	visible = true
-	print("CasaPrueba: Casa.png visible junto al spawn en ", global_position)
+
+	print(
+		"CasaPrueba: visible=", is_visible_in_tree(),
+		" | textura=", texture.get_size() if texture != null else Vector2.ZERO,
+		" | spawn=", spawn,
+		" | posicion=", global_position,
+		" | z_index=", z_index,
+		" | viewport=", get_viewport_rect().size
+	)
