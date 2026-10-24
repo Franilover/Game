@@ -9,11 +9,18 @@
 [ext_resource type="Script" path="res://scripts/world/world_entity_factory.gd" id="7_world_entity_factory"]
 [ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="8_world_spawn_rules"]
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="9_world_atmosphere"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Casa.png" id="10_casa_prueba"]
+[ext_resource type="Script" path="res://scripts/world/casa_prueba.gd" id="11_casa_prueba_script"]
 
 [node name="MundoAbierto" type="Node2D"]
 
 [node name="WorldGenerator" type="Node2D" parent="."]
 script = ExtResource("1_world_generator")
+
+[node name="CasaPrueba" type="Sprite2D" parent="WorldGenerator"]
+texture = ExtResource("10_casa_prueba")
+script = ExtResource("11_casa_prueba_script")
+z_index = -1
 
 [node name="WorldTerrain" type="Node2D" parent="WorldGenerator"]
 script = ExtResource("2_world_terrain")
@@ -37,7 +44,7 @@ peso_destacadas = 76.0
 [node name="WorldEntitySpawner" type="Node" parent="WorldGenerator"]
 script = ExtResource("5_world_spawner")
 
-[node name="WorldAtmosphere" type="Node" parent="WorldGenerator"]
+[node name="WorldAtmosphere" type="Node2D" parent="WorldGenerator"]
 script = ExtResource("9_world_atmosphere")
 
 [node name="DayNightModulation" type="CanvasModulate" parent="WorldGenerator/WorldAtmosphere"]
