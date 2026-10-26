@@ -2,6 +2,7 @@ extends SceneTree
 
 const CombatClockScript = preload("res://scripts/gameplay/combat/combat_clock.gd")
 const CombatEventQueueScript = preload("res://scripts/gameplay/combat/combat_event_queue.gd")
+const CombatActionLifecycleScript = preload("res://scripts/gameplay/combat/combat_action_lifecycle.gd")
 
 
 func _initialize() -> void:
@@ -13,6 +14,7 @@ func _run() -> void:
 	_test_monotonic_clock(errors)
 	_test_stable_event_order_and_deduplication(errors)
 	_test_due_batch_and_clock_advance(errors)
+	_test_action_lifecycle_and_interruptions(errors)
 
 	if not errors.is_empty():
 		for error in errors:
@@ -79,3 +81,38 @@ func _test_due_batch_and_clock_advance(errors: Array[String]) -> void:
 	var past := queue.schedule("past-event", 19, "late", {})
 	if bool(past.get("accepted", false)) or past.get("reason", "") != "event_in_past":
 		errors.append("La cola aceptó un evento anterior al reloj actual.")
+
+func _test_action_lifecycle_and_interruptions(errors: Array[String]) -> void:
+	var action := CombatActionLifecycleScript.new() as CombatActionLifecycle
+	if not action.begin_preparation("attack-1", true):
+		errors.append("La acción no pudo comenzar la preparación.")
+		return
+	if not action.can_interrupt():
+		errors.append("Una acción marcada como interrumpible no permite reemplazo.")
+		return
+	if not action.interrupt("replacement_order"):
+		errors.append("La orden interrumpible no pudo interrumpirse.")
+		return
+	if action.state_name() != "interrupted" or action.can_interrupt():
+		errors.append("La acción interrumpida no quedó en estado terminal.")
+	if action.complete():
+		errors.append("Una acción interrumpida pudo completarse después.")
+
+	var committed := CombatActionLifecycleScript.new() as CombatActionLifecycle
+	committed.begin_preparation("attack-2", true)
+	if not committed.commit():
+		errors.append("La acción no pudo alcanzar el punto de compromiso.")
+		return
+	if committed.can_interrupt() or committed.interrupt("replacement_order"):
+		errors.append("Una acción comprometida pudo interrumpirse por reemplazo.")
+	if not committed.begin_execution(false):
+		errors.append("La acción comprometida no pudo comenzar su ejecución.")
+		return
+	if not committed.complete() or committed.state_name() != "completed":
+		errors.append("La acción no pudo completar su ciclo de vida.")
+
+	var rejected := CombatActionLifecycleScript.new() as CombatActionLifecycle
+	if not rejected.reject("invalid_requirements") or rejected.state_name() != "rejected":
+		errors.append("Una orden inválida no pudo rechazarse antes de comenzar.")
+	if rejected.begin_preparation("should-not-start", true):
+		errors.append("Una orden rechazada pudo reiniciarse.")
