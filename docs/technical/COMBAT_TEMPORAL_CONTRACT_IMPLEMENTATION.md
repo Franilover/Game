@@ -37,6 +37,16 @@ La prueba headless `tests/combat/test_combat_temporal_contract.gd` comprueba:
 
 El workflow de Godot 4.7 ejecuta esta prueba para los cambios del sistema de combate y del runtime de Eterium.
 
+## Primitivas temporales añadidas en la siguiente fase
+
+- `CombatClock`: reloj lógico entero que no retrocede.
+- `CombatEventQueue`: cola ordenada por tiempo y secuencia, con rechazo de IDs duplicados y eventos anteriores al reloj actual.
+- `CombatActionLifecycle`: máquina de estados de orden que diferencia rechazo, compromiso, ejecución, interrupción y cancelación.
+- `GarumiEteriumClock`: recuperación individual con progreso pausado al máximo y reanudación tras gasto.
+- `tests/combat/test_combat_event_queue.gd`: pruebas de reloj, cola, ciclo de vida y recuperación individual.
+
+Estas primitivas siguen aisladas del flujo real de `CombatSystem` para permitir validación incremental. Las pruebas están **PENDING** hasta que se ejecute Godot 4.7 y se inspeccione la salida.
+
 ## Reglas aún no implementadas
 
 - Reloj lógico determinista del combate y cola de eventos.
