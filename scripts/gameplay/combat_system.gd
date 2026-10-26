@@ -637,6 +637,8 @@ func atacar_objetivo_con_arma(
 
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
+	if not objetivo.is_alive:
+		return false
 
 	if arma.is_empty() or not _es_arma(arma):
 		return false
