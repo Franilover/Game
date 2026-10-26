@@ -20,6 +20,7 @@ Este archivo es la bitácora de puntos de recuperación para la implementación 
 ## CP-02 — Reloj lógico y cola determinista de eventos
 
 - **Estado:** implementado como primitivas aisladas; pruebas añadidas, resultado **PENDING** hasta ejecución real.
+- **Checkpoint de código CP-02/CP-03/CP-04:** `352b7a1a0dad931e9bb2965b55ca3c342e1a4c2b` (reloj, cola, ciclo de vida, reloj individual y pruebas ya presentes).
 - **Archivos:** `scripts/gameplay/combat/combat_clock.gd`, `scripts/gameplay/combat/combat_event_queue.gd`, `tests/combat/test_combat_event_queue.gd`.
 - **Contrato:** reloj entero monotónico; eventos ordenados por `(time_us, sequence)`; IDs únicos; rechazo de duplicados y eventos anteriores al reloj; `pop_due()` entrega todos los eventos vencidos en orden y avanza el reloj hasta el límite solicitado.
 - **Límite:** la cola aún no está conectada a ataques, física, recuperación ni victoria.
@@ -28,6 +29,7 @@ Este archivo es la bitácora de puntos de recuperación para la implementación 
 ## CP-03 — Ciclo de vida temporal de órdenes
 
 - **Estado:** primera máquina de estados implementada como primitiva aislada; pruebas añadidas, resultado **PENDING** hasta ejecución real.
+- **Checkpoint de código compartido:** `352b7a1a0dad931e9bb2965b55ca3c342e1a4c2b`.
 - **Archivo:** `scripts/gameplay/combat/combat_action_lifecycle.gd`; prueba adicional en `tests/combat/test_combat_event_queue.gd`.
 - **Contrato:** estados solicitada, rechazada, preparando, comprometida, ejecutando, completada, interrumpida y cancelada. El compromiso cierra la interrupción por reemplazo de orden; solo fases marcadas como interrumpibles permiten `interrupt()`.
 - **Límite:** todavía no administra costes, movimiento, animaciones ni órdenes reales de `CombatSystem`.
@@ -36,6 +38,7 @@ Este archivo es la bitácora de puntos de recuperación para la implementación 
 ## CP-04 — Reloj de recuperación individual por Garumi
 
 - **Estado:** primitiva aislada implementada; prueba añadida, resultado **PENDING** hasta ejecución real.
+- **Checkpoint de código compartido:** `352b7a1a0dad931e9bb2965b55ca3c342e1a4c2b`.
 - **Archivo:** `scripts/gameplay/combat/garumi_eterium_clock.gd`; prueba en `tests/combat/test_combat_event_queue.gd`.
 - **Contrato:** cada instancia guarda su Eterium actual/máximo, intervalo, progreso y recuperación efectiva. El reloj se pausa al máximo; el llenado externo conserva progreso parcial; el tick que alcanza el máximo descarta tiempo posterior del mismo delta; gasto reanuda desde el progreso conservado.
 - **Límite:** aún no está conectado a las entidades Garumi ni a `PlayerEteriumRuntime`; no calcula modificadores, que deben venir resueltos por reglas explícitas.
