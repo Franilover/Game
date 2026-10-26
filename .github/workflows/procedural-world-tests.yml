@@ -92,6 +92,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run combat event queue contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEventQueueContract: FAIL:' <<<"$output"; then
+            echo "Combat event queue contract test reported script or assertion errors."
+            exit 1
+          fi
+
       # Verifies stable atlas registration and real DisplayLayer composition.
       - name: Run TileMapDual terrain regression test
         run: godot --headless --path . --script res://tests/world/test_world_terrain_visual.gd
