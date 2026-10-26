@@ -3,6 +3,7 @@ extends SceneTree
 const CombatClockScript = preload("res://scripts/gameplay/combat/combat_clock.gd")
 const CombatEventQueueScript = preload("res://scripts/gameplay/combat/combat_event_queue.gd")
 const CombatActionLifecycleScript = preload("res://scripts/gameplay/combat/combat_action_lifecycle.gd")
+const GarumiEteriumClockScript = preload("res://scripts/gameplay/combat/garumi_eterium_clock.gd")
 
 
 func _initialize() -> void:
@@ -15,6 +16,7 @@ func _run() -> void:
 	_test_stable_event_order_and_deduplication(errors)
 	_test_due_batch_and_clock_advance(errors)
 	_test_action_lifecycle_and_interruptions(errors)
+	_test_individual_eterium_clock(errors)
 
 	if not errors.is_empty():
 		for error in errors:
@@ -116,3 +118,38 @@ func _test_action_lifecycle_and_interruptions(errors: Array[String]) -> void:
 		errors.append("Una orden inválida no pudo rechazarse antes de comenzar.")
 	if rejected.begin_preparation("should-not-start", true):
 		errors.append("Una orden rechazada pudo reiniciarse.")
+
+func _test_individual_eterium_clock(errors: Array[String]) -> void:
+	var recovery := GarumiEteriumClockScript.new() as GarumiEteriumClock
+	recovery.configurar(3, 5, 1_000_000, 1, 250_000)
+
+	# Llenado por una fuente externa: el progreso queda pausado.
+	if recovery.agregar(2) != 2 or recovery.eterium_actual != 5:
+		errors.append("El llenado externo no alcanzó el máximo.")
+		return
+	if recovery.avanzar(4_000_000) != 0:
+		errors.append("El reloj recuperó Eterium mientras el recurso estaba lleno.")
+		return
+	if recovery.progreso_us != 250_000:
+		errors.append("El reloj individual perdió progreso al estar lleno.")
+		return
+
+	if recovery.gastar(1) != 1:
+		errors.append("No se pudo gastar Eterium para reanudar el reloj.")
+		return
+	if recovery.avanzar(749_999) != 0 or recovery.eterium_actual != 4:
+		errors.append("El reloj individual ignoró el progreso parcial conservado.")
+		return
+	if recovery.avanzar(1) != 1 or recovery.eterium_actual != 5:
+		errors.append("El reloj individual no completó el intervalo al reanudarse.")
+		return
+	if recovery.progreso_us != 0:
+		errors.append("El tick que alcanzó el máximo dejó progreso acumulado.")
+
+	# El progreso y el recurso de un Garumi no deben afectar al otro.
+	var other := GarumiEteriumClockScript.new() as GarumiEteriumClock
+	other.configurar(0, 10, 2_000_000, 2)
+	if other.avanzar(1_000_000) != 0 or other.eterium_actual != 0:
+		errors.append("El reloj individual de un Garumi no respetó su intervalo.")
+	if other.avanzar(1_000_000) != 2 or other.eterium_actual != 2:
+		errors.append("El reloj individual no aplicó su recuperación efectiva.")
