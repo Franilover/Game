@@ -3,6 +3,7 @@ class_name CombatSystem
 
 
 signal ataque_realizado(atacante: Node, objetivo: Entity, danio: int)
+signal contacto_efectivo(atacante: Node, objetivo: Entity, origen: String)
 signal ataque_sin_objetivo(atacante: Node)
 signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 
@@ -264,6 +265,14 @@ func _al_recibir_objetivo_de_ataque(
 		return
 
 	var objeto := ataque.objeto_ataque
+	var entidad_objetivo := objetivo as Entity
+	if entidad_objetivo == null:
+		return
+	contacto_efectivo.emit(
+		player,
+		entidad_objetivo,
+		"Jugador/Combate:" + str(objeto.get("nombre", "Objeto"))
+	)
 	var danio := _obtener_danio_arma(objeto)
 
 	var override_variant: Variant = objeto.get(
@@ -489,6 +498,11 @@ func _disparar_proyectil(
 		radio
 	)
 
+	if proyectil.has_signal("contacto_detectado"):
+		proyectil.connect(
+			"contacto_detectado",
+			_al_detectar_contacto_proyectil
+		)
 	if proyectil.has_signal("objetivo_impactado"):
 		proyectil.connect(
 			"objetivo_impactado",
@@ -499,6 +513,21 @@ func _disparar_proyectil(
 		"CombatSystem: proyectil disparado → ",
 		str(arma.get("nombre", "Arma"))
 	)
+
+func _al_detectar_contacto_proyectil(
+	objetivo: Entity,
+	ataque: CombatAttack
+) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		return
+	if ataque == null:
+		return
+	contacto_efectivo.emit(
+		ataque.attacker,
+		objetivo,
+		ataque.origin
+	)
+
 
 func _al_recibir_impacto_proyectil(
 	objetivo: Entity,
@@ -613,6 +642,11 @@ func atacar_objetivo_con_arma(
 		return false
 
 	var danio: int = _obtener_danio_arma(arma)
+	contacto_efectivo.emit(
+		atacante,
+		objetivo,
+		"Entidad/Arma:" + str(arma.get("nombre", "Arma"))
+	)
 
 	_aplicar_danio(
 		objetivo,
@@ -812,7 +846,13 @@ func aplicar_danio_desde_entidad(
 		return false
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
-	if danio <= 0 or not objetivo.is_alive:
+	if not objetivo.is_alive:
+		return false
+
+	# La IA llama esta API después de confirmar su contacto. El evento se
+	# registra incluso si el daño resultante es cero.
+	contacto_efectivo.emit(atacante, objetivo, origen)
+	if danio <= 0:
 		return false
 
 	var vivo_antes: bool = objetivo.is_alive
