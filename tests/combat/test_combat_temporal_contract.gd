@@ -149,3 +149,24 @@ func _probar_pausa_recuperacion_eterium(errores: Array[String]) -> void:
 	recuperadas = runtime.actualizar_recuperacion(0.02, true)
 	if recuperadas != 1 or runtime.mana() != 10:
 		errores.append("La recuperación no reanudó el progreso conservado tras gastar Eterium.")
+
+	# Un delta grande no debe almacenar varias recuperaciones que ocurrirían
+	# después de alcanzar el máximo.
+	runtime.establecer_mana(9)
+	runtime.recovery_accumulator = 0.0
+	runtime.actualizar_recuperacion(5.0, true)
+	if runtime.mana() != 10:
+		errores.append("Un delta grande no llenó el recurso hasta su máximo.")
+	if not is_equal_approx(runtime.recovery_accumulator, 0.0):
+		errores.append("Se acumularon turnos completos después de alcanzar el máximo.")
+
+	# Una absorción que llena el recurso debe pausar, no borrar el progreso previo.
+	runtime.establecer_mana(9)
+	runtime.recovery_accumulator = 0.25
+	if runtime.absorber(1) != 1:
+		errores.append("La absorción de prueba no completó la unidad de Eterium.")
+	if not is_equal_approx(runtime.recovery_accumulator, 0.25):
+		errores.append("La absorción borró el progreso previo de recuperación.")
+	runtime.actualizar_recuperacion(2.0, true)
+	if not is_equal_approx(runtime.recovery_accumulator, 0.25):
+		errores.append("El reloj avanzó o se reinició mientras el recurso lleno estaba pausado.")
