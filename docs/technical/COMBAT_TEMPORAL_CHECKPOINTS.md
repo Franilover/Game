@@ -19,16 +19,19 @@ Este archivo es la bitácora de puntos de recuperación para la implementación 
 
 ## CP-02 — Reloj lógico y cola determinista de eventos
 
-- **Estado:** siguiente bloque de implementación.
-- **Objetivo:** introducir primitivas independientes del árbol de escenas para tiempo lógico entero, secuencia estable y deduplicación de eventos.
-- **Criterio de aceptación:** el mismo conjunto de eventos con el mismo tiempo y secuencia se procesa en el mismo orden; un evento ya resuelto no puede resolverse dos veces.
-- **Límite de este bloque:** todavía no conectar la cola con ataques activos, física, recuperación ni victoria hasta que sus pruebas unitarias sean claras.
+- **Estado:** implementado como primitivas aisladas; pruebas añadidas, resultado **PENDING** hasta ejecución real.
+- **Archivos:** `scripts/gameplay/combat/combat_clock.gd`, `scripts/gameplay/combat/combat_event_queue.gd`, `tests/combat/test_combat_event_queue.gd`.
+- **Contrato:** reloj entero monotónico; eventos ordenados por `(time_us, sequence)`; IDs únicos; rechazo de duplicados y eventos anteriores al reloj; `pop_due()` entrega todos los eventos vencidos en orden y avanza el reloj hasta el límite solicitado.
+- **Límite:** la cola aún no está conectada a ataques, física, recuperación ni victoria.
+- **Prueba:** `godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd`.
 
 ## CP-03 — Ciclo de vida temporal de órdenes
 
-- **Estado:** no iniciado.
-- **Objetivo:** representar validación, preparación, compromiso, ejecución, finalización, interrupción y cancelación como estados explícitos.
-- **Dependencia:** CP-02 y pruebas del contrato de eventos.
+- **Estado:** primera máquina de estados implementada como primitiva aislada; pruebas añadidas, resultado **PENDING** hasta ejecución real.
+- **Archivo:** `scripts/gameplay/combat/combat_action_lifecycle.gd`; prueba adicional en `tests/combat/test_combat_event_queue.gd`.
+- **Contrato:** estados solicitada, rechazada, preparando, comprometida, ejecutando, completada, interrumpida y cancelada. El compromiso cierra la interrupción por reemplazo de orden; solo fases marcadas como interrumpibles permiten `interrupt()`.
+- **Límite:** todavía no administra costes, movimiento, animaciones ni órdenes reales de `CombatSystem`.
+- **Dependencia siguiente:** adaptar las órdenes existentes al ciclo de vida sin romper controles actuales.
 
 ## CP-04 — Integración del reloj de recuperación por Garumi
 
