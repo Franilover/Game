@@ -1,4 +1,4 @@
-name: Procedural World Tests
+name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
@@ -38,7 +38,7 @@ permissions:
 
 jobs:
   procedural-kernel:
-    name: Godot 4.7 headless kernel tests
+    name: Garlia Godot 4.7 headless regression tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
