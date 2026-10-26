@@ -2,11 +2,19 @@ name: Procedural World Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
       - "scripts/creatures/**"
+      - "scripts/gameplay/combat/**"
+      - "scripts/gameplay/combat_system.gd"
+      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "tests/combat/**"
+      - "scripts/gameplay/combat/**"
+      - "scripts/gameplay/combat_system.gd"
+      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "tests/combat/**"
       - "tests/creatures/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
@@ -72,6 +80,17 @@ jobs:
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
+
+      - name: Run combat temporal contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_temporal_contract.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatTemporalContract: FAIL:' <<<"$output"; then
+            echo "Combat temporal contract test reported script or assertion errors."
+            exit 1
+          fi
 
       # Verifies stable atlas registration and real DisplayLayer composition.
       - name: Run TileMapDual terrain regression test
