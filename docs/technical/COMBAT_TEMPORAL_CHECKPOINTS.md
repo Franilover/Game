@@ -33,11 +33,19 @@ Este archivo es la bitácora de puntos de recuperación para la implementación 
 - **Límite:** todavía no administra costes, movimiento, animaciones ni órdenes reales de `CombatSystem`.
 - **Dependencia siguiente:** adaptar las órdenes existentes al ciclo de vida sin romper controles actuales.
 
-## CP-04 — Integración del reloj de recuperación por Garumi
+## CP-04 — Reloj de recuperación individual por Garumi
 
-- **Estado:** no iniciado.
-- **Objetivo:** separar el reloj individual de Eterium de `PlayerEteriumRuntime` sin romper fisiología, sprint, curación ni absorción del jugador.
-- **Dependencia:** contrato temporal y auditoría de consumidores existentes.
+- **Estado:** primitiva aislada implementada; prueba añadida, resultado **PENDING** hasta ejecución real.
+- **Archivo:** `scripts/gameplay/combat/garumi_eterium_clock.gd`; prueba en `tests/combat/test_combat_event_queue.gd`.
+- **Contrato:** cada instancia guarda su Eterium actual/máximo, intervalo, progreso y recuperación efectiva. El reloj se pausa al máximo; el llenado externo conserva progreso parcial; el tick que alcanza el máximo descarta tiempo posterior del mismo delta; gasto reanuda desde el progreso conservado.
+- **Límite:** aún no está conectado a las entidades Garumi ni a `PlayerEteriumRuntime`; no calcula modificadores, que deben venir resueltos por reglas explícitas.
+- **Prueba:** `godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd`.
+
+## CP-05 — Integración segura del contrato en el combate real
+
+- **Estado:** siguiente bloque.
+- **Objetivo:** conectar la cola y el ciclo de vida con las órdenes reales de `CombatSystem`, una parte cada vez, sin cambiar todavía movimiento o daño de todo el juego.
+- **Criterio:** cada orden produce transiciones trazables; las acciones ya comprometidas no se cancelan por reemplazo; eventos únicos y temporales se resuelven una sola vez.
 
 ## Protocolo de depuración
 
