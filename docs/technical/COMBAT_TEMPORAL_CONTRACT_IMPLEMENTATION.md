@@ -15,9 +15,10 @@ Estado: rama de trabajo `fix/combat-temporal-contract-v1`. Esta documentación d
 
 ### Progreso de recuperación de Eterium
 
-- `PlayerEteriumRuntime.actualizar_recuperacion()` pausa la actualización cuando el recurso está al máximo sin poner a cero `recovery_accumulator`.
-- Al gastar Eterium, el siguiente intervalo continúa usando el progreso fraccionario conservado.
-- Esta corrección conserva la configuración existente de recuperación, absorción y fisiología del jugador; no traslada aún el runtime al reloj individual de cada Garumi.
+- `PlayerEteriumRuntime.actualizar_recuperacion()` no avanza ni borra el progreso existente mientras el recurso ya está al máximo.
+- Si la propia recuperación pasiva completa un tick y llena el recurso, el contador queda en cero al completar ese tick; el tiempo restante del mismo `delta` no se almacena como recuperaciones futuras.
+- Si una fuente externa —por ejemplo, absorción— llena el recurso durante un intervalo parcial, ese progreso se conserva mientras el recurso permanece lleno. Al gastar Eterium, la recuperación continúa desde el progreso pausado.
+- Esta corrección conserva la configuración existente de recuperación y fisiología del jugador; no traslada aún el runtime al reloj individual de cada Garumi.
 
 ## Pruebas añadidas
 
@@ -27,8 +28,10 @@ La prueba headless `tests/combat/test_combat_temporal_contract.gd` comprueba:
 2. Ausencia de reducción de salud cuando el daño es cero.
 3. Separación entre `contacto_detectado` y `objetivo_impactado`.
 4. Aplicación de daño positivo exactamente una vez.
-5. Conservación del progreso fraccionario de recuperación al máximo.
+5. Conservación del progreso fraccionario cuando una fuente externa llena Eterium.
 6. Reanudación de la recuperación tras gastar Eterium.
+7. Finalización limpia del tick que alcanza el máximo.
+8. Ausencia de recuperaciones acumuladas después del máximo cuando un `delta` es grande.
 
 El workflow de Godot 4.7 ejecuta esta prueba para los cambios del sistema de combate y del runtime de Eterium.
 
