@@ -3,6 +3,7 @@ extends SceneTree
 const EntityScript = preload("res://scripts/characters/entity.gd")
 const CombatAttackScript = preload("res://scripts/gameplay/combat/combat_attack.gd")
 const CombatProjectileScript = preload("res://scripts/gameplay/combat/combat_projectile.gd")
+const CombatAttackAreaScript = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
 const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eterium_runtime.gd")
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
@@ -83,6 +84,33 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	if objetivo.health != salud_inicial:
 		errores.append("El proyectil de daño cero alteró la salud.")
 
+	# El hitbox melee publica contacto aunque una herramienta no tenga daño.
+	var area_melee := CombatAttackAreaScript.new() as CombatAttackArea
+	area_melee.objeto_ataque = {
+		"tipo": "herramienta",
+		"nombre": "Herramienta de prueba",
+		"propiedades_game": {"danio": 0}
+	}
+	combate._al_recibir_objetivo_de_ataque(objetivo, area_melee)
+	if int(contactos_sistema["cantidad"]) != 2:
+		errores.append("El contacto melee sin daño no se publicó.")
+	if objetivo.health != salud_inicial:
+		errores.append("El contacto melee sin daño alteró la salud.")
+
+	# La entrada de ataques de la IA también comunica contacto cero-daño.
+	var danio_ia_aplicado := combate.aplicar_danio_desde_entidad(
+		atacante,
+		objetivo,
+		0,
+		"Prueba/IA"
+	)
+	if danio_ia_aplicado:
+		errores.append("La ruta de daño de IA declaró daño aplicado con cantidad cero.")
+	if int(contactos_sistema["cantidad"]) != 3:
+		errores.append("La ruta de ataque de IA no publicó el contacto de daño cero.")
+	if objetivo.health != salud_inicial:
+		errores.append("La ruta de IA con daño cero alteró la salud.")
+
 	var ataque_daniador := CombatAttackScript.new() as CombatAttack
 	ataque_daniador.configurar(
 		atacante,
@@ -100,12 +128,21 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
 			impactos_reales["cantidad"] = int(impactos_reales["cantidad"]) + 1
 	)
+	proyectil_daniador.contacto_detectado.connect(combate._al_detectar_contacto_proyectil)
 	proyectil_daniador._procesar_objetivo(objetivo)
 
 	if int(impactos_reales["cantidad"]) != 1:
 		errores.append("Un impacto con daño real no emitió objetivo_impactado.")
 	if objetivo.health != salud_inicial - 5:
 		errores.append("El daño real del proyectil no se aplicó exactamente una vez.")
+	if int(contactos_sistema["cantidad"]) != 4:
+		errores.append("El proyectil con daño real no publicó exactamente un contacto.")
+
+	objetivo.restaurar_estado_vital(0, false)
+	var contactos_antes_objetivo_muerto := int(contactos_sistema["cantidad"])
+	combate.aplicar_danio_desde_entidad(atacante, objetivo, 5, "Prueba/ObjetivoMuerto")
+	if int(contactos_sistema["cantidad"]) != contactos_antes_objetivo_muerto:
+		errores.append("Un objetivo muerto generó un contacto nuevo.")
 
 	atacante.queue_free()
 	objetivo.queue_free()
