@@ -108,8 +108,11 @@ func actualizar_recuperacion(delta: float, puede_recuperar: bool) -> int:
 		if not puede_recuperar:
 			recovery_accumulator = 0.0
 		return 0
-	if vital_state == null or vital_state.mana >= vital_state.max_mana:
-		recovery_accumulator = 0.0
+	if vital_state == null:
+		return 0
+	# Al estar lleno, el reloj de recuperación se pausa. Conservamos la
+	# fracción acumulada para continuar desde ella tras gastar Eterium.
+	if vital_state.mana >= vital_state.max_mana:
 		return 0
 	var recuperacion_s := maxf(float(reglas.get("recuperacion_pasiva_s_por_segundo", 0.0)), 0.0)
 	if recuperacion_s <= 0.0:
