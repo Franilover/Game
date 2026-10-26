@@ -85,8 +85,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/combat/test_combat_temporal_contract.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_temporal_contract.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatTemporalContract: FAIL:' <<<"$output"; then
             echo "Combat temporal contract test reported script or assertion errors."
             exit 1
