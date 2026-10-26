@@ -24,14 +24,16 @@ Estado: rama de trabajo `fix/combat-temporal-contract-v1`. Esta documentación d
 
 La prueba headless `tests/combat/test_combat_temporal_contract.gd` comprueba:
 
-1. Contacto de proyectil con daño cero.
-2. Ausencia de reducción de salud cuando el daño es cero.
-3. Separación entre `contacto_detectado` y `objetivo_impactado`.
-4. Aplicación de daño positivo exactamente una vez.
-5. Conservación del progreso fraccionario cuando una fuente externa llena Eterium.
-6. Reanudación de la recuperación tras gastar Eterium.
-7. Finalización limpia del tick que alcanza el máximo.
-8. Ausencia de recuperaciones acumuladas después del máximo cuando un `delta` es grande.
+1. Contacto de proyectil con daño cero, con salud intacta.
+2. Separación entre `contacto_detectado` y `objetivo_impactado`.
+3. Contacto melee para una herramienta sin daño.
+4. Contacto de IA con daño cero sin declarar daño aplicado.
+5. Aplicación de daño positivo exactamente una vez y publicación de un contacto.
+6. Ausencia de contactos nuevos contra objetivos muertos.
+7. Conservación del progreso fraccionario cuando una fuente externa llena Eterium.
+8. Reanudación de la recuperación tras gastar Eterium.
+9. Finalización limpia del tick pasivo que alcanza el máximo.
+10. Ausencia de recuperaciones acumuladas después del máximo cuando un `delta` es grande.
 
 El workflow de Godot 4.7 ejecuta esta prueba para los cambios del sistema de combate y del runtime de Eterium.
 
