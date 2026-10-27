@@ -269,6 +269,9 @@ func iniciar_enfrentamiento(jugador: Node) -> bool:
 	add_to_group("damageable")
 	salud_combate_cambiada.emit(health, max_health)
 	encuentro_iniciado.emit(self, jugador)
+	var escena_principal := get_tree().current_scene
+	if escena_principal != null and escena_principal.has_method("iniciar_arena_garumi"):
+		escena_principal.call("iniciar_arena_garumi", self, jugador)
 	return true
 
 
@@ -305,6 +308,10 @@ func forzar_vinculo(jugador: Node) -> bool:
 
 
 func _establecer_vinculo(jugador: Node, tipo: String) -> void:
+	if _enfrentamiento_activo:
+		var escena_principal := get_tree().current_scene
+		if escena_principal != null and escena_principal.has_method("terminar_arena_garumi"):
+			escena_principal.call("terminar_arena_garumi", self)
 	_vinculado = true
 	_tipo_vinculo = tipo
 	_enfrentamiento_activo = false
@@ -319,6 +326,10 @@ func _establecer_vinculo(jugador: Node, tipo: String) -> void:
 
 
 func finalizar_enfrentamiento() -> void:
+	if _enfrentamiento_activo:
+		var escena_principal := get_tree().current_scene
+		if escena_principal != null and escena_principal.has_method("terminar_arena_garumi"):
+			escena_principal.call("terminar_arena_garumi", self)
 	_enfrentamiento_activo = false
 	_jugador_del_encuentro = null
 	remove_from_group("damageable")
