@@ -19,7 +19,7 @@ func _run() -> void:
 	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
 	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
 	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
-	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Garumi_Prototipo", "garumi_debug_preview": true})
+	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Oruvan", "garumi_debug_preview": true})
 	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
 	var sprite_garumi := garumi_node.get_node("Sprite2D") as Sprite2D
@@ -43,7 +43,7 @@ func _run() -> void:
 	if not guardados.is_empty():
 		var estado_guardado := guardados[0] as Dictionary
 		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
-		_expect(str(estado_guardado.get("asset_key", "")) == "Garumi_Prototipo", "El streaming debe conservar la clave del sprite.")
+		_expect(str(estado_guardado.get("asset_key", "")) == "Oruvan", "El streaming debe conservar la clave del sprite.")
 		_expect(str(estado_guardado.get("nombre", "")) == "Garumi scene test", "El streaming debe conservar el nombre visible del Garumi.")
 		_expect(bool(estado_guardado.get("garumi_debug_preview", false)), "El streaming debe conservar que la instancia es sólo un prototipo de depuración.")
 		_expect(str(estado_guardado.get("habitat_clave", "")) == "bosque", "El streaming debe conservar el contexto ecológico del Garumi.")
@@ -105,7 +105,8 @@ func _run() -> void:
 	}
 	var normal_orumi_gen1 := {
 		"id": "orumi-descendiente-1", "nombre": "Descendiente de Orumi",
-		"categoria_garumi": "normal", "original_id": "orumi-test-id", "numero_origen": 1
+		"categoria_garumi": "normal", "original_id": "orumi-test-id", "numero_origen": 1,
+		"estado_documentacion": "canon"
 	}
 	var normal_varum_gen1 := normal_orumi_gen1.duplicate(true)
 	normal_varum_gen1["original_id"] = "varum-test-id"
@@ -119,6 +120,7 @@ func _run() -> void:
 	aprobado_orumi["estado_documentacion"] = "aprobado"
 	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar Garumis normales de Orumi generación 1 si el exportador ya filtra el canon.")
 	_expect(bool(rules.call("garumi_cumple_filtro_generacional", aprobado_orumi, "orumi-test-id", 1)), "Debe aceptar el descendiente normal de Orumi marcado como aprobado.")
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar el descendiente normal de Orumi marcado como canon.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", borrador_orumi, "orumi-test-id", 1)), "Nunca debe aparecer un registro que el snapshot marque como borrador.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_varum_gen1, "orumi-test-id", 1)), "Debe excluir descendientes de Varum aunque sean de primera generación.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen2, "orumi-test-id", 1)), "Debe excluir generaciones posteriores de Orumi.")
