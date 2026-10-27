@@ -5,6 +5,9 @@ signal vinculo_establecido(garumi: Garumi, jugador: Node, tipo: String)
 signal propuesta_vinculo_rechazada(garumi: Garumi, jugador: Node)
 signal salud_combate_cambiada(actual: int, maxima: int)
 signal encuentro_iniciado(garumi: Garumi, jugador: Node)
+signal nivel_cambiado(nivel_anterior: int, nivel_actual: int)
+signal experiencia_cambiada(total: int, nivel: int)
+signal eterium_cambiado(actual: int, maximo: int)
 
 const OPCION_OFRECER_VINCULO := 0
 const OPCION_ENFRENTAR := 1
@@ -24,6 +27,12 @@ var _jugador_vinculado: Node = null
 var _guardado: bool = false
 var _distancia_maxima_seguimiento: float = 520.0
 var _cerebro_garumi: GarumiBrain = null
+var _progresion: GarumiProgression = GarumiProgression.new()
+var nivel: int = 1
+var experiencia_total: int = 0
+var estadisticas_combate: Dictionary = {}
+var eterium_maximo: int = 30
+var eterium_actual: int = 30
 
 
 func _ready() -> void:
@@ -53,6 +62,81 @@ func _physics_process(delta: float) -> void:
 		super._physics_process(delta)
 		return
 	super._physics_process(delta)
+
+
+func obtener_estadisticas_combate() -> Dictionary:
+	return estadisticas_combate.duplicate(true)
+
+
+func experiencia_para_siguiente_nivel() -> int:
+	if nivel >= GarumiProgression.NIVEL_MAXIMO:
+		return 0
+	return _progresion.xp_para_siguiente_nivel(nivel)
+
+
+func ganar_experiencia(cantidad: int) -> int:
+	if cantidad <= 0 or nivel >= GarumiProgression.NIVEL_MAXIMO:
+		return 0
+	var nivel_anterior := nivel
+	var vida_maxima_anterior := max_health
+	var eterium_maximo_anterior := eterium_maximo
+	experiencia_total += cantidad
+	nivel = _progresion.nivel_desde_experiencia(experiencia_total)
+	estadisticas_combate = _progresion.obtener_estadisticas(nivel)
+	max_health = int(estadisticas_combate.get("vida", max_health))
+	eterium_maximo = int(estadisticas_combate.get("eterium", eterium_maximo))
+	if nivel > nivel_anterior:
+		# El aumento de capacidad no castiga la salud o Eterium que ya tenía.
+		health = mini(max_health, health + max_health - vida_maxima_anterior)
+		eterium_actual = mini(eterium_maximo, eterium_actual + eterium_maximo - eterium_maximo_anterior)
+		vital_state.configurar(max_health, max_mana)
+		vital_state.health = health
+		vital_state.is_alive = health > 0
+		_sync_desde_vital()
+		health_changed.emit(health, max_health)
+		eterium_cambiado.emit(eterium_actual, eterium_maximo)
+		nivel_cambiado.emit(nivel_anterior, nivel)
+	datos["nivel"] = nivel
+	datos["experiencia_total"] = experiencia_total
+	datos["eterium_actual"] = eterium_actual
+	experiencia_cambiada.emit(experiencia_total, nivel)
+	return nivel - nivel_anterior
+
+
+func calcular_danio_ofensivo(potencia: float = 100.0) -> int:
+	return _progresion.calcular_danio(
+		int(estadisticas_combate.get("ataque", 10)),
+		0,
+		potencia
+	)
+
+
+func calcular_danio_recibido(danio_base: int) -> int:
+	return _progresion.calcular_danio(
+		danio_base,
+		int(estadisticas_combate.get("defensa", 0)),
+		100.0
+	)
+
+
+func gastar_eterium(cantidad: int) -> bool:
+	if cantidad < 0 or eterium_actual < cantidad:
+		return false
+	eterium_actual -= cantidad
+	datos["eterium_actual"] = eterium_actual
+	eterium_cambiado.emit(eterium_actual, eterium_maximo)
+	return true
+
+
+func restaurar_eterium(cantidad: int) -> int:
+	if cantidad <= 0:
+		return 0
+	var anterior := eterium_actual
+	eterium_actual = mini(eterium_maximo, eterium_actual + cantidad)
+	if eterium_actual != anterior:
+		datos["eterium_actual"] = eterium_actual
+		eterium_cambiado.emit(eterium_actual, eterium_maximo)
+	return eterium_actual - anterior
 
 
 func esta_guardado() -> bool:
@@ -128,6 +212,20 @@ func configurar(datos_garumi: Dictionary) -> void:
 	super.configurar(datos_separados)
 	_vinculado = bool(datos_separados.get("vinculado", false))
 	_tipo_vinculo = str(datos_separados.get("tipo_vinculo", ""))
+	_progresion.configurar(datos_separados)
+	nivel = clampi(int(datos_separados.get("nivel", 1)), 1, GarumiProgression.NIVEL_MAXIMO)
+	experiencia_total = maxi(0, int(datos_separados.get("experiencia_total", 0)))
+	nivel = _progresion.nivel_desde_experiencia(experiencia_total)
+	estadisticas_combate = _progresion.obtener_estadisticas(nivel)
+	max_health = int(estadisticas_combate.get("vida", salud_combate_predeterminada))
+	health = max_health
+	eterium_maximo = int(estadisticas_combate.get("eterium", 30))
+	eterium_actual = clampi(int(datos_separados.get("eterium_actual", eterium_maximo)), 0, eterium_maximo)
+	datos["nivel"] = nivel
+	datos["experiencia_total"] = experiencia_total
+	datos["eterium_actual"] = eterium_actual
+	vital_state.configurar(max_health, max_mana)
+	_sync_desde_vital()
 	_configurar_cerebro_garumi()
 
 
@@ -389,15 +487,16 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 	if cantidad <= 0:
 		return
 
+	var dano_real := calcular_danio_recibido(cantidad)
 	var salud_anterior := health
-	health = maxi(1, health - cantidad)
+	health = maxi(1, health - dano_real)
 	vital_state.health = health
 	vital_state.is_alive = true
 	_sync_desde_vital()
 	if health != salud_anterior:
 		health_changed.emit(health, max_health)
 		salud_combate_cambiada.emit(health, max_health)
-		print("Garumi: ", criatura_nombre, " recibe ", salud_anterior - health, " de daño (", origen, ") | ", health, "/", max_health)
+		print("Garumi: ", criatura_nombre, " recibe ", salud_anterior - health, " de daño tras defensa (", origen, ") | ", health, "/", max_health)
 
 
 func forzar_vinculo(jugador: Node) -> bool:
