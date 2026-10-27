@@ -12,6 +12,7 @@
 - `WorldDataService` lee `garumis_game` desde el snapshot de mundo y lo conserva en un catálogo separado de `_criaturas_por_id`.
 - `WorldSpawnRules` comprueba compatibilidad con bioma, ecosistema, hábitat y clave de hábitat. Los selectores presentes se combinan por AND; dentro de cada selector, los IDs se combinan por OR.
 - `WorldEntitySpawner` intenta materializar hasta `max_garumis_per_chunk` Garumis por chunk, con probabilidad configurable y semilla derivada del mundo/chunk. Los Garumis usan el ciclo de vida de entidad existente, sin mezclarse con la selección de especies de hábitat.
+- `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada de `Creature`. Comparte infraestructura de salud, movimiento y representación, pero no incluye el `AIController` de criaturas normales.
 - `Creature` busca sprite propio en `res://assets/art/garumis/<asset_key>.png` o `.PNG`. No reutiliza por accidente un sprite de criatura normal.
 - Si falta el arte, el proxy geométrico de desarrollo permite comprobar posición y streaming. **No es el diseño canónico** ni sustituye el sprite dibujado a mano.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
@@ -37,6 +38,8 @@ Cada snapshot puede incluir una clave raíz `garumis_game`, como arreglo indepen
 ```
 
 Los selectores ecológicos son opcionales individualmente, pero **al menos uno debe estar presente**. Si se indican varios, todos tienen que coincidir con el contexto del tile. `probabilidad_chunk` es un valor entre 0 y 1; si se omite, Godot usa el ajuste `garumi_spawn_probability_per_chunk` del spawner (por defecto 0.15). `peso_spawn` permite ponderar Garumis elegibles en un mismo punto.
+
+El snapshot incluido actualmente en `data/world_initial.json` contiene `biomas`, `ecosistemas_sin_bioma`, `version` y `generado_en`, pero **no contiene `garumis_game`**. Por eso el código, por sí solo, aún no generará Garumis en una sesión que use ese snapshot. Primero se necesita que la fuente canónica los exporte con estos campos, y después sprites PNG aprobados en la carpeta dedicada.
 
 Este documento define el contrato que el runtime puede consumir; no implica que el exportador de Supabase ya emita esos campos. Ese lado queda sin tocar hasta revisar y autorizar explícitamente su adaptación.
 
