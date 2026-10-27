@@ -861,6 +861,8 @@ func _spawn_garumis_en_chunk(
 				origen_x + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				origen_y + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
 			)
+			if not _terrain.is_walkable(tile):
+				continue
 			var bioma := _terrain.get_bioma_at(tile)
 			var ecosistema := _terrain.get_ecosistema_at(tile)
 			var habitats := _terrain.get_habitats_at(tile)
