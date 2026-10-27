@@ -23,11 +23,21 @@ var _menu_contextual: CanvasLayer = null
 var _jugador_vinculado: Node = null
 var _guardado: bool = false
 var _distancia_maxima_seguimiento: float = 520.0
+var _cerebro_garumi: GarumiBrain = null
 
 
 func _ready() -> void:
 	super._ready()
 	_normalizar_grupos_garumi()
+	_configurar_cerebro_garumi()
+
+
+func _configurar_cerebro_garumi() -> void:
+	if _cerebro_garumi == null or not is_instance_valid(_cerebro_garumi):
+		_cerebro_garumi = GarumiBrain.new()
+		_cerebro_garumi.name = "GarumiBrain"
+		add_child(_cerebro_garumi)
+	_cerebro_garumi.configurar(self)
 
 
 func _physics_process(delta: float) -> void:
@@ -118,6 +128,7 @@ func configurar(datos_garumi: Dictionary) -> void:
 	super.configurar(datos_separados)
 	_vinculado = bool(datos_separados.get("vinculado", false))
 	_tipo_vinculo = str(datos_separados.get("tipo_vinculo", ""))
+	_configurar_cerebro_garumi()
 
 
 func activar_como_proxy() -> void:
