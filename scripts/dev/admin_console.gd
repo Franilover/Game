@@ -514,21 +514,30 @@ func _obtener_nombres_garumis_visibles() -> Array[String]:
 		if nombre.is_empty():
 			continue
 
-		# El snapshot del mundo ya contiene el catálogo accesible al juego.
-		# Si además expone estado/visibilidad, descartamos borradores y privados.
+		# WorldData contiene el catálogo disponible al juego. Si los registros
+		# incluyen metadatos de publicación, aceptamos canon o público y
+		# descartamos explícitamente borradores/privados.
 		var estado := str(garumi.get("estado", "")).strip_edges().to_lower()
 		var visibilidad := str(garumi.get("visibilidad", "")).strip_edges().to_lower()
 		var es_publico := bool(garumi.get("publico", garumi.get("es_publico", false)))
 		var es_canonico := bool(garumi.get("canonico", garumi.get("es_canonico", garumi.get("canon", false))))
-		if not estado.is_empty() and estado not in ["canon", "canónico", "canonico", "publico", "público", "publicado", "aprobado"]:
+		var estado_visible := estado in ["canon", "canónico", "canonico", "publico", "público", "publicado", "aprobado"]
+		var visibilidad_visible := visibilidad in ["publico", "público", "public", "canon", "canónico", "canonico"]
+
+		if not estado.is_empty() and not estado_visible:
 			continue
-		if not visibilidad.is_empty() and visibilidad not in ["publico", "público", "public", "canon", "canónico", "canonico"]:
+		if not visibilidad.is_empty() and not visibilidad_visible:
 			continue
-		if garumi.has("publicado") and not bool(garumi.get("publicado", false)) and not es_canonico:
+		if garumi.has("publicado") and not bool(garumi.get("publicado", false)) and not es_canonico and not estado_visible and not visibilidad_visible:
 			continue
-		if garumi.has("es_publico") or garumi.has("publico") or garumi.has("canonico") or garumi.has("es_canonico") or garumi.has("canon"):
-			if not es_publico and not es_canonico:
-				continue
+
+		var tiene_marcadores := (
+			garumi.has("es_publico") or garumi.has("publico")
+			or garumi.has("canonico") or garumi.has("es_canonico") or garumi.has("canon")
+		)
+		if tiene_marcadores and not es_publico and not es_canonico and not estado_visible and not visibilidad_visible:
+			continue
+
 		if nombre not in nombres:
 			nombres.append(nombre)
 	nombres.sort()
