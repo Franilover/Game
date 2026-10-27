@@ -71,9 +71,11 @@ func _aplicar_control() -> void:
 	if _tiene_perfil_ejecutable():
 		garumi._movimiento.tomar_control()
 	else:
-		# Sin una instrucción válida de Supabase, el cerebro no suplanta el
-		# movimiento genérico ni transforma un perfil desconocido en errante.
-		garumi._movimiento.liberar_control()
+		# Sin una instrucción válida no se inventa conducta autónoma. Se mantiene
+		# la dirección externa en cero para impedir que CreatureMovement aplique
+		# su patrulla genérica como si fuera el perfil canónico de este Garumi.
+		garumi._movimiento.tomar_control()
+		garumi._movimiento.establecer_direccion(Vector2.ZERO)
 		garumi._movimiento.detener()
 
 
