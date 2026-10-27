@@ -69,7 +69,7 @@ func _esta_en_pantalla() -> bool:
 	var camara := get_viewport().get_camera_2d()
 	if camara == null:
 		return true
-	var posicion_pantalla := camara.unproject_position(global_position)
+	var posicion_pantalla: Vector2 = get_global_transform_with_canvas().origin
 	return get_viewport().get_visible_rect().has_point(posicion_pantalla)
 
 
