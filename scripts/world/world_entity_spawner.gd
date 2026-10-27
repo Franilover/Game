@@ -166,7 +166,7 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if criatura is Creature:
 			var creature_node := criatura as Creature
 			creature_node.configurar_chunk(chunk_coord, limite_chunk)
-			creature_node.configurar_entorno("general")
+			creature_node.configurar_entorno(str(dato.get("habitat_clave", "general")).strip_edges().to_lower())
 			var health := float(dato.get("health", creature_node.health))
 			creature_node.health = clampf(health, 0.0, creature_node.max_health)
 			if dato.has("velocity") and dato["velocity"] is Vector2:
@@ -340,6 +340,9 @@ func _preparar_datos_garumis_en_chunk(
 			registro["criatura_id"] = garumi_id
 			registro["categoria_entidad"] = "garumi"
 			registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", "")))
+			var aparicion_variant: Variant = registro.get("aparicion", {})
+			var aparicion: Dictionary = aparicion_variant if aparicion_variant is Dictionary else {}
+			registro["habitat_clave"] = str(aparicion.get("habitat_clave", "general")).strip_edges().to_lower()
 			registro["runtime_instance_key"] = "garumi:" + str(slot) + ":" + garumi_id
 			registro["chunk"] = chunk_coord
 			registro["position"] = Vector2(
