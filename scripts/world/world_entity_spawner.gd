@@ -120,6 +120,8 @@ func _ready() -> void:
 
 
 func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
+	if _hay_arena_combate_activa():
+		return false
 	if _entity_manager == null or _entity_factory == null or _world_data == null:
 		return false
 	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
@@ -1026,6 +1028,8 @@ func _spawn_garumis_en_chunk(
 
 
 func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
+	if _hay_arena_combate_activa():
+		return
 	if _terrain == null or _entity_manager == null or _entity_factory == null:
 		return
 	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
@@ -1600,3 +1604,7 @@ func _spawn_characters_in_chunk(
 
 	if not creados.is_empty():
 		print("WorldEntitySpawner: personajes en reino → chunk ", chunk_coord, " → ", creados.size())
+
+
+func _hay_arena_combate_activa() -> bool:
+	return not get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
