@@ -9,6 +9,16 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
+	var router := GameplayInputRouter.new()
+	root.add_child(router)
+	var interfaz_modal := CanvasLayer.new()
+	interfaz_modal.add_to_group("modal_ui")
+	root.add_child(interfaz_modal)
+	_expect(router.esta_entrada_bloqueada(router.get_tree()), "Una interfaz modal debe impedir que el gameplay consuma sus clics.", errores)
+	interfaz_modal.remove_from_group("modal_ui")
+	_expect(not router.esta_entrada_bloqueada(router.get_tree()), "Sin una interfaz modal, el router no debe quedar bloqueado por ella.", errores)
+	interfaz_modal.queue_free()
+	router.queue_free()
 	var jugador := Node2D.new()
 	jugador.name = "JugadorPrueba"
 	root.add_child(jugador)
