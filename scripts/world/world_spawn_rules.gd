@@ -119,6 +119,15 @@ func garumi_cumple_filtro_generacional(
 	var categoria := str(garumi.get("categoria_garumi", "")).strip_edges().to_lower()
 	if categoria != "normal":
 		return false
+	# El mundo sólo genera la forma inicial. Las formas evolucionadas se
+	# obtienen mediante la progresión de una instancia existente, nunca como
+	# encuentros independientes. Si falta el estado, se rechaza por seguridad.
+	var estado_evolutivo := str(garumi.get("estado_evolutivo", "")).strip_edges().to_lower()
+	if estado_evolutivo != "inicial":
+		return false
+	var evoluciona_de_id := str(garumi.get("evoluciona_de_id", "")).strip_edges()
+	if not evoluciona_de_id.is_empty() or bool(garumi.get("es_evolucion", false)):
+		return false
 	# Si el snapshot incluye estado documental, nunca permitir borradores.
 	# Si lo omite, el exportador debe garantizar que sólo entrega canon aprobado.
 	if garumi.has("estado_documentacion"):
