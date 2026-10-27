@@ -7,7 +7,7 @@
 - **Main:** no se ha modificado ni mezclado esta rama.
 - **Supabase (estado actual):** una fila de Oruvan marcada `canon` para prueba y la migración `emitir_garumi_orumi_gen1_para_prueba`; no se añadieron columnas ni se canonizaron otros registros.
 - **Checkpoint previo:** `942613000ce072dacb8825a17f4b0b891d0bf9ea`
-- **Checkpoint de filtro Orumi generación 1:** reglas con filtro generacional/estado en `d71e5d629f3770092332a1074f97bb6b3c1deba0`; la integración de Oruvan y el RPC están reflejados en el HEAD actual.
+- **Checkpoint de filtro Orumi generación 1:** reglas con filtro generacional/estado en `d71e5d629f3770092332a1074f97bb6b3c1deba0`; último commit de renombrado de sprite: `d4b55b5a59439c76d6efa34334efa2d61e5e91b2` (docs posteriores actualizan el estado del checkpoint).
 - **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
@@ -83,7 +83,7 @@ El prototipo guarda y restaura su marcador de depuración, nombre, asset key y h
 - Suite headless automatizada: **PENDING**. No se ha observado ejecución completa Godot 4.7 ni CI exitoso; no declararla como PASS.
 - Revisión estática: el flujo de datos y las rutas de materialización se revisaron; eso no sustituye compilación ni prueba en ejecución.
 - El snapshot incluido `data/world_initial.json` aún no contiene `garumis_game`; Oruvan llega por el RPC remoto y se guarda en la caché del jugador.
-- La comprobación SQL confirmó que el RPC ambiental v2 devuelve sólo Oruvan, con `asset_key = Oruvan`.
+- La comprobación SQL confirmó que el RPC ambiental v2 devuelve sólo Oruvan, con `asset_key = Oruvan`; la migración quedó registrada como `20261027145719`.
 - El sprite actual es `assets/art/garumis/Oruvan.svg`, provisional y abstracto; no es el diseño final.
 - La aparición y carga de textura dentro de Godot después de sincronizar/reiniciar siguen pendientes de verificación.
 
