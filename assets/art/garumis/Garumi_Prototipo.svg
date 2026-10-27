@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <title>Garumi prototipo de depuración — forma abstracta no canónica</title>
+  <g stroke="#232134" stroke-linejoin="miter" stroke-width="1">
+    <path d="M3 9 6 7 8 9 6 12 4 12Z" fill="#7f97a6"/>
+    <path d="M24 4 28 6 27 10 24 8Z" fill="#b5accd"/>
+    <path d="M26 20 29 18 29 22 26 24 24 22Z" fill="#7f97a6"/>
+    <path d="M14 4 19 6 23 10 24 15 21 20 17 24 12 23 8 20 6 15 8 10 11 7Z" fill="#4c4665"/>
+    <path d="M14 6 18 8 21 11 22 15 19 19 16 22 12 21 9 18 8 15 10 11 12 8Z" fill="#847aa6" stroke="none"/>
+    <path d="M10 11 13 9 15 13 13 17 11 20 9 17 8 15Z" fill="#4c4665" stroke="none"/>
+    <path d="M13 17 16 16 19 19 16 22 12 21 11 20Z" fill="#4c4665" stroke="none"/>
+    <path d="M17 8 20 11 22 15 19 19 17 17 18 13Z" fill="#b5accd" stroke="none"/>
+    <path d="M14 6 18 8 17 11 14 10 12 8Z" fill="#b5accd" stroke="none"/>
+    <path d="M15 10 18 13 17 17 14 19 12 16 12 13Z" fill="#232134" stroke="none"/>
+    <path d="M15 11 17 13 16 16 14 17 13 15 13 13Z" fill="#e2dced" stroke="none"/>
+    <path d="M15 11 17 13 15 14Z" fill="#f5f0fa" stroke="none"/>
+  </g>
+  <g fill="#b5accd">
+    <rect x="5" y="18" width="1" height="1"/>
+    <rect x="7" y="23" width="1" height="1" fill="#7f97a6"/>
+    <rect x="23" y="27" width="1" height="1"/>
+    <rect x="20" y="4" width="1" height="1" fill="#7f97a6"/>
+  </g>
+</svg>
