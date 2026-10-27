@@ -199,11 +199,16 @@ func garumi_puede_aparecer(
 		if not coincide_habitat:
 			return false
 	if not habitat_claves.is_empty():
-		var coincide_clave := false
-		for clave in habitat_claves:
-			if clave.to_lower() in claves_habitats_presentes:
-				coincide_clave = true
-				break
+		# "general" describe un alcance ecológico amplio, no un hábitat literal.
+		# Por ello admite cualquier hábitat del bioma/ecosistema que ya pasó
+		# los selectores más específicos del registro.
+		var selector_general := "general" in habitat_claves
+		var coincide_clave := selector_general
+		if not coincide_clave:
+			for clave in habitat_claves:
+				if clave.to_lower() in claves_habitats_presentes:
+					coincide_clave = true
+					break
 		if not coincide_clave:
 			return false
 	return true
