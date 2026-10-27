@@ -1,6 +1,8 @@
 extends Creature
 class_name Garumi
 
+const GARUMI_PROGRESSION_SCRIPT: Script = preload("res://scripts/creatures/garumi_progression.gd")
+
 signal vinculo_establecido(garumi: Garumi, jugador: Node, tipo: String)
 signal propuesta_vinculo_rechazada(garumi: Garumi, jugador: Node)
 signal salud_combate_cambiada(actual: int, maxima: int)
@@ -28,7 +30,7 @@ var _jugador_vinculado: Node = null
 var _guardado: bool = false
 var _distancia_maxima_seguimiento: float = 520.0
 var _cerebro_garumi: GarumiBrain = null
-var _progresion: GarumiProgression = GarumiProgression.new()
+var _progresion: Variant = GARUMI_PROGRESSION_SCRIPT.new()
 var nivel: int = 1
 var experiencia_total: int = 0
 var estadisticas_combate: Dictionary = {}
@@ -72,7 +74,7 @@ func obtener_estadisticas_combate() -> Dictionary:
 func puede_evolucionar_a(destino: Dictionary, relacion: Dictionary) -> bool:
 	if _enfrentamiento_activo or destino.is_empty() or relacion.is_empty():
 		return false
-	if nivel < GarumiProgression.NIVEL_EVOLUCION_FISICA:
+	if nivel < GARUMI_PROGRESSION_SCRIPT.NIVEL_EVOLUCION_FISICA:
 		return false
 	if str(datos.get("estado_evolutivo", "")).strip_edges().to_lower() != "inicial":
 		return false
@@ -127,13 +129,13 @@ func evolucionar_a(destino: Dictionary, relacion: Dictionary) -> bool:
 
 
 func experiencia_para_siguiente_nivel() -> int:
-	if nivel >= GarumiProgression.NIVEL_MAXIMO:
+	if nivel >= GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO:
 		return 0
 	return _progresion.xp_para_siguiente_nivel(nivel)
 
 
 func ganar_experiencia(cantidad: int) -> int:
-	if cantidad <= 0 or nivel >= GarumiProgression.NIVEL_MAXIMO:
+	if cantidad <= 0 or nivel >= GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO:
 		return 0
 	var nivel_anterior := nivel
 	var vida_maxima_anterior := max_health
@@ -271,7 +273,7 @@ func configurar(datos_garumi: Dictionary) -> void:
 	_vinculado = bool(datos_separados.get("vinculado", false))
 	_tipo_vinculo = str(datos_separados.get("tipo_vinculo", ""))
 	_progresion.configurar(datos_separados)
-	nivel = clampi(int(datos_separados.get("nivel", 1)), 1, GarumiProgression.NIVEL_MAXIMO)
+	nivel = clampi(int(datos_separados.get("nivel", 1)), 1, GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO)
 	experiencia_total = maxi(0, int(datos_separados.get("experiencia_total", 0)))
 	nivel = _progresion.nivel_desde_experiencia(experiencia_total)
 	estadisticas_combate = _progresion.obtener_estadisticas(nivel)
