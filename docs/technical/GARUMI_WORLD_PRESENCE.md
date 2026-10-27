@@ -15,7 +15,7 @@
 - Los Garumis se preparan tanto en la ruta de aparición directa como en DATA LOD. Se conserva `categoria_entidad`, `asset_key`, `runtime_instance_key` y `habitat_clave` al descargar/restaurar un chunk; la categoría determina la escena/pool al materializar.
 - El grupo `garumis` se mantiene separado del grupo normal `creatures`. El daño común no altera su salud; la absorción por Necromancers requiere su propio contrato y todavía no está implementada.
 - `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada de `Creature`. Comparte infraestructura de salud, movimiento y representación, pero no incluye el `AIController` de criaturas normales.
-- `Creature` busca sprite propio en `res://assets/art/garumis/<asset_key>.png` o `.PNG`. No reutiliza por accidente un sprite de criatura normal.
+- `Creature` busca el sprite propio en `res://assets/art/garumis/<asset_key>.png`, `.PNG`, `.svg` o `.SVG`. No reutiliza por accidente un sprite de criatura normal.
 - `assets/art/garumis/Oruvan.svg` es un sprite abstracto dibujado a mano y no canónico. Mientras `garumis_game` esté vacío, el prototipo automático está **activado por defecto en builds debug** y su probabilidad es 1.0 para cada chunk que tenga una posición caminable válida. Se puede desactivar con `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Lleva metadata explícita de prueba visual de Orumi gen. 1; no es un registro canónico ni reemplaza a Oruvan. En builds de lanzamiento, `OS.is_debug_build()` impide que aparezca. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
 
@@ -58,7 +58,7 @@ Los selectores ecológicos son opcionales individualmente, pero **al menos uno d
 
 El snapshot incluido actualmente en `data/world_initial.json` contiene `biomas`, `ecosistemas_sin_bioma`, `version` y `generado_en`, pero **no contiene `garumis_game`**. La salida runtime proporcionada el 27-10-2026 confirma `catalogo = 0` y registra `Garumi prototipo DEBUG` en el chunk `(1, -1)` con `sprite=cargado`. Esto verifica el fallback visual local; no verifica el catálogo canónico ni la compilación de todos los scripts.
 
-### Diagnóstico de la fuente de datos (lectura, sin escrituras)
+### Diagnóstico de fuente e integración
 
 - `public.garumis` tenía 24 borradores; sólo Oruvan (`4a409bba-fc4a-4b58-931f-9af1a6831710`) se actualizó a `estado_documentacion = 'canon'` para esta prueba. Orumi tiene ID `24f86486-aced-4a23-bd1b-f025561a8aa3`; los otros 23 Garumis no se modificaron.
 - La migración `emitir_garumi_orumi_gen1_para_prueba` añadió `garumis_game` a `public.get_mundo_inicial()`. Los RPC ambientales v1 y v2 heredan esa clave. La consulta de verificación al RPC v2 devolvió exactamente un registro: Oruvan.
