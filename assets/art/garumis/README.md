@@ -1,6 +1,6 @@
 # Sprites de Garumis
 
-Guarda aquí sprites creados para Garlia, idealmente PNG con fondo transparente.
+Guarda aquí los sprites creados para Garlia en PNG o SVG, con transparencia cuando corresponda.
 
 El basename debe coincidir con el campo `asset_key` del registro en `garumis_game`, por ejemplo `<asset_key>.png`. Los sprites de esta carpeta se cargan de forma independiente de `assets/art/creatures/`.
 
