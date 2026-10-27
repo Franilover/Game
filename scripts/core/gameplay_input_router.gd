@@ -79,6 +79,12 @@ func esta_entrada_bloqueada(arbol: SceneTree) -> bool:
 	if arbol.paused:
 		return true
 
+	# Los menús contextuales modales deben recibir los clics antes que el gameplay.
+	# _input se ejecuta antes de la GUI; sin este bloqueo, CombatSystem puede consumirlos.
+	for interfaz in arbol.get_nodes_in_group("modal_ui"):
+		if is_instance_valid(interfaz) and interfaz.is_inside_tree() and not interfaz.is_queued_for_deletion():
+			return true
+
 	if _inventory_ui != null and _inventory_ui.esta_abierto():
 		return true
 
