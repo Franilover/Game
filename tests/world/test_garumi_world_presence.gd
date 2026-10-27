@@ -72,7 +72,8 @@ func _run() -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 42
-	var elegido: Dictionary = rules.call("elegir_garumi", [garumi], rng)
+	var candidatos: Array[Dictionary] = [garumi]
+	var elegido: Dictionary = rules.call("elegir_garumi", candidatos, rng)
 	_expect(str(elegido.get("id", "")) == "g-1", "La selección ponderada debe devolver el candidato válido.")
 	data.free()
 	rules.free()
