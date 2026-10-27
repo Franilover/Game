@@ -1577,6 +1577,11 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 					numero.visible = _mostrar_numeros_garumis
 		return true
 
+	# Las teclas numéricas solo controlan Garumis mientras G mantiene
+	# visibles los números; fuera de ese modo, el juego recibe la tecla normal.
+	if not _mostrar_numeros_garumis:
+		return false
+
 	var numero_pulsado := -1
 	if evento.keycode >= KEY_1 and evento.keycode <= KEY_9:
 		numero_pulsado = evento.keycode - KEY_1 + 1
