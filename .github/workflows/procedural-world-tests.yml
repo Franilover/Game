@@ -2,17 +2,19 @@ name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-bond-combat"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
       - "scripts/world/world_*.gd"
       - "scripts/creatures/**"
+      - "scripts/ui/**"
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
       - "scripts/gameplay/player/player_eterium_runtime.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
+      - "tests/ui/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
       - "project.godot"
@@ -66,6 +68,17 @@ jobs:
           printf '%s\n' "$output"
           if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
             echo "Godot reported script compilation errors during import."
+            exit 1
+          fi
+
+      - name: Run Garumi encyclopedia shortcut smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . --script res://tests/ui/test_garumi_encyclopedia.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
+            echo "Garumi encyclopedia regression test reported errors."
             exit 1
           fi
 
