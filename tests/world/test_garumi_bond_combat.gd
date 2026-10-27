@@ -45,6 +45,11 @@ func _run() -> void:
 	root.add_child(garumi)
 	await process_frame
 	garumi.configurar({"id": "garumi-prueba", "nombre": "Garumi de prueba", "salud_combate": 40})
+	var cerebro_garumi := garumi.get_node_or_null("GarumiBrain") as GarumiBrain
+	_expect(cerebro_garumi != null, "Cada Garumi debe crear su cerebro reutilizable.", errores)
+	if cerebro_garumi != null:
+		cerebro_garumi.registrar_interaccion(jugador, "ayuda")
+		_expect(float(cerebro_garumi.obtener_relacion(jugador).get("confianza", 0.0)) == 8.0, "El cerebro debe registrar confianza por jugador sin mezclar relaciones.", errores)
 
 	_expect(not garumi.is_in_group("damageable"), "El Garumi no debe recibir daño antes de iniciar un enfrentamiento.", errores)
 	garumi.take_damage(20, "test/sin-enfrentamiento")
