@@ -4,7 +4,7 @@
 
 ## Configuración que interpreta el motor
 
-Se admite un perfil declarado en `ia_config.garumi.movimiento.perfil`. Para compatibilidad, si ese campo no existe, se puede usar `ia_config.movimiento.perfil`. La configuración específica de Garumi tiene prioridad cuando declara un perfil.
+Se admite un perfil declarado en `ia_config.garumi.movimiento.perfil`. Si no existe, se consulta `ia_config.movimiento.perfil`; como último recurso, se acepta `ia_config.perfil` únicamente si su valor coincide con una primitiva de movimiento implementada. La configuración específica de Garumi tiene prioridad. Los perfiles de especie que el intérprete no conoce no se convierten a otra conducta.
 
 ```json
 {
