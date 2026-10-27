@@ -110,8 +110,11 @@ func _run() -> void:
 	}
 	var normal_varum_gen1 := normal_orumi_gen1.duplicate(true)
 	normal_varum_gen1["original_id"] = "varum-test-id"
-	var normal_orumi_gen2 := normal_orumi_gen1.duplicate(true)
-	normal_orumi_gen2["numero_origen"] = 2
+	var forma_final_orumi := normal_orumi_gen1.duplicate(true)
+	forma_final_orumi["numero_origen"] = 2
+	forma_final_orumi["estado_evolutivo"] = "final"
+	var otro_inicial_orumi := normal_orumi_gen1.duplicate(true)
+	otro_inicial_orumi["numero_origen"] = 7
 	var original_orumi := normal_orumi_gen1.duplicate(true)
 	original_orumi["categoria_garumi"] = "original"
 	var borrador_orumi := normal_orumi_gen1.duplicate(true)
@@ -123,7 +126,8 @@ func _run() -> void:
 	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar el descendiente normal de Orumi marcado como canon.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", borrador_orumi, "orumi-test-id", 1)), "Nunca debe aparecer un registro que el snapshot marque como borrador.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_varum_gen1, "orumi-test-id", 1)), "Debe excluir descendientes de Varum aunque sean de primera generación.")
-	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen2, "orumi-test-id", 1)), "Debe excluir generaciones posteriores de Orumi.")
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", otro_inicial_orumi, "orumi-test-id", 1)), "Debe aceptar cualquier forma inicial canónica de Orumi aunque numero_origen sea 3, 5 o 7.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", forma_final_orumi, "orumi-test-id", 1)), "Las formas finales deben evolucionar desde una forma inicial, no aparecer en el mundo.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", original_orumi, "orumi-test-id", 1)), "Los Originales no deben poder aparecer como Garumis normales.")
 	var evolucion_orumi := normal_orumi_gen1.duplicate(true)
 	evolucion_orumi["estado_evolutivo"] = "evolucion_1"
