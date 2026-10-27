@@ -22,6 +22,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _debug_console: Node = $UI/DebugConsole
 var _world_entity_spawner: WorldEntitySpawner = null
 var _eterium_radial_menu: Control = null
+var _garumi_combat_arena: Node2D = null
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
@@ -32,6 +33,7 @@ var _world_generator: WorldGenerator = null
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
 const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
 const ETERIUM_RADIAL_MENU_SCRIPT = preload("res://scripts/ui/eterium_radial_menu.gd")
+const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
 
 
@@ -264,6 +266,10 @@ func _configurar_camara() -> void:
 func _seguir_jugador() -> void:
 	if _player == null or _camera == null:
 		return
+	if is_instance_valid(_garumi_combat_arena) and _garumi_combat_arena.call("esta_activa"):
+		_camera.global_position = _garumi_combat_arena.call("obtener_centro")
+		_ultima_posicion_camara = _camera.global_position
+		return
 
 	var posicion: Vector2 = _player.global_position
 	if posicion == _ultima_posicion_camara:
@@ -271,6 +277,33 @@ func _seguir_jugador() -> void:
 
 	_camera.global_position = posicion
 	_ultima_posicion_camara = posicion
+
+
+func iniciar_arena_garumi(garumi: Node, jugador: Node) -> void:
+	if not garumi is Node2D or not jugador is Node2D:
+		return
+	if is_instance_valid(_garumi_combat_arena):
+		_garumi_combat_arena.call("terminar")
+	_garumi_combat_arena = Node2D.new()
+	_garumi_combat_arena.name = "GarumiCombatArena"
+	_garumi_combat_arena.set_script(GARUMI_COMBAT_ARENA_SCRIPT)
+	add_child(_garumi_combat_arena)
+	_garumi_combat_arena.call("iniciar", jugador, garumi)
+	_ultima_posicion_camara = Vector2.INF
+	_seguir_jugador()
+	print("Main: arena de combate iniciada; cámara fijada y perímetro activado.")
+
+
+func terminar_arena_garumi(garumi: Node = null) -> void:
+	if not is_instance_valid(_garumi_combat_arena):
+		return
+	if garumi != null and _garumi_combat_arena.get("garumi") != garumi:
+		return
+	_garumi_combat_arena.call("terminar")
+	_garumi_combat_arena = null
+	_ultima_posicion_camara = Vector2.INF
+	_seguir_jugador()
+	print("Main: arena de combate cerrada; cámara liberada.")
 
 
 func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator = null) -> void:
