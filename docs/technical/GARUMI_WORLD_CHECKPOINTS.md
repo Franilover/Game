@@ -6,7 +6,7 @@
 - **Base intacta:** `fix/combat-temporal-contract-v1` en `77e23937ea1ee8c2b69803717aecc883b3aff603`
 - **Main:** no se ha modificado ni mezclado esta rama.
 - **Supabase:** sin cambios de esquema, RPC ni datos canónicos.
-- **Último checkpoint de código + regresión:** `cd45aad5569720333459f6439ccae3dd79cf889c`
+- **Último checkpoint de código + regresión:** `942613000ce072dacb8825a17f4b0b891d0bf9ea`
 - **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
@@ -52,9 +52,11 @@ El prototipo guarda y restaura su marcador de depuración, nombre, asset key y h
 ## Estado de verificación
 
 - Prueba: `godot --headless --path . --script res://tests/world/test_garumi_world_presence.gd`
-- Resultado: **PENDING**. No se ha observado una ejecución de Godot 4.7 ni un resultado de CI asociado al checkpoint de esta actualización; no declararlo como PASS.
+- Prueba estática/runtime parcial: la salida manual de Godot aportada el 27-10-2026 muestra `Garumi prototipo DEBUG -> chunk=(1, -1) | sprite=cargado`. Fallback de aparición y carga de sprite **observados**.
+- Suite headless automatizada: **PENDING**. No se ha observado ejecución completa Godot 4.7 ni CI exitoso; no declararla como PASS.
 - Revisión estática: el flujo de datos y las rutas de materialización se revisaron; eso no sustituye compilación ni prueba en ejecución.
 - El snapshot `data/world_initial.json` actual no incluye `garumis_game`.
+- Diagnóstico read-only: `public.garumis` tiene 24 filas y todas están en `borrador`; los RPC `get_mundo_inicial`, `get_mundo_inicial_ambiental_v1` y `get_mundo_inicial_ambiental_v2` no emiten `garumis_game`.
 - `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano, exclusivo del prototipo no canónico. En builds de depuración puede aparecer cuando falta el catálogo; builds de lanzamiento no lo generan. No hay sprites canónicos aprobados todavía.
 - Sin el catálogo de la fuente canónica y sprites aprobados, el mundo no mostrará apariciones canónicas de Garumis. El runtime está preparado para consumir esos datos, pero su exportación no se ha modificado. El fallback de depuración sólo valida render/posición/streaming y no representa el canon.
 
