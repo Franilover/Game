@@ -1522,6 +1522,12 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 		return null
 	if nodo is Sprite2D and (nodo as Sprite2D).texture != null:
 		return (nodo as Sprite2D).texture
+	if nodo is AnimatedSprite2D:
+		var animado := nodo as AnimatedSprite2D
+		if animado.sprite_frames != null and animado.sprite_frames.has_animation(animado.animation):
+			var fotograma := animado.sprite_frames.get_frame_texture(animado.animation, animado.frame)
+			if fotograma != null:
+				return fotograma
 	if nodo is TextureRect and (nodo as TextureRect).texture != null:
 		return (nodo as TextureRect).texture
 	for hijo in nodo.get_children():
