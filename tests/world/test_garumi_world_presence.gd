@@ -18,10 +18,12 @@ func _run() -> void:
 	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
 	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
 	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
-	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test"})
+	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Garumi_Prototipo"})
 	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
 	_expect(str(datos_visual.get("categoria_entidad", "")) == "garumi", "La clase debe fijar su categoría antes de resolver sprite y presentación.")
+	_expect(garumi_node.get_node("Sprite2D").texture != null, "El sprite SVG dibujado a mano debe cargarse desde assets/art/garumis.")
+	_expect(not bool(garumi_node.get_meta("garumi_sprite_missing", true)), "El runtime debe marcar el prototipo como textura disponible.")
 	_expect(garumi_node.is_in_group("garumis"), "Las instancias deben pertenecer al grupo propio de Garumis.")
 	_expect(not garumi_node.is_in_group("creatures"), "Los Garumis no deben mezclarse con el grupo de criaturas comunes.")
 	_expect(not garumi_node.is_in_group("damageable"), "El daño común no debe matar a un Garumi.")
@@ -39,7 +41,7 @@ func _run() -> void:
 	if not guardados.is_empty():
 		var estado_guardado := guardados[0] as Dictionary
 		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
-		_expect(str(estado_guardado.get("asset_key", "")) == "Garumi scene test", "El streaming debe conservar la clave del sprite.")
+		_expect(str(estado_guardado.get("asset_key", "")) == "Garumi_Prototipo", "El streaming debe conservar la clave del sprite.")
 		_expect(str(estado_guardado.get("habitat_clave", "")) == "bosque", "El streaming debe conservar el contexto ecológico del Garumi.")
 	manager.free()
 	garumi_node.free()
