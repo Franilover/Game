@@ -987,7 +987,21 @@ func _spawn_garumis_en_chunk(
 				continue
 
 			var garumi_data := elegido.duplicate(true)
+			# Si esta instancia ya evolucionó, restaura su forma y progresión
+			# guardadas. El catálogo inicial sólo sirve para localizar el slot.
+			var datos_garumi_guardados_variant: Variant = estado_previo.get("garumi_datos", {})
+			if datos_garumi_guardados_variant is Dictionary:
+				var datos_garumi_guardados := datos_garumi_guardados_variant as Dictionary
+				var aparicion_catalogo: Variant = garumi_data.get("aparicion", {})
+				for clave_guardada in datos_garumi_guardados.keys():
+					garumi_data[clave_guardada] = datos_garumi_guardados[clave_guardada]
+				if aparicion_catalogo is Dictionary and not (aparicion_catalogo as Dictionary).is_empty():
+					garumi_data["aparicion"] = aparicion_catalogo
+			for clave_progresion in ["nivel", "experiencia_total", "eterium_actual"]:
+				if estado_previo.has(clave_progresion):
+					garumi_data[clave_progresion] = estado_previo[clave_progresion]
 			garumi_data["categoria_entidad"] = "garumi"
+			garumi_data["runtime_instance_key"] = instancia_key
 			garumi_data["asset_key"] = str(garumi_data.get("asset_key", garumi_data.get("nombre", "")))
 			var criatura_variant: Variant = _entity_factory.crear_criatura(garumi_data)
 			if not criatura_variant is Creature:
