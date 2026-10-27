@@ -3,6 +3,7 @@ extends SceneTree
 const WORLD_DATA_SCRIPT = preload("res://scripts/world/world_data.gd")
 const SPAWN_RULES_SCRIPT = preload("res://scripts/world/world_spawn_rules.gd")
 const GARUMI_SCENE: PackedScene = preload("res://scenes/creatures/garumi.tscn")
+const ENTITY_MANAGER_SCRIPT = preload("res://scripts/world/world_entity_manager.gd")
 
 var _failed := false
 
@@ -27,6 +28,18 @@ func _run() -> void:
 	var salud_antes := int(garumi_node.get("health"))
 	garumi_node.call("take_damage", 999, "test")
 	_expect(int(garumi_node.get("health")) == salud_antes and bool(garumi_node.get("is_alive")), "El daño común debe dejar vivo al Garumi hasta tener absorción específica.")
+
+	garumi_node.set_meta("runtime_instance_key", "garumi:0:g-scene")
+	garumi_node.global_position = Vector2(48.0, 80.0)
+	var manager: Node = ENTITY_MANAGER_SCRIPT.new()
+	manager.call("guardar_estado_entidad", garumi_node, Vector2i(2, 1))
+	var guardados: Array = manager.call("obtener_datos_chunk", Vector2i(2, 1), "criaturas")
+	_expect(guardados.size() == 1, "El streaming debe registrar el estado del Garumi en el chunk.")
+	if not guardados.is_empty():
+		var estado_guardado := guardados[0] as Dictionary
+		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
+		_expect(str(estado_guardado.get("asset_key", "")) == "Garumi scene test", "El streaming debe conservar la clave del sprite.")
+	manager.free()
 	garumi_node.free()
 
 	var data: Node = WORLD_DATA_SCRIPT.new()
