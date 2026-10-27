@@ -79,6 +79,8 @@ func puede_evolucionar_a(destino: Dictionary, relacion: Dictionary) -> bool:
 	var estado_relacion := str(relacion.get("estado_documentacion", "")).strip_edges().to_lower()
 	if estado_relacion not in ["canon", "aprobado"]:
 		return false
+	if str(relacion.get("tipo_relacion", "")).strip_edges().to_lower() != "directa":
+		return false
 	var origen_id := str(datos.get("id", criatura_id)).strip_edges()
 	var destino_id := str(destino.get("id", "")).strip_edges()
 	if origen_id.is_empty() or destino_id.is_empty() or origen_id == destino_id:
