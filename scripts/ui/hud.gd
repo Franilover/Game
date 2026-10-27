@@ -54,6 +54,9 @@ var _mission_panel_open: bool = false
 
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
+var _garumis_vinculados_panel: PanelContainer = null
+var _garumis_vinculados_lista: VBoxContainer = null
+var _garumis_vinculados_ids: Dictionary = {}
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
 @onready var _health_value_node: Label = $BottomLeft/HealthValue
@@ -1429,10 +1432,6 @@ func _actualizar_reloj_calendario() -> void:
 	_calendar_label.text = "%s   %s\n%s · Año %d" % [hora, periodo, fecha, anio]
 
 
-# GARUMIS VINCULADOS
-var _garumis_vinculados_panel: PanelContainer = null
-var _garumis_vinculados_lista: VBoxContainer = null
-var _garumis_vinculados_ids: Dictionary = {}
 
 func _preparar_panel_garumis_vinculados() -> void:
 	_garumis_vinculados_panel = PanelContainer.new()
