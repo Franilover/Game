@@ -136,6 +136,7 @@ func _run() -> void:
 	forma_con_origen["evoluciona_de_id"] = "orumi-descendiente-1"
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", forma_con_origen, "orumi-test-id", 1)), "Una forma con predecesor evolutivo no debe aparecer de forma natural.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "", 1)), "Sin ID de Original permitido no se debe habilitar ningún candidato.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 2)), "Esta fase sólo habilita la primera generación configurada.")
 
 	var bioma := {"id": "bioma-prueba"}
 	var ecosistema := {"id": "ecosistema-prueba"}
