@@ -254,6 +254,7 @@ func ofrecer_vinculo(jugador: Node) -> bool:
 	var probabilidad := clampf(float(datos.get("aceptacion_vinculo", 0.5)), 0.0, 1.0)
 	if _rng.randf() > probabilidad:
 		propuesta_vinculo_rechazada.emit(self, jugador)
+		_notificar_resultado_vinculo(false, "")
 		print("Garumi: ", criatura_nombre, " rechaza la propuesta de vínculo.")
 		return false
 	_establecer_vinculo(jugador, "voluntario")
@@ -327,6 +328,7 @@ func _establecer_vinculo(jugador: Node, tipo: String) -> void:
 	set_meta("vinculado", true)
 	set_meta("tipo_vinculo", tipo)
 	vinculo_establecido.emit(self, jugador, tipo)
+	_notificar_resultado_vinculo(true, tipo)
 	print("Garumi: vínculo ", tipo, " establecido con ", jugador.name)
 
 
@@ -351,3 +353,9 @@ func obtener_tipo_vinculo() -> String:
 
 func esta_enfrentamiento() -> bool:
 	return _enfrentamiento_activo
+
+
+func _notificar_resultado_vinculo(exito: bool, tipo: String) -> void:
+	for nodo_hud in get_tree().get_nodes_in_group("hud"):
+		if is_instance_valid(nodo_hud) and nodo_hud.has_method("mostrar_resultado_vinculo"):
+			nodo_hud.call("mostrar_resultado_vinculo", self, exito, tipo)
