@@ -106,7 +106,7 @@ func _run() -> void:
 	var normal_orumi_gen1 := {
 		"id": "orumi-descendiente-1", "nombre": "Descendiente de Orumi",
 		"categoria_garumi": "normal", "original_id": "orumi-test-id", "numero_origen": 1,
-		"estado_documentacion": "canon"
+		"estado_documentacion": "canon", "estado_evolutivo": "inicial"
 	}
 	var normal_varum_gen1 := normal_orumi_gen1.duplicate(true)
 	normal_varum_gen1["original_id"] = "varum-test-id"
@@ -125,6 +125,12 @@ func _run() -> void:
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_varum_gen1, "orumi-test-id", 1)), "Debe excluir descendientes de Varum aunque sean de primera generación.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen2, "orumi-test-id", 1)), "Debe excluir generaciones posteriores de Orumi.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", original_orumi, "orumi-test-id", 1)), "Los Originales no deben poder aparecer como Garumis normales.")
+	var evolucion_orumi := normal_orumi_gen1.duplicate(true)
+	evolucion_orumi["estado_evolutivo"] = "evolucion_1"
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", evolucion_orumi, "orumi-test-id", 1)), "Las formas evolucionadas no deben aparecer como encuentros independientes.")
+	var forma_con_origen := normal_orumi_gen1.duplicate(true)
+	forma_con_origen["evoluciona_de_id"] = "orumi-descendiente-1"
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", forma_con_origen, "orumi-test-id", 1)), "Una forma con predecesor evolutivo no debe aparecer de forma natural.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "", 1)), "Sin ID de Original permitido no se debe habilitar ningún candidato.")
 
 	var bioma := {"id": "bioma-prueba"}
