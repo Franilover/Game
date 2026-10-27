@@ -4,6 +4,7 @@ const WORLD_DATA_SCRIPT = preload("res://scripts/world/world_data.gd")
 const SPAWN_RULES_SCRIPT = preload("res://scripts/world/world_spawn_rules.gd")
 const GARUMI_SCENE: PackedScene = preload("res://scenes/creatures/garumi.tscn")
 const ENTITY_MANAGER_SCRIPT = preload("res://scripts/world/world_entity_manager.gd")
+const SPAWNER_SCRIPT = preload("res://scripts/world/world_entity_spawner.gd")
 
 var _failed := false
 
@@ -82,6 +83,12 @@ func _run() -> void:
 	var diagnostico: Dictionary = data.call("obtener_diagnostico_garumis_game")
 	_expect(int(diagnostico.get("catalogo", 0)) == 1, "El diagnóstico debe contar el catálogo validado.")
 
+	var spawner: Node = SPAWNER_SCRIPT.new()
+	_expect(bool(spawner.get("mostrar_prototipo_garumi_en_debug_sin_catalogo")), "El prototipo debe volver a estar visible por defecto mientras el catálogo canónico esté vacío.")
+	_expect(is_equal_approx(float(spawner.get("probabilidad_prototipo_garumi_debug")), 1.0), "La probabilidad del prototipo debe ser 100% en los chunks de depuración válidos para evitar que parezca que no hay Garumis.")
+	_expect(str(spawner.get("garumi_original_id_habilitado")) == "24f86486-aced-4a23-bd1b-f025561a8aa3" and int(spawner.get("garumi_generacion_habilitada")) == 1, "La configuración de depuración debe reflejar sólo la línea de Orumi, generación 1.")
+	spawner.free()
+
 	var rules: Node = SPAWN_RULES_SCRIPT.new()
 	var garumi: Dictionary = {
 		"id": "g-1",
@@ -144,7 +151,7 @@ func _run() -> void:
 	if _failed:
 		quit(1)
 		return
-	print("PASS: Garumi catalog stays separate; only normal Orumi generation 1 passes lineage filtering; ecology and spawn probability checks pass.")
+	print("PASS: Orumi generation-one filter, draft rejection, and visible debug prototype defaults are covered; ecology and spawn probability checks pass.")
 	quit()
 
 
