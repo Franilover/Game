@@ -16,7 +16,7 @@
 - El grupo `garumis` se mantiene separado del grupo normal `creatures`. El daño común no altera su salud; la absorción por Necromancers requiere su propio contrato y todavía no está implementada.
 - `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada de `Creature`. Comparte infraestructura de salud, movimiento y representación, pero no incluye el `AIController` de criaturas normales.
 - `Creature` busca sprite propio en `res://assets/art/garumis/<asset_key>.png` o `.PNG`. No reutiliza por accidente un sprite de criatura normal.
-- Si falta el arte, el proxy geométrico de desarrollo permite comprobar posición y streaming. **No es el diseño canónico** ni sustituye el sprite dibujado a mano.
+- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano y no canónico. En builds de depuración, si `garumis_game` está vacío, el motor puede mostrar ese prototipo con probabilidad configurable; en builds de lanzamiento no aparece. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
 
 ### Contrato de datos esperado por Godot
