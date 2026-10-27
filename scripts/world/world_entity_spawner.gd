@@ -5,6 +5,10 @@ class_name WorldEntitySpawner
 @export_category("Aparición de criaturas")
 @export var max_creatures_per_chunk: int = 5
 
+@export_category("Aparición de Garumis")
+@export_range(0, 4, 1) var max_garumis_per_chunk: int = 1
+@export_range(0.0, 1.0, 0.01) var garumi_spawn_probability_per_chunk: float = 0.15
+
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
 var _entity_factory: WorldEntityFactory = null
@@ -138,9 +142,17 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			if not estado_runtime.is_empty():
 				for clave in estado_runtime.keys():
 					dato[clave] = estado_runtime[clave]
-		var criatura_data := _world_data.obtener_criatura(criatura_id).duplicate(true)
+		var categoria_entidad := str(dato.get("categoria_entidad", "criatura")).strip_edges().to_lower()
+		var criatura_data: Dictionary
+		if categoria_entidad == "garumi":
+			criatura_data = _world_data.obtener_garumi_game(criatura_id).duplicate(true)
+		else:
+			criatura_data = _world_data.obtener_criatura(criatura_id).duplicate(true)
 		if criatura_data.is_empty():
 			continue
+		if categoria_entidad == "garumi":
+			criatura_data["categoria_entidad"] = "garumi"
+			criatura_data["asset_key"] = str(criatura_data.get("asset_key", criatura_data.get("nombre", "")))
 		var criatura_variant: Variant = _entity_factory.crear_criatura(criatura_data)
 		if not criatura_variant is Node:
 			continue
@@ -702,6 +714,8 @@ func _spawn_chunk_interno(
 			criatura
 		)
 
+	_spawn_garumis_en_chunk(chunk_coord, limite_chunk, rng)
+
 	_spawn_characters_in_chunk(
 		chunk_coord,
 		limite_chunk,
@@ -709,6 +723,124 @@ func _spawn_chunk_interno(
 	)
 	_entity_manager.activar_criaturas_chunk(chunk_coord)
 	return
+
+func _spawn_garumis_en_chunk(
+	chunk_coord: Vector2i,
+	limite_chunk: Rect2,
+	rng: RandomNumberGenerator
+) -> void:
+	if _terrain == null or _entity_manager == null or _entity_factory == null or _spawn_rules == null or _world_data == null:
+		return
+	if max_garumis_per_chunk <= 0:
+		return
+
+	var catalogo := _world_data.obtener_garumis_game()
+	if catalogo.is_empty():
+		return
+
+	# La selección depende de los datos ecológicos del snapshot, no del nombre
+	# ni de una lista de especies codificada dentro del motor.
+	var candidatos_probables: Array[Dictionary] = []
+	for garumi in catalogo:
+		var garumi_id := str(garumi.get("id", "")).strip_edges()
+		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
+		if garumi_id.is_empty() or garumi_nombre.is_empty():
+			continue
+		var probabilidad := _spawn_rules.obtener_probabilidad_spawn_garumi(
+			garumi,
+			garumi_spawn_probability_per_chunk
+		)
+		if probabilidad <= 0.0 or rng.randf() > probabilidad:
+			continue
+		candidatos_probables.append(garumi)
+
+	if candidatos_probables.is_empty():
+		return
+
+	var creados_ids: Dictionary = {}
+	var creados := 0
+	var origen_x := chunk_coord.x * _terrain.chunk_size_tiles
+	var origen_y := chunk_coord.y * _terrain.chunk_size_tiles
+	for slot in range(max_garumis_per_chunk):
+		if creados >= max_garumis_per_chunk:
+			break
+		var materializado := false
+		for intento in range(32):
+			var tile := Vector2i(
+				origen_x + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
+				origen_y + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
+			)
+			var bioma := _terrain.get_bioma_at(tile)
+			var ecosistema := _terrain.get_ecosistema_at(tile)
+			var habitats := _terrain.get_habitats_at(tile)
+			if bioma.is_empty() or ecosistema.is_empty():
+				continue
+
+			var validos: Array[Dictionary] = []
+			for garumi in candidatos_probables:
+				var garumi_id := str(garumi.get("id", "")).strip_edges()
+				if garumi_id.is_empty() or creados_ids.has(garumi_id):
+					continue
+				if not _spawn_rules.garumi_puede_aparecer(garumi, bioma, ecosistema, habitats):
+					continue
+				validos.append(garumi)
+			if validos.is_empty():
+				continue
+
+			var elegido := _spawn_rules.elegir_garumi(validos, rng)
+			if elegido.is_empty():
+				continue
+			var garumi_id := str(elegido.get("id", "")).strip_edges()
+			var instancia_key := "garumi:" + str(slot) + ":" + garumi_id
+			var estado_previo := _entity_manager.obtener_estado_criatura(
+				chunk_coord,
+				garumi_id,
+				instancia_key
+			)
+			if not estado_previo.is_empty() and not bool(estado_previo.get("is_alive", true)):
+				creados_ids[garumi_id] = true
+				continue
+
+			var garumi_data := elegido.duplicate(true)
+			garumi_data["categoria_entidad"] = "garumi"
+			garumi_data["asset_key"] = str(garumi_data.get("asset_key", garumi_data.get("nombre", "")))
+			var criatura_variant: Variant = _entity_factory.crear_criatura(garumi_data)
+			if not criatura_variant is Node:
+				continue
+			var criatura := criatura_variant as Node
+			criatura.set_meta("runtime_instance_key", instancia_key)
+			criatura.set_meta("entidad_categoria", "garumi")
+			if not _entity_manager.registrar(criatura, chunk_coord):
+				criatura.queue_free()
+				continue
+
+			criatura.global_position = Vector2(
+				(float(tile.x) + 0.5) * _terrain.tile_size,
+				(float(tile.y) + 0.5) * _terrain.tile_size
+			)
+			if not estado_previo.is_empty():
+				criatura.global_position = estado_previo.get("position", criatura.global_position)
+				if criatura is CharacterBody2D and estado_previo.get("velocity", Vector2.ZERO) is Vector2:
+					(criatura as CharacterBody2D).velocity = estado_previo.get("velocity", Vector2.ZERO)
+				if criatura is Entity:
+					(criatura as Entity).restaurar_estado_vital(
+						int(estado_previo.get("health", (criatura as Entity).health)),
+						bool(estado_previo.get("is_alive", true))
+					)
+			if criatura is Creature:
+				var criatura_node := criatura as Creature
+				criatura_node.configurar_chunk(chunk_coord, limite_chunk)
+				var aparicion_variant: Variant = elegido.get("aparicion", {})
+				var aparicion: Dictionary = aparicion_variant if aparicion_variant is Dictionary else {}
+				criatura_node.configurar_entorno(str(aparicion.get("habitat_clave", "general")).to_lower())
+
+			creados_ids[garumi_id] = true
+			creados += 1
+			materializado = true
+			break
+		if not materializado:
+			continue
+
 
 func _iniciar_tarea_spawn(chunk_coord: Vector2i) -> void:
 	if _terrain == null or _entity_manager == null or _entity_factory == null:
