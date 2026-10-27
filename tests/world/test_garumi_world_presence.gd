@@ -13,12 +13,20 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var garumi_node: Node = GARUMI_SCENE.instantiate()
+	root.add_child(garumi_node)
 	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
 	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
 	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
 	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test"})
+	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
 	_expect(str(datos_visual.get("categoria_entidad", "")) == "garumi", "La clase debe fijar su categoría antes de resolver sprite y presentación.")
+	_expect(garumi_node.is_in_group("garumis"), "Las instancias deben pertenecer al grupo propio de Garumis.")
+	_expect(not garumi_node.is_in_group("creatures"), "Los Garumis no deben mezclarse con el grupo de criaturas comunes.")
+	_expect(not garumi_node.is_in_group("damageable"), "El daño común no debe matar a un Garumi.")
+	var salud_antes := int(garumi_node.get("health"))
+	garumi_node.call("take_damage", 999, "test")
+	_expect(int(garumi_node.get("health")) == salud_antes and bool(garumi_node.get("is_alive")), "El daño común debe dejar vivo al Garumi hasta tener absorción específica.")
 	garumi_node.free()
 
 	var data: Node = WORLD_DATA_SCRIPT.new()
