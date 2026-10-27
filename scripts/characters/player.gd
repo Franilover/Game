@@ -251,6 +251,7 @@ func _physics_process(delta: float) -> void:
 	velocity = direction * speed
 
 	move_and_slide()
+	_ajustar_a_arena_garumi()
 
 	# Dirección.
 	if direction != Vector2.ZERO:
@@ -510,6 +511,7 @@ func _procesar_jump(delta: float) -> void:
 	var velocidad := locomotion.obtener_velocidad_accion(duracion, jump_distance)
 	velocity = _action_direction * velocidad
 	move_and_slide()
+	_ajustar_a_arena_garumi()
 	var altura := sin(progreso * PI) * 16.0
 	visual.position = _base_visual_position + Vector2(0.0, -altura)
 	if not locomotion.procesando_salto():
@@ -528,17 +530,31 @@ func _puede_hacer_dash() -> bool:
 
 
 func _iniciar_dash() -> void:
-	if not locomotion.iniciar_dash(_obtener_direccion_accion(), dash_duration, dash_cooldown, dash_stamina_cost):
+	var direccion_dash := _obtener_direccion_accion()
+	# En una arena, un dash solo permite salir si se ejecuta desde un borde hacia fuera.
+	for arena in get_tree().get_nodes_in_group("garumi_combat_arena"):
+		if is_instance_valid(arena) and arena.has_method("intentar_escapar"):
+			if bool(arena.call("intentar_escapar", self, direccion_dash)):
+				print("Player: saliendo del enfrentamiento mediante dash.")
+				break
+	if not locomotion.iniciar_dash(direccion_dash, dash_duration, dash_cooldown, dash_stamina_cost):
 		return
-	_action_direction = locomotion.obtener_direccion_accion(_obtener_direccion_accion())
+	_action_direction = locomotion.obtener_direccion_accion(direccion_dash)
 	state = State.DASH
 	_update_visual()
+
+
+func _ajustar_a_arena_garumi() -> void:
+	for arena in get_tree().get_nodes_in_group("garumi_combat_arena"):
+		if is_instance_valid(arena) and arena.has_method("ajustar_jugador_tras_movimiento"):
+			arena.call("ajustar_jugador_tras_movimiento")
 
 
 func _procesar_dash(delta: float) -> void:
 	var velocidad := locomotion.obtener_velocidad_accion(dash_duration, dash_distance)
 	velocity = _action_direction * velocidad
 	move_and_slide()
+	_ajustar_a_arena_garumi()
 	if not locomotion.procesando_dash():
 		velocity = Vector2.ZERO
 		state = State.IDLE
