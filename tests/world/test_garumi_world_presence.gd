@@ -18,7 +18,7 @@ func _run() -> void:
 	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
 	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
 	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
-	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Garumi_Prototipo"})
+	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Garumi_Prototipo", "garumi_debug_preview": true})
 	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
 	var sprite_garumi := garumi_node.get_node("Sprite2D") as Sprite2D
@@ -43,6 +43,8 @@ func _run() -> void:
 		var estado_guardado := guardados[0] as Dictionary
 		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
 		_expect(str(estado_guardado.get("asset_key", "")) == "Garumi_Prototipo", "El streaming debe conservar la clave del sprite.")
+		_expect(str(estado_guardado.get("nombre", "")) == "Garumi scene test", "El streaming debe conservar el nombre visible del Garumi.")
+		_expect(bool(estado_guardado.get("garumi_debug_preview", false)), "El streaming debe conservar que la instancia es sólo un prototipo de depuración.")
 		_expect(str(estado_guardado.get("habitat_clave", "")) == "bosque", "El streaming debe conservar el contexto ecológico del Garumi.")
 	manager.free()
 	garumi_node.free()
