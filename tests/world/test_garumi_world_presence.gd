@@ -106,7 +106,13 @@ func _run() -> void:
 	normal_orumi_gen2["numero_origen"] = 2
 	var original_orumi := normal_orumi_gen1.duplicate(true)
 	original_orumi["categoria_garumi"] = "original"
-	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar sólo un Garumi normal de la generación habilitada de Orumi.")
+	var borrador_orumi := normal_orumi_gen1.duplicate(true)
+	borrador_orumi["estado_documentacion"] = "borrador"
+	var aprobado_orumi := normal_orumi_gen1.duplicate(true)
+	aprobado_orumi["estado_documentacion"] = "aprobado"
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar Garumis normales de Orumi generación 1 si el exportador ya filtra el canon.")
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", aprobado_orumi, "orumi-test-id", 1)), "Debe aceptar el descendiente normal de Orumi marcado como aprobado.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", borrador_orumi, "orumi-test-id", 1)), "Nunca debe aparecer un registro que el snapshot marque como borrador.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_varum_gen1, "orumi-test-id", 1)), "Debe excluir descendientes de Varum aunque sean de primera generación.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen2, "orumi-test-id", 1)), "Debe excluir generaciones posteriores de Orumi.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", original_orumi, "orumi-test-id", 1)), "Los Originales no deben poder aparecer como Garumis normales.")
