@@ -8,8 +8,12 @@ class_name WorldEntitySpawner
 @export_category("Aparición de Garumis")
 @export_range(0, 4, 1) var max_garumis_per_chunk: int = 1
 @export_range(0.0, 1.0, 0.01) var garumi_spawn_probability_per_chunk: float = 0.15
-@export var mostrar_prototipo_garumi_en_debug_sin_catalogo: bool = true
+@export var mostrar_prototipo_garumi_en_debug_sin_catalogo: bool = false
 @export_range(0.0, 1.0, 0.05) var probabilidad_prototipo_garumi_debug: float = 0.35
+## Fase inicial: únicamente Garumis normales de la primera generación de Orumi.
+## ID de public.garumi_originales confirmado por consulta de sólo lectura.
+@export var garumi_original_id_habilitado: String = "24f86486-aced-4a23-bd1b-f025561a8aa3"
+@export_range(1, 100, 1) var garumi_generacion_habilitada: int = 1
 
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
@@ -295,6 +299,12 @@ func _preparar_datos_garumis_en_chunk(
 		var garumi_id := str(garumi.get("id", "")).strip_edges()
 		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
 		if garumi_id.is_empty() or garumi_nombre.is_empty():
+			continue
+		if not _spawn_rules.garumi_cumple_filtro_generacional(
+			garumi,
+			garumi_original_id_habilitado,
+			garumi_generacion_habilitada
+		):
 			continue
 		var probabilidad := _spawn_rules.obtener_probabilidad_spawn_garumi(
 			garumi,
