@@ -21,8 +21,9 @@ func _run() -> void:
 	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Garumi_Prototipo"})
 	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
+	var sprite_garumi := garumi_node.get_node("Sprite2D") as Sprite2D
 	_expect(str(datos_visual.get("categoria_entidad", "")) == "garumi", "La clase debe fijar su categoría antes de resolver sprite y presentación.")
-	_expect(garumi_node.get_node("Sprite2D").texture != null, "El sprite SVG dibujado a mano debe cargarse desde assets/art/garumis.")
+	_expect(sprite_garumi != null and sprite_garumi.texture != null, "El sprite SVG dibujado a mano debe cargarse desde assets/art/garumis.")
 	_expect(not bool(garumi_node.get_meta("garumi_sprite_missing", true)), "El runtime debe marcar el prototipo como textura disponible.")
 	_expect(garumi_node.is_in_group("garumis"), "Las instancias deben pertenecer al grupo propio de Garumis.")
 	_expect(not garumi_node.is_in_group("creatures"), "Los Garumis no deben mezclarse con el grupo de criaturas comunes.")
