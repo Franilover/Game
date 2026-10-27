@@ -258,7 +258,98 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			break
 		if not creado:
 			continue
+	# DATA LOD prepara también Garumis; de lo contrario, al entrar a FULL,
+	# el materializador devolvería los datos de criaturas normales y nunca
+	# ejecutaría el spawner de fallback.
+	for garumi_dato in _preparar_datos_garumis_en_chunk(chunk_coord, rng):
+		datos.append(garumi_dato)
+
 	_entity_manager.reemplazar_datos_chunk(chunk_coord, "criaturas", datos)
+
+
+func _preparar_datos_garumis_en_chunk(
+	chunk_coord: Vector2i,
+	rng: RandomNumberGenerator
+) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	if _terrain == null or _world_data == null or _spawn_rules == null:
+		return resultado
+	if max_garumis_per_chunk <= 0:
+		return resultado
+
+	var catalogo := _world_data.obtener_garumis_game()
+	if catalogo.is_empty():
+		return resultado
+
+	var candidatos_probables: Array[Dictionary] = []
+	for garumi in catalogo:
+		var garumi_id := str(garumi.get("id", "")).strip_edges()
+		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
+		if garumi_id.is_empty() or garumi_nombre.is_empty():
+			continue
+		var probabilidad := _spawn_rules.obtener_probabilidad_spawn_garumi(
+			garumi,
+			garumi_spawn_probability_per_chunk
+		)
+		if probabilidad <= 0.0 or rng.randf() > probabilidad:
+			continue
+		candidatos_probables.append(garumi)
+
+	if candidatos_probables.is_empty():
+		return resultado
+
+	var elegidos: Dictionary = {}
+	for slot in range(max_garumis_per_chunk):
+		for intento in range(32):
+			var tile := Vector2i(
+				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
+				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
+			)
+			var contexto := _obtener_contexto_data_cacheado(chunk_coord, tile)
+			if not bool(contexto.get("walkable", false)):
+				continue
+			var bioma_variant: Variant = contexto.get("bioma", {})
+			var ecosistema_variant: Variant = contexto.get("ecosistema", {})
+			var habitats_variant: Variant = contexto.get("habitats", [])
+			if not bioma_variant is Dictionary or not ecosistema_variant is Dictionary or not habitats_variant is Array:
+				continue
+			var bioma := bioma_variant as Dictionary
+			var ecosistema := ecosistema_variant as Dictionary
+			var habitats := habitats_variant as Array
+			if bioma.is_empty() or ecosistema.is_empty():
+				continue
+
+			var validos: Array[Dictionary] = []
+			for garumi in candidatos_probables:
+				var garumi_id := str(garumi.get("id", "")).strip_edges()
+				if garumi_id.is_empty() or elegidos.has(garumi_id):
+					continue
+				if not _spawn_rules.garumi_puede_aparecer(garumi, bioma, ecosistema, habitats):
+					continue
+				validos.append(garumi)
+			if validos.is_empty():
+				continue
+
+			var elegido := _spawn_rules.elegir_garumi(validos, rng)
+			if elegido.is_empty():
+				continue
+			var garumi_id := str(elegido.get("id", "")).strip_edges()
+			if garumi_id.is_empty():
+				continue
+			var registro := elegido.duplicate(true)
+			registro["criatura_id"] = garumi_id
+			registro["categoria_entidad"] = "garumi"
+			registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", "")))
+			registro["runtime_instance_key"] = "garumi:" + str(slot) + ":" + garumi_id
+			registro["chunk"] = chunk_coord
+			registro["position"] = Vector2(
+				(float(tile.x) + 0.5) * _terrain.tile_size,
+				(float(tile.y) + 0.5) * _terrain.tile_size
+			)
+			resultado.append(registro)
+			elegidos[garumi_id] = true
+			break
+	return resultado
 
 
 func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
