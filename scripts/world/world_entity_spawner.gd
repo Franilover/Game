@@ -164,6 +164,8 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		var criatura := criatura_variant as Node
 		instance_key = str(dato.get("runtime_instance_key", criatura_id))
 		criatura.set_meta("runtime_instance_key", instance_key)
+		if bool(dato.get("garumi_debug_preview", false)):
+			criatura.set_meta("garumi_debug_preview", true)
 		if not _entity_manager.registrar(criatura, chunk_coord):
 			criatura.queue_free()
 			continue
@@ -172,6 +174,8 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			var creature_node := criatura as Creature
 			creature_node.configurar_chunk(chunk_coord, limite_chunk)
 			creature_node.configurar_entorno(str(dato.get("habitat_clave", "general")).strip_edges().to_lower())
+			if bool(dato.get("garumi_debug_preview", false)):
+				print("WorldEntitySpawner: Garumi prototipo DEBUG materializado desde DATA -> chunk=", chunk_coord, " | sprite=", "cargado" if not bool(criatura.get_meta("garumi_sprite_missing", false)) else "pendiente")
 			var health := float(dato.get("health", creature_node.health))
 			creature_node.health = clampf(health, 0.0, creature_node.max_health)
 			if dato.has("velocity") and dato["velocity"] is Vector2:
@@ -371,7 +375,7 @@ func _preparar_datos_garumi_debug(
 		return resultado
 	if rng.randf() > clampf(probabilidad_prototipo_garumi_debug, 0.0, 1.0):
 		return resultado
-	for intento in range(32):
+	for _intento in range(32):
 		var tile := Vector2i(
 			chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 			chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
