@@ -159,9 +159,9 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			criatura_data["categoria_entidad"] = "garumi"
 			criatura_data["asset_key"] = str(criatura_data.get("asset_key", criatura_data.get("nombre", "")))
 		var criatura_variant: Variant = _entity_factory.crear_criatura(criatura_data)
-		if not criatura_variant is Node:
+		if not criatura_variant is Creature:
 			continue
-		var criatura := criatura_variant as Node
+		var criatura := criatura_variant as Creature
 		instance_key = str(dato.get("runtime_instance_key", criatura_id))
 		criatura.set_meta("runtime_instance_key", instance_key)
 		if bool(dato.get("garumi_debug_preview", false)):
@@ -883,9 +883,9 @@ func _spawn_garumis_en_chunk(
 			return
 		var garumi_debug: Dictionary = datos_debug[0]
 		var instancia_debug: Variant = _entity_factory.crear_criatura(garumi_debug)
-		if not instancia_debug is Node:
+		if not instancia_debug is Creature:
 			return
-		var node_debug := instancia_debug as Node
+		var node_debug := instancia_debug as Creature
 		node_debug.set_meta("runtime_instance_key", str(garumi_debug.get("runtime_instance_key", "")))
 		node_debug.set_meta("entidad_categoria", "garumi")
 		if not _entity_manager.registrar(node_debug, chunk_coord):
@@ -967,9 +967,9 @@ func _spawn_garumis_en_chunk(
 			garumi_data["categoria_entidad"] = "garumi"
 			garumi_data["asset_key"] = str(garumi_data.get("asset_key", garumi_data.get("nombre", "")))
 			var criatura_variant: Variant = _entity_factory.crear_criatura(garumi_data)
-			if not criatura_variant is Node:
+			if not criatura_variant is Creature:
 				continue
-			var criatura := criatura_variant as Node
+			var criatura := criatura_variant as Creature
 			criatura.set_meta("runtime_instance_key", instancia_key)
 			criatura.set_meta("entidad_categoria", "garumi")
 			if not _entity_manager.registrar(criatura, chunk_coord):
