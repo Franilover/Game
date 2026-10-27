@@ -42,8 +42,8 @@ Estos nombres son identificadores de primitivas de ejecución, no personalidades
 
 ## Validación y ausencia de configuración
 
-- Sin un perfil explícito válido, `GarumiBrain` libera el control y no inventa un perfil `errante`.
-- Un perfil desconocido también deja el control al sistema genérico y no se convierte silenciosamente en otro perfil.
+- Sin un perfil explícito válido, `GarumiBrain` mantiene la dirección en cero para bloquear la patrulla genérica; no inventa un perfil `errante`.
+- Un perfil desconocido también queda detenido y no se convierte silenciosamente en otro perfil.
 - Los parámetros de movimiento solo se leen de la configuración; los valores de respaldo sirven para que el intérprete funcione físicamente, no para definir canon.
 - `CreatureMovement` conserva la responsabilidad de velocidad, colisiones y desplazamiento físico, y mantiene sus restricciones generales de movimiento.
 - El seguimiento de Garumis vinculados y la arena de combate tienen prioridad.
