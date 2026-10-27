@@ -44,16 +44,16 @@ func _run() -> void:
 	var garumi := GARUMI_SCENE.instantiate() as Garumi
 	root.add_child(garumi)
 	await process_frame
-	garumi.configurar({"id": "garumi-prueba", "nombre": "Garumi de prueba", "salud_combate": 40})
+	garumi.configurar({"id": "garumi-prueba", "nombre": "Garumi de prueba", "salud_combate": 40, "defensa": 0})
 	var cerebro_garumi := garumi.get_node_or_null("GarumiBrain") as GarumiBrain
 	_expect(cerebro_garumi != null, "Cada Garumi debe crear su cerebro reutilizable.", errores)
 	if cerebro_garumi != null:
 		_expect(bool(garumi._movimiento.get("_usar_direccion_externa")), "Sin perfil de Supabase, el cerebro debe bloquear la patrulla genérica y no inventar conducta.", errores)
 		_expect(not garumi.has_meta("relaciones_garumi"), "El cerebro no debe inventar relaciones persistentes en metadatos.", errores)
-		garumi.configurar({"id": "garumi-perfil", "nombre": "Garumi perfil", "ia_config": {"garumi": {"movimiento": {"perfil": "quieto"}}}})
+		garumi.configurar({"id": "garumi-perfil", "nombre": "Garumi perfil", "defensa": 0, "ia_config": {"garumi": {"movimiento": {"perfil": "quieto"}}}})
 		cerebro_garumi.configurar(garumi)
 		_expect(bool(garumi._movimiento.get("_usar_direccion_externa")), "Un perfil explícito de configuración debe activar el intérprete.", errores)
-		garumi.configurar({"id": "garumi-perfil-desconocido", "nombre": "Garumi perfil desconocido", "ia_config": {"garumi": {"movimiento": {"perfil": "perfil_no_registrado"}}}})
+		garumi.configurar({"id": "garumi-perfil-desconocido", "nombre": "Garumi perfil desconocido", "defensa": 0, "ia_config": {"garumi": {"movimiento": {"perfil": "perfil_no_registrado"}}}})
 		cerebro_garumi.configurar(garumi)
 		_expect(bool(garumi._movimiento.get("_usar_direccion_externa")), "Un perfil desconocido debe bloquear la patrulla genérica, no convertirse en errante.", errores)
 
