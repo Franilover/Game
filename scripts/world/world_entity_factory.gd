@@ -2,6 +2,7 @@ extends Node
 class_name WorldEntityFactory
 
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
+const GARUMI_SCENE: PackedScene = preload("res://scenes/creatures/garumi.tscn")
 const WORLD_PROP_SCENE: PackedScene = preload("res://scenes/world/world_prop.tscn")
 
 var _player: Node = null
@@ -17,6 +18,7 @@ var _world_data: WorldDataService = null
 var _world_atmosphere: WorldAtmosphere = null
 var _relaciones_ecologicas: Array = []
 var _creature_pool: Array[Creature] = []
+var _garumi_pool: Array[Garumi] = []
 var _prop_pool: Array[WorldProp] = []
 
 
@@ -49,9 +51,13 @@ func configurar_dependencias(
 
 
 func crear_criatura(data: Dictionary) -> Creature:
-	var node: Creature = _tomar_criatura_del_pool()
+	var es_garumi := str(data.get("categoria_entidad", "")).strip_edges().to_lower() == "garumi"
+	var node: Creature = _tomar_garumi_del_pool() if es_garumi else _tomar_criatura_del_pool()
 	if node == null:
-		node = CREATURE_SCENE.instantiate() as Creature
+		if es_garumi:
+			node = GARUMI_SCENE.instantiate() as Garumi
+		else:
+			node = CREATURE_SCENE.instantiate() as Creature
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear Creature.")
 		return null
@@ -84,13 +90,25 @@ func reciclar_criatura(node: Creature) -> void:
 	node.desactivar_como_proxy()
 	if node.get_parent() != null:
 		node.get_parent().remove_child(node)
-	if not node in _creature_pool:
-		_creature_pool.append(node)
+	if node is Garumi:
+		if not node in _garumi_pool:
+			_garumi_pool.append(node as Garumi)
+	else:
+		if not node in _creature_pool:
+			_creature_pool.append(node)
 
 
 func _tomar_criatura_del_pool() -> Creature:
 	while not _creature_pool.is_empty():
 		var node: Creature = _creature_pool.pop_back() as Creature
+		if node != null and is_instance_valid(node):
+			return node
+	return null
+
+
+func _tomar_garumi_del_pool() -> Garumi:
+	while not _garumi_pool.is_empty():
+		var node: Garumi = _garumi_pool.pop_back()
 		if node != null and is_instance_valid(node):
 			return node
 	return null
