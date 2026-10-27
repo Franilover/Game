@@ -2,6 +2,7 @@ extends Creature
 class_name Garumi
 
 signal vinculo_establecido(garumi: Garumi, jugador: Node, tipo: String)
+signal propuesta_vinculo_rechazada(garumi: Garumi, jugador: Node)
 signal salud_combate_cambiada(actual: int, maxima: int)
 signal encuentro_iniciado(garumi: Garumi, jugador: Node)
 
@@ -126,7 +127,12 @@ func _al_ocultar_menu() -> void:
 
 
 func ofrecer_vinculo(jugador: Node) -> bool:
-	if _vinculado or _enfrentamiento_activo:
+	if _vinculado or _enfrentamiento_activo or jugador == null or not is_instance_valid(jugador):
+		return false
+	var probabilidad := clampf(float(datos.get("aceptacion_vinculo", 0.5)), 0.0, 1.0)
+	if _rng.randf() > probabilidad:
+		propuesta_vinculo_rechazada.emit(self, jugador)
+		print("Garumi: ", criatura_nombre, " rechaza la propuesta de vínculo.")
 		return false
 	_establecer_vinculo(jugador, "voluntario")
 	return true
@@ -164,8 +170,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 		return
 
 	var salud_anterior := health
-	var salud_minima := 1
-	health = maxi(salud_minima, health - cantidad)
+	health = maxi(1, health - cantidad)
 	vital_state.health = health
 	vital_state.is_alive = true
 	_sync_desde_vital()
@@ -176,7 +181,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 
 
 func forzar_vinculo(jugador: Node) -> bool:
-	if not puede_forzar_vinculo():
+	if not puede_forzar_vinculo() or jugador == null or not is_instance_valid(jugador):
 		return false
 	_establecer_vinculo(jugador, "forzado")
 	return true
@@ -193,7 +198,7 @@ func _establecer_vinculo(jugador: Node, tipo: String) -> void:
 	set_meta("vinculado", true)
 	set_meta("tipo_vinculo", tipo)
 	vinculo_establecido.emit(self, jugador, tipo)
-	print("Garumi: vínculo ", tipo, " establecido con ", jugador.name if jugador != null else "jugador desconocido")
+	print("Garumi: vínculo ", tipo, " establecido con ", jugador.name)
 
 
 func finalizar_enfrentamiento() -> void:
