@@ -50,12 +50,27 @@ func esta_guardado() -> bool:
 
 
 func alternar_estado_invocacion(jugador: Node) -> void:
-	if not _vinculado or not is_instance_valid(jugador):
+	if not _vinculado or not is_instance_valid(jugador) or not jugador is Node2D:
 		return
 	if _guardado:
 		_invocar_garumi(jugador)
-	else:
+	elif _esta_en_pantalla():
 		_guardar_garumi()
+	else:
+		# Si está libre pero fuera de cámara, la tecla lo trae junto al jugador.
+		global_position = (jugador as Node2D).global_position + Vector2(42.0, 20.0)
+		_jugador_vinculado = jugador
+		if has_method("iniciar_seguimiento_jugador"):
+			iniciar_seguimiento_jugador(jugador)
+		actualizar_estado_en_hud()
+
+
+func _esta_en_pantalla() -> bool:
+	var camara := get_viewport().get_camera_2d()
+	if camara == null:
+		return true
+	var posicion_pantalla := camara.unproject_position(global_position)
+	return get_viewport().get_visible_rect().has_point(posicion_pantalla)
 
 
 func _guardar_garumi() -> void:
