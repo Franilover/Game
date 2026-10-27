@@ -6,8 +6,8 @@
 - **Base intacta:** `fix/combat-temporal-contract-v1` en `77e23937ea1ee8c2b69803717aecc883b3aff603`
 - **Main:** no se ha modificado ni mezclado esta rama.
 - **Supabase:** sin cambios de esquema, RPC ni datos canónicos.
-- **Checkpoint completo del bloque GP-01/GP-02:** `c38990bcd3ff5890653678d7862149044c41b418`
-- **Checkpoint más reciente que incluye esta bitácora:** se actualiza al crear este archivo.
+- **Último checkpoint de código + regresión:** `8318f69c1eca01de3f7a0c3084999f532183e14c`
+- **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
 
@@ -35,10 +35,24 @@ Añade `Garumi` y `scenes/creatures/garumi.tscn`, piscina separada en `WorldEnti
 
 Añade selección Garumi en DATA LOD, recuperación de categoría/clave de sprite/contexto de hábitat y pruebas de catálogo, selectores, escena, resistencia al daño común y persistencia del estado en chunks.
 
+### GP-04 — Sprite prototipo de depuración
+
+`8facf8926cc8f4c297473e481e975002a19ded7b`
+
+Añade `assets/art/garumis/Garumi_Prototipo.svg`, un sprite abstracto hecho a mano y expresamente no canónico. El cargador de Garumis reconoce SVG además de PNG.
+
+### GP-05 — Presencia de prueba sin catálogo canónico
+
+`8318f69c1eca01de3f7a0c3084999f532183e14c`
+
+Si el snapshot no tiene `garumis_game`, en builds de depuración el spawner puede insertar una entidad `Garumi prototipo (DEBUG)` mediante la misma ruta DATA/FULL y el ciclo de vida de chunks. La probabilidad se configura con `probabilidad_prototipo_garumi_debug` (0.35 por defecto), y el interruptor `mostrar_prototipo_garumi_en_debug_sin_catalogo` permite desactivarla. El fallback está protegido por `OS.is_debug_build()`; no genera una especie falsa en builds de lanzamiento.
+
+El prototipo guarda y restaura su marcador de depuración, nombre, asset key y hábitat para no convertirse en una instancia canónica durante el streaming.
+
 ## Estado de verificación
 
 - Prueba: `godot --headless --path . --script res://tests/world/test_garumi_world_presence.gd`
-- Resultado: **PENDING**. No se ha observado una ejecución de Godot 4.7 ni un resultado de CI asociado a este commit; no declararlo como PASS.
+- Resultado: **PENDING**. No se ha observado una ejecución de Godot 4.7 ni un resultado de CI asociado al checkpoint de esta actualización; no declararlo como PASS.
 - Revisión estática: el flujo de datos y las rutas de materialización se revisaron; eso no sustituye compilación ni prueba en ejecución.
 - El snapshot `data/world_initial.json` actual no incluye `garumis_game`.
 - `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano, exclusivo del prototipo no canónico. En builds de depuración puede aparecer cuando falta el catálogo; builds de lanzamiento no lo generan. No hay sprites canónicos aprobados todavía.
