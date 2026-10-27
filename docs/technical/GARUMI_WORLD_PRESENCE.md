@@ -16,8 +16,12 @@
 - El grupo `garumis` se mantiene separado del grupo normal `creatures`. El daño común no altera su salud; la absorción por Necromancers requiere su propio contrato y todavía no está implementada.
 - `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada de `Creature`. Comparte infraestructura de salud, movimiento y representación, pero no incluye el `AIController` de criaturas normales.
 - `Creature` busca sprite propio en `res://assets/art/garumis/<asset_key>.png` o `.PNG`. No reutiliza por accidente un sprite de criatura normal.
-- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano y no canónico. El prototipo automático queda **desactivado por defecto**; sólo aparece en debug si se activa manualmente `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Así no se mezcla con la primera generación canónica. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
+- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano y no canónico. Mientras `garumis_game` esté vacío, el prototipo automático está **activado por defecto en builds debug** y su probabilidad es 1.0 para cada chunk que tenga una posición caminable válida. Se puede desactivar con `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Lleva metadata explícita de prueba visual de Orumi gen. 1; no es un registro canónico ni reemplaza a Oruvan. En builds de lanzamiento, `OS.is_debug_build()` impide que aparezca. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
+
+### Disponibilidad visual en depuración (corrección inmediata)
+
+El prototipo de depuración volvió a estar habilitado por defecto porque el catálogo canónico sigue llegando vacío; deshabilitarlo dejaba cero Garumis visibles. Su probabilidad de prueba pasó a 1.0 y está protegido por `OS.is_debug_build()`. Es deliberadamente sólo una vista de prueba: al recibir catálogo canónico no se usa el fallback porque la ruta alternativa sólo corre cuando el catálogo está vacío. Revisar el log `Garumi prototipo DEBUG` y `sprite=cargado` en la consola.
 
 ### Fase de aparición activa: generación 1 de Orumi
 
