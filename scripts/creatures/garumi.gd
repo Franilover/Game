@@ -461,7 +461,7 @@ func iniciar_enfrentamiento(jugador: Node) -> bool:
 
 	_jugador_del_encuentro = jugador
 	_enfrentamiento_activo = true
-	max_health = maxi(1, int(datos.get("salud_combate", salud_combate_predeterminada)))
+	max_health = maxi(1, int(estadisticas_combate.get("vida", datos.get("salud_combate", salud_combate_predeterminada))))
 	vital_state.configurar(max_health, max_mana)
 	restaurar_estado_vital(max_health, true)
 	add_to_group("damageable")
