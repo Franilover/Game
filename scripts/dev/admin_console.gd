@@ -326,6 +326,26 @@ func _mostrar_sugerencias_summon(
 			false
 		)
 
+	# Garumi tiene un catálogo independiente del de criaturas comunes.
+	# Tab completa el nombre canónico/público entre comillas.
+	var es_garumi: bool = (
+		not partes.is_empty()
+		and partes[0].to_lower() == "garumi"
+	)
+	if es_garumi:
+		var nombre_parcial_garumi := ""
+		if argumento_crudo.strip_edges().length() > "Garumi".length():
+			nombre_parcial_garumi = argumento_crudo.strip_edges().substr("Garumi".length()).strip_edges()
+			if nombre_parcial_garumi.begins_with("\""):
+				nombre_parcial_garumi = nombre_parcial_garumi.substr(1)
+			if nombre_parcial_garumi.ends_with("\""):
+				nombre_parcial_garumi = nombre_parcial_garumi.substr(0, nombre_parcial_garumi.length() - 1)
+		_mostrar_sugerencias(
+			_filtrar_nombres(_obtener_nombres_garumis_visibles(), nombre_parcial_garumi),
+			COMANDO_SUMMON
+		)
+		return
+
 	# Una segunda palabra después de "Humano" significa que
 	# el usuario está eligiendo un personaje individual.
 	var es_humano: bool = (
@@ -487,6 +507,34 @@ func _obtener_nombres_criaturas() -> Array[String]:
 	return nombres
 
 
+func _obtener_nombres_garumis_visibles() -> Array[String]:
+	var nombres: Array[String] = []
+	for garumi in WorldData.obtener_garumis_game():
+		var nombre := str(garumi.get("nombre", "")).strip_edges()
+		if nombre.is_empty():
+			continue
+
+		# El snapshot del mundo ya contiene el catálogo accesible al juego.
+		# Si además expone estado/visibilidad, descartamos borradores y privados.
+		var estado := str(garumi.get("estado", "")).strip_edges().to_lower()
+		var visibilidad := str(garumi.get("visibilidad", "")).strip_edges().to_lower()
+		var es_publico := bool(garumi.get("publico", garumi.get("es_publico", false)))
+		var es_canonico := bool(garumi.get("canonico", garumi.get("es_canonico", garumi.get("canon", false))))
+		if not estado.is_empty() and estado not in ["canon", "canónico", "canonico", "publico", "público", "publicado", "aprobado"]:
+			continue
+		if not visibilidad.is_empty() and visibilidad not in ["publico", "público", "public", "canon", "canónico", "canonico"]:
+			continue
+		if garumi.has("publicado") and not bool(garumi.get("publicado", false)) and not es_canonico:
+			continue
+		if garumi.has("es_publico") or garumi.has("publico") or garumi.has("canonico") or garumi.has("es_canonico") or garumi.has("canon"):
+			if not es_publico and not es_canonico:
+				continue
+		if nombre not in nombres:
+			nombres.append(nombre)
+	nombres.sort()
+	return nombres
+
+
 func _obtener_nombres_personajes_game() -> Array[String]:
 	var nombres: Array[String] = []
 
@@ -618,6 +666,14 @@ func _completar_sugerencia(nombre: String) -> void:
 				" ",
 				false
 			)
+
+		if not partes.is_empty() and partes[0].to_lower() == "garumi":
+			prefijo = COMANDO_SUMMON + " Garumi \""
+			_entrada.text = prefijo + nombre + "\""
+			_entrada.caret_column = _entrada.text.length() - 1
+			_actualizar_sugerencias()
+			_entrada.grab_focus()
+			return
 
 		if (
 			not partes.is_empty()
@@ -771,6 +827,12 @@ func _comando_help() -> void:
 	_agregar_linea(
 		"[color=#b4befe]"
 		+ "/summon <criatura>"
+		+ "[/color]"
+	)
+
+	_agregar_linea(
+		"[color=#b4befe]"
+		+ "/summon Garumi \"<nombre del Garumi>\""
 		+ "[/color]"
 	)
 
