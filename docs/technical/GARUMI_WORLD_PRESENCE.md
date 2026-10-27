@@ -4,7 +4,7 @@
 
 - **Rama:** `feat/garumi-world-presence`
 - **Base:** `fix/combat-temporal-contract-v1` en el checkpoint publicado actual.
-- **Alcance:** sólo Godot. No modifica tablas, RPC ni datos canónicos de Supabase.
+- **Alcance:** Godot + prueba de integración controlada. En Supabase se canonizó únicamente Oruvan por autorización explícita y se actualizó el RPC del mundo; no se añadieron columnas ni se aprobaron otros Garumis.
 - **Estado de ejecución:** la prueba nueva queda **PENDING** hasta observar su salida en Godot 4.7/CI.
 
 ### Qué incorpora
@@ -60,12 +60,12 @@ El snapshot incluido actualmente en `data/world_initial.json` contiene `biomas`,
 
 ### Diagnóstico de la fuente de datos (lectura, sin escrituras)
 
-- La tabla `public.garumis` contiene 24 registros; los 24 tienen `estado_documentacion = 'borrador'`. No se encontró ninguno aprobado como canon. La tabla `public.garumi_originales` confirma que Orumi tiene ID `24f86486-aced-4a23-bd1b-f025561a8aa3`.
-- `public.get_mundo_inicial()`, `public.get_mundo_inicial_ambiental_v1()` y `public.get_mundo_inicial_ambiental_v2()` no contienen referencias a `garumis` ni emiten la clave `garumis_game`.
-- El esquema actual de `public.garumis` no contiene `asset_key` ni selectores de aparición ecológica. Por tanto, el cliente Godot no puede inferir de forma segura bioma/hábitat/probabilidad usando sólo los registros actuales.
-- Próxima integración canónica: decidir y aprobar el contrato de aparición, definir cómo se asocia cada Garumi con hábitat/bioma, añadir su clave de sprite y extender el exportador para devolver sólo registros aprobados. Todo ello queda bloqueado hasta autorización explícita; no se modificó Supabase.
+- `public.garumis` tenía 24 borradores; sólo Oruvan (`4a409bba-fc4a-4b58-931f-9af1a6831710`) se actualizó a `estado_documentacion = 'canon'` para esta prueba. Orumi tiene ID `24f86486-aced-4a23-bd1b-f025561a8aa3`; los otros 23 Garumis no se modificaron.
+- La migración `emitir_garumi_orumi_gen1_para_prueba` añadió `garumis_game` a `public.get_mundo_inicial()`. Los RPC ambientales v1 y v2 heredan esa clave. La consulta de verificación al RPC v2 devolvió exactamente un registro: Oruvan.
+- `public.garumis` sigue sin columna `asset_key` ni selectores ecológicos. Para esta prueba, el RPC deriva `asset_key` desde el nombre (`Oruvan`) y añade temporalmente `habitat_claves = ["general"]`, probabilidad 1.0 y peso 1.0. No es la distribución ecológica definitiva.
+- Para la prueba el exportador filtra por categoría `normal`, linaje Orumi, `numero_origen = 1` y estado `aprobado/canon`. No se modificaron otros registros ni el esquema de tablas.
 
-Este documento define el contrato que el runtime puede consumir; no implica que el exportador de Supabase ya emita esos campos. Ese lado queda sin tocar hasta revisar y autorizar explícitamente su adaptación.
+El RPC ya emite el único registro autorizado para esta prueba. El arte de Oruvan es provisional y la regla de aparición `general` debe sustituirse cuando se defina su ecología definitiva.
 
 ### Arte y siguiente paso
 
@@ -78,5 +78,5 @@ Este documento define el contrato que el runtime puede consumir; no implica que 
 
 Comando: `godot --headless --path . --script res://tests/world/test_garumi_world_presence.gd`
 
-- **Resultado:** PENDING hasta ver salida real.
+- **Resultado del RPC:** verificado, devuelve Oruvan con `asset_key = Oruvan` y probabilidad 1.0. **Resultado runtime Godot:** PENDING hasta confirmar materialización y `sprite=cargado` después de sincronizar y reiniciar.
 - **Punto de recuperación:** commit de esta implementación en `feat/garumi-world-presence`. No hacer reset de `main` ni revertir bloques posteriores a ciegas.
