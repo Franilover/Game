@@ -77,7 +77,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(timeout 30s godot --headless --path . --script res://tests/ui/test_garumi_encyclopedia.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
             echo "Garumi encyclopedia regression test reported errors."
