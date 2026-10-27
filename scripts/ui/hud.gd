@@ -1538,6 +1538,7 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	etiqueta.add_theme_font_size_override("font_size", 11)
 	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.83, 0.68, 1.0))
 	fila.add_child(etiqueta)
+	actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	if not is_instance_valid(nodo):
@@ -1559,6 +1560,9 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	return null
 
 func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
+	for modal in get_tree().get_nodes_in_group("modal_ui"):
+		if is_instance_valid(modal) and modal.is_inside_tree() and not modal.is_queued_for_deletion():
+			return false
 	if evento.keycode == KEY_G:
 		_mostrar_numeros_garumis = not _mostrar_numeros_garumis
 		for i in range(_garumis_vinculados_nodos.size()):
