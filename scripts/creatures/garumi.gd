@@ -20,11 +20,79 @@ var _vinculado: bool = false
 var _tipo_vinculo: String = ""
 var _jugador_del_encuentro: Node = null
 var _menu_contextual: CanvasLayer = null
+var _jugador_vinculado: Node = null
+var _guardado: bool = false
+var _distancia_maxima_seguimiento: float = 520.0
 
 
 func _ready() -> void:
 	super._ready()
 	_normalizar_grupos_garumi()
+
+
+func _physics_process(delta: float) -> void:
+	if _vinculado:
+		if _guardado:
+			return
+		if not is_instance_valid(_jugador_vinculado):
+			_guardar_garumi()
+			return
+		if not _enfrentamiento_activo and global_position.distance_to((_jugador_vinculado as Node2D).global_position) > _distancia_maxima_seguimiento:
+			_guardar_garumi()
+			return
+		super._physics_process(delta)
+		return
+	super._physics_process(delta)
+
+
+func esta_guardado() -> bool:
+	return _guardado
+
+
+func alternar_estado_invocacion(jugador: Node) -> void:
+	if not _vinculado or not is_instance_valid(jugador):
+		return
+	if _guardado:
+		_invocar_garumi(jugador)
+	else:
+		_guardar_garumi()
+
+
+func _guardar_garumi() -> void:
+	if _guardado:
+		return
+	_guardado = true
+	if has_method("detener_seguimiento_jugador"):
+		detener_seguimiento_jugador()
+	if has_method("desactivar_como_proxy"):
+		desactivar_como_proxy()
+	else:
+		visible = false
+		set_physics_process(false)
+		set_process(false)
+	actualizar_estado_en_hud()
+
+
+func _invocar_garumi(jugador: Node) -> void:
+	if not is_instance_valid(jugador) or not jugador is Node2D:
+		return
+	_guardado = false
+	_jugador_vinculado = jugador
+	var destino := (jugador as Node2D).global_position + Vector2(42.0, 20.0)
+	if has_method("activar_como_proxy"):
+		activar_como_proxy()
+	_normalizar_grupos_garumi()
+	global_position = destino
+	velocity = Vector2.ZERO
+	if has_method("iniciar_seguimiento_jugador"):
+		iniciar_seguimiento_jugador(jugador)
+	actualizar_estado_en_hud()
+
+
+func actualizar_estado_en_hud() -> void:
+	for nodo_hud in get_tree().get_nodes_in_group("hud"):
+		if is_instance_valid(nodo_hud) and nodo_hud.has_method("actualizar_estado_garumi"):
+			nodo_hud.call("actualizar_estado_garumi", self, _guardado)
 
 
 func configurar(datos_garumi: Dictionary) -> void:
@@ -319,6 +387,8 @@ func _establecer_vinculo(jugador: Node, tipo: String) -> void:
 		if escena_principal != null and escena_principal.has_method("terminar_arena_garumi"):
 			escena_principal.call("terminar_arena_garumi", self)
 	_vinculado = true
+	_jugador_vinculado = jugador
+	_guardado = false
 	_tipo_vinculo = tipo
 	_enfrentamiento_activo = false
 	_jugador_del_encuentro = null
@@ -328,6 +398,8 @@ func _establecer_vinculo(jugador: Node, tipo: String) -> void:
 	set_meta("vinculado", true)
 	set_meta("tipo_vinculo", tipo)
 	vinculo_establecido.emit(self, jugador, tipo)
+	if has_method("iniciar_seguimiento_jugador"):
+		iniciar_seguimiento_jugador(jugador)
 	_notificar_resultado_vinculo(true, tipo)
 	print("Garumi: vínculo ", tipo, " establecido con ", jugador.name)
 
