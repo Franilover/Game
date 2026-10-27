@@ -38,7 +38,7 @@ func _run() -> void:
 	var garumi_voluntario := GARUMI_SCENE.instantiate() as Garumi
 	root.add_child(garumi_voluntario)
 	await process_frame
-	garumi_voluntario.configurar({"id": "garumi-voluntario", "nombre": "Garumi voluntario"})
+	garumi_voluntario.configurar({"id": "garumi-voluntario", "nombre": "Garumi voluntario", "aceptacion_vinculo": 1.0})
 	_expect(garumi_voluntario.ofrecer_vinculo(jugador), "Debe poder ofrecerse un vínculo fuera del combate.", errores)
 	_expect(garumi_voluntario.obtener_tipo_vinculo() == "voluntario", "El vínculo voluntario debe distinguirse del forzado.", errores)
 	_expect(not garumi_voluntario.es_dialogable(), "Un Garumi ya vinculado no debe volver a aparecer como objetivo contextual.", errores)
