@@ -41,7 +41,14 @@ Cada snapshot puede incluir una clave raíz `garumis_game`, como arreglo indepen
 
 Los selectores ecológicos son opcionales individualmente, pero **al menos uno debe estar presente**. Si se indican varios, todos tienen que coincidir con el contexto del tile. `probabilidad_chunk` es un valor entre 0 y 1; si se omite, Godot usa el ajuste `garumi_spawn_probability_per_chunk` del spawner (por defecto 0.15). `peso_spawn` permite ponderar Garumis elegibles en un mismo punto.
 
-El snapshot incluido actualmente en `data/world_initial.json` contiene `biomas`, `ecosistemas_sin_bioma`, `version` y `generado_en`, pero **no contiene `garumis_game`**. Por eso el código, por sí solo, aún no generará Garumis en una sesión que use ese snapshot. Primero se necesita que la fuente canónica los exporte con estos campos, y después sprites PNG aprobados en la carpeta dedicada.
+El snapshot incluido actualmente en `data/world_initial.json` contiene `biomas`, `ecosistemas_sin_bioma`, `version` y `generado_en`, pero **no contiene `garumis_game`**. La salida runtime proporcionada el 27-10-2026 confirma `catalogo = 0` y registra `Garumi prototipo DEBUG` en el chunk `(1, -1)` con `sprite=cargado`. Esto verifica el fallback visual local; no verifica el catálogo canónico ni la compilación de todos los scripts.
+
+### Diagnóstico de la fuente de datos (lectura, sin escrituras)
+
+- La tabla `public.garumis` existe y contiene 24 registros; los 24 tienen `estado_documentacion = 'borrador'`. No se encontró ninguno aprobado como canon.
+- `public.get_mundo_inicial()`, `public.get_mundo_inicial_ambiental_v1()` y `public.get_mundo_inicial_ambiental_v2()` no contienen referencias a `garumis` ni emiten la clave `garumis_game`.
+- El esquema actual de `public.garumis` no contiene `asset_key` ni selectores de aparición ecológica. Por tanto, el cliente Godot no puede inferir de forma segura bioma/hábitat/probabilidad usando sólo los registros actuales.
+- Próxima integración canónica: decidir y aprobar el contrato de aparición, definir cómo se asocia cada Garumi con hábitat/bioma, añadir su clave de sprite y extender el exportador para devolver sólo registros aprobados. Todo ello queda bloqueado hasta autorización explícita; no se modificó Supabase.
 
 Este documento define el contrato que el runtime puede consumir; no implica que el exportador de Supabase ya emita esos campos. Ese lado queda sin tocar hasta revisar y autorizar explícitamente su adaptación.
 
