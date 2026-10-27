@@ -48,8 +48,14 @@ func _run() -> void:
 	var cerebro_garumi := garumi.get_node_or_null("GarumiBrain") as GarumiBrain
 	_expect(cerebro_garumi != null, "Cada Garumi debe crear su cerebro reutilizable.", errores)
 	if cerebro_garumi != null:
-		cerebro_garumi.registrar_interaccion(jugador, "ayuda")
-		_expect(float(cerebro_garumi.obtener_relacion(jugador).get("confianza", 0.0)) == 8.0, "El cerebro debe registrar confianza por jugador sin mezclar relaciones.", errores)
+		_expect(not bool(garumi._movimiento.get("_usar_direccion_externa")), "Sin perfil de Supabase, el cerebro no debe tomar control del movimiento.", errores)
+		_expect(not garumi.has_meta("relaciones_garumi"), "El cerebro no debe inventar relaciones persistentes en metadatos.", errores)
+		garumi.configurar({"id": "garumi-perfil", "nombre": "Garumi perfil", "ia_config": {"garumi": {"movimiento": {"perfil": "quieto"}}}})
+		cerebro_garumi.configurar(garumi)
+		_expect(bool(garumi._movimiento.get("_usar_direccion_externa")), "Un perfil explícito de configuración debe activar el intérprete.", errores)
+		garumi.configurar({"id": "garumi-perfil-desconocido", "nombre": "Garumi perfil desconocido", "ia_config": {"garumi": {"movimiento": {"perfil": "perfil_no_registrado"}}}})
+		cerebro_garumi.configurar(garumi)
+		_expect(not bool(garumi._movimiento.get("_usar_direccion_externa")), "Un perfil desconocido no debe convertirse silenciosamente en errante.", errores)
 
 	_expect(not garumi.is_in_group("damageable"), "El Garumi no debe recibir daño antes de iniciar un enfrentamiento.", errores)
 	garumi.take_damage(20, "test/sin-enfrentamiento")
