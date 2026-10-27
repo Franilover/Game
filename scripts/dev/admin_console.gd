@@ -313,32 +313,38 @@ func _mostrar_sugerencias_tp(texto: String) -> void:
 func _mostrar_sugerencias_summon(
 	texto: String
 ) -> void:
-	var argumento_crudo: String = texto.substr(
-		COMANDO_SUMMON.length()
-	)
-
+	var argumento_crudo: String = texto.substr(COMANDO_SUMMON.length())
 	var argumento: String = argumento_crudo.strip_edges()
 	var partes: PackedStringArray = PackedStringArray()
-
 	if not argumento.is_empty():
-		partes = argumento.split(
-			" ",
-			false
-		)
+		partes = argumento.split(" ", false)
 
-	# Garumi tiene un catálogo independiente del de criaturas comunes.
-	# Tab completa el nombre canónico/público entre comillas.
+	# Primero se autocompleta el tipo; los catálogos aparecen después
+	# de elegirlo y escribir un espacio.
+	if partes.size() == 1 and not texto.ends_with(" "):
+		var tipo_parcial := partes[0].to_lower()
+		var tipos: Array[String] = ["Garumi", "Humano"]
+		var tipos_filtrados: Array[String] = []
+		for tipo in tipos:
+			if tipo.to_lower().begins_with(tipo_parcial):
+				tipos_filtrados.append(tipo)
+		if not tipos_filtrados.is_empty():
+			_mostrar_sugerencias(tipos_filtrados, COMANDO_SUMMON)
+			return
+
+	# Garumis: catálogo independiente, solo tras /summon Garumi .
 	var es_garumi: bool = (
 		not partes.is_empty()
 		and partes[0].to_lower() == "garumi"
+		and (partes.size() >= 2 or texto.ends_with(" "))
 	)
 	if es_garumi:
 		var nombre_parcial_garumi := ""
-		if argumento_crudo.strip_edges().length() > "Garumi".length():
-			nombre_parcial_garumi = argumento_crudo.strip_edges().substr("Garumi".length()).strip_edges()
-			if nombre_parcial_garumi.begins_with("\""):
+		if partes.size() >= 2:
+			nombre_parcial_garumi = " ".join(partes.slice(1)).strip_edges()
+			if nombre_parcial_garumi.begins_with("\\""):
 				nombre_parcial_garumi = nombre_parcial_garumi.substr(1)
-			if nombre_parcial_garumi.ends_with("\""):
+			if nombre_parcial_garumi.ends_with("\\""):
 				nombre_parcial_garumi = nombre_parcial_garumi.substr(0, nombre_parcial_garumi.length() - 1)
 		_mostrar_sugerencias(
 			_filtrar_nombres(_obtener_nombres_garumis_visibles(), nombre_parcial_garumi),
@@ -346,88 +352,42 @@ func _mostrar_sugerencias_summon(
 		)
 		return
 
-	# Una segunda palabra después de "Humano" significa que
-	# el usuario está eligiendo un personaje individual.
+	# Personajes humanos: solo aparecen después de /summon Humano .
 	var es_humano: bool = (
 		not partes.is_empty()
 		and partes[0].to_lower() == "humano"
+		and (partes.size() >= 2 or texto.ends_with(" "))
 	)
-
-	if es_humano and (
-		partes.size() >= 2
-		or texto.ends_with(" ")
-	):
-		var nombre_parcial: String = ""
-
+	if es_humano:
+		var nombre_parcial_humano := ""
 		if partes.size() >= 2:
-			nombre_parcial = partes[1]
+			nombre_parcial_humano = " ".join(partes.slice(1)).strip_edges()
+			if nombre_parcial_humano.begins_with("\\""):
+				nombre_parcial_humano = nombre_parcial_humano.substr(1)
+			if nombre_parcial_humano.ends_with("\\""):
+				nombre_parcial_humano = nombre_parcial_humano.substr(0, nombre_parcial_humano.length() - 1)
 
-		var criatura_humana: Dictionary = (
-			WorldData.buscar_criatura_por_nombre(
-				"Humano"
-			)
-		)
-
+		var criatura_humana: Dictionary = WorldData.buscar_criatura_por_nombre("Humano")
 		var nombres_personajes: Array[String] = []
-
 		if not criatura_humana.is_empty():
-			var personajes: Array[Dictionary] = (
-				WorldData.obtener_personajes_game_de_criatura(
-					str(
-						criatura_humana.get(
-							"id",
-							""
-						)
-					)
-				)
+			var personajes: Array[Dictionary] = WorldData.obtener_personajes_game_de_criatura(
+				str(criatura_humana.get("id", ""))
 			)
-
 			for personaje in personajes:
-				var nombre_personaje: String = str(
-					personaje.get(
-						"nombre",
-						""
-					)
-				).strip_edges()
-
-				if nombre_personaje.is_empty():
-					continue
-
-				nombres_personajes.append(
-					nombre_personaje
-				)
-
+				var nombre_personaje := str(personaje.get("nombre", "")).strip_edges()
+				if not nombre_personaje.is_empty() and nombre_personaje not in nombres_personajes:
+					nombres_personajes.append(nombre_personaje)
 		_mostrar_sugerencias(
-				_filtrar_nombres(
-					nombres_personajes,
-					nombre_parcial
-				),
+			_filtrar_nombres(nombres_personajes, nombre_parcial_humano),
 			COMANDO_SUMMON
 		)
 		return
 
-	var nombre_parcial: String = _extraer_argumento(
-		texto,
-		COMANDO_SUMMON
-	)
-
-	var nombres_summon: Array[String] = (
-		_obtener_nombres_criaturas()
-	)
-
-	nombres_summon.append_array(
-		_obtener_nombres_personajes_game()
-	)
-
-	nombres_summon = _deduplicar_nombres(
-		nombres_summon
-	)
-
+	# El autocompletado normal contiene solo criaturas; los humanos
+	# pertenecen exclusivamente a la ruta explícita /summon Humano .
+	var nombres_summon: Array[String] = _obtener_nombres_criaturas()
 	_mostrar_sugerencias(
-		_filtrar_nombres(
-			nombres_summon,
-			nombre_parcial
-		),
+		_filtrar_nombres(nombres_summon, _extraer_argumento(texto, COMANDO_SUMMON)),
 		COMANDO_SUMMON
 	)
 
@@ -665,32 +625,36 @@ func _completar_sugerencia(nombre: String) -> void:
 	var prefijo: String = comando + " "
 
 	if comando == COMANDO_SUMMON:
-		var argumento_crudo: String = _entrada.text.substr(
-			COMANDO_SUMMON.length()
-		)
+		var argumento_crudo: String = _entrada.text.substr(COMANDO_SUMMON.length())
+		var argumento: String = argumento_crudo.strip_edges()
 		var partes: PackedStringArray = PackedStringArray()
+		if not argumento.is_empty():
+			partes = argumento.split(" ", false)
 
-		if not argumento_crudo.strip_edges().is_empty():
-			partes = argumento_crudo.strip_edges().split(
-				" ",
-				false
-			)
+		# Seleccionar el tipo abre su catálogo; no confundir "Garumi"
+		# con el nombre de un Garumi.
+		if nombre in ["Garumi", "Humano"] and (
+			partes.is_empty()
+			or (partes.size() == 1 and not _entrada.text.ends_with(" "))
+		):
+			_entrada.text = COMANDO_SUMMON + " " + nombre + " "
+			_entrada.caret_column = _entrada.text.length()
+			_actualizar_sugerencias()
+			_entrada.grab_focus()
+			return
 
-		if not partes.is_empty() and partes[0].to_lower() == "garumi":
-			prefijo = COMANDO_SUMMON + " Garumi \""
-			_entrada.text = prefijo + nombre + "\""
+		if not partes.is_empty() and partes[0].to_lower() == "garumi" and (
+			partes.size() >= 2 or _entrada.text.ends_with(" ")
+		):
+			prefijo = COMANDO_SUMMON + " Garumi \\""
+			_entrada.text = prefijo + nombre + "\\""
 			_entrada.caret_column = _entrada.text.length() - 1
 			_actualizar_sugerencias()
 			_entrada.grab_focus()
 			return
 
-		if (
-			not partes.is_empty()
-			and partes[0].to_lower() == "humano"
-			and (
-				partes.size() >= 2
-				or _entrada.text.ends_with(" ")
-			)
+		if not partes.is_empty() and partes[0].to_lower() == "humano" and (
+			partes.size() >= 2 or _entrada.text.ends_with(" ")
 		):
 			prefijo = COMANDO_SUMMON + " Humano "
 
