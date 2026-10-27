@@ -55,6 +55,7 @@ func _run() -> void:
 	var relacion_borrador := {
 		"especie_origen_id": "orumi-inicial-test",
 		"especie_destino_id": "orumi-final-test",
+		"tipo_relacion": "directa",
 		"estado_documentacion": "borrador"
 	}
 	var relacion_canon := relacion_borrador.duplicate(true)
