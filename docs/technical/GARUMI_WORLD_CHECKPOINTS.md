@@ -5,9 +5,9 @@
 - **Rama de trabajo:** `feat/garumi-world-presence`
 - **Base intacta:** `fix/combat-temporal-contract-v1` en `77e23937ea1ee8c2b69803717aecc883b3aff603`
 - **Main:** no se ha modificado ni mezclado esta rama.
-- **Supabase:** sin cambios de esquema, RPC ni datos canónicos.
+- **Supabase (estado actual):** una fila de Oruvan marcada `canon` para prueba y la migración `emitir_garumi_orumi_gen1_para_prueba`; no se añadieron columnas ni se canonizaron otros registros.
 - **Checkpoint previo:** `942613000ce072dacb8825a17f4b0b891d0bf9ea`
-- **Checkpoint de filtro Orumi generación 1:** reglas con filtro generacional y de estado en `ee04d0a75a6dc2945313dcb96d7f5aad2348c593`; regresión ampliada en `7817be330709ef3d8a01c285d0494d7c8187903c`. La reparación de vista debug y su prueba están reflejadas en el HEAD actual.
+- **Checkpoint de filtro Orumi generación 1:** reglas con filtro generacional/estado en `d71e5d629f3770092332a1074f97bb6b3c1deba0`; la integración de Oruvan y el RPC están reflejados en el HEAD actual.
 - **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
@@ -68,20 +68,28 @@ El prototipo guarda y restaura su marcador de depuración, nombre, asset key y h
 - Se agregó una regresión que comprueba el default visible y el 100% de probabilidad.
 - **Prueba runtime aún requerida:** ejecutar build/sync y confirmar el log del prototipo y `sprite=cargado`; la edición del código no equivale a prueba ejecutada.
 
+## GP-08 — Oruvan como primer Garumi de prueba
+
+- Se marcó únicamente Oruvan (`4a409bba-fc4a-4b58-931f-9af1a6831710`) con `estado_documentacion = 'canon'`; los otros 23 registros no se modificaron.
+- Se aplicó la migración Supabase `emitir_garumi_orumi_gen1_para_prueba`, que extiende `get_mundo_inicial()` con `garumis_game`. Los RPC ambiental v1/v2 heredan la clave.
+- Verificación real del RPC ambiental v2: devuelve exactamente un elemento, `Oruvan`, con `asset_key = "Oruvan"`, `estado_documentacion = "canon"` y `probabilidad_chunk = 1.0`.
+- La regla de hábitat `general` y probabilidad 1.0 son temporales para probar el flujo; no son la ecología definitiva de Oruvan.
+- `assets/art/garumis/Oruvan.svg` es una copia renombrada del antiguo sprite abstracto. La textura está provisionalmente asignada; falta confirmar el nuevo build dentro de Godot.
+
 ## Estado de verificación
 
 - Prueba: `godot --headless --path . --script res://tests/world/test_garumi_world_presence.gd`
 - Prueba estática/runtime parcial: la salida manual de Godot aportada el 27-10-2026 muestra `Garumi prototipo DEBUG -> chunk=(1, -1) | sprite=cargado`. Fallback de aparición y carga de sprite **observados**.
 - Suite headless automatizada: **PENDING**. No se ha observado ejecución completa Godot 4.7 ni CI exitoso; no declararla como PASS.
 - Revisión estática: el flujo de datos y las rutas de materialización se revisaron; eso no sustituye compilación ni prueba en ejecución.
-- El snapshot `data/world_initial.json` actual no incluye `garumis_game`.
-- Diagnóstico read-only: `public.garumis` tiene 24 filas y todas están en `borrador`; los RPC `get_mundo_inicial`, `get_mundo_inicial_ambiental_v1` y `get_mundo_inicial_ambiental_v2` no emiten `garumis_game`.
-- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano, exclusivo del prototipo no canónico. En builds de depuración puede aparecer cuando falta el catálogo; builds de lanzamiento no lo generan. No hay sprites canónicos aprobados todavía.
-- Sin el catálogo de la fuente canónica y sprites aprobados, el mundo no mostrará apariciones canónicas de Garumis. El runtime está preparado para consumir esos datos, pero su exportación no se ha modificado. El fallback de depuración sólo valida render/posición/streaming y no representa el canon.
+- El snapshot incluido `data/world_initial.json` aún no contiene `garumis_game`; Oruvan llega por el RPC remoto y se guarda en la caché del jugador.
+- La comprobación SQL confirmó que el RPC ambiental v2 devuelve sólo Oruvan, con `asset_key = Oruvan`.
+- El sprite actual es `assets/art/garumis/Oruvan.svg`, provisional y abstracto; no es el diseño final.
+- La aparición y carga de textura dentro de Godot después de sincronizar/reiniciar siguen pendientes de verificación.
 
 ## Protocolo para el siguiente bloque
 
 1. No resetear ni revertir la rama completa para arreglar un fallo localizado.
 2. Leer la salida de la prueba y el primer error de compilación de Godot, corregirlo y volver a ejecutar la misma prueba.
 3. Verificar una transición DATA → FULL → DATA → FULL, comprobando que el Garumi conserva identidad, sprite, posición/contexto y no se duplica.
-4. Antes de modificar Supabase o añadir nombres/arte como canon, revisar y autorizar expresamente ese bloque.
+4. La autorización actual cubre únicamente Oruvan para esta prueba. No modificar ni canonizar otros Garumis sin nueva decisión.
