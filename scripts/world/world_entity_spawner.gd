@@ -164,6 +164,10 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if categoria_entidad == "garumi":
 			criatura_data["categoria_entidad"] = "garumi"
 			criatura_data["asset_key"] = str(criatura_data.get("asset_key", criatura_data.get("nombre", "")))
+			# La fila canónica define la forma; el estado runtime conserva su progreso.
+			for clave_progresion in ["nivel", "experiencia_total", "eterium_actual"]:
+				if dato.has(clave_progresion):
+					criatura_data[clave_progresion] = dato[clave_progresion]
 		var criatura_variant: Variant = _entity_factory.crear_criatura(criatura_data)
 		if not criatura_variant is Creature:
 			continue
