@@ -1183,6 +1183,67 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	_diag_prop_creados += 1
 	return true
 
+func summon_garumi(
+	nombre: String,
+	posicion: Vector2
+) -> Dictionary:
+	var nombre_solicitado := nombre.strip_edges()
+	if nombre_solicitado.is_empty():
+		return {"ok": false, "mensaje": "Debes indicar el nombre del Garumi."}
+	if _world_data == null or _entity_factory == null or _entity_manager == null:
+		return {"ok": false, "mensaje": "El sistema de entidades no está configurado."}
+
+	var garumi_data: Dictionary = {}
+	for dato_variant in _world_data.obtener_garumis_game():
+		if not dato_variant is Dictionary:
+			continue
+		var dato := dato_variant as Dictionary
+		var nombre_catalogo := str(dato.get("nombre", "")).strip_edges()
+		if nombre_catalogo.to_lower() == nombre_solicitado.to_lower():
+			garumi_data = dato.duplicate(true)
+			break
+
+	if garumi_data.is_empty():
+		return {
+			"ok": false,
+			"mensaje": "No existe un Garumi llamado " + nombre_solicitado + " en el catálogo activo."
+		}
+
+	garumi_data["categoria_entidad"] = "garumi"
+	garumi_data["asset_key"] = str(garumi_data.get("asset_key", garumi_data.get("nombre", "")))
+	var garumi_variant: Variant = _entity_factory.crear_criatura(garumi_data)
+	if not garumi_variant is Creature:
+		return {"ok": false, "mensaje": "No se pudo crear la escena del Garumi."}
+
+	var garumi := garumi_variant as Creature
+	var runtime_key := "garumi_admin:" + str(Time.get_ticks_msec())
+	garumi.set_meta("runtime_instance_key", runtime_key)
+	garumi.set_meta("entidad_categoria", "garumi")
+	if not _entity_manager.registrar_global(garumi):
+		garumi.queue_free()
+		return {"ok": false, "mensaje": "No se pudo registrar el Garumi en el mundo."}
+
+	garumi.global_position = posicion
+	if _terrain != null:
+		var tile_size := maxi(_terrain.tile_size, 1)
+		var posicion_local := _terrain.to_local(posicion)
+		var tile := Vector2i(floori(posicion_local.x / float(tile_size)), floori(posicion_local.y / float(tile_size)))
+		var chunk_coord := Vector2i(
+			floori(float(tile.x) / float(_terrain.chunk_size_tiles)),
+			floori(float(tile.y) / float(_terrain.chunk_size_tiles))
+		)
+		var origin_x := chunk_coord.x * _terrain.chunk_size_tiles
+		var origin_y := chunk_coord.y * _terrain.chunk_size_tiles
+		var limites_chunk := Rect2(
+			Vector2(float(origin_x * _terrain.tile_size), float(origin_y * _terrain.tile_size)),
+			Vector2(float(_terrain.chunk_size_tiles * _terrain.tile_size), float(_terrain.chunk_size_tiles * _terrain.tile_size))
+		)
+		garumi.configurar_chunk(chunk_coord, limites_chunk)
+		garumi.configurar_entorno("general")
+
+	return {"ok": true, "nombre": str(garumi_data.get("nombre", nombre_solicitado)), "garumi": garumi}
+
+
 func summon_criatura(
 	nombre: String,
 	posicion: Vector2
