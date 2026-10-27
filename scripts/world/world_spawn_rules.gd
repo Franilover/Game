@@ -114,7 +114,7 @@ func garumi_cumple_filtro_generacional(
 	original_id_permitido: String,
 	generacion_permitida: int
 ) -> bool:
-	if garumi.is_empty() or original_id_permitido.strip_edges().is_empty() or generacion_permitida < 1:
+	if garumi.is_empty() or original_id_permitido.strip_edges().is_empty() or generacion_permitida != 1:
 		return false
 	var categoria := str(garumi.get("categoria_garumi", "")).strip_edges().to_lower()
 	if categoria != "normal":
