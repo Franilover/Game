@@ -8,6 +8,7 @@ signal encuentro_iniciado(garumi: Garumi, jugador: Node)
 signal nivel_cambiado(nivel_anterior: int, nivel_actual: int)
 signal experiencia_cambiada(total: int, nivel: int)
 signal eterium_cambiado(actual: int, maximo: int)
+signal evolucion_completada(origen_id: String, destino_id: String, nivel: int)
 
 const OPCION_OFRECER_VINCULO := 0
 const OPCION_ENFRENTAR := 1
@@ -66,6 +67,61 @@ func _physics_process(delta: float) -> void:
 
 func obtener_estadisticas_combate() -> Dictionary:
 	return estadisticas_combate.duplicate(true)
+
+
+func puede_evolucionar_a(destino: Dictionary, relacion: Dictionary) -> bool:
+	if _enfrentamiento_activo or destino.is_empty() or relacion.is_empty():
+		return false
+	if nivel < GarumiProgression.NIVEL_EVOLUCION_FISICA:
+		return false
+	if str(datos.get("estado_evolutivo", "")).strip_edges().to_lower() != "inicial":
+		return false
+	var estado_relacion := str(relacion.get("estado_documentacion", "")).strip_edges().to_lower()
+	if estado_relacion not in ["canon", "aprobado"]:
+		return false
+	var origen_id := str(datos.get("id", criatura_id)).strip_edges()
+	var destino_id := str(destino.get("id", "")).strip_edges()
+	if origen_id.is_empty() or destino_id.is_empty() or origen_id == destino_id:
+		return false
+	if str(relacion.get("especie_origen_id", "")).strip_edges() != origen_id:
+		return false
+	if str(relacion.get("especie_destino_id", "")).strip_edges() != destino_id:
+		return false
+	if str(destino.get("original_id", "")).strip_edges() != str(datos.get("original_id", "")).strip_edges():
+		return false
+	if str(destino.get("categoria_garumi", "")).strip_edges().to_lower() != "normal":
+		return false
+	if str(destino.get("estado_evolutivo", "")).strip_edges().to_lower() != "final":
+		return false
+	var estado_destino := str(destino.get("estado_documentacion", "")).strip_edges().to_lower()
+	return estado_destino in ["canon", "aprobado"]
+
+
+func evolucionar_a(destino: Dictionary, relacion: Dictionary) -> bool:
+	if not puede_evolucionar_a(destino, relacion):
+		return false
+	var origen_id := str(datos.get("id", criatura_id)).strip_edges()
+	var destino_id := str(destino.get("id", "")).strip_edges()
+	var proporcion_vida := 1.0
+	if max_health > 0:
+		proporcion_vida = clampf(float(health) / float(max_health), 0.0, 1.0)
+	var datos_nuevos := destino.duplicate(true)
+	datos_nuevos["nivel"] = nivel
+	datos_nuevos["experiencia_total"] = experiencia_total
+	datos_nuevos["eterium_actual"] = eterium_actual
+	datos_nuevos["vinculado"] = _vinculado
+	datos_nuevos["tipo_vinculo"] = _tipo_vinculo
+	datos_nuevos["asset_key"] = str(destino.get("asset_key", destino.get("nombre", "")))
+	configurar(datos_nuevos)
+	health = clampi(roundi(proporcion_vida * float(max_health)), 1, max_health)
+	vital_state.configurar(max_health, max_mana)
+	vital_state.health = health
+	vital_state.is_alive = true
+	_sync_desde_vital()
+	health_changed.emit(health, max_health)
+	evolucion_completada.emit(origen_id, destino_id, nivel)
+	print("Garumi: evolución completada ", origen_id, " → ", destino_id, " | nivel ", nivel)
+	return true
 
 
 func experiencia_para_siguiente_nivel() -> int:
