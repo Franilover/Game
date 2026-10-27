@@ -6,7 +6,7 @@
 - **Base intacta:** `fix/combat-temporal-contract-v1` en `77e23937ea1ee8c2b69803717aecc883b3aff603`
 - **Main:** no se ha modificado ni mezclado esta rama.
 - **Supabase:** sin cambios de esquema, RPC ni datos canónicos.
-- **Último checkpoint de código + regresión:** `fd0a413f21daf45e3ea6cec8ebb0ba6d08e8caab`
+- **Último checkpoint de código + regresión:** `cd45aad5569720333459f6439ccae3dd79cf889c`
 - **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
