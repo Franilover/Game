@@ -16,8 +16,19 @@
 - El grupo `garumis` se mantiene separado del grupo normal `creatures`. El daño común no altera su salud; la absorción por Necromancers requiere su propio contrato y todavía no está implementada.
 - `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada de `Creature`. Comparte infraestructura de salud, movimiento y representación, pero no incluye el `AIController` de criaturas normales.
 - `Creature` busca sprite propio en `res://assets/art/garumis/<asset_key>.png` o `.PNG`. No reutiliza por accidente un sprite de criatura normal.
-- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano y no canónico. En builds de depuración, si `garumis_game` está vacío, el motor puede mostrar ese prototipo con probabilidad configurable; en builds de lanzamiento no aparece. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
+- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano y no canónico. El prototipo automático queda **desactivado por defecto**; sólo aparece en debug si se activa manualmente `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Así no se mezcla con la primera generación canónica. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
+
+### Fase de aparición activa: generación 1 de Orumi
+
+- Sólo se admite `categoria_garumi = "normal"`.
+- `original_id` debe coincidir con el ID de Orumi en `public.garumi_originales`: `24f86486-aced-4a23-bd1b-f025561a8aa3`.
+- `numero_origen` debe ser exactamente `1`; generaciones posteriores quedan fuera.
+- Si el registro trae `estado_documentacion`, debe ser `aprobado`. Si ese campo falta en el snapshot, el exportador debe filtrar los estados no aprobados antes de emitir `garumis_game`.
+- Orumi y Varum/Nyru no se generan como entidades: son Originales. Los descendientes de los otros dos linajes también quedan fuera.
+- La consulta de sólo lectura encontró a **Oruvan** como descendiente normal de primera generación de Orumi (ID `4a409bba-fc4a-4b58-931f-9af1a6831710`), pero está en `borrador`. No debe aparecer hasta que tenga aprobación canónica y el exportador lo suministre con sus reglas de aparición.
+
+La configuración vive en `WorldEntitySpawner`: `garumi_original_id_habilitado` y `garumi_generacion_habilitada`. Los filtros se prueban en `tests/world/test_garumi_world_presence.gd`. Esta selección no modifica los registros de Supabase.
 
 ### Contrato de datos esperado por Godot
 
@@ -45,7 +56,7 @@ El snapshot incluido actualmente en `data/world_initial.json` contiene `biomas`,
 
 ### Diagnóstico de la fuente de datos (lectura, sin escrituras)
 
-- La tabla `public.garumis` existe y contiene 24 registros; los 24 tienen `estado_documentacion = 'borrador'`. No se encontró ninguno aprobado como canon.
+- La tabla `public.garumis` contiene 24 registros; los 24 tienen `estado_documentacion = 'borrador'`. No se encontró ninguno aprobado como canon. La tabla `public.garumi_originales` confirma que Orumi tiene ID `24f86486-aced-4a23-bd1b-f025561a8aa3`.
 - `public.get_mundo_inicial()`, `public.get_mundo_inicial_ambiental_v1()` y `public.get_mundo_inicial_ambiental_v2()` no contienen referencias a `garumis` ni emiten la clave `garumis_game`.
 - El esquema actual de `public.garumis` no contiene `asset_key` ni selectores de aparición ecológica. Por tanto, el cliente Godot no puede inferir de forma segura bioma/hábitat/probabilidad usando sólo los registros actuales.
 - Próxima integración canónica: decidir y aprobar el contrato de aparición, definir cómo se asocia cada Garumi con hábitat/bioma, añadir su clave de sprite y extender el exportador para devolver sólo registros aprobados. Todo ello queda bloqueado hasta autorización explícita; no se modificó Supabase.
