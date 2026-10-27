@@ -4,4 +4,6 @@ Guarda aquí los sprites creados para Garlia en PNG o SVG, con transparencia cua
 
 El basename debe coincidir con el campo `asset_key` del registro en `garumis_game`, por ejemplo `<asset_key>.png`. Los sprites de esta carpeta se cargan de forma independiente de `assets/art/creatures/`.
 
-El archivo `Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano para depuración. No representa un linaje ni es canon visual. En builds de depuración puede aparecer si el snapshot no trae `garumis_game`; en builds de lanzamiento no se genera este Garumi de prueba. No reutilizarlo como arte definitivo.
+`Oruvan.svg` es el sprite provisional usado para la prueba de presencia en Godot. Se renombró desde el prototipo de depuración para conectarlo al único Garumi marcado como canon para esta prueba. La forma abstracta actual **no es arte definitivo**; debe reemplazarse cuando se diseñe el sprite final de Oruvan.
+
+En builds de depuración, si el catálogo `garumis_game` está vacío, el motor puede mostrar esta textura como fallback de prueba. En cuanto el catálogo remoto de Oruvan carga, la instancia canónica usa la misma clave `Oruvan`.
