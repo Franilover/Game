@@ -34,7 +34,7 @@ func _run() -> void:
 	var garumi := GARUMI_SCENE.instantiate() as Garumi
 	root.add_child(garumi)
 	await process_frame
-	var xp_nivel_30 := progresion.xp_total_para_nivel(30)
+	var xp_nivel_30: int = int(progresion.xp_total_para_nivel(30))
 	garumi.configurar({
 		"id": "orumi-inicial-test",
 		"nombre": "Forma inicial de prueba",
