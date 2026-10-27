@@ -190,6 +190,18 @@ func _inicializar_mundo() -> void:
 
 	terrain.cargar_datos_mundo()
 
+	var diagnostico_garumis := _world_data.obtener_diagnostico_garumis_game()
+	print(
+		"WorldGenerator: Garumis en catálogo = ",
+		diagnostico_garumis.get("catalogo", 0),
+		" | con aparición = ",
+		diagnostico_garumis.get("con_aparicion", 0),
+		" | con sprite = ",
+		diagnostico_garumis.get("con_sprite", 0),
+		" | sin sprite = ",
+		diagnostico_garumis.get("sin_sprite", 0)
+	)
+
 	# El catálogo de lugares se sincroniza, pero no se instancia hasta que
 	# exista un ancla geográfica canónica y calibración planetaria verificable.
 	var diagnostico_lugares := _world_data.obtener_diagnostico_lugares_game()
