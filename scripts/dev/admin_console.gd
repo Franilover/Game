@@ -342,9 +342,9 @@ func _mostrar_sugerencias_summon(
 		var nombre_parcial_garumi := ""
 		if partes.size() >= 2:
 			nombre_parcial_garumi = " ".join(partes.slice(1)).strip_edges()
-			if nombre_parcial_garumi.begins_with(char(34)):
+			if nombre_parcial_garumi.begins_with('"'):
 				nombre_parcial_garumi = nombre_parcial_garumi.substr(1)
-			if nombre_parcial_garumi.ends_with(char(34)):
+			if nombre_parcial_garumi.ends_with('"'):
 				nombre_parcial_garumi = nombre_parcial_garumi.substr(0, nombre_parcial_garumi.length() - 1)
 		_mostrar_sugerencias(
 			_filtrar_nombres(_obtener_nombres_garumis_visibles(), nombre_parcial_garumi),
@@ -362,9 +362,9 @@ func _mostrar_sugerencias_summon(
 		var nombre_parcial_humano := ""
 		if partes.size() >= 2:
 			nombre_parcial_humano = " ".join(partes.slice(1)).strip_edges()
-			if nombre_parcial_humano.begins_with(char(34)):
+			if nombre_parcial_humano.begins_with('"'):
 				nombre_parcial_humano = nombre_parcial_humano.substr(1)
-			if nombre_parcial_humano.ends_with(char(34)):
+			if nombre_parcial_humano.ends_with('"'):
 				nombre_parcial_humano = nombre_parcial_humano.substr(0, nombre_parcial_humano.length() - 1)
 
 		var criatura_humana: Dictionary = WorldData.buscar_criatura_por_nombre("Humano")
@@ -646,8 +646,8 @@ func _completar_sugerencia(nombre: String) -> void:
 		if not partes.is_empty() and partes[0].to_lower() == "garumi" and (
 			partes.size() >= 2 or _entrada.text.ends_with(" ")
 		):
-			prefijo = COMANDO_SUMMON + " Garumi " + char(34)
-			_entrada.text = prefijo + nombre + char(34)
+			prefijo = COMANDO_SUMMON + " Garumi " + '"'
+			_entrada.text = prefijo + nombre + '"'
 			_entrada.caret_column = _entrada.text.length() - 1
 			_actualizar_sugerencias()
 			_entrada.grab_focus()
