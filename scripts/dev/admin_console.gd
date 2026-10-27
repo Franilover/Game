@@ -776,6 +776,12 @@ func _comando_help() -> void:
 
 	_agregar_linea(
 		"[color=#b4befe]"
+		+ "/summon Garumi \"<nombre del Garumi>\""
+		+ "[/color]"
+	)
+
+	_agregar_linea(
+		"[color=#b4befe]"
 		+ "/give <objeto>"
 		+ "[/color]"
 	)
@@ -835,6 +841,24 @@ func _comando_summon(nombre: String) -> void:
 
 	# Invocar cerca del jugador, sin buscarlo globalmente.
 	var posicion_invocacion: Vector2 = player.global_position + Vector2(32.0, 0.0)
+
+	# Sintaxis explícita para invocar una especie de Garumi por su nombre.
+	# Se respetan las comillas para nombres compuestos.
+	if nombre_solicitado.to_lower().begins_with("garumi "):
+		var nombre_garumi := nombre_solicitado.substr("Garumi".length()).strip_edges()
+		if nombre_garumi.length() >= 2 and nombre_garumi.begins_with("\"") and nombre_garumi.ends_with("\""):
+			nombre_garumi = nombre_garumi.substr(1, nombre_garumi.length() - 2).strip_edges()
+		if nombre_garumi.is_empty():
+			_agregar_linea("[color=#d88]Uso: /summon Garumi \"<nombre del Garumi>\"[/color]")
+			return
+
+		var resultado_garumi: Dictionary = world_generator.summon_garumi(nombre_garumi, posicion_invocacion)
+		if bool(resultado_garumi.get("ok", false)):
+			_agregar_linea("[color=#9fd18b]Garumi invocado: " + str(resultado_garumi.get("nombre", nombre_garumi)) + "[/color]")
+		else:
+			_agregar_linea("[color=#d88]" + str(resultado_garumi.get("mensaje", "No se pudo invocar el Garumi.")) + "[/color]")
+		return
+
 	var resultado: Dictionary = world_generator.summon_criatura(nombre_solicitado, posicion_invocacion)
 
 	if resultado is Dictionary:
