@@ -8,7 +8,14 @@ var _ficha: RichTextLabel
 var _icono: TextureRect
 var _tab_biomas: Button
 var _tab_criaturas: Button
+var _tab_garumis: Button
 var _modo: String = "biomas"
+
+var _garumis_catalogo: Array[Dictionary] = []
+var _garumis_por_id: Dictionary = {}
+var _garumi_originales: Array[Dictionary] = []
+var _solicitud_catalogo_garumis: int = -1
+var _catalogo_garumis_cargado: bool = false
 
 
 func _ready() -> void:
@@ -28,7 +35,9 @@ func _ready() -> void:
 
 	if not WorldData.mundo_actualizado.is_connected(_al_mundo_actualizado):
 		WorldData.mundo_actualizado.connect(_al_mundo_actualizado)
-
+	if not SupabaseClient.request_completed.is_connected(_al_respuesta_catalogo_garumis):
+		SupabaseClient.request_completed.connect(_al_respuesta_catalogo_garumis)
+	_cargar_catalogo_garumis()
 	actualizar()
 
 
@@ -66,13 +75,22 @@ func _crear_interfaz() -> void:
 	_tab_criaturas.pressed.connect(_mostrar_criaturas)
 	tabs.add_child(_tab_criaturas)
 
+	_tab_garumis = Button.new()
+	_tab_garumis.text = "Garumis"
+	_tab_garumis.tooltip_text = "Enciclopedia de Garumis · Atajo: G"
+	_tab_garumis.toggle_mode = true
+	_tab_garumis.button_pressed = false
+	_configurar_boton_seccion(_tab_garumis)
+	_tab_garumis.pressed.connect(_mostrar_garumis)
+	tabs.add_child(_tab_garumis)
+
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 5)
 	column.add_child(body)
 
 	_arbol = Tree.new()
-	_arbol.custom_minimum_size = Vector2(112, 0)
+	_arbol.custom_minimum_size = Vector2(190, 0)
 	_arbol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_arbol.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_arbol.hide_root = true
@@ -192,16 +210,20 @@ func actualizar() -> void:
 	if _arbol == null:
 		return
 
-	if _modo == "criaturas":
-		_construir_lista_criaturas()
-	else:
-		_construir_arbol_biomas()
+	match _modo:
+		"criaturas":
+			_construir_lista_criaturas()
+		"garumis":
+			_construir_lista_garumis()
+		_:
+			_construir_arbol_biomas()
 
 
 func _mostrar_biomas() -> void:
 	_modo = "biomas"
 	_tab_biomas.button_pressed = true
 	_tab_criaturas.button_pressed = false
+	_tab_garumis.button_pressed = false
 	actualizar()
 
 
@@ -209,7 +231,122 @@ func _mostrar_criaturas() -> void:
 	_modo = "criaturas"
 	_tab_biomas.button_pressed = false
 	_tab_criaturas.button_pressed = true
+	_tab_garumis.button_pressed = false
 	actualizar()
+
+
+func _mostrar_garumis() -> void:
+	_modo = "garumis"
+	_tab_biomas.button_pressed = false
+	_tab_criaturas.button_pressed = false
+	_tab_garumis.button_pressed = true
+	if not _catalogo_garumis_cargado and _solicitud_catalogo_garumis < 0:
+		_cargar_catalogo_garumis()
+	actualizar()
+
+
+func abrir_en_garumis() -> void:
+	visible = true
+	_mostrar_garumis()
+
+
+func _cargar_catalogo_garumis() -> void:
+	if _catalogo_garumis_cargado or _solicitud_catalogo_garumis >= 0:
+		return
+	var consulta := (
+		"select=entidad_id,tipo_registro,nombre,numero_global,numero_origen,"
+		+ "categoria_garumi,original_id,nombre_original,estado_evolutivo,"
+		+ "estado_documentacion,descripcion,letra_original,orden_catalogo"
+		+ "&order=orden_catalogo.asc"
+	)
+	_solicitud_catalogo_garumis = SupabaseClient.get_rest("v_garumi_catalogo_numerado_v1", consulta)
+	if _solicitud_catalogo_garumis < 0:
+		_usar_catalogo_garumis_del_mundo()
+
+
+func _al_respuesta_catalogo_garumis(
+	solicitud_id: int,
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if solicitud_id != _solicitud_catalogo_garumis:
+		return
+	_solicitud_catalogo_garumis = -1
+	if resultado != HTTPRequest.RESULT_SUCCESS or codigo_http < 200 or codigo_http >= 300:
+		_usar_catalogo_garumis_del_mundo()
+		if _modo == "garumis":
+			actualizar()
+		return
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:
+		_usar_catalogo_garumis_del_mundo()
+		if _modo == "garumis":
+			actualizar()
+		return
+	_catalogo_garumis_cargado = true
+	_aplicar_catalogo_desde_filas(json.data as Array)
+	if _modo == "garumis":
+		actualizar()
+
+
+func _aplicar_catalogo_desde_filas(filas: Array) -> void:
+	_garumi_originales.clear()
+	_garumis_catalogo.clear()
+	_garumis_por_id.clear()
+	for fila_variant in filas:
+		if not fila_variant is Dictionary:
+			continue
+		var fila := (fila_variant as Dictionary).duplicate(true)
+		var tipo := str(fila.get("tipo_registro", ""))
+		if tipo == "original":
+			if not str(fila.get("letra_original", "")).strip_edges().is_empty():
+				_garumi_originales.append(fila)
+			continue
+		if tipo != "especie":
+			continue
+		var estado := str(fila.get("estado_documentacion", "")).strip_edges().to_lower()
+		if estado not in ["canon", "aprobado"]:
+			continue
+		var id := str(fila.get("entidad_id", fila.get("id", ""))).strip_edges()
+		var nombre := str(fila.get("nombre", "")).strip_edges()
+		if id.is_empty() or nombre.is_empty() or _garumis_por_id.has(id):
+			continue
+		fila["id"] = id
+		_garumis_catalogo.append(fila)
+		_garumis_por_id[id] = fila
+	_garumi_originales.sort_custom(_ordenar_por_orden_catalogo)
+	_garumis_catalogo.sort_custom(_ordenar_por_orden_catalogo)
+
+
+func _ordenar_por_orden_catalogo(a: Dictionary, b: Dictionary) -> bool:
+	var orden_a := int(a.get("orden_catalogo", a.get("numero_global", 0)))
+	var orden_b := int(b.get("orden_catalogo", b.get("numero_global", 0)))
+	if orden_a == orden_b:
+		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
+	return orden_a < orden_b
+
+
+func _usar_catalogo_garumis_del_mundo() -> void:
+	_garumi_originales.clear()
+	_garumis_catalogo.clear()
+	_garumis_por_id.clear()
+	for registro_variant in WorldData.obtener_garumis_game():
+		if not registro_variant is Dictionary:
+			continue
+		var registro := (registro_variant as Dictionary).duplicate(true)
+		var id := str(registro.get("id", "")).strip_edges()
+		var nombre := str(registro.get("nombre", "")).strip_edges()
+		if id.is_empty() or nombre.is_empty():
+			continue
+		if str(registro.get("estado_documentacion", "canon")).to_lower() not in ["canon", "aprobado"]:
+			continue
+		registro["tipo_registro"] = "especie"
+		registro["entidad_id"] = id
+		_garumis_catalogo.append(registro)
+		_garumis_por_id[id] = registro
+	_garumis_catalogo.sort_custom(_ordenar_por_orden_catalogo)
 
 
 func _construir_arbol_biomas() -> void:
@@ -284,6 +421,46 @@ func _construir_lista_criaturas() -> void:
 	_mostrar_item(primero)
 
 
+func _construir_lista_garumis() -> void:
+	_arbol.clear()
+	var raiz := _arbol.create_item()
+	var grupos_por_letra: Dictionary = {}
+	var primero: TreeItem = null
+	for original in _garumi_originales:
+		var letra := str(original.get("letra_original", "")).strip_edges()
+		if letra.is_empty() or grupos_por_letra.has(letra):
+			continue
+		var grupo := _arbol.create_item(raiz)
+		grupo.set_text(0, "%s · %s" % [letra, str(original.get("nombre", "Original"))])
+		grupo.set_metadata(0, {"nivel": "garumi_original", "letra": letra})
+		grupos_por_letra[letra] = grupo
+		if primero == null:
+			primero = grupo
+	for garumi in _garumis_catalogo:
+		var letra := str(garumi.get("letra_original", "")).strip_edges()
+		var clave_grupo := letra if not letra.is_empty() else "__sin_linaje__"
+		if not grupos_por_letra.has(clave_grupo):
+			var nombre_original := str(garumi.get("nombre_original", "")).strip_edges()
+			var grupo := _arbol.create_item(raiz)
+			grupo.set_text(0, nombre_original if letra.is_empty() else "%s · %s" % [letra, nombre_original if not nombre_original.is_empty() else "Linaje"])
+			grupo.set_metadata(0, {"nivel": "garumi_original", "letra": letra})
+			grupos_por_letra[clave_grupo] = grupo
+			if primero == null:
+				primero = grupo
+		var padre := grupos_por_letra[clave_grupo] as TreeItem
+		var item := _agregar_item(padre, garumi, "garumi")
+		if primero == null:
+			primero = item
+	if primero == null:
+		_nombre.text = "Enciclopedia de Garumis"
+		_icono.texture = null
+		_icono.visible = false
+		_ficha.text = "[center][color=#8f754f]No hay Garumis canónicos o aprobados disponibles.[/color][/center]"
+		return
+	_arbol.set_selected(primero, 0)
+	_mostrar_item(primero)
+
+
 func _obtener_registros(registros_variant: Variant, descubiertos: Dictionary) -> Array[Dictionary]:
 	var resultado: Array[Dictionary] = []
 	if not registros_variant is Array:
@@ -312,7 +489,17 @@ func _obtener_descubiertos(descubrimientos: Dictionary, categoria: String) -> Di
 
 func _agregar_item(padre: TreeItem, registro: Dictionary, nivel: String) -> TreeItem:
 	var item := _arbol.create_item(padre)
-	item.set_text(0, str(registro.get("nombre", "Sin nombre")))
+	var etiqueta := str(registro.get("nombre", "Sin nombre"))
+	if nivel == "garumi":
+		var letra := str(registro.get("letra_original", "")).strip_edges()
+		var local := int(registro.get("numero_origen", 0))
+		var global_num := int(registro.get("numero_global", 0))
+		if not letra.is_empty() and local > 0:
+			etiqueta = "%s-%d" % [letra, local]
+		if global_num > 0:
+			etiqueta += " · #%d" % global_num
+		etiqueta += " · " + str(registro.get("nombre", "Sin nombre"))
+	item.set_text(0, etiqueta)
 	item.set_metadata(0, {
 		"nivel": nivel,
 		"id": str(registro.get("id", ""))
@@ -351,6 +538,9 @@ func _mostrar_item(item: TreeItem) -> void:
 	var metadata := metadata_variant as Dictionary
 	var nivel := str(metadata.get("nivel", ""))
 	var id := str(metadata.get("id", ""))
+	if nivel == "garumi_original":
+		_mostrar_ficha_original(str(metadata.get("letra", "")))
+		return
 	var registro := _obtener_registro_por_nivel(nivel, id)
 
 	if nivel.is_empty() or id.is_empty() or registro.is_empty():
@@ -366,6 +556,9 @@ func _mostrar_item(item: TreeItem) -> void:
 
 	if nivel == "criatura":
 		_mostrar_ficha_criatura(id, registro, partes)
+		return
+	if nivel == "garumi":
+		_mostrar_ficha_garumi(registro, partes)
 		return
 
 	match nivel:
@@ -480,6 +673,77 @@ func _buscar_contexto_habitat(habitat_id: String) -> Dictionary:
 				if habitat_variant is Dictionary and str((habitat_variant as Dictionary).get("id", "")) == habitat_id:
 					return {"bioma_id": str(bioma.get("id", "")), "ecosistema": eco}
 	return {}
+
+
+func _mostrar_ficha_original(letra: String) -> void:
+	var original: Dictionary = {}
+	for registro in _garumi_originales:
+		if str(registro.get("letra_original", "")) == letra:
+			original = registro
+			break
+	var nombre_original := str(original.get("nombre", "Linaje de Garumis"))
+	var cantidad := 0
+	for garumi in _garumis_catalogo:
+		if str(garumi.get("letra_original", "")) == letra:
+			cantidad += 1
+	_nombre.text = (letra + " · " if not letra.is_empty() else "") + nombre_original
+	_icono.texture = null
+	_icono.visible = false
+	var partes: Array[String] = ["[color=#8f754f]Original:[/color] " + nombre_original]
+	partes.append("[color=#8f754f]Letra del linaje:[/color] " + letra)
+	partes.append("[color=#8f754f]Garumis aprobados o canónicos:[/color] " + str(cantidad))
+	if cantidad == 0:
+		partes.append("Todavía no hay descendientes aprobados para mostrar en este linaje.")
+	partes.append("Cada Garumi tiene un número local dentro de su linaje y un número global en el catálogo.")
+	_ficha.text = "\n\n".join(partes)
+
+
+func _mostrar_ficha_garumi(registro: Dictionary, partes: Array[String]) -> void:
+	_mostrar_sprite_garumi(registro)
+	var global_num := int(registro.get("numero_global", 0))
+	var local := int(registro.get("numero_origen", 0))
+	var letra := str(registro.get("letra_original", "")).strip_edges()
+	var original := str(registro.get("nombre_original", "")).strip_edges()
+	if global_num > 0:
+		partes.append("[color=#8f754f]Número global:[/color] #" + str(global_num))
+	if local > 0:
+		partes.append("[color=#8f754f]Número de linaje:[/color] " + ((letra + "-") if not letra.is_empty() else "") + str(local))
+	if not original.is_empty():
+		partes.append("[color=#8f754f]Original:[/color] " + ((letra + " · ") if not letra.is_empty() else "") + original)
+	var categoria := str(registro.get("categoria_garumi", "")).strip_edges()
+	if not categoria.is_empty():
+		partes.append("[color=#8f754f]Categoría:[/color] " + categoria.capitalize())
+	var etapa := str(registro.get("estado_evolutivo", "")).strip_edges()
+	if not etapa.is_empty():
+		partes.append("[color=#8f754f]Etapa evolutiva:[/color] " + etapa.capitalize())
+	var descripcion := str(registro.get("descripcion", "")).strip_edges()
+	partes.append(descripcion if not descripcion.is_empty() else "Todavía no hay una descripción publicada para este Garumi.")
+	if not _icono.visible:
+		partes.append("[color=#55432e]No hay ilustración disponible en esta versión.[/color]")
+	_ficha.text = "\n\n".join(partes)
+
+
+func _mostrar_sprite_garumi(registro: Dictionary) -> void:
+	_icono.texture = null
+	_icono.visible = false
+	var claves: Array[String] = []
+	var asset_key := str(registro.get("asset_key", "")).strip_edges()
+	var nombre := str(registro.get("nombre", "")).strip_edges()
+	if not asset_key.is_empty():
+		claves.append(asset_key)
+	if not nombre.is_empty() and not claves.has(nombre):
+		claves.append(nombre)
+	for clave in claves:
+		for extension in [".png", ".PNG", ".svg", ".SVG"]:
+			var ruta: String = "res://assets/art/garumis/" + clave + extension
+			if not ResourceLoader.exists(ruta):
+				continue
+			var textura := load(ruta) as Texture2D
+			if textura == null:
+				continue
+			_icono.texture = textura
+			_icono.visible = true
+			return
 
 
 func _mostrar_ficha_criatura(
@@ -709,6 +973,9 @@ func _obtener_habitats_de_criatura(criatura_id: String) -> String:
 
 func _obtener_registro_por_nivel(nivel: String, id: String) -> Dictionary:
 	match nivel:
+		"garumi":
+			var garumi_variant: Variant = _garumis_por_id.get(id, {})
+			return (garumi_variant as Dictionary).duplicate(true) if garumi_variant is Dictionary else {}
 		"bioma":
 			return WorldData.obtener_bioma(id)
 		"ecosistema":
