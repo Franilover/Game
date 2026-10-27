@@ -2,10 +2,11 @@ name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
+      - "scripts/world/world_*.gd"
       - "scripts/creatures/**"
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
@@ -100,6 +101,17 @@ jobs:
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEventQueueContract: FAIL:' <<<"$output"; then
             echo "Combat event queue contract test reported script or assertion errors."
+            exit 1
+          fi
+
+      - name: Run Garumi world presence regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/world/test_garumi_world_presence.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiWorldPresence: FAIL:' <<<"$output"; then
+            echo "Garumi world presence test reported script or assertion errors."
             exit 1
           fi
 
