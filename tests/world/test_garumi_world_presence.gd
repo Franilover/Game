@@ -86,6 +86,9 @@ func _run() -> void:
 	var garumi: Dictionary = {
 		"id": "g-1",
 		"nombre": "Garumi de prueba",
+		"categoria_garumi": "normal",
+		"original_id": "orumi-test-id",
+		"numero_origen": 1,
 		"aparicion": {
 			"bioma_ids": ["bioma-prueba", "bioma-alterno"],
 			"ecosistema_ids": ["ecosistema-prueba"],
@@ -93,6 +96,22 @@ func _run() -> void:
 			"habitat_claves": ["general"]
 		}
 	}
+	var normal_orumi_gen1 := {
+		"id": "orumi-descendiente-1", "nombre": "Descendiente de Orumi",
+		"categoria_garumi": "normal", "original_id": "orumi-test-id", "numero_origen": 1
+	}
+	var normal_varum_gen1 := normal_orumi_gen1.duplicate(true)
+	normal_varum_gen1["original_id"] = "varum-test-id"
+	var normal_orumi_gen2 := normal_orumi_gen1.duplicate(true)
+	normal_orumi_gen2["numero_origen"] = 2
+	var original_orumi := normal_orumi_gen1.duplicate(true)
+	original_orumi["categoria_garumi"] = "original"
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar sólo un Garumi normal de la generación habilitada de Orumi.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_varum_gen1, "orumi-test-id", 1)), "Debe excluir descendientes de Varum aunque sean de primera generación.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen2, "orumi-test-id", 1)), "Debe excluir generaciones posteriores de Orumi.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", original_orumi, "orumi-test-id", 1)), "Los Originales no deben poder aparecer como Garumis normales.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "", 1)), "Sin ID de Original permitido no se debe habilitar ningún candidato.")
+
 	var bioma := {"id": "bioma-prueba"}
 	var ecosistema := {"id": "ecosistema-prueba"}
 	var habitats: Array = [
@@ -119,7 +138,7 @@ func _run() -> void:
 	if _failed:
 		quit(1)
 		return
-	print("PASS: Garumi catalog remains separate, ecology selectors are respected, and spawn chance stays bounded.")
+	print("PASS: Garumi catalog stays separate; only normal Orumi generation 1 passes lineage filtering; ecology and spawn probability checks pass.")
 	quit()
 
 
