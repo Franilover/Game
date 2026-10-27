@@ -37,6 +37,8 @@ var _misiones_game: Array[Dictionary] = []
 var _reinos_game: Array[Dictionary] = []
 var _props_game: Array[Dictionary] = []
 var _lugares_game: Array[Dictionary] = []
+var _garumis_game: Array[Dictionary] = []
+var _garumis_por_id: Dictionary = {}
 
 
 func configurar_dependencias(supabase_client: GarliaSupabaseClient) -> void:
@@ -443,6 +445,23 @@ func _construir_indices() -> void:
 	_reinos_game.clear()
 	_props_game.clear()
 	_lugares_game.clear()
+	_garumis_game.clear()
+	_garumis_por_id.clear()
+
+	# Garumis usan un catálogo raíz independiente de las criaturas de hábitat.
+	# Esto conserva su categoría propia sin mezclarlos en _criaturas_por_id.
+	var garumis_variant: Variant = mundo.get("garumis_game", [])
+	if garumis_variant is Array:
+		for garumi_variant in garumis_variant as Array:
+			if not garumi_variant is Dictionary:
+				continue
+			var garumi := (garumi_variant as Dictionary).duplicate(true)
+			var garumi_id := str(garumi.get("id", "")).strip_edges()
+			var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
+			if garumi_id.is_empty() or garumi_nombre.is_empty() or _garumis_por_id.has(garumi_id):
+				continue
+			_garumis_game.append(garumi)
+			_garumis_por_id[garumi_id] = garumi
 
 	var reinos_variant: Variant = mundo.get(
 		"reinos_game",
@@ -711,6 +730,53 @@ func buscar_criatura_por_nombre(
 			return criatura.duplicate(true)
 
 	return {}
+
+
+func obtener_garumis_game() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	for garumi in _garumis_game:
+		resultado.append(garumi.duplicate(true))
+	return resultado
+
+
+func obtener_garumi_game(garumi_id: String) -> Dictionary:
+	var buscado := garumi_id.strip_edges()
+	if buscado.is_empty():
+		return {}
+	var garumi_variant: Variant = _garumis_por_id.get(buscado, {})
+	if garumi_variant is Dictionary:
+		return (garumi_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func obtener_diagnostico_garumis_game() -> Dictionary:
+	var con_aparicion := 0
+	var sin_aparicion: Array[String] = []
+	var con_sprite := 0
+	var sin_sprite: Array[String] = []
+	for garumi in _garumis_game:
+		var garumi_id := str(garumi.get("id", ""))
+		var aparicion_variant: Variant = garumi.get("aparicion", {})
+		if aparicion_variant is Dictionary and not (aparicion_variant as Dictionary).is_empty():
+			con_aparicion += 1
+		else:
+			sin_aparicion.append(garumi_id)
+		var asset_key := str(garumi.get("asset_key", garumi.get("nombre", ""))).strip_edges()
+		var sprite_png := "res://assets/art/garumis/" + asset_key + ".png"
+		var sprite_upper := "res://assets/art/garumis/" + asset_key + ".PNG"
+		if not asset_key.is_empty() and (FileAccess.file_exists(sprite_png) or FileAccess.file_exists(sprite_upper)):
+			con_sprite += 1
+		else:
+			sin_sprite.append(garumi_id)
+	return {
+		"catalogo": _garumis_game.size(),
+		"con_aparicion": con_aparicion,
+		"sin_aparicion": sin_aparicion.size(),
+		"ids_sin_aparicion": sin_aparicion,
+		"con_sprite": con_sprite,
+		"sin_sprite": sin_sprite.size(),
+		"ids_sin_sprite": sin_sprite
+	}
 
 
 func obtener_props_game() -> Array[Dictionary]:
