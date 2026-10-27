@@ -41,8 +41,8 @@ Añade selección Garumi en DATA LOD, recuperación de categoría/clave de sprit
 - Resultado: **PENDING**. No se ha observado una ejecución de Godot 4.7 ni un resultado de CI asociado a este commit; no declararlo como PASS.
 - Revisión estática: el flujo de datos y las rutas de materialización se revisaron; eso no sustituye compilación ni prueba en ejecución.
 - El snapshot `data/world_initial.json` actual no incluye `garumis_game`.
-- `assets/art/garumis/` aún no contiene sprites canónicos; por ahora, una textura ausente utiliza un proxy geométrico temporal.
-- Sin el catálogo de la fuente canónica y sprites aprobados, el mundo no mostrará apariciones canónicas de Garumis. El runtime está preparado para consumir esos datos, pero su exportación no se ha modificado.
+- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano, exclusivo del prototipo no canónico. En builds de depuración puede aparecer cuando falta el catálogo; builds de lanzamiento no lo generan. No hay sprites canónicos aprobados todavía.
+- Sin el catálogo de la fuente canónica y sprites aprobados, el mundo no mostrará apariciones canónicas de Garumis. El runtime está preparado para consumir esos datos, pero su exportación no se ha modificado. El fallback de depuración sólo valida render/posición/streaming y no representa el canon.
 
 ## Protocolo para el siguiente bloque
 
