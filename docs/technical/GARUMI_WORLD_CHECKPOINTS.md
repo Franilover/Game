@@ -6,7 +6,8 @@
 - **Base intacta:** `fix/combat-temporal-contract-v1` en `77e23937ea1ee8c2b69803717aecc883b3aff603`
 - **Main:** no se ha modificado ni mezclado esta rama.
 - **Supabase:** sin cambios de esquema, RPC ni datos canónicos.
-- **Último checkpoint de código + regresión:** `942613000ce072dacb8825a17f4b0b891d0bf9ea`
+- **Checkpoint previo:** `942613000ce072dacb8825a17f4b0b891d0bf9ea`
+- **Checkpoint de filtro Orumi generación 1:** `7817be330709ef3d8a01c285d0494d7c8187903c` (test actualizado; ver HEAD de rama para docs posteriores)
 - **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
@@ -48,6 +49,15 @@ Añade `assets/art/garumis/Garumi_Prototipo.svg`, un sprite abstracto hecho a ma
 Si el snapshot no tiene `garumis_game`, en builds de depuración el spawner puede insertar una entidad `Garumi prototipo (DEBUG)` mediante la misma ruta DATA/FULL y el ciclo de vida de chunks. La probabilidad se configura con `probabilidad_prototipo_garumi_debug` (0.35 por defecto), y el interruptor `mostrar_prototipo_garumi_en_debug_sin_catalogo` permite desactivarla. El fallback está protegido por `OS.is_debug_build()`; no genera una especie falsa en builds de lanzamiento.
 
 El prototipo guarda y restaura su marcador de depuración, nombre, asset key y hábitat para no convertirse en una instancia canónica durante el streaming.
+
+## Fase GP-06 — Sólo normales de primera generación de Orumi
+
+- Filtro añadido a `WorldSpawnRules`: categoría `normal`, `original_id` de Orumi y `numero_origen = 1`.
+- Si un registro incluye `estado_documentacion`, se exige `aprobado`; `borrador` queda excluido explícitamente.
+- `WorldEntitySpawner` usa el ID de Orumi `24f86486-aced-4a23-bd1b-f025561a8aa3`, generación `1`, y desactiva por defecto el prototipo no canónico de debug.
+- Pruebas añadidas para rechazar Varum, generación 2, categoría Original, ID de linaje vacío y registros en borrador.
+- Supabase sigue sin cambios. El descendiente Oruvan (ID `4a409bba-fc4a-4b58-931f-9af1a6831710`) es la primera generación de Orumi, pero está en borrador.
+- **Consecuencia actual:** hasta que exista un registro aprobado que el snapshot exporte con reglas de aparición, no habrá apariciones canónicas de Garumis. No tratar el prototipo debug como si fuese un descendiente real.
 
 ## Estado de verificación
 
