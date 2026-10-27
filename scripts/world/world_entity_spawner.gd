@@ -834,6 +834,14 @@ func _spawn_garumis_en_chunk(
 				var aparicion: Dictionary = aparicion_variant if aparicion_variant is Dictionary else {}
 				criatura_node.configurar_entorno(str(aparicion.get("habitat_clave", "general")).to_lower())
 
+			print(
+				"WorldEntitySpawner: Garumi materializado → ",
+				str(garumi_data.get("nombre", garumi_id)),
+				" | chunk=",
+				chunk_coord,
+				" | sprite=",
+				"pendiente" if bool(criatura.get_meta("garumi_sprite_missing", false)) else "cargado"
+			)
 			creados_ids[garumi_id] = true
 			creados += 1
 			materializado = true
