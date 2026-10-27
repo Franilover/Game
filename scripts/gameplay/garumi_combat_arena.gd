@@ -50,12 +50,14 @@ func _physics_process(_delta: float) -> void:
 
 
 func _ajustar_participantes() -> void:
-	jugador.global_position = _limitar_posicion(jugador.global_position)
-	garumi.global_position = _limitar_posicion(garumi.global_position)
-	if jugador is CharacterBody2D:
-		(jugador as CharacterBody2D).velocity = Vector2.ZERO if _esta_en_borde(jugador.global_position) else (jugador as CharacterBody2D).velocity
-	if garumi is CharacterBody2D:
-		(garumi as CharacterBody2D).velocity = Vector2.ZERO if _esta_en_borde(garumi.global_position) else (garumi as CharacterBody2D).velocity
+	var posicion_jugador_anterior := jugador.global_position
+	var posicion_garumi_anterior := garumi.global_position
+	jugador.global_position = _limitar_posicion(posicion_jugador_anterior)
+	garumi.global_position = _limitar_posicion(posicion_garumi_anterior)
+	if jugador is CharacterBody2D and jugador.global_position != posicion_jugador_anterior:
+		(jugador as CharacterBody2D).velocity = Vector2.ZERO
+	if garumi is CharacterBody2D and garumi.global_position != posicion_garumi_anterior:
+		(garumi as CharacterBody2D).velocity = Vector2.ZERO
 
 
 func _limitar_posicion(posicion: Vector2) -> Vector2:
