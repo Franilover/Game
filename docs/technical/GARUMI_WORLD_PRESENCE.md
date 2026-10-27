@@ -16,21 +16,21 @@
 - El grupo `garumis` se mantiene separado del grupo normal `creatures`. El daño común no altera su salud; la absorción por Necromancers requiere su propio contrato y todavía no está implementada.
 - `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada de `Creature`. Comparte infraestructura de salud, movimiento y representación, pero no incluye el `AIController` de criaturas normales.
 - `Creature` busca sprite propio en `res://assets/art/garumis/<asset_key>.png` o `.PNG`. No reutiliza por accidente un sprite de criatura normal.
-- `assets/art/garumis/Garumi_Prototipo.svg` es un sprite abstracto dibujado a mano y no canónico. Mientras `garumis_game` esté vacío, el prototipo automático está **activado por defecto en builds debug** y su probabilidad es 1.0 para cada chunk que tenga una posición caminable válida. Se puede desactivar con `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Lleva metadata explícita de prueba visual de Orumi gen. 1; no es un registro canónico ni reemplaza a Oruvan. En builds de lanzamiento, `OS.is_debug_build()` impide que aparezca. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
+- `assets/art/garumis/Oruvan.svg` es un sprite abstracto dibujado a mano y no canónico. Mientras `garumis_game` esté vacío, el prototipo automático está **activado por defecto en builds debug** y su probabilidad es 1.0 para cada chunk que tenga una posición caminable válida. Se puede desactivar con `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Lleva metadata explícita de prueba visual de Orumi gen. 1; no es un registro canónico ni reemplaza a Oruvan. En builds de lanzamiento, `OS.is_debug_build()` impide que aparezca. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
 
 ### Disponibilidad visual en depuración (corrección inmediata)
 
-El prototipo de depuración volvió a estar habilitado por defecto porque el catálogo canónico sigue llegando vacío; deshabilitarlo dejaba cero Garumis visibles. Su probabilidad de prueba pasó a 1.0 y está protegido por `OS.is_debug_build()`. Es deliberadamente sólo una vista de prueba: al recibir catálogo canónico no se usa el fallback porque la ruta alternativa sólo corre cuando el catálogo está vacío. Revisar el log `Garumi prototipo DEBUG` y `sprite=cargado` en la consola.
+La vista de depuración utiliza `asset_key = Oruvan` y probabilidad de prueba 1.0 si el catálogo sigue vacío, bajo `OS.is_debug_build()`. Tras la integración, el registro canónico de Oruvan usa el mismo `Oruvan.svg` desde `garumis_game`. El dibujo actual sigue siendo provisional y no debe interpretarse como el diseño visual definitivo.
 
 ### Fase de aparición activa: generación 1 de Orumi
 
 - Sólo se admite `categoria_garumi = "normal"`.
 - `original_id` debe coincidir con el ID de Orumi en `public.garumi_originales`: `24f86486-aced-4a23-bd1b-f025561a8aa3`.
 - `numero_origen` debe ser exactamente `1`; generaciones posteriores quedan fuera.
-- Si el registro trae `estado_documentacion`, debe ser `aprobado`. Si ese campo falta en el snapshot, el exportador debe filtrar los estados no aprobados antes de emitir `garumis_game`.
+- Si el registro trae `estado_documentacion`, debe ser `aprobado` o `canon`. Si ese campo falta en el snapshot, el exportador debe filtrar los estados no aprobados antes de emitir `garumis_game`.
 - Orumi y Varum/Nyru no se generan como entidades: son Originales. Los descendientes de los otros dos linajes también quedan fuera.
-- La consulta de sólo lectura encontró a **Oruvan** como descendiente normal de primera generación de Orumi (ID `4a409bba-fc4a-4b58-931f-9af1a6831710`), pero está en `borrador`. No debe aparecer hasta que tenga aprobación canónica y el exportador lo suministre con sus reglas de aparición.
+- La consulta identificó a **Oruvan** como descendiente normal de primera generación de Orumi (ID `4a409bba-fc4a-4b58-931f-9af1a6831710`). Para esta prueba se marcó como `canon`; el RPC lo suministra únicamente para el filtro de Orumi generación 1.
 
 La configuración vive en `WorldEntitySpawner`: `garumi_original_id_habilitado` y `garumi_generacion_habilitada`. Los filtros se prueban en `tests/world/test_garumi_world_presence.gd`. Esta selección no modifica los registros de Supabase.
 
