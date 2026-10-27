@@ -29,6 +29,7 @@ func _run() -> void:
 	garumi_node.call("take_damage", 999, "test")
 	_expect(int(garumi_node.get("health")) == salud_antes and bool(garumi_node.get("is_alive")), "El daño común debe dejar vivo al Garumi hasta tener absorción específica.")
 
+	garumi_node.call("configurar_entorno", "bosque")
 	garumi_node.set_meta("runtime_instance_key", "garumi:0:g-scene")
 	garumi_node.global_position = Vector2(48.0, 80.0)
 	var manager: Node = ENTITY_MANAGER_SCRIPT.new()
@@ -39,6 +40,7 @@ func _run() -> void:
 		var estado_guardado := guardados[0] as Dictionary
 		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
 		_expect(str(estado_guardado.get("asset_key", "")) == "Garumi scene test", "El streaming debe conservar la clave del sprite.")
+		_expect(str(estado_guardado.get("habitat_clave", "")) == "bosque", "El streaming debe conservar el contexto ecológico del Garumi.")
 	manager.free()
 	garumi_node.free()
 
