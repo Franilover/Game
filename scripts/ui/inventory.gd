@@ -233,6 +233,14 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if key_event.pressed and not key_event.echo:
+			if event.is_action_pressed("garumi_encyclopedia") or key_event.physical_keycode == KEY_G or key_event.keycode == KEY_G:
+				toggle_enciclopedia_garumis()
+				get_viewport().set_input_as_handled()
+				return
+
 	# En Android, tocar fuera de la ventana cierra el inventario.
 	# Se consume el toque para evitar activar accidentalmente una acción del juego.
 	if not OS.has_feature("android") or not _abierto or not visible:
@@ -305,6 +313,22 @@ func toggle_mapa() -> void:
 	tabs.current_tab = 3
 	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
 	actualizar()
+
+
+func toggle_enciclopedia_garumis() -> void:
+	var tabs: TabContainer = $Window/Margin/Column/Tabs
+	var enciclopedia := $Window/Margin/Column/Tabs/Enciclopedia as Control
+	if _abierto and tabs.current_tab == 2:
+		cerrar()
+		return
+	if not _abierto:
+		_abierto = true
+		visible = true
+		_actualizar_admin_tab()
+	tabs.current_tab = 2
+	$Window/Margin/Column/TabButtons/Enciclopedia.button_pressed = true
+	if enciclopedia != null and enciclopedia.has_method("abrir_en_garumis"):
+		enciclopedia.call("abrir_en_garumis")
 
 
 func abrir() -> void:
