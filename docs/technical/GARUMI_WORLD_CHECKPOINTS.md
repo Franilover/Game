@@ -7,7 +7,7 @@
 - **Main:** no se ha modificado ni mezclado esta rama.
 - **Supabase:** sin cambios de esquema, RPC ni datos canónicos.
 - **Checkpoint previo:** `942613000ce072dacb8825a17f4b0b891d0bf9ea`
-- **Checkpoint de filtro Orumi generación 1:** `7817be330709ef3d8a01c285d0494d7c8187903c` (test actualizado; ver HEAD de rama para docs posteriores)
+- **Checkpoint de filtro Orumi generación 1:** reglas con filtro generacional y de estado en `ee04d0a75a6dc2945313dcb96d7f5aad2348c593`; regresión ampliada en `7817be330709ef3d8a01c285d0494d7c8187903c`; documentación consolidada en el HEAD actual de esta rama.
 - **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
