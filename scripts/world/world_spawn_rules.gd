@@ -105,10 +105,10 @@ func obtener_candidatos(ecosistema: Dictionary) -> Array:
 		_candidatos_por_ecosistema[ecosistema_id] = resultado
 	return resultado
 
-## Filtro de alcance de la primera fase de aparición.
-## Un candidato debe ser normal, pertenecer al Original configurado y tener
-## exactamente el número de generación habilitado. La falta de datos rechaza
-## el candidato para que un registro incompleto no termine apareciendo.
+## Filtro de aparición inicial.
+## "numero_origen" numera registros dentro del linaje; no es un nivel ni una
+## generación. Sólo pueden aparecer formas normales iniciales del Original
+## habilitado y aprobadas en canon. Las formas finales se alcanzan evolucionando.
 func garumi_cumple_filtro_generacional(
 	garumi: Dictionary,
 	original_id_permitido: String,
@@ -137,10 +137,8 @@ func garumi_cumple_filtro_generacional(
 	var original_id := str(garumi.get("original_id", "")).strip_edges()
 	if original_id != original_id_permitido.strip_edges():
 		return false
-	var numero_variant: Variant = garumi.get("numero_origen", null)
-	if not (numero_variant is int or numero_variant is float):
-		return false
-	return int(numero_variant) == generacion_permitida
+	# El parámetro se conserva por compatibilidad con la configuración del
+	# spawner, pero no se compara con numero_origen: no representa generación.
 
 ## Un Garumi sólo puede aparecer si su registro trae una regla ecológica
 ## explícita en "aparicion". Los selectores presentes se combinan por AND;
