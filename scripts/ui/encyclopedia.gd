@@ -253,6 +253,13 @@ func abrir_en_garumis() -> void:
 func _cargar_catalogo_garumis() -> void:
 	if _catalogo_garumis_cargado or _solicitud_catalogo_garumis >= 0:
 		return
+	# En builds offline/tests puede no existir configuración de Supabase. La
+	# enciclopedia sigue funcionando con el catálogo incluido en WorldData.
+	var diagnostico: Dictionary = SupabaseClient.obtener_diagnostico_debug()
+	if not bool(diagnostico.get("configurado", false)):
+		_usar_catalogo_garumis_del_mundo()
+		_catalogo_garumis_cargado = true
+		return
 	var consulta := (
 		"select=entidad_id,tipo_registro,nombre,numero_global,numero_origen,"
 		+ "categoria_garumi,original_id,nombre_original,estado_evolutivo,"
