@@ -327,6 +327,7 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		"habitat_clave": criatura.entorno,
 		"nombre": criatura.criatura_nombre,
 		"garumi_debug_preview": bool(criatura.datos.get("garumi_debug_preview", false)),
+		"garumi_debug_preview": bool(criatura.datos.get("garumi_debug_preview", false)),
 		"position": criatura.global_position,
 		"velocity": criatura.velocity,
 		"health": criatura.health,
