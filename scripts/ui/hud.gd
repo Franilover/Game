@@ -57,6 +57,8 @@ var _discovery_notice_timer: float = 0.0
 var _garumis_vinculados_panel: PanelContainer = null
 var _garumis_vinculados_lista: VBoxContainer = null
 var _garumis_vinculados_ids: Dictionary = {}
+var _garumis_vinculados_nodos: Array[Node] = []
+var _mostrar_numeros_garumis: bool = false
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
 @onready var _health_value_node: Label = $BottomLeft/HealthValue
@@ -189,10 +191,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
 
-		if not key_event.pressed:
+		if not key_event.pressed or key_event.echo:
 			return
 
-		if key_event.echo:
+		if _procesar_tecla_garumis(key_event):
+			get_viewport().set_input_as_handled()
 			return
 
 		if key_event.keycode == KEY_F3:
@@ -1456,7 +1459,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 	columna.add_theme_constant_override("separation", 6)
 	_garumis_vinculados_panel.add_child(columna)
 	var titulo := Label.new()
-	titulo.text = "GARUMIS VINCULADOS"
+	titulo.text = "Garumis"
 	titulo.add_theme_font_size_override("font_size", 10)
 	titulo.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
 	columna.add_child(titulo)
@@ -1489,8 +1492,10 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 		return
 	var id := str(garumi.get_instance_id())
 	if _garumis_vinculados_ids.has(id):
+		actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
 		return
 	_garumis_vinculados_ids[id] = true
+	_garumis_vinculados_nodos.append(garumi)
 	_garumis_vinculados_panel.visible = true
 	var fila := HBoxContainer.new()
 	fila.name = "Garumi_" + id
@@ -1498,6 +1503,16 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	fila.custom_minimum_size = Vector2(0.0, 42.0)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_garumis_vinculados_lista.add_child(fila)
+	var numero := Label.new()
+	numero.name = "Numero"
+	numero.text = str(_garumis_vinculados_nodos.size())
+	numero.visible = _mostrar_numeros_garumis
+	numero.custom_minimum_size = Vector2(12.0, 0.0)
+	numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+	numero.add_theme_font_size_override("font_size", 12)
+	fila.add_child(numero)
+
 	var retrato := TextureRect.new()
 	retrato.custom_minimum_size = Vector2(40.0, 40.0)
 	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -1507,6 +1522,14 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	if textura != null:
 		retrato.texture = textura
 	fila.add_child(retrato)
+	var indicador := Label.new()
+	indicador.name = "EstadoGuardado"
+	indicador.text = "●"
+	indicador.custom_minimum_size = Vector2(12.0, 0.0)
+	indicador.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	indicador.add_theme_font_size_override("font_size", 12)
+	fila.add_child(indicador)
+
 	var etiqueta := Label.new()
 	etiqueta.text = nombre
 	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1534,3 +1557,44 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 		if textura != null:
 			return textura
 	return null
+
+func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
+	if evento.keycode == KEY_G:
+		_mostrar_numeros_garumis = not _mostrar_numeros_garumis
+		for i in range(_garumis_vinculados_nodos.size()):
+			var garumi := _garumis_vinculados_nodos[i]
+			if not is_instance_valid(garumi):
+				continue
+			var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
+			if fila != null:
+				var numero := fila.get_node_or_null("Numero") as Label
+				if numero != null:
+					numero.text = str(i + 1)
+					numero.visible = _mostrar_numeros_garumis
+		return true
+
+	var numero_pulsado := -1
+	if evento.keycode >= KEY_1 and evento.keycode <= KEY_9:
+		numero_pulsado = evento.keycode - KEY_1 + 1
+	elif evento.keycode >= KEY_KP_1 and evento.keycode <= KEY_KP_9:
+		numero_pulsado = evento.keycode - KEY_KP_1 + 1
+	if numero_pulsado < 1 or numero_pulsado > _garumis_vinculados_nodos.size():
+		return false
+	if not is_instance_valid(player):
+		return true
+	var garumi := _garumis_vinculados_nodos[numero_pulsado - 1]
+	if is_instance_valid(garumi) and garumi.has_method("alternar_estado_invocacion"):
+		garumi.call("alternar_estado_invocacion", player)
+	return true
+
+
+func actualizar_estado_garumi(garumi: Node, guardado: bool) -> void:
+	if not is_instance_valid(garumi) or _garumis_vinculados_lista == null:
+		return
+	var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
+	if fila == null:
+		return
+	var indicador := fila.get_node_or_null("EstadoGuardado") as Label
+	if indicador == null:
+		return
+	indicador.add_theme_color_override("font_color", Color(0.70, 0.51, 0.32, 1.0) if guardado else Color(0.13, 0.10, 0.075, 1.0))
