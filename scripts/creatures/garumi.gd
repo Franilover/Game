@@ -101,6 +101,7 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	_menu_contextual.add_child(overlay)
+	overlay.gui_input.connect(_al_input_menu_contextual)
 
 	var fondo := ColorRect.new()
 	fondo.name = "FondoOscuro"
@@ -200,6 +201,21 @@ func _crear_boton_menu_garumi(texto: String, opcion: int) -> Button:
 	pressed.bg_color = Color(0.10, 0.075, 0.045, 1.0)
 	boton.add_theme_stylebox_override("pressed", pressed)
 	return boton
+
+
+
+func _al_input_menu_contextual(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var tecla := event as InputEventKey
+		if tecla.keycode == KEY_ESCAPE:
+			_al_cerrar_menu_contextual()
+			get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed:
+		var clic := event as InputEventMouseButton
+		if clic.button_index == MOUSE_BUTTON_LEFT:
+			var panel := _menu_contextual.get_node_or_null("Overlay/GarumiBondMenu") if is_instance_valid(_menu_contextual) else null
+			if panel is Control and not (panel as Control).get_global_rect().has_point(clic.position):
+				_al_cerrar_menu_contextual()
 
 
 func _al_cerrar_menu_contextual() -> void:
