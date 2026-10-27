@@ -921,6 +921,14 @@ func _spawn_garumis_en_chunk(
 		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
 		if garumi_id.is_empty() or garumi_nombre.is_empty():
 			continue
+		# FULL y DATA deben aplicar el mismo filtro canónico: únicamente
+		# Garumis normales de la generación/origen habilitados.
+		if not _spawn_rules.garumi_cumple_filtro_generacional(
+			garumi,
+			garumi_original_id_habilitado,
+			garumi_generacion_habilitada
+		):
+			continue
 		var probabilidad := _spawn_rules.obtener_probabilidad_spawn_garumi(
 			garumi,
 			garumi_spawn_probability_per_chunk
