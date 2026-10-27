@@ -43,6 +43,31 @@ func _run() -> void:
 	_expect(garumi_voluntario.obtener_tipo_vinculo() == "voluntario", "El vínculo voluntario debe distinguirse del forzado.", errores)
 	_expect(not garumi_voluntario.es_dialogable(), "Un Garumi ya vinculado no debe volver a aparecer como objetivo contextual.", errores)
 
+	var garumi_menu := GARUMI_SCENE.instantiate() as Garumi
+	root.add_child(garumi_menu)
+	await process_frame
+	garumi_menu.configurar({"id": "garumi-menu", "nombre": "Garumi menú"})
+	garumi_menu.interact(jugador)
+	await process_frame
+	_expect(is_instance_valid(garumi_menu._menu_contextual), "Interactuar debe abrir el menú contextual.", errores)
+	var boton_cerrar := _buscar_boton_texto(garumi_menu._menu_contextual, "Cerrar")
+	_expect(boton_cerrar != null, "El menú debe contener un botón Cerrar.", errores)
+	if boton_cerrar != null:
+		boton_cerrar.pressed.emit()
+	await process_frame
+	_expect(garumi_menu._menu_contextual == null, "El botón Cerrar debe cerrar el menú contextual.", errores)
+	garumi_menu.interact(jugador)
+	await process_frame
+	var boton_enfrentar := _buscar_boton_texto(garumi_menu._menu_contextual, "Enfrentar")
+	_expect(boton_enfrentar != null, "El menú debe contener la opción Enfrentar.", errores)
+	if boton_enfrentar != null:
+		boton_enfrentar.pressed.emit()
+	await process_frame
+	_expect(garumi_menu._menu_contextual == null, "Elegir Enfrentar debe cerrar el menú.", errores)
+	_expect(garumi_menu.esta_enfrentamiento(), "Elegir Enfrentar debe iniciar el estado de combate.", errores)
+	garumi_menu.finalizar_enfrentamiento()
+	garumi_menu.queue_free()
+
 	jugador.queue_free()
 	garumi.queue_free()
 	garumi_voluntario.queue_free()
@@ -59,3 +84,13 @@ func _run() -> void:
 func _expect(condicion: bool, mensaje: String, errores: Array[String]) -> void:
 	if not condicion:
 		errores.append(mensaje)
+
+
+func _buscar_boton_texto(nodo: Node, texto: String) -> Button:
+	if nodo is Button and (nodo as Button).text == texto:
+		return nodo as Button
+	for hijo in nodo.get_children():
+		var encontrado := _buscar_boton_texto(hijo, texto)
+		if encontrado != null:
+			return encontrado
+	return null
