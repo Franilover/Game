@@ -8,6 +8,8 @@ class_name WorldEntitySpawner
 @export_category("Aparición de Garumis")
 @export_range(0, 4, 1) var max_garumis_per_chunk: int = 1
 @export_range(0.0, 1.0, 0.01) var garumi_spawn_probability_per_chunk: float = 0.15
+@export var mostrar_prototipo_garumi_en_debug_sin_catalogo: bool = true
+@export_range(0.0, 1.0, 0.05) var probabilidad_prototipo_garumi_debug: float = 0.35
 
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
@@ -145,7 +147,10 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		var categoria_entidad := str(dato.get("categoria_entidad", "criatura")).strip_edges().to_lower()
 		var criatura_data: Dictionary
 		if categoria_entidad == "garumi":
-			criatura_data = _world_data.obtener_garumi_game(criatura_id).duplicate(true)
+			if bool(dato.get("garumi_debug_preview", false)):
+				criatura_data = dato.duplicate(true)
+			else:
+				criatura_data = _world_data.obtener_garumi_game(criatura_id).duplicate(true)
 		else:
 			criatura_data = _world_data.obtener_criatura(criatura_id).duplicate(true)
 		if criatura_data.is_empty():
@@ -279,7 +284,7 @@ func _preparar_datos_garumis_en_chunk(
 
 	var catalogo := _world_data.obtener_garumis_game()
 	if catalogo.is_empty():
-		return resultado
+		return _preparar_datos_garumi_debug(chunk_coord, rng)
 
 	var candidatos_probables: Array[Dictionary] = []
 	for garumi in catalogo:
@@ -354,6 +359,45 @@ func _preparar_datos_garumis_en_chunk(
 			break
 	return resultado
 
+
+func _preparar_datos_garumi_debug(
+	chunk_coord: Vector2i,
+	rng: RandomNumberGenerator
+) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	if not mostrar_prototipo_garumi_en_debug_sin_catalogo or not OS.is_debug_build():
+		return resultado
+	if max_garumis_per_chunk <= 0:
+		return resultado
+	if rng.randf() > clampf(probabilidad_prototipo_garumi_debug, 0.0, 1.0):
+		return resultado
+	for intento in range(32):
+		var tile := Vector2i(
+			chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
+			chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
+		)
+		var contexto := _obtener_contexto_data_cacheado(chunk_coord, tile)
+		if not bool(contexto.get("walkable", false)):
+			continue
+		var id_instancia := "garumi:debug:%d:%d" % [chunk_coord.x, chunk_coord.y]
+		resultado.append({
+			"id": "__garumi_debug_preview__",
+			"criatura_id": "__garumi_debug_preview__",
+			"nombre": "Garumi prototipo (DEBUG)",
+			"asset_key": "Garumi_Prototipo",
+			"categoria_entidad": "garumi",
+			"garumi_debug_preview": true,
+			"habitat_clave": "general",
+			"aparicion": {"habitat_clave": "general"},
+			"runtime_instance_key": id_instancia,
+			"chunk": chunk_coord,
+			"position": Vector2(
+				(float(tile.x) + 0.5) * _terrain.tile_size,
+				(float(tile.y) + 0.5) * _terrain.tile_size
+			)
+		})
+		return resultado
+	return resultado
 
 func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager == null or _terrain == null or _world_data == null or _spawn_rules == null:
@@ -830,6 +874,24 @@ func _spawn_garumis_en_chunk(
 
 	var catalogo := _world_data.obtener_garumis_game()
 	if catalogo.is_empty():
+		var datos_debug := _preparar_datos_garumi_debug(chunk_coord, rng)
+		if datos_debug.is_empty():
+			return
+		var garumi_debug: Dictionary = datos_debug[0]
+		var instancia_debug: Variant = _entity_factory.crear_criatura(garumi_debug)
+		if not instancia_debug is Node:
+			return
+		var node_debug := instancia_debug as Node
+		node_debug.set_meta("runtime_instance_key", str(garumi_debug.get("runtime_instance_key", "")))
+		node_debug.set_meta("entidad_categoria", "garumi")
+		if not _entity_manager.registrar(node_debug, chunk_coord):
+			node_debug.queue_free()
+			return
+		node_debug.global_position = garumi_debug.get("position", Vector2.ZERO)
+		if node_debug is Creature:
+			(node_debug as Creature).configurar_chunk(chunk_coord, limite_chunk)
+			(node_debug as Creature).configurar_entorno("general")
+		print("WorldEntitySpawner: Garumi prototipo DEBUG -> chunk=", chunk_coord, " | sprite=", "cargado" if not bool(node_debug.get_meta("garumi_sprite_missing", false)) else "pendiente")
 		return
 
 	# La selección depende de los datos ecológicos del snapshot, no del nombre
