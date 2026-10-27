@@ -4,6 +4,7 @@ class_name GarumiProgression
 ## Reglas iniciales jugables. Las estadísticas de especie se leen del snapshot
 ## canónico cuando existen; los valores por defecto son sólo fallback temporal.
 const NIVEL_MAXIMO: int = 100
+const NIVEL_EVOLUCION_FISICA: int = 30
 const XP_BASE: float = 100.0
 const EXPONENTE_XP: float = 1.5
 const CRECIMIENTO_POR_NIVEL: float = 0.025
