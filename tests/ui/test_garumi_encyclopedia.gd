@@ -10,7 +10,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_failed = false
 	const ACTION := "garumi_encyclopedia"
-	_check(InputMap.has_action(ACTION), "Debe existir la acción de la Enciclopedia de Garumis.", _failed)
+	_check(InputMap.has_action(ACTION), "Debe existir la acción de la Enciclopedia de Garumis.")
 	var tecla_g_encontrada := false
 	if InputMap.has_action(ACTION):
 		for evento in InputMap.action_get_events(ACTION):
@@ -19,10 +19,10 @@ func _run() -> void:
 				if tecla.physical_keycode == KEY_G or tecla.keycode == KEY_G:
 					tecla_g_encontrada = true
 					break
-	_check(tecla_g_encontrada, "La acción debe estar vinculada físicamente a G.", _failed)
+	_check(tecla_g_encontrada, "La acción debe estar vinculada físicamente a G.")
 
 	var inventario := INVENTORY_SCENE.instantiate() as Control
-	_check(inventario != null, "Debe poder instanciarse la UI de inventario.", _failed)
+	_check(inventario != null, "Debe poder instanciarse la UI de inventario.")
 	if inventario == null:
 		quit(1)
 		return
@@ -31,7 +31,7 @@ func _run() -> void:
 
 	var tabs := inventario.get_node("Window/Margin/Column/Tabs") as TabContainer
 	var enciclopedia := inventario.get_node("Window/Margin/Column/Tabs/Enciclopedia") as Control
-	_check(enciclopedia.has_method("abrir_en_garumis"), "La Enciclopedia debe exponer abrir_en_garumis().", _failed)
+	_check(enciclopedia.has_method("abrir_en_garumis"), "La Enciclopedia debe exponer abrir_en_garumis().")
 
 	# Simular una pulsación física de G sobre el mismo receptor que procesa input real.
 	var tecla := InputEventKey.new()
@@ -40,9 +40,9 @@ func _run() -> void:
 	tecla.physical_keycode = KEY_G
 	inventario.call("_input", tecla)
 	await process_frame
-	_check(inventario.visible, "Pulsar G debe abrir la ventana del inventario.", _failed)
-	_check(tabs.current_tab == 2, "Pulsar G debe seleccionar la pestaña Enciclopedia.", _failed)
-	_check(str(enciclopedia.get("_modo")) == "garumis", "Pulsar G debe seleccionar la sección Garumis.", _failed)
+	_check(inventario.visible, "Pulsar G debe abrir la ventana del inventario.")
+	_check(tabs.current_tab == 2, "Pulsar G debe seleccionar la pestaña Enciclopedia.")
+	_check(str(enciclopedia.get("_modo")) == "garumis", "Pulsar G debe seleccionar la sección Garumis.")
 
 	# El mismo atajo vuelve a cerrar la ventana si ya estamos en Garumis.
 	var segunda_tecla := InputEventKey.new()
@@ -51,7 +51,7 @@ func _run() -> void:
 	segunda_tecla.physical_keycode = KEY_G
 	inventario.call("_input", segunda_tecla)
 	await process_frame
-	_check(not inventario.visible, "Pulsar G de nuevo en Garumis debe cerrar la ventana.", _failed)
+	_check(not inventario.visible, "Pulsar G de nuevo en Garumis debe cerrar la ventana.")
 
 	inventario.queue_free()
 	if _failed:
@@ -62,12 +62,11 @@ func _run() -> void:
 	quit(0)
 
 
-func _check(condition: bool, message: String, failed: bool) -> void:
+func _check(condition: bool, message: String) -> void:
 	if condition:
 		return
-	push_error("GarumiEncyclopedia: FAIL: " + message)
-	# Avoid relying on a Variant-inferred mutation from inside this helper.
 	_failed = true
+	push_error("GarumiEncyclopedia: FAIL: " + message)
 
 
 var _failed: bool = false
