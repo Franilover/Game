@@ -764,7 +764,9 @@ func obtener_diagnostico_garumis_game() -> Dictionary:
 		var asset_key := str(garumi.get("asset_key", garumi.get("nombre", ""))).strip_edges()
 		var sprite_png := "res://assets/art/garumis/" + asset_key + ".png"
 		var sprite_upper := "res://assets/art/garumis/" + asset_key + ".PNG"
-		if not asset_key.is_empty() and (FileAccess.file_exists(sprite_png) or FileAccess.file_exists(sprite_upper)):
+		var sprite_svg := "res://assets/art/garumis/" + asset_key + ".svg"
+		var sprite_upper_svg := "res://assets/art/garumis/" + asset_key + ".SVG"
+		if not asset_key.is_empty() and (FileAccess.file_exists(sprite_png) or FileAccess.file_exists(sprite_upper) or FileAccess.file_exists(sprite_svg) or FileAccess.file_exists(sprite_upper_svg)):
 			con_sprite += 1
 		else:
 			sin_sprite.append(garumi_id)
