@@ -87,7 +87,7 @@ func interact(jugador: Node) -> void:
 
 func _mostrar_menu_contextual(jugador: Node) -> void:
 	if is_instance_valid(_menu_contextual):
-		_menu_contextual.queue_free()
+		_al_cerrar_menu_contextual()
 
 	# Capa propia para que el menú no dependa de la posición del cursor
 	# ni de la transformación/cámara del mundo.
@@ -107,14 +107,17 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 	fondo.name = "FondoOscuro"
 	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fondo.color = Color(0.025, 0.02, 0.015, 0.68)
-	fondo.mouse_filter = Control.MOUSE_FILTER_STOP
+	fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(fondo)
 
 	var panel := PanelContainer.new()
 	panel.name = "GarumiBondMenu"
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-190.0, -145.0)
-	panel.size = Vector2(380.0, 290.0)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	panel.offset_left = -190.0
+	panel.offset_top = -145.0
+	panel.offset_right = 190.0
+	panel.offset_bottom = 145.0
+	panel.z_index = 1
 	panel.custom_minimum_size = Vector2(380.0, 0.0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var estilo_panel := StyleBoxFlat.new()
@@ -216,18 +219,19 @@ func _al_input_menu_contextual(event: InputEvent) -> void:
 			var panel := _menu_contextual.get_node_or_null("Overlay/GarumiBondMenu") if is_instance_valid(_menu_contextual) else null
 			if panel is Control and not (panel as Control).get_global_rect().has_point(clic.position):
 				_al_cerrar_menu_contextual()
+				get_viewport().set_input_as_handled()
 
 
 func _al_cerrar_menu_contextual() -> void:
-	if is_instance_valid(_menu_contextual):
-		_menu_contextual.queue_free()
+	var menu_a_cerrar := _menu_contextual
 	_menu_contextual = null
+	if is_instance_valid(menu_a_cerrar):
+		menu_a_cerrar.queue_free()
 
 
 func _al_seleccionar_opcion(opcion: int, jugador: Node) -> void:
-	if is_instance_valid(_menu_contextual):
-		_menu_contextual.queue_free()
-	_menu_contextual = null
+	# Liberar el menú antes de ejecutar una acción que cambie de estado o de cámara.
+	_al_cerrar_menu_contextual()
 	match opcion:
 		OPCION_OFRECER_VINCULO:
 			ofrecer_vinculo(jugador)
