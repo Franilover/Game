@@ -7,7 +7,7 @@
 - **Main:** no se ha modificado ni mezclado esta rama.
 - **Supabase:** sin cambios de esquema, RPC ni datos canónicos.
 - **Checkpoint previo:** `942613000ce072dacb8825a17f4b0b891d0bf9ea`
-- **Checkpoint de filtro Orumi generación 1:** reglas con filtro generacional y de estado en `ee04d0a75a6dc2945313dcb96d7f5aad2348c593`; regresión ampliada en `7817be330709ef3d8a01c285d0494d7c8187903c`; documentación consolidada en el HEAD actual de esta rama.
+- **Checkpoint de filtro Orumi generación 1:** reglas con filtro generacional y de estado en `ee04d0a75a6dc2945313dcb96d7f5aad2348c593`; regresión ampliada en `7817be330709ef3d8a01c285d0494d7c8187903c`. La reparación de vista debug y su prueba están reflejadas en el HEAD actual.
 - **Rama base:** `fix/combat-temporal-contract-v1`; esta rama no se ha mezclado con `main`.
 
 ## Puntos de recuperación
@@ -58,6 +58,15 @@ El prototipo guarda y restaura su marcador de depuración, nombre, asset key y h
 - Pruebas añadidas para rechazar Varum, generación 2, categoría Original, ID de linaje vacío y registros en borrador.
 - Supabase sigue sin cambios. El descendiente Oruvan (ID `4a409bba-fc4a-4b58-931f-9af1a6831710`) es la primera generación de Orumi, pero está en borrador.
 - **Consecuencia actual:** hasta que exista un registro aprobado que el snapshot exporte con reglas de aparición, no habrá apariciones canónicas de Garumis. No tratar el prototipo debug como si fuese un descendiente real.
+
+## GP-07 — Restaurar vista visual mientras el catálogo está vacío
+
+- **Causa de la pantalla sin Garumis:** GP-06 había dejado `mostrar_prototipo_garumi_en_debug_sin_catalogo = false`, mientras Supabase todavía no exporta `garumis_game`. La suma de ambas cosas era cero entidades visibles.
+- Se restablece el prototipo debug como activo por defecto y con probabilidad `1.0` en chunks que tengan una posición caminable válida.
+- La instancia de prueba lleva metadata de Orumi generación 1, pero su nombre y marca DEBUG dejan claro que no es Oruvan ni un Garumi canónico.
+- El fallback sólo existe con `OS.is_debug_build()` y sólo se usa cuando el catálogo está vacío. No cambia Supabase ni el alcance de los spawns canónicos.
+- Se agregó una regresión que comprueba el default visible y el 100% de probabilidad.
+- **Prueba runtime aún requerida:** ejecutar build/sync y confirmar el log del prototipo y `sprite=cargado`; la edición del código no equivale a prueba ejecutada.
 
 ## Estado de verificación
 
