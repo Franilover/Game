@@ -124,6 +124,7 @@ func _ready() -> void:
 	_crear_huecos_manos()
 	_preparar_location()
 	_preparar_aviso_descubrimiento()
+	_preparar_panel_garumis_vinculados()
 	_preparar_panel_interaccion()
 	_preparar_panel_misiones()
 	_preparar_reloj_calendario()
@@ -1426,3 +1427,105 @@ func _actualizar_reloj_calendario() -> void:
 	var anio := int(tiempo.get("anio", 0))
 	var fecha := "Día %d · %s" % [dia_estacion, estacion] if dia_estacion > 0 else estacion
 	_calendar_label.text = "%s   %s\n%s · Año %d" % [hora, periodo, fecha, anio]
+
+
+# GARUMIS VINCULADOS
+var _garumis_vinculados_panel: PanelContainer = null
+var _garumis_vinculados_lista: VBoxContainer = null
+var _garumis_vinculados_ids: Dictionary = {}
+
+func _preparar_panel_garumis_vinculados() -> void:
+	_garumis_vinculados_panel = PanelContainer.new()
+	_garumis_vinculados_panel.name = "GarumisVinculados"
+	_garumis_vinculados_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_garumis_vinculados_panel.position = Vector2(18.0, 18.0)
+	_garumis_vinculados_panel.custom_minimum_size = Vector2(174.0, 0.0)
+	_garumis_vinculados_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_garumis_vinculados_panel.z_index = 20
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.055, 0.04, 0.03, 0.88)
+	estilo.border_color = Color(0.48, 0.35, 0.20, 0.95)
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(4)
+	estilo.content_margin_left = 8.0
+	estilo.content_margin_top = 7.0
+	estilo.content_margin_right = 8.0
+	estilo.content_margin_bottom = 7.0
+	_garumis_vinculados_panel.add_theme_stylebox_override("panel", estilo)
+	add_child(_garumis_vinculados_panel)
+	var columna := VBoxContainer.new()
+	columna.add_theme_constant_override("separation", 6)
+	_garumis_vinculados_panel.add_child(columna)
+	var titulo := Label.new()
+	titulo.text = "GARUMIS VINCULADOS"
+	titulo.add_theme_font_size_override("font_size", 10)
+	titulo.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+	columna.add_child(titulo)
+	_garumis_vinculados_lista = VBoxContainer.new()
+	_garumis_vinculados_lista.add_theme_constant_override("separation", 5)
+	columna.add_child(_garumis_vinculados_lista)
+	_garumis_vinculados_panel.visible = false
+
+func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> void:
+	if discovery_notice == null:
+		return
+	var nombre := "Garumi"
+	if is_instance_valid(garumi):
+		nombre = str(garumi.get("criatura_nombre"))
+		if nombre.strip_edges().is_empty() or nombre == "<null>":
+			nombre = garumi.name
+	if exito:
+		var detalle := "vínculo establecido"
+		if tipo == "forzado":
+			detalle = "vínculo establecido tras el enfrentamiento"
+		discovery_notice.text = nombre + ": " + detalle
+		_agregar_garumi_vinculado(garumi, nombre)
+	else:
+		discovery_notice.text = nombre + " rechazó la propuesta de vínculo."
+	discovery_notice.visible = true
+	_discovery_notice_timer = 3.8
+
+func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
+	if not is_instance_valid(garumi) or _garumis_vinculados_lista == null:
+		return
+	var id := str(garumi.get_instance_id())
+	if _garumis_vinculados_ids.has(id):
+		return
+	_garumis_vinculados_ids[id] = true
+	_garumis_vinculados_panel.visible = true
+	var fila := HBoxContainer.new()
+	fila.name = "Garumi_" + id
+	fila.add_theme_constant_override("separation", 7)
+	fila.custom_minimum_size = Vector2(0.0, 42.0)
+	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_garumis_vinculados_lista.add_child(fila)
+	var retrato := TextureRect.new()
+	retrato.custom_minimum_size = Vector2(40.0, 40.0)
+	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var textura := _buscar_textura_garumi(garumi)
+	if textura != null:
+		retrato.texture = textura
+	fila.add_child(retrato)
+	var etiqueta := Label.new()
+	etiqueta.text = nombre
+	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	etiqueta.add_theme_font_size_override("font_size", 11)
+	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.83, 0.68, 1.0))
+	fila.add_child(etiqueta)
+
+func _buscar_textura_garumi(nodo: Node) -> Texture2D:
+	if not is_instance_valid(nodo):
+		return null
+	if nodo is Sprite2D and (nodo as Sprite2D).texture != null:
+		return (nodo as Sprite2D).texture
+	if nodo is TextureRect and (nodo as TextureRect).texture != null:
+		return (nodo as TextureRect).texture
+	for hijo in nodo.get_children():
+		var textura := _buscar_textura_garumi(hijo)
+		if textura != null:
+			return textura
+	return null
