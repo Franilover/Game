@@ -12,6 +12,8 @@
 - `WorldDataService` lee `garumis_game` desde el snapshot de mundo y lo conserva en un catálogo separado de `_criaturas_por_id`.
 - `WorldSpawnRules` comprueba compatibilidad con bioma, ecosistema, hábitat y clave de hábitat. Los selectores presentes se combinan por AND; dentro de cada selector, los IDs se combinan por OR.
 - `WorldEntitySpawner` intenta materializar hasta `max_garumis_per_chunk` Garumis por chunk, con probabilidad configurable y semilla derivada del mundo/chunk. Los Garumis usan el ciclo de vida de entidad existente, sin mezclarse con la selección de especies de hábitat.
+- Los Garumis se preparan tanto en la ruta de aparición directa como en DATA LOD. Se conserva `categoria_entidad`, `asset_key`, `runtime_instance_key` y `habitat_clave` al descargar/restaurar un chunk; la categoría determina la escena/pool al materializar.
+- El grupo `garumis` se mantiene separado del grupo normal `creatures`. El daño común no altera su salud; la absorción por Necromancers requiere su propio contrato y todavía no está implementada.
 - `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada de `Creature`. Comparte infraestructura de salud, movimiento y representación, pero no incluye el `AIController` de criaturas normales.
 - `Creature` busca sprite propio en `res://assets/art/garumis/<asset_key>.png` o `.PNG`. No reutiliza por accidente un sprite de criatura normal.
 - Si falta el arte, el proxy geométrico de desarrollo permite comprobar posición y streaming. **No es el diseño canónico** ni sustituye el sprite dibujado a mano.
