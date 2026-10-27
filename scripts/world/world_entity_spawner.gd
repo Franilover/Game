@@ -397,11 +397,11 @@ func _preparar_datos_garumi_debug(
 		resultado.append({
 			"id": "__garumi_debug_preview__",
 			"criatura_id": "__garumi_debug_preview__",
-			"nombre": "Garumi prototipo DEBUG — prueba visual Orumi gen. 1",
+			"nombre": "Oruvan (prueba visual DEBUG sin catálogo)",
 			"categoria_garumi": "normal",
 			"original_id": garumi_original_id_habilitado,
 			"numero_origen": garumi_generacion_habilitada,
-			"asset_key": "Garumi_Prototipo",
+			"asset_key": "Oruvan",
 			"categoria_entidad": "garumi",
 			"garumi_debug_preview": true,
 			"habitat_clave": "general",
