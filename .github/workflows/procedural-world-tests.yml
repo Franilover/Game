@@ -22,6 +22,7 @@ on:
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
+      - "scripts/world/world_*.gd"
       - "scripts/creatures/**"
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
