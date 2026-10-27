@@ -8,8 +8,8 @@ class_name WorldEntitySpawner
 @export_category("Aparición de Garumis")
 @export_range(0, 4, 1) var max_garumis_per_chunk: int = 1
 @export_range(0.0, 1.0, 0.01) var garumi_spawn_probability_per_chunk: float = 0.15
-@export var mostrar_prototipo_garumi_en_debug_sin_catalogo: bool = false
-@export_range(0.0, 1.0, 0.05) var probabilidad_prototipo_garumi_debug: float = 0.35
+@export var mostrar_prototipo_garumi_en_debug_sin_catalogo: bool = true
+@export_range(0.0, 1.0, 0.05) var probabilidad_prototipo_garumi_debug: float = 1.0
 ## Fase inicial: únicamente Garumis normales de la primera generación de Orumi.
 ## ID de public.garumi_originales confirmado por consulta de sólo lectura.
 @export var garumi_original_id_habilitado: String = "24f86486-aced-4a23-bd1b-f025561a8aa3"
@@ -397,7 +397,10 @@ func _preparar_datos_garumi_debug(
 		resultado.append({
 			"id": "__garumi_debug_preview__",
 			"criatura_id": "__garumi_debug_preview__",
-			"nombre": "Garumi prototipo (DEBUG)",
+			"nombre": "Garumi prototipo DEBUG — prueba visual Orumi gen. 1",
+			"categoria_garumi": "normal",
+			"original_id": garumi_original_id_habilitado,
+			"numero_origen": garumi_generacion_habilitada,
 			"asset_key": "Garumi_Prototipo",
 			"categoria_entidad": "garumi",
 			"garumi_debug_preview": true,
