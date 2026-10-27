@@ -19,17 +19,17 @@ func _run() -> void:
 		"eterium_maximo": 30
 	})
 
-	_expect(progresion.xp_para_siguiente_nivel(1) == 100, "Nivel 1 debe requerir 100 XP para subir.")
-	_expect(progresion.nivel_desde_experiencia(99) == 1, "99 XP no debe subir desde nivel 1.")
-	_expect(progresion.nivel_desde_experiencia(100) == 2, "100 XP debe subir a nivel 2.")
-	_expect(progresion.nivel_desde_experiencia(progresion.xp_total_para_nivel(100)) == 100, "La curva debe alcanzar nivel 100 con su umbral acumulado.")
+	_expect(progresion.xp_para_siguiente_nivel(1) == 100, "Nivel 1 debe requerir 100 XP para subir.", errores)
+	_expect(progresion.nivel_desde_experiencia(99) == 1, "99 XP no debe subir desde nivel 1.", errores)
+	_expect(progresion.nivel_desde_experiencia(100) == 2, "100 XP debe subir a nivel 2.", errores)
+	_expect(progresion.nivel_desde_experiencia(progresion.xp_total_para_nivel(100)) == 100, "La curva debe alcanzar nivel 100 con su umbral acumulado.", errores)
 	var base: Dictionary = progresion.obtener_estadisticas(1)
 	var superior: Dictionary = progresion.obtener_estadisticas(10)
-	_expect(int(base["vida"]) == 40 and int(base["ataque"]) == 10, "Nivel 1 debe respetar las estadísticas base suministradas.")
-	_expect(int(superior["vida"]) > int(base["vida"]) and int(superior["ataque"]) > int(base["ataque"]), "Las estadísticas deben crecer con el nivel.")
-	_expect(progresion.calcular_danio(10, 0, 100.0) == 10, "Defensa cero no debe reducir el daño base.")
-	_expect(progresion.calcular_danio(10, 100, 100.0) == 5, "Defensa alta debe reducir el daño sin anularlo.")
-	_expect(progresion.calcular_danio(10, 0, 200.0) == 20, "La potencia del movimiento debe escalar el daño.")
+	_expect(int(base["vida"]) == 40 and int(base["ataque"]) == 10, "Nivel 1 debe respetar las estadísticas base suministradas.", errores)
+	_expect(int(superior["vida"]) > int(base["vida"]) and int(superior["ataque"]) > int(base["ataque"]), "Las estadísticas deben crecer con el nivel.", errores)
+	_expect(progresion.calcular_danio(10, 0, 100.0) == 10, "Defensa cero no debe reducir el daño base.", errores)
+	_expect(progresion.calcular_danio(10, 100, 100.0) == 5, "Defensa alta debe reducir el daño sin anularlo.", errores)
+	_expect(progresion.calcular_danio(10, 0, 200.0) == 20, "La potencia del movimiento debe escalar el daño.", errores)
 
 	var garumi := GARUMI_SCENE.instantiate() as Garumi
 	root.add_child(garumi)
@@ -59,11 +59,11 @@ func _run() -> void:
 	}
 	var relacion_canon := relacion_borrador.duplicate(true)
 	relacion_canon["estado_documentacion"] = "canon"
-	_expect(garumi.nivel == 30, "La experiencia acumulada debe calcular el nivel real.")
-	_expect(not garumi.puede_evolucionar_a(destino, relacion_borrador), "Una relación evolutiva en borrador no debe habilitar evolución.")
-	_expect(garumi.puede_evolucionar_a(destino, relacion_canon), "Una relación canónica debe habilitar evolución desde nivel 30.")
-	_expect(garumi.evolucionar_a(destino, relacion_canon), "Debe poder transformar una instancia existente en su forma final.")
-	_expect(garumi.criatura_id == "orumi-final-test" and garumi.nivel == 30, "La evolución debe cambiar la forma y conservar el nivel.")
+	_expect(garumi.nivel == 30, "La experiencia acumulada debe calcular el nivel real.", errores)
+	_expect(not garumi.puede_evolucionar_a(destino, relacion_borrador), "Una relación evolutiva en borrador no debe habilitar evolución.", errores)
+	_expect(garumi.puede_evolucionar_a(destino, relacion_canon), "Una relación canónica debe habilitar evolución desde nivel 30.", errores)
+	_expect(garumi.evolucionar_a(destino, relacion_canon), "Debe poder transformar una instancia existente en su forma final.", errores)
+	_expect(garumi.criatura_id == "orumi-final-test" and garumi.nivel == 30, "La evolución debe cambiar la forma y conservar el nivel.", errores)
 	garumi.queue_free()
 
 	if errores.is_empty():
