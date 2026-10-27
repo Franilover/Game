@@ -94,6 +94,7 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 	_menu_contextual = CanvasLayer.new()
 	_menu_contextual.name = "GarumiBondMenuLayer"
 	_menu_contextual.layer = 120
+	_menu_contextual.add_to_group("modal_ui")
 	get_tree().root.add_child(_menu_contextual)
 
 	var overlay := Control.new()
