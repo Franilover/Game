@@ -17,6 +17,12 @@ func iniciar(nuevo_jugador: Node2D, nuevo_garumi: Node2D) -> void:
 	if not is_instance_valid(jugador) or not is_instance_valid(garumi):
 		return
 	centro_arena = (jugador.global_position + garumi.global_position) * 0.5
+	# La arena debe caber en el área visible de la cámara, especialmente arriba y abajo.
+	var camara := get_viewport().get_camera_2d()
+	if camara != null:
+		var tamano_visible := get_viewport().get_visible_rect().size / camara.zoom
+		tamano_arena.x = minf(tamano_arena.x, maxf(160.0, tamano_visible.x - 48.0))
+		tamano_arena.y = minf(tamano_arena.y, maxf(160.0, tamano_visible.y - 72.0))
 	limites_globales = Rect2(centro_arena - tamano_arena * 0.5, tamano_arena)
 	global_position = centro_arena
 	activa = true
@@ -66,6 +72,37 @@ func _limitar_posicion(posicion: Vector2) -> Vector2:
 		clampf(posicion.x, limites_globales.position.x + margen, limites_globales.end.x - margen),
 		clampf(posicion.y, limites_globales.position.y + margen, limites_globales.end.y - margen)
 	)
+
+
+func ajustar_jugador_tras_movimiento() -> void:
+	if not activa or not is_instance_valid(jugador):
+		return
+	var antes := jugador.global_position
+	jugador.global_position = _limitar_posicion(antes)
+	if jugador is CharacterBody2D and jugador.global_position != antes:
+		(jugador as CharacterBody2D).velocity = Vector2.ZERO
+
+
+## Solo se escapa al tocar un borde y gastar un dash hacia fuera de ese borde.
+func intentar_escapar(nodo_jugador: Node2D, direccion_dash: Vector2) -> bool:
+	if not activa or nodo_jugador != jugador or direccion_dash.length_squared() < 0.01:
+		return false
+	var posicion := jugador.global_position
+	var margen := 15.0
+	var sale_por_borde := (
+		(posicion.x <= limites_globales.position.x + margen and direccion_dash.x < -0.55)
+		or (posicion.x >= limites_globales.end.x - margen and direccion_dash.x > 0.55)
+		or (posicion.y <= limites_globales.position.y + margen and direccion_dash.y < -0.55)
+		or (posicion.y >= limites_globales.end.y - margen and direccion_dash.y > 0.55)
+	)
+	if not sale_por_borde:
+		return false
+	print("GarumiCombatArena: escape confirmado por dash hacia el exterior.")
+	if is_instance_valid(garumi) and garumi.has_method("finalizar_enfrentamiento"):
+		garumi.call("finalizar_enfrentamiento")
+	else:
+		terminar()
+	return true
 
 
 func _esta_en_borde(posicion: Vector2) -> bool:
