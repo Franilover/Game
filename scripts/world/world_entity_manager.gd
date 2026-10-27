@@ -319,8 +319,11 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	if instance_key.is_empty():
 		instance_key = _runtime_key(chunk_coord, criatura_id)
 	var key := _runtime_key(chunk_coord, instance_key)
+	var categoria_entidad := str(criatura.datos.get("categoria_entidad", "criatura")).strip_edges().to_lower()
 	var datos_criatura := {
 		"criatura_id": criatura_id,
+		"categoria_entidad": categoria_entidad,
+		"asset_key": str(criatura.datos.get("asset_key", "")),
 		"position": criatura.global_position,
 		"velocity": criatura.velocity,
 		"health": criatura.health,
