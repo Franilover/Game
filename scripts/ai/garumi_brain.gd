@@ -52,11 +52,17 @@ func _recargar_configuracion() -> void:
 	var movimiento_garumi_variant: Variant = datos_garumi.get("movimiento", {})
 	var movimiento_garumi: Dictionary = movimiento_garumi_variant if movimiento_garumi_variant is Dictionary else {}
 
-	# La configuración específica de Garumi tiene prioridad. Si no declara
-	# perfil, se permite el perfil genérico existente; nunca se inventa uno.
+	# Prioridad: movimiento específico de Garumi, movimiento genérico y,
+	# por último, perfil de alto nivel solo si coincide con una primitiva que
+	# este intérprete realmente soporta. Nunca se traduce una especie desconocida.
 	var movimiento_general_variant: Variant = ia.get("movimiento", {})
 	var movimiento_general: Dictionary = movimiento_general_variant if movimiento_general_variant is Dictionary else {}
-	movimiento = movimiento_garumi if movimiento_garumi.has("perfil") else movimiento_general
+	if movimiento_garumi.has("perfil"):
+		movimiento = movimiento_garumi
+	elif movimiento_general.has("perfil"):
+		movimiento = movimiento_general
+	elif PERFILES_MECANICOS.has(str(ia.get("perfil", "")).strip_edges().to_lower()):
+		movimiento = {"perfil": str(ia.get("perfil", "")).strip_edges().to_lower()}
 	configuracion = datos_garumi
 	_perfil = str(movimiento.get("perfil", "")).strip_edges().to_lower()
 
