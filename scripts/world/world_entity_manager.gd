@@ -324,6 +324,7 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		"criatura_id": criatura_id,
 		"categoria_entidad": categoria_entidad,
 		"asset_key": str(criatura.datos.get("asset_key", "")),
+		"habitat_clave": criatura.entorno,
 		"position": criatura.global_position,
 		"velocity": criatura.velocity,
 		"health": criatura.health,
