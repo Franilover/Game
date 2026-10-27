@@ -49,8 +49,10 @@ func _input(event: InputEvent) -> void:
 	if esta_bloqueado():
 		return
 
+	var combate_garumi_activo := not get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
+
 	if event.is_action_pressed("primary_action"):
-		if _interaction_system != null and _interaction_system.procesar_accion_primaria():
+		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
 			return
 
@@ -59,7 +61,7 @@ func _input(event: InputEvent) -> void:
 			return
 
 	if event.is_action_pressed("secondary_action"):
-		if _interaction_system != null and _interaction_system.procesar_accion_secundaria():
+		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_secundaria():
 			get_viewport().set_input_as_handled()
 			return
 
