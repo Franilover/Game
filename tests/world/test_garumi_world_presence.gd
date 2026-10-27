@@ -133,6 +133,12 @@ func _run() -> void:
 		{"id": "habitat-prueba", "tipo_habitat": {"clave": "general"}}
 	]
 	_expect(bool(rules.call("garumi_puede_aparecer", garumi, bioma, ecosistema, habitats)), "Un Garumi compatible debe aparecer en su contexto ecológico.")
+	var garumi_general := garumi.duplicate(true)
+	var aparicion_general: Dictionary = garumi_general["aparicion"]
+	aparicion_general.erase("habitat_ids")
+	aparicion_general.erase("habitat_id")
+	garumi_general["aparicion"] = aparicion_general
+	_expect(bool(rules.call("garumi_puede_aparecer", garumi_general, bioma, ecosistema, [{"id": "habitat-bosque", "tipo_habitat": {"clave": "bosque"}}])), "La clave general debe permitir cualquier hábitat existente, sin exigir un hábitat literal llamado general.")
 	_expect(not bool(rules.call("garumi_puede_aparecer", garumi, bioma, {"id": "ecosistema-ajeno"}, habitats)), "Un selector ecológico presente debe restringir la aparición.")
 	_expect(not bool(rules.call("garumi_puede_aparecer", {"id": "sin-aparicion", "nombre": "Sin aparición"}, bioma, ecosistema, habitats)), "Un Garumi sin anclas ecológicas no debe aparecer globalmente.")
 	_expect(not bool(rules.call("garumi_puede_aparecer", garumi, bioma, ecosistema, [{"id": "otro-habitat", "tipo_habitat": {"clave": "general"}}])), "El ID de hábitat debe respetarse cuando está definido.")
