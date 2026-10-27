@@ -2,6 +2,7 @@ extends SceneTree
 
 const WORLD_DATA_SCRIPT = preload("res://scripts/world/world_data.gd")
 const SPAWN_RULES_SCRIPT = preload("res://scripts/world/world_spawn_rules.gd")
+const GARUMI_SCENE: PackedScene = preload("res://scenes/creatures/garumi.tscn")
 
 var _failed := false
 
@@ -11,6 +12,15 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var garumi_node: Node = GARUMI_SCENE.instantiate()
+	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
+	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
+	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
+	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test"})
+	var datos_visual: Dictionary = garumi_node.get("datos")
+	_expect(str(datos_visual.get("categoria_entidad", "")) == "garumi", "La clase debe fijar su categoría antes de resolver sprite y presentación.")
+	garumi_node.free()
+
 	var data: Node = WORLD_DATA_SCRIPT.new()
 	data.set("mundo", {
 		"biomas": [],
