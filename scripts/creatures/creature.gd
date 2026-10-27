@@ -264,7 +264,9 @@ func _cargar_sprite() -> void:
 			asset_key = criatura_nombre
 		var rutas_garumi: Array[String] = [
 			"res://assets/art/garumis/" + asset_key + ".png",
-			"res://assets/art/garumis/" + asset_key + ".PNG"
+			"res://assets/art/garumis/" + asset_key + ".PNG",
+			"res://assets/art/garumis/" + asset_key + ".svg",
+			"res://assets/art/garumis/" + asset_key + ".SVG"
 		]
 		var textura_garumi: Texture2D = null
 		for ruta_garumi in rutas_garumi:
