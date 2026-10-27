@@ -50,6 +50,12 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 
+	# Durante el duelo se ocultan las interacciones contextuales para no tapar ataques.
+	if not get_tree().get_nodes_in_group("garumi_combat_arena").is_empty():
+		if objetivo_actual != null:
+			_cambiar_objetivo(null)
+		return
+
 	# El objetivo contextual pierde validez en cuanto el jugador sale de alcance.
 	# Esto se comprueba incluso si otra interfaz está bloqueando temporalmente la entrada.
 	if objetivo_actual != null and not _objetivo_sigue_disponible():
