@@ -139,6 +139,7 @@ func garumi_cumple_filtro_generacional(
 		return false
 	# El parámetro se conserva por compatibilidad con la configuración del
 	# spawner, pero no se compara con numero_origen: no representa generación.
+	return true
 
 ## Un Garumi sólo puede aparecer si su registro trae una regla ecológica
 ## explícita en "aparicion". Los selectores presentes se combinan por AND;
