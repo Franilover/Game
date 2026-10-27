@@ -119,6 +119,12 @@ func garumi_cumple_filtro_generacional(
 	var categoria := str(garumi.get("categoria_garumi", "")).strip_edges().to_lower()
 	if categoria != "normal":
 		return false
+	# Si el snapshot incluye estado documental, nunca permitir borradores.
+	# Si lo omite, el exportador debe garantizar que sólo entrega canon aprobado.
+	if garumi.has("estado_documentacion"):
+		var estado := str(garumi.get("estado_documentacion", "")).strip_edges().to_lower()
+		if estado != "aprobado":
+			return false
 	var original_id := str(garumi.get("original_id", "")).strip_edges()
 	if original_id != original_id_permitido.strip_edges():
 		return false
