@@ -104,32 +104,6 @@ func ajustar_jugador_tras_movimiento() -> void:
 		(jugador as CharacterBody2D).velocity = Vector2.ZERO
 
 
-## Solo se escapa al tocar un borde y gastar un dash hacia fuera de ese borde.
-func intentar_escapar(nodo_jugador: Node2D, direccion_dash: Vector2) -> bool:
-	if not activa or nodo_jugador != jugador or direccion_dash.length_squared() < 0.01:
-		return false
-	var posicion := jugador.global_position
-	var margen := 15.0
-	var sale_por_borde := (
-		(posicion.x <= limites_globales.position.x + margen and direccion_dash.x < -0.55)
-		or (posicion.x >= limites_globales.end.x - margen and direccion_dash.x > 0.55)
-		or (posicion.y <= limites_globales.position.y + margen and direccion_dash.y < -0.55)
-		or (posicion.y >= limites_globales.end.y - margen and direccion_dash.y > 0.55)
-	)
-	if not sale_por_borde:
-		return false
-	print("GarumiCombatArena: escape confirmado por dash hacia el exterior.")
-	for rival_actual in garumis:
-		if is_instance_valid(rival_actual) and rival_actual.has_method("finalizar_enfrentamiento"):
-			rival_actual.call("finalizar_enfrentamiento")
-	terminar()
-	return true
-
-
-func _esta_en_borde(posicion: Vector2) -> bool:
-	return posicion != _limitar_posicion(posicion)
-
-
 func _excluir_criaturas_ajenas() -> void:
 	var candidatas: Array[Node] = []
 	for grupo in ["creatures", "garumis"]:
