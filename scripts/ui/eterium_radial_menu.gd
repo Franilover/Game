@@ -236,7 +236,7 @@ func _al_presionar_espacio() -> void:
 		_tiempo_sostenido = 0.0
 		_toques_espacio += 1
 		if _toques_espacio >= 3:
-			_recuperar_dash_sin_coste()
+			_recuperar_dash_directo()
 			_limpiar_minijuego()
 			return
 		_tiempo_ventana_toques = VENTANA_TOQUES
@@ -433,7 +433,7 @@ func _completar_meditacion() -> void:
 	_limpiar_minijuego()
 
 
-func _recuperar_dash_sin_coste() -> void:
+func _recuperar_dash_directo() -> void:
 	if not is_instance_valid(jugador) or not jugador.has_method("recuperar_dash_con_eterium"):
 		return
 	var recuperadas: int = jugador.call("recuperar_dash_con_eterium", 1, COSTO_CARGA_DASH)
@@ -564,7 +564,7 @@ func _curarse() -> void:
 
 
 func _recuperar_dash() -> void:
-	_recuperar_dash_sin_coste()
+	_recuperar_dash_directo()
 
 
 func _meditar() -> void:
