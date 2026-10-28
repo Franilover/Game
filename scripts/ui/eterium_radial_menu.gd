@@ -2,7 +2,7 @@ extends Control
 class_name EteriumRadialMenu
 
 ## Menú radial transparente de acciones de Eterium.
-## Pulsa X para abrir; selecciona con clic o con las teclas 1–4.
+## Pulsa X para abrir; selecciona con clic o con las teclas 1–2.
 
 const COSTO_CURACION: int = 10
 const COSTO_CARGA_DASH: int = 10
@@ -19,9 +19,7 @@ var _centro: Vector2 = Vector2.ZERO
 
 const NOMBRES := [
 	"Curarse",
-	"Recuperar dash",
-	"Menú de IUMs",
-	"Usar conjuro equipado"
+	"Recuperar dash"
 ]
 
 func configurar(player: Node, lab: Node, manager: Node, inventory: Node, admin: Node) -> void:
@@ -54,7 +52,7 @@ func _input(event: InputEvent) -> void:
 		var tecla := event as InputEventKey
 		if visible_menu and tecla.pressed and not tecla.echo:
 			# Atajos directos mientras el menú de Eterium está abierto.
-			if tecla.keycode >= KEY_1 and tecla.keycode <= KEY_4:
+			if tecla.keycode >= KEY_1 and tecla.keycode <= KEY_2:
 				cuadrante = tecla.keycode - KEY_1
 				_ejecutar_seleccion()
 				get_viewport().set_input_as_handled()
@@ -120,10 +118,8 @@ func _actualizar_cuadrante(posicion: Vector2) -> void:
 		cuadrante = 0 # superior izquierda: curación
 	elif delta.x >= 0.0 and delta.y < 0.0:
 		cuadrante = 1 # superior derecha: recuperar dash
-	elif delta.x < 0.0 and delta.y >= 0.0:
-		cuadrante = 2 # inferior izquierda: laboratorio IUM
 	else:
-		cuadrante = 3 # inferior derecha: conjuro equipado
+		cuadrante = -1
 
 func _ejecutar_seleccion() -> void:
 	match cuadrante:
@@ -131,10 +127,7 @@ func _ejecutar_seleccion() -> void:
 			_curarse()
 		1:
 			_recuperar_dash()
-		2:
-			_abrir_laboratorio_ium()
-		3:
-			_usar_conjuro()
+ 
 	_cerrar()
 
 func _curarse() -> void:
@@ -225,10 +218,9 @@ func _draw() -> void:
 	var sombra := Color(0.035, 0.025, 0.018, 0.58)
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.015, 0.01, 0.16), true)
 	var brazos := [
-		Vector2(-1, -1), Vector2(1, -1),
-		Vector2(-1, 1), Vector2(1, 1)
+		Vector2(-1, -1), Vector2(1, -1)
 	]
-	for i in range(4):
+	for i in range(2):
 		var dir: Vector2 = brazos[i].normalized()
 		var inicio := _centro + dir * 20.0
 		var fin := _centro + dir * TAMANO_CUADRANTE
