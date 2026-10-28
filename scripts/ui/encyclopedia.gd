@@ -45,13 +45,13 @@ func _crear_interfaz() -> void:
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 5)
-	margin.add_theme_constant_override("margin_top", 5)
+	margin.add_theme_constant_override("margin_top", 0)
 	margin.add_theme_constant_override("margin_right", 5)
 	margin.add_theme_constant_override("margin_bottom", 5)
 	add_child(margin)
 
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 4)
+	column.add_theme_constant_override("separation", 0)
 	margin.add_child(column)
 
 	var tabs := HBoxContainer.new()
