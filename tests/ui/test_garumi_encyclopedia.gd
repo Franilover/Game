@@ -51,7 +51,7 @@ func _run() -> void:
 	var filas_catalogo: Array[Dictionary] = [
 		{"tipo_registro": "original", "entidad_id": orumi_id, "nombre": "Orumi", "letra_original": "O", "orden_catalogo": 1},
 		{"tipo_registro": "original", "entidad_id": "varum-test-id", "nombre": "Varum", "letra_original": "V", "orden_catalogo": 2},
-		{"tipo_registro": "especie", "entidad_id": "orumi-descendiente-test", "nombre": "Oruvan", "original_id": orumi_id, "nombre_original": "Orumi", "letra_original": "O", "estado_documentacion": "canon", "numero_global": 1},
+		{"tipo_registro": "especie", "entidad_id": "orumi-descendiente-test", "nombre": "Oruvan", "original_id": orumi_id, "nombre_original": "Orumi", "letra_original": "O", "estado_documentacion": "canon", "numero_origen": 1, "numero_global": 4},
 		{"tipo_registro": "especie", "entidad_id": "varum-descendiente-test", "nombre": "Varumin", "original_id": "varum-test-id", "nombre_original": "Varum", "letra_original": "V", "estado_documentacion": "canon", "numero_global": 2}
 	]
 	enciclopedia.call("_aplicar_catalogo_desde_filas", filas_catalogo)
@@ -60,6 +60,14 @@ func _run() -> void:
 	_check(catalogo_filtrado.size() == 1, "La enciclopedia debe mostrar sólo descendientes de Orumi.")
 	_check(not catalogo_filtrado.is_empty() and str(catalogo_filtrado[0].get("nombre", "")) == "Oruvan", "Debe conservar el descendiente de Orumi.")
 	_check(originales_filtrados.size() == 1 and str(originales_filtrados[0].get("nombre", "")) == "Orumi", "Debe mostrar sólo el Original Orumi como encabezado de linaje.")
+	enciclopedia.call("_construir_lista_garumis")
+	var arbol: Tree = enciclopedia.get("_arbol")
+	_check(arbol.columns == 3, "La lista de Garumis debe separar número de origen, nombre y número global.")
+	var grupo_orumi := arbol.get_root().get_first_child()
+	var item_oruvan: TreeItem = grupo_orumi.get_first_child() if grupo_orumi != null else null
+	_check(item_oruvan != null and item_oruvan.get_text(0) == "1", "El número normal/de origen debe aparecer a la izquierda.")
+	_check(item_oruvan != null and item_oruvan.get_text(1) == "Oruvan", "El nombre debe quedar en la columna central.")
+	_check(item_oruvan != null and item_oruvan.get_text(2) == "4", "El número global debe aparecer a la derecha.")
 
 	# Soltar G y pulsarla de nuevo para verificar el cierre por la misma ruta.
 	var soltar_tecla := InputEventKey.new()
