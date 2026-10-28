@@ -484,6 +484,8 @@ func _curar_garumi_con_eterium() -> void:
 			eterium.call("restaurar", COSTO_CURACION_GARUMI)
 		return
 	_cooldown_curacion_eterium = INTERVALO_CURACION_ETERIUM
+	if jugador.has_method("_sync_desde_vital"):
+		jugador.call("_sync_desde_vital")
 	if jugador.has_signal("mana_changed"):
 		jugador.emit_signal("mana_changed", int(jugador.get("mana")), int(jugador.get("max_mana")))
 	_actualizar_marcos_combate()
