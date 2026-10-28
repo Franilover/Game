@@ -71,9 +71,6 @@ func _inicializar_navegacion_tabs() -> void:
 		# reservar espacio vertical adicional antes del contenido.
 		columna_principal.add_theme_constant_override("separation", 0)
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	var tab_bar: TabBar = tabs.get_tab_bar()
-	tab_bar.visible = false
-	tab_bar.custom_minimum_size = Vector2(0.0, 0.0)
 
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
