@@ -28,6 +28,7 @@ var _vinculado: bool = false
 var _tipo_vinculo: String = ""
 var _jugador_del_encuentro: Node = null
 var _menu_contextual: CanvasLayer = null
+var _jugador_menu_contextual: Node2D = null
 var _jugador_vinculado: Node = null
 var _guardado: bool = false
 var _garumi_instancia_id: String = ""
@@ -383,6 +384,7 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 		_al_cerrar_menu_contextual()
 
 	# Dos acciones pequeñas flotan sobre la criatura; sin pantalla oscura ni ventana modal grande.
+	_jugador_menu_contextual = jugador as Node2D
 	_menu_contextual = CanvasLayer.new()
 	_menu_contextual.name = "GarumiBondMenuLayer"
 	_menu_contextual.layer = 120
@@ -428,9 +430,12 @@ func _actualizar_posicion_menu_contextual() -> void:
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_menu_contextual):
 		return
-	if not is_instance_valid(_jugador_del_encuentro) and not is_instance_valid(_jugador_vinculado):
-		# El menú solo se mantiene mientras el jugador sigue próximo al Garumi.
-		pass
+	if not is_instance_valid(_jugador_menu_contextual):
+		_al_cerrar_menu_contextual()
+		return
+	if global_position.distance_to(_jugador_menu_contextual.global_position) > get_interaction_distance() + 12.0:
+		_al_cerrar_menu_contextual()
+		return
 	_actualizar_posicion_menu_contextual()
 
 
@@ -481,6 +486,7 @@ func _al_input_menu_contextual(event: InputEvent) -> void:
 func _al_cerrar_menu_contextual() -> void:
 	var menu_a_cerrar := _menu_contextual
 	_menu_contextual = null
+	_jugador_menu_contextual = null
 	if is_instance_valid(menu_a_cerrar):
 		menu_a_cerrar.queue_free()
 
