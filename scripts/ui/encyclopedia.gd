@@ -96,16 +96,8 @@ func _crear_interfaz() -> void:
 	_arbol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_arbol.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_arbol.hide_root = true
-	_arbol.columns = 3
-	_arbol.set_column_title(0, "Origen")
-	_arbol.set_column_title(1, "Garumi")
-	_arbol.set_column_title(2, "Global")
-	_arbol.set_column_titles_visible(true)
-	_arbol.set_column_expand(0, false)
-	_arbol.set_column_expand(1, true)
-	_arbol.set_column_expand(2, false)
-	_arbol.set_column_custom_minimum_width(0, 38)
-	_arbol.set_column_custom_minimum_width(2, 38)
+	_arbol.columns = 1
+	_arbol.set_column_titles_visible(false)
 	_arbol.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46, 1.0))
 	_arbol.add_theme_color_override("font_selected_color", Color(0.95, 0.88, 0.7, 1.0))
 	_arbol.add_theme_font_size_override("font_size", 9)
@@ -232,6 +224,8 @@ func actualizar() -> void:
 
 func _mostrar_biomas() -> void:
 	_modo = "biomas"
+	_arbol.columns = 1
+	_arbol.set_column_titles_visible(false)
 	_tab_biomas.button_pressed = true
 	_tab_criaturas.button_pressed = false
 	_tab_garumis.button_pressed = false
@@ -240,6 +234,8 @@ func _mostrar_biomas() -> void:
 
 func _mostrar_criaturas() -> void:
 	_modo = "criaturas"
+	_arbol.columns = 1
+	_arbol.set_column_titles_visible(false)
 	_tab_biomas.button_pressed = false
 	_tab_criaturas.button_pressed = true
 	_tab_garumis.button_pressed = false
@@ -248,6 +244,16 @@ func _mostrar_criaturas() -> void:
 
 func _mostrar_garumis() -> void:
 	_modo = "garumis"
+	_arbol.columns = 3
+	_arbol.set_column_title(0, "Origen")
+	_arbol.set_column_title(1, "Garumi")
+	_arbol.set_column_title(2, "Global")
+	_arbol.set_column_titles_visible(true)
+	_arbol.set_column_expand(0, false)
+	_arbol.set_column_expand(1, true)
+	_arbol.set_column_expand(2, false)
+	_arbol.set_column_custom_minimum_width(0, 38)
+	_arbol.set_column_custom_minimum_width(2, 38)
 	_tab_biomas.button_pressed = false
 	_tab_criaturas.button_pressed = false
 	_tab_garumis.button_pressed = true
