@@ -21,11 +21,6 @@ var _eterium_label: Label
 var _estado_label: Label
 var _botones: Array[Button] = []
 
-const NOMBRES := [
-	"Curarse",
-	"Recuperar dash",
-	"Meditar"
-]
 
 func configurar(player: Node, lab: Node, manager: Node, inventory: Node, admin: Node) -> void:
 	jugador = player
@@ -101,7 +96,7 @@ func _crear_interfaz() -> void:
 	]
 	for i in range(descripciones.size()):
 		var boton := Button.new()
-		boton.text = descripciones[i][0] + "\\n" + descripciones[i][1]
+		boton.text = descripciones[i][0] + "\n" + descripciones[i][1]
 		boton.custom_minimum_size = Vector2(300, 48)
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.add_theme_font_size_override("font_size", 12)
