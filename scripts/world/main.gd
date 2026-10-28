@@ -23,6 +23,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 var _world_entity_spawner: WorldEntitySpawner = null
 var _eterium_radial_menu: Control = null
 var _garumi_combat_arena: Node2D = null
+var _garumi_battle_party: Node = null
 @onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
@@ -34,6 +35,7 @@ var _world_generator: WorldGenerator = null
 const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
 const ETERIUM_RADIAL_MENU_SCRIPT = preload("res://scripts/ui/eterium_radial_menu.gd")
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
+const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
 
 
@@ -351,7 +353,22 @@ func iniciar_arena_garumi(garumi: Node, jugador: Node) -> void:
 	print("Main: arena de combate iniciada; cámara fijada y perímetro activado.")
 
 
+func iniciar_combate_garumi(garumi: Node, jugador: Node) -> void:
+	if not garumi is Garumi or not jugador is Node2D:
+		return
+	if is_instance_valid(_garumi_battle_party):
+		_garumi_battle_party.call("finalizar")
+	_garumi_battle_party = Node.new()
+	_garumi_battle_party.name = "GarumiBattleParty"
+	_garumi_battle_party.set_script(GARUMI_BATTLE_PARTY_SCRIPT)
+	add_child(_garumi_battle_party)
+	_garumi_battle_party.call("iniciar", jugador, garumi)
+
+
 func terminar_arena_garumi(garumi: Node = null) -> void:
+	if is_instance_valid(_garumi_battle_party):
+		_garumi_battle_party.call("finalizar")
+		_garumi_battle_party = null
 	if not is_instance_valid(_garumi_combat_arena):
 		return
 	if garumi != null and _garumi_combat_arena.get("garumi") != garumi:
