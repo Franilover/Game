@@ -65,9 +65,15 @@ var _slot_grids: Array[GridContainer] = []
 
 
 func _inicializar_navegacion_tabs() -> void:
+	var columna_principal := $Window/Margin/Column as VBoxContainer
+	if columna_principal != null:
+		# Los selectores superiores ya funcionan como barra de pestañas; no
+		# reservar espacio vertical adicional antes del contenido.
+		columna_principal.add_theme_constant_override("separation", 0)
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
 	var tab_bar: TabBar = tabs.get_tab_bar()
 	tab_bar.visible = false
+	tab_bar.custom_minimum_size = Vector2(0.0, 0.0)
 
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
