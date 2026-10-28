@@ -268,7 +268,7 @@ func _crear_marcos_combate() -> void:
 	_panel_aliado.offset_left = 18.0
 	_panel_aliado.offset_top = 18.0
 	_panel_aliado.offset_right = 258.0
-	_panel_aliado.offset_bottom = 126.0
+	_panel_aliado.offset_bottom = 190.0
 	_panel_enemigo = _crear_marco_luchador("Enemigo", false)
 	_panel_enemigo.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_panel_enemigo.anchor_left = 1.0
