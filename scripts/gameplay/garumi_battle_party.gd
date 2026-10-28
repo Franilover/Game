@@ -227,8 +227,13 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 
 
 func _guardar_garumis_antes_de_seleccionar() -> void:
-	for garumi in disponibles:
-		if not is_instance_valid(garumi):
+	# Guardar todos los Garumis vinculados presentes, incluso si un guardado antiguo
+	# contiene más de tres o alguno no puede entrar en esta selección.
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not is_instance_valid(nodo) or not nodo is Garumi:
+			continue
+		var garumi := nodo as Garumi
+		if garumi == rival or not garumi.esta_vinculado():
 			continue
 		if garumi.has_method("esta_guardado") and not bool(garumi.call("esta_guardado")):
 			if garumi.has_method("guardar_para_seleccion_combate"):
