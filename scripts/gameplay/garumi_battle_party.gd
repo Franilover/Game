@@ -205,8 +205,11 @@ func _derrotar_activo() -> void:
 	if derrotado.has_method("salir_combate_vinculado"):
 		derrotado.call("salir_combate_vinculado", true)
 	activo = null
-	_seleccion_pendiente = true
+	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
+	if disponibles.is_empty():
+		remove_from_group("modal_ui")
+		_estado.text = "No quedan Garumis disponibles. Puedes seguir combatiendo por tu cuenta."
 	print("GarumiBattleParty: ", _nombre(derrotado), " fue derrotado; puedes elegir otro Garumi.")
 
 
