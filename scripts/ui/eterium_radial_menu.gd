@@ -1,13 +1,12 @@
 extends Control
 class_name EteriumRadialMenu
 
-## Menú radial transparente de acciones de Eterium.
-## Pulsa X para abrir; selecciona con clic o con las teclas 1–3.
+## Panel compacto de acciones de Eterium, integrado con el estilo de los menús del juego.
+## Pulsa X para abrir; usa los botones o las teclas 1–3.
 
 const COSTO_CURACION: int = 10
 const COSTO_CARGA_DASH: int = 10
 const RECUPERACION_MEDITACION: int = 20
-const TAMANO_CUADRANTE: float = 110.0
 
 var jugador: Node = null
 var ium_lab: Node = null
@@ -16,7 +15,11 @@ var inventario: Node = null
 var admin_console: Node = null
 var visible_menu: bool = false
 var cuadrante: int = -1
-var _centro: Vector2 = Vector2.ZERO
+var _overlay: ColorRect
+var _panel: PanelContainer
+var _eterium_label: Label
+var _estado_label: Label
+var _botones: Array[Button] = []
 
 const NOMBRES := [
 	"Curarse",
@@ -35,57 +38,123 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
-	_centro_inicializar()
+	_crear_interfaz()
 
-func _centro_inicializar() -> void:
-	_centro = get_viewport_rect().size * 0.5
+func _crear_interfaz() -> void:
+	_overlay = ColorRect.new()
+	_overlay.name = "Fondo"
+	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_overlay.color = Color(0.025, 0.02, 0.035, 0.68)
+	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_overlay.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+			_cerrar()
+	)
+	add_child(_overlay)
 
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_RESIZED:
-		_centro_inicializar()
-		queue_redraw()
+	var centrador := CenterContainer.new()
+	centrador.name = "Centrador"
+	centrador.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centrador.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(centrador)
+
+	_panel = PanelContainer.new()
+	_panel.name = "PanelEterium"
+	_panel.custom_minimum_size = Vector2(330, 0)
+	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.075, 0.065, 0.085, 0.98)
+	estilo.border_color = Color(0.42, 0.34, 0.52, 1.0)
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(5)
+	estilo.content_margin_left = 14
+	estilo.content_margin_right = 14
+	estilo.content_margin_top = 12
+	estilo.content_margin_bottom = 12
+	_panel.add_theme_stylebox_override("panel", estilo)
+	centrador.add_child(_panel)
+
+	var columna := VBoxContainer.new()
+	columna.add_theme_constant_override("separation", 8)
+	_panel.add_child(columna)
+
+	var titulo := Label.new()
+	titulo.text = "ETERIUM"
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 17)
+	titulo.add_theme_color_override("font_color", Color(0.78, 0.75, 0.98, 1.0))
+	columna.add_child(titulo)
+
+	_eterium_label = Label.new()
+	_eterium_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_eterium_label.add_theme_font_size_override("font_size", 12)
+	_eterium_label.add_theme_color_override("font_color", Color(0.82, 0.8, 0.88, 1.0))
+	columna.add_child(_eterium_label)
+
+	var separador := HSeparator.new()
+	columna.add_child(separador)
+
+	var descripciones := [
+		["1  ·  Curarse", "Recupera el 25 % de la salud máxima · 10 Eterium"],
+		["2  ·  Recuperar dash", "Recupera una carga de dash · 10 Eterium"],
+		["3  ·  Meditar", "Recupera hasta 20 puntos de Eterium"]
+	]
+	for i in range(descripciones.size()):
+		var boton := Button.new()
+		boton.text = descripciones[i][0] + "\\n" + descripciones[i][1]
+		boton.custom_minimum_size = Vector2(300, 48)
+		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.add_theme_font_size_override("font_size", 12)
+		boton.add_theme_color_override("font_color", Color(0.91, 0.89, 0.96, 1.0))
+		boton.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+		var normal := StyleBoxFlat.new()
+		normal.bg_color = Color(0.12, 0.105, 0.15, 1.0)
+		normal.border_color = Color(0.25, 0.22, 0.32, 1.0)
+		normal.set_border_width_all(1)
+		normal.set_corner_radius_all(3)
+		normal.content_margin_left = 10
+		normal.content_margin_right = 8
+		var hover := normal.duplicate() as StyleBoxFlat
+		hover.bg_color = Color(0.19, 0.16, 0.25, 1.0)
+		hover.border_color = Color(0.62, 0.56, 0.82, 1.0)
+		var pressed := normal.duplicate() as StyleBoxFlat
+		pressed.bg_color = Color(0.25, 0.21, 0.33, 1.0)
+		boton.add_theme_stylebox_override("normal", normal)
+		boton.add_theme_stylebox_override("hover", hover)
+		boton.add_theme_stylebox_override("pressed", pressed)
+		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		boton.pressed.connect(_seleccionar.bind(i))
+		columna.add_child(boton)
+		_botones.append(boton)
+
+	_estado_label = Label.new()
+	_estado_label.text = "X: cerrar  ·  Esc: cerrar"
+	_estado_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_estado_label.add_theme_font_size_override("font_size", 10)
+	_estado_label.add_theme_color_override("font_color", Color(0.63, 0.6, 0.7, 1.0))
+	columna.add_child(_estado_label)
 
 func _input(event: InputEvent) -> void:
 	if _admin_abierto() or _otra_interfaz_abierta():
 		if visible_menu:
 			_cerrar()
 		return
-	if event is InputEventKey:
-		var tecla := event as InputEventKey
-		if visible_menu and tecla.pressed and not tecla.echo:
-			# Atajos directos mientras el menú de Eterium está abierto.
-			if tecla.keycode >= KEY_1 and tecla.keycode <= KEY_3:
-				cuadrante = tecla.keycode - KEY_1
-				_ejecutar_seleccion()
-				get_viewport().set_input_as_handled()
-				return
-			if tecla.keycode == KEY_ESCAPE:
-				_cerrar()
-				get_viewport().set_input_as_handled()
-				return
-		if tecla.keycode == KEY_X and tecla.pressed and not tecla.echo:
-			if visible_menu:
-				_cerrar()
-			else:
-				_abrir()
+	if event is not InputEventKey:
+		return
+	var tecla := event as InputEventKey
+	if not tecla.pressed or tecla.echo:
+		return
+	if visible_menu:
+		if tecla.keycode >= KEY_1 and tecla.keycode <= KEY_3:
+			_seleccionar(tecla.keycode - KEY_1)
 			get_viewport().set_input_as_handled()
 			return
-	if not visible_menu:
-		return
-	if event is InputEventMouseMotion:
-		_actualizar_cuadrante((event as InputEventMouseMotion).position)
-		queue_redraw()
-	elif event is InputEventMouseButton:
-		var boton := event as InputEventMouseButton
-		if boton.button_index == MOUSE_BUTTON_LEFT and boton.pressed:
-			_actualizar_cuadrante(boton.position)
-			_ejecutar_seleccion()
-			get_viewport().set_input_as_handled()
-		elif boton.button_index == MOUSE_BUTTON_RIGHT and boton.pressed:
+		if tecla.keycode == KEY_ESCAPE or tecla.keycode == KEY_X:
 			_cerrar()
 			get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("ui_cancel"):
-		_cerrar()
+			return
+	if tecla.keycode == KEY_X:
+		_abrir()
 		get_viewport().set_input_as_handled()
 
 func toggle_menu() -> void:
@@ -98,30 +167,33 @@ func toggle_menu() -> void:
 func _abrir() -> void:
 	if jugador == null or not is_instance_valid(jugador):
 		return
-	_centro_inicializar()
-	cuadrante = -1
 	visible_menu = true
 	visible = true
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	queue_redraw()
+	_actualizar_resumen()
 
 func _cerrar() -> void:
 	visible_menu = false
 	visible = false
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cuadrante = -1
-	queue_redraw()
 
-func _actualizar_cuadrante(posicion: Vector2) -> void:
-	var delta := posicion - _centro
-	if delta.length() < 22.0:
-		cuadrante = -1
-	elif delta.x < 0.0 and delta.y < 0.0:
-		cuadrante = 0 # superior izquierda: curación
-	elif delta.x >= 0.0 and delta.y < 0.0:
-		cuadrante = 1 # superior derecha: recuperar dash
+func _actualizar_resumen() -> void:
+	if _eterium_label == null:
+		return
+	var eterium: Variant = jugador.get("eterium") if jugador != null and is_instance_valid(jugador) else null
+	if eterium != null and eterium.has_method("mana") and eterium.has_method("max_mana"):
+		_eterium_label.text = "Reserva: %d / %d" % [int(eterium.call("mana")), int(eterium.call("max_mana"))]
 	else:
-		cuadrante = 2 # zona inferior: meditar
+		_eterium_label.text = "Reserva de Eterium"
+	if _estado_label != null:
+		_estado_label.text = "X o Esc para cerrar"
+	if _botones.size() >= 3:
+		_botones[0].disabled = jugador == null or int(jugador.get("health")) >= int(jugador.get("max_health"))
+		_botones[1].disabled = jugador == null or not jugador.has_method("recuperar_dash_con_eterium")
+		_botones[2].disabled = eterium == null or not eterium.has_method("mana") or not eterium.has_method("max_mana") or int(eterium.call("mana")) >= int(eterium.call("max_mana"))
+
+func _seleccionar(indice: int) -> void:
+	cuadrante = indice
+	_ejecutar_seleccion()
 
 func _ejecutar_seleccion() -> void:
 	match cuadrante:
@@ -239,25 +311,4 @@ func _otra_interfaz_abierta() -> bool:
 		return true
 	return is_instance_valid(ium_lab) and bool(ium_lab.get("visible"))
 
-func _draw() -> void:
-	if not visible_menu:
-		return
-	var sombra := Color(0.035, 0.025, 0.018, 0.58)
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.015, 0.01, 0.16), true)
-	var brazos := [
-		Vector2(-1, -1), Vector2(1, -1), Vector2(0, 1)
-	]
-	for i in range(3):
-		var dir: Vector2 = brazos[i].normalized()
-		var inicio := _centro + dir * 20.0
-		var fin := _centro + dir * TAMANO_CUADRANTE
-		var color := Color(0.78, 0.66, 0.46, 0.95) if i == cuadrante else Color(0.45, 0.32, 0.21, 0.85)
-		draw_line(inicio, fin, color, 3.0, true)
-		draw_circle(fin, 5.0 if i == cuadrante else 3.5, color)
-		var texto: String = str(i + 1) + " · " + str(NOMBRES[i])
-		var caja := Rect2(fin + Vector2(-78, -23), Vector2(156, 46))
-		draw_rect(caja, Color(0.055, 0.038, 0.025, 0.78), true)
-		draw_rect(caja, color, false, 1.0)
-		draw_string(ThemeDB.fallback_font, caja.position + Vector2(8, 27), texto, HORIZONTAL_ALIGNMENT_CENTER, 140, 12, Color(0.95, 0.88, 0.73, 1.0))
-	draw_circle(_centro, 15.0, sombra)
-	draw_arc(_centro, 15.0, 0.0, TAU, 32, Color(0.78, 0.66, 0.46, 1.0), 2.0, true)
+
