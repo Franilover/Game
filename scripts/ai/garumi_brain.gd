@@ -67,8 +67,10 @@ func _recargar_configuracion() -> void:
 	# Prioridad: movimiento específico de Garumi, movimiento genérico y,
 	# por último, perfil de alto nivel solo si coincide con una primitiva que
 	# este intérprete realmente soporta. Nunca se traduce una especie desconocida.
-	var comportamiento_especifico_variant: Variant = datos_garumi.get("comportamiento", {})
-	if not (comportamiento_especifico_variant is Dictionary):
+	var comportamiento_especifico_variant: Variant = {}
+	if datos_garumi.has("comportamiento"):
+		comportamiento_especifico_variant = datos_garumi.get("comportamiento", {})
+	else:
 		comportamiento_especifico_variant = ia.get("comportamiento", {})
 	comportamiento = comportamiento_especifico_variant if comportamiento_especifico_variant is Dictionary else {}
 
@@ -167,7 +169,9 @@ func _elegir_intencion() -> void:
 		_direccion_objetivo = Vector2.ZERO
 		return
 
-	var radio_social := maxf(float(movimiento.get("radio_social", 100.0)), 0.0)
+	var sociabilidad := clampf(float(comportamiento.get("sociabilidad", 0.5)), 0.0, 1.0)
+	var radio_social_base := maxf(float(movimiento.get("radio_social", 100.0)), 0.0)
+	var radio_social := radio_social_base * (0.5 + sociabilidad)
 	var jugador := _buscar_jugador_cercano(radio_social)
 	var tiene_jugador := is_instance_valid(jugador)
 	var hacia_jugador := Vector2.ZERO
@@ -183,14 +187,19 @@ func _elegir_intencion() -> void:
 			var radio_curiosidad := radio_social * (0.5 + curiosidad)
 			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_preferida and distancia <= radio_curiosidad else _direccion_errante()
 		"timido", "evasivo":
-			var distancia_escape := maxf(float(movimiento.get("distancia_escape", 72.0)), 0.0)
+			var temor := clampf(float(comportamiento.get("temor", 0.5)), 0.0, 1.0)
+			var distancia_escape := maxf(float(movimiento.get("distancia_escape", 72.0)), 0.0) * (0.5 + temor)
 			_direccion_objetivo = -hacia_jugador if tiene_jugador and distancia < distancia_escape else _direccion_errante()
 		"territorial":
-			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_preferida * 1.5 else Vector2.ZERO
+			var territorialidad := clampf(float(comportamiento.get("territorialidad", 0.5)), 0.0, 1.0)
+			var radio_defendido := distancia_preferida * (1.0 + territorialidad)
+			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > radio_defendido else Vector2.ZERO
 		"agresivo", "cazador":
 			# Conducta de presión, no inicia daño por sí sola: el combate conserva
 			# el flujo de interacción y las reglas de vínculo existentes.
-			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_preferida else _direccion_errante()
+			var agresividad := clampf(float(comportamiento.get("agresividad", 0.5)), 0.0, 1.0)
+			var distancia_presion := distancia_preferida * (1.0 + agresividad)
+			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_presion else _direccion_errante()
 		"defensivo", "vigilante":
 			var distancia_reaccion := maxf(float(movimiento.get("distancia_reaccion", distancia_preferida)), 8.0)
 			_direccion_objetivo = -hacia_jugador if tiene_jugador and distancia < distancia_reaccion else Vector2.ZERO
