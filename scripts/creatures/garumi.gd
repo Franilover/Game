@@ -375,11 +375,14 @@ func interact(jugador: Node) -> void:
 
 
 func _mostrar_menu_contextual(jugador: Node) -> void:
+	if _vinculado or _enfrentamiento_activo:
+		return
+	if not is_instance_valid(jugador) or not jugador is Node2D:
+		return
 	if is_instance_valid(_menu_contextual):
 		_al_cerrar_menu_contextual()
 
-	# Capa propia para que el menú no dependa de la posición del cursor
-	# ni de la transformación/cámara del mundo.
+	# Dos acciones pequeñas flotan sobre la criatura; sin pantalla oscura ni ventana modal grande.
 	_menu_contextual = CanvasLayer.new()
 	_menu_contextual.name = "GarumiBondMenuLayer"
 	_menu_contextual.layer = 120
@@ -393,117 +396,71 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 	_menu_contextual.add_child(overlay)
 	overlay.gui_input.connect(_al_input_menu_contextual)
 
-	var fondo := ColorRect.new()
-	fondo.name = "FondoOscuro"
-	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	fondo.color = Color(0.025, 0.02, 0.015, 0.68)
-	fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(fondo)
+	var acciones := HBoxContainer.new()
+	acciones.name = "GarumiBondMenu"
+	acciones.add_theme_constant_override("separation", 6)
+	acciones.mouse_filter = Control.MOUSE_FILTER_STOP
+	acciones.custom_minimum_size = Vector2(0.0, 30.0)
+	overlay.add_child(acciones)
 
-	var panel := PanelContainer.new()
-	panel.name = "GarumiBondMenu"
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.offset_left = -190.0
-	panel.offset_top = -145.0
-	panel.offset_right = 190.0
-	panel.offset_bottom = 145.0
-	panel.z_index = 1
-	panel.custom_minimum_size = Vector2(380.0, 0.0)
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	var estilo_panel := StyleBoxFlat.new()
-	estilo_panel.bg_color = Color(0.08, 0.055, 0.035, 0.99)
-	estilo_panel.border_color = Color(0.58, 0.43, 0.24, 1.0)
-	estilo_panel.set_border_width_all(2)
-	estilo_panel.set_corner_radius_all(6)
-	estilo_panel.content_margin_left = 22.0
-	estilo_panel.content_margin_top = 18.0
-	estilo_panel.content_margin_right = 22.0
-	estilo_panel.content_margin_bottom = 18.0
-	panel.add_theme_stylebox_override("panel", estilo_panel)
-	overlay.add_child(panel)
-
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 10)
-	panel.add_child(columna)
-
-	var titulo := Label.new()
-	titulo.text = criatura_nombre if not criatura_nombre.strip_edges().is_empty() else name
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	titulo.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
-	titulo.add_theme_font_size_override("font_size", 18)
-	columna.add_child(titulo)
-
-	var subtitulo := Label.new()
-	subtitulo.text = "Gestiona tu vínculo con este Garumi." if _vinculado else "¿Cómo quieres acercarte a este Garumi?"
-	subtitulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitulo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	subtitulo.add_theme_color_override("font_color", Color(0.72, 0.64, 0.52, 1.0))
-	subtitulo.add_theme_font_size_override("font_size", 11)
-	columna.add_child(subtitulo)
-
-	var separador := HSeparator.new()
-	columna.add_child(separador)
-
-	if _vinculado:
-		_agregar_boton_menu_garumi(columna, "Romper vínculo", OPCION_ROMPER_VINCULO, jugador)
-	elif _enfrentamiento_activo:
-		if puede_forzar_vinculo():
-			_agregar_boton_menu_garumi(columna, "Forzar vínculo", OPCION_FORZAR_VINCULO, jugador)
-		_agregar_boton_menu_garumi(columna, "Retirarse del enfrentamiento", OPCION_RETIRARSE, jugador)
-	else:
-		if _puede_establecer_otro_vinculo():
-			_agregar_boton_menu_garumi(columna, "Ofrecer vínculo", OPCION_OFRECER_VINCULO, jugador)
-		else:
-			var limite := Label.new()
-			limite.text = "Ya tienes 5 vínculos. Rompe uno antes de vincular otro."
-			limite.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			limite.add_theme_color_override("font_color", Color(0.95, 0.62, 0.42, 1.0))
-			columna.add_child(limite)
-		_agregar_boton_menu_garumi(columna, "Enfrentar", OPCION_ENFRENTAR, jugador)
-
-	var cerrar := _crear_boton_menu_garumi("Cerrar", -1)
-	cerrar.pressed.connect(_al_cerrar_menu_contextual)
-	columna.add_child(cerrar)
+	_agregar_boton_menu_garumi(acciones, "Enfrentarte", OPCION_ENFRENTAR, jugador)
+	_agregar_boton_menu_garumi(acciones, "Vincular", OPCION_OFRECER_VINCULO, jugador)
+	_actualizar_posicion_menu_contextual()
 
 
-func _agregar_boton_menu_garumi(contenedor: VBoxContainer, texto: String, opcion: int, jugador: Node) -> void:
-	var boton := _crear_boton_menu_garumi(texto, opcion)
-	boton.pressed.connect(_al_seleccionar_opcion.bind(opcion, jugador))
-	contenedor.add_child(boton)
+func _actualizar_posicion_menu_contextual() -> void:
+	if not is_instance_valid(_menu_contextual) or not is_instance_valid(self):
+		return
+	var overlay := _menu_contextual.get_node_or_null("Overlay") as Control
+	var acciones := _menu_contextual.get_node_or_null("Overlay/GarumiBondMenu") as Control
+	if overlay == null or acciones == null:
+		return
+	var escala_pantalla := get_global_transform_with_canvas().origin
+	var viewport := get_viewport().get_visible_rect().size
+	var tamano := acciones.get_combined_minimum_size()
+	acciones.size = tamano
+	acciones.position = Vector2(
+		clampf(escala_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
+		clampf(escala_pantalla.y - tamano.y - 22.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
+	)
 
 
-func _crear_boton_menu_garumi(texto: String, opcion: int) -> Button:
+func _process(_delta: float) -> void:
+	if not is_instance_valid(_menu_contextual):
+		return
+	if not is_instance_valid(_jugador_del_encuentro) and not is_instance_valid(_jugador_vinculado):
+		# El menú solo se mantiene mientras el jugador sigue próximo al Garumi.
+		pass
+	_actualizar_posicion_menu_contextual()
+
+
+func _agregar_boton_menu_garumi(contenedor: HBoxContainer, texto: String, opcion: int, jugador: Node) -> void:
 	var boton := Button.new()
 	boton.text = texto
-	boton.custom_minimum_size = Vector2(0.0, 38.0)
-	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.custom_minimum_size = Vector2(104.0, 30.0)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	boton.focus_mode = Control.FOCUS_ALL
-	boton.add_theme_color_override("font_color", Color(0.91, 0.83, 0.68, 1.0))
-	boton.add_theme_color_override("font_hover_color", Color(0.98, 0.91, 0.75, 1.0))
-	boton.add_theme_color_override("font_pressed_color", Color(0.98, 0.91, 0.75, 1.0))
-	boton.add_theme_font_size_override("font_size", 13)
-
+	boton.add_theme_font_size_override("font_size", 11)
+	boton.add_theme_color_override("font_color", Color(0.91, 0.87, 0.98, 1.0))
+	boton.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.15, 0.105, 0.065, 1.0)
-	normal.border_color = Color(0.38, 0.28, 0.16, 1.0)
+	normal.bg_color = Color(0.075, 0.065, 0.095, 0.96)
+	normal.border_color = Color(0.42, 0.36, 0.55, 1.0)
 	normal.set_border_width_all(1)
 	normal.set_corner_radius_all(4)
-	normal.content_margin_left = 12.0
-	normal.content_margin_right = 12.0
+	normal.content_margin_left = 8.0
+	normal.content_margin_right = 8.0
 	boton.add_theme_stylebox_override("normal", normal)
-
 	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.24, 0.17, 0.095, 1.0)
-	hover.border_color = Color(0.78, 0.61, 0.34, 1.0)
+	hover.bg_color = Color(0.16, 0.13, 0.22, 1.0)
+	hover.border_color = Color(0.72, 0.65, 0.92, 1.0)
 	boton.add_theme_stylebox_override("hover", hover)
 	boton.add_theme_stylebox_override("focus", hover)
-
 	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color(0.10, 0.075, 0.045, 1.0)
+	pressed.bg_color = Color(0.11, 0.09, 0.16, 1.0)
 	boton.add_theme_stylebox_override("pressed", pressed)
-	return boton
-
+	boton.pressed.connect(_al_seleccionar_opcion.bind(opcion, jugador))
+	contenedor.add_child(boton)
 
 
 func _al_input_menu_contextual(event: InputEvent) -> void:
