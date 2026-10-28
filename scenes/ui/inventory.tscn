@@ -271,7 +271,7 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="LeftPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario" unique_id=261778966]
+[node name="LeftPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent" unique_id=261778966]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -331,7 +331,7 @@ theme_override_styles/focus = SubResource("StyleBox_tab_focus")
 text = "ELIMINAR OBJETO"
 disabled = true
 
-[node name="RightPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario" unique_id=1747754025]
+[node name="RightPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent" unique_id=1747754025]
 custom_minimum_size = Vector2(174, 0)
 layout_mode = 2
 size_flags_vertical = 3
