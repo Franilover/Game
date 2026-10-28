@@ -531,12 +531,7 @@ func _puede_hacer_dash() -> bool:
 
 func _iniciar_dash() -> void:
 	var direccion_dash := _obtener_direccion_accion()
-	# En una arena, un dash solo permite salir si se ejecuta desde un borde hacia fuera.
-	for arena in get_tree().get_nodes_in_group("garumi_combat_arena"):
-		if is_instance_valid(arena) and arena.has_method("intentar_escapar"):
-			if bool(arena.call("intentar_escapar", self, direccion_dash)):
-				print("Player: saliendo del enfrentamiento mediante dash.")
-				break
+	# El dash es movimiento; retirarse del combate se hace exclusivamente con el botón Huir.
 	if not locomotion.iniciar_dash(direccion_dash, dash_duration, dash_cooldown, dash_stamina_cost):
 		return
 	_action_direction = locomotion.obtener_direccion_accion(direccion_dash)
