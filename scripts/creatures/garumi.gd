@@ -601,7 +601,7 @@ func forzar_vinculo(jugador: Node) -> bool:
 
 func _establecer_vinculo(jugador: Node, tipo: String) -> bool:
 	if not _vinculado and not _puede_establecer_otro_vinculo():
-		push_warning("Garumi: límite de 5 vínculos alcanzado; rompe un vínculo antes de aceptar otro.")
+		push_warning("Garumi: límite de 3 vínculos alcanzado; rompe un vínculo antes de aceptar otro.")
 		_notificar_resultado_vinculo(false, "limite_alcanzado")
 		return false
 	if _enfrentamiento_activo:
@@ -723,6 +723,13 @@ func romper_vinculo() -> bool:
 	actualizar_estado_en_hud()
 	print("Garumi: vínculo roto; ", criatura_nombre, " queda libre y ya no ocupa un espacio.")
 	return true
+
+
+## Guarda al Garumi antes de abrir el selector para que no aparezca en la arena por seguimiento.
+func guardar_para_seleccion_combate() -> void:
+	if not _vinculado or _combate_vinculado_activo or _guardado:
+		return
+	_guardar_garumi()
 
 
 func entrar_combate_vinculado(jugador: Node, rival: Garumi) -> void:
