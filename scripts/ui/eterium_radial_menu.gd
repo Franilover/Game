@@ -2,10 +2,11 @@ extends Control
 class_name EteriumRadialMenu
 
 ## Menú radial transparente de acciones de Eterium.
-## Pulsa X para abrir; selecciona con clic o con las teclas 1–2.
+## Pulsa X para abrir; selecciona con clic o con las teclas 1–3.
 
 const COSTO_CURACION: int = 10
 const COSTO_CARGA_DASH: int = 10
+const RECUPERACION_MEDITACION: int = 20
 const TAMANO_CUADRANTE: float = 110.0
 
 var jugador: Node = null
@@ -19,7 +20,8 @@ var _centro: Vector2 = Vector2.ZERO
 
 const NOMBRES := [
 	"Curarse",
-	"Recuperar dash"
+	"Recuperar dash",
+	"Meditar"
 ]
 
 func configurar(player: Node, lab: Node, manager: Node, inventory: Node, admin: Node) -> void:
@@ -52,7 +54,7 @@ func _input(event: InputEvent) -> void:
 		var tecla := event as InputEventKey
 		if visible_menu and tecla.pressed and not tecla.echo:
 			# Atajos directos mientras el menú de Eterium está abierto.
-			if tecla.keycode >= KEY_1 and tecla.keycode <= KEY_2:
+			if tecla.keycode >= KEY_1 and tecla.keycode <= KEY_3:
 				cuadrante = tecla.keycode - KEY_1
 				_ejecutar_seleccion()
 				get_viewport().set_input_as_handled()
@@ -119,7 +121,7 @@ func _actualizar_cuadrante(posicion: Vector2) -> void:
 	elif delta.x >= 0.0 and delta.y < 0.0:
 		cuadrante = 1 # superior derecha: recuperar dash
 	else:
-		cuadrante = -1
+		cuadrante = 2 # zona inferior: meditar
 
 func _ejecutar_seleccion() -> void:
 	match cuadrante:
@@ -127,6 +129,8 @@ func _ejecutar_seleccion() -> void:
 			_curarse()
 		1:
 			_recuperar_dash()
+		2:
+			_meditar()
  
 	_cerrar()
 
@@ -157,6 +161,29 @@ func _recuperar_dash() -> void:
 		_notificar("Carga de dash recuperada.")
 	else:
 		_notificar("No puedes recuperar una carga: revisa Eterium y cargas.")
+
+func _meditar() -> void:
+	if jugador == null or not is_instance_valid(jugador):
+		return
+	var eterium: Variant = jugador.get("eterium")
+	if eterium == null:
+		_notificar("El sistema de Eterium no está disponible.")
+		return
+	if not eterium.has_method("restaurar") or not eterium.has_method("mana") or not eterium.has_method("max_mana"):
+		_notificar("No se puede recuperar Eterium ahora.")
+		return
+	if int(eterium.call("mana")) >= int(eterium.call("max_mana")):
+		_notificar("Tu Eterium ya está completo.")
+		return
+	if bool(eterium.call("restaurar", RECUPERACION_MEDITACION)):
+		if jugador.has_method("_sync_desde_vital"):
+			jugador.call("_sync_desde_vital")
+		if jugador.has_signal("mana_changed"):
+			jugador.emit_signal("mana_changed", int(jugador.get("mana")), int(jugador.get("max_mana")))
+		_notificar("Meditaste y recuperaste Eterium.")
+	else:
+		_notificar("No puedes meditar para recuperar Eterium ahora.")
+
 
 func _abrir_laboratorio_ium() -> void:
 	if ium_lab == null or not is_instance_valid(ium_lab):
@@ -218,9 +245,9 @@ func _draw() -> void:
 	var sombra := Color(0.035, 0.025, 0.018, 0.58)
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.015, 0.01, 0.16), true)
 	var brazos := [
-		Vector2(-1, -1), Vector2(1, -1)
+		Vector2(-1, -1), Vector2(1, -1), Vector2(0, 1)
 	]
-	for i in range(2):
+	for i in range(3):
 		var dir: Vector2 = brazos[i].normalized()
 		var inicio := _centro + dir * 20.0
 		var fin := _centro + dir * TAMANO_CUADRANTE
