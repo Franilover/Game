@@ -18,6 +18,7 @@ var _estado: Label
 var _cooldown_aliado := 0.0
 var _cooldown_rival := 0.0
 var _seleccion_pendiente := false
+var _forzar_disponible := false
 
 
 func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
@@ -116,25 +117,31 @@ func _actualizar_interfaz() -> void:
 		ayuda.text = "Solo un Garumi puede combatir a la vez."
 		ayuda.add_theme_font_size_override("font_size", 11)
 		_lista.add_child(ayuda)
-		return
-	if not _seleccion_pendiente:
-		return
-	var instruccion := Label.new()
-	instruccion.text = "Elige quién entra (teclas 1–5):"
-	instruccion.add_theme_font_size_override("font_size", 12)
-	_lista.add_child(instruccion)
-	for i in range(disponibles.size()):
-		var garumi := disponibles[i]
-		var boton := Button.new()
-		boton.text = "%d  %s  ·  Nv. %d" % [i + 1, _nombre(garumi), garumi.nivel]
-		boton.custom_minimum_size = Vector2(260.0, 32.0)
-		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.pressed.connect(seleccionar_garumi.bind(i))
-		_lista.add_child(boton)
-	if disponibles.is_empty():
-		_estado.text = "No tienes Garumis vinculados disponibles."
-	else:
-		_estado.text = "Solo puedes usar uno por combate."
+	elif _seleccion_pendiente:
+		var instruccion := Label.new()
+		instruccion.text = "Elige quién entra (teclas 1–5):"
+		instruccion.add_theme_font_size_override("font_size", 12)
+		_lista.add_child(instruccion)
+		for i in range(disponibles.size()):
+			var garumi := disponibles[i]
+			var boton := Button.new()
+			boton.text = "%d  %s  ·  Nv. %d" % [i + 1, _nombre(garumi), garumi.nivel]
+			boton.custom_minimum_size = Vector2(260.0, 32.0)
+			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			boton.pressed.connect(seleccionar_garumi.bind(i))
+			_lista.add_child(boton)
+		_estado.text = "Solo puedes usar uno por combate." if not disponibles.is_empty() else "No tienes Garumis vinculados disponibles."
+	if _forzar_disponible:
+		var boton_vinculo := Button.new()
+		boton_vinculo.text = "Forzar vínculo"
+		boton_vinculo.custom_minimum_size = Vector2(260.0, 32.0)
+		boton_vinculo.pressed.connect(_forzar_vinculo)
+		_lista.add_child(boton_vinculo)
+	var boton_retirarse := Button.new()
+	boton_retirarse.text = "Retirarse del enfrentamiento"
+	boton_retirarse.custom_minimum_size = Vector2(260.0, 30.0)
+	boton_retirarse.pressed.connect(_retirarse)
+	_lista.add_child(boton_retirarse)
 
 
 func _input(event: InputEvent) -> void:
@@ -181,6 +188,10 @@ func seleccionar_garumi(indice: int) -> void:
 func _process(delta: float) -> void:
 	if not is_instance_valid(rival) or not rival.esta_enfrentamiento():
 		return
+	var puede_forzar := rival.puede_forzar_vinculo()
+	if puede_forzar != _forzar_disponible:
+		_forzar_disponible = puede_forzar
+		_actualizar_interfaz()
 	if not is_instance_valid(activo):
 		return
 	if not activo.esta_vinculado() or not bool(activo.get("is_alive")):
@@ -200,6 +211,18 @@ func _process(delta: float) -> void:
 			activo.call("recibir_danio_combate", maxi(1, danio_rival), rival)
 			if not bool(activo.get("is_alive")):
 				_derrotar_activo()
+
+
+func _forzar_vinculo() -> void:
+	if not is_instance_valid(rival) or not is_instance_valid(jugador):
+		return
+	if rival.puede_forzar_vinculo():
+		rival.forzar_vinculo(jugador)
+
+
+func _retirarse() -> void:
+	if is_instance_valid(rival) and rival.esta_enfrentamiento():
+		rival.finalizar_enfrentamiento()
 
 
 func _derrotar_activo() -> void:
