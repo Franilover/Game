@@ -51,7 +51,7 @@ func _disponibles_desde_vinculos() -> void:
 		if not nodo is Garumi or not is_instance_valid(nodo):
 			continue
 		var garumi := nodo as Garumi
-		if not garumi.esta_vinculado() or garumi == rival:
+		if not garumi.esta_vinculado() or garumi == rival or not bool(garumi.get("is_alive")):
 			continue
 		encontrados.append(garumi)
 	for id in orden_ids:
@@ -90,6 +90,10 @@ func _crear_interfaz() -> void:
 
 
 func _actualizar_interfaz() -> void:
+	if is_instance_valid(activo):
+		remove_from_group("modal_ui")
+	elif _seleccion_pendiente:
+		add_to_group("modal_ui")
 	if not is_instance_valid(_lista):
 		return
 	for hijo in _lista.get_children():
@@ -154,7 +158,7 @@ func seleccionar_garumi(indice: int) -> void:
 	if indice < 0 or indice >= disponibles.size():
 		return
 	var elegido := disponibles[indice]
-	if not is_instance_valid(elegido) or not elegido.esta_vinculado() or elegido.esta_guardado() and not elegido.has_method("activar_como_proxy"):
+	if not is_instance_valid(elegido) or not elegido.esta_vinculado() or not bool(elegido.get("is_alive")):
 		return
 	activo = elegido
 	_seleccion_pendiente = false
