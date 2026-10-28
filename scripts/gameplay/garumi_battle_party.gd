@@ -15,6 +15,12 @@ var activo: Garumi
 var _panel: PanelContainer
 var _lista: VBoxContainer
 var _estado: Label
+var _panel_aliado: PanelContainer
+var _panel_enemigo: PanelContainer
+var _info_aliado: Label
+var _info_enemigo: Label
+var _vida_aliado: ProgressBar
+var _vida_enemigo: ProgressBar
 var _cooldown_aliado := 0.0
 var _cooldown_rival := 0.0
 var _seleccion_pendiente := false
@@ -28,6 +34,7 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	_guardar_garumis_antes_de_seleccionar()
 	_cambiar_panel_garumis_hud(false)
 	_crear_interfaz()
+	_crear_marcos_combate()
 	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
 	if disponibles.is_empty():
@@ -204,6 +211,111 @@ func _actualizar_interfaz() -> void:
 	_lista.add_child(boton_retirarse)
 	if is_instance_valid(activo):
 		_panel.visible = false
+	_actualizar_marcos_combate()
+
+
+func _crear_marcos_combate() -> void:
+	_panel_aliado = _crear_marco_luchador("Aliado", true)
+	_panel_aliado.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_panel_aliado.offset_left = 18.0
+	_panel_aliado.offset_top = 18.0
+	_panel_aliado.offset_right = 258.0
+	_panel_aliado.offset_bottom = 126.0
+	_panel_enemigo = _crear_marco_luchador("Enemigo", false)
+	_panel_enemigo.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_panel_enemigo.anchor_left = 1.0
+	_panel_enemigo.anchor_right = 1.0
+	_panel_enemigo.offset_left = -258.0
+	_panel_enemigo.offset_top = 18.0
+	_panel_enemigo.offset_right = -18.0
+	_panel_enemigo.offset_bottom = 126.0
+	add_child(_panel_aliado)
+	add_child(_panel_enemigo)
+	_actualizar_marcos_combate()
+
+
+func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
+	var marco := PanelContainer.new()
+	marco.name = "MarcoCombate" + rotulo
+	marco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marco.z_index = 20
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.035, 0.03, 0.025, 0.92)
+	estilo.border_color = Color(0.78, 0.61, 0.34, 0.95)
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(7)
+	estilo.content_margin_left = 9.0
+	estilo.content_margin_top = 7.0
+	estilo.content_margin_right = 9.0
+	estilo.content_margin_bottom = 7.0
+	marco.add_theme_stylebox_override("panel", estilo)
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 8)
+	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marco.add_child(fila)
+	var retrato := TextureRect.new()
+	retrato.name = "Retrato"
+	retrato.custom_minimum_size = Vector2(64.0, 64.0)
+	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(retrato)
+	var columna := VBoxContainer.new()
+	columna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna.alignment = BoxContainer.ALIGNMENT_CENTER
+	columna.add_theme_constant_override("separation", 4)
+	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(columna)
+	var titulo := Label.new()
+	titulo.name = "Titulo"
+	titulo.text = rotulo.to_upper()
+	titulo.add_theme_font_size_override("font_size", 10)
+	titulo.add_theme_color_override("font_color", Color(0.96, 0.82, 0.56))
+	columna.add_child(titulo)
+	var info := Label.new()
+	info.name = "Info"
+	info.add_theme_font_size_override("font_size", 12)
+	info.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
+	columna.add_child(info)
+	var vida := ProgressBar.new()
+	vida.name = "Vida"
+	vida.custom_minimum_size = Vector2(0.0, 12.0)
+	vida.show_percentage = false
+	vida.min_value = 0
+	vida.max_value = 100
+	columna.add_child(vida)
+	if es_aliado:
+		_info_aliado = info
+		_vida_aliado = vida
+	else:
+		_info_enemigo = info
+		_vida_enemigo = vida
+	return marco
+
+
+func _actualizar_marcos_combate() -> void:
+	if is_instance_valid(_panel_aliado):
+		_panel_aliado.visible = is_instance_valid(activo)
+		if is_instance_valid(activo):
+			var retrato_aliado := _panel_aliado.get_node_or_null("HBoxContainer/Retrato") as TextureRect
+			if retrato_aliado != null:
+				retrato_aliado.texture = _buscar_textura_garumi(activo)
+			if is_instance_valid(_info_aliado):
+				_info_aliado.text = "%s · Nv. %d" % [_nombre(activo), activo.nivel]
+			if is_instance_valid(_vida_aliado):
+				_vida_aliado.max_value = maxi(1, activo.max_health)
+				_vida_aliado.value = clampi(activo.health, 0, activo.max_health)
+	if is_instance_valid(_panel_enemigo):
+		_panel_enemigo.visible = is_instance_valid(rival) and rival.esta_enfrentamiento()
+		if is_instance_valid(rival):
+			var retrato_enemigo := _panel_enemigo.get_node_or_null("HBoxContainer/Retrato") as TextureRect
+			if retrato_enemigo != null:
+				retrato_enemigo.texture = _buscar_textura_garumi(rival)
+			if is_instance_valid(_info_enemigo):
+				_info_enemigo.text = "%s · Nv. %d" % [_nombre(rival), rival.nivel]
+			if is_instance_valid(_vida_enemigo):
+				_vida_enemigo.max_value = maxi(1, rival.max_health)
+				_vida_enemigo.value = clampi(rival.health, 0, rival.max_health)
 
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
@@ -300,6 +412,7 @@ func _process(delta: float) -> void:
 	if puede_forzar != _forzar_disponible:
 		_forzar_disponible = puede_forzar
 		_actualizar_interfaz()
+	_actualizar_marcos_combate()
 	if not is_instance_valid(activo):
 		return
 	if not activo.esta_vinculado() or not bool(activo.get("is_alive")):
@@ -357,6 +470,10 @@ func finalizar() -> void:
 	_cambiar_panel_garumis_hud(true)
 	if is_instance_valid(_panel):
 		_panel.queue_free()
+	if is_instance_valid(_panel_aliado):
+		_panel_aliado.queue_free()
+	if is_instance_valid(_panel_enemigo):
+		_panel_enemigo.queue_free()
 	queue_free()
 
 
