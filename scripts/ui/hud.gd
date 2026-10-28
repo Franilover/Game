@@ -60,7 +60,6 @@ var _garumis_vinculados_lista: VBoxContainer = null
 var _garumis_vinculados_titulo: Label = null
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
-var _mostrar_numeros_garumis: bool = false
 var _dialogo_ruptura_vinculo: ConfirmationDialog = null
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
