@@ -55,13 +55,13 @@ var _world_items: GarliaWorldItems = null
 var _equipment_stats_label: Label = null
 
 
-@onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
+@onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
 var _slot_grids: Array[GridContainer] = []
-@onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemName
-@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemDescription
-@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/ItemIcon
-@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/DeleteButton
-@onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea/EquipmentSlots
+@onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemDescription
+@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
+@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DeleteButton
+@onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/EquipmentSlots
 
 
 func _inicializar_navegacion_tabs() -> void:
@@ -703,7 +703,7 @@ func obtener_estadistica_equipo(
 
 
 func _preparar_panel_estadisticas_equipo() -> void:
-	var right_panel := $Window/Margin/Column/Tabs/Inventario/RightPanel as VBoxContainer
+	var right_panel := $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel as VBoxContainer
 	if right_panel == null:
 		return
 	_equipment_stats_label = Label.new()
