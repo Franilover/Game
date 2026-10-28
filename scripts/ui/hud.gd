@@ -1470,6 +1470,12 @@ func _preparar_panel_garumis_vinculados() -> void:
 	columna.add_child(_garumis_vinculados_lista)
 	_garumis_vinculados_panel.visible = false
 
+func mostrar_panel_garumis_durante_combate(mostrar: bool) -> void:
+	if not is_instance_valid(_garumis_vinculados_panel):
+		return
+	_garumis_vinculados_panel.visible = mostrar and not _garumis_vinculados_nodos.is_empty()
+
+
 func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> void:
 	if discovery_notice == null:
 		return
