@@ -4,7 +4,7 @@ class_name GarumiBattleParty
 ## Selector y director del combate de Garumis vinculados.
 ## Un único aliado puede estar activo; al caer, se ofrece elegir otro.
 
-const MAX_VINCULOS := 5
+const MAX_VINCULOS := 3
 const INTERVALO_ATAQUE_ALIADO := 1.0
 const INTERVALO_ATAQUE_RIVAL := 1.35
 
@@ -33,7 +33,7 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 		_estado.text = "No tienes Garumis vinculados. Puedes retirarte o combatir por tu cuenta."
 		print("GarumiBattleParty: el jugador no tiene vínculos disponibles para el combate.")
 	else:
-		print("GarumiBattleParty: combate iniciado; selecciona un Garumi con las teclas 1-5.")
+		print("GarumiBattleParty: combate iniciado; selecciona un Garumi con las teclas 1-3.")
 
 
 func _disponibles_desde_vinculos() -> void:
@@ -119,7 +119,7 @@ func _actualizar_interfaz() -> void:
 		_lista.add_child(ayuda)
 	elif _seleccion_pendiente:
 		var instruccion := Label.new()
-		instruccion.text = "Elige quién entra (teclas 1–5):"
+		instruccion.text = "Elige quién entra (teclas 1–3):"
 		instruccion.add_theme_font_size_override("font_size", 12)
 		_lista.add_child(instruccion)
 		for i in range(disponibles.size()):
