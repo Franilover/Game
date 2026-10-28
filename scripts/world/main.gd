@@ -358,7 +358,7 @@ func iniciar_combate_garumi(garumi: Node, jugador: Node) -> void:
 		return
 	if is_instance_valid(_garumi_battle_party):
 		_garumi_battle_party.call("finalizar")
-	_garumi_battle_party = Node.new()
+	_garumi_battle_party = CanvasLayer.new()
 	_garumi_battle_party.name = "GarumiBattleParty"
 	_garumi_battle_party.set_script(GARUMI_BATTLE_PARTY_SCRIPT)
 	add_child(_garumi_battle_party)
