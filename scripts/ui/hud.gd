@@ -24,6 +24,7 @@ var _calendar_elapsed: float = 0.0
 var mostrar_contexto_mundo: bool = false
 
 var _tiempo_contexto: float = 0.0
+var _combate_garumi_activo: bool = false
 var _ultima_tile_contexto: Vector2i = Vector2i(2147483647, 2147483647)
 
 var location_panel: Control = null
@@ -178,7 +179,7 @@ func _process(delta: float) -> void:
 			inventario_abierto = true
 			break
 	if is_instance_valid(_calendar_panel):
-		_calendar_panel.visible = not inventario_abierto
+		_calendar_panel.visible = not inventario_abierto and not _combate_garumi_activo
 	_calendar_elapsed += delta
 	if _calendar_elapsed >= 0.2:
 		_calendar_elapsed = 0.0
@@ -1474,6 +1475,12 @@ func mostrar_panel_garumis_durante_combate(mostrar: bool) -> void:
 	if not is_instance_valid(_garumis_vinculados_panel):
 		return
 	_garumis_vinculados_panel.visible = mostrar and not _garumis_vinculados_nodos.is_empty()
+
+
+func establecer_estado_combate_garumi(activo: bool) -> void:
+	_combate_garumi_activo = activo
+	if is_instance_valid(_calendar_panel):
+		_calendar_panel.visible = not activo
 
 
 func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> void:
