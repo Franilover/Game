@@ -188,6 +188,7 @@ func gastar_eterium(cantidad: int) -> bool:
 	eterium_actual -= cantidad
 	datos["eterium_actual"] = eterium_actual
 	eterium_cambiado.emit(eterium_actual, eterium_maximo)
+	_persistir_estado_vinculo()
 	return true
 
 
@@ -199,6 +200,7 @@ func restaurar_eterium(cantidad: int) -> int:
 	if eterium_actual != anterior:
 		datos["eterium_actual"] = eterium_actual
 		eterium_cambiado.emit(eterium_actual, eterium_maximo)
+		_persistir_estado_vinculo()
 	return eterium_actual - anterior
 
 
