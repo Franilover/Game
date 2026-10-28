@@ -56,6 +56,7 @@ var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 var _garumis_vinculados_panel: PanelContainer = null
 var _garumis_vinculados_lista: VBoxContainer = null
+var _garumis_vinculados_titulo: Label = null
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
 var _mostrar_numeros_garumis: bool = false
@@ -1459,11 +1460,11 @@ func _preparar_panel_garumis_vinculados() -> void:
 	var columna := VBoxContainer.new()
 	columna.add_theme_constant_override("separation", 6)
 	_garumis_vinculados_panel.add_child(columna)
-	var titulo := Label.new()
-	titulo.text = "Garumis"
-	titulo.add_theme_font_size_override("font_size", 10)
-	titulo.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-	columna.add_child(titulo)
+	_garumis_vinculados_titulo = Label.new()
+	_garumis_vinculados_titulo.text = "Garumis (0/5)"
+	_garumis_vinculados_titulo.add_theme_font_size_override("font_size", 10)
+	_garumis_vinculados_titulo.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+	columna.add_child(_garumis_vinculados_titulo)
 	_garumis_vinculados_lista = VBoxContainer.new()
 	_garumis_vinculados_lista.add_theme_constant_override("separation", 5)
 	columna.add_child(_garumis_vinculados_lista)
@@ -1507,6 +1508,7 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	_garumis_vinculados_ids[id] = true
 	_garumis_vinculados_nodos.append(garumi)
 	_garumis_vinculados_panel.visible = true
+	_actualizar_titulo_garumis_vinculados()
 	var fila := HBoxContainer.new()
 	fila.name = "Garumi_" + id
 	fila.add_theme_constant_override("separation", 7)
@@ -1655,7 +1657,13 @@ func eliminar_garumi_vinculado(garumi: Node) -> void:
 	_garumis_vinculados_ids.erase(id)
 	_garumis_vinculados_nodos.erase(garumi)
 	_renumerar_garumis_vinculados()
+	_actualizar_titulo_garumis_vinculados()
 	_garumis_vinculados_panel.visible = not _garumis_vinculados_nodos.is_empty()
+
+
+func _actualizar_titulo_garumis_vinculados() -> void:
+	if is_instance_valid(_garumis_vinculados_titulo):
+		_garumis_vinculados_titulo.text = "Garumis (%d/5)" % _garumis_vinculados_nodos.size()
 
 
 func _renumerar_garumis_vinculados() -> void:
