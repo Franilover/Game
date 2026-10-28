@@ -802,6 +802,14 @@ func obtener_garumis_vinculados() -> Array[Dictionary]:
 	return guardados
 
 
+func contar_garumis_vinculados() -> int:
+	return obtener_garumis_vinculados().size()
+
+
+func puede_vincular_garumi() -> bool:
+	return contar_garumis_vinculados() < 5
+
+
 func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
 	var id_instancia := str(datos_garumi.get("garumi_instancia_id", "")).strip_edges()
 	if id_instancia.is_empty():
