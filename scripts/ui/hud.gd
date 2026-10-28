@@ -1592,7 +1592,8 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	return null
 
 func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
-	if evento.shift_pressed or _combate_garumi_activo:
+	# El combate gestiona Shift+1/2/3 para cambiar el aliado activo.
+	if _combate_garumi_activo:
 		return false
 	for nodo_inventario in get_tree().get_nodes_in_group("inventory"):
 		if nodo_inventario is CanvasItem and (nodo_inventario as CanvasItem).visible:
@@ -1614,9 +1615,45 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 		return true
 
 	var garumi := _garumis_vinculados_nodos[indice]
-	if is_instance_valid(garumi) and garumi.has_method("alternar_estado_invocacion"):
+	if not is_instance_valid(garumi):
+		return true
+
+	if evento.shift_pressed:
+		_curar_garumi_vinculado_con_eterium(garumi)
+	elif garumi.has_method("alternar_estado_invocacion"):
 		garumi.call("alternar_estado_invocacion", player)
 	return true
+
+
+func _curar_garumi_vinculado_con_eterium(garumi: Node) -> void:
+	const COSTO_ETERIUM := 10
+	const CURACION := 25
+
+	if not is_instance_valid(player) or not is_instance_valid(garumi):
+		return
+	if not garumi.has_method("curar_con_eterium"):
+		return
+	if not bool(garumi.get("is_alive")):
+		return
+
+	var vida_actual := int(garumi.get("health"))
+	var vida_maxima := maxi(1, int(garumi.get("max_health")))
+	if vida_actual >= vida_maxima:
+		return
+	if int(player.get("mana")) < COSTO_ETERIUM:
+		return
+	if not player.eterium.gastar(COSTO_ETERIUM):
+		return
+
+	player._sync_desde_vital()
+	player.mana_changed.emit(player.mana, player.max_mana)
+	var recuperada := int(garumi.call("curar_con_eterium", CURACION))
+	if recuperada <= 0:
+		# No cobrar si el Garumi no pudo recibir la curación.
+		player.eterium.restaurar(COSTO_ETERIUM)
+		player._sync_desde_vital()
+		player.mana_changed.emit(player.mana, player.max_mana)
+
 
 func _pedir_ruptura_vinculo(garumi: Node) -> void:
 	if not is_instance_valid(garumi) or not garumi.has_method("romper_vinculo"):
