@@ -736,7 +736,10 @@ func entrar_combate_vinculado(jugador: Node, rival: Garumi) -> void:
 	_combate_vinculado_activo = true
 	if has_method("detener_seguimiento_jugador"):
 		detener_seguimiento_jugador()
-	global_position = (jugador as Node2D).global_position + Vector2(28.0, 18.0)
+	var direccion_hacia_rival := (rival.global_position - (jugador as Node2D).global_position).normalized()
+	if direccion_hacia_rival == Vector2.ZERO:
+		direccion_hacia_rival = Vector2.RIGHT
+	global_position = (jugador as Node2D).global_position + direccion_hacia_rival * 28.0
 	velocity = Vector2.ZERO
 	add_to_group("garumi_combat_ally")
 	_normalizar_grupos_garumi()
