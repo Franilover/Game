@@ -25,13 +25,14 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	jugador = nuevo_jugador
 	rival = nuevo_rival
 	_disponibles_desde_vinculos()
+	_guardar_garumis_antes_de_seleccionar()
+	_cambiar_panel_garumis_hud(false)
 	_crear_interfaz()
 	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
 	if disponibles.is_empty():
-		remove_from_group("modal_ui")
-		_estado.text = "No tienes Garumis vinculados. Puedes retirarte o combatir por tu cuenta."
-		print("GarumiBattleParty: el jugador no tiene vínculos disponibles para el combate.")
+		_estado.text = "No tienes Garumis vinculados disponibles. Puedes retirarte o luchar por tu cuenta."
+		print("GarumiBattleParty: no hay Garumis vinculados disponibles.")
 	else:
 		print("GarumiBattleParty: combate iniciado; selecciona un Garumi con las teclas 1-3.")
 
@@ -72,76 +73,172 @@ func _crear_interfaz() -> void:
 		_panel.queue_free()
 	_panel = PanelContainer.new()
 	_panel.name = "GarumiBattleSelection"
-	_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	_panel.position = Vector2(16.0, 16.0)
-	_panel.custom_minimum_size = Vector2(300.0, 0.0)
+	_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_panel.offset_left = -285.0
+	_panel.offset_top = -205.0
+	_panel.offset_right = 285.0
+	_panel.offset_bottom = 205.0
+	_panel.custom_minimum_size = Vector2(570.0, 410.0)
+	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_panel.z_index = 100
 	add_child(_panel)
 	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.055, 0.045, 0.035, 0.96)
-	estilo.border_color = Color(0.78, 0.61, 0.34, 0.95)
+	estilo.bg_color = Color(0.035, 0.03, 0.025, 0.98)
+	estilo.border_color = Color(0.78, 0.61, 0.34, 1.0)
 	estilo.set_border_width_all(2)
-	estilo.set_corner_radius_all(5)
-	estilo.content_margin_left = 14.0
-	estilo.content_margin_top = 12.0
-	estilo.content_margin_right = 14.0
-	estilo.content_margin_bottom = 12.0
+	estilo.set_corner_radius_all(10)
+	estilo.content_margin_left = 18.0
+	estilo.content_margin_top = 18.0
+	estilo.content_margin_right = 18.0
+	estilo.content_margin_bottom = 18.0
 	_panel.add_theme_stylebox_override("panel", estilo)
 	_lista = VBoxContainer.new()
-	_lista.add_theme_constant_override("separation", 6)
+	_lista.add_theme_constant_override("separation", 12)
 	_panel.add_child(_lista)
 
 
 func _actualizar_interfaz() -> void:
 	if is_instance_valid(activo):
 		remove_from_group("modal_ui")
-	elif _seleccion_pendiente:
+	else:
 		add_to_group("modal_ui")
-	if is_instance_valid(_panel):
-		_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	if not is_instance_valid(_lista):
+	if not is_instance_valid(_lista) or not is_instance_valid(_panel):
 		return
 	for hijo in _lista.get_children():
 		hijo.queue_free()
+	_panel.visible = not is_instance_valid(activo)
 	var titulo := Label.new()
-	titulo.text = "COMBATE GARUMI"
-	titulo.add_theme_font_size_override("font_size", 16)
+	titulo.text = "ELIGE TU GARUMI"
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 22)
 	titulo.add_theme_color_override("font_color", Color(0.96, 0.82, 0.56))
 	_lista.add_child(titulo)
 	_estado = Label.new()
+	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.add_theme_font_size_override("font_size", 12)
+	_estado.add_theme_color_override("font_color", Color(0.82, 0.76, 0.66))
 	_lista.add_child(_estado)
 	if is_instance_valid(activo):
 		_estado.text = "En combate: %s · Nv. %d" % [_nombre(activo), activo.nivel]
-		var ayuda := Label.new()
-		ayuda.text = "Solo un Garumi puede combatir a la vez."
-		ayuda.add_theme_font_size_override("font_size", 11)
-		_lista.add_child(ayuda)
-	elif _seleccion_pendiente:
+	elif not disponibles.is_empty():
 		var instruccion := Label.new()
-		instruccion.text = "Elige quién entra (teclas 1–3):"
+		instruccion.text = "Selecciona una criatura para entrar en la arena · teclas 1–3"
+		instruccion.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		instruccion.add_theme_font_size_override("font_size", 12)
 		_lista.add_child(instruccion)
+		var tarjetas := HBoxContainer.new()
+		tarjetas.alignment = BoxContainer.ALIGNMENT_CENTER
+		tarjetas.add_theme_constant_override("separation", 12)
+		tarjetas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		_lista.add_child(tarjetas)
 		for i in range(disponibles.size()):
 			var garumi := disponibles[i]
-			var boton := Button.new()
-			boton.text = "%d  %s  ·  Nv. %d" % [i + 1, _nombre(garumi), garumi.nivel]
-			boton.custom_minimum_size = Vector2(260.0, 32.0)
-			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			boton.pressed.connect(seleccionar_garumi.bind(i))
-			_lista.add_child(boton)
-		_estado.text = "Solo puedes usar uno por combate." if not disponibles.is_empty() else "No tienes Garumis vinculados disponibles."
-	if _forzar_disponible:
+			var tarjeta := Button.new()
+			tarjeta.custom_minimum_size = Vector2(160.0, 230.0)
+			tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			tarjeta.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			tarjeta.focus_mode = Control.FOCUS_ALL
+			tarjeta.pressed.connect(seleccionar_garumi.bind(i))
+			var tarjeta_estilo := StyleBoxFlat.new()
+			tarjeta_estilo.bg_color = Color(0.10, 0.075, 0.05, 1.0)
+			tarjeta_estilo.border_color = Color(0.42, 0.31, 0.19, 1.0)
+			tarjeta_estilo.set_border_width_all(1)
+			tarjeta_estilo.set_corner_radius_all(7)
+			tarjeta.add_theme_stylebox_override("normal", tarjeta_estilo)
+			var enfocado := tarjeta_estilo.duplicate()
+			enfocado.border_color = Color(0.96, 0.75, 0.38, 1.0)
+			enfocado.set_border_width_all(2)
+			tarjeta.add_theme_stylebox_override("hover", enfocado)
+			tarjeta.add_theme_stylebox_override("focus", enfocado)
+			var contenido := VBoxContainer.new()
+			contenido.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			contenido.alignment = BoxContainer.ALIGNMENT_CENTER
+			contenido.add_theme_constant_override("separation", 8)
+			tarjeta.add_child(contenido)
+			var numero := Label.new()
+			numero.text = "GARUMI %d" % (i + 1)
+			numero.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			numero.add_theme_color_override("font_color", Color(0.96, 0.82, 0.56))
+			numero.add_theme_font_size_override("font_size", 11)
+			contenido.add_child(numero)
+			var retrato := TextureRect.new()
+			retrato.custom_minimum_size = Vector2(112.0, 112.0)
+			retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			retrato.texture = _buscar_textura_garumi(garumi)
+			contenido.add_child(retrato)
+			var nombre := Label.new()
+			nombre.text = _nombre(garumi)
+			nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			nombre.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
+			nombre.add_theme_font_size_override("font_size", 14)
+			contenido.add_child(nombre)
+			var nivel := Label.new()
+			nivel.text = "Nivel %d" % garumi.nivel
+			nivel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			nivel.add_theme_color_override("font_color", Color(0.75, 0.68, 0.56))
+			nivel.add_theme_font_size_override("font_size", 12)
+			contenido.add_child(nivel)
+			tarjetas.add_child(tarjeta)
+		_estado.text = "Solo un Garumi puede combatir a la vez."
+	else:
+		_estado.text = "No tienes otros Garumis disponibles."
+	if _forzar_disponible and not is_instance_valid(activo):
 		var boton_vinculo := Button.new()
 		boton_vinculo.text = "Forzar vínculo"
 		boton_vinculo.custom_minimum_size = Vector2(260.0, 32.0)
+		boton_vinculo.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		boton_vinculo.pressed.connect(_forzar_vinculo)
 		_lista.add_child(boton_vinculo)
 	var boton_retirarse := Button.new()
 	boton_retirarse.text = "Retirarse del enfrentamiento"
 	boton_retirarse.custom_minimum_size = Vector2(260.0, 30.0)
+	boton_retirarse.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	boton_retirarse.pressed.connect(_retirarse)
 	_lista.add_child(boton_retirarse)
+	if is_instance_valid(activo):
+		_panel.visible = false
+
+
+func _buscar_textura_garumi(nodo: Node) -> Texture2D:
+	if not is_instance_valid(nodo):
+		return null
+	if nodo is Sprite2D and (nodo as Sprite2D).texture != null:
+		return (nodo as Sprite2D).texture
+	if nodo is AnimatedSprite2D:
+		var animado := nodo as AnimatedSprite2D
+		if animado.sprite_frames != null and animado.sprite_frames.has_animation(animado.animation):
+			var textura := animado.sprite_frames.get_frame_texture(animado.animation, animado.frame)
+			if textura != null:
+				return textura
+	if nodo is TextureRect and (nodo as TextureRect).texture != null:
+		return (nodo as TextureRect).texture
+	for hijo in nodo.get_children():
+		var textura_hijo := _buscar_textura_garumi(hijo)
+		if textura_hijo != null:
+			return textura_hijo
+	return null
+
+
+func _guardar_garumis_antes_de_seleccionar() -> void:
+	for garumi in disponibles:
+		if not is_instance_valid(garumi):
+			continue
+		if garumi.has_method("esta_guardado") and not bool(garumi.call("esta_guardado")):
+			if garumi.has_method("guardar_para_seleccion_combate"):
+				garumi.call("guardar_para_seleccion_combate")
+			else:
+				garumi.call("_guardar_garumi")
+
+
+func _cambiar_panel_garumis_hud(mostrar: bool) -> void:
+	for nodo_hud in get_tree().get_nodes_in_group("hud"):
+		if is_instance_valid(nodo_hud) and nodo_hud.has_method("mostrar_panel_garumis_durante_combate"):
+			nodo_hud.call("mostrar_panel_garumis_durante_combate", mostrar)
 
 
 func _input(event: InputEvent) -> void:
@@ -246,6 +343,7 @@ func finalizar() -> void:
 		activo.call("salir_combate_vinculado", false)
 	activo = null
 	_seleccion_pendiente = false
+	_cambiar_panel_garumis_hud(true)
 	if is_instance_valid(_panel):
 		_panel.queue_free()
 	queue_free()
