@@ -582,6 +582,22 @@ func iniciar_enfrentamiento(jugador: Node) -> bool:
 	return true
 
 
+
+## Activa un rival adicional de un encuentro múltiple sin reiniciar arena ni HUD.
+func iniciar_enfrentamiento_secundario(jugador: Node) -> bool:
+	if _vinculado or _enfrentamiento_activo or jugador == null or not is_instance_valid(jugador):
+		return false
+	_jugador_del_encuentro = jugador
+	_enfrentamiento_activo = true
+	max_health = maxi(1, int(estadisticas_combate.get("vida", datos.get("salud_combate", salud_combate_predeterminada))))
+	vital_state.configurar(max_health, max_mana)
+	restaurar_estado_vital(max_health, true)
+	add_to_group("damageable")
+	salud_combate_cambiada.emit(health, max_health)
+	encuentro_iniciado.emit(self, jugador)
+	return true
+
+
 func puede_forzar_vinculo() -> bool:
 	if _vinculado or not _enfrentamiento_activo or max_health <= 0:
 		return false
