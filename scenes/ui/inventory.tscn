@@ -256,7 +256,17 @@ theme_override_styles/tab_unselected = SubResource("StyleBox_tab_unselected")
 theme_override_styles/tab_hovered = SubResource("StyleBox_tab_hovered")
 theme_override_styles/panel = SubResource("StyleBox_tabs_panel")
 
-[node name="Inventario" type="HBoxContainer" parent="Window/Margin/Column/Tabs" unique_id=1889075135]
+[node name="Inventario" type="VBoxContainer" parent="Window/Margin/Column/Tabs" unique_id=1889075135]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="TopSpacer" type="Control" parent="Window/Margin/Column/Tabs/Inventario" unique_id=601240011]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="InventoryContent" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario" unique_id=601240012]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
@@ -267,18 +277,18 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="Grid" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel" unique_id=1707057280]
+[node name="Grid" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel" unique_id=1707057280]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_constants/separation = 8
 
-[node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel" unique_id=1747754024]
+[node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel" unique_id=1747754024]
 custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel" unique_id=3001000001]
+[node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel" unique_id=3001000001]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 0
@@ -287,18 +297,18 @@ expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
 
-[node name="InfoText" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel" unique_id=3001000010]
+[node name="InfoText" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel" unique_id=3001000010]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ItemName" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText" unique_id=1080046545]
+[node name="ItemName" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText" unique_id=1080046545]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 16
 text = "Ningún objeto"
 
-[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText" unique_id=1325010840]
+[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText" unique_id=1325010840]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
@@ -307,7 +317,7 @@ text = "Selecciona un objeto para estudiar sus propiedades."
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="DeleteButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText" unique_id=3001000002]
+[node name="DeleteButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText" unique_id=3001000002]
 custom_minimum_size = Vector2(100, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
@@ -327,18 +337,18 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="EquipmentArea" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/RightPanel" unique_id=3001000011]
+[node name="EquipmentArea" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel" unique_id=3001000011]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="SkinPanel" type="Control" parent="Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea" unique_id=3001000004]
+[node name="SkinPanel" type="Control" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea" unique_id=3001000004]
 custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Skin" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea/SkinPanel" unique_id=3001000005]
+[node name="Skin" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel" unique_id=3001000005]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -351,7 +361,7 @@ expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
 
-[node name="EquipmentSlots" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea" unique_id=3001000012]
+[node name="EquipmentSlots" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea" unique_id=3001000012]
 custom_minimum_size = Vector2(62, 0)
 layout_mode = 2
 size_flags_vertical = 3
