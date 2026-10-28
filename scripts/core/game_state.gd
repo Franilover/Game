@@ -765,6 +765,56 @@ func guardar_relaciones_sociales(relaciones: Dictionary) -> void:
 	world_state.flags["relaciones_sociales"] = relaciones.duplicate(true)
 
 
+## Registro persistente de Garumis vinculados a esta partida.
+## Se almacena dentro de flags para mantener compatibilidad con el formato JSON actual.
+func obtener_garumis_vinculados() -> Array[Dictionary]:
+	var guardados: Array[Dictionary] = []
+	var variant: Variant = world_state.flags.get("garumis_vinculados", [])
+	if not variant is Array:
+		return guardados
+	for item in variant as Array:
+		if item is Dictionary:
+			guardados.append((item as Dictionary).duplicate(true))
+	return guardados
+
+
+func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
+	var id_instancia := str(datos_garumi.get("garumi_instancia_id", "")).strip_edges()
+	if id_instancia.is_empty():
+		push_warning("GameState: no se guardó un Garumi vinculado sin garumi_instancia_id.")
+		return false
+	var lista := obtener_garumis_vinculados()
+	var encontrado := false
+	for i in range(lista.size()):
+		if str(lista[i].get("garumi_instancia_id", "")) == id_instancia:
+			lista[i] = datos_garumi.duplicate(true)
+			encontrado = true
+			break
+	if not encontrado:
+		lista.append(datos_garumi.duplicate(true))
+	world_state.flags["garumis_vinculados"] = lista
+	_al_cambio_guardable()
+	return true
+
+
+func eliminar_garumi_vinculado(id_instancia: String) -> bool:
+	var id_limpio := id_instancia.strip_edges()
+	if id_limpio.is_empty():
+		return false
+	var lista := obtener_garumis_vinculados()
+	var nueva_lista: Array[Dictionary] = []
+	var eliminado := false
+	for registro in lista:
+		if str(registro.get("garumi_instancia_id", "")) == id_limpio:
+			eliminado = true
+			continue
+		nueva_lista.append(registro)
+	if eliminado:
+		world_state.flags["garumis_vinculados"] = nueva_lista
+		_al_cambio_guardable()
+	return eliminado
+
+
 func obtener_recuerdos_sociales() -> Dictionary:
 	var recuerdos_variant: Variant = world_state.flags.get("recuerdos_sociales", {})
 	if recuerdos_variant is Dictionary:
