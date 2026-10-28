@@ -28,6 +28,7 @@ var _jugador_del_encuentro: Node = null
 var _menu_contextual: CanvasLayer = null
 var _jugador_vinculado: Node = null
 var _guardado: bool = false
+var _garumi_instancia_id: String = ""
 var _distancia_maxima_seguimiento: float = 520.0
 var _cerebro_garumi: GarumiBrain = null
 var _progresion: Variant = GARUMI_PROGRESSION_SCRIPT.new()
@@ -124,6 +125,7 @@ func evolucionar_a(destino: Dictionary, relacion: Dictionary) -> bool:
 	_sync_desde_vital()
 	health_changed.emit(health, max_health)
 	evolucion_completada.emit(origen_id, destino_id, nivel)
+	_persistir_estado_vinculo()
 	print("Garumi: evolución completada ", origen_id, " → ", destino_id, " | nivel ", nivel)
 	return true
 
@@ -160,6 +162,7 @@ func ganar_experiencia(cantidad: int) -> int:
 	datos["experiencia_total"] = experiencia_total
 	datos["eterium_actual"] = eterium_actual
 	experiencia_cambiada.emit(experiencia_total, nivel)
+	_persistir_estado_vinculo()
 	return nivel - nivel_anterior
 
 
@@ -240,6 +243,7 @@ func _guardar_garumi() -> void:
 		set_physics_process(false)
 		set_process(false)
 	actualizar_estado_en_hud()
+	_persistir_estado_vinculo()
 
 
 func _invocar_garumi(jugador: Node) -> void:
@@ -256,6 +260,7 @@ func _invocar_garumi(jugador: Node) -> void:
 	if has_method("iniciar_seguimiento_jugador"):
 		iniciar_seguimiento_jugador(jugador)
 	actualizar_estado_en_hud()
+	_persistir_estado_vinculo()
 
 
 func actualizar_estado_en_hud() -> void:
@@ -597,7 +602,64 @@ func _establecer_vinculo(jugador: Node, tipo: String) -> void:
 	if has_method("iniciar_seguimiento_jugador"):
 		iniciar_seguimiento_jugador(jugador)
 	_notificar_resultado_vinculo(true, tipo)
+	_persistir_estado_vinculo()
 	print("Garumi: vínculo ", tipo, " establecido con ", jugador.name)
+
+
+## Identidad y estado de la instancia vinculada para el guardado local.
+func obtener_datos_persistencia_vinculo() -> Dictionary:
+	if not _vinculado:
+		return {}
+	if _garumi_instancia_id.is_empty():
+		_garumi_instancia_id = str(Time.get_ticks_usec()) + "-" + str(get_instance_id())
+	var registro := datos.duplicate(true)
+	registro["categoria_entidad"] = "garumi"
+	registro["garumi_instancia_id"] = _garumi_instancia_id
+	registro["vinculado"] = true
+	registro["tipo_vinculo"] = _tipo_vinculo
+	registro["guardado"] = _guardado
+	registro["nivel"] = nivel
+	registro["experiencia_total"] = experiencia_total
+	registro["eterium_actual"] = eterium_actual
+	registro["position_x"] = global_position.x
+	registro["position_y"] = global_position.y
+	registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", criatura_nombre)))
+	return registro
+
+
+func _persistir_estado_vinculo() -> void:
+	if not _vinculado:
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not game_state.has_method("guardar_garumi_vinculado"):
+		return
+	var registro := obtener_datos_persistencia_vinculo()
+	if not registro.is_empty():
+		game_state.call("guardar_garumi_vinculado", registro)
+
+
+func restaurar_vinculo_persistido(jugador: Node, guardado: bool, posicion: Vector2) -> void:
+	if not is_instance_valid(jugador) or not jugador is Node2D:
+		return
+	_vinculado = true
+	_jugador_vinculado = jugador
+	_guardado = false
+	_tipo_vinculo = str(datos.get("tipo_vinculo", _tipo_vinculo))
+	_garumi_instancia_id = str(datos.get("garumi_instancia_id", _garumi_instancia_id))
+	_enfrentamiento_activo = false
+	_jugador_del_encuentro = null
+	global_position = posicion
+	set_meta("vinculado", true)
+	set_meta("tipo_vinculo", _tipo_vinculo)
+	_normalizar_grupos_garumi()
+	if guardado:
+		_guardar_garumi()
+	else:
+		_guardado = false
+		activar_como_proxy()
+		if has_method("iniciar_seguimiento_jugador"):
+			iniciar_seguimiento_jugador(jugador)
+	actualizar_estado_en_hud()
 
 
 func finalizar_enfrentamiento() -> void:
