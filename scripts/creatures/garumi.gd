@@ -273,9 +273,20 @@ func configurar(datos_garumi: Dictionary) -> void:
 	_vinculado = bool(datos_separados.get("vinculado", false))
 	_tipo_vinculo = str(datos_separados.get("tipo_vinculo", ""))
 	_progresion.configurar(datos_separados)
-	nivel = clampi(int(datos_separados.get("nivel", 1)), 1, GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO)
+	var nivel_guardado := clampi(
+		int(datos_separados.get("nivel", 1)),
+		1,
+		GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO
+	)
+	var tiene_experiencia_guardada := datos_separados.has("experiencia_total")
 	experiencia_total = maxi(0, int(datos_separados.get("experiencia_total", 0)))
-	nivel = _progresion.nivel_desde_experiencia(experiencia_total)
+	if tiene_experiencia_guardada:
+		# La XP acumulada es la fuente de verdad cuando existe en el guardado.
+		nivel = _progresion.nivel_desde_experiencia(experiencia_total)
+	else:
+		# Compatibilidad con guardados antiguos que sólo conservaban el nivel.
+		nivel = nivel_guardado
+		experiencia_total = _progresion.xp_total_para_nivel(nivel)
 	estadisticas_combate = _progresion.obtener_estadisticas(nivel)
 	max_health = int(estadisticas_combate.get("vida", salud_combate_predeterminada))
 	health = max_health
