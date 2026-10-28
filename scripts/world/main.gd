@@ -366,14 +366,16 @@ func iniciar_combate_garumi(garumi: Node, jugador: Node) -> void:
 
 
 func terminar_arena_garumi(garumi: Node = null) -> void:
-	if not is_instance_valid(_garumi_combat_arena):
-		return
-	if garumi != null and _garumi_combat_arena.get("garumi") != garumi:
+	if is_instance_valid(_garumi_combat_arena):
+		if garumi != null and _garumi_combat_arena.get("garumi") != garumi:
+			return
+	elif not is_instance_valid(_garumi_battle_party):
 		return
 	if is_instance_valid(_garumi_battle_party):
 		_garumi_battle_party.call("finalizar")
 		_garumi_battle_party = null
-	_garumi_combat_arena.call("terminar")
+	if is_instance_valid(_garumi_combat_arena):
+		_garumi_combat_arena.call("terminar")
 	_garumi_combat_arena = null
 	_ultima_posicion_camara = Vector2.INF
 	_seguir_jugador()
