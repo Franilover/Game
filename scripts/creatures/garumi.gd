@@ -446,23 +446,23 @@ func _agregar_boton_menu_garumi(contenedor: HBoxContainer, texto: String, opcion
 	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	boton.focus_mode = Control.FOCUS_ALL
 	boton.add_theme_font_size_override("font_size", 11)
-	boton.add_theme_color_override("font_color", Color(0.91, 0.87, 0.98, 1.0))
-	boton.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+	boton.add_theme_color_override("font_color", Color(0.91, 0.83, 0.70, 1.0))
+	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.82, 1.0))
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.075, 0.065, 0.095, 0.96)
-	normal.border_color = Color(0.42, 0.36, 0.55, 1.0)
+	normal.bg_color = Color(0.105, 0.071, 0.043, 0.98)
+	normal.border_color = Color(0.48, 0.32, 0.17, 1.0)
 	normal.set_border_width_all(1)
 	normal.set_corner_radius_all(4)
 	normal.content_margin_left = 8.0
 	normal.content_margin_right = 8.0
 	boton.add_theme_stylebox_override("normal", normal)
 	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.16, 0.13, 0.22, 1.0)
-	hover.border_color = Color(0.72, 0.65, 0.92, 1.0)
+	hover.bg_color = Color(0.19, 0.125, 0.065, 1.0)
+	hover.border_color = Color(0.76, 0.54, 0.29, 1.0)
 	boton.add_theme_stylebox_override("hover", hover)
 	boton.add_theme_stylebox_override("focus", hover)
 	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color(0.11, 0.09, 0.16, 1.0)
+	pressed.bg_color = Color(0.14, 0.09, 0.045, 1.0)
 	boton.add_theme_stylebox_override("pressed", pressed)
 	boton.pressed.connect(_al_seleccionar_opcion.bind(opcion, jugador))
 	contenedor.add_child(boton)
