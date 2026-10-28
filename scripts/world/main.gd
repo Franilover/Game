@@ -228,12 +228,67 @@ func _inicializar_runtime_de_zona() -> void:
 	_inicializar_ium()
 	_configurar_admin()
 	_configurar_pantalla()
+	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
+		call_deferred("_restaurar_garumis_vinculados")
 
 	if _zone_manager.obtener_tipo_actual() == "reino_torres":
 		_player.global_position = Vector2(0, 120)
 		print("Main: inicio en Reino Torres.")
 	else:
 		print("Main: mundo abierto listo.")
+
+
+## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
+func _restaurar_garumis_vinculados() -> void:
+	if not is_instance_valid(_player) or _world_generator == null:
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not game_state.has_method("obtener_garumis_vinculados"):
+		return
+	var entity_manager: WorldEntityManager = _world_generator.entity_manager
+	var entity_factory: WorldEntityFactory = _world_generator.entity_factory
+	if entity_manager == null or entity_factory == null:
+		push_warning("Main: no se pudieron restaurar Garumis: falta EntityManager o EntityFactory.")
+		return
+	var registros_variant: Variant = game_state.call("obtener_garumis_vinculados")
+	if not registros_variant is Array:
+		return
+	var restaurados := 0
+	for registro_variant in registros_variant as Array:
+		if not registro_variant is Dictionary:
+			continue
+		var registro := (registro_variant as Dictionary).duplicate(true)
+		var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
+		var especie_id := str(registro.get("id", registro.get("criatura_id", ""))).strip_edges()
+		if id_instancia.is_empty() or especie_id.is_empty():
+			push_warning("Main: se omitió un Garumi guardado sin ID de instancia o especie.")
+			continue
+		var clave_persistente := "garumi_vinculado:" + id_instancia
+		if entity_manager.existe_persistente(clave_persistente):
+			continue
+		registro["categoria_entidad"] = "garumi"
+		registro["vinculado"] = true
+		registro["garumi_instancia_id"] = id_instancia
+		var garumi := entity_factory.crear_criatura(registro) as Garumi
+		if garumi == null:
+			push_warning("Main: no se pudo reconstruir el Garumi " + especie_id)
+			continue
+		var posicion_guardada := Vector2(
+			float(registro.get("position_x", _player.global_position.x + 42.0)),
+			float(registro.get("position_y", _player.global_position.y + 20.0))
+		)
+		var esta_guardado := bool(registro.get("guardado", false))
+		# Si quedó libre lejos del jugador al cerrar el juego, vuelve a su lado.
+		if not esta_guardado and posicion_guardada.distance_to(_player.global_position) > 520.0:
+			posicion_guardada = _player.global_position + Vector2(42.0, 20.0)
+		garumi.global_position = posicion_guardada
+		if not entity_manager.registrar_global(garumi, clave_persistente):
+			entity_factory.reciclar_criatura(garumi)
+			continue
+		garumi.restaurar_vinculo_persistido(_player, esta_guardado, posicion_guardada)
+		restaurados += 1
+	if restaurados > 0:
+		print("Main: Garumis vinculados restaurados desde la partida: ", restaurados)
 
 
 func _configurar_camara() -> void:
