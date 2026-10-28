@@ -59,6 +59,7 @@ var _garumis_vinculados_lista: VBoxContainer = null
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
 var _mostrar_numeros_garumis: bool = false
+var _dialogo_ruptura_vinculo: ConfirmationDialog = null
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
 @onready var _health_value_node: Label = $BottomLeft/HealthValue
@@ -1442,7 +1443,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 	_garumis_vinculados_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_garumis_vinculados_panel.position = Vector2(18.0, 18.0)
 	_garumis_vinculados_panel.custom_minimum_size = Vector2(174.0, 0.0)
-	_garumis_vinculados_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_garumis_vinculados_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_garumis_vinculados_panel.z_index = 20
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = Color(0.055, 0.04, 0.03, 0.88)
@@ -1510,7 +1511,7 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	fila.name = "Garumi_" + id
 	fila.add_theme_constant_override("separation", 7)
 	fila.custom_minimum_size = Vector2(0.0, 42.0)
-	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.mouse_filter = Control.MOUSE_FILTER_STOP
 	_garumis_vinculados_lista.add_child(fila)
 	var numero := Label.new()
 	numero.name = "Numero"
@@ -1546,7 +1547,15 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	etiqueta.add_theme_font_size_override("font_size", 11)
 	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.83, 0.68, 1.0))
+	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fila.add_child(etiqueta)
+	var liberar := Button.new()
+	liberar.text = "×"
+	liberar.tooltip_text = "Romper vínculo con " + nombre
+	liberar.custom_minimum_size = Vector2(24.0, 28.0)
+	liberar.focus_mode = Control.FOCUS_ALL
+	liberar.pressed.connect(_pedir_ruptura_vinculo.bind(garumi))
+	fila.add_child(liberar)
 	actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
@@ -1604,6 +1613,36 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 	if is_instance_valid(garumi) and garumi.has_method("alternar_estado_invocacion"):
 		garumi.call("alternar_estado_invocacion", player)
 	return true
+
+
+func _pedir_ruptura_vinculo(garumi: Node) -> void:
+	if not is_instance_valid(garumi) or not garumi.has_method("romper_vinculo"):
+		return
+	if is_instance_valid(_dialogo_ruptura_vinculo):
+		_dialogo_ruptura_vinculo.queue_free()
+	_dialogo_ruptura_vinculo = ConfirmationDialog.new()
+	_dialogo_ruptura_vinculo.title = "Romper vínculo"
+	_dialogo_ruptura_vinculo.dialog_text = "¿Quieres romper el vínculo con %s? El Garumi quedará libre y dejará de ocupar uno de tus cinco espacios." % str(garumi.get("criatura_nombre"))
+	_dialogo_ruptura_vinculo.ok_button_text = "Romper vínculo"
+	_dialogo_ruptura_vinculo.cancel_button_text = "Conservar vínculo"
+	add_child(_dialogo_ruptura_vinculo)
+	_dialogo_ruptura_vinculo.confirmed.connect(_confirmar_ruptura_vinculo.bind(garumi))
+	_dialogo_ruptura_vinculo.canceled.connect(_al_cancelar_dialogo_ruptura)
+	_dialogo_ruptura_vinculo.popup_centered()
+
+
+func _confirmar_ruptura_vinculo(garumi: Node) -> void:
+	if is_instance_valid(garumi) and garumi.has_method("romper_vinculo"):
+		garumi.call("romper_vinculo")
+	if is_instance_valid(_dialogo_ruptura_vinculo):
+		_dialogo_ruptura_vinculo.queue_free()
+	_dialogo_ruptura_vinculo = null
+
+
+func _al_cancelar_dialogo_ruptura() -> void:
+	if is_instance_valid(_dialogo_ruptura_vinculo):
+		_dialogo_ruptura_vinculo.queue_free()
+	_dialogo_ruptura_vinculo = null
 
 
 func eliminar_garumi_vinculado(garumi: Node) -> void:
