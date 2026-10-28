@@ -309,7 +309,7 @@ func _actualizar_marcos_combate() -> void:
 	if is_instance_valid(_panel_enemigo):
 		_panel_enemigo.visible = is_instance_valid(rival) and rival.esta_enfrentamiento()
 		if is_instance_valid(rival):
-			var retrato_enemigo := _panel_enemigo.get_node_or_null("HBoxContainer/Retrato") as TextureRect
+			var retrato_enemigo := _panel_enemigo.get_node_or_null("Fila/Retrato") as TextureRect
 			if retrato_enemigo != null:
 				retrato_enemigo.texture = _buscar_textura_garumi(rival)
 			if is_instance_valid(_info_enemigo):
