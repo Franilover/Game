@@ -1606,6 +1606,33 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 	return true
 
 
+func eliminar_garumi_vinculado(garumi: Node) -> void:
+	if not is_instance_valid(garumi) or not is_instance_valid(_garumis_vinculados_lista):
+		return
+	var id := str(garumi.get_instance_id())
+	var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + id)
+	if is_instance_valid(fila):
+		fila.queue_free()
+	_garumis_vinculados_ids.erase(id)
+	_garumis_vinculados_nodos.erase(garumi)
+	_renumerar_garumis_vinculados()
+	_garumis_vinculados_panel.visible = not _garumis_vinculados_nodos.is_empty()
+
+
+func _renumerar_garumis_vinculados() -> void:
+	for i in range(_garumis_vinculados_nodos.size()):
+		var garumi := _garumis_vinculados_nodos[i]
+		if not is_instance_valid(garumi):
+			continue
+		var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
+		if fila == null:
+			continue
+		var numero := fila.get_node_or_null("Numero") as Label
+		if numero != null:
+			numero.text = str(i + 1)
+			numero.visible = _mostrar_numeros_garumis
+
+
 func actualizar_estado_garumi(garumi: Node, guardado: bool) -> void:
 	if not is_instance_valid(garumi) or _garumis_vinculados_lista == null:
 		return
