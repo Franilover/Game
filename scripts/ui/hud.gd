@@ -1461,7 +1461,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 	columna.add_theme_constant_override("separation", 6)
 	_garumis_vinculados_panel.add_child(columna)
 	_garumis_vinculados_titulo = Label.new()
-	_garumis_vinculados_titulo.text = "Garumis (0/5)"
+	_garumis_vinculados_titulo.text = "Garumis (0/3)"
 	_garumis_vinculados_titulo.add_theme_font_size_override("font_size", 10)
 	_garumis_vinculados_titulo.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
 	columna.add_child(_garumis_vinculados_titulo)
@@ -1624,7 +1624,7 @@ func _pedir_ruptura_vinculo(garumi: Node) -> void:
 		_dialogo_ruptura_vinculo.queue_free()
 	_dialogo_ruptura_vinculo = ConfirmationDialog.new()
 	_dialogo_ruptura_vinculo.title = "Romper vínculo"
-	_dialogo_ruptura_vinculo.dialog_text = "¿Quieres romper el vínculo con %s? El Garumi quedará libre y dejará de ocupar uno de tus cinco espacios." % str(garumi.get("criatura_nombre"))
+	_dialogo_ruptura_vinculo.dialog_text = "¿Quieres romper el vínculo con %s? El Garumi quedará libre y dejará de ocupar uno de tus tres espacios." % str(garumi.get("criatura_nombre"))
 	_dialogo_ruptura_vinculo.ok_button_text = "Romper vínculo"
 	_dialogo_ruptura_vinculo.cancel_button_text = "Conservar vínculo"
 	add_child(_dialogo_ruptura_vinculo)
@@ -1663,7 +1663,7 @@ func eliminar_garumi_vinculado(garumi: Node) -> void:
 
 func _actualizar_titulo_garumis_vinculados() -> void:
 	if is_instance_valid(_garumis_vinculados_titulo):
-		_garumis_vinculados_titulo.text = "Garumis (%d/5)" % _garumis_vinculados_nodos.size()
+		_garumis_vinculados_titulo.text = "Garumis (%d/3)" % _garumis_vinculados_nodos.size()
 
 
 func _renumerar_garumis_vinculados() -> void:
