@@ -137,20 +137,25 @@ func _actualizar_interfaz() -> void:
 		_estado.text = "Solo puedes usar uno por combate."
 
 
-func _unhandled_key_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	if not _seleccion_pendiente or is_instance_valid(activo):
 		return
 	var tecla := event as InputEventKey
-	var indice := -1
-	match tecla.keycode:
-		KEY_1: indice = 0
-		KEY_2: indice = 1
-		KEY_3: indice = 2
-		KEY_4: indice = 3
-		KEY_5: indice = 4
-	if indice >= 0 and indice < disponibles.size():
+	var codigo := tecla.keycode
+	if codigo == KEY_KP_1:
+		codigo = KEY_1
+	elif codigo == KEY_KP_2:
+		codigo = KEY_2
+	elif codigo == KEY_KP_3:
+		codigo = KEY_3
+	elif codigo == KEY_KP_4:
+		codigo = KEY_4
+	elif codigo == KEY_KP_5:
+		codigo = KEY_5
+	var indice := codigo - KEY_1
+	if indice >= 0 and indice < mini(MAX_VINCULOS, disponibles.size()):
 		seleccionar_garumi(indice)
 		get_viewport().set_input_as_handled()
 
