@@ -356,8 +356,12 @@ func _guardar_garumis_antes_de_seleccionar() -> void:
 
 func _cambiar_panel_garumis_hud(mostrar: bool) -> void:
 	for nodo_hud in get_tree().get_nodes_in_group("hud"):
-		if is_instance_valid(nodo_hud) and nodo_hud.has_method("mostrar_panel_garumis_durante_combate"):
+		if not is_instance_valid(nodo_hud):
+			continue
+		if nodo_hud.has_method("mostrar_panel_garumis_durante_combate"):
 			nodo_hud.call("mostrar_panel_garumis_durante_combate", mostrar)
+		if nodo_hud.has_method("establecer_estado_combate_garumi"):
+			nodo_hud.call("establecer_estado_combate_garumi", not mostrar)
 
 
 func _input(event: InputEvent) -> void:
