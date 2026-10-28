@@ -298,6 +298,7 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	estilo.content_margin_bottom = 7.0
 	marco.add_theme_stylebox_override("panel", estilo)
 	var contenido_marco := VBoxContainer.new()
+	contenido_marco.name = "ContenidoMarco"
 	contenido_marco.add_theme_constant_override("separation", 4)
 	contenido_marco.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	marco.add_child(contenido_marco)
@@ -459,7 +460,7 @@ func _actualizar_marcos_combate() -> void:
 	if is_instance_valid(_panel_aliado):
 		_panel_aliado.visible = is_instance_valid(activo)
 		if is_instance_valid(activo):
-			var retrato_aliado := _panel_aliado.get_node_or_null("Fila/Retrato") as TextureRect
+			var retrato_aliado := _panel_aliado.get_node_or_null("ContenidoMarco/Fila/Retrato") as TextureRect
 			if retrato_aliado != null:
 				retrato_aliado.texture = _buscar_textura_garumi(activo)
 			if is_instance_valid(_info_aliado):
@@ -483,7 +484,7 @@ func _actualizar_marcos_combate() -> void:
 				_selector_objetivo.select(clampi(indice_objetivo, 0, rivales.size() - 1))
 		if is_instance_valid(objetivo_rival) and objetivo_rival.esta_enfrentamiento():
 			if is_instance_valid(_panel_enemigo):
-				var retrato_enemigo := _panel_enemigo.get_node_or_null("Fila/Retrato") as TextureRect
+				var retrato_enemigo := _panel_enemigo.get_node_or_null("ContenidoMarco/Fila/Retrato") as TextureRect
 				if retrato_enemigo != null:
 					retrato_enemigo.texture = _buscar_textura_garumi(objetivo_rival)
 			if is_instance_valid(_info_enemigo):
