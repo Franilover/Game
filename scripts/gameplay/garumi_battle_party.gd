@@ -12,6 +12,9 @@ const COSTO_CURACION_GARUMI := 5
 
 var jugador: Node2D
 var rival: Garumi
+var rivales: Array[Garumi] = []
+var objetivo_rival: Garumi
+var _selector_objetivo: OptionButton
 var disponibles: Array[Garumi] = []
 var activo: Garumi
 var _panel: PanelContainer
@@ -37,6 +40,8 @@ var _forzar_disponible := false
 func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	jugador = nuevo_jugador
 	rival = nuevo_rival
+	objetivo_rival = nuevo_rival
+	_descubrir_rivales(nuevo_rival)
 	_disponibles_desde_vinculos()
 	_guardar_garumis_antes_de_seleccionar()
 	_cambiar_panel_garumis_hud(false)
@@ -80,6 +85,44 @@ func _disponibles_desde_vinculos() -> void:
 			disponibles.append(garumi)
 	if disponibles.size() > MAX_VINCULOS:
 		disponibles.resize(MAX_VINCULOS)
+
+
+func _descubrir_rivales(principal: Garumi) -> void:
+	rivales.clear()
+	if not is_instance_valid(principal):
+		return
+	rivales.append(principal)
+	var candidatos: Array[Garumi] = []
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not nodo is Garumi or not is_instance_valid(nodo):
+			continue
+		var enemigo := nodo as Garumi
+		if enemigo == principal or enemigo.esta_vinculado() or enemigo.esta_enfrentamiento() or not bool(enemigo.get("is_alive")):
+			continue
+		if enemigo.global_position.distance_to(principal.global_position) > 360.0:
+			continue
+		candidatos.append(enemigo)
+	candidatos.sort_custom(func(a: Garumi, b: Garumi) -> bool:
+		return a.global_position.distance_squared_to(principal.global_position) < b.global_position.distance_squared_to(principal.global_position)
+	)
+	for i in range(mini(2, candidatos.size())):
+		var enemigo := candidatos[i]
+		if enemigo.iniciar_enfrentamiento_secundario(jugador):
+			rivales.append(enemigo)
+			var escena := get_tree().current_scene
+			if escena != null and is_instance_valid(escena.get("_garumi_combat_arena")):
+				var arena: Variant = escena.get("_garumi_combat_arena")
+				if is_instance_valid(arena) and arena.has_method("agregar_garumi"):
+					arena.call("agregar_garumi", enemigo)
+	objetivo_rival = principal
+	print("GarumiBattleParty: rivales en el encuentro: ", rivales.size(), ". Ninguno se vincula automáticamente.")
+
+
+func _al_cambiar_objetivo_rival(indice: int) -> void:
+	if indice >= 0 and indice < rivales.size():
+		objetivo_rival = rivales[indice]
+		_actualizar_marcos_combate()
+
 
 
 func _crear_interfaz() -> void:
@@ -428,16 +471,29 @@ func _actualizar_marcos_combate() -> void:
 				_vida_aliado.max_value = maxi(1, activo.max_health)
 				_vida_aliado.value = clampi(activo.health, 0, activo.max_health)
 	if is_instance_valid(_panel_enemigo):
-		_panel_enemigo.visible = is_instance_valid(rival) and rival.esta_enfrentamiento()
-		if is_instance_valid(rival):
-			var retrato_enemigo := _panel_enemigo.get_node_or_null("Fila/Retrato") as TextureRect
-			if retrato_enemigo != null:
-				retrato_enemigo.texture = _buscar_textura_garumi(rival)
+		_panel_enemigo.visible = not rivales.is_empty()
+		if is_instance_valid(_selector_objetivo):
+			var seleccion_anterior := _selector_objetivo.selected
+			_selector_objetivo.clear()
+			var indice_objetivo := 0
+			for i in range(rivales.size()):
+				var enemigo := rivales[i]
+				var sufijo := " (KO)" if not is_instance_valid(enemigo) or not enemigo.esta_enfrentamiento() or not bool(enemigo.get("is_alive")) else ""
+				_selector_objetivo.add_item("%s%s" % [_nombre(enemigo), sufijo], i)
+				if enemigo == objetivo_rival:
+					indice_objetivo = i
+			if not rivales.is_empty():
+				_selector_objetivo.select(clampi(indice_objetivo, 0, rivales.size() - 1))
+		if is_instance_valid(objetivo_rival) and objetivo_rival.esta_enfrentamiento():
+			if is_instance_valid(_panel_enemigo):
+				var retrato_enemigo := _panel_enemigo.get_node_or_null("Fila/Retrato") as TextureRect
+				if retrato_enemigo != null:
+					retrato_enemigo.texture = _buscar_textura_garumi(objetivo_rival)
 			if is_instance_valid(_info_enemigo):
-				_info_enemigo.text = "%s · Nv. %d" % [_nombre(rival), rival.nivel]
+				_info_enemigo.text = "%s · Nv. %d" % [_nombre(objetivo_rival), objetivo_rival.nivel]
 			if is_instance_valid(_vida_enemigo):
-				_vida_enemigo.max_value = maxi(1, rival.max_health)
-				_vida_enemigo.value = clampi(rival.health, 0, rival.max_health)
+				_vida_enemigo.max_value = maxi(1, objetivo_rival.max_health)
+				_vida_enemigo.value = clampi(objetivo_rival.health, 0, objetivo_rival.max_health)
 
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
@@ -537,7 +593,7 @@ func _process(delta: float) -> void:
 		return
 	if not rival.esta_enfrentamiento():
 		return
-	var puede_forzar := rival.puede_forzar_vinculo()
+	var puede_forzar := rivales.size() == 1 and rival.puede_forzar_vinculo()
 	if puede_forzar != _forzar_disponible:
 		_forzar_disponible = puede_forzar
 		_actualizar_interfaz()
@@ -557,20 +613,30 @@ func _process(delta: float) -> void:
 		_cooldown_aliado = INTERVALO_ATAQUE_ALIADO
 		# El Garumi aliado deja de atacar al rival al llegar a 7 HP.
 		# Si el siguiente golpe lo dejaría por debajo, se reduce para dejarlo exactamente en 7.
-		if rival.health > 7 and activo.has_method("calcular_danio_ofensivo"):
+		if is_instance_valid(objetivo_rival) and objetivo_rival.esta_enfrentamiento() and objetivo_rival.health > 0 and activo.has_method("calcular_danio_ofensivo"):
 			var danio := int(activo.call("calcular_danio_ofensivo", 100.0))
-			danio = mini(maxi(0, danio), rival.health - 7)
+			danio = mini(maxi(0, danio), maxi(0, objetivo_rival.health - 7))
 			if danio > 0:
-				rival.take_damage(danio, "Garumi vinculado: " + _nombre(activo))
-			if is_instance_valid(rival) and rival.health <= 7:
+				objetivo_rival.take_damage(danio, "Garumi vinculado: " + _nombre(activo))
+			if is_instance_valid(objetivo_rival) and objetivo_rival.health <= 7:
 				_estado.text = "¡Rival debilitado! Tu Garumi deja de atacar con 7 de vida."
 	if _cooldown_rival <= 0.0:
 		_cooldown_rival = INTERVALO_ATAQUE_RIVAL
-		if activo.has_method("recibir_danio_combate"):
-			var danio_rival := int(rival.calcular_danio_ofensivo(75.0))
-			activo.call("recibir_danio_combate", maxi(1, danio_rival), rival)
-			if not bool(activo.get("is_alive")):
-				_derrotar_activo()
+		for enemigo in rivales:
+			if not is_instance_valid(enemigo) or not enemigo.esta_enfrentamiento() or not bool(enemigo.get("is_alive")):
+				continue
+			if activo.has_method("recibir_danio_combate"):
+				var danio_rival := int(enemigo.calcular_danio_ofensivo(75.0))
+				activo.call("recibir_danio_combate", maxi(1, danio_rival), enemigo)
+				if not bool(activo.get("is_alive")):
+					_derrotar_activo()
+				break
+		var vivos := 0
+		for enemigo in rivales:
+			if is_instance_valid(enemigo) and enemigo.esta_enfrentamiento() and bool(enemigo.get("is_alive")):
+				vivos += 1
+		if vivos == 0:
+			_estado.text = "¡Los tres Garumis han sido derrotados! No se ha creado ningún vínculo."
 
 
 func _tecla_curacion_mantenida() -> bool:
