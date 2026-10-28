@@ -373,6 +373,7 @@ func guardar_partida() -> bool:
 	_guardado_en_curso = true
 
 	capturar_estado_desde_juego(jugador)
+	_sincronizar_garumis_vinculados_desde_escena()
 
 	var datos := _leer_archivo_partida(active_save_id)
 
@@ -763,6 +764,29 @@ func obtener_relaciones_sociales() -> Dictionary:
 
 func guardar_relaciones_sociales(relaciones: Dictionary) -> void:
 	world_state.flags["relaciones_sociales"] = relaciones.duplicate(true)
+
+
+func _sincronizar_garumis_vinculados_desde_escena() -> void:
+	var por_id: Dictionary = {}
+	for registro in obtener_garumis_vinculados():
+		var id_existente := str(registro.get("garumi_instancia_id", "")).strip_edges()
+		if not id_existente.is_empty():
+			por_id[id_existente] = registro
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not is_instance_valid(nodo) or not nodo.has_method("obtener_datos_persistencia_vinculo"):
+			continue
+		var registro_variant: Variant = nodo.call("obtener_datos_persistencia_vinculo")
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
+		if not id_instancia.is_empty():
+			por_id[id_instancia] = registro
+	var resultado: Array[Dictionary] = []
+	for registro_variant in por_id.values():
+		if registro_variant is Dictionary:
+			resultado.append((registro_variant as Dictionary).duplicate(true))
+	world_state.flags["garumis_vinculados"] = resultado
 
 
 ## Registro persistente de Garumis vinculados a esta partida.
