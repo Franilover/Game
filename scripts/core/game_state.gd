@@ -807,7 +807,7 @@ func contar_garumis_vinculados() -> int:
 
 
 func puede_vincular_garumi() -> bool:
-	return contar_garumis_vinculados() < 5
+	return contar_garumis_vinculados() < 3
 
 
 func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
@@ -822,8 +822,8 @@ func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
 			world_state.flags["garumis_vinculados"] = lista
 			_al_cambio_guardable()
 			return true
-	if lista.size() >= 5:
-		push_warning("GameState: límite de 5 Garumis vinculados alcanzado; rompe un vínculo antes de añadir otro.")
+	if lista.size() >= 3:
+		push_warning("GameState: límite de 3 Garumis vinculados alcanzado; rompe un vínculo antes de añadir otro.")
 		return false
 	lista.append(datos_garumi.duplicate(true))
 	world_state.flags["garumis_vinculados"] = lista
