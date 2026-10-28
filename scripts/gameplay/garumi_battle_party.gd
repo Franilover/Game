@@ -25,6 +25,7 @@ var _info_enemigo: Label
 var _vida_aliado: ProgressBar
 var _vida_enemigo: ProgressBar
 var _ataques_container: HBoxContainer
+var _reservas_garumis_container: HBoxContainer
 var _ataques_estado: Label
 var _ataques_supabase: Array[Dictionary] = []
 var _ataques_request_id: int = -1
@@ -280,6 +281,7 @@ func _crear_marcos_combate() -> void:
 	add_child(_panel_enemigo)
 	_cargar_ataques_desde_supabase()
 	_actualizar_marcos_combate()
+	_actualizar_fila_reservas_garumis()
 
 
 func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
@@ -339,6 +341,13 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	vida.max_value = 100
 	columna.add_child(vida)
 	if es_aliado:
+		_reservas_garumis_container = HBoxContainer.new()
+		_reservas_garumis_container.name = "GarumisReserva"
+		_reservas_garumis_container.add_theme_constant_override("separation", 6)
+		_reservas_garumis_container.alignment = BoxContainer.ALIGNMENT_BEGIN
+		_reservas_garumis_container.custom_minimum_size = Vector2(0.0, 38.0)
+		_reservas_garumis_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		contenido_marco.add_child(_reservas_garumis_container)
 		_ataques_container = HBoxContainer.new()
 		_ataques_container.name = "Ataques"
 		_ataques_container.add_theme_constant_override("separation", 5)
@@ -356,6 +365,77 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 		_info_enemigo = info
 		_vida_enemigo = vida
 	return marco
+
+
+func _actualizar_fila_reservas_garumis() -> void:
+	if not is_instance_valid(_reservas_garumis_container):
+		return
+	for hijo in _reservas_garumis_container.get_children():
+		hijo.queue_free()
+	_reservas_garumis_container.visible = is_instance_valid(activo)
+	if not is_instance_valid(activo):
+		return
+	var shader_circular := Shader.new()
+	shader_circular.code = """
+shader_type canvas_item;
+void fragment() {
+	vec2 centrado = UV - vec2(0.5, 0.5);
+	if (length(centrado) > 0.49) {
+		discard;
+	}
+	COLOR = texture(TEXTURE, UV);
+}
+"""
+	for i in range(disponibles.size()):
+		var garumi := disponibles[i]
+		if not is_instance_valid(garumi) or garumi == activo:
+			continue
+		var circulo := Control.new()
+		circulo.name = "ReservaGarumi%d" % (i + 1)
+		circulo.custom_minimum_size = Vector2(38.0, 38.0)
+		circulo.size = Vector2(38.0, 38.0)
+		circulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_reservas_garumis_container.add_child(circulo)
+		var fondo := Panel.new()
+		fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var estilo_circulo := StyleBoxFlat.new()
+		estilo_circulo.bg_color = Color(0.10, 0.075, 0.05, 1.0)
+		estilo_circulo.border_color = Color(0.78, 0.61, 0.34, 1.0)
+		estilo_circulo.set_border_width_all(1)
+		estilo_circulo.set_corner_radius_all(19)
+		fondo.add_theme_stylebox_override("panel", estilo_circulo)
+		circulo.add_child(fondo)
+		var retrato := TextureRect.new()
+		retrato.name = "Retrato"
+		retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		retrato.offset_left = 2.0
+		retrato.offset_top = 2.0
+		retrato.offset_right = -2.0
+		retrato.offset_bottom = -2.0
+		retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var textura := _buscar_textura_garumi(garumi)
+		if textura != null:
+			retrato.texture = textura
+		var material := ShaderMaterial.new()
+		material.shader = shader_circular
+		retrato.material = material
+		circulo.add_child(retrato)
+		var numero := Label.new()
+		numero.name = "Numero"
+		numero.text = str(i + 1)
+		numero.position = Vector2(-1.0, 23.0)
+		numero.size = Vector2(13.0, 13.0)
+		numero.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		numero.add_theme_font_size_override("font_size", 8)
+		numero.add_theme_color_override("font_color", Color(0.98, 0.91, 0.76, 1.0))
+		numero.add_theme_color_override("font_outline_color", Color(0.035, 0.03, 0.025, 1.0))
+		numero.add_theme_constant_override("outline_size", 2)
+		numero.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		circulo.add_child(numero)
 
 
 ## El catálogo de combate se consulta en Supabase. Godot no define ataques ni
@@ -607,6 +687,7 @@ func _activar_garumi_combate(elegido: Garumi, indice: int) -> void:
 		activo.call("entrar_combate_vinculado", jugador, objetivo)
 	_actualizar_interfaz()
 	_actualizar_marcos_combate()
+	_actualizar_fila_reservas_garumis()
 	print("GarumiBattleParty: entra ", _nombre(activo), " (", indice + 1, ").")
 
 
@@ -680,6 +761,7 @@ func _derrotar_activo() -> void:
 	activo = null
 	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
+	_actualizar_fila_reservas_garumis()
 	if disponibles.is_empty():
 		remove_from_group("modal_ui")
 		_estado.text = "No quedan Garumis disponibles. Puedes seguir combatiendo por tu cuenta."
