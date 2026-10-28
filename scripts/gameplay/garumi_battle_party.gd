@@ -7,6 +7,8 @@ class_name GarumiBattleParty
 const MAX_VINCULOS := 3
 const INTERVALO_ATAQUE_ALIADO := 1.0
 const INTERVALO_ATAQUE_RIVAL := 1.35
+const INTERVALO_CURACION_ETERIUM := 0.55
+const COSTO_CURACION_GARUMI := 5
 
 var jugador: Node2D
 var rival: Garumi
@@ -23,6 +25,7 @@ var _vida_aliado: ProgressBar
 var _vida_enemigo: ProgressBar
 var _cooldown_aliado := 0.0
 var _cooldown_rival := 0.0
+var _cooldown_curacion_eterium := 0.0
 var _seleccion_pendiente := false
 var _forzar_disponible := false
 
@@ -428,6 +431,10 @@ func _process(delta: float) -> void:
 		return
 	_cooldown_aliado -= delta
 	_cooldown_rival -= delta
+	_cooldown_curacion_eterium = maxf(0.0, _cooldown_curacion_eterium - delta)
+	# Mantener 1, 2 o 3 pulsado canaliza Eterium del jugador para curar al Garumi activo.
+	if _tecla_curacion_mantenida() and _cooldown_curacion_eterium <= 0.0:
+		_curar_garumi_con_eterium()
 	if _cooldown_aliado <= 0.0:
 		_cooldown_aliado = INTERVALO_ATAQUE_ALIADO
 		# El Garumi aliado deja de atacar al rival al llegar a 7 HP.
@@ -446,6 +453,40 @@ func _process(delta: float) -> void:
 			activo.call("recibir_danio_combate", maxi(1, danio_rival), rival)
 			if not bool(activo.get("is_alive")):
 				_derrotar_activo()
+
+
+func _tecla_curacion_mantenida() -> bool:
+	return (
+		Input.is_key_pressed(KEY_1)
+		or Input.is_key_pressed(KEY_2)
+		or Input.is_key_pressed(KEY_3)
+		or Input.is_key_pressed(KEY_KP_1)
+		or Input.is_key_pressed(KEY_KP_2)
+		or Input.is_key_pressed(KEY_KP_3)
+	)
+
+
+func _curar_garumi_con_eterium() -> void:
+	if not is_instance_valid(activo) or activo.health >= activo.max_health:
+		return
+	if not is_instance_valid(jugador):
+		return
+	var eterium: Variant = jugador.get("eterium")
+	if eterium == null or not eterium.has_method("gastar"):
+		return
+	if not bool(eterium.call("gastar", COSTO_CURACION_GARUMI)):
+		return
+	var cantidad_curacion := maxi(1, roundi(float(activo.max_health) * 0.20))
+	var recuperada := int(activo.call("curar_con_eterium", cantidad_curacion))
+	if recuperada <= 0:
+		# Si no se pudo aplicar la curación, devolvemos el Eterium para no cobrar en vano.
+		if eterium.has_method("restaurar"):
+			eterium.call("restaurar", COSTO_CURACION_GARUMI)
+		return
+	_cooldown_curacion_eterium = INTERVALO_CURACION_ETERIUM
+	if jugador.has_signal("mana_changed"):
+		jugador.emit_signal("mana_changed", int(jugador.get("mana")), int(jugador.get("max_mana")))
+	_actualizar_marcos_combate()
 
 
 func _forzar_vinculo() -> void:
