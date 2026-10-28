@@ -105,6 +105,173 @@ func obtener_candidatos(ecosistema: Dictionary) -> Array:
 		_candidatos_por_ecosistema[ecosistema_id] = resultado
 	return resultado
 
+## Filtro de aparición inicial.
+## "numero_origen" numera registros dentro del linaje; no es un nivel ni una
+## generación. Sólo pueden aparecer formas normales iniciales del Original
+## habilitado y aprobadas en canon. Las formas finales se alcanzan evolucionando.
+func garumi_cumple_filtro_generacional(
+	garumi: Dictionary,
+	original_id_permitido: String,
+	generacion_permitida: int
+) -> bool:
+	if garumi.is_empty() or original_id_permitido.strip_edges().is_empty() or generacion_permitida != 1:
+		return false
+	var categoria := str(garumi.get("categoria_garumi", "")).strip_edges().to_lower()
+	if categoria != "normal":
+		return false
+	# El mundo sólo genera la forma inicial. Las formas evolucionadas se
+	# obtienen mediante la progresión de una instancia existente, nunca como
+	# encuentros independientes. Si falta el estado, se rechaza por seguridad.
+	var estado_evolutivo := str(garumi.get("estado_evolutivo", "")).strip_edges().to_lower()
+	if estado_evolutivo != "inicial":
+		return false
+	var evoluciona_de_id := str(garumi.get("evoluciona_de_id", "")).strip_edges()
+	if not evoluciona_de_id.is_empty() or bool(garumi.get("es_evolucion", false)):
+		return false
+	# Si el snapshot incluye estado documental, nunca permitir borradores.
+	# Si lo omite, el exportador debe garantizar que sólo entrega canon aprobado.
+	if garumi.has("estado_documentacion"):
+		var estado := str(garumi.get("estado_documentacion", "")).strip_edges().to_lower()
+		if estado not in ["aprobado", "canon"]:
+			return false
+	var original_id := str(garumi.get("original_id", "")).strip_edges()
+	if original_id != original_id_permitido.strip_edges():
+		return false
+	# El parámetro se conserva por compatibilidad con la configuración del
+	# spawner, pero no se compara con numero_origen: no representa generación.
+	return true
+
+## Un Garumi sólo puede aparecer si su registro trae una regla ecológica
+## explícita en "aparicion". Los selectores presentes se combinan por AND;
+## los valores de cada selector se combinan por OR.
+func garumi_puede_aparecer(
+	garumi: Dictionary,
+	bioma: Dictionary,
+	ecosistema: Dictionary,
+	habitats: Array
+) -> bool:
+	var aparicion_variant: Variant = garumi.get("aparicion", {})
+	if not aparicion_variant is Dictionary:
+		return false
+	var aparicion := aparicion_variant as Dictionary
+	if aparicion.is_empty():
+		return false
+
+	var bioma_ids := _normalizar_selector_ids(aparicion.get("bioma_ids", []))
+	if bioma_ids.is_empty():
+		bioma_ids = _normalizar_selector_ids(aparicion.get("bioma_id", ""))
+	var ecosistema_ids := _normalizar_selector_ids(aparicion.get("ecosistema_ids", []))
+	if ecosistema_ids.is_empty():
+		ecosistema_ids = _normalizar_selector_ids(aparicion.get("ecosistema_id", ""))
+	var habitat_ids := _normalizar_selector_ids(aparicion.get("habitat_ids", []))
+	if habitat_ids.is_empty():
+		habitat_ids = _normalizar_selector_ids(aparicion.get("habitat_id", ""))
+	var habitat_claves := _normalizar_selector_ids(aparicion.get("habitat_claves", []))
+	if habitat_claves.is_empty():
+		habitat_claves = _normalizar_selector_ids(aparicion.get("habitat_clave", ""))
+
+	# No permitir que un registro sin anclas ecológicas aparezca por todo el mundo.
+	if bioma_ids.is_empty() and ecosistema_ids.is_empty() and habitat_ids.is_empty() and habitat_claves.is_empty():
+		return false
+
+	if not bioma_ids.is_empty() and str(bioma.get("id", "")) not in bioma_ids:
+		return false
+	if not ecosistema_ids.is_empty() and str(ecosistema.get("id", "")) not in ecosistema_ids:
+		return false
+
+	var ids_habitats_presentes: Array[String] = []
+	var claves_habitats_presentes: Array[String] = []
+	for habitat_variant in habitats:
+		if not habitat_variant is Dictionary:
+			continue
+		var habitat := habitat_variant as Dictionary
+		var habitat_id := str(habitat.get("id", "")).strip_edges()
+		if not habitat_id.is_empty() and habitat_id not in ids_habitats_presentes:
+			ids_habitats_presentes.append(habitat_id)
+		var tipo_variant: Variant = habitat.get("tipo_habitat", {})
+		if tipo_variant is Dictionary:
+			var clave := str((tipo_variant as Dictionary).get("clave", "")).strip_edges().to_lower()
+			if not clave.is_empty() and clave not in claves_habitats_presentes:
+				claves_habitats_presentes.append(clave)
+		if not habitat.has("tipo_habitat"):
+			var clave_directa := str(habitat.get("clave", "")).strip_edges().to_lower()
+			if not clave_directa.is_empty() and clave_directa not in claves_habitats_presentes:
+				claves_habitats_presentes.append(clave_directa)
+
+	if not habitat_ids.is_empty():
+		var coincide_habitat := false
+		for habitat_id in habitat_ids:
+			if habitat_id in ids_habitats_presentes:
+				coincide_habitat = true
+				break
+		if not coincide_habitat:
+			return false
+	if not habitat_claves.is_empty():
+		# "general" describe un alcance ecológico amplio, no un hábitat literal.
+		# Por ello admite cualquier hábitat del bioma/ecosistema que ya pasó
+		# los selectores más específicos del registro.
+		var selector_general := "general" in habitat_claves
+		var coincide_clave := selector_general
+		if not coincide_clave:
+			for clave in habitat_claves:
+				if clave.to_lower() in claves_habitats_presentes:
+					coincide_clave = true
+					break
+		if not coincide_clave:
+			return false
+	return true
+
+
+func obtener_probabilidad_spawn_garumi(garumi: Dictionary, probabilidad_predeterminada: float) -> float:
+	var aparicion_variant: Variant = garumi.get("aparicion", {})
+	if not aparicion_variant is Dictionary:
+		return 0.0
+	var aparicion := aparicion_variant as Dictionary
+	var valor: Variant = aparicion.get("probabilidad_chunk", probabilidad_predeterminada)
+	if not (valor is int or valor is float):
+		return clampf(probabilidad_predeterminada, 0.0, 1.0)
+	return clampf(float(valor), 0.0, 1.0)
+
+
+func elegir_garumi(candidatos: Array[Dictionary], rng: RandomNumberGenerator) -> Dictionary:
+	if candidatos.is_empty():
+		return {}
+	var peso_total := 0.0
+	for garumi in candidatos:
+		var aparicion_variant: Variant = garumi.get("aparicion", {})
+		var aparicion: Dictionary = aparicion_variant if aparicion_variant is Dictionary else {}
+		var peso_variant: Variant = aparicion.get("peso_spawn", garumi.get("peso_spawn", 1.0))
+		if peso_variant is int or peso_variant is float:
+			peso_total += maxf(float(peso_variant), 0.0)
+	if peso_total <= 0.0:
+		return {}
+	var objetivo := rng.randf_range(0.0, peso_total)
+	var acumulado := 0.0
+	for garumi in candidatos:
+		var aparicion_variant: Variant = garumi.get("aparicion", {})
+		var aparicion: Dictionary = aparicion_variant if aparicion_variant is Dictionary else {}
+		var peso_variant: Variant = aparicion.get("peso_spawn", garumi.get("peso_spawn", 1.0))
+		var peso := maxf(float(peso_variant), 0.0) if peso_variant is int or peso_variant is float else 0.0
+		acumulado += peso
+		if objetivo <= acumulado:
+			return garumi
+	return candidatos.back()
+
+
+func _normalizar_selector_ids(valor: Variant) -> Array[String]:
+	var resultado: Array[String] = []
+	if valor is String:
+		var clave := (valor as String).strip_edges()
+		if not clave.is_empty():
+			resultado.append(clave)
+	elif valor is Array:
+		for elemento in valor as Array:
+			var clave := str(elemento).strip_edges()
+			if not clave.is_empty() and clave not in resultado:
+				resultado.append(clave)
+	return resultado
+
+
 func ubicacion_valida(
 	bioma: Dictionary,
 	habitat_clave: String,

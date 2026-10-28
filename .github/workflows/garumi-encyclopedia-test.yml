@@ -1,0 +1,84 @@
+name: Garumi Encyclopedia G Shortcut
+
+on:
+  push:
+    branches: ["feat/garumi-bond-combat"]
+    paths:
+      - "scripts/ui/inventory.gd"
+      - "scripts/ui/encyclopedia.gd"
+      - "scenes/ui/inventory.tscn"
+      - "tests/ui/**"
+      - "scripts/ai/garumi_brain.gd"
+      - "scripts/creatures/garumi.gd"
+      - "tests/world/test_garumi_brain.gd"
+      - "project.godot"
+      - ".github/workflows/garumi-encyclopedia-test.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/ui/inventory.gd"
+      - "scripts/ui/encyclopedia.gd"
+      - "scenes/ui/inventory.tscn"
+      - "tests/ui/**"
+      - "scripts/ai/garumi_brain.gd"
+      - "scripts/creatures/garumi.gd"
+      - "tests/world/test_garumi_brain.gd"
+      - "project.godot"
+      - ".github/workflows/garumi-encyclopedia-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  garumi-encyclopedia:
+    name: Godot 4.7 — Garumi encyclopedia shortcut
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot 4.7
+        shell: bash
+        run: |
+          set -euo pipefail
+          filename="Godot_v4.7-stable_linux.x86_64"
+          wget -q "https://github.com/godotengine/godot/releases/download/4.7-stable/${filename}.zip"
+          unzip -q "${filename}.zip"
+          sudo install "${filename}" /usr/local/bin/godot
+          godot --version
+
+      - name: Import resources and verify script compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --editor --path . --quit 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
+            echo "Godot reported script compilation errors during import."
+            exit 1
+          fi
+
+      - name: Verify Garumi behavior and elemental config
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . --script res://tests/world/test_garumi_brain.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|test_garumi_brain: FAIL' <<<"$output"; then
+            echo "Garumi behavior regression test reported errors."
+            exit 1
+          fi
+
+      - name: Verify G opens and closes Garumi encyclopedia
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
+            echo "Garumi encyclopedia regression test reported errors."
+            exit 1
+          fi

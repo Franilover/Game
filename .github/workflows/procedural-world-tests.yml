@@ -1,13 +1,20 @@
-name: Procedural World Tests
+name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
+      - "scripts/world/world_*.gd"
       - "scripts/creatures/**"
+      - "scripts/ui/**"
+      - "scripts/gameplay/combat/**"
+      - "scripts/gameplay/combat_system.gd"
+      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "tests/combat/**"
       - "tests/creatures/**"
+      - "tests/ui/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
       - "project.godot"
@@ -17,8 +24,15 @@ on:
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
+      - "scripts/world/world_*.gd"
       - "scripts/creatures/**"
+      - "scripts/ui/**"
+      - "scripts/gameplay/combat/**"
+      - "scripts/gameplay/combat_system.gd"
+      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "tests/combat/**"
       - "tests/creatures/**"
+      - "tests/ui/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
       - "project.godot"
@@ -30,7 +44,7 @@ permissions:
 
 jobs:
   procedural-kernel:
-    name: Godot 4.7 headless kernel tests
+    name: Garlia Godot 4.7 headless regression tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -59,6 +73,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run Garumi encyclopedia shortcut smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
+            echo "Garumi encyclopedia regression test reported errors."
+            exit 1
+          fi
+
       - name: Run creature AI target policy regression test
         shell: bash
         run: |
@@ -72,6 +97,39 @@ jobs:
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
+
+      - name: Run combat temporal contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_temporal_contract.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatTemporalContract: FAIL:' <<<"$output"; then
+            echo "Combat temporal contract test reported script or assertion errors."
+            exit 1
+          fi
+
+      - name: Run combat event queue contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEventQueueContract: FAIL:' <<<"$output"; then
+            echo "Combat event queue contract test reported script or assertion errors."
+            exit 1
+          fi
+
+      - name: Run Garumi world presence regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/world/test_garumi_world_presence.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiWorldPresence: FAIL:' <<<"$output"; then
+            echo "Garumi world presence test reported script or assertion errors."
+            exit 1
+          fi
 
       # Verifies stable atlas registration and real DisplayLayer composition.
       - name: Run TileMapDual terrain regression test

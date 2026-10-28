@@ -256,6 +256,33 @@ func _cargar_sprite() -> void:
 
 	var rutas: Array[String] = []
 
+	# Los Garumis tienen un catálogo visual independiente. No reutilizamos por
+	# accidente el sprite de una criatura normal con el mismo nombre.
+	if str(datos.get("categoria_entidad", "")).strip_edges().to_lower() == "garumi":
+		var asset_key := str(datos.get("asset_key", criatura_nombre)).strip_edges()
+		if asset_key.is_empty() or asset_key.contains("/") or asset_key.contains("\\"):
+			asset_key = criatura_nombre
+		var rutas_garumi: Array[String] = [
+			"res://assets/art/garumis/" + asset_key + ".png",
+			"res://assets/art/garumis/" + asset_key + ".PNG",
+			"res://assets/art/garumis/" + asset_key + ".svg",
+			"res://assets/art/garumis/" + asset_key + ".SVG"
+		]
+		var textura_garumi: Texture2D = null
+		for ruta_garumi in rutas_garumi:
+			if not ResourceLoader.exists(ruta_garumi):
+				continue
+			textura_garumi = load(ruta_garumi) as Texture2D
+			if textura_garumi != null:
+				break
+		var sprite_garumi := get_node_or_null("Sprite2D") as Sprite2D
+		if sprite_garumi != null:
+			sprite_garumi.texture = textura_garumi
+		set_meta("garumi_sprite_missing", textura_garumi == null)
+		queue_redraw()
+		return
+
+
 	if _es_humano() and not nombre_individual.is_empty():
 		rutas.append(
 			"res://assets/art/characters/"
@@ -1107,7 +1134,13 @@ func _draw() -> void:
 		_dibujar_brillo_horario()
 
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	# Con arte disponible, el mundo muestra únicamente el sprite.
+	# El nombre queda reservado para el respaldo visual cuando falta el arte.
 	if sprite != null and sprite.texture != null:
+		return
+
+	if str(datos.get("categoria_entidad", "")).strip_edges().to_lower() == "garumi":
+		_dibujar_garumi_sin_sprite()
 		if mostrar_nombre_debug:
 			_dibujar_nombre()
 		return
@@ -1181,8 +1214,35 @@ func _draw() -> void:
 		)
 	)
 
+	# Las criaturas sin sprite usan la figura de respaldo y conservan el nombre.
 	if mostrar_nombre_debug:
 		_dibujar_nombre()
+
+
+
+## Proyección geométrica temporal de desarrollo. El arte final debe ser un
+## sprite propio en assets/art/garumis; esta figura no define el canon visual.
+func _dibujar_garumi_sin_sprite() -> void:
+	var color := _obtener_color()
+	var silueta := PackedVector2Array([
+		Vector2(0.0, -10.0),
+		Vector2(7.0, -3.0),
+		Vector2(5.0, 5.0),
+		Vector2(0.0, 9.0),
+		Vector2(-6.0, 4.0),
+		Vector2(-8.0, -3.0)
+	])
+	draw_colored_polygon(silueta, Color(0.06, 0.07, 0.10, 0.95))
+	var nucleo := PackedVector2Array([
+		Vector2(0.0, -6.0),
+		Vector2(4.0, -2.0),
+		Vector2(2.0, 4.0),
+		Vector2(-1.0, 6.0),
+		Vector2(-4.0, 1.0),
+		Vector2(-4.0, -2.0)
+	])
+	draw_colored_polygon(nucleo, color)
+	draw_circle(Vector2(0.0, -1.0), 1.5, color.lightened(0.35))
 
 
 func _dibujar_brillo_horario() -> void:

@@ -55,19 +55,22 @@ var _world_items: GarliaWorldItems = null
 var _equipment_stats_label: Label = null
 
 
-@onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/LeftPanel/Grid
+@onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
 var _slot_grids: Array[GridContainer] = []
-@onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemName
-@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/ItemDescription
-@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/ItemIcon
-@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/LeftPanel/InfoPanel/InfoText/DeleteButton
-@onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/RightPanel/EquipmentArea/EquipmentSlots
+@onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemDescription
+@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
+@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DeleteButton
+@onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/EquipmentSlots
 
 
 func _inicializar_navegacion_tabs() -> void:
+	var columna_principal := $Window/Margin/Column as VBoxContainer
+	if columna_principal != null:
+		# Los selectores superiores ya funcionan como barra de pestañas; no
+		# reservar espacio vertical adicional antes del contenido.
+		columna_principal.add_theme_constant_override("separation", 0)
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	var tab_bar: TabBar = tabs.get_tab_bar()
-	tab_bar.visible = false
 
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
@@ -305,6 +308,22 @@ func toggle_mapa() -> void:
 	tabs.current_tab = 3
 	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
 	actualizar()
+
+
+func toggle_enciclopedia_garumis() -> void:
+	var tabs: TabContainer = $Window/Margin/Column/Tabs
+	var enciclopedia := $Window/Margin/Column/Tabs/Enciclopedia as Control
+	if _abierto and tabs.current_tab == 2:
+		cerrar()
+		return
+	if not _abierto:
+		_abierto = true
+		visible = true
+		_actualizar_admin_tab()
+	tabs.current_tab = 2
+	$Window/Margin/Column/TabButtons/Enciclopedia.button_pressed = true
+	if enciclopedia != null and enciclopedia.has_method("abrir_en_garumis"):
+		enciclopedia.call("abrir_en_garumis")
 
 
 func abrir() -> void:
@@ -684,7 +703,7 @@ func obtener_estadistica_equipo(
 
 
 func _preparar_panel_estadisticas_equipo() -> void:
-	var right_panel := $Window/Margin/Column/Tabs/Inventario/RightPanel as VBoxContainer
+	var right_panel := $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel as VBoxContainer
 	if right_panel == null:
 		return
 	_equipment_stats_label = Label.new()

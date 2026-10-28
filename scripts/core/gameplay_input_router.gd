@@ -49,8 +49,10 @@ func _input(event: InputEvent) -> void:
 	if esta_bloqueado():
 		return
 
+	var combate_garumi_activo := not get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
+
 	if event.is_action_pressed("primary_action"):
-		if _interaction_system != null and _interaction_system.procesar_accion_primaria():
+		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
 			return
 
@@ -59,7 +61,7 @@ func _input(event: InputEvent) -> void:
 			return
 
 	if event.is_action_pressed("secondary_action"):
-		if _interaction_system != null and _interaction_system.procesar_accion_secundaria():
+		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_secundaria():
 			get_viewport().set_input_as_handled()
 			return
 
@@ -78,6 +80,12 @@ func esta_entrada_bloqueada(arbol: SceneTree) -> bool:
 
 	if arbol.paused:
 		return true
+
+	# Los menús contextuales modales deben recibir los clics antes que el gameplay.
+	# _input se ejecuta antes de la GUI; sin este bloqueo, CombatSystem puede consumirlos.
+	for interfaz in arbol.get_nodes_in_group("modal_ui"):
+		if is_instance_valid(interfaz) and interfaz.is_inside_tree() and not interfaz.is_queued_for_deletion():
+			return true
 
 	if _inventory_ui != null and _inventory_ui.esta_abierto():
 		return true

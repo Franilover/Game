@@ -373,6 +373,7 @@ func guardar_partida() -> bool:
 	_guardado_en_curso = true
 
 	capturar_estado_desde_juego(jugador)
+	_sincronizar_garumis_vinculados_desde_escena()
 
 	var datos := _leer_archivo_partida(active_save_id)
 
@@ -763,6 +764,89 @@ func obtener_relaciones_sociales() -> Dictionary:
 
 func guardar_relaciones_sociales(relaciones: Dictionary) -> void:
 	world_state.flags["relaciones_sociales"] = relaciones.duplicate(true)
+
+
+func _sincronizar_garumis_vinculados_desde_escena() -> void:
+	var por_id: Dictionary = {}
+	for registro in obtener_garumis_vinculados():
+		var id_existente := str(registro.get("garumi_instancia_id", "")).strip_edges()
+		if not id_existente.is_empty():
+			por_id[id_existente] = registro
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not is_instance_valid(nodo) or not nodo.has_method("obtener_datos_persistencia_vinculo"):
+			continue
+		var registro_variant: Variant = nodo.call("obtener_datos_persistencia_vinculo")
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
+		if not id_instancia.is_empty():
+			por_id[id_instancia] = registro
+	var resultado: Array[Dictionary] = []
+	for registro_variant in por_id.values():
+		if registro_variant is Dictionary:
+			resultado.append((registro_variant as Dictionary).duplicate(true))
+	world_state.flags["garumis_vinculados"] = resultado
+
+
+## Registro persistente de Garumis vinculados a esta partida.
+## Se almacena dentro de flags para mantener compatibilidad con el formato JSON actual.
+func obtener_garumis_vinculados() -> Array[Dictionary]:
+	var guardados: Array[Dictionary] = []
+	var variant: Variant = world_state.flags.get("garumis_vinculados", [])
+	if not variant is Array:
+		return guardados
+	for item in variant as Array:
+		if item is Dictionary:
+			guardados.append((item as Dictionary).duplicate(true))
+	return guardados
+
+
+func contar_garumis_vinculados() -> int:
+	return obtener_garumis_vinculados().size()
+
+
+func puede_vincular_garumi() -> bool:
+	return contar_garumis_vinculados() < 3
+
+
+func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
+	var id_instancia := str(datos_garumi.get("garumi_instancia_id", "")).strip_edges()
+	if id_instancia.is_empty():
+		push_warning("GameState: no se guardó un Garumi vinculado sin garumi_instancia_id.")
+		return false
+	var lista := obtener_garumis_vinculados()
+	for i in range(lista.size()):
+		if str(lista[i].get("garumi_instancia_id", "")) == id_instancia:
+			lista[i] = datos_garumi.duplicate(true)
+			world_state.flags["garumis_vinculados"] = lista
+			_al_cambio_guardable()
+			return true
+	if lista.size() >= 3:
+		push_warning("GameState: límite de 3 Garumis vinculados alcanzado; rompe un vínculo antes de añadir otro.")
+		return false
+	lista.append(datos_garumi.duplicate(true))
+	world_state.flags["garumis_vinculados"] = lista
+	_al_cambio_guardable()
+	return true
+
+
+func eliminar_garumi_vinculado(id_instancia: String) -> bool:
+	var id_limpio := id_instancia.strip_edges()
+	if id_limpio.is_empty():
+		return false
+	var lista := obtener_garumis_vinculados()
+	var nueva_lista: Array[Dictionary] = []
+	var eliminado := false
+	for registro in lista:
+		if str(registro.get("garumi_instancia_id", "")) == id_limpio:
+			eliminado = true
+			continue
+		nueva_lista.append(registro)
+	if eliminado:
+		world_state.flags["garumis_vinculados"] = nueva_lista
+		_al_cambio_guardable()
+	return eliminado
 
 
 func obtener_recuerdos_sociales() -> Dictionary:

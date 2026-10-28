@@ -319,8 +319,14 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	if instance_key.is_empty():
 		instance_key = _runtime_key(chunk_coord, criatura_id)
 	var key := _runtime_key(chunk_coord, instance_key)
+	var categoria_entidad := str(criatura.datos.get("categoria_entidad", "criatura")).strip_edges().to_lower()
 	var datos_criatura := {
 		"criatura_id": criatura_id,
+		"categoria_entidad": categoria_entidad,
+		"asset_key": str(criatura.datos.get("asset_key", "")),
+		"habitat_clave": criatura.entorno,
+		"nombre": criatura.criatura_nombre,
+		"garumi_debug_preview": bool(criatura.datos.get("garumi_debug_preview", false)),
 		"position": criatura.global_position,
 		"velocity": criatura.velocity,
 		"health": criatura.health,
@@ -328,6 +334,12 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		"is_alive": criatura.is_alive,
 		"estado": criatura.get_meta("estado_mundo", "")
 	}
+	if criatura is Garumi:
+		var garumi := criatura as Garumi
+		datos_criatura["garumi_datos"] = garumi.datos.duplicate(true)
+		datos_criatura["nivel"] = garumi.nivel
+		datos_criatura["experiencia_total"] = garumi.experiencia_total
+		datos_criatura["eterium_actual"] = garumi.eterium_actual
 	_runtime_state_by_key[key] = datos_criatura
 	var registro_criatura := datos_criatura.duplicate(true)
 	registro_criatura["runtime_instance_key"] = instance_key

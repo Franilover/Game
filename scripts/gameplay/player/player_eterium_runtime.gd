@@ -108,8 +108,11 @@ func actualizar_recuperacion(delta: float, puede_recuperar: bool) -> int:
 		if not puede_recuperar:
 			recovery_accumulator = 0.0
 		return 0
-	if vital_state == null or vital_state.mana >= vital_state.max_mana:
-		recovery_accumulator = 0.0
+	if vital_state == null:
+		return 0
+	# Al estar lleno, el reloj de recuperación se pausa. Conservamos la
+	# fracción acumulada para continuar desde ella tras gastar Eterium.
+	if vital_state.mana >= vital_state.max_mana:
 		return 0
 	var recuperacion_s := maxf(float(reglas.get("recuperacion_pasiva_s_por_segundo", 0.0)), 0.0)
 	if recuperacion_s <= 0.0:
@@ -124,6 +127,12 @@ func actualizar_recuperacion(delta: float, puede_recuperar: bool) -> int:
 		return 0
 	vital_state.mana += recuperadas
 	recovery_accumulator -= recuperadas
+	# El tick que llena el recurso completa el intervalo que lo produjo.
+	# El resto del delta ocurre con el recurso lleno y no genera progreso.
+	# En cambio, si otra fuente llena el recurso, el progreso existente se
+	# conserva porque no ha completado un tick pasivo.
+	if vital_state.mana >= vital_state.max_mana:
+		recovery_accumulator = 0.0
 	if vida_eterium_compartidos():
 		vital_state.health = vital_state.mana
 	_emitir_mana()
@@ -219,7 +228,8 @@ func absorber(cantidad: int) -> int:
 	if real <= 0:
 		return 0
 	vital_state.mana += real
-	recovery_accumulator = 0.0
+	# La absorción cambia el recurso, no el progreso del reloj pasivo.
+	# Si llena el Eterium, el progreso queda pausado hasta el siguiente gasto.
 	_emitir_mana()
 	return real
 

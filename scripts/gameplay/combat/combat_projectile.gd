@@ -5,6 +5,7 @@ class_name CombatProjectile
 ## Transporta una instancia de ataque y resuelve el impacto mediante
 ## la capa canónica CombatDamage. No busca objetivos en el SceneTree.
 
+signal contacto_detectado(objetivo: Entity, ataque: CombatAttack)
 signal objetivo_impactado(objetivo: Entity, ataque: CombatAttack)
 
 var attack: CombatAttack = null
@@ -67,11 +68,19 @@ func _procesar_objetivo(objetivo: Node) -> void:
 		return
 	if not CombatTargeting.es_objetivo_valido(attack.attacker, entidad):
 		return
-	if not CombatDamage.aplicar(entidad, attack.damage, attack.origin):
-		return
+
+	# El contacto es un resultado independiente del daño. Un bloqueo de daño
+	# o una capacidad de daño cero no debe dejar vivo al mismo proyectil.
 	_impactado = true
-	objetivo_impactado.emit(entidad, attack)
-	CombatFeedback.impacto(entidad, attack.damage)
+	contacto_detectado.emit(entidad, attack)
+
+	# objetivo_impactado conserva su contrato histórico: solo se emite cuando
+	# CombatDamage confirma una reducción real de salud.
+	if CombatDamage.aplicar(entidad, attack.damage, attack.origin):
+		objetivo_impactado.emit(entidad, attack)
+
+	# El feedback corresponde al consumidor del resultado, no al proyectil;
+	# así evitamos aplicar dos veces el mismo flash visual.
 	queue_free()
 
 
