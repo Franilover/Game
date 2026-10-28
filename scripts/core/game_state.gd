@@ -816,14 +816,16 @@ func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
 		push_warning("GameState: no se guardó un Garumi vinculado sin garumi_instancia_id.")
 		return false
 	var lista := obtener_garumis_vinculados()
-	var encontrado := false
 	for i in range(lista.size()):
 		if str(lista[i].get("garumi_instancia_id", "")) == id_instancia:
 			lista[i] = datos_garumi.duplicate(true)
-			encontrado = true
-			break
-	if not encontrado:
-		lista.append(datos_garumi.duplicate(true))
+			world_state.flags["garumis_vinculados"] = lista
+			_al_cambio_guardable()
+			return true
+	if lista.size() >= 5:
+		push_warning("GameState: límite de 5 Garumis vinculados alcanzado; rompe un vínculo antes de añadir otro.")
+		return false
+	lista.append(datos_garumi.duplicate(true))
 	world_state.flags["garumis_vinculados"] = lista
 	_al_cambio_guardable()
 	return true
