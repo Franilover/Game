@@ -807,8 +807,8 @@ func salir_combate_vinculado(derrotado: bool = false) -> void:
 	actualizar_estado_en_hud()
 
 
-func finalizar_enfrentamiento() -> void:
-	if _enfrentamiento_activo:
+func finalizar_enfrentamiento(solicitar_limpieza: bool = true) -> void:
+	if _enfrentamiento_activo and solicitar_limpieza:
 		var escena_principal := get_tree().current_scene
 		if escena_principal != null and escena_principal.has_method("terminar_arena_garumi"):
 			escena_principal.call("terminar_arena_garumi", self)
