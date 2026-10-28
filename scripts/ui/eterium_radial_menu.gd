@@ -436,11 +436,11 @@ func _completar_meditacion() -> void:
 func _recuperar_dash_sin_coste() -> void:
 	if not is_instance_valid(jugador) or not jugador.has_method("recuperar_dash_con_eterium"):
 		return
-	var recuperadas: int = jugador.call("recuperar_dash_con_eterium", 1, 0)
+	var recuperadas: int = jugador.call("recuperar_dash_con_eterium", 1, COSTO_CARGA_DASH)
 	if recuperadas > 0:
-		_notificar("Dash recuperado.")
+		_notificar("Dash recuperado (10 de Eterium).")
 	else:
-		_notificar("Ya tienes todas las cargas de dash.")
+		_notificar("No puedes recuperar una carga: revisa Eterium y cargas.")
 
 
 func _fallar_minijuego(mensaje: String) -> void:
