@@ -562,6 +562,8 @@ func iniciar_enfrentamiento(jugador: Node) -> bool:
 	var escena_principal := get_tree().current_scene
 	if escena_principal != null and escena_principal.has_method("iniciar_arena_garumi"):
 		escena_principal.call("iniciar_arena_garumi", self, jugador)
+		if escena_principal.has_method("iniciar_combate_garumi"):
+			escena_principal.call("iniciar_combate_garumi", self, jugador)
 	return true
 
 
@@ -736,6 +738,7 @@ func entrar_combate_vinculado(jugador: Node, rival: Garumi) -> void:
 		detener_seguimiento_jugador()
 	global_position = (jugador as Node2D).global_position + Vector2(28.0, 18.0)
 	velocity = Vector2.ZERO
+	add_to_group("garumi_combat_ally")
 	_normalizar_grupos_garumi()
 	actualizar_estado_en_hud()
 
@@ -756,7 +759,8 @@ func recibir_danio_combate(cantidad: int, atacante: Node = null) -> void:
 
 
 func salir_combate_vinculado(derrotado: bool = false) -> void:
-	_comb ate_vinculado_activo = false
+	_combate_vinculado_activo = false
+	remove_from_group("garumi_combat_ally")
 	if has_method("detener_seguimiento_jugador"):
 		detener_seguimiento_jugador()
 	if derrotado:
