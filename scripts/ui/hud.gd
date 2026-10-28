@@ -164,6 +164,7 @@ func _conectar_senal_game_state() -> void:
 
 
 func _process(delta: float) -> void:
+	_actualizar_vidas_garumis_vinculados()
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
 		_tiempo_contexto += delta
 		if _tiempo_contexto >= 0.25:
@@ -1474,7 +1475,9 @@ func _preparar_panel_garumis_vinculados() -> void:
 func mostrar_panel_garumis_durante_combate(mostrar: bool) -> void:
 	if not is_instance_valid(_garumis_vinculados_panel):
 		return
-	_garumis_vinculados_panel.visible = mostrar and not _garumis_vinculados_nodos.is_empty()
+	# El panel habitual de Garumis permanece visible durante el combate.
+	_garumis_vinculados_panel.visible = not _garumis_vinculados_nodos.is_empty()
+	_actualizar_vidas_garumis_vinculados()
 
 
 func establecer_estado_combate_garumi(activo: bool) -> void:
@@ -1525,7 +1528,7 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	var fila := HBoxContainer.new()
 	fila.name = "Garumi_" + id
 	fila.add_theme_constant_override("separation", 7)
-	fila.custom_minimum_size = Vector2(0.0, 42.0)
+	fila.custom_minimum_size = Vector2(0.0, 52.0)
 	fila.mouse_filter = Control.MOUSE_FILTER_STOP
 	_garumis_vinculados_lista.add_child(fila)
 	var numero := Label.new()
@@ -1539,7 +1542,7 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	fila.add_child(numero)
 
 	var retrato := TextureRect.new()
-	retrato.custom_minimum_size = Vector2(40.0, 40.0)
+	retrato.custom_minimum_size = Vector2(36.0, 36.0)
 	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1555,15 +1558,38 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	indicador.add_theme_font_size_override("font_size", 12)
 	fila.add_child(indicador)
 
+	var columna_info := VBoxContainer.new()
+	columna_info.name = "InfoGarumi"
+	columna_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna_info.alignment = BoxContainer.ALIGNMENT_CENTER
+	columna_info.add_theme_constant_override("separation", 2)
+	columna_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(columna_info)
 	var etiqueta := Label.new()
+	etiqueta.name = "Nombre"
 	etiqueta.text = nombre
 	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta.add_theme_font_size_override("font_size", 11)
+	etiqueta.add_theme_font_size_override("font_size", 10)
 	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.83, 0.68, 1.0))
 	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fila.add_child(etiqueta)
+	columna_info.add_child(etiqueta)
+	var vida_texto := Label.new()
+	vida_texto.name = "VidaTexto"
+	vida_texto.add_theme_font_size_override("font_size", 9)
+	vida_texto.add_theme_color_override("font_color", Color(0.80, 0.72, 0.60, 1.0))
+	vida_texto.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columna_info.add_child(vida_texto)
+	var barra_vida := ProgressBar.new()
+	barra_vida.name = "Vida"
+	barra_vida.custom_minimum_size = Vector2(0.0, 7.0)
+	barra_vida.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	barra_vida.show_percentage = false
+	barra_vida.min_value = 0.0
+	barra_vida.max_value = 100.0
+	barra_vida.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columna_info.add_child(barra_vida)
 	var liberar := Button.new()
 	liberar.text = "×"
 	liberar.tooltip_text = "Romper vínculo con " + nombre
@@ -1691,6 +1717,26 @@ func _renumerar_garumis_vinculados() -> void:
 		if numero != null:
 			numero.text = str(i + 1)
 			numero.visible = _mostrar_numeros_garumis
+
+
+func _actualizar_vidas_garumis_vinculados() -> void:
+	if not is_instance_valid(_garumis_vinculados_lista):
+		return
+	for garumi in _garumis_vinculados_nodos:
+		if not is_instance_valid(garumi):
+			continue
+		var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
+		if fila == null:
+			continue
+		var barra := fila.get_node_or_null("InfoGarumi/Vida") as ProgressBar
+		var texto := fila.get_node_or_null("InfoGarumi/VidaTexto") as Label
+		if barra == null or texto == null:
+			continue
+		var vida_maxima := maxi(1, int(garumi.get("max_health")))
+		var vida_actual := clampi(int(garumi.get("health")), 0, vida_maxima)
+		barra.max_value = vida_maxima
+		barra.value = vida_actual
+		texto.text = "Vida %d / %d" % [vida_actual, vida_maxima]
 
 
 func actualizar_estado_garumi(garumi: Node, guardado: bool) -> void:
