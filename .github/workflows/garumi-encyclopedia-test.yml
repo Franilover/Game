@@ -20,6 +20,9 @@ on:
       - "scripts/ui/encyclopedia.gd"
       - "scenes/ui/inventory.tscn"
       - "tests/ui/**"
+      - "scripts/ai/garumi_brain.gd"
+      - "scripts/creatures/garumi.gd"
+      - "tests/world/test_garumi_brain.gd"
       - "project.godot"
       - ".github/workflows/garumi-encyclopedia-test.yml"
   workflow_dispatch:
@@ -51,8 +54,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --editor --path . --quit 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
+          output="$(godot --headless --editor --path . --quit 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
           if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
             echo "Godot reported script compilation errors during import."
             exit 1
@@ -73,8 +76,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
             echo "Garumi encyclopedia regression test reported errors."
             exit 1
