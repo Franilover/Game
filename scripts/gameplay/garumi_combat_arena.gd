@@ -120,6 +120,8 @@ func _excluir_criaturas_ajenas() -> void:
 			continue
 		if nodo.is_in_group("garumi_combat_ally"):
 			continue
+		if nodo is Garumi and (nodo as Garumi).esta_vinculado():
+			continue
 		var criatura := nodo as Node2D
 		if not limites_globales.has_point(criatura.global_position):
 			continue
