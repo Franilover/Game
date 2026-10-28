@@ -88,16 +88,11 @@ func _run() -> void:
 	garumi_menu.interact(jugador)
 	await process_frame
 	_expect(is_instance_valid(garumi_menu._menu_contextual), "Interactuar debe abrir el menú contextual.", errores)
-	var boton_cerrar := _buscar_boton_texto(garumi_menu._menu_contextual, "Cerrar")
-	_expect(boton_cerrar != null, "El menú debe contener un botón Cerrar.", errores)
-	if boton_cerrar != null:
-		boton_cerrar.pressed.emit()
-	await process_frame
-	_expect(garumi_menu._menu_contextual == null, "El botón Cerrar debe cerrar el menú contextual.", errores)
-	garumi_menu.interact(jugador)
-	await process_frame
-	var boton_enfrentar := _buscar_boton_texto(garumi_menu._menu_contextual, "Enfrentar")
-	_expect(boton_enfrentar != null, "El menú debe contener la opción Enfrentar.", errores)
+	var boton_enfrentar := _buscar_boton_texto(garumi_menu._menu_contextual, "Enfrentarte")
+	var boton_vincular := _buscar_boton_texto(garumi_menu._menu_contextual, "Vincular")
+	_expect(boton_enfrentar != null, "El menú flotante debe contener la acción Enfrentarte.", errores)
+	_expect(boton_vincular != null, "El menú flotante debe contener la acción Vincular.", errores)
+	_expect(_buscar_boton_texto(garumi_menu._menu_contextual, "Cerrar") == null, "El menú flotante no debe añadir un tercer botón ni una ventana grande.", errores)
 	if boton_enfrentar != null:
 		boton_enfrentar.pressed.emit()
 	await process_frame
