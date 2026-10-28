@@ -39,7 +39,7 @@ func _crear_interfaz() -> void:
 	_overlay = ColorRect.new()
 	_overlay.name = "Fondo"
 	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_overlay.color = Color(0.025, 0.02, 0.035, 0.68)
+	_overlay.color = Color(0.035, 0.022, 0.012, 0.34)
 	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	_overlay.gui_input.connect(func(event: InputEvent) -> void:
 		if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
@@ -47,87 +47,55 @@ func _crear_interfaz() -> void:
 	)
 	add_child(_overlay)
 
-	var centrador := CenterContainer.new()
-	centrador.name = "Centrador"
-	centrador.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	centrador.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centrador)
+	# Cada acción tiene su propio contenedor; no existe un panel común.
+	var opciones := ["Curarse", "Recuperar dash", "Meditar"]
+	for i in range(opciones.size()):
+		var contenedor_opcion := PanelContainer.new()
+		contenedor_opcion.name = "OpcionEterium%d" % (i + 1)
+		contenedor_opcion.custom_minimum_size = Vector2(220.0, 34.0)
+		contenedor_opcion.size = Vector2(220.0, 34.0)
+		contenedor_opcion.position = Vector2(
+			(get_viewport_rect().size.x - 220.0) * 0.5,
+			get_viewport_rect().size.y * 0.5 - 55.0 + float(i) * 39.0
+		)
+		var estilo_opcion := StyleBoxFlat.new()
+		estilo_opcion.bg_color = Color(0.105, 0.071, 0.043, 0.98)
+		estilo_opcion.border_color = Color(0.48, 0.32, 0.17, 1.0)
+		estilo_opcion.set_border_width_all(1)
+		estilo_opcion.set_corner_radius_all(4)
+		estilo_opcion.content_margin_left = 4.0
+		estilo_opcion.content_margin_right = 4.0
+		estilo_opcion.content_margin_top = 2.0
+		estilo_opcion.content_margin_bottom = 2.0
+		contenedor_opcion.add_theme_stylebox_override("panel", estilo_opcion)
+		contenedor_opcion.mouse_filter = Control.MOUSE_FILTER_STOP
+		_overlay.add_child(contenedor_opcion)
 
-	_panel = PanelContainer.new()
-	_panel.name = "PanelEterium"
-	_panel.custom_minimum_size = Vector2(330, 0)
-	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.075, 0.065, 0.085, 0.98)
-	estilo.border_color = Color(0.42, 0.34, 0.52, 1.0)
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(5)
-	estilo.content_margin_left = 14
-	estilo.content_margin_right = 14
-	estilo.content_margin_top = 12
-	estilo.content_margin_bottom = 12
-	_panel.add_theme_stylebox_override("panel", estilo)
-	centrador.add_child(_panel)
-
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 8)
-	_panel.add_child(columna)
-
-	var titulo := Label.new()
-	titulo.text = "ETERIUM"
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.add_theme_font_size_override("font_size", 17)
-	titulo.add_theme_color_override("font_color", Color(0.78, 0.75, 0.98, 1.0))
-	columna.add_child(titulo)
-
-	_eterium_label = Label.new()
-	_eterium_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_eterium_label.add_theme_font_size_override("font_size", 12)
-	_eterium_label.add_theme_color_override("font_color", Color(0.82, 0.8, 0.88, 1.0))
-	columna.add_child(_eterium_label)
-
-	var separador := HSeparator.new()
-	columna.add_child(separador)
-
-	var descripciones := [
-		["1  ·  Curarse", "Recupera el 25 % de la salud máxima · 10 Eterium"],
-		["2  ·  Recuperar dash", "Recupera una carga de dash · 10 Eterium"],
-		["3  ·  Meditar", "Recupera hasta 20 puntos de Eterium"]
-	]
-	for i in range(descripciones.size()):
 		var boton := Button.new()
-		boton.text = descripciones[i][0] + "\n" + descripciones[i][1]
-		boton.custom_minimum_size = Vector2(300, 48)
-		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.name = "AccionEterium%d" % (i + 1)
+		boton.text = opciones[i]
+		boton.custom_minimum_size = Vector2(210.0, 28.0)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		boton.add_theme_font_size_override("font_size", 12)
-		boton.add_theme_color_override("font_color", Color(0.91, 0.89, 0.96, 1.0))
-		boton.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+		boton.add_theme_color_override("font_color", Color(0.91, 0.83, 0.70, 1.0))
+		boton.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.82, 1.0))
 		var normal := StyleBoxFlat.new()
-		normal.bg_color = Color(0.12, 0.105, 0.15, 1.0)
-		normal.border_color = Color(0.25, 0.22, 0.32, 1.0)
-		normal.set_border_width_all(1)
+		normal.bg_color = Color(0.105, 0.071, 0.043, 1.0)
+		normal.border_color = Color(0.0, 0.0, 0.0, 0.0)
+		normal.set_border_width_all(0)
 		normal.set_corner_radius_all(3)
-		normal.content_margin_left = 10
-		normal.content_margin_right = 8
 		var hover := normal.duplicate() as StyleBoxFlat
-		hover.bg_color = Color(0.19, 0.16, 0.25, 1.0)
-		hover.border_color = Color(0.62, 0.56, 0.82, 1.0)
+		hover.bg_color = Color(0.19, 0.125, 0.065, 1.0)
 		var pressed := normal.duplicate() as StyleBoxFlat
-		pressed.bg_color = Color(0.25, 0.21, 0.33, 1.0)
+		pressed.bg_color = Color(0.25, 0.16, 0.08, 1.0)
 		boton.add_theme_stylebox_override("normal", normal)
 		boton.add_theme_stylebox_override("hover", hover)
 		boton.add_theme_stylebox_override("pressed", pressed)
 		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		boton.pressed.connect(_seleccionar.bind(i))
-		columna.add_child(boton)
+		contenedor_opcion.add_child(boton)
 		_botones.append(boton)
-
-	_estado_label = Label.new()
-	_estado_label.text = "X: cerrar  ·  Esc: cerrar"
-	_estado_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_estado_label.add_theme_font_size_override("font_size", 10)
-	_estado_label.add_theme_color_override("font_color", Color(0.63, 0.6, 0.7, 1.0))
-	columna.add_child(_estado_label)
 
 func _input(event: InputEvent) -> void:
 	if _admin_abierto() or _otra_interfaz_abierta():
@@ -172,15 +140,7 @@ func _cerrar() -> void:
 	cuadrante = -1
 
 func _actualizar_resumen() -> void:
-	if _eterium_label == null:
-		return
 	var eterium: Variant = jugador.get("eterium") if jugador != null and is_instance_valid(jugador) else null
-	if eterium != null and eterium.has_method("mana") and eterium.has_method("max_mana"):
-		_eterium_label.text = "Reserva: %d / %d" % [int(eterium.call("mana")), int(eterium.call("max_mana"))]
-	else:
-		_eterium_label.text = "Reserva de Eterium"
-	if _estado_label != null:
-		_estado_label.text = "X o Esc para cerrar"
 	if _botones.size() >= 3:
 		_botones[0].disabled = jugador == null or int(jugador.get("health")) >= int(jugador.get("max_health"))
 		_botones[1].disabled = jugador == null or not jugador.has_method("recuperar_dash_con_eterium")
