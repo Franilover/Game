@@ -6,6 +6,7 @@ var _arbol: Tree
 var _nombre: Label
 var _ficha: RichTextLabel
 var _icono: TextureRect
+var _contenedor_superior_detalle: VBoxContainer
 var _tab_biomas: Button
 var _tab_criaturas: Button
 var _tab_garumis: Button
@@ -140,6 +141,7 @@ func _crear_interfaz() -> void:
 	detail_margin.add_child(detail_column)
 
 	var top := VBoxContainer.new()
+	_contenedor_superior_detalle = top
 	top.custom_minimum_size = Vector2(0, 72)
 	top.alignment = BoxContainer.ALIGNMENT_CENTER
 	top.add_theme_constant_override("separation", 5)
@@ -245,10 +247,7 @@ func _mostrar_criaturas() -> void:
 func _mostrar_garumis() -> void:
 	_modo = "garumis"
 	_arbol.columns = 3
-	_arbol.set_column_title(0, "Origen")
-	_arbol.set_column_title(1, "Garumi")
-	_arbol.set_column_title(2, "Global")
-	_arbol.set_column_titles_visible(true)
+	_arbol.set_column_titles_visible(false)
 	_arbol.set_column_expand(0, false)
 	_arbol.set_column_expand(1, true)
 	_arbol.set_column_expand(2, false)
@@ -574,6 +573,7 @@ func _al_click_arbol(posicion: Vector2, boton: int) -> void:
 
 
 func _mostrar_item(item: TreeItem) -> void:
+	_restaurar_ficha_detalle()
 	var metadata_variant: Variant = item.get_metadata(0)
 	if not metadata_variant is Dictionary:
 		return
@@ -741,9 +741,39 @@ func _mostrar_ficha_original(letra: String) -> void:
 	_ficha.text = "\n\n".join(partes)
 
 
-func _mostrar_ficha_garumi(registro: Dictionary, partes: Array[String]) -> void:
+func _mostrar_ficha_garumi(registro: Dictionary, _partes: Array[String]) -> void:
+	# Al seleccionar un Garumi, la ficha se convierte en un visor de imagen:
+	# sin nombre, estadísticas ni texto que compita con la ilustración.
+	_nombre.hide()
+	_ficha.hide()
+	_icono.custom_minimum_size = Vector2(0, 0)
+	_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_icono.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 0)
+	_contenedor_superior_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_contenedor_superior_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_contenedor_superior_detalle.alignment = BoxContainer.ALIGNMENT_CENTER
 	_mostrar_sprite_garumi(registro)
-	var global_num := int(registro.get("numero_global", 0))
+	if not _icono.visible:
+		# No inventar una ilustración si el recurso todavía no existe.
+		_nombre.text = "Sin ilustración"
+		_nombre.show()
+		return
+	_icono.size = _contenedor_superior_detalle.size
+
+
+func _restaurar_ficha_detalle() -> void:
+	if _contenedor_superior_detalle == null:
+		return
+	_nombre.show()
+	_ficha.show()
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 72)
+	_contenedor_superior_detalle.size_flags_horizontal = Control.SIZE_FILL
+	_contenedor_superior_detalle.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_icono.custom_minimum_size = Vector2(64, 54)
+	_icono.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
 	var local := int(registro.get("numero_origen", 0))
 	var letra := str(registro.get("letra_original", "")).strip_edges()
 	var original := str(registro.get("nombre_original", "")).strip_edges()
