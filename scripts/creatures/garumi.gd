@@ -186,6 +186,21 @@ func calcular_danio_recibido(danio_base: int) -> int:
 	)
 
 
+func curar_con_eterium(cantidad: int) -> int:
+	if cantidad <= 0 or not is_alive or health >= max_health:
+		return 0
+	var anterior := health
+	health = mini(max_health, health + cantidad)
+	vital_state.health = health
+	vital_state.is_alive = health > 0
+	_sync_desde_vital()
+	var recuperada := health - anterior
+	if recuperada > 0:
+		health_changed.emit(health, max_health)
+		salud_combate_cambiada.emit(health, max_health)
+	return recuperada
+
+
 func gastar_eterium(cantidad: int) -> bool:
 	if cantidad < 0 or eterium_actual < cantidad:
 		return false
