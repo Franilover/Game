@@ -411,7 +411,10 @@ func seleccionar_garumi(indice: int) -> void:
 
 
 func _process(delta: float) -> void:
-	if not is_instance_valid(rival) or not rival.esta_enfrentamiento():
+	if not is_instance_valid(rival):
+		finalizar()
+		return
+	if not rival.esta_enfrentamiento():
 		return
 	var puede_forzar := rival.puede_forzar_vinculo()
 	if puede_forzar != _forzar_disponible:
@@ -427,9 +430,15 @@ func _process(delta: float) -> void:
 	_cooldown_rival -= delta
 	if _cooldown_aliado <= 0.0:
 		_cooldown_aliado = INTERVALO_ATAQUE_ALIADO
-		if activo.has_method("calcular_danio_ofensivo"):
+		# El Garumi aliado deja de atacar al rival al llegar a 7 HP.
+		# Si el siguiente golpe lo dejaría por debajo, se reduce para dejarlo exactamente en 7.
+		if rival.health > 7 and activo.has_method("calcular_danio_ofensivo"):
 			var danio := int(activo.call("calcular_danio_ofensivo", 100.0))
-			rival.take_damage(maxi(1, danio), "Garumi vinculado: " + _nombre(activo))
+			danio = mini(maxi(0, danio), rival.health - 7)
+			if danio > 0:
+				rival.take_damage(danio, "Garumi vinculado: " + _nombre(activo))
+			if is_instance_valid(rival) and rival.health <= 7:
+				_estado.text = "¡Rival debilitado! Tu Garumi deja de atacar con 7 de vida."
 	if _cooldown_rival <= 0.0:
 		_cooldown_rival = INTERVALO_ATAQUE_RIVAL
 		if activo.has_method("recibir_danio_combate"):
