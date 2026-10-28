@@ -75,10 +75,10 @@ func _crear_interfaz() -> void:
 	_panel.name = "GarumiBattleSelection"
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_panel.offset_left = -285.0
-	_panel.offset_top = -205.0
+	_panel.offset_top = -165.0
 	_panel.offset_right = 285.0
-	_panel.offset_bottom = 205.0
-	_panel.custom_minimum_size = Vector2(570.0, 410.0)
+	_panel.offset_bottom = 165.0
+	_panel.custom_minimum_size = Vector2(570.0, 330.0)
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel.z_index = 100
 	add_child(_panel)
@@ -93,7 +93,7 @@ func _crear_interfaz() -> void:
 	estilo.content_margin_bottom = 18.0
 	_panel.add_theme_stylebox_override("panel", estilo)
 	_lista = VBoxContainer.new()
-	_lista.add_theme_constant_override("separation", 12)
+	_lista.add_theme_constant_override("separation", 7)
 	_panel.add_child(_lista)
 
 
@@ -135,7 +135,7 @@ func _actualizar_interfaz() -> void:
 		for i in range(disponibles.size()):
 			var garumi := disponibles[i]
 			var tarjeta := Button.new()
-			tarjeta.custom_minimum_size = Vector2(160.0, 230.0)
+			tarjeta.custom_minimum_size = Vector2(160.0, 175.0)
 			tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			tarjeta.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			tarjeta.focus_mode = Control.FOCUS_ALL
@@ -146,9 +146,11 @@ func _actualizar_interfaz() -> void:
 			tarjeta_estilo.set_border_width_all(1)
 			tarjeta_estilo.set_corner_radius_all(7)
 			tarjeta.add_theme_stylebox_override("normal", tarjeta_estilo)
-			var enfocado := tarjeta_estilo.duplicate()
+			var enfocado := StyleBoxFlat.new()
+			enfocado.bg_color = Color(0.13, 0.095, 0.055, 1.0)
 			enfocado.border_color = Color(0.96, 0.75, 0.38, 1.0)
 			enfocado.set_border_width_all(2)
+			enfocado.set_corner_radius_all(7)
 			tarjeta.add_theme_stylebox_override("hover", enfocado)
 			tarjeta.add_theme_stylebox_override("focus", enfocado)
 			var contenido := VBoxContainer.new()
@@ -163,7 +165,7 @@ func _actualizar_interfaz() -> void:
 			numero.add_theme_font_size_override("font_size", 11)
 			contenido.add_child(numero)
 			var retrato := TextureRect.new()
-			retrato.custom_minimum_size = Vector2(112.0, 112.0)
+			retrato.custom_minimum_size = Vector2(80.0, 80.0)
 			retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -244,9 +246,13 @@ func _cambiar_panel_garumis_hud(mostrar: bool) -> void:
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
+	var tecla := event as InputEventKey
+	if tecla.keycode == KEY_F and _forzar_disponible:
+		_forzar_vinculo()
+		get_viewport().set_input_as_handled()
+		return
 	if not _seleccion_pendiente or is_instance_valid(activo):
 		return
-	var tecla := event as InputEventKey
 	var codigo := tecla.keycode
 	if codigo == KEY_KP_1:
 		codigo = KEY_1
