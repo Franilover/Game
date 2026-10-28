@@ -286,6 +286,8 @@ func _restaurar_garumis_vinculados() -> void:
 			entity_factory.reciclar_criatura(garumi)
 			continue
 		garumi.restaurar_vinculo_persistido(_player, esta_guardado, posicion_guardada)
+		if is_instance_valid(_hud) and _hud.has_method("registrar_garumi_restaurado"):
+			_hud.call("registrar_garumi_restaurado", garumi)
 		restaurados += 1
 	if restaurados > 0:
 		print("Main: Garumis vinculados restaurados desde la partida: ", restaurados)
