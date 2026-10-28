@@ -21,7 +21,7 @@ var _eterium_label: Label
 var _estado_label: Label
 var _botones: Array[Button] = []
 const TIEMPO_CONCENTRACION := 4.0
-const VENTANA_TOQUES := 0.42
+const VENTANA_TOQUES := 0.6
 const DURACION_CURACION := 5.0
 const TOQUES_CURACION_NECESARIOS := 12
 const COSTO_FALLO_MINIJUEGO := 3
@@ -48,8 +48,10 @@ var _ultima_vida := -1
 func configurar(player: Node, lab: Node, manager: Node, inventory: Node, admin: Node) -> void:
 	jugador = player
 	_ultima_vida = int(player.get("health")) if player != null else -1
-	if player != null and player.has_signal("health_changed") and not player.health_changed.is_connected(_al_cambio_vida_minijuego):
-		player.health_changed.connect(_al_cambio_vida_minijuego)
+	if player != null and player.has_signal("health_changed"):
+		var callback_vida := Callable(self, "_al_cambio_vida_minijuego")
+		if not player.is_connected("health_changed", callback_vida):
+			player.connect("health_changed", callback_vida)
 	ium_lab = lab
 	ium_manager = manager
 	inventario = inventory
@@ -362,6 +364,7 @@ func _iniciar_minijuego_curacion() -> void:
 	_mostrar_minijuego()
 	_actualizar_panel_minijuego("Curación · 0/%d" % TOQUES_CURACION_NECESARIOS, "Pulsa ESPACIO tantas veces como puedas durante 5 segundos.")
 	_minijuego_barra.value = 0.0
+	_minijuego_tiempo.visible = true
 	_minijuego_tiempo.value = 100.0
 
 
@@ -374,6 +377,7 @@ func _iniciar_concentracion() -> void:
 	_mostrar_minijuego()
 	_actualizar_panel_minijuego("Concentración lograda", "Suelta ESPACIO; espera el ritmo y vuelve a mantenerlo.")
 	_minijuego_barra.value = 0.0
+	_minijuego_tiempo.visible = false
 
 
 func _iniciar_meditacion_desde_menu() -> void:
@@ -388,6 +392,7 @@ func _iniciar_meditacion_desde_menu() -> void:
 		return
 	_estado_minijuego = "espera_meditacion"
 	_espacio_pulsado = false
+	_minijuego_tiempo.visible = false
 	_mostrar_minijuego()
 	_actualizar_panel_minijuego("Meditar", "Mantén ESPACIO 4 segundos sin recibir daño; luego sigue el ritmo.")
 
@@ -505,7 +510,7 @@ func _al_cambio_vida_minijuego(vida: int, _maxima: int) -> void:
 	if _ultima_vida >= 0 and vida < _ultima_vida:
 		if _estado_minijuego in ["concentracion", "eterium"]:
 			_fallar_minijuego("Recibiste daño y perdiste la concentración.")
-		elif _estado_minijuego == "esperando_toques" and _espacio_pulsado and _tiempo_sostenido > 0.15:
+		elif _estado_minijuego == "esperando_toques" and _espacio_pulsado:
 			_fallar_minijuego("Recibiste daño durante la concentración.")
 	_ultima_vida = vida
 
