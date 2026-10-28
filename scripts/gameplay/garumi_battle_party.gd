@@ -27,6 +27,9 @@ var _vida_enemigo: ProgressBar
 var _ataques_container: HBoxContainer
 var _reservas_garumis_container: HBoxContainer
 var _ataques_estado: Label
+var _acciones_combate: HBoxContainer
+var _boton_huir: Button
+var _boton_ofrecer_vinculo: Button
 var _ataques_supabase: Array[Dictionary] = []
 var _ataques_request_id: int = -1
 var _cooldown_aliado := 0.0
@@ -45,6 +48,7 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	_cambiar_panel_garumis_hud(false)
 	_crear_interfaz()
 	_crear_marcos_combate()
+	_crear_acciones_combate()
 	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
 	if disponibles.is_empty():
@@ -282,6 +286,89 @@ func _crear_marcos_combate() -> void:
 	_cargar_ataques_desde_supabase()
 	_actualizar_marcos_combate()
 	_actualizar_fila_reservas_garumis()
+	_actualizar_acciones_combate()
+
+
+
+
+func _crear_acciones_combate() -> void:
+	if is_instance_valid(_acciones_combate):
+		_acciones_combate.queue_free()
+	_acciones_combate = HBoxContainer.new()
+	_acciones_combate.name = "AccionesCombate"
+	_acciones_combate.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_acciones_combate.anchor_left = 0.0
+	_acciones_combate.anchor_top = 1.0
+	_acciones_combate.anchor_right = 0.0
+	_acciones_combate.anchor_bottom = 1.0
+	_acciones_combate.offset_left = 12.0
+	_acciones_combate.offset_top = -48.0
+	_acciones_combate.offset_right = 280.0
+	_acciones_combate.offset_bottom = -12.0
+	_acciones_combate.add_theme_constant_override("separation", 8)
+	_acciones_combate.z_index = 30
+	_acciones_combate.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_acciones_combate)
+
+	_boton_huir = _crear_boton_accion_combate("Huir")
+	_boton_huir.pressed.connect(_retirarse)
+	_acciones_combate.add_child(_boton_huir)
+
+	_boton_ofrecer_vinculo = _crear_boton_accion_combate("Ofrecer vínculo")
+	_boton_ofrecer_vinculo.pressed.connect(_ofrecer_vinculo_en_combate)
+	_acciones_combate.add_child(_boton_ofrecer_vinculo)
+	_actualizar_acciones_combate()
+
+
+func _crear_boton_accion_combate(texto: String) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(126.0, 32.0)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	boton.focus_mode = Control.FOCUS_ALL
+	boton.add_theme_font_size_override("font_size", 11)
+	boton.add_theme_color_override("font_color", Color(0.94, 0.87, 0.73, 1.0))
+	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.8, 1.0))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.075, 0.06, 0.045, 0.94)
+	normal.border_color = Color(0.58, 0.43, 0.24, 0.95)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(4)
+	normal.content_margin_left = 6.0
+	normal.content_margin_right = 6.0
+	boton.add_theme_stylebox_override("normal", normal)
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.18, 0.13, 0.075, 1.0)
+	hover.border_color = Color(0.88, 0.68, 0.37, 1.0)
+	boton.add_theme_stylebox_override("hover", hover)
+	boton.add_theme_stylebox_override("focus", hover)
+	boton.add_theme_stylebox_override("pressed", hover)
+	return boton
+
+
+func _actualizar_acciones_combate() -> void:
+	if is_instance_valid(_boton_huir):
+		_boton_huir.disabled = not is_instance_valid(rival)
+	if is_instance_valid(_boton_ofrecer_vinculo):
+		_boton_ofrecer_vinculo.disabled = (
+			not is_instance_valid(objetivo_rival)
+			or not objetivo_rival.esta_enfrentamiento()
+			or objetivo_rival.esta_vinculado()
+		)
+
+
+func _ofrecer_vinculo_en_combate() -> void:
+	if not is_instance_valid(objetivo_rival) or not is_instance_valid(jugador):
+		return
+	if not objetivo_rival.esta_enfrentamiento() or objetivo_rival.esta_vinculado():
+		return
+	var objetivo := objetivo_rival
+	if objetivo.ofrecer_vinculo_en_combate(jugador):
+		# El vínculo aceptado cierra el enfrentamiento y su arena desde Garumi.
+		finalizar()
+	else:
+		_actualizar_acciones_combate()
+		_actualizar_marcos_combate()
 
 
 func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
@@ -762,8 +849,10 @@ func _forzar_vinculo() -> void:
 
 
 func _retirarse() -> void:
-	if is_instance_valid(rival) and rival.esta_enfrentamiento():
-		rival.finalizar_enfrentamiento()
+	for enemigo in rivales:
+		if is_instance_valid(enemigo) and enemigo.esta_enfrentamiento():
+			enemigo.finalizar_enfrentamiento()
+	finalizar()
 
 
 func _derrotar_activo() -> void:
