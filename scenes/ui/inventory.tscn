@@ -132,13 +132,13 @@ theme_override_styles/panel = SubResource("StyleBox_window")
 [node name="Margin" type="MarginContainer" parent="Window" unique_id=319582735]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
+theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 8
 
 [node name="Column" type="VBoxContainer" parent="Window/Margin" unique_id=446694475]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 0
 
 [node name="TabButtons" type="HBoxContainer" parent="Window/Margin/Column" unique_id=3001000200]
 layout_mode = 2
