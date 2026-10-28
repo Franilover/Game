@@ -17,6 +17,8 @@ var _garumi_originales: Array[Dictionary] = []
 var _solicitud_catalogo_garumis: int = -1
 var _catalogo_garumis_cargado: bool = false
 
+const ORUMI_ORIGINAL_ID: String = "24f86486-aced-4a23-bd1b-f025561a8aa3"
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -308,10 +310,10 @@ func _aplicar_catalogo_desde_filas(filas: Array) -> void:
 		var fila := (fila_variant as Dictionary).duplicate(true)
 		var tipo := str(fila.get("tipo_registro", ""))
 		if tipo == "original":
-			if not str(fila.get("letra_original", "")).strip_edges().is_empty():
+			if _es_original_orumi(fila) and not str(fila.get("letra_original", "")).strip_edges().is_empty():
 				_garumi_originales.append(fila)
 			continue
-		if tipo != "especie":
+		if tipo != "especie" or not _es_linaje_orumi(fila):
 			continue
 		var estado := str(fila.get("estado_documentacion", "")).strip_edges().to_lower()
 		if estado not in ["canon", "aprobado"]:
@@ -325,6 +327,21 @@ func _aplicar_catalogo_desde_filas(filas: Array) -> void:
 		_garumis_por_id[id] = fila
 	_garumi_originales.sort_custom(_ordenar_por_orden_catalogo)
 	_garumis_catalogo.sort_custom(_ordenar_por_orden_catalogo)
+
+
+func _es_original_orumi(registro: Dictionary) -> bool:
+	var id := str(registro.get("entidad_id", registro.get("id", ""))).strip_edges()
+	var nombre := str(registro.get("nombre", "")).strip_edges().to_lower()
+	return id == ORUMI_ORIGINAL_ID or nombre == "orumi"
+
+
+func _es_linaje_orumi(registro: Dictionary) -> bool:
+	var original_id := str(registro.get("original_id", "")).strip_edges()
+	if original_id == ORUMI_ORIGINAL_ID:
+		return true
+	# Respaldo para snapshots que aún no incluyan original_id.
+	var nombre_original := str(registro.get("nombre_original", "")).strip_edges().to_lower()
+	return nombre_original == "orumi"
 
 
 func _ordenar_por_orden_catalogo(a: Dictionary, b: Dictionary) -> bool:
@@ -345,7 +362,7 @@ func _usar_catalogo_garumis_del_mundo() -> void:
 		var registro := (registro_variant as Dictionary).duplicate(true)
 		var id := str(registro.get("id", "")).strip_edges()
 		var nombre := str(registro.get("nombre", "")).strip_edges()
-		if id.is_empty() or nombre.is_empty():
+		if id.is_empty() or nombre.is_empty() or not _es_linaje_orumi(registro):
 			continue
 		if str(registro.get("estado_documentacion", "canon")).to_lower() not in ["canon", "aprobado"]:
 			continue
