@@ -1475,7 +1475,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 func mostrar_panel_garumis_durante_combate(mostrar: bool) -> void:
 	if not is_instance_valid(_garumis_vinculados_panel):
 		return
- 	# Durante el combate solo se muestran los marcos del aliado y del rival.
+	# Durante el combate solo se muestran los marcos del aliado y del rival.
 	_garumis_vinculados_panel.visible = mostrar and not _garumis_vinculados_nodos.is_empty()
 	_actualizar_vidas_garumis_vinculados()
 
