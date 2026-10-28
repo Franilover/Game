@@ -243,6 +243,7 @@ text = "Admin"
 [node name="Tabs" type="TabContainer" parent="Window/Margin/Column" unique_id=3001000100]
 layout_mode = 2
 size_flags_vertical = 3
+tabs_visible = false
 current_tab = 0
 theme_override_colors/font_selected_color = Color(0.95, 0.88, 0.7, 1)
 theme_override_colors/font_unselected_color = Color(0.65, 0.52, 0.35, 1)
