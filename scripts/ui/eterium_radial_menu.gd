@@ -144,6 +144,11 @@ func _input(event: InputEvent) -> void:
 		return
 	if not tecla.pressed or tecla.echo:
 		return
+	if not _estado_minijuego.is_empty() and not visible_menu:
+		if tecla.keycode == KEY_ESCAPE:
+			_fallar_minijuego("Cancelaste el minijuego.")
+		get_viewport().set_input_as_handled()
+		return
 	if _admin_abierto() or _otra_interfaz_abierta():
 		if visible_menu:
 			_cerrar()
