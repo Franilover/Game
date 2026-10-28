@@ -853,10 +853,15 @@ func _forzar_vinculo() -> void:
 
 
 func _retirarse() -> void:
+	# Cerrar estados de todos los rivales antes de liberar arena, cámara y HUD.
 	for enemigo in rivales:
 		if is_instance_valid(enemigo) and enemigo.esta_enfrentamiento():
 			enemigo.finalizar_enfrentamiento()
-	finalizar()
+	var escena := get_tree().current_scene
+	if escena != null and escena.has_method("terminar_arena_garumi"):
+		escena.call("terminar_arena_garumi")
+	else:
+		finalizar()
 
 
 func _derrotar_activo() -> void:
