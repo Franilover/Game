@@ -35,26 +35,32 @@ func _run() -> void:
 	var enciclopedia := inventario.get_node("Window/Margin/Column/Tabs/Enciclopedia") as Control
 	_check(enciclopedia.has_method("abrir_en_garumis"), "La Enciclopedia debe exponer abrir_en_garumis().")
 
-	# Simular una pulsación física de G sobre el mismo receptor que procesa input real.
+	# Recorrer el pipeline real de entrada de Godot; no llamar _input() directamente.
 	var tecla := InputEventKey.new()
 	tecla.pressed = true
 	tecla.keycode = KEY_G
 	tecla.physical_keycode = KEY_G
-	inventario.call("_input", tecla)
+	Input.parse_input_event(tecla)
 	await get_tree().process_frame
 	_check(inventario.visible, "Pulsar G debe abrir la ventana del inventario.")
 	_check(tabs.current_tab == 2, "Pulsar G debe seleccionar la pestaña Enciclopedia.")
 	_check(str(enciclopedia.get("_modo")) == "garumis", "Pulsar G debe seleccionar la sección Garumis.")
 
-	# El mismo atajo vuelve a cerrar la ventana si ya estamos en Garumis.
+	# Soltar G y pulsarla de nuevo para verificar el cierre por la misma ruta.
+	var soltar_tecla := InputEventKey.new()
+	soltar_tecla.keycode = KEY_G
+	soltar_tecla.physical_keycode = KEY_G
+	soltar_tecla.pressed = false
+	Input.parse_input_event(soltar_tecla)
+	await get_tree().process_frame
+
 	var segunda_tecla := InputEventKey.new()
 	segunda_tecla.pressed = true
 	segunda_tecla.keycode = KEY_G
 	segunda_tecla.physical_keycode = KEY_G
-	inventario.call("_input", segunda_tecla)
+	Input.parse_input_event(segunda_tecla)
 	await get_tree().process_frame
 	_check(not inventario.visible, "Pulsar G de nuevo en Garumis debe cerrar la ventana.")
-
 	if _failed:
 		push_error("GarumiEncyclopedia: FAIL")
 		get_tree().quit(1)
