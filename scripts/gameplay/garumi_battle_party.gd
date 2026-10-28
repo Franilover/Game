@@ -309,6 +309,15 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	fila.add_theme_constant_override("separation", 8)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenido_marco.add_child(fila)
+	if es_aliado:
+		_reservas_garumis_container = HBoxContainer.new()
+		_reservas_garumis_container.name = "GarumisReserva"
+		_reservas_garumis_container.add_theme_constant_override("separation", 5)
+		_reservas_garumis_container.alignment = BoxContainer.ALIGNMENT_BEGIN
+		_reservas_garumis_container.custom_minimum_size = Vector2(0.0, 38.0)
+		_reservas_garumis_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_reservas_garumis_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fila.add_child(_reservas_garumis_container)
 	var retrato := TextureRect.new()
 	retrato.name = "Retrato"
 	retrato.custom_minimum_size = Vector2(64.0, 64.0)
@@ -341,13 +350,6 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	vida.max_value = 100
 	columna.add_child(vida)
 	if es_aliado:
-		_reservas_garumis_container = HBoxContainer.new()
-		_reservas_garumis_container.name = "GarumisReserva"
-		_reservas_garumis_container.add_theme_constant_override("separation", 6)
-		_reservas_garumis_container.alignment = BoxContainer.ALIGNMENT_BEGIN
-		_reservas_garumis_container.custom_minimum_size = Vector2(0.0, 38.0)
-		_reservas_garumis_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		contenido_marco.add_child(_reservas_garumis_container)
 		_ataques_container = HBoxContainer.new()
 		_ataques_container.name = "Ataques"
 		_ataques_container.add_theme_constant_override("separation", 5)
@@ -392,8 +394,8 @@ void fragment() {
 			continue
 		var circulo := Control.new()
 		circulo.name = "ReservaGarumi%d" % (i + 1)
-		circulo.custom_minimum_size = Vector2(38.0, 38.0)
-		circulo.size = Vector2(38.0, 38.0)
+		circulo.custom_minimum_size = Vector2(34.0, 34.0)
+		circulo.size = Vector2(34.0, 34.0)
 		circulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_reservas_garumis_container.add_child(circulo)
 		var fondo := Panel.new()
@@ -403,16 +405,16 @@ void fragment() {
 		estilo_circulo.bg_color = Color(0.10, 0.075, 0.05, 1.0)
 		estilo_circulo.border_color = Color(0.78, 0.61, 0.34, 1.0)
 		estilo_circulo.set_border_width_all(1)
-		estilo_circulo.set_corner_radius_all(19)
+		estilo_circulo.set_corner_radius_all(17)
 		fondo.add_theme_stylebox_override("panel", estilo_circulo)
 		circulo.add_child(fondo)
 		var retrato := TextureRect.new()
 		retrato.name = "Retrato"
 		retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		retrato.offset_left = 2.0
-		retrato.offset_top = 2.0
-		retrato.offset_right = -2.0
-		retrato.offset_bottom = -2.0
+		retrato.offset_left = 1.0
+		retrato.offset_top = 1.0
+		retrato.offset_right = -1.0
+		retrato.offset_bottom = -1.0
 		retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -426,8 +428,8 @@ void fragment() {
 		var numero := Label.new()
 		numero.name = "Numero"
 		numero.text = str(i + 1)
-		numero.position = Vector2(-1.0, 23.0)
-		numero.size = Vector2(13.0, 13.0)
+		numero.position = Vector2(-1.0, 20.0)
+		numero.size = Vector2(12.0, 12.0)
 		numero.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		numero.add_theme_font_size_override("font_size", 8)
@@ -497,10 +499,23 @@ func _actualizar_botones_ataques() -> void:
 		# Los borradores pueden verse para diagnóstico, pero nunca ejecutarse.
 		var listo := estado == "aprobado" and publicado and integracion == "integrado"
 		var boton := Button.new()
-		boton.text = "%d. %s" % [indice + 1, nombre]
-		boton.custom_minimum_size = Vector2(72.0, 28.0)
+		boton.text = nombre
+		boton.custom_minimum_size = Vector2(76.0, 30.0)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.size_flags_stretch_ratio = 1.0
+		boton.add_theme_font_size_override("font_size", 10)
+		boton.clip_text = true
+		var estilo_ataque := StyleBoxFlat.new()
+		estilo_ataque.bg_color = Color(0.12, 0.085, 0.05, 1.0)
+		estilo_ataque.border_color = Color(0.62, 0.46, 0.25, 1.0)
+		estilo_ataque.set_border_width_all(1)
+		estilo_ataque.set_corner_radius_all(4)
+		boton.add_theme_stylebox_override("normal", estilo_ataque)
+		var estilo_ataque_hover := estilo_ataque.duplicate() as StyleBoxFlat
+		estilo_ataque_hover.bg_color = Color(0.22, 0.15, 0.075, 1.0)
+		estilo_ataque_hover.border_color = Color(0.9, 0.7, 0.38, 1.0)
+		boton.add_theme_stylebox_override("hover", estilo_ataque_hover)
+		boton.add_theme_stylebox_override("pressed", estilo_ataque_hover)
 		boton.disabled = not listo
 		boton.tooltip_text = (
 			"Ejecutar ataque publicado"
