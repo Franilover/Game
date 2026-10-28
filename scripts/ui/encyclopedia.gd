@@ -96,7 +96,16 @@ func _crear_interfaz() -> void:
 	_arbol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_arbol.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_arbol.hide_root = true
-	_arbol.columns = 1
+	_arbol.columns = 3
+	_arbol.set_column_title(0, "Origen")
+	_arbol.set_column_title(1, "Garumi")
+	_arbol.set_column_title(2, "Global")
+	_arbol.set_column_titles_visible(true)
+	_arbol.set_column_expand(0, false)
+	_arbol.set_column_expand(1, true)
+	_arbol.set_column_expand(2, false)
+	_arbol.set_column_custom_minimum_width(0, 38)
+	_arbol.set_column_custom_minimum_width(2, 38)
 	_arbol.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46, 1.0))
 	_arbol.add_theme_color_override("font_selected_color", Color(0.95, 0.88, 0.7, 1.0))
 	_arbol.add_theme_font_size_override("font_size", 9)
@@ -513,17 +522,21 @@ func _obtener_descubiertos(descubrimientos: Dictionary, categoria: String) -> Di
 
 func _agregar_item(padre: TreeItem, registro: Dictionary, nivel: String) -> TreeItem:
 	var item := _arbol.create_item(padre)
-	var etiqueta := str(registro.get("nombre", "Sin nombre"))
+	var nombre := str(registro.get("nombre", "Sin nombre"))
 	if nivel == "garumi":
-		var letra := str(registro.get("letra_original", "")).strip_edges()
 		var local := int(registro.get("numero_origen", 0))
 		var global_num := int(registro.get("numero_global", 0))
-		if not letra.is_empty() and local > 0:
-			etiqueta = "%s-%d" % [letra, local]
-		if global_num > 0:
-			etiqueta += " · #%d" % global_num
-		etiqueta += " · " + str(registro.get("nombre", "Sin nombre"))
-	item.set_text(0, etiqueta)
+		# Numeración local del Original a la izquierda, nombre al centro y
+		# número global del catálogo a la derecha. Así se distinguen ambos
+		# números cuando se incorporen los linajes de Varum y Nyru.
+		item.set_text(0, str(local) if local > 0 else "—")
+		item.set_text(1, nombre)
+		item.set_text(2, str(global_num) if global_num > 0 else "—")
+		item.set_text_alignment(0, HORIZONTAL_ALIGNMENT_LEFT)
+		item.set_text_alignment(1, HORIZONTAL_ALIGNMENT_LEFT)
+		item.set_text_alignment(2, HORIZONTAL_ALIGNMENT_RIGHT)
+	else:
+		item.set_text(0, nombre)
 	item.set_metadata(0, {
 		"nivel": nivel,
 		"id": str(registro.get("id", ""))
