@@ -7,8 +7,6 @@ class_name GarumiBattleParty
 const MAX_VINCULOS := 3
 const INTERVALO_ATAQUE_ALIADO := 1.0
 const INTERVALO_ATAQUE_RIVAL := 1.35
-const INTERVALO_CURACION_ETERIUM := 0.55
-const COSTO_CURACION_GARUMI := 5
 
 var jugador: Node2D
 var rival: Garumi
@@ -32,7 +30,6 @@ var _ataques_supabase: Array[Dictionary] = []
 var _ataques_request_id: int = -1
 var _cooldown_aliado := 0.0
 var _cooldown_rival := 0.0
-var _cooldown_curacion_eterium := 0.0
 var _seleccion_pendiente := false
 var _forzar_disponible := false
 
@@ -550,21 +547,23 @@ func _input(event: InputEvent) -> void:
 		_forzar_vinculo()
 		get_viewport().set_input_as_handled()
 		return
-	if not _seleccion_pendiente or is_instance_valid(activo):
-		return
+
 	var codigo := tecla.keycode
-	if codigo == KEY_KP_1:
-		codigo = KEY_1
-	elif codigo == KEY_KP_2:
-		codigo = KEY_2
-	elif codigo == KEY_KP_3:
-		codigo = KEY_3
-	elif codigo == KEY_KP_4:
-		codigo = KEY_4
-	elif codigo == KEY_KP_5:
-		codigo = KEY_5
+	if codigo >= KEY_KP_1 and codigo <= KEY_KP_3:
+		codigo = KEY_1 + (codigo - KEY_KP_1)
+	if codigo < KEY_1 or codigo > KEY_3:
+		return
 	var indice := codigo - KEY_1
-	if indice >= 0 and indice < mini(MAX_VINCULOS, disponibles.size()):
+
+	# Durante el combate Shift+1/2/3 cambia el único Garumi aliado activo.
+	if tecla.shift_pressed:
+		if indice < disponibles.size():
+			_cambiar_garumi_activo(indice)
+			get_viewport().set_input_as_handled()
+		return
+
+	# Sin un aliado activo, 1/2/3 siguen sirviendo para elegir el inicial.
+	if _seleccion_pendiente and not is_instance_valid(activo) and indice < disponibles.size():
 		seleccionar_garumi(indice)
 		get_viewport().set_input_as_handled()
 
@@ -577,13 +576,36 @@ func seleccionar_garumi(indice: int) -> void:
 	var elegido := disponibles[indice]
 	if not is_instance_valid(elegido) or not elegido.esta_vinculado() or not bool(elegido.get("is_alive")):
 		return
+	_activar_garumi_combate(elegido, indice)
+
+
+func _cambiar_garumi_activo(indice: int) -> void:
+	if indice < 0 or indice >= disponibles.size():
+		return
+	var elegido := disponibles[indice]
+	if not is_instance_valid(elegido) or elegido == activo:
+		return
+	if not elegido.esta_vinculado() or not bool(elegido.get("is_alive")):
+		return
+	if is_instance_valid(activo):
+		var saliente := activo
+		if saliente.has_method("salir_combate_vinculado"):
+			saliente.call("salir_combate_vinculado", false)
+		if saliente.has_method("guardar_para_seleccion_combate"):
+			saliente.call("guardar_para_seleccion_combate")
+	_activar_garumi_combate(elegido, indice)
+
+
+func _activar_garumi_combate(elegido: Garumi, indice: int) -> void:
 	activo = elegido
 	_seleccion_pendiente = false
 	_cooldown_aliado = 0.35
 	_cooldown_rival = 0.8
+	var objetivo := objetivo_rival if is_instance_valid(objetivo_rival) else rival
 	if activo.has_method("entrar_combate_vinculado"):
-		activo.call("entrar_combate_vinculado", jugador, rival)
+		activo.call("entrar_combate_vinculado", jugador, objetivo)
 	_actualizar_interfaz()
+	_actualizar_marcos_combate()
 	print("GarumiBattleParty: entra ", _nombre(activo), " (", indice + 1, ").")
 
 
@@ -605,10 +627,6 @@ func _process(delta: float) -> void:
 		return
 	_cooldown_aliado -= delta
 	_cooldown_rival -= delta
-	_cooldown_curacion_eterium = maxf(0.0, _cooldown_curacion_eterium - delta)
-	# Mantener 1, 2 o 3 pulsado canaliza Eterium del jugador para curar al Garumi activo.
-	if _tecla_curacion_mantenida() and _cooldown_curacion_eterium <= 0.0:
-		_curar_garumi_con_eterium()
 	if _cooldown_aliado <= 0.0:
 		_cooldown_aliado = INTERVALO_ATAQUE_ALIADO
 		# El Garumi aliado deja de atacar al rival al llegar a 7 HP.
@@ -637,42 +655,6 @@ func _process(delta: float) -> void:
 				vivos += 1
 		if vivos == 0:
 			_estado.text = "¡Los tres Garumis han sido derrotados! No se ha creado ningún vínculo."
-
-
-func _tecla_curacion_mantenida() -> bool:
-	return (
-		Input.is_key_pressed(KEY_1)
-		or Input.is_key_pressed(KEY_2)
-		or Input.is_key_pressed(KEY_3)
-		or Input.is_key_pressed(KEY_KP_1)
-		or Input.is_key_pressed(KEY_KP_2)
-		or Input.is_key_pressed(KEY_KP_3)
-	)
-
-
-func _curar_garumi_con_eterium() -> void:
-	if not is_instance_valid(activo) or activo.health >= activo.max_health:
-		return
-	if not is_instance_valid(jugador):
-		return
-	var eterium: Variant = jugador.get("eterium")
-	if eterium == null or not eterium.has_method("gastar"):
-		return
-	if not bool(eterium.call("gastar", COSTO_CURACION_GARUMI)):
-		return
-	var cantidad_curacion := maxi(1, roundi(float(activo.max_health) * 0.20))
-	var recuperada := int(activo.call("curar_con_eterium", cantidad_curacion))
-	if recuperada <= 0:
-		# Si no se pudo aplicar la curación, devolvemos el Eterium para no cobrar en vano.
-		if eterium.has_method("restaurar"):
-			eterium.call("restaurar", COSTO_CURACION_GARUMI)
-		return
-	_cooldown_curacion_eterium = INTERVALO_CURACION_ETERIUM
-	if jugador.has_method("_sync_desde_vital"):
-		jugador.call("_sync_desde_vital")
-	if jugador.has_signal("mana_changed"):
-		jugador.emit_signal("mana_changed", int(jugador.get("mana")), int(jugador.get("max_mana")))
-	_actualizar_marcos_combate()
 
 
 func _forzar_vinculo() -> void:
