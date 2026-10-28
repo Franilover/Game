@@ -1487,6 +1487,15 @@ func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> 
 	discovery_notice.visible = true
 	_discovery_notice_timer = 3.8
 
+func registrar_garumi_restaurado(garumi: Node) -> void:
+	if not is_instance_valid(garumi):
+		return
+	var nombre := str(garumi.get("criatura_nombre"))
+	if nombre.strip_edges().is_empty() or nombre == "<null>":
+		nombre = garumi.name
+	_agregar_garumi_vinculado(garumi, nombre)
+
+
 func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	if not is_instance_valid(garumi) or _garumis_vinculados_lista == null:
 		return
