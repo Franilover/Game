@@ -1134,9 +1134,9 @@ func _draw() -> void:
 		_dibujar_brillo_horario()
 
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	# Con arte disponible, el mundo muestra únicamente el sprite.
+	# El nombre queda reservado para el respaldo visual cuando falta el arte.
 	if sprite != null and sprite.texture != null:
-		if mostrar_nombre_debug:
-			_dibujar_nombre()
 		return
 
 	if str(datos.get("categoria_entidad", "")).strip_edges().to_lower() == "garumi":
@@ -1214,6 +1214,7 @@ func _draw() -> void:
 		)
 	)
 
+	# Las criaturas sin sprite usan la figura de respaldo y conservan el nombre.
 	if mostrar_nombre_debug:
 		_dibujar_nombre()
 
