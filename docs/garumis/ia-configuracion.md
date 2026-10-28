@@ -1,59 +1,69 @@
 # Configuración reutilizable de IA para Garumis
 
-`scripts/ai/garumi_brain.gd` es un intérprete genérico. **Supabase define el perfil y sus parámetros; Godot solo implementa las primitivas de conducta disponibles.** No se crean perfiles canónicos por defecto ni una clase por especie.
+`scripts/ai/garumi_brain.gd` interpreta perfiles y parámetros procedentes de `ia_config`. Supabase define la configuración; Godot ejecuta primitivas conocidas. El cerebro no crea perfiles canónicos por especie ni cambia las reglas de vínculo.
 
-## Configuración que interpreta el motor
+## Contrato de datos
 
-Se admite un perfil declarado en `ia_config.garumi.movimiento.perfil`. Si no existe, se consulta `ia_config.movimiento.perfil`; como último recurso, se acepta `ia_config.perfil` únicamente si su valor coincide con una primitiva de movimiento implementada. La configuración específica de Garumi tiene prioridad. Los perfiles de especie que el intérprete no conoce no se convierten a otra conducta.
+La configuración específica del Garumi tiene prioridad sobre los parámetros generales. Ejemplo de estructura compatible:
 
 ```json
 {
   "ia_config": {
     "garumi": {
       "movimiento": {
-        "perfil": "curioso",
-        "radio_social": 100,
+        "perfil": "jugueton",
+        "radio_social": 120,
         "distancia_preferida": 40,
         "distancia_escape": 72,
         "intervalo_min": 0.8,
         "intervalo_max": 2.2,
         "probabilidad_pausa": 0.3
-      }
+      },
+      "comportamiento": {
+        "curiosidad": 0.8,
+        "temor": 0.2,
+        "sociabilidad": 0.5,
+        "agresividad": 0.1,
+        "territorialidad": 0.2
+      },
+      "elementos": ["terava", "lumora"]
     }
   }
 }
 ```
 
-El ejemplo describe la forma que el intérprete puede consumir; no afirma que esos valores estén cargados en Supabase ni los registra como canon.
+Este es un ejemplo de contrato, no una asignación canónica a una especie. Los nombres de elementos deben coincidir con los códigos de `public.garumi_elementos`.
 
-## Primitivas de movimiento disponibles
+## Perfiles de movimiento disponibles
 
-| Perfil configurado | Acción ejecutada por Godot |
+| Perfil | Conducta |
 | --- | --- |
-| `errante` | Desplazamiento con pausas aleatorias. |
-| `curioso`, `sociable` | Se aproxima al jugador dentro del radio social y mantiene la distancia configurada. |
-| `timido`, `evasivo` | Se aleja si el jugador entra en la distancia de escape configurada. |
-| `territorial` | Se aproxima hasta la distancia configurada y se detiene. |
-| `explorador` | Alterna desplazamiento y pausas. |
-| `acompanante`, `acompañante` | Busca al jugador cercano. |
+| `errante` | Se desplaza por su cuenta con pausas. |
+| `curioso` | Se aproxima al jugador si está dentro del radio social; después vuelve a explorar. |
+| `sociable`, `gregario` | Busca proximidad sin iniciar combate por sí solo. |
+| `timido`, `evasivo` | Se aleja cuando el jugador entra en su distancia de escape. |
+| `territorial` | Se aproxima hasta su distancia preferida y mantiene la posición. |
+| `explorador`, `independiente` | Alterna desplazamientos autónomos y pausas. |
+| `acompanante` | Busca al jugador cercano; el seguimiento persistente de un Garumi vinculado sigue teniendo prioridad. |
+| `agresivo`, `cazador` | Presiona y se aproxima; no inflige daño ni inicia un enfrentamiento automáticamente. |
+| `defensivo`, `vigilante` | Retrocede si alguien entra en su distancia de reacción y protege su espacio inmediato. |
+| `jugueton` | Alterna aproximación y retirada según la distancia. |
 | `quieto`, `inmovil` | No emite dirección de movimiento. |
 
-Estos nombres son identificadores de primitivas de ejecución, no personalidades asignadas por el código a especies o individuos. Se eliminó la interpretación de rasgos de personalidad que podía competir con el perfil configurado.
+Los acentos se normalizan para resolver identificadores como `juguetón` y `acompañante`. Un perfil desconocido no se traduce silenciosamente a otro: el Garumi permanece quieto hasta recibir una configuración soportada.
 
-## Validación y ausencia de configuración
+## Elementos y conducta son capas distintas
 
-- Sin un perfil explícito válido, `GarumiBrain` mantiene la dirección en cero para bloquear la patrulla genérica; no inventa un perfil `errante`.
-- Un perfil desconocido también queda detenido y no se convierte silenciosamente en otro perfil.
-- Los parámetros de movimiento solo se leen de la configuración; los valores de respaldo sirven para que el intérprete funcione físicamente, no para definir canon.
-- `CreatureMovement` conserva la responsabilidad de velocidad, colisiones y desplazamiento físico, y mantiene sus restricciones generales de movimiento.
-- El seguimiento de Garumis vinculados y la arena de combate tienen prioridad.
+- `elementos` se lee como una lista de códigos y queda disponible mediante `GarumiBrain.obtener_elementos()`.
+- `comportamiento` aporta rasgos como curiosidad, temor y sociabilidad.
+- `movimiento` define la primitiva ejecutable y sus distancias/intervalos.
+- Los elementos todavía no modifican el daño ni las efectividades en este cerebro. La resolución elemental debe conectarse al sistema de combate y a las tablas canónicas de asignaciones/efectividades antes de afectar el balance.
+- No se asignan elementos a especies por inferencia automática ni se cambian estados de documentación en Supabase.
 
-## Relaciones y persistencia
+## Límites y prioridades
 
-El cerebro ya no asigna puntos de confianza, no usa identificadores de instancia como identidad persistente y no almacena relaciones en metadatos. La relación con un jugador debe integrarse a través del servicio de progreso/guardado existente, usando identificadores persistentes y reglas definidas por el backend. Hasta verificar esa ruta, no se simula persistencia ni se aplican incrementos arbitrarios.
-
-## Alcance
-
-- No implementa todavía decisiones de combate ni un catálogo de ataques.
-- No sustituye `CreatureAI` ni cambia la IA de otras criaturas.
-- No modifica datos ni tablas de Supabase.
+- El seguimiento de Garumis vinculados, el estado guardado y el enfrentamiento existente tienen prioridad sobre la conducta autónoma.
+- `CreatureMovement` conserva velocidad, colisiones y desplazamiento físico.
+- Esta capa no sustituye `CreatureAI` ni cambia la IA de otras criaturas.
+- La relación persistente con el jugador no se inventa ni se almacena en metadatos.
+- Prueba: `godot --headless --path . --script res://tests/world/test_garumi_brain.gd`.
