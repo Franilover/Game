@@ -265,18 +265,18 @@ func _actualizar_interfaz() -> void:
 func _crear_marcos_combate() -> void:
 	_panel_aliado = _crear_marco_luchador("Aliado", true)
 	_panel_aliado.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_panel_aliado.offset_left = 18.0
-	_panel_aliado.offset_top = 18.0
-	_panel_aliado.offset_right = 368.0
-	_panel_aliado.offset_bottom = 190.0
+	_panel_aliado.offset_left = 10.0
+	_panel_aliado.offset_top = 10.0
+	_panel_aliado.offset_right = 302.0
+	_panel_aliado.offset_bottom = 138.0
 	_panel_enemigo = _crear_marco_luchador("Enemigo", false)
 	_panel_enemigo.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_panel_enemigo.anchor_left = 1.0
 	_panel_enemigo.anchor_right = 1.0
-	_panel_enemigo.offset_left = -258.0
-	_panel_enemigo.offset_top = 18.0
-	_panel_enemigo.offset_right = -18.0
-	_panel_enemigo.offset_bottom = 126.0
+	_panel_enemigo.offset_left = -222.0
+	_panel_enemigo.offset_top = 10.0
+	_panel_enemigo.offset_right = -10.0
+	_panel_enemigo.offset_bottom = 84.0
 	add_child(_panel_aliado)
 	add_child(_panel_enemigo)
 	_cargar_ataques_desde_supabase()
@@ -294,19 +294,19 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	estilo.border_color = Color(0.78, 0.61, 0.34, 0.95)
 	estilo.set_border_width_all(1)
 	estilo.set_corner_radius_all(7)
-	estilo.content_margin_left = 9.0
-	estilo.content_margin_top = 7.0
-	estilo.content_margin_right = 9.0
-	estilo.content_margin_bottom = 7.0
+	estilo.content_margin_left = 4.0
+	estilo.content_margin_top = 3.0
+	estilo.content_margin_right = 4.0
+	estilo.content_margin_bottom = 3.0
 	marco.add_theme_stylebox_override("panel", estilo)
 	var contenido_marco := VBoxContainer.new()
 	contenido_marco.name = "ContenidoMarco"
-	contenido_marco.add_theme_constant_override("separation", 4)
+	contenido_marco.add_theme_constant_override("separation", 2)
 	contenido_marco.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	marco.add_child(contenido_marco)
 	var fila := HBoxContainer.new()
 	fila.name = "Fila"
-	fila.add_theme_constant_override("separation", 8)
+	fila.add_theme_constant_override("separation", 4)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenido_marco.add_child(fila)
 	if es_aliado:
@@ -314,13 +314,13 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 		_reservas_garumis_container.name = "GarumisReserva"
 		_reservas_garumis_container.add_theme_constant_override("separation", 5)
 		_reservas_garumis_container.alignment = BoxContainer.ALIGNMENT_BEGIN
-		_reservas_garumis_container.custom_minimum_size = Vector2(0.0, 38.0)
+		_reservas_garumis_container.custom_minimum_size = Vector2(0.0, 26.0)
 		_reservas_garumis_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_reservas_garumis_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		fila.add_child(_reservas_garumis_container)
 	var retrato := TextureRect.new()
 	retrato.name = "Retrato"
-	retrato.custom_minimum_size = Vector2(64.0, 64.0)
+	retrato.custom_minimum_size = Vector2(42.0, 42.0)
 	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -328,23 +328,23 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	var columna := VBoxContainer.new()
 	columna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columna.alignment = BoxContainer.ALIGNMENT_CENTER
-	columna.add_theme_constant_override("separation", 4)
+	columna.add_theme_constant_override("separation", 1)
 	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fila.add_child(columna)
 	var titulo := Label.new()
 	titulo.name = "Titulo"
 	titulo.text = rotulo.to_upper()
-	titulo.add_theme_font_size_override("font_size", 10)
+	titulo.add_theme_font_size_override("font_size", 9)
 	titulo.add_theme_color_override("font_color", Color(0.96, 0.82, 0.56))
 	columna.add_child(titulo)
 	var info := Label.new()
 	info.name = "Info"
-	info.add_theme_font_size_override("font_size", 12)
+	info.add_theme_font_size_override("font_size", 10)
 	info.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
 	columna.add_child(info)
 	var vida := ProgressBar.new()
 	vida.name = "Vida"
-	vida.custom_minimum_size = Vector2(0.0, 12.0)
+	vida.custom_minimum_size = Vector2(0.0, 6.0)
 	vida.show_percentage = false
 	vida.min_value = 0
 	vida.max_value = 100
@@ -394,8 +394,8 @@ void fragment() {
 			continue
 		var circulo := Control.new()
 		circulo.name = "ReservaGarumi%d" % (i + 1)
-		circulo.custom_minimum_size = Vector2(34.0, 34.0)
-		circulo.size = Vector2(34.0, 34.0)
+		circulo.custom_minimum_size = Vector2(26.0, 26.0)
+		circulo.size = Vector2(26.0, 26.0)
 		circulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_reservas_garumis_container.add_child(circulo)
 		var fondo := Panel.new()
@@ -770,6 +770,8 @@ func _derrotar_activo() -> void:
 	if not is_instance_valid(activo):
 		return
 	var derrotado := activo
+	if _intentar_revivir_con_todo_eterium(derrotado):
+		return
 	disponibles.erase(derrotado)
 	if derrotado.has_method("salir_combate_vinculado"):
 		derrotado.call("salir_combate_vinculado", true)
@@ -781,6 +783,29 @@ func _derrotar_activo() -> void:
 		remove_from_group("modal_ui")
 		_estado.text = "No quedan Garumis disponibles. Puedes seguir combatiendo por tu cuenta."
 	print("GarumiBattleParty: ", _nombre(derrotado), " fue derrotado; puedes elegir otro Garumi.")
+
+
+func _intentar_revivir_con_todo_eterium(garumi: Garumi) -> bool:
+	if not is_instance_valid(garumi) or not is_instance_valid(jugador) or not jugador is Player:
+		return false
+	var jugador_real := jugador as Player
+	var cantidad_eterium := maxi(0, jugador_real.mana)
+	if cantidad_eterium <= 0 or not jugador_real.eterium.gastar(cantidad_eterium):
+		return false
+	jugador_real._sync_desde_vital()
+	jugador_real.mana_changed.emit(jugador_real.mana, jugador_real.max_mana)
+	# Todo el Eterium disponible se convierte en salud para levantar al Garumi.
+	# La salud recuperada equivale a las unidades consumidas, con el máximo de su vida.
+	var vida_revivida := clampi(cantidad_eterium, 1, maxi(1, garumi.max_health))
+	garumi.health = vida_revivida
+	garumi.vital_state.health = vida_revivida
+	garumi.vital_state.is_alive = true
+	garumi._sync_desde_vital()
+	garumi.health_changed.emit(garumi.health, garumi.max_health)
+	garumi.salud_combate_cambiada.emit(garumi.health, garumi.max_health)
+	_estado.text = "%s vuelve al combate: se consumió todo tu Eterium (%d)." % [_nombre(garumi), cantidad_eterium]
+	_actualizar_marcos_combate()
+	return true
 
 
 func finalizar() -> void:
