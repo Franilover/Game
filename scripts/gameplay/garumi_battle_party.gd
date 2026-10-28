@@ -97,7 +97,7 @@ func _actualizar_interfaz() -> void:
 	elif _seleccion_pendiente:
 		add_to_group("modal_ui")
 	if is_instance_valid(_panel):
-		_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE if is_instance_valid(activo) else Control.MOUSE_FILTER_STOP
+		_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	if not is_instance_valid(_lista):
 		return
 	for hijo in _lista.get_children():
