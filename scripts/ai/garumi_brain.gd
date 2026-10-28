@@ -8,6 +8,8 @@ class_name GarumiBrain
 var garumi: Garumi = null
 var configuracion: Dictionary = {}
 var movimiento: Dictionary = {}
+var comportamiento: Dictionary = {}
+var elementos: Array[String] = []
 var _perfil: String = ""
 
 var _rng := RandomNumberGenerator.new()
@@ -26,7 +28,15 @@ const PERFILES_MECANICOS := [
 	"acompanante",
 	"acompañante",
 	"quieto",
-	"inmovil"
+	"inmovil",
+	"agresivo",
+	"cazador",
+	"defensivo",
+	"vigilante",
+	"jugueton",
+	"juguetón",
+	"gregario",
+	"independiente"
 ]
 
 
@@ -41,6 +51,8 @@ func configurar(nuevo_garumi: Garumi) -> void:
 func _recargar_configuracion() -> void:
 	configuracion = {}
 	movimiento = {}
+	comportamiento = {}
+	elementos.clear()
 	_perfil = ""
 
 	if not is_instance_valid(garumi):
@@ -55,16 +67,54 @@ func _recargar_configuracion() -> void:
 	# Prioridad: movimiento específico de Garumi, movimiento genérico y,
 	# por último, perfil de alto nivel solo si coincide con una primitiva que
 	# este intérprete realmente soporta. Nunca se traduce una especie desconocida.
+	var comportamiento_especifico_variant: Variant = datos_garumi.get("comportamiento", {})
+	if not (comportamiento_especifico_variant is Dictionary):
+		comportamiento_especifico_variant = ia.get("comportamiento", {})
+	comportamiento = comportamiento_especifico_variant if comportamiento_especifico_variant is Dictionary else {}
+
 	var movimiento_general_variant: Variant = ia.get("movimiento", {})
 	var movimiento_general: Dictionary = movimiento_general_variant if movimiento_general_variant is Dictionary else {}
 	if movimiento_garumi.has("perfil"):
-		movimiento = movimiento_garumi
+		movimiento = movimiento_garumi.duplicate(true)
 	elif movimiento_general.has("perfil"):
-		movimiento = movimiento_general
-	elif PERFILES_MECANICOS.has(str(ia.get("perfil", "")).strip_edges().to_lower()):
-		movimiento = {"perfil": str(ia.get("perfil", "")).strip_edges().to_lower()}
+		movimiento = movimiento_general.duplicate(true)
+	else:
+		var perfil_comportamiento := str(comportamiento.get("perfil", comportamiento.get("temperamento", ""))).strip_edges()
+		var perfil_general := str(ia.get("perfil", "")).strip_edges()
+		var perfil_elegido := perfil_comportamiento if not perfil_comportamiento.is_empty() else perfil_general
+		if not perfil_elegido.is_empty():
+			movimiento = {"perfil": perfil_elegido}
+
+	# El perfil de movimiento define la acción; los rasgos aportan parámetros
+	# solo cuando no contradicen una instrucción específica de movimiento.
+	for clave in comportamiento.keys():
+		if not movimiento.has(clave):
+			movimiento[clave] = comportamiento[clave]
+
+	var elementos_variant: Variant = datos_garumi.get("elementos", ia.get("elementos", []))
+	if not (elementos_variant is Array):
+		var elementos_ia_variant: Variant = ia.get("elementos", [])
+		elementos_variant = elementos_ia_variant
+	if elementos_variant is Array:
+		for elemento_variant in elementos_variant:
+			var elemento := str(elemento_variant).strip_edges()
+			if not elemento.is_empty() and not elementos.has(elemento):
+				elementos.append(elemento)
+
 	configuracion = datos_garumi
-	_perfil = str(movimiento.get("perfil", "")).strip_edges().to_lower()
+	_perfil = _normalizar_perfil(str(movimiento.get("perfil", "")))
+
+
+func _normalizar_perfil(valor: String) -> String:
+	return valor.strip_edges().to_lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+
+
+func obtener_elementos() -> Array[String]:
+	return elementos.duplicate()
+
+
+func obtener_comportamiento() -> Dictionary:
+	return comportamiento.duplicate(true)
 
 
 func _tiene_perfil_ejecutable() -> bool:
@@ -113,7 +163,7 @@ func _elegir_intencion() -> void:
 	if not bool(movimiento.get("desplazamiento_propio", true)):
 		_direccion_objetivo = Vector2.ZERO
 		return
-	if str(movimiento.get("tipo", "")).strip_edges().to_lower() == "inmovil" or _perfil in ["quieto", "inmovil"]:
+	if _normalizar_perfil(str(movimiento.get("tipo", ""))) == "inmovil" or _perfil in ["quieto", "inmovil"]:
 		_direccion_objetivo = Vector2.ZERO
 		return
 
@@ -128,13 +178,31 @@ func _elegir_intencion() -> void:
 
 	var distancia_preferida := maxf(float(movimiento.get("distancia_preferida", 40.0)), 8.0)
 	match _perfil:
-		"curioso", "sociable":
-			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_preferida else _direccion_errante()
+		"curioso", "sociable", "gregario":
+			var curiosidad := clampf(float(comportamiento.get("curiosidad", 0.5)), 0.0, 1.0)
+			var radio_curiosidad := radio_social * (0.5 + curiosidad)
+			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_preferida and distancia <= radio_curiosidad else _direccion_errante()
 		"timido", "evasivo":
 			var distancia_escape := maxf(float(movimiento.get("distancia_escape", 72.0)), 0.0)
 			_direccion_objetivo = -hacia_jugador if tiene_jugador and distancia < distancia_escape else _direccion_errante()
 		"territorial":
 			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_preferida * 1.5 else Vector2.ZERO
+		"agresivo", "cazador":
+			# Conducta de presión, no inicia daño por sí sola: el combate conserva
+			# el flujo de interacción y las reglas de vínculo existentes.
+			_direccion_objetivo = hacia_jugador if tiene_jugador and distancia > distancia_preferida else _direccion_errante()
+		"defensivo", "vigilante":
+			var distancia_reaccion := maxf(float(movimiento.get("distancia_reaccion", distancia_preferida)), 8.0)
+			_direccion_objetivo = -hacia_jugador if tiene_jugador and distancia < distancia_reaccion else Vector2.ZERO
+		"jugueton":
+			if tiene_jugador and distancia > distancia_preferida * 1.4:
+				_direccion_objetivo = hacia_jugador
+			elif tiene_jugador and distancia < distancia_preferida * 0.75:
+				_direccion_objetivo = -hacia_jugador
+			else:
+				_direccion_objetivo = _direccion_errante()
+		"independiente":
+			_direccion_objetivo = _direccion_errante()
 		"explorador":
 			_direccion_objetivo = _direccion_exploracion()
 		"acompanante", "acompañante":
