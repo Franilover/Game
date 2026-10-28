@@ -6,6 +6,7 @@ class_name GarumiCombatArena
 
 var jugador: Node2D
 var garumi: Node2D
+var garumis: Array[Node2D] = []
 var centro_arena: Vector2 = Vector2.ZERO
 var limites_globales: Rect2 = Rect2()
 var activa: bool = false
@@ -14,6 +15,9 @@ var activa: bool = false
 func iniciar(nuevo_jugador: Node2D, nuevo_garumi: Node2D) -> void:
 	jugador = nuevo_jugador
 	garumi = nuevo_garumi
+	garumis.clear()
+	if is_instance_valid(garumi):
+		garumis.append(garumi)
 	if not is_instance_valid(jugador) or not is_instance_valid(garumi):
 		return
 	centro_arena = (jugador.global_position + garumi.global_position) * 0.5
@@ -29,6 +33,19 @@ func iniciar(nuevo_jugador: Node2D, nuevo_garumi: Node2D) -> void:
 	add_to_group("garumi_combat_arena")
 	_ajustar_participantes()
 	queue_redraw()
+
+
+func agregar_garumi(nuevo_garumi: Node2D) -> void:
+	if not activa or not is_instance_valid(nuevo_garumi) or garumis.has(nuevo_garumi):
+		return
+	garumis.append(nuevo_garumi)
+	var angulo := TAU * float(garumis.size() - 1) / 3.0
+	nuevo_garumi.global_position = _limitar_posicion(centro_arena + Vector2(cos(angulo), sin(angulo)) * 62.0)
+	queue_redraw()
+
+
+func obtener_garumis() -> Array[Node2D]:
+	return garumis.duplicate()
 
 
 func terminar() -> void:
@@ -51,19 +68,23 @@ func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(jugador) or not is_instance_valid(garumi):
 		terminar()
 		return
+	garumis = garumis.filter(func(item: Node2D) -> bool: return is_instance_valid(item))
 	_ajustar_participantes()
 	_excluir_criaturas_ajenas()
 
 
 func _ajustar_participantes() -> void:
 	var posicion_jugador_anterior := jugador.global_position
-	var posicion_garumi_anterior := garumi.global_position
 	jugador.global_position = _limitar_posicion(posicion_jugador_anterior)
-	garumi.global_position = _limitar_posicion(posicion_garumi_anterior)
 	if jugador is CharacterBody2D and jugador.global_position != posicion_jugador_anterior:
 		(jugador as CharacterBody2D).velocity = Vector2.ZERO
-	if garumi is CharacterBody2D and garumi.global_position != posicion_garumi_anterior:
-		(garumi as CharacterBody2D).velocity = Vector2.ZERO
+	for rival_actual in garumis:
+		if not is_instance_valid(rival_actual):
+			continue
+		var posicion_anterior := rival_actual.global_position
+		rival_actual.global_position = _limitar_posicion(posicion_anterior)
+		if rival_actual is CharacterBody2D and rival_actual.global_position != posicion_anterior:
+			(rival_actual as CharacterBody2D).velocity = Vector2.ZERO
 
 
 func _limitar_posicion(posicion: Vector2) -> Vector2:
@@ -98,10 +119,10 @@ func intentar_escapar(nodo_jugador: Node2D, direccion_dash: Vector2) -> bool:
 	if not sale_por_borde:
 		return false
 	print("GarumiCombatArena: escape confirmado por dash hacia el exterior.")
-	if is_instance_valid(garumi) and garumi.has_method("finalizar_enfrentamiento"):
-		garumi.call("finalizar_enfrentamiento")
-	else:
-		terminar()
+	for rival_actual in garumis:
+		if is_instance_valid(rival_actual) and rival_actual.has_method("finalizar_enfrentamiento"):
+			rival_actual.call("finalizar_enfrentamiento")
+	terminar()
 	return true
 
 
@@ -116,7 +137,7 @@ func _excluir_criaturas_ajenas() -> void:
 			if nodo not in candidatas:
 				candidatas.append(nodo)
 	for nodo in candidatas:
-		if not nodo is Node2D or nodo == garumi or nodo == jugador:
+		if not nodo is Node2D or nodo in garumis or nodo == jugador:
 			continue
 		if nodo.is_in_group("garumi_combat_ally"):
 			continue
