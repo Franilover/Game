@@ -236,14 +236,6 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey:
-		var key_event := event as InputEventKey
-		if key_event.pressed and not key_event.echo:
-			if event.is_action_pressed("garumi_encyclopedia") or key_event.physical_keycode == KEY_G or key_event.keycode == KEY_G:
-				toggle_enciclopedia_garumis()
-				get_viewport().set_input_as_handled()
-				return
-
 	# En Android, tocar fuera de la ventana cierra el inventario.
 	# Se consume el toque para evitar activar accidentalmente una acción del juego.
 	if not OS.has_feature("android") or not _abierto or not visible:
