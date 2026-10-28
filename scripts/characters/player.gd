@@ -12,7 +12,7 @@ signal fisiologia_changed(vida_eterium_compartidos: bool)
 
 
 @export_category("Stamina")
-@export var max_stamina: float = 3.0
+@export var max_stamina: float = 5.0
 @export var stamina_regeneration: float = 0.0
 @export var stamina_regeneration_delay: float = 0.0
 
