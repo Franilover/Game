@@ -700,6 +700,9 @@ func romper_vinculo() -> bool:
 	var id_instancia := str(obtener_datos_persistencia_vinculo().get("garumi_instancia_id", "")).strip_edges()
 	if game_state != null and not id_instancia.is_empty() and game_state.has_method("eliminar_garumi_vinculado"):
 		game_state.call("eliminar_garumi_vinculado", id_instancia)
+	for nodo_hud in get_tree().get_nodes_in_group("hud"):
+		if is_instance_valid(nodo_hud) and nodo_hud.has_method("eliminar_garumi_vinculado"):
+			nodo_hud.call("eliminar_garumi_vinculado", self)
 	_vinculado = false
 	_tipo_vinculo = ""
 	_guardado = false
