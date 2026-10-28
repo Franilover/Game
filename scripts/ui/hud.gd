@@ -20,6 +20,7 @@ var _world_atmosphere_ref: WorldAtmosphere = null
 var _calendar_panel: PanelContainer = null
 var _calendar_label: Label = null
 var _calendar_elapsed: float = 0.0
+var _eterium_ui_elapsed: float = 0.0
 
 var mostrar_contexto_mundo: bool = false
 
@@ -164,6 +165,10 @@ func _conectar_senal_game_state() -> void:
 
 func _process(delta: float) -> void:
 	_actualizar_vidas_garumis_vinculados()
+	_eterium_ui_elapsed += delta
+	if _eterium_ui_elapsed >= 0.1:
+		_eterium_ui_elapsed = 0.0
+		_actualizar_eterium()
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
 		_tiempo_contexto += delta
 		if _tiempo_contexto >= 0.25:
