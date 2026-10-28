@@ -774,26 +774,6 @@ func _restaurar_ficha_detalle() -> void:
 	_icono.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-	var local := int(registro.get("numero_origen", 0))
-	var letra := str(registro.get("letra_original", "")).strip_edges()
-	var original := str(registro.get("nombre_original", "")).strip_edges()
-	if global_num > 0:
-		partes.append("[color=#8f754f]Número global:[/color] #" + str(global_num))
-	if local > 0:
-		partes.append("[color=#8f754f]Número de linaje:[/color] " + ((letra + "-") if not letra.is_empty() else "") + str(local))
-	if not original.is_empty():
-		partes.append("[color=#8f754f]Original:[/color] " + ((letra + " · ") if not letra.is_empty() else "") + original)
-	var categoria := str(registro.get("categoria_garumi", "")).strip_edges()
-	if not categoria.is_empty():
-		partes.append("[color=#8f754f]Categoría:[/color] " + categoria.capitalize())
-	var etapa := str(registro.get("estado_evolutivo", "")).strip_edges()
-	if not etapa.is_empty():
-		partes.append("[color=#8f754f]Etapa evolutiva:[/color] " + etapa.capitalize())
-	var descripcion := str(registro.get("descripcion", "")).strip_edges()
-	partes.append(descripcion if not descripcion.is_empty() else "Todavía no hay una descripción publicada para este Garumi.")
-	if not _icono.visible:
-		partes.append("[color=#55432e]No hay ilustración disponible en esta versión.[/color]")
-	_ficha.text = "\n\n".join(partes)
 
 
 func _mostrar_sprite_garumi(registro: Dictionary) -> void:
