@@ -25,9 +25,10 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	rival = nuevo_rival
 	_disponibles_desde_vinculos()
 	_crear_interfaz()
-	_seleccion_pendiente = true
+	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
 	if disponibles.is_empty():
+		remove_from_group("modal_ui")
 		_estado.text = "No tienes Garumis vinculados. Puedes retirarte o combatir por tu cuenta."
 		print("GarumiBattleParty: el jugador no tiene vínculos disponibles para el combate.")
 	else:
@@ -94,6 +95,8 @@ func _actualizar_interfaz() -> void:
 		remove_from_group("modal_ui")
 	elif _seleccion_pendiente:
 		add_to_group("modal_ui")
+	if is_instance_valid(_panel):
+		_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE if is_instance_valid(activo) else Control.MOUSE_FILTER_STOP
 	if not is_instance_valid(_lista):
 		return
 	for hijo in _lista.get_children():
@@ -198,6 +201,7 @@ func _derrotar_activo() -> void:
 	if not is_instance_valid(activo):
 		return
 	var derrotado := activo
+	disponibles.erase(derrotado)
 	if derrotado.has_method("salir_combate_vinculado"):
 		derrotado.call("salir_combate_vinculado", true)
 	activo = null
