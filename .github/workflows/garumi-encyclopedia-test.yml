@@ -8,6 +8,9 @@ on:
       - "scripts/ui/encyclopedia.gd"
       - "scenes/ui/inventory.tscn"
       - "tests/ui/**"
+      - "scripts/ai/garumi_brain.gd"
+      - "scripts/creatures/garumi.gd"
+      - "tests/world/test_garumi_brain.gd"
       - "project.godot"
       - ".github/workflows/garumi-encyclopedia-test.yml"
   pull_request:
@@ -52,6 +55,17 @@ jobs:
           printf '%s\n' "$output"
           if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
             echo "Godot reported script compilation errors during import."
+            exit 1
+          fi
+
+      - name: Verify Garumi behavior and elemental config
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . --script res://tests/world/test_garumi_brain.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|test_garumi_brain: FAIL' <<<"$output"; then
+            echo "Garumi behavior regression test reported errors."
             exit 1
           fi
 
