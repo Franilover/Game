@@ -23,6 +23,10 @@ var _info_aliado: Label
 var _info_enemigo: Label
 var _vida_aliado: ProgressBar
 var _vida_enemigo: ProgressBar
+var _ataques_container: HBoxContainer
+var _ataques_estado: Label
+var _ataques_supabase: Array[Dictionary] = []
+var _ataques_request_id: int = -1
 var _cooldown_aliado := 0.0
 var _cooldown_rival := 0.0
 var _cooldown_curacion_eterium := 0.0
@@ -234,6 +238,7 @@ func _crear_marcos_combate() -> void:
 	_panel_enemigo.offset_bottom = 126.0
 	add_child(_panel_aliado)
 	add_child(_panel_enemigo)
+	_cargar_ataques_desde_supabase()
 	_actualizar_marcos_combate()
 
 
@@ -252,11 +257,15 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	estilo.content_margin_right = 9.0
 	estilo.content_margin_bottom = 7.0
 	marco.add_theme_stylebox_override("panel", estilo)
+	var contenido_marco := VBoxContainer.new()
+	contenido_marco.add_theme_constant_override("separation", 4)
+	contenido_marco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marco.add_child(contenido_marco)
 	var fila := HBoxContainer.new()
 	fila.name = "Fila"
 	fila.add_theme_constant_override("separation", 8)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	marco.add_child(fila)
+	contenido_marco.add_child(fila)
 	var retrato := TextureRect.new()
 	retrato.name = "Retrato"
 	retrato.custom_minimum_size = Vector2(64.0, 64.0)
@@ -289,12 +298,121 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	vida.max_value = 100
 	columna.add_child(vida)
 	if es_aliado:
+		_ataques_container = HBoxContainer.new()
+		_ataques_container.name = "Ataques"
+		_ataques_container.add_theme_constant_override("separation", 5)
+		_ataques_container.mouse_filter = Control.MOUSE_FILTER_STOP
+		contenido_marco.add_child(_ataques_container)
+		_ataques_estado = Label.new()
+		_ataques_estado.name = "AtaquesEstado"
+		_ataques_estado.add_theme_font_size_override("font_size", 10)
+		_ataques_estado.add_theme_color_override("font_color", Color(0.82, 0.76, 0.66))
+		_ataques_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		contenido_marco.add_child(_ataques_estado)
 		_info_aliado = info
 		_vida_aliado = vida
 	else:
 		_info_enemigo = info
 		_vida_enemigo = vida
 	return marco
+
+
+## El catálogo de combate se consulta en Supabase. Godot no define ataques ni
+## rellena potencia/elemento/coste ausentes con valores inventados.
+func _cargar_ataques_desde_supabase() -> void:
+	if not is_instance_valid(SupabaseClient):
+		_establecer_estado_ataques("Supabase no está disponible.")
+		return
+	if not SupabaseClient.request_completed.is_connected(_al_respuesta_ataques_supabase):
+		SupabaseClient.request_completed.connect(_al_respuesta_ataques_supabase)
+		_ataques_request_id = SupabaseClient.get_rest(
+			"v_garumi_movimientos_configuracion_ium_v1",
+			"select=movimiento_id,codigo,movimiento,descripcion,estado_movimiento,familia_combate,objetivo_tipo,modalidad_ejecucion,alcance_max_m,radio_efecto_m,desplazamiento_max_m,duracion_s,configuracion_ium,estado_configuracion,estado_integracion,conjuracion_publicada,estado_demanda_eterium,referencia_demanda_eterium,unidad_demanda_eterium,coeficiente_eterium&order=codigo.asc"
+		)
+	if _ataques_request_id < 0:
+		_establecer_estado_ataques("No se pudo consultar el catálogo de ataques.")
+
+
+func _al_respuesta_ataques_supabase(
+	request_id: int,
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if request_id != _ataques_request_id:
+		return
+	_ataques_request_id = -1
+	if resultado != HTTPRequest.RESULT_SUCCESS or codigo_http < 200 or codigo_http >= 300:
+		_establecer_estado_ataques("No se pudieron cargar los ataques desde Supabase.")
+		return
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:
+		_establecer_estado_ataques("La respuesta de ataques no tiene un formato válido.")
+		return
+	_ataques_supabase.clear()
+	for item in json.data as Array:
+		if item is Dictionary:
+			_ataques_supabase.append((item as Dictionary).duplicate(true))
+		_actualizar_botones_ataques()
+
+
+func _actualizar_botones_ataques() -> void:
+	if not is_instance_valid(_ataques_container):
+		return
+	for hijo in _ataques_container.get_children():
+		hijo.queue_free()
+	var visibles := mini(3, _ataques_supabase.size())
+	if visibles == 0:
+		_establecer_estado_ataques("Sin ataques publicados en Supabase.")
+		return
+	var ejecutables := 0
+	for indice in range(visibles):
+		var ataque := _ataques_supabase[indice]
+		var nombre := str(ataque.get("movimiento", ataque.get("codigo", "Ataque"))).strip_edges()
+		var estado := str(ataque.get("estado_movimiento", "")).to_lower()
+		var integracion := str(ataque.get("estado_integracion", "")).to_lower()
+		var publicado := bool(ataque.get("conjuracion_publicada", false))
+		# Los borradores pueden verse para diagnóstico, pero nunca ejecutarse.
+		var listo := estado == "aprobado" and publicado and integracion == "integrado"
+		var boton := Button.new()
+		boton.text = "%d. %s" % [indice + 1, nombre]
+		boton.custom_minimum_size = Vector2(72.0, 28.0)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.size_flags_stretch_ratio = 1.0
+		boton.disabled = not listo
+		boton.tooltip_text = (
+			"Ejecutar ataque publicado"
+			if listo
+			else "Ataque no disponible: Supabase aún no lo publica como integrado"
+		)
+		if listo:
+			boton.pressed.connect(_al_presionar_ataque_supabase.bind(ataque))
+		_ataques_container.add_child(boton)
+		if listo:
+			ejecutables += 1
+	if ejecutables == 0:
+		_establecer_estado_ataques("Ataques en borrador o sin integración aprobada en Supabase.")
+	else:
+		_establecer_estado_ataques("Selecciona un ataque. Los parámetros provienen de Supabase.")
+
+
+func _al_presionar_ataque_supabase(ataque: Dictionary) -> void:
+	# La vista actual no expone todavía potencia/daño ni coste elemental ejecutable.
+	# No se aplica daño hasta que el catálogo entregue esos parámetros canónicos.
+	var potencia: Variant = ataque.get("potencia")
+	var coste: Variant = ataque.get("coste_eterium")
+	var elemento: Variant = ataque.get("tipo_elemental")
+	if potencia == null or coste == null or elemento == null:
+		_establecer_estado_ataques("Faltan potencia, coste de Eterium o elemento en el catálogo Supabase.")
+		return
+	_establecer_estado_ataques("Ataque seleccionado: %s" % str(ataque.get("movimiento", "Ataque")))
+	push_warning("GarumiBattleParty: el ataque tiene metadatos, pero aún falta conectar el ejecutor canónico de combate.")
+
+
+func _establecer_estado_ataques(mensaje: String) -> void:
+	if is_instance_valid(_ataques_estado):
+		_ataques_estado.text = mensaje
 
 
 func _actualizar_marcos_combate() -> void:
