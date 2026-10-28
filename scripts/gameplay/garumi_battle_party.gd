@@ -348,8 +348,10 @@ func _crear_boton_accion_combate(texto: String) -> Button:
 
 
 func _actualizar_acciones_combate() -> void:
+	# Huir es una acción del encuentro, no depende de que el rival principal
+	# siga válido (puede haber sido derrotado mientras quedan rivales activos).
 	if is_instance_valid(_boton_huir):
-		_boton_huir.disabled = not is_instance_valid(rival)
+		_boton_huir.disabled = false
 	if is_instance_valid(_boton_ofrecer_vinculo):
 		_boton_ofrecer_vinculo.disabled = (
 			not is_instance_valid(objetivo_rival)
