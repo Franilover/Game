@@ -46,6 +46,21 @@ func _run() -> void:
 	_check(tabs.current_tab == 2, "Pulsar G debe seleccionar la pestaña Enciclopedia.")
 	_check(str(enciclopedia.get("_modo")) == "garumis", "Pulsar G debe seleccionar la sección Garumis.")
 
+	# La enciclopedia sólo debe exponer el linaje descendiente de Orumi.
+	const orumi_id := "24f86486-aced-4a23-bd1b-f025561a8aa3"
+	var filas_catalogo: Array[Dictionary] = [
+		{"tipo_registro": "original", "entidad_id": orumi_id, "nombre": "Orumi", "letra_original": "O", "orden_catalogo": 1},
+		{"tipo_registro": "original", "entidad_id": "varum-test-id", "nombre": "Varum", "letra_original": "V", "orden_catalogo": 2},
+		{"tipo_registro": "especie", "entidad_id": "orumi-descendiente-test", "nombre": "Oruvan", "original_id": orumi_id, "nombre_original": "Orumi", "letra_original": "O", "estado_documentacion": "canon", "numero_global": 1},
+		{"tipo_registro": "especie", "entidad_id": "varum-descendiente-test", "nombre": "Varumin", "original_id": "varum-test-id", "nombre_original": "Varum", "letra_original": "V", "estado_documentacion": "canon", "numero_global": 2}
+	]
+	enciclopedia.call("_aplicar_catalogo_desde_filas", filas_catalogo)
+	var catalogo_filtrado: Array = enciclopedia.get("_garumis_catalogo")
+	var originales_filtrados: Array = enciclopedia.get("_garumi_originales")
+	_check(catalogo_filtrado.size() == 1, "La enciclopedia debe mostrar sólo descendientes de Orumi.")
+	_check(not catalogo_filtrado.is_empty() and str(catalogo_filtrado[0].get("nombre", "")) == "Oruvan", "Debe conservar el descendiente de Orumi.")
+	_check(originales_filtrados.size() == 1 and str(originales_filtrados[0].get("nombre", "")) == "Orumi", "Debe mostrar sólo el Original Orumi como encabezado de linaje.")
+
 	# Soltar G y pulsarla de nuevo para verificar el cierre por la misma ruta.
 	var soltar_tecla := InputEventKey.new()
 	soltar_tecla.keycode = KEY_G
