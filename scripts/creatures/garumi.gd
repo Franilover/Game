@@ -583,14 +583,21 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 
 	var dano_real := calcular_danio_recibido(cantidad)
 	var salud_anterior := health
-	health = maxi(1, health - dano_real)
+	health = maxi(0, health - dano_real)
 	vital_state.health = health
-	vital_state.is_alive = true
+	vital_state.is_alive = health > 0
 	_sync_desde_vital()
 	if health != salud_anterior:
 		health_changed.emit(health, max_health)
 		salud_combate_cambiada.emit(health, max_health)
 		print("Garumi: ", criatura_nombre, " recibe ", salud_anterior - health, " de daño tras defensa (", origen, ") | ", health, "/", max_health)
+	if health <= 0:
+		# Salvaguarda para daño externo o golpes que el sistema de combate no haya limitado.
+		_enfrentamiento_activo = false
+		_jugador_del_encuentro = null
+		remove_from_group("damageable")
+		print("Garumi: ", criatura_nombre, " fue derrotado y desaparece del mundo.")
+		queue_free()
 
 
 func forzar_vinculo(jugador: Node) -> bool:
