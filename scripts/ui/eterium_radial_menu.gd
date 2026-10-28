@@ -254,7 +254,9 @@ func _al_soltar_espacio() -> void:
 	if not _espacio_pulsado:
 		return
 	_espacio_pulsado = false
-	if _estado_minijuego == "eterium":
+	if _estado_minijuego == "concentracion":
+		_fallar_minijuego("Soltaste antes de completar los 4 segundos.")
+	elif _estado_minijuego == "eterium":
 		if _fase_meditacion == "inicial":
 			_fase_meditacion = "soltar"
 			_tiempo_fase = 0.0
@@ -364,11 +366,13 @@ func _iniciar_minijuego_curacion() -> void:
 
 
 func _iniciar_concentracion() -> void:
-	_estado_minijuego = "concentracion"
-	_tiempo_sostenido = 0.0
+	# Los cuatro segundos ya se cumplieron antes de entrar aquí.
+	_estado_minijuego = "eterium"
+	_fase_meditacion = "inicial"
 	_tiempo_fase = 0.0
+	_ciclos_meditacion = 0
 	_mostrar_minijuego()
-	_actualizar_panel_minijuego("Concentración", "Mantén ESPACIO sin recibir daño.")
+	_actualizar_panel_minijuego("Concentración lograda", "Suelta ESPACIO; espera el ritmo y vuelve a mantenerlo.")
 	_minijuego_barra.value = 0.0
 
 
