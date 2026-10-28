@@ -124,6 +124,7 @@ func _al_cambiar_objetivo_rival(indice: int) -> void:
 	if indice >= 0 and indice < rivales.size():
 		objetivo_rival = rivales[indice]
 		_actualizar_marcos_combate()
+		_actualizar_acciones_combate()
 
 
 
@@ -364,7 +365,10 @@ func _ofrecer_vinculo_en_combate() -> void:
 		return
 	var objetivo := objetivo_rival
 	if objetivo.ofrecer_vinculo_en_combate(jugador):
-		# El vínculo aceptado cierra el enfrentamiento y su arena desde Garumi.
+		# Si acepta, el resto de rivales también deja de combatir.
+		for enemigo in rivales:
+			if is_instance_valid(enemigo) and enemigo != objetivo and enemigo.esta_enfrentamiento():
+				enemigo.finalizar_enfrentamiento()
 		finalizar()
 	else:
 		_actualizar_acciones_combate()
