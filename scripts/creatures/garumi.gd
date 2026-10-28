@@ -560,6 +560,22 @@ func ofrecer_vinculo(jugador: Node) -> bool:
 	return _establecer_vinculo(jugador, "voluntario")
 
 
+## Permite proponer un vínculo voluntario durante el combate desde el HUD.
+## Si lo rechaza, el enfrentamiento continúa; si acepta, _establecer_vinculo cierra la arena.
+func ofrecer_vinculo_en_combate(jugador: Node) -> bool:
+	if _vinculado or not _enfrentamiento_activo or jugador == null or not is_instance_valid(jugador):
+		return false
+	if _jugador_del_encuentro != jugador:
+		return false
+	var probabilidad := clampf(float(datos.get("aceptacion_vinculo", 0.5)), 0.0, 1.0)
+	if _rng.randf() > probabilidad:
+		propuesta_vinculo_rechazada.emit(self, jugador)
+		_notificar_resultado_vinculo(false, "")
+		print("Garumi: ", criatura_nombre, " rechaza la propuesta de vínculo durante el combate.")
+		return false
+	return _establecer_vinculo(jugador, "voluntario")
+
+
 func iniciar_enfrentamiento(jugador: Node) -> bool:
 	if _vinculado or _enfrentamiento_activo:
 		return false
