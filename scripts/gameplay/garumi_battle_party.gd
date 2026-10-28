@@ -250,6 +250,7 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	estilo.content_margin_bottom = 7.0
 	marco.add_theme_stylebox_override("panel", estilo)
 	var fila := HBoxContainer.new()
+	fila.name = "Fila"
 	fila.add_theme_constant_override("separation", 8)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	marco.add_child(fila)
@@ -297,7 +298,7 @@ func _actualizar_marcos_combate() -> void:
 	if is_instance_valid(_panel_aliado):
 		_panel_aliado.visible = is_instance_valid(activo)
 		if is_instance_valid(activo):
-			var retrato_aliado := _panel_aliado.get_node_or_null("HBoxContainer/Retrato") as TextureRect
+			var retrato_aliado := _panel_aliado.get_node_or_null("Fila/Retrato") as TextureRect
 			if retrato_aliado != null:
 				retrato_aliado.texture = _buscar_textura_garumi(activo)
 			if is_instance_valid(_info_aliado):
