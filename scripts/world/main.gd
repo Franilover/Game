@@ -395,7 +395,7 @@ func _configurar_camara() -> void:
 	_ultima_posicion_camara = Vector2.INF
 	_camera.drag_horizontal_enabled = false
 	_camera.drag_vertical_enabled = false
-	var tipo_zona := _zone_manager.obtener_tipo_actual() if is_instance_valid(_zone_manager) else ""
+	var tipo_zona: String = str(_zone_manager.obtener_tipo_actual()) if is_instance_valid(_zone_manager) else ""
 	if tipo_zona == "reino_torres":
 		# Límites del Ground de reino_torres.tscn; Camera2D calcula el área
 		# visible según el zoom para no mostrar fuera del borde del reino.
