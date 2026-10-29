@@ -35,6 +35,9 @@ size = Vector2(118, 72)
 [sub_resource type="RectangleShape2D" id="OuterWallVertical"]
 size = Vector2(24, 1400)
 
+[sub_resource type="RectangleShape2D" id="GateWallVertical"]
+size = Vector2(24, 600)
+
 [node name="ReinoTorres" type="Node2D"]
 z_as_relative = false
 z_index = 0
@@ -574,15 +577,15 @@ shape = SubResource("ShapeExit")
 [node name="Walls" type="StaticBody2D" parent="."]
 
 [node name="Left" type="CollisionShape2D" parent="Walls"]
-position = Vector2(-1216, 0)
+position = Vector2(-1188, 0)
 shape = SubResource("ShapeWall")
 
 [node name="Top" type="CollisionShape2D" parent="Walls"]
-position = Vector2(0, -716)
+position = Vector2(0, -708)
 shape = SubResource("ShapeWallH")
 
 [node name="Bottom" type="CollisionShape2D" parent="Walls"]
-position = Vector2(0, 716)
+position = Vector2(0, 708)
 shape = SubResource("ShapeWallH")
 
 [node name="CastleCollisionBody" type="StaticBody2D" parent="."]
@@ -2556,22 +2559,13 @@ polygon = PackedVector2Array(1180, 100, 1200, 100, 1200, 700, 1180, 700)
 color = Color(0.34, 0.33, 0.28, 1)
 z_index = -2
 
-[node name="ExpandedWestWallCollision" type="CollisionShape2D" parent="Walls"]
-position = Vector2(-1188, 0)
-shape = SubResource("OuterWallVertical")
 
-[node name="ExpandedNorthWallCollision" type="CollisionShape2D" parent="Walls"]
-position = Vector2(0, -708)
-shape = SubResource("ShapeWallH")
 
-[node name="ExpandedSouthWallCollision" type="CollisionShape2D" parent="Walls"]
-position = Vector2(0, 708)
-shape = SubResource("ShapeWallH")
 
 [node name="ExpandedEastWallNorthCollision" type="CollisionShape2D" parent="Walls"]
 position = Vector2(1188, -400)
-shape = SubResource("ShapeWall")
+shape = SubResource("GateWallVertical")
 
 [node name="ExpandedEastWallSouthCollision" type="CollisionShape2D" parent="Walls"]
 position = Vector2(1188, 400)
-shape = SubResource("ShapeWall")
+shape = SubResource("GateWallVertical")
