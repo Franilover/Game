@@ -344,6 +344,24 @@ func _vincular_desde_amigos(registro: Dictionary) -> void:
 	registro_vinculado["vinculado"] = true
 	if str(registro_vinculado.get("tipo_vinculo", "")).strip_edges().is_empty():
 		registro_vinculado["tipo_vinculo"] = "amistad"
+
+	# Activar el vínculo en la instancia del mundo cuando siga presente.
+	var jugador := get_tree().get_first_node_in_group("player")
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not is_instance_valid(nodo) or str(nodo.get("_garumi_instancia_id")).strip_edges() != id_instancia:
+			continue
+		if is_instance_valid(jugador) and nodo.has_method("restaurar_vinculo_persistido"):
+			var posicion: Vector2 = nodo.global_position if nodo is Node2D else Vector2.ZERO
+			nodo.call("restaurar_vinculo_persistido", jugador, false, posicion)
+			if nodo.has_method("obtener_datos_persistencia_vinculo"):
+				var datos_actuales: Variant = nodo.call("obtener_datos_persistencia_vinculo")
+				if datos_actuales is Dictionary and not (datos_actuales as Dictionary).is_empty():
+					registro_vinculado = datos_actuales as Dictionary
+		for nodo_hud in get_tree().get_nodes_in_group("hud"):
+			if is_instance_valid(nodo_hud) and nodo_hud.has_method("registrar_garumi_restaurado"):
+				nodo_hud.call("registrar_garumi_restaurado", nodo)
+		break
+
 	if GameState.guardar_garumi_vinculado(registro_vinculado):
 		GameState.eliminar_garumi_amigo(id_instancia)
 		_estado.text = ""
