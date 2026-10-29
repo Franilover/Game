@@ -217,7 +217,7 @@ func _renderizar_recetas() -> void:
 
 func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	var panel := Button.new()
-	panel.custom_minimum_size = Vector2(64, 64)
+	panel.custom_minimum_size = Vector2(40, 40)
 	panel.tooltip_text = str(receta.get("nombre", "Receta"))
 	panel.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.11, 0.07, 0.045, 0.9), Color(0.29, 0.19, 0.12, 1), 1))
 	panel.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
@@ -232,11 +232,11 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var icono := TextureRect.new()
 	icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icono.offset_left = 6
-	icono.offset_top = 6
-	icono.offset_right = -6
-	icono.offset_bottom = -6
-	icono.custom_minimum_size = Vector2(52, 52)
+	icono.offset_left = 5
+	icono.offset_top = 5
+	icono.offset_right = -5
+	icono.offset_bottom = -5
+	icono.custom_minimum_size = Vector2(30, 30)
 	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
