@@ -184,6 +184,9 @@ func _process(delta: float) -> void:
 	_eterium_ui_elapsed += delta
 	if _eterium_ui_elapsed >= 0.1:
 		_eterium_ui_elapsed = 0.0
+		# Consultar las fuentes de verdad evita que el HUD dependa de una señal
+		# perdida durante la inicialización o de una propiedad pública desfasada.
+		_actualizar_stamina()
 		_actualizar_eterium()
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
 		_tiempo_contexto += delta
@@ -421,12 +424,21 @@ func _actualizar_stamina() -> void:
 		"stamina",
 		0.0
 	)
-
 	var stamina_maxima := _obtener_float(
 		player,
 		"max_stamina",
-		100.0
+		5.0
 	)
+
+	# PlayerStaminaController es la fuente de verdad de las cargas de dash.
+	var controlador: Variant = player.get("stamina_controller") if is_instance_valid(player) else null
+	if controlador != null:
+		var actual_controlador: Variant = controlador.get("current")
+		var maximo_controlador: Variant = controlador.get("maximum")
+		if actual_controlador != null:
+			stamina_actual = float(actual_controlador)
+		if maximo_controlador != null:
+			stamina_maxima = float(maximo_controlador)
 
 	_actualizar_puntos_dash(stamina_actual, stamina_maxima)
 
@@ -437,12 +449,18 @@ func _actualizar_eterium() -> void:
 		"mana",
 		0.0
 	)
-
 	var eterium_maximo := _obtener_float(
 		player,
 		"max_mana",
 		100.0
 	)
+
+	# El runtime opera directamente sobre VitalState; leerlo evita mostrar una
+	# copia antigua de Player.mana entre dos sincronizaciones.
+	var runtime: Variant = player.get("eterium_runtime") if is_instance_valid(player) else null
+	if runtime != null and runtime.has_method("mana") and runtime.has_method("max_mana"):
+		eterium_actual = float(runtime.call("mana"))
+		eterium_maximo = float(runtime.call("max_mana"))
 
 	_actualizar_barra_float(
 		eterium_bar,

@@ -121,6 +121,8 @@ func _ready() -> void:
 	add_child(input_gate)
 	eterium.configurar(eterium_runtime, stamina_controller)
 	eterium.configurar_vital(vital_state)
+	if not eterium_runtime.mana_changed.is_connected(_al_cambio_mana_runtime):
+		eterium_runtime.mana_changed.connect(_al_cambio_mana_runtime)
 	exploration_controller.terreno_descubierto.connect(_al_terreno_descubierto)
 	locomotion.configurar(movement_controller, action_controller, stamina_controller)
 	if not stamina_controller.stamina_changed.is_connected(_al_cambio_stamina):
@@ -358,6 +360,15 @@ func restaurar_eterium(cantidad: float) -> bool:
 func _al_cambio_stamina(current: float, maximum: float) -> void:
 	stamina = current
 	stamina_changed.emit(current, maximum)
+
+
+func _al_cambio_mana_runtime(_actual: int, _maximo: int) -> void:
+	# El runtime modifica VitalState directamente; mantener sincronizadas las
+	# propiedades públicas de Entity y avisar al HUD en cada cambio real.
+	_sync_desde_vital()
+	mana_changed.emit(mana, max_mana)
+	if eterium.vida_eterium_compartidos():
+		health_changed.emit(health, max_health)
 
 
 # ============================================================
