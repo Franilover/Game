@@ -335,7 +335,7 @@ static func _dibujar_arbol(imagen: Image, variante: int) -> void:
 			_rect(imagen, centro - media - 1, y, media * 2 + 2, 1, verde_sombra)
 			_rect(imagen, centro - media, y, media * 2, 1, verde_base)
 			if fila % 4 == 1:
-				_rect(imagen, centro - media + 1, y, maxi(1, media / 2), 1, verde_luz)
+				_rect(imagen, centro - media + 1, y, maxi(1, int(media / 2)), 1, verde_luz)
 	_rect(imagen, centro - 1, 6, 2, 2, Color("#789353"))
 	_rect(imagen, centro - 8, 14, 4, 2, verde_luz)
 	_rect(imagen, centro + 3, 23, 4, 2, verde_luz)
