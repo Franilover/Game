@@ -667,7 +667,6 @@ func consumir_durabilidad_equipo(clave: String = "mano_secundaria") -> bool:
 	if resultado:
 		actualizar()
 		_actualizar_slots_equipamiento()
-		_actualizar_panel_estadisticas_equipo()
 		inventory_changed.emit()
 	return resultado
 
