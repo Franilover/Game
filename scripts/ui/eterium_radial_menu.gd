@@ -251,6 +251,7 @@ func _al_presionar_espacio() -> void:
 	if not is_instance_valid(jugador) or not bool(jugador.get("is_alive")):
 		return
 	_estado_minijuego = "esperando_toques"
+	add_to_group("modal_ui")
 	_espacio_pulsado = true
 	_tiempo_sostenido = 0.0
 	_toques_espacio = 1
@@ -467,6 +468,10 @@ func _fallar_minijuego(mensaje: String) -> void:
 func _limpiar_minijuego() -> void:
 	_estado_minijuego = ""
 	_fase_meditacion = ""
+	if is_in_group("modal_ui"):
+		remove_from_group("modal_ui")
+	if is_instance_valid(_minijuego_layer) and _minijuego_layer.is_in_group("modal_ui"):
+		_minijuego_layer.remove_from_group("modal_ui")
 	_espacio_pulsado = false
 	_tiempo_sostenido = 0.0
 	_tiempo_ventana_toques = 0.0
@@ -486,6 +491,8 @@ func _mostrar_minijuego() -> void:
 		_overlay.visible = false
 	visible_menu = false
 	_minijuego_layer.visible = true
+	_minijuego_layer.add_to_group("modal_ui")
+	_minijuego_tiempo.visible = _estado_minijuego == "curacion"
 	_indicador_tiempo.visible = _estado_minijuego in ["concentracion", "eterium"]
 
 
