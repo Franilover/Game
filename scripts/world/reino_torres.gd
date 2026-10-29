@@ -174,22 +174,24 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
 		return
 	_posicion_exterior = _jugador.global_position
+	_visibilidad_exterior.clear()
+	_estados_colision_exterior.clear()
 	for child: Node in get_children():
 		if child == _capa_interior or child == _aviso:
 			continue
 		if child is CanvasItem:
+			_visibilidad_exterior[child.get_instance_id()] = (child as CanvasItem).visible
 			(child as CanvasItem).visible = false
-		_desactivar_colisiones(self, true)
-		_capa_interior.visible = true
-		_capa_interior.process_mode = Node.PROCESS_MODE_INHERIT
-		_construir_habitacion(entrada)
-		_jugador.global_position = global_position
-		_interterior_colisiones(true)
-		_interterior_activo = true
-		_aviso.visible = true
-		_aviso.text = "E — Salir al exterior"
-		_aviso.position = Vector2(-105, -175)
-		print("ReinoTorres: entrando a ", entrada["id"])
+	_guardar_y_desactivar_colisiones(self)
+	_capa_interior.visible = true
+	_capa_interior.process_mode = Node.PROCESS_MODE_INHERIT
+	_construir_habitacion(entrada)
+	_jugador.global_position = to_global(Vector2(60, 90))
+	_interterior_colisiones(true)
+	_interterior_activo = true
+	_aviso.visible = false
+	_aviso.text = ""
+	print("ReinoTorres: entrando a ", entrada["id"])
 
 
 func _salir_del_interior() -> void:
@@ -200,26 +202,47 @@ func _salir_del_interior() -> void:
 	for child: Node in get_children():
 		if child == _capa_interior or child == _aviso:
 			continue
-		if child is CanvasItem:
-			(child as CanvasItem).visible = true
-	_desactivar_colisiones(self, false)
+		if child is CanvasItem and _visibilidad_exterior.has(child.get_instance_id()):
+			(child as CanvasItem).visible = bool(_visibilidad_exterior[child.get_instance_id()])
+	_restaurar_colisiones(self)
 	_jugador.global_position = _posicion_exterior
-	_capa_interior.get_children().map(func(n: Node): n.queue_free())
+	for hijo: Node in _capa_interior.get_children():
+		hijo.free()
 	_interterior_colisiones(false)
 	_interterior_activo = false
+	_aviso.visible = false
 	_aviso.text = ""
 	print("ReinoTorres: regreso al exterior.")
 
 
-func _desactivar_colisiones(nodo: Node, desactivar: bool) -> void:
+func _guardar_y_desactivar_colisiones(nodo: Node) -> void:
 	for hijo: Node in nodo.get_children():
 		if hijo == _capa_interior:
 			continue
 		if hijo is CollisionShape2D:
-			(hijo as CollisionShape2D).set_deferred("disabled", desactivar)
+			var forma := hijo as CollisionShape2D
+			_estados_colision_exterior[forma.get_instance_id()] = forma.disabled
+			forma.set_deferred("disabled", true)
 		elif hijo is CollisionPolygon2D:
-			(hijo as CollisionPolygon2D).set_deferred("disabled", desactivar)
-		_desactivar_colisiones(hijo, desactivar)
+			var poligono := hijo as CollisionPolygon2D
+			_estados_colision_exterior[poligono.get_instance_id()] = poligono.disabled
+			poligono.set_deferred("disabled", true)
+		_guardar_y_desactivar_colisiones(hijo)
+
+
+func _restaurar_colisiones(nodo: Node) -> void:
+	for hijo: Node in nodo.get_children():
+		if hijo == _capa_interior:
+			continue
+		if hijo is CollisionShape2D:
+			var forma := hijo as CollisionShape2D
+			if _estados_colision_exterior.has(forma.get_instance_id()):
+				forma.set_deferred("disabled", bool(_estados_colision_exterior[forma.get_instance_id()]))
+		elif hijo is CollisionPolygon2D:
+			var poligono := hijo as CollisionPolygon2D
+			if _estados_colision_exterior.has(poligono.get_instance_id()):
+				poligono.set_deferred("disabled", bool(_estados_colision_exterior[poligono.get_instance_id()]))
+		_restaurar_colisiones(hijo)
 
 
 func _interterior_colisiones(_activar: bool) -> void:
