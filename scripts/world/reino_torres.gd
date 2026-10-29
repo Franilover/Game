@@ -34,7 +34,7 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"semillas", "paths":["edificios/semillas.png","edificios/almacen.png","edificios/edificio.png"], "position":Vector2(800,602), "size":Vector2(122,100), "hide":["SeedStore"]},
 	{"key":"telar", "paths":["edificios/telares.png","casas/taller.png","casas/casa.png"], "position":Vector2(-760,-258), "size":Vector2(100,90), "hide":["WeaverHouse"]},
 	{"key":"alfareria", "paths":["edificios/alfareria.png","casas/taller.png","casas/casa.png"], "position":Vector2(-760,102), "size":Vector2(100,90), "hide":["PotterHouse"]},
-	{"key":"banos", "paths":["edificios/banos.png","edificios/edificio.png"], "position":Vector2(-760,211), "size":Vector2(108,98), "hide":["BathHouse"]}
+	{"key":"banos", "paths":["edificios/banos.png","edificios/edificio.png"], "position":Vector2(-760,211), "size":Vector2(108,98), "hide":["BathHouse"]},
 	{"key":"vivienda_oeste_01", "paths":["casas/vivienda_oeste_01.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-354), "size":Vector2(84,82), "hide":["WestHome1Wall","WestHome1Roof","WestHome1Door","WestHome1CollisionBody"]},
 	{"key":"vivienda_oeste_02", "paths":["casas/vivienda_oeste_02.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,-354), "size":Vector2(84,82), "hide":["WestHome2Wall","WestHome2Roof","WestHome2Door","WestHome2CollisionBody"]},
 	{"key":"vivienda_oeste_03", "paths":["casas/vivienda_oeste_03.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-254), "size":Vector2(84,82), "hide":["WestHome3Wall","WestHome3Roof","WestHome3Door","WestHome3CollisionBody"]},
