@@ -340,6 +340,7 @@ func _construir_interfaz_minijuego() -> void:
 	sombra.mouse_filter = Control.MOUSE_FILTER_STOP
 	_minijuego_layer.add_child(sombra)
 	var panel := PanelContainer.new()
+	_panel = panel
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.offset_left = -150.0
 	panel.offset_top = -52.0
