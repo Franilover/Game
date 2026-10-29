@@ -127,6 +127,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _al_solicitar_destino_reino(clave: String) -> void:
+	print("Main: destino solicitado desde RealmMenu → ", clave)
 	if _zone_manager == null or not is_instance_valid(_zone_manager):
 		return
 	if clave == "mundo_abierto":
