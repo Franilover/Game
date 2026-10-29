@@ -304,7 +304,7 @@ func _inicializar_runtime_de_zona() -> void:
 
 	var tipo_zona_actual: String = str(_zone_manager.obtener_tipo_actual())
 	if tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
-		var zona_actual := _zone_manager.obtener_zona_actual()
+		var zona_actual: Node = _zone_manager.obtener_zona_actual()
 		var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
 		_player.global_position = punto_aparicion.global_position if is_instance_valid(punto_aparicion) else Vector2(0, 120)
 		print("Main: reino activo → ", tipo_zona_actual)
