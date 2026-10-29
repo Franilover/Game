@@ -388,6 +388,12 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	var detalle_x := -150 + float(semilla % 5) * 65.0
 	var detalle_y := -20 + float((semilla / 7) % 4) * 25.0
 	_agregar_rect(cuarto, "DetallePropio", Vector2(detalle_x, detalle_y), Vector2(18 + semilla % 17, 12 + semilla % 9), claro, 3)
+	var paleta: Array[Color] = [madera, acento, piedra, claro, Color(0.40, 0.31, 0.25)]
+	for i in range(4):
+		var objeto_x := -175.0 + float((semilla / (i + 3)) % 8) * 40.0
+		var objeto_y := -100.0 + float((semilla / (i + 7)) % 5) * 26.0
+		var objeto_tamano := Vector2(12 + (semilla / (i + 2)) % 18, 10 + (semilla / (i + 5)) % 15)
+		_agregar_rect(cuarto, "ObjetoPropio%d" % i, Vector2(objeto_x, objeto_y), objeto_tamano, paleta[(semilla / (i + 1)) % paleta.size()], 3)
 	_agregar_rect(cuarto, "VentanaNorte", Vector2(-70, -132), Vector2(36, 5), Color(0.22,0.35,0.38), 4)
 	_agregar_rect(cuarto, "VentanaEste", Vector2(220, -20), Vector2(5, 34), Color(0.22,0.35,0.38), 4)
 
