@@ -15,7 +15,7 @@ func _run() -> void:
 	# No SupabaseClient is injected here on purpose: Torres must still be
 	# reachable from the RealmMenu while the remote realm catalog loads.
 	manager.entrar_reino("torres")
-	await process_frame
+	await get_tree().process_frame
 	await process_frame
 
 	if manager.obtener_tipo_actual() != "reino_torres":
