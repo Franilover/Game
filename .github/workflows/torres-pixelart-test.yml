@@ -1,0 +1,67 @@
+name: Torres TileMapDual Grass Regression
+
+on:
+  push:
+    branches: ["feat/garumi-triple-combat-supabase-attacks"]
+    paths:
+      - "assets/tilesets/Torres_Cesped.png"
+      - "scripts/world/reino_torres.gd"
+      - "scripts/world/torres_pixel_art.gd"
+      - "scenes/kingdom/reino_torres.tscn"
+      - "tests/world/test_torres_cesped_tilemap.gd"
+      - ".github/workflows/torres-pixelart-test.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "assets/tilesets/Torres_Cesped.png"
+      - "scripts/world/reino_torres.gd"
+      - "scripts/world/torres_pixel_art.gd"
+      - "scenes/kingdom/reino_torres.tscn"
+      - "tests/world/test_torres_cesped_tilemap.gd"
+      - ".github/workflows/torres-pixelart-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  torres-grass:
+    name: Godot 4.7 — Torres grass TileMapDual
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot 4.7
+        shell: bash
+        run: |
+          set -euo pipefail
+          filename="Godot_v4.7-stable_linux.x86_64"
+          wget -q "https://github.com/godotengine/godot/releases/download/4.7-stable/${filename}.zip"
+          unzip -q "${filename}.zip"
+          sudo install "${filename}" /usr/local/bin/godot
+          godot --version
+
+      - name: Import resources and verify scripts compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --editor --path . --quit 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
+            echo "Godot reported script compilation errors during import."
+            exit 1
+          fi
+
+      - name: Verify Torres grass TileMapDual atlas
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 60s godot --headless --path . --script res://tests/world/test_torres_cesped_tilemap.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|Torres grass TileMapDual regression:' <<<"$output"; then
+            echo "Torres TileMapDual grass regression test reported errors."
+            exit 1
+          fi
