@@ -3,6 +3,8 @@ extends Control
 
 var _ids_descubiertos: Array[String] = []
 var _arbol: Tree
+var _garumi_grid_scroll: ScrollContainer
+var _garumi_grid: GridContainer
 var _nombre: Label
 var _ficha: RichTextLabel
 var _icono: TextureRect
@@ -96,6 +98,19 @@ func _crear_interfaz() -> void:
 	_arbol.item_selected.connect(_al_seleccionar)
 	_arbol.item_mouse_selected.connect(_al_click_arbol)
 	body.add_child(_arbol)
+
+	_garumi_grid_scroll = ScrollContainer.new()
+	_garumi_grid_scroll.custom_minimum_size = Vector2(190, 0)
+	_garumi_grid_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_garumi_grid_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_garumi_grid_scroll.visible = false
+	body.add_child(_garumi_grid_scroll)
+	_garumi_grid = GridContainer.new()
+	_garumi_grid.columns = 4
+	_garumi_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_garumi_grid.add_theme_constant_override("h_separation", 4)
+	_garumi_grid.add_theme_constant_override("v_separation", 4)
+	_garumi_grid_scroll.add_child(_garumi_grid)
 
 	var detail_panel := PanelContainer.new()
 	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -201,7 +216,10 @@ func actualizar() -> void:
 		"criaturas":
 			_construir_lista_criaturas()
 		"garumis":
-			_construir_lista_garumis()
+			if solo_garumis:
+				_construir_grid_garumis()
+			else:
+				_construir_lista_garumis()
 		_:
 			_construir_arbol_biomas()
 
@@ -232,6 +250,8 @@ func _mostrar_garumis() -> void:
 	_arbol.set_column_expand(2, false)
 	_arbol.set_column_custom_minimum_width(0, 38)
 	_arbol.set_column_custom_minimum_width(2, 38)
+	_arbol.visible = not solo_garumis
+	_garumi_grid_scroll.visible = solo_garumis
 	if not _catalogo_garumis_cargado and _solicitud_catalogo_garumis < 0:
 		_cargar_catalogo_garumis()
 	actualizar()
@@ -482,6 +502,64 @@ func _construir_lista_garumis() -> void:
 		return
 	_arbol.set_selected(primero, 0)
 	_mostrar_item(primero)
+
+
+func _construir_grid_garumis() -> void:
+	if not is_instance_valid(_garumi_grid):
+		return
+	for hijo in _garumi_grid.get_children():
+		hijo.queue_free()
+	var descubiertos: Dictionary = GameState.call("obtener_garumis_descubiertos") if GameState.has_method("obtener_garumis_descubiertos") else {}
+	for registro in _garumis_catalogo:
+		var id := str(registro.get("id", registro.get("entidad_id", ""))).strip_edges()
+		var conocido := not id.is_empty() and descubiertos.has(id)
+		var textura := _obtener_textura_garumi(registro)
+		var boton := TextureButton.new()
+		boton.custom_minimum_size = Vector2(44, 44)
+		boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		boton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		boton.ignore_texture_size = true
+		boton.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		boton.texture_normal = textura
+		boton.tooltip_text = str(registro.get("nombre", "Garumi")) if conocido else "Garumi no descubierto"
+		if not conocido:
+			boton.material = _crear_material_silueta()
+		boton.disabled = textura == null
+		boton.pressed.connect(_mostrar_garumi_desde_grid.bind(registro.duplicate(true)))
+		_garumi_grid.add_child(boton)
+
+
+func _mostrar_garumi_desde_grid(registro: Dictionary) -> void:
+	_restaurar_ficha_detalle()
+	_nombre.text = str(registro.get("nombre", "Garumi"))
+	_mostrar_ficha_garumi(registro, [])
+
+
+func _crear_material_silueta() -> ShaderMaterial:
+	var shader := Shader.new()
+	shader.code = "shader_type canvas_item; void fragment() { COLOR = vec4(0.10, 0.075, 0.05, COLOR.a); }"
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	return material
+
+
+func _obtener_textura_garumi(registro: Dictionary) -> Texture2D:
+	var claves: Array[String] = []
+	var asset_key := str(registro.get("asset_key", "")).strip_edges()
+	var nombre := str(registro.get("nombre", "")).strip_edges()
+	if not asset_key.is_empty():
+		claves.append(asset_key)
+	if not nombre.is_empty() and not claves.has(nombre):
+		claves.append(nombre)
+	for clave in claves:
+		for extension in [".png", ".PNG", ".svg", ".SVG"]:
+			var ruta := "res://assets/art/garumis/" + clave + extension
+			if not ResourceLoader.exists(ruta):
+				continue
+			var textura := load(ruta) as Texture2D
+			if textura != null:
+				return textura
+	return null
 
 
 func _obtener_registros(registros_variant: Variant, descubiertos: Dictionary) -> Array[Dictionary]:
@@ -753,26 +831,13 @@ func _restaurar_ficha_detalle() -> void:
 
 
 func _mostrar_sprite_garumi(registro: Dictionary) -> void:
-	_icono.texture = null
-	_icono.visible = false
-	var claves: Array[String] = []
-	var asset_key := str(registro.get("asset_key", "")).strip_edges()
-	var nombre := str(registro.get("nombre", "")).strip_edges()
-	if not asset_key.is_empty():
-		claves.append(asset_key)
-	if not nombre.is_empty() and not claves.has(nombre):
-		claves.append(nombre)
-	for clave in claves:
-		for extension in [".png", ".PNG", ".svg", ".SVG"]:
-			var ruta: String = "res://assets/art/garumis/" + clave + extension
-			if not ResourceLoader.exists(ruta):
-				continue
-			var textura := load(ruta) as Texture2D
-			if textura == null:
-				continue
-			_icono.texture = textura
-			_icono.visible = true
-			return
+	_icono.texture = _obtener_textura_garumi(registro)
+	_icono.visible = _icono.texture != null
+	_icono.material = null
+	var id := str(registro.get("id", registro.get("entidad_id", ""))).strip_edges()
+	var descubiertos: Dictionary = GameState.call("obtener_garumis_descubiertos") if GameState.has_method("obtener_garumis_descubiertos") else {}
+	if not id.is_empty() and not descubiertos.has(id) and _icono.visible:
+		_icono.material = _crear_material_silueta()
 
 
 func _mostrar_ficha_criatura(
