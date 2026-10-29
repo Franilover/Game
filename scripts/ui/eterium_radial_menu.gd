@@ -36,6 +36,7 @@ var _minijuego_titulo: Label
 var _minijuego_instruccion: Label
 var _minijuego_barra: ProgressBar
 var _minijuego_tiempo: ProgressBar
+var _minijuego_sombra: ColorRect
 var _anillo_meditacion: Control
 var _radio_anillo := RADIO_ANILLO_INICIAL
 var _direccion_anillo := -1.0
@@ -335,9 +336,10 @@ func _construir_interfaz_minijuego() -> void:
 	_minijuego_layer.z_index = 80
 	add_child(_minijuego_layer)
 	var sombra := ColorRect.new()
+	_minijuego_sombra = sombra
 	sombra.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	sombra.color = Color(0.025, 0.018, 0.012, 0.58)
-	sombra.mouse_filter = Control.MOUSE_FILTER_STOP
+	sombra.color = Color(0.025, 0.018, 0.012, 0.0)
+	sombra.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_minijuego_layer.add_child(sombra)
 	var panel := PanelContainer.new()
 	_panel = panel
@@ -424,10 +426,14 @@ func _iniciar_concentracion() -> void:
 	_fase_meditacion = "inicial"
 	_tiempo_fase = 0.0
 	_ciclos_meditacion = 0
+	_radio_anillo = RADIO_ANILLO_INICIAL
+	_direccion_anillo = -1.0
+	_ventana_coyote = 0.0
 	_mostrar_minijuego()
-	_actualizar_panel_minijuego("SIGUE EL PULSO", "")
+	_actualizar_panel_minijuego("", "")
 	_minijuego_barra.value = 0.0
 	_minijuego_tiempo.visible = false
+	queue_redraw()
 
 
 func _iniciar_meditacion_desde_menu() -> void:
@@ -536,6 +542,17 @@ func _mostrar_minijuego() -> void:
 	visible_menu = false
 	_minijuego_layer.visible = true
 	_minijuego_layer.add_to_group("modal_ui")
+	var meditacion := _estado_minijuego in ["concentracion", "eterium", "espera_meditacion"]
+	if is_instance_valid(_minijuego_sombra):
+		_minijuego_sombra.visible = not meditacion
+	if is_instance_valid(_panel):
+		_panel.visible = not meditacion
+		if meditacion:
+			_panel.offset_left = -150.0
+			_panel.offset_top = 14.0
+			_panel.offset_right = 150.0
+			_panel.offset_bottom = 50.0
+			_panel.custom_minimum_size = Vector2(300.0, 36.0)
 	_minijuego_tiempo.visible = _estado_minijuego in ["curacion", "dash_menu"]
 	_indicador_tiempo.visible = _estado_minijuego in ["concentracion", "eterium"]
 
@@ -545,7 +562,9 @@ func _actualizar_panel_minijuego(titulo: String, instruccion: String) -> void:
 		return
 	_minijuego_titulo.text = titulo
 	_minijuego_instruccion.text = instruccion
-	_minijuego_instruccion.visible = not instruccion.is_empty()
+	var meditacion := _estado_minijuego in ["concentracion", "eterium", "espera_meditacion"]
+	_minijuego_titulo.visible = not instruccion.is_empty() and not meditacion
+	_minijuego_instruccion.visible = not instruccion.is_empty() and not meditacion
 
 
 func _actualizar_indicador_tiempo() -> void:
