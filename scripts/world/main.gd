@@ -37,6 +37,8 @@ const ETERIUM_RADIAL_MENU_SCRIPT = preload("res://scripts/ui/eterium_radial_menu
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
+@onready var _realm_menu: Control = $UI/RealmMenu
+var _reino_descubrimiento_elapsed: float = 0.0
 
 
 func _ready() -> void:
@@ -56,6 +58,10 @@ func _ready() -> void:
 
 	if not _zone_manager.zona_cambiada.is_connected(_al_cambio_de_zona):
 		_zone_manager.zona_cambiada.connect(_al_cambio_de_zona)
+	if is_instance_valid(_realm_menu) and _realm_menu.has_signal("destino_solicitado"):
+		var callback_viaje := Callable(self, "_al_solicitar_destino_reino")
+		if not _realm_menu.is_connected("destino_solicitado", callback_viaje):
+			_realm_menu.connect("destino_solicitado", callback_viaje)
 	if not _supabase_client.reinos_game_cargados.is_connected(_al_reinos_game_cargados):
 		_supabase_client.reinos_game_cargados.connect(_al_reinos_game_cargados)
 
@@ -107,7 +113,34 @@ func _iniciar_zonas() -> void:
 	_zone_manager.iniciar()
 
 
-func _process(_delta: float) -> void:
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var tecla := event as InputEventKey
+	if not tecla.pressed or tecla.echo or tecla.keycode != KEY_M or not tecla.shift_pressed:
+		return
+	if _realm_menu == null or not is_instance_valid(_realm_menu):
+		return
+	if _realm_menu.has_method("alternar"):
+		_realm_menu.call("alternar", _supabase_client, GameState, _zone_manager.obtener_tipo_actual())
+		get_viewport().set_input_as_handled()
+
+
+func _al_solicitar_destino_reino(clave: String) -> void:
+	if _zone_manager == null or not is_instance_valid(_zone_manager):
+		return
+	if clave == "mundo_abierto":
+		_zone_manager.entrar_mundo_abierto()
+		return
+	var desbloqueados: Dictionary = GameState.obtener_reinos_desbloqueados()
+	if not bool(desbloqueados.get(clave.strip_edges().to_lower(), false)):
+		push_warning("Main: intento de viajar a un reino todavía no descubierto: " + clave)
+		return
+	if _zone_manager.has_method("entrar_reino"):
+		_zone_manager.call("entrar_reino", clave)
+
+
+func _process(delta: float) -> void:
 	# La cámara debe seguir funcionando aunque la zona tarde en terminar de inicializar.
 	if _player == null:
 		var jugador_en_escena: Player = get_node_or_null("Entities/Player") as Player
@@ -119,6 +152,42 @@ func _process(_delta: float) -> void:
 			_camera = camara_en_escena
 			_configurar_camara()
 	_seguir_jugador()
+
+	_reino_descubrimiento_elapsed += delta
+	if _reino_descubrimiento_elapsed >= 0.5:
+		_reino_descubrimiento_elapsed = 0.0
+		_detectar_reinos_descubiertos()
+
+
+func _detectar_reinos_descubiertos() -> void:
+	if _zone_manager == null or _zone_manager.obtener_tipo_actual() != "mundo_abierto":
+		return
+	if not is_instance_valid(_player) or _world_context == null or not _world_context.tiene_mundo_activo():
+		return
+	if _supabase_client == null:
+		return
+	for reino_variant in _world_context.get_reinos_at_position(_player.global_position):
+		if not reino_variant is Dictionary:
+			continue
+		var reino := reino_variant as Dictionary
+		var clave := str(reino.get("clave", "")).strip_edges().to_lower()
+		if clave.is_empty():
+			continue
+		var regla := _supabase_client.obtener_reino_game(clave)
+		if regla.is_empty():
+			continue
+		var propiedades_variant: Variant = regla.get("propiedades", {})
+		if not propiedades_variant is Dictionary:
+			continue
+		var propiedades := propiedades_variant as Dictionary
+		if str(propiedades.get("tipo_zona", "")) != "escena_fija":
+			continue
+		if bool(propiedades.get("usa_world_generator", false)) or bool(propiedades.get("generacion_procedural", false)):
+			continue
+		var escena := str(propiedades.get("escena", "")).strip_edges()
+		if escena.is_empty() or not ResourceLoader.exists(escena):
+			continue
+		GameState.desbloquear_reino(clave)
 
 
 func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
@@ -233,9 +302,12 @@ func _inicializar_runtime_de_zona() -> void:
 	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
 		call_deferred("_restaurar_garumis_vinculados")
 
-	if _zone_manager.obtener_tipo_actual() == "reino_torres":
-		_player.global_position = Vector2(0, 120)
-		print("Main: inicio en Reino Torres.")
+	var tipo_zona_actual := _zone_manager.obtener_tipo_actual()
+	if tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
+		var zona_actual := _zone_manager.obtener_zona_actual()
+		var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
+		_player.global_position = punto_aparicion.global_position if is_instance_valid(punto_aparicion) else Vector2(0, 120)
+		print("Main: reino activo → ", tipo_zona_actual)
 	else:
 		print("Main: mundo abierto listo.")
 
