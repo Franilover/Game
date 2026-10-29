@@ -255,7 +255,7 @@ func _al_presionar_espacio() -> void:
 		_espacio_pulsado = true
 		_tiempo_sostenido = 0.0
 		_toques_espacio += 1
-		if _toques_espacio >= 3:
+		if _toques_espacio >= 2:
 			_recuperar_dash_directo()
 			_limpiar_minijuego()
 			return
@@ -313,20 +313,20 @@ func _construir_interfaz_minijuego() -> void:
 	_minijuego_layer.add_child(sombra)
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -175.0
-	panel.offset_top = -68.0
-	panel.offset_right = 175.0
-	panel.offset_bottom = 68.0
-	panel.custom_minimum_size = Vector2(350.0, 136.0)
+	panel.offset_left = -150.0
+	panel.offset_top = -52.0
+	panel.offset_right = 150.0
+	panel.offset_bottom = 52.0
+	panel.custom_minimum_size = Vector2(300.0, 104.0)
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = Color(0.09, 0.061, 0.038, 0.98)
 	estilo.border_color = Color(0.55, 0.39, 0.21, 1.0)
 	estilo.set_border_width_all(2)
 	estilo.set_corner_radius_all(5)
-	estilo.content_margin_left = 12.0
-	estilo.content_margin_right = 12.0
-	estilo.content_margin_top = 9.0
-	estilo.content_margin_bottom = 9.0
+	estilo.content_margin_left = 10.0
+	estilo.content_margin_right = 10.0
+	estilo.content_margin_top = 6.0
+	estilo.content_margin_bottom = 6.0
 	panel.add_theme_stylebox_override("panel", estilo)
 	_minijuego_layer.add_child(panel)
 	var columna := VBoxContainer.new()
@@ -344,7 +344,7 @@ func _construir_interfaz_minijuego() -> void:
 	_minijuego_instruccion.add_theme_color_override("font_color", Color(0.78, 0.68, 0.53, 1.0))
 	columna.add_child(_minijuego_instruccion)
 	_minijuego_barra = ProgressBar.new()
-	_minijuego_barra.custom_minimum_size = Vector2(0.0, 14.0)
+	_minijuego_barra.custom_minimum_size = Vector2(0.0, 20.0)
 	_minijuego_barra.min_value = 0.0
 	_minijuego_barra.max_value = 100.0
 	_minijuego_barra.show_percentage = false
@@ -516,6 +516,7 @@ func _actualizar_panel_minijuego(titulo: String, instruccion: String) -> void:
 		return
 	_minijuego_titulo.text = titulo
 	_minijuego_instruccion.text = instruccion
+	_minijuego_instruccion.visible = not instruccion.is_empty()
 
 
 func _actualizar_indicador_tiempo() -> void:
