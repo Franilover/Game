@@ -57,7 +57,9 @@ var _posicion_exterior: Vector2 = Vector2.ZERO
 var _visibilidad_exterior: Dictionary = {}
 var _estados_colision_exterior: Dictionary = {}
 var _capa_interior: Node2D
+var _aviso_panel: PanelContainer
 var _aviso: Label
+var _entrada_aviso_actual: Dictionary = {}
 
 # Las entradas están cerca de la fachada de cada edificio. Cada clave tiene
 # su propio nombre, función y distribución interior.
@@ -124,12 +126,11 @@ func _process(_delta: float) -> void:
 
 	if _interior_activo:
 		var cerca_salida := _jugador.global_position.distance_to(to_global(Vector2(60, 105))) < 48.0
-		_aviso.text = "E — Salir al exterior" if cerca_salida else ""
-		_aviso.visible = cerca_salida
+		_entrada_aviso_actual = {"salir": true} if cerca_salida else {}
+		_aviso.text = "Salir al exterior   [Clic izq./der.]" if cerca_salida else ""
+		_aviso_panel.visible = cerca_salida
 		if cerca_salida:
-			_aviso.global_position = _jugador.global_position + Vector2(-115, -45)
-		if Input.is_action_just_pressed("interact") and cerca_salida:
-			_salir_del_interior()
+			_posicionar_aviso_sobre_jugador()
 		return
 
 	var entrada_cercana: Dictionary = {}
@@ -140,29 +141,80 @@ func _process(_delta: float) -> void:
 			distancia_menor = distancia
 			entrada_cercana = entrada
 
+	_entrada_aviso_actual = entrada_cercana
 	if entrada_cercana.is_empty():
 		_aviso.text = ""
-		_aviso.visible = false
+		_aviso_panel.visible = false
 		return
 
-	_aviso.visible = true
-	_aviso.global_position = _jugador.global_position + Vector2(-145, -45)
-	_aviso.text = "E — Entrar: " + str(entrada_cercana["nombre"])
-	if Input.is_action_just_pressed("interact"):
-		_entrar_al_interior(entrada_cercana)
+	_aviso.text = "Entrar: " + str(entrada_cercana["nombre"]) + "   [Clic izq./der.]"
+	_aviso_panel.visible = true
+	_posicionar_aviso_sobre_jugador()
 
 
 func _crear_aviso() -> void:
+	# Botón flotante compacto con el mismo acabado oscuro y borde cálido del menú Garumi.
+	_aviso_panel = PanelContainer.new()
+	_aviso_panel.name = "AvisoEntradaPanel"
+	_aviso_panel.z_index = 50
+	_aviso_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_aviso_panel.custom_minimum_size = Vector2(0.0, 30.0)
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.105, 0.071, 0.043, 0.98)
+	estilo.border_color = Color(0.48, 0.32, 0.17, 1.0)
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(4)
+	estilo.content_margin_left = 9.0
+	estilo.content_margin_right = 9.0
+	estilo.content_margin_top = 4.0
+	estilo.content_margin_bottom = 4.0
+	_aviso_panel.add_theme_stylebox_override("panel", estilo)
+	var hover := estilo.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.19, 0.125, 0.065, 1.0)
+	hover.border_color = Color(0.76, 0.54, 0.29, 1.0)
+	_aviso_panel.add_theme_stylebox_override("panel", hover)
+	_aviso_panel.gui_input.connect(_al_clic_aviso)
+
 	_aviso = Label.new()
 	_aviso.name = "AvisoEntrada"
-	_aviso.position = Vector2(-150, -190)
-	_aviso.z_index = 50
-	_aviso.add_theme_color_override("font_color", Color(1.0, 0.91, 0.69))
-	_aviso.add_theme_color_override("font_shadow_color", Color(0.08, 0.07, 0.06))
-	_aviso.add_theme_constant_override("shadow_offset_x", 2)
-	_aviso.add_theme_constant_override("shadow_offset_y", 2)
-	_aviso.visible = false
-	add_child(_aviso)
+	_aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aviso.add_theme_color_override("font_color", Color(0.91, 0.83, 0.70, 1.0))
+	_aviso.add_theme_font_size_override("font_size", 11)
+	_aviso_panel.add_child(_aviso)
+	_aviso_panel.visible = false
+	var capa_ui := CanvasLayer.new()
+	capa_ui.name = "AvisoEntradaLayer"
+	capa_ui.layer = 110
+	add_child(capa_ui)
+	capa_ui.add_child(_aviso_panel)
+
+
+func _posicionar_aviso_sobre_jugador() -> void:
+	if not is_instance_valid(_aviso_panel) or not is_instance_valid(_jugador):
+		return
+	var posicion_pantalla: Vector2 = _jugador.get_global_transform_with_canvas().origin
+	var tamano := _aviso_panel.get_combined_minimum_size()
+	_aviso_panel.size = tamano
+	var viewport := get_viewport().get_visible_rect().size
+	_aviso_panel.position = Vector2(
+		clampf(posicion_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
+		clampf(posicion_pantalla.y - tamano.y - 24.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
+	)
+
+
+func _al_clic_aviso(evento: InputEvent) -> void:
+	if not evento is InputEventMouseButton:
+		return
+	var clic := evento as InputEventMouseButton
+	if not clic.pressed or clic.button_index not in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		return
+	if _entrada_aviso_actual.is_empty():
+		return
+	get_viewport().set_input_as_handled()
+	if bool(_entrada_aviso_actual.get("salir", false)):
+		_salir_del_interior()
+	else:
+		_entrar_al_interior(_entrada_aviso_actual)
 
 
 func _cargar_sprites_de_torres() -> void:
@@ -207,7 +259,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_jugador.global_position = to_global(Vector2(60, 90))
 	_interterior_colisiones(true)
 	_interior_activo = true
-	_aviso.visible = false
+	_aviso_panel.visible = false
 	_aviso.text = ""
 	print("ReinoTorres: entrando a ", entrada["id"])
 
@@ -228,7 +280,7 @@ func _salir_del_interior() -> void:
 		hijo.free()
 	_interterior_colisiones(false)
 	_interior_activo = false
-	_aviso.visible = false
+	_aviso_panel.visible = false
 	_aviso.text = ""
 	print("ReinoTorres: regreso al exterior.")
 
