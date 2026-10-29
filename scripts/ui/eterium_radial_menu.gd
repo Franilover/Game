@@ -197,8 +197,12 @@ func _process(delta: float) -> void:
 				_fase_meditacion = "inicial"
 				_tiempo_fase = 0.0
 				_ciclos_meditacion = 0
-				_actualizar_panel_minijuego("SIGUE EL PULSO", "")
+				_radio_anillo = RADIO_ANILLO_INICIAL
+				_direccion_anillo = -1.0
+				_ventana_coyote = 0.0
+				_actualizar_panel_minijuego("", "")
 				_minijuego_barra.value = 0.0
+				queue_redraw()
 	elif _estado_minijuego == "eterium":
 		_tiempo_fase += delta
 		_ventana_coyote = maxf(0.0, _ventana_coyote - delta)
