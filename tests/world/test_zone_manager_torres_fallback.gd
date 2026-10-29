@@ -21,7 +21,7 @@ func _run() -> void:
 	if manager.obtener_tipo_actual() != "reino_torres":
 		_fail("Entrar en Torres no cambió el tipo de zona.")
 		return
-	var zona := manager.obtener_zona_actual()
+	var zona: Node = manager.obtener_zona_actual()
 	if not is_instance_valid(zona):
 		_fail("ZoneManager no creó una zona activa.")
 		return
