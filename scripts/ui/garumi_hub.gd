@@ -314,17 +314,23 @@ func _quitar_vinculo(registro: Dictionary) -> void:
 	registro_amigo["max_health"] = salud["max"]
 	GameState.guardar_garumi_amigo(registro_amigo)
 	var vinculo_roto := false
+	var instancia_en_escena := false
 	for nodo in get_tree().get_nodes_in_group("garumis"):
-		if not is_instance_valid(nodo) or not nodo.has_method("romper_vinculo"):
+		if not is_instance_valid(nodo):
 			continue
-		if str(nodo.get("_garumi_instancia_id")).strip_edges() == id_instancia:
+		if str(nodo.get("_garumi_instancia_id")).strip_edges() != id_instancia:
+			continue
+		instancia_en_escena = true
+		if nodo.has_method("romper_vinculo"):
 			vinculo_roto = bool(nodo.call("romper_vinculo"))
-			break
-	if not vinculo_roto:
+		break
+	if not instancia_en_escena:
 		vinculo_roto = GameState.eliminar_garumi_vinculado(id_instancia)
 	if vinculo_roto:
 		actualizar()
 		_mostrar_detalle(registro_amigo, "Amigo")
+	else:
+		GameState.eliminar_garumi_amigo(id_instancia)
 
 
 func _vincular_desde_amigos(registro: Dictionary) -> void:
