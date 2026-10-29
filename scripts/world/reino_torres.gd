@@ -5,6 +5,14 @@ signal salida_solicitada
 const TORRES_ART_ROOT := "res://assets/art/kingdom/torres"
 const TORRES_PIXEL_ART := preload("res://scripts/world/torres_pixel_art.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
+const TORRES_GRASS_ATLAS := "res://assets/tilesets/Torres_Cesped.png"
+const TORRES_TILE_SIZE := 32
+const CESPED_CORNERS: Array[TileSet.CellNeighbor] = [
+	TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
+	TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
+	TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
+	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
+]
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
 # Si no existe ningún archivo válido, sus Polygon2D de placeholder quedan visibles.
@@ -62,6 +70,7 @@ var _capa_interior: Node2D
 var _aviso_panel: PanelContainer
 var _aviso: Label
 var _entrada_aviso_actual: Dictionary = {}
+var _cesped_dual: TileMapDual
 
 # Las entradas están cerca de la fachada de cada edificio. Cada clave tiene
 # su propio nombre, función y distribución interior.
@@ -116,6 +125,7 @@ func _ready() -> void:
 	_capa_interior.visible = false
 	add_child(_capa_interior)
 	_crear_aviso()
+	_crear_cesped_tilemap_dual()
 	_texturizar_mapa_pixelart()
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
@@ -238,10 +248,67 @@ func _input(evento: InputEvent) -> void:
 		_entrar_al_interior(accion)
 
 
+func _crear_cesped_tilemap_dual() -> void:
+	# El suelo del reino usa Dual Grid real: cada atlas tile define sus cuatro
+	# cuadrantes y TileMapDual resuelve bordes/esquinas según las celdas vecinas.
+	var textura: Texture2D = load(TORRES_GRASS_ATLAS) as Texture2D
+	if textura == null:
+		push_error("ReinoTorres: no se pudo cargar el atlas de césped: " + TORRES_GRASS_ATLAS)
+		return
+	if textura.get_size() != Vector2(TORRES_TILE_SIZE * 4, TORRES_TILE_SIZE * 4):
+		push_error("ReinoTorres: Torres_Cesped.png debe ser un atlas de 128x128 con tiles de 32x32.")
+		return
+
+	var conjunto := TileSet.new()
+	conjunto.tile_size = Vector2i(TORRES_TILE_SIZE, TORRES_TILE_SIZE)
+	conjunto.add_terrain_set()
+	conjunto.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
+	conjunto.add_terrain(0)
+	conjunto.set_terrain_name(0, 0, "<any>")
+	conjunto.add_terrain(0)
+	conjunto.set_terrain_name(0, 1, "Césped de Torres")
+
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = textura
+	atlas.texture_region_size = Vector2i(TORRES_TILE_SIZE, TORRES_TILE_SIZE)
+	for mascara in range(16):
+		atlas.create_tile(Vector2i(mascara % 4, int(mascara / 4)))
+	conjunto.add_source(atlas, 0)
+
+	# El índice de máscara usa el mismo orden que el atlas: TL, TR, BL, BR.
+	# Se registra el terreno en cada tile para que el addon pueda componer sus
+	# DisplayLayer sin una textura completa opaca por debajo de los bordes.
+	for mascara in range(16):
+		var coordenada := Vector2i(mascara % 4, int(mascara / 4))
+		var datos := atlas.get_tile_data(coordenada, 0)
+		datos.terrain_set = 0
+		datos.terrain = 1
+		for bit_index in range(CESPED_CORNERS.size()):
+			var conectado := 1 if (mascara & (1 << bit_index)) != 0 else 0
+			datos.set_terrain_peering_bit(CESPED_CORNERS[bit_index], conectado)
+
+	_cesped_dual = TileMapDual.new()
+	_cesped_dual.name = "TorresCespedDual"
+	_cesped_dual.tile_set = conjunto
+	_cesped_dual.position = Vector2(-1200, -704)
+	_cesped_dual.z_as_relative = false
+	_cesped_dual.z_index = -19
+	_cesped_dual.rendering_quadrant_size = 16
+	_cesped_dual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(_cesped_dual)
+
+	# 75 x 44 celdas cubren el suelo de Torres a 32 px por tile. Se mantiene
+	# Ground como base de color detrás de las esquinas transparentes del atlas.
+	for y in range(44):
+		for x in range(75):
+			_cesped_dual.set_cell(Vector2i(x, y), 0, Vector2i(3, 3))
+
+	print("ReinoTorres: césped TileMapDual listo (75x44 celdas, atlas propio).")
+
+
 func _texturizar_mapa_pixelart() -> void:
 	# Sustituye las superficies planas por texturas rasterizadas a baja resolución.
 	var superficies: Array[Dictionary] = [
-		{"nombre": "Ground", "tipo": "hierba"},
 		{"nombre": "NorthPath", "tipo": "camino"},
 		{"nombre": "MainStreet", "tipo": "camino"},
 		{"nombre": "WestStreet", "tipo": "camino"},
