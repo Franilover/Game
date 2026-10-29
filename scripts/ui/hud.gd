@@ -1466,8 +1466,9 @@ func _preparar_reloj_calendario() -> void:
 func _actualizar_reloj_calendario() -> void:
 	if not is_instance_valid(_calendar_label):
 		return
+	# En reinos fijos no existe WorldAtmosphere. Conservamos la última
+	# lectura válida en vez de reemplazar el reloj por "no disponible".
 	if not is_instance_valid(_world_atmosphere_ref):
-		_calendar_label.text = "GARLIA\nCalendario no disponible"
 		return
 	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
