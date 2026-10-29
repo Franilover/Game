@@ -146,7 +146,7 @@ func _reconstruir_destinos() -> void:
 				continue
 			var propiedades := propiedades_variant as Dictionary
 			var escena := str(propiedades.get("escena", "")).strip_edges()
-			if escena.is_empty():
+			if escena.is_empty() or not ResourceLoader.exists(escena):
 				continue
 			var nombre := str(propiedades.get("nombre", propiedades.get("titulo", clave.capitalize()))).strip_edges()
 			if nombre.is_empty():
