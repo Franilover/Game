@@ -536,7 +536,7 @@ func _obtener_nombres_garumis_visibles() -> Array[String]:
 		if garumi.has("publicado") and not bool(garumi.get("publicado", false)) and not es_canonico and not estado_visible and not visibilidad_visible:
 			continue
 
-		var tiene_marcadores := (
+		var tiene_marcadores: bool = (
 			garumi.has("es_publico") or garumi.has("publico")
 			or garumi.has("canonico") or garumi.has("es_canonico") or garumi.has("canon")
 		)
