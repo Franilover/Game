@@ -82,7 +82,7 @@ func _crear_interfaz() -> void:
 	scroll.add_child(_lista_amigos)
 
 	_detalle = VBoxContainer.new()
-	_detalle.custom_minimum_size = Vector2(125, 0)
+	_detalle.custom_minimum_size = Vector2(205, 0)
 	_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_detalle.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -164,41 +164,60 @@ func actualizar() -> void:
 	for hijo in _lista_amigos.get_children():
 		hijo.queue_free()
 	var vinculados: Array = GameState.call("obtener_garumis_vinculados") if GameState.has_method("obtener_garumis_vinculados") else []
-	if vinculados.is_empty():
-		_agregar_mensaje(_lista_vinculados, "No tienes vínculos activos.")
-	else:
-		for registro in vinculados:
-			if registro is Dictionary:
-				_agregar_fila(_lista_vinculados, registro as Dictionary, "Vinculado")
+	for registro in vinculados:
+		if registro is Dictionary:
+			_agregar_fila(_lista_vinculados, registro as Dictionary, "Vinculado")
 	var amigos: Array = GameState.call("obtener_garumis_amigos") if GameState.has_method("obtener_garumis_amigos") else []
-	if amigos.is_empty():
-		_agregar_mensaje(_lista_amigos, "Aún no tienes amigos Garumis.")
-	else:
-		for registro in amigos:
-			if registro is Dictionary:
-				_agregar_fila(_lista_amigos, registro as Dictionary, "Amigo")
+	for registro in amigos:
+		if registro is Dictionary:
+			_agregar_fila(_lista_amigos, registro as Dictionary, "Amigo")
 
 
-func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, _estado_registro: String) -> void:
+func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado_registro: String) -> void:
 	var fila := HBoxContainer.new()
 	fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fila.add_theme_constant_override("separation", 5)
 	contenedor.add_child(fila)
-	var nombre := str(registro.get("nombre", registro.get("criatura_nombre", "Garumi"))).strip_edges()
-	if nombre.is_empty():
-		nombre = "Garumi"
+
 	var sprite := _crear_sprite_fila(registro)
 	if sprite != null:
-		fila.add_child(sprite)
-	var boton := Button.new()
-	boton.text = nombre
-	boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	boton.custom_minimum_size = Vector2(0, 44)
-	boton.add_theme_font_size_override("font_size", 10)
-	boton.add_theme_color_override("font_color", TEXTO)
-	boton.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), ""))
-	fila.add_child(boton)
+		var boton_sprite := TextureButton.new()
+		boton_sprite.custom_minimum_size = Vector2(58, 58)
+		boton_sprite.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		boton_sprite.texture_normal = sprite.texture
+		boton_sprite.ignore_texture_size = true
+		boton_sprite.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), estado_registro))
+		fila.add_child(boton_sprite)
+
+	if estado_registro == "Vinculado":
+		var columna_vida := VBoxContainer.new()
+		columna_vida.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		columna_vida.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		columna_vida.add_theme_constant_override("separation", 2)
+		fila.add_child(columna_vida)
+		var vida_maxima := maxi(1, int(registro.get("max_health", registro.get("vida_maxima", 100))))
+		var vida_actual := clampi(int(registro.get("health", registro.get("vida", vida_maxima))), 0, vida_maxima)
+		var barra := ProgressBar.new()
+		barra.min_value = 0
+		barra.max_value = vida_maxima
+		barra.value = vida_actual
+		barra.show_percentage = false
+		barra.custom_minimum_size = Vector2(0, 12)
+		columna_vida.add_child(barra)
+		var numeros_vida := Label.new()
+		numeros_vida.text = "%d / %d" % [vida_actual, vida_maxima]
+		numeros_vida.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		numeros_vida.add_theme_font_size_override("font_size", 10)
+		numeros_vida.add_theme_color_override("font_color", TEXTO)
+		columna_vida.add_child(numeros_vida)
+	else:
+		var boton_vincular := Button.new()
+		boton_vincular.text = "Vincular"
+		boton_vincular.custom_minimum_size = Vector2(65, 30)
+		boton_vincular.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		boton_vincular.add_theme_font_size_override("font_size", 10)
+		boton_vincular.pressed.connect(_vincular_desde_amigos.bind(registro.duplicate(true)))
+		fila.add_child(boton_vincular)
 
 
 func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
@@ -245,24 +264,53 @@ func _agregar_mensaje(contenedor: VBoxContainer, mensaje: String) -> void:
 	contenedor.add_child(etiqueta)
 
 
-func _mostrar_detalle(registro: Dictionary, _estado_registro: String) -> void:
+func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 	for hijo in _detalle.get_children():
 		_detalle.remove_child(hijo)
 		hijo.queue_free()
 
 	var sprite := _crear_sprite_fila(registro)
 	if sprite != null:
-		sprite.custom_minimum_size = Vector2(112, 112)
+		sprite.custom_minimum_size = Vector2(190, 190)
+		sprite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sprite.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_detalle.add_child(sprite)
 
-	var nombre := str(registro.get("nombre", registro.get("criatura_nombre", "Garumi"))).strip_edges()
-	var etiqueta_nombre := Label.new()
-	etiqueta_nombre.text = nombre if not nombre.is_empty() else "Garumi"
-	etiqueta_nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	etiqueta_nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta_nombre.add_theme_color_override("font_color", TEXTO)
-	etiqueta_nombre.add_theme_font_size_override("font_size", 12)
-	_detalle.add_child(etiqueta_nombre)
+	var boton_accion := Button.new()
+	boton_accion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton_accion.add_theme_font_size_override("font_size", 11)
+	if estado_registro == "Vinculado":
+		boton_accion.text = "Quitar vínculo"
+		boton_accion.pressed.connect(_quitar_vinculo.bind(registro.duplicate(true)))
+	else:
+		boton_accion.text = "Vincular"
+		boton_accion.disabled = not GameState.puede_vincular_garumi()
+		boton_accion.pressed.connect(_vincular_desde_amigos.bind(registro.duplicate(true)))
+	_detalle.add_child(boton_accion)
+
+
+func _quitar_vinculo(registro: Dictionary) -> void:
+	var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
+	if id_instancia.is_empty():
+		return
+	if GameState.eliminar_garumi_vinculado(id_instancia):
+		GameState.guardar_garumi_amigo(registro)
+		actualizar()
+		_mostrar_detalle(registro, "Amigo")
+
+
+func _vincular_desde_amigos(registro: Dictionary) -> void:
+	if not GameState.puede_vincular_garumi():
+		_estado.text = "Ya tienes 3 Garumis vinculados."
+		return
+	var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
+	if id_instancia.is_empty():
+		return
+	if GameState.guardar_garumi_vinculado(registro):
+		GameState.eliminar_garumi_amigo(id_instancia)
+		_estado.text = ""
+		actualizar()
+		_mostrar_detalle(registro, "Vinculado")
 
 
 func mostrar_resultado_amistad_garumi(garumi: Node, exito: bool) -> void:
