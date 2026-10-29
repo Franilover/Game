@@ -239,7 +239,7 @@ func _physics_process(delta: float) -> void:
 					_iniciar_dash()
 					return
 
-	var shift_pressed := Input.is_action_pressed("run")
+	var run_pressed := Input.is_action_pressed("run")
 
 	# Movimiento normal.
 	var direction := Input.get_vector(
@@ -255,7 +255,7 @@ func _physics_process(delta: float) -> void:
 		eterium_sprint = eterium.procesar_carrera(delta)
 
 	var is_running := (
-		shift_pressed
+		run_pressed
 		and direction != Vector2.ZERO
 		and not eterium_sprint
 	)
