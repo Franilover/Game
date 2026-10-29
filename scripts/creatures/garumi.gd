@@ -605,6 +605,11 @@ func iniciar_enfrentamiento(jugador: Node) -> bool:
 
 	_jugador_del_encuentro = jugador
 	_enfrentamiento_activo = true
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null and game_state.has_method("registrar_garumi_descubierto"):
+		var id_catalogo := str(datos.get("id", datos.get("entidad_id", criatura_id))).strip_edges()
+		if not id_catalogo.is_empty():
+			game_state.call("registrar_garumi_descubierto", id_catalogo)
 	max_health = maxi(1, int(estadisticas_combate.get("vida", datos.get("salud_combate", salud_combate_predeterminada))))
 	vital_state.configurar(max_health, max_mana)
 	restaurar_estado_vital(max_health, true)
