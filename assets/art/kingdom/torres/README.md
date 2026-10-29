@@ -55,8 +55,9 @@ assets/art/kingdom/torres/
 - Si tampoco encuentra una imagen, genera automáticamente una textura pixel-art propia para ese edificio; ya no depende de los polígonos planos de placeholder para verse correctamente.
 - Cuando encuentra un sprite, oculta únicamente las formas visuales de ese edificio; las colisiones y los rótulos se conservan.
 - El sprite se ajusta automáticamente dentro del tamaño objetivo definido para cada edificio, sin deformar su proporción.
-- El generador `scripts/world/torres_pixel_art.gd` crea fachadas, tejados, ventanas, puertas y detalles por oficio a baja resolución. También rasteriza el césped, caminos, plaza, canal, muros, campos, árboles y puestos con filtrado nearest.
-- El generador es determinista y no necesita paquetes ni imágenes externas. Añadir un PNG específico sigue teniendo prioridad, de modo que se pueden reemplazar partes por arte hecho a mano sin cambiar el código.
+- El generador `scripts/world/torres_pixel_art.gd` crea fachadas, tejados, ventanas, puertas y detalles por oficio a baja resolución. Los caminos, plaza, canal, muros, campos, árboles y puestos reciben texturas con filtrado nearest.
+- El césped usa un atlas propio `assets/tilesets/Torres_Cesped.png` de 128×128 píxeles: 16 máscaras para tiles de 32×32, con transparencia por cuadrantes. `TileMapDual` resuelve los bordes y las esquinas a partir de las celdas vecinas.
+- El atlas de césped es un PNG editable a mano; el resto de edificios puede reemplazarse con sprites específicos sin cambiar el sistema.
 - Para cambiar el tamaño o la posición de un sprite, modifica el registro correspondiente en `SPRITE_BUILDINGS` dentro de `scripts/world/reino_torres.gd`.
 
 Los nombres deben coincidir exactamente con los de la lista. No hace falta editar la escena cada vez que se añade una imagen.
