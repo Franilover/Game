@@ -206,7 +206,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_construir_habitacion(entrada)
 	_jugador.global_position = to_global(Vector2(60, 90))
 	_interterior_colisiones(true)
-	_interterior_activo = true
+	_interior_activo = true
 	_aviso.visible = false
 	_aviso.text = ""
 	print("ReinoTorres: entrando a ", entrada["id"])
@@ -227,7 +227,7 @@ func _salir_del_interior() -> void:
 	for hijo: Node in _capa_interior.get_children():
 		hijo.free()
 	_interterior_colisiones(false)
-	_interterior_activo = false
+	_interior_activo = false
 	_aviso.visible = false
 	_aviso.text = ""
 	print("ReinoTorres: regreso al exterior.")
