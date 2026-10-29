@@ -35,6 +35,17 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"telar", "paths":["edificios/telares.png","casas/taller.png","casas/casa.png"], "position":Vector2(-760,-258), "size":Vector2(100,90), "hide":["WeaverHouse"]},
 	{"key":"alfareria", "paths":["edificios/alfareria.png","casas/taller.png","casas/casa.png"], "position":Vector2(-760,102), "size":Vector2(100,90), "hide":["PotterHouse"]},
 	{"key":"banos", "paths":["edificios/banos.png","edificios/edificio.png"], "position":Vector2(-760,211), "size":Vector2(108,98), "hide":["BathHouse"]}
+	{"key":"vivienda_oeste_01", "paths":["casas/vivienda_oeste_01.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-354), "size":Vector2(84,82), "hide":["WestHome1Wall","WestHome1Roof","WestHome1Door","WestHome1CollisionBody"]},
+	{"key":"vivienda_oeste_02", "paths":["casas/vivienda_oeste_02.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,-354), "size":Vector2(84,82), "hide":["WestHome2Wall","WestHome2Roof","WestHome2Door","WestHome2CollisionBody"]},
+	{"key":"vivienda_oeste_03", "paths":["casas/vivienda_oeste_03.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-254), "size":Vector2(84,82), "hide":["WestHome3Wall","WestHome3Roof","WestHome3Door","WestHome3CollisionBody"]},
+	{"key":"vivienda_oeste_04", "paths":["casas/vivienda_oeste_04.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,-254), "size":Vector2(84,82), "hide":["WestHome4Wall","WestHome4Roof","WestHome4Door","WestHome4CollisionBody"]},
+	{"key":"vivienda_oeste_05", "paths":["casas/vivienda_oeste_05.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,106), "size":Vector2(84,82), "hide":["WestHome5Wall","WestHome5Roof","WestHome5Door","WestHome5CollisionBody"]},
+	{"key":"vivienda_oeste_06", "paths":["casas/vivienda_oeste_06.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,106), "size":Vector2(84,82), "hide":["WestHome6Wall","WestHome6Roof","WestHome6Door","WestHome6CollisionBody"]},
+	{"key":"vivienda_oeste_07", "paths":["casas/vivienda_oeste_07.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,216), "size":Vector2(84,82), "hide":["WestHome7Wall","WestHome7Roof","WestHome7Door","WestHome7CollisionBody"]},
+	{"key":"vivienda_oeste_08", "paths":["casas/vivienda_oeste_08.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,216), "size":Vector2(84,82), "hide":["WestHome8Wall","WestHome8Roof","WestHome8Door","WestHome8CollisionBody"]},
+	{"key":"vivienda_oeste_09", "paths":["casas/vivienda_oeste_09.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,-254), "size":Vector2(84,82), "hide":["WestHome9Wall","WestHome9Roof","WestHome9Door","WestHome9CollisionBody"]},
+	{"key":"vivienda_oeste_10", "paths":["casas/vivienda_oeste_10.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,96), "size":Vector2(84,82), "hide":["WestHome10Wall","WestHome10Roof","WestHome10Door","WestHome10CollisionBody"]},
+	{"key":"vivienda_oeste_11", "paths":["casas/vivienda_oeste_11.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,206), "size":Vector2(84,82), "hide":["WestHome11Wall","WestHome11Roof","WestHome11Door","WestHome11CollisionBody"]}
 ]
 
 @onready var _exit: Area2D = $Exit
@@ -45,6 +56,7 @@ var _transicionando: bool = false
 func _ready() -> void:
 	_exit.body_entered.connect(_al_entrar_salida)
 	_cargar_sprites_de_torres()
+	_elevar_rotulos()
 
 
 func _cargar_sprites_de_torres() -> void:
@@ -88,6 +100,12 @@ func _ocultar_placeholder(prefixes: Array) -> void:
 			if child.name.begins_with(String(prefix)) and child is CanvasItem:
 				(child as CanvasItem).visible = false
 				break
+
+
+func _elevar_rotulos() -> void:
+	for child: Node in get_children():
+		if child is Label:
+			(child as Label).z_index = 10
 
 
 func _al_entrar_salida(body: Node2D) -> void:
