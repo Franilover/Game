@@ -9,7 +9,8 @@ var _icono: TextureRect
 var _contenedor_superior_detalle: VBoxContainer
 var _tab_biomas: Button
 var _tab_criaturas: Button
-var _tab_garumis: Button
+var _barra_tabs: HBoxContainer
+var solo_garumis: bool = false
 var _modo: String = "biomas"
 
 var _garumis_catalogo: Array[Dictionary] = []
@@ -41,7 +42,11 @@ func _ready() -> void:
 	if not SupabaseClient.request_completed.is_connected(_al_respuesta_catalogo_garumis):
 		SupabaseClient.request_completed.connect(_al_respuesta_catalogo_garumis)
 	_cargar_catalogo_garumis()
-	actualizar()
+	if solo_garumis:
+		_barra_tabs.visible = false
+		_mostrar_garumis()
+	else:
+		actualizar()
 
 
 func _crear_interfaz() -> void:
@@ -58,6 +63,7 @@ func _crear_interfaz() -> void:
 	margin.add_child(column)
 
 	var tabs := HBoxContainer.new()
+	_barra_tabs = tabs
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tabs.alignment = BoxContainer.ALIGNMENT_BEGIN
 	tabs.add_theme_constant_override("separation", 3)
@@ -78,14 +84,6 @@ func _crear_interfaz() -> void:
 	_tab_criaturas.pressed.connect(_mostrar_criaturas)
 	tabs.add_child(_tab_criaturas)
 
-	_tab_garumis = Button.new()
-	_tab_garumis.text = "Garumis"
-	_tab_garumis.tooltip_text = "Enciclopedia de Garumis · Atajo: G"
-	_tab_garumis.toggle_mode = true
-	_tab_garumis.button_pressed = false
-	_configurar_boton_seccion(_tab_garumis)
-	_tab_garumis.pressed.connect(_mostrar_garumis)
-	tabs.add_child(_tab_garumis)
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -230,7 +228,6 @@ func _mostrar_biomas() -> void:
 	_arbol.set_column_titles_visible(false)
 	_tab_biomas.button_pressed = true
 	_tab_criaturas.button_pressed = false
-	_tab_garumis.button_pressed = false
 	actualizar()
 
 
@@ -241,7 +238,6 @@ func _mostrar_criaturas() -> void:
 	_arbol.set_column_titles_visible(false)
 	_tab_biomas.button_pressed = false
 	_tab_criaturas.button_pressed = true
-	_tab_garumis.button_pressed = false
 	actualizar()
 
 
@@ -257,7 +253,6 @@ func _mostrar_garumis() -> void:
 	_arbol.set_column_custom_minimum_width(2, 38)
 	_tab_biomas.button_pressed = false
 	_tab_criaturas.button_pressed = false
-	_tab_garumis.button_pressed = true
 	if not _catalogo_garumis_cargado and _solicitud_catalogo_garumis < 0:
 		_cargar_catalogo_garumis()
 	actualizar()
@@ -266,6 +261,14 @@ func _mostrar_garumis() -> void:
 func abrir_en_garumis() -> void:
 	visible = true
 	_mostrar_garumis()
+
+
+func configurar_como_garudex() -> void:
+	solo_garumis = true
+	if is_inside_tree():
+		if is_instance_valid(_barra_tabs):
+			_barra_tabs.visible = false
+		_mostrar_garumis()
 
 
 func _cargar_catalogo_garumis() -> void:

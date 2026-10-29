@@ -35,6 +35,8 @@ signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
 signal descubrimientos_mundo_actualizados
 signal descubrimiento_mundo(nivel: String, id: String)
+signal garumis_vinculados_actualizados
+signal garumis_amigos_actualizados
 
 
 func configurar_dependencias(
@@ -791,6 +793,64 @@ func _sincronizar_garumis_vinculados_desde_escena() -> void:
 
 ## Registro persistente de Garumis vinculados a esta partida.
 ## Se almacena dentro de flags para mantener compatibilidad con el formato JSON actual.
+func obtener_garumis_amigos() -> Array[Dictionary]:
+	var amigos: Array[Dictionary] = []
+	var variant: Variant = world_state.flags.get("garumis_amigos", [])
+	if not variant is Array:
+		return amigos
+	for item in variant as Array:
+		if item is Dictionary:
+			amigos.append((item as Dictionary).duplicate(true))
+	return amigos
+
+
+func es_garumi_amigo(id_instancia: String) -> bool:
+	var id_limpio := id_instancia.strip_edges()
+	if id_limpio.is_empty():
+		return false
+	for amigo in obtener_garumis_amigos():
+		if str(amigo.get("garumi_instancia_id", "")) == id_limpio:
+			return true
+	return false
+
+
+func guardar_garumi_amigo(datos_garumi: Dictionary) -> bool:
+	var id_instancia := str(datos_garumi.get("garumi_instancia_id", "")).strip_edges()
+	if id_instancia.is_empty():
+		return false
+	var lista := obtener_garumis_amigos()
+	for i in range(lista.size()):
+		if str(lista[i].get("garumi_instancia_id", "")) == id_instancia:
+			lista[i] = datos_garumi.duplicate(true)
+			world_state.flags["garumis_amigos"] = lista
+			garumis_amigos_actualizados.emit()
+			_al_cambio_guardable()
+			return true
+	lista.append(datos_garumi.duplicate(true))
+	world_state.flags["garumis_amigos"] = lista
+	garumis_amigos_actualizados.emit()
+	_al_cambio_guardable()
+	return true
+
+
+func eliminar_garumi_amigo(id_instancia: String) -> bool:
+	var id_limpio := id_instancia.strip_edges()
+	if id_limpio.is_empty():
+		return false
+	var nueva_lista: Array[Dictionary] = []
+	var eliminado := false
+	for amigo in obtener_garumis_amigos():
+		if str(amigo.get("garumi_instancia_id", "")) == id_limpio:
+			eliminado = true
+		else:
+			nueva_lista.append(amigo)
+	if eliminado:
+		world_state.flags["garumis_amigos"] = nueva_lista
+		garumis_amigos_actualizados.emit()
+		_al_cambio_guardable()
+	return eliminado
+
+
 func obtener_garumis_vinculados() -> Array[Dictionary]:
 	var guardados: Array[Dictionary] = []
 	var variant: Variant = world_state.flags.get("garumis_vinculados", [])
@@ -820,6 +880,7 @@ func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
 		if str(lista[i].get("garumi_instancia_id", "")) == id_instancia:
 			lista[i] = datos_garumi.duplicate(true)
 			world_state.flags["garumis_vinculados"] = lista
+			garumis_vinculados_actualizados.emit()
 			_al_cambio_guardable()
 			return true
 	if lista.size() >= 3:
@@ -827,6 +888,7 @@ func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
 		return false
 	lista.append(datos_garumi.duplicate(true))
 	world_state.flags["garumis_vinculados"] = lista
+	garumis_vinculados_actualizados.emit()
 	_al_cambio_guardable()
 	return true
 
@@ -845,6 +907,7 @@ func eliminar_garumi_vinculado(id_instancia: String) -> bool:
 		nueva_lista.append(registro)
 	if eliminado:
 		world_state.flags["garumis_vinculados"] = nueva_lista
+		garumis_vinculados_actualizados.emit()
 		_al_cambio_guardable()
 	return eliminado
 

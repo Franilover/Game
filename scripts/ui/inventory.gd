@@ -75,6 +75,7 @@ func _inicializar_navegacion_tabs() -> void:
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
 	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
+	var boton_garumis: Button = $Window/Margin/Column/TabButtons/Garumis
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
@@ -89,14 +90,20 @@ func _inicializar_navegacion_tabs() -> void:
 	boton_enciclopedia.pressed.connect(func() -> void:
 		tabs.current_tab = 2
 	)
-	boton_mapa.pressed.connect(func() -> void:
+	boton_garumis.pressed.connect(func() -> void:
 		tabs.current_tab = 3
+		var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
+		if pagina_garumis.has_method("abrir_en_garumis"):
+			pagina_garumis.call("abrir_en_garumis")
 	)
-	boton_relaciones.pressed.connect(func() -> void:
+	boton_mapa.pressed.connect(func() -> void:
 		tabs.current_tab = 4
 	)
-	boton_admin.pressed.connect(func() -> void:
+	boton_relaciones.pressed.connect(func() -> void:
 		tabs.current_tab = 5
+	)
+	boton_admin.pressed.connect(func() -> void:
+		tabs.current_tab = 6
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 		if admin_tab != null:
 			admin_tab.abrir(_player)
@@ -263,7 +270,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if event.is_action_pressed("inventory"):
+		if event.is_action_pressed("garumi_encyclopedia"):
+			toggle_enciclopedia_garumis()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory"):
 			toggle()
 			get_viewport().set_input_as_handled()
 
@@ -283,7 +293,7 @@ func _actualizar_admin_tab() -> void:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
 	boton_admin.visible = es_admin
 	admin_tab.visible = es_admin
-	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 6:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin:
 		admin_tab.abrir(jugador)
@@ -312,18 +322,18 @@ func toggle_mapa() -> void:
 
 func toggle_enciclopedia_garumis() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	var enciclopedia := $Window/Margin/Column/Tabs/Enciclopedia as Control
-	if _abierto and tabs.current_tab == 2:
+	if _abierto and tabs.current_tab == 3:
 		cerrar()
 		return
 	if not _abierto:
 		_abierto = true
 		visible = true
 		_actualizar_admin_tab()
-	tabs.current_tab = 2
-	$Window/Margin/Column/TabButtons/Enciclopedia.button_pressed = true
-	if enciclopedia != null and enciclopedia.has_method("abrir_en_garumis"):
-		enciclopedia.call("abrir_en_garumis")
+	tabs.current_tab = 3
+	$Window/Margin/Column/TabButtons/Garumis.button_pressed = true
+	var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
+	if pagina_garumis.has_method("abrir_en_garumis"):
+		pagina_garumis.call("abrir_en_garumis")
 
 
 func abrir() -> void:

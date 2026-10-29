@@ -17,6 +17,7 @@ const OPCION_ENFRENTAR := 1
 const OPCION_FORZAR_VINCULO := 2
 const OPCION_RETIRARSE := 3
 const OPCION_ROMPER_VINCULO := 4
+const OPCION_OFRECER_AMISTAD := 5
 
 @export_category("Vínculo y combate")
 @export_range(1, 1000, 1) var salud_combate_predeterminada: int = 40
@@ -407,6 +408,8 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 
 	_agregar_boton_menu_garumi(acciones, "Enfrentarte", OPCION_ENFRENTAR, jugador)
 	_agregar_boton_menu_garumi(acciones, "Vincular", OPCION_OFRECER_VINCULO, jugador)
+	if not _es_amigo_del_jugador():
+		_agregar_boton_menu_garumi(acciones, "Amistad", OPCION_OFRECER_AMISTAD, jugador)
 	_actualizar_posicion_menu_contextual()
 
 
@@ -505,10 +508,65 @@ func _al_seleccionar_opcion(opcion: int, jugador: Node) -> void:
 			finalizar_enfrentamiento()
 		OPCION_ROMPER_VINCULO:
 			romper_vinculo()
+		OPCION_OFRECER_AMISTAD:
+			ofrecer_amistad(jugador)
 
 
 func _al_ocultar_menu() -> void:
 	_al_cerrar_menu_contextual()
+
+
+func _es_amigo_del_jugador() -> bool:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not game_state.has_method("es_garumi_amigo"):
+		return false
+	var id := _obtener_id_instancia_social()
+	return not id.is_empty() and bool(game_state.call("es_garumi_amigo", id))
+
+
+func _obtener_id_instancia_social() -> String:
+	if _garumi_instancia_id.is_empty():
+		_garumi_instancia_id = str(Time.get_ticks_usec()) + "-" + str(get_instance_id())
+	return _garumi_instancia_id
+
+
+func obtener_datos_amistad() -> Dictionary:
+	var registro := datos.duplicate(true)
+	registro["categoria_entidad"] = "garumi"
+	registro["garumi_instancia_id"] = _obtener_id_instancia_social()
+	registro["vinculado"] = _vinculado
+	registro["tipo_vinculo"] = _tipo_vinculo
+	registro["nivel"] = nivel
+	registro["experiencia_total"] = experiencia_total
+	registro["eterium_actual"] = eterium_actual
+	registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", criatura_nombre)))
+	return registro
+
+
+func ofrecer_amistad(jugador: Node) -> bool:
+	if _vinculado or _enfrentamiento_activo or not is_instance_valid(jugador):
+		return false
+	if _es_amigo_del_jugador():
+		return true
+	var probabilidad := clampf(float(datos.get("aceptacion_amistad", datos.get("aceptacion_vinculo", 0.5))), 0.0, 1.0)
+	if _rng.randf() > probabilidad:
+		_notificar_resultado_amistad(false)
+		return false
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not game_state.has_method("guardar_garumi_amigo"):
+		return false
+	var exito := bool(game_state.call("guardar_garumi_amigo", obtener_datos_amistad()))
+	_notificar_resultado_amistad(exito)
+	return exito
+
+
+func _notificar_resultado_amistad(exito: bool) -> void:
+	for nodo in get_tree().get_nodes_in_group("inventory"):
+		if not is_instance_valid(nodo):
+			continue
+		var hub := nodo.get_node_or_null("Window/Margin/Column/Tabs/Garumis")
+		if hub != null and hub.has_method("mostrar_resultado_amistad_garumi"):
+			hub.call("mostrar_resultado_amistad_garumi", self, exito)
 
 
 func ofrecer_vinculo(jugador: Node) -> bool:
