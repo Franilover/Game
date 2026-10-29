@@ -3,6 +3,8 @@ extends Node2D
 signal salida_solicitada
 
 const TORRES_ART_ROOT := "res://assets/art/kingdom/torres"
+const TORRES_PIXEL_ART := preload("res://scripts/world/torres_pixel_art.gd")
+const TAMANO_PIXEL_MUNDO := 8.0
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
 # Si no existe ningún archivo válido, sus Polygon2D de placeholder quedan visibles.
@@ -114,6 +116,9 @@ func _ready() -> void:
 	_capa_interior.visible = false
 	add_child(_capa_interior)
 	_crear_aviso()
+	_texturizar_mapa_pixelart()
+	_cargar_arboles_pixelart()
+	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
 	_elevar_rotulos()
 
@@ -233,15 +238,209 @@ func _input(evento: InputEvent) -> void:
 		_entrar_al_interior(accion)
 
 
+func _texturizar_mapa_pixelart() -> void:
+	# Sustituye las superficies planas por texturas rasterizadas a baja resolución.
+	var superficies: Array[Dictionary] = [
+		{"nombre": "Ground", "tipo": "hierba"},
+		{"nombre": "NorthPath", "tipo": "camino"},
+		{"nombre": "MainStreet", "tipo": "camino"},
+		{"nombre": "WestStreet", "tipo": "camino"},
+		{"nombre": "EastStreet", "tipo": "camino"},
+		{"nombre": "SouthPath", "tipo": "camino"},
+		{"nombre": "NorthRingRoad", "tipo": "camino"},
+		{"nombre": "SouthRingRoad", "tipo": "camino"},
+		{"nombre": "WestRingRoad", "tipo": "camino"},
+		{"nombre": "EastRingRoad", "tipo": "camino"},
+		{"nombre": "NorthCrossStreet", "tipo": "camino"},
+		{"nombre": "SouthCrossStreet", "tipo": "camino"},
+		{"nombre": "WestCrossStreet", "tipo": "camino"},
+		{"nombre": "EastCrossStreet", "tipo": "camino"},
+		{"nombre": "Plaza", "tipo": "plaza"},
+		{"nombre": "PlazaInset", "tipo": "plaza"},
+		{"nombre": "RoadToWorld", "tipo": "camino"},
+		{"nombre": "CanalBankNorth", "tipo": "ribera"},
+		{"nombre": "CanalBankSouth", "tipo": "ribera"},
+		{"nombre": "CanalWater", "tipo": "agua"},
+		{"nombre": "CanalBridgeWest", "tipo": "puente"},
+		{"nombre": "CanalBridgeEast", "tipo": "puente"},
+		{"nombre": "RoyalGardenPlot", "tipo": "jardin"},
+		{"nombre": "RoyalGardenWalk", "tipo": "plaza"},
+		{"nombre": "RoyalGardenCross", "tipo": "plaza"},
+		{"nombre": "GardenBed", "tipo": "jardin"},
+		{"nombre": "GardenSoil", "tipo": "tierra"},
+		{"nombre": "WellShadow", "tipo": "tierra"},
+		{"nombre": "EastGatePierNorth", "tipo": "muro"},
+		{"nombre": "EastGatePierSouth", "tipo": "muro"},
+		{"nombre": "EastGateLintel", "tipo": "muro"},
+		{"nombre": "WestOuterWall", "tipo": "muro"},
+		{"nombre": "NorthOuterWall", "tipo": "muro"},
+		{"nombre": "SouthOuterWall", "tipo": "muro"},
+		{"nombre": "EastOuterWallNorth", "tipo": "muro"},
+		{"nombre": "EastOuterWallSouth", "tipo": "muro"}
+	]
+	for i in range(superficies.size()):
+		var superficie: Dictionary = superficies[i]
+		_texturizar_poligono(str(superficie["nombre"]), str(superficie["tipo"]), i * 17)
+
+	# Los cultivos tienen surcos y hojas integrados en el propio sprite.
+	for hijo: Node in get_children():
+		if hijo is Polygon2D and String(hijo.name).begins_with("FieldFurrow"):
+			(hijo as Polygon2D).visible = false
+	for indice in range(1, 17):
+		_texturizar_poligono("Field%d" % indice, "cultivo", indice * 31)
+
+	# Las líneas finas que remataban el camino eran vectoriales; los bordes
+	# ahora forman parte de la textura pixelada del camino.
+	for nombre_borde in ["RoadEdgeTop", "RoadEdgeBottom"]:
+		var borde := get_node_or_null(NodePath(nombre_borde)) as Polygon2D
+		if is_instance_valid(borde):
+			borde.visible = false
+
+
+func _texturizar_poligono(nombre: String, tipo: String, semilla: int = 0) -> void:
+	var poligono := get_node_or_null(NodePath(nombre)) as Polygon2D
+	if not is_instance_valid(poligono) or poligono.polygon.size() < 3:
+		return
+	var limites := _limites_de_poligono(poligono)
+	if limites.size.x <= 0.0 or limites.size.y <= 0.0:
+		return
+	var ancho_textura := maxi(1, ceili(limites.size.x / TAMANO_PIXEL_MUNDO))
+	var alto_textura := maxi(1, ceili(limites.size.y / TAMANO_PIXEL_MUNDO))
+	var textura := TORRES_PIXEL_ART.crear_superficie(tipo, Vector2i(ancho_textura, alto_textura), semilla)
+	var sprite := Sprite2D.new()
+	sprite.name = "Pixel_" + nombre
+	sprite.texture = textura
+	sprite.position = limites.get_center()
+	sprite.centered = true
+	sprite.scale = Vector2(limites.size.x / float(ancho_textura), limites.size.y / float(alto_textura))
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = poligono.z_index
+	add_child(sprite)
+	poligono.visible = false
+
+
+func _cargar_arboles_pixelart() -> void:
+	var grupos: Dictionary = {}
+	for hijo: Node in get_children():
+		if not hijo is Polygon2D:
+			continue
+		var nombre := String(hijo.name)
+		var sufijo := ""
+		if nombre.ends_with("Trunk"):
+			sufijo = "tronco"
+		elif nombre.ends_with("Crown"):
+			sufijo = "copa"
+		if sufijo.is_empty():
+			continue
+		var prefijo := nombre.trim_suffix("Trunk") if sufijo == "tronco" else nombre.trim_suffix("Crown")
+		if not grupos.has(prefijo):
+			grupos[prefijo] = {}
+		var grupo: Dictionary = grupos[prefijo]
+		grupo[sufijo] = hijo as Polygon2D
+		grupos[prefijo] = grupo
+
+	for prefijo in grupos.keys():
+		var grupo: Dictionary = grupos[prefijo]
+		if not grupo.has("tronco") or not grupo.has("copa"):
+			continue
+		var tronco: Polygon2D = grupo["tronco"]
+		var copa: Polygon2D = grupo["copa"]
+		var limites := _limites_de_poligono(tronco).merge(_limites_de_poligono(copa))
+		var textura: Texture2D = TORRES_PIXEL_ART.crear_decoracion("arbol", absi(String(prefijo).hash()) % 5)
+		_agregar_sprite_pixelart("Pixel_" + String(prefijo), textura, limites, maxi(tronco.z_index, copa.z_index))
+		tronco.visible = false
+		copa.visible = false
+
+
+func _cargar_puestos_pixelart() -> void:
+	_agrupar_poligonos_pixelart(
+		["MarketCounter", "MarketCounterTop", "MarketAwningBase", "MarketAwningStripe1", "MarketAwningStripe2", "MarketAwningStripe3"],
+		"puesto", 0
+	)
+	_agrupar_poligonos_pixelart(
+		["FishStall", "FishStallAwning", "FishStallStripe"],
+		"puesto_azul", 1
+	)
+	for indice in range(1, 5):
+		_agrupar_poligonos_pixelart(
+			["MarketExtension%d" % indice, "MarketExtensionAwning%d" % indice, "MarketExtensionLegL%d" % indice, "MarketExtensionLegR%d" % indice],
+			"puesto" if indice % 2 == 0 else "puesto_azul", indice
+		)
+	_agrupar_poligonos_pixelart(
+		["WellShadow", "WellOuter", "WellWater", "WellLipTop"],
+		"pozo", 0
+	)
+	_agrupar_poligonos_pixelart(
+		["LampWestPost", "LampWestGlow"],
+		"lampara", 0
+	)
+	_agrupar_poligonos_pixelart(
+		["LampEastPost", "LampEastGlow"],
+		"lampara", 1
+	)
+
+
+func _agrupar_poligonos_pixelart(nombres: Array, tipo: String, variante: int) -> void:
+	var limites := Rect2()
+	var primero := true
+	var z_mayor := -100
+	var encontrados: Array[Polygon2D] = []
+	for valor: Variant in nombres:
+		var poligono := get_node_or_null(NodePath(String(valor))) as Polygon2D
+		if not is_instance_valid(poligono) or poligono.polygon.size() < 3:
+			continue
+		var limite_poligono := _limites_de_poligono(poligono)
+		if primero:
+			limites = limite_poligono
+			primero = false
+		else:
+			limites = limites.merge(limite_poligono)
+		z_mayor = maxi(z_mayor, poligono.z_index)
+		encontrados.append(poligono)
+	if primero:
+		return
+	var textura: Texture2D = TORRES_PIXEL_ART.crear_decoracion(tipo, variante)
+	_agregar_sprite_pixelart("Pixel_" + tipo.capitalize() + "_" + str(variante), textura, limites, z_mayor)
+	for poligono: Polygon2D in encontrados:
+		poligono.visible = false
+
+
+func _limites_de_poligono(poligono: Polygon2D) -> Rect2:
+	var puntos := poligono.polygon
+	if puntos.is_empty():
+		return Rect2()
+	var primer_punto: Vector2 = poligono.transform * puntos[0]
+	var limites := Rect2(primer_punto, Vector2.ZERO)
+	for punto: Vector2 in puntos:
+		limites = limites.expand(poligono.transform * punto)
+	return limites
+
+
+func _agregar_sprite_pixelart(nombre: String, textura: Texture2D, limites: Rect2, z: int) -> void:
+	if textura == null or limites.size.x <= 0.0 or limites.size.y <= 0.0:
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = nombre
+	sprite.texture = textura
+	sprite.position = limites.get_center()
+	sprite.centered = true
+	sprite.scale = Vector2(limites.size.x / textura.get_width(), limites.size.y / textura.get_height())
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = z
+	add_child(sprite)
+
+
 func _cargar_sprites_de_torres() -> void:
 	for building: Dictionary in SPRITE_BUILDINGS:
+		var clave := String(building["key"])
 		var texture := _buscar_textura(building["paths"])
 		if texture == null:
-			continue
+			texture = TORRES_PIXEL_ART.crear_edificio(clave, absi(clave.hash()) % 7)
 
+		# Oculta la geometría plana conservando rótulos, entradas y colisiones.
 		_ocultar_placeholder(building["hide"])
 		var sprite := Sprite2D.new()
-		sprite.name = "Sprite_" + String(building["key"]).capitalize()
+		sprite.name = "Sprite_" + clave.capitalize()
 		sprite.texture = texture
 		sprite.position = building["position"]
 		sprite.centered = true
@@ -253,7 +452,12 @@ func _cargar_sprites_de_torres() -> void:
 			sprite.scale = Vector2.ONE * scale_factor
 		sprite.z_index = 3
 		add_child(sprite)
-		print("ReinoTorres: sprite cargado para ", building["key"], " -> ", texture.resource_path)
+		if _buscar_textura(building["paths"]) == null:
+			print("ReinoTorres: pixel art procedural cargado para ", clave)
+		else:
+			print("ReinoTorres: sprite externo cargado para ", clave)
+
+
 
 
 func _entrar_al_interior(entrada: Dictionary) -> void:
