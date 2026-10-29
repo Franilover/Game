@@ -110,8 +110,10 @@ func _process(_delta: float) -> void:
 		return
 
 	if _interior_activo:
-		_aviso.text = "E — Salir al exterior" if _jugador.global_position.distance_to(global_position) < 100.0 else ""
-		if Input.is_action_just_pressed("interact") and _jugador.global_position.distance_to(global_position) < 100.0:
+		var cerca_salida := _jugador.global_position.distance_to(to_global(Vector2(60, 105))) < 48.0
+		_aviso.text = "E — Salir al exterior" if cerca_salida else ""
+		_aviso.visible = cerca_salida
+		if Input.is_action_just_pressed("interact") and cerca_salida:
 			_salir_del_interior()
 		return
 
@@ -253,7 +255,7 @@ func _interterior_colisiones(_activar: bool) -> void:
 
 func _construir_habitacion(entrada: Dictionary) -> void:
 	for hijo: Node in _capa_interior.get_children():
-		hijo.queue_free()
+		hijo.free()
 	var cuarto := Node2D.new()
 	cuarto.name = "Habitacion_" + str(entrada["id"])
 	_capa_interior.add_child(cuarto)
@@ -264,6 +266,11 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	_agregar_rect(cuarto, "MuroEste", Vector2(226, 0), Vector2(12, 278), Color(0.47, 0.39, 0.29), 2)
 	_agregar_rect(cuarto, "MuroSurIzq", Vector2(-112, 133), Vector2(232, 12), Color(0.47, 0.39, 0.29), 2)
 	_agregar_rect(cuarto, "MuroSurDer", Vector2(172, 133), Vector2(112, 12), Color(0.47, 0.39, 0.29), 2)
+	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -139), Vector2(456, 12))
+	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-226, 0), Vector2(12, 278))
+	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(226, 0), Vector2(12, 278))
+	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2(-112, 133), Vector2(232, 12))
+	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(172, 133), Vector2(112, 12))
 	_agregar_rect(cuarto, "Alfombra", Vector2(0, 12), Vector2(116, 64), Color(0.49, 0.34, 0.22), -5)
 
 	var titulo := Label.new()
@@ -367,6 +374,18 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	_agregar_rect(cuarto, "DetallePropio", Vector2(detalle_x, detalle_y), Vector2(18 + semilla % 17, 12 + semilla % 9), claro, 3)
 	_agregar_rect(cuarto, "VentanaNorte", Vector2(-70, -132), Vector2(36, 5), Color(0.22,0.35,0.38), 4)
 	_agregar_rect(cuarto, "VentanaEste", Vector2(220, -20), Vector2(5, 34), Color(0.22,0.35,0.38), 4)
+
+
+func _agregar_colision_muro(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:
+	var cuerpo := StaticBody2D.new()
+	cuerpo.name = nombre
+	cuerpo.position = posicion
+	var forma := CollisionShape2D.new()
+	var rectangulo := RectangleShape2D.new()
+	rectangulo.size = tamano
+	forma.shape = rectangulo
+	cuerpo.add_child(forma)
+	padre.add_child(cuerpo)
 
 
 func _agregar_rect(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2, color: Color, z: int) -> void:
