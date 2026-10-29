@@ -12,6 +12,7 @@ on:
       - "scenes/kingdom/reino_torres.tscn"
       - "tests/world/test_torres_cesped_tilemap.gd"
       - "tests/world/test_zone_manager_torres_fallback.gd"
+      - "tests/world/test_zone_manager_torres_fallback.tscn"
       - ".github/workflows/torres-pixelart-test.yml"
   pull_request:
     branches: [main]
@@ -73,7 +74,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(timeout 60s godot --headless --path . --script res://tests/world/test_zone_manager_torres_fallback.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          output="$(timeout 60s godot --headless --path . res://tests/world/test_zone_manager_torres_fallback.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|ZoneManager Torres fallback regression:' <<<"$output"; then
             echo "Torres travel regression test reported errors."
