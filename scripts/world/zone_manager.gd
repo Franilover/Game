@@ -185,6 +185,12 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		return
 
 	if is_instance_valid(zona_actual):
+		# El reloj vive dentro de WorldGenerator. Guardamos el calendario antes
+		# de descargar Mundo Abierto para que Torres no reinicie día/hora.
+		if tipo_actual == TIPO_MUNDO_ABIERTO:
+			var atmosfera: WorldAtmosphere = zona_actual.get_node_or_null("WorldGenerator/WorldAtmosphere") as WorldAtmosphere
+			if is_instance_valid(atmosfera):
+				GameState.world_state.flags["tiempo_mundo"] = atmosfera.obtener_estado_guardado().duplicate(true)
 		zona_actual.queue_free()
 		await zona_actual.tree_exited
 
