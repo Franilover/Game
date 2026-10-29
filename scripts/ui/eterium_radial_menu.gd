@@ -546,7 +546,7 @@ func _mostrar_minijuego() -> void:
 	if is_instance_valid(_minijuego_sombra):
 		_minijuego_sombra.visible = not meditacion
 	if is_instance_valid(_panel):
-		_panel.visible = not meditacion
+		_panel.visible = true
 		if meditacion:
 			_panel.offset_left = -150.0
 			_panel.offset_top = 14.0
