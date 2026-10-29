@@ -295,11 +295,14 @@ func _al_soltar_espacio() -> void:
 	elif _estado_minijuego == "eterium":
 		if _fase_meditacion == "inicial":
 			_fase_meditacion = "soltar"
+			_direccion_anillo = -1.0
+			_radio_anillo = RADIO_ANILLO_INICIAL
+			_ventana_coyote = MARGEN_Coyote
 			_tiempo_fase = 0.0
-			_actualizar_panel_minijuego("SUELTA", "")
+			_actualizar_panel_minijuego("", "")
 		elif _fase_meditacion == "mantener":
-			if _tiempo_fase < 0.35:
-				_fallar_minijuego("Soltaste antes de completar el pulso.")
+			if _radio_anillo < RADIO_ANILLO_OBJETIVO + 24.0:
+				_fallar_minijuego("Soltaste demasiado pronto.")
 				return
 			_ciclos_meditacion += 1
 			_minijuego_barra.value = float(_ciclos_meditacion) / CICLOS_MEDITACION_NECESARIOS * 100.0
@@ -307,8 +310,11 @@ func _al_soltar_espacio() -> void:
 				_completar_meditacion()
 			else:
 				_fase_meditacion = "soltar"
+				_direccion_anillo = -1.0
+				_radio_anillo = RADIO_ANILLO_INICIAL
+				_ventana_coyote = MARGEN_Coyote
 				_tiempo_fase = 0.0
-				_actualizar_panel_minijuego("PULSO %d/%d" % [_ciclos_meditacion, CICLOS_MEDITACION_NECESARIOS], "")
+				_actualizar_panel_minijuego("", "")
 
 
 func _draw() -> void:
