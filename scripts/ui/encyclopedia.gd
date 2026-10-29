@@ -211,8 +211,6 @@ func _mostrar_biomas() -> void:
 	_arbol.columns = 1
 	_arbol.remove_theme_font_size_override("font_size")
 	_arbol.set_column_titles_visible(false)
-	_tab_biomas.button_pressed = true
-	_tab_criaturas.button_pressed = false
 	actualizar()
 
 
@@ -221,8 +219,6 @@ func _mostrar_criaturas() -> void:
 	_arbol.columns = 1
 	_arbol.remove_theme_font_size_override("font_size")
 	_arbol.set_column_titles_visible(false)
-	_tab_biomas.button_pressed = false
-	_tab_criaturas.button_pressed = true
 	actualizar()
 
 
@@ -830,7 +826,7 @@ func _mostrar_ficha_criatura(
 
 	# La ficha de criatura sólo muestra el bioma.
 	partes.append("[color=#8f754f]Bioma:[/color] " + _obtener_biomas_de_criatura(id))
-	_ficha.text = "\\n\\n".join(partes)
+	_ficha.text = "\n\n".join(partes)
 
 
 func _agregar_criaturas_de_bioma(bioma: Dictionary, partes: Array[String]) -> void:
