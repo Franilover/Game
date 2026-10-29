@@ -59,11 +59,6 @@ func _crear_interfaz() -> void:
 	_pagina_garumis.add_theme_constant_override("separation", 5)
 	body.add_child(_pagina_garumis)
 
-	var titulo_vinculados := Label.new()
-	titulo_vinculados.text = "VÍNCULOS ACTIVOS · MÁXIMO 3"
-	titulo_vinculados.add_theme_color_override("font_color", TEXTO)
-	titulo_vinculados.add_theme_font_size_override("font_size", 11)
-	_pagina_garumis.add_child(titulo_vinculados)
 	_lista_vinculados = VBoxContainer.new()
 	_lista_vinculados.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lista_vinculados.add_theme_constant_override("separation", 3)
@@ -195,6 +190,9 @@ func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado: Stri
 	var nombre := str(registro.get("nombre", registro.get("criatura_nombre", "Garumi"))).strip_edges()
 	if nombre.is_empty():
 		nombre = "Garumi"
+	var sprite := _crear_sprite_fila(registro)
+	if sprite != null:
+		fila.add_child(sprite)
 	var boton := Button.new()
 	boton.text = nombre
 	boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -209,6 +207,33 @@ func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado: Stri
 	etiqueta.add_theme_font_size_override("font_size", 9)
 	etiqueta.add_theme_color_override("font_color", SECUNDARIO)
 	fila.add_child(etiqueta)
+
+
+func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
+	var claves: Array[String] = []
+	var asset_key := str(registro.get("asset_key", "")).strip_edges()
+	var nombre := str(registro.get("nombre", registro.get("criatura_nombre", ""))).strip_edges()
+	if not asset_key.is_empty():
+		claves.append(asset_key)
+	if not nombre.is_empty() and not claves.has(nombre):
+		claves.append(nombre)
+
+	for clave in claves:
+		for extension in [".png", ".PNG", ".svg", ".SVG"]:
+			var ruta := "res://assets/art/garumis/" + clave + extension
+			if not ResourceLoader.exists(ruta):
+				continue
+			var textura := load(ruta) as Texture2D
+			if textura == null:
+				continue
+			var sprite := TextureRect.new()
+			sprite.texture = textura
+			sprite.custom_minimum_size = Vector2(32, 32)
+			sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			sprite.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			return sprite
+	return null
 
 
 func _agregar_mensaje(contenedor: VBoxContainer, mensaje: String) -> void:
