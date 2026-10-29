@@ -553,7 +553,7 @@ func _obtener_textura_garumi(registro: Dictionary) -> Texture2D:
 		claves.append(nombre)
 	for clave in claves:
 		for extension in [".png", ".PNG", ".svg", ".SVG"]:
-			var ruta := "res://assets/art/garumis/" + clave + extension
+			var ruta: String = "res://assets/art/garumis/" + clave + str(extension)
 			if not ResourceLoader.exists(ruta):
 				continue
 			var textura := load(ruta) as Texture2D
