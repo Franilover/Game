@@ -27,6 +27,10 @@ const DURACION_DASH_MINIJUEGO := 1.5
 const TOQUES_CURACION_NECESARIOS := 12
 const COSTO_FALLO_MINIJUEGO := 3
 const CICLOS_MEDITACION_NECESARIOS := 4
+const RADIO_ANILLO_INICIAL := 112.0
+const RADIO_ANILLO_OBJETIVO := 42.0
+const VELOCIDAD_ANILLO := 105.0
+const MARGEN_Coyote := 0.09
 var _minijuego_layer: Control
 var _minijuego_titulo: Label
 var _minijuego_instruccion: Label
