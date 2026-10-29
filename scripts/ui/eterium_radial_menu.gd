@@ -251,12 +251,14 @@ func _al_presionar_espacio() -> void:
 			return
 		_espacio_pulsado = true
 		if _fase_meditacion == "soltar":
-			if _tiempo_fase < 0.2 or _tiempo_fase > 0.75:
-				_fallar_minijuego("No seguiste el ritmo.")
+			var dentro_ventana := _radio_anillo <= RADIO_ANILLO_OBJETIVO + 12.0 and _radio_anillo >= RADIO_ANILLO_OBJETIVO - 8.0
+			if not dentro_ventana and _ventana_coyote <= 0.0:
+				_fallar_minijuego("Fallaste el pulso.")
 				return
 			_fase_meditacion = "mantener"
+			_direccion_anillo = 1.0
 			_tiempo_fase = 0.0
-			_actualizar_panel_minijuego("MANTÉN", "")
+			_actualizar_panel_minijuego("", "")
 		return
 	if visible_menu:
 		return
