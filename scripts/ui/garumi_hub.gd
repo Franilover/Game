@@ -86,7 +86,7 @@ func _crear_interfaz() -> void:
 	scroll.add_child(_lista_amigos)
 
 	_detalle = VBoxContainer.new()
-	_detalle.custom_minimum_size = Vector2(205, 0)
+	_detalle.custom_minimum_size = Vector2(150, 0)
 	_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_detalle.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -200,7 +200,7 @@ func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_regis
 		boton_vincular.text = "Vincular"
 		boton_vincular.custom_minimum_size = Vector2(84, 27)
 		boton_vincular.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		boton_vincular.add_theme_font_size_override("font_size", 10)
+		_estilizar_boton_accion(boton_vincular)
 		boton_vincular.pressed.connect(_vincular_desde_amigos.bind(registro.duplicate(true)))
 		celda.add_child(boton_vincular)
 
@@ -270,7 +270,7 @@ func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 
 	var sprite := _crear_sprite_fila(registro)
 	if sprite != null:
-		sprite.custom_minimum_size = Vector2(220, 220)
+		sprite.custom_minimum_size = Vector2(160, 160)
 		sprite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sprite.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_detalle.add_child(sprite)
@@ -296,7 +296,7 @@ func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 
 	var boton_accion := Button.new()
 	boton_accion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	boton_accion.add_theme_font_size_override("font_size", 11)
+	_estilizar_boton_accion(boton_accion)
 	if estado_registro == "Vinculado":
 		boton_accion.text = "Quitar vínculo"
 		boton_accion.pressed.connect(_quitar_vinculo.bind(registro.duplicate(true)))
@@ -305,6 +305,30 @@ func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 		boton_accion.disabled = not GameState.puede_vincular_garumi()
 		boton_accion.pressed.connect(_vincular_desde_amigos.bind(registro.duplicate(true)))
 	_detalle.add_child(boton_accion)
+
+
+func _estilizar_boton_accion(boton: Button) -> void:
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.custom_minimum_size = Vector2(0, 27)
+	boton.clip_text = true
+	boton.add_theme_font_size_override("font_size", 10)
+	boton.add_theme_color_override("font_color", TEXTO)
+	boton.add_theme_color_override("font_hover_color", Color(0.98, 0.88, 0.66, 1.0))
+	boton.add_theme_color_override("font_pressed_color", TEXTO)
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.12, 0.075, 0.045, 0.95)
+	normal.border_color = BORDE
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(3)
+	normal.content_margin_left = 5
+	normal.content_margin_right = 5
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.19, 0.13, 0.08, 1.0)
+	hover.border_color = Color(0.55, 0.40, 0.22, 1.0)
+	boton.add_theme_stylebox_override("normal", normal)
+	boton.add_theme_stylebox_override("hover", hover)
+	boton.add_theme_stylebox_override("pressed", hover)
+	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 
 func _quitar_vinculo(registro: Dictionary) -> void:
