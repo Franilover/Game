@@ -39,12 +39,16 @@ func alternar(cliente: GarliaSupabaseClient, estado: GameStateService, tipo_zona
 	_reconstruir_destinos()
 	_abierto = true
 	visible = true
+	if not is_in_group("modal_ui"):
+		add_to_group("modal_ui")
 	_panel.grab_focus()
 
 
 func cerrar() -> void:
 	_abierto = false
 	visible = false
+	if is_in_group("modal_ui"):
+		remove_from_group("modal_ui")
 
 
 func _construir_interfaz() -> void:
