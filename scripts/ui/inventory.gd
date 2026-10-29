@@ -654,7 +654,6 @@ func _actualizar_slots_equipamiento() -> void:
 			continue
 
 		slot.configurar_objeto(objeto)
-	_actualizar_panel_estadisticas_equipo()
 
 
 func obtener_equipamiento() -> Dictionary:
