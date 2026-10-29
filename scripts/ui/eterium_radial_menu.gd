@@ -309,6 +309,15 @@ func _al_soltar_espacio() -> void:
 				_actualizar_panel_minijuego("PULSO %d/%d" % [_ciclos_meditacion, CICLOS_MEDITACION_NECESARIOS], "")
 
 
+func _draw() -> void:
+	if _estado_minijuego != "eterium":
+		return
+	var centro := get_viewport_rect().size * 0.5
+	draw_circle(centro, RADIO_ANILLO_OBJETIVO, Color(0.20, 0.13, 0.07, 0.70))
+	draw_arc(centro, RADIO_ANILLO_OBJETIVO, 0.0, TAU, 96, Color(0.94, 0.83, 0.65, 1.0), 3.0, true)
+	draw_arc(centro, _radio_anillo, 0.0, TAU, 96, Color(0.78, 0.58, 0.32, 1.0), 4.0, true)
+
+
 func _construir_interfaz_minijuego() -> void:
 	_minijuego_layer = Control.new()
 	_minijuego_layer.name = "MinijuegoEterium"
