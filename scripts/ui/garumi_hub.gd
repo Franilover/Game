@@ -195,8 +195,9 @@ func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado_regis
 		columna_vida.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		columna_vida.add_theme_constant_override("separation", 2)
 		fila.add_child(columna_vida)
-		var vida_maxima := maxi(1, int(registro.get("max_health", registro.get("vida_maxima", 100))))
-		var vida_actual := clampi(int(registro.get("health", registro.get("vida", vida_maxima))), 0, vida_maxima)
+		var salud := _obtener_salud_garumi(registro)
+		var vida_maxima: int = salud["max"]
+		var vida_actual: int = salud["actual"]
 		var barra := ProgressBar.new()
 		barra.min_value = 0
 		barra.max_value = vida_maxima
@@ -218,6 +219,20 @@ func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado_regis
 		boton_vincular.add_theme_font_size_override("font_size", 10)
 		boton_vincular.pressed.connect(_vincular_desde_amigos.bind(registro.duplicate(true)))
 		fila.add_child(boton_vincular)
+
+
+func _obtener_salud_garumi(registro: Dictionary) -> Dictionary:
+	var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not is_instance_valid(nodo):
+			continue
+		var id_nodo := str(nodo.get("_garumi_instancia_id")).strip_edges()
+		if id_instancia.is_empty() or id_nodo != id_instancia:
+			continue
+		var maximo := maxi(1, int(nodo.get("max_health")))
+		return {"actual": clampi(int(nodo.get("health")), 0, maximo), "max": maximo}
+	var max_guardado := maxi(1, int(registro.get("max_health", registro.get("vida_maxima", 100))))
+	return {"actual": clampi(int(registro.get("health", registro.get("vida", max_guardado))), 0, max_guardado), "max": max_guardado}
 
 
 func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
@@ -293,10 +308,23 @@ func _quitar_vinculo(registro: Dictionary) -> void:
 	var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
 	if id_instancia.is_empty():
 		return
-	if GameState.eliminar_garumi_vinculado(id_instancia):
-		GameState.guardar_garumi_amigo(registro)
+	var registro_amigo := registro.duplicate(true)
+	var salud := _obtener_salud_garumi(registro)
+	registro_amigo["health"] = salud["actual"]
+	registro_amigo["max_health"] = salud["max"]
+	GameState.guardar_garumi_amigo(registro_amigo)
+	var vinculo_roto := false
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not is_instance_valid(nodo) or not nodo.has_method("romper_vinculo"):
+			continue
+		if str(nodo.get("_garumi_instancia_id")).strip_edges() == id_instancia:
+			vinculo_roto = bool(nodo.call("romper_vinculo"))
+			break
+	if not vinculo_roto:
+		vinculo_roto = GameState.eliminar_garumi_vinculado(id_instancia)
+	if vinculo_roto:
 		actualizar()
-		_mostrar_detalle(registro, "Amigo")
+		_mostrar_detalle(registro_amigo, "Amigo")
 
 
 func _vincular_desde_amigos(registro: Dictionary) -> void:
@@ -306,11 +334,15 @@ func _vincular_desde_amigos(registro: Dictionary) -> void:
 	var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
 	if id_instancia.is_empty():
 		return
-	if GameState.guardar_garumi_vinculado(registro):
+	var registro_vinculado := registro.duplicate(true)
+	registro_vinculado["vinculado"] = true
+	if str(registro_vinculado.get("tipo_vinculo", "")).strip_edges().is_empty():
+		registro_vinculado["tipo_vinculo"] = "amistad"
+	if GameState.guardar_garumi_vinculado(registro_vinculado):
 		GameState.eliminar_garumi_amigo(id_instancia)
 		_estado.text = ""
 		actualizar()
-		_mostrar_detalle(registro, "Vinculado")
+		_mostrar_detalle(registro_vinculado, "Vinculado")
 
 
 func mostrar_resultado_amistad_garumi(garumi: Node, exito: bool) -> void:
