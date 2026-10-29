@@ -98,8 +98,8 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 		return
 
 	var escena := str(propiedades.get("escena", "")).strip_edges()
-	if escena.is_empty():
-		push_warning("ZoneManager: el reino '%s' no tiene escena configurada." % clave)
+	if escena.is_empty() or not ResourceLoader.exists(escena):
+		push_warning("ZoneManager: la escena configurada para el reino '%s' no existe: %s" % [clave, escena])
 		return
 	var tipo := TIPO_REINO_TORRES if clave == "torres" else "reino:" + clave
 	_cambiar_zona(escena, tipo)
@@ -156,16 +156,17 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		return
 
 	_transicionando = true
-
-	if is_instance_valid(zona_actual):
-		zona_actual.queue_free()
-		await zona_actual.tree_exited
-
+	# Validar y cargar la escena de destino antes de retirar la zona actual.
+	# Si el recurso falta, el jugador no queda atrapado en una escena vacía.
 	var packed := load(path) as PackedScene
 	if packed == null:
 		push_error("ZoneManager: no se pudo cargar la zona '%s'." % path)
 		_transicionando = false
 		return
+
+	if is_instance_valid(zona_actual):
+		zona_actual.queue_free()
+		await zona_actual.tree_exited
 
 	zona_actual = packed.instantiate()
 	zona_actual.name = "ZonaActiva"
