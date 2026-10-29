@@ -462,6 +462,7 @@ func _construir_lista_criaturas() -> void:
 
 
 func _construir_lista_garumis() -> void:
+	_arbol.columns = 3
 	_arbol.clear()
 	var raiz := _arbol.create_item()
 	var grupos_por_letra: Dictionary = {}
