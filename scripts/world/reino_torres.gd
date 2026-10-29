@@ -160,8 +160,8 @@ func _crear_aviso() -> void:
 	_aviso_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_aviso_panel.custom_minimum_size = Vector2(0.0, 30.0)
 	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.105, 0.071, 0.043, 0.98)
-	estilo.border_color = Color(0.48, 0.32, 0.17, 1.0)
+	estilo.bg_color = Color("#11111C")
+	estilo.border_color = Color("#B4BEFE")
 	estilo.set_border_width_all(1)
 	estilo.set_corner_radius_all(4)
 	estilo.content_margin_left = 9.0
@@ -170,9 +170,13 @@ func _crear_aviso() -> void:
 	estilo.content_margin_bottom = 4.0
 	_aviso_panel.add_theme_stylebox_override("panel", estilo)
 	var hover := estilo.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.19, 0.125, 0.065, 1.0)
-	hover.border_color = Color(0.76, 0.54, 0.29, 1.0)
-	_aviso_panel.add_theme_stylebox_override("panel", hover)
+	hover.bg_color = Color("#1B1B2A")
+	hover.border_color = Color("#D0D5FF")
+	_aviso_panel.add_theme_stylebox_override("panel", estilo)
+	_aviso_panel.set_meta("estilo_normal", estilo)
+	_aviso_panel.set_meta("estilo_hover", hover)
+	_aviso_panel.mouse_entered.connect(_al_entrar_aviso)
+	_aviso_panel.mouse_exited.connect(_al_salir_aviso)
 	_aviso_panel.gui_input.connect(_al_clic_aviso)
 
 	_aviso = Label.new()
@@ -200,6 +204,16 @@ func _posicionar_aviso_sobre_jugador() -> void:
 		clampf(posicion_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
 		clampf(posicion_pantalla.y - tamano.y - 24.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
 	)
+
+
+func _al_entrar_aviso() -> void:
+	if is_instance_valid(_aviso_panel):
+		_aviso_panel.add_theme_stylebox_override("panel", _aviso_panel.get_meta("estilo_hover") as StyleBoxFlat)
+
+
+func _al_salir_aviso() -> void:
+	if is_instance_valid(_aviso_panel):
+		_aviso_panel.add_theme_stylebox_override("panel", _aviso_panel.get_meta("estilo_normal") as StyleBoxFlat)
 
 
 func _al_clic_aviso(evento: InputEvent) -> void:
