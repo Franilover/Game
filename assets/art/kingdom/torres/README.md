@@ -19,7 +19,8 @@ assets/art/kingdom/torres/
 │   ├── casa_oriente_b.png
 │   ├── casa_oriente_c.png
 │   ├── casa.png
-│   └── vivienda.png
+│   ├── vivienda.png
+│   ├── vivienda_oeste_01.png ... vivienda_oeste_11.png
 └── edificios/
     ├── forja.png
     ├── establos.png
@@ -49,7 +50,7 @@ assets/art/kingdom/torres/
 
 ## Reglas
 
-- El cargador intenta primero el archivo específico de cada edificio.
+- El cargador intenta primero el archivo específico de cada edificio, incluidas las 11 viviendas del barrio oeste (`casas/vivienda_oeste_01.png` a `casas/vivienda_oeste_11.png`).
 - Si falta, prueba las alternativas genéricas definidas en el script (por ejemplo, `casas/casa.png` o `edificios/edificio.png`).
 - Si no encuentra ninguna textura válida, deja visibles las formas placeholder actuales.
 - Cuando encuentra un sprite, oculta únicamente las formas visuales de ese edificio; las colisiones y los rótulos se conservan.
