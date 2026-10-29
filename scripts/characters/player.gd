@@ -123,10 +123,9 @@ func _ready() -> void:
 	eterium.configurar_vital(vital_state)
 	exploration_controller.terreno_descubierto.connect(_al_terreno_descubierto)
 	locomotion.configurar(movement_controller, action_controller, stamina_controller)
-	if not stamina_controller.stamina_changed.is_connected(_al_cambio_stamina):
-		stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 	stamina_controller.configurar(max_stamina)
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
+	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 
 	_base_visual_position = visual.position
 

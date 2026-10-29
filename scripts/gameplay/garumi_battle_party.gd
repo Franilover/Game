@@ -307,7 +307,9 @@ func _crear_acciones_combate() -> void:
 	_acciones_combate.offset_right = 280.0
 	_acciones_combate.offset_bottom = -12.0
 	_acciones_combate.add_theme_constant_override("separation", 8)
-	_acciones_combate.z_index = 30
+	# Debe quedar por encima del panel central; de lo contrario el panel tapa
+	# parte del botón Huir y bloquea los clics en esa zona.
+	_acciones_combate.z_index = 200
 	_acciones_combate.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_acciones_combate)
 

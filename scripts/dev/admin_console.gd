@@ -18,6 +18,10 @@ var _sugerencias_lista: VBoxContainer
 
 var _abierto: bool = false
 var _sugerencias: Array[String] = []
+var _historial_comandos: Array[String] = []
+var _indice_historial_comandos: int = -1
+var _borrador_historial: String = ""
+const MAX_HISTORIAL_COMANDOS: int = 100
 var world_context: WorldContext = null
 var world_entity_spawner: WorldEntitySpawner = null
 var world_atmosphere: WorldAtmosphere = null
@@ -85,10 +89,17 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if not _abierto:
+		# Abrir directamente con / y dejarlo listo para escribir el comando.
+		# Unicode también cubre distribuciones donde / se obtiene con Shift.
 		if tecla.keycode == KEY_T:
 			abrir()
 			get_viewport().set_input_as_handled()
-
+			return
+		if tecla.keycode == KEY_SLASH or tecla.keycode == KEY_KP_DIVIDE or tecla.unicode == 47:
+			abrir()
+			_entrada.text = "/"
+			_entrada.caret_column = 1
+			get_viewport().set_input_as_handled()
 		return
 
 	if tecla.keycode == KEY_ESCAPE:
@@ -113,6 +124,8 @@ func abrir() -> void:
 	get_tree().paused = true
 
 	_entrada.clear()
+	_indice_historial_comandos = -1
+	_borrador_historial = ""
 	_entrada.grab_focus()
 	_ocultar_sugerencias()
 
@@ -225,18 +238,50 @@ func _al_input_entrada(event: InputEvent) -> void:
 		return
 
 	var tecla: InputEventKey = event as InputEventKey
-
 	if not tecla.pressed or tecla.echo:
+		return
+
+	if tecla.keycode == KEY_UP:
+		_navegar_historial_comandos(-1)
+		get_viewport().set_input_as_handled()
+		return
+	if tecla.keycode == KEY_DOWN:
+		_navegar_historial_comandos(1)
+		get_viewport().set_input_as_handled()
 		return
 
 	if tecla.keycode != KEY_TAB:
 		return
-
 	if _sugerencias.is_empty():
 		return
-
 	_completar_sugerencia(_sugerencias[0])
 	get_viewport().set_input_as_handled()
+
+
+func _navegar_historial_comandos(direccion: int) -> void:
+	if not _abierto or not is_instance_valid(_entrada) or _historial_comandos.is_empty():
+		return
+
+	if direccion < 0:
+		if _indice_historial_comandos == -1:
+			_borrador_historial = _entrada.text
+			_indice_historial_comandos = _historial_comandos.size() - 1
+		else:
+			_indice_historial_comandos = maxi(0, _indice_historial_comandos - 1)
+	else:
+		if _indice_historial_comandos == -1:
+			return
+		if _indice_historial_comandos >= _historial_comandos.size() - 1:
+			_indice_historial_comandos = -1
+			_entrada.text = _borrador_historial
+			_entrada.caret_column = _entrada.text.length()
+			_actualizar_sugerencias()
+			return
+		_indice_historial_comandos += 1
+
+	_entrada.text = _historial_comandos[_indice_historial_comandos]
+	_entrada.caret_column = _entrada.text.length()
+	_actualizar_sugerencias()
 
 
 func _actualizar_sugerencias() -> void:
@@ -715,6 +760,12 @@ func _al_enviar_comando(texto: String) -> void:
 	_agregar_linea(
 		"> " + comando
 	)
+	if _historial_comandos.is_empty() or _historial_comandos.back() != comando:
+		_historial_comandos.append(comando)
+		if _historial_comandos.size() > MAX_HISTORIAL_COMANDOS:
+			_historial_comandos.pop_front()
+	_indice_historial_comandos = -1
+	_borrador_historial = ""
 
 	_entrada.clear()
 	_ocultar_sugerencias()

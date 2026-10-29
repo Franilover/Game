@@ -941,17 +941,11 @@ func _aplicar_estado_al_juego() -> void:
 	jugador.set("is_alive", true)
 
 	if jugador.get("stamina") != null:
-		var stamina_guardada := clampf(
+		jugador.set("stamina", clampf(
 			player_state.stamina,
 			0.0,
 			float(jugador.get("max_stamina"))
-		)
-		var stamina_controller: Variant = jugador.get("stamina_controller")
-		if stamina_controller != null and stamina_controller.has_method("establecer_actual"):
-			# El controlador es la fuente de verdad; su señal sincroniza Player.stamina y el HUD.
-			stamina_controller.call("establecer_actual", stamina_guardada)
-		else:
-			jugador.set("stamina", stamina_guardada)
+		))
 
 	if jugador.get("facing") is Vector2:
 		jugador.set("facing", player_state.facing)
