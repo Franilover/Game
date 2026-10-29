@@ -67,6 +67,7 @@ func _construir_interfaz() -> void:
 
 	_panel = PanelContainer.new()
 	_panel.name = "PanelReinos"
+	_panel.focus_mode = Control.FOCUS_ALL
 	_panel.custom_minimum_size = Vector2(340.0, 260.0)
 	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -173,11 +174,13 @@ func _agregar_destino(clave: String, nombre: String, categoria: String, actual: 
 	boton.focus_mode = Control.FOCUS_ALL
 	boton.tooltip_text = categoria
 	_estilizar_boton(boton, actual)
-	boton.pressed.connect(func() -> void:
-		cerrar()
-		destino_solicitado.emit(clave)
-	)
+	boton.pressed.connect(_seleccionar_destino.bind(clave))
 	_lista.add_child(boton)
+
+
+func _seleccionar_destino(clave: String) -> void:
+	cerrar()
+	destino_solicitado.emit(clave)
 
 
 func _estilizar_boton(boton: Button, seleccionado: bool) -> void:
