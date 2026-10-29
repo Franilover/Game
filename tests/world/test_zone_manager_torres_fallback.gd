@@ -1,16 +1,16 @@
-extends SceneTree
+extends Node
 
 const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
 const TORRES_SCENE_PATH := "res://scenes/kingdom/reino_torres.tscn"
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
 	var manager := ZONE_MANAGER_SCRIPT.new() as Node2D
-	root.add_child(manager)
+	add_child(manager)
 
 	# No SupabaseClient is injected here on purpose: Torres must still be
 	# reachable from the RealmMenu while the remote realm catalog loads.
@@ -33,9 +33,9 @@ func _run() -> void:
 		return
 
 	print("PASS: Torres travel works without waiting for the remote realm catalog.")
-	quit()
+	get_tree().quit()
 
 
 func _fail(message: String) -> void:
 	push_error("ZoneManager Torres fallback regression: " + message)
-	quit(1)
+	get_tree().quit(1)
