@@ -308,14 +308,14 @@ func toggle() -> void:
 
 func toggle_mapa() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	if _abierto and tabs.current_tab == 3:
+	if _abierto and tabs.current_tab == 4:
 		cerrar()
 		return
 	if not _abierto:
 		_abierto = true
 		visible = true
 		_actualizar_admin_tab()
-	tabs.current_tab = 3
+	tabs.current_tab = 4
 	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
 	actualizar()
 
