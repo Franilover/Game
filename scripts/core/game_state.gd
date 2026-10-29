@@ -633,6 +633,30 @@ func registrar_criatura_derrotada(criatura: Node) -> bool:
 	return true
 
 
+func registrar_garumi_descubierto(garumi_id: String) -> bool:
+	var id := garumi_id.strip_edges()
+	if id.is_empty():
+		return false
+	var registros_variant: Variant = world_state.flags.get("enciclopedia_garumis", {})
+	var registros: Dictionary = {}
+	if registros_variant is Dictionary:
+		registros = (registros_variant as Dictionary).duplicate(true)
+	if registros.has(id):
+		return false
+	registros[id] = true
+	world_state.flags["enciclopedia_garumis"] = registros
+	enciclopedia_actualizada.emit(id)
+	print("GameState: Garumi descubierto → ", id)
+	return true
+
+
+func obtener_garumis_descubiertos() -> Dictionary:
+	var registros_variant: Variant = world_state.flags.get("enciclopedia_garumis", {})
+	if registros_variant is Dictionary:
+		return (registros_variant as Dictionary).duplicate(true)
+	return {}
+
+
 func obtener_criaturas_descubiertas() -> Dictionary:
 	var registros_variant: Variant = world_state.flags.get(
 		"enciclopedia_criaturas",
