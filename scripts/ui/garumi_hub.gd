@@ -14,7 +14,7 @@ var _lista_vinculados: VBoxContainer
 var _lista_amigos: VBoxContainer
 var _garudex: Control
 var _estado: Label
-var _detalle: RichTextLabel
+var _detalle: VBoxContainer
 
 
 func _ready() -> void:
@@ -81,14 +81,12 @@ func _crear_interfaz() -> void:
 	_lista_amigos.add_theme_constant_override("separation", 3)
 	scroll.add_child(_lista_amigos)
 
-	_detalle = RichTextLabel.new()
-	_detalle.bbcode_enabled = true
-	_detalle.fit_content = false
-	_detalle.scroll_active = true
-	_detalle.custom_minimum_size = Vector2(155, 0)
+	_detalle = VBoxContainer.new()
+	_detalle.custom_minimum_size = Vector2(125, 0)
 	_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_detalle.add_theme_color_override("default_color", SECUNDARIO)
-	_detalle.add_theme_font_size_override("normal_font_size", 11)
+	_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_detalle.alignment = BoxContainer.ALIGNMENT_CENTER
+	_detalle.add_theme_constant_override("separation", 6)
 	body.add_child(_detalle)
 
 	_garudex = Control.new()
@@ -179,10 +177,9 @@ func actualizar() -> void:
 		for registro in amigos:
 			if registro is Dictionary:
 				_agregar_fila(_lista_amigos, registro as Dictionary, "Amigo")
-	_estado.text = "%d/3 vinculados · %d amigos" % [vinculados.size(), amigos.size()]
 
 
-func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado: String) -> void:
+func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, _estado_registro: String) -> void:
 	var fila := HBoxContainer.new()
 	fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fila.add_theme_constant_override("separation", 5)
@@ -197,16 +194,11 @@ func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado: Stri
 	boton.text = nombre
 	boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	boton.custom_minimum_size = Vector2(0, 27)
+	boton.custom_minimum_size = Vector2(0, 44)
 	boton.add_theme_font_size_override("font_size", 10)
 	boton.add_theme_color_override("font_color", TEXTO)
-	boton.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), estado))
+	boton.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), ""))
 	fila.add_child(boton)
-	var etiqueta := Label.new()
-	etiqueta.text = estado
-	etiqueta.add_theme_font_size_override("font_size", 9)
-	etiqueta.add_theme_color_override("font_color", SECUNDARIO)
-	fila.add_child(etiqueta)
 
 
 func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
@@ -219,8 +211,16 @@ func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
 		claves.append(nombre)
 
 	for clave in claves:
-		for extension in [".png", ".PNG", ".svg", ".SVG"]:
-			var ruta := "res://assets/art/garumis/" + clave + extension
+		for ruta in [
+			"res://assets/art/garumis/" + clave + ".png",
+			"res://assets/art/garumis/" + clave + ".PNG",
+			"res://assets/art/garumis/" + clave + ".svg",
+			"res://assets/art/garumis/" + clave + ".SVG",
+			"res://assets/art/creatures/" + clave + ".png",
+			"res://assets/art/creatures/" + clave + ".PNG",
+			"res://assets/art/creatures/" + clave + "/" + clave + ".png",
+			"res://assets/art/creatures/" + clave + "/" + clave + ".PNG",
+		]:
 			if not ResourceLoader.exists(ruta):
 				continue
 			var textura := load(ruta) as Texture2D
@@ -228,7 +228,7 @@ func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
 				continue
 			var sprite := TextureRect.new()
 			sprite.texture = textura
-			sprite.custom_minimum_size = Vector2(32, 32)
+			sprite.custom_minimum_size = Vector2(48, 48)
 			sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			sprite.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -245,21 +245,24 @@ func _agregar_mensaje(contenedor: VBoxContainer, mensaje: String) -> void:
 	contenedor.add_child(etiqueta)
 
 
-func _mostrar_detalle(registro: Dictionary, estado: String) -> void:
-	var nombre := str(registro.get("nombre", registro.get("criatura_nombre", "Garumi")))
-	var lineas: PackedStringArray = ["[center][color=#e6c99a][b]" + nombre + "[/b][/color][/center]", "[color=#a68559]Estado:[/color] " + estado]
-	lineas.append("[color=#a68559]Nivel:[/color] " + str(int(registro.get("nivel", 1))))
-	var origen := str(registro.get("nombre_original", ""))
-	if not origen.is_empty():
-		lineas.append("[color=#a68559]Original:[/color] " + origen)
-	var categoria := str(registro.get("categoria_garumi", ""))
-	if not categoria.is_empty():
-		lineas.append("[color=#a68559]Categoría:[/color] " + categoria)
-	var descripcion := str(registro.get("descripcion", "")).strip_edges()
-	if not descripcion.is_empty():
-		lineas.append("")
-		lineas.append(descripcion)
-	_detalle.text = "\n".join(lineas)
+func _mostrar_detalle(registro: Dictionary, _estado_registro: String) -> void:
+	for hijo in _detalle.get_children():
+		_detalle.remove_child(hijo)
+		hijo.queue_free()
+
+	var sprite := _crear_sprite_fila(registro)
+	if sprite != null:
+		sprite.custom_minimum_size = Vector2(112, 112)
+		_detalle.add_child(sprite)
+
+	var nombre := str(registro.get("nombre", registro.get("criatura_nombre", "Garumi"))).strip_edges()
+	var etiqueta_nombre := Label.new()
+	etiqueta_nombre.text = nombre if not nombre.is_empty() else "Garumi"
+	etiqueta_nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta_nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	etiqueta_nombre.add_theme_color_override("font_color", TEXTO)
+	etiqueta_nombre.add_theme_font_size_override("font_size", 12)
+	_detalle.add_child(etiqueta_nombre)
 
 
 func mostrar_resultado_amistad_garumi(garumi: Node, exito: bool) -> void:
