@@ -537,7 +537,7 @@ func _mostrar_garumi_desde_grid(registro: Dictionary) -> void:
 
 func _crear_material_silueta() -> ShaderMaterial:
 	var shader := Shader.new()
-	shader.code = "shader_type canvas_item; void fragment() { COLOR = vec4(0.10, 0.075, 0.05, COLOR.a); }"
+	shader.code = "shader_type canvas_item; void fragment() { COLOR = vec4(0.88, 0.86, 0.76, COLOR.a); }"
 	var material := ShaderMaterial.new()
 	material.shader = shader
 	return material
