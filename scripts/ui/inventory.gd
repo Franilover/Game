@@ -52,7 +52,6 @@ var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
 var _player: Player = null
 var _world_items: GarliaWorldItems = null
-var _equipment_stats_label: Label = null
 
 
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
@@ -236,7 +235,6 @@ func _ready() -> void:
 	_inicializar_hotbar()
 	_crear_slots()
 	_crear_slots_equipamiento()
-	_preparar_panel_estadisticas_equipo()
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_inicializar_navegacion_tabs()
 	_limpiar_informacion()
@@ -620,7 +618,6 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if inventory_controller.equipar_desde_inventario(clave, source_index, objeto):
 		equipment_slot.configurar_objeto(objeto)
 		actualizar()
-		_actualizar_panel_estadisticas_equipo()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
 
@@ -639,7 +636,6 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 		return
 	equipment_slot.limpiar_objeto()
 	actualizar()
-	_actualizar_panel_estadisticas_equipo()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
@@ -710,45 +706,6 @@ func obtener_estadistica_equipo(
 			total += float(valor)
 
 	return total
-
-
-func _preparar_panel_estadisticas_equipo() -> void:
-	var right_panel := $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel as VBoxContainer
-	if right_panel == null:
-		return
-	_equipment_stats_label = Label.new()
-	_equipment_stats_label.name = "EquipmentStats"
-	_equipment_stats_label.custom_minimum_size = Vector2(0, 38)
-	_equipment_stats_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_equipment_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_equipment_stats_label.add_theme_color_override("font_color", Color(0.82, 0.75, 0.61, 1.0))
-	_equipment_stats_label.add_theme_font_size_override("font_size", 9)
-	_equipment_stats_label.text = "EQUIPO\nSin bonificaciones numéricas registradas"
-	right_panel.add_child(_equipment_stats_label)
-	_actualizar_panel_estadisticas_equipo()
-
-
-func _actualizar_panel_estadisticas_equipo() -> void:
-	if not is_instance_valid(_equipment_stats_label):
-		return
-	var estadisticas := obtener_estadisticas_equipo()
-	var lineas: PackedStringArray = ["ESTADÍSTICAS DE EQUIPO"]
-	var claves: Array[String] = []
-	for clave_variant in estadisticas.keys():
-		var clave := str(clave_variant)
-		# Propiedades físicas descriptivas no se presentan como bonificaciones.
-		if clave in ["durabilidad", "dureza", "fractura"]:
-			continue
-		claves.append(clave)
-	claves.sort()
-	for clave in claves:
-		var valor := float(estadisticas[clave])
-		var nombre := clave.replace("_", " ").capitalize()
-		var numero := ("+" if valor > 0.0 else "") + (("%.2f" % valor).rstrip("0").rstrip("."))
-		lineas.append(nombre + ": " + numero)
-	if claves.is_empty():
-		lineas.append("Sin bonificaciones numéricas registradas")
-	_equipment_stats_label.text = "\n".join(lineas)
 
 
 func obtener_estadisticas_equipo() -> Dictionary:
