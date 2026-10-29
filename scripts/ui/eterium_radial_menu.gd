@@ -200,10 +200,13 @@ func _process(delta: float) -> void:
 				_minijuego_barra.value = 0.0
 	elif _estado_minijuego == "eterium":
 		_tiempo_fase += delta
-		if _fase_meditacion == "soltar" and _tiempo_fase > 0.75:
+		_ventana_coyote = maxf(0.0, _ventana_coyote - delta)
+		_radio_anillo += _direccion_anillo * VELOCIDAD_ANILLO * delta
+		queue_redraw()
+		if _fase_meditacion == "soltar" and _radio_anillo <= RADIO_ANILLO_OBJETIVO + 4.0 and _ventana_coyote <= 0.0:
+			_fallar_minijuego("No mantuviste a tiempo.")
+		elif _fase_meditacion == "mantener" and _radio_anillo >= RADIO_ANILLO_OBJETIVO + 48.0:
 			_fallar_minijuego("Soltaste demasiado tarde.")
-		elif _fase_meditacion == "mantener" and _tiempo_fase > 0.9:
-			_fallar_minijuego("Mantuviste ESPACIO demasiado tiempo.")
 	elif _estado_minijuego == "dash_menu":
 		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
 		_actualizar_panel_minijuego("DASH · %d/2" % _toques_curacion, "ESPACIO × 2")
