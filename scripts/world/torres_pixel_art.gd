@@ -147,8 +147,8 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	var es_piedra := clave in ["vivienda_mason", "archivo_real", "sala_consejo", "cuartel", "banos", "aguas", "registro"]
 	var es_granja := clave in ["granero", "casa_granjeros", "semillas", "corrales", "establos"]
 	var es_taller := clave in ["forja", "reparaciones", "carpinteria", "alfareria", "telar", "molino"]
-	var paredes: Array[Color] = [Color("#B9A17A"), Color("#C5AD84"), Color("#9E8A67"), Color("#A4A07D"), Color("#B9B6A2")]
-	var tejados: Array[Color] = [Color("#8A4936"), Color("#704431"), Color("#5A4934"), Color("#596642"), Color("#794D3C")]
+	var paredes: Array = [Color("#B9A17A"), Color("#C5AD84"), Color("#9E8A67"), Color("#A4A07D"), Color("#B9B6A2")]
+	var tejados: Array = [Color("#8A4936"), Color("#704431"), Color("#5A4934"), Color("#596642"), Color("#794D3C")]
 	if es_piedra:
 		paredes = [Color("#888473"), Color("#A19A84"), Color("#777969"), Color("#96917E"), Color("#A7A08D")]
 	if es_granja:
@@ -160,7 +160,6 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	var tejado := tejados[(indice / 3) % tejados.size()]
 	var luz := Color("#DBBD80") if clave in ["panaderia", "posada", "alojamiento"] else Color("#A5C2B5")
 	var contorno := Color("#33291F")
-	var sombra := Color("#22271E")
 
 	# Sombra pixelada, cimiento y cuerpo de mampostería.
 	_rect(imagen, 4, h - 8, w - 8, 4, Color(0.1333, 0.1529, 0.1176, 0.42))
@@ -211,7 +210,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	for x in [ventana_l, ventana_r]:
 		_rect(imagen, x - 1, ventana_y - 1, ventana_w + 2, ventana_h + 2, contorno)
 		_rect(imagen, x, ventana_y, ventana_w, ventana_h, Color("#35565B"))
-		_rect(imagen, x + 1, ventana_y + 1, maxi(1, ventana_w - 2), 1, Color("#75999A"))
+		_rect(imagen, x + 1, ventana_y + 1, maxi(1, ventana_w - 2), 1, luz)
 		_rect(imagen, x + int(ventana_w / 2), ventana_y, 1, ventana_h, Color("#9B896A"))
 		_rect(imagen, x, ventana_y + int(ventana_h / 2), ventana_w, 1, Color("#9B896A"))
 
