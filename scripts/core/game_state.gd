@@ -757,6 +757,35 @@ func debe_iniciar_en_reino_torres() -> bool:
 
 func marcar_reino_torres_visitado() -> void:
 	world_state.flags["reino_torres_visitado"] = true
+	desbloquear_reino("torres")
+
+
+## Reinos desbloqueados por esta partida. Torres siempre está disponible.
+func obtener_reinos_desbloqueados() -> Dictionary:
+	var resultado: Dictionary = {"torres": true}
+	var variante: Variant = world_state.flags.get("reinos_desbloqueados", {})
+	if variante is Dictionary:
+		for clave_variant in (variante as Dictionary).keys():
+			var clave := str(clave_variant).strip_edges().to_lower()
+			if not clave.is_empty() and bool((variante as Dictionary).get(clave_variant, false)):
+				resultado[clave] = true
+	return resultado
+
+
+## Registra el descubrimiento en el guardado local sin modificar el canon de Supabase.
+func desbloquear_reino(clave_reino: String) -> bool:
+	var clave := clave_reino.strip_edges().to_lower()
+	if clave.is_empty():
+		return false
+	var desbloqueados := obtener_reinos_desbloqueados()
+	if bool(desbloqueados.get(clave, false)):
+		return false
+	desbloqueados[clave] = true
+	world_state.flags["reinos_desbloqueados"] = desbloqueados
+	print("GameState: reino descubierto → ", clave)
+	if not active_save_id.is_empty():
+		call_deferred("guardar_partida")
+	return true
 
 
 func obtener_configuracion_personaje() -> Dictionary:
