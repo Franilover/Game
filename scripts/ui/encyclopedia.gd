@@ -708,27 +708,13 @@ func _buscar_contexto_habitat(habitat_id: String) -> Dictionary:
 	return {}
 
 
-func _mostrar_ficha_original(letra: String) -> void:
-	var original: Dictionary = {}
-	for registro in _garumi_originales:
-		if str(registro.get("letra_original", "")) == letra:
-			original = registro
-			break
-	var nombre_original := str(original.get("nombre", "Linaje de Garumis"))
-	var cantidad := 0
-	for garumi in _garumis_catalogo:
-		if str(garumi.get("letra_original", "")) == letra:
-			cantidad += 1
-	_nombre.text = (letra + " · " if not letra.is_empty() else "") + nombre_original
+func _mostrar_ficha_original(_letra: String) -> void:
+	# Los Garumis Originales permanecen misteriosos: no revelar datos en la ficha.
+	_nombre.hide()
+	_ficha.hide()
 	_icono.texture = null
 	_icono.visible = false
-	var partes: Array[String] = ["[color=#8f754f]Original:[/color] " + nombre_original]
-	partes.append("[color=#8f754f]Letra del linaje:[/color] " + letra)
-	partes.append("[color=#8f754f]Garumis aprobados o canónicos:[/color] " + str(cantidad))
-	if cantidad == 0:
-		partes.append("Todavía no hay descendientes aprobados para mostrar en este linaje.")
-	partes.append("Cada Garumi tiene un número local dentro de su linaje y un número global en el catálogo.")
-	_ficha.text = "\n\n".join(partes)
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 0)
 
 
 func _mostrar_ficha_garumi(registro: Dictionary, _partes: Array[String]) -> void:
