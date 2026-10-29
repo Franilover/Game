@@ -42,7 +42,6 @@ var _toques_espacio := 0
 var _tiempo_minijuego := 0.0
 var _tiempo_fase := 0.0
 var _toques_curacion := 0
-var _ciclos_meditacion := 0
 var _ultima_vida := -1
 
 
@@ -484,7 +483,7 @@ func _actualizar_panel_minijuego(titulo: String, instruccion: String) -> void:
 		return
 	_minijuego_titulo.text = titulo
 	_minijuego_instruccion.text = instruccion
-	var meditacion := _estado_minijuego in ["concentracion", "eterium", "espera_meditacion"]
+	var meditacion := _estado_minijuego in ["concentracion", "espera_meditacion"]
 	_minijuego_titulo.visible = not instruccion.is_empty() and not meditacion
 	_minijuego_instruccion.visible = not instruccion.is_empty() and not meditacion
 
@@ -496,10 +495,7 @@ func _actualizar_indicador_tiempo() -> void:
 	_indicador_tiempo.visible = mostrar
 	if not mostrar:
 		return
-	if _estado_minijuego in ["esperando_toques", "concentracion"]:
-		_indicador_tiempo.text = "Concentración %.1fs" % maxf(0.0, TIEMPO_CONCENTRACION - _tiempo_sostenido)
-	else:
-		_indicador_tiempo.text = "Ritmo %d/%d" % [_ciclos_meditacion, CICLOS_MEDITACION_NECESARIOS]
+	_indicador_tiempo.text = "Concentración %.1fs" % maxf(0.0, TIEMPO_CONCENTRACION - _tiempo_sostenido)
 	var transformacion: Transform2D = (jugador as Node2D).get_global_transform_with_canvas()
 	_indicador_tiempo.position = transformacion.origin + Vector2(-75.0, -52.0)
 
