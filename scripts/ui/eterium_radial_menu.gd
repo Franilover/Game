@@ -36,6 +36,10 @@ var _minijuego_titulo: Label
 var _minijuego_instruccion: Label
 var _minijuego_barra: ProgressBar
 var _minijuego_tiempo: ProgressBar
+var _anillo_meditacion: Control
+var _radio_anillo := RADIO_ANILLO_INICIAL
+var _direccion_anillo := -1.0
+var _ventana_coyote := 0.0
 var _indicador_tiempo: Label
 var _estado_minijuego := ""
 var _fase_meditacion := ""
