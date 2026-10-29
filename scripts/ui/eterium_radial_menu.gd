@@ -27,20 +27,17 @@ const DURACION_DASH_MINIJUEGO := 1.5
 const TOQUES_CURACION_NECESARIOS := 12
 const COSTO_FALLO_MINIJUEGO := 3
 const CICLOS_MEDITACION_NECESARIOS := 4
-const RADIO_ANILLO_INICIAL := 112.0
-const RADIO_ANILLO_OBJETIVO := 42.0
-const VELOCIDAD_ANILLO := 105.0
-const MARGEN_Coyote := 0.09
+const SECUENCIAS_MEDITACION := ["312", "1231", "231", "3123"]
+const DURACIONES_SECUENCIA_MEDITACION := [2.2, 2.6, 2.2, 2.8]
 var _minijuego_layer: Control
 var _minijuego_titulo: Label
 var _minijuego_instruccion: Label
 var _minijuego_barra: ProgressBar
 var _minijuego_tiempo: ProgressBar
 var _minijuego_sombra: ColorRect
-var _anillo_meditacion: Control
-var _radio_anillo := RADIO_ANILLO_INICIAL
-var _direccion_anillo := -1.0
-var _ventana_coyote := 0.0
+var _secuencia_label: Label
+var _secuencia_actual := 0
+var _indice_secuencia := 0
 var _indicador_tiempo: Label
 var _estado_minijuego := ""
 var _fase_meditacion := ""
@@ -152,6 +149,10 @@ func _input(event: InputEvent) -> void:
 			_al_soltar_espacio()
 		get_viewport().set_input_as_handled()
 		return
+	if _estado_minijuego == "eterium" and tecla.pressed and not tecla.echo:
+		_procesar_tecla_secuencia(tecla)
+		get_viewport().set_input_as_handled()
+		return
 	if not tecla.pressed or tecla.echo:
 		return
 	if not _estado_minijuego.is_empty() and not visible_menu:
@@ -197,21 +198,13 @@ func _process(delta: float) -> void:
 				_fase_meditacion = "inicial"
 				_tiempo_fase = 0.0
 				_ciclos_meditacion = 0
-				_radio_anillo = RADIO_ANILLO_INICIAL
-				_direccion_anillo = -1.0
-				_ventana_coyote = 0.0
 				_actualizar_panel_minijuego("", "")
 				_minijuego_barra.value = 0.0
-				queue_redraw()
+				_iniciar_secuencia_meditacion()
 	elif _estado_minijuego == "eterium":
 		_tiempo_fase += delta
-		_ventana_coyote = maxf(0.0, _ventana_coyote - delta)
-		_radio_anillo += _direccion_anillo * VELOCIDAD_ANILLO * delta
-		queue_redraw()
-		if _fase_meditacion == "soltar" and _radio_anillo <= RADIO_ANILLO_OBJETIVO + 4.0 and _ventana_coyote <= 0.0:
-			_fallar_minijuego("No mantuviste a tiempo.")
-		elif _fase_meditacion == "mantener" and _radio_anillo >= RADIO_ANILLO_OBJETIVO + 48.0:
-			_fallar_minijuego("Soltaste demasiado tarde.")
+		if _tiempo_fase >= DURACIONES_SECUENCIA_MEDITACION[_secuencia_actual]:
+			_fallar_minijuego("Se acabó el tiempo de la secuencia.")
 	elif _estado_minijuego == "dash_menu":
 		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
 		_actualizar_panel_minijuego("DASH · %d/2" % _toques_curacion, "ESPACIO × 2")
@@ -252,18 +245,6 @@ func _al_presionar_espacio() -> void:
 		_mostrar_minijuego()
 		return
 	if _estado_minijuego == "eterium":
-		if _espacio_pulsado:
-			return
-		_espacio_pulsado = true
-		if _fase_meditacion == "soltar":
-			var dentro_ventana := _radio_anillo <= RADIO_ANILLO_OBJETIVO + 12.0 and _radio_anillo >= RADIO_ANILLO_OBJETIVO - 8.0
-			if not dentro_ventana and _ventana_coyote <= 0.0:
-				_fallar_minijuego("Fallaste el pulso.")
-				return
-			_fase_meditacion = "mantener"
-			_direccion_anillo = 1.0
-			_tiempo_fase = 0.0
-			_actualizar_panel_minijuego("", "")
 		return
 	if visible_menu:
 		return
@@ -298,37 +279,7 @@ func _al_soltar_espacio() -> void:
 	if _estado_minijuego == "concentracion":
 		_fallar_minijuego("Soltaste antes de completar los 4 segundos.")
 	elif _estado_minijuego == "eterium":
-		if _fase_meditacion == "inicial":
-			_fase_meditacion = "soltar"
-			_direccion_anillo = -1.0
-			_radio_anillo = RADIO_ANILLO_INICIAL
-			_ventana_coyote = MARGEN_Coyote
-			_tiempo_fase = 0.0
-			_actualizar_panel_minijuego("", "")
-		elif _fase_meditacion == "mantener":
-			if _radio_anillo < RADIO_ANILLO_OBJETIVO + 24.0:
-				_fallar_minijuego("Soltaste demasiado pronto.")
-				return
-			_ciclos_meditacion += 1
-			_minijuego_barra.value = float(_ciclos_meditacion) / CICLOS_MEDITACION_NECESARIOS * 100.0
-			if _ciclos_meditacion >= CICLOS_MEDITACION_NECESARIOS:
-				_completar_meditacion()
-			else:
-				_fase_meditacion = "soltar"
-				_direccion_anillo = -1.0
-				_radio_anillo = RADIO_ANILLO_INICIAL
-				_ventana_coyote = MARGEN_Coyote
-				_tiempo_fase = 0.0
-				_actualizar_panel_minijuego("", "")
-
-
-func _draw() -> void:
-	if _estado_minijuego != "eterium":
 		return
-	var centro := get_viewport_rect().size * 0.5
-	draw_circle(centro, RADIO_ANILLO_OBJETIVO, Color(0.20, 0.13, 0.07, 0.70))
-	draw_arc(centro, RADIO_ANILLO_OBJETIVO, 0.0, TAU, 96, Color(0.94, 0.83, 0.65, 1.0), 3.0, true)
-	draw_arc(centro, _radio_anillo, 0.0, TAU, 96, Color(0.78, 0.58, 0.32, 1.0), 4.0, true)
 
 
 func _construir_interfaz_minijuego() -> void:
@@ -390,6 +341,20 @@ func _construir_interfaz_minijuego() -> void:
 	_minijuego_tiempo.max_value = 100.0
 	_minijuego_tiempo.show_percentage = false
 	columna.add_child(_minijuego_tiempo)
+	_secuencia_label = Label.new()
+	_secuencia_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_secuencia_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_secuencia_label.add_theme_font_size_override("font_size", 25)
+	_secuencia_label.add_theme_color_override("font_color", Color(0.96, 0.84, 0.63, 1.0))
+	_secuencia_label.add_theme_color_override("font_outline_color", Color(0.035, 0.025, 0.015, 1.0))
+	_secuencia_label.add_theme_constant_override("outline_size", 4)
+	_secuencia_label.set_anchors_preset(Control.PRESET_CENTER)
+	_secuencia_label.offset_left = -110.0
+	_secuencia_label.offset_top = -24.0
+	_secuencia_label.offset_right = 110.0
+	_secuencia_label.offset_bottom = 24.0
+	_secuencia_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_minijuego_layer.add_child(_secuencia_label)
 	_indicador_tiempo = Label.new()
 	_indicador_tiempo.visible = false
 	_indicador_tiempo.add_theme_font_size_override("font_size", 11)
@@ -400,6 +365,39 @@ func _construir_interfaz_minijuego() -> void:
 	_indicador_tiempo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_indicador_tiempo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_indicador_tiempo)
+
+
+func _iniciar_secuencia_meditacion() -> void:
+	_secuencia_actual = mini(_ciclos_meditacion, SECUENCIAS_MEDITACION.size() - 1)
+	_indice_secuencia = 0
+	_tiempo_fase = 0.0
+	if is_instance_valid(_secuencia_label):
+		_secuencia_label.text = SECUENCIAS_MEDITACION[_secuencia_actual]
+		_secuencia_label.visible = true
+	_minijuego_barra.value = float(_ciclos_meditacion) / CICLOS_MEDITACION_NECESARIOS * 100.0
+
+
+func _procesar_tecla_secuencia(tecla: InputEventKey) -> void:
+	if _estado_minijuego != "eterium" or not tecla.pressed or tecla.echo:
+		return
+	var codigo := tecla.physical_keycode if tecla.physical_keycode != 0 else tecla.keycode
+	if codigo < KEY_1 or codigo > KEY_3:
+		_fallar_minijuego("Pulsa solo los números 1, 2 y 3.")
+		return
+	var pulsado := str(codigo - KEY_0)
+	var secuencia: String = SECUENCIAS_MEDITACION[_secuencia_actual]
+	if pulsado != secuencia.substr(_indice_secuencia, 1):
+		_fallar_minijuego("Secuencia incorrecta.")
+		return
+	_indice_secuencia += 1
+	if _indice_secuencia >= secuencia.length():
+		_ciclos_meditacion += 1
+		if _ciclos_meditacion >= CICLOS_MEDITACION_NECESARIOS:
+			_completar_meditacion()
+		else:
+			_iniciar_secuencia_meditacion()
+	else:
+		_secuencia_label.text = secuencia.substr(_indice_secuencia)
 
 
 func _iniciar_minijuego_curacion() -> void:
@@ -427,17 +425,12 @@ func _iniciar_minijuego_curacion() -> void:
 func _iniciar_concentracion() -> void:
 	# Los cuatro segundos ya se cumplieron antes de entrar aquí.
 	_estado_minijuego = "eterium"
-	_fase_meditacion = "inicial"
-	_tiempo_fase = 0.0
 	_ciclos_meditacion = 0
-	_radio_anillo = RADIO_ANILLO_INICIAL
-	_direccion_anillo = -1.0
-	_ventana_coyote = 0.0
 	_mostrar_minijuego()
 	_actualizar_panel_minijuego("", "")
 	_minijuego_barra.value = 0.0
 	_minijuego_tiempo.visible = false
-	queue_redraw()
+	_iniciar_secuencia_meditacion()
 
 
 func _iniciar_meditacion_desde_menu() -> void:
@@ -535,6 +528,8 @@ func _limpiar_minijuego() -> void:
 	_ciclos_meditacion = 0
 	if is_instance_valid(_minijuego_layer):
 		_minijuego_layer.visible = false
+	if is_instance_valid(_secuencia_label):
+		_secuencia_label.visible = false
 	if is_instance_valid(_indicador_tiempo):
 		_indicador_tiempo.visible = false
 
@@ -558,7 +553,9 @@ func _mostrar_minijuego() -> void:
 			_panel.offset_bottom = 50.0
 			_panel.custom_minimum_size = Vector2(300.0, 36.0)
 	_minijuego_tiempo.visible = _estado_minijuego in ["curacion", "dash_menu"]
-	_indicador_tiempo.visible = _estado_minijuego in ["concentracion", "eterium"]
+	_indicador_tiempo.visible = _estado_minijuego == "concentracion"
+	if is_instance_valid(_secuencia_label):
+		_secuencia_label.visible = _estado_minijuego == "eterium"
 
 
 func _actualizar_panel_minijuego(titulo: String, instruccion: String) -> void:
