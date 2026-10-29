@@ -40,7 +40,7 @@ func configurar_bloqueos(
 	_hud = hud
 	_debug_console = debug_console
 
-func _input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if not _es_accion_primaria_o_secundaria(event):
 		return
 
