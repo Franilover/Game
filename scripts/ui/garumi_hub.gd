@@ -10,8 +10,8 @@ var _subtab: String = "garumis"
 var _boton_garumis: Button
 var _boton_garudex: Button
 var _pagina_garumis: VBoxContainer
-var _lista_vinculados: VBoxContainer
-var _lista_amigos: VBoxContainer
+var _lista_vinculados: GridContainer
+var _lista_amigos: GridContainer
 var _garudex: Control
 var _estado: Label
 var _detalle: VBoxContainer
@@ -59,9 +59,11 @@ func _crear_interfaz() -> void:
 	_pagina_garumis.add_theme_constant_override("separation", 5)
 	body.add_child(_pagina_garumis)
 
-	_lista_vinculados = VBoxContainer.new()
+	_lista_vinculados = GridContainer.new()
+	_lista_vinculados.columns = 3
 	_lista_vinculados.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista_vinculados.add_theme_constant_override("separation", 3)
+	_lista_vinculados.add_theme_constant_override("h_separation", 8)
+	_lista_vinculados.add_theme_constant_override("v_separation", 8)
 	_pagina_garumis.add_child(_lista_vinculados)
 
 	var separador := HSeparator.new()
@@ -76,9 +78,11 @@ func _crear_interfaz() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_pagina_garumis.add_child(scroll)
-	_lista_amigos = VBoxContainer.new()
+	_lista_amigos = GridContainer.new()
+	_lista_amigos.columns = 3
 	_lista_amigos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista_amigos.add_theme_constant_override("separation", 3)
+	_lista_amigos.add_theme_constant_override("h_separation", 8)
+	_lista_amigos.add_theme_constant_override("v_separation", 8)
 	scroll.add_child(_lista_amigos)
 
 	_detalle = VBoxContainer.new()
@@ -173,52 +177,32 @@ func actualizar() -> void:
 			_agregar_fila(_lista_amigos, registro as Dictionary, "Amigo")
 
 
-func _agregar_fila(contenedor: VBoxContainer, registro: Dictionary, estado_registro: String) -> void:
-	var fila := HBoxContainer.new()
-	fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fila.add_theme_constant_override("separation", 5)
-	contenedor.add_child(fila)
+func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_registro: String) -> void:
+	var celda := VBoxContainer.new()
+	celda.custom_minimum_size = Vector2(88, 0)
+	celda.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	celda.add_theme_constant_override("separation", 3)
+	contenedor.add_child(celda)
 
 	var sprite := _crear_sprite_fila(registro)
 	if sprite != null:
 		var boton_sprite := TextureButton.new()
-		boton_sprite.custom_minimum_size = Vector2(58, 58)
+		boton_sprite.custom_minimum_size = Vector2(88, 88)
+		boton_sprite.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		boton_sprite.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		boton_sprite.texture_normal = sprite.texture
 		boton_sprite.ignore_texture_size = true
 		boton_sprite.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), estado_registro))
-		fila.add_child(boton_sprite)
+		celda.add_child(boton_sprite)
 
-	if estado_registro == "Vinculado":
-		var columna_vida := VBoxContainer.new()
-		columna_vida.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		columna_vida.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		columna_vida.add_theme_constant_override("separation", 2)
-		fila.add_child(columna_vida)
-		var salud := _obtener_salud_garumi(registro)
-		var vida_maxima: int = salud["max"]
-		var vida_actual: int = salud["actual"]
-		var barra := ProgressBar.new()
-		barra.min_value = 0
-		barra.max_value = vida_maxima
-		barra.value = vida_actual
-		barra.show_percentage = false
-		barra.custom_minimum_size = Vector2(0, 12)
-		columna_vida.add_child(barra)
-		var numeros_vida := Label.new()
-		numeros_vida.text = "%d / %d" % [vida_actual, vida_maxima]
-		numeros_vida.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		numeros_vida.add_theme_font_size_override("font_size", 10)
-		numeros_vida.add_theme_color_override("font_color", TEXTO)
-		columna_vida.add_child(numeros_vida)
-	else:
+	if estado_registro == "Amigo":
 		var boton_vincular := Button.new()
 		boton_vincular.text = "Vincular"
-		boton_vincular.custom_minimum_size = Vector2(65, 30)
-		boton_vincular.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		boton_vincular.custom_minimum_size = Vector2(84, 27)
+		boton_vincular.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		boton_vincular.add_theme_font_size_override("font_size", 10)
 		boton_vincular.pressed.connect(_vincular_desde_amigos.bind(registro.duplicate(true)))
-		fila.add_child(boton_vincular)
+		celda.add_child(boton_vincular)
 
 
 func _obtener_salud_garumi(registro: Dictionary) -> Dictionary:
@@ -286,10 +270,29 @@ func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 
 	var sprite := _crear_sprite_fila(registro)
 	if sprite != null:
-		sprite.custom_minimum_size = Vector2(190, 190)
+		sprite.custom_minimum_size = Vector2(220, 220)
 		sprite.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sprite.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_detalle.add_child(sprite)
+
+	if estado_registro == "Vinculado":
+		var salud := _obtener_salud_garumi(registro)
+		var vida_maxima: int = salud["max"]
+		var vida_actual: int = salud["actual"]
+		var barra := ProgressBar.new()
+		barra.min_value = 0
+		barra.max_value = vida_maxima
+		barra.value = vida_actual
+		barra.show_percentage = false
+		barra.custom_minimum_size = Vector2(0, 16)
+		barra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_detalle.add_child(barra)
+		var numeros_vida := Label.new()
+		numeros_vida.text = "%d / %d" % [vida_actual, vida_maxima]
+		numeros_vida.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		numeros_vida.add_theme_font_size_override("font_size", 12)
+		numeros_vida.add_theme_color_override("font_color", TEXTO)
+		_detalle.add_child(numeros_vida)
 
 	var boton_accion := Button.new()
 	boton_accion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
