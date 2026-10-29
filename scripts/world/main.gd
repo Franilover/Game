@@ -302,7 +302,7 @@ func _inicializar_runtime_de_zona() -> void:
 	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
 		call_deferred("_restaurar_garumis_vinculados")
 
-	var tipo_zona_actual := _zone_manager.obtener_tipo_actual()
+	var tipo_zona_actual: String = str(_zone_manager.obtener_tipo_actual())
 	if tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
 		var zona_actual := _zone_manager.obtener_zona_actual()
 		var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
