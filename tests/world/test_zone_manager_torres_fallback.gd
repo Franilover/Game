@@ -16,7 +16,7 @@ func _run() -> void:
 	# reachable from the RealmMenu while the remote realm catalog loads.
 	manager.entrar_reino("torres")
 	await get_tree().process_frame
-	await process_frame
+	await get_tree().process_frame
 
 	if manager.obtener_tipo_actual() != "reino_torres":
 		_fail("Entrar en Torres no cambió el tipo de zona.")
