@@ -125,8 +125,10 @@ func _process(_delta: float) -> void:
 
 	if entrada_cercana.is_empty():
 		_aviso.text = ""
+		_aviso.visible = false
 		return
 
+	_aviso.visible = true
 	_aviso.text = "E — Entrar: " + str(entrada_cercana["nombre"])
 	if Input.is_action_just_pressed("interact"):
 		_entrar_al_interior(entrada_cercana)
@@ -213,8 +215,10 @@ func _desactivar_colisiones(nodo: Node, desactivar: bool) -> void:
 	for hijo: Node in nodo.get_children():
 		if hijo == _capa_interior:
 			continue
-		if hijo is CollisionShape2D or hijo is CollisionPolygon2D:
+		if hijo is CollisionShape2D:
 			(hijo as CollisionShape2D).set_deferred("disabled", desactivar)
+		elif hijo is CollisionPolygon2D:
+			(hijo as CollisionPolygon2D).set_deferred("disabled", desactivar)
 		_desactivar_colisiones(hijo, desactivar)
 
 
