@@ -109,7 +109,7 @@ static func crear_superficie(tipo: String, tamano: Vector2i, semilla: int = 0) -
 			imagen.fill(Color("#59442C"))
 			for y in range(0, alto, 2):
 				_rect(imagen, 0, y, ancho, 1, Color("#3D3425"))
-				for x in range((y / 2) % 3, ancho, 3):
+				for x in range(int(y / 2) % 3, ancho, 3):
 					_rect(imagen, x, y + 1, 1, 1, Color("#6B8540") if (x + y + semilla) % 4 != 0 else Color("#9A9A4D"))
 		_:
 			imagen.fill(Color("#555047"))
