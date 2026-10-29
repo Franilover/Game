@@ -211,6 +211,12 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_world_items.establecer_generacion_habilitada(true)
 
 		_world_generator.configurar_dependencias(WorldData, GameState)
+		# La nueva instancia de WorldAtmosphere debe recuperar el calendario
+		# compartido, incluso si se pasó un tiempo en un reino de escena fija.
+		if is_instance_valid(_world_atmosphere):
+			var tiempo_guardado: Variant = GameState.world_state.flags.get("tiempo_mundo", {})
+			if tiempo_guardado is Dictionary and not (tiempo_guardado as Dictionary).is_empty():
+				_world_atmosphere.establecer_estado_guardado((tiempo_guardado as Dictionary).duplicate(true))
 		_world_generator.configurar_contexto_compartido(_world_context)
 		_world_generator.configurar_entidades(
 			$Entities,
@@ -389,7 +395,17 @@ func _configurar_camara() -> void:
 	_ultima_posicion_camara = Vector2.INF
 	_camera.drag_horizontal_enabled = false
 	_camera.drag_vertical_enabled = false
-	_camera.limit_enabled = false
+	var tipo_zona := _zone_manager.obtener_tipo_actual() if is_instance_valid(_zone_manager) else ""
+	if tipo_zona == "reino_torres":
+		# Límites del Ground de reino_torres.tscn; Camera2D calcula el área
+		# visible según el zoom para no mostrar fuera del borde del reino.
+		_camera.limit_left = -1200
+		_camera.limit_right = 1200
+		_camera.limit_top = -700
+		_camera.limit_bottom = 700
+		_camera.limit_enabled = true
+	else:
+		_camera.limit_enabled = false
 	_camera.make_current()
 
 	_seguir_jugador()
