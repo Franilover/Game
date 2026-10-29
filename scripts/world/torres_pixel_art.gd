@@ -163,7 +163,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	var sombra := Color("#22271E")
 
 	# Sombra pixelada, cimiento y cuerpo de mampostería.
-	_rect(imagen, 4, h - 8, w - 8, 4, Color("#22271E", 0.42))
+	_rect(imagen, 4, h - 8, w - 8, 4, Color(0.1333, 0.1529, 0.1176, 0.42))
 	_rect(imagen, 7, h - 13, w - 14, 7, contorno)
 	_rect(imagen, 8, h - 14, w - 16, 7, pared)
 	_rect(imagen, 9, h - 13, w - 18, 2, pared.lightened(0.12))
@@ -272,7 +272,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 
 static func _dibujar_castillo(imagen: Image, variante: int) -> void:
 	var w := imagen.get_width()
-	_rect(imagen, 8, 76, w - 16, 7, Color("#25271F", 0.45))
+	_rect(imagen, 8, 76, w - 16, 7, Color(0.1451, 0.1529, 0.1216, 0.45))
 	# Bloque central y sus sillares.
 	_rect(imagen, 29, 20, 54, 58, Color("#37362F"))
 	_rect(imagen, 31, 21, 50, 55, Color("#85816E"))
@@ -319,7 +319,7 @@ static func _dibujar_castillo(imagen: Image, variante: int) -> void:
 static func _dibujar_arbol(imagen: Image, variante: int) -> void:
 	var w := imagen.get_width()
 	var centro := int(w / 2)
-	_rect(imagen, 7, 34, 18, 4, Color("#22271E", 0.45))
+	_rect(imagen, 7, 34, 18, 4, Color(0.1333, 0.1529, 0.1176, 0.45))
 	_rect(imagen, centro - 3, 24, 6, 13, Color("#573A25"))
 	_rect(imagen, centro - 1, 25, 2, 11, Color("#8A5D36"))
 	var verde_base := Color("#23452C") if variante % 3 == 0 else (Color("#2B4B2B") if variante % 3 == 1 else Color("#2D4935"))
@@ -344,7 +344,7 @@ static func _dibujar_arbol(imagen: Image, variante: int) -> void:
 
 static func _dibujar_pozo(imagen: Image) -> void:
 	var w := imagen.get_width()
-	_rect(imagen, 1, 22, w - 2, 5, Color("#24271F", 0.45))
+	_rect(imagen, 1, 22, w - 2, 5, Color(0.1412, 0.1529, 0.1216, 0.45))
 	_rect(imagen, 4, 5, w - 8, 20, Color("#35372F"))
 	_rect(imagen, 6, 7, w - 12, 16, Color("#827B67"))
 	_rect(imagen, 8, 9, w - 16, 12, Color("#264B53"))
@@ -356,7 +356,7 @@ static func _dibujar_pozo(imagen: Image) -> void:
 
 static func _dibujar_puesto(imagen: Image, variante: int, azul: bool) -> void:
 	var w := imagen.get_width()
-	_rect(imagen, 4, 34, w - 8, 4, Color("#22271E", 0.45))
+	_rect(imagen, 4, 34, w - 8, 4, Color(0.1333, 0.1529, 0.1176, 0.45))
 	_rect(imagen, 6, 21, w - 12, 14, Color("#4A3424"))
 	_rect(imagen, 8, 23, w - 16, 11, Color("#946A41"))
 	_rect(imagen, 5, 19, w - 10, 4, Color("#392B20"))
@@ -378,7 +378,7 @@ static func _dibujar_puesto(imagen: Image, variante: int, azul: bool) -> void:
 
 static func _dibujar_lampara(imagen: Image) -> void:
 	var w := imagen.get_width()
-	_rect(imagen, 2, 20, w - 4, 3, Color("#25271F", 0.45))
+	_rect(imagen, 2, 20, w - 4, 3, Color(0.1451, 0.1529, 0.1216, 0.45))
 	_rect(imagen, 5, 7, 3, 15, Color("#493525"))
 	_rect(imagen, 4, 5, 5, 3, Color("#30271F"))
 	_rect(imagen, 3, 1, 7, 6, Color("#D1A452"))
