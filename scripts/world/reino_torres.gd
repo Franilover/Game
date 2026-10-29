@@ -54,6 +54,8 @@ var _transicionando: bool = false
 var _interior_activo: bool = false
 var _jugador: Node2D
 var _posicion_exterior: Vector2 = Vector2.ZERO
+var _visibilidad_exterior: Dictionary = {}
+var _estados_colision_exterior: Dictionary = {}
 var _capa_interior: Node2D
 var _aviso: Label
 
@@ -87,7 +89,18 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"semillas","nombre":"Depósito de semillas","pos":Vector2(800,650),"tipo":"almacen"},
 	{"id":"telar","nombre":"Casa de los telares","pos":Vector2(-760,-215),"tipo":"telar"},
 	{"id":"alfareria","nombre":"Alfarería","pos":Vector2(-760,145),"tipo":"alfareria"},
-	{"id":"banos","nombre":"Baños públicos","pos":Vector2(-760,255),"tipo":"banos"}
+	{"id":"banos","nombre":"Baños públicos","pos":Vector2(-760,255),"tipo":"banos"},
+	{"id":"vivienda_oeste_01","nombre":"Vivienda del barrio oeste","pos":Vector2(-1040,-313),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_02","nombre":"Vivienda del barrio oeste","pos":Vector2(-930,-313),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_03","nombre":"Vivienda del barrio oeste","pos":Vector2(-1040,-213),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_04","nombre":"Vivienda del barrio oeste","pos":Vector2(-930,-213),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_05","nombre":"Vivienda del barrio oeste","pos":Vector2(-1040,147),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_06","nombre":"Vivienda del barrio oeste","pos":Vector2(-930,147),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_07","nombre":"Vivienda del barrio oeste","pos":Vector2(-1040,257),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_08","nombre":"Vivienda del barrio oeste","pos":Vector2(-930,257),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_09","nombre":"Vivienda del barrio oeste","pos":Vector2(-520,-213),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_10","nombre":"Vivienda del barrio oeste","pos":Vector2(-520,137),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_11","nombre":"Vivienda del barrio oeste","pos":Vector2(-520,247),"tipo":"vivienda"}
 ]
 
 
