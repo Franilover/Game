@@ -102,6 +102,8 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 		push_warning("ZoneManager: la escena configurada para el reino '%s' no existe: %s" % [clave, escena])
 		return
 	var tipo := TIPO_REINO_TORRES if clave == "torres" else "reino:" + clave
+	if tipo_actual == TIPO_REINO_TORRES and clave != "torres":
+		GameState.marcar_reino_torres_visitado()
 	_cambiar_zona(escena, tipo)
 
 
