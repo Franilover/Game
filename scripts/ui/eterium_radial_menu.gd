@@ -23,6 +23,7 @@ var _botones: Array[Button] = []
 const TIEMPO_CONCENTRACION := 4.0
 const VENTANA_TOQUES := 0.6
 const DURACION_CURACION := 5.0
+const DURACION_DASH_MINIJUEGO := 1.5
 const TOQUES_CURACION_NECESARIOS := 12
 const COSTO_FALLO_MINIJUEGO := 3
 const CICLOS_MEDITACION_NECESARIOS := 4
@@ -195,6 +196,14 @@ func _process(delta: float) -> void:
 			_fallar_minijuego("Soltaste demasiado tarde.")
 		elif _fase_meditacion == "mantener" and _tiempo_fase > 0.9:
 			_fallar_minijuego("Mantuviste ESPACIO demasiado tiempo.")
+	elif _estado_minijuego == "dash_menu":
+		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
+		_actualizar_panel_minijuego("Recuperar dash · %d/3" % _toques_curacion, "Pulsa ESPACIO tres veces antes de que termine el tiempo.")
+		_minijuego_barra.value = float(_toques_curacion) / 3.0 * 100.0
+		_minijuego_tiempo.visible = true
+		_minijuego_tiempo.value = _tiempo_minijuego / DURACION_DASH_MINIJUEGO * 100.0
+		if _tiempo_minijuego <= 0.0:
+			_fallar_minijuego("No completaste las tres pulsaciones.")
 	elif _estado_minijuego == "curacion":
 		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
 		_actualizar_panel_minijuego("Curación · %d/%d" % [_toques_curacion, TOQUES_CURACION_NECESARIOS], "Pulsa ESPACIO tantas veces como puedas durante 5 segundos.")
@@ -213,6 +222,12 @@ func _al_presionar_espacio() -> void:
 		return
 	if _estado_minijuego == "curacion":
 		_toques_curacion += 1
+		return
+	if _estado_minijuego == "dash_menu":
+		_toques_curacion += 1
+		if _toques_curacion >= 3:
+			_recuperar_dash_directo()
+			_limpiar_minijuego()
 		return
 	if _estado_minijuego == "espera_meditacion":
 		_espacio_pulsado = true
@@ -492,7 +507,7 @@ func _mostrar_minijuego() -> void:
 	visible_menu = false
 	_minijuego_layer.visible = true
 	_minijuego_layer.add_to_group("modal_ui")
-	_minijuego_tiempo.visible = _estado_minijuego == "curacion"
+	_minijuego_tiempo.visible = _estado_minijuego in ["curacion", "dash_menu"]
 	_indicador_tiempo.visible = _estado_minijuego in ["concentracion", "eterium"]
 
 
@@ -576,7 +591,16 @@ func _curarse() -> void:
 
 
 func _recuperar_dash() -> void:
-	_recuperar_dash_directo()
+	if not is_instance_valid(jugador):
+		return
+	_estado_minijuego = "dash_menu"
+	_toques_curacion = 0
+	_tiempo_minijuego = DURACION_DASH_MINIJUEGO
+	_mostrar_minijuego()
+	_actualizar_panel_minijuego("Recuperar dash · 0/3", "Pulsa ESPACIO tres veces antes de que termine el tiempo.")
+	_minijuego_barra.value = 0.0
+	_minijuego_tiempo.visible = true
+	_minijuego_tiempo.value = 100.0
 
 
 func _meditar() -> void:
