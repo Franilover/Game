@@ -126,6 +126,8 @@ func _process(_delta: float) -> void:
 		var cerca_salida := _jugador.global_position.distance_to(to_global(Vector2(60, 105))) < 48.0
 		_aviso.text = "E — Salir al exterior" if cerca_salida else ""
 		_aviso.visible = cerca_salida
+		if cerca_salida:
+			_aviso.global_position = _jugador.global_position + Vector2(-115, -45)
 		if Input.is_action_just_pressed("interact") and cerca_salida:
 			_salir_del_interior()
 		return
@@ -144,6 +146,7 @@ func _process(_delta: float) -> void:
 		return
 
 	_aviso.visible = true
+	_aviso.global_position = _jugador.global_position + Vector2(-145, -45)
 	_aviso.text = "E — Entrar: " + str(entrada_cercana["nombre"])
 	if Input.is_action_just_pressed("interact"):
 		_entrar_al_interior(entrada_cercana)
