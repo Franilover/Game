@@ -72,6 +72,11 @@ var _aviso: Label
 var _entrada_aviso_actual: Dictionary = {}
 var _cesped_dual: TileMapDual
 
+# La cámara se limita a la habitación activa y recupera exactamente sus límites
+# anteriores al salir, sin alterar el encuadre del exterior de Torres.
+var _camara_interior: Camera2D = null
+var _limites_camara_anteriores: Dictionary = {}
+
 # Las entradas están cerca de la fachada de cada edificio. Cada clave tiene
 # su propio nombre, función y distribución interior.
 const ENTRADAS: Array[Dictionary] = [
@@ -546,6 +551,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_capa_interior.process_mode = Node.PROCESS_MODE_INHERIT
 	_construir_habitacion(entrada)
 	_jugador.global_position = to_global(Vector2(60, 90))
+	_limitar_camara_a_interior()
 	_interterior_colisiones(true)
 	_interior_activo = true
 	_aviso_panel.visible = false
@@ -564,6 +570,7 @@ func _salir_del_interior() -> void:
 		if child is CanvasItem and _visibilidad_exterior.has(child.get_instance_id()):
 			(child as CanvasItem).visible = bool(_visibilidad_exterior[child.get_instance_id()])
 	_restaurar_colisiones(self)
+	_restaurar_limites_camara()
 	_jugador.global_position = _posicion_exterior
 	for hijo: Node in _capa_interior.get_children():
 		hijo.free()
@@ -572,6 +579,48 @@ func _salir_del_interior() -> void:
 	_aviso_panel.visible = false
 	_aviso.text = ""
 	print("ReinoTorres: regreso al exterior.")
+
+
+func _limitar_camara_a_interior() -> void:
+	_camara_interior = get_viewport().get_camera_2d()
+	if not is_instance_valid(_camara_interior):
+		push_warning("ReinoTorres: no se encontró Camera2D para limitar el interior.")
+		return
+
+	_limites_camara_anteriores = {
+		"left": _camara_interior.limit_left,
+		"top": _camara_interior.limit_top,
+		"right": _camara_interior.limit_right,
+		"bottom": _camara_interior.limit_bottom,
+		"enabled": _camara_interior.limit_enabled,
+	}
+	# Coincide con los bordes exteriores de la habitación (incluyendo los muros).
+	var esquina_superior_izquierda := to_global(Vector2(-228, -139))
+	var esquina_inferior_derecha := to_global(Vector2(228, 139))
+	_camara_interior.limit_left = floori(esquina_superior_izquierda.x)
+	_camara_interior.limit_top = floori(esquina_superior_izquierda.y)
+	_camara_interior.limit_right = ceili(esquina_inferior_derecha.x)
+	_camara_interior.limit_bottom = ceili(esquina_inferior_derecha.y)
+	_camara_interior.limit_enabled = true
+	_camara_interior.reset_smoothing()
+	print("ReinoTorres: cámara limitada al interior.")
+
+
+func _restaurar_limites_camara() -> void:
+	if not is_instance_valid(_camara_interior) or _limites_camara_anteriores.is_empty():
+		_camara_interior = null
+		_limites_camara_anteriores.clear()
+		return
+
+	_camara_interior.limit_left = int(_limites_camara_anteriores.get("left", -10000000))
+	_camara_interior.limit_top = int(_limites_camara_anteriores.get("top", -10000000))
+	_camara_interior.limit_right = int(_limites_camara_anteriores.get("right", 10000000))
+	_camara_interior.limit_bottom = int(_limites_camara_anteriores.get("bottom", 10000000))
+	_camara_interior.limit_enabled = bool(_limites_camara_anteriores.get("enabled", false))
+	_camara_interior.reset_smoothing()
+	_camara_interior = null
+	_limites_camara_anteriores.clear()
+	print("ReinoTorres: límites de cámara exteriores restaurados.")
 
 
 func _guardar_y_desactivar_colisiones(nodo: Node) -> void:
