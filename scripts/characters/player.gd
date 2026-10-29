@@ -208,12 +208,10 @@ func _physics_process(delta: float) -> void:
 		return
 
 
-	# Shift tiene dos funciones:
-	# pulsarlo = dash inmediato
-	# mantenerlo = correr después del dash
+	# Shift se reserva para correr; Ctrl (acción "dash") ejecuta el dash.
 	var shift_pressed := Input.is_action_pressed("run")
 
-	if Input.is_action_just_pressed("run"):
+	if Input.is_action_just_pressed("dash"):
 		if _puede_hacer_dash():
 			_iniciar_dash()
 			return
