@@ -1514,15 +1514,22 @@ func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
 	slot.set_meta("garumi_id", "")
 	_garumis_vinculados_lista.add_child(slot)
 
-	var numero := Label.new()
+	var numero := Button.new()
 	numero.name = "Numero"
 	numero.text = str(numero_slot)
-	numero.custom_minimum_size = Vector2(10.0, 0.0)
-	numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	numero.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	numero.custom_minimum_size = Vector2(16.0, 30.0)
+	numero.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	numero.focus_mode = Control.FOCUS_NONE
+	numero.mouse_filter = Control.MOUSE_FILTER_STOP
 	numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+	numero.add_theme_color_override("font_hover_color", Color(1.0, 0.92, 0.74, 1.0))
 	numero.add_theme_font_size_override("font_size", 11)
-	numero.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	numero.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	numero.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	numero.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	numero.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	numero.tooltip_text = "Invocar / guardar Garumi %d" % numero_slot
+	numero.pressed.connect(_activar_garumi_por_indice.bind(numero_slot - 1))
 	slot.add_child(numero)
 
 	var anillo := GarumiHealthRing.new()
@@ -1604,7 +1611,7 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	_garumis_vinculados_ids[id] = true
 	_garumis_vinculados_nodos.append(garumi)
 	slot.set_meta("garumi_id", id)
-	var numero := slot.get_node_or_null("Numero") as Label
+	var numero := slot.get_node_or_null("Numero") as Button
 	if numero != null:
 		numero.text = str(_garumis_vinculados_nodos.size())
 		numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
@@ -1657,18 +1664,23 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 	var indice := codigo - KEY_1
 	if indice < 0 or indice >= _garumis_vinculados_nodos.size():
 		return false
-	if not is_instance_valid(player):
-		return true
-
-	var garumi := _garumis_vinculados_nodos[indice]
-	if not is_instance_valid(garumi):
-		return true
-
 	if evento.shift_pressed:
-		_curar_garumi_vinculado_con_eterium(garumi)
-	elif garumi.has_method("alternar_estado_invocacion"):
-		garumi.call("alternar_estado_invocacion", player)
+		var garumi_curacion := _garumis_vinculados_nodos[indice]
+		if is_instance_valid(garumi_curacion):
+			_curar_garumi_vinculado_con_eterium(garumi_curacion)
+	else:
+		_activar_garumi_por_indice(indice)
 	return true
+
+
+func _activar_garumi_por_indice(indice: int) -> void:
+	if _combate_garumi_activo or indice < 0 or indice >= _garumis_vinculados_nodos.size():
+		return
+	if not is_instance_valid(player):
+		return
+	var garumi := _garumis_vinculados_nodos[indice]
+	if is_instance_valid(garumi) and garumi.has_method("alternar_estado_invocacion"):
+		garumi.call("alternar_estado_invocacion", player)
 
 
 func _curar_garumi_vinculado_con_eterium(garumi: Node) -> void:
@@ -1764,7 +1776,7 @@ func _renumerar_garumis_vinculados() -> void:
 		if slot == null:
 			continue
 		slot.set_meta("garumi_id", "")
-		var numero_vacio := slot.get_node_or_null("Numero") as Label
+		var numero_vacio := slot.get_node_or_null("Numero") as Button
 		if numero_vacio != null:
 			numero_vacio.text = str(i + 1)
 			numero_vacio.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
@@ -1784,7 +1796,7 @@ func _renumerar_garumis_vinculados() -> void:
 		if slot == null:
 			continue
 		slot.set_meta("garumi_id", str(garumi.get_instance_id()))
-		var numero := slot.get_node_or_null("Numero") as Label
+		var numero := slot.get_node_or_null("Numero") as Button
 		if numero != null:
 			numero.text = str(i + 1)
 		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
@@ -1830,7 +1842,7 @@ func actualizar_estado_garumi(garumi: Node, guardado: bool) -> void:
 	var slot := _obtener_slot_garumi(garumi)
 	if slot == null:
 		return
-	var numero := slot.get_node_or_null("Numero") as Label
+	var numero := slot.get_node_or_null("Numero") as Button
 	if numero != null:
 		numero.visible = true
 		numero.add_theme_color_override(
