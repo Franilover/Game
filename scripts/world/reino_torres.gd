@@ -435,7 +435,8 @@ func _cargar_sprites_de_torres() -> void:
 	for building: Dictionary in SPRITE_BUILDINGS:
 		var clave := String(building["key"])
 		var texture := _buscar_textura(building["paths"])
-		if texture == null:
+		var tiene_textura_personalizada := texture != null
+		if not tiene_textura_personalizada:
 			texture = TORRES_PIXEL_ART.crear_edificio(clave, absi(clave.hash()) % 7)
 
 		# Oculta la geometría plana conservando rótulos, entradas y colisiones.
@@ -453,10 +454,10 @@ func _cargar_sprites_de_torres() -> void:
 			sprite.scale = Vector2.ONE * scale_factor
 		sprite.z_index = 3
 		add_child(sprite)
-		if _buscar_textura(building["paths"]) == null:
-			print("ReinoTorres: pixel art procedural cargado para ", clave)
-		else:
+		if tiene_textura_personalizada:
 			print("ReinoTorres: sprite externo cargado para ", clave)
+		else:
+			print("ReinoTorres: pixel art procedural cargado para ", clave)
 
 
 
