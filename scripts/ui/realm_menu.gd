@@ -146,7 +146,8 @@ func _reconstruir_destinos() -> void:
 			var nombre := str(propiedades.get("nombre", propiedades.get("titulo", clave.capitalize()))).strip_edges()
 			if nombre.is_empty():
 				nombre = clave.capitalize()
-			_agregar_destino(clave, nombre, "REINO", clave == _tipo_zona_actual or ("reino:" + clave) == _tipo_zona_actual)
+			var es_actual := (clave == "torres" and _tipo_zona_actual == "reino_torres") or clave == _tipo_zona_actual or ("reino:" + clave) == _tipo_zona_actual
+			_agregar_destino(clave, nombre, "REINO", es_actual)
 			agregados[clave] = true
 
 	# Torres siempre aparece desbloqueado por defecto, incluso si su catálogo remoto
