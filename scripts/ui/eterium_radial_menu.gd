@@ -181,14 +181,14 @@ func _process(delta: float) -> void:
 	elif _estado_minijuego == "concentracion":
 		if _espacio_pulsado:
 			_tiempo_sostenido += delta
-			_actualizar_panel_minijuego("Concentración", "Mantén ESPACIO sin recibir daño.")
+			_actualizar_panel_minijuego("CONCENTRACIÓN", "")
 			_minijuego_barra.value = _tiempo_sostenido / TIEMPO_CONCENTRACION * 100.0
 			if _tiempo_sostenido >= TIEMPO_CONCENTRACION:
 				_estado_minijuego = "eterium"
 				_fase_meditacion = "inicial"
 				_tiempo_fase = 0.0
 				_ciclos_meditacion = 0
-				_actualizar_panel_minijuego("Concentración lograda", "Suelta ESPACIO; espera el ritmo y vuelve a mantenerlo.")
+				_actualizar_panel_minijuego("SIGUE EL PULSO", "")
 				_minijuego_barra.value = 0.0
 	elif _estado_minijuego == "eterium":
 		_tiempo_fase += delta
@@ -198,12 +198,12 @@ func _process(delta: float) -> void:
 			_fallar_minijuego("Mantuviste ESPACIO demasiado tiempo.")
 	elif _estado_minijuego == "dash_menu":
 		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
-		_actualizar_panel_minijuego("Recuperar dash · %d/3" % _toques_curacion, "Pulsa ESPACIO tres veces antes de que termine el tiempo.")
-		_minijuego_barra.value = float(_toques_curacion) / 3.0 * 100.0
+		_actualizar_panel_minijuego("DASH · %d/2" % _toques_curacion, "ESPACIO × 2")
+		_minijuego_barra.value = float(_toques_curacion) / 2.0 * 100.0
 		_minijuego_tiempo.visible = true
 		_minijuego_tiempo.value = _tiempo_minijuego / DURACION_DASH_MINIJUEGO * 100.0
 		if _tiempo_minijuego <= 0.0:
-			_fallar_minijuego("No completaste las tres pulsaciones.")
+			_fallar_minijuego("No completaste las dos pulsaciones.")
 	elif _estado_minijuego == "curacion":
 		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
 		_actualizar_panel_minijuego("Curación · %d/%d" % [_toques_curacion, TOQUES_CURACION_NECESARIOS], "Pulsa ESPACIO tantas veces como puedas durante 5 segundos.")
@@ -225,7 +225,7 @@ func _al_presionar_espacio() -> void:
 		return
 	if _estado_minijuego == "dash_menu":
 		_toques_curacion += 1
-		if _toques_curacion >= 3:
+		if _toques_curacion >= 2:
 			_recuperar_dash_directo()
 			_limpiar_minijuego()
 		return
@@ -245,7 +245,7 @@ func _al_presionar_espacio() -> void:
 				return
 			_fase_meditacion = "mantener"
 			_tiempo_fase = 0.0
-			_actualizar_panel_minijuego("Recuperando Eterium", "Mantén ESPACIO y suéltalo cuando termine el pulso.")
+			_actualizar_panel_minijuego("MANTÉN", "")
 		return
 	if visible_menu:
 		return
@@ -283,7 +283,7 @@ func _al_soltar_espacio() -> void:
 		if _fase_meditacion == "inicial":
 			_fase_meditacion = "soltar"
 			_tiempo_fase = 0.0
-			_actualizar_panel_minijuego("Recuperando Eterium", "Espera un instante y vuelve a mantener ESPACIO.")
+			_actualizar_panel_minijuego("SUELTA", "")
 		elif _fase_meditacion == "mantener":
 			if _tiempo_fase < 0.35:
 				_fallar_minijuego("Soltaste antes de completar el pulso.")
@@ -295,7 +295,7 @@ func _al_soltar_espacio() -> void:
 			else:
 				_fase_meditacion = "soltar"
 				_tiempo_fase = 0.0
-				_actualizar_panel_minijuego("Recuperando Eterium · %d/%d" % [_ciclos_meditacion, CICLOS_MEDITACION_NECESARIOS], "Suelta un instante y vuelve a mantener ESPACIO.")
+				_actualizar_panel_minijuego("PULSO %d/%d" % [_ciclos_meditacion, CICLOS_MEDITACION_NECESARIOS], "")
 
 
 func _construir_interfaz_minijuego() -> void:
@@ -396,7 +396,7 @@ func _iniciar_concentracion() -> void:
 	_tiempo_fase = 0.0
 	_ciclos_meditacion = 0
 	_mostrar_minijuego()
-	_actualizar_panel_minijuego("Concentración lograda", "Suelta ESPACIO; espera el ritmo y vuelve a mantenerlo.")
+	_actualizar_panel_minijuego("SIGUE EL PULSO", "")
 	_minijuego_barra.value = 0.0
 	_minijuego_tiempo.visible = false
 
@@ -415,7 +415,7 @@ func _iniciar_meditacion_desde_menu() -> void:
 	_espacio_pulsado = false
 	_minijuego_tiempo.visible = false
 	_mostrar_minijuego()
-	_actualizar_panel_minijuego("Meditar", "Mantén ESPACIO 4 segundos sin recibir daño; luego sigue el ritmo.")
+	_actualizar_panel_minijuego("MEDITAR", "MANTÉN ESPACIO")
 
 
 func _completar_curacion() -> void:
@@ -597,7 +597,7 @@ func _recuperar_dash() -> void:
 	_toques_curacion = 0
 	_tiempo_minijuego = DURACION_DASH_MINIJUEGO
 	_mostrar_minijuego()
-	_actualizar_panel_minijuego("Recuperar dash · 0/3", "Pulsa ESPACIO tres veces antes de que termine el tiempo.")
+	_actualizar_panel_minijuego("DASH · 0/2", "ESPACIO × 2")
 	_minijuego_barra.value = 0.0
 	_minijuego_tiempo.visible = true
 	_minijuego_tiempo.value = 100.0
