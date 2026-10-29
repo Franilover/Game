@@ -46,6 +46,9 @@ func _ready() -> void:
 		_barra_tabs.visible = false
 		_mostrar_garumis()
 	else:
+		# La enciclopedia normal abre directamente en Criaturas, sin selector de secciones.
+		_barra_tabs.visible = false
+		_modo = "criaturas"
 		actualizar()
 
 
@@ -62,27 +65,9 @@ func _crear_interfaz() -> void:
 	column.add_theme_constant_override("separation", 0)
 	margin.add_child(column)
 
-	var tabs := HBoxContainer.new()
-	_barra_tabs = tabs
-	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tabs.alignment = BoxContainer.ALIGNMENT_BEGIN
-	tabs.add_theme_constant_override("separation", 3)
-	column.add_child(tabs)
+	_barra_tabs = HBoxContainer.new()
+	_barra_tabs.visible = false
 
-	_tab_biomas = Button.new()
-	_tab_biomas.text = "Biomas"
-	_tab_biomas.toggle_mode = true
-	_tab_biomas.button_pressed = true
-	_configurar_boton_seccion(_tab_biomas)
-	_tab_biomas.pressed.connect(_mostrar_biomas)
-	tabs.add_child(_tab_biomas)
-
-	_tab_criaturas = Button.new()
-	_tab_criaturas.text = "Criaturas"
-	_tab_criaturas.toggle_mode = true
-	_configurar_boton_seccion(_tab_criaturas)
-	_tab_criaturas.pressed.connect(_mostrar_criaturas)
-	tabs.add_child(_tab_criaturas)
 
 
 	var body := HBoxContainer.new()
@@ -251,8 +236,6 @@ func _mostrar_garumis() -> void:
 	_arbol.set_column_expand(2, false)
 	_arbol.set_column_custom_minimum_width(0, 38)
 	_arbol.set_column_custom_minimum_width(2, 38)
-	_tab_biomas.button_pressed = false
-	_tab_criaturas.button_pressed = false
 	if not _catalogo_garumis_cargado and _solicitud_catalogo_garumis < 0:
 		_cargar_catalogo_garumis()
 	actualizar()
@@ -604,6 +587,11 @@ func _mostrar_item(item: TreeItem) -> void:
 	var partes: Array[String] = []
 
 	if nivel == "criatura":
+		# El sprite ocupa el área principal de la ficha.
+		_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 178)
+		_icono.custom_minimum_size = Vector2(160, 160)
+		_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_icono.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_mostrar_ficha_criatura(id, registro, partes)
 		return
 	if nivel == "garumi":
@@ -813,8 +801,7 @@ func _mostrar_ficha_criatura(
 	var nombre_criatura := str(registro.get("nombre", "")).strip_edges()
 	var rutas_sprite: Array[String] = []
 	if not nombre_criatura.is_empty():
-		# Mismo orden de búsqueda que Creature: sprite estático primero,
-		# hoja de caminar como respaldo si no existe imagen estática.
+		# Sprite estático primero; usa el primer fotograma de la hoja como respaldo.
 		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".png")
 		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".PNG")
 		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + ".png")
@@ -830,7 +817,6 @@ func _mostrar_ficha_criatura(
 		var textura := load(ruta_sprite) as Texture2D
 		if textura == null:
 			continue
-		# Las hojas de caminar se muestran como un solo fotograma en la ficha.
 		if ruta_sprite.to_lower().contains("_walking"):
 			var atlas := AtlasTexture.new()
 			atlas.atlas = textura
@@ -842,11 +828,9 @@ func _mostrar_ficha_criatura(
 		_icono.visible = true
 		break
 
+	# La ficha de criatura sólo muestra el bioma.
 	partes.append("[color=#8f754f]Bioma:[/color] " + _obtener_biomas_de_criatura(id))
-	partes.append("[color=#8f754f]Ecosistema:[/color] " + _obtener_ecosistemas_de_criatura(id))
-	partes.append("[color=#8f754f]Hábitat:[/color] " + _obtener_habitats_de_criatura(id))
-	partes.append("[color=#8f754f]Encuentros registrados:[/color] " + str(_obtener_derrotas(id)))
-	_ficha.text = "\n\n".join(partes)
+	_ficha.text = "\\n\\n".join(partes)
 
 
 func _agregar_criaturas_de_bioma(bioma: Dictionary, partes: Array[String]) -> void:
