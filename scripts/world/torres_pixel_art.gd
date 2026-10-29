@@ -147,8 +147,8 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	var es_piedra := clave in ["vivienda_mason", "archivo_real", "sala_consejo", "cuartel", "banos", "aguas", "registro"]
 	var es_granja := clave in ["granero", "casa_granjeros", "semillas", "corrales", "establos"]
 	var es_taller := clave in ["forja", "reparaciones", "carpinteria", "alfareria", "telar", "molino"]
-	var paredes: Array = [Color("#B9A17A"), Color("#C5AD84"), Color("#9E8A67"), Color("#A4A07D"), Color("#B9B6A2")]
-	var tejados: Array = [Color("#8A4936"), Color("#704431"), Color("#5A4934"), Color("#596642"), Color("#794D3C")]
+	var paredes: Array[Color] = [Color("#B9A17A"), Color("#C5AD84"), Color("#9E8A67"), Color("#A4A07D"), Color("#B9B6A2")]
+	var tejados: Array[Color] = [Color("#8A4936"), Color("#704431"), Color("#5A4934"), Color("#596642"), Color("#794D3C")]
 	if es_piedra:
 		paredes = [Color("#888473"), Color("#A19A84"), Color("#777969"), Color("#96917E"), Color("#A7A08D")]
 	if es_granja:
@@ -156,8 +156,8 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	if es_taller:
 		tejados = [Color("#5D4030"), Color("#684531"), Color("#564B3D"), Color("#6F5140"), Color("#614A33")]
 	var indice := absi(clave.hash() + variante * 13)
-	var pared := paredes[indice % paredes.size()]
-	var tejado := tejados[(indice / 3) % tejados.size()]
+	var pared: Color = paredes[indice % paredes.size()]
+	var tejado: Color = tejados[int(indice / 3) % tejados.size()]
 	var luz := Color("#DBBD80") if clave in ["panaderia", "posada", "alojamiento"] else Color("#A5C2B5")
 	var contorno := Color("#33291F")
 
