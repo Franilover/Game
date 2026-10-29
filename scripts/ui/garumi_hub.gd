@@ -374,9 +374,11 @@ func _vincular_desde_amigos(registro: Dictionary) -> void:
 
 	# Activar el vínculo en la instancia del mundo cuando siga presente.
 	var jugador := get_tree().get_first_node_in_group("player")
+	var instancia_encontrada := false
 	for nodo in get_tree().get_nodes_in_group("garumis"):
 		if not is_instance_valid(nodo) or str(nodo.get("_garumi_instancia_id")).strip_edges() != id_instancia:
 			continue
+		instancia_encontrada = true
 		if is_instance_valid(jugador) and nodo.has_method("restaurar_vinculo_persistido"):
 			var posicion: Vector2 = nodo.global_position if nodo is Node2D else Vector2.ZERO
 			nodo.call("restaurar_vinculo_persistido", jugador, false, posicion)
@@ -391,6 +393,12 @@ func _vincular_desde_amigos(registro: Dictionary) -> void:
 
 	if GameState.guardar_garumi_vinculado(registro_vinculado):
 		GameState.eliminar_garumi_amigo(id_instancia)
+		# Si el amigo estaba guardado fuera de escena, reconstruir la instancia
+		# desde el registro persistido para que el HUD y las teclas 1/2/3 lo controlen.
+		if not instancia_encontrada:
+			var escena_actual := get_tree().current_scene
+			if is_instance_valid(escena_actual) and escena_actual.has_method("_restaurar_garumis_vinculados"):
+				escena_actual.call_deferred("_restaurar_garumis_vinculados")
 		_estado.text = ""
 		actualizar()
 		_mostrar_detalle(registro_vinculado, "Vinculado")
