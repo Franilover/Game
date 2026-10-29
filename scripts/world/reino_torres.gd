@@ -97,8 +97,8 @@ func _buscar_textura(paths: Array) -> Texture2D:
 func _ocultar_placeholder(prefixes: Array) -> void:
 	for child: Node in get_children():
 		for prefix: String in prefixes:
-			if child.name.begins_with(String(prefix)) and child is CanvasItem:
-				(child as CanvasItem).visible = false
+			if child.name.begins_with(String(prefix)) and child is Polygon2D:
+				(child as Polygon2D).visible = false
 				break
 
 
