@@ -62,7 +62,16 @@ func iniciar() -> void:
 		push_error("ZoneManager: falta SupabaseClient.")
 		return
 
-	if GameState.debe_iniciar_en_reino_torres():
+	# Reanudar la última zona guardada. La regla de primera visita solo
+	# se usa en partidas antiguas que todavía no tienen zona persistida.
+	var zona_guardada := str(GameState.world_state.flags.get("zona_actual_tipo", "")).strip_edges()
+	if zona_guardada == TIPO_REINO_TORRES:
+		entrar_reino("torres")
+	elif zona_guardada.begins_with("reino:"):
+		entrar_reino(zona_guardada.trim_prefix("reino:"))
+	elif zona_guardada == TIPO_MUNDO_ABIERTO:
+		entrar_mundo_abierto()
+	elif GameState.debe_iniciar_en_reino_torres():
 		entrar_reino("torres")
 	else:
 		entrar_mundo_abierto()
