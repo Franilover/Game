@@ -216,11 +216,6 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1.0))
 	detalle.add_child(titulo)
 
-	var descripcion := Label.new()
-	descripcion.text = "Relación actual"
-	descripcion.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1.0))
-	detalle.add_child(descripcion)
-
 	for clave in ["amistad", "confianza", "respeto", "afecto"]:
 		var valor := float(relacion.get(clave, 0.0))
 		var fila := Label.new()
