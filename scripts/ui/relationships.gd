@@ -123,6 +123,7 @@ func _actualizar() -> void:
 		boton.custom_minimum_size = TAMANO_RETRATO
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.toggle_mode = true
+		boton.set_meta("personaje_id", personaje_id)
 		boton.tooltip_text = nombre
 		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
