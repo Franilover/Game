@@ -1,9 +1,7 @@
 extends Control
-
-const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
-
 class_name PauseMenu
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
 
 @onready var volver_button: Button = $Panel/Margin/Column/VolverButton
