@@ -62,6 +62,7 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 
 var _transicionando: bool = false
 var _interior_activo: bool = false
+var _entrada_interior_id: String = ""
 var _jugador: Node2D
 var _posicion_exterior: Vector2 = Vector2.ZERO
 var _visibilidad_exterior: Dictionary = {}
@@ -594,6 +595,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
 		return
 	_posicion_exterior = _jugador.global_position
+	_entrada_interior_id = str(entrada.get("id", ""))
 	_visibilidad_exterior.clear()
 	_estados_colision_exterior.clear()
 	for child: Node in get_children():
@@ -632,9 +634,49 @@ func _salir_del_interior() -> void:
 		hijo.free()
 	_interterior_colisiones(false)
 	_interior_activo = false
+	_entrada_interior_id = ""
 	_aviso_panel.visible = false
 	_aviso.text = ""
 	print("ReinoTorres: regreso al exterior.")
+
+
+func obtener_estado_guardado() -> Dictionary:
+	return {
+		"interior_activo": _interior_activo,
+		"entrada_id": _entrada_interior_id,
+		"posicion_exterior": {
+			"x": _posicion_exterior.x,
+			"y": _posicion_exterior.y
+		}
+	}
+
+
+func restaurar_estado_guardado(estado: Dictionary) -> void:
+	if not bool(estado.get("interior_activo", false)):
+		return
+	if not is_instance_valid(_jugador):
+		_jugador = get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(_jugador):
+		return
+
+	var entrada_id := str(estado.get("entrada_id", "")).strip_edges()
+	var entrada_guardada: Dictionary = {}
+	for entrada: Dictionary in ENTRADAS:
+		if str(entrada.get("id", "")) == entrada_id:
+			entrada_guardada = entrada
+			break
+	if entrada_guardada.is_empty():
+		push_warning("ReinoTorres: no se pudo restaurar el interior; entrada desconocida: " + entrada_id)
+		return
+
+	var exterior_variant: Variant = estado.get("posicion_exterior", {})
+	if exterior_variant is Dictionary:
+		var exterior := exterior_variant as Dictionary
+		_posicion_exterior = Vector2(float(exterior.get("x", 0.0)), float(exterior.get("y", 0.0)))
+		_jugador.global_position = _posicion_exterior
+
+	_entrar_al_interior(entrada_guardada)
+	print("ReinoTorres: interior restaurado → ", entrada_id)
 
 
 func _limitar_camara_a_interior() -> void:
