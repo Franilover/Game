@@ -77,7 +77,7 @@ func _crear_ui() -> void:
 	contenido.add_child(separador)
 
 	detalle = VBoxContainer.new()
-	detalle.custom_minimum_size = Vector2(150.0, 0.0)
+	detalle.custom_minimum_size = Vector2(170.0, 0.0)
 	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detalle.size_flags_stretch_ratio = 0.8
 	detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -202,7 +202,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var textura := _cargar_retrato(asset_key, nombre)
 	if textura != null:
 		var skin := TextureRect.new()
-		skin.custom_minimum_size = Vector2(0.0, 84.0)
+		skin.custom_minimum_size = Vector2(0.0, 136.0)
 		skin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		skin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		skin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
