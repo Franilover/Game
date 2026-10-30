@@ -77,6 +77,7 @@ func _abrir() -> void:
 		return
 
 	abierto = true
+	_cerrar_menus_contextuales_garumi()
 	$Overlay.visible = true
 	$Panel.visible = true
 	get_tree().paused = true
@@ -109,6 +110,14 @@ func _abrir_configuracion() -> void:
 	_settings_panel.closed.connect(_cerrar_configuracion)
 	add_child(_settings_panel)
 	_settings_panel.z_index = 5000
+
+
+func _cerrar_menus_contextuales_garumi() -> void:
+	# Los menús contextuales de Garumi viven en CanvasLayers globales
+	# y pueden quedar por encima del menú de pausa (y Configuración).
+	for garumi in get_tree().get_nodes_in_group("garumi_instances"):
+		if is_instance_valid(garumi) and garumi.has_method("cerrar_menu_contextual"):
+			garumi.call("cerrar_menu_contextual")
 
 
 func _cerrar_configuracion() -> void:
