@@ -675,7 +675,9 @@ func restaurar_estado_guardado(estado: Dictionary) -> void:
 		_posicion_exterior = Vector2(float(exterior.get("x", 0.0)), float(exterior.get("y", 0.0)))
 		_jugador.global_position = _posicion_exterior
 
+	var posicion_interior := _jugador.global_position
 	_entrar_al_interior(entrada_guardada)
+	_jugador.global_position = posicion_interior
 	print("ReinoTorres: interior restaurado → ", entrada_id)
 
 
