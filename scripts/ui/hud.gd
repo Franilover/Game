@@ -1,6 +1,8 @@
 extends Control
 class_name HUD
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 class GarumiHealthRing extends Control:
 	var health_ratio: float = 1.0
 	var occupied: bool = false
@@ -144,6 +146,7 @@ func _ready() -> void:
 	add_to_group("hud")
 
 	_configurar_referencias_ui()
+	PIXEL_UI_THEME.apply(self)
 	_crear_selector_manos()
 	_crear_huecos_manos()
 	_preparar_location()
