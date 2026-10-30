@@ -11,7 +11,11 @@ const CONTROLES := [
 	{"label": "Mano derecha", "keys": "E"},
 	{"label": "Recuperar Eterium / Curarse / Meditar", "keys": "ESPACIO"},
 	{"label": "Seleccionar Garumi", "keys": "1 · 2 · 3"},
-	{"label": "Viajar", "keys": "SHIFT + M"}
+	{"label": "Dash", "keys": "SHIFT"},
+	{"label": "Misiones", "keys": "F"},
+	{"label": "Mapa", "keys": "M"},
+	{"label": "Viajar", "keys": "SHIFT + M"},
+	{"label": "Pausa", "keys": "ESC"}
 ]
 
 var _panel: PanelContainer
