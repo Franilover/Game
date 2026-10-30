@@ -48,6 +48,13 @@ func _ready() -> void:
 	_registrar_debug()
 
 
+func configurar_atmosfera_compartida(nueva_atmosfera: WorldAtmosphere) -> void:
+	if not is_instance_valid(nueva_atmosfera):
+		push_error("WorldGenerator: la atmósfera compartida no es válida.")
+		return
+	atmosphere = nueva_atmosfera
+
+
 func configurar_dependencias(
 	world_data: WorldDataService,
 	game_state: GameStateService
