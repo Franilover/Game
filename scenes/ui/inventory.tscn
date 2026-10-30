@@ -323,7 +323,7 @@ theme_override_constants/separation = 6
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 16
-text = "Ningún objeto"
+text = ""
 
 [node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText" unique_id=1325010840]
 layout_mode = 2
@@ -347,6 +347,7 @@ theme_override_styles/pressed = SubResource("StyleBox_nav_selected")
 theme_override_styles/focus = SubResource("StyleBox_tab_focus")
 text = "ELIMINAR OBJETO"
 disabled = true
+visible = false
 
 [node name="RightPanel" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent" unique_id=1747754025]
 custom_minimum_size = Vector2(174, 0)
