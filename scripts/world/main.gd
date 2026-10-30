@@ -51,6 +51,9 @@ func _ready() -> void:
 	_world_atmosphere = $Systems/WorldAtmosphere as WorldAtmosphere
 	if not is_instance_valid(_world_atmosphere):
 		push_error("Main: falta Systems/WorldAtmosphere; el reloj global no puede iniciar.")
+	else:
+		# El calendario pertenece al runtime principal y sigue activo en reinos e interiores.
+		_world_atmosphere.configurar_dependencias(WorldData)
 
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
