@@ -1,6 +1,8 @@
 extends Control
 class_name GarliaInventory
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 const SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_slot.tscn"
 )
@@ -238,6 +240,7 @@ func _ready() -> void:
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_inicializar_navegacion_tabs()
 	_limpiar_informacion()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _input(event: InputEvent) -> void:
