@@ -45,6 +45,7 @@ var eterium_actual: int = 30
 
 func _ready() -> void:
 	super._ready()
+	add_to_group("garumi_instances")
 	_normalizar_grupos_garumi()
 	_configurar_cerebro_garumi()
 
@@ -411,6 +412,10 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 	if not _es_amigo_del_jugador():
 		_agregar_boton_menu_garumi(acciones, "Amistad", OPCION_OFRECER_AMISTAD, jugador)
 	_actualizar_posicion_menu_contextual()
+
+
+func cerrar_menu_contextual() -> void:
+	_al_cerrar_menu_contextual()
 
 
 func _actualizar_posicion_menu_contextual() -> void:
