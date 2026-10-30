@@ -2,7 +2,7 @@ extends RefCounted
 class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
-const UI_DIR := "res://assets/art/UI/"
+const UI_DIR := "res://assets/art/UI/Menus/"
 
 static func apply(root: Control) -> void:
 	if root == null:
@@ -61,7 +61,7 @@ static func _apply_control(control: Control) -> void:
 
 	if control is ProgressBar:
 		var bar_background := _texture_style("bar_frame.png", 3)
-		var fill_name := "bar_fill.png"
+		var fill_name := "bar_fill_health.png"
 		match control.name:
 			"HealthBar":
 				fill_name = "bar_fill_health.png"
