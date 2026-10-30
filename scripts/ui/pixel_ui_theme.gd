@@ -34,14 +34,21 @@ static func _apply_control(control: Control) -> void:
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
-	if control is Button:
+	if control is Button and control.name == "InventorySlot":
+		var slot := _texture_style("slot_frame.png", 5)
+		var selected_slot := _texture_style("slot_selected.png", 5)
+		if slot != null:
+			control.add_theme_stylebox_override("normal", slot)
+			control.add_theme_stylebox_override("hover", selected_slot if selected_slot != null else slot)
+			control.add_theme_stylebox_override("pressed", selected_slot if selected_slot != null else slot)
+
+	elif control is Button:
 		var normal := _texture_style("button_normal.png", 5)
 		var hover := _texture_style("button_hover.png", 5)
 		var pressed := _texture_style("button_pressed.png", 5)
 		var disabled := _texture_style("button_disabled.png", 5)
 		if normal != null:
 			control.add_theme_stylebox_override("normal", normal)
-		if normal != null:
 			control.add_theme_stylebox_override("hover", hover if hover != null else normal)
 			control.add_theme_stylebox_override("pressed", pressed if pressed != null else normal)
 			control.add_theme_stylebox_override("disabled", disabled if disabled != null else normal)
