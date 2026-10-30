@@ -96,6 +96,12 @@ func _construir_interfaz() -> void:
 	columna.add_child(cerrar)
 
 
+func _obtener_audio_settings() -> Node:
+	# Resolver el autoload por ruta evita depender de que el editor haya
+	# refrescado la lista de autoloads al cambiar de rama.
+	return get_node_or_null("/root/AudioSettings")
+
+
 func _agregar_control_volumen(contenedor: VBoxContainer, titulo: String, bus: String) -> void:
 	var fila := HBoxContainer.new()
 	fila.add_theme_constant_override("separation", 10)
@@ -113,7 +119,8 @@ func _agregar_control_volumen(contenedor: VBoxContainer, titulo: String, bus: St
 	deslizador.step = 1.0
 	deslizador.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	deslizador.custom_minimum_size.x = 160
-	deslizador.value = AudioSettings.obtener_volumen(bus) * 100.0
+	var audio_settings := _obtener_audio_settings()
+	deslizador.value = float(audio_settings.call("obtener_volumen", bus)) * 100.0 if audio_settings != null else 100.0
 	fila.add_child(deslizador)
 
 	var porcentaje := Label.new()
@@ -128,7 +135,11 @@ func _agregar_control_volumen(contenedor: VBoxContainer, titulo: String, bus: St
 
 
 func _on_volumen_cambiado(valor: float, bus: String, etiqueta: Label) -> void:
-	AudioSettings.establecer_volumen(bus, valor / 100.0)
+	var audio_settings := _obtener_audio_settings()
+	if audio_settings == null:
+		push_warning("SettingsPanel: no se encontró /root/AudioSettings. Revisa el autoload en project.godot.")
+	else:
+		audio_settings.call("establecer_volumen", bus, valor / 100.0)
 	etiqueta.text = str(roundi(valor)) + "%"
 
 
