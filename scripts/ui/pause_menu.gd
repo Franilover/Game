@@ -1,5 +1,7 @@
 extends Control
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 class_name PauseMenu
 
 const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
@@ -31,6 +33,7 @@ func _ready() -> void:
 	# pero todavía no tienen sistema detrás.
 	mundo_button.disabled = true
 	configuracion_button.disabled = true
+	PIXEL_UI_THEME.apply(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
