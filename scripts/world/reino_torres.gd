@@ -135,7 +135,7 @@ func _ready() -> void:
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
-	_elevar_rotulos()
+	_crear_rotulos_edificios()
 
 
 func _process(_delta: float) -> void:
@@ -171,6 +171,54 @@ func _process(_delta: float) -> void:
 	_aviso_panel.visible = true
 	_posicionar_aviso_sobre_jugador()
 
+
+
+func _crear_rotulos_edificios() -> void:
+	var ids_sin_rotulo := [
+		"casa_oriente_a", "casa_oriente_b", "casa_oriente_c",
+		"vivienda_oeste_01", "vivienda_oeste_02", "vivienda_oeste_03",
+		"vivienda_oeste_04", "vivienda_oeste_05", "vivienda_oeste_06",
+		"vivienda_oeste_07", "vivienda_oeste_08", "vivienda_oeste_09",
+		"vivienda_oeste_10", "vivienda_oeste_11"
+	]
+	for entrada: Dictionary in ENTRADAS:
+		var id := str(entrada.get("id", ""))
+		if ids_sin_rotulo.has(id):
+			continue
+		var nombre := str(entrada.get("nombre", "")).strip_edges()
+		if nombre.is_empty():
+			continue
+
+		var placa := PanelContainer.new()
+		placa.name = "Rotulo_" + id
+		placa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		placa.z_index = 20
+		placa.position = Vector2(float(entrada["pos"].x) - 64.0, float(entrada["pos"].y) - 83.0)
+		placa.custom_minimum_size = Vector2(128.0, 22.0)
+
+		var fondo := StyleBoxFlat.new()
+		fondo.bg_color = Color("#24180F", 0.94)
+		fondo.border_color = Color("#795638", 0.95)
+		fondo.set_border_width_all(1)
+		fondo.set_corner_radius_all(3)
+		fondo.content_margin_left = 6.0
+		fondo.content_margin_right = 6.0
+		fondo.content_margin_top = 2.0
+		fondo.content_margin_bottom = 2.0
+		placa.add_theme_stylebox_override("panel", fondo)
+
+		var texto := Label.new()
+		texto.name = "Nombre"
+		texto.text = nombre
+		texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		texto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		texto.add_theme_color_override("font_color", Color("#F3E4C5"))
+		texto.add_theme_color_override("font_outline_color", Color("#21150E"))
+		texto.add_theme_constant_override("outline_size", 2)
+		texto.add_theme_font_size_override("font_size", 9)
+		texto.clip_text = true
+		placa.add_child(texto)
+		add_child(placa)
 
 func _crear_aviso() -> void:
 	# Botón flotante compacto con el mismo acabado oscuro y borde cálido del menú Garumi.
@@ -679,12 +727,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(172, 133), Vector2(112, 12))
 	_agregar_rect(cuarto, "Alfombra", Vector2(0, 12), Vector2(116, 64), Color(0.49, 0.34, 0.22), -5)
 
-	var titulo := Label.new()
-	titulo.text = str(entrada["nombre"]).to_upper()
-	titulo.position = Vector2(-205, -128)
-	titulo.add_theme_color_override("font_color", Color(0.96, 0.86, 0.66))
-	titulo.add_theme_font_size_override("font_size", 12)
-	cuarto.add_child(titulo)
 
 	var tipo := str(entrada["tipo"])
 	var semilla: int = absi(str(entrada["id"]).hash())
@@ -835,10 +877,6 @@ func _ocultar_placeholder(prefixes: Array) -> void:
 				break
 
 
-func _elevar_rotulos() -> void:
-	for child: Node in get_children():
-		if child is Label:
-			(child as Label).z_index = 10
 
 
 func _al_entrar_salida(body: Node2D) -> void:
