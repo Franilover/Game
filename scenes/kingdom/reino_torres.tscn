@@ -133,23 +133,7 @@ polygon = PackedVector2Array(55, -249, 81, -269, 107, -249)
 color = Color(0.27, 0.19, 0.16, 1)
 z_index = 3
 
-[node name="CastleLabel" type="Label" parent="."]
-offset_left = -42.0
-offset_top = -206.0
-offset_right = 80.0
-offset_bottom = -183.0
-text = "TORRES"
-theme_override_colors/font_color = Color(0.94, 0.87, 0.70, 1)
-theme_override_font_sizes/font_size = 15
 
-[node name="CastleSubtitle" type="Label" parent="."]
-offset_left = -48.0
-offset_top = -145.0
-offset_right = 80.0
-offset_bottom = -127.0
-text = "CASTILLO"
-theme_override_colors/font_color = Color(0.94, 0.87, 0.70, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="HouseBakerWall" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-280, -172, -210, -172, -210, -117, -280, -117)
@@ -291,14 +275,6 @@ polygon = PackedVector2Array(-213, -82, -190, -82, -190, -56, -213, -56)
 color = Color(0.83, 0.70, 0.48, 1)
 z_index = 3
 
-[node name="MarketLabel" type="Label" parent="."]
-offset_left = -297.0
-offset_top = -104.0
-offset_right = -190.0
-offset_bottom = -87.0
-text = "MERCADO"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 12
 
 [node name="FishStall" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(205, 45, 292, 45, 292, 65, 205, 65)
@@ -315,14 +291,6 @@ polygon = PackedVector2Array(230, 20, 247, 20, 247, 42, 230, 42)
 color = Color(0.78, 0.70, 0.52, 1)
 z_index = 3
 
-[node name="FishLabel" type="Label" parent="."]
-offset_left = 218.0
-offset_top = 68.0
-offset_right = 300.0
-offset_bottom = 84.0
-text = "PUESTO"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="WellShadow" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-24, 4, 24, 4, 24, 42, -24, 42)
@@ -344,14 +312,6 @@ polygon = PackedVector2Array(-26, -4, 26, -4, 26, 4, -26, 4)
 color = Color(0.65, 0.59, 0.43, 1)
 z_index = 4
 
-[node name="WellLabel" type="Label" parent="."]
-offset_left = -18.0
-offset_top = 43.0
-offset_right = 60.0
-offset_bottom = 58.0
-text = "POZO"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="ForgeBase" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-395, -205, -325, -205, -325, -170, -395, -170)
@@ -373,14 +333,6 @@ polygon = PackedVector2Array(-368, -190, -352, -190, -352, -176, -368, -176)
 color = Color(0.88, 0.36, 0.12, 1)
 z_index = 4
 
-[node name="ForgeLabel" type="Label" parent="."]
-offset_left = -393.0
-offset_top = -252.0
-offset_right = -315.0
-offset_bottom = -235.0
-text = "FORJA"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 11
 
 [node name="StableBase" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(340, 175, 425, 175, 425, 207, 340, 207)
@@ -397,14 +349,6 @@ polygon = PackedVector2Array(366, 185, 400, 185, 400, 207, 366, 207)
 color = Color(0.19, 0.14, 0.10, 1)
 z_index = 3
 
-[node name="StableLabel" type="Label" parent="."]
-offset_left = 346.0
-offset_top = 211.0
-offset_right = 440.0
-offset_bottom = 228.0
-text = "ESTABLOS"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="GardenBed" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-175, 190, -115, 190, -115, 224, -175, 224)
@@ -495,62 +439,11 @@ polygon = PackedVector2Array(312, -9, 328, -9, 328, 2, 312, 2)
 color = Color(0.88, 0.67, 0.31, 1)
 z_index = 4
 
-[node name="TownTitle" type="Label" parent="."]
-offset_left = -145.0
-offset_top = -55.0
-offset_right = 145.0
-offset_bottom = -28.0
-text = "PLAZA DE TORRES"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 18
 
-[node name="InnLabel" type="Label" parent="."]
-offset_left = -405.0
-offset_top = 99.0
-offset_right = -330.0
-offset_bottom = 116.0
-text = "POSADA"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 10
 
-[node name="BakerLabel" type="Label" parent="."]
-offset_left = -275.0
-offset_top = -195.0
-offset_right = -180.0
-offset_bottom = -178.0
-text = "PANADERIA"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 10
 
-[node name="MasonLabel" type="Label" parent="."]
-offset_left = -265.0
-offset_top = 194.0
-offset_right = -160.0
-offset_bottom = 211.0
-text = "VIVIENDAS"
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 10
 
-[node name="ExitLabel" type="Label" parent="."]
-offset_left = 1020.0
-offset_top = -35.0
-offset_right = 1110.0
-offset_bottom = 10.0
-text = "SALIDA\nMUNDO ABIERTO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.92, 0.84, 0.67, 1)
-theme_override_font_sizes/font_size = 14
 
-[node name="TownBanner" type="Label" parent="."]
-offset_left = -115.0
-offset_top = 105.0
-offset_right = 130.0
-offset_bottom = 124.0
-text = "BIENVENIDO A TORRES"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.95, 0.84, 0.65, 1)
-theme_override_font_sizes/font_size = 11
 
 [node name="RoadToWorld" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(420, -48, 1120, -48, 1120, 48, 420, 48)
@@ -719,15 +612,6 @@ polygon = PackedVector2Array(650, 510, 690, 510, 690, 572, 650, 572)
 color = Color(0.58, 0.45, 0.30, 1)
 z_index = -6
 
-[node name="RoyalQuarterLabel" type="Label" parent="."]
-offset_left = -300.0
-offset_top = -405.0
-offset_right = 300.0
-offset_bottom = -388.0
-text = "JARDINES Y ARCHIVOS REALES"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 13
 
 [node name="RoyalGardenPlot" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-330, -610, 330, -610, 330, -495, -330, -495)
@@ -879,15 +763,6 @@ polygon = PackedVector2Array(-146, -660, -132, -660, -132, -646, -146, -646)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="RoyalArchiveLabel" type="Label" parent="."]
-offset_left = -228.0
-offset_top = -621.0
-offset_right = -112.0
-offset_bottom = -607.0
-text = "ARCHIVOS"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="RoyalArchiveCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-170, -650)
@@ -919,15 +794,6 @@ polygon = PackedVector2Array(202, -665, 216, -665, 216, -651, 202, -651)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="CouncilHallLabel" type="Label" parent="."]
-offset_left = 104.0
-offset_top = -616.0
-offset_right = 236.0
-offset_bottom = -602.0
-text = "CONSEJO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="CouncilHallCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(170, -650)
@@ -959,15 +825,6 @@ polygon = PackedVector2Array(-382, -567, -368, -567, -368, -553, -382, -553)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="OrisStudyLabel" type="Label" parent="."]
-offset_left = -472.0
-offset_top = -524.0
-offset_right = -348.0
-offset_bottom = -510.0
-text = "CASA DE ESTUDIO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="OrisStudyCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-410, -555)
@@ -979,15 +836,6 @@ polygon = PackedVector2Array(-440, -603, -410, -628, -380, -603)
 color = Color(0.48, 0.53, 0.50, 1)
 z_index = 3
 
-[node name="WestQuarterLabel" type="Label" parent="."]
-offset_left = -1100.0
-offset_top = -405.0
-offset_right = -740.0
-offset_bottom = -389.0
-text = "BARRIO DE LOS OFICIOS"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 12
 
 [node name="WestHome1Wall" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-1072, -373, -1008, -373, -1008, -327, -1072, -327)
@@ -1234,15 +1082,6 @@ polygon = PackedVector2Array(-742, -260, -728, -260, -728, -246, -742, -246)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="WeaverHouseLabel" type="Label" parent="."]
-offset_left = -812.0
-offset_top = -221.0
-offset_right = -708.0
-offset_bottom = -207.0
-text = "TELARES"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="WeaverHouseCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-760, -250)
@@ -1274,15 +1113,6 @@ polygon = PackedVector2Array(-742, 100, -728, 100, -728, 114, -742, 114)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="PotterHouseLabel" type="Label" parent="."]
-offset_left = -812.0
-offset_top = 139.0
-offset_right = -708.0
-offset_bottom = 153.0
-text = "ALFARERIA"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="PotterHouseCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-760, 110)
@@ -1314,30 +1144,12 @@ polygon = PackedVector2Array(-738, 207, -724, 207, -724, 221, -738, 221)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="BathHouseLabel" type="Label" parent="."]
-offset_left = -816.0
-offset_top = 252.0
-offset_right = -704.0
-offset_bottom = 266.0
-text = "BAÑOS"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="BathHouseCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-760, 220)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="BathHouseCollisionBody"]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="MarketQuarterLabel" type="Label" parent="."]
-offset_left = -350.0
-offset_top = -130.0
-offset_right = -30.0
-offset_bottom = -114.0
-text = "MERCADO MAYOR"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 12
 
 [node name="MarketExtension1" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-368, -162, -292, -162, -292, -138, -368, -138)
@@ -1419,15 +1231,6 @@ polygon = PackedVector2Array(-189, 66, -185, 66, -185, 92, -189, 92)
 color = Color(0.23, 0.17, 0.11, 1)
 z_index = 3
 
-[node name="EastQuarterLabel" type="Label" parent="."]
-offset_left = 720.0
-offset_top = -405.0
-offset_right = 1080.0
-offset_bottom = -389.0
-text = "DISTRITO DE LA PUERTA"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 12
 
 [node name="TradeHouseWall" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(880, -380, 980, -380, 980, -320, 880, -320)
@@ -1454,15 +1257,6 @@ polygon = PackedVector2Array(958, -363, 972, -363, 972, -349, 958, -349)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="TradeHouseLabel" type="Label" parent="."]
-offset_left = 868.0
-offset_top = -318.0
-offset_right = 992.0
-offset_bottom = -304.0
-text = "CASA DE COMERCIO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="TradeHouseCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(930, -350)
@@ -1494,15 +1288,6 @@ polygon = PackedVector2Array(964, -261, 978, -261, 978, -247, 964, -247)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="CaravanseraiLabel" type="Label" parent="."]
-offset_left = 862.0
-offset_top = -210.0
-offset_right = 998.0
-offset_bottom = -196.0
-text = "ALOJAMIENTO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="CaravanseraiCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(930, -245)
@@ -1534,15 +1319,6 @@ polygon = PackedVector2Array(760, -364, 774, -364, 774, -350, 760, -350)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="GuardBarracksLabel" type="Label" parent="."]
-offset_left = 666.0
-offset_top = -317.0
-offset_right = 794.0
-offset_bottom = -303.0
-text = "CUARTEL"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="GuardBarracksCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(730, -350)
@@ -1574,15 +1350,6 @@ polygon = PackedVector2Array(751, -254, 765, -254, 765, -240, 751, -240)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="GateOfficeLabel" type="Label" parent="."]
-offset_left = 675.0
-offset_top = -217.0
-offset_right = 785.0
-offset_bottom = -203.0
-text = "REGISTRO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="GateOfficeCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(730, -245)
@@ -1614,15 +1381,6 @@ polygon = PackedVector2Array(956, 98, 970, 98, 970, 112, 956, 112)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="RepairWorkshopLabel" type="Label" parent="."]
-offset_left = 870.0
-offset_top = 141.0
-offset_right = 990.0
-offset_bottom = 155.0
-text = "REPARACIONES"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="RepairWorkshopCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(930, 110)
@@ -1654,15 +1412,6 @@ polygon = PackedVector2Array(755, 98, 769, 98, 769, 112, 755, 112)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="PublicStoreLabel" type="Label" parent="."]
-offset_left = 671.0
-offset_top = 141.0
-offset_right = 789.0
-offset_bottom = 155.0
-text = "ALMACEN"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="PublicStoreCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(730, 110)
@@ -1694,30 +1443,12 @@ polygon = PackedVector2Array(954, 208, 968, 208, 968, 222, 954, 222)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="CartwrightLabel" type="Label" parent="."]
-offset_left = 872.0
-offset_top = 251.0
-offset_right = 988.0
-offset_bottom = 265.0
-text = "CARPINTERIA"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="CartwrightCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(930, 220)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CartwrightCollisionBody"]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="SouthQuarterLabel" type="Label" parent="."]
-offset_left = -320.0
-offset_top = 385.0
-offset_right = 320.0
-offset_bottom = 401.0
-text = "HUERTAS Y ABASTECIMIENTO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 12
 
 [node name="GrainStoreWall" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-501, 234, -399, 234, -399, 296, -501, 296)
@@ -1744,15 +1475,6 @@ polygon = PackedVector2Array(-421, 251, -407, 251, -407, 265, -421, 265)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="GrainStoreLabel" type="Label" parent="."]
-offset_left = -513.0
-offset_top = 298.0
-offset_right = -387.0
-offset_bottom = 312.0
-text = "GRANERO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="GrainStoreCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-450, 265)
@@ -1784,15 +1506,6 @@ polygon = PackedVector2Array(-246, 253, -232, 253, -232, 267, -246, 267)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="MillHouseLabel" type="Label" parent="."]
-offset_left = -328.0
-offset_top = 296.0
-offset_right = -212.0
-offset_bottom = 310.0
-text = "MOLINO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="MillHouseCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-270, 265)
@@ -1824,15 +1537,6 @@ polygon = PackedVector2Array(279, 251, 293, 251, 293, 265, 279, 265)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="WaterWorksLabel" type="Label" parent="."]
-offset_left = 187.0
-offset_top = 298.0
-offset_right = 313.0
-offset_bottom = 312.0
-text = "AGUAS"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="WaterWorksCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(250, 265)
@@ -1864,15 +1568,6 @@ polygon = PackedVector2Array(478, 252, 492, 252, 492, 266, 478, 266)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="AnimalPensLabel" type="Label" parent="."]
-offset_left = 388.0
-offset_top = 297.0
-offset_right = 512.0
-offset_bottom = 311.0
-text = "CORRALES"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="AnimalPensCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(450, 265)
@@ -2304,15 +1999,6 @@ polygon = PackedVector2Array(-820, 596, -806, 596, -806, 610, -820, 610)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="FarmersHallLabel" type="Label" parent="."]
-offset_left = -914.0
-offset_top = 643.0
-offset_right = -786.0
-offset_bottom = 657.0
-text = "CASA DE GRANJEROS"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="FarmersHallCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(-850, 610)
@@ -2344,15 +2030,6 @@ polygon = PackedVector2Array(828, 597, 842, 597, 842, 611, 828, 611)
 color = Color(0.19, 0.33, 0.38, 1)
 z_index = 3
 
-[node name="SeedStoreLabel" type="Label" parent="."]
-offset_left = 738.0
-offset_top = 642.0
-offset_right = 862.0
-offset_bottom = 656.0
-text = "SEMILLAS"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="SeedStoreCollisionBody" type="StaticBody2D" parent="."]
 position = Vector2(800, 610)
@@ -2479,45 +2156,9 @@ polygon = PackedVector2Array(500, 456, 478, 494, 522, 494)
 color = Color(0.15, 0.28, 0.15, 1)
 z_index = 2
 
-[node name="NorthGateLabel" type="Label" parent="."]
-offset_left = -125.0
-offset_top = -690.0
-offset_right = 125.0
-offset_bottom = -674.0
-text = "PUERTA REAL"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 12
 
-[node name="SouthCanalLabel" type="Label" parent="."]
-offset_left = -350.0
-offset_top = 565.0
-offset_right = 350.0
-offset_bottom = 579.0
-text = "CANAL DE ABASTECIMIENTO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
-[node name="WestGateLabel" type="Label" parent="."]
-offset_left = -1190.0
-offset_top = -35.0
-offset_right = -1070.0
-offset_bottom = -22.0
-text = "PORTILLO"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 9
 
-[node name="EastGateLabel" type="Label" parent="."]
-offset_left = 950.0
-offset_top = -70.0
-offset_right = 1180.0
-offset_bottom = -56.0
-text = "CAMINO PRINCIPAL"
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.94, 0.85, 0.68, 1)
-theme_override_font_sizes/font_size = 10
 
 [node name="EastGatePierNorth" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(1030, -90, 1054, -90, 1054, -48, 1030, -48)
