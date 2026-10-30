@@ -48,6 +48,10 @@ func _ready() -> void:
 
 	WorldData.configurar_dependencias(_supabase_client)
 
+	_world_atmosphere = $Systems/WorldAtmosphere as WorldAtmosphere
+	if not is_instance_valid(_world_atmosphere):
+		push_error("Main: falta Systems/WorldAtmosphere; el reloj global no puede iniciar.")
+
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
 		_supabase_client.relaciones_ecologicas_cargadas.connect(_al_cargar_relaciones_ecologicas)
@@ -194,7 +198,6 @@ func _detectar_reinos_descubiertos() -> void:
 func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
-	_world_atmosphere = null
 
 	if tipo == "mundo_abierto":
 		if _world_generator == null:
@@ -202,7 +205,7 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 			return
 
 		_world_entity_spawner = _world_generator.get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
-		_world_atmosphere = _world_generator.get_node_or_null("WorldAtmosphere") as WorldAtmosphere
+		_world_generator.configurar_atmosfera_compartida(_world_atmosphere)
 		_world_context.configurar(
 			_world_generator.get_node_or_null("WorldTerrain") as WorldTerrain,
 			_world_atmosphere,
