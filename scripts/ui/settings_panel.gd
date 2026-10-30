@@ -6,40 +6,12 @@ signal closed
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 const CONTROLES := [
-	{"action": "move_up", "label": "Moverse hacia arriba"},
-	{"action": "move_down", "label": "Moverse hacia abajo"},
-	{"action": "move_left", "label": "Moverse a la izquierda"},
-	{"action": "move_right", "label": "Moverse a la derecha"},
-	{"action": "run", "label": "Correr"},
-	{"action": "jump", "label": "Saltar"},
-	{"action": "interact", "label": "Interactuar"},
-	{"action": "primary_action", "label": "Acción principal"},
-	{"action": "secondary_action", "label": "Acción secundaria"},
-	{"action": "dash", "label": "Dash"},
-	{"action": "eterium_sprint", "label": "Sprint de Eterium"},
-	{"action": "inventory", "label": "Inventario"},
-	{"action": "character", "label": "Personaje"},
-	{"action": "map", "label": "Mapa"},
-	{"action": "journal", "label": "Diario"},
-	{"action": "pause", "label": "Pausa"},
-	{"action": "confirm", "label": "Confirmar"},
-	{"action": "cancel", "label": "Cancelar"},
-	{"action": "analyze", "label": "Analizar"},
-	{"action": "focus", "label": "Enfocar"},
-	{"action": "use_ium", "label": "Usar IUM"},
-	{"action": "codex", "label": "Enciclopedia"},
-	{"action": "garumi_encyclopedia", "label": "Enciclopedia Garumi"},
-	{"action": "camera_zoom_in", "label": "Acercar cámara"},
-	{"action": "camera_zoom_out", "label": "Alejar cámara"},
-	{"action": "camera_reset", "label": "Restablecer cámara"},
-	{"action": "slot_1", "label": "Acceso rápido 1"},
-	{"action": "slot_2", "label": "Acceso rápido 2"},
-	{"action": "slot_3", "label": "Acceso rápido 3"},
-	{"action": "slot_4", "label": "Acceso rápido 4"},
-	{"action": "slot_5", "label": "Acceso rápido 5"},
-	{"action": "slot_6", "label": "Acceso rápido 6"},
-	{"action": "slot_7", "label": "Acceso rápido 7"},
-	{"action": "slot_8", "label": "Acceso rápido 8"}
+	{"label": "Moverse", "keys": "W · A · S · D"},
+	{"label": "Mano izquierda", "keys": "Q"},
+	{"label": "Mano derecha", "keys": "E"},
+	{"label": "Recuperar Eterium / Curarse / Meditar", "keys": "ESPACIO"},
+	{"label": "Seleccionar Garumi", "keys": "1 · 2 · 3"},
+	{"label": "Viajar", "keys": "SHIFT + M"}
 ]
 
 var _panel: PanelContainer
@@ -162,7 +134,6 @@ func _on_volumen_cambiado(valor: float, bus: String, etiqueta: Label) -> void:
 
 func _construir_lista_controles(lista: VBoxContainer) -> void:
 	for control_info in CONTROLES:
-		var accion := str(control_info["action"])
 		var nombre := str(control_info["label"])
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 12)
@@ -174,7 +145,7 @@ func _construir_lista_controles(lista: VBoxContainer) -> void:
 		fila.add_child(etiqueta)
 
 		var tecla := Label.new()
-		tecla.text = _obtener_texto_atajos(accion)
+		tecla.text = str(control_info["keys"])
 		tecla.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		tecla.add_theme_color_override("font_color", Color(0.88, 0.76, 0.56))
 		fila.add_child(tecla)
