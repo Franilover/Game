@@ -722,7 +722,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	cuarto.name = "Habitacion_" + str(entrada["id"])
 	_capa_interior.add_child(cuarto)
 
-	_agregar_rect(cuarto, "Suelo", Vector2.ZERO, Vector2(440, 270), Color(0.35, 0.29, 0.22), -10)
+	_agregar_suelo_tilemap(cuarto)
 	_agregar_rect(cuarto, "MuroNorte", Vector2(0, -139), Vector2(456, 12), Color(0.47, 0.39, 0.29), 2)
 	_agregar_rect(cuarto, "MuroOeste", Vector2(-226, 0), Vector2(12, 278), Color(0.47, 0.39, 0.29), 2)
 	_agregar_rect(cuarto, "MuroEste", Vector2(226, 0), Vector2(12, 278), Color(0.47, 0.39, 0.29), 2)
@@ -836,6 +836,35 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 		_agregar_rect(cuarto, "ObjetoPropio%d" % i, Vector2(objeto_x, objeto_y), objeto_tamano, paleta[int(semilla / (i + 1)) % paleta.size()], 3)
 	_agregar_rect(cuarto, "VentanaNorte", Vector2(-70, -132), Vector2(36, 5), Color(0.22,0.35,0.38), 4)
 	_agregar_rect(cuarto, "VentanaEste", Vector2(220, -20), Vector2(5, 34), Color(0.22,0.35,0.38), 4)
+
+
+func _agregar_suelo_tilemap(padre: Node) -> void:
+	var textura := load("res://assets/tilesets/Suelo.png") as Texture2D
+	if textura == null:
+		push_warning("ReinoTorres: no se pudo cargar assets/tilesets/Suelo.png")
+		_agregar_rect(padre, "SueloFallback", Vector2.ZERO, Vector2(440, 270), Color(0.35, 0.29, 0.22), -10)
+		return
+
+	var tileset := TileSet.new()
+	tileset.tile_size = Vector2i(16, 16)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = textura
+	atlas.texture_region_size = Vector2i(16, 16)
+	atlas.create_tile(Vector2i.ZERO)
+	tileset.add_source(atlas, 0)
+
+	var capa := TileMapLayer.new()
+	capa.name = "SueloTileMap"
+	capa.position = Vector2(-224, -136)
+	capa.tile_set = tileset
+	capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	capa.z_index = -10
+	padre.add_child(capa)
+
+	# 28 x 17 tiles cubren la habitación completa (448 x 272 unidades).
+	for y in range(17):
+		for x in range(28):
+			capa.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
 
 
 func _agregar_colision_muro(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:
