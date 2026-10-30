@@ -424,6 +424,19 @@ func capturar_estado_desde_juego(jugador: Player) -> void:
 	player_state.position_valida = true
 	player_state.tile_valido = false
 
+	# Persistir también la zona activa y el estado del interior, no solo
+	# las coordenadas globales del jugador.
+	var escena_actual := get_tree().current_scene
+	if is_instance_valid(escena_actual):
+		var zone_manager := escena_actual.get_node_or_null("World/ZoneManager")
+		if is_instance_valid(zone_manager):
+			world_state.flags["zona_actual_tipo"] = str(zone_manager.call("obtener_tipo_actual"))
+			var zona := zone_manager.call("obtener_zona_actual") as Node
+			if is_instance_valid(zona) and zona.has_method("obtener_estado_guardado"):
+				world_state.flags["estado_zona_actual"] = zona.call("obtener_estado_guardado").duplicate(true)
+			else:
+				world_state.flags.erase("estado_zona_actual")
+
 	var world_context: WorldContext = _world_context
 
 	if world_context != null:
@@ -1041,6 +1054,16 @@ func _aplicar_estado_al_juego() -> void:
 
 	if jugador is Node2D and player_state.position_valida:
 		(jugador as Node2D).global_position = player_state.position
+
+	# Reconstruir la habitación después de posicionar al jugador.
+	var escena_actual := get_tree().current_scene
+	if is_instance_valid(escena_actual):
+		var zone_manager := escena_actual.get_node_or_null("World/ZoneManager")
+		if is_instance_valid(zone_manager):
+			var zona := zone_manager.call("obtener_zona_actual") as Node
+			var estado_zona: Variant = world_state.flags.get("estado_zona_actual", {})
+			if is_instance_valid(zona) and zona.has_method("restaurar_estado_guardado") and estado_zona is Dictionary:
+				zona.call("restaurar_estado_guardado", (estado_zona as Dictionary).duplicate(true))
 
 	jugador.set("health", clampi(
 		player_state.health,
