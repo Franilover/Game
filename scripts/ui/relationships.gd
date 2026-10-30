@@ -25,10 +25,6 @@ func configurar(sistema: Node) -> void:
 			var senal_anterior: Signal = _relationship_system.reglas_sociales_cargadas
 			if senal_anterior.is_connected(_al_reglas_sociales_cargadas):
 				senal_anterior.disconnect(_al_reglas_sociales_cargadas)
-		if _relationship_system.has_signal("relacion_cambiada"):
-			var cambio_anterior: Signal = _relationship_system.relacion_cambiada
-			if cambio_anterior.is_connected(_al_relacion_cambiada):
-				cambio_anterior.disconnect(_al_relacion_cambiada)
 
 	_relationship_system = sistema
 	if _relationship_system != null:
@@ -36,18 +32,10 @@ func configurar(sistema: Node) -> void:
 			var senal_reglas: Signal = _relationship_system.reglas_sociales_cargadas
 			if not senal_reglas.is_connected(_al_reglas_sociales_cargadas):
 				senal_reglas.connect(_al_reglas_sociales_cargadas)
-		if _relationship_system.has_signal("relacion_cambiada"):
-			var senal_cambios: Signal = _relationship_system.relacion_cambiada
-			if not senal_cambios.is_connected(_al_relacion_cambiada):
-				senal_cambios.connect(_al_relacion_cambiada)
 	_actualizar()
 
 
 func _al_reglas_sociales_cargadas() -> void:
-	_actualizar()
-
-
-func _al_relacion_cambiada(_personaje_id: String, _relacion: Dictionary) -> void:
 	_actualizar()
 
 
