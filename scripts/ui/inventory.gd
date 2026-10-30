@@ -804,6 +804,7 @@ func _mostrar_informacion() -> void:
 	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción ni propiedades adicionales registradas."
 	item_description.visible = true
 	delete_button.disabled = false
+	delete_button.visible = true
 
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
 	item_icon.texture = textura
@@ -822,12 +823,13 @@ func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> Sty
 
 
 func _limpiar_informacion() -> void:
-	item_name.text = "Ningún objeto"
+	item_name.text = ""
 	item_description.text = ""
 	item_description.visible = false
 	item_icon.texture = null
 	item_icon.visible = false
 	delete_button.disabled = true
+	delete_button.visible = false
 
 
 func agregar_objeto(datos_objeto: Dictionary) -> bool:
