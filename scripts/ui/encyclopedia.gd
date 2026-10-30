@@ -1111,7 +1111,7 @@ func _mostrar_sin_descubrimientos() -> void:
 	_nombre.text = "Nada descubierto todavía"
 	_icono.texture = null
 	_icono.visible = false
-	_ficha.text = "[center][color=#8f754f]Este registro está vacío.[/color]\\n\\nExplora Garlia para descubrir nuevos conocimientos.[/center]"
+	_ficha.text = ""
 
 
 func _al_descubrir_criatura(_criatura_id: String) -> void:
