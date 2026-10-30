@@ -43,6 +43,12 @@ static func _apply_control(control: Control) -> void:
 			control.add_theme_stylebox_override("pressed", selected_slot if selected_slot != null else slot)
 
 	elif control is Button:
+		# Los assets de botones tienen rellenos claros: mantener el texto oscuro
+		# en todos sus estados para conservar el contraste.
+		control.add_theme_color_override("font_color", Color("#382719"))
+		control.add_theme_color_override("font_hover_color", Color("#24180F"))
+		control.add_theme_color_override("font_pressed_color", Color("#1D140D"))
+		control.add_theme_color_override("font_disabled_color", Color("#756653"))
 		var normal := _texture_style("button_normal.png", 5)
 		var hover := _texture_style("button_hover.png", 5)
 		var pressed := _texture_style("button_pressed.png", 5)
