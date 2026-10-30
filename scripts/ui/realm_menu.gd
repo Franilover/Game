@@ -15,7 +15,6 @@ var _game_state: GameStateService
 var _tipo_zona_actual: String = ""
 var _panel: PanelContainer
 var _lista: VBoxContainer
-var _subtitulo: Label
 
 
 func _ready() -> void:
@@ -68,7 +67,7 @@ func _construir_interfaz() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "PanelReinos"
 	_panel.focus_mode = Control.FOCUS_ALL
-	_panel.custom_minimum_size = Vector2(340.0, 260.0)
+	_panel.custom_minimum_size = Vector2(320.0, 150.0)
 	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_panel.add_theme_stylebox_override("panel", _crear_estilo_panel())
@@ -89,24 +88,12 @@ func _construir_interfaz() -> void:
 	contenido.add_child(cabecera)
 
 	var titulo := Label.new()
-	titulo.text = "VIAJAR"
+	titulo.text = "Viajar"
 	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	titulo.add_theme_color_override("font_color", COLOR_TEXTO)
 	titulo.add_theme_font_size_override("font_size", 19)
 	cabecera.add_child(titulo)
 
-	var cerrar_boton := Button.new()
-	cerrar_boton.text = "×"
-	cerrar_boton.custom_minimum_size = Vector2(30.0, 28.0)
-	_estilizar_boton(cerrar_boton, true)
-	cerrar_boton.pressed.connect(cerrar)
-	cabecera.add_child(cerrar_boton)
-
-	_subtitulo = Label.new()
-	_subtitulo.text = "Elige un destino descubierto"
-	_subtitulo.add_theme_color_override("font_color", COLOR_SECUNDARIO)
-	_subtitulo.add_theme_font_size_override("font_size", 11)
-	contenido.add_child(_subtitulo)
 
 	var separador := HSeparator.new()
 	separador.add_theme_color_override("separator", COLOR_BORDE)
@@ -115,13 +102,6 @@ func _construir_interfaz() -> void:
 	_lista = VBoxContainer.new()
 	_lista.add_theme_constant_override("separation", 7)
 	contenido.add_child(_lista)
-
-	var pie := Label.new()
-	pie.text = "SHIFT + M  ·  CERRAR"
-	pie.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	pie.add_theme_color_override("font_color", COLOR_SECUNDARIO)
-	pie.add_theme_font_size_override("font_size", 10)
-	contenido.add_child(pie)
 
 
 func _reconstruir_destinos() -> void:
@@ -162,12 +142,11 @@ func _reconstruir_destinos() -> void:
 		agregados["torres"] = true
 
 	_agregar_destino("mundo_abierto", "Mundo Abierto", "EXPLORACIÓN", _tipo_zona_actual == "mundo_abierto")
-	_subtitulo.text = "Elige un destino descubierto" if agregados.size() > 1 else "Torres está disponible. Descubre otros reinos explorando."
 
 
 func _agregar_destino(clave: String, nombre: String, categoria: String, actual: bool) -> void:
 	var boton := Button.new()
-	boton.text = nombre + ("   ·   ACTUAL" if actual else "")
+	boton.text = nombre
 	boton.custom_minimum_size = Vector2(292.0, 42.0)
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boton.disabled = actual
