@@ -97,7 +97,7 @@ text = "Mundo"
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-disabled = true
+disabled = false
 text = "Configuración"
 
 [node name="MenuButton" type="Button" parent="Panel/Margin/Column"]
