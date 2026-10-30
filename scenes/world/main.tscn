@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://drmehcw40k0lc" path="res://scenes/characters/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/admin_player_editor.gd" id="26_admin_player_editor"]
 [ext_resource type="Script" path="res://scripts/world/main.gd" id="3_main"]
+[ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="33_world_atmosphere"]
 [ext_resource type="Script" path="res://scripts/world/zone_manager.gd" id="30_zone_manager"]
 [ext_resource type="Script" path="res://scripts/ui/realm_menu.gd" id="32_realm_menu"]
 [ext_resource type="Script" path="res://scripts/world/world_context.gd" id="31_world_context"]
@@ -69,6 +70,11 @@ z_index = 150
 script = ExtResource("32_realm_menu")
 
 [node name="Systems" type="Node" parent="." unique_id=40830559]
+
+[node name="WorldAtmosphere" type="Node" parent="Systems"]
+script = ExtResource("33_world_atmosphere")
+
+[node name="DayNightModulation" type="CanvasModulate" parent="Systems/WorldAtmosphere"]
 
 [node name="WorldContext" type="Node" parent="Systems"]
 script = ExtResource("31_world_context")
