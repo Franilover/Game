@@ -1,5 +1,7 @@
 extends Control
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 
 @onready var start_button: Button = (
 	$Center/StartButton
@@ -224,6 +226,7 @@ func _ready() -> void:
 		multiplayer_button.disabled = true
 
 	_actualizar_estado_mundo()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _actualizar_estado_mundo() -> void:
