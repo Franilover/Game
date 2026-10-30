@@ -1,6 +1,7 @@
 extends Control
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
 
 
 @onready var start_button: Button = (
@@ -18,6 +19,8 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 @onready var profile_button: Button = (
 	$ProfileButton
 )
+
+@onready var settings_button: Button = $SettingsButton
 
 @onready var login_overlay: ColorRect = (
 	$LoginOverlay
@@ -76,6 +79,7 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 )
 
 
+var _settings_panel: SettingsPanel = null
 var _login_en_curso: bool = false
 var _codigo_sala_actual: String = ""
 
@@ -97,6 +101,8 @@ func _ready() -> void:
 	start_button.pressed.connect(
 		_iniciar_partida
 	)
+
+	settings_button.pressed.connect(_abrir_configuracion)
 
 	multiplayer_button.pressed.connect(
 		_abrir_multijugador
@@ -227,6 +233,28 @@ func _ready() -> void:
 
 	_actualizar_estado_mundo()
 	PIXEL_UI_THEME.apply(self)
+
+
+func _abrir_configuracion() -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		return
+
+	login_overlay.visible = false
+	multiplayer_overlay.visible = false
+	_settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
+	if _settings_panel == null:
+		push_error("StartMenu: no se pudo crear el panel de configuración.")
+		return
+
+	_settings_panel.closed.connect(_cerrar_configuracion)
+	add_child(_settings_panel)
+	_settings_panel.z_index = 5000
+
+
+func _cerrar_configuracion() -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		_settings_panel.queue_free()
+	_settings_panel = null
 
 
 func _actualizar_estado_mundo() -> void:
