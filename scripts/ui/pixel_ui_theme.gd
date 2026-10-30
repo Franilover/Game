@@ -41,12 +41,10 @@ static func _apply_control(control: Control) -> void:
 		var disabled := _texture_style("button_disabled.png", 5)
 		if normal != null:
 			control.add_theme_stylebox_override("normal", normal)
-		if hover != null:
+		if normal != null:
 			control.add_theme_stylebox_override("hover", hover if hover != null else normal)
-		if pressed != null:
-			control.add_theme_stylebox_override("pressed", pressed)
-		if disabled != null:
-			control.add_theme_stylebox_override("disabled", disabled)
+			control.add_theme_stylebox_override("pressed", pressed if pressed != null else normal)
+			control.add_theme_stylebox_override("disabled", disabled if disabled != null else normal)
 
 	if control is LineEdit:
 		var input_style := _texture_style("input_frame.png", 4)
@@ -56,7 +54,15 @@ static func _apply_control(control: Control) -> void:
 
 	if control is ProgressBar:
 		var bar_background := _texture_style("bar_frame.png", 3)
-		var bar_fill := _texture_style("bar_fill.png", 2)
+		var fill_name := "bar_fill.png"
+		match control.name:
+			"HealthBar":
+				fill_name = "bar_fill_health.png"
+			"EteriumBar":
+				fill_name = "bar_fill_eterium.png"
+			"StaminaBar":
+				fill_name = "bar_fill_stamina.png"
+		var bar_fill := _texture_style(fill_name, 2)
 		if bar_background != null:
 			control.add_theme_stylebox_override("background", bar_background)
 		if bar_fill != null:
