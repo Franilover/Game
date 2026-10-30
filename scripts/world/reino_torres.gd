@@ -145,12 +145,20 @@ func _process(_delta: float) -> void:
 		return
 
 	if _interior_activo:
-		var cerca_salida := _jugador.global_position.distance_to(to_global(Vector2(60, 105))) < 48.0
-		_entrada_aviso_actual = {"salir": true} if cerca_salida else {}
-		_aviso.text = "Salir al exterior   [Clic izq./der.]" if cerca_salida else ""
-		_aviso_panel.visible = cerca_salida
+		# El interior es cerrado: limita la posición del jugador al área transitable.
+		# La única salida es el umbral de la puerta, que devuelve al exterior automáticamente.
+		var posicion_local := to_local(_jugador.global_position)
+		posicion_local.x = clampf(posicion_local.x, -204.0, 204.0)
+		posicion_local.y = clampf(posicion_local.y, -112.0, 108.0)
+		_jugador.global_position = to_global(posicion_local)
+
+		var umbral_salida := to_global(Vector2(60, 105))
+		var cerca_salida := _jugador.global_position.distance_to(umbral_salida) < 30.0
+		_entrada_aviso_actual.clear()
+		_aviso_panel.visible = false
+		_aviso.text = ""
 		if cerca_salida:
-			_posicionar_aviso_sobre_jugador()
+			_salir_del_interior()
 		return
 
 	var entrada_cercana: Dictionary = {}
@@ -598,7 +606,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_capa_interior.visible = true
 	_capa_interior.process_mode = Node.PROCESS_MODE_INHERIT
 	_construir_habitacion(entrada)
-	_jugador.global_position = to_global(Vector2(60, 90))
+	_jugador.global_position = to_global(Vector2(0, 70))
 	_limitar_camara_a_interior()
 	_interterior_colisiones(true)
 	_interior_activo = true
