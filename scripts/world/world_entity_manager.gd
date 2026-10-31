@@ -288,6 +288,33 @@ func obtener_persistente(key: String) -> Node:
 	return null
 
 
+func capturar_estado_persistente_mundo() -> Dictionary:
+	# Capturamos también las criaturas que siguen materializadas: el guardado
+	# normal por chunk ocurre al descargarlas, pero el servidor puede pausarse
+	# con muchos chunks todavía activos.
+	for entidad_variant in obtener_entidades_activas():
+		if entidad_variant is Creature and is_instance_valid(entidad_variant):
+			var criatura := entidad_variant as Creature
+			guardar_estado_entidad(criatura, criatura.chunk_coord)
+	return {
+		"criaturas": _runtime_state_by_key.duplicate(true),
+		"props": _runtime_prop_state_by_key.duplicate(true)
+	}
+
+
+func restaurar_estado_persistente_mundo(estado: Dictionary) -> void:
+	var criaturas_variant: Variant = estado.get("criaturas", {})
+	var props_variant: Variant = estado.get("props", {})
+	_runtime_state_by_key = (criaturas_variant as Dictionary).duplicate(true) if criaturas_variant is Dictionary else {}
+	_runtime_prop_state_by_key = (props_variant as Dictionary).duplicate(true) if props_variant is Dictionary else {}
+	print(
+		"WorldEntityManager: estado global recuperado → criaturas=",
+		_runtime_state_by_key.size(),
+		" | props=",
+		_runtime_prop_state_by_key.size()
+	)
+
+
 func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	if entity == null or not is_instance_valid(entity):
 		return
