@@ -245,6 +245,11 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 		GameState
 	)
 	_entities.add_child(jugador)
+	jugador.aplicar_identidad_red(
+		str(identidad.get("nombre", nombre_verificado)),
+		str(identidad.get("genero", "")),
+		identidad.get("apariencia", {}) as Dictionary
+	)
 	_crear_sistemas_jugador_servidor(peer_id, jugador)
 	var camara_jugador := jugador.get_node_or_null("Camera2D") as Camera2D
 	if is_instance_valid(camara_jugador):
@@ -615,6 +620,14 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			proxy.name = "JugadorRemoto_%d" % peer_id
 			proxy.personaje_nombre = str(registro.get("username", "Explorador"))
 			proxy.remove_from_group("player")
+			proxy.collision_layer = 0
+			proxy.collision_mask = 0
+			var hurtbox_proxy := proxy.get_node_or_null("Hurtbox") as Area2D
+			if is_instance_valid(hurtbox_proxy):
+				hurtbox_proxy.collision_layer = 0
+				hurtbox_proxy.collision_mask = 0
+				hurtbox_proxy.monitoring = false
+				hurtbox_proxy.monitorable = false
 			proxy.set_physics_process(false)
 			proxy.set_process(false)
 			_entities.add_child(proxy)
