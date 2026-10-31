@@ -230,10 +230,16 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo verificar tu cuenta. Vuelve a iniciar sesión.")
 		return
 
-	# La conexión puede llegar mientras el servidor todavía construye la primera zona.
-	while not _mundo_listo and GarliaMultiplayer.es_servidor_dedicado():
-		await get_tree().create_timer(0.2).timeout
-	if not _mundo_listo or not multiplayer.get_peers().has(peer_id):
+	# La conexión puede llegar mientras el servidor construye o cambia de zona.
+	# El tiempo de espera está limitado para no retener indefinidamente el RPC.
+	var intentos_espera := 0
+	while not _mundo_listo and GarliaMultiplayer.es_servidor_dedicado() and intentos_espera < 100:
+		await get_tree().create_timer(0.2, true, false).timeout
+		intentos_espera += 1
+	if not multiplayer.get_peers().has(peer_id):
+		return
+	if not _mundo_listo:
+		rechazar_entrada_global.rpc_id(peer_id, "El mundo global aún no está disponible. Intenta de nuevo.")
 		return
 
 	var nombre_verificado := await _obtener_username_supabase(user_id, access_token)
