@@ -297,7 +297,14 @@ func capturar_estado_persistente_mundo() -> Dictionary:
 			continue
 		if entidad_variant is WorldProp:
 			var prop := entidad_variant as WorldProp
-			guardar_estado_entidad(prop, prop.chunk_coord)
+			var chunk_variant: Variant = prop.datos.get("chunk", Vector2i.ZERO)
+			var chunk_coord := Vector2i.ZERO
+			if chunk_variant is Vector2i:
+				chunk_coord = chunk_variant
+			elif chunk_variant is Dictionary:
+				var chunk_data := chunk_variant as Dictionary
+				chunk_coord = Vector2i(int(chunk_data.get("x", 0)), int(chunk_data.get("y", 0)))
+			guardar_estado_entidad(prop, chunk_coord)
 			continue
 		if not entidad_variant is Creature:
 			continue
