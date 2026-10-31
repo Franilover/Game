@@ -520,6 +520,29 @@ func configurar_replica_red_cliente() -> void:
 		ai.set_process(false)
 
 
+func reactivar_simulacion_local_red() -> void:
+	_control_remoto_cliente = false
+	set_process(true)
+	set_physics_process(true)
+	if _movimiento != null:
+		_movimiento.set_process(true)
+		_movimiento.set_physics_process(true)
+	var ai := get_node_or_null("AIController")
+	if ai != null:
+		ai.set_process(true)
+		ai.set_physics_process(true)
+	visible = is_alive
+	if is_alive:
+		establecer_colision(true)
+		add_to_group("creatures")
+		add_to_group("interactable")
+		add_to_group("damageable")
+	else:
+		establecer_colision(false)
+		remove_from_group("interactable")
+		remove_from_group("damageable")
+
+
 func ocultar_replica_red_cliente() -> void:
 	configurar_replica_red_cliente()
 	visible = false
