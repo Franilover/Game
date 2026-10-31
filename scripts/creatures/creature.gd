@@ -584,7 +584,7 @@ func aplicar_estado_red(
 			add_to_group("damageable")
 		if ataque_activo and not _red_ataque_activo_previo:
 			iniciar_animacion_ataque()
-	_red_ataque_activo_previo = ataque_activo
+		_red_ataque_activo_previo = ataque_activo
 	else:
 		if visibilidad_previa or vida_previa:
 			remove_from_group("damageable")
@@ -593,7 +593,7 @@ func aplicar_estado_red(
 			velocity = Vector2.ZERO
 			_detener_animacion_ataque()
 			_detener_animacion_caminando()
-			_red_ataque_activo_previo = false
+		_red_ataque_activo_previo = false
 
 
 func take_damage_desde(atacante: Node, cantidad: int, origen: String = "desconocido") -> void:
