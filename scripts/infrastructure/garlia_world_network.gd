@@ -409,6 +409,12 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 		GameState.obtener_reinos_desbloqueados(),
 		_obtener_tiempo_mundo_servidor()
 	)
+	recibir_entidades_iniciales_red.rpc_id(
+		peer_id,
+		tipo_zona,
+		_crear_snapshot_criaturas_servidor(true),
+		_crear_snapshot_props_servidor(true)
+	)
 	_difundir_estado()
 	print("GarliaWorldNetwork: jugador autenticado y añadido → ", nombre_verificado, " [", peer_id, "]")
 
@@ -899,7 +905,7 @@ func _clave_prop_red(prop: WorldProp, zona: String) -> String:
 	return "%s|%d:%d|%s" % [zona, chunk.x, chunk.y, instancia]
 
 
-func _crear_snapshot_props_servidor() -> Array:
+func _crear_snapshot_props_servidor(incluir_datos: bool = false) -> Array:
 	var resultado: Array = []
 	if not is_instance_valid(_entity_manager) or not _entity_manager.has_method("obtener_entidades_activas"):
 		return resultado
@@ -925,7 +931,8 @@ func _crear_snapshot_props_servidor() -> Array:
 			chunk_coord = Vector2i(int(chunk_data.get("x", 0)), int(chunk_data.get("y", 0)))
 		registro["chunk_x"] = chunk_coord.x
 		registro["chunk_y"] = chunk_coord.y
-		registro["datos"] = prop.datos.duplicate(true)
+		if incluir_datos:
+			registro["datos"] = prop.datos.duplicate(true)
 		resultado.append(registro)
 		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
 			break
@@ -1067,7 +1074,7 @@ func _al_morir_criatura_red(criatura: Creature) -> void:
 		_tumbas_criaturas_red.erase(_tumbas_criaturas_red.keys()[0])
 
 
-func _crear_snapshot_criaturas_servidor() -> Array:
+func _crear_snapshot_criaturas_servidor(incluir_datos: bool = false) -> Array:
 	var resultado: Array = []
 	if not is_instance_valid(_entity_manager) or not _entity_manager.has_method("obtener_entidades_activas"):
 		return resultado
@@ -1094,7 +1101,8 @@ func _crear_snapshot_criaturas_servidor() -> Array:
 		registro["limite_y"] = criatura.limites_chunk.position.y
 		registro["limite_w"] = criatura.limites_chunk.size.x
 		registro["limite_h"] = criatura.limites_chunk.size.y
-		registro["datos"] = criatura.datos.duplicate(true)
+		if incluir_datos:
+			registro["datos"] = criatura.datos.duplicate(true)
 		resultado.append(registro)
 		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
 			break
@@ -1114,6 +1122,19 @@ func _difundir_estado_criaturas() -> void:
 	if _jugadores_servidor.is_empty():
 		return
 	recibir_estado_criaturas_red.rpc(_zona_actual_red, _crear_snapshot_criaturas_servidor())
+
+
+@rpc("authority", "call_remote", "reliable")
+func recibir_entidades_iniciales_red(zona: String, criaturas: Array, props: Array) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	_zona_esperada_criaturas = zona
+	_zona_esperada_props = zona
+	_estados_criaturas_pendientes = criaturas.duplicate(true)
+	_estados_props_pendientes = props.duplicate(true)
+	if zona == _zona_actual_red and is_instance_valid(_entity_manager_cliente):
+		_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
+		_aplicar_estado_props_cliente(_estados_props_pendientes)
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
