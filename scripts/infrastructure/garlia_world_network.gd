@@ -40,6 +40,7 @@ var _objetivo_posicion_local := Vector2.ZERO
 var _local_posicion_inicializada := false
 const SNAPSHOT_INTERPOLATION_SPEED := 16.0
 var _auth_pendiente: Dictionary = {}
+var _usuarios_en_entrada: Dictionary = {}
 var _sistemas_jugador_servidor: Dictionary = {}
 var _ultima_accion_servidor: Dictionary = {}
 var _ultimo_input_servidor: Dictionary = {}
@@ -296,6 +297,10 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 		rechazar_entrada_global.rpc_id(peer_id, "El mundo global aún no está disponible. Intenta de nuevo.")
 		return
 
+	if _usuarios_en_entrada.has(user_id):
+		rechazar_entrada_global.rpc_id(peer_id, "Esa cuenta ya está entrando al mundo global.")
+		return
+	_usuarios_en_entrada[user_id] = peer_id
 	var nombre_verificado := await _obtener_username_supabase(user_id, access_token)
 	if nombre_verificado.is_empty():
 		var correo_verificado := str(usuario_verificado.get("email", ""))
@@ -303,27 +308,35 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	for jugador_existente_variant in _jugadores_servidor.values():
 		var jugador_existente := jugador_existente_variant as Player
 		if is_instance_valid(jugador_existente) and str(jugador_existente.get_meta("supabase_user_id", "")) == user_id:
+			_usuarios_en_entrada.erase(user_id)
 			rechazar_entrada_global.rpc_id(peer_id, "Esa cuenta ya está conectada al mundo global.")
 			return
 	var identidad := _sanear_identidad_visual(identidad_visual, nombre_verificado)
 	var especie_id := str(identidad_visual.get("especie_id", "")).strip_edges()
 	var especie_canonica := await _obtener_especie_jugable_canonica(especie_id, access_token)
 	if especie_canonica.is_empty():
+		_usuarios_en_entrada.erase(user_id)
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo validar la especie seleccionada. Vuelve a crear tu personaje.")
 		return
 	var runtime_eterium := await _obtener_runtime_eterium(access_token)
 	if runtime_eterium.is_empty():
+		_usuarios_en_entrada.erase(user_id)
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo cargar el runtime de Eterium del mundo. Intenta entrar más tarde.")
 		return
 	var reglas_especies := await _obtener_reglas_eterium_especies(access_token)
 	if not _reglas_especies_eterium_cargadas:
+		_usuarios_en_entrada.erase(user_id)
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudieron verificar las reglas Eterium de tu especie. Intenta entrar de nuevo.")
+		return
+	if not multiplayer.get_peers().has(peer_id):
+		_usuarios_en_entrada.erase(user_id)
 		return
 	identidad["especie"] = especie_canonica
 
 	get_tree().paused = false
 	var jugador := PLAYER_SCENE.instantiate() as Player
 	if jugador == null:
+		_usuarios_en_entrada.erase(user_id)
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo crear tu personaje en el servidor.")
 		return
 	jugador.name = "JugadorRed_%d" % peer_id
@@ -359,6 +372,7 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	var separacion := Vector2(float((_jugadores_servidor.size() % 4) * 24), float(int(_jugadores_servidor.size() / 4) * 24))
 	jugador.global_position = _world_anchor.global_position + Vector2(28.0, 12.0) + separacion
 	_jugadores_servidor[peer_id] = jugador
+	_usuarios_en_entrada.erase(user_id)
 	recibir_identidad_jugador.rpc(peer_id, _crear_identidad_red(jugador))
 
 	var snapshot := _crear_snapshot(true)
@@ -1237,6 +1251,10 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		_ultima_accion_servidor.erase(peer_id)
 		_ultimo_input_servidor.erase(peer_id)
 		_reapariciones_pendientes.erase(peer_id)
+		for usuario_variant in _usuarios_en_entrada.keys():
+			if int(_usuarios_en_entrada[usuario_variant]) == peer_id:
+				_usuarios_en_entrada.erase(usuario_variant)
+				break
 		if _jugadores_servidor.is_empty() and _servidor_inicializado:
 			GlobalWorldStore.guardar_y_pausar()
 		else:
