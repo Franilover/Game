@@ -188,11 +188,11 @@ func _al_conectar_con_servidor() -> void:
 		mundo_global_rechazado.emit("La sesión no contiene credenciales válidas.")
 		GarliaMultiplayer.cerrar_partida()
 		return
-	solicitar_entrada_global.rpc_id(1, user_id, username, token)
+	solicitar_entrada_global.rpc_id(1, user_id, username, token, _obtener_identidad_visual_local())
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func solicitar_entrada_global(user_id: String, username: String, access_token: String) -> void:
+func solicitar_entrada_global(user_id: String, _username: String, access_token: String, identidad_visual: Dictionary) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado():
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
@@ -221,6 +221,7 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 	if nombre_verificado.is_empty():
 		var correo_verificado := str(usuario_verificado.get("email", ""))
 		nombre_verificado = correo_verificado.get_slice("@", 0) if "@" in correo_verificado else user_id.left(8)
+	var identidad := _sanear_identidad_visual(identidad_visual, nombre_verificado)
 
 	get_tree().paused = false
 	var jugador := PLAYER_SCENE.instantiate() as Player
@@ -228,7 +229,12 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo crear tu personaje en el servidor.")
 		return
 	jugador.name = "JugadorRed_%d" % peer_id
-	jugador.personaje_nombre = nombre_verificado.strip_edges().left(MAX_USERNAME_LENGTH)
+	jugador.personaje_nombre = str(identidad.get("nombre", nombre_verificado)).left(MAX_USERNAME_LENGTH)
+	jugador.aplicar_identidad_red(
+		jugador.personaje_nombre,
+		str(identidad.get("genero", "")),
+		identidad.get("apariencia", {}) as Dictionary
+	)
 	jugador.configurar_control_remoto_servidor()
 	jugador.configurar_dependencias(
 		null,
@@ -253,6 +259,42 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona, GameState.obtener_reinos_desbloqueados())
 	_difundir_estado()
 	print("GarliaWorldNetwork: jugador autenticado y añadido → ", nombre_verificado, " [", peer_id, "]")
+
+
+func _obtener_identidad_visual_local() -> Dictionary:
+	var nombre := str(_personaje_local.get("nombre", "")).strip_edges().left(MAX_USERNAME_LENGTH)
+	var genero := str(_personaje_local.get("genero", "")).strip_edges().left(32)
+	var apariencia_variant: Variant = _personaje_local.get("personalizacion", {})
+	var apariencia: Dictionary = apariencia_variant.duplicate(true) if apariencia_variant is Dictionary else {}
+	return {
+		"nombre": nombre,
+		"genero": genero,
+		"apariencia": apariencia
+	}
+
+
+func _sanear_identidad_visual(identidad: Dictionary, nombre_verificado: String) -> Dictionary:
+	var nombre := str(identidad.get("nombre", "")).strip_edges().left(MAX_USERNAME_LENGTH)
+	if nombre.is_empty():
+		nombre = nombre_verificado.strip_edges().left(MAX_USERNAME_LENGTH)
+	var genero := str(identidad.get("genero", "")).strip_edges().left(32)
+	var apariencia_resultado: Dictionary = {}
+	var apariencia_variant: Variant = identidad.get("apariencia", {})
+	if apariencia_variant is Dictionary:
+		var apariencia := apariencia_variant as Dictionary
+		for slot in CharacterAppearance.SLOTS:
+			var pieza_variant: Variant = apariencia.get(slot, {})
+			if not pieza_variant is Dictionary:
+				continue
+			var pieza := pieza_variant as Dictionary
+			var prefijo := str(CharacterAppearance.SLOT_DIRECTORIES.get(slot, ""))
+			var ruta := str(pieza.get("ruta", "")).strip_edges()
+			var ruta_segura := ""
+			if not prefijo.is_empty() and ruta.begins_with(prefijo) and ruta.get_extension().to_lower() in ["png", "webp"] and ResourceLoader.exists(ruta):
+				ruta_segura = ruta
+			var color := CharacterAppearance.color_a_html(pieza.get("color", "#ffffff"), Color.WHITE)
+			apariencia_resultado[slot] = {"ruta": ruta_segura, "color": color}
+	return {"nombre": nombre, "genero": genero, "apariencia": apariencia_resultado}
 
 
 func _obtener_username_supabase(user_id: String, token: String) -> String:
@@ -522,6 +564,8 @@ func _crear_snapshot() -> Array:
 		resultado.append({
 			"peer_id": peer_id,
 			"username": jugador.personaje_nombre,
+			"gender": jugador.personaje_genero,
+			"appearance": jugador.personaje_apariencia.duplicate(true),
 			"x": jugador.global_position.x,
 			"y": jugador.global_position.y,
 			"facing_x": jugador.facing.x,
@@ -581,7 +625,11 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			proxy.set_process(false)
 			_proxies_cliente[peer_id] = proxy
 		proxy.global_position = posicion
-		proxy.personaje_nombre = str(registro.get("username", proxy.personaje_nombre))
+		proxy.aplicar_identidad_red(
+			str(registro.get("username", proxy.personaje_nombre)),
+			str(registro.get("gender", "")),
+			registro.get("appearance", {}) as Dictionary
+		)
 		_actualizar_estado_jugador(proxy, registro)
 		if direccion.length_squared() > 0.01:
 			proxy.facing = direccion.normalized()
