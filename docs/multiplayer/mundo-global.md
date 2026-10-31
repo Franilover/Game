@@ -7,8 +7,8 @@ Garlia usa un solo proceso de servidor dedicado como autoridad del mundo. Los ju
 - **Transporte:** WebSocket sobre TLS (wss://). La sesión de Supabase se transmite únicamente dentro del canal cifrado.
 - **Identidad:** el servidor comprueba el bearer token con Supabase Auth y obtiene el nombre público desde la tabla perfiles.
 - **Límite actual:** 8 jugadores conectados.
-- **Movimiento:** el cliente envía dirección y estado de carrera; el servidor mueve al personaje y publica posiciones, orientación y estado vital.
-- **Acciones:** las acciones primaria y secundaria se envían al servidor. El servidor resuelve interacción contextual y combate sin arma.
+- **Movimiento:** el cliente envía dirección, carrera, sprint de Eterium y solicitud de dash; el servidor calcula el movimiento y publica posición, orientación, animación y estado vital. La identidad visual (nombre, género y capas de personalización) también se valida y replica.
+- **Acciones:** las acciones primaria y secundaria se envían al servidor. En esta fase el servidor resuelve combate desarmado y acciones contextuales que no requieran modificar inventario. El input se limita por jugador para reducir spam.
 - **Zonas:** descubrimientos y viajes se validan/ejecutan en el servidor y se anuncian a todos los clientes.
 - **Datos:** cada usuario conserva su guardado personal local. El servidor guarda por separado el estado global del mundo en user://garlia_global_world.json.
 
@@ -52,14 +52,15 @@ El archivo user://garlia_global_world.json debe residir en almacenamiento persis
 
 ## Alcance de esta primera integración
 
-Ya están conectados: servidor dedicado WSS, verificación de identidad, entrada de jugadores, movimiento autoritativo, snapshots de posición/vida/maná/resistencia, ataques sin arma e interacciones contextuales sin inventario, viajes de zona, descubrimientos verificados, guardado global y pausa cuando no quedan jugadores.
+Ya están conectados: servidor dedicado WSS, verificación de identidad, entrada de jugadores, límite de sesiones, movimiento autoritativo (andar/correr/dash/sprint de Eterium), snapshots de posición/identidad visual/animación/vida/maná/resistencia, acciones de combate sin arma, interacciones contextuales compatibles con inventario nulo, viajes de zona, descubrimientos verificados, guardado global y pausa cuando no quedan jugadores.
 
 Todavía no es una simulación global completa de todos los objetos:
 
 - El inventario, equipo, consumibles y colocación de objetos siguen en el guardado local y no tienen sincronización servidor-cliente.
 - Las criaturas, props, objetos dinámicos, sus animaciones y sus cambios de salud/muerte no se replican en un estado único entre todos los clientes. Los mundos se generan localmente desde la misma semilla, por lo que la geografía base coincide, pero el estado dinámico puede divergir.
 - El streaming del servidor sigue un centroide de jugadores; si el grupo se dispersa mucho, los chunks lejanos pueden no generarse en el servidor.
-- El movimiento usa snapshots discretos sin predicción/interpolación avanzada; en latencia alta puede verse entrecortado.
+- El movimiento y los snapshots se intercambian aproximadamente cada 50 ms (20 Hz) sobre WSS/TCP. No hay predicción local ni interpolación avanzada; la latencia alta o la pérdida de paquetes puede verse como movimiento entrecortado. El salto todavía no está integrado en el protocolo global.
+- El servidor no replica el inventario personal: equipamiento, consumibles, herramientas, recolección, drops y colocación de objetos no están sincronizados ni validados como operaciones de red. Los sistemas de interacción del jugador remoto se crean sin una instancia de inventario servidor.
 - No se ha desplegado un servidor ni configurado un dominio/certificado real.
 
 No se debe anunciar todavía como multijugador persistente terminado para público. La siguiente etapa técnica es replicar entidades y mundo dinámico desde servidor, sincronizar inventario individual con validación del servidor y ampliar el streaming para grupos dispersos.
