@@ -44,6 +44,9 @@ var _jugador_seguimiento: Node = null
 var _distancia_seguimiento: float = 24.0
 var _muerte_procesada: bool = false
 var _atacante_actual_danio: Node = null
+var _control_remoto_cliente: bool = false
+var _red_posicion_objetivo: Vector2 = Vector2.ZERO
+var _red_velocidad_objetivo: Vector2 = Vector2.ZERO
 
 var _sprite_textura_base: Texture2D = null
 var _sprite_hframes_base: int = 1
@@ -503,6 +506,48 @@ func ejecutar_muerte_simulada_visual(duracion: float = 1.0) -> void:
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.22)
 
 
+func configurar_replica_red_cliente() -> void:
+	if _control_remoto_cliente:
+		return
+	_control_remoto_cliente = true
+	if _movimiento != null:
+		_movimiento.detener()
+		_movimiento.set_physics_process(false)
+		_movimiento.set_process(false)
+	var ai := get_node_or_null("AIController")
+	if ai != null:
+		ai.set_physics_process(false)
+		ai.set_process(false)
+
+
+func aplicar_estado_red(
+	posicion: Vector2,
+	velocidad: Vector2,
+	vida: int,
+	vida_maxima: int,
+	viva: bool,
+	ataque_activo: bool = false
+) -> void:
+	configurar_replica_red_cliente()
+	_red_posicion_objetivo = posicion
+	_red_velocidad_objetivo = velocidad
+	vital_state.max_health = maxi(vida_maxima, 1)
+	vital_state.health = clampi(vida, 0, vital_state.max_health)
+	vital_state.is_alive = viva and vital_state.health > 0
+	_sync_desde_vital()
+	visible = is_alive
+	if is_alive:
+		add_to_group("damageable")
+		if ataque_activo and not _ataque_animando:
+			iniciar_animacion_ataque()
+	else:
+		remove_from_group("damageable")
+		remove_from_group("interactable")
+		velocity = Vector2.ZERO
+		_detener_animacion_ataque()
+		_detener_animacion_caminando()
+
+
 func take_damage_desde(atacante: Node, cantidad: int, origen: String = "desconocido") -> void:
 	_atacante_actual_danio = atacante if is_instance_valid(atacante) else null
 	take_damage(cantidad, origen)
@@ -887,6 +932,15 @@ func _actualizar_profundidad() -> void:
 func _physics_process(delta: float) -> void:
 	_actualizar_animacion_ataque(delta)
 	_actualizar_profundidad()
+	if _control_remoto_cliente:
+		if not is_alive:
+			velocity = Vector2.ZERO
+			return
+		var factor := 1.0 - exp(-14.0 * delta)
+		global_position = global_position.lerp(_red_posicion_objetivo, factor)
+		velocity = _red_velocidad_objetivo
+		_actualizar_animacion_caminando(delta)
+		return
 	if _siguiendo_jugador:
 		_procesar_seguimiento()
 
