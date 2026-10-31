@@ -16,6 +16,7 @@ var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
 var _runtime_prop_state_by_key: Dictionary = {}
 var _replicas_red_by_key: Dictionary = {}
+var _replicas_red_props_by_key: Dictionary = {}
 var _data_by_chunk: Dictionary = {}
 
 
@@ -176,6 +177,29 @@ func registrar_replica_red(datos: Dictionary, chunk_coord: Vector2i, instance_ke
 	criatura.configurar_chunk(chunk_coord, limites_chunk)
 	_replicas_red_by_key[instance_key] = criatura
 	return criatura
+
+
+func registrar_replica_prop_red(datos: Dictionary, chunk_coord: Vector2i, instance_key: String) -> WorldProp:
+	if instance_key.is_empty() or _entity_factory == null:
+		return null
+	var existente_variant: Variant = _replicas_red_props_by_key.get(instance_key)
+	if existente_variant is WorldProp and is_instance_valid(existente_variant):
+		return existente_variant as WorldProp
+	var prop_variant: Variant = _entity_factory.crear_prop(datos)
+	if not prop_variant is WorldProp:
+		return null
+	var prop := prop_variant as WorldProp
+	var partes_clave := instance_key.split("|")
+	var runtime_key := str(partes_clave[partes_clave.size() - 1]) if not partes_clave.is_empty() else instance_key
+	prop.set_meta("runtime_instance_key", runtime_key)
+	if not registrar(prop, chunk_coord):
+		prop.queue_free()
+		return null
+	var limite_variant: Variant = datos.get("limite_chunk", Rect2())
+	var limite := limite_variant as Rect2 if limite_variant is Rect2 else Rect2()
+	prop.configurar_chunk(chunk_coord, limite)
+	_replicas_red_props_by_key[instance_key] = prop
+	return prop
 
 
 func registrar_global(entity: Node, persistent_key: String = "") -> bool:
