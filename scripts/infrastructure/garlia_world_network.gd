@@ -499,7 +499,19 @@ func solicitar_viaje_global(destino: String) -> void:
 		zone_manager.call("entrar_mundo_abierto")
 	else:
 		zone_manager.call("entrar_reino", clave)
-	cambiar_zona_global.rpc(clave)
+	_confirmar_cambio_zona_global(clave)
+
+
+func _confirmar_cambio_zona_global(destino: String) -> void:
+	# No anunciar un destino hasta que Main haya reconstruido la zona en servidor.
+	var intentos := 0
+	while intentos < 200 and GarliaMultiplayer.es_servidor_dedicado() and not _mundo_listo:
+		await get_tree().create_timer(0.05, true, false).timeout
+		intentos += 1
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _mundo_listo:
+		return
+	cambiar_zona_global.rpc(destino)
+	_difundir_estado()
 
 
 @rpc("authority", "call_remote", "reliable")
