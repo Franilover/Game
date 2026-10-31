@@ -1051,6 +1051,10 @@ func _crear_snapshot_criaturas_servidor() -> Array:
 		var registro := _serializar_criatura_red(criatura, clave)
 		registro["chunk_x"] = criatura.chunk_coord.x
 		registro["chunk_y"] = criatura.chunk_coord.y
+		registro["limite_x"] = criatura.limites_chunk.position.x
+		registro["limite_y"] = criatura.limites_chunk.position.y
+		registro["limite_w"] = criatura.limites_chunk.size.x
+		registro["limite_h"] = criatura.limites_chunk.size.y
 		registro["datos"] = criatura.datos.duplicate(true)
 		resultado.append(registro)
 		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
@@ -1125,7 +1129,11 @@ func _aplicar_estado_criaturas_cliente(registros: Array) -> void:
 		if not datos_variant is Dictionary:
 			continue
 		var chunk_coord := Vector2i(int(registro.get("chunk_x", 0)), int(registro.get("chunk_y", 0)))
-		_entity_manager_cliente.call("registrar_replica_red", (datos_variant as Dictionary).duplicate(true), chunk_coord, clave)
+		var limites_chunk := Rect2(
+			Vector2(float(registro.get("limite_x", 0.0)), float(registro.get("limite_y", 0.0))),
+			Vector2(float(registro.get("limite_w", 0.0)), float(registro.get("limite_h", 0.0)))
+		)
+		_entity_manager_cliente.call("registrar_replica_red", (datos_variant as Dictionary).duplicate(true), chunk_coord, clave, limites_chunk)
 	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
 		if not entidad_variant is Creature:
 			continue
