@@ -218,6 +218,8 @@ func _detectar_reinos_descubiertos() -> void:
 		if escena.is_empty() or not ResourceLoader.exists(escena):
 			continue
 		GameState.desbloquear_reino(clave)
+		if GarliaWorldNetwork.es_cliente_en_mundo_global():
+			GarliaWorldNetwork.notificar_reino_descubierto(clave)
 
 
 func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
