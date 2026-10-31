@@ -756,7 +756,7 @@ func _abrir_multijugador() -> void:
 	multiplayer_overlay.visible = true
 
 	multiplayer_status.text = (
-		"Listo para crear o unirse a una partida."
+		"Mundo global · introduce el dominio del servidor."
 	)
 
 	host_button.visible = false
