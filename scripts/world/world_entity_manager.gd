@@ -15,6 +15,7 @@ var _persistent_by_key: Dictionary = {}
 var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
 var _runtime_prop_state_by_key: Dictionary = {}
+var _replicas_red_by_key: Dictionary = {}
 var _data_by_chunk: Dictionary = {}
 
 
@@ -154,6 +155,26 @@ func registrar(
 	_by_chunk[chunk_coord] = bucket
 
 	return true
+
+
+func registrar_replica_red(datos: Dictionary, chunk_coord: Vector2i, instance_key: String) -> Creature:
+	if instance_key.is_empty() or _entity_factory == null:
+		return null
+	var existente_variant: Variant = _replicas_red_by_key.get(instance_key)
+	if existente_variant is Creature and is_instance_valid(existente_variant):
+		return existente_variant as Creature
+	var criatura_variant: Variant = _entity_factory.crear_criatura(datos)
+	if not criatura_variant is Creature:
+		return null
+	var criatura := criatura_variant as Creature
+	criatura.set_meta("runtime_instance_key", instance_key)
+	criatura.configurar_chunk(chunk_coord, Rect2(Vector2.ZERO, Vector2.ZERO))
+	if not registrar(criatura, chunk_coord):
+		criatura.queue_free()
+		return null
+	_replicas_red_by_key[instance_key] = criatura
+	return criatura
+	return criatura
 
 
 func registrar_global(entity: Node, persistent_key: String = "") -> bool:
