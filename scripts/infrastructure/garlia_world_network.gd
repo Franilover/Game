@@ -25,7 +25,6 @@ var _zona_actual_red := ""
 var _zona_esperada_criaturas := ""
 var _estados_criaturas_pendientes: Array = []
 var _tumbas_criaturas_red: Dictionary = {}
-var _criaturas_conectadas_red: Dictionary = {}
 var _entity_snapshot_elapsed := 0.0
 const ENTITY_SNAPSHOT_INTERVAL := 0.20
 const MAX_ENTITY_SNAPSHOT_RECORDS := 512
@@ -123,7 +122,6 @@ func inicializar_mundo_servidor(
 	_zona_actual_red = zona_nueva
 	if cambio_zona:
 		_tumbas_criaturas_red.clear()
-		_criaturas_conectadas_red.clear()
 	_servidor_inicializado = true
 	_mundo_listo = true
 	GlobalWorldStore.configurar_runtime(main)
@@ -799,18 +797,19 @@ func _serializar_criatura_red(criatura: Creature, clave: String) -> Dictionary:
 	}
 
 
-func _registrar_criatura_red(criatura: Creature, clave: String) -> void:
-	var id_instancia := criatura.get_instance_id()
-	if str(_criaturas_conectadas_red.get(id_instancia, "")) == clave:
-		return
-	_criaturas_conectadas_red[id_instancia] = clave
-	var callback := Callable(self, "_al_morir_criatura_red").bind(clave, criatura)
+func _registrar_criatura_red(criatura: Creature, _clave: String) -> void:
+	# Conectar al nodo, no a la clave: una criatura puede volver al pool y
+	# materializarse después con otra clave de instancia.
+	var callback := Callable(self, "_al_morir_criatura_red").bind(criatura)
 	if not criatura.died.is_connected(callback):
-		criatura.died.connect(callback, CONNECT_ONE_SHOT)
+		criatura.died.connect(callback)
 
 
-func _al_morir_criatura_red(clave: String, criatura: Creature) -> void:
+func _al_morir_criatura_red(criatura: Creature) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado() or not is_instance_valid(criatura):
+		return
+	var clave := _clave_criatura_red(criatura, _zona_actual_red)
+	if clave.is_empty():
 		return
 	_tumbas_criaturas_red[clave] = _serializar_criatura_red(criatura, clave)
 	_tumbas_criaturas_red[clave]["is_alive"] = false
@@ -1157,6 +1156,10 @@ func _al_conexion_fallida() -> void:
 	_cliente_global_activado = false
 	_dash_local_pendiente = false
 	_salto_local_pendiente = false
+	_restaurar_simulacion_criaturas_locales()
+	_entity_manager_cliente = null
+	_estados_criaturas_pendientes.clear()
+	_zona_esperada_criaturas = ""
 	_proxies_cliente.clear()
 	_objetivos_posicion_proxy.clear()
 	_identidades_remotas_cliente.clear()
@@ -1172,6 +1175,10 @@ func _al_servidor_desconectado() -> void:
 	_cliente_global_activado = false
 	_dash_local_pendiente = false
 	_salto_local_pendiente = false
+	_restaurar_simulacion_criaturas_locales()
+	_entity_manager_cliente = null
+	_estados_criaturas_pendientes.clear()
+	_zona_esperada_criaturas = ""
 	for proxy_variant in _proxies_cliente.values():
 		var proxy := proxy_variant as Player
 		if is_instance_valid(proxy):
