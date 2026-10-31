@@ -955,7 +955,7 @@ func _conectado_a_partida() -> void:
 	print("StartMenu: transporte ENet conectado; esperando autorización del mundo global.")
 
 
-func _al_mundo_global_listo(semilla: int) -> void:
+func _al_mundo_global_listo(semilla: int, tipo_zona: String) -> void:
 	# La creación de personaje oculta el overlay antes de conectar; el handshake
 	# debe poder completar la entrada aunque el panel ya no esté visible.
 	multiplayer_status.text = "Entrando al mundo compartido..."
@@ -966,10 +966,16 @@ func _al_mundo_global_listo(semilla: int) -> void:
 			break
 	if id_guardado.is_empty():
 		id_guardado = GameState.crear_partida("Mundo compartido global", str(semilla), _config_personaje_multijugador)
-	if id_guardado.is_empty() or not GameState.iniciar_partida(id_guardado):
+	if id_guardado.is_empty() or not GameState.establecer_zona_mundo_global(id_guardado, tipo_zona):
 		host_button.disabled = false
 		join_button.disabled = false
-		multiplayer_status.text = "No se pudo preparar tu guardado local para el mundo compartido."
+		multiplayer_status.text = "No se pudo preparar la zona global en tu guardado local."
+		GarliaMultiplayer.cerrar_partida()
+		return
+	if not GameState.iniciar_partida(id_guardado):
+		host_button.disabled = false
+		join_button.disabled = false
+		multiplayer_status.text = "No se pudo abrir tu guardado del mundo compartido."
 		GarliaMultiplayer.cerrar_partida()
 		return
 	GameState.establecer_semilla_mundo(semilla)
