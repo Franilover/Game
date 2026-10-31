@@ -154,8 +154,9 @@ func inicializar_mundo_servidor(
 		var sistemas: Dictionary = _sistemas_jugador_servidor.get(peer_id, {})
 		var interaccion: InteractionSystem = sistemas.get("interaccion") as InteractionSystem
 		if is_instance_valid(interaccion):
-			var world_items: GarliaWorldItems = main.get_node_or_null("Systems/WorldItems") as GarliaWorldItems
-			interaccion.configurar(jugador_existente, null, world_items, jugador_existente.input_gate, _entity_manager as WorldEntityManager)
+			# El WorldItems del runtime pertenece al jugador ancla local de Main.
+			# Los jugadores remotos no comparten ese inventario tras viajar de zona.
+			interaccion.configurar(jugador_existente, null, null, jugador_existente.input_gate, _entity_manager as WorldEntityManager)
 		var combate: CombatSystem = sistemas.get("combate") as CombatSystem
 		if is_instance_valid(combate):
 			combate.configurar(jugador_existente, null, _world_context as WorldContext, main.get_node_or_null("CombatProjectiles"), GameState)
