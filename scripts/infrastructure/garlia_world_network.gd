@@ -199,6 +199,7 @@ func _process(delta: float) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado():
 		if not _servidor_inicializado or get_tree().paused:
 			return
+		_limpiar_inputs_expirados()
 		_revisar_reapariciones()
 		_snapshot_elapsed += delta
 		if _snapshot_elapsed >= SNAPSHOT_INTERVAL:
@@ -858,6 +859,18 @@ func _actualizar_interpolacion_clientes(delta: float) -> void:
 			proxy.global_position = proxy.global_position.lerp(objetivo, factor)
 
 
+func _limpiar_inputs_expirados() -> void:
+	var ahora := Time.get_ticks_msec()
+	for peer_variant in _ultimo_input_servidor.keys():
+		var peer_id := int(peer_variant)
+		if ahora - int(_ultimo_input_servidor[peer_id]) <= 300:
+			continue
+		var jugador: Player = _jugadores_servidor.get(peer_id) as Player
+		if is_instance_valid(jugador):
+			jugador.establecer_input_red(Vector2.ZERO, false, false, false)
+		_ultimo_input_servidor.erase(peer_id)
+
+
 func _revisar_reapariciones() -> void:
 	for peer_variant in _jugadores_servidor.keys():
 		var peer_id := int(peer_variant)
@@ -887,6 +900,8 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 	var estaba_vivo := bool(jugador.is_alive)
 	var vital := jugador.vital_state as VitalState
 	if is_instance_valid(vital):
+		vital.max_health = maxi(int(registro.get("max_health", vital.max_health)), 1)
+		vital.max_mana = maxi(int(registro.get("max_mana", vital.max_mana)), 1)
 		vital.health = clampi(int(registro.get("health", vital.health)), 0, vital.max_health)
 		vital.mana = clampi(int(registro.get("mana", vital.mana)), 0, vital.max_mana)
 		vital.is_alive = bool(registro.get("is_alive", vital.is_alive)) and vital.health > 0
@@ -905,6 +920,7 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 			stamina_controller.call("establecer_actual", clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(jugador.max_stamina)))
 		else:
 			jugador.stamina = clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(jugador.max_stamina))
+		jugador.max_stamina = maxf(float(registro.get("max_stamina", jugador.max_stamina)), 0.0)
 	if jugador.has_signal("health_changed"):
 		jugador.health_changed.emit(int(jugador.health), int(jugador.max_health))
 	if jugador.has_signal("mana_changed"):
@@ -922,6 +938,10 @@ func _al_servidor_desconectado() -> void:
 		if is_instance_valid(proxy):
 			proxy.queue_free()
 	_proxies_cliente.clear()
+	_objetivos_posicion_proxy.clear()
+	_local_posicion_inicializada = false
+	_dash_local_pendiente = false
+	_salto_local_pendiente = false
 	_estado_inicial_pendiente.clear()
 	_peer_local_id = 0
 	if is_instance_valid(_local_player):
