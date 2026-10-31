@@ -837,10 +837,9 @@ func _buscar_jugador_reactivo_bosque() -> Node2D:
 		return null
 	var mejor: Node2D = null
 	var mejor_distancia := INF
-	for candidato_variant in get_tree().get_nodes_in_group("player"):
-		if not candidato_variant is Node2D:
+	for candidato in _obtener_candidatos_entidad():
+		if candidato != jugador and not candidato.is_in_group("player"):
 			continue
-		var candidato := candidato_variant as Node2D
 		if not is_instance_valid(candidato) or not candidato.is_inside_tree():
 			continue
 		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
