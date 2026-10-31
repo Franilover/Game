@@ -615,8 +615,9 @@ func _actualizar_profundidad() -> void:
 
 func _ready() -> void:
 	add_to_group("world_props")
-	if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
-		_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
+	if is_instance_valid(_world_items):
+		if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
+			_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
 	_actualizar_profundidad()
 
 
