@@ -1,0 +1,130 @@
+extends Node
+## Persistencia exclusiva del mundo compartido.
+## Nunca guarda vida, inventario, personaje ni progreso individual de jugadores.
+
+const SAVE_PATH := "user://garlia_global_world.json"
+const SAVE_INTERVAL := 15.0
+const PERSONAL_FLAGS := [
+	"personaje",
+	"personaje_admin",
+	"inventario_estado",
+	"misiones_estado",
+	"proceso_ium_equipado",
+	"garumis_vinculados",
+	"garumis_amigos",
+	"jugador",
+	"player",
+	"player_state"
+]
+
+var _elapsed_save: float = 0.0
+var _main: Node = null
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+func configurar_runtime(main: Node) -> void:
+	_main = main
+
+
+func restaurar_en_game_state(game_state: Node) -> bool:
+	if game_state == null or not is_instance_valid(game_state):
+		return false
+	if not FileAccess.file_exists(SAVE_PATH):
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		game_state.world_state.world_seed = rng.randi()
+		game_state.world_state.world_seed_valida = true
+		print("GlobalWorldStore: se creó la semilla inicial del mundo global.")
+		return false
+
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		push_error("GlobalWorldStore: no se pudo abrir el guardado global.")
+		return false
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not parsed is Dictionary:
+		push_error("GlobalWorldStore: el archivo del mundo global no es válido.")
+		return false
+
+	var data := parsed as Dictionary
+	game_state.world_state.world_seed = int(data.get("world_seed", 0))
+	game_state.world_state.world_seed_valida = bool(data.get("world_seed_valida", false))
+	game_state.world_state.elapsed_time = float(data.get("elapsed_time", 0.0))
+	var flags: Variant = data.get("flags", {})
+	if flags is Dictionary:
+		game_state.world_state.flags = (flags as Dictionary).duplicate(true)
+	else:
+		game_state.world_state.flags = {}
+	print("GlobalWorldStore: mundo global restaurado. Semilla: ", game_state.world_state.world_seed)
+	return true
+
+
+func guardar_desde_runtime() -> bool:
+	var game_state: Node = get_node_or_null("/root/GameState")
+	if game_state == null:
+		return false
+
+	if is_instance_valid(_main):
+		var zone_manager := _main.get_node_or_null("World/ZoneManager")
+		if is_instance_valid(zone_manager):
+			game_state.world_state.flags["zona_actual_tipo"] = str(zone_manager.call("obtener_tipo_actual"))
+			var zone: Node = zone_manager.call("obtener_zona_actual") as Node
+			if is_instance_valid(zone) and zone.has_method("obtener_estado_guardado"):
+				game_state.world_state.flags["estado_zona_actual"] = zone.call("obtener_estado_guardado").duplicate(true)
+			var atmosphere: Node = _main.get_node_or_null("Systems/WorldAtmosphere")
+			if is_instance_valid(atmosphere) and atmosphere.has_method("obtener_estado_guardado"):
+				game_state.world_state.flags["tiempo_mundo"] = atmosphere.call("obtener_estado_guardado").duplicate(true)
+
+	var flags: Dictionary = game_state.world_state.flags.duplicate(true)
+	for key in PERSONAL_FLAGS:
+		flags.erase(key)
+
+	var data := {
+		"version": 1,
+		"world_seed": int(game_state.world_state.world_seed),
+		"world_seed_valida": bool(game_state.world_state.world_seed_valida),
+		"elapsed_time": float(game_state.world_state.elapsed_time),
+		"flags": flags,
+		"saved_at": Time.get_datetime_string_from_system(true)
+	}
+	var temporary_path := SAVE_PATH + ".tmp"
+	var file := FileAccess.open(temporary_path, FileAccess.WRITE)
+	if file == null:
+		push_error("GlobalWorldStore: no se pudo escribir el guardado temporal.")
+		return false
+	file.store_string(JSON.stringify(data))
+	file.flush()
+	file.close()
+
+	var absolute_temp := ProjectSettings.globalize_path(temporary_path)
+	var absolute_final := ProjectSettings.globalize_path(SAVE_PATH)
+	var error := DirAccess.rename_absolute(absolute_temp, absolute_final)
+	if error != OK:
+		DirAccess.remove_absolute(absolute_final)
+		error = DirAccess.rename_absolute(absolute_temp, absolute_final)
+	if error != OK:
+		push_error("GlobalWorldStore: no se pudo publicar el guardado global. Error: " + str(error))
+		return false
+	return true
+
+
+func _process(delta: float) -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado():
+		return
+	if GarliaMultiplayer.obtener_cantidad_jugadores_remotos() <= 0:
+		return
+	_elapsed_save += delta
+	if _elapsed_save < SAVE_INTERVAL:
+		return
+	_elapsed_save = 0.0
+	guardar_desde_runtime()
+
+
+func guardar_y_pausar() -> void:
+	guardar_desde_runtime()
+	get_tree().paused = true
+	print("GlobalWorldStore: no quedan jugadores; mundo guardado y pausado.")
