@@ -198,6 +198,9 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id <= 1 or _auth_pendiente.has(peer_id) or _jugadores_servidor.has(peer_id):
 		return
+	if _jugadores_servidor.size() + _auth_pendiente.size() >= GarliaMultiplayer.MAX_PLAYERS:
+		rechazar_entrada_global.rpc_id(peer_id, "El mundo global alcanzó su límite de jugadores.")
+		return
 	_auth_pendiente[peer_id] = true
 
 	var usuario_verificado := await _validar_token_supabase(access_token)
@@ -214,13 +217,18 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 	if not _mundo_listo or not multiplayer.get_peers().has(peer_id):
 		return
 
+	var nombre_verificado := await _obtener_username_supabase(user_id, access_token)
+	if nombre_verificado.is_empty():
+		var correo_verificado := str(usuario_verificado.get("email", ""))
+		nombre_verificado = correo_verificado.get_slice("@", 0) if "@" in correo_verificado else user_id.left(8)
+
 	get_tree().paused = false
 	var jugador := PLAYER_SCENE.instantiate() as Player
 	if jugador == null:
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo crear tu personaje en el servidor.")
 		return
 	jugador.name = "JugadorRed_%d" % peer_id
-	jugador.personaje_nombre = username.strip_edges().left(MAX_USERNAME_LENGTH)
+	jugador.personaje_nombre = nombre_verificado.strip_edges().left(MAX_USERNAME_LENGTH)
 	jugador.configurar_control_remoto_servidor()
 	jugador.configurar_dependencias(
 		null,
@@ -244,7 +252,36 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 	var tipo_zona := str(zone_manager.call("obtener_tipo_actual")) if is_instance_valid(zone_manager) else "mundo_abierto"
 	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona, GameState.obtener_reinos_desbloqueados())
 	_difundir_estado()
-	print("GarliaWorldNetwork: jugador autenticado y añadido → ", username, " [", peer_id, "]")
+	print("GarliaWorldNetwork: jugador autenticado y añadido → ", nombre_verificado, " [", peer_id, "]")
+
+
+func _obtener_username_supabase(user_id: String, token: String) -> String:
+	if user_id.is_empty() or token.is_empty():
+		return ""
+	var request := HTTPRequest.new()
+	request.timeout = 8.0
+	request.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(request)
+	var url := GarliaAuth.SUPABASE_URL + "/rest/v1/perfiles?select=username&id=eq." + user_id + "&limit=1"
+	var headers := PackedStringArray([
+		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
+		"Authorization: Bearer " + token
+	])
+	var error := request.request(url, headers, HTTPClient.METHOD_GET)
+	if error != OK:
+		request.queue_free()
+		return ""
+	var response: Array = await request.request_completed
+	request.queue_free()
+	if int(response[0]) != HTTPRequest.RESULT_SUCCESS or int(response[1]) < 200 or int(response[1]) >= 300:
+		return ""
+	var parsed: Variant = JSON.parse_string(PackedByteArray(response[3]).get_string_from_utf8())
+	if not parsed is Array or (parsed as Array).is_empty():
+		return ""
+	var profile: Variant = (parsed as Array)[0]
+	if profile is Dictionary:
+		return str((profile as Dictionary).get("username", "")).strip_edges()
+	return ""
 
 
 func _validar_token_supabase(token: String) -> Dictionary:
