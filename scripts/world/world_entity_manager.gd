@@ -416,9 +416,10 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	# diferentes. La especie es única por chunk en los spawns naturales.
 	# No se crea alias para personajes de reinos, que sí pueden repetirse.
 	if not instance_key.begins_with("personaje:") and instance_key != criatura_id:
+		# La instancia natural más reciente de esa especie en el chunk actualiza
+		# el alias usado por el materializador DATA.
 		var key_por_especie := _runtime_key(chunk_coord, criatura_id)
-		if not _runtime_state_by_key.has(key_por_especie):
-			_runtime_state_by_key[key_por_especie] = datos_criatura.duplicate(true)
+		_runtime_state_by_key[key_por_especie] = datos_criatura.duplicate(true)
 	var registro_criatura := datos_criatura.duplicate(true)
 	registro_criatura["runtime_instance_key"] = instance_key
 	guardar_dato_chunk(chunk_coord, "criaturas", registro_criatura)
