@@ -727,6 +727,8 @@ func registrar_descubrimiento_global(clave: String) -> void:
 	if limpia.is_empty():
 		return
 	var jugador: Player = _jugadores_servidor[peer_id] as Player
+	if not is_instance_valid(jugador) or not jugador.is_alive:
+		return
 	var presentes: Array = _world_context.call("get_reinos_at_position", jugador.global_position)
 	var verificado := false
 	for reino_variant in presentes:
@@ -734,6 +736,8 @@ func registrar_descubrimiento_global(clave: String) -> void:
 			verificado = true
 			break
 	if not verificado:
+		return
+	if bool(GameState.obtener_reinos_desbloqueados().get(limpia, false)):
 		return
 	GameState.desbloquear_reino(limpia)
 	recibir_reinos_globales.rpc(GameState.obtener_reinos_desbloqueados())
