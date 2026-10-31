@@ -692,6 +692,7 @@ func solicitar_viaje_global(destino: String) -> void:
 	var destino_actual := "mundo_abierto" if clave == "mundo_abierto" else "reino:" + clave
 	if zona_actual == destino_actual or (clave == "torres" and zona_actual == "reino_torres"):
 		return
+	GlobalWorldStore.guardar_desde_runtime()
 	_mundo_listo = false
 	if clave == "mundo_abierto":
 		zone_manager.call("entrar_mundo_abierto")
