@@ -34,6 +34,8 @@ var _sistemas_jugador_servidor: Dictionary = {}
 var _ultima_accion_servidor: Dictionary = {}
 var _ultimo_input_servidor: Dictionary = {}
 var _reapariciones_pendientes: Dictionary = {}
+var _eterium_runtime_global: Dictionary = {}
+var _reglas_especies_eterium_global: Array = []
 var _personaje_local: Dictionary = {}
 var _estado_inicial_pendiente: Array = []
 var _peer_local_id := 0
@@ -264,6 +266,17 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 			rechazar_entrada_global.rpc_id(peer_id, "Esa cuenta ya está conectada al mundo global.")
 			return
 	var identidad := _sanear_identidad_visual(identidad_visual, nombre_verificado)
+	var especie_id := str(identidad_visual.get("especie_id", "")).strip_edges()
+	var especie_canonica := await _obtener_especie_jugable_canonica(especie_id)
+	if especie_canonica.is_empty():
+		rechazar_entrada_global.rpc_id(peer_id, "No se pudo validar la especie seleccionada. Vuelve a crear tu personaje.")
+		return
+	var runtime_eterium := await _obtener_runtime_eterium(access_token)
+	if runtime_eterium.is_empty():
+		rechazar_entrada_global.rpc_id(peer_id, "No se pudo cargar el runtime de Eterium del mundo. Intenta entrar más tarde.")
+		return
+	var reglas_especies := await _obtener_reglas_eterium_especies(access_token)
+	identidad["especie"] = especie_canonica
 
 	get_tree().paused = false
 	var jugador := PLAYER_SCENE.instantiate() as Player
@@ -275,7 +288,8 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	jugador.aplicar_identidad_red(
 		jugador.personaje_nombre,
 		str(identidad.get("genero", "")),
-		identidad.get("apariencia", {}) as Dictionary
+		identidad.get("apariencia", {}) as Dictionary,
+		especie_canonica
 	)
 	jugador.configurar_control_remoto_servidor()
 	jugador.configurar_dependencias(
@@ -291,8 +305,10 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	jugador.aplicar_identidad_red(
 		str(identidad.get("nombre", nombre_verificado)),
 		str(identidad.get("genero", "")),
-		identidad.get("apariencia", {}) as Dictionary
+		identidad.get("apariencia", {}) as Dictionary,
+		especie_canonica
 	)
+	jugador.aplicar_runtime_eterium_red(runtime_eterium, reglas_especies)
 	_crear_sistemas_jugador_servidor(peer_id, jugador)
 	var camara_jugador := jugador.get_node_or_null("Camera2D") as Camera2D
 	if is_instance_valid(camara_jugador):
@@ -314,10 +330,13 @@ func _obtener_identidad_visual_local() -> Dictionary:
 	var genero := str(_personaje_local.get("genero", "")).strip_edges().left(32)
 	var apariencia_variant: Variant = _personaje_local.get("personalizacion", {})
 	var apariencia: Dictionary = apariencia_variant.duplicate(true) if apariencia_variant is Dictionary else {}
+	var especie_variant: Variant = _personaje_local.get("especie", {})
+	var especie: Dictionary = especie_variant as Dictionary if especie_variant is Dictionary else {}
 	return {
 		"nombre": nombre,
 		"genero": genero,
-		"apariencia": apariencia
+		"apariencia": apariencia,
+		"especie_id": str(especie.get("id", "")).strip_edges()
 	}
 
 
@@ -343,6 +362,88 @@ func _sanear_identidad_visual(identidad: Dictionary, nombre_verificado: String) 
 			var color := CharacterAppearance.color_a_html(pieza.get("color", "#ffffff"), Color.WHITE)
 			apariencia_resultado[slot] = {"ruta": ruta_segura, "color": color}
 	return {"nombre": nombre, "genero": genero, "apariencia": apariencia_resultado}
+
+
+func _obtener_especie_jugable_canonica(especie_id: String) -> Dictionary:
+	if especie_id.is_empty() or not is_instance_valid(_supabase_client):
+		return {}
+	var especies: Array = _supabase_client.obtener_especies_jugables()
+	if especies.is_empty():
+		_supabase_client.cargar_especies_jugables()
+		for _intento in range(40):
+			await get_tree().create_timer(0.2, true, false).timeout
+			especies = _supabase_client.obtener_especies_jugables()
+			if not especies.is_empty():
+				break
+	for especie_variant in especies:
+		if not especie_variant is Dictionary:
+			continue
+		var especie := especie_variant as Dictionary
+		if str(especie.get("id", "")).strip_edges() == especie_id:
+			return especie.duplicate(true)
+	return {}
+
+
+func _obtener_runtime_eterium(token: String) -> Dictionary:
+	if not _eterium_runtime_global.is_empty():
+		return _eterium_runtime_global.duplicate(true)
+	var request := HTTPRequest.new()
+	request.timeout = 15.0
+	request.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(request)
+	var headers := PackedStringArray([
+		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
+		"Authorization: Bearer " + token,
+		"Content-Type: application/json"
+	])
+	var url := GarliaAuth.SUPABASE_URL + "/rest/v1/rpc/get_eterium_runtime_v1"
+	var error := request.request(url, headers, HTTPClient.METHOD_POST, "{}")
+	if error != OK:
+		request.queue_free()
+		return {}
+	var response: Array = await request.request_completed
+	request.queue_free()
+	if int(response[0]) != HTTPRequest.RESULT_SUCCESS or int(response[1]) < 200 or int(response[1]) >= 300:
+		push_warning("GarliaWorldNetwork: no se pudo obtener Eterium runtime para el servidor.")
+		return {}
+	var parsed: Variant = JSON.parse_string(PackedByteArray(response[3]).get_string_from_utf8())
+	if not parsed is Dictionary:
+		return {}
+	var datos := parsed as Dictionary
+	if not datos.get("reglas", {}) is Dictionary or not datos.get("organismos", []) is Array:
+		return {}
+	_eterium_runtime_global = datos.duplicate(true)
+	return _eterium_runtime_global.duplicate(true)
+
+
+func _obtener_reglas_eterium_especies(token: String) -> Array:
+	if not _reglas_especies_eterium_global.is_empty():
+		return _reglas_especies_eterium_global.duplicate(true)
+	var request := HTTPRequest.new()
+	request.timeout = 12.0
+	request.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(request)
+	var headers := PackedStringArray([
+		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
+		"Authorization: Bearer " + token
+	])
+	var url := GarliaAuth.SUPABASE_URL + "/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,eterium_inicial,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
+	var error := request.request(url, headers, HTTPClient.METHOD_GET)
+	if error != OK:
+		request.queue_free()
+		return []
+	var response: Array = await request.request_completed
+	request.queue_free()
+	if int(response[0]) != HTTPRequest.RESULT_SUCCESS or int(response[1]) < 200 or int(response[1]) >= 300:
+		push_warning("GarliaWorldNetwork: no se pudieron cargar reglas Eterium de especie.")
+		return []
+	var parsed: Variant = JSON.parse_string(PackedByteArray(response[3]).get_string_from_utf8())
+	if not parsed is Array:
+		return []
+	for regla_variant in parsed as Array:
+		if regla_variant is Dictionary:
+			_reglas_especies_eterium_global.append((regla_variant as Dictionary).duplicate(true))
+	return _reglas_especies_eterium_global.duplicate(true)
 
 
 func _obtener_username_supabase(user_id: String, token: String) -> String:
@@ -636,6 +737,7 @@ func _crear_snapshot() -> Array:
 			"username": jugador.personaje_nombre,
 			"gender": jugador.personaje_genero,
 			"appearance": jugador.personaje_apariencia.duplicate(true),
+			"species": jugador.personaje_especie.duplicate(true),
 			"x": jugador.global_position.x,
 			"y": jugador.global_position.y,
 			"facing_x": jugador.facing.x,
@@ -679,6 +781,12 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 				if direccion.length_squared() > 0.01:
 					_local_player.facing = direccion.normalized()
 					_local_player.call("_update_dir_marker")
+				_local_player.aplicar_identidad_red(
+					str(registro.get("username", _local_player.personaje_nombre)),
+					str(registro.get("gender", "")),
+					registro.get("appearance", {}) as Dictionary,
+					registro.get("species", {}) as Dictionary
+				)
 				_actualizar_estado_jugador(_local_player, registro)
 			continue
 		var proxy: Player = _proxies_cliente.get(peer_id) as Player
@@ -712,7 +820,8 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 		proxy.aplicar_identidad_red(
 			str(registro.get("username", proxy.personaje_nombre)),
 			str(registro.get("gender", "")),
-			registro.get("appearance", {}) as Dictionary
+			registro.get("appearance", {}) as Dictionary,
+			registro.get("species", {}) as Dictionary
 		)
 		_actualizar_estado_jugador(proxy, registro)
 		if direccion.length_squared() > 0.01:
