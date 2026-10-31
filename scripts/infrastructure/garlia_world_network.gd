@@ -152,6 +152,8 @@ func configurar_mundo_cliente(main: Node, entities: Node2D, local_player: Player
 	_main = main
 	_entities = entities
 	_local_player = local_player
+	_local_posicion_inicializada = false
+	_objetivos_posicion_proxy.clear()
 	_local_player.visible = true
 	_local_player.set_physics_process(true)
 	if not _estado_inicial_pendiente.is_empty():
@@ -914,13 +916,15 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 	if jugador == _local_player and jugador.is_alive and not estaba_vivo:
 		jugador.visible = true
 		jugador.set_physics_process(true)
+	jugador.max_stamina = clampf(float(registro.get("max_stamina", jugador.max_stamina)), 1.0, 5.0)
 	if jugador.get("stamina_controller") != null:
 		var stamina_controller: Variant = jugador.get("stamina_controller")
+		if stamina_controller.has_method("establecer_maximo"):
+			stamina_controller.call("establecer_maximo", jugador.max_stamina)
 		if stamina_controller.has_method("establecer_actual"):
-			stamina_controller.call("establecer_actual", clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(jugador.max_stamina)))
+			stamina_controller.call("establecer_actual", clampf(float(registro.get("stamina", jugador.stamina)), 0.0, jugador.max_stamina))
 		else:
-			jugador.stamina = clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(jugador.max_stamina))
-		jugador.max_stamina = maxf(float(registro.get("max_stamina", jugador.max_stamina)), 0.0)
+			jugador.stamina = clampf(float(registro.get("stamina", jugador.stamina)), 0.0, jugador.max_stamina)
 	if jugador.has_signal("health_changed"):
 		jugador.health_changed.emit(int(jugador.health), int(jugador.max_health))
 	if jugador.has_signal("mana_changed"):
