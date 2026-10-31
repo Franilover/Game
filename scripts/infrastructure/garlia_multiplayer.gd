@@ -102,6 +102,10 @@ func es_servidor_dedicado() -> bool:
 
 
 func _leer_argumento_servidor() -> void:
+	iniciar_servidor_dedicado_desde_argumentos()
+
+
+func iniciar_servidor_dedicado_desde_argumentos() -> bool:
 	var argumentos := OS.get_cmdline_user_args()
 	var activar := false
 	var puerto := DEFAULT_PORT
@@ -116,8 +120,11 @@ func _leer_argumento_servidor() -> void:
 			_tls_cert_path = argumento.trim_prefix("--tls-cert=")
 		elif argumento.begins_with("--tls-key="):
 			_tls_key_path = argumento.trim_prefix("--tls-key=")
-	if activar:
-		iniciar_servidor_dedicado(puerto)
+	if not activar:
+		return false
+	if es_servidor_dedicado():
+		return true
+	return iniciar_servidor_dedicado(puerto)
 
 
 func puede_usar_multijugador() -> bool:
