@@ -81,6 +81,9 @@ func crear_criatura(data: Dictionary) -> Creature:
 	)
 	node.configurar(data)
 	node.activar_como_proxy()
+	if GarliaWorldNetwork.es_cliente_en_mundo_global():
+		if not (node is Garumi and (node as Garumi).esta_vinculado()):
+			node.ocultar_replica_red_cliente()
 	return node
 
 
