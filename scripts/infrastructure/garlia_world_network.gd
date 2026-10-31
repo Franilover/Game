@@ -27,6 +27,8 @@ var _estados_criaturas_pendientes: Array = []
 var _estados_props_pendientes: Array = []
 var _zona_esperada_props := ""
 var _tumbas_criaturas_red: Dictionary = {}
+var _definiciones_criaturas_red: Dictionary = {}
+var _definiciones_props_red: Dictionary = {}
 var _entity_snapshot_elapsed := 0.0
 var _entity_client_apply_elapsed := 0.0
 const ENTITY_SNAPSHOT_INTERVAL := 0.10
@@ -942,6 +944,36 @@ func _crear_snapshot_props_servidor(incluir_datos: bool = false) -> Array:
 func _difundir_estado_props() -> void:
 	if _jugadores_servidor.is_empty():
 		return
+	var nuevos: Array = []
+	if is_instance_valid(_entity_manager):
+		for entidad_variant in _entity_manager.call("obtener_entidades_activas"):
+			if not entidad_variant is WorldProp:
+				continue
+			var prop := entidad_variant as WorldProp
+			if not is_instance_valid(prop):
+				continue
+			var clave := _clave_prop_red(prop, _zona_actual_red)
+			if clave.is_empty() or _definiciones_props_red.has(clave):
+				continue
+			var chunk_variant: Variant = prop.datos.get("chunk", Vector2i.ZERO)
+			var chunk_coord := Vector2i.ZERO
+			if chunk_variant is Vector2i:
+				chunk_coord = chunk_variant
+			elif chunk_variant is Dictionary:
+				var chunk_data := chunk_variant as Dictionary
+				chunk_coord = Vector2i(int(chunk_data.get("x", 0)), int(chunk_data.get("y", 0)))
+			nuevos.append({
+				"key": clave,
+				"x": prop.global_position.x,
+				"y": prop.global_position.y,
+				"visible": bool(prop.visible),
+				"chunk_x": chunk_coord.x,
+				"chunk_y": chunk_coord.y,
+				"datos": prop.datos.duplicate(true)
+			})
+			_definiciones_props_red[clave] = true
+	if not nuevos.is_empty():
+		recibir_props_dinamicos_red.rpc(_zona_actual_red, nuevos)
 	recibir_estado_props_red.rpc(_zona_actual_red, _crear_snapshot_props_servidor())
 
 
@@ -1121,6 +1153,29 @@ func _crear_snapshot_criaturas_servidor(incluir_datos: bool = false) -> Array:
 func _difundir_estado_criaturas() -> void:
 	if _jugadores_servidor.is_empty():
 		return
+	var nuevas: Array = []
+	if is_instance_valid(_entity_manager):
+		for entidad_variant in _entity_manager.call("obtener_entidades_activas"):
+			if not entidad_variant is Creature:
+				continue
+			var criatura := entidad_variant as Creature
+			if not is_instance_valid(criatura) or (criatura is Garumi and (criatura as Garumi).esta_vinculado()):
+				continue
+			var clave := _clave_criatura_red(criatura, _zona_actual_red)
+			if clave.is_empty() or _definiciones_criaturas_red.has(clave):
+				continue
+			var registro := _serializar_criatura_red(criatura, clave)
+			registro["chunk_x"] = criatura.chunk_coord.x
+			registro["chunk_y"] = criatura.chunk_coord.y
+			registro["limite_x"] = criatura.limites_chunk.position.x
+			registro["limite_y"] = criatura.limites_chunk.position.y
+			registro["limite_w"] = criatura.limites_chunk.size.x
+			registro["limite_h"] = criatura.limites_chunk.size.y
+			registro["datos"] = criatura.datos.duplicate(true)
+			nuevas.append(registro)
+			_definiciones_criaturas_red[clave] = true
+	if not nuevas.is_empty():
+		recibir_criaturas_dinamicas_red.rpc(_zona_actual_red, nuevas)
 	recibir_estado_criaturas_red.rpc(_zona_actual_red, _crear_snapshot_criaturas_servidor())
 
 
@@ -1135,6 +1190,24 @@ func recibir_entidades_iniciales_red(zona: String, criaturas: Array, props: Arra
 	if zona == _zona_actual_red and is_instance_valid(_entity_manager_cliente):
 		_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
 		_aplicar_estado_props_cliente(_estados_props_pendientes)
+
+
+@rpc("authority", "call_remote", "reliable")
+func recibir_criaturas_dinamicas_red(zona: String, registros: Array) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado() or zona != _zona_actual_red:
+		return
+	_zona_esperada_criaturas = zona
+	_estados_criaturas_pendientes = registros.duplicate(true)
+	_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
+
+
+@rpc("authority", "call_remote", "reliable")
+func recibir_props_dinamicos_red(zona: String, registros: Array) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado() or zona != _zona_actual_red:
+		return
+	_zona_esperada_props = zona
+	_estados_props_pendientes = registros.duplicate(true)
+	_aplicar_estado_props_cliente(_estados_props_pendientes)
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
