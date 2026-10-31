@@ -4,17 +4,13 @@ extends Node
 
 const SAVE_PATH := "user://garlia_global_world.json"
 const SAVE_INTERVAL := 15.0
-const PERSONAL_FLAGS := [
-	"personaje",
-	"personaje_admin",
-	"inventario_estado",
-	"misiones_estado",
-	"proceso_ium_equipado",
-	"garumis_vinculados",
-	"garumis_amigos",
-	"jugador",
-	"player",
-	"player_state"
+const GLOBAL_FLAGS := [
+	# Datos que describen el mundo compartido, no un personaje.
+	"zona_actual_tipo",
+	"estado_zona_actual",
+	"tiempo_mundo",
+	"reino_torres_visitado",
+	"reinos_desbloqueados"
 ]
 
 var _elapsed_save: float = 0.0
@@ -79,9 +75,10 @@ func guardar_desde_runtime() -> bool:
 			if is_instance_valid(atmosphere) and atmosphere.has_method("obtener_estado_guardado"):
 				game_state.world_state.flags["tiempo_mundo"] = atmosphere.call("obtener_estado_guardado").duplicate(true)
 
-	var flags: Dictionary = game_state.world_state.flags.duplicate(true)
-	for key in PERSONAL_FLAGS:
-		flags.erase(key)
+	var flags: Dictionary = {}
+	for key in GLOBAL_FLAGS:
+		if game_state.world_state.flags.has(key):
+			flags[key] = game_state.world_state.flags[key].duplicate(true) if game_state.world_state.flags[key] is Dictionary or game_state.world_state.flags[key] is Array else game_state.world_state.flags[key]
 
 	var data := {
 		"version": 1,
