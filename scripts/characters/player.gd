@@ -84,6 +84,11 @@ var personaje_especie: Dictionary = {}
 var personaje_skin: String = ""
 var personaje_apariencia: Dictionary = {}
 
+# El cliente solo envía intención de movimiento; el servidor mueve al jugador remoto.
+var _red_servidor_controlado: bool = false
+var _red_direccion: Vector2 = Vector2.ZERO
+var _red_correr: bool = false
+
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
 @onready var visual: Node2D = $Visual
@@ -182,7 +187,52 @@ func _input(event: InputEvent) -> void:
 		_dash_chord_cancelled = true
 
 
+func configurar_control_remoto_servidor() -> void:
+	_red_servidor_controlado = true
+	_red_direccion = Vector2.ZERO
+	_red_correr = false
+
+
+func establecer_input_red(direccion: Vector2, correr: bool) -> void:
+	if not _red_servidor_controlado:
+		return
+	_red_direccion = direccion.limit_length(1.0)
+	_red_correr = correr
+
+
+func _procesar_movimiento_red(delta: float) -> void:
+	locomotion.actualizar_cooldowns(delta)
+	locomotion.avanzar_accion(delta)
+	var direccion := _red_direccion.limit_length(1.0)
+	_movement_input_direction = direccion
+	var esta_corriendo := _red_correr and direccion != Vector2.ZERO
+	velocity = direccion * move_speed * (run_multiplier if esta_corriendo else 1.0)
+	move_and_slide()
+	if direccion != Vector2.ZERO:
+		facing = direccion.normalized()
+		_update_dir_marker()
+	var nuevo_estado := State.IDLE
+	if direccion != Vector2.ZERO:
+		nuevo_estado = State.RUN if esta_corriendo else State.WALK
+	if nuevo_estado != state:
+		state = nuevo_estado
+		_update_visual()
+	_actualizar_regeneracion_stamina(delta, esta_corriendo)
+
+
 func _physics_process(delta: float) -> void:
+	if _red_servidor_controlado:
+		if not is_alive:
+			velocity = Vector2.ZERO
+			return
+		_procesar_movimiento_red(delta)
+		return
+
+	if GarliaWorldNetwork.controla_jugador_local(self):
+		GarliaWorldNetwork.actualizar_input_local(delta)
+		velocity = Vector2.ZERO
+		return
+
 	if not is_alive:
 		velocity = Vector2.ZERO
 		return
