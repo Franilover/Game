@@ -776,7 +776,7 @@ func _refrescar_objetivo() -> void:
 
 	var candidatos: Array[Node2D] = []
 	for candidato in _obtener_candidatos_entidad():
-		var es_jugador_conectado := candidato.is_in_group("player")
+		var es_jugador_conectado := candidato.is_in_group("player") or candidato == jugador
 		if not es_jugador_conectado and not _es_objetivo_permitido(candidato):
 			continue
 		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
