@@ -910,12 +910,23 @@ func _crear_snapshot_props_servidor() -> Array:
 		var clave := _clave_prop_red(prop, _zona_actual_red)
 		if clave.is_empty():
 			continue
-		resultado.append({
+		var registro := {
 			"key": clave,
 			"x": prop.global_position.x,
 			"y": prop.global_position.y,
 			"visible": bool(prop.visible)
-		})
+		}
+		var chunk_variant: Variant = prop.datos.get("chunk", Vector2i.ZERO)
+		var chunk_coord := Vector2i.ZERO
+		if chunk_variant is Vector2i:
+			chunk_coord = chunk_variant
+		elif chunk_variant is Dictionary:
+			var chunk_data := chunk_variant as Dictionary
+			chunk_coord = Vector2i(int(chunk_data.get("x", 0)), int(chunk_data.get("y", 0)))
+		registro["chunk_x"] = chunk_coord.x
+		registro["chunk_y"] = chunk_coord.y
+		registro["datos"] = prop.datos.duplicate(true)
+		resultado.append(registro)
 		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
 			break
 	return resultado
@@ -937,6 +948,20 @@ func recibir_estado_props_red(zona: String, registros: Array) -> void:
 		_aplicar_estado_props_cliente(_estados_props_pendientes)
 
 
+func _buscar_prop_cliente_por_clave(clave: String) -> WorldProp:
+	if not is_instance_valid(_entity_manager_cliente):
+		return null
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if not entidad_variant is WorldProp:
+			continue
+		var prop := entidad_variant as WorldProp
+		if not is_instance_valid(prop):
+			continue
+		if _clave_prop_red(prop, _zona_actual_red) == clave:
+			return prop
+	return null
+
+
 func _aplicar_estado_props_cliente(registros: Array) -> void:
 	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
 		return
@@ -950,6 +975,20 @@ func _aplicar_estado_props_cliente(registros: Array) -> void:
 		var clave := str(registro.get("key", "")).strip_edges()
 		if not clave.is_empty():
 			por_clave[clave] = registro
+	# Crear props dinamicos que solo existan en el runtime autoritativo.
+	for clave_variant in por_clave.keys():
+		var clave := str(clave_variant)
+		if _buscar_prop_cliente_por_clave(clave) != null:
+			continue
+		var registro_variant: Variant = por_clave.get(clave, {})
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		var datos_variant: Variant = registro.get("datos", {})
+		if not datos_variant is Dictionary:
+			continue
+		var chunk_coord := Vector2i(int(registro.get("chunk_x", 0)), int(registro.get("chunk_y", 0)))
+		_entity_manager_cliente.call("registrar_replica_prop_red", (datos_variant as Dictionary).duplicate(true), chunk_coord, clave)
 	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
 		if not entidad_variant is WorldProp or not is_instance_valid(entidad_variant):
 			continue
