@@ -1048,7 +1048,11 @@ func _crear_snapshot_criaturas_servidor() -> Array:
 		_registrar_criatura_red(criatura, clave)
 		if criatura.is_alive:
 			_tumbas_criaturas_red.erase(clave)
-		resultado.append(_serializar_criatura_red(criatura, clave))
+		var registro := _serializar_criatura_red(criatura, clave)
+		registro["chunk_x"] = criatura.chunk_coord.x
+		registro["chunk_y"] = criatura.chunk_coord.y
+		registro["datos"] = criatura.datos.duplicate(true)
+		resultado.append(registro)
 		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
 			break
 	for clave_variant in _tumbas_criaturas_red.keys():
@@ -1079,6 +1083,22 @@ func recibir_estado_criaturas_red(zona: String, registros: Array) -> void:
 		_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
 
 
+func _buscar_criatura_cliente_por_clave(clave: String) -> Creature:
+	if not is_instance_valid(_entity_manager_cliente):
+		return null
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if not entidad_variant is Creature:
+			continue
+		var criatura := entidad_variant as Creature
+		if not is_instance_valid(criatura):
+			continue
+		if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+			continue
+		if _clave_criatura_red(criatura, _zona_actual_red) == clave:
+			return criatura
+	return null
+
+
 func _aplicar_estado_criaturas_cliente(registros: Array) -> void:
 	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
 		return
@@ -1092,6 +1112,20 @@ func _aplicar_estado_criaturas_cliente(registros: Array) -> void:
 		var clave := str(registro.get("key", "")).strip_edges()
 		if not clave.is_empty():
 			por_clave[clave] = registro
+	# Crear en el cliente las criaturas dinámicas que no existían en su generación local.
+	for clave_variant in por_clave.keys():
+		var clave := str(clave_variant)
+		if _buscar_criatura_cliente_por_clave(clave) != null:
+			continue
+		var registro_variant: Variant = por_clave.get(clave, {})
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		var datos_variant: Variant = registro.get("datos", {})
+		if not datos_variant is Dictionary:
+			continue
+		var chunk_coord := Vector2i(int(registro.get("chunk_x", 0)), int(registro.get("chunk_y", 0)))
+		_entity_manager_cliente.call("registrar_replica_red", (datos_variant as Dictionary).duplicate(true), chunk_coord, clave)
 	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
 		if not entidad_variant is Creature:
 			continue
