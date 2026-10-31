@@ -37,6 +37,7 @@ var _semilla_global := 0
 var _input_elapsed := 0.0
 var _snapshot_elapsed := 0.0
 var _dash_local_pendiente := false
+var _salto_local_pendiente := false
 
 
 func _ready() -> void:
@@ -163,6 +164,8 @@ func _input(event: InputEvent) -> void:
 		if event is InputEventKey and (event as InputEventKey).echo:
 			return
 		_dash_local_pendiente = true
+	if event.is_action_pressed("jump"):
+		_salto_local_pendiente = true
 
 
 func actualizar_input_local(delta: float) -> void:
@@ -178,8 +181,10 @@ func actualizar_input_local(delta: float) -> void:
 	var correr := Input.is_action_pressed("run")
 	var sprint_eterium := Input.is_action_pressed("eterium_sprint")
 	var dash := _dash_local_pendiente
+	var salto := _salto_local_pendiente
 	_dash_local_pendiente = false
-	recibir_input_global.rpc_id(1, direccion.limit_length(1.0), correr, dash, sprint_eterium)
+	_salto_local_pendiente = false
+	recibir_input_global.rpc_id(1, direccion.limit_length(1.0), correr, dash, sprint_eterium, salto)
 
 
 func _process(delta: float) -> void:
@@ -409,7 +414,7 @@ func rechazar_entrada_global(mensaje: String) -> void:
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
-func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_eterium: bool) -> void:
+func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_eterium: bool, salto: bool) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado():
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
@@ -421,7 +426,7 @@ func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_e
 	if ahora - anterior < 20:
 		return
 	_ultimo_input_servidor[peer_id] = ahora
-	jugador.establecer_input_red(direccion.limit_length(1.0), correr, dash, sprint_eterium)
+	jugador.establecer_input_red(direccion.limit_length(1.0), correr, dash, sprint_eterium, salto)
 
 
 
