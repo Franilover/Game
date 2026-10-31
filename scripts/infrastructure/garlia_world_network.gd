@@ -464,7 +464,7 @@ func _sanear_identidad_visual(identidad: Dictionary, nombre_verificado: String) 
 			var ruta_segura := ""
 			if not prefijo.is_empty() and ruta.begins_with(prefijo) and ruta.get_extension().to_lower() in ["png", "webp"] and ResourceLoader.exists(ruta):
 				ruta_segura = ruta
-			var color := CharacterAppearance.color_a_html(pieza.get("color", "#ffffff"))
+			var color := CharacterAppearance.color_a_html(CharacterAppearance.html_a_color(pieza.get("color", "#ffffff"), Color.WHITE))
 			apariencia_resultado[slot] = {"ruta": ruta_segura, "color": color}
 	return {"nombre": nombre, "genero": genero, "apariencia": apariencia_resultado}
 
