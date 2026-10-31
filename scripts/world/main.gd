@@ -361,7 +361,13 @@ func _inicializar_runtime_de_zona() -> void:
 			_supabase_client
 		)
 	elif GarliaWorldNetwork.es_cliente_en_mundo_global():
-		GarliaWorldNetwork.configurar_mundo_cliente(self, $Entities, _player)
+		GarliaWorldNetwork.configurar_mundo_cliente(
+			self,
+			$Entities,
+			_player,
+			_world_generator.entity_manager if _world_generator != null else null,
+			tipo_zona_actual
+		)
 
 
 ## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
