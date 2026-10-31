@@ -85,6 +85,8 @@ func get_interaction_priority() -> int:
 
 func get_interaction_text() -> String:
 	if _tiene_recoleccion_canonica():
+		if _replica_red_cliente or (GarliaMultiplayer.es_servidor_dedicado() and _inventory == null):
+			return "Recolección no sincronizada"
 		return "Recolectar"
 
 	match tipo:
@@ -186,6 +188,9 @@ func interact(persona: Node) -> bool:
 		return false
 
 	if _tiene_recoleccion_canonica():
+		if _replica_red_cliente or (GarliaMultiplayer.es_servidor_dedicado() and _inventory == null):
+			Events.notification_pushed.emit("La recolección multijugador aún no está disponible.")
+			return true
 		if not _puede_recolectar(persona):
 			var requisito := _obtener_requisito_herramienta()
 			var tipo_herramienta: String = str(requisito.get("tipo", "herramienta"))
