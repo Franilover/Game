@@ -7,7 +7,7 @@ const INPUT_INTERVAL := 0.05
 const SNAPSHOT_INTERVAL := 0.05
 const MAX_USERNAME_LENGTH := 24
 
-signal mundo_global_listo(semilla: int, tipo_zona: String)
+signal mundo_global_listo(semilla: int, tipo_zona: String, reinos_globales: Dictionary)
 signal mundo_global_rechazado(mensaje: String)
 
 var _servidor_inicializado := false
@@ -233,7 +233,7 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 	var snapshot := _crear_snapshot()
 	var zone_manager := _main.get_node_or_null("World/ZoneManager")
 	var tipo_zona := str(zone_manager.call("obtener_tipo_actual")) if is_instance_valid(zone_manager) else "mundo_abierto"
-	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona)
+	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona, GameState.obtener_reinos_desbloqueados())
 	_difundir_estado()
 	print("GarliaWorldNetwork: jugador autenticado y añadido → ", username, " [", peer_id, "]")
 
@@ -265,7 +265,7 @@ func _validar_token_supabase(token: String) -> Dictionary:
 
 
 @rpc("authority", "call_remote", "reliable")
-func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int, tipo_zona: String) -> void:
+func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int, tipo_zona: String, reinos_globales: Dictionary) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado():
 		return
 	_peer_local_id = peer_id_local
@@ -274,7 +274,7 @@ func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int, tipo_
 	if is_instance_valid(_local_player):
 		_aplicar_snapshot(_estado_inicial_pendiente)
 		_estado_inicial_pendiente.clear()
-	mundo_global_listo.emit(_semilla_global, tipo_zona)
+	mundo_global_listo.emit(_semilla_global, tipo_zona, reinos_globales)
 
 
 @rpc("authority", "call_remote", "reliable")
