@@ -297,13 +297,40 @@ func capturar_estado_persistente_mundo() -> Dictionary:
 			continue
 		var criatura := entidad_variant as Creature
 		# Los Garumis vinculados pertenecen al guardado privado del jugador.
+		# Sólo se conserva el tombstone del spawn salvaje original para impedir
+		# que vuelva a aparecer al regenerar el chunk.
 		if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+			_guardar_tombstone_garumi_vinculado(criatura as Garumi)
 			continue
 		guardar_estado_entidad(criatura, criatura.chunk_coord)
 	return {
 		"criaturas": _runtime_state_by_key.duplicate(true),
 		"props": _runtime_prop_state_by_key.duplicate(true)
 	}
+
+
+func _guardar_tombstone_garumi_vinculado(garumi: Garumi) -> void:
+	var instancia := str(garumi.get_meta("runtime_instance_key", "")).strip_edges()
+	if not (instancia.begins_with("garumi:") or instancia.begins_with("natural:")):
+		return
+	var criatura_id := garumi.get_id().strip_edges()
+	if criatura_id.is_empty():
+		return
+	var chunk := garumi.chunk_coord
+	var tombstone := {
+		"criatura_id": criatura_id,
+		"categoria_entidad": "garumi",
+		"runtime_instance_key": instancia,
+		"position": garumi.global_position,
+		"velocity": Vector2.ZERO,
+		"health": 0,
+		"max_health": garumi.max_health,
+		"is_alive": false,
+		"estado": "vinculado"
+	}
+	_runtime_state_by_key[_runtime_key(chunk, instancia)] = tombstone
+	# El ID del Garumi es único por chunk en la generación natural.
+	_runtime_state_by_key[_runtime_key(chunk, criatura_id)] = tombstone.duplicate(true)
 
 
 func restaurar_estado_persistente_mundo(estado: Dictionary) -> void:
