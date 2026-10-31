@@ -161,7 +161,7 @@ func get_interaction_details() -> Dictionary:
 				)
 
 	var item_id := _obtener_item_id_recoleccion()
-	if not item_id.is_empty():
+	if not item_id.is_empty() and is_instance_valid(_world_items):
 		var item := _world_items.buscar_item_por_id(
 			item_id
 		)
@@ -348,6 +348,8 @@ func _obtener_item_id_recoleccion() -> String:
 	if prop_id.is_empty():
 		return ""
 
+	if not is_instance_valid(_world_items):
+		return ""
 	for item_variant in _world_items.obtener_catalogo():
 		if not item_variant is Dictionary:
 			continue
