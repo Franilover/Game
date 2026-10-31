@@ -238,7 +238,7 @@ func iniciar_partida(id: String) -> bool:
 
 ## Sincroniza únicamente la zona de entrada del mundo global en el save local.
 ## El estado de personaje, inventario y progreso privado permanece local.
-func establecer_zona_mundo_global(id: String, tipo_zona: String, reinos_globales: Dictionary = {}) -> bool:
+func establecer_zona_mundo_global(id: String, tipo_zona: String, reinos_globales: Dictionary = {}, tiempo_mundo: Dictionary = {}) -> bool:
 	var tipo := tipo_zona.strip_edges()
 	if id.is_empty() or tipo.is_empty():
 		return false
@@ -257,6 +257,8 @@ func establecer_zona_mundo_global(id: String, tipo_zona: String, reinos_globales
 			if not clave.is_empty() and bool(reinos_globales.get(clave_variant, false)):
 				desbloqueados[clave] = true
 		flags["reinos_desbloqueados"] = desbloqueados
+	if not tiempo_mundo.is_empty():
+		flags["tiempo_mundo"] = tiempo_mundo.duplicate(true)
 	estado["flags"] = flags
 	datos["estado"] = estado
 	datos["actualizado_en"] = _ahora()
