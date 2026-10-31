@@ -39,6 +39,9 @@ const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle
 @onready var _zone_manager: Node2D = $World/ZoneManager
 @onready var _realm_menu: Control = $UI/RealmMenu
 var _reino_descubrimiento_elapsed: float = 0.0
+var _datos_mundo_servidor_listos := false
+var _reinos_game_servidor_listos := false
+var _inicio_servidor_pendiente := false
 
 
 func _ready() -> void:
@@ -88,6 +91,7 @@ func _ready() -> void:
 		_configurar_hud(_world_context, null)
 
 	_supabase_client.cargar_reinos_game()
+	_reinos_game_servidor_listos = not _supabase_client.obtener_reinos_game().is_empty()
 	if GarliaMultiplayer.es_servidor_dedicado():
 		_esperar_datos_mundo_servidor()
 	elif not GameState.debe_iniciar_en_reino_torres():
@@ -99,17 +103,30 @@ func _ready() -> void:
 
 
 func _esperar_datos_mundo_servidor() -> void:
-	if WorldData.esta_cargado():
-		_iniciar_zonas()
-		return
-	if not WorldData.mundo_listo.is_connected(_al_datos_mundo_servidor_listos):
-		WorldData.mundo_listo.connect(_al_datos_mundo_servidor_listos, CONNECT_ONE_SHOT)
-	_supabase_client.cargar_mundo_inicial()
+	_inicio_servidor_pendiente = true
+	_datos_mundo_servidor_listos = WorldData.esta_cargado()
+	_reinos_game_servidor_listos = _reinos_game_servidor_listos or not _supabase_client.obtener_reinos_game().is_empty()
+	if not _datos_mundo_servidor_listos:
+		if not WorldData.mundo_listo.is_connected(_al_datos_mundo_servidor_listos):
+			WorldData.mundo_listo.connect(_al_datos_mundo_servidor_listos, CONNECT_ONE_SHOT)
+		_supabase_client.cargar_mundo_inicial()
+	_intentar_iniciar_servidor_global()
 
 
 func _al_datos_mundo_servidor_listos() -> void:
-	if GarliaMultiplayer.es_servidor_dedicado():
-		_iniciar_zonas()
+	if not GarliaMultiplayer.es_servidor_dedicado():
+		return
+	_datos_mundo_servidor_listos = true
+	_intentar_iniciar_servidor_global()
+
+
+func _intentar_iniciar_servidor_global() -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _inicio_servidor_pendiente:
+		return
+	if not _datos_mundo_servidor_listos or not _reinos_game_servidor_listos:
+		return
+	_inicio_servidor_pendiente = false
+	_iniciar_zonas()
 
 
 func _exit_tree() -> void:
@@ -120,6 +137,10 @@ func _exit_tree() -> void:
 
 
 func _al_reinos_game_cargados(_reinos: Array) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		_reinos_game_servidor_listos = true
+		_intentar_iniciar_servidor_global()
+		return
 	if GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
 
