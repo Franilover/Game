@@ -15,10 +15,15 @@ signal peer_connected(peer_id: int)
 signal peer_disconnected(peer_id: int)
 
 signal status_changed(message: String)
+signal dedicated_server_started(port: int)
+signal dedicated_server_empty
+signal dedicated_server_has_players(count: int)
 
 
 var is_host: bool = false
 var is_connected: bool = false
+var is_dedicated_server: bool = false
+var _connected_peer_ids: Dictionary = {}
 
 var local_player_info: Dictionary = {}
 var _auth: Node = null
@@ -48,6 +53,49 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(
 		_on_server_disconnected
 	)
+	call_deferred("_leer_argumento_servidor")
+
+
+## Inicia un servidor dedicado sin exigir una sesión de jugador.
+## Uso: godot --headless --path . -- --garlia-server --port=7777
+func iniciar_servidor_dedicado(puerto: int = DEFAULT_PORT) -> bool:
+	cerrar_partida()
+	var peer := ENetMultiplayerPeer.new()
+	var error: Error = peer.create_server(puerto, MAX_PLAYERS)
+	if error != OK:
+		push_error("GarliaMultiplayer: no se pudo iniciar servidor dedicado. Error: %s" % error)
+		status_changed.emit("No se pudo iniciar el servidor dedicado. Error: " + str(error))
+		return false
+	multiplayer.multiplayer_peer = peer
+	is_host = true
+	is_connected = true
+	is_dedicated_server = true
+	_connected_peer_ids.clear()
+	status_changed.emit("Servidor dedicado activo en puerto %d." % puerto)
+	print("GarliaMultiplayer: servidor dedicado escuchando en UDP ", puerto)
+	dedicated_server_started.emit(puerto)
+	return true
+
+
+func obtener_cantidad_jugadores_remotos() -> int:
+	return _connected_peer_ids.size()
+
+
+func es_servidor_dedicado() -> bool:
+	return is_dedicated_server and multiplayer.is_server()
+
+
+func _leer_argumento_servidor() -> void:
+	var argumentos := OS.get_cmdline_user_args()
+	var activar := false
+	var puerto := DEFAULT_PORT
+	for argumento in argumentos:
+		if argumento == "--garlia-server":
+			activar = true
+		elif argumento.begins_with("--port="):
+			puerto = clampi(int(argumento.trim_prefix("--port=")), 1, 65535)
+	if activar:
+		iniciar_servidor_dedicado(puerto)
 
 
 func puede_usar_multijugador() -> bool:
@@ -174,6 +222,8 @@ func unirse_partida(
 
 
 func cerrar_partida() -> void:
+	is_dedicated_server = false
+	_connected_peer_ids.clear()
 	if multiplayer.multiplayer_peer == null:
 		is_host = false
 		is_connected = false
@@ -230,6 +280,9 @@ func obtener_ips_locales() -> Array[String]:
 func _on_peer_connected(
 	id: int
 ) -> void:
+	if is_dedicated_server:
+		_connected_peer_ids[id] = true
+		dedicated_server_has_players.emit(_connected_peer_ids.size())
 	print(
 		"GarliaMultiplayer: peer conectado → ",
 		id
@@ -241,6 +294,12 @@ func _on_peer_connected(
 func _on_peer_disconnected(
 	id: int
 ) -> void:
+	if is_dedicated_server:
+		_connected_peer_ids.erase(id)
+		if _connected_peer_ids.is_empty():
+			dedicated_server_empty.emit()
+		else:
+			dedicated_server_has_players.emit(_connected_peer_ids.size())
 	print(
 		"GarliaMultiplayer: peer desconectado → ",
 		id
