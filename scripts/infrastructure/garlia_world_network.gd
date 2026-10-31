@@ -46,6 +46,7 @@ var _ultimo_input_servidor: Dictionary = {}
 var _reapariciones_pendientes: Dictionary = {}
 var _eterium_runtime_global: Dictionary = {}
 var _reglas_especies_eterium_global: Array = []
+var _especies_jugables_cache: Array = []
 var _reglas_especies_eterium_cargadas := false
 var _personaje_local: Dictionary = {}
 var _estado_inicial_pendiente: Array = []
@@ -306,7 +307,7 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 			return
 	var identidad := _sanear_identidad_visual(identidad_visual, nombre_verificado)
 	var especie_id := str(identidad_visual.get("especie_id", "")).strip_edges()
-	var especie_canonica := await _obtener_especie_jugable_canonica(especie_id)
+	var especie_canonica := await _obtener_especie_jugable_canonica(especie_id, access_token)
 	if especie_canonica.is_empty():
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo validar la especie seleccionada. Vuelve a crear tu personaje.")
 		return
@@ -407,18 +408,35 @@ func _sanear_identidad_visual(identidad: Dictionary, nombre_verificado: String) 
 	return {"nombre": nombre, "genero": genero, "apariencia": apariencia_resultado}
 
 
-func _obtener_especie_jugable_canonica(especie_id: String) -> Dictionary:
-	if especie_id.is_empty() or not is_instance_valid(_supabase_client):
+func _obtener_especie_jugable_canonica(especie_id: String, token: String) -> Dictionary:
+	if especie_id.is_empty() or token.is_empty():
 		return {}
-	var especies: Array = _supabase_client.obtener_especies_jugables()
-	if especies.is_empty():
-		_supabase_client.cargar_especies_jugables()
-		for _intento in range(40):
-			await get_tree().create_timer(0.2, true, false).timeout
-			especies = _supabase_client.obtener_especies_jugables()
-			if not especies.is_empty():
-				break
-	for especie_variant in especies:
+	if _especies_jugables_cache.is_empty():
+		var request := HTTPRequest.new()
+		request.timeout = 12.0
+		request.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child(request)
+		var headers := PackedStringArray([
+			"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
+			"Authorization: Bearer " + token
+		])
+		var url := GarliaAuth.SUPABASE_URL + "/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
+		var error := request.request(url, headers, HTTPClient.METHOD_GET)
+		if error != OK:
+			request.queue_free()
+			return {}
+		var response: Array = await request.request_completed
+		request.queue_free()
+		if int(response[0]) != HTTPRequest.RESULT_SUCCESS or int(response[1]) < 200 or int(response[1]) >= 300:
+			push_warning("GarliaWorldNetwork: no se pudo verificar el catálogo de especies jugables.")
+			return {}
+		var parsed: Variant = JSON.parse_string(PackedByteArray(response[3]).get_string_from_utf8())
+		if not parsed is Array:
+			return {}
+		for especie_variant in parsed as Array:
+			if especie_variant is Dictionary:
+				_especies_jugables_cache.append((especie_variant as Dictionary).duplicate(true))
+	for especie_variant in _especies_jugables_cache:
 		if not especie_variant is Dictionary:
 			continue
 		var especie := especie_variant as Dictionary
