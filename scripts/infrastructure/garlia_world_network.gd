@@ -223,15 +223,17 @@ func actualizar_input_local(delta: float) -> void:
 		return
 	_input_elapsed = 0.0
 	var direccion := Vector2.ZERO
-	if not _local_player.input_gate.esta_bloqueado():
+	var entrada_bloqueada := _local_player.input_gate.esta_bloqueado()
+	if not entrada_bloqueada:
 		direccion = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var correr := Input.is_action_pressed("run")
-	var sprint_eterium := Input.is_action_pressed("eterium_sprint")
+	var correr := Input.is_action_pressed("run") and not entrada_bloqueada
+	var sprint_eterium := Input.is_action_pressed("eterium_sprint") and not entrada_bloqueada
+	var curar_eterium := Input.is_action_pressed("focus") and not entrada_bloqueada
 	var dash := _dash_local_pendiente
 	var salto := _salto_local_pendiente
 	_dash_local_pendiente = false
 	_salto_local_pendiente = false
-	recibir_input_global.rpc_id(1, direccion.limit_length(1.0), correr, dash, sprint_eterium, salto)
+	recibir_input_global.rpc_id(1, direccion.limit_length(1.0), correr, dash, sprint_eterium, salto, curar_eterium)
 
 
 func _process(delta: float) -> void:
@@ -396,7 +398,15 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	var snapshot := _crear_snapshot(true)
 	var zone_manager := _main.get_node_or_null("World/ZoneManager")
 	var tipo_zona := str(zone_manager.call("obtener_tipo_actual")) if is_instance_valid(zone_manager) else "mundo_abierto"
-	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona, GameState.obtener_reinos_desbloqueados())
+	recibir_inicio_red.rpc_id(
+		peer_id,
+		snapshot,
+		peer_id,
+		GameState.world_state.world_seed,
+		tipo_zona,
+		GameState.obtener_reinos_desbloqueados(),
+		_obtener_tiempo_mundo_servidor()
+	)
 	_difundir_estado()
 	print("GarliaWorldNetwork: jugador autenticado y añadido → ", nombre_verificado, " [", peer_id, "]")
 
@@ -624,7 +634,7 @@ func rechazar_entrada_global(mensaje: String) -> void:
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
-func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_eterium: bool, salto: bool) -> void:
+func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_eterium: bool, salto: bool, curar_eterium: bool) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado() or not _mundo_listo:
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
@@ -636,7 +646,7 @@ func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_e
 	if ahora - anterior < 20:
 		return
 	_ultimo_input_servidor[peer_id] = ahora
-	jugador.establecer_input_red(direccion.limit_length(1.0), correr, dash, sprint_eterium, salto)
+	jugador.establecer_input_red(direccion.limit_length(1.0), correr, dash, sprint_eterium, salto, curar_eterium)
 
 
 
