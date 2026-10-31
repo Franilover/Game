@@ -823,6 +823,10 @@ func reaparecer_en_red(posicion: Vector2) -> void:
 	state = State.IDLE
 	_red_direccion = Vector2.ZERO
 	_red_correr = false
+	_red_dash_pendiente = false
+	_red_salto_pendiente = false
+	_red_eterium_sprint = false
+	locomotion.reiniciar()
 	visible = true
 	if is_instance_valid(visual):
 		visual.position = _base_visual_position
