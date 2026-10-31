@@ -47,6 +47,7 @@ var _atacante_actual_danio: Node = null
 var _control_remoto_cliente: bool = false
 var _red_posicion_objetivo: Vector2 = Vector2.ZERO
 var _red_velocidad_objetivo: Vector2 = Vector2.ZERO
+var _red_ataque_activo_previo := false
 
 var _sprite_textura_base: Texture2D = null
 var _sprite_hframes_base: int = 1
@@ -581,8 +582,9 @@ func aplicar_estado_red(
 			add_to_group("interactable")
 			add_to_group("creatures")
 			add_to_group("damageable")
-		if ataque_activo and not _ataque_animando:
+		if ataque_activo and not _red_ataque_activo_previo:
 			iniciar_animacion_ataque()
+	_red_ataque_activo_previo = ataque_activo
 	else:
 		if visibilidad_previa or vida_previa:
 			remove_from_group("damageable")
@@ -591,6 +593,7 @@ func aplicar_estado_red(
 			velocity = Vector2.ZERO
 			_detener_animacion_ataque()
 			_detener_animacion_caminando()
+			_red_ataque_activo_previo = false
 
 
 func take_damage_desde(atacante: Node, cantidad: int, origen: String = "desconocido") -> void:
