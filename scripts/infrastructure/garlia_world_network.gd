@@ -533,7 +533,7 @@ func rechazar_entrada_global(mensaje: String) -> void:
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
 func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_eterium: bool, salto: bool) -> void:
-	if not GarliaMultiplayer.es_servidor_dedicado():
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _mundo_listo:
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
 	var jugador: Player = _jugadores_servidor.get(peer_id) as Player
@@ -575,7 +575,7 @@ func _crear_sistemas_jugador_servidor(peer_id: int, jugador: Player) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func solicitar_accion_global(accion: String) -> void:
-	if not GarliaMultiplayer.es_servidor_dedicado():
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _mundo_listo:
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
 	if not _jugadores_servidor.has(peer_id):
@@ -613,7 +613,7 @@ func notificar_reino_descubierto(clave: String) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func registrar_descubrimiento_global(clave: String) -> void:
-	if not GarliaMultiplayer.es_servidor_dedicado():
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _mundo_listo:
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
 	if not _jugadores_servidor.has(peer_id) or not is_instance_valid(_world_context):
