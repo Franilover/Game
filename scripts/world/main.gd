@@ -47,6 +47,8 @@ func _ready() -> void:
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
 	WorldData.configurar_dependencias(_supabase_client)
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GlobalWorldStore.restaurar_en_game_state(GameState)
 
 	_world_atmosphere = $Systems/WorldAtmosphere as WorldAtmosphere
 	if not is_instance_valid(_world_atmosphere):
@@ -83,8 +85,9 @@ func _ready() -> void:
 		_configurar_hud(_world_context, null)
 
 	_supabase_client.cargar_reinos_game()
-	# No dependemos de que la respuesta HTTP llegue antes de este frame.
-	if not GameState.debe_iniciar_en_reino_torres():
+	if GarliaMultiplayer.es_servidor_dedicado():
+		_esperar_datos_mundo_servidor()
+	elif not GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
 	elif not _supabase_client.obtener_reinos_game().is_empty():
 		_iniciar_zonas()
@@ -92,7 +95,23 @@ func _ready() -> void:
 		call_deferred("_verificar_inicio_de_zona")
 
 
+func _esperar_datos_mundo_servidor() -> void:
+	if WorldData.esta_cargado():
+		_iniciar_zonas()
+		return
+	if not WorldData.mundo_listo.is_connected(_al_datos_mundo_servidor_listos):
+		WorldData.mundo_listo.connect(_al_datos_mundo_servidor_listos, CONNECT_ONE_SHOT)
+	_supabase_client.cargar_mundo_inicial()
+
+
+func _al_datos_mundo_servidor_listos() -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		_iniciar_zonas()
+
+
 func _exit_tree() -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GlobalWorldStore.guardar_desde_runtime()
 	if is_instance_valid(_supabase_client):
 		_supabase_client.establecer_mundo_activo(false)
 
@@ -323,6 +342,19 @@ func _inicializar_runtime_de_zona() -> void:
 		print("Main: reino activo → ", tipo_zona_actual)
 	else:
 		print("Main: mundo abierto listo.")
+
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GarliaWorldNetwork.inicializar_mundo_servidor(
+			self,
+			$Entities,
+			_player,
+			_world_context,
+			_world_generator.entity_manager if _world_generator != null else null,
+			_ium_manager,
+			_supabase_client
+		)
+	elif GarliaWorldNetwork.es_cliente_en_mundo_global():
+		GarliaWorldNetwork.configurar_mundo_cliente(self, $Entities, _player)
 
 
 ## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
