@@ -761,7 +761,7 @@ func _abrir_multijugador() -> void:
 
 	host_button.visible = false
 	local_ip_label.text = "Mundo global compartido · conexión directa"
-	ip_input.placeholder_text = "IP o dominio del servidor global"
+	ip_input.placeholder_text = "Dominio del servidor con certificado TLS"
 	port_input.visible = true
 	if port_input.text.strip_edges().is_empty():
 		port_input.text = str(GarliaMultiplayer.DEFAULT_PORT)
@@ -952,7 +952,7 @@ func _union_iniciada() -> void:
 
 func _conectado_a_partida() -> void:
 	multiplayer_status.text = "Conectado. Verificando cuenta y cargando el mundo global..."
-	print("StartMenu: transporte ENet conectado; esperando autorización del mundo global.")
+	print("StartMenu: transporte WSS conectado; esperando autorización del mundo global.")
 
 
 func _al_mundo_global_listo(semilla: int, tipo_zona: String, reinos_globales: Dictionary) -> void:
