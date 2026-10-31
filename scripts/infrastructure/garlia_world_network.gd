@@ -11,6 +11,7 @@ signal mundo_global_listo(semilla: int, tipo_zona: String)
 signal mundo_global_rechazado(mensaje: String)
 
 var _servidor_inicializado := false
+var _ultima_zona_servidor := ""
 var _mundo_listo := false
 var _cliente_global_activado := false
 var _main: Node = null
@@ -85,6 +86,10 @@ func inicializar_mundo_servidor(
 	_entity_manager = entity_manager
 	_ium_manager = ium_manager
 	_supabase_client = supabase_client
+	var zone_manager_runtime := main.get_node_or_null("World/ZoneManager")
+	var zona_nueva := str(zone_manager_runtime.call("obtener_tipo_actual")) if is_instance_valid(zone_manager_runtime) else ""
+	var cambio_zona := _servidor_inicializado and zona_nueva != _ultima_zona_servidor
+	_ultima_zona_servidor = zona_nueva
 	_servidor_inicializado = true
 	_mundo_listo = true
 	GlobalWorldStore.configurar_runtime(main)
@@ -100,10 +105,22 @@ func inicializar_mundo_servidor(
 
 	# Si Main cambia de zona, los jugadores existentes deben apuntar a los
 	# sistemas de entidades de la zona recién activada.
-	for jugador_variant in _jugadores_servidor.values():
-		var jugador_existente := jugador_variant as Player
-		if is_instance_valid(jugador_existente):
-			jugador_existente.configurar_dependencias(null, _world_context, _ium_manager, _entity_manager, _supabase_client, GameState)
+	for peer_variant in _jugadores_servidor.keys():
+		var peer_id := int(peer_variant)
+		var jugador_existente := _jugadores_servidor[peer_id] as Player
+		if not is_instance_valid(jugador_existente):
+			continue
+		jugador_existente.configurar_dependencias(null, _world_context, _ium_manager, _entity_manager, _supabase_client, GameState)
+		var sistemas: Dictionary = _sistemas_jugador_servidor.get(peer_id, {})
+		var interaccion: InteractionSystem = sistemas.get("interaccion") as InteractionSystem
+		if is_instance_valid(interaccion):
+			var world_items: GarliaWorldItems = main.get_node_or_null("Systems/WorldItems") as GarliaWorldItems
+			interaccion.configurar(jugador_existente, null, world_items, jugador_existente.input_gate, _entity_manager as WorldEntityManager)
+		var combate: CombatSystem = sistemas.get("combate") as CombatSystem
+		if is_instance_valid(combate):
+			combate.configurar(jugador_existente, null, _world_context as WorldContext, main.get_node_or_null("CombatProjectiles"), GameState)
+		if cambio_zona:
+			jugador_existente.global_position = _world_anchor.global_position + Vector2(float((_jugadores_servidor.size() % 4) * 24), float(int(_jugadores_servidor.size() / 4) * 24))
 
 	if GarliaMultiplayer.obtener_cantidad_jugadores_remotos() > 0:
 		get_tree().paused = false
