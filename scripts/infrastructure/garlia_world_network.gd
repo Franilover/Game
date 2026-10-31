@@ -279,8 +279,8 @@ func _process(delta: float) -> void:
 func _al_conectar_con_servidor() -> void:
 	if GarliaMultiplayer.es_servidor_dedicado() or not _cliente_global_activado:
 		return
-	var user_id := GarliaAuth.obtener_user_id()
-	var username := GarliaAuth.obtener_username()
+	var user_id: String = str(GarliaAuth.obtener_user_id())
+	var username: String = str(GarliaAuth.obtener_username())
 	var token := str(GarliaAuth.access_token)
 	if user_id.is_empty() or token.is_empty():
 		mundo_global_rechazado.emit("La sesión no contiene credenciales válidas.")
@@ -464,7 +464,7 @@ func _sanear_identidad_visual(identidad: Dictionary, nombre_verificado: String) 
 			var ruta_segura := ""
 			if not prefijo.is_empty() and ruta.begins_with(prefijo) and ruta.get_extension().to_lower() in ["png", "webp"] and ResourceLoader.exists(ruta):
 				ruta_segura = ruta
-			var color := CharacterAppearance.color_a_html(pieza.get("color", "#ffffff"), Color.WHITE)
+			var color := CharacterAppearance.color_a_html(pieza.get("color", "#ffffff"))
 			apariencia_resultado[slot] = {"ruta": ruta_segura, "color": color}
 	return {"nombre": nombre, "genero": genero, "apariencia": apariencia_resultado}
 
@@ -481,7 +481,7 @@ func _obtener_especie_jugable_canonica(especie_id: String, token: String) -> Dic
 			"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
 			"Authorization: Bearer " + token
 		])
-		var url := GarliaAuth.SUPABASE_URL + "/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
+		var url: String = GarliaAuth.SUPABASE_URL + "/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
 		var error := request.request(url, headers, HTTPClient.METHOD_GET)
 		if error != OK:
 			request.queue_free()
@@ -518,7 +518,7 @@ func _obtener_runtime_eterium(token: String) -> Dictionary:
 		"Authorization: Bearer " + token,
 		"Content-Type: application/json"
 	])
-	var url := GarliaAuth.SUPABASE_URL + "/rest/v1/rpc/get_eterium_runtime_v1"
+	var url: String = GarliaAuth.SUPABASE_URL + "/rest/v1/rpc/get_eterium_runtime_v1"
 	var error := request.request(url, headers, HTTPClient.METHOD_POST, "{}")
 	if error != OK:
 		request.queue_free()
@@ -549,7 +549,7 @@ func _obtener_reglas_eterium_especies(token: String) -> Array:
 		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
 		"Authorization: Bearer " + token
 	])
-	var url := GarliaAuth.SUPABASE_URL + "/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,eterium_inicial,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
+	var url: String = GarliaAuth.SUPABASE_URL + "/rest/v1/especie_eterium_game?select=especie_eterium_id,vida_eterium_compartidos,recuperacion_eterium,eterium_inicial,activo,especie_eterium_v1!inner(especie_id,capacidad_base)&activo=eq.true"
 	var error := request.request(url, headers, HTTPClient.METHOD_GET)
 	if error != OK:
 		request.queue_free()
@@ -576,7 +576,7 @@ func _obtener_username_supabase(user_id: String, token: String) -> String:
 	request.timeout = 8.0
 	request.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(request)
-	var url := GarliaAuth.SUPABASE_URL + "/rest/v1/perfiles?select=username&id=eq." + user_id + "&limit=1"
+	var url: String = GarliaAuth.SUPABASE_URL + "/rest/v1/perfiles?select=username&id=eq." + user_id + "&limit=1"
 	var headers := PackedStringArray([
 		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
 		"Authorization: Bearer " + token
