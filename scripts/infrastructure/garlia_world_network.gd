@@ -56,6 +56,8 @@ func _ready() -> void:
 		GarliaMultiplayer.peer_disconnected.connect(_al_desconectar_peer)
 	if not GarliaMultiplayer.server_disconnected.is_connected(_al_servidor_desconectado):
 		GarliaMultiplayer.server_disconnected.connect(_al_servidor_desconectado)
+	if not GarliaMultiplayer.connection_failed.is_connected(_al_conexion_fallida):
+		GarliaMultiplayer.connection_failed.connect(_al_conexion_fallida)
 
 
 func configurar_personaje_local(datos: Dictionary) -> void:
@@ -975,6 +977,21 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 		jugador.mana_changed.emit(int(jugador.mana), int(jugador.max_mana))
 	if jugador.has_signal("stamina_changed"):
 		jugador.stamina_changed.emit(float(jugador.stamina), float(jugador.max_stamina))
+
+
+func _al_conexion_fallida() -> void:
+	_cliente_global_activado = false
+	_dash_local_pendiente = false
+	_salto_local_pendiente = false
+	_proxies_cliente.clear()
+	_objetivos_posicion_proxy.clear()
+	_identidades_remotas_cliente.clear()
+	_estado_inicial_pendiente.clear()
+	_peer_local_id = 0
+	_local_posicion_inicializada = false
+	if is_instance_valid(_local_player):
+		_local_player.set_physics_process(true)
+	Events.notification_pushed.emit("No se pudo conectar con el mundo global.")
 
 
 func _al_servidor_desconectado() -> void:
