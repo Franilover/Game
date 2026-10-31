@@ -37,6 +37,7 @@ var _supabase_client: Node = null
 var _jugadores_servidor: Dictionary = {}
 var _proxies_cliente: Dictionary = {}
 var _identidades_remotas_cliente: Dictionary = {}
+var _identidades_aplicadas_cliente: Dictionary = {}
 var _objetivos_posicion_proxy: Dictionary = {}
 var _objetivo_posicion_local := Vector2.ZERO
 var _local_posicion_inicializada := false
@@ -844,13 +845,16 @@ func recibir_identidad_jugador(peer_id: int, identidad: Dictionary) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado() or peer_id <= 0:
 		return
 	_identidades_remotas_cliente[peer_id] = identidad.duplicate(true)
+	_identidades_aplicadas_cliente[peer_id] = false
 	if peer_id == _peer_local_id:
 		if is_instance_valid(_local_player):
 			_aplicar_identidad_snapshot(_local_player, identidad)
+			_identidades_aplicadas_cliente[peer_id] = true
 	elif _proxies_cliente.has(peer_id):
 		var proxy: Player = _proxies_cliente[peer_id] as Player
 		if is_instance_valid(proxy):
 			_aplicar_identidad_snapshot(proxy, identidad)
+			_identidades_aplicadas_cliente[peer_id] = true
 
 
 func _aplicar_identidad_snapshot(jugador: Player, identidad: Dictionary) -> void:
@@ -1255,8 +1259,9 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 					_local_player.facing = direccion.normalized()
 					_local_player.call("_update_dir_marker")
 				var identidad_local: Dictionary = _identidades_remotas_cliente.get(peer_id, {})
-				if not identidad_local.is_empty():
+				if not bool(_identidades_aplicadas_cliente.get(peer_id, false)) and not identidad_local.is_empty():
 					_aplicar_identidad_snapshot(_local_player, identidad_local)
+					_identidades_aplicadas_cliente[peer_id] = true
 				_actualizar_estado_jugador(_local_player, registro)
 			continue
 		var proxy: Player = _proxies_cliente.get(peer_id) as Player
@@ -1280,6 +1285,9 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			proxy.global_position = posicion
 			_objetivos_posicion_proxy[peer_id] = posicion
 			_entities.add_child(proxy)
+			# Player._ready lo agrega al grupo local; los proxies no deben ser
+			# objetivos de la IA ni del gameplay personal del cliente.
+			proxy.remove_from_group("player")
 			var camara_proxy := proxy.get_node_or_null("Camera2D") as Camera2D
 			if is_instance_valid(camara_proxy):
 				camara_proxy.enabled = false
@@ -1288,8 +1296,9 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			_proxies_cliente[peer_id] = proxy
 		_objetivos_posicion_proxy[peer_id] = posicion
 		var identidad_proxy: Dictionary = _identidades_remotas_cliente.get(peer_id, {})
-		if not identidad_proxy.is_empty():
+		if not bool(_identidades_aplicadas_cliente.get(peer_id, false)) and not identidad_proxy.is_empty():
 			_aplicar_identidad_snapshot(proxy, identidad_proxy)
+			_identidades_aplicadas_cliente[peer_id] = true
 		_actualizar_estado_jugador(proxy, registro)
 		if direccion.length_squared() > 0.01:
 			proxy.facing = direccion.normalized()
@@ -1406,6 +1415,7 @@ func _limpiar_proxies_cliente() -> void:
 	_proxies_cliente.clear()
 	_objetivos_posicion_proxy.clear()
 	_identidades_remotas_cliente.clear()
+	_identidades_aplicadas_cliente.clear()
 
 
 func _al_conexion_fallida() -> void:
@@ -1475,3 +1485,4 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		_proxies_cliente.erase(peer_id)
 	_objetivos_posicion_proxy.erase(peer_id)
 	_identidades_remotas_cliente.erase(peer_id)
+	_identidades_aplicadas_cliente.erase(peer_id)
