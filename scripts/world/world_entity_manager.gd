@@ -170,10 +170,10 @@ func registrar_replica_red(datos: Dictionary, chunk_coord: Vector2i, instance_ke
 	var partes_clave := instance_key.split("|")
 	var runtime_key := str(partes_clave[partes_clave.size() - 1]) if not partes_clave.is_empty() else instance_key
 	criatura.set_meta("runtime_instance_key", runtime_key)
-	criatura.configurar_chunk(chunk_coord, limites_chunk)
 	if not registrar(criatura, chunk_coord):
 		criatura.queue_free()
 		return null
+	criatura.configurar_chunk(chunk_coord, limites_chunk)
 	_replicas_red_by_key[instance_key] = criatura
 	return criatura
 
