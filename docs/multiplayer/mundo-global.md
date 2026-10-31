@@ -10,7 +10,7 @@ Garlia usa un solo proceso de servidor dedicado como autoridad del mundo. Los ju
 - **Movimiento:** el cliente envía dirección, carrera, salto, dash y sprint de Eterium; el servidor calcula el movimiento y publica posición, orientación, estado de animación y estado vital. La identidad visual y la especie se envían por mensajes fiables al entrar; los snapshots periódicos llevan solo estado dinámico.
 - **Acciones:** las acciones primaria y secundaria se envían al servidor. En esta fase el servidor resuelve combate desarmado y acciones contextuales que no requieran modificar inventario. El input de movimiento se descarta si deja de renovarse durante 300 ms, y las acciones tienen un límite por jugador.
 - **Zonas y criaturas:** descubrimientos y viajes se validan/ejecutan en el servidor. Las criaturas que ya están materializadas en chunks activos se replican por clave determinista de zona/chunk/instancia; posición, velocidad, vida, muerte y señal de ataque se difunden a los clientes.
-- **Datos:** cada usuario conserva su guardado personal local. El servidor guarda por separado el estado global del mundo en user://garlia_global_world.json.
+- **Datos:** cada usuario conserva su guardado personal local. El servidor guarda por zona la semilla, calendario, desbloqueos y el estado runtime de criaturas (posición, velocidad, vida/muerte y datos de Garumi) en user://garlia_global_world.json.
 
 ## Certificado TLS requerido
 
@@ -48,7 +48,7 @@ Cuando se desconecta el último jugador, el servidor escribe el estado global y 
 
 Esto evita perder el mundo y permite volver sin arrancar otro proceso. **No apaga el VPS ni detiene el proceso del servidor.** El apagado real con reactivación automática requiere un supervisor/coordinador externo que no forma parte de este cambio.
 
-El archivo user://garlia_global_world.json debe residir en almacenamiento persistente. Ejecuta una sola instancia de servidor sobre ese archivo; varias instancias producirían mundos divergentes y escrituras en conflicto. La persistencia global actual conserva semilla, zona, estado de la zona si el adaptador lo ofrece, calendario y desbloqueos; todavía no serializa todo el estado runtime de criaturas/props para reinicios completos del proceso.
+El archivo user://garlia_global_world.json debe residir en almacenamiento persistente. Ejecuta una sola instancia de servidor sobre ese archivo; varias instancias producirían mundos divergentes y escrituras en conflicto. La persistencia guarda por zona las criaturas que el WorldEntityManager ya conoce, incluidos posición, velocidad, vida/muerte y progreso de Garumi. El guardado se realiza cada 15 segundos, antes de cambiar de zona y cuando se desconecta el último jugador. El estado de props recolectables, drops y objetos colocados todavía no forma parte de este archivo.
 
 ## Alcance de esta primera integración
 
