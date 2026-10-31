@@ -8,6 +8,7 @@ var _request: HTTPRequest
 var _recetas: Array[Dictionary] = []
 var _cargando: bool = false
 var _lista: GridContainer
+var _lista_scroll: ScrollContainer
 var _estado: Label
 var _detalle_nombre: Label
 var _detalle_icono: TextureRect
@@ -61,17 +62,20 @@ func _crear_interfaz() -> void:
 	contenido.add_theme_constant_override("separation", 5)
 	columna.add_child(contenido)
 
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_child(scroll)
+	_lista_scroll = ScrollContainer.new()
+	_lista_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lista_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_lista_scroll.size_flags_stretch_ratio = 1.0
+	contenido.add_child(_lista_scroll)
 
 	_lista = GridContainer.new()
-	_lista.columns = 3
+	_lista.columns = 5
 	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista.add_theme_constant_override("h_separation", 4)
-	_lista.add_theme_constant_override("v_separation", 4)
-	scroll.add_child(_lista)
+	_lista.add_theme_constant_override("h_separation", 6)
+	_lista.add_theme_constant_override("v_separation", 6)
+	_lista_scroll.add_child(_lista)
+	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
+	call_deferred("_ajustar_columnas_recetas")
 
 	var panel_detalle := PanelContainer.new()
 	panel_detalle.custom_minimum_size = Vector2(112, 0)
@@ -217,7 +221,8 @@ func _renderizar_recetas() -> void:
 
 func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	var panel := Button.new()
-	panel.custom_minimum_size = Vector2(64, 64)
+	panel.custom_minimum_size = Vector2(56, 56)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.tooltip_text = str(receta.get("nombre", "Receta"))
 	panel.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.11, 0.07, 0.045, 0.9), Color(0.29, 0.19, 0.12, 1), 1))
 	panel.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
@@ -232,11 +237,11 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var icono := TextureRect.new()
 	icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icono.offset_left = 6
-	icono.offset_top = 6
-	icono.offset_right = -6
-	icono.offset_bottom = -6
-	icono.custom_minimum_size = Vector2(52, 52)
+	icono.offset_left = 7
+	icono.offset_top = 7
+	icono.offset_right = -7
+	icono.offset_bottom = -7
+	icono.custom_minimum_size = Vector2(42, 42)
 	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -247,6 +252,15 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	)
 	panel.add_child(icono)
 
+
+
+func _ajustar_columnas_recetas() -> void:
+	if not is_instance_valid(_lista) or not is_instance_valid(_lista_scroll):
+		return
+	var separacion := 6
+	var ancho_util := maxi(1, int(_lista_scroll.size.x))
+	var columnas := floori(float(ancho_util + separacion) / 62.0)
+	_lista.columns = clampi(columnas, 3, 8)
 
 
 func _seleccionar_receta(receta: Dictionary) -> void:

@@ -9,15 +9,35 @@ var variante = 0
 var semilla = 0
 var interactuable = false
 var datos = {}
-var _world_context: WorldContext = null
-var _inventory: GarliaInventory = null
-var _world_items: GarliaWorldItems = null
+var _world_context = null
+var _inventory = null
+var _world_items = null
+var _replica_red_cliente := false
+
+
+func _es_servidor_dedicado() -> bool:
+	var arbol := Engine.get_main_loop() as SceneTree
+	if arbol == null or arbol.root == null:
+		return false
+	var multiplayer := arbol.root.get_node_or_null("GarliaMultiplayer")
+	return is_instance_valid(multiplayer) and multiplayer.has_method("es_servidor_dedicado") and bool(multiplayer.call("es_servidor_dedicado"))
+
+
+func _emitir_notificacion(mensaje: String) -> void:
+	var arbol := Engine.get_main_loop() as SceneTree
+	if arbol == null or arbol.root == null:
+		return
+	var events := arbol.root.get_node_or_null("Events")
+	if is_instance_valid(events) and events.has_signal("notification_pushed"):
+		events.emit_signal("notification_pushed", mensaje)
+
+
 
 
 func configurar_dependencias(
-	nuevo_world_context: WorldContext,
-	nuevo_inventory: GarliaInventory,
-	nuevo_world_items: GarliaWorldItems = null
+	nuevo_world_context,
+	nuevo_inventory,
+	nuevo_world_items = null
 ) -> void:
 	_world_context = nuevo_world_context
 	_inventory = nuevo_inventory
@@ -84,6 +104,8 @@ func get_interaction_priority() -> int:
 
 func get_interaction_text() -> String:
 	if _tiene_recoleccion_canonica():
+		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
+			return "Recolección no sincronizada"
 		return "Recolectar"
 
 	match tipo:
@@ -158,7 +180,7 @@ func get_interaction_details() -> Dictionary:
 				)
 
 	var item_id := _obtener_item_id_recoleccion()
-	if not item_id.is_empty():
+	if not item_id.is_empty() and is_instance_valid(_world_items):
 		var item := _world_items.buscar_item_por_id(
 			item_id
 		)
@@ -185,11 +207,14 @@ func interact(persona: Node) -> bool:
 		return false
 
 	if _tiene_recoleccion_canonica():
+		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
+			_emitir_notificacion("La recolección multijugador aún no está disponible.")
+			return true
 		if not _puede_recolectar(persona):
 			var requisito := _obtener_requisito_herramienta()
 			var tipo_herramienta: String = str(requisito.get("tipo", "herramienta"))
 			var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
-			Events.notification_pushed.emit(
+			_emitir_notificacion(
 				"Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido)
 			)
 			print(
@@ -220,7 +245,7 @@ func interact(persona: Node) -> bool:
 	if not bioma.is_empty():
 		mensaje += " · " + bioma
 
-	Events.notification_pushed.emit(
+	_emitir_notificacion(
 		mensaje
 	)
 
@@ -342,6 +367,8 @@ func _obtener_item_id_recoleccion() -> String:
 	if prop_id.is_empty():
 		return ""
 
+	if not is_instance_valid(_world_items):
+		return ""
 	for item_variant in _world_items.obtener_catalogo():
 		if not item_variant is Dictionary:
 			continue
@@ -427,10 +454,10 @@ func _recolectar(persona: Node) -> bool:
 			" | slots=",
 			str(inventario.get("items").size() if inventario.get("items") is Array else -1)
 		)
-		Events.notification_pushed.emit("No tienes espacio en el inventario.")
+		_emitir_notificacion("No tienes espacio en el inventario.")
 		return false
 
-	Events.notification_pushed.emit(
+	_emitir_notificacion(
 		"Recolectaste " + str(
 			item.get(
 				"nombre",
@@ -500,6 +527,50 @@ func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	queue_redraw()
 
 
+func configurar_replica_red_cliente() -> void:
+	_replica_red_cliente = true
+
+
+func ocultar_replica_red_cliente() -> void:
+	configurar_replica_red_cliente()
+	visible = false
+	remove_from_group("interactable")
+	remove_from_group("world_resource")
+	remove_from_group("world_cave")
+	remove_from_group("world_structure")
+
+
+func aplicar_estado_red(posicion: Vector2) -> void:
+	configurar_replica_red_cliente()
+	global_position = posicion
+	visible = true
+	if interactuable:
+		add_to_group("interactable")
+	if tipo == "recurso" or tipo == "planta":
+		add_to_group("world_resource")
+	elif tipo == "cueva":
+		add_to_group("world_cave")
+	elif tipo == "estructura":
+		add_to_group("world_structure")
+
+
+func reactivar_simulacion_local_red() -> void:
+	_replica_red_cliente = false
+	visible = true
+	remove_from_group("interactable")
+	remove_from_group("world_resource")
+	remove_from_group("world_cave")
+	remove_from_group("world_structure")
+	if interactuable:
+		add_to_group("interactable")
+	if tipo == "recurso" or tipo == "planta":
+		add_to_group("world_resource")
+	elif tipo == "cueva":
+		add_to_group("world_cave")
+	elif tipo == "estructura":
+		add_to_group("world_structure")
+
+
 func configurar_chunk(
 	chunk_coord: Vector2i,
 	limite_chunk: Rect2
@@ -565,8 +636,9 @@ func _actualizar_profundidad() -> void:
 
 func _ready() -> void:
 	add_to_group("world_props")
-	if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
-		_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
+	if is_instance_valid(_world_items):
+		if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
+			_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
 	_actualizar_profundidad()
 
 

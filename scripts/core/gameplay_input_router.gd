@@ -40,13 +40,23 @@ func configurar_bloqueos(
 	_hud = hud
 	_debug_console = debug_console
 
-func _input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if not _es_accion_primaria_o_secundaria(event):
 		return
 
 	# Si una interfaz modal está abierta, no consumimos el evento:
 	# la UI (Buttons, inventario, diálogo, etc.) debe recibirlo.
 	if esta_bloqueado():
+		return
+
+	# En el mundo global las acciones se resuelven exclusivamente en servidor.
+	# No ejecutamos combate/interacción local en una copia independiente.
+	if GarliaWorldNetwork.es_cliente_en_mundo_global():
+		if event.is_action_pressed("primary_action"):
+			GarliaWorldNetwork.solicitar_accion_local("primary")
+		else:
+			GarliaWorldNetwork.solicitar_accion_local("secondary")
+		get_viewport().set_input_as_handled()
 		return
 
 	var combate_garumi_activo := not get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()

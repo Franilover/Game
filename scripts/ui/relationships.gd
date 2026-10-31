@@ -2,11 +2,17 @@ extends Control
 
 class_name RelationshipsUI
 
-var lista: VBoxContainer
+const TAMANO_RETRATO := Vector2(64.0, 72.0)
+const SEPARACION_RETRATOS := 8
+
+var lista: GridContainer
 var detalle: VBoxContainer
 var estado: Label
+var _lista_scroll: ScrollContainer
 var _botones: Array[Button] = []
+var _personajes_por_id: Dictionary = {}
 var _relationship_system: Node = null
+
 
 func _ready() -> void:
 	_crear_ui()
@@ -14,8 +20,24 @@ func _ready() -> void:
 
 
 func configurar(sistema: Node) -> void:
+	if _relationship_system != null and is_instance_valid(_relationship_system):
+		if _relationship_system.has_signal("reglas_sociales_cargadas"):
+			var senal_anterior: Signal = _relationship_system.reglas_sociales_cargadas
+			if senal_anterior.is_connected(_al_reglas_sociales_cargadas):
+				senal_anterior.disconnect(_al_reglas_sociales_cargadas)
+
 	_relationship_system = sistema
+	if _relationship_system != null:
+		if _relationship_system.has_signal("reglas_sociales_cargadas"):
+			var senal_reglas: Signal = _relationship_system.reglas_sociales_cargadas
+			if not senal_reglas.is_connected(_al_reglas_sociales_cargadas):
+				senal_reglas.connect(_al_reglas_sociales_cargadas)
 	_actualizar()
+
+
+func _al_reglas_sociales_cargadas() -> void:
+	_actualizar()
+
 
 func _crear_ui() -> void:
 	var margen := MarginContainer.new()
@@ -32,21 +54,32 @@ func _crear_ui() -> void:
 
 	var contenido := HBoxContainer.new()
 	contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_theme_constant_override("separation", 6)
+	contenido.add_theme_constant_override("separation", 8)
 	columna.add_child(contenido)
 
-	lista = VBoxContainer.new()
-	lista.custom_minimum_size = Vector2(100, 0)
-	lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	lista.add_theme_constant_override("separation", 2)
-	contenido.add_child(lista)
+	_lista_scroll = ScrollContainer.new()
+	_lista_scroll.custom_minimum_size = Vector2(220.0, 0.0)
+	_lista_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lista_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_lista_scroll.size_flags_stretch_ratio = 1.0
+	_lista_scroll.resized.connect(_ajustar_columnas_retratos)
+	contenido.add_child(_lista_scroll)
+
+	lista = GridContainer.new()
+	lista.columns = 3
+	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lista.add_theme_constant_override("h_separation", SEPARACION_RETRATOS)
+	lista.add_theme_constant_override("v_separation", SEPARACION_RETRATOS)
+	_lista_scroll.add_child(lista)
 
 	var separador := VSeparator.new()
 	separador.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	contenido.add_child(separador)
 
 	detalle = VBoxContainer.new()
+	detalle.custom_minimum_size = Vector2(170.0, 0.0)
 	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detalle.size_flags_stretch_ratio = 0.8
 	detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detalle.add_theme_constant_override("separation", 8)
 	contenido.add_child(detalle)
@@ -56,23 +89,36 @@ func _crear_ui() -> void:
 	estado.add_theme_color_override("font_color", Color(0.55, 0.43, 0.29, 1.0))
 	estado.add_theme_font_size_override("font_size", 10)
 	columna.add_child(estado)
+	call_deferred("_ajustar_columnas_retratos")
+
+
+func _ajustar_columnas_retratos() -> void:
+	if not is_instance_valid(lista) or not is_instance_valid(_lista_scroll):
+		return
+	var ancho_util := maxi(1, int(_lista_scroll.size.x))
+	var paso := TAMANO_RETRATO.x + float(SEPARACION_RETRATOS)
+	lista.columns = clampi(floori(float(ancho_util + SEPARACION_RETRATOS) / paso), 2, 6)
+
 
 func _actualizar() -> void:
 	_limpiar()
 
 	var sistema := _relationship_system
-	if sistema == null or not sistema.has_method("esta_cargado") or not sistema.call("esta_cargado"):
-		estado.text = ""
+	if sistema == null or not sistema.has_method("esta_cargado"):
+		estado.text = "Las relaciones todavía no están disponibles."
+		return
+	if not bool(sistema.call("esta_cargado")):
+		estado.text = "Cargando relaciones sociales..."
 		return
 
 	var reglas_variant: Variant = sistema.call("obtener_reglas_sociales")
 	if not reglas_variant is Dictionary:
-		estado.text = ""
+		estado.text = "No se pudieron leer las relaciones sociales."
 		return
 
 	var reglas: Dictionary = reglas_variant as Dictionary
 	if reglas.is_empty():
-		estado.text = ""
+		estado.text = "Todavía no hay personajes configurados para relaciones."
 		return
 
 	for personaje_id_variant in reglas.keys():
@@ -81,27 +127,64 @@ func _actualizar() -> void:
 		if not regla_variant is Dictionary:
 			continue
 
-		var regla: Dictionary = regla_variant as Dictionary
-		var nombre := ""
 		var personaje: Dictionary = WorldData.obtener_personaje_game_por_id(personaje_id)
-		if not personaje.is_empty():
-			nombre = str(personaje.get("nombre", "")).strip_edges()
+		var nombre := str(personaje.get("nombre", "")).strip_edges()
 		if nombre.is_empty():
 			nombre = personaje_id
+		var asset_key := str(personaje.get("asset_key", nombre)).strip_edges()
+		_personajes_por_id[personaje_id] = {
+			"nombre": nombre,
+			"asset_key": asset_key
+		}
 
 		var boton := Button.new()
-		boton.text = nombre
-		boton.custom_minimum_size = Vector2(0, 24)
-		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.custom_minimum_size = TAMANO_RETRATO
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.toggle_mode = true
+		boton.set_meta("personaje_id", personaje_id)
+		boton.tooltip_text = nombre
+		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
+		var textura := _cargar_retrato(asset_key, nombre)
+		if textura != null:
+			var retrato := TextureRect.new()
+			retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			retrato.offset_left = 6.0
+			retrato.offset_top = 6.0
+			retrato.offset_right = -6.0
+			retrato.offset_bottom = -6.0
+			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			retrato.texture = textura
+			boton.add_child(retrato)
+		else:
+			boton.text = nombre.substr(0, 2).to_upper()
 		lista.add_child(boton)
 		_botones.append(boton)
 
 	estado.text = ""
 
+
+func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
+	var claves: Array[String] = []
+	if not asset_key.is_empty():
+		claves.append(asset_key)
+	if not nombre.is_empty() and nombre not in claves:
+		claves.append(nombre)
+	for clave in claves:
+		var ruta := "res://assets/art/characters/" + clave + ".png"
+		if ResourceLoader.exists(ruta):
+			var recurso: Resource = load(ruta)
+			if recurso is Texture2D:
+				return recurso as Texture2D
+	return null
+
+
 func _seleccionar(personaje_id: String, nombre: String) -> void:
 	for boton in _botones:
-		boton.button_pressed = false
+		boton.button_pressed = str(boton.get_meta("personaje_id", "")) == personaje_id
 
 	_limpiar_detalle()
 
@@ -114,14 +197,17 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 		return
 
 	var relacion: Dictionary = relacion_variant as Dictionary
-
-	var skin := TextureRect.new()
-	var ruta_skin := "res://assets/art/characters/" + nombre + ".png"
-	if ResourceLoader.exists(ruta_skin):
-		skin.texture = load(ruta_skin)
-		skin.custom_minimum_size = Vector2(0, 58)
+	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
+	var asset_key := str(datos_personaje.get("asset_key", nombre))
+	var textura := _cargar_retrato(asset_key, nombre)
+	if textura != null:
+		var skin := TextureRect.new()
+		skin.custom_minimum_size = Vector2(0.0, 136.0)
+		skin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		skin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		skin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		skin.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		skin.texture = textura
 		detalle.add_child(skin)
 
 	var titulo := Label.new()
@@ -130,11 +216,6 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1.0))
 	detalle.add_child(titulo)
 
-	var descripcion := Label.new()
-	descripcion.text = "Relación actual"
-	descripcion.add_theme_color_override("font_color", Color(0.65, 0.52, 0.35, 1.0))
-	detalle.add_child(descripcion)
-
 	for clave in ["amistad", "confianza", "respeto", "afecto"]:
 		var valor := float(relacion.get(clave, 0.0))
 		var fila := Label.new()
@@ -142,12 +223,15 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 		fila.add_theme_font_size_override("font_size", 10)
 		detalle.add_child(fila)
 
+
 func _limpiar() -> void:
 	_botones.clear()
+	_personajes_por_id.clear()
 	if lista != null:
 		for hijo in lista.get_children():
 			hijo.queue_free()
 	_limpiar_detalle()
+
 
 func _limpiar_detalle() -> void:
 	if detalle == null:

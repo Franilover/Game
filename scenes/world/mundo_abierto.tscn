@@ -8,7 +8,6 @@
 [ext_resource type="Script" path="res://scripts/world/world_entity_manager.gd" id="6_world_entity_manager"]
 [ext_resource type="Script" path="res://scripts/world/world_entity_factory.gd" id="7_world_entity_factory"]
 [ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="8_world_spawn_rules"]
-[ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="9_world_atmosphere"]
 [ext_resource type="Texture2D" path="res://assets/art/places/Casa.png" id="10_casa_prueba"]
 [ext_resource type="Script" path="res://scripts/world/casa_prueba.gd" id="11_casa_prueba_script"]
 
@@ -44,7 +43,4 @@ peso_destacadas = 76.0
 [node name="WorldEntitySpawner" type="Node" parent="WorldGenerator"]
 script = ExtResource("5_world_spawner")
 
-[node name="WorldAtmosphere" type="Node" parent="WorldGenerator"]
-script = ExtResource("9_world_atmosphere")
 
-[node name="DayNightModulation" type="CanvasModulate" parent="WorldGenerator/WorldAtmosphere"]

@@ -773,7 +773,9 @@ func _aplicar_danio(
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
 		danio,
-		"Jugador/CombatSystem:" + origen
+		"Jugador/CombatSystem:" + origen,
+		Callable(),
+		atacante
 	)
 	if not aplicado:
 		return
@@ -862,7 +864,9 @@ func aplicar_danio_desde_entidad(
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
 		danio,
-		origen
+		origen,
+		Callable(),
+		atacante
 	)
 	if not aplicado:
 		return false

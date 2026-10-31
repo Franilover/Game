@@ -35,6 +35,8 @@ signal enciclopedia_actualizada(criatura_id: String)
 signal mapa_exploracion_actualizada
 signal descubrimientos_mundo_actualizados
 signal descubrimiento_mundo(nivel: String, id: String)
+signal garumis_vinculados_actualizados
+signal garumis_amigos_actualizados
 
 
 func configurar_dependencias(
@@ -234,6 +236,35 @@ func iniciar_partida(id: String) -> bool:
 	return true
 
 
+## Sincroniza únicamente la zona de entrada del mundo global en el save local.
+## El estado de personaje, inventario y progreso privado permanece local.
+func establecer_zona_mundo_global(id: String, tipo_zona: String, reinos_globales: Dictionary = {}, tiempo_mundo: Dictionary = {}) -> bool:
+	var tipo := tipo_zona.strip_edges()
+	if id.is_empty() or tipo.is_empty():
+		return false
+	var datos := _leer_archivo_partida(id)
+	if datos.is_empty():
+		return false
+	var estado_variant: Variant = datos.get("estado", {})
+	var estado: Dictionary = estado_variant as Dictionary if estado_variant is Dictionary else {}
+	var flags_variant: Variant = estado.get("flags", {})
+	var flags: Dictionary = (flags_variant as Dictionary).duplicate(true) if flags_variant is Dictionary else {}
+	flags["zona_actual_tipo"] = tipo
+	if not reinos_globales.is_empty():
+		var desbloqueados := {"torres": true}
+		for clave_variant in reinos_globales.keys():
+			var clave := str(clave_variant).strip_edges().to_lower()
+			if not clave.is_empty() and bool(reinos_globales.get(clave_variant, false)):
+				desbloqueados[clave] = true
+		flags["reinos_desbloqueados"] = desbloqueados
+	if not tiempo_mundo.is_empty():
+		flags["tiempo_mundo"] = tiempo_mundo.duplicate(true)
+	estado["flags"] = flags
+	datos["estado"] = estado
+	datos["actualizado_en"] = _ahora()
+	return _escribir_archivo_partida(id, datos)
+
+
 func eliminar_partida(id: String) -> bool:
 	if not save_repository.eliminar_partida(id):
 		return false
@@ -421,6 +452,19 @@ func capturar_estado_desde_juego(jugador: Player) -> void:
 	player_state.position = jugador.global_position
 	player_state.position_valida = true
 	player_state.tile_valido = false
+
+	# Persistir también la zona activa y el estado del interior, no solo
+	# las coordenadas globales del jugador.
+	var escena_actual := get_tree().current_scene
+	if is_instance_valid(escena_actual):
+		var zone_manager := escena_actual.get_node_or_null("World/ZoneManager")
+		if is_instance_valid(zone_manager):
+			world_state.flags["zona_actual_tipo"] = str(zone_manager.call("obtener_tipo_actual"))
+			var zona := zone_manager.call("obtener_zona_actual") as Node
+			if is_instance_valid(zona) and zona.has_method("obtener_estado_guardado"):
+				world_state.flags["estado_zona_actual"] = zona.call("obtener_estado_guardado").duplicate(true)
+			else:
+				world_state.flags.erase("estado_zona_actual")
 
 	var world_context: WorldContext = _world_context
 
@@ -631,6 +675,30 @@ func registrar_criatura_derrotada(criatura: Node) -> bool:
 	return true
 
 
+func registrar_garumi_descubierto(garumi_id: String) -> bool:
+	var id := garumi_id.strip_edges()
+	if id.is_empty():
+		return false
+	var registros_variant: Variant = world_state.flags.get("enciclopedia_garumis", {})
+	var registros: Dictionary = {}
+	if registros_variant is Dictionary:
+		registros = (registros_variant as Dictionary).duplicate(true)
+	if registros.has(id):
+		return false
+	registros[id] = true
+	world_state.flags["enciclopedia_garumis"] = registros
+	enciclopedia_actualizada.emit(id)
+	print("GameState: Garumi descubierto → ", id)
+	return true
+
+
+func obtener_garumis_descubiertos() -> Dictionary:
+	var registros_variant: Variant = world_state.flags.get("enciclopedia_garumis", {})
+	if registros_variant is Dictionary:
+		return (registros_variant as Dictionary).duplicate(true)
+	return {}
+
+
 func obtener_criaturas_descubiertas() -> Dictionary:
 	var registros_variant: Variant = world_state.flags.get(
 		"enciclopedia_criaturas",
@@ -731,6 +799,35 @@ func debe_iniciar_en_reino_torres() -> bool:
 
 func marcar_reino_torres_visitado() -> void:
 	world_state.flags["reino_torres_visitado"] = true
+	desbloquear_reino("torres")
+
+
+## Reinos desbloqueados por esta partida. Torres siempre está disponible.
+func obtener_reinos_desbloqueados() -> Dictionary:
+	var resultado: Dictionary = {"torres": true}
+	var variante: Variant = world_state.flags.get("reinos_desbloqueados", {})
+	if variante is Dictionary:
+		for clave_variant in (variante as Dictionary).keys():
+			var clave := str(clave_variant).strip_edges().to_lower()
+			if not clave.is_empty() and bool((variante as Dictionary).get(clave_variant, false)):
+				resultado[clave] = true
+	return resultado
+
+
+## Registra el descubrimiento en el guardado local sin modificar el canon de Supabase.
+func desbloquear_reino(clave_reino: String) -> bool:
+	var clave := clave_reino.strip_edges().to_lower()
+	if clave.is_empty():
+		return false
+	var desbloqueados := obtener_reinos_desbloqueados()
+	if bool(desbloqueados.get(clave, false)):
+		return false
+	desbloqueados[clave] = true
+	world_state.flags["reinos_desbloqueados"] = desbloqueados
+	print("GameState: reino descubierto → ", clave)
+	if not active_save_id.is_empty():
+		call_deferred("guardar_partida")
+	return true
 
 
 func obtener_configuracion_personaje() -> Dictionary:
@@ -791,6 +888,64 @@ func _sincronizar_garumis_vinculados_desde_escena() -> void:
 
 ## Registro persistente de Garumis vinculados a esta partida.
 ## Se almacena dentro de flags para mantener compatibilidad con el formato JSON actual.
+func obtener_garumis_amigos() -> Array[Dictionary]:
+	var amigos: Array[Dictionary] = []
+	var variant: Variant = world_state.flags.get("garumis_amigos", [])
+	if not variant is Array:
+		return amigos
+	for item in variant as Array:
+		if item is Dictionary:
+			amigos.append((item as Dictionary).duplicate(true))
+	return amigos
+
+
+func es_garumi_amigo(id_instancia: String) -> bool:
+	var id_limpio := id_instancia.strip_edges()
+	if id_limpio.is_empty():
+		return false
+	for amigo in obtener_garumis_amigos():
+		if str(amigo.get("garumi_instancia_id", "")) == id_limpio:
+			return true
+	return false
+
+
+func guardar_garumi_amigo(datos_garumi: Dictionary) -> bool:
+	var id_instancia := str(datos_garumi.get("garumi_instancia_id", "")).strip_edges()
+	if id_instancia.is_empty():
+		return false
+	var lista := obtener_garumis_amigos()
+	for i in range(lista.size()):
+		if str(lista[i].get("garumi_instancia_id", "")) == id_instancia:
+			lista[i] = datos_garumi.duplicate(true)
+			world_state.flags["garumis_amigos"] = lista
+			garumis_amigos_actualizados.emit()
+			_al_cambio_guardable()
+			return true
+	lista.append(datos_garumi.duplicate(true))
+	world_state.flags["garumis_amigos"] = lista
+	garumis_amigos_actualizados.emit()
+	_al_cambio_guardable()
+	return true
+
+
+func eliminar_garumi_amigo(id_instancia: String) -> bool:
+	var id_limpio := id_instancia.strip_edges()
+	if id_limpio.is_empty():
+		return false
+	var nueva_lista: Array[Dictionary] = []
+	var eliminado := false
+	for amigo in obtener_garumis_amigos():
+		if str(amigo.get("garumi_instancia_id", "")) == id_limpio:
+			eliminado = true
+		else:
+			nueva_lista.append(amigo)
+	if eliminado:
+		world_state.flags["garumis_amigos"] = nueva_lista
+		garumis_amigos_actualizados.emit()
+		_al_cambio_guardable()
+	return eliminado
+
+
 func obtener_garumis_vinculados() -> Array[Dictionary]:
 	var guardados: Array[Dictionary] = []
 	var variant: Variant = world_state.flags.get("garumis_vinculados", [])
@@ -820,6 +975,7 @@ func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
 		if str(lista[i].get("garumi_instancia_id", "")) == id_instancia:
 			lista[i] = datos_garumi.duplicate(true)
 			world_state.flags["garumis_vinculados"] = lista
+			garumis_vinculados_actualizados.emit()
 			_al_cambio_guardable()
 			return true
 	if lista.size() >= 3:
@@ -827,6 +983,7 @@ func guardar_garumi_vinculado(datos_garumi: Dictionary) -> bool:
 		return false
 	lista.append(datos_garumi.duplicate(true))
 	world_state.flags["garumis_vinculados"] = lista
+	garumis_vinculados_actualizados.emit()
 	_al_cambio_guardable()
 	return true
 
@@ -845,6 +1002,7 @@ func eliminar_garumi_vinculado(id_instancia: String) -> bool:
 		nueva_lista.append(registro)
 	if eliminado:
 		world_state.flags["garumis_vinculados"] = nueva_lista
+		garumis_vinculados_actualizados.emit()
 		_al_cambio_guardable()
 	return eliminado
 
@@ -926,6 +1084,16 @@ func _aplicar_estado_al_juego() -> void:
 	if jugador is Node2D and player_state.position_valida:
 		(jugador as Node2D).global_position = player_state.position
 
+	# Reconstruir la habitación después de posicionar al jugador.
+	var escena_actual := get_tree().current_scene
+	if is_instance_valid(escena_actual):
+		var zone_manager := escena_actual.get_node_or_null("World/ZoneManager")
+		if is_instance_valid(zone_manager):
+			var zona := zone_manager.call("obtener_zona_actual") as Node
+			var estado_zona: Variant = world_state.flags.get("estado_zona_actual", {})
+			if is_instance_valid(zona) and zona.has_method("restaurar_estado_guardado") and estado_zona is Dictionary:
+				zona.call("restaurar_estado_guardado", (estado_zona as Dictionary).duplicate(true))
+
 	jugador.set("health", clampi(
 		player_state.health,
 		0,
@@ -941,11 +1109,17 @@ func _aplicar_estado_al_juego() -> void:
 	jugador.set("is_alive", true)
 
 	if jugador.get("stamina") != null:
-		jugador.set("stamina", clampf(
+		var stamina_guardada := clampf(
 			player_state.stamina,
 			0.0,
 			float(jugador.get("max_stamina"))
-		))
+		)
+		var stamina_controller: Variant = jugador.get("stamina_controller")
+		if stamina_controller != null and stamina_controller.has_method("establecer_actual"):
+			# El controlador es la fuente de verdad; su señal sincroniza Player.stamina y el HUD.
+			stamina_controller.call("establecer_actual", stamina_guardada)
+		else:
+			jugador.set("stamina", stamina_guardada)
 
 	if jugador.get("facing") is Vector2:
 		jugador.set("facing", player_state.facing)

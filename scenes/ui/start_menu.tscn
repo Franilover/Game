@@ -233,7 +233,6 @@ theme_override_styles/hover = SubResource("StyleBoxProfileHover")
 text = "P"
 
 [node name="SettingsButton" type="Button" parent="." unique_id=1025445352]
-modulate = Color(1, 1, 1, 0.42)
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -246,13 +245,13 @@ offset_right = -24.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 0
-tooltip_text = "Configuración — Próximamente"
+tooltip_text = "Abrir configuración"
 focus_mode = 1
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxSettingsNormal")
 theme_override_styles/pressed = SubResource("StyleBoxSettingsPressed")
 theme_override_styles/hover = SubResource("StyleBoxSettingsHover")
-disabled = true
+disabled = false
 text = "⚙"
 
 [node name="LoginOverlay" type="ColorRect" parent="." unique_id=1220459436]

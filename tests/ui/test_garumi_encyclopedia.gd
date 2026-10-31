@@ -33,7 +33,8 @@ func _run() -> void:
 
 	var tabs := inventario.get_node("Window/Margin/Column/Tabs") as TabContainer
 	var enciclopedia := inventario.get_node("Window/Margin/Column/Tabs/Enciclopedia") as Control
-	_check(enciclopedia.has_method("abrir_en_garumis"), "La Enciclopedia debe exponer abrir_en_garumis().")
+	var garumis_tab := inventario.get_node("Window/Margin/Column/Tabs/Garumis") as Control
+	_check(garumis_tab.has_method("abrir_en_garumis"), "Garumis debe ser una pestaña independiente.")
 
 	# Recorrer el pipeline real de entrada de Godot; no llamar _input() directamente.
 	var tecla := InputEventKey.new()
@@ -43,8 +44,37 @@ func _run() -> void:
 	Input.parse_input_event(tecla)
 	await get_tree().process_frame
 	_check(inventario.visible, "Pulsar G debe abrir la ventana del inventario.")
-	_check(tabs.current_tab == 2, "Pulsar G debe seleccionar la pestaña Enciclopedia.")
-	_check(str(enciclopedia.get("_modo")) == "garumis", "Pulsar G debe seleccionar la sección Garumis.")
+	_check(tabs.current_tab == 3, "Pulsar G debe seleccionar la pestaña Garumis.")
+	_check(str(enciclopedia.get("_modo")) != "garumis", "La Enciclopedia no debe contener Garumis.")
+	_check(str(garumis_tab.get("_subtab")) == "garumis", "G debe abrir la subpestaña Garumis.")
+
+	# La enciclopedia sólo debe exponer el linaje descendiente de Orumi.
+	const orumi_id := "24f86486-aced-4a23-bd1b-f025561a8aa3"
+	var filas_catalogo: Array[Dictionary] = [
+		{"tipo_registro": "original", "entidad_id": orumi_id, "nombre": "Orumi", "letra_original": "O", "orden_catalogo": 1},
+		{"tipo_registro": "original", "entidad_id": "varum-test-id", "nombre": "Varum", "letra_original": "V", "orden_catalogo": 2},
+		{"tipo_registro": "especie", "entidad_id": "orumi-descendiente-test", "nombre": "Oruvan", "original_id": orumi_id, "nombre_original": "Orumi", "letra_original": "O", "estado_documentacion": "canon", "numero_origen": 1, "numero_global": 4},
+		{"tipo_registro": "especie", "entidad_id": "varum-descendiente-test", "nombre": "Varumin", "original_id": "varum-test-id", "nombre_original": "Varum", "letra_original": "V", "estado_documentacion": "canon", "numero_global": 2}
+	]
+	var garudex: Control = garumis_tab.get("_garudex")
+	_check(garudex != null, "La pestaña Garumis debe incluir Garudex.")
+	if garudex == null:
+		get_tree().quit(1)
+		return
+	garudex.call("_aplicar_catalogo_desde_filas", filas_catalogo)
+	var catalogo_filtrado: Array = garudex.get("_garumis_catalogo")
+	var originales_filtrados: Array = garudex.get("_garumi_originales")
+	_check(catalogo_filtrado.size() == 1, "La enciclopedia debe mostrar sólo descendientes de Orumi.")
+	_check(not catalogo_filtrado.is_empty() and str(catalogo_filtrado[0].get("nombre", "")) == "Oruvan", "Debe conservar el descendiente de Orumi.")
+	_check(originales_filtrados.size() == 1 and str(originales_filtrados[0].get("nombre", "")) == "Orumi", "Debe mostrar sólo el Original Orumi como encabezado de linaje.")
+	garudex.call("_construir_lista_garumis")
+	var arbol: Tree = garudex.get("_arbol")
+	_check(arbol.columns == 3, "La lista de Garumis debe separar número de origen, nombre y número global.")
+	var grupo_orumi := arbol.get_root().get_first_child()
+	var item_oruvan: TreeItem = grupo_orumi.get_first_child() if grupo_orumi != null else null
+	_check(item_oruvan != null and item_oruvan.get_text(0) == "1", "El número normal/de origen debe aparecer a la izquierda.")
+	_check(item_oruvan != null and item_oruvan.get_text(1) == "Oruvan", "El nombre debe quedar en la columna central.")
+	_check(item_oruvan != null and item_oruvan.get_text(2) == "4", "El número global debe aparecer a la derecha.")
 
 	# Soltar G y pulsarla de nuevo para verificar el cierre por la misma ruta.
 	var soltar_tecla := InputEventKey.new()

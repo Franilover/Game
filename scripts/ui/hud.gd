@@ -1,6 +1,24 @@
 extends Control
 class_name HUD
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
+class GarumiHealthRing extends Control:
+	var health_ratio: float = 1.0
+	var occupied: bool = false
+
+	func _draw() -> void:
+		var center := size * 0.5
+		var radius := minf(size.x, size.y) * 0.5 - 2.0
+		if radius <= 0.0:
+			return
+		draw_circle(center, radius - 1.5, Color(0.075, 0.05, 0.035, 0.98))
+		draw_arc(center, radius, 0.0, TAU, 48, Color(0.29, 0.19, 0.12, 1.0), 3.0, true)
+		if occupied:
+			var progreso := clampf(health_ratio, 0.0, 1.0)
+			if progreso > 0.0:
+				draw_arc(center, radius, -PI * 0.5, -PI * 0.5 + TAU * progreso, 48, Color(0.48, 0.73, 0.96, 1.0), 3.0, true)
+
 
 var player: Player = null
 var world_context: WorldContext = null
@@ -20,6 +38,7 @@ var _world_atmosphere_ref: WorldAtmosphere = null
 var _calendar_panel: PanelContainer = null
 var _calendar_label: Label = null
 var _calendar_elapsed: float = 0.0
+var _eterium_ui_elapsed: float = 0.0
 
 var mostrar_contexto_mundo: bool = false
 
@@ -55,12 +74,11 @@ var _mission_panel_open: bool = false
 
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
-var _garumis_vinculados_panel: PanelContainer = null
-var _garumis_vinculados_lista: VBoxContainer = null
+var _garumis_vinculados_panel: HBoxContainer = null
+var _garumis_vinculados_lista: HBoxContainer = null
 var _garumis_vinculados_titulo: Label = null
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
-var _mostrar_numeros_garumis: bool = false
 var _dialogo_ruptura_vinculo: ConfirmationDialog = null
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
@@ -128,6 +146,7 @@ func _ready() -> void:
 	add_to_group("hud")
 
 	_configurar_referencias_ui()
+	PIXEL_UI_THEME.apply(self)
 	_crear_selector_manos()
 	_crear_huecos_manos()
 	_preparar_location()
@@ -165,6 +184,13 @@ func _conectar_senal_game_state() -> void:
 
 func _process(delta: float) -> void:
 	_actualizar_vidas_garumis_vinculados()
+	_eterium_ui_elapsed += delta
+	if _eterium_ui_elapsed >= 0.1:
+		_eterium_ui_elapsed = 0.0
+		# Consultar las fuentes de verdad evita que el HUD dependa de una señal
+		# perdida durante la inicialización o de una propiedad pública desfasada.
+		_actualizar_stamina()
+		_actualizar_eterium()
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
 		_tiempo_contexto += delta
 		if _tiempo_contexto >= 0.25:
@@ -179,6 +205,11 @@ func _process(delta: float) -> void:
 		if nodo is CanvasItem and (nodo as CanvasItem).visible:
 			inventario_abierto = true
 			break
+	if is_instance_valid(_garumis_vinculados_panel):
+		_garumis_vinculados_panel.visible = (
+			not inventario_abierto
+			and not _combate_garumi_activo
+		)
 	if is_instance_valid(_calendar_panel):
 		_calendar_panel.visible = not inventario_abierto and not _combate_garumi_activo
 	_calendar_elapsed += delta
@@ -396,12 +427,21 @@ func _actualizar_stamina() -> void:
 		"stamina",
 		0.0
 	)
-
 	var stamina_maxima := _obtener_float(
 		player,
 		"max_stamina",
-		100.0
+		5.0
 	)
+
+	# PlayerStaminaController es la fuente de verdad de las cargas de dash.
+	var controlador: Variant = player.get("stamina_controller") if is_instance_valid(player) else null
+	if controlador != null:
+		var actual_controlador: Variant = controlador.get("current")
+		var maximo_controlador: Variant = controlador.get("maximum")
+		if actual_controlador != null:
+			stamina_actual = float(actual_controlador)
+		if maximo_controlador != null:
+			stamina_maxima = float(maximo_controlador)
 
 	_actualizar_puntos_dash(stamina_actual, stamina_maxima)
 
@@ -412,12 +452,18 @@ func _actualizar_eterium() -> void:
 		"mana",
 		0.0
 	)
-
 	var eterium_maximo := _obtener_float(
 		player,
 		"max_mana",
 		100.0
 	)
+
+	# El runtime opera directamente sobre VitalState; leerlo evita mostrar una
+	# copia antigua de Player.mana entre dos sincronizaciones.
+	var runtime: Variant = player.get("eterium_runtime") if is_instance_valid(player) else null
+	if runtime != null and runtime.has_method("mana") and runtime.has_method("max_mana"):
+		eterium_actual = float(runtime.call("mana"))
+		eterium_maximo = float(runtime.call("max_mana"))
 
 	_actualizar_barra_float(
 		eterium_bar,
@@ -1309,7 +1355,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var hand_key := event as InputEventKey
 		# Capturar Tab en _input para evitar que otro control consuma la entrada.
-		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_M:
+		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_M and not hand_key.shift_pressed:
 			var inventory_node := get_tree().get_first_node_in_group("inventory")
 			if inventory_node != null and inventory_node.has_method("toggle_mapa"):
 				inventory_node.call("toggle_mapa")
@@ -1423,8 +1469,9 @@ func _preparar_reloj_calendario() -> void:
 func _actualizar_reloj_calendario() -> void:
 	if not is_instance_valid(_calendar_label):
 		return
+	# En reinos fijos no existe WorldAtmosphere. Conservamos la última
+	# lectura válida en vez de reemplazar el reloj por "no disponible".
 	if not is_instance_valid(_world_atmosphere_ref):
-		_calendar_label.text = "GARLIA\nCalendario no disponible"
 		return
 	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
@@ -1441,36 +1488,71 @@ func _actualizar_reloj_calendario() -> void:
 
 
 func _preparar_panel_garumis_vinculados() -> void:
-	_garumis_vinculados_panel = PanelContainer.new()
+	# Tres espacios permanentes: número a la izquierda y retrato con anillo de vida.
+	# Sin título ni contenedor decorativo; los huecos vacíos usan los tonos de la UI.
+	_garumis_vinculados_panel = HBoxContainer.new()
 	_garumis_vinculados_panel.name = "GarumisVinculados"
 	_garumis_vinculados_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_garumis_vinculados_panel.position = Vector2(18.0, 18.0)
-	_garumis_vinculados_panel.custom_minimum_size = Vector2(174.0, 0.0)
-	_garumis_vinculados_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_garumis_vinculados_panel.add_theme_constant_override("separation", 10)
+	_garumis_vinculados_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_garumis_vinculados_panel.z_index = 20
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.055, 0.04, 0.03, 0.88)
-	estilo.border_color = Color(0.48, 0.35, 0.20, 0.95)
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(4)
-	estilo.content_margin_left = 8.0
-	estilo.content_margin_top = 7.0
-	estilo.content_margin_right = 8.0
-	estilo.content_margin_bottom = 7.0
-	_garumis_vinculados_panel.add_theme_stylebox_override("panel", estilo)
 	add_child(_garumis_vinculados_panel)
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 6)
-	_garumis_vinculados_panel.add_child(columna)
-	_garumis_vinculados_titulo = Label.new()
-	_garumis_vinculados_titulo.text = "Garumis (0/3)"
-	_garumis_vinculados_titulo.add_theme_font_size_override("font_size", 10)
-	_garumis_vinculados_titulo.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-	columna.add_child(_garumis_vinculados_titulo)
-	_garumis_vinculados_lista = VBoxContainer.new()
-	_garumis_vinculados_lista.add_theme_constant_override("separation", 5)
-	columna.add_child(_garumis_vinculados_lista)
-	_garumis_vinculados_panel.visible = false
+
+	_garumis_vinculados_lista = HBoxContainer.new()
+	_garumis_vinculados_lista.name = "GarumiSlots"
+	_garumis_vinculados_lista.add_theme_constant_override("separation", 10)
+	_garumis_vinculados_lista.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_garumis_vinculados_panel.add_child(_garumis_vinculados_lista)
+
+	for i in range(3):
+		_crear_hueco_garumi(i + 1)
+
+func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
+	var slot := HBoxContainer.new()
+	slot.name = "GarumiSlot" + str(numero_slot)
+	slot.custom_minimum_size = Vector2(56.0, 46.0)
+	slot.add_theme_constant_override("separation", 3)
+	slot.alignment = BoxContainer.ALIGNMENT_CENTER
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.set_meta("garumi_id", "")
+	_garumis_vinculados_lista.add_child(slot)
+
+	var numero := Button.new()
+	numero.name = "Numero"
+	numero.text = str(numero_slot)
+	numero.custom_minimum_size = Vector2(16.0, 30.0)
+	numero.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	numero.focus_mode = Control.FOCUS_NONE
+	numero.mouse_filter = Control.MOUSE_FILTER_STOP
+	numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+	numero.add_theme_color_override("font_hover_color", Color(1.0, 0.92, 0.74, 1.0))
+	numero.add_theme_font_size_override("font_size", 11)
+	numero.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	numero.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	numero.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	numero.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	numero.tooltip_text = "Invocar / guardar Garumi %d" % numero_slot
+	numero.pressed.connect(_activar_garumi_por_indice.bind(numero_slot - 1))
+	slot.add_child(numero)
+
+	var anillo := GarumiHealthRing.new()
+	anillo.name = "Vida"
+	anillo.custom_minimum_size = Vector2(42.0, 42.0)
+	anillo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_child(anillo)
+
+	var retrato := TextureRect.new()
+	retrato.name = "Retrato"
+	retrato.set_anchors_preset(Control.PRESET_CENTER)
+	retrato.position = Vector2(-15.0, -15.0)
+	retrato.size = Vector2(30.0, 30.0)
+	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	anillo.add_child(retrato)
+	return slot
+
 
 func mostrar_panel_garumis_durante_combate(mostrar: bool) -> void:
 	if not is_instance_valid(_garumis_vinculados_panel):
@@ -1521,83 +1603,31 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	if _garumis_vinculados_ids.has(id):
 		actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
 		return
+	if _garumis_vinculados_nodos.size() >= 3:
+		return
+	var slot: HBoxContainer = null
+	for candidato in _garumis_vinculados_lista.get_children():
+		if candidato is HBoxContainer and str(candidato.get_meta("garumi_id", "")) == "":
+			slot = candidato as HBoxContainer
+			break
+	if slot == null:
+		return
 	_garumis_vinculados_ids[id] = true
 	_garumis_vinculados_nodos.append(garumi)
-	_garumis_vinculados_panel.visible = true
-	_actualizar_titulo_garumis_vinculados()
-	var fila := HBoxContainer.new()
-	fila.name = "Garumi_" + id
-	fila.add_theme_constant_override("separation", 7)
-	fila.custom_minimum_size = Vector2(0.0, 52.0)
-	fila.mouse_filter = Control.MOUSE_FILTER_STOP
-	_garumis_vinculados_lista.add_child(fila)
-	var numero := Label.new()
-	numero.name = "Numero"
-	numero.text = str(_garumis_vinculados_nodos.size())
-	numero.visible = _mostrar_numeros_garumis
-	numero.custom_minimum_size = Vector2(12.0, 0.0)
-	numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-	numero.add_theme_font_size_override("font_size", 12)
-	fila.add_child(numero)
-
-	var retrato := TextureRect.new()
-	retrato.custom_minimum_size = Vector2(36.0, 36.0)
-	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var textura := _buscar_textura_garumi(garumi)
-	if textura != null:
-		retrato.texture = textura
-	fila.add_child(retrato)
-	var indicador := Label.new()
-	indicador.name = "EstadoGuardado"
-	indicador.text = "●"
-	indicador.custom_minimum_size = Vector2(12.0, 0.0)
-	indicador.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	indicador.add_theme_font_size_override("font_size", 12)
-	fila.add_child(indicador)
-
-	var columna_info := VBoxContainer.new()
-	columna_info.name = "InfoGarumi"
-	columna_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_info.alignment = BoxContainer.ALIGNMENT_CENTER
-	columna_info.add_theme_constant_override("separation", 2)
-	columna_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fila.add_child(columna_info)
-	var etiqueta := Label.new()
-	etiqueta.name = "Nombre"
-	etiqueta.text = nombre
-	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta.add_theme_font_size_override("font_size", 10)
-	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.83, 0.68, 1.0))
-	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_info.add_child(etiqueta)
-	var vida_texto := Label.new()
-	vida_texto.name = "VidaTexto"
-	vida_texto.add_theme_font_size_override("font_size", 9)
-	vida_texto.add_theme_color_override("font_color", Color(0.80, 0.72, 0.60, 1.0))
-	vida_texto.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_info.add_child(vida_texto)
-	var barra_vida := ProgressBar.new()
-	barra_vida.name = "Vida"
-	barra_vida.custom_minimum_size = Vector2(0.0, 7.0)
-	barra_vida.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	barra_vida.show_percentage = false
-	barra_vida.min_value = 0.0
-	barra_vida.max_value = 100.0
-	barra_vida.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_info.add_child(barra_vida)
-	var liberar := Button.new()
-	liberar.text = "×"
-	liberar.tooltip_text = "Romper vínculo con " + nombre
-	liberar.custom_minimum_size = Vector2(24.0, 28.0)
-	liberar.focus_mode = Control.FOCUS_ALL
-	liberar.pressed.connect(_pedir_ruptura_vinculo.bind(garumi))
-	fila.add_child(liberar)
+	slot.set_meta("garumi_id", id)
+	var numero := slot.get_node_or_null("Numero") as Button
+	if numero != null:
+		numero.text = str(_garumis_vinculados_nodos.size())
+		numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+	var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+	if anillo != null:
+		anillo.occupied = true
+		var retrato := anillo.get_node_or_null("Retrato") as TextureRect
+		if retrato != null:
+			retrato.texture = _buscar_textura_garumi(garumi)
+	_actualizar_vidas_garumis_vinculados()
 	actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
+
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	if not is_instance_valid(nodo):
@@ -1619,41 +1649,72 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	return null
 
 func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
+	# El combate gestiona Shift+1/2/3 para cambiar el aliado activo.
+	if _combate_garumi_activo:
+		return false
+	for nodo_inventario in get_tree().get_nodes_in_group("inventory"):
+		if nodo_inventario is CanvasItem and (nodo_inventario as CanvasItem).visible:
+			return false
 	for modal in get_tree().get_nodes_in_group("modal_ui"):
 		if is_instance_valid(modal) and modal.is_inside_tree() and not modal.is_queued_for_deletion():
 			return false
-	if evento.keycode == KEY_G:
-		_mostrar_numeros_garumis = not _mostrar_numeros_garumis
-		for i in range(_garumis_vinculados_nodos.size()):
-			var garumi := _garumis_vinculados_nodos[i]
-			if not is_instance_valid(garumi):
-				continue
-			var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-			if fila != null:
-				var numero := fila.get_node_or_null("Numero") as Label
-				if numero != null:
-					numero.text = str(i + 1)
-					numero.visible = _mostrar_numeros_garumis
-		return true
 
-	# Las teclas numéricas solo controlan Garumis mientras G mantiene
-	# visibles los números; fuera de ese modo, el juego recibe la tecla normal.
-	if not _mostrar_numeros_garumis:
+	var codigo := evento.keycode
+	if codigo >= KEY_KP_1 and codigo <= KEY_KP_3:
+		codigo = KEY_1 + (codigo - KEY_KP_1)
+	if codigo < KEY_1 or codigo > KEY_3:
 		return false
 
-	var numero_pulsado := -1
-	if evento.keycode >= KEY_1 and evento.keycode <= KEY_9:
-		numero_pulsado = evento.keycode - KEY_1 + 1
-	elif evento.keycode >= KEY_KP_1 and evento.keycode <= KEY_KP_9:
-		numero_pulsado = evento.keycode - KEY_KP_1 + 1
-	if numero_pulsado < 1 or numero_pulsado > _garumis_vinculados_nodos.size():
+	var indice := codigo - KEY_1
+	if indice < 0 or indice >= _garumis_vinculados_nodos.size():
 		return false
+	if evento.shift_pressed:
+		var garumi_curacion := _garumis_vinculados_nodos[indice]
+		if is_instance_valid(garumi_curacion):
+			_curar_garumi_vinculado_con_eterium(garumi_curacion)
+	else:
+		_activar_garumi_por_indice(indice)
+	return true
+
+
+func _activar_garumi_por_indice(indice: int) -> void:
+	if _combate_garumi_activo or indice < 0 or indice >= _garumis_vinculados_nodos.size():
+		return
 	if not is_instance_valid(player):
-		return true
-	var garumi := _garumis_vinculados_nodos[numero_pulsado - 1]
+		return
+	var garumi := _garumis_vinculados_nodos[indice]
 	if is_instance_valid(garumi) and garumi.has_method("alternar_estado_invocacion"):
 		garumi.call("alternar_estado_invocacion", player)
-	return true
+
+
+func _curar_garumi_vinculado_con_eterium(garumi: Node) -> void:
+	const COSTO_ETERIUM := 10
+	const CURACION := 25
+
+	if not is_instance_valid(player) or not is_instance_valid(garumi):
+		return
+	if not garumi.has_method("curar_con_eterium"):
+		return
+	if not bool(garumi.get("is_alive")):
+		return
+
+	var vida_actual := int(garumi.get("health"))
+	var vida_maxima := maxi(1, int(garumi.get("max_health")))
+	if vida_actual >= vida_maxima:
+		return
+	if int(player.get("mana")) < COSTO_ETERIUM:
+		return
+	if not player.eterium.gastar(COSTO_ETERIUM):
+		return
+
+	player._sync_desde_vital()
+	player.mana_changed.emit(player.mana, player.max_mana)
+	var recuperada := int(garumi.call("curar_con_eterium", CURACION))
+	if recuperada <= 0:
+		# No cobrar si el Garumi no pudo recibir la curación.
+		player.eterium.restaurar(COSTO_ETERIUM)
+		player._sync_desde_vital()
+		player.mana_changed.emit(player.mana, player.max_mana)
 
 
 func _pedir_ruptura_vinculo(garumi: Node) -> void:
@@ -1690,33 +1751,65 @@ func eliminar_garumi_vinculado(garumi: Node) -> void:
 	if not is_instance_valid(garumi) or not is_instance_valid(_garumis_vinculados_lista):
 		return
 	var id := str(garumi.get_instance_id())
-	var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + id)
-	if is_instance_valid(fila):
-		fila.queue_free()
+	var slot := _obtener_slot_garumi(garumi)
+	if slot != null:
+		slot.set_meta("garumi_id", "")
+		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo != null:
+			anillo.occupied = false
+			anillo.health_ratio = 1.0
+			var retrato := anillo.get_node_or_null("Retrato") as TextureRect
+			if retrato != null:
+				retrato.texture = null
+			anillo.queue_redraw()
 	_garumis_vinculados_ids.erase(id)
 	_garumis_vinculados_nodos.erase(garumi)
 	_renumerar_garumis_vinculados()
-	_actualizar_titulo_garumis_vinculados()
-	_garumis_vinculados_panel.visible = not _garumis_vinculados_nodos.is_empty()
 
 
 func _actualizar_titulo_garumis_vinculados() -> void:
-	if is_instance_valid(_garumis_vinculados_titulo):
-		_garumis_vinculados_titulo.text = "Garumis (%d/3)" % _garumis_vinculados_nodos.size()
-
+	# El título se eliminó en el nuevo diseño.
+	pass
 
 func _renumerar_garumis_vinculados() -> void:
+	if not is_instance_valid(_garumis_vinculados_lista):
+		return
+	# Compacta los vínculos para que el número visible coincida con las teclas 1–3.
+	for i in range(_garumis_vinculados_lista.get_child_count()):
+		var slot := _garumis_vinculados_lista.get_child(i) as HBoxContainer
+		if slot == null:
+			continue
+		slot.set_meta("garumi_id", "")
+		var numero_vacio := slot.get_node_or_null("Numero") as Button
+		if numero_vacio != null:
+			numero_vacio.text = str(i + 1)
+			numero_vacio.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+		var anillo_vacio := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo_vacio != null:
+			anillo_vacio.occupied = false
+			anillo_vacio.health_ratio = 1.0
+			var retrato_vacio := anillo_vacio.get_node_or_null("Retrato") as TextureRect
+			if retrato_vacio != null:
+				retrato_vacio.texture = null
+			anillo_vacio.queue_redraw()
 	for i in range(_garumis_vinculados_nodos.size()):
 		var garumi := _garumis_vinculados_nodos[i]
 		if not is_instance_valid(garumi):
 			continue
-		var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-		if fila == null:
+		var slot := _garumis_vinculados_lista.get_child(i) as HBoxContainer
+		if slot == null:
 			continue
-		var numero := fila.get_node_or_null("Numero") as Label
+		slot.set_meta("garumi_id", str(garumi.get_instance_id()))
+		var numero := slot.get_node_or_null("Numero") as Button
 		if numero != null:
 			numero.text = str(i + 1)
-			numero.visible = _mostrar_numeros_garumis
+		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo != null:
+			anillo.occupied = true
+			var retrato := anillo.get_node_or_null("Retrato") as TextureRect
+			if retrato != null:
+				retrato.texture = _buscar_textura_garumi(garumi)
+	_actualizar_vidas_garumis_vinculados()
 
 
 func _actualizar_vidas_garumis_vinculados() -> void:
@@ -1725,27 +1818,38 @@ func _actualizar_vidas_garumis_vinculados() -> void:
 	for garumi in _garumis_vinculados_nodos:
 		if not is_instance_valid(garumi):
 			continue
-		var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-		if fila == null:
+		var slot := _obtener_slot_garumi(garumi)
+		if slot == null:
 			continue
-		var barra := fila.get_node_or_null("InfoGarumi/Vida") as ProgressBar
-		var texto := fila.get_node_or_null("InfoGarumi/VidaTexto") as Label
-		if barra == null or texto == null:
+		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo == null:
 			continue
 		var vida_maxima := maxi(1, int(garumi.get("max_health")))
 		var vida_actual := clampi(int(garumi.get("health")), 0, vida_maxima)
-		barra.max_value = vida_maxima
-		barra.value = vida_actual
-		texto.text = "Vida %d / %d" % [vida_actual, vida_maxima]
+		anillo.health_ratio = float(vida_actual) / float(vida_maxima)
+		anillo.occupied = true
+		anillo.queue_redraw()
+
+func _obtener_slot_garumi(garumi: Node) -> HBoxContainer:
+	if not is_instance_valid(garumi) or not is_instance_valid(_garumis_vinculados_lista):
+		return null
+	var id := str(garumi.get_instance_id())
+	for candidato in _garumis_vinculados_lista.get_children():
+		if candidato is HBoxContainer and str(candidato.get_meta("garumi_id", "")) == id:
+			return candidato as HBoxContainer
+	return null
 
 
 func actualizar_estado_garumi(garumi: Node, guardado: bool) -> void:
-	if not is_instance_valid(garumi) or _garumis_vinculados_lista == null:
+	if not is_instance_valid(garumi):
 		return
-	var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-	if fila == null:
+	var slot := _obtener_slot_garumi(garumi)
+	if slot == null:
 		return
-	var indicador := fila.get_node_or_null("EstadoGuardado") as Label
-	if indicador == null:
-		return
-	indicador.add_theme_color_override("font_color", Color(0.70, 0.51, 0.32, 1.0) if guardado else Color(0.13, 0.10, 0.075, 1.0))
+	var numero := slot.get_node_or_null("Numero") as Button
+	if numero != null:
+		numero.visible = true
+		numero.add_theme_color_override(
+			"font_color",
+			Color(0.88, 0.75, 0.53, 1.0) if not guardado else Color(0.13, 0.10, 0.075, 1.0)
+		)
