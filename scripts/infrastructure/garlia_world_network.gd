@@ -1006,6 +1006,8 @@ func _crear_snapshot_criaturas_servidor() -> Array:
 		var criatura := entidad_variant as Creature
 		if not is_instance_valid(criatura):
 			continue
+		if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+			continue
 		var clave := _clave_criatura_red(criatura, _zona_actual_red)
 		if clave.is_empty():
 			continue
@@ -1084,7 +1086,10 @@ func _ocultar_criaturas_cliente_hasta_snapshot() -> void:
 		return
 	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
 		if entidad_variant is Creature and is_instance_valid(entidad_variant):
-			(entidad_variant as Creature).ocultar_replica_red_cliente()
+			var criatura := entidad_variant as Creature
+			if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+				continue
+			criatura.ocultar_replica_red_cliente()
 
 
 func _restaurar_simulacion_criaturas_locales() -> void:
@@ -1092,7 +1097,10 @@ func _restaurar_simulacion_criaturas_locales() -> void:
 		return
 	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
 		if entidad_variant is Creature and is_instance_valid(entidad_variant):
-			(entidad_variant as Creature).reactivar_simulacion_local_red()
+			var criatura := entidad_variant as Creature
+			if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+				continue
+			criatura.reactivar_simulacion_local_red()
 
 
 func _actualizar_ancla_mundo() -> void:
