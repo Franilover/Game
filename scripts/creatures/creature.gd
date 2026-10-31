@@ -520,6 +520,18 @@ func configurar_replica_red_cliente() -> void:
 		ai.set_process(false)
 
 
+func ocultar_replica_red_cliente() -> void:
+	configurar_replica_red_cliente()
+	visible = false
+	remove_from_group("damageable")
+	remove_from_group("interactable")
+	establecer_colision(false)
+
+
+func esta_animando_ataque() -> bool:
+	return _ataque_animando
+
+
 func aplicar_estado_red(
 	posicion: Vector2,
 	velocidad: Vector2,
@@ -537,12 +549,16 @@ func aplicar_estado_red(
 	_sync_desde_vital()
 	visible = is_alive
 	if is_alive:
+		establecer_colision(true)
+		add_to_group("interactable")
+		add_to_group("creatures")
 		add_to_group("damageable")
 		if ataque_activo and not _ataque_animando:
 			iniciar_animacion_ataque()
 	else:
 		remove_from_group("damageable")
 		remove_from_group("interactable")
+		establecer_colision(false)
 		velocity = Vector2.ZERO
 		_detener_animacion_ataque()
 		_detener_animacion_caminando()
