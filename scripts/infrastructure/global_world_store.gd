@@ -81,7 +81,7 @@ func _serializar_variante(valor: Variant) -> Variant:
 		var vector_i := valor as Vector2i
 		return {"__garlia_type": "Vector2i", "x": vector_i.x, "y": vector_i.y}
 	if valor is Rect2:
-		var rect := valor as Rect2
+		var rect: Rect2 = valor
 		return {
 			"__garlia_type": "Rect2",
 			"x": rect.position.x,
