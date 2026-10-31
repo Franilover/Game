@@ -28,6 +28,7 @@ var _proxies_cliente: Dictionary = {}
 var _auth_pendiente: Dictionary = {}
 var _sistemas_jugador_servidor: Dictionary = {}
 var _ultima_accion_servidor: Dictionary = {}
+var _ultimo_input_servidor: Dictionary = {}
 var _reapariciones_pendientes: Dictionary = {}
 var _personaje_local: Dictionary = {}
 var _estado_inicial_pendiente: Array = []
@@ -239,6 +240,11 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	if nombre_verificado.is_empty():
 		var correo_verificado := str(usuario_verificado.get("email", ""))
 		nombre_verificado = correo_verificado.get_slice("@", 0) if "@" in correo_verificado else user_id.left(8)
+	for jugador_existente_variant in _jugadores_servidor.values():
+		var jugador_existente := jugador_existente_variant as Player
+		if is_instance_valid(jugador_existente) and str(jugador_existente.get_meta("supabase_user_id", "")) == user_id:
+			rechazar_entrada_global.rpc_id(peer_id, "Esa cuenta ya está conectada al mundo global.")
+			return
 	var identidad := _sanear_identidad_visual(identidad_visual, nombre_verificado)
 
 	get_tree().paused = false
@@ -263,6 +269,7 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 		GameState
 	)
 	_entities.add_child(jugador)
+	jugador.set_meta("supabase_user_id", user_id)
 	jugador.aplicar_identidad_red(
 		str(identidad.get("nombre", nombre_verificado)),
 		str(identidad.get("genero", "")),
@@ -401,8 +408,13 @@ func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_e
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
 	var jugador: Player = _jugadores_servidor.get(peer_id) as Player
-	if not is_instance_valid(jugador):
+	if not is_instance_valid(jugador) or not direccion.is_finite():
 		return
+	var ahora := Time.get_ticks_msec()
+	var anterior := int(_ultimo_input_servidor.get(peer_id, 0))
+	if ahora - anterior < 20:
+		return
+	_ultimo_input_servidor[peer_id] = ahora
 	jugador.establecer_input_red(direccion.limit_length(1.0), correr, dash, sprint_eterium)
 
 
@@ -498,7 +510,7 @@ func solicitar_viaje_global(destino: String) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado():
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
-	if not _jugadores_servidor.has(peer_id):
+	if not _jugadores_servidor.has(peer_id) or not _mundo_listo:
 		return
 	var clave := destino.strip_edges().to_lower()
 	if clave.is_empty():
@@ -513,6 +525,11 @@ func solicitar_viaje_global(destino: String) -> void:
 	var zone_manager := _main.get_node_or_null("World/ZoneManager")
 	if not is_instance_valid(zone_manager):
 		return
+	var zona_actual := str(zone_manager.call("obtener_tipo_actual"))
+	var destino_actual := "mundo_abierto" if clave == "mundo_abierto" else "reino:" + clave
+	if zona_actual == destino_actual or (clave == "torres" and zona_actual == "reino_torres"):
+		return
+	_mundo_listo = false
 	if clave == "mundo_abierto":
 		zone_manager.call("entrar_mundo_abierto")
 	else:
@@ -753,6 +770,7 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		_jugadores_servidor.erase(peer_id)
 		_sistemas_jugador_servidor.erase(peer_id)
 		_ultima_accion_servidor.erase(peer_id)
+		_ultimo_input_servidor.erase(peer_id)
 		_reapariciones_pendientes.erase(peer_id)
 		if _jugadores_servidor.is_empty() and _servidor_inicializado:
 			GlobalWorldStore.guardar_y_pausar()
