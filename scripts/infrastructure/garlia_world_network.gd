@@ -1649,6 +1649,7 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		_ultima_accion_servidor.erase(peer_id)
 		_ultimo_input_servidor.erase(peer_id)
 		_reapariciones_pendientes.erase(peer_id)
+		_auth_pendiente.erase(peer_id)
 		for usuario_variant in _usuarios_en_entrada.keys():
 			if int(_usuarios_en_entrada[usuario_variant]) == peer_id:
 				_usuarios_en_entrada.erase(usuario_variant)
