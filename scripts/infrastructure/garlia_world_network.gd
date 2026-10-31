@@ -24,6 +24,8 @@ var _entity_manager_cliente: Node = null
 var _zona_actual_red := ""
 var _zona_esperada_criaturas := ""
 var _estados_criaturas_pendientes: Array = []
+var _estados_props_pendientes: Array = []
+var _zona_esperada_props := ""
 var _tumbas_criaturas_red: Dictionary = {}
 var _entity_snapshot_elapsed := 0.0
 var _entity_client_apply_elapsed := 0.0
@@ -181,10 +183,13 @@ func configurar_mundo_cliente(
 	_local_posicion_inicializada = false
 	_objetivos_posicion_proxy.clear()
 	_ocultar_criaturas_cliente_hasta_snapshot()
+	_ocultar_props_cliente_hasta_snapshot()
 	_local_player.visible = true
 	_local_player.set_physics_process(true)
 	if _zona_esperada_criaturas == _zona_actual_red and not _estados_criaturas_pendientes.is_empty():
 		_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
+	if _zona_esperada_props == _zona_actual_red and not _estados_props_pendientes.is_empty():
+		_aplicar_estado_props_cliente(_estados_props_pendientes)
 	if not _estado_inicial_pendiente.is_empty():
 		_aplicar_snapshot(_estado_inicial_pendiente)
 		_estado_inicial_pendiente.clear()
@@ -241,6 +246,7 @@ func _process(delta: float) -> void:
 		if _entity_snapshot_elapsed >= ENTITY_SNAPSHOT_INTERVAL:
 			_entity_snapshot_elapsed = 0.0
 			_difundir_estado_criaturas()
+			_difundir_estado_props()
 		return
 	if es_cliente_en_mundo_global():
 		actualizar_input_local(delta)
@@ -250,6 +256,7 @@ func _process(delta: float) -> void:
 			_entity_client_apply_elapsed = 0.0
 			if _entity_manager_cliente != null and is_instance_valid(_entity_manager_cliente):
 				_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
+				_aplicar_estado_props_cliente(_estados_props_pendientes)
 
 
 func _al_conectar_con_servidor() -> void:
@@ -820,6 +827,107 @@ func recibir_estado_red(snapshot: Array) -> void:
 
 
 
+func _clave_prop_red(prop: WorldProp, zona: String) -> String:
+	if not is_instance_valid(prop):
+		return ""
+	var instancia := str(prop.get_meta("runtime_instance_key", "")).strip_edges()
+	if instancia.is_empty():
+		return ""
+	var chunk_variant: Variant = prop.datos.get("chunk", Vector2i.ZERO)
+	var chunk := Vector2i.ZERO
+	if chunk_variant is Vector2i:
+		chunk = chunk_variant
+	elif chunk_variant is Dictionary:
+		var chunk_data := chunk_variant as Dictionary
+		chunk = Vector2i(int(chunk_data.get("x", 0)), int(chunk_data.get("y", 0)))
+	return "%s|%d:%d|%s" % [zona, chunk.x, chunk.y, instancia]
+
+
+func _crear_snapshot_props_servidor() -> Array:
+	var resultado: Array = []
+	if not is_instance_valid(_entity_manager) or not _entity_manager.has_method("obtener_entidades_activas"):
+		return resultado
+	for entidad_variant in _entity_manager.call("obtener_entidades_activas"):
+		if not entidad_variant is WorldProp or not is_instance_valid(entidad_variant):
+			continue
+		var prop := entidad_variant as WorldProp
+		var clave := _clave_prop_red(prop, _zona_actual_red)
+		if clave.is_empty():
+			continue
+		resultado.append({
+			"key": clave,
+			"x": prop.global_position.x,
+			"y": prop.global_position.y,
+			"visible": bool(prop.visible)
+		})
+		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
+			break
+	return resultado
+
+
+func _difundir_estado_props() -> void:
+	if _jugadores_servidor.is_empty():
+		return
+	recibir_estado_props_red.rpc(_zona_actual_red, _crear_snapshot_props_servidor())
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func recibir_estado_props_red(zona: String, registros: Array) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	_zona_esperada_props = zona
+	_estados_props_pendientes = registros.duplicate(true)
+	if zona == _zona_actual_red and is_instance_valid(_entity_manager_cliente):
+		_aplicar_estado_props_cliente(_estados_props_pendientes)
+
+
+func _aplicar_estado_props_cliente(registros: Array) -> void:
+	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
+		return
+	if _zona_esperada_props != _zona_actual_red:
+		return
+	var por_clave: Dictionary = {}
+	for registro_variant in registros:
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		var clave := str(registro.get("key", "")).strip_edges()
+		if not clave.is_empty():
+			por_clave[clave] = registro
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if not entidad_variant is WorldProp or not is_instance_valid(entidad_variant):
+			continue
+		var prop := entidad_variant as WorldProp
+		var clave := _clave_prop_red(prop, _zona_actual_red)
+		if clave.is_empty() or not por_clave.has(clave):
+			prop.ocultar_replica_red_cliente()
+			continue
+		var registro: Dictionary = por_clave[clave]
+		if not bool(registro.get("visible", true)):
+			prop.ocultar_replica_red_cliente()
+			continue
+		prop.aplicar_estado_red(Vector2(
+			float(registro.get("x", prop.global_position.x)),
+			float(registro.get("y", prop.global_position.y))
+		))
+
+
+func _ocultar_props_cliente_hasta_snapshot() -> void:
+	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
+		return
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if entidad_variant is WorldProp and is_instance_valid(entidad_variant):
+			(entidad_variant as WorldProp).ocultar_replica_red_cliente()
+
+
+func _restaurar_props_locales() -> void:
+	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
+		return
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if entidad_variant is WorldProp and is_instance_valid(entidad_variant):
+			(entidad_variant as WorldProp).reactivar_simulacion_local_red()
+
+
 func _clave_criatura_red(criatura: Creature, zona: String) -> String:
 	if not is_instance_valid(criatura):
 		return ""
@@ -1203,9 +1311,12 @@ func _al_conexion_fallida() -> void:
 	_dash_local_pendiente = false
 	_salto_local_pendiente = false
 	_restaurar_simulacion_criaturas_locales()
+	_restaurar_props_locales()
 	_entity_manager_cliente = null
 	_estados_criaturas_pendientes.clear()
+	_estados_props_pendientes.clear()
 	_zona_esperada_criaturas = ""
+	_zona_esperada_props = ""
 	_restaurar_simulacion_criaturas_locales()
 	_entity_manager_cliente = null
 	_estados_criaturas_pendientes.clear()
