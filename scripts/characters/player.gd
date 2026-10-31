@@ -88,6 +88,8 @@ var personaje_apariencia: Dictionary = {}
 var _red_servidor_controlado: bool = false
 var _red_direccion: Vector2 = Vector2.ZERO
 var _red_correr: bool = false
+var _red_dash_pendiente: bool = false
+var _red_eterium_sprint: bool = false
 var _apariencia_red_aplicada: bool = false
 
 
@@ -205,13 +207,17 @@ func configurar_control_remoto_servidor() -> void:
 	_red_servidor_controlado = true
 	_red_direccion = Vector2.ZERO
 	_red_correr = false
+	_red_dash_pendiente = false
+	_red_eterium_sprint = false
 
 
-func establecer_input_red(direccion: Vector2, correr: bool) -> void:
+func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false) -> void:
 	if not _red_servidor_controlado:
 		return
 	_red_direccion = direccion.limit_length(1.0)
 	_red_correr = correr
+	_red_dash_pendiente = _red_dash_pendiente or dash
+	_red_eterium_sprint = sprint_eterium
 
 
 func _procesar_movimiento_red(delta: float) -> void:
@@ -219,19 +225,44 @@ func _procesar_movimiento_red(delta: float) -> void:
 	locomotion.avanzar_accion(delta)
 	var direccion := _red_direccion.limit_length(1.0)
 	_movement_input_direction = direccion
-	var esta_corriendo := _red_correr and direccion != Vector2.ZERO
-	velocity = direccion * move_speed * (run_multiplier if esta_corriendo else 1.0)
-	move_and_slide()
 	if direccion != Vector2.ZERO:
 		facing = direccion.normalized()
 		_update_dir_marker()
+
+	if state == State.JUMP:
+		_procesar_jump(delta)
+		return
+	if state == State.DASH:
+		_procesar_dash(delta)
+		return
+	if _red_dash_pendiente:
+		_red_dash_pendiente = false
+		if _puede_hacer_dash():
+			_iniciar_dash()
+			if state == State.DASH:
+				_procesar_dash(delta)
+				return
+
+	var eterium_sprint := false
+	if _red_eterium_sprint and direccion != Vector2.ZERO:
+		eterium_sprint = eterium.procesar_carrera(delta)
+	var esta_corriendo := _red_correr and direccion != Vector2.ZERO and not eterium_sprint
+	var velocidad := move_speed
+	if eterium_sprint:
+		velocidad *= run_multiplier * eterium.multiplicador_carrera()
+	elif esta_corriendo:
+		velocidad *= run_multiplier
+	velocity = direccion * velocidad
+	move_and_slide()
+	if direccion == Vector2.ZERO and state == State.IDLE:
+		_actualizar_recuperacion_eterium(delta)
 	var nuevo_estado := State.IDLE
 	if direccion != Vector2.ZERO:
-		nuevo_estado = State.RUN if esta_corriendo else State.WALK
+		nuevo_estado = State.RUN if esta_corriendo or eterium_sprint else State.WALK
 	if nuevo_estado != state:
 		state = nuevo_estado
 		_update_visual()
-	_actualizar_regeneracion_stamina(delta, esta_corriendo)
+	_actualizar_regeneracion_stamina(delta, esta_corriendo or eterium_sprint)
 
 
 func _physics_process(delta: float) -> void:
