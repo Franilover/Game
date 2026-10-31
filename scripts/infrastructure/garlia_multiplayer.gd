@@ -3,6 +3,8 @@ extends Node
 
 const DEFAULT_PORT: int = 7777
 const MAX_PLAYERS: int = 8
+const DEFAULT_TLS_CERT_PATH := "user://certs/garlia_server.crt"
+const DEFAULT_TLS_KEY_PATH := "user://certs/garlia_server.key"
 
 
 signal host_created
@@ -24,6 +26,8 @@ var is_host: bool = false
 var is_connected: bool = false
 var is_dedicated_server: bool = false
 var _connected_peer_ids: Dictionary = {}
+var _tls_cert_path: String = DEFAULT_TLS_CERT_PATH
+var _tls_key_path: String = DEFAULT_TLS_KEY_PATH
 
 var local_player_info: Dictionary = {}
 var _auth: Node = null
@@ -60,22 +64,32 @@ func _ready() -> void:
 ## Uso: godot --headless --path . -- --garlia-server --port=7777
 func iniciar_servidor_dedicado(puerto: int = DEFAULT_PORT) -> bool:
 	cerrar_partida()
-	var peer := ENetMultiplayerPeer.new()
-	var error: Error = peer.create_server(puerto, MAX_PLAYERS)
+	var cert := X509Certificate.new()
+	var cert_error := cert.load(_tls_cert_path)
+	var key := CryptoKey.new()
+	var key_error := key.load(_tls_key_path)
+	if cert_error != OK or key_error != OK:
+		var mensaje := "Falta el certificado TLS o la clave privada del servidor."
+		push_error("GarliaMultiplayer: " + mensaje + " Cert: " + _tls_cert_path + " | Key: " + _tls_key_path)
+		status_changed.emit(mensaje + " Revisa las rutas configuradas por argumentos.")
+		return false
+
+	var tls_options := TLSOptions.server(key, cert)
+	var peer := WebSocketMultiplayerPeer.new()
+	var error: Error = peer.create_server(puerto, "*", tls_options)
 	if error != OK:
-		push_error("GarliaMultiplayer: no se pudo iniciar servidor dedicado. Error: %s" % error)
-		status_changed.emit("No se pudo iniciar el servidor dedicado. Error: " + str(error))
+		push_error("GarliaMultiplayer: no se pudo iniciar servidor WSS. Error: %s" % error)
+		status_changed.emit("No se pudo iniciar el servidor WSS. Error: " + str(error))
 		return false
 	multiplayer.multiplayer_peer = peer
 	is_host = true
 	is_connected = true
 	is_dedicated_server = true
 	_connected_peer_ids.clear()
-	status_changed.emit("Servidor dedicado activo en puerto %d." % puerto)
-	print("GarliaMultiplayer: servidor dedicado escuchando en UDP ", puerto)
+	status_changed.emit("Servidor WSS activo en puerto %d." % puerto)
+	print("GarliaMultiplayer: servidor WSS escuchando en TCP ", puerto)
 	dedicated_server_started.emit(puerto)
 	return true
-
 
 func obtener_cantidad_jugadores_remotos() -> int:
 	return _connected_peer_ids.size()
@@ -89,11 +103,17 @@ func _leer_argumento_servidor() -> void:
 	var argumentos := OS.get_cmdline_user_args()
 	var activar := false
 	var puerto := DEFAULT_PORT
+	_tls_cert_path = str(ProjectSettings.globalize_path(DEFAULT_TLS_CERT_PATH))
+	_tls_key_path = str(ProjectSettings.globalize_path(DEFAULT_TLS_KEY_PATH))
 	for argumento in argumentos:
 		if argumento == "--garlia-server":
 			activar = true
 		elif argumento.begins_with("--port="):
 			puerto = clampi(int(argumento.trim_prefix("--port=")), 1, 65535)
+		elif argumento.begins_with("--tls-cert="):
+			_tls_cert_path = argumento.trim_prefix("--tls-cert=")
+		elif argumento.begins_with("--tls-key="):
+			_tls_key_path = argumento.trim_prefix("--tls-key=")
 	if activar:
 		iniciar_servidor_dedicado(puerto)
 
@@ -103,123 +123,48 @@ func puede_usar_multijugador() -> bool:
 
 
 func crear_partida(
-	puerto: int = DEFAULT_PORT
+	_puerto: int = DEFAULT_PORT
 ) -> bool:
-	if not puede_usar_multijugador():
-		status_changed.emit(
-			"Debes iniciar sesión para crear una partida."
-		)
-
-		return false
-
-	cerrar_partida()
-
-	var peer := ENetMultiplayerPeer.new()
-
-	var error: Error = peer.create_server(
-		puerto,
-		MAX_PLAYERS - 1
-	)
-
-	if error != OK:
-		status_changed.emit(
-			"No se pudo crear la partida. Error: "
-			+ str(error)
-		)
-
-		return false
-
-	multiplayer.multiplayer_peer = peer
-
-	is_host = true
-	is_connected = true
-
-	local_player_info = {
-		"user_id": _auth.obtener_user_id(),
-		"username": _auth.obtener_username()
-	}
-
-	status_changed.emit(
-		"Partida creada. Esperando jugadores..."
-	)
-
-	host_created.emit()
-
-	print(
-		"GarliaMultiplayer: servidor creado en puerto ",
-		puerto
-	)
-
-	print(
-		"GarliaMultiplayer: jugador host → ",
-		local_player_info.get("username", "")
-	)
-
-	return true
-
+	status_changed.emit("El alojamiento entre jugadores está deshabilitado. Usa el servidor global seguro.")
+	return false
 
 func unirse_partida(
 	direccion_ip: String,
 	puerto: int = DEFAULT_PORT
 ) -> bool:
 	if not puede_usar_multijugador():
-		status_changed.emit(
-			"Debes iniciar sesión para unirte a una partida."
-		)
-
+		status_changed.emit("Debes iniciar sesión para unirte al mundo global.")
 		return false
 
-	var ip: String = direccion_ip.strip_edges()
-
-	if ip.is_empty():
-		status_changed.emit(
-			"Introduce la dirección IP de la partida."
-		)
-
+	var host := direccion_ip.strip_edges()
+	if host.begins_with("wss://"):
+		host = host.trim_prefix("wss://")
+	elif host.contains("://"):
+		status_changed.emit("La conexión debe usar WSS seguro.")
+		return false
+	if host.is_empty() or "/" in host or " " in host:
+		status_changed.emit("Introduce un dominio o IP válido.")
 		return false
 
 	cerrar_partida()
-
-	var peer := ENetMultiplayerPeer.new()
-
-	var error: Error = peer.create_client(
-		ip,
-		puerto
-	)
-
+	var url := "wss://%s:%d" % [host, clampi(puerto, 1, 65535)]
+	var peer := WebSocketMultiplayerPeer.new()
+	var error: Error = peer.create_client(url)
 	if error != OK:
-		status_changed.emit(
-			"No se pudo iniciar la conexión. Error: "
-			+ str(error)
-		)
-
+		status_changed.emit("No se pudo iniciar la conexión segura. Error: " + str(error))
 		return false
 
 	multiplayer.multiplayer_peer = peer
-
 	is_host = false
 	is_connected = false
-
 	local_player_info = {
 		"user_id": _auth.obtener_user_id(),
 		"username": _auth.obtener_username()
 	}
-
-	status_changed.emit(
-		"Conectando con la partida..."
-	)
-
+	status_changed.emit("Conectando mediante WSS seguro...")
 	join_started.emit()
-
-	print(
-		"GarliaMultiplayer: conectando a ",
-		ip,
-		":",
-		puerto
-	)
-
+	print("GarliaMultiplayer: conectando mediante TLS a ", url)
 	return true
-
 
 func cerrar_partida() -> void:
 	is_dedicated_server = false
