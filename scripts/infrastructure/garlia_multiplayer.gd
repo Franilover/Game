@@ -38,6 +38,8 @@ func configurar_dependencias(auth: Node) -> void:
 
 
 func _ready() -> void:
+	# El listener TLS y el polling deben seguir activos aunque el mundo esté pausado.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	multiplayer.peer_connected.connect(
 		_on_peer_connected
 	)
@@ -291,7 +293,7 @@ func _on_server_disconnected() -> void:
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 
 	status_changed.emit(
-		"El anfitrión cerró la partida."
+		"El servidor del mundo global se desconectó."
 	)
 
 	print(
