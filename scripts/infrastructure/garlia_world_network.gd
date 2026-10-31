@@ -96,6 +96,13 @@ func inicializar_mundo_servidor(
 		_world_anchor.collision_layer = 0
 		_world_anchor.collision_mask = 0
 
+	# Si Main cambia de zona, los jugadores existentes deben apuntar a los
+	# sistemas de entidades de la zona recién activada.
+	for jugador_variant in _jugadores_servidor.values():
+		var jugador_existente := jugador_variant as Player
+		if is_instance_valid(jugador_existente):
+			jugador_existente.configurar_dependencias(null, _world_context, _ium_manager, _entity_manager, _supabase_client, GameState)
+
 	if GarliaMultiplayer.obtener_cantidad_jugadores_remotos() > 0:
 		get_tree().paused = false
 	else:
@@ -138,6 +145,7 @@ func _process(delta: float) -> void:
 		_snapshot_elapsed += delta
 		if _snapshot_elapsed >= SNAPSHOT_INTERVAL:
 			_snapshot_elapsed = 0.0
+			_actualizar_ancla_mundo()
 			_difundir_estado()
 		return
 
@@ -195,7 +203,10 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 		GameState
 	)
 	_entities.add_child(jugador)
-	var separacion := Vector2(float((_jugadores_servidor.size() % 4) * 24), float((_jugadores_servidor.size() / 4) * 24))
+	var camara_jugador := jugador.get_node_or_null("Camera2D") as Camera2D
+	if is_instance_valid(camara_jugador):
+		camara_jugador.enabled = false
+	var separacion := Vector2(float((_jugadores_servidor.size() % 4) * 24), float(int(_jugadores_servidor.size() / 4) * 24))
 	jugador.global_position = _world_anchor.global_position + Vector2(28.0, 12.0) + separacion
 	_jugadores_servidor[peer_id] = jugador
 
@@ -272,6 +283,23 @@ func recibir_estado_red(snapshot: Array) -> void:
 	_aplicar_snapshot(snapshot)
 
 
+func _actualizar_ancla_mundo() -> void:
+	if not is_instance_valid(_world_anchor) or _jugadores_servidor.is_empty():
+		return
+	var centro := Vector2.ZERO
+	var cantidad := 0
+	for jugador_variant in _jugadores_servidor.values():
+		var jugador := jugador_variant as Player
+		if not is_instance_valid(jugador):
+			continue
+		centro += jugador.global_position
+		cantidad += 1
+	if cantidad > 0:
+		# WorldStreamer sigue un único punto. El centroide mantiene cargada la
+		# región compartida mientras el grupo se desplaza unido.
+		_world_anchor.global_position = centro / float(cantidad)
+
+
 func _crear_snapshot() -> Array:
 	var resultado: Array = []
 	for peer_variant in _jugadores_servidor.keys():
@@ -325,6 +353,9 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			proxy.set_physics_process(false)
 			proxy.set_process(false)
 			_entities.add_child(proxy)
+			var camara_proxy := proxy.get_node_or_null("Camera2D") as Camera2D
+			if is_instance_valid(camara_proxy):
+				camara_proxy.enabled = false
 			proxy.set_physics_process(false)
 			proxy.set_process(false)
 			_proxies_cliente[peer_id] = proxy
