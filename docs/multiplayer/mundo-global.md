@@ -9,7 +9,7 @@ Garlia usa un solo proceso de servidor dedicado como autoridad del mundo. Los ju
 - **Límite actual:** 8 jugadores conectados.
 - **Movimiento:** el cliente envía dirección, carrera, salto, dash y sprint de Eterium; el servidor calcula el movimiento y publica posición, orientación, estado de animación y estado vital. La identidad visual y la especie se envían por mensajes fiables al entrar; los snapshots periódicos llevan solo estado dinámico.
 - **Acciones:** las acciones primaria y secundaria se envían al servidor. En esta fase el servidor resuelve combate desarmado y acciones contextuales que no requieran modificar inventario. El input de movimiento se descarta si deja de renovarse durante 300 ms, y las acciones tienen un límite por jugador.
-- **Zonas, criaturas y props:** descubrimientos y viajes se validan/ejecutan en el servidor. Las criaturas y WorldProp que ya están materializados en chunks activos se replican por clave determinista de zona/chunk/instancia; se difunden posición, velocidad, vida/muerte y estado de ataque de criaturas, además de presencia/posición de props.
+- **Zonas, calendario, criaturas y props:** descubrimientos y viajes se validan/ejecutan en el servidor; los desbloqueos confirmados se difunden a todos los clientes y el reloj global se entrega en el handshake y se corrige periódicamente. Las criaturas y WorldProp materializados en chunks activos se replican por clave determinista de zona/chunk/instancia; se difunden posición, velocidad, vida/muerte y ataque de criaturas, además de presencia/posición de props.
 - **Datos:** cada usuario conserva su guardado personal local. El servidor guarda por zona la semilla, calendario, desbloqueos, estado runtime de criaturas y datos Garumi, además de la posición/datos runtime de WorldProp activos, en user://garlia_global_world.json.
 
 ## Certificado TLS requerido
@@ -52,7 +52,7 @@ El archivo user://garlia_global_world.json debe residir en almacenamiento persis
 
 ## Alcance de esta primera integración
 
-Ya están conectados: servidor dedicado WSS, verificación de identidad, entrada de jugadores, límite de sesiones, validación de especie y carga del runtime de Eterium, movimiento autoritativo (andar/correr/salto/dash/sprint de Eterium), interpolación de jugadores, identidad visual sincronizada una sola vez, snapshots compactos de jugadores, réplicas de criaturas materializadas en chunks activos (posición, velocidad, vida, muerte y ataque), réplicas de WorldProp materializados en chunks activos (presencia y posición), acciones de combate sin arma, interacciones contextuales que no necesitan inventario, viajes de zona, descubrimientos verificados, guardado global por zona y pausa cuando no quedan jugadores.
+Ya están conectados: servidor dedicado WSS, verificación de identidad, entrada de jugadores, límite de sesiones, validación de especie y carga del runtime de Eterium, movimiento autoritativo (andar/correr/salto/dash/sprint de Eterium), interpolación de jugadores, identidad visual sincronizada una sola vez, snapshots compactos de jugadores, réplicas de criaturas y WorldProp materializados en chunks activos, sincronización del calendario y desbloqueos de reinos, acciones de combate sin arma, interacciones contextuales sin inventario, viajes de zona, descubrimientos verificados, guardado global por zona y pausa del árbol cuando no quedan jugadores.
 
 Todavía no es una simulación global completa de todos los objetos:
 
