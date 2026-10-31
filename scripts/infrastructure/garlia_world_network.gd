@@ -273,16 +273,15 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	if peer_id <= 1 or _auth_pendiente.has(peer_id) or _jugadores_servidor.has(peer_id):
 		return
 	if _jugadores_servidor.size() + _auth_pendiente.size() >= GarliaMultiplayer.MAX_PLAYERS:
-		rechazar_entrada_global.rpc_id(peer_id, "El mundo global alcanzó su límite de jugadores.")
+		_rechazar_solicitud_entrada(peer_id, "El mundo global alcanzó su límite de jugadores.")
 		return
 	_auth_pendiente[peer_id] = true
 
 	var usuario_verificado := await _validar_token_supabase(access_token)
-	_auth_pendiente.erase(peer_id)
 	if not multiplayer.get_peers().has(peer_id):
 		return
 	if str(usuario_verificado.get("id", "")) != user_id or user_id.is_empty():
-		rechazar_entrada_global.rpc_id(peer_id, "No se pudo verificar tu cuenta. Vuelve a iniciar sesión.")
+		_rechazar_solicitud_entrada(peer_id, "No se pudo verificar tu cuenta. Vuelve a iniciar sesión.", user_id)
 		return
 
 	# La conexión puede llegar mientras el servidor construye o cambia de zona.
@@ -294,50 +293,52 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	if not multiplayer.get_peers().has(peer_id):
 		return
 	if not _mundo_listo:
-		rechazar_entrada_global.rpc_id(peer_id, "El mundo global aún no está disponible. Intenta de nuevo.")
+		_rechazar_solicitud_entrada(peer_id, "El mundo global aún no está disponible. Intenta de nuevo.", user_id)
 		return
 
 	if _usuarios_en_entrada.has(user_id):
-		rechazar_entrada_global.rpc_id(peer_id, "Esa cuenta ya está entrando al mundo global.")
+		_rechazar_solicitud_entrada(peer_id, "Esa cuenta ya está entrando al mundo global.")
 		return
 	_usuarios_en_entrada[user_id] = peer_id
 	var nombre_verificado := await _obtener_username_supabase(user_id, access_token)
+	if not multiplayer.get_peers().has(peer_id):
+		return
 	if nombre_verificado.is_empty():
 		var correo_verificado := str(usuario_verificado.get("email", ""))
 		nombre_verificado = correo_verificado.get_slice("@", 0) if "@" in correo_verificado else user_id.left(8)
 	for jugador_existente_variant in _jugadores_servidor.values():
 		var jugador_existente := jugador_existente_variant as Player
 		if is_instance_valid(jugador_existente) and str(jugador_existente.get_meta("supabase_user_id", "")) == user_id:
-			_usuarios_en_entrada.erase(user_id)
-			rechazar_entrada_global.rpc_id(peer_id, "Esa cuenta ya está conectada al mundo global.")
+			_rechazar_solicitud_entrada(peer_id, "Esa cuenta ya está conectada al mundo global.", user_id)
 			return
 	var identidad := _sanear_identidad_visual(identidad_visual, nombre_verificado)
 	var especie_id := str(identidad_visual.get("especie_id", "")).strip_edges()
 	var especie_canonica := await _obtener_especie_jugable_canonica(especie_id, access_token)
+	if not multiplayer.get_peers().has(peer_id):
+		return
 	if especie_canonica.is_empty():
-		_usuarios_en_entrada.erase(user_id)
-		rechazar_entrada_global.rpc_id(peer_id, "No se pudo validar la especie seleccionada. Vuelve a crear tu personaje.")
+		_rechazar_solicitud_entrada(peer_id, "No se pudo validar la especie seleccionada. Vuelve a crear tu personaje.", user_id)
 		return
 	var runtime_eterium := await _obtener_runtime_eterium(access_token)
+	if not multiplayer.get_peers().has(peer_id):
+		return
 	if runtime_eterium.is_empty():
-		_usuarios_en_entrada.erase(user_id)
-		rechazar_entrada_global.rpc_id(peer_id, "No se pudo cargar el runtime de Eterium del mundo. Intenta entrar más tarde.")
+		_rechazar_solicitud_entrada(peer_id, "No se pudo cargar el runtime de Eterium del mundo. Intenta entrar más tarde.", user_id)
 		return
 	var reglas_especies := await _obtener_reglas_eterium_especies(access_token)
+	if not multiplayer.get_peers().has(peer_id):
+		return
 	if not _reglas_especies_eterium_cargadas:
-		_usuarios_en_entrada.erase(user_id)
-		rechazar_entrada_global.rpc_id(peer_id, "No se pudieron verificar las reglas Eterium de tu especie. Intenta entrar de nuevo.")
+		_rechazar_solicitud_entrada(peer_id, "No se pudieron verificar las reglas Eterium de tu especie. Intenta entrar de nuevo.", user_id)
 		return
 	if not multiplayer.get_peers().has(peer_id):
-		_usuarios_en_entrada.erase(user_id)
 		return
 	identidad["especie"] = especie_canonica
 
 	get_tree().paused = false
 	var jugador := PLAYER_SCENE.instantiate() as Player
 	if jugador == null:
-		_usuarios_en_entrada.erase(user_id)
-		rechazar_entrada_global.rpc_id(peer_id, "No se pudo crear tu personaje en el servidor.")
+		_rechazar_solicitud_entrada(peer_id, "No se pudo crear tu personaje en el servidor.", user_id)
 		return
 	jugador.name = "JugadorRed_%d" % peer_id
 	jugador.personaje_nombre = str(identidad.get("nombre", nombre_verificado)).left(MAX_USERNAME_LENGTH)
@@ -373,6 +374,7 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	jugador.global_position = _world_anchor.global_position + Vector2(28.0, 12.0) + separacion
 	_jugadores_servidor[peer_id] = jugador
 	_usuarios_en_entrada.erase(user_id)
+	_auth_pendiente.erase(peer_id)
 	recibir_identidad_jugador.rpc(peer_id, _crear_identidad_red(jugador))
 
 	var snapshot := _crear_snapshot(true)
@@ -381,6 +383,13 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona, GameState.obtener_reinos_desbloqueados())
 	_difundir_estado()
 	print("GarliaWorldNetwork: jugador autenticado y añadido → ", nombre_verificado, " [", peer_id, "]")
+
+
+func _rechazar_solicitud_entrada(peer_id: int, mensaje: String, user_id: String = "") -> void:
+	_auth_pendiente.erase(peer_id)
+	if not user_id.is_empty() and int(_usuarios_en_entrada.get(user_id, -1)) == peer_id:
+		_usuarios_en_entrada.erase(user_id)
+	rechazar_entrada_global.rpc_id(peer_id, mensaje)
 
 
 func _obtener_identidad_visual_local() -> Dictionary:
