@@ -1213,8 +1213,6 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 		_proxies_cliente.erase(peer_id)
 		_objetivos_posicion_proxy.erase(peer_id)
 		_identidades_remotas_cliente.erase(peer_id)
-		_objetivos_posicion_proxy.erase(peer_id)
-		_identidades_remotas_cliente.erase(peer_id)
 
 
 func _actualizar_interpolacion_clientes(delta: float) -> void:
@@ -1307,6 +1305,16 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 		jugador.stamina_changed.emit(float(jugador.stamina), float(jugador.max_stamina))
 
 
+func _limpiar_proxies_cliente() -> void:
+	for proxy_variant in _proxies_cliente.values():
+		var proxy := proxy_variant as Player
+		if is_instance_valid(proxy):
+			proxy.queue_free()
+	_proxies_cliente.clear()
+	_objetivos_posicion_proxy.clear()
+	_identidades_remotas_cliente.clear()
+
+
 func _al_conexion_fallida() -> void:
 	_cliente_global_activado = false
 	_dash_local_pendiente = false
@@ -1318,13 +1326,7 @@ func _al_conexion_fallida() -> void:
 	_estados_props_pendientes.clear()
 	_zona_esperada_criaturas = ""
 	_zona_esperada_props = ""
-	_restaurar_simulacion_criaturas_locales()
-	_entity_manager_cliente = null
-	_estados_criaturas_pendientes.clear()
-	_zona_esperada_criaturas = ""
-	_proxies_cliente.clear()
-	_objetivos_posicion_proxy.clear()
-	_identidades_remotas_cliente.clear()
+	_limpiar_proxies_cliente()
 	_estado_inicial_pendiente.clear()
 	_peer_local_id = 0
 	_local_posicion_inicializada = false
@@ -1338,23 +1340,14 @@ func _al_servidor_desconectado() -> void:
 	_dash_local_pendiente = false
 	_salto_local_pendiente = false
 	_restaurar_simulacion_criaturas_locales()
+	_restaurar_props_locales()
 	_entity_manager_cliente = null
 	_estados_criaturas_pendientes.clear()
+	_estados_props_pendientes.clear()
 	_zona_esperada_criaturas = ""
-	_restaurar_simulacion_criaturas_locales()
-	_entity_manager_cliente = null
-	_estados_criaturas_pendientes.clear()
-	_zona_esperada_criaturas = ""
-	for proxy_variant in _proxies_cliente.values():
-		var proxy := proxy_variant as Player
-		if is_instance_valid(proxy):
-			proxy.queue_free()
-	_proxies_cliente.clear()
-	_objetivos_posicion_proxy.clear()
-	_identidades_remotas_cliente.clear()
+	_zona_esperada_props = ""
+	_limpiar_proxies_cliente()
 	_local_posicion_inicializada = false
-	_dash_local_pendiente = false
-	_salto_local_pendiente = false
 	_estado_inicial_pendiente.clear()
 	_peer_local_id = 0
 	if is_instance_valid(_local_player):
