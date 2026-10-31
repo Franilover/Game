@@ -334,6 +334,55 @@ func solicitar_accion_global(accion: String) -> void:
 			combate.procesar_accion_secundaria()
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func solicitar_viaje_global(destino: String) -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if not _jugadores_servidor.has(peer_id):
+		return
+	var clave := destino.strip_edges().to_lower()
+	if clave.is_empty():
+		return
+	if clave != "mundo_abierto":
+		var desbloqueados: Dictionary = GameState.obtener_reinos_desbloqueados()
+		if not bool(desbloqueados.get(clave, false)):
+			return
+		var regla := _supabase_client.obtener_reino_game(clave) if is_instance_valid(_supabase_client) else {}
+		if regla.is_empty():
+			return
+	var zone_manager := _main.get_node_or_null("World/ZoneManager")
+	if not is_instance_valid(zone_manager):
+		return
+	if clave == "mundo_abierto":
+		zone_manager.call("entrar_mundo_abierto")
+	else:
+		zone_manager.call("entrar_reino", clave)
+	cambiar_zona_global.rpc(clave)
+
+
+@rpc("authority", "call_remote", "reliable")
+func cambiar_zona_global(destino: String) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	var zone_manager := _main.get_node_or_null("World/ZoneManager") if is_instance_valid(_main) else null
+	if not is_instance_valid(zone_manager):
+		return
+	if destino == "mundo_abierto":
+		zone_manager.call("entrar_mundo_abierto")
+	else:
+		zone_manager.call("entrar_reino", destino)
+
+
+func enviar_solicitud_viaje(destino: String) -> void:
+	if not es_cliente_en_mundo_global():
+		return
+	var clave := destino.strip_edges().to_lower()
+	if clave.is_empty():
+		return
+	solicitar_viaje_global.rpc_id(1, clave)
+
+
 func solicitar_accion_local(accion: String) -> void:
 	if not es_cliente_en_mundo_global():
 		return
