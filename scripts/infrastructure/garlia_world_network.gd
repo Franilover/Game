@@ -7,7 +7,7 @@ const INPUT_INTERVAL := 0.05
 const SNAPSHOT_INTERVAL := 0.05
 const MAX_USERNAME_LENGTH := 24
 
-signal mundo_global_listo(semilla: int)
+signal mundo_global_listo(semilla: int, tipo_zona: String)
 signal mundo_global_rechazado(mensaje: String)
 
 var _servidor_inicializado := false
@@ -25,6 +25,8 @@ var _supabase_client: Node = null
 var _jugadores_servidor: Dictionary = {}
 var _proxies_cliente: Dictionary = {}
 var _auth_pendiente: Dictionary = {}
+var _sistemas_jugador_servidor: Dictionary = {}
+var _ultima_accion_servidor: Dictionary = {}
 var _personaje_local: Dictionary = {}
 var _estado_inicial_pendiente: Array = []
 var _peer_local_id := 0
@@ -203,6 +205,7 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 		GameState
 	)
 	_entities.add_child(jugador)
+	_crear_sistemas_jugador_servidor(peer_id, jugador)
 	var camara_jugador := jugador.get_node_or_null("Camera2D") as Camera2D
 	if is_instance_valid(camara_jugador):
 		camara_jugador.enabled = false
@@ -211,7 +214,9 @@ func solicitar_entrada_global(user_id: String, username: String, access_token: S
 	_jugadores_servidor[peer_id] = jugador
 
 	var snapshot := _crear_snapshot()
-	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed)
+	var zone_manager := _main.get_node_or_null("World/ZoneManager")
+	var tipo_zona := str(zone_manager.call("obtener_tipo_actual")) if is_instance_valid(zone_manager) else "mundo_abierto"
+	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona)
 	_difundir_estado()
 	print("GarliaWorldNetwork: jugador autenticado y añadido → ", username, " [", peer_id, "]")
 
@@ -243,7 +248,7 @@ func _validar_token_supabase(token: String) -> Dictionary:
 
 
 @rpc("authority", "call_remote", "reliable")
-func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int) -> void:
+func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int, tipo_zona: String) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado():
 		return
 	_peer_local_id = peer_id_local
@@ -252,14 +257,14 @@ func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int) -> vo
 	if is_instance_valid(_local_player):
 		_aplicar_snapshot(_estado_inicial_pendiente)
 		_estado_inicial_pendiente.clear()
-	mundo_global_listo.emit(_semilla_global)
+	mundo_global_listo.emit(_semilla_global, tipo_zona)
 
 
 @rpc("authority", "call_remote", "reliable")
 func rechazar_entrada_global(mensaje: String) -> void:
-	mundo_global_rechazado.emit(mensaje)
 	_cliente_global_activado = false
 	GarliaMultiplayer.cerrar_partida()
+	mundo_global_rechazado.emit(mensaje)
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
@@ -271,6 +276,70 @@ func recibir_input_global(direccion: Vector2, correr: bool) -> void:
 	if not is_instance_valid(jugador):
 		return
 	jugador.establecer_input_red(direccion.limit_length(1.0), correr)
+
+
+
+func _crear_sistemas_jugador_servidor(peer_id: int, jugador: Player) -> void:
+	if not is_instance_valid(jugador):
+		return
+	var contenedor := Node.new()
+	contenedor.name = "SistemasRed_%d" % peer_id
+	jugador.add_child(contenedor)
+
+	var interaccion := InteractionSystem.new()
+	interaccion.name = "InteraccionServidor"
+	contenedor.add_child(interaccion)
+	var world_items: GarliaWorldItems = _main.get_node_or_null("Systems/WorldItems") as GarliaWorldItems
+	interaccion.configurar(jugador, null, world_items, jugador.input_gate, _entity_manager as WorldEntityManager)
+
+	var combate := CombatSystem.new()
+	combate.name = "CombateServidor"
+	contenedor.add_child(combate)
+	var proyectiles := _main.get_node_or_null("CombatProjectiles")
+	combate.configurar(jugador, null, _world_context as WorldContext, proyectiles, GameState)
+
+	_sistemas_jugador_servidor[peer_id] = {
+		"interaccion": interaccion,
+		"combate": combate
+	}
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func solicitar_accion_global(accion: String) -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if not _jugadores_servidor.has(peer_id):
+		return
+	if accion != "primary" and accion != "secondary":
+		return
+	var ahora := Time.get_ticks_msec()
+	var anterior := int(_ultima_accion_servidor.get(peer_id, 0))
+	if ahora - anterior < 100:
+		return
+	_ultima_accion_servidor[peer_id] = ahora
+
+	var sistemas: Dictionary = _sistemas_jugador_servidor.get(peer_id, {})
+	var interaccion: InteractionSystem = sistemas.get("interaccion") as InteractionSystem
+	var combate: CombatSystem = sistemas.get("combate") as CombatSystem
+	if accion == "primary":
+		if is_instance_valid(interaccion) and interaccion.procesar_accion_primaria():
+			return
+		if is_instance_valid(combate):
+			combate.procesar_accion_primaria()
+	else:
+		if is_instance_valid(interaccion) and interaccion.procesar_accion_secundaria():
+			return
+		if is_instance_valid(combate):
+			combate.procesar_accion_secundaria()
+
+
+func solicitar_accion_local(accion: String) -> void:
+	if not es_cliente_en_mundo_global():
+		return
+	if accion != "primary" and accion != "secondary":
+		return
+	solicitar_accion_global.rpc_id(1, accion)
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -382,6 +451,8 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		if is_instance_valid(jugador):
 			jugador.queue_free()
 		_jugadores_servidor.erase(peer_id)
+		_sistemas_jugador_servidor.erase(peer_id)
+		_ultima_accion_servidor.erase(peer_id)
 		if _jugadores_servidor.is_empty() and _servidor_inicializado:
 			GlobalWorldStore.guardar_y_pausar()
 		else:
