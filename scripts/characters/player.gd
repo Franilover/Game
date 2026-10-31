@@ -91,6 +91,7 @@ var _red_correr: bool = false
 var _red_dash_pendiente: bool = false
 var _red_salto_pendiente: bool = false
 var _red_eterium_sprint: bool = false
+var _red_curar_eterium: bool = false
 var _apariencia_red_aplicada: bool = false
 
 
@@ -233,7 +234,7 @@ func configurar_control_remoto_servidor() -> void:
 	_red_eterium_sprint = false
 
 
-func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false, salto: bool = false) -> void:
+func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false, salto: bool = false, curar_eterium: bool = false) -> void:
 	if not _red_servidor_controlado:
 		return
 	_red_direccion = direccion.limit_length(1.0)
@@ -241,6 +242,7 @@ func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, 
 	_red_dash_pendiente = _red_dash_pendiente or dash
 	_red_salto_pendiente = _red_salto_pendiente or salto
 	_red_eterium_sprint = sprint_eterium
+	_red_curar_eterium = curar_eterium
 
 
 func _procesar_movimiento_red(delta: float) -> void:
@@ -272,6 +274,10 @@ func _procesar_movimiento_red(delta: float) -> void:
 			if state == State.DASH:
 				_procesar_dash(delta)
 				return
+
+	if _red_curar_eterium and not eterium.vida_eterium_compartidos():
+		_procesar_curacion_eterium(delta)
+		return
 
 	var eterium_sprint := false
 	if _red_eterium_sprint and direccion != Vector2.ZERO:
@@ -826,6 +832,7 @@ func reaparecer_en_red(posicion: Vector2) -> void:
 	_red_dash_pendiente = false
 	_red_salto_pendiente = false
 	_red_eterium_sprint = false
+	_red_curar_eterium = false
 	locomotion.reiniciar()
 	visible = true
 	if is_instance_valid(visual):
