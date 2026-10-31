@@ -1,3 +1,20 @@
+extends Node2D
+class_name WorldProp
+
+signal interactuar(prop: Node2D)
+
+var tipo = ""
+var bioma = ""
+var variante = 0
+var semilla = 0
+var interactuable = false
+var datos = {}
+var _world_context: WorldContext = null
+var _inventory: GarliaInventory = null
+var _world_items: GarliaWorldItems = null
+var _replica_red_cliente := false
+
+
 func _es_servidor_dedicado() -> bool:
 	var arbol := Engine.get_main_loop() as SceneTree
 	if arbol == null or arbol.root == null:
@@ -15,21 +32,6 @@ func _emitir_notificacion(mensaje: String) -> void:
 		events.emit_signal("notification_pushed", mensaje)
 
 
-extends Node2D
-class_name WorldProp
-
-signal interactuar(prop: Node2D)
-
-var tipo = ""
-var bioma = ""
-var variante = 0
-var semilla = 0
-var interactuable = false
-var datos = {}
-var _world_context: WorldContext = null
-var _inventory: GarliaInventory = null
-var _world_items: GarliaWorldItems = null
-var _replica_red_cliente := false
 
 
 func configurar_dependencias(
