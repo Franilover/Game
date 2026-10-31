@@ -236,6 +236,26 @@ func iniciar_partida(id: String) -> bool:
 	return true
 
 
+## Sincroniza únicamente la zona de entrada del mundo global en el save local.
+## El estado de personaje, inventario y progreso privado permanece local.
+func establecer_zona_mundo_global(id: String, tipo_zona: String) -> bool:
+	var tipo := tipo_zona.strip_edges()
+	if id.is_empty() or tipo.is_empty():
+		return false
+	var datos := _leer_archivo_partida(id)
+	if datos.is_empty():
+		return false
+	var estado_variant: Variant = datos.get("estado", {})
+	var estado: Dictionary = estado_variant as Dictionary if estado_variant is Dictionary else {}
+	var flags_variant: Variant = estado.get("flags", {})
+	var flags: Dictionary = (flags_variant as Dictionary).duplicate(true) if flags_variant is Dictionary else {}
+	flags["zona_actual_tipo"] = tipo
+	estado["flags"] = flags
+	datos["estado"] = estado
+	datos["actualizado_en"] = _ahora()
+	return _escribir_archivo_partida(id, datos)
+
+
 func eliminar_partida(id: String) -> bool:
 	if not save_repository.eliminar_partida(id):
 		return false
