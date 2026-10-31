@@ -293,7 +293,13 @@ func capturar_estado_persistente_mundo() -> Dictionary:
 	# normal por chunk ocurre al descargarlas, pero el servidor puede pausarse
 	# con muchos chunks todavía activos.
 	for entidad_variant in obtener_entidades_activas():
-		if not entidad_variant is Creature or not is_instance_valid(entidad_variant):
+		if not is_instance_valid(entidad_variant):
+			continue
+		if entidad_variant is WorldProp:
+			var prop := entidad_variant as WorldProp
+			guardar_estado_entidad(prop, prop.chunk_coord)
+			continue
+		if not entidad_variant is Creature:
 			continue
 		var criatura := entidad_variant as Creature
 		# Los Garumis vinculados pertenecen al guardado privado del jugador.
