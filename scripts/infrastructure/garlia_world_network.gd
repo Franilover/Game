@@ -133,6 +133,8 @@ func inicializar_mundo_servidor(
 	_zona_actual_red = zona_nueva
 	if cambio_zona:
 		_tumbas_criaturas_red.clear()
+		_definiciones_criaturas_red.clear()
+		_definiciones_props_red.clear()
 	_servidor_inicializado = true
 	_mundo_listo = true
 	GlobalWorldStore.configurar_runtime(main)
