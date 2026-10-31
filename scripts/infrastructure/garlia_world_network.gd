@@ -427,6 +427,7 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 				continue
 			proxy.name = "JugadorRemoto_%d" % peer_id
 			proxy.personaje_nombre = str(registro.get("username", "Explorador"))
+			proxy.remove_from_group("player")
 			proxy.set_physics_process(false)
 			proxy.set_process(false)
 			_entities.add_child(proxy)
@@ -457,10 +458,18 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 	if not is_instance_valid(jugador):
 		return
-	jugador.set("is_alive", bool(registro.get("is_alive", true)))
-	jugador.set("health", clampi(int(registro.get("health", jugador.health)), 0, int(registro.get("max_health", jugador.max_health))))
-	jugador.set("mana", clampi(int(registro.get("mana", jugador.mana)), 0, int(registro.get("max_mana", jugador.max_mana))))
-	jugador.set("stamina", clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(registro.get("max_stamina", jugador.max_stamina))))
+	var vital := jugador.vital_state as VitalState
+	if is_instance_valid(vital):
+		vital.health = clampi(int(registro.get("health", vital.health)), 0, vital.max_health)
+		vital.mana = clampi(int(registro.get("mana", vital.mana)), 0, vital.max_mana)
+		vital.is_alive = bool(registro.get("is_alive", vital.is_alive)) and vital.health > 0
+		jugador.call("_sync_desde_vital")
+	if jugador.get("stamina_controller") != null:
+		var stamina_controller: Variant = jugador.get("stamina_controller")
+		if stamina_controller.has_method("establecer_actual"):
+			stamina_controller.call("establecer_actual", clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(jugador.max_stamina)))
+		else:
+			jugador.stamina = clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(jugador.max_stamina))
 	if jugador.has_signal("health_changed"):
 		jugador.health_changed.emit(int(jugador.health), int(jugador.max_health))
 	if jugador.has_signal("mana_changed"):
