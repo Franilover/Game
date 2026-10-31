@@ -134,7 +134,9 @@ func crear_prop(data: Dictionary) -> WorldProp:
 	if node == null:
 		push_error("WorldEntityFactory: no se pudo crear WorldProp.")
 		return null
-	node.configurar_dependencias(_world_context, _inventory, _world_items)
+	var inventory_prop := null if GarliaMultiplayer.es_servidor_dedicado() else _inventory
+	var world_items_prop := null if GarliaMultiplayer.es_servidor_dedicado() else _world_items
+	node.configurar_dependencias(_world_context, inventory_prop, world_items_prop)
 	node.configurar_desde_game_data(data)
 	node.activar_como_proxy()
 	if GarliaWorldNetwork.es_cliente_en_mundo_global():
