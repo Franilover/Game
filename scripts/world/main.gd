@@ -223,6 +223,8 @@ func _detectar_reinos_descubiertos() -> void:
 
 
 func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GarliaWorldNetwork.preparar_cambio_zona_servidor()
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
 
