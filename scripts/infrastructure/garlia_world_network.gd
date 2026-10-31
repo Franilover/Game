@@ -640,8 +640,9 @@ func _crear_sistemas_jugador_servidor(peer_id: int, jugador: Player) -> void:
 	var interaccion := InteractionSystem.new()
 	interaccion.name = "InteraccionServidor"
 	contenedor.add_child(interaccion)
-	var world_items: GarliaWorldItems = _main.get_node_or_null("Systems/WorldItems") as GarliaWorldItems
-	interaccion.configurar(jugador, null, world_items, jugador.input_gate, _entity_manager as WorldEntityManager)
+	# El gestor WorldItems de Main está asociado al jugador ancla y su inventario.
+	# No se lo damos a jugadores remotos: evita que recolecten en el inventario del ancla.
+	interaccion.configurar(jugador, null, null, jugador.input_gate, _entity_manager as WorldEntityManager)
 
 	var combate := CombatSystem.new()
 	combate.name = "CombateServidor"
