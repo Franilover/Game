@@ -9,9 +9,9 @@ var variante = 0
 var semilla = 0
 var interactuable = false
 var datos = {}
-var _world_context: WorldContext = null
-var _inventory: GarliaInventory = null
-var _world_items: GarliaWorldItems = null
+var _world_context = null
+var _inventory = null
+var _world_items = null
 var _replica_red_cliente := false
 
 
@@ -35,9 +35,9 @@ func _emitir_notificacion(mensaje: String) -> void:
 
 
 func configurar_dependencias(
-	nuevo_world_context: WorldContext,
-	nuevo_inventory: GarliaInventory,
-	nuevo_world_items: GarliaWorldItems = null
+	nuevo_world_context,
+	nuevo_inventory,
+	nuevo_world_items = null
 ) -> void:
 	_world_context = nuevo_world_context
 	_inventory = nuevo_inventory
