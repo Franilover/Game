@@ -76,7 +76,7 @@ func _procesar_objetivo(objetivo: Node) -> void:
 
 	# objetivo_impactado conserva su contrato histórico: solo se emite cuando
 	# CombatDamage confirma una reducción real de salud.
-	if CombatDamage.aplicar(entidad, attack.damage, attack.origin):
+	if CombatDamage.aplicar(entidad, attack.damage, attack.origin, Callable(), attack.attacker):
 		objetivo_impactado.emit(entidad, attack)
 
 	# El feedback corresponde al consumidor del resultado, no al proyectil;
