@@ -724,7 +724,19 @@ func registrar_descubrimiento_global(clave: String) -> void:
 	if not verificado:
 		return
 	GameState.desbloquear_reino(limpia)
-	print("GarliaWorldNetwork: reino descubierto validado en servidor → ", limpia)
+	recibir_reinos_globales.rpc(GameState.obtener_reinos_desbloqueados())
+	print("GarliaWorldNetwork: reino descubierto validado y difundido → ", limpia)
+
+
+@rpc("authority", "call_remote", "reliable")
+func recibir_reinos_globales(reinos_globales: Dictionary) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	for clave_variant in reinos_globales.keys():
+		var clave := str(clave_variant).strip_edges().to_lower()
+		if clave.is_empty() or not bool(reinos_globales.get(clave_variant, false)):
+			continue
+		GameState.desbloquear_reino(clave)
 
 
 @rpc("any_peer", "call_remote", "reliable")
