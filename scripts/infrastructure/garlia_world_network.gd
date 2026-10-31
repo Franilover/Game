@@ -25,6 +25,7 @@ var _supabase_client: Node = null
 
 var _jugadores_servidor: Dictionary = {}
 var _proxies_cliente: Dictionary = {}
+var _identidades_remotas_cliente: Dictionary = {}
 var _objetivos_posicion_proxy: Dictionary = {}
 var _objetivo_posicion_local := Vector2.ZERO
 var _local_posicion_inicializada := false
@@ -319,8 +320,9 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 	var separacion := Vector2(float((_jugadores_servidor.size() % 4) * 24), float(int(_jugadores_servidor.size() / 4) * 24))
 	jugador.global_position = _world_anchor.global_position + Vector2(28.0, 12.0) + separacion
 	_jugadores_servidor[peer_id] = jugador
+	recibir_identidad_jugador.rpc(peer_id, _crear_identidad_red(jugador))
 
-	var snapshot := _crear_snapshot()
+	var snapshot := _crear_snapshot(true)
 	var zone_manager := _main.get_node_or_null("World/ZoneManager")
 	var tipo_zona := str(zone_manager.call("obtener_tipo_actual")) if is_instance_valid(zone_manager) else "mundo_abierto"
 	recibir_inicio_red.rpc_id(peer_id, snapshot, peer_id, GameState.world_state.world_seed, tipo_zona, GameState.obtener_reinos_desbloqueados())
@@ -701,6 +703,31 @@ func solicitar_accion_local(accion: String) -> void:
 	solicitar_accion_global.rpc_id(1, accion)
 
 
+@rpc("authority", "call_remote", "reliable")
+func recibir_identidad_jugador(peer_id: int, identidad: Dictionary) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado() or peer_id <= 0:
+		return
+	_identidades_remotas_cliente[peer_id] = identidad.duplicate(true)
+	if peer_id == _peer_local_id:
+		if is_instance_valid(_local_player):
+			_aplicar_identidad_snapshot(_local_player, identidad)
+	elif _proxies_cliente.has(peer_id):
+		var proxy: Player = _proxies_cliente[peer_id] as Player
+		if is_instance_valid(proxy):
+			_aplicar_identidad_snapshot(proxy, identidad)
+
+
+func _aplicar_identidad_snapshot(jugador: Player, identidad: Dictionary) -> void:
+	if not is_instance_valid(jugador):
+		return
+	jugador.aplicar_identidad_red(
+		str(identidad.get("username", jugador.personaje_nombre)),
+		str(identidad.get("gender", "")),
+		identidad.get("appearance", {}) as Dictionary,
+		identidad.get("species", {}) as Dictionary
+	)
+
+
 @rpc("authority", "call_remote", "unreliable_ordered")
 func recibir_estado_red(snapshot: Array) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado():
@@ -728,19 +755,24 @@ func _actualizar_ancla_mundo() -> void:
 		_world_anchor.global_position = centro / float(cantidad)
 
 
-func _crear_snapshot() -> Array:
+func _crear_identidad_red(jugador: Player) -> Dictionary:
+	return {
+		"username": jugador.personaje_nombre,
+		"gender": jugador.personaje_genero,
+		"appearance": jugador.personaje_apariencia.duplicate(true),
+		"species": jugador.personaje_especie.duplicate(true)
+	}
+
+
+func _crear_snapshot(incluir_identidad: bool = false) -> Array:
 	var resultado: Array = []
 	for peer_variant in _jugadores_servidor.keys():
 		var peer_id := int(peer_variant)
 		var jugador: Player = _jugadores_servidor[peer_id] as Player
 		if not is_instance_valid(jugador):
 			continue
-		resultado.append({
+		var registro := {
 			"peer_id": peer_id,
-			"username": jugador.personaje_nombre,
-			"gender": jugador.personaje_genero,
-			"appearance": jugador.personaje_apariencia.duplicate(true),
-			"species": jugador.personaje_especie.duplicate(true),
 			"x": jugador.global_position.x,
 			"y": jugador.global_position.y,
 			"facing_x": jugador.facing.x,
@@ -753,7 +785,10 @@ func _crear_snapshot() -> Array:
 			"stamina": float(jugador.stamina),
 			"max_stamina": float(jugador.max_stamina),
 			"is_alive": bool(jugador.is_alive)
-		})
+		}
+		if incluir_identidad:
+			registro.merge(_crear_identidad_red(jugador), true)
+		resultado.append(registro)
 	return resultado
 
 
@@ -773,6 +808,13 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 		if peer_id <= 0:
 			continue
 		vistos[peer_id] = true
+		if registro.has("username"):
+			_identidades_remotas_cliente[peer_id] = {
+				"username": registro.get("username", ""),
+				"gender": registro.get("gender", ""),
+				"appearance": registro.get("appearance", {}),
+				"species": registro.get("species", {})
+			}
 		var posicion := Vector2(float(registro.get("x", 0.0)), float(registro.get("y", 0.0)))
 		var direccion := Vector2(float(registro.get("facing_x", 0.0)), float(registro.get("facing_y", 1.0)))
 		if peer_id == _peer_local_id:
@@ -784,12 +826,9 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 				if direccion.length_squared() > 0.01:
 					_local_player.facing = direccion.normalized()
 					_local_player.call("_update_dir_marker")
-				_local_player.aplicar_identidad_red(
-					str(registro.get("username", _local_player.personaje_nombre)),
-					str(registro.get("gender", "")),
-					registro.get("appearance", {}) as Dictionary,
-					registro.get("species", {}) as Dictionary
-				)
+				var identidad_local: Dictionary = _identidades_remotas_cliente.get(peer_id, {})
+				if not identidad_local.is_empty():
+					_aplicar_identidad_snapshot(_local_player, identidad_local)
 				_actualizar_estado_jugador(_local_player, registro)
 			continue
 		var proxy: Player = _proxies_cliente.get(peer_id) as Player
@@ -820,12 +859,9 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			proxy.set_process(false)
 			_proxies_cliente[peer_id] = proxy
 		_objetivos_posicion_proxy[peer_id] = posicion
-		proxy.aplicar_identidad_red(
-			str(registro.get("username", proxy.personaje_nombre)),
-			str(registro.get("gender", "")),
-			registro.get("appearance", {}) as Dictionary,
-			registro.get("species", {}) as Dictionary
-		)
+		var identidad_proxy: Dictionary = _identidades_remotas_cliente.get(peer_id, {})
+		if not identidad_proxy.is_empty():
+			_aplicar_identidad_snapshot(proxy, identidad_proxy)
 		_actualizar_estado_jugador(proxy, registro)
 		if direccion.length_squared() > 0.01:
 			proxy.facing = direccion.normalized()
@@ -841,6 +877,9 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			proxy.queue_free()
 		_proxies_cliente.erase(peer_id)
 		_objetivos_posicion_proxy.erase(peer_id)
+		_identidades_remotas_cliente.erase(peer_id)
+		_objetivos_posicion_proxy.erase(peer_id)
+		_identidades_remotas_cliente.erase(peer_id)
 
 
 func _actualizar_interpolacion_clientes(delta: float) -> void:
@@ -943,6 +982,7 @@ func _al_servidor_desconectado() -> void:
 			proxy.queue_free()
 	_proxies_cliente.clear()
 	_objetivos_posicion_proxy.clear()
+	_identidades_remotas_cliente.clear()
 	_local_posicion_inicializada = false
 	_dash_local_pendiente = false
 	_salto_local_pendiente = false
