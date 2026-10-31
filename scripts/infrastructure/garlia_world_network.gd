@@ -26,6 +26,7 @@ var _zona_esperada_criaturas := ""
 var _estados_criaturas_pendientes: Array = []
 var _tumbas_criaturas_red: Dictionary = {}
 var _entity_snapshot_elapsed := 0.0
+var _entity_client_apply_elapsed := 0.0
 const ENTITY_SNAPSHOT_INTERVAL := 0.20
 const MAX_ENTITY_SNAPSHOT_RECORDS := 512
 var _ium_manager: Node = null
@@ -242,8 +243,11 @@ func _process(delta: float) -> void:
 	if es_cliente_en_mundo_global():
 		actualizar_input_local(delta)
 		_actualizar_interpolacion_clientes(delta)
-		if _entity_manager_cliente != null and is_instance_valid(_entity_manager_cliente):
-			_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
+		_entity_client_apply_elapsed += delta
+		if _entity_client_apply_elapsed >= 0.10:
+			_entity_client_apply_elapsed = 0.0
+			if _entity_manager_cliente != null and is_instance_valid(_entity_manager_cliente):
+				_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
 
 
 func _al_conectar_con_servidor() -> void:
@@ -1160,6 +1164,10 @@ func _al_conexion_fallida() -> void:
 	_entity_manager_cliente = null
 	_estados_criaturas_pendientes.clear()
 	_zona_esperada_criaturas = ""
+	_restaurar_simulacion_criaturas_locales()
+	_entity_manager_cliente = null
+	_estados_criaturas_pendientes.clear()
+	_zona_esperada_criaturas = ""
 	_proxies_cliente.clear()
 	_objetivos_posicion_proxy.clear()
 	_identidades_remotas_cliente.clear()
@@ -1175,6 +1183,10 @@ func _al_servidor_desconectado() -> void:
 	_cliente_global_activado = false
 	_dash_local_pendiente = false
 	_salto_local_pendiente = false
+	_restaurar_simulacion_criaturas_locales()
+	_entity_manager_cliente = null
+	_estados_criaturas_pendientes.clear()
+	_zona_esperada_criaturas = ""
 	_restaurar_simulacion_criaturas_locales()
 	_entity_manager_cliente = null
 	_estados_criaturas_pendientes.clear()
