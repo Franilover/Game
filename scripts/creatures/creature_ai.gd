@@ -1026,7 +1026,7 @@ func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 		if criatura.get_meta("garlia_objetivo_liberacion") == candidato:
 			return "atacar"
 
-	if _es_reactivo_bosque() and candidato.is_in_group("player"):
+	if _es_reactivo_bosque() and (candidato.is_in_group("player") or candidato == jugador):
 		# La conducta se evalúa sobre el jugador concreto detectado por la IA.
 		if _es_seiloris():
 			return "huir" if _jugador_es_agresor_bosque(candidato) else ""
