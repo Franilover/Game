@@ -351,6 +351,37 @@ func solicitar_accion_global(accion: String) -> void:
 			combate.procesar_accion_secundaria()
 
 
+func notificar_reino_descubierto(clave: String) -> void:
+	if not es_cliente_en_mundo_global():
+		return
+	var limpia := clave.strip_edges().to_lower()
+	if not limpia.is_empty():
+		registrar_descubrimiento_global.rpc_id(1, limpia)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func registrar_descubrimiento_global(clave: String) -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if not _jugadores_servidor.has(peer_id) or not is_instance_valid(_world_context):
+		return
+	var limpia := clave.strip_edges().to_lower()
+	if limpia.is_empty():
+		return
+	var jugador: Player = _jugadores_servidor[peer_id] as Player
+	var presentes: Array = _world_context.call("get_reinos_at_position", jugador.global_position)
+	var verificado := false
+	for reino_variant in presentes:
+		if reino_variant is Dictionary and str((reino_variant as Dictionary).get("clave", "")).strip_edges().to_lower() == limpia:
+			verificado = true
+			break
+	if not verificado:
+		return
+	GameState.desbloquear_reino(limpia)
+	print("GarliaWorldNetwork: reino descubierto validado en servidor → ", limpia)
+
+
 @rpc("any_peer", "call_remote", "reliable")
 func solicitar_viaje_global(destino: String) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado():
