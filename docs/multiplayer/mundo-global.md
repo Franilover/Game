@@ -48,7 +48,7 @@ Cuando se desconecta el último jugador, el servidor escribe el estado global y 
 
 Esto evita perder el mundo y permite volver sin arrancar otro proceso. **No apaga el VPS ni detiene el proceso del servidor.** El apagado real con reactivación automática requiere un supervisor/coordinador externo que no forma parte de este cambio.
 
-El archivo user://garlia_global_world.json debe residir en almacenamiento persistente. Ejecuta una sola instancia de servidor sobre ese archivo; varias instancias producirían mundos divergentes y escrituras en conflicto. La persistencia guarda por zona las criaturas que el WorldEntityManager ya conoce, incluidos posición, velocidad, vida/muerte y progreso de Garumi. El guardado se realiza cada 15 segundos, antes de cambiar de zona y cuando se desconecta el último jugador. El estado de props recolectables, drops y objetos colocados todavía no forma parte de este archivo.
+El archivo user://garlia_global_world.json debe residir en almacenamiento persistente. Ejecuta una sola instancia de servidor sobre ese archivo; varias instancias producirían mundos divergentes y escrituras en conflicto. La persistencia guarda por zona las criaturas que el WorldEntityManager ya conoce, incluidos posición, velocidad, vida/muerte y progreso de Garumi. El guardado se realiza cada 15 segundos, antes de cambiar de zona y cuando se desconecta el último jugador. También captura las posiciones y los datos runtime de los WorldProp que siguen activos cuando se guarda o descarga un chunk. La eliminación/colección de recursos, drops y objetos colocados todavía no tiene sincronización ni persistencia global completa.
 
 ## Alcance de esta primera integración
 
