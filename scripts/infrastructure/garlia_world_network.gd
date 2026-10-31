@@ -20,6 +20,15 @@ var _world_anchor: Player = null
 var _local_player: Player = null
 var _world_context: Node = null
 var _entity_manager: Node = null
+var _entity_manager_cliente: Node = null
+var _zona_actual_red := ""
+var _zona_esperada_criaturas := ""
+var _estados_criaturas_pendientes: Array = []
+var _tumbas_criaturas_red: Dictionary = {}
+var _criaturas_conectadas_red: Dictionary = {}
+var _entity_snapshot_elapsed := 0.0
+const ENTITY_SNAPSHOT_INTERVAL := 0.20
+const MAX_ENTITY_SNAPSHOT_RECORDS := 512
 var _ium_manager: Node = null
 var _supabase_client: Node = null
 
@@ -111,6 +120,10 @@ func inicializar_mundo_servidor(
 	var zona_nueva := str(zone_manager_runtime.call("obtener_tipo_actual")) if is_instance_valid(zone_manager_runtime) else ""
 	var cambio_zona := _servidor_inicializado and zona_nueva != _ultima_zona_servidor
 	_ultima_zona_servidor = zona_nueva
+	_zona_actual_red = zona_nueva
+	if cambio_zona:
+		_tumbas_criaturas_red.clear()
+		_criaturas_conectadas_red.clear()
 	_servidor_inicializado = true
 	_mundo_listo = true
 	GlobalWorldStore.configurar_runtime(main)
@@ -150,20 +163,30 @@ func inicializar_mundo_servidor(
 	print("GarliaWorldNetwork: mundo global del servidor preparado.")
 
 
-func configurar_mundo_cliente(main: Node, entities: Node2D, local_player: Player) -> void:
+func configurar_mundo_cliente(
+	main: Node,
+	entities: Node2D,
+	local_player: Player,
+	entity_manager: Node = null,
+	tipo_zona: String = ""
+) -> void:
 	if not es_cliente_en_mundo_global():
 		return
 	_main = main
 	_entities = entities
 	_local_player = local_player
+	_entity_manager_cliente = entity_manager
+	_zona_actual_red = tipo_zona
 	_local_posicion_inicializada = false
 	_objetivos_posicion_proxy.clear()
 	_local_player.visible = true
 	_local_player.set_physics_process(true)
+	if _zona_esperada_criaturas == _zona_actual_red and not _estados_criaturas_pendientes.is_empty():
+		_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
 	if not _estado_inicial_pendiente.is_empty():
 		_aplicar_snapshot(_estado_inicial_pendiente)
 		_estado_inicial_pendiente.clear()
-	print("GarliaWorldNetwork: cliente enlazado al mundo global.")
+	print("GarliaWorldNetwork: cliente enlazado al mundo global → ", _zona_actual_red)
 
 
 func _input(event: InputEvent) -> void:
@@ -208,14 +231,20 @@ func _process(delta: float) -> void:
 		_limpiar_inputs_expirados()
 		_revisar_reapariciones()
 		_snapshot_elapsed += delta
+		_entity_snapshot_elapsed += delta
 		if _snapshot_elapsed >= SNAPSHOT_INTERVAL:
 			_snapshot_elapsed = 0.0
 			_actualizar_ancla_mundo()
 			_difundir_estado()
+		if _entity_snapshot_elapsed >= ENTITY_SNAPSHOT_INTERVAL:
+			_entity_snapshot_elapsed = 0.0
+			_difundir_estado_criaturas()
 		return
 	if es_cliente_en_mundo_global():
 		actualizar_input_local(delta)
 		_actualizar_interpolacion_clientes(delta)
+		if _entity_manager_cliente != null and is_instance_valid(_entity_manager_cliente):
+			_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
 
 
 func _al_conectar_con_servidor() -> void:
@@ -743,6 +772,142 @@ func recibir_estado_red(snapshot: Array) -> void:
 		_estado_inicial_pendiente = snapshot.duplicate(true)
 		return
 	_aplicar_snapshot(snapshot)
+
+
+
+func _clave_criatura_red(criatura: Creature, zona: String) -> String:
+	if not is_instance_valid(criatura):
+		return ""
+	var instancia := str(criatura.get_meta("runtime_instance_key", "")).strip_edges()
+	if instancia.is_empty():
+		return ""
+	return "%s|%d:%d|%s" % [zona, criatura.chunk_coord.x, criatura.chunk_coord.y, instancia]
+
+
+func _serializar_criatura_red(criatura: Creature, clave: String) -> Dictionary:
+	return {
+		"key": clave,
+		"x": criatura.global_position.x,
+		"y": criatura.global_position.y,
+		"vx": criatura.velocity.x,
+		"vy": criatura.velocity.y,
+		"health": int(criatura.health),
+		"max_health": int(criatura.max_health),
+		"is_alive": bool(criatura.is_alive),
+		"attack": criatura.esta_animando_ataque()
+	}
+
+
+func _registrar_criatura_red(criatura: Creature, clave: String) -> void:
+	var id_instancia := criatura.get_instance_id()
+	if str(_criaturas_conectadas_red.get(id_instancia, "")) == clave:
+		return
+	_criaturas_conectadas_red[id_instancia] = clave
+	var callback := Callable(self, "_al_morir_criatura_red").bind(clave, criatura)
+	if not criatura.died.is_connected(callback):
+		criatura.died.connect(callback, CONNECT_ONE_SHOT)
+
+
+func _al_morir_criatura_red(clave: String, criatura: Creature) -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado() or not is_instance_valid(criatura):
+		return
+	_tumbas_criaturas_red[clave] = _serializar_criatura_red(criatura, clave)
+	_tumbas_criaturas_red[clave]["is_alive"] = false
+	_tumbas_criaturas_red[clave]["attack"] = false
+	while _tumbas_criaturas_red.size() > 256:
+		_tumbas_criaturas_red.erase(_tumbas_criaturas_red.keys()[0])
+
+
+func _crear_snapshot_criaturas_servidor() -> Array:
+	var resultado: Array = []
+	if not is_instance_valid(_entity_manager) or not _entity_manager.has_method("obtener_entidades_activas"):
+		return resultado
+	var claves_vistas: Dictionary = {}
+	for entidad_variant in _entity_manager.call("obtener_entidades_activas"):
+		if not entidad_variant is Creature:
+			continue
+		var criatura := entidad_variant as Creature
+		if not is_instance_valid(criatura):
+			continue
+		var clave := _clave_criatura_red(criatura, _zona_actual_red)
+		if clave.is_empty():
+			continue
+		claves_vistas[clave] = true
+		_registrar_criatura_red(criatura, clave)
+		if criatura.is_alive:
+			_tumbas_criaturas_red.erase(clave)
+		resultado.append(_serializar_criatura_red(criatura, clave))
+		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
+			break
+	for clave_variant in _tumbas_criaturas_red.keys():
+		if resultado.size() >= MAX_ENTITY_SNAPSHOT_RECORDS:
+			break
+		var clave := str(clave_variant)
+		if claves_vistas.has(clave):
+			continue
+		var tumba: Variant = _tumbas_criaturas_red.get(clave, {})
+		if tumba is Dictionary:
+			resultado.append((tumba as Dictionary).duplicate(true))
+	return resultado
+
+
+func _difundir_estado_criaturas() -> void:
+	if _jugadores_servidor.is_empty():
+		return
+	recibir_estado_criaturas_red.rpc(_zona_actual_red, _crear_snapshot_criaturas_servidor())
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func recibir_estado_criaturas_red(zona: String, registros: Array) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	_zona_esperada_criaturas = zona
+	_estados_criaturas_pendientes = registros.duplicate(true)
+	if zona == _zona_actual_red and is_instance_valid(_entity_manager_cliente):
+		_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
+
+
+func _aplicar_estado_criaturas_cliente(registros: Array) -> void:
+	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
+		return
+	if _zona_esperada_criaturas != _zona_actual_red:
+		return
+	var por_clave: Dictionary = {}
+	for registro_variant in registros:
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		var clave := str(registro.get("key", "")).strip_edges()
+		if not clave.is_empty():
+			por_clave[clave] = registro
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if not entidad_variant is Creature:
+			continue
+		var criatura := entidad_variant as Creature
+		if not is_instance_valid(criatura):
+			continue
+		var clave := _clave_criatura_red(criatura, _zona_actual_red)
+		criatura.configurar_replica_red_cliente()
+		if clave.is_empty() or not por_clave.has(clave):
+			criatura.ocultar_replica_red_cliente()
+			continue
+		var registro: Dictionary = por_clave[clave]
+		criatura.aplicar_estado_red(
+			Vector2(float(registro.get("x", criatura.global_position.x)), float(registro.get("y", criatura.global_position.y))),
+			Vector2(float(registro.get("vx", 0.0)), float(registro.get("vy", 0.0))),
+			int(registro.get("health", criatura.health)),
+			int(registro.get("max_health", criatura.max_health)),
+			bool(registro.get("is_alive", true)),
+			bool(registro.get("attack", false))
+		)
+
+
+func _restaurar_simulacion_criaturas_locales() -> void:
+	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
+		return
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if entidad_variant is Creature and is_instance_valid(entidad_variant):
+			(entidad_variant as Creature).reactivar_simulacion_local_red()
 
 
 func _actualizar_ancla_mundo() -> void:
