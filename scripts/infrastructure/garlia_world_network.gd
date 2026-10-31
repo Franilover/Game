@@ -179,6 +179,7 @@ func configurar_mundo_cliente(
 	_zona_actual_red = tipo_zona
 	_local_posicion_inicializada = false
 	_objetivos_posicion_proxy.clear()
+	_ocultar_criaturas_cliente_hasta_snapshot()
 	_local_player.visible = true
 	_local_player.set_physics_process(true)
 	if _zona_esperada_criaturas == _zona_actual_red and not _estados_criaturas_pendientes.is_empty():
@@ -900,6 +901,14 @@ func _aplicar_estado_criaturas_cliente(registros: Array) -> void:
 			bool(registro.get("is_alive", true)),
 			bool(registro.get("attack", false))
 		)
+
+
+func _ocultar_criaturas_cliente_hasta_snapshot() -> void:
+	if not is_instance_valid(_entity_manager_cliente) or not _entity_manager_cliente.has_method("obtener_entidades_activas"):
+		return
+	for entidad_variant in _entity_manager_cliente.call("obtener_entidades_activas"):
+		if entidad_variant is Creature and is_instance_valid(entidad_variant):
+			(entidad_variant as Creature).ocultar_replica_red_cliente()
 
 
 func _restaurar_simulacion_criaturas_locales() -> void:
