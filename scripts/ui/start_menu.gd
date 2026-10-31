@@ -992,7 +992,7 @@ func _conexion_fallida() -> void:
 	join_button.disabled = false
 
 	multiplayer_status.text = (
-		"No se pudo conectar con la partida."
+		"No se pudo conectar con el servidor global."
 	)
 
 
