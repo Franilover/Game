@@ -37,6 +37,7 @@ var _ultimo_input_servidor: Dictionary = {}
 var _reapariciones_pendientes: Dictionary = {}
 var _eterium_runtime_global: Dictionary = {}
 var _reglas_especies_eterium_global: Array = []
+var _reglas_especies_eterium_cargadas := false
 var _personaje_local: Dictionary = {}
 var _estado_inicial_pendiente: Array = []
 var _peer_local_id := 0
@@ -280,6 +281,9 @@ func solicitar_entrada_global(user_id: String, _username: String, access_token: 
 		rechazar_entrada_global.rpc_id(peer_id, "No se pudo cargar el runtime de Eterium del mundo. Intenta entrar más tarde.")
 		return
 	var reglas_especies := await _obtener_reglas_eterium_especies(access_token)
+	if not _reglas_especies_eterium_cargadas:
+		rechazar_entrada_global.rpc_id(peer_id, "No se pudieron verificar las reglas Eterium de tu especie. Intenta entrar de nuevo.")
+		return
 	identidad["especie"] = especie_canonica
 
 	get_tree().paused = false
@@ -422,7 +426,7 @@ func _obtener_runtime_eterium(token: String) -> Dictionary:
 
 
 func _obtener_reglas_eterium_especies(token: String) -> Array:
-	if not _reglas_especies_eterium_global.is_empty():
+	if _reglas_especies_eterium_cargadas:
 		return _reglas_especies_eterium_global.duplicate(true)
 	var request := HTTPRequest.new()
 	request.timeout = 12.0
@@ -445,6 +449,7 @@ func _obtener_reglas_eterium_especies(token: String) -> Array:
 	var parsed: Variant = JSON.parse_string(PackedByteArray(response[3]).get_string_from_utf8())
 	if not parsed is Array:
 		return []
+	_reglas_especies_eterium_cargadas = true
 	for regla_variant in parsed as Array:
 		if regla_variant is Dictionary:
 			_reglas_especies_eterium_global.append((regla_variant as Dictionary).duplicate(true))
@@ -1014,3 +1019,5 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		if is_instance_valid(proxy):
 			proxy.queue_free()
 		_proxies_cliente.erase(peer_id)
+	_objetivos_posicion_proxy.erase(peer_id)
+	_identidades_remotas_cliente.erase(peer_id)
