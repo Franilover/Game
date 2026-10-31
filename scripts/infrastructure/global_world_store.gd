@@ -80,6 +80,15 @@ func _serializar_variante(valor: Variant) -> Variant:
 	if valor is Vector2i:
 		var vector_i := valor as Vector2i
 		return {"__garlia_type": "Vector2i", "x": vector_i.x, "y": vector_i.y}
+	if valor is Rect2:
+		var rect := valor as Rect2
+		return {
+			"__garlia_type": "Rect2",
+			"x": rect.position.x,
+			"y": rect.position.y,
+			"w": rect.size.x,
+			"h": rect.size.y
+		}
 	if valor is Color:
 		var color := valor as Color
 		return {"__garlia_type": "Color", "r": color.r, "g": color.g, "b": color.b, "a": color.a}
@@ -110,6 +119,11 @@ func _decodificar_variante(valor: Variant) -> Variant:
 				return Vector2(float(diccionario.get("x", 0.0)), float(diccionario.get("y", 0.0)))
 			"Vector2i":
 				return Vector2i(int(diccionario.get("x", 0)), int(diccionario.get("y", 0)))
+			"Rect2":
+				return Rect2(
+					Vector2(float(diccionario.get("x", 0.0)), float(diccionario.get("y", 0.0))),
+					Vector2(float(diccionario.get("w", 0.0)), float(diccionario.get("h", 0.0)))
+				)
 			"Color":
 				return Color(float(diccionario.get("r", 1.0)), float(diccionario.get("g", 1.0)), float(diccionario.get("b", 1.0)), float(diccionario.get("a", 1.0)))
 		var resultado_diccionario: Dictionary = {}
