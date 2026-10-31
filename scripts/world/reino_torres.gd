@@ -72,6 +72,7 @@ var _aviso_panel: PanelContainer
 var _aviso: Label
 var _entrada_aviso_actual: Dictionary = {}
 var _cesped_dual: TileMapDual
+var _rotulos_edificios: Dictionary = {}
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -170,6 +171,7 @@ func _process(_delta: float) -> void:
 			distancia_menor = distancia
 			entrada_cercana = entrada
 
+	_actualizar_visibilidad_rotulos()
 	_entrada_aviso_actual = entrada_cercana
 	if entrada_cercana.is_empty():
 		_aviso.text = ""
@@ -202,18 +204,19 @@ func _crear_rotulos_edificios() -> void:
 		placa.name = "Rotulo_" + id
 		placa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		placa.z_index = 20
-		placa.position = Vector2(float(entrada["pos"].x) - 64.0, float(entrada["pos"].y) - 83.0)
-		placa.custom_minimum_size = Vector2(128.0, 22.0)
+		placa.position = Vector2(float(entrada["pos"].x) - 55.0, float(entrada["pos"].y) - 83.0)
+		placa.custom_minimum_size = Vector2(110.0, 18.0)
+		placa.visible = false
 
 		var fondo := StyleBoxFlat.new()
-		fondo.bg_color = Color("#24180F", 0.94)
-		fondo.border_color = Color("#795638", 0.95)
+		fondo.bg_color = Color("#24180F", 0.92)
+		fondo.border_color = Color("#795638", 0.9)
 		fondo.set_border_width_all(1)
 		fondo.set_corner_radius_all(3)
-		fondo.content_margin_left = 6.0
-		fondo.content_margin_right = 6.0
-		fondo.content_margin_top = 2.0
-		fondo.content_margin_bottom = 2.0
+		fondo.content_margin_left = 4.0
+		fondo.content_margin_right = 4.0
+		fondo.content_margin_top = 1.0
+		fondo.content_margin_bottom = 1.0
 		placa.add_theme_stylebox_override("panel", fondo)
 
 		var texto := Label.new()
@@ -223,11 +226,27 @@ func _crear_rotulos_edificios() -> void:
 		texto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		texto.add_theme_color_override("font_color", Color("#F3E4C5"))
 		texto.add_theme_color_override("font_outline_color", Color("#21150E"))
-		texto.add_theme_constant_override("outline_size", 2)
-		texto.add_theme_font_size_override("font_size", 9)
+		texto.add_theme_constant_override("outline_size", 1)
+		texto.add_theme_font_size_override("font_size", 8)
 		texto.clip_text = true
 		placa.add_child(texto)
 		add_child(placa)
+		_rotulos_edificios[id] = placa
+
+
+func _actualizar_visibilidad_rotulos() -> void:
+	if not is_instance_valid(_jugador):
+		return
+	const DISTANCIA_ROTULO := 135.0
+	for entrada: Dictionary in ENTRADAS:
+		var id := str(entrada.get("id", ""))
+		if not _rotulos_edificios.has(id):
+			continue
+		var placa := _rotulos_edificios[id] as Control
+		if not is_instance_valid(placa):
+			continue
+		var distancia := _jugador.global_position.distance_to(to_global(entrada["pos"]))
+		placa.visible = distancia <= DISTANCIA_ROTULO
 
 func _crear_aviso() -> void:
 	# Botón flotante compacto con el mismo acabado oscuro y borde cálido del menú Garumi.
