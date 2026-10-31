@@ -35,6 +35,7 @@ var _peer_local_id := 0
 var _semilla_global := 0
 var _input_elapsed := 0.0
 var _snapshot_elapsed := 0.0
+var _dash_local_pendiente := false
 
 
 func _ready() -> void:
@@ -149,6 +150,20 @@ func configurar_mundo_cliente(main: Node, entities: Node2D, local_player: Player
 	print("GarliaWorldNetwork: cliente enlazado al mundo global.")
 
 
+func _input(event: InputEvent) -> void:
+	if not es_cliente_en_mundo_global() or not is_instance_valid(_local_player):
+		return
+	if _local_player.input_gate.esta_bloqueado():
+		return
+	if event is InputEventKey and (event as InputEventKey).keycode == KEY_M and (event as InputEventKey).shift_pressed:
+		_dash_local_pendiente = false
+		return
+	if event.is_action_pressed("dash"):
+		if event is InputEventKey and (event as InputEventKey).echo:
+			return
+		_dash_local_pendiente = true
+
+
 func actualizar_input_local(delta: float) -> void:
 	if not is_instance_valid(_local_player) or not es_cliente_en_mundo_global():
 		return
@@ -160,7 +175,10 @@ func actualizar_input_local(delta: float) -> void:
 	if not _local_player.input_gate.esta_bloqueado():
 		direccion = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var correr := Input.is_action_pressed("run")
-	recibir_input_global.rpc_id(1, direccion.limit_length(1.0), correr)
+	var sprint_eterium := Input.is_action_pressed("eterium_sprint")
+	var dash := _dash_local_pendiente
+	_dash_local_pendiente = false
+	recibir_input_global.rpc_id(1, direccion.limit_length(1.0), correr, dash, sprint_eterium)
 
 
 func _process(delta: float) -> void:
@@ -378,14 +396,14 @@ func rechazar_entrada_global(mensaje: String) -> void:
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
-func recibir_input_global(direccion: Vector2, correr: bool) -> void:
+func recibir_input_global(direccion: Vector2, correr: bool, dash: bool, sprint_eterium: bool) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado():
 		return
 	var peer_id := multiplayer.get_remote_sender_id()
 	var jugador: Player = _jugadores_servidor.get(peer_id) as Player
 	if not is_instance_valid(jugador):
 		return
-	jugador.establecer_input_red(direccion.limit_length(1.0), correr)
+	jugador.establecer_input_red(direccion.limit_length(1.0), correr, dash, sprint_eterium)
 
 
 
@@ -587,6 +605,7 @@ func _crear_snapshot() -> Array:
 			"y": jugador.global_position.y,
 			"facing_x": jugador.facing.x,
 			"facing_y": jugador.facing.y,
+			"state": int(jugador.state),
 			"health": int(jugador.health),
 			"max_health": int(jugador.max_health),
 			"mana": int(jugador.mana),
@@ -704,6 +723,10 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 		vital.mana = clampi(int(registro.get("mana", vital.mana)), 0, vital.max_mana)
 		vital.is_alive = bool(registro.get("is_alive", vital.is_alive)) and vital.health > 0
 		jugador.call("_sync_desde_vital")
+	var estado_recibido := int(registro.get("state", int(jugador.state)))
+	if estado_recibido >= Player.State.IDLE and estado_recibido <= Player.State.DASH and int(jugador.state) != estado_recibido:
+		jugador.state = estado_recibido as Player.State
+		jugador.call("_update_visual")
 	jugador.visible = bool(jugador.is_alive)
 	if jugador == _local_player and jugador.is_alive and not estaba_vivo:
 		jugador.visible = true
