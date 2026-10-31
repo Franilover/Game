@@ -195,8 +195,10 @@ func registrar_replica_prop_red(datos: Dictionary, chunk_coord: Vector2i, instan
 	if not registrar(prop, chunk_coord):
 		prop.queue_free()
 		return null
+	var limite := Rect2()
 	var limite_variant: Variant = datos.get("limite_chunk", Rect2())
-	var limite := limite_variant as Rect2 if limite_variant is Rect2 else Rect2()
+	if limite_variant is Rect2:
+		limite = limite_variant
 	prop.configurar_chunk(chunk_coord, limite)
 	_replicas_red_props_by_key[instance_key] = prop
 	return prop
