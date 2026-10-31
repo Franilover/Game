@@ -1065,6 +1065,9 @@ func _aplicar_estado_criaturas_cliente(registros: Array) -> void:
 		var criatura := entidad_variant as Creature
 		if not is_instance_valid(criatura):
 			continue
+		# Los Garumis vinculados pertenecen al guardado individual de este jugador.
+		if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+			continue
 		var clave := _clave_criatura_red(criatura, _zona_actual_red)
 		criatura.configurar_replica_red_cliente()
 		if clave.is_empty() or not por_clave.has(clave):
