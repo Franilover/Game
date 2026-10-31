@@ -69,6 +69,11 @@ func controla_jugador_local(jugador: Player) -> bool:
 	return es_cliente_en_mundo_global() and is_instance_valid(_local_player) and jugador == _local_player
 
 
+func preparar_cambio_zona_servidor() -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		_mundo_listo = false
+
+
 func inicializar_mundo_servidor(
 	main: Node,
 	entities: Node2D,
