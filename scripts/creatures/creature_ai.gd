@@ -739,7 +739,7 @@ func _refrescar_objetivo() -> void:
 	var objetivo_liberacion: Variant = null
 	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		objetivo_liberacion = criatura.get_meta("garlia_objetivo_liberacion")
-	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion):
+	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion) and (objetivo_liberacion as Node2D).is_inside_tree():
 		if not ("is_alive" in objetivo_liberacion) or bool(objetivo_liberacion.get("is_alive")):
 			objetivo = objetivo_liberacion as Node2D
 			return
@@ -2206,7 +2206,7 @@ func _procesar_saltando_lejos(delta: float) -> void:
 # ============================================================
 # ESPIRITU ESTELAR
 
-func _liberar_lesfleengs_al_ser_atacado() -> void:
+func _liberar_lesfleengs_al_ser_atacado(atacante: Node = null) -> void:
 	if criatura == null or not is_instance_valid(criatura):
 		return
 
@@ -2248,17 +2248,20 @@ func _liberar_lesfleengs_al_ser_atacado() -> void:
 	# Hasta que se concreten, se libera un Lesfleeng junto al Ligniano.
 	var angulo := randf_range(0.0, TAU)
 	lesfleeng.global_position = criatura.global_position + Vector2.from_angle(angulo) * 18.0
-	if jugador != null and is_instance_valid(jugador):
+	var objetivo_real := atacante as Node2D if is_instance_valid(atacante) else null
+	if is_instance_valid(objetivo_real) and objetivo_real.is_inside_tree():
+		lesfleeng.set_meta("garlia_objetivo_liberacion", objetivo_real)
+	elif jugador != null and is_instance_valid(jugador) and jugador.is_inside_tree() and jugador.is_in_group("player"):
 		lesfleeng.set_meta("garlia_objetivo_liberacion", jugador)
 
 	print("CreatureAI: Lignianos liberó un Lesfleeng al recibir un ataque.")
 
 
-func al_recibir_danio(cantidad: int) -> void:
+func al_recibir_danio(cantidad: int, atacante: Node = null) -> void:
 	if criatura != null and is_instance_valid(criatura):
 		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
 		if nombre_especie == "lignianos":
-			_liberar_lesfleengs_al_ser_atacado()
+			_liberar_lesfleengs_al_ser_atacado(atacante)
 		# Una Sirena sólo simula la muerte si sigue viva; las demás reacciones
 		# defensivas tampoco deben mover una criatura ya muerta.
 		if not criatura.is_alive:
