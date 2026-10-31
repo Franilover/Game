@@ -545,10 +545,12 @@ func reactivar_simulacion_local_red() -> void:
 
 func ocultar_replica_red_cliente() -> void:
 	configurar_replica_red_cliente()
+	var necesitaba_ocultar := visible or is_in_group("damageable") or is_in_group("interactable")
 	visible = false
 	remove_from_group("damageable")
 	remove_from_group("interactable")
-	establecer_colision(false)
+	if necesitaba_ocultar:
+		establecer_colision(false)
 
 
 func esta_animando_ataque() -> bool:
@@ -566,25 +568,29 @@ func aplicar_estado_red(
 	configurar_replica_red_cliente()
 	_red_posicion_objetivo = posicion
 	_red_velocidad_objetivo = velocidad
+	var visibilidad_previa := visible
+	var vida_previa := is_alive
 	vital_state.max_health = maxi(vida_maxima, 1)
 	vital_state.health = clampi(vida, 0, vital_state.max_health)
 	vital_state.is_alive = viva and vital_state.health > 0
 	_sync_desde_vital()
 	visible = is_alive
 	if is_alive:
-		establecer_colision(true)
-		add_to_group("interactable")
-		add_to_group("creatures")
-		add_to_group("damageable")
+		if not visibilidad_previa or not vida_previa:
+			establecer_colision(true)
+			add_to_group("interactable")
+			add_to_group("creatures")
+			add_to_group("damageable")
 		if ataque_activo and not _ataque_animando:
 			iniciar_animacion_ataque()
 	else:
-		remove_from_group("damageable")
-		remove_from_group("interactable")
-		establecer_colision(false)
-		velocity = Vector2.ZERO
-		_detener_animacion_ataque()
-		_detener_animacion_caminando()
+		if visibilidad_previa or vida_previa:
+			remove_from_group("damageable")
+			remove_from_group("interactable")
+			establecer_colision(false)
+			velocity = Vector2.ZERO
+			_detener_animacion_ataque()
+			_detener_animacion_caminando()
 
 
 func take_damage_desde(atacante: Node, cantidad: int, origen: String = "desconocido") -> void:
