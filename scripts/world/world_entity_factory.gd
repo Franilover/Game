@@ -137,6 +137,8 @@ func crear_prop(data: Dictionary) -> WorldProp:
 	node.configurar_dependencias(_world_context, _inventory, _world_items)
 	node.configurar_desde_game_data(data)
 	node.activar_como_proxy()
+	if GarliaWorldNetwork.es_cliente_en_mundo_global():
+		node.ocultar_replica_red_cliente()
 	return node
 
 
