@@ -725,7 +725,7 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 		jugador.call("_sync_desde_vital")
 	var estado_recibido := int(registro.get("state", int(jugador.state)))
 	if estado_recibido >= Player.State.IDLE and estado_recibido <= Player.State.DASH and int(jugador.state) != estado_recibido:
-		jugador.state = estado_recibido as Player.State
+		jugador.set("state", estado_recibido)
 		jugador.call("_update_visual")
 	jugador.visible = bool(jugador.is_alive)
 	if jugador == _local_player and jugador.is_alive and not estaba_vivo:
