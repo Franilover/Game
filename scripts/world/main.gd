@@ -193,6 +193,10 @@ func _process(delta: float) -> void:
 
 
 func _detectar_reinos_descubiertos() -> void:
+	# En servidor dedicado el Player de Main es un ancla técnica oculta.
+	# Los descubrimientos se validan por RPC usando la posición del jugador real.
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
 	if _zone_manager == null or _zone_manager.obtener_tipo_actual() != "mundo_abierto":
 		return
 	if not is_instance_valid(_player) or _world_context == null or not _world_context.tiene_mundo_activo():
