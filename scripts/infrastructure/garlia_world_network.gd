@@ -760,12 +760,14 @@ func solicitar_viaje_global(destino: String) -> void:
 	var clave := destino.strip_edges().to_lower()
 	if clave.is_empty():
 		return
+	var regla_destino: Dictionary = {}
 	if clave != "mundo_abierto":
 		var desbloqueados: Dictionary = GameState.obtener_reinos_desbloqueados()
 		if not bool(desbloqueados.get(clave, false)):
 			return
-		var regla := _supabase_client.obtener_reino_game(clave) if is_instance_valid(_supabase_client) else {}
-		if regla.is_empty():
+		if is_instance_valid(_supabase_client):
+			regla_destino = _supabase_client.obtener_reino_game(clave)
+		if regla_destino.is_empty() and clave != "torres":
 			return
 	var zone_manager := _main.get_node_or_null("World/ZoneManager")
 	if not is_instance_valid(zone_manager):
@@ -780,10 +782,10 @@ func solicitar_viaje_global(destino: String) -> void:
 		zone_manager.call("entrar_mundo_abierto")
 	else:
 		zone_manager.call("entrar_reino", clave)
-	_confirmar_cambio_zona_global(clave)
+	_confirmar_cambio_zona_global(clave, regla_destino)
 
 
-func _confirmar_cambio_zona_global(destino: String) -> void:
+func _confirmar_cambio_zona_global(destino: String, regla_destino: Dictionary = {}) -> void:
 	# No anunciar un destino hasta que Main haya reconstruido la zona en servidor.
 	var intentos := 0
 	while intentos < 200 and GarliaMultiplayer.es_servidor_dedicado() and not _mundo_listo:
@@ -791,12 +793,12 @@ func _confirmar_cambio_zona_global(destino: String) -> void:
 		intentos += 1
 	if not GarliaMultiplayer.es_servidor_dedicado() or not _mundo_listo:
 		return
-	cambiar_zona_global.rpc(destino)
+	cambiar_zona_global.rpc(destino, regla_destino)
 	_difundir_estado()
 
 
 @rpc("authority", "call_remote", "reliable")
-func cambiar_zona_global(destino: String) -> void:
+func cambiar_zona_global(destino: String, regla_destino: Dictionary = {}) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado():
 		return
 	var zone_manager := _main.get_node_or_null("World/ZoneManager") if is_instance_valid(_main) else null
@@ -805,7 +807,7 @@ func cambiar_zona_global(destino: String) -> void:
 	if destino == "mundo_abierto":
 		zone_manager.call("entrar_mundo_abierto")
 	else:
-		zone_manager.call("entrar_reino", destino)
+		zone_manager.call("entrar_reino", destino, regla_destino)
 
 
 func enviar_solicitud_viaje(destino: String) -> void:
