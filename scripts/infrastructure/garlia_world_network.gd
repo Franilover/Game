@@ -7,7 +7,7 @@ const INPUT_INTERVAL := 0.05
 const SNAPSHOT_INTERVAL := 0.05
 const MAX_USERNAME_LENGTH := 24
 
-signal mundo_global_listo(semilla: int, tipo_zona: String, reinos_globales: Dictionary)
+signal mundo_global_listo(semilla: int, tipo_zona: String, reinos_globales: Dictionary, tiempo_mundo: Dictionary)
 signal mundo_global_rechazado(mensaje: String)
 
 var _servidor_inicializado := false
@@ -57,6 +57,9 @@ var _peer_local_id := 0
 var _semilla_global := 0
 var _input_elapsed := 0.0
 var _snapshot_elapsed := 0.0
+var _tiempo_global_elapsed := 0.0
+var _tiempo_mundo_pendiente: Dictionary = {}
+const GLOBAL_TIME_SYNC_INTERVAL := 1.0
 var _dash_local_pendiente := false
 var _salto_local_pendiente := false
 
@@ -243,6 +246,10 @@ func _process(delta: float) -> void:
 			_snapshot_elapsed = 0.0
 			_actualizar_ancla_mundo()
 			_difundir_estado()
+		_tiempo_global_elapsed += delta
+		if _tiempo_global_elapsed >= GLOBAL_TIME_SYNC_INTERVAL:
+			_tiempo_global_elapsed = 0.0
+			_difundir_tiempo_global()
 		if _entity_snapshot_elapsed >= ENTITY_SNAPSHOT_INTERVAL:
 			_entity_snapshot_elapsed = 0.0
 			_difundir_estado_criaturas()
@@ -257,6 +264,8 @@ func _process(delta: float) -> void:
 			if _entity_manager_cliente != null and is_instance_valid(_entity_manager_cliente):
 				_aplicar_estado_criaturas_cliente(_estados_criaturas_pendientes)
 				_aplicar_estado_props_cliente(_estados_props_pendientes)
+		if not _tiempo_mundo_pendiente.is_empty():
+			_aplicar_tiempo_global_cliente(_tiempo_mundo_pendiente)
 
 
 func _al_conectar_con_servidor() -> void:
@@ -594,7 +603,7 @@ func _validar_token_supabase(token: String) -> Dictionary:
 
 
 @rpc("authority", "call_remote", "reliable")
-func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int, tipo_zona: String, reinos_globales: Dictionary) -> void:
+func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int, tipo_zona: String, reinos_globales: Dictionary, tiempo_mundo: Dictionary) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado():
 		return
 	_peer_local_id = peer_id_local
@@ -603,7 +612,8 @@ func recibir_inicio_red(snapshot: Array, peer_id_local: int, semilla: int, tipo_
 	if is_instance_valid(_local_player):
 		_aplicar_snapshot(_estado_inicial_pendiente)
 		_estado_inicial_pendiente.clear()
-	mundo_global_listo.emit(_semilla_global, tipo_zona, reinos_globales)
+	_tiempo_mundo_pendiente = tiempo_mundo.duplicate(true)
+	mundo_global_listo.emit(_semilla_global, tipo_zona, reinos_globales, tiempo_mundo)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -1097,6 +1107,41 @@ func _crear_identidad_red(jugador: Player) -> Dictionary:
 		"appearance": jugador.personaje_apariencia.duplicate(true),
 		"species": jugador.personaje_especie.duplicate(true)
 	}
+
+
+func _obtener_tiempo_mundo_servidor() -> Dictionary:
+	if not is_instance_valid(_main):
+		return {}
+	var atmosphere := _main.get_node_or_null("Systems/WorldAtmosphere")
+	if is_instance_valid(atmosphere) and atmosphere.has_method("obtener_estado_guardado"):
+		return atmosphere.call("obtener_estado_guardado").duplicate(true)
+	return {}
+
+
+func _difundir_tiempo_global() -> void:
+	if _jugadores_servidor.is_empty():
+		return
+	var estado := _obtener_tiempo_mundo_servidor()
+	if not estado.is_empty():
+		recibir_tiempo_global.rpc(estado)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func recibir_tiempo_global(estado: Dictionary) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	_tiempo_mundo_pendiente = estado.duplicate(true)
+	_aplicar_tiempo_global_cliente(_tiempo_mundo_pendiente)
+
+
+func _aplicar_tiempo_global_cliente(estado: Dictionary) -> void:
+	if estado.is_empty() or not is_instance_valid(_main):
+		return
+	var atmosphere := _main.get_node_or_null("Systems/WorldAtmosphere")
+	if not is_instance_valid(atmosphere) or not atmosphere.has_method("establecer_estado_guardado"):
+		return
+	atmosphere.call("establecer_estado_guardado", estado)
+	_tiempo_mundo_pendiente.clear()
 
 
 func _crear_snapshot(incluir_identidad: bool = false) -> Array:
