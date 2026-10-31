@@ -191,17 +191,37 @@ func _input(event: InputEvent) -> void:
 		_dash_chord_cancelled = true
 
 
-func aplicar_identidad_red(nombre: String, genero: String, apariencia: Dictionary) -> void:
+func aplicar_identidad_red(
+	nombre: String,
+	genero: String,
+	apariencia: Dictionary,
+	especie: Dictionary = {}
+) -> void:
 	var nombre_limpio := nombre.strip_edges().left(24)
 	if not nombre_limpio.is_empty():
 		personaje_nombre = nombre_limpio
 	personaje_genero = genero.strip_edges().left(32)
+	if not especie.is_empty():
+		personaje_especie = especie.duplicate(true)
+		if is_instance_valid(_supabase_client_ref) and _supabase_client_ref.has_method("tiene_especie_eterium_game"):
+			if _supabase_client_ref.tiene_especie_eterium_game():
+				_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
 	var capas := apariencia.duplicate(true)
 	var cambio := capas != personaje_apariencia
 	personaje_apariencia = capas
 	if is_instance_valid(visual) and (cambio or not _apariencia_red_aplicada):
 		CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
 		_apariencia_red_aplicada = true
+
+
+func aplicar_runtime_eterium_red(datos_runtime: Dictionary, reglas_especies: Array) -> void:
+	var reglas_variant: Variant = datos_runtime.get("reglas", {})
+	var organismos_variant: Variant = datos_runtime.get("organismos", [])
+	if reglas_variant is Dictionary and organismos_variant is Array:
+		eterium.aplicar_runtime(reglas_variant as Dictionary, organismos_variant as Array)
+		_sync_vital_desde_eterium()
+	if not reglas_especies.is_empty():
+		_aplicar_especie_eterium_game(reglas_especies)
 
 
 func configurar_control_remoto_servidor() -> void:
