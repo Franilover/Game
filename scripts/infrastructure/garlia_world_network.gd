@@ -28,6 +28,7 @@ var _proxies_cliente: Dictionary = {}
 var _auth_pendiente: Dictionary = {}
 var _sistemas_jugador_servidor: Dictionary = {}
 var _ultima_accion_servidor: Dictionary = {}
+var _reapariciones_pendientes: Dictionary = {}
 var _personaje_local: Dictionary = {}
 var _estado_inicial_pendiente: Array = []
 var _peer_local_id := 0
@@ -161,12 +162,15 @@ func _process(delta: float) -> void:
 	if GarliaMultiplayer.es_servidor_dedicado():
 		if not _servidor_inicializado or get_tree().paused:
 			return
+		_revisar_reapariciones()
 		_snapshot_elapsed += delta
 		if _snapshot_elapsed >= SNAPSHOT_INTERVAL:
 			_snapshot_elapsed = 0.0
 			_actualizar_ancla_mundo()
 			_difundir_estado()
 		return
+	if es_cliente_en_mundo_global():
+		actualizar_input_local(delta)
 
 
 func _al_conectar_con_servidor() -> void:
@@ -552,15 +556,43 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 		_proxies_cliente.erase(peer_id)
 
 
+func _revisar_reapariciones() -> void:
+	for peer_variant in _jugadores_servidor.keys():
+		var peer_id := int(peer_variant)
+		var jugador: Player = _jugadores_servidor[peer_id] as Player
+		if not is_instance_valid(jugador) or jugador.is_alive or _reapariciones_pendientes.has(peer_id):
+			continue
+		_reapariciones_pendientes[peer_id] = true
+		_reaparecer_despues(peer_id)
+
+
+func _reaparecer_despues(peer_id: int) -> void:
+	await get_tree().create_timer(2.5, true, false).timeout
+	_reapariciones_pendientes.erase(peer_id)
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _jugadores_servidor.has(peer_id):
+		return
+	var jugador: Player = _jugadores_servidor[peer_id] as Player
+	if not is_instance_valid(jugador) or jugador.is_alive:
+		return
+	var posicion := _world_anchor.global_position + Vector2(float((peer_id % 4) * 18), 12.0) if is_instance_valid(_world_anchor) else Vector2.ZERO
+	jugador.reaparecer_en_red(posicion)
+	_difundir_estado()
+
+
 func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 	if not is_instance_valid(jugador):
 		return
+	var estaba_vivo := bool(jugador.is_alive)
 	var vital := jugador.vital_state as VitalState
 	if is_instance_valid(vital):
 		vital.health = clampi(int(registro.get("health", vital.health)), 0, vital.max_health)
 		vital.mana = clampi(int(registro.get("mana", vital.mana)), 0, vital.max_mana)
 		vital.is_alive = bool(registro.get("is_alive", vital.is_alive)) and vital.health > 0
 		jugador.call("_sync_desde_vital")
+	jugador.visible = bool(jugador.is_alive)
+	if jugador == _local_player and jugador.is_alive and not estaba_vivo:
+		jugador.visible = true
+		jugador.set_physics_process(true)
 	if jugador.get("stamina_controller") != null:
 		var stamina_controller: Variant = jugador.get("stamina_controller")
 		if stamina_controller.has_method("establecer_actual"):
@@ -583,6 +615,7 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		_jugadores_servidor.erase(peer_id)
 		_sistemas_jugador_servidor.erase(peer_id)
 		_ultima_accion_servidor.erase(peer_id)
+		_reapariciones_pendientes.erase(peer_id)
 		if _jugadores_servidor.is_empty() and _servidor_inicializado:
 			GlobalWorldStore.guardar_y_pausar()
 		else:
