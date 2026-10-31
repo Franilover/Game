@@ -705,9 +705,18 @@ func _actualizar_percepcion() -> void:
 
 func _obtener_candidatos_entidad() -> Array[Node2D]:
 	var candidatos: Array[Node2D] = []
+	# La referencia explícita también sirve para pruebas aisladas y para
+	# escenas donde el Player todavía no se ha añadido al grupo.
+	if is_instance_valid(jugador) and jugador is Node2D:
+		var jugador_configurado := jugador as Node2D
+		if jugador_configurado.is_inside_tree() and not ("is_alive" in jugador_configurado and not bool(jugador_configurado.get("is_alive"))):
+			candidatos.append(jugador_configurado)
 	# En multijugador el nodo Player configurado en la fábrica es sólo el ancla
 	# del mundo. Los jugadores reales se descubren por grupo en cada tick.
-	for jugador_variant in get_tree().get_nodes_in_group("player"):
+	var arbol := Engine.get_main_loop() as SceneTree
+	if arbol == null:
+		return candidatos
+	for jugador_variant in arbol.get_nodes_in_group("player"):
 		if not jugador_variant is Node2D:
 			continue
 		var jugador_actual := jugador_variant as Node2D
