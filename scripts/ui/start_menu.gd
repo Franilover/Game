@@ -956,8 +956,8 @@ func _conectado_a_partida() -> void:
 
 
 func _al_mundo_global_listo(semilla: int) -> void:
-	if not multiplayer_overlay.visible:
-		return
+	# La creación de personaje oculta el overlay antes de conectar; el handshake
+	# debe poder completar la entrada aunque el panel ya no esté visible.
 	multiplayer_status.text = "Entrando al mundo compartido..."
 	var id_guardado := ""
 	for partida in GameState.obtener_partidas():
