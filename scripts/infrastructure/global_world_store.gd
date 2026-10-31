@@ -51,7 +51,7 @@ func restaurar_en_game_state(game_state: Node) -> bool:
 	game_state.world_state.world_seed = int(data.get("world_seed", 0))
 	game_state.world_state.world_seed_valida = bool(data.get("world_seed_valida", false))
 	game_state.world_state.elapsed_time = float(data.get("elapsed_time", 0.0))
-	var flags: Variant = data.get("flags", {})
+	var flags: Variant = _decodificar_variante(data.get("flags", {}))
 	if flags is Dictionary:
 		game_state.world_state.flags = (flags as Dictionary).duplicate(true)
 	else:
@@ -150,7 +150,7 @@ func guardar_desde_runtime() -> bool:
 		"world_seed": int(game_state.world_state.world_seed),
 		"world_seed_valida": bool(game_state.world_state.world_seed_valida),
 		"elapsed_time": float(game_state.world_state.elapsed_time),
-		"flags": flags,
+		"flags": _serializar_variante(flags),
 		"entidades_por_zona": _serializar_variante(_entidades_por_zona),
 		"saved_at": Time.get_datetime_string_from_system(true)
 	}
