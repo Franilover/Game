@@ -290,6 +290,9 @@ func _inicializar_runtime_de_zona() -> void:
 		push_error("Main: no se encontró Entities/Player.")
 		return
 
+	if GarliaMultiplayer.es_servidor_dedicado() and _world_generator != null:
+		GlobalWorldStore.restaurar_estado_entidades(_world_generator.entity_manager, str(_zone_manager.obtener_tipo_actual()))
+
 	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
 		if _zone_manager.consumir_salida_reino_pendiente():
 			_player.global_position = Vector2(560, 120)
