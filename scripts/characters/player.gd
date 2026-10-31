@@ -187,6 +187,19 @@ func _input(event: InputEvent) -> void:
 		_dash_chord_cancelled = true
 
 
+func aplicar_identidad_red(nombre: String, genero: String, apariencia: Dictionary) -> void:
+	var nombre_limpio := nombre.strip_edges().left(24)
+	if not nombre_limpio.is_empty():
+		personaje_nombre = nombre_limpio
+	personaje_genero = genero.strip_edges().left(32)
+	var capas := apariencia.duplicate(true)
+	if capas == personaje_apariencia:
+		return
+	personaje_apariencia = capas
+	if is_instance_valid(visual):
+		CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
+
+
 func configurar_control_remoto_servidor() -> void:
 	_red_servidor_controlado = true
 	_red_direccion = Vector2.ZERO
