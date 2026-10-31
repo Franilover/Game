@@ -769,6 +769,18 @@ func solicitar_viaje_global(destino: String) -> void:
 			regla_destino = _supabase_client.obtener_reino_game(clave)
 		if regla_destino.is_empty() and clave != "torres":
 			return
+		if not regla_destino.is_empty():
+			var propiedades_variant: Variant = regla_destino.get("propiedades", {})
+			if not propiedades_variant is Dictionary:
+				return
+			var propiedades := propiedades_variant as Dictionary
+			if str(propiedades.get("tipo_zona", "")) != "escena_fija":
+				return
+			if bool(propiedades.get("usa_world_generator", false)) or bool(propiedades.get("generacion_procedural", false)):
+				return
+			var escena := str(propiedades.get("escena", "")).strip_edges()
+			if escena.is_empty() or not ResourceLoader.exists(escena):
+				return
 	var zone_manager := _main.get_node_or_null("World/ZoneManager")
 	if not is_instance_valid(zone_manager):
 		return
