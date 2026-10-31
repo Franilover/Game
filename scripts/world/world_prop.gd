@@ -1,3 +1,20 @@
+func _es_servidor_dedicado() -> bool:
+	var arbol := Engine.get_main_loop() as SceneTree
+	if arbol == null or arbol.root == null:
+		return false
+	var multiplayer := arbol.root.get_node_or_null("GarliaMultiplayer")
+	return is_instance_valid(multiplayer) and multiplayer.has_method("es_servidor_dedicado") and bool(multiplayer.call("es_servidor_dedicado"))
+
+
+func _emitir_notificacion(mensaje: String) -> void:
+	var arbol := Engine.get_main_loop() as SceneTree
+	if arbol == null or arbol.root == null:
+		return
+	var events := arbol.root.get_node_or_null("Events")
+	if is_instance_valid(events) and events.has_signal("notification_pushed"):
+		events.emit_signal("notification_pushed", mensaje)
+
+
 extends Node2D
 class_name WorldProp
 
@@ -85,7 +102,7 @@ func get_interaction_priority() -> int:
 
 func get_interaction_text() -> String:
 	if _tiene_recoleccion_canonica():
-		if _replica_red_cliente or (GarliaMultiplayer.es_servidor_dedicado() and _inventory == null):
+		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
 			return "Recolección no sincronizada"
 		return "Recolectar"
 
@@ -188,14 +205,14 @@ func interact(persona: Node) -> bool:
 		return false
 
 	if _tiene_recoleccion_canonica():
-		if _replica_red_cliente or (GarliaMultiplayer.es_servidor_dedicado() and _inventory == null):
-			Events.notification_pushed.emit("La recolección multijugador aún no está disponible.")
+		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
+			_emitir_notificacion("La recolección multijugador aún no está disponible.")
 			return true
 		if not _puede_recolectar(persona):
 			var requisito := _obtener_requisito_herramienta()
 			var tipo_herramienta: String = str(requisito.get("tipo", "herramienta"))
 			var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
-			Events.notification_pushed.emit(
+			_emitir_notificacion(
 				"Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido)
 			)
 			print(
@@ -226,7 +243,7 @@ func interact(persona: Node) -> bool:
 	if not bioma.is_empty():
 		mensaje += " · " + bioma
 
-	Events.notification_pushed.emit(
+	_emitir_notificacion(
 		mensaje
 	)
 
@@ -435,10 +452,10 @@ func _recolectar(persona: Node) -> bool:
 			" | slots=",
 			str(inventario.get("items").size() if inventario.get("items") is Array else -1)
 		)
-		Events.notification_pushed.emit("No tienes espacio en el inventario.")
+		_emitir_notificacion("No tienes espacio en el inventario.")
 		return false
 
-	Events.notification_pushed.emit(
+	_emitir_notificacion(
 		"Recolectaste " + str(
 			item.get(
 				"nombre",
