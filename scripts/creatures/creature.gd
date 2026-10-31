@@ -43,6 +43,7 @@ var _siguiendo_jugador: bool = false
 var _jugador_seguimiento: Node = null
 var _distancia_seguimiento: float = 24.0
 var _muerte_procesada: bool = false
+var _atacante_actual_danio: Node = null
 
 var _sprite_textura_base: Texture2D = null
 var _sprite_hframes_base: int = 1
@@ -502,6 +503,12 @@ func ejecutar_muerte_simulada_visual(duracion: float = 1.0) -> void:
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.22)
 
 
+func take_damage_desde(atacante: Node, cantidad: int, origen: String = "desconocido") -> void:
+	_atacante_actual_danio = atacante if is_instance_valid(atacante) else null
+	take_damage(cantidad, origen)
+	_atacante_actual_danio = null
+
+
 func take_damage(
 	cantidad: int,
 	origen: String = "desconocido"
@@ -519,7 +526,7 @@ func take_damage(
 		var ai := get_node_or_null("AIController") as CreatureAI
 
 		if ai != null:
-			ai.al_recibir_danio(salud_anterior - health)
+			ai.al_recibir_danio(salud_anterior - health, _atacante_actual_danio)
 
 
 func establecer_colision(activa: bool) -> void:
