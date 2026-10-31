@@ -293,9 +293,13 @@ func capturar_estado_persistente_mundo() -> Dictionary:
 	# normal por chunk ocurre al descargarlas, pero el servidor puede pausarse
 	# con muchos chunks todavía activos.
 	for entidad_variant in obtener_entidades_activas():
-		if entidad_variant is Creature and is_instance_valid(entidad_variant):
-			var criatura := entidad_variant as Creature
-			guardar_estado_entidad(criatura, criatura.chunk_coord)
+		if not entidad_variant is Creature or not is_instance_valid(entidad_variant):
+			continue
+		var criatura := entidad_variant as Creature
+		# Los Garumis vinculados pertenecen al guardado privado del jugador.
+		if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+			continue
+		guardar_estado_entidad(criatura, criatura.chunk_coord)
 	return {
 		"criaturas": _runtime_state_by_key.duplicate(true),
 		"props": _runtime_prop_state_by_key.duplicate(true)
@@ -368,6 +372,13 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		datos_criatura["experiencia_total"] = garumi.experiencia_total
 		datos_criatura["eterium_actual"] = garumi.eterium_actual
 	_runtime_state_by_key[key] = datos_criatura
+	# FULL y DATA pueden materializar el mismo spawn con claves técnicas
+	# diferentes. La especie es única por chunk en los spawns naturales.
+	# No se crea alias para personajes de reinos, que sí pueden repetirse.
+	if not instance_key.begins_with("personaje:") and instance_key != criatura_id:
+		var key_por_especie := _runtime_key(chunk_coord, criatura_id)
+		if not _runtime_state_by_key.has(key_por_especie):
+			_runtime_state_by_key[key_por_especie] = datos_criatura.duplicate(true)
 	var registro_criatura := datos_criatura.duplicate(true)
 	registro_criatura["runtime_instance_key"] = instance_key
 	guardar_dato_chunk(chunk_coord, "criaturas", registro_criatura)
@@ -379,8 +390,15 @@ func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String, instanc
 		clave_instancia = criatura_id
 	var key := _runtime_key(chunk_coord, clave_instancia)
 	var estado: Variant = _runtime_state_by_key.get(key, {})
-	if estado is Dictionary:
+	if estado is Dictionary and not (estado as Dictionary).is_empty():
 		return (estado as Dictionary).duplicate(true)
+	# Compatibilidad entre la clave natural usada por FULL y la clave de slot
+	# usada por DATA. Los personajes quedan aislados bajo su ID de instancia.
+	if not clave_instancia.begins_with("personaje:"):
+		var key_por_especie := _runtime_key(chunk_coord, criatura_id)
+		estado = _runtime_state_by_key.get(key_por_especie, {})
+		if estado is Dictionary:
+			return (estado as Dictionary).duplicate(true)
 	return {}
 
 
