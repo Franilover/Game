@@ -20,6 +20,20 @@ var _entidades_por_zona: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# GarliaMultiplayer inicia WSS mediante call_deferred desde su _ready().
+	# Esperamos al siguiente ciclo diferido para conocer el modo de ejecución,
+	# y restaurar semilla/zona antes de que StartMenu cargue Main.
+	call_deferred("_restaurar_mundo_global_si_servidor")
+
+
+func _restaurar_mundo_global_si_servidor() -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado():
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	if not is_instance_valid(game_state):
+		push_error("GlobalWorldStore: falta GameState al restaurar el mundo global.")
+		return
+	restaurar_en_game_state(game_state)
 
 
 func configurar_runtime(main: Node) -> void:
