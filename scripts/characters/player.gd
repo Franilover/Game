@@ -88,6 +88,7 @@ var personaje_apariencia: Dictionary = {}
 var _red_servidor_controlado: bool = false
 var _red_direccion: Vector2 = Vector2.ZERO
 var _red_correr: bool = false
+var _apariencia_red_aplicada: bool = false
 
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
@@ -193,11 +194,11 @@ func aplicar_identidad_red(nombre: String, genero: String, apariencia: Dictionar
 		personaje_nombre = nombre_limpio
 	personaje_genero = genero.strip_edges().left(32)
 	var capas := apariencia.duplicate(true)
-	if capas == personaje_apariencia:
-		return
+	var cambio := capas != personaje_apariencia
 	personaje_apariencia = capas
-	if is_instance_valid(visual):
+	if is_instance_valid(visual) and (cambio or not _apariencia_red_aplicada):
 		CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
+		_apariencia_red_aplicada = true
 
 
 func configurar_control_remoto_servidor() -> void:
