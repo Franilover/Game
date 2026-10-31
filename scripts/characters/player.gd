@@ -229,7 +229,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if GarliaWorldNetwork.controla_jugador_local(self):
-		GarliaWorldNetwork.actualizar_input_local(delta)
+		# El autoload de red envía input incluso durante la animación de muerte;
+		# así el cliente puede recibir una reaparición sin depender de este proceso.
 		velocity = Vector2.ZERO
 		return
 
@@ -736,6 +737,28 @@ func _morir_jugador() -> void:
 		),
 		0.35
 	)
+
+
+func reaparecer_en_red(posicion: Vector2) -> void:
+	vital_state.reiniciar()
+	_sync_desde_vital()
+	stamina_controller.reiniciar()
+	global_position = posicion
+	velocity = Vector2.ZERO
+	state = State.IDLE
+	_red_direccion = Vector2.ZERO
+	_red_correr = false
+	visible = true
+	if is_instance_valid(visual):
+		visual.position = _base_visual_position
+		visual.modulate = Color.WHITE
+		visual.scale = Vector2.ONE
+	set_physics_process(true)
+	_update_dir_marker()
+	_update_visual()
+	health_changed.emit(health, max_health)
+	mana_changed.emit(mana, max_mana)
+	stamina_changed.emit(stamina, max_stamina)
 
 
 func reaparecer() -> void:
