@@ -247,8 +247,8 @@ func _ready() -> void:
 
 
 func _entrar_runtime_servidor() -> void:
-	if not GarliaMultiplayer.es_servidor_dedicado():
-		push_error("StartMenu: se pidió modo servidor, pero ENet no pudo abrir el puerto configurado.")
+	if not GarliaMultiplayer.iniciar_servidor_dedicado_desde_argumentos():
+		push_error("StartMenu: se pidió modo servidor, pero WSS/TLS no pudo iniciar. Revisa el certificado, la clave privada y el puerto.")
 		get_tree().quit(1)
 		return
 	var error := get_tree().change_scene_to_file("res://scenes/world/main.tscn")
