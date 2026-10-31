@@ -955,7 +955,7 @@ func _conectado_a_partida() -> void:
 	print("StartMenu: transporte ENet conectado; esperando autorización del mundo global.")
 
 
-func _al_mundo_global_listo(semilla: int, tipo_zona: String) -> void:
+func _al_mundo_global_listo(semilla: int, tipo_zona: String, reinos_globales: Dictionary) -> void:
 	# La creación de personaje oculta el overlay antes de conectar; el handshake
 	# debe poder completar la entrada aunque el panel ya no esté visible.
 	multiplayer_status.text = "Entrando al mundo compartido..."
@@ -966,7 +966,7 @@ func _al_mundo_global_listo(semilla: int, tipo_zona: String) -> void:
 			break
 	if id_guardado.is_empty():
 		id_guardado = GameState.crear_partida("Mundo compartido global", str(semilla), _config_personaje_multijugador)
-	if id_guardado.is_empty() or not GameState.establecer_zona_mundo_global(id_guardado, tipo_zona):
+	if id_guardado.is_empty() or not GameState.establecer_zona_mundo_global(id_guardado, tipo_zona, reinos_globales):
 		host_button.disabled = false
 		join_button.disabled = false
 		multiplayer_status.text = "No se pudo preparar la zona global en tu guardado local."
