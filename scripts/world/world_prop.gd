@@ -12,6 +12,7 @@ var datos = {}
 var _world_context: WorldContext = null
 var _inventory: GarliaInventory = null
 var _world_items: GarliaWorldItems = null
+var _replica_red_cliente := false
 
 
 func configurar_dependencias(
@@ -498,6 +499,50 @@ func configurar_desde_game_data(datos_game: Dictionary) -> void:
 
 	_actualizar_sprite(asset_path)
 	queue_redraw()
+
+
+func configurar_replica_red_cliente() -> void:
+	_replica_red_cliente = true
+
+
+func ocultar_replica_red_cliente() -> void:
+	configurar_replica_red_cliente()
+	visible = false
+	remove_from_group("interactable")
+	remove_from_group("world_resource")
+	remove_from_group("world_cave")
+	remove_from_group("world_structure")
+
+
+func aplicar_estado_red(posicion: Vector2) -> void:
+	configurar_replica_red_cliente()
+	global_position = posicion
+	visible = true
+	if interactuable:
+		add_to_group("interactable")
+	if tipo == "recurso" or tipo == "planta":
+		add_to_group("world_resource")
+	elif tipo == "cueva":
+		add_to_group("world_cave")
+	elif tipo == "estructura":
+		add_to_group("world_structure")
+
+
+func reactivar_simulacion_local_red() -> void:
+	_replica_red_cliente = false
+	visible = true
+	remove_from_group("interactable")
+	remove_from_group("world_resource")
+	remove_from_group("world_cave")
+	remove_from_group("world_structure")
+	if interactuable:
+		add_to_group("interactable")
+	if tipo == "recurso" or tipo == "planta":
+		add_to_group("world_resource")
+	elif tipo == "cueva":
+		add_to_group("world_cave")
+	elif tipo == "estructura":
+		add_to_group("world_structure")
 
 
 func configurar_chunk(
