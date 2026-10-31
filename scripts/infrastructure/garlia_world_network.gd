@@ -25,6 +25,10 @@ var _supabase_client: Node = null
 
 var _jugadores_servidor: Dictionary = {}
 var _proxies_cliente: Dictionary = {}
+var _objetivos_posicion_proxy: Dictionary = {}
+var _objetivo_posicion_local := Vector2.ZERO
+var _local_posicion_inicializada := false
+const SNAPSHOT_INTERPOLATION_SPEED := 16.0
 var _auth_pendiente: Dictionary = {}
 var _sistemas_jugador_servidor: Dictionary = {}
 var _ultima_accion_servidor: Dictionary = {}
@@ -200,6 +204,7 @@ func _process(delta: float) -> void:
 		return
 	if es_cliente_en_mundo_global():
 		actualizar_input_local(delta)
+		_actualizar_interpolacion_clientes(delta)
 
 
 func _al_conectar_con_servidor() -> void:
@@ -665,7 +670,10 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 		var direccion := Vector2(float(registro.get("facing_x", 0.0)), float(registro.get("facing_y", 1.0)))
 		if peer_id == _peer_local_id:
 			if is_instance_valid(_local_player):
-				_local_player.global_position = posicion
+				_objetivo_posicion_local = posicion
+				if not _local_posicion_inicializada or _local_player.global_position.distance_to(posicion) > 320.0:
+					_local_player.global_position = posicion
+					_local_posicion_inicializada = true
 				if direccion.length_squared() > 0.01:
 					_local_player.facing = direccion.normalized()
 					_local_player.call("_update_dir_marker")
@@ -689,6 +697,8 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 				hurtbox_proxy.monitorable = false
 			proxy.set_physics_process(false)
 			proxy.set_process(false)
+			proxy.global_position = posicion
+			_objetivos_posicion_proxy[peer_id] = posicion
 			_entities.add_child(proxy)
 			var camara_proxy := proxy.get_node_or_null("Camera2D") as Camera2D
 			if is_instance_valid(camara_proxy):
@@ -696,7 +706,7 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			proxy.set_physics_process(false)
 			proxy.set_process(false)
 			_proxies_cliente[peer_id] = proxy
-		proxy.global_position = posicion
+		_objetivos_posicion_proxy[peer_id] = posicion
 		proxy.aplicar_identidad_red(
 			str(registro.get("username", proxy.personaje_nombre)),
 			str(registro.get("gender", "")),
@@ -716,6 +726,25 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 		if is_instance_valid(proxy):
 			proxy.queue_free()
 		_proxies_cliente.erase(peer_id)
+		_objetivos_posicion_proxy.erase(peer_id)
+
+
+func _actualizar_interpolacion_clientes(delta: float) -> void:
+	var factor := 1.0 - exp(-SNAPSHOT_INTERPOLATION_SPEED * delta)
+	if is_instance_valid(_local_player) and _local_posicion_inicializada:
+		if _local_player.global_position.distance_to(_objetivo_posicion_local) <= 320.0:
+			_local_player.global_position = _local_player.global_position.lerp(_objetivo_posicion_local, factor)
+	for peer_variant in _proxies_cliente.keys():
+		var peer_id := int(peer_variant)
+		var proxy: Player = _proxies_cliente[peer_id] as Player
+		if not is_instance_valid(proxy) or not _objetivos_posicion_proxy.has(peer_id):
+			continue
+		var objetivo: Vector2 = _objetivos_posicion_proxy[peer_id]
+		var distancia := proxy.global_position.distance_to(objetivo)
+		if distancia > 320.0:
+			proxy.global_position = objetivo
+		else:
+			proxy.global_position = proxy.global_position.lerp(objetivo, factor)
 
 
 func _revisar_reapariciones() -> void:
