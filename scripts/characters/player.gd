@@ -89,6 +89,7 @@ var _red_servidor_controlado: bool = false
 var _red_direccion: Vector2 = Vector2.ZERO
 var _red_correr: bool = false
 var _red_dash_pendiente: bool = false
+var _red_salto_pendiente: bool = false
 var _red_eterium_sprint: bool = false
 var _apariencia_red_aplicada: bool = false
 
@@ -208,15 +209,17 @@ func configurar_control_remoto_servidor() -> void:
 	_red_direccion = Vector2.ZERO
 	_red_correr = false
 	_red_dash_pendiente = false
+	_red_salto_pendiente = false
 	_red_eterium_sprint = false
 
 
-func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false) -> void:
+func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false, salto: bool = false) -> void:
 	if not _red_servidor_controlado:
 		return
 	_red_direccion = direccion.limit_length(1.0)
 	_red_correr = correr
 	_red_dash_pendiente = _red_dash_pendiente or dash
+	_red_salto_pendiente = _red_salto_pendiente or salto
 	_red_eterium_sprint = sprint_eterium
 
 
@@ -235,6 +238,13 @@ func _procesar_movimiento_red(delta: float) -> void:
 	if state == State.DASH:
 		_procesar_dash(delta)
 		return
+	if _red_salto_pendiente:
+		_red_salto_pendiente = false
+		if _puede_hacer_jump():
+			_iniciar_jump()
+			if state == State.JUMP:
+				_procesar_jump(delta)
+				return
 	if _red_dash_pendiente:
 		_red_dash_pendiente = false
 		if _puede_hacer_dash():
