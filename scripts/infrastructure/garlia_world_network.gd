@@ -382,7 +382,14 @@ func _crear_snapshot() -> Array:
 			"x": jugador.global_position.x,
 			"y": jugador.global_position.y,
 			"facing_x": jugador.facing.x,
-			"facing_y": jugador.facing.y
+			"facing_y": jugador.facing.y,
+			"health": int(jugador.health),
+			"max_health": int(jugador.max_health),
+			"mana": int(jugador.mana),
+			"max_mana": int(jugador.max_mana),
+			"stamina": float(jugador.stamina),
+			"max_stamina": float(jugador.max_stamina),
+			"is_alive": bool(jugador.is_alive)
 		})
 	return resultado
 
@@ -411,6 +418,7 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 				if direccion.length_squared() > 0.01:
 					_local_player.facing = direccion.normalized()
 					_local_player.call("_update_dir_marker")
+				_actualizar_estado_jugador(_local_player, registro)
 			continue
 		var proxy: Player = _proxies_cliente.get(peer_id) as Player
 		if not is_instance_valid(proxy):
@@ -430,6 +438,7 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 			_proxies_cliente[peer_id] = proxy
 		proxy.global_position = posicion
 		proxy.personaje_nombre = str(registro.get("username", proxy.personaje_nombre))
+		_actualizar_estado_jugador(proxy, registro)
 		if direccion.length_squared() > 0.01:
 			proxy.facing = direccion.normalized()
 			proxy.call("_update_dir_marker")
@@ -443,6 +452,21 @@ func _aplicar_snapshot(snapshot: Array) -> void:
 		if is_instance_valid(proxy):
 			proxy.queue_free()
 		_proxies_cliente.erase(peer_id)
+
+
+func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
+	if not is_instance_valid(jugador):
+		return
+	jugador.set("is_alive", bool(registro.get("is_alive", true)))
+	jugador.set("health", clampi(int(registro.get("health", jugador.health)), 0, int(registro.get("max_health", jugador.max_health))))
+	jugador.set("mana", clampi(int(registro.get("mana", jugador.mana)), 0, int(registro.get("max_mana", jugador.max_mana))))
+	jugador.set("stamina", clampf(float(registro.get("stamina", jugador.stamina)), 0.0, float(registro.get("max_stamina", jugador.max_stamina))))
+	if jugador.has_signal("health_changed"):
+		jugador.health_changed.emit(int(jugador.health), int(jugador.max_health))
+	if jugador.has_signal("mana_changed"):
+		jugador.mana_changed.emit(int(jugador.mana), int(jugador.max_mana))
+	if jugador.has_signal("stamina_changed"):
+		jugador.stamina_changed.emit(float(jugador.stamina), float(jugador.max_stamina))
 
 
 func _al_desconectar_peer(peer_id: int) -> void:
