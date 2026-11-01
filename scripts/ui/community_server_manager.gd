@@ -8,7 +8,6 @@ var _list: ItemList
 var _name: LineEdit
 var _description: LineEdit
 var _port: SpinBox
-var _players: SpinBox
 var _visibility: OptionButton
 var _status: Label
 
