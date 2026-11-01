@@ -81,6 +81,7 @@ const COMMUNITY_SERVER_MANAGER_SCENE = preload("res://scenes/ui/community_server
 @onready var remove_server_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/RemoveServerButton
 @onready var public_directory_label: Label = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/PublicDirectoryLabel
 @onready var community_server_manager_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/CommunityServerManagerButton
+@onready var community_certificate_check: CheckBox = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/CommunityCertificateCheck
 
 const SERVER_BOOKMARKS_PATH := "user://garlia_servers.json"
 var _saved_servers: Array[Dictionary] = []
@@ -910,7 +911,7 @@ func _unirse_partida_real() -> void:
 	host_button.disabled = true
 	join_button.disabled = true
 	multiplayer_status.text = "Conectando a %s:%d..." % [address, port]
-	if not GarliaWorldNetwork.conectar_a_servidor_global(address, port):
+	if not GarliaWorldNetwork.conectar_a_servidor_global(address, port, community_certificate_check.button_pressed):
 		host_button.disabled = false
 		join_button.disabled = false
 
