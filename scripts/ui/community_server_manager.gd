@@ -53,7 +53,9 @@ func _build_ui() -> void:
 	_name = _add_line(content, "Nombre del servidor")
 	_description = _add_line(content, "Descripción")
 	_port = _add_spin(content, "Puerto", 1024, 65535, 7778)
-	_players = _add_spin(content, "Máximo de jugadores", 1, 8, 8)
+	var capacity_note := Label.new()
+	capacity_note.text = "Capacidad actual del motor: máximo 8 jugadores"
+	content.add_child(capacity_note)
 	var visibility_label := Label.new()
 	visibility_label.text = "Visibilidad"
 	content.add_child(visibility_label)
@@ -142,7 +144,6 @@ func _select_profile(index: int) -> void:
 	_name.text = str(profile.get("name", ""))
 	_description.text = str(profile.get("description", ""))
 	_port.value = int(profile.get("port", 7778))
-	_players.value = int(profile.get("max_players", 8))
 	_visibility.select(int(profile.get("visibility", 0)))
 
 
@@ -155,7 +156,7 @@ func _save_profile() -> void:
 		"name": server_name,
 		"description": _description.text.strip_edges(),
 		"port": int(_port.value),
-		"max_players": int(_players.value),
+		"max_players": 8,
 		"visibility": _visibility.selected,
 		"world_data": "user://garlia_servers/%s/world.json" % _slug(server_name)
 	}
@@ -194,7 +195,7 @@ func _export_launcher() -> void:
 	if error != OK and error != ERR_ALREADY_EXISTS:
 		_status.text = "No se pudo crear la carpeta del servidor."
 		return
-	var world_path := ProjectSettings.globalize_path(str(profile.get("world_data", directory + "/world.json")))
+	var world_path := "/var/lib/garlia/%s/world.json" % slug
 	var port := int(profile.get("port", 7778))
 	var launcher := "#!/usr/bin/env bash\nset -euo pipefail\n\n# Garlia — %s\n# Copia tu certificado y clave TLS al VPS y ajusta estas rutas.\nGODOT_BIN=godot\nPROJECT_DIR=\"$(pwd)\"\nTLS_CERT=/etc/letsencrypt/live/tu-dominio/fullchain.pem\nTLS_KEY=/etc/letsencrypt/live/tu-dominio/privkey.pem\n\nexec \"$GODOT_BIN\" --headless --path \"$PROJECT_DIR\" -- --garlia-server --port=%d --tls-cert=\"$TLS_CERT\" --tls-key=\"$TLS_KEY\" --world-data=%s\n" % [str(profile.get("name", "Servidor")), port, world_path]
 	var launcher_path := absolute_dir.path_join("start_server.sh")
@@ -209,7 +210,7 @@ func _export_launcher() -> void:
 	if config != null:
 		config.store_string(JSON.stringify(profile, "\t"))
 		config.close()
-	_status.text = "Lanzador exportado: " + launcher_path + ". Requiere Godot, TLS y puerto TCP accesible."
+	_status.text = "Lanzador exportado: " + launcher_path + ". Público aún no se anuncia en un directorio; requiere Godot, TLS y puerto TCP accesible."
 
 
 func _slug(value: String) -> String:
