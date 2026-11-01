@@ -82,6 +82,14 @@ Todavía no es una simulación global completa de todos los objetos:
 
 No se debe anunciar todavía como multijugador persistente terminado para público. La siguiente etapa técnica es sincronizar inventario individual con validación del servidor, implementar recolección/drops como operaciones autoritativas persistentes, ampliar el streaming para grupos dispersos y completar el inventario individual, la recolección/desaparición y los drops.
 
+## Administrador de servidores comunitarios
+
+Desde Multijugador se puede abrir **Crear / administrar servidores**. El administrador permite crear perfiles locales con nombre, descripción, puerto y visibilidad prevista, guardarlos, editarlos o eliminarlos. Los perfiles se almacenan en `user://garlia_community_servers.json`.
+
+Al seleccionar un perfil se puede exportar `start_server.sh` y `server.json` a la carpeta local `user://garlia_servers/<nombre>/`. El lanzador usa el ejecutable `godot`, el proyecto ubicado en el directorio actual, TLS de Let's Encrypt y una ruta de mundo aislada en `/var/lib/garlia/<nombre>/world.json`. Antes de ejecutarlo en un VPS hay que instalar Godot, desplegar el proyecto, ajustar el dominio y las rutas del certificado, crear la carpeta de datos con permisos para el usuario del servicio y permitir el puerto TCP configurado. El script exportado es una plantilla de despliegue, no instala ni inicia infraestructura remota por sí solo.
+
+La capacidad máxima del runtime sigue siendo 8 jugadores; el perfil no permite cambiar ese límite todavía. La opción de visibilidad pública solo registra la intención del propietario: no publica el servidor, porque el directorio público y su servicio de heartbeat aún no existen. La opción privada tampoco añade contraseña; el control de acceso sigue siendo el sistema de identidad actual.
+
 ## Lista de servidores estilo Minecraft
 
 El cliente guarda localmente los servidores privados/favoritos en `user://garlia_servers.json`. Cada entrada contiene nombre visible, host y puerto. La lista no se sincroniza entre dispositivos. Se puede seleccionar una entrada para rellenar la conexión, guardar una nueva o eliminarla. La conexión siempre usa WSS/TLS; el puerto predeterminado es 7777.
