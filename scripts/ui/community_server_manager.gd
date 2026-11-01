@@ -1,15 +1,8 @@
-extends Control
-## Editor local de perfiles para servidores comunitarios.
-## No publica ni despliega infraestructura: genera configuración y un lanzador.
 
-const PROFILES_PATH := "user://garlia_community_servers.json"
-var _profiles: Array[Dictionary] = []
-var _list: ItemList
-var _name: LineEdit
-var _description: LineEdit
-var _port: SpinBox
-var _visibility: OptionButton
-var _status: Label
+var _server_pid: int = -1
+var _start_local_button: Button
+var _stop_local_button: Button
+var _file_dialog: FileDialog
 
 
 func _ready() -> void:
@@ -25,8 +18,8 @@ func _build_ui() -> void:
 	add_child(shade)
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-260, -310)
-	panel.size = Vector2(520, 620)
+	panel.position = Vector2(-280, -320)
+	panel.size = Vector2(560, 640)
 	add_child(panel)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 20)
@@ -42,34 +35,48 @@ func _build_ui() -> void:
 	content.add_theme_constant_override("separation", 8)
 	scroll.add_child(content)
 	var title := Label.new()
-	title.text = "ADMINISTRAR SERVIDORES"
+	title.text = "SERVIDORES DE COMUNIDAD"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(title)
+	var intro := Label.new()
+	intro.text = "Crea un servidor LAN desde este equipo. Para jugar por Internet necesitarás alojamiento público."
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(intro)
 	_list = ItemList.new()
-	_list.custom_minimum_size.y = 110
+	_list.custom_minimum_size.y = 90
 	_list.item_selected.connect(_select_profile)
 	content.add_child(_list)
 	_name = _add_line(content, "Nombre del servidor")
 	_description = _add_line(content, "Descripción")
-	_port = _add_spin(content, "Puerto", 1024, 65535, 7778)
-	var capacity_note := Label.new()
-	capacity_note.text = "Capacidad actual del motor: máximo 8 jugadores"
-	content.add_child(capacity_note)
-	var visibility_label := Label.new()
-	visibility_label.text = "Visibilidad"
-	content.add_child(visibility_label)
-	_visibility = OptionButton.new()
-	_visibility.add_item("Privado (solo con dirección)")
-	_visibility.add_item("Público (requiere directorio central)")
-	content.add_child(_visibility)
+	_port = _add_spin(content, "Puerto local", 1024, 65535, 7778)
 	var actions := HBoxContainer.new()
 	content.add_child(actions)
 	_add_button(actions, "Guardar perfil", _save_profile)
 	_add_button(actions, "Eliminar", _delete_profile)
-	_add_button(actions, "Exportar lanzador", _export_launcher)
+	_start_local_button = Button.new()
+	_start_local_button.text = "Iniciar servidor LAN"
+	_start_local_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_start_local_button.pressed.connect(_start_local_server)
+	content.add_child(_start_local_button)
+	_stop_local_button = Button.new()
+	_stop_local_button.text = "Detener servidor"
+	_stop_local_button.disabled = true
+	_stop_local_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_stop_local_button.pressed.connect(_stop_local_server)
+	content.add_child(_stop_local_button)
+	var certificate_actions := HBoxContainer.new()
+	content.add_child(certificate_actions)
+	_add_button(certificate_actions, "Exportar certificado", _export_certificate)
+	_add_button(certificate_actions, "Confiar certificado", _import_certificate)
+	_file_dialog = FileDialog.new()
+	_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	_file_dialog.add_filter("*.crt", "Certificado TLS")
+	_file_dialog.file_selected.connect(_save_certificate_copy)
+	add_child(_file_dialog)
 	_status = Label.new()
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_status.text = "Los perfiles se guardan en este dispositivo."
+	_status.text = "El certificado se genera automáticamente al iniciar el servidor."
 	content.add_child(_status)
 	var close_row := HBoxContainer.new()
 	close_row.alignment = BoxContainer.ALIGNMENT_END
@@ -143,7 +150,6 @@ func _select_profile(index: int) -> void:
 	_name.text = str(profile.get("name", ""))
 	_description.text = str(profile.get("description", ""))
 	_port.value = int(profile.get("port", 7778))
-	_visibility.select(int(profile.get("visibility", 0)))
 
 
 func _save_profile() -> void:
@@ -151,23 +157,15 @@ func _save_profile() -> void:
 	if server_name.is_empty():
 		_status.text = "Escribe un nombre para el servidor."
 		return
-	var profile := {
-		"name": server_name,
-		"description": _description.text.strip_edges(),
-		"port": int(_port.value),
-		"max_players": 8,
-		"visibility": _visibility.selected,
-		"world_data": "user://garlia_servers/%s/world.json" % _slug(server_name)
-	}
+	var profile := {"name": server_name, "description": _description.text.strip_edges(), "port": int(_port.value), "max_players": 8}
 	var selected := _list.get_selected_items()
 	if selected.size() > 0 and selected[0] < _profiles.size():
 		_profiles[selected[0]] = profile
 	else:
 		_profiles.append(profile)
-	if not _write_profiles():
-		return
-	_load_profiles()
-	_status.text = "Perfil guardado. Mundo independiente: " + str(profile["world_data"])
+	if _write_profiles():
+		_load_profiles()
+		_status.text = "Perfil guardado en este dispositivo."
 
 
 func _delete_profile() -> void:
@@ -178,38 +176,130 @@ func _delete_profile() -> void:
 	_profiles.remove_at(selected[0])
 	if _write_profiles():
 		_load_profiles()
-		_status.text = "Perfil eliminado. Los archivos de mundo no se borraron."
+		_status.text = "Perfil eliminado. No se borraron mundos ni certificados."
 
 
-func _export_launcher() -> void:
+func _ensure_server_certificate() -> bool:
+	var cert_dir := ProjectSettings.globalize_path("user://certs")
+	var dir_error := DirAccess.make_dir_recursive_absolute(cert_dir)
+	if dir_error != OK and dir_error != ERR_ALREADY_EXISTS:
+		_status.text = "No se pudo crear la carpeta de certificados."
+		return false
+	var cert_path := ProjectSettings.globalize_path("user://certs/garlia_server.crt")
+	var key_path := ProjectSettings.globalize_path("user://certs/garlia_server.key")
+	if FileAccess.file_exists(cert_path) and FileAccess.file_exists(key_path):
+		return true
+	var crypto := Crypto.new()
+	var key := crypto.generate_rsa(2048)
+	if key == null:
+		_status.text = "No se pudo generar la clave TLS."
+		return false
+	var cert := crypto.generate_self_signed_certificate(key, "CN=Garlia LAN Server")
+	if cert == null:
+		_status.text = "No se pudo generar el certificado TLS."
+		return false
+	var key_error := key.save(key_path)
+	var cert_error := cert.save(cert_path)
+	if key_error != OK or cert_error != OK:
+		_status.text = "No se pudo guardar el certificado TLS."
+		return false
+	return true
+
+
+func _start_local_server() -> void:
+	if _server_pid > 0:
+		_status.text = "El servidor ya está iniciado (proceso %d)." % _server_pid
+		return
+	if not _ensure_server_certificate():
+		return
 	var selected := _list.get_selected_items()
 	if selected.is_empty():
-		_status.text = "Guarda y selecciona un perfil primero."
+		_save_profile()
+		selected = _list.get_selected_items()
+	if selected.is_empty():
+		_status.text = "Guarda y selecciona un perfil antes de iniciar."
 		return
-	var profile: Dictionary = _profiles[selected[0]]
-	var slug := _slug(str(profile.get("name", "servidor")))
-	var directory := "user://garlia_servers/%s" % slug
-	var absolute_dir := ProjectSettings.globalize_path(directory)
-	var error := DirAccess.make_dir_recursive_absolute(absolute_dir)
-	if error != OK and error != ERR_ALREADY_EXISTS:
-		_status.text = "No se pudo crear la carpeta del servidor."
+	var port := int(_profiles[selected[0]].get("port", 7778))
+	var project_path := ProjectSettings.globalize_path("res://")
+	var cert_path := ProjectSettings.globalize_path("user://certs/garlia_server.crt")
+	var key_path := ProjectSettings.globalize_path("user://certs/garlia_server.key")
+	var executable := OS.get_executable_path()
+	var arguments := PackedStringArray(["--headless", "--path", project_path, "--", "--garlia-server", "--port=%d" % port, "--tls-cert=%s" % cert_path, "--tls-key=%s" % key_path])
+	_server_pid = OS.create_process(executable, arguments, false)
+	if _server_pid <= 0:
+		_status.text = "No se pudo iniciar el proceso de servidor. Comprueba que el juego esté instalado."
 		return
-	var world_path := "/var/lib/garlia/%s/world.json" % slug
-	var port := int(profile.get("port", 7778))
-	var launcher := "#!/usr/bin/env bash\nset -euo pipefail\n\n# Garlia — %s\n# Copia tu certificado y clave TLS al VPS y ajusta estas rutas.\nGODOT_BIN=godot\nPROJECT_DIR=\"$(pwd)\"\nTLS_CERT=/etc/letsencrypt/live/tu-dominio/fullchain.pem\nTLS_KEY=/etc/letsencrypt/live/tu-dominio/privkey.pem\n\nexec \"$GODOT_BIN\" --headless --path \"$PROJECT_DIR\" -- --garlia-server --port=%d --tls-cert=\"$TLS_CERT\" --tls-key=\"$TLS_KEY\" --world-data=%s\n" % [str(profile.get("name", "Servidor")), port, world_path]
-	var launcher_path := absolute_dir.path_join("start_server.sh")
-	var file := FileAccess.open(launcher_path, FileAccess.WRITE)
-	if file == null:
-		_status.text = "No se pudo exportar el lanzador."
+	_start_local_button.disabled = true
+	_stop_local_button.disabled = false
+	var ips := PackedStringArray(IP.get_local_addresses())
+	var usable_ips: Array[String] = []
+	for ip in ips:
+		if "." in ip and ip != "127.0.0.1" and not usable_ips.has(ip):
+			usable_ips.append(ip)
+	_status.text = "Servidor iniciado. LAN: %s:%d. Comparte también el certificado con tus amigos." % [", ".join(usable_ips) if not usable_ips.is_empty() else "127.0.0.1", port]
+
+
+func _stop_local_server() -> void:
+	if _server_pid > 0:
+		OS.kill(_server_pid)
+		_server_pid = -1
+	_start_local_button.disabled = false
+	_stop_local_button.disabled = true
+	_status.text = "Se solicitó detener el servidor local."
+
+
+func _export_certificate() -> void:
+	var cert_path := ProjectSettings.globalize_path("user://certs/garlia_server.crt")
+	if not FileAccess.file_exists(cert_path):
+		_status.text = "Inicia el servidor primero para generar el certificado."
 		return
-	file.store_string(launcher)
-	file.close()
-	var config_path := absolute_dir.path_join("server.json")
-	var config := FileAccess.open(config_path, FileAccess.WRITE)
-	if config != null:
-		config.store_string(JSON.stringify(profile, "\t"))
-		config.close()
-	_status.text = "Lanzador exportado: " + launcher_path + ". Público aún no se anuncia en un directorio; requiere Godot, TLS y puerto TCP accesible."
+	_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	_file_dialog.current_file = "garlia_server.crt"
+	_file_dialog.popup_centered_ratio(0.7)
+
+
+func _save_certificate_copy(destination: String) -> void:
+	var source := FileAccess.open("user://certs/garlia_server.crt", FileAccess.READ)
+	if source == null:
+		_status.text = "No se pudo leer el certificado."
+		return
+	var bytes := source.get_buffer(source.get_length())
+	source.close()
+	var output := FileAccess.open(destination, FileAccess.WRITE)
+	if output == null:
+		_status.text = "No se pudo guardar el certificado exportado."
+		return
+	output.store_buffer(bytes)
+	output.close()
+	_status.text = "Certificado exportado. Compártelo por un canal seguro con quienes se unirán."
+
+
+func _import_certificate() -> void:
+	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	_file_dialog.current_file = ""
+	_file_dialog.file_selected.disconnect(_save_certificate_copy)
+	_file_dialog.file_selected.connect(_trust_certificate_copy, CONNECT_ONE_SHOT)
+	_file_dialog.popup_centered_ratio(0.7)
+
+
+func _trust_certificate_copy(source_path: String) -> void:
+	var source := FileAccess.open(source_path, FileAccess.READ)
+	if source == null:
+		_status.text = "No se pudo leer el certificado seleccionado."
+		return
+	var bytes := source.get_buffer(source.get_length())
+	source.close()
+	var directory := ProjectSettings.globalize_path("user://certs")
+	DirAccess.make_dir_recursive_absolute(directory)
+	var destination := FileAccess.open("user://certs/trusted_server.crt", FileAccess.WRITE)
+	if destination == null:
+		_status.text = "No se pudo instalar el certificado de confianza."
+		return
+	destination.store_buffer(bytes)
+	destination.close()
+	_file_dialog.file_selected.disconnect(_trust_certificate_copy)
+	_file_dialog.file_selected.connect(_save_certificate_copy)
+	_status.text = "Certificado instalado. Ya puedes conectar a ese servidor."
 
 
 func _slug(value: String) -> String:
