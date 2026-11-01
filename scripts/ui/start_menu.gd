@@ -2,6 +2,7 @@ extends Control
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
+const COMMUNITY_SERVER_MANAGER_SCENE = preload("res://scenes/ui/community_server_manager.tscn")
 
 
 @onready var start_button: Button = (
@@ -79,6 +80,7 @@ const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
 @onready var save_server_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/SaveServerButton
 @onready var remove_server_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/RemoveServerButton
 @onready var public_directory_label: Label = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/PublicDirectoryLabel
+@onready var community_server_manager_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/CommunityServerManagerButton
 
 const SERVER_BOOKMARKS_PATH := "user://garlia_servers.json"
 var _saved_servers: Array[Dictionary] = []
@@ -131,6 +133,7 @@ func _ready() -> void:
 		_unirse_partida
 	)
 	save_server_button.pressed.connect(_guardar_servidor_local)
+	community_server_manager_button.pressed.connect(_abrir_administrador_servidores)
 	remove_server_button.pressed.connect(_eliminar_servidor_local)
 	saved_servers_list.item_selected.connect(_seleccionar_servidor_guardado)
 	_cargar_servidores_guardados()
@@ -863,6 +866,11 @@ func _eliminar_servidor_local() -> void:
 	_guardar_archivo_servidores()
 	_cargar_servidores_guardados()
 	multiplayer_status.text = "Servidor eliminado de la lista local."
+
+
+func _abrir_administrador_servidores() -> void:
+	var manager := COMMUNITY_SERVER_MANAGER_SCENE.instantiate()
+	add_child(manager)
 
 
 func _crear_partida() -> void:
