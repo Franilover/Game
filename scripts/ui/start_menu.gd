@@ -869,7 +869,7 @@ func _eliminar_servidor_local() -> void:
 
 
 func _abrir_administrador_servidores() -> void:
-	var manager := COMMUNITY_SERVER_MANAGER_SCENE.instantiate()
+	var manager: Control = COMMUNITY_SERVER_MANAGER_SCENE.instantiate()
 	add_child(manager)
 
 
