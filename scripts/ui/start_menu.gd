@@ -908,11 +908,9 @@ func _unirse_partida_real() -> void:
 
 
 func _partida_creada() -> void:
-	_mostrar_ips_locales()
+	multiplayer_status.text = "Servidor iniciado. La conexión comunitaria utiliza WSS/TLS."
 
-	print(
-		"StartMenu: servidor ENet listo."
-	)
+	print("StartMenu: señal de servidor creado recibida.")
 
 
 func _on_sala_creada(
