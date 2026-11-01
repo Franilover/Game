@@ -431,6 +431,10 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxInput")
 placeholder_text = "Nombre para guardar el servidor"
 
+[node name="CommunityCertificateCheck" type="CheckBox" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+layout_mode = 2
+text = "Usar certificado comunitario importado"
+
 [node name="IPLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1166416841]
 layout_mode = 2
 text = "Dirección del servidor (IP o dominio)"
