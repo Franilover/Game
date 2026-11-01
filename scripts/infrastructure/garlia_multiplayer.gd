@@ -158,7 +158,11 @@ func unirse_partida(
 	cerrar_partida()
 	var url := "wss://%s:%d" % [host, clampi(puerto, 1, 65535)]
 	var peer := WebSocketMultiplayerPeer.new()
-	var error: Error = peer.create_client(url)
+	var tls_options := TLSOptions.client()
+	var trusted_cert := X509Certificate.new()
+	if trusted_cert.load("user://certs/trusted_server.crt") == OK:
+		tls_options = TLSOptions.client(trusted_cert)
+	var error: Error = peer.create_client(url, tls_options)
 	if error != OK:
 		status_changed.emit("No se pudo iniciar la conexión segura. Error: " + str(error))
 		return false
