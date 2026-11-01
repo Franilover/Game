@@ -2,7 +2,8 @@ extends Node
 ## Persistencia exclusiva del mundo compartido.
 ## Nunca guarda vida, inventario, personaje ni progreso individual de jugadores.
 
-const SAVE_PATH := "user://garlia_global_world.json"
+const DEFAULT_SAVE_PATH := "user://garlia_global_world.json"
+var _save_path: String = DEFAULT_SAVE_PATH
 const SAVE_INTERVAL := 15.0
 const GLOBAL_FLAGS := [
 	# Datos que describen el mundo compartido, no un personaje.
@@ -20,6 +21,25 @@ var _entidades_por_zona: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_configurar_ruta_guardado_desde_argumentos()
+
+
+func _configurar_ruta_guardado_desde_argumentos() -> void:
+	for argumento in OS.get_cmdline_user_args():
+		if not argumento.begins_with("--world-data="):
+			continue
+		var ruta := argumento.trim_prefix("--world-data=").strip_edges()
+		if ruta.is_empty():
+			push_error("GlobalWorldStore: --world-data necesita una ruta.")
+			return
+		_save_path = ProjectSettings.globalize_path(ruta) if ruta.begins_with("user://") else ruta
+		var directorio := _save_path.get_base_dir()
+		var error := DirAccess.make_dir_recursive_absolute(directorio)
+		if error != OK and error != ERR_ALREADY_EXISTS:
+			push_error("GlobalWorldStore: no se pudo crear el directorio de datos: " + directorio)
+			return
+		print("GlobalWorldStore: archivo de mundo configurado en ", _save_path)
+		return
 
 
 func configurar_runtime(main: Node) -> void:
@@ -29,7 +49,7 @@ func configurar_runtime(main: Node) -> void:
 func restaurar_en_game_state(game_state: Node) -> bool:
 	if game_state == null or not is_instance_valid(game_state):
 		return false
-	if not FileAccess.file_exists(SAVE_PATH):
+	if not FileAccess.file_exists(_save_path):
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
 		game_state.world_state.world_seed = rng.randi()
@@ -37,7 +57,7 @@ func restaurar_en_game_state(game_state: Node) -> bool:
 		print("GlobalWorldStore: se creó la semilla inicial del mundo global.")
 		return false
 
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var file := FileAccess.open(_save_path, FileAccess.READ)
 	if file == null:
 		push_error("GlobalWorldStore: no se pudo abrir el guardado global.")
 		return false
@@ -168,7 +188,7 @@ func guardar_desde_runtime() -> bool:
 		"entidades_por_zona": _serializar_variante(_entidades_por_zona),
 		"saved_at": Time.get_datetime_string_from_system(true)
 	}
-	var temporary_path := SAVE_PATH + ".tmp"
+	var temporary_path := _save_path + ".tmp"
 	var file := FileAccess.open(temporary_path, FileAccess.WRITE)
 	if file == null:
 		push_error("GlobalWorldStore: no se pudo escribir el guardado temporal.")
@@ -177,8 +197,8 @@ func guardar_desde_runtime() -> bool:
 	file.flush()
 	file.close()
 
-	var absolute_temp := ProjectSettings.globalize_path(temporary_path)
-	var absolute_final := ProjectSettings.globalize_path(SAVE_PATH)
+	var absolute_temp := temporary_path
+	var absolute_final := _save_path
 	var error := DirAccess.rename_absolute(absolute_temp, absolute_final)
 	if error != OK:
 		DirAccess.remove_absolute(absolute_final)
