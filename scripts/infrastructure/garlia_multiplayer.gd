@@ -139,7 +139,8 @@ func crear_partida(
 
 func unirse_partida(
 	direccion_ip: String,
-	puerto: int = DEFAULT_PORT
+	puerto: int = DEFAULT_PORT,
+	usar_certificado_comunitario: bool = false
 ) -> bool:
 	if not puede_usar_multijugador():
 		status_changed.emit("Debes iniciar sesión para unirte al mundo global.")
@@ -158,7 +159,15 @@ func unirse_partida(
 	cerrar_partida()
 	var url := "wss://%s:%d" % [host, clampi(puerto, 1, 65535)]
 	var peer := WebSocketMultiplayerPeer.new()
-	var error: Error = peer.create_client(url)
+	var tls_options := TLSOptions.client()
+	if usar_certificado_comunitario:
+		var trusted_cert := X509Certificate.new()
+		var cert_error := trusted_cert.load("user://certs/trusted_server.crt")
+		if cert_error != OK:
+			status_changed.emit("No se encontró el certificado comunitario de confianza. Impórtalo desde el administrador de servidores.")
+			return false
+		tls_options = TLSOptions.client(trusted_cert, "Garlia LAN Server")
+	var error: Error = peer.create_client(url, tls_options)
 	if error != OK:
 		status_changed.emit("No se pudo iniciar la conexión segura. Error: " + str(error))
 		return false
