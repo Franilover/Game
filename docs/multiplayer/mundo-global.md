@@ -28,7 +28,24 @@ Desde la carpeta del proyecto:
 ~~~bash
 godot --headless --path . -- --garlia-server --port=7777 \
   --tls-cert=/etc/letsencrypt/live/juego.example.com/fullchain.pem \
-  --tls-key=/etc/letsencrypt/live/juego.example.com/privkey.pem
+  --tls-key=/etc/letsencrypt/live/juego.example.com/privkey.pem \
+  --world-data=/var/lib/garlia/official/garlia_global_world.json
+~~~
+
+--world-data es opcional. Permite asignar un archivo de mundo persistente independiente a cada instancia. La ruta debe ser absoluta y el usuario del proceso debe tener permisos de lectura/escritura. Si se omite, se conserva el archivo predeterminado en `user://garlia_global_world.json`.
+
+Ejemplo para dos mundos comunitarios en el mismo equipo (cada proceso debe usar puerto, certificado/dominio y ruta de datos propios):
+
+~~~bash
+godot --headless --path . -- --garlia-server --port=7778 \
+  --tls-cert=/etc/letsencrypt/live/servidor-a.example.com/fullchain.pem \
+  --tls-key=/etc/letsencrypt/live/servidor-a.example.com/privkey.pem \
+  --world-data=/var/lib/garlia/servidor-a/garlia_global_world.json
+
+godot --headless --path . -- --garlia-server --port=7779 \
+  --tls-cert=/etc/letsencrypt/live/servidor-b.example.com/fullchain.pem \
+  --tls-key=/etc/letsencrypt/live/servidor-b.example.com/privkey.pem \
+  --world-data=/var/lib/garlia/servidor-b/garlia_global_world.json
 ~~~
 
 En el firewall y proveedor de hosting, permite **TCP 7777**. El transporte actual es WebSocket seguro, no ENet/UDP.
