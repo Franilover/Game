@@ -144,7 +144,7 @@ func get_interaction_details() -> Dictionary:
 		"bioma": bioma
 	}
 
-	var contexto_provider := _world_context
+	var contexto_provider: Variant = _world_context
 	if contexto_provider != null and is_instance_valid(contexto_provider):
 		var contexto_variant: Variant = contexto_provider.get_contexto_at(global_position)
 
@@ -181,7 +181,7 @@ func get_interaction_details() -> Dictionary:
 
 	var item_id := _obtener_item_id_recoleccion()
 	if not item_id.is_empty() and is_instance_valid(_world_items):
-		var item := _world_items.buscar_item_por_id(
+		var item: Dictionary = _world_items.buscar_item_por_id(
 			item_id
 		)
 
