@@ -1,1 +1,6 @@
-[gd_scene format=3]\n\n[ext_resource type="Script" path="res://scripts/ui/community_server_manager.gd" id="1"]\n\n[node name="CommunityServerManager" type="Control"]\nscript = ExtResource("1")\n
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/community_server_manager.gd" id="1"]
+
+[node name="CommunityServerManager" type="Control"]
+script = ExtResource("1")
