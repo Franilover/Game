@@ -214,7 +214,12 @@ func _start_local_server() -> void:
 		return
 	var selected := _list.get_selected_items()
 	if selected.is_empty():
+		if _name.text.strip_edges().is_empty():
+			_status.text = "Escribe un nombre y guarda el perfil antes de iniciar."
+			return
 		_save_profile()
+		if not _profiles.is_empty():
+			_list.select(_profiles.size() - 1)
 		selected = _list.get_selected_items()
 	if selected.is_empty():
 		_status.text = "Guarda y selecciona un perfil antes de iniciar."
