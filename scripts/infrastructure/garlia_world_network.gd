@@ -83,7 +83,7 @@ func configurar_personaje_local(datos: Dictionary) -> void:
 	_personaje_local = datos.duplicate(true)
 
 
-func conectar_a_servidor_global(ip: String, puerto: int = GarliaMultiplayer.DEFAULT_PORT) -> bool:
+func conectar_a_servidor_global(ip: String, puerto: int = GarliaMultiplayer.DEFAULT_PORT, usar_certificado_comunitario: bool = false) -> bool:
 	if not GarliaAuth.esta_autenticado():
 		mundo_global_rechazado.emit("Inicia sesión antes de entrar al mundo global.")
 		return false
@@ -92,7 +92,7 @@ func conectar_a_servidor_global(ip: String, puerto: int = GarliaMultiplayer.DEFA
 		mundo_global_rechazado.emit("Introduce la IP o dominio del servidor global.")
 		return false
 	_cliente_global_activado = true
-	return GarliaMultiplayer.unirse_partida(direccion, clampi(puerto, 1, 65535))
+	return GarliaMultiplayer.unirse_partida(direccion, clampi(puerto, 1, 65535), usar_certificado_comunitario)
 
 
 func es_cliente_en_mundo_global() -> bool:
