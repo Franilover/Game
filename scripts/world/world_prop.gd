@@ -427,7 +427,7 @@ func _recolectar(persona: Node) -> bool:
 		)
 		return false
 
-	var item := _world_items.buscar_item_por_id(
+	var item: Dictionary = _world_items.buscar_item_por_id(
 		item_id
 	)
 	if item.is_empty():
