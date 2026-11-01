@@ -64,3 +64,13 @@ Todavía no es una simulación global completa de todos los objetos:
 - No se ha desplegado un servidor ni configurado un dominio/certificado real.
 
 No se debe anunciar todavía como multijugador persistente terminado para público. La siguiente etapa técnica es sincronizar inventario individual con validación del servidor, implementar recolección/drops como operaciones autoritativas persistentes, ampliar el streaming para grupos dispersos y completar el inventario individual, la recolección/desaparición y los drops.
+
+## Lista de servidores estilo Minecraft
+
+El cliente guarda localmente los servidores privados/favoritos en `user://garlia_servers.json`. Cada entrada contiene nombre visible, host y puerto. La lista no se sincroniza entre dispositivos. Se puede seleccionar una entrada para rellenar la conexión, guardar una nueva o eliminarla. La conexión siempre usa WSS/TLS; el puerto predeterminado es 7777.
+
+El directorio público todavía no está conectado: requiere un servicio central para registrar, consultar, actualizar heartbeat y retirar servidores. No se debe presentar la lista local como un catálogo público. Tampoco se ha habilitado publicación desde el cliente. Antes de activarlo hay que aprobar e implementar el contrato de datos y sus políticas de seguridad en Supabase (o desplegar un servicio dedicado). No se modificó el proyecto Supabase en este cambio.
+
+Los servidores comunitarios se alojan como procesos dedicados independientes. Cada proceso debe usar su propio directorio de datos persistente para que `user://garlia_global_world.json` no se comparta entre instancias. La dirección anunciada debe resolver públicamente y presentar un certificado TLS válido para ese host. El menú no puede crear infraestructura ni abrir puertos del router automáticamente.
+
+El servidor oficial todavía requiere configurar su dominio real en el despliegue; no se inventa un endpoint predeterminado en el cliente.
