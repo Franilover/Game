@@ -12,7 +12,7 @@ signal fisiologia_changed(vida_eterium_compartidos: bool)
 
 
 @export_category("Stamina")
-@export var max_stamina: float = 3.0
+@export var max_stamina: float = 5.0
 @export var stamina_regeneration: float = 0.0
 @export var stamina_regeneration_delay: float = 0.0
 
@@ -68,6 +68,9 @@ var _game_state_ref: GameStateService = null
 var _auth_ref: Node = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
+var _dash_input_pending: bool = false
+var _dash_input_buffer: float = 0.0
+var _dash_chord_cancelled: bool = false
 
 
 
@@ -80,6 +83,16 @@ var personaje_genero: String = ""
 var personaje_especie: Dictionary = {}
 var personaje_skin: String = ""
 var personaje_apariencia: Dictionary = {}
+
+# El cliente solo envía intención de movimiento; el servidor mueve al jugador remoto.
+var _red_servidor_controlado: bool = false
+var _red_direccion: Vector2 = Vector2.ZERO
+var _red_correr: bool = false
+var _red_dash_pendiente: bool = false
+var _red_salto_pendiente: bool = false
+var _red_eterium_sprint: bool = false
+var _red_curar_eterium: bool = false
+var _apariencia_red_aplicada: bool = false
 
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
@@ -121,11 +134,14 @@ func _ready() -> void:
 	add_child(input_gate)
 	eterium.configurar(eterium_runtime, stamina_controller)
 	eterium.configurar_vital(vital_state)
+	if not eterium_runtime.mana_changed.is_connected(_al_cambio_mana_runtime):
+		eterium_runtime.mana_changed.connect(_al_cambio_mana_runtime)
 	exploration_controller.terreno_descubierto.connect(_al_terreno_descubierto)
 	locomotion.configurar(movement_controller, action_controller, stamina_controller)
+	if not stamina_controller.stamina_changed.is_connected(_al_cambio_stamina):
+		stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 	stamina_controller.configurar(max_stamina)
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
-	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 
 	_base_visual_position = visual.position
 
@@ -166,7 +182,139 @@ func _actualizar_recuperacion_eterium(delta: float) -> void:
 		health_changed.emit(health, max_health)
 
 
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var tecla := event as InputEventKey
+	if tecla.pressed and not tecla.echo and tecla.keycode == KEY_M and tecla.shift_pressed:
+		_dash_input_pending = false
+		_dash_input_buffer = 0.0
+		_dash_chord_cancelled = true
+
+
+func aplicar_identidad_red(
+	nombre: String,
+	genero: String,
+	apariencia: Dictionary,
+	especie: Dictionary = {}
+) -> void:
+	var nombre_limpio := nombre.strip_edges().left(24)
+	if not nombre_limpio.is_empty():
+		personaje_nombre = nombre_limpio
+	personaje_genero = genero.strip_edges().left(32)
+	if not especie.is_empty():
+		personaje_especie = especie.duplicate(true)
+		if is_instance_valid(_supabase_client_ref) and _supabase_client_ref.has_method("tiene_especie_eterium_game"):
+			if _supabase_client_ref.tiene_especie_eterium_game():
+				_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
+	var capas := apariencia.duplicate(true)
+	var cambio := capas != personaje_apariencia
+	personaje_apariencia = capas
+	if is_instance_valid(visual) and (cambio or not _apariencia_red_aplicada):
+		CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
+		_apariencia_red_aplicada = true
+
+
+func aplicar_runtime_eterium_red(datos_runtime: Dictionary, reglas_especies: Array) -> void:
+	var reglas_variant: Variant = datos_runtime.get("reglas", {})
+	var organismos_variant: Variant = datos_runtime.get("organismos", [])
+	if reglas_variant is Dictionary and organismos_variant is Array:
+		eterium.aplicar_runtime(reglas_variant as Dictionary, organismos_variant as Array)
+		_sync_vital_desde_eterium()
+	if not reglas_especies.is_empty():
+		_aplicar_especie_eterium_game(reglas_especies)
+
+
+func configurar_control_remoto_servidor() -> void:
+	_red_servidor_controlado = true
+	_red_direccion = Vector2.ZERO
+	_red_correr = false
+	_red_dash_pendiente = false
+	_red_salto_pendiente = false
+	_red_eterium_sprint = false
+
+
+func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false, salto: bool = false, curar_eterium: bool = false) -> void:
+	if not _red_servidor_controlado:
+		return
+	_red_direccion = direccion.limit_length(1.0)
+	_red_correr = correr
+	_red_dash_pendiente = _red_dash_pendiente or dash
+	_red_salto_pendiente = _red_salto_pendiente or salto
+	_red_eterium_sprint = sprint_eterium
+	_red_curar_eterium = curar_eterium
+
+
+func _procesar_movimiento_red(delta: float) -> void:
+	locomotion.actualizar_cooldowns(delta)
+	locomotion.avanzar_accion(delta)
+	var direccion := _red_direccion.limit_length(1.0)
+	_movement_input_direction = direccion
+	if direccion != Vector2.ZERO:
+		facing = direccion.normalized()
+		_update_dir_marker()
+
+	if state == State.JUMP:
+		_procesar_jump(delta)
+		return
+	if state == State.DASH:
+		_procesar_dash(delta)
+		return
+	if _red_salto_pendiente:
+		_red_salto_pendiente = false
+		if _puede_hacer_jump():
+			_iniciar_jump()
+			if state == State.JUMP:
+				_procesar_jump(delta)
+				return
+	if _red_dash_pendiente:
+		_red_dash_pendiente = false
+		if _puede_hacer_dash():
+			_iniciar_dash()
+			if state == State.DASH:
+				_procesar_dash(delta)
+				return
+
+	if _red_curar_eterium and not eterium.vida_eterium_compartidos():
+		_procesar_curacion_eterium(delta)
+		return
+
+	var eterium_sprint := false
+	if _red_eterium_sprint and direccion != Vector2.ZERO:
+		eterium_sprint = eterium.procesar_carrera(delta)
+	var esta_corriendo := _red_correr and direccion != Vector2.ZERO and not eterium_sprint
+	var velocidad := move_speed
+	if eterium_sprint:
+		velocidad *= run_multiplier * eterium.multiplicador_carrera()
+	elif esta_corriendo:
+		velocidad *= run_multiplier
+	velocity = direccion * velocidad
+	move_and_slide()
+	if direccion == Vector2.ZERO and state == State.IDLE:
+		_actualizar_recuperacion_eterium(delta)
+	var nuevo_estado := State.IDLE
+	if direccion != Vector2.ZERO:
+		nuevo_estado = State.RUN if esta_corriendo or eterium_sprint else State.WALK
+	if nuevo_estado != state:
+		state = nuevo_estado
+		_update_visual()
+	_actualizar_regeneracion_stamina(delta, esta_corriendo or eterium_sprint)
+
+
 func _physics_process(delta: float) -> void:
+	if _red_servidor_controlado:
+		if not is_alive:
+			velocity = Vector2.ZERO
+			return
+		_procesar_movimiento_red(delta)
+		return
+
+	if GarliaWorldNetwork.controla_jugador_local(self):
+		# El autoload de red envía input incluso durante la animación de muerte;
+		# así el cliente puede recibir una reaparición sin depender de este proceso.
+		velocity = Vector2.ZERO
+		return
+
 	if not is_alive:
 		velocity = Vector2.ZERO
 		return
@@ -180,6 +328,8 @@ func _physics_process(delta: float) -> void:
 	# Si una interfaz está bloqueando el gameplay,
 	# no procesamos ningún input del jugador.
 	if _esta_bloqueado_por_interfaz():
+		_dash_input_pending = false
+		_dash_input_buffer = 0.0
 		_movement_input_direction = Vector2.ZERO
 		velocity = Vector2.ZERO
 		if state != State.IDLE:
@@ -205,15 +355,23 @@ func _physics_process(delta: float) -> void:
 		return
 
 
-	# Shift tiene dos funciones:
-	# pulsarlo = dash inmediato
-	# mantenerlo = correr después del dash
-	var shift_pressed := Input.is_action_pressed("run")
+	# Shift inicia el dash. Se espera una fracción de segundo para distinguir
+	# Shift solo de Shift+M (menú de reinos), sin disparar el dash por accidente.
+	if Input.is_action_just_pressed("dash"):
+		_dash_input_pending = true
+		_dash_input_buffer = 0.12
+		_dash_chord_cancelled = false
 
-	if Input.is_action_just_pressed("run"):
-		if _puede_hacer_dash():
-			_iniciar_dash()
-			return
+	if _dash_input_pending:
+		_dash_input_buffer -= delta
+		if _dash_input_buffer <= 0.0:
+			_dash_input_pending = false
+			if not _dash_chord_cancelled and not Input.is_key_pressed(KEY_M):
+				if _puede_hacer_dash():
+					_iniciar_dash()
+					return
+
+	var run_pressed := Input.is_action_pressed("run")
 
 	# Movimiento normal.
 	var direction := Input.get_vector(
@@ -229,7 +387,7 @@ func _physics_process(delta: float) -> void:
 		eterium_sprint = eterium.procesar_carrera(delta)
 
 	var is_running := (
-		shift_pressed
+		run_pressed
 		and direction != Vector2.ZERO
 		and not eterium_sprint
 	)
@@ -357,6 +515,15 @@ func restaurar_eterium(cantidad: float) -> bool:
 func _al_cambio_stamina(current: float, maximum: float) -> void:
 	stamina = current
 	stamina_changed.emit(current, maximum)
+
+
+func _al_cambio_mana_runtime(_actual: int, _maximo: int) -> void:
+	# El runtime modifica VitalState directamente; mantener sincronizadas las
+	# propiedades públicas de Entity y avisar al HUD en cada cambio real.
+	_sync_desde_vital()
+	mana_changed.emit(mana, max_mana)
+	if eterium.vida_eterium_compartidos():
+		health_changed.emit(health, max_health)
 
 
 # ============================================================
@@ -531,12 +698,7 @@ func _puede_hacer_dash() -> bool:
 
 func _iniciar_dash() -> void:
 	var direccion_dash := _obtener_direccion_accion()
-	# En una arena, un dash solo permite salir si se ejecuta desde un borde hacia fuera.
-	for arena in get_tree().get_nodes_in_group("garumi_combat_arena"):
-		if is_instance_valid(arena) and arena.has_method("intentar_escapar"):
-			if bool(arena.call("intentar_escapar", self, direccion_dash)):
-				print("Player: saliendo del enfrentamiento mediante dash.")
-				break
+	# El dash es movimiento; retirarse del combate se hace exclusivamente con el botón Huir.
 	if not locomotion.iniciar_dash(direccion_dash, dash_duration, dash_cooldown, dash_stamina_cost):
 		return
 	_action_direction = locomotion.obtener_direccion_accion(direccion_dash)
@@ -656,6 +818,33 @@ func _morir_jugador() -> void:
 		),
 		0.35
 	)
+
+
+func reaparecer_en_red(posicion: Vector2) -> void:
+	vital_state.reiniciar()
+	_sync_desde_vital()
+	stamina_controller.reiniciar()
+	global_position = posicion
+	velocity = Vector2.ZERO
+	state = State.IDLE
+	_red_direccion = Vector2.ZERO
+	_red_correr = false
+	_red_dash_pendiente = false
+	_red_salto_pendiente = false
+	_red_eterium_sprint = false
+	_red_curar_eterium = false
+	locomotion.reiniciar()
+	visible = true
+	if is_instance_valid(visual):
+		visual.position = _base_visual_position
+		visual.modulate = Color.WHITE
+		visual.scale = Vector2.ONE
+	set_physics_process(true)
+	_update_dir_marker()
+	_update_visual()
+	health_changed.emit(health, max_health)
+	mana_changed.emit(mana, max_mana)
+	stamina_changed.emit(stamina, max_stamina)
 
 
 func reaparecer() -> void:

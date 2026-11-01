@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://nlfdq585l2mc"
-path="res://.godot/imported/Des.png-9353a2cf4a12596f4d2c0c12ba4ab4bd.ctex"
+path="res://.godot/imported/Desel.png-37b463c762bc6eb3769d75ced378fcbd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/garumis/Des.png"
-dest_files=["res://.godot/imported/Des.png-9353a2cf4a12596f4d2c0c12ba4ab4bd.ctex"]
+source_file="res://assets/art/garumis/Desel.png"
+dest_files=["res://.godot/imported/Desel.png-37b463c762bc6eb3769d75ced378fcbd.ctex"]
 
 [params]
 

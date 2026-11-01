@@ -16,6 +16,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
+AudioSettings="*res://scripts/core/audio_settings.gd"
 Events="*res://scripts/core/events.gd"
 GameState="*res://scripts/core/game_state.gd"
 SceneManager="*uid://bfjh825dher2d"
@@ -26,6 +27,8 @@ GarliaAuth="*uid://dkyg06kgibana"
 GarliaMultiplayer="*uid://dy1ypxqjxvg7x"
 
 GarliaSalas="*uid://txc18ojymio3"
+GlobalWorldStore="*res://scripts/infrastructure/global_world_store.gd"
+GarliaWorldNetwork="*res://scripts/infrastructure/garlia_world_network.gd"
 GarliaDebug="*res://scripts/core/garlia_debug.gd"
 MissionManager="*res://scripts/gameplay/mission_manager.gd"
 RelationshipSystem="*res://scripts/gameplay/relationship_system.gd"
@@ -75,8 +78,8 @@ move_right={
 }
 run={
 "deadzone": 0.2,
-"events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":16,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194325,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
-, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":7,"pressure":0.0,"pressed":false,"script":null)
+"events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":16,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194326,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"window_id":0,"button_index":7,"pressure":0.0,"pressed":false,"script":null)
 ])
 }
 interact={
@@ -116,8 +119,7 @@ jump={
 }
 dodge={
 "deadzone": 0.2,
-"events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":16,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":32,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
-])
+"events": Array[InputEvent]([])
 }
 analyze={
 "deadzone": 0.2,
@@ -240,12 +242,12 @@ slot_8={
 }
 dash={
 "deadzone": 0.2,
-"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194326,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
-]
+"events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":16,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194325,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+])
 }
 eterium_sprint={
 "deadzone": 0.2,
-"events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":16,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194326,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+"events": Array[InputEvent]([Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":16,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194327,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
 ])
 }
 

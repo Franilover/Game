@@ -43,6 +43,11 @@ var _siguiendo_jugador: bool = false
 var _jugador_seguimiento: Node = null
 var _distancia_seguimiento: float = 24.0
 var _muerte_procesada: bool = false
+var _atacante_actual_danio: Node = null
+var _control_remoto_cliente: bool = false
+var _red_posicion_objetivo: Vector2 = Vector2.ZERO
+var _red_velocidad_objetivo: Vector2 = Vector2.ZERO
+var _red_ataque_activo_previo := false
 
 var _sprite_textura_base: Texture2D = null
 var _sprite_hframes_base: int = 1
@@ -502,6 +507,101 @@ func ejecutar_muerte_simulada_visual(duracion: float = 1.0) -> void:
 	tween.tween_property(sprite, "modulate", Color.WHITE, 0.22)
 
 
+func configurar_replica_red_cliente() -> void:
+	if _control_remoto_cliente:
+		return
+	_control_remoto_cliente = true
+	if _movimiento != null:
+		_movimiento.detener()
+		_movimiento.set_physics_process(false)
+		_movimiento.set_process(false)
+	var ai := get_node_or_null("AIController")
+	if ai != null:
+		ai.set_physics_process(false)
+		ai.set_process(false)
+
+
+func reactivar_simulacion_local_red() -> void:
+	_control_remoto_cliente = false
+	set_process(true)
+	set_physics_process(true)
+	if _movimiento != null:
+		_movimiento.set_process(true)
+		_movimiento.set_physics_process(true)
+	var ai := get_node_or_null("AIController")
+	if ai != null:
+		ai.set_process(true)
+		ai.set_physics_process(true)
+	visible = is_alive
+	if is_alive:
+		establecer_colision(true)
+		add_to_group("creatures")
+		add_to_group("interactable")
+		add_to_group("damageable")
+	else:
+		establecer_colision(false)
+		remove_from_group("interactable")
+		remove_from_group("damageable")
+
+
+func ocultar_replica_red_cliente() -> void:
+	configurar_replica_red_cliente()
+	var necesitaba_ocultar := visible or is_in_group("damageable") or is_in_group("interactable")
+	visible = false
+	remove_from_group("damageable")
+	remove_from_group("interactable")
+	if necesitaba_ocultar:
+		establecer_colision(false)
+
+
+func esta_animando_ataque() -> bool:
+	return _ataque_animando
+
+
+func aplicar_estado_red(
+	posicion: Vector2,
+	velocidad: Vector2,
+	vida: int,
+	vida_maxima: int,
+	viva: bool,
+	ataque_activo: bool = false
+) -> void:
+	configurar_replica_red_cliente()
+	_red_posicion_objetivo = posicion
+	_red_velocidad_objetivo = velocidad
+	var visibilidad_previa := visible
+	var vida_previa := is_alive
+	vital_state.max_health = maxi(vida_maxima, 1)
+	vital_state.health = clampi(vida, 0, vital_state.max_health)
+	vital_state.is_alive = viva and vital_state.health > 0
+	_sync_desde_vital()
+	visible = is_alive
+	if is_alive:
+		if not visibilidad_previa or not vida_previa:
+			establecer_colision(true)
+			add_to_group("interactable")
+			add_to_group("creatures")
+			add_to_group("damageable")
+		if ataque_activo and not _red_ataque_activo_previo:
+			iniciar_animacion_ataque()
+		_red_ataque_activo_previo = ataque_activo
+	else:
+		if visibilidad_previa or vida_previa:
+			remove_from_group("damageable")
+			remove_from_group("interactable")
+			establecer_colision(false)
+			velocity = Vector2.ZERO
+			_detener_animacion_ataque()
+			_detener_animacion_caminando()
+		_red_ataque_activo_previo = false
+
+
+func take_damage_desde(atacante: Node, cantidad: int, origen: String = "desconocido") -> void:
+	_atacante_actual_danio = atacante if is_instance_valid(atacante) else null
+	take_damage(cantidad, origen)
+	_atacante_actual_danio = null
+
+
 func take_damage(
 	cantidad: int,
 	origen: String = "desconocido"
@@ -519,7 +619,7 @@ func take_damage(
 		var ai := get_node_or_null("AIController") as CreatureAI
 
 		if ai != null:
-			ai.al_recibir_danio(salud_anterior - health)
+			ai.al_recibir_danio(salud_anterior - health, _atacante_actual_danio)
 
 
 func establecer_colision(activa: bool) -> void:
@@ -880,6 +980,15 @@ func _actualizar_profundidad() -> void:
 func _physics_process(delta: float) -> void:
 	_actualizar_animacion_ataque(delta)
 	_actualizar_profundidad()
+	if _control_remoto_cliente:
+		if not is_alive:
+			velocity = Vector2.ZERO
+			return
+		var factor := 1.0 - exp(-14.0 * delta)
+		global_position = global_position.lerp(_red_posicion_objetivo, factor)
+		velocity = _red_velocidad_objetivo
+		_actualizar_animacion_caminando(delta)
+		return
 	if _siguiendo_jugador:
 		_procesar_seguimiento()
 

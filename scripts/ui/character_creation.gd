@@ -1,5 +1,7 @@
 extends ColorRect
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 signal confirmed(config: Dictionary, action: String)
 signal cancelled
 
@@ -34,6 +36,7 @@ func _ready() -> void:
 	_normalizar_geometria_raiz()
 	visible = false
 	_instalar_scroll_contenido()
+	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_layout_responsive)
 	_configurar_layout_responsive()
 	gender.add_item("El")

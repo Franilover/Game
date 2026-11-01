@@ -1,5 +1,9 @@
 extends Control
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
+const COMMUNITY_SERVER_MANAGER_SCENE = preload("res://scenes/ui/community_server_manager.tscn")
+
 
 @onready var start_button: Button = (
 	$Center/StartButton
@@ -16,6 +20,8 @@ extends Control
 @onready var profile_button: Button = (
 	$ProfileButton
 )
+
+@onready var settings_button: Button = $SettingsButton
 
 @onready var login_overlay: ColorRect = (
 	$LoginOverlay
@@ -69,13 +75,26 @@ extends Control
 	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/Status
 )
 
+@onready var server_name_input: LineEdit = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/ServerNameInput
+@onready var saved_servers_list: ItemList = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/SavedServersList
+@onready var save_server_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/SaveServerButton
+@onready var remove_server_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/RemoveServerButton
+@onready var public_directory_label: Label = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/PublicDirectoryLabel
+@onready var community_server_manager_button: Button = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/CommunityServerManagerButton
+@onready var community_certificate_check: CheckBox = $MultiplayerOverlay/MultiplayerPanel/Margin/Content/CommunityCertificateCheck
+
+const SERVER_BOOKMARKS_PATH := "user://garlia_servers.json"
+var _saved_servers: Array[Dictionary] = []
+
 @onready var multiplayer_close_button: Button = (
 	$MultiplayerOverlay/MultiplayerPanel/Margin/Content/CloseButton
 )
 
 
+var _settings_panel: SettingsPanel = null
 var _login_en_curso: bool = false
 var _codigo_sala_actual: String = ""
+var _config_personaje_multijugador: Dictionary = {}
 
 var _mundo_preparado: bool = false
 var _cargando_mundo: bool = false
@@ -85,6 +104,11 @@ var _cargando_mundo: bool = false
 
 
 func _ready() -> void:
+	# El servidor dedicado reutiliza el runtime del mundo, no el menú ni una partida local.
+	if OS.get_cmdline_user_args().has("--garlia-server"):
+		call_deferred("_entrar_runtime_servidor")
+		return
+
 	SupabaseClient.configurar_dependencias(GarliaAuth)
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
@@ -95,6 +119,8 @@ func _ready() -> void:
 	start_button.pressed.connect(
 		_iniciar_partida
 	)
+
+	settings_button.pressed.connect(_abrir_configuracion)
 
 	multiplayer_button.pressed.connect(
 		_abrir_multijugador
@@ -107,6 +133,11 @@ func _ready() -> void:
 	join_button.pressed.connect(
 		_unirse_partida
 	)
+	save_server_button.pressed.connect(_guardar_servidor_local)
+	community_server_manager_button.pressed.connect(_abrir_administrador_servidores)
+	remove_server_button.pressed.connect(_eliminar_servidor_local)
+	saved_servers_list.item_selected.connect(_seleccionar_servidor_guardado)
+	_cargar_servidores_guardados()
 
 	multiplayer_close_button.pressed.connect(
 		_cerrar_multijugador
@@ -155,6 +186,11 @@ func _ready() -> void:
 	GarliaMultiplayer.status_changed.connect(
 		_multijugador_estado_cambiado
 	)
+
+	if not GarliaWorldNetwork.mundo_global_listo.is_connected(_al_mundo_global_listo):
+		GarliaWorldNetwork.mundo_global_listo.connect(_al_mundo_global_listo)
+	if not GarliaWorldNetwork.mundo_global_rechazado.is_connected(_al_mundo_global_rechazado):
+		GarliaWorldNetwork.mundo_global_rechazado.connect(_al_mundo_global_rechazado)
 
 	GarliaMultiplayer.host_created.connect(
 		_partida_creada
@@ -224,6 +260,40 @@ func _ready() -> void:
 		multiplayer_button.disabled = true
 
 	_actualizar_estado_mundo()
+	PIXEL_UI_THEME.apply(self)
+
+
+func _entrar_runtime_servidor() -> void:
+	if not GarliaMultiplayer.iniciar_servidor_dedicado_desde_argumentos():
+		push_error("StartMenu: se pidió modo servidor, pero WSS/TLS no pudo iniciar. Revisa el certificado, la clave privada y el puerto.")
+		get_tree().quit(1)
+		return
+	var error := get_tree().change_scene_to_file("res://scenes/world/main.tscn")
+	if error != OK:
+		push_error("StartMenu: no se pudo cargar el runtime del servidor. Error: " + str(error))
+		get_tree().quit(1)
+
+
+func _abrir_configuracion() -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		return
+
+	login_overlay.visible = false
+	multiplayer_overlay.visible = false
+	_settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
+	if _settings_panel == null:
+		push_error("StartMenu: no se pudo crear el panel de configuración.")
+		return
+
+	_settings_panel.closed.connect(_cerrar_configuracion)
+	add_child(_settings_panel)
+	_settings_panel.z_index = 5000
+
+
+func _cerrar_configuracion() -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		_settings_panel.queue_free()
+	_settings_panel = null
 
 
 func _actualizar_estado_mundo() -> void:
@@ -683,6 +753,8 @@ func _on_character_confirmed(config: Dictionary, action: String) -> void:
 		"host":
 			_crear_partida_real()
 		"join":
+			_config_personaje_multijugador = config.duplicate(true)
+			GarliaWorldNetwork.configurar_personaje_local(_config_personaje_multijugador)
 			_unirse_partida_real()
 
 # ============================================================
@@ -691,143 +763,163 @@ func _on_character_confirmed(config: Dictionary, action: String) -> void:
 
 func _abrir_multijugador() -> void:
 	if not GarliaAuth.esta_autenticado():
-		multijugador_estado(
-			"Debes iniciar sesión para usar el multijugador."
-		)
-
+		multijugador_estado("Inicia sesión para entrar a servidores. El acceso como invitado se integrará en otra etapa.")
 		return
-
 	login_overlay.visible = false
 	multiplayer_overlay.visible = true
-
-	multiplayer_status.text = (
-		"Listo para crear o unirse a una partida."
-	)
-
-	_mostrar_ips_locales()
-
-	ip_input.placeholder_text = (
-		"Código de sala (ej: LUNA-4821)"
-	)
-
-	port_input.visible = false
-
+	multiplayer_status.text = "Selecciona un servidor guardado o introduce una dirección."
+	public_directory_label.text = "Directorio público: pendiente de conectar al servicio central."
+	port_input.text = str(GarliaMultiplayer.DEFAULT_PORT)
+	_cargar_servidores_guardados()
 	ip_input.grab_focus()
 
 
 func _cerrar_multijugador() -> void:
-	if not GarliaSalas.obtener_codigo_activo().is_empty():
-		GarliaSalas.cerrar_sala()
-
 	multiplayer_overlay.visible = false
 
 
-func _mostrar_ips_locales() -> void:
-	var ips: Array[String] = (
-		GarliaMultiplayer.obtener_ips_locales()
-	)
-
-	if ips.is_empty():
-		local_ip_label.text = (
-			"Tu IP local: no disponible"
-		)
-
+func _cargar_servidores_guardados() -> void:
+	_saved_servers.clear()
+	saved_servers_list.clear()
+	var archivo := FileAccess.open(SERVER_BOOKMARKS_PATH, FileAccess.READ)
+	if archivo == null:
 		return
+	var parsed: Variant = JSON.parse_string(archivo.get_as_text())
+	archivo.close()
+	if not parsed is Array:
+		return
+	for entry_variant in parsed:
+		if not entry_variant is Dictionary:
+			continue
+		var entry := entry_variant as Dictionary
+		var server_name := str(entry.get("name", "")).strip_edges()
+		var address := str(entry.get("address", "")).strip_edges()
+		var port := int(entry.get("port", GarliaMultiplayer.DEFAULT_PORT))
+		if server_name.is_empty() or address.is_empty() or port < 1 or port > 65535:
+			continue
+		_saved_servers.append({"name": server_name, "address": address, "port": port})
+		saved_servers_list.add_item("%s — %s:%d" % [server_name, address, port])
+		saved_servers_list.set_item_metadata(saved_servers_list.item_count - 1, _saved_servers.size() - 1)
 
-	local_ip_label.text = (
-		"Tu IP local: "
-		+ " / ".join(ips)
-	)
+
+func _guardar_archivo_servidores() -> void:
+	var archivo := FileAccess.open(SERVER_BOOKMARKS_PATH, FileAccess.WRITE)
+	if archivo == null:
+		multiplayer_status.text = "No se pudo guardar la lista local."
+		return
+	archivo.store_string(JSON.stringify(_saved_servers, "\t"))
+	archivo.close()
+
+
+func _guardar_servidor_local() -> void:
+	var server_name := server_name_input.text.strip_edges()
+	var address := ip_input.text.strip_edges()
+	var port_text := port_input.text.strip_edges()
+	if server_name.is_empty() or address.is_empty():
+		multiplayer_status.text = "Escribe un nombre y una dirección."
+		return
+	if address.begins_with("wss://"):
+		address = address.trim_prefix("wss://")
+	if address.contains("://") or "/" in address or " " in address:
+		multiplayer_status.text = "Introduce solo una IP o dominio, sin protocolo ni rutas."
+		return
+	if not port_text.is_valid_int():
+		multiplayer_status.text = "El puerto debe ser un número entre 1 y 65535."
+		return
+	var port := int(port_text)
+	if port < 1 or port > 65535:
+		multiplayer_status.text = "El puerto debe ser un número entre 1 y 65535."
+		return
+	for entry in _saved_servers:
+		if str(entry.get("address", "")).to_lower() == address.to_lower() and int(entry.get("port", 0)) == port:
+			entry["name"] = server_name
+			_guardar_archivo_servidores()
+			_cargar_servidores_guardados()
+			multiplayer_status.text = "Servidor guardado actualizado."
+			return
+	_saved_servers.append({"name": server_name, "address": address, "port": port})
+	_guardar_archivo_servidores()
+	_cargar_servidores_guardados()
+	multiplayer_status.text = "Servidor guardado en este dispositivo."
+
+
+func _seleccionar_servidor_guardado(indice: int) -> void:
+	if indice < 0 or indice >= saved_servers_list.item_count:
+		return
+	var entry_index := int(saved_servers_list.get_item_metadata(indice))
+	if entry_index < 0 or entry_index >= _saved_servers.size():
+		return
+	var entry: Dictionary = _saved_servers[entry_index]
+	server_name_input.text = str(entry.get("name", ""))
+	ip_input.text = str(entry.get("address", ""))
+	port_input.text = str(entry.get("port", GarliaMultiplayer.DEFAULT_PORT))
+
+
+func _eliminar_servidor_local() -> void:
+	var selected := saved_servers_list.get_selected_items()
+	if selected.is_empty():
+		multiplayer_status.text = "Selecciona un servidor guardado."
+		return
+	var entry_index := int(saved_servers_list.get_item_metadata(selected[0]))
+	if entry_index < 0 or entry_index >= _saved_servers.size():
+		return
+	_saved_servers.remove_at(entry_index)
+	_guardar_archivo_servidores()
+	_cargar_servidores_guardados()
+	multiplayer_status.text = "Servidor eliminado de la lista local."
+
+
+func _abrir_administrador_servidores() -> void:
+	var manager: Control = COMMUNITY_SERVER_MANAGER_SCENE.instantiate()
+	add_child(manager)
 
 
 func _crear_partida() -> void:
-	_mostrar_creacion_personaje("host")
+	multiplayer_status.text = "Aloja un servidor comunitario ejecutando el servidor dedicado en un equipo o VPS."
+
 
 func _crear_partida_real() -> void:
-	if not GarliaAuth.esta_autenticado():
-		multiplayer_status.text = (
-			"Debes iniciar sesión para crear una partida."
-		)
-
-		return
-
-	var ips: Array[String] = (
-		GarliaMultiplayer.obtener_ips_locales()
-	)
-
-	if ips.is_empty():
-		multiplayer_status.text = (
-			"No se detectó IP local."
-		)
-
-		return
-
-	host_button.disabled = true
-	join_button.disabled = true
-
-	multiplayer_status.text = (
-		"Creando partida..."
-	)
-
-	var creada: bool = (
-		GarliaMultiplayer.crear_partida()
-	)
-
-	if not creada:
-		host_button.disabled = false
-		join_button.disabled = false
-		return
-
-	multiplayer_status.text = (
-		"Publicando sala..."
-	)
-
-	await GarliaSalas.publicar_sala(
-		ips[0]
-	)
+	_crear_partida()
 
 
 func _unirse_partida() -> void:
 	_mostrar_creacion_personaje("join")
 
+
 func _unirse_partida_real() -> void:
 	if not GarliaAuth.esta_autenticado():
-		multiplayer_status.text = (
-			"Debes iniciar sesión para unirte."
-		)
-
+		multiplayer_status.text = "Debes iniciar sesión para entrar a este servidor."
 		return
-
-	var codigo: String = (
-		ip_input.text.strip_edges().to_upper()
-	)
-
-	if codigo.is_empty():
-		multiplayer_status.text = (
-			"Escribe el código de la sala."
-		)
-
+	var address := ip_input.text.strip_edges()
+	if address.is_empty():
+		multiplayer_status.text = "Introduce una IP o dominio."
 		ip_input.grab_focus()
 		return
-
+	if address.begins_with("wss://"):
+		address = address.trim_prefix("wss://")
+	if address.contains("://") or "/" in address or " " in address:
+		multiplayer_status.text = "Introduce solo una IP o dominio con TLS válido."
+		return
+	var port_text := port_input.text.strip_edges()
+	if not port_text.is_valid_int():
+		multiplayer_status.text = "El puerto debe ser un número entre 1 y 65535."
+		return
+	var port := int(port_text)
+	if port < 1 or port > 65535:
+		multiplayer_status.text = "El puerto debe ser un número entre 1 y 65535."
+		return
 	host_button.disabled = true
 	join_button.disabled = true
-
-	multiplayer_status.text = (
-		"Buscando sala..."
-	)
-
-	await GarliaSalas.buscar_sala(
-		codigo
-	)
+	multiplayer_status.text = "Conectando a %s:%d..." % [address, port]
+	if not GarliaWorldNetwork.conectar_a_servidor_global(address, port, community_certificate_check.button_pressed):
+		host_button.disabled = false
+		join_button.disabled = false
 
 
 func _partida_creada() -> void:
-	_mostrar_ips_locales()
+	multiplayer_status.text = "Servidor iniciado. La conexión comunitaria utiliza WSS/TLS."
 
-	print(
-		"StartMenu: servidor ENet listo."
-	)
+	print("StartMenu: señal de servidor creado recibida.")
 
 
 func _on_sala_creada(
@@ -902,16 +994,40 @@ func _union_iniciada() -> void:
 
 
 func _conectado_a_partida() -> void:
+	multiplayer_status.text = "Conectado. Verificando cuenta y cargando el mundo global..."
+	print("StartMenu: transporte WSS conectado; esperando autorización del mundo global.")
+
+
+func _al_mundo_global_listo(semilla: int, tipo_zona: String, reinos_globales: Dictionary, tiempo_mundo: Dictionary) -> void:
+	# La creación de personaje oculta el overlay antes de conectar; el handshake
+	# debe poder completar la entrada aunque el panel ya no esté visible.
+	multiplayer_status.text = "Entrando al mundo compartido..."
+	var id_guardado := ""
+	for partida in GameState.obtener_partidas():
+		if str(partida.get("nombre", "")) == "Mundo compartido global" and int(partida.get("semilla", 0)) == semilla:
+			id_guardado = str(partida.get("id", ""))
+			break
+	if id_guardado.is_empty():
+		id_guardado = GameState.crear_partida("Mundo compartido global", str(semilla), _config_personaje_multijugador)
+	if id_guardado.is_empty() or not GameState.establecer_zona_mundo_global(id_guardado, tipo_zona, reinos_globales, tiempo_mundo):
+		host_button.disabled = false
+		join_button.disabled = false
+		multiplayer_status.text = "No se pudo preparar la zona global en tu guardado local."
+		GarliaMultiplayer.cerrar_partida()
+		return
+	if not GameState.iniciar_partida(id_guardado):
+		host_button.disabled = false
+		join_button.disabled = false
+		multiplayer_status.text = "No se pudo abrir tu guardado del mundo compartido."
+		GarliaMultiplayer.cerrar_partida()
+		return
+	GameState.establecer_semilla_mundo(semilla)
+
+
+func _al_mundo_global_rechazado(mensaje: String) -> void:
 	host_button.disabled = false
 	join_button.disabled = false
-
-	multiplayer_status.text = (
-		"Conectado a la partida."
-	)
-
-	print(
-		"StartMenu: conectado al multijugador."
-	)
+	multiplayer_status.text = mensaje
 
 
 func _conexion_fallida() -> void:
@@ -919,7 +1035,7 @@ func _conexion_fallida() -> void:
 	join_button.disabled = false
 
 	multiplayer_status.text = (
-		"No se pudo conectar con la partida."
+		"No se pudo conectar con el servidor global."
 	)
 
 
@@ -927,12 +1043,7 @@ func _servidor_desconectado() -> void:
 	host_button.disabled = false
 	join_button.disabled = false
 
-	multiplayer_status.text = (
-		"El anfitrión cerró la partida."
-	)
-
-	if not GarliaSalas.obtener_codigo_activo().is_empty():
-		GarliaSalas.cerrar_sala()
+	multiplayer_status.text = "El servidor del mundo global se desconectó."
 
 
 func _multijugador_estado_cambiado(

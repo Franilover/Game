@@ -15,6 +15,8 @@ var _persistent_by_key: Dictionary = {}
 var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
 var _runtime_prop_state_by_key: Dictionary = {}
+var _replicas_red_by_key: Dictionary = {}
+var _replicas_red_props_by_key: Dictionary = {}
 var _data_by_chunk: Dictionary = {}
 
 
@@ -156,6 +158,52 @@ func registrar(
 	return true
 
 
+func registrar_replica_red(datos: Dictionary, chunk_coord: Vector2i, instance_key: String, limites_chunk: Rect2 = Rect2()) -> Creature:
+	if instance_key.is_empty() or _entity_factory == null:
+		return null
+	var existente_variant: Variant = _replicas_red_by_key.get(instance_key)
+	if existente_variant is Creature and is_instance_valid(existente_variant):
+		return existente_variant as Creature
+	var criatura_variant: Variant = _entity_factory.crear_criatura(datos)
+	if not criatura_variant is Creature:
+		return null
+	var criatura := criatura_variant as Creature
+	var partes_clave := instance_key.split("|")
+	var runtime_key := str(partes_clave[partes_clave.size() - 1]) if not partes_clave.is_empty() else instance_key
+	criatura.set_meta("runtime_instance_key", runtime_key)
+	if not registrar(criatura, chunk_coord):
+		criatura.queue_free()
+		return null
+	criatura.configurar_chunk(chunk_coord, limites_chunk)
+	_replicas_red_by_key[instance_key] = criatura
+	return criatura
+
+
+func registrar_replica_prop_red(datos: Dictionary, chunk_coord: Vector2i, instance_key: String) -> WorldProp:
+	if instance_key.is_empty() or _entity_factory == null:
+		return null
+	var existente_variant: Variant = _replicas_red_props_by_key.get(instance_key)
+	if existente_variant is WorldProp and is_instance_valid(existente_variant):
+		return existente_variant as WorldProp
+	var prop_variant: Variant = _entity_factory.crear_prop(datos)
+	if not prop_variant is WorldProp:
+		return null
+	var prop := prop_variant as WorldProp
+	var partes_clave := instance_key.split("|")
+	var runtime_key := str(partes_clave[partes_clave.size() - 1]) if not partes_clave.is_empty() else instance_key
+	prop.set_meta("runtime_instance_key", runtime_key)
+	if not registrar(prop, chunk_coord):
+		prop.queue_free()
+		return null
+	var limite := Rect2()
+	var limite_variant: Variant = datos.get("limite_chunk", Rect2())
+	if limite_variant is Rect2:
+		limite = limite_variant
+	prop.configurar_chunk(chunk_coord, limite)
+	_replicas_red_props_by_key[instance_key] = prop
+	return prop
+
+
 func registrar_global(entity: Node, persistent_key: String = "") -> bool:
 	if entity == null or not is_instance_valid(entity):
 		return false
@@ -288,6 +336,77 @@ func obtener_persistente(key: String) -> Node:
 	return null
 
 
+func capturar_estado_persistente_mundo() -> Dictionary:
+	# Capturamos también las criaturas que siguen materializadas: el guardado
+	# normal por chunk ocurre al descargarlas, pero el servidor puede pausarse
+	# con muchos chunks todavía activos.
+	for entidad_variant in obtener_entidades_activas():
+		if not is_instance_valid(entidad_variant):
+			continue
+		if entidad_variant is WorldProp:
+			var prop := entidad_variant as WorldProp
+			var chunk_variant: Variant = prop.datos.get("chunk", Vector2i.ZERO)
+			var chunk_coord := Vector2i.ZERO
+			if chunk_variant is Vector2i:
+				chunk_coord = chunk_variant
+			elif chunk_variant is Dictionary:
+				var chunk_data := chunk_variant as Dictionary
+				chunk_coord = Vector2i(int(chunk_data.get("x", 0)), int(chunk_data.get("y", 0)))
+			guardar_estado_entidad(prop, chunk_coord)
+			continue
+		if not entidad_variant is Creature:
+			continue
+		var criatura := entidad_variant as Creature
+		# Los Garumis vinculados pertenecen al guardado privado del jugador.
+		# Sólo se conserva el tombstone del spawn salvaje original para impedir
+		# que vuelva a aparecer al regenerar el chunk.
+		if criatura is Garumi and (criatura as Garumi).esta_vinculado():
+			_guardar_tombstone_garumi_vinculado(criatura as Garumi)
+			continue
+		guardar_estado_entidad(criatura, criatura.chunk_coord)
+	return {
+		"criaturas": _runtime_state_by_key.duplicate(true),
+		"props": _runtime_prop_state_by_key.duplicate(true)
+	}
+
+
+func _guardar_tombstone_garumi_vinculado(garumi: Garumi) -> void:
+	var instancia := str(garumi.get_meta("runtime_instance_key", "")).strip_edges()
+	if not (instancia.begins_with("garumi:") or instancia.begins_with("natural:")):
+		return
+	var criatura_id := garumi.get_id().strip_edges()
+	if criatura_id.is_empty():
+		return
+	var chunk := garumi.chunk_coord
+	var tombstone := {
+		"criatura_id": criatura_id,
+		"categoria_entidad": "garumi",
+		"runtime_instance_key": instancia,
+		"position": garumi.global_position,
+		"velocity": Vector2.ZERO,
+		"health": 0,
+		"max_health": garumi.max_health,
+		"is_alive": false,
+		"estado": "vinculado"
+	}
+	_runtime_state_by_key[_runtime_key(chunk, instancia)] = tombstone
+	# El ID del Garumi es único por chunk en la generación natural.
+	_runtime_state_by_key[_runtime_key(chunk, criatura_id)] = tombstone.duplicate(true)
+
+
+func restaurar_estado_persistente_mundo(estado: Dictionary) -> void:
+	var criaturas_variant: Variant = estado.get("criaturas", {})
+	var props_variant: Variant = estado.get("props", {})
+	_runtime_state_by_key = (criaturas_variant as Dictionary).duplicate(true) if criaturas_variant is Dictionary else {}
+	_runtime_prop_state_by_key = (props_variant as Dictionary).duplicate(true) if props_variant is Dictionary else {}
+	print(
+		"WorldEntityManager: estado global recuperado → criaturas=",
+		_runtime_state_by_key.size(),
+		" | props=",
+		_runtime_prop_state_by_key.size()
+	)
+
+
 func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 	if entity == null or not is_instance_valid(entity):
 		return
@@ -341,6 +460,14 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		datos_criatura["experiencia_total"] = garumi.experiencia_total
 		datos_criatura["eterium_actual"] = garumi.eterium_actual
 	_runtime_state_by_key[key] = datos_criatura
+	# FULL y DATA pueden materializar el mismo spawn con claves técnicas
+	# diferentes. La especie es única por chunk en los spawns naturales.
+	# No se crea alias para personajes de reinos, que sí pueden repetirse.
+	if not instance_key.begins_with("personaje:") and instance_key != criatura_id:
+		# La instancia natural más reciente de esa especie en el chunk actualiza
+		# el alias usado por el materializador DATA.
+		var key_por_especie := _runtime_key(chunk_coord, criatura_id)
+		_runtime_state_by_key[key_por_especie] = datos_criatura.duplicate(true)
 	var registro_criatura := datos_criatura.duplicate(true)
 	registro_criatura["runtime_instance_key"] = instance_key
 	guardar_dato_chunk(chunk_coord, "criaturas", registro_criatura)
@@ -352,8 +479,15 @@ func obtener_estado_criatura(chunk_coord: Vector2i, criatura_id: String, instanc
 		clave_instancia = criatura_id
 	var key := _runtime_key(chunk_coord, clave_instancia)
 	var estado: Variant = _runtime_state_by_key.get(key, {})
-	if estado is Dictionary:
+	if estado is Dictionary and not (estado as Dictionary).is_empty():
 		return (estado as Dictionary).duplicate(true)
+	# Compatibilidad entre la clave natural usada por FULL y la clave de slot
+	# usada por DATA. Los personajes quedan aislados bajo su ID de instancia.
+	if not clave_instancia.begins_with("personaje:"):
+		var key_por_especie := _runtime_key(chunk_coord, criatura_id)
+		estado = _runtime_state_by_key.get(key_por_especie, {})
+		if estado is Dictionary:
+			return (estado as Dictionary).duplicate(true)
 	return {}
 
 

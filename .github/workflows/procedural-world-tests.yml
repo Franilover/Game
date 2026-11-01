@@ -2,7 +2,7 @@ name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
@@ -12,6 +12,11 @@ on:
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
       - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "scripts/infrastructure/garlia_world_network.gd"
+      - "scripts/infrastructure/garlia_multiplayer.gd"
+      - "scripts/infrastructure/global_world_store.gd"
+      - "scripts/core/game_state.gd"
+      - "scripts/ui/start_menu.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
       - "tests/ui/**"

@@ -705,8 +705,27 @@ func _actualizar_percepcion() -> void:
 
 func _obtener_candidatos_entidad() -> Array[Node2D]:
 	var candidatos: Array[Node2D] = []
-	if jugador != null and is_instance_valid(jugador) and jugador.is_inside_tree():
-		candidatos.append(jugador)
+	# La referencia explícita también sirve para pruebas aisladas y para
+	# escenas donde el Player todavía no se ha añadido al grupo.
+	if is_instance_valid(jugador) and jugador is Node2D:
+		var jugador_configurado := jugador as Node2D
+		if jugador_configurado.is_inside_tree() and not ("is_alive" in jugador_configurado and not bool(jugador_configurado.get("is_alive"))):
+			candidatos.append(jugador_configurado)
+	# En multijugador el nodo Player configurado en la fábrica es sólo el ancla
+	# del mundo. Los jugadores reales se descubren por grupo en cada tick.
+	var arbol := Engine.get_main_loop() as SceneTree
+	if arbol == null:
+		return candidatos
+	for jugador_variant in arbol.get_nodes_in_group("player"):
+		if not jugador_variant is Node2D:
+			continue
+		var jugador_actual := jugador_variant as Node2D
+		if not is_instance_valid(jugador_actual) or not jugador_actual.is_inside_tree():
+			continue
+		if "is_alive" in jugador_actual and not bool(jugador_actual.get("is_alive")):
+			continue
+		if not jugador_actual in candidatos:
+			candidatos.append(jugador_actual)
 
 	if entity_manager == null or not is_instance_valid(entity_manager):
 		return candidatos
@@ -729,7 +748,7 @@ func _refrescar_objetivo() -> void:
 	var objetivo_liberacion: Variant = null
 	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		objetivo_liberacion = criatura.get_meta("garlia_objetivo_liberacion")
-	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion):
+	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion) and (objetivo_liberacion as Node2D).is_inside_tree():
 		if not ("is_alive" in objetivo_liberacion) or bool(objetivo_liberacion.get("is_alive")):
 			objetivo = objetivo_liberacion as Node2D
 			return
@@ -738,9 +757,11 @@ func _refrescar_objetivo() -> void:
 	elif criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		criatura.remove_meta("garlia_objetivo_liberacion")
 
-	# La reacción de bosque tiene prioridad sobre la percepción ecológica normal.
-	if _jugador_debe_reaccionar_en_bosque():
-		objetivo = jugador
+	# Las respuestas especiales del bosque se asignan al jugador conectado
+	# que realmente provocó la reacción, no al ancla oculta de Main.
+	var jugador_bosque := _buscar_jugador_reactivo_bosque()
+	if is_instance_valid(jugador_bosque):
+		objetivo = jugador_bosque
 		return
 
 	if actividad_horaria == "proteger":
@@ -755,7 +776,8 @@ func _refrescar_objetivo() -> void:
 
 	var candidatos: Array[Node2D] = []
 	for candidato in _obtener_candidatos_entidad():
-		if candidato != jugador and not _es_objetivo_permitido(candidato):
+		var es_jugador_conectado := candidato.is_in_group("player") or candidato == jugador
+		if not es_jugador_conectado and not _es_objetivo_permitido(candidato):
 			continue
 		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
 			continue
@@ -786,26 +808,49 @@ func _es_seiloris() -> bool:
 	return criatura.get_nombre().strip_edges().to_lower() == "seiloris"
 
 
-func _jugador_es_agresor_bosque() -> bool:
-	if jugador == null or not is_instance_valid(jugador):
+func _jugador_es_agresor_bosque(jugador_objetivo: Node = null) -> bool:
+	var candidato: Node = jugador_objetivo if is_instance_valid(jugador_objetivo) else jugador
+	if not is_instance_valid(candidato):
 		return false
-	return bool(jugador.get_meta("garlia_bosque_agresor", false))
+	return bool(candidato.get_meta("garlia_bosque_agresor", false))
 
 
-func _jugador_es_asesino_bosque() -> bool:
-	if jugador == null or not is_instance_valid(jugador):
+func _jugador_es_asesino_bosque(jugador_objetivo: Node = null) -> bool:
+	var candidato: Node = jugador_objetivo if is_instance_valid(jugador_objetivo) else jugador
+	if not is_instance_valid(candidato):
 		return false
-	return bool(jugador.get_meta("garlia_bosque_asesino", false))
+	return bool(candidato.get_meta("garlia_bosque_asesino", false))
 
 
-func _jugador_debe_reaccionar_en_bosque() -> bool:
+func _jugador_debe_reaccionar_en_bosque(jugador_objetivo: Node = null) -> bool:
 	if not _es_reactivo_bosque():
 		return false
 
 	if _es_seiloris():
-		return _jugador_es_agresor_bosque()
+		return _jugador_es_agresor_bosque(jugador_objetivo)
 
-	return _jugador_es_asesino_bosque()
+	return _jugador_es_asesino_bosque(jugador_objetivo)
+
+
+func _buscar_jugador_reactivo_bosque() -> Node2D:
+	if not _es_reactivo_bosque():
+		return null
+	var mejor: Node2D = null
+	var mejor_distancia := INF
+	for candidato in _obtener_candidatos_entidad():
+		if candidato != jugador and not candidato.is_in_group("player"):
+			continue
+		if not is_instance_valid(candidato) or not candidato.is_inside_tree():
+			continue
+		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
+			continue
+		if not _jugador_debe_reaccionar_en_bosque(candidato):
+			continue
+		var distancia := criatura.global_position.distance_to(candidato.global_position)
+		if distancia < mejor_distancia:
+			mejor_distancia = distancia
+			mejor = candidato
+	return mejor
 
 
 func _es_objetivo_permitido(candidato: Node2D) -> bool:
@@ -981,12 +1026,11 @@ func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 		if criatura.get_meta("garlia_objetivo_liberacion") == candidato:
 			return "atacar"
 
-	if _es_reactivo_bosque() and candidato == jugador:
-		# En estas especies, la reacción al jugador depende de su conducta
-		# en el bosque; el perfil genérico no debe saltarse esa condición.
+	if _es_reactivo_bosque() and (candidato.is_in_group("player") or candidato == jugador):
+		# La conducta se evalúa sobre el jugador concreto detectado por la IA.
 		if _es_seiloris():
-			return "huir" if _jugador_es_agresor_bosque() else ""
-		return "atacar" if _jugador_es_asesino_bosque() else ""
+			return "huir" if _jugador_es_agresor_bosque(candidato) else ""
+		return "atacar" if _jugador_es_asesino_bosque(candidato) else ""
 
 	if candidato is Creature and bool((candidato as Creature).get_meta("atractor_refugio", false)):
 		return "perseguir"
@@ -2171,7 +2215,7 @@ func _procesar_saltando_lejos(delta: float) -> void:
 # ============================================================
 # ESPIRITU ESTELAR
 
-func _liberar_lesfleengs_al_ser_atacado() -> void:
+func _liberar_lesfleengs_al_ser_atacado(atacante: Node = null) -> void:
 	if criatura == null or not is_instance_valid(criatura):
 		return
 
@@ -2213,17 +2257,20 @@ func _liberar_lesfleengs_al_ser_atacado() -> void:
 	# Hasta que se concreten, se libera un Lesfleeng junto al Ligniano.
 	var angulo := randf_range(0.0, TAU)
 	lesfleeng.global_position = criatura.global_position + Vector2.from_angle(angulo) * 18.0
-	if jugador != null and is_instance_valid(jugador):
+	var objetivo_real := atacante as Node2D if is_instance_valid(atacante) else null
+	if is_instance_valid(objetivo_real) and objetivo_real.is_inside_tree():
+		lesfleeng.set_meta("garlia_objetivo_liberacion", objetivo_real)
+	elif jugador != null and is_instance_valid(jugador) and jugador.is_inside_tree() and jugador.is_in_group("player"):
 		lesfleeng.set_meta("garlia_objetivo_liberacion", jugador)
 
 	print("CreatureAI: Lignianos liberó un Lesfleeng al recibir un ataque.")
 
 
-func al_recibir_danio(cantidad: int) -> void:
+func al_recibir_danio(cantidad: int, atacante: Node = null) -> void:
 	if criatura != null and is_instance_valid(criatura):
 		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
 		if nombre_especie == "lignianos":
-			_liberar_lesfleengs_al_ser_atacado()
+			_liberar_lesfleengs_al_ser_atacado(atacante)
 		# Una Sirena sólo simula la muerte si sigue viva; las demás reacciones
 		# defensivas tampoco deben mover una criatura ya muerta.
 		if not criatura.is_alive:

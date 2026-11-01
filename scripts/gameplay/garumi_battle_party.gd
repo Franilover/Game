@@ -7,11 +7,12 @@ class_name GarumiBattleParty
 const MAX_VINCULOS := 3
 const INTERVALO_ATAQUE_ALIADO := 1.0
 const INTERVALO_ATAQUE_RIVAL := 1.35
-const INTERVALO_CURACION_ETERIUM := 0.55
-const COSTO_CURACION_GARUMI := 5
 
 var jugador: Node2D
 var rival: Garumi
+var rivales: Array[Garumi] = []
+var objetivo_rival: Garumi
+var _selector_objetivo: OptionButton
 var disponibles: Array[Garumi] = []
 var activo: Garumi
 var _panel: PanelContainer
@@ -23,9 +24,16 @@ var _info_aliado: Label
 var _info_enemigo: Label
 var _vida_aliado: ProgressBar
 var _vida_enemigo: ProgressBar
+var _ataques_container: HBoxContainer
+var _reservas_garumis_container: HBoxContainer
+var _ataques_estado: Label
+var _acciones_combate: HBoxContainer
+var _boton_huir: Button
+var _boton_ofrecer_vinculo: Button
+var _ataques_supabase: Array[Dictionary] = []
+var _ataques_request_id: int = -1
 var _cooldown_aliado := 0.0
 var _cooldown_rival := 0.0
-var _cooldown_curacion_eterium := 0.0
 var _seleccion_pendiente := false
 var _forzar_disponible := false
 
@@ -33,11 +41,14 @@ var _forzar_disponible := false
 func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	jugador = nuevo_jugador
 	rival = nuevo_rival
+	objetivo_rival = nuevo_rival
+	_descubrir_rivales(nuevo_rival)
 	_disponibles_desde_vinculos()
 	_guardar_garumis_antes_de_seleccionar()
 	_cambiar_panel_garumis_hud(false)
 	_crear_interfaz()
 	_crear_marcos_combate()
+	_crear_acciones_combate()
 	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
 	if disponibles.is_empty():
@@ -76,6 +87,45 @@ func _disponibles_desde_vinculos() -> void:
 			disponibles.append(garumi)
 	if disponibles.size() > MAX_VINCULOS:
 		disponibles.resize(MAX_VINCULOS)
+
+
+func _descubrir_rivales(principal: Garumi) -> void:
+	rivales.clear()
+	if not is_instance_valid(principal):
+		return
+	rivales.append(principal)
+	var candidatos: Array[Garumi] = []
+	for nodo in get_tree().get_nodes_in_group("garumis"):
+		if not nodo is Garumi or not is_instance_valid(nodo):
+			continue
+		var enemigo := nodo as Garumi
+		if enemigo == principal or enemigo.esta_vinculado() or enemigo.esta_enfrentamiento() or not bool(enemigo.get("is_alive")):
+			continue
+		if enemigo.global_position.distance_to(principal.global_position) > 360.0:
+			continue
+		candidatos.append(enemigo)
+	candidatos.sort_custom(func(a: Garumi, b: Garumi) -> bool:
+		return a.global_position.distance_squared_to(principal.global_position) < b.global_position.distance_squared_to(principal.global_position)
+	)
+	for i in range(mini(2, candidatos.size())):
+		var enemigo := candidatos[i]
+		if enemigo.iniciar_enfrentamiento_secundario(jugador):
+			rivales.append(enemigo)
+			var escena := get_tree().current_scene
+			if escena != null and is_instance_valid(escena.get("_garumi_combat_arena")):
+				var arena: Variant = escena.get("_garumi_combat_arena")
+				if is_instance_valid(arena) and arena.has_method("agregar_garumi"):
+					arena.call("agregar_garumi", enemigo)
+	objetivo_rival = principal
+	print("GarumiBattleParty: rivales en el encuentro: ", rivales.size(), ". Ninguno se vincula automáticamente.")
+
+
+func _al_cambiar_objetivo_rival(indice: int) -> void:
+	if indice >= 0 and indice < rivales.size():
+		objetivo_rival = rivales[indice]
+		_actualizar_marcos_combate()
+		_actualizar_acciones_combate()
+
 
 
 func _crear_interfaz() -> void:
@@ -220,21 +270,113 @@ func _actualizar_interfaz() -> void:
 func _crear_marcos_combate() -> void:
 	_panel_aliado = _crear_marco_luchador("Aliado", true)
 	_panel_aliado.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_panel_aliado.offset_left = 18.0
-	_panel_aliado.offset_top = 18.0
-	_panel_aliado.offset_right = 258.0
-	_panel_aliado.offset_bottom = 126.0
+	_panel_aliado.offset_left = 10.0
+	_panel_aliado.offset_top = 10.0
+	_panel_aliado.offset_right = 302.0
+	_panel_aliado.offset_bottom = 138.0
 	_panel_enemigo = _crear_marco_luchador("Enemigo", false)
 	_panel_enemigo.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_panel_enemigo.anchor_left = 1.0
 	_panel_enemigo.anchor_right = 1.0
-	_panel_enemigo.offset_left = -258.0
-	_panel_enemigo.offset_top = 18.0
-	_panel_enemigo.offset_right = -18.0
-	_panel_enemigo.offset_bottom = 126.0
+	_panel_enemigo.offset_left = -222.0
+	_panel_enemigo.offset_top = 10.0
+	_panel_enemigo.offset_right = -10.0
+	_panel_enemigo.offset_bottom = 84.0
 	add_child(_panel_aliado)
 	add_child(_panel_enemigo)
+	_cargar_ataques_desde_supabase()
 	_actualizar_marcos_combate()
+	_actualizar_fila_reservas_garumis()
+	_actualizar_acciones_combate()
+
+
+
+
+func _crear_acciones_combate() -> void:
+	if is_instance_valid(_acciones_combate):
+		_acciones_combate.queue_free()
+	_acciones_combate = HBoxContainer.new()
+	_acciones_combate.name = "AccionesCombate"
+	_acciones_combate.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_acciones_combate.anchor_left = 0.0
+	_acciones_combate.anchor_top = 1.0
+	_acciones_combate.anchor_right = 0.0
+	_acciones_combate.anchor_bottom = 1.0
+	_acciones_combate.offset_left = 12.0
+	_acciones_combate.offset_top = -48.0
+	_acciones_combate.offset_right = 280.0
+	_acciones_combate.offset_bottom = -12.0
+	_acciones_combate.add_theme_constant_override("separation", 8)
+	# Debe quedar por encima del panel central; de lo contrario el panel tapa
+	# parte del botón Huir y bloquea los clics en esa zona.
+	_acciones_combate.z_index = 200
+	_acciones_combate.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_acciones_combate)
+
+	_boton_huir = _crear_boton_accion_combate("Huir")
+	_boton_huir.pressed.connect(_retirarse)
+	_acciones_combate.add_child(_boton_huir)
+
+	_boton_ofrecer_vinculo = _crear_boton_accion_combate("Ofrecer vínculo")
+	_boton_ofrecer_vinculo.pressed.connect(_ofrecer_vinculo_en_combate)
+	_acciones_combate.add_child(_boton_ofrecer_vinculo)
+	_actualizar_acciones_combate()
+
+
+func _crear_boton_accion_combate(texto: String) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(126.0, 32.0)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	boton.focus_mode = Control.FOCUS_ALL
+	boton.add_theme_font_size_override("font_size", 11)
+	boton.add_theme_color_override("font_color", Color(0.94, 0.87, 0.73, 1.0))
+	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.8, 1.0))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.075, 0.06, 0.045, 0.94)
+	normal.border_color = Color(0.58, 0.43, 0.24, 0.95)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(4)
+	normal.content_margin_left = 6.0
+	normal.content_margin_right = 6.0
+	boton.add_theme_stylebox_override("normal", normal)
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.18, 0.13, 0.075, 1.0)
+	hover.border_color = Color(0.88, 0.68, 0.37, 1.0)
+	boton.add_theme_stylebox_override("hover", hover)
+	boton.add_theme_stylebox_override("focus", hover)
+	boton.add_theme_stylebox_override("pressed", hover)
+	return boton
+
+
+func _actualizar_acciones_combate() -> void:
+	# Huir es una acción del encuentro, no depende de que el rival principal
+	# siga válido (puede haber sido derrotado mientras quedan rivales activos).
+	if is_instance_valid(_boton_huir):
+		_boton_huir.disabled = false
+	if is_instance_valid(_boton_ofrecer_vinculo):
+		_boton_ofrecer_vinculo.disabled = (
+			not is_instance_valid(objetivo_rival)
+			or not objetivo_rival.esta_enfrentamiento()
+			or objetivo_rival.esta_vinculado()
+		)
+
+
+func _ofrecer_vinculo_en_combate() -> void:
+	if not is_instance_valid(objetivo_rival) or not is_instance_valid(jugador):
+		return
+	if not objetivo_rival.esta_enfrentamiento() or objetivo_rival.esta_vinculado():
+		return
+	var objetivo := objetivo_rival
+	if objetivo.ofrecer_vinculo_en_combate(jugador):
+		# Si acepta, el resto de rivales también deja de combatir.
+		for enemigo in rivales:
+			if is_instance_valid(enemigo) and enemigo != objetivo and enemigo.esta_enfrentamiento():
+				enemigo.finalizar_enfrentamiento()
+		finalizar()
+	else:
+		_actualizar_acciones_combate()
+		_actualizar_marcos_combate()
 
 
 func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
@@ -247,19 +389,33 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	estilo.border_color = Color(0.78, 0.61, 0.34, 0.95)
 	estilo.set_border_width_all(1)
 	estilo.set_corner_radius_all(7)
-	estilo.content_margin_left = 9.0
-	estilo.content_margin_top = 7.0
-	estilo.content_margin_right = 9.0
-	estilo.content_margin_bottom = 7.0
+	estilo.content_margin_left = 4.0
+	estilo.content_margin_top = 3.0
+	estilo.content_margin_right = 4.0
+	estilo.content_margin_bottom = 3.0
 	marco.add_theme_stylebox_override("panel", estilo)
+	var contenido_marco := VBoxContainer.new()
+	contenido_marco.name = "ContenidoMarco"
+	contenido_marco.add_theme_constant_override("separation", 2)
+	contenido_marco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marco.add_child(contenido_marco)
 	var fila := HBoxContainer.new()
 	fila.name = "Fila"
-	fila.add_theme_constant_override("separation", 8)
+	fila.add_theme_constant_override("separation", 4)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	marco.add_child(fila)
+	contenido_marco.add_child(fila)
+	if es_aliado:
+		_reservas_garumis_container = HBoxContainer.new()
+		_reservas_garumis_container.name = "GarumisReserva"
+		_reservas_garumis_container.add_theme_constant_override("separation", 5)
+		_reservas_garumis_container.alignment = BoxContainer.ALIGNMENT_BEGIN
+		_reservas_garumis_container.custom_minimum_size = Vector2(0.0, 26.0)
+		_reservas_garumis_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_reservas_garumis_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fila.add_child(_reservas_garumis_container)
 	var retrato := TextureRect.new()
 	retrato.name = "Retrato"
-	retrato.custom_minimum_size = Vector2(64.0, 64.0)
+	retrato.custom_minimum_size = Vector2(42.0, 42.0)
 	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -267,28 +423,39 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	var columna := VBoxContainer.new()
 	columna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columna.alignment = BoxContainer.ALIGNMENT_CENTER
-	columna.add_theme_constant_override("separation", 4)
+	columna.add_theme_constant_override("separation", 1)
 	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fila.add_child(columna)
 	var titulo := Label.new()
 	titulo.name = "Titulo"
 	titulo.text = rotulo.to_upper()
-	titulo.add_theme_font_size_override("font_size", 10)
+	titulo.add_theme_font_size_override("font_size", 9)
 	titulo.add_theme_color_override("font_color", Color(0.96, 0.82, 0.56))
 	columna.add_child(titulo)
 	var info := Label.new()
 	info.name = "Info"
-	info.add_theme_font_size_override("font_size", 12)
+	info.add_theme_font_size_override("font_size", 10)
 	info.add_theme_color_override("font_color", Color(0.96, 0.91, 0.82))
 	columna.add_child(info)
 	var vida := ProgressBar.new()
 	vida.name = "Vida"
-	vida.custom_minimum_size = Vector2(0.0, 12.0)
+	vida.custom_minimum_size = Vector2(0.0, 6.0)
 	vida.show_percentage = false
 	vida.min_value = 0
 	vida.max_value = 100
 	columna.add_child(vida)
 	if es_aliado:
+		_ataques_container = HBoxContainer.new()
+		_ataques_container.name = "Ataques"
+		_ataques_container.add_theme_constant_override("separation", 5)
+		_ataques_container.mouse_filter = Control.MOUSE_FILTER_STOP
+		contenido_marco.add_child(_ataques_container)
+		_ataques_estado = Label.new()
+		_ataques_estado.name = "AtaquesEstado"
+		_ataques_estado.add_theme_font_size_override("font_size", 10)
+		_ataques_estado.add_theme_color_override("font_color", Color(0.82, 0.76, 0.66))
+		_ataques_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		contenido_marco.add_child(_ataques_estado)
 		_info_aliado = info
 		_vida_aliado = vida
 	else:
@@ -297,11 +464,193 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	return marco
 
 
+func _actualizar_fila_reservas_garumis() -> void:
+	if not is_instance_valid(_reservas_garumis_container):
+		return
+	for hijo in _reservas_garumis_container.get_children():
+		hijo.queue_free()
+	_reservas_garumis_container.visible = is_instance_valid(activo)
+	if not is_instance_valid(activo):
+		return
+	var shader_circular := Shader.new()
+	shader_circular.code = """
+shader_type canvas_item;
+void fragment() {
+	vec2 centrado = UV - vec2(0.5, 0.5);
+	if (length(centrado) > 0.49) {
+		discard;
+	}
+	COLOR = texture(TEXTURE, UV);
+}
+"""
+	for i in range(disponibles.size()):
+		var garumi := disponibles[i]
+		if not is_instance_valid(garumi) or garumi == activo:
+			continue
+		var circulo := Control.new()
+		circulo.name = "ReservaGarumi%d" % (i + 1)
+		circulo.custom_minimum_size = Vector2(26.0, 26.0)
+		circulo.size = Vector2(26.0, 26.0)
+		circulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_reservas_garumis_container.add_child(circulo)
+		var fondo := Panel.new()
+		fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var estilo_circulo := StyleBoxFlat.new()
+		estilo_circulo.bg_color = Color(0.10, 0.075, 0.05, 1.0)
+		estilo_circulo.border_color = Color(0.78, 0.61, 0.34, 1.0)
+		estilo_circulo.set_border_width_all(1)
+		estilo_circulo.set_corner_radius_all(17)
+		fondo.add_theme_stylebox_override("panel", estilo_circulo)
+		circulo.add_child(fondo)
+		var retrato := TextureRect.new()
+		retrato.name = "Retrato"
+		retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		retrato.offset_left = 1.0
+		retrato.offset_top = 1.0
+		retrato.offset_right = -1.0
+		retrato.offset_bottom = -1.0
+		retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var textura := _buscar_textura_garumi(garumi)
+		if textura != null:
+			retrato.texture = textura
+		var material := ShaderMaterial.new()
+		material.shader = shader_circular
+		retrato.material = material
+		circulo.add_child(retrato)
+		var numero := Label.new()
+		numero.name = "Numero"
+		numero.text = str(i + 1)
+		numero.position = Vector2(-1.0, 20.0)
+		numero.size = Vector2(12.0, 12.0)
+		numero.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		numero.add_theme_font_size_override("font_size", 8)
+		numero.add_theme_color_override("font_color", Color(0.98, 0.91, 0.76, 1.0))
+		numero.add_theme_color_override("font_outline_color", Color(0.035, 0.03, 0.025, 1.0))
+		numero.add_theme_constant_override("outline_size", 2)
+		numero.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		circulo.add_child(numero)
+
+
+## El catálogo de combate se consulta en Supabase. Godot no define ataques ni
+## rellena potencia/elemento/coste ausentes con valores inventados.
+func _cargar_ataques_desde_supabase() -> void:
+	if not is_instance_valid(SupabaseClient):
+		_establecer_estado_ataques("Supabase no está disponible.")
+		return
+	if not SupabaseClient.request_completed.is_connected(_al_respuesta_ataques_supabase):
+		SupabaseClient.request_completed.connect(_al_respuesta_ataques_supabase)
+		_ataques_request_id = SupabaseClient.get_rest(
+			"v_garumi_movimientos_configuracion_ium_v1",
+			"select=movimiento_id,codigo,movimiento,descripcion,estado_movimiento,familia_combate,objetivo_tipo,modalidad_ejecucion,alcance_max_m,radio_efecto_m,desplazamiento_max_m,duracion_s,configuracion_ium,estado_configuracion,estado_integracion,conjuracion_publicada,estado_demanda_eterium,referencia_demanda_eterium,unidad_demanda_eterium,coeficiente_eterium&order=codigo.asc"
+		)
+	if _ataques_request_id < 0:
+		_establecer_estado_ataques("No se pudo consultar el catálogo de ataques.")
+
+
+func _al_respuesta_ataques_supabase(
+	request_id: int,
+	resultado: int,
+	codigo_http: int,
+	_cabeceras: PackedStringArray,
+	cuerpo: PackedByteArray
+) -> void:
+	if request_id != _ataques_request_id:
+		return
+	_ataques_request_id = -1
+	if resultado != HTTPRequest.RESULT_SUCCESS or codigo_http < 200 or codigo_http >= 300:
+		_establecer_estado_ataques("No se pudieron cargar los ataques desde Supabase.")
+		return
+	var json := JSON.new()
+	if json.parse(cuerpo.get_string_from_utf8()) != OK or not json.data is Array:
+		_establecer_estado_ataques("La respuesta de ataques no tiene un formato válido.")
+		return
+	_ataques_supabase.clear()
+	for item in json.data as Array:
+		if item is Dictionary:
+			_ataques_supabase.append((item as Dictionary).duplicate(true))
+		_actualizar_botones_ataques()
+
+
+func _actualizar_botones_ataques() -> void:
+	if not is_instance_valid(_ataques_container):
+		return
+	for hijo in _ataques_container.get_children():
+		hijo.queue_free()
+	var visibles := mini(3, _ataques_supabase.size())
+	if visibles == 0:
+		_establecer_estado_ataques("Sin ataques publicados en Supabase.")
+		return
+	var ejecutables := 0
+	for indice in range(visibles):
+		var ataque := _ataques_supabase[indice]
+		var nombre := str(ataque.get("movimiento", ataque.get("codigo", "Ataque"))).strip_edges()
+		var estado := str(ataque.get("estado_movimiento", "")).to_lower()
+		var integracion := str(ataque.get("estado_integracion", "")).to_lower()
+		var publicado := bool(ataque.get("conjuracion_publicada", false))
+		# Los borradores pueden verse para diagnóstico, pero nunca ejecutarse.
+		var listo := estado == "aprobado" and publicado and integracion == "integrado"
+		var boton := Button.new()
+		boton.text = nombre
+		boton.custom_minimum_size = Vector2(76.0, 30.0)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.size_flags_stretch_ratio = 1.0
+		boton.add_theme_font_size_override("font_size", 10)
+		boton.clip_text = true
+		var estilo_ataque := StyleBoxFlat.new()
+		estilo_ataque.bg_color = Color(0.12, 0.085, 0.05, 1.0)
+		estilo_ataque.border_color = Color(0.62, 0.46, 0.25, 1.0)
+		estilo_ataque.set_border_width_all(1)
+		estilo_ataque.set_corner_radius_all(4)
+		boton.add_theme_stylebox_override("normal", estilo_ataque)
+		var estilo_ataque_hover := estilo_ataque.duplicate() as StyleBoxFlat
+		estilo_ataque_hover.bg_color = Color(0.22, 0.15, 0.075, 1.0)
+		estilo_ataque_hover.border_color = Color(0.9, 0.7, 0.38, 1.0)
+		boton.add_theme_stylebox_override("hover", estilo_ataque_hover)
+		boton.add_theme_stylebox_override("pressed", estilo_ataque_hover)
+		boton.disabled = not listo
+		boton.tooltip_text = (
+			"Ejecutar ataque publicado"
+			if listo
+			else "Ataque no disponible: Supabase aún no lo publica como integrado"
+		)
+		if listo:
+			boton.pressed.connect(_al_presionar_ataque_supabase.bind(ataque))
+		_ataques_container.add_child(boton)
+		if listo:
+			ejecutables += 1
+	if ejecutables == 0:
+		_establecer_estado_ataques("Ataques en borrador o sin integración aprobada en Supabase.")
+	else:
+		_establecer_estado_ataques("Selecciona un ataque. Los parámetros provienen de Supabase.")
+
+
+func _al_presionar_ataque_supabase(ataque: Dictionary) -> void:
+	# La vista actual no expone todavía potencia/daño ni coste elemental ejecutable.
+	# No se aplica daño hasta que el catálogo entregue esos parámetros canónicos.
+	var potencia: Variant = ataque.get("potencia")
+	var coste: Variant = ataque.get("coste_eterium")
+	var elemento: Variant = ataque.get("tipo_elemental")
+	if potencia == null or coste == null or elemento == null:
+		_establecer_estado_ataques("Faltan potencia, coste de Eterium o elemento en el catálogo Supabase.")
+		return
+	_establecer_estado_ataques("Ataque seleccionado: %s" % str(ataque.get("movimiento", "Ataque")))
+	push_warning("GarumiBattleParty: el ataque tiene metadatos, pero aún falta conectar el ejecutor canónico de combate.")
+
+
+func _establecer_estado_ataques(mensaje: String) -> void:
+	if is_instance_valid(_ataques_estado):
+		_ataques_estado.text = mensaje
+
+
 func _actualizar_marcos_combate() -> void:
 	if is_instance_valid(_panel_aliado):
 		_panel_aliado.visible = is_instance_valid(activo)
 		if is_instance_valid(activo):
-			var retrato_aliado := _panel_aliado.get_node_or_null("Fila/Retrato") as TextureRect
+			var retrato_aliado := _panel_aliado.get_node_or_null("ContenidoMarco/Fila/Retrato") as TextureRect
 			if retrato_aliado != null:
 				retrato_aliado.texture = _buscar_textura_garumi(activo)
 			if is_instance_valid(_info_aliado):
@@ -310,16 +659,29 @@ func _actualizar_marcos_combate() -> void:
 				_vida_aliado.max_value = maxi(1, activo.max_health)
 				_vida_aliado.value = clampi(activo.health, 0, activo.max_health)
 	if is_instance_valid(_panel_enemigo):
-		_panel_enemigo.visible = is_instance_valid(rival) and rival.esta_enfrentamiento()
-		if is_instance_valid(rival):
-			var retrato_enemigo := _panel_enemigo.get_node_or_null("Fila/Retrato") as TextureRect
-			if retrato_enemigo != null:
-				retrato_enemigo.texture = _buscar_textura_garumi(rival)
+		_panel_enemigo.visible = not rivales.is_empty()
+		if is_instance_valid(_selector_objetivo):
+			var seleccion_anterior := _selector_objetivo.selected
+			_selector_objetivo.clear()
+			var indice_objetivo := 0
+			for i in range(rivales.size()):
+				var enemigo := rivales[i]
+				var sufijo := " (KO)" if not is_instance_valid(enemigo) or not enemigo.esta_enfrentamiento() or not bool(enemigo.get("is_alive")) else ""
+				_selector_objetivo.add_item("%s%s" % [_nombre(enemigo), sufijo], i)
+				if enemigo == objetivo_rival:
+					indice_objetivo = i
+			if not rivales.is_empty():
+				_selector_objetivo.select(clampi(indice_objetivo, 0, rivales.size() - 1))
+		if is_instance_valid(objetivo_rival) and objetivo_rival.esta_enfrentamiento():
+			if is_instance_valid(_panel_enemigo):
+				var retrato_enemigo := _panel_enemigo.get_node_or_null("ContenidoMarco/Fila/Retrato") as TextureRect
+				if retrato_enemigo != null:
+					retrato_enemigo.texture = _buscar_textura_garumi(objetivo_rival)
 			if is_instance_valid(_info_enemigo):
-				_info_enemigo.text = "%s · Nv. %d" % [_nombre(rival), rival.nivel]
+				_info_enemigo.text = "%s · Nv. %d" % [_nombre(objetivo_rival), objetivo_rival.nivel]
 			if is_instance_valid(_vida_enemigo):
-				_vida_enemigo.max_value = maxi(1, rival.max_health)
-				_vida_enemigo.value = clampi(rival.health, 0, rival.max_health)
+				_vida_enemigo.max_value = maxi(1, objetivo_rival.max_health)
+				_vida_enemigo.value = clampi(objetivo_rival.health, 0, objetivo_rival.max_health)
 
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
@@ -376,21 +738,23 @@ func _input(event: InputEvent) -> void:
 		_forzar_vinculo()
 		get_viewport().set_input_as_handled()
 		return
-	if not _seleccion_pendiente or is_instance_valid(activo):
-		return
+
 	var codigo := tecla.keycode
-	if codigo == KEY_KP_1:
-		codigo = KEY_1
-	elif codigo == KEY_KP_2:
-		codigo = KEY_2
-	elif codigo == KEY_KP_3:
-		codigo = KEY_3
-	elif codigo == KEY_KP_4:
-		codigo = KEY_4
-	elif codigo == KEY_KP_5:
-		codigo = KEY_5
+	if codigo >= KEY_KP_1 and codigo <= KEY_KP_3:
+		codigo = KEY_1 + (codigo - KEY_KP_1)
+	if codigo < KEY_1 or codigo > KEY_3:
+		return
 	var indice := codigo - KEY_1
-	if indice >= 0 and indice < mini(MAX_VINCULOS, disponibles.size()):
+
+	# Durante el combate Shift+1/2/3 cambia el único Garumi aliado activo.
+	if tecla.shift_pressed:
+		if indice < disponibles.size():
+			_cambiar_garumi_activo(indice)
+			get_viewport().set_input_as_handled()
+		return
+
+	# Sin un aliado activo, 1/2/3 siguen sirviendo para elegir el inicial.
+	if _seleccion_pendiente and not is_instance_valid(activo) and indice < disponibles.size():
 		seleccionar_garumi(indice)
 		get_viewport().set_input_as_handled()
 
@@ -403,13 +767,37 @@ func seleccionar_garumi(indice: int) -> void:
 	var elegido := disponibles[indice]
 	if not is_instance_valid(elegido) or not elegido.esta_vinculado() or not bool(elegido.get("is_alive")):
 		return
+	_activar_garumi_combate(elegido, indice)
+
+
+func _cambiar_garumi_activo(indice: int) -> void:
+	if indice < 0 or indice >= disponibles.size():
+		return
+	var elegido := disponibles[indice]
+	if not is_instance_valid(elegido) or elegido == activo:
+		return
+	if not elegido.esta_vinculado() or not bool(elegido.get("is_alive")):
+		return
+	if is_instance_valid(activo):
+		var saliente := activo
+		if saliente.has_method("salir_combate_vinculado"):
+			saliente.call("salir_combate_vinculado", false)
+		if saliente.has_method("guardar_para_seleccion_combate"):
+			saliente.call("guardar_para_seleccion_combate")
+	_activar_garumi_combate(elegido, indice)
+
+
+func _activar_garumi_combate(elegido: Garumi, indice: int) -> void:
 	activo = elegido
 	_seleccion_pendiente = false
 	_cooldown_aliado = 0.35
 	_cooldown_rival = 0.8
+	var objetivo := objetivo_rival if is_instance_valid(objetivo_rival) else rival
 	if activo.has_method("entrar_combate_vinculado"):
-		activo.call("entrar_combate_vinculado", jugador, rival)
+		activo.call("entrar_combate_vinculado", jugador, objetivo)
 	_actualizar_interfaz()
+	_actualizar_marcos_combate()
+	_actualizar_fila_reservas_garumis()
 	print("GarumiBattleParty: entra ", _nombre(activo), " (", indice + 1, ").")
 
 
@@ -419,7 +807,7 @@ func _process(delta: float) -> void:
 		return
 	if not rival.esta_enfrentamiento():
 		return
-	var puede_forzar := rival.puede_forzar_vinculo()
+	var puede_forzar := rivales.size() == 1 and rival.puede_forzar_vinculo()
 	if puede_forzar != _forzar_disponible:
 		_forzar_disponible = puede_forzar
 		_actualizar_interfaz()
@@ -431,64 +819,34 @@ func _process(delta: float) -> void:
 		return
 	_cooldown_aliado -= delta
 	_cooldown_rival -= delta
-	_cooldown_curacion_eterium = maxf(0.0, _cooldown_curacion_eterium - delta)
-	# Mantener 1, 2 o 3 pulsado canaliza Eterium del jugador para curar al Garumi activo.
-	if _tecla_curacion_mantenida() and _cooldown_curacion_eterium <= 0.0:
-		_curar_garumi_con_eterium()
 	if _cooldown_aliado <= 0.0:
 		_cooldown_aliado = INTERVALO_ATAQUE_ALIADO
 		# El Garumi aliado deja de atacar al rival al llegar a 7 HP.
 		# Si el siguiente golpe lo dejaría por debajo, se reduce para dejarlo exactamente en 7.
-		if rival.health > 7 and activo.has_method("calcular_danio_ofensivo"):
+		if is_instance_valid(objetivo_rival) and objetivo_rival.esta_enfrentamiento() and objetivo_rival.health > 0 and activo.has_method("calcular_danio_ofensivo"):
 			var danio := int(activo.call("calcular_danio_ofensivo", 100.0))
-			danio = mini(maxi(0, danio), rival.health - 7)
+			danio = mini(maxi(0, danio), maxi(0, objetivo_rival.health - 7))
 			if danio > 0:
-				rival.take_damage(danio, "Garumi vinculado: " + _nombre(activo))
-			if is_instance_valid(rival) and rival.health <= 7:
+				objetivo_rival.take_damage(danio, "Garumi vinculado: " + _nombre(activo))
+			if is_instance_valid(objetivo_rival) and objetivo_rival.health <= 7:
 				_estado.text = "¡Rival debilitado! Tu Garumi deja de atacar con 7 de vida."
 	if _cooldown_rival <= 0.0:
 		_cooldown_rival = INTERVALO_ATAQUE_RIVAL
-		if activo.has_method("recibir_danio_combate"):
-			var danio_rival := int(rival.calcular_danio_ofensivo(75.0))
-			activo.call("recibir_danio_combate", maxi(1, danio_rival), rival)
-			if not bool(activo.get("is_alive")):
-				_derrotar_activo()
-
-
-func _tecla_curacion_mantenida() -> bool:
-	return (
-		Input.is_key_pressed(KEY_1)
-		or Input.is_key_pressed(KEY_2)
-		or Input.is_key_pressed(KEY_3)
-		or Input.is_key_pressed(KEY_KP_1)
-		or Input.is_key_pressed(KEY_KP_2)
-		or Input.is_key_pressed(KEY_KP_3)
-	)
-
-
-func _curar_garumi_con_eterium() -> void:
-	if not is_instance_valid(activo) or activo.health >= activo.max_health:
-		return
-	if not is_instance_valid(jugador):
-		return
-	var eterium: Variant = jugador.get("eterium")
-	if eterium == null or not eterium.has_method("gastar"):
-		return
-	if not bool(eterium.call("gastar", COSTO_CURACION_GARUMI)):
-		return
-	var cantidad_curacion := maxi(1, roundi(float(activo.max_health) * 0.20))
-	var recuperada := int(activo.call("curar_con_eterium", cantidad_curacion))
-	if recuperada <= 0:
-		# Si no se pudo aplicar la curación, devolvemos el Eterium para no cobrar en vano.
-		if eterium.has_method("restaurar"):
-			eterium.call("restaurar", COSTO_CURACION_GARUMI)
-		return
-	_cooldown_curacion_eterium = INTERVALO_CURACION_ETERIUM
-	if jugador.has_method("_sync_desde_vital"):
-		jugador.call("_sync_desde_vital")
-	if jugador.has_signal("mana_changed"):
-		jugador.emit_signal("mana_changed", int(jugador.get("mana")), int(jugador.get("max_mana")))
-	_actualizar_marcos_combate()
+		for enemigo in rivales:
+			if not is_instance_valid(enemigo) or not enemigo.esta_enfrentamiento() or not bool(enemigo.get("is_alive")):
+				continue
+			if activo.has_method("recibir_danio_combate"):
+				var danio_rival := int(enemigo.calcular_danio_ofensivo(75.0))
+				activo.call("recibir_danio_combate", maxi(1, danio_rival), enemigo)
+				if not bool(activo.get("is_alive")):
+					_derrotar_activo()
+				break
+		var vivos := 0
+		for enemigo in rivales:
+			if is_instance_valid(enemigo) and enemigo.esta_enfrentamiento() and bool(enemigo.get("is_alive")):
+				vivos += 1
+		if vivos == 0:
+			_estado.text = "¡Los tres Garumis han sido derrotados! No se ha creado ningún vínculo."
 
 
 func _forzar_vinculo() -> void:
@@ -499,24 +857,58 @@ func _forzar_vinculo() -> void:
 
 
 func _retirarse() -> void:
-	if is_instance_valid(rival) and rival.esta_enfrentamiento():
-		rival.finalizar_enfrentamiento()
+	# Cambiar primero el estado de cada rival sin pedir limpiezas recursivas.
+	# Después Main cierra el HUD, la arena y devuelve el control de la cámara.
+	var escena := get_tree().current_scene
+	for enemigo in rivales:
+		if is_instance_valid(enemigo) and enemigo.esta_enfrentamiento():
+			enemigo.finalizar_enfrentamiento(false)
+	if escena != null and escena.has_method("terminar_arena_garumi"):
+		escena.call("terminar_arena_garumi")
+	else:
+		finalizar()
 
 
 func _derrotar_activo() -> void:
 	if not is_instance_valid(activo):
 		return
 	var derrotado := activo
+	if _intentar_revivir_con_todo_eterium(derrotado):
+		return
 	disponibles.erase(derrotado)
 	if derrotado.has_method("salir_combate_vinculado"):
 		derrotado.call("salir_combate_vinculado", true)
 	activo = null
 	_seleccion_pendiente = not disponibles.is_empty()
 	_actualizar_interfaz()
+	_actualizar_fila_reservas_garumis()
 	if disponibles.is_empty():
 		remove_from_group("modal_ui")
 		_estado.text = "No quedan Garumis disponibles. Puedes seguir combatiendo por tu cuenta."
 	print("GarumiBattleParty: ", _nombre(derrotado), " fue derrotado; puedes elegir otro Garumi.")
+
+
+func _intentar_revivir_con_todo_eterium(garumi: Garumi) -> bool:
+	if not is_instance_valid(garumi) or not is_instance_valid(jugador) or not jugador is Player:
+		return false
+	var jugador_real := jugador as Player
+	var cantidad_eterium := maxi(0, jugador_real.mana)
+	if cantidad_eterium <= 0 or not jugador_real.eterium.gastar(cantidad_eterium):
+		return false
+	jugador_real._sync_desde_vital()
+	jugador_real.mana_changed.emit(jugador_real.mana, jugador_real.max_mana)
+	# Todo el Eterium disponible se convierte en salud para levantar al Garumi.
+	# La salud recuperada equivale a las unidades consumidas, con el máximo de su vida.
+	var vida_revivida := clampi(cantidad_eterium, 1, maxi(1, garumi.max_health))
+	garumi.health = vida_revivida
+	garumi.vital_state.health = vida_revivida
+	garumi.vital_state.is_alive = true
+	garumi._sync_desde_vital()
+	garumi.health_changed.emit(garumi.health, garumi.max_health)
+	garumi.salud_combate_cambiada.emit(garumi.health, garumi.max_health)
+	_estado.text = "%s vuelve al combate: se consumió todo tu Eterium (%d)." % [_nombre(garumi), cantidad_eterium]
+	_actualizar_marcos_combate()
+	return true
 
 
 func finalizar() -> void:

@@ -3,12 +3,16 @@ extends Control
 
 var _ids_descubiertos: Array[String] = []
 var _arbol: Tree
+var _garumi_grid_scroll: ScrollContainer
+var _garumi_grid: GridContainer
 var _nombre: Label
 var _ficha: RichTextLabel
 var _icono: TextureRect
+var _contenedor_superior_detalle: VBoxContainer
 var _tab_biomas: Button
 var _tab_criaturas: Button
-var _tab_garumis: Button
+var _barra_tabs: HBoxContainer
+var solo_garumis: bool = false
 var _modo: String = "biomas"
 
 var _garumis_catalogo: Array[Dictionary] = []
@@ -16,6 +20,8 @@ var _garumis_por_id: Dictionary = {}
 var _garumi_originales: Array[Dictionary] = []
 var _solicitud_catalogo_garumis: int = -1
 var _catalogo_garumis_cargado: bool = false
+
+const ORUMI_ORIGINAL_ID: String = "24f86486-aced-4a23-bd1b-f025561a8aa3"
 
 
 func _ready() -> void:
@@ -38,7 +44,14 @@ func _ready() -> void:
 	if not SupabaseClient.request_completed.is_connected(_al_respuesta_catalogo_garumis):
 		SupabaseClient.request_completed.connect(_al_respuesta_catalogo_garumis)
 	_cargar_catalogo_garumis()
-	actualizar()
+	if solo_garumis:
+		_barra_tabs.visible = false
+		_mostrar_garumis()
+	else:
+		# La enciclopedia normal abre directamente en Criaturas, sin selector de secciones.
+		_barra_tabs.visible = false
+		_modo = "criaturas"
+		actualizar()
 
 
 func _crear_interfaz() -> void:
@@ -54,35 +67,10 @@ func _crear_interfaz() -> void:
 	column.add_theme_constant_override("separation", 0)
 	margin.add_child(column)
 
-	var tabs := HBoxContainer.new()
-	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tabs.alignment = BoxContainer.ALIGNMENT_BEGIN
-	tabs.add_theme_constant_override("separation", 3)
-	column.add_child(tabs)
+	_barra_tabs = HBoxContainer.new()
+	_barra_tabs.visible = false
 
-	_tab_biomas = Button.new()
-	_tab_biomas.text = "Biomas"
-	_tab_biomas.toggle_mode = true
-	_tab_biomas.button_pressed = true
-	_configurar_boton_seccion(_tab_biomas)
-	_tab_biomas.pressed.connect(_mostrar_biomas)
-	tabs.add_child(_tab_biomas)
 
-	_tab_criaturas = Button.new()
-	_tab_criaturas.text = "Criaturas"
-	_tab_criaturas.toggle_mode = true
-	_configurar_boton_seccion(_tab_criaturas)
-	_tab_criaturas.pressed.connect(_mostrar_criaturas)
-	tabs.add_child(_tab_criaturas)
-
-	_tab_garumis = Button.new()
-	_tab_garumis.text = "Garumis"
-	_tab_garumis.tooltip_text = "Enciclopedia de Garumis · Atajo: G"
-	_tab_garumis.toggle_mode = true
-	_tab_garumis.button_pressed = false
-	_configurar_boton_seccion(_tab_garumis)
-	_tab_garumis.pressed.connect(_mostrar_garumis)
-	tabs.add_child(_tab_garumis)
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -95,9 +83,9 @@ func _crear_interfaz() -> void:
 	_arbol.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_arbol.hide_root = true
 	_arbol.columns = 1
+	_arbol.set_column_titles_visible(false)
 	_arbol.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46, 1.0))
 	_arbol.add_theme_color_override("font_selected_color", Color(0.95, 0.88, 0.7, 1.0))
-	_arbol.add_theme_font_size_override("font_size", 9)
 
 	var estilo_arbol := StyleBoxFlat.new()
 	estilo_arbol.bg_color = Color(0.075, 0.05, 0.035, 0.9)
@@ -110,6 +98,19 @@ func _crear_interfaz() -> void:
 	_arbol.item_selected.connect(_al_seleccionar)
 	_arbol.item_mouse_selected.connect(_al_click_arbol)
 	body.add_child(_arbol)
+
+	_garumi_grid_scroll = ScrollContainer.new()
+	_garumi_grid_scroll.custom_minimum_size = Vector2(190, 0)
+	_garumi_grid_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_garumi_grid_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_garumi_grid_scroll.visible = false
+	body.add_child(_garumi_grid_scroll)
+	_garumi_grid = GridContainer.new()
+	_garumi_grid.columns = 4
+	_garumi_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_garumi_grid.add_theme_constant_override("h_separation", 4)
+	_garumi_grid.add_theme_constant_override("v_separation", 4)
+	_garumi_grid_scroll.add_child(_garumi_grid)
 
 	var detail_panel := PanelContainer.new()
 	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -137,6 +138,7 @@ func _crear_interfaz() -> void:
 	detail_margin.add_child(detail_column)
 
 	var top := VBoxContainer.new()
+	_contenedor_superior_detalle = top
 	top.custom_minimum_size = Vector2(0, 72)
 	top.alignment = BoxContainer.ALIGNMENT_CENTER
 	top.add_theme_constant_override("separation", 5)
@@ -214,32 +216,42 @@ func actualizar() -> void:
 		"criaturas":
 			_construir_lista_criaturas()
 		"garumis":
-			_construir_lista_garumis()
+			if solo_garumis:
+				_construir_grid_garumis()
+			else:
+				_construir_lista_garumis()
 		_:
 			_construir_arbol_biomas()
 
 
 func _mostrar_biomas() -> void:
 	_modo = "biomas"
-	_tab_biomas.button_pressed = true
-	_tab_criaturas.button_pressed = false
-	_tab_garumis.button_pressed = false
+	_arbol.columns = 1
+	_arbol.remove_theme_font_size_override("font_size")
+	_arbol.set_column_titles_visible(false)
 	actualizar()
 
 
 func _mostrar_criaturas() -> void:
 	_modo = "criaturas"
-	_tab_biomas.button_pressed = false
-	_tab_criaturas.button_pressed = true
-	_tab_garumis.button_pressed = false
+	_arbol.columns = 1
+	_arbol.remove_theme_font_size_override("font_size")
+	_arbol.set_column_titles_visible(false)
 	actualizar()
 
 
 func _mostrar_garumis() -> void:
 	_modo = "garumis"
-	_tab_biomas.button_pressed = false
-	_tab_criaturas.button_pressed = false
-	_tab_garumis.button_pressed = true
+	_arbol.columns = 3
+	_arbol.add_theme_font_size_override("font_size", 9)
+	_arbol.set_column_titles_visible(false)
+	_arbol.set_column_expand(0, false)
+	_arbol.set_column_expand(1, true)
+	_arbol.set_column_expand(2, false)
+	_arbol.set_column_custom_minimum_width(0, 38)
+	_arbol.set_column_custom_minimum_width(2, 38)
+	_arbol.visible = not solo_garumis
+	_garumi_grid_scroll.visible = solo_garumis
 	if not _catalogo_garumis_cargado and _solicitud_catalogo_garumis < 0:
 		_cargar_catalogo_garumis()
 	actualizar()
@@ -248,6 +260,14 @@ func _mostrar_garumis() -> void:
 func abrir_en_garumis() -> void:
 	visible = true
 	_mostrar_garumis()
+
+
+func configurar_como_garudex() -> void:
+	solo_garumis = true
+	if is_inside_tree():
+		if is_instance_valid(_barra_tabs):
+			_barra_tabs.visible = false
+		_mostrar_garumis()
 
 
 func _cargar_catalogo_garumis() -> void:
@@ -308,10 +328,10 @@ func _aplicar_catalogo_desde_filas(filas: Array) -> void:
 		var fila := (fila_variant as Dictionary).duplicate(true)
 		var tipo := str(fila.get("tipo_registro", ""))
 		if tipo == "original":
-			if not str(fila.get("letra_original", "")).strip_edges().is_empty():
+			if _es_original_orumi(fila) and not str(fila.get("letra_original", "")).strip_edges().is_empty():
 				_garumi_originales.append(fila)
 			continue
-		if tipo != "especie":
+		if tipo != "especie" or not _es_linaje_orumi(fila):
 			continue
 		var estado := str(fila.get("estado_documentacion", "")).strip_edges().to_lower()
 		if estado not in ["canon", "aprobado"]:
@@ -325,6 +345,21 @@ func _aplicar_catalogo_desde_filas(filas: Array) -> void:
 		_garumis_por_id[id] = fila
 	_garumi_originales.sort_custom(_ordenar_por_orden_catalogo)
 	_garumis_catalogo.sort_custom(_ordenar_por_orden_catalogo)
+
+
+func _es_original_orumi(registro: Dictionary) -> bool:
+	var id := str(registro.get("entidad_id", registro.get("id", ""))).strip_edges()
+	var nombre := str(registro.get("nombre", "")).strip_edges().to_lower()
+	return id == ORUMI_ORIGINAL_ID or nombre == "orumi"
+
+
+func _es_linaje_orumi(registro: Dictionary) -> bool:
+	var original_id := str(registro.get("original_id", "")).strip_edges()
+	if original_id == ORUMI_ORIGINAL_ID:
+		return true
+	# Respaldo para snapshots que aún no incluyan original_id.
+	var nombre_original := str(registro.get("nombre_original", "")).strip_edges().to_lower()
+	return nombre_original == "orumi"
 
 
 func _ordenar_por_orden_catalogo(a: Dictionary, b: Dictionary) -> bool:
@@ -345,7 +380,7 @@ func _usar_catalogo_garumis_del_mundo() -> void:
 		var registro := (registro_variant as Dictionary).duplicate(true)
 		var id := str(registro.get("id", "")).strip_edges()
 		var nombre := str(registro.get("nombre", "")).strip_edges()
-		if id.is_empty() or nombre.is_empty():
+		if id.is_empty() or nombre.is_empty() or not _es_linaje_orumi(registro):
 			continue
 		if str(registro.get("estado_documentacion", "canon")).to_lower() not in ["canon", "aprobado"]:
 			continue
@@ -429,6 +464,7 @@ func _construir_lista_criaturas() -> void:
 
 
 func _construir_lista_garumis() -> void:
+	_arbol.columns = 3
 	_arbol.clear()
 	var raiz := _arbol.create_item()
 	var grupos_por_letra: Dictionary = {}
@@ -468,6 +504,64 @@ func _construir_lista_garumis() -> void:
 	_mostrar_item(primero)
 
 
+func _construir_grid_garumis() -> void:
+	if not is_instance_valid(_garumi_grid):
+		return
+	for hijo in _garumi_grid.get_children():
+		hijo.queue_free()
+	var descubiertos: Dictionary = GameState.call("obtener_garumis_descubiertos") if GameState.has_method("obtener_garumis_descubiertos") else {}
+	for registro in _garumis_catalogo:
+		var id := str(registro.get("id", registro.get("entidad_id", ""))).strip_edges()
+		var conocido := not id.is_empty() and descubiertos.has(id)
+		var textura := _obtener_textura_garumi(registro)
+		var boton := TextureButton.new()
+		boton.custom_minimum_size = Vector2(44, 44)
+		boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		boton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		boton.ignore_texture_size = true
+		boton.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		boton.texture_normal = textura
+		boton.tooltip_text = str(registro.get("nombre", "Garumi")) if conocido else "Garumi no descubierto"
+		if not conocido:
+			boton.material = _crear_material_silueta()
+		boton.disabled = textura == null
+		boton.pressed.connect(_mostrar_garumi_desde_grid.bind(registro.duplicate(true)))
+		_garumi_grid.add_child(boton)
+
+
+func _mostrar_garumi_desde_grid(registro: Dictionary) -> void:
+	_restaurar_ficha_detalle()
+	_nombre.text = str(registro.get("nombre", "Garumi"))
+	_mostrar_ficha_garumi(registro, [])
+
+
+func _crear_material_silueta() -> ShaderMaterial:
+	var shader := Shader.new()
+	shader.code = "shader_type canvas_item; void fragment() { COLOR = vec4(0.88, 0.86, 0.76, COLOR.a); }"
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	return material
+
+
+func _obtener_textura_garumi(registro: Dictionary) -> Texture2D:
+	var claves: Array[String] = []
+	var asset_key := str(registro.get("asset_key", "")).strip_edges()
+	var nombre := str(registro.get("nombre", "")).strip_edges()
+	if not asset_key.is_empty():
+		claves.append(asset_key)
+	if not nombre.is_empty() and not claves.has(nombre):
+		claves.append(nombre)
+	for clave in claves:
+		for extension in [".png", ".PNG", ".svg", ".SVG"]:
+			var ruta: String = "res://assets/art/garumis/" + clave + str(extension)
+			if not ResourceLoader.exists(ruta):
+				continue
+			var textura := load(ruta) as Texture2D
+			if textura != null:
+				return textura
+	return null
+
+
 func _obtener_registros(registros_variant: Variant, descubiertos: Dictionary) -> Array[Dictionary]:
 	var resultado: Array[Dictionary] = []
 	if not registros_variant is Array:
@@ -496,17 +590,21 @@ func _obtener_descubiertos(descubrimientos: Dictionary, categoria: String) -> Di
 
 func _agregar_item(padre: TreeItem, registro: Dictionary, nivel: String) -> TreeItem:
 	var item := _arbol.create_item(padre)
-	var etiqueta := str(registro.get("nombre", "Sin nombre"))
+	var nombre := str(registro.get("nombre", "Sin nombre"))
 	if nivel == "garumi":
-		var letra := str(registro.get("letra_original", "")).strip_edges()
 		var local := int(registro.get("numero_origen", 0))
 		var global_num := int(registro.get("numero_global", 0))
-		if not letra.is_empty() and local > 0:
-			etiqueta = "%s-%d" % [letra, local]
-		if global_num > 0:
-			etiqueta += " · #%d" % global_num
-		etiqueta += " · " + str(registro.get("nombre", "Sin nombre"))
-	item.set_text(0, etiqueta)
+		# Numeración local del Original a la izquierda, nombre al centro y
+		# número global del catálogo a la derecha. Así se distinguen ambos
+		# números cuando se incorporen los linajes de Varum y Nyru.
+		item.set_text(0, str(local) if local > 0 else "—")
+		item.set_text(1, nombre)
+		item.set_text(2, str(global_num) if global_num > 0 else "—")
+		item.set_text_alignment(0, HORIZONTAL_ALIGNMENT_LEFT)
+		item.set_text_alignment(1, HORIZONTAL_ALIGNMENT_LEFT)
+		item.set_text_alignment(2, HORIZONTAL_ALIGNMENT_RIGHT)
+	else:
+		item.set_text(0, nombre)
 	item.set_metadata(0, {
 		"nivel": nivel,
 		"id": str(registro.get("id", ""))
@@ -538,6 +636,7 @@ func _al_click_arbol(posicion: Vector2, boton: int) -> void:
 
 
 func _mostrar_item(item: TreeItem) -> void:
+	_restaurar_ficha_detalle()
 	var metadata_variant: Variant = item.get_metadata(0)
 	if not metadata_variant is Dictionary:
 		return
@@ -562,6 +661,11 @@ func _mostrar_item(item: TreeItem) -> void:
 	var partes: Array[String] = []
 
 	if nivel == "criatura":
+		# El sprite ocupa el área principal de la ficha.
+		_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 178)
+		_icono.custom_minimum_size = Vector2(160, 160)
+		_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_icono.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_mostrar_ficha_criatura(id, registro, partes)
 		return
 	if nivel == "garumi":
@@ -682,75 +786,58 @@ func _buscar_contexto_habitat(habitat_id: String) -> Dictionary:
 	return {}
 
 
-func _mostrar_ficha_original(letra: String) -> void:
-	var original: Dictionary = {}
-	for registro in _garumi_originales:
-		if str(registro.get("letra_original", "")) == letra:
-			original = registro
-			break
-	var nombre_original := str(original.get("nombre", "Linaje de Garumis"))
-	var cantidad := 0
-	for garumi in _garumis_catalogo:
-		if str(garumi.get("letra_original", "")) == letra:
-			cantidad += 1
-	_nombre.text = (letra + " · " if not letra.is_empty() else "") + nombre_original
+func _mostrar_ficha_original(_letra: String) -> void:
+	# Los Garumis Originales permanecen misteriosos: no revelar datos en la ficha.
+	_nombre.hide()
+	_ficha.hide()
 	_icono.texture = null
 	_icono.visible = false
-	var partes: Array[String] = ["[color=#8f754f]Original:[/color] " + nombre_original]
-	partes.append("[color=#8f754f]Letra del linaje:[/color] " + letra)
-	partes.append("[color=#8f754f]Garumis aprobados o canónicos:[/color] " + str(cantidad))
-	if cantidad == 0:
-		partes.append("Todavía no hay descendientes aprobados para mostrar en este linaje.")
-	partes.append("Cada Garumi tiene un número local dentro de su linaje y un número global en el catálogo.")
-	_ficha.text = "\n\n".join(partes)
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 0)
 
 
-func _mostrar_ficha_garumi(registro: Dictionary, partes: Array[String]) -> void:
+func _mostrar_ficha_garumi(registro: Dictionary, _partes: Array[String]) -> void:
+	# Al seleccionar un Garumi, la ficha se convierte en un visor de imagen:
+	# sin nombre, estadísticas ni texto que compita con la ilustración.
+	_nombre.hide()
+	_ficha.hide()
+	_icono.custom_minimum_size = Vector2(0, 0)
+	_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_icono.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 0)
+	_contenedor_superior_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_contenedor_superior_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_contenedor_superior_detalle.alignment = BoxContainer.ALIGNMENT_CENTER
 	_mostrar_sprite_garumi(registro)
-	var global_num := int(registro.get("numero_global", 0))
-	var local := int(registro.get("numero_origen", 0))
-	var letra := str(registro.get("letra_original", "")).strip_edges()
-	var original := str(registro.get("nombre_original", "")).strip_edges()
-	if global_num > 0:
-		partes.append("[color=#8f754f]Número global:[/color] #" + str(global_num))
-	if local > 0:
-		partes.append("[color=#8f754f]Número de linaje:[/color] " + ((letra + "-") if not letra.is_empty() else "") + str(local))
-	if not original.is_empty():
-		partes.append("[color=#8f754f]Original:[/color] " + ((letra + " · ") if not letra.is_empty() else "") + original)
-	var categoria := str(registro.get("categoria_garumi", "")).strip_edges()
-	if not categoria.is_empty():
-		partes.append("[color=#8f754f]Categoría:[/color] " + categoria.capitalize())
-	var etapa := str(registro.get("estado_evolutivo", "")).strip_edges()
-	if not etapa.is_empty():
-		partes.append("[color=#8f754f]Etapa evolutiva:[/color] " + etapa.capitalize())
-	var descripcion := str(registro.get("descripcion", "")).strip_edges()
-	partes.append(descripcion if not descripcion.is_empty() else "Todavía no hay una descripción publicada para este Garumi.")
 	if not _icono.visible:
-		partes.append("[color=#55432e]No hay ilustración disponible en esta versión.[/color]")
-	_ficha.text = "\n\n".join(partes)
+		# No inventar una ilustración si el recurso todavía no existe.
+		_nombre.text = "Sin ilustración"
+		_nombre.show()
+		return
+	_icono.size = _contenedor_superior_detalle.size
+
+
+func _restaurar_ficha_detalle() -> void:
+	if _contenedor_superior_detalle == null:
+		return
+	_nombre.show()
+	_ficha.show()
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 72)
+	_contenedor_superior_detalle.size_flags_horizontal = Control.SIZE_FILL
+	_contenedor_superior_detalle.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_icono.custom_minimum_size = Vector2(64, 54)
+	_icono.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
 
 
 func _mostrar_sprite_garumi(registro: Dictionary) -> void:
-	_icono.texture = null
-	_icono.visible = false
-	var claves: Array[String] = []
-	var asset_key := str(registro.get("asset_key", "")).strip_edges()
-	var nombre := str(registro.get("nombre", "")).strip_edges()
-	if not asset_key.is_empty():
-		claves.append(asset_key)
-	if not nombre.is_empty() and not claves.has(nombre):
-		claves.append(nombre)
-	for clave in claves:
-		for extension in [".png", ".PNG", ".svg", ".SVG"]:
-			var ruta: String = "res://assets/art/garumis/" + clave + extension
-			if not ResourceLoader.exists(ruta):
-				continue
-			var textura := load(ruta) as Texture2D
-			if textura == null:
-				continue
-			_icono.texture = textura
-			_icono.visible = true
-			return
+	_icono.texture = _obtener_textura_garumi(registro)
+	_icono.visible = _icono.texture != null
+	_icono.material = null
+	var id := str(registro.get("id", registro.get("entidad_id", ""))).strip_edges()
+	var descubiertos: Dictionary = GameState.call("obtener_garumis_descubiertos") if GameState.has_method("obtener_garumis_descubiertos") else {}
+	if not id.is_empty() and not descubiertos.has(id) and _icono.visible:
+		_icono.material = _crear_material_silueta()
 
 
 func _mostrar_ficha_criatura(
@@ -761,8 +848,7 @@ func _mostrar_ficha_criatura(
 	var nombre_criatura := str(registro.get("nombre", "")).strip_edges()
 	var rutas_sprite: Array[String] = []
 	if not nombre_criatura.is_empty():
-		# Mismo orden de búsqueda que Creature: sprite estático primero,
-		# hoja de caminar como respaldo si no existe imagen estática.
+		# Sprite estático primero; usa el primer fotograma de la hoja como respaldo.
 		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".png")
 		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".PNG")
 		rutas_sprite.append("res://assets/art/creatures/" + nombre_criatura + ".png")
@@ -778,7 +864,6 @@ func _mostrar_ficha_criatura(
 		var textura := load(ruta_sprite) as Texture2D
 		if textura == null:
 			continue
-		# Las hojas de caminar se muestran como un solo fotograma en la ficha.
 		if ruta_sprite.to_lower().contains("_walking"):
 			var atlas := AtlasTexture.new()
 			atlas.atlas = textura
@@ -790,10 +875,8 @@ func _mostrar_ficha_criatura(
 		_icono.visible = true
 		break
 
+	# La ficha de criatura sólo muestra el bioma.
 	partes.append("[color=#8f754f]Bioma:[/color] " + _obtener_biomas_de_criatura(id))
-	partes.append("[color=#8f754f]Ecosistema:[/color] " + _obtener_ecosistemas_de_criatura(id))
-	partes.append("[color=#8f754f]Hábitat:[/color] " + _obtener_habitats_de_criatura(id))
-	partes.append("[color=#8f754f]Encuentros registrados:[/color] " + str(_obtener_derrotas(id)))
 	_ficha.text = "\n\n".join(partes)
 
 
@@ -1028,7 +1111,7 @@ func _mostrar_sin_descubrimientos() -> void:
 	_nombre.text = "Nada descubierto todavía"
 	_icono.texture = null
 	_icono.visible = false
-	_ficha.text = "[center][color=#8f754f]Este registro está vacío.[/color]\\n\\nExplora Garlia para descubrir nuevos conocimientos.[/center]"
+	_ficha.text = ""
 
 
 func _al_descubrir_criatura(_criatura_id: String) -> void:

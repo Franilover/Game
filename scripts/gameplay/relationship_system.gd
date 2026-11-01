@@ -8,6 +8,7 @@ class_name RelationshipSystemService
 
 signal relacion_cambiada(personaje_id: String, relacion: Dictionary)
 signal recuerdo_registrado(personaje_id: String, recuerdo: Dictionary)
+signal reglas_sociales_cargadas
 
 var _reglas: Dictionary = {}
 var _regalos: Array = []
@@ -59,6 +60,7 @@ func _al_reglas_cargadas(reglas: Array) -> void:
 			continue
 		_reglas[personaje_id] = regla.duplicate(true)
 	_cargado = not _reglas.is_empty()
+	reglas_sociales_cargadas.emit()
 
 
 func esta_cargado() -> bool:

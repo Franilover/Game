@@ -37,6 +37,11 @@ const ETERIUM_RADIAL_MENU_SCRIPT = preload("res://scripts/ui/eterium_radial_menu
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
+@onready var _realm_menu: Control = $UI/RealmMenu
+var _reino_descubrimiento_elapsed: float = 0.0
+var _datos_mundo_servidor_listos := false
+var _reinos_game_servidor_listos := false
+var _inicio_servidor_pendiente := false
 
 
 func _ready() -> void:
@@ -45,6 +50,18 @@ func _ready() -> void:
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
 	WorldData.configurar_dependencias(_supabase_client)
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GlobalWorldStore.restaurar_en_game_state(GameState)
+
+	_world_atmosphere = $Systems/WorldAtmosphere as WorldAtmosphere
+	if not is_instance_valid(_world_atmosphere):
+		push_error("Main: falta Systems/WorldAtmosphere; el reloj global no puede iniciar.")
+	else:
+		# El calendario pertenece al runtime principal y sigue activo en reinos e interiores.
+		_world_atmosphere.configurar_dependencias(WorldData)
+		var tiempo_guardado: Variant = GameState.world_state.flags.get("tiempo_mundo", {})
+		if tiempo_guardado is Dictionary and not (tiempo_guardado as Dictionary).is_empty():
+			_world_atmosphere.establecer_estado_guardado(tiempo_guardado as Dictionary)
 
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
@@ -56,6 +73,10 @@ func _ready() -> void:
 
 	if not _zone_manager.zona_cambiada.is_connected(_al_cambio_de_zona):
 		_zone_manager.zona_cambiada.connect(_al_cambio_de_zona)
+	if is_instance_valid(_realm_menu) and _realm_menu.has_signal("destino_solicitado"):
+		var callback_viaje := Callable(self, "_al_solicitar_destino_reino")
+		if not _realm_menu.is_connected("destino_solicitado", callback_viaje):
+			_realm_menu.connect("destino_solicitado", callback_viaje)
 	if not _supabase_client.reinos_game_cargados.is_connected(_al_reinos_game_cargados):
 		_supabase_client.reinos_game_cargados.connect(_al_reinos_game_cargados)
 
@@ -70,8 +91,10 @@ func _ready() -> void:
 		_configurar_hud(_world_context, null)
 
 	_supabase_client.cargar_reinos_game()
-	# No dependemos de que la respuesta HTTP llegue antes de este frame.
-	if not GameState.debe_iniciar_en_reino_torres():
+	_reinos_game_servidor_listos = not _supabase_client.obtener_reinos_game().is_empty()
+	if GarliaMultiplayer.es_servidor_dedicado():
+		_esperar_datos_mundo_servidor()
+	elif not GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
 	elif not _supabase_client.obtener_reinos_game().is_empty():
 		_iniciar_zonas()
@@ -79,12 +102,45 @@ func _ready() -> void:
 		call_deferred("_verificar_inicio_de_zona")
 
 
+func _esperar_datos_mundo_servidor() -> void:
+	_inicio_servidor_pendiente = true
+	_datos_mundo_servidor_listos = WorldData.esta_cargado()
+	_reinos_game_servidor_listos = _reinos_game_servidor_listos or not _supabase_client.obtener_reinos_game().is_empty()
+	if not _datos_mundo_servidor_listos:
+		if not WorldData.mundo_listo.is_connected(_al_datos_mundo_servidor_listos):
+			WorldData.mundo_listo.connect(_al_datos_mundo_servidor_listos, CONNECT_ONE_SHOT)
+		_supabase_client.cargar_mundo_inicial()
+	_intentar_iniciar_servidor_global()
+
+
+func _al_datos_mundo_servidor_listos() -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado():
+		return
+	_datos_mundo_servidor_listos = true
+	_intentar_iniciar_servidor_global()
+
+
+func _intentar_iniciar_servidor_global() -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _inicio_servidor_pendiente:
+		return
+	if not _datos_mundo_servidor_listos or not _reinos_game_servidor_listos:
+		return
+	_inicio_servidor_pendiente = false
+	_iniciar_zonas()
+
+
 func _exit_tree() -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GlobalWorldStore.guardar_desde_runtime()
 	if is_instance_valid(_supabase_client):
 		_supabase_client.establecer_mundo_activo(false)
 
 
 func _al_reinos_game_cargados(_reinos: Array) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		_reinos_game_servidor_listos = true
+		_intentar_iniciar_servidor_global()
+		return
 	if GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
 
@@ -107,7 +163,38 @@ func _iniciar_zonas() -> void:
 	_zone_manager.iniciar()
 
 
-func _process(_delta: float) -> void:
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var tecla := event as InputEventKey
+	if not tecla.pressed or tecla.echo or tecla.keycode != KEY_M or not tecla.shift_pressed:
+		return
+	if _realm_menu == null or not is_instance_valid(_realm_menu):
+		return
+	if _realm_menu.has_method("alternar"):
+		_realm_menu.call("alternar", _supabase_client, GameState, _zone_manager.obtener_tipo_actual())
+		get_viewport().set_input_as_handled()
+
+
+func _al_solicitar_destino_reino(clave: String) -> void:
+	print("Main: destino solicitado desde RealmMenu → ", clave)
+	if GarliaWorldNetwork.es_cliente_en_mundo_global():
+		GarliaWorldNetwork.enviar_solicitud_viaje(clave)
+		return
+	if _zone_manager == null or not is_instance_valid(_zone_manager):
+		return
+	if clave == "mundo_abierto":
+		_zone_manager.entrar_mundo_abierto()
+		return
+	var desbloqueados: Dictionary = GameState.obtener_reinos_desbloqueados()
+	if not bool(desbloqueados.get(clave.strip_edges().to_lower(), false)):
+		push_warning("Main: intento de viajar a un reino todavía no descubierto: " + clave)
+		return
+	if _zone_manager.has_method("entrar_reino"):
+		_zone_manager.call("entrar_reino", clave)
+
+
+func _process(delta: float) -> void:
 	# La cámara debe seguir funcionando aunque la zona tarde en terminar de inicializar.
 	if _player == null:
 		var jugador_en_escena: Player = get_node_or_null("Entities/Player") as Player
@@ -120,11 +207,57 @@ func _process(_delta: float) -> void:
 			_configurar_camara()
 	_seguir_jugador()
 
+	_reino_descubrimiento_elapsed += delta
+	if _reino_descubrimiento_elapsed >= 0.5:
+		_reino_descubrimiento_elapsed = 0.0
+		_detectar_reinos_descubiertos()
+
+
+func _detectar_reinos_descubiertos() -> void:
+	# En servidor dedicado el Player de Main es un ancla técnica oculta.
+	# Los descubrimientos se validan por RPC usando la posición del jugador real.
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	if _zone_manager == null or _zone_manager.obtener_tipo_actual() != "mundo_abierto":
+		return
+	if not is_instance_valid(_player) or _world_context == null or not _world_context.tiene_mundo_activo():
+		return
+	if _supabase_client == null:
+		return
+	for reino_variant in _world_context.get_reinos_at_position(_player.global_position):
+		if not reino_variant is Dictionary:
+			continue
+		var reino := reino_variant as Dictionary
+		var clave := str(reino.get("clave", "")).strip_edges().to_lower()
+		if clave.is_empty():
+			continue
+		var regla := _supabase_client.obtener_reino_game(clave)
+		if regla.is_empty():
+			continue
+		var propiedades_variant: Variant = regla.get("propiedades", {})
+		if not propiedades_variant is Dictionary:
+			continue
+		var propiedades := propiedades_variant as Dictionary
+		if str(propiedades.get("tipo_zona", "")) != "escena_fija":
+			continue
+		if bool(propiedades.get("usa_world_generator", false)) or bool(propiedades.get("generacion_procedural", false)):
+			continue
+		var escena := str(propiedades.get("escena", "")).strip_edges()
+		if escena.is_empty() or not ResourceLoader.exists(escena):
+			continue
+		if GarliaWorldNetwork.es_cliente_en_mundo_global():
+			# El servidor valida la posición y difunde el desbloqueo confirmado.
+			if not bool(GameState.obtener_reinos_desbloqueados().get(clave, false)):
+				GarliaWorldNetwork.notificar_reino_descubierto(clave)
+		else:
+			GameState.desbloquear_reino(clave)
+
 
 func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GarliaWorldNetwork.preparar_cambio_zona_servidor()
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
-	_world_atmosphere = null
 
 	if tipo == "mundo_abierto":
 		if _world_generator == null:
@@ -132,7 +265,7 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 			return
 
 		_world_entity_spawner = _world_generator.get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
-		_world_atmosphere = _world_generator.get_node_or_null("WorldAtmosphere") as WorldAtmosphere
+		_world_generator.configurar_atmosfera_compartida(_world_atmosphere)
 		_world_context.configurar(
 			_world_generator.get_node_or_null("WorldTerrain") as WorldTerrain,
 			_world_atmosphere,
@@ -141,6 +274,12 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_world_items.establecer_generacion_habilitada(true)
 
 		_world_generator.configurar_dependencias(WorldData, GameState)
+		# La nueva instancia de WorldAtmosphere debe recuperar el calendario
+		# compartido, incluso si se pasó un tiempo en un reino de escena fija.
+		if is_instance_valid(_world_atmosphere):
+			var tiempo_guardado: Variant = GameState.world_state.flags.get("tiempo_mundo", {})
+			if tiempo_guardado is Dictionary and not (tiempo_guardado as Dictionary).is_empty():
+				_world_atmosphere.establecer_estado_guardado((tiempo_guardado as Dictionary).duplicate(true))
 		_world_generator.configurar_contexto_compartido(_world_context)
 		_world_generator.configurar_entidades(
 			$Entities,
@@ -181,6 +320,9 @@ func _inicializar_runtime_de_zona() -> void:
 	if _player == null:
 		push_error("Main: no se encontró Entities/Player.")
 		return
+
+	if GarliaMultiplayer.es_servidor_dedicado() and _world_generator != null:
+		GlobalWorldStore.restaurar_estado_entidades(_world_generator.entity_manager, str(_zone_manager.obtener_tipo_actual()))
 
 	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
 		if _zone_manager.consumir_salida_reino_pendiente():
@@ -233,11 +375,33 @@ func _inicializar_runtime_de_zona() -> void:
 	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
 		call_deferred("_restaurar_garumis_vinculados")
 
-	if _zone_manager.obtener_tipo_actual() == "reino_torres":
-		_player.global_position = Vector2(0, 120)
-		print("Main: inicio en Reino Torres.")
+	var tipo_zona_actual: String = str(_zone_manager.obtener_tipo_actual())
+	if tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
+		var zona_actual: Node = _zone_manager.obtener_zona_actual()
+		var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
+		_player.global_position = punto_aparicion.global_position if is_instance_valid(punto_aparicion) else Vector2(0, 120)
+		print("Main: reino activo → ", tipo_zona_actual)
 	else:
 		print("Main: mundo abierto listo.")
+
+	if GarliaMultiplayer.es_servidor_dedicado():
+		GarliaWorldNetwork.inicializar_mundo_servidor(
+			self,
+			$Entities,
+			_player,
+			_world_context,
+			_world_generator.entity_manager if _world_generator != null else null,
+			_ium_manager,
+			_supabase_client
+		)
+	elif GarliaWorldNetwork.es_cliente_en_mundo_global():
+		GarliaWorldNetwork.configurar_mundo_cliente(
+			self,
+			$Entities,
+			_player,
+			_world_generator.entity_manager if _world_generator != null else null,
+			tipo_zona_actual
+		)
 
 
 ## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
@@ -316,7 +480,17 @@ func _configurar_camara() -> void:
 	_ultima_posicion_camara = Vector2.INF
 	_camera.drag_horizontal_enabled = false
 	_camera.drag_vertical_enabled = false
-	_camera.limit_enabled = false
+	var tipo_zona: String = str(_zone_manager.obtener_tipo_actual()) if is_instance_valid(_zone_manager) else ""
+	if tipo_zona == "reino_torres":
+		# Límites del Ground de reino_torres.tscn; Camera2D calcula el área
+		# visible según el zoom para no mostrar fuera del borde del reino.
+		_camera.limit_left = -1200
+		_camera.limit_right = 1200
+		_camera.limit_top = -700
+		_camera.limit_bottom = 700
+		_camera.limit_enabled = true
+	else:
+		_camera.limit_enabled = false
 	_camera.make_current()
 
 	_seguir_jugador()

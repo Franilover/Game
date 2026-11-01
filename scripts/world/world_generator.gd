@@ -32,7 +32,7 @@ var render_manager: Node
 @onready var _entity_manager_node: WorldEntityManager = $WorldEntityManager
 @onready var _entity_factory_node: WorldEntityFactory = $WorldEntityFactory
 @onready var _spawn_rules_node: WorldSpawnRules = $WorldSpawnRules
-@onready var _atmosphere_node: WorldAtmosphere = $WorldAtmosphere
+@onready var _atmosphere_node: WorldAtmosphere = get_node_or_null("WorldAtmosphere") as WorldAtmosphere
 @onready var _context_node: WorldContext = get_node_or_null("WorldContext") as WorldContext
 
 var _world_ready: bool = false
@@ -46,6 +46,13 @@ var _mundo_inicial_listo_emitido: bool = false
 func _ready() -> void:
 	_crear_sistemas()
 	_registrar_debug()
+
+
+func configurar_atmosfera_compartida(nueva_atmosfera: WorldAtmosphere) -> void:
+	if not is_instance_valid(nueva_atmosfera):
+		push_error("WorldGenerator: la atmósfera compartida no es válida.")
+		return
+	atmosphere = nueva_atmosfera
 
 
 func configurar_dependencias(

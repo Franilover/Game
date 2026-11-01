@@ -1,6 +1,8 @@
 extends Control
 class_name GarliaInventory
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 const SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_slot.tscn"
 )
@@ -52,7 +54,6 @@ var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
 var _player: Player = null
 var _world_items: GarliaWorldItems = null
-var _equipment_stats_label: Label = null
 
 
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
@@ -75,6 +76,7 @@ func _inicializar_navegacion_tabs() -> void:
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
 	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
+	var boton_garumis: Button = $Window/Margin/Column/TabButtons/Garumis
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
@@ -89,14 +91,20 @@ func _inicializar_navegacion_tabs() -> void:
 	boton_enciclopedia.pressed.connect(func() -> void:
 		tabs.current_tab = 2
 	)
-	boton_mapa.pressed.connect(func() -> void:
+	boton_garumis.pressed.connect(func() -> void:
 		tabs.current_tab = 3
+		var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
+		if pagina_garumis.has_method("abrir_en_garumis"):
+			pagina_garumis.call("abrir_en_garumis")
 	)
-	boton_relaciones.pressed.connect(func() -> void:
+	boton_mapa.pressed.connect(func() -> void:
 		tabs.current_tab = 4
 	)
-	boton_admin.pressed.connect(func() -> void:
+	boton_relaciones.pressed.connect(func() -> void:
 		tabs.current_tab = 5
+	)
+	boton_admin.pressed.connect(func() -> void:
+		tabs.current_tab = 6
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 		if admin_tab != null:
 			admin_tab.abrir(_player)
@@ -229,10 +237,10 @@ func _ready() -> void:
 	_inicializar_hotbar()
 	_crear_slots()
 	_crear_slots_equipamiento()
-	_preparar_panel_estadisticas_equipo()
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_inicializar_navegacion_tabs()
 	_limpiar_informacion()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _input(event: InputEvent) -> void:
@@ -263,7 +271,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if event.is_action_pressed("inventory"):
+		if event.is_action_pressed("garumi_encyclopedia"):
+			toggle_enciclopedia_garumis()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory"):
 			toggle()
 			get_viewport().set_input_as_handled()
 
@@ -283,7 +294,7 @@ func _actualizar_admin_tab() -> void:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
 	boton_admin.visible = es_admin
 	admin_tab.visible = es_admin
-	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 6:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin:
 		admin_tab.abrir(jugador)
@@ -298,6 +309,20 @@ func toggle() -> void:
 
 func toggle_mapa() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
+	if _abierto and tabs.current_tab == 4:
+		cerrar()
+		return
+	if not _abierto:
+		_abierto = true
+		visible = true
+		_actualizar_admin_tab()
+	tabs.current_tab = 4
+	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
+	actualizar()
+
+
+func toggle_enciclopedia_garumis() -> void:
+	var tabs: TabContainer = $Window/Margin/Column/Tabs
 	if _abierto and tabs.current_tab == 3:
 		cerrar()
 		return
@@ -306,24 +331,10 @@ func toggle_mapa() -> void:
 		visible = true
 		_actualizar_admin_tab()
 	tabs.current_tab = 3
-	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
-	actualizar()
-
-
-func toggle_enciclopedia_garumis() -> void:
-	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	var enciclopedia := $Window/Margin/Column/Tabs/Enciclopedia as Control
-	if _abierto and tabs.current_tab == 2:
-		cerrar()
-		return
-	if not _abierto:
-		_abierto = true
-		visible = true
-		_actualizar_admin_tab()
-	tabs.current_tab = 2
-	$Window/Margin/Column/TabButtons/Enciclopedia.button_pressed = true
-	if enciclopedia != null and enciclopedia.has_method("abrir_en_garumis"):
-		enciclopedia.call("abrir_en_garumis")
+	$Window/Margin/Column/TabButtons/Garumis.button_pressed = true
+	var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
+	if pagina_garumis.has_method("abrir_en_garumis"):
+		pagina_garumis.call("abrir_en_garumis")
 
 
 func abrir() -> void:
@@ -610,7 +621,6 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if inventory_controller.equipar_desde_inventario(clave, source_index, objeto):
 		equipment_slot.configurar_objeto(objeto)
 		actualizar()
-		_actualizar_panel_estadisticas_equipo()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
 
@@ -629,7 +639,6 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 		return
 	equipment_slot.limpiar_objeto()
 	actualizar()
-	_actualizar_panel_estadisticas_equipo()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
@@ -648,7 +657,6 @@ func _actualizar_slots_equipamiento() -> void:
 			continue
 
 		slot.configurar_objeto(objeto)
-	_actualizar_panel_estadisticas_equipo()
 
 
 func obtener_equipamiento() -> Dictionary:
@@ -662,7 +670,6 @@ func consumir_durabilidad_equipo(clave: String = "mano_secundaria") -> bool:
 	if resultado:
 		actualizar()
 		_actualizar_slots_equipamiento()
-		_actualizar_panel_estadisticas_equipo()
 		inventory_changed.emit()
 	return resultado
 
@@ -700,45 +707,6 @@ func obtener_estadistica_equipo(
 			total += float(valor)
 
 	return total
-
-
-func _preparar_panel_estadisticas_equipo() -> void:
-	var right_panel := $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel as VBoxContainer
-	if right_panel == null:
-		return
-	_equipment_stats_label = Label.new()
-	_equipment_stats_label.name = "EquipmentStats"
-	_equipment_stats_label.custom_minimum_size = Vector2(0, 38)
-	_equipment_stats_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_equipment_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_equipment_stats_label.add_theme_color_override("font_color", Color(0.82, 0.75, 0.61, 1.0))
-	_equipment_stats_label.add_theme_font_size_override("font_size", 9)
-	_equipment_stats_label.text = "EQUIPO\nSin bonificaciones numéricas registradas"
-	right_panel.add_child(_equipment_stats_label)
-	_actualizar_panel_estadisticas_equipo()
-
-
-func _actualizar_panel_estadisticas_equipo() -> void:
-	if not is_instance_valid(_equipment_stats_label):
-		return
-	var estadisticas := obtener_estadisticas_equipo()
-	var lineas: PackedStringArray = ["ESTADÍSTICAS DE EQUIPO"]
-	var claves: Array[String] = []
-	for clave_variant in estadisticas.keys():
-		var clave := str(clave_variant)
-		# Propiedades físicas descriptivas no se presentan como bonificaciones.
-		if clave in ["durabilidad", "dureza", "fractura"]:
-			continue
-		claves.append(clave)
-	claves.sort()
-	for clave in claves:
-		var valor := float(estadisticas[clave])
-		var nombre := clave.replace("_", " ").capitalize()
-		var numero := ("+" if valor > 0.0 else "") + (("%.2f" % valor).rstrip("0").rstrip("."))
-		lineas.append(nombre + ": " + numero)
-	if claves.is_empty():
-		lineas.append("Sin bonificaciones numéricas registradas")
-	_equipment_stats_label.text = "\n".join(lineas)
 
 
 func obtener_estadisticas_equipo() -> Dictionary:
@@ -836,6 +804,7 @@ func _mostrar_informacion() -> void:
 	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción ni propiedades adicionales registradas."
 	item_description.visible = true
 	delete_button.disabled = false
+	delete_button.visible = true
 
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
 	item_icon.texture = textura
@@ -854,12 +823,13 @@ func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> Sty
 
 
 func _limpiar_informacion() -> void:
-	item_name.text = "Ningún objeto"
+	item_name.text = ""
 	item_description.text = ""
 	item_description.visible = false
 	item_icon.texture = null
 	item_icon.visible = false
 	delete_button.disabled = true
+	delete_button.visible = false
 
 
 func agregar_objeto(datos_objeto: Dictionary) -> bool:

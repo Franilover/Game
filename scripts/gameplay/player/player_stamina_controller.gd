@@ -4,7 +4,7 @@ class_name PlayerStaminaController
 ## Reserva discreta de impulsos para dash. No se regenera con el tiempo.
 signal stamina_changed(current: float, maximum: float)
 
-const MAX_CARGAS: int = 3
+const MAX_CARGAS: int = 5
 var current: float = MAX_CARGAS
 var maximum: float = MAX_CARGAS
 var regeneration: float = 0.0
