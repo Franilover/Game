@@ -361,10 +361,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -205.0
-offset_right = 220.0
-offset_bottom = 205.0
+offset_left = -250.0
+offset_top = -285.0
+offset_right = 250.0
+offset_bottom = 285.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxMultiplayerPanel")
@@ -393,42 +393,73 @@ text = "Juega con otros exploradores de Garlia."
 horizontal_alignment = 1
 
 [node name="HostButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1334370356]
-custom_minimum_size = Vector2(0, 44)
+visible = false
+custom_minimum_size = Vector2(0, 1)
 layout_mode = 2
-text = "Crear partida"
+text = "Alojar servidor"
 
 [node name="LocalIPLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=106304562]
+visible = false
 layout_mode = 2
-text = "Tu IP local: —"
+text = "Servidores guardados"
 horizontal_alignment = 1
 
 [node name="Separator" type="HSeparator" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1690500757]
 layout_mode = 2
 
-[node name="IPLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1166416841]
+[node name="PublicDirectoryLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-text = "Dirección del anfitrión"
+text = "Directorio público: conectando..."
+autowrap_mode = 2
+horizontal_alignment = 1
 
-[node name="IPInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1604332809]
-custom_minimum_size = Vector2(0, 38)
+[node name="SavedServersList" type="ItemList" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 0
+
+[node name="ServerNameInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxInput")
-placeholder_text = "192.168.1.100"
+placeholder_text = "Nombre para guardar el servidor"
+
+[node name="IPLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1166416841]
+layout_mode = 2
+text = "Dirección del servidor (IP o dominio)"
+
+[node name="IPInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1604332809]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxInput")
+placeholder_text = "servidor.ejemplo.net"
 
 [node name="PortLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1552646489]
 layout_mode = 2
 text = "Puerto"
 
 [node name="PortInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=142787175]
-custom_minimum_size = Vector2(0, 38)
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxInput")
 text = "7777"
 
+[node name="SaveServerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Guardar servidor"
+
+[node name="RemoveServerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+text = "Eliminar seleccionado"
+
 [node name="JoinButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=208731829]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Unirse a partida"
+text = "Conectar"
 
 [node name="Status" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=659142770]
 custom_minimum_size = Vector2(0, 44)
