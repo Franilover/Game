@@ -274,7 +274,9 @@ func _add_button(parent: Container, label_text: String, callback: Callable) -> v
 	var button := Button.new()
 	button.text = label_text
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.custom_minimum_size.y = 36
 	button.pressed.connect(callback)
+	_style_button(button, false)
 	parent.add_child(button)
 
 
