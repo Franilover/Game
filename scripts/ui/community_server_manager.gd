@@ -1,5 +1,9 @@
 extends Control
 
+signal closed
+
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 const PROFILES_PATH := "user://garlia_community_servers.json"
 
 var _profiles: Array = []
@@ -23,76 +27,136 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0, 0.82)
+	shade.color = Color("#160F0A")
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(shade)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.add_theme_constant_override("margin_left", 24)
+	center.add_theme_constant_override("margin_right", 24)
+	center.add_theme_constant_override("margin_top", 20)
+	center.add_theme_constant_override("margin_bottom", 20)
+	add_child(center)
+
 	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-280, -320)
-	panel.size = Vector2(560, 640)
-	add_child(panel)
+	panel.custom_minimum_size = Vector2(560, 0)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	center.add_child(panel)
+
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_right", 20)
-	margin.add_theme_constant_override("margin_top", 18)
-	margin.add_theme_constant_override("margin_bottom", 18)
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_bottom", 20)
 	panel.add_child(margin)
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_child(scroll)
+
 	var content := VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 8)
-	scroll.add_child(content)
-	var title := Label.new()
-	title.text = "SERVIDORES DE COMUNIDAD"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	content.add_child(title)
+	content.add_theme_constant_override("separation", 10)
+	margin.add_child(content)
+
+	var heading := Label.new()
+	heading.text = "ADMINISTRAR SERVIDORES"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 24)
+	content.add_child(heading)
+
 	var intro := Label.new()
-	intro.text = "Crea un servidor LAN desde este equipo. Para jugar por Internet necesitarás alojamiento público."
+	intro.text = "Crea y administra un servidor local para jugar en tu red. Para conexiones por Internet necesitarás alojamiento público y configurar el acceso de red."
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	intro.add_theme_color_override("font_color", Color("#D8C6A5"))
 	content.add_child(intro)
+
+	var section_title := Label.new()
+	section_title.text = "PERFILES GUARDADOS"
+	section_title.add_theme_font_size_override("font_size", 14)
+	content.add_child(section_title)
+
 	_list = ItemList.new()
-	_list.custom_minimum_size.y = 90
+	_list.custom_minimum_size.y = 76
+	_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_list.add_theme_color_override("font_color", Color("#F4E7CF"))
 	_list.item_selected.connect(_select_profile)
 	content.add_child(_list)
+
+	var form_title := Label.new()
+	form_title.text = "CONFIGURACIÓN DEL SERVIDOR"
+	form_title.add_theme_font_size_override("font_size", 14)
+	content.add_child(form_title)
+
 	_name = _add_line(content, "Nombre del servidor")
 	_description = _add_line(content, "Descripción")
 	_port = _add_spin(content, "Puerto local", 1024, 65535, 7778)
+
 	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
 	content.add_child(actions)
 	_add_button(actions, "Guardar perfil", _save_profile)
 	_add_button(actions, "Eliminar", _delete_profile)
+
 	_start_local_button = Button.new()
 	_start_local_button.text = "Iniciar servidor LAN"
+	_start_local_button.custom_minimum_size.y = 42
 	_start_local_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_start_local_button.pressed.connect(_start_local_server)
 	content.add_child(_start_local_button)
+
 	_stop_local_button = Button.new()
 	_stop_local_button.text = "Detener servidor"
+	_stop_local_button.custom_minimum_size.y = 38
 	_stop_local_button.disabled = true
 	_stop_local_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_stop_local_button.pressed.connect(_stop_local_server)
 	content.add_child(_stop_local_button)
+
 	var certificate_actions := HBoxContainer.new()
+	certificate_actions.add_theme_constant_override("separation", 8)
 	content.add_child(certificate_actions)
 	_add_button(certificate_actions, "Exportar certificado", _export_certificate)
-	_add_button(certificate_actions, "Confiar certificado", _import_certificate)
+	_add_button(certificate_actions, "Importar confianza", _import_certificate)
+
 	_file_dialog = FileDialog.new()
 	_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	_file_dialog.add_filter("*.crt", "Certificado TLS")
 	_file_dialog.file_selected.connect(_save_certificate_copy)
 	add_child(_file_dialog)
+
 	_status = Label.new()
+	_status.custom_minimum_size.y = 42
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status.text = "El certificado se genera automáticamente al iniciar el servidor."
+	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_status.add_theme_color_override("font_color", Color("#D8C6A5"))
 	content.add_child(_status)
-	var close_row := HBoxContainer.new()
-	close_row.alignment = BoxContainer.ALIGNMENT_END
-	content.add_child(close_row)
-	_add_button(close_row, "Cerrar", queue_free)
+
+	var footer := HBoxContainer.new()
+	footer.alignment = BoxContainer.ALIGNMENT_END
+	content.add_child(footer)
+	var back_button := Button.new()
+	back_button.text = "Volver"
+	back_button.custom_minimum_size = Vector2(132, 40)
+	back_button.pressed.connect(_close_manager)
+	footer.add_child(back_button)
+
+	PIXEL_UI_THEME.apply(self)
+
+
+func _close_manager() -> void:
+	closed.emit()
+	queue_free()
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		_close_manager()
+		get_viewport().set_input_as_handled()
 
 
 func _add_line(parent: VBoxContainer, hint: String) -> LineEdit:
