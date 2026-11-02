@@ -55,10 +55,21 @@ func _build_ui() -> void:
 	margin.add_theme_constant_override("margin_bottom", 20)
 	panel.add_child(margin)
 
+	var layout := VBoxContainer.new()
+	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	layout.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	layout.add_theme_constant_override("separation", 10)
+	margin.add_child(layout)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	layout.add_child(scroll)
+
 	var content := VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 10)
-	margin.add_child(content)
+	scroll.add_child(content)
 
 	var heading := Label.new()
 	heading.text = "ADMINISTRAR SERVIDORES"
@@ -138,7 +149,7 @@ func _build_ui() -> void:
 
 	var footer := HBoxContainer.new()
 	footer.alignment = BoxContainer.ALIGNMENT_END
-	content.add_child(footer)
+	layout.add_child(footer)
 	var back_button := Button.new()
 	back_button.text = "Volver"
 	back_button.custom_minimum_size = Vector2(132, 40)
