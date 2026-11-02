@@ -97,8 +97,19 @@ func obtener_cantidad_jugadores_remotos() -> int:
 	return _connected_peer_ids.size()
 
 
+## Autoridad que ejecuta la simulación y valida las acciones del mundo.
+## En la implementación actual solo el dedicado puede ser autoridad.
+## El modo anfitrión se habilitará cuando Main separe el jugador local del ancla del mundo.
+func es_autoridad_del_mundo() -> bool:
+	return multiplayer.is_server() and (is_dedicated_server or is_host)
+
+
 func es_servidor_dedicado() -> bool:
 	return is_dedicated_server and multiplayer.is_server()
+
+
+func es_anfitrion_jugable() -> bool:
+	return es_autoridad_del_mundo() and not is_dedicated_server
 
 
 func _leer_argumento_servidor() -> void:
