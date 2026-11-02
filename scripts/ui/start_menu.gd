@@ -870,8 +870,24 @@ func _eliminar_servidor_local() -> void:
 
 
 func _abrir_administrador_servidores() -> void:
-	var manager: Control = COMMUNITY_SERVER_MANAGER_SCENE.instantiate()
+	var existing := get_node_or_null("CommunityServerManager")
+	if existing != null:
+		return
+	var manager := COMMUNITY_SERVER_MANAGER_SCENE.instantiate() as Control
+	if manager == null:
+		multiplayer_status.text = "No se pudo abrir el administrador de servidores."
+		return
+	manager.name = "CommunityServerManager"
+	manager.closed.connect(_al_cerrar_administrador_servidores)
 	add_child(manager)
+	manager.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	manager.z_index = 6000
+	manager.call_deferred("set_anchors_and_offsets_preset", Control.PRESET_FULL_RECT)
+
+
+func _al_cerrar_administrador_servidores() -> void:
+	if is_instance_valid(community_server_manager_button):
+		community_server_manager_button.grab_focus()
 
 
 func _crear_partida() -> void:
