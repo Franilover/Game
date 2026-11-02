@@ -1,3 +1,14 @@
+extends Control
+
+const PROFILES_PATH := "user://garlia_community_servers.json"
+
+var _profiles: Array = []
+var _list: ItemList
+var _name: LineEdit
+var _description: LineEdit
+var _port: SpinBox
+var _status: Label
+
 
 var _server_pid: int = -1
 var _start_local_button: Button
