@@ -96,6 +96,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 		errores.append("El contacto melee sin daño no se publicó.")
 	if objetivo.health != salud_inicial:
 		errores.append("El contacto melee sin daño alteró la salud.")
+	area_melee.free()
 
 	# La entrada de ataques de la IA también comunica contacto cero-daño.
 	var danio_ia_aplicado := combate.aplicar_danio_desde_entidad(
@@ -147,6 +148,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	atacante.queue_free()
 	objetivo.queue_free()
 	combate.queue_free()
+	await get_tree().process_frame
 
 
 func _probar_pausa_recuperacion_eterium(errores: Array[String]) -> void:
