@@ -2,7 +2,7 @@ name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks", "refactor/p1-player-locomotion"]
     paths:
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
@@ -11,7 +11,9 @@ on:
       - "scripts/ui/**"
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
-      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "scripts/gameplay/player/**"
+      - "scripts/characters/player.gd"
+      - "tests/player/**"
       - "scripts/infrastructure/garlia_world_network.gd"
       - "scripts/infrastructure/garlia_multiplayer.gd"
       - "scripts/infrastructure/global_world_store.gd"
@@ -34,7 +36,9 @@ on:
       - "scripts/ui/**"
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
-      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "scripts/gameplay/player/**"
+      - "scripts/characters/player.gd"
+      - "tests/player/**"
       - "tests/combat/**"
       - "tests/creatures/**"
       - "tests/ui/**"
@@ -133,6 +137,17 @@ jobs:
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiWorldPresence: FAIL:' <<<"$output"; then
             echo "Garumi world presence test reported script or assertion errors."
+            exit 1
+          fi
+
+      - name: Run player locomotion regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/player/test_player_locomotion.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerLocomotion: FAIL:' <<<"$output"; then
+            echo "Player locomotion regression test reported errors."
             exit 1
           fi
 

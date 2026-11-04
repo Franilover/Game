@@ -250,8 +250,8 @@ func _procesar_movimiento_red(delta: float) -> void:
 	locomotion.avanzar_accion(delta)
 	var direccion := _red_direccion.limit_length(1.0)
 	_movement_input_direction = direccion
-	if direccion != Vector2.ZERO:
-		facing = direccion.normalized()
+	if locomotion.actualizar_facing(direccion):
+		facing = locomotion.obtener_facing()
 		_update_dir_marker()
 
 	if state == State.JUMP:
@@ -283,21 +283,20 @@ func _procesar_movimiento_red(delta: float) -> void:
 	if _red_eterium_sprint and direccion != Vector2.ZERO:
 		eterium_sprint = eterium.procesar_carrera(delta)
 	var esta_corriendo := _red_correr and direccion != Vector2.ZERO and not eterium_sprint
-	var velocidad := move_speed
+	var multiplicador_velocidad := 1.0
 	if eterium_sprint:
-		velocidad *= run_multiplier * eterium.multiplicador_carrera()
+		multiplicador_velocidad = run_multiplier * eterium.multiplicador_carrera()
 	elif esta_corriendo:
-		velocidad *= run_multiplier
-	velocity = direccion * velocidad
+		multiplicador_velocidad = run_multiplier
+	velocity = _calcular_movimiento_normal(
+		direccion,
+		multiplicador_velocidad,
+		esta_corriendo or eterium_sprint
+	)
 	move_and_slide()
 	if direccion == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
-	var nuevo_estado := State.IDLE
-	if direccion != Vector2.ZERO:
-		nuevo_estado = State.RUN if esta_corriendo or eterium_sprint else State.WALK
-	if nuevo_estado != state:
-		state = nuevo_estado
-		_update_visual()
+	_sincronizar_estado_movimiento()
 	_actualizar_regeneracion_stamina(delta, esta_corriendo or eterium_sprint)
 
 
@@ -397,43 +396,58 @@ func _physics_process(delta: float) -> void:
 		_actualizar_recuperacion_eterium(delta)
 
 	# Movimiento.
-	var speed: float
-
+	var multiplicador_velocidad := 1.0
 	if eterium_sprint:
-		speed = move_speed * run_multiplier * eterium.multiplicador_carrera()
+		multiplicador_velocidad = run_multiplier * eterium.multiplicador_carrera()
 	elif is_running:
-		speed = move_speed * run_multiplier
-	else:
-		speed = move_speed
+		multiplicador_velocidad = run_multiplier
 
-	velocity = direction * speed
+	velocity = _calcular_movimiento_normal(
+		direction,
+		multiplicador_velocidad,
+		is_running
+	)
 
 	move_and_slide()
 	_ajustar_a_arena_garumi()
-
-	# Dirección.
-	if direction != Vector2.ZERO:
-		facing = direction.normalized()
-		_update_dir_marker()
-
-	# Estado visual.
-	var new_state: State
-
-	if direction == Vector2.ZERO:
-		new_state = State.IDLE
-	elif is_running:
-		new_state = State.RUN
-	else:
-		new_state = State.WALK
-
-	if new_state != state:
-		state = new_state
-		_update_visual()
+	_sincronizar_estado_movimiento()
 
 	_actualizar_regeneracion_stamina(
 		delta,
 		is_running
 	)
+
+
+func _calcular_movimiento_normal(
+	direccion: Vector2,
+	multiplicador_velocidad: float,
+	estado_corriendo: bool
+) -> Vector2:
+	var facing_anterior := facing
+	var velocidad := locomotion.calcular_movimiento(
+		direccion,
+		move_speed,
+		multiplicador_velocidad,
+		estado_corriendo
+	)
+	facing = locomotion.obtener_facing()
+	if not facing.is_equal_approx(facing_anterior):
+		_update_dir_marker()
+	return velocidad
+
+
+func _sincronizar_estado_movimiento() -> void:
+	var nuevo_estado := State.IDLE
+	match locomotion.obtener_estado_movimiento():
+		PlayerMovementController.State.WALK:
+			nuevo_estado = State.WALK
+		PlayerMovementController.State.RUN:
+			nuevo_estado = State.RUN
+
+	if nuevo_estado == state:
+		return
+	state = nuevo_estado
+	_update_visual()
 
 
 func obtener_direccion_movimiento() -> Vector2:
