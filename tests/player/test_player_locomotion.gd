@@ -6,6 +6,7 @@ const ActionScript = preload("res://scripts/gameplay/player/player_action_contro
 const StaminaScript = preload("res://scripts/gameplay/player/player_stamina_controller.gd")
 const VisualScript = preload("res://scripts/characters/player_visual_controller.gd")
 const DashInputScript = preload("res://scripts/gameplay/player/player_dash_input_controller.gd")
+const InputScript = preload("res://scripts/gameplay/player/player_input_controller.gd")
 
 
 func _initialize() -> void:
@@ -19,6 +20,7 @@ func _run() -> void:
 	_probar_coordinador(errores)
 	_probar_presentacion_visual(errores)
 	_probar_buffer_dash(errores)
+	_probar_adaptador_input(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -131,3 +133,22 @@ func _probar_buffer_dash(errores: Array[String]) -> void:
 	dash_input.reiniciar()
 	if dash_input.actualizar(0.2, false):
 		errores.append("Reiniciar no limpió la solicitud pendiente de dash.")
+
+func _probar_adaptador_input(errores: Array[String]) -> void:
+	var input_controller = InputScript.new()
+	var evento_menu := InputEventKey.new()
+	evento_menu.keycode = KEY_M
+	evento_menu.shift_pressed = true
+	evento_menu.pressed = true
+	if not input_controller.es_combinacion_menu_reinos(evento_menu):
+		errores.append("El adaptador no reconoció Shift+M.")
+	evento_menu.echo = true
+	if input_controller.es_combinacion_menu_reinos(evento_menu):
+		errores.append("El adaptador trató una repetición de tecla como una nueva combinación.")
+	var evento_ajeno := InputEventKey.new()
+	evento_ajeno.keycode = KEY_M
+	evento_ajeno.pressed = true
+	if input_controller.es_combinacion_menu_reinos(evento_ajeno):
+		errores.append("El adaptador reconoció M sin Shift como menú de reinos.")
+	if input_controller.es_combinacion_menu_reinos(InputEventMouseButton.new()):
+		errores.append("El adaptador reconoció un evento de ratón como combinación de teclado.")
