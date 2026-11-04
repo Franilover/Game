@@ -7,6 +7,7 @@ const StaminaScript = preload("res://scripts/gameplay/player/player_stamina_cont
 const VisualScript = preload("res://scripts/characters/player_visual_controller.gd")
 const DashInputScript = preload("res://scripts/gameplay/player/player_dash_input_controller.gd")
 const InputScript = preload("res://scripts/gameplay/player/player_input_controller.gd")
+const PhysicsScript = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 
 
 func _initialize() -> void:
@@ -21,6 +22,7 @@ func _run() -> void:
 	_probar_presentacion_visual(errores)
 	_probar_buffer_dash(errores)
 	_probar_adaptador_input(errores)
+	_probar_integracion_fisica(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -152,3 +154,17 @@ func _probar_adaptador_input(errores: Array[String]) -> void:
 		errores.append("El adaptador reconoció M sin Shift como menú de reinos.")
 	if input_controller.es_combinacion_menu_reinos(InputEventMouseButton.new()):
 		errores.append("El adaptador reconoció un evento de ratón como combinación de teclado.")
+
+func _probar_integracion_fisica(errores: Array[String]) -> void:
+	var physics_controller = PhysicsScript.new()
+	var cuerpo := CharacterBody2D.new()
+	var velocidad := Vector2(45.0, -30.0)
+	physics_controller.establecer_velocidad(cuerpo, velocidad)
+	if not cuerpo.velocity.is_equal_approx(velocidad):
+		errores.append("El controlador físico no asignó la velocidad calculada al cuerpo.")
+	physics_controller.establecer_velocidad(cuerpo, Vector2.ZERO)
+	if not cuerpo.velocity.is_zero_approx():
+		errores.append("El controlador físico no pudo detener el cuerpo.")
+	physics_controller.establecer_velocidad(null, velocidad)
+	physics_controller.aplicar_desplazamiento(null)
+	cuerpo.free()
