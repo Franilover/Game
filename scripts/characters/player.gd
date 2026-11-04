@@ -64,6 +64,7 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 var visual_controller := PlayerVisualController.new()
 var dash_input_controller := PlayerDashInputController.new()
+var input_controller := PlayerInputController.new()
 
 var _world_context_ref: WorldContext = null
 var _game_state_ref: GameStateService = null
@@ -183,10 +184,7 @@ func _actualizar_recuperacion_eterium(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not event is InputEventKey:
-		return
-	var tecla := event as InputEventKey
-	if tecla.pressed and not tecla.echo and tecla.keycode == KEY_M and tecla.shift_pressed:
+	if input_controller.es_combinacion_menu_reinos(event):
 		dash_input_controller.cancelar_por_menu_reinos()
 
 
@@ -342,35 +340,35 @@ func _physics_process(delta: float) -> void:
 		_procesar_dash(delta)
 		return
 
+	# Capturar una sola instantánea de controles para este tick físico.
+	var entrada := input_controller.capturar()
+
 	# Curación con Eterium mientras se mantiene Q.
-	if Input.is_action_pressed("focus") and not eterium.vida_eterium_compartidos():
+	if bool(entrada.get("focus_pressed", false)) and not eterium.vida_eterium_compartidos():
 		_procesar_curacion_eterium(delta)
 		return
 
-
 	# Shift inicia el dash. Se espera una fracción de segundo para distinguir
 	# Shift solo de Shift+M (menú de reinos), sin disparar el dash por accidente.
-	if Input.is_action_just_pressed("dash"):
+	if bool(entrada.get("dash_just_pressed", false)):
 		dash_input_controller.solicitar()
 
-	if dash_input_controller.actualizar(delta, Input.is_key_pressed(KEY_M)):
+	if dash_input_controller.actualizar(
+		delta,
+		bool(entrada.get("menu_key_pressed", false))
+	):
 		if _puede_hacer_dash():
 			_iniciar_dash()
 			return
 
-	var run_pressed := Input.is_action_pressed("run")
+	var run_pressed := bool(entrada.get("run_pressed", false))
 
 	# Movimiento normal.
-	var direction := Input.get_vector(
-		"move_left",
-		"move_right",
-		"move_up",
-		"move_down"
-	)
+	var direction: Vector2 = entrada.get("direction", Vector2.ZERO)
 	_movement_input_direction = direction
 
 	var eterium_sprint := false
-	if Input.is_action_pressed("eterium_sprint") and direction != Vector2.ZERO:
+	if bool(entrada.get("eterium_sprint_pressed", false)) and direction != Vector2.ZERO:
 		eterium_sprint = eterium.procesar_carrera(delta)
 
 	var is_running := (
