@@ -16,6 +16,8 @@ signal equipo_cambio(slot: String, item: Dictionary)
 
 var runtime := InventoryRuntime.new()
 var input_gate: GameplayInputGate = null
+var mano_izquierda_activa: int = 0
+var mano_derecha_activa: int = 0
 
 func configurar_gate(gate: GameplayInputGate) -> void:
 	input_gate = gate
@@ -37,6 +39,29 @@ func cargar_items(items: Array) -> void:
  
 func obtener_item(indice: int) -> Dictionary:
 	return runtime.obtener_item(indice)
+
+func seleccionar_slot_mano(mano: String, slot_index: int) -> bool:
+	if slot_index < 0 or slot_index >= 6:
+		return false
+	if mano == "izquierda":
+		mano_izquierda_activa = slot_index
+	elif mano == "derecha":
+		mano_derecha_activa = slot_index
+	else:
+		return false
+	return true
+
+
+func obtener_indice_mano_activa(mano: String) -> int:
+	if mano == "izquierda":
+		return mano_izquierda_activa
+	if mano == "derecha":
+		return 12 + mano_derecha_activa
+	return -1
+
+
+func obtener_objeto_mano_activa(mano: String) -> Dictionary:
+	return runtime.obtener_item(obtener_indice_mano_activa(mano))
 
 func agregar_objeto(datos: Dictionary) -> bool:
 	if not puede_interactuar():
