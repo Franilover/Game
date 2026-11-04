@@ -62,6 +62,7 @@ var exploration_controller := PlayerExplorationController.new()
 var locomotion := PlayerLocomotionCoordinator.new()
 var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
+var visual_controller := PlayerVisualController.new()
 
 var _world_context_ref: WorldContext = null
 var _game_state_ref: GameStateService = null
@@ -144,6 +145,7 @@ func _ready() -> void:
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
 
 	_base_visual_position = visual.position
+	visual_controller.configurar(visual, facing_marker, anim)
 
 	_aplicar_configuracion_personaje()
 	_update_dir_marker()
@@ -1068,80 +1070,11 @@ func admin_guardar_estado() -> void:
 	_game_state_ref.guardar_partida()
 
 func _update_visual() -> void:
-	if anim == null:
-		return
-
-	var dir_name := _facing_name()
-	var anim_name := ""
-
-	match state:
-		State.IDLE:
-			anim_name = (
-				"idle_"
-				+ dir_name
-			)
-
-		State.WALK:
-			anim_name = (
-				"walk_"
-				+ dir_name
-			)
-
-		State.RUN:
-			anim_name = (
-				"run_"
-				+ dir_name
-			)
-
-		State.JUMP:
-			anim_name = (
-				"jump_"
-				+ dir_name
-			)
-
-		State.DASH:
-			anim_name = (
-				"dash_"
-				+ dir_name
-			)
-
-	if anim.has_animation(anim_name):
-		anim.play(anim_name)
+	visual_controller.actualizar_estado(state, facing)
 
 
 func _update_dir_marker() -> void:
-	if facing_marker == null:
-		return
-
-	var center := Vector2(
-		0,
-		-24
-	)
-
-	var offset := (
-		facing.normalized()
-		* 14.0
-	)
-
-	facing_marker.position = (
-		center
-		+ offset
-		- Vector2(
-			2,
-			2
-		)
-	)
-
-
-func _facing_name() -> String:
-	if abs(facing.y) >= abs(facing.x):
-		return (
-			"down"
-			if facing.y > 0.0
-			else "up"
-		)
-
-	return "side"
+	visual_controller.actualizar_direccion(facing)
 
 
 # ============================================================

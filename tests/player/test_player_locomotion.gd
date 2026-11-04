@@ -4,6 +4,7 @@ const MovementScript = preload("res://scripts/gameplay/player/player_movement_co
 const CoordinatorScript = preload("res://scripts/gameplay/player/player_locomotion_coordinator.gd")
 const ActionScript = preload("res://scripts/gameplay/player/player_action_controller.gd")
 const StaminaScript = preload("res://scripts/gameplay/player/player_stamina_controller.gd")
+const VisualScript = preload("res://scripts/characters/player_visual_controller.gd")
 
 
 func _initialize() -> void:
@@ -15,6 +16,7 @@ func _run() -> void:
 	_probar_intensidad_analogica(errores)
 	_probar_limite_direccion_y_estado(errores)
 	_probar_coordinador(errores)
+	_probar_presentacion_visual(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -81,3 +83,26 @@ func _probar_coordinador(errores: Array[String]) -> void:
 		errores.append("El coordinador no comunicó el cambio de orientación.")
 	if not coordinator.obtener_facing().is_equal_approx(Vector2.UP):
 		errores.append("El coordinador devolvió una orientación incorrecta.")
+
+ 
+func _probar_presentacion_visual(errores: Array[String]) -> void:
+	var visual = VisualScript.new()
+	if visual.obtener_nombre_animacion(0, Vector2.DOWN) != "idle_down":
+		errores.append("La presentación no construyó idle_down.")
+	if visual.obtener_nombre_animacion(1, Vector2.UP) != "walk_up":
+		errores.append("La presentación no construyó walk_up.")
+	if visual.obtener_nombre_animacion(2, Vector2.RIGHT) != "run_side":
+		errores.append("La presentación no construyó run_side.")
+	if visual.obtener_nombre_animacion(3, Vector2.LEFT) != "jump_side":
+		errores.append("La presentación no construyó jump_side.")
+	if visual.obtener_nombre_animacion(4, Vector2.DOWN) != "dash_down":
+		errores.append("La presentación no construyó dash_down.")
+
+	var marcador := ColorRect.new()
+	visual.configurar(Node2D.new(), marcador, null)
+	visual.actualizar_direccion(Vector2.RIGHT)
+	if not marcador.position.is_equal_approx(Vector2(12.0, -26.0)):
+		errores.append("El marcador visual no conservó el desplazamiento lateral.")
+	visual.actualizar_direccion(Vector2.ZERO)
+	if not marcador.position.is_equal_approx(Vector2(-2.0, -12.0)):
+		errores.append("El marcador visual no usó DOWN como orientación de reserva.")

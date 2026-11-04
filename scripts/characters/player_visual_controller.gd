@@ -5,23 +5,19 @@ class_name PlayerVisualController
 ## No modifica estado de gameplay ni consulta Supabase.
 
 var visual: Node2D = null
-var body_visual: CanvasItem = null
-var head_visual: CanvasItem = null
 var facing_marker: CanvasItem = null
 var animation_player: AnimationPlayer = null
 
+
 func configurar(
 	nuevo_visual: Node2D,
-	nuevo_body: CanvasItem,
-	nuevo_head: CanvasItem,
 	nuevo_marker: CanvasItem,
 	nueva_animacion: AnimationPlayer
 ) -> void:
 	visual = nuevo_visual
-	body_visual = nuevo_body
-	head_visual = nuevo_head
 	facing_marker = nuevo_marker
 	animation_player = nueva_animacion
+
 
 func actualizar_direccion(facing: Vector2) -> void:
 	if facing_marker == null:
@@ -31,22 +27,32 @@ func actualizar_direccion(facing: Vector2) -> void:
 	if direccion == Vector2.ZERO:
 		direccion = Vector2.DOWN
 
-	facing_marker.position = direccion * 6.0
+	var centro := Vector2(0.0, -24.0)
+	facing_marker.position = centro + direccion * 14.0 - Vector2(2.0, 2.0)
 
-func actualizar_estado(estado: int) -> void:
+
+func actualizar_estado(estado: int, facing: Vector2) -> void:
 	if animation_player == null:
 		return
 
-	var nombre := "idle"
-	match estado:
-		1:
-			nombre = "walk"
-		2:
-			nombre = "run"
-		3:
-			nombre = "jump"
-		4:
-			nombre = "dash"
-
+	var nombre := obtener_nombre_animacion(estado, facing)
 	if animation_player.has_animation(nombre):
 		animation_player.play(nombre)
+
+
+func obtener_nombre_animacion(estado: int, facing: Vector2) -> String:
+	var prefijo := "idle"
+	match estado:
+		1:
+			prefijo = "walk"
+		2:
+			prefijo = "run"
+		3:
+			prefijo = "jump"
+		4:
+			prefijo = "dash"
+
+	var direccion := "side"
+	if absf(facing.y) >= absf(facing.x):
+		direccion = "down" if facing.y > 0.0 else "up"
+	return prefijo + "_" + direccion
