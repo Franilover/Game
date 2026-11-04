@@ -5,6 +5,7 @@ const CoordinatorScript = preload("res://scripts/gameplay/player/player_locomoti
 const ActionScript = preload("res://scripts/gameplay/player/player_action_controller.gd")
 const StaminaScript = preload("res://scripts/gameplay/player/player_stamina_controller.gd")
 const VisualScript = preload("res://scripts/characters/player_visual_controller.gd")
+const DashInputScript = preload("res://scripts/gameplay/player/player_dash_input_controller.gd")
 
 
 func _initialize() -> void:
@@ -17,6 +18,7 @@ func _run() -> void:
 	_probar_limite_direccion_y_estado(errores)
 	_probar_coordinador(errores)
 	_probar_presentacion_visual(errores)
+	_probar_buffer_dash(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -106,3 +108,26 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 	visual.actualizar_direccion(Vector2.ZERO)
 	if not marcador.position.is_equal_approx(Vector2(-2.0, -12.0)):
 		errores.append("El marcador visual no usó DOWN como orientación de reserva.")
+
+ 
+func _probar_buffer_dash(errores: Array[String]) -> void:
+	var dash_input = DashInputScript.new()
+	dash_input.solicitar()
+	if dash_input.actualizar(0.05, false):
+		errores.append("El dash se activó antes de completar su ventana de espera.")
+	if not dash_input.actualizar(0.07, false):
+		errores.append("El dash no se habilitó al completar la ventana de espera.")
+
+	dash_input.solicitar()
+	dash_input.cancelar_por_menu_reinos()
+	if dash_input.actualizar(0.2, false):
+		errores.append("Shift+M no canceló la solicitud de dash.")
+
+	dash_input.solicitar()
+	if dash_input.actualizar(0.2, true):
+		errores.append("El dash se activó mientras M seguía presionada.")
+
+	dash_input.solicitar()
+	dash_input.reiniciar()
+	if dash_input.actualizar(0.2, false):
+		errores.append("Reiniciar no limpió la solicitud pendiente de dash.")

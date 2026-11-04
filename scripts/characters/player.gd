@@ -63,15 +63,13 @@ var locomotion := PlayerLocomotionCoordinator.new()
 var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 var visual_controller := PlayerVisualController.new()
+var dash_input_controller := PlayerDashInputController.new()
 
 var _world_context_ref: WorldContext = null
 var _game_state_ref: GameStateService = null
 var _auth_ref: Node = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
-var _dash_input_pending: bool = false
-var _dash_input_buffer: float = 0.0
-var _dash_chord_cancelled: bool = false
 
 
 
@@ -189,9 +187,7 @@ func _input(event: InputEvent) -> void:
 		return
 	var tecla := event as InputEventKey
 	if tecla.pressed and not tecla.echo and tecla.keycode == KEY_M and tecla.shift_pressed:
-		_dash_input_pending = false
-		_dash_input_buffer = 0.0
-		_dash_chord_cancelled = true
+		dash_input_controller.cancelar_por_menu_reinos()
 
 
 func aplicar_identidad_red(
@@ -326,8 +322,7 @@ func _physics_process(delta: float) -> void:
 	# Si una interfaz está bloqueando el gameplay,
 	# no procesamos ningún input del jugador.
 	if _esta_bloqueado_por_interfaz():
-		_dash_input_pending = false
-		_dash_input_buffer = 0.0
+		dash_input_controller.reiniciar()
 		_movement_input_direction = Vector2.ZERO
 		velocity = Vector2.ZERO
 		if state != State.IDLE:
@@ -356,18 +351,12 @@ func _physics_process(delta: float) -> void:
 	# Shift inicia el dash. Se espera una fracción de segundo para distinguir
 	# Shift solo de Shift+M (menú de reinos), sin disparar el dash por accidente.
 	if Input.is_action_just_pressed("dash"):
-		_dash_input_pending = true
-		_dash_input_buffer = 0.12
-		_dash_chord_cancelled = false
+		dash_input_controller.solicitar()
 
-	if _dash_input_pending:
-		_dash_input_buffer -= delta
-		if _dash_input_buffer <= 0.0:
-			_dash_input_pending = false
-			if not _dash_chord_cancelled and not Input.is_key_pressed(KEY_M):
-				if _puede_hacer_dash():
-					_iniciar_dash()
-					return
+	if dash_input_controller.actualizar(delta, Input.is_key_pressed(KEY_M)):
+		if _puede_hacer_dash():
+			_iniciar_dash()
+			return
 
 	var run_pressed := Input.is_action_pressed("run")
 
