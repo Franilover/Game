@@ -31,7 +31,7 @@ func _run() -> void:
 func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	var atacante := EntityScript.new() as Entity
 	atacante.name = "CombatTestAttacker"
-	get_tree().get_tree().root.add_child(atacante)
+	get_tree().root.add_child(atacante)
 
 	var objetivo := EntityScript.new() as Entity
 	objetivo.name = "CombatTestTarget"
