@@ -423,16 +423,19 @@ func _calcular_movimiento_normal(
 	multiplicador_velocidad: float,
 	estado_corriendo: bool
 ) -> Vector2:
-	var facing_anterior := facing
 	var velocidad := locomotion.calcular_movimiento(
 		direccion,
 		move_speed,
 		multiplicador_velocidad,
 		estado_corriendo
 	)
-	facing = locomotion.obtener_facing()
-	if not facing.is_equal_approx(facing_anterior):
-		_update_dir_marker()
+	# No sobrescribir el facing visual cuando el input está en reposo:
+	# el controlador puede haberse reiniciado durante una pausa/interfaz.
+	if direccion.length_squared() > 0.01:
+		var nuevo_facing := locomotion.obtener_facing()
+		if not facing.is_equal_approx(nuevo_facing):
+			facing = nuevo_facing
+			_update_dir_marker()
 	return velocidad
 
 

@@ -56,6 +56,13 @@ func _probar_limite_direccion_y_estado(errores: Array[String]) -> void:
 	if movement.state != MovementScript.State.RUN:
 		errores.append("El multiplicador de carrera no produjo estado RUN.")
 
+	# El sprint de Eterium puede aumentar velocidad sin cambiar el estado WALK.
+	velocidad = movement.actualizar(Vector2.RIGHT, 90.0, 2.0, false)
+	if not velocidad.is_equal_approx(Vector2(180.0, 0.0)):
+		errores.append("El multiplicador adicional de velocidad no se aplicó.")
+	if movement.state != MovementScript.State.WALK:
+		errores.append("Un multiplicador adicional alteró el estado visual WALK.")
+
 
 func _probar_coordinador(errores: Array[String]) -> void:
 	var movement = MovementScript.new()
