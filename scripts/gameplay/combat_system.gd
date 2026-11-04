@@ -32,7 +32,7 @@ const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
 var player: Player = null
-var inventory: GarliaInventory = null
+var inventory: InventoryController = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
 var game_state: GameStateService = null
@@ -42,7 +42,7 @@ var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Player, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null) -> void:
+func configurar(nuevo_player: Player, nuevo_inventory: InventoryController = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
