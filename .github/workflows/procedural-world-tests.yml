@@ -107,6 +107,17 @@ jobs:
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
 
+      - name: Run player locomotion regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/player/test_player_locomotion.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerLocomotion: FAIL:' <<<"$output"; then
+            echo "Player locomotion regression test reported errors."
+            exit 1
+          fi
+
       - name: Run combat temporal contract regression test
         shell: bash
         run: |
@@ -137,17 +148,6 @@ jobs:
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiWorldPresence: FAIL:' <<<"$output"; then
             echo "Garumi world presence test reported script or assertion errors."
-            exit 1
-          fi
-
-      - name: Run player locomotion regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/player/test_player_locomotion.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerLocomotion: FAIL:' <<<"$output"; then
-            echo "Player locomotion regression test reported errors."
             exit 1
           fi
 
