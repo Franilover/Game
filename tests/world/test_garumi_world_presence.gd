@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const WORLD_DATA_SCRIPT = preload("res://scripts/world/world_data.gd")
 const SPAWN_RULES_SCRIPT = preload("res://scripts/world/world_spawn_rules.gd")
@@ -9,22 +9,22 @@ const SPAWNER_SCRIPT = preload("res://scripts/world/world_entity_spawner.gd")
 var _failed := false
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
 	var garumi_node: Node = GARUMI_SCENE.instantiate()
-	root.add_child(garumi_node)
+	get_tree().root.add_child(garumi_node)
 	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
 	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
 	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
-	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Oruvan", "garumi_debug_preview": true})
+	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Desel", "garumi_debug_preview": true})
 	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
 	var sprite_garumi := garumi_node.get_node("Sprite2D") as Sprite2D
 	_expect(str(datos_visual.get("categoria_entidad", "")) == "garumi", "La clase debe fijar su categoría antes de resolver sprite y presentación.")
-	_expect(sprite_garumi != null and sprite_garumi.texture != null, "El sprite SVG dibujado a mano debe cargarse desde assets/art/garumis.")
+	_expect(sprite_garumi != null and sprite_garumi.texture != null, "El sprite de prueba debe cargarse desde assets/art/garumis.")
 	_expect(not bool(garumi_node.get_meta("garumi_sprite_missing", true)), "El runtime debe marcar el prototipo como textura disponible.")
 	_expect(garumi_node.is_in_group("garumis"), "Las instancias deben pertenecer al grupo propio de Garumis.")
 	_expect(not garumi_node.is_in_group("creatures"), "Los Garumis no deben mezclarse con el grupo de criaturas comunes.")
@@ -43,10 +43,10 @@ func _run() -> void:
 	if not guardados.is_empty():
 		var estado_guardado := guardados[0] as Dictionary
 		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
-		_expect(str(estado_guardado.get("asset_key", "")) == "Oruvan", "El streaming debe conservar la clave del sprite.")
+		_expect(str(estado_guardado.get("asset_key", "")) == "Desel", "El streaming debe conservar la clave del sprite.")
 		_expect(str(estado_guardado.get("nombre", "")) == "Garumi scene test", "El streaming debe conservar el nombre visible del Garumi.")
 		_expect(bool(estado_guardado.get("garumi_debug_preview", false)), "El streaming debe conservar que la instancia es sólo un prototipo de depuración.")
-		_expect(str(estado_guardado.get("habitat_clave", "")) == "bosque", "El streaming debe conservar el contexto ecológico del Garumi.")
+		_expect(str(estado_guardado.get("habitat_clave", "")) == "tierra", "El streaming debe conservar el entorno de tierra del Garumi.")
 	manager.free()
 	garumi_node.free()
 
@@ -168,10 +168,10 @@ func _run() -> void:
 	rules.free()
 
 	if _failed:
-		quit(1)
+		get_tree().quit(1)
 		return
 	print("PASS: Orumi generation-one filter, draft rejection, and visible debug prototype defaults are covered; ecology and spawn probability checks pass.")
-	quit()
+	get_tree().quit()
 
 
 func _expect(condition: bool, message: String) -> void:
