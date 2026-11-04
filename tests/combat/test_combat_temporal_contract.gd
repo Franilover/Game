@@ -31,15 +31,15 @@ func _run() -> void:
 func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	var atacante := EntityScript.new() as Entity
 	atacante.name = "CombatTestAttacker"
-	get_tree().root.add_child(atacante)
+	get_tree().get_tree().root.add_child(atacante)
 
 	var objetivo := EntityScript.new() as Entity
 	objetivo.name = "CombatTestTarget"
-	root.add_child(objetivo)
+	get_tree().root.add_child(objetivo)
 	await get_tree().process_frame
 
 	var combate := CombatSystemScript.new() as CombatSystem
-	root.add_child(combate)
+	get_tree().root.add_child(combate)
 
 	var contactos_sistema: Dictionary = {"cantidad": 0}
 	combate.contacto_efectivo.connect(
@@ -59,7 +59,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 
 	var proyectil_cero := CombatProjectileScript.new() as CombatProjectile
 	proyectil_cero.configurar(ataque_cero, Vector2.RIGHT, 100.0, 1.0, 2.0)
-	root.add_child(proyectil_cero)
+	get_tree().root.add_child(proyectil_cero)
 	var contactos_proyectil: Dictionary = {"cantidad": 0}
 	var impactos_con_danio: Dictionary = {"cantidad": 0}
 	proyectil_cero.contacto_detectado.connect(
@@ -122,7 +122,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	)
 	var proyectil_daniador := CombatProjectileScript.new() as CombatProjectile
 	proyectil_daniador.configurar(ataque_daniador, Vector2.RIGHT, 100.0, 1.0, 2.0)
-	root.add_child(proyectil_daniador)
+	get_tree().root.add_child(proyectil_daniador)
 	var impactos_reales: Dictionary = {"cantidad": 0}
 	proyectil_daniador.objetivo_impactado.connect(
 		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
