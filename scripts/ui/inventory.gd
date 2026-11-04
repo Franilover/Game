@@ -21,8 +21,17 @@ signal inventory_selection_changed(indice: int, datos: Dictionary)
 signal active_item_changed(datos: Dictionary)
 signal hand_item_changed(hand: String, slot_index: int, datos: Dictionary)
 
-var mano_izquierda_activa: int = 0
-var mano_derecha_activa: int = 0
+var mano_izquierda_activa: int:
+	get:
+		return inventory_controller.mano_izquierda_activa
+	set(value):
+		inventory_controller.mano_izquierda_activa = clampi(value, 0, 5)
+
+var mano_derecha_activa: int:
+	get:
+		return inventory_controller.mano_derecha_activa
+	set(value):
+		inventory_controller.mano_derecha_activa = clampi(value, 0, 5)
 
 var slot_nodes: Array[Button] = []
 
@@ -1221,33 +1230,18 @@ func seleccionar_hotbar(indice_hotbar: int) -> void:
 
 
 func seleccionar_slot_mano(mano: String, slot_index: int) -> bool:
-	if slot_index < 0 or slot_index >= 6:
+	if not inventory_controller.seleccionar_slot_mano(mano, slot_index):
 		return false
-	var indice_datos := slot_index if mano == "izquierda" else 12 + slot_index
-	if mano == "izquierda":
-		mano_izquierda_activa = slot_index
-	elif mano == "derecha":
-		mano_derecha_activa = slot_index
-	else:
-		return false
-	hand_item_changed.emit(mano, slot_index, obtener_objeto(indice_datos))
+	hand_item_changed.emit(mano, slot_index, obtener_objeto(obtener_indice_mano_activa(mano)))
 	return true
 
 
 func obtener_indice_mano_activa(mano: String) -> int:
-	if mano == "izquierda":
-		return mano_izquierda_activa
-	if mano == "derecha":
-		return 12 + mano_derecha_activa
-	return -1
+	return inventory_controller.obtener_indice_mano_activa(mano)
 
 
 func obtener_objeto_mano_activa(mano: String) -> Dictionary:
-	if mano == "izquierda":
-		return obtener_objeto(mano_izquierda_activa)
-	if mano == "derecha":
-		return obtener_objeto(12 + mano_derecha_activa)
-	return {}
+	return inventory_controller.obtener_objeto_mano_activa(mano)
 
 
 func obtener_objeto_activo() -> Dictionary:
