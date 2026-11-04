@@ -593,7 +593,7 @@ func _configurar_combate(world_context: WorldContext, world_gen: WorldGenerator 
 		push_error("Main: no se encontró Systems/CombatSystem.")
 		return
 
-	_combat_system.configurar(_player, _inventory, world_context, _combat_projectiles, GameState)
+	_combat_system.configurar(_player, _inventory.inventory_controller if _inventory != null else null, world_context, _combat_projectiles, GameState)
 
 
 func _configurar_input_router() -> void:
