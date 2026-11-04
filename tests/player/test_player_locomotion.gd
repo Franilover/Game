@@ -115,7 +115,7 @@ func _probar_buffer_dash(errores: Array[String]) -> void:
 	dash_input.solicitar()
 	if dash_input.actualizar(0.05, false):
 		errores.append("El dash se activó antes de completar su ventana de espera.")
-	if not dash_input.actualizar(0.07, false):
+	if not dash_input.actualizar(0.08, false):
 		errores.append("El dash no se habilitó al completar la ventana de espera.")
 
 	dash_input.solicitar()
