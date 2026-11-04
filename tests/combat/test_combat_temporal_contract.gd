@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const EntityScript = preload("res://scripts/characters/entity.gd")
 const CombatAttackScript = preload("res://scripts/gameplay/combat/combat_attack.gd")
@@ -9,7 +9,7 @@ const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eteri
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
@@ -21,22 +21,22 @@ func _run() -> void:
 	if not errores.is_empty():
 		for error in errores:
 			push_error("CombatTemporalContract: FAIL: " + error)
-		quit(1)
+		get_tree().quit(1)
 		return
 
 	print("CombatTemporalContract: PASS")
-	quit(0)
+	get_tree().quit(0)
 
 
 func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	var atacante := EntityScript.new() as Entity
 	atacante.name = "CombatTestAttacker"
-	root.add_child(atacante)
+	get_tree().root.add_child(atacante)
 
 	var objetivo := EntityScript.new() as Entity
 	objetivo.name = "CombatTestTarget"
 	root.add_child(objetivo)
-	await process_frame
+	await get_tree().process_frame
 
 	var combate := CombatSystemScript.new() as CombatSystem
 	root.add_child(combate)
