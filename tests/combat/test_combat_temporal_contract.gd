@@ -18,7 +18,7 @@ func _run() -> void:
 	var errores: Array[String] = []
 	await _probar_contacto_independiente_del_danio(errores)
 	_probar_pausa_recuperacion_eterium(errores)
-	_probar_inventario_desacoplado_de_ui(errores)
+	await _probar_inventario_desacoplado_de_ui(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -216,6 +216,7 @@ func _probar_pausa_recuperacion_eterium(errores: Array[String]) -> void:
 
 func _probar_inventario_desacoplado_de_ui(errores: Array[String]) -> void:
 	var inventario := InventoryControllerScript.new() as InventoryController
+	get_tree().root.add_child(inventario)
 	var items: Array = []
 	items.resize(18)
 	items[0] = {"nombre": "Objeto mano izquierda"}
@@ -244,4 +245,5 @@ func _probar_inventario_desacoplado_de_ui(errores: Array[String]) -> void:
 	if combate.inventory != inventario:
 		errores.append("CombatSystem no acepta InventoryController como contrato de inventario.")
 	combate.free()
-	inventario.free()
+	inventario.queue_free()
+	await get_tree().process_frame
