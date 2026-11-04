@@ -65,6 +65,7 @@ var action_controller := PlayerActionController.new()
 var visual_controller := PlayerVisualController.new()
 var dash_input_controller := PlayerDashInputController.new()
 var input_controller := PlayerInputController.new()
+var physics_movement_controller := PlayerMovementPhysicsController.new()
 
 var _world_context_ref: WorldContext = null
 var _game_state_ref: GameStateService = null
@@ -400,12 +401,13 @@ func _aplicar_movimiento_normal(
 	delta: float,
 	ajustar_arena: bool
 ) -> void:
-	velocity = _calcular_movimiento_normal(
+	var velocidad := _calcular_movimiento_normal(
 		direccion,
 		multiplicador_velocidad,
 		estado_corriendo
 	)
-	move_and_slide()
+	physics_movement_controller.establecer_velocidad(self, velocidad)
+	physics_movement_controller.aplicar_desplazamiento(self)
 	if ajustar_arena:
 		_ajustar_a_arena_garumi()
 	if direccion == Vector2.ZERO and state == State.IDLE:
@@ -689,8 +691,8 @@ func _procesar_jump(delta: float) -> void:
 	var duracion := maxf(jump_duration, 0.001)
 	var progreso := locomotion.obtener_progreso_salto(duracion)
 	var velocidad := locomotion.obtener_velocidad_accion(duracion, jump_distance)
-	velocity = _action_direction * velocidad
-	move_and_slide()
+	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad)
+	physics_movement_controller.aplicar_desplazamiento(self)
 	_ajustar_a_arena_garumi()
 	var altura := sin(progreso * PI) * 16.0
 	visual.position = _base_visual_position + Vector2(0.0, -altura)
@@ -727,8 +729,8 @@ func _ajustar_a_arena_garumi() -> void:
 
 func _procesar_dash(delta: float) -> void:
 	var velocidad := locomotion.obtener_velocidad_accion(dash_duration, dash_distance)
-	velocity = _action_direction * velocidad
-	move_and_slide()
+	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad)
+	physics_movement_controller.aplicar_desplazamiento(self)
 	_ajustar_a_arena_garumi()
 	if not locomotion.procesando_dash():
 		velocity = Vector2.ZERO
