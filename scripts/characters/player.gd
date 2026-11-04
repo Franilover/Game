@@ -288,16 +288,13 @@ func _procesar_movimiento_red(delta: float) -> void:
 		multiplicador_velocidad = run_multiplier * eterium.multiplicador_carrera()
 	elif esta_corriendo:
 		multiplicador_velocidad = run_multiplier
-	velocity = _calcular_movimiento_normal(
+	_aplicar_movimiento_normal(
 		direccion,
 		multiplicador_velocidad,
-		esta_corriendo or eterium_sprint
+		esta_corriendo or eterium_sprint,
+		delta,
+		false
 	)
-	move_and_slide()
-	if direccion == Vector2.ZERO and state == State.IDLE:
-		_actualizar_recuperacion_eterium(delta)
-	_sincronizar_estado_movimiento()
-	_actualizar_regeneracion_stamina(delta, esta_corriendo or eterium_sprint)
 
 
 func _physics_process(delta: float) -> void:
@@ -391,10 +388,6 @@ func _physics_process(delta: float) -> void:
 		and not eterium_sprint
 	)
 
-	# La recuperación natural ocurre únicamente mientras el jugador espera.
-	if direction == Vector2.ZERO and state == State.IDLE:
-		_actualizar_recuperacion_eterium(delta)
-
 	# Movimiento.
 	var multiplicador_velocidad := 1.0
 	if eterium_sprint:
@@ -402,20 +395,34 @@ func _physics_process(delta: float) -> void:
 	elif is_running:
 		multiplicador_velocidad = run_multiplier
 
-	velocity = _calcular_movimiento_normal(
+	_aplicar_movimiento_normal(
 		direction,
 		multiplicador_velocidad,
-		is_running
-	)
-
-	move_and_slide()
-	_ajustar_a_arena_garumi()
-	_sincronizar_estado_movimiento()
-
-	_actualizar_regeneracion_stamina(
+		is_running,
 		delta,
-		is_running
+		true
 	)
+
+
+func _aplicar_movimiento_normal(
+	direccion: Vector2,
+	multiplicador_velocidad: float,
+	estado_corriendo: bool,
+	delta: float,
+	ajustar_arena: bool
+) -> void:
+	velocity = _calcular_movimiento_normal(
+		direccion,
+		multiplicador_velocidad,
+		estado_corriendo
+	)
+	move_and_slide()
+	if ajustar_arena:
+		_ajustar_a_arena_garumi()
+	if direccion == Vector2.ZERO and state == State.IDLE:
+		_actualizar_recuperacion_eterium(delta)
+	_sincronizar_estado_movimiento()
+	_actualizar_regeneracion_stamina(delta, estado_corriendo)
 
 
 func _calcular_movimiento_normal(
