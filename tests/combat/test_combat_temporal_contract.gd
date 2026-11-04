@@ -5,6 +5,7 @@ const CombatAttackScript = preload("res://scripts/gameplay/combat/combat_attack.
 const CombatProjectileScript = preload("res://scripts/gameplay/combat/combat_projectile.gd")
 const CombatAttackAreaScript = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
+const InventoryControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
 const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eterium_runtime.gd")
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
 
@@ -17,6 +18,7 @@ func _run() -> void:
 	var errores: Array[String] = []
 	await _probar_contacto_independiente_del_danio(errores)
 	_probar_pausa_recuperacion_eterium(errores)
+	_probar_inventario_desacoplado_de_ui(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -211,3 +213,35 @@ func _probar_pausa_recuperacion_eterium(errores: Array[String]) -> void:
 		errores.append("Un delta grande no llenó el recurso hasta su máximo.")
 	if not is_equal_approx(runtime.recovery_accumulator, 0.0):
 		errores.append("Se acumularon turnos completos después de alcanzar el máximo.")
+
+func _probar_inventario_desacoplado_de_ui(errores: Array[String]) -> void:
+	var inventario := InventoryControllerScript.new() as InventoryController
+	var items: Array = []
+	items.resize(18)
+	items[0] = {"nombre": "Objeto mano izquierda"}
+	items[12] = {"nombre": "Objeto mano derecha"}
+	inventario.configurar_items(items)
+
+	if not inventario.seleccionar_slot_mano("izquierda", 0):
+		errores.append("InventoryController rechazó una selección válida de mano izquierda.")
+	if not inventario.seleccionar_slot_mano("derecha", 0):
+		errores.append("InventoryController rechazó una selección válida de mano derecha.")
+	if inventario.obtener_indice_mano_activa("izquierda") != 0:
+		errores.append("InventoryController no conservó el índice de mano izquierda.")
+	if inventario.obtener_indice_mano_activa("derecha") != 12:
+		errores.append("InventoryController no conservó el índice de mano derecha.")
+	if str(inventario.obtener_objeto_mano_activa("izquierda").get("nombre", "")) != "Objeto mano izquierda":
+		errores.append("Combat inventory API no devolvió el objeto de mano izquierda.")
+	if str(inventario.obtener_objeto_mano_activa("derecha").get("nombre", "")) != "Objeto mano derecha":
+		errores.append("Combat inventory API no devolvió el objeto de mano derecha.")
+	if inventario.seleccionar_slot_mano("centro", 0):
+		errores.append("InventoryController aceptó una mano desconocida.")
+	if inventario.seleccionar_slot_mano("izquierda", 6):
+		errores.append("InventoryController aceptó un índice de mano fuera de rango.")
+
+	var combate := CombatSystemScript.new() as CombatSystem
+	combate.inventory = inventario
+	if combate.inventory != inventario:
+		errores.append("CombatSystem no acepta InventoryController como contrato de inventario.")
+	combate.free()
+	inventario.free()
