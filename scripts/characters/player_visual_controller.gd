@@ -5,13 +5,13 @@ class_name PlayerVisualController
 ## No modifica estado de gameplay ni consulta Supabase.
 
 var visual: Node2D = null
-var facing_marker: CanvasItem = null
+var facing_marker: Control = null
 var animation_player: AnimationPlayer = null
 
 
 func configurar(
 	nuevo_visual: Node2D,
-	nuevo_marker: CanvasItem,
+	nuevo_marker: Control,
 	nueva_animacion: AnimationPlayer
 ) -> void:
 	visual = nuevo_visual
