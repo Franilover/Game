@@ -245,7 +245,11 @@ func _probar_inventario_desacoplado_de_ui(errores: Array[String]) -> void:
 	if combate.inventory != inventario:
 		errores.append("CombatSystem no acepta InventoryController como contrato de inventario.")
 	combate.free()
-	# Soltar explícitamente el runtime RefCounted del fixture antes de cerrar la escena.
+	# Liberar las piezas RefCounted del runtime de prueba antes de cerrar la escena.
+	inventario.runtime.state = null
+	inventario.runtime.hotbar = null
+	inventario.runtime.equipment.state = null
+	inventario.runtime.equipment = null
 	inventario.runtime = null
 	inventario.queue_free()
 	await get_tree().process_frame
