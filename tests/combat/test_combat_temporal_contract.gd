@@ -35,6 +35,7 @@ func _run() -> void:
 func _probar_direccion_de_ataque_recibida(errores: Array[String]) -> void:
 	var jugador := PlayerScene.instantiate() as Player
 	var combate := CombatSystemScript.new() as CombatSystem
+	combate.player = jugador
 	get_tree().root.add_child(jugador)
 	get_tree().root.add_child(combate)
 	await get_tree().process_frame
