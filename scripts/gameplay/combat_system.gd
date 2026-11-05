@@ -12,6 +12,11 @@ const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 	"res://scripts/gameplay/combat/combat_attack_area.gd"
 )
 
+
+const COMBAT_ITEM_RESOLVER: Script = preload(
+	"res://scripts/gameplay/combat/combat_item_resolver.gd"
+)
+
 @export_category("Ataque")
 @export var alcance_desarmado: float = 48.0
 @export var ancho_ataque: float = 48.0
@@ -109,53 +114,51 @@ func procesar_accion_secundaria() -> bool:
 
 
 func _al_ataque_solicitado(
-	_direccion: Vector2,
+	direccion: Vector2,
 	objeto: Dictionary,
 	modo: String
 ) -> void:
 	if player == null or _tiempo_desde_ataque > 0.0:
 		return
 
+	var direccion_ataque := _normalizar_direccion_ataque(direccion)
+
 	if modo == "desarmado":
-		_atacar_desarmado()
+		_atacar_desarmado(direccion_ataque)
 		return
 
 	if modo == "arma_equipada":
 		if not _es_objeto_ataque(objeto):
 			return
-		_atacar_con_objeto(objeto)
+		_atacar_con_objeto(objeto, direccion_ataque)
 		return
 
 	if modo == "mano_secundaria":
 		if not _es_arma(objeto):
 			return
-		_atacar_con_arma(objeto)
-
+		_atacar_con_arma(objeto, direccion_ataque)
 
 func _es_herramienta(objeto: Dictionary) -> bool:
-	var tipo: String = str(objeto.get("tipo", "")).strip_edges().to_lower()
-	return tipo == "herramienta"
-
+	return COMBAT_ITEM_RESOLVER.es_herramienta(objeto)
 
 func _es_objeto_ataque(objeto: Dictionary) -> bool:
-	return _es_arma(objeto) or _es_herramienta(objeto)
+	return COMBAT_ITEM_RESOLVER.es_objeto_ataque(objeto)
 
-
-func _atacar_con_objeto(objeto: Dictionary) -> void:
+func _atacar_con_objeto(objeto: Dictionary, direccion: Vector2) -> void:
 	if objeto.is_empty():
 		return
 
-	var tipo: String = str(objeto.get("tipo", "")).strip_edges().to_lower()
-	if tipo == "herramienta":
-		_atacar_con_herramienta(objeto)
+	if _es_herramienta(objeto):
+		_atacar_con_herramienta(objeto, direccion)
 		return
 
-	_atacar_con_arma(objeto)
+	_atacar_con_arma(objeto, direccion)
 
-
-func _atacar_con_herramienta(herramienta: Dictionary) -> void:
-	var propiedades_variant: Variant = herramienta.get("propiedades_game", {})
-	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+func _atacar_con_herramienta(
+	herramienta: Dictionary,
+	direccion: Vector2
+) -> void:
+	var propiedades := _obtener_propiedades_game(herramienta)
 	var recoleccion_variant: Variant = propiedades.get("herramienta_recoleccion", {})
 	var recoleccion: Dictionary = recoleccion_variant as Dictionary if recoleccion_variant is Dictionary else {}
 	var tipo_herramienta := str(recoleccion.get("tipo", "")).strip_edges().to_lower()
@@ -165,10 +168,8 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 			_consumir_durabilidad_herramienta()
 		return
 
-	var direccion: Vector2 = _obtener_direccion_ataque()
-	var alcance: float = _obtener_alcance_arma(herramienta)
-	var ancho: float = _obtener_ancho_arma(herramienta)
-
+	var alcance := _obtener_alcance_arma(herramienta)
+	var ancho := _obtener_ancho_arma(herramienta)
 	_crear_ataque_melee(
 		direccion,
 		alcance,
@@ -176,7 +177,6 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 		herramienta
 	)
 	_consumir_durabilidad_herramienta()
-
 
 func _usar_pala() -> bool:
 	if world_context == null or not is_instance_valid(world_context):
@@ -303,7 +303,7 @@ func usar_objeto_activo() -> void:
 	var objeto_activo := _obtener_objeto_activo_para_accion()
 	if objeto_activo.is_empty() or not _es_objeto_ataque(objeto_activo):
 		return
-	_atacar_con_objeto(objeto_activo)
+	_atacar_con_objeto(objeto_activo, _obtener_direccion_ataque())
 
 
 func _obtener_objeto_activo_para_accion() -> Dictionary:
@@ -351,51 +351,10 @@ func _obtener_arma_equipada(slot_preferido: String = "mano_principal") -> Dictio
 	return {}
 
 
-func _es_arma(
-	objeto: Dictionary
-) -> bool:
-	var tipo: String = str(
-		objeto.get(
-			"tipo",
-			""
-		)
-	).strip_edges().to_lower()
+func _es_arma(objeto: Dictionary) -> bool:
+	return COMBAT_ITEM_RESOLVER.es_arma(objeto)
 
-	if tipo == "arma":
-		return true
-
-	# Compatibilidad con partidas antiguas y objetos cuyo tipo de catálogo
-	# es genérico, pero cuya clasificación canónica sí declara que son armas.
-	if bool(objeto.get("es_arma", false)):
-		return true
-
-	var categorias: Array[String] = []
-	for clave in ["categoria", "categoria_canonica"]:
-		var valor := str(objeto.get(clave, "")).strip_edges().to_lower()
-		if not valor.is_empty():
-			categorias.append(valor)
-
-	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
-	if tipo_objeto_variant is Dictionary:
-		var tipo_objeto := tipo_objeto_variant as Dictionary
-		var categoria_tipo := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
-		if not categoria_tipo.is_empty():
-			categorias.append(categoria_tipo)
-		var plantilla_variant: Variant = tipo_objeto.get("plantilla", {})
-		if plantilla_variant is Dictionary:
-			var categoria_plantilla := str((plantilla_variant as Dictionary).get("categoria", "")).strip_edges().to_lower()
-			if not categoria_plantilla.is_empty():
-				categorias.append(categoria_plantilla)
-
-	for categoria in categorias:
-		if "arma" in categoria:
-			return true
-
-	return false
-
-
-func _atacar_desarmado() -> void:
-	var direccion: Vector2 = _obtener_direccion_ataque()
+func _atacar_desarmado(direccion: Vector2) -> void:
 	# El hitbox es la única resolución del ataque melee.
 	# CombatAttackArea detecta el objetivo y CombatDamage aplica el daño.
 	_crear_ataque_melee(
@@ -408,43 +367,25 @@ func _atacar_desarmado() -> void:
 
 	_tiempo_desde_ataque = enfriamiento_arma
 
-
-
 func _atacar_con_arma(
-	arma: Dictionary
+	arma: Dictionary,
+	direccion: Vector2
 ) -> void:
-	var direccion: Vector2 = (
-		_obtener_direccion_ataque()
-	)
-
-	var modo: String = (
-		_obtener_modo_ataque(arma)
-	)
-
+	var modo := _obtener_modo_ataque(arma)
 	_tiempo_desde_ataque = enfriamiento_arma
 
 	if modo == "distancia":
-		_disparar_proyectil(
-			arma,
-			direccion
-		)
+		_disparar_proyectil(arma, direccion)
 		return
 
-	var alcance: float = _obtener_alcance_arma(
-		arma
-	)
-
-	var ancho: float = _obtener_ancho_arma(
-		arma
-	)
-
+	var alcance := _obtener_alcance_arma(arma)
+	var ancho := _obtener_ancho_arma(arma)
 	_crear_ataque_melee(
 		direccion,
 		alcance,
 		ancho,
 		arma
 	)
-
 
 func _disparar_proyectil(
 	arma: Dictionary,
@@ -569,61 +510,8 @@ func _obtener_ai_controller(objetivo: Node) -> CreatureAI:
 	return objetivo.get_node_or_null("AIController") as CreatureAI
 
 
-func _obtener_modo_ataque(
-	arma: Dictionary
-) -> String:
-	# La categoría canónica puede venir directamente del objeto, de su tipo
-	# enlazado o de la plantilla geométrica. Algunas partidas antiguas solo
-	# conservan una de esas capas.
-	var categorias: Array[String] = []
-	var categoria_directa := str(arma.get("categoria_canonica", arma.get("categoria", ""))).strip_edges().to_lower()
-	if not categoria_directa.is_empty():
-		categorias.append(categoria_directa)
-
-	var tipo_objeto_variant: Variant = arma.get("tipo_objeto", {})
-	if tipo_objeto_variant is Dictionary:
-		var tipo_objeto := tipo_objeto_variant as Dictionary
-		var categoria_tipo := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
-		if not categoria_tipo.is_empty():
-			categorias.append(categoria_tipo)
-
-		var plantilla_variant: Variant = tipo_objeto.get("plantilla", {})
-		if plantilla_variant is Dictionary:
-			var plantilla := plantilla_variant as Dictionary
-			var categoria_plantilla := str(plantilla.get("categoria", "")).strip_edges().to_lower()
-			if not categoria_plantilla.is_empty():
-				categorias.append(categoria_plantilla)
-
-	# El catálogo puede declarar el arco por modalidad, subtipo o familia.
-	# Revisar todas las etiquetas conocidas evita que una categoría genérica
-	# ("arma") haga que un arco termine ejecutando el ataque cuerpo a cuerpo.
-	var propiedades := _obtener_propiedades_game(arma)
-	var etiquetas: Array[String] = categorias.duplicate()
-	for fuente_variant in [arma, tipo_objeto_variant, propiedades]:
-		if not fuente_variant is Dictionary:
-			continue
-		var fuente := fuente_variant as Dictionary
-		for clave in [
-			"modo_ataque", "tipo_ataque", "modalidad_ataque", "modo_combate",
-			"tipo_arma", "clase_arma", "subtipo_arma", "familia_arma",
-			"tipo", "clase", "subtipo", "familia", "categoria"
-		]:
-			var etiqueta := str(fuente.get(clave, "")).strip_edges().to_lower()
-			if not etiqueta.is_empty():
-				etiquetas.append(etiqueta)
-
-	for etiqueta in etiquetas:
-		if (
-			"distancia" in etiqueta
-			or "proyectil" in etiqueta
-			or "ranged" in etiqueta
-			or "arco" in etiqueta
-			or etiqueta == "bow"
-		):
-			return "distancia"
-
-	return "cuerpo"
-
+func _obtener_modo_ataque(arma: Dictionary) -> String:
+	return COMBAT_ITEM_RESOLVER.obtener_modo_ataque(arma)
 
 func atacar_objetivo_con_arma(
 	atacante: Node,
@@ -665,96 +553,37 @@ func obtener_alcance_arma(
 	return _obtener_alcance_arma(arma)
 
 
-func _obtener_danio_arma(
-	arma: Dictionary
-) -> int:
-	var propiedades: Dictionary = (
-		_obtener_propiedades_game(
-			arma
-		)
-	)
-
-	var danio_variant: Variant = propiedades.get(
-		"danio",
-		null
-	)
-
-	if danio_variant is int or danio_variant is float:
-		return maxi(
-			0,
-			int(danio_variant)
-		)
-
-	return maxi(
-		0,
+func _obtener_danio_arma(arma: Dictionary) -> int:
+	return COMBAT_ITEM_RESOLVER.obtener_danio_arma(
+		arma,
 		danio_arma_defecto
 	)
 
-
-func _obtener_alcance_arma(
-	arma: Dictionary
-) -> float:
-	return _obtener_float_propiedad(
+func _obtener_alcance_arma(arma: Dictionary) -> float:
+	return COMBAT_ITEM_RESOLVER.obtener_alcance_arma(
 		arma,
-		"alcance",
 		alcance_arma
 	)
 
-
-func _obtener_ancho_arma(
-	arma: Dictionary
-) -> float:
-	return _obtener_float_propiedad(
+func _obtener_ancho_arma(arma: Dictionary) -> float:
+	return COMBAT_ITEM_RESOLVER.obtener_ancho_ataque(
 		arma,
-		"ancho_ataque",
 		ancho_arma
 	)
-
 
 func _obtener_float_propiedad(
 	arma: Dictionary,
 	nombre: String,
 	valor_por_defecto: float
 ) -> float:
-	var propiedades: Dictionary = (
-		_obtener_propiedades_game(
-			arma
-		)
+	return COMBAT_ITEM_RESOLVER.obtener_float_propiedad(
+		arma,
+		nombre,
+		valor_por_defecto
 	)
 
-	var valor: Variant = (
-		propiedades.get(
-			nombre,
-			valor_por_defecto
-		)
-	)
-
-	if valor is int or valor is float:
-		return maxf(
-			0.0,
-			float(valor)
-		)
-
-	return valor_por_defecto
-
-
-func _obtener_propiedades_game(
-	objeto: Dictionary
-) -> Dictionary:
-	var propiedades_variant: Variant = (
-		objeto.get(
-			"propiedades_game",
-			{}
-		)
-	)
-
-	if propiedades_variant is Dictionary:
-		return (
-			propiedades_variant as Dictionary
-		)
-
-	return {}
-
+func _obtener_propiedades_game(objeto: Dictionary) -> Dictionary:
+	return COMBAT_ITEM_RESOLVER.obtener_propiedades_game(objeto)
 
 func _aplicar_danio(
 	objetivo: Entity,
@@ -913,6 +742,12 @@ func _registrar_criatura_derrotada(objetivo: Entity) -> void:
 	if game_state == null or not is_instance_valid(game_state):
 		return
 	game_state.registrar_criatura_derrotada(objetivo)
+
+
+func _normalizar_direccion_ataque(direccion: Vector2) -> Vector2:
+	if direccion.length_squared() > 0.01:
+		return direccion.normalized()
+	return _obtener_direccion_ataque()
 
 
 func _obtener_direccion_ataque() -> Vector2:
