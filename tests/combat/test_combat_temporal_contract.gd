@@ -5,6 +5,7 @@ const CombatAttackScript = preload("res://scripts/gameplay/combat/combat_attack.
 const CombatProjectileScript = preload("res://scripts/gameplay/combat/combat_projectile.gd")
 const CombatAttackAreaScript = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
+const PlayerScript = preload("res://scripts/characters/player.gd")
 const InventoryControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
 const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eterium_runtime.gd")
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
@@ -17,6 +18,7 @@ func _ready() -> void:
 func _run() -> void:
 	var errores: Array[String] = []
 	_probar_durabilidad_en_mano_correcta(errores)
+	_probar_direccion_de_ataque_recibida(errores)
 	await _probar_contacto_independiente_del_danio(errores)
 	_probar_pausa_recuperacion_eterium(errores)
 
@@ -28,6 +30,35 @@ func _run() -> void:
 
 	print("CombatTemporalContract: PASS")
 	get_tree().quit(0)
+
+
+func _probar_direccion_de_ataque_recibida(errores: Array[String]) -> void:
+	var jugador := PlayerScript.new() as Player
+	var combate := CombatSystemScript.new() as CombatSystem
+	jugador.facing = Vector2.DOWN
+	combate.player = jugador
+	combate._ready()
+
+	if not combate.combat_controller.solicitar_ataque(
+		Vector2.LEFT,
+		{},
+		"desarmado"
+	):
+		errores.append("CombatController rechazó una solicitud de prueba válida.")
+	else:
+		var ataque: CombatAttackArea = null
+		for hijo in jugador.get_children():
+			if hijo is CombatAttackArea:
+				ataque = hijo as CombatAttackArea
+				break
+
+		if ataque == null:
+			errores.append("La solicitud no creó el hitbox melee esperado.")
+		elif not is_equal_approx(ataque.rotation, Vector2.LEFT.angle()):
+			errores.append("CombatSystem ignoró la dirección entregada por CombatController.")
+
+	combate.free()
+	jugador.free()
 
 
 func _probar_durabilidad_en_mano_correcta(errores: Array[String]) -> void:
