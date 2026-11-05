@@ -483,3 +483,14 @@ La regresión `CombatTemporalContract` ahora comprueba ambos casos de durabilida
 
 La separación de manos no cambia las reglas de combate ni el comportamiento de uso de consumibles; sólo mueve la operación a su dueño y corrige el destino de la durabilidad.
 
+## Cuadragésima quinta barrida — Resolución de objetos y dirección de ataque
+
+Se separó la interpretación de datos de objetos de la ejecución del combate:
+
+- Se creó `CombatItemResolver` como componente puro para clasificar armas/herramientas, interpretar el modo de ataque y leer daño, alcance, ancho y otras propiedades numéricas.
+- `CombatSystem` conserva la orquestación: valida la acción, crea el hitbox o proyectil y coordina el daño. Mantiene wrappers internos para no romper sus consumidores actuales.
+- `CombatController` ya entrega dirección, objeto y modo en la solicitud. `CombatSystem` ahora conserva esa dirección durante la ejecución melee y a distancia; sólo consulta el facing actual cuando el vector recibido es inválido/cero.
+- Se añadieron pruebas para clasificación directa y legacy, categorías anidadas, modo proyectil, valores por defecto y dirección recibida.
+- GitHub Actions ejecutó la suite completa con Godot 4.7, incluida la prueba nueva de `CombatItemResolver` y el contrato temporal de combate.
+
+No se alteraron fórmulas de daño, balance, alcance, categorías admitidas ni reglas de ataque; esta pasada separa lectura de datos y respeta el snapshot de dirección de la solicitud.
