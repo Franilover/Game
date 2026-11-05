@@ -5,6 +5,7 @@ const CombatAttackScript = preload("res://scripts/gameplay/combat/combat_attack.
 const CombatProjectileScript = preload("res://scripts/gameplay/combat/combat_projectile.gd")
 const CombatAttackAreaScript = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
+const InventoryControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
 const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eterium_runtime.gd")
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
 
@@ -15,6 +16,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
+	_probar_durabilidad_en_mano_correcta(errores)
 	await _probar_contacto_independiente_del_danio(errores)
 	_probar_pausa_recuperacion_eterium(errores)
 
@@ -26,6 +28,48 @@ func _run() -> void:
 
 	print("CombatTemporalContract: PASS")
 	get_tree().quit(0)
+
+
+func _probar_durabilidad_en_mano_correcta(errores: Array[String]) -> void:
+	var inventario := InventoryControllerScript.new() as InventoryController
+	var combate := CombatSystemScript.new() as CombatSystem
+	var items: Array = []
+	for _indice in range(18):
+		items.append({})
+
+	var herramienta := {
+		"tipo": "herramienta",
+		"nombre": "Herramienta de prueba",
+		"durabilidad_actual": 3,
+		"propiedades_game": {"durabilidad": 3}
+	}
+	items[0] = herramienta.duplicate(true)
+	items[12] = herramienta.duplicate(true)
+	inventario.configurar_items(items)
+	combate.inventory = inventario
+
+	# La acción primaria toma la mano izquierda.
+	combate._accion_en_mano_derecha = false
+	combate._consumir_durabilidad_herramienta()
+	var izquierda := inventario.obtener_objeto_mano_activa("izquierda")
+	var derecha := inventario.obtener_objeto_mano_activa("derecha")
+	if int(izquierda.get("durabilidad_actual", -1)) != 2:
+		errores.append("La acción primaria no consumió durabilidad de la mano izquierda.")
+	if int(derecha.get("durabilidad_actual", -1)) != 3:
+		errores.append("La acción primaria consumió durabilidad de la mano derecha.")
+
+	# La acción secundaria toma la mano derecha.
+	combate._accion_en_mano_derecha = true
+	combate._consumir_durabilidad_herramienta()
+	izquierda = inventario.obtener_objeto_mano_activa("izquierda")
+	derecha = inventario.obtener_objeto_mano_activa("derecha")
+	if int(izquierda.get("durabilidad_actual", -1)) != 2:
+		errores.append("La acción secundaria alteró la durabilidad de la mano izquierda.")
+	if int(derecha.get("durabilidad_actual", -1)) != 2:
+		errores.append("La acción secundaria no consumió durabilidad de la mano derecha.")
+
+	combate.free()
+	inventario.free()
 
 
 func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
