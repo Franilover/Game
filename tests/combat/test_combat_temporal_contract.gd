@@ -5,7 +5,7 @@ const CombatAttackScript = preload("res://scripts/gameplay/combat/combat_attack.
 const CombatProjectileScript = preload("res://scripts/gameplay/combat/combat_projectile.gd")
 const CombatAttackAreaScript = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
-const PlayerScript = preload("res://scripts/characters/player.gd")
+const PlayerScene = preload("res://scenes/characters/player.tscn")
 const InventoryControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
 const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eterium_runtime.gd")
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
@@ -18,7 +18,7 @@ func _ready() -> void:
 func _run() -> void:
 	var errores: Array[String] = []
 	_probar_durabilidad_en_mano_correcta(errores)
-	_probar_direccion_de_ataque_recibida(errores)
+	await _probar_direccion_de_ataque_recibida(errores)
 	await _probar_contacto_independiente_del_danio(errores)
 	_probar_pausa_recuperacion_eterium(errores)
 
@@ -33,12 +33,13 @@ func _run() -> void:
 
 
 func _probar_direccion_de_ataque_recibida(errores: Array[String]) -> void:
-	var jugador := PlayerScript.new() as Player
+	var jugador := PlayerScene.instantiate() as Player
 	var combate := CombatSystemScript.new() as CombatSystem
-	jugador.facing = Vector2.DOWN
-	combate.player = jugador
-	combate._ready()
+	get_tree().root.add_child(jugador)
+	get_tree().root.add_child(combate)
+	await get_tree().process_frame
 
+	jugador.facing = Vector2.DOWN
 	if not combate.combat_controller.solicitar_ataque(
 		Vector2.LEFT,
 		{},
@@ -57,8 +58,9 @@ func _probar_direccion_de_ataque_recibida(errores: Array[String]) -> void:
 		elif not is_equal_approx(ataque.rotation, Vector2.LEFT.angle()):
 			errores.append("CombatSystem ignoró la dirección entregada por CombatController.")
 
-	combate.free()
-	jugador.free()
+	combate.queue_free()
+	jugador.queue_free()
+	await get_tree().process_frame
 
 
 func _probar_durabilidad_en_mano_correcta(errores: Array[String]) -> void:
