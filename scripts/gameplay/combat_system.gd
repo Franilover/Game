@@ -205,9 +205,7 @@ func _consumir_durabilidad_herramienta(en_equipo: bool = false) -> void:
 		inventory.consumir_durabilidad_equipo(_inventory_equipment_slot)
 		return
 	var mano := "izquierda" if _accion_en_equipo else "derecha"
-	var indice: int = inventory.obtener_indice_mano_activa(mano)
-	if indice >= 0:
-		inventory.consumir_durabilidad(indice)
+	inventory.consumir_durabilidad_mano_activa(mano)
 
 
 func _crear_ataque_melee(
