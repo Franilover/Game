@@ -34,13 +34,27 @@ revisar InventoryEquipment antes que HUD.
 ## Combate
 
 Ruta:
-GameplayInputRouter → CombatSystem → CombatController → CombatTargeting / CombatDamage → target.
+GameplayInputRouter → CombatSystem → CombatController → CombatSystem → CombatItemResolver → CombatAttackArea / CombatProjectile → CombatTargeting / CombatDamage → Entity.
+
+Responsabilidades:
+- `CombatController`: valida el bloqueo de entrada y emite el snapshot de dirección, objeto y modo.
+- `CombatItemResolver`: interpreta la clasificación y propiedades del objeto; no crea ataques ni aplica daño.
+- `CombatSystem`: orquesta la acción, crea hitboxes/proyectiles y conecta los efectos de combate.
+- `CombatTargeting`: valida objetivos.
+- `CombatDamage`: aplica daño.
 
 Archivos principales:
 - scripts/gameplay/combat_system.gd
-- controladores Combat existentes
-- InventoryEquipment para estado del arma
+- scripts/gameplay/combat/combat_controller.gd
+- scripts/gameplay/combat/combat_item_resolver.gd
+- scripts/gameplay/combat/combat_attack_area.gd
+- scripts/gameplay/combat/combat_projectile.gd
+- InventoryController / InventoryEquipment para el objeto y el equipamiento
 - entidades objetivo para recibir daño.
+
+La dirección enviada por `CombatController` forma parte del snapshot de la acción: `CombatSystem` debe propagarla hasta el hitbox o proyectil, sin volver a leer el facing después de aceptar la solicitud. Sólo se usa el facing actual como fallback para una dirección cero.
+
+Si el ataque usa el modo o las dimensiones equivocados, revisar `CombatItemResolver` antes de tocar la ejecución. Si el ángulo no coincide, revisar el payload y su propagación desde `_al_ataque_solicitado()`.
 
 No poner lógica de inventario dentro del HUD.
 
@@ -191,7 +205,8 @@ Si falla qué objeto está equipado: revisar `InventoryRuntime/Equipment`, no la
 CombatSystem recibe `InventoryController` desde `Main`; no depende de `GarliaInventory`.
 La acción primaria consulta el objeto activo de la mano izquierda y la secundaria consulta el objeto activo de la mano derecha. La durabilidad de una herramienta se consume en la misma mano que ejecutó la acción.
 
-Flujo: GameplayInputRouter → InteractionSystem / CombatSystem → InventoryController → InventoryRuntime.
+Flujo de objetos: GameplayInputRouter → InteractionSystem / CombatSystem → InventoryController → InventoryRuntime.
+Flujo de resolución: CombatController (snapshot dirección/objeto/modo) → CombatSystem → CombatItemResolver → hitbox/proyectil.
 
 El equipamiento real (`InventoryEquipment`) y las manos activas son estados distintos. La hotbar tampoco determina qué objeto de mano ejecuta una acción.
 
