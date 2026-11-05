@@ -173,23 +173,27 @@ RelationshipSystem conserva el estado social y recibe SocialRepository para los 
 
 ## Inventario — frontera actual
 
-`Inventory` es Presentation/UI y recibe `Player` e `InputGate` desde `Main`.
-`InventoryController` coordina el `InventoryRuntime` y expone el contrato de estado.
-`InventoryRuntime` contiene el estado canónico separado en items, hotbar y equipment.
+`GarliaInventory` es Presentation/UI; crea y contiene `InventoryController`, y recibe `Player` e `InputGate` desde `Main`.
+`InventoryController` coordina `InventoryRuntime` y expone operaciones de dominio para consultar manos, usar/consumir objetos y consumir durabilidad.
+`InventoryRuntime` conserva el estado canónico separado en items, hotbar y equipment.
+
+`InteractionSystem` recibe `InventoryController`, nunca el nodo visual `GarliaInventory`.
+Cuando una operación de gameplay cambia una mano, `mano_objeto_cambiado` notifica a la UI para refrescar slots, información y señales de presentación.
 
 La hotbar y el equipamiento son estados distintos. Seleccionar un índice de hotbar no equipa automáticamente el objeto de ese índice.
 
-Si falla la apertura/bloqueo del inventario: `Main → Inventory → InventoryController → GameplayInputRouter`.
+Si falla la apertura/bloqueo del inventario: `Main → GarliaInventory → InventoryController → GameplayInputRouter`.
 Si falla qué objeto está equipado: revisar `InventoryRuntime/Equipment`, no la hotbar ni el HUD.
 
 
 ## Combate y equipamiento — frontera
 
-El CombatSystem recibe Inventory desde Main y obtiene el arma desde obtener_equipamiento(). La hotbar no determina el arma utilizada por el ataque primario.
+CombatSystem recibe `InventoryController` desde `Main`; no depende de `GarliaInventory`.
+La acción primaria consulta el objeto activo de la mano izquierda y la secundaria consulta el objeto activo de la mano derecha. La durabilidad de una herramienta se consume en la misma mano que ejecutó la acción.
 
-Flujo: InventoryController → InventoryRuntime → InventoryEquipment → CombatSystem
+Flujo: GameplayInputRouter → InteractionSystem / CombatSystem → InventoryController → InventoryRuntime.
 
-La durabilidad de un arma/herramienta equipada se consume sobre el slot equipado, no sobre el slot seleccionado de hotbar.
+El equipamiento real (`InventoryEquipment`) y las manos activas son estados distintos. La hotbar tampoco determina qué objeto de mano ejecuta una acción.
 
-Si un click ataca con el objeto equivocado: revisar CombatSystem._obtener_arma_equipada() y InventoryEquipment, no la UI de hotbar.
-Si el daño recibido ignora armadura: revisar Player._inventory_ref → obtener_equipamiento() → CombatDefense.
+Si un click usa el objeto equivocado: revisar `CombatSystem.procesar_accion_primaria/secundaria()`, `InventoryController.obtener_objeto_mano_activa()` y la selección de mano; no empezar por la UI.
+Si el daño recibido ignora armadura: revisar la ruta de equipamiento defensivo del Player y `CombatDefense`.
