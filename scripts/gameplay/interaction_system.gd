@@ -10,7 +10,7 @@ signal objetivo_cambiado(objetivo: Node)
 
 
 var player: Player = null
-var inventory: GarliaInventory = null
+var inventory: InventoryController = null
 var world_items: GarliaWorldItems = null
 var input_gate: GameplayInputGate = null
 var entity_manager: WorldEntityManager = null
@@ -23,7 +23,7 @@ var _scan_timer: float = 0.0
 
 func configurar(
 	nuevo_player: Player,
-	nuevo_inventory: GarliaInventory = null,
+	nuevo_inventory: InventoryController = null,
 	nuevo_world_items: GarliaWorldItems = null,
 	nuevo_input_gate: GameplayInputGate = null,
 	nuevo_entity_manager: WorldEntityManager = null
