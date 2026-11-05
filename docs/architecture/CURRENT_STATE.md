@@ -1,6 +1,6 @@
 # Garlia — Auditoría del estado actual
 
-Fecha: 2026-10-04
+Fecha: 2026-11-05
 
 ## Evidencia revisada
 
@@ -23,8 +23,9 @@ Se detectaron especialmente:
 - WorldTerrain, WorldTerrainVisual, WorldStreamer, WorldEntitySpawner y WorldAtmosphere ahora son nodos explícitos de `main.tscn`.
 - WorldAtmosphere recibe su CanvasModulate como dependencia de escena.
 - GameplayInputRouter recibe explícitamente InteractionSystem y CombatSystem.
-- CombatSystem recibe explícitamente Inventory, WorldGenerator y root de proyectiles.
-- InteractionSystem recibe explícitamente Inventory y GarliaWorldItems.
+- CombatSystem recibe explícitamente InventoryController, WorldContext, root de proyectiles y GameState.
+- InteractionSystem recibe InventoryController y GarliaWorldItems; no depende de la UI de inventario.
+- InventoryController centraliza uso/consumo de objetos de mano y durabilidad; GarliaInventory sólo refleja esos cambios mediante señales.
 - `DialogueSystem` accede directamente a MissionManager y RelationshipSystem.
 - `IUMManager` ya usa `IUMRepository → SupabaseClient` para acceso remoto.
 - `GameState` coordina guardado/carga local; `PlayerState`, `WorldState` y `DiscoveryState` contienen los snapshots persistibles correspondientes.
@@ -466,3 +467,19 @@ La cadena de combate ahora mantiene el contrato `Entity` desde la detección has
 ## Cuadragésima tercera barrida — GameState tipado en Player
 
 `GameState` ahora tiene contrato explícito (`class_name GameState`) y `Player` dejó de depender de llamadas dinámicas para terreno, descubrimientos, configuración de personaje y guardado. La dependencia de estado de partida queda tipada desde la composición hasta el uso.
+
+## Cuadragésima cuarta barrida — InteractionSystem y CombatSystem cierran la frontera de manos
+
+Se eliminó la dependencia de presentación que todavía quedaba en la ruta contextual:
+
+- `InteractionSystem` recibe `InventoryController` directamente desde `Main`.
+- La UI `GarliaInventory` ya no es necesaria para que el gameplay consulte, use o consuma un objeto de mano.
+- Las reglas de uso de consumibles (vida, stamina y Eterium), la validación de efectos y el consumo de cantidad ahora pertenecen a `InventoryController`.
+- `InventoryController` emite `mano_objeto_cambiado` tras el uso, consumo o desgaste de una mano; `GarliaInventory` escucha el evento y actualiza slots, selección y presentación.
+- El bloqueo de acciones sigue siendo responsabilidad de `GameplayInputRouter`/`GameplayInputGate`; la UI conserva su papel de bloqueo visual/modal.
+- `CombatSystem` identifica explícitamente la mano usada: acción primaria = izquierda; acción secundaria = derecha. El consumo de durabilidad sigue esa misma mano, sin invertirla.
+
+La regresión `CombatTemporalContract` ahora comprueba ambos casos de durabilidad. GitHub Actions ejecutó Godot 4.7, compilación de recursos y la suite headless de regresión para esta rama.
+
+La separación de manos no cambia las reglas de combate ni el comportamiento de uso de consumibles; sólo mueve la operación a su dueño y corrige el destino de la durabilidad.
+
