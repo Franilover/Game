@@ -241,6 +241,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_to_group("inventory")
 	add_child(inventory_controller)
+	if not inventory_controller.mano_objeto_cambiado.is_connected(_al_cambio_mano_desde_controlador):
+		inventory_controller.mano_objeto_cambiado.connect(_al_cambio_mano_desde_controlador)
 
 	_inicializar_items()
 	_inicializar_hotbar()
@@ -250,6 +252,27 @@ func _ready() -> void:
 	_inicializar_navegacion_tabs()
 	_limpiar_informacion()
 	PIXEL_UI_THEME.apply(self)
+
+
+func _al_cambio_mano_desde_controlador(
+	mano: String,
+	slot_index: int,
+	datos: Dictionary
+) -> void:
+	var indice := inventory_controller.obtener_indice_mano_activa(mano)
+	actualizar()
+	if indice_seleccionado == indice:
+		var actualizado := obtener_objeto(indice)
+		if actualizado.is_empty():
+			indice_seleccionado = -1
+			objeto_seleccionado.clear()
+			_limpiar_informacion()
+		else:
+			objeto_seleccionado = actualizado
+			_mostrar_informacion()
+	inventory_changed.emit()
+	hand_item_changed.emit(mano, slot_index, datos.duplicate(true))
+	_emitir_objeto_activo()
 
 
 func _input(event: InputEvent) -> void:
@@ -854,162 +877,18 @@ func usar_objeto_activo(usuario: Player = null) -> bool:
 
 
 func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
-	return usar_objeto_en_indice(obtener_indice_mano_activa(mano), usuario)
+	var actor := usuario if usuario != null else _player
+	return inventory_controller.usar_objeto_mano(mano, actor)
 
 
 func usar_objeto_en_indice(indice: int, usuario: Player = null) -> bool:
-
-	if indice < 0:
+	var actor := usuario if usuario != null else _player
+	if not inventory_controller.usar_objeto_en_indice(indice, actor):
 		return false
-
-	if indice >= items.size() or items[indice].is_empty():
-		return false
-
-	var objeto: Dictionary = items[indice]
-	var uso: Dictionary = _obtener_definicion_uso(objeto)
-
-	if uso.is_empty():
-		return false
-
-	var actor: Player = usuario
-	if actor == null:
-		actor = _player
-
-	if actor == null or not is_instance_valid(actor):
-		return false
-
-	var efectos_aplicados: int = _aplicar_efectos_uso(
-		uso,
-		actor
-	)
-
-	if efectos_aplicados <= 0:
-		return false
-
-	quitar_cantidad(indice, 1)
-
-	Events.notification_pushed.emit(
-		"Usaste " + str(objeto.get("nombre", "Objeto"))
-	)
-
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
 	return true
-
-
-func _obtener_definicion_uso(objeto: Dictionary) -> Dictionary:
-	var propiedades_variant: Variant = objeto.get(
-		"propiedades_game",
-		{}
-	)
-
-	if not propiedades_variant is Dictionary:
-		return {}
-
-	var propiedades: Dictionary = propiedades_variant as Dictionary
-	var uso_variant: Variant = propiedades.get(
-		"uso",
-		{}
-	)
-
-	if not uso_variant is Dictionary:
-		return {}
-
-	var uso: Dictionary = uso_variant as Dictionary
-
-	if bool(uso.get("permitido", true)) == false:
-		return {}
-
-	var tipo: String = str(
-		uso.get("tipo", "")
-	).strip_edges().to_lower()
-
-	if tipo.is_empty():
-		return {}
-
-	return uso.duplicate(true)
-
-
-func _aplicar_efectos_uso(
-	uso: Dictionary,
-	actor: Player
-) -> int:
-	var aplicados: int = 0
-	var efectos_variant: Variant = uso.get(
-		"efectos",
-		null
-	)
-
-	if efectos_variant is Array:
-		for efecto_variant in efectos_variant as Array:
-			if not efecto_variant is Dictionary:
-				continue
-
-			if _aplicar_efecto_recurso(
-				efecto_variant as Dictionary,
-				actor
-			):
-				aplicados += 1
-
-		return aplicados
-
-	var efecto: Dictionary = uso.duplicate(true)
-
-	if _aplicar_efecto_recurso(efecto, actor):
-		aplicados += 1
-
-	return aplicados
-
-
-func _aplicar_efecto_recurso(
-	efecto: Dictionary,
-	actor: Player
-) -> bool:
-	var recurso: String = str(
-		efecto.get(
-			"recurso",
-			efecto.get("efecto", "")
-		)
-	).strip_edges().to_lower()
-
-	var magnitud_variant: Variant = efecto.get(
-		"magnitud",
-		efecto.get("cantidad", 0)
-	)
-
-	if not (
-		magnitud_variant is int
-		or magnitud_variant is float
-	):
-		return false
-
-	var magnitud: float = maxf(
-		float(magnitud_variant),
-		0.0
-	)
-
-	if magnitud <= 0.0:
-		return false
-
-	match recurso:
-		"vida", "salud", "health":
-			var antes: int = actor.health
-			if antes >= actor.max_health:
-				return false
-			actor.heal(roundi(magnitud))
-			return actor.health > antes
-
-		"stamina":
-			var antes_stamina: float = actor.stamina
-			if antes_stamina >= actor.max_stamina:
-				return false
-			return actor.restaurar_stamina(magnitud)
-
-		"eterium", "mana":
-			var antes_eterium: int = actor.mana
-			if antes_eterium >= actor.max_mana:
-				return false
-			return actor.restaurar_eterium(magnitud)
-
-	return false
 
 
 func consumir_objeto_activo(cantidad: int = 1) -> bool:
@@ -1017,7 +896,7 @@ func consumir_objeto_activo(cantidad: int = 1) -> bool:
 
 
 func consumir_objeto_mano(mano: String, cantidad: int = 1) -> bool:
-	return quitar_cantidad(obtener_indice_mano_activa(mano), maxi(1, cantidad))
+	return inventory_controller.consumir_objeto_mano(mano, cantidad)
 
 
 func quitar_objeto(indice: int) -> bool:
