@@ -33,6 +33,8 @@ func _run() -> void:
 func _probar_durabilidad_en_mano_correcta(errores: Array[String]) -> void:
 	var inventario := InventoryControllerScript.new() as InventoryController
 	var combate := CombatSystemScript.new() as CombatSystem
+	get_tree().root.add_child(inventario)
+	get_tree().root.add_child(combate)
 	var items: Array = []
 	for _indice in range(18):
 		items.append({})
