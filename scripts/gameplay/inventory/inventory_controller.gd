@@ -63,6 +63,12 @@ func obtener_indice_mano_activa(mano: String) -> int:
 func obtener_objeto_mano_activa(mano: String) -> Dictionary:
 	return runtime.obtener_item(obtener_indice_mano_activa(mano))
 
+func consumir_durabilidad_mano_activa(mano: String) -> bool:
+	var indice := obtener_indice_mano_activa(mano)
+	if indice < 0:
+		return false
+	return consumir_durabilidad(indice)
+
 func agregar_objeto(datos: Dictionary) -> bool:
 	if not puede_interactuar():
 		_garlia_debug().call("registrar", "INVENTORY", "agregar_objeto bloqueado por GameplayInputGate.")
