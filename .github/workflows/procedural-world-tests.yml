@@ -129,6 +129,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run combat item resolver regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_item_resolver.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatItemResolver: FAIL:' <<<"$output"; then
+            echo "Combat item resolver regression test reported errors."
+            exit 1
+          fi
+
       - name: Run combat event queue contract regression test
         shell: bash
         run: |
