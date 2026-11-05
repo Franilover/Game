@@ -13,6 +13,7 @@ func _garlia_debug() -> Node:
 signal inventario_cambio
 signal hotbar_cambio(indice: int)
 signal equipo_cambio(slot: String, item: Dictionary)
+signal mano_objeto_cambiado(mano: String, slot_index: int, item: Dictionary)
 
 var runtime := InventoryRuntime.new()
 var input_gate: GameplayInputGate = null
@@ -63,11 +64,149 @@ func obtener_indice_mano_activa(mano: String) -> int:
 func obtener_objeto_mano_activa(mano: String) -> Dictionary:
 	return runtime.obtener_item(obtener_indice_mano_activa(mano))
 
-func consumir_durabilidad_mano_activa(mano: String) -> bool:
-	var indice := obtener_indice_mano_activa(mano)
+
+func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
+	if mano not in ["izquierda", "derecha"]:
+		return false
+	return usar_objeto_en_indice(obtener_indice_mano_activa(mano), usuario, mano)
+
+
+func usar_objeto_en_indice(
+	indice: int,
+	usuario: Player = null,
+	mano: String = ""
+) -> bool:
+	if not puede_interactuar():
+		return false
 	if indice < 0:
 		return false
-	return consumir_durabilidad(indice)
+
+	var objeto := runtime.obtener_item(indice)
+	if objeto.is_empty():
+		return false
+
+	var uso := _obtener_definicion_uso(objeto)
+	if uso.is_empty():
+		return false
+
+	if usuario == null or not is_instance_valid(usuario):
+		return false
+
+	var efectos_aplicados := _aplicar_efectos_uso(uso, usuario)
+	if efectos_aplicados <= 0:
+		return false
+
+	if not quitar_cantidad(indice, 1):
+		return false
+
+	Events.notification_pushed.emit(
+		"Usaste " + str(objeto.get("nombre", "Objeto"))
+	)
+	if mano in ["izquierda", "derecha"]:
+		_emitir_mano_objeto_cambiado(mano)
+	return true
+
+
+func consumir_objeto_mano(mano: String, cantidad: int = 1) -> bool:
+	if mano not in ["izquierda", "derecha"]:
+		return false
+	var indice := obtener_indice_mano_activa(mano)
+	if not quitar_cantidad(indice, maxi(1, cantidad)):
+		return false
+	_emitir_mano_objeto_cambiado(mano)
+	return true
+
+
+func _emitir_mano_objeto_cambiado(mano: String) -> void:
+	var indice := obtener_indice_mano_activa(mano)
+	if indice < 0:
+		return
+	var slot_index := mano_izquierda_activa if mano == "izquierda" else mano_derecha_activa
+	mano_objeto_cambiado.emit(
+		mano,
+		slot_index,
+		runtime.obtener_item(indice)
+	)
+
+
+func _obtener_definicion_uso(objeto: Dictionary) -> Dictionary:
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return {}
+
+	var propiedades := propiedades_variant as Dictionary
+	var uso_variant: Variant = propiedades.get("uso", {})
+	if not uso_variant is Dictionary:
+		return {}
+
+	var uso := uso_variant as Dictionary
+	if not bool(uso.get("permitido", true)):
+		return {}
+
+	if str(uso.get("tipo", "")).strip_edges().is_empty():
+		return {}
+	return uso.duplicate(true)
+
+
+func _aplicar_efectos_uso(uso: Dictionary, actor: Player) -> int:
+	var aplicados := 0
+	var efectos_variant: Variant = uso.get("efectos", null)
+	if efectos_variant is Array:
+		for efecto_variant in efectos_variant as Array:
+			if not efecto_variant is Dictionary:
+				continue
+			if _aplicar_efecto_recurso(efecto_variant as Dictionary, actor):
+				aplicados += 1
+		return aplicados
+
+	if _aplicar_efecto_recurso(uso.duplicate(true), actor):
+		aplicados += 1
+	return aplicados
+
+
+func _aplicar_efecto_recurso(efecto: Dictionary, actor: Player) -> bool:
+	var recurso := str(
+		efecto.get("recurso", efecto.get("efecto", ""))
+	).strip_edges().to_lower()
+	var magnitud_variant: Variant = efecto.get(
+		"magnitud",
+		efecto.get("cantidad", 0)
+	)
+	if not (magnitud_variant is int or magnitud_variant is float):
+		return false
+
+	var magnitud := maxf(float(magnitud_variant), 0.0)
+	if magnitud <= 0.0:
+		return false
+
+	match recurso:
+		"vida", "salud", "health":
+			var antes := actor.health
+			if antes >= actor.max_health:
+				return false
+			actor.heal(roundi(magnitud))
+			return actor.health > antes
+		"stamina":
+			var antes_stamina := actor.stamina
+			if antes_stamina >= actor.max_stamina:
+				return false
+			return actor.restaurar_stamina(magnitud)
+		"eterium", "mana":
+			var antes_eterium := actor.mana
+			if antes_eterium >= actor.max_mana:
+				return false
+			return actor.restaurar_eterium(magnitud)
+
+	return false
+
+func consumir_durabilidad_mano_activa(mano: String) -> bool:
+	if mano not in ["izquierda", "derecha"]:
+		return false
+	var indice := obtener_indice_mano_activa(mano)
+	if indice < 0 or not consumir_durabilidad(indice):
+		return false
+	_emitir_mano_objeto_cambiado(mano)
+	return true
 
 func agregar_objeto(datos: Dictionary) -> bool:
 	if not puede_interactuar():
