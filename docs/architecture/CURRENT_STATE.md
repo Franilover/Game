@@ -619,3 +619,18 @@ Se reemplazó la validación mínima que solo comprobaba la existencia de \`biom
 - La prueba quedó incorporada al workflow Godot 4.7. No se declara validación CI hasta disponer de un resultado publicado.
 
 La validación solo rechaza estructuras incompletas o mal tipadas; no transforma, corrige ni escribe datos en Supabase. La autoridad de los datos permanece en la fuente canónica.
+
+
+## Quincuagésima quinta barrida — Restauración coherente de Player y Eterium
+
+Se corrigieron rutas que modificaban las propiedades públicas de \`Player\` sin actualizar el \`VitalState\` que usa el combate:
+
+- \`Entity.restaurar_estado_vital()\` ahora puede restaurar salud y maná en una sola operación, aplica límites y rearma el guard de muerte según el estado restaurado.
+- \`GameStateService\` restaura salud/maná mediante ese método; ya no escribe directamente \`health\`, \`mana\` e \`is_alive\` ni duplica sus señales.
+- \`Player.restaurar_eterium()\` delega en \`PlayerEteriumCoordinator\`; el daño de fisiología compartida también modifica Eterium mediante el coordinador.
+- Las reapariciones local y de red usan el dueño de estado \`Entity\`, evitando que el siguiente daño lea reservas antiguas y rearmando la siguiente transición de muerte.
+- Los máximos administrativos actualizan \`VitalState\` y el controlador de stamina; en fisiología compartida vida y Eterium conservan una misma capacidad.
+- La absorción de Eterium ahora recupera también la vida cuando la fisiología es compartida y no permite recuperar recursos en una entidad muerta.
+- Se ampliaron \`EntityLifecycleContract\` y se añadió \`PlayerVitalStateContract\` para restauración, daño normal/compartido, muerte, reaparición, absorción y límites administrativos.
+
+No se cambian fórmulas canónicas ni datos de Supabase. Las pruebas están integradas al workflow, pero todavía no se declara CI validado para esta revisión.
