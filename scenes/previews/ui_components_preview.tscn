@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_group.tscn" id="1_inventory_group"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_slot.tscn" id="2_inventory_slot"]
