@@ -34,12 +34,13 @@ revisar InventoryEquipment antes que HUD.
 ## Combate
 
 Ruta:
-GameplayInputRouter → CombatSystem → CombatController → CombatSystem → CombatItemResolver → CombatAttackArea / CombatProjectile → CombatTargeting / CombatDamage → Entity.
+GameplayInputRouter → CombatSystem → CombatController → CombatSystem → CombatItemResolver → CombatAttackExecutor → CombatAttackArea / CombatProjectile → CombatTargeting / CombatDamage → Entity.
 
 Responsabilidades:
 - `CombatController`: valida el bloqueo de entrada y emite el snapshot de dirección, objeto y modo.
 - `CombatItemResolver`: interpreta la clasificación y propiedades del objeto; no crea ataques ni aplica daño.
-- `CombatSystem`: orquesta la acción, crea hitboxes/proyectiles y conecta los efectos de combate.
+- `CombatAttackExecutor`: construye y conecta los nodos melee/proyectil; no decide cuándo se ataca ni resuelve impactos.
+- `CombatSystem`: orquesta la acción y conserva cooldown, daño, feedback, agresión ecológica, absorción de Eterium y registro de derrotas.
 - `CombatTargeting`: valida objetivos.
 - `CombatDamage`: aplica daño.
 
@@ -47,6 +48,7 @@ Archivos principales:
 - scripts/gameplay/combat_system.gd
 - scripts/gameplay/combat/combat_controller.gd
 - scripts/gameplay/combat/combat_item_resolver.gd
+- scripts/gameplay/combat/combat_attack_executor.gd
 - scripts/gameplay/combat/combat_attack_area.gd
 - scripts/gameplay/combat/combat_projectile.gd
 - InventoryController / InventoryEquipment para el objeto y el equipamiento
@@ -54,7 +56,7 @@ Archivos principales:
 
 La dirección enviada por `CombatController` forma parte del snapshot de la acción: `CombatSystem` debe propagarla hasta el hitbox o proyectil, sin volver a leer el facing después de aceptar la solicitud. Sólo se usa el facing actual como fallback para una dirección cero.
 
-Si el ataque usa el modo o las dimensiones equivocados, revisar `CombatItemResolver` antes de tocar la ejecución. Si el ángulo no coincide, revisar el payload y su propagación desde `_al_ataque_solicitado()`.
+Si el ataque usa el modo o las dimensiones equivocados, revisar `CombatItemResolver`. Si el hitbox/proyectil no se crea o no conserva propiedades/conexiones, revisar `CombatAttackExecutor`. Si el impacto y sus efectos posteriores están equivocados, revisar el handler correspondiente de `CombatSystem`.
 
 No poner lógica de inventario dentro del HUD.
 
