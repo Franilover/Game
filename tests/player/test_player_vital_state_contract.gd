@@ -111,7 +111,13 @@ func _run() -> void:
 	):
 		errores.append("La edición de máximos no sincronizó el estado vital compartido.")
 
-	jugador.restaurar_estado_vital(30, true, 20)
+	if not jugador.eterium.gastar(80):
+		errores.append("No se pudo consumir la reserva compartida completa.")
+	if jugador.is_alive or jugador.vital_state.is_alive or int(muertes["cantidad"]) != 3:
+		errores.append("Agotar el Eterium compartido no produjo una muerte idempotente.")
+	if jugador.eterium.absorber(10) != 0 or jugador.is_alive:
+		errores.append("Absorber Eterium después de agotar la vida revivió al jugador.")
+
 	jugador.reaparecer_en_red(Vector2(64, 96))
 	if (
 		jugador.health != 80
