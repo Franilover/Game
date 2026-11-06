@@ -34,7 +34,7 @@ func _probar_creacion_melee(errores: Array[String]) -> void:
 		"propiedades_game": {"danio": 0}
 	}
 	var direccion := Vector2.LEFT
-	var ataque := Executor.crear_ataque_melee(
+	var ataque: CombatAttackArea = Executor.crear_ataque_melee(
 		jugador,
 		direccion,
 		52.0,
@@ -78,7 +78,7 @@ func _probar_creacion_proyectil(errores: Array[String]) -> void:
 		"nombre": "Arco de prueba",
 		"categoria": "arco"
 	}
-	var proyectil := Executor.disparar_proyectil(
+	var proyectil: CombatProjectile = Executor.disparar_proyectil(
 		jugador,
 		raiz_proyectiles,
 		direccion,
