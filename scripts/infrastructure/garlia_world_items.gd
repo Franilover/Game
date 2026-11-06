@@ -2,6 +2,9 @@ extends Node
 class_name GarliaWorldItems
 
 
+const WORLD_ITEM_SCENE: PackedScene = preload("res://scenes/world/world_item.tscn")
+
+
 const MAX_OBJECTOS_EN_MUNDO: int = 3
 const HTTP_TIMEOUT: float = 15.0
 const MAX_CATALOG_RETRIES: int = 3
@@ -563,7 +566,10 @@ func _generar_world_item(
 		print("GarliaWorldItems: no se configuró WorldEntityManager.")
 		return false
 
-	var objeto := WorldItem.new()
+	var objeto := WORLD_ITEM_SCENE.instantiate() as WorldItem
+	if objeto == null:
+		push_error("GarliaWorldItems: no se pudo instanciar la escena WorldItem.")
+		return false
 	objeto.configurar_dependencias(_player, _inventory, _mission_manager)
 	if not _entity_manager.registrar_global(objeto):
 		objeto.free()
