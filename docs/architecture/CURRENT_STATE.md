@@ -563,3 +563,18 @@ Se separó la validación de ataques con arma de su ejecución y se dejó de rep
 - La regresión verifica validación de entradas, rechazo de objetivos derrotados, contacto aceptado con daño cero y daño real aplicado exactamente una vez.
 
 No se modificaron daño, alcance, cooldown, clasificación de armas ni reglas de Cambiaformas. La separación aclara el contrato sin cambiar las condiciones de gameplay.
+
+
+## Quincuagésima primera barrida — Resultado tipado para ataques genéricos de entidades
+
+Se aplicó el mismo contrato explícito a las solicitudes de ataque genérico que usa CreatureAI:
+
+- CombatSystem.solicitar_danio_desde_entidad() devuelve CombatAttackResult: distingue solicitud aceptada, contacto registrado, daño aplicado y motivo de rechazo.
+- La API registra el contacto de una solicitud válida aunque la cantidad sea cero; sólo declara daño aplicado cuando CombatDamage confirma una reducción real de salud.
+- aplicar_danio_desde_entidad() permanece como wrapper booleano para consumidores existentes. Conserva su significado histórico: true únicamente cuando se redujo salud.
+- CreatureAI._aplicar_danio_objetivo() ahora devuelve el resultado tipado y distingue objetivo inválido de CombatSystem no disponible.
+- Lignianos aplica el slow sólo cuando el resultado confirma el contacto. El efecto no depende de que el daño sea mayor que cero.
+- Los efectos posteriores al impacto y el robo de vida del Vampiro siguen ejecutándose únicamente después de daño real confirmado.
+- Se añadió una regresión para daño cero, daño real, wrapper booleano, atacante nulo y objetivo derrotado.
+
+No se cambió la fórmula de daño, la defensa, el cooldown ni la cantidad de daño configurada por especie. Se unificó el contrato de resultados y se conserva la API anterior.
