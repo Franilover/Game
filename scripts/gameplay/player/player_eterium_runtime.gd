@@ -222,12 +222,16 @@ func calcular_absorcion(datos_criatura: Dictionary) -> int:
 	return clampi(cantidad, 0, maxi(max_mana() - mana(), 0))
 
 func absorber(cantidad: int) -> int:
-	if vital_state == null:
+	if vital_state == null or not vital_state.is_alive:
 		return 0
 	var real := clampi(cantidad, 0, maxi(vital_state.max_mana - vital_state.mana, 0))
 	if real <= 0:
 		return 0
 	vital_state.mana += real
+	if vida_eterium_compartidos():
+		# En esta fisiología, absorber Eterium también recupera la reserva vital.
+		vital_state.health = vital_state.mana
+		vital_state.is_alive = vital_state.health > 0
 	# La absorción cambia el recurso, no el progreso del reloj pasivo.
 	# Si llena el Eterium, el progreso queda pausado hasta el siguiente gasto.
 	_emitir_mana()
