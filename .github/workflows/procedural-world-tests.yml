@@ -18,6 +18,7 @@ on:
       - "tests/entities/**"
       - "tests/persistence/**"
       - "tests/inventory/**"
+      - "tests/missions/**"
       - "scripts/infrastructure/save_file_repository.gd"
       - "scripts/state/world_snapshot_validator.gd"
       - "scripts/infrastructure/garlia_world_network.gd"
@@ -160,6 +161,17 @@ jobs:
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|InventoryPickupContract: FAIL:' <<<"$output"; then
             echo "Inventory pickup contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run mission manager persistence contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/missions/test_mission_manager_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|MissionManagerContract: FAIL:' <<<"$output"; then
+            echo "Mission manager contract test reported errors."
             exit 1
           fi
 
