@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/eterium_radial_menu.tscn" id="1_menu"]
+
+[node name="EteriumRadialMenuPreview" type="Control"]
+custom_minimum_size = Vector2(640, 360)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.075, 0.05, 0.035, 1)
+mouse_filter = 2
+
+[node name="EteriumRadialMenu" parent="." instance=ExtResource("1_menu")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Fondo" parent="EteriumRadialMenu" index="0"]
+visible = true
