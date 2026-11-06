@@ -605,3 +605,17 @@ Se cerró una inconsistencia entre la configuración de criaturas y el estado vi
 - El workflow ya ejecuta esa prueba; no se afirma CI validado hasta disponer de un resultado publicado para el commit actual.
 
 No se cambian estadísticas canónicas, daño, recompensas ni comportamiento de IA. La restauración viva completa de una criatura (visibilidad, movimiento y estado de IA) sigue fuera de esta corrección y requiere un contrato propio si se incorpora al flujo de juego.
+
+
+## Quincuagésima cuarta barrida — Validación estructural compartida de snapshots
+
+Se reemplazó la validación mínima que solo comprobaba la existencia de \`biomas\` por un contrato compartido:
+
+- Se creó \`WorldSnapshotValidator\`, usado tanto por \`WorldDataService\` como por \`GarliaSupabaseClient\`.
+- Exige que el snapshot contenga biomas y que la jerarquía bioma → ecosistemas → habitats → criaturas mantenga arreglos y registros con IDs; las criaturas deben incluir nombre.
+- Valida el tipo de los catálogos opcionales cuando están presentes (\`personajes_game\`, \`dialogos_game\`, \`misiones_game\`, \`reinos_game\`, \`props_game\`, \`lugares_game\`, \`garumis_game\`).
+- No exige que cada nodo tenga descendientes: un ecosistema o hábitat sin hijos sigue siendo una estructura válida.
+- Se añadió \`WorldSnapshotValidatorContract\` con casos válidos e inválidos y lectura del snapshot incluido \`data/world_initial.json\`.
+- La prueba quedó incorporada al workflow Godot 4.7. No se declara validación CI hasta disponer de un resultado publicado.
+
+La validación solo rechaza estructuras incompletas o mal tipadas; no transforma, corrige ni escribe datos en Supabase. La autoridad de los datos permanece en la fuente canónica.
