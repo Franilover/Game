@@ -235,18 +235,20 @@ func quitar_objeto(indice: int) -> bool:
 
 func soltar_objeto_al_mundo(
 	indice: int,
-	datos: Dictionary,
 	posicion: Vector2,
 	world_items: GarliaWorldItems
 ) -> bool:
-	if indice < 0 or indice >= runtime.state.items.size() or datos.is_empty():
+	if indice < 0 or indice >= runtime.state.items.size():
 		return false
 	if world_items == null or not is_instance_valid(world_items):
 		return false
-	if runtime.obtener_item(indice).is_empty():
+	# El controller usa el objeto actual del runtime, nunca una copia antigua
+	# que la UI haya conservado durante el arrastre.
+	var objeto := runtime.obtener_item(indice)
+	if objeto.is_empty():
 		return false
 	# La creación/registración en el mundo ocurre antes de retirar el origen.
-	if not world_items.soltar_objeto_al_mundo(datos, posicion):
+	if not world_items.soltar_objeto_al_mundo(objeto, posicion):
 		return false
 	return quitar_objeto(indice)
 
