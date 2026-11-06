@@ -1,7 +1,7 @@
-[gd_scene format=3 uid="uid://drmehcw40k0lc"]
+[gd_scene load_steps=3 format=3 uid="uid://drmehcw40k0lc"]
 
 [ext_resource type="Script" uid="uid://cotlqbuvswjm1" path="res://scripts/characters/player.gd" id="1_player"]
-[ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/characters/Sprite-0004.png" id="2_yewv4"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player_visual.tscn" id="2_visual"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(20, 10)
@@ -16,21 +16,7 @@ visible = false
 position = Vector2(0, -5)
 shape = SubResource("RectangleShape2D_player")
 
-[node name="Visual" type="Node2D" parent="." unique_id=1215258653]
-z_as_relative = false
-z_index = 4096
-
-[node name="Sprite2D" type="Sprite2D" parent="Visual" unique_id=584402202]
-position = Vector2(-2, -22)
-texture = ExtResource("2_yewv4")
-
-[node name="FacingMarker" type="ColorRect" parent="Visual" unique_id=142337053]
-offset_left = -2.0
-offset_top = -2.0
-offset_right = 2.0
-offset_bottom = 2.0
-mouse_filter = 2
-color = Color(1, 0.95, 0.2, 1)
+[node name="Visual" parent="." instance=ExtResource("2_visual")]
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=2001000002]
 
