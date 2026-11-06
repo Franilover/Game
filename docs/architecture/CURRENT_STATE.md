@@ -679,3 +679,16 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - El workflow Godot 4.7 incluye el contrato. No se afirma ejecución correcta hasta obtener resultado CI.
 - Esta corrección no modifica el formato de los objetos ni los datos canónicos.
 
+
+
+## Sexagésima barrida — Persistencia, inventario y progresión validados
+
+- `SaveFileRepository` ya valida el tamaño UTF-8 realmente escrito en el temporal; no usa `get_error()` como indicador de éxito después de escribir, porque el cursor al final puede representar `ERR_FILE_EOF`.
+- El lector usa `JSON.parse()` con instancia para tratar archivos corruptos como una condición recuperable sin contaminar la consola con un error global.
+- `InventoryController.soltar_objeto_al_mundo()` es dueño de la transacción: toma el objeto actual desde `InventoryRuntime`, crea/registra el `WorldItem` y solo después descuenta el slot.
+- La UI ya no entrega una copia potencialmente obsoleta del objeto arrastrado; solo entrega índice y posición.
+- `MissionManagerService.cargar_estado_partida()` valida estados y progreso contra los objetivos vigentes, limita cantidades y descarta referencias de objetivos inexistentes.
+- Contratos ejecutados: `SaveFileRepositoryContract`, `InventoryPickupContract`, `InventoryDropContract` y `MissionManagerContract`.
+- CI completo Godot 4.7: **success**, run `42213469008`, commit de código `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`. También pasaron locomoción, combate, IA, ciclo de vida, snapshot y terreno.
+- Pendiente funcional: aplicar/reclamar recompensas con el esquema canónico correcto; esta barrida no modificó Supabase ni tablas/RPC/datos.
+
