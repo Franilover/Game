@@ -7,7 +7,7 @@
 [ext_resource type="Script" path="res://scripts/ui/relationships.gd" id="5_relationships"]
 [ext_resource type="Script" path="res://scripts/ui/admin_inventory.gd" id="6_admin_inventory"]
 [ext_resource type="Script" path="res://scripts/ui/garumi_hub.gd" id="8_garumi_hub"]
-[ext_resource type="Script" path="res://scripts/ui/crafting.gd" id="7_crafting"]
+[ext_resource type="PackedScene" path="res://scenes/ui/crafting_panel.tscn" id="7_crafting"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_window"]
 bg_color = Color(0.1, 0.065, 0.04, 0.97)
@@ -385,10 +385,9 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 3
 
-[node name="Crafteo" type="Control" parent="Window/Margin/Column/Tabs" unique_id=3001000105]
+[node name="Crafteo" parent="Window/Margin/Column/Tabs" unique_id=3001000105 instance=ExtResource("7_crafting")]
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("7_crafting")
 
 [node name="Enciclopedia" type="Control" parent="Window/Margin/Column/Tabs" unique_id=3001000101]
 layout_mode = 2
