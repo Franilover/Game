@@ -5,7 +5,7 @@ class_name CombatImpactEffects
 ## real de salud. Esta capa nunca modifica salud ni decide cuánto daño aplicar.
 
 static func registrar_agresion_bosque(
-	jugador: Player,
+	jugador: Node,
 	criatura: Creature,
 	asesinada: bool
 ) -> bool:
