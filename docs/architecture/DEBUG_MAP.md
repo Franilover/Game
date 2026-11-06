@@ -37,13 +37,16 @@ Ruta jugador:
 GameplayInputRouter → CombatSystem → CombatController → CombatSystem → CombatItemResolver → CombatAttackExecutor → CombatAttackArea / CombatProjectile → CombatTargeting / CombatDamage → Entity.
 
 Ruta criatura:
-CreatureAI (objetivo, perfil, estado y momento del ataque) → CombatSystem (ejecución y resolución) → CombatDamage → Entity / Creature → señales de criatura → CreatureAI.
+CreatureAI (objetivo, perfil, estado y momento del ataque) → CombatWeaponAttackValidator → CombatSystem → CombatDamage → Entity / Creature → señales de criatura → CreatureAI.
+El resultado de ataque se entrega como CombatAttackResult: solicitud aceptada, contacto registrado y daño aplicado son estados independientes.
 
 Responsabilidades:
 - `CombatController`: valida el bloqueo de entrada y emite el snapshot de dirección, objeto y modo.
 - `CombatItemResolver`: interpreta la clasificación y propiedades del objeto; no crea ataques ni aplica daño.
 - `CombatAttackExecutor`: construye y conecta los nodos melee/proyectil; no decide cuándo se ataca ni resuelve impactos.
-- `CombatSystem`: recibe solicitudes ya decididas, ejecuta el ataque, aplica cooldown y coordina daño, contacto/eventos públicos y robo de vida.
+- `CombatWeaponAttackValidator`: valida atacante, objetivo vivo y clasificación de arma; no ejecuta acciones ni modifica estado.
+- `CombatAttackResult`: comunica por separado aceptación de solicitud, contacto registrado, daño aplicado y motivo de rechazo.
+- `CombatSystem`: ejecuta solicitudes validadas, aplica cooldown y coordina daño, contacto/eventos públicos y robo de vida. La aceptación no equivale a daño aplicado.
 - `CreatureAI`: decide a quién atacar, según qué perfil y cuándo; administra su máquina de estados y solicita la ejecución a `CombatSystem`. No modifica salud.
 - `Entity`: conserva `VitalState`, salud y ciclo vital. Es el dueño del estado de vida.
 - `Creature`: extiende `Entity` con datos y comportamiento de especie. Publica `configuracion_actualizada` y `danio_recibido`; no llama directamente a `CreatureAI` para entregar esos dos eventos.
@@ -58,6 +61,8 @@ Archivos principales:
 - scripts/gameplay/combat/combat_controller.gd
 - scripts/gameplay/combat/combat_item_resolver.gd
 - scripts/gameplay/combat/combat_attack_executor.gd
+- scripts/gameplay/combat/combat_weapon_attack_validator.gd
+- scripts/gameplay/combat/combat_attack_result.gd
 - scripts/gameplay/combat/combat_impact_effects.gd
 - scripts/gameplay/combat/combat_attack_area.gd
 - scripts/gameplay/combat/combat_projectile.gd
@@ -66,7 +71,7 @@ Archivos principales:
 
 La dirección enviada por `CombatController` forma parte del snapshot de la acción: `CombatSystem` debe propagarla hasta el hitbox o proyectil, sin volver a leer el facing después de aceptar la solicitud. Sólo se usa el facing actual como fallback para una dirección cero.
 
-Si la IA elige un objetivo, alcance o perfil equivocado, revisar `CreatureAI`. Si la solicitud está bien pero el ataque se ejecuta mal, revisar `CombatSystem`, `CombatItemResolver` y `CombatAttackExecutor`. Si salud o muerte no cambian bien, revisar `Entity` / `CombatDamage`. Si no llega una reacción de criatura, revisar las señales `configuracion_actualizada` y `danio_recibido` y la suscripción de `CreatureAI`. Si los efectos posteriores están equivocados, revisar `CombatImpactEffects`.
+Si la IA elige un objetivo, alcance o perfil equivocado, revisar `CreatureAI`. Si una solicitud se rechaza, revisar `CombatWeaponAttackValidator`; si se acepta pero contacto o daño no coinciden, inspeccionar `CombatAttackResult` y `CombatSystem`. Para la ejecución revisar `CombatItemResolver` y `CombatAttackExecutor`. Si salud o muerte no cambian bien, revisar `Entity` / `CombatDamage`. Si no llega una reacción de criatura, revisar las señales `configuracion_actualizada` y `danio_recibido` y la suscripción de `CreatureAI`. Si los efectos posteriores están equivocados, revisar `CombatImpactEffects`.
 
 No poner lógica de inventario dentro del HUD.
 
