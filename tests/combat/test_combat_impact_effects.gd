@@ -49,7 +49,6 @@ func _probar_impacto_letal_de_jugador(errores: Array[String]) -> void:
 	jugador.add_to_group("player")
 	var game_state := FakeGameState.new()
 	var feerin := Creature.new()
-	feerin
 	feerin.criatura_nombre = "Feerin"
 	feerin.add_to_group("creatures")
 	feerin.is_alive = false
