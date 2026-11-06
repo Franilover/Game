@@ -7,23 +7,8 @@ const INTERACTION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_intera
 const DASH_CHARGES_SCENE: PackedScene = preload("res://scenes/ui/hud_dash_charges.tscn")
 const DISCOVERY_NOTICE_SCENE: PackedScene = preload("res://scenes/ui/hud_discovery_notice.tscn")
 const CALENDAR_CLOCK_SCENE: PackedScene = preload("res://scenes/ui/hud_calendar_clock.tscn")
-
-class GarumiHealthRing extends Control:
-	var health_ratio: float = 1.0
-	var occupied: bool = false
-
-	func _draw() -> void:
-		var center := size * 0.5
-		var radius := minf(size.x, size.y) * 0.5 - 2.0
-		if radius <= 0.0:
-			return
-		draw_circle(center, radius - 1.5, Color(0.075, 0.05, 0.035, 0.98))
-		draw_arc(center, radius, 0.0, TAU, 48, Color(0.29, 0.19, 0.12, 1.0), 3.0, true)
-		if occupied:
-			var progreso := clampf(health_ratio, 0.0, 1.0)
-			if progreso > 0.0:
-				draw_arc(center, radius, -PI * 0.5, -PI * 0.5 + TAU * progreso, 48, Color(0.48, 0.73, 0.96, 1.0), 3.0, true)
-
+const GARUMI_LINKED_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_panel.tscn")
+const GARUMI_LINKED_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_slot.tscn")
 
 var player: Player = null
 var world_context: WorldContext = null
@@ -1362,69 +1347,37 @@ func _actualizar_reloj_calendario() -> void:
 
 
 func _preparar_panel_garumis_vinculados() -> void:
-	# Tres espacios permanentes: número a la izquierda y retrato con anillo de vida.
-	# Sin título ni contenedor decorativo; los huecos vacíos usan los tonos de la UI.
-	_garumis_vinculados_panel = HBoxContainer.new()
-	_garumis_vinculados_panel.name = "GarumisVinculados"
-	_garumis_vinculados_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_garumis_vinculados_panel = GARUMI_LINKED_PANEL_SCENE.instantiate() as HBoxContainer
+	if _garumis_vinculados_panel == null:
+		push_error("HUD: no se pudo instanciar hud_garumi_linked_panel.tscn.")
+		return
 	_garumis_vinculados_panel.position = Vector2(18.0, 18.0)
-	_garumis_vinculados_panel.add_theme_constant_override("separation", 10)
-	_garumis_vinculados_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_garumis_vinculados_panel.z_index = 20
+	_garumis_vinculados_lista = _garumis_vinculados_panel.get_node("GarumiSlots") as HBoxContainer
+	if _garumis_vinculados_lista == null:
+		push_error("HUD: falta GarumiSlots en hud_garumi_linked_panel.tscn.")
+		return
 	add_child(_garumis_vinculados_panel)
-
-	_garumis_vinculados_lista = HBoxContainer.new()
-	_garumis_vinculados_lista.name = "GarumiSlots"
-	_garumis_vinculados_lista.add_theme_constant_override("separation", 10)
-	_garumis_vinculados_lista.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_garumis_vinculados_panel.add_child(_garumis_vinculados_lista)
-
 	for i in range(3):
 		_crear_hueco_garumi(i + 1)
 
-func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
-	var slot := HBoxContainer.new()
-	slot.name = "GarumiSlot" + str(numero_slot)
-	slot.custom_minimum_size = Vector2(56.0, 46.0)
-	slot.add_theme_constant_override("separation", 3)
-	slot.alignment = BoxContainer.ALIGNMENT_CENTER
-	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.set_meta("garumi_id", "")
-	_garumis_vinculados_lista.add_child(slot)
 
-	var numero := Button.new()
-	numero.name = "Numero"
+func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
+	var slot := GARUMI_LINKED_SLOT_SCENE.instantiate() as HBoxContainer
+	if slot == null:
+		push_error("HUD: no se pudo instanciar hud_garumi_linked_slot.tscn.")
+		return null
+	slot.name = "GarumiSlot" + str(numero_slot)
+	slot.set_meta("garumi_id", "")
+	var numero := slot.get_node("Numero") as Button
+	var anillo := slot.get_node("Vida") as GarumiHealthRing
+	if numero == null or anillo == null:
+		push_error("HUD: el slot de Garumi necesita Numero y Vida.")
+		slot.free()
+		return null
 	numero.text = str(numero_slot)
-	numero.custom_minimum_size = Vector2(16.0, 30.0)
-	numero.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	numero.focus_mode = Control.FOCUS_NONE
-	numero.mouse_filter = Control.MOUSE_FILTER_STOP
-	numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-	numero.add_theme_color_override("font_hover_color", Color(1.0, 0.92, 0.74, 1.0))
-	numero.add_theme_font_size_override("font_size", 11)
-	numero.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
-	numero.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
-	numero.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
-	numero.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	numero.tooltip_text = "Invocar / guardar Garumi %d" % numero_slot
 	numero.pressed.connect(_activar_garumi_por_indice.bind(numero_slot - 1))
-	slot.add_child(numero)
-
-	var anillo := GarumiHealthRing.new()
-	anillo.name = "Vida"
-	anillo.custom_minimum_size = Vector2(42.0, 42.0)
-	anillo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.add_child(anillo)
-
-	var retrato := TextureRect.new()
-	retrato.name = "Retrato"
-	retrato.set_anchors_preset(Control.PRESET_CENTER)
-	retrato.position = Vector2(-15.0, -15.0)
-	retrato.size = Vector2(30.0, 30.0)
-	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	anillo.add_child(retrato)
+	_garumis_vinculados_lista.add_child(slot)
 	return slot
 
 
