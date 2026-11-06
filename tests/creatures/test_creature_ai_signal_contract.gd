@@ -62,6 +62,20 @@ func _run() -> void:
 	if ai._tiempo_teleport <= 0.0:
 		errores.append("CreatureAI no reaccionó al evento de daño recibido.")
 
+	var muertes := {"cantidad": 0}
+	criatura.died.connect(
+		func() -> void:
+			muertes["cantidad"] = int(muertes["cantidad"]) + 1
+	)
+	criatura.take_damage(200, "Prueba/MuerteCriatura")
+	if criatura.is_alive or criatura.vital_state.is_alive:
+		errores.append("La muerte de Creature no sincronizó el estado vital de Entity.")
+	if int(muertes["cantidad"]) != 1:
+		errores.append("Creature no emitió died exactamente una vez.")
+	criatura._die()
+	if int(muertes["cantidad"]) != 1:
+		errores.append("La llamada repetida a Creature._die() duplicó died.")
+
 	atacante.queue_free()
 	criatura.queue_free()
 	await get_tree().process_frame
