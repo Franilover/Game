@@ -1,0 +1,48 @@
+[gd_scene load_steps=6 format=3]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_normal"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_hover"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_pressed"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_focus"]
+
+[ext_resource type="Script" path="res://scripts/ui/garumi_health_ring.gd" id="1_ring"]
+
+[node name="GarumiSlot" type="HBoxContainer"]
+custom_minimum_size = Vector2(56, 46)
+mouse_filter = 2
+alignment = 1
+theme_override_constants/separation = 3
+
+[node name="Numero" type="Button" parent="."]
+custom_minimum_size = Vector2(16, 30)
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_colors/font_color = Color(0.88, 0.75, 0.53, 1)
+theme_override_colors/font_hover_color = Color(1, 0.92, 0.74, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxEmpty_number_normal")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_number_hover")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_number_pressed")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_number_focus")
+text = "1"
+
+[node name="Vida" type="Control" parent="."]
+custom_minimum_size = Vector2(42, 42)
+mouse_filter = 2
+script = ExtResource("1_ring")
+
+[node name="Retrato" type="TextureRect" parent="Vida"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -15.0
+offset_top = -15.0
+offset_right = 15.0
+offset_bottom = 15.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
