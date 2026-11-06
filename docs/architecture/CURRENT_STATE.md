@@ -592,3 +592,16 @@ Se corrigió una transición inconsistente entre VitalState y Entity:
 - Se añadió EntityLifecycleContract para comprobar muerte letal, daño posterior, idempotencia, restauración viva y restauración muerta.
 
 La corrección no cambia el cálculo de daño ni las reglas de combate. El alcance de la señal se limita al ciclo de vida de Entity; las subclases que implementan su propio _die() conservan su lógica.
+
+
+## Quincuagésima tercera barrida — Estado vital coherente en Creature
+
+Se cerró una inconsistencia entre la configuración de criaturas y el estado vital heredado:
+
+- \`Creature.configurar()\` antes actualizaba \`health\`, \`mana\` e \`is_alive\` directamente, pero podía dejar \`VitalState.max_health/max_mana\` con los valores anteriores cuando la configuración llegaba después de \`_ready()\`.
+- La configuración ahora usa \`_configurar_estado_vital()\`, que restablece el snapshot vital completo y rearma el guard de muerte de \`Entity\`.
+- \`Creature._die()\` conserva sus efectos específicos de criatura (misión, drops, movimiento y desaparición), pero delega la emisión de \`died\` a \`Entity._die()\` para reutilizar el guard idempotente común.
+- Se amplió \`CreatureAISignalContract\` para configurar una criatura con 140 HP, verificar que \`Creature\` y \`VitalState\` coincidan, y comprobar una única señal \`died\` ante muerte letal y llamada repetida.
+- El workflow ya ejecuta esa prueba; no se afirma CI validado hasta disponer de un resultado publicado para el commit actual.
+
+No se cambian estadísticas canónicas, daño, recompensas ni comportamiento de IA. La restauración viva completa de una criatura (visibilidad, movimiento y estado de IA) sigue fuera de esta corrección y requiere un contrato propio si se incorpora al flujo de juego.
