@@ -494,3 +494,16 @@ Se separó la interpretación de datos de objetos de la ejecución del combate:
 - GitHub Actions ejecutó la suite completa con Godot 4.7, incluida la prueba nueva de `CombatItemResolver` y el contrato temporal de combate.
 
 No se alteraron fórmulas de daño, balance, alcance, categorías admitidas ni reglas de ataque; esta pasada separa lectura de datos y respeta el snapshot de dirección de la solicitud.
+
+## Cuadragésima sexta barrida — Construcción de ataques separada de la orquestación
+
+Se extrajo la creación y conexión de nodos de ataque a `CombatAttackExecutor`:
+
+- `crear_ataque_melee()` construye/configura `CombatAttackArea`, aplica el override de daño directo, conecta el callback de objetivo y agrega el hitbox al atacante.
+- `disparar_proyectil()` construye `CombatAttack` y `CombatProjectile`, establece la posición inicial, configura movimiento/vida/colisión y conecta las señales de contacto e impacto.
+- `CombatSystem` conserva las decisiones de combate, selección de objeto, cooldown, feedback, daño, agresión ecológica, absorción de Eterium y registro de derrotas. Sólo delega la construcción/instanciación.
+- Se añadió `test_combat_attack_executor.tscn`, que verifica la creación melee y a distancia, dirección, propiedades, override de daño, root de proyectiles y conexiones de señales.
+- GitHub Actions validó la importación de Godot 4.7 y la suite completa, incluida la nueva prueba del executor.
+
+La extracción mantiene el orden de configuración y adición de nodos que ya utilizaba `CombatSystem`. No altera daño, cooldown, velocidad, alcance, duración, posición inicial ni reacciones posteriores al impacto.
+
