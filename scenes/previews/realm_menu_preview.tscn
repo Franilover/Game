@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/realm_menu.tscn" id="1_realm_menu"]
+
+[node name="RealmMenuPreview" type="Control"]
+custom_minimum_size = Vector2(720, 420)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RealmMenu" parent="." instance=ExtResource("1_realm_menu")]
+visible = true
+
+[node name="Torres" type="Button" parent="RealmMenu/Centro/PanelReinos/Margen/Contenido/Destinos"]
+custom_minimum_size = Vector2(292, 42)
+layout_mode = 2
+disabled = true
+text = "Torres · Zona actual"
+
+[node name="MundoAbierto" type="Button" parent="RealmMenu/Centro/PanelReinos/Margen/Contenido/Destinos"]
+custom_minimum_size = Vector2(292, 42)
+layout_mode = 2
+text = "Mundo Abierto"
+
+[node name="ReinoBloqueado" type="Button" parent="RealmMenu/Centro/PanelReinos/Margen/Contenido/Destinos"]
+custom_minimum_size = Vector2(292, 42)
+layout_mode = 2
+disabled = true
+text = "Reino bloqueado"
