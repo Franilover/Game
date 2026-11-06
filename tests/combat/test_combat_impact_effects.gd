@@ -22,7 +22,7 @@ func _run() -> void:
 
 
 func _probar_agresion_ecologica(errores: Array[String]) -> void:
-	var jugador := Player.new()
+	var jugador := Node.new()
 	var feerin := Creature.new()
 	feerin.criatura_nombre = "Feerin"
 
