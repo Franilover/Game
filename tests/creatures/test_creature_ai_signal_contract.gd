@@ -34,12 +34,20 @@ func _run() -> void:
 	criatura.configurar({
 		"id": "creature-ai-signal-test",
 		"nombre": "Espiritu Estelar",
-		"stats_dnd": {"hp_max": 100},
+		"stats_dnd": {"hp_max": 140},
 		"ia_config": config_ia
 	})
 
 	if ai.perfil != CreatureAI.Perfil.ESPIRITU_ESTELAR:
 		errores.append("CreatureAI no recibió la configuración actualizada de su Creature.")
+
+	if (
+		criatura.max_health != 140
+		or criatura.health != 140
+		or criatura.vital_state.max_health != 140
+		or criatura.vital_state.health != 140
+	):
+		errores.append("Creature no sincronizó max_health/health con VitalState al configurarse.")
 
 	var evento_danio := {"cantidad": 0, "atacante": null}
 	criatura.danio_recibido.connect(
