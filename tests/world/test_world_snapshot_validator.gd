@@ -28,6 +28,17 @@ func _run() -> void:
 	}
 	_comprobar(errores, "snapshot anidado válido", valido, true)
 
+	var archivo_snapshot := FileAccess.open("res://data/world_initial.json", FileAccess.READ)
+	if archivo_snapshot == null:
+		errores.append("No se pudo abrir el snapshot incluido para validar compatibilidad.")
+	else:
+		var snapshot_variant: Variant = JSON.parse_string(archivo_snapshot.get_as_text())
+		archivo_snapshot.close()
+		if not snapshot_variant is Dictionary:
+			errores.append("El snapshot incluido no se pudo interpretar como Dictionary.")
+		elif not ValidatorScript.es_valido(snapshot_variant as Dictionary):
+			errores.append("El snapshot incluido no cumple la estructura mínima del validador.")
+
 	var sin_biomas := valido.duplicate(true)
 	sin_biomas.erase("biomas")
 	_comprobar(errores, "biomas ausentes", sin_biomas, false)
