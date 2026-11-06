@@ -26,7 +26,7 @@ func _run() -> void:
 func _probar_creacion_melee(errores: Array[String]) -> void:
 	var jugador := PlayerScene.instantiate() as Player
 	get_tree().root.add_child(jugador)
-	await process_frame
+	await get_tree().process_frame
 
 	var objeto := {
 		"tipo": "herramienta",
@@ -61,15 +61,15 @@ func _probar_creacion_melee(errores: Array[String]) -> void:
 			errores.append("El hitbox melee no conectó su callback de objetivo.")
 
 	jugador.queue_free()
-	await process_frame
+	await get_tree().process_frame
 
 
 func _probar_creacion_proyectil(errores: Array[String]) -> void:
 	var jugador := PlayerScene.instantiate() as Player
 	var raiz_proyectiles := Node2D.new()
-	get_root().add_child(jugador)
+	get_tree().root.add_child(jugador)
 	get_tree().root.add_child(raiz_proyectiles)
-	await process_frame
+	await get_tree().process_frame
 
 	jugador.global_position = Vector2(30.0, 45.0)
 	var direccion := Vector2.RIGHT
@@ -120,7 +120,7 @@ func _probar_creacion_proyectil(errores: Array[String]) -> void:
 
 	jugador.queue_free()
 	raiz_proyectiles.queue_free()
-	await process_frame
+	await get_tree().process_frame
 
 
 func _al_detectar_objetivo_melee(_objetivo: Entity, _ataque: CombatAttackArea) -> void:
