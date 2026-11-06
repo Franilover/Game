@@ -79,6 +79,8 @@ func _run() -> void:
 	if not manager.aceptar_mision("mision_contrato"):
 		errores.append("No se pudo aceptar la misión de prueba.")
 	manager.registrar_recoleccion("mineral", 3)
+	manager.registrar_dialogo("personaje_1")
+	# Un evento repetido después de completar no debe emitir otra recompensa.
 	manager.registrar_recoleccion("mineral", 3)
 	if completadas.size() != 1:
 		errores.append("La finalización no fue idempotente.")
