@@ -4,6 +4,9 @@ class_name HUD
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const MISSION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_mission_panel.tscn")
 const INTERACTION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_interaction_panel.tscn")
+const DASH_CHARGES_SCENE: PackedScene = preload("res://scenes/ui/hud_dash_charges.tscn")
+const DISCOVERY_NOTICE_SCENE: PackedScene = preload("res://scenes/ui/hud_discovery_notice.tscn")
+const CALENDAR_CLOCK_SCENE: PackedScene = preload("res://scenes/ui/hud_calendar_clock.tscn")
 
 class GarumiHealthRing extends Control:
 	var health_ratio: float = 1.0
@@ -252,8 +255,11 @@ func _preparar_puntos_dash() -> void:
 		return
 	_stamina_bar_node.visible = false
 	_stamina_value_node.visible = false
-	var contenedor := HBoxContainer.new()
-	contenedor.name = "DashCharges"
+
+	var contenedor := DASH_CHARGES_SCENE.instantiate() as HBoxContainer
+	if contenedor == null:
+		push_error("HUD: no se pudo instanciar hud_dash_charges.tscn.")
+		return
 	contenedor.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	contenedor.anchor_left = 0.5
 	contenedor.anchor_right = 0.5
@@ -264,17 +270,15 @@ func _preparar_puntos_dash() -> void:
 	contenedor.offset_top = -30.0
 	contenedor.offset_bottom = -12.0
 	contenedor.size = Vector2(84.0, 18.0)
-	contenedor.add_theme_constant_override("separation", 4)
-	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(contenedor)
+
+	_stamina_pips.clear()
 	for i in range(5):
-		var pip := Panel.new()
-		pip.name = "DashCharge" + str(i + 1)
-		pip.custom_minimum_size = Vector2(14.0, 14.0)
-		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		contenedor.add_child(pip)
-		_stamina_pips.append(pip)
+		var pip := contenedor.get_node_or_null("DashCharge" + str(i + 1)) as Panel
+		if pip != null:
+			_stamina_pips.append(pip)
 	_actualizar_puntos_dash(5.0, 5.0)
+
 
 func _actualizar_puntos_dash(actual: float, maximo: float) -> void:
 	for i in range(_stamina_pips.size()):
@@ -308,27 +312,10 @@ func _configurar_referencias_ui() -> void:
 
 
 func _preparar_aviso_descubrimiento() -> void:
-	# Aviso creado por código para no añadir otra dependencia al .tscn.
-	discovery_notice = Label.new()
-	discovery_notice.name = "DiscoveryNotice"
-	discovery_notice.visible = false
-	discovery_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	discovery_notice.z_index = 3000
-	discovery_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	discovery_notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	discovery_notice.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	discovery_notice.position = Vector2(-260.0, 28.0)
-	discovery_notice.size = Vector2(520.0, 48.0)
-	discovery_notice.add_theme_color_override(
-		"font_color",
-		Color(0.93, 0.84, 0.65, 1.0)
-	)
-	discovery_notice.add_theme_color_override(
-		"font_outline_color",
-		Color(0.075, 0.05, 0.035, 1.0)
-	)
-	discovery_notice.add_theme_constant_override("outline_size", 3)
-	discovery_notice.add_theme_font_size_override("font_size", 16)
+	discovery_notice = DISCOVERY_NOTICE_SCENE.instantiate() as Label
+	if discovery_notice == null:
+		push_error("HUD: no se pudo instanciar hud_discovery_notice.tscn.")
+		return
 	add_child(discovery_notice)
 
 
@@ -1336,8 +1323,10 @@ func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
 
 
 func _preparar_reloj_calendario() -> void:
-	_calendar_panel = PanelContainer.new()
-	_calendar_panel.name = "CalendarClock"
+	_calendar_panel = CALENDAR_CLOCK_SCENE.instantiate() as PanelContainer
+	if _calendar_panel == null:
+		push_error("HUD: no se pudo instanciar hud_calendar_clock.tscn.")
+		return
 	_calendar_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_calendar_panel.anchor_left = 1.0
 	_calendar_panel.anchor_right = 1.0
@@ -1347,27 +1336,7 @@ func _preparar_reloj_calendario() -> void:
 	_calendar_panel.offset_top = 12.0
 	_calendar_panel.offset_right = -12.0
 	_calendar_panel.offset_bottom = 82.0
-	_calendar_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.075, 0.05, 0.035, 0.88)
-	estilo.set_border_width_all(1)
-	estilo.border_color = Color(0.42, 0.29, 0.17, 1.0)
-	estilo.set_corner_radius_all(4)
-	estilo.content_margin_left = 10
-	estilo.content_margin_right = 10
-	estilo.content_margin_top = 6
-	estilo.content_margin_bottom = 6
-	_calendar_panel.add_theme_stylebox_override("panel", estilo)
-	_calendar_label = Label.new()
-	_calendar_label.name = "CalendarText"
-	_calendar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_calendar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_calendar_label.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
-	_calendar_label.add_theme_color_override("font_outline_color", Color(0.075, 0.05, 0.035, 1.0))
-	_calendar_label.add_theme_constant_override("outline_size", 2)
-	_calendar_label.add_theme_font_size_override("font_size", 11)
-	_calendar_label.text = "GARLIA\nCargando calendario…"
-	_calendar_panel.add_child(_calendar_label)
+	_calendar_label = _calendar_panel.get_node("CalendarText") as Label
 	add_child(_calendar_panel)
 
 
