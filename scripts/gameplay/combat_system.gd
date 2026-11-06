@@ -609,7 +609,6 @@ func aplicar_danio_desde_entidad(
 	if danio <= 0:
 		return false
 
-	var vivo_antes: bool = objetivo.is_alive
 	var salud_objetivo_antes: int = objetivo.health
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
