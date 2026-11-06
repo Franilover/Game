@@ -979,11 +979,11 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 
 func admin_establecer_maximos(
 	vida: int,
-	eterium: int,
+	eterium_maximo: int,
 	energia: float
 ) -> bool:
 	max_health = maxi(1, vida)
-	max_mana = maxi(1, eterium)
+	max_mana = maxi(1, eterium_maximo)
 	max_stamina = maxf(1.0, energia)
 
 	var estaba_vivo := vital_state.is_alive
