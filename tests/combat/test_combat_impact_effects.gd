@@ -48,7 +48,7 @@ func _probar_agresion_ecologica(errores: Array[String]) -> void:
 		errores.append("Registró agresión ecológica para una especie ajena a la regla.")
 
 	jugador.free()
-	feer in.free()
+	feerin.free()
 	criatura_ajena.free()
 
 
