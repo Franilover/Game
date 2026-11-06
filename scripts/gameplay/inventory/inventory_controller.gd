@@ -233,6 +233,23 @@ func quitar_cantidad(indice: int, cantidad: int = 1) -> bool:
 func quitar_objeto(indice: int) -> bool:
 	return quitar_cantidad(indice, 999999)
 
+func soltar_objeto_al_mundo(
+	indice: int,
+	datos: Dictionary,
+	posicion: Vector2,
+	world_items: GarliaWorldItems
+) -> bool:
+	if indice < 0 or indice >= runtime.state.items.size() or datos.is_empty():
+		return false
+	if world_items == null or not is_instance_valid(world_items):
+		return false
+	if runtime.obtener_item(indice).is_empty():
+		return false
+	# La creación/registración en el mundo ocurre antes de retirar el origen.
+	if not world_items.soltar_objeto_al_mundo(datos, posicion):
+		return false
+	return quitar_objeto(indice)
+
 func establecer_objeto(indice: int, datos: Dictionary) -> bool:
 	if not puede_interactuar():
 		return false
