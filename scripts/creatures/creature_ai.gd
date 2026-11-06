@@ -1636,13 +1636,13 @@ func _procesar_ataque_cambiaformas() -> void:
 		_iniciar_recuperacion(_obtener_enfriamiento_ataque())
 		return
 
-	var ataque_realizado: bool = combate.atacar_objetivo_con_arma(
+	var resultado: CombatAttackResult = combate.solicitar_ataque_con_arma(
 		criatura,
 		objetivo,
 		arma
 	)
 
-	if ataque_realizado and _copiar_skin_configurado():
+	if resultado.solicitud_aceptada and _copiar_skin_configurado():
 		criatura.copiar_skin_de(objetivo)
 		criatura.ocultar_nombre_debug()
 
