@@ -8,13 +8,12 @@ signal ataque_sin_objetivo(atacante: Node)
 signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 
 
-const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
-	"res://scripts/gameplay/combat/combat_attack_area.gd"
-)
-
-
 const COMBAT_ITEM_RESOLVER: Script = preload(
 	"res://scripts/gameplay/combat/combat_item_resolver.gd"
+)
+
+const COMBAT_ATTACK_EXECUTOR: Script = preload(
+	"res://scripts/gameplay/combat/combat_attack_executor.gd"
 )
 
 @export_category("Ataque")
@@ -218,30 +217,20 @@ func _crear_ataque_melee(
 	if player == null:
 		return
 
-	var ataque := CombatAttackArea.new()
-	ataque.configurar(
+	var ataque := COMBAT_ATTACK_EXECUTOR.crear_ataque_melee(
 		player,
 		direccion,
 		alcance,
 		ancho,
 		objeto,
 		duracion_ataque,
-		color_ataque
+		color_ataque,
+		danio_directo,
+		Callable(self, "_al_recibir_objetivo_de_ataque")
 	)
+	if ataque == null:
+		return
 
-	if danio_directo >= 0:
-		var objeto_ataque_variant: Variant = ataque.get("objeto_ataque")
-		if objeto_ataque_variant is Dictionary:
-			var objeto_ataque: Dictionary = objeto_ataque_variant as Dictionary
-			objeto_ataque["_damage_override"] = danio_directo
-			ataque.set("objeto_ataque", objeto_ataque)
-
-	ataque.connect(
-		"objetivo_detectado",
-		_al_recibir_objetivo_de_ataque.bind(ataque)
-	)
-
-	player.add_child(ataque)
 	print(
 		"CombatSystem: área de ataque creada | dirección=",
 		direccion,
@@ -250,7 +239,6 @@ func _crear_ataque_melee(
 		" ancho=",
 		ancho
 	)
-
 
 func _al_recibir_objetivo_de_ataque(
 	objetivo: Node,
@@ -394,59 +382,37 @@ func _disparar_proyectil(
 	if player == null:
 		return
 
-	var raiz_proyectiles: Node = projectile_root
-	if raiz_proyectiles == null or not is_instance_valid(raiz_proyectiles):
-		return
-
-	var velocidad: float = _obtener_float_propiedad(
+	var velocidad := _obtener_float_propiedad(
 		arma,
 		"velocidad_proyectil",
 		velocidad_proyectil
 	)
-	var vida: float = _obtener_float_propiedad(
+	var vida := _obtener_float_propiedad(
 		arma,
 		"vida_proyectil",
 		vida_proyectil
 	)
-	var radio: float = _obtener_float_propiedad(
+	var radio := _obtener_float_propiedad(
 		arma,
 		"radio_impacto",
 		radio_impacto_proyectil
 	)
-	var danio: int = _obtener_danio_arma(arma)
+	var danio := _obtener_danio_arma(arma)
 
-	var ataque := CombatAttack.new()
-	ataque.configurar(
+	var proyectil := COMBAT_ATTACK_EXECUTOR.disparar_proyectil(
 		player,
+		projectile_root,
 		direccion,
 		arma,
-		"distancia",
-		danio,
-		"Jugador/Proyectil:" + str(arma.get("nombre", "Proyectil"))
-	)
-
-	var proyectil := CombatProjectile.new()
-	raiz_proyectiles.add_child(proyectil)
-	proyectil.global_position = player.global_position + direccion * 14.0
-
-	proyectil.configurar(
-		ataque,
-		direccion,
 		velocidad,
 		vida,
-		radio
+		radio,
+		danio,
+		Callable(self, "_al_detectar_contacto_proyectil"),
+		Callable(self, "_al_recibir_impacto_proyectil")
 	)
-
-	if proyectil.has_signal("contacto_detectado"):
-		proyectil.connect(
-			"contacto_detectado",
-			_al_detectar_contacto_proyectil
-		)
-	if proyectil.has_signal("objetivo_impactado"):
-		proyectil.connect(
-			"objetivo_impactado",
-			_al_recibir_impacto_proyectil
-		)
+	if proyectil == null:
+		return
 
 	print(
 		"CombatSystem: proyectil disparado → ",
