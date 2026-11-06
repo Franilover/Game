@@ -17,7 +17,7 @@ Para ejecutar una vista previa, abre la escena y pulsa **F6** (Ejecutar escena a
 
 - Criaturas: `scenes/creatures/` (una escena por sprite disponible).
 - Garumis: `scenes/garumis/`.
-- Objetos del mundo: `scenes/world/world_item.tscn` define el icono, la etiqueta de interacción y el orden visual; el script conserva la resolución del icono, el inventario y las misiones. La textura incluida en la escena es solo una referencia visual de editor y se reemplaza al configurar el objeto real.
+- Objetos del mundo: `scenes/world/world_item.tscn` define el icono y la etiqueta de interacción; `scenes/world/world_prop.tscn` contiene el nodo `Sprite` que recibe la textura y transformaciones de `props_game`. Ambas escenas conservan sus datos y lógica de interacción en los scripts. La textura incluida en `world_item.tscn` es solo una referencia visual de editor y se reemplaza al configurar el objeto real.
 - Componentes UI: `scenes/ui/inventory_group.tscn`, `inventory_slot.tscn`, `inventory_equipment_slot.tscn`, `hud_mission_panel.tscn` y `hud_interaction_panel.tscn`, `hud_dash_charges.tscn`, `hud_discovery_notice.tscn`, `hud_calendar_clock.tscn` y `eterium_radial_menu.tscn`, `hud_garumi_linked_panel.tscn`, `hud_garumi_linked_slot.tscn`, `hud_hand_slot.tscn` y `hud_hand_item_selector.tscn`.
 
 ## Cómo se relacionan con el runtime

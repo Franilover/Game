@@ -580,11 +580,14 @@ func configurar_chunk(
 
 
 func _actualizar_sprite(asset_path: String) -> void:
-	var anterior := get_node_or_null("Sprite")
-	if anterior != null and is_instance_valid(anterior):
-		anterior.free()
+	var sprite := get_node_or_null("Sprite") as Sprite2D
+	if sprite == null:
+		push_error("WorldProp: la escena world_prop.tscn no contiene el nodo Sprite.")
+		return
 
 	if asset_path.is_empty():
+		sprite.texture = null
+		sprite.visible = false
 		return
 
 	var textura: Texture2D = load(asset_path)
@@ -592,18 +595,18 @@ func _actualizar_sprite(asset_path: String) -> void:
 		push_warning(
 			"WorldProp: no se pudo cargar asset_path → " + asset_path
 		)
+		sprite.texture = null
+		sprite.visible = false
 		return
 
-	var sprite := Sprite2D.new()
-	sprite.name = "Sprite"
 	sprite.texture = textura
+	sprite.visible = true
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.scale = Vector2.ONE * maxf(float(datos.get("escala", 1.0)), 0.01)
 	sprite.position = Vector2(
 		float(datos.get("offset_x", 0.0)),
 		float(datos.get("offset_y", 0.0))
 	)
-	add_child(sprite)
 
 
 func _actualizar_profundidad() -> void:

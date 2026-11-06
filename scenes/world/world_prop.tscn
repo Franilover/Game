@@ -1,6 +1,11 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/world_prop.gd" id="1_world_prop"]
+[ext_resource type="Texture2D" path="res://assets/art/props/Árbol.png" id="2_preview_sprite"]
 
 [node name="WorldProp" type="Node2D"]
 script = ExtResource("1_world_prop")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_preview_sprite")
+texture_filter = 1
