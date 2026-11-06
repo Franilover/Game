@@ -15,145 +15,181 @@
 [ext_resource type="PackedScene" path="res://scenes/garumis/plavar.tscn" id="13_scene"]
 
 [node name="CatalogoCriaturasGarumis" type="Node2D"]
-[node name="Dramarias" parent="." instance=ExtResource("1_scene")]
-position = Vector2(0, 0)
 
-[node name="Label1" type="Label" parent="."]
-offset_left = -36.0
-offset_top = 26.0
-offset_right = 80.0
-offset_bottom = 44.0
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(320, 180)
+enabled = true
+
+[node name="TituloCriaturas" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 6.0
+offset_right = 624.0
+offset_bottom = 24.0
+text = "CRIATURAS"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+
+[node name="Dramarias" parent="." instance=ExtResource("1_scene")]
+position = Vector2(80, 42)
+
+[node name="LabelDramarias" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 62.0
+offset_right = 152.0
+offset_bottom = 78.0
 text = "Dramarias"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="EspirituEstelar" parent="." instance=ExtResource("2_scene")]
-position = Vector2(112, 0)
+position = Vector2(240, 42)
 
-[node name="Label2" type="Label" parent="."]
-offset_left = 76.0
-offset_top = 26.0
-offset_right = 192.0
-offset_bottom = 44.0
-text = "Espiritu Estelar"
-theme_override_font_sizes/font_size = 8
+[node name="LabelEspirituEstelar" type="Label" parent="."]
+offset_left = 168.0
+offset_top = 62.0
+offset_right = 312.0
+offset_bottom = 78.0
+text = "Espíritu Estelar"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Feerin" parent="." instance=ExtResource("3_scene")]
-position = Vector2(224, 0)
+position = Vector2(400, 42)
 
-[node name="Label3" type="Label" parent="."]
-offset_left = 188.0
-offset_top = 26.0
-offset_right = 304.0
-offset_bottom = 44.0
+[node name="LabelFeerin" type="Label" parent="."]
+offset_left = 328.0
+offset_top = 62.0
+offset_right = 472.0
+offset_bottom = 78.0
 text = "Feerin"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Flaxis" parent="." instance=ExtResource("4_scene")]
-position = Vector2(336, 0)
+position = Vector2(560, 42)
 
-[node name="Label4" type="Label" parent="."]
-offset_left = 300.0
-offset_top = 26.0
-offset_right = 416.0
-offset_bottom = 44.0
+[node name="LabelFlaxis" type="Label" parent="."]
+offset_left = 488.0
+offset_top = 62.0
+offset_right = 632.0
+offset_bottom = 78.0
 text = "Flaxis"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Lesfleeng" parent="." instance=ExtResource("5_scene")]
-position = Vector2(0, 104)
+position = Vector2(80, 112)
 
-[node name="Label5" type="Label" parent="."]
-offset_left = -36.0
-offset_top = 130.0
-offset_right = 80.0
+[node name="LabelLesfleeng" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 132.0
+offset_right = 152.0
 offset_bottom = 148.0
 text = "Lesfleeng"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Waarin" parent="." instance=ExtResource("6_scene")]
-position = Vector2(112, 104)
+position = Vector2(240, 112)
 
-[node name="Label6" type="Label" parent="."]
-offset_left = 76.0
-offset_top = 130.0
-offset_right = 192.0
+[node name="LabelWaarin" type="Label" parent="."]
+offset_left = 168.0
+offset_top = 132.0
+offset_right = 312.0
 offset_bottom = 148.0
 text = "Waarin"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Zlish" parent="." instance=ExtResource("7_scene")]
-position = Vector2(224, 104)
+position = Vector2(400, 112)
 
-[node name="Label7" type="Label" parent="."]
-offset_left = 188.0
-offset_top = 130.0
-offset_right = 304.0
+[node name="LabelZlish" type="Label" parent="."]
+offset_left = 328.0
+offset_top = 132.0
+offset_right = 472.0
 offset_bottom = 148.0
 text = "Zlish"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="TituloGarumis" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 174.0
+offset_right = 624.0
+offset_bottom = 192.0
+text = "GARUMIS"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
 
 [node name="Dark" parent="." instance=ExtResource("8_scene")]
-position = Vector2(336, 104)
+position = Vector2(80, 220)
 
-[node name="Label8" type="Label" parent="."]
-offset_left = 300.0
-offset_top = 130.0
-offset_right = 416.0
-offset_bottom = 148.0
+[node name="LabelDark" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 240.0
+offset_right = 152.0
+offset_bottom = 256.0
 text = "Dark"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Daruka" parent="." instance=ExtResource("9_scene")]
-position = Vector2(0, 208)
+position = Vector2(240, 220)
 
-[node name="Label9" type="Label" parent="."]
-offset_left = -36.0
-offset_top = 234.0
-offset_right = 80.0
-offset_bottom = 252.0
+[node name="LabelDaruka" type="Label" parent="."]
+offset_left = 168.0
+offset_top = 240.0
+offset_right = 312.0
+offset_bottom = 256.0
 text = "Daruka"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Desel" parent="." instance=ExtResource("10_scene")]
-position = Vector2(112, 208)
+position = Vector2(400, 220)
 
-[node name="Label10" type="Label" parent="."]
-offset_left = 76.0
-offset_top = 234.0
-offset_right = 192.0
-offset_bottom = 252.0
+[node name="LabelDesel" type="Label" parent="."]
+offset_left = 328.0
+offset_top = 240.0
+offset_right = 472.0
+offset_bottom = 256.0
 text = "Desel"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Desello" parent="." instance=ExtResource("11_scene")]
-position = Vector2(224, 208)
+position = Vector2(560, 220)
 
-[node name="Label11" type="Label" parent="."]
-offset_left = 188.0
-offset_top = 234.0
-offset_right = 304.0
-offset_bottom = 252.0
+[node name="LabelDesello" type="Label" parent="."]
+offset_left = 488.0
+offset_top = 240.0
+offset_right = 632.0
+offset_bottom = 256.0
 text = "Desello"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Plava" parent="." instance=ExtResource("12_scene")]
-position = Vector2(336, 208)
+position = Vector2(80, 290)
 
-[node name="Label12" type="Label" parent="."]
-offset_left = 300.0
-offset_top = 234.0
-offset_right = 416.0
-offset_bottom = 252.0
+[node name="LabelPlava" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 310.0
+offset_right = 152.0
+offset_bottom = 326.0
 text = "Plava"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
 
 [node name="Plavar" parent="." instance=ExtResource("13_scene")]
-position = Vector2(0, 312)
+position = Vector2(240, 290)
 
-[node name="Label13" type="Label" parent="."]
-offset_left = -36.0
-offset_top = 338.0
-offset_right = 80.0
-offset_bottom = 356.0
+[node name="LabelPlavar" type="Label" parent="."]
+offset_left = 168.0
+offset_top = 310.0
+offset_right = 312.0
+offset_bottom = 326.0
 text = "Plavar"
-theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
