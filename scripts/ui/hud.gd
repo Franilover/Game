@@ -9,6 +9,8 @@ const DISCOVERY_NOTICE_SCENE: PackedScene = preload("res://scenes/ui/hud_discove
 const CALENDAR_CLOCK_SCENE: PackedScene = preload("res://scenes/ui/hud_calendar_clock.tscn")
 const GARUMI_LINKED_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_panel.tscn")
 const GARUMI_LINKED_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_slot.tscn")
+const HAND_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_slot.tscn")
+const HAND_ITEM_SELECTOR_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_item_selector.tscn")
 
 var player: Player = null
 var world_context: WorldContext = null
@@ -1042,7 +1044,10 @@ func _crear_huecos_manos() -> void:
 
 
 func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
-	var slot := Button.new()
+	var slot := HAND_SLOT_SCENE.instantiate() as Button
+	if slot == null:
+		push_error("HUD: no se pudo instanciar hud_hand_slot.tscn.")
+		return null
 	slot.name = nombre
 	slot.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	slot.anchor_left = 0.5
@@ -1053,16 +1058,14 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.offset_bottom = 0.0
 	slot.offset_left = -134.0 if tecla == "Q" else 86.0
 	slot.offset_right = -86.0 if tecla == "Q" else 134.0
-	slot.custom_minimum_size = Vector2(48, 48)
-	slot.focus_mode = Control.FOCUS_NONE
-	slot.mouse_filter = Control.MOUSE_FILTER_STOP
-	slot.expand_icon = true
-	slot.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	slot.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
 	slot.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
 	slot.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
 	slot.add_theme_stylebox_override("focus", _estilo_hueco_mano(false))
 	slot.tooltip_text = "Mano " + ("izquierda" if tecla == "Q" else "derecha") + " (" + tecla + ")"
+	var etiqueta_tecla := slot.get_node_or_null("HandKey") as Label
+	if etiqueta_tecla != null:
+		etiqueta_tecla.text = tecla
 	if OS.has_feature("android"):
 		slot.pressed.connect(func() -> void:
 			if not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
@@ -1073,15 +1076,6 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 				else:
 					_abrir_selector_mano(mano)
 		)
-	var numero := Label.new()
-	numero.name = "HandKey"
-	numero.text = tecla
-	numero.position = Vector2(4, 2)
-	numero.size = Vector2(14, 12)
-	numero.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	numero.add_theme_font_size_override("font_size", 9)
-	numero.add_theme_color_override("font_color", Color(0.72, 0.64, 0.50, 1))
-	slot.add_child(numero)
 	add_child(slot)
 	return slot
 
@@ -1116,45 +1110,26 @@ func _actualizar_hueco_mano(slot: Button, mano: String) -> void:
 
 
 func _crear_selector_manos() -> void:
-	# Selector compacto anclado encima del botón Q/E, sin panel centrado.
-	_hand_selector = PanelContainer.new()
-	_hand_selector.name = "HandItemSelector"
-	_hand_selector.visible = false
-	_hand_selector.custom_minimum_size = Vector2(42, 0)
-	_hand_selector.size = Vector2(42, 0)
-	_hand_selector.mouse_filter = Control.MOUSE_FILTER_STOP
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.10, 0.065, 0.04, 0.98)
-	panel_style.set_border_width_all(1)
-	panel_style.border_color = Color(0.42, 0.29, 0.17, 1)
-	panel_style.set_corner_radius_all(3)
-	panel_style.content_margin_left = 3
-	panel_style.content_margin_right = 3
-	panel_style.content_margin_top = 3
-	panel_style.content_margin_bottom = 3
-	_hand_selector.add_theme_stylebox_override("panel", panel_style)
-	add_child(_hand_selector)
-
-	_hand_selector_grid = VBoxContainer.new()
-	_hand_selector_grid.add_theme_constant_override("separation", 3)
-	_hand_selector.add_child(_hand_selector_grid)
+	_hand_selector = HAND_ITEM_SELECTOR_SCENE.instantiate() as PanelContainer
+	if _hand_selector == null:
+		push_error("HUD: no se pudo instanciar hud_hand_item_selector.tscn.")
+		return
+	_hand_selector_grid = _hand_selector.get_node_or_null("Buttons") as VBoxContainer
+	if _hand_selector_grid == null:
+		push_error("HUD: falta Buttons en hud_hand_item_selector.tscn.")
+		return
+	_hand_selector_buttons.clear()
 	for i in range(6):
-		var button := Button.new()
-		button.custom_minimum_size = Vector2(34, 32)
-		button.size = Vector2(34, 32)
-		button.focus_mode = Control.FOCUS_NONE
-		button.mouse_filter = Control.MOUSE_FILTER_STOP
-		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.expand_icon = true
-		button.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
-		button.add_theme_font_size_override("font_size", 9)
+		var button := _hand_selector_grid.get_node_or_null("Slot%d" % (i + 1)) as Button
+		if button == null:
+			push_error("HUD: falta Slot%d en el selector de manos." % (i + 1))
+			continue
 		button.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
 		button.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
 		button.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
 		button.pressed.connect(_al_pulsar_selector_mano.bind(i))
-		_hand_selector_grid.add_child(button)
 		_hand_selector_buttons.append(button)
+	add_child(_hand_selector)
 
 
 func _abrir_selector_mano(mano: String) -> void:
