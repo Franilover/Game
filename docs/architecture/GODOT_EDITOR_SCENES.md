@@ -4,7 +4,7 @@
 
 Abre el proyecto en Godot y usa **Escena > Abrir escena**:
 
-- `scenes/previews/creature_garumi_catalog.tscn`: muestra las criaturas y Garumis que ya tienen sprites exportados.
+- `scenes/previews/creature_garumi_catalog.tscn`: muestra las criaturas y Garumis que ya tienen sprites exportados, separados por categoría y distribuidos en una cuadrícula centrada por cámara. Cada instancia conserva su escena individual como origen editable.
 - `scenes/previews/ui_components_preview.tscn`: muestra componentes reutilizables de inventario y paneles del HUD.
 - `scenes/previews/eterium_radial_menu_preview.tscn`: permite inspeccionar el menú radial de Eterium.
 - `scenes/ui/character_appearance_preview.tscn`: permite inspeccionar las capas visuales de personalización del personaje.
