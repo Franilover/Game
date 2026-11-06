@@ -93,17 +93,24 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 		)
 		return false
 
-	archivo.store_string(JSON.stringify(datos))
+	var contenido_json := JSON.stringify(datos)
+	archivo.store_string(contenido_json)
 	archivo.flush()
-	var error_escritura := archivo.get_error()
+	# get_error() puede devolver ERR_FILE_EOF cuando el cursor termina justo
+	# al final del archivo; eso no significa que la escritura haya fallado.
+	# Comprobamos los bytes persistidos frente al tamaño UTF-8 esperado.
+	var bytes_esperados := contenido_json.to_utf8_buffer().size()
+	var bytes_escritos := archivo.get_length()
 	archivo.close()
 
-	if error_escritura != OK:
+	if bytes_escritos != bytes_esperados:
 		_eliminar_archivo(ruta_temporal)
 		push_error(
-			"SaveFileRepository: error al escribir el temporal ("
-			+ str(error_escritura)
-			+ ")"
+			"SaveFileRepository: escritura incompleta del temporal ("
+			+ str(bytes_escritos)
+			+ "/"
+			+ str(bytes_esperados)
+			+ " bytes)."
 		)
 		return false
 
@@ -213,7 +220,12 @@ func _leer_json_dictionary(ruta: String) -> Dictionary:
 
 	var texto := archivo.get_as_text()
 	archivo.close()
-	var datos: Variant = JSON.parse_string(texto)
+	# parse() devuelve el error sin escribir un ERROR global en consola.
+	# Un save corrupto es una condición recuperable cuando existe .bak.
+	var parser := JSON.new()
+	if parser.parse(texto) != OK:
+		return {}
+	var datos: Variant = parser.data
 	if not datos is Dictionary:
 		return {}
 	var resultado := (datos as Dictionary).duplicate(true)
