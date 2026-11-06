@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/world/main.gd" id="3_main"]
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="33_world_atmosphere"]
 [ext_resource type="Script" path="res://scripts/world/zone_manager.gd" id="30_zone_manager"]
-[ext_resource type="Script" path="res://scripts/ui/realm_menu.gd" id="32_realm_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/realm_menu.tscn" id="32_realm_menu"]
 [ext_resource type="Script" path="res://scripts/world/world_context.gd" id="31_world_context"]
 [ext_resource type="PackedScene" uid="uid://dvbsydjnksfcv" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://dcgwxktgqcpqm" path="res://scripts/gameplay/interaction_system.gd" id="5_interaction"]
