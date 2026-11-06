@@ -22,7 +22,6 @@ func _run() -> void:
 
 	var drop_exitoso := controller.soltar_objeto_al_mundo(
 		0,
-		objeto.duplicate(true),
 		Vector2.ZERO,
 		world_items
 	)
