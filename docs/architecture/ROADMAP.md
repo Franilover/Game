@@ -74,6 +74,7 @@
 - [ ] Medir coste por frame y evitar trabajo repetido.
 
 ### 2.3 Interacciones y progresión
+- [~] Validar estado y progreso de misiones al restaurar partidas; contrato automatizado cubre normalización, finalización idempotente y emisión única de recompensa. Falta ejecutar CI y completar la aplicación/reclamación efectiva de recompensas.
 - [ ] Auditar el flujo completo de misiones: aceptar, progreso, completar, recompensa y persistencia.
 - [ ] Verificar que las recompensas se apliquen una sola vez y no se pierdan al recargar.
 - [ ] Revisar diálogos interrumpidos, ramas y condiciones.
@@ -129,7 +130,8 @@
 - [x] Mantener importación/compilación headless en CI.
 - [x] Ejecutar contratos de locomoción, combate, IA y ciclo de vida cubiertos por el workflow actual.
 - [~] Añadir contrato de recuperación de `SaveFileRepository` al workflow.
-- [ ] Añadir contratos de inventario, misiones, datos offline y restauración completa.
+- [~] Añadir contratos de inventario y misiones; recogida y estado/progreso de misiones ya tienen contratos, falta validar CI y ampliar a recompensas/persistencia integral.
+- [ ] Añadir contratos de datos offline y restauración completa.
 - [ ] Añadir pruebas de integración de inicio/cierre de partida.
 - [ ] Verificar referencias rotas de escenas, recursos, autoloads y scripts.
 - [ ] Añadir pruebas de regresión para fallos encontrados, no solo pruebas felices.
