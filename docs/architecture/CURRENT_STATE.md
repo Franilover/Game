@@ -658,3 +658,14 @@ Se cerró un caso límite del repositorio de guardados:
 - Se amplió \`SaveFileRepositoryContract\` para simular un destino que es un directorio, comprobar que el respaldo se puede leer y verificar que una escritura posterior fallida no lo elimina.
 
 La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas de apagado abrupto ni de fallos físicos de disco. Pendiente ejecución CI.
+
+
+## Quincuagésima octava barrida — Restauración segura del progreso de misiones
+
+- `MissionManagerService.cargar_estado_partida()` valida los estados guardados contra los estados reconocidos por el runtime y normaliza estados desconocidos a `disponible`.
+- El progreso se reconstruye usando los objetivos del catálogo actual: cantidades negativas pasan a cero, valores superiores se limitan al requisito y los objetivos que ya no existen se descartan.
+- Los datos de progreso con tipos incorrectos se rechazan sin romper la carga de la partida.
+- Se añadió `MissionManagerContract` para verificar normalización, serialización, finalización idempotente y emisión única de `recompensa_disponible`.
+- El workflow Godot 4.7 ejecuta el nuevo contrato. La prueba aún requiere un resultado CI del commit actualizado.
+- La aplicación efectiva de recompensas al inventario/estado del jugador continúa pendiente: no se asumió un esquema de recompensa ni se modificó Supabase.
+
