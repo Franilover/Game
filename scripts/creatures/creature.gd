@@ -220,9 +220,8 @@ func configurar(
 			int(hp_variant)
 		)
 
-	health = max_health
-	mana = max_mana
-	is_alive = true
+	# Reconfigurar el dominio vital completo, no solo los campos espejo de Entity.
+	_configurar_estado_vital()
 
 	_rng.seed = abs(
 		hash(
