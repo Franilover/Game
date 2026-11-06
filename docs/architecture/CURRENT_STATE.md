@@ -548,3 +548,18 @@ Se eliminó la llamada directa de `Creature` a `CreatureAI` para notificar cambi
 - Se añadió una regresión con la escena real de criatura: comprueba actualización de perfil, reducción de salud, cantidad/atacante emitidos y reacción de Espíritu Estelar al recibir daño.
 
 La comunicación de configuración/daño es ahora un contrato de señales; se mantienen las otras dependencias explícitas de composición y control de simulación que todavía necesita `Creature`.
+
+
+## Quincuagésima barrida — Validación de solicitudes y resultado de ataque explícito
+
+Se separó la validación de ataques con arma de su ejecución y se dejó de representar todo el resultado con un booleano:
+
+- CombatWeaponAttackValidator valida atacante, objetivo vivo y clasificación del arma. No emite eventos ni aplica daño.
+- CombatSystem.solicitar_ataque_con_arma() ejecuta únicamente solicitudes válidas y devuelve CombatAttackResult.
+- CombatAttackResult separa cuatro datos: solicitud aceptada, contacto registrado, daño aplicado y motivo de rechazo.
+- CombatSystem._aplicar_danio() ahora devuelve si CombatDamage confirmó una reducción real de salud; sus consumidores que no necesitan el valor conservan el mismo comportamiento.
+- CreatureAI consulta solicitud_aceptada para mantener la reacción de Cambiaformas. La copia de apariencia conserva su condición previa: se realiza al aceptar la solicitud, no depende de que el daño sea mayor que cero.
+- Se mantiene atacar_objetivo_con_arma() como wrapper booleano de compatibilidad; su true significa solicitud aceptada, no daño aplicado.
+- La regresión verifica validación de entradas, rechazo de objetivos derrotados, contacto aceptado con daño cero y daño real aplicado exactamente una vez.
+
+No se modificaron daño, alcance, cooldown, clasificación de armas ni reglas de Cambiaformas. La separación aclara el contrato sin cambiar las condiciones de gameplay.
