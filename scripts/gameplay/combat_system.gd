@@ -542,8 +542,6 @@ func _aplicar_danio(
 	if not is_instance_valid(objetivo):
 		return
 
-	var vivo_antes: bool = objetivo.is_alive
-
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
 		danio,
