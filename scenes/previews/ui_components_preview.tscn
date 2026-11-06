@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_group.tscn" id="1_inventory_group"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_slot.tscn" id="2_inventory_slot"]
@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_discovery_notice.tscn" id="7_discovery"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_calendar_clock.tscn" id="8_calendar"]
 [ext_resource type="PackedScene" path="res://scenes/ui/eterium_radial_menu.tscn" id="9_eterium"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_garumi_linked_panel.tscn" id="10_garumi_panel"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_garumi_linked_slot.tscn" id="11_garumi_slot"]
 
 [node name="UIComponentsPreview" type="Control"]
 custom_minimum_size = Vector2(1280, 800)
@@ -99,3 +101,13 @@ offset_bottom = 600.0
 
 [node name="Fondo" parent="EteriumRadialMenu" index="0"]
 visible = true
+
+[node name="GarumisLinkedPanel" parent="." instance=ExtResource("10_garumi_panel")]
+offset_left = 32.0
+offset_top = 720.0
+offset_right = 220.0
+offset_bottom = 766.0
+
+[node name="GarumiSlot1" parent="GarumisLinkedPanel/GarumiSlots" instance=ExtResource("11_garumi_slot")]
+[node name="GarumiSlot2" parent="GarumisLinkedPanel/GarumiSlots" instance=ExtResource("11_garumi_slot")]
+[node name="GarumiSlot3" parent="GarumisLinkedPanel/GarumiSlots" instance=ExtResource("11_garumi_slot")]
