@@ -760,7 +760,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 
 	if _eterium_vida_compartida():
 		if dano_recibido > 0:
-			eterium.runtime.establecer_mana(
+			eterium.establecer_mana(
 				maxi(eterium.mana() - dano_recibido, 0)
 			)
 		print(name, " recibió ", dano_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
