@@ -535,3 +535,16 @@ Se consolidó en `CombatImpactEffects.procesar_impacto_confirmado()` la parte co
 - La prueba cubre la absorción por derrota de jugador, la agresión de Feerin, el registro de derrota, las reacciones de IA y la no atribución al jugador de derrotas causadas por NPC.
 
 El procesador solo recibe impactos ya confirmados. No modifica vida, fórmulas, defensa, cooldown, ni el contrato de contacto independiente del daño.
+
+## Cuadragésima novena barrida — Señales entre Creature y CreatureAI
+
+Se eliminó la llamada directa de `Creature` a `CreatureAI` para notificar cambios de configuración y daño recibido:
+
+- `Creature` emite `configuracion_actualizada` al terminar de aplicar nuevos datos de especie.
+- `Creature` emite `danio_recibido(cantidad, atacante)` después de que `Entity` confirma una reducción real de salud. La emisión también sucede para impactos letales y conserva el atacante durante el evento.
+- `CreatureAI` se suscribe a ambas señales al iniciar: actualiza perfil/configuración y ejecuta sus reacciones defensivas/especializadas.
+- `Entity` conserva el estado vital; `Creature` lo extiende con datos de especie; `CreatureAI` conserva percepción, selección de objetivo, máquina de estados y decisiones de ataque.
+- `CombatSystem` continúa siendo el ejecutor de ataques solicitados por IA y el punto de coordinación del daño. No se movieron fórmulas, cooldowns, perfiles ni reglas de criaturas.
+- Se añadió una regresión con la escena real de criatura: comprueba actualización de perfil, reducción de salud, cantidad/atacante emitidos y reacción de Espíritu Estelar al recibir daño.
+
+La comunicación de configuración/daño es ahora un contrato de señales; se mantienen las otras dependencias explícitas de composición y control de simulación que todavía necesita `Creature`.
