@@ -25,14 +25,17 @@ static func registrar_agresion_bosque(
 
 
 static func registrar_criatura_derrotada(
-	game_state: GameStateService,
+	game_state: Node,
 	objetivo: Entity
 ) -> bool:
 	if game_state == null or not is_instance_valid(game_state):
 		return false
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
-	return game_state.registrar_criatura_derrotada(objetivo)
+	if not game_state.has_method("registrar_criatura_derrotada"):
+		return false
+	var resultado: Variant = game_state.call("registrar_criatura_derrotada", objetivo)
+	return bool(resultado)
 
 
 static func obtener_ai_controller(objetivo: Node) -> CreatureAI:
