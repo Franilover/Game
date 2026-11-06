@@ -38,7 +38,7 @@ GameplayInputRouter → CombatSystem → CombatController → CombatSystem → C
 
 Ruta criatura:
 CreatureAI (objetivo, perfil, estado y momento del ataque) → CombatSystem → CombatDamage → Entity / Creature → señales de criatura → CreatureAI.
-- Ataques genéricos de IA: CombatSystem.aplicar_danio_desde_entidad() → CombatDamage.
+- Ataques genéricos de IA: CreatureAI → CombatSystem.solicitar_danio_desde_entidad() → CombatDamage → CombatAttackResult. La API booleana aplicar_danio_desde_entidad() permanece como wrapper y sólo devuelve true si la salud disminuyó.
 - Cambiaformas con arma: CreatureAI → CombatSystem.solicitar_ataque_con_arma() → CombatWeaponAttackValidator → aplicación de daño/contacto → CombatAttackResult devuelto a CreatureAI.
 En la ruta de Cambiaformas, solicitud aceptada, contacto registrado y daño aplicado son estados independientes.
 
@@ -47,8 +47,8 @@ Responsabilidades:
 - `CombatItemResolver`: interpreta la clasificación y propiedades del objeto; no crea ataques ni aplica daño.
 - `CombatAttackExecutor`: construye y conecta los nodos melee/proyectil; no decide cuándo se ataca ni resuelve impactos.
 - `CombatWeaponAttackValidator`: valida atacante, objetivo vivo y clasificación de arma; no ejecuta acciones ni modifica estado.
-- `CombatAttackResult`: comunica por separado aceptación de solicitud, contacto registrado, daño aplicado y motivo de rechazo.
-- `CombatSystem`: ejecuta solicitudes validadas, aplica cooldown y coordina daño, contacto/eventos públicos y robo de vida. La aceptación no equivale a daño aplicado.
+- `CombatAttackResult`: comunica por separado aceptación de solicitud, contacto registrado, daño aplicado y motivo de rechazo tanto en armas como en daño genérico de entidades.
+- `CombatSystem`: ejecuta solicitudes validadas, aplica cooldown y coordina daño, contacto/eventos públicos y robo de vida. `solicitar_danio_desde_entidad()` y `solicitar_ataque_con_arma()` devuelven resultados tipados; la aceptación no equivale a daño aplicado.
 - `CreatureAI`: decide a quién atacar, según qué perfil y cuándo; administra su máquina de estados y solicita la ejecución a `CombatSystem`. No modifica salud.
 - `Entity`: conserva `VitalState`, salud y ciclo vital. Es el dueño del estado de vida.
 - `Creature`: extiende `Entity` con datos y comportamiento de especie. Publica `configuracion_actualizada` y `danio_recibido`; no llama directamente a `CreatureAI` para entregar esos dos eventos.
