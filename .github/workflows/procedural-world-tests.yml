@@ -104,6 +104,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run creature AI signal contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/creatures/test_creature_ai_signal_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CreatureAISignalContract: FAIL:' <<<"$output"; then
+            echo "Creature AI signal contract test reported errors."
+            exit 1
+          fi
+
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
 
