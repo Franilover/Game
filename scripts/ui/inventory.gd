@@ -551,21 +551,29 @@ func _notification(what: int) -> void:
 
 
 func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
+	_soltar_objeto_en_posicion(indice, datos, get_global_mouse_position())
+
+
+func _soltar_objeto_en_posicion(
+	indice: int,
+	datos: Dictionary,
+	posicion: Vector2
+) -> bool:
 	if indice < 0 or indice >= items.size() or datos.is_empty():
-		return
+		return false
 
 	var world_items: GarliaWorldItems = _world_items
 
 	if world_items == null:
 		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
-		return
+		return false
 
 	# El inventario solo descuenta el objeto si el WorldItem quedó registrado.
-	if not world_items.soltar_objeto_al_mundo(datos, get_global_mouse_position()):
+	if not world_items.soltar_objeto_al_mundo(datos, posicion):
 		print("Inventory: no se pudo crear el objeto en el mundo; se conserva en inventario.")
-		return
+		return false
 
-	quitar_objeto(indice)
+	return quitar_objeto(indice)
 
 
 func _al_seleccionar_slot(slot: Button) -> void:
