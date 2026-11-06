@@ -37,8 +37,10 @@ Ruta jugador:
 GameplayInputRouter → CombatSystem → CombatController → CombatSystem → CombatItemResolver → CombatAttackExecutor → CombatAttackArea / CombatProjectile → CombatTargeting / CombatDamage → Entity.
 
 Ruta criatura:
-CreatureAI (objetivo, perfil, estado y momento del ataque) → CombatWeaponAttackValidator → CombatSystem → CombatDamage → Entity / Creature → señales de criatura → CreatureAI.
-El resultado de ataque se entrega como CombatAttackResult: solicitud aceptada, contacto registrado y daño aplicado son estados independientes.
+CreatureAI (objetivo, perfil, estado y momento del ataque) → CombatSystem → CombatDamage → Entity / Creature → señales de criatura → CreatureAI.
+- Ataques genéricos de IA: CombatSystem.aplicar_danio_desde_entidad() → CombatDamage.
+- Cambiaformas con arma: CreatureAI → CombatSystem.solicitar_ataque_con_arma() → CombatWeaponAttackValidator → aplicación de daño/contacto → CombatAttackResult devuelto a CreatureAI.
+En la ruta de Cambiaformas, solicitud aceptada, contacto registrado y daño aplicado son estados independientes.
 
 Responsabilidades:
 - `CombatController`: valida el bloqueo de entrada y emite el snapshot de dirección, objeto y modo.
