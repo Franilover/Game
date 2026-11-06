@@ -48,7 +48,14 @@ func _run() -> void:
 		errores.append("El progreso restaurado excedió el máximo del objetivo.")
 	if manager.obtener_progreso("mision_contrato", "dialogo") != 0:
 		errores.append("El progreso negativo no se normalizó a cero.")
-	var progreso_serializado: Dictionary = manager.serializar_estado_partida().get("progreso", {}).get("mision_contrato", {})
+	var estado_serializado := manager.serializar_estado_partida()
+	var progreso_serializado_variant: Variant = estado_serializado.get("progreso", {})
+	var progreso_serializado: Dictionary = {}
+	if progreso_serializado_variant is Dictionary:
+		var misiones_serializadas: Dictionary = progreso_serializado_variant as Dictionary
+		var mision_serializada_variant: Variant = misiones_serializadas.get("mision_contrato", {})
+		if mision_serializada_variant is Dictionary:
+			progreso_serializado = mision_serializada_variant as Dictionary
 	if progreso_serializado.has("objetivo_eliminado"):
 		errores.append("Se conservó progreso de un objetivo que ya no existe.")
 
@@ -75,7 +82,10 @@ func _run() -> void:
 	manager.registrar_recoleccion("mineral", 3)
 	if completadas.size() != 1:
 		errores.append("La finalización no fue idempotente.")
-	if recompensas.size() != 1 or (recompensas[0] as Array).size() != 1:
+	var cantidad_recompensas := 0
+	if recompensas.size() == 1 and recompensas[0] is Array:
+		cantidad_recompensas = (recompensas[0] as Array).size()
+	if recompensas.size() != 1 or cantidad_recompensas != 1:
 		errores.append("La señal de recompensa no se emitió exactamente una vez.")
 	if not manager.esta_completada("mision_contrato"):
 		errores.append("La misión no quedó en estado completada.")
