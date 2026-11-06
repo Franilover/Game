@@ -507,3 +507,17 @@ Se extrajo la creación y conexión de nodos de ataque a `CombatAttackExecutor`:
 
 La extracción mantiene el orden de configuración y adición de nodos que ya utilizaba `CombatSystem`. No altera daño, cooldown, velocidad, alcance, duración, posición inicial ni reacciones posteriores al impacto.
 
+
+## Cuadragésima séptima barrida — Efectos posteriores al impacto separados
+
+Se extrajeron los efectos que ocurren después de confirmar una reducción real de salud a `CombatImpactEffects`:
+
+- Reacciones de `CreatureAI` ante armas.
+- Registro de derrotas mediante `GameStateService`.
+- Marcadores de agresión ecológica del bosque.
+- Feedback visual del objetivo.
+- `CombatSystem` sigue siendo dueño de las rutas de daño, contacto, cooldown, eventos públicos, absorción de Eterium y robo de vida.
+- `CombatDamage` permanece como única capa que reduce salud. `CombatProjectile` conserva su contrato: publica el contacto por separado y emite el impacto consumible únicamente si la salud disminuyó.
+- Se añadió una regresión para agresión ecológica, registro en enciclopedia y dependencias nulas, integrada en GitHub Actions.
+
+La extracción no agrega otra aplicación de daño ni unifica artificialmente los caminos melee, proyectil y ataque de criatura. Se preservan los momentos y condiciones actuales de cada efecto.
