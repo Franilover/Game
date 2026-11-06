@@ -446,38 +446,14 @@ func _al_recibir_impacto_proyectil(
 		return
 
 	var arma := ataque.object_data
-
-	if (
-		not arma.is_empty()
-		and objetivo.is_in_group("creatures")
-		and not objetivo.is_alive
-		and ataque.attacker != null
-		and ataque.attacker.is_in_group("player")
-	):
-		COMBAT_IMPACT_EFFECTS.registrar_criatura_derrotada(game_state, objetivo)
-		if objetivo is Creature:
-			COMBAT_IMPACT_EFFECTS.registrar_agresion_bosque(
-				player,
-				objetivo as Creature,
-				true
-			)
-
-	var ai_proyectil: CreatureAI = COMBAT_IMPACT_EFFECTS.obtener_ai_controller(objetivo)
-	if (
-		not arma.is_empty()
-		and objetivo.is_in_group("creatures")
-		and objetivo.is_alive
-		and ai_proyectil != null
-	):
-		if ataque.attacker != null and ataque.attacker.is_in_group("player") and objetivo is Creature:
-			COMBAT_IMPACT_EFFECTS.registrar_agresion_bosque(
-				player,
-				objetivo as Creature,
-				false
-			)
-		COMBAT_IMPACT_EFFECTS.notificar_reaccion_ia(ai_proyectil, arma)
-
-	COMBAT_IMPACT_EFFECTS.aplicar_feedback(objetivo, ataque.damage)
+	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
+		game_state,
+		player,
+		ataque.attacker,
+		objetivo,
+		ataque.damage,
+		arma
+	)
 	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
 
 
@@ -578,38 +554,18 @@ func _aplicar_danio(
 	if not aplicado:
 		return
 
-	if atacante is Player and objetivo is Creature:
-		COMBAT_IMPACT_EFFECTS.registrar_agresion_bosque(
-			player,
-			objetivo as Creature,
-			not objetivo.is_alive
-		)
-
-	if (
-		vivo_antes
-		and not objetivo.is_alive
-		and objetivo.is_in_group("creatures")
-	):
-		COMBAT_IMPACT_EFFECTS.registrar_criatura_derrotada(game_state, objetivo)
-
-		var actor_eterium: Player = atacante as Player
-		if actor_eterium == null:
-			actor_eterium = player
-
-		if actor_eterium != null and is_instance_valid(actor_eterium):
-			actor_eterium.absorber_eterium_de_criatura(objetivo)
-
-	if not arma.is_empty() and objetivo.is_in_group("creatures") and objetivo.is_alive:
-		var ai: CreatureAI = COMBAT_IMPACT_EFFECTS.obtener_ai_controller(objetivo)
-		if ai != null:
-			COMBAT_IMPACT_EFFECTS.notificar_reaccion_ia(ai, arma)
-
-	COMBAT_IMPACT_EFFECTS.aplicar_feedback(objetivo, danio)
-
 	var actor: Node = atacante
-
 	if actor == null:
 		actor = player
+
+	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
+		game_state,
+		player,
+		actor,
+		objetivo,
+		danio,
+		arma
+	)
 
 	ataque_realizado.emit(
 		actor,
@@ -667,10 +623,13 @@ func aplicar_danio_desde_entidad(
 	if not aplicado:
 		return false
 
-	if vivo_antes and not objetivo.is_alive and objetivo.is_in_group("creatures"):
-		COMBAT_IMPACT_EFFECTS.registrar_criatura_derrotada(game_state, objetivo)
-
-	COMBAT_IMPACT_EFFECTS.aplicar_feedback(objetivo, danio)
+	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
+		game_state,
+		player,
+		atacante,
+		objetivo,
+		danio
+	)
 
 	# Robo de vida canónico: sólo cura al vampiro que acaba de infligir
 	# daño real; CombatDamage ya confirmó que la salud del objetivo bajó.
