@@ -48,7 +48,7 @@ func _run() -> void:
 	if repository.leer_partida(id) != estado_inicial:
 		errores.append("La recuperación no restauró un archivo final legible.")
 
-	if not repository.ruta_partida("../fuera") .is_empty():
+	if not repository.ruta_partida("../fuera").is_empty():
 		errores.append("Se aceptó un ID de partida con traversal de rutas.")
 	if repository.escribir_partida("", estado_nuevo):
 		errores.append("Se aceptó un ID vacío.")
