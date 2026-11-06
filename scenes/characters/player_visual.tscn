@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://d7m2k4p9v6x1a"]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/characters/Sprite-0004.png" id="1_player_texture"]
 
