@@ -29,9 +29,9 @@
 ### 1.2 Guardado y restauración
 - [x] Mantener snapshots separados: `PlayerState`, `WorldState` y `DiscoveryState`.
 - [x] Mantener `GameStateService` como coordinador, sin duplicar una fachada.
-- [~] Implementar escritura temporal, validación JSON, respaldo y recuperación del último save válido en `SaveFileRepository`; además se protege el respaldo cuando el destino bloquea la recuperación. Falta ejecución de CI.
-- [ ] Validar la recuperación ante interrupción real del proceso y errores de filesystem.
-- [~] Añadir contrato automatizado para sobrescribir, recuperar, eliminar y rechazar IDs/payloads inválidos; falta ejecución de CI.
+- [x] Implementar escritura temporal, validación JSON, respaldo y recuperación del último save válido en `SaveFileRepository`; el respaldo se conserva cuando el destino bloquea la recuperación.
+- [x] Contrato automatizado de sobrescritura, recuperación, eliminación y rechazo de IDs/payloads inválidos; CI Godot 4.7 aprobado.
+- [ ] Validar la recuperación ante interrupción real del proceso y errores de filesystem fuera del entorno de contrato.
 - [ ] Validar versión y migraciones de saves antiguos.
 - [ ] Rechazar estructuras corruptas o incompletas sin destruir el último save válido.
 - [ ] Comprobar restauración de posición, zona/interior, salud, maná, stamina, inventario, IUM, misiones, Garumis y tiempo.
@@ -74,7 +74,7 @@
 - [ ] Medir coste por frame y evitar trabajo repetido.
 
 ### 2.3 Interacciones y progresión
-- [~] Validar estado y progreso de misiones al restaurar partidas; contrato automatizado cubre normalización, finalización idempotente y emisión única de recompensa. Falta ejecutar CI y completar la aplicación/reclamación efectiva de recompensas.
+- [x] Validar estado y progreso de misiones al restaurar partidas; contrato CI cubre normalización, finalización idempotente y emisión única de la señal de recompensa.
 - [ ] Auditar el flujo completo de misiones: aceptar, progreso, completar, recompensa y persistencia.
 - [ ] Verificar que las recompensas se apliquen una sola vez y no se pierdan al recargar.
 - [ ] Revisar diálogos interrumpidos, ramas y condiciones.
@@ -97,19 +97,19 @@
 - [ ] Probar mundos largos y sesiones con muchas criaturas.
 
 ### 3.2 Inventario y objetos
-- [~] Separar la obtención de posición del puntero de la transacción de soltar objetos; el inventario solo descuenta tras confirmar el registro del WorldItem. Contrato de fallo añadido, pendiente de CI.
+- [x] Separar la obtención de posición del puntero de la transacción de soltar objetos; el inventario solo descuenta tras confirmar el registro del WorldItem.
 - [x] Separar estado/controlador de la presentación del inventario.
 - [x] Separar hotbar de equipamiento.
-- [~] `InventoryRuntime` ya revierte recogidas parciales que no caben; se añadió contrato de cantidades, pendiente de ejecución en CI.
-- [x] Verificar el contrato de soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo; la ruta de fallo conserva el objeto.
+- [x] `InventoryRuntime` revierte recogidas parciales que no caben; el contrato verifica rechazo atómico y transferencia íntegra cuando existe capacidad.
+- [x] Verificar el contrato de soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo; la ruta de fallo conserva el objeto y usa el dato actual del runtime, no una copia de arrastre obsoleta.
 - [ ] Auditar identidad por ID, apilamiento, límites y capacidad.
 - [ ] Probar durabilidad, consumibles, transferencia entre manos y equipamiento.
 - [ ] Verificar restauración completa del inventario y compatibilidad con saves antiguos.
 - [ ] Unificar validaciones para recoger, soltar, intercambiar, usar y equipar.
 
 ### 3.3 Datos y modo sin conexión
-- [~] Introducir `WorldSnapshotValidator` compartido por `WorldData` y `SupabaseClient`; contrato cubre jerarquía y snapshot incluido, pendiente de CI.
-- [~] Rechazar snapshots con jerarquía obligatoria incompleta o tipos incorrectos; falta validar el flujo completo de fallback/cache en CI.
+- [x] Introducir `WorldSnapshotValidator` compartido por `WorldData` y `SupabaseClient`; el contrato de jerarquía/snapshot incluido pasa CI.
+- [x] Rechazar snapshots con jerarquía obligatoria incompleta o tipos incorrectos; el fallback/cache completo sigue pendiente de pruebas de integración.
 - [ ] Revisar caché local versionada para catálogos cuando corresponda, sin duplicar la autoridad de Supabase.
 - [ ] Comprobar inicio de una partida nueva sin conexión y recuperación posterior.
 - [ ] Auditar reintentos y errores de red por dominio.
@@ -130,8 +130,8 @@
 ### 4.2 Pruebas y CI
 - [x] Mantener importación/compilación headless en CI.
 - [x] Ejecutar contratos de locomoción, combate, IA y ciclo de vida cubiertos por el workflow actual.
-- [~] Añadir contrato de recuperación de `SaveFileRepository` al workflow.
-- [~] Añadir contratos de inventario y misiones; recogida y estado/progreso de misiones ya tienen contratos, falta validar CI y ampliar a recompensas/persistencia integral.
+- [x] Contrato de recuperación de `SaveFileRepository` ejecutado en CI.
+- [x] Contratos de recogida/soltado de inventario y restauración/finalización de misiones ejecutados en CI; la aplicación efectiva de recompensas y persistencia integral siguen pendientes.
 - [ ] Añadir contratos de datos offline y restauración completa.
 - [ ] Añadir pruebas de integración de inicio/cierre de partida.
 - [ ] Verificar referencias rotas de escenas, recursos, autoloads y scripts.
