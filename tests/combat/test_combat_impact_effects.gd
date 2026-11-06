@@ -1,6 +1,18 @@
 extends Node
 
 
+class FakeGameState:
+	extends Node
+
+	var criaturas_registradas: Array[Node] = []
+
+	func registrar_criatura_derrotada(criatura: Node) -> bool:
+		if criatura == null:
+			return false
+		criaturas_registradas.append(criatura)
+		return true
+
+
 func _ready() -> void:
 	call_deferred("_run")
 
@@ -49,24 +61,18 @@ func _probar_agresion_ecologica(errores: Array[String]) -> void:
 
 
 func _probar_registro_derrota(errores: Array[String]) -> void:
-	var game_state := GameStateService.new()
+	var game_state := FakeGameState.new()
 	var criatura := Creature.new()
-	criatura.criatura_id = "combat-impact-effects-test"
-	criatura.add_to_group("creatures")
 
 	if not CombatImpactEffects.registrar_criatura_derrotada(game_state, criatura):
-		errores.append("No delegó el registro de derrota a GameState.")
-	var registros_variant: Variant = game_state.world_state.flags.get("enciclopedia_criaturas", {})
-	if not registros_variant is Dictionary:
-		errores.append("GameState no conservó el registro de enciclopedia como Dictionary.")
-	else:
-		var registros: Dictionary = registros_variant as Dictionary
-		if int(registros.get(criatura.criatura_id, 0)) != 1:
-			errores.append("El helper no registró exactamente una derrota en GameState.")
+		errores.append("No delegó el registro de derrota al servicio.")
+	if game_state.criaturas_registradas.size() != 1:
+		errores.append("El servicio no recibió exactamente un registro de derrota.")
+	elif game_state.criaturas_registradas[0] != criatura:
+		errores.append("El servicio recibió una criatura distinta al objetivo.")
 
-	criatura.remove_from_group("creatures")
-	criatura.free()
 	game_state.free()
+	criatura.free()
 
 
 func _probar_seguridad_de_dependencias(errores: Array[String]) -> void:
@@ -78,7 +84,7 @@ func _probar_seguridad_de_dependencias(errores: Array[String]) -> void:
 	if CombatImpactEffects.notificar_reaccion_ia(null, {"nombre": "Prueba"}):
 		errores.append("Aceptó una reacción de IA sin controlador.")
 	if CombatImpactEffects.registrar_criatura_derrotada(null, criatura):
-		errores.append("Registró una derrota sin GameState.")
+		errores.append("Registró una derrota sin servicio.")
 	CombatImpactEffects.aplicar_feedback(nodo, 5)
 
 	nodo.free()
