@@ -217,7 +217,7 @@ func _crear_ataque_melee(
 	if player == null:
 		return
 
-	var ataque := COMBAT_ATTACK_EXECUTOR.crear_ataque_melee(
+	var ataque: CombatAttackArea = COMBAT_ATTACK_EXECUTOR.crear_ataque_melee(
 		player,
 		direccion,
 		alcance,
@@ -399,7 +399,7 @@ func _disparar_proyectil(
 	)
 	var danio := _obtener_danio_arma(arma)
 
-	var proyectil := COMBAT_ATTACK_EXECUTOR.disparar_proyectil(
+	var proyectil: CombatProjectile = COMBAT_ATTACK_EXECUTOR.disparar_proyectil(
 		player,
 		projectile_root,
 		direccion,
