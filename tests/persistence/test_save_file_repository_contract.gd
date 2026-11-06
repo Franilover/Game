@@ -55,6 +55,25 @@ func _run() -> void:
 	if repository.escribir_partida("empty_payload", {}):
 		errores.append("Se aceptó un payload vacío.")
 
+	# Simula un destino bloqueado: aunque la recuperación no pueda renombrar
+	# el respaldo, una nueva escritura no debe destruir el único save válido.
+	var ruta_bloqueada := repository.ruta_partida("blocked_save")
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ruta_bloqueada))
+	var ruta_respaldo_bloqueado := ruta_bloqueada + ".bak"
+	_escribir_texto(ruta_respaldo_bloqueado, JSON.stringify({
+		"id": "blocked_save",
+		"version": 7
+	}))
+	var recuperacion_bloqueada := repository.leer_partida("blocked_save")
+	if int(recuperacion_bloqueada.get("version", 0)) != 7:
+		errores.append("No se pudo leer el respaldo válido cuando el destino estaba bloqueado.")
+	if repository.escribir_partida("blocked_save", {"id": "blocked_save", "version": 8}):
+		errores.append("Se aceptó sobrescribir cuando no se podía restaurar el respaldo válido.")
+	if not FileAccess.file_exists(ruta_respaldo_bloqueado):
+		errores.append("La escritura fallida eliminó el único respaldo válido.")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta_respaldo_bloqueado))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta_bloqueada))
+
 	# El borrado también limpia restos de una transacción interrumpida.
 	_escribir_texto(ruta + ".tmp", "temporal")
 	_escribir_texto(ruta + ".bak", JSON.stringify(estado_inicial))
