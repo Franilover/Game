@@ -578,3 +578,17 @@ Se aplicó el mismo contrato explícito a las solicitudes de ataque genérico qu
 - Se añadió una regresión para daño cero, daño real, wrapper booleano, atacante nulo y objetivo derrotado.
 
 No se cambió la fórmula de daño, la defensa, el cooldown ni la cantidad de daño configurada por especie. Se unificó el contrato de resultados y se conserva la API anterior.
+
+
+## Quincuagésima segunda barrida — Ciclo de vida de muerte en Entity
+
+Se corrigió una transición inconsistente entre VitalState y Entity:
+
+- VitalState.recibir_danio() marca is_alive = false al llegar a cero.
+- Entity.take_damage() sincroniza ese estado antes de llamar a _die().
+- Antes de la corrección, _die() interpretaba el estado ya sincronizado como una muerte procesada y retornaba sin emitir died.
+- Entity ahora usa un guard independiente (_death_emitted) para emitir la señal exactamente una vez por transición de vida a muerte.
+- Restaurar una partida muerta no reproduce died; restaurar una entidad viva rearma el evento para su siguiente muerte.
+- Se añadió EntityLifecycleContract para comprobar muerte letal, daño posterior, idempotencia, restauración viva y restauración muerta.
+
+La corrección no cambia el cálculo de daño ni las reglas de combate. El alcance de la señal se limita al ciclo de vida de Entity; las subclases que implementan su propio _die() conservan su lógica.
