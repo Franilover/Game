@@ -8,6 +8,7 @@ Abre el proyecto en Godot y usa **Escena > Abrir escena**:
 - `scenes/previews/ui_components_preview.tscn`: muestra componentes reutilizables de inventario y paneles del HUD.
 - `scenes/previews/eterium_radial_menu_preview.tscn`: permite inspeccionar el menú radial de Eterium.
 - `scenes/ui/character_appearance_preview.tscn`: permite inspeccionar las capas visuales de personalización del personaje.
+- `scenes/previews/realm_menu_preview.tscn`: muestra el menú de viaje con destinos de ejemplo.
 
 Para ejecutar una vista previa, abre la escena y pulsa **F6** (Ejecutar escena actual). También puedes inspeccionar y modificar sus nodos directamente en el árbol de escena.
 
@@ -22,6 +23,8 @@ Para ejecutar una vista previa, abre la escena y pulsa **F6** (Ejecutar escena a
 Las escenas de criatura heredan las plantillas existentes `creature.tscn` y `garumi.tscn`. El juego puede seguir reemplazando la textura al configurar la entidad con los datos recibidos en runtime. Las escenas de panel del HUD contienen la estructura y el estilo; el código continúa rellenando misiones, texto y acciones.
 
 `inventory_group.tscn` define el contenedor y la rejilla; el inventario sigue creando los slots según `slot_count`. Esto conserva la capacidad configurable.
+
+`realm_menu.tscn` define el overlay, panel, cabecera y lista de destinos del menú de viaje; `realm_menu.gd` conserva la consulta de destinos desbloqueados y crea los botones según el estado real. `realm_menu_preview.tscn` añade destinos ficticios solo para inspeccionar el diseño, sin modificar el catálogo remoto.
 
 `character_creation.tscn` contiene la estructura del formulario y utiliza `character_appearance_preview.tscn` para las capas de vista previa. Cada fila de opciones utiliza `character_appearance_option_row.tscn`; el script rellena su catálogo con los archivos disponibles y conecta la selección y el selector de color. Esto deja la geometría, los nodos y los estilos de las piezas editables sin duplicar la lógica de personalización.
 
