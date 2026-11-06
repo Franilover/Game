@@ -6,6 +6,7 @@ Abre el proyecto en Godot y usa **Escena > Abrir escena**:
 
 - `scenes/previews/creature_garumi_catalog.tscn`: muestra las criaturas y Garumis que ya tienen sprites exportados.
 - `scenes/previews/ui_components_preview.tscn`: muestra componentes reutilizables de inventario y paneles del HUD.
+- `scenes/previews/eterium_radial_menu_preview.tscn`: permite inspeccionar el menú radial de Eterium.
 
 Para ejecutar una vista previa, abre la escena y pulsa **F6** (Ejecutar escena actual). También puedes inspeccionar y modificar sus nodos directamente en el árbol de escena.
 
@@ -13,7 +14,7 @@ Para ejecutar una vista previa, abre la escena y pulsa **F6** (Ejecutar escena a
 
 - Criaturas: `scenes/creatures/` (una escena por sprite disponible).
 - Garumis: `scenes/garumis/`.
-- Componentes UI: `scenes/ui/inventory_group.tscn`, `inventory_slot.tscn`, `inventory_equipment_slot.tscn`, `hud_mission_panel.tscn` y `hud_interaction_panel.tscn`.
+- Componentes UI: `scenes/ui/inventory_group.tscn`, `inventory_slot.tscn`, `inventory_equipment_slot.tscn`, `hud_mission_panel.tscn` y `hud_interaction_panel.tscn`, `hud_dash_charges.tscn`, `hud_discovery_notice.tscn`, `hud_calendar_clock.tscn` y `eterium_radial_menu.tscn`.
 
 ## Cómo se relacionan con el runtime
 
@@ -23,4 +24,4 @@ Las escenas de criatura heredan las plantillas existentes `creature.tscn` y `gar
 
 ## Cobertura pendiente
 
-No todos los assets del repositorio tienen todavía una escena propia: los archivos fuente Aseprite sin exportación PNG no se convierten automáticamente en escenas visuales. Tampoco se han extraído aún todos los paneles y controles construidos dinámicamente por HUD, creación de personaje y menú radial.
+No todos los assets del repositorio tienen todavía una escena propia: los archivos fuente Aseprite sin exportación PNG no se convierten automáticamente en escenas visuales. Tampoco se han extraído aún todos los paneles y controles construidos dinámicamente por HUD, creación de personaje e inventario. El menú radial de Eterium ya utiliza una escena editable; su lógica de entrada y minijuego permanece en el script.
