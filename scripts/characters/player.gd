@@ -986,13 +986,21 @@ func admin_establecer_maximos(
 	max_mana = maxi(1, eterium)
 	max_stamina = maxf(1.0, energia)
 
-	health = mini(health, max_health)
-	mana = mini(mana, max_mana)
-	stamina = minf(stamina, max_stamina)
+	var estaba_vivo := vital_state.is_alive
+	if eterium.vida_eterium_compartidos():
+		# La fisiología compartida usa una sola capacidad para vida y Eterium.
+		max_health = max_mana
+	vital_state.max_health = max_health
+	vital_state.max_mana = max_mana
+	var vida_actual := clampi(vital_state.health, 0, max_health)
+	var eterium_actual := clampi(vital_state.mana, 0, max_mana)
+	if eterium.vida_eterium_compartidos():
+		vida_actual = eterium_actual
+	restaurar_estado_vital(vida_actual, estaba_vivo, eterium_actual)
 
-	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_mana)
-	stamina_changed.emit(stamina, max_stamina)
+	stamina_controller.establecer_maximo(max_stamina)
+	max_stamina = stamina_controller.maximum
+	stamina_controller.establecer_actual(minf(stamina, max_stamina))
 	return true
 
 
