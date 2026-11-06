@@ -168,8 +168,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/missions/test_mission_manager_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
+          output="$(timeout 30s godot --headless --path . res://tests/missions/test_mission_manager_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|MissionManagerContract: FAIL:' <<<"$output"; then
             echo "Mission manager contract test reported errors."
             exit 1
