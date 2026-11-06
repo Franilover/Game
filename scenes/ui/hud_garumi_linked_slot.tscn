@@ -1,12 +1,13 @@
 [gd_scene load_steps=6 format=3]
 
+[ext_resource type="Script" path="res://scripts/ui/garumi_health_ring.gd" id="1_ring"]
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_normal"]
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_hover"]
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_pressed"]
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_number_focus"]
 
 
-[ext_resource type="Script" path="res://scripts/ui/garumi_health_ring.gd" id="1_ring"]
 
 [node name="GarumiSlot" type="HBoxContainer"]
 custom_minimum_size = Vector2(56, 46)
