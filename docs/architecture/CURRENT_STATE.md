@@ -647,3 +647,14 @@ Se cerraron rutas adicionales del runtime de Eterium:
 - \`PlayerVitalStateContract\` comprueba que gastar toda la reserva compartida mata al jugador, que la absorción no revive una entidad muerta y que la reaparición de red restaura las reservas.
 
 No se modifican costes, tasas, capacidades canónicas ni datos remotos. La validación automatizada sigue pendiente de un resultado CI visible.
+
+
+## Quincuagésima séptima barrida — Protección del respaldo ante recuperación bloqueada
+
+Se cerró un caso límite del repositorio de guardados:
+
+- Si el archivo final está dañado o ausente y existe un \`.bak\` válido, \`leer_partida()\` devuelve ese estado e intenta restaurarlo.
+- Si el filesystem impide completar el reemplazo (por ejemplo, el destino está bloqueado), \`escribir_partida()\` ahora detecta que el respaldo válido sigue siendo la única copia recuperable y cancela la nueva escritura.
+- Se amplió \`SaveFileRepositoryContract\` para simular un destino que es un directorio, comprobar que el respaldo se puede leer y verificar que una escritura posterior fallida no lo elimina.
+
+La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas de apagado abrupto ni de fallos físicos de disco. Pendiente ejecución CI.
