@@ -2,6 +2,8 @@ extends Control
 class_name HUD
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const MISSION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_mission_panel.tscn")
+const INTERACTION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_interaction_panel.tscn")
 
 class GarumiHealthRing extends Control:
 	var health_ratio: float = 1.0
@@ -836,57 +838,19 @@ func _al_mision_completada(_mision: Dictionary) -> void:
 
 
 func _preparar_panel_misiones() -> void:
-	mission_panel = PanelContainer.new()
-	mission_panel.name = "MissionPanel"
+	mission_panel = MISSION_PANEL_SCENE.instantiate() as PanelContainer
+	if mission_panel == null:
+		push_error("HUD: no se pudo instanciar hud_mission_panel.tscn.")
+		return
+
 	mission_panel.visible = false
 	mission_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	mission_panel.z_index = 2500
 	mission_panel.set_anchors_preset(Control.PRESET_CENTER)
 	mission_panel.position = Vector2(-280.0, -210.0)
 	mission_panel.size = Vector2(560.0, 420.0)
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.055, 0.035, 0.98)
-	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	mission_panel.add_theme_stylebox_override("panel", style)
-
-	var margin := MarginContainer.new()
-	margin.name = "Margin"
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_top", 20)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_bottom", 18)
-	mission_panel.add_child(margin)
-
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
-	margin.add_child(column)
-
-	var title := Label.new()
-	title.text = "MISIONES"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
-	title.add_theme_font_size_override("font_size", 18)
-	column.add_child(title)
-
-	mission_list = VBoxContainer.new()
-	mission_list.name = "MissionList"
-	mission_list.add_theme_constant_override("separation", 8)
-	mission_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(mission_list)
-
-	mission_hint = Label.new()
-	mission_hint.text = "F · Cerrar    ESC · Cerrar"
-	mission_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	mission_hint.add_theme_color_override("font_color", Color(0.62, 0.53, 0.42, 1.0))
-	mission_hint.add_theme_font_size_override("font_size", 10)
-	column.add_child(mission_hint)
-
+	mission_list = mission_panel.get_node("Margin/Column/MissionList") as VBoxContainer
+	mission_hint = mission_panel.get_node("Margin/Column/MissionHint") as Label
 	add_child(mission_panel)
 
 
@@ -1008,80 +972,21 @@ func esta_mostrando_panel_misiones() -> bool:
 
 
 func _preparar_panel_interaccion() -> void:
-	interaction_panel = PanelContainer.new()
-	interaction_panel.name = "InteractionPanel"
+	interaction_panel = INTERACTION_PANEL_SCENE.instantiate() as PanelContainer
+	if interaction_panel == null:
+		push_error("HUD: no se pudo instanciar hud_interaction_panel.tscn.")
+		return
+
 	interaction_panel.visible = false
 	interaction_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	interaction_panel.z_index = 2000
-
 	interaction_panel.set_anchors_preset(Control.PRESET_CENTER)
 	interaction_panel.position = Vector2(-230.0, -150.0)
 	interaction_panel.size = Vector2(460.0, 300.0)
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.055, 0.035, 0.98)
-	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	interaction_panel.add_theme_stylebox_override(
-		"panel",
-		style
-	)
-
-	var margin := MarginContainer.new()
-	margin.name = "Margin"
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_top", 20)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_bottom", 20)
-	interaction_panel.add_child(margin)
-
-	var column := VBoxContainer.new()
-	column.name = "Column"
-	column.add_theme_constant_override("separation", 12)
-	margin.add_child(column)
-
-	interaction_title = Label.new()
-	interaction_title.name = "Title"
-	interaction_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	interaction_title.add_theme_color_override(
-		"font_color",
-		Color(0.93, 0.84, 0.65, 1.0)
-	)
-	interaction_title.add_theme_font_size_override(
-		"font_size",
-		18
-	)
-	column.add_child(interaction_title)
-
-	interaction_body = Label.new()
-	interaction_body.name = "Body"
-	interaction_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	interaction_body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	interaction_body.custom_minimum_size = Vector2(0, 160)
-	interaction_body.add_theme_color_override(
-		"font_color",
-		Color(0.78, 0.70, 0.57, 1.0)
-	)
-	interaction_body.add_theme_font_size_override(
-		"font_size",
-		12
-	)
-	column.add_child(interaction_body)
-
-	interaction_close = Button.new()
-	interaction_close.name = "Close"
-	interaction_close.text = "Cerrar"
-	interaction_close.custom_minimum_size = Vector2(0, 34)
-	interaction_close.focus_mode = Control.FOCUS_NONE
-	interaction_close.pressed.connect(
-		cerrar_panel_interaccion
-	)
-	column.add_child(interaction_close)
-
+	interaction_title = interaction_panel.get_node("Margin/Column/Title") as Label
+	interaction_body = interaction_panel.get_node("Margin/Column/Body") as Label
+	interaction_close = interaction_panel.get_node("Margin/Column/Close") as Button
+	interaction_close.pressed.connect(cerrar_panel_interaccion)
 	add_child(interaction_panel)
 
 
