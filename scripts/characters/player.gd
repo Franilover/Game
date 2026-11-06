@@ -168,21 +168,16 @@ func _procesar_curacion_eterium(delta: float) -> void:
 	if not eterium.aplicar_curacion(curacion, costo):
 		return
 
-	# El runtime trabaja sobre el VitalState compartido con Entity.
-	# Sincronizamos las propiedades públicas y notificamos a la presentación.
+	# Si hubo gasto, el runtime ya emitió mana_changed y el adaptador sincronizó
+	# el snapshot. En fisiología compartida también notificó la vida.
 	_sync_desde_vital()
-	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_mana)
+	if not eterium.vida_eterium_compartidos() or costo <= 0:
+		health_changed.emit(health, max_health)
 
 
 func _actualizar_recuperacion_eterium(delta: float) -> void:
-	var recuperadas := eterium.actualizar_recuperacion(delta, true)
-	if recuperadas <= 0:
-		return
-	_sync_desde_vital()
-	mana_changed.emit(mana, max_mana)
-	if eterium.vida_eterium_compartidos():
-		health_changed.emit(health, max_health)
+	# El runtime emite mana_changed; el adaptador sincroniza Player y HUD.
+	eterium.actualizar_recuperacion(delta, true)
 
 
 func _input(event: InputEvent) -> void:
@@ -657,10 +652,7 @@ func absorber_eterium_de_criatura(criatura: Node) -> int:
 	if absorbido <= 0:
 		return 0
 
-	mana_changed.emit(mana, max_mana)
-	if eterium.vida_eterium_compartidos():
-		health_changed.emit(health, max_health)
-
+	# La señal del runtime ya actualizó las propiedades públicas y la HUD.
 	print(
 		"Player: Eterium absorbido de ",
 		str(criatura.get("criatura_nombre")),
