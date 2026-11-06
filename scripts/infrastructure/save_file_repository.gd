@@ -74,6 +74,15 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 
 	var ruta_temporal := _ruta_temporal(ruta)
 	var ruta_respaldo := _ruta_respaldo(ruta)
+	var respaldo_valido := not _leer_json_dictionary(ruta_respaldo).is_empty()
+	var final_valido := not _leer_json_dictionary(ruta).is_empty()
+	if respaldo_valido and not final_valido:
+		# No se elimina el único save válido si el filesystem impide recuperarlo.
+		push_error(
+			"SaveFileRepository: existe un respaldo válido que no pudo restaurarse; "
+			+ "se cancela la escritura para conservarlo."
+		)
+		return false
 	_eliminar_archivo(ruta_temporal)
 
 	var archivo := FileAccess.open(ruta_temporal, FileAccess.WRITE)
