@@ -521,3 +521,17 @@ Se extrajeron los efectos que ocurren después de confirmar una reducción real 
 - Se añadió una regresión para agresión ecológica, registro en enciclopedia y dependencias nulas, integrada en GitHub Actions.
 
 La extracción no agrega otra aplicación de daño ni unifica artificialmente los caminos melee, proyectil y ataque de criatura. Se preservan los momentos y condiciones actuales de cada efecto.
+
+## Cuadragésima octava barrida — Resultado de impacto unificado y atribución
+
+Se consolidó en `CombatImpactEffects.procesar_impacto_confirmado()` la parte compartida de los tres caminos de daño confirmado:
+
+- Melee y armas de entidades llaman al mismo procesador después de que `CombatDamage` confirma una reducción real de salud.
+- Los proyectiles llaman al mismo procesador desde `objetivo_impactado`; el proyectil sigue siendo quien aplica el daño, así que no existe una segunda aplicación.
+- Las derrotas de criaturas se registran desde las tres rutas. La agresión ecológica se atribuye al jugador atacante sin depender de que la víctima tenga un AIController.
+- El jugador recibe absorción de Eterium cuando él es el atacante que derrota a la criatura, también mediante proyectil. Las derrotas causadas por criaturas/NPC no se atribuyen por defecto al jugador.
+- Las reacciones de IA se notifican para impactos con arma contra criaturas que sobreviven; el feedback visual se procesa una sola vez.
+- La curación por robo de vida del vampiro y los eventos públicos de combate permanecen en `CombatSystem`.
+- La prueba cubre la absorción por derrota de jugador, la agresión de Feerin, el registro de derrota, las reacciones de IA y la no atribución al jugador de derrotas causadas por NPC.
+
+El procesador solo recibe impactos ya confirmados. No modifica vida, fórmulas, defensa, cooldown, ni el contrato de contacto independiente del daño.
