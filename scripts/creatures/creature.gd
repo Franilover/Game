@@ -1190,7 +1190,8 @@ func _die() -> void:
 					global_position
 				)
 
-	died.emit()
+	# Entity conserva la autoridad de emisión idempotente de died.
+	super._die()
 
 	if _movimiento != null:
 		_movimiento.detener()
