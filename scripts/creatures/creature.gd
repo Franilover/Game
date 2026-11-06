@@ -317,6 +317,21 @@ func _cargar_sprite() -> void:
 			+ nombre
 			+ ".PNG"
 		)
+		rutas.append(
+			"res://assets/art/creatures/"
+			+ nombre
+			+ "/"
+			+ nombre
+			+ "_Idle.png"
+		)
+		rutas.append(
+			"res://assets/art/creatures/"
+			+ nombre
+			+ "/"
+			+ nombre
+			+ "_Idle.PNG"
+		)
+
 	rutas.append(
 		"res://assets/art/creatures/"
 		+ nombre
