@@ -144,7 +144,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/combat/test_combat_attack_executor.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          output="$(godot --headless --path . res://tests/combat/test_combat_attack_executor.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatAttackExecutor: FAIL:' <<<"$output"; then
             echo "Combat attack executor regression test reported errors."
