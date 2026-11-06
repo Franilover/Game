@@ -520,12 +520,7 @@ func recuperar_cargas_por_descanso() -> void:
 	stamina_controller.reiniciar()
 
 func restaurar_eterium(cantidad: float) -> bool:
-	var antes: int = mana
-	mana = mini(maxi(mana + roundi(cantidad), 0), max_mana)
-	if mana == antes:
-		return false
-	mana_changed.emit(mana, max_mana)
-	return true
+	return eterium.restaurar(roundi(cantidad))
 
 func _al_cambio_stamina(current: float, maximum: float) -> void:
 	stamina = current
@@ -764,10 +759,10 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 			)
 
 	if _eterium_vida_compartida():
-		mana = maxi(mana - dano_recibido, 0)
-		health = mana
-		mana_changed.emit(mana, max_mana)
-		health_changed.emit(health, max_health)
+		if dano_recibido > 0:
+			eterium.runtime.establecer_mana(
+				maxi(eterium.mana() - dano_recibido, 0)
+			)
 		print(name, " recibió ", dano_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
 		if health <= 0:
 			_die()
@@ -836,8 +831,7 @@ func _morir_jugador() -> void:
 
 
 func reaparecer_en_red(posicion: Vector2) -> void:
-	vital_state.reiniciar()
-	_sync_desde_vital()
+	restaurar_estado_vital(max_health, true, max_mana)
 	stamina_controller.reiniciar()
 	global_position = posicion
 	velocity = Vector2.ZERO
@@ -857,16 +851,11 @@ func reaparecer_en_red(posicion: Vector2) -> void:
 	set_physics_process(true)
 	_update_dir_marker()
 	_update_visual()
-	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_mana)
 	stamina_changed.emit(stamina, max_stamina)
 
 
 func reaparecer() -> void:
-	is_alive = true
-
-	health = max_health
-	mana = max_mana
+	restaurar_estado_vital(max_health, true, max_mana)
 	stamina_controller.reiniciar()
 
 	velocity = Vector2.ZERO
@@ -887,16 +876,6 @@ func reaparecer() -> void:
 
 	_update_dir_marker()
 	_update_visual()
-
-	health_changed.emit(
-		health,
-		max_health
-	)
-
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
 
 	stamina_changed.emit(
 		stamina,
