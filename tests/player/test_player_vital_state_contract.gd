@@ -31,8 +31,10 @@ func _run() -> void:
 		"vida_eterium_compartidos": false,
 		"recuperacion_eterium": true
 	}
-	if not jugador.eterium.aplicar_especie(regla_normal, "especie-prueba-normal"):
-		errores.append("No se pudo aplicar la fisiología no compartida de prueba.")
+	jugador.personaje_especie = {"id": "especie-prueba-normal"}
+	jugador._aplicar_especie_eterium_game([regla_normal])
+	if jugador.max_mana != 120:
+		errores.append("La fisiología no compartida no sincronizó el máximo de Eterium.")
 
 	if not jugador.restaurar_eterium(20.0):
 		errores.append("La restauración de Eterium no informó el cambio.")
@@ -75,8 +77,10 @@ func _run() -> void:
 		"vida_eterium_compartidos": true,
 		"recuperacion_eterium": true
 	}
-	if not jugador.eterium.aplicar_especie(regla_compartida, "especie-prueba-compartida"):
-		errores.append("No se pudo aplicar la fisiología compartida de prueba.")
+	jugador.personaje_especie = {"id": "especie-prueba-compartida"}
+	jugador._aplicar_especie_eterium_game([regla_compartida])
+	if jugador.max_health != 120 or jugador.max_mana != 120:
+		errores.append("La fisiología compartida no sincronizó ambas capacidades.")
 
 	jugador.take_damage(25, "Prueba/DañoCompartido")
 	if (
