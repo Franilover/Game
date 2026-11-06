@@ -17,6 +17,7 @@ on:
       - "tests/player/**"
       - "tests/entities/**"
       - "tests/persistence/**"
+      - "tests/inventory/**"
       - "scripts/infrastructure/save_file_repository.gd"
       - "scripts/infrastructure/garlia_world_network.gd"
       - "scripts/infrastructure/garlia_multiplayer.gd"
@@ -46,6 +47,7 @@ on:
       - "tests/player/**"
       - "tests/entities/**"
       - "tests/persistence/**"
+      - "tests/inventory/**"
       - "scripts/infrastructure/save_file_repository.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
@@ -145,6 +147,17 @@ jobs:
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|SaveFileRepositoryContract: FAIL:' <<<"$output"; then
             echo "Save repository contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run inventory pickup atomicity contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/inventory/test_inventory_pickup_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|InventoryPickupContract: FAIL:' <<<"$output"; then
+            echo "Inventory pickup contract test reported errors."
             exit 1
           fi
 
