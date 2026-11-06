@@ -604,24 +604,24 @@ func _aplicar_danio(
 ##
 ## CombatSystem es el único punto de aplicación de daño del gameplay.
 ## Las IA deciden cuándo atacar, pero no modifican directamente la salud.
-func aplicar_danio_desde_entidad(
+func solicitar_danio_desde_entidad(
 	atacante: Node,
 	objetivo: Entity,
 	danio: int,
 	origen: String = "CombatSystem/Entidad"
-) -> bool:
+) -> CombatAttackResult:
 	if atacante == null or not is_instance_valid(atacante):
-		return false
+		return COMBAT_ATTACK_RESULT.rechazado(&"atacante_invalido")
 	if objetivo == null or not is_instance_valid(objetivo):
-		return false
+		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_invalido")
 	if not objetivo.is_alive:
-		return false
+		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_derrotado")
 
 	# La IA llama esta API después de confirmar su contacto. El evento se
 	# registra incluso si el daño resultante es cero.
 	contacto_efectivo.emit(atacante, objetivo, origen)
 	if danio <= 0:
-		return false
+		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 
 	var salud_objetivo_antes: int = objetivo.health
 	var aplicado := CombatDamage.aplicar(
@@ -632,7 +632,7 @@ func aplicar_danio_desde_entidad(
 		atacante
 	)
 	if not aplicado:
-		return false
+		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 
 	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
 		game_state,
@@ -659,7 +659,23 @@ func aplicar_danio_desde_entidad(
 						criatura_atacante.heal(curacion)
 
 	ataque_realizado.emit(atacante, objetivo, danio)
-	return true
+	return COMBAT_ATTACK_RESULT.aceptado(true, true)
+
+
+## Compatibilidad: el booleano histórico indica que hubo reducción real de salud.
+func aplicar_danio_desde_entidad(
+	atacante: Node,
+	objetivo: Entity,
+	danio: int,
+	origen: String = "CombatSystem/Entidad"
+) -> bool:
+	var resultado := solicitar_danio_desde_entidad(
+		atacante,
+		objetivo,
+		danio,
+		origen
+	)
+	return resultado.danio_aplicado
 
 
 func _normalizar_direccion_ataque(direccion: Vector2) -> Vector2:
