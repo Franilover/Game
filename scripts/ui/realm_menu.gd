@@ -3,8 +3,6 @@ extends Control
 
 signal destino_solicitado(clave: String)
 
-const COLOR_FONDO := Color(0.055, 0.045, 0.055, 0.94)
-const COLOR_PANEL := Color(0.105, 0.082, 0.075, 0.99)
 const COLOR_BORDE := Color(0.48, 0.35, 0.20, 1.0)
 const COLOR_TEXTO := Color(0.91, 0.86, 0.75, 1.0)
 const COLOR_SECUNDARIO := Color(0.68, 0.61, 0.51, 1.0)
@@ -13,15 +11,14 @@ var _abierto: bool = false
 var _supabase_client: GarliaSupabaseClient
 var _game_state: GameStateService
 var _tipo_zona_actual: String = ""
-var _panel: PanelContainer
-var _lista: VBoxContainer
+@onready var _panel: PanelContainer = $Centro/PanelReinos
+@onready var _lista: VBoxContainer = $Centro/PanelReinos/Margen/Contenido/Destinos
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
-	_construir_interfaz()
 
 
 func esta_abierto() -> bool:
@@ -50,58 +47,6 @@ func cerrar() -> void:
 		remove_from_group("modal_ui")
 
 
-func _construir_interfaz() -> void:
-	var velo := ColorRect.new()
-	velo.name = "Velo"
-	velo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	velo.color = COLOR_FONDO
-	velo.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(velo)
-
-	var centro := CenterContainer.new()
-	centro.name = "Centro"
-	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	centro.mouse_filter = Control.MOUSE_FILTER_PASS
-	add_child(centro)
-
-	_panel = PanelContainer.new()
-	_panel.name = "PanelReinos"
-	_panel.focus_mode = Control.FOCUS_ALL
-	_panel.custom_minimum_size = Vector2(320.0, 150.0)
-	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_panel.add_theme_stylebox_override("panel", _crear_estilo_panel())
-	centro.add_child(_panel)
-
-	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 20)
-	margen.add_theme_constant_override("margin_right", 20)
-	margen.add_theme_constant_override("margin_top", 16)
-	margen.add_theme_constant_override("margin_bottom", 16)
-	_panel.add_child(margen)
-
-	var contenido := VBoxContainer.new()
-	contenido.add_theme_constant_override("separation", 10)
-	margen.add_child(contenido)
-
-	var cabecera := HBoxContainer.new()
-	contenido.add_child(cabecera)
-
-	var titulo := Label.new()
-	titulo.text = "Viajar"
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	titulo.add_theme_color_override("font_color", COLOR_TEXTO)
-	titulo.add_theme_font_size_override("font_size", 19)
-	cabecera.add_child(titulo)
-
-
-	var separador := HSeparator.new()
-	separador.add_theme_color_override("separator", COLOR_BORDE)
-	contenido.add_child(separador)
-
-	_lista = VBoxContainer.new()
-	_lista.add_theme_constant_override("separation", 7)
-	contenido.add_child(_lista)
 
 
 func _reconstruir_destinos() -> void:
@@ -185,15 +130,6 @@ func _estilizar_boton(boton: Button, seleccionado: bool) -> void:
 	boton.add_theme_font_size_override("font_size", 13)
 
 
-func _crear_estilo_panel() -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = COLOR_PANEL
-	estilo.border_color = COLOR_BORDE
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(6)
-	estilo.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
-	estilo.shadow_size = 12
-	return estilo
 
 
 func _input(event: InputEvent) -> void:
