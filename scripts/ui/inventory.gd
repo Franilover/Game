@@ -9,6 +9,7 @@ const SLOT_SCENE: PackedScene = preload(
 const EQUIPMENT_SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_equipment_slot.tscn"
 )
+const INVENTORY_GROUP_SCENE: PackedScene = preload("res://scenes/ui/inventory_group.tscn")
 
 const HOTBAR_SLOT_COUNT: int = 6
 
@@ -440,27 +441,20 @@ func _crear_slots() -> void:
 
 	var nombres_grupo := ["MANO IZQUIERDA", "MOCHILA", "MANO DERECHA"]
 	for grupo in range(3):
-		var panel_grupo := VBoxContainer.new()
+		var panel_grupo := INVENTORY_GROUP_SCENE.instantiate() as VBoxContainer
+		if panel_grupo == null:
+			continue
 		panel_grupo.name = "Grupo_" + str(grupo)
 		panel_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		panel_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		panel_grupo.add_theme_constant_override("separation", 8)
 		grid.add_child(panel_grupo)
 
-		var titulo := Label.new()
+		var titulo := panel_grupo.get_node("Title") as Label
+		var rejilla := panel_grupo.get_node("Slots") as GridContainer
+		if titulo == null or rejilla == null:
+			push_error("Inventory: inventory_group.tscn no contiene Title y Slots.")
+			continue
 		titulo.text = nombres_grupo[grupo]
-		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		titulo.add_theme_font_size_override("font_size", 10)
-		titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1))
-		panel_grupo.add_child(titulo)
-
-		var rejilla := GridContainer.new()
-		rejilla.name = "Slots"
-		rejilla.columns = 3
-		rejilla.add_theme_constant_override("h_separation", 5)
-		rejilla.add_theme_constant_override("v_separation", 5)
-		rejilla.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		panel_grupo.add_child(rejilla)
 		_slot_grids.append(rejilla)
 
 	for visual_index in range(slot_count):
@@ -471,6 +465,9 @@ func _crear_slots() -> void:
 		var indice_datos := visual_index
 		slot.set_meta("inventory_index", indice_datos)
 		var grupo := int(visual_index / 6)
+		if grupo < 0 or grupo >= _slot_grids.size():
+			slot.queue_free()
+			continue
 		_slot_grids[grupo].add_child(slot)
 
 		if slot.has_signal("seleccionado"):
