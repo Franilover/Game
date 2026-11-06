@@ -155,7 +155,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . res://tests/combat/test_combat_impact_effects.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_impact_effects.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatImpactEffects: FAIL:' <<<"$output"; then
             echo "Combat impact effects regression test reported errors."
