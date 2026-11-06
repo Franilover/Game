@@ -559,21 +559,25 @@ func _soltar_objeto_en_posicion(
 	datos: Dictionary,
 	posicion: Vector2
 ) -> bool:
-	if indice < 0 or indice >= items.size() or datos.is_empty():
-		return false
-
 	var world_items: GarliaWorldItems = _world_items
-
 	if world_items == null:
 		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
 		return false
 
-	# El inventario solo descuenta el objeto si el WorldItem quedó registrado.
-	if not world_items.soltar_objeto_al_mundo(datos, posicion):
+	# La transacción pertenece al controller; esta capa solo refresca la UI.
+	if not inventory_controller.soltar_objeto_al_mundo(
+		indice,
+		datos,
+		posicion,
+		world_items
+	):
 		print("Inventory: no se pudo crear el objeto en el mundo; se conserva en inventario.")
 		return false
 
-	return quitar_objeto(indice)
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+	return true
 
 
 func _al_seleccionar_slot(slot: Button) -> void:
