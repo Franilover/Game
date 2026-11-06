@@ -106,8 +106,8 @@
 - [ ] Unificar validaciones para recoger, soltar, intercambiar, usar y equipar.
 
 ### 3.3 Datos y modo sin conexión
-- [ ] Auditar snapshots locales y validación de estructuras de `WorldData`.
-- [ ] Verificar que un snapshot incompleto nunca sustituya uno válido.
+- [~] Introducir `WorldSnapshotValidator` compartido por `WorldData` y `SupabaseClient`; contrato cubre jerarquía y snapshot incluido, pendiente de CI.
+- [~] Rechazar snapshots con jerarquía obligatoria incompleta o tipos incorrectos; falta validar el flujo completo de fallback/cache en CI.
 - [ ] Revisar caché local versionada para catálogos cuando corresponda, sin duplicar la autoridad de Supabase.
 - [ ] Comprobar inicio de una partida nueva sin conexión y recuperación posterior.
 - [ ] Auditar reintentos y errores de red por dominio.
