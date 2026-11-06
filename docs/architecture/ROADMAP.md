@@ -20,7 +20,7 @@
 - [x] Emitir `died` exactamente una vez por transición de vivo a muerto en `Entity`.
 - [x] No reproducir el evento histórico al restaurar una entidad muerta.
 - [x] Rearmar el evento al restaurar una entidad viva.
-- [ ] Revisar overrides de `_die()` en `Creature`, `Player` y otras subclases.
+- [~] Revisar overrides de `_die()`: `Creature` ya delega la señal a `Entity` y sincroniza `VitalState` al configurarse; falta validar restauración viva de subclases.
 - [ ] Unificar y probar salud, maná, Eterium y stamina sin cambiar sus reglas de dominio.
 - [ ] Revisar curación, daño, regeneración, límites y restauración.
 - [ ] Detectar escrituras directas que omitan al dueño del estado.
@@ -29,9 +29,9 @@
 ### 1.2 Guardado y restauración
 - [x] Mantener snapshots separados: `PlayerState`, `WorldState` y `DiscoveryState`.
 - [x] Mantener `GameStateService` como coordinador, sin duplicar una fachada.
-- [~] Preparar escritura temporal, validación JSON, respaldo y recuperación del último save válido en `SaveFileRepository`.
+- [~] Implementar escritura temporal, validación JSON, respaldo y recuperación del último save válido en `SaveFileRepository`; falta ejecución de CI.
 - [ ] Validar la recuperación ante interrupción real del proceso y errores de filesystem.
-- [ ] Añadir pruebas para crear, sobrescribir, recuperar, eliminar y listar partidas.
+- [~] Añadir contrato automatizado para sobrescribir, recuperar, eliminar y rechazar IDs/payloads inválidos; falta ejecución de CI.
 - [ ] Validar versión y migraciones de saves antiguos.
 - [ ] Rechazar estructuras corruptas o incompletas sin destruir el último save válido.
 - [ ] Comprobar restauración de posición, zona/interior, salud, maná, stamina, inventario, IUM, misiones, Garumis y tiempo.
@@ -98,7 +98,7 @@
 ### 3.2 Inventario y objetos
 - [x] Separar estado/controlador de la presentación del inventario.
 - [x] Separar hotbar de equipamiento.
-- [ ] Corregir y probar recogidas parciales sin duplicación ni pérdida.
+- [~] `InventoryRuntime` ya revierte recogidas parciales que no caben; se añadió contrato de cantidades, pendiente de ejecución en CI.
 - [ ] Verificar soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo.
 - [ ] Auditar identidad por ID, apilamiento, límites y capacidad.
 - [ ] Probar durabilidad, consumibles, transferencia entre manos y equipamiento.
