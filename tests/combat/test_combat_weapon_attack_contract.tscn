@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/combat/test_combat_weapon_attack_contract.gd" id="1"]
+
+[node name="CombatWeaponAttackContract" type="Node"]
+script = ExtResource("1")
