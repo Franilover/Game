@@ -13,7 +13,9 @@ on:
       - "scripts/gameplay/combat_system.gd"
       - "scripts/gameplay/player/**"
       - "scripts/characters/player.gd"
+      - "scripts/characters/entity.gd"
       - "tests/player/**"
+      - "tests/entities/**"
       - "scripts/infrastructure/garlia_world_network.gd"
       - "scripts/infrastructure/garlia_multiplayer.gd"
       - "scripts/infrastructure/global_world_store.gd"
@@ -38,7 +40,9 @@ on:
       - "scripts/gameplay/combat_system.gd"
       - "scripts/gameplay/player/**"
       - "scripts/characters/player.gd"
+      - "scripts/characters/entity.gd"
       - "tests/player/**"
+      - "tests/entities/**"
       - "tests/combat/**"
       - "tests/creatures/**"
       - "tests/ui/**"
@@ -117,6 +121,17 @@ jobs:
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
+
+      - name: Run entity lifecycle regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/entities/test_entity_lifecycle_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|EntityLifecycleContract: FAIL:' <<<"$output"; then
+            echo "Entity lifecycle contract test reported errors."
+            exit 1
+          fi
 
       - name: Run player locomotion regression test
         shell: bash
