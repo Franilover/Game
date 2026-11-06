@@ -78,9 +78,15 @@ func _crear_hurtbox() -> void:
 	shape.position = collision.position
 	hurtbox.add_child(shape)
 
-func restaurar_estado_vital(vida: int, vivo: bool) -> void:
+func restaurar_estado_vital(
+	vida: int,
+	vivo: bool,
+	mana_guardado: int = -1
+) -> void:
 	var vida_segura := clampi(vida, 0, max_health)
 	vital_state.health = vida_segura
+	if mana_guardado >= 0:
+		vital_state.mana = clampi(mana_guardado, 0, max_mana)
 	vital_state.is_alive = vivo and vida_segura > 0
 	_sync_desde_vital()
 	# Restaurar una partida no reproduce el evento histórico de muerte.
