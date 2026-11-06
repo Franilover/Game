@@ -1094,19 +1094,21 @@ func _aplicar_estado_al_juego() -> void:
 			if is_instance_valid(zona) and zona.has_method("restaurar_estado_guardado") and estado_zona is Dictionary:
 				zona.call("restaurar_estado_guardado", (estado_zona as Dictionary).duplicate(true))
 
-	jugador.set("health", clampi(
+	var vida_guardada := clampi(
 		player_state.health,
 		0,
 		int(jugador.get("max_health"))
-	))
-
-	jugador.set("mana", clampi(
+	)
+	var mana_guardado := clampi(
 		player_state.mana,
 		0,
 		int(jugador.get("max_mana"))
-	))
-
-	jugador.set("is_alive", true)
+	)
+	jugador.restaurar_estado_vital(
+		vida_guardada,
+		true,
+		mana_guardado
+	)
 
 	if jugador.get("stamina") != null:
 		var stamina_guardada := clampf(
@@ -1123,18 +1125,6 @@ func _aplicar_estado_al_juego() -> void:
 
 	if jugador.get("facing") is Vector2:
 		jugador.set("facing", player_state.facing)
-
-	if jugador.has_signal("health_changed"):
-		jugador.health_changed.emit(
-			int(jugador.get("health")),
-			int(jugador.get("max_health"))
-		)
-
-	if jugador.has_signal("mana_changed"):
-		jugador.mana_changed.emit(
-			int(jugador.get("mana")),
-			int(jugador.get("max_mana"))
-		)
 
 	if jugador.has_signal("stamina_changed"):
 		jugador.stamina_changed.emit(
