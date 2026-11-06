@@ -29,7 +29,7 @@
 ### 1.2 Guardado y restauración
 - [x] Mantener snapshots separados: `PlayerState`, `WorldState` y `DiscoveryState`.
 - [x] Mantener `GameStateService` como coordinador, sin duplicar una fachada.
-- [~] Implementar escritura temporal, validación JSON, respaldo y recuperación del último save válido en `SaveFileRepository`; falta ejecución de CI.
+- [~] Implementar escritura temporal, validación JSON, respaldo y recuperación del último save válido en `SaveFileRepository`; además se protege el respaldo cuando el destino bloquea la recuperación. Falta ejecución de CI.
 - [ ] Validar la recuperación ante interrupción real del proceso y errores de filesystem.
 - [~] Añadir contrato automatizado para sobrescribir, recuperar, eliminar y rechazar IDs/payloads inválidos; falta ejecución de CI.
 - [ ] Validar versión y migraciones de saves antiguos.
