@@ -1,10 +1,10 @@
-extends SceneTree
+extends Node
 
 const PlayerScene = preload("res://scenes/characters/player.tscn")
 const Executor = preload("res://scripts/gameplay/combat/combat_attack_executor.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
@@ -16,16 +16,16 @@ func _run() -> void:
 	if not errores.is_empty():
 		for error in errores:
 			push_error("CombatAttackExecutor: FAIL: " + error)
-		quit(1)
+		get_tree().quit(1)
 		return
 
 	print("CombatAttackExecutor: PASS")
-	quit(0)
+	get_tree().quit(0)
 
 
 func _probar_creacion_melee(errores: Array[String]) -> void:
 	var jugador := PlayerScene.instantiate() as Player
-	get_root().add_child(jugador)
+	get_tree().root.add_child(jugador)
 	await process_frame
 
 	var objeto := {
@@ -68,7 +68,7 @@ func _probar_creacion_proyectil(errores: Array[String]) -> void:
 	var jugador := PlayerScene.instantiate() as Player
 	var raiz_proyectiles := Node2D.new()
 	get_root().add_child(jugador)
-	get_root().add_child(raiz_proyectiles)
+	get_tree().root.add_child(raiz_proyectiles)
 	await process_frame
 
 	jugador.global_position = Vector2(30.0, 45.0)
