@@ -9,6 +9,7 @@ Abre el proyecto en Godot y usa **Escena > Abrir escena**:
 - `scenes/previews/eterium_radial_menu_preview.tscn`: permite inspeccionar el menú radial de Eterium.
 - `scenes/ui/character_appearance_preview.tscn`: permite inspeccionar las capas visuales de personalización del personaje.
 - `scenes/previews/realm_menu_preview.tscn`: muestra el menú de viaje con destinos de ejemplo.
+- `scenes/previews/crafting_panel_preview.tscn`: permite inspeccionar la distribución del panel de fabricación.
 
 Para ejecutar una vista previa, abre la escena y pulsa **F6** (Ejecutar escena actual). También puedes inspeccionar y modificar sus nodos directamente en el árbol de escena.
 
@@ -23,6 +24,8 @@ Para ejecutar una vista previa, abre la escena y pulsa **F6** (Ejecutar escena a
 Las escenas de criatura heredan las plantillas existentes `creature.tscn` y `garumi.tscn`. El juego puede seguir reemplazando la textura al configurar la entidad con los datos recibidos en runtime. Las escenas de panel del HUD contienen la estructura y el estilo; el código continúa rellenando misiones, texto y acciones.
 
 `inventory_group.tscn` define el contenedor y la rejilla; el inventario sigue creando los slots según `slot_count`. Esto conserva la capacidad configurable.
+
+`crafting_panel.tscn` define el estado de carga, rejilla desplazable de recetas y panel de detalle/ingredientes/acción. `crafting.gd` mantiene la consulta de recetas, el renderizado dinámico de tarjetas y las operaciones de inventario. La escena de preview permite ajustar la composición sin editar el script.
 
 `realm_menu.tscn` define el overlay, panel, cabecera y lista de destinos del menú de viaje; `realm_menu.gd` conserva la consulta de destinos desbloqueados y crea los botones según el estado real. `realm_menu_preview.tscn` añade destinos ficticios solo para inspeccionar el diseño, sin modificar el catálogo remoto.
 
