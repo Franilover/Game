@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_group.tscn" id="1_inventory_group"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_slot.tscn" id="2_inventory_slot"]
@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/eterium_radial_menu.tscn" id="9_eterium"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_garumi_linked_panel.tscn" id="10_garumi_panel"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_garumi_linked_slot.tscn" id="11_garumi_slot"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_hand_slot.tscn" id="12_hand_slot"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_hand_item_selector.tscn" id="13_hand_selector"]
 
 [node name="UIComponentsPreview" type="Control"]
 custom_minimum_size = Vector2(1280, 800)
@@ -111,3 +113,28 @@ offset_bottom = 766.0
 [node name="GarumiSlot1" parent="GarumisLinkedPanel/GarumiSlots" instance=ExtResource("11_garumi_slot")]
 [node name="GarumiSlot2" parent="GarumisLinkedPanel/GarumiSlots" instance=ExtResource("11_garumi_slot")]
 [node name="GarumiSlot3" parent="GarumisLinkedPanel/GarumiSlots" instance=ExtResource("11_garumi_slot")]
+
+[node name="LeftHandSlot" parent="." instance=ExtResource("12_hand_slot")]
+offset_left = 506.0
+offset_top = 752.0
+offset_right = 554.0
+offset_bottom = 800.0
+
+[node name="HandKey" parent="LeftHandSlot" index="0"]
+text = "Q"
+
+[node name="RightHandSlot" parent="." instance=ExtResource("12_hand_slot")]
+offset_left = 726.0
+offset_top = 752.0
+offset_right = 774.0
+offset_bottom = 800.0
+
+[node name="HandKey" parent="RightHandSlot" index="0"]
+text = "E"
+
+[node name="HandItemSelector" parent="." instance=ExtResource("13_hand_selector")]
+visible = true
+offset_left = 570.0
+offset_top = 510.0
+offset_right = 612.0
+offset_bottom = 720.0
