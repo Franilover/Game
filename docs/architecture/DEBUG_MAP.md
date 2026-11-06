@@ -33,19 +33,25 @@ revisar InventoryEquipment antes que HUD.
 
 ## Combate
 
-Ruta:
+Ruta jugador:
 GameplayInputRouter → CombatSystem → CombatController → CombatSystem → CombatItemResolver → CombatAttackExecutor → CombatAttackArea / CombatProjectile → CombatTargeting / CombatDamage → Entity.
+
+Ruta criatura:
+CreatureAI (objetivo, perfil, estado y momento del ataque) → CombatSystem (ejecución y resolución) → CombatDamage → Entity / Creature → señales de criatura → CreatureAI.
 
 Responsabilidades:
 - `CombatController`: valida el bloqueo de entrada y emite el snapshot de dirección, objeto y modo.
 - `CombatItemResolver`: interpreta la clasificación y propiedades del objeto; no crea ataques ni aplica daño.
 - `CombatAttackExecutor`: construye y conecta los nodos melee/proyectil; no decide cuándo se ataca ni resuelve impactos.
-- `CombatSystem`: orquesta la acción, cooldown, aplicación de daño, contacto/eventos públicos y robo de vida.
+- `CombatSystem`: recibe solicitudes ya decididas, ejecuta el ataque, aplica cooldown y coordina daño, contacto/eventos públicos y robo de vida.
+- `CreatureAI`: decide a quién atacar, según qué perfil y cuándo; administra su máquina de estados y solicita la ejecución a `CombatSystem`. No modifica salud.
+- `Entity`: conserva `VitalState`, salud y ciclo vital. Es el dueño del estado de vida.
+- `Creature`: extiende `Entity` con datos y comportamiento de especie. Publica `configuracion_actualizada` y `danio_recibido`; no llama directamente a `CreatureAI` para entregar esos dos eventos.
+- `CreatureAI` escucha las señales de su `Creature`: actualiza su configuración cuando ésta cambia y decide su reacción cuando recibe daño. La IA no es dueña de la salud.
 - `CombatImpactEffects`: procesa una sola vez los efectos de cada daño confirmado: agresión ecológica del jugador, registro de derrota, absorción de Eterium del jugador derrotador, reacción de IA ante armas y feedback visual. No aplica daño.
 - `CombatProjectile`: aplica daño mediante `CombatDamage`; publica contacto aunque no haya daño y emite el evento de impacto únicamente cuando la salud disminuye.
 - `CombatDamage`: único punto que reduce salud; no registra derrotas, no absorbe Eterium ni produce feedback.
 - `CombatTargeting`: valida objetivos.
-- `CombatDamage`: aplica daño.
 
 Archivos principales:
 - scripts/gameplay/combat_system.gd
@@ -60,7 +66,7 @@ Archivos principales:
 
 La dirección enviada por `CombatController` forma parte del snapshot de la acción: `CombatSystem` debe propagarla hasta el hitbox o proyectil, sin volver a leer el facing después de aceptar la solicitud. Sólo se usa el facing actual como fallback para una dirección cero.
 
-Si el ataque usa el modo o las dimensiones equivocados, revisar `CombatItemResolver`. Si el hitbox/proyectil no se crea o no conserva propiedades/conexiones, revisar `CombatAttackExecutor`. Si el impacto y sus efectos posteriores están equivocados, revisar el handler correspondiente de `CombatSystem`.
+Si la IA elige un objetivo, alcance o perfil equivocado, revisar `CreatureAI`. Si la solicitud está bien pero el ataque se ejecuta mal, revisar `CombatSystem`, `CombatItemResolver` y `CombatAttackExecutor`. Si salud o muerte no cambian bien, revisar `Entity` / `CombatDamage`. Si no llega una reacción de criatura, revisar las señales `configuracion_actualizada` y `danio_recibido` y la suscripción de `CreatureAI`. Si los efectos posteriores están equivocados, revisar `CombatImpactEffects`.
 
 No poner lógica de inventario dentro del HUD.
 
