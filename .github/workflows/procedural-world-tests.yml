@@ -184,6 +184,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run combat entity attack contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_entity_attack_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEntityAttackContract: FAIL:' <<<"$output"; then
+            echo "Combat entity attack contract regression test reported errors."
+            exit 1
+          fi
+
       - name: Run combat event queue contract regression test
         shell: bash
         run: |
