@@ -18,7 +18,6 @@ var _tipo_zona_actual: String = ""
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	visible = false
 
 
 func esta_abierto() -> bool:
