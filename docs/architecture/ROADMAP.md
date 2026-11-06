@@ -21,8 +21,8 @@
 - [x] No reproducir el evento histórico al restaurar una entidad muerta.
 - [x] Rearmar el evento al restaurar una entidad viva.
 - [~] Revisar overrides de `_die()`: `Creature` ya delega la señal a `Entity` y sincroniza `VitalState` al configurarse; falta validar restauración viva de subclases.
-- [ ] Unificar y probar salud, maná, Eterium y stamina sin cambiar sus reglas de dominio.
-- [ ] Revisar curación, daño, regeneración, límites y restauración.
+- [~] Unificar restauración de salud/maná, Eterium compartido, reaparición y máximos administrativos mediante `VitalState`; falta auditar todos los efectos secundarios y validar CI.
+- [~] Añadir contratos de daño/restauración y absorción para fisiología compartida; falta auditar curación, regeneración y límites de todos los caminos.
 - [ ] Detectar escrituras directas que omitan al dueño del estado.
 - [ ] Impedir operaciones sobre entidades eliminadas o inválidas.
 
