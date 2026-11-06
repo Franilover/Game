@@ -4,6 +4,71 @@ class_name CombatImpactEffects
 ## Efectos que suceden después de que CombatDamage confirma una reducción
 ## real de salud. Esta capa nunca modifica salud ni decide cuánto daño aplicar.
 
+static func procesar_impacto_confirmado(
+	game_state: Node,
+	jugador: Node,
+	atacante: Node,
+	objetivo: Entity,
+	cantidad: int,
+	arma: Dictionary = {}
+) -> Dictionary:
+	if objetivo == null or not is_instance_valid(objetivo):
+		return {}
+
+	var es_criatura := objetivo.is_in_group("creatures")
+	var atacante_es_jugador := _es_jugador(atacante)
+	var agresion_ecologica := false
+	var derrota_registrada := false
+	var eterium_absorbido := 0
+	var reaccion_ia := false
+
+	if atacante_es_jugador and objetivo is Creature:
+		agresion_ecologica = registrar_agresion_bosque(
+			jugador,
+			objetivo as Creature,
+			not objetivo.is_alive
+		)
+
+	if es_criatura and not objetivo.is_alive:
+		derrota_registrada = registrar_criatura_derrotada(
+			game_state,
+			objetivo
+		)
+
+		if atacante_es_jugador and objetivo is Creature:
+			var receptor_eterium: Node = atacante
+			if not receptor_eterium.has_method("absorber_eterium_de_criatura"):
+				receptor_eterium = jugador
+			if (
+				receptor_eterium != null
+				and is_instance_valid(receptor_eterium)
+				and receptor_eterium.has_method("absorber_eterium_de_criatura")
+			):
+				eterium_absorbido = int(
+					receptor_eterium.call("absorber_eterium_de_criatura", objetivo)
+				)
+
+	if es_criatura and objetivo.is_alive and not arma.is_empty():
+		var ai := obtener_ai_controller(objetivo)
+		if ai != null:
+			reaccion_ia = notificar_reaccion_ia(ai, arma)
+
+	aplicar_feedback(objetivo, cantidad)
+
+	return {
+		"agresion_ecologica": agresion_ecologica,
+		"derrota_registrada": derrota_registrada,
+		"eterium_absorbido": eterium_absorbido,
+		"reaccion_ia": reaccion_ia
+	}
+
+
+static func _es_jugador(atacante: Node) -> bool:
+	if atacante == null or not is_instance_valid(atacante):
+		return false
+	return atacante is Player or atacante.is_in_group("player")
+
+
 static func registrar_agresion_bosque(
 	jugador: Node,
 	criatura: Creature,
