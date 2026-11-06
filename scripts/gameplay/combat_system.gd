@@ -16,6 +16,10 @@ const COMBAT_ATTACK_EXECUTOR: Script = preload(
 	"res://scripts/gameplay/combat/combat_attack_executor.gd"
 )
 
+const COMBAT_IMPACT_EFFECTS: Script = preload(
+	"res://scripts/gameplay/combat/combat_impact_effects.gd"
+)
+
 @export_category("Ataque")
 @export var alcance_desarmado: float = 48.0
 @export var ancho_ataque: float = 48.0
@@ -450,30 +454,31 @@ func _al_recibir_impacto_proyectil(
 		and ataque.attacker != null
 		and ataque.attacker.is_in_group("player")
 	):
-		_registrar_criatura_derrotada(objetivo)
+		COMBAT_IMPACT_EFFECTS.registrar_criatura_derrotada(game_state, objetivo)
 		if objetivo is Creature:
-			_registrar_agresion_bosque(objetivo as Creature, true)
+			COMBAT_IMPACT_EFFECTS.registrar_agresion_bosque(
+				player,
+				objetivo as Creature,
+				true
+			)
 
+	var ai_proyectil: CreatureAI = COMBAT_IMPACT_EFFECTS.obtener_ai_controller(objetivo)
 	if (
 		not arma.is_empty()
 		and objetivo.is_in_group("creatures")
 		and objetivo.is_alive
-		and _obtener_ai_controller(objetivo) != null
+		and ai_proyectil != null
 	):
 		if ataque.attacker != null and ataque.attacker.is_in_group("player") and objetivo is Creature:
-			_registrar_agresion_bosque(objetivo as Creature, false)
-		var ai: CreatureAI = _obtener_ai_controller(objetivo)
-		if ai != null:
-			ai.al_recibir_ataque_con_arma(arma)
+			COMBAT_IMPACT_EFFECTS.registrar_agresion_bosque(
+				player,
+				objetivo as Creature,
+				false
+			)
+		COMBAT_IMPACT_EFFECTS.notificar_reaccion_ia(ai_proyectil, arma)
 
-	CombatFeedback.impacto(objetivo, ataque.damage)
+	COMBAT_IMPACT_EFFECTS.aplicar_feedback(objetivo, ataque.damage)
 	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
-
-
-func _obtener_ai_controller(objetivo: Node) -> CreatureAI:
-	if objetivo == null or not is_instance_valid(objetivo):
-		return null
-	return objetivo.get_node_or_null("AIController") as CreatureAI
 
 
 func _obtener_modo_ataque(arma: Dictionary) -> String:
@@ -574,14 +579,18 @@ func _aplicar_danio(
 		return
 
 	if atacante is Player and objetivo is Creature:
-		_registrar_agresion_bosque(objetivo as Creature, not objetivo.is_alive)
+		COMBAT_IMPACT_EFFECTS.registrar_agresion_bosque(
+			player,
+			objetivo as Creature,
+			not objetivo.is_alive
+		)
 
 	if (
 		vivo_antes
 		and not objetivo.is_alive
 		and objetivo.is_in_group("creatures")
 	):
-		_registrar_criatura_derrotada(objetivo)
+		COMBAT_IMPACT_EFFECTS.registrar_criatura_derrotada(game_state, objetivo)
 
 		var actor_eterium: Player = atacante as Player
 		if actor_eterium == null:
@@ -590,18 +599,12 @@ func _aplicar_danio(
 		if actor_eterium != null and is_instance_valid(actor_eterium):
 			actor_eterium.absorber_eterium_de_criatura(objetivo)
 
-	if (
-		not arma.is_empty()
-		and objetivo.is_in_group("creatures")
-		and objetivo.is_alive
-		and objetivo.has_node("AIController")
-	):
-		var ai: CreatureAI = _obtener_ai_controller(objetivo)
-
+	if not arma.is_empty() and objetivo.is_in_group("creatures") and objetivo.is_alive:
+		var ai: CreatureAI = COMBAT_IMPACT_EFFECTS.obtener_ai_controller(objetivo)
 		if ai != null:
-			ai.al_recibir_ataque_con_arma(arma)
+			COMBAT_IMPACT_EFFECTS.notificar_reaccion_ia(ai, arma)
 
-	CombatFeedback.impacto(objetivo, danio)
+	COMBAT_IMPACT_EFFECTS.aplicar_feedback(objetivo, danio)
 
 	var actor: Node = atacante
 
@@ -665,9 +668,9 @@ func aplicar_danio_desde_entidad(
 		return false
 
 	if vivo_antes and not objetivo.is_alive and objetivo.is_in_group("creatures"):
-		_registrar_criatura_derrotada(objetivo)
+		COMBAT_IMPACT_EFFECTS.registrar_criatura_derrotada(game_state, objetivo)
 
-	CombatFeedback.impacto(objetivo, danio)
+	COMBAT_IMPACT_EFFECTS.aplicar_feedback(objetivo, danio)
 
 	# Robo de vida canónico: sólo cura al vampiro que acaba de infligir
 	# daño real; CombatDamage ya confirmó que la salud del objetivo bajó.
@@ -687,27 +690,6 @@ func aplicar_danio_desde_entidad(
 
 	ataque_realizado.emit(atacante, objetivo, danio)
 	return true
-
-
-func _registrar_agresion_bosque(criatura: Creature, asesinada: bool) -> void:
-	if player == null or not is_instance_valid(player):
-		return
-	if criatura == null or not is_instance_valid(criatura):
-		return
-
-	var nombre := criatura.get_nombre().strip_edges().to_lower()
-	if nombre not in ["feerin", "lignianos", "seiloris"]:
-		return
-
-	player.set_meta("garlia_bosque_agresor", true)
-	if asesinada:
-		player.set_meta("garlia_bosque_asesino", true)
-
-
-func _registrar_criatura_derrotada(objetivo: Entity) -> void:
-	if game_state == null or not is_instance_valid(game_state):
-		return
-	game_state.registrar_criatura_derrotada(objetivo)
 
 
 func _normalizar_direccion_ataque(direccion: Vector2) -> Vector2:
