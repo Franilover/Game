@@ -50,7 +50,7 @@ Responsabilidades:
 - `CombatAttackResult`: comunica por separado aceptación de solicitud, contacto registrado, daño aplicado y motivo de rechazo tanto en armas como en daño genérico de entidades.
 - `CombatSystem`: ejecuta solicitudes validadas, aplica cooldown y coordina daño, contacto/eventos públicos y robo de vida. `solicitar_danio_desde_entidad()` y `solicitar_ataque_con_arma()` devuelven resultados tipados; la aceptación no equivale a daño aplicado.
 - `CreatureAI`: decide a quién atacar, según qué perfil y cuándo; administra su máquina de estados y solicita la ejecución a `CombatSystem`. No modifica salud.
-- `Entity`: conserva `VitalState`, salud y ciclo vital. Es el dueño del estado de vida.
+- `Entity`: conserva `VitalState`, salud y ciclo vital. Es el dueño del estado de vida. La señal `died` se emite una sola vez por transición a muerto; restaurar una partida muerta no reproduce el evento histórico.
 - `Creature`: extiende `Entity` con datos y comportamiento de especie. Publica `configuracion_actualizada` y `danio_recibido`; no llama directamente a `CreatureAI` para entregar esos dos eventos.
 - `CreatureAI` escucha las señales de su `Creature`: actualiza su configuración cuando ésta cambia y decide su reacción cuando recibe daño. La IA no es dueña de la salud.
 - `CombatImpactEffects`: procesa una sola vez los efectos de cada daño confirmado: agresión ecológica del jugador, registro de derrota, absorción de Eterium del jugador derrotador, reacción de IA ante armas y feedback visual. No aplica daño.
