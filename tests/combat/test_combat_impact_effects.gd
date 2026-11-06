@@ -1,7 +1,6 @@
 extends Node
 
 
-
 func _ready() -> void:
 	call_deferred("_run")
 
@@ -34,14 +33,14 @@ func _probar_agresion_ecologica(errores: Array[String]) -> void:
 	if jugador.has_meta("garlia_bosque_asesino"):
 		errores.append("Marcó asesinato aunque la criatura no fue derrotada.")
 
-	if not ImpactEffects.registrar_agresion_bosque(jugador, feerin, true):
+	if not CombatImpactEffects.registrar_agresion_bosque(jugador, feerin, true):
 		errores.append("No registró la agresión letal contra Feerin.")
 	if not jugador.has_meta("garlia_bosque_asesino"):
 		errores.append("No marcó al jugador como asesino del bosque.")
 
-	var criatura_ajena := CreatureScript.new() as Creature
+	var criatura_ajena := Creature.new()
 	criatura_ajena.criatura_nombre = "Criatura de prueba"
-	if ImpactEffects.registrar_agresion_bosque(jugador, criatura_ajena, true):
+	if CombatImpactEffects.registrar_agresion_bosque(jugador, criatura_ajena, true):
 		errores.append("Registró agresión ecológica para una especie ajena a la regla.")
 
 	jugador.free()
@@ -51,11 +50,11 @@ func _probar_agresion_ecologica(errores: Array[String]) -> void:
 
 func _probar_registro_derrota(errores: Array[String]) -> void:
 	var game_state := GameStateService.new()
-	var criatura := CreatureScript.new() as Creature
+	var criatura := Creature.new()
 	criatura.criatura_id = "combat-impact-effects-test"
 	criatura.add_to_group("creatures")
 
-	if not ImpactEffects.registrar_criatura_derrotada(game_state, criatura):
+	if not CombatImpactEffects.registrar_criatura_derrotada(game_state, criatura):
 		errores.append("No delegó el registro de derrota a GameState.")
 	var registros_variant: Variant = game_state.world_state.flags.get("enciclopedia_criaturas", {})
 	if not registros_variant is Dictionary:
@@ -71,16 +70,16 @@ func _probar_registro_derrota(errores: Array[String]) -> void:
 
 
 func _probar_seguridad_de_dependencias(errores: Array[String]) -> void:
-	var criatura := CreatureScript.new() as Creature
+	var criatura := Creature.new()
 	var nodo := Node.new()
 
-	if ImpactEffects.obtener_ai_controller(nodo) != null:
+	if CombatImpactEffects.obtener_ai_controller(nodo) != null:
 		errores.append("Encontró un AIController inexistente.")
-	if ImpactEffects.notificar_reaccion_ia(null, {"nombre": "Prueba"}):
+	if CombatImpactEffects.notificar_reaccion_ia(null, {"nombre": "Prueba"}):
 		errores.append("Aceptó una reacción de IA sin controlador.")
-	if ImpactEffects.registrar_criatura_derrotada(null, criatura):
+	if CombatImpactEffects.registrar_criatura_derrotada(null, criatura):
 		errores.append("Registró una derrota sin GameState.")
-	ImpactEffects.aplicar_feedback(nodo, 5)
+	CombatImpactEffects.aplicar_feedback(nodo, 5)
 
 	nodo.free()
 	criatura.free()
