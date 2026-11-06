@@ -537,7 +537,6 @@ func _notification(what: int) -> void:
 		return
 
 	var indice := _arrastre_indice
-	var datos := _arrastre_datos.duplicate(true)
 	_arrastre_indice = -1
 	_arrastre_datos.clear()
 
@@ -547,16 +546,15 @@ func _notification(what: int) -> void:
 	if not visible:
 		return
 
-	_soltar_objeto_al_mundo(indice, datos)
+	_soltar_objeto_al_mundo(indice)
 
 
-func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
-	_soltar_objeto_en_posicion(indice, datos, get_global_mouse_position())
+func _soltar_objeto_al_mundo(indice: int) -> void:
+	_soltar_objeto_en_posicion(indice, get_global_mouse_position())
 
 
 func _soltar_objeto_en_posicion(
 	indice: int,
-	datos: Dictionary,
 	posicion: Vector2
 ) -> bool:
 	var world_items: GarliaWorldItems = _world_items
@@ -567,7 +565,6 @@ func _soltar_objeto_en_posicion(
 	# La transacción pertenece al controller; esta capa solo refresca la UI.
 	if not inventory_controller.soltar_objeto_al_mundo(
 		indice,
-		datos,
 		posicion,
 		world_items
 	):
