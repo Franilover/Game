@@ -30,9 +30,15 @@ func _run() -> void:
 	if int(muertes["cantidad"]) != 1:
 		errores.append("Una entidad muerta volvió a emitir died.")
 
-	entidad.restaurar_estado_vital(40, true)
+	entidad.restaurar_estado_vital(40, true, 27)
 	if not entidad.is_alive or entidad.health != 40:
 		errores.append("La restauración viva no recuperó el estado vital.")
+	if entidad.mana != 27 or entidad.vital_state.mana != 27:
+		errores.append("La restauración no sincronizó maná entre Entity y VitalState.")
+	entidad.restaurar_estado_vital(40, true, 150)
+	if entidad.mana != entidad.max_mana:
+		errores.append("La restauración no limitó el maná al máximo permitido.")
+	entidad.restaurar_estado_vital(40, true, 27)
 	entidad.take_damage(40, "Prueba/SegundaMuerte")
 	if int(muertes["cantidad"]) != 2:
 		errores.append("Una entidad restaurada viva no pudo emitir su siguiente muerte.")
