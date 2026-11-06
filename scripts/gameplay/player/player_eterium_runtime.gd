@@ -49,12 +49,15 @@ func aplicar_especie(regla: Dictionary, especie_id: String) -> bool:
 	especie_ready = true
 	var capacidad := maxi(1, roundi(float(padre.get("capacidad_base", max_mana()))))
 	var eterium_inicial := clampi(int(regla.get("eterium_inicial", capacidad)), 0, capacidad)
-	_configurar_max_mana(capacidad)
-	establecer_mana(eterium_inicial)
 	var compartido := vida_eterium_compartidos()
+	_configurar_max_mana(capacidad)
 	if compartido:
+		# La barra compartida inicia llena; evita emitir un estado transitorio
+		# muerto antes de aplicar la capacidad vital de la especie.
 		_configurar_max_vida(capacidad)
 		establecer_mana(capacidad)
+	else:
+		establecer_mana(eterium_inicial)
 	recupera = bool(regla.get("recuperacion_eterium", true))
 	fisiologia_changed.emit(compartido)
 	return true
