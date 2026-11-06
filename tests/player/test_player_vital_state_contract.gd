@@ -48,6 +48,8 @@ func _run() -> void:
 	jugador.take_damage(jugador.max_health + 100, "Prueba/MuertePlayer")
 	if jugador.is_alive or jugador.vital_state.is_alive or int(muertes["cantidad"]) != 1:
 		errores.append("La muerte normal no sincronizó el estado ni emitió died.")
+	if jugador.eterium.absorber(10) != 0 or jugador.is_alive:
+		errores.append("La absorción de Eterium revivió una entidad muerta.")
 
 	jugador.reaparecer()
 	if (
@@ -89,6 +91,10 @@ func _run() -> void:
 		errores.append("La restauración de fisiología compartida no informó el cambio.")
 	if jugador.health != 105 or jugador.vital_state.health != 105:
 		errores.append("Restaurar Eterium compartido no restauró también la vida.")
+	if jugador.eterium.absorber(5) != 5:
+		errores.append("La absorción no entregó la cantidad esperada.")
+	if jugador.health != 110 or jugador.mana != 110 or jugador.vital_state.health != 110:
+		errores.append("La absorción de Eterium compartido no recuperó la vida.")
 
 	jugador.admin_establecer_maximos(80, 80, 3.0)
 	if (
