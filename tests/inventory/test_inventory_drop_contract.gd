@@ -21,7 +21,13 @@ func _run() -> void:
 	inventario.inventory_controller.runtime.establecer_items([objeto])
 	inventario._world_items = world_items
 
-	inventario._soltar_objeto_al_mundo(0, inventario.items[0].duplicate(true))
+	var drop_exitoso := inventario._soltar_objeto_en_posicion(
+		0,
+		inventario.items[0].duplicate(true),
+		Vector2.ZERO
+	)
+	if drop_exitoso:
+		errores.append("Se informó éxito aunque faltaba WorldEntityManager.")
 	if inventario.items.size() != 1:
 		errores.append("El fallo de creación alteró la capacidad del inventario.")
 	elif str(inventario.items[0].get("id", "")) != "objeto_prueba":
