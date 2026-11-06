@@ -1,11 +1,11 @@
 # Garlia — Registro persistente de auditoría
 
-**Última actualización:** 2026-10-18  
+**Última actualización:** 2026-11-06  
 **Repositorio:** `Franilover/Game`  
-**Rama auditada:** `fix/terrain-root-cause-v1`  
-**Commit auditado:** `d8a2331dfadce482f89a646197a3e9fb6300f4fa`  
+**Rama auditada:** `refactor/p1-player-locomotion`  
+**Commit validado por CI:** `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`  
 **Pull request de terreno:** [#3](https://github.com/Franilover/Game/pull/3)  
-**Método:** inspección estática de archivos y metadatos de GitHub. No equivale a una prueba visual ni a una ejecución integral de Godot.
+**Método:** inspección estática del código actual y CI completo Godot 4.7. No equivale a una prueba visual ni a una validación manual de gameplay.
 
 ## Para continuar en otra sesión
 
@@ -18,11 +18,12 @@
 
 ## Resumen ejecutivo
 
-- El CI observado para el commit auditado terminó correctamente en importación/compilación headless y pruebas automatizadas de mundo/TileMapDual.
-- Ese CI no demuestra que la composición visual del terreno sea correcta píxel a píxel ni cubre de forma suficiente el ciclo integral de partida, autenticación, inventario, persistencia y funcionamiento offline.
-- Hay defectos estáticos plausibles en el contrato de recogida parcial de objetos, el descarte de consultas de drops fallidas, la escritura directa de saves y la validación débil de snapshots.
-- Se identificaron riesgos de integración con JWT/RLS, restauración de sesión, arranque offline y precálculo de entidades por chunk. Deben confirmarse contra las rutas completas y, cuando corresponda, contra la configuración real de Supabase.
-- No se han aplicado correcciones en esta auditoría.
+- El CI completo Godot 4.7 del commit `820d1b3` terminó en **success** (run `42213469008`).
+- Los hallazgos `INV-01`, `ITEM-03` y `SAVE-01` quedaron corregidos y verificados mediante contratos automatizados.
+- La recogida parcial ahora es atómica; soltar objetos solo retira el objeto tras registrar el WorldItem; el guardado usa temporal, validación y respaldo recuperable.
+- El contrato de estado/progreso de misiones también pasa CI. La aplicación/reclamación efectiva de recompensas sigue pendiente de confirmar su esquema canónico.
+- Los hallazgos restantes de esta tabla provienen de una auditoría anterior y deben revalidarse contra esta rama antes de tratarlos como defectos vigentes.
+- No se modificó Supabase ni se integró la rama en `main`.
 
 ## Registro de hallazgos
 
@@ -30,13 +31,13 @@ Estados permitidos: **Abierto**, **En verificación**, **Corregido pendiente de 
 
 | ID | Prioridad | Área | Hallazgo y evidencia estática | Estado | Verificación pendiente |
 |---|---|---|---|---|---|
-| INV-01 | Alta | Inventario/recogida | Confirmado por lectura directa de `InventoryRuntime.agregar_objeto()`: primero modifica pilas compatibles y ocupa slots vacíos, y solo después calcula `exito = restante <= 0`; si queda remanente devuelve `false` sin revertir las modificaciones ya hechas. `WorldItem.interact()` y `GarliaWorldItems.intentar_recoger()` conservan el objeto del mundo cuando reciben `false`. Ejemplo reproducible por código: una pila de 9/10 y una recogida de 3 unidades dejan el inventario en 10, devuelven `false` con 2 pendientes y conservan el objeto del mundo con las 3 originales; al reintentar se pueden duplicar unidades. | En verificación | Ejecutar el caso mínimo en Godot y comprobar conteos; decidir contrato: operación atómica con rollback, o transferencia parcial que actualice la cantidad restante del objeto del mundo. |
+| INV-01 | Alta | Inventario/recogida | `InventoryRuntime.agregar_objeto()` ahora revierte una recogida que no cabe íntegramente. El contrato prueba pila 9/10 + solicitud 3 con inventario lleno (rechazo sin mutación), y el caso válido con slot libre (pila 10 + remanente 2). | Resuelto verificado | `InventoryPickupContract: PASS` en CI Godot 4.7 run `42213469008`. |
 | ITEM-01 | Alta | Drops | Confirmado por lectura directa de `generar_drops_criatura()` y `_procesar_siguiente_drop()`: la solicitud se añade a `_cola_drops`, pero se extrae con `pop_front()` antes de iniciar la consulta REST. Si `request()` falla al iniciar, el resultado HTTP falla, el status no es 2xx o el JSON no es un arreglo, se procesa la siguiente solicitud sin reponer la que falló ni reintentarla. En esa ruta no se generan los drops de esa criatura; el fallo puede perder el drop del combate. | En verificación | Probar fallo al iniciar request, desconexión/timeout, HTTP no-2xx y JSON inválido; verificar que el fallo se registra y la solicitud se reintenta o queda recuperable, sin duplicar drops exitosos. |
-| ITEM-03 | Alta | Soltar objetos desde inventario | `Inventory._soltar_objeto_al_mundo()` llama a `GarliaWorldItems.soltar_objeto_al_mundo()` y luego ejecuta `quitar_objeto(indice)` sin comprobar si se creó el `WorldItem`. La función de infraestructura retorna `void`; `_generar_world_item()` puede salir sin crear nada si falta `Entities` o `WorldEntityManager`/falla `registrar_global()`. En ese caso el objeto desaparece del inventario sin aparecer en el mundo. | Abierto | Prueba con `WorldEntityManager` ausente o `registrar_global()` fallido; definir resultado de creación y retirar el objeto solo tras éxito. |
+| ITEM-03 | Alta | Soltar objetos desde inventario | `InventoryController.soltar_objeto_al_mundo()` obtiene el objeto actual desde runtime y solo lo descuenta después de que `GarliaWorldItems` confirma el registro. La UI entrega índice/posición, no una copia antigua del arrastre. | Resuelto verificado | `InventoryDropContract: PASS` en CI Godot 4.7 run `42213469008`; prueba de infraestructura ausente conserva ID y cantidad. |
 | ITEM-02 | Media | Catálogo de objetos | La generación inicial depende de `catalogo`; no se encontró un fallback local equivalente. Algunos fallos HTTP terminan en `carga_fallida` sin reintento. | Abierto | Arranque offline y reconexión; definir catálogo local versionado/snapshot sin duplicar la autoridad canónica. |
 | AUTH-01 | Alta | Supabase Auth | `GarliaSupabaseClient._crear_headers()` no incorpora el JWT de usuario como `Authorization: Bearer <user JWT>`; `GarliaAuth` usa la clave publicable como Bearer en el flujo inspeccionado. | En verificación | Revisar encabezados en todas las rutas, sesiones reales y políticas RLS. No asumir que todas las tablas fallan sin inspeccionar sus permisos. |
 | AUTH-02 | Alta | Restauración de sesión | Las cargas iniciales diferidas de catálogos pueden terminar si todavía no hay sesión restaurada. No se encontró una conexión clara que repita todas esas cargas al finalizar la restauración. | En verificación | Trazar `session_restore_finished`, cargas iniciales y reintentos por dominio. Probar inicio en frío con sesión persistida. |
-| SAVE-01 | Alta | Persistencia | `SaveFileRepository.escribir_partida()` y `WorldData` escriben sobre el archivo final directamente; no se observó estrategia temporal + reemplazo atómico. | Abierto | Interrumpir una escritura en una prueba controlada y verificar recuperación del último save válido. |
+| SAVE-01 | Alta | Persistencia | `SaveFileRepository` escribe en temporal, valida JSON, conserva respaldo durante el reemplazo y recupera el último save válido. La escritura se verifica por bytes UTF-8, no por `get_error()` al final del cursor. | Resuelto verificado | `SaveFileRepositoryContract: PASS` en CI Godot 4.7 run `42213469008`; cubre sobrescritura, corrupción, recuperación, bloqueo de destino y limpieza. |
 | WORLD-01 | Alta | Snapshot offline | `WorldDataService._mundo_valido()` acepta un diccionario solo por contener `biomas` como arreglo. Un snapshot incompleto puede desplazar uno válido. | Abierto | Probar JSON mínimo, tipos incorrectos, campos obligatorios ausentes y compatibilidad de versiones. |
 | START-01 | Alta | Inicio de partida | La ruta de inicio a Reino Torres reintenta mientras `reinos_game` esté vacío; no se observó un fallback local equivalente en esa espera. | En verificación | Inicio de jugador nuevo completamente offline y reconexión posterior. |
 | WORLD-02 | Media | Mutabilidad del estado | Algunos getters de `WorldData` parecen devolver referencias internas en vez de copias profundas. | En verificación | Buscar todos los consumidores y comprobar si alguno muta los diccionarios/arreglos recibidos. |
@@ -112,3 +113,15 @@ La auditoría anterior observó que:
 - No se ejecutó el juego localmente ni se realizó una prueba visual automatizada de píxeles.
 - La ausencia de una referencia encontrada no demuestra que no exista en todo el proyecto; se debe ampliar la búsqueda antes de declarar una función ausente.
 - Las afirmaciones sobre RLS dependen de las políticas y grants reales de Supabase, que no se modificaron en esta fase.
+
+
+## Actualización de rama — 2026-11-06
+
+Esta sección sustituye los estados históricos solo para los hallazgos que se han vuelto a verificar. No se deben asumir resueltos los demás registros sin reproducirlos contra `refactor/p1-player-locomotion`.
+
+- CI completo Godot 4.7: `success`, run `42213469008`, commit `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`.
+- `INV-01`, `ITEM-03` y `SAVE-01`: **Resuelto verificado**.
+- Contratos de estado/progreso de misiones y de soltado de inventario: **PASS**.
+- Aplicación de recompensas, recuperación ante interrupción real de proceso, autenticación/RLS, offline y renderizado visual siguen en el backlog.
+- La rama permanece aislada; `main` no se modificó y Supabase no se tocó.
+
