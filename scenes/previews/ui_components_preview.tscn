@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_group.tscn" id="1_inventory_group"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_slot.tscn" id="2_inventory_slot"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_dash_charges.tscn" id="6_dash"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_discovery_notice.tscn" id="7_discovery"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_calendar_clock.tscn" id="8_calendar"]
+[ext_resource type="PackedScene" path="res://scenes/ui/eterium_radial_menu.tscn" id="9_eterium"]
 
 [node name="UIComponentsPreview" type="Control"]
 custom_minimum_size = Vector2(1280, 800)
@@ -89,3 +90,12 @@ offset_left = 1094.0
 offset_top = 36.0
 offset_right = 1256.0
 offset_bottom = 106.0
+
+[node name="EteriumRadialMenu" parent="." instance=ExtResource("9_eterium")]
+offset_left = 820.0
+offset_top = 240.0
+offset_right = 1280.0
+offset_bottom = 600.0
+
+[node name="Fondo" parent="EteriumRadialMenu" index="0"]
+visible = true
