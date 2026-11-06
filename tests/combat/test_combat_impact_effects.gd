@@ -1,8 +1,5 @@
 extends Node
 
-const PlayerScene = preload("res://scenes/characters/player.tscn")
-const CreatureScript = preload("res://scripts/creatures/creature.gd")
-const ImpactEffects = preload("res://scripts/gameplay/combat/combat_impact_effects.gd")
 
 
 func _ready() -> void:
@@ -26,11 +23,11 @@ func _run() -> void:
 
 
 func _probar_agresion_ecologica(errores: Array[String]) -> void:
-	var jugador := PlayerScene.instantiate() as Player
-	var feerin := CreatureScript.new() as Creature
+	var jugador := Player.new()
+	var feerin := Creature.new()
 	feerin.criatura_nombre = "Feerin"
 
-	if not ImpactEffects.registrar_agresion_bosque(jugador, feerin, false):
+	if not CombatImpactEffects.registrar_agresion_bosque(jugador, feerin, false):
 		errores.append("No registró agresión contra Feerin.")
 	if not jugador.has_meta("garlia_bosque_agresor"):
 		errores.append("No marcó al jugador como agresor del bosque.")
