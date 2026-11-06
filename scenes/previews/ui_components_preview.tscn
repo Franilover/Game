@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_group.tscn" id="1_inventory_group"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_slot.tscn" id="2_inventory_slot"]
@@ -13,9 +13,11 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_garumi_linked_slot.tscn" id="11_garumi_slot"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_hand_slot.tscn" id="12_hand_slot"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_hand_item_selector.tscn" id="13_hand_selector"]
+[ext_resource type="Script" path="res://scripts/previews/ui_components_preview.gd" id="14_preview"]
 
 [node name="UIComponentsPreview" type="Control"]
 custom_minimum_size = Vector2(1280, 800)
+script = ExtResource("14_preview")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
