@@ -72,6 +72,7 @@ var _game_state_ref: GameStateService = null
 var _auth_ref: Node = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
+var _muerte_visual_procesada: bool = false
 
 
 
@@ -534,6 +535,9 @@ func _al_cambio_mana_runtime(_actual: int, _maximo: int) -> void:
 	mana_changed.emit(mana, max_mana)
 	if eterium.vida_eterium_compartidos():
 		health_changed.emit(health, max_health)
+		if not is_alive:
+			_die()
+			_morir_jugador()
 
 
 # ============================================================
@@ -801,6 +805,9 @@ func _recibir_golpe_visual() -> void:
 
 
 func _morir_jugador() -> void:
+	if _muerte_visual_procesada:
+		return
+	_muerte_visual_procesada = true
 	velocity = Vector2.ZERO
 
 	set_physics_process(false)
@@ -831,6 +838,7 @@ func _morir_jugador() -> void:
 
 
 func reaparecer_en_red(posicion: Vector2) -> void:
+	_muerte_visual_procesada = false
 	restaurar_estado_vital(max_health, true, max_mana)
 	stamina_controller.reiniciar()
 	global_position = posicion
@@ -855,6 +863,7 @@ func reaparecer_en_red(posicion: Vector2) -> void:
 
 
 func reaparecer() -> void:
+	_muerte_visual_procesada = false
 	restaurar_estado_vital(max_health, true, max_mana)
 	stamina_controller.reiniciar()
 
