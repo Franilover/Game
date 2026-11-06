@@ -164,6 +164,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run inventory drop transaction contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/inventory/test_inventory_drop_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|InventoryDropContract: FAIL:' <<<"$output"; then
+            echo "Inventory drop contract test reported errors."
+            exit 1
+          fi
+
       - name: Run mission manager persistence contract test
         shell: bash
         run: |
