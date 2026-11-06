@@ -40,7 +40,8 @@ Responsabilidades:
 - `CombatController`: valida el bloqueo de entrada y emite el snapshot de dirección, objeto y modo.
 - `CombatItemResolver`: interpreta la clasificación y propiedades del objeto; no crea ataques ni aplica daño.
 - `CombatAttackExecutor`: construye y conecta los nodos melee/proyectil; no decide cuándo se ataca ni resuelve impactos.
-- `CombatSystem`: orquesta la acción y conserva cooldown, daño, feedback, agresión ecológica, absorción de Eterium y registro de derrotas.
+- `CombatSystem`: orquesta la acción, cooldown y aplicación de daño; conserva la absorción de Eterium, los contratos de contacto/ataque y el robo de vida.
+- `CombatImpactEffects`: ejecuta reacciones de `CreatureAI`, registro de derrotas, agresión ecológica y feedback visual después de que el daño ya fue confirmado; no modifica salud.
 - `CombatTargeting`: valida objetivos.
 - `CombatDamage`: aplica daño.
 
@@ -49,6 +50,7 @@ Archivos principales:
 - scripts/gameplay/combat/combat_controller.gd
 - scripts/gameplay/combat/combat_item_resolver.gd
 - scripts/gameplay/combat/combat_attack_executor.gd
+- scripts/gameplay/combat/combat_impact_effects.gd
 - scripts/gameplay/combat/combat_attack_area.gd
 - scripts/gameplay/combat/combat_projectile.gd
 - InventoryController / InventoryEquipment para el objeto y el equipamiento
