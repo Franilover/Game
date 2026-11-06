@@ -140,6 +140,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run combat attack executor regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_attack_executor.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatAttackExecutor: FAIL:' <<<"$output"; then
+            echo "Combat attack executor regression test reported errors."
+            exit 1
+          fi
+
       - name: Run combat event queue contract regression test
         shell: bash
         run: |
