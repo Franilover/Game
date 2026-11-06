@@ -65,67 +65,24 @@ func _ready() -> void:
 	_construir_interfaz_minijuego()
 
 func _crear_interfaz() -> void:
-	_overlay = ColorRect.new()
-	_overlay.name = "Fondo"
-	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_overlay.color = Color(0.035, 0.022, 0.012, 0.34)
-	_overlay.visible = false
-	_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	_overlay.gui_input.connect(func(event: InputEvent) -> void:
-		if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
-			_cerrar()
-	)
-	add_child(_overlay)
-
-	# Cada acción tiene su propio contenedor; no existe un panel común.
-	var opciones := ["Curarse", "Recuperar dash", "Meditar"]
-	for i in range(opciones.size()):
-		var contenedor_opcion := PanelContainer.new()
-		contenedor_opcion.name = "OpcionEterium%d" % (i + 1)
-		contenedor_opcion.custom_minimum_size = Vector2(220.0, 34.0)
-		contenedor_opcion.size = Vector2(220.0, 34.0)
-		contenedor_opcion.position = Vector2(
-			(get_viewport_rect().size.x - 220.0) * 0.5,
-			get_viewport_rect().size.y * 0.5 - 55.0 + float(i) * 39.0
-		)
-		var estilo_opcion := StyleBoxFlat.new()
-		estilo_opcion.bg_color = Color(0.105, 0.071, 0.043, 0.98)
-		estilo_opcion.border_color = Color(0.48, 0.32, 0.17, 1.0)
-		estilo_opcion.set_border_width_all(1)
-		estilo_opcion.set_corner_radius_all(4)
-		estilo_opcion.content_margin_left = 4.0
-		estilo_opcion.content_margin_right = 4.0
-		estilo_opcion.content_margin_top = 2.0
-		estilo_opcion.content_margin_bottom = 2.0
-		contenedor_opcion.add_theme_stylebox_override("panel", estilo_opcion)
-		contenedor_opcion.mouse_filter = Control.MOUSE_FILTER_STOP
-		_overlay.add_child(contenedor_opcion)
-
-		var boton := Button.new()
-		boton.name = "AccionEterium%d" % (i + 1)
-		boton.text = opciones[i]
-		boton.custom_minimum_size = Vector2(210.0, 28.0)
-		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		boton.add_theme_font_size_override("font_size", 12)
-		boton.add_theme_color_override("font_color", Color(0.91, 0.83, 0.70, 1.0))
-		boton.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.82, 1.0))
-		var normal := StyleBoxFlat.new()
-		normal.bg_color = Color(0.105, 0.071, 0.043, 1.0)
-		normal.border_color = Color(0.0, 0.0, 0.0, 0.0)
-		normal.set_border_width_all(0)
-		normal.set_corner_radius_all(3)
-		var hover := normal.duplicate() as StyleBoxFlat
-		hover.bg_color = Color(0.19, 0.125, 0.065, 1.0)
-		var pressed := normal.duplicate() as StyleBoxFlat
-		pressed.bg_color = Color(0.25, 0.16, 0.08, 1.0)
-		boton.add_theme_stylebox_override("normal", normal)
-		boton.add_theme_stylebox_override("hover", hover)
-		boton.add_theme_stylebox_override("pressed", pressed)
-		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	_overlay = get_node("Fondo") as ColorRect
+	if _overlay == null:
+		push_error("EteriumRadialMenu: falta Fondo en la escena.")
+		return
+	_overlay.gui_input.connect(_al_input_overlay)
+	_botones.clear()
+	for i in range(3):
+		var boton := _overlay.get_node_or_null("MenuPanel/Options/AccionEterium%d" % (i + 1)) as Button
+		if boton == null:
+			push_error("EteriumRadialMenu: falta el botón de acción %d." % (i + 1))
+			continue
 		boton.pressed.connect(_seleccionar.bind(i))
-		contenedor_opcion.add_child(boton)
 		_botones.append(boton)
+
+
+func _al_input_overlay(event: InputEvent) -> void:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+		_cerrar()
 
 func _input(event: InputEvent) -> void:
 	if event is not InputEventKey:
@@ -261,74 +218,17 @@ func _al_soltar_espacio() -> void:
 
 
 func _construir_interfaz_minijuego() -> void:
-	_minijuego_layer = Control.new()
-	_minijuego_layer.name = "MinijuegoEterium"
-	_minijuego_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_minijuego_layer.mouse_filter = Control.MOUSE_FILTER_STOP
-	_minijuego_layer.visible = false
-	_minijuego_layer.z_index = 80
-	add_child(_minijuego_layer)
-	var sombra := ColorRect.new()
-	_minijuego_sombra = sombra
-	sombra.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	sombra.color = Color(0.025, 0.018, 0.012, 0.0)
-	sombra.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_minijuego_layer.add_child(sombra)
-	var panel := PanelContainer.new()
-	_panel = panel
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -150.0
-	panel.offset_top = -52.0
-	panel.offset_right = 150.0
-	panel.offset_bottom = 52.0
-	panel.custom_minimum_size = Vector2(300.0, 104.0)
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.09, 0.061, 0.038, 0.98)
-	estilo.border_color = Color(0.55, 0.39, 0.21, 1.0)
-	estilo.set_border_width_all(2)
-	estilo.set_corner_radius_all(5)
-	estilo.content_margin_left = 10.0
-	estilo.content_margin_right = 10.0
-	estilo.content_margin_top = 6.0
-	estilo.content_margin_bottom = 6.0
-	panel.add_theme_stylebox_override("panel", estilo)
-	_minijuego_layer.add_child(panel)
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 7)
-	panel.add_child(columna)
-	_minijuego_titulo = Label.new()
-	_minijuego_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_minijuego_titulo.add_theme_font_size_override("font_size", 14)
-	_minijuego_titulo.add_theme_color_override("font_color", Color(0.94, 0.83, 0.65, 1.0))
-	columna.add_child(_minijuego_titulo)
-	_minijuego_instruccion = Label.new()
-	_minijuego_instruccion.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_minijuego_instruccion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_minijuego_instruccion.add_theme_font_size_override("font_size", 10)
-	_minijuego_instruccion.add_theme_color_override("font_color", Color(0.78, 0.68, 0.53, 1.0))
-	columna.add_child(_minijuego_instruccion)
-	_minijuego_barra = ProgressBar.new()
-	_minijuego_barra.custom_minimum_size = Vector2(0.0, 20.0)
-	_minijuego_barra.min_value = 0.0
-	_minijuego_barra.max_value = 100.0
-	_minijuego_barra.show_percentage = false
-	columna.add_child(_minijuego_barra)
-	_minijuego_tiempo = ProgressBar.new()
-	_minijuego_tiempo.custom_minimum_size = Vector2(0.0, 5.0)
-	_minijuego_tiempo.min_value = 0.0
-	_minijuego_tiempo.max_value = 100.0
-	_minijuego_tiempo.show_percentage = false
-	columna.add_child(_minijuego_tiempo)
-	_indicador_tiempo = Label.new()
-	_indicador_tiempo.visible = false
-	_indicador_tiempo.add_theme_font_size_override("font_size", 11)
-	_indicador_tiempo.add_theme_color_override("font_color", Color(0.96, 0.84, 0.63, 1.0))
-	_indicador_tiempo.add_theme_color_override("font_outline_color", Color(0.035, 0.025, 0.015, 1.0))
-	_indicador_tiempo.add_theme_constant_override("outline_size", 3)
-	_indicador_tiempo.size = Vector2(150.0, 22.0)
-	_indicador_tiempo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_indicador_tiempo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_indicador_tiempo)
+	_minijuego_layer = get_node("MinijuegoEterium") as Control
+	if _minijuego_layer == null:
+		push_error("EteriumRadialMenu: falta MinijuegoEterium en la escena.")
+		return
+	_minijuego_sombra = _minijuego_layer.get_node("Sombra") as ColorRect
+	_panel = _minijuego_layer.get_node("Panel") as PanelContainer
+	_minijuego_titulo = _minijuego_layer.get_node("Panel/Columna/Titulo") as Label
+	_minijuego_instruccion = _minijuego_layer.get_node("Panel/Columna/Instruccion") as Label
+	_minijuego_barra = _minijuego_layer.get_node("Panel/Columna/Progreso") as ProgressBar
+	_minijuego_tiempo = _minijuego_layer.get_node("Panel/Columna/Tiempo") as ProgressBar
+	_indicador_tiempo = get_node("IndicadorTiempo") as Label
 
 
 func _iniciar_minijuego_curacion() -> void:
