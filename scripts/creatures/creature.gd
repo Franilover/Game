@@ -1,6 +1,9 @@
 extends Entity
 class_name Creature
 
+signal configuracion_actualizada
+signal danio_recibido(cantidad: int, atacante: Node)
+
 
 @export var move_speed: float = 20.0
 @export var min_move_time: float = 1.0
@@ -247,11 +250,8 @@ func configurar(
 
 	_cargar_sprite()
 
-	var ai := get_node_or_null("AIController") as CreatureAI
-	if ai != null:
-		ai.configurar_criatura()
-
 	queue_redraw()
+	configuracion_actualizada.emit()
 
 
 func _cargar_sprite() -> void:
@@ -614,12 +614,12 @@ func take_damage(
 	super.take_damage(cantidad, origen)
 
 	if health < salud_anterior:
-		# El evento de ataque también debe llegar a la IA cuando el golpe es
-		# letal: un Ligniano libera su defensa al ser atacado, no al sobrevivir.
-		var ai := get_node_or_null("AIController") as CreatureAI
-
-		if ai != null:
-			ai.al_recibir_danio(salud_anterior - health, _atacante_actual_danio)
+		# La criatura publica el resultado; su IA decide qué reacción ejecutar.
+		# Se emite también para golpes letales y conserva al atacante original.
+		danio_recibido.emit(
+			salud_anterior - health,
+			_atacante_actual_danio
+		)
 
 
 func establecer_colision(activa: bool) -> void:
