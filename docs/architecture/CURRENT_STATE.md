@@ -634,3 +634,16 @@ Se corrigieron rutas que modificaban las propiedades públicas de \`Player\` sin
 - Se ampliaron \`EntityLifecycleContract\` y se añadió \`PlayerVitalStateContract\` para restauración, daño normal/compartido, muerte, reaparición, absorción y límites administrativos.
 
 No se cambian fórmulas canónicas ni datos de Supabase. Las pruebas están integradas al workflow, pero todavía no se declara CI validado para esta revisión.
+
+
+## Quincuagésima sexta barrida — Agotamiento de Eterium compartido
+
+Se cerraron rutas adicionales del runtime de Eterium:
+
+- La configuración de una especie con vida/Eterium compartidos aplica primero la capacidad vital y después establece la barra llena, evitando emitir una muerte transitoria durante la configuración.
+- Cuando una operación del runtime agota la barra compartida, el adaptador de \`Player\` sincroniza el estado y procesa la muerte mediante \`Entity._die()\`.
+- La animación de muerte de Player tiene guard propio para no iniciar varios tweens por una misma transición; ambas rutas de reaparición la rearman.
+- La recuperación pasiva y la absorción ya no emiten señales duplicadas desde Player cuando el runtime ya notificó el cambio.
+- \`PlayerVitalStateContract\` comprueba que gastar toda la reserva compartida mata al jugador, que la absorción no revive una entidad muerta y que la reaparición de red restaura las reservas.
+
+No se modifican costes, tasas, capacidades canónicas ni datos remotos. La validación automatizada sigue pendiente de un resultado CI visible.
