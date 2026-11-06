@@ -33,7 +33,7 @@ var _world_generator: WorldGenerator = null
 @onready var _world_context: WorldContext = $Systems/WorldContext
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
 const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
-const ETERIUM_RADIAL_MENU_SCRIPT = preload("res://scripts/ui/eterium_radial_menu.gd")
+const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_radial_menu.tscn")
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
@@ -687,9 +687,10 @@ func _configurar_menu_radial_eterium() -> void:
 	if contenedor_ui == null or _player == null:
 		push_error("Main: no se pudo inicializar el menú radial de Eterium.")
 		return
-	_eterium_radial_menu = Control.new()
-	_eterium_radial_menu.name = "EteriumRadialMenu"
-	_eterium_radial_menu.set_script(ETERIUM_RADIAL_MENU_SCRIPT)
+	_eterium_radial_menu = ETERIUM_RADIAL_MENU_SCENE.instantiate() as Control
+	if _eterium_radial_menu == null:
+		push_error("Main: no se pudo instanciar eterium_radial_menu.tscn.")
+		return
 	contenedor_ui.add_child(_eterium_radial_menu)
 	_eterium_radial_menu.call(
 		"configurar",
