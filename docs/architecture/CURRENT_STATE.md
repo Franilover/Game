@@ -669,3 +669,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - El workflow Godot 4.7 ejecuta el nuevo contrato. La prueba aún requiere un resultado CI del commit actualizado.
 - La aplicación efectiva de recompensas al inventario/estado del jugador continúa pendiente: no se asumió un esquema de recompensa ni se modificó Supabase.
 
+
+
+## Quincuagésima novena barrida — Transacción segura al soltar objetos
+
+- `GarliaInventory` separa ahora la posición del puntero de la operación de transferencia mediante `_soltar_objeto_en_posicion()`; la entrada de UI solo proporciona la posición.
+- La operación devuelve un resultado y solo retira el objeto del inventario cuando `GarliaWorldItems` confirma que el `WorldItem` fue registrado por `WorldEntityManager`.
+- Se añadió `InventoryDropContract` para simular infraestructura ausente y verificar que el inventario conserva ID y cantidad cuando el drop falla.
+- El workflow Godot 4.7 incluye el contrato. No se afirma ejecución correcta hasta obtener resultado CI.
+- Esta corrección no modifica el formato de los objetos ni los datos canónicos.
+
