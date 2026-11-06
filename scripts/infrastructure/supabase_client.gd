@@ -1,6 +1,8 @@
 extends Node
 class_name GarliaSupabaseClient
 
+const WorldSnapshotValidatorScript = preload("res://scripts/state/world_snapshot_validator.gd")
+
 signal relaciones_ecologicas_cargadas(relaciones: Array)
 signal reinos_game_cargados(reinos: Array)
 signal mundo_cargado(datos: Dictionary)
@@ -830,13 +832,7 @@ func _al_completar_solicitud(
 func _mundo_valido(
 	datos: Dictionary
 ) -> bool:
-	if not datos.has("biomas"):
-		return false
-
-	if not datos["biomas"] is Array:
-		return false
-
-	return true
+	return WorldSnapshotValidatorScript.es_valido(datos)
 
 
 func _manejar_error(
