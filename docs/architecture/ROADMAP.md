@@ -22,7 +22,7 @@
 - [x] Rearmar el evento al restaurar una entidad viva.
 - [~] Revisar overrides de `_die()`: `Creature` ya delega la señal a `Entity` y sincroniza `VitalState` al configurarse; falta validar restauración viva de subclases.
 - [~] Unificar restauración de salud/maná, Eterium compartido, reaparición y máximos administrativos mediante `VitalState`; falta auditar todos los efectos secundarios y validar CI.
-- [~] Añadir contratos de daño/restauración y absorción para fisiología compartida; falta auditar curación, regeneración y límites de todos los caminos.
+- [~] Añadir contratos de daño/restauración, absorción y agotamiento para fisiología compartida; falta auditar curación, regeneración y límites de todos los caminos.
 - [ ] Detectar escrituras directas que omitan al dueño del estado.
 - [ ] Impedir operaciones sobre entidades eliminadas o inválidas.
 
@@ -60,7 +60,7 @@
 - [ ] Verificar IUM y ataques especiales sin alterar las fórmulas canónicas.
 - [ ] Probar ataques simultáneos, múltiples objetivos, colisiones y proyectiles fuera de escena.
 - [ ] Verificar cooldown, cancelación, interrupciones y atribución de daño.
-- [ ] Probar Eterium, absorción, robo de vida y derrota en todos los caminos.
+- [~] Cubrir fisiología compartida, absorción y muerte al agotar Eterium en `PlayerVitalStateContract`; falta ampliar a todos los caminos y validar CI.
 - [ ] Mantener el balance separado de la infraestructura.
 
 ### 2.2 IA de criaturas
