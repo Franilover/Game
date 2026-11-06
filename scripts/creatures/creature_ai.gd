@@ -148,6 +148,11 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 
+	if not criatura.configuracion_actualizada.is_connected(configurar_criatura):
+		criatura.configuracion_actualizada.connect(configurar_criatura)
+	if not criatura.danio_recibido.is_connected(al_recibir_danio):
+		criatura.danio_recibido.connect(al_recibir_danio)
+
 	_encontrar_movimiento()
 	_refrescar_configuracion()
 	_aplicar_configuracion_movimiento()
