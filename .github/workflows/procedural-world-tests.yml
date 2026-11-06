@@ -4,6 +4,7 @@ on:
   push:
     branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks", "refactor/p1-player-locomotion"]
     paths:
+      - "scenes/**"
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
       - "scripts/world/world_*.gd"
@@ -36,6 +37,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "scenes/**"
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
       - "scripts/world/world_*.gd"
