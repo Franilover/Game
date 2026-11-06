@@ -16,6 +16,14 @@ const COMBAT_ATTACK_EXECUTOR: Script = preload(
 	"res://scripts/gameplay/combat/combat_attack_executor.gd"
 )
 
+const COMBAT_WEAPON_ATTACK_VALIDATOR: Script = preload(
+	"res://scripts/gameplay/combat/combat_weapon_attack_validator.gd"
+)
+
+const COMBAT_ATTACK_RESULT: Script = preload(
+	"res://scripts/gameplay/combat/combat_attack_result.gd"
+)
+
 const COMBAT_IMPACT_EFFECTS: Script = preload(
 	"res://scripts/gameplay/combat/combat_impact_effects.gd"
 )
@@ -460,21 +468,18 @@ func _al_recibir_impacto_proyectil(
 func _obtener_modo_ataque(arma: Dictionary) -> String:
 	return COMBAT_ITEM_RESOLVER.obtener_modo_ataque(arma)
 
-func atacar_objetivo_con_arma(
+func solicitar_ataque_con_arma(
 	atacante: Node,
 	objetivo: Entity,
 	arma: Dictionary
-) -> bool:
-	if atacante == null or not is_instance_valid(atacante):
-		return false
-
-	if objetivo == null or not is_instance_valid(objetivo):
-		return false
-	if not objetivo.is_alive:
-		return false
-
-	if arma.is_empty() or not _es_arma(arma):
-		return false
+) -> CombatAttackResult:
+	var motivo_rechazo: StringName = COMBAT_WEAPON_ATTACK_VALIDATOR.validar(
+		atacante,
+		objetivo,
+		arma
+	)
+	if not motivo_rechazo.is_empty():
+		return COMBAT_ATTACK_RESULT.rechazado(motivo_rechazo)
 
 	var danio: int = _obtener_danio_arma(arma)
 	contacto_efectivo.emit(
@@ -483,7 +488,7 @@ func atacar_objetivo_con_arma(
 		"Entidad/Arma:" + str(arma.get("nombre", "Arma"))
 	)
 
-	_aplicar_danio(
+	var danio_aplicado := _aplicar_danio(
 		objetivo,
 		danio,
 		str(arma.get("nombre", "Arma")),
@@ -491,7 +496,17 @@ func atacar_objetivo_con_arma(
 		arma
 	)
 
-	return true
+	return COMBAT_ATTACK_RESULT.aceptado(true, danio_aplicado)
+
+
+## Compatibilidad para consumidores antiguos: true significa solicitud aceptada,
+## no necesariamente que la salud del objetivo haya disminuido.
+func atacar_objetivo_con_arma(
+	atacante: Node,
+	objetivo: Entity,
+	arma: Dictionary
+) -> bool:
+	return solicitar_ataque_con_arma(atacante, objetivo, arma).solicitud_aceptada
 
 
 func obtener_alcance_arma(
@@ -538,9 +553,9 @@ func _aplicar_danio(
 	origen: String,
 	atacante: Node = null,
 	arma: Dictionary = {}
-) -> void:
-	if not is_instance_valid(objetivo):
-		return
+) -> bool:
+	if objetivo == null or not is_instance_valid(objetivo):
+		return false
 
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
@@ -550,7 +565,7 @@ func _aplicar_danio(
 		atacante
 	)
 	if not aplicado:
-		return
+		return false
 
 	var actor: Node = atacante
 	if actor == null:
@@ -582,8 +597,7 @@ func _aplicar_danio(
 		danio,
 		" de daño."
 	)
-
-
+	return true
 
 
 ## Daño genérico de entidades
