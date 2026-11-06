@@ -666,7 +666,7 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - El progreso se reconstruye usando los objetivos del catálogo actual: cantidades negativas pasan a cero, valores superiores se limitan al requisito y los objetivos que ya no existen se descartan.
 - Los datos de progreso con tipos incorrectos se rechazan sin romper la carga de la partida.
 - Se añadió `MissionManagerContract` para verificar normalización, serialización, finalización idempotente y emisión única de `recompensa_disponible`.
-- El workflow Godot 4.7 ejecuta el nuevo contrato. La prueba aún requiere un resultado CI del commit actualizado.
+- El workflow Godot 4.7 ejecutó el nuevo contrato correctamente en el run `42213469008`.
 - La aplicación efectiva de recompensas al inventario/estado del jugador continúa pendiente: no se asumió un esquema de recompensa ni se modificó Supabase.
 
 
@@ -676,7 +676,7 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - `GarliaInventory` separa ahora la posición del puntero de la operación de transferencia mediante `_soltar_objeto_en_posicion()`; la entrada de UI solo proporciona la posición.
 - La operación devuelve un resultado y solo retira el objeto del inventario cuando `GarliaWorldItems` confirma que el `WorldItem` fue registrado por `WorldEntityManager`.
 - Se añadió `InventoryDropContract` para simular infraestructura ausente y verificar que el inventario conserva ID y cantidad cuando el drop falla.
-- El workflow Godot 4.7 incluye el contrato. No se afirma ejecución correcta hasta obtener resultado CI.
+- El contrato pasó en el run CI Godot 4.7 `42213469008`.
 - Esta corrección no modifica el formato de los objetos ni los datos canónicos.
 
 
