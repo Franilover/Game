@@ -1,10 +1,13 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_group.tscn" id="1_inventory_group"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_slot.tscn" id="2_inventory_slot"]
 [ext_resource type="PackedScene" path="res://scenes/ui/inventory_equipment_slot.tscn" id="3_equipment_slot"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_mission_panel.tscn" id="4_mission"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud_interaction_panel.tscn" id="5_interaction"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_dash_charges.tscn" id="6_dash"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_discovery_notice.tscn" id="7_discovery"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud_calendar_clock.tscn" id="8_calendar"]
 
 [node name="UIComponentsPreview" type="Control"]
 custom_minimum_size = Vector2(1280, 800)
@@ -70,3 +73,19 @@ offset_left = 650.0
 offset_top = 340.0
 offset_right = 1110.0
 offset_bottom = 640.0
+
+[node name="DashCharges" parent="." instance=ExtResource("6_dash")]
+offset_left = 700.0
+offset_top = 36.0
+offset_right = 784.0
+offset_bottom = 54.0
+
+[node name="DiscoveryNotice" parent="." instance=ExtResource("7_discovery")]
+visible = true
+text = "NUEVO DESCUBRIMIENTO"
+
+[node name="CalendarClock" parent="." instance=ExtResource("8_calendar")]
+offset_left = 1094.0
+offset_top = 36.0
+offset_right = 1256.0
+offset_bottom = 106.0
