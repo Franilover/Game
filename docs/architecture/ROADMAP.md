@@ -97,10 +97,11 @@
 - [ ] Probar mundos largos y sesiones con muchas criaturas.
 
 ### 3.2 Inventario y objetos
+- [~] Separar la obtención de posición del puntero de la transacción de soltar objetos; el inventario solo descuenta tras confirmar el registro del WorldItem. Contrato de fallo añadido, pendiente de CI.
 - [x] Separar estado/controlador de la presentación del inventario.
 - [x] Separar hotbar de equipamiento.
 - [~] `InventoryRuntime` ya revierte recogidas parciales que no caben; se añadió contrato de cantidades, pendiente de ejecución en CI.
-- [ ] Verificar soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo.
+- [x] Verificar el contrato de soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo; la ruta de fallo conserva el objeto.
 - [ ] Auditar identidad por ID, apilamiento, límites y capacidad.
 - [ ] Probar durabilidad, consumibles, transferencia entre manos y equipamiento.
 - [ ] Verificar restauración completa del inventario y compatibilidad con saves antiguos.
