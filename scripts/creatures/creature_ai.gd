@@ -1561,14 +1561,14 @@ func _iniciar_ataque_ligniano() -> void:
 		return
 
 	if _puede_recibir_danio(objetivo):
-		_aplicar_danio_objetivo(
+		var resultado: CombatAttackResult = _aplicar_danio_objetivo(
 			objetivo,
 			_obtener_danio_ataque(),
 			"CreatureAI/Lignianos"
 		)
 
 		var jugador_objetivo := objetivo as Player
-		if jugador_objetivo != null:
+		if jugador_objetivo != null and resultado.contacto_registrado:
 			jugador_objetivo.aplicar_efecto_slow(
 				_obtener_float_ataque(
 					"duracion_slow",
@@ -2437,16 +2437,20 @@ func _animar_salto() -> void:
 
 
 
-func _aplicar_danio_objetivo(objetivo_danio: Node, cantidad: int, origen: String) -> void:
+func _aplicar_danio_objetivo(
+	objetivo_danio: Node,
+	cantidad: int,
+	origen: String
+) -> CombatAttackResult:
 	var entidad := objetivo_danio as Entity
 	if entidad == null or not is_instance_valid(entidad):
-		return
+		return CombatAttackResult.rechazado(&"objetivo_invalido")
 
 	var combate := _obtener_combat_system()
 	if combate == null:
-		return
+		return CombatAttackResult.rechazado(&"combat_system_no_disponible")
 
-	combate.aplicar_danio_desde_entidad(
+	return combate.solicitar_danio_desde_entidad(
 		criatura,
 		entidad,
 		cantidad,
