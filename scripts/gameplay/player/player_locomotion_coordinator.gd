@@ -86,7 +86,7 @@ func obtener_progreso_salto(duracion: float) -> float:
 func calcular_movimiento(
 	input_direction: Vector2,
 	move_speed: float,
-	run_multiplier: float,
+	speed_multiplier: float,
 	corriendo: bool
 ) -> Vector2:
 	if movement == null:
@@ -94,9 +94,16 @@ func calcular_movimiento(
 	return movement.actualizar(
 		input_direction,
 		move_speed,
-		run_multiplier,
+		speed_multiplier,
 		corriendo
 	)
+
+
+func actualizar_facing(input_direction: Vector2) -> bool:
+	if movement == null:
+		return false
+	var direction := movement.calcular_direccion(input_direction)
+	return movement.actualizar_facing(direction)
 
 func obtener_estado_movimiento() -> PlayerMovementController.State:
 	if movement == null:

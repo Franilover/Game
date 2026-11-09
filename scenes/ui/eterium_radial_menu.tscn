@@ -1,0 +1,149 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/eterium_radial_menu.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_menu"]
+bg_color = Color(0.105, 0.071, 0.043, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.32, 0.17, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 5.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+
+[node name="EteriumRadialMenu" type="Control"]
+script = ExtResource("1_script")
+mouse_filter = 2
+visible = true
+
+[node name="Fondo" type="ColorRect" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.035, 0.022, 0.012, 0.34)
+mouse_filter = 0
+
+[node name="MenuPanel" type="PanelContainer" parent="Fondo"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(230, 126)
+offset_left = -115.0
+offset_top = -63.0
+offset_right = 115.0
+offset_bottom = 63.0
+theme_override_styles/panel = SubResource("StyleBox_menu")
+
+[node name="Options" type="VBoxContainer" parent="Fondo/MenuPanel"]
+theme_override_constants/separation = 5
+
+[node name="AccionEterium1" type="Button" parent="Fondo/MenuPanel/Options"]
+custom_minimum_size = Vector2(210, 28)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.91, 0.83, 0.70, 1)
+theme_override_colors/font_hover_color = Color(1, 0.94, 0.82, 1)
+theme_override_font_sizes/font_size = 12
+text = "Curarse"
+
+[node name="AccionEterium2" type="Button" parent="Fondo/MenuPanel/Options"]
+custom_minimum_size = Vector2(210, 28)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.91, 0.83, 0.70, 1)
+theme_override_colors/font_hover_color = Color(1, 0.94, 0.82, 1)
+theme_override_font_sizes/font_size = 12
+text = "Recuperar dash"
+
+[node name="AccionEterium3" type="Button" parent="Fondo/MenuPanel/Options"]
+custom_minimum_size = Vector2(210, 28)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.91, 0.83, 0.70, 1)
+theme_override_colors/font_hover_color = Color(1, 0.94, 0.82, 1)
+theme_override_font_sizes/font_size = 12
+text = "Meditar"
+
+[node name="MinijuegoEterium" type="Control" parent="."]
+visible = false
+z_index = 80
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Sombra" type="ColorRect" parent="MinijuegoEterium"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.018, 0.012, 0)
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="MinijuegoEterium"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -52.0
+offset_right = 150.0
+offset_bottom = 52.0
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(300, 104)
+theme_override_styles/panel = SubResource("StyleBox_menu")
+
+[node name="Columna" type="VBoxContainer" parent="MinijuegoEterium/Panel"]
+theme_override_constants/separation = 7
+
+[node name="Titulo" type="Label" parent="MinijuegoEterium/Panel/Columna"]
+theme_override_colors/font_color = Color(0.94, 0.83, 0.65, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+
+[node name="Instruccion" type="Label" parent="MinijuegoEterium/Panel/Columna"]
+theme_override_colors/font_color = Color(0.78, 0.68, 0.53, 1)
+theme_override_font_sizes/font_size = 10
+autowrap_mode = 2
+horizontal_alignment = 1
+
+[node name="Progreso" type="ProgressBar" parent="MinijuegoEterium/Panel/Columna"]
+custom_minimum_size = Vector2(0, 20)
+max_value = 100.0
+show_percentage = false
+
+[node name="Tiempo" type="ProgressBar" parent="MinijuegoEterium/Panel/Columna"]
+visible = false
+custom_minimum_size = Vector2(0, 5)
+max_value = 100.0
+show_percentage = false
+
+[node name="IndicadorTiempo" type="Label" parent="."]
+visible = false
+z_index = 81
+offset_left = -75.0
+offset_top = 0.0
+offset_right = 75.0
+offset_bottom = 22.0
+theme_override_colors/font_color = Color(0.96, 0.84, 0.63, 1)
+theme_override_colors/font_outline_color = Color(0.035, 0.025, 0.015, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+mouse_filter = 2

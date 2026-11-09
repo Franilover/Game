@@ -150,6 +150,8 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			if not estado_runtime.is_empty():
 				for clave in estado_runtime.keys():
 					dato[clave] = estado_runtime[clave]
+		if not bool(dato.get("is_alive", true)):
+			continue
 		var categoria_entidad := str(dato.get("categoria_entidad", "criatura")).strip_edges().to_lower()
 		var criatura_data: Dictionary
 		if categoria_entidad == "garumi":
@@ -186,8 +188,11 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			creature_node.configurar_entorno(str(dato.get("habitat_clave", "general")).strip_edges().to_lower())
 			if bool(dato.get("garumi_debug_preview", false)):
 				print("WorldEntitySpawner: Garumi prototipo DEBUG materializado desde DATA -> chunk=", chunk_coord, " | sprite=", "cargado" if not bool(criatura.get_meta("garumi_sprite_missing", false)) else "pendiente")
-			var health := float(dato.get("health", creature_node.health))
-			creature_node.health = clampf(health, 0.0, creature_node.max_health)
+			var health := int(dato.get("health", creature_node.health))
+			creature_node.restaurar_estado_vital(
+				clampi(health, 0, creature_node.max_health),
+				bool(dato.get("is_alive", true))
+			)
 			if dato.has("velocity") and dato["velocity"] is Vector2:
 				creature_node.velocity = dato["velocity"]
 

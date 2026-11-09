@@ -1,3 +1,4 @@
+@tool
 extends Node2D
 class_name WorldItem
 
@@ -9,8 +10,8 @@ const DISTANCIA_INTERACCION: float = 52.0
 var _jugador: Player = null
 var _inventario: GarliaInventory = null
 var _mission_manager: MissionManager = null
-var _etiqueta: Label = null
-var _icono: Sprite2D = null
+@onready var _etiqueta: Label = get_node_or_null("InteractionLabel") as Label
+@onready var _icono: Sprite2D = get_node_or_null("ItemIcon") as Sprite2D
 var _etiqueta_visible: bool = false
 
 
@@ -19,8 +20,6 @@ func _ready() -> void:
 	add_to_group("interactable")
 	z_index = 10
 	
-	_crear_icono()
-	_crear_etiqueta()
 	_actualizar_icono()
 	queue_redraw()
 
@@ -65,7 +64,7 @@ func esta_cerca(persona: Node2D) -> bool:
 
 
 func _process(_delta: float) -> void:
-	if not is_instance_valid(_jugador):
+	if not is_instance_valid(_jugador) or not is_instance_valid(_etiqueta):
 		return
 	
 	var cerca: bool = esta_cerca(_jugador)
@@ -76,46 +75,13 @@ func _process(_delta: float) -> void:
 	_etiqueta.visible = cerca
 
 
-func _crear_icono() -> void:
-	_icono = get_node_or_null("ItemIcon") as Sprite2D
-	if _icono == null:
-		_icono = Sprite2D.new()
-		_icono.name = "ItemIcon"
-		add_child(_icono)
-	
-	_icono.centered = true
-	_icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_icono.position = Vector2.ZERO
-
-
 func _actualizar_icono() -> void:
-	if not is_instance_valid(_icono):
+	if not is_instance_valid(_icono) or datos_objeto.is_empty():
 		return
 	
 	var textura: Texture2D = ItemIconResolver.obtener_icono(datos_objeto)
 	_icono.texture = textura
 	_icono.visible = textura != null
-
-
-func _crear_etiqueta() -> void:
-	_etiqueta = get_node_or_null("InteractionLabel") as Label
-	if _etiqueta != null:
-		return
-	
-	_etiqueta = Label.new()
-	_etiqueta.name = "InteractionLabel"
-	_etiqueta.text = "[ LMB ] · " + nombre
-	_etiqueta.position = Vector2(-80.0, -42.0)
-	_etiqueta.size = Vector2(160.0, 24.0)
-	_etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_etiqueta.visible = false
-	_etiqueta.add_theme_font_size_override("font_size", 10)
-	_etiqueta.add_theme_color_override("font_color", Color(0.93, 0.86, 0.68, 1.0))
-	_etiqueta.add_theme_color_override("font_shadow_color", Color(0.08, 0.05, 0.03, 1.0))
-	_etiqueta.add_theme_constant_override("shadow_offset_x", 1)
-	_etiqueta.add_theme_constant_override("shadow_offset_y", 1)
-	add_child(_etiqueta)
 
 
 func _draw() -> void:

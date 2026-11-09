@@ -1,5 +1,7 @@
 extends Control
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 @onready var list_container: VBoxContainer = $Panel/Margin/Column/Scroll/Partidas
 @onready var status_label: Label = $Panel/Margin/Column/Status
 @onready var character_creation: Control = $CharacterCreation
@@ -32,6 +34,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	actualizar_lista()
 	_configurar_diseno_responsive()
+	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_diseno_responsive)
 	call_deferred("_normalizar_geometria_raiz")
 	call_deferred("_configurar_diseno_responsive")
@@ -117,6 +120,7 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 	row.add_child(delete)
 
 	list_container.add_child(panel)
+	PIXEL_UI_THEME.apply(panel)
 
 
 func _jugar_partida(id: String) -> void:
@@ -318,6 +322,7 @@ func _construir_editor_partida() -> void:
 
 	column.add_child(_editor_container)
 	column.move_child(_editor_container, 2)
+	PIXEL_UI_THEME.apply(_editor_container)
 	_editor_container.visible = false
 	_configurar_diseno_responsive()
 

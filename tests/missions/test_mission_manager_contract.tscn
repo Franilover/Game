@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/missions/test_mission_manager_contract.gd" id="1"]
+
+[node name="MissionManagerContract" type="Node"]
+script = ExtResource("1")

@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[node name="DashCharges" type="HBoxContainer"]
+custom_minimum_size = Vector2(84, 18)
+theme_override_constants/separation = 4
+mouse_filter = 2
+
+[node name="DashCharge1" type="Panel" parent="."]
+custom_minimum_size = Vector2(14, 14)
+mouse_filter = 2
+[node name="DashCharge2" type="Panel" parent="."]
+custom_minimum_size = Vector2(14, 14)
+mouse_filter = 2
+[node name="DashCharge3" type="Panel" parent="."]
+custom_minimum_size = Vector2(14, 14)
+mouse_filter = 2
+[node name="DashCharge4" type="Panel" parent="."]
+custom_minimum_size = Vector2(14, 14)
+mouse_filter = 2
+[node name="DashCharge5" type="Panel" parent="."]
+custom_minimum_size = Vector2(14, 14)
+mouse_filter = 2

@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/character_creation.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/character_appearance_preview.tscn" id="2_preview"]
 
 [sub_resource type="StyleBoxFlat" id="Panel"]
 bg_color = Color(0.2, 0.15, 0.1, 0.99)
@@ -123,6 +124,9 @@ custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 7
+
+[node name="AppearancePreview" parent="Panel/Margin/Column/Content/Appearance" instance=ExtResource("2_preview")]
+layout_mode = 2
 
 [node name="Status" type="Label" parent="Panel/Margin/Column"]
 visible = false

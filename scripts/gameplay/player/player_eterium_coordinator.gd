@@ -34,6 +34,10 @@ func vida_eterium_compartidos() -> bool:
 func mana() -> int:
 	return 0 if runtime == null else runtime.mana()
 
+func establecer_mana(valor: int) -> void:
+	if runtime != null:
+		runtime.establecer_mana(valor)
+
 func max_mana() -> int:
 	return 0 if runtime == null else runtime.max_mana()
 

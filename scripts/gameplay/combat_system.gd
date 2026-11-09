@@ -8,8 +8,24 @@ signal ataque_sin_objetivo(atacante: Node)
 signal accion_contextual_solicitada(objeto: Dictionary, usuario: Node)
 
 
-const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
-	"res://scripts/gameplay/combat/combat_attack_area.gd"
+const COMBAT_ITEM_RESOLVER: Script = preload(
+	"res://scripts/gameplay/combat/combat_item_resolver.gd"
+)
+
+const COMBAT_ATTACK_EXECUTOR: Script = preload(
+	"res://scripts/gameplay/combat/combat_attack_executor.gd"
+)
+
+const COMBAT_WEAPON_ATTACK_VALIDATOR: Script = preload(
+	"res://scripts/gameplay/combat/combat_weapon_attack_validator.gd"
+)
+
+const COMBAT_ATTACK_RESULT: Script = preload(
+	"res://scripts/gameplay/combat/combat_attack_result.gd"
+)
+
+const COMBAT_IMPACT_EFFECTS: Script = preload(
+	"res://scripts/gameplay/combat/combat_impact_effects.gd"
 )
 
 @export_category("Ataque")
@@ -32,17 +48,17 @@ const COMBAT_ATTACK_AREA_SCRIPT: Script = preload(
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
 var player: Player = null
-var inventory: GarliaInventory = null
+var inventory: InventoryController = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
 var game_state: GameStateService = null
 var _inventory_equipment_slot: String = "mano_secundaria"
-var _accion_en_equipo: bool = false
+var _accion_en_mano_derecha: bool = false
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Player, nuevo_inventory: GarliaInventory = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null) -> void:
+func configurar(nuevo_player: Player, nuevo_inventory: InventoryController = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
@@ -81,7 +97,7 @@ func procesar_accion_primaria() -> bool:
 	# El router ya resolvió la prioridad de interacción.
 	# Aquí solo se decide la acción primaria de combate.
 	var objeto_activo: Dictionary = inventory.obtener_objeto_mano_activa("izquierda") if inventory != null else {}
-	_accion_en_equipo = false
+	_accion_en_mano_derecha = false
 	var modo := "arma_equipada" if _es_objeto_ataque(objeto_activo) else "desarmado"
 
 	return combat_controller.solicitar_ataque(
@@ -96,7 +112,7 @@ func procesar_accion_secundaria() -> bool:
 		return false
 
 	var objeto_equipado := _obtener_objeto_equipado_para_accion()
-	_accion_en_equipo = true
+	_accion_en_mano_derecha = true
 	if objeto_equipado.is_empty():
 		return false
 
@@ -109,53 +125,51 @@ func procesar_accion_secundaria() -> bool:
 
 
 func _al_ataque_solicitado(
-	_direccion: Vector2,
+	direccion: Vector2,
 	objeto: Dictionary,
 	modo: String
 ) -> void:
 	if player == null or _tiempo_desde_ataque > 0.0:
 		return
 
+	var direccion_ataque := _normalizar_direccion_ataque(direccion)
+
 	if modo == "desarmado":
-		_atacar_desarmado()
+		_atacar_desarmado(direccion_ataque)
 		return
 
 	if modo == "arma_equipada":
 		if not _es_objeto_ataque(objeto):
 			return
-		_atacar_con_objeto(objeto)
+		_atacar_con_objeto(objeto, direccion_ataque)
 		return
 
 	if modo == "mano_secundaria":
 		if not _es_arma(objeto):
 			return
-		_atacar_con_arma(objeto)
-
+		_atacar_con_arma(objeto, direccion_ataque)
 
 func _es_herramienta(objeto: Dictionary) -> bool:
-	var tipo: String = str(objeto.get("tipo", "")).strip_edges().to_lower()
-	return tipo == "herramienta"
-
+	return COMBAT_ITEM_RESOLVER.es_herramienta(objeto)
 
 func _es_objeto_ataque(objeto: Dictionary) -> bool:
-	return _es_arma(objeto) or _es_herramienta(objeto)
+	return COMBAT_ITEM_RESOLVER.es_objeto_ataque(objeto)
 
-
-func _atacar_con_objeto(objeto: Dictionary) -> void:
+func _atacar_con_objeto(objeto: Dictionary, direccion: Vector2) -> void:
 	if objeto.is_empty():
 		return
 
-	var tipo: String = str(objeto.get("tipo", "")).strip_edges().to_lower()
-	if tipo == "herramienta":
-		_atacar_con_herramienta(objeto)
+	if _es_herramienta(objeto):
+		_atacar_con_herramienta(objeto, direccion)
 		return
 
-	_atacar_con_arma(objeto)
+	_atacar_con_arma(objeto, direccion)
 
-
-func _atacar_con_herramienta(herramienta: Dictionary) -> void:
-	var propiedades_variant: Variant = herramienta.get("propiedades_game", {})
-	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+func _atacar_con_herramienta(
+	herramienta: Dictionary,
+	direccion: Vector2
+) -> void:
+	var propiedades := _obtener_propiedades_game(herramienta)
 	var recoleccion_variant: Variant = propiedades.get("herramienta_recoleccion", {})
 	var recoleccion: Dictionary = recoleccion_variant as Dictionary if recoleccion_variant is Dictionary else {}
 	var tipo_herramienta := str(recoleccion.get("tipo", "")).strip_edges().to_lower()
@@ -165,10 +179,8 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 			_consumir_durabilidad_herramienta()
 		return
 
-	var direccion: Vector2 = _obtener_direccion_ataque()
-	var alcance: float = _obtener_alcance_arma(herramienta)
-	var ancho: float = _obtener_ancho_arma(herramienta)
-
+	var alcance := _obtener_alcance_arma(herramienta)
+	var ancho := _obtener_ancho_arma(herramienta)
 	_crear_ataque_melee(
 		direccion,
 		alcance,
@@ -176,7 +188,6 @@ func _atacar_con_herramienta(herramienta: Dictionary) -> void:
 		herramienta
 	)
 	_consumir_durabilidad_herramienta()
-
 
 func _usar_pala() -> bool:
 	if world_context == null or not is_instance_valid(world_context):
@@ -204,10 +215,8 @@ func _consumir_durabilidad_herramienta(en_equipo: bool = false) -> void:
 	if en_equipo:
 		inventory.consumir_durabilidad_equipo(_inventory_equipment_slot)
 		return
-	var mano := "izquierda" if _accion_en_equipo else "derecha"
-	var indice: int = inventory.obtener_indice_mano_activa(mano)
-	if indice >= 0:
-		inventory.consumir_durabilidad(indice)
+	var mano := "derecha" if _accion_en_mano_derecha else "izquierda"
+	inventory.consumir_durabilidad_mano_activa(mano)
 
 
 func _crear_ataque_melee(
@@ -220,30 +229,20 @@ func _crear_ataque_melee(
 	if player == null:
 		return
 
-	var ataque := CombatAttackArea.new()
-	ataque.configurar(
+	var ataque: CombatAttackArea = COMBAT_ATTACK_EXECUTOR.crear_ataque_melee(
 		player,
 		direccion,
 		alcance,
 		ancho,
 		objeto,
 		duracion_ataque,
-		color_ataque
+		color_ataque,
+		danio_directo,
+		Callable(self, "_al_recibir_objetivo_de_ataque")
 	)
+	if ataque == null:
+		return
 
-	if danio_directo >= 0:
-		var objeto_ataque_variant: Variant = ataque.get("objeto_ataque")
-		if objeto_ataque_variant is Dictionary:
-			var objeto_ataque: Dictionary = objeto_ataque_variant as Dictionary
-			objeto_ataque["_damage_override"] = danio_directo
-			ataque.set("objeto_ataque", objeto_ataque)
-
-	ataque.connect(
-		"objetivo_detectado",
-		_al_recibir_objetivo_de_ataque.bind(ataque)
-	)
-
-	player.add_child(ataque)
 	print(
 		"CombatSystem: área de ataque creada | dirección=",
 		direccion,
@@ -252,7 +251,6 @@ func _crear_ataque_melee(
 		" ancho=",
 		ancho
 	)
-
 
 func _al_recibir_objetivo_de_ataque(
 	objetivo: Node,
@@ -305,7 +303,7 @@ func usar_objeto_activo() -> void:
 	var objeto_activo := _obtener_objeto_activo_para_accion()
 	if objeto_activo.is_empty() or not _es_objeto_ataque(objeto_activo):
 		return
-	_atacar_con_objeto(objeto_activo)
+	_atacar_con_objeto(objeto_activo, _obtener_direccion_ataque())
 
 
 func _obtener_objeto_activo_para_accion() -> Dictionary:
@@ -353,51 +351,10 @@ func _obtener_arma_equipada(slot_preferido: String = "mano_principal") -> Dictio
 	return {}
 
 
-func _es_arma(
-	objeto: Dictionary
-) -> bool:
-	var tipo: String = str(
-		objeto.get(
-			"tipo",
-			""
-		)
-	).strip_edges().to_lower()
+func _es_arma(objeto: Dictionary) -> bool:
+	return COMBAT_ITEM_RESOLVER.es_arma(objeto)
 
-	if tipo == "arma":
-		return true
-
-	# Compatibilidad con partidas antiguas y objetos cuyo tipo de catálogo
-	# es genérico, pero cuya clasificación canónica sí declara que son armas.
-	if bool(objeto.get("es_arma", false)):
-		return true
-
-	var categorias: Array[String] = []
-	for clave in ["categoria", "categoria_canonica"]:
-		var valor := str(objeto.get(clave, "")).strip_edges().to_lower()
-		if not valor.is_empty():
-			categorias.append(valor)
-
-	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
-	if tipo_objeto_variant is Dictionary:
-		var tipo_objeto := tipo_objeto_variant as Dictionary
-		var categoria_tipo := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
-		if not categoria_tipo.is_empty():
-			categorias.append(categoria_tipo)
-		var plantilla_variant: Variant = tipo_objeto.get("plantilla", {})
-		if plantilla_variant is Dictionary:
-			var categoria_plantilla := str((plantilla_variant as Dictionary).get("categoria", "")).strip_edges().to_lower()
-			if not categoria_plantilla.is_empty():
-				categorias.append(categoria_plantilla)
-
-	for categoria in categorias:
-		if "arma" in categoria:
-			return true
-
-	return false
-
-
-func _atacar_desarmado() -> void:
-	var direccion: Vector2 = _obtener_direccion_ataque()
+func _atacar_desarmado(direccion: Vector2) -> void:
 	# El hitbox es la única resolución del ataque melee.
 	# CombatAttackArea detecta el objetivo y CombatDamage aplica el daño.
 	_crear_ataque_melee(
@@ -410,43 +367,25 @@ func _atacar_desarmado() -> void:
 
 	_tiempo_desde_ataque = enfriamiento_arma
 
-
-
 func _atacar_con_arma(
-	arma: Dictionary
+	arma: Dictionary,
+	direccion: Vector2
 ) -> void:
-	var direccion: Vector2 = (
-		_obtener_direccion_ataque()
-	)
-
-	var modo: String = (
-		_obtener_modo_ataque(arma)
-	)
-
+	var modo := _obtener_modo_ataque(arma)
 	_tiempo_desde_ataque = enfriamiento_arma
 
 	if modo == "distancia":
-		_disparar_proyectil(
-			arma,
-			direccion
-		)
+		_disparar_proyectil(arma, direccion)
 		return
 
-	var alcance: float = _obtener_alcance_arma(
-		arma
-	)
-
-	var ancho: float = _obtener_ancho_arma(
-		arma
-	)
-
+	var alcance := _obtener_alcance_arma(arma)
+	var ancho := _obtener_ancho_arma(arma)
 	_crear_ataque_melee(
 		direccion,
 		alcance,
 		ancho,
 		arma
 	)
-
 
 func _disparar_proyectil(
 	arma: Dictionary,
@@ -455,59 +394,37 @@ func _disparar_proyectil(
 	if player == null:
 		return
 
-	var raiz_proyectiles: Node = projectile_root
-	if raiz_proyectiles == null or not is_instance_valid(raiz_proyectiles):
-		return
-
-	var velocidad: float = _obtener_float_propiedad(
+	var velocidad := _obtener_float_propiedad(
 		arma,
 		"velocidad_proyectil",
 		velocidad_proyectil
 	)
-	var vida: float = _obtener_float_propiedad(
+	var vida := _obtener_float_propiedad(
 		arma,
 		"vida_proyectil",
 		vida_proyectil
 	)
-	var radio: float = _obtener_float_propiedad(
+	var radio := _obtener_float_propiedad(
 		arma,
 		"radio_impacto",
 		radio_impacto_proyectil
 	)
-	var danio: int = _obtener_danio_arma(arma)
+	var danio := _obtener_danio_arma(arma)
 
-	var ataque := CombatAttack.new()
-	ataque.configurar(
+	var proyectil: CombatProjectile = COMBAT_ATTACK_EXECUTOR.disparar_proyectil(
 		player,
+		projectile_root,
 		direccion,
 		arma,
-		"distancia",
-		danio,
-		"Jugador/Proyectil:" + str(arma.get("nombre", "Proyectil"))
-	)
-
-	var proyectil := CombatProjectile.new()
-	raiz_proyectiles.add_child(proyectil)
-	proyectil.global_position = player.global_position + direccion * 14.0
-
-	proyectil.configurar(
-		ataque,
-		direccion,
 		velocidad,
 		vida,
-		radio
+		radio,
+		danio,
+		Callable(self, "_al_detectar_contacto_proyectil"),
+		Callable(self, "_al_recibir_impacto_proyectil")
 	)
-
-	if proyectil.has_signal("contacto_detectado"):
-		proyectil.connect(
-			"contacto_detectado",
-			_al_detectar_contacto_proyectil
-		)
-	if proyectil.has_signal("objetivo_impactado"):
-		proyectil.connect(
-			"objetivo_impactado",
-			_al_recibir_impacto_proyectil
-		)
+	if proyectil == null:
+		return
 
 	print(
 		"CombatSystem: proyectil disparado → ",
@@ -537,111 +454,32 @@ func _al_recibir_impacto_proyectil(
 		return
 
 	var arma := ataque.object_data
-
-	if (
-		not arma.is_empty()
-		and objetivo.is_in_group("creatures")
-		and not objetivo.is_alive
-		and ataque.attacker != null
-		and ataque.attacker.is_in_group("player")
-	):
-		_registrar_criatura_derrotada(objetivo)
-		if objetivo is Creature:
-			_registrar_agresion_bosque(objetivo as Creature, true)
-
-	if (
-		not arma.is_empty()
-		and objetivo.is_in_group("creatures")
-		and objetivo.is_alive
-		and _obtener_ai_controller(objetivo) != null
-	):
-		if ataque.attacker != null and ataque.attacker.is_in_group("player") and objetivo is Creature:
-			_registrar_agresion_bosque(objetivo as Creature, false)
-		var ai: CreatureAI = _obtener_ai_controller(objetivo)
-		if ai != null:
-			ai.al_recibir_ataque_con_arma(arma)
-
-	CombatFeedback.impacto(objetivo, ataque.damage)
+	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
+		game_state,
+		player,
+		ataque.attacker,
+		objetivo,
+		ataque.damage,
+		arma
+	)
 	ataque_realizado.emit(ataque.attacker, objetivo, ataque.damage)
 
 
-func _obtener_ai_controller(objetivo: Node) -> CreatureAI:
-	if objetivo == null or not is_instance_valid(objetivo):
-		return null
-	return objetivo.get_node_or_null("AIController") as CreatureAI
+func _obtener_modo_ataque(arma: Dictionary) -> String:
+	return COMBAT_ITEM_RESOLVER.obtener_modo_ataque(arma)
 
-
-func _obtener_modo_ataque(
-	arma: Dictionary
-) -> String:
-	# La categoría canónica puede venir directamente del objeto, de su tipo
-	# enlazado o de la plantilla geométrica. Algunas partidas antiguas solo
-	# conservan una de esas capas.
-	var categorias: Array[String] = []
-	var categoria_directa := str(arma.get("categoria_canonica", arma.get("categoria", ""))).strip_edges().to_lower()
-	if not categoria_directa.is_empty():
-		categorias.append(categoria_directa)
-
-	var tipo_objeto_variant: Variant = arma.get("tipo_objeto", {})
-	if tipo_objeto_variant is Dictionary:
-		var tipo_objeto := tipo_objeto_variant as Dictionary
-		var categoria_tipo := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
-		if not categoria_tipo.is_empty():
-			categorias.append(categoria_tipo)
-
-		var plantilla_variant: Variant = tipo_objeto.get("plantilla", {})
-		if plantilla_variant is Dictionary:
-			var plantilla := plantilla_variant as Dictionary
-			var categoria_plantilla := str(plantilla.get("categoria", "")).strip_edges().to_lower()
-			if not categoria_plantilla.is_empty():
-				categorias.append(categoria_plantilla)
-
-	# El catálogo puede declarar el arco por modalidad, subtipo o familia.
-	# Revisar todas las etiquetas conocidas evita que una categoría genérica
-	# ("arma") haga que un arco termine ejecutando el ataque cuerpo a cuerpo.
-	var propiedades := _obtener_propiedades_game(arma)
-	var etiquetas: Array[String] = categorias.duplicate()
-	for fuente_variant in [arma, tipo_objeto_variant, propiedades]:
-		if not fuente_variant is Dictionary:
-			continue
-		var fuente := fuente_variant as Dictionary
-		for clave in [
-			"modo_ataque", "tipo_ataque", "modalidad_ataque", "modo_combate",
-			"tipo_arma", "clase_arma", "subtipo_arma", "familia_arma",
-			"tipo", "clase", "subtipo", "familia", "categoria"
-		]:
-			var etiqueta := str(fuente.get(clave, "")).strip_edges().to_lower()
-			if not etiqueta.is_empty():
-				etiquetas.append(etiqueta)
-
-	for etiqueta in etiquetas:
-		if (
-			"distancia" in etiqueta
-			or "proyectil" in etiqueta
-			or "ranged" in etiqueta
-			or "arco" in etiqueta
-			or etiqueta == "bow"
-		):
-			return "distancia"
-
-	return "cuerpo"
-
-
-func atacar_objetivo_con_arma(
+func solicitar_ataque_con_arma(
 	atacante: Node,
 	objetivo: Entity,
 	arma: Dictionary
-) -> bool:
-	if atacante == null or not is_instance_valid(atacante):
-		return false
-
-	if objetivo == null or not is_instance_valid(objetivo):
-		return false
-	if not objetivo.is_alive:
-		return false
-
-	if arma.is_empty() or not _es_arma(arma):
-		return false
+) -> CombatAttackResult:
+	var motivo_rechazo: StringName = COMBAT_WEAPON_ATTACK_VALIDATOR.validar(
+		atacante,
+		objetivo,
+		arma
+	)
+	if not motivo_rechazo.is_empty():
+		return COMBAT_ATTACK_RESULT.rechazado(motivo_rechazo)
 
 	var danio: int = _obtener_danio_arma(arma)
 	contacto_efectivo.emit(
@@ -650,7 +488,7 @@ func atacar_objetivo_con_arma(
 		"Entidad/Arma:" + str(arma.get("nombre", "Arma"))
 	)
 
-	_aplicar_danio(
+	var danio_aplicado := _aplicar_danio(
 		objetivo,
 		danio,
 		str(arma.get("nombre", "Arma")),
@@ -658,7 +496,17 @@ func atacar_objetivo_con_arma(
 		arma
 	)
 
-	return true
+	return COMBAT_ATTACK_RESULT.aceptado(true, danio_aplicado)
+
+
+## Compatibilidad para consumidores antiguos: true significa solicitud aceptada,
+## no necesariamente que la salud del objetivo haya disminuido.
+func atacar_objetivo_con_arma(
+	atacante: Node,
+	objetivo: Entity,
+	arma: Dictionary
+) -> bool:
+	return solicitar_ataque_con_arma(atacante, objetivo, arma).solicitud_aceptada
 
 
 func obtener_alcance_arma(
@@ -667,96 +515,37 @@ func obtener_alcance_arma(
 	return _obtener_alcance_arma(arma)
 
 
-func _obtener_danio_arma(
-	arma: Dictionary
-) -> int:
-	var propiedades: Dictionary = (
-		_obtener_propiedades_game(
-			arma
-		)
-	)
-
-	var danio_variant: Variant = propiedades.get(
-		"danio",
-		null
-	)
-
-	if danio_variant is int or danio_variant is float:
-		return maxi(
-			0,
-			int(danio_variant)
-		)
-
-	return maxi(
-		0,
+func _obtener_danio_arma(arma: Dictionary) -> int:
+	return COMBAT_ITEM_RESOLVER.obtener_danio_arma(
+		arma,
 		danio_arma_defecto
 	)
 
-
-func _obtener_alcance_arma(
-	arma: Dictionary
-) -> float:
-	return _obtener_float_propiedad(
+func _obtener_alcance_arma(arma: Dictionary) -> float:
+	return COMBAT_ITEM_RESOLVER.obtener_alcance_arma(
 		arma,
-		"alcance",
 		alcance_arma
 	)
 
-
-func _obtener_ancho_arma(
-	arma: Dictionary
-) -> float:
-	return _obtener_float_propiedad(
+func _obtener_ancho_arma(arma: Dictionary) -> float:
+	return COMBAT_ITEM_RESOLVER.obtener_ancho_ataque(
 		arma,
-		"ancho_ataque",
 		ancho_arma
 	)
-
 
 func _obtener_float_propiedad(
 	arma: Dictionary,
 	nombre: String,
 	valor_por_defecto: float
 ) -> float:
-	var propiedades: Dictionary = (
-		_obtener_propiedades_game(
-			arma
-		)
+	return COMBAT_ITEM_RESOLVER.obtener_float_propiedad(
+		arma,
+		nombre,
+		valor_por_defecto
 	)
 
-	var valor: Variant = (
-		propiedades.get(
-			nombre,
-			valor_por_defecto
-		)
-	)
-
-	if valor is int or valor is float:
-		return maxf(
-			0.0,
-			float(valor)
-		)
-
-	return valor_por_defecto
-
-
-func _obtener_propiedades_game(
-	objeto: Dictionary
-) -> Dictionary:
-	var propiedades_variant: Variant = (
-		objeto.get(
-			"propiedades_game",
-			{}
-		)
-	)
-
-	if propiedades_variant is Dictionary:
-		return (
-			propiedades_variant as Dictionary
-		)
-
-	return {}
-
+func _obtener_propiedades_game(objeto: Dictionary) -> Dictionary:
+	return COMBAT_ITEM_RESOLVER.obtener_propiedades_game(objeto)
 
 func _aplicar_danio(
 	objetivo: Entity,
@@ -764,54 +553,32 @@ func _aplicar_danio(
 	origen: String,
 	atacante: Node = null,
 	arma: Dictionary = {}
-) -> void:
-	if not is_instance_valid(objetivo):
-		return
-
-	var vivo_antes: bool = objetivo.is_alive
+) -> bool:
+	if objetivo == null or not is_instance_valid(objetivo):
+		return false
 
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
 		danio,
-		"Jugador/CombatSystem:" + origen
+		"Jugador/CombatSystem:" + origen,
+		Callable(),
+		atacante
 	)
 	if not aplicado:
-		return
-
-	if atacante is Player and objetivo is Creature:
-		_registrar_agresion_bosque(objetivo as Creature, not objetivo.is_alive)
-
-	if (
-		vivo_antes
-		and not objetivo.is_alive
-		and objetivo.is_in_group("creatures")
-	):
-		_registrar_criatura_derrotada(objetivo)
-
-		var actor_eterium: Player = atacante as Player
-		if actor_eterium == null:
-			actor_eterium = player
-
-		if actor_eterium != null and is_instance_valid(actor_eterium):
-			actor_eterium.absorber_eterium_de_criatura(objetivo)
-
-	if (
-		not arma.is_empty()
-		and objetivo.is_in_group("creatures")
-		and objetivo.is_alive
-		and objetivo.has_node("AIController")
-	):
-		var ai: CreatureAI = _obtener_ai_controller(objetivo)
-
-		if ai != null:
-			ai.al_recibir_ataque_con_arma(arma)
-
-	CombatFeedback.impacto(objetivo, danio)
+		return false
 
 	var actor: Node = atacante
-
 	if actor == null:
 		actor = player
+
+	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
+		game_state,
+		player,
+		actor,
+		objetivo,
+		danio,
+		arma
+	)
 
 	ataque_realizado.emit(
 		actor,
@@ -830,47 +597,50 @@ func _aplicar_danio(
 		danio,
 		" de daño."
 	)
-
-
+	return true
 
 
 ## Daño genérico de entidades
 ##
 ## CombatSystem es el único punto de aplicación de daño del gameplay.
 ## Las IA deciden cuándo atacar, pero no modifican directamente la salud.
-func aplicar_danio_desde_entidad(
+func solicitar_danio_desde_entidad(
 	atacante: Node,
 	objetivo: Entity,
 	danio: int,
 	origen: String = "CombatSystem/Entidad"
-) -> bool:
+) -> CombatAttackResult:
 	if atacante == null or not is_instance_valid(atacante):
-		return false
+		return COMBAT_ATTACK_RESULT.rechazado(&"atacante_invalido")
 	if objetivo == null or not is_instance_valid(objetivo):
-		return false
+		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_invalido")
 	if not objetivo.is_alive:
-		return false
+		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_derrotado")
 
 	# La IA llama esta API después de confirmar su contacto. El evento se
 	# registra incluso si el daño resultante es cero.
 	contacto_efectivo.emit(atacante, objetivo, origen)
 	if danio <= 0:
-		return false
+		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 
-	var vivo_antes: bool = objetivo.is_alive
 	var salud_objetivo_antes: int = objetivo.health
 	var aplicado := CombatDamage.aplicar(
 		objetivo,
 		danio,
-		origen
+		origen,
+		Callable(),
+		atacante
 	)
 	if not aplicado:
-		return false
+		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 
-	if vivo_antes and not objetivo.is_alive and objetivo.is_in_group("creatures"):
-		_registrar_criatura_derrotada(objetivo)
-
-	CombatFeedback.impacto(objetivo, danio)
+	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
+		game_state,
+		player,
+		atacante,
+		objetivo,
+		danio
+	)
 
 	# Robo de vida canónico: sólo cura al vampiro que acaba de infligir
 	# daño real; CombatDamage ya confirmó que la salud del objetivo bajó.
@@ -889,28 +659,29 @@ func aplicar_danio_desde_entidad(
 						criatura_atacante.heal(curacion)
 
 	ataque_realizado.emit(atacante, objetivo, danio)
-	return true
+	return COMBAT_ATTACK_RESULT.aceptado(true, true)
 
 
-func _registrar_agresion_bosque(criatura: Creature, asesinada: bool) -> void:
-	if player == null or not is_instance_valid(player):
-		return
-	if criatura == null or not is_instance_valid(criatura):
-		return
+## Compatibilidad: el booleano histórico indica que hubo reducción real de salud.
+func aplicar_danio_desde_entidad(
+	atacante: Node,
+	objetivo: Entity,
+	danio: int,
+	origen: String = "CombatSystem/Entidad"
+) -> bool:
+	var resultado := solicitar_danio_desde_entidad(
+		atacante,
+		objetivo,
+		danio,
+		origen
+	)
+	return resultado.danio_aplicado
 
-	var nombre := criatura.get_nombre().strip_edges().to_lower()
-	if nombre not in ["feerin", "lignianos", "seiloris"]:
-		return
 
-	player.set_meta("garlia_bosque_agresor", true)
-	if asesinada:
-		player.set_meta("garlia_bosque_asesino", true)
-
-
-func _registrar_criatura_derrotada(objetivo: Entity) -> void:
-	if game_state == null or not is_instance_valid(game_state):
-		return
-	game_state.registrar_criatura_derrotada(objetivo)
+func _normalizar_direccion_ataque(direccion: Vector2) -> Vector2:
+	if direccion.length_squared() > 0.01:
+		return direccion.normalized()
+	return _obtener_direccion_ataque()
 
 
 func _obtener_direccion_ataque() -> Vector2:

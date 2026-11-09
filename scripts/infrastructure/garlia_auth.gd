@@ -64,6 +64,12 @@ func obtener_perfil() -> Dictionary:
 	return perfil
 
 
+## El rol se obtiene del perfil cargado desde Supabase.
+## Esta comprobación solo sirve para habilitar la interfaz; el backend debe validar cada acción.
+func es_admin() -> bool:
+	return esta_autenticado() and str(perfil.get("rol", "")).strip_edges().to_lower() == "admin"
+
+
 func obtener_user_id() -> String:
 	return user_id
 

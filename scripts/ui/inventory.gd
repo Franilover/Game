@@ -1,12 +1,15 @@
 extends Control
 class_name GarliaInventory
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 const SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_slot.tscn"
 )
 const EQUIPMENT_SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_equipment_slot.tscn"
 )
+const INVENTORY_GROUP_SCENE: PackedScene = preload("res://scenes/ui/inventory_group.tscn")
 
 const HOTBAR_SLOT_COUNT: int = 6
 
@@ -19,8 +22,17 @@ signal inventory_selection_changed(indice: int, datos: Dictionary)
 signal active_item_changed(datos: Dictionary)
 signal hand_item_changed(hand: String, slot_index: int, datos: Dictionary)
 
-var mano_izquierda_activa: int = 0
-var mano_derecha_activa: int = 0
+var mano_izquierda_activa: int:
+	get:
+		return inventory_controller.mano_izquierda_activa
+	set(value):
+		inventory_controller.mano_izquierda_activa = clampi(value, 0, 5)
+
+var mano_derecha_activa: int:
+	get:
+		return inventory_controller.mano_derecha_activa
+	set(value):
+		inventory_controller.mano_derecha_activa = clampi(value, 0, 5)
 
 var slot_nodes: Array[Button] = []
 
@@ -52,7 +64,6 @@ var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
 var _player: Player = null
 var _world_items: GarliaWorldItems = null
-var _equipment_stats_label: Label = null
 
 
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
@@ -75,6 +86,7 @@ func _inicializar_navegacion_tabs() -> void:
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
 	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
+	var boton_garumis: Button = $Window/Margin/Column/TabButtons/Garumis
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
@@ -89,14 +101,20 @@ func _inicializar_navegacion_tabs() -> void:
 	boton_enciclopedia.pressed.connect(func() -> void:
 		tabs.current_tab = 2
 	)
-	boton_mapa.pressed.connect(func() -> void:
+	boton_garumis.pressed.connect(func() -> void:
 		tabs.current_tab = 3
+		var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
+		if pagina_garumis.has_method("abrir_en_garumis"):
+			pagina_garumis.call("abrir_en_garumis")
 	)
-	boton_relaciones.pressed.connect(func() -> void:
+	boton_mapa.pressed.connect(func() -> void:
 		tabs.current_tab = 4
 	)
-	boton_admin.pressed.connect(func() -> void:
+	boton_relaciones.pressed.connect(func() -> void:
 		tabs.current_tab = 5
+	)
+	boton_admin.pressed.connect(func() -> void:
+		tabs.current_tab = 6
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 		if admin_tab != null:
 			admin_tab.abrir(_player)
@@ -224,15 +242,38 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_to_group("inventory")
 	add_child(inventory_controller)
+	if not inventory_controller.mano_objeto_cambiado.is_connected(_al_cambio_mano_desde_controlador):
+		inventory_controller.mano_objeto_cambiado.connect(_al_cambio_mano_desde_controlador)
 
 	_inicializar_items()
 	_inicializar_hotbar()
 	_crear_slots()
 	_crear_slots_equipamiento()
-	_preparar_panel_estadisticas_equipo()
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_inicializar_navegacion_tabs()
 	_limpiar_informacion()
+	PIXEL_UI_THEME.apply(self)
+
+
+func _al_cambio_mano_desde_controlador(
+	mano: String,
+	slot_index: int,
+	datos: Dictionary
+) -> void:
+	var indice := inventory_controller.obtener_indice_mano_activa(mano)
+	actualizar()
+	if indice_seleccionado == indice:
+		var actualizado := obtener_objeto(indice)
+		if actualizado.is_empty():
+			indice_seleccionado = -1
+			objeto_seleccionado.clear()
+			_limpiar_informacion()
+		else:
+			objeto_seleccionado = actualizado
+			_mostrar_informacion()
+	inventory_changed.emit()
+	hand_item_changed.emit(mano, slot_index, datos.duplicate(true))
+	_emitir_objeto_activo()
 
 
 func _input(event: InputEvent) -> void:
@@ -263,7 +304,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if event.is_action_pressed("inventory"):
+		if event.is_action_pressed("garumi_encyclopedia"):
+			toggle_enciclopedia_garumis()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory"):
 			toggle()
 			get_viewport().set_input_as_handled()
 
@@ -283,7 +327,7 @@ func _actualizar_admin_tab() -> void:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
 	boton_admin.visible = es_admin
 	admin_tab.visible = es_admin
-	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 6:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin:
 		admin_tab.abrir(jugador)
@@ -298,6 +342,20 @@ func toggle() -> void:
 
 func toggle_mapa() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
+	if _abierto and tabs.current_tab == 4:
+		cerrar()
+		return
+	if not _abierto:
+		_abierto = true
+		visible = true
+		_actualizar_admin_tab()
+	tabs.current_tab = 4
+	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
+	actualizar()
+
+
+func toggle_enciclopedia_garumis() -> void:
+	var tabs: TabContainer = $Window/Margin/Column/Tabs
 	if _abierto and tabs.current_tab == 3:
 		cerrar()
 		return
@@ -306,24 +364,10 @@ func toggle_mapa() -> void:
 		visible = true
 		_actualizar_admin_tab()
 	tabs.current_tab = 3
-	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
-	actualizar()
-
-
-func toggle_enciclopedia_garumis() -> void:
-	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	var enciclopedia := $Window/Margin/Column/Tabs/Enciclopedia as Control
-	if _abierto and tabs.current_tab == 2:
-		cerrar()
-		return
-	if not _abierto:
-		_abierto = true
-		visible = true
-		_actualizar_admin_tab()
-	tabs.current_tab = 2
-	$Window/Margin/Column/TabButtons/Enciclopedia.button_pressed = true
-	if enciclopedia != null and enciclopedia.has_method("abrir_en_garumis"):
-		enciclopedia.call("abrir_en_garumis")
+	$Window/Margin/Column/TabButtons/Garumis.button_pressed = true
+	var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
+	if pagina_garumis.has_method("abrir_en_garumis"):
+		pagina_garumis.call("abrir_en_garumis")
 
 
 func abrir() -> void:
@@ -397,27 +441,20 @@ func _crear_slots() -> void:
 
 	var nombres_grupo := ["MANO IZQUIERDA", "MOCHILA", "MANO DERECHA"]
 	for grupo in range(3):
-		var panel_grupo := VBoxContainer.new()
+		var panel_grupo := INVENTORY_GROUP_SCENE.instantiate() as VBoxContainer
+		if panel_grupo == null:
+			continue
 		panel_grupo.name = "Grupo_" + str(grupo)
 		panel_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		panel_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		panel_grupo.add_theme_constant_override("separation", 8)
 		grid.add_child(panel_grupo)
 
-		var titulo := Label.new()
+		var titulo := panel_grupo.get_node("Title") as Label
+		var rejilla := panel_grupo.get_node("Slots") as GridContainer
+		if titulo == null or rejilla == null:
+			push_error("Inventory: inventory_group.tscn no contiene Title y Slots.")
+			continue
 		titulo.text = nombres_grupo[grupo]
-		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		titulo.add_theme_font_size_override("font_size", 10)
-		titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1))
-		panel_grupo.add_child(titulo)
-
-		var rejilla := GridContainer.new()
-		rejilla.name = "Slots"
-		rejilla.columns = 3
-		rejilla.add_theme_constant_override("h_separation", 5)
-		rejilla.add_theme_constant_override("v_separation", 5)
-		rejilla.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		panel_grupo.add_child(rejilla)
 		_slot_grids.append(rejilla)
 
 	for visual_index in range(slot_count):
@@ -428,6 +465,9 @@ func _crear_slots() -> void:
 		var indice_datos := visual_index
 		slot.set_meta("inventory_index", indice_datos)
 		var grupo := int(visual_index / 6)
+		if grupo < 0 or grupo >= _slot_grids.size():
+			slot.queue_free()
+			continue
 		_slot_grids[grupo].add_child(slot)
 
 		if slot.has_signal("seleccionado"):
@@ -494,7 +534,6 @@ func _notification(what: int) -> void:
 		return
 
 	var indice := _arrastre_indice
-	var datos := _arrastre_datos.duplicate(true)
 	_arrastre_indice = -1
 	_arrastre_datos.clear()
 
@@ -504,25 +543,35 @@ func _notification(what: int) -> void:
 	if not visible:
 		return
 
-	_soltar_objeto_al_mundo(indice, datos)
+	_soltar_objeto_al_mundo(indice)
 
 
-func _soltar_objeto_al_mundo(indice: int, datos: Dictionary) -> void:
-	if indice < 0 or indice >= items.size() or datos.is_empty():
-		return
+func _soltar_objeto_al_mundo(indice: int) -> void:
+	_soltar_objeto_en_posicion(indice, get_global_mouse_position())
 
+
+func _soltar_objeto_en_posicion(
+	indice: int,
+	posicion: Vector2
+) -> bool:
 	var world_items: GarliaWorldItems = _world_items
-
 	if world_items == null:
 		print("Inventory: no se encontró GarliaWorldItems para soltar el objeto.")
-		return
+		return false
 
-	# El inventario solo descuenta el objeto si el WorldItem quedó registrado.
-	if not world_items.soltar_objeto_al_mundo(datos, get_global_mouse_position()):
+	# La transacción pertenece al controller; esta capa solo refresca la UI.
+	if not inventory_controller.soltar_objeto_al_mundo(
+		indice,
+		posicion,
+		world_items
+	):
 		print("Inventory: no se pudo crear el objeto en el mundo; se conserva en inventario.")
-		return
+		return false
 
-	quitar_objeto(indice)
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+	return true
 
 
 func _al_seleccionar_slot(slot: Button) -> void:
@@ -610,7 +659,6 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if inventory_controller.equipar_desde_inventario(clave, source_index, objeto):
 		equipment_slot.configurar_objeto(objeto)
 		actualizar()
-		_actualizar_panel_estadisticas_equipo()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
 
@@ -629,7 +677,6 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 		return
 	equipment_slot.limpiar_objeto()
 	actualizar()
-	_actualizar_panel_estadisticas_equipo()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
 
@@ -648,7 +695,6 @@ func _actualizar_slots_equipamiento() -> void:
 			continue
 
 		slot.configurar_objeto(objeto)
-	_actualizar_panel_estadisticas_equipo()
 
 
 func obtener_equipamiento() -> Dictionary:
@@ -662,7 +708,6 @@ func consumir_durabilidad_equipo(clave: String = "mano_secundaria") -> bool:
 	if resultado:
 		actualizar()
 		_actualizar_slots_equipamiento()
-		_actualizar_panel_estadisticas_equipo()
 		inventory_changed.emit()
 	return resultado
 
@@ -700,45 +745,6 @@ func obtener_estadistica_equipo(
 			total += float(valor)
 
 	return total
-
-
-func _preparar_panel_estadisticas_equipo() -> void:
-	var right_panel := $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel as VBoxContainer
-	if right_panel == null:
-		return
-	_equipment_stats_label = Label.new()
-	_equipment_stats_label.name = "EquipmentStats"
-	_equipment_stats_label.custom_minimum_size = Vector2(0, 38)
-	_equipment_stats_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_equipment_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_equipment_stats_label.add_theme_color_override("font_color", Color(0.82, 0.75, 0.61, 1.0))
-	_equipment_stats_label.add_theme_font_size_override("font_size", 9)
-	_equipment_stats_label.text = "EQUIPO\nSin bonificaciones numéricas registradas"
-	right_panel.add_child(_equipment_stats_label)
-	_actualizar_panel_estadisticas_equipo()
-
-
-func _actualizar_panel_estadisticas_equipo() -> void:
-	if not is_instance_valid(_equipment_stats_label):
-		return
-	var estadisticas := obtener_estadisticas_equipo()
-	var lineas: PackedStringArray = ["ESTADÍSTICAS DE EQUIPO"]
-	var claves: Array[String] = []
-	for clave_variant in estadisticas.keys():
-		var clave := str(clave_variant)
-		# Propiedades físicas descriptivas no se presentan como bonificaciones.
-		if clave in ["durabilidad", "dureza", "fractura"]:
-			continue
-		claves.append(clave)
-	claves.sort()
-	for clave in claves:
-		var valor := float(estadisticas[clave])
-		var nombre := clave.replace("_", " ").capitalize()
-		var numero := ("+" if valor > 0.0 else "") + (("%.2f" % valor).rstrip("0").rstrip("."))
-		lineas.append(nombre + ": " + numero)
-	if claves.is_empty():
-		lineas.append("Sin bonificaciones numéricas registradas")
-	_equipment_stats_label.text = "\n".join(lineas)
 
 
 func obtener_estadisticas_equipo() -> Dictionary:
@@ -836,6 +842,7 @@ func _mostrar_informacion() -> void:
 	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción ni propiedades adicionales registradas."
 	item_description.visible = true
 	delete_button.disabled = false
+	delete_button.visible = true
 
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
 	item_icon.texture = textura
@@ -854,12 +861,13 @@ func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> Sty
 
 
 func _limpiar_informacion() -> void:
-	item_name.text = "Ningún objeto"
+	item_name.text = ""
 	item_description.text = ""
 	item_description.visible = false
 	item_icon.texture = null
 	item_icon.visible = false
 	delete_button.disabled = true
+	delete_button.visible = false
 
 
 func agregar_objeto(datos_objeto: Dictionary) -> bool:
@@ -875,162 +883,18 @@ func usar_objeto_activo(usuario: Player = null) -> bool:
 
 
 func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
-	return usar_objeto_en_indice(obtener_indice_mano_activa(mano), usuario)
+	var actor := usuario if usuario != null else _player
+	return inventory_controller.usar_objeto_mano(mano, actor)
 
 
 func usar_objeto_en_indice(indice: int, usuario: Player = null) -> bool:
-
-	if indice < 0:
+	var actor := usuario if usuario != null else _player
+	if not inventory_controller.usar_objeto_en_indice(indice, actor):
 		return false
-
-	if indice >= items.size() or items[indice].is_empty():
-		return false
-
-	var objeto: Dictionary = items[indice]
-	var uso: Dictionary = _obtener_definicion_uso(objeto)
-
-	if uso.is_empty():
-		return false
-
-	var actor: Player = usuario
-	if actor == null:
-		actor = _player
-
-	if actor == null or not is_instance_valid(actor):
-		return false
-
-	var efectos_aplicados: int = _aplicar_efectos_uso(
-		uso,
-		actor
-	)
-
-	if efectos_aplicados <= 0:
-		return false
-
-	quitar_cantidad(indice, 1)
-
-	Events.notification_pushed.emit(
-		"Usaste " + str(objeto.get("nombre", "Objeto"))
-	)
-
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
 	return true
-
-
-func _obtener_definicion_uso(objeto: Dictionary) -> Dictionary:
-	var propiedades_variant: Variant = objeto.get(
-		"propiedades_game",
-		{}
-	)
-
-	if not propiedades_variant is Dictionary:
-		return {}
-
-	var propiedades: Dictionary = propiedades_variant as Dictionary
-	var uso_variant: Variant = propiedades.get(
-		"uso",
-		{}
-	)
-
-	if not uso_variant is Dictionary:
-		return {}
-
-	var uso: Dictionary = uso_variant as Dictionary
-
-	if bool(uso.get("permitido", true)) == false:
-		return {}
-
-	var tipo: String = str(
-		uso.get("tipo", "")
-	).strip_edges().to_lower()
-
-	if tipo.is_empty():
-		return {}
-
-	return uso.duplicate(true)
-
-
-func _aplicar_efectos_uso(
-	uso: Dictionary,
-	actor: Player
-) -> int:
-	var aplicados: int = 0
-	var efectos_variant: Variant = uso.get(
-		"efectos",
-		null
-	)
-
-	if efectos_variant is Array:
-		for efecto_variant in efectos_variant as Array:
-			if not efecto_variant is Dictionary:
-				continue
-
-			if _aplicar_efecto_recurso(
-				efecto_variant as Dictionary,
-				actor
-			):
-				aplicados += 1
-
-		return aplicados
-
-	var efecto: Dictionary = uso.duplicate(true)
-
-	if _aplicar_efecto_recurso(efecto, actor):
-		aplicados += 1
-
-	return aplicados
-
-
-func _aplicar_efecto_recurso(
-	efecto: Dictionary,
-	actor: Player
-) -> bool:
-	var recurso: String = str(
-		efecto.get(
-			"recurso",
-			efecto.get("efecto", "")
-		)
-	).strip_edges().to_lower()
-
-	var magnitud_variant: Variant = efecto.get(
-		"magnitud",
-		efecto.get("cantidad", 0)
-	)
-
-	if not (
-		magnitud_variant is int
-		or magnitud_variant is float
-	):
-		return false
-
-	var magnitud: float = maxf(
-		float(magnitud_variant),
-		0.0
-	)
-
-	if magnitud <= 0.0:
-		return false
-
-	match recurso:
-		"vida", "salud", "health":
-			var antes: int = actor.health
-			if antes >= actor.max_health:
-				return false
-			actor.heal(roundi(magnitud))
-			return actor.health > antes
-
-		"stamina":
-			var antes_stamina: float = actor.stamina
-			if antes_stamina >= actor.max_stamina:
-				return false
-			return actor.restaurar_stamina(magnitud)
-
-		"eterium", "mana":
-			var antes_eterium: int = actor.mana
-			if antes_eterium >= actor.max_mana:
-				return false
-			return actor.restaurar_eterium(magnitud)
-
-	return false
 
 
 func consumir_objeto_activo(cantidad: int = 1) -> bool:
@@ -1038,7 +902,7 @@ func consumir_objeto_activo(cantidad: int = 1) -> bool:
 
 
 func consumir_objeto_mano(mano: String, cantidad: int = 1) -> bool:
-	return quitar_cantidad(obtener_indice_mano_activa(mano), maxi(1, cantidad))
+	return inventory_controller.consumir_objeto_mano(mano, cantidad)
 
 
 func quitar_objeto(indice: int) -> bool:
@@ -1251,33 +1115,18 @@ func seleccionar_hotbar(indice_hotbar: int) -> void:
 
 
 func seleccionar_slot_mano(mano: String, slot_index: int) -> bool:
-	if slot_index < 0 or slot_index >= 6:
+	if not inventory_controller.seleccionar_slot_mano(mano, slot_index):
 		return false
-	var indice_datos := slot_index if mano == "izquierda" else 12 + slot_index
-	if mano == "izquierda":
-		mano_izquierda_activa = slot_index
-	elif mano == "derecha":
-		mano_derecha_activa = slot_index
-	else:
-		return false
-	hand_item_changed.emit(mano, slot_index, obtener_objeto(indice_datos))
+	hand_item_changed.emit(mano, slot_index, obtener_objeto(obtener_indice_mano_activa(mano)))
 	return true
 
 
 func obtener_indice_mano_activa(mano: String) -> int:
-	if mano == "izquierda":
-		return mano_izquierda_activa
-	if mano == "derecha":
-		return 12 + mano_derecha_activa
-	return -1
+	return inventory_controller.obtener_indice_mano_activa(mano)
 
 
 func obtener_objeto_mano_activa(mano: String) -> Dictionary:
-	if mano == "izquierda":
-		return obtener_objeto(mano_izquierda_activa)
-	if mano == "derecha":
-		return obtener_objeto(12 + mano_derecha_activa)
-	return {}
+	return inventory_controller.obtener_objeto_mano_activa(mano)
 
 
 func obtener_objeto_activo() -> Dictionary:

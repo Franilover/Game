@@ -15,6 +15,7 @@ signal mana_changed(current: int, maximum: int)
 signal died
 
 var vital_state := VitalState.new()
+var _death_emitted: bool = false
 var _ultima_y_profundidad: int = 2147483647
 
 func _ready() -> void:
@@ -35,6 +36,7 @@ func _process(_delta: float) -> void:
 func _configurar_estado_vital() -> void:
 	vital_state.configurar(max_health, max_mana)
 	_sync_desde_vital()
+	_death_emitted = not is_alive
 
 func _sync_desde_vital() -> void:
 	health = vital_state.health
@@ -76,11 +78,20 @@ func _crear_hurtbox() -> void:
 	shape.position = collision.position
 	hurtbox.add_child(shape)
 
-func restaurar_estado_vital(vida: int, vivo: bool) -> void:
+func restaurar_estado_vital(
+	vida: int,
+	vivo: bool,
+	mana_guardado: int = -1
+) -> void:
 	var vida_segura := clampi(vida, 0, max_health)
 	vital_state.health = vida_segura
+	if mana_guardado >= 0:
+		vital_state.mana = clampi(mana_guardado, 0, max_mana)
 	vital_state.is_alive = vivo and vida_segura > 0
 	_sync_desde_vital()
+	# Restaurar una partida no reproduce el evento histórico de muerte.
+	# Una entidad restaurada viva sí puede emitirlo en su siguiente muerte.
+	_death_emitted = not is_alive
 	_emitir_estado_vital()
 
 
@@ -123,9 +134,10 @@ func heal(cantidad: int) -> void:
 	health_changed.emit(health, max_health)
 
 func _die() -> void:
-	if not is_alive:
+	if _death_emitted:
 		return
 
+	_death_emitted = true
 	is_alive = false
 	vital_state.is_alive = false
 	died.emit()

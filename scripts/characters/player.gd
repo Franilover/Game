@@ -12,7 +12,7 @@ signal fisiologia_changed(vida_eterium_compartidos: bool)
 
 
 @export_category("Stamina")
-@export var max_stamina: float = 3.0
+@export var max_stamina: float = 5.0
 @export var stamina_regeneration: float = 0.0
 @export var stamina_regeneration_delay: float = 0.0
 
@@ -62,12 +62,17 @@ var exploration_controller := PlayerExplorationController.new()
 var locomotion := PlayerLocomotionCoordinator.new()
 var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
+var visual_controller := PlayerVisualController.new()
+var dash_input_controller := PlayerDashInputController.new()
+var input_controller := PlayerInputController.new()
+var physics_movement_controller := PlayerMovementPhysicsController.new()
 
 var _world_context_ref: WorldContext = null
 var _game_state_ref: GameStateService = null
 var _auth_ref: Node = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
+var _muerte_visual_procesada: bool = false
 
 
 
@@ -80,6 +85,16 @@ var personaje_genero: String = ""
 var personaje_especie: Dictionary = {}
 var personaje_skin: String = ""
 var personaje_apariencia: Dictionary = {}
+
+# El cliente solo envía intención de movimiento; el servidor mueve al jugador remoto.
+var _red_servidor_controlado: bool = false
+var _red_direccion: Vector2 = Vector2.ZERO
+var _red_correr: bool = false
+var _red_dash_pendiente: bool = false
+var _red_salto_pendiente: bool = false
+var _red_eterium_sprint: bool = false
+var _red_curar_eterium: bool = false
+var _apariencia_red_aplicada: bool = false
 
 
 @onready var anim: AnimationPlayer = $AnimationPlayer
@@ -121,13 +136,17 @@ func _ready() -> void:
 	add_child(input_gate)
 	eterium.configurar(eterium_runtime, stamina_controller)
 	eterium.configurar_vital(vital_state)
+	if not eterium_runtime.mana_changed.is_connected(_al_cambio_mana_runtime):
+		eterium_runtime.mana_changed.connect(_al_cambio_mana_runtime)
 	exploration_controller.terreno_descubierto.connect(_al_terreno_descubierto)
 	locomotion.configurar(movement_controller, action_controller, stamina_controller)
+	if not stamina_controller.stamina_changed.is_connected(_al_cambio_stamina):
+		stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 	stamina_controller.configurar(max_stamina)
 	stamina_controller.establecer_regeneracion(stamina_regeneration, stamina_regeneration_delay)
-	stamina_controller.stamina_changed.connect(_al_cambio_stamina)
 
 	_base_visual_position = visual.position
+	visual_controller.configurar(visual, facing_marker, anim)
 
 	_aplicar_configuracion_personaje()
 	_update_dir_marker()
@@ -149,24 +168,142 @@ func _procesar_curacion_eterium(delta: float) -> void:
 	if not eterium.aplicar_curacion(curacion, costo):
 		return
 
-	# El runtime trabaja sobre el VitalState compartido con Entity.
-	# Sincronizamos las propiedades públicas y notificamos a la presentación.
+	# Si hubo gasto, el runtime ya emitió mana_changed y el adaptador sincronizó
+	# el snapshot. En fisiología compartida también notificó la vida.
 	_sync_desde_vital()
-	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_mana)
-
-
-func _actualizar_recuperacion_eterium(delta: float) -> void:
-	var recuperadas := eterium.actualizar_recuperacion(delta, true)
-	if recuperadas <= 0:
-		return
-	_sync_desde_vital()
-	mana_changed.emit(mana, max_mana)
-	if eterium.vida_eterium_compartidos():
+	if not eterium.vida_eterium_compartidos() or costo <= 0:
 		health_changed.emit(health, max_health)
 
 
+func _actualizar_recuperacion_eterium(delta: float) -> void:
+	# El runtime emite mana_changed; el adaptador sincroniza Player y HUD.
+	eterium.actualizar_recuperacion(delta, true)
+
+
+func _input(event: InputEvent) -> void:
+	if input_controller.es_combinacion_menu_reinos(event):
+		dash_input_controller.cancelar_por_menu_reinos()
+
+
+func aplicar_identidad_red(
+	nombre: String,
+	genero: String,
+	apariencia: Dictionary,
+	especie: Dictionary = {}
+) -> void:
+	var nombre_limpio := nombre.strip_edges().left(24)
+	if not nombre_limpio.is_empty():
+		personaje_nombre = nombre_limpio
+	personaje_genero = genero.strip_edges().left(32)
+	if not especie.is_empty():
+		personaje_especie = especie.duplicate(true)
+		if is_instance_valid(_supabase_client_ref) and _supabase_client_ref.has_method("tiene_especie_eterium_game"):
+			if _supabase_client_ref.tiene_especie_eterium_game():
+				_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
+	var capas := apariencia.duplicate(true)
+	var cambio := capas != personaje_apariencia
+	personaje_apariencia = capas
+	if is_instance_valid(visual) and (cambio or not _apariencia_red_aplicada):
+		CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
+		_apariencia_red_aplicada = true
+
+
+func aplicar_runtime_eterium_red(datos_runtime: Dictionary, reglas_especies: Array) -> void:
+	var reglas_variant: Variant = datos_runtime.get("reglas", {})
+	var organismos_variant: Variant = datos_runtime.get("organismos", [])
+	if reglas_variant is Dictionary and organismos_variant is Array:
+		eterium.aplicar_runtime(reglas_variant as Dictionary, organismos_variant as Array)
+		_sync_vital_desde_eterium()
+	if not reglas_especies.is_empty():
+		_aplicar_especie_eterium_game(reglas_especies)
+
+
+func configurar_control_remoto_servidor() -> void:
+	_red_servidor_controlado = true
+	_red_direccion = Vector2.ZERO
+	_red_correr = false
+	_red_dash_pendiente = false
+	_red_salto_pendiente = false
+	_red_eterium_sprint = false
+
+
+func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false, salto: bool = false, curar_eterium: bool = false) -> void:
+	if not _red_servidor_controlado:
+		return
+	_red_direccion = direccion.limit_length(1.0)
+	_red_correr = correr
+	_red_dash_pendiente = _red_dash_pendiente or dash
+	_red_salto_pendiente = _red_salto_pendiente or salto
+	_red_eterium_sprint = sprint_eterium
+	_red_curar_eterium = curar_eterium
+
+
+func _procesar_movimiento_red(delta: float) -> void:
+	locomotion.actualizar_cooldowns(delta)
+	locomotion.avanzar_accion(delta)
+	var direccion := _red_direccion.limit_length(1.0)
+	_movement_input_direction = direccion
+	if locomotion.actualizar_facing(direccion):
+		facing = locomotion.obtener_facing()
+		_update_dir_marker()
+
+	if state == State.JUMP:
+		_procesar_jump(delta)
+		return
+	if state == State.DASH:
+		_procesar_dash(delta)
+		return
+	if _red_salto_pendiente:
+		_red_salto_pendiente = false
+		if _puede_hacer_jump():
+			_iniciar_jump()
+			if state == State.JUMP:
+				_procesar_jump(delta)
+				return
+	if _red_dash_pendiente:
+		_red_dash_pendiente = false
+		if _puede_hacer_dash():
+			_iniciar_dash()
+			if state == State.DASH:
+				_procesar_dash(delta)
+				return
+
+	if _red_curar_eterium and not eterium.vida_eterium_compartidos():
+		_procesar_curacion_eterium(delta)
+		return
+
+	var eterium_sprint := false
+	if _red_eterium_sprint and direccion != Vector2.ZERO:
+		eterium_sprint = eterium.procesar_carrera(delta)
+	var esta_corriendo := _red_correr and direccion != Vector2.ZERO and not eterium_sprint
+	var multiplicador_velocidad := 1.0
+	if eterium_sprint:
+		multiplicador_velocidad = run_multiplier * eterium.multiplicador_carrera()
+	elif esta_corriendo:
+		multiplicador_velocidad = run_multiplier
+	_aplicar_movimiento_normal(
+		direccion,
+		multiplicador_velocidad,
+		esta_corriendo or eterium_sprint,
+		delta,
+		false
+	)
+
+
 func _physics_process(delta: float) -> void:
+	if _red_servidor_controlado:
+		if not is_alive:
+			velocity = Vector2.ZERO
+			return
+		_procesar_movimiento_red(delta)
+		return
+
+	if GarliaWorldNetwork.controla_jugador_local(self):
+		# El autoload de red envía input incluso durante la animación de muerte;
+		# así el cliente puede recibir una reaparición sin depender de este proceso.
+		velocity = Vector2.ZERO
+		return
+
 	if not is_alive:
 		velocity = Vector2.ZERO
 		return
@@ -180,6 +317,7 @@ func _physics_process(delta: float) -> void:
 	# Si una interfaz está bloqueando el gameplay,
 	# no procesamos ningún input del jugador.
 	if _esta_bloqueado_por_interfaz():
+		dash_input_controller.reiniciar()
 		_movement_input_direction = Vector2.ZERO
 		velocity = Vector2.ZERO
 		if state != State.IDLE:
@@ -199,83 +337,114 @@ func _physics_process(delta: float) -> void:
 		_procesar_dash(delta)
 		return
 
+	# Capturar una sola instantánea de controles para este tick físico.
+	var entrada := input_controller.capturar()
+
 	# Curación con Eterium mientras se mantiene Q.
-	if Input.is_action_pressed("focus") and not eterium.vida_eterium_compartidos():
+	if bool(entrada.get("focus_pressed", false)) and not eterium.vida_eterium_compartidos():
 		_procesar_curacion_eterium(delta)
 		return
 
+	# Shift inicia el dash. Se espera una fracción de segundo para distinguir
+	# Shift solo de Shift+M (menú de reinos), sin disparar el dash por accidente.
+	if bool(entrada.get("dash_just_pressed", false)):
+		dash_input_controller.solicitar()
 
-	# Shift tiene dos funciones:
-	# pulsarlo = dash inmediato
-	# mantenerlo = correr después del dash
-	var shift_pressed := Input.is_action_pressed("run")
-
-	if Input.is_action_just_pressed("run"):
+	if dash_input_controller.actualizar(
+		delta,
+		bool(entrada.get("menu_key_pressed", false))
+	):
 		if _puede_hacer_dash():
 			_iniciar_dash()
 			return
 
+	var run_pressed := bool(entrada.get("run_pressed", false))
+
 	# Movimiento normal.
-	var direction := Input.get_vector(
-		"move_left",
-		"move_right",
-		"move_up",
-		"move_down"
-	)
+	var direction: Vector2 = entrada.get("direction", Vector2.ZERO)
 	_movement_input_direction = direction
 
 	var eterium_sprint := false
-	if Input.is_action_pressed("eterium_sprint") and direction != Vector2.ZERO:
+	if bool(entrada.get("eterium_sprint_pressed", false)) and direction != Vector2.ZERO:
 		eterium_sprint = eterium.procesar_carrera(delta)
 
 	var is_running := (
-		shift_pressed
+		run_pressed
 		and direction != Vector2.ZERO
 		and not eterium_sprint
 	)
 
-	# La recuperación natural ocurre únicamente mientras el jugador espera.
-	if direction == Vector2.ZERO and state == State.IDLE:
-		_actualizar_recuperacion_eterium(delta)
-
 	# Movimiento.
-	var speed: float
-
+	var multiplicador_velocidad := 1.0
 	if eterium_sprint:
-		speed = move_speed * run_multiplier * eterium.multiplicador_carrera()
+		multiplicador_velocidad = run_multiplier * eterium.multiplicador_carrera()
 	elif is_running:
-		speed = move_speed * run_multiplier
-	else:
-		speed = move_speed
+		multiplicador_velocidad = run_multiplier
 
-	velocity = direction * speed
-
-	move_and_slide()
-	_ajustar_a_arena_garumi()
-
-	# Dirección.
-	if direction != Vector2.ZERO:
-		facing = direction.normalized()
-		_update_dir_marker()
-
-	# Estado visual.
-	var new_state: State
-
-	if direction == Vector2.ZERO:
-		new_state = State.IDLE
-	elif is_running:
-		new_state = State.RUN
-	else:
-		new_state = State.WALK
-
-	if new_state != state:
-		state = new_state
-		_update_visual()
-
-	_actualizar_regeneracion_stamina(
+	_aplicar_movimiento_normal(
+		direction,
+		multiplicador_velocidad,
+		is_running,
 		delta,
-		is_running
+		true
 	)
+
+
+func _aplicar_movimiento_normal(
+	direccion: Vector2,
+	multiplicador_velocidad: float,
+	estado_corriendo: bool,
+	delta: float,
+	ajustar_arena: bool
+) -> void:
+	var velocidad := _calcular_movimiento_normal(
+		direccion,
+		multiplicador_velocidad,
+		estado_corriendo
+	)
+	physics_movement_controller.establecer_velocidad(self, velocidad)
+	physics_movement_controller.aplicar_desplazamiento(self)
+	if ajustar_arena:
+		_ajustar_a_arena_garumi()
+	if direccion == Vector2.ZERO and state == State.IDLE:
+		_actualizar_recuperacion_eterium(delta)
+	_sincronizar_estado_movimiento()
+	_actualizar_regeneracion_stamina(delta, estado_corriendo)
+
+
+func _calcular_movimiento_normal(
+	direccion: Vector2,
+	multiplicador_velocidad: float,
+	estado_corriendo: bool
+) -> Vector2:
+	var velocidad := locomotion.calcular_movimiento(
+		direccion,
+		move_speed,
+		multiplicador_velocidad,
+		estado_corriendo
+	)
+	# No sobrescribir el facing visual cuando el input está en reposo:
+	# el controlador puede haberse reiniciado durante una pausa/interfaz.
+	if direccion.length_squared() > 0.01:
+		var nuevo_facing := locomotion.obtener_facing()
+		if not facing.is_equal_approx(nuevo_facing):
+			facing = nuevo_facing
+			_update_dir_marker()
+	return velocidad
+
+
+func _sincronizar_estado_movimiento() -> void:
+	var nuevo_estado := State.IDLE
+	match locomotion.obtener_estado_movimiento():
+		PlayerMovementController.State.WALK:
+			nuevo_estado = State.WALK
+		PlayerMovementController.State.RUN:
+			nuevo_estado = State.RUN
+
+	if nuevo_estado == state:
+		return
+	state = nuevo_estado
+	_update_visual()
 
 
 func obtener_direccion_movimiento() -> Vector2:
@@ -347,16 +516,23 @@ func recuperar_cargas_por_descanso() -> void:
 	stamina_controller.reiniciar()
 
 func restaurar_eterium(cantidad: float) -> bool:
-	var antes: int = mana
-	mana = mini(maxi(mana + roundi(cantidad), 0), max_mana)
-	if mana == antes:
-		return false
-	mana_changed.emit(mana, max_mana)
-	return true
+	return eterium.restaurar(roundi(cantidad))
 
 func _al_cambio_stamina(current: float, maximum: float) -> void:
 	stamina = current
 	stamina_changed.emit(current, maximum)
+
+
+func _al_cambio_mana_runtime(_actual: int, _maximo: int) -> void:
+	# El runtime modifica VitalState directamente; mantener sincronizadas las
+	# propiedades públicas de Entity y avisar al HUD en cada cambio real.
+	_sync_desde_vital()
+	mana_changed.emit(mana, max_mana)
+	if eterium.vida_eterium_compartidos():
+		health_changed.emit(health, max_health)
+		if not is_alive:
+			_die()
+			_morir_jugador()
 
 
 # ============================================================
@@ -476,10 +652,7 @@ func absorber_eterium_de_criatura(criatura: Node) -> int:
 	if absorbido <= 0:
 		return 0
 
-	mana_changed.emit(mana, max_mana)
-	if eterium.vida_eterium_compartidos():
-		health_changed.emit(health, max_health)
-
+	# La señal del runtime ya actualizó las propiedades públicas y la HUD.
 	print(
 		"Player: Eterium absorbido de ",
 		str(criatura.get("criatura_nombre")),
@@ -509,8 +682,8 @@ func _procesar_jump(delta: float) -> void:
 	var duracion := maxf(jump_duration, 0.001)
 	var progreso := locomotion.obtener_progreso_salto(duracion)
 	var velocidad := locomotion.obtener_velocidad_accion(duracion, jump_distance)
-	velocity = _action_direction * velocidad
-	move_and_slide()
+	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad)
+	physics_movement_controller.aplicar_desplazamiento(self)
 	_ajustar_a_arena_garumi()
 	var altura := sin(progreso * PI) * 16.0
 	visual.position = _base_visual_position + Vector2(0.0, -altura)
@@ -531,12 +704,7 @@ func _puede_hacer_dash() -> bool:
 
 func _iniciar_dash() -> void:
 	var direccion_dash := _obtener_direccion_accion()
-	# En una arena, un dash solo permite salir si se ejecuta desde un borde hacia fuera.
-	for arena in get_tree().get_nodes_in_group("garumi_combat_arena"):
-		if is_instance_valid(arena) and arena.has_method("intentar_escapar"):
-			if bool(arena.call("intentar_escapar", self, direccion_dash)):
-				print("Player: saliendo del enfrentamiento mediante dash.")
-				break
+	# El dash es movimiento; retirarse del combate se hace exclusivamente con el botón Huir.
 	if not locomotion.iniciar_dash(direccion_dash, dash_duration, dash_cooldown, dash_stamina_cost):
 		return
 	_action_direction = locomotion.obtener_direccion_accion(direccion_dash)
@@ -552,8 +720,8 @@ func _ajustar_a_arena_garumi() -> void:
 
 func _procesar_dash(delta: float) -> void:
 	var velocidad := locomotion.obtener_velocidad_accion(dash_duration, dash_distance)
-	velocity = _action_direction * velocidad
-	move_and_slide()
+	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad)
+	physics_movement_controller.aplicar_desplazamiento(self)
 	_ajustar_a_arena_garumi()
 	if not locomotion.procesando_dash():
 		velocity = Vector2.ZERO
@@ -587,10 +755,10 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 			)
 
 	if _eterium_vida_compartida():
-		mana = maxi(mana - dano_recibido, 0)
-		health = mana
-		mana_changed.emit(mana, max_mana)
-		health_changed.emit(health, max_health)
+		if dano_recibido > 0:
+			eterium.establecer_mana(
+				maxi(eterium.mana() - dano_recibido, 0)
+			)
 		print(name, " recibió ", dano_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
 		if health <= 0:
 			_die()
@@ -629,6 +797,9 @@ func _recibir_golpe_visual() -> void:
 
 
 func _morir_jugador() -> void:
+	if _muerte_visual_procesada:
+		return
+	_muerte_visual_procesada = true
 	velocity = Vector2.ZERO
 
 	set_physics_process(false)
@@ -658,11 +829,34 @@ func _morir_jugador() -> void:
 	)
 
 
-func reaparecer() -> void:
-	is_alive = true
+func reaparecer_en_red(posicion: Vector2) -> void:
+	_muerte_visual_procesada = false
+	restaurar_estado_vital(max_health, true, max_mana)
+	stamina_controller.reiniciar()
+	global_position = posicion
+	velocity = Vector2.ZERO
+	state = State.IDLE
+	_red_direccion = Vector2.ZERO
+	_red_correr = false
+	_red_dash_pendiente = false
+	_red_salto_pendiente = false
+	_red_eterium_sprint = false
+	_red_curar_eterium = false
+	locomotion.reiniciar()
+	visible = true
+	if is_instance_valid(visual):
+		visual.position = _base_visual_position
+		visual.modulate = Color.WHITE
+		visual.scale = Vector2.ONE
+	set_physics_process(true)
+	_update_dir_marker()
+	_update_visual()
+	stamina_changed.emit(stamina, max_stamina)
 
-	health = max_health
-	mana = max_mana
+
+func reaparecer() -> void:
+	_muerte_visual_procesada = false
+	restaurar_estado_vital(max_health, true, max_mana)
 	stamina_controller.reiniciar()
 
 	velocity = Vector2.ZERO
@@ -670,9 +864,10 @@ func reaparecer() -> void:
 
 	locomotion.reiniciar()
 
-	var world_gen: Node = _world_context_ref
-	if world_gen != null:
-		set_spawn_from_world(world_gen)
+	# El contexto compartido proporciona el spawn al reaparecer.
+	# En zonas fijas (sin terreno procedural) se conserva la posición actual.
+	if is_instance_valid(_world_context_ref) and _world_context_ref.tiene_mundo_activo():
+		global_position = _world_context_ref.get_spawn_position()
 
 	if visual != null:
 		visual.position = _base_visual_position
@@ -683,16 +878,6 @@ func reaparecer() -> void:
 
 	_update_dir_marker()
 	_update_visual()
-
-	health_changed.emit(
-		health,
-		max_health
-	)
-
-	mana_changed.emit(
-		mana,
-		max_mana
-	)
 
 	stamina_changed.emit(
 		stamina,
@@ -796,20 +981,28 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 
 func admin_establecer_maximos(
 	vida: int,
-	eterium: int,
+	eterium_maximo: int,
 	energia: float
 ) -> bool:
 	max_health = maxi(1, vida)
-	max_mana = maxi(1, eterium)
+	max_mana = maxi(1, eterium_maximo)
 	max_stamina = maxf(1.0, energia)
 
-	health = mini(health, max_health)
-	mana = mini(mana, max_mana)
-	stamina = minf(stamina, max_stamina)
+	var estaba_vivo := vital_state.is_alive
+	if eterium.vida_eterium_compartidos():
+		# La fisiología compartida usa una sola capacidad para vida y Eterium.
+		max_health = max_mana
+	vital_state.max_health = max_health
+	vital_state.max_mana = max_mana
+	var vida_actual := clampi(vital_state.health, 0, max_health)
+	var eterium_actual := clampi(vital_state.mana, 0, max_mana)
+	if eterium.vida_eterium_compartidos():
+		vida_actual = eterium_actual
+	restaurar_estado_vital(vida_actual, estaba_vivo, eterium_actual)
 
-	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_mana)
-	stamina_changed.emit(stamina, max_stamina)
+	stamina_controller.establecer_maximo(max_stamina)
+	max_stamina = stamina_controller.maximum
+	stamina_controller.establecer_actual(minf(stamina, max_stamina))
 	return true
 
 
@@ -855,80 +1048,11 @@ func admin_guardar_estado() -> void:
 	_game_state_ref.guardar_partida()
 
 func _update_visual() -> void:
-	if anim == null:
-		return
-
-	var dir_name := _facing_name()
-	var anim_name := ""
-
-	match state:
-		State.IDLE:
-			anim_name = (
-				"idle_"
-				+ dir_name
-			)
-
-		State.WALK:
-			anim_name = (
-				"walk_"
-				+ dir_name
-			)
-
-		State.RUN:
-			anim_name = (
-				"run_"
-				+ dir_name
-			)
-
-		State.JUMP:
-			anim_name = (
-				"jump_"
-				+ dir_name
-			)
-
-		State.DASH:
-			anim_name = (
-				"dash_"
-				+ dir_name
-			)
-
-	if anim.has_animation(anim_name):
-		anim.play(anim_name)
+	visual_controller.actualizar_estado(state, facing)
 
 
 func _update_dir_marker() -> void:
-	if facing_marker == null:
-		return
-
-	var center := Vector2(
-		0,
-		-24
-	)
-
-	var offset := (
-		facing.normalized()
-		* 14.0
-	)
-
-	facing_marker.position = (
-		center
-		+ offset
-		- Vector2(
-			2,
-			2
-		)
-	)
-
-
-func _facing_name() -> String:
-	if abs(facing.y) >= abs(facing.x):
-		return (
-			"down"
-			if facing.y > 0.0
-			else "up"
-		)
-
-	return "side"
+	visual_controller.actualizar_direccion(facing)
 
 
 # ============================================================
@@ -1010,7 +1134,7 @@ func aplicar_efecto_slow(duracion: float) -> void:
 func set_spawn_from_world(
 	world_gen: WorldGenerator
 ) -> void:
-	if world_gen == null:
+	if not is_instance_valid(world_gen):
 		return
 
 	global_position = world_gen.get_spawn_position()

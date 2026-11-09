@@ -1,45 +1,125 @@
-extends SceneTree
+extends Node
 
 const EntityScript = preload("res://scripts/characters/entity.gd")
 const CombatAttackScript = preload("res://scripts/gameplay/combat/combat_attack.gd")
 const CombatProjectileScript = preload("res://scripts/gameplay/combat/combat_projectile.gd")
 const CombatAttackAreaScript = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
+const PlayerScene = preload("res://scenes/characters/player.tscn")
+const InventoryControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
 const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eterium_runtime.gd")
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
 	var errores: Array[String] = []
+	_probar_durabilidad_en_mano_correcta(errores)
+	await _probar_direccion_de_ataque_recibida(errores)
 	await _probar_contacto_independiente_del_danio(errores)
 	_probar_pausa_recuperacion_eterium(errores)
 
 	if not errores.is_empty():
 		for error in errores:
 			push_error("CombatTemporalContract: FAIL: " + error)
-		quit(1)
+		get_tree().quit(1)
 		return
 
 	print("CombatTemporalContract: PASS")
-	quit(0)
+	get_tree().quit(0)
+
+
+func _probar_direccion_de_ataque_recibida(errores: Array[String]) -> void:
+	var jugador := PlayerScene.instantiate() as Player
+	var combate := CombatSystemScript.new() as CombatSystem
+	combate.player = jugador
+	get_tree().root.add_child(jugador)
+	get_tree().root.add_child(combate)
+	await get_tree().process_frame
+
+	jugador.facing = Vector2.DOWN
+	if not combate.combat_controller.solicitar_ataque(
+		Vector2.LEFT,
+		{},
+		"desarmado"
+	):
+		errores.append("CombatController rechazó una solicitud de prueba válida.")
+	else:
+		var ataque: CombatAttackArea = null
+		for hijo in jugador.get_children():
+			if hijo is CombatAttackArea:
+				ataque = hijo as CombatAttackArea
+				break
+
+		if ataque == null:
+			errores.append("La solicitud no creó el hitbox melee esperado.")
+		elif not is_equal_approx(ataque.rotation, Vector2.LEFT.angle()):
+			errores.append("CombatSystem ignoró la dirección entregada por CombatController.")
+
+	combate.queue_free()
+	jugador.queue_free()
+	await get_tree().process_frame
+
+
+func _probar_durabilidad_en_mano_correcta(errores: Array[String]) -> void:
+	var inventario := InventoryControllerScript.new() as InventoryController
+	var combate := CombatSystemScript.new() as CombatSystem
+	get_tree().root.add_child(inventario)
+	get_tree().root.add_child(combate)
+	var items: Array = []
+	for _indice in range(18):
+		items.append({})
+
+	var herramienta := {
+		"tipo": "herramienta",
+		"nombre": "Herramienta de prueba",
+		"durabilidad_actual": 3,
+		"propiedades_game": {"durabilidad": 3}
+	}
+	items[0] = herramienta.duplicate(true)
+	items[12] = herramienta.duplicate(true)
+	inventario.configurar_items(items)
+	combate.inventory = inventario
+
+	# La acción primaria toma la mano izquierda.
+	combate._accion_en_mano_derecha = false
+	combate._consumir_durabilidad_herramienta()
+	var izquierda := inventario.obtener_objeto_mano_activa("izquierda")
+	var derecha := inventario.obtener_objeto_mano_activa("derecha")
+	if int(izquierda.get("durabilidad_actual", -1)) != 2:
+		errores.append("La acción primaria no consumió durabilidad de la mano izquierda.")
+	if int(derecha.get("durabilidad_actual", -1)) != 3:
+		errores.append("La acción primaria consumió durabilidad de la mano derecha.")
+
+	# La acción secundaria toma la mano derecha.
+	combate._accion_en_mano_derecha = true
+	combate._consumir_durabilidad_herramienta()
+	izquierda = inventario.obtener_objeto_mano_activa("izquierda")
+	derecha = inventario.obtener_objeto_mano_activa("derecha")
+	if int(izquierda.get("durabilidad_actual", -1)) != 2:
+		errores.append("La acción secundaria alteró la durabilidad de la mano izquierda.")
+	if int(derecha.get("durabilidad_actual", -1)) != 2:
+		errores.append("La acción secundaria no consumió durabilidad de la mano derecha.")
+
+	combate.free()
+	inventario.free()
 
 
 func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	var atacante := EntityScript.new() as Entity
 	atacante.name = "CombatTestAttacker"
-	root.add_child(atacante)
+	get_tree().root.add_child(atacante)
 
 	var objetivo := EntityScript.new() as Entity
 	objetivo.name = "CombatTestTarget"
-	root.add_child(objetivo)
-	await process_frame
+	get_tree().root.add_child(objetivo)
+	await get_tree().process_frame
 
 	var combate := CombatSystemScript.new() as CombatSystem
-	root.add_child(combate)
+	get_tree().root.add_child(combate)
 
 	var contactos_sistema: Dictionary = {"cantidad": 0}
 	combate.contacto_efectivo.connect(
@@ -59,7 +139,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 
 	var proyectil_cero := CombatProjectileScript.new() as CombatProjectile
 	proyectil_cero.configurar(ataque_cero, Vector2.RIGHT, 100.0, 1.0, 2.0)
-	root.add_child(proyectil_cero)
+	get_tree().root.add_child(proyectil_cero)
 	var contactos_proyectil: Dictionary = {"cantidad": 0}
 	var impactos_con_danio: Dictionary = {"cantidad": 0}
 	proyectil_cero.contacto_detectado.connect(
@@ -96,6 +176,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 		errores.append("El contacto melee sin daño no se publicó.")
 	if objetivo.health != salud_inicial:
 		errores.append("El contacto melee sin daño alteró la salud.")
+	area_melee.free()
 
 	# La entrada de ataques de la IA también comunica contacto cero-daño.
 	var danio_ia_aplicado := combate.aplicar_danio_desde_entidad(
@@ -122,7 +203,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	)
 	var proyectil_daniador := CombatProjectileScript.new() as CombatProjectile
 	proyectil_daniador.configurar(ataque_daniador, Vector2.RIGHT, 100.0, 1.0, 2.0)
-	root.add_child(proyectil_daniador)
+	get_tree().root.add_child(proyectil_daniador)
 	var impactos_reales: Dictionary = {"cantidad": 0}
 	proyectil_daniador.objetivo_impactado.connect(
 		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
@@ -147,6 +228,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	atacante.queue_free()
 	objetivo.queue_free()
 	combate.queue_free()
+	await get_tree().process_frame
 
 
 func _probar_pausa_recuperacion_eterium(errores: Array[String]) -> void:

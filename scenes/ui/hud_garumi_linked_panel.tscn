@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[node name="GarumisVinculados" type="HBoxContainer"]
+position = Vector2(18, 18)
+z_index = 20
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="GarumiSlots" type="HBoxContainer" parent="."]
+mouse_filter = 2
+theme_override_constants/separation = 10

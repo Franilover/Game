@@ -9,7 +9,8 @@ static func aplicar(
 	objetivo: Entity,
 	cantidad: int,
 	origen: String,
-	modificador: Callable = Callable()
+	modificador: Callable = Callable(),
+	atacante: Node = null
 ) -> bool:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
@@ -24,5 +25,8 @@ static func aplicar(
 		return false
 
 	var salud_antes: int = objetivo.health
-	objetivo.take_damage(dano, origen)
+	if objetivo is Creature and atacante != null and is_instance_valid(atacante):
+		(objetivo as Creature).take_damage_desde(atacante, dano, origen)
+	else:
+		objetivo.take_damage(dano, origen)
 	return objetivo.health < salud_antes

@@ -28,11 +28,10 @@ func _run() -> void:
 	root.add_child(jugador_arena)
 	root.add_child(rival_arena)
 	arena.call("iniciar", jugador_arena, rival_arena)
-	_expect(not bool(arena.call("intentar_escapar", jugador_arena, Vector2.RIGHT)), "No se debe escapar desde el centro de la arena.", errores)
 	var limites: Rect2 = arena.get("limites_globales")
 	jugador_arena.global_position = Vector2(limites.position.x + 12.0, limites.get_center().y)
-	_expect(not bool(arena.call("intentar_escapar", jugador_arena, Vector2.RIGHT)), "No se debe escapar si el dash apunta hacia dentro desde el borde izquierdo.", errores)
-	_expect(bool(arena.call("intentar_escapar", jugador_arena, Vector2.LEFT)), "Debe permitirse escapar al tocar el borde y dashear hacia fuera.", errores)
+	_expect(bool(arena.call("esta_activa")), "La arena debe seguir activa aunque el jugador haga dash cerca del borde; huir se controla desde el botón.", errores)
+	_expect(not arena.has_method("intentar_escapar"), "La arena ya no debe exponer escape mediante dash.", errores)
 	arena.queue_free()
 	jugador_arena.queue_free()
 	rival_arena.queue_free()
@@ -89,16 +88,11 @@ func _run() -> void:
 	garumi_menu.interact(jugador)
 	await process_frame
 	_expect(is_instance_valid(garumi_menu._menu_contextual), "Interactuar debe abrir el menú contextual.", errores)
-	var boton_cerrar := _buscar_boton_texto(garumi_menu._menu_contextual, "Cerrar")
-	_expect(boton_cerrar != null, "El menú debe contener un botón Cerrar.", errores)
-	if boton_cerrar != null:
-		boton_cerrar.pressed.emit()
-	await process_frame
-	_expect(garumi_menu._menu_contextual == null, "El botón Cerrar debe cerrar el menú contextual.", errores)
-	garumi_menu.interact(jugador)
-	await process_frame
-	var boton_enfrentar := _buscar_boton_texto(garumi_menu._menu_contextual, "Enfrentar")
-	_expect(boton_enfrentar != null, "El menú debe contener la opción Enfrentar.", errores)
+	var boton_enfrentar := _buscar_boton_texto(garumi_menu._menu_contextual, "Enfrentarte")
+	var boton_vincular := _buscar_boton_texto(garumi_menu._menu_contextual, "Vincular")
+	_expect(boton_enfrentar != null, "El menú flotante debe contener la acción Enfrentarte.", errores)
+	_expect(boton_vincular != null, "El menú flotante debe contener la acción Vincular.", errores)
+	_expect(_buscar_boton_texto(garumi_menu._menu_contextual, "Cerrar") == null, "El menú flotante no debe añadir un tercer botón ni una ventana grande.", errores)
 	if boton_enfrentar != null:
 		boton_enfrentar.pressed.emit()
 	await process_frame

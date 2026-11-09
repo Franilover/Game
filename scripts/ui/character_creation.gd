@@ -1,5 +1,9 @@
 extends ColorRect
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const APPEARANCE_PREVIEW_SCENE = preload("res://scenes/ui/character_appearance_preview.tscn")
+const APPEARANCE_OPTION_ROW_SCENE = preload("res://scenes/ui/character_appearance_option_row.tscn")
+
 signal confirmed(config: Dictionary, action: String)
 signal cancelled
 
@@ -34,6 +38,7 @@ func _ready() -> void:
 	_normalizar_geometria_raiz()
 	visible = false
 	_instalar_scroll_contenido()
+	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_layout_responsive)
 	_configurar_layout_responsive()
 	gender.add_item("El")
@@ -192,22 +197,13 @@ func _on_species_loaded(data: Array) -> void:
 	_update_confirm()
 
 func _crear_vista_previa() -> void:
-	_preview_container = Control.new()
+	_preview_container = APPEARANCE_PREVIEW_SCENE.instantiate() as Control
 	_preview_container.name = "VistaPreviaPersonaje"
-	_preview_container.custom_minimum_size = Vector2(0, 84)
-	_preview_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for slot in ["body", "shoes", "pants", "shirt", "eyes", "hair"]:
-		var capa := TextureRect.new()
-		capa.name = "Preview_" + slot
-		capa.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		capa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		capa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		capa.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_preview_container.add_child(capa)
-		_preview_layers[slot] = capa
+	for slot in CharacterAppearance.SLOTS:
+		var capa := _preview_container.get_node_or_null(slot.capitalize()) as TextureRect
+		if capa != null:
+			_preview_layers[slot] = capa
 	appearance_container.add_child(_preview_container)
-	appearance_container.move_child(_preview_container, 1)
 
 
 func _actualizar_vista_previa() -> void:
@@ -226,7 +222,8 @@ func _actualizar_vista_previa() -> void:
 		capa.visible = capa.texture != null
 
 func _construir_controles_personalizacion() -> void:
-	# Carruseles compactos por categoría; no se muestran sprites completos predefinidos.
+	# Cada fila tiene estructura propia editable en el editor; el catálogo se
+	# rellena aquí porque depende de los assets instalados en el proyecto.
 	var etiqueta_skin := appearance_container.get_node_or_null("SkinLabel") as Label
 	if etiqueta_skin != null:
 		etiqueta_skin.visible = false
@@ -236,21 +233,15 @@ func _construir_controles_personalizacion() -> void:
 	_personalizacion_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_personalizacion_rows.add_theme_constant_override("separation", 4)
 	appearance_container.add_child(_personalizacion_rows)
-	appearance_container.move_child(_personalizacion_rows, 2)
 
 	for slot in CharacterAppearance.SLOTS:
-		var fila := HBoxContainer.new()
+		if slot == "body":
+			continue
+		var fila := APPEARANCE_OPTION_ROW_SCENE.instantiate() as HBoxContainer
 		fila.name = "Fila_" + slot
-		fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		fila.alignment = BoxContainer.ALIGNMENT_CENTER
-		fila.add_theme_constant_override("separation", 8)
 		_personalizacion_rows.add_child(fila)
 
-		# La lista conserva rutas y selección, pero no se muestra: la interfaz
-		# presenta una sola miniatura con flechas para recorrer las opciones.
-		var lista := ItemList.new()
-		lista.name = "CatalogoInterno"
-		lista.visible = false
+		var lista := fila.get_node("CatalogoInterno") as ItemList
 		lista.add_item("")
 		lista.set_item_metadata(0, "")
 		for pieza in CharacterAppearance.catalogo(slot):
@@ -260,42 +251,19 @@ func _construir_controles_personalizacion() -> void:
 			lista.set_item_metadata(indice, str(pieza["ruta"]))
 		lista.select(0)
 		lista.item_selected.connect(_al_seleccionar_pieza.bind(slot))
-		fila.add_child(lista)
 		_personalizacion_items[slot] = lista
 
-		var icono := TextureRect.new()
-		icono.name = "MiniaturaActual"
-		icono.custom_minimum_size = Vector2(38, 38)
-		icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fila.add_child(icono)
+		var icono := fila.get_node("MiniaturaActual") as TextureRect
 		_personalizacion_vistas[slot] = icono
 
-		var anterior := Button.new()
-		anterior.text = "‹"
-		anterior.custom_minimum_size = Vector2(34, 34)
-		anterior.focus_mode = Control.FOCUS_NONE
-		anterior.tooltip_text = "Opción anterior"
+		var anterior := fila.get_node("Anterior") as Button
 		anterior.pressed.connect(_cambiar_opcion.bind(slot, -1))
-		fila.add_child(anterior)
-
-		var siguiente := Button.new()
-		siguiente.text = "›"
-		siguiente.custom_minimum_size = Vector2(34, 34)
-		siguiente.focus_mode = Control.FOCUS_NONE
-		siguiente.tooltip_text = "Opción siguiente"
+		var siguiente := fila.get_node("Siguiente") as Button
 		siguiente.pressed.connect(_cambiar_opcion.bind(slot, 1))
-		fila.add_child(siguiente)
 
-		var selector_color := ColorPickerButton.new()
-		selector_color.custom_minimum_size = Vector2(28, 28)
+		var selector_color := fila.get_node("Color") as ColorPickerButton
 		selector_color.color = _color_inicial(slot)
-		selector_color.tooltip_text = "Cambiar color"
 		selector_color.color_changed.connect(_al_cambiar_color_pieza.bind(slot))
-		fila.add_child(selector_color)
 		_personalizacion_colores[slot] = selector_color
 		_personalizacion[slot] = {
 			"ruta": "",

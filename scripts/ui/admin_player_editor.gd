@@ -1,6 +1,8 @@
 extends Control
 class_name AdminPlayerEditor
 
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 var jugador: Player
 var _species: OptionButton
 var _nombre: LineEdit
@@ -34,6 +36,7 @@ func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_crear_ui()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _crear_ui() -> void:

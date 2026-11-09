@@ -13,21 +13,22 @@ enum State {
 var state: State = State.IDLE
 var facing: Vector2 = Vector2.DOWN
 
+
 func calcular_direccion(input_direction: Vector2) -> Vector2:
 	if input_direction.length_squared() <= 0.01:
 		return Vector2.ZERO
-	return input_direction.normalized()
+	# Input.get_vector y la intención de red ya entregan vectores acotados.
+	# limit_length conserva la intensidad analógica sin permitir magnitudes > 1.
+	return input_direction.limit_length(1.0)
+
 
 func calcular_velocidad(
 	direction: Vector2,
 	move_speed: float,
-	run_multiplier: float,
-	corriendo: bool
+	speed_multiplier: float
 ) -> Vector2:
-	var velocidad_base := maxf(move_speed, 0.0)
-	if corriendo:
-		velocidad_base *= maxf(run_multiplier, 0.0)
-	return direction * velocidad_base
+	return direction * maxf(move_speed, 0.0) * maxf(speed_multiplier, 0.0)
+
 
 func actualizar_facing(direction: Vector2) -> bool:
 	if direction.length_squared() <= 0.01:
@@ -40,6 +41,7 @@ func actualizar_facing(direction: Vector2) -> bool:
 	facing = nuevo
 	return true
 
+
 func determinar_estado(
 	direction: Vector2,
 	corriendo: bool
@@ -50,21 +52,18 @@ func determinar_estado(
 		return State.RUN
 	return State.WALK
 
+
 func actualizar(
 	input_direction: Vector2,
 	move_speed: float,
-	run_multiplier: float,
+	speed_multiplier: float,
 	corriendo: bool
 ) -> Vector2:
 	var direction := calcular_direccion(input_direction)
 	actualizar_facing(direction)
 	state = determinar_estado(direction, corriendo)
-	return calcular_velocidad(
-		direction,
-		move_speed,
-		run_multiplier,
-		corriendo
-	)
+	return calcular_velocidad(direction, move_speed, speed_multiplier)
+
 
 func reiniciar() -> void:
 	state = State.IDLE

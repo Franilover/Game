@@ -33,14 +33,47 @@ revisar InventoryEquipment antes que HUD.
 
 ## Combate
 
-Ruta:
-GameplayInputRouter → CombatSystem → CombatController → CombatTargeting / CombatDamage → target.
+Ruta jugador:
+GameplayInputRouter → CombatSystem → CombatController → CombatSystem → CombatItemResolver → CombatAttackExecutor → CombatAttackArea / CombatProjectile → CombatTargeting / CombatDamage → Entity.
+
+Ruta criatura:
+CreatureAI (objetivo, perfil, estado y momento del ataque) → CombatSystem → CombatDamage → Entity / Creature → señales de criatura → CreatureAI.
+- Ataques genéricos de IA: CreatureAI → CombatSystem.solicitar_danio_desde_entidad() → CombatDamage → CombatAttackResult. La API booleana aplicar_danio_desde_entidad() permanece como wrapper y sólo devuelve true si la salud disminuyó.
+- Cambiaformas con arma: CreatureAI → CombatSystem.solicitar_ataque_con_arma() → CombatWeaponAttackValidator → aplicación de daño/contacto → CombatAttackResult devuelto a CreatureAI.
+En la ruta de Cambiaformas, solicitud aceptada, contacto registrado y daño aplicado son estados independientes.
+
+Responsabilidades:
+- `CombatController`: valida el bloqueo de entrada y emite el snapshot de dirección, objeto y modo.
+- `CombatItemResolver`: interpreta la clasificación y propiedades del objeto; no crea ataques ni aplica daño.
+- `CombatAttackExecutor`: construye y conecta los nodos melee/proyectil; no decide cuándo se ataca ni resuelve impactos.
+- `CombatWeaponAttackValidator`: valida atacante, objetivo vivo y clasificación de arma; no ejecuta acciones ni modifica estado.
+- `CombatAttackResult`: comunica por separado aceptación de solicitud, contacto registrado, daño aplicado y motivo de rechazo tanto en armas como en daño genérico de entidades.
+- `CombatSystem`: ejecuta solicitudes validadas, aplica cooldown y coordina daño, contacto/eventos públicos y robo de vida. `solicitar_danio_desde_entidad()` y `solicitar_ataque_con_arma()` devuelven resultados tipados; la aceptación no equivale a daño aplicado.
+- `CreatureAI`: decide a quién atacar, según qué perfil y cuándo; administra su máquina de estados y solicita la ejecución a `CombatSystem`. No modifica salud.
+- `Entity`: conserva `VitalState`, salud y ciclo vital. Es el dueño del estado de vida. La señal `died` se emite una sola vez por transición a muerto; restaurar una partida muerta no reproduce el evento histórico.
+- `Creature`: extiende `Entity` con datos y comportamiento de especie. Publica `configuracion_actualizada` y `danio_recibido`; no llama directamente a `CreatureAI` para entregar esos dos eventos.
+- `CreatureAI` escucha las señales de su `Creature`: actualiza su configuración cuando ésta cambia y decide su reacción cuando recibe daño. La IA no es dueña de la salud.
+- `CombatImpactEffects`: procesa una sola vez los efectos de cada daño confirmado: agresión ecológica del jugador, registro de derrota, absorción de Eterium del jugador derrotador, reacción de IA ante armas y feedback visual. No aplica daño.
+- `CombatProjectile`: aplica daño mediante `CombatDamage`; publica contacto aunque no haya daño y emite el evento de impacto únicamente cuando la salud disminuye.
+- `CombatDamage`: único punto que reduce salud; no registra derrotas, no absorbe Eterium ni produce feedback.
+- `CombatTargeting`: valida objetivos.
 
 Archivos principales:
 - scripts/gameplay/combat_system.gd
-- controladores Combat existentes
-- InventoryEquipment para estado del arma
+- scripts/gameplay/combat/combat_controller.gd
+- scripts/gameplay/combat/combat_item_resolver.gd
+- scripts/gameplay/combat/combat_attack_executor.gd
+- scripts/gameplay/combat/combat_weapon_attack_validator.gd
+- scripts/gameplay/combat/combat_attack_result.gd
+- scripts/gameplay/combat/combat_impact_effects.gd
+- scripts/gameplay/combat/combat_attack_area.gd
+- scripts/gameplay/combat/combat_projectile.gd
+- InventoryController / InventoryEquipment para el objeto y el equipamiento
 - entidades objetivo para recibir daño.
+
+La dirección enviada por `CombatController` forma parte del snapshot de la acción: `CombatSystem` debe propagarla hasta el hitbox o proyectil, sin volver a leer el facing después de aceptar la solicitud. Sólo se usa el facing actual como fallback para una dirección cero.
+
+Si la IA elige un objetivo, alcance o perfil equivocado, revisar `CreatureAI`. Si una solicitud se rechaza, revisar `CombatWeaponAttackValidator`; si se acepta pero contacto o daño no coinciden, inspeccionar `CombatAttackResult` y `CombatSystem`. Para la ejecución revisar `CombatItemResolver` y `CombatAttackExecutor`. Si salud o muerte no cambian bien, revisar `Entity` / `CombatDamage`. Si no llega una reacción de criatura, revisar las señales `configuracion_actualizada` y `danio_recibido` y la suscripción de `CreatureAI`. Si los efectos posteriores están equivocados, revisar `CombatImpactEffects`.
 
 No poner lógica de inventario dentro del HUD.
 
@@ -173,23 +206,28 @@ RelationshipSystem conserva el estado social y recibe SocialRepository para los 
 
 ## Inventario — frontera actual
 
-`Inventory` es Presentation/UI y recibe `Player` e `InputGate` desde `Main`.
-`InventoryController` coordina el `InventoryRuntime` y expone el contrato de estado.
-`InventoryRuntime` contiene el estado canónico separado en items, hotbar y equipment.
+`GarliaInventory` es Presentation/UI; crea y contiene `InventoryController`, y recibe `Player` e `InputGate` desde `Main`.
+`InventoryController` coordina `InventoryRuntime` y expone operaciones de dominio para consultar manos, usar/consumir objetos y consumir durabilidad.
+`InventoryRuntime` conserva el estado canónico separado en items, hotbar y equipment.
+
+`InteractionSystem` recibe `InventoryController`, nunca el nodo visual `GarliaInventory`.
+Cuando una operación de gameplay cambia una mano, `mano_objeto_cambiado` notifica a la UI para refrescar slots, información y señales de presentación.
 
 La hotbar y el equipamiento son estados distintos. Seleccionar un índice de hotbar no equipa automáticamente el objeto de ese índice.
 
-Si falla la apertura/bloqueo del inventario: `Main → Inventory → InventoryController → GameplayInputRouter`.
+Si falla la apertura/bloqueo del inventario: `Main → GarliaInventory → InventoryController → GameplayInputRouter`.
 Si falla qué objeto está equipado: revisar `InventoryRuntime/Equipment`, no la hotbar ni el HUD.
 
 
 ## Combate y equipamiento — frontera
 
-El CombatSystem recibe Inventory desde Main y obtiene el arma desde obtener_equipamiento(). La hotbar no determina el arma utilizada por el ataque primario.
+CombatSystem recibe `InventoryController` desde `Main`; no depende de `GarliaInventory`.
+La acción primaria consulta el objeto activo de la mano izquierda y la secundaria consulta el objeto activo de la mano derecha. La durabilidad de una herramienta se consume en la misma mano que ejecutó la acción.
 
-Flujo: InventoryController → InventoryRuntime → InventoryEquipment → CombatSystem
+Flujo de objetos: GameplayInputRouter → InteractionSystem / CombatSystem → InventoryController → InventoryRuntime.
+Flujo de resolución: CombatController (snapshot dirección/objeto/modo) → CombatSystem → CombatItemResolver → hitbox/proyectil.
 
-La durabilidad de un arma/herramienta equipada se consume sobre el slot equipado, no sobre el slot seleccionado de hotbar.
+El equipamiento real (`InventoryEquipment`) y las manos activas son estados distintos. La hotbar tampoco determina qué objeto de mano ejecuta una acción.
 
-Si un click ataca con el objeto equivocado: revisar CombatSystem._obtener_arma_equipada() y InventoryEquipment, no la UI de hotbar.
-Si el daño recibido ignora armadura: revisar Player._inventory_ref → obtener_equipamiento() → CombatDefense.
+Si un click usa el objeto equivocado: revisar `CombatSystem.procesar_accion_primaria/secundaria()`, `InventoryController.obtener_objeto_mano_activa()` y la selección de mano; no empezar por la UI.
+Si el daño recibido ignora armadura: revisar la ruta de equipamiento defensivo del Player y `CombatDefense`.

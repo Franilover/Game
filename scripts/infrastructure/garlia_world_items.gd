@@ -2,6 +2,9 @@ extends Node
 class_name GarliaWorldItems
 
 
+const WORLD_ITEM_SCENE: PackedScene = preload("res://scenes/world/world_item.tscn")
+
+
 const MAX_OBJECTOS_EN_MUNDO: int = 3
 const HTTP_TIMEOUT: float = 15.0
 const MAX_CATALOG_RETRIES: int = 3
@@ -563,7 +566,10 @@ func _generar_world_item(
 		print("GarliaWorldItems: no se configuró WorldEntityManager.")
 		return false
 
-	var objeto := WorldItem.new()
+	var objeto := WORLD_ITEM_SCENE.instantiate() as WorldItem
+	if objeto == null:
+		push_error("GarliaWorldItems: no se pudo instanciar la escena WorldItem.")
+		return false
 	objeto.configurar_dependencias(_player, _inventory, _mission_manager)
 	if not _entity_manager.registrar_global(objeto):
 		objeto.free()
@@ -587,30 +593,10 @@ func _generar_world_item(
 	return true
 
 
-func _generar_objetos_en_mundo(jugador: Node2D) -> void:
-	if not is_instance_valid(jugador):
-		return
-
-	var entities := _entities_root
-	if entities == null or not is_instance_valid(entities):
-		return
-
-	_eliminar_objetos_del_mundo()
-
-	var cantidad := mini(MAX_OBJECTOS_EN_MUNDO, catalogo.size())
-	var posiciones := [
-		Vector2(120.0, 0.0),
-		Vector2(-100.0, 60.0),
-		Vector2(70.0, 120.0)
-	]
-
-	for i in range(cantidad):
-		var datos := catalogo[i].duplicate(true)
-		_generar_world_item(
-			datos,
-			jugador.global_position + posiciones[i]
-		)
-
+func _generar_objetos_en_mundo(_jugador: Node2D) -> void:
+	# El catálogo de items no es una lista de colocación inicial.
+	# Los objetos del mundo deben aparecer por generación explícita de props
+	# o por drops solicitados; nunca junto al jugador al iniciar una zona.
 	_objetos_generados_en_escena = true
 
 

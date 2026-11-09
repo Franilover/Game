@@ -2,8 +2,9 @@ name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks", "refactor/p1-player-locomotion"]
     paths:
+      - "scenes/**"
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
       - "scripts/world/world_*.gd"
@@ -11,7 +12,21 @@ on:
       - "scripts/ui/**"
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
-      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "scripts/gameplay/player/**"
+      - "scripts/characters/player.gd"
+      - "scripts/characters/entity.gd"
+      - "tests/player/**"
+      - "tests/entities/**"
+      - "tests/persistence/**"
+      - "tests/inventory/**"
+      - "tests/missions/**"
+      - "scripts/infrastructure/save_file_repository.gd"
+      - "scripts/state/world_snapshot_validator.gd"
+      - "scripts/infrastructure/garlia_world_network.gd"
+      - "scripts/infrastructure/garlia_multiplayer.gd"
+      - "scripts/infrastructure/global_world_store.gd"
+      - "scripts/core/game_state.gd"
+      - "scripts/ui/start_menu.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
       - "tests/ui/**"
@@ -22,6 +37,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "scenes/**"
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
       - "scripts/world/world_*.gd"
@@ -29,7 +45,15 @@ on:
       - "scripts/ui/**"
       - "scripts/gameplay/combat/**"
       - "scripts/gameplay/combat_system.gd"
-      - "scripts/gameplay/player/player_eterium_runtime.gd"
+      - "scripts/gameplay/player/**"
+      - "scripts/characters/player.gd"
+      - "scripts/characters/entity.gd"
+      - "tests/player/**"
+      - "tests/entities/**"
+      - "tests/persistence/**"
+      - "tests/inventory/**"
+      - "scripts/infrastructure/save_file_repository.gd"
+      - "scripts/state/world_snapshot_validator.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
       - "tests/ui/**"
@@ -77,8 +101,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
             echo "Garumi encyclopedia regression test reported errors."
             exit 1
@@ -88,24 +112,178 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . res://tests/creatures/test_creature_ai_target_policy.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
+          output="$(godot --headless --path . res://tests/creatures/test_creature_ai_target_policy.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|Failed to load script|CreatureAITargetPolicy: FAIL:' <<<"$output"; then
             echo "Creature AI regression test reported script or assertion errors."
+            exit 1
+          fi
+
+      - name: Run creature AI signal contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/creatures/test_creature_ai_signal_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CreatureAISignalContract: FAIL:' <<<"$output"; then
+            echo "Creature AI signal contract test reported errors."
             exit 1
           fi
 
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
 
+      - name: Run entity lifecycle regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/entities/test_entity_lifecycle_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|EntityLifecycleContract: FAIL:' <<<"$output"; then
+            echo "Entity lifecycle contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run save repository recovery contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/persistence/test_save_file_repository_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E 'SCRIPT ERROR:|SaveFileRepositoryContract: FAIL:' <<<"$output"; then
+            echo "Save repository contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run inventory pickup atomicity contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/inventory/test_inventory_pickup_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|InventoryPickupContract: FAIL:' <<<"$output"; then
+            echo "Inventory pickup contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run inventory drop transaction contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/inventory/test_inventory_drop_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|InventoryDropContract: FAIL:' <<<"$output"; then
+            echo "Inventory drop contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run mission manager persistence contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/missions/test_mission_manager_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|MissionManagerContract: FAIL:' <<<"$output"; then
+            echo "Mission manager contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run world snapshot validator contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_world_snapshot_validator.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|WorldSnapshotValidatorContract: FAIL:' <<<"$output"; then
+            echo "World snapshot validator contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run Player VitalState restoration contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/player/test_player_vital_state_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerVitalStateContract: FAIL:' <<<"$output"; then
+            echo "Player VitalState contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run player locomotion regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/player/test_player_locomotion.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerLocomotion: FAIL:' <<<"$output"; then
+            echo "Player locomotion regression test reported errors."
+            exit 1
+          fi
+
       - name: Run combat temporal contract regression test
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/combat/test_combat_temporal_contract.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          output="$(godot --headless --path . res://tests/combat/test_combat_temporal_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatTemporalContract: FAIL:' <<<"$output"; then
             echo "Combat temporal contract test reported script or assertion errors."
+            exit 1
+          fi
+
+      - name: Run combat item resolver regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_item_resolver.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatItemResolver: FAIL:' <<<"$output"; then
+            echo "Combat item resolver regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat attack executor regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . res://tests/combat/test_combat_attack_executor.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatAttackExecutor: FAIL:' <<<"$output"; then
+            echo "Combat attack executor regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat impact effects regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_impact_effects.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatImpactEffects: FAIL:' <<<"$output"; then
+            echo "Combat impact effects regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat weapon attack contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_weapon_attack_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatWeaponAttackContract: FAIL:' <<<"$output"; then
+            echo "Combat weapon attack contract regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat entity attack contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_entity_attack_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEntityAttackContract: FAIL:' <<<"$output"; then
+            echo "Combat entity attack contract regression test reported errors."
             exit 1
           fi
 
@@ -113,8 +291,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEventQueueContract: FAIL:' <<<"$output"; then
             echo "Combat event queue contract test reported script or assertion errors."
             exit 1
@@ -124,8 +302,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/world/test_garumi_world_presence.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
+          output="$(godot --headless --path . res://tests/world/test_garumi_world_presence.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiWorldPresence: FAIL:' <<<"$output"; then
             echo "Garumi world presence test reported script or assertion errors."
             exit 1

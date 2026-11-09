@@ -1,6 +1,8 @@
 extends Node
 class_name WorldDataService
 
+const WorldSnapshotValidatorScript = preload("res://scripts/state/world_snapshot_validator.gd")
+
 
 
 signal mundo_listo
@@ -369,13 +371,7 @@ func _guardar_cache(
 func _mundo_valido(
 	datos: Dictionary
 ) -> bool:
-	if not datos.has("biomas"):
-		return false
-
-	if not datos["biomas"] is Array:
-		return false
-
-	return true
+	return WorldSnapshotValidatorScript.es_valido(datos)
 
 
 func _calcular_firma(

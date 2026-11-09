@@ -1,6 +1,16 @@
 extends Control
 class_name HUD
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const MISSION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_mission_panel.tscn")
+const INTERACTION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_interaction_panel.tscn")
+const DASH_CHARGES_SCENE: PackedScene = preload("res://scenes/ui/hud_dash_charges.tscn")
+const DISCOVERY_NOTICE_SCENE: PackedScene = preload("res://scenes/ui/hud_discovery_notice.tscn")
+const CALENDAR_CLOCK_SCENE: PackedScene = preload("res://scenes/ui/hud_calendar_clock.tscn")
+const GARUMI_LINKED_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_panel.tscn")
+const GARUMI_LINKED_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_slot.tscn")
+const HAND_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_slot.tscn")
+const HAND_ITEM_SELECTOR_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_item_selector.tscn")
 
 var player: Player = null
 var world_context: WorldContext = null
@@ -20,6 +30,7 @@ var _world_atmosphere_ref: WorldAtmosphere = null
 var _calendar_panel: PanelContainer = null
 var _calendar_label: Label = null
 var _calendar_elapsed: float = 0.0
+var _eterium_ui_elapsed: float = 0.0
 
 var mostrar_contexto_mundo: bool = false
 
@@ -55,12 +66,11 @@ var _mission_panel_open: bool = false
 
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
-var _garumis_vinculados_panel: PanelContainer = null
-var _garumis_vinculados_lista: VBoxContainer = null
+var _garumis_vinculados_panel: HBoxContainer = null
+var _garumis_vinculados_lista: HBoxContainer = null
 var _garumis_vinculados_titulo: Label = null
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
-var _mostrar_numeros_garumis: bool = false
 var _dialogo_ruptura_vinculo: ConfirmationDialog = null
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
@@ -128,6 +138,7 @@ func _ready() -> void:
 	add_to_group("hud")
 
 	_configurar_referencias_ui()
+	PIXEL_UI_THEME.apply(self)
 	_crear_selector_manos()
 	_crear_huecos_manos()
 	_preparar_location()
@@ -165,6 +176,13 @@ func _conectar_senal_game_state() -> void:
 
 func _process(delta: float) -> void:
 	_actualizar_vidas_garumis_vinculados()
+	_eterium_ui_elapsed += delta
+	if _eterium_ui_elapsed >= 0.1:
+		_eterium_ui_elapsed = 0.0
+		# Consultar las fuentes de verdad evita que el HUD dependa de una señal
+		# perdida durante la inicialización o de una propiedad pública desfasada.
+		_actualizar_stamina()
+		_actualizar_eterium()
 	if mostrar_contexto_mundo and not _interaction_panel_open and not _mission_panel_open:
 		_tiempo_contexto += delta
 		if _tiempo_contexto >= 0.25:
@@ -179,6 +197,11 @@ func _process(delta: float) -> void:
 		if nodo is CanvasItem and (nodo as CanvasItem).visible:
 			inventario_abierto = true
 			break
+	if is_instance_valid(_garumis_vinculados_panel):
+		_garumis_vinculados_panel.visible = (
+			not inventario_abierto
+			and not _combate_garumi_activo
+		)
 	if is_instance_valid(_calendar_panel):
 		_calendar_panel.visible = not inventario_abierto and not _combate_garumi_activo
 	_calendar_elapsed += delta
@@ -219,8 +242,11 @@ func _preparar_puntos_dash() -> void:
 		return
 	_stamina_bar_node.visible = false
 	_stamina_value_node.visible = false
-	var contenedor := HBoxContainer.new()
-	contenedor.name = "DashCharges"
+
+	var contenedor := DASH_CHARGES_SCENE.instantiate() as HBoxContainer
+	if contenedor == null:
+		push_error("HUD: no se pudo instanciar hud_dash_charges.tscn.")
+		return
 	contenedor.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	contenedor.anchor_left = 0.5
 	contenedor.anchor_right = 0.5
@@ -231,17 +257,15 @@ func _preparar_puntos_dash() -> void:
 	contenedor.offset_top = -30.0
 	contenedor.offset_bottom = -12.0
 	contenedor.size = Vector2(84.0, 18.0)
-	contenedor.add_theme_constant_override("separation", 4)
-	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(contenedor)
+
+	_stamina_pips.clear()
 	for i in range(5):
-		var pip := Panel.new()
-		pip.name = "DashCharge" + str(i + 1)
-		pip.custom_minimum_size = Vector2(14.0, 14.0)
-		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		contenedor.add_child(pip)
-		_stamina_pips.append(pip)
+		var pip := contenedor.get_node_or_null("DashCharge" + str(i + 1)) as Panel
+		if pip != null:
+			_stamina_pips.append(pip)
 	_actualizar_puntos_dash(5.0, 5.0)
+
 
 func _actualizar_puntos_dash(actual: float, maximo: float) -> void:
 	for i in range(_stamina_pips.size()):
@@ -275,27 +299,10 @@ func _configurar_referencias_ui() -> void:
 
 
 func _preparar_aviso_descubrimiento() -> void:
-	# Aviso creado por código para no añadir otra dependencia al .tscn.
-	discovery_notice = Label.new()
-	discovery_notice.name = "DiscoveryNotice"
-	discovery_notice.visible = false
-	discovery_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	discovery_notice.z_index = 3000
-	discovery_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	discovery_notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	discovery_notice.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	discovery_notice.position = Vector2(-260.0, 28.0)
-	discovery_notice.size = Vector2(520.0, 48.0)
-	discovery_notice.add_theme_color_override(
-		"font_color",
-		Color(0.93, 0.84, 0.65, 1.0)
-	)
-	discovery_notice.add_theme_color_override(
-		"font_outline_color",
-		Color(0.075, 0.05, 0.035, 1.0)
-	)
-	discovery_notice.add_theme_constant_override("outline_size", 3)
-	discovery_notice.add_theme_font_size_override("font_size", 16)
+	discovery_notice = DISCOVERY_NOTICE_SCENE.instantiate() as Label
+	if discovery_notice == null:
+		push_error("HUD: no se pudo instanciar hud_discovery_notice.tscn.")
+		return
 	add_child(discovery_notice)
 
 
@@ -396,12 +403,21 @@ func _actualizar_stamina() -> void:
 		"stamina",
 		0.0
 	)
-
 	var stamina_maxima := _obtener_float(
 		player,
 		"max_stamina",
-		100.0
+		5.0
 	)
+
+	# PlayerStaminaController es la fuente de verdad de las cargas de dash.
+	var controlador: Variant = player.get("stamina_controller") if is_instance_valid(player) else null
+	if controlador != null:
+		var actual_controlador: Variant = controlador.get("current")
+		var maximo_controlador: Variant = controlador.get("maximum")
+		if actual_controlador != null:
+			stamina_actual = float(actual_controlador)
+		if maximo_controlador != null:
+			stamina_maxima = float(maximo_controlador)
 
 	_actualizar_puntos_dash(stamina_actual, stamina_maxima)
 
@@ -412,12 +428,18 @@ func _actualizar_eterium() -> void:
 		"mana",
 		0.0
 	)
-
 	var eterium_maximo := _obtener_float(
 		player,
 		"max_mana",
 		100.0
 	)
+
+	# El runtime opera directamente sobre VitalState; leerlo evita mostrar una
+	# copia antigua de Player.mana entre dos sincronizaciones.
+	var runtime: Variant = player.get("eterium_runtime") if is_instance_valid(player) else null
+	if runtime != null and runtime.has_method("mana") and runtime.has_method("max_mana"):
+		eterium_actual = float(runtime.call("mana"))
+		eterium_maximo = float(runtime.call("max_mana"))
 
 	_actualizar_barra_float(
 		eterium_bar,
@@ -790,57 +812,19 @@ func _al_mision_completada(_mision: Dictionary) -> void:
 
 
 func _preparar_panel_misiones() -> void:
-	mission_panel = PanelContainer.new()
-	mission_panel.name = "MissionPanel"
+	mission_panel = MISSION_PANEL_SCENE.instantiate() as PanelContainer
+	if mission_panel == null:
+		push_error("HUD: no se pudo instanciar hud_mission_panel.tscn.")
+		return
+
 	mission_panel.visible = false
 	mission_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	mission_panel.z_index = 2500
 	mission_panel.set_anchors_preset(Control.PRESET_CENTER)
 	mission_panel.position = Vector2(-280.0, -210.0)
 	mission_panel.size = Vector2(560.0, 420.0)
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.055, 0.035, 0.98)
-	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	mission_panel.add_theme_stylebox_override("panel", style)
-
-	var margin := MarginContainer.new()
-	margin.name = "Margin"
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_top", 20)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_bottom", 18)
-	mission_panel.add_child(margin)
-
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
-	margin.add_child(column)
-
-	var title := Label.new()
-	title.text = "MISIONES"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
-	title.add_theme_font_size_override("font_size", 18)
-	column.add_child(title)
-
-	mission_list = VBoxContainer.new()
-	mission_list.name = "MissionList"
-	mission_list.add_theme_constant_override("separation", 8)
-	mission_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(mission_list)
-
-	mission_hint = Label.new()
-	mission_hint.text = "F · Cerrar    ESC · Cerrar"
-	mission_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	mission_hint.add_theme_color_override("font_color", Color(0.62, 0.53, 0.42, 1.0))
-	mission_hint.add_theme_font_size_override("font_size", 10)
-	column.add_child(mission_hint)
-
+	mission_list = mission_panel.get_node("Margin/Column/MissionList") as VBoxContainer
+	mission_hint = mission_panel.get_node("Margin/Column/MissionHint") as Label
 	add_child(mission_panel)
 
 
@@ -962,80 +946,21 @@ func esta_mostrando_panel_misiones() -> bool:
 
 
 func _preparar_panel_interaccion() -> void:
-	interaction_panel = PanelContainer.new()
-	interaction_panel.name = "InteractionPanel"
+	interaction_panel = INTERACTION_PANEL_SCENE.instantiate() as PanelContainer
+	if interaction_panel == null:
+		push_error("HUD: no se pudo instanciar hud_interaction_panel.tscn.")
+		return
+
 	interaction_panel.visible = false
 	interaction_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	interaction_panel.z_index = 2000
-
 	interaction_panel.set_anchors_preset(Control.PRESET_CENTER)
 	interaction_panel.position = Vector2(-230.0, -150.0)
 	interaction_panel.size = Vector2(460.0, 300.0)
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.055, 0.035, 0.98)
-	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-	interaction_panel.add_theme_stylebox_override(
-		"panel",
-		style
-	)
-
-	var margin := MarginContainer.new()
-	margin.name = "Margin"
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_top", 20)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_bottom", 20)
-	interaction_panel.add_child(margin)
-
-	var column := VBoxContainer.new()
-	column.name = "Column"
-	column.add_theme_constant_override("separation", 12)
-	margin.add_child(column)
-
-	interaction_title = Label.new()
-	interaction_title.name = "Title"
-	interaction_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	interaction_title.add_theme_color_override(
-		"font_color",
-		Color(0.93, 0.84, 0.65, 1.0)
-	)
-	interaction_title.add_theme_font_size_override(
-		"font_size",
-		18
-	)
-	column.add_child(interaction_title)
-
-	interaction_body = Label.new()
-	interaction_body.name = "Body"
-	interaction_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	interaction_body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	interaction_body.custom_minimum_size = Vector2(0, 160)
-	interaction_body.add_theme_color_override(
-		"font_color",
-		Color(0.78, 0.70, 0.57, 1.0)
-	)
-	interaction_body.add_theme_font_size_override(
-		"font_size",
-		12
-	)
-	column.add_child(interaction_body)
-
-	interaction_close = Button.new()
-	interaction_close.name = "Close"
-	interaction_close.text = "Cerrar"
-	interaction_close.custom_minimum_size = Vector2(0, 34)
-	interaction_close.focus_mode = Control.FOCUS_NONE
-	interaction_close.pressed.connect(
-		cerrar_panel_interaccion
-	)
-	column.add_child(interaction_close)
-
+	interaction_title = interaction_panel.get_node("Margin/Column/Title") as Label
+	interaction_body = interaction_panel.get_node("Margin/Column/Body") as Label
+	interaction_close = interaction_panel.get_node("Margin/Column/Close") as Button
+	interaction_close.pressed.connect(cerrar_panel_interaccion)
 	add_child(interaction_panel)
 
 
@@ -1119,7 +1044,10 @@ func _crear_huecos_manos() -> void:
 
 
 func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
-	var slot := Button.new()
+	var slot := HAND_SLOT_SCENE.instantiate() as Button
+	if slot == null:
+		push_error("HUD: no se pudo instanciar hud_hand_slot.tscn.")
+		return null
 	slot.name = nombre
 	slot.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	slot.anchor_left = 0.5
@@ -1130,16 +1058,11 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.offset_bottom = 0.0
 	slot.offset_left = -134.0 if tecla == "Q" else 86.0
 	slot.offset_right = -86.0 if tecla == "Q" else 134.0
-	slot.custom_minimum_size = Vector2(48, 48)
-	slot.focus_mode = Control.FOCUS_NONE
-	slot.mouse_filter = Control.MOUSE_FILTER_STOP
-	slot.expand_icon = true
-	slot.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	slot.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
-	slot.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
-	slot.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
-	slot.add_theme_stylebox_override("focus", _estilo_hueco_mano(false))
+	PIXEL_UI_THEME.apply(slot)
 	slot.tooltip_text = "Mano " + ("izquierda" if tecla == "Q" else "derecha") + " (" + tecla + ")"
+	var etiqueta_tecla := slot.get_node_or_null("HandKey") as Label
+	if etiqueta_tecla != null:
+		etiqueta_tecla.text = tecla
 	if OS.has_feature("android"):
 		slot.pressed.connect(func() -> void:
 			if not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
@@ -1150,26 +1073,8 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 				else:
 					_abrir_selector_mano(mano)
 		)
-	var numero := Label.new()
-	numero.name = "HandKey"
-	numero.text = tecla
-	numero.position = Vector2(4, 2)
-	numero.size = Vector2(14, 12)
-	numero.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	numero.add_theme_font_size_override("font_size", 9)
-	numero.add_theme_color_override("font_color", Color(0.72, 0.64, 0.50, 1))
-	slot.add_child(numero)
 	add_child(slot)
 	return slot
-
-
-func _estilo_hueco_mano(seleccionado: bool) -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.34, 0.27, 0.14, 1.0) if seleccionado else Color(0.18, 0.115, 0.07, 0.98)
-	estilo.set_border_width_all(2)
-	estilo.border_color = Color(0.74, 0.62, 0.34, 1.0) if seleccionado else Color(0.42, 0.29, 0.17, 1.0)
-	estilo.set_corner_radius_all(3)
-	return estilo
 
 
 func _al_cambiar_inventario_manos() -> void:
@@ -1193,45 +1098,24 @@ func _actualizar_hueco_mano(slot: Button, mano: String) -> void:
 
 
 func _crear_selector_manos() -> void:
-	# Selector compacto anclado encima del botón Q/E, sin panel centrado.
-	_hand_selector = PanelContainer.new()
-	_hand_selector.name = "HandItemSelector"
-	_hand_selector.visible = false
-	_hand_selector.custom_minimum_size = Vector2(42, 0)
-	_hand_selector.size = Vector2(42, 0)
-	_hand_selector.mouse_filter = Control.MOUSE_FILTER_STOP
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.10, 0.065, 0.04, 0.98)
-	panel_style.set_border_width_all(1)
-	panel_style.border_color = Color(0.42, 0.29, 0.17, 1)
-	panel_style.set_corner_radius_all(3)
-	panel_style.content_margin_left = 3
-	panel_style.content_margin_right = 3
-	panel_style.content_margin_top = 3
-	panel_style.content_margin_bottom = 3
-	_hand_selector.add_theme_stylebox_override("panel", panel_style)
-	add_child(_hand_selector)
-
-	_hand_selector_grid = VBoxContainer.new()
-	_hand_selector_grid.add_theme_constant_override("separation", 3)
-	_hand_selector.add_child(_hand_selector_grid)
+	_hand_selector = HAND_ITEM_SELECTOR_SCENE.instantiate() as PanelContainer
+	if _hand_selector == null:
+		push_error("HUD: no se pudo instanciar hud_hand_item_selector.tscn.")
+		return
+	PIXEL_UI_THEME.apply(_hand_selector)
+	_hand_selector_grid = _hand_selector.get_node_or_null("Buttons") as VBoxContainer
+	if _hand_selector_grid == null:
+		push_error("HUD: falta Buttons en hud_hand_item_selector.tscn.")
+		return
+	_hand_selector_buttons.clear()
 	for i in range(6):
-		var button := Button.new()
-		button.custom_minimum_size = Vector2(34, 32)
-		button.size = Vector2(34, 32)
-		button.focus_mode = Control.FOCUS_NONE
-		button.mouse_filter = Control.MOUSE_FILTER_STOP
-		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.expand_icon = true
-		button.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1))
-		button.add_theme_font_size_override("font_size", 9)
-		button.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
-		button.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
-		button.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
+		var button := _hand_selector_grid.get_node_or_null("Slot%d" % (i + 1)) as Button
+		if button == null:
+			push_error("HUD: falta Slot%d en el selector de manos." % (i + 1))
+			continue
 		button.pressed.connect(_al_pulsar_selector_mano.bind(i))
-		_hand_selector_grid.add_child(button)
 		_hand_selector_buttons.append(button)
+	add_child(_hand_selector)
 
 
 func _abrir_selector_mano(mano: String) -> void:
@@ -1309,7 +1193,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var hand_key := event as InputEventKey
 		# Capturar Tab en _input para evitar que otro control consuma la entrada.
-		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_M:
+		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_M and not hand_key.shift_pressed:
 			var inventory_node := get_tree().get_first_node_in_group("inventory")
 			if inventory_node != null and inventory_node.has_method("toggle_mapa"):
 				inventory_node.call("toggle_mapa")
@@ -1385,8 +1269,10 @@ func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
 
 
 func _preparar_reloj_calendario() -> void:
-	_calendar_panel = PanelContainer.new()
-	_calendar_panel.name = "CalendarClock"
+	_calendar_panel = CALENDAR_CLOCK_SCENE.instantiate() as PanelContainer
+	if _calendar_panel == null:
+		push_error("HUD: no se pudo instanciar hud_calendar_clock.tscn.")
+		return
 	_calendar_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_calendar_panel.anchor_left = 1.0
 	_calendar_panel.anchor_right = 1.0
@@ -1396,35 +1282,16 @@ func _preparar_reloj_calendario() -> void:
 	_calendar_panel.offset_top = 12.0
 	_calendar_panel.offset_right = -12.0
 	_calendar_panel.offset_bottom = 82.0
-	_calendar_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.075, 0.05, 0.035, 0.88)
-	estilo.set_border_width_all(1)
-	estilo.border_color = Color(0.42, 0.29, 0.17, 1.0)
-	estilo.set_corner_radius_all(4)
-	estilo.content_margin_left = 10
-	estilo.content_margin_right = 10
-	estilo.content_margin_top = 6
-	estilo.content_margin_bottom = 6
-	_calendar_panel.add_theme_stylebox_override("panel", estilo)
-	_calendar_label = Label.new()
-	_calendar_label.name = "CalendarText"
-	_calendar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_calendar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_calendar_label.add_theme_color_override("font_color", Color(0.93, 0.84, 0.65, 1.0))
-	_calendar_label.add_theme_color_override("font_outline_color", Color(0.075, 0.05, 0.035, 1.0))
-	_calendar_label.add_theme_constant_override("outline_size", 2)
-	_calendar_label.add_theme_font_size_override("font_size", 11)
-	_calendar_label.text = "GARLIA\nCargando calendario…"
-	_calendar_panel.add_child(_calendar_label)
+	_calendar_label = _calendar_panel.get_node("CalendarText") as Label
 	add_child(_calendar_panel)
 
 
 func _actualizar_reloj_calendario() -> void:
 	if not is_instance_valid(_calendar_label):
 		return
+	# En reinos fijos no existe WorldAtmosphere. Conservamos la última
+	# lectura válida en vez de reemplazar el reloj por "no disponible".
 	if not is_instance_valid(_world_atmosphere_ref):
-		_calendar_label.text = "GARLIA\nCalendario no disponible"
 		return
 	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
@@ -1441,36 +1308,39 @@ func _actualizar_reloj_calendario() -> void:
 
 
 func _preparar_panel_garumis_vinculados() -> void:
-	_garumis_vinculados_panel = PanelContainer.new()
-	_garumis_vinculados_panel.name = "GarumisVinculados"
-	_garumis_vinculados_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_garumis_vinculados_panel = GARUMI_LINKED_PANEL_SCENE.instantiate() as HBoxContainer
+	if _garumis_vinculados_panel == null:
+		push_error("HUD: no se pudo instanciar hud_garumi_linked_panel.tscn.")
+		return
 	_garumis_vinculados_panel.position = Vector2(18.0, 18.0)
-	_garumis_vinculados_panel.custom_minimum_size = Vector2(174.0, 0.0)
-	_garumis_vinculados_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_garumis_vinculados_panel.z_index = 20
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.055, 0.04, 0.03, 0.88)
-	estilo.border_color = Color(0.48, 0.35, 0.20, 0.95)
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(4)
-	estilo.content_margin_left = 8.0
-	estilo.content_margin_top = 7.0
-	estilo.content_margin_right = 8.0
-	estilo.content_margin_bottom = 7.0
-	_garumis_vinculados_panel.add_theme_stylebox_override("panel", estilo)
+	_garumis_vinculados_lista = _garumis_vinculados_panel.get_node("GarumiSlots") as HBoxContainer
+	if _garumis_vinculados_lista == null:
+		push_error("HUD: falta GarumiSlots en hud_garumi_linked_panel.tscn.")
+		return
 	add_child(_garumis_vinculados_panel)
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 6)
-	_garumis_vinculados_panel.add_child(columna)
-	_garumis_vinculados_titulo = Label.new()
-	_garumis_vinculados_titulo.text = "Garumis (0/3)"
-	_garumis_vinculados_titulo.add_theme_font_size_override("font_size", 10)
-	_garumis_vinculados_titulo.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-	columna.add_child(_garumis_vinculados_titulo)
-	_garumis_vinculados_lista = VBoxContainer.new()
-	_garumis_vinculados_lista.add_theme_constant_override("separation", 5)
-	columna.add_child(_garumis_vinculados_lista)
-	_garumis_vinculados_panel.visible = false
+	for i in range(3):
+		_crear_hueco_garumi(i + 1)
+
+
+func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
+	var slot := GARUMI_LINKED_SLOT_SCENE.instantiate() as HBoxContainer
+	if slot == null:
+		push_error("HUD: no se pudo instanciar hud_garumi_linked_slot.tscn.")
+		return null
+	slot.name = "GarumiSlot" + str(numero_slot)
+	slot.set_meta("garumi_id", "")
+	var numero := slot.get_node("Numero") as Button
+	var anillo := slot.get_node("Vida") as GarumiHealthRing
+	if numero == null or anillo == null:
+		push_error("HUD: el slot de Garumi necesita Numero y Vida.")
+		slot.free()
+		return null
+	numero.text = str(numero_slot)
+	numero.tooltip_text = "Invocar / guardar Garumi %d" % numero_slot
+	numero.pressed.connect(_activar_garumi_por_indice.bind(numero_slot - 1))
+	_garumis_vinculados_lista.add_child(slot)
+	return slot
+
 
 func mostrar_panel_garumis_durante_combate(mostrar: bool) -> void:
 	if not is_instance_valid(_garumis_vinculados_panel):
@@ -1521,83 +1391,31 @@ func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
 	if _garumis_vinculados_ids.has(id):
 		actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
 		return
+	if _garumis_vinculados_nodos.size() >= 3:
+		return
+	var slot: HBoxContainer = null
+	for candidato in _garumis_vinculados_lista.get_children():
+		if candidato is HBoxContainer and str(candidato.get_meta("garumi_id", "")) == "":
+			slot = candidato as HBoxContainer
+			break
+	if slot == null:
+		return
 	_garumis_vinculados_ids[id] = true
 	_garumis_vinculados_nodos.append(garumi)
-	_garumis_vinculados_panel.visible = true
-	_actualizar_titulo_garumis_vinculados()
-	var fila := HBoxContainer.new()
-	fila.name = "Garumi_" + id
-	fila.add_theme_constant_override("separation", 7)
-	fila.custom_minimum_size = Vector2(0.0, 52.0)
-	fila.mouse_filter = Control.MOUSE_FILTER_STOP
-	_garumis_vinculados_lista.add_child(fila)
-	var numero := Label.new()
-	numero.name = "Numero"
-	numero.text = str(_garumis_vinculados_nodos.size())
-	numero.visible = _mostrar_numeros_garumis
-	numero.custom_minimum_size = Vector2(12.0, 0.0)
-	numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-	numero.add_theme_font_size_override("font_size", 12)
-	fila.add_child(numero)
-
-	var retrato := TextureRect.new()
-	retrato.custom_minimum_size = Vector2(36.0, 36.0)
-	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var textura := _buscar_textura_garumi(garumi)
-	if textura != null:
-		retrato.texture = textura
-	fila.add_child(retrato)
-	var indicador := Label.new()
-	indicador.name = "EstadoGuardado"
-	indicador.text = "●"
-	indicador.custom_minimum_size = Vector2(12.0, 0.0)
-	indicador.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	indicador.add_theme_font_size_override("font_size", 12)
-	fila.add_child(indicador)
-
-	var columna_info := VBoxContainer.new()
-	columna_info.name = "InfoGarumi"
-	columna_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_info.alignment = BoxContainer.ALIGNMENT_CENTER
-	columna_info.add_theme_constant_override("separation", 2)
-	columna_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fila.add_child(columna_info)
-	var etiqueta := Label.new()
-	etiqueta.name = "Nombre"
-	etiqueta.text = nombre
-	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta.add_theme_font_size_override("font_size", 10)
-	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.83, 0.68, 1.0))
-	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_info.add_child(etiqueta)
-	var vida_texto := Label.new()
-	vida_texto.name = "VidaTexto"
-	vida_texto.add_theme_font_size_override("font_size", 9)
-	vida_texto.add_theme_color_override("font_color", Color(0.80, 0.72, 0.60, 1.0))
-	vida_texto.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_info.add_child(vida_texto)
-	var barra_vida := ProgressBar.new()
-	barra_vida.name = "Vida"
-	barra_vida.custom_minimum_size = Vector2(0.0, 7.0)
-	barra_vida.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	barra_vida.show_percentage = false
-	barra_vida.min_value = 0.0
-	barra_vida.max_value = 100.0
-	barra_vida.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_info.add_child(barra_vida)
-	var liberar := Button.new()
-	liberar.text = "×"
-	liberar.tooltip_text = "Romper vínculo con " + nombre
-	liberar.custom_minimum_size = Vector2(24.0, 28.0)
-	liberar.focus_mode = Control.FOCUS_ALL
-	liberar.pressed.connect(_pedir_ruptura_vinculo.bind(garumi))
-	fila.add_child(liberar)
+	slot.set_meta("garumi_id", id)
+	var numero := slot.get_node_or_null("Numero") as Button
+	if numero != null:
+		numero.text = str(_garumis_vinculados_nodos.size())
+		numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+	var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+	if anillo != null:
+		anillo.occupied = true
+		var retrato := anillo.get_node_or_null("Retrato") as TextureRect
+		if retrato != null:
+			retrato.texture = _buscar_textura_garumi(garumi)
+	_actualizar_vidas_garumis_vinculados()
 	actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
+
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	if not is_instance_valid(nodo):
@@ -1619,41 +1437,72 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	return null
 
 func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
+	# El combate gestiona Shift+1/2/3 para cambiar el aliado activo.
+	if _combate_garumi_activo:
+		return false
+	for nodo_inventario in get_tree().get_nodes_in_group("inventory"):
+		if nodo_inventario is CanvasItem and (nodo_inventario as CanvasItem).visible:
+			return false
 	for modal in get_tree().get_nodes_in_group("modal_ui"):
 		if is_instance_valid(modal) and modal.is_inside_tree() and not modal.is_queued_for_deletion():
 			return false
-	if evento.keycode == KEY_G:
-		_mostrar_numeros_garumis = not _mostrar_numeros_garumis
-		for i in range(_garumis_vinculados_nodos.size()):
-			var garumi := _garumis_vinculados_nodos[i]
-			if not is_instance_valid(garumi):
-				continue
-			var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-			if fila != null:
-				var numero := fila.get_node_or_null("Numero") as Label
-				if numero != null:
-					numero.text = str(i + 1)
-					numero.visible = _mostrar_numeros_garumis
-		return true
 
-	# Las teclas numéricas solo controlan Garumis mientras G mantiene
-	# visibles los números; fuera de ese modo, el juego recibe la tecla normal.
-	if not _mostrar_numeros_garumis:
+	var codigo := evento.keycode
+	if codigo >= KEY_KP_1 and codigo <= KEY_KP_3:
+		codigo = KEY_1 + (codigo - KEY_KP_1)
+	if codigo < KEY_1 or codigo > KEY_3:
 		return false
 
-	var numero_pulsado := -1
-	if evento.keycode >= KEY_1 and evento.keycode <= KEY_9:
-		numero_pulsado = evento.keycode - KEY_1 + 1
-	elif evento.keycode >= KEY_KP_1 and evento.keycode <= KEY_KP_9:
-		numero_pulsado = evento.keycode - KEY_KP_1 + 1
-	if numero_pulsado < 1 or numero_pulsado > _garumis_vinculados_nodos.size():
+	var indice := codigo - KEY_1
+	if indice < 0 or indice >= _garumis_vinculados_nodos.size():
 		return false
+	if evento.shift_pressed:
+		var garumi_curacion := _garumis_vinculados_nodos[indice]
+		if is_instance_valid(garumi_curacion):
+			_curar_garumi_vinculado_con_eterium(garumi_curacion)
+	else:
+		_activar_garumi_por_indice(indice)
+	return true
+
+
+func _activar_garumi_por_indice(indice: int) -> void:
+	if _combate_garumi_activo or indice < 0 or indice >= _garumis_vinculados_nodos.size():
+		return
 	if not is_instance_valid(player):
-		return true
-	var garumi := _garumis_vinculados_nodos[numero_pulsado - 1]
+		return
+	var garumi := _garumis_vinculados_nodos[indice]
 	if is_instance_valid(garumi) and garumi.has_method("alternar_estado_invocacion"):
 		garumi.call("alternar_estado_invocacion", player)
-	return true
+
+
+func _curar_garumi_vinculado_con_eterium(garumi: Node) -> void:
+	const COSTO_ETERIUM := 10
+	const CURACION := 25
+
+	if not is_instance_valid(player) or not is_instance_valid(garumi):
+		return
+	if not garumi.has_method("curar_con_eterium"):
+		return
+	if not bool(garumi.get("is_alive")):
+		return
+
+	var vida_actual := int(garumi.get("health"))
+	var vida_maxima := maxi(1, int(garumi.get("max_health")))
+	if vida_actual >= vida_maxima:
+		return
+	if int(player.get("mana")) < COSTO_ETERIUM:
+		return
+	if not player.eterium.gastar(COSTO_ETERIUM):
+		return
+
+	player._sync_desde_vital()
+	player.mana_changed.emit(player.mana, player.max_mana)
+	var recuperada := int(garumi.call("curar_con_eterium", CURACION))
+	if recuperada <= 0:
+		# No cobrar si el Garumi no pudo recibir la curación.
+		player.eterium.restaurar(COSTO_ETERIUM)
+		player._sync_desde_vital()
+		player.mana_changed.emit(player.mana, player.max_mana)
 
 
 func _pedir_ruptura_vinculo(garumi: Node) -> void:
@@ -1690,33 +1539,65 @@ func eliminar_garumi_vinculado(garumi: Node) -> void:
 	if not is_instance_valid(garumi) or not is_instance_valid(_garumis_vinculados_lista):
 		return
 	var id := str(garumi.get_instance_id())
-	var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + id)
-	if is_instance_valid(fila):
-		fila.queue_free()
+	var slot := _obtener_slot_garumi(garumi)
+	if slot != null:
+		slot.set_meta("garumi_id", "")
+		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo != null:
+			anillo.occupied = false
+			anillo.health_ratio = 1.0
+			var retrato := anillo.get_node_or_null("Retrato") as TextureRect
+			if retrato != null:
+				retrato.texture = null
+			anillo.queue_redraw()
 	_garumis_vinculados_ids.erase(id)
 	_garumis_vinculados_nodos.erase(garumi)
 	_renumerar_garumis_vinculados()
-	_actualizar_titulo_garumis_vinculados()
-	_garumis_vinculados_panel.visible = not _garumis_vinculados_nodos.is_empty()
 
 
 func _actualizar_titulo_garumis_vinculados() -> void:
-	if is_instance_valid(_garumis_vinculados_titulo):
-		_garumis_vinculados_titulo.text = "Garumis (%d/3)" % _garumis_vinculados_nodos.size()
-
+	# El título se eliminó en el nuevo diseño.
+	pass
 
 func _renumerar_garumis_vinculados() -> void:
+	if not is_instance_valid(_garumis_vinculados_lista):
+		return
+	# Compacta los vínculos para que el número visible coincida con las teclas 1–3.
+	for i in range(_garumis_vinculados_lista.get_child_count()):
+		var slot := _garumis_vinculados_lista.get_child(i) as HBoxContainer
+		if slot == null:
+			continue
+		slot.set_meta("garumi_id", "")
+		var numero_vacio := slot.get_node_or_null("Numero") as Button
+		if numero_vacio != null:
+			numero_vacio.text = str(i + 1)
+			numero_vacio.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
+		var anillo_vacio := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo_vacio != null:
+			anillo_vacio.occupied = false
+			anillo_vacio.health_ratio = 1.0
+			var retrato_vacio := anillo_vacio.get_node_or_null("Retrato") as TextureRect
+			if retrato_vacio != null:
+				retrato_vacio.texture = null
+			anillo_vacio.queue_redraw()
 	for i in range(_garumis_vinculados_nodos.size()):
 		var garumi := _garumis_vinculados_nodos[i]
 		if not is_instance_valid(garumi):
 			continue
-		var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-		if fila == null:
+		var slot := _garumis_vinculados_lista.get_child(i) as HBoxContainer
+		if slot == null:
 			continue
-		var numero := fila.get_node_or_null("Numero") as Label
+		slot.set_meta("garumi_id", str(garumi.get_instance_id()))
+		var numero := slot.get_node_or_null("Numero") as Button
 		if numero != null:
 			numero.text = str(i + 1)
-			numero.visible = _mostrar_numeros_garumis
+		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo != null:
+			anillo.occupied = true
+			var retrato := anillo.get_node_or_null("Retrato") as TextureRect
+			if retrato != null:
+				retrato.texture = _buscar_textura_garumi(garumi)
+	_actualizar_vidas_garumis_vinculados()
 
 
 func _actualizar_vidas_garumis_vinculados() -> void:
@@ -1725,27 +1606,38 @@ func _actualizar_vidas_garumis_vinculados() -> void:
 	for garumi in _garumis_vinculados_nodos:
 		if not is_instance_valid(garumi):
 			continue
-		var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-		if fila == null:
+		var slot := _obtener_slot_garumi(garumi)
+		if slot == null:
 			continue
-		var barra := fila.get_node_or_null("InfoGarumi/Vida") as ProgressBar
-		var texto := fila.get_node_or_null("InfoGarumi/VidaTexto") as Label
-		if barra == null or texto == null:
+		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
+		if anillo == null:
 			continue
 		var vida_maxima := maxi(1, int(garumi.get("max_health")))
 		var vida_actual := clampi(int(garumi.get("health")), 0, vida_maxima)
-		barra.max_value = vida_maxima
-		barra.value = vida_actual
-		texto.text = "Vida %d / %d" % [vida_actual, vida_maxima]
+		anillo.health_ratio = float(vida_actual) / float(vida_maxima)
+		anillo.occupied = true
+		anillo.queue_redraw()
+
+func _obtener_slot_garumi(garumi: Node) -> HBoxContainer:
+	if not is_instance_valid(garumi) or not is_instance_valid(_garumis_vinculados_lista):
+		return null
+	var id := str(garumi.get_instance_id())
+	for candidato in _garumis_vinculados_lista.get_children():
+		if candidato is HBoxContainer and str(candidato.get_meta("garumi_id", "")) == id:
+			return candidato as HBoxContainer
+	return null
 
 
 func actualizar_estado_garumi(garumi: Node, guardado: bool) -> void:
-	if not is_instance_valid(garumi) or _garumis_vinculados_lista == null:
+	if not is_instance_valid(garumi):
 		return
-	var fila := _garumis_vinculados_lista.get_node_or_null("Garumi_" + str(garumi.get_instance_id()))
-	if fila == null:
+	var slot := _obtener_slot_garumi(garumi)
+	if slot == null:
 		return
-	var indicador := fila.get_node_or_null("EstadoGuardado") as Label
-	if indicador == null:
-		return
-	indicador.add_theme_color_override("font_color", Color(0.70, 0.51, 0.32, 1.0) if guardado else Color(0.13, 0.10, 0.075, 1.0))
+	var numero := slot.get_node_or_null("Numero") as Button
+	if numero != null:
+		numero.visible = true
+		numero.add_theme_color_override(
+			"font_color",
+			Color(0.88, 0.75, 0.53, 1.0) if not guardado else Color(0.13, 0.10, 0.075, 1.0)
+		)

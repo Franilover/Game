@@ -1,8 +1,9 @@
 extends Control
-
 class_name PauseMenu
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
+const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
 
 @onready var volver_button: Button = $Panel/Margin/Column/VolverButton
 @onready var mundo_button: Button = $Panel/Margin/Column/MundoButton
@@ -11,6 +12,7 @@ const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
 
 var abierto: bool = false
 var _inventory: Node = null
+var _settings_panel: SettingsPanel = null
 
 
 func configurar(inventario: Node) -> void:
@@ -25,15 +27,22 @@ func _ready() -> void:
 	$Panel.visible = false
 
 	volver_button.pressed.connect(_volver)
+	configuracion_button.pressed.connect(_abrir_configuracion)
 	menu_button.pressed.connect(_volver_al_menu)
 
-	# Estas opciones forman parte de la interfaz desde ahora,
-	# pero todavía no tienen sistema detrás.
+	# Mundo sigue reservado; Configuración ya tiene panel funcional.
 	mundo_button.disabled = true
-	configuracion_button.disabled = true
+	configuracion_button.disabled = false
+	PIXEL_UI_THEME.apply(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_ESCAPE:
+			_cerrar_configuracion()
+			get_viewport().set_input_as_handled()
+		return
+
 	if event is not InputEventKey:
 		return
 
@@ -68,6 +77,7 @@ func _abrir() -> void:
 		return
 
 	abierto = true
+	_cerrar_menus_contextuales_garumi()
 	$Overlay.visible = true
 	$Panel.visible = true
 	get_tree().paused = true
@@ -82,6 +92,41 @@ func _cerrar() -> void:
 	$Overlay.visible = false
 	$Panel.visible = false
 	get_tree().paused = false
+
+
+func _abrir_configuracion() -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		return
+
+	$Overlay.visible = false
+	$Panel.visible = false
+	_settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
+	if _settings_panel == null:
+		push_error("PauseMenu: no se pudo crear el panel de configuración.")
+		$Overlay.visible = true
+		$Panel.visible = true
+		return
+
+	_settings_panel.closed.connect(_cerrar_configuracion)
+	add_child(_settings_panel)
+	_settings_panel.z_index = 5000
+
+
+func _cerrar_menus_contextuales_garumi() -> void:
+	# Los menús contextuales de Garumi viven en CanvasLayers globales
+	# y pueden quedar por encima del menú de pausa (y Configuración).
+	for garumi in get_tree().get_nodes_in_group("garumi_instances"):
+		if is_instance_valid(garumi) and garumi.has_method("cerrar_menu_contextual"):
+			garumi.call("cerrar_menu_contextual")
+
+
+func _cerrar_configuracion() -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		_settings_panel.queue_free()
+	_settings_panel = null
+	if abierto:
+		$Overlay.visible = true
+		$Panel.visible = true
 
 
 func _volver() -> void:

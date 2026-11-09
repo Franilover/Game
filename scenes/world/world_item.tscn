@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_item.gd" id="1_world_item"]
+[ext_resource type="Texture2D" path="res://assets/art/items/Espada de Madera.png" id="2_preview_icon"]
+
+[node name="WorldItem" type="Node2D"]
+z_index = 10
+script = ExtResource("1_world_item")
+
+[node name="ItemIcon" type="Sprite2D" parent="."]
+texture = ExtResource("2_preview_icon")
+centered = true
+texture_filter = 1
+
+[node name="InteractionLabel" type="Label" parent="."]
+visible = false
+offset_left = -80.0
+offset_top = -42.0
+offset_right = 80.0
+offset_bottom = -18.0
+text = "[ LMB ] · Objeto"
+horizontal_alignment = 1
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.93, 0.86, 0.68, 1)
+theme_override_colors/font_shadow_color = Color(0.08, 0.05, 0.03, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10

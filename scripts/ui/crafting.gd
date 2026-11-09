@@ -2,17 +2,19 @@ extends Control
 
 class_name CraftingUI
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const HTTP_TIMEOUT: float = 8.0
 
 var _request: HTTPRequest
 var _recetas: Array[Dictionary] = []
 var _cargando: bool = false
-var _lista: GridContainer
-var _estado: Label
-var _detalle_nombre: Label
-var _detalle_icono: TextureRect
-var _detalle_ingredientes: RichTextLabel
-var _boton_craftear: Button
+@onready var _lista: GridContainer = $Margin/Column/Content/RecipeScroll/RecipeGrid
+@onready var _lista_scroll: ScrollContainer = $Margin/Column/Content/RecipeScroll
+@onready var _estado: Label = $Margin/Column/Status
+@onready var _detalle_nombre: Label = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/RecipeName
+@onready var _detalle_icono: TextureRect = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/RecipeIcon
+@onready var _detalle_ingredientes: RichTextLabel = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/Ingredients
+@onready var _boton_craftear: Button = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/CraftButton
 var _receta_seleccionada: Dictionary = {}
 var _inventory: Node = null
 var _world_items: GarliaWorldItems = null
@@ -31,106 +33,18 @@ func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 
 func _ready() -> void:
 	set_process_mode(Node.PROCESS_MODE_ALWAYS)
-	_crear_interfaz()
+	PIXEL_UI_THEME.apply(self)
+	$Margin/Column/Content/DetailPanel.add_theme_stylebox_override(
+		"panel",
+		_crear_estilo_boton(Color(0.075, 0.05, 0.035, 0.95), Color(0.29, 0.19, 0.12, 1), 1)
+	)
+	_boton_craftear.pressed.connect(_craftear_seleccionado)
+	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
+	call_deferred("_ajustar_columnas_recetas")
 	_cargar_recetas()
 
 
 
-func _crear_interfaz() -> void:
-	var margen := MarginContainer.new()
-	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margen.add_theme_constant_override("margin_left", 12)
-	margen.add_theme_constant_override("margin_top", 8)
-	margen.add_theme_constant_override("margin_right", 12)
-	margen.add_theme_constant_override("margin_bottom", 8)
-	add_child(margen)
-
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 4)
-	margen.add_child(columna)
-
-
-	_estado = Label.new()
-	_estado.text = "Cargando recetas..."
-	_estado.add_theme_font_size_override("font_size", 10)
-	_estado.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46))
-	columna.add_child(_estado)
-
-	var contenido := HBoxContainer.new()
-	contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_theme_constant_override("separation", 5)
-	columna.add_child(contenido)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_child(scroll)
-
-	_lista = GridContainer.new()
-	_lista.columns = 3
-	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista.add_theme_constant_override("h_separation", 4)
-	_lista.add_theme_constant_override("v_separation", 4)
-	scroll.add_child(_lista)
-
-	var panel_detalle := PanelContainer.new()
-	panel_detalle.custom_minimum_size = Vector2(112, 0)
-	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel_detalle.add_theme_stylebox_override("panel", _crear_estilo_boton(Color(0.075, 0.05, 0.035, 0.95), Color(0.29, 0.19, 0.12, 1), 1))
-	contenido.add_child(panel_detalle)
-
-	var margen_detalle := MarginContainer.new()
-	margen_detalle.add_theme_constant_override("margin_left", 5)
-	margen_detalle.add_theme_constant_override("margin_top", 5)
-	margen_detalle.add_theme_constant_override("margin_right", 5)
-	margen_detalle.add_theme_constant_override("margin_bottom", 5)
-	panel_detalle.add_child(margen_detalle)
-
-	var columna_detalle := VBoxContainer.new()
-	columna_detalle.add_theme_constant_override("separation", 4)
-	margen_detalle.add_child(columna_detalle)
-
-	_detalle_nombre = Label.new()
-	_detalle_nombre.text = "Selecciona un objeto"
-	_detalle_nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_detalle_nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_detalle_nombre.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1))
-	_detalle_nombre.add_theme_font_size_override("font_size", 13)
-	columna_detalle.add_child(_detalle_nombre)
-
-	_detalle_icono = TextureRect.new()
-	_detalle_icono.custom_minimum_size = Vector2(0, 58)
-	_detalle_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_detalle_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_detalle_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_detalle_icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_detalle_icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_detalle.add_child(_detalle_icono)
-
-	var titulo_ingredientes := Label.new()
-	titulo_ingredientes.text = "Necesitas"
-	titulo_ingredientes.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46))
-	titulo_ingredientes.add_theme_font_size_override("font_size", 11)
-	columna_detalle.add_child(titulo_ingredientes)
-
-	_detalle_ingredientes = RichTextLabel.new()
-	_detalle_ingredientes.bbcode_enabled = true
-	_detalle_ingredientes.fit_content = true
-	_detalle_ingredientes.scroll_active = true
-	_detalle_ingredientes.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_detalle_ingredientes.add_theme_color_override("default_color", Color(0.72, 0.61, 0.45, 1))
-	_detalle_ingredientes.add_theme_font_size_override("normal_font_size", 10)
-	columna_detalle.add_child(_detalle_ingredientes)
-
-	_boton_craftear = Button.new()
-	_boton_craftear.text = "Craftear"
-	_boton_craftear.custom_minimum_size = Vector2(0, 26)
-	_boton_craftear.disabled = true
-	_boton_craftear.pressed.connect(_craftear_seleccionado)
-	_boton_craftear.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
-	_boton_craftear.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
-	_boton_craftear.add_theme_stylebox_override("disabled", _crear_estilo_boton(Color(0.10, 0.075, 0.05, 0.8), Color(0.25, 0.18, 0.12, 1), 1))
-	columna_detalle.add_child(_boton_craftear)
 
 
 func _cargar_recetas() -> void:
@@ -217,26 +131,25 @@ func _renderizar_recetas() -> void:
 
 func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	var panel := Button.new()
-	panel.custom_minimum_size = Vector2(64, 64)
+	panel.custom_minimum_size = Vector2(56, 56)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.name = "InventorySlot"
 	panel.tooltip_text = str(receta.get("nombre", "Receta"))
-	panel.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.11, 0.07, 0.045, 0.9), Color(0.29, 0.19, 0.12, 1), 1))
-	panel.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
-	panel.add_theme_stylebox_override("pressed", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
-	panel.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	panel.text = ""
 	panel.pressed.connect(func() -> void:
 		_seleccionar_receta(receta)
 	)
 	_lista.add_child(panel)
+	PIXEL_UI_THEME.apply(panel)
 
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var icono := TextureRect.new()
 	icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icono.offset_left = 6
-	icono.offset_top = 6
-	icono.offset_right = -6
-	icono.offset_bottom = -6
-	icono.custom_minimum_size = Vector2(52, 52)
+	icono.offset_left = 7
+	icono.offset_top = 7
+	icono.offset_right = -7
+	icono.offset_bottom = -7
+	icono.custom_minimum_size = Vector2(42, 42)
 	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -247,6 +160,15 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	)
 	panel.add_child(icono)
 
+
+
+func _ajustar_columnas_recetas() -> void:
+	if not is_instance_valid(_lista) or not is_instance_valid(_lista_scroll):
+		return
+	var separacion := 6
+	var ancho_util := maxi(1, int(_lista_scroll.size.x))
+	var columnas := floori(float(ancho_util + separacion) / 62.0)
+	_lista.columns = clampi(columnas, 3, 8)
 
 
 func _seleccionar_receta(receta: Dictionary) -> void:

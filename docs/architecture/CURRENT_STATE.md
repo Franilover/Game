@@ -1,6 +1,6 @@
 # Garlia — Auditoría del estado actual
 
-Fecha: 2026-10-04
+Fecha: 2026-11-05
 
 ## Evidencia revisada
 
@@ -23,8 +23,9 @@ Se detectaron especialmente:
 - WorldTerrain, WorldTerrainVisual, WorldStreamer, WorldEntitySpawner y WorldAtmosphere ahora son nodos explícitos de `main.tscn`.
 - WorldAtmosphere recibe su CanvasModulate como dependencia de escena.
 - GameplayInputRouter recibe explícitamente InteractionSystem y CombatSystem.
-- CombatSystem recibe explícitamente Inventory, WorldGenerator y root de proyectiles.
-- InteractionSystem recibe explícitamente Inventory y GarliaWorldItems.
+- CombatSystem recibe explícitamente InventoryController, WorldContext, root de proyectiles y GameState.
+- InteractionSystem recibe InventoryController y GarliaWorldItems; no depende de la UI de inventario.
+- InventoryController centraliza uso/consumo de objetos de mano y durabilidad; GarliaInventory sólo refleja esos cambios mediante señales.
 - `DialogueSystem` accede directamente a MissionManager y RelationshipSystem.
 - `IUMManager` ya usa `IUMRepository → SupabaseClient` para acceso remoto.
 - `GameState` coordina guardado/carga local; `PlayerState`, `WorldState` y `DiscoveryState` contienen los snapshots persistibles correspondientes.
@@ -466,3 +467,228 @@ La cadena de combate ahora mantiene el contrato `Entity` desde la detección has
 ## Cuadragésima tercera barrida — GameState tipado en Player
 
 `GameState` ahora tiene contrato explícito (`class_name GameState`) y `Player` dejó de depender de llamadas dinámicas para terreno, descubrimientos, configuración de personaje y guardado. La dependencia de estado de partida queda tipada desde la composición hasta el uso.
+
+## Cuadragésima cuarta barrida — InteractionSystem y CombatSystem cierran la frontera de manos
+
+Se eliminó la dependencia de presentación que todavía quedaba en la ruta contextual:
+
+- `InteractionSystem` recibe `InventoryController` directamente desde `Main`.
+- La UI `GarliaInventory` ya no es necesaria para que el gameplay consulte, use o consuma un objeto de mano.
+- Las reglas de uso de consumibles (vida, stamina y Eterium), la validación de efectos y el consumo de cantidad ahora pertenecen a `InventoryController`.
+- `InventoryController` emite `mano_objeto_cambiado` tras el uso, consumo o desgaste de una mano; `GarliaInventory` escucha el evento y actualiza slots, selección y presentación.
+- El bloqueo de acciones sigue siendo responsabilidad de `GameplayInputRouter`/`GameplayInputGate`; la UI conserva su papel de bloqueo visual/modal.
+- `CombatSystem` identifica explícitamente la mano usada: acción primaria = izquierda; acción secundaria = derecha. El consumo de durabilidad sigue esa misma mano, sin invertirla.
+
+La regresión `CombatTemporalContract` ahora comprueba ambos casos de durabilidad. GitHub Actions ejecutó Godot 4.7, compilación de recursos y la suite headless de regresión para esta rama.
+
+La separación de manos no cambia las reglas de combate ni el comportamiento de uso de consumibles; sólo mueve la operación a su dueño y corrige el destino de la durabilidad.
+
+## Cuadragésima quinta barrida — Resolución de objetos y dirección de ataque
+
+Se separó la interpretación de datos de objetos de la ejecución del combate:
+
+- Se creó `CombatItemResolver` como componente puro para clasificar armas/herramientas, interpretar el modo de ataque y leer daño, alcance, ancho y otras propiedades numéricas.
+- `CombatSystem` conserva la orquestación: valida la acción, crea el hitbox o proyectil y coordina el daño. Mantiene wrappers internos para no romper sus consumidores actuales.
+- `CombatController` ya entrega dirección, objeto y modo en la solicitud. `CombatSystem` ahora conserva esa dirección durante la ejecución melee y a distancia; sólo consulta el facing actual cuando el vector recibido es inválido/cero.
+- Se añadieron pruebas para clasificación directa y legacy, categorías anidadas, modo proyectil, valores por defecto y dirección recibida.
+- GitHub Actions ejecutó la suite completa con Godot 4.7, incluida la prueba nueva de `CombatItemResolver` y el contrato temporal de combate.
+
+No se alteraron fórmulas de daño, balance, alcance, categorías admitidas ni reglas de ataque; esta pasada separa lectura de datos y respeta el snapshot de dirección de la solicitud.
+
+## Cuadragésima sexta barrida — Construcción de ataques separada de la orquestación
+
+Se extrajo la creación y conexión de nodos de ataque a `CombatAttackExecutor`:
+
+- `crear_ataque_melee()` construye/configura `CombatAttackArea`, aplica el override de daño directo, conecta el callback de objetivo y agrega el hitbox al atacante.
+- `disparar_proyectil()` construye `CombatAttack` y `CombatProjectile`, establece la posición inicial, configura movimiento/vida/colisión y conecta las señales de contacto e impacto.
+- `CombatSystem` conserva las decisiones de combate, selección de objeto, cooldown, feedback, daño, agresión ecológica, absorción de Eterium y registro de derrotas. Sólo delega la construcción/instanciación.
+- Se añadió `test_combat_attack_executor.tscn`, que verifica la creación melee y a distancia, dirección, propiedades, override de daño, root de proyectiles y conexiones de señales.
+- GitHub Actions validó la importación de Godot 4.7 y la suite completa, incluida la nueva prueba del executor.
+
+La extracción mantiene el orden de configuración y adición de nodos que ya utilizaba `CombatSystem`. No altera daño, cooldown, velocidad, alcance, duración, posición inicial ni reacciones posteriores al impacto.
+
+
+## Cuadragésima séptima barrida — Efectos posteriores al impacto separados
+
+Se extrajeron los efectos que ocurren después de confirmar una reducción real de salud a `CombatImpactEffects`:
+
+- Reacciones de `CreatureAI` ante armas.
+- Registro de derrotas mediante `GameStateService`.
+- Marcadores de agresión ecológica del bosque.
+- Feedback visual del objetivo.
+- `CombatSystem` sigue siendo dueño de las rutas de daño, contacto, cooldown, eventos públicos, absorción de Eterium y robo de vida.
+- `CombatDamage` permanece como única capa que reduce salud. `CombatProjectile` conserva su contrato: publica el contacto por separado y emite el impacto consumible únicamente si la salud disminuyó.
+- Se añadió una regresión para agresión ecológica, registro en enciclopedia y dependencias nulas, integrada en GitHub Actions.
+
+La extracción no agrega otra aplicación de daño ni unifica artificialmente los caminos melee, proyectil y ataque de criatura. Se preservan los momentos y condiciones actuales de cada efecto.
+
+## Cuadragésima octava barrida — Resultado de impacto unificado y atribución
+
+Se consolidó en `CombatImpactEffects.procesar_impacto_confirmado()` la parte compartida de los tres caminos de daño confirmado:
+
+- Melee y armas de entidades llaman al mismo procesador después de que `CombatDamage` confirma una reducción real de salud.
+- Los proyectiles llaman al mismo procesador desde `objetivo_impactado`; el proyectil sigue siendo quien aplica el daño, así que no existe una segunda aplicación.
+- Las derrotas de criaturas se registran desde las tres rutas. La agresión ecológica se atribuye al jugador atacante sin depender de que la víctima tenga un AIController.
+- El jugador recibe absorción de Eterium cuando él es el atacante que derrota a la criatura, también mediante proyectil. Las derrotas causadas por criaturas/NPC no se atribuyen por defecto al jugador.
+- Las reacciones de IA se notifican para impactos con arma contra criaturas que sobreviven; el feedback visual se procesa una sola vez.
+- La curación por robo de vida del vampiro y los eventos públicos de combate permanecen en `CombatSystem`.
+- La prueba cubre la absorción por derrota de jugador, la agresión de Feerin, el registro de derrota, las reacciones de IA y la no atribución al jugador de derrotas causadas por NPC.
+
+El procesador solo recibe impactos ya confirmados. No modifica vida, fórmulas, defensa, cooldown, ni el contrato de contacto independiente del daño.
+
+## Cuadragésima novena barrida — Señales entre Creature y CreatureAI
+
+Se eliminó la llamada directa de `Creature` a `CreatureAI` para notificar cambios de configuración y daño recibido:
+
+- `Creature` emite `configuracion_actualizada` al terminar de aplicar nuevos datos de especie.
+- `Creature` emite `danio_recibido(cantidad, atacante)` después de que `Entity` confirma una reducción real de salud. La emisión también sucede para impactos letales y conserva el atacante durante el evento.
+- `CreatureAI` se suscribe a ambas señales al iniciar: actualiza perfil/configuración y ejecuta sus reacciones defensivas/especializadas.
+- `Entity` conserva el estado vital; `Creature` lo extiende con datos de especie; `CreatureAI` conserva percepción, selección de objetivo, máquina de estados y decisiones de ataque.
+- `CombatSystem` continúa siendo el ejecutor de ataques solicitados por IA y el punto de coordinación del daño. No se movieron fórmulas, cooldowns, perfiles ni reglas de criaturas.
+- Se añadió una regresión con la escena real de criatura: comprueba actualización de perfil, reducción de salud, cantidad/atacante emitidos y reacción de Espíritu Estelar al recibir daño.
+
+La comunicación de configuración/daño es ahora un contrato de señales; se mantienen las otras dependencias explícitas de composición y control de simulación que todavía necesita `Creature`.
+
+
+## Quincuagésima barrida — Validación de solicitudes y resultado de ataque explícito
+
+Se separó la validación de ataques con arma de su ejecución y se dejó de representar todo el resultado con un booleano:
+
+- CombatWeaponAttackValidator valida atacante, objetivo vivo y clasificación del arma. No emite eventos ni aplica daño.
+- CombatSystem.solicitar_ataque_con_arma() ejecuta únicamente solicitudes válidas y devuelve CombatAttackResult.
+- CombatAttackResult separa cuatro datos: solicitud aceptada, contacto registrado, daño aplicado y motivo de rechazo.
+- CombatSystem._aplicar_danio() ahora devuelve si CombatDamage confirmó una reducción real de salud; sus consumidores que no necesitan el valor conservan el mismo comportamiento.
+- CreatureAI consulta solicitud_aceptada para mantener la reacción de Cambiaformas. La copia de apariencia conserva su condición previa: se realiza al aceptar la solicitud, no depende de que el daño sea mayor que cero.
+- Se mantiene atacar_objetivo_con_arma() como wrapper booleano de compatibilidad; su true significa solicitud aceptada, no daño aplicado.
+- La regresión verifica validación de entradas, rechazo de objetivos derrotados, contacto aceptado con daño cero y daño real aplicado exactamente una vez.
+
+No se modificaron daño, alcance, cooldown, clasificación de armas ni reglas de Cambiaformas. La separación aclara el contrato sin cambiar las condiciones de gameplay.
+
+
+## Quincuagésima primera barrida — Resultado tipado para ataques genéricos de entidades
+
+Se aplicó el mismo contrato explícito a las solicitudes de ataque genérico que usa CreatureAI:
+
+- CombatSystem.solicitar_danio_desde_entidad() devuelve CombatAttackResult: distingue solicitud aceptada, contacto registrado, daño aplicado y motivo de rechazo.
+- La API registra el contacto de una solicitud válida aunque la cantidad sea cero; sólo declara daño aplicado cuando CombatDamage confirma una reducción real de salud.
+- aplicar_danio_desde_entidad() permanece como wrapper booleano para consumidores existentes. Conserva su significado histórico: true únicamente cuando se redujo salud.
+- CreatureAI._aplicar_danio_objetivo() ahora devuelve el resultado tipado y distingue objetivo inválido de CombatSystem no disponible.
+- Lignianos aplica el slow sólo cuando el resultado confirma el contacto. El efecto no depende de que el daño sea mayor que cero.
+- Los efectos posteriores al impacto y el robo de vida del Vampiro siguen ejecutándose únicamente después de daño real confirmado.
+- Se añadió una regresión para daño cero, daño real, wrapper booleano, atacante nulo y objetivo derrotado.
+
+No se cambió la fórmula de daño, la defensa, el cooldown ni la cantidad de daño configurada por especie. Se unificó el contrato de resultados y se conserva la API anterior.
+
+
+## Quincuagésima segunda barrida — Ciclo de vida de muerte en Entity
+
+Se corrigió una transición inconsistente entre VitalState y Entity:
+
+- VitalState.recibir_danio() marca is_alive = false al llegar a cero.
+- Entity.take_damage() sincroniza ese estado antes de llamar a _die().
+- Antes de la corrección, _die() interpretaba el estado ya sincronizado como una muerte procesada y retornaba sin emitir died.
+- Entity ahora usa un guard independiente (_death_emitted) para emitir la señal exactamente una vez por transición de vida a muerte.
+- Restaurar una partida muerta no reproduce died; restaurar una entidad viva rearma el evento para su siguiente muerte.
+- Se añadió EntityLifecycleContract para comprobar muerte letal, daño posterior, idempotencia, restauración viva y restauración muerta.
+
+La corrección no cambia el cálculo de daño ni las reglas de combate. El alcance de la señal se limita al ciclo de vida de Entity; las subclases que implementan su propio _die() conservan su lógica.
+
+
+## Quincuagésima tercera barrida — Estado vital coherente en Creature
+
+Se cerró una inconsistencia entre la configuración de criaturas y el estado vital heredado:
+
+- \`Creature.configurar()\` antes actualizaba \`health\`, \`mana\` e \`is_alive\` directamente, pero podía dejar \`VitalState.max_health/max_mana\` con los valores anteriores cuando la configuración llegaba después de \`_ready()\`.
+- La configuración ahora usa \`_configurar_estado_vital()\`, que restablece el snapshot vital completo y rearma el guard de muerte de \`Entity\`.
+- \`Creature._die()\` conserva sus efectos específicos de criatura (misión, drops, movimiento y desaparición), pero delega la emisión de \`died\` a \`Entity._die()\` para reutilizar el guard idempotente común.
+- Se amplió \`CreatureAISignalContract\` para configurar una criatura con 140 HP, verificar que \`Creature\` y \`VitalState\` coincidan, y comprobar una única señal \`died\` ante muerte letal y llamada repetida.
+- El workflow ya ejecuta esa prueba; no se afirma CI validado hasta disponer de un resultado publicado para el commit actual.
+
+No se cambian estadísticas canónicas, daño, recompensas ni comportamiento de IA. La restauración viva completa de una criatura (visibilidad, movimiento y estado de IA) sigue fuera de esta corrección y requiere un contrato propio si se incorpora al flujo de juego.
+
+
+## Quincuagésima cuarta barrida — Validación estructural compartida de snapshots
+
+Se reemplazó la validación mínima que solo comprobaba la existencia de \`biomas\` por un contrato compartido:
+
+- Se creó \`WorldSnapshotValidator\`, usado tanto por \`WorldDataService\` como por \`GarliaSupabaseClient\`.
+- Exige que el snapshot contenga biomas y que la jerarquía bioma → ecosistemas → habitats → criaturas mantenga arreglos y registros con IDs; las criaturas deben incluir nombre.
+- Valida el tipo de los catálogos opcionales cuando están presentes (\`personajes_game\`, \`dialogos_game\`, \`misiones_game\`, \`reinos_game\`, \`props_game\`, \`lugares_game\`, \`garumis_game\`).
+- No exige que cada nodo tenga descendientes: un ecosistema o hábitat sin hijos sigue siendo una estructura válida.
+- Se añadió \`WorldSnapshotValidatorContract\` con casos válidos e inválidos y lectura del snapshot incluido \`data/world_initial.json\`.
+- La prueba quedó incorporada al workflow Godot 4.7. No se declara validación CI hasta disponer de un resultado publicado.
+
+La validación solo rechaza estructuras incompletas o mal tipadas; no transforma, corrige ni escribe datos en Supabase. La autoridad de los datos permanece en la fuente canónica.
+
+
+## Quincuagésima quinta barrida — Restauración coherente de Player y Eterium
+
+Se corrigieron rutas que modificaban las propiedades públicas de \`Player\` sin actualizar el \`VitalState\` que usa el combate:
+
+- \`Entity.restaurar_estado_vital()\` ahora puede restaurar salud y maná en una sola operación, aplica límites y rearma el guard de muerte según el estado restaurado.
+- \`GameStateService\` restaura salud/maná mediante ese método; ya no escribe directamente \`health\`, \`mana\` e \`is_alive\` ni duplica sus señales.
+- \`Player.restaurar_eterium()\` delega en \`PlayerEteriumCoordinator\`; el daño de fisiología compartida también modifica Eterium mediante el coordinador.
+- Las reapariciones local y de red usan el dueño de estado \`Entity\`, evitando que el siguiente daño lea reservas antiguas y rearmando la siguiente transición de muerte.
+- Los máximos administrativos actualizan \`VitalState\` y el controlador de stamina; en fisiología compartida vida y Eterium conservan una misma capacidad.
+- La absorción de Eterium ahora recupera también la vida cuando la fisiología es compartida y no permite recuperar recursos en una entidad muerta.
+- Se ampliaron \`EntityLifecycleContract\` y se añadió \`PlayerVitalStateContract\` para restauración, daño normal/compartido, muerte, reaparición, absorción y límites administrativos.
+
+No se cambian fórmulas canónicas ni datos de Supabase. Las pruebas están integradas al workflow, pero todavía no se declara CI validado para esta revisión.
+
+
+## Quincuagésima sexta barrida — Agotamiento de Eterium compartido
+
+Se cerraron rutas adicionales del runtime de Eterium:
+
+- La configuración de una especie con vida/Eterium compartidos aplica primero la capacidad vital y después establece la barra llena, evitando emitir una muerte transitoria durante la configuración.
+- Cuando una operación del runtime agota la barra compartida, el adaptador de \`Player\` sincroniza el estado y procesa la muerte mediante \`Entity._die()\`.
+- La animación de muerte de Player tiene guard propio para no iniciar varios tweens por una misma transición; ambas rutas de reaparición la rearman.
+- La recuperación pasiva y la absorción ya no emiten señales duplicadas desde Player cuando el runtime ya notificó el cambio.
+- \`PlayerVitalStateContract\` comprueba que gastar toda la reserva compartida mata al jugador, que la absorción no revive una entidad muerta y que la reaparición de red restaura las reservas.
+
+No se modifican costes, tasas, capacidades canónicas ni datos remotos. La validación automatizada sigue pendiente de un resultado CI visible.
+
+
+## Quincuagésima séptima barrida — Protección del respaldo ante recuperación bloqueada
+
+Se cerró un caso límite del repositorio de guardados:
+
+- Si el archivo final está dañado o ausente y existe un \`.bak\` válido, \`leer_partida()\` devuelve ese estado e intenta restaurarlo.
+- Si el filesystem impide completar el reemplazo (por ejemplo, el destino está bloqueado), \`escribir_partida()\` ahora detecta que el respaldo válido sigue siendo la única copia recuperable y cancela la nueva escritura.
+- Se amplió \`SaveFileRepositoryContract\` para simular un destino que es un directorio, comprobar que el respaldo se puede leer y verificar que una escritura posterior fallida no lo elimina.
+
+La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas de apagado abrupto ni de fallos físicos de disco. Pendiente ejecución CI.
+
+
+## Quincuagésima octava barrida — Restauración segura del progreso de misiones
+
+- `MissionManagerService.cargar_estado_partida()` valida los estados guardados contra los estados reconocidos por el runtime y normaliza estados desconocidos a `disponible`.
+- El progreso se reconstruye usando los objetivos del catálogo actual: cantidades negativas pasan a cero, valores superiores se limitan al requisito y los objetivos que ya no existen se descartan.
+- Los datos de progreso con tipos incorrectos se rechazan sin romper la carga de la partida.
+- Se añadió `MissionManagerContract` para verificar normalización, serialización, finalización idempotente y emisión única de `recompensa_disponible`.
+- El workflow Godot 4.7 ejecutó el nuevo contrato correctamente en el run `42213469008`.
+- La aplicación efectiva de recompensas al inventario/estado del jugador continúa pendiente: no se asumió un esquema de recompensa ni se modificó Supabase.
+
+
+
+## Quincuagésima novena barrida — Transacción segura al soltar objetos
+
+- `GarliaInventory` separa ahora la posición del puntero de la operación de transferencia mediante `_soltar_objeto_en_posicion()`; la entrada de UI solo proporciona la posición.
+- La operación devuelve un resultado y solo retira el objeto del inventario cuando `GarliaWorldItems` confirma que el `WorldItem` fue registrado por `WorldEntityManager`.
+- Se añadió `InventoryDropContract` para simular infraestructura ausente y verificar que el inventario conserva ID y cantidad cuando el drop falla.
+- El contrato pasó en el run CI Godot 4.7 `42213469008`.
+- Esta corrección no modifica el formato de los objetos ni los datos canónicos.
+
+
+
+## Sexagésima barrida — Persistencia, inventario y progresión validados
+
+- `SaveFileRepository` ya valida el tamaño UTF-8 realmente escrito en el temporal; no usa `get_error()` como indicador de éxito después de escribir, porque el cursor al final puede representar `ERR_FILE_EOF`.
+- El lector usa `JSON.parse()` con instancia para tratar archivos corruptos como una condición recuperable sin contaminar la consola con un error global.
+- `InventoryController.soltar_objeto_al_mundo()` es dueño de la transacción: toma el objeto actual desde `InventoryRuntime`, crea/registra el `WorldItem` y solo después descuenta el slot.
+- La UI ya no entrega una copia potencialmente obsoleta del objeto arrastrado; solo entrega índice y posición.
+- `MissionManagerService.cargar_estado_partida()` valida estados y progreso contra los objetivos vigentes, limita cantidades y descarta referencias de objetivos inexistentes.
+- Contratos ejecutados: `SaveFileRepositoryContract`, `InventoryPickupContract`, `InventoryDropContract` y `MissionManagerContract`.
+- CI completo Godot 4.7: **success**, run `42213469008`, commit de código `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`. También pasaron locomoción, combate, IA, ciclo de vida, snapshot y terreno.
+- Pendiente funcional: aplicar/reclamar recompensas con el esquema canónico correcto; esta barrida no modificó Supabase ni tablas/RPC/datos.
+

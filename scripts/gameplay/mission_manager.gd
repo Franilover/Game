@@ -503,14 +503,46 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	if progreso_variant is Dictionary:
 		_progreso = (progreso_variant as Dictionary).duplicate(true)
 
+	# El save puede sobrevivir a cambios del catálogo. Solo se conserva el
+	# estado conocido y se reconstruye el progreso contra objetivos actuales.
 	for mision in _misiones:
 		var mision_id := str(mision.get("id", "")).strip_edges()
 		if mision_id.is_empty():
 			continue
-		if not _estado.has(mision_id):
-			_estado[mision_id] = "disponible"
-		if not _progreso.has(mision_id):
-			_progreso[mision_id] = {}
+
+		var estado_guardado := str(
+			_estado.get(mision_id, "disponible")
+		).strip_edges().to_lower()
+		if estado_guardado not in ["disponible", "activa", "completada", "reclamada"]:
+			estado_guardado = "disponible"
+		_estado[mision_id] = estado_guardado
+
+		var progreso_guardado_variant: Variant = _progreso.get(mision_id, {})
+		var progreso_guardado: Dictionary = (
+			progreso_guardado_variant as Dictionary
+			if progreso_guardado_variant is Dictionary
+			else {}
+		)
+		var progreso_validado: Dictionary = {}
+		var objetivos_variant: Variant = mision.get("objetivos", [])
+		if objetivos_variant is Array:
+			for objetivo_variant in objetivos_variant as Array:
+				if not objetivo_variant is Dictionary:
+					continue
+				var objetivo := objetivo_variant as Dictionary
+				var objetivo_id := str(objetivo.get("id", "")).strip_edges()
+				if objetivo_id.is_empty():
+					continue
+				var requerido := maxi(
+					1,
+					int(objetivo.get("cantidad_requerida", 1))
+				)
+				var valor_variant: Variant = progreso_guardado.get(objetivo_id, 0)
+				var valor := 0
+				if valor_variant is int or valor_variant is float:
+					valor = clampi(int(valor_variant), 0, requerido)
+				progreso_validado[objetivo_id] = valor
+		_progreso[mision_id] = progreso_validado
 
 
 
