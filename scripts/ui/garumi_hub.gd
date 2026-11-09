@@ -178,7 +178,7 @@ func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_regis
 		var marco_sprite := PanelContainer.new()
 		marco_sprite.custom_minimum_size = Vector2(88, 88)
 		marco_sprite.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		var estilo_marco := PIXEL_UI_THEME.slot_style(false)
+		var estilo_marco: StyleBox = PIXEL_UI_THEME.slot_style(false)
 		if estilo_marco != null:
 			marco_sprite.add_theme_stylebox_override("panel", estilo_marco)
 		celda.add_child(marco_sprite)
