@@ -65,9 +65,8 @@ script = ExtResource("9_admin")
 layer = 200
 script = ExtResource("31_debug_console")
 
-[node name="RealmMenu" type="Control" parent="UI"]
+[node name="RealmMenu" parent="UI" instance=ExtResource("32_realm_menu")]
 z_index = 150
-script = ExtResource("32_realm_menu")
 
 [node name="Systems" type="Node" parent="." unique_id=40830559]
 
