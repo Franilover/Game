@@ -2,6 +2,8 @@ extends Control
 
 class_name RelationshipsUI
 
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 const TAMANO_RETRATO := Vector2(64.0, 72.0)
 const SEPARACION_RETRATOS := 8
 
@@ -16,6 +18,7 @@ var _relationship_system: Node = null
 
 func _ready() -> void:
 	_crear_ui()
+	PIXEL_UI_THEME.apply(self)
 	_actualizar()
 
 
@@ -138,6 +141,7 @@ func _actualizar() -> void:
 		}
 
 		var boton := Button.new()
+		boton.name = "SlotRelationshipPortrait"
 		boton.custom_minimum_size = TAMANO_RETRATO
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.toggle_mode = true
@@ -161,6 +165,7 @@ func _actualizar() -> void:
 			boton.add_child(retrato)
 		else:
 			boton.text = nombre.substr(0, 2).to_upper()
+		PIXEL_UI_THEME.apply(boton)
 		lista.add_child(boton)
 		_botones.append(boton)
 
