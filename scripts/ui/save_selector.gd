@@ -322,6 +322,7 @@ func _construir_editor_partida() -> void:
 
 	column.add_child(_editor_container)
 	column.move_child(_editor_container, 2)
+	PIXEL_UI_THEME.apply(_editor_container)
 	_editor_container.visible = false
 	_configurar_diseno_responsive()
 
