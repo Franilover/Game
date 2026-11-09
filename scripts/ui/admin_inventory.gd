@@ -1,6 +1,8 @@
 extends Control
 class_name AdminInventory
 
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 var _jugador: Player = null
 var _world_entity_spawner: WorldEntitySpawner = null
 var _inventario: GarliaInventory = null
@@ -19,6 +21,7 @@ var _botones: Dictionary = {}
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_crear_ui()
+	PIXEL_UI_THEME.apply(self)
 	visible = false
 
 
@@ -70,6 +73,7 @@ func _crear_ui() -> void:
 		boton.toggle_mode = true
 		boton.custom_minimum_size = Vector2(0, 24)
 		boton.pressed.connect(_cambiar_modo.bind(str(entrada[0])))
+		PIXEL_UI_THEME.apply(boton)
 		encabezado.add_child(boton)
 		_botones[str(entrada[0])] = boton
 
@@ -225,6 +229,7 @@ func _crear_fila(nombre: String, datos: Dictionary) -> void:
 	boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	boton.custom_minimum_size = Vector2(0, 34)
 	boton.pressed.connect(_seleccionar.bind(datos))
+	PIXEL_UI_THEME.apply(boton)
 	_lista.add_child(boton)
 
 
