@@ -2,6 +2,7 @@ extends Control
 
 class_name CraftingUI
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const HTTP_TIMEOUT: float = 8.0
 
 var _request: HTTPRequest
@@ -32,14 +33,12 @@ func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 
 func _ready() -> void:
 	set_process_mode(Node.PROCESS_MODE_ALWAYS)
+	PIXEL_UI_THEME.apply(self)
 	$Margin/Column/Content/DetailPanel.add_theme_stylebox_override(
 		"panel",
 		_crear_estilo_boton(Color(0.075, 0.05, 0.035, 0.95), Color(0.29, 0.19, 0.12, 1), 1)
 	)
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
-	_boton_craftear.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
-	_boton_craftear.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
-	_boton_craftear.add_theme_stylebox_override("disabled", _crear_estilo_boton(Color(0.10, 0.075, 0.05, 0.8), Color(0.25, 0.18, 0.12, 1), 1))
 	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
 	call_deferred("_ajustar_columnas_recetas")
 	_cargar_recetas()
@@ -134,16 +133,14 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	var panel := Button.new()
 	panel.custom_minimum_size = Vector2(56, 56)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.name = "InventorySlot"
 	panel.tooltip_text = str(receta.get("nombre", "Receta"))
-	panel.add_theme_stylebox_override("normal", _crear_estilo_boton(Color(0.11, 0.07, 0.045, 0.9), Color(0.29, 0.19, 0.12, 1), 1))
-	panel.add_theme_stylebox_override("hover", _crear_estilo_boton(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1), 2))
-	panel.add_theme_stylebox_override("pressed", _crear_estilo_boton(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
-	panel.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	panel.text = ""
 	panel.pressed.connect(func() -> void:
 		_seleccionar_receta(receta)
 	)
 	_lista.add_child(panel)
+	PIXEL_UI_THEME.apply(panel)
 
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var icono := TextureRect.new()

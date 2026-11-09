@@ -28,15 +28,24 @@ static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTextu
 	style.draw_center = true
 	return style
 
+static func slot_style(selected: bool = false) -> StyleBoxTexture:
+	return _texture_style("slot_selected.png" if selected else "slot_frame.png", 5)
+
 static func _apply_control(control: Control) -> void:
 	if control is Panel or control is PanelContainer:
 		var panel := _texture_style("panel_frame.png", 8)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
-	if control is Button and control.name == "InventorySlot":
-		var slot := _texture_style("slot_frame.png", 5)
-		var selected_slot := _texture_style("slot_selected.png", 5)
+	var is_slot_button := control is Button and (
+		control.name == "InventorySlot"
+		or control.name == "EquipmentSlot"
+		or control.name.ends_with("HandSlot")
+		or control.name.begins_with("Slot")
+	)
+	if is_slot_button:
+		var slot := slot_style(false)
+		var selected_slot := slot_style(true)
 		if slot != null:
 			control.add_theme_stylebox_override("normal", slot)
 			control.add_theme_stylebox_override("hover", selected_slot if selected_slot != null else slot)

@@ -2,6 +2,7 @@ extends Control
 class_name InventoryHotbar
 
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const SLOT_COUNT: int = 6
 
 
@@ -15,6 +16,7 @@ var _inventario_conectado: bool = false
 
 
 func _ready() -> void:
+	PIXEL_UI_THEME.apply(self)
 	var marco_fijo := get_node_or_null(
 		"Selection"
 	)
@@ -143,12 +145,18 @@ func _preparar_slots() -> void:
 		slot.clip_text = true
 
 		_crear_icono(slot)
-		_crear_placeholder(slot)
 		_crear_cantidad(slot)
 		_crear_numero(slot)
 
-		_configurar_estilo_normal(slot)
-		_configurar_estilo_seleccionado(slot)
+		var estilo_normal := slot.get_theme_stylebox("normal")
+		var estilo_seleccionado := PIXEL_UI_THEME.slot_style(true)
+		if estilo_seleccionado == null:
+			estilo_seleccionado = slot.get_theme_stylebox("pressed")
+		slot.set_meta("normal_style", estilo_normal)
+		slot.set_meta("selected_style", estilo_seleccionado)
+		if estilo_seleccionado != null:
+			slot.add_theme_stylebox_override("hover", estilo_seleccionado)
+			slot.add_theme_stylebox_override("pressed", estilo_seleccionado)
 
 
 func _al_pulsar_slot(
@@ -208,62 +216,6 @@ func _crear_icono(
 	)
 
 	return icon
-
-
-func _crear_placeholder(
-	slot: Button
-) -> Panel:
-	var placeholder := slot.get_node_or_null(
-		"ItemPlaceholder"
-	) as Panel
-
-	if placeholder != null:
-		return placeholder
-
-	placeholder = Panel.new()
-	placeholder.name = "ItemPlaceholder"
-
-	placeholder.mouse_filter = (
-		Control.MOUSE_FILTER_IGNORE
-	)
-
-	placeholder.z_index = -1
-
-	slot.add_child(placeholder)
-
-	placeholder.set_anchors_and_offsets_preset(
-		Control.PRESET_FULL_RECT,
-		Control.PRESET_MODE_MINSIZE,
-		8
-	)
-
-	var estilo := StyleBoxFlat.new()
-
-	estilo.bg_color = Color(
-		0.16,
-		0.105,
-		0.065,
-		0.95
-	)
-
-	estilo.border_width_left = 1
-	estilo.border_width_top = 1
-	estilo.border_width_right = 1
-	estilo.border_width_bottom = 1
-
-	estilo.border_color = Color(
-		0.30,
-		0.20,
-		0.12,
-		1.0
-	)
-
-	placeholder.add_theme_stylebox_override(
-		"panel",
-		estilo
-	)
-
-	return placeholder
 
 
 func _crear_cantidad(
@@ -416,81 +368,6 @@ func _crear_numero(
 	return label
 
 
-func _configurar_estilo_normal(
-	slot: Button
-) -> void:
-	var estilo := StyleBoxFlat.new()
-
-	estilo.bg_color = Color(
-		0.18,
-		0.115,
-		0.07,
-		0.98
-	)
-
-	estilo.border_width_left = 2
-	estilo.border_width_top = 2
-	estilo.border_width_right = 2
-	estilo.border_width_bottom = 2
-
-	estilo.border_color = Color(
-		0.42,
-		0.29,
-		0.17,
-		1.0
-	)
-
-	estilo.corner_radius_top_left = 3
-	estilo.corner_radius_top_right = 3
-	estilo.corner_radius_bottom_left = 3
-	estilo.corner_radius_bottom_right = 3
-
-	slot.set_meta(
-		"normal_style",
-		estilo
-	)
-
-	slot.add_theme_stylebox_override(
-		"normal",
-		estilo
-	)
-
-
-func _configurar_estilo_seleccionado(
-	slot: Button
-) -> void:
-	var estilo := StyleBoxFlat.new()
-
-	estilo.bg_color = Color(
-		0.34,
-		0.27,
-		0.14,
-		1.0
-	)
-
-	estilo.border_width_left = 2
-	estilo.border_width_top = 2
-	estilo.border_width_right = 2
-	estilo.border_width_bottom = 2
-
-	estilo.border_color = Color(
-		0.74,
-		0.62,
-		0.34,
-		1.0
-	)
-
-	estilo.corner_radius_top_left = 3
-	estilo.corner_radius_top_right = 3
-	estilo.corner_radius_bottom_left = 3
-	estilo.corner_radius_bottom_right = 3
-
-	slot.set_meta(
-		"selected_style",
-		estilo
-	)
-
-
 func _actualizar() -> void:
 	if not is_inside_tree():
 		return
@@ -535,10 +412,6 @@ func _configurar_slot(
 		"ItemIcon"
 	) as TextureRect
 
-	var placeholder := slot.get_node_or_null(
-		"ItemPlaceholder"
-	) as Panel
-
 	var cantidad := slot.get_node_or_null(
 		"ItemQuantity"
 	) as Label
@@ -547,11 +420,6 @@ func _configurar_slot(
 		if icon:
 			icon.visible = false
 			icon.texture = null
-
-		if placeholder:
-			# Las ranuras vacías también deben tener presencia visual desde
-			# el primer frame; no esperar al primer objeto para dibujarlas.
-			placeholder.visible = true
 
 		if cantidad:
 			cantidad.visible = false
@@ -570,9 +438,6 @@ func _configurar_slot(
 	if icon:
 		icon.texture = textura
 		icon.visible = textura != null
-
-	if placeholder:
-		placeholder.visible = textura == null
 
 	var cantidad_objeto := int(
 		datos.get(
@@ -614,20 +479,10 @@ func _actualizar_seleccion() -> void:
 			null
 		)
 
-		if (
-			i == indice_seleccionado
-			and seleccionado is StyleBoxFlat
-		):
-			slot.add_theme_stylebox_override(
-				"normal",
-				seleccionado
-			)
-		else:
-			if normal is StyleBoxFlat:
-				slot.add_theme_stylebox_override(
-					"normal",
-					normal
-				)
+		if i == indice_seleccionado and seleccionado is StyleBox:
+			slot.add_theme_stylebox_override("normal", seleccionado)
+		elif normal is StyleBox:
+			slot.add_theme_stylebox_override("normal", normal)
 
 
 func _al_objeto_activo_cambiado(

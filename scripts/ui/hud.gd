@@ -1058,10 +1058,7 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.offset_bottom = 0.0
 	slot.offset_left = -134.0 if tecla == "Q" else 86.0
 	slot.offset_right = -86.0 if tecla == "Q" else 134.0
-	slot.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
-	slot.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
-	slot.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
-	slot.add_theme_stylebox_override("focus", _estilo_hueco_mano(false))
+	PIXEL_UI_THEME.apply(slot)
 	slot.tooltip_text = "Mano " + ("izquierda" if tecla == "Q" else "derecha") + " (" + tecla + ")"
 	var etiqueta_tecla := slot.get_node_or_null("HandKey") as Label
 	if etiqueta_tecla != null:
@@ -1078,15 +1075,6 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 		)
 	add_child(slot)
 	return slot
-
-
-func _estilo_hueco_mano(seleccionado: bool) -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.34, 0.27, 0.14, 1.0) if seleccionado else Color(0.18, 0.115, 0.07, 0.98)
-	estilo.set_border_width_all(2)
-	estilo.border_color = Color(0.74, 0.62, 0.34, 1.0) if seleccionado else Color(0.42, 0.29, 0.17, 1.0)
-	estilo.set_corner_radius_all(3)
-	return estilo
 
 
 func _al_cambiar_inventario_manos() -> void:
@@ -1114,6 +1102,7 @@ func _crear_selector_manos() -> void:
 	if _hand_selector == null:
 		push_error("HUD: no se pudo instanciar hud_hand_item_selector.tscn.")
 		return
+	PIXEL_UI_THEME.apply(_hand_selector)
 	_hand_selector_grid = _hand_selector.get_node_or_null("Buttons") as VBoxContainer
 	if _hand_selector_grid == null:
 		push_error("HUD: falta Buttons en hud_hand_item_selector.tscn.")
@@ -1124,9 +1113,6 @@ func _crear_selector_manos() -> void:
 		if button == null:
 			push_error("HUD: falta Slot%d en el selector de manos." % (i + 1))
 			continue
-		button.add_theme_stylebox_override("normal", _estilo_hueco_mano(false))
-		button.add_theme_stylebox_override("hover", _estilo_hueco_mano(true))
-		button.add_theme_stylebox_override("pressed", _estilo_hueco_mano(true))
 		button.pressed.connect(_al_pulsar_selector_mano.bind(i))
 		_hand_selector_buttons.append(button)
 	add_child(_hand_selector)

@@ -11,7 +11,7 @@ var datos: Dictionary = {}
 
 
 @onready var icon_texture: TextureRect = $Icon
-@onready var icon_placeholder: ColorRect = $IconPlaceholder
+@onready var icon_placeholder: Control = get_node_or_null("IconPlaceholder")
 @onready var quantity_label: Label = $Quantity
 
 
@@ -61,29 +61,21 @@ func actualizar() -> void:
 	if datos.is_empty():
 		icon_texture.texture = null
 		icon_texture.visible = false
-
-		icon_placeholder.visible = true
-
+		if icon_placeholder != null:
+			icon_placeholder.visible = false
 		quantity_label.text = ""
-
 		return
 
-	var textura: Texture2D = (
-		ItemIconResolver.obtener_icono(
-			datos
-		)
-	)
-
+	var textura: Texture2D = ItemIconResolver.obtener_icono(datos)
 	if textura != null:
 		icon_texture.texture = textura
 		icon_texture.visible = true
-
-		icon_placeholder.visible = false
 	else:
 		icon_texture.texture = null
 		icon_texture.visible = false
 
-		icon_placeholder.visible = true
+	if icon_placeholder != null:
+		icon_placeholder.visible = false
 
 	var cantidad: int = int(
 		datos.get(
