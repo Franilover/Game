@@ -76,15 +76,6 @@ func _ajustar_panel_a_pantalla() -> void:
 	panel.offset_bottom = alto * 0.5
 
 
-func _estilo_panel(fondo: Color, borde: Color, grosor: int = 1) -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = fondo
-	estilo.border_color = borde
-	estilo.set_border_width_all(grosor)
-	estilo.set_corner_radius_all(3)
-	return estilo
-
-
 func _estilizar_boton(boton: Button) -> void:
 	PIXEL_UI_THEME.apply(boton)
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
@@ -97,7 +88,7 @@ func _aplicar_estilo_interfaz() -> void:
 		elif control is Button:
 			_estilizar_boton(control as Button)
 		elif control is Panel:
-			(control as Panel).add_theme_stylebox_override("panel", _estilo_panel(Color(0.055, 0.035, 0.022, 0.96), Color(0.29, 0.19, 0.12, 1)))
+			(control as Panel).add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 
 
 func configurar(manager: Node, admin_console: Node) -> void:
@@ -281,7 +272,7 @@ func _crear_slot_canvas(
 	var panel := Panel.new()
 
 	panel.custom_minimum_size = Vector2(100, 60)
-	panel.add_theme_stylebox_override("panel", _estilo_panel(Color(0.16, 0.105, 0.065, 0.98), Color(0.42, 0.29, 0.17, 1)))
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 
 	var vbox := VBoxContainer.new()
 
