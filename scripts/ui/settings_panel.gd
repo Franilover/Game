@@ -40,7 +40,7 @@ func _construir_interfaz() -> void:
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_panel.position = Vector2(-310.0, -245.0)
 	_panel.size = Vector2(620.0, 490.0)
-	_panel.add_theme_stylebox_override("panel", _crear_estilo_panel())
+	_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(_panel)
 
 	var margen := MarginContainer.new()
@@ -180,18 +180,3 @@ func _obtener_texto_atajos(accion: String) -> String:
 		return "No asignado"
 	return " / ".join(nombres)
 
-
-func _crear_estilo_panel() -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.2, 0.15, 0.1, 0.99)
-	estilo.border_width_left = 2
-	estilo.border_width_top = 2
-	estilo.border_width_right = 2
-	estilo.border_width_bottom = 2
-	estilo.border_color = Color(0.58, 0.46, 0.31, 1)
-	estilo.set_corner_radius_all(8)
-	return estilo
-
-
-func _cerrar() -> void:
-	closed.emit()
