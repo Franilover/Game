@@ -228,3 +228,139 @@ func _tooltip_receta(receta: Dictionary) -> String:
 			var ingrediente := ingrediente_variant as Dictionary
 			partes.append(_nombre_item(str(ingrediente.get("item_id", ""))) + " x" + str(maxi(1, int(ingrediente.get("cantidad", 1)))))
 	return "\n".join(partes)
+
+func _texto_ingredientes(receta: Dictionary) -> String:
+	var partes: Array[String] = []
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+
+	if not ingredientes_variant is Array:
+		return "Materiales: —"
+
+	for ingrediente_variant in ingredientes_variant as Array:
+		if not ingrediente_variant is Dictionary:
+			continue
+		var ingrediente := ingrediente_variant as Dictionary
+		var id := str(ingrediente.get("item_id", ""))
+		var cantidad := int(ingrediente.get("cantidad", 1))
+		partes.append(_nombre_item(id) + " x" + str(cantidad))
+
+	return "Materiales: " + ", ".join(partes)
+
+
+func _buscar_item_catalogo(item_id: String) -> Dictionary:
+	if _world_items == null or not is_instance_valid(_world_items):
+		return {}
+	return _world_items.buscar_item_por_id(item_id)
+
+
+func _nombre_item(item_id: String) -> String:
+	if _world_items == null:
+		return item_id
+	var item := _buscar_item_catalogo(item_id)
+	if item.is_empty():
+		return item_id
+	return str(item.get("nombre", item_id))
+
+
+func _obtener_cantidad_item(items: Array[Dictionary], item_id: String) -> int:
+	var total := 0
+
+	for objeto in items:
+		var actual := str(objeto.get("item_id", objeto.get("id", "")))
+		if actual == item_id:
+			total += maxi(1, int(objeto.get("cantidad", 1)))
+
+	return total
+
+
+func _puede_craftear(receta: Dictionary, items: Array[Dictionary]) -> bool:
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+
+	if not ingredientes_variant is Array:
+		return false
+
+	for ingrediente_variant in ingredientes_variant as Array:
+		if not ingrediente_variant is Dictionary:
+			return false
+
+		var ingrediente := ingrediente_variant as Dictionary
+		var item_id := str(ingrediente.get("item_id", ""))
+		var cantidad := maxi(1, int(ingrediente.get("cantidad", 1)))
+
+		if item_id.is_empty() or _obtener_cantidad_item(items, item_id) < cantidad:
+			return false
+
+	return true
+
+
+func _craftear(receta: Dictionary) -> void:
+	var inventario := _inventory
+
+	if inventario == null:
+		_estado.text = "No se encontró el inventario."
+		return
+
+	var items: Array[Dictionary] = inventario.obtener_objetos()
+
+	if not _puede_craftear(receta, items):
+		_estado.text = "Faltan materiales para " + str(receta.get("nombre", "esta receta")) + "."
+		return
+
+	var resultado_variant: Variant = receta.get("resultado", {})
+	if not resultado_variant is Dictionary:
+		return
+
+	var resultado := resultado_variant as Dictionary
+	var output_id := str(resultado.get("item_id", ""))
+	var output_cantidad := maxi(1, int(resultado.get("cantidad", 1)))
+
+	if _world_items == null:
+		_estado.text = "No está disponible el catálogo de objetos."
+		return
+
+	var objeto_resultado := _world_items.buscar_item_por_id(output_id)
+
+	if objeto_resultado.is_empty():
+		_estado.text = "El objeto resultado no está en el catálogo del juego."
+		return
+
+	objeto_resultado["cantidad"] = output_cantidad
+	objeto_resultado["max_stack"] = maxi(1, int(objeto_resultado.get("max_stack", 1)))
+
+	# Primero añadimos el resultado. agregar_objeto es atómico si no hay espacio,
+	# así evitamos consumir materiales cuando el resultado no puede entrar.
+	if not inventario.agregar_objeto(objeto_resultado):
+		_estado.text = "No hay espacio para el resultado."
+		return
+
+	# Los materiales ya fueron comprobados; ahora se consumen de los slots reales.
+	var ingredientes := receta.get("ingredientes", []) as Array
+
+	for ingrediente_variant in ingredientes:
+		var ingrediente := ingrediente_variant as Dictionary
+		var item_id := str(ingrediente.get("item_id", ""))
+		var restante := maxi(1, int(ingrediente.get("cantidad", 1)))
+
+		for indice in range(inventario.obtener_objetos().size()):
+			if restante <= 0:
+				break
+
+			var objeto: Dictionary = inventario.obtener_objeto(indice)
+			if objeto.is_empty():
+				continue
+
+			var actual_id := str(objeto.get("item_id", objeto.get("id", "")))
+			if actual_id != item_id:
+				continue
+
+			var disponible := maxi(1, int(objeto.get("cantidad", 1)))
+			var quitar := mini(restante, disponible)
+
+			if inventario.quitar_cantidad(indice, quitar):
+				restante -= quitar
+
+	Events.notification_pushed.emit(
+		"Creaste " + str(objeto_resultado.get("nombre", "Objeto"))
+	)
+	_estado.text = "Creado: " + str(objeto_resultado.get("nombre", "Objeto")) + "."
+	_renderizar_recetas()
