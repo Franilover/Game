@@ -76,6 +76,11 @@ static func _apply_control(control: Control) -> void:
 			control.add_theme_stylebox_override("normal", input_style)
 			control.add_theme_stylebox_override("focus", input_style)
 
+	if control is ItemList:
+		var list_style := _texture_style("input_frame.png", 4)
+		if list_style != null:
+			control.add_theme_stylebox_override("panel", list_style)
+
 	if control is ProgressBar:
 		var bar_background := _texture_style("bar_frame.png", 3)
 		var fill_name := "bar_fill_health.png"
