@@ -1,5 +1,7 @@
 extends Control
 
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 
 var _ids_descubiertos: Array[String] = []
 var _arbol: Tree
@@ -222,6 +224,7 @@ func actualizar() -> void:
 				_construir_lista_garumis()
 		_:
 			_construir_arbol_biomas()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _mostrar_biomas() -> void:
