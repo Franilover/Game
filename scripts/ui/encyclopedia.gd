@@ -544,8 +544,8 @@ func _mostrar_criatura_desde_grid(registro: Dictionary) -> void:
 	_nombre.text = str(registro.get("nombre", "Criatura"))
 	_icono.texture = null
 	_icono.visible = false
-	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 178)
-	_icono.custom_minimum_size = Vector2(160, 160)
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 218)
+	_icono.custom_minimum_size = Vector2(200, 200)
 	_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_icono.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var partes: Array[String] = []
@@ -823,10 +823,10 @@ func _mostrar_ficha_garumi(registro: Dictionary, _partes: Array[String]) -> void
 	# sin nombre, estadísticas ni texto que compita con la ilustración.
 	_nombre.hide()
 	_ficha.hide()
-	_icono.custom_minimum_size = Vector2(0, 0)
+	_icono.custom_minimum_size = Vector2(220, 220)
 	_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_icono.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 0)
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 220)
 	_contenedor_superior_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_contenedor_superior_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_contenedor_superior_detalle.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -844,10 +844,10 @@ func _restaurar_ficha_detalle() -> void:
 		return
 	_nombre.show()
 	_ficha.show()
-	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 72)
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 218)
 	_contenedor_superior_detalle.size_flags_horizontal = Control.SIZE_FILL
 	_contenedor_superior_detalle.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_icono.custom_minimum_size = Vector2(64, 54)
+	_icono.custom_minimum_size = Vector2(200, 200)
 	_icono.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
