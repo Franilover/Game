@@ -251,7 +251,6 @@ theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxSettingsNormal")
 theme_override_styles/pressed = SubResource("StyleBoxSettingsPressed")
 theme_override_styles/hover = SubResource("StyleBoxSettingsHover")
-disabled = false
 text = "⚙"
 
 [node name="LoginOverlay" type="ColorRect" parent="." unique_id=1220459436]
@@ -296,7 +295,7 @@ theme_override_font_sizes/font_size = 26
 text = "Iniciar sesión"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content"]
+[node name="Subtitle" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1799794419]
 layout_mode = 2
 text = "Usa tu cuenta de Garlia."
 horizontal_alignment = 1
@@ -407,31 +406,30 @@ horizontal_alignment = 1
 [node name="Separator" type="HSeparator" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1690500757]
 layout_mode = 2
 
-[node name="PublicDirectoryLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+[node name="PublicDirectoryLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=442017283]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Directorio público: conectando..."
-autowrap_mode = 2
 horizontal_alignment = 1
+autowrap_mode = 2
 
-[node name="CommunityServerManagerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+[node name="CommunityServerManagerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1807339227]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 text = "Crear / administrar servidores"
 
-[node name="SavedServersList" type="ItemList" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+[node name="SavedServersList" type="ItemList" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=957104482]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
-select_mode = 0
 
-[node name="ServerNameInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+[node name="ServerNameInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1546111929]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxInput")
 placeholder_text = "Nombre para guardar el servidor"
 
-[node name="CommunityCertificateCheck" type="CheckBox" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+[node name="CommunityCertificateCheck" type="CheckBox" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=50666336]
 layout_mode = 2
 text = "Usar certificado comunitario importado"
 
@@ -455,12 +453,12 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxInput")
 text = "7777"
 
-[node name="SaveServerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+[node name="SaveServerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1280883592]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 text = "Guardar servidor"
 
-[node name="RemoveServerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content"]
+[node name="RemoveServerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=591566367]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 text = "Eliminar seleccionado"
@@ -484,3 +482,5 @@ layout_mode = 2
 text = "Volver"
 
 [node name="CharacterCreation" parent="." unique_id=1640942131 instance=ExtResource("2_character_creation")]
+layout_mode = 0
+anchors_preset = 0
