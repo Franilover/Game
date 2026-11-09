@@ -199,6 +199,8 @@ func _mostrar_biomas() -> void:
 
 func _mostrar_criaturas() -> void:
 	_modo = "criaturas"
+	_arbol.visible = false
+	_garumi_grid_scroll.visible = true
 	_arbol.columns = 1
 	_arbol.remove_theme_font_size_override("font_size")
 	_arbol.set_column_titles_visible(false)
@@ -207,6 +209,8 @@ func _mostrar_criaturas() -> void:
 
 func _mostrar_garumis() -> void:
 	_modo = "garumis"
+	_arbol.visible = not solo_garumis
+	_garumi_grid_scroll.visible = solo_garumis
 	_arbol.columns = 3
 	_arbol.add_theme_font_size_override("font_size", 9)
 	_arbol.set_column_titles_visible(false)
@@ -402,30 +406,31 @@ func _construir_arbol_biomas() -> void:
 
 func _construir_lista_criaturas() -> void:
 	_arbol.clear()
-	var raiz := _arbol.create_item()
+	_arbol.visible = false
+	_garumi_grid_scroll.visible = true
+	for hijo in _garumi_grid.get_children():
+		hijo.queue_free()
+
 	var criaturas_descubiertas := _obtener_descubiertos(
 		GameState.obtener_descubrimientos_mundo(),
 		"criaturas"
 	)
-
 	var criaturas: Array[Dictionary] = _obtener_registros(
 		WorldData.obtener_criaturas(),
 		criaturas_descubiertas
 	)
 	criaturas.sort_custom(_ordenar_registros)
 
-	var primero: TreeItem = null
-	for criatura in criaturas:
-		var item := _agregar_item(raiz, criatura, "criatura")
-		if primero == null:
-			primero = item
-
-	if primero == null:
+	if criaturas.is_empty():
 		_mostrar_sin_descubrimientos()
 		return
 
-	_arbol.set_selected(primero, 0)
-	_mostrar_item(primero)
+	for criatura in criaturas:
+		var nombre := str(criatura.get("nombre", "Criatura"))
+		var boton := _crear_boton_registro(nombre, _obtener_textura_criatura(criatura), false)
+		boton.tooltip_text = nombre
+		boton.pressed.connect(_mostrar_criatura_desde_grid.bind(criatura.duplicate(true)))
+		_garumi_grid.add_child(boton)
 
 
 func _construir_lista_garumis() -> void:
@@ -478,20 +483,74 @@ func _construir_grid_garumis() -> void:
 	for registro in _garumis_catalogo:
 		var id := str(registro.get("id", registro.get("entidad_id", ""))).strip_edges()
 		var conocido := not id.is_empty() and descubiertos.has(id)
-		var textura := _obtener_textura_garumi(registro)
-		var boton := TextureButton.new()
-		boton.custom_minimum_size = Vector2(44, 44)
-		boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		boton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		boton.ignore_texture_size = true
-		boton.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		boton.texture_normal = textura
-		boton.tooltip_text = str(registro.get("nombre", "Garumi")) if conocido else "Garumi no descubierto"
-		if not conocido:
-			boton.material = _crear_material_silueta()
-		boton.disabled = textura == null
+		var nombre := str(registro.get("nombre", "Garumi"))
+		var boton := _crear_boton_registro(
+			nombre,
+			_obtener_textura_garumi(registro),
+			not conocido
+		)
+		boton.tooltip_text = nombre if conocido else "Garumi no descubierto"
 		boton.pressed.connect(_mostrar_garumi_desde_grid.bind(registro.duplicate(true)))
 		_garumi_grid.add_child(boton)
+
+
+func _crear_boton_registro(nombre: String, textura: Texture2D, silueta: bool) -> Button:
+	var boton := Button.new()
+	boton.custom_minimum_size = Vector2(44, 44)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	boton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	boton.clip_contents = true
+	boton.add_theme_font_size_override("font_size", 7)
+	boton.text = ""
+	PIXEL_UI_THEME.apply(boton)
+
+	var imagen := TextureRect.new()
+	imagen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	imagen.offset_left = 4
+	imagen.offset_top = 3
+	imagen.offset_right = -4
+	imagen.offset_bottom = -13
+	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	imagen.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	imagen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	imagen.texture = textura
+	imagen.visible = textura != null
+	if silueta and textura != null:
+		imagen.material = _crear_material_silueta()
+	boton.add_child(imagen)
+
+	var etiqueta := Label.new()
+	etiqueta.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	etiqueta.offset_left = 2
+	etiqueta.offset_right = -2
+	etiqueta.offset_top = -12
+	etiqueta.offset_bottom = -1
+	etiqueta.text = nombre
+	etiqueta.clip_text = true
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta.add_theme_font_size_override("font_size", 7)
+	etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
+	etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
+	etiqueta.add_theme_constant_override("outline_size", 2)
+	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boton.add_child(etiqueta)
+	boton.disabled = textura == null
+	return boton
+
+
+func _mostrar_criatura_desde_grid(registro: Dictionary) -> void:
+	_restaurar_ficha_detalle()
+	var id := str(registro.get("id", "")).strip_edges()
+	_nombre.text = str(registro.get("nombre", "Criatura"))
+	_icono.texture = null
+	_icono.visible = false
+	_contenedor_superior_detalle.custom_minimum_size = Vector2(0, 178)
+	_icono.custom_minimum_size = Vector2(160, 160)
+	_icono.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_icono.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var partes: Array[String] = []
+	_mostrar_ficha_criatura(id, registro, partes)
 
 
 func _mostrar_garumi_desde_grid(registro: Dictionary) -> void:
@@ -803,6 +862,36 @@ func _mostrar_sprite_garumi(registro: Dictionary) -> void:
 	var descubiertos: Dictionary = GameState.call("obtener_garumis_descubiertos") if GameState.has_method("obtener_garumis_descubiertos") else {}
 	if not id.is_empty() and not descubiertos.has(id) and _icono.visible:
 		_icono.material = _crear_material_silueta()
+
+
+func _obtener_textura_criatura(registro: Dictionary) -> Texture2D:
+	var nombre_criatura := str(registro.get("nombre", "")).strip_edges()
+	if nombre_criatura.is_empty():
+		return null
+	var rutas_sprite: Array[String] = [
+		"res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".png",
+		"res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + ".PNG",
+		"res://assets/art/creatures/" + nombre_criatura + ".png",
+		"res://assets/art/creatures/" + nombre_criatura + ".PNG",
+		"res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_Walking.png",
+		"res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_Walking.PNG",
+		"res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_walking.png",
+		"res://assets/art/creatures/" + nombre_criatura + "/" + nombre_criatura + "_walking.PNG",
+	]
+	for ruta_sprite in rutas_sprite:
+		if not ResourceLoader.exists(ruta_sprite):
+			continue
+		var textura := load(ruta_sprite) as Texture2D
+		if textura == null:
+			continue
+		if ruta_sprite.to_lower().contains("_walking"):
+			var atlas := AtlasTexture.new()
+			atlas.atlas = textura
+			var frame_ancho := maxi(1, textura.get_width() / 4)
+			atlas.region = Rect2(0, 0, frame_ancho, textura.get_height())
+			return atlas
+		return textura
+	return null
 
 
 func _mostrar_ficha_criatura(
