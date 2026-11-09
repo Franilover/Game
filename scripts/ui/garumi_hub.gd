@@ -2,6 +2,7 @@ extends Control
 class_name GarumiHub
 
 const ENCYCLOPEDIA_SCRIPT: Script = preload("res://scripts/ui/encyclopedia.gd")
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TEXTO := Color(0.90, 0.79, 0.58, 1.0)
 const SECUNDARIO := Color(0.65, 0.52, 0.35, 1.0)
 const BORDE := Color(0.29, 0.19, 0.12, 1.0)
@@ -25,6 +26,7 @@ func _ready() -> void:
 	if GameState.has_signal("garumis_amigos_actualizados") and not GameState.garumis_amigos_actualizados.is_connected(actualizar):
 		GameState.garumis_amigos_actualizados.connect(actualizar)
 	actualizar()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _crear_interfaz() -> void:
@@ -118,20 +120,7 @@ func _crear_boton_tab(texto: String) -> Button:
 	boton.add_theme_color_override("font_color", SECUNDARIO)
 	boton.add_theme_color_override("font_hover_color", TEXTO)
 	boton.add_theme_color_override("font_pressed_color", TEXTO)
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.12, 0.075, 0.045, 0.95)
-	normal.border_color = BORDE
-	normal.set_border_width_all(1)
-	normal.corner_radius_top_left = 3
-	normal.corner_radius_top_right = 3
-	boton.add_theme_stylebox_override("normal", normal)
-	var activo := normal.duplicate() as StyleBoxFlat
-	activo.bg_color = Color(0.28, 0.20, 0.12, 1)
-	activo.border_color = Color(0.74, 0.62, 0.34, 1)
-	activo.border_width_bottom = 2
-	boton.add_theme_stylebox_override("pressed", activo)
-	boton.add_theme_stylebox_override("hover", activo)
-	boton.add_theme_stylebox_override("focus", activo)
+	PIXEL_UI_THEME.apply(boton)
 	return boton
 
 
@@ -186,14 +175,21 @@ func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_regis
 
 	var sprite := _crear_sprite_fila(registro)
 	if sprite != null:
+		var marco_sprite := PanelContainer.new()
+		marco_sprite.custom_minimum_size = Vector2(88, 88)
+		marco_sprite.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		var estilo_marco := PIXEL_UI_THEME.slot_style(false)
+		if estilo_marco != null:
+			marco_sprite.add_theme_stylebox_override("panel", estilo_marco)
+		celda.add_child(marco_sprite)
 		var boton_sprite := TextureButton.new()
-		boton_sprite.custom_minimum_size = Vector2(88, 88)
+		boton_sprite.custom_minimum_size = Vector2(78, 78)
 		boton_sprite.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		boton_sprite.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		boton_sprite.texture_normal = sprite.texture
 		boton_sprite.ignore_texture_size = true
 		boton_sprite.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), estado_registro))
-		celda.add_child(boton_sprite)
+		marco_sprite.add_child(boton_sprite)
 
 	if estado_registro == "Amigo":
 		var boton_vincular := Button.new()
@@ -286,6 +282,7 @@ func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 		barra.show_percentage = false
 		barra.custom_minimum_size = Vector2(0, 16)
 		barra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		PIXEL_UI_THEME.apply(barra)
 		_detalle.add_child(barra)
 		var numeros_vida := Label.new()
 		numeros_vida.text = "%d / %d" % [vida_actual, vida_maxima]
@@ -315,20 +312,7 @@ func _estilizar_boton_accion(boton: Button) -> void:
 	boton.add_theme_color_override("font_color", TEXTO)
 	boton.add_theme_color_override("font_hover_color", Color(0.98, 0.88, 0.66, 1.0))
 	boton.add_theme_color_override("font_pressed_color", TEXTO)
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.12, 0.075, 0.045, 0.95)
-	normal.border_color = BORDE
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(3)
-	normal.content_margin_left = 5
-	normal.content_margin_right = 5
-	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.19, 0.13, 0.08, 1.0)
-	hover.border_color = Color(0.55, 0.40, 0.22, 1.0)
-	boton.add_theme_stylebox_override("normal", normal)
-	boton.add_theme_stylebox_override("hover", hover)
-	boton.add_theme_stylebox_override("pressed", hover)
-	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	PIXEL_UI_THEME.apply(boton)
 
 
 func _quitar_vinculo(registro: Dictionary) -> void:
