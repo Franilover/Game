@@ -28,7 +28,6 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_apply_local_theme()
 
 	var shade := ColorRect.new()
 	shade.color = Color(0.025, 0.020, 0.017, 0.88)
@@ -46,7 +45,8 @@ func _build_ui() -> void:
 	panel.offset_top = 0
 	panel.offset_right = 0
 	panel.offset_bottom = 0
-	panel.add_theme_stylebox_override("panel", _make_panel_style())
+	# El panel queda sin dibujo hasta disponer de un sprite panel_frame.png.
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(panel)
 
 	var outer := MarginContainer.new()
@@ -106,7 +106,7 @@ func _build_ui() -> void:
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_list.add_theme_color_override("font_color", Color("#eadbc8"))
 	_list.add_theme_color_override("font_selected_color", Color("#fff4e5"))
-	_list.add_theme_stylebox_override("panel", _make_field_style())
+
 	_list.item_selected.connect(_select_profile)
 	content.add_child(_list)
 
@@ -178,52 +178,12 @@ func _build_ui() -> void:
 	footer.add_child(back_button)
 
 
-func _make_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#292017")
-	style.border_color = Color("#806044")
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 8
-	style.content_margin_right = 8
-	style.content_margin_top = 8
-	style.content_margin_bottom = 8
-	return style
-
-
-func _make_field_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#1c1712")
-	style.border_color = Color("#59432f")
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.content_margin_left = 8
-	style.content_margin_right = 8
-	style.content_margin_top = 6
-	style.content_margin_bottom = 6
-	return style
-
-
 func _style_button(button: Button, emphasized: bool) -> void:
 	button.add_theme_color_override("font_color", Color("#f0dfc9"))
 	button.add_theme_color_override("font_hover_color", Color("#fff2df"))
 	button.add_theme_color_override("font_disabled_color", Color("#827362"))
 	button.add_theme_font_size_override("font_size", 14)
 	PIXEL_UI_THEME.apply(button)
-
-
-func _apply_local_theme() -> void:
-	var theme := Theme.new()
-	theme.set_color("font_color", "Label", Color("#e4d2bc"))
-	theme.set_color("font_color", "LineEdit", Color("#f0dfc9"))
-	theme.set_color("font_placeholder_color", "LineEdit", Color("#9b8874"))
-	theme.set_color("font_color", "SpinBox", Color("#f0dfc9"))
-	theme.set_color("font_color", "ItemList", Color("#e4d2bc"))
-	theme.set_stylebox("normal", "LineEdit", _make_field_style())
-	theme.set_stylebox("focus", "LineEdit", _make_field_style())
-	theme.set_stylebox("normal", "SpinBox", _make_field_style())
-	theme.set_stylebox("read_only", "LineEdit", _make_field_style())
-	self.theme = theme
 
 
 func _input(event: InputEvent) -> void:
