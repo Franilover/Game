@@ -24,6 +24,7 @@ var _solicitud_catalogo_garumis: int = -1
 var _catalogo_garumis_cargado: bool = false
 
 const ORUMI_ORIGINAL_ID: String = "24f86486-aced-4a23-bd1b-f025561a8aa3"
+const REGISTROS_GRID_COLUMNAS: int = 4
 
 
 func _ready() -> void:
@@ -95,14 +96,15 @@ func _crear_interfaz() -> void:
 	body.add_child(_arbol)
 
 	_garumi_grid_scroll = ScrollContainer.new()
-	_garumi_grid_scroll.custom_minimum_size = Vector2(190, 0)
+	_garumi_grid_scroll.custom_minimum_size = Vector2(280, 0)
 	_garumi_grid_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_garumi_grid_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_garumi_grid_scroll.visible = false
 	body.add_child(_garumi_grid_scroll)
 	_garumi_grid = GridContainer.new()
-	_garumi_grid.columns = 4
+	_garumi_grid.columns = REGISTROS_GRID_COLUMNAS
 	_garumi_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_garumi_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_garumi_grid.add_theme_constant_override("h_separation", 4)
 	_garumi_grid.add_theme_constant_override("v_separation", 4)
 	_garumi_grid_scroll.add_child(_garumi_grid)
@@ -405,6 +407,7 @@ func _construir_arbol_biomas() -> void:
 
 
 func _construir_lista_criaturas() -> void:
+	_garumi_grid.columns = REGISTROS_GRID_COLUMNAS
 	_arbol.clear()
 	_arbol.visible = false
 	_garumi_grid_scroll.visible = true
@@ -477,6 +480,7 @@ func _construir_lista_garumis() -> void:
 func _construir_grid_garumis() -> void:
 	if not is_instance_valid(_garumi_grid):
 		return
+	_garumi_grid.columns = REGISTROS_GRID_COLUMNAS
 	for hijo in _garumi_grid.get_children():
 		hijo.queue_free()
 	var descubiertos: Dictionary = GameState.call("obtener_garumis_descubiertos") if GameState.has_method("obtener_garumis_descubiertos") else {}
@@ -496,9 +500,9 @@ func _construir_grid_garumis() -> void:
 
 func _crear_boton_registro(nombre: String, textura: Texture2D, silueta: bool) -> Button:
 	var boton := Button.new()
-	boton.custom_minimum_size = Vector2(44, 44)
-	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	boton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	boton.custom_minimum_size = Vector2(64, 72)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.size_flags_vertical = Control.SIZE_FILL
 	boton.clip_contents = true
 	boton.add_theme_font_size_override("font_size", 7)
 	boton.text = ""
@@ -509,7 +513,7 @@ func _crear_boton_registro(nombre: String, textura: Texture2D, silueta: bool) ->
 	imagen.offset_left = 4
 	imagen.offset_top = 3
 	imagen.offset_right = -4
-	imagen.offset_bottom = -13
+	imagen.offset_bottom = -16
 	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	imagen.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -524,12 +528,12 @@ func _crear_boton_registro(nombre: String, textura: Texture2D, silueta: bool) ->
 	etiqueta.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	etiqueta.offset_left = 2
 	etiqueta.offset_right = -2
-	etiqueta.offset_top = -12
+	etiqueta.offset_top = -15
 	etiqueta.offset_bottom = -1
 	etiqueta.text = nombre
 	etiqueta.clip_text = true
 	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	etiqueta.add_theme_font_size_override("font_size", 7)
+	etiqueta.add_theme_font_size_override("font_size", 8)
 	etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
 	etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
 	etiqueta.add_theme_constant_override("outline_size", 2)
