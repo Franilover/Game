@@ -23,6 +23,7 @@ var _file_dialog: FileDialog
 func _ready() -> void:
 	_build_ui()
 	_load_profiles()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _build_ui() -> void:
@@ -204,27 +205,11 @@ func _make_field_style() -> StyleBoxFlat:
 
 
 func _style_button(button: Button, emphasized: bool) -> void:
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("#765236") if emphasized else Color("#403126")
-	normal.border_color = Color("#b58a5b") if emphasized else Color("#72563d")
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(4)
-	normal.content_margin_left = 10
-	normal.content_margin_right = 10
-	normal.content_margin_top = 8
-	normal.content_margin_bottom = 8
-	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color("#896344") if emphasized else Color("#594331")
-	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color("#5a3d29")
-	button.add_theme_stylebox_override("normal", normal)
-	button.add_theme_stylebox_override("hover", hover)
-	button.add_theme_stylebox_override("pressed", pressed)
-	button.add_theme_stylebox_override("focus", _make_field_style())
 	button.add_theme_color_override("font_color", Color("#f0dfc9"))
 	button.add_theme_color_override("font_hover_color", Color("#fff2df"))
 	button.add_theme_color_override("font_disabled_color", Color("#827362"))
 	button.add_theme_font_size_override("font_size", 14)
+	PIXEL_UI_THEME.apply(button)
 
 
 func _apply_local_theme() -> void:
