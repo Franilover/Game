@@ -173,15 +173,6 @@ func _nombre_partida(id: String) -> String:
 	return "Partida"
 
 
-func _crear_estilo_panel_edicion() -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.10, 0.075, 0.05, 1)
-	estilo.set_border_width_all(1)
-	estilo.border_color = Color(0.42, 0.33, 0.22, 1)
-	estilo.set_corner_radius_all(4)
-	return estilo
-
-
 func _configurar_diseno_responsive() -> void:
 	var viewport_size := get_viewport_rect().size
 	var compacto := viewport_size.x < 720.0 or viewport_size.y < 560.0
@@ -230,8 +221,6 @@ func _construir_editor_partida() -> void:
 	_nombre_mundo_input.custom_minimum_size = Vector2(0, 36)
 	_nombre_mundo_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_nombre_mundo_input.max_length = 64
-	_nombre_mundo_input.add_theme_stylebox_override("normal", _crear_estilo_panel_edicion())
-	_nombre_mundo_input.add_theme_stylebox_override("focus", _crear_estilo_panel_edicion())
 	_editor_form.add_child(_nombre_mundo_input)
 
 	var label_personaje := Label.new()
@@ -241,8 +230,6 @@ func _construir_editor_partida() -> void:
 	_nombre_personaje_input.custom_minimum_size = Vector2(0, 36)
 	_nombre_personaje_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_nombre_personaje_input.max_length = 48
-	_nombre_personaje_input.add_theme_stylebox_override("normal", _crear_estilo_panel_edicion())
-	_nombre_personaje_input.add_theme_stylebox_override("focus", _crear_estilo_panel_edicion())
 	_editor_form.add_child(_nombre_personaje_input)
 
 	var label_genero := Label.new()
@@ -261,8 +248,6 @@ func _construir_editor_partida() -> void:
 	_genero_libre_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_genero_libre_input.placeholder_text = "Escribe tu género"
 	_genero_libre_input.visible = false
-	_genero_libre_input.add_theme_stylebox_override("normal", _crear_estilo_panel_edicion())
-	_genero_libre_input.add_theme_stylebox_override("focus", _crear_estilo_panel_edicion())
 	_editor_form.add_child(_genero_libre_input)
 
 	var datos_fila := HBoxContainer.new()
@@ -300,7 +285,6 @@ func _construir_editor_partida() -> void:
 	_aspectos_list.fixed_icon_size = Vector2i(56, 56)
 	_aspectos_list.icon_mode = ItemList.ICON_MODE_TOP
 	_aspectos_list.select_mode = ItemList.SELECT_SINGLE
-	_aspectos_list.add_theme_stylebox_override("panel", _crear_estilo_panel_edicion())
 	_editor_form.add_child(_aspectos_list)
 	_cargar_aspectos_edicion()
 
