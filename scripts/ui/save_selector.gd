@@ -120,6 +120,7 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 	row.add_child(delete)
 
 	list_container.add_child(panel)
+	PIXEL_UI_THEME.apply(panel)
 
 
 func _jugar_partida(id: String) -> void:

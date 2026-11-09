@@ -3,7 +3,7 @@ extends Control
 
 signal destino_solicitado(clave: String)
 
-const COLOR_BORDE := Color(0.48, 0.35, 0.20, 1.0)
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const COLOR_TEXTO := Color(0.91, 0.86, 0.75, 1.0)
 const COLOR_SECUNDARIO := Color(0.68, 0.61, 0.51, 1.0)
 
@@ -107,22 +107,7 @@ func _seleccionar_destino(clave: String) -> void:
 
 
 func _estilizar_boton(boton: Button, seleccionado: bool) -> void:
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.15, 0.115, 0.09, 1.0) if not seleccionado else Color(0.21, 0.16, 0.11, 1.0)
-	normal.border_color = COLOR_BORDE if seleccionado else Color(0.27, 0.21, 0.15, 1.0)
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(4)
-	normal.content_margin_left = 12.0
-	normal.content_margin_right = 12.0
-	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.23, 0.17, 0.11, 1.0)
-	hover.border_color = Color(0.68, 0.51, 0.30, 1.0)
-	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color(0.10, 0.075, 0.06, 1.0)
-	boton.add_theme_stylebox_override("normal", normal)
-	boton.add_theme_stylebox_override("hover", hover)
-	boton.add_theme_stylebox_override("pressed", pressed)
-	boton.add_theme_stylebox_override("disabled", normal)
+	PIXEL_UI_THEME.apply(boton)
 	boton.add_theme_color_override("font_color", COLOR_TEXTO)
 	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.91, 0.73, 1.0))
 	boton.add_theme_color_override("font_disabled_color", COLOR_SECUNDARIO)

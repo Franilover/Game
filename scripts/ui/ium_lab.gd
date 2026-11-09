@@ -1,6 +1,8 @@
 extends Control
 class_name IUMLab
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 ## IUMLab — menú del Simulador de IUMs.
 ## Se abre con [M], se cierra con [M] o [Escape].
 ## El jugador arrastra IUMs al canvas, los conecta y simula.
@@ -84,13 +86,7 @@ func _estilo_panel(fondo: Color, borde: Color, grosor: int = 1) -> StyleBoxFlat:
 
 
 func _estilizar_boton(boton: Button) -> void:
-	boton.add_theme_color_override("font_color", Color(0.82, 0.75, 0.61, 1))
-	boton.add_theme_color_override("font_hover_color", Color(0.95, 0.88, 0.7, 1))
-	boton.add_theme_color_override("font_pressed_color", Color(0.95, 0.88, 0.7, 1))
-	boton.add_theme_color_override("font_disabled_color", Color(0.42, 0.34, 0.24, 1))
-	boton.add_theme_stylebox_override("normal", _estilo_panel(Color(0.12, 0.075, 0.045, 0.98), Color(0.29, 0.19, 0.12, 1)))
-	boton.add_theme_stylebox_override("hover", _estilo_panel(Color(0.19, 0.13, 0.08, 1), Color(0.55, 0.40, 0.22, 1)))
-	boton.add_theme_stylebox_override("pressed", _estilo_panel(Color(0.28, 0.20, 0.12, 1), Color(0.74, 0.62, 0.34, 1), 2))
+	PIXEL_UI_THEME.apply(boton)
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 

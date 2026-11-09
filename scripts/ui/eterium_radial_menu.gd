@@ -1,6 +1,8 @@
 extends Control
 class_name EteriumRadialMenu
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 ## Panel compacto de acciones de Eterium, integrado con el estilo de los menús del juego.
 ## Pulsa X para abrir; usa los botones o las teclas 1–3.
 
@@ -63,6 +65,7 @@ func _ready() -> void:
 	visible = true
 	_crear_interfaz()
 	_construir_interfaz_minijuego()
+	PIXEL_UI_THEME.apply(self)
 
 func _crear_interfaz() -> void:
 	_overlay = get_node("Fondo") as ColorRect

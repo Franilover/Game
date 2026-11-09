@@ -2,6 +2,7 @@ extends Control
 
 class_name DeathMenu
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const START_MENU_PATH := "res://scenes/ui/start_menu.tscn"
 
 @onready var overlay: ColorRect = $Overlay
@@ -27,6 +28,7 @@ func _ready() -> void:
 
 	reaparecer_button.pressed.connect(_reaparecer)
 	menu_button.pressed.connect(_volver_al_menu)
+	PIXEL_UI_THEME.apply(self)
 
 
 
