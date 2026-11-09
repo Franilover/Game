@@ -89,14 +89,7 @@ func _crear_interfaz() -> void:
 	_arbol.add_theme_color_override("font_color", Color(0.78, 0.66, 0.46, 1.0))
 	_arbol.add_theme_color_override("font_selected_color", Color(0.95, 0.88, 0.7, 1.0))
 
-	var estilo_arbol := StyleBoxFlat.new()
-	estilo_arbol.bg_color = Color(0.075, 0.05, 0.035, 0.9)
-	estilo_arbol.border_width_left = 1
-	estilo_arbol.border_width_top = 1
-	estilo_arbol.border_width_right = 1
-	estilo_arbol.border_width_bottom = 1
-	estilo_arbol.border_color = Color(0.29, 0.19, 0.12, 1.0)
-	_arbol.add_theme_stylebox_override("panel", estilo_arbol)
+	_arbol.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_arbol.item_selected.connect(_al_seleccionar)
 	_arbol.item_mouse_selected.connect(_al_click_arbol)
 	body.add_child(_arbol)
@@ -118,14 +111,7 @@ func _crear_interfaz() -> void:
 	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	var estilo_detalle := StyleBoxFlat.new()
-	estilo_detalle.bg_color = Color(0.075, 0.05, 0.035, 0.9)
-	estilo_detalle.border_width_left = 1
-	estilo_detalle.border_width_top = 1
-	estilo_detalle.border_width_right = 1
-	estilo_detalle.border_width_bottom = 1
-	estilo_detalle.border_color = Color(0.29, 0.19, 0.12, 1.0)
-	detail_panel.add_theme_stylebox_override("panel", estilo_detalle)
+	detail_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	body.add_child(detail_panel)
 
 	var detail_margin := MarginContainer.new()
@@ -183,32 +169,8 @@ func _configurar_boton_seccion(boton: Button) -> void:
 	boton.add_theme_color_override("font_hover_color", Color(0.82, 0.70, 0.51, 1))
 	boton.add_theme_color_override("font_pressed_color", Color(0.94, 0.85, 0.66, 1))
 	boton.add_theme_font_size_override("font_size", 9)
-	var transparente := Color(0, 0, 0, 0)
-	var normal := _crear_estilo_boton(transparente, Color(0.22, 0.15, 0.09, 0.8), 1)
-	var hover := _crear_estilo_boton(transparente, Color(0.39, 0.29, 0.17, 1), 1)
-	var activo := _crear_estilo_boton(transparente, Color(0.57, 0.44, 0.24, 1), 1)
-	for estilo in [normal, hover, activo]:
-		estilo.set_content_margin_all(7)
-		estilo.set_border_width_all(1)
-		estilo.corner_radius_top_left = 3
-		estilo.corner_radius_top_right = 3
-		estilo.corner_radius_bottom_left = 3
-		estilo.corner_radius_bottom_right = 3
-	boton.add_theme_stylebox_override("normal", normal)
-	boton.add_theme_stylebox_override("hover", hover)
-	boton.add_theme_stylebox_override("pressed", activo)
+	PIXEL_UI_THEME.apply(boton)
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-
-
-func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = fondo
-	estilo.border_color = borde
-	estilo.set_border_width_all(1)
-	estilo.border_width_bottom = borde_inferior
-	estilo.corner_radius_top_left = 3
-	estilo.corner_radius_top_right = 3
-	return estilo
 
 func actualizar() -> void:
 	if _arbol == null:
