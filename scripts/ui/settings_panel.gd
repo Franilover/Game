@@ -100,6 +100,10 @@ func _construir_interfaz() -> void:
 	columna.add_child(cerrar)
 
 
+func _cerrar() -> void:
+	closed.emit()
+
+
 func _obtener_audio_settings() -> Node:
 	# Resolver el autoload por ruta evita depender de que el editor haya
 	# refrescado la lista de autoloads al cambiar de rama.
