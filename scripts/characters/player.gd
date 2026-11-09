@@ -864,9 +864,10 @@ func reaparecer() -> void:
 
 	locomotion.reiniciar()
 
-	var world_gen: Node = _world_context_ref
-	if world_gen != null:
-		set_spawn_from_world(world_gen)
+	# El contexto compartido es la fuente de spawn del jugador.
+	# En zonas fijas (sin terreno procedural) se conserva la posición actual.
+	if is_instance_valid(_world_context_ref) and _world_context_ref.tiene_mundo_activo():
+		set_spawn_from_world(_world_context_ref)
 
 	if visual != null:
 		visual.position = _base_visual_position
@@ -1131,12 +1132,12 @@ func aplicar_efecto_slow(duracion: float) -> void:
 # ============================================================
 
 func set_spawn_from_world(
-	world_gen: WorldGenerator
+	world_context: WorldContext
 ) -> void:
-	if world_gen == null:
+	if not is_instance_valid(world_context) or not world_context.tiene_mundo_activo():
 		return
 
-	global_position = world_gen.get_spawn_position()
+	global_position = world_context.get_spawn_position()
 
 
 func _sync_vital_desde_eterium() -> void:
