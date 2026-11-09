@@ -328,7 +328,7 @@ func _inicializar_runtime_de_zona() -> void:
 		if _zone_manager.consumir_salida_reino_pendiente():
 			_player.global_position = Vector2(560, 120)
 		else:
-			_player.set_spawn_from_world(_world_context)
+			_player.set_spawn_from_world(_world_generator)
 		_world_generator.registrar_jugador(_player)
 
 	_world_items.configurar_dependencias(
