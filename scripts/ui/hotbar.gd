@@ -149,7 +149,7 @@ func _preparar_slots() -> void:
 		_crear_numero(slot)
 
 		var estilo_normal := slot.get_theme_stylebox("normal")
-		var estilo_seleccionado := PIXEL_UI_THEME.slot_style(true)
+		var estilo_seleccionado: StyleBox = PIXEL_UI_THEME.slot_style(true)
 		if estilo_seleccionado == null:
 			estilo_seleccionado = slot.get_theme_stylebox("pressed")
 		slot.set_meta("normal_style", estilo_normal)

@@ -11,7 +11,7 @@ var datos: Dictionary = {}
 
 
 @onready var icon_texture: TextureRect = $Icon
-@onready var icon_placeholder: Control = get_node_or_null("IconPlaceholder")
+@onready var icon_placeholder: Control = get_node_or_null("IconPlaceholder") as Control
 @onready var quantity_label: Label = $Quantity
 
 
