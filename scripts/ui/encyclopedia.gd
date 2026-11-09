@@ -535,7 +535,6 @@ func _crear_boton_registro(nombre: String, textura: Texture2D, silueta: bool) ->
 	etiqueta.add_theme_constant_override("outline_size", 2)
 	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	boton.add_child(etiqueta)
-	boton.disabled = textura == null
 	return boton
 
 
