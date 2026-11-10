@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/ui/admin_player_editor.gd" id="26_admin_player_editor"]
 [ext_resource type="Script" path="res://scripts/world/main.gd" id="3_main"]
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="33_world_atmosphere"]
+[ext_resource type="Script" path="res://scripts/world/world_climate_system.gd" id="34_world_climate"]
 [ext_resource type="Script" path="res://scripts/world/zone_manager.gd" id="30_zone_manager"]
 [ext_resource type="PackedScene" path="res://scenes/ui/realm_menu.tscn" id="32_realm_menu"]
 [ext_resource type="Script" path="res://scripts/world/world_context.gd" id="31_world_context"]
@@ -74,6 +75,9 @@ z_index = 150
 script = ExtResource("33_world_atmosphere")
 
 [node name="DayNightModulation" type="CanvasModulate" parent="Systems/WorldAtmosphere"]
+
+[node name="ClimateSystem" type="Node" parent="Systems/WorldAtmosphere"]
+script = ExtResource("34_world_climate")
 
 [node name="WorldContext" type="Node" parent="Systems"]
 script = ExtResource("31_world_context")
