@@ -296,7 +296,7 @@ func _actualizar_iluminacion(delta: float = 0.0) -> void:
 	_modulacion.color = _color_iluminacion_actual
 
 
-static func calcular_color_iluminacion(hora_normalizada: float) -> Color:
+func calcular_color_iluminacion(hora_normalizada: float) -> Color:
 	# Paleta cíclica: noche azul, amanecer rosado/dorado, luz diurna clara
 	# y atardecer naranja, coral y violeta antes de volver a la noche.
 	const CLAVES_LUZ: Array[Dictionary] = [
