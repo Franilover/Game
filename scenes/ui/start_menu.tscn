@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://cmn23gd47tjqf" path="res://scripts/ui/start_menu.gd" id="1_start_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
-[ext_resource type="Texture2D" path="res://assets/art/UI/Menus/panel_background.png" id="3_panel_background"]
 [ext_resource type="Texture2D" path="res://assets/art/UI/Menus/menu_background.png" id="4_menu_background"]
 
 
@@ -48,7 +47,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Inner" type="TextureRect" parent="Paper" unique_id=1484655391]
+
 layout_mode = 0
 offset_left = 8.0
 offset_top = 8.0
@@ -163,7 +162,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.02, 0.015, 0.01, 0.72)
 
-[node name="LoginPanelBackground" type="TextureRect" parent="LoginOverlay"]
+
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -269,7 +268,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.02, 0.015, 0.01, 0.78)
 
-[node name="MultiplayerPanelBackground" type="TextureRect" parent="MultiplayerOverlay"]
+
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
