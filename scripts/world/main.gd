@@ -380,6 +380,14 @@ func _inicializar_runtime_de_zona() -> void:
 		var zona_actual: Node = _zone_manager.obtener_zona_actual()
 		var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
 		_player.global_position = punto_aparicion.global_position if is_instance_valid(punto_aparicion) else Vector2(0, 120)
+		# Una expedición conserva el punto exacto desde el que el jugador salió
+		# de Torres. Se aplica después del spawn predeterminado del reino.
+		if _zone_manager.has_method("consumir_retorno_expedicion"):
+			var retorno: Dictionary = _zone_manager.call("consumir_retorno_expedicion")
+			if bool(retorno.get("valido", false)):
+				var posicion_retorno: Variant = retorno.get("posicion", Vector2.ZERO)
+				if posicion_retorno is Vector2:
+					_player.global_position = posicion_retorno
 		print("Main: reino activo → ", tipo_zona_actual)
 	else:
 		print("Main: mundo abierto listo.")
