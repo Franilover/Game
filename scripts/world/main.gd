@@ -273,6 +273,7 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		GarliaWorldNetwork.preparar_cambio_zona_servidor()
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
+	_actualizar_limites_camara_zona(tipo)
 
 	if tipo == "mundo_abierto" or tipo == "expedicion:bosque":
 		if _world_generator == null:
@@ -322,6 +323,25 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_world_context.configurar(null, null, WorldData)
 		_world_items.establecer_generacion_habilitada(false)
 		_inicializar_runtime_de_zona()
+
+
+func _actualizar_limites_camara_zona(tipo: String) -> void:
+	if not is_instance_valid(_camera):
+		return
+	if tipo == "reino_torres":
+		_camera.limit_left = -1200
+		_camera.limit_right = 1200
+		_camera.limit_top = -700
+		_camera.limit_bottom = 700
+		_camera.limit_enabled = true
+	elif tipo == "expedicion:bosque":
+		_camera.limit_left = 0
+		_camera.limit_right = 5120
+		_camera.limit_top = -1024
+		_camera.limit_bottom = 1024
+		_camera.limit_enabled = true
+	else:
+		_camera.limit_enabled = false
 
 
 func _al_mundo_inicializado() -> void:
