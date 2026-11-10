@@ -11,6 +11,7 @@ signal mundo_inicializado
 @export var map_seed: int = 0
 @export var usar_semilla_fija: bool = false
 @export var bioma_forzado_id: String = ""
+@export var usar_terreno_estatico: bool = false
 @export var tile_size: int = 32
 @export var chunk_size_tiles: int = 32
 @export var load_radius_chunks: int = 1
@@ -266,11 +267,11 @@ func _inicializar_mundo() -> void:
 	if terrain.visual != null:
 		terrain.visual.finalizar_preparacion_renderer()
 
-	# El chunk inicial también entra al pipeline incremental. No usar
-	# generar_chunk_completo() aquí: esa función es síncrona y puede mantener
-	# el mismo frame ocupado mientras el presupuesto de render ya está agotado.
-	# El WorldStreamer continuará la generación en frames sucesivos.
-	terrain.iniciar_generacion_chunk(Vector2i.ZERO)
+	# Las expediciones diseñadas a mano conservan los servicios de entidades,
+	# contexto y guardado, pero su suelo proviene de TileMapLayers estáticos.
+	# No deben iniciar chunks ni activar streaming procedural.
+	if not usar_terreno_estatico:
+		terrain.iniciar_generacion_chunk(Vector2i.ZERO)
 
 	_world_ready = true
 	_mundo_inicial_listo_emitido = false
@@ -280,19 +281,22 @@ func _inicializar_mundo() -> void:
 	mundo_inicializado.emit()
 
 	print(
-		"WorldGenerator: mundo inicial iniciado; generación incremental activa."
+		"WorldGenerator: mundo inicial iniciado; ",
+		"terreno estático." if usar_terreno_estatico else "generación incremental activa."
 	)
 
 
 func registrar_jugador(
 	player: Node
 ) -> void:
-	if not _world_ready:
+	if not _world_ready or usar_terreno_estatico:
 		return
 	streamer.registrar_jugador(player)
 
 
 func get_spawn_position() -> Vector2:
+	if usar_terreno_estatico:
+		return Vector2(560.0, 120.0)
 	if terrain == null:
 		return Vector2.ZERO
 
