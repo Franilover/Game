@@ -3,7 +3,7 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
-const PANEL_INSET := 8
+const PANEL_INSET := 2
 
 
 static func apply(root: Control) -> void:
