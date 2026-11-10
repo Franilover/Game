@@ -76,13 +76,6 @@ func _construir_interfaz() -> void:
 	titulo.add_theme_font_size_override("font_size", 27)
 	columna.add_child(titulo)
 
-	var subtitulo := Label.new()
-	subtitulo.text = "Ajusta el sonido y consulta los controles."
-	subtitulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitulo.add_theme_font_size_override("font_size", 12)
-	subtitulo.add_theme_color_override("font_color", Color(0.72, 0.62, 0.46))
-	columna.add_child(subtitulo)
-
 	var separador := HSeparator.new()
 	columna.add_child(separador)
 
