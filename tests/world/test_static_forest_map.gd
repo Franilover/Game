@@ -41,7 +41,7 @@ func _run() -> void:
 		_fail("La capa DualGrid de tierra no contiene los senderos.")
 		return
 
-	var display := pradera.get_node_or_null("Display")
+	var display: Node = pradera.get_child(0) if pradera.get_child_count() > 0 else null
 	if display == null:
 		_fail("TileMapDual no creó su Display.")
 		return
