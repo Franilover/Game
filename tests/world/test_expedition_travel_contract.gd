@@ -30,8 +30,8 @@ func _run() -> void:
 		_fail("No se pudo preparar Torres para la prueba.")
 		return
 
-	# Ejercitar el mismo camino que usa el Area2D de salida de Torres:
-	# la escena emite salida_solicitada y ZoneManager debe enrutarla al bosque.
+	# Ejercitar el mismo camino que usa el selector al elegir la expedición
+	# dinámica desde el portón de Torres.
 	var zona_torres: Node = manager.obtener_zona_actual()
 	if zona_torres == null or zona_torres.get_node_or_null("ExpeditionEntrance") == null:
 		_fail("Torres no tiene la entrada de expedición en el antiguo portón este.")
