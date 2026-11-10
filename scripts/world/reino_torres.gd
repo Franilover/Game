@@ -7,13 +7,16 @@ const TORRES_ART_ROOT := "res://assets/art/kingdom/torres"
 const TORRES_PIXEL_ART := preload("res://scripts/world/torres_pixel_art.gd")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
-const TORRES_GRASS_ATLAS := "res://assets/tilesets/Torres_Cesped.png"
 const TORRES_TILE_SIZE := 32
-const CESPED_CORNERS: Array[TileSet.CellNeighbor] = [
-	TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
-	TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
-	TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
-	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
+const TORRES_TERRAIN_VISUAL_SCRIPT := preload("res://scripts/world/world_terrain_visual.gd")
+const TORRES_TERRAIN_ORIGIN := Vector2(-1200.0, -704.0)
+const TORRES_TERRAIN_COLUMNS := 75
+const TORRES_TERRAIN_ROWS := 44
+const TORRES_ROAD_SURFACES: PackedStringArray = [
+	"NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath",
+	"NorthRingRoad", "SouthRingRoad", "WestRingRoad", "EastRingRoad",
+	"NorthCrossStreet", "SouthCrossStreet", "WestCrossStreet", "EastCrossStreet",
+	"RoadToWorld",
 ]
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
@@ -74,6 +77,8 @@ var _aviso_panel: PanelContainer
 var _aviso: Label
 var _entrada_aviso_actual: Dictionary = {}
 var _cesped_dual: TileMapDual
+var _terrain_renderer: Node
+var _terreno_dual_listo: bool = false
 var _rotulos_edificios: Dictionary = {}
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
@@ -140,7 +145,7 @@ func _ready() -> void:
 	_capa_interior.visible = false
 	add_child(_capa_interior)
 	_crear_aviso()
-	_crear_cesped_tilemap_dual()
+	await _crear_cesped_tilemap_dual()
 	_texturizar_mapa_pixelart()
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
@@ -303,82 +308,75 @@ func _input(evento: InputEvent) -> void:
 
 
 func _crear_cesped_tilemap_dual() -> void:
-	# El suelo del reino usa Dual Grid real: cada atlas tile define sus cuatro
-	# cuadrantes y TileMapDual resuelve bordes/esquinas según las celdas vecinas.
-	var textura: Texture2D = load(TORRES_GRASS_ATLAS) as Texture2D
-	if textura == null:
-		push_error("ReinoTorres: no se pudo cargar el atlas de césped: " + TORRES_GRASS_ATLAS)
-		return
-	if textura.get_size() != Vector2(TORRES_TILE_SIZE * 4, TORRES_TILE_SIZE * 4):
-		push_error("ReinoTorres: Torres_Cesped.png debe ser un atlas de 128x128 con tiles de 32x32.")
-		return
+	# Torres y la expedición comparten el renderer canónico de terrenos.
+	# La ciudad sigue siendo un mapa fijo: sólo se rasteriza su distribución
+	# existente a celdas, sin generar ni modificar su geometría.
+	_terrain_renderer = TORRES_TERRAIN_VISUAL_SCRIPT.new()
+	_terrain_renderer.name = "TerrainRenderer"
+	add_child(_terrain_renderer)
+	_terrain_renderer.call("configurar", TORRES_TILE_SIZE)
 
-	var conjunto := TileSet.new()
-	conjunto.tile_size = Vector2i(TORRES_TILE_SIZE, TORRES_TILE_SIZE)
-	conjunto.add_terrain_set()
-	conjunto.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
-	conjunto.add_terrain(0)
-	conjunto.set_terrain_name(0, 0, "<any>")
-	conjunto.add_terrain(0)
-	conjunto.set_terrain_name(0, 1, "Césped de Torres")
+	# TileMapDual crea los Display internos en _ready(). Preparar las reglas
+	# una vez antes de registrar el terreno de las 3.300 celdas.
+	await get_tree().process_frame
+	_terrain_renderer.call("finalizar_preparacion_renderer")
+	_terrain_renderer.call("comenzar_lote")
 
-	var atlas := TileSetAtlasSource.new()
-	atlas.texture = textura
-	atlas.texture_region_size = Vector2i(TORRES_TILE_SIZE, TORRES_TILE_SIZE)
-	for mascara in range(16):
-		atlas.create_tile(Vector2i(mascara % 4, int(mascara / 4)))
-	conjunto.add_source(atlas, 0)
+	var caminos: Array[PackedVector2Array] = []
+	for nombre in TORRES_ROAD_SURFACES:
+		var poligono := get_node_or_null(NodePath(nombre)) as Polygon2D
+		if not is_instance_valid(poligono):
+			continue
+			# Las calles dejan de dibujarse como polígonos/texturas separados:
+			# su forma se conserva, pero ahora determina las celdas de Tierra.
+		poligono.visible = false
+		caminos.append(poligono.polygon)
 
-	# El índice de máscara usa el mismo orden que el atlas: TL, TR, BL, BR.
-	# Se registra el terreno en cada tile para que el addon pueda componer sus
-	# DisplayLayer sin una textura completa opaca por debajo de los bordes.
-	for mascara in range(16):
-		var coordenada := Vector2i(mascara % 4, int(mascara / 4))
-		var datos := atlas.get_tile_data(coordenada, 0)
-		datos.terrain_set = 0
-		datos.terrain = 1
-		for bit_index in range(CESPED_CORNERS.size()):
-			var conectado := 1 if (mascara & (1 << bit_index)) != 0 else 0
-			datos.set_terrain_peering_bit(CESPED_CORNERS[bit_index], conectado)
+	# Bosque en el perímetro, pradera en el interior y caminos de tierra.
+	# La prioridad de los caminos evita que el anillo forestal los tape.
+	for y in range(TORRES_TERRAIN_ROWS):
+		for x in range(TORRES_TERRAIN_COLUMNS):
+			var celda := Vector2i(x, y)
+			var centro := TORRES_TERRAIN_ORIGIN + Vector2(
+				(float(x) + 0.5) * TORRES_TILE_SIZE,
+				(float(y) + 0.5) * TORRES_TILE_SIZE
+			)
+			var zona := 0
+			var bioma := "Pradera"
+			if _torres_punto_en_caminos(centro, caminos):
+				zona = 1
+				bioma = "Tierra"
+			elif x < 3 or x >= TORRES_TERRAIN_COLUMNS - 3 or y < 3 or y >= TORRES_TERRAIN_ROWS - 3:
+				zona = 8
+				bioma = "Bosque"
+			_terrain_renderer.call("set_zone", celda, zona, zona, bioma)
 
-	_cesped_dual = TileMapDual.new()
-	_cesped_dual.name = "TorresCespedDual"
-	_cesped_dual.tile_set = conjunto
-	_cesped_dual.position = Vector2(-1200, -704)
-	_cesped_dual.z_as_relative = false
-	_cesped_dual.z_index = -19
-	_cesped_dual.rendering_quadrant_size = 16
-	_cesped_dual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	add_child(_cesped_dual)
+	_terrain_renderer.call("terminar_lote")
+	# Procesar el Display por tandas para evitar un flush gigante al entrar.
+	while bool(_terrain_renderer.call("tiene_flush_pendiente")):
+		_terrain_renderer.call("procesar_flush", 512)
+		await get_tree().process_frame
 
-	# 75 x 44 celdas cubren el suelo de Torres a 32 px por tile. Se mantiene
-	# Ground como base de color detrás de las esquinas transparentes del atlas.
-	for y in range(44):
-		for x in range(75):
-			_cesped_dual.set_cell(Vector2i(x, y), 0, Vector2i(3, 3))
+	# El antiguo fondo plano ocultaría la mezcla de atlas y ya no es necesario.
+	var suelo := get_node_or_null("Ground") as Polygon2D
+	if is_instance_valid(suelo):
+		suelo.visible = false
+	_terreno_dual_listo = true
+	print("ReinoTorres: terreno fijo compuesto con TileMapDual (pradera, bosque y caminos de tierra).")
 
-	print("ReinoTorres: césped TileMapDual listo (75x44 celdas, atlas propio).")
+
+func _torres_punto_en_caminos(punto: Vector2, caminos: Array[PackedVector2Array]) -> bool:
+	for poligono: PackedVector2Array in caminos:
+		if poligono.size() >= 3 and Geometry2D.is_point_in_polygon(punto, poligono):
+			return true
+	return false
 
 
 func _texturizar_mapa_pixelart() -> void:
 	# Sustituye las superficies planas por texturas rasterizadas a baja resolución.
 	var superficies: Array[Dictionary] = [
-		{"nombre": "NorthPath", "tipo": "camino"},
-		{"nombre": "MainStreet", "tipo": "camino"},
-		{"nombre": "WestStreet", "tipo": "camino"},
-		{"nombre": "EastStreet", "tipo": "camino"},
-		{"nombre": "SouthPath", "tipo": "camino"},
-		{"nombre": "NorthRingRoad", "tipo": "camino"},
-		{"nombre": "SouthRingRoad", "tipo": "camino"},
-		{"nombre": "WestRingRoad", "tipo": "camino"},
-		{"nombre": "EastRingRoad", "tipo": "camino"},
-		{"nombre": "NorthCrossStreet", "tipo": "camino"},
-		{"nombre": "SouthCrossStreet", "tipo": "camino"},
-		{"nombre": "WestCrossStreet", "tipo": "camino"},
-		{"nombre": "EastCrossStreet", "tipo": "camino"},
 		{"nombre": "Plaza", "tipo": "plaza"},
 		{"nombre": "PlazaInset", "tipo": "plaza"},
-		{"nombre": "RoadToWorld", "tipo": "camino"},
 		{"nombre": "CanalBankNorth", "tipo": "ribera"},
 		{"nombre": "CanalBankSouth", "tipo": "ribera"},
 		{"nombre": "CanalWater", "tipo": "agua"},
