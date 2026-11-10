@@ -602,6 +602,14 @@ func seleccionar_slot(indice: int) -> void:
 
 	indice_seleccionado = indice
 
+	# Las ranuras de los grupos laterales representan directamente las manos.
+	# Al seleccionar una, también pasa a ser la ranura activa de Q o E para que
+	# el HUD refleje el cambio inmediatamente. La mochila (6–11) no altera manos.
+	if indice < 6:
+		seleccionar_slot_mano("izquierda", indice)
+	elif indice >= 12 and indice < 18:
+		seleccionar_slot_mano("derecha", indice - 12)
+
 	if items[indice].is_empty():
 		objeto_seleccionado.clear()
 
