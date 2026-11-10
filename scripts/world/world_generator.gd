@@ -9,6 +9,8 @@ signal mundo_inicializado
 
 
 @export var map_seed: int = 0
+@export var usar_semilla_fija: bool = false
+@export var bioma_forzado_id: String = ""
 @export var tile_size: int = 32
 @export var chunk_size_tiles: int = 32
 @export var load_radius_chunks: int = 1
@@ -178,13 +180,17 @@ func _inicializar_mundo() -> void:
 	if _world_ready:
 		return
 
-	if _game_state.tiene_semilla_mundo():
-		map_seed = _game_state.obtener_semilla_mundo()
-	elif map_seed == 0:
-		map_seed = randi()
+	if not usar_semilla_fija:
+		if _game_state.tiene_semilla_mundo():
+			map_seed = _game_state.obtener_semilla_mundo()
+		elif map_seed == 0:
+			map_seed = randi()
 
-		if not _game_state.active_save_id.is_empty():
-			_game_state.establecer_semilla_mundo(map_seed)
+			if not _game_state.active_save_id.is_empty():
+				_game_state.establecer_semilla_mundo(map_seed)
+	elif map_seed == 0:
+		push_error("WorldGenerator: usar_semilla_fija requiere una semilla distinta de cero.")
+		return
 
 	terrain.configurar(
 		map_seed,
@@ -196,6 +202,10 @@ func _inicializar_mundo() -> void:
 	terrain.configurar_render_manager(render_manager)
 
 	terrain.cargar_datos_mundo()
+	if not bioma_forzado_id.strip_edges().is_empty():
+		if not terrain.establecer_bioma_forzado(bioma_forzado_id):
+			push_error("WorldGenerator: no se pudo aplicar el bioma forzado '%s'." % bioma_forzado_id)
+			return
 
 	var diagnostico_garumis := _world_data.obtener_diagnostico_garumis_game()
 	print(
