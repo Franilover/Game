@@ -59,6 +59,7 @@ var _clima_actual: Dictionary = {
 	"visibilidad": 1.0
 }
 var _clima_objetivo: Dictionary = {}
+var _clima_origen: Dictionary = {}
 var _transicion_duracion: float = 0.0
 var _transicion_transcurrida: float = 0.0
 var _fenomenos_activos: Dictionary = {}
@@ -80,6 +81,7 @@ func establecer_clima(
 
 	var fuerza := clampf(intensidad, 0.0, 1.0)
 	var perfil: Dictionary = PERFILES_CLIMA[tipo].duplicate(true)
+	_clima_origen = _clima_actual.duplicate(true)
 	_clima_objetivo = {
 		"tipo": tipo,
 		"intensidad": fuerza
@@ -94,6 +96,8 @@ func establecer_clima(
 	_transicion_transcurrida = 0.0
 	if _transicion_duracion <= 0.0:
 		_clima_actual = _clima_objetivo.duplicate(true)
+		_clima_objetivo.clear()
+		_clima_origen.clear()
 		clima_cambiado.emit(obtener_estado())
 	else:
 		clima_transicion_iniciada.emit(_clima_objetivo.duplicate(true))
@@ -115,16 +119,16 @@ func _actualizar_transicion_clima(delta: float) -> void:
 	progreso = progreso * progreso * (3.0 - 2.0 * progreso)
 
 	var nuevo_estado := {
-		"tipo": str(_clima_objetivo["tipo"]),
+		"tipo": str(_clima_origen.get("tipo", "despejado")),
 		"intensidad": lerpf(
-			float(_clima_actual.get("intensidad", 1.0)),
+			float(_clima_origen.get("intensidad", 1.0)),
 			float(_clima_objetivo["intensidad"]),
 			progreso
 		)
 	}
 	for propiedad in ["cobertura_nubes", "precipitacion", "viento", "humedad", "visibilidad"]:
 		nuevo_estado[propiedad] = lerpf(
-			float(_clima_actual.get(propiedad, _clima_objetivo[propiedad])),
+			float(_clima_origen.get(propiedad, _clima_objetivo[propiedad])),
 			float(_clima_objetivo[propiedad]),
 			progreso
 		)
@@ -133,6 +137,7 @@ func _actualizar_transicion_clima(delta: float) -> void:
 	if _transicion_transcurrida >= _transicion_duracion:
 		_clima_actual = _clima_objetivo.duplicate(true)
 		_clima_objetivo.clear()
+		_clima_origen.clear()
 		clima_cambiado.emit(obtener_estado())
 
 
