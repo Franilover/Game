@@ -34,7 +34,6 @@ func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 func _ready() -> void:
 	set_process_mode(Node.PROCESS_MODE_ALWAYS)
 	PIXEL_UI_THEME.apply(self)
-	$Margin/Column/Content/DetailPanel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
 	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
 	call_deferred("_ajustar_columnas_recetas")
