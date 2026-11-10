@@ -13,7 +13,7 @@ func _run() -> void:
 	add_child(entidades)
 	var jugador := Node2D.new()
 	jugador.name = "Player"
-	jugador.global_position = Vector2(73.0, 91.0)
+	jugador.global_position = Vector2(1080.0, 0.0)
 	entidades.add_child(jugador)
 
 	var mundo := Node2D.new()
@@ -33,6 +33,12 @@ func _run() -> void:
 	# Ejercitar el mismo camino que usa el Area2D de salida de Torres:
 	# la escena emite salida_solicitada y ZoneManager debe enrutarla al bosque.
 	var zona_torres: Node = manager.obtener_zona_actual()
+	if zona_torres == null or zona_torres.get_node_or_null("ExpeditionEntrance") == null:
+		_fail("Torres no tiene la entrada de expedición en el antiguo portón este.")
+		return
+	if zona_torres.get_node_or_null("Exit") != null:
+		_fail("La antigua salida/teletransporte del portón sigue presente.")
+		return
 	if zona_torres == null or not zona_torres.has_signal("salida_solicitada"):
 		_fail("La escena de Torres no expone la señal de salida física.")
 		return
@@ -68,7 +74,7 @@ func _run() -> void:
 		_fail("No se serializó el punto de retorno.")
 		return
 	var origen := origen_variant as Dictionary
-	if not is_equal_approx(float(origen.get("x", 0.0)), 73.0) or not is_equal_approx(float(origen.get("y", 0.0)), 91.0):
+	if not is_equal_approx(float(origen.get("x", 0.0)), 900.0) or not is_equal_approx(float(origen.get("y", 0.0)), 0.0):
 		_fail("El punto de retorno no coincide con la posición de salida.")
 		return
 
@@ -92,7 +98,7 @@ func _run() -> void:
 		_fail("El punto de retorno no se entregó como Vector2.")
 		return
 	jugador.global_position = posicion_variant
-	if jugador.global_position.distance_to(Vector2(73.0, 91.0)) > 0.01:
+	if jugador.global_position.distance_to(Vector2(900.0, 0.0)) > 0.01:
 		_fail("La posición del jugador no se pudo restaurar.")
 		return
 	if manager.consumir_retorno_expedicion().size() != 0:
