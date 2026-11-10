@@ -183,11 +183,14 @@ func _al_solicitar_destino_reino(clave: String) -> void:
 		return
 	if _zone_manager == null or not is_instance_valid(_zone_manager):
 		return
+	if _zone_manager.has_method("esta_en_expedicion") and _zone_manager.esta_en_expedicion():
+		if clave.strip_edges().to_lower() == "torres":
+			_zone_manager.salir_expedicion()
+		else:
+			push_warning("Main: durante la expedición sólo está disponible el regreso a Torres.")
+		return
 	if clave == "mundo_abierto":
 		_zone_manager.entrar_mundo_abierto()
-		return
-	if clave.strip_edges().to_lower() == "torres" and _zone_manager.has_method("esta_en_expedicion") and _zone_manager.esta_en_expedicion():
-		_zone_manager.salir_expedicion()
 		return
 	var desbloqueados: Dictionary = GameState.obtener_reinos_desbloqueados()
 	if not bool(desbloqueados.get(clave.strip_edges().to_lower(), false)):
