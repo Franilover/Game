@@ -867,6 +867,14 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 		_emitir_objeto_activo()
 	return resultado
 
+func agregar_objeto_desde_ui(datos_objeto: Dictionary) -> bool:
+	var resultado: bool = inventory_controller.agregar_objeto_desde_ui(datos_objeto)
+	if resultado:
+		actualizar()
+		inventory_changed.emit()
+		_emitir_objeto_activo()
+	return resultado
+
 func usar_objeto_activo(usuario: Player = null) -> bool:
 	return usar_objeto_en_indice(obtener_indice_inventario_hotbar(indice_hotbar_activo), usuario)
 
