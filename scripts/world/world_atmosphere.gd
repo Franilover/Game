@@ -9,6 +9,7 @@ class_name WorldAtmosphere
 
 @export_range(2.0, 60.0, 1.0) var minutos_por_dia: float = 12.0
 @export_range(0.0, 1.0, 0.01) var hora_inicial: float = 0.28
+@export_range(0.2, 12.0, 0.1) var suavizado_iluminacion_segundos: float = 2.8
 
 signal dia_cambiado(dia_del_anio: int, anio: int)
 signal estacion_cambiada(estacion: Dictionary)
@@ -28,6 +29,8 @@ var _tiempo_bloqueado: bool = false
 var _anio_inicio: int = 0
 
 var _modulacion: CanvasModulate
+var _color_iluminacion_actual: Color = Color.WHITE
+var _iluminacion_inicializada: bool = false
 var _world_data: WorldDataService = null
 
 
@@ -60,7 +63,7 @@ func _process(delta: float) -> void:
 		return
 
 	if _tiempo_bloqueado:
-		_actualizar_iluminacion()
+		_actualizar_iluminacion(delta)
 		return
 
 	var duracion_real_segundos := maxf(
@@ -79,7 +82,7 @@ func _process(delta: float) -> void:
 		hora_del_dia -= horas_por_dia
 		_avanzar_dia()
 
-	_actualizar_iluminacion()
+	_actualizar_iluminacion(delta)
 
 
 func _al_mundo_listo() -> void:
@@ -270,34 +273,65 @@ func _actualizar_estacion() -> void:
 		inicio_dia += duracion
 
 
-func _actualizar_iluminacion() -> void:
+func _actualizar_iluminacion(delta: float = 0.0) -> void:
 	if _modulacion == null or not is_instance_valid(_modulacion):
 		return
 
-	var dia_normalizado := hora_del_dia / maxf(
-		horas_por_dia,
-		1.0
-	)
+	var dia_normalizado := hora_del_dia / maxf(horas_por_dia, 1.0)
+	var color_objetivo := calcular_color_iluminacion(dia_normalizado)
 
-	var luz: Color
-	if dia_normalizado < 0.20:
-		luz = Color(0.28, 0.32, 0.52)
-	elif dia_normalizado < 0.30:
-		luz = Color(0.28, 0.32, 0.52).lerp(
-			Color(1.0, 0.79, 0.62),
-			(dia_normalizado - 0.20) / 0.10
+	if not _iluminacion_inicializada:
+		_color_iluminacion_actual = color_objetivo
+		_iluminacion_inicializada = true
+	elif delta > 0.0:
+		# Suavizado exponencial: también evita saltos cuando un administrador
+		# cambia la hora directamente o se restaura una partida guardada.
+		var duracion := maxf(suavizado_iluminacion_segundos, 0.01)
+		var factor := 1.0 - exp(-delta / duracion)
+		_color_iluminacion_actual = _color_iluminacion_actual.lerp(
+			color_objetivo,
+			clampf(factor, 0.0, 1.0)
 		)
-	elif dia_normalizado < 0.72:
-		luz = Color(1.0, 0.97, 0.88)
-	elif dia_normalizado < 0.82:
-		luz = Color(1.0, 0.97, 0.88).lerp(
-			Color(0.65, 0.42, 0.48),
-			(dia_normalizado - 0.72) / 0.10
-		)
-	else:
-		luz = Color(0.28, 0.32, 0.52)
 
-	_modulacion.color = luz
+	_modulacion.color = _color_iluminacion_actual
+
+
+static func calcular_color_iluminacion(hora_normalizada: float) -> Color:
+	# Paleta cíclica: noche azul, amanecer rosado/dorado, luz diurna clara
+	# y atardecer naranja, coral y violeta antes de volver a la noche.
+	const CLAVES_LUZ: Array[Dictionary] = [
+		{"hora": 0.00, "color": Color("#263454")},
+		{"hora": 0.08, "color": Color("#293B63")},
+		{"hora": 0.15, "color": Color("#465A83")},
+		{"hora": 0.19, "color": Color("#8A6487")},
+		{"hora": 0.22, "color": Color("#D77A67")},
+		{"hora": 0.25, "color": Color("#F5A06A")},
+		{"hora": 0.29, "color": Color("#FFE0A2")},
+		{"hora": 0.34, "color": Color("#FFF0D0")},
+		{"hora": 0.50, "color": Color("#FFFDF2")},
+		{"hora": 0.66, "color": Color("#FFEBD0")},
+		{"hora": 0.72, "color": Color("#FFD49A")},
+		{"hora": 0.76, "color": Color("#F9A36F")},
+		{"hora": 0.80, "color": Color("#E97862")},
+		{"hora": 0.84, "color": Color("#A65E70")},
+		{"hora": 0.89, "color": Color("#4E527D")},
+		{"hora": 0.95, "color": Color("#2C3A63")},
+		{"hora": 1.00, "color": Color("#263454")},
+	]
+
+	var hora := clampf(hora_normalizada, 0.0, 1.0)
+	for indice in range(CLAVES_LUZ.size() - 1):
+		var inicio: Dictionary = CLAVES_LUZ[indice]
+		var final: Dictionary = CLAVES_LUZ[indice + 1]
+		var hora_inicio := float(inicio["hora"])
+		var hora_final := float(final["hora"])
+		if hora <= hora_final:
+			var progreso := inverse_lerp(hora_inicio, hora_final, hora)
+			# Smoothstep evita cambios bruscos de velocidad entre colores.
+			progreso = progreso * progreso * (3.0 - 2.0 * progreso)
+			return (inicio["color"] as Color).lerp(final["color"], progreso)
+
+	return CLAVES_LUZ.back()["color"]
 
 
 func _obtener_periodo() -> String:
