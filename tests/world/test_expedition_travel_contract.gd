@@ -32,14 +32,24 @@ func _run() -> void:
 
 	manager.salir_de_reino_actual()
 	for _frame in range(12):
-		if manager.obtener_tipo_actual() == "mundo_abierto" and not bool(manager.obtener_diagnostico().get("transicionando", false)):
+		if manager.obtener_tipo_actual() == "expedicion:bosque" and not bool(manager.obtener_diagnostico().get("transicionando", false)):
 			break
 		await get_tree().process_frame
-	if manager.obtener_tipo_actual() != "mundo_abierto":
-		_fail("La salida física de Torres no inició la expedición.")
+	if manager.obtener_tipo_actual() != "expedicion:bosque":
+		_fail("La salida física de Torres no inició la zona dedicada de bosque.")
 		return
 	if not manager.esta_en_expedicion():
 		_fail("El estado de expedición no quedó activo.")
+		return
+	var generador: WorldGenerator = manager.obtener_world_generator()
+	if generador == null:
+		_fail("La expedición no expuso su WorldGenerator.")
+		return
+	if not generador.usar_semilla_fija or generador.map_seed != 31415926:
+		_fail("La zona de bosque no usa la semilla fija esperada.")
+		return
+	if generador.bioma_forzado_id != "fdc97953-f400-4f39-9b54-0a1c85f2c9a1":
+		_fail("La zona no tiene configurado el ID canónico del bioma Bosque.")
 		return
 
 	var estado: Dictionary = manager.obtener_estado_expedicion()
@@ -83,6 +93,25 @@ func _run() -> void:
 	if manager.esta_en_expedicion():
 		_fail("La expedición siguió activa después de regresar.")
 		return
+
+	# El selector espacial debe devolver el mismo bioma forzado en cualquier coordenada.
+	var areas := WorldTerrainAreas.new()
+	areas.configurar(31415926)
+	var bioma_prueba := [{
+		"id": "bioma-bosque-prueba",
+		"ecosistemas": [{"id": "ecosistema-bosque-prueba"}]
+	}]
+	var ecosistemas_prueba := [{"id": "ecosistema-bosque-prueba"}]
+	var indices_prueba := {"ecosistema-bosque-prueba": 0}
+	areas.cargar_datos(bioma_prueba, ecosistemas_prueba, indices_prueba)
+	if not areas.establecer_bioma_forzado_id("bioma-bosque-prueba"):
+		_fail("No se pudo activar el bioma forzado.")
+		return
+	for x in range(-128, 129, 16):
+		for y in range(-128, 129, 16):
+			if areas.bioma_index_at_tile(Vector2i(x, y)) != 0:
+				_fail("El bioma forzado varió entre coordenadas.")
+				return
 
 	GameState.world_state.flags = flags_originales
 	print("ExpeditionTravelContract: PASS")
