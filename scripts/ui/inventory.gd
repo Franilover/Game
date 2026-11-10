@@ -252,7 +252,7 @@ func _ready() -> void:
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_inicializar_navegacion_tabs()
 	_limpiar_informacion()
-	PIXEL_UI_THEME.apply(self)
+	PIXEL_UI_THEME.apply(self, false)
 
 
 func _al_cambio_mano_desde_controlador(
