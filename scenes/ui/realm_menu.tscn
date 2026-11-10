@@ -2,20 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/ui/realm_menu.gd" id="1_realm_menu"]
 
-[sub_resource type="StyleBoxFlat" id="RealmPanel"]
-bg_color = Color(0.105, 0.075, 0.05, 0.99)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.48, 0.35, 0.20, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-shadow_color = Color(0, 0, 0, 0.35)
-shadow_size = 12
-
 [node name="RealmMenu" type="Control"]
 anchors_preset = 15
 anchor_right = 1.0
@@ -49,7 +35,6 @@ mouse_filter = 1
 custom_minimum_size = Vector2(320, 150)
 layout_mode = 2
 focus_mode = 2
-theme_override_styles/panel = SubResource("RealmPanel")
 
 [node name="Margen" type="MarginContainer" parent="Centro/PanelReinos"]
 layout_mode = 2
