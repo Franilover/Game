@@ -149,7 +149,8 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 ## Primera expedición: estado local y retorno a Torres.
 ## El primer prototipo reutiliza MundoAbierto; P1 añadirá la zona de bosque dedicada.
 func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
-	if _transicionando or tipo_actual != TIPO_REINO_TORRES:
+	if _transicionando or not _es_zona_torres():
+		push_warning("ZoneManager: se rechazó iniciar la expedición. tipo_actual='%s', zona='%s'." % [tipo_actual, str(zona_actual.name) if is_instance_valid(zona_actual) else "sin zona"])
 		return false
 	if not _id_expedicion_valido(id_expedicion):
 		push_warning("ZoneManager: ID de expedición inválido.")
@@ -260,10 +261,22 @@ func esta_en_expedicion() -> bool:
 
 
 func _obtener_jugador_principal() -> Node2D:
+	# El grupo es la referencia estable del jugador durante los cambios de zona.
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	if is_instance_valid(jugador):
+		return jugador
 	var escena_actual := get_tree().current_scene
-	if not is_instance_valid(escena_actual):
-		return null
-	return escena_actual.get_node_or_null("Entities/Player") as Node2D
+	if is_instance_valid(escena_actual):
+		return escena_actual.get_node_or_null("Entities/Player") as Node2D
+	return null
+
+
+func _es_zona_torres() -> bool:
+	if tipo_actual == TIPO_REINO_TORRES:
+		return true
+	# La salida física pertenece a la escena fija de Torres. Usar la señal
+	# evita que un alias de tipo persistido mande esta salida al Mundo Abierto.
+	return is_instance_valid(zona_actual) and zona_actual.has_signal("salida_solicitada")
 
 
 func _id_expedicion_valido(id_expedicion: String) -> bool:
@@ -296,9 +309,13 @@ func salir_de_reino_torres() -> void:
 func salir_de_reino_actual() -> void:
 	if _transicionando:
 		return
-	if tipo_actual == TIPO_REINO_TORRES:
-		# La salida física de Torres es la entrada natural a la primera expedición.
-		iniciar_expedicion()
+	if _es_zona_torres():
+		# La salida física de Torres siempre conduce a la expedición, nunca al
+		# Mundo Abierto genérico. El await permite registrar cualquier fallo.
+		print("ZoneManager: salida física de Torres detectada; iniciando expedición. tipo_actual=", tipo_actual)
+		var iniciada: bool = await iniciar_expedicion()
+		if not iniciada:
+			push_error("ZoneManager: no se pudo iniciar la primera expedición desde la salida de Torres.")
 		return
 	if tipo_actual.begins_with("reino:"):
 		_salida_reino_pendiente = true
