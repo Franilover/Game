@@ -1132,7 +1132,9 @@ func _abrir_selector_mano(mano: String) -> void:
 		var indice := i if mano == "izquierda" else 12 + i
 		var datos := _inventory_ref.obtener_objeto(indice)
 		var button := _hand_selector_buttons[i]
-		button.text = str(i + 1)
+		# El icono identifica las ranuras ocupadas; el número solo se muestra
+		# en espacios vacíos para evitar superponer texto sobre los objetos.
+		button.text = "" if not datos.is_empty() else str(i + 1)
 		button.icon = ItemIconResolver.obtener_icono(datos) if not datos.is_empty() else null
 		button.tooltip_text = str(i + 1) + " · " + str(datos.get("nombre", "Vacío")) if not datos.is_empty() else str(i + 1) + " · Vacío"
 
