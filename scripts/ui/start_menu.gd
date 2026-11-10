@@ -666,45 +666,18 @@ func _sesion_cerrada() -> void:
 
 
 func _actualizar_estado_cuenta() -> void:
-	var autenticado: bool = (
-		GarliaAuth.esta_autenticado()
-	)
+	var autenticado: bool = GarliaAuth.esta_autenticado()
 
 	if autenticado:
 		_actualizar_perfil_button()
-
-		profile_button.tooltip_text = (
-			"Cuenta de "
-			+ GarliaAuth.obtener_username()
-		)
-
+		profile_button.tooltip_text = "Cuenta de " + GarliaAuth.obtener_username()
 	else:
 		profile_button.text = "P"
+		profile_button.tooltip_text = "Perfil / Iniciar sesión"
 
-		profile_button.tooltip_text = (
-			"Perfil / Iniciar sesión"
-		)
-
-	if GarliaAuth.esta_restaurando_sesion():
-		multiplayer_button.disabled = true
-
-		multiplayer_button.tooltip_text = (
-			"Comprobando sesión..."
-		)
-
-	elif autenticado:
-		multiplayer_button.disabled = false
-
-		multiplayer_button.tooltip_text = (
-			"Jugar con otros exploradores"
-		)
-
-	else:
-		multiplayer_button.disabled = true
-
-		multiplayer_button.tooltip_text = (
-			"Inicia sesión para usar el multijugador."
-		)
+	# El acceso multijugador permanece desactivado mientras se trabaja en esa función.
+	multiplayer_button.disabled = true
+	multiplayer_button.tooltip_text = "Multijugador temporalmente desactivado."
 
 
 func _actualizar_perfil_button() -> void:
