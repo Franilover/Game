@@ -3,7 +3,8 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
-const PANEL_INSET := 2
+const PANEL_BACKGROUND_INSET := 0
+const PANEL_FRAME_MARGIN := 8
 
 
 static func apply(root: Control) -> void:
@@ -53,10 +54,10 @@ static func _ensure_panel_background(control: Control) -> void:
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_SCALE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.offset_left = PANEL_INSET
-	background.offset_top = PANEL_INSET
-	background.offset_right = -PANEL_INSET
-	background.offset_bottom = -PANEL_INSET
+	background.offset_left = PANEL_BACKGROUND_INSET
+	background.offset_top = PANEL_BACKGROUND_INSET
+	background.offset_right = -PANEL_BACKGROUND_INSET
+	background.offset_bottom = -PANEL_BACKGROUND_INSET
 	background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Se dibuja detrás del Panel: el centro transparente del marco deja
@@ -72,7 +73,7 @@ static func slot_style(selected: bool = false) -> StyleBoxTexture:
 static func _apply_control(control: Control) -> void:
 	if control is Panel or control is PanelContainer:
 		_ensure_panel_background(control)
-		var panel := _texture_style("panel_frame.png", PANEL_INSET)
+		var panel := _texture_style("panel_frame.png", PANEL_FRAME_MARGIN)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
