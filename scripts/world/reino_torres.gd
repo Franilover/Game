@@ -1,6 +1,7 @@
 extends Node2D
 
 signal salida_solicitada
+signal destino_viaje_solicitado(destino_id: String)
 
 const TORRES_ART_ROOT := "res://assets/art/kingdom/torres"
 const TORRES_PIXEL_ART := preload("res://scripts/world/torres_pixel_art.gd")
@@ -78,6 +79,8 @@ var _rotulos_edificios: Dictionary = {}
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
 var _camara_interior: Camera2D = null
+var _selector_viajes_layer: CanvasLayer
+var _selector_viajes_panel: PanelContainer
 var _limites_camara_anteriores: Dictionary = {}
 
 # Las entradas están cerca de la fachada de cada edificio. Cada clave tiene
@@ -127,6 +130,8 @@ const ENTRADAS: Array[Dictionary] = [
 
 func _ready() -> void:
 	_expedition_entrance.body_entered.connect(_al_entrar_entrada_expedicion)
+	_expedition_entrance.body_exited.connect(_al_salir_entrada_expedicion)
+	_crear_selector_viajes()
 	_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	_capa_interior = Node2D.new()
 	_capa_interior.name = "InteriorActivo"
@@ -946,11 +951,143 @@ func _ocultar_placeholder(prefixes: Array) -> void:
 
 
 func _al_entrar_entrada_expedicion(body: Node2D) -> void:
-	if _transicionando:
+	if _transicionando or body == null or not body.is_in_group("player"):
 		return
+	_actualizar_selector_viajes()
+	if is_instance_valid(_selector_viajes_layer):
+		_selector_viajes_layer.visible = true
+		_posicionar_selector_viajes()
+
+
+func _al_salir_entrada_expedicion(body: Node2D) -> void:
 	if body == null or not body.is_in_group("player"):
 		return
+	if is_instance_valid(_selector_viajes_layer):
+		_selector_viajes_layer.visible = false
 
+
+func _crear_selector_viajes() -> void:
+	_selector_viajes_layer = CanvasLayer.new()
+	_selector_viajes_layer.name = "SelectorViajesLayer"
+	_selector_viajes_layer.layer = 80
+	_selector_viajes_layer.visible = false
+	add_child(_selector_viajes_layer)
+
+	_selector_viajes_panel = PanelContainer.new()
+	_selector_viajes_panel.name = "SelectorViajes"
+	_selector_viajes_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_selector_viajes_panel.position = Vector2(-190.0, -170.0)
+	_selector_viajes_panel.custom_minimum_size = Vector2(380.0, 340.0)
+	_selector_viajes_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_selector_viajes_layer.add_child(_selector_viajes_panel)
+
+	var contenido := VBoxContainer.new()
+	contenido.name = "Contenido"
+	contenido.add_theme_constant_override("separation", 8)
+	_selector_viajes_panel.add_child(contenido)
+
+	var titulo := Label.new()
+	titulo.name = "TravelTitle"
+	titulo.text = "VIAJAR"
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 18)
+	contenido.add_child(titulo)
+
+	var fijos := Label.new()
+	fijos.name = "FixedHeading"
+	fijos.text = "LUGARES FIJOS"
+	fijos.add_theme_font_size_override("font_size", 12)
+	contenido.add_child(fijos)
+	_agregar_boton_destino(contenido, "Torres", "torres", "Volver a Torres")
+	_agregar_boton_destino(contenido, "Mundo Abierto", "mundo_abierto", "Explorar el mundo")
+
+	var dinamicos := Label.new()
+	dinamicos.name = "DynamicHeading"
+	dinamicos.text = "LUGARES DINÁMICOS"
+	dinamicos.add_theme_font_size_override("font_size", 12)
+	contenido.add_child(dinamicos)
+
+	var lista_dinamica := VBoxContainer.new()
+	lista_dinamica.name = "DynamicDestinations"
+	lista_dinamica.add_theme_constant_override("separation", 6)
+	contenido.add_child(lista_dinamica)
+
+	var cerrar := Button.new()
+	cerrar.name = "CloseTravelSelector"
+	cerrar.text = "Cerrar"
+	cerrar.custom_minimum_size.y = 34.0
+	cerrar.pressed.connect(func() -> void:
+		_selector_viajes_layer.visible = false
+	)
+	contenido.add_child(cerrar)
+
+	PIXEL_UI_THEME.apply(_selector_viajes_panel, false)
+	PIXEL_UI_THEME.apply(contenido, false)
+
+
+func _agregar_boton_destino(contenedor: VBoxContainer, texto: String, destino_id: String, descripcion: String) -> void:
+	var boton := Button.new()
+	boton.name = "Destino_" + destino_id
+	boton.text = texto + "  —  " + descripcion
+	boton.custom_minimum_size = Vector2(0.0, 38.0)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.pressed.connect(_seleccionar_destino_viaje.bind(destino_id))
+	contenedor.add_child(boton)
+
+
+func _actualizar_selector_viajes() -> void:
+	if not is_instance_valid(_selector_viajes_panel):
+		return
+	var lista := _selector_viajes_panel.get_node_or_null("Contenido/DynamicDestinations") as VBoxContainer
+	if lista == null:
+		return
+	for hijo in lista.get_children():
+		lista.remove_child(hijo)
+		hijo.queue_free()
+
+	if not _primera_expedicion_finalizada():
+		_agregar_boton_destino(lista, "Explorar el bosque", "expedicion_bosque", "Primera expedición")
+	else:
+		var aviso := Label.new()
+		aviso.name = "NoDynamicDestinations"
+		aviso.text = "No hay nuevas expediciones disponibles."
+		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lista.add_child(aviso)
+
+
+func _primera_expedicion_finalizada() -> bool:
+	var flags: Dictionary = GameState.world_state.flags
+	var ruta_variant: Variant = flags.get("expedicion_ruta", {})
+	if not ruta_variant is Dictionary or not bool((ruta_variant as Dictionary).get("completada", false)):
+		return false
+	var coleccionables_variant: Variant = flags.get("expedicion_coleccionables", {})
+	if not coleccionables_variant is Dictionary:
+		return false
+	var coleccionables := coleccionables_variant as Dictionary
+	var requeridos_variant: Variant = coleccionables.get("requeridos", [])
+	var recogidos_variant: Variant = coleccionables.get("recogidos", [])
+	if not requeridos_variant is Array or not recogidos_variant is Array:
+		return false
+	var requeridos := requeridos_variant as Array
+	var recogidos := recogidos_variant as Array
+	if requeridos.is_empty():
+		return false
+	for id_variant in requeridos:
+		if not recogidos.has(id_variant):
+			return false
+	return true
+
+
+func _seleccionar_destino_viaje(destino_id: String) -> void:
+	if _transicionando:
+		return
 	_transicionando = true
-	print("ReinoTorres: entrada a la expedición de bosque y ruinas solicitada.")
-	salida_solicitada.emit()
+	if is_instance_valid(_selector_viajes_layer):
+		_selector_viajes_layer.visible = false
+	destino_viaje_solicitado.emit(destino_id)
+
+
+func _posicionar_selector_viajes() -> void:
+	if not is_instance_valid(_selector_viajes_panel):
+		return
+	_selector_viajes_panel.position = Vector2(-190.0, -170.0)
