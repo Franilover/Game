@@ -8,10 +8,12 @@ extends Node2D
 signal zona_cambiada(tipo: String, zona: Node)
 
 const MUNDO_ABIERTO_PATH := "res://scenes/world/mundo_abierto.tscn"
+const EXPEDICION_BOSQUE_PATH := "res://scenes/world/expedicion_bosque.tscn"
 const REINO_TORRES_ESCENA_PATH := "res://scenes/kingdom/reino_torres.tscn"
 
 const TIPO_REINO_TORRES := "reino_torres"
 const TIPO_MUNDO_ABIERTO := "mundo_abierto"
+const TIPO_EXPEDICION_BOSQUE := "expedicion:bosque"
 
 var tipo_actual: String = ""
 var zona_actual: Node = null
@@ -72,6 +74,8 @@ func iniciar() -> void:
 		entrar_reino(zona_guardada.trim_prefix("reino:"))
 	elif zona_guardada == TIPO_MUNDO_ABIERTO:
 		entrar_mundo_abierto()
+	elif zona_guardada == TIPO_EXPEDICION_BOSQUE:
+		entrar_expedicion_bosque()
 	elif GameState.debe_iniciar_en_reino_torres():
 		entrar_reino("torres")
 	else:
@@ -150,8 +154,8 @@ func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
 	if not _id_expedicion_valido(id_expedicion):
 		push_warning("ZoneManager: ID de expedición inválido.")
 		return false
-	if not ResourceLoader.exists(MUNDO_ABIERTO_PATH):
-		push_error("ZoneManager: no existe la escena base para iniciar la expedición.")
+	if not ResourceLoader.exists(EXPEDICION_BOSQUE_PATH):
+		push_error("ZoneManager: no existe la escena dedicada de la expedición.")
 		return false
 
 	var jugador := _obtener_jugador_principal()
@@ -177,8 +181,8 @@ func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
 	}
 	GameState.marcar_reino_torres_visitado()
 	_salida_reino_pendiente = true
-	await _cambiar_zona(MUNDO_ABIERTO_PATH, TIPO_MUNDO_ABIERTO)
-	if tipo_actual != TIPO_MUNDO_ABIERTO:
+	await _cambiar_zona(EXPEDICION_BOSQUE_PATH, TIPO_EXPEDICION_BOSQUE)
+	if tipo_actual != TIPO_EXPEDICION_BOSQUE:
 		flags.erase("expedicion_estado")
 		_salida_reino_pendiente = false
 		return false
@@ -191,7 +195,7 @@ func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
 
 
 func salir_expedicion() -> bool:
-	if _transicionando or tipo_actual != TIPO_MUNDO_ABIERTO:
+	if _transicionando or tipo_actual != TIPO_EXPEDICION_BOSQUE:
 		return false
 	var flags: Dictionary = GameState.world_state.flags
 	var estado_variant: Variant = flags.get("expedicion_estado", {})
@@ -252,7 +256,7 @@ func obtener_estado_expedicion() -> Dictionary:
 
 func esta_en_expedicion() -> bool:
 	var estado := obtener_estado_expedicion()
-	return bool(estado.get("activa", false)) and tipo_actual == TIPO_MUNDO_ABIERTO
+	return bool(estado.get("activa", false)) and tipo_actual == TIPO_EXPEDICION_BOSQUE
 
 
 func _obtener_jugador_principal() -> Node2D:
@@ -315,8 +319,12 @@ func obtener_zona_actual() -> Node:
 	return zona_actual
 
 
+func entrar_expedicion_bosque() -> void:
+	_cambiar_zona(EXPEDICION_BOSQUE_PATH, TIPO_EXPEDICION_BOSQUE)
+
+
 func obtener_world_generator() -> WorldGenerator:
-	if tipo_actual != TIPO_MUNDO_ABIERTO:
+	if tipo_actual != TIPO_MUNDO_ABIERTO and tipo_actual != TIPO_EXPEDICION_BOSQUE:
 		return null
 	if zona_actual == null or not is_instance_valid(zona_actual):
 		return null
@@ -341,7 +349,7 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 	if is_instance_valid(zona_actual):
 		# El reloj vive dentro de WorldGenerator. Guardamos el calendario antes
 		# de descargar Mundo Abierto para que Torres no reinicie día/hora.
-		if tipo_actual == TIPO_MUNDO_ABIERTO:
+		if tipo_actual == TIPO_MUNDO_ABIERTO or tipo_actual == TIPO_EXPEDICION_BOSQUE:
 			var atmosfera: WorldAtmosphere = zona_actual.get_node_or_null("WorldGenerator/WorldAtmosphere") as WorldAtmosphere
 			if is_instance_valid(atmosfera):
 				GameState.world_state.flags["tiempo_mundo"] = atmosfera.obtener_estado_guardado().duplicate(true)
