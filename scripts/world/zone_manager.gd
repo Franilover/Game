@@ -338,6 +338,74 @@ func salir_de_reino_actual() -> void:
 	entrar_mundo_abierto()
 
 
+func _al_solicitar_destino_viaje(destino_id: String) -> void:
+	match destino_id:
+		"torres":
+			if tipo_actual != TIPO_REINO_TORRES:
+				entrar_reino("torres")
+		"mundo_abierto":
+			entrar_mundo_abierto()
+		"expedicion_bosque":
+			if not _primera_expedicion_finalizada():
+				var iniciada := await iniciar_expedicion("primera_expedicion")
+				if not iniciada:
+					push_warning("ZoneManager: no se pudo iniciar la primera expedición.")
+		_:
+			push_warning("ZoneManager: destino dinámico desconocido '%s'." % destino_id)
+
+
+func _primera_expedicion_finalizada() -> bool:
+	var flags: Dictionary = GameState.world_state.flags
+	var ruta_variant: Variant = flags.get("expedicion_ruta", {})
+	if not ruta_variant is Dictionary or not bool((ruta_variant as Dictionary).get("completada", false)):
+		return false
+	var coleccionables_variant: Variant = flags.get("expedicion_coleccionables", {})
+	if not coleccionables_variant is Dictionary:
+		return false
+	var coleccionables := coleccionables_variant as Dictionary
+	var requeridos_variant: Variant = coleccionables.get("requeridos", [])
+	var recogidos_variant: Variant = coleccionables.get("recogidos", [])
+	if not requeridos_variant is Array or not recogidos_variant is Array:
+		return false
+	var requeridos := requeridos_variant as Array
+	var recogidos := recogidos_variant as Array
+	if requeridos.is_empty():
+		return false
+	for id_variant in requeridos:
+		if not recogidos.has(id_variant):
+			return false
+	return true
+
+
+func registrar_coleccionable_requerido_expedicion(coleccionable_id: String) -> void:
+	_registrar_estado_coleccionable_expedicion(coleccionable_id, false)
+
+
+func registrar_coleccionable_recogido_expedicion(coleccionable_id: String) -> void:
+	_registrar_estado_coleccionable_expedicion(coleccionable_id, true)
+
+
+func _registrar_estado_coleccionable_expedicion(coleccionable_id: String, recogido: bool) -> void:
+	var identificador := coleccionable_id.strip_edges()
+	if identificador.is_empty():
+		return
+	var flags: Dictionary = GameState.world_state.flags
+	var estado_variant: Variant = flags.get("expedicion_coleccionables", {})
+	var estado: Dictionary = (estado_variant as Dictionary).duplicate(true) if estado_variant is Dictionary else {}
+	var requeridos_variant: Variant = estado.get("requeridos", [])
+	var recogidos_variant: Variant = estado.get("recogidos", [])
+	var requeridos: Array = requeridos_variant.duplicate() if requeridos_variant is Array else []
+	var recogidos: Array = recogidos_variant.duplicate() if recogidos_variant is Array else []
+	if not requeridos.has(identificador):
+		requeridos.append(identificador)
+	if recogido and not recogidos.has(identificador):
+		recogidos.append(identificador)
+	estado["requeridos"] = requeridos
+	estado["recogidos"] = recogidos
+	flags["expedicion_coleccionables"] = estado
+	_guardar_partida_si_disponible()
+
+
 func consumir_salida_reino_pendiente() -> bool:
 	var pendiente := _salida_reino_pendiente
 	_salida_reino_pendiente = false
@@ -397,6 +465,10 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		var callback := Callable(self, "salir_de_reino_actual")
 		if not zona_actual.salida_solicitada.is_connected(callback):
 			zona_actual.salida_solicitada.connect(callback)
+	if tipo == TIPO_REINO_TORRES and zona_actual.has_signal("destino_viaje_solicitado"):
+		var callback_viaje := Callable(self, "_al_solicitar_destino_viaje")
+		if not zona_actual.destino_viaje_solicitado.is_connected(callback_viaje):
+			zona_actual.destino_viaje_solicitado.connect(callback_viaje)
 
 	tipo_actual = tipo
 	_transicionando = false
