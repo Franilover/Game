@@ -9,11 +9,12 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var noche_inicio: Color = ATMOSPHERE_SCRIPT.calcular_color_iluminacion(0.0)
-	var noche_final: Color = ATMOSPHERE_SCRIPT.calcular_color_iluminacion(1.0)
-	var amanecer: Color = ATMOSPHERE_SCRIPT.calcular_color_iluminacion(0.25)
-	var mediodia: Color = ATMOSPHERE_SCRIPT.calcular_color_iluminacion(0.50)
-	var atardecer: Color = ATMOSPHERE_SCRIPT.calcular_color_iluminacion(0.79)
+	var atmosphere = ATMOSPHERE_SCRIPT.new()
+	var noche_inicio: Color = atmosphere.calcular_color_iluminacion(0.0)
+	var noche_final: Color = atmosphere.calcular_color_iluminacion(1.0)
+	var amanecer: Color = atmosphere.calcular_color_iluminacion(0.25)
+	var mediodia: Color = atmosphere.calcular_color_iluminacion(0.50)
+	var atardecer: Color = atmosphere.calcular_color_iluminacion(0.79)
 
 	if not noche_inicio.is_equal_approx(noche_final):
 		_fail("The lighting gradient must wrap seamlessly across midnight.")
