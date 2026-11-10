@@ -3,6 +3,8 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
+const PANEL_INSET := 8
+
 
 static func apply(root: Control) -> void:
 	if root == null:
@@ -10,6 +12,7 @@ static func apply(root: Control) -> void:
 	_apply_control(root)
 	for node in root.find_children("*", "Control", true, false):
 		_apply_control(node as Control)
+
 
 static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTexture:
 	var path := UI_DIR + file_name
@@ -28,12 +31,48 @@ static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTextu
 	style.draw_center = true
 	return style
 
+
+static func _ensure_panel_background(control: Control) -> void:
+	# Configuración ya incorpora esta capa manualmente. Reutilizarla evita
+	# duplicar el relleno cuando el tema global se aplica a ese panel.
+	var existing := control.get_node_or_null("PanelBackground")
+	if existing is TextureRect:
+		return
+
+	var path := UI_DIR + "panel_background.png"
+	if not ResourceLoader.exists(path):
+		return
+	var texture := load(path) as Texture2D
+	if texture == null:
+		push_warning("PixelUITheme: no se pudo cargar " + path)
+		return
+
+	var background := TextureRect.new()
+	background.name = "PanelBackground"
+	background.texture = texture
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_SCALE
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.offset_left = PANEL_INSET
+	background.offset_top = PANEL_INSET
+	background.offset_right = -PANEL_INSET
+	background.offset_bottom = -PANEL_INSET
+	background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Se dibuja detrás del Panel: el centro transparente del marco deja
+	# visible el relleno y el contenido continúa dibujándose por encima.
+	background.show_behind_parent = true
+	control.add_child(background)
+
+
 static func slot_style(selected: bool = false) -> StyleBoxTexture:
 	return _texture_style("slot_selected.png" if selected else "slot_frame.png", 5)
 
+
 static func _apply_control(control: Control) -> void:
 	if control is Panel or control is PanelContainer:
-		var panel := _texture_style("panel_frame.png", 8)
+		_ensure_panel_background(control)
+		var panel := _texture_style("panel_frame.png", PANEL_INSET)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
