@@ -49,6 +49,7 @@ grow_horizontal = 2
 grow_vertical = 2
 pivot_offset = Vector2(310, 170)
 scale = Vector2(1.25, 1.25)
+texture_filter = 1
 mouse_filter = 1
 
 [node name="Margin" type="MarginContainer" parent="Window" unique_id=319582735]
