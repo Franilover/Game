@@ -177,27 +177,36 @@ func _input(event: InputEvent) -> void:
 
 
 func _al_solicitar_destino_reino(clave: String) -> void:
-	print("Main: destino solicitado desde RealmMenu → ", clave)
-	if GarliaWorldNetwork.es_cliente_en_mundo_global():
-		GarliaWorldNetwork.enviar_solicitud_viaje(clave)
-		return
+	var clave_normalizada := clave.strip_edges().to_lower()
+	print("Main: destino solicitado desde RealmMenu → ", clave_normalizada)
 	if _zone_manager == null or not is_instance_valid(_zone_manager):
 		return
-	if _zone_manager.has_method("esta_en_expedicion") and _zone_manager.esta_en_expedicion():
-		if clave.strip_edges().to_lower() == "torres":
+
+	# Torres es el destino local fijo de inicio. Debe resolverse aquí antes de
+		# cualquier desvío de red o validación de desbloqueo/catálogo remoto.
+	# También aceptamos los alias que pueden llegar desde registros antiguos.
+	if clave_normalizada in ["torres", "reino_torres", "reino:torres"]:
+		if _zone_manager.has_method("esta_en_expedicion") and _zone_manager.esta_en_expedicion():
 			_zone_manager.salir_expedicion()
 		else:
-			push_warning("Main: durante la expedición sólo está disponible el regreso a Torres.")
+			_zone_manager.entrar_reino("torres")
 		return
-	if clave == "mundo_abierto":
+
+	if GarliaWorldNetwork.es_cliente_en_mundo_global():
+		GarliaWorldNetwork.enviar_solicitud_viaje(clave_normalizada)
+		return
+	if _zone_manager.has_method("esta_en_expedicion") and _zone_manager.esta_en_expedicion():
+		push_warning("Main: durante la expedición sólo está disponible el regreso a Torres.")
+		return
+	if clave_normalizada == "mundo_abierto":
 		_zone_manager.entrar_mundo_abierto()
 		return
 	var desbloqueados: Dictionary = GameState.obtener_reinos_desbloqueados()
-	if not bool(desbloqueados.get(clave.strip_edges().to_lower(), false)):
-		push_warning("Main: intento de viajar a un reino todavía no descubierto: " + clave)
+	if not bool(desbloqueados.get(clave_normalizada, false)):
+		push_warning("Main: intento de viajar a un reino todavía no descubierto: " + clave_normalizada)
 		return
 	if _zone_manager.has_method("entrar_reino"):
-		_zone_manager.call("entrar_reino", clave)
+		_zone_manager.call("entrar_reino", clave_normalizada)
 
 
 func _process(delta: float) -> void:
