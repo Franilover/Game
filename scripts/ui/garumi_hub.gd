@@ -26,7 +26,7 @@ func _ready() -> void:
 	if GameState.has_signal("garumis_amigos_actualizados") and not GameState.garumis_amigos_actualizados.is_connected(actualizar):
 		GameState.garumis_amigos_actualizados.connect(actualizar)
 	actualizar()
-	PIXEL_UI_THEME.apply(self)
+	PIXEL_UI_THEME.apply(self, false)
 
 
 func _crear_interfaz() -> void:
@@ -120,7 +120,7 @@ func _crear_boton_tab(texto: String) -> Button:
 	boton.add_theme_color_override("font_color", SECUNDARIO)
 	boton.add_theme_color_override("font_hover_color", TEXTO)
 	boton.add_theme_color_override("font_pressed_color", TEXTO)
-	PIXEL_UI_THEME.apply(boton)
+	PIXEL_UI_THEME.apply(boton, false)
 	return boton
 
 
@@ -282,7 +282,7 @@ func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 		barra.show_percentage = false
 		barra.custom_minimum_size = Vector2(0, 16)
 		barra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		PIXEL_UI_THEME.apply(barra)
+		PIXEL_UI_THEME.apply(barra, false)
 		_detalle.add_child(barra)
 		var numeros_vida := Label.new()
 		numeros_vida.text = "%d / %d" % [vida_actual, vida_maxima]
@@ -312,7 +312,7 @@ func _estilizar_boton_accion(boton: Button) -> void:
 	boton.add_theme_color_override("font_color", TEXTO)
 	boton.add_theme_color_override("font_hover_color", Color(0.98, 0.88, 0.66, 1.0))
 	boton.add_theme_color_override("font_pressed_color", TEXTO)
-	PIXEL_UI_THEME.apply(boton)
+	PIXEL_UI_THEME.apply(boton, false)
 
 
 func _quitar_vinculo(registro: Dictionary) -> void:
