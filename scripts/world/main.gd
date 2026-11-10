@@ -186,6 +186,9 @@ func _al_solicitar_destino_reino(clave: String) -> void:
 	if clave == "mundo_abierto":
 		_zone_manager.entrar_mundo_abierto()
 		return
+	if clave.strip_edges().to_lower() == "torres" and _zone_manager.has_method("esta_en_expedicion") and _zone_manager.esta_en_expedicion():
+		_zone_manager.salir_expedicion()
+		return
 	var desbloqueados: Dictionary = GameState.obtener_reinos_desbloqueados()
 	if not bool(desbloqueados.get(clave.strip_edges().to_lower(), false)):
 		push_warning("Main: intento de viajar a un reino todavía no descubierto: " + clave)
