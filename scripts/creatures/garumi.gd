@@ -2,6 +2,7 @@ extends Creature
 class_name Garumi
 
 const GARUMI_PROGRESSION_SCRIPT: Script = preload("res://scripts/creatures/garumi_progression.gd")
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 signal vinculo_establecido(garumi: Garumi, jugador: Node, tipo: String)
 signal propuesta_vinculo_rechazada(garumi: Garumi, jugador: Node)
@@ -400,12 +401,24 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 	_menu_contextual.add_child(overlay)
 	overlay.gui_input.connect(_al_input_menu_contextual)
 
+	var panel_menu := PanelContainer.new()
+	panel_menu.name = "GarumiBondPanel"
+	panel_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(panel_menu)
+	var margen := MarginContainer.new()
+	margen.name = "Margin"
+	margen.add_theme_constant_override("margin_left", 10)
+	margen.add_theme_constant_override("margin_top", 8)
+	margen.add_theme_constant_override("margin_right", 10)
+	margen.add_theme_constant_override("margin_bottom", 8)
+	panel_menu.add_child(margen)
 	var acciones := HBoxContainer.new()
 	acciones.name = "GarumiBondMenu"
-	acciones.add_theme_constant_override("separation", 6)
+	acciones.add_theme_constant_override("separation", 8)
 	acciones.mouse_filter = Control.MOUSE_FILTER_STOP
-	acciones.custom_minimum_size = Vector2(0.0, 30.0)
-	overlay.add_child(acciones)
+	acciones.custom_minimum_size = Vector2(0.0, 38.0)
+	margen.add_child(acciones)
+	PIXEL_UI_THEME.apply(panel_menu, false)
 
 	_agregar_boton_menu_garumi(acciones, "Enfrentarte", OPCION_ENFRENTAR, jugador)
 	_agregar_boton_menu_garumi(acciones, "Vincular", OPCION_OFRECER_VINCULO, jugador)
@@ -422,14 +435,14 @@ func _actualizar_posicion_menu_contextual() -> void:
 	if not is_instance_valid(_menu_contextual) or not is_instance_valid(self):
 		return
 	var overlay := _menu_contextual.get_node_or_null("Overlay") as Control
-	var acciones := _menu_contextual.get_node_or_null("Overlay/GarumiBondMenu") as Control
-	if overlay == null or acciones == null:
+	var panel_menu := _menu_contextual.get_node_or_null("Overlay/GarumiBondPanel") as Control
+	if overlay == null or panel_menu == null:
 		return
 	var escala_pantalla := get_global_transform_with_canvas().origin
 	var viewport := get_viewport().get_visible_rect().size
-	var tamano := acciones.get_combined_minimum_size()
-	acciones.size = tamano
-	acciones.position = Vector2(
+	var tamano := panel_menu.get_combined_minimum_size()
+	panel_menu.size = tamano
+	panel_menu.position = Vector2(
 		clampf(escala_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
 		clampf(escala_pantalla.y - tamano.y - 22.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
 	)
@@ -450,28 +463,11 @@ func _process(_delta: float) -> void:
 func _agregar_boton_menu_garumi(contenedor: HBoxContainer, texto: String, opcion: int, jugador: Node) -> void:
 	var boton := Button.new()
 	boton.text = texto
-	boton.custom_minimum_size = Vector2(104.0, 30.0)
+	boton.custom_minimum_size = Vector2(112.0, 38.0)
 	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	boton.focus_mode = Control.FOCUS_ALL
-	boton.add_theme_font_size_override("font_size", 11)
-	boton.add_theme_color_override("font_color", Color(0.91, 0.83, 0.70, 1.0))
-	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.82, 1.0))
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.105, 0.071, 0.043, 0.98)
-	normal.border_color = Color(0.48, 0.32, 0.17, 1.0)
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(4)
-	normal.content_margin_left = 8.0
-	normal.content_margin_right = 8.0
-	boton.add_theme_stylebox_override("normal", normal)
-	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.19, 0.125, 0.065, 1.0)
-	hover.border_color = Color(0.76, 0.54, 0.29, 1.0)
-	boton.add_theme_stylebox_override("hover", hover)
-	boton.add_theme_stylebox_override("focus", hover)
-	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color(0.14, 0.09, 0.045, 1.0)
-	boton.add_theme_stylebox_override("pressed", pressed)
+	boton.add_theme_font_size_override("font_size", 12)
+	PIXEL_UI_THEME.apply(boton, false)
 	boton.pressed.connect(_al_seleccionar_opcion.bind(opcion, jugador))
 	contenedor.add_child(boton)
 
