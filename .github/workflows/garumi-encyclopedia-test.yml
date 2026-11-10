@@ -2,7 +2,7 @@ name: Garumi Encyclopedia G Shortcut
 
 on:
   push:
-    branches: ["feat/garumi-bond-combat"]
+    branches: [main, "feat/garumi-bond-combat"]
     paths:
       - "scripts/ui/inventory.gd"
       - "scripts/ui/encyclopedia.gd"

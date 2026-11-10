@@ -2,7 +2,7 @@ name: Torres TileMapDual Grass Regression
 
 on:
   push:
-    branches: ["feat/garumi-triple-combat-supabase-attacks"]
+    branches: [main, "feat/garumi-triple-combat-supabase-attacks"]
     paths:
       - "assets/tilesets/Torres_Cesped.png"
       - "scripts/world/reino_torres.gd"
