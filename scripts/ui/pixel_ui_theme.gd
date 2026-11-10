@@ -3,8 +3,7 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
-const PANEL_BACKGROUND_INSET := 8
-const PANEL_FRAME_MARGIN := 8
+const PANEL_BACKGROUND_MARGIN := 8
 const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
@@ -34,48 +33,14 @@ static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTextu
 	return style
 
 
-static func _ensure_panel_background(control: Control) -> void:
-	# Configuración ya incorpora esta capa manualmente. Reutilizarla evita
-	# duplicar el relleno cuando el tema global se aplica a ese panel.
-	var existing := control.get_node_or_null("PanelBackground")
-	if existing is TextureRect:
-		return
-
-	var path := UI_DIR + "panel_background.png"
-	if not ResourceLoader.exists(path):
-		return
-	var texture := load(path) as Texture2D
-	if texture == null:
-		push_warning("PixelUITheme: no se pudo cargar " + path)
-		return
-
-	var background := TextureRect.new()
-	background.name = "PanelBackground"
-	background.texture = texture
-	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	background.stretch_mode = TextureRect.STRETCH_SCALE
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.offset_left = PANEL_BACKGROUND_INSET
-	background.offset_top = PANEL_BACKGROUND_INSET
-	background.offset_right = -PANEL_BACKGROUND_INSET
-	background.offset_bottom = -PANEL_BACKGROUND_INSET
-	background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# El marco del Panel se dibuja primero; el relleno queda encima,
-	# pero debajo de los demás controles hijos.
-	background.show_behind_parent = false
-	control.add_child(background)
-	control.move_child(background, 0)
-
-
 static func slot_style(selected: bool = false) -> StyleBoxTexture:
 	return _texture_style("slot_selected.png" if selected else "slot_frame.png", 5)
 
 
 static func _apply_control(control: Control, use_pixel_titles: bool = true) -> void:
 	if control is Panel or control is PanelContainer:
-		_ensure_panel_background(control)
-		var panel := _texture_style("panel_frame.png", PANEL_FRAME_MARGIN)
+		# Un único recurso dibuja tanto el fondo como el borde del panel.
+		var panel := _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
