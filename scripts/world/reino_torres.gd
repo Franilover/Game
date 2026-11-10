@@ -80,6 +80,8 @@ var _rotulos_edificios: Dictionary = {}
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
 var _camara_interior: Camera2D = null
 var _selector_viajes_layer: CanvasLayer
+var _selector_viajes_root: Control
+var _selector_viajes_center: CenterContainer
 var _selector_viajes_panel: PanelContainer
 var _limites_camara_anteriores: Dictionary = {}
 
@@ -973,13 +975,25 @@ func _crear_selector_viajes() -> void:
 	_selector_viajes_layer.visible = false
 	add_child(_selector_viajes_layer)
 
+	# La interfaz ocupa el viewport completo y el contenedor centra el panel
+	# usando su tamaño real, sin depender de offsets calculados a mano.
+	_selector_viajes_root = Control.new()
+	_selector_viajes_root.name = "SelectorViajesRoot"
+	_selector_viajes_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_selector_viajes_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_selector_viajes_layer.add_child(_selector_viajes_root)
+
+	_selector_viajes_center = CenterContainer.new()
+	_selector_viajes_center.name = "SelectorViajesCenter"
+	_selector_viajes_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_selector_viajes_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_selector_viajes_root.add_child(_selector_viajes_center)
+
 	_selector_viajes_panel = PanelContainer.new()
 	_selector_viajes_panel.name = "SelectorViajes"
-	_selector_viajes_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_selector_viajes_panel.position = Vector2(-190.0, -170.0)
-	_selector_viajes_panel.custom_minimum_size = Vector2(380.0, 340.0)
+	_selector_viajes_panel.custom_minimum_size = Vector2(380.0, 0.0)
 	_selector_viajes_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_selector_viajes_layer.add_child(_selector_viajes_panel)
+	_selector_viajes_center.add_child(_selector_viajes_panel)
 
 	var contenido := VBoxContainer.new()
 	contenido.name = "Contenido"
@@ -1071,6 +1085,7 @@ func _seleccionar_destino_viaje(destino_id: String) -> void:
 
 
 func _posicionar_selector_viajes() -> void:
-	if not is_instance_valid(_selector_viajes_panel):
+	if not is_instance_valid(_selector_viajes_center):
 		return
-	_selector_viajes_panel.position = Vector2(-190.0, -170.0)
+	_selector_viajes_center.queue_sort()
+	_selector_viajes_panel.reset_size()
