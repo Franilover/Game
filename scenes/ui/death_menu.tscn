@@ -33,9 +33,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -190.0
-offset_top = -160.0
+offset_top = -130.0
 offset_right = 190.0
-offset_bottom = 160.0
+offset_bottom = 130.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -56,13 +56,6 @@ theme_override_font_sizes/font_size = 30
 text = "Has muerto"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
-theme_override_font_sizes/font_size = 11
-text = "Al reaparecer perderás tus objetos."
-horizontal_alignment = 1
-
 [node name="Separator" type="HSeparator" parent="Panel/Margin/Column"]
 layout_mode = 2
 
@@ -78,9 +71,3 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Menu"
 
-[node name="Hint" type="Label" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
-theme_override_font_sizes/font_size = 10
-text = "Esc · reaparecer"
-horizontal_alignment = 1
