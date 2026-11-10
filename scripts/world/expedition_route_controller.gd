@@ -91,25 +91,18 @@ func _emitir_notificacion(mensaje: String) -> void:
 
 
 func _draw() -> void:
-	var camino := PackedVector2Array([
-		Vector2(560.0, 120.0),
-		Vector2(1080.0, 120.0),
-		Vector2(1800.0, -160.0),
-		Vector2(2680.0, 120.0),
-		Vector2(3600.0, 120.0),
-		Vector2(4480.0, 120.0)
-	])
-	draw_polyline(camino, Color(0.43, 0.36, 0.25, 0.62), 7.0, true)
-	draw_polyline(camino, Color(0.76, 0.66, 0.46, 0.48), 2.0, true)
-	draw_line(Vector2(1800.0, -160.0), SECRET_POSITION, Color(0.38, 0.48, 0.31, 0.48), 4.0, true)
-	for i in range(CHECKPOINTS.size()):
-		var hito := CHECKPOINTS[i]
-		var centro: Vector2 = hito["posicion"]
-		var activo := i == _checkpoint_index and not _completed
-		var color := Color(0.83, 0.72, 0.49, 0.9) if activo else Color(0.35, 0.31, 0.24, 0.72)
-		draw_arc(centro, 42.0, 0.0, TAU, 32, color, 5.0, true)
-		draw_circle(centro, 7.0, color)
-		if activo:
-			draw_string(ThemeDB.fallback_font, centro + Vector2(-100.0, -58.0), str(hito["nombre"]), HORIZONTAL_ALIGNMENT_CENTER, 200.0, 18, Color(0.94, 0.88, 0.72, 0.96))
-	if _secret_discovered:
-		draw_arc(SECRET_POSITION, 30.0, 0.0, TAU, 24, Color(0.53, 0.69, 0.43, 0.9), 4.0, true)
+	# La ruta se comunica mediante el propio sendero de tierra del TileMap.
+	# No dibujamos líneas, círculos ni marcadores geométricos sobre el bosque.
+	if _completed or _checkpoint_index >= CHECKPOINTS.size():
+		return
+	var hito := CHECKPOINTS[_checkpoint_index]
+	var centro: Vector2 = hito["posicion"]
+	draw_string(
+		ThemeDB.fallback_font,
+		centro + Vector2(-100.0, -70.0),
+		str(hito["nombre"]),
+		HORIZONTAL_ALIGNMENT_CENTER,
+		200.0,
+		16,
+		Color(0.94, 0.88, 0.72, 0.88)
+	)
