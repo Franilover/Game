@@ -7,6 +7,7 @@ var _biomas: Array = []
 var _ecosistemas: Array = []
 var _ecosistema_indices: Dictionary = {}
 var _bioma_ecosistemas: Array = []
+var _bioma_forzado_index: int = -1
 var _biome_noises: Array[FastNoiseLite] = []
 var _ecosystem_noises: Array[FastNoiseLite] = []
 var _terrain_noise: FastNoiseLite
@@ -149,9 +150,27 @@ func cargar_datos(
 		_bioma_ecosistemas.append(indices)
 
 
+func establecer_bioma_forzado_id(bioma_id: String) -> bool:
+	_bioma_forzado_index = -1
+	var id := bioma_id.strip_edges()
+	if id.is_empty():
+		return true
+	for indice in range(_biomas.size()):
+		var bioma_variant: Variant = _biomas[indice]
+		if not bioma_variant is Dictionary:
+			continue
+		if str((bioma_variant as Dictionary).get("id", "")) == id:
+			_bioma_forzado_index = indice
+			return true
+	push_warning("WorldTerrainAreas: no existe el bioma forzado '%s'." % id)
+	return false
+
+
 func bioma_index_at_tile(tile: Vector2i) -> int:
 	if _biomas.is_empty() or _biome_noises.size() != _biomas.size():
 		return -1
+	if _bioma_forzado_index >= 0 and _bioma_forzado_index < _biomas.size():
+		return _bioma_forzado_index
 
 	# Cada bioma tiene su propio campo de ruido. Elegir el máximo
 	# ponderado evita el error anterior: usar un único ruido con
