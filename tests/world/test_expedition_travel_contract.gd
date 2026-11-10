@@ -30,8 +30,14 @@ func _run() -> void:
 		_fail("No se pudo preparar Torres para la prueba.")
 		return
 
-	manager.salir_de_reino_actual()
-	for _frame in range(60):
+	# Ejercitar el mismo camino que usa el Area2D de salida de Torres:
+	# la escena emite salida_solicitada y ZoneManager debe enrutarla al bosque.
+	var zona_torres: Node = manager.obtener_zona_actual()
+	if zona_torres == null or not zona_torres.has_signal("salida_solicitada"):
+		_fail("La escena de Torres no expone la señal de salida física.")
+		return
+	zona_torres.emit_signal("salida_solicitada")
+	for _frame in range(120):
 		if manager.obtener_tipo_actual() == "expedicion:bosque":
 			break
 		await get_tree().process_frame
