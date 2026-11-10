@@ -68,59 +68,62 @@ func actualizar_lista() -> void:
 
 
 func _crear_fila_partida(partida: Dictionary) -> void:
-	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.custom_minimum_size = Vector2(0, 68)
+	var partida_id := str(partida.get("id", ""))
+	var ficha := Button.new()
+	ficha.name = "SaveSlotButton"
+	ficha.text = ""
+	ficha.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ficha.custom_minimum_size = Vector2(0, 68)
+	ficha.pressed.connect(_jugar_partida.bind(partida_id))
 
 	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 12)
 	margin.add_theme_constant_override("margin_top", 8)
 	margin.add_theme_constant_override("margin_right", 12)
 	margin.add_theme_constant_override("margin_bottom", 8)
-	panel.add_child(margin)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ficha.add_child(margin)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6 if get_viewport_rect().size.x < 560.0 else 10)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(row)
 
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.size_flags_stretch_ratio = 1.0
+	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(info)
 
 	var title := Label.new()
 	title.text = str(partida.get("nombre", "Partida"))
 	title.add_theme_font_size_override("font_size", 16)
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info.add_child(title)
 
 	var edit := Button.new()
 	edit.text = "✎"
 	edit.tooltip_text = "Editar nombre y configuración del mundo"
 	edit.custom_minimum_size = Vector2(36 if get_viewport_rect().size.x < 560.0 else 44, 42)
-	edit.pressed.connect(
-		_editar_partida.bind(str(partida.get("id", "")))
-	)
+	edit.pressed.connect(_editar_partida.bind(partida_id))
 	row.add_child(edit)
 
 	var play := Button.new()
 	play.text = "Jugar"
 	play.custom_minimum_size = Vector2(66 if get_viewport_rect().size.x < 560.0 else 90, 42)
-	play.pressed.connect(
-		_jugar_partida.bind(str(partida.get("id", "")))
-	)
+	play.pressed.connect(_jugar_partida.bind(partida_id))
 	row.add_child(play)
 
 	var delete := Button.new()
 	delete.text = "Eliminar"
 	delete.custom_minimum_size = Vector2(70 if get_viewport_rect().size.x < 560.0 else 90, 42)
-	delete.pressed.connect(
-		_eliminar_partida.bind(str(partida.get("id", "")))
-	)
+	delete.pressed.connect(_eliminar_partida.bind(partida_id))
 	row.add_child(delete)
 
-	list_container.add_child(panel)
-	PIXEL_UI_THEME.apply(panel)
+	list_container.add_child(ficha)
+	PIXEL_UI_THEME.apply(ficha)
 
 
 func _jugar_partida(id: String) -> void:
