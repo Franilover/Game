@@ -68,7 +68,7 @@ El workflow de regresión de Godot 4.7 para HEAD `a231714` terminó correctament
 
 ### P1 — Trabajo restante
 
-Colocar hitos estables para entrada, bifurcación, claro, ruinas y salida; definir límites jugables y asegurar que los encuentros del catálogo forestal aparecen en posiciones y densidades adecuadas. La zona ya es un bosque procedural determinista, pero todavía no constituye una ruta guiada completa.
+Colocar hitos estables para entrada, bifurcación, claro, ruinas y salida; definir límites jugables y asegurar que los encuentros del catálogo forestal aparecen en posiciones y densidades adecuadas. La zona ya tiene un layout fijo de TileMaps y límites físicos; quedan por enriquecer visualmente la vegetación, los puntos de interés y los encuentros colocados.
 
 ## Diseño de la primera ruta
 
@@ -165,7 +165,7 @@ Empezar por **P0**: diseñar e implementar el acceso local a la expedición, el 
 - Ruta principal secuencial: borde del bosque → bifurcación → claro → ruinas exteriores → altar antiguo.
 - Cada hito se activa al acercarse, envía notificación y guarda progreso en `GameState.world_state.flags.expedicion_ruta`; la ruta se reanuda al volver a cargar la expedición.
 - Se añadió un refugio opcional fuera del sendero principal, registrable sin bloquear la progresión.
-- La ruta muestra una guía visual discreta sobre el terreno y destaca el siguiente hito.
+- La ruta se representa mediante un sendero de tierra en el TileMap; el controlador conserva el siguiente hito y su persistencia.
 - Se añadió un contrato automatizado para comprobar el orden de hitos, el desvío opcional y la finalización.
 - Esta primera pasada establece navegación, exploración y persistencia. Los encuentros colocados, botín, puzle ambiental y jefe de ruinas quedan como siguientes capas de gameplay; no se simula que ya existan.
 
