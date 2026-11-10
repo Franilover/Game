@@ -4,6 +4,7 @@ class_name SettingsPanel
 signal closed
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const UI_ASSETS_DIR := "res://assets/art/UI/Menus/"
 
 const CONTROLES := [
 	{"label": "Moverse", "keys": "W · A · S · D"},
@@ -18,7 +19,7 @@ const CONTROLES := [
 	{"label": "Pausa", "keys": "ESC"}
 ]
 
-var _panel: PanelContainer
+var _panel: Panel
 
 
 func _ready() -> void:
@@ -36,14 +37,29 @@ func _construir_interfaz() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)
 
-	_panel = PanelContainer.new()
+	_panel = Panel.new()
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_panel.position = Vector2(-310.0, -245.0)
 	_panel.size = Vector2(620.0, 490.0)
 	_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(_panel)
 
+	var fondo := TextureRect.new()
+	fondo.name = "PanelBackground"
+	fondo.texture = load(UI_ASSETS_DIR + "panel_background.png") as Texture2D
+	fondo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	fondo.stretch_mode = TextureRect.STRETCH_SCALE
+	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fondo.offset_left = 8.0
+	fondo.offset_top = 8.0
+	fondo.offset_right = -8.0
+	fondo.offset_bottom = -8.0
+	fondo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(fondo)
+
 	var margen := MarginContainer.new()
+	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margen.add_theme_constant_override("margin_left", 24)
 	margen.add_theme_constant_override("margin_top", 20)
 	margen.add_theme_constant_override("margin_right", 24)
