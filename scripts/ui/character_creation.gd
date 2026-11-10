@@ -38,7 +38,6 @@ func _ready() -> void:
 	_normalizar_geometria_raiz()
 	visible = false
 	_instalar_scroll_contenido()
-	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_layout_responsive)
 	_configurar_layout_responsive()
 	gender.add_item("El")
@@ -57,6 +56,7 @@ func _ready() -> void:
 	cancel_button.pressed.connect(_on_cancel)
 	_crear_vista_previa()
 	_construir_controles_personalizacion()
+	PIXEL_UI_THEME.apply(self)
 	_actualizar_vista_previa()
 	if not SupabaseClient.especies_jugables_cargadas.is_connected(_on_species_loaded):
 		SupabaseClient.especies_jugables_cargadas.connect(_on_species_loaded)
