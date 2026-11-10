@@ -320,15 +320,13 @@ func _crear_cesped_tilemap_dual() -> void:
 	# una vez antes de registrar el terreno de las 3.300 celdas.
 	await get_tree().process_frame
 	_terrain_renderer.call("finalizar_preparacion_renderer")
-	_terrain_renderer.call("comenzar_lote")
-
 	var caminos: Array[PackedVector2Array] = []
 	for nombre in TORRES_ROAD_SURFACES:
 		var poligono := get_node_or_null(NodePath(nombre)) as Polygon2D
 		if not is_instance_valid(poligono):
 			continue
-			# Las calles dejan de dibujarse como polígonos/texturas separados:
-			# su forma se conserva, pero ahora determina las celdas de Tierra.
+		# Las calles dejan de dibujarse como polígonos/texturas separados:
+		# su forma se conserva, pero ahora determina las celdas de Tierra.
 		poligono.visible = false
 		caminos.append(poligono.polygon)
 
@@ -351,8 +349,8 @@ func _crear_cesped_tilemap_dual() -> void:
 				bioma = "Bosque"
 			_terrain_renderer.call("set_zone", celda, zona, zona, bioma)
 
-	_terrain_renderer.call("terminar_lote")
-	# Procesar el Display por tandas para evitar un flush gigante al entrar.
+	# Cada set_zone marca la celda y sus ocho vecinos en las capas afectadas.
+	# El flush se procesa por tandas para evitar un bloqueo al entrar.
 	while bool(_terrain_renderer.call("tiene_flush_pendiente")):
 		_terrain_renderer.call("procesar_flush", 512)
 		await get_tree().process_frame
