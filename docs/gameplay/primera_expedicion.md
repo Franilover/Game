@@ -47,16 +47,25 @@ El workflow de regresión de Godot 4.7 para HEAD `a231714` terminó correctament
 
 - La salida física de Torres inicia la expedición `primera_expedicion`.
 - El estado de expedición queda registrado en `GameState.world_state.flags`, con ID estable, estado activo, origen y coordenadas de retorno serializables.
-- El primer prototipo reutiliza temporalmente `MundoAbierto`; todavía no garantiza bosque ni usa una escena exclusiva.
+- La salida carga `scenes/world/expedicion_bosque.tscn`, con tipo persistido `expedicion:bosque`.
 - Elegir Torres desde RealmMenu durante la expedición ejecuta el retorno controlado.
 - Main aplica la posición exacta de salida después del spawn predeterminado de Torres.
 - La transición guarda la partida cuando existe un guardado activo.
 - Se añadió `tests/world/test_expedition_travel_contract.gd` para comprobar salida, estado, retorno y consumo único de la posición.
 - La regresión completa de Godot 4.7 terminó correctamente en el commit `25130b0700b61b6c29af8c9381f661adf8ee2010`; el nuevo contrato de expedición pasó.
 
-### P1 — Siguiente trabajo
+### P1 — Zona de bosque: base implementada
 
-Crear una zona de bosque propia y determinista, sin depender del bioma aleatorio del Mundo Abierto. Reutilizar el pipeline de terreno, entidades y streaming, y colocar hitos estables para entrada, bifurcación, claro, ruinas y salida. La transición actual es una base de viaje y persistencia, no la expedición visual final.
+- Se creó `scenes/world/expedicion_bosque.tscn`, reutilizando WorldGenerator, terreno, streaming, spawn rules, factory y entity manager.
+- La zona usa la semilla fija `31415926`, independiente de la semilla del mundo general.
+- `WorldTerrainAreas` admite un bioma forzado por ID; la expedición fija el ID local del bioma Bosque y conserva la selección normal de ecosistemas dentro de ese bioma.
+- `ZoneManager` reconoce y reanuda `expedicion:bosque`; Main la inicializa como zona procedural y restaura Garumis vinculados.
+- Durante la expedición, RealmMenu sólo permite regresar a Torres, evitando abandonar el estado de expedición por un viaje lateral.
+- La prueba automatizada verifica el viaje, la semilla, el ID del bioma, la selección forzada en múltiples coordenadas y el retorno.
+
+### P1 — Trabajo restante
+
+Colocar hitos estables para entrada, bifurcación, claro, ruinas y salida; definir límites jugables y asegurar que los encuentros del catálogo forestal aparecen en posiciones y densidades adecuadas. La zona ya es un bosque procedural determinista, pero todavía no constituye una ruta guiada completa.
 
 ## Diseño de la primera ruta
 
