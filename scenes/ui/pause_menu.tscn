@@ -54,16 +54,6 @@ theme_override_font_sizes/font_size = 28
 text = "Pausa"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
-theme_override_font_sizes/font_size = 11
-text = "El mundo espera."
-horizontal_alignment = 1
-
-[node name="Separator" type="HSeparator" parent="Panel/Margin/Column"]
-layout_mode = 2
-
 [node name="VolverButton" type="Button" parent="Panel/Margin/Column"]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
@@ -90,9 +80,3 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 17
 text = "Menu"
 
-[node name="Hint" type="Label" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.43, 0.29, 1)
-theme_override_font_sizes/font_size = 10
-text = "Esc · volver"
-horizontal_alignment = 1
