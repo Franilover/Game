@@ -158,3 +158,13 @@ Colocar hitos estables para entrada, bifurcación, claro, ruinas y salida; defin
 ## Siguiente tarea concreta
 
 Empezar por **P0**: diseñar e implementar el acceso local a la expedición, el retorno a Torres y el guardado de estado. No comenzar todavía el jefe ni una expansión general del mundo.
+
+## Implementación de ruta jugable — primera pasada
+
+- Se añadió `ExpeditionRouteController` a la escena dedicada del bosque.
+- Ruta principal secuencial: borde del bosque → bifurcación → claro → ruinas exteriores → altar antiguo.
+- Cada hito se activa al acercarse, envía notificación y guarda progreso en `GameState.world_state.flags.expedicion_ruta`; la ruta se reanuda al volver a cargar la expedición.
+- Se añadió un refugio opcional fuera del sendero principal, registrable sin bloquear la progresión.
+- La ruta muestra una guía visual discreta sobre el terreno y destaca el siguiente hito.
+- Se añadió un contrato automatizado para comprobar el orden de hitos, el desvío opcional y la finalización.
+- Esta primera pasada establece navegación, exploración y persistencia. Los encuentros colocados, botín, puzle ambiental y jefe de ruinas quedan como siguientes capas de gameplay; no se simula que ya existan.
