@@ -56,6 +56,9 @@ El workflow de regresión de Godot 4.7 para HEAD `a231714` terminó correctament
 
 ### P1 — Zona de bosque: base implementada
 
+- El antiguo portón/teletransporte este de Torres se sustituye por una entrada de ruinas que inicia la aventura de bosque; ya no se presenta como salida al Mundo Abierto.
+- El retorno de la expedición coloca al jugador dentro de Torres, fuera del área de entrada, para evitar reactivar el viaje al aparecer.
+
 - Se creó `scenes/world/expedicion_bosque.tscn`, reutilizando WorldGenerator, terreno, streaming, spawn rules, factory y entity manager.
 - La zona usa la semilla fija `31415926`, independiente de la semilla del mundo general.
 - `WorldTerrainAreas` admite un bioma forzado por ID; la expedición fija el ID local del bioma Bosque y conserva la selección normal de ecosistemas dentro de ese bioma.
