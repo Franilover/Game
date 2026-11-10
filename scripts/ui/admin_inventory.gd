@@ -21,7 +21,7 @@ var _botones: Dictionary = {}
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_crear_ui()
-	PIXEL_UI_THEME.apply(self)
+	PIXEL_UI_THEME.apply(self, false)
 	visible = false
 
 
@@ -74,7 +74,7 @@ func _crear_ui() -> void:
 		boton.toggle_mode = true
 		boton.custom_minimum_size = Vector2(0, 24)
 		boton.pressed.connect(_cambiar_modo.bind(str(entrada[0])))
-		PIXEL_UI_THEME.apply(boton)
+		PIXEL_UI_THEME.apply(boton, false)
 		encabezado.add_child(boton)
 		_botones[str(entrada[0])] = boton
 
@@ -251,7 +251,7 @@ func _crear_fila(nombre: String, datos: Dictionary) -> void:
 	boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	boton.custom_minimum_size = Vector2(0, 34)
 	boton.pressed.connect(_seleccionar.bind(datos))
-	PIXEL_UI_THEME.apply(boton)
+	PIXEL_UI_THEME.apply(boton, false)
 	_lista.add_child(boton)
 
 
