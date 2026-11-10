@@ -59,7 +59,7 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"vivienda_oeste_11", "paths":["casas/vivienda_oeste_11.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,206), "size":Vector2(84,82), "hide":["WestHome11Wall","WestHome11Roof","WestHome11Door","WestHome11CollisionBody"]}
 ]
 
-@onready var _exit: Area2D = $Exit
+@onready var _expedition_entrance: Area2D = $ExpeditionEntrance
 
 var _transicionando: bool = false
 var _interior_activo: bool = false
@@ -126,7 +126,7 @@ const ENTRADAS: Array[Dictionary] = [
 
 
 func _ready() -> void:
-	_exit.body_entered.connect(_al_entrar_salida)
+	_expedition_entrance.body_entered.connect(_al_entrar_entrada_expedicion)
 	_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	_capa_interior = Node2D.new()
 	_capa_interior.name = "InteriorActivo"
@@ -945,12 +945,12 @@ func _ocultar_placeholder(prefixes: Array) -> void:
 
 
 
-func _al_entrar_salida(body: Node2D) -> void:
+func _al_entrar_entrada_expedicion(body: Node2D) -> void:
 	if _transicionando:
 		return
 	if body == null or not body.is_in_group("player"):
 		return
 
 	_transicionando = true
-	print("ReinoTorres: salida solicitada.")
+	print("ReinoTorres: entrada a la expedición de bosque y ruinas solicitada.")
 	salida_solicitada.emit()
