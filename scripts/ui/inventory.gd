@@ -849,17 +849,6 @@ func _mostrar_informacion() -> void:
 	item_icon.visible = textura != null
 
 
-func _crear_estilo_boton(fondo: Color, borde: Color, borde_inferior: int) -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = fondo
-	estilo.border_color = borde
-	estilo.set_border_width_all(1)
-	estilo.border_width_bottom = borde_inferior
-	estilo.corner_radius_top_left = 3
-	estilo.corner_radius_top_right = 3
-	return estilo
-
-
 func _limpiar_informacion() -> void:
 	item_name.text = ""
 	item_description.text = ""
