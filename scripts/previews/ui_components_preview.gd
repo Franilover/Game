@@ -3,6 +3,8 @@ extends Control
 
 ## Rellena únicamente la vista de muestra. No modifica datos del juego ni servicios remotos.
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 const INVENTORY_PREVIEW_ITEMS: Array[Dictionary] = [
 	{"nombre": "Espada de Madera", "cantidad": 1, "descripcion": "Arma de muestra"},
 	{"nombre": "Pala de Madera", "cantidad": 1, "descripcion": "Herramienta de muestra"},
@@ -18,6 +20,7 @@ func _ready() -> void:
 	_configurar_equipamiento()
 	_configurar_interaccion()
 	_configurar_manos()
+	PIXEL_UI_THEME.apply(self)
 
 
 func _configurar_inventario() -> void:
