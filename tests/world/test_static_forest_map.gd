@@ -35,7 +35,7 @@ func _run() -> void:
 		return
 
 	var limites: Rect2 = bosque.obtener_limites_mapa()
-	if limites.position != Vector2.ZERO or limites.size != Vector2(5120.0, 2048.0):
+	if not limites.position.is_equal_approx(Vector2.ZERO) or not limites.size.is_equal_approx(Vector2(5120.0, 2048.0)):
 		_fail("Los límites declarados no coinciden con el tamaño del bosque.")
 		return
 
