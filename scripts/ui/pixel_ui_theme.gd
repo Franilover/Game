@@ -8,12 +8,12 @@ const PANEL_FRAME_MARGIN := 8
 const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
-static func apply(root: Control) -> void:
+static func apply(root: Control, use_pixel_titles: bool = true) -> void:
 	if root == null:
 		return
-	_apply_control(root)
+	_apply_control(root, use_pixel_titles)
 	for node in root.find_children("*", "Control", true, false):
-		_apply_control(node as Control)
+		_apply_control(node as Control, use_pixel_titles)
 
 
 static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTexture:
@@ -72,7 +72,7 @@ static func slot_style(selected: bool = false) -> StyleBoxTexture:
 	return _texture_style("slot_selected.png" if selected else "slot_frame.png", 5)
 
 
-static func _apply_control(control: Control) -> void:
+static func _apply_control(control: Control, use_pixel_titles: bool = true) -> void:
 	if control is Panel or control is PanelContainer:
 		_ensure_panel_background(control)
 		var panel := _texture_style("panel_frame.png", PANEL_FRAME_MARGIN)
@@ -82,7 +82,7 @@ static func _apply_control(control: Control) -> void:
 	# Pixelgrafia queda reservada para encabezados; el resto usa la fuente Open Sans integrada en Godot.
 	var control_name := control.name.to_lower()
 	var is_title := control_name == "title" or control_name.ends_with("_title") or control_name.begins_with("title_") or control_name == "heading" or control_name.ends_with("_heading")
-	if is_title and (control is Label or control is RichTextLabel):
+	if use_pixel_titles and is_title and (control is Label or control is RichTextLabel):
 		control.add_theme_font_override("font", PIXEL_TITLE_FONT)
 
 	# Unificar el contorno de los textos con el acabado que ya usa Admin.
