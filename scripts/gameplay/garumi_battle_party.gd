@@ -4,6 +4,8 @@ class_name GarumiBattleParty
 ## Selector y director del combate de Garumis vinculados.
 ## Un único aliado puede estar activo; al caer, se ofrece elegir otro.
 
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 const MAX_VINCULOS := 3
 const INTERVALO_ATAQUE_ALIADO := 1.0
 const INTERVALO_ATAQUE_RIVAL := 1.35
@@ -142,16 +144,6 @@ func _crear_interfaz() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel.z_index = 100
 	add_child(_panel)
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.035, 0.03, 0.025, 0.98)
-	estilo.border_color = Color(0.78, 0.61, 0.34, 1.0)
-	estilo.set_border_width_all(2)
-	estilo.set_corner_radius_all(10)
-	estilo.content_margin_left = 18.0
-	estilo.content_margin_top = 18.0
-	estilo.content_margin_right = 18.0
-	estilo.content_margin_bottom = 18.0
-	_panel.add_theme_stylebox_override("panel", estilo)
 	_lista = VBoxContainer.new()
 	_lista.add_theme_constant_override("separation", 7)
 	_panel.add_child(_lista)
@@ -200,19 +192,6 @@ func _actualizar_interfaz() -> void:
 			tarjeta.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			tarjeta.focus_mode = Control.FOCUS_ALL
 			tarjeta.pressed.connect(seleccionar_garumi.bind(i))
-			var tarjeta_estilo := StyleBoxFlat.new()
-			tarjeta_estilo.bg_color = Color(0.10, 0.075, 0.05, 1.0)
-			tarjeta_estilo.border_color = Color(0.42, 0.31, 0.19, 1.0)
-			tarjeta_estilo.set_border_width_all(1)
-			tarjeta_estilo.set_corner_radius_all(7)
-			tarjeta.add_theme_stylebox_override("normal", tarjeta_estilo)
-			var enfocado := StyleBoxFlat.new()
-			enfocado.bg_color = Color(0.13, 0.095, 0.055, 1.0)
-			enfocado.border_color = Color(0.96, 0.75, 0.38, 1.0)
-			enfocado.set_border_width_all(2)
-			enfocado.set_corner_radius_all(7)
-			tarjeta.add_theme_stylebox_override("hover", enfocado)
-			tarjeta.add_theme_stylebox_override("focus", enfocado)
 			var contenido := VBoxContainer.new()
 			contenido.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			contenido.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -264,6 +243,7 @@ func _actualizar_interfaz() -> void:
 	_lista.add_child(boton_retirarse)
 	if is_instance_valid(activo):
 		_panel.visible = false
+	PIXEL_UI_THEME.apply(_panel, false)
 	_actualizar_marcos_combate()
 
 
@@ -332,20 +312,7 @@ func _crear_boton_accion_combate(texto: String) -> Button:
 	boton.add_theme_font_size_override("font_size", 11)
 	boton.add_theme_color_override("font_color", Color(0.94, 0.87, 0.73, 1.0))
 	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.94, 0.8, 1.0))
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.075, 0.06, 0.045, 0.94)
-	normal.border_color = Color(0.58, 0.43, 0.24, 0.95)
-	normal.set_border_width_all(1)
-	normal.set_corner_radius_all(4)
-	normal.content_margin_left = 6.0
-	normal.content_margin_right = 6.0
-	boton.add_theme_stylebox_override("normal", normal)
-	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.18, 0.13, 0.075, 1.0)
-	hover.border_color = Color(0.88, 0.68, 0.37, 1.0)
-	boton.add_theme_stylebox_override("hover", hover)
-	boton.add_theme_stylebox_override("focus", hover)
-	boton.add_theme_stylebox_override("pressed", hover)
+	PIXEL_UI_THEME.apply(boton, false)
 	return boton
 
 
@@ -384,16 +351,6 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	marco.name = "MarcoCombate" + rotulo
 	marco.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	marco.z_index = 20
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.035, 0.03, 0.025, 0.92)
-	estilo.border_color = Color(0.78, 0.61, 0.34, 0.95)
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(7)
-	estilo.content_margin_left = 4.0
-	estilo.content_margin_top = 3.0
-	estilo.content_margin_right = 4.0
-	estilo.content_margin_bottom = 3.0
-	marco.add_theme_stylebox_override("panel", estilo)
 	var contenido_marco := VBoxContainer.new()
 	contenido_marco.name = "ContenidoMarco"
 	contenido_marco.add_theme_constant_override("separation", 2)
@@ -461,6 +418,7 @@ func _crear_marco_luchador(rotulo: String, es_aliado: bool) -> PanelContainer:
 	else:
 		_info_enemigo = info
 		_vida_enemigo = vida
+	PIXEL_UI_THEME.apply(marco, false)
 	return marco
 
 
@@ -600,17 +558,7 @@ func _actualizar_botones_ataques() -> void:
 		boton.size_flags_stretch_ratio = 1.0
 		boton.add_theme_font_size_override("font_size", 10)
 		boton.clip_text = true
-		var estilo_ataque := StyleBoxFlat.new()
-		estilo_ataque.bg_color = Color(0.12, 0.085, 0.05, 1.0)
-		estilo_ataque.border_color = Color(0.62, 0.46, 0.25, 1.0)
-		estilo_ataque.set_border_width_all(1)
-		estilo_ataque.set_corner_radius_all(4)
-		boton.add_theme_stylebox_override("normal", estilo_ataque)
-		var estilo_ataque_hover := estilo_ataque.duplicate() as StyleBoxFlat
-		estilo_ataque_hover.bg_color = Color(0.22, 0.15, 0.075, 1.0)
-		estilo_ataque_hover.border_color = Color(0.9, 0.7, 0.38, 1.0)
-		boton.add_theme_stylebox_override("hover", estilo_ataque_hover)
-		boton.add_theme_stylebox_override("pressed", estilo_ataque_hover)
+		PIXEL_UI_THEME.apply(boton, false)
 		boton.disabled = not listo
 		boton.tooltip_text = (
 			"Ejecutar ataque publicado"
