@@ -168,3 +168,18 @@ Empezar por **P0**: diseñar e implementar el acceso local a la expedición, el 
 - La ruta muestra una guía visual discreta sobre el terreno y destaca el siguiente hito.
 - Se añadió un contrato automatizado para comprobar el orden de hitos, el desvío opcional y la finalización.
 - Esta primera pasada establece navegación, exploración y persistencia. Los encuentros colocados, botín, puzle ambiental y jefe de ruinas quedan como siguientes capas de gameplay; no se simula que ya existan.
+
+
+## Cambio de dirección visual — bosque estático
+
+La expedición deja de depender de la generación de chunks para representar el terreno. La escena conserva el `WorldGenerator` únicamente como coordinador de contexto, entidades, HUD y sistemas reutilizables; `usar_terreno_estatico` impide iniciar generación de terreno o streaming procedural.
+
+- `StaticForestMap` construye capas `TileMapLayer` fijas usando los atlas existentes `Pradera.png`, `Bosque.png` y `Tierra.png`.
+- El suelo cubre un rectángulo definido; una franja de tiles de bosque forma el borde visual.
+- El sendero principal y el desvío opcional se pintan con tiles de tierra siguiendo los hitos de la ruta.
+- Cuatro cuerpos estáticos con colisiones cierran los límites del mapa.
+- La cámara queda limitada al rectángulo de la expedición.
+- `ExpeditionRouteController` conserva hitos y guardado, pero ya no dibuja líneas ni círculos encima del terreno.
+- Se añadió un contrato automatizado para comprobar las capas, cobertura de suelo, senderos y límites.
+
+Esta implementación es una primera composición estática basada en los atlas disponibles. Aún requiere revisión visual dentro de Godot para confirmar cómo se leen los tiles concretos y enriquecer el borde con vegetación/árboles y puntos de interés colocados. No se afirma que se haya hecho esa prueba visual en este cambio.
