@@ -57,18 +57,6 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.20392157, 0.23921569, 0.44313726, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
-bg_color = Color(0.15, 0.095, 0.06, 0.78)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.29, 0.19, 0.12, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
 [node name="HUD" type="Control" unique_id=1018038866]
 layout_mode = 3
 anchors_preset = 15
@@ -288,7 +276,6 @@ offset_bottom = -95.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBox_panel")
 
 [node name="Margin" type="MarginContainer" parent="InteractionPrompt" unique_id=1431221983]
 layout_mode = 2
