@@ -9,18 +9,6 @@
 [ext_resource type="Script" path="res://scripts/ui/garumi_hub.gd" id="8_garumi_hub"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crafting_panel.tscn" id="7_crafting"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_window"]
-bg_color = Color(0.1, 0.065, 0.04, 0.97)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.29, 0.17, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
 [sub_resource type="StyleBoxFlat" id="StyleBox_tabs_panel"]
 bg_color = Color(0, 0, 0, 0)
 border_width_left = 0
@@ -98,7 +86,6 @@ offset_bottom = 170.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
-theme_override_styles/panel = SubResource("StyleBox_window")
 
 [node name="Margin" type="MarginContainer" parent="Window" unique_id=319582735]
 layout_mode = 2
