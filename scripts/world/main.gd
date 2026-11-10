@@ -532,6 +532,12 @@ func _configurar_camara() -> void:
 		_camera.limit_top = -700
 		_camera.limit_bottom = 700
 		_camera.limit_enabled = true
+	elif tipo_zona == "expedicion:bosque":
+		_camera.limit_left = 0
+		_camera.limit_right = 5120
+		_camera.limit_top = -1024
+		_camera.limit_bottom = 1024
+		_camera.limit_enabled = true
 	else:
 		_camera.limit_enabled = false
 	_camera.make_current()
