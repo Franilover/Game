@@ -91,10 +91,17 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 	if clave.is_empty():
 		return
 
-	# El viaje a Torres desde una expedición usa el retorno controlado para
-	# restaurar la posición exacta de salida, incluso desde RealmMenu.
-	if clave == "torres" and esta_en_expedicion():
-		salir_expedicion()
+	# Torres es una escena local fija. Su destino nunca debe depender del
+	# catálogo remoto: una configuración antigua o incorrecta podía apuntar
+	# al Mundo Abierto aunque el jugador hubiera elegido Torres.
+	if clave == "torres":
+		if esta_en_expedicion():
+			salir_expedicion()
+			return
+		if tipo_actual == TIPO_REINO_TORRES and is_instance_valid(zona_actual):
+			return
+		print("ZoneManager: viaje a Torres → escena local fija.")
+		_cambiar_zona(REINO_TORRES_ESCENA_PATH, TIPO_REINO_TORRES)
 		return
 
 	print("ZoneManager: solicitud de viaje → ", clave)
