@@ -367,7 +367,7 @@ func _dar_objeto() -> void:
 	var objeto := _seleccion.duplicate(true)
 	objeto["cantidad"] = cantidad
 
-	if inventario.call("agregar_objeto", objeto):
+	if inventario.call("agregar_objeto_desde_ui", objeto):
 		_estado.text = "Añadido: " + str(objeto.get("nombre", "Objeto")) + " x" + str(cantidad)
 	else:
 		_estado.text = "No hay espacio suficiente en el inventario."
