@@ -1056,27 +1056,10 @@ func _actualizar_selector_viajes() -> void:
 
 
 func _primera_expedicion_finalizada() -> bool:
-	var flags: Dictionary = GameState.world_state.flags
-	var ruta_variant: Variant = flags.get("expedicion_ruta", {})
-	if not ruta_variant is Dictionary or not bool((ruta_variant as Dictionary).get("completada", false)):
+	var zone_manager := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(zone_manager) or not zone_manager.has_method("_primera_expedicion_finalizada"):
 		return false
-	var coleccionables_variant: Variant = flags.get("expedicion_coleccionables", {})
-	if not coleccionables_variant is Dictionary:
-		return false
-	var coleccionables := coleccionables_variant as Dictionary
-	var requeridos_variant: Variant = coleccionables.get("requeridos", [])
-	var recogidos_variant: Variant = coleccionables.get("recogidos", [])
-	if not requeridos_variant is Array or not recogidos_variant is Array:
-		return false
-	var requeridos := requeridos_variant as Array
-	var recogidos := recogidos_variant as Array
-	if requeridos.is_empty():
-		return false
-	for id_variant in requeridos:
-		if not recogidos.has(id_variant):
-			return false
-	return true
-
+	return bool(zone_manager.call("_primera_expedicion_finalizada"))
 
 func _seleccionar_destino_viaje(destino_id: String) -> void:
 	if _transicionando:
