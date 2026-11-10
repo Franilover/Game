@@ -2,9 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="1_pause"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_overlay"]
-bg_color = Color(0.02, 0.015, 0.01, 0.72)
-
 [sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
 bg_color = Color(0.2, 0.15, 0.1, 0.99)
 border_width_left = 2
