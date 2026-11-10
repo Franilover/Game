@@ -445,7 +445,7 @@ z_index = 4
 
 
 
-[node name="RoadToWorld" type="Polygon2D" parent="."]
+[node name="RoadToAdventure" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(420, -48, 1120, -48, 1120, 48, 420, 48)
 color = Color(0.38, 0.31, 0.22, 1)
 z_index = 1
@@ -460,11 +460,11 @@ polygon = PackedVector2Array(420, 48, 1120, 48, 1120, 52, 420, 52)
 color = Color(0.55, 0.45, 0.31, 1)
 z_index = 2
 
-[node name="Exit" type="Area2D" parent="."]
+[node name="ExpeditionEntrance" type="Area2D" parent="."]
 position = Vector2(1080, 0)
 monitoring = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Exit"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExpeditionEntrance"]
 shape = SubResource("ShapeExit")
 
 [node name="Walls" type="StaticBody2D" parent="."]
@@ -2160,20 +2160,45 @@ z_index = 2
 
 
 
-[node name="EastGatePierNorth" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(1030, -90, 1054, -90, 1054, -48, 1030, -48)
-color = Color(0.47, 0.43, 0.35, 1)
+[node name="ExpeditionRuinsBackdrop" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1052, -43, 1090, -43, 1090, 43, 1052, 43)
+color = Color(0.13, 0.16, 0.12, 1)
+z_index = 2
+
+[node name="ExpeditionRuinsLeftPillar" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1028, -82, 1050, -82, 1050, 82, 1028, 82)
+color = Color(0.39, 0.37, 0.32, 1)
 z_index = 4
 
-[node name="EastGatePierSouth" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(1030, 48, 1054, 48, 1054, 90, 1030, 90)
-color = Color(0.47, 0.43, 0.35, 1)
+[node name="ExpeditionRuinsRightPillar" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1100, -82, 1122, -82, 1122, 82, 1100, 82)
+color = Color(0.39, 0.37, 0.32, 1)
 z_index = 4
 
-[node name="EastGateLintel" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(1024, -96, 1060, -96, 1060, -84, 1024, -84)
-color = Color(0.58, 0.48, 0.32, 1)
+[node name="ExpeditionRuinsLeftCap" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1022, -88, 1056, -88, 1056, -72, 1022, -72)
+color = Color(0.52, 0.48, 0.39, 1)
 z_index = 5
+
+[node name="ExpeditionRuinsBrokenLintel" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1040, -96, 1078, -96, 1087, -83, 1108, -83, 1108, -72, 1040, -72)
+color = Color(0.52, 0.48, 0.39, 1)
+z_index = 5
+
+[node name="ExpeditionRuinsStoneBaseLeft" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1018, 70, 1060, 70, 1060, 88, 1018, 88)
+color = Color(0.31, 0.30, 0.26, 1)
+z_index = 5
+
+[node name="ExpeditionRuinsStoneBaseRight" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1090, 70, 1132, 70, 1132, 88, 1090, 88)
+color = Color(0.31, 0.30, 0.26, 1)
+z_index = 5
+
+[node name="ExpeditionRuinsMoss" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1029, -76, 1037, -76, 1037, -57, 1029, -57)
+color = Color(0.24, 0.37, 0.20, 1)
+z_index = 6
 
 [node name="WestOuterWall" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-1198, -700, -1178, -700, -1178, 700, -1198, 700)
