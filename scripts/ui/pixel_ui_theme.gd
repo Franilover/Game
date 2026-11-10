@@ -78,6 +78,12 @@ static func _apply_control(control: Control) -> void:
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
+	# Unificar el contorno de los textos con el acabado que ya usa Admin.
+	# El borde oscuro mejora el contraste sin cambiar la tipografía ni los sprites.
+	if control is Label or control is RichTextLabel or control is CheckBox or control is OptionButton or control is LineEdit or control is TextEdit:
+		control.add_theme_color_override("font_outline_color", Color("#302014"))
+		control.add_theme_constant_override("outline_size", 2)
+
 	var is_slot_button := control is Button and (
 		control.name == "InventorySlot"
 		or control.name == "EquipmentSlot"
