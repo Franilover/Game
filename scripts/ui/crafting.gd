@@ -33,7 +33,7 @@ func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 
 func _ready() -> void:
 	set_process_mode(Node.PROCESS_MODE_ALWAYS)
-	PIXEL_UI_THEME.apply(self)
+	PIXEL_UI_THEME.apply(self, false)
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
 	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
 	call_deferred("_ajustar_columnas_recetas")
@@ -136,7 +136,7 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 		_seleccionar_receta(receta)
 	)
 	_lista.add_child(panel)
-	PIXEL_UI_THEME.apply(panel)
+	PIXEL_UI_THEME.apply(panel, false)
 
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
 	var icono := TextureRect.new()
