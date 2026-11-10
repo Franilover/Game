@@ -1194,9 +1194,13 @@ func flush() -> void:
 		if layer == null:
 			continue
 
-		# _marcar_dirty() sólo inserta Vector2i. No hace falta reconstruir
-		# otra Array antes de cada actualización del Dual Grid.
-		var dirty: Array[Vector2i] = cells_variant as Array[Vector2i]
+		# El Dictionary conserva las colas como Array sin tipo estático.
+		# Copiar sus coordenadas a un Array tipado evita el cast inválido
+		# Array -> Array[Vector2i] y mantiene la firma exigida por _update_cells.
+		var dirty: Array[Vector2i] = []
+		for cell_variant in cells_variant:
+			if cell_variant is Vector2i:
+				dirty.append(cell_variant as Vector2i)
 		if not dirty.is_empty():
 			var update_start_usec := Time.get_ticks_usec()
 			layer._update_cells(dirty, false)
