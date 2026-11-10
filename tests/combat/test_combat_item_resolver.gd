@@ -74,6 +74,24 @@ func _probar_modo_ataque(errores: Array[String]) -> void:
 	if Resolver.obtener_modo_ataque(arco_legacy) != "distancia":
 		errores.append("No detectó la etiqueta legacy bow.")
 
+	var arco_tipo_catalogo := {
+		"tipo": "arma",
+		"nombre": "Arco Aoris",
+		"tipo_objeto": {
+			"clave": "arco",
+			"nombre_humano": "Arco"
+		}
+	}
+	if Resolver.obtener_modo_ataque(arco_tipo_catalogo) != "distancia":
+		errores.append("No detectó el arco mediante la clave y nombre humano del tipo de catálogo.")
+
+	var arco_solo_nombre := {
+		"tipo": "arma",
+		"nombre": "Arco de prueba"
+	}
+	if Resolver.obtener_modo_ataque(arco_solo_nombre) != "distancia":
+		errores.append("No detectó un arco identificado por el nombre del objeto.")
+
 	if Resolver.obtener_modo_ataque({"tipo": "arma", "categoria": "espada"}) != "cuerpo":
 		errores.append("Una espada no conservó el modo cuerpo a cuerpo por defecto.")
 
