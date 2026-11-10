@@ -102,6 +102,25 @@ func _run() -> void:
 		_fail("La expedición siguió activa después de regresar.")
 		return
 
+	# Desde Mundo Abierto, seleccionar Torres debe cargar la escena fija local.
+	manager.entrar_mundo_abierto()
+	for _frame in range(120):
+		if manager.obtener_tipo_actual() == "mundo_abierto":
+			break
+		await get_tree().process_frame
+	manager.entrar_reino("torres")
+	for _frame in range(120):
+		if manager.obtener_tipo_actual() == "reino_torres":
+			break
+		await get_tree().process_frame
+	if manager.obtener_tipo_actual() != "reino_torres":
+		_fail("Viajar a Torres desde Mundo Abierto no cargó reino_torres.")
+		return
+	var escena_torres := manager.obtener_zona_actual()
+	if not is_instance_valid(escena_torres) or escena_torres.scene_file_path != "res://scenes/kingdom/reino_torres.tscn":
+		_fail("El destino Torres no corresponde a su escena fija local.")
+		return
+
 	# El selector espacial debe devolver el mismo bioma forzado en cualquier coordenada.
 	var areas := WorldTerrainAreas.new()
 	areas.configurar(31415926)
