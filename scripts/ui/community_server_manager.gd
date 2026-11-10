@@ -45,8 +45,6 @@ func _build_ui() -> void:
 	panel.offset_top = 0
 	panel.offset_right = 0
 	panel.offset_bottom = 0
-	# El panel queda sin dibujo hasta disponer de un sprite panel_frame.png.
-	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(panel)
 
 	var outer := MarginContainer.new()
