@@ -41,6 +41,23 @@ Fecha del último commit observado: 2026-11-10.
 
 El workflow de regresión de Godot 4.7 para HEAD `a231714` terminó correctamente. Pasaron importación/compilación y las pruebas de clima, terreno, IA, entidades, inventario, misiones, guardado, locomoción y combate. Esto acredita esos contratos automatizados; no demuestra que la ruta de expedición exista ni que el juego completo se haya probado visualmente.
 
+## Estado de implementación — 2026-11-10
+
+### P0 — Acceso y retorno: implementado
+
+- La salida física de Torres inicia la expedición `primera_expedicion`.
+- El estado de expedición queda registrado en `GameState.world_state.flags`, con ID estable, estado activo, origen y coordenadas de retorno serializables.
+- El primer prototipo reutiliza temporalmente `MundoAbierto`; todavía no garantiza bosque ni usa una escena exclusiva.
+- Elegir Torres desde RealmMenu durante la expedición ejecuta el retorno controlado.
+- Main aplica la posición exacta de salida después del spawn predeterminado de Torres.
+- La transición guarda la partida cuando existe un guardado activo.
+- Se añadió `tests/world/test_expedition_travel_contract.gd` para comprobar salida, estado, retorno y consumo único de la posición.
+- La regresión completa de Godot 4.7 terminó correctamente en el commit `25130b0700b61b6c29af8c9381f661adf8ee2010`; el nuevo contrato de expedición pasó.
+
+### P1 — Siguiente trabajo
+
+Crear una zona de bosque propia y determinista, sin depender del bioma aleatorio del Mundo Abierto. Reutilizar el pipeline de terreno, entidades y streaming, y colocar hitos estables para entrada, bifurcación, claro, ruinas y salida. La transición actual es una base de viaje y persistencia, no la expedición visual final.
+
 ## Diseño de la primera ruta
 
 ### Recorrido propuesto
