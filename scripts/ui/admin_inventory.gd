@@ -29,6 +29,7 @@ func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: Garlia
 	_jugador = jugador
 	_world_entity_spawner = spawner
 	_inventario = inventario
+	_world_items = world_items
 
 
 func abrir(jugador: Node = null) -> void:
@@ -181,6 +182,13 @@ func _cargar_criaturas() -> void:
 
 
 func _cargar_objetos() -> void:
+	if _world_items == null or not is_instance_valid(_world_items):
+		var aviso := Label.new()
+		aviso.text = "No se encontró el catálogo de objetos."
+		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_lista.add_child(aviso)
+		return
+
 	var catalogo: Array[Dictionary] = _world_items.obtener_catalogo()
 	var grupos: Dictionary = {}
 
