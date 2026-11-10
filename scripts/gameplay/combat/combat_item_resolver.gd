@@ -91,7 +91,8 @@ static func obtener_modo_ataque(arma: Dictionary) -> String:
 		for clave in [
 			"modo_ataque", "tipo_ataque", "modalidad_ataque", "modo_combate",
 			"tipo_arma", "clase_arma", "subtipo_arma", "familia_arma",
-			"tipo", "clase", "subtipo", "familia", "categoria"
+			"tipo", "clase", "subtipo", "familia", "categoria",
+			"clave", "nombre_humano", "nombre"
 		]:
 			var etiqueta := str(fuente.get(clave, "")).strip_edges().to_lower()
 			if not etiqueta.is_empty():
