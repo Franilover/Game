@@ -154,6 +154,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run expedition route progression contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_expedition_route_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|ExpeditionRouteContract: FAIL:' <<<"$output"; then
+            echo "Expedition route progression test reported errors."
+            exit 1
+          fi
+
       - name: Run world climate and lighting regression test
         run: godot --headless --path . --script res://tests/world/test_world_climate_system.gd
 
