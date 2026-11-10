@@ -22,6 +22,10 @@ func _run() -> void:
 	var manager := ZONE_MANAGER_SCRIPT.new() as Node2D
 	manager.name = "ZoneManager"
 	mundo.add_child(manager)
+	await get_tree().process_frame
+	if not manager.is_in_group("zone_manager"):
+		_fail("ZoneManager no se registró para las interacciones del selector y los coleccionables.")
+		return
 
 	manager.entrar_reino("torres")
 	await get_tree().process_frame
