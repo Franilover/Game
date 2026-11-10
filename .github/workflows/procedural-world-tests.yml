@@ -141,6 +141,9 @@ jobs:
             exit 1
           fi
 
+      - name: Run world climate and lighting regression test
+        run: godot --headless --path . --script res://tests/world/test_world_climate_system.gd
+
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
 
