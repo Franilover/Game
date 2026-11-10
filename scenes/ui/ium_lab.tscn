@@ -2,30 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/ui/ium_lab.gd" id="1_iumlab"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.1, 0.065, 0.04, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.29, 0.17, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_canvas"]
-bg_color = Color(0.055, 0.035, 0.022, 0.96)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.29, 0.19, 0.12, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
 [node name="IUMLab" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -52,7 +28,6 @@ offset_left = -440.0
 offset_top = -290.0
 offset_right = 440.0
 offset_bottom = 290.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="VBox" type="VBoxContainer" parent="Panel"]
 layout_mode = 1
@@ -128,7 +103,6 @@ theme_override_font_sizes/font_size = 11
 [node name="CanvasContainer" type="Panel" parent="Panel/VBox/ContentRow/CenterCol"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBox_canvas")
 
 [node name="Canvas" type="Control" parent="Panel/VBox/ContentRow/CenterCol/CanvasContainer"]
 unique_name_in_owner = true
