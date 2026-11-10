@@ -2,18 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/ui/death_menu.gd" id="1_death"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
-bg_color = Color(0.2, 0.15, 0.1, 0.99)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.58, 0.46, 0.31, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [node name="DeathMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -50,7 +38,6 @@ offset_right = 190.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBox_panel")
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
