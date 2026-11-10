@@ -1,7 +1,4 @@
-[gd_resource type="Theme" load_steps=2 format=3]
-
-[ext_resource type="FontFile" path="res://assets/fonts/Pixelgrafia.ttf" id="1_pixelgrafia"]
+[gd_resource type="Theme" load_steps=1 format=3]
 
 [resource]
-default_font = ExtResource("1_pixelgrafia")
 default_font_size = 16
