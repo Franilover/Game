@@ -88,8 +88,12 @@ func _crear_ui() -> void:
 	contenido.add_child(izquierda)
 
 	var scroll := ScrollContainer.new()
+	scroll.name = "CreatureObjectListScroll"
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.follow_focus = true
 	izquierda.add_child(scroll)
 
 	_lista = VBoxContainer.new()
@@ -98,11 +102,20 @@ func _crear_ui() -> void:
 	_lista.add_theme_constant_override("separation", 2)
 	scroll.add_child(_lista)
 
+	var scroll_detalle := ScrollContainer.new()
+	scroll_detalle.name = "CreatureObjectDetailScroll"
+	scroll_detalle.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_detalle.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_detalle.follow_focus = true
+	contenido.add_child(scroll_detalle)
+
 	_detalle = VBoxContainer.new()
 	_detalle.custom_minimum_size = Vector2(90, 0)
 	_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detalle.add_theme_constant_override("separation", 4)
-	contenido.add_child(_detalle)
+	scroll_detalle.add_child(_detalle)
 
 	_estado = Label.new()
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

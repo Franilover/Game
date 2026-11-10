@@ -97,6 +97,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run admin creature and object scroll contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_admin_inventory_scroll.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|AdminInventoryScrollContract: FAIL:' <<<"$output"; then
+            echo "Admin inventory scroll contract test reported errors."
+            exit 1
+          fi
+
       - name: Run Garumi encyclopedia shortcut smoke test
         shell: bash
         run: |
