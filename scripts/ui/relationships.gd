@@ -51,12 +51,13 @@ func _al_reglas_sociales_cargadas() -> void:
 	_actualizar()
 
 
-func _al_relacion_cambiada(personaje_id: String, _relacion: Dictionary) -> void:
-	if personaje_id != _personaje_seleccionado_id:
+func _al_relacion_cambiada(personaje_id: String, relacion: Dictionary) -> void:
+	if personaje_id != _personaje_seleccionado_id or not is_instance_valid(detalle):
 		return
-	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
-	var nombre := str(datos_personaje.get("nombre", personaje_id))
-	_seleccionar(personaje_id, nombre)
+	var barra := detalle.get_node_or_null("FriendshipBar") as ProgressBar
+	if barra == null:
+		return
+	barra.value = _amistad_a_valor_visual(float(relacion.get("amistad", 0.0)))
 
 
 func _crear_ui() -> void:
@@ -283,7 +284,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	detalle.add_child(etiqueta_amistad)
 
 	var amistad_guardada := float(relacion.get("amistad", 0.0))
-	var amistad_visual := clampf(roundi((amistad_guardada + 100.0) * 0.495 + 1.0), 1.0, 100.0)
+	var amistad_visual := _amistad_a_valor_visual(amistad_guardada)
 	var barra_amistad := ProgressBar.new()
 	barra_amistad.name = "FriendshipBar"
 	barra_amistad.min_value = 1.0
@@ -294,6 +295,10 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	barra_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	PIXEL_UI_THEME.apply(barra_amistad)
 	detalle.add_child(barra_amistad)
+
+
+func _amistad_a_valor_visual(amistad: float) -> float:
+	return clampf(roundi((amistad + 100.0) * 0.495 + 1.0), 1.0, 100.0)
 
 
 func _limpiar() -> void:
