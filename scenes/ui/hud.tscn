@@ -60,20 +60,31 @@ visible = false
 layout_mode = 0
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 326.0
-offset_bottom = 344.0
-mouse_filter = 2
+offset_right = 576.0
+offset_bottom = 776.0
+mouse_filter = 1
 
-[node name="LocationLabel" type="Label" parent="LocationPanel" unique_id=660405638]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 8.0
-offset_right = 300.0
-offset_bottom = 336.0
+[node name="Scroll" type="ScrollContainer" parent="LocationPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="LocationLabel" type="Label" parent="LocationPanel/Scroll" unique_id=660405638]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_colors/font_outline_color = Color(0.075, 0.05, 0.035, 1)
 theme_override_constants/outline_size = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 11
 text = "RENDIMIENTO"
 
 [node name="BottomLeft" type="Control" parent="." unique_id=2105957153]
