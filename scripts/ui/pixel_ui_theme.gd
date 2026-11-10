@@ -5,6 +5,7 @@ class_name PixelUITheme
 const UI_DIR := "res://assets/art/UI/Menus/"
 const PANEL_BACKGROUND_INSET := 8
 const PANEL_FRAME_MARGIN := 8
+const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
 static func apply(root: Control) -> void:
@@ -77,6 +78,12 @@ static func _apply_control(control: Control) -> void:
 		var panel := _texture_style("panel_frame.png", PANEL_FRAME_MARGIN)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
+
+	# Pixelgrafia queda reservada para encabezados; el resto usa la fuente Open Sans integrada en Godot.
+	var control_name := control.name.to_lower()
+	var is_title := control_name == "title" or control_name.ends_with("_title") or control_name.begins_with("title_") or control_name == "heading" or control_name.ends_with("_heading")
+	if is_title and (control is Label or control is RichTextLabel):
+		control.add_theme_font_override("font", PIXEL_TITLE_FONT)
 
 	# Unificar el contorno de los textos con el acabado que ya usa Admin.
 	# El borde oscuro mejora el contraste sin cambiar la tipografía ni los sprites.
