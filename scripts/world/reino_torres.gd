@@ -349,11 +349,13 @@ func _crear_cesped_tilemap_dual() -> void:
 				bioma = "Bosque"
 			_terrain_renderer.call("set_zone", celda, zona, zona, bioma)
 
-	# Cada set_zone marca la celda y sus ocho vecinos en las capas afectadas.
-	# El flush se procesa por tandas para evitar un bloqueo al entrar.
-	while bool(_terrain_renderer.call("tiene_flush_pendiente")):
-		_terrain_renderer.call("procesar_flush", 512)
-		await get_tree().process_frame
+	# Torres es un mapa fijo: no necesita streaming ni presupuesto por frame.
+	# Resolver las tres capas juntas evita dejar partes del suelo esperando
+	# varios ciclos de flush como ocurre con los chunks del mundo procedural.
+	_terrain_renderer.call("flush")
+	if bool(_terrain_renderer.call("tiene_flush_pendiente")):
+		push_error("ReinoTorres: quedó terreno pendiente después de la composición estática.")
+		return
 
 	# El antiguo fondo plano ocultaría la mezcla de atlas y ya no es necesario.
 	var suelo := get_node_or_null("Ground") as Polygon2D
