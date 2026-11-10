@@ -144,19 +144,24 @@ func _actualizar() -> void:
 		boton.name = "SlotRelationshipPortrait"
 		boton.custom_minimum_size = TAMANO_RETRATO
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.size_flags_vertical = Control.SIZE_FILL
 		boton.toggle_mode = true
+		boton.clip_contents = true
+		boton.text = ""
 		boton.set_meta("personaje_id", personaje_id)
 		boton.tooltip_text = nombre
 		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
+		PIXEL_UI_THEME.apply(boton)
+
 		var textura := _cargar_retrato(asset_key, nombre)
 		if textura != null:
 			var retrato := TextureRect.new()
 			retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			retrato.offset_left = 6.0
-			retrato.offset_top = 6.0
-			retrato.offset_right = -6.0
-			retrato.offset_bottom = -6.0
+			retrato.offset_left = 4.0
+			retrato.offset_top = 3.0
+			retrato.offset_right = -4.0
+			retrato.offset_bottom = -16.0
 			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -164,8 +169,32 @@ func _actualizar() -> void:
 			retrato.texture = textura
 			boton.add_child(retrato)
 		else:
-			boton.text = nombre.substr(0, 2).to_upper()
-		PIXEL_UI_THEME.apply(boton)
+			var iniciales := Label.new()
+			iniciales.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			iniciales.offset_bottom = -16.0
+			iniciales.text = nombre.substr(0, 2).to_upper()
+			iniciales.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			iniciales.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			iniciales.add_theme_font_size_override("font_size", 14)
+			iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			boton.add_child(iniciales)
+
+		var etiqueta := Label.new()
+		etiqueta.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		etiqueta.offset_left = 2.0
+		etiqueta.offset_right = -2.0
+		etiqueta.offset_top = -15.0
+		etiqueta.offset_bottom = -1.0
+		etiqueta.text = nombre
+		etiqueta.clip_text = true
+		etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		etiqueta.add_theme_font_size_override("font_size", 8)
+		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
+		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
+		etiqueta.add_theme_constant_override("outline_size", 2)
+		etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		boton.add_child(etiqueta)
+
 		lista.add_child(boton)
 		_botones.append(boton)
 
