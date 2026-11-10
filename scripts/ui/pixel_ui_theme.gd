@@ -60,10 +60,11 @@ static func _ensure_panel_background(control: Control) -> void:
 	background.offset_bottom = -PANEL_BACKGROUND_INSET
 	background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Se dibuja detrás del Panel: el centro transparente del marco deja
-	# visible el relleno y el contenido continúa dibujándose por encima.
-	background.show_behind_parent = true
+	# El marco del Panel se dibuja primero; el relleno queda encima,
+	# pero debajo de los demás controles hijos.
+	background.show_behind_parent = false
 	control.add_child(background)
+	control.move_child(background, 0)
 
 
 static func slot_style(selected: bool = false) -> StyleBoxTexture:
