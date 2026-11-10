@@ -1000,26 +1000,19 @@ func _crear_selector_viajes() -> void:
 	contenido.add_theme_constant_override("separation", 8)
 	_selector_viajes_panel.add_child(contenido)
 
-	var titulo := Label.new()
-	titulo.name = "TravelTitle"
-	titulo.text = "VIAJAR"
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.add_theme_font_size_override("font_size", 18)
-	contenido.add_child(titulo)
+	var estaciones := Label.new()
+	estaciones.name = "StationsHeading"
+	estaciones.text = "Estaciones"
+	estaciones.add_theme_font_size_override("font_size", 12)
+	contenido.add_child(estaciones)
+	_agregar_boton_destino(contenido, "Torres", "torres")
+	_agregar_boton_destino(contenido, "Mundo Abierto", "mundo_abierto")
 
-	var fijos := Label.new()
-	fijos.name = "FixedHeading"
-	fijos.text = "LUGARES FIJOS"
-	fijos.add_theme_font_size_override("font_size", 12)
-	contenido.add_child(fijos)
-	_agregar_boton_destino(contenido, "Torres", "torres", "Volver a Torres")
-	_agregar_boton_destino(contenido, "Mundo Abierto", "mundo_abierto", "Explorar el mundo")
-
-	var dinamicos := Label.new()
-	dinamicos.name = "DynamicHeading"
-	dinamicos.text = "LUGARES DINÁMICOS"
-	dinamicos.add_theme_font_size_override("font_size", 12)
-	contenido.add_child(dinamicos)
+	var expediciones := Label.new()
+	expediciones.name = "ExpeditionsHeading"
+	expediciones.text = "Expediciones"
+	expediciones.add_theme_font_size_override("font_size", 12)
+	contenido.add_child(expediciones)
 
 	var lista_dinamica := VBoxContainer.new()
 	lista_dinamica.name = "DynamicDestinations"
@@ -1039,10 +1032,10 @@ func _crear_selector_viajes() -> void:
 	PIXEL_UI_THEME.apply(contenido, false)
 
 
-func _agregar_boton_destino(contenedor: VBoxContainer, texto: String, destino_id: String, descripcion: String) -> void:
+func _agregar_boton_destino(contenedor: VBoxContainer, texto: String, destino_id: String) -> void:
 	var boton := Button.new()
 	boton.name = "Destino_" + destino_id
-	boton.text = texto + "  —  " + descripcion
+	boton.text = texto
 	boton.custom_minimum_size = Vector2(0.0, 38.0)
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boton.pressed.connect(_seleccionar_destino_viaje.bind(destino_id))
@@ -1059,14 +1052,13 @@ func _actualizar_selector_viajes() -> void:
 		lista.remove_child(hijo)
 		hijo.queue_free()
 
-	if not _primera_expedicion_finalizada():
-		_agregar_boton_destino(lista, "Explorar el bosque", "expedicion_bosque", "Primera expedición")
-	else:
-		var aviso := Label.new()
-		aviso.name = "NoDynamicDestinations"
-		aviso.text = "No hay nuevas expediciones disponibles."
-		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lista.add_child(aviso)
+	var expediciones := _selector_viajes_panel.get_node_or_null("Contenido/ExpeditionsHeading") as Label
+	var hay_primera_expedicion := not _primera_expedicion_finalizada()
+	if is_instance_valid(expediciones):
+		expediciones.visible = hay_primera_expedicion
+	lista.visible = hay_primera_expedicion
+	if hay_primera_expedicion:
+		_agregar_boton_destino(lista, "Primera expedición", "expedicion_bosque")
 
 
 func _primera_expedicion_finalizada() -> bool:
