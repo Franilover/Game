@@ -30,12 +30,13 @@ func _run() -> void:
 		_fail("No se pudo preparar Torres para la prueba.")
 		return
 
-	var iniciada: bool = await manager.iniciar_expedicion("expedicion_contrato")
-	if not iniciada:
-		_fail("La expedición no pudo iniciarse desde Torres.")
-		return
+	manager.salir_de_reino_actual()
+	for _frame in range(12):
+		if manager.obtener_tipo_actual() == "mundo_abierto" and not bool(manager.obtener_diagnostico().get("transicionando", false)):
+			break
+		await get_tree().process_frame
 	if manager.obtener_tipo_actual() != "mundo_abierto":
-		_fail("La expedición no cambió a MundoAbierto.")
+		_fail("La salida física de Torres no inició la expedición.")
 		return
 	if not manager.esta_en_expedicion():
 		_fail("El estado de expedición no quedó activo.")
@@ -55,12 +56,13 @@ func _run() -> void:
 		return
 
 	manager.consumir_salida_reino_pendiente()
-	var regreso: bool = await manager.salir_expedicion()
-	if not regreso:
-		_fail("No se pudo regresar a Torres desde la expedición.")
-		return
+	manager.entrar_reino("torres")
+	for _frame in range(12):
+		if manager.obtener_tipo_actual() == "reino_torres" and not bool(manager.obtener_diagnostico().get("transicionando", false)):
+			break
+		await get_tree().process_frame
 	if manager.obtener_tipo_actual() != "reino_torres":
-		_fail("El retorno no cargó la escena fija de Torres.")
+		_fail("RealmMenu no pudo regresar a Torres desde la expedición.")
 		return
 
 	var retorno: Dictionary = manager.consumir_retorno_expedicion()
