@@ -19,7 +19,7 @@ var _personaje_seleccionado_id := ""
 
 func _ready() -> void:
 	_crear_ui()
-	PIXEL_UI_THEME.apply(self)
+	PIXEL_UI_THEME.apply(self, false)
 	_actualizar()
 
 
@@ -170,7 +170,7 @@ func _actualizar() -> void:
 		boton.tooltip_text = nombre
 		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
-		PIXEL_UI_THEME.apply(boton)
+		PIXEL_UI_THEME.apply(boton, false)
 
 		var textura := _cargar_retrato(asset_key, nombre)
 		if textura != null:
@@ -293,7 +293,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	barra_amistad.show_percentage = false
 	barra_amistad.custom_minimum_size = Vector2(0.0, 16.0)
 	barra_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	PIXEL_UI_THEME.apply(barra_amistad)
+	PIXEL_UI_THEME.apply(barra_amistad, false)
 	detalle.add_child(barra_amistad)
 
 
