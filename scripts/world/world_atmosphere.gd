@@ -329,9 +329,12 @@ static func calcular_color_iluminacion(hora_normalizada: float) -> Color:
 			var progreso := inverse_lerp(hora_inicio, hora_final, hora)
 			# Smoothstep evita cambios bruscos de velocidad entre colores.
 			progreso = progreso * progreso * (3.0 - 2.0 * progreso)
-			return (inicio["color"] as Color).lerp(final["color"], progreso)
+			var color_inicio: Color = inicio["color"]
+			var color_final: Color = final["color"]
+			return color_inicio.lerp(color_final, progreso)
 
-	return CLAVES_LUZ.back()["color"]
+	var ultimo_color: Color = CLAVES_LUZ.back()["color"]
+	return ultimo_color
 
 
 func _obtener_periodo() -> String:
