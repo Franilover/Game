@@ -40,10 +40,10 @@ func _run() -> void:
 	if zona_torres == null or zona_torres.get_node_or_null("ExpeditionEntrance") == null:
 		_fail("Torres no tiene la entrada de expedición en el antiguo portón este.")
 		return
-	if zona_torres.get_node_or_null("SelectorViajesLayer/SelectorViajes") == null:
+	if zona_torres.get_node_or_null("SelectorViajesLayer/SelectorViajesRoot/SelectorViajesCenter/SelectorViajes") == null:
 		_fail("El portón no creó el panel del selector de viajes.")
 		return
-	var selector := zona_torres.get_node("SelectorViajesLayer/SelectorViajes")
+	var selector := zona_torres.get_node("SelectorViajesLayer/SelectorViajesRoot/SelectorViajesCenter/SelectorViajes")
 	var destinos_fijos := selector.get_node_or_null("Contenido")
 	if destinos_fijos == null or destinos_fijos.get_node_or_null("Destino_torres") == null or destinos_fijos.get_node_or_null("Destino_mundo_abierto") == null:
 		_fail("El selector no muestra los dos destinos fijos.")
