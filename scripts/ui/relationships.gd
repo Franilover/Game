@@ -250,12 +250,23 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1.0))
 	detalle.add_child(titulo)
 
-	for clave in ["amistad", "confianza", "respeto", "afecto"]:
-		var valor := float(relacion.get(clave, 0.0))
-		var fila := Label.new()
-		fila.text = clave.capitalize() + ": " + str(roundi(valor))
-		fila.add_theme_font_size_override("font_size", 10)
-		detalle.add_child(fila)
+	var etiqueta_amistad := Label.new()
+	etiqueta_amistad.text = "Amistad"
+	etiqueta_amistad.add_theme_font_size_override("font_size", 10)
+	detalle.add_child(etiqueta_amistad)
+
+	var amistad_guardada := float(relacion.get("amistad", 0.0))
+	var amistad_visual := clampf(roundi((amistad_guardada + 100.0) * 0.495 + 1.0), 1.0, 100.0)
+	var barra_amistad := ProgressBar.new()
+	barra_amistad.name = "FriendshipBar"
+	barra_amistad.min_value = 1.0
+	barra_amistad.max_value = 100.0
+	barra_amistad.value = amistad_visual
+	barra_amistad.show_percentage = false
+	barra_amistad.custom_minimum_size = Vector2(0.0, 16.0)
+	barra_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	PIXEL_UI_THEME.apply(barra_amistad)
+	detalle.add_child(barra_amistad)
 
 
 func _limpiar() -> void:
