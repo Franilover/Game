@@ -6,14 +6,14 @@ const MAP_LEFT := 0
 const MAP_RIGHT := 160
 const MAP_TOP := -32
 const MAP_BOTTOM := 32
-const FULL_TILE := Vector2i(2, 1)
-const GRASS_TEXTURE := "res://assets/tilesets/Pradera.png"
-const FOREST_TEXTURE := "res://assets/tilesets/Bosque.png"
-const DIRT_TEXTURE := "res://assets/tilesets/Tierra.png"
 
-var ground_layer: TileMapLayer
-var forest_layer: TileMapLayer
-var path_layer: TileMapLayer
+const ZONE_GRASS := 0
+const ZONE_DIRT := 1
+const ZONE_FOREST := 8
+
+const TERRAIN_VISUAL_SCRIPT := preload("res://scripts/world/world_terrain_visual.gd")
+
+var terrain_renderer: Node
 
 
 func _ready() -> void:
@@ -22,22 +22,30 @@ func _ready() -> void:
 
 
 func _construir_mapa() -> void:
-	ground_layer = _crear_capa("Ground", GRASS_TEXTURE, -20)
-	forest_layer = _crear_capa("ForestEdge", FOREST_TEXTURE, -19)
-	path_layer = _crear_capa("DirtPaths", DIRT_TEXTURE, -18)
+	# Reutilizar el renderer canónico del mundo: crea TileMapDual, registra
+	# los 16 patrones de esquina de cada atlas y compone los bordes mediante
+	# el addon. No pintar TileMapLayer con un atlas_coords fijo.
+	terrain_renderer = TERRAIN_VISUAL_SCRIPT.new()
+	terrain_renderer.name = "TerrainRenderer"
+	add_child(terrain_renderer)
+	terrain_renderer.call("configurar", TILE_SIZE)
 
-	# Suelo fijo: toda la superficie se define una sola vez al entrar.
+	# TileMapDual crea sus nodos Display durante _ready().
+	await get_tree().process_frame
+	terrain_renderer.call("finalizar_preparacion_renderer")
+
+	# Base de pradera y anillo de bosque. Cada celda pertenece a un terreno;
+	# TileMapDual resuelve automáticamente sus cuatro esquinas.
 	for y in range(MAP_TOP, MAP_BOTTOM):
 		for x in range(MAP_LEFT, MAP_RIGHT):
-			ground_layer.set_cell(Vector2i(x, y), 0, FULL_TILE)
+			var cell := Vector2i(x, y)
+			if _es_borde_bosque(cell):
+				_establecer_terreno(cell, ZONE_FOREST, "Bosque")
+			else:
+				_establecer_terreno(cell, ZONE_GRASS, "Pradera")
 
-	# Franja profunda de bosque en los cuatro lados. El borde visual y las
-	# colisiones coinciden para que el jugador nunca camine fuera del mapa.
-	for y in range(MAP_TOP, MAP_BOTTOM):
-		for x in range(MAP_LEFT, MAP_RIGHT):
-			if x < 5 or x >= MAP_RIGHT - 5 or y < MAP_TOP + 5 or y >= MAP_BOTTOM - 5:
-				forest_layer.set_cell(Vector2i(x, y), 0, FULL_TILE)
-
+	# Sendero principal: se pinta como zona Tierra dentro del terreno de
+	# pradera; las uniones se resuelven por el mismo DualGrid.
 	_pintar_sendero([
 		Vector2(560, 120),
 		Vector2(820, 120),
@@ -54,42 +62,35 @@ func _construir_mapa() -> void:
 		Vector2(4480, 120)
 	], 1)
 
-	# Desvío opcional hacia un pequeño claro escondido al norte.
+	# Desvío opcional hacia el claro escondido.
 	_pintar_sendero([
 		Vector2(1800, -160),
 		Vector2(1880, -300),
 		Vector2(1980, -560)
 	], 0)
 
+	# set_zone registra las celdas y las fronteras dirty. Procesar el Display
+	# por tandas entre frames evita un único flush gigante al entrar.
+	while bool(terrain_renderer.call("tiene_flush_pendiente")):
+		terrain_renderer.call("procesar_flush", 512)
+		await get_tree().process_frame
 
-func _crear_capa(nombre: String, textura_path: String, z: int) -> TileMapLayer:
-	var textura := load(textura_path) as Texture2D
-	if textura == null:
-		push_error("StaticForestMap: no se pudo cargar " + textura_path)
-		return null
 
-	var tile_set := TileSet.new()
-	tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	var atlas := TileSetAtlasSource.new()
-	atlas.texture = textura
-	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	for y in range(4):
-		for x in range(4):
-			atlas.create_tile(Vector2i(x, y))
-	tile_set.add_source(atlas, 0)
+func _establecer_terreno(cell: Vector2i, zone: int, bioma: String) -> void:
+	terrain_renderer.call("set_zone", cell, zone, zone, bioma)
 
-	var layer := TileMapLayer.new()
-	layer.name = nombre
-	layer.tile_set = tile_set
-	layer.z_index = z
-	layer.y_sort_enabled = false
-	layer.rendering_quadrant_size = 16
-	add_child(layer)
-	return layer
+
+func _es_borde_bosque(cell: Vector2i) -> bool:
+	return (
+		cell.x < MAP_LEFT + 5
+		or cell.x >= MAP_RIGHT - 5
+		or cell.y < MAP_TOP + 5
+		or cell.y >= MAP_BOTTOM - 5
+	)
 
 
 func _pintar_sendero(puntos: Array[Vector2], ancho: int) -> void:
-	if path_layer == null or puntos.size() < 2:
+	if puntos.size() < 2:
 		return
 	for i in range(puntos.size() - 1):
 		var inicio := puntos[i]
@@ -102,9 +103,14 @@ func _pintar_sendero(puntos: Array[Vector2], ancho: int) -> void:
 				for x in range(-ancho, ancho + 1):
 					if Vector2(x, y).length() > float(ancho) + 0.35:
 						continue
-					var celda := centro + Vector2i(x, y)
-					if celda.x >= MAP_LEFT + 5 and celda.x < MAP_RIGHT - 5 and celda.y >= MAP_TOP + 5 and celda.y < MAP_BOTTOM - 5:
-						path_layer.set_cell(celda, 0, FULL_TILE)
+					var cell := centro + Vector2i(x, y)
+					if (
+						cell.x >= MAP_LEFT + 5
+						and cell.x < MAP_RIGHT - 5
+						and cell.y >= MAP_TOP + 5
+						and cell.y < MAP_BOTTOM - 5
+				):
+						_establecer_terreno(cell, ZONE_DIRT, "Tierra")
 
 
 func _crear_limites() -> void:
