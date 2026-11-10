@@ -170,7 +170,7 @@ func _configurar_boton_seccion(boton: Button) -> void:
 	boton.add_theme_color_override("font_hover_color", Color(0.82, 0.70, 0.51, 1))
 	boton.add_theme_color_override("font_pressed_color", Color(0.94, 0.85, 0.66, 1))
 	boton.add_theme_font_size_override("font_size", 9)
-	PIXEL_UI_THEME.apply(boton)
+	PIXEL_UI_THEME.apply(boton, false)
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 func actualizar() -> void:
@@ -187,7 +187,7 @@ func actualizar() -> void:
 				_construir_lista_garumis()
 		_:
 			_construir_arbol_biomas()
-	PIXEL_UI_THEME.apply(self)
+	PIXEL_UI_THEME.apply(self, false)
 
 
 func _mostrar_biomas() -> void:
@@ -505,7 +505,7 @@ func _crear_boton_registro(nombre: String, textura: Texture2D, silueta: bool) ->
 	boton.clip_contents = true
 	boton.add_theme_font_size_override("font_size", 7)
 	boton.text = ""
-	PIXEL_UI_THEME.apply(boton)
+	PIXEL_UI_THEME.apply(boton, false)
 
 	var imagen := TextureRect.new()
 	imagen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
