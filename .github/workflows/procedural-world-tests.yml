@@ -154,6 +154,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run handcrafted static forest map contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_static_forest_map.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|StaticForestMapContract: FAIL:' <<<"$output"; then
+            echo "Static forest map contract test reported errors."
+            exit 1
+          fi
+
       - name: Run expedition route progression contract test
         shell: bash
         run: |
