@@ -222,6 +222,16 @@ func agregar_objeto(datos: Dictionary) -> bool:
 		inventario_cambio.emit()
 	return resultado
 
+func agregar_objeto_desde_ui(datos: Dictionary) -> bool:
+	# La entrega desde la interfaz administrativa no representa una acción
+	# del personaje; conserva las mismas reglas de capacidad del runtime.
+	if datos.is_empty():
+		return false
+	var resultado: bool = runtime.agregar_objeto(datos)
+	if resultado:
+		inventario_cambio.emit()
+	return resultado
+
 func quitar_cantidad(indice: int, cantidad: int = 1) -> bool:
 	if not puede_interactuar():
 		return false
