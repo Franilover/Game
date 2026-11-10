@@ -251,6 +251,10 @@ eterium_sprint={
 ])
 }
 
+[gui]
+
+theme/custom="res://assets/fonts/pixelgrafia_theme.tres"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
