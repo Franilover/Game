@@ -1081,7 +1081,7 @@ func _primera_expedicion_finalizada() -> bool:
 func _seleccionar_destino_viaje(destino_id: String) -> void:
 	if _transicionando:
 		return
-	_transicionando = true
+	_transicionando = destino_id != "torres"
 	if is_instance_valid(_selector_viajes_layer):
 		_selector_viajes_layer.visible = false
 	destino_viaje_solicitado.emit(destino_id)
