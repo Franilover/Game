@@ -826,6 +826,7 @@ func _preparar_panel_misiones() -> void:
 	mission_list = mission_panel.get_node("Margin/Column/MissionList") as VBoxContainer
 	mission_hint = mission_panel.get_node("Margin/Column/MissionHint") as Label
 	add_child(mission_panel)
+	PIXEL_UI_THEME.apply(mission_panel)
 
 
 func _limpiar_lista_misiones() -> void:
@@ -962,6 +963,7 @@ func _preparar_panel_interaccion() -> void:
 	interaction_close = interaction_panel.get_node("Margin/Column/Close") as Button
 	interaction_close.pressed.connect(cerrar_panel_interaccion)
 	add_child(interaction_panel)
+	PIXEL_UI_THEME.apply(interaction_panel)
 
 
 func mostrar_panel_interaccion(datos: Dictionary) -> void:
@@ -1284,6 +1286,7 @@ func _preparar_reloj_calendario() -> void:
 	_calendar_panel.offset_bottom = 82.0
 	_calendar_label = _calendar_panel.get_node("CalendarText") as Label
 	add_child(_calendar_panel)
+	PIXEL_UI_THEME.apply(_calendar_panel)
 
 
 func _actualizar_reloj_calendario() -> void:
