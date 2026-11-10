@@ -36,6 +36,14 @@ func _run() -> void:
 	if zona_torres == null or zona_torres.get_node_or_null("ExpeditionEntrance") == null:
 		_fail("Torres no tiene la entrada de expedición en el antiguo portón este.")
 		return
+	if zona_torres.get_node_or_null("SelectorViajesLayer/SelectorViajes") == null:
+		_fail("El portón no creó el panel del selector de viajes.")
+		return
+	var selector := zona_torres.get_node("SelectorViajesLayer/SelectorViajes")
+	var destinos_fijos := selector.get_node_or_null("Contenido")
+	if destinos_fijos == null or destinos_fijos.get_node_or_null("Destino_torres") == null or destinos_fijos.get_node_or_null("Destino_mundo_abierto") == null:
+		_fail("El selector no muestra los dos destinos fijos.")
+		return
 	if zona_torres.get_node_or_null("Exit") != null:
 		_fail("La antigua salida/teletransporte del portón sigue presente.")
 		return
@@ -109,6 +117,22 @@ func _run() -> void:
 		return
 	if manager.esta_en_expedicion():
 		_fail("La expedición siguió activa después de regresar.")
+		return
+
+	# El destino dinámico solo se archiva cuando la ruta terminó y todos
+	# los coleccionables declarados para esa expedición fueron recogidos.
+	GameState.world_state.flags["expedicion_ruta"] = {"completada": true}
+	GameState.world_state.flags.erase("expedicion_coleccionables")
+	if manager._primera_expedicion_finalizada():
+		_fail("La primera expedición se archivó sin registrar sus coleccionables.")
+		return
+	manager.registrar_coleccionable_requerido_expedicion("cofre_bosque_01")
+	if manager._primera_expedicion_finalizada():
+		_fail("La primera expedición se archivó antes de recoger el cofre.")
+		return
+	manager.registrar_coleccionable_recogido_expedicion("cofre_bosque_01")
+	if not manager._primera_expedicion_finalizada():
+		_fail("La primera expedición no se archivó tras completar ruta y recolección.")
 		return
 
 	# Desde Mundo Abierto, seleccionar Torres debe cargar la escena fija local.
