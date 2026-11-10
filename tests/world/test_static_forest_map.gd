@@ -15,8 +15,10 @@ func _run() -> void:
 	for frame in range(300):
 		await get_tree().process_frame
 		renderer = bosque.get_node_or_null("TerrainRenderer")
-		if renderer != null and not bool(renderer.call("tiene_flush_pendiente")):
-			break
+		if renderer != null:
+			var capa_base := renderer.get_node_or_null("TerrainDual_Zone_00") as TileMapDual
+			if capa_base != null and capa_base.get_used_cells().size() >= 7000 and not bool(renderer.call("tiene_flush_pendiente")):
+				break
 
 	if renderer == null:
 		_fail("No se creó el renderer estático.")
