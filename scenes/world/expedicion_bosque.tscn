@@ -1,0 +1,40 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_generator.gd" id="1_world_generator"]
+[ext_resource type="Script" path="res://scripts/world/world_terrain.gd" id="2_world_terrain"]
+[ext_resource type="Script" path="res://scripts/world/world_terrain_visual.gd" id="3_world_terrain_visual"]
+[ext_resource type="Script" path="res://scripts/world/world_streamer.gd" id="4_world_streamer"]
+[ext_resource type="Script" uid="uid://bcrdgcnddob75" path="res://scripts/world/world_entity_spawner.gd" id="5_world_spawner"]
+[ext_resource type="Script" path="res://scripts/world/world_entity_manager.gd" id="6_world_entity_manager"]
+[ext_resource type="Script" path="res://scripts/world/world_entity_factory.gd" id="7_world_entity_factory"]
+[ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="8_world_spawn_rules"]
+
+[node name="ExpedicionBosque" type="Node2D"]
+
+[node name="WorldGenerator" type="Node2D" parent="."]
+script = ExtResource("1_world_generator")
+map_seed = 31415926
+usar_semilla_fija = true
+bioma_forzado_id = "fdc97953-f400-4f39-9b54-0a1c85f2c9a1"
+
+[node name="WorldTerrain" type="Node2D" parent="WorldGenerator"]
+script = ExtResource("2_world_terrain")
+
+[node name="WorldTerrainVisual" type="Node2D" parent="WorldGenerator/WorldTerrain"]
+script = ExtResource("3_world_terrain_visual")
+
+[node name="WorldStreamer" type="Node" parent="WorldGenerator"]
+script = ExtResource("4_world_streamer")
+
+[node name="WorldEntityManager" type="Node" parent="WorldGenerator"]
+script = ExtResource("6_world_entity_manager")
+
+[node name="WorldEntityFactory" type="Node" parent="WorldGenerator"]
+script = ExtResource("7_world_entity_factory")
+
+[node name="WorldSpawnRules" type="Node" parent="WorldGenerator"]
+script = ExtResource("8_world_spawn_rules")
+peso_destacadas = 76.0
+
+[node name="WorldEntitySpawner" type="Node" parent="WorldGenerator"]
+script = ExtResource("5_world_spawner")
