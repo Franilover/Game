@@ -1,32 +1,63 @@
 extends Node
 
-const FOREST_SCRIPT = preload("res://scripts/world/static_forest_map.gd")
-
 
 func _ready() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
-	var bosque := FOREST_SCRIPT.new() as Node2D
+	var bosque := Node2D.new()
+	bosque.set_script(load("res://scripts/world/static_forest_map.gd"))
 	add_child(bosque)
-	await get_tree().process_frame
 
-	var suelo := bosque.get_node_or_null("Ground") as TileMapLayer
-	var borde := bosque.get_node_or_null("ForestEdge") as TileMapLayer
-	var sendero := bosque.get_node_or_null("DirtPaths") as TileMapLayer
-	if suelo == null or borde == null or sendero == null:
-		_fail("No se crearon las tres capas TileMap estáticas.")
+	# La construcción del bosque y el flush de TileMapDual son asíncronos.
+	var renderer: Node = null
+	for frame in range(300):
+		await get_tree().process_frame
+		renderer = bosque.get_node_or_null("TerrainRenderer")
+		if renderer != null and not bool(renderer.call("tiene_flush_pendiente")):
+			break
+
+	if renderer == null:
+		_fail("No se creó el renderer estático.")
 		return
-	if suelo.get_used_cells().size() < 9000:
-		_fail("El suelo fijo no cubre la superficie completa.")
+
+	var pradera := renderer.get_node_or_null("TerrainDual_Zone_00") as TileMapDual
+	var tierra := renderer.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
+	var bosque_layer := renderer.get_node_or_null("TerrainDual_Zone_08") as TileMapDual
+	if pradera == null or tierra == null or bosque_layer == null:
+		_fail("El bosque no está usando las capas TileMapDual de pradera, tierra y bosque.")
 		return
-	if borde.get_used_cells().size() < 1000:
-		_fail("El borde de bosque no se pintó con tiles.")
+
+	if pradera.get_used_cells().size() < 7000:
+		_fail("La capa DualGrid de pradera no cubre el interior del mapa.")
 		return
-	if sendero.get_used_cells().size() < 100:
-		_fail("El sendero de tierra no se construyó con tiles.")
+	if bosque_layer.get_used_cells().size() < 1000:
+		_fail("La capa DualGrid de bosque no forma el borde.")
 		return
+	if tierra.get_used_cells().size() < 100:
+		_fail("La capa DualGrid de tierra no contiene los senderos.")
+		return
+
+	var display := pradera.get_node_or_null("Display")
+	if display == null:
+		_fail("TileMapDual no creó su Display.")
+		return
+	var total_display_cells := 0
+	var atlas_variants: Dictionary = {}
+	for child in display.get_children():
+		if child is TileMapLayer:
+			var display_layer := child as TileMapLayer
+			for cell in display_layer.get_used_cells():
+				total_display_cells += 1
+				atlas_variants[display_layer.get_cell_atlas_coords(cell)] = true
+	if total_display_cells < 7000:
+		_fail("TileMapDual no compuso las celdas visuales del suelo.")
+		return
+	if atlas_variants.size() < 2:
+		_fail("El atlas no está resolviendo distintas máscaras de esquina.")
+		return
+
 	if bosque.get_node_or_null("LimiteOeste") == null or bosque.get_node_or_null("LimiteEste") == null:
 		_fail("Faltan colisiones en los límites laterales.")
 		return
@@ -34,8 +65,8 @@ func _run() -> void:
 		_fail("Faltan colisiones en los límites superior e inferior.")
 		return
 
-	var limites: Rect2 = bosque.obtener_limites_mapa()
-	if not limites.position.is_equal_approx(Vector2(0.0, -1024.0)) or not limites.size.is_equal_approx(Vector2(5120.0, 2048.0)):
+	var limites: Rect2 = bosque.call("obtener_limites_mapa")
+	if not limites.position.is_equal_approx(Vector2.ZERO) or not limites.size.is_equal_approx(Vector2(5120.0, 2048.0)):
 		_fail("Los límites declarados no coinciden con el tamaño del bosque.")
 		return
 
