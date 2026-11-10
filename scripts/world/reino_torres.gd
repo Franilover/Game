@@ -4,6 +4,7 @@ signal salida_solicitada
 
 const TORRES_ART_ROOT := "res://assets/art/kingdom/torres"
 const TORRES_PIXEL_ART := preload("res://scripts/world/torres_pixel_art.gd")
+const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_GRASS_ATLAS := "res://assets/tilesets/Torres_Cesped.png"
 const TORRES_TILE_SIZE := 32
@@ -208,17 +209,6 @@ func _crear_rotulos_edificios() -> void:
 		placa.custom_minimum_size = Vector2(110.0, 18.0)
 		placa.visible = false
 
-		var fondo := StyleBoxFlat.new()
-		fondo.bg_color = Color("#24180F", 0.92)
-		fondo.border_color = Color("#795638", 0.9)
-		fondo.set_border_width_all(1)
-		fondo.set_corner_radius_all(3)
-		fondo.content_margin_left = 4.0
-		fondo.content_margin_right = 4.0
-		fondo.content_margin_top = 1.0
-		fondo.content_margin_bottom = 1.0
-		placa.add_theme_stylebox_override("panel", fondo)
-
 		var texto := Label.new()
 		texto.name = "Nombre"
 		texto.text = nombre
@@ -230,6 +220,7 @@ func _crear_rotulos_edificios() -> void:
 		texto.add_theme_font_size_override("font_size", 8)
 		texto.clip_text = true
 		placa.add_child(texto)
+		PIXEL_UI_THEME.apply(placa, false)
 		add_child(placa)
 		_rotulos_edificios[id] = placa
 
@@ -249,44 +240,29 @@ func _actualizar_visibilidad_rotulos() -> void:
 		placa.visible = distancia <= DISTANCIA_ROTULO
 
 func _crear_aviso() -> void:
-	# Botón flotante compacto con el mismo acabado oscuro y borde cálido del menú Garumi.
+	# Aviso flotante con el mismo panel pixel-art y tratamiento tipográfico del resto de la interfaz.
 	_aviso_panel = PanelContainer.new()
 	_aviso_panel.name = "AvisoEntradaPanel"
 	_aviso_panel.z_index = 50
 	_aviso_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_aviso_panel.custom_minimum_size = Vector2(0.0, 30.0)
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.105, 0.071, 0.043, 0.98)
-	estilo.border_color = Color(0.48, 0.32, 0.17, 1.0)
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(4)
-	estilo.content_margin_left = 9.0
-	estilo.content_margin_right = 9.0
-	estilo.content_margin_top = 4.0
-	estilo.content_margin_bottom = 4.0
-	_aviso_panel.add_theme_stylebox_override("panel", estilo)
-	var hover := estilo.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(0.19, 0.125, 0.065, 1.0)
-	hover.border_color = Color(0.76, 0.54, 0.29, 1.0)
-	_aviso_panel.add_theme_stylebox_override("panel", estilo)
-	_aviso_panel.set_meta("estilo_normal", estilo)
-	_aviso_panel.set_meta("estilo_hover", hover)
-	_aviso_panel.mouse_entered.connect(_al_entrar_aviso)
-	_aviso_panel.mouse_exited.connect(_al_salir_aviso)
 
 	_aviso = Label.new()
 	_aviso.name = "AvisoEntrada"
 	_aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_aviso.add_theme_color_override("font_color", Color(0.91, 0.83, 0.70, 1.0))
+	_aviso.add_theme_color_override("font_color", Color("#FFF3D6"))
+	_aviso.add_theme_color_override("font_outline_color", Color("#302014"))
+	_aviso.add_theme_constant_override("outline_size", 2)
 	_aviso.add_theme_font_size_override("font_size", 11)
 	_aviso_panel.add_child(_aviso)
+	PIXEL_UI_THEME.apply(_aviso_panel, false)
 	_aviso_panel.visible = false
+
 	var capa_ui := CanvasLayer.new()
 	capa_ui.name = "AvisoEntradaLayer"
 	capa_ui.layer = 110
 	add_child(capa_ui)
 	capa_ui.add_child(_aviso_panel)
-
 
 func _posicionar_aviso_sobre_jugador() -> void:
 	if not is_instance_valid(_aviso_panel) or not is_instance_valid(_jugador):
@@ -299,16 +275,6 @@ func _posicionar_aviso_sobre_jugador() -> void:
 		clampf(posicion_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
 		clampf(posicion_pantalla.y - tamano.y - 24.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
 	)
-
-
-func _al_entrar_aviso() -> void:
-	if is_instance_valid(_aviso_panel):
-		_aviso_panel.add_theme_stylebox_override("panel", _aviso_panel.get_meta("estilo_hover") as StyleBoxFlat)
-
-
-func _al_salir_aviso() -> void:
-	if is_instance_valid(_aviso_panel):
-		_aviso_panel.add_theme_stylebox_override("panel", _aviso_panel.get_meta("estilo_normal") as StyleBoxFlat)
 
 
 func _input(evento: InputEvent) -> void:
