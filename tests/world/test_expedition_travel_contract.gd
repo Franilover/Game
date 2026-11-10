@@ -43,7 +43,7 @@ func _run() -> void:
 		return
 
 	var estado := manager.obtener_estado_expedicion()
-	if str(estado.get("id", "")) != "expedicion_contrato":
+	if str(estado.get("id", "")) != "primera_expedicion":
 		_fail("No se conservó el ID estable de expedición.")
 		return
 	var origen_variant: Variant = estado.get("origen_posicion", {})
