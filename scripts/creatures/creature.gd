@@ -1,6 +1,8 @@
 extends Entity
 class_name Creature
 
+const PIXELGRAFIA_FONT = preload("res://assets/fonts/Pixelgrafia.ttf")
+
 signal configuracion_actualizada
 signal danio_recibido(cantidad: int, atacante: Node)
 
@@ -1391,9 +1393,7 @@ func _dibujar_nombre() -> void:
 	if nombre_visual.is_empty():
 		return
 
-	var font: Font = (
-		ThemeDB.fallback_font
-	)
+	var font: Font = PIXELGRAFIA_FONT
 
 	var ancho: float = float(
 		font.get_string_size(
