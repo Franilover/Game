@@ -3,7 +3,7 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
-const PANEL_BACKGROUND_INSET := 0
+const PANEL_BACKGROUND_INSET := 8
 const PANEL_FRAME_MARGIN := 8
 
 
