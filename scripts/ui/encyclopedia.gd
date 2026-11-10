@@ -113,7 +113,6 @@ func _crear_interfaz() -> void:
 	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	detail_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	body.add_child(detail_panel)
 
 	var detail_margin := MarginContainer.new()
