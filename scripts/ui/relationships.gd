@@ -14,6 +14,7 @@ var _lista_scroll: ScrollContainer
 var _botones: Array[Button] = []
 var _personajes_por_id: Dictionary = {}
 var _relationship_system: Node = null
+var _personaje_seleccionado_id := ""
 
 
 func _ready() -> void:
@@ -25,9 +26,13 @@ func _ready() -> void:
 func configurar(sistema: Node) -> void:
 	if _relationship_system != null and is_instance_valid(_relationship_system):
 		if _relationship_system.has_signal("reglas_sociales_cargadas"):
-			var senal_anterior: Signal = _relationship_system.reglas_sociales_cargadas
-			if senal_anterior.is_connected(_al_reglas_sociales_cargadas):
-				senal_anterior.disconnect(_al_reglas_sociales_cargadas)
+			var senal_reglas_anterior: Signal = _relationship_system.reglas_sociales_cargadas
+			if senal_reglas_anterior.is_connected(_al_reglas_sociales_cargadas):
+				senal_reglas_anterior.disconnect(_al_reglas_sociales_cargadas)
+		if _relationship_system.has_signal("relacion_cambiada"):
+			var senal_relacion_anterior: Signal = _relationship_system.relacion_cambiada
+			if senal_relacion_anterior.is_connected(_al_relacion_cambiada):
+				senal_relacion_anterior.disconnect(_al_relacion_cambiada)
 
 	_relationship_system = sistema
 	if _relationship_system != null:
@@ -35,11 +40,23 @@ func configurar(sistema: Node) -> void:
 			var senal_reglas: Signal = _relationship_system.reglas_sociales_cargadas
 			if not senal_reglas.is_connected(_al_reglas_sociales_cargadas):
 				senal_reglas.connect(_al_reglas_sociales_cargadas)
+		if _relationship_system.has_signal("relacion_cambiada"):
+			var senal_relacion: Signal = _relationship_system.relacion_cambiada
+			if not senal_relacion.is_connected(_al_relacion_cambiada):
+				senal_relacion.connect(_al_relacion_cambiada)
 	_actualizar()
 
 
 func _al_reglas_sociales_cargadas() -> void:
 	_actualizar()
+
+
+func _al_relacion_cambiada(personaje_id: String, _relacion: Dictionary) -> void:
+	if personaje_id != _personaje_seleccionado_id:
+		return
+	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
+	var nombre := str(datos_personaje.get("nombre", personaje_id))
+	_seleccionar(personaje_id, nombre)
 
 
 func _crear_ui() -> void:
@@ -199,6 +216,15 @@ func _actualizar() -> void:
 		_botones.append(boton)
 
 	estado.text = ""
+	if not _personaje_seleccionado_id.is_empty():
+		if _personajes_por_id.has(_personaje_seleccionado_id):
+			var datos_personaje: Dictionary = _personajes_por_id[_personaje_seleccionado_id]
+			_seleccionar(
+				_personaje_seleccionado_id,
+				str(datos_personaje.get("nombre", _personaje_seleccionado_id))
+			)
+		else:
+			_personaje_seleccionado_id = ""
 
 
 func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
@@ -217,6 +243,7 @@ func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
 
 
 func _seleccionar(personaje_id: String, nombre: String) -> void:
+	_personaje_seleccionado_id = personaje_id
 	for boton in _botones:
 		boton.button_pressed = str(boton.get_meta("personaje_id", "")) == personaje_id
 
