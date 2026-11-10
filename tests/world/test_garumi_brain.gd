@@ -1,18 +1,18 @@
-extends SceneTree
+extends Node
 
 const GARUMI_SCENE: PackedScene = preload("res://scenes/creatures/garumi.tscn")
 
 var _errores: Array[String] = []
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
 	var garumi := GARUMI_SCENE.instantiate() as Garumi
-	root.add_child(garumi)
-	await process_frame
+	get_tree().root.add_child(garumi)
+	await get_tree().process_frame
 
 	garumi.configurar({
 		"id": "garumi-brain-test",
@@ -52,11 +52,11 @@ func _run() -> void:
 	garumi.queue_free()
 	if _errores.is_empty():
 		print("test_garumi_brain: OK")
-		quit(0)
+		get_tree().quit(0)
 	else:
 		for error in _errores:
 			push_error(error)
-		quit(1)
+		get_tree().quit(1)
 
 
 func _expect(condicion: bool, mensaje: String) -> void:
