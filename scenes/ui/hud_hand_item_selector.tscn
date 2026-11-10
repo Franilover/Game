@@ -1,26 +1,9 @@
 [gd_scene load_steps=2 format=3]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_selector"]
-bg_color = Color(0.10, 0.065, 0.04, 0.98)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.42, 0.29, 0.17, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-content_margin_left = 3.0
-content_margin_top = 3.0
-content_margin_right = 3.0
-content_margin_bottom = 3.0
-
 [node name="HandItemSelector" type="PanelContainer"]
 visible = false
 custom_minimum_size = Vector2(42, 0)
 mouse_filter = 0
-theme_override_styles/panel = SubResource("StyleBox_selector")
 
 [node name="Buttons" type="VBoxContainer" parent="."]
 theme_override_constants/separation = 3
