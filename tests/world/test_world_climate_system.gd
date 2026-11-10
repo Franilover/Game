@@ -37,6 +37,19 @@ func _run() -> void:
 	if float(lluvia.get("precipitacion", 0.0)) <= 0.0:
 		_fail("Rain must expose a positive precipitation value.")
 		return
+	if not climate.establecer_clima("despejado", 1.0, 1.0):
+		_fail("A gradual weather transition could not be started.")
+		return
+	climate._actualizar_transicion_clima(0.5)
+	var transicion: Dictionary = climate.obtener_estado()
+	var precipitacion_intermedia := float(transicion["clima"].get("precipitacion", -1.0))
+	if precipitacion_intermedia <= 0.0 or precipitacion_intermedia >= float(lluvia["precipitacion"]):
+		_fail("Weather transition did not interpolate smoothly from its origin.")
+		return
+	climate._actualizar_transicion_clima(0.5)
+	if bool(climate.obtener_estado()["en_transicion"]):
+		_fail("Weather transition did not finish at its configured duration.")
+		return
 	if climate.establecer_clima("clima_inexistente"):
 		_fail("An unknown weather profile must be rejected.")
 		return
