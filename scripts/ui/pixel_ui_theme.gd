@@ -81,6 +81,11 @@ static func _apply_control(control: Control) -> void:
 		if list_style != null:
 			control.add_theme_stylebox_override("panel", list_style)
 
+	if control is HSeparator or control is VSeparator:
+		var separator_style := _texture_style("panel_separator.png", 3)
+		if separator_style != null:
+			control.add_theme_stylebox_override("separator", separator_style)
+
 	if control is ProgressBar:
 		var bar_background := _texture_style("bar_frame.png", 3)
 		var fill_name := "bar_fill_health.png"
