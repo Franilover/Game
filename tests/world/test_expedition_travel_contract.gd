@@ -42,7 +42,7 @@ func _run() -> void:
 		_fail("El estado de expedición no quedó activo.")
 		return
 
-	var estado := manager.obtener_estado_expedicion()
+	var estado: Dictionary = manager.obtener_estado_expedicion()
 	if str(estado.get("id", "")) != "primera_expedicion":
 		_fail("No se conservó el ID estable de expedición.")
 		return
