@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/world_generator.gd" id="1_world_generator"]
 [ext_resource type="Script" path="res://scripts/world/world_terrain.gd" id="2_world_terrain"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/world/world_entity_factory.gd" id="7_world_entity_factory"]
 [ext_resource type="Script" path="res://scripts/world/world_spawn_rules.gd" id="8_world_spawn_rules"]
 [ext_resource type="Script" path="res://scripts/world/expedition_route_controller.gd" id="9_expedition_route"]
+[ext_resource type="Script" path="res://scripts/world/static_forest_map.gd" id="10_static_forest"]
 
 [node name="ExpedicionBosque" type="Node2D"]
 
@@ -17,6 +18,7 @@ script = ExtResource("1_world_generator")
 map_seed = 31415926
 usar_semilla_fija = true
 bioma_forzado_id = "fdc97953-f400-4f39-9b54-0a1c85f2c9a1"
+usar_terreno_estatico = true
 
 [node name="WorldTerrain" type="Node2D" parent="WorldGenerator"]
 script = ExtResource("2_world_terrain")
@@ -39,6 +41,9 @@ peso_destacadas = 76.0
 
 [node name="WorldEntitySpawner" type="Node" parent="WorldGenerator"]
 script = ExtResource("5_world_spawner")
+
+[node name="ForestMap" type="Node2D" parent="."]
+script = ExtResource("10_static_forest")
 
 [node name="ExpeditionRoute" type="Node2D" parent="."]
 script = ExtResource("9_expedition_route")
