@@ -3,18 +3,6 @@
 [ext_resource type="Script" path="res://scripts/ui/character_creation.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_appearance_preview.tscn" id="2_preview"]
 
-[sub_resource type="StyleBoxFlat" id="Panel"]
-bg_color = Color(0.2, 0.15, 0.1, 0.99)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.58, 0.46, 0.31, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [node name="CharacterCreation" type="ColorRect"]
 anchors_preset = 15
 anchor_right = 1.0
@@ -38,7 +26,6 @@ offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("Panel")
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
