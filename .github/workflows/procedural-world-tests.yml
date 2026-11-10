@@ -7,6 +7,8 @@ on:
       - "scenes/**"
       - "scripts/world/procedural/**"
       - "scripts/world/world_terrain*.gd"
+      - "scripts/world/zone_manager.gd"
+      - "scripts/world/main.gd"
       - "scripts/world/world_*.gd"
       - "scripts/creatures/**"
       - "scripts/ui/**"
@@ -138,6 +140,17 @@ jobs:
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|CreatureAISignalContract: FAIL:' <<<"$output"; then
             echo "Creature AI signal contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run expedition travel and return contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/world/test_expedition_travel_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|ExpeditionTravelContract: FAIL:' <<<"$output"; then
+            echo "Expedition travel contract test reported errors."
             exit 1
           fi
 
