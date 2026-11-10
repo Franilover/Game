@@ -85,6 +85,7 @@ func _crear_ui() -> void:
 	var izquierda := VBoxContainer.new()
 	izquierda.custom_minimum_size = Vector2(90, 0)
 	izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	izquierda.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	contenido.add_child(izquierda)
 
 	var scroll := ScrollContainer.new()
@@ -93,7 +94,7 @@ func _crear_ui() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.follow_focus = true
+	scroll.follow_focus = false
 	izquierda.add_child(scroll)
 
 	_lista = VBoxContainer.new()
@@ -108,7 +109,7 @@ func _crear_ui() -> void:
 	scroll_detalle.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll_detalle.follow_focus = true
+	scroll_detalle.follow_focus = false
 	contenido.add_child(scroll_detalle)
 
 	_detalle = VBoxContainer.new()
