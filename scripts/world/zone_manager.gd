@@ -87,6 +87,12 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 	if clave.is_empty():
 		return
 
+	# El viaje a Torres desde una expedición usa el retorno controlado para
+	# restaurar la posición exacta de salida, incluso desde RealmMenu.
+	if clave == "torres" and esta_en_expedicion():
+		salir_expedicion()
+		return
+
 	print("ZoneManager: solicitud de viaje → ", clave)
 	var regla_canonica := regla
 	if regla_canonica.is_empty() and is_instance_valid(_supabase_client):
@@ -177,6 +183,9 @@ func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
 		_salida_reino_pendiente = false
 		return false
 
+	# Es el mismo punto de entrada que Main utiliza al salir de un reino.
+	# Colocarlo aquí permite que el guardado inmediato capture coordenadas válidas.
+	jugador.global_position = Vector2(560.0, 120.0)
 	_guardar_partida_si_disponible()
 	return true
 
@@ -284,8 +293,10 @@ func salir_de_reino_actual() -> void:
 	if _transicionando:
 		return
 	if tipo_actual == TIPO_REINO_TORRES:
-		GameState.marcar_reino_torres_visitado()
-	if tipo_actual == TIPO_REINO_TORRES or tipo_actual.begins_with("reino:"):
+		# La salida física de Torres es la entrada natural a la primera expedición.
+		iniciar_expedicion()
+		return
+	if tipo_actual.begins_with("reino:"):
 		_salida_reino_pendiente = true
 	entrar_mundo_abierto()
 
