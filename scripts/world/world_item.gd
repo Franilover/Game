@@ -33,6 +33,7 @@ func configurar_dependencias(jugador: Player, inventario: GarliaInventory, missi
 func configurar(nuevos_datos: Dictionary) -> void:
 	datos_objeto = nuevos_datos.duplicate(true)
 	nombre = str(datos_objeto.get("nombre", "Objeto"))
+	_registrar_coleccionable_expedicion()
 	
 	if is_instance_valid(_etiqueta):
 		_etiqueta.text = "[ LMB ] · " + nombre
@@ -179,8 +180,30 @@ func interact(persona: Node) -> void:
 		datos["cantidad"] = 1
 	
 	if inventario.agregar_objeto(datos):
+		_registrar_recoleccion_expedicion()
 		var item_id := str(datos.get("id", datos.get("item_id", ""))).strip_edges()
 		if not item_id.is_empty():
 			if _mission_manager != null and is_instance_valid(_mission_manager):
 				_mission_manager.registrar_recoleccion(item_id, int(datos.get("cantidad", 1)))
 		queue_free()
+
+
+
+func _registrar_coleccionable_expedicion() -> void:
+	var expedicion_id := str(datos_objeto.get("expedicion_id", "")).strip_edges()
+	var coleccionable_id := str(datos_objeto.get("expedicion_collectible_id", "")).strip_edges()
+	if expedicion_id != "primera_expedicion" or coleccionable_id.is_empty():
+		return
+	var zone_manager := get_tree().get_first_node_in_group("zone_manager")
+	if is_instance_valid(zone_manager) and zone_manager.has_method("registrar_coleccionable_requerido_expedicion"):
+		zone_manager.call("registrar_coleccionable_requerido_expedicion", coleccionable_id)
+
+
+func _registrar_recoleccion_expedicion() -> void:
+	var expedicion_id := str(datos_objeto.get("expedicion_id", "")).strip_edges()
+	var coleccionable_id := str(datos_objeto.get("expedicion_collectible_id", "")).strip_edges()
+	if expedicion_id != "primera_expedicion" or coleccionable_id.is_empty():
+		return
+	var zone_manager := get_tree().get_first_node_in_group("zone_manager")
+	if is_instance_valid(zone_manager) and zone_manager.has_method("registrar_coleccionable_recogido_expedicion"):
+		zone_manager.call("registrar_coleccionable_recogido_expedicion", coleccionable_id)
