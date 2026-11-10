@@ -50,7 +50,8 @@ func obtener_diagnostico() -> Dictionary:
 		"zona_nombre": str(zona_actual.name) if zona_valida else "",
 		"transicionando": _transicionando,
 		"world_generator": is_instance_valid(world_generator),
-		"salida_reino_pendiente": _salida_reino_pendiente
+		"salida_reino_pendiente": _salida_reino_pendiente,
+		"expedicion": obtener_estado_expedicion()
 	}
 
 func configurar_dependencias(supabase_client: GarliaSupabaseClient) -> void:
@@ -133,6 +134,139 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 	if tipo_actual == TIPO_REINO_TORRES and clave != "torres":
 		GameState.marcar_reino_torres_visitado()
 	_cambiar_zona(escena, tipo)
+
+
+## Primera expedición: estado local y retorno a Torres.
+## El primer prototipo reutiliza MundoAbierto; P1 añadirá la zona de bosque dedicada.
+func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
+	if _transicionando or tipo_actual != TIPO_REINO_TORRES:
+		return false
+	if not _id_expedicion_valido(id_expedicion):
+		push_warning("ZoneManager: ID de expedición inválido.")
+		return false
+	if not ResourceLoader.exists(MUNDO_ABIERTO_PATH):
+		push_error("ZoneManager: no existe la escena base para iniciar la expedición.")
+		return false
+
+	var jugador := _obtener_jugador_principal()
+	if not is_instance_valid(jugador):
+		push_warning("ZoneManager: no se puede iniciar la expedición sin jugador.")
+		return false
+
+	var flags: Dictionary = GameState.world_state.flags
+	var estado_previo: Variant = flags.get("expedicion_estado", {})
+	if estado_previo is Dictionary and bool((estado_previo as Dictionary).get("activa", false)):
+		push_warning("ZoneManager: ya existe una expedición activa.")
+		return false
+
+	flags["expedicion_estado"] = {
+		"id": id_expedicion,
+		"activa": true,
+		"origen_tipo": TIPO_REINO_TORRES,
+		"origen_posicion": {
+			"x": jugador.global_position.x,
+			"y": jugador.global_position.y
+		},
+		"retorno_pendiente": false
+	}
+	GameState.marcar_reino_torres_visitado()
+	_salida_reino_pendiente = true
+	await _cambiar_zona(MUNDO_ABIERTO_PATH, TIPO_MUNDO_ABIERTO)
+	if tipo_actual != TIPO_MUNDO_ABIERTO:
+		flags.erase("expedicion_estado")
+		_salida_reino_pendiente = false
+		return false
+
+	_guardar_partida_si_disponible()
+	return true
+
+
+func salir_expedicion() -> bool:
+	if _transicionando or tipo_actual != TIPO_MUNDO_ABIERTO:
+		return false
+	var flags: Dictionary = GameState.world_state.flags
+	var estado_variant: Variant = flags.get("expedicion_estado", {})
+	if not estado_variant is Dictionary:
+		return false
+	var estado := (estado_variant as Dictionary).duplicate(true)
+	if not bool(estado.get("activa", false)):
+		return false
+	if str(estado.get("origen_tipo", "")) != TIPO_REINO_TORRES:
+		push_warning("ZoneManager: el destino de retorno de esta expedición no es compatible.")
+		return false
+	if not ResourceLoader.exists(REINO_TORRES_ESCENA_PATH):
+		push_error("ZoneManager: no existe la escena local de Torres para regresar.")
+		return false
+
+	estado["activa"] = false
+	estado["retorno_pendiente"] = true
+	flags["expedicion_estado"] = estado
+	await _cambiar_zona(REINO_TORRES_ESCENA_PATH, TIPO_REINO_TORRES)
+	if tipo_actual != TIPO_REINO_TORRES:
+		estado["activa"] = true
+		estado["retorno_pendiente"] = false
+		flags["expedicion_estado"] = estado
+		return false
+
+	_guardar_partida_si_disponible()
+	return true
+
+
+## Main consume este dato después de aplicar el spawn normal de la escena fija.
+func consumir_retorno_expedicion() -> Dictionary:
+	var flags: Dictionary = GameState.world_state.flags
+	var estado_variant: Variant = flags.get("expedicion_estado", {})
+	if not estado_variant is Dictionary:
+		return {}
+	var estado := (estado_variant as Dictionary).duplicate(true)
+	if not bool(estado.get("retorno_pendiente", false)):
+		return {}
+	var origen_variant: Variant = estado.get("origen_posicion", {})
+	if not origen_variant is Dictionary:
+		return {}
+	var origen := origen_variant as Dictionary
+	var posicion := Vector2(
+		float(origen.get("x", 0.0)),
+		float(origen.get("y", 0.0))
+	)
+	estado["retorno_pendiente"] = false
+	flags["expedicion_estado"] = estado
+	return {"valido": true, "posicion": posicion}
+
+
+func obtener_estado_expedicion() -> Dictionary:
+	var estado_variant: Variant = GameState.world_state.flags.get("expedicion_estado", {})
+	if estado_variant is Dictionary:
+		return (estado_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func esta_en_expedicion() -> bool:
+	var estado := obtener_estado_expedicion()
+	return bool(estado.get("activa", false)) and tipo_actual == TIPO_MUNDO_ABIERTO
+
+
+func _obtener_jugador_principal() -> Node2D:
+	var escena_actual := get_tree().current_scene
+	if not is_instance_valid(escena_actual):
+		return null
+	return escena_actual.get_node_or_null("Entities/Player") as Node2D
+
+
+func _id_expedicion_valido(id_expedicion: String) -> bool:
+	var id := id_expedicion.strip_edges()
+	if id.is_empty():
+		return false
+	var regex := RegEx.new()
+	regex.compile("^[a-z0-9_-]{1,64}$")
+	return regex.search(id) != null
+
+
+func _guardar_partida_si_disponible() -> void:
+	if not GameState.active_save_id.is_empty():
+		if not GameState.guardar_partida():
+			push_warning("ZoneManager: no se pudo guardar el estado después del viaje.")
+
 
 func entrar_mundo_abierto() -> void:
 	if tipo_actual == TIPO_REINO_TORRES:
