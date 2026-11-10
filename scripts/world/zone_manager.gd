@@ -182,8 +182,8 @@ func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
 		"activa": true,
 		"origen_tipo": TIPO_REINO_TORRES,
 		"origen_posicion": {
-			"x": jugador.global_position.x,
-			"y": jugador.global_position.y
+			"x": _obtener_posicion_retorno_segura(jugador).x,
+			"y": _obtener_posicion_retorno_segura(jugador).y
 		},
 		"retorno_pendiente": false
 	}
@@ -200,6 +200,15 @@ func iniciar_expedicion(id_expedicion: String = "primera_expedicion") -> bool:
 	jugador.global_position = Vector2(560.0, 120.0)
 	_guardar_partida_si_disponible()
 	return true
+
+
+func _obtener_posicion_retorno_segura(jugador: Node2D) -> Vector2:
+	var posicion := jugador.global_position
+	# La entrada queda en el extremo este de Torres. Al regresar, aparecer
+	# dentro del Area2D volvería a activar la expedición inmediatamente.
+	if posicion.x >= 1000.0 and absf(posicion.y) <= 100.0:
+		posicion.x = 900.0
+	return posicion
 
 
 func salir_expedicion() -> bool:
