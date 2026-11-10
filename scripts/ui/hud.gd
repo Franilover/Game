@@ -82,7 +82,7 @@ var _dialogo_ruptura_vinculo: ConfirmationDialog = null
 @onready var _interaction_prompt_node: PanelContainer = $InteractionPrompt
 @onready var _interaction_prompt_action_node: Label = $InteractionPrompt/Margin/Content/Action
 @onready var _location_panel_node: Panel = $LocationPanel
-@onready var _location_label_node: Label = $LocationPanel/LocationLabel
+@onready var _location_label_node: Label = $LocationPanel/Scroll/LocationLabel
 
 
 func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext = null, nuevo_mission_manager: MissionManagerService = null, nuevo_entity_manager: WorldEntityManager = null, nuevo_supabase_client: GarliaSupabaseClient = null, nuevo_inventory: GarliaInventory = null, nuevo_world_data: WorldDataService = null, nuevo_game_state: GameStateService = null) -> void:
@@ -230,6 +230,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 			if location_panel:
 				location_panel.visible = mostrar_contexto_mundo
+				if mostrar_contexto_mundo:
+					location_panel.move_to_front()
 
 			if mostrar_contexto_mundo:
 				_actualizar_contexto()
@@ -320,9 +322,28 @@ func _al_descubrimiento_mundo(nivel: String, id: String) -> void:
 func _preparar_location() -> void:
 	if location_panel == null:
 		push_error("HUD: falta LocationPanel en hud.tscn.")
-
+		return
 	if location_label == null:
 		push_error("HUD: falta LocationLabel en hud.tscn.")
+		return
+
+	# El panel de diagnóstico vive en una capa propia para quedar por encima
+	# del mundo, el HUD y las interfaces habituales.
+	var capa_contexto := CanvasLayer.new()
+	capa_contexto.name = "WorldContextLayer"
+	capa_contexto.layer = 300
+	add_child(capa_contexto)
+	location_panel.reparent(capa_contexto, false)
+	location_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	location_panel.position = Vector2(16.0, 16.0)
+	var viewport_size := get_viewport_rect().size
+	location_panel.size = Vector2(
+		minf(560.0, maxf(280.0, viewport_size.x - 32.0)),
+		minf(760.0, maxf(220.0, viewport_size.y - 32.0))
+	)
+	location_panel.z_index = 0
+	location_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	PIXEL_UI_THEME.apply(location_panel, false)
 
 func _buscar_primer_label(nodo: Node) -> Label:
 	for child in nodo.get_children():
@@ -956,8 +977,8 @@ func _preparar_panel_interaccion() -> void:
 	interaction_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	interaction_panel.z_index = 2000
 	interaction_panel.set_anchors_preset(Control.PRESET_CENTER)
-	interaction_panel.position = Vector2(-230.0, -150.0)
-	interaction_panel.size = Vector2(460.0, 300.0)
+	interaction_panel.position = Vector2(-280.0, -190.0)
+	interaction_panel.size = Vector2(560.0, 380.0)
 	interaction_title = interaction_panel.get_node("Margin/Column/Title") as Label
 	interaction_body = interaction_panel.get_node("Margin/Column/Body") as Label
 	interaction_close = interaction_panel.get_node("Margin/Column/Close") as Button
@@ -1523,6 +1544,8 @@ func _pedir_ruptura_vinculo(garumi: Node) -> void:
 	add_child(_dialogo_ruptura_vinculo)
 	_dialogo_ruptura_vinculo.confirmed.connect(_confirmar_ruptura_vinculo.bind(garumi))
 	_dialogo_ruptura_vinculo.canceled.connect(_al_cancelar_dialogo_ruptura)
+	for control in _dialogo_ruptura_vinculo.find_children("*", "Control", true, false):
+		PIXEL_UI_THEME.apply(control as Control)
 	_dialogo_ruptura_vinculo.popup_centered()
 
 
