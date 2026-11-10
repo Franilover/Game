@@ -116,7 +116,7 @@ func _run() -> void:
 	if manager.obtener_tipo_actual() != "reino_torres":
 		_fail("Viajar a Torres desde Mundo Abierto no cargó reino_torres.")
 		return
-	var escena_torres := manager.obtener_zona_actual()
+	var escena_torres: Node = manager.obtener_zona_actual()
 	if not is_instance_valid(escena_torres) or escena_torres.scene_file_path != "res://scenes/kingdom/reino_torres.tscn":
 		_fail("El destino Torres no corresponde a su escena fija local.")
 		return
