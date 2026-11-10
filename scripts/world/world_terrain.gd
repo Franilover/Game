@@ -108,6 +108,13 @@ func configurar(
 
 	_crear_capas()
 	visual.configurar(tile_size)
+func establecer_bioma_forzado(bioma_id: String) -> bool:
+	if areas == null:
+		push_error("WorldTerrain: no se puede forzar un bioma antes de configurar las áreas.")
+		return false
+	return areas.establecer_bioma_forzado_id(bioma_id)
+
+
 func configurar_render_manager(render_manager: Node) -> void:
 	_render_manager = render_manager
 
