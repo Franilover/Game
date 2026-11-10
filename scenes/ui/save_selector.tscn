@@ -3,9 +3,6 @@
 [ext_resource type="Script" path="res://scripts/ui/save_selector.gd" id="1_save_selector"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_overlay"]
-bg_color = Color(0.02, 0.015, 0.01, 0.78)
-
 [sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
 bg_color = Color(0.20, 0.15, 0.10, 0.99)
 border_width_left = 2
@@ -17,18 +14,6 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_input"]
-bg_color = Color(0.10, 0.075, 0.05, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.42, 0.33, 0.22, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
 
 [node name="SaveSelector" type="Control"]
 layout_mode = 3
