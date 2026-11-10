@@ -24,6 +24,7 @@ var _supabase_client: GarliaSupabaseClient = null
 
 
 func _ready() -> void:
+	add_to_group("zone_manager")
 	_registrar_debug()
 
 func _registrar_debug() -> void:
