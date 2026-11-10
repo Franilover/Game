@@ -52,14 +52,14 @@ func _construir_mapa() -> void:
 		Vector2(3600, 120),
 		Vector2(4040, 120),
 		Vector2(4480, 120)
-	], 2)
+	], 1)
 
 	# Desvío opcional hacia un pequeño claro escondido al norte.
 	_pintar_sendero([
 		Vector2(1800, -160),
 		Vector2(1880, -300),
 		Vector2(1980, -560)
-	], 1)
+	], 0)
 
 
 func _crear_capa(nombre: String, textura_path: String, z: int) -> TileMapLayer:
