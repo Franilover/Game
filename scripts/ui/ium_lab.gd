@@ -82,13 +82,12 @@ func _estilizar_boton(boton: Button) -> void:
 
 
 func _aplicar_estilo_interfaz() -> void:
+	PIXEL_UI_THEME.apply(self)
 	for control in find_children("*", "Control", true, false):
 		if control is Label:
 			(control as Label).add_theme_color_override("font_color", Color(0.82, 0.75, 0.61, 1))
 		elif control is Button:
 			_estilizar_boton(control as Button)
-		elif control is Panel:
-			(control as Panel).add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 
 
 func configurar(manager: Node, admin_console: Node) -> void:
@@ -272,7 +271,6 @@ func _crear_slot_canvas(
 	var panel := Panel.new()
 
 	panel.custom_minimum_size = Vector2(100, 60)
-	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 
 	var vbox := VBoxContainer.new()
 
@@ -369,6 +367,8 @@ func _crear_slot_canvas(
 	vbox.add_child(hbox)
 
 	panel.add_child(vbox)
+
+	PIXEL_UI_THEME.apply(panel)
 
 	panel.gui_input.connect(
 		func(event):
