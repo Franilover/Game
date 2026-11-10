@@ -2,7 +2,7 @@
 
 [node name="InteractionPanel" type="PanelContainer"]
 visible = false
-custom_minimum_size = Vector2(460, 300)
+custom_minimum_size = Vector2(560, 380)
 
 [node name="Margin" type="MarginContainer" parent="."]
 theme_override_constants/margin_left = 24
@@ -19,13 +19,13 @@ theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 
 [node name="Body" type="Label" parent="Margin/Column"]
-custom_minimum_size = Vector2(0, 160)
+custom_minimum_size = Vector2(0, 220)
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.78, 0.70, 0.57, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 14
 autowrap_mode = 2
 
 [node name="Close" type="Button" parent="Margin/Column"]
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 40)
 text = "Cerrar"
 focus_mode = 0
