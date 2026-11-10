@@ -10,31 +10,6 @@
 
 
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxLoginPanel"]
-bg_color = Color(0.2, 0.15, 0.1, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.58, 0.46, 0.31, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxMultiplayerPanel"]
-bg_color = Color(0.2, 0.15, 0.1, 0.99)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.58, 0.46, 0.31, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
 [node name="StartMenu" type="Control" unique_id=560386343]
 layout_mode = 3
 anchors_preset = 15
@@ -214,7 +189,6 @@ offset_right = 190.0
 offset_bottom = 165.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxLoginPanel")
 
 [node name="Margin" type="MarginContainer" parent="LoginOverlay/LoginPanel" unique_id=1276907403]
 layout_mode = 2
@@ -321,7 +295,6 @@ offset_right = 250.0
 offset_bottom = 285.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxMultiplayerPanel")
 
 [node name="Margin" type="MarginContainer" parent="MultiplayerOverlay/MultiplayerPanel" unique_id=1249777574]
 layout_mode = 2
