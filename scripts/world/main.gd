@@ -262,9 +262,9 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
 
-	if tipo == "mundo_abierto":
+	if tipo == "mundo_abierto" or tipo == "expedicion:bosque":
 		if _world_generator == null:
-			push_error("Main: MundoAbierto no contiene WorldGenerator.")
+			push_error("Main: la zona procedural no contiene WorldGenerator.")
 			return
 
 		_world_entity_spawner = _world_generator.get_node_or_null("WorldEntitySpawner") as WorldEntitySpawner
@@ -327,7 +327,7 @@ func _inicializar_runtime_de_zona() -> void:
 	if GarliaMultiplayer.es_servidor_dedicado() and _world_generator != null:
 		GlobalWorldStore.restaurar_estado_entidades(_world_generator.entity_manager, str(_zone_manager.obtener_tipo_actual()))
 
-	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
+	if _world_generator != null:
 		if _zone_manager.consumir_salida_reino_pendiente():
 			_player.global_position = Vector2(560, 120)
 		else:
@@ -375,7 +375,7 @@ func _inicializar_runtime_de_zona() -> void:
 	_inicializar_ium()
 	_configurar_admin()
 	_configurar_pantalla()
-	if _zone_manager.obtener_tipo_actual() == "mundo_abierto" and _world_generator != null:
+	if _world_generator != null:
 		call_deferred("_restaurar_garumis_vinculados")
 
 	var tipo_zona_actual: String = str(_zone_manager.obtener_tipo_actual())
