@@ -42,7 +42,10 @@ func _run() -> void:
 	if zona_torres == null or not zona_torres.has_signal("salida_solicitada"):
 		_fail("La escena de Torres no expone la señal de salida física.")
 		return
-	zona_torres.emit_signal("salida_solicitada")
+	if not zona_torres.has_signal("destino_viaje_solicitado"):
+		_fail("Torres no expone el selector de destinos de viaje.")
+		return
+	zona_torres.emit_signal("destino_viaje_solicitado", "expedicion_bosque")
 	for _frame in range(120):
 		if manager.obtener_tipo_actual() == "expedicion:bosque":
 			break
