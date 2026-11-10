@@ -3,77 +3,11 @@
 [ext_resource type="Script" uid="uid://cmn23gd47tjqf" path="res://scripts/ui/start_menu.gd" id="1_start_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxProfileNormal"]
-bg_color = Color(0.29, 0.22, 0.15, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.58, 0.46, 0.31, 1)
-corner_radius_top_left = 30
-corner_radius_top_right = 30
-corner_radius_bottom_right = 30
-corner_radius_bottom_left = 30
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxProfilePressed"]
-bg_color = Color(0.21, 0.16, 0.11, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.48, 0.37, 0.24, 1)
-corner_radius_top_left = 30
-corner_radius_top_right = 30
-corner_radius_bottom_right = 30
-corner_radius_bottom_left = 30
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxProfileHover"]
-bg_color = Color(0.38, 0.29, 0.19, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.78, 0.64, 0.43, 1)
-corner_radius_top_left = 30
-corner_radius_top_right = 30
-corner_radius_bottom_right = 30
-corner_radius_bottom_left = 30
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxSettingsNormal"]
-bg_color = Color(0.29, 0.22, 0.15, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.58, 0.46, 0.31, 1)
-corner_radius_top_left = 30
-corner_radius_top_right = 30
-corner_radius_bottom_right = 30
-corner_radius_bottom_left = 30
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxSettingsPressed"]
-bg_color = Color(0.21, 0.16, 0.11, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.48, 0.37, 0.24, 1)
-corner_radius_top_left = 30
-corner_radius_top_right = 30
-corner_radius_bottom_right = 30
-corner_radius_bottom_left = 30
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxSettingsHover"]
-bg_color = Color(0.38, 0.29, 0.19, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.78, 0.64, 0.43, 1)
-corner_radius_top_left = 30
-corner_radius_top_right = 30
-corner_radius_bottom_right = 30
-corner_radius_bottom_left = 30
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxLoginPanel"]
 bg_color = Color(0.2, 0.15, 0.1, 0.98)
@@ -87,16 +21,6 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxInput"]
-bg_color = Color(0.1, 0.075, 0.05, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_color = Color(0.42, 0.33, 0.22, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxMultiplayerPanel"]
 bg_color = Color(0.2, 0.15, 0.1, 0.99)
@@ -227,9 +151,6 @@ grow_vertical = 0
 tooltip_text = "Perfil / Iniciar sesión"
 focus_mode = 1
 theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxProfileNormal")
-theme_override_styles/pressed = SubResource("StyleBoxProfilePressed")
-theme_override_styles/hover = SubResource("StyleBoxProfileHover")
 text = "P"
 
 [node name="SettingsButton" type="Button" parent="." unique_id=1025445352]
@@ -248,9 +169,6 @@ grow_vertical = 0
 tooltip_text = "Abrir configuración"
 focus_mode = 1
 theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBoxSettingsNormal")
-theme_override_styles/pressed = SubResource("StyleBoxSettingsPressed")
-theme_override_styles/hover = SubResource("StyleBoxSettingsHover")
 text = "⚙"
 
 [node name="LoginOverlay" type="ColorRect" parent="." unique_id=1220459436]
@@ -307,7 +225,6 @@ text = "Correo"
 [node name="EmailInput" type="LineEdit" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1874871142]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxInput")
 placeholder_text = "correo@ejemplo.com"
 
 [node name="PasswordLabel" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1008143552]
@@ -317,7 +234,6 @@ text = "Contraseña"
 [node name="PasswordInput" type="LineEdit" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1460567700]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxInput")
 placeholder_text = "Contraseña"
 secret = true
 
@@ -426,7 +342,6 @@ size_flags_vertical = 3
 [node name="ServerNameInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1546111929]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxInput")
 placeholder_text = "Nombre para guardar el servidor"
 
 [node name="CommunityCertificateCheck" type="CheckBox" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=50666336]
@@ -440,7 +355,6 @@ text = "Dirección del servidor (IP o dominio)"
 [node name="IPInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1604332809]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxInput")
 placeholder_text = "servidor.ejemplo.net"
 
 [node name="PortLabel" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1552646489]
@@ -450,7 +364,6 @@ text = "Puerto"
 [node name="PortInput" type="LineEdit" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=142787175]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxInput")
 text = "7777"
 
 [node name="SaveServerButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1280883592]
