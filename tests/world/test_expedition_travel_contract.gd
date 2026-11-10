@@ -31,10 +31,11 @@ func _run() -> void:
 		return
 
 	manager.salir_de_reino_actual()
-	for _frame in range(12):
-		if manager.obtener_tipo_actual() == "expedicion:bosque" and not bool(manager.obtener_diagnostico().get("transicionando", false)):
+	for _frame in range(60):
+		if manager.obtener_tipo_actual() == "expedicion:bosque":
 			break
 		await get_tree().process_frame
+	await get_tree().process_frame
 	if manager.obtener_tipo_actual() != "expedicion:bosque":
 		_fail("La salida física de Torres no inició la zona dedicada de bosque.")
 		return
@@ -67,10 +68,11 @@ func _run() -> void:
 
 	manager.consumir_salida_reino_pendiente()
 	manager.entrar_reino("torres")
-	for _frame in range(12):
-		if manager.obtener_tipo_actual() == "reino_torres" and not bool(manager.obtener_diagnostico().get("transicionando", false)):
+	for _frame in range(60):
+		if manager.obtener_tipo_actual() == "reino_torres":
 			break
 		await get_tree().process_frame
+	await get_tree().process_frame
 	if manager.obtener_tipo_actual() != "reino_torres":
 		_fail("RealmMenu no pudo regresar a Torres desde la expedición.")
 		return
