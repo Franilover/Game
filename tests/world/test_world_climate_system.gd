@@ -90,6 +90,9 @@ func _run() -> void:
 	if niebla_a != niebla_b:
 		_fail("The same habitat and world date must resolve to the same climate.")
 		return
+	if (niebla_a.get("eventos", []) as Array).size() != 1:
+		_fail("Habitat-specific weather rules must inherit station-wide seasonal events.")
+		return
 	var clima_niebla: Dictionary = niebla_a.get("clima", {})
 	if str(clima_niebla.get("tipo", "")) != "niebla" or float(clima_niebla.get("visibilidad", 1.0)) > 0.21:
 		_fail("Habitat-specific fog rules did not reduce visibility.")
