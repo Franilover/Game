@@ -330,14 +330,26 @@ func _al_pulsar_dormir() -> void:
 
 
 func _input(evento: InputEvent) -> void:
-	# Mientras haya una entrada/salida al alcance, el clic se consume aquí,
-	# independientemente de dónde esté el cursor, antes de que llegue al combate.
-	if _entrada_aviso_actual.is_empty() or not _aviso_panel.visible:
-		return
 	if not evento is InputEventMouseButton:
 		return
 	var clic := evento as InputEventMouseButton
 	if not clic.pressed or clic.button_index not in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		return
+
+	# La cama toma prioridad sobre el uso de las manos y el combate.
+	# El botón conserva su propio clic; fuera de él, ningún sistema de gameplay
+	# debe recibir el mismo evento mientras la interacción de dormir esté activa.
+	if _interior_activo and _boton_dormir.visible:
+		if _boton_dormir.get_global_rect().has_point(clic.position):
+			return
+		get_viewport().set_input_as_handled()
+		if not _hay_objeto_en_manos():
+			_al_pulsar_dormir()
+		return
+
+	# Mientras haya una entrada/salida al alcance, el clic se consume aquí,
+	# independientemente de dónde esté el cursor, antes de que llegue al combate.
+	if _entrada_aviso_actual.is_empty() or not _aviso_panel.visible:
 		return
 	get_viewport().set_input_as_handled()
 	var accion := _entrada_aviso_actual.duplicate(true)
@@ -345,6 +357,15 @@ func _input(evento: InputEvent) -> void:
 		_salir_del_interior()
 	else:
 		_entrar_al_interior(accion)
+
+
+func _hay_objeto_en_manos() -> bool:
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if not is_instance_valid(inventario) or not inventario.has_method("obtener_objeto_mano_activa"):
+		return false
+	var izquierda: Dictionary = inventario.call("obtener_objeto_mano_activa", "izquierda")
+	var derecha: Dictionary = inventario.call("obtener_objeto_mano_activa", "derecha")
+	return not izquierda.is_empty() or not derecha.is_empty()
 
 
 func _crear_cesped_tilemap_dual() -> void:
