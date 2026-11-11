@@ -660,14 +660,19 @@ func _actualizar_luces_faroles() -> void:
 	if hora_normalizada >= 0.82 or hora_normalizada < 0.20:
 		intensidad = 1.0
 	elif hora_normalizada >= 0.72:
-		intensidad = smoothstep(0.72, 0.82, hora_normalizada)
+		intensidad = _suavizar_luz(clampf((hora_normalizada - 0.72) / 0.10, 0.0, 1.0))
 	elif hora_normalizada < 0.30:
-		intensidad = 1.0 - smoothstep(0.20, 0.30, hora_normalizada)
+		intensidad = 1.0 - _suavizar_luz(clampf((hora_normalizada - 0.20) / 0.10, 0.0, 1.0))
 
 	for luz: PointLight2D in _luces_faroles:
 		if is_instance_valid(luz):
 			luz.enabled = intensidad > 0.01
 			luz.energy = 0.9 * intensidad
+
+
+func _suavizar_luz(valor: float) -> float:
+	var t := clampf(valor, 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
 
 
 func _cargar_puestos_pixelart() -> void:
