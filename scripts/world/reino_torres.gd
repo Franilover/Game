@@ -83,6 +83,7 @@ var _terreno_dual_listo: bool = false
 var _atmosfera_mundo: Node = null
 var _luces_faroles: Array[PointLight2D] = []
 var _brillos_faroles: Array[Sprite2D] = []
+var _capa_brillos_faroles: CanvasLayer = null
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -598,10 +599,11 @@ func _cargar_arboles_pixelart() -> void:
 
 func _crear_luces_faroles() -> void:
 	# Los nodos reales de la escena son Sprite_poste_oeste y Sprite_poste_este.
-	# El brillo visible se dibuja aparte y la PointLight2D ilumina el entorno.
+	# La luz 2D ilumina el mundo; el resplandor visible se dibuja en una
+	# CanvasLayer independiente para que CanvasModulate no lo apague.
 	var gradiente := Gradient.new()
-	gradiente.set_color(0, Color(1.0, 0.78, 0.46, 0.58))
-	gradiente.set_color(1, Color(1.0, 0.58, 0.22, 0.0))
+	gradiente.set_color(0, Color(1.0, 0.72, 0.34, 0.92))
+	gradiente.set_color(1, Color(1.0, 0.48, 0.12, 0.0))
 
 	var textura_luz := GradientTexture2D.new()
 	textura_luz.gradient = gradiente
@@ -611,6 +613,12 @@ func _crear_luces_faroles() -> void:
 	textura_luz.fill_from = Vector2(0.5, 0.5)
 	textura_luz.fill_to = Vector2(0.5, 0.0)
 
+	_capa_brillos_faroles = CanvasLayer.new()
+	_capa_brillos_faroles.name = "CapaBrillosFaroles"
+	_capa_brillos_faroles.layer = 1
+	_capa_brillos_faroles.follow_viewport_enabled = true
+	add_child(_capa_brillos_faroles)
+
 	var nombres_faroles := ["Sprite_poste_oeste", "Sprite_poste_este"]
 	for indice in range(nombres_faroles.size()):
 		var farol := get_node_or_null(NodePath(nombres_faroles[indice])) as Sprite2D
@@ -618,88 +626,100 @@ func _crear_luces_faroles() -> void:
 			push_warning("ReinoTorres: no se encontró el farol: " + nombres_faroles[indice])
 			continue
 
-		# El punto luminoso se sitúa en la parte superior del poste, donde está la lámpara.
-		var posicion_luz := farol.position + Vector2(0.0, -18.0)
+		# Coordenada global calculada desde el sprite, sin posiciones aproximadas del mapa.
+		var posicion_global := farol.to_global(Vector2(0.0, -18.0))
+		var posicion_local := to_local(posicion_global)
 
-		# Brillo dibujado explícitamente: hace visible la lámpara incluso si otro
-		# elemento de la escena no recibe iluminación 2D por sus máscaras.
-		var brillo := Sprite2D.new()
-		brillo.name = "Brillo" + ("Oeste" if indice == 0 else "Este")
-		brillo.texture = textura_luz
-		brillo.position = posicion_luz
-		brillo.scale = Vector2(0.48, 0.48)
-		brillo.z_index = 5
-		brillo.visible = false
-		var material_brillo := CanvasItemMaterial.new()
-		material_brillo.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-		brillo.material = material_brillo
-		add_child(brillo)
-		_brillos_faroles.append(brillo)
-
-		# La luz es hermana del sprite para iluminar los demás elementos del mapa.
+		# Luz real para iluminar el suelo y los elementos cercanos del mundo.
 		var luz := PointLight2D.new()
 		luz.name = "LuzFarol" + ("Oeste" if indice == 0 else "Este")
-		luz.position = posicion_luz
+		luz.position = posicion_local
 		luz.texture = textura_luz
-		luz.texture_scale = 1.8
+		luz.texture_scale = 2.8
 		luz.color = Color("#ffd18a")
-		luz.energy = 1.35
+		luz.energy = 1.8
 		luz.range_item_cull_mask = 1
 		luz.blend_mode = Light2D.BLEND_MODE_ADD
 		luz.shadow_enabled = false
 		luz.enabled = false
-		luz.z_index = 8
 		add_child(luz)
 		_luces_faroles.append(luz)
 
-	if _luces_faroles.size() != 2:
-		push_warning("ReinoTorres: se crearon %d de 2 luces de farol." % _luces_faroles.size())
+		# Resplandor visible independiente de la iluminación del CanvasItem.
+		var brillo := Sprite2D.new()
+		brillo.name = "Brillo" + ("Oeste" if indice == 0 else "Este")
+		brillo.texture = textura_luz
+		brillo.position = posicion_global
+		brillo.scale = Vector2(0.95, 0.95)
+		brillo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		brillo.visible = false
+		var material_brillo := CanvasItemMaterial.new()
+		material_brillo.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		brillo.material = material_brillo
+		_capa_brillos_faroles.add_child(brillo)
+		_brillos_faroles.append(brillo)
+
+	if _luces_faroles.size() != 2 or _brillos_faroles.size() != 2:
+		push_warning(
+			"ReinoTorres: faroles preparados: %d luces y %d brillos."
+			% [_luces_faroles.size(), _brillos_faroles.size()]
+		)
+	else:
+		print("ReinoTorres: dos faroles con luz y resplandor preparados.")
 
 	_actualizar_luces_faroles()
 
 
 func _actualizar_luces_faroles() -> void:
-	if _luces_faroles.is_empty():
+	if _luces_faroles.is_empty() and _brillos_faroles.is_empty():
 		return
 
+	# WorldAtmosphere pertenece a la escena principal, no a la zona.
+	# Buscar desde SceneTree.root evita depender de cuál sea current_scene.
 	if not is_instance_valid(_atmosfera_mundo):
-		var escena := get_tree().current_scene
-		if is_instance_valid(escena):
-			_atmosfera_mundo = escena.find_child("WorldAtmosphere", true, false)
+		_atmosfera_mundo = get_tree().root.find_child("WorldAtmosphere", true, false)
 
-	if not is_instance_valid(_atmosfera_mundo):
-		return
-	if not _atmosfera_mundo.has_method("obtener_tiempo"):
-		return
-
-	var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
-	if not bool(tiempo.get("calendario_cargado", false)):
-		return
-
-	var horas_por_dia := maxf(float(tiempo.get("horas_por_dia", 24.0)), 1.0)
-	var hora_normalizada := fposmod(
-		float(tiempo.get("hora_del_dia", 0.0)) / horas_por_dia,
-		1.0
-	)
 	var intensidad := 0.0
-
-	# Encendido progresivo al atardecer y apagado gradual al amanecer.
-	if hora_normalizada >= 0.82 or hora_normalizada < 0.20:
-		intensidad = 1.0
-	elif hora_normalizada >= 0.72:
-		intensidad = _suavizar_luz(clampf((hora_normalizada - 0.72) / 0.10, 0.0, 1.0))
-	elif hora_normalizada < 0.30:
-		intensidad = 1.0 - _suavizar_luz(clampf((hora_normalizada - 0.20) / 0.10, 0.0, 1.0))
+	if is_instance_valid(_atmosfera_mundo) and _atmosfera_mundo.has_method("obtener_tiempo"):
+		var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
+		if bool(tiempo.get("calendario_cargado", false)):
+			var horas_por_dia := maxf(float(tiempo.get("horas_por_dia", 24.0)), 1.0)
+			var hora_normalizada := fposmod(
+				float(tiempo.get("hora_del_dia", 0.0)) / horas_por_dia,
+				1.0
+			)
+			# Encendido progresivo al atardecer y apagado gradual al amanecer.
+			if hora_normalizada >= 0.82 or hora_normalizada < 0.20:
+				intensidad = 1.0
+			elif hora_normalizada >= 0.72:
+				intensidad = _suavizar_luz(clampf((hora_normalizada - 0.72) / 0.10, 0.0, 1.0))
+			elif hora_normalizada < 0.30:
+				intensidad = 1.0 - _suavizar_luz(clampf((hora_normalizada - 0.20) / 0.10, 0.0, 1.0))
+		else:
+			intensidad = _obtener_intensidad_desde_modulacion()
+	else:
+		intensidad = _obtener_intensidad_desde_modulacion()
 
 	for luz: PointLight2D in _luces_faroles:
 		if is_instance_valid(luz):
 			luz.enabled = intensidad > 0.01
-			luz.energy = 1.35 * intensidad
+			luz.energy = 1.8 * intensidad
 
 	for brillo: Sprite2D in _brillos_faroles:
 		if is_instance_valid(brillo):
 			brillo.visible = intensidad > 0.01
-			brillo.modulate.a = intensidad
+			brillo.modulate = Color(1.0, 0.82, 0.58, intensidad)
+
+
+func _obtener_intensidad_desde_modulacion() -> float:
+	# Respaldo para escenas donde el calendario todavía no esté disponible:
+	# el color de CanvasModulate ya refleja si el mundo está de día o de noche.
+	var modulacion := get_tree().root.find_child("DayNightModulation", true, false) as CanvasModulate
+	if not is_instance_valid(modulacion):
+		return 0.0
+	var color := modulacion.color
+	var luminancia := color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722
+	return _suavizar_luz(1.0 - clampf((luminancia - 0.08) / 0.62, 0.0, 1.0))
 
 
 func _suavizar_luz(valor: float) -> float:
