@@ -610,13 +610,17 @@ func _crear_luces_faroles() -> void:
 	textura_luz.fill_from = Vector2(0.5, 0.5)
 	textura_luz.fill_to = Vector2(0.5, 0.0)
 
-	for farol in [
-		{"nombre": "LuzFarolOeste", "posicion": Vector2(-330, -16)},
-		{"nombre": "LuzFarolEste", "posicion": Vector2(320, -16)}
-	]:
+	for indice in range(2):
+		var nombre_sprite := "Pixel_Lampara_" + str(indice)
+		var farol := get_node_or_null(NodePath(nombre_sprite)) as Sprite2D
+		if not is_instance_valid(farol):
+			push_warning("ReinoTorres: no se encontró el sprite del farol: " + nombre_sprite)
+			continue
+
+		# La luz queda anclada al sprite real, no a coordenadas estimadas del mapa.
 		var luz := PointLight2D.new()
-		luz.name = str(farol["nombre"])
-		luz.position = farol["posicion"]
+		luz.name = "LuzFarol" + ("Oeste" if indice == 0 else "Este")
+		luz.position = Vector2.ZERO
 		luz.texture = textura_luz
 		luz.texture_scale = 1.55
 		luz.color = Color("#ffd18a")
@@ -625,8 +629,11 @@ func _crear_luces_faroles() -> void:
 		luz.shadow_enabled = false
 		luz.enabled = false
 		luz.z_index = 8
-		add_child(luz)
+		farol.add_child(luz)
 		_luces_faroles.append(luz)
+
+	if _luces_faroles.size() != 2:
+		push_warning("ReinoTorres: se crearon %d de 2 luces de farol." % _luces_faroles.size())
 
 	_actualizar_luces_faroles()
 
