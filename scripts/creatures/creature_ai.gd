@@ -1241,17 +1241,15 @@ func _obtener_respuesta_ambiental() -> Dictionary:
 func _obtener_modificador_velocidad_ambiental() -> float:
 	var estado := _obtener_estado_ambiental()
 	var ambiente_variant: Variant = estado.get("ambiente", {})
-	if not ambiente_variant is Dictionary:
-		return 1.0
-	var temperatura: Variant = (ambiente_variant as Dictionary).get("temperatura_c", null)
-	if not (temperatura is int or temperatura is float):
-		return 1.0
-	var respuesta := _obtener_respuesta_ambiental()
 	var modificador := 1.0
-	if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
-		modificador *= clampf(float(respuesta.get("velocidad_bajo_minimo", 0.78)), 0.1, 1.0)
-	elif float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
-		modificador *= clampf(float(respuesta.get("velocidad_sobre_maximo", 0.82)), 0.1, 1.0)
+	if ambiente_variant is Dictionary:
+		var temperatura: Variant = (ambiente_variant as Dictionary).get("temperatura_c", null)
+		if temperatura is int or temperatura is float:
+			var respuesta := _obtener_respuesta_ambiental()
+			if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
+				modificador *= clampf(float(respuesta.get("velocidad_bajo_minimo", 0.78)), 0.1, 1.0)
+			elif float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
+				modificador *= clampf(float(respuesta.get("velocidad_sobre_maximo", 0.82)), 0.1, 1.0)
 	for evento_variant in estado.get("eventos", []):
 		if not evento_variant is Dictionary:
 			continue
@@ -1264,20 +1262,18 @@ func _obtener_modificador_velocidad_ambiental() -> float:
 func _aplicar_respuesta_ambiental_rutina() -> void:
 	var estado := _obtener_estado_ambiental()
 	var ambiente_variant: Variant = estado.get("ambiente", {})
-	if not ambiente_variant is Dictionary:
-		return
-	var temperatura: Variant = (ambiente_variant as Dictionary).get("temperatura_c", null)
-	if not (temperatura is int or temperatura is float):
-		return
-	var respuesta := _obtener_respuesta_ambiental()
-	if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
-		var actividad_frio := str(respuesta.get("actividad_con_frio", "reposar")).strip_edges().to_lower()
-		if not actividad_frio.is_empty():
-			actividad_horaria = actividad_frio
-	elif float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
-		var actividad_calor := str(respuesta.get("actividad_con_calor", "reposar")).strip_edges().to_lower()
-		if not actividad_calor.is_empty():
-			actividad_horaria = actividad_calor
+	if ambiente_variant is Dictionary:
+		var temperatura: Variant = (ambiente_variant as Dictionary).get("temperatura_c", null)
+		if temperatura is int or temperatura is float:
+			var respuesta := _obtener_respuesta_ambiental()
+			if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
+				var actividad_frio := str(respuesta.get("actividad_con_frio", "reposar")).strip_edges().to_lower()
+				if not actividad_frio.is_empty():
+					actividad_horaria = actividad_frio
+			elif float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
+				var actividad_calor := str(respuesta.get("actividad_con_calor", "reposar")).strip_edges().to_lower()
+				if not actividad_calor.is_empty():
+					actividad_horaria = actividad_calor
 	for evento_variant in estado.get("eventos", []):
 		if not evento_variant is Dictionary:
 			continue
