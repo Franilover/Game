@@ -582,7 +582,7 @@ func despawn_entidades_de_chunks() -> void:
 	for chunk_variant in chunks:
 		if not chunk_variant is Vector2i:
 			continue
-		var chunk_coord := chunk_variant as Vector2i
+		var chunk_coord: Vector2i = chunk_variant
 		var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
 		if bucket_variant is Array:
 			for entity_variant in bucket_variant as Array:
