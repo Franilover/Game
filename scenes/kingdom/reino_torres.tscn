@@ -904,70 +904,7 @@ texture = ExtResource("official_tree")
 [node name="Sprite_Arbol_Ciudad_13" type="Sprite2D" parent="." unique_id=1552278688]
 z_index = 2
 texture_filter = 1
-position = Vector2(91, -105)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_14" type="Sprite2D" parent="." unique_id=597513496]
-z_index = 2
-texture_filter = 1
-position = Vector2(91.00001, 83.999985)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_15" type="Sprite2D" parent="." unique_id=846450633]
-z_index = 2
-texture_filter = 1
-position = Vector2(-91.99999, 82)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_17" type="Sprite2D" parent="." unique_id=1965964427]
-z_index = 2
-texture_filter = 1
-position = Vector2(92, 193.99997)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_18" type="Sprite2D" parent="." unique_id=436515238]
-z_index = 2
-texture_filter = 1
-position = Vector2(-91, 192)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_19" type="Sprite2D" parent="." unique_id=980339042]
-z_index = 2
-texture_filter = 1
-position = Vector2(93, 310.99997)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_20" type="Sprite2D" parent="." unique_id=823755746]
-z_index = 2
-texture_filter = 1
-position = Vector2(-90, 309)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_21" type="Sprite2D" parent="." unique_id=2119492868]
-z_index = 2
-texture_filter = 1
-position = Vector2(93, 310.99997)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_22" type="Sprite2D" parent="." unique_id=2129984941]
-z_index = 2
-texture_filter = 1
-position = Vector2(-90, 309)
-scale = Vector2(1.375, 1.625)
-texture = ExtResource("official_tree")
-
-[node name="Sprite_Arbol_Ciudad_16" type="Sprite2D" parent="." unique_id=216415276]
-z_index = 2
-texture_filter = 1
-position = Vector2(-86.00001, -106.999985)
+position = Vector2(192.00003, -251.00002)
 scale = Vector2(1.375, 1.625)
 texture = ExtResource("official_tree")
 
