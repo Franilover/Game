@@ -1210,12 +1210,13 @@ func _obtener_estado_ambiental() -> Dictionary:
 	var sistema := world_atmosphere.get_node_or_null("ClimateSystem")
 	if sistema == null or not sistema.has_method("obtener_estado_para_contexto"):
 		return {}
-	var contexto: Dictionary = {}
-	for clave in ["bioma_id", "ecosistema_id", "habitat_id"]:
-		var valor := str(criatura.datos.get(clave, "")).strip_edges()
-		if not valor.is_empty():
-			contexto[clave] = valor
-	return sistema.call("obtener_estado_para_contexto", contexto)
+	if sistema.has_method("obtener_estado_para_posicion"):
+		return sistema.call(
+			"obtener_estado_para_posicion",
+			criatura.global_position,
+			criatura.entorno
+		)
+	return sistema.call("obtener_estado_para_contexto", {})
 
 
 func _obtener_respuesta_ambiental() -> Dictionary:
