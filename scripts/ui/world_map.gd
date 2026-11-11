@@ -47,7 +47,9 @@ func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String,
 	if _world_context != null:
 		_tile_size = maxi(_world_context.get_tile_size(), 1)
 	if _tipo_zona == "reino_torres" and is_instance_valid(_zona_fija):
-		_poligonos_fijos = _zona_fija.find_children("*", "Polygon2D", true, false)
+		for nodo in _zona_fija.find_children("*", "Polygon2D", true, false):
+			if nodo is Polygon2D:
+				_poligonos_fijos.append(nodo as Polygon2D)
 		_limites_mapa_fijo = Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 	elif _tipo_zona == "expedicion:bosque":
 		_limites_mapa_fijo = Rect2(0.0, -1024.0, 5120.0, 2048.0)
@@ -59,7 +61,11 @@ func _process(_delta: float) -> void:
 	if not visible or _player == null:
 		return
 	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
-		queue_redraw()
+		var posicion_jugador := _player.global_position
+		var tile_fijo := Vector2i(floori(posicion_jugador.x / 32.0), floori(posicion_jugador.y / 32.0))
+		if tile_fijo != _ultima_actualizacion:
+			_ultima_actualizacion = tile_fijo
+			queue_redraw()
 		return
 	if _world_context == null:
 		return
