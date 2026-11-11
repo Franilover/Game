@@ -16,6 +16,17 @@ var _estado: Label
 var _cantidad: SpinBox
 var _boton_accion: Button
 var _botones: Dictionary = {}
+var _contenido_catalogo: HBoxContainer
+var _panel_tiempo: ScrollContainer
+var _atmosfera: WorldAtmosphere = null
+var _estado_tiempo: Label
+var _estado_tiempo_accion: Label
+var _boton_bloqueo_tiempo: Button
+var _hora_spin: SpinBox
+var _minuto_spin: SpinBox
+var _dias_spin: SpinBox
+var _estacion_selector: OptionButton
+var _anio_spin: SpinBox
 
 
 func _ready() -> void:
@@ -30,6 +41,11 @@ func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: Garlia
 	_world_entity_spawner = spawner
 	_inventario = inventario
 	_world_items = world_items
+
+
+func configurar_tiempo(atmosfera: WorldAtmosphere) -> void:
+	_atmosfera = atmosfera
+	_actualizar_panel_tiempo()
 
 
 func abrir(jugador: Node = null) -> void:
@@ -55,7 +71,10 @@ func _actualizar_visibilidad() -> void:
 	if not activo:
 		return
 
+	if _botones.has("tiempo"):
+		(_botones["tiempo"] as Button).disabled = not _puede_controlar_tiempo()
 	_cargar_lista()
+	_actualizar_panel_tiempo()
 
 
 func _crear_ui() -> void:
@@ -68,7 +87,7 @@ func _crear_ui() -> void:
 	encabezado.add_theme_constant_override("separation", 3)
 	titulo_columna.add_child(encabezado)
 
-	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"]]:
+	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"], ["tiempo", "Tiempo"]]:
 		var boton := Button.new()
 		boton.text = str(entrada[1])
 		boton.toggle_mode = true
@@ -79,6 +98,7 @@ func _crear_ui() -> void:
 		_botones[str(entrada[0])] = boton
 
 	var contenido := HBoxContainer.new()
+	_contenido_catalogo = contenido
 	contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	contenido.add_theme_constant_override("separation", 5)
 	titulo_columna.add_child(contenido)
@@ -137,14 +157,25 @@ func _crear_ui() -> void:
 	_cantidad.visible = false
 	_detalle.add_child(_cantidad)
 
+	_crear_panel_tiempo(titulo_columna)
 	_cambiar_modo("criaturas")
 
 
 func _cambiar_modo(modo: String) -> void:
+	if modo == "tiempo" and not _puede_controlar_tiempo():
+		return
+
 	_modo = modo
 	for clave in _botones:
 		var boton: Button = _botones[clave]
 		boton.button_pressed = clave == _modo
+
+	var es_tiempo := _modo == "tiempo"
+	_contenido_catalogo.visible = not es_tiempo
+	_panel_tiempo.visible = es_tiempo
+	if es_tiempo:
+		_actualizar_panel_tiempo()
+		return
 
 	_seleccion.clear()
 	_cargar_lista()
@@ -371,3 +402,234 @@ func _dar_objeto() -> void:
 		_estado.text = "Añadido: " + str(objeto.get("nombre", "Objeto")) + " x" + str(cantidad)
 	else:
 		_estado.text = "No hay espacio suficiente en el inventario."
+
+func _puede_controlar_tiempo() -> bool:
+	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
+	if not datos_variant is Dictionary:
+		return false
+	var datos := datos_variant as Dictionary
+	if str(datos.get("rol", "explorador")).to_lower() != "admin":
+		return false
+	var capacidades_variant: Variant = datos.get("capacidades", [])
+	return capacidades_variant is Array and "controlar_tiempo" in (capacidades_variant as Array)
+
+
+func _crear_panel_tiempo(contenedor: VBoxContainer) -> void:
+	_panel_tiempo = ScrollContainer.new()
+	_panel_tiempo.name = "TimeControls"
+	_panel_tiempo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel_tiempo.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel_tiempo.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_panel_tiempo.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_panel_tiempo.visible = false
+	contenedor.add_child(_panel_tiempo)
+
+	var columna := VBoxContainer.new()
+	columna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna.add_theme_constant_override("separation", 7)
+	_panel_tiempo.add_child(columna)
+
+	_estado_tiempo = Label.new()
+	_estado_tiempo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_estado_tiempo.add_theme_font_size_override("font_size", 13)
+	columna.add_child(_estado_tiempo)
+
+	_boton_bloqueo_tiempo = _crear_boton_tiempo("Bloquear avance del tiempo")
+	_boton_bloqueo_tiempo.pressed.connect(_alternar_bloqueo_tiempo)
+	columna.add_child(_boton_bloqueo_tiempo)
+
+	columna.add_child(_crear_separador_tiempo("Hora del día"))
+	var fila_hora := HBoxContainer.new()
+	fila_hora.add_theme_constant_override("separation", 5)
+	columna.add_child(fila_hora)
+	_hora_spin = _crear_spin_tiempo(0, 23, 1)
+	_minuto_spin = _crear_spin_tiempo(0, 59, 1)
+	fila_hora.add_child(_campo_tiempo("Hora", _hora_spin))
+	fila_hora.add_child(_campo_tiempo("Minuto", _minuto_spin))
+	var aplicar_hora := _crear_boton_tiempo("Aplicar hora")
+	aplicar_hora.pressed.connect(_aplicar_hora_tiempo)
+	fila_hora.add_child(aplicar_hora)
+
+	var fila_periodo := HBoxContainer.new()
+	fila_periodo.add_theme_constant_override("separation", 5)
+	columna.add_child(fila_periodo)
+	var boton_dia := _crear_boton_tiempo("Mediodía")
+	boton_dia.pressed.connect(_establecer_dia_tiempo)
+	fila_periodo.add_child(boton_dia)
+	var boton_noche := _crear_boton_tiempo("Medianoche")
+	boton_noche.pressed.connect(_establecer_noche_tiempo)
+	fila_periodo.add_child(boton_noche)
+
+	columna.add_child(_crear_separador_tiempo("Días"))
+	var fila_dias := HBoxContainer.new()
+	fila_dias.add_theme_constant_override("separation", 5)
+	columna.add_child(fila_dias)
+	_dias_spin = _crear_spin_tiempo(1, 36500, 1)
+	fila_dias.add_child(_campo_tiempo("Cantidad", _dias_spin))
+	var retroceder := _crear_boton_tiempo("Retroceder")
+	retroceder.pressed.connect(_desplazar_tiempo.bind(-1))
+	fila_dias.add_child(retroceder)
+	var avanzar := _crear_boton_tiempo("Avanzar")
+	avanzar.pressed.connect(_desplazar_tiempo.bind(1))
+	fila_dias.add_child(avanzar)
+
+	columna.add_child(_crear_separador_tiempo("Estación"))
+	var fila_estacion := HBoxContainer.new()
+	fila_estacion.add_theme_constant_override("separation", 5)
+	columna.add_child(fila_estacion)
+	_estacion_selector = OptionButton.new()
+	_estacion_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila_estacion.add_child(_estacion_selector)
+	var aplicar_estacion := _crear_boton_tiempo("Cambiar")
+	aplicar_estacion.pressed.connect(_aplicar_estacion_tiempo)
+	fila_estacion.add_child(aplicar_estacion)
+
+	columna.add_child(_crear_separador_tiempo("Año"))
+	var fila_anio := HBoxContainer.new()
+	fila_anio.add_theme_constant_override("separation", 5)
+	columna.add_child(fila_anio)
+	_anio_spin = _crear_spin_tiempo(-100000, 100000, 1)
+	fila_anio.add_child(_campo_tiempo("Año", _anio_spin))
+	var aplicar_anio := _crear_boton_tiempo("Cambiar año")
+	aplicar_anio.pressed.connect(_aplicar_anio_tiempo)
+	fila_anio.add_child(aplicar_anio)
+
+	_estado_tiempo_accion = Label.new()
+	_estado_tiempo_accion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	columna.add_child(_estado_tiempo_accion)
+
+
+func _crear_separador_tiempo(texto: String) -> Label:
+	var etiqueta := Label.new()
+	etiqueta.text = texto
+	etiqueta.add_theme_font_size_override("font_size", 12)
+	return etiqueta
+
+
+func _crear_spin_tiempo(minimo: float, maximo: float, paso: float) -> SpinBox:
+	var control := SpinBox.new()
+	control.min_value = minimo
+	control.max_value = maximo
+	control.step = paso
+	control.custom_minimum_size = Vector2(75, 26)
+	return control
+
+
+func _crear_boton_tiempo(texto: String) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(0, 26)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	PIXEL_UI_THEME.apply(boton, false)
+	return boton
+
+
+func _campo_tiempo(texto: String, control: Control) -> Control:
+	var columna := VBoxContainer.new()
+	columna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var etiqueta := Label.new()
+	etiqueta.text = texto
+	etiqueta.add_theme_font_size_override("font_size", 10)
+	columna.add_child(etiqueta)
+	columna.add_child(control)
+	return columna
+
+
+func _actualizar_panel_tiempo() -> void:
+	if not is_instance_valid(_estado_tiempo):
+		return
+	if _atmosfera == null or not is_instance_valid(_atmosfera):
+		_estado_tiempo.text = "No se encontró el calendario del mundo."
+		_boton_bloqueo_tiempo.disabled = true
+		return
+
+	var datos := _atmosfera.obtener_tiempo()
+	if not bool(datos.get("calendario_cargado", false)):
+		_estado_tiempo.text = "Cargando calendario del mundo..."
+		_boton_bloqueo_tiempo.disabled = true
+		return
+
+	_estado_tiempo.text = "Día %d · %s · Año %d · %s" % [int(datos.get("dia", 1)), str(datos.get("estacion", "—")), int(datos.get("anio", 0)), str(datos.get("hora", "00:00"))]
+	_boton_bloqueo_tiempo.disabled = false
+	_boton_bloqueo_tiempo.text = "Reanudar avance del tiempo" if _atmosfera.esta_bloqueado() else "Bloquear avance del tiempo"
+	var minutos_totales := int(floor(float(datos.get("hora_del_dia", 0.0)) * 60.0))
+	_hora_spin.max_value = maxi(0, int(ceil(float(datos.get("horas_por_dia", 24.0)))) - 1)
+	_hora_spin.value = int(floor(float(minutos_totales) / 60.0))
+	_minuto_spin.value = minutos_totales % 60
+	_anio_spin.value = int(datos.get("anio", 0))
+
+	var estacion_actual := str(datos.get("estacion_id", ""))
+	_estacion_selector.clear()
+	for estacion_variant in _atmosfera.estaciones:
+		if not estacion_variant is Dictionary:
+			continue
+		var estacion := estacion_variant as Dictionary
+		var id := str(estacion.get("id", ""))
+		var nombre := str(estacion.get("nombre", id))
+		if id.is_empty():
+			continue
+		_estacion_selector.add_item(nombre)
+		_estacion_selector.set_item_metadata(_estacion_selector.item_count - 1, id)
+		if id == estacion_actual:
+			_estacion_selector.select(_estacion_selector.item_count - 1)
+
+
+func _registrar_accion_tiempo(ok: bool, mensaje: String) -> void:
+	_estado_tiempo_accion.text = mensaje if ok else "No se pudo aplicar: " + mensaje
+	_actualizar_panel_tiempo()
+
+
+func _alternar_bloqueo_tiempo() -> void:
+	if _atmosfera == null:
+		return
+	if _atmosfera.esta_bloqueado():
+		_atmosfera.desbloquear_tiempo()
+		_registrar_accion_tiempo(true, "El tiempo vuelve a avanzar.")
+	else:
+		_atmosfera.bloquear_tiempo()
+		_registrar_accion_tiempo(true, "El tiempo quedó bloqueado.")
+
+
+func _aplicar_hora_tiempo() -> void:
+	if _atmosfera == null:
+		return
+	var ok := _atmosfera.establecer_hora_del_dia(int(_hora_spin.value), int(_minuto_spin.value))
+	_registrar_accion_tiempo(ok, "Hora actualizada." if ok else "El calendario aún no está cargado.")
+
+
+func _establecer_dia_tiempo() -> void:
+	if _atmosfera == null:
+		return
+	var ok := _atmosfera.establecer_dia()
+	_registrar_accion_tiempo(ok, "Hora establecida al mediodía." if ok else "El calendario aún no está cargado.")
+
+
+func _establecer_noche_tiempo() -> void:
+	if _atmosfera == null:
+		return
+	var ok := _atmosfera.establecer_noche()
+	_registrar_accion_tiempo(ok, "Hora establecida a medianoche." if ok else "El calendario aún no está cargado.")
+
+
+func _desplazar_tiempo(direccion: int) -> void:
+	if _atmosfera == null:
+		return
+	var cantidad := maxi(1, int(_dias_spin.value)) * direccion
+	var ok := _atmosfera.desplazar_dias(cantidad)
+	var mensaje := "Se avanzaron %d días." % cantidad if cantidad > 0 else "Se retrocedieron %d días." % absi(cantidad)
+	_registrar_accion_tiempo(ok, mensaje if ok else "El calendario aún no está cargado.")
+
+
+func _aplicar_estacion_tiempo() -> void:
+	if _atmosfera == null or _estacion_selector.selected < 0:
+		return
+	var id := str(_estacion_selector.get_item_metadata(_estacion_selector.selected))
+	var ok := _atmosfera.establecer_estacion(id)
+	_registrar_accion_tiempo(ok, "Estación actualizada." if ok else "No se pudo cambiar la estación.")
+
+
+func _aplicar_anio_tiempo() -> void:
+	if _atmosfera == null:
+		return
+	var ok := _atmosfera.establecer_anio(int(_anio_spin.value))
+	_registrar_accion_tiempo(ok, "Año actualizado." if ok else "El calendario aún no está cargado.")
