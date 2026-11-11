@@ -383,7 +383,8 @@ func _interpolar_claves_luz(
 		return claves[0]["color"] as Color
 
 	if hora <= float(claves[0]["hora"]):
-		return claves[0]["color"] as Color
+		var primer_color: Color = claves[0]["color"]
+		return primer_color
 
 	for indice in range(claves.size() - 1):
 		var inicio: Dictionary = claves[indice]
@@ -397,7 +398,8 @@ func _interpolar_claves_luz(
 			var color_final: Color = final["color"]
 			return color_inicio.lerp(color_final, progreso)
 
-	return claves.back()["color"] as Color
+	var ultimo_color: Color = claves.back()["color"]
+	return ultimo_color
 
 
 func _obtener_periodo() -> String:
