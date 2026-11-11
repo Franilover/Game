@@ -356,10 +356,8 @@ func _texturizar_mapa_pixelart() -> void:
 		{"nombre": "CanalWater", "tipo": "agua"},
 		{"nombre": "CanalBridgeWest", "tipo": "puente"},
 		{"nombre": "CanalBridgeEast", "tipo": "puente"},
-		{"nombre": "RoyalGardenPlot", "tipo": "jardin"},
 		{"nombre": "RoyalGardenWalk", "tipo": "plaza"},
 		{"nombre": "RoyalGardenCross", "tipo": "plaza"},
-		{"nombre": "GardenBed", "tipo": "jardin"},
 		{"nombre": "GardenSoil", "tipo": "tierra"},
 		{"nombre": "EastGatePierNorth", "tipo": "muro"},
 		{"nombre": "EastGatePierSouth", "tipo": "muro"},
@@ -373,15 +371,6 @@ func _texturizar_mapa_pixelart() -> void:
 	for i in range(superficies.size()):
 		var superficie: Dictionary = superficies[i]
 		_texturizar_poligono(str(superficie["nombre"]), str(superficie["tipo"]), i * 17)
-
-	# Los cultivos tienen surcos y hojas integrados en el propio sprite.
-	for hijo: Node in get_children():
-		if hijo is Polygon2D and String(hijo.name).begins_with("FieldFurrow"):
-			(hijo as Polygon2D).visible = false
-	for indice in range(1, 17):
-		_texturizar_poligono("Field%d" % indice, "cultivo", indice * 31)
-	for indice in range(1, 5):
-		_texturizar_poligono("GardenCrop%d" % indice, "cultivo", indice * 23)
 
 	# Las líneas finas que remataban el camino eran vectoriales; los bordes
 	# ahora forman parte de la textura pixelada del camino.
