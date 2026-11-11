@@ -45,6 +45,13 @@ func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: Garlia
 
 func configurar_tiempo(atmosfera: WorldAtmosphere) -> void:
 	_atmosfera = atmosfera
+	if is_instance_valid(_atmosfera):
+		if not _atmosfera.dia_cambiado.is_connected(_al_cambio_calendario):
+			_atmosfera.dia_cambiado.connect(_al_cambio_calendario)
+		if not _atmosfera.estacion_cambiada.is_connected(_al_cambio_estacion):
+			_atmosfera.estacion_cambiada.connect(_al_cambio_estacion)
+	if WorldData.has_signal("mundo_listo") and not WorldData.mundo_listo.is_connected(_al_calendario_disponible):
+		WorldData.mundo_listo.connect(_al_calendario_disponible)
 	_actualizar_panel_tiempo()
 
 
@@ -633,3 +640,15 @@ func _aplicar_anio_tiempo() -> void:
 		return
 	var ok := _atmosfera.establecer_anio(int(_anio_spin.value))
 	_registrar_accion_tiempo(ok, "Año actualizado." if ok else "El calendario aún no está cargado.")
+
+
+func _al_calendario_disponible() -> void:
+	_actualizar_panel_tiempo()
+
+
+func _al_cambio_calendario(_dia_del_anio: int, _anio: int) -> void:
+	_actualizar_panel_tiempo()
+
+
+func _al_cambio_estacion(_estacion: Dictionary) -> void:
+	_actualizar_panel_tiempo()
