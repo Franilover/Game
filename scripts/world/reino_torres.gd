@@ -80,6 +80,8 @@ var _boton_dormir: Button
 var _camas_interactivas: Array[Vector2] = []
 var _entrada_aviso_actual: Dictionary = {}
 var _terreno_dual_listo: bool = false
+var _atmosfera_mundo: Node = null
+var _luces_faroles: Array[PointLight2D] = []
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -152,6 +154,7 @@ func _ready() -> void:
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
+	_crear_luces_faroles()
 	# Las capas estáticas deben reconstruir su caché antes de añadir
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
 	# iniciales de las celdas serializadas de la escena.
@@ -193,6 +196,7 @@ func _crear_rio_marino_tilemap() -> void:
 
 
 func _process(_delta: float) -> void:
+	_actualizar_luces_faroles()
 	if not is_instance_valid(_jugador):
 		_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	if not is_instance_valid(_jugador):
@@ -589,6 +593,81 @@ func _cargar_arboles_pixelart() -> void:
 		_agregar_sprite_pixelart("Pixel_" + String(prefijo), textura, limites, maxi(tronco.z_index, copa.z_index))
 		tronco.visible = false
 		copa.visible = false
+
+
+func _crear_luces_faroles() -> void:
+	# Los dos postes de la plaza conservan sus sprites de escena; estas luces
+	# sólo aportan iluminación y siguen el reloj global del mundo.
+	var gradiente := Gradient.new()
+	gradiente.set_color(0, Color(1.0, 0.78, 0.46, 0.52))
+	gradiente.set_color(1, Color(1.0, 0.58, 0.22, 0.0))
+
+	var textura_luz := GradientTexture2D.new()
+	textura_luz.gradient = gradiente
+	textura_luz.width = 128
+	textura_luz.height = 128
+	textura_luz.fill = GradientTexture2D.FILL_RADIAL
+	textura_luz.fill_from = Vector2(0.5, 0.5)
+	textura_luz.fill_to = Vector2(0.5, 0.0)
+
+	for farol in [
+		{"nombre": "LuzFarolOeste", "posicion": Vector2(-330, -16)},
+		{"nombre": "LuzFarolEste", "posicion": Vector2(320, -16)}
+	]:
+		var luz := PointLight2D.new()
+		luz.name = str(farol["nombre"])
+		luz.position = farol["posicion"]
+		luz.texture = textura_luz
+		luz.texture_scale = 1.55
+		luz.color = Color("#ffd18a")
+		luz.energy = 0.9
+		luz.blend_mode = Light2D.BLEND_MODE_ADD
+		luz.shadow_enabled = false
+		luz.enabled = false
+		luz.z_index = 8
+		add_child(luz)
+		_luces_faroles.append(luz)
+
+	_actualizar_luces_faroles()
+
+
+func _actualizar_luces_faroles() -> void:
+	if _luces_faroles.is_empty():
+		return
+
+	if not is_instance_valid(_atmosfera_mundo):
+		var escena := get_tree().current_scene
+		if is_instance_valid(escena):
+			_atmosfera_mundo = escena.find_child("WorldAtmosphere", true, false)
+
+	if not is_instance_valid(_atmosfera_mundo):
+		return
+	if not _atmosfera_mundo.has_method("obtener_tiempo"):
+		return
+
+	var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return
+
+	var horas_por_dia := maxf(float(tiempo.get("horas_por_dia", 24.0)), 1.0)
+	var hora_normalizada := fposmod(
+		float(tiempo.get("hora_del_dia", 0.0)) / horas_por_dia,
+		1.0
+	)
+	var intensidad := 0.0
+
+	# Encendido progresivo al atardecer y apagado gradual al amanecer.
+	if hora_normalizada >= 0.82 or hora_normalizada < 0.20:
+		intensidad = 1.0
+	elif hora_normalizada >= 0.72:
+		intensidad = smoothstep(0.72, 0.82, hora_normalizada)
+	elif hora_normalizada < 0.30:
+		intensidad = 1.0 - smoothstep(0.20, 0.30, hora_normalizada)
+
+	for luz: PointLight2D in _luces_faroles:
+		if is_instance_valid(luz):
+			luz.enabled = intensidad > 0.01
+			luz.energy = 0.9 * intensidad
 
 
 func _cargar_puestos_pixelart() -> void:
