@@ -694,27 +694,7 @@ func _configurar_pantalla() -> void:
 	if not pantalla_completa:
 		return
 
-	# Mantener una ventana moderada y colocarla explícitamente dentro del área
-	# util del monitor. No depender de MAXIMIZED: algunos gestores Wayland
-	# pueden aplicar una geometría incorrecta y dejar la ventana fuera de vista.
-	var pantalla := DisplayServer.window_get_current_screen()
-	var area_util := DisplayServer.screen_get_usable_rect(pantalla)
-	if area_util.size.x <= 0 or area_util.size.y <= 0:
-		area_util = Rect2i(Vector2i.ZERO, DisplayServer.screen_get_size(pantalla))
-
-	var margen := Vector2i(48, 48)
-	var limite := Vector2i(
-		maxi(480, area_util.size.x - margen.x),
-		maxi(270, area_util.size.y - margen.y)
-	)
-	var tamano := Vector2i(
-		mini(800, limite.x),
-		mini(450, limite.y)
-	)
-
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-	DisplayServer.window_set_size(tamano)
-	DisplayServer.window_set_position(area_util.position + (area_util.size - tamano) / 2)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 
 # ============================================================
