@@ -31,6 +31,7 @@
 [ext_resource type="Texture2D" uid="uid://d0a5v42c67j5s" path="res://assets/art/places/Castillo.png" id="official_41"]
 [ext_resource type="Texture2D" uid="uid://mp46yeh2r0go" path="res://assets/art/places/Poste.png" id="official_42"]
 [ext_resource type="Texture2D" uid="uid://gy85sfyfqx63" path="res://assets/art/places/Pozo.png" id="official_43"]
+[ext_resource type="Texture2D" uid="uid://uauvarvrj8u7" path="res://assets/art/props/Árbol.png" id="official_tree"]
 
 [sub_resource type="RectangleShape2D" id="ShapeExit"]
 size = Vector2(48, 180)
@@ -2124,125 +2125,89 @@ position = Vector2(800, 610)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SeedStoreCollisionBody" unique_id=1238420334]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="CityTree1Trunk" type="Polygon2D" parent="." unique_id=845539816]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-1085, -524, -1075, -524, -1075, -502, -1085, -502)
-
-[node name="CityTree1Crown" type="Polygon2D" parent="." unique_id=1944518226]
+[node name="Sprite_Arbol_Ciudad_01" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-1080, -554, -1102, -516, -1058, -516)
+texture_filter = 1
+position = Vector2(-1080, -528)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree2Trunk" type="Polygon2D" parent="." unique_id=1757290080]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-1015, -524, -1005, -524, -1005, -502, -1015, -502)
-
-[node name="CityTree2Crown" type="Polygon2D" parent="." unique_id=135535785]
+[node name="Sprite_Arbol_Ciudad_02" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-1010, -554, -1032, -516, -988, -516)
+texture_filter = 1
+position = Vector2(-1010, -528)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree3Trunk" type="Polygon2D" parent="." unique_id=1556896720]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-1085, 326, -1075, 326, -1075, 348, -1085, 348)
-
-[node name="CityTree3Crown" type="Polygon2D" parent="." unique_id=274745268]
+[node name="Sprite_Arbol_Ciudad_03" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-1080, 296, -1102, 334, -1058, 334)
+texture_filter = 1
+position = Vector2(-1080, 322)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree4Trunk" type="Polygon2D" parent="." unique_id=1511073704]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-1015, 326, -1005, 326, -1005, 348, -1015, 348)
-
-[node name="CityTree4Crown" type="Polygon2D" parent="." unique_id=1292303373]
+[node name="Sprite_Arbol_Ciudad_04" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-1010, 296, -1032, 334, -988, 334)
+texture_filter = 1
+position = Vector2(-1010, 322)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree5Trunk" type="Polygon2D" parent="." unique_id=1152211069]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(1005, -524, 1015, -524, 1015, -502, 1005, -502)
-
-[node name="CityTree5Crown" type="Polygon2D" parent="." unique_id=1997379957]
+[node name="Sprite_Arbol_Ciudad_05" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(1010, -554, 988, -516, 1032, -516)
+texture_filter = 1
+position = Vector2(1010, -528)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree6Trunk" type="Polygon2D" parent="." unique_id=1762780624]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(1075, -524, 1085, -524, 1085, -502, 1075, -502)
-
-[node name="CityTree6Crown" type="Polygon2D" parent="." unique_id=1295666441]
+[node name="Sprite_Arbol_Ciudad_06" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(1080, -554, 1058, -516, 1102, -516)
+texture_filter = 1
+position = Vector2(1080, -528)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree7Trunk" type="Polygon2D" parent="." unique_id=365638937]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(1005, 326, 1015, 326, 1015, 348, 1005, 348)
-
-[node name="CityTree7Crown" type="Polygon2D" parent="." unique_id=999156943]
+[node name="Sprite_Arbol_Ciudad_07" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(1010, 296, 988, 334, 1032, 334)
+texture_filter = 1
+position = Vector2(1010, 322)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree8Trunk" type="Polygon2D" parent="." unique_id=400630662]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(1075, 326, 1085, 326, 1085, 348, 1075, 348)
-
-[node name="CityTree8Crown" type="Polygon2D" parent="." unique_id=690196565]
+[node name="Sprite_Arbol_Ciudad_08" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(1080, 296, 1058, 334, 1102, 334)
+texture_filter = 1
+position = Vector2(1080, 322)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree9Trunk" type="Polygon2D" parent="." unique_id=2007726699]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-505, -454, -495, -454, -495, -432, -505, -432)
-
-[node name="CityTree9Crown" type="Polygon2D" parent="." unique_id=161378570]
+[node name="Sprite_Arbol_Ciudad_09" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-500, -484, -522, -446, -478, -446)
+texture_filter = 1
+position = Vector2(-500, -458)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree10Trunk" type="Polygon2D" parent="." unique_id=2081749553]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(495, -454, 505, -454, 505, -432, 495, -432)
-
-[node name="CityTree10Crown" type="Polygon2D" parent="." unique_id=646119293]
+[node name="Sprite_Arbol_Ciudad_10" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(500, -484, 478, -446, 522, -446)
+texture_filter = 1
+position = Vector2(500, -458)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree11Trunk" type="Polygon2D" parent="." unique_id=983734460]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-505, 486, -495, 486, -495, 508, -505, 508)
-
-[node name="CityTree11Crown" type="Polygon2D" parent="." unique_id=715831762]
+[node name="Sprite_Arbol_Ciudad_11" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-500, 456, -522, 494, -478, 494)
+texture_filter = 1
+position = Vector2(-500, 482)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
-[node name="CityTree12Trunk" type="Polygon2D" parent="." unique_id=404128729]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(495, 486, 505, 486, 505, 508, 495, 508)
-
-[node name="CityTree12Crown" type="Polygon2D" parent="." unique_id=2041344104]
+[node name="Sprite_Arbol_Ciudad_12" type="Sprite2D" parent="."]
 z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(500, 456, 478, 494, 522, 494)
+texture_filter = 1
+position = Vector2(500, 482)
+scale = Vector2(1.375, 1.625)
+texture = ExtResource("official_tree")
 
 [node name="ExpeditionRuinsBackdrop" type="Polygon2D" parent="." unique_id=579043357]
 z_index = 2
