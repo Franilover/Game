@@ -1247,11 +1247,18 @@ func _obtener_modificador_velocidad_ambiental() -> float:
 	if not (temperatura is int or temperatura is float):
 		return 1.0
 	var respuesta := _obtener_respuesta_ambiental()
+	var modificador := 1.0
 	if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
-		return clampf(float(respuesta.get("velocidad_bajo_minimo", 0.78)), 0.1, 1.0)
-	if float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
-		return clampf(float(respuesta.get("velocidad_sobre_maximo", 0.82)), 0.1, 1.0)
-	return 1.0
+		modificador *= clampf(float(respuesta.get("velocidad_bajo_minimo", 0.78)), 0.1, 1.0)
+	elif float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
+		modificador *= clampf(float(respuesta.get("velocidad_sobre_maximo", 0.82)), 0.1, 1.0)
+	for evento_variant in estado.get("eventos", []):
+		if not evento_variant is Dictionary:
+			continue
+		var efectos_variant: Variant = (evento_variant as Dictionary).get("efectos", {})
+		if efectos_variant is Dictionary:
+			modificador *= clampf(float((efectos_variant as Dictionary).get("modificador_velocidad_criaturas", 1.0)), 0.1, 2.0)
+	return clampf(modificador, 0.1, 2.0)
 
 
 func _aplicar_respuesta_ambiental_rutina() -> void:
@@ -1271,6 +1278,14 @@ func _aplicar_respuesta_ambiental_rutina() -> void:
 		var actividad_calor := str(respuesta.get("actividad_con_calor", "reposar")).strip_edges().to_lower()
 		if not actividad_calor.is_empty():
 			actividad_horaria = actividad_calor
+	for evento_variant in estado.get("eventos", []):
+		if not evento_variant is Dictionary:
+			continue
+		var efectos_variant: Variant = (evento_variant as Dictionary).get("efectos", {})
+		if efectos_variant is Dictionary:
+			var actividad_evento := str((efectos_variant as Dictionary).get("actividad_criaturas", "")).strip_edges().to_lower()
+			if not actividad_evento.is_empty():
+				actividad_horaria = actividad_evento
 
 
 func _movimiento_permitido() -> bool:
