@@ -25,8 +25,10 @@ void fragment() {
 """
 
 @export var climate_system_path: NodePath = NodePath("../../Systems/WorldAtmosphere/ClimateSystem")
+@export var player_path: NodePath = NodePath("../../Entities/Player")
 
 var _climate_system: Node
+var _player: Node2D
 var _shader_material: ShaderMaterial
 
 
@@ -35,6 +37,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = -100
 	_climate_system = get_node_or_null(climate_system_path)
+	_player = get_node_or_null(player_path) as Node2D
 	var shader := Shader.new()
 	shader.code = SHADER_CODE
 	_shader_material = ShaderMaterial.new()
@@ -52,8 +55,12 @@ func _actualizar_niebla() -> void:
 	if _shader_material == null:
 		return
 	var visibilidad := 1.0
-	if _climate_system != null and is_instance_valid(_climate_system) and _climate_system.has_method("obtener_estado"):
-		var estado: Dictionary = _climate_system.call("obtener_estado")
+	if _climate_system != null and is_instance_valid(_climate_system):
+		var estado: Dictionary = {}
+		if is_instance_valid(_player) and _climate_system.has_method("obtener_estado_para_posicion"):
+			estado = _climate_system.call("obtener_estado_para_posicion", _player.global_position, "")
+		elif _climate_system.has_method("obtener_estado"):
+			estado = _climate_system.call("obtener_estado")
 		var clima_variant: Variant = estado.get("clima", {})
 		if clima_variant is Dictionary:
 			visibilidad = clampf(float((clima_variant as Dictionary).get("visibilidad", 1.0)), 0.0, 1.0)
