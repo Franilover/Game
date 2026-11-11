@@ -575,12 +575,27 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 
 ## Retira las entidades generadas por chunks cuando una zona procedural se descarga.
 ## Las entidades globales/persistentes (por ejemplo, personajes registrados por ID)
-## quedan fuera de esta limpieza y conservan su ciclo de vida.
+## quedan fuera de esta limpieza y conservan su ciclo de vida. Aquí se usa queue_free
+## en vez de reciclar: la fábrica y sus pools también se destruyen al salir de la zona.
 func despawn_entidades_de_chunks() -> void:
 	var chunks: Array = _by_chunk.keys()
 	for chunk_variant in chunks:
-		if chunk_variant is Vector2i:
-			despawn_chunk(chunk_variant)
+		if not chunk_variant is Vector2i:
+			continue
+		var chunk_coord := chunk_variant as Vector2i
+		var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
+		if bucket_variant is Array:
+			for entity_variant in bucket_variant as Array:
+				if not entity_variant is Node or not is_instance_valid(entity_variant):
+					continue
+				var entity := entity_variant as Node
+				guardar_estado_entidad(entity, chunk_coord)
+				_remover_persistencia(entity)
+				entity.queue_free()
+		_by_chunk.erase(chunk_coord)
+	_active_chunks.clear()
+	_active_creature_chunks.clear()
+	_active_prop_chunks.clear()
 
 
 func limpiar_todo() -> void:
