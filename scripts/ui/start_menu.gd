@@ -319,19 +319,13 @@ func _imprimir_estado_ventana(momento: String) -> void:
 
 
 func _configurar_layout_responsive() -> void:
-	var area := get_viewport_rect().size
+	# Paper y Center ya tienen anclas centradas y dimensiones fijas en la escena.
+	# No recalcular su posición desde el viewport: hacerlo aquí desincroniza
+	# sus offsets respecto al área lógica y desplaza el bloque principal.
+	# Solo los paneles superpuestos necesitan reducirse en ventanas pequeñas.
+	var area := get_viewport().get_visible_rect().size
 	if area.x <= 0.0 or area.y <= 0.0:
 		return
-	_ajustar_panel_centrado(
-		get_node_or_null("Paper") as Control,
-		Vector2(520.0, 440.0),
-		area
-	)
-	_ajustar_panel_centrado(
-		get_node_or_null("Center") as Control,
-		Vector2(360.0, 380.0),
-		area
-	)
 	_ajustar_panel_centrado(
 		get_node_or_null("LoginOverlay/LoginPanel") as Control,
 		Vector2(380.0, 330.0),
