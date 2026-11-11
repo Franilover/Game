@@ -532,8 +532,13 @@ func _cargar_sprites_de_torres() -> void:
 		if not tiene_textura_personalizada:
 			texture = TORRES_PIXEL_ART.crear_edificio(clave, absi(clave.hash()) % 7)
 
-		# Oculta la geometría plana conservando rótulos, entradas y colisiones.
+		# Los sprites oficiales están guardados en la escena para editarlos desde Godot.
 		_ocultar_placeholder(building["hide"])
+		var sprite_existente := get_node_or_null(NodePath("Sprite_" + clave)) as Sprite2D
+		if is_instance_valid(sprite_existente):
+			if tiene_textura_personalizada:
+				print("ReinoTorres: sprite oficial de escena activo para ", clave)
+			continue
 		var sprite := Sprite2D.new()
 		sprite.name = "Sprite_" + clave.capitalize()
 		sprite.texture = texture
