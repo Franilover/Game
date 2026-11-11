@@ -318,7 +318,9 @@ func _al_pulsar_dormir() -> void:
 		_boton_dormir.visible = false
 		return
 	var escena := get_tree().current_scene
-	var atmosfera := escena.find_child("WorldAtmosphere", true, false) if is_instance_valid(escena) else null
+	var atmosfera: Node = null
+	if is_instance_valid(escena):
+		atmosfera = escena.find_child("WorldAtmosphere", true, false)
 	if not is_instance_valid(atmosfera) or not atmosfera.has_method("dormir_hasta_manana"):
 		push_warning("ReinoTorres: no se encontró el calendario para dormir.")
 		return
