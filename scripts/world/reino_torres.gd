@@ -862,11 +862,8 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_rect(cuarto, "Armero", Vector2(0, -90), Vector2(90, 24), piedra, 2)
 		"taller", "carpinteria":
 			_agregar_rect(cuarto, "BancoTrabajo", Vector2(0, 15), Vector2(150, 42), madera, 1)
-			_agregar_rect(cuarto, "Herramientas", Vector2(-145, -70), Vector2(48, 82), piedra, 1)
 			_agregar_rect(cuarto, "Materiales", Vector2(145, 65), Vector2(65, 40), acento, 1)
 		"granero", "molino", "semillas":
-			for i in range(4):
-				_agregar_rect(cuarto, "Saco%d" % i, Vector2(-145 + i * 95, -45), Vector2(46, 44), acento, 1)
 			_agregar_rect(cuarto, "MesaPesaje", Vector2(0, 55), Vector2(110, 25), madera, 1)
 			if tipo == "molino":
 				_agregar_rect(cuarto, "MecanismoMolino", Vector2(0, -90), Vector2(80, 30), piedra, 2)
@@ -875,12 +872,9 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_rect(cuarto, "Canal", Vector2(0, 60), Vector2(180, 20), Color(0.25,0.46,0.52), 2)
 			_agregar_rect(cuarto, "ValvulaOeste", Vector2(-145, -80), Vector2(32, 32), piedra, 2)
 		"telar":
-			for i in range(3):
-				_agregar_rect(cuarto, "Telar%d" % i, Vector2(-120 + i * 120, -15), Vector2(48, 95), madera, 1)
 			_agregar_rect(cuarto, "RollosTela", Vector2(0, 75), Vector2(125, 24), Color(0.47,0.31,0.29), 2)
 		"alfareria":
 			_agregar_rect(cuarto, "HornoCeramica", Vector2(-130, -65), Vector2(66, 66), piedra, 1)
-			_agregar_rect(cuarto, "Torno", Vector2(30, 10), Vector2(50, 50), madera, 2)
 			_agregar_rect(cuarto, "EstantesVasijas", Vector2(145, -50), Vector2(36, 95), acento, 1)
 		"banos":
 			for i in range(3):
