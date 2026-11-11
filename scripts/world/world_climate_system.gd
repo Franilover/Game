@@ -225,27 +225,23 @@ func obtener_estado_para_posicion(
 	if habitats_variant is Array:
 		var habitats := habitats_variant as Array
 		var buscado := habitat_clave.strip_edges().to_lower()
-		var elegido: Dictionary = {}
-		for habitat_variant in habitats:
-			if not habitat_variant is Dictionary:
-				continue
-			var habitat := habitat_variant as Dictionary
-			if elegido.is_empty():
-				elegido = habitat
-			var tipo_habitat_variant: Variant = habitat.get("tipo_habitat", {})
-			var tipo_habitat_clave := ""
-			if tipo_habitat_variant is Dictionary:
-				tipo_habitat_clave = str((tipo_habitat_variant as Dictionary).get("clave", "")).strip_edges().to_lower()
-			var claves := [
-				str(habitat.get("clave", "")).strip_edges().to_lower(),
-				str(habitat.get("nombre", "")).strip_edges().to_lower(),
-				tipo_habitat_clave
-			]
-			if not buscado.is_empty() and buscado in claves:
-				elegido = habitat
-				break
-		if not elegido.is_empty():
-			contexto["habitat_id"] = str(elegido.get("id", ""))
+		if not buscado.is_empty():
+			for habitat_variant in habitats:
+				if not habitat_variant is Dictionary:
+					continue
+				var habitat := habitat_variant as Dictionary
+				var tipo_habitat_variant: Variant = habitat.get("tipo_habitat", {})
+				var tipo_habitat_clave := ""
+				if tipo_habitat_variant is Dictionary:
+					tipo_habitat_clave = str((tipo_habitat_variant as Dictionary).get("clave", "")).strip_edges().to_lower()
+				var claves := [
+					str(habitat.get("clave", "")).strip_edges().to_lower(),
+					str(habitat.get("nombre", "")).strip_edges().to_lower(),
+					tipo_habitat_clave
+				]
+				if buscado in claves:
+					contexto["habitat_id"] = str(habitat.get("id", ""))
+					break
 	return obtener_estado_para_contexto(contexto)
 
 
