@@ -389,6 +389,16 @@ func establecer_dia() -> bool:
 	return true
 
 
+func dormir_hasta_manana() -> bool:
+	if not _calendario_cargado or _tiempo_bloqueado:
+		return false
+
+	_avanzar_dia()
+	hora_del_dia = horas_por_dia * (7.0 / 24.0)
+	_actualizar_iluminacion()
+	return true
+
+
 func establecer_noche() -> bool:
 	if not _calendario_cargado:
 		return false
