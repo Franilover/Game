@@ -2,6 +2,9 @@ extends SceneTree
 
 const ATMOSPHERE_SCRIPT = preload("res://scripts/world/world_atmosphere.gd")
 const CLIMATE_SCRIPT = preload("res://scripts/world/world_climate_system.gd")
+const WORLD_DATA_SCRIPT = preload("res://scripts/world/world_data.gd")
+const CREATURE_AI_SCRIPT = preload("res://scripts/creatures/creature_ai.gd")
+const CREATURE_SCRIPT = preload("res://scripts/creatures/creature.gd")
 
 
 func _initialize() -> void:
@@ -53,7 +56,8 @@ func _run() -> void:
 	atmosphere.estacion_actual = {}
 
 	var climate = CLIMATE_SCRIPT.new()
-	root.add_child(climate)
+	climate.name = "ClimateSystem"
+	atmosphere.add_child(climate)
 	if climate.obtener_clima_id() != "despejado":
 		_fail("The initial climate must be clear.")
 		return
@@ -84,7 +88,22 @@ func _run() -> void:
 			}
 		}
 	}
-	climate.configurar_dependencias(null, atmosphere)
+	var world_data = WORLD_DATA_SCRIPT.new()
+	world_data.mundo = {
+		"ambiente_estacional": {
+			"season-test": {
+				"habitats": {
+					"habitat-frio": {
+						"temperatura_media": {"valor": 260.15},
+						"humedad_relativa": {"valor": 0.9},
+						"disponibilidad_agua": {"valor": 0.7},
+						"velocidad_medio": {"valor": 0.1}
+					}
+				}
+			}
+		}
+	}
+	climate.configurar_dependencias(world_data, atmosphere)
 	var niebla_a: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
 	var niebla_b: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
 	if niebla_a != niebla_b:
@@ -96,6 +115,25 @@ func _run() -> void:
 	var clima_niebla: Dictionary = niebla_a.get("clima", {})
 	if str(clima_niebla.get("tipo", "")) != "niebla" or float(clima_niebla.get("visibilidad", 1.0)) > 0.21:
 		_fail("Habitat-specific fog rules did not reduce visibility.")
+		return
+	var ambiente_frio: Dictionary = niebla_a.get("ambiente", {})
+	if not is_equal_approx(float(ambiente_frio.get("temperatura_c", 0.0)), -14.0):
+		_fail("Seasonal habitat temperature was not converted from Kelvin and combined with weather.")
+		return
+	var criatura = CREATURE_SCRIPT.new()
+	criatura.datos = {"habitat_id": "habitat-frio"}
+	var ai = CREATURE_AI_SCRIPT.new()
+	ai.criatura = criatura
+	ai.world_atmosphere = atmosphere
+	if not is_equal_approx(ai._obtener_distancia_deteccion(), 30.0):
+		_fail("Fog did not reduce creature detection distance.")
+		return
+	if not is_equal_approx(ai._obtener_modificador_velocidad_ambiental(), 0.78):
+		_fail("Cold did not reduce creature movement speed.")
+		return
+	ai._aplicar_respuesta_ambiental_rutina()
+	if ai.actividad_horaria != "reposar":
+		_fail("Cold did not change the creature's activity routine.")
 		return
 	var clima_despejado: Dictionary = climate.obtener_estado_para_contexto({}).get("clima", {})
 	if str(clima_despejado.get("tipo", "")) != "despejado":
