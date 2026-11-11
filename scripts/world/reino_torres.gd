@@ -7,18 +7,6 @@ const TORRES_ART_ROOT := "res://assets/art/kingdom/torres"
 const TORRES_PIXEL_ART := preload("res://scripts/world/torres_pixel_art.gd")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
-const TORRES_TILE_SIZE := 32
-const TORRES_TERRAIN_VISUAL_SCRIPT := preload("res://scripts/world/world_terrain_visual.gd")
-const TORRES_TERRAIN_ORIGIN := Vector2(-1200.0, -704.0)
-const TORRES_TERRAIN_COLUMNS := 75
-const TORRES_TERRAIN_ROWS := 44
-const TORRES_ROAD_SURFACES: PackedStringArray = [
-	"NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath",
-	"NorthRingRoad", "SouthRingRoad", "WestRingRoad", "EastRingRoad",
-	"NorthCrossStreet", "SouthCrossStreet", "WestCrossStreet", "EastCrossStreet",
-	"NorthAvenue", "SouthAvenue", "WestAvenue", "EastAvenue",
-	"RoadToAdventure",
-]
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
 # Si no existe ningún archivo válido, sus Polygon2D de placeholder quedan visibles.
@@ -77,8 +65,6 @@ var _capa_interior: Node2D
 var _aviso_panel: PanelContainer
 var _aviso: Label
 var _entrada_aviso_actual: Dictionary = {}
-var _cesped_dual: TileMapDual
-var _terrain_renderer: Node
 var _terreno_dual_listo: bool = false
 var _rotulos_edificios: Dictionary = {}
 
@@ -309,123 +295,50 @@ func _input(evento: InputEvent) -> void:
 
 
 func _crear_cesped_tilemap_dual() -> void:
-	# Si la escena ya contiene capas pintadas desde el editor, éstas son la
-	# fuente del diseño. No volver a rasterizar los polígonos de caminos.
-	var capas_editor: Array[TileMapDual] = []
+	# Torres usa exclusivamente las capas TileMapDual guardadas en la escena.
+	# Se ocultan durante su inicialización para evitar mostrar una composición
+	# incompleta y se revelan juntas cuando los tres Display están listos.
+	var capas: Array[TileMapDual] = []
+	var celdas_totales := 0
 	for zona in [0, 1, 8]:
-		var capa_editor := get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
-		if capa_editor != null:
-			capas_editor.append(capa_editor)
-	if not capas_editor.is_empty():
-		if capas_editor.size() != 3:
-			push_error("ReinoTorres: el terreno editable está incompleto; se requieren Pradera, Tierra y Bosque.")
+		var capa := get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
+		if not is_instance_valid(capa):
+			push_error("ReinoTorres: falta la capa editable TerrainDual_Zone_%02d." % zona)
 			return
-		# Cada TileMapDual inicializa su Display de forma asíncrona en
-		# _ready(); ceder dos frames evita validar antes de que lea el TileSet.
-		await get_tree().process_frame
-		await get_tree().process_frame
-		for capa_editor in capas_editor:
-			capa_editor.reconstruir_renderer_dual()
-			var diagnostico_editor: Dictionary = capa_editor.obtener_diagnostico()
-			if capa_editor.get_used_cells().is_empty() or int(diagnostico_editor.get("display_cells", 0)) <= 0:
-				push_error("ReinoTorres: la capa editable %s no generó tiles visuales." % capa_editor.name)
-				return
-		_terreno_dual_listo = true
-		print("ReinoTorres: terreno cargado desde TileMapDual editables de la escena.")
+		capa.visible = false
+		capas.append(capa)
+		celdas_totales += capa.get_used_cells().size()
+
+	if celdas_totales != 75 * 44:
+		push_error("ReinoTorres: el terreno de escena debe contener exactamente 3.300 celdas; contiene %d." % celdas_totales)
 		return
 
-	# Compatibilidad temporal: se usa sólo mientras la escena aún no se haya
-	# convertido con tools/editor/bake_torres_editable_tilemap.gd.
-	# Torres y la expedición comparten el renderer canónico de terrenos.
-	# La ciudad sigue siendo un mapa fijo: sólo se rasteriza su distribución
-	# existente a celdas, sin generar ni modificar su geometría.
-	_terrain_renderer = TORRES_TERRAIN_VISUAL_SCRIPT.new()
-	_terrain_renderer.name = "TerrainRenderer"
-	# Las celdas se rasterizan desde (0, 0), pero el mapa de Torres ocupa
-	# el rectángulo mundial (-1200, -704) -> (1200, 704). El renderer debe
-	# compartir ese origen para que los TileMapDual coincidan con Ground,
-	# los caminos y el resto de la geometría de la escena.
-	_terrain_renderer.position = TORRES_TERRAIN_ORIGIN
-	add_child(_terrain_renderer)
-	_terrain_renderer.call("configurar", TORRES_TILE_SIZE)
-
-	# TileMapDual crea los Display internos en _ready(). Preparar las reglas
-	# una vez antes de registrar el terreno de las 3.300 celdas.
-	await get_tree().process_frame
-	_terrain_renderer.call("finalizar_preparacion_renderer")
-	var caminos: Array[PackedVector2Array] = []
-	for nombre in TORRES_ROAD_SURFACES:
-		var poligono := get_node_or_null(NodePath(nombre)) as Polygon2D
-		if not is_instance_valid(poligono):
-			continue
-		# Las calles dejan de dibujarse como polígonos/texturas separados:
-		# su forma se conserva, pero ahora determina las celdas de Tierra.
-		poligono.visible = false
-		caminos.append(poligono.polygon)
-
-	# Bosque en el perímetro, pradera en el interior y caminos de tierra.
-	# La prioridad de los caminos evita que el anillo forestal los tape.
-	for y in range(TORRES_TERRAIN_ROWS):
-		for x in range(TORRES_TERRAIN_COLUMNS):
-			var celda := Vector2i(x, y)
-			var centro := TORRES_TERRAIN_ORIGIN + Vector2(
-				(float(x) + 0.5) * TORRES_TILE_SIZE,
-				(float(y) + 0.5) * TORRES_TILE_SIZE
-			)
-			var zona := 0
-			var bioma := "Pradera"
-			if _torres_punto_en_caminos(centro, caminos):
-				zona = 1
-				bioma = "Tierra"
-			elif x < 3 or x >= TORRES_TERRAIN_COLUMNS - 3 or y < 3 or y >= TORRES_TERRAIN_ROWS - 3:
-				zona = 8
-				bioma = "Bosque"
-			_terrain_renderer.call("set_zone", celda, zona, zona, bioma)
-
-	# Igual que en StaticForestMap (expedición fija): procesar el DualGrid
-	# por tandas, dejando que el árbol y sus DisplayLayers completen cada
-	# actualización entre frames. No forzar _update_cells() manualmente.
-	while bool(_terrain_renderer.call("tiene_flush_pendiente")):
-		_terrain_renderer.call("procesar_flush", 512)
+	# TileMapDual crea su Display en _ready() y compone las celdas en el
+	# siguiente frame. No reconstruirlo manualmente: eso duplicaba el trabajo.
+	var renderer_listo := false
+	for intento in range(60):
+		renderer_listo = true
+		for capa in capas:
+			var diagnostico: Dictionary = capa.obtener_diagnostico()
+			if (
+				not bool(diagnostico.get("renderer_valid", false))
+				or int(diagnostico.get("display_cells", 0)) <= 0
+			):
+				renderer_listo = false
+				break
+		if renderer_listo:
+			break
 		await get_tree().process_frame
 
-	# Verificar el resultado visual real de cada capa, no sólo las celdas
-	# registradas en el TileMapDual. Esto detecta capas cuyo Display no haya
-	# compuesto sus tiles aunque el mapa lógico parezca completo.
-	for zona in [0, 1, 8]:
-		var capa := _terrain_renderer.get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
-		if not is_instance_valid(capa):
-			push_error("ReinoTorres: falta la capa visual de terreno %d." % zona)
-			return
-		var diagnostico: Dictionary = capa.call("obtener_diagnostico")
-		var celdas_logicas := int(diagnostico.get("world_cells", 0))
-		var celdas_visuales := int(diagnostico.get("display_cells", 0))
-		print("ReinoTorres terreno zona %d: lógicas=%d, visuales=%d, capas=%s, cache=%d, reglas=%d, métricas=%s" % [
-			zona,
-			celdas_logicas,
-			celdas_visuales,
-			str(diagnostico.get("display_layers", [])),
-			int(diagnostico.get("cached_cells", 0)),
-			int(diagnostico.get("terrain_layers", 0)),
-			str(diagnostico.get("renderer_metrics", {}))
-		])
-		if celdas_logicas > 0 and celdas_visuales <= 0:
-			push_error("ReinoTorres: la zona %d tiene celdas lógicas pero ningún tile visual." % zona)
-			return
+	if not renderer_listo:
+		push_error("ReinoTorres: los TileMapDual de la escena no terminaron de cargar sus Display.")
+		return
 
-	# El antiguo fondo plano ocultaría la mezcla de atlas y ya no es necesario.
-	var suelo := get_node_or_null("Ground") as Polygon2D
-	if is_instance_valid(suelo):
-		suelo.visible = false
+	for capa in capas:
+		capa.visible = true
+
 	_terreno_dual_listo = true
-	print("ReinoTorres: terreno fijo compuesto con TileMapDual (pradera, bosque y caminos de tierra).")
-
-
-func _torres_punto_en_caminos(punto: Vector2, caminos: Array[PackedVector2Array]) -> bool:
-	for poligono: PackedVector2Array in caminos:
-		if poligono.size() >= 3 and Geometry2D.is_point_in_polygon(punto, poligono):
-			return true
-	return false
+	print("ReinoTorres: terreno TileMapDual de escena visible desde su composición inicial.")
 
 
 func _texturizar_mapa_pixelart() -> void:
