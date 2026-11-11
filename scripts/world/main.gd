@@ -66,7 +66,7 @@ func _ready() -> void:
 			_world_atmosphere.establecer_estado_guardado(tiempo_guardado as Dictionary)
 		var climate_system := get_node_or_null("Systems/WorldAtmosphere/ClimateSystem") as WorldClimateSystem
 		if climate_system != null:
-			climate_system.configurar_dependencias(WorldData, _world_atmosphere)
+			climate_system.configurar_dependencias(WorldData, _world_atmosphere, _world_context)
 		else:
 			push_error("Main: falta Systems/WorldAtmosphere/ClimateSystem; el clima no podrá simularse.")
 
