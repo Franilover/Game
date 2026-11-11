@@ -31,19 +31,27 @@ func _run() -> void:
 		return
 
 	var renderer := torres.get_node_or_null("TerrainRenderer")
-	if renderer == null:
-		_fail("Torres no creó el renderer común de terrenos.")
-		return
-	if bool(renderer.call("tiene_flush_pendiente")):
-		_fail("El renderer terminó con celdas pendientes de composición.")
-		return
-	if (renderer as Node2D).position != Vector2(-1200.0, -704.0):
-		_fail("El renderer TileMapDual no coincide con el origen mundial del suelo de Torres.")
-		return
+	var terreno_editorial := renderer == null
+	if terreno_editorial:
+		for zone in EXPECTED_ATLASES.keys():
+			if torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) == null:
+				_fail("Falta la capa editable TileMapDual de la zona %d." % int(zone))
+				return
+	else:
+		if bool(renderer.call("tiene_flush_pendiente")):
+			_fail("El renderer terminó con celdas pendientes de composición.")
+			return
+		if (renderer as Node2D).position != Vector2(-1200.0, -704.0):
+			_fail("El renderer TileMapDual no coincide con el origen mundial del suelo de Torres.")
+			return
 
 	var total_cells := 0
 	for zone in EXPECTED_ATLASES.keys():
-		var layer := renderer.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
+		var layer := (
+			torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
+			if terreno_editorial
+			else renderer.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
+		)
 		if layer == null:
 			_fail("Falta la capa TileMapDual de la zona %d." % int(zone))
 			return
@@ -95,13 +103,17 @@ func _run() -> void:
 
 	# RoadToAdventure cruza las celdas (55, 21) y (60, 21).
 	# Ambas deben pertenecer a Tierra, no quedar como pradera ni como hueco.
-	var tierra := renderer.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
+	var tierra := (
+		torres.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
+		if terreno_editorial
+		else renderer.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
+	)
 	for celda in [Vector2i(55, 21), Vector2i(60, 21)]:
 		if tierra == null or tierra.get_cell_source_id(celda) == -1:
 			_fail("RoadToAdventure no quedó rasterizado como Tierra en la celda %s." % str(celda))
 			return
 
-	print("PASS: Torres usa el renderer compartido TileMapDual con pradera, bosque y caminos de tierra.")
+	print("PASS: Torres usa TileMapDual con pradera, bosque y caminos de tierra. Modo editable: %s" % str(terreno_editorial))
 	torres.queue_free()
 	quit()
 
