@@ -320,6 +320,9 @@ func _crear_cesped_tilemap_dual() -> void:
 		if capas_editor.size() != 3:
 			push_error("ReinoTorres: el terreno editable está incompleto; se requieren Pradera, Tierra y Bosque.")
 			return
+		# Cada TileMapDual inicializa su Display de forma asíncrona en
+		# _ready(); ceder dos frames evita validar antes de que lea el TileSet.
+		await get_tree().process_frame
 		await get_tree().process_frame
 		for capa_editor in capas_editor:
 			capa_editor.reconstruir_renderer_dual()
