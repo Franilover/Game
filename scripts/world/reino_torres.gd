@@ -204,8 +204,9 @@ func _process(_delta: float) -> void:
 		posicion_local.y = clampf(posicion_local.y, -INTERIOR_MEDIO_ALTO + 30.0, INTERIOR_MEDIO_ALTO - 40.0)
 		_jugador.global_position = to_global(posicion_local)
 
-		var umbral_salida := to_global(Vector2(60, 370))
-		var cerca_salida := _jugador.global_position.distance_to(umbral_salida) < 38.0
+		var cerca_salida := posicion_local.y >= INTERIOR_MEDIO_ALTO - 60.0 \
+			and posicion_local.x >= -12.0 \
+			and posicion_local.x <= 132.0
 		_entrada_aviso_actual.clear()
 		_aviso_panel.visible = false
 		_aviso.text = ""
@@ -892,7 +893,7 @@ func _agregar_suelo_tilemap(padre: Node) -> void:
 
 	# 80 x 50 tiles cubren los 1280 x 800 puntos del nuevo interior.
 	for y in range(int(INTERIOR_ALTO / 16.0)):
-		for x in range(int(INTERIOR_ANCHO / 16.0)): 
+		for x in range(int(INTERIOR_ANCHO / 16.0)):
 			capa.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
 
 
