@@ -57,6 +57,41 @@ func _run() -> void:
 	if climate.obtener_clima_id() != "despejado":
 		_fail("The initial climate must be clear.")
 		return
+	# La seleccion diaria acepta reglas de Supabase y se mantiene determinista
+	# para la misma fecha, estación y hábitat.
+	atmosphere.estacion_actual = {
+		"id": "season-test",
+		"config_climatica": {
+			"transicion_segundos": 0.0,
+			"perfiles": [{"tipo": "despejado", "peso": 1.0}],
+			"habitats": {
+				"habitat-frio": {
+					"perfiles": [{
+						"tipo": "niebla",
+						"peso": 1.0,
+						"intensidad_min": 1.0,
+						"intensidad_max": 1.0,
+						"efectos": {"visibilidad": 0.2}
+					}]
+				}
+			}
+		}
+	}
+	climate.configurar_dependencias(null, atmosphere)
+	var niebla_a: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
+	var niebla_b: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
+	if niebla_a != niebla_b:
+		_fail("The same habitat and world date must resolve to the same climate.")
+		return
+	var clima_niebla: Dictionary = niebla_a.get("clima", {})
+	if str(clima_niebla.get("tipo", "")) != "niebla" or float(clima_niebla.get("visibilidad", 1.0)) > 0.21:
+		_fail("Habitat-specific fog rules did not reduce visibility.")
+		return
+	var clima_despejado: Dictionary = climate.obtener_estado_para_contexto({}).get("clima", {})
+	if str(clima_despejado.get("tipo", "")) != "despejado":
+		_fail("The station-wide climate profile was not used as fallback.")
+		return
+
 	if not climate.establecer_clima("lluvia", 0.8, 0.0):
 		_fail("A supported weather profile was rejected.")
 		return
