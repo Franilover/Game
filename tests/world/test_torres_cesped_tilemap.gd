@@ -58,6 +58,13 @@ func _run() -> void:
 		if cells <= 0:
 			_fail("La zona %d no recibió celdas." % int(zone))
 			return
+		var diagnostico: Dictionary = layer.call("obtener_diagnostico")
+		if not bool(diagnostico.get("renderer_valid", false)):
+			_fail("La zona %d no inicializó su renderer visual." % int(zone))
+			return
+		if int(diagnostico.get("display_cells", 0)) <= 0:
+			_fail("La zona %d tiene celdas lógicas, pero no generó tiles en Display." % int(zone))
+			return
 		total_cells += cells
 
 	if total_cells != EXPECTED_CELL_COUNT:
@@ -72,6 +79,7 @@ func _run() -> void:
 		"NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath",
 		"NorthRingRoad", "SouthRingRoad", "WestRingRoad", "EastRingRoad",
 		"NorthCrossStreet", "SouthCrossStreet", "WestCrossStreet", "EastCrossStreet",
+		"NorthAvenue", "SouthAvenue", "WestAvenue", "EastAvenue",
 		"RoadToAdventure",
 	]:
 		var camino := torres.get_node_or_null(nombre) as Polygon2D
