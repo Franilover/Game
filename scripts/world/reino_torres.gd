@@ -13,8 +13,15 @@ const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.p
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 
+# Los interiores deben superar el viewport base (960x540) para que la cámara
+# nunca deje ver el fondo gris alrededor del suelo.
+const INTERIOR_ANCHO := 1280.0
+const INTERIOR_ALTO := 800.0
+const INTERIOR_MEDIO_ANCHO := INTERIOR_ANCHO / 2.0
+const INTERIOR_MEDIO_ALTO := INTERIOR_ALTO / 2.0
+
 # Cada edificio intenta primero su sprite específico y después uno genérico.
-# Si no existe ningún archivo válido, sus Polygon2D de placeholder quedan visibles.
+# Los recursos ausentes conservan únicamente su estructura pixel-art disponible.
 const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"castillo", "paths":["res://assets/art/places/Castillo.png","castillo.png","edificios/castillo.png"], "position":Vector2(0,-205), "size":Vector2(230,190), "hide":["CastleKeep","CastleFacade","CastleRoof","CastleDoor","CastleWindow","CastleTower"]},
 	{"key":"panaderia", "paths":["res://assets/art/places/Panaderia.png","casas/panaderia.png","edificios/panaderia.png","casas/casa.png"], "position":Vector2(-245,-157), "size":Vector2(96,92), "hide":["HouseBaker"]},
@@ -193,12 +200,12 @@ func _process(_delta: float) -> void:
 		# El interior es cerrado: limita la posición del jugador al área transitable.
 		# La única salida es el umbral de la puerta, que devuelve al exterior automáticamente.
 		var posicion_local := to_local(_jugador.global_position)
-		posicion_local.x = clampf(posicion_local.x, -204.0, 204.0)
-		posicion_local.y = clampf(posicion_local.y, -112.0, 108.0)
+		posicion_local.x = clampf(posicion_local.x, -610.0, 610.0)
+		posicion_local.y = clampf(posicion_local.y, -370.0, 360.0)
 		_jugador.global_position = to_global(posicion_local)
 
-		var umbral_salida := to_global(Vector2(60, 105))
-		var cerca_salida := _jugador.global_position.distance_to(umbral_salida) < 30.0
+		var umbral_salida := to_global(Vector2(60, 370))
+		var cerca_salida := _jugador.global_position.distance_to(umbral_salida) < 38.0
 		_entrada_aviso_actual.clear()
 		_aviso_panel.visible = false
 		_aviso.text = ""
@@ -721,8 +728,8 @@ func _limitar_camara_a_interior() -> void:
 		"enabled": _camara_interior.limit_enabled,
 	}
 	# Coincide con los bordes exteriores de la habitación (incluyendo los muros).
-	var esquina_superior_izquierda := to_global(Vector2(-228, -139))
-	var esquina_inferior_derecha := to_global(Vector2(228, 139))
+	var esquina_superior_izquierda := to_global(Vector2(-648, -408))
+	var esquina_inferior_derecha := to_global(Vector2(648, 408))
 	_camara_interior.limit_left = floori(esquina_superior_izquierda.x)
 	_camara_interior.limit_top = floori(esquina_superior_izquierda.y)
 	_camara_interior.limit_right = ceili(esquina_inferior_derecha.x)
@@ -796,11 +803,12 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	# Los muebles existentes se representan con sprites oficiales. Los objetos
 	# sin sprite propio quedan fuera hasta que se dibujen sus recursos pixel art.
 	_agregar_suelo_tilemap(cuarto)
-	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -139), Vector2(456, 12))
-	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-226, 0), Vector2(12, 278))
-	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(226, 0), Vector2(12, 278))
-	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2(-112, 133), Vector2(232, 12))
-	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(172, 133), Vector2(112, 12))
+	# Muros perimetrales ampliados con una abertura de puerta al sur.
+	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -404), Vector2(1296, 16))
+	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-644, 0), Vector2(16, 816))
+	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(644, 0), Vector2(16, 816))
+	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2(-330, 404), Vector2(636, 16))
+	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(390, 404), Vector2(516, 16))
 
 	var tipo := str(entrada["tipo"])
 	match tipo:
@@ -876,15 +884,15 @@ func _agregar_suelo_tilemap(padre: Node) -> void:
 
 	var capa := TileMapLayer.new()
 	capa.name = "SueloTileMap"
-	capa.position = Vector2(-224, -136)
+	capa.position = Vector2(-640, -400)
 	capa.tile_set = tileset
 	capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	capa.z_index = -10
 	padre.add_child(capa)
 
-	# 28 x 17 tiles cubren la habitación completa (448 x 272 unidades).
-	for y in range(17):
-		for x in range(28):
+	# 80 x 50 tiles cubren los 1280 x 800 puntos del nuevo interior.
+	for y in range(50):
+		for x in range(80):
 			capa.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
 
 
