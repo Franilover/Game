@@ -16,6 +16,7 @@ const TORRES_ROAD_SURFACES: PackedStringArray = [
 	"NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath",
 	"NorthRingRoad", "SouthRingRoad", "WestRingRoad", "EastRingRoad",
 	"NorthCrossStreet", "SouthCrossStreet", "WestCrossStreet", "EastCrossStreet",
+	"NorthAvenue", "SouthAvenue", "WestAvenue", "EastAvenue",
 	"RoadToAdventure",
 ]
 
@@ -356,6 +357,25 @@ func _crear_cesped_tilemap_dual() -> void:
 	if bool(_terrain_renderer.call("tiene_flush_pendiente")):
 		push_error("ReinoTorres: quedó terreno pendiente después de la composición estática.")
 		return
+
+	# Verificar el resultado visual real de cada capa, no sólo las celdas
+	# registradas en el TileMapDual. Esto detecta capas cuyo Display no haya
+	# compuesto sus tiles aunque el mapa lógico parezca completo.
+	for zona in [0, 1, 8]:
+		var capa := _terrain_renderer.get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
+		if not is_instance_valid(capa):
+			push_error("ReinoTorres: falta la capa visual de terreno %d." % zona)
+			return
+		var diagnostico: Dictionary = capa.call("obtener_diagnostico")
+		var celdas_logicas := int(diagnostico.get("world_cells", 0))
+		var celdas_visuales := int(diagnostico.get("display_cells", 0))
+		print("ReinoTorres terreno zona %d: lógicas=%d, visuales=%d, capas=%s" % [
+			zona, celdas_logicas, celdas_visuales,
+			str(diagnostico.get("display_layers", []))
+		])
+		if celdas_logicas > 0 and celdas_visuales <= 0:
+			push_error("ReinoTorres: la zona %d tiene celdas lógicas pero ningún tile visual." % zona)
+			return
 
 	# El antiguo fondo plano ocultaría la mezcla de atlas y ya no es necesario.
 	var suelo := get_node_or_null("Ground") as Polygon2D
