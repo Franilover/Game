@@ -384,8 +384,22 @@ func _crear_cesped_tilemap_dual() -> void:
 			)
 		return
 
-	# Forzar una actualización explícita con TODAS las celdas ya guardadas.
-	# Esto llena TileCache y hace que los DisplayLayer compongan el terreno.
+	# TileMapDual inicializa TerrainDual antes de conectar su señal
+	# changed. La lectura inicial del atlas ocurre demasiado pronto y no crea
+	# ningún DisplayLayer. Las capas procedurales sí lo corrigen al finalizar
+	# su preparación; repetir aquí esa reconstrucción para las capas de escena.
+	for capa in capas:
+		capa.reconstruir_renderer_dual()
+		var diagnostico: Dictionary = capa.obtener_diagnostico()
+		if int(diagnostico.get("display_children", 0)) <= 0:
+			push_error(
+				"ReinoTorres: %s no creó DisplayLayer tras reconstruir: %s"
+				% [capa.name, JSON.stringify(diagnostico)]
+			)
+			return
+
+	# Ahora que existen los DisplayLayer, entregarles todas las celdas
+	# serializadas de la escena para componer la superficie dual.
 	for capa in capas:
 		var celdas: Array[Vector2i] = celdas_por_capa[capa]
 		capa._update_cells(celdas, false)
