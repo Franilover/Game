@@ -1982,6 +1982,9 @@ func _aplicar_configuracion_movimiento() -> void:
 			_movimiento.move_speed,
 			0.0
 		)
+		_velocidad_base_actual = _velocidad_normal
+		_ultimo_modificador_ambiental = -1.0
+		_actualizar_velocidad_ambiental()
 		return
 
 	_velocidad_normal = _obtener_float_movimiento(
