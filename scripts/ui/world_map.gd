@@ -229,6 +229,18 @@ func _dibujar_marcador_jugador(posicion: Vector2) -> void:
 	draw_circle(posicion, 1.2, Color("#fff2c2"))
 
 
+
+func _dibujar_tile_real(tile: Vector2i, rect: Rect2) -> void:
+	# Cada celda explorada se representa con el bioma real del WorldContext.
+	# Esta función es la que conecta el mapa procedural con sus datos de terreno.
+	var color_zona := _color_zona(tile)
+	draw_rect(rect, color_zona, true)
+
+	# Borde discreto para conservar la lectura de cuadrícula cuando hay espacio.
+	if rect.size.x >= 6.0 and rect.size.y >= 6.0:
+		draw_rect(rect, Color(0.08, 0.055, 0.035, 0.28), false, 0.6)
+
+
 func _color_zona(tile: Vector2i) -> Color:
 	if _world_context == null:
 		return Color("#6b5138")
