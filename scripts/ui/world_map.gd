@@ -16,6 +16,10 @@ var _tile_size: int = 32
 var _ultima_actualizacion: Vector2i = Vector2i(2147483647, 2147483647)
 var _texturas: Dictionary = {}
 var _zoom: float = 1.0
+var _tipo_zona: String = "mundo_abierto"
+var _zona_fija: Node = null
+var _poligonos_fijos: Array[Polygon2D] = []
+var _limites_mapa_fijo := Rect2()
 
 
 func _ready() -> void:
@@ -30,15 +34,34 @@ func _ready() -> void:
 
 
 func configurar(jugador: Node2D, contexto: WorldContext) -> void:
+	configurar_zona(jugador, contexto, "mundo_abierto", null)
+
+
+func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String, zona: Node = null) -> void:
 	_player = jugador
 	_world_context = contexto
+	_tipo_zona = tipo_zona
+	_zona_fija = zona
+	_poligonos_fijos.clear()
+	_limites_mapa_fijo = Rect2()
 	if _world_context != null:
 		_tile_size = maxi(_world_context.get_tile_size(), 1)
+	if _tipo_zona == "reino_torres" and is_instance_valid(_zona_fija):
+		_poligonos_fijos = _zona_fija.find_children("*", "Polygon2D", true, false)
+		_limites_mapa_fijo = Rect2(-1200.0, -700.0, 2400.0, 1400.0)
+	elif _tipo_zona == "expedicion:bosque":
+		_limites_mapa_fijo = Rect2(0.0, -1024.0, 5120.0, 2048.0)
+	_ultima_actualizacion = Vector2i(2147483647, 2147483647)
 	_refrescar()
 
 
 func _process(_delta: float) -> void:
-	if not visible or _world_context == null or _player == null:
+	if not visible or _player == null:
+		return
+	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+		queue_redraw()
+		return
+	if _world_context == null:
 		return
 
 	if not is_instance_valid(_world_context) or not is_instance_valid(_player):
@@ -95,99 +118,109 @@ func _clave_tile(tile: Vector2i) -> String:
 
 
 func _draw() -> void:
-	draw_rect(
-		Rect2(Vector2.ZERO, size),
-		Color("#191009"),
-		true
-	)
-
-	var margen: float = 4.0
-	var mapa_rect := Rect2(
-		margen,
-		20.0,
-		size.x - margen * 2.0,
-		size.y - 24.0
-	)
-
+	draw_rect(Rect2(Vector2.ZERO, size), Color("#191009"), true)
+	var mapa_rect := Rect2(4.0, 20.0, size.x - 8.0, size.y - 24.0)
 	if mapa_rect.size.x <= 0.0 or mapa_rect.size.y <= 0.0:
 		return
+	draw_rect(mapa_rect, Color("#26170d"), true)
 
-	draw_rect(
-		mapa_rect,
-		Color("#26170d"),
-		true
-	)
+	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+		_dibujar_mapa_zona_fija(mapa_rect)
+		return
 
 	var centro := _obtener_tile_jugador()
 	var tile_pixels := MAP_TILE_PIXELS_BASE * _zoom
 	var ancho: int = maxi(int(mapa_rect.size.x / tile_pixels), 1)
 	var alto: int = maxi(int(mapa_rect.size.y / tile_pixels), 1)
-
 	var inicio_x: int = centro.x - ancho / 2
 	var inicio_y: int = centro.y - alto / 2
-
 	for y in range(alto):
 		for x in range(ancho):
-			var tile := Vector2i(
-				inicio_x + x,
-				inicio_y + y
-			)
-
-			var rect := Rect2(
-				mapa_rect.position
-				+ Vector2(
-					float(x) * tile_pixels,
-					float(y) * tile_pixels
-				),
-				Vector2(
-					tile_pixels + 0.2,
-					tile_pixels + 0.2
-				)
-			)
-
+			var tile := Vector2i(inicio_x + x, inicio_y + y)
+			var rect := Rect2(mapa_rect.position + Vector2(float(x) * tile_pixels, float(y) * tile_pixels), Vector2(tile_pixels + 0.2, tile_pixels + 0.2))
 			if not _explorado.has(_clave_tile(tile)):
-				draw_rect(
-					rect,
-					Color("#120b07"),
-					true
-				)
+				draw_rect(rect, Color("#120b07"), true)
 				continue
-
 			_dibujar_tile_real(tile, rect)
+	var posicion_jugador := mapa_rect.position + Vector2(
+		(float(centro.x - inicio_x) + 0.5) * tile_pixels,
+		(float(centro.y - inicio_y) + 0.5) * tile_pixels
+	)
+	_dibujar_marcador_jugador(posicion_jugador)
 
-	var posicion_jugador := Vector2(
-		mapa_rect.position.x
-		+ float(centro.x - inicio_x) * tile_pixels
-		+ tile_pixels * 0.5,
-		mapa_rect.position.y
-		+ float(centro.y - inicio_y) * tile_pixels
-		+ tile_pixels * 0.5
+
+func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
+	var titulo := "REINO TORRES" if _tipo_zona == "reino_torres" else "PRIMERA EXPEDICIÓN · BOSQUE"
+	draw_string(ThemeDB.fallback_font, Vector2(10.0, 14.0), titulo, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 10, Color("#e2c99b"))
+	var limites := _limites_mapa_fijo
+	if limites.size.x <= 0.0 or limites.size.y <= 0.0:
+		return
+
+	if _tipo_zona == "expedicion:bosque":
+		_dibujar_mapa_bosque(mapa_rect, limites)
+	else:
+		for poligono in _poligonos_fijos:
+			if not is_instance_valid(poligono) or poligono.polygon.size() < 3:
+				continue
+			var puntos: PackedVector2Array = PackedVector2Array()
+			for punto in poligono.polygon:
+				puntos.append(_punto_a_mapa(poligono.to_global(punto), mapa_rect, limites))
+			var color := poligono.color
+			if color.a > 0.05:
+				draw_colored_polygon(puntos, color)
+			# Los contornos se mantienen discretos para no convertir el mapa en
+			# una copia pixelada de cada detalle de la escena.
+			if puntos.size() >= 3:
+				var contorno := PackedVector2Array(puntos)
+				contorno.append(puntos[0])
+				draw_polyline(contorno, Color("#302316", 0.45), 1.0, true)
+
+	var posicion := _player.global_position if is_instance_valid(_player) else limites.get_center()
+	_dibujar_marcador_jugador(_punto_a_mapa(posicion, mapa_rect, limites))
+
+
+func _dibujar_mapa_bosque(mapa_rect: Rect2, limites: Rect2) -> void:
+	# La expedición tiene un mapa fijo de 160 x 64 celdas de 32 px.
+	# Se representa su anillo boscoso y los senderos definidos por ForestMap.
+	draw_rect(mapa_rect, Color("#64734a"), true)
+	var ancho_bosque := limites.size.x * 5.0 / 160.0
+	var alto_bosque := limites.size.y * 5.0 / 64.0
+	draw_rect(Rect2(mapa_rect.position, Vector2(mapa_rect.size.x, mapa_rect.size.y * alto_bosque / limites.size.y)), Color("#29472d"), true)
+	draw_rect(Rect2(mapa_rect.position + Vector2(0.0, mapa_rect.size.y - mapa_rect.size.y * alto_bosque / limites.size.y), Vector2(mapa_rect.size.x, mapa_rect.size.y * alto_bosque / limites.size.y)), Color("#29472d"), true)
+	draw_rect(Rect2(mapa_rect.position, Vector2(mapa_rect.size.x * ancho_bosque / limites.size.x, mapa_rect.size.y)), Color("#29472d"), true)
+	draw_rect(Rect2(mapa_rect.position + Vector2(mapa_rect.size.x - mapa_rect.size.x * ancho_bosque / limites.size.x, 0.0), Vector2(mapa_rect.size.x * ancho_bosque / limites.size.x, mapa_rect.size.y)), Color("#29472d"), true)
+
+	var sendero := PackedVector2Array()
+	var puntos_mundo := [
+		Vector2(560, 120), Vector2(820, 120), Vector2(1080, 120),
+		Vector2(1360, 40), Vector2(1600, -80), Vector2(1800, -160),
+		Vector2(2080, -80), Vector2(2380, 20), Vector2(2680, 120),
+		Vector2(3100, 120), Vector2(3600, 120), Vector2(4040, 120),
+		Vector2(4480, 120)
+	]
+	for punto in puntos_mundo:
+		sendero.append(_punto_a_mapa(punto, mapa_rect, limites))
+	draw_polyline(sendero, Color("#9b7950"), 4.0, true)
+	draw_polyline(sendero, Color("#c2a477"), 1.2, true)
+	var desvio := PackedVector2Array([
+		_punto_a_mapa(Vector2(1800, -160), mapa_rect, limites),
+		_punto_a_mapa(Vector2(1880, -300), mapa_rect, limites),
+		_punto_a_mapa(Vector2(1980, -560), mapa_rect, limites)
+	])
+	draw_polyline(desvio, Color("#9b7950"), 2.0, true)
+
+
+func _punto_a_mapa(punto: Vector2, mapa_rect: Rect2, limites: Rect2) -> Vector2:
+	return mapa_rect.position + Vector2(
+		(punto.x - limites.position.x) / limites.size.x * mapa_rect.size.x,
+		(punto.y - limites.position.y) / limites.size.y * mapa_rect.size.y
 	)
 
-	draw_circle(
-		posicion_jugador,
-		3.0,
-		Color("#d8b56a")
-	)
 
-	draw_circle(
-		posicion_jugador,
-		1.2,
-		Color("#fff2c2")
-	)
-
-
-func _dibujar_tile_real(tile: Vector2i, rect: Rect2) -> void:
-	# El mapa es una representación cartográfica ligera: no dibuja atlas ni
-	# crea un segundo TileMap. Cada celda explorada se pinta con el color de
-	# su zona real, usando los mismos datos que el terreno principal.
-	var color_zona := _color_zona(tile)
-	draw_rect(rect, color_zona, true)
-
-	# Un borde discreto conserva la lectura de cuadrícula cuando hay espacio.
-	# A zoom mínimo lo omitimos para no gastar llamadas de dibujo innecesarias.
-	if rect.size.x >= 6.0 and rect.size.y >= 6.0:
-		draw_rect(rect, Color(0.08, 0.055, 0.035, 0.28), false, 0.6)
+func _dibujar_marcador_jugador(posicion: Vector2) -> void:
+	draw_circle(posicion, 4.0, Color("#21170e"))
+	draw_circle(posicion, 2.8, Color("#d8b56a"))
+	draw_circle(posicion, 1.2, Color("#fff2c2"))
 
 
 func _color_zona(tile: Vector2i) -> Color:
