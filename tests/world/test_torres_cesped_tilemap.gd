@@ -68,10 +68,26 @@ func _run() -> void:
 	if suelo == null or suelo.visible:
 		_fail("El suelo plano antiguo debe quedar oculto bajo el terreno DualGrid.")
 		return
-	for nombre in ["NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath", "RoadToWorld"]:
+	for nombre in [
+		"NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath",
+		"NorthRingRoad", "SouthRingRoad", "WestRingRoad", "EastRingRoad",
+		"NorthCrossStreet", "SouthCrossStreet", "WestCrossStreet", "EastCrossStreet",
+		"RoadToAdventure",
+	]:
 		var camino := torres.get_node_or_null(nombre) as Polygon2D
-		if camino != null and camino.visible:
+		if camino == null:
+			_fail("No existe el camino declarado en la escena: %s." % nombre)
+			return
+		if camino.visible:
 			_fail("El camino %s sigue dibujándose como polígono separado." % nombre)
+			return
+
+	# RoadToAdventure cruza las celdas (55, 21) y (60, 21).
+	# Ambas deben pertenecer a Tierra, no quedar como pradera ni como hueco.
+	var tierra := renderer.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
+	for celda in [Vector2i(55, 21), Vector2i(60, 21)]:
+		if tierra == null or tierra.get_cell_source_id(celda) == -1:
+			_fail("RoadToAdventure no quedó rasterizado como Tierra en la celda %s." % str(celda))
 			return
 
 	print("PASS: Torres usa el renderer compartido TileMapDual con pradera, bosque y caminos de tierra.")
