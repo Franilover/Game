@@ -47,8 +47,21 @@ func _run() -> void:
 		_expect(str(estado_guardado.get("nombre", "")) == "Garumi scene test", "El streaming debe conservar el nombre visible del Garumi.")
 		_expect(bool(estado_guardado.get("garumi_debug_preview", false)), "El streaming debe conservar que la instancia es sólo un prototipo de depuración.")
 		_expect(str(estado_guardado.get("habitat_clave", "")) == "tierra", "El streaming debe conservar el entorno de tierra del Garumi.")
+
+	# Al abandonar Mundo Abierto se eliminan las entidades de chunks que viven
+	# bajo Entities, pero los personajes globales/persistentes deben sobrevivir.
+	manager.call("configurar", get_tree().root)
+	_expect(bool(manager.call("registrar", garumi_node, Vector2i(2, 1))), "El Garumi silvestre de prueba debe quedar registrado en su chunk.")
+	var personaje_persistente := Node2D.new()
+	personaje_persistente.name = "PersonajePersistenteTest"
+	get_tree().root.add_child(personaje_persistente)
+	_expect(bool(manager.call("registrar", personaje_persistente, Vector2i.ZERO, "personaje-test")), "El personaje persistente debe registrarse globalmente.")
+	manager.call("despawn_entidades_de_chunks")
+	_expect(garumi_node.is_queued_for_deletion(), "Al descargar la zona procedural, el Garumi silvestre debe retirarse de Entities.")
+	_expect(personaje_persistente.get_parent() == get_tree().root and not personaje_persistente.is_queued_for_deletion(), "La limpieza de chunks no debe eliminar personajes globales/persistentes.")
+	personaje_persistente.queue_free()
 	manager.free()
-	garumi_node.free()
+	await get_tree().process_frame
 
 	var data: Node = WORLD_DATA_SCRIPT.new()
 	data.set("mundo", {
