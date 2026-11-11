@@ -105,6 +105,7 @@ func _run() -> void:
 	}
 	climate.configurar_dependencias(world_data, atmosphere)
 	var niebla_a: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
+	climate._estados_contexto_cache.clear()
 	var niebla_b: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
 	if niebla_a != niebla_b:
 		_fail("The same habitat and world date must resolve to the same climate.")
@@ -145,6 +146,15 @@ func _run() -> void:
 		_fail("Seasonal events were not resolved from the station configuration.")
 		return
 
+	atmosphere.dia_del_anio = 2
+	atmosphere.estacion_actual["dia_de_estacion"] = 2
+	var eventos_dia_dos: Array = climate.obtener_estado_para_contexto({}).get("eventos", [])
+	if not eventos_dia_dos.is_empty():
+		_fail("Seasonal events must respect their configured day window.")
+		return
+	atmosphere.dia_del_anio = 1
+	atmosphere.estacion_actual["dia_de_estacion"] = 1
+
 	if not climate.establecer_clima("lluvia", 0.8, 0.0):
 		_fail("A supported weather profile was rejected.")
 		return
@@ -178,7 +188,7 @@ func _run() -> void:
 		_fail("An active phenomenon could not be finalized.")
 		return
 
-	print("PASS: cyclic dawn/day/sunset gradient, weather profiles, precipitation state, and natural phenomenon lifecycle.")
+	print("PASS: seasonal lighting, deterministic local weather, fog visibility, thermal creature responses, seasonal events, and phenomena.")
 	quit()
 
 
