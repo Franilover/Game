@@ -55,6 +55,9 @@ func _run() -> void:
 		if layer == null:
 			_fail("Falta la capa TileMapDual de la zona %d." % int(zone))
 			return
+		if terreno_editorial and layer.position != Vector2(-1200.0, -704.0):
+			_fail("La capa editable de la zona %d no coincide con el origen de Torres." % int(zone))
+			return
 		var atlas := layer.tile_set.get_source(0) as TileSetAtlasSource
 		if atlas == null or atlas.texture == null:
 			_fail("La zona %d no tiene un atlas válido." % int(zone))
