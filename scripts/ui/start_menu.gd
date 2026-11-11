@@ -261,6 +261,48 @@ func _ready() -> void:
 
 	_actualizar_estado_mundo()
 	PIXEL_UI_THEME.apply(self)
+	get_viewport().size_changed.connect(_configurar_layout_responsive)
+	_configurar_layout_responsive()
+
+
+func _configurar_layout_responsive() -> void:
+	var area := get_viewport_rect().size
+	if area.x <= 0.0 or area.y <= 0.0:
+		return
+	_ajustar_panel_centrado(
+		get_node_or_null("Paper") as Control,
+		Vector2(520.0, 440.0),
+		area
+	)
+	_ajustar_panel_centrado(
+		get_node_or_null("Center") as Control,
+		Vector2(360.0, 380.0),
+		area
+	)
+	_ajustar_panel_centrado(
+		get_node_or_null("LoginOverlay/LoginPanel") as Control,
+		Vector2(380.0, 330.0),
+		area
+	)
+	_ajustar_panel_centrado(
+		get_node_or_null("MultiplayerOverlay/MultiplayerPanel") as Control,
+		Vector2(500.0, 570.0),
+		area
+	)
+
+
+func _ajustar_panel_centrado(panel: Control, maximo: Vector2, area: Vector2) -> void:
+	if not is_instance_valid(panel):
+		return
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	var margen := Vector2(24.0, 24.0)
+	var minimo := Vector2(240.0, 260.0)
+	var disponible := Vector2(
+		maxf(minimo.x, area.x - margen.x * 2.0),
+		maxf(minimo.y, area.y - margen.y * 2.0)
+	)
+	panel.size = Vector2(minf(maximo.x, disponible.x), minf(maximo.y, disponible.y))
+	panel.position = -panel.size * 0.5
 
 
 func _entrar_runtime_servidor() -> void:
