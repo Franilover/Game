@@ -37,6 +37,9 @@ func _run() -> void:
 	if bool(renderer.call("tiene_flush_pendiente")):
 		_fail("El renderer terminó con celdas pendientes de composición.")
 		return
+	if (renderer as Node2D).position != Vector2(-1200.0, -704.0):
+		_fail("El renderer TileMapDual no coincide con el origen mundial del suelo de Torres.")
+		return
 
 	var total_cells := 0
 	for zone in EXPECTED_ATLASES.keys():
