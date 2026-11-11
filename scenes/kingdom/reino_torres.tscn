@@ -912,20 +912,8 @@ z_index = -11
 color = Color(0.48, 0.39, 0.27, 1)
 polygon = PackedVector2Array(650, -430, 690, -430, 690, 430, 650, 430)
 
-[node name="CanalBankNorth" type="Polygon2D" parent="." unique_id=1667475323]
-z_index = -9
-color = Color(0.29, 0.34, 0.23, 1)
-polygon = PackedVector2Array(-1120, 520, 760, 520, 760, 554, -1120, 554)
 
-[node name="CanalWater" type="Polygon2D" parent="." unique_id=1481802310]
-z_index = -8
-color = Color(0.19, 0.34, 0.38, 1)
-polygon = PackedVector2Array(-1120, 530, 760, 530, 760, 546, -1120, 546)
 
-[node name="CanalBankSouth" type="Polygon2D" parent="." unique_id=1518105310]
-z_index = -9
-color = Color(0.29, 0.34, 0.23, 1)
-polygon = PackedVector2Array(-1120, 546, 760, 546, 760, 560, -1120, 560)
 
 [node name="CanalBridgeWest" type="Polygon2D" parent="." unique_id=1705450493]
 z_index = -6
