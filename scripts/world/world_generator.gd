@@ -51,6 +51,14 @@ func _ready() -> void:
 	_registrar_debug()
 
 
+func _exit_tree() -> void:
+	# Las entidades generadas viven bajo Main/Entities, fuera de esta escena.
+	# Al descargar Mundo Abierto debemos retirarlas antes de destruir el manager;
+	# los personajes persistentes/globales no pertenecen a chunks y se conservan.
+	if is_instance_valid(entity_manager):
+		entity_manager.despawn_entidades_de_chunks()
+
+
 func configurar_atmosfera_compartida(nueva_atmosfera: WorldAtmosphere) -> void:
 	if not is_instance_valid(nueva_atmosfera):
 		push_error("WorldGenerator: la atmósfera compartida no es válida.")
