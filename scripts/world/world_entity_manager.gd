@@ -573,6 +573,16 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 	_active_chunks.erase(chunk_coord)
 
 
+## Retira las entidades generadas por chunks cuando una zona procedural se descarga.
+## Las entidades globales/persistentes (por ejemplo, personajes registrados por ID)
+## quedan fuera de esta limpieza y conservan su ciclo de vida.
+func despawn_entidades_de_chunks() -> void:
+	var chunks: Array = _by_chunk.keys()
+	for chunk_variant in chunks:
+		if chunk_variant is Vector2i:
+			despawn_chunk(chunk_variant)
+
+
 func limpiar_todo() -> void:
 	var chunks := _by_chunk.keys()
 	for chunk_variant in chunks:
