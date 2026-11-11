@@ -424,6 +424,70 @@ func reiniciar_tiempo() -> bool:
 	_actualizar_iluminacion()
 	return true
 
+func establecer_hora_del_dia(hora: int, minuto: int) -> bool:
+	if not _calendario_cargado:
+		return false
+
+	var minutos_dia := maxi(1, int(round(horas_por_dia * 60.0)))
+	var hora_maxima := maxi(0, int(ceil(horas_por_dia)) - 1)
+	var hora_segura := clampi(hora, 0, hora_maxima)
+	var minuto_seguro := clampi(minuto, 0, 59)
+	var total_minutos := mini(hora_segura * 60 + minuto_seguro, minutos_dia - 1)
+	hora_del_dia = float(total_minutos) / 60.0
+	_actualizar_iluminacion()
+	return true
+
+
+func desplazar_dias(cantidad: int) -> bool:
+	if not _calendario_cargado or dias_por_anio <= 0 or cantidad == 0:
+		return false
+
+	var estacion_anterior_id := obtener_estacion_id()
+	dia_del_anio += cantidad
+	while dia_del_anio >= dias_por_anio:
+		dia_del_anio -= dias_por_anio
+		anio += 1
+	while dia_del_anio < 0:
+		dia_del_anio += dias_por_anio
+		anio -= 1
+
+	_actualizar_estacion()
+	dia_cambiado.emit(dia_del_anio, anio)
+	if obtener_estacion_id() != estacion_anterior_id:
+		estacion_cambiada.emit(estacion_actual.duplicate(true))
+	return true
+
+
+func establecer_estacion(estacion_id: String) -> bool:
+	if not _calendario_cargado or estacion_id.strip_edges().is_empty():
+		return false
+
+	var dia_de_estacion_actual := maxi(0, int(estacion_actual.get("dia_de_estacion", 1)) - 1)
+	var inicio_dia := 0
+	for estacion_variant in estaciones:
+		if not estacion_variant is Dictionary:
+			continue
+		var estacion := estacion_variant as Dictionary
+		var duracion := maxi(int(estacion.get("duracion_dias", 0)), 0)
+		if duracion <= 0:
+			continue
+		if str(estacion.get("id", "")) == estacion_id:
+			dia_del_anio = inicio_dia + mini(dia_de_estacion_actual, duracion - 1)
+			_actualizar_estacion()
+			dia_cambiado.emit(dia_del_anio, anio)
+			estacion_cambiada.emit(estacion_actual.duplicate(true))
+			return true
+		inicio_dia += duracion
+	return false
+
+
+func establecer_anio(nuevo_anio: int) -> bool:
+	if not _calendario_cargado:
+		return false
+	anio = nuevo_anio
+	dia_cambiado.emit(dia_del_anio, anio)
+	return true
+
 func obtener_estacion_id() -> String:
 	return str(
 		estacion_actual.get(
