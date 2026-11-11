@@ -381,7 +381,7 @@ func _actualizar_eventos_estacionales() -> void:
 			if not clave.is_empty():
 				nuevos[clave] = evento.duplicate(true)
 
-	for clave_variant in _eventos_estacionales_activos.keys():
+	for clave_variant in _eventos_estacionales_activos.keys().duplicate():
 		var clave := str(clave_variant)
 		if not nuevos.has(clave):
 			_eventos_estacionales_activos.erase(clave)
@@ -430,7 +430,9 @@ func _obtener_regla_climatica(contexto: Dictionary) -> Dictionary:
 			continue
 		var regla_variant: Variant = (reglas_variant as Dictionary).get(id, {})
 		if regla_variant is Dictionary and not (regla_variant as Dictionary).is_empty():
-			return regla_variant as Dictionary
+			var combinada := config.duplicate(true)
+			combinada.merge(regla_variant as Dictionary, true)
+			return combinada
 	return config
 
 
