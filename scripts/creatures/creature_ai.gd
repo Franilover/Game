@@ -1264,7 +1264,7 @@ func _aplicar_respuesta_ambiental_rutina() -> void:
 		return
 	var respuesta := _obtener_respuesta_ambiental()
 	if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
-		var actividad_frio := str(respuesta.get("actividad_con_frio", "buscar_refugio")).strip_edges().to_lower()
+		var actividad_frio := str(respuesta.get("actividad_con_frio", "reposar")).strip_edges().to_lower()
 		if not actividad_frio.is_empty():
 			actividad_horaria = actividad_frio
 	elif float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
