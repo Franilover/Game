@@ -141,10 +141,12 @@ func _ready() -> void:
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
 	_crear_rotulos_edificios()
+	# Las capas estáticas deben reconstruir su caché antes de añadir
+	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
+	# iniciales de las celdas serializadas de la escena.
+	await _crear_cesped_tilemap_dual()
 	await _crear_muralla_montana()
 	await _crear_rio_marino_tilemap()
-	# El único paso que espera al renderer es la composición inicial del DualGrid.
-	await _crear_cesped_tilemap_dual()
 
 
 
@@ -335,49 +337,81 @@ func _input(evento: InputEvent) -> void:
 
 func _crear_cesped_tilemap_dual() -> void:
 	# Torres usa exclusivamente las capas TileMapDual guardadas en la escena.
-	# Se ocultan durante su inicialización para evitar mostrar una composición
+	# Se ocultan durante la reconstrucción para evitar mostrar una composición
 	# incompleta y se revelan juntas cuando los tres Display están listos.
 	var capas: Array[TileMapDual] = []
+	var celdas_por_capa: Dictionary = {}
 	var celdas_totales := 0
 	for zona in [0, 1, 8]:
-		var capa := get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
+		var nombre := "TerrainDual_Zone_%02d" % zona
+		var capa := get_node_or_null(nombre) as TileMapDual
 		if not is_instance_valid(capa):
-			push_error("ReinoTorres: falta la capa editable TerrainDual_Zone_%02d." % zona)
+			push_error("ReinoTorres: falta la capa editable %s." % nombre)
 			return
 		capa.visible = false
 		capas.append(capa)
-		celdas_totales += capa.get_used_cells().size()
+		var celdas: Array[Vector2i] = capa.get_used_cells()
+		celdas_por_capa[capa] = celdas
+		celdas_totales += celdas.size()
 
 	if celdas_totales != 75 * 44:
 		push_error("ReinoTorres: el terreno de escena debe contener exactamente 3.300 celdas; contiene %d." % celdas_totales)
 		return
 
-	# TileMapDual crea su Display en _ready() y compone las celdas en el
-	# siguiente frame. No reconstruirlo manualmente: eso duplicaba el trabajo.
-	var renderer_listo := false
+	# Esperar a que el _ready diferido de cada TileMapDual cree su Display
+	# y lea los atlas. En Godot 4.4+ _changed() no rellena la caché inicial
+	# de las celdas serializadas, porque no recibe una lista de cambios.
+	var renderers_inicializados := false
 	for intento in range(60):
-		renderer_listo = true
+		renderers_inicializados = true
 		for capa in capas:
 			var diagnostico: Dictionary = capa.obtener_diagnostico()
 			if (
 				not bool(diagnostico.get("renderer_valid", false))
-				or int(diagnostico.get("display_cells", 0)) <= 0
+				or int(diagnostico.get("terrain_layers", 0)) <= 0
 			):
-				renderer_listo = false
+				renderers_inicializados = false
 				break
-		if renderer_listo:
+		if renderers_inicializados:
 			break
 		await get_tree().process_frame
 
-	if not renderer_listo:
-		push_error("ReinoTorres: los TileMapDual de la escena no terminaron de cargar sus Display.")
+	if not renderers_inicializados:
+		for capa in capas:
+			push_error(
+				"ReinoTorres: renderer sin inicializar en %s: %s"
+				% [capa.name, JSON.stringify(capa.obtener_diagnostico())]
+			)
+		return
+
+	# Forzar una actualización explícita con TODAS las celdas ya guardadas.
+	# Esto llena TileCache y hace que los DisplayLayer compongan el terreno.
+	for capa in capas:
+		var celdas: Array[Vector2i] = celdas_por_capa[capa]
+		capa._update_cells(celdas, false)
+
+	# DisplayLayer escribe sus tiles durante la actualización; comprobarlos
+	# en el siguiente frame evita revelar las capas antes de que estén listas.
+	await get_tree().process_frame
+
+	var renderers_listos := true
+	for capa in capas:
+		var diagnostico: Dictionary = capa.obtener_diagnostico()
+		if int(diagnostico.get("display_cells", 0)) <= 0:
+			renderers_listos = false
+			push_error(
+				"ReinoTorres: %s no compuso celdas: %s"
+				% [capa.name, JSON.stringify(diagnostico)]
+			)
+
+	if not renderers_listos:
 		return
 
 	for capa in capas:
 		capa.visible = true
 
 	_terreno_dual_listo = true
-	print("ReinoTorres: terreno TileMapDual de escena visible desde su composición inicial.")
+	print("ReinoTorres: terreno TileMapDual de escena reconstruido y visible (3.300 celdas).")
 
 
 func _crear_muralla_montana() -> void:
