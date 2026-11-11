@@ -156,8 +156,6 @@ func _draw() -> void:
 
 
 func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
-	var titulo := "REINO TORRES" if _tipo_zona == "reino_torres" else "PRIMERA EXPEDICIÓN · BOSQUE"
-	draw_string(ThemeDB.fallback_font, Vector2(10.0, 14.0), titulo, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 10, Color("#e2c99b"))
 	var limites := _limites_mapa_fijo
 	if limites.size.x <= 0.0 or limites.size.y <= 0.0:
 		return
