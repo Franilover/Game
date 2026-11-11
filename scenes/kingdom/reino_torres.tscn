@@ -2325,47 +2325,10 @@ z_index = 5
 color = Color(0.52, 0.48, 0.39, 1)
 polygon = PackedVector2Array(1040, -96, 1078, -96, 1087, -83, 1108, -83, 1108, -72, 1040, -72)
 
-[node name="ExpeditionRuinsStoneBaseLeft" type="Polygon2D" parent="." unique_id=1433667288]
-z_index = 5
-color = Color(0.31, 0.3, 0.26, 1)
-polygon = PackedVector2Array(1018, 70, 1060, 70, 1060, 88, 1018, 88)
-
-[node name="ExpeditionRuinsStoneBaseRight" type="Polygon2D" parent="." unique_id=1085794723]
-z_index = 5
-color = Color(0.31, 0.3, 0.26, 1)
-polygon = PackedVector2Array(1090, 70, 1132, 70, 1132, 88, 1090, 88)
-
 [node name="ExpeditionRuinsMoss" type="Polygon2D" parent="." unique_id=160510096]
 z_index = 6
 color = Color(0.24, 0.37, 0.2, 1)
 polygon = PackedVector2Array(1029, -76, 1037, -76, 1037, -57, 1029, -57)
-
-[node name="WestOuterWall" type="Polygon2D" parent="." unique_id=540301616]
-z_index = -2
-color = Color(0.34, 0.33, 0.28, 1)
-polygon = PackedVector2Array(-1198, -700, -1178, -700, -1178, 700, -1198, 700)
-
-[node name="NorthOuterWall" type="Polygon2D" parent="." unique_id=1572520803]
-z_index = -2
-color = Color(0.34, 0.33, 0.28, 1)
-polygon = PackedVector2Array(-1200, -700, 1200, -700, 1200, -680, -1200, -680)
-
-[node name="SouthOuterWall" type="Polygon2D" parent="." unique_id=1187975009]
-z_index = -2
-color = Color(0.34, 0.33, 0.28, 1)
-polygon = PackedVector2Array(-1200, 680, 1200, 680, 1200, 700, -1200, 700)
-
-[node name="EastOuterWallNorth" type="Polygon2D" parent="." unique_id=1359413035]
-z_index = -2
-position = Vector2(180, 271.83328)
-scale = Vector2(0.85, 1.3883333)
-color = Color(0.34, 0.33, 0.28, 1)
-polygon = PackedVector2Array(1180, -700, 1200, -700, 1200, -100, 1171.7646, -99.27967, 1174.1746, -275.06598)
-
-[node name="EastOuterWallSouth" type="Polygon2D" parent="." unique_id=1324141418]
-z_index = -2
-color = Color(0.34, 0.33, 0.28, 1)
-polygon = PackedVector2Array(1180, 100, 1200, 100, 1200, 700, 1180, 700, 1180, 254, 1180, 189)
 
 [node name="TerrainDual_Zone_00" type="TileMapLayer" parent="." unique_id=560589640]
 z_index = -4094
