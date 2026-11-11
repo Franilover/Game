@@ -972,7 +972,7 @@ script = ExtResource("4_7dy5d")
 godot_4_3_compatibility = false
 
 [node name="TerrainDual_Zone_08" type="TileMapLayer" parent="." unique_id=1238186988]
-z_index = -4095
+z_index = -4087
 z_as_relative = false
 texture_filter = 1
 position = Vector2(-1200, -704)
