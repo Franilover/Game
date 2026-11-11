@@ -728,8 +728,8 @@ func _limitar_camara_a_interior() -> void:
 		"enabled": _camara_interior.limit_enabled,
 	}
 	# Coincide con los bordes exteriores de la habitación (incluyendo los muros).
-	var esquina_superior_izquierda := to_global(Vector2(-INTERIOR_MEDIO_ANCHO - 8.0, -INTERIOR_MEDIO_ALTO - 8.0))
-	var esquina_inferior_derecha := to_global(Vector2(INTERIOR_MEDIO_ANCHO + 8.0, INTERIOR_MEDIO_ALTO + 8.0))
+	var esquina_superior_izquierda := to_global(Vector2(-INTERIOR_MEDIO_ANCHO, -INTERIOR_MEDIO_ALTO))
+	var esquina_inferior_derecha := to_global(Vector2(INTERIOR_MEDIO_ANCHO, INTERIOR_MEDIO_ALTO))
 	_camara_interior.limit_left = floori(esquina_superior_izquierda.x)
 	_camara_interior.limit_top = floori(esquina_superior_izquierda.y)
 	_camara_interior.limit_right = ceili(esquina_inferior_derecha.x)
