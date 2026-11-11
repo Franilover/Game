@@ -26,6 +26,32 @@ func _run() -> void:
 		_fail("Midday must remain brighter and more neutral than sunset.")
 		return
 
+	# Cada estación puede definir su propia paleta y sus propios horarios.
+	atmosphere.estacion_actual = {
+		"config_visual": {
+			"horarios": {
+				"amanecer_inicio": 0.10,
+				"amanecer_fin": 0.24,
+				"atardecer_inicio": 0.62,
+				"atardecer_fin": 0.78
+			},
+			"claves_luz": [
+				{"hora": 0.0, "color": "#101020"},
+				{"hora": 0.5, "color": "#ffffff"},
+				{"hora": 1.0, "color": "#101020"}
+			]
+		}
+	}
+	if not atmosphere.calcular_color_iluminacion(0.5).is_equal_approx(Color("#ffffff")):
+		_fail("A station-specific lighting palette was not used.")
+		return
+	atmosphere.horas_por_dia = 25.0
+	atmosphere.hora_del_dia = 25.0 * 0.15
+	if atmosphere._obtener_periodo() != "Amanecer":
+		_fail("Station-specific dawn timing was not applied.")
+		return
+	atmosphere.estacion_actual = {}
+
 	var climate = CLIMATE_SCRIPT.new()
 	root.add_child(climate)
 	if climate.obtener_clima_id() != "despejado":
