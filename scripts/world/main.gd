@@ -45,6 +45,8 @@ var _inicio_servidor_pendiente := false
 
 
 func _ready() -> void:
+	_registrar_diagnostico_ventana("_ready: inicio")
+	call_deferred("_diagnostico_ventana_diferido")
 	SupabaseClient.configurar_dependencias(GarliaAuth)
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
@@ -691,10 +693,43 @@ func _configurar_admin() -> void:
 	)
 
 func _configurar_pantalla() -> void:
+	_registrar_diagnostico_ventana("antes de _configurar_pantalla")
 	if not pantalla_completa:
+		print("[VENTANA] pantalla_completa=false; no se modifica el modo.")
 		return
 
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	_registrar_diagnostico_ventana("después de solicitar FULLSCREEN")
+
+
+func _diagnostico_ventana_diferido() -> void:
+	await get_tree().create_timer(1.0).timeout
+	_registrar_diagnostico_ventana("1 segundo después de _ready")
+
+
+func _registrar_diagnostico_ventana(etapa: String) -> void:
+	var pantalla := DisplayServer.window_get_current_screen()
+	var modo := DisplayServer.window_get_mode()
+	var tamano_ventana := DisplayServer.window_get_size()
+	var posicion_ventana := DisplayServer.window_get_position()
+	var tamano_pantalla := DisplayServer.screen_get_size(pantalla)
+	var area_util := DisplayServer.screen_get_usable_rect(pantalla)
+	var tamano_viewport := get_viewport().get_visible_rect().size
+	print("[VENTANA][", etapa, "] pid=", OS.get_process_id(),
+		" window_id=", get_window().get_window_id(),
+		" modo=", modo,
+		" pantalla=", pantalla,
+		" ventana=", tamano_ventana,
+		" posicion=", posicion_ventana,
+		" pantalla_size=", tamano_pantalla,
+		" area_util=", area_util,
+		" viewport=", tamano_viewport,
+		" pantalla_completa_export=", pantalla_completa,
+		" project_mode=", ProjectSettings.get_setting("display/window/size/mode", -1),
+		" project_override=", Vector2i(
+			ProjectSettings.get_setting("display/window/size/window_width_override", 0),
+			ProjectSettings.get_setting("display/window/size/window_height_override", 0)
+		))
 
 
 # ============================================================
