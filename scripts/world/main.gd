@@ -61,14 +61,14 @@ func _ready() -> void:
 	else:
 		# El calendario pertenece al runtime principal y sigue activo en reinos e interiores.
 		_world_atmosphere.configurar_dependencias(WorldData)
+		var tiempo_guardado: Variant = GameState.world_state.flags.get("tiempo_mundo", {})
+		if tiempo_guardado is Dictionary and not (tiempo_guardado as Dictionary).is_empty():
+			_world_atmosphere.establecer_estado_guardado(tiempo_guardado as Dictionary)
 		var climate_system := get_node_or_null("Systems/WorldAtmosphere/ClimateSystem") as WorldClimateSystem
 		if climate_system != null:
 			climate_system.configurar_dependencias(WorldData, _world_atmosphere)
 		else:
 			push_error("Main: falta Systems/WorldAtmosphere/ClimateSystem; el clima no podrá simularse.")
-		var tiempo_guardado: Variant = GameState.world_state.flags.get("tiempo_mundo", {})
-		if tiempo_guardado is Dictionary and not (tiempo_guardado as Dictionary).is_empty():
-			_world_atmosphere.establecer_estado_guardado(tiempo_guardado as Dictionary)
 
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
