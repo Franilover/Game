@@ -638,31 +638,6 @@ position = Vector2(930, -245)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CaravanseraiCollisionBody" unique_id=1540711263]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="GuardBarracksWall" type="Polygon2D" parent="." unique_id=1560474278]
-z_index = 1
-color = Color(0.43, 0.44, 0.39, 1)
-polygon = PackedVector2Array(678, -381, 782, -381, 782, -319, 678, -319)
-
-[node name="GuardBarracksRoof" type="Polygon2D" parent="." unique_id=1587833332]
-z_index = 2
-color = Color(0.25, 0.25, 0.22, 1)
-polygon = PackedVector2Array(670, -381, 730, -407, 790, -381)
-
-[node name="GuardBarracksDoor" type="Polygon2D" parent="." unique_id=1599589458]
-z_index = 3
-color = Color(0.2, 0.13, 0.09, 1)
-polygon = PackedVector2Array(722, -345, 738, -345, 738, -319, 722, -319)
-
-[node name="GuardBarracksWindowL" type="Polygon2D" parent="." unique_id=2035017080]
-z_index = 3
-color = Color(0.19, 0.33, 0.38, 1)
-polygon = PackedVector2Array(686, -364, 700, -364, 700, -350, 686, -350)
-
-[node name="GuardBarracksWindowR" type="Polygon2D" parent="." unique_id=1353329630]
-z_index = 3
-color = Color(0.19, 0.33, 0.38, 1)
-polygon = PackedVector2Array(760, -364, 774, -364, 774, -350, 760, -350)
-
 [node name="GuardBarracksCollisionBody" type="StaticBody2D" parent="." unique_id=791510463]
 position = Vector2(730, -350)
 
@@ -686,31 +661,6 @@ position = Vector2(730, 110)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PublicStoreCollisionBody" unique_id=546497195]
 shape = SubResource("DistrictBuildingSmall")
-
-[node name="CartwrightWall" type="Polygon2D" parent="." unique_id=1786943269]
-z_index = 1
-color = Color(0.51, 0.43, 0.32, 1)
-polygon = PackedVector2Array(884, 191, 976, 191, 976, 249, 884, 249)
-
-[node name="CartwrightRoof" type="Polygon2D" parent="." unique_id=1758110861]
-z_index = 2
-color = Color(0.3, 0.22, 0.17, 1)
-polygon = PackedVector2Array(876, 191, 930, 165, 984, 191)
-
-[node name="CartwrightDoor" type="Polygon2D" parent="." unique_id=582253464]
-z_index = 3
-color = Color(0.2, 0.13, 0.09, 1)
-polygon = PackedVector2Array(922, 223, 938, 223, 938, 249, 922, 249)
-
-[node name="CartwrightWindowL" type="Polygon2D" parent="." unique_id=1660535265]
-z_index = 3
-color = Color(0.19, 0.33, 0.38, 1)
-polygon = PackedVector2Array(892, 208, 906, 208, 906, 222, 892, 222)
-
-[node name="CartwrightWindowR" type="Polygon2D" parent="." unique_id=1668152289]
-z_index = 3
-color = Color(0.19, 0.33, 0.38, 1)
-polygon = PackedVector2Array(954, 208, 968, 208, 968, 222, 954, 222)
 
 [node name="CartwrightCollisionBody" type="StaticBody2D" parent="." unique_id=1206000459]
 position = Vector2(930, 220)
@@ -921,36 +871,6 @@ texture_filter = 1
 position = Vector2(500, 482)
 scale = Vector2(1.375, 1.625)
 texture = ExtResource("official_tree")
-
-[node name="ExpeditionRuinsBackdrop" type="Polygon2D" parent="." unique_id=579043357]
-z_index = 2
-color = Color(0.13, 0.16, 0.12, 1)
-polygon = PackedVector2Array(1052, -43, 1090, -43, 1090, 43, 1052, 43)
-
-[node name="ExpeditionRuinsLeftPillar" type="Polygon2D" parent="." unique_id=1353528296]
-z_index = 4
-color = Color(0.39, 0.37, 0.32, 1)
-polygon = PackedVector2Array(1028, -82, 1050, -82, 1050, 82, 1028, 82)
-
-[node name="ExpeditionRuinsRightPillar" type="Polygon2D" parent="." unique_id=2143100974]
-z_index = 4
-color = Color(0.39, 0.37, 0.32, 1)
-polygon = PackedVector2Array(1100, -82, 1122, -82, 1122, 82, 1100, 82)
-
-[node name="ExpeditionRuinsLeftCap" type="Polygon2D" parent="." unique_id=1738187958]
-z_index = 5
-color = Color(0.52, 0.48, 0.39, 1)
-polygon = PackedVector2Array(1022, -88, 1056, -88, 1056, -72, 1022, -72)
-
-[node name="ExpeditionRuinsBrokenLintel" type="Polygon2D" parent="." unique_id=703419465]
-z_index = 5
-color = Color(0.52, 0.48, 0.39, 1)
-polygon = PackedVector2Array(1040, -96, 1078, -96, 1087, -83, 1108, -83, 1108, -72, 1040, -72)
-
-[node name="ExpeditionRuinsMoss" type="Polygon2D" parent="." unique_id=160510096]
-z_index = 6
-color = Color(0.24, 0.37, 0.2, 1)
-polygon = PackedVector2Array(1029, -76, 1037, -76, 1037, -57, 1029, -57)
 
 [node name="TerrainDual_Zone_00" type="TileMapLayer" parent="." unique_id=560589640]
 z_index = -4094
