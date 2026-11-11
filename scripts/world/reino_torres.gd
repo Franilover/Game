@@ -16,7 +16,7 @@ const TORRES_ROAD_SURFACES: PackedStringArray = [
 	"NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath",
 	"NorthRingRoad", "SouthRingRoad", "WestRingRoad", "EastRingRoad",
 	"NorthCrossStreet", "SouthCrossStreet", "WestCrossStreet", "EastCrossStreet",
-	"RoadToWorld",
+	"RoadToAdventure",
 ]
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
