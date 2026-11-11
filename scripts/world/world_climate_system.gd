@@ -90,6 +90,19 @@ func configurar_dependencias(
 		_world_atmosphere.dia_cambiado.connect(_al_cambiar_dia)
 	if not _world_atmosphere.estacion_cambiada.is_connected(_al_cambiar_estacion):
 		_world_atmosphere.estacion_cambiada.connect(_al_cambiar_estacion)
+	if _world_data != null:
+		if not _world_data.mundo_listo.is_connected(_al_recibir_datos_mundo):
+			_world_data.mundo_listo.connect(_al_recibir_datos_mundo)
+		if not _world_data.mundo_actualizado.is_connected(_al_recibir_datos_mundo):
+			_world_data.mundo_actualizado.connect(_al_recibir_datos_mundo)
+	if _world_data != null and _world_data.esta_cargado():
+		_al_recibir_datos_mundo()
+	else:
+		_actualizar_clima_diario()
+
+
+func _al_recibir_datos_mundo() -> void:
+	_estados_contexto_cache.clear()
 	_actualizar_clima_diario()
 
 
