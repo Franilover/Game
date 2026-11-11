@@ -31,18 +31,13 @@ func _run() -> void:
 		return
 
 	var renderer := torres.get_node_or_null("TerrainRenderer")
-	var terreno_editorial := renderer == null
-	if terreno_editorial:
-		for zone in EXPECTED_ATLASES.keys():
-			if torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) == null:
-				_fail("Falta la capa editable TileMapDual de la zona %d." % int(zone))
-				return
-	else:
-		if bool(renderer.call("tiene_flush_pendiente")):
-			_fail("El renderer terminó con celdas pendientes de composición.")
-			return
-		if (renderer as Node2D).position != Vector2(-1200.0, -704.0):
-			_fail("El renderer TileMapDual no coincide con el origen mundial del suelo de Torres.")
+	if renderer != null:
+		_fail("Torres todavía crea un TerrainRenderer dinámico.")
+		return
+	var terreno_editorial := true
+	for zone in EXPECTED_ATLASES.keys():
+		if torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) == null:
+			_fail("Falta la capa editable TileMapDual de la zona %d." % int(zone))
 			return
 
 	var total_cells := 0
@@ -54,6 +49,9 @@ func _run() -> void:
 		)
 		if layer == null:
 			_fail("Falta la capa TileMapDual de la zona %d." % int(zone))
+			return
+		if not layer.visible:
+			_fail("La capa TileMapDual de la zona %d no quedó visible al terminar la carga." % int(zone))
 			return
 		if terreno_editorial and layer.position != Vector2(-1200.0, -704.0):
 			_fail("La capa editable de la zona %d no coincide con el origen de Torres." % int(zone))
