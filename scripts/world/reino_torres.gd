@@ -393,6 +393,14 @@ func _crear_rio_marino_tilemap() -> void:
 	add_child(terreno)
 	terreno.configurar(32)
 
+	# El agua debe quedar sobre el suelo opaco y bajo los puentes.
+	# WorldTerrainVisual usa por defecto z_index ~ -4091, apropiado para
+	# terrenos de fondo como la muralla, pero demasiado bajo para el canal.
+	for hijo in terreno.get_children():
+		if hijo is TileMapDual:
+			hijo.z_index = -8
+			hijo.z_as_relative = false
+
 	# TileMapDual crea sus Display durante _ready(); esperar antes de pintar.
 	await get_tree().process_frame
 	await get_tree().process_frame
