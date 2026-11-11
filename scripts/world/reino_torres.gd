@@ -141,6 +141,7 @@ func _ready() -> void:
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
 	_crear_rotulos_edificios()
+	await _crear_muralla_montana()
 	# El único paso que espera al renderer es la composición inicial del DualGrid.
 	await _crear_cesped_tilemap_dual()
 
@@ -346,6 +347,41 @@ func _crear_cesped_tilemap_dual() -> void:
 	print("ReinoTorres: terreno TileMapDual de escena visible desde su composición inicial.")
 
 
+func _crear_muralla_montana() -> void:
+	# Reutiliza el mismo compositor procedural y el mismo atlas de Montaña
+	# que utiliza Mundo Abierto. El offset coincide con el límite del mapa.
+	var terreno := WorldTerrainVisual.new()
+	terreno.name = "TerrenoMurallaMontana"
+	terreno.position = Vector2(-1200, -704)
+	add_child(terreno)
+	terreno.configurar(32)
+
+	# TileMapDual inicializa sus Display de forma diferida.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	terreno.finalizar_preparacion_renderer()
+
+	# Anillo de una celda (32 px) alrededor del reino. La abertura oriental
+	# queda libre para conservar el acceso de la puerta y sus colisiones.
+	var celdas_muralla: Dictionary = {}
+	for x in range(75):
+		celdas_muralla[Vector2i(x, 0)] = true
+		celdas_muralla[Vector2i(x, 43)] = true
+	for y in range(1, 43):
+		celdas_muralla[Vector2i(0, y)] = true
+	for y in range(1, 19):
+		celdas_muralla[Vector2i(74, y)] = true
+	for y in range(25, 43):
+		celdas_muralla[Vector2i(74, y)] = true
+
+	for celda_variant in celdas_muralla.keys():
+		var celda: Vector2i = celda_variant
+		terreno.set_zone(celda, 2, 2, "Montaña")
+
+	terreno.flush()
+	print("ReinoTorres: muralla procedural de montaña creada con TileMapDual.")
+
+
 func _texturizar_mapa_pixelart() -> void:
 	# Sustituye las superficies planas por texturas rasterizadas a baja resolución.
 	var superficies: Array[Dictionary] = [
@@ -361,12 +397,7 @@ func _texturizar_mapa_pixelart() -> void:
 		{"nombre": "GardenSoil", "tipo": "tierra"},
 		{"nombre": "EastGatePierNorth", "tipo": "muro"},
 		{"nombre": "EastGatePierSouth", "tipo": "muro"},
-		{"nombre": "EastGateLintel", "tipo": "muro"},
-		{"nombre": "WestOuterWall", "tipo": "muro"},
-		{"nombre": "NorthOuterWall", "tipo": "muro"},
-		{"nombre": "SouthOuterWall", "tipo": "muro"},
-		{"nombre": "EastOuterWallNorth", "tipo": "muro"},
-		{"nombre": "EastOuterWallSouth", "tipo": "muro"}
+		{"nombre": "EastGateLintel", "tipo": "muro"}
 	]
 	for i in range(superficies.size()):
 		var superficie: Dictionary = superficies[i]
