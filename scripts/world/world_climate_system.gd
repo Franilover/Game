@@ -232,10 +232,14 @@ func obtener_estado_para_posicion(
 			var habitat := habitat_variant as Dictionary
 			if elegido.is_empty():
 				elegido = habitat
+			var tipo_habitat_variant: Variant = habitat.get("tipo_habitat", {})
+			var tipo_habitat_clave := ""
+			if tipo_habitat_variant is Dictionary:
+				tipo_habitat_clave = str((tipo_habitat_variant as Dictionary).get("clave", "")).strip_edges().to_lower()
 			var claves := [
 				str(habitat.get("clave", "")).strip_edges().to_lower(),
 				str(habitat.get("nombre", "")).strip_edges().to_lower(),
-				str(habitat.get("tipo_habitat", "")).strip_edges().to_lower()
+				tipo_habitat_clave
 			]
 			if not buscado.is_empty() and buscado in claves:
 				elegido = habitat
