@@ -13,13 +13,13 @@ const TAMANO_PIXEL_MUNDO := 8.0
 # Si no existe ningún archivo válido, sus Polygon2D de placeholder quedan visibles.
 const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"castillo", "paths":["castillo.png","edificios/castillo.png"], "position":Vector2(0,-205), "size":Vector2(230,190), "hide":["CastleKeep","CastleFacade","CastleRoof","CastleDoor","CastleWindow","CastleTower"]},
-	{"key":"panaderia", "paths":["casas/panaderia.png","edificios/panaderia.png","casas/casa.png"], "position":Vector2(-245,-157), "size":Vector2(96,92), "hide":["HouseBaker"]},
-	{"key":"posada", "paths":["casas/posada.png","edificios/posada.png","casas/casa.png"], "position":Vector2(-385,52), "size":Vector2(104,102), "hide":["HouseInn"]},
-	{"key":"vivienda_mason", "paths":["casas/vivienda_mason.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-235,152), "size":Vector2(96,88), "hide":["HouseMason"]},
-	{"key":"casa_oriente_a", "paths":["casas/casa_oriente_a.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(220,-158), "size":Vector2(96,90), "hide":["HouseEastA"]},
-	{"key":"casa_oriente_b", "paths":["casas/casa_oriente_b.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(385,-148), "size":Vector2(96,90), "hide":["HouseEastB"]},
-	{"key":"casa_oriente_c", "paths":["casas/casa_oriente_c.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(385,118), "size":Vector2(96,92), "hide":["HouseEastC"]},
-	{"key":"forja", "paths":["edificios/forja.png","edificios/taller.png"], "position":Vector2(-360,-201), "size":Vector2(104,92), "hide":["ForgeBase","ForgeRoof","ForgeOpening","ForgeFire"]},
+	{"key":"panaderia", "paths":["res://assets/art/places/Panaderia.png","casas/panaderia.png","edificios/panaderia.png","casas/casa.png"], "position":Vector2(-245,-157), "size":Vector2(96,92), "hide":["HouseBaker"]},
+	{"key":"posada", "paths":["res://assets/art/places/Posada.png","casas/posada.png","edificios/posada.png","casas/casa.png"], "position":Vector2(-385,52), "size":Vector2(104,102), "hide":["HouseInn"]},
+	{"key":"vivienda_mason", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_mason.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-235,152), "size":Vector2(96,88), "hide":["HouseMason"]},
+	{"key":"casa_oriente_a", "paths":["res://assets/art/places/Casa_Comun.png","casas/casa_oriente_a.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(220,-158), "size":Vector2(96,90), "hide":["HouseEastA"]},
+	{"key":"casa_oriente_b", "paths":["res://assets/art/places/Casa_Comun.png","casas/casa_oriente_b.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(385,-148), "size":Vector2(96,90), "hide":["HouseEastB"]},
+	{"key":"casa_oriente_c", "paths":["res://assets/art/places/Casa_Comun.png","casas/casa_oriente_c.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(385,118), "size":Vector2(96,92), "hide":["HouseEastC"]},
+	{"key":"forja", "paths":["res://assets/art/places/Forja.png","edificios/forja.png","edificios/taller.png"], "position":Vector2(-360,-201), "size":Vector2(104,92), "hide":["ForgeBase","ForgeRoof","ForgeOpening","ForgeFire"]},
 	{"key":"establos", "paths":["edificios/establos.png","edificios/establo.png"], "position":Vector2(382,177), "size":Vector2(112,88), "hide":["StableBase","StableRoof","StableDoor"]},
 	{"key":"archivo_real", "paths":["edificios/archivo_real.png","edificios/archivo.png","edificios/edificio.png"], "position":Vector2(-170,-657), "size":Vector2(116,94), "hide":["RoyalArchive"]},
 	{"key":"sala_consejo", "paths":["edificios/sala_consejo.png","edificios/consejo.png","edificios/edificio.png"], "position":Vector2(170,-658), "size":Vector2(132,104), "hide":["CouncilHall"]},
@@ -35,22 +35,22 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"molino", "paths":["edificios/molino.png","edificios/edificio.png"], "position":Vector2(-270,257), "size":Vector2(114,96), "hide":["MillHouse"]},
 	{"key":"aguas", "paths":["edificios/aguas.png","edificios/estacion_agua.png","edificios/edificio.png"], "position":Vector2(250,257), "size":Vector2(124,102), "hide":["WaterWorks"]},
 	{"key":"corrales", "paths":["edificios/corrales.png","edificios/establos.png","edificios/edificio.png"], "position":Vector2(450,257), "size":Vector2(122,100), "hide":["AnimalPens"]},
-	{"key":"casa_granjeros", "paths":["edificios/casa_granjeros.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-850,602), "size":Vector2(126,102), "hide":["FarmersHall"]},
+	{"key":"casa_granjeros", "paths":["res://assets/art/places/Casa_Comun.png","edificios/casa_granjeros.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-850,602), "size":Vector2(126,102), "hide":["FarmersHall"]},
 	{"key":"semillas", "paths":["edificios/semillas.png","edificios/almacen.png","edificios/edificio.png"], "position":Vector2(800,602), "size":Vector2(122,100), "hide":["SeedStore"]},
 	{"key":"telar", "paths":["edificios/telares.png","casas/taller.png","casas/casa.png"], "position":Vector2(-760,-258), "size":Vector2(100,90), "hide":["WeaverHouse"]},
 	{"key":"alfareria", "paths":["edificios/alfareria.png","casas/taller.png","casas/casa.png"], "position":Vector2(-760,102), "size":Vector2(100,90), "hide":["PotterHouse"]},
 	{"key":"banos", "paths":["edificios/banos.png","edificios/edificio.png"], "position":Vector2(-760,211), "size":Vector2(108,98), "hide":["BathHouse"]},
-	{"key":"vivienda_oeste_01", "paths":["casas/vivienda_oeste_01.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-354), "size":Vector2(84,82), "hide":["WestHome1Wall","WestHome1Roof","WestHome1Door","WestHome1CollisionBody"]},
-	{"key":"vivienda_oeste_02", "paths":["casas/vivienda_oeste_02.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,-354), "size":Vector2(84,82), "hide":["WestHome2Wall","WestHome2Roof","WestHome2Door","WestHome2CollisionBody"]},
-	{"key":"vivienda_oeste_03", "paths":["casas/vivienda_oeste_03.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-254), "size":Vector2(84,82), "hide":["WestHome3Wall","WestHome3Roof","WestHome3Door","WestHome3CollisionBody"]},
-	{"key":"vivienda_oeste_04", "paths":["casas/vivienda_oeste_04.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,-254), "size":Vector2(84,82), "hide":["WestHome4Wall","WestHome4Roof","WestHome4Door","WestHome4CollisionBody"]},
-	{"key":"vivienda_oeste_05", "paths":["casas/vivienda_oeste_05.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,106), "size":Vector2(84,82), "hide":["WestHome5Wall","WestHome5Roof","WestHome5Door","WestHome5CollisionBody"]},
-	{"key":"vivienda_oeste_06", "paths":["casas/vivienda_oeste_06.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,106), "size":Vector2(84,82), "hide":["WestHome6Wall","WestHome6Roof","WestHome6Door","WestHome6CollisionBody"]},
-	{"key":"vivienda_oeste_07", "paths":["casas/vivienda_oeste_07.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,216), "size":Vector2(84,82), "hide":["WestHome7Wall","WestHome7Roof","WestHome7Door","WestHome7CollisionBody"]},
-	{"key":"vivienda_oeste_08", "paths":["casas/vivienda_oeste_08.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,216), "size":Vector2(84,82), "hide":["WestHome8Wall","WestHome8Roof","WestHome8Door","WestHome8CollisionBody"]},
-	{"key":"vivienda_oeste_09", "paths":["casas/vivienda_oeste_09.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,-254), "size":Vector2(84,82), "hide":["WestHome9Wall","WestHome9Roof","WestHome9Door","WestHome9CollisionBody"]},
-	{"key":"vivienda_oeste_10", "paths":["casas/vivienda_oeste_10.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,96), "size":Vector2(84,82), "hide":["WestHome10Wall","WestHome10Roof","WestHome10Door","WestHome10CollisionBody"]},
-	{"key":"vivienda_oeste_11", "paths":["casas/vivienda_oeste_11.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,206), "size":Vector2(84,82), "hide":["WestHome11Wall","WestHome11Roof","WestHome11Door","WestHome11CollisionBody"]}
+	{"key":"vivienda_oeste_01", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_01.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-354), "size":Vector2(84,82), "hide":["WestHome1Wall","WestHome1Roof","WestHome1Door","WestHome1CollisionBody"]},
+	{"key":"vivienda_oeste_02", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_02.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,-354), "size":Vector2(84,82), "hide":["WestHome2Wall","WestHome2Roof","WestHome2Door","WestHome2CollisionBody"]},
+	{"key":"vivienda_oeste_03", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_03.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,-254), "size":Vector2(84,82), "hide":["WestHome3Wall","WestHome3Roof","WestHome3Door","WestHome3CollisionBody"]},
+	{"key":"vivienda_oeste_04", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_04.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,-254), "size":Vector2(84,82), "hide":["WestHome4Wall","WestHome4Roof","WestHome4Door","WestHome4CollisionBody"]},
+	{"key":"vivienda_oeste_05", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_05.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,106), "size":Vector2(84,82), "hide":["WestHome5Wall","WestHome5Roof","WestHome5Door","WestHome5CollisionBody"]},
+	{"key":"vivienda_oeste_06", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_06.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,106), "size":Vector2(84,82), "hide":["WestHome6Wall","WestHome6Roof","WestHome6Door","WestHome6CollisionBody"]},
+	{"key":"vivienda_oeste_07", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_07.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1040,216), "size":Vector2(84,82), "hide":["WestHome7Wall","WestHome7Roof","WestHome7Door","WestHome7CollisionBody"]},
+	{"key":"vivienda_oeste_08", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_08.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-930,216), "size":Vector2(84,82), "hide":["WestHome8Wall","WestHome8Roof","WestHome8Door","WestHome8CollisionBody"]},
+	{"key":"vivienda_oeste_09", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_09.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,-254), "size":Vector2(84,82), "hide":["WestHome9Wall","WestHome9Roof","WestHome9Door","WestHome9CollisionBody"]},
+	{"key":"vivienda_oeste_10", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_10.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,96), "size":Vector2(84,82), "hide":["WestHome10Wall","WestHome10Roof","WestHome10Door","WestHome10CollisionBody"]},
+	{"key":"vivienda_oeste_11", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_oeste_11.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-520,206), "size":Vector2(84,82), "hide":["WestHome11Wall","WestHome11Roof","WestHome11Door","WestHome11CollisionBody"]}
 ]
 
 @onready var _expedition_entrance: Area2D = $ExpeditionEntrance
@@ -904,7 +904,7 @@ func _agregar_rect(padre: Node, nombre: String, posicion: Vector2, tamano: Vecto
 
 func _buscar_textura(paths: Array) -> Texture2D:
 	for relative_path: String in paths:
-		var full_path := TORRES_ART_ROOT.path_join(relative_path)
+		var full_path := relative_path if relative_path.begins_with("res://") else TORRES_ART_ROOT.path_join(relative_path)
 		if not ResourceLoader.exists(full_path):
 			continue
 		var resource := load(full_path)
