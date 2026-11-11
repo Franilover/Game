@@ -135,6 +135,9 @@ var _ataque_resuelto: bool = false
 
 var _movimiento: CreatureMovement = null
 var _velocidad_normal: float = 20.0
+var _velocidad_base_actual: float = 20.0
+var _ultimo_modificador_ambiental: float = -1.0
+var _tiempo_revision_ambiental: float = 0.0
 var objeto_robado: Dictionary = {}
 
 
@@ -190,6 +193,11 @@ func _physics_process(delta: float) -> void:
 		_tiempo_teleport - delta,
 		0.0
 	)
+
+	_tiempo_revision_ambiental += delta
+	if _tiempo_revision_ambiental >= 0.75:
+		_tiempo_revision_ambiental = 0.0
+		_actualizar_velocidad_ambiental()
 
 	_actualizar_rutina()
 
@@ -1980,8 +1988,9 @@ func _aplicar_configuracion_movimiento() -> void:
 		"velocidad",
 		_movimiento.move_speed
 	)
-
-	_movimiento.move_speed = _velocidad_normal * _obtener_modificador_velocidad_ambiental()
+	_velocidad_base_actual = _velocidad_normal
+	_ultimo_modificador_ambiental = -1.0
+	_actualizar_velocidad_ambiental()
 	_movimiento.min_move_time = _obtener_float_movimiento(
 		"exploracion_min",
 		_movimiento.min_move_time
@@ -2131,10 +2140,19 @@ func _establecer_velocidad(
 	if _movimiento == null:
 		return
 
-	_movimiento.move_speed = maxf(
-		nueva_velocidad * _obtener_modificador_velocidad_ambiental(),
-		0.0
-	)
+	_velocidad_base_actual = maxf(nueva_velocidad, 0.0)
+	_ultimo_modificador_ambiental = -1.0
+	_actualizar_velocidad_ambiental()
+
+
+func _actualizar_velocidad_ambiental() -> void:
+	if _movimiento == null or not is_instance_valid(_movimiento):
+		return
+	var modificador := _obtener_modificador_velocidad_ambiental()
+	if is_equal_approx(modificador, _ultimo_modificador_ambiental):
+		return
+	_ultimo_modificador_ambiental = modificador
+	_movimiento.move_speed = maxf(_velocidad_base_actual * modificador, 0.0)
 
 
 func _iniciar_persecucion() -> void:
