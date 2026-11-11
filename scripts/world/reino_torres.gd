@@ -13,10 +13,10 @@ const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.p
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 
-# Los interiores deben superar el viewport base (960x540) para que la cámara
-# nunca deje ver el fondo gris alrededor del suelo.
-const INTERIOR_ANCHO := 1280.0
-const INTERIOR_ALTO := 800.0
+# Ampliación moderada respecto al interior original (448x272).
+# Mantiene el espacio compacto y reduce los bordes visibles sin vaciar la sala.
+const INTERIOR_ANCHO := 560.0
+const INTERIOR_ALTO := 352.0
 const INTERIOR_MEDIO_ANCHO := INTERIOR_ANCHO / 2.0
 const INTERIOR_MEDIO_ALTO := INTERIOR_ALTO / 2.0
 
@@ -808,8 +808,8 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -INTERIOR_MEDIO_ALTO - 4.0), Vector2(INTERIOR_ANCHO + 16.0, 16))
 	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-INTERIOR_MEDIO_ANCHO - 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
 	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(INTERIOR_MEDIO_ANCHO + 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
-	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2(-330, INTERIOR_MEDIO_ALTO + 4.0), Vector2(636, 16))
-	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(390, INTERIOR_MEDIO_ALTO + 4.0), Vector2(516, 16))
+	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2((-INTERIOR_MEDIO_ANCHO - 4.0 - 12.0) / 2.0, INTERIOR_MEDIO_ALTO + 4.0), Vector2(INTERIOR_MEDIO_ANCHO - 12.0, 16))
+	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2((132.0 + INTERIOR_MEDIO_ANCHO + 4.0) / 2.0, INTERIOR_MEDIO_ALTO + 4.0), Vector2(INTERIOR_MEDIO_ANCHO - 128.0, 16))
 
 	var tipo := str(entrada["tipo"])
 	match tipo:
@@ -891,7 +891,7 @@ func _agregar_suelo_tilemap(padre: Node) -> void:
 	capa.z_index = -10
 	padre.add_child(capa)
 
-	# 80 x 50 tiles cubren los 1280 x 800 puntos del nuevo interior.
+	# Los tiles cubren exactamente los 560 x 352 puntos del interior.
 	for y in range(int(INTERIOR_ALTO / 16.0)):
 		for x in range(int(INTERIOR_ANCHO / 16.0)):
 			capa.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
