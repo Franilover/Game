@@ -163,6 +163,11 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			criatura_data = _world_data.obtener_criatura(criatura_id).duplicate(true)
 		if criatura_data.is_empty():
 			continue
+		# El contexto ecológico del punto de aparición acompaña a la instancia
+		# runtime; así la IA consulta el clima de su hábitat real.
+		for clave_ambiental in ["bioma_id", "ecosistema_id", "habitat_id", "habitat_clave"]:
+			if dato.has(clave_ambiental):
+				criatura_data[clave_ambiental] = dato[clave_ambiental]
 		if categoria_entidad == "garumi":
 			criatura_data["categoria_entidad"] = "garumi"
 			criatura_data["asset_key"] = str(criatura_data.get("asset_key", criatura_data.get("nombre", "")))
@@ -267,7 +272,24 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			if not criatura_elegida is Dictionary:
 				continue
 			var elegido := (criatura_elegida as Dictionary).duplicate(true)
-			elegido["habitat_clave"] = str(candidato_elegido.get("habitat_clave", "general")).to_lower()
+			var habitat_clave := str(candidato_elegido.get("habitat_clave", "general")).to_lower()
+			elegido["habitat_clave"] = habitat_clave
+			var bioma_variant: Variant = contexto.get("bioma", {})
+			var ecosistema_contexto_variant: Variant = contexto.get("ecosistema", {})
+			if bioma_variant is Dictionary:
+				elegido["bioma_id"] = str((bioma_variant as Dictionary).get("id", ""))
+			if ecosistema_contexto_variant is Dictionary:
+				elegido["ecosistema_id"] = str((ecosistema_contexto_variant as Dictionary).get("id", ""))
+			var habitats_contexto_variant: Variant = contexto.get("habitats", [])
+			if habitats_contexto_variant is Array:
+				for habitat_variant in habitats_contexto_variant as Array:
+					if not habitat_variant is Dictionary:
+						continue
+					var habitat := habitat_variant as Dictionary
+					var tipo_habitat_variant: Variant = habitat.get("tipo_habitat", {})
+					if tipo_habitat_variant is Dictionary and str((tipo_habitat_variant as Dictionary).get("clave", "")).to_lower() == habitat_clave:
+						elegido["habitat_id"] = str(habitat.get("id", ""))
+						break
 			var criatura_id := str(elegido.get("id", elegido.get("criatura_id", ""))).strip_edges()
 			if criatura_id.is_empty():
 				continue
