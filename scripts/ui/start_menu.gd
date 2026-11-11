@@ -104,6 +104,8 @@ var _cargando_mundo: bool = false
 
 
 func _ready() -> void:
+	# Diagnóstico de arranque: se registra antes de inicializar servicios o layouts.
+	call_deferred("_debug_ventana_inicio")
 	# El servidor dedicado reutiliza el runtime del mundo, no el menú ni una partida local.
 	if OS.get_cmdline_user_args().has("--garlia-server"):
 		call_deferred("_entrar_runtime_servidor")
@@ -263,6 +265,57 @@ func _ready() -> void:
 	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_layout_responsive)
 	_configurar_layout_responsive()
+
+
+func _debug_ventana_inicio() -> void:
+	# Captura el estado inmediato, después del primer frame y tras un segundo.
+	# Esto permite detectar si Godot o el compositor cambian el tamaño/posición.
+	_imprimir_estado_ventana("INMEDIATO")
+	await get_tree().process_frame
+	_imprimir_estado_ventana("PRIMER_FRAME")
+	await get_tree().create_timer(1.0).timeout
+	_imprimir_estado_ventana("1_SEGUNDO")
+
+
+func _imprimir_estado_ventana(momento: String) -> void:
+	var pantalla := DisplayServer.window_get_current_screen()
+	var viewport := get_viewport()
+	var ventana := get_window()
+	var centro := get_node_or_null("Center") as Control
+	var papel := get_node_or_null("Paper") as Control
+
+	print("\n========== [VENTANA][", momento, "] ==========")
+	print("[VENTANA] PID: ", OS.get_process_id())
+	print("[VENTANA] SO: ", OS.get_name(), " | Godot: ", Engine.get_version_info())
+	print("[VENTANA] Modo ventana (enum): ", DisplayServer.window_get_mode())
+	print("[VENTANA] Tamaño ventana: ", DisplayServer.window_get_size())
+	print("[VENTANA] Posición ventana: ", DisplayServer.window_get_position())
+	print("[VENTANA] Pantalla actual: ", pantalla)
+	print("[VENTANA] Tamaño pantalla: ", DisplayServer.screen_get_size(pantalla))
+	print("[VENTANA] Posición pantalla: ", DisplayServer.screen_get_position(pantalla))
+	print("[VENTANA] Tamaño viewport visible: ", viewport.get_visible_rect().size)
+	print("[VENTANA] Tamaño viewport: ", viewport.size)
+	print("[VENTANA] Escala contenido ventana: ", ventana.content_scale_size)
+	print("[VENTANA] Modo escala contenido: ", ventana.content_scale_mode)
+	print("[VENTANA] Aspecto escala contenido: ", ventana.content_scale_aspect)
+	print("[VENTANA] Config proyecto - modo: ", ProjectSettings.get_setting("display/window/size/mode", "NO_DEFINIDO"))
+	print("[VENTANA] Config proyecto - override: ", Vector2i(
+		int(ProjectSettings.get_setting("display/window/size/window_width_override", 0)),
+		int(ProjectSettings.get_setting("display/window/size/window_height_override", 0))
+	))
+	print("[VENTANA] Config proyecto - viewport: ", Vector2i(
+		int(ProjectSettings.get_setting("display/window/size/viewport_width", 0)),
+		int(ProjectSettings.get_setting("display/window/size/viewport_height", 0))
+	))
+	print("[VENTANA] Config proyecto - stretch mode: ", ProjectSettings.get_setting("display/window/stretch/mode", "NO_DEFINIDO"))
+	print("[VENTANA] Config proyecto - stretch aspect: ", ProjectSettings.get_setting("display/window/stretch/aspect", "NO_DEFINIDO"))
+	print("[VENTANA] Config proyecto - scale mode: ", ProjectSettings.get_setting("display/window/stretch/scale_mode", "NO_DEFINIDO"))
+	print("[VENTANA] Menú root rect global: ", get_global_rect())
+	if is_instance_valid(centro):
+		print("[VENTANA] Center rect global: ", centro.get_global_rect(), " | size: ", centro.size, " | position: ", centro.position)
+	if is_instance_valid(papel):
+		print("[VENTANA] Paper rect global: ", papel.get_global_rect(), " | size: ", papel.size, " | position: ", papel.position)
+	print("========== [/VENTANA] ==========")
 
 
 func _configurar_layout_responsive() -> void:
