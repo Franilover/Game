@@ -37,9 +37,11 @@ RelationshipSystem="*res://scripts/gameplay/relationship_system.gd"
 
 window/size/viewport_width=960
 window/size/viewport_height=540
-window/size/window_width_override=1280
-window/size/window_height_override=720
-window/size/mode=3
+window/size/window_width_override=960
+window/size/window_height_override=540
+window/size/min_width=640
+window/size/min_height=360
+window/size/mode=2
 window/size/resizable=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
