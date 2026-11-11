@@ -28,6 +28,9 @@
 [ext_resource type="Texture2D" uid="uid://bb4hlgvjnymuw" path="res://assets/art/places/Casa_de_los_Telares.png" id="official_38"]
 [ext_resource type="Texture2D" uid="uid://ctxwymjva8slo" path="res://assets/art/places/Alfareria.png" id="official_39"]
 [ext_resource type="Texture2D" uid="uid://risqmhc65ra7" path="res://assets/art/places/Baños_Publicos.png" id="official_40"]
+[ext_resource type="Texture2D" uid="uid://d0a5v42c67j5s" path="res://assets/art/places/Castillo.png" id="official_41"]
+[ext_resource type="Texture2D" uid="uid://mp46yeh2r0go" path="res://assets/art/places/Poste.png" id="official_42"]
+[ext_resource type="Texture2D" uid="uid://gy85sfyfqx63" path="res://assets/art/places/Pozo.png" id="official_43"]
 
 [sub_resource type="RectangleShape2D" id="ShapeExit"]
 size = Vector2(48, 180)
@@ -2825,6 +2828,39 @@ tile_map_data = PackedByteArray("AAAAAAAAAAACAAEAAAABAAAAAAACAAEAAAACAAAAAAACAAE
 tile_set = SubResource("TileSet_msr2i")
 script = ExtResource("4_7dy5d")
 godot_4_3_compatibility = false
+
+
+[node name="Sprite_castillo" type="Sprite2D" parent="."]
+z_index = 3
+texture_filter = 1
+position = Vector2(0, -205)
+texture = ExtResource("official_41")
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(230, 190)
+
+[node name="Sprite_pozo" type="Sprite2D" parent="."]
+z_index = 4
+texture_filter = 1
+position = Vector2(0, 19)
+texture = ExtResource("official_43")
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(52, 46)
+
+[node name="Sprite_poste_oeste" type="Sprite2D" parent="."]
+z_index = 3
+texture_filter = 1
+position = Vector2(-330, 12)
+texture = ExtResource("official_42")
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(48, 64)
+
+[node name="Sprite_poste_este" type="Sprite2D" parent="."]
+z_index = 3
+texture_filter = 1
+position = Vector2(320, 12)
+texture = ExtResource("official_42")
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(48, 64)
 
 [node name="Sprite_panaderia" type="Sprite2D" parent="." unique_id=1288523006]
 z_index = 3
