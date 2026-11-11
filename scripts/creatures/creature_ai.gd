@@ -1134,6 +1134,8 @@ func _actualizar_rutina() -> void:
 						actividad_horaria = actividad_bloque
 					break
 
+	_aplicar_respuesta_ambiental_rutina()
+
 	# Publicar siempre el estado horario, incluso si falta o está mal formada
 	# la configuración; así no quedan metadatos de una rutina anterior.
 	criatura.set_meta("actividad_horaria", actividad_horaria)
@@ -1192,15 +1194,79 @@ func _buscar_refugio() -> Creature:
 	return mejor
 
 func _obtener_distancia_deteccion() -> float:
-	var valor: Variant = configuracion_ia.get(
-		"deteccion",
-		distancia_deteccion
-	)
+	var valor: Variant = configuracion_ia.get("deteccion", distancia_deteccion)
+	var distancia_base := maxf(float(valor), 0.0) if valor is int or valor is float else distancia_deteccion
+	var estado_ambiental := _obtener_estado_ambiental()
+	var clima_variant: Variant = estado_ambiental.get("clima", {})
+	if clima_variant is Dictionary:
+		var visibilidad := clampf(float((clima_variant as Dictionary).get("visibilidad", 1.0)), 0.15, 1.0)
+		return distancia_base * visibilidad
+	return distancia_base
 
-	if valor is int or valor is float:
-		return maxf(float(valor), 0.0)
 
-	return distancia_deteccion
+func _obtener_estado_ambiental() -> Dictionary:
+	if criatura == null or world_atmosphere == null or not is_instance_valid(world_atmosphere):
+		return {}
+	var sistema := world_atmosphere.get_node_or_null("ClimateSystem")
+	if sistema == null or not sistema.has_method("obtener_estado_para_contexto"):
+		return {}
+	var contexto: Dictionary = {}
+	for clave in ["bioma_id", "ecosistema_id", "habitat_id"]:
+		var valor := str(criatura.datos.get(clave, "")).strip_edges()
+		if not valor.is_empty():
+			contexto[clave] = valor
+	return sistema.call("obtener_estado_para_contexto", contexto)
+
+
+func _obtener_respuesta_ambiental() -> Dictionary:
+	var valor: Variant = configuracion_ia.get("respuesta_ambiental", {})
+	var respuesta: Dictionary = valor.duplicate(true) if valor is Dictionary else {}
+	# Valores fisiológicos generales de partida; cada especie puede sustituirlos
+	# desde su ia_config en Supabase.
+	if not respuesta.has("temperatura_minima_c"):
+		respuesta["temperatura_minima_c"] = 0.0
+	if not respuesta.has("temperatura_maxima_c"):
+		respuesta["temperatura_maxima_c"] = 28.0
+	if not respuesta.has("velocidad_bajo_minimo"):
+		respuesta["velocidad_bajo_minimo"] = 0.78
+	if not respuesta.has("velocidad_sobre_maximo"):
+		respuesta["velocidad_sobre_maximo"] = 0.82
+	return respuesta
+
+
+func _obtener_modificador_velocidad_ambiental() -> float:
+	var estado := _obtener_estado_ambiental()
+	var ambiente_variant: Variant = estado.get("ambiente", {})
+	if not ambiente_variant is Dictionary:
+		return 1.0
+	var temperatura: Variant = (ambiente_variant as Dictionary).get("temperatura_c", null)
+	if not (temperatura is int or temperatura is float):
+		return 1.0
+	var respuesta := _obtener_respuesta_ambiental()
+	if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
+		return clampf(float(respuesta.get("velocidad_bajo_minimo", 0.78)), 0.1, 1.0)
+	if float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
+		return clampf(float(respuesta.get("velocidad_sobre_maximo", 0.82)), 0.1, 1.0)
+	return 1.0
+
+
+func _aplicar_respuesta_ambiental_rutina() -> void:
+	var estado := _obtener_estado_ambiental()
+	var ambiente_variant: Variant = estado.get("ambiente", {})
+	if not ambiente_variant is Dictionary:
+		return
+	var temperatura: Variant = (ambiente_variant as Dictionary).get("temperatura_c", null)
+	if not (temperatura is int or temperatura is float):
+		return
+	var respuesta := _obtener_respuesta_ambiental()
+	if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
+		var actividad_frio := str(respuesta.get("actividad_con_frio", "buscar_refugio")).strip_edges().to_lower()
+		if not actividad_frio.is_empty():
+			actividad_horaria = actividad_frio
+	elif float(temperatura) > float(respuesta.get("temperatura_maxima_c", 28.0)):
+		var actividad_calor := str(respuesta.get("actividad_con_calor", "reposar")).strip_edges().to_lower()
+		if not actividad_calor.is_empty():
+			actividad_horaria = actividad_calor
 
 
 func _movimiento_permitido() -> bool:
@@ -1900,7 +1966,7 @@ func _aplicar_configuracion_movimiento() -> void:
 		_movimiento.move_speed
 	)
 
-	_movimiento.move_speed = _velocidad_normal
+	_movimiento.move_speed = _velocidad_normal * _obtener_modificador_velocidad_ambiental()
 	_movimiento.min_move_time = _obtener_float_movimiento(
 		"exploracion_min",
 		_movimiento.min_move_time
@@ -2051,7 +2117,7 @@ func _establecer_velocidad(
 		return
 
 	_movimiento.move_speed = maxf(
-		nueva_velocidad,
+		nueva_velocidad * _obtener_modificador_velocidad_ambiental(),
 		0.0
 	)
 
