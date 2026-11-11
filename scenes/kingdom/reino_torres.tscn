@@ -1,5 +1,28 @@
 [gd_scene format=4 uid="uid://dwd4yfnicinhj"]
 
+[ext_resource type="Texture2D" path="res://assets/art/places/Panaderia.png" id="official_20"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Posada.png" id="official_21"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Casa_Comun.png" id="official_22"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Forja.png" id="official_23"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Establos.png" id="official_24"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Archivo_Real.png" id="official_25"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Sala_del_Consejo.png" id="official_26"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Casa_de_Estudio_Oris.png" id="official_27"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Casa_de_Comercio.png" id="official_28"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Alojamiento_de_la_Caravana.png" id="official_29"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Registro_de_la_Puerta.png" id="official_30"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Taller_de_Reparaciones.png" id="official_31"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Almacen_Publico.png" id="official_32"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Granero.png" id="official_33"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Molino.png" id="official_34"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Obras_de_Agua.png" id="official_35"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Corrales.png" id="official_36"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Deposito_Semillas.png" id="official_37"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Casa_de_los_Telares.png" id="official_38"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Alfareria.png" id="official_39"]
+[ext_resource type="Texture2D" path="res://assets/art/places/Baños_Publicos.png" id="official_40"]
+[ext_resource type="Script" path="res://scripts/world/editor_sprite_fit.gd" id="editor_sprite_fit"]
+
 [ext_resource type="Material" uid="uid://cmbcfxlkxxnwq" path="res://addons/TileMapDual/ghost_material.tres" id="2_kixsf"]
 [ext_resource type="Script" uid="uid://bpu8c76t82ih2" path="res://scripts/world/reino_torres.gd" id="2_reino"]
 [ext_resource type="Texture2D" uid="uid://uauvarvrj8u7" path="res://assets/tilesets/Pradera.png" id="3_yrcbl"]
@@ -513,111 +536,133 @@ color = Color(0.27, 0.19, 0.16, 1)
 polygon = PackedVector2Array(55, -249, 81, -269, 107, -249)
 
 [node name="HouseBakerWall" type="Polygon2D" parent="." unique_id=1312778731]
+visible = false
 z_index = 1
 color = Color(0.55, 0.39, 0.27, 1)
 polygon = PackedVector2Array(-280, -172, -210, -172, -210, -117, -280, -117)
 
 [node name="HouseBakerRoof" type="Polygon2D" parent="." unique_id=1600692990]
+visible = false
 z_index = 2
 color = Color(0.31, 0.18, 0.16, 1)
 polygon = PackedVector2Array(-288, -172, -245, -197, -202, -172)
 
 [node name="HouseBakerDoor" type="Polygon2D" parent="." unique_id=1403577426]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-254, -142, -236, -142, -236, -117, -254, -117)
 
 [node name="HouseBakerWindowL" type="Polygon2D" parent="." unique_id=167506670]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-272, -151, -256, -151, -256, -135, -272, -135)
 
 [node name="HouseBakerWindowR" type="Polygon2D" parent="." unique_id=2013455835]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-234, -151, -218, -151, -218, -135, -234, -135)
 
 [node name="HouseInnWall" type="Polygon2D" parent="." unique_id=142685191]
+visible = false
 z_index = 1
 color = Color(0.6, 0.48, 0.32, 1)
 polygon = PackedVector2Array(-423, 35, -348, 35, -348, 97, -423, 97)
 
 [node name="HouseInnRoof" type="Polygon2D" parent="." unique_id=1261977461]
+visible = false
 z_index = 2
 color = Color(0.34, 0.22, 0.16, 1)
 polygon = PackedVector2Array(-431, 35, -385, 7, -340, 35)
 
 [node name="HouseInnDoor" type="Polygon2D" parent="." unique_id=255574001]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-394, 68, -376, 68, -376, 97, -394, 97)
 
 [node name="HouseInnWindowL" type="Polygon2D" parent="." unique_id=972371532]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-416, 54, -400, 54, -400, 70, -416, 70)
 
 [node name="HouseInnWindowR" type="Polygon2D" parent="." unique_id=487362411]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-370, 54, -354, 54, -354, 70, -370, 70)
 
 [node name="HouseMasonWall" type="Polygon2D" parent="." unique_id=1607759021]
+visible = false
 z_index = 1
 color = Color(0.48, 0.49, 0.4, 1)
 polygon = PackedVector2Array(-271, 138, -199, 138, -199, 193, -271, 193)
 
 [node name="HouseMasonRoof" type="Polygon2D" parent="." unique_id=1116881580]
+visible = false
 z_index = 2
 color = Color(0.29, 0.24, 0.2, 1)
 polygon = PackedVector2Array(-279, 138, -235, 111, -191, 138)
 
 [node name="HouseMasonDoor" type="Polygon2D" parent="." unique_id=1993085170]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-244, 165, -226, 165, -226, 193, -244, 193)
 
 [node name="HouseEastA" type="Polygon2D" parent="." unique_id=33754762]
+visible = false
 z_index = 1
 color = Color(0.58, 0.43, 0.29, 1)
 polygon = PackedVector2Array(185, -173, 255, -173, 255, -117, 185, -117)
 
 [node name="HouseEastARoof" type="Polygon2D" parent="." unique_id=1733136941]
+visible = false
 z_index = 2
 color = Color(0.34, 0.2, 0.16, 1)
 polygon = PackedVector2Array(177, -173, 220, -199, 263, -173)
 
 [node name="HouseEastADoor" type="Polygon2D" parent="." unique_id=579706878]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(211, -143, 229, -143, 229, -117, 211, -117)
 
 [node name="HouseEastB" type="Polygon2D" parent="." unique_id=339462426]
+visible = false
 z_index = 1
 color = Color(0.48, 0.49, 0.41, 1)
 polygon = PackedVector2Array(351, -163, 419, -163, 419, -108, 351, -108)
 
 [node name="HouseEastBRoof" type="Polygon2D" parent="." unique_id=404599852]
+visible = false
 z_index = 2
 color = Color(0.28, 0.23, 0.19, 1)
 polygon = PackedVector2Array(343, -163, 385, -190, 427, -163)
 
 [node name="HouseEastBDoor" type="Polygon2D" parent="." unique_id=274352150]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(376, -134, 394, -134, 394, -108, 376, -108)
 
 [node name="HouseEastC" type="Polygon2D" parent="." unique_id=1768145494]
+visible = false
 z_index = 1
 color = Color(0.57, 0.46, 0.31, 1)
 polygon = PackedVector2Array(350, 103, 420, 103, 420, 161, 350, 161)
 
 [node name="HouseEastCRoof" type="Polygon2D" parent="." unique_id=48385557]
+visible = false
 z_index = 2
 color = Color(0.33, 0.2, 0.15, 1)
 polygon = PackedVector2Array(342, 103, 385, 76, 428, 103)
 
 [node name="HouseEastCDoor" type="Polygon2D" parent="." unique_id=1813851714]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(376, 132, 394, 132, 394, 161, 376, 161)
@@ -688,36 +733,43 @@ color = Color(0.65, 0.59, 0.43, 1)
 polygon = PackedVector2Array(-26, -4, 26, -4, 26, 4, -26, 4)
 
 [node name="ForgeBase" type="Polygon2D" parent="." unique_id=1256280950]
+visible = false
 z_index = 1
 color = Color(0.34, 0.28, 0.23, 1)
 polygon = PackedVector2Array(-395, -205, -325, -205, -325, -170, -395, -170)
 
 [node name="ForgeRoof" type="Polygon2D" parent="." unique_id=188776111]
+visible = false
 z_index = 2
 color = Color(0.25, 0.19, 0.16, 1)
 polygon = PackedVector2Array(-405, -205, -360, -233, -315, -205)
 
 [node name="ForgeOpening" type="Polygon2D" parent="." unique_id=1363977563]
+visible = false
 z_index = 3
 color = Color(0.12, 0.1, 0.09, 1)
 polygon = PackedVector2Array(-373, -200, -347, -200, -347, -170, -373, -170)
 
 [node name="ForgeFire" type="Polygon2D" parent="." unique_id=221541219]
+visible = false
 z_index = 4
 color = Color(0.88, 0.36, 0.12, 1)
 polygon = PackedVector2Array(-368, -190, -352, -190, -352, -176, -368, -176)
 
 [node name="StableBase" type="Polygon2D" parent="." unique_id=1473143785]
+visible = false
 z_index = 1
 color = Color(0.45, 0.36, 0.24, 1)
 polygon = PackedVector2Array(340, 175, 425, 175, 425, 207, 340, 207)
 
 [node name="StableRoof" type="Polygon2D" parent="." unique_id=2996843]
+visible = false
 z_index = 2
 color = Color(0.3, 0.21, 0.16, 1)
 polygon = PackedVector2Array(332, 175, 382, 147, 433, 175)
 
 [node name="StableDoor" type="Polygon2D" parent="." unique_id=157765999]
+visible = false
 z_index = 3
 color = Color(0.19, 0.14, 0.1, 1)
 polygon = PackedVector2Array(366, 185, 400, 185, 400, 207, 366, 207)
@@ -1132,26 +1184,31 @@ color = Color(0.15, 0.28, 0.15, 1)
 polygon = PackedVector2Array(275, -554, 253, -516, 297, -516)
 
 [node name="RoyalArchiveWall" type="Polygon2D" parent="." unique_id=901134707]
+visible = false
 z_index = 1
 color = Color(0.52, 0.48, 0.38, 1)
 polygon = PackedVector2Array(-216, -677, -124, -677, -124, -623, -216, -623)
 
 [node name="RoyalArchiveRoof" type="Polygon2D" parent="." unique_id=1991965714]
+visible = false
 z_index = 2
 color = Color(0.29, 0.23, 0.18, 1)
 polygon = PackedVector2Array(-224, -677, -170, -703, -116, -677)
 
 [node name="RoyalArchiveDoor" type="Polygon2D" parent="." unique_id=214059724]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-178, -649, -162, -649, -162, -623, -178, -623)
 
 [node name="RoyalArchiveWindowL" type="Polygon2D" parent="." unique_id=80824936]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-208, -660, -194, -660, -194, -646, -208, -646)
 
 [node name="RoyalArchiveWindowR" type="Polygon2D" parent="." unique_id=288757678]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-146, -660, -132, -660, -132, -646, -146, -646)
@@ -1163,26 +1220,31 @@ position = Vector2(-170, -650)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="CouncilHallWall" type="Polygon2D" parent="." unique_id=1465316056]
+visible = false
 z_index = 1
 color = Color(0.49, 0.47, 0.39, 1)
 polygon = PackedVector2Array(116, -682, 224, -682, 224, -618, 116, -618)
 
 [node name="CouncilHallRoof" type="Polygon2D" parent="." unique_id=1518221116]
+visible = false
 z_index = 2
 color = Color(0.27, 0.22, 0.18, 1)
 polygon = PackedVector2Array(108, -682, 170, -708, 232, -682)
 
 [node name="CouncilHallDoor" type="Polygon2D" parent="." unique_id=1432998921]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(162, -644, 178, -644, 178, -618, 162, -618)
 
 [node name="CouncilHallWindowL" type="Polygon2D" parent="." unique_id=1070049243]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(124, -665, 138, -665, 138, -651, 124, -651)
 
 [node name="CouncilHallWindowR" type="Polygon2D" parent="." unique_id=510942277]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(202, -665, 216, -665, 216, -651, 202, -651)
@@ -1194,26 +1256,31 @@ position = Vector2(170, -650)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="OrisStudyWall" type="Polygon2D" parent="." unique_id=1358676016]
+visible = false
 z_index = 1
 color = Color(0.44, 0.48, 0.44, 1)
 polygon = PackedVector2Array(-460, -584, -360, -584, -360, -526, -460, -526)
 
 [node name="OrisStudyRoof" type="Polygon2D" parent="." unique_id=1550638406]
+visible = false
 z_index = 2
 color = Color(0.24, 0.27, 0.25, 1)
 polygon = PackedVector2Array(-468, -584, -410, -610, -352, -584)
 
 [node name="OrisStudyDoor" type="Polygon2D" parent="." unique_id=19335954]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-418, -552, -402, -552, -402, -526, -418, -526)
 
 [node name="OrisStudyWindowL" type="Polygon2D" parent="." unique_id=2066685546]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-452, -567, -438, -567, -438, -553, -452, -553)
 
 [node name="OrisStudyWindowR" type="Polygon2D" parent="." unique_id=440001009]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-382, -567, -368, -567, -368, -553, -382, -553)
@@ -1225,21 +1292,25 @@ position = Vector2(-410, -555)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="StudyDome" type="Polygon2D" parent="." unique_id=1565680816]
+visible = false
 z_index = 3
 color = Color(0.48, 0.53, 0.5, 1)
 polygon = PackedVector2Array(-440, -603, -410, -628, -380, -603)
 
 [node name="WestHome1Wall" type="Polygon2D" parent="." unique_id=560468009]
+visible = false
 z_index = 1
 color = Color(0.53, 0.42, 0.31, 1)
 polygon = PackedVector2Array(-1072, -373, -1008, -373, -1008, -327, -1072, -327)
 
 [node name="WestHome1Roof" type="Polygon2D" parent="." unique_id=76034406]
+visible = false
 z_index = 2
 color = Color(0.3, 0.2, 0.16, 1)
 polygon = PackedVector2Array(-1080, -373, -1040, -399, -1000, -373)
 
 [node name="WestHome1Door" type="Polygon2D" parent="." unique_id=377579788]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-1048, -353, -1032, -353, -1032, -327, -1048, -327)
@@ -1251,16 +1322,19 @@ position = Vector2(-1040, -350)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome2Wall" type="Polygon2D" parent="." unique_id=1467502562]
+visible = false
 z_index = 1
 color = Color(0.48, 0.48, 0.39, 1)
 polygon = PackedVector2Array(-962, -373, -898, -373, -898, -327, -962, -327)
 
 [node name="WestHome2Roof" type="Polygon2D" parent="." unique_id=594472564]
+visible = false
 z_index = 2
 color = Color(0.29, 0.25, 0.2, 1)
 polygon = PackedVector2Array(-970, -373, -930, -399, -890, -373)
 
 [node name="WestHome2Door" type="Polygon2D" parent="." unique_id=454119790]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-938, -353, -922, -353, -922, -327, -938, -327)
@@ -1272,16 +1346,19 @@ position = Vector2(-930, -350)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome3Wall" type="Polygon2D" parent="." unique_id=803898232]
+visible = false
 z_index = 1
 color = Color(0.53, 0.42, 0.31, 1)
 polygon = PackedVector2Array(-1072, -273, -1008, -273, -1008, -227, -1072, -227)
 
 [node name="WestHome3Roof" type="Polygon2D" parent="." unique_id=1076857105]
+visible = false
 z_index = 2
 color = Color(0.3, 0.2, 0.16, 1)
 polygon = PackedVector2Array(-1080, -273, -1040, -299, -1000, -273)
 
 [node name="WestHome3Door" type="Polygon2D" parent="." unique_id=1092039610]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-1048, -253, -1032, -253, -1032, -227, -1048, -227)
@@ -1293,16 +1370,19 @@ position = Vector2(-1040, -250)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome4Wall" type="Polygon2D" parent="." unique_id=1776265291]
+visible = false
 z_index = 1
 color = Color(0.48, 0.48, 0.39, 1)
 polygon = PackedVector2Array(-962, -273, -898, -273, -898, -227, -962, -227)
 
 [node name="WestHome4Roof" type="Polygon2D" parent="." unique_id=1130360629]
+visible = false
 z_index = 2
 color = Color(0.29, 0.25, 0.2, 1)
 polygon = PackedVector2Array(-970, -273, -930, -299, -890, -273)
 
 [node name="WestHome4Door" type="Polygon2D" parent="." unique_id=1174178802]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-938, -253, -922, -253, -922, -227, -938, -227)
@@ -1314,16 +1394,19 @@ position = Vector2(-930, -250)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome5Wall" type="Polygon2D" parent="." unique_id=1408663012]
+visible = false
 z_index = 1
 color = Color(0.53, 0.42, 0.31, 1)
 polygon = PackedVector2Array(-1072, 87, -1008, 87, -1008, 133, -1072, 133)
 
 [node name="WestHome5Roof" type="Polygon2D" parent="." unique_id=867146203]
+visible = false
 z_index = 2
 color = Color(0.3, 0.2, 0.16, 1)
 polygon = PackedVector2Array(-1080, 87, -1040, 61, -1000, 87)
 
 [node name="WestHome5Door" type="Polygon2D" parent="." unique_id=782563040]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-1048, 107, -1032, 107, -1032, 133, -1048, 133)
@@ -1335,16 +1418,19 @@ position = Vector2(-1040, 110)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome6Wall" type="Polygon2D" parent="." unique_id=608747808]
+visible = false
 z_index = 1
 color = Color(0.48, 0.48, 0.39, 1)
 polygon = PackedVector2Array(-962, 87, -898, 87, -898, 133, -962, 133)
 
 [node name="WestHome6Roof" type="Polygon2D" parent="." unique_id=91803526]
+visible = false
 z_index = 2
 color = Color(0.29, 0.25, 0.2, 1)
 polygon = PackedVector2Array(-970, 87, -930, 61, -890, 87)
 
 [node name="WestHome6Door" type="Polygon2D" parent="." unique_id=185955958]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-938, 107, -922, 107, -922, 133, -938, 133)
@@ -1356,16 +1442,19 @@ position = Vector2(-930, 110)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome7Wall" type="Polygon2D" parent="." unique_id=478043303]
+visible = false
 z_index = 1
 color = Color(0.53, 0.42, 0.31, 1)
 polygon = PackedVector2Array(-1072, 197, -1008, 197, -1008, 243, -1072, 243)
 
 [node name="WestHome7Roof" type="Polygon2D" parent="." unique_id=1574559774]
+visible = false
 z_index = 2
 color = Color(0.3, 0.2, 0.16, 1)
 polygon = PackedVector2Array(-1080, 197, -1040, 171, -1000, 197)
 
 [node name="WestHome7Door" type="Polygon2D" parent="." unique_id=1660135150]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-1048, 217, -1032, 217, -1032, 243, -1048, 243)
@@ -1377,16 +1466,19 @@ position = Vector2(-1040, 220)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome8Wall" type="Polygon2D" parent="." unique_id=1650583917]
+visible = false
 z_index = 1
 color = Color(0.48, 0.48, 0.39, 1)
 polygon = PackedVector2Array(-962, 197, -898, 197, -898, 243, -962, 243)
 
 [node name="WestHome8Roof" type="Polygon2D" parent="." unique_id=1721342837]
+visible = false
 z_index = 2
 color = Color(0.29, 0.25, 0.2, 1)
 polygon = PackedVector2Array(-970, 197, -930, 171, -890, 197)
 
 [node name="WestHome8Door" type="Polygon2D" parent="." unique_id=699588239]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-938, 217, -922, 217, -922, 243, -938, 243)
@@ -1398,16 +1490,19 @@ position = Vector2(-930, 220)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome9Wall" type="Polygon2D" parent="." unique_id=1907188191]
+visible = false
 z_index = 1
 color = Color(0.53, 0.42, 0.31, 1)
 polygon = PackedVector2Array(-552, -273, -488, -273, -488, -227, -552, -227)
 
 [node name="WestHome9Roof" type="Polygon2D" parent="." unique_id=1024361289]
+visible = false
 z_index = 2
 color = Color(0.3, 0.2, 0.16, 1)
 polygon = PackedVector2Array(-560, -273, -520, -299, -480, -273)
 
 [node name="WestHome9Door" type="Polygon2D" parent="." unique_id=699318080]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-528, -253, -512, -253, -512, -227, -528, -227)
@@ -1419,16 +1514,19 @@ position = Vector2(-520, -250)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome10Wall" type="Polygon2D" parent="." unique_id=1582910348]
+visible = false
 z_index = 1
 color = Color(0.48, 0.48, 0.39, 1)
 polygon = PackedVector2Array(-552, 77, -488, 77, -488, 123, -552, 123)
 
 [node name="WestHome10Roof" type="Polygon2D" parent="." unique_id=334083687]
+visible = false
 z_index = 2
 color = Color(0.29, 0.25, 0.2, 1)
 polygon = PackedVector2Array(-560, 77, -520, 51, -480, 77)
 
 [node name="WestHome10Door" type="Polygon2D" parent="." unique_id=903348221]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-528, 97, -512, 97, -512, 123, -528, 123)
@@ -1440,16 +1538,19 @@ position = Vector2(-520, 100)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WestHome11Wall" type="Polygon2D" parent="." unique_id=1672538285]
+visible = false
 z_index = 1
 color = Color(0.53, 0.42, 0.31, 1)
 polygon = PackedVector2Array(-552, 187, -488, 187, -488, 233, -552, 233)
 
 [node name="WestHome11Roof" type="Polygon2D" parent="." unique_id=29047894]
+visible = false
 z_index = 2
 color = Color(0.3, 0.2, 0.16, 1)
 polygon = PackedVector2Array(-560, 187, -520, 161, -480, 187)
 
 [node name="WestHome11Door" type="Polygon2D" parent="." unique_id=564181709]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-528, 207, -512, 207, -512, 233, -528, 233)
@@ -1461,26 +1562,31 @@ position = Vector2(-520, 210)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WeaverHouseWall" type="Polygon2D" parent="." unique_id=1167537451]
+visible = false
 z_index = 1
 color = Color(0.55, 0.43, 0.32, 1)
 polygon = PackedVector2Array(-800, -277, -720, -277, -720, -223, -800, -223)
 
 [node name="WeaverHouseRoof" type="Polygon2D" parent="." unique_id=978312142]
+visible = false
 z_index = 2
 color = Color(0.33, 0.22, 0.16, 1)
 polygon = PackedVector2Array(-808, -277, -760, -303, -712, -277)
 
 [node name="WeaverHouseDoor" type="Polygon2D" parent="." unique_id=176529525]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-768, -249, -752, -249, -752, -223, -768, -223)
 
 [node name="WeaverHouseWindowL" type="Polygon2D" parent="." unique_id=152774601]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-792, -260, -778, -260, -778, -246, -792, -246)
 
 [node name="WeaverHouseWindowR" type="Polygon2D" parent="." unique_id=463394585]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-742, -260, -728, -260, -728, -246, -742, -246)
@@ -1492,26 +1598,31 @@ position = Vector2(-760, -250)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="PotterHouseWall" type="Polygon2D" parent="." unique_id=1056268430]
+visible = false
 z_index = 1
 color = Color(0.48, 0.49, 0.41, 1)
 polygon = PackedVector2Array(-800, 83, -720, 83, -720, 137, -800, 137)
 
 [node name="PotterHouseRoof" type="Polygon2D" parent="." unique_id=1653681770]
+visible = false
 z_index = 2
 color = Color(0.28, 0.23, 0.19, 1)
 polygon = PackedVector2Array(-808, 83, -760, 57, -712, 83)
 
 [node name="PotterHouseDoor" type="Polygon2D" parent="." unique_id=2050342822]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-768, 111, -752, 111, -752, 137, -768, 137)
 
 [node name="PotterHouseWindowL" type="Polygon2D" parent="." unique_id=1247820536]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-792, 100, -778, 100, -778, 114, -792, 114)
 
 [node name="PotterHouseWindowR" type="Polygon2D" parent="." unique_id=1556148724]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-742, 100, -728, 100, -728, 114, -742, 114)
@@ -1523,26 +1634,31 @@ position = Vector2(-760, 110)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="BathHouseWall" type="Polygon2D" parent="." unique_id=1036370349]
+visible = false
 z_index = 1
 color = Color(0.5, 0.46, 0.37, 1)
 polygon = PackedVector2Array(-804, 190, -716, 190, -716, 250, -804, 250)
 
 [node name="BathHouseRoof" type="Polygon2D" parent="." unique_id=439380444]
+visible = false
 z_index = 2
 color = Color(0.3, 0.24, 0.18, 1)
 polygon = PackedVector2Array(-812, 190, -760, 164, -708, 190)
 
 [node name="BathHouseDoor" type="Polygon2D" parent="." unique_id=445427378]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-768, 224, -752, 224, -752, 250, -768, 250)
 
 [node name="BathHouseWindowL" type="Polygon2D" parent="." unique_id=1774485974]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-796, 207, -782, 207, -782, 221, -796, 221)
 
 [node name="BathHouseWindowR" type="Polygon2D" parent="." unique_id=2103866498]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-738, 207, -724, 207, -724, 221, -738, 221)
@@ -1634,26 +1750,31 @@ color = Color(0.23, 0.17, 0.11, 1)
 polygon = PackedVector2Array(-189, 66, -185, 66, -185, 92, -189, 92)
 
 [node name="TradeHouseWall" type="Polygon2D" parent="." unique_id=1324630317]
+visible = false
 z_index = 1
 color = Color(0.57, 0.45, 0.31, 1)
 polygon = PackedVector2Array(880, -380, 980, -380, 980, -320, 880, -320)
 
 [node name="TradeHouseRoof" type="Polygon2D" parent="." unique_id=123097002]
+visible = false
 z_index = 2
 color = Color(0.31, 0.21, 0.16, 1)
 polygon = PackedVector2Array(872, -380, 930, -406, 988, -380)
 
 [node name="TradeHouseDoor" type="Polygon2D" parent="." unique_id=224695800]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(922, -346, 938, -346, 938, -320, 922, -320)
 
 [node name="TradeHouseWindowL" type="Polygon2D" parent="." unique_id=1332647521]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(888, -363, 902, -363, 902, -349, 888, -349)
 
 [node name="TradeHouseWindowR" type="Polygon2D" parent="." unique_id=2050702289]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(958, -363, 972, -363, 972, -349, 958, -349)
@@ -1665,26 +1786,31 @@ position = Vector2(930, -350)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="CaravanseraiWall" type="Polygon2D" parent="." unique_id=1734292846]
+visible = false
 z_index = 1
 color = Color(0.49, 0.43, 0.33, 1)
 polygon = PackedVector2Array(874, -278, 986, -278, 986, -212, 874, -212)
 
 [node name="CaravanseraiRoof" type="Polygon2D" parent="." unique_id=2099092826]
+visible = false
 z_index = 2
 color = Color(0.29, 0.23, 0.18, 1)
 polygon = PackedVector2Array(866, -278, 930, -304, 994, -278)
 
 [node name="CaravanseraiDoor" type="Polygon2D" parent="." unique_id=1222507126]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(922, -238, 938, -238, 938, -212, 922, -212)
 
 [node name="CaravanseraiWindowL" type="Polygon2D" parent="." unique_id=1757523603]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(882, -261, 896, -261, 896, -247, 882, -247)
 
 [node name="CaravanseraiWindowR" type="Polygon2D" parent="." unique_id=51297665]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(964, -261, 978, -261, 978, -247, 964, -247)
@@ -1727,26 +1853,31 @@ position = Vector2(730, -350)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="GateOfficeWall" type="Polygon2D" parent="." unique_id=505945872]
+visible = false
 z_index = 1
 color = Color(0.52, 0.47, 0.36, 1)
 polygon = PackedVector2Array(687, -271, 773, -271, 773, -219, 687, -219)
 
 [node name="GateOfficeRoof" type="Polygon2D" parent="." unique_id=1076087168]
+visible = false
 z_index = 2
 color = Color(0.31, 0.24, 0.17, 1)
 polygon = PackedVector2Array(679, -271, 730, -297, 781, -271)
 
 [node name="GateOfficeDoor" type="Polygon2D" parent="." unique_id=2027294049]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(722, -245, 738, -245, 738, -219, 722, -219)
 
 [node name="GateOfficeWindowL" type="Polygon2D" parent="." unique_id=1153160113]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(695, -254, 709, -254, 709, -240, 695, -240)
 
 [node name="GateOfficeWindowR" type="Polygon2D" parent="." unique_id=217381697]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(751, -254, 765, -254, 765, -240, 751, -240)
@@ -1758,26 +1889,31 @@ position = Vector2(730, -245)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="RepairWorkshopWall" type="Polygon2D" parent="." unique_id=227641803]
+visible = false
 z_index = 1
 color = Color(0.48, 0.47, 0.39, 1)
 polygon = PackedVector2Array(882, 81, 978, 81, 978, 139, 882, 139)
 
 [node name="RepairWorkshopRoof" type="Polygon2D" parent="." unique_id=1654321969]
+visible = false
 z_index = 2
 color = Color(0.27, 0.23, 0.19, 1)
 polygon = PackedVector2Array(874, 81, 930, 55, 986, 81)
 
 [node name="RepairWorkshopDoor" type="Polygon2D" parent="." unique_id=801914775]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(922, 113, 938, 113, 938, 139, 922, 139)
 
 [node name="RepairWorkshopWindowL" type="Polygon2D" parent="." unique_id=339583892]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(890, 98, 904, 98, 904, 112, 890, 112)
 
 [node name="RepairWorkshopWindowR" type="Polygon2D" parent="." unique_id=550864315]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(956, 98, 970, 98, 970, 112, 956, 112)
@@ -1789,26 +1925,31 @@ position = Vector2(930, 110)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="PublicStoreWall" type="Polygon2D" parent="." unique_id=47611148]
+visible = false
 z_index = 1
 color = Color(0.56, 0.44, 0.3, 1)
 polygon = PackedVector2Array(683, 81, 777, 81, 777, 139, 683, 139)
 
 [node name="PublicStoreRoof" type="Polygon2D" parent="." unique_id=1734807286]
+visible = false
 z_index = 2
 color = Color(0.31, 0.21, 0.16, 1)
 polygon = PackedVector2Array(675, 81, 730, 55, 785, 81)
 
 [node name="PublicStoreDoor" type="Polygon2D" parent="." unique_id=290365940]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(722, 113, 738, 113, 738, 139, 722, 139)
 
 [node name="PublicStoreWindowL" type="Polygon2D" parent="." unique_id=307059121]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(691, 98, 705, 98, 705, 112, 691, 112)
 
 [node name="PublicStoreWindowR" type="Polygon2D" parent="." unique_id=1687947564]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(755, 98, 769, 98, 769, 112, 755, 112)
@@ -1851,26 +1992,31 @@ position = Vector2(930, 220)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="GrainStoreWall" type="Polygon2D" parent="." unique_id=1821961591]
+visible = false
 z_index = 1
 color = Color(0.56, 0.45, 0.31, 1)
 polygon = PackedVector2Array(-501, 234, -399, 234, -399, 296, -501, 296)
 
 [node name="GrainStoreRoof" type="Polygon2D" parent="." unique_id=1897017263]
+visible = false
 z_index = 2
 color = Color(0.31, 0.22, 0.16, 1)
 polygon = PackedVector2Array(-509, 234, -450, 208, -391, 234)
 
 [node name="GrainStoreDoor" type="Polygon2D" parent="." unique_id=1693187282]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-458, 270, -442, 270, -442, 296, -458, 296)
 
 [node name="GrainStoreWindowL" type="Polygon2D" parent="." unique_id=946485039]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-493, 251, -479, 251, -479, 265, -493, 265)
 
 [node name="GrainStoreWindowR" type="Polygon2D" parent="." unique_id=330209245]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-421, 251, -407, 251, -407, 265, -421, 265)
@@ -1882,26 +2028,31 @@ position = Vector2(-450, 265)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="MillHouseWall" type="Polygon2D" parent="." unique_id=643400454]
+visible = false
 z_index = 1
 color = Color(0.51, 0.46, 0.36, 1)
 polygon = PackedVector2Array(-316, 236, -224, 236, -224, 294, -316, 294)
 
 [node name="MillHouseRoof" type="Polygon2D" parent="." unique_id=2037181994]
+visible = false
 z_index = 2
 color = Color(0.3, 0.23, 0.18, 1)
 polygon = PackedVector2Array(-324, 236, -270, 210, -216, 236)
 
 [node name="MillHouseDoor" type="Polygon2D" parent="." unique_id=1106670642]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-278, 268, -262, 268, -262, 294, -278, 294)
 
 [node name="MillHouseWindowL" type="Polygon2D" parent="." unique_id=1216743352]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-308, 253, -294, 253, -294, 267, -308, 267)
 
 [node name="MillHouseWindowR" type="Polygon2D" parent="." unique_id=1410141328]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-246, 253, -232, 253, -232, 267, -246, 267)
@@ -1913,26 +2064,31 @@ position = Vector2(-270, 265)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="WaterWorksWall" type="Polygon2D" parent="." unique_id=283121597]
+visible = false
 z_index = 1
 color = Color(0.43, 0.48, 0.45, 1)
 polygon = PackedVector2Array(199, 234, 301, 234, 301, 296, 199, 296)
 
 [node name="WaterWorksRoof" type="Polygon2D" parent="." unique_id=926295413]
+visible = false
 z_index = 2
 color = Color(0.27, 0.31, 0.29, 1)
 polygon = PackedVector2Array(191, 234, 250, 208, 309, 234)
 
 [node name="WaterWorksDoor" type="Polygon2D" parent="." unique_id=1572822853]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(242, 270, 258, 270, 258, 296, 242, 296)
 
 [node name="WaterWorksWindowL" type="Polygon2D" parent="." unique_id=492690834]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(207, 251, 221, 251, 221, 265, 207, 265)
 
 [node name="WaterWorksWindowR" type="Polygon2D" parent="." unique_id=259791909]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(279, 251, 293, 251, 293, 265, 279, 265)
@@ -1944,26 +2100,31 @@ position = Vector2(250, 265)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="AnimalPensWall" type="Polygon2D" parent="." unique_id=2031991205]
+visible = false
 z_index = 1
 color = Color(0.47, 0.39, 0.27, 1)
 polygon = PackedVector2Array(400, 235, 500, 235, 500, 295, 400, 295)
 
 [node name="AnimalPensRoof" type="Polygon2D" parent="." unique_id=1319260651]
+visible = false
 z_index = 2
 color = Color(0.3, 0.22, 0.16, 1)
 polygon = PackedVector2Array(392, 235, 450, 209, 508, 235)
 
 [node name="AnimalPensDoor" type="Polygon2D" parent="." unique_id=1394071078]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(442, 269, 458, 269, 458, 295, 442, 295)
 
 [node name="AnimalPensWindowL" type="Polygon2D" parent="." unique_id=627339454]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(408, 252, 422, 252, 422, 266, 408, 266)
 
 [node name="AnimalPensWindowR" type="Polygon2D" parent="." unique_id=1245131940]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(478, 252, 492, 252, 492, 266, 478, 266)
@@ -2375,26 +2536,31 @@ color = Color(0.42, 0.31, 0.19, 1)
 polygon = PackedVector2Array(658, 593, 663, 593, 663, 627, 658, 627)
 
 [node name="FarmersHallWall" type="Polygon2D" parent="." unique_id=115380298]
+visible = false
 z_index = 1
 color = Color(0.55, 0.46, 0.32, 1)
 polygon = PackedVector2Array(-902, 579, -798, 579, -798, 641, -902, 641)
 
 [node name="FarmersHallRoof" type="Polygon2D" parent="." unique_id=1200997046]
+visible = false
 z_index = 2
 color = Color(0.32, 0.23, 0.17, 1)
 polygon = PackedVector2Array(-910, 579, -850, 553, -790, 579)
 
 [node name="FarmersHallDoor" type="Polygon2D" parent="." unique_id=1801316161]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(-858, 615, -842, 615, -842, 641, -858, 641)
 
 [node name="FarmersHallWindowL" type="Polygon2D" parent="." unique_id=1931634866]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-894, 596, -880, 596, -880, 610, -894, 610)
 
 [node name="FarmersHallWindowR" type="Polygon2D" parent="." unique_id=522754171]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(-820, 596, -806, 596, -806, 610, -820, 610)
@@ -2406,26 +2572,31 @@ position = Vector2(-850, 610)
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="SeedStoreWall" type="Polygon2D" parent="." unique_id=1403785240]
+visible = false
 z_index = 1
 color = Color(0.52, 0.47, 0.36, 1)
 polygon = PackedVector2Array(750, 580, 850, 580, 850, 640, 750, 640)
 
 [node name="SeedStoreRoof" type="Polygon2D" parent="." unique_id=967149606]
+visible = false
 z_index = 2
 color = Color(0.3, 0.23, 0.18, 1)
 polygon = PackedVector2Array(742, 580, 800, 554, 858, 580)
 
 [node name="SeedStoreDoor" type="Polygon2D" parent="." unique_id=1087596504]
+visible = false
 z_index = 3
 color = Color(0.2, 0.13, 0.09, 1)
 polygon = PackedVector2Array(792, 614, 808, 614, 808, 640, 792, 640)
 
 [node name="SeedStoreWindowL" type="Polygon2D" parent="." unique_id=950530189]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(758, 597, 772, 597, 772, 611, 758, 611)
 
 [node name="SeedStoreWindowR" type="Polygon2D" parent="." unique_id=1193523718]
+visible = false
 z_index = 3
 color = Color(0.19, 0.33, 0.38, 1)
 polygon = PackedVector2Array(828, 597, 842, 597, 842, 611, 828, 611)
@@ -2655,3 +2826,327 @@ tile_map_data = PackedByteArray("AAAAAAAAAAACAAEAAAABAAAAAAACAAEAAAACAAAAAAACAAE
 tile_set = SubResource("TileSet_msr2i")
 script = ExtResource("4_7dy5d")
 godot_4_3_compatibility = false
+
+[node name="Sprite_panaderia" type="Sprite2D" parent="."]
+texture = ExtResource("official_20")
+position = Vector2(-245, -157)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(96, 92)
+
+[node name="Sprite_posada" type="Sprite2D" parent="."]
+texture = ExtResource("official_21")
+position = Vector2(-385, 52)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(104, 102)
+
+[node name="Sprite_vivienda_mason" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-235, 152)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(96, 88)
+
+[node name="Sprite_casa_oriente_a" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(220, -158)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(96, 90)
+
+[node name="Sprite_casa_oriente_b" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(385, -148)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(96, 90)
+
+[node name="Sprite_casa_oriente_c" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(385, 118)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(96, 92)
+
+[node name="Sprite_forja" type="Sprite2D" parent="."]
+texture = ExtResource("official_23")
+position = Vector2(-360, -201)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(104, 92)
+
+[node name="Sprite_establos" type="Sprite2D" parent="."]
+texture = ExtResource("official_24")
+position = Vector2(382, 177)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(112, 88)
+
+[node name="Sprite_archivo_real" type="Sprite2D" parent="."]
+texture = ExtResource("official_25")
+position = Vector2(-170, -657)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(116, 94)
+
+[node name="Sprite_sala_consejo" type="Sprite2D" parent="."]
+texture = ExtResource("official_26")
+position = Vector2(170, -658)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(132, 104)
+
+[node name="Sprite_casa_estudio" type="Sprite2D" parent="."]
+texture = ExtResource("official_27")
+position = Vector2(-410, -564)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(122, 98)
+
+[node name="Sprite_casa_comercio" type="Sprite2D" parent="."]
+texture = ExtResource("official_28")
+position = Vector2(930, -358)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(122, 100)
+
+[node name="Sprite_alojamiento" type="Sprite2D" parent="."]
+texture = ExtResource("official_29")
+position = Vector2(930, -253)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(134, 108)
+
+[node name="Sprite_registro" type="Sprite2D" parent="."]
+texture = ExtResource("official_30")
+position = Vector2(730, -250)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(108, 90)
+
+[node name="Sprite_reparaciones" type="Sprite2D" parent="."]
+texture = ExtResource("official_31")
+position = Vector2(930, 102)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(118, 96)
+
+[node name="Sprite_almacen" type="Sprite2D" parent="."]
+texture = ExtResource("official_32")
+position = Vector2(730, 102)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(116, 96)
+
+[node name="Sprite_granero" type="Sprite2D" parent="."]
+texture = ExtResource("official_33")
+position = Vector2(-450, 257)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(124, 102)
+
+[node name="Sprite_molino" type="Sprite2D" parent="."]
+texture = ExtResource("official_34")
+position = Vector2(-270, 257)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(114, 96)
+
+[node name="Sprite_aguas" type="Sprite2D" parent="."]
+texture = ExtResource("official_35")
+position = Vector2(250, 257)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(124, 102)
+
+[node name="Sprite_corrales" type="Sprite2D" parent="."]
+texture = ExtResource("official_36")
+position = Vector2(450, 257)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(122, 100)
+
+[node name="Sprite_casa_granjeros" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-850, 602)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(126, 102)
+
+[node name="Sprite_semillas" type="Sprite2D" parent="."]
+texture = ExtResource("official_37")
+position = Vector2(800, 602)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(122, 100)
+
+[node name="Sprite_telar" type="Sprite2D" parent="."]
+texture = ExtResource("official_38")
+position = Vector2(-760, -258)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(100, 90)
+
+[node name="Sprite_alfareria" type="Sprite2D" parent="."]
+texture = ExtResource("official_39")
+position = Vector2(-760, 102)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(100, 90)
+
+[node name="Sprite_banos" type="Sprite2D" parent="."]
+texture = ExtResource("official_40")
+position = Vector2(-760, 211)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(108, 98)
+
+[node name="Sprite_vivienda_oeste_01" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-1040, -354)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_02" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-930, -354)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_03" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-1040, -254)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_04" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-930, -254)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_05" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-1040, 106)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_06" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-930, 106)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_07" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-1040, 216)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_08" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-930, 216)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_09" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-520, -254)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_10" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-520, 96)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
+
+[node name="Sprite_vivienda_oeste_11" type="Sprite2D" parent="."]
+texture = ExtResource("official_22")
+position = Vector2(-520, 206)
+centered = true
+texture_filter = 1
+z_index = 3
+script = ExtResource("editor_sprite_fit")
+target_size = Vector2(84, 82)
