@@ -815,20 +815,20 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 
 	match tipo:
 		"castillo":
-			_agregar_rect(cuarto, "MesaDelTrono", Vector2(0, -70), Vector2(110, 28), madera, 1)
+			_agregar_sprite_mueble(cuarto, "MesaDelTrono", MUEBLE_MESA, Vector2(0, -70), Vector2(1.6, 1), 1)
 			_agregar_rect(cuarto, "Trono", Vector2(0, -100), Vector2(24, 22), claro, 3)
 			_agregar_rect(cuarto, "EstandarteOeste", Vector2(-175, -65), Vector2(12, 66), Color(0.45,0.20,0.16), 1)
 			_agregar_rect(cuarto, "EstandarteEste", Vector2(175, -65), Vector2(12, 66), Color(0.45,0.20,0.16), 1)
-			_agregar_rect(cuarto, "MesaAudiencias", Vector2(0, 45), Vector2(170, 28), madera, 1)
+			_agregar_sprite_mueble(cuarto, "MesaAudiencias", MUEBLE_MESA, Vector2(0, 45), Vector2(2.2, 1), 1)
 		"panaderia":
 			_agregar_sprite_mueble(cuarto, "Horno", MUEBLE_HORNO, Vector2(-150, -75), Vector2(2, 2), 1)
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(90, -20), Vector2(1.5, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaAmasado", MUEBLE_MESA, Vector2(70, 65), Vector2(1.3, 1), 1)
 		"posada":
 			for i in range(3):
-				_agregar_rect(cuarto, "Mesa%d" % i, Vector2(-110 + i * 110, -15), Vector2(54, 34), madera, 1)
+				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA, Vector2(-110 + i * 110, -15), Vector2(1.0, 0.9), 1)
 				_agregar_rect(cuarto, "Banco%d" % i, Vector2(-110 + i * 110, 10), Vector2(58, 9), acento, 2)
-			_agregar_rect(cuarto, "Mostrador", Vector2(0, -95), Vector2(140, 22), madera, 1)
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(2.0, 1), 1)
 		"forja":
 			_agregar_rect(cuarto, "Yunque", Vector2(35, 10), Vector2(52, 35), piedra, 2)
 			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-145, -70), Vector2(2, 2), 1)
@@ -841,30 +841,30 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			for i in range(4):
 				_agregar_rect(cuarto, "Estante%d" % i, Vector2(-165 + i * 110, -65), Vector2(30, 115), madera, 1)
 				_agregar_rect(cuarto, "Libros%d" % i, Vector2(-165 + i * 110, -72), Vector2(24, 72), acento, 2)
-			_agregar_rect(cuarto, "MesaConsulta", Vector2(0, 65), Vector2(125, 30), piedra, 1)
+			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA, Vector2(0, 65), Vector2(1.8, 1), 1)
 		"consejo":
-			_agregar_rect(cuarto, "MesaConsejo", Vector2(0, -5), Vector2(190, 76), madera, 1)
+			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA, Vector2(0, -5), Vector2(2.8, 1.8), 1)
 			for i in range(6):
 				_agregar_rect(cuarto, "Asiento%d" % i, Vector2(-145 + i * 58, 55), Vector2(24, 20), acento, 2)
 		"oris":
-			_agregar_rect(cuarto, "MesaEstudio", Vector2(0, 25), Vector2(135, 48), madera, 1)
-			_agregar_rect(cuarto, "MesaMuestras", Vector2(-130, -65), Vector2(64, 42), piedra, 1)
+			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA, Vector2(0, 25), Vector2(2.0, 1.4), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA, Vector2(-130, -65), Vector2(1.0, 1.1), 1)
 			_agregar_rect(cuarto, "Estanteria", Vector2(150, -70), Vector2(36, 100), acento, 1)
 			_agregar_rect(cuarto, "CirculoInvestigacion", Vector2(0, -80), Vector2(76, 6), claro, 2)
 		"comercio", "registro", "almacen":
-			_agregar_rect(cuarto, "Mostrador", Vector2(0, -75), Vector2(180, 25), madera, 1)
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -75), Vector2(2.6, 1), 1)
 			for i in range(4):
 				_agregar_rect(cuarto, "Estante%d" % i, Vector2(-165 + i * 110, 45), Vector2(34, 70), acento, 1)
-			_agregar_rect(cuarto, "MesaInventario", Vector2(0, 55), Vector2(100, 22), piedra, 2)
+			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA, Vector2(0, 55), Vector2(1.5, 1), 2)
 		"cuartel":
 			for i in range(4):
-				_agregar_rect(cuarto, "Litera%d" % i, Vector2(-150 + (i % 2) * 300, -65 + int(i / 2) * 105), Vector2(70, 35), madera, 1)
+				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, Vector2(-150 + (i % 2) * 300, -65 + int(i / 2) * 105), Vector2(0.85, 0.85), 1)
 			_agregar_rect(cuarto, "Armero", Vector2(0, -90), Vector2(90, 24), piedra, 2)
 		"taller", "carpinteria":
-			_agregar_rect(cuarto, "BancoTrabajo", Vector2(0, 15), Vector2(150, 42), madera, 1)
-			_agregar_rect(cuarto, "Materiales", Vector2(145, 65), Vector2(65, 40), acento, 1)
+			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA, Vector2(0, 15), Vector2(2.2, 1.4), 1)
+			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(145, 65), Vector2.ONE, 1)
 		"granero", "molino", "semillas":
-			_agregar_rect(cuarto, "MesaPesaje", Vector2(0, 55), Vector2(110, 25), madera, 1)
+			_agregar_sprite_mueble(cuarto, "MesaPesaje", MUEBLE_MESA, Vector2(0, 55), Vector2(1.6, 1), 1)
 			if tipo == "molino":
 				_agregar_rect(cuarto, "MecanismoMolino", Vector2(0, -90), Vector2(80, 30), piedra, 2)
 		"aguas":
@@ -874,7 +874,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 		"telar":
 			_agregar_rect(cuarto, "RollosTela", Vector2(0, 75), Vector2(125, 24), Color(0.47,0.31,0.29), 2)
 		"alfareria":
-			_agregar_rect(cuarto, "HornoCeramica", Vector2(-130, -65), Vector2(66, 66), piedra, 1)
+			_agregar_sprite_mueble(cuarto, "HornoCeramica", MUEBLE_HORNO, Vector2(-130, -65), Vector2(1.8, 1.8), 1)
 			_agregar_rect(cuarto, "EstantesVasijas", Vector2(145, -50), Vector2(36, 95), acento, 1)
 		"banos":
 			for i in range(3):
