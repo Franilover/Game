@@ -31,7 +31,7 @@
 [ext_resource type="Texture2D" uid="uid://d0a5v42c67j5s" path="res://assets/art/places/Castillo.png" id="official_41"]
 [ext_resource type="Texture2D" uid="uid://mp46yeh2r0go" path="res://assets/art/places/Poste.png" id="official_42"]
 [ext_resource type="Texture2D" uid="uid://gy85sfyfqx63" path="res://assets/art/places/Pozo.png" id="official_43"]
-[ext_resource type="Texture2D" uid="uid://uauvarvrj8u7" path="res://assets/art/props/Árbol.png" id="official_tree"]
+[ext_resource type="Texture2D" path="res://assets/art/props/Árbol.png" id="official_tree"]
 
 [sub_resource type="RectangleShape2D" id="ShapeExit"]
 size = Vector2(48, 180)
@@ -990,116 +990,6 @@ polygon = PackedVector2Array(-20, -610, 20, -610, 20, -495, -20, -495)
 z_index = -6
 color = Color(0.55, 0.46, 0.33, 1)
 polygon = PackedVector2Array(-330, -560, 330, -560, 330, -540, -330, -540)
-
-[node name="RoyalTree1Trunk" type="Polygon2D" parent="." unique_id=2000273180]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-280, -584, -270, -584, -270, -562, -280, -562)
-
-[node name="RoyalTree1Crown" type="Polygon2D" parent="." unique_id=720971179]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-275, -614, -297, -576, -253, -576)
-
-[node name="RoyalTree2Trunk" type="Polygon2D" parent="." unique_id=831224550]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-215, -584, -205, -584, -205, -562, -215, -562)
-
-[node name="RoyalTree2Crown" type="Polygon2D" parent="." unique_id=2085196717]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-210, -614, -232, -576, -188, -576)
-
-[node name="RoyalTree3Trunk" type="Polygon2D" parent="." unique_id=1940450422]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-150, -584, -140, -584, -140, -562, -150, -562)
-
-[node name="RoyalTree3Crown" type="Polygon2D" parent="." unique_id=964160180]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-145, -614, -167, -576, -123, -576)
-
-[node name="RoyalTree4Trunk" type="Polygon2D" parent="." unique_id=1286595698]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(140, -584, 150, -584, 150, -562, 140, -562)
-
-[node name="RoyalTree4Crown" type="Polygon2D" parent="." unique_id=2135559259]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(145, -614, 123, -576, 167, -576)
-
-[node name="RoyalTree5Trunk" type="Polygon2D" parent="." unique_id=605498777]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(205, -584, 215, -584, 215, -562, 205, -562)
-
-[node name="RoyalTree5Crown" type="Polygon2D" parent="." unique_id=942564600]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(210, -614, 188, -576, 232, -576)
-
-[node name="RoyalTree6Trunk" type="Polygon2D" parent="." unique_id=648373723]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(270, -584, 280, -584, 280, -562, 270, -562)
-
-[node name="RoyalTree6Crown" type="Polygon2D" parent="." unique_id=1231922652]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(275, -614, 253, -576, 297, -576)
-
-[node name="RoyalTree7Trunk" type="Polygon2D" parent="." unique_id=554068944]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-280, -524, -270, -524, -270, -502, -280, -502)
-
-[node name="RoyalTree7Crown" type="Polygon2D" parent="." unique_id=802573241]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-275, -554, -297, -516, -253, -516)
-
-[node name="RoyalTree8Trunk" type="Polygon2D" parent="." unique_id=1887596816]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(-215, -524, -205, -524, -205, -502, -215, -502)
-
-[node name="RoyalTree8Crown" type="Polygon2D" parent="." unique_id=1912870475]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(-210, -554, -232, -516, -188, -516)
-
-[node name="RoyalTree9Trunk" type="Polygon2D" parent="." unique_id=1821110403]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(140, -524, 150, -524, 150, -502, 140, -502)
-
-[node name="RoyalTree9Crown" type="Polygon2D" parent="." unique_id=1267521173]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(145, -554, 123, -516, 167, -516)
-
-[node name="RoyalTree10Trunk" type="Polygon2D" parent="." unique_id=1301872825]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(205, -524, 215, -524, 215, -502, 205, -502)
-
-[node name="RoyalTree10Crown" type="Polygon2D" parent="." unique_id=2085567642]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(210, -554, 188, -516, 232, -516)
-
-[node name="RoyalTree11Trunk" type="Polygon2D" parent="." unique_id=1699050892]
-z_index = 1
-color = Color(0.3, 0.2, 0.12, 1)
-polygon = PackedVector2Array(270, -524, 280, -524, 280, -502, 270, -502)
-
-[node name="RoyalTree11Crown" type="Polygon2D" parent="." unique_id=92310058]
-z_index = 2
-color = Color(0.15, 0.28, 0.15, 1)
-polygon = PackedVector2Array(275, -554, 253, -516, 297, -516)
 
 [node name="RoyalArchiveWall" type="Polygon2D" parent="." unique_id=901134707]
 visible = false
@@ -2124,6 +2014,83 @@ position = Vector2(800, 610)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SeedStoreCollisionBody" unique_id=1238420334]
 shape = SubResource("DistrictBuildingSmall")
+
+[node name="Sprite_Arbol_Real_01" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-275, -588)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_02" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-210, -588)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_03" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-145, -588)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_04" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(145, -588)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_05" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(210, -588)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_06" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(275, -588)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_07" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-275, -528)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_08" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-210, -528)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_09" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(145, -528)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_10" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(210, -528)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
+
+[node name="Sprite_Arbol_Real_11" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(275, -528)
+scale = Vector2(1.375, 1.625)
+z_index = 2
+texture = ExtResource("official_tree")
 
 [node name="Sprite_Arbol_Ciudad_01" type="Sprite2D" parent="."]
 z_index = 2
