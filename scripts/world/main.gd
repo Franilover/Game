@@ -694,7 +694,10 @@ func _configurar_pantalla() -> void:
 	if not pantalla_completa:
 		return
 
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	# Maximizar deja que el gestor de ventanas respete el area util de la
+	# pantalla (incluidos paneles y barras del escritorio). Fullscreen puede
+	# ocupar una geometria mayor que el area visible en algunos escritorios.
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
 
 
 # ============================================================
