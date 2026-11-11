@@ -369,9 +369,14 @@ func _crear_cesped_tilemap_dual() -> void:
 		var diagnostico: Dictionary = capa.call("obtener_diagnostico")
 		var celdas_logicas := int(diagnostico.get("world_cells", 0))
 		var celdas_visuales := int(diagnostico.get("display_cells", 0))
-		print("ReinoTorres terreno zona %d: lógicas=%d, visuales=%d, capas=%s" % [
-			zona, celdas_logicas, celdas_visuales,
-			str(diagnostico.get("display_layers", []))
+		print("ReinoTorres terreno zona %d: lógicas=%d, visuales=%d, capas=%s, cache=%d, reglas=%d, métricas=%s" % [
+			zona,
+			celdas_logicas,
+			celdas_visuales,
+			str(diagnostico.get("display_layers", [])),
+			int(diagnostico.get("cached_cells", 0)),
+			int(diagnostico.get("terrain_layers", 0)),
+			str(diagnostico.get("renderer_metrics", {}))
 		])
 		if celdas_logicas > 0 and celdas_visuales <= 0:
 			push_error("ReinoTorres: la zona %d tiene celdas lógicas pero ningún tile visual." % zona)
