@@ -12,7 +12,7 @@ const TAMANO_PIXEL_MUNDO := 8.0
 # Cada edificio intenta primero su sprite específico y después uno genérico.
 # Si no existe ningún archivo válido, sus Polygon2D de placeholder quedan visibles.
 const SPRITE_BUILDINGS: Array[Dictionary] = [
-	{"key":"castillo", "paths":["castillo.png","edificios/castillo.png"], "position":Vector2(0,-205), "size":Vector2(230,190), "hide":["CastleKeep","CastleFacade","CastleRoof","CastleDoor","CastleWindow","CastleTower"]},
+	{"key":"castillo", "paths":["res://assets/art/places/Castillo.png","castillo.png","edificios/castillo.png"], "position":Vector2(0,-205), "size":Vector2(230,190), "hide":["CastleKeep","CastleFacade","CastleRoof","CastleDoor","CastleWindow","CastleTower"]},
 	{"key":"panaderia", "paths":["res://assets/art/places/Panaderia.png","casas/panaderia.png","edificios/panaderia.png","casas/casa.png"], "position":Vector2(-245,-157), "size":Vector2(96,92), "hide":["HouseBaker"]},
 	{"key":"posada", "paths":["res://assets/art/places/Posada.png","casas/posada.png","edificios/posada.png","casas/casa.png"], "position":Vector2(-385,52), "size":Vector2(104,102), "hide":["HouseInn"]},
 	{"key":"vivienda_mason", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_mason.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-235,152), "size":Vector2(96,88), "hide":["HouseMason"]},
@@ -460,18 +460,16 @@ func _cargar_puestos_pixelart() -> void:
 			["MarketExtension%d" % indice, "MarketExtensionAwning%d" % indice, "MarketExtensionLegL%d" % indice, "MarketExtensionLegR%d" % indice],
 			"puesto" if indice % 2 == 0 else "puesto_azul", indice
 		)
-	_agrupar_poligonos_pixelart(
-		["WellShadow", "WellOuter", "WellWater", "WellLipTop"],
-		"pozo", 0
-	)
-	_agrupar_poligonos_pixelart(
-		["LampWestPost", "LampWestGlow"],
-		"lampara", 0
-	)
-	_agrupar_poligonos_pixelart(
-		["LampEastPost", "LampEastGlow"],
-		"lampara", 1
-	)
+	if get_node_or_null("Sprite_pozo") != null:
+		_ocultar_placeholder(["WellShadow", "WellOuter", "WellWater", "WellLipTop"])
+	else:
+		_agrupar_poligonos_pixelart(
+			["WellShadow", "WellOuter", "WellWater", "WellLipTop"],
+			"pozo", 0
+		)
+	_ocultar_placeholder(["LampWestPost", "LampEastPost"])
+	_agrupar_poligonos_pixelart(["LampWestGlow"], "lampara", 0)
+	_agrupar_poligonos_pixelart(["LampEastGlow"], "lampara", 1)
 
 
 func _agrupar_poligonos_pixelart(nombres: Array, tipo: String, variante: int) -> void:
