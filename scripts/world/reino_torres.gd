@@ -132,12 +132,16 @@ func _ready() -> void:
 	_capa_interior.visible = false
 	add_child(_capa_interior)
 	_crear_aviso()
-	await _crear_cesped_tilemap_dual()
+	# Preparar primero todos los elementos que sustituyen polígonos vectoriales.
+	# Esta fase es síncrona: no debe quedar un frame donde Torres muestre sus
+	# superficies de diseño antes de recibir sus sprites definitivos.
 	_texturizar_mapa_pixelart()
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
 	_crear_rotulos_edificios()
+	# El único paso que espera al renderer es la composición inicial del DualGrid.
+	await _crear_cesped_tilemap_dual()
 
 
 func _process(_delta: float) -> void:
