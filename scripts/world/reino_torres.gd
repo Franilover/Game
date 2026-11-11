@@ -337,10 +337,12 @@ func _input(evento: InputEvent) -> void:
 
 func _crear_cesped_tilemap_dual() -> void:
 	# Torres usa exclusivamente las capas TileMapDual guardadas en la escena.
-	# Se ocultan durante la reconstrucción para evitar mostrar una composición
-	# incompleta y se revelan juntas cuando los tres Display están listos.
+	# Cada capa contiene una parte del suelo y algunas posiciones se solapan
+	# intencionalmente entre atlas. Por eso se valida la huella única del mapa,
+	# no la suma de celdas de las tres capas.
 	var capas: Array[TileMapDual] = []
 	var celdas_por_capa: Dictionary = {}
+	var posiciones_unicas: Dictionary = {}
 	var celdas_totales := 0
 	for zona in [0, 1, 8]:
 		var nombre := "TerrainDual_Zone_%02d" % zona
@@ -348,15 +350,28 @@ func _crear_cesped_tilemap_dual() -> void:
 		if not is_instance_valid(capa):
 			push_error("ReinoTorres: falta la capa editable %s." % nombre)
 			return
-		capa.visible = false
 		capas.append(capa)
 		var celdas: Array[Vector2i] = capa.get_used_cells()
+		if celdas.is_empty():
+			push_error("ReinoTorres: la capa %s no contiene celdas." % nombre)
+			return
 		celdas_por_capa[capa] = celdas
 		celdas_totales += celdas.size()
+		for celda: Vector2i in celdas:
+			posiciones_unicas[celda] = true
 
-	if celdas_totales != 75 * 44:
-		push_error("ReinoTorres: el terreno de escena debe contener exactamente 3.300 celdas; contiene %d." % celdas_totales)
+	var posiciones_esperadas := 75 * 44
+	if posiciones_unicas.size() != posiciones_esperadas:
+		push_error(
+			"ReinoTorres: la huella del terreno debe cubrir %d posiciones únicas; contiene %d (%d celdas entre las capas)."
+			% [posiciones_esperadas, posiciones_unicas.size(), celdas_totales]
+		)
 		return
+
+	print(
+		"ReinoTorres: datos de terreno válidos: %d celdas distribuidas en %d posiciones únicas."
+		% [celdas_totales, posiciones_unicas.size()]
+	)
 
 	# Esperar a que el _ready diferido de cada TileMapDual cree su Display
 	# y lea los atlas. En Godot 4.4+ _changed() no rellena la caché inicial
@@ -386,8 +401,8 @@ func _crear_cesped_tilemap_dual() -> void:
 
 	# TileMapDual inicializa TerrainDual antes de conectar su señal
 	# changed. La lectura inicial del atlas ocurre demasiado pronto y no crea
-	# ningún DisplayLayer. Las capas procedurales sí lo corrigen al finalizar
-	# su preparación; repetir aquí esa reconstrucción para las capas de escena.
+	# ningún DisplayLayer. Reconstruirlo después de _ready() reproduce el mismo
+	# procedimiento que utiliza WorldTerrainVisual en el terreno procedural.
 	for capa in capas:
 		capa.reconstruir_renderer_dual()
 		var diagnostico: Dictionary = capa.obtener_diagnostico()
@@ -398,14 +413,14 @@ func _crear_cesped_tilemap_dual() -> void:
 			)
 			return
 
-	# Ahora que existen los DisplayLayer, entregarles todas las celdas
-	# serializadas de la escena para componer la superficie dual.
+	# Entregar las celdas guardadas de la escena a las capas Dual.
+	# No se oculta el TileMapDual padre: visible=false también oculta sus
+	# DisplayLayer hijos. La reconstrucción completa ocurre sin ceder el frame.
 	for capa in capas:
 		var celdas: Array[Vector2i] = celdas_por_capa[capa]
 		capa._update_cells(celdas, false)
 
-	# DisplayLayer escribe sus tiles durante la actualización; comprobarlos
-	# en el siguiente frame evita revelar las capas antes de que estén listas.
+	# Comprobar las celdas generadas en el siguiente frame.
 	await get_tree().process_frame
 
 	var renderers_listos := true
@@ -421,12 +436,11 @@ func _crear_cesped_tilemap_dual() -> void:
 	if not renderers_listos:
 		return
 
-	for capa in capas:
-		capa.visible = true
-
 	_terreno_dual_listo = true
-	print("ReinoTorres: terreno TileMapDual de escena reconstruido y visible (3.300 celdas).")
-
+	print(
+		"ReinoTorres: terreno TileMapDual de escena reconstruido y visible (%d celdas en %d posiciones)."
+		% [celdas_totales, posiciones_unicas.size()]
+	)
 
 func _crear_muralla_montana() -> void:
 	# Reutiliza el mismo compositor procedural y el mismo atlas de Montaña
