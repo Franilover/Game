@@ -309,58 +309,119 @@ func _actualizar_iluminacion(delta: float = 0.0) -> void:
 	_modulacion.color = _color_iluminacion_actual
 
 
+func _obtener_config_visual_estacion() -> Dictionary:
+	var config_variant: Variant = estacion_actual.get("config_visual", {})
+	if config_variant is Dictionary:
+		return (config_variant as Dictionary).duplicate(true)
+	return {}
+
+
 func calcular_color_iluminacion(hora_normalizada: float) -> Color:
-	# Paleta cíclica: noche azul, amanecer rosado/dorado, luz diurna clara
-	# y atardecer naranja, coral y violeta antes de volver a la noche.
-	const CLAVES_LUZ: Array[Dictionary] = [
-		{"hora": 0.00, "color": Color("#263454")},
-		{"hora": 0.08, "color": Color("#293B63")},
-		{"hora": 0.15, "color": Color("#465A83")},
-		{"hora": 0.19, "color": Color("#8A6487")},
-		{"hora": 0.22, "color": Color("#D77A67")},
-		{"hora": 0.25, "color": Color("#F5A06A")},
-		{"hora": 0.29, "color": Color("#FFE0A2")},
-		{"hora": 0.34, "color": Color("#FFF0D0")},
-		{"hora": 0.50, "color": Color("#FFFDF2")},
-		{"hora": 0.66, "color": Color("#FFEBD0")},
-		{"hora": 0.72, "color": Color("#FFD49A")},
-		{"hora": 0.76, "color": Color("#F9A36F")},
-		{"hora": 0.80, "color": Color("#E97862")},
-		{"hora": 0.84, "color": Color("#A65E70")},
-		{"hora": 0.89, "color": Color("#4E527D")},
-		{"hora": 0.95, "color": Color("#2C3A63")},
-		{"hora": 1.00, "color": Color("#263454")},
+	const CLAVES_LUZ_PREDETERMINADAS: Array[Dictionary] = [
+		{"hora": 0.00, "color": "#263454"},
+		{"hora": 0.08, "color": "#293B63"},
+		{"hora": 0.15, "color": "#465A83"},
+		{"hora": 0.19, "color": "#8A6487"},
+		{"hora": 0.22, "color": "#D77A67"},
+		{"hora": 0.25, "color": "#F5A06A"},
+		{"hora": 0.29, "color": "#FFE0A2"},
+		{"hora": 0.34, "color": "#FFF0D0"},
+		{"hora": 0.50, "color": "#FFFDF2"},
+		{"hora": 0.66, "color": "#FFEBD0"},
+		{"hora": 0.72, "color": "#FFD49A"},
+		{"hora": 0.76, "color": "#F9A36F"},
+		{"hora": 0.80, "color": "#E97862"},
+		{"hora": 0.84, "color": "#A65E70"},
+		{"hora": 0.89, "color": "#4E527D"},
+		{"hora": 0.95, "color": "#2C3A63"},
+		{"hora": 1.00, "color": "#263454"},
 	]
 
 	var hora := clampf(hora_normalizada, 0.0, 1.0)
-	for indice in range(CLAVES_LUZ.size() - 1):
-		var inicio: Dictionary = CLAVES_LUZ[indice]
-		var final: Dictionary = CLAVES_LUZ[indice + 1]
+	var config_visual := _obtener_config_visual_estacion()
+	var claves_variant: Variant = config_visual.get("claves_luz", [])
+	if claves_variant is Array and (claves_variant as Array).size() >= 2:
+		var claves_configuradas := _normalizar_claves_luz(claves_variant as Array)
+		if claves_configuradas.size() >= 2:
+			return _interpolar_claves_luz(claves_configuradas, hora)
+
+	return _interpolar_claves_luz(
+		_normalizar_claves_luz(CLAVES_LUZ_PREDETERMINADAS),
+		hora
+	)
+
+
+func _normalizar_claves_luz(claves: Array) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	for clave_variant in claves:
+		if not clave_variant is Dictionary:
+			continue
+		var clave := clave_variant as Dictionary
+		if not clave.has("hora") or not clave.has("color"):
+			continue
+		var color_texto := str(clave.get("color", "")).strip_edges()
+		if color_texto.is_empty():
+			continue
+		resultado.append({
+			"hora": clampf(float(clave.get("hora", 0.0)), 0.0, 1.0),
+			"color": Color.from_string(color_texto, Color.WHITE)
+		})
+	resultado.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return float(a.get("hora", 0.0)) < float(b.get("hora", 0.0))
+	)
+	return resultado
+
+
+func _interpolar_claves_luz(
+	claves: Array[Dictionary],
+	hora: float
+) -> Color:
+	if claves.is_empty():
+		return Color.WHITE
+	if claves.size() == 1:
+		return claves[0]["color"] as Color
+
+	if hora <= float(claves[0]["hora"]):
+		return claves[0]["color"] as Color
+
+	for indice in range(claves.size() - 1):
+		var inicio: Dictionary = claves[indice]
+		var final: Dictionary = claves[indice + 1]
 		var hora_inicio := float(inicio["hora"])
 		var hora_final := float(final["hora"])
 		if hora <= hora_final:
 			var progreso := inverse_lerp(hora_inicio, hora_final, hora)
-			# Smoothstep evita cambios bruscos de velocidad entre colores.
 			progreso = progreso * progreso * (3.0 - 2.0 * progreso)
 			var color_inicio: Color = inicio["color"]
 			var color_final: Color = final["color"]
 			return color_inicio.lerp(color_final, progreso)
 
-	var ultimo_color: Color = CLAVES_LUZ.back()["color"]
-	return ultimo_color
+	return claves.back()["color"] as Color
 
 
 func _obtener_periodo() -> String:
-	var dia_normalizado := hora_del_dia / maxf(
-		horas_por_dia,
-		1.0
-	)
+	var dia_normalizado := hora_del_dia / maxf(horas_por_dia, 1.0)
+	var config_visual := _obtener_config_visual_estacion()
+	var horarios_variant: Variant = config_visual.get("horarios", {})
+	var horarios: Dictionary = horarios_variant if horarios_variant is Dictionary else {}
 
-	if dia_normalizado < 0.20 or dia_normalizado >= 0.82:
+	var amanecer_inicio := clampf(float(horarios.get("amanecer_inicio", 0.20)), 0.0, 1.0)
+	var amanecer_fin := clampf(float(horarios.get("amanecer_fin", 0.30)), 0.0, 1.0)
+	var atardecer_inicio := clampf(float(horarios.get("atardecer_inicio", 0.72)), 0.0, 1.0)
+	var atardecer_fin := clampf(float(horarios.get("atardecer_fin", 0.82)), 0.0, 1.0)
+
+	if amanecer_fin <= amanecer_inicio or atardecer_fin <= atardecer_inicio:
+		amanecer_inicio = 0.20
+		amanecer_fin = 0.30
+		atardecer_inicio = 0.72
+		atardecer_fin = 0.82
+
+	if dia_normalizado < amanecer_inicio or dia_normalizado >= atardecer_fin:
 		return "Noche"
-	if dia_normalizado < 0.30:
+	if dia_normalizado < amanecer_fin:
 		return "Amanecer"
-	if dia_normalizado < 0.72:
+	if dia_normalizado < atardecer_inicio:
 		return "Día"
 	return "Atardecer"
 
