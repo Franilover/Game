@@ -26,6 +26,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_construir_interfaz()
 	PIXEL_UI_THEME.apply(self)
+	get_viewport().size_changed.connect(_ajustar_panel_a_pantalla)
+	_ajustar_panel_a_pantalla()
 
 
 func _construir_interfaz() -> void:
@@ -92,6 +94,16 @@ func _construir_interfaz() -> void:
 	cerrar.custom_minimum_size = Vector2(0, 40)
 	cerrar.pressed.connect(_cerrar)
 	columna.add_child(cerrar)
+
+
+func _ajustar_panel_a_pantalla() -> void:
+	if not is_instance_valid(_panel):
+		return
+	var area := get_viewport_rect().size
+	var ancho := minf(620.0, maxf(280.0, area.x - 32.0))
+	var alto := minf(490.0, maxf(300.0, area.y - 32.0))
+	_panel.position = Vector2(-ancho * 0.5, -alto * 0.5)
+	_panel.size = Vector2(ancho, alto)
 
 
 func _cerrar() -> void:
