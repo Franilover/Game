@@ -64,6 +64,13 @@ func _run() -> void:
 		"config_climatica": {
 			"transicion_segundos": 0.0,
 			"perfiles": [{"tipo": "despejado", "peso": 1.0}],
+			"eventos": [{
+				"clave": "evento_prueba",
+				"dia_inicio": 1,
+				"dia_fin": 1,
+				"probabilidad_diaria": 1.0,
+				"efectos": {"actividad_criaturas": "reposar"}
+			}],
 			"habitats": {
 				"habitat-frio": {
 					"perfiles": [{
@@ -90,6 +97,11 @@ func _run() -> void:
 	var clima_despejado: Dictionary = climate.obtener_estado_para_contexto({}).get("clima", {})
 	if str(clima_despejado.get("tipo", "")) != "despejado":
 		_fail("The station-wide climate profile was not used as fallback.")
+		return
+
+	var eventos: Array = climate.obtener_estado_para_contexto({}).get("eventos", [])
+	if eventos.size() != 1 or str(eventos[0].get("clave", "")) != "evento_prueba":
+		_fail("Seasonal events were not resolved from the station configuration.")
 		return
 
 	if not climate.establecer_clima("lluvia", 0.8, 0.0):
