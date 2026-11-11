@@ -142,7 +142,6 @@ func _ready() -> void:
 	_cargar_sprites_de_torres()
 	_crear_rotulos_edificios()
 	await _crear_muralla_montana()
-	await _crear_rio_marino_tilemap()
 	# El único paso que espera al renderer es la composición inicial del DualGrid.
 	await _crear_cesped_tilemap_dual()
 
@@ -381,36 +380,6 @@ func _crear_muralla_montana() -> void:
 
 	terreno.flush()
 	print("ReinoTorres: muralla procedural de montaña creada con TileMapDual.")
-
-
-func _crear_rio_marino_tilemap() -> void:
-	# El río reutiliza el compositor TileMapDual y el atlas Marino del mundo.
-	# Su origen se ajusta al antiguo cauce: 59 celdas de 32 px forman una
-	# franja continua entre los dos puentes, sin geometría vectorial.
-	var terreno := WorldTerrainVisual.new()
-	terreno.name = "TerrenoRioMarino"
-	terreno.position = Vector2(-1184, -694)
-	add_child(terreno)
-	terreno.configurar(32)
-
-	# El agua debe quedar sobre el suelo opaco y bajo los puentes.
-	# WorldTerrainVisual usa por defecto z_index ~ -4091, apropiado para
-	# terrenos de fondo como la muralla, pero demasiado bajo para el canal.
-	for hijo in terreno.get_children():
-		if hijo is TileMapDual:
-			hijo.z_index = -8
-			hijo.z_as_relative = false
-
-	# TileMapDual crea sus Display durante _ready(); esperar antes de pintar.
-	await get_tree().process_frame
-	await get_tree().process_frame
-	terreno.finalizar_preparacion_renderer()
-
-	for x in range(2, 61):
-		terreno.set_zone(Vector2i(x, 38), 4, 4, "Marino")
-
-	terreno.flush()
-	print("ReinoTorres: río Marino creado con TileMapDual.")
 
 
 func _texturizar_mapa_pixelart() -> void:
