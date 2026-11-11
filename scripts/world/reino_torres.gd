@@ -792,33 +792,20 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	cuarto.name = "Habitacion_" + str(entrada["id"])
 	_capa_interior.add_child(cuarto)
 
+	# El suelo se conserva como TileMap y las paredes mantienen sus colisiones.
+	# Los muebles existentes se representan con sprites oficiales. Los objetos
+	# sin sprite propio quedan fuera hasta que se dibujen sus recursos pixel art.
 	_agregar_suelo_tilemap(cuarto)
-	_agregar_rect(cuarto, "MuroNorte", Vector2(0, -139), Vector2(456, 12), Color(0.47, 0.39, 0.29), 2)
-	_agregar_rect(cuarto, "MuroOeste", Vector2(-226, 0), Vector2(12, 278), Color(0.47, 0.39, 0.29), 2)
-	_agregar_rect(cuarto, "MuroEste", Vector2(226, 0), Vector2(12, 278), Color(0.47, 0.39, 0.29), 2)
-	_agregar_rect(cuarto, "MuroSurIzq", Vector2(-112, 133), Vector2(232, 12), Color(0.47, 0.39, 0.29), 2)
-	_agregar_rect(cuarto, "MuroSurDer", Vector2(172, 133), Vector2(112, 12), Color(0.47, 0.39, 0.29), 2)
 	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -139), Vector2(456, 12))
 	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-226, 0), Vector2(12, 278))
 	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(226, 0), Vector2(12, 278))
 	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2(-112, 133), Vector2(232, 12))
 	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(172, 133), Vector2(112, 12))
-	_agregar_rect(cuarto, "Alfombra", Vector2(0, 12), Vector2(116, 64), Color(0.49, 0.34, 0.22), -5)
-
 
 	var tipo := str(entrada["tipo"])
-	var semilla: int = absi(str(entrada["id"]).hash())
-	var madera := Color(0.25, 0.15, 0.09)
-	var acento := Color(0.56, 0.39, 0.22)
-	var piedra := Color(0.43, 0.42, 0.36)
-	var claro := Color(0.68, 0.57, 0.40)
-
 	match tipo:
 		"castillo":
 			_agregar_sprite_mueble(cuarto, "MesaDelTrono", MUEBLE_MESA, Vector2(0, -70), Vector2(1.6, 1), 1)
-			_agregar_rect(cuarto, "Trono", Vector2(0, -100), Vector2(24, 22), claro, 3)
-			_agregar_rect(cuarto, "EstandarteOeste", Vector2(-175, -65), Vector2(12, 66), Color(0.45,0.20,0.16), 1)
-			_agregar_rect(cuarto, "EstandarteEste", Vector2(175, -65), Vector2(12, 66), Color(0.45,0.20,0.16), 1)
 			_agregar_sprite_mueble(cuarto, "MesaAudiencias", MUEBLE_MESA, Vector2(0, 45), Vector2(2.2, 1), 1)
 		"panaderia":
 			_agregar_sprite_mueble(cuarto, "Horno", MUEBLE_HORNO, Vector2(-150, -75), Vector2(2, 2), 1)
@@ -827,77 +814,35 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 		"posada":
 			for i in range(3):
 				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA, Vector2(-110 + i * 110, -15), Vector2(1.0, 0.9), 1)
-				_agregar_rect(cuarto, "Banco%d" % i, Vector2(-110 + i * 110, 10), Vector2(58, 9), acento, 2)
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(2.0, 1), 1)
 		"forja":
-			_agregar_rect(cuarto, "Yunque", Vector2(35, 10), Vector2(52, 35), piedra, 2)
 			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-145, -70), Vector2(2, 2), 1)
 			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA, Vector2(115, 65), Vector2(1.4, 1), 1)
-		"establos", "corrales":
-			for i in range(3):
-				_agregar_rect(cuarto, "Puesto%d" % i, Vector2(-135 + i * 135, 0), Vector2(90, 116), acento, 1)
-				_agregar_rect(cuarto, "Comedero%d" % i, Vector2(-135 + i * 135, 42), Vector2(58, 15), madera, 2)
 		"archivo":
-			for i in range(4):
-				_agregar_rect(cuarto, "Estante%d" % i, Vector2(-165 + i * 110, -65), Vector2(30, 115), madera, 1)
-				_agregar_rect(cuarto, "Libros%d" % i, Vector2(-165 + i * 110, -72), Vector2(24, 72), acento, 2)
 			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA, Vector2(0, 65), Vector2(1.8, 1), 1)
 		"consejo":
 			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA, Vector2(0, -5), Vector2(2.8, 1.8), 1)
-			for i in range(6):
-				_agregar_rect(cuarto, "Asiento%d" % i, Vector2(-145 + i * 58, 55), Vector2(24, 20), acento, 2)
 		"oris":
 			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA, Vector2(0, 25), Vector2(2.0, 1.4), 1)
 			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA, Vector2(-130, -65), Vector2(1.0, 1.1), 1)
-			_agregar_rect(cuarto, "Estanteria", Vector2(150, -70), Vector2(36, 100), acento, 1)
-			_agregar_rect(cuarto, "CirculoInvestigacion", Vector2(0, -80), Vector2(76, 6), claro, 2)
 		"comercio", "registro", "almacen":
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -75), Vector2(2.6, 1), 1)
-			for i in range(4):
-				_agregar_rect(cuarto, "Estante%d" % i, Vector2(-165 + i * 110, 45), Vector2(34, 70), acento, 1)
 			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA, Vector2(0, 55), Vector2(1.5, 1), 2)
 		"cuartel":
 			for i in range(4):
 				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, Vector2(-150 + (i % 2) * 300, -65 + int(i / 2) * 105), Vector2(0.85, 0.85), 1)
-			_agregar_rect(cuarto, "Armero", Vector2(0, -90), Vector2(90, 24), piedra, 2)
 		"taller", "carpinteria":
 			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA, Vector2(0, 15), Vector2(2.2, 1.4), 1)
 			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(145, 65), Vector2.ONE, 1)
 		"granero", "molino", "semillas":
 			_agregar_sprite_mueble(cuarto, "MesaPesaje", MUEBLE_MESA, Vector2(0, 55), Vector2(1.6, 1), 1)
-			if tipo == "molino":
-				_agregar_rect(cuarto, "MecanismoMolino", Vector2(0, -90), Vector2(80, 30), piedra, 2)
-		"aguas":
-			_agregar_rect(cuarto, "Deposito", Vector2(0, -20), Vector2(140, 90), Color(0.23,0.39,0.43), 1)
-			_agregar_rect(cuarto, "Canal", Vector2(0, 60), Vector2(180, 20), Color(0.25,0.46,0.52), 2)
-			_agregar_rect(cuarto, "ValvulaOeste", Vector2(-145, -80), Vector2(32, 32), piedra, 2)
-		"telar":
-			_agregar_rect(cuarto, "RollosTela", Vector2(0, 75), Vector2(125, 24), Color(0.47,0.31,0.29), 2)
 		"alfareria":
 			_agregar_sprite_mueble(cuarto, "HornoCeramica", MUEBLE_HORNO, Vector2(-130, -65), Vector2(1.8, 1.8), 1)
-			_agregar_rect(cuarto, "EstantesVasijas", Vector2(145, -50), Vector2(36, 95), acento, 1)
-		"banos":
-			for i in range(3):
-				_agregar_rect(cuarto, "Pileta%d" % i, Vector2(-130 + i * 130, 0), Vector2(82, 78), Color(0.29,0.43,0.45), 1)
 		"vivienda":
 			_agregar_sprite_mueble(cuarto, "Cama", MUEBLE_CAMA, Vector2(-145, -55), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Mesa", MUEBLE_MESA, Vector2(75, 20), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(145, -75), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 70), Vector2.ONE, 1)
-
-	# Detalles diferentes en cada local para que dos casas del mismo tipo tampoco
-	# parezcan copias exactas.
-	var detalle_x := -150 + float(semilla % 5) * 65.0
-	var detalle_y := -20 + float(int(semilla / 7) % 4) * 25.0
-	_agregar_rect(cuarto, "DetallePropio", Vector2(detalle_x, detalle_y), Vector2(18 + semilla % 17, 12 + semilla % 9), claro, 3)
-	var paleta: Array[Color] = [madera, acento, piedra, claro, Color(0.40, 0.31, 0.25)]
-	for i in range(4):
-		var objeto_x := -175.0 + float(int(semilla / (i + 3)) % 8) * 40.0
-		var objeto_y := -100.0 + float(int(semilla / (i + 7)) % 5) * 26.0
-		var objeto_tamano := Vector2(12 + int(semilla / (i + 2)) % 18, 10 + int(semilla / (i + 5)) % 15)
-		_agregar_rect(cuarto, "ObjetoPropio%d" % i, Vector2(objeto_x, objeto_y), objeto_tamano, paleta[int(semilla / (i + 1)) % paleta.size()], 3)
-	_agregar_rect(cuarto, "VentanaNorte", Vector2(-70, -132), Vector2(36, 5), Color(0.22,0.35,0.38), 4)
-	_agregar_rect(cuarto, "VentanaEste", Vector2(220, -20), Vector2(5, 34), Color(0.22,0.35,0.38), 4)
 
 
 func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1) -> void:
@@ -919,7 +864,6 @@ func _agregar_suelo_tilemap(padre: Node) -> void:
 	var textura := load("res://assets/tilesets/Suelo.png") as Texture2D
 	if textura == null:
 		push_warning("ReinoTorres: no se pudo cargar assets/tilesets/Suelo.png")
-		_agregar_rect(padre, "SueloFallback", Vector2.ZERO, Vector2(440, 270), Color(0.35, 0.29, 0.22), -10)
 		return
 
 	var tileset := TileSet.new()
@@ -956,19 +900,6 @@ func _agregar_colision_muro(padre: Node, nombre: String, posicion: Vector2, tama
 	padre.add_child(cuerpo)
 
 
-func _agregar_rect(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2, color: Color, z: int) -> void:
-	var pieza := Polygon2D.new()
-	pieza.name = nombre
-	pieza.position = posicion
-	pieza.polygon = PackedVector2Array([
-		Vector2(-tamano.x / 2.0, -tamano.y / 2.0),
-		Vector2(tamano.x / 2.0, -tamano.y / 2.0),
-		Vector2(tamano.x / 2.0, tamano.y / 2.0),
-		Vector2(-tamano.x / 2.0, tamano.y / 2.0)
-	])
-	pieza.color = color
-	pieza.z_index = z
-	padre.add_child(pieza)
 
 
 func _buscar_textura(paths: Array) -> Texture2D:
