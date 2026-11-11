@@ -5,6 +5,7 @@ signal destino_viaje_solicitado(destino_id: String)
 
 const TORRES_ART_ROOT := "res://assets/art/kingdom/torres"
 const TORRES_PIXEL_ART := preload("res://scripts/world/torres_pixel_art.gd")
+const ARBOL_PROP_TEXTURE: Texture2D = preload("res://assets/art/props/Árbol.png")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 
@@ -439,7 +440,7 @@ func _cargar_arboles_pixelart() -> void:
 		var tronco: Polygon2D = grupo["tronco"]
 		var copa: Polygon2D = grupo["copa"]
 		var limites := _limites_de_poligono(tronco).merge(_limites_de_poligono(copa))
-		var textura: Texture2D = TORRES_PIXEL_ART.crear_decoracion("arbol", absi(String(prefijo).hash()) % 5)
+		var textura: Texture2D = ARBOL_PROP_TEXTURE
 		_agregar_sprite_pixelart("Pixel_" + String(prefijo), textura, limites, maxi(tronco.z_index, copa.z_index))
 		tronco.visible = false
 		copa.visible = false
