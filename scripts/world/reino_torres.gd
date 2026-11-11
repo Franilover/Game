@@ -358,6 +358,23 @@ func _crear_cesped_tilemap_dual() -> void:
 		push_error("ReinoTorres: quedó terreno pendiente después de la composición estática.")
 		return
 
+	# En el mapa fijo de Torres no existe un ciclo de streaming que vuelva a
+	# notificar las celdas si TileMapDual recibió el cambio de TileSet antes
+	# de que terminara el rasterizado. Sincronizar explícitamente cada capa
+	# desde sus celdas finales garantiza que Display reciba el mapa completo.
+	# Esta pasada sólo se usa aquí; Mundo Abierto y Expediciones conservan
+	# su actualización incremental habitual.
+	for zona in [0, 1, 8]:
+		var capa_fija := _terrain_renderer.get_node_or_null(
+			"TerrainDual_Zone_%02d" % zona
+		) as TileMapDual
+		if not is_instance_valid(capa_fija):
+			push_error("ReinoTorres: no se pudo sincronizar la zona %d." % zona)
+			return
+		var celdas_finales: Array[Vector2i] = capa_fija.get_used_cells()
+		if not celdas_finales.is_empty():
+			capa_fija.call("_update_cells", celdas_finales, false)
+
 	# Verificar el resultado visual real de cada capa, no sólo las celdas
 	# registradas en el TileMapDual. Esto detecta capas cuyo Display no haya
 	# compuesto sus tiles aunque el mapa lógico parezca completo.
