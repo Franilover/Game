@@ -314,6 +314,11 @@ func _crear_cesped_tilemap_dual() -> void:
 	# existente a celdas, sin generar ni modificar su geometría.
 	_terrain_renderer = TORRES_TERRAIN_VISUAL_SCRIPT.new()
 	_terrain_renderer.name = "TerrainRenderer"
+	# Las celdas se rasterizan desde (0, 0), pero el mapa de Torres ocupa
+	# el rectángulo mundial (-1200, -704) -> (1200, 704). El renderer debe
+	# compartir ese origen para que los TileMapDual coincidan con Ground,
+	# los caminos y el resto de la geometría de la escena.
+	_terrain_renderer.position = TORRES_TERRAIN_ORIGIN
 	add_child(_terrain_renderer)
 	_terrain_renderer.call("configurar", TORRES_TILE_SIZE)
 
