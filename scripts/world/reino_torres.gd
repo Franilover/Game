@@ -82,6 +82,7 @@ var _entrada_aviso_actual: Dictionary = {}
 var _terreno_dual_listo: bool = false
 var _atmosfera_mundo: Node = null
 var _luces_faroles: Array[PointLight2D] = []
+var _brillos_faroles: Array[Sprite2D] = []
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -596,10 +597,10 @@ func _cargar_arboles_pixelart() -> void:
 
 
 func _crear_luces_faroles() -> void:
-	# Los dos postes de la plaza conservan sus sprites de escena; estas luces
-	# sólo aportan iluminación y siguen el reloj global del mundo.
+	# Los nodos reales de la escena son Sprite_poste_oeste y Sprite_poste_este.
+	# El brillo visible se dibuja aparte y la PointLight2D ilumina el entorno.
 	var gradiente := Gradient.new()
-	gradiente.set_color(0, Color(1.0, 0.78, 0.46, 0.52))
+	gradiente.set_color(0, Color(1.0, 0.78, 0.46, 0.58))
 	gradiente.set_color(1, Color(1.0, 0.58, 0.22, 0.0))
 
 	var textura_luz := GradientTexture2D.new()
@@ -610,26 +611,45 @@ func _crear_luces_faroles() -> void:
 	textura_luz.fill_from = Vector2(0.5, 0.5)
 	textura_luz.fill_to = Vector2(0.5, 0.0)
 
-	for indice in range(2):
-		var nombre_sprite := "Pixel_Lampara_" + str(indice)
-		var farol := get_node_or_null(NodePath(nombre_sprite)) as Sprite2D
+	var nombres_faroles := ["Sprite_poste_oeste", "Sprite_poste_este"]
+	for indice in range(nombres_faroles.size()):
+		var farol := get_node_or_null(NodePath(nombres_faroles[indice])) as Sprite2D
 		if not is_instance_valid(farol):
-			push_warning("ReinoTorres: no se encontró el sprite del farol: " + nombre_sprite)
+			push_warning("ReinoTorres: no se encontró el farol: " + nombres_faroles[indice])
 			continue
 
-		# La luz queda anclada al sprite real, no a coordenadas estimadas del mapa.
+		# El punto luminoso se sitúa en la parte superior del poste, donde está la lámpara.
+		var posicion_luz := farol.position + Vector2(0.0, -18.0)
+
+		# Brillo dibujado explícitamente: hace visible la lámpara incluso si otro
+		# elemento de la escena no recibe iluminación 2D por sus máscaras.
+		var brillo := Sprite2D.new()
+		brillo.name = "Brillo" + ("Oeste" if indice == 0 else "Este")
+		brillo.texture = textura_luz
+		brillo.position = posicion_luz
+		brillo.scale = Vector2(0.48, 0.48)
+		brillo.z_index = 5
+		brillo.visible = false
+		var material_brillo := CanvasItemMaterial.new()
+		material_brillo.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		brillo.material = material_brillo
+		add_child(brillo)
+		_brillos_faroles.append(brillo)
+
+		# La luz es hermana del sprite para iluminar los demás elementos del mapa.
 		var luz := PointLight2D.new()
 		luz.name = "LuzFarol" + ("Oeste" if indice == 0 else "Este")
-		luz.position = Vector2.ZERO
+		luz.position = posicion_luz
 		luz.texture = textura_luz
-		luz.texture_scale = 1.55
+		luz.texture_scale = 1.8
 		luz.color = Color("#ffd18a")
-		luz.energy = 0.9
+		luz.energy = 1.35
+		luz.range_item_cull_mask = 1
 		luz.blend_mode = Light2D.BLEND_MODE_ADD
 		luz.shadow_enabled = false
 		luz.enabled = false
 		luz.z_index = 8
-		farol.add_child(luz)
+		add_child(luz)
 		_luces_faroles.append(luz)
 
 	if _luces_faroles.size() != 2:
@@ -674,7 +694,12 @@ func _actualizar_luces_faroles() -> void:
 	for luz: PointLight2D in _luces_faroles:
 		if is_instance_valid(luz):
 			luz.enabled = intensidad > 0.01
-			luz.energy = 0.9 * intensidad
+			luz.energy = 1.35 * intensidad
+
+	for brillo: Sprite2D in _brillos_faroles:
+		if is_instance_valid(brillo):
+			brillo.visible = intensidad > 0.01
+			brillo.modulate.a = intensidad
 
 
 func _suavizar_luz(valor: float) -> float:
