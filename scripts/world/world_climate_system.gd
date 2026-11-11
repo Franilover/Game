@@ -8,6 +8,8 @@ signal clima_transicion_iniciada(estado_objetivo: Dictionary)
 signal clima_cambiado(estado: Dictionary)
 signal fenomeno_iniciado(fenomeno: Dictionary)
 signal fenomeno_finalizado(tipo: String)
+signal evento_estacional_iniciado(evento: Dictionary)
+signal evento_estacional_finalizado(clave: String)
 
 const PERFILES_CLIMA: Dictionary = {
 	"despejado": {
@@ -71,6 +73,7 @@ var _clima_origen: Dictionary = {}
 var _transicion_duracion: float = 0.0
 var _transicion_transcurrida: float = 0.0
 var _fenomenos_activos: Dictionary = {}
+var _eventos_estacionales_activos: Dictionary = {}
 var _world_data: WorldDataService
 var _world_atmosphere: WorldAtmosphere
 var _world_context: WorldContext
@@ -133,6 +136,7 @@ func _actualizar_clima_diario() -> void:
 		float(clima.get("intensidad", 1.0)),
 		_obtener_duracion_transicion()
 	)
+	_actualizar_eventos_estacionales()
 
 
 func _obtener_duracion_transicion() -> float:
@@ -298,10 +302,95 @@ func obtener_estado_para_contexto(contexto: Dictionary = {}) -> Dictionary:
 		},
 		"contexto": normalizado,
 		"estacion_id": estacion_id,
-		"fecha": fecha
+		"fecha": fecha,
+		"eventos": _seleccionar_eventos_estacionales(
+			regla,
+			ambiente,
+			perfil,
+			cache_key
+		)
 	}
 	_estados_contexto_cache[cache_key] = resultado
 	return resultado.duplicate(true)
+
+
+func _seleccionar_eventos_estacionales(
+	regla: Dictionary,
+	ambiente: Dictionary,
+	clima: Dictionary,
+	semilla_texto: String
+) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	var eventos_variant: Variant = regla.get("eventos", [])
+	if not eventos_variant is Array:
+		return resultado
+	var estacion := _obtener_estacion_actual()
+	var dia := int(estacion.get("dia_de_estacion", 1))
+	var duracion := maxi(int(estacion.get("duracion_dias", 1)), 1)
+	var temperatura: Variant = ambiente.get("temperatura_base_c", null)
+	if temperatura is int or temperatura is float:
+		temperatura = float(temperatura) + float(clima.get("temperatura_delta_c", 0.0))
+
+	for evento_variant in eventos_variant as Array:
+		if not evento_variant is Dictionary:
+			continue
+		var evento := (evento_variant as Dictionary).duplicate(true)
+		var clave := str(evento.get("clave", "")).strip_edges()
+		if clave.is_empty():
+			continue
+		var inicio := clampi(int(evento.get("dia_inicio", 1)), 1, duracion)
+		var fin := clampi(int(evento.get("dia_fin", duracion)), 1, duracion)
+		var dentro_del_periodo := dia >= inicio and dia <= fin if inicio <= fin else dia >= inicio or dia <= fin
+		if not dentro_del_periodo:
+			continue
+
+		var condiciones_variant: Variant = evento.get("condiciones", {})
+		var condiciones: Dictionary = condiciones_variant if condiciones_variant is Dictionary else {}
+		var climas_variant: Variant = condiciones.get("climas", [])
+		if climas_variant is Array and not (climas_variant as Array).is_empty():
+			if str(clima.get("tipo", "")) not in climas_variant:
+				continue
+		if temperatura is int or temperatura is float:
+			if condiciones.has("temperatura_minima_c") and float(temperatura) < float(condiciones["temperatura_minima_c"]):
+				continue
+			if condiciones.has("temperatura_maxima_c") and float(temperatura) > float(condiciones["temperatura_maxima_c"]):
+				continue
+			if condiciones.has("humedad_minima") and float(clima.get("humedad", 0.0)) < float(condiciones["humedad_minima"]):
+				continue
+
+		var probabilidad := clampf(float(evento.get("probabilidad_diaria", 1.0)), 0.0, 1.0)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = abs(hash(semilla_texto + "|evento|" + clave))
+		if rng.randf() > probabilidad:
+			continue
+		evento["dia_estacion"] = dia
+		resultado.append(evento)
+	return resultado
+
+
+func _actualizar_eventos_estacionales() -> void:
+	var estado := obtener_estado_para_contexto({})
+	var eventos_variant: Variant = estado.get("eventos", [])
+	var nuevos: Dictionary = {}
+	if eventos_variant is Array:
+		for evento_variant in eventos_variant as Array:
+			if not evento_variant is Dictionary:
+				continue
+			var evento := evento_variant as Dictionary
+			var clave := str(evento.get("clave", "")).strip_edges()
+			if not clave.is_empty():
+				nuevos[clave] = evento.duplicate(true)
+
+	for clave_variant in _eventos_estacionales_activos.keys():
+		var clave := str(clave_variant)
+		if not nuevos.has(clave):
+			_eventos_estacionales_activos.erase(clave)
+			evento_estacional_finalizado.emit(clave)
+	for clave_variant in nuevos:
+		var clave := str(clave_variant)
+		if not _eventos_estacionales_activos.has(clave):
+			evento_estacional_iniciado.emit((nuevos[clave] as Dictionary).duplicate(true))
+	_eventos_estacionales_activos = nuevos
 
 
 func _normalizar_contexto(contexto: Dictionary) -> Dictionary:
@@ -479,7 +568,8 @@ func obtener_estado() -> Dictionary:
 		"clima": _clima_actual.duplicate(true),
 		"en_transicion": not _clima_objetivo.is_empty(),
 		"clima_objetivo": _clima_objetivo.duplicate(true),
-		"fenomenos": _fenomenos_activos.duplicate(true)
+		"fenomenos": _fenomenos_activos.duplicate(true),
+		"eventos_estacionales": _eventos_estacionales_activos.duplicate(true)
 	}
 
 
