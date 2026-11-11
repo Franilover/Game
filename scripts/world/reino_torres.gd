@@ -67,7 +67,6 @@ var _aviso_panel: PanelContainer
 var _aviso: Label
 var _entrada_aviso_actual: Dictionary = {}
 var _terreno_dual_listo: bool = false
-var _rotulos_edificios: Dictionary = {}
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -140,7 +139,6 @@ func _ready() -> void:
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
-	_crear_rotulos_edificios()
 	# Las capas estáticas deben reconstruir su caché antes de añadir
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
 	# iniciales de las celdas serializadas de la escena.
@@ -212,72 +210,17 @@ func _process(_delta: float) -> void:
 			distancia_menor = distancia
 			entrada_cercana = entrada
 
-	_actualizar_visibilidad_rotulos()
 	_entrada_aviso_actual = entrada_cercana
 	if entrada_cercana.is_empty():
 		_aviso.text = ""
 		_aviso_panel.visible = false
 		return
 
-	_aviso.text = "Entrar: " + str(entrada_cercana["nombre"]) + "   [Clic izq./der.]"
+	_aviso.text = "Entrar"
 	_aviso_panel.visible = true
 	_posicionar_aviso_sobre_jugador()
 
 
-
-func _crear_rotulos_edificios() -> void:
-	var ids_sin_rotulo := [
-		"casa_oriente_a", "casa_oriente_b", "casa_oriente_c",
-		"vivienda_oeste_01", "vivienda_oeste_02", "vivienda_oeste_03",
-		"vivienda_oeste_04", "vivienda_oeste_05", "vivienda_oeste_06",
-		"vivienda_oeste_07", "vivienda_oeste_08", "vivienda_oeste_09",
-		"vivienda_oeste_10", "vivienda_oeste_11"
-	]
-	for entrada: Dictionary in ENTRADAS:
-		var id := str(entrada.get("id", ""))
-		if ids_sin_rotulo.has(id):
-			continue
-		var nombre := str(entrada.get("nombre", "")).strip_edges()
-		if nombre.is_empty():
-			continue
-
-		var placa := PanelContainer.new()
-		placa.name = "Rotulo_" + id
-		placa.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		placa.z_index = 20
-		placa.position = Vector2(float(entrada["pos"].x) - 55.0, float(entrada["pos"].y) - 83.0)
-		placa.custom_minimum_size = Vector2(110.0, 18.0)
-		placa.visible = false
-
-		var texto := Label.new()
-		texto.name = "Nombre"
-		texto.text = nombre
-		texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		texto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		texto.add_theme_color_override("font_color", Color("#F3E4C5"))
-		texto.add_theme_color_override("font_outline_color", Color("#21150E"))
-		texto.add_theme_constant_override("outline_size", 1)
-		texto.add_theme_font_size_override("font_size", 8)
-		texto.clip_text = true
-		placa.add_child(texto)
-		PIXEL_UI_THEME.apply(placa, false)
-		add_child(placa)
-		_rotulos_edificios[id] = placa
-
-
-func _actualizar_visibilidad_rotulos() -> void:
-	if not is_instance_valid(_jugador):
-		return
-	const DISTANCIA_ROTULO := 135.0
-	for entrada: Dictionary in ENTRADAS:
-		var id := str(entrada.get("id", ""))
-		if not _rotulos_edificios.has(id):
-			continue
-		var placa := _rotulos_edificios[id] as Control
-		if not is_instance_valid(placa):
-			continue
-		var distancia := _jugador.global_position.distance_to(to_global(entrada["pos"]))
-		placa.visible = distancia <= DISTANCIA_ROTULO
 
 func _crear_aviso() -> void:
 	# Aviso flotante con el mismo panel pixel-art y tratamiento tipográfico del resto de la interfaz.
