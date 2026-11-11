@@ -309,6 +309,30 @@ func _input(evento: InputEvent) -> void:
 
 
 func _crear_cesped_tilemap_dual() -> void:
+	# Si la escena ya contiene capas pintadas desde el editor, éstas son la
+	# fuente del diseño. No volver a rasterizar los polígonos de caminos.
+	var capas_editor: Array[TileMapDual] = []
+	for zona in [0, 1, 8]:
+		var capa_editor := get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
+		if capa_editor != null:
+			capas_editor.append(capa_editor)
+	if not capas_editor.is_empty():
+		if capas_editor.size() != 3:
+			push_error("ReinoTorres: el terreno editable está incompleto; se requieren Pradera, Tierra y Bosque.")
+			return
+		await get_tree().process_frame
+		for capa_editor in capas_editor:
+			capa_editor.reconstruir_renderer_dual()
+			var diagnostico_editor: Dictionary = capa_editor.obtener_diagnostico()
+			if capa_editor.get_used_cells().is_empty() or int(diagnostico_editor.get("display_cells", 0)) <= 0:
+				push_error("ReinoTorres: la capa editable %s no generó tiles visuales." % capa_editor.name)
+				return
+		_terreno_dual_listo = true
+		print("ReinoTorres: terreno cargado desde TileMapDual editables de la escena.")
+		return
+
+	# Compatibilidad temporal: se usa sólo mientras la escena aún no se haya
+	# convertido con tools/editor/bake_torres_editable_tilemap.gd.
 	# Torres y la expedición comparten el renderer canónico de terrenos.
 	# La ciudad sigue siendo un mapa fijo: sólo se rasteriza su distribución
 	# existente a celdas, sin generar ni modificar su geometría.
