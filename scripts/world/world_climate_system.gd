@@ -1,9 +1,8 @@
 extends Node
 class_name WorldClimateSystem
 
-## Estado ambiental del mundo. Centraliza clima y fenómenos naturales para que
-## los efectos visuales, el audio, la fauna y el gameplay puedan suscribirse
-## sin depender entre sí.
+## Simulacion climatica determinista. Las reglas estacionales y los factores
+## ambientales proceden de WorldData; el cliente sólo resuelve y ejecuta.
 
 signal clima_transicion_iniciada(estado_objetivo: Dictionary)
 signal clima_cambiado(estado: Dictionary)
@@ -13,40 +12,48 @@ signal fenomeno_finalizado(tipo: String)
 const PERFILES_CLIMA: Dictionary = {
 	"despejado": {
 		"cobertura_nubes": 0.08, "precipitacion": 0.0,
-		"viento": 0.12, "humedad": 0.30, "visibilidad": 1.0
+		"viento": 0.12, "humedad": 0.30, "visibilidad": 1.0,
+		"temperatura_delta_c": 0.0
 	},
 	"nublado": {
 		"cobertura_nubes": 0.78, "precipitacion": 0.0,
-		"viento": 0.22, "humedad": 0.58, "visibilidad": 0.88
+		"viento": 0.22, "humedad": 0.58, "visibilidad": 0.88,
+		"temperatura_delta_c": -1.0
 	},
 	"lluvia": {
 		"cobertura_nubes": 0.94, "precipitacion": 0.72,
-		"viento": 0.42, "humedad": 0.92, "visibilidad": 0.72
+		"viento": 0.42, "humedad": 0.92, "visibilidad": 0.72,
+		"temperatura_delta_c": -2.0
 	},
 	"tormenta": {
 		"cobertura_nubes": 1.0, "precipitacion": 1.0,
-		"viento": 0.88, "humedad": 1.0, "visibilidad": 0.48
+		"viento": 0.88, "humedad": 1.0, "visibilidad": 0.48,
+		"temperatura_delta_c": -3.0
 	},
 	"niebla": {
 		"cobertura_nubes": 0.62, "precipitacion": 0.0,
-		"viento": 0.04, "humedad": 0.96, "visibilidad": 0.28
+		"viento": 0.04, "humedad": 0.96, "visibilidad": 0.28,
+		"temperatura_delta_c": -1.0
 	},
 	"nieve": {
 		"cobertura_nubes": 0.88, "precipitacion": 0.68,
-		"viento": 0.30, "humedad": 0.82, "visibilidad": 0.66
+		"viento": 0.30, "humedad": 0.82, "visibilidad": 0.66,
+		"temperatura_delta_c": -5.0
 	},
 	"ola_calor": {
 		"cobertura_nubes": 0.06, "precipitacion": 0.0,
-		"viento": 0.08, "humedad": 0.18, "visibilidad": 0.94
+		"viento": 0.08, "humedad": 0.18, "visibilidad": 0.94,
+		"temperatura_delta_c": 4.0
 	}
 }
 
 const FENOMENOS_VALIDOS: Array[String] = [
-	"tormenta_electrica",
-	"terremoto",
-	"viento_extremo",
-	"inundacion",
-	"granizada"
+	"tormenta_electrica", "terremoto", "viento_extremo",
+	"inundacion", "granizada"
+]
+const PROPIEDADES_CLIMA: Array[String] = [
+	"cobertura_nubes", "precipitacion", "viento",
+	"humedad", "visibilidad", "temperatura_delta_c"
 ]
 
 var _clima_actual: Dictionary = {
@@ -56,13 +63,34 @@ var _clima_actual: Dictionary = {
 	"precipitacion": 0.0,
 	"viento": 0.12,
 	"humedad": 0.30,
-	"visibilidad": 1.0
+	"visibilidad": 1.0,
+	"temperatura_delta_c": 0.0
 }
 var _clima_objetivo: Dictionary = {}
 var _clima_origen: Dictionary = {}
 var _transicion_duracion: float = 0.0
 var _transicion_transcurrida: float = 0.0
 var _fenomenos_activos: Dictionary = {}
+var _world_data: WorldDataService
+var _world_atmosphere: WorldAtmosphere
+var _estados_contexto_cache: Dictionary = {}
+var _clave_dia_actual: String = ""
+
+
+func configurar_dependencias(
+	world_data: WorldDataService,
+	world_atmosphere: WorldAtmosphere
+) -> void:
+	_world_data = world_data
+	_world_atmosphere = world_atmosphere
+	if _world_atmosphere == null:
+		push_error("WorldClimateSystem: WorldAtmosphere es obligatorio.")
+		return
+	if not _world_atmosphere.dia_cambiado.is_connected(_al_cambiar_dia):
+		_world_atmosphere.dia_cambiado.connect(_al_cambiar_dia)
+	if not _world_atmosphere.estacion_cambiada.is_connected(_al_cambiar_estacion):
+		_world_atmosphere.estacion_cambiada.connect(_al_cambiar_estacion)
+	_actualizar_clima_diario()
 
 
 func _process(delta: float) -> void:
@@ -70,10 +98,37 @@ func _process(delta: float) -> void:
 	_actualizar_fenomenos(delta)
 
 
+func _al_cambiar_dia(_dia: int, _anio: int) -> void:
+	_actualizar_clima_diario()
+
+
+func _al_cambiar_estacion(_estacion: Dictionary) -> void:
+	_actualizar_clima_diario()
+
+
+func _actualizar_clima_diario() -> void:
+	_estados_contexto_cache.clear()
+	if _world_atmosphere == null or _world_atmosphere.estacion_actual.is_empty():
+		return
+	var estado := obtener_estado_para_contexto({})
+	var clima: Dictionary = estado.get("clima", {})
+	establecer_clima(
+		str(clima.get("tipo", "despejado")),
+		float(clima.get("intensidad", 1.0)),
+		_obtener_duracion_transicion()
+	)
+
+
+func _obtener_duracion_transicion() -> float:
+	var regla := _obtener_regla_climatica({})
+	return maxf(float(regla.get("transicion_segundos", 8.0)), 0.0)
+
+
 func establecer_clima(
 	tipo: String,
 	intensidad: float = 1.0,
-	duracion_transicion: float = 8.0
+	duracion_transicion: float = 8.0,
+	efectos_adicionales: Dictionary = {}
 ) -> bool:
 	if not PERFILES_CLIMA.has(tipo):
 		push_warning("WorldClimateSystem: perfil de clima desconocido: " + tipo)
@@ -81,11 +136,11 @@ func establecer_clima(
 
 	var fuerza := clampf(intensidad, 0.0, 1.0)
 	var perfil: Dictionary = PERFILES_CLIMA[tipo].duplicate(true)
+	for propiedad in PROPIEDADES_CLIMA:
+		if efectos_adicionales.has(propiedad):
+			perfil[propiedad] = float(efectos_adicionales[propiedad])
 	_clima_origen = _clima_actual.duplicate(true)
-	_clima_objetivo = {
-		"tipo": tipo,
-		"intensidad": fuerza
-	}
+	_clima_objetivo = {"tipo": tipo, "intensidad": fuerza}
 	for propiedad in perfil:
 		var valor := float(perfil[propiedad])
 		if propiedad in ["cobertura_nubes", "precipitacion", "viento"]:
@@ -107,17 +162,9 @@ func establecer_clima(
 func _actualizar_transicion_clima(delta: float) -> void:
 	if _clima_objetivo.is_empty():
 		return
-	_transicion_transcurrida = minf(
-		_transicion_transcurrida + delta,
-		_transicion_duracion
-	)
-	var progreso := clampf(
-		_transicion_transcurrida / maxf(_transicion_duracion, 0.001),
-		0.0,
-		1.0
-	)
+	_transicion_transcurrida = minf(_transicion_transcurrida + delta, _transicion_duracion)
+	var progreso := clampf(_transicion_transcurrida / maxf(_transicion_duracion, 0.001), 0.0, 1.0)
 	progreso = progreso * progreso * (3.0 - 2.0 * progreso)
-
 	var nuevo_estado := {
 		"tipo": str(_clima_origen.get("tipo", "despejado")),
 		"intensidad": lerpf(
@@ -126,14 +173,13 @@ func _actualizar_transicion_clima(delta: float) -> void:
 			progreso
 		)
 	}
-	for propiedad in ["cobertura_nubes", "precipitacion", "viento", "humedad", "visibilidad"]:
+	for propiedad in PROPIEDADES_CLIMA:
 		nuevo_estado[propiedad] = lerpf(
-			float(_clima_origen.get(propiedad, _clima_objetivo[propiedad])),
-			float(_clima_objetivo[propiedad]),
+			float(_clima_origen.get(propiedad, _clima_objetivo.get(propiedad, 0.0))),
+			float(_clima_objetivo.get(propiedad, 0.0)),
 			progreso
 		)
 	_clima_actual = nuevo_estado
-
 	if _transicion_transcurrida >= _transicion_duracion:
 		_clima_actual = _clima_objetivo.duplicate(true)
 		_clima_objetivo.clear()
@@ -141,11 +187,197 @@ func _actualizar_transicion_clima(delta: float) -> void:
 		clima_cambiado.emit(obtener_estado())
 
 
-func iniciar_fenomeno(
-	tipo: String,
-	intensidad: float = 1.0,
-	duracion_segundos: float = 0.0
-) -> bool:
+func obtener_estado_para_contexto(contexto: Dictionary = {}) -> Dictionary:
+	var normalizado := _normalizar_contexto(contexto)
+	var temporada := _obtener_estacion_actual()
+	var estacion_id := str(temporada.get("id", ""))
+	var fecha := _obtener_clave_fecha()
+	var clave_contexto := str(normalizado.get("habitat_id", ""))
+	if clave_contexto.is_empty():
+		clave_contexto = str(normalizado.get("ecosistema_id", ""))
+	if clave_contexto.is_empty():
+		clave_contexto = str(normalizado.get("bioma_id", "global"))
+	var cache_key := "%s|%s|%s" % [fecha, estacion_id, clave_contexto]
+	if _estados_contexto_cache.has(cache_key):
+		return (_estados_contexto_cache[cache_key] as Dictionary).duplicate(true)
+
+	var ambiente := _obtener_factores_ambientales(normalizado, estacion_id)
+	var regla := _obtener_regla_climatica(normalizado)
+	var seleccion := _seleccionar_perfil_clima(regla, ambiente, cache_key)
+	var tipo := str(seleccion.get("tipo", "despejado"))
+	var intensidad := clampf(float(seleccion.get("intensidad", 1.0)), 0.0, 1.0)
+	var perfil: Dictionary = PERFILES_CLIMA.get(tipo, PERFILES_CLIMA["despejado"]).duplicate(true)
+	var efectos_variant: Variant = seleccion.get("efectos", {})
+	if efectos_variant is Dictionary:
+		for propiedad in PROPIEDADES_CLIMA:
+			if (efectos_variant as Dictionary).has(propiedad):
+				perfil[propiedad] = float((efectos_variant as Dictionary)[propiedad])
+	for propiedad in ["cobertura_nubes", "precipitacion", "viento"]:
+		perfil[propiedad] = float(perfil.get(propiedad, 0.0)) * intensidad
+
+	var temperatura_base: Variant = ambiente.get("temperatura_base_c", null)
+	var temperatura_resultante: Variant = null
+	if temperatura_base is int or temperatura_base is float:
+		temperatura_resultante = float(temperatura_base) + float(perfil.get("temperatura_delta_c", 0.0))
+
+	var resultado := {
+		"clima": {
+			"tipo": tipo,
+			"intensidad": intensidad,
+			"cobertura_nubes": float(perfil.get("cobertura_nubes", 0.0)),
+			"precipitacion": float(perfil.get("precipitacion", 0.0)),
+			"viento": float(perfil.get("viento", 0.0)),
+			"humedad": float(perfil.get("humedad", ambiente.get("humedad_relativa", 0.5))),
+			"visibilidad": float(perfil.get("visibilidad", 1.0)),
+			"temperatura_delta_c": float(perfil.get("temperatura_delta_c", 0.0))
+		},
+		"ambiente": {
+			"temperatura_base_c": temperatura_base,
+			"temperatura_c": temperatura_resultante,
+			"humedad_relativa": float(ambiente.get("humedad_relativa", 0.5)),
+			"disponibilidad_agua": float(ambiente.get("disponibilidad_agua", 0.5)),
+			"velocidad_medio": float(ambiente.get("velocidad_medio", 0.0))
+		},
+		"contexto": normalizado,
+		"estacion_id": estacion_id,
+		"fecha": fecha
+	}
+	_estados_contexto_cache[cache_key] = resultado
+	return resultado.duplicate(true)
+
+
+func _normalizar_contexto(contexto: Dictionary) -> Dictionary:
+	var resultado := {}
+	for clave in ["bioma_id", "ecosistema_id", "habitat_id"]:
+		var valor := str(contexto.get(clave, "")).strip_edges()
+		if not valor.is_empty():
+			resultado[clave] = valor
+	return resultado
+
+
+func _obtener_estacion_actual() -> Dictionary:
+	if _world_atmosphere == null:
+		return {}
+	return _world_atmosphere.estacion_actual.duplicate(true)
+
+
+func _obtener_clave_fecha() -> String:
+	if _world_atmosphere == null:
+		return "sin_fecha"
+	return "%s:%s" % [_world_atmosphere.anio, _world_atmosphere.dia_del_anio]
+
+
+func _obtener_regla_climatica(contexto: Dictionary) -> Dictionary:
+	var estacion := _obtener_estacion_actual()
+	var config_variant: Variant = estacion.get("config_climatica", {})
+	if not config_variant is Dictionary:
+		return {}
+	var config := config_variant as Dictionary
+	for nivel in ["habitats", "ecosistemas", "biomas"]:
+		var id := str(contexto.get(
+			"habitat_id" if nivel == "habitats" else "ecosistema_id" if nivel == "ecosistemas" else "bioma_id",
+			""
+		))
+		var reglas_variant: Variant = config.get(nivel, {})
+		if id.is_empty() or not reglas_variant is Dictionary:
+			continue
+		var regla_variant: Variant = (reglas_variant as Dictionary).get(id, {})
+		if regla_variant is Dictionary and not (regla_variant as Dictionary).is_empty():
+			return regla_variant as Dictionary
+	return config
+
+
+func _obtener_factores_ambientales(contexto: Dictionary, estacion_id: String) -> Dictionary:
+	var factores: Dictionary = {}
+	if _world_data != null and not estacion_id.is_empty():
+		var habitat_id := str(contexto.get("habitat_id", ""))
+		var ecosistema_id := str(contexto.get("ecosistema_id", ""))
+		if not habitat_id.is_empty():
+			factores = _world_data.obtener_ambiente_estacional_habitat(estacion_id, habitat_id)
+		if factores.is_empty() and not ecosistema_id.is_empty():
+			factores = _world_data.obtener_ambiente_estacional_ecosistema(estacion_id, ecosistema_id)
+		if factores.is_empty() and not habitat_id.is_empty():
+			factores = _world_data.obtener_factores_ambientales_habitat(habitat_id)
+		if factores.is_empty() and not ecosistema_id.is_empty():
+			factores = _world_data.obtener_factores_ambientales_ecosistema(ecosistema_id)
+
+	var temperatura_k := _obtener_valor_factor(factores, "temperatura_media", NAN)
+	var temperatura_c: Variant = temperatura_k - 273.15 if is_finite(temperatura_k) else null
+	var humedad := _obtener_valor_factor(factores, "humedad_relativa", 0.5)
+	var agua := _obtener_valor_factor(factores, "disponibilidad_agua", 0.5)
+	var velocidad := _obtener_valor_factor(factores, "velocidad_medio", 0.0)
+	return {
+		"temperatura_base_c": temperatura_c,
+		"humedad_relativa": clampf(humedad, 0.0, 1.0),
+		"disponibilidad_agua": clampf(agua, 0.0, 1.0),
+		"velocidad_medio": maxf(velocidad, 0.0)
+	}
+
+
+func _obtener_valor_factor(factores: Dictionary, clave: String, por_defecto: float) -> float:
+	var valor_variant: Variant = factores.get(clave, {})
+	if not valor_variant is Dictionary:
+		return por_defecto
+	var valor: Variant = (valor_variant as Dictionary).get("valor", null)
+	if valor is int or valor is float:
+		return float(valor)
+	return por_defecto
+
+
+func _seleccionar_perfil_clima(regla: Dictionary, ambiente: Dictionary, semilla_texto: String) -> Dictionary:
+	var perfiles: Array = []
+	var perfiles_variant: Variant = regla.get("perfiles", [])
+	if perfiles_variant is Array:
+		for perfil_variant in perfiles_variant as Array:
+			if perfil_variant is Dictionary and PERFILES_CLIMA.has(str((perfil_variant as Dictionary).get("tipo", ""))):
+				perfiles.append(perfil_variant)
+	if perfiles.is_empty():
+		perfiles = _crear_perfiles_por_ambiente(ambiente)
+
+	var peso_total := 0.0
+	for perfil in perfiles:
+		peso_total += maxf(float(perfil.get("peso", 0.0)), 0.0)
+	if peso_total <= 0.0:
+		return {"tipo": "despejado", "intensidad": 1.0}
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = abs(hash(semilla_texto + "|" + str(_world_atmosphere.anio if _world_atmosphere != null else 0)))
+	var elegido := perfiles.back()
+	var objetivo := rng.randf_range(0.0, peso_total)
+	for perfil in perfiles:
+		objetivo -= maxf(float(perfil.get("peso", 0.0)), 0.0)
+		if objetivo <= 0.0:
+			elegido = perfil
+			break
+	var intensidad_min := clampf(float(elegido.get("intensidad_min", 0.65)), 0.0, 1.0)
+	var intensidad_max := clampf(float(elegido.get("intensidad_max", 1.0)), intensidad_min, 1.0)
+	return {
+		"tipo": str(elegido.get("tipo", "despejado")),
+		"intensidad": rng.randf_range(intensidad_min, intensidad_max),
+		"efectos": elegido.get("efectos", {})
+	}
+
+
+func _crear_perfiles_por_ambiente(ambiente: Dictionary) -> Array[Dictionary]:
+	var temperatura := float(ambiente.get("temperatura_base_c", 20.0)) if ambiente.get("temperatura_base_c") is float or ambiente.get("temperatura_base_c") is int else 20.0
+	var humedad := clampf(float(ambiente.get("humedad_relativa", 0.5)), 0.0, 1.0)
+	var agua := clampf(float(ambiente.get("disponibilidad_agua", 0.5)), 0.0, 1.0)
+	var viento := clampf(float(ambiente.get("velocidad_medio", 0.0)) / 6.0, 0.0, 1.0)
+	var perfiles: Array[Dictionary] = [
+		{"tipo": "despejado", "peso": 42.0},
+		{"tipo": "nublado", "peso": 18.0 + humedad * 8.0},
+		{"tipo": "lluvia", "peso": 3.0 + humedad * 14.0 + agua * 8.0},
+		{"tipo": "niebla", "peso": 1.0 + humedad * 15.0 * (1.0 - viento)},
+		{"tipo": "tormenta", "peso": 0.5 + humedad * viento * 9.0}
+	]
+	if temperatura <= 4.0:
+		perfiles.append({"tipo": "nieve", "peso": (4.0 - temperatura) * 4.0 + humedad * 2.0})
+	if temperatura >= 27.0 and humedad < 0.55:
+		perfiles.append({"tipo": "ola_calor", "peso": (temperatura - 26.0) * 2.5 + (0.55 - humedad) * 8.0})
+	return perfiles
+
+
+func iniciar_fenomeno(tipo: String, intensidad: float = 1.0, duracion_segundos: float = 0.0) -> bool:
 	if not FENOMENOS_VALIDOS.has(tipo):
 		push_warning("WorldClimateSystem: fenómeno desconocido: " + tipo)
 		return false
