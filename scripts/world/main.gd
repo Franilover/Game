@@ -662,6 +662,14 @@ func _configurar_inventario() -> void:
 		return
 
 	_inventory.configurar(_player, _world_entity_spawner, _world_context, RelationshipSystem, _world_items)
+	# El mapa recibe la zona activa después de configurar Player e inventario.
+	# Así Torres (escena fija) y la expedición no conservan el mapa de la zona anterior.
+	if _inventory.has_method("configurar_mapa_zona"):
+		_inventory.configurar_mapa_zona(
+			str(_zone_manager.obtener_tipo_actual()),
+			_zone_manager.obtener_zona_actual(),
+			_world_context
+		)
 
 	if _input_router != null:
 		_inventory.configurar_input_router(_input_router)
