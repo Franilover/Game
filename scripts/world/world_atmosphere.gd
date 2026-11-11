@@ -236,39 +236,52 @@ func _avanzar_dia() -> void:
 		)
 
 
+func _obtener_estaciones_ordenadas() -> Array:
+	var resultado: Array = estaciones.duplicate(true)
+	resultado.sort_custom(
+		func(a: Variant, b: Variant) -> bool:
+			if not a is Dictionary:
+				return false
+			if not b is Dictionary:
+				return true
+			return int((a as Dictionary).get("orden", 0)) < int((b as Dictionary).get("orden", 0))
+	)
+	return resultado
+
+
 func _actualizar_estacion() -> void:
 	estacion_actual = {}
 	if estaciones.is_empty():
 		return
 
-	var inicio_dia: int = 0
+	var estaciones_ordenadas := _obtener_estaciones_ordenadas()
+	var duracion_total := 0
+	for estacion_variant in estaciones_ordenadas:
+		if not estacion_variant is Dictionary:
+			continue
+		duracion_total += maxi(int((estacion_variant as Dictionary).get("duracion_dias", 0)), 0)
 
-	for estacion_variant in estaciones:
+	if duracion_total <= 0:
+		return
+
+	# Resolver el día usando la duración real de las estaciones evita
+	# dejar estacion_actual vacío si el calendario trae un orden distinto.
+	dia_del_anio = posmod(dia_del_anio, duracion_total)
+
+	var inicio_dia := 0
+	for estacion_variant in estaciones_ordenadas:
 		if not estacion_variant is Dictionary:
 			continue
 
-		var estacion: Dictionary = (
-			estacion_variant as Dictionary
-		)
-		var duracion := maxi(
-			int(
-				estacion.get(
-					"duracion_dias",
-					0
-				)
-			),
-			0
-		)
-
+		var estacion := estacion_variant as Dictionary
+		var duracion := maxi(int(estacion.get("duracion_dias", 0)), 0)
 		if duracion <= 0:
 			continue
 
-		if dia_del_anio < inicio_dia + duracion:
+		if dia_del_anio >= inicio_dia and dia_del_anio < inicio_dia + duracion:
 			estacion_actual = estacion.duplicate(true)
-			estacion_actual["dia_de_estacion"] = (
-			dia_del_anio - inicio_dia + 1
-		)
-		return
+			estacion_actual["dia_de_estacion"] = dia_del_anio - inicio_dia + 1
+			return
 
 		inicio_dia += duracion
 
@@ -464,16 +477,19 @@ func establecer_estacion(estacion_id: String) -> bool:
 
 	var dia_de_estacion_actual := maxi(0, int(estacion_actual.get("dia_de_estacion", 1)) - 1)
 	var inicio_dia := 0
-	for estacion_variant in estaciones:
+	for estacion_variant in _obtener_estaciones_ordenadas():
 		if not estacion_variant is Dictionary:
 			continue
 		var estacion := estacion_variant as Dictionary
 		var duracion := maxi(int(estacion.get("duracion_dias", 0)), 0)
 		if duracion <= 0:
 			continue
-		if str(estacion.get("id", "")) == estacion_id:
+		if str(estacion.get("id", "")).strip_edges() == estacion_id.strip_edges():
 			dia_del_anio = inicio_dia + mini(dia_de_estacion_actual, duracion - 1)
 			_actualizar_estacion()
+			if estacion_actual.is_empty():
+				push_error("WorldAtmosphere: no se pudo resolver la estación seleccionada: " + estacion_id)
+				return false
 			dia_cambiado.emit(dia_del_anio, anio)
 			estacion_cambiada.emit(estacion_actual.duplicate(true))
 			return true
