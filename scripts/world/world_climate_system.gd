@@ -73,16 +73,19 @@ var _transicion_transcurrida: float = 0.0
 var _fenomenos_activos: Dictionary = {}
 var _world_data: WorldDataService
 var _world_atmosphere: WorldAtmosphere
+var _world_context: WorldContext
 var _estados_contexto_cache: Dictionary = {}
 var _clave_dia_actual: String = ""
 
 
 func configurar_dependencias(
 	world_data: WorldDataService,
-	world_atmosphere: WorldAtmosphere
+	world_atmosphere: WorldAtmosphere,
+	world_context: WorldContext = null
 ) -> void:
 	_world_data = world_data
 	_world_atmosphere = world_atmosphere
+	_world_context = world_context
 	if _world_atmosphere == null:
 		push_error("WorldClimateSystem: WorldAtmosphere es obligatorio.")
 		return
@@ -198,6 +201,48 @@ func _actualizar_transicion_clima(delta: float) -> void:
 		_clima_objetivo.clear()
 		_clima_origen.clear()
 		clima_cambiado.emit(obtener_estado())
+
+
+func obtener_estado_para_posicion(
+	posicion_global: Vector2,
+	habitat_clave: String = ""
+) -> Dictionary:
+	if _world_context == null or not _world_context.tiene_mundo_activo():
+		return obtener_estado_para_contexto({})
+	var tile := _world_context.get_tile_at(posicion_global)
+	var contexto_mundo := _world_context.get_contexto_data_at(tile)
+	if contexto_mundo.is_empty():
+		return obtener_estado_para_contexto({})
+	var bioma_variant: Variant = contexto_mundo.get("bioma", {})
+	var ecosistema_variant: Variant = contexto_mundo.get("ecosistema", {})
+	var bioma: Dictionary = bioma_variant if bioma_variant is Dictionary else {}
+	var ecosistema: Dictionary = ecosistema_variant if ecosistema_variant is Dictionary else {}
+	var contexto := {
+		"bioma_id": str(bioma.get("id", "")),
+		"ecosistema_id": str(ecosistema.get("id", ""))
+	}
+	var habitats_variant: Variant = contexto_mundo.get("habitats", [])
+	if habitats_variant is Array:
+		var habitats := habitats_variant as Array
+		var buscado := habitat_clave.strip_edges().to_lower()
+		var elegido: Dictionary = {}
+		for habitat_variant in habitats:
+			if not habitat_variant is Dictionary:
+				continue
+			var habitat := habitat_variant as Dictionary
+			if elegido.is_empty():
+				elegido = habitat
+			var claves := [
+				str(habitat.get("clave", "")).strip_edges().to_lower(),
+				str(habitat.get("nombre", "")).strip_edges().to_lower(),
+				str(habitat.get("tipo_habitat", "")).strip_edges().to_lower()
+			]
+			if not buscado.is_empty() and buscado in claves:
+				elegido = habitat
+				break
+		if not elegido.is_empty():
+			contexto["habitat_id"] = str(elegido.get("id", ""))
+	return obtener_estado_para_contexto(contexto)
 
 
 func obtener_estado_para_contexto(contexto: Dictionary = {}) -> Dictionary:
