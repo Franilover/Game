@@ -200,8 +200,8 @@ func _process(_delta: float) -> void:
 		# El interior es cerrado: limita la posición del jugador al área transitable.
 		# La única salida es el umbral de la puerta, que devuelve al exterior automáticamente.
 		var posicion_local := to_local(_jugador.global_position)
-		posicion_local.x = clampf(posicion_local.x, -610.0, 610.0)
-		posicion_local.y = clampf(posicion_local.y, -370.0, 360.0)
+		posicion_local.x = clampf(posicion_local.x, -INTERIOR_MEDIO_ANCHO + 30.0, INTERIOR_MEDIO_ANCHO - 30.0)
+		posicion_local.y = clampf(posicion_local.y, -INTERIOR_MEDIO_ALTO + 30.0, INTERIOR_MEDIO_ALTO - 40.0)
 		_jugador.global_position = to_global(posicion_local)
 
 		var umbral_salida := to_global(Vector2(60, 370))
@@ -728,8 +728,8 @@ func _limitar_camara_a_interior() -> void:
 		"enabled": _camara_interior.limit_enabled,
 	}
 	# Coincide con los bordes exteriores de la habitación (incluyendo los muros).
-	var esquina_superior_izquierda := to_global(Vector2(-648, -408))
-	var esquina_inferior_derecha := to_global(Vector2(648, 408))
+	var esquina_superior_izquierda := to_global(Vector2(-INTERIOR_MEDIO_ANCHO - 8.0, -INTERIOR_MEDIO_ALTO - 8.0))
+	var esquina_inferior_derecha := to_global(Vector2(INTERIOR_MEDIO_ANCHO + 8.0, INTERIOR_MEDIO_ALTO + 8.0))
 	_camara_interior.limit_left = floori(esquina_superior_izquierda.x)
 	_camara_interior.limit_top = floori(esquina_superior_izquierda.y)
 	_camara_interior.limit_right = ceili(esquina_inferior_derecha.x)
@@ -804,11 +804,11 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	# sin sprite propio quedan fuera hasta que se dibujen sus recursos pixel art.
 	_agregar_suelo_tilemap(cuarto)
 	# Muros perimetrales ampliados con una abertura de puerta al sur.
-	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -404), Vector2(1296, 16))
-	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-644, 0), Vector2(16, 816))
-	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(644, 0), Vector2(16, 816))
-	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2(-330, 404), Vector2(636, 16))
-	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(390, 404), Vector2(516, 16))
+	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -INTERIOR_MEDIO_ALTO - 4.0), Vector2(INTERIOR_ANCHO + 16.0, 16))
+	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-INTERIOR_MEDIO_ANCHO - 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
+	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(INTERIOR_MEDIO_ANCHO + 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
+	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2(-330, INTERIOR_MEDIO_ALTO + 4.0), Vector2(636, 16))
+	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2(390, INTERIOR_MEDIO_ALTO + 4.0), Vector2(516, 16))
 
 	var tipo := str(entrada["tipo"])
 	match tipo:
@@ -884,15 +884,15 @@ func _agregar_suelo_tilemap(padre: Node) -> void:
 
 	var capa := TileMapLayer.new()
 	capa.name = "SueloTileMap"
-	capa.position = Vector2(-640, -400)
+	capa.position = Vector2(-INTERIOR_MEDIO_ANCHO, -INTERIOR_MEDIO_ALTO)
 	capa.tile_set = tileset
 	capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	capa.z_index = -10
 	padre.add_child(capa)
 
 	# 80 x 50 tiles cubren los 1280 x 800 puntos del nuevo interior.
-	for y in range(50):
-		for x in range(80):
+	for y in range(int(INTERIOR_ALTO / 16.0)):
+		for x in range(int(INTERIOR_ANCHO / 16.0)): 
 			capa.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
 
 
