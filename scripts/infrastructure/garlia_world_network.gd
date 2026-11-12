@@ -9,6 +9,7 @@ const MAX_USERNAME_LENGTH := 24
 
 signal mundo_global_listo(semilla: int, tipo_zona: String, reinos_globales: Dictionary, tiempo_mundo: Dictionary)
 signal mundo_global_rechazado(mensaje: String)
+signal mensaje_chat_recibido(nombre: String, mensaje: String, es_accion: bool)
 
 var _servidor_inicializado := false
 var _ultima_zona_servidor := ""
@@ -48,6 +49,7 @@ var _auth_pendiente: Dictionary = {}
 var _usuarios_en_entrada: Dictionary = {}
 var _sistemas_jugador_servidor: Dictionary = {}
 var _ultima_accion_servidor: Dictionary = {}
+var _ultimo_chat_servidor: Dictionary = {}
 var _ultimo_input_servidor: Dictionary = {}
 var _reapariciones_pendientes: Dictionary = {}
 var _eterium_runtime_global: Dictionary = {}
@@ -844,6 +846,47 @@ func enviar_solicitud_viaje(destino: String) -> void:
 	if clave.is_empty():
 		return
 	solicitar_viaje_global.rpc_id(1, clave)
+
+
+func enviar_mensaje_chat(mensaje: String, es_accion: bool = false) -> void:
+	var texto := mensaje.strip_edges().replace("\\n", " ").replace("\\r", " ").left(240)
+	if texto.is_empty():
+		return
+	if es_cliente_en_mundo_global():
+		solicitar_mensaje_chat_global.rpc_id(1, texto, es_accion)
+		return
+	var nombre := str(_personaje_local.get("nombre", "")).strip_edges()
+	if nombre.is_empty() and is_instance_valid(_local_player):
+		nombre = _local_player.personaje_nombre.strip_edges()
+	if nombre.is_empty():
+		nombre = "Explorador"
+	mensaje_chat_recibido.emit(nombre, texto, es_accion)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func solicitar_mensaje_chat_global(mensaje: String, es_accion: bool = false) -> void:
+	if not GarliaMultiplayer.es_servidor_dedicado() or not _mundo_listo:
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	var jugador := _jugadores_servidor.get(peer_id) as Player
+	if not is_instance_valid(jugador):
+		return
+	var texto := mensaje.strip_edges().replace("\\n", " ").replace("\\r", " ").left(240)
+	if texto.is_empty():
+		return
+	var ahora := Time.get_ticks_msec()
+	var anterior := int(_ultimo_chat_servidor.get(peer_id, 0))
+	if ahora - anterior < 350:
+		return
+	_ultimo_chat_servidor[peer_id] = ahora
+	recibir_mensaje_chat_global.rpc(jugador.personaje_nombre, texto, es_accion)
+
+
+@rpc("authority", "call_remote", "reliable")
+func recibir_mensaje_chat_global(nombre: String, mensaje: String, es_accion: bool = false) -> void:
+	if GarliaMultiplayer.es_servidor_dedicado():
+		return
+	mensaje_chat_recibido.emit(nombre, mensaje, es_accion)
 
 
 func solicitar_accion_local(accion: String) -> void:
@@ -1647,6 +1690,7 @@ func _al_desconectar_peer(peer_id: int) -> void:
 		_jugadores_servidor.erase(peer_id)
 		_sistemas_jugador_servidor.erase(peer_id)
 		_ultima_accion_servidor.erase(peer_id)
+		_ultimo_chat_servidor.erase(peer_id)
 		_ultimo_input_servidor.erase(peer_id)
 		_reapariciones_pendientes.erase(peer_id)
 		_auth_pendiente.erase(peer_id)
