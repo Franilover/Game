@@ -280,6 +280,7 @@ func _construir_editor_partida() -> void:
 
 	var label_aspecto := Label.new()
 	label_aspecto.text = "Aspecto del personaje"
+	label_aspecto.visible = false
 	_editor_form.add_child(label_aspecto)
 	_aspectos_list = ItemList.new()
 	_aspectos_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -288,6 +289,7 @@ func _construir_editor_partida() -> void:
 	_aspectos_list.fixed_icon_size = Vector2i(56, 56)
 	_aspectos_list.icon_mode = ItemList.ICON_MODE_TOP
 	_aspectos_list.select_mode = ItemList.SELECT_SINGLE
+	_aspectos_list.visible = false
 	_editor_form.add_child(_aspectos_list)
 	_cargar_aspectos_edicion()
 
@@ -414,9 +416,6 @@ func _guardar_edicion_partida() -> void:
 		_mostrar_estado_edicion("El nombre del personaje no puede estar vacío.")
 		return
 	var seleccionados := _aspectos_list.get_selected_items()
-	if seleccionados.is_empty():
-		_mostrar_estado_edicion("Selecciona un aspecto para el personaje.")
-		return
 
 	var genero := _genero_input.get_item_text(_genero_input.selected)
 	if _genero_input.selected == 4:
@@ -427,7 +426,7 @@ func _guardar_edicion_partida() -> void:
 	elif _genero_input.selected == 5:
 		genero = "sin_genero"
 
-	var skin_path := str(_aspectos_list.get_item_metadata(seleccionados[0]))
+	var skin_path := str(_aspectos_list.get_item_metadata(seleccionados[0])) if not seleccionados.is_empty() else ""
 	if GameState.actualizar_personaje_partida(_id_pendiente_editar, nombre_mundo, nombre_personaje, genero, skin_path):
 		_id_pendiente_editar = ""
 		_salir_editor_partida()
