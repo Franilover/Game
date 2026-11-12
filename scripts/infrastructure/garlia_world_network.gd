@@ -849,7 +849,7 @@ func enviar_solicitud_viaje(destino: String) -> void:
 
 
 func enviar_mensaje_chat(mensaje: String, es_accion: bool = false) -> void:
-	var texto := mensaje.strip_edges().replace("\\n", " ").replace("\\r", " ").left(240)
+	var texto := mensaje.strip_edges().replace("\n", " ").replace("\r", " ").left(240)
 	if texto.is_empty():
 		return
 	if es_cliente_en_mundo_global():
@@ -875,7 +875,7 @@ func solicitar_mensaje_chat_global(mensaje: String, es_accion: bool = false) -> 
 	var jugador := _jugadores_servidor.get(peer_id) as Player
 	if not is_instance_valid(jugador):
 		return
-	var texto := mensaje.strip_edges().replace("\\n", " ").replace("\\r", " ").left(240)
+	var texto := mensaje.strip_edges().replace("\n", " ").replace("\r", " ").left(240)
 	if texto.is_empty():
 		return
 	var ahora := Time.get_ticks_msec()
