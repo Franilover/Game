@@ -334,7 +334,7 @@ func _seleccionar_eventos_estacionales(
 	for evento_variant in eventos_variant as Array:
 		if not evento_variant is Dictionary:
 			continue
-		var evento := (evento_variant as Dictionary).duplicate(true)
+		var evento: Dictionary = (evento_variant as Dictionary).duplicate(true)
 		var clave := str(evento.get("clave", "")).strip_edges()
 		if clave.is_empty():
 			continue
@@ -437,7 +437,7 @@ func _obtener_regla_climatica(contexto: Dictionary) -> Dictionary:
 			continue
 		var regla_variant: Variant = (reglas_variant as Dictionary).get(id, {})
 		if regla_variant is Dictionary and not (regla_variant as Dictionary).is_empty():
-			var combinada := config.duplicate(true)
+			var combinada: Dictionary = config.duplicate(true)
 			combinada.merge(regla_variant as Dictionary, true)
 			return combinada
 	return config
@@ -501,7 +501,7 @@ func _seleccionar_perfil_clima(regla: Dictionary, ambiente: Dictionary, semilla_
 		var peso_efectivo := _ajustar_peso_por_ambiente(tipo, peso_base, ambiente)
 		if peso_efectivo <= 0.0:
 			continue
-		var copia := perfil.duplicate(true)
+		var copia: Dictionary = perfil.duplicate(true)
 		copia["peso_efectivo"] = peso_efectivo
 		perfiles_ponderados.append(copia)
 		peso_total += peso_efectivo
@@ -511,7 +511,7 @@ func _seleccionar_perfil_clima(regla: Dictionary, ambiente: Dictionary, semilla_
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _semilla_determinista(semilla_texto + "|" + str(_world_atmosphere.anio if _world_atmosphere != null else 0))
-	var elegido := perfiles_ponderados.back()
+	var elegido: Dictionary = perfiles_ponderados.back()
 	var objetivo := rng.randf_range(0.0, peso_total)
 	for perfil in perfiles_ponderados:
 		objetivo -= float(perfil.get("peso_efectivo", 0.0))
