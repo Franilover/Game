@@ -134,7 +134,7 @@ func _process(delta: float) -> void:
 func _al_presionar_espacio() -> void:
 	if _admin_abierto() or _otra_interfaz_abierta() or visible_menu:
 		return
-	if not _estado_minijuego.is_empty() or not is_instance_valid(jugador):
+	if (_estado_minijuego != "" and _estado_minijuego != "espera_meditacion") or not is_instance_valid(jugador):
 		return
 	if not bool(jugador.get("is_alive")):
 		return
