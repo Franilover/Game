@@ -859,6 +859,10 @@ func enviar_mensaje_chat(mensaje: String, es_accion: bool = false) -> void:
 	if nombre.is_empty() and is_instance_valid(_local_player):
 		nombre = _local_player.personaje_nombre.strip_edges()
 	if nombre.is_empty():
+		var jugador_local := get_tree().get_first_node_in_group("player") as Player
+		if is_instance_valid(jugador_local):
+			nombre = jugador_local.personaje_nombre.strip_edges()
+	if nombre.is_empty():
 		nombre = "Explorador"
 	mensaje_chat_recibido.emit(nombre, texto, es_accion)
 
