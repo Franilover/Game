@@ -268,17 +268,28 @@ func _cargar_sprite() -> void:
 		var asset_key := str(datos.get("asset_key", criatura_nombre)).strip_edges()
 		if asset_key.is_empty() or asset_key.contains("/") or asset_key.contains("\\"):
 			asset_key = criatura_nombre
-		var rutas_garumi: Array[String] = [
-			"res://assets/art/garumis/" + asset_key + ".png",
-			"res://assets/art/garumis/" + asset_key + ".PNG",
-			"res://assets/art/garumis/" + asset_key + ".svg",
-			"res://assets/art/garumis/" + asset_key + ".SVG"
-		]
+		# Primero se intenta la clave visual del catálogo. Si está vacía o
+		# desactualizada, se usa el nombre visible; así Velki.png y Velkor.png
+		# se cargan aunque el registro no tenga asset_key específico.
+		var claves_asset: Array[String] = [asset_key]
+		if criatura_nombre.strip_edges() != asset_key:
+			claves_asset.append(criatura_nombre.strip_edges())
 		var textura_garumi: Texture2D = null
-		for ruta_garumi in rutas_garumi:
-			if not ResourceLoader.exists(ruta_garumi):
+		for clave_asset in claves_asset:
+			if clave_asset.is_empty() or clave_asset.contains("/") or clave_asset.contains("\\\\"):
 				continue
-			textura_garumi = load(ruta_garumi) as Texture2D
+			var rutas_garumi: Array[String] = [
+				"res://assets/art/garumis/" + clave_asset + ".png",
+				"res://assets/art/garumis/" + clave_asset + ".PNG",
+				"res://assets/art/garumis/" + clave_asset + ".svg",
+				"res://assets/art/garumis/" + clave_asset + ".SVG"
+			]
+			for ruta_garumi in rutas_garumi:
+				if not ResourceLoader.exists(ruta_garumi):
+					continue
+				textura_garumi = load(ruta_garumi) as Texture2D
+				if textura_garumi != null:
+					break
 			if textura_garumi != null:
 				break
 		var sprite_garumi := get_node_or_null("Sprite2D") as Sprite2D
