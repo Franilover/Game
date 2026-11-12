@@ -206,8 +206,6 @@ func _process(delta: float) -> void:
 		if nodo is CanvasItem and (nodo as CanvasItem).visible:
 			inventario_abierto = true
 			break
-	if is_instance_valid(_garumis_vinculados_panel):
-		_garumis_vinculados_panel.visible = false
 	if is_instance_valid(_calendar_panel):
 		_calendar_panel.visible = not inventario_abierto and not _combate_garumi_activo
 	_calendar_elapsed += delta
