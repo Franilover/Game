@@ -17,6 +17,7 @@ var _sugerencias_scroll: ScrollContainer
 var _sugerencias_lista: VBoxContainer
 
 var _abierto: bool = false
+var _pauso_al_abrir := false
 var _sugerencias: Array[String] = []
 var _historial_comandos: Array[String] = []
 var _indice_historial_comandos: int = -1
@@ -69,6 +70,8 @@ func _ready() -> void:
 
 	_crear_interfaz()
 	visible = false
+	if not GarliaWorldNetwork.mensaje_chat_recibido.is_connected(_al_recibir_mensaje_chat):
+		GarliaWorldNetwork.mensaje_chat_recibido.connect(_al_recibir_mensaje_chat)
 
 	if WorldData.has_signal("mundo_listo"):
 		WorldData.mundo_listo.connect(
@@ -121,7 +124,9 @@ func abrir() -> void:
 	_abierto = true
 	visible = true
 
-	get_tree().paused = true
+	_pauso_al_abrir = not GarliaWorldNetwork.es_cliente_en_mundo_global() and not get_tree().paused
+	if _pauso_al_abrir:
+		get_tree().paused = true
 
 	_entrada.clear()
 	_indice_historial_comandos = -1
@@ -142,7 +147,9 @@ func cerrar() -> void:
 	_entrada.release_focus()
 	_ocultar_sugerencias()
 
-	get_tree().paused = false
+	if _pauso_al_abrir:
+		get_tree().paused = false
+	_pauso_al_abrir = false
 
 
 func esta_abierta() -> bool:
@@ -757,9 +764,6 @@ func _al_enviar_comando(texto: String) -> void:
 	if comando.is_empty():
 		return
 
-	_agregar_linea(
-		"> " + comando
-	)
 	if _historial_comandos.is_empty() or _historial_comandos.back() != comando:
 		_historial_comandos.append(comando)
 		if _historial_comandos.size() > MAX_HISTORIAL_COMANDOS:
@@ -770,7 +774,11 @@ func _al_enviar_comando(texto: String) -> void:
 	_entrada.clear()
 	_ocultar_sugerencias()
 
-	_ejecutar_comando(comando)
+	if comando.begins_with("/"):
+		_agregar_linea("[color=#888888]> " + _escapar_bbcode(comando) + "[/color]")
+		_ejecutar_comando(comando)
+	else:
+		GarliaWorldNetwork.enviar_mensaje_chat(comando)
 
 	if _abierto:
 		_entrada.grab_focus()
@@ -1305,3 +1313,20 @@ func _agregar_linea(texto: String) -> void:
 	_historial.append_text(
 		"\n" + texto
 	)
+
+
+func _al_recibir_mensaje_chat(nombre: String, mensaje: String, es_accion: bool) -> void:
+	var nombre_seguro := _escapar_bbcode(nombre)
+	var mensaje_seguro := _escapar_bbcode(mensaje)
+	if es_accion:
+		_agregar_linea("[color=#d6b58c]" + nombre_seguro + " " + mensaje_seguro + "[/color]")
+	else:
+		_agregar_linea("[color=#b4befe]" + nombre_seguro + ":[/color] " + mensaje_seguro)
+
+
+func _escapar_bbcode(texto: String) -> String:
+	return texto.replace("[", "[lb]")
+
+
+func _publicar_accion_chat(mensaje: String) -> void:
+	GarliaWorldNetwork.enviar_mensaje_chat(mensaje, true)
