@@ -1,6 +1,8 @@
 extends Entity
 class_name Player
 
+const INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_input_controller.gd")
+
 
 signal stamina_changed(current: float, maximum: float)
 signal fisiologia_changed(vida_eterium_compartidos: bool)
@@ -64,7 +66,7 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 var visual_controller := PlayerVisualController.new()
 var dash_input_controller := PlayerDashInputController.new()
-var input_controller := PlayerInputController.new()
+var input_controller = INPUT_CONTROLLER_SCRIPT.new()
 var physics_movement_controller := PlayerMovementPhysicsController.new()
 
 var _world_context_ref: WorldContext = null
@@ -180,8 +182,17 @@ func _actualizar_recuperacion_eterium(delta: float) -> void:
 	eterium.actualizar_recuperacion(delta, true)
 
 
+func _obtener_input_controller():
+	# Recuperación defensiva: el controlador debe existir incluso si una escena,
+	# herramienta o extensión externa limpió la referencia durante la partida.
+	if input_controller == null or not is_instance_valid(input_controller):
+		input_controller = INPUT_CONTROLLER_SCRIPT.new()
+	return input_controller
+
+
 func _input(event: InputEvent) -> void:
-	if input_controller.es_combinacion_menu_reinos(event):
+	var controlador_entrada = _obtener_input_controller()
+	if controlador_entrada.es_combinacion_menu_reinos(event):
 		dash_input_controller.cancelar_por_menu_reinos()
 
 
@@ -339,7 +350,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# Capturar una sola instantánea de controles para este tick físico.
-	var entrada := input_controller.capturar()
+	var controlador_entrada = _obtener_input_controller()
+	var entrada: Dictionary = controlador_entrada.capturar()
 
 	# Curación con Eterium mientras se mantiene Q.
 	if bool(entrada.get("focus_pressed", false)) and not eterium.vida_eterium_compartidos():
