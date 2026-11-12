@@ -26,6 +26,7 @@ var estacion_actual: Dictionary = {}
 var _calendario_cargado: bool = false
 var _estado_guardado_pendiente: Dictionary = {}
 var _tiempo_bloqueado: bool = false
+var _multiplicador_tiempo: int = 1
 var _anio_inicio: int = 0
 
 var _modulacion: CanvasModulate
@@ -72,7 +73,7 @@ func _process(delta: float) -> void:
 	)
 
 	var incremento_horas := (
-		delta * horas_por_dia
+		delta * horas_por_dia * float(_multiplicador_tiempo)
 		/ duracion_real_segundos
 	)
 
@@ -442,6 +443,17 @@ func _obtener_hora_texto() -> String:
 		minutos
 	]
 
+
+
+func establecer_multiplicador_tiempo(multiplicador: int) -> bool:
+	if multiplicador not in [1, 10, 60]:
+		return false
+	_multiplicador_tiempo = multiplicador
+	return true
+
+
+func obtener_multiplicador_tiempo() -> int:
+	return _multiplicador_tiempo
 
 
 func bloquear_tiempo() -> void:
