@@ -76,6 +76,7 @@ var _estados_colision_exterior: Dictionary = {}
 var _capa_interior: Node2D
 var _aviso_panel: PanelContainer
 var _aviso: Label
+var _boton_entrar: Button
 var _boton_dormir: Button
 var _camas_interactivas: Array[Vector2] = []
 var _entrada_aviso_actual: Dictionary = {}
@@ -220,6 +221,7 @@ func _process(_delta: float) -> void:
 			and posicion_local.x >= -12.0 \
 			and posicion_local.x <= 132.0
 		_entrada_aviso_actual.clear()
+		_boton_entrar.visible = false
 		_aviso_panel.visible = false
 		_aviso.text = ""
 		if cerca_salida:
@@ -228,9 +230,10 @@ func _process(_delta: float) -> void:
 
 	_boton_dormir.visible = false
 	var entrada_cercana: Dictionary = {}
-	var distancia_menor := 58.0
+	var distancia_menor := 84.0
+	var posicion_jugador_local := to_local(_jugador.global_position)
 	for entrada: Dictionary in ENTRADAS:
-		var distancia := _jugador.global_position.distance_to(to_global(entrada["pos"]))
+		var distancia := posicion_jugador_local.distance_to(entrada["pos"])
 		if distancia < distancia_menor:
 			distancia_menor = distancia
 			entrada_cercana = entrada
@@ -242,7 +245,8 @@ func _process(_delta: float) -> void:
 		return
 
 	_aviso.text = "Entrar"
-	_aviso_panel.visible = true
+	_aviso_panel.visible = false
+	_boton_entrar.visible = true
 	_posicionar_aviso_sobre_jugador()
 
 
@@ -272,6 +276,18 @@ func _crear_aviso() -> void:
 	add_child(capa_ui)
 	capa_ui.add_child(_aviso_panel)
 
+	_boton_entrar = Button.new()
+	_boton_entrar.name = "BotonEntrar"
+	_boton_entrar.text = "Entrar"
+	_boton_entrar.custom_minimum_size = Vector2(88.0, 30.0)
+	_boton_entrar.mouse_filter = Control.MOUSE_FILTER_STOP
+	_boton_entrar.focus_mode = Control.FOCUS_NONE
+	_boton_entrar.z_index = 51
+	_boton_entrar.visible = false
+	_boton_entrar.pressed.connect(_al_pulsar_entrar)
+	PIXEL_UI_THEME.apply(_boton_entrar, false)
+	capa_ui.add_child(_boton_entrar)
+
 	_boton_dormir = Button.new()
 	_boton_dormir.name = "BotonDormir"
 	_boton_dormir.text = "Dormir"
@@ -288,10 +304,12 @@ func _posicionar_aviso_sobre_jugador() -> void:
 	if not is_instance_valid(_aviso_panel) or not is_instance_valid(_jugador):
 		return
 	var posicion_pantalla: Vector2 = _jugador.get_global_transform_with_canvas().origin
-	var tamano := _aviso_panel.get_combined_minimum_size()
-	_aviso_panel.size = tamano
+	if not is_instance_valid(_boton_entrar):
+		return
+	var tamano := _boton_entrar.get_combined_minimum_size()
+	_boton_entrar.size = tamano
 	var viewport := get_viewport().get_visible_rect().size
-	_aviso_panel.position = Vector2(
+	_boton_entrar.position = Vector2(
 		clampf(posicion_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
 		clampf(posicion_pantalla.y - tamano.y - 24.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
 	)
@@ -339,7 +357,7 @@ func _input(evento: InputEvent) -> void:
 	if not evento is InputEventMouseButton:
 		return
 	var clic := evento as InputEventMouseButton
-	if not clic.pressed or clic.button_index not in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+	if not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT:
 		return
 
 	# La cama toma prioridad sobre el uso de las manos y el combate.
@@ -353,16 +371,24 @@ func _input(evento: InputEvent) -> void:
 			_al_pulsar_dormir()
 		return
 
-	# Mientras haya una entrada/salida al alcance, el clic se consume aquí,
-	# independientemente de dónde esté el cursor, antes de que llegue al combate.
-	if _entrada_aviso_actual.is_empty() or not _aviso_panel.visible:
+	# El botón visible gestiona su propio clic. También se admite pulsar
+	# directamente sobre la puerta para entrar sin depender del botón flotante.
+	if _entrada_aviso_actual.is_empty():
+		return
+	if is_instance_valid(_boton_entrar) and _boton_entrar.visible and _boton_entrar.get_global_rect().has_point(clic.position):
+		return
+	var posicion_clic_mundo := get_global_mouse_position()
+	var posicion_puerta := to_global(_entrada_aviso_actual["pos"])
+	if posicion_clic_mundo.distance_to(posicion_puerta) > 76.0:
 		return
 	get_viewport().set_input_as_handled()
-	var accion := _entrada_aviso_actual.duplicate(true)
-	if bool(accion.get("salir", false)):
-		_salir_del_interior()
-	else:
-		_entrar_al_interior(accion)
+	_entrar_al_interior(_entrada_aviso_actual.duplicate(true))
+
+
+func _al_pulsar_entrar() -> void:
+	if _interior_activo or _entrada_aviso_actual.is_empty():
+		return
+	_entrar_al_interior(_entrada_aviso_actual.duplicate(true))
 
 
 func _hay_objeto_en_manos() -> bool:
@@ -842,6 +868,7 @@ func _cargar_sprites_de_torres() -> void:
 func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
 		return
+	_boton_entrar.visible = false
 	_posicion_exterior = _jugador.global_position
 	_entrada_interior_id = str(entrada.get("id", ""))
 	_camas_interactivas.clear()
@@ -873,6 +900,7 @@ func _salir_del_interior() -> void:
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
 	_boton_dormir.visible = false
+	_boton_entrar.visible = false
 	_camas_interactivas.clear()
 	for child: Node in get_children():
 		if child == _capa_interior or child == _aviso:
