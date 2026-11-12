@@ -71,6 +71,14 @@ var _garumis_vinculados_lista: HBoxContainer = null
 var _garumis_vinculados_titulo: Label = null
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
+var _garumi_companero_actual: Node = null
+var _garumi_companero_slot: Button = null
+var _garumi_selector_panel: PanelContainer = null
+var _garumi_selector_lista: HBoxContainer = null
+var _r_hold_activo := false
+var _r_hold_elapsed := 0.0
+var _r_selector_abierto := false
+const R_HOLD_DELAY := 0.24
 var _dialogo_ruptura_vinculo: ConfirmationDialog = null
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
@@ -176,6 +184,7 @@ func _conectar_senal_game_state() -> void:
 
 func _process(delta: float) -> void:
 	_actualizar_vidas_garumis_vinculados()
+	_procesar_hold_companero(delta)
 	_eterium_ui_elapsed += delta
 	if _eterium_ui_elapsed >= 0.1:
 		_eterium_ui_elapsed = 0.0
@@ -198,10 +207,7 @@ func _process(delta: float) -> void:
 			inventario_abierto = true
 			break
 	if is_instance_valid(_garumis_vinculados_panel):
-		_garumis_vinculados_panel.visible = (
-			not inventario_abierto
-			and not _combate_garumi_activo
-		)
+		_garumis_vinculados_panel.visible = false
 	if is_instance_valid(_calendar_panel):
 		_calendar_panel.visible = not inventario_abierto and not _combate_garumi_activo
 	_calendar_elapsed += delta
@@ -1210,6 +1216,19 @@ func accion_controles_moviles(accion: String) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var hand_key := event as InputEventKey
+		if hand_key.keycode == KEY_R:
+			if hand_key.pressed and not hand_key.echo:
+				if not _combate_garumi_activo and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
+					_r_hold_activo = true
+					_r_hold_elapsed = 0.0
+					get_viewport().set_input_as_handled()
+					return
+			elif not hand_key.pressed and _r_hold_activo:
+				_r_hold_activo = false
+				if not _r_selector_abierto:
+					_alternar_companero_actual()
+				get_viewport().set_input_as_handled()
+				return
 		# Capturar Tab en _input para evitar que otro control consuma la entrada.
 		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_M and not hand_key.shift_pressed:
 			var inventory_node := get_tree().get_first_node_in_group("inventory")
@@ -1327,21 +1346,61 @@ func _actualizar_reloj_calendario() -> void:
 
 
 func _preparar_panel_garumis_vinculados() -> void:
+	# El panel anterior de tres círculos deja de mostrarse. Conservamos el
+	# registro interno de vínculos para salud, persistencia y selección.
 	_garumis_vinculados_panel = GARUMI_LINKED_PANEL_SCENE.instantiate() as HBoxContainer
-	if _garumis_vinculados_panel == null:
-		push_error("HUD: no se pudo instanciar hud_garumi_linked_panel.tscn.")
+	if is_instance_valid(_garumis_vinculados_panel):
+		_garumis_vinculados_panel.visible = false
+		_garumis_vinculados_lista = _garumis_vinculados_panel.get_node("GarumiSlots") as HBoxContainer
+		add_child(_garumis_vinculados_panel)
+		for i in range(3):
+			_crear_hueco_garumi(i + 1)
+
+	_garumi_companero_slot = HAND_SLOT_SCENE.instantiate() as Button
+	if not is_instance_valid(_garumi_companero_slot):
+		push_error("HUD: no se pudo crear el botón de compañero R.")
 		return
-	_garumis_vinculados_panel.position = Vector2(18.0, 18.0)
-	_garumis_vinculados_lista = _garumis_vinculados_panel.get_node("GarumiSlots") as HBoxContainer
-	if _garumis_vinculados_lista == null:
-		push_error("HUD: falta GarumiSlots en hud_garumi_linked_panel.tscn.")
-		return
-	add_child(_garumis_vinculados_panel)
-	for i in range(3):
-		_crear_hueco_garumi(i + 1)
+	_garumi_companero_slot.name = "GarumiCompanionSlot"
+	_garumi_companero_slot.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_garumi_companero_slot.anchor_left = 0.5
+	_garumi_companero_slot.anchor_right = 0.5
+	_garumi_companero_slot.anchor_top = 1.0
+	_garumi_companero_slot.anchor_bottom = 1.0
+	_garumi_companero_slot.offset_top = -48.0
+	_garumi_companero_slot.offset_bottom = 0.0
+	_garumi_companero_slot.offset_left = -24.0
+	_garumi_companero_slot.offset_right = 24.0
+	PIXEL_UI_THEME.apply(_garumi_companero_slot)
+	_garumi_companero_slot.tooltip_text = "Compañero (R): guardar o liberar · mantener R para elegir"
+	var etiqueta := _garumi_companero_slot.get_node_or_null("HandKey") as Label
+	if is_instance_valid(etiqueta):
+		etiqueta.text = "R"
+	_garumi_companero_slot.pressed.connect(_alternar_companero_actual)
+	add_child(_garumi_companero_slot)
+
+	_garumi_selector_panel = PanelContainer.new()
+	_garumi_selector_panel.name = "GarumiCompanionSelector"
+	_garumi_selector_panel.visible = false
+	_garumi_selector_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_garumi_selector_panel.anchor_left = 0.5
+	_garumi_selector_panel.anchor_right = 0.5
+	_garumi_selector_panel.anchor_top = 1.0
+	_garumi_selector_panel.anchor_bottom = 1.0
+	_garumi_selector_panel.offset_left = -91.0
+	_garumi_selector_panel.offset_right = 91.0
+	_garumi_selector_panel.offset_top = -108.0
+	_garumi_selector_panel.offset_bottom = -54.0
+	PIXEL_UI_THEME.apply(_garumi_selector_panel, false)
+	_garumi_selector_lista = HBoxContainer.new()
+	_garumi_selector_lista.alignment = BoxContainer.ALIGNMENT_CENTER
+	_garumi_selector_lista.add_theme_constant_override("separation", 5)
+	_garumi_selector_panel.add_child(_garumi_selector_lista)
+	add_child(_garumi_selector_panel)
 
 
 func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
+	if not is_instance_valid(_garumis_vinculados_lista):
+		return null
 	var slot := GARUMI_LINKED_SLOT_SCENE.instantiate() as HBoxContainer
 	if slot == null:
 		push_error("HUD: no se pudo instanciar hud_garumi_linked_slot.tscn.")
@@ -1351,28 +1410,24 @@ func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
 	var numero := slot.get_node("Numero") as Button
 	var anillo := slot.get_node("Vida") as GarumiHealthRing
 	if numero == null or anillo == null:
-		push_error("HUD: el slot de Garumi necesita Numero y Vida.")
 		slot.free()
 		return null
 	numero.text = str(numero_slot)
-	numero.tooltip_text = "Invocar / guardar Garumi %d" % numero_slot
-	numero.pressed.connect(_activar_garumi_por_indice.bind(numero_slot - 1))
 	_garumis_vinculados_lista.add_child(slot)
 	return slot
 
 
-func mostrar_panel_garumis_durante_combate(mostrar: bool) -> void:
-	if not is_instance_valid(_garumis_vinculados_panel):
-		return
-	# Durante el combate solo se muestran los marcos del aliado y del rival.
-	_garumis_vinculados_panel.visible = mostrar and not _garumis_vinculados_nodos.is_empty()
-	_actualizar_vidas_garumis_vinculados()
+func mostrar_panel_garumis_durante_combate(_mostrar: bool) -> void:
+	if is_instance_valid(_garumis_vinculados_panel):
+		_garumis_vinculados_panel.visible = false
 
 
 func establecer_estado_combate_garumi(activo: bool) -> void:
 	_combate_garumi_activo = activo
 	if is_instance_valid(_calendar_panel):
 		_calendar_panel.visible = not activo
+	if activo:
+		_cerrar_selector_companero()
 
 
 func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> void:
@@ -1394,6 +1449,7 @@ func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> 
 	discovery_notice.visible = true
 	_discovery_notice_timer = 3.8
 
+
 func registrar_garumi_restaurado(garumi: Node) -> void:
 	if not is_instance_valid(garumi):
 		return
@@ -1403,37 +1459,109 @@ func registrar_garumi_restaurado(garumi: Node) -> void:
 	_agregar_garumi_vinculado(garumi, nombre)
 
 
-func _agregar_garumi_vinculado(garumi: Node, nombre: String) -> void:
-	if not is_instance_valid(garumi) or _garumis_vinculados_lista == null:
+func _agregar_garumi_vinculado(garumi: Node, _nombre: String) -> void:
+	if not is_instance_valid(garumi):
 		return
 	var id := str(garumi.get_instance_id())
 	if _garumis_vinculados_ids.has(id):
-		actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
+		_actualizar_selector_companero()
 		return
 	if _garumis_vinculados_nodos.size() >= 3:
 		return
-	var slot: HBoxContainer = null
-	for candidato in _garumis_vinculados_lista.get_children():
-		if candidato is HBoxContainer and str(candidato.get_meta("garumi_id", "")) == "":
-			slot = candidato as HBoxContainer
-			break
-	if slot == null:
-		return
 	_garumis_vinculados_ids[id] = true
 	_garumis_vinculados_nodos.append(garumi)
-	slot.set_meta("garumi_id", id)
-	var numero := slot.get_node_or_null("Numero") as Button
-	if numero != null:
-		numero.text = str(_garumis_vinculados_nodos.size())
-		numero.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-	var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
-	if anillo != null:
-		anillo.occupied = true
-		var retrato := anillo.get_node_or_null("Retrato") as TextureRect
-		if retrato != null:
-			retrato.texture = _buscar_textura_garumi(garumi)
-	_actualizar_vidas_garumis_vinculados()
-	actualizar_estado_garumi(garumi, bool(garumi.call("esta_guardado")) if garumi.has_method("esta_guardado") else false)
+	if not is_instance_valid(_garumi_companero_actual):
+		_establecer_companero(garumi)
+	else:
+		if garumi.has_method("establecer_estado_companero"):
+			garumi.call("establecer_estado_companero", player, false)
+	_actualizar_selector_companero()
+
+
+func _procesar_hold_companero(delta: float) -> void:
+	if not _r_hold_activo or _r_selector_abierto:
+		return
+	_r_hold_elapsed += delta
+	if _r_hold_elapsed >= R_HOLD_DELAY:
+		_abrir_selector_companero()
+
+
+func _abrir_selector_companero() -> void:
+	if _combate_garumi_activo or not is_instance_valid(_garumi_selector_panel):
+		return
+	_r_selector_abierto = true
+	for hijo in _garumi_selector_lista.get_children():
+		hijo.queue_free()
+	for i in range(_garumis_vinculados_nodos.size()):
+		var garumi := _garumis_vinculados_nodos[i]
+		if not is_instance_valid(garumi):
+			continue
+		var boton := HAND_SLOT_SCENE.instantiate() as Button
+		if boton == null:
+			continue
+		boton.name = "ElegirGarumi%d" % (i + 1)
+		boton.custom_minimum_size = Vector2(42, 42)
+		boton.text = ""
+		boton.tooltip_text = "%d · %s" % [i + 1, str(garumi.get("criatura_nombre"))]
+		var tecla := boton.get_node_or_null("HandKey") as Label
+		if is_instance_valid(tecla):
+			tecla.text = str(i + 1)
+		var textura := _buscar_textura_garumi(garumi)
+		if textura != null:
+			boton.icon = textura
+		boton.pressed.connect(_seleccionar_companero.bind(garumi))
+		_garumi_selector_lista.add_child(boton)
+	_garumi_selector_panel.visible = not _garumis_vinculados_nodos.is_empty()
+	_garumi_selector_panel.move_to_front()
+
+
+func _cerrar_selector_companero() -> void:
+	_r_selector_abierto = false
+	if is_instance_valid(_garumi_selector_panel):
+		_garumi_selector_panel.visible = false
+
+
+func _seleccionar_companero(garumi: Node) -> void:
+	if not is_instance_valid(garumi):
+		return
+	_establecer_companero(garumi)
+	_cerrar_selector_companero()
+
+
+func _establecer_companero(garumi: Node) -> void:
+	if not is_instance_valid(garumi) or not _garumis_vinculados_nodos.has(garumi):
+		return
+	if is_instance_valid(_garumi_companero_actual) and _garumi_companero_actual != garumi:
+		if _garumi_companero_actual.has_method("establecer_estado_companero"):
+			_garumi_companero_actual.call("establecer_estado_companero", player, false)
+	_garumi_companero_actual = garumi
+	if is_instance_valid(player) and garumi.has_method("establecer_estado_companero"):
+		garumi.call("establecer_estado_companero", player, true)
+	_actualizar_selector_companero()
+
+
+func _alternar_companero_actual() -> void:
+	if not is_instance_valid(_garumi_companero_actual) or not is_instance_valid(player):
+		if not _garumis_vinculados_nodos.is_empty():
+			_establecer_companero(_garumis_vinculados_nodos[0])
+		return
+	var guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
+	if _garumi_companero_actual.has_method("establecer_estado_companero"):
+		_garumi_companero_actual.call("establecer_estado_companero", player, guardado)
+	_actualizar_selector_companero()
+
+
+func _actualizar_selector_companero() -> void:
+	if not is_instance_valid(_garumi_companero_slot):
+		return
+	var retrato := _buscar_textura_garumi(_garumi_companero_actual) if is_instance_valid(_garumi_companero_actual) else null
+	_garumi_companero_slot.icon = retrato
+	_garumi_companero_slot.text = "" if retrato != null else "—"
+	if is_instance_valid(_garumi_companero_actual):
+		var guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
+		_garumi_companero_slot.tooltip_text = "%s · %s (R)" % [str(_garumi_companero_actual.get("criatura_nombre")), "guardado" if guardado else "acompañándote"]
+	else:
+		_garumi_companero_slot.tooltip_text = "Sin compañero · mantener R para elegir"
 
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
@@ -1557,23 +1685,16 @@ func _al_cancelar_dialogo_ruptura() -> void:
 
 
 func eliminar_garumi_vinculado(garumi: Node) -> void:
-	if not is_instance_valid(garumi) or not is_instance_valid(_garumis_vinculados_lista):
+	if not is_instance_valid(garumi):
 		return
 	var id := str(garumi.get_instance_id())
-	var slot := _obtener_slot_garumi(garumi)
-	if slot != null:
-		slot.set_meta("garumi_id", "")
-		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
-		if anillo != null:
-			anillo.occupied = false
-			anillo.health_ratio = 1.0
-			var retrato := anillo.get_node_or_null("Retrato") as TextureRect
-			if retrato != null:
-				retrato.texture = null
-			anillo.queue_redraw()
 	_garumis_vinculados_ids.erase(id)
 	_garumis_vinculados_nodos.erase(garumi)
-	_renumerar_garumis_vinculados()
+	if _garumi_companero_actual == garumi:
+		_garumi_companero_actual = null
+		if not _garumis_vinculados_nodos.is_empty():
+			_establecer_companero(_garumis_vinculados_nodos[0])
+	_actualizar_selector_companero()
 
 
 func _actualizar_titulo_garumis_vinculados() -> void:
@@ -1649,16 +1770,6 @@ func _obtener_slot_garumi(garumi: Node) -> HBoxContainer:
 	return null
 
 
-func actualizar_estado_garumi(garumi: Node, guardado: bool) -> void:
-	if not is_instance_valid(garumi):
-		return
-	var slot := _obtener_slot_garumi(garumi)
-	if slot == null:
-		return
-	var numero := slot.get_node_or_null("Numero") as Button
-	if numero != null:
-		numero.visible = true
-		numero.add_theme_color_override(
-			"font_color",
-			Color(0.88, 0.75, 0.53, 1.0) if not guardado else Color(0.13, 0.10, 0.075, 1.0)
-		)
+func actualizar_estado_garumi(garumi: Node, _guardado: bool) -> void:
+	if garumi == _garumi_companero_actual:
+		_actualizar_selector_companero()
