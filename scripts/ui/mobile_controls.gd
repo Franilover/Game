@@ -32,7 +32,6 @@ func _ready() -> void:
 		"run": $Actions/Dash,
 		"jump": $Actions/Jump,
 		"inventory": $Actions/Inventory,
-		"ium_menu": $Actions/IUM,
 	}
 
 	for accion in _botones:
@@ -53,16 +52,13 @@ func _configurar_estilo_joystick() -> void:
 
 
 func _configurar_boton(boton: BaseButton, accion: String) -> void:
-	var acciones_ui := ["ium_menu"]
-	if boton == null or (not InputMap.has_action(accion) and not acciones_ui.has(accion) and accion != "inventory"):
+	if boton == null or (not InputMap.has_action(accion) and accion != "inventory"):
 		push_warning("Control móvil: no existe la acción InputMap '%s'." % accion)
 		return
 	boton.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
 	boton.focus_mode = Control.FOCUS_NONE
 	boton.mouse_filter = Control.MOUSE_FILTER_STOP
-	if accion == "ium_menu":
-		boton.button_down.connect(func() -> void: _solicitar_hud("toggle_ium"))
-	elif accion == "inventory":
+	if accion == "inventory":
 		boton.button_down.connect(func() -> void: _solicitar_inventario())
 	else:
 		boton.button_down.connect(func() -> void: _presionar_accion(accion))
@@ -74,10 +70,10 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 		return
 	var nombres := {
 		"interact": "F", "primary_action": "A", "secondary_action": "B",
-		"run": "⇢", "jump": "↑", "inventory": "Tab", "ium_menu": "X"
+		"run": "⇢", "jump": "↑", "inventory": "Tab"
 	}
 	boton.text = str(nombres.get(accion, "•"))
-	boton.add_theme_font_size_override("font_size", 18 if accion.begins_with("hand_") or accion == "ium_menu" else 22)
+	boton.add_theme_font_size_override("font_size", 18 if accion.begins_with("hand_")  else 22)
 	boton.add_theme_color_override("font_color", Color("#eee8d5"))
 	boton.add_theme_color_override("font_hover_color", Color("#ffffff"))
 	boton.add_theme_color_override("font_pressed_color", Color("#b4cbe0"))
@@ -101,7 +97,7 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	boton.tooltip_text = str({
 		"interact": "Interactuar", "primary_action": "Acción principal",
 		"secondary_action": "Acción secundaria", "run": "Dash / correr",
-		"jump": "Saltar", "inventory": "Abrir inventario", "ium_menu": "Menú de IUMs"
+		"jump": "Saltar", "inventory": "Abrir inventario"
 	}.get(accion, accion.capitalize()))
 
 
@@ -130,7 +126,6 @@ func _distribuir_controles() -> void:
 	var bottom := viewport_size.y - margen
 	# Inventario e IUM quedan separados del joystick; las ranuras de mano del HUD son seleccionables.
 	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
-	_posicionar($Actions/IUM, Vector2(margen + a + gap, margen), Vector2(a, a))
 	# Acciones de combate en bloque compacto, con separación real entre hitboxes.
 	_posicionar($Actions/Primary, Vector2(right - a, bottom - a), Vector2(a, a))
 	_posicionar($Actions/Jump, Vector2(right - a * 2.0 - gap, bottom - a * 1.65 - gap), Vector2(a, a))
