@@ -246,6 +246,7 @@ func _procesar_movimiento_red(delta: float) -> void:
 	if locomotion.actualizar_facing(direccion):
 		facing = locomotion.obtener_facing()
 		_update_dir_marker()
+		_update_visual()
 
 	if state == State.JUMP:
 		_procesar_jump(delta)
@@ -430,6 +431,7 @@ func _calcular_movimiento_normal(
 		if not facing.is_equal_approx(nuevo_facing):
 			facing = nuevo_facing
 			_update_dir_marker()
+			_update_visual()
 	return velocidad
 
 
