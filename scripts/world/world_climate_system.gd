@@ -360,7 +360,7 @@ func _seleccionar_eventos_estacionales(
 
 		var probabilidad := clampf(float(evento.get("probabilidad_diaria", 1.0)), 0.0, 1.0)
 		var rng := RandomNumberGenerator.new()
-		rng.seed = abs(hash(semilla_texto + "|evento|" + clave))
+		rng.seed = _semilla_determinista(semilla_texto + "|evento|" + clave)
 		if rng.randf() > probabilidad:
 			continue
 		evento["dia_estacion"] = dia
@@ -412,6 +412,13 @@ func _obtener_clave_fecha() -> String:
 	if _world_atmosphere == null:
 		return "sin_fecha"
 	return "%s:%s" % [_world_atmosphere.anio, _world_atmosphere.dia_del_anio]
+
+
+func _semilla_determinista(texto: String) -> int:
+	var semilla_mundo := 0
+	if _world_context != null and _world_context.tiene_mundo_activo():
+		semilla_mundo = _world_context.get_map_seed()
+	return abs(hash("%s|mundo:%s" % [texto, semilla_mundo]))
 
 
 func _obtener_regla_climatica(contexto: Dictionary) -> Dictionary:
@@ -503,7 +510,7 @@ func _seleccionar_perfil_clima(regla: Dictionary, ambiente: Dictionary, semilla_
 		return {"tipo": "despejado", "intensidad": 1.0}
 
 	var rng := RandomNumberGenerator.new()
-	rng.seed = abs(hash(semilla_texto + "|" + str(_world_atmosphere.anio if _world_atmosphere != null else 0)))
+	rng.seed = _semilla_determinista(semilla_texto + "|" + str(_world_atmosphere.anio if _world_atmosphere != null else 0))
 	var elegido := perfiles_ponderados.back()
 	var objetivo := rng.randf_range(0.0, peso_total)
 	for perfil in perfiles_ponderados:
