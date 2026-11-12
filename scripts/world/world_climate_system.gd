@@ -74,7 +74,7 @@ var _transicion_duracion: float = 0.0
 var _transicion_transcurrida: float = 0.0
 var _fenomenos_activos: Dictionary = {}
 var _eventos_estacionales_activos: Dictionary = {}
-var _world_data: WorldDataService
+var _world_data: Node
 var _world_atmosphere: WorldAtmosphere
 var _world_context: WorldContext
 var _estados_contexto_cache: Dictionary = {}
@@ -82,7 +82,7 @@ var _clave_dia_actual: String = ""
 
 
 func configurar_dependencias(
-	world_data: WorldDataService,
+	world_data: Node,
 	world_atmosphere: WorldAtmosphere,
 	world_context: WorldContext = null
 ) -> void:
@@ -97,11 +97,11 @@ func configurar_dependencias(
 	if not _world_atmosphere.estacion_cambiada.is_connected(_al_cambiar_estacion):
 		_world_atmosphere.estacion_cambiada.connect(_al_cambiar_estacion)
 	if _world_data != null:
-		if not _world_data.mundo_listo.is_connected(_al_recibir_datos_mundo):
-			_world_data.mundo_listo.connect(_al_recibir_datos_mundo)
-		if not _world_data.mundo_actualizado.is_connected(_al_recibir_datos_mundo):
-			_world_data.mundo_actualizado.connect(_al_recibir_datos_mundo)
-	if _world_data != null and _world_data.esta_cargado():
+		var callback := Callable(self, "_al_recibir_datos_mundo")
+		for senal in ["mundo_listo", "mundo_actualizado"]:
+			if _world_data.has_signal(senal) and not _world_data.is_connected(senal, callback):
+				_world_data.connect(senal, callback)
+	if _world_data != null and _world_data.has_method("esta_cargado") and bool(_world_data.call("esta_cargado")):
 		_al_recibir_datos_mundo()
 	else:
 		_actualizar_clima_diario()
@@ -448,14 +448,14 @@ func _obtener_factores_ambientales(contexto: Dictionary, estacion_id: String) ->
 	if _world_data != null and not estacion_id.is_empty():
 		var habitat_id := str(contexto.get("habitat_id", ""))
 		var ecosistema_id := str(contexto.get("ecosistema_id", ""))
-		if not habitat_id.is_empty():
-			factores = _world_data.obtener_ambiente_estacional_habitat(estacion_id, habitat_id)
-		if factores.is_empty() and not ecosistema_id.is_empty():
-			factores = _world_data.obtener_ambiente_estacional_ecosistema(estacion_id, ecosistema_id)
-		if factores.is_empty() and not habitat_id.is_empty():
-			factores = _world_data.obtener_factores_ambientales_habitat(habitat_id)
-		if factores.is_empty() and not ecosistema_id.is_empty():
-			factores = _world_data.obtener_factores_ambientales_ecosistema(ecosistema_id)
+		if not habitat_id.is_empty() and _world_data.has_method("obtener_ambiente_estacional_habitat"):
+			factores = _world_data.call("obtener_ambiente_estacional_habitat", estacion_id, habitat_id)
+		if factores.is_empty() and not ecosistema_id.is_empty() and _world_data.has_method("obtener_ambiente_estacional_ecosistema"):
+			factores = _world_data.call("obtener_ambiente_estacional_ecosistema", estacion_id, ecosistema_id)
+		if factores.is_empty() and not habitat_id.is_empty() and _world_data.has_method("obtener_factores_ambientales_habitat"):
+			factores = _world_data.call("obtener_factores_ambientales_habitat", habitat_id)
+		if factores.is_empty() and not ecosistema_id.is_empty() and _world_data.has_method("obtener_factores_ambientales_ecosistema"):
+			factores = _world_data.call("obtener_factores_ambientales_ecosistema", ecosistema_id)
 
 	var temperatura_k := _obtener_valor_factor(factores, "temperatura_media", NAN)
 	var temperatura_c: Variant = temperatura_k - 273.15 if is_finite(temperatura_k) else null
