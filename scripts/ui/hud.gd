@@ -1216,7 +1216,12 @@ func _input(event: InputEvent) -> void:
 		var hand_key := event as InputEventKey
 		if hand_key.keycode == KEY_R:
 			if hand_key.pressed and not hand_key.echo:
-				if not _combate_garumi_activo and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
+				var modal_abierto := false
+				for modal in get_tree().get_nodes_in_group("modal_ui"):
+					if is_instance_valid(modal) and modal.is_inside_tree() and not modal.is_queued_for_deletion():
+						modal_abierto = true
+						break
+				if not modal_abierto and not _combate_garumi_activo and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
 					_r_hold_activo = true
 					_r_hold_elapsed = 0.0
 					get_viewport().set_input_as_handled()
