@@ -7,6 +7,11 @@ class_name PlayerVisualController
 var visual: Node2D = null
 var facing_marker: Control = null
 var animation_player: AnimationPlayer = null
+var sprite: Sprite2D = null
+
+const SPRITE_IDLE: Texture2D = preload("res://assets/art/characters/Sprite-0004.png")
+const SPRITE_WALK_LEFT: Texture2D = preload("res://assets/art/characters/Sprite-0004_Walking_Left.png")
+const SPRITE_WALK_BACK: Texture2D = preload("res://assets/art/characters/Sprite-0004_Walking_Back.png")
 
 
 func configurar(
@@ -17,6 +22,7 @@ func configurar(
 	visual = nuevo_visual
 	facing_marker = nuevo_marker
 	animation_player = nueva_animacion
+	sprite = visual.get_node_or_null("Sprite2D") as Sprite2D if is_instance_valid(visual) else null
 
 
 func actualizar_direccion(facing: Vector2) -> void:
@@ -32,12 +38,41 @@ func actualizar_direccion(facing: Vector2) -> void:
 
 
 func actualizar_estado(estado: int, facing: Vector2) -> void:
+	_actualizar_sprite_direccional(estado, facing)
+
 	if animation_player == null:
 		return
 
 	var nombre := obtener_nombre_animacion(estado, facing)
 	if animation_player.has_animation(nombre):
 		animation_player.play(nombre)
+
+
+func _actualizar_sprite_direccional(estado: int, facing: Vector2) -> void:
+	if sprite == null or not is_instance_valid(sprite):
+		return
+
+	# Los sprites direccionales disponibles son poses para caminar/correr.
+	# Al detenerse, saltar o hacer dash se conserva la skin frontal base.
+	sprite.texture = SPRITE_IDLE
+	sprite.flip_h = false
+	if estado != 1 and estado != 2:
+		return
+
+	var direccion := _obtener_direccion(facing)
+	match direccion:
+		"side":
+			sprite.texture = SPRITE_WALK_LEFT
+			# La misma pose lateral sirve para ambos lados mediante espejo.
+			sprite.flip_h = facing.x > 0.0
+		"up":
+			sprite.texture = SPRITE_WALK_BACK
+
+
+func _obtener_direccion(facing: Vector2) -> String:
+	if absf(facing.y) >= absf(facing.x):
+		return "down" if facing.y > 0.0 else "up"
+	return "side"
 
 
 func obtener_nombre_animacion(estado: int, facing: Vector2) -> String:
