@@ -104,14 +104,36 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 	if visual.obtener_nombre_animacion(4, Vector2.DOWN) != "dash_down":
 		errores.append("La presentación no construyó dash_down.")
 
+	var raiz_visual := Node2D.new()
+	var sprite := Sprite2D.new()
+	raiz_visual.add_child(sprite)
 	var marcador := ColorRect.new()
-	visual.configurar(Node2D.new(), marcador, null)
+	visual.configurar(raiz_visual, marcador, null)
 	visual.actualizar_direccion(Vector2.RIGHT)
 	if not marcador.position.is_equal_approx(Vector2(12.0, -26.0)):
 		errores.append("El marcador visual no conservó el desplazamiento lateral.")
 	visual.actualizar_direccion(Vector2.ZERO)
 	if not marcador.position.is_equal_approx(Vector2(-2.0, -12.0)):
 		errores.append("El marcador visual no usó DOWN como orientación de reserva.")
+
+	# Los sprites nuevos se aplican a WALK y RUN sin depender de AnimationPlayer.
+	visual.actualizar_estado(1, Vector2.LEFT)
+	if sprite.texture == null or sprite.texture.resource_path != "res://assets/art/characters/Sprite-0004_Walking_Left.png" or sprite.flip_h:
+		errores.append("Caminar hacia la izquierda no usó la nueva pose lateral.")
+	visual.actualizar_estado(2, Vector2.RIGHT)
+	if sprite.texture == null or sprite.texture.resource_path != "res://assets/art/characters/Sprite-0004_Walking_Left.png" or not sprite.flip_h:
+		errores.append("Correr hacia la derecha no reflejó la pose lateral.")
+	visual.actualizar_estado(1, Vector2.UP)
+	if sprite.texture == null or sprite.texture.resource_path != "res://assets/art/characters/Sprite-0004_Walking_Back.png" or sprite.flip_h:
+		errores.append("Caminar hacia arriba no usó la pose de espalda.")
+	visual.actualizar_estado(2, Vector2.DOWN)
+	if sprite.texture == null or sprite.texture.resource_path != "res://assets/art/characters/Sprite-0004.png" or sprite.flip_h:
+		errores.append("Caminar hacia abajo no conservó la skin frontal base.")
+	visual.actualizar_estado(0, Vector2.LEFT)
+	if sprite.texture == null or sprite.texture.resource_path != "res://assets/art/characters/Sprite-0004.png" or sprite.flip_h:
+		errores.append("Al detenerse no se restauró la skin base.")
+	raiz_visual.free()
+	marcador.free()
 
  
 func _probar_buffer_dash(errores: Array[String]) -> void:
