@@ -230,7 +230,8 @@ func _process(_delta: float) -> void:
 
 	_boton_dormir.visible = false
 	var entrada_cercana: Dictionary = {}
-	var distancia_menor := 84.0
+	# El cuerpo del jugador puede quedar separado del punto de puerta por las colisiones de fachada.
+	var distancia_menor := 200.0
 	var posicion_jugador_local := to_local(_jugador.global_position)
 	for entrada: Dictionary in ENTRADAS:
 		var distancia := posicion_jugador_local.distance_to(entrada["pos"])
@@ -247,8 +248,9 @@ func _process(_delta: float) -> void:
 
 	_aviso.text = "Entrar"
 	_aviso_panel.visible = false
+	_boton_entrar.text = "Entrar: " + str(entrada_cercana.get("nombre", "edificio"))
 	_boton_entrar.visible = true
-	_posicionar_aviso_sobre_jugador()
+	_posicionar_boton_entrada()
 
 
 
@@ -301,18 +303,17 @@ func _crear_aviso() -> void:
 	PIXEL_UI_THEME.apply(_boton_dormir, false)
 	capa_ui.add_child(_boton_dormir)
 
-func _posicionar_aviso_sobre_jugador() -> void:
-	if not is_instance_valid(_aviso_panel) or not is_instance_valid(_jugador):
-		return
-	var posicion_pantalla: Vector2 = _jugador.get_global_transform_with_canvas().origin
+func _posicionar_boton_entrada() -> void:
 	if not is_instance_valid(_boton_entrar):
 		return
+	# La interacción queda anclada al HUD, no a la transformación de cámara
+	# del jugador. Así siempre aparece en una posición visible del viewport.
+	var viewport := get_viewport().get_visible_rect().size
 	var tamano := _boton_entrar.get_combined_minimum_size()
 	_boton_entrar.size = tamano
-	var viewport := get_viewport().get_visible_rect().size
 	_boton_entrar.position = Vector2(
-		clampf(posicion_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
-		clampf(posicion_pantalla.y - tamano.y - 24.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
+		(viewport.x - tamano.x) * 0.5,
+		viewport.y - tamano.y - 76.0
 	)
 
 
@@ -380,7 +381,7 @@ func _input(evento: InputEvent) -> void:
 		return
 	var posicion_clic_mundo := get_global_mouse_position()
 	var posicion_puerta := to_global(_entrada_aviso_actual["pos"])
-	if posicion_clic_mundo.distance_to(posicion_puerta) > 76.0:
+	if posicion_clic_mundo.distance_to(posicion_puerta) > 140.0:
 		return
 	get_viewport().set_input_as_handled()
 	_entrar_al_interior(_entrada_aviso_actual.duplicate(true))
