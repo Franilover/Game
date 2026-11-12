@@ -170,7 +170,7 @@ func _run() -> void:
 		_fail("An active phenomenon could not be finalized.")
 		return
 
-	print("PASS: seasonal lighting, deterministic local weather, fog visibility, thermal creature responses, seasonal events, and phenomena.")
+	print("PASS: seasonal lighting, deterministic local weather, habitat temperature, fog visibility, seasonal events, and phenomena.")
 	quit()
 
 
