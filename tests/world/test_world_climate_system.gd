@@ -27,6 +27,35 @@ func _run() -> void:
 	var atardecer: Color = atmosphere.calcular_color_iluminacion(0.79)
 
 	print("ClimateTest: default lighting passed.")
+
+	# La velocidad del reloj debe multiplicar el avance sin alterar el reloj base.
+	var reloj = ATMOSPHERE_SCRIPT.new()
+	reloj._calendario_cargado = true
+	reloj.minutos_por_dia = 12.0
+	reloj.horas_por_dia = 24.0
+	reloj.dias_por_anio = 365
+	reloj._process(1.0)
+	var avance_x1 := reloj.hora_del_dia
+	reloj.hora_del_dia = 0.0
+	if not reloj.establecer_multiplicador_tiempo(10):
+		_fail("The x10 time multiplier was rejected.")
+		return
+	reloj._process(1.0)
+	var avance_x10 := reloj.hora_del_dia
+	reloj.hora_del_dia = 0.0
+	if not reloj.establecer_multiplicador_tiempo(60):
+		_fail("The x60 time multiplier was rejected.")
+		return
+	reloj._process(1.0)
+	var avance_x60 := reloj.hora_del_dia
+	if not is_equal_approx(avance_x10, avance_x1 * 10.0) or not is_equal_approx(avance_x60, avance_x1 * 60.0):
+		_fail("Time multipliers must scale the world clock by their selected factor.")
+		return
+	if reloj.establecer_multiplicador_tiempo(5) or reloj.obtener_multiplicador_tiempo() != 60:
+		_fail("Unsupported time multipliers must be rejected without changing the current speed.")
+		return
+	reloj.free()
+	print("ClimateTest: time acceleration x1/x10/x60 passed.")
 	if not noche_inicio.is_equal_approx(noche_final):
 		_fail("The lighting gradient must wrap seamlessly across midnight.")
 		return
