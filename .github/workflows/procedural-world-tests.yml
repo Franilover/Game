@@ -100,7 +100,7 @@ jobs:
           fi
 
       - name: Run world climate and lighting regression test
-        run: godot --headless --path . --script res://tests/world/test_world_climate_system.gd
+        run: timeout 45s godot --headless --path . --script res://tests/world/test_world_climate_system.gd
 
       - name: Run admin creature and object scroll contract test
         shell: bash
