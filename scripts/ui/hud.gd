@@ -7,8 +7,6 @@ const INTERACTION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_intera
 const DASH_CHARGES_SCENE: PackedScene = preload("res://scenes/ui/hud_dash_charges.tscn")
 const DISCOVERY_NOTICE_SCENE: PackedScene = preload("res://scenes/ui/hud_discovery_notice.tscn")
 const CALENDAR_CLOCK_SCENE: PackedScene = preload("res://scenes/ui/hud_calendar_clock.tscn")
-const GARUMI_LINKED_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_panel.tscn")
-const GARUMI_LINKED_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_garumi_linked_slot.tscn")
 const HAND_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_slot.tscn")
 const HAND_ITEM_SELECTOR_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_item_selector.tscn")
 
@@ -66,9 +64,6 @@ var _mission_panel_open: bool = false
 
 var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
-var _garumis_vinculados_panel: HBoxContainer = null
-var _garumis_vinculados_lista: HBoxContainer = null
-var _garumis_vinculados_titulo: Label = null
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
 var _garumi_companero_actual: Node = null
@@ -189,7 +184,6 @@ func _conectar_senal_game_state() -> void:
 
 
 func _process(delta: float) -> void:
-	_actualizar_vidas_garumis_vinculados()
 	_procesar_hold_companero(delta)
 	_eterium_ui_elapsed += delta
 	if _eterium_ui_elapsed >= 0.1:
@@ -1352,16 +1346,7 @@ func _actualizar_reloj_calendario() -> void:
 
 
 func _preparar_panel_garumis_vinculados() -> void:
-	# El panel anterior de tres círculos deja de mostrarse. Conservamos el
-	# registro interno de vínculos para salud, persistencia y selección.
-	_garumis_vinculados_panel = GARUMI_LINKED_PANEL_SCENE.instantiate() as HBoxContainer
-	if is_instance_valid(_garumis_vinculados_panel):
-		_garumis_vinculados_panel.visible = false
-		_garumis_vinculados_lista = _garumis_vinculados_panel.get_node("GarumiSlots") as HBoxContainer
-		add_child(_garumis_vinculados_panel)
-		for i in range(3):
-			_crear_hueco_garumi(i + 1)
-
+	# Un único botón cuadrado, reutilizando exactamente la escena visual de Q/E.
 	_garumi_companero_slot = HAND_SLOT_SCENE.instantiate() as Button
 	if not is_instance_valid(_garumi_companero_slot):
 		push_error("HUD: no se pudo crear el botón de compañero R.")
@@ -1404,36 +1389,9 @@ func _preparar_panel_garumis_vinculados() -> void:
 	add_child(_garumi_selector_panel)
 
 
-func _crear_hueco_garumi(numero_slot: int) -> HBoxContainer:
-	if not is_instance_valid(_garumis_vinculados_lista):
-		return null
-	var slot := GARUMI_LINKED_SLOT_SCENE.instantiate() as HBoxContainer
-	if slot == null:
-		push_error("HUD: no se pudo instanciar hud_garumi_linked_slot.tscn.")
-		return null
-	slot.name = "GarumiSlot" + str(numero_slot)
-	slot.set_meta("garumi_id", "")
-	var numero := slot.get_node("Numero") as Button
-	var anillo := slot.get_node("Vida") as GarumiHealthRing
-	if numero == null or anillo == null:
-		slot.free()
-		return null
-	numero.text = str(numero_slot)
-	_garumis_vinculados_lista.add_child(slot)
-	return slot
-
-
 func mostrar_panel_garumis_durante_combate(_mostrar: bool) -> void:
-	if is_instance_valid(_garumis_vinculados_panel):
-		_garumis_vinculados_panel.visible = false
-
-
-func establecer_estado_combate_garumi(activo: bool) -> void:
-	_combate_garumi_activo = activo
-	if is_instance_valid(_calendar_panel):
-		_calendar_panel.visible = not activo
-	if activo:
-		_cerrar_selector_companero()
+	# Se conserva la API para el sistema de combate, pero el HUD ya no dibuja círculos.
+	pass
 
 
 func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> void:
@@ -1694,79 +1652,6 @@ func eliminar_garumi_vinculado(garumi: Node) -> void:
 		if not _garumis_vinculados_nodos.is_empty():
 			_establecer_companero(_garumis_vinculados_nodos[0])
 	_actualizar_selector_companero()
-
-
-func _actualizar_titulo_garumis_vinculados() -> void:
-	# El título se eliminó en el nuevo diseño.
-	pass
-
-func _renumerar_garumis_vinculados() -> void:
-	if not is_instance_valid(_garumis_vinculados_lista):
-		return
-	# Compacta los vínculos para que el número visible coincida con las teclas 1–3.
-	for i in range(_garumis_vinculados_lista.get_child_count()):
-		var slot := _garumis_vinculados_lista.get_child(i) as HBoxContainer
-		if slot == null:
-			continue
-		slot.set_meta("garumi_id", "")
-		var numero_vacio := slot.get_node_or_null("Numero") as Button
-		if numero_vacio != null:
-			numero_vacio.text = str(i + 1)
-			numero_vacio.add_theme_color_override("font_color", Color(0.88, 0.75, 0.53, 1.0))
-		var anillo_vacio := slot.get_node_or_null("Vida") as GarumiHealthRing
-		if anillo_vacio != null:
-			anillo_vacio.occupied = false
-			anillo_vacio.health_ratio = 1.0
-			var retrato_vacio := anillo_vacio.get_node_or_null("Retrato") as TextureRect
-			if retrato_vacio != null:
-				retrato_vacio.texture = null
-			anillo_vacio.queue_redraw()
-	for i in range(_garumis_vinculados_nodos.size()):
-		var garumi := _garumis_vinculados_nodos[i]
-		if not is_instance_valid(garumi):
-			continue
-		var slot := _garumis_vinculados_lista.get_child(i) as HBoxContainer
-		if slot == null:
-			continue
-		slot.set_meta("garumi_id", str(garumi.get_instance_id()))
-		var numero := slot.get_node_or_null("Numero") as Button
-		if numero != null:
-			numero.text = str(i + 1)
-		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
-		if anillo != null:
-			anillo.occupied = true
-			var retrato := anillo.get_node_or_null("Retrato") as TextureRect
-			if retrato != null:
-				retrato.texture = _buscar_textura_garumi(garumi)
-	_actualizar_vidas_garumis_vinculados()
-
-
-func _actualizar_vidas_garumis_vinculados() -> void:
-	if not is_instance_valid(_garumis_vinculados_lista):
-		return
-	for garumi in _garumis_vinculados_nodos:
-		if not is_instance_valid(garumi):
-			continue
-		var slot := _obtener_slot_garumi(garumi)
-		if slot == null:
-			continue
-		var anillo := slot.get_node_or_null("Vida") as GarumiHealthRing
-		if anillo == null:
-			continue
-		var vida_maxima := maxi(1, int(garumi.get("max_health")))
-		var vida_actual := clampi(int(garumi.get("health")), 0, vida_maxima)
-		anillo.health_ratio = float(vida_actual) / float(vida_maxima)
-		anillo.occupied = true
-		anillo.queue_redraw()
-
-func _obtener_slot_garumi(garumi: Node) -> HBoxContainer:
-	if not is_instance_valid(garumi) or not is_instance_valid(_garumis_vinculados_lista):
-		return null
-	var id := str(garumi.get_instance_id())
-	for candidato in _garumis_vinculados_lista.get_children():
-		if candidato is HBoxContainer and str(candidato.get_meta("garumi_id", "")) == id:
-			return candidato as HBoxContainer
-	return null
 
 
 func actualizar_estado_garumi(garumi: Node, _guardado: bool) -> void:
