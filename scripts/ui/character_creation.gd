@@ -140,8 +140,8 @@ func open(action: String) -> void:
 	gender.select(0)
 	gender_free.text = ""
 	gender_free.visible = false
-	if species.item_count > 0:
-		species.select(0)
+	_seleccionar_especie_humana()
+	status.visible = false
 	for slot in CharacterAppearance.SLOTS:
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
 		if lista != null and lista.item_count > 0:
