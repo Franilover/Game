@@ -9,9 +9,13 @@ var facing_marker: Control = null
 var animation_player: AnimationPlayer = null
 var sprite: Sprite2D = null
 
-const SPRITE_IDLE: Texture2D = preload("res://assets/art/characters/Sprite-0004.png")
-const SPRITE_WALK_LEFT: Texture2D = preload("res://assets/art/characters/Sprite-0004_Walking_Left.png")
-const SPRITE_WALK_BACK: Texture2D = preload("res://assets/art/characters/Sprite-0004_Walking_Back.png")
+const SPRITE_IDLE_PATH := "res://assets/art/characters/Sprite-0004.png"
+const SPRITE_WALK_LEFT_PATH := "res://assets/art/characters/Sprite-0004_Walking_Left.png"
+const SPRITE_WALK_BACK_PATH := "res://assets/art/characters/Sprite-0004_Walking_Back.png"
+
+var sprite_idle: Texture2D = null
+var sprite_walk_left: Texture2D = null
+var sprite_walk_back: Texture2D = null
 
 
 func configurar(
@@ -23,6 +27,20 @@ func configurar(
 	facing_marker = nuevo_marker
 	animation_player = nueva_animacion
 	sprite = visual.get_node_or_null("Sprite2D") as Sprite2D if is_instance_valid(visual) else null
+	# Image.load lee PNG directamente y evita depender de archivos .import
+	# que todavía no existan en un checkout limpio o en CI headless.
+	sprite_idle = _cargar_textura_directa(SPRITE_IDLE_PATH)
+	sprite_walk_left = _cargar_textura_directa(SPRITE_WALK_LEFT_PATH)
+	sprite_walk_back = _cargar_textura_directa(SPRITE_WALK_BACK_PATH)
+
+
+func _cargar_textura_directa(ruta: String) -> Texture2D:
+	var imagen := Image.new()
+	var error := imagen.load(ruta)
+	if error != OK:
+		push_error("PlayerVisualController: no se pudo cargar la imagen %s (error %s)." % [ruta, error])
+		return null
+	return ImageTexture.create_from_image(imagen)
 
 
 func actualizar_direccion(facing: Vector2) -> void:
@@ -54,7 +72,8 @@ func _actualizar_sprite_direccional(estado: int, facing: Vector2) -> void:
 
 	# Los sprites direccionales disponibles son poses para caminar/correr.
 	# Al detenerse, saltar o hacer dash se conserva la skin frontal base.
-	sprite.texture = SPRITE_IDLE
+	if sprite_idle != null:
+		sprite.texture = sprite_idle
 	sprite.flip_h = false
 	if estado != 1 and estado != 2:
 		return
@@ -62,11 +81,13 @@ func _actualizar_sprite_direccional(estado: int, facing: Vector2) -> void:
 	var direccion := _obtener_direccion(facing)
 	match direccion:
 		"side":
-			sprite.texture = SPRITE_WALK_LEFT
+			if sprite_walk_left != null:
+				sprite.texture = sprite_walk_left
 			# La misma pose lateral sirve para ambos lados mediante espejo.
 			sprite.flip_h = facing.x > 0.0
 		"up":
-			sprite.texture = SPRITE_WALK_BACK
+			if sprite_walk_back != null:
+				sprite.texture = sprite_walk_back
 
 
 func _obtener_direccion(facing: Vector2) -> String:
