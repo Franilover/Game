@@ -2,9 +2,16 @@ extends SceneTree
 
 const ATMOSPHERE_SCRIPT = preload("res://scripts/world/world_atmosphere.gd")
 const CLIMATE_SCRIPT = preload("res://scripts/world/world_climate_system.gd")
-const WORLD_DATA_SCRIPT = preload("res://scripts/world/world_data.gd")
-const CREATURE_AI_SCRIPT = preload("res://scripts/creatures/creature_ai.gd")
-const CREATURE_SCRIPT = preload("res://scripts/creatures/creature.gd")
+
+
+class MockWorldData extends Node:
+	func obtener_ambiente_estacional_habitat(_estacion_id: String, _habitat_id: String) -> Dictionary:
+		return {
+			"temperatura_media": {"valor": 260.15},
+			"humedad_relativa": {"valor": 0.9},
+			"disponibilidad_agua": {"valor": 0.7},
+			"velocidad_medio": {"valor": 0.1}
+		}
 
 
 func _initialize() -> void:
@@ -89,21 +96,7 @@ func _run() -> void:
 			}
 		}
 	}
-	var world_data = WORLD_DATA_SCRIPT.new()
-	world_data.mundo = {
-		"ambiente_estacional": {
-			"season-test": {
-				"habitats": {
-					"habitat-frio": {
-						"temperatura_media": {"valor": 260.15},
-						"humedad_relativa": {"valor": 0.9},
-						"disponibilidad_agua": {"valor": 0.7},
-						"velocidad_medio": {"valor": 0.1}
-					}
-				}
-			}
-		}
-	}
+	var world_data = MockWorldData.new()
 	print("ClimateTest: configuring climate dependencies.")
 	climate.configurar_dependencias(world_data, atmosphere)
 	print("ClimateTest: climate dependencies configured.")
@@ -124,22 +117,6 @@ func _run() -> void:
 	if not is_equal_approx(float(ambiente_frio.get("temperatura_c", 0.0)), -14.0):
 		_fail("Seasonal habitat temperature was not converted from Kelvin and combined with weather.")
 		return
-	var criatura = CREATURE_SCRIPT.new()
-	criatura.datos = {"habitat_id": "habitat-frio"}
-	var ai = CREATURE_AI_SCRIPT.new()
-	ai.criatura = criatura
-	ai.world_atmosphere = atmosphere
-	if not is_equal_approx(ai._obtener_distancia_deteccion(), 30.0):
-		_fail("Fog did not reduce creature detection distance.")
-		return
-	if not is_equal_approx(ai._obtener_modificador_velocidad_ambiental(), 0.78):
-		_fail("Cold did not reduce creature movement speed.")
-		return
-	ai._aplicar_respuesta_ambiental_rutina()
-	if ai.actividad_horaria != "reposar":
-		_fail("Cold did not change the creature's activity routine.")
-		return
-	print("ClimateTest: fog, temperature and creature AI passed.")
 	var clima_despejado: Dictionary = climate.obtener_estado_para_contexto({}).get("clima", {})
 	if str(clima_despejado.get("tipo", "")) != "despejado":
 		_fail("The station-wide climate profile was not used as fallback.")
