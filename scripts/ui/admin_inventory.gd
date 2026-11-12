@@ -22,6 +22,7 @@ var _atmosfera: WorldAtmosphere = null
 var _estado_tiempo: Label
 var _estado_tiempo_accion: Label
 var _boton_bloqueo_tiempo: Button
+var _botones_velocidad_tiempo: Dictionary = {}
 var _hora_spin: SpinBox
 var _minuto_spin: SpinBox
 var _dias_spin: SpinBox
@@ -445,6 +446,17 @@ func _crear_panel_tiempo(contenedor: VBoxContainer) -> void:
 	_boton_bloqueo_tiempo.pressed.connect(_alternar_bloqueo_tiempo)
 	columna.add_child(_boton_bloqueo_tiempo)
 
+	columna.add_child(_crear_separador_tiempo("Velocidad del reloj"))
+	var fila_velocidad := HBoxContainer.new()
+	fila_velocidad.add_theme_constant_override("separation", 5)
+	columna.add_child(fila_velocidad)
+	for multiplicador in [1, 10, 60]:
+		var boton_velocidad := _crear_boton_tiempo("×%d" % multiplicador)
+		boton_velocidad.toggle_mode = true
+		boton_velocidad.pressed.connect(_establecer_velocidad_tiempo.bind(multiplicador))
+		fila_velocidad.add_child(boton_velocidad)
+		_botones_velocidad_tiempo[multiplicador] = boton_velocidad
+
 	columna.add_child(_crear_separador_tiempo("Hora del día"))
 	var fila_hora := HBoxContainer.new()
 	fila_hora.add_theme_constant_override("separation", 5)
@@ -559,6 +571,11 @@ func _actualizar_panel_tiempo() -> void:
 	_estado_tiempo.text = "Día %d · %s · Año %d · %s" % [int(datos.get("dia", 1)), str(datos.get("estacion", "—")), int(datos.get("anio", 0)), str(datos.get("hora", "00:00"))]
 	_boton_bloqueo_tiempo.disabled = false
 	_boton_bloqueo_tiempo.text = "Reanudar avance del tiempo" if _atmosfera.esta_bloqueado() else "Bloquear avance del tiempo"
+	var velocidad_actual := _atmosfera.obtener_multiplicador_tiempo()
+	for multiplicador in _botones_velocidad_tiempo:
+		var boton_velocidad: Button = _botones_velocidad_tiempo[multiplicador]
+		boton_velocidad.button_pressed = int(multiplicador) == velocidad_actual
+		boton_velocidad.disabled = false
 	var minutos_totales := int(floor(float(datos.get("hora_del_dia", 0.0)) * 60.0))
 	_hora_spin.max_value = maxi(0, int(ceil(float(datos.get("horas_por_dia", 24.0)))) - 1)
 	_hora_spin.value = int(floor(float(minutos_totales) / 60.0))
@@ -584,6 +601,14 @@ func _actualizar_panel_tiempo() -> void:
 func _registrar_accion_tiempo(ok: bool, mensaje: String) -> void:
 	_estado_tiempo_accion.text = mensaje if ok else "No se pudo aplicar: " + mensaje
 	_actualizar_panel_tiempo()
+
+
+func _establecer_velocidad_tiempo(multiplicador: int) -> void:
+	if _atmosfera == null:
+		return
+	var ok := _atmosfera.establecer_multiplicador_tiempo(multiplicador)
+	var mensaje := "Velocidad del reloj: ×%d." % multiplicador
+	_registrar_accion_tiempo(ok, mensaje if ok else "Velocidad no admitida.")
 
 
 func _alternar_bloqueo_tiempo() -> void:
