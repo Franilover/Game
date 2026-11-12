@@ -1569,7 +1569,8 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 func _usar_don_companero(indice: int) -> void:
 	if not is_instance_valid(_garumi_companero_actual):
 		return
-	if bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false:
+	var companero_guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
+	if companero_guardado:
 		return
 	if _garumi_companero_actual.has_method("usar_don_por_slot"):
 		_garumi_companero_actual.call("usar_don_por_slot", indice)
