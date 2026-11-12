@@ -481,20 +481,33 @@ func _seleccionar_perfil_clima(regla: Dictionary, ambiente: Dictionary, semilla_
 			if perfil_variant is Dictionary and PERFILES_CLIMA.has(str((perfil_variant as Dictionary).get("tipo", ""))):
 				perfiles.append(perfil_variant)
 	if perfiles.is_empty():
-		perfiles = _crear_perfiles_por_ambiente(ambiente)
+		perfiles = _crear_perfiles_predeterminados()
 
+	var perfiles_ponderados: Array[Dictionary] = []
 	var peso_total := 0.0
-	for perfil in perfiles:
-		peso_total += maxf(float(perfil.get("peso", 0.0)), 0.0)
+	for perfil_variant in perfiles:
+		if not perfil_variant is Dictionary:
+			continue
+		var perfil := perfil_variant as Dictionary
+		var tipo := str(perfil.get("tipo", ""))
+		var peso_base := maxf(float(perfil.get("peso", 0.0)), 0.0)
+		var peso_efectivo := _ajustar_peso_por_ambiente(tipo, peso_base, ambiente)
+		if peso_efectivo <= 0.0:
+			continue
+		var copia := perfil.duplicate(true)
+		copia["peso_efectivo"] = peso_efectivo
+		perfiles_ponderados.append(copia)
+		peso_total += peso_efectivo
+
 	if peso_total <= 0.0:
 		return {"tipo": "despejado", "intensidad": 1.0}
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = abs(hash(semilla_texto + "|" + str(_world_atmosphere.anio if _world_atmosphere != null else 0)))
-	var elegido := perfiles.back()
+	var elegido := perfiles_ponderados.back()
 	var objetivo := rng.randf_range(0.0, peso_total)
-	for perfil in perfiles:
-		objetivo -= maxf(float(perfil.get("peso", 0.0)), 0.0)
+	for perfil in perfiles_ponderados:
+		objetivo -= float(perfil.get("peso_efectivo", 0.0))
 		if objetivo <= 0.0:
 			elegido = perfil
 			break
@@ -507,23 +520,48 @@ func _seleccionar_perfil_clima(regla: Dictionary, ambiente: Dictionary, semilla_
 	}
 
 
-func _crear_perfiles_por_ambiente(ambiente: Dictionary) -> Array[Dictionary]:
-	var temperatura := float(ambiente.get("temperatura_base_c", 20.0)) if ambiente.get("temperatura_base_c") is float or ambiente.get("temperatura_base_c") is int else 20.0
+func _ajustar_peso_por_ambiente(tipo: String, peso: float, ambiente: Dictionary) -> float:
+	if peso <= 0.0:
+		return 0.0
+	var temperatura_variant: Variant = ambiente.get("temperatura_base_c", null)
+	var tiene_temperatura := temperatura_variant is int or temperatura_variant is float
+	var temperatura := float(temperatura_variant) if tiene_temperatura else 20.0
 	var humedad := clampf(float(ambiente.get("humedad_relativa", 0.5)), 0.0, 1.0)
 	var agua := clampf(float(ambiente.get("disponibilidad_agua", 0.5)), 0.0, 1.0)
 	var viento := clampf(float(ambiente.get("velocidad_medio", 0.0)) / 6.0, 0.0, 1.0)
-	var perfiles: Array[Dictionary] = [
+
+	match tipo:
+		"despejado":
+			return peso * (1.15 - humedad * 0.25)
+		"nublado":
+			return peso * (0.75 + humedad * 0.5)
+		"lluvia":
+			return peso * clampf(0.25 + humedad * 0.9 + agua * 0.4, 0.1, 1.8)
+		"niebla":
+			return peso * clampf(0.1 + humedad * (1.0 - viento) * 1.6, 0.1, 1.7)
+		"tormenta":
+			return peso * clampf(0.1 + humedad * viento * 2.2, 0.05, 2.0)
+		"nieve":
+			if not tiene_temperatura or temperatura > 4.0:
+				return 0.0
+			return peso * clampf((4.0 - temperatura) / 8.0, 0.2, 2.5)
+		"ola_calor":
+			if not tiene_temperatura or temperatura < 27.0 or humedad > 0.65:
+				return 0.0
+			return peso * clampf((temperatura - 26.0) / 6.0 + (0.65 - humedad), 0.2, 2.2)
+	return peso
+
+
+func _crear_perfiles_predeterminados() -> Array[Dictionary]:
+	return [
 		{"tipo": "despejado", "peso": 42.0},
-		{"tipo": "nublado", "peso": 18.0 + humedad * 8.0},
-		{"tipo": "lluvia", "peso": 3.0 + humedad * 14.0 + agua * 8.0},
-		{"tipo": "niebla", "peso": 1.0 + humedad * 15.0 * (1.0 - viento)},
-		{"tipo": "tormenta", "peso": 0.5 + humedad * viento * 9.0}
+		{"tipo": "nublado", "peso": 20.0},
+		{"tipo": "lluvia", "peso": 15.0},
+		{"tipo": "niebla", "peso": 9.0},
+		{"tipo": "tormenta", "peso": 5.0},
+		{"tipo": "nieve", "peso": 3.0},
+		{"tipo": "ola_calor", "peso": 3.0}
 	]
-	if temperatura <= 4.0:
-		perfiles.append({"tipo": "nieve", "peso": (4.0 - temperatura) * 4.0 + humedad * 2.0})
-	if temperatura >= 27.0 and humedad < 0.55:
-		perfiles.append({"tipo": "ola_calor", "peso": (temperatura - 26.0) * 2.5 + (0.55 - humedad) * 8.0})
-	return perfiles
 
 
 func iniciar_fenomeno(tipo: String, intensidad: float = 1.0, duracion_segundos: float = 0.0) -> bool:
