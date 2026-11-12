@@ -29,6 +29,29 @@ func _run() -> void:
 	_expect(garumi_node.is_in_group("garumis"), "Las instancias deben pertenecer al grupo propio de Garumis.")
 	_expect(not garumi_node.is_in_group("creatures"), "Los Garumis no deben mezclarse con el grupo de criaturas comunes.")
 	_expect(not garumi_node.is_in_group("damageable"), "El daño común no debe matar a un Garumi.")
+
+	# Los sprites nuevos deben resolverse por nombre visible incluso cuando
+	# asset_key contiene una clave antigua o inexistente del catálogo.
+	for nombre_sprite in ["Velki", "Velkor"]:
+		var garumi_sprite_test: Node = GARUMI_SCENE.instantiate()
+		get_tree().root.add_child(garumi_sprite_test)
+		garumi_sprite_test.call("configurar", {
+			"id": "sprite-" + nombre_sprite.to_lower(),
+			"nombre": nombre_sprite,
+			"asset_key": "clave-antigua-inexistente",
+			"garumi_debug_preview": true
+		})
+		var sprite_test := garumi_sprite_test.get_node("Sprite2D") as Sprite2D
+		_expect(
+			sprite_test != null and sprite_test.texture != null,
+			"El juego debe cargar assets/art/garumis/%s.png usando el nombre visible como fallback." % nombre_sprite
+		)
+		_expect(
+			not bool(garumi_sprite_test.get_meta("garumi_sprite_missing", true)),
+			"El runtime debe marcar el sprite de %s como disponible." % nombre_sprite
+		)
+		garumi_sprite_test.queue_free()
+
 	var salud_antes := int(garumi_node.get("health"))
 	garumi_node.call("take_damage", 999, "test")
 	_expect(int(garumi_node.get("health")) == salud_antes and bool(garumi_node.get("is_alive")), "El daño común debe dejar vivo al Garumi hasta tener absorción específica.")
