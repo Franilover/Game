@@ -1355,15 +1355,16 @@ func _preparar_panel_garumis_vinculados() -> void:
 		push_error("HUD: no se pudo crear el botón de compañero R.")
 		return
 	_garumi_companero_slot.name = "GarumiCompanionSlot"
-	_garumi_companero_slot.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_garumi_companero_slot.anchor_left = 0.5
-	_garumi_companero_slot.anchor_right = 0.5
-	_garumi_companero_slot.anchor_top = 1.0
-	_garumi_companero_slot.anchor_bottom = 1.0
-	_garumi_companero_slot.offset_top = -48.0
-	_garumi_companero_slot.offset_bottom = 0.0
-	_garumi_companero_slot.offset_left = -24.0
-	_garumi_companero_slot.offset_right = 24.0
+	# El único slot del compañero permanece fijo en la esquina superior izquierda.
+	_garumi_companero_slot.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_garumi_companero_slot.anchor_left = 0.0
+	_garumi_companero_slot.anchor_right = 0.0
+	_garumi_companero_slot.anchor_top = 0.0
+	_garumi_companero_slot.anchor_bottom = 0.0
+	_garumi_companero_slot.offset_left = 16.0
+	_garumi_companero_slot.offset_top = 16.0
+	_garumi_companero_slot.offset_right = 64.0
+	_garumi_companero_slot.offset_bottom = 64.0
 	PIXEL_UI_THEME.apply(_garumi_companero_slot)
 	_garumi_companero_slot.tooltip_text = "Compañero (R): guardar o liberar · mantener R para elegir"
 	var etiqueta := _garumi_companero_slot.get_node_or_null("HandKey") as Label
@@ -1375,15 +1376,16 @@ func _preparar_panel_garumis_vinculados() -> void:
 	_garumi_selector_panel = PanelContainer.new()
 	_garumi_selector_panel.name = "GarumiCompanionSelector"
 	_garumi_selector_panel.visible = false
-	_garumi_selector_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_garumi_selector_panel.anchor_left = 0.5
-	_garumi_selector_panel.anchor_right = 0.5
-	_garumi_selector_panel.anchor_top = 1.0
-	_garumi_selector_panel.anchor_bottom = 1.0
-	_garumi_selector_panel.offset_left = -91.0
-	_garumi_selector_panel.offset_right = 91.0
-	_garumi_selector_panel.offset_top = -108.0
-	_garumi_selector_panel.offset_bottom = -54.0
+	# El selector se despliega junto al slot R, sin moverlo ni mostrar slots permanentes.
+	_garumi_selector_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_garumi_selector_panel.anchor_left = 0.0
+	_garumi_selector_panel.anchor_right = 0.0
+	_garumi_selector_panel.anchor_top = 0.0
+	_garumi_selector_panel.anchor_bottom = 0.0
+	_garumi_selector_panel.offset_left = 16.0
+	_garumi_selector_panel.offset_right = 166.0
+	_garumi_selector_panel.offset_top = 72.0
+	_garumi_selector_panel.offset_bottom = 126.0
 	PIXEL_UI_THEME.apply(_garumi_selector_panel, false)
 	_garumi_selector_lista = HBoxContainer.new()
 	_garumi_selector_lista.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -1565,7 +1567,13 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 		codigo = KEY_1 + (codigo - KEY_KP_1)
 	if codigo < KEY_1 or codigo > KEY_3:
 		return false
-	_usar_don_companero(codigo - KEY_1)
+	var indice := codigo - KEY_1
+	# Con el selector de R abierto, 1–3 cambian el compañero; fuera de él usan dones.
+	if _r_selector_abierto:
+		if indice < _garumis_vinculados_nodos.size():
+			_seleccionar_companero(_garumis_vinculados_nodos[indice])
+		return true
+	_usar_don_companero(indice)
 	return true
 
 
