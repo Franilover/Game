@@ -276,7 +276,7 @@ func _cargar_sprite() -> void:
 			claves_asset.append(criatura_nombre.strip_edges())
 		var textura_garumi: Texture2D = null
 		for clave_asset in claves_asset:
-			if clave_asset.is_empty() or clave_asset.contains("/") or clave_asset.contains("\\\\"):
+			if clave_asset.is_empty() or clave_asset.contains("/") or clave_asset.contains("\\"):
 				continue
 			var rutas_garumi: Array[String] = [
 				"res://assets/art/garumis/" + clave_asset + ".png",
