@@ -98,6 +98,12 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
 		player = nuevo_player
+		if is_instance_valid(_garumi_companero_actual):
+			for garumi_vinculado in _garumis_vinculados_nodos:
+				if is_instance_valid(garumi_vinculado) and garumi_vinculado.has_method("establecer_estado_companero"):
+					var es_companero := garumi_vinculado == _garumi_companero_actual
+					var estaba_guardado := bool(garumi_vinculado.call("esta_guardado")) if garumi_vinculado.has_method("esta_guardado") else false
+					garumi_vinculado.call("establecer_estado_companero", player, es_companero and not estaba_guardado)
 	if nuevo_world_context != null and is_instance_valid(nuevo_world_context):
 		world_context = nuevo_world_context
 	if nuevo_mission_manager != null and is_instance_valid(nuevo_mission_manager):
@@ -1584,7 +1590,7 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	return null
 
 func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
-	# El combate gestiona Shift+1/2/3 para cambiar el aliado activo.
+	# 1, 2 y 3 quedan reservadas para los tres dones equipados del compañero.
 	if _combate_garumi_activo:
 		return false
 	for nodo_inventario in get_tree().get_nodes_in_group("inventory"):
@@ -1593,33 +1599,26 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 	for modal in get_tree().get_nodes_in_group("modal_ui"):
 		if is_instance_valid(modal) and modal.is_inside_tree() and not modal.is_queued_for_deletion():
 			return false
-
 	var codigo := evento.keycode
 	if codigo >= KEY_KP_1 and codigo <= KEY_KP_3:
 		codigo = KEY_1 + (codigo - KEY_KP_1)
 	if codigo < KEY_1 or codigo > KEY_3:
 		return false
-
-	var indice := codigo - KEY_1
-	if indice < 0 or indice >= _garumis_vinculados_nodos.size():
-		return false
-	if evento.shift_pressed:
-		var garumi_curacion := _garumis_vinculados_nodos[indice]
-		if is_instance_valid(garumi_curacion):
-			_curar_garumi_vinculado_con_eterium(garumi_curacion)
-	else:
-		_activar_garumi_por_indice(indice)
+	_usar_don_companero(codigo - KEY_1)
 	return true
 
 
-func _activar_garumi_por_indice(indice: int) -> void:
-	if _combate_garumi_activo or indice < 0 or indice >= _garumis_vinculados_nodos.size():
+func _usar_don_companero(indice: int) -> void:
+	if not is_instance_valid(_garumi_companero_actual):
 		return
-	if not is_instance_valid(player):
+	if bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false:
 		return
-	var garumi := _garumis_vinculados_nodos[indice]
-	if is_instance_valid(garumi) and garumi.has_method("alternar_estado_invocacion"):
-		garumi.call("alternar_estado_invocacion", player)
+	if _garumi_companero_actual.has_method("usar_don_por_slot"):
+		_garumi_companero_actual.call("usar_don_por_slot", indice)
+	elif is_instance_valid(discovery_notice):
+		discovery_notice.text = "Los dones de este Garumi aún no están disponibles."
+		discovery_notice.visible = true
+		_discovery_notice_timer = 2.0
 
 
 func _curar_garumi_vinculado_con_eterium(garumi: Node) -> void:
