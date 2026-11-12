@@ -93,20 +93,18 @@ func _input(event: InputEvent) -> void:
 	var tecla := event as InputEventKey
 	var es_espacio := tecla.keycode == KEY_SPACE or tecla.physical_keycode == KEY_SPACE
 	if es_espacio:
-		if tecla.echo:
-			get_viewport().set_input_as_handled()
-			return
-		if tecla.pressed:
-			_al_presionar_espacio()
-		else:
-			_al_soltar_espacio()
+		if not tecla.echo:
+			if tecla.pressed:
+				_al_presionar_espacio()
+			else:
+				_al_soltar_espacio()
 		get_viewport().set_input_as_handled()
 		return
 	if not tecla.pressed or tecla.echo:
 		return
-	if not _estado_minijuego.is_empty() and not visible_menu:
+	if _estado_minijuego == "concentracion":
 		if tecla.keycode == KEY_ESCAPE:
-			_fallar_minijuego("Cancelaste el minijuego.")
+			_al_soltar_espacio()
 		get_viewport().set_input_as_handled()
 		return
 	if _admin_abierto() or _otra_interfaz_abierta():
@@ -118,106 +116,49 @@ func _input(event: InputEvent) -> void:
 			_seleccionar(tecla.keycode - KEY_1)
 			get_viewport().set_input_as_handled()
 			return
-		if tecla.keycode == KEY_ESCAPE or tecla.keycode == KEY_X:
+		if tecla.keycode == KEY_ESCAPE:
 			_cerrar()
 			get_viewport().set_input_as_handled()
-			return
-	if tecla.keycode == KEY_X:
-		_abrir()
-		get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
-	if _estado_minijuego == "esperando_toques":
-		if _espacio_pulsado:
-			_tiempo_sostenido += delta
-			if _tiempo_sostenido >= TIEMPO_CONCENTRACION:
-				_iniciar_concentracion()
-		else:
-			_tiempo_ventana_toques -= delta
-			if _tiempo_ventana_toques <= 0.0:
-				_iniciar_minijuego_curacion()
-	elif _estado_minijuego == "concentracion":
-		if _espacio_pulsado:
-			_tiempo_sostenido += delta
-			_actualizar_panel_minijuego("MEDITAR", "Mantén ESPACIO durante 4 segundos.")
-			_minijuego_barra.value = _tiempo_sostenido / TIEMPO_CONCENTRACION * 100.0
-			if _tiempo_sostenido >= TIEMPO_CONCENTRACION:
-				_completar_meditacion()
-	elif _estado_minijuego == "dash_menu":
-		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
-		_actualizar_panel_minijuego("DASH · %d/2" % _toques_curacion, "ESPACIO × 2")
-		_minijuego_barra.value = float(_toques_curacion) / 2.0 * 100.0
-		_minijuego_tiempo.visible = true
-		_minijuego_tiempo.value = _tiempo_minijuego / DURACION_DASH_MINIJUEGO * 100.0
-		if _tiempo_minijuego <= 0.0:
-			_fallar_minijuego("No completaste las dos pulsaciones.")
-	elif _estado_minijuego == "curacion":
-		_tiempo_minijuego = maxf(0.0, _tiempo_minijuego - delta)
-		_actualizar_panel_minijuego("Curación · %d/%d" % [_toques_curacion, TOQUES_CURACION_NECESARIOS], "Pulsa ESPACIO tantas veces como puedas durante 5 segundos.")
-		_minijuego_barra.value = minf(100.0, float(_toques_curacion) / TOQUES_CURACION_NECESARIOS * 100.0)
-		_minijuego_tiempo.value = _tiempo_minijuego / DURACION_CURACION * 100.0
-		if _tiempo_minijuego <= 0.0:
-			if _toques_curacion >= TOQUES_CURACION_NECESARIOS:
-				_completar_curacion()
-			else:
-				_fallar_minijuego("No alcanzaste las %d pulsaciones." % TOQUES_CURACION_NECESARIOS)
+	if _estado_minijuego == "concentracion" and _espacio_pulsado:
+		_tiempo_sostenido += delta
+		_minijuego_barra.value = minf(100.0, _tiempo_sostenido / TIEMPO_CONCENTRACION * 100.0)
+		_actualizar_panel_minijuego("CONCENTRANDO", "Mantén ESPACIO para recuperar Eterium.")
+		if _tiempo_sostenido >= TIEMPO_CONCENTRACION:
+			_completar_meditacion()
 	_actualizar_indicador_tiempo()
 
 
 func _al_presionar_espacio() -> void:
-	if _admin_abierto() or _otra_interfaz_abierta():
+	if _admin_abierto() or _otra_interfaz_abierta() or visible_menu:
 		return
-	if _estado_minijuego == "curacion":
-		_toques_curacion += 1
+	if not _estado_minijuego.is_empty() or not is_instance_valid(jugador):
 		return
-	if _estado_minijuego == "dash_menu":
-		_toques_curacion += 1
-		if _toques_curacion >= 2:
-			_recuperar_dash_directo()
-			_limpiar_minijuego()
+	if not bool(jugador.get("is_alive")):
 		return
-	if _estado_minijuego == "espera_meditacion":
-		_espacio_pulsado = true
-		_tiempo_sostenido = 0.0
-		_estado_minijuego = "concentracion"
-		_mostrar_minijuego()
+	var eterium_actual: Variant = jugador.get("eterium")
+	if eterium_actual == null or not eterium_actual.has_method("mana") or not eterium_actual.has_method("max_mana"):
 		return
-	if _estado_minijuego == "eterium":
+	if int(eterium_actual.call("mana")) >= int(eterium_actual.call("max_mana")):
 		return
-	if visible_menu:
-		return
-	if _estado_minijuego == "esperando_toques":
-		if _espacio_pulsado:
-			return
-		_espacio_pulsado = true
-		_tiempo_sostenido = 0.0
-		_toques_espacio += 1
-		if _toques_espacio >= 2:
-			_recuperar_dash_directo()
-			_limpiar_minijuego()
-			return
-		_tiempo_ventana_toques = VENTANA_TOQUES
-		return
-	if not _estado_minijuego.is_empty():
-		return
-	if not is_instance_valid(jugador) or not bool(jugador.get("is_alive")):
-		return
-	_estado_minijuego = "esperando_toques"
+	_estado_minijuego = "concentracion"
 	add_to_group("modal_ui")
 	_espacio_pulsado = true
 	_tiempo_sostenido = 0.0
-	_toques_espacio = 1
-	_tiempo_ventana_toques = VENTANA_TOQUES
+	_mostrar_minijuego()
+	_actualizar_panel_minijuego("CONCENTRANDO", "Mantén ESPACIO para recuperar Eterium.")
+	_minijuego_barra.value = 0.0
+	_minijuego_tiempo.visible = false
 
 
 func _al_soltar_espacio() -> void:
-	if not _espacio_pulsado:
+	if _estado_minijuego != "concentracion" or not _espacio_pulsado:
 		return
 	_espacio_pulsado = false
-	if _estado_minijuego == "concentracion":
-		_notificar("Meditación cancelada.")
-		_limpiar_minijuego()
+	_notificar("Concentración interrumpida.")
+	_limpiar_minijuego()
 
 
 func _construir_interfaz_minijuego() -> void:
