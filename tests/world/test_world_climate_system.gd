@@ -19,6 +19,7 @@ func _run() -> void:
 	var mediodia: Color = atmosphere.calcular_color_iluminacion(0.50)
 	var atardecer: Color = atmosphere.calcular_color_iluminacion(0.79)
 
+	print("ClimateTest: default lighting passed.")
 	if not noche_inicio.is_equal_approx(noche_final):
 		_fail("The lighting gradient must wrap seamlessly across midnight.")
 		return
@@ -103,7 +104,9 @@ func _run() -> void:
 			}
 		}
 	}
+	print("ClimateTest: configuring climate dependencies.")
 	climate.configurar_dependencias(world_data, atmosphere)
+	print("ClimateTest: climate dependencies configured.")
 	var niebla_a: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
 	climate._estados_contexto_cache.clear()
 	var niebla_b: Dictionary = climate.obtener_estado_para_contexto({"habitat_id": "habitat-frio"})
@@ -136,6 +139,7 @@ func _run() -> void:
 	if ai.actividad_horaria != "reposar":
 		_fail("Cold did not change the creature's activity routine.")
 		return
+	print("ClimateTest: fog, temperature and creature AI passed.")
 	var clima_despejado: Dictionary = climate.obtener_estado_para_contexto({}).get("clima", {})
 	if str(clima_despejado.get("tipo", "")) != "despejado":
 		_fail("The station-wide climate profile was not used as fallback.")
@@ -155,6 +159,7 @@ func _run() -> void:
 	atmosphere.dia_del_anio = 1
 	atmosphere.estacion_actual["dia_de_estacion"] = 1
 
+	print("ClimateTest: seasonal event checks passed.")
 	if not climate.establecer_clima("lluvia", 0.8, 0.0):
 		_fail("A supported weather profile was rejected.")
 		return
