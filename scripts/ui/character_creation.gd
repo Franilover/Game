@@ -55,6 +55,9 @@ func _ready() -> void:
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
 	_crear_vista_previa()
+	# La personalización visual queda desactivada temporalmente.
+	# Conservamos la estructura y los datos para reactivarla más adelante.
+	appearance_container.visible = false
 	_construir_controles_personalizacion()
 	PIXEL_UI_THEME.apply(self)
 	_actualizar_vista_previa()
@@ -174,6 +177,25 @@ func _actualizar_genero_segun_especie() -> void:
 	gender.visible = not es_feerin
 	gender_free.visible = not es_feerin and gender.selected == 3
 
+func _seleccionar_especie_humana() -> void:
+	if species.item_count == 0:
+		return
+	for indice in range(species.item_count):
+		var datos_variant: Variant = species.get_item_metadata(indice)
+		if not datos_variant is Dictionary:
+			continue
+		var datos := datos_variant as Dictionary
+		var nombre := str(datos.get("nombre", "")).strip_edges().to_lower()
+		var clave := str(datos.get("clave", "")).strip_edges().to_lower()
+		if nombre == "humano" or clave == "humano":
+			species.select(indice)
+			return
+	# No elegimos otra especie silenciosamente si Humano no está disponible.
+	species.select(-1)
+	status.text = "La especie Humano no está disponible."
+	status.visible = true
+
+
 func _on_species_selected(_index: int) -> void:
 	_actualizar_genero_segun_especie()
 	_update_confirm()
@@ -190,7 +212,7 @@ func _on_species_loaded(data: Array) -> void:
 	if not species.item_selected.is_connected(_on_species_selected):
 		species.item_selected.connect(_on_species_selected)
 	if species.item_count > 0:
-		species.select(0)
+		_seleccionar_especie_humana()
 		_actualizar_genero_segun_especie()
 	else:
 		status.text = "No hay especies jugables disponibles."
