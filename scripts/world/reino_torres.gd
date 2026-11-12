@@ -242,6 +242,7 @@ func _process(_delta: float) -> void:
 	if entrada_cercana.is_empty():
 		_aviso.text = ""
 		_aviso_panel.visible = false
+		_boton_entrar.visible = false
 		return
 
 	_aviso.text = "Entrar"
