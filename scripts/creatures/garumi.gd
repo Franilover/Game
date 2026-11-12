@@ -231,6 +231,15 @@ func esta_guardado() -> bool:
 	return _guardado
 
 
+func establecer_estado_companero(jugador: Node, activo: bool) -> void:
+	if not _vinculado or not is_instance_valid(jugador) or not jugador is Node2D:
+		return
+	if activo:
+		_invocar_garumi(jugador)
+	else:
+		_guardar_garumi()
+
+
 func alternar_estado_invocacion(jugador: Node) -> void:
 	if not _vinculado or not is_instance_valid(jugador) or not jugador is Node2D:
 		return
