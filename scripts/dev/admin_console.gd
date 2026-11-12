@@ -949,6 +949,7 @@ func _comando_summon(nombre: String) -> void:
 		var resultado_garumi: Dictionary = world_generator.summon_garumi(nombre_garumi, posicion_invocacion)
 		if bool(resultado_garumi.get("ok", false)):
 			_agregar_linea("[color=#9fd18b]Garumi invocado: " + str(resultado_garumi.get("nombre", nombre_garumi)) + "[/color]")
+			_publicar_accion_chat("invocó a Garumi " + str(resultado_garumi.get("nombre", nombre_garumi)) + ".")
 		else:
 			_agregar_linea("[color=#d88]" + str(resultado_garumi.get("mensaje", "No se pudo invocar el Garumi.")) + "[/color]")
 		return
@@ -965,6 +966,7 @@ func _comando_summon(nombre: String) -> void:
 				+ str(datos.get("nombre", nombre_solicitado))
 				+ "[/color]"
 			)
+			_publicar_accion_chat("invocó a " + str(datos.get("nombre", nombre_solicitado)) + ".")
 			return
 
 		# Si no era una criatura/personaje directo, probamos la sintaxis
@@ -995,6 +997,7 @@ nombre_personaje,
 							))
 							+ "[/color]"
 						)
+						_publicar_accion_chat("invocó a " + str(datos.get("nombre", nombre_personaje)) + ".")
 						return
 
 		_agregar_linea(
@@ -1152,6 +1155,7 @@ func _comando_tp(argumentos: String) -> void:
 
 	jugador.global_position = posicion
 	_agregar_linea("[color=#9fd18b]Teletransportado a " + tipo + ": " + nombre + ".[/color]")
+	_publicar_accion_chat("se teletransportó a " + tipo + " " + nombre + ".")
 
 func _comando_give(nombre: String) -> void:
 	_garlia_debug().call("registrar", "COMMAND", "/give " + nombre)
@@ -1224,6 +1228,7 @@ func _comando_give(nombre: String) -> void:
 		+ str(item.get("nombre", nombre_objeto))
 		+ "[/color]"
 	)
+	_publicar_accion_chat("obtuvo " + str(item.get("nombre", nombre_objeto)) + ".")
 
 
 func _comando_time(argumentos: String) -> void:
@@ -1250,6 +1255,7 @@ func _comando_time(argumentos: String) -> void:
 	match subcomando:
 		"lock":
 			atmosfera.bloquear_tiempo()
+			_publicar_accion_chat("bloqueó el paso del tiempo.")
 			_agregar_linea(
 				"[color=#9fd18b]"
 				+ "Tiempo bloqueado."
@@ -1258,6 +1264,7 @@ func _comando_time(argumentos: String) -> void:
 
 		"day":
 			if atmosfera.establecer_dia():
+				_publicar_accion_chat("hizo de día.")
 				_agregar_linea(
 					"[color=#9fd18b]"
 					+ "Hora establecida: 12:00."
@@ -1272,6 +1279,7 @@ func _comando_time(argumentos: String) -> void:
 
 		"night":
 			if atmosfera.establecer_noche():
+				_publicar_accion_chat("hizo de noche.")
 				_agregar_linea(
 					"[color=#9fd18b]"
 					+ "Hora establecida: 00:00."
@@ -1286,6 +1294,7 @@ func _comando_time(argumentos: String) -> void:
 
 		"restart":
 			if atmosfera.reiniciar_tiempo():
+				_publicar_accion_chat("reinició el tiempo del mundo.")
 				_agregar_linea(
 					"[color=#9fd18b]"
 					+ "Tiempo reiniciado al inicio del calendario y desbloqueado."
