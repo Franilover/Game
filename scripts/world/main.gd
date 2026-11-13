@@ -210,6 +210,9 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 	var input_controller = PLAYER_INPUT_CONTROLLER_SCRIPT.new()
+	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo() and input_controller.es_combinacion_viaje(event):
+		get_viewport().set_input_as_handled()
+		return
 	if not input_controller.es_combinacion_viaje(event):
 		return
 	if _realm_menu == null or not is_instance_valid(_realm_menu):
