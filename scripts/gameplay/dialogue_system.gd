@@ -15,6 +15,7 @@ var relationship_system: RelationshipSystemService = null
 
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
+var portrait_rect: TextureRect = null
 var text_label: Label = null
 var hint_label: Label = null
 var action_button: Button = null
@@ -261,11 +262,45 @@ func _mostrar_linea_actual() -> void:
 	).strip_edges()
 
 	speaker_label.text = hablante
+	_actualizar_retrato(hablante)
 	_texto_completo = texto
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
 	text_label.text = ""
 	_actualizar_boton_accion()
+
+
+func _actualizar_retrato(hablante: String) -> void:
+	if portrait_rect == null:
+		return
+
+	var nombre := hablante.strip_edges()
+	if is_instance_valid(_fuente):
+		var nombre_individual := _fuente.nombre_individual.strip_edges()
+		if nombre_individual.is_empty():
+			nombre_individual = _fuente.get_nombre().strip_edges()
+		if nombre.is_empty() or nombre.to_lower() == _fuente.get_nombre().strip_edges().to_lower():
+			nombre = nombre_individual
+
+	if nombre.is_empty():
+		portrait_rect.texture = null
+		portrait_rect.visible = false
+		return
+
+	var rutas: Array[String] = [
+		"res://assets/art/characters/heads/" + nombre + ".png",
+		"res://assets/art/characters/heads/" + nombre + ".PNG"
+	]
+	var textura: Texture2D = null
+	for ruta in rutas:
+		if ResourceLoader.exists(ruta):
+			textura = load(ruta) as Texture2D
+			if textura != null:
+				break
+
+	portrait_rect.texture = textura
+	portrait_rect.visible = textura != null
+
 
 
 func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
@@ -515,9 +550,26 @@ func _crear_interfaz() -> void:
 	margin.add_theme_constant_override("margin_bottom", 14)
 	dialogue_panel.add_child(margin)
 
+	var content_row := HBoxContainer.new()
+	content_row.name = "DialogueContent"
+	content_row.add_theme_constant_override("separation", 14)
+	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(content_row)
+
+	portrait_rect = TextureRect.new()
+	portrait_rect.name = "SpeakerPortrait"
+	portrait_rect.custom_minimum_size = Vector2(64, 64)
+	portrait_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	portrait_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content_row.add_child(portrait_rect)
+
 	var column := VBoxContainer.new()
+	column.name = "DialogueText"
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
-	margin.add_child(column)
+	content_row.add_child(column)
 
 	speaker_label = Label.new()
 	speaker_label.name = "Speaker"
