@@ -1,0 +1,98 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/reserva_carmesi_intro.gd" id="1_script"]
+
+[node name="ReservaCarmesiIntro" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.075, 0.035, 0.035, 1)
+
+[node name="DistantLight" type="ColorRect" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -120.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.24, 0.075, 0.065, 0.42)
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -390.0
+offset_top = -235.0
+offset_right = 390.0
+offset_bottom = 235.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+
+[node name="PageCounter" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.58, 0.43, 1)
+theme_override_font_sizes/font_size = 14
+text = "INTRODUCCIÓN  ·  01 / 04"
+horizontal_alignment = 1
+
+[node name="PageTitle" type="Label" parent="Content"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.84, 0.68, 1)
+theme_override_font_sizes/font_size = 30
+text = "UN TERRITORIO DEL ABISMO"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Rule" type="ColorRect" parent="Content"]
+custom_minimum_size = Vector2(120, 2)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.61, 0.27, 0.19, 1)
+
+[node name="PageText" type="Label" parent="Content"]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.88, 0.84, 0.77, 1)
+theme_override_font_sizes/font_size = 19
+text = "En el Abismo se extiende un territorio inmenso conocido como la Reserva Carmesí."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Navigation" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PreviousButton" type="Button" parent="Content/Navigation"]
+custom_minimum_size = Vector2(170, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Anterior"
+
+[node name="NextButton" type="Button" parent="Content/Navigation"]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Continuar"
