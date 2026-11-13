@@ -389,7 +389,7 @@ func _ejecutar_accion_dialogo() -> void:
 			var evento_id := str(accion.get("evento_id", "")).strip_edges()
 			var contexto_variant: Variant = accion.get("contexto", {})
 			var contexto: Dictionary = contexto_variant.duplicate(true) if contexto_variant is Dictionary else {}
-			var resultado := relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
+			var resultado: Dictionary = relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
 			if resultado.is_empty():
 				return
 			_acciones.clear()
