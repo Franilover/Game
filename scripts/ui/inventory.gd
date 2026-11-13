@@ -153,7 +153,7 @@ func _configurar_admin_inventory(world_entity_spawner: WorldEntitySpawner) -> vo
 
 
 func _configurar_world_map(world_context: WorldContext) -> void:
-	var mapa: WorldMapUI = $Window/Margin/Column/Tabs/Mapa
+	var mapa := $Window/Margin/Column/Tabs/Mapa as WorldMapUI
 	if _player != null and is_instance_valid(mapa):
 		mapa.configurar_zona(_player, world_context, "mundo_abierto", null)
 
