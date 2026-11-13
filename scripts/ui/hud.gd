@@ -1238,6 +1238,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var hand_key := event as InputEventKey
 		if hand_key.keycode == KEY_R:
+			if _modo_historia:
+				_r_hold_activo = false
+				_r_hold_elapsed = 0.0
+				return
 			if hand_key.pressed and not hand_key.echo:
 				var modal_abierto := false
 				for modal in get_tree().get_nodes_in_group("modal_ui"):
@@ -1330,6 +1334,15 @@ func establecer_modo_historia(activo: bool) -> void:
 	_modo_historia = activo
 	if is_instance_valid(_calendar_panel):
 		_calendar_panel.visible = not activo
+	# El selector de compañero no forma parte del HUD de Historia.
+	if is_instance_valid(_garumi_companero_slot):
+		_garumi_companero_slot.visible = not activo
+	if is_instance_valid(_garumi_selector_panel):
+		_garumi_selector_panel.visible = false if activo else _r_selector_abierto
+	if activo:
+		_r_hold_activo = false
+		_r_hold_elapsed = 0.0
+		_r_selector_abierto = false
 
 
 func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
