@@ -247,7 +247,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _preparar_barra_dash() -> void:
 	if not is_instance_valid(_stamina_bar_node):
 		return
-	_stamina_bar_node.visible = true
+	_stamina_bar_node.visible = false
 	_stamina_bar_node.min_value = 0.0
 	_stamina_bar_node.max_value = 1.0
 	_stamina_bar_node.value = 1.0
@@ -260,7 +260,8 @@ func _actualizar_barra_dash(actual: float, maximo: float) -> void:
 	_stamina_bar_node.min_value = 0.0
 	_stamina_bar_node.max_value = maxf(maximo, 1.0)
 	_stamina_bar_node.value = clampf(actual, 0.0, _stamina_bar_node.max_value)
-	_stamina_bar_node.visible = true
+	# Solo aparece mientras la carga del dash se está recuperando.
+	_stamina_bar_node.visible = actual < maximo - 0.0001
 
 func _configurar_referencias_ui() -> void:
 	_preparar_barra_dash()
