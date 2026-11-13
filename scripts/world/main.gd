@@ -685,6 +685,14 @@ func _materializar_npcs_reino_torres() -> void:
 		)
 		npc.configurar(criatura_data)
 		$Entities.add_child(npc)
+		# Los NPC civiles ignoran al jugador y no participan en combate.
+		if is_instance_valid(_player):
+			npc.add_collision_exception_with(_player)
+		npc.remove_from_group("creatures")
+		npc.remove_from_group("damageable")
+		var movimiento_inicial := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento_inicial != null:
+			movimiento_inicial.detener_por_rutina()
 
 		var desplazamiento_plaza := Vector2.ZERO
 		if ubicacion == "plaza":
@@ -697,6 +705,7 @@ func _materializar_npcs_reino_torres() -> void:
 		npc.global_position = zona.to_global(posicion_hogar_local)
 		npc.set_meta("personaje_game_id", personaje_id)
 		npc.add_to_group("torres_game_npc")
+		npc.remove_from_group("creatures")
 		npc.remove_from_group("damageable")
 
 		var ai := npc.get_node_or_null("AIController")
