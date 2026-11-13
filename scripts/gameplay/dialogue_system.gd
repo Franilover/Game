@@ -263,7 +263,7 @@ func _mostrar_linea_actual() -> void:
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
 	text_label.text = ""
-	hint_label.text = "[ LMB ] Continuar · [ ESC ] Cerrar"
+	hint_label.text = "[ LMB ] Continuar · [ ESC ] Salir del diálogo"
 	_actualizar_boton_accion()
 
 
