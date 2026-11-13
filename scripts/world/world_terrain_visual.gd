@@ -1,6 +1,8 @@
 extends Node2D
 class_name WorldTerrainVisual
 
+const WATER_SHADER := preload("res://assets/shaders/agua_marina.gdshader")
+
 # Prueba de rendimiento: desactiva temporalmente las capas decorativas de variaciones.
 # El terreno base y sus transiciones TileMapDual siguen activos.
 const ENABLE_VARIATIONS: bool = false
@@ -357,6 +359,16 @@ func _marcar_frontera_por_celda_nueva(cell: Vector2i) -> void:
 
 func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
+	add_to_group("world_terrain_visual")
+
+
+func obtener_zona_en_posicion(posicion_global: Vector2) -> int:
+	var posicion_local := to_local(posicion_global)
+	var celda := Vector2i(
+		floori(posicion_local.x / float(maxi(tile_size, 1))),
+		floori(posicion_local.y / float(maxi(tile_size, 1)))
+	)
+	return int(_cell_zone.get(celda, -1))
 
 	# Las capas TileMapDual necesitan ejecutar _ready() antes de recibir
 	# celdas. Se crean todas por adelantado porque el primer chunk se pinta
@@ -460,6 +472,10 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	tile_set.set_terrain_name(0, 1, TERRAIN_NAMES[zone])
 
 	var layer := TileMapDual.new()
+	if zone >= 4 and zone <= 6:
+		var water_material := ShaderMaterial.new()
+		water_material.shader = WATER_SHADER
+		layer.display_material = water_material
 	layer.name = "TerrainDual_Zone_%02d" % zone
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
