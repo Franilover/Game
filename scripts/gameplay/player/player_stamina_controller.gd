@@ -1,64 +1,82 @@
 extends RefCounted
 class_name PlayerStaminaController
 
-## Reserva discreta de impulsos para dash. No se regenera con el tiempo.
+## Una carga de dash que se recupera automáticamente en tres segundos.
 signal stamina_changed(current: float, maximum: float)
 
-const MAX_CARGAS: int = 5
-var current: float = MAX_CARGAS
-var maximum: float = MAX_CARGAS
-var regeneration: float = 0.0
-var regeneration_delay: float = 0.0
-var regeneration_timer: float = 0.0
+const DURACION_RECARGA_DASH: float = 3.0
 
-func configurar(maximo: float, actual: float = -1.0) -> void:
-	maximum = clampf(roundf(maximo), 1.0, float(MAX_CARGAS))
-	current = maximum if actual < 0.0 else clampf(roundf(actual), 0.0, maximum)
-	regeneration_timer = 0.0
+var current: float = 1.0
+var maximum: float = 1.0
+var regeneration: float = 0.0
+var regeneration_delay: float = DURACION_RECARGA_DASH
+var regeneration_timer: float = DURACION_RECARGA_DASH
+
+func configurar(_maximo: float, actual: float = -1.0) -> void:
+	maximum = 1.0
+	current = maximum if actual < 0.0 else clampf(actual, 0.0, maximum)
+	regeneration_timer = current / maximum * DURACION_RECARGA_DASH
 	stamina_changed.emit(current, maximum)
 
-func establecer_maximo(maximo: float, conservar_actual: bool = true) -> void:
-	maximum = clampf(roundf(maximo), 1.0, float(MAX_CARGAS))
-	current = minf(current, maximum) if conservar_actual else maximum
+func establecer_maximo(_maximo: float, _conservar_actual: bool = true) -> void:
+	# El dash tiene una sola carga: no se acumulan impulsos adicionales.
+	maximum = 1.0
+	current = clampf(current, 0.0, maximum)
+	regeneration_timer = current / maximum * DURACION_RECARGA_DASH
 	stamina_changed.emit(current, maximum)
 
 func establecer_actual(actual: float) -> void:
-	current = clampf(roundf(actual), 0.0, maximum)
+	current = clampf(actual, 0.0, maximum)
+	regeneration_timer = current / maximum * DURACION_RECARGA_DASH
 	stamina_changed.emit(current, maximum)
 
 func tiene(cantidad: float) -> bool:
-	return current >= maxf(ceilf(cantidad), 0.0)
+	return current >= maxf(cantidad, 0.0)
 
 func gastar(cantidad: float) -> bool:
-	var gasto := maxf(ceilf(cantidad), 0.0)
-	if current < gasto:
+	var gasto := maxf(cantidad, 0.0)
+	if current + 0.0001 < gasto:
 		return false
 	if gasto <= 0.0:
 		return true
 	current = maxf(current - gasto, 0.0)
+	regeneration_timer = 0.0
 	stamina_changed.emit(current, maximum)
 	return true
 
 func restaurar(cantidad: float) -> bool:
-	var recuperacion := maxf(floorf(cantidad), 0.0)
+	var recuperacion := maxf(cantidad, 0.0)
 	if recuperacion <= 0.0 or current >= maximum:
 		return false
 	var anterior := current
 	current = minf(current + recuperacion, maximum)
-	if current == anterior:
-		return false
-	stamina_changed.emit(current, maximum)
-	return true
+	regeneration_timer = current / maximum * DURACION_RECARGA_DASH
+	if not is_equal_approx(current, anterior):
+		stamina_changed.emit(current, maximum)
+		return true
+	return false
 
-func actualizar(_delta: float, _puede_regenerar: bool) -> void:
-	pass
+func actualizar(delta: float, puede_regenerar: bool) -> void:
+	if not puede_regenerar or current >= maximum:
+		return
+	regeneration_timer = minf(
+		regeneration_timer + maxf(delta, 0.0),
+		DURACION_RECARGA_DASH
+	)
+	var nuevo_actual := minf(
+		regeneration_timer / DURACION_RECARGA_DASH * maximum,
+		maximum
+	)
+	if not is_equal_approx(current, nuevo_actual):
+		current = nuevo_actual
+		stamina_changed.emit(current, maximum)
 
 func reiniciar() -> void:
 	current = maximum
-	regeneration_timer = 0.0
+	regeneration_timer = DURACION_RECARGA_DASH
 	stamina_changed.emit(current, maximum)
 
 func establecer_regeneracion(_valor: float, _retraso: float = -1.0) -> void:
-	# Las cargas solo se recuperan mediante Eterium o descanso.
+	# La recarga del dash siempre dura tres segundos y no admite ajustes externos.
 	regeneration = 0.0
-	regeneration_delay = 0.0
+	regeneration_delay = DURACION_RECARGA_DASH
