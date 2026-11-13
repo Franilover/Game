@@ -573,7 +573,8 @@ func _crear_luces_faroles() -> void:
 			continue
 
 		# Coordenada global calculada desde el sprite, sin posiciones aproximadas del mapa.
-		var posicion_global := farol.to_global(Vector2(0.0, -18.0))
+		# Bajar el foco desde la parte alta del poste hacia la zona de la lámpara.
+		var posicion_global := farol.to_global(Vector2(0.0, -8.0))
 		var posicion_local := to_local(posicion_global)
 
 		# Luz real para iluminar el suelo y los elementos cercanos del mundo.
