@@ -51,10 +51,10 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PageTitle" type="Label" parent="Content"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.84, 0.68, 1)
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 22
 text = "UN TERRITORIO DEL ABISMO"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -67,7 +67,7 @@ size_flags_horizontal = 4
 color = Color(0.61, 0.27, 0.19, 1)
 
 [node name="TextPanel" type="PanelContainer" parent="Content"]
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 152)
 layout_mode = 2
 size_flags_vertical = 3
 
