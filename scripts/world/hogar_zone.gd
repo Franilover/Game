@@ -6,12 +6,6 @@ class_name HogarZone
 
 const ANCHO := 2400.0
 const ALTO := 1600.0
-const TAMANO_CUADRICULA := 32.0
-const COLOR_HIERBA := Color(0.34, 0.48, 0.27, 1.0)
-const COLOR_HIERBA_CLARA := Color(0.39, 0.53, 0.30, 1.0)
-const COLOR_CAMINO := Color(0.55, 0.43, 0.29, 1.0)
-const COLOR_TIERRA := Color(0.39, 0.29, 0.20, 1.0)
-const COLOR_BORDE := Color(0.20, 0.29, 0.18, 1.0)
 
 var _decoraciones: Array[Dictionary] = []
 var _version_estado := 1
@@ -110,7 +104,6 @@ func mover_decoracion(indice: int, posicion: Vector2) -> bool:
 		return false
 	_decoraciones[indice]["x"] = posicion.x
 	_decoraciones[indice]["y"] = posicion.y
-	queue_redraw()
 	return true
 
 
