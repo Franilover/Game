@@ -149,8 +149,10 @@ func _ready() -> void:
 	_crear_indicador_recarga_dash()
 	PIXEL_UI_THEME.apply(self)
 	if is_instance_valid(interaction_prompt):
-		# La interacción contextual es solo texto; no debe parecer un botón de mouse.
-		interaction_prompt.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		# El aviso contextual usa la misma textura de fondo que los botones del juego.
+		var interaction_style := PIXEL_UI_THEME.button_surface_style()
+		if interaction_style != null:
+			interaction_prompt.add_theme_stylebox_override("panel", interaction_style)
 	_crear_selector_manos()
 	_crear_huecos_manos()
 	_preparar_location()
