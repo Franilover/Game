@@ -74,6 +74,12 @@ var _auth_ref: Node = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
 var _muerte_visual_procesada: bool = false
+var _terrain_query_timer: float = 0.0
+var _terrain_speed_multiplier: float = 1.0
+var _terrain_visual_ref: Node = null
+
+const WATER_SPEED_MULTIPLIER: float = 0.58
+const WATER_ZONES: Array[int] = [4, 5, 6]
 
 
 
@@ -241,6 +247,7 @@ func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, 
 
 
 func _procesar_movimiento_red(delta: float) -> void:
+	_actualizar_multiplicador_terreno(delta)
 	stamina_controller.actualizar(delta, true)
 	locomotion.actualizar_cooldowns(delta)
 	locomotion.avanzar_accion(delta)
@@ -308,6 +315,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
+	_actualizar_multiplicador_terreno(delta)
 	stamina_controller.actualizar(delta, true)
 	locomotion.actualizar_cooldowns(delta)
 	_exploration_check_timer -= delta
@@ -407,7 +415,7 @@ func _calcular_movimiento_normal(
 	var velocidad := locomotion.calcular_movimiento(
 		direccion,
 		move_speed,
-		multiplicador_velocidad,
+		multiplicador_velocidad * _terrain_speed_multiplier,
 		estado_corriendo
 	)
 	# No sobrescribir el facing visual cuando el input está en reposo:
@@ -419,6 +427,25 @@ func _calcular_movimiento_normal(
 			_update_dir_marker()
 			_update_visual()
 	return velocidad
+
+
+func _actualizar_multiplicador_terreno(delta: float) -> void:
+	_terrain_query_timer -= delta
+	if _terrain_query_timer > 0.0:
+		return
+	_terrain_query_timer = 0.08
+
+	var zona := -1
+	if is_instance_valid(_world_context_ref) and _world_context_ref.tiene_mundo_activo():
+		var tile := _world_context_ref.get_tile_at(global_position)
+		zona = _world_context_ref.get_zona_at(tile)
+	else:
+		if not is_instance_valid(_terrain_visual_ref):
+			_terrain_visual_ref = get_tree().get_first_node_in_group("world_terrain_visual")
+		if is_instance_valid(_terrain_visual_ref) and _terrain_visual_ref.has_method("obtener_zona_en_posicion"):
+			zona = int(_terrain_visual_ref.call("obtener_zona_en_posicion", global_position))
+
+	_terrain_speed_multiplier = WATER_SPEED_MULTIPLIER if WATER_ZONES.has(zona) else 1.0
 
 
 func _sincronizar_estado_movimiento() -> void:
@@ -648,7 +675,7 @@ func _procesar_jump(delta: float) -> void:
 	var duracion := maxf(jump_duration, 0.001)
 	var progreso := locomotion.obtener_progreso_salto(duracion)
 	var velocidad := locomotion.obtener_velocidad_accion(duracion, jump_distance)
-	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad)
+	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad * _terrain_speed_multiplier)
 	physics_movement_controller.aplicar_desplazamiento(self)
 	_ajustar_a_arena_garumi()
 	var altura := sin(progreso * PI) * 16.0
@@ -686,7 +713,7 @@ func _ajustar_a_arena_garumi() -> void:
 
 func _procesar_dash(delta: float) -> void:
 	var velocidad := locomotion.obtener_velocidad_accion(dash_duration, dash_distance)
-	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad)
+	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad * _terrain_speed_multiplier)
 	physics_movement_controller.aplicar_desplazamiento(self)
 	_ajustar_a_arena_garumi()
 	if not locomotion.procesando_dash():
