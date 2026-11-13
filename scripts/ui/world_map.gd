@@ -235,8 +235,8 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 	aldeanos.sort_custom(func(a: Node, b: Node) -> bool:
 		var datos_a: Variant = a.get("datos")
 		var datos_b: Variant = b.get("datos")
-		var nombre_a := str(datos_a.get("nombre", a.name)) if datos_a is Dictionary else a.name
-		var nombre_b := str(datos_b.get("nombre", b.name)) if datos_b is Dictionary else b.name
+		var nombre_a: String = str(datos_a.get("nombre", a.name)) if datos_a is Dictionary else a.name
+		var nombre_b: String = str(datos_b.get("nombre", b.name)) if datos_b is Dictionary else b.name
 		return nombre_a.to_lower() < nombre_b.to_lower()
 	)
 
@@ -247,7 +247,7 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 	]
 	var indice := 0
 	for aldeano in aldeanos:
-		var nombre := str(aldeano.call("get_nombre_visual")) if aldeano.has_method("get_nombre_visual") else aldeano.name
+		var nombre: String = str(aldeano.call("get_nombre_visual")) if aldeano.has_method("get_nombre_visual") else aldeano.name
 		var posicion_local: Vector2
 		if bool(aldeano.get_meta("rutina_en_edificio", false)):
 			var clave := str(aldeano.get_meta("rutina_ubicacion", ""))
