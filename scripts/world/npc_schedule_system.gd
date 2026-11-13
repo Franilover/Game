@@ -291,10 +291,11 @@ func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
 
 
 func _posicion_a_celda(posicion: Vector2) -> Vector2i:
-	var origen_global := _malla.offset - Vector2(TAMANO_CELDA * 0.5, TAMANO_CELDA * 0.5)
+	# AStarGrid2D.offset ya apunta al centro de la celda (0, 0).
+	# Restar otra media celda desplazaba cada consulta una celda.
 	return Vector2i(
-		floori((posicion.x - origen_global.x) / TAMANO_CELDA),
-		floori((posicion.y - origen_global.y) / TAMANO_CELDA)
+		roundi((posicion.x - _malla.offset.x) / TAMANO_CELDA),
+		roundi((posicion.y - _malla.offset.y) / TAMANO_CELDA)
 	)
 
 
