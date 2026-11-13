@@ -37,6 +37,14 @@ static func slot_style(selected: bool = false) -> StyleBoxTexture:
 	return _texture_style("slot_selected.png" if selected else "slot_frame.png", 5)
 
 
+static func apply_interaction_prompt(control: Control) -> void:
+	if control == null:
+		return
+	var style := _texture_style("button_normal.png", 5)
+	if style != null:
+		control.add_theme_stylebox_override("panel", style)
+
+
 static func _apply_control(control: Control, use_pixel_titles: bool = true) -> void:
 	if control is Panel or control is PanelContainer:
 		# Un único recurso dibuja tanto el fondo como el borde del panel.
