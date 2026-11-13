@@ -18,6 +18,7 @@ const CONTROLES := [
 ]
 
 var _panel: Panel
+var _center: CenterContainer
 
 
 func _ready() -> void:
@@ -37,13 +38,18 @@ func _construir_interfaz() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)
 
+	_center = CenterContainer.new()
+	_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_center)
+
 	_panel = Panel.new()
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.position = Vector2(-310.0, -245.0)
-	_panel.size = Vector2(620.0, 490.0)
-	# El tema central dibuja el fondo y el borde con el mismo recurso
-	# que utilizan los demás paneles actuales del juego.
-	add_child(_panel)
+	_panel.custom_minimum_size = Vector2(620.0, 490.0)
+	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# El contenedor centra el panel usando el rectángulo real del viewport.
+	# Evita offsets negativos calculados sobre un Control todavía sin tamaño.
+	_center.add_child(_panel)
 
 	var margen := MarginContainer.new()
 	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -79,7 +85,7 @@ func _construir_interfaz() -> void:
 	columna.add_child(controles_titulo)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 185)
+	scroll.custom_minimum_size = Vector2(0, 120)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	columna.add_child(scroll)
 
@@ -102,7 +108,7 @@ func _ajustar_panel_a_pantalla() -> void:
 	var area := get_viewport_rect().size
 	var ancho := minf(620.0, maxf(280.0, area.x - 32.0))
 	var alto := minf(490.0, maxf(300.0, area.y - 32.0))
-	_panel.position = Vector2(-ancho * 0.5, -alto * 0.5)
+	_panel.custom_minimum_size = Vector2(ancho, alto)
 	_panel.size = Vector2(ancho, alto)
 
 
