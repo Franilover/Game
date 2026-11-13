@@ -374,7 +374,7 @@ func _agregar_sprite(indice: int) -> void:
 	add_child(sprite)
 	_sprites.append(sprite)
 	if str(_decoraciones[indice].get("tipo", "")) == "cofre":
-		var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+		var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as ContextualActionTarget
 		if is_instance_valid(objetivo):
 			objetivo.name = "InteraccionCofre_" + str(indice)
 			objetivo.configurar(
