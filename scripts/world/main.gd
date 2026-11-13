@@ -709,7 +709,7 @@ func _materializar_npcs_reino_torres() -> void:
 			movimiento.set_process(false)
 			movimiento.set_physics_process(false)
 
-		existentes[personaje_id] = true
+		existentes[personaje_id] = npc
 		creados += 1
 
 	if creados > 0:
