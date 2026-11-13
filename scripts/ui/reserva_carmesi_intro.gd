@@ -1,6 +1,7 @@
 extends Control
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const VELOCIDAD_MAQUINA_ESCRIBIR := 34.0
 
 const PAGINAS: Array[Dictionary] = [
 	{
@@ -23,18 +24,38 @@ const PAGINAS: Array[Dictionary] = [
 
 @onready var page_counter: Label = $Content/PageCounter
 @onready var page_title: Label = $Content/PageTitle
-@onready var page_text: Label = $Content/PageText
+@onready var text_panel: PanelContainer = $Content/TextPanel
+@onready var page_text: Label = $Content/TextPanel/PageText
 @onready var previous_button: Button = $Content/Navigation/PreviousButton
 @onready var next_button: Button = $Content/Navigation/NextButton
 
 var _pagina_actual: int = 0
+var _texto_tween: Tween
 
 
 func _ready() -> void:
 	previous_button.pressed.connect(_pagina_anterior)
 	next_button.pressed.connect(_pagina_siguiente)
 	PIXEL_UI_THEME.apply(self)
+	_configurar_panel_texto()
 	_actualizar_pagina()
+
+
+func _configurar_panel_texto() -> void:
+	# Panel cálido y continuo: separa la narración del fondo sin parecer una caja rígida.
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.105, 0.067, 0.057, 0.96)
+	estilo.border_color = Color(0.48, 0.25, 0.17, 0.95)
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(8)
+	estilo.shadow_color = Color(0.015, 0.008, 0.008, 0.48)
+	estilo.shadow_size = 12
+	estilo.shadow_offset = Vector2(0, 4)
+	estilo.content_margin_left = 30.0
+	estilo.content_margin_right = 30.0
+	estilo.content_margin_top = 22.0
+	estilo.content_margin_bottom = 22.0
+	text_panel.add_theme_stylebox_override("panel", estilo)
 
 
 func _actualizar_pagina() -> void:
@@ -42,14 +63,23 @@ func _actualizar_pagina() -> void:
 	page_counter.text = "INTRODUCCIÓN  ·  %02d / %02d" % [_pagina_actual + 1, PAGINAS.size()]
 	page_title.text = str(pagina["titulo"])
 	page_text.text = str(pagina["texto"])
+	page_text.visible_characters = 0
 	previous_button.disabled = _pagina_actual == 0
 	next_button.text = "Comenzar capítulo" if _pagina_actual == PAGINAS.size() - 1 else "Continuar"
 
-	page_text.modulate.a = 0.0
+	if _texto_tween and _texto_tween.is_running():
+		_texto_tween.kill()
 	page_title.modulate.a = 0.0
-	var tween := create_tween().set_parallel(true)
-	tween.tween_property(page_title, "modulate:a", 1.0, 0.32)
-	tween.tween_property(page_text, "modulate:a", 1.0, 0.48).set_delay(0.08)
+	text_panel.modulate.a = 0.0
+	var entrada := create_tween().set_parallel(true)
+	entrada.tween_property(page_title, "modulate:a", 1.0, 0.38)
+	entrada.tween_property(text_panel, "modulate:a", 1.0, 0.42).set_delay(0.06)
+
+	# El texto se revela por caracteres; la duración crece con la longitud del párrafo.
+	var cantidad_caracteres := page_text.get_total_character_count()
+	var duracion := maxf(1.0, float(cantidad_caracteres) / VELOCIDAD_MAQUINA_ESCRIBIR)
+	_texto_tween = create_tween()
+	_texto_tween.tween_property(page_text, "visible_characters", cantidad_caracteres, duracion)
 
 
 func _pagina_anterior() -> void:
@@ -60,6 +90,11 @@ func _pagina_anterior() -> void:
 
 
 func _pagina_siguiente() -> void:
+	# El primer toque termina la animación; el siguiente avanza de página.
+	if _texto_tween and _texto_tween.is_running():
+		_texto_tween.kill()
+		page_text.visible_characters = -1
+		return
 	if _pagina_actual < PAGINAS.size() - 1:
 		_pagina_actual += 1
 		_actualizar_pagina()
