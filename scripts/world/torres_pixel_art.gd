@@ -8,11 +8,11 @@ static func crear_edificio(clave: String, variante: int = 0) -> Texture2D:
 	var tamano := Vector2i(48, 48)
 	if clave == "castillo":
 		tamano = Vector2i(112, 88)
-	elif clave in ["archivo_real", "sala_consejo", "casa_estudio", "casa_comercio", "alojamiento", "cuartel", "registro", "reparaciones", "almacen", "carpinteria", "granero", "molino", "aguas", "corrales", "casa_granjeros", "semillas"]:
+	elif clave in ["archivo_real", "sala_consejo", "casa_estudio", "casa_comercio", "cuartel", "registro", "reparaciones", "carpinteria", "granero", "molino", "corrales", "casa_granjeros"]:
 		tamano = Vector2i(64, 56)
 	elif clave.begins_with("vivienda_oeste"):
 		tamano = Vector2i(42, 42)
-	elif clave in ["forja", "establos", "telar", "alfareria", "banos"]:
+	elif clave in ["forja"]:
 		tamano = Vector2i(52, 48)
 
 	var imagen := Image.create(tamano.x, tamano.y, false, Image.FORMAT_RGBA8)
@@ -144,9 +144,9 @@ static func crear_decoracion(tipo: String, variante: int = 0) -> Texture2D:
 static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	var w := imagen.get_width()
 	var h := imagen.get_height()
-	var es_piedra := clave in ["vivienda_mason", "archivo_real", "sala_consejo", "cuartel", "banos", "aguas", "registro"]
-	var es_granja := clave in ["granero", "casa_granjeros", "semillas", "corrales", "establos"]
-	var es_taller := clave in ["forja", "reparaciones", "carpinteria", "alfareria", "telar", "molino"]
+	var es_piedra := clave in ["vivienda_mason", "archivo_real", "sala_consejo", "cuartel", "registro"]
+	var es_granja := clave in ["granero", "casa_granjeros", "corrales"]
+	var es_taller := clave in ["forja", "reparaciones", "carpinteria", "molino"]
 	var paredes: Array[Color] = [Color("#B9A17A"), Color("#C5AD84"), Color("#9E8A67"), Color("#A4A07D"), Color("#B9B6A2")]
 	var tejados: Array[Color] = [Color("#8A4936"), Color("#704431"), Color("#5A4934"), Color("#596642"), Color("#794D3C")]
 	if es_piedra:
@@ -158,7 +158,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	var indice := absi(clave.hash() + variante * 13)
 	var pared: Color = paredes[indice % paredes.size()]
 	var tejado: Color = tejados[int(indice / 3) % tejados.size()]
-	var luz := Color("#DBBD80") if clave in ["panaderia", "posada", "alojamiento"] else Color("#A5C2B5")
+	var luz := Color("#DBBD80") if clave in ["panaderia", "posada"] else Color("#A5C2B5")
 	var contorno := Color("#33291F")
 
 	# Sombra pixelada, cimiento y cuerpo de mampostería.
@@ -191,7 +191,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 	_rect(imagen, 9, pared_y + 1, w - 18, pared_h - 2, pared)
 	_rect(imagen, 9, pared_y + 2, w - 18, 1, pared.lightened(0.14))
 	_rect(imagen, 9, h - 9, w - 18, 2, pared.darkened(0.20))
-	if clave in ["vivienda_mason", "banos", "archivo_real", "sala_consejo"]:
+	if clave in ["vivienda_mason", "archivo_real", "sala_consejo"]:
 		for fila in range(pared_y + 4, h - 9, 4):
 			_rect(imagen, 10, fila, w - 20, 1, pared.darkened(0.12))
 			var divisor := 15 if int(fila / 4) % 2 == 0 else 25
@@ -232,7 +232,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 		_rect(imagen, 9, 3, 5, 11, Color("#955A3A") if clave == "panaderia" else Color("#6B6254"))
 		_rect(imagen, 9, 5, 5, 2, Color("#B6A083"))
 		_rect(imagen, 10, 14, 3, 2, Color("#5B3926"))
-	if clave in ["posada", "alojamiento"]:
+	if clave in ["posada"]:
 		_rect(imagen, centro - 7, pared_y + 1, 14, 4, Color("#493127"))
 		_rect(imagen, centro - 6, pared_y + 2, 12, 2, Color("#D9BD82"))
 		_rect(imagen, centro - 4, pared_y + 2, 8, 1, Color("#815038"))
@@ -240,7 +240,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 		_rect(imagen, w - 12, pared_y + 5, 4, 7, Color("#3F3329"))
 		_rect(imagen, w - 11, pared_y + 7, 2, 3, Color("#CE6B32"))
 		_rect(imagen, w - 11, pared_y + 9, 1, 1, Color("#E6B05B"))
-	if clave in ["granero", "semillas", "casa_granjeros", "corrales"]:
+	if clave in ["granero", "casa_granjeros", "corrales"]:
 		_rect(imagen, 4, h - 16, 5, 5, Color("#B69A58"))
 		_rect(imagen, 5, h - 15, 3, 3, Color("#D4B96D"))
 	if clave == "molino":
