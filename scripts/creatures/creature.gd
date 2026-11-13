@@ -1094,6 +1094,16 @@ func _procesar_seguimiento() -> void:
 	_movimiento.tomar_control()
 
 
+func pausar_movimiento_temporal() -> void:
+	if _movimiento != null:
+		_movimiento.pausar_temporalmente()
+
+
+func reanudar_movimiento_temporal() -> void:
+	if _movimiento != null:
+		_movimiento.reanudar_temporalmente()
+
+
 func tomar_control_movimiento() -> void:
 	if _movimiento == null:
 		return
