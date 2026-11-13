@@ -873,16 +873,46 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
 		Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
 	]
+	# Las claves de rutina y los IDs de puerta no siempre tienen el mismo
+	# nombre (por ejemplo, casa_elian -> casa_oriente_a).
+	var ubicacion_rutina_por_entrada := {
+		"panaderia": "panaderia",
+		"forja": "forja",
+		"cuartel": "cuartel",
+		"registro": "registro",
+		"casa_comercio": "casa_comercio",
+		"archivo_real": "archivo_real",
+		"casa_estudio": "casa_estudio",
+		"casa_oriente_a": "casa_elian",
+		"vivienda_mason": "casa_bruna",
+		"casa_oriente_b": "casa_darven",
+		"casa_oriente_c": "casa_saira",
+		"vivienda_oeste_09": "casa_narel"
+	}
+	var ubicacion_rutina_esperada := str(ubicacion_rutina_por_entrada.get(entrada_id, ""))
 	var indice := 0
 	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not is_instance_valid(npc) or not npc is Node2D:
 			continue
-		if not bool(npc.get_meta("rutina_en_edificio", false)):
-			continue
-		if str(npc.get_meta("rutina_edificio_id", "")) != entrada_id:
+		var ya_asignado_a_esta_puerta := (
+			bool(npc.get_meta("rutina_en_edificio", false))
+			and str(npc.get_meta("rutina_edificio_id", "")) == entrada_id
+		)
+		var va_a_este_edificio := (
+			not ubicacion_rutina_esperada.is_empty()
+			and str(npc.get_meta("rutina_ubicacion", "")) == ubicacion_rutina_esperada
+		)
+		# Si el jugador entra antes de que termine la caminata, el NPC debe
+		# estar atendiendo dentro igualmente, no quedarse fuera de la sala.
+		if not ya_asignado_a_esta_puerta and not va_a_este_edificio:
 			continue
 		if npc.get_parent() != cuarto:
 			npc.reparent(cuarto, true)
+		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento != null:
+			movimiento.detener_por_rutina()
+		npc.set_meta("rutina_en_edificio", true)
+		npc.set_meta("rutina_edificio_id", entrada_id)
 		var actor := npc as Node2D
 		actor.position = posiciones[indice % posiciones.size()]
 		actor.visible = true
