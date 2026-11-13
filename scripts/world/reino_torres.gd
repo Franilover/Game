@@ -74,6 +74,7 @@ var _entrada_interior_id: String = ""
 var _jugador: Node2D
 var _posicion_exterior: Vector2 = Vector2.ZERO
 var _visibilidad_exterior: Dictionary = {}
+var _visibilidad_npcs_exterior: Dictionary = {}
 var _estados_colision_exterior: Dictionary = {}
 var _capa_interior: Node2D
 var _aviso_panel: PanelContainer
@@ -801,6 +802,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
 		return
 	_boton_entrar.visible = false
+	_ocultar_npcs_exteriores()
 	_posicion_exterior = _jugador.global_position
 	_entrada_interior_id = str(entrada.get("id", ""))
 	_visibilidad_exterior.clear()
@@ -824,9 +826,31 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	print("ReinoTorres: entrando a ", entrada["id"])
 
 
+func _ocultar_npcs_exteriores() -> void:
+	_visibilidad_npcs_exterior.clear()
+	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not is_instance_valid(npc) or not npc is CanvasItem:
+			continue
+		var visual := npc as CanvasItem
+		_visibilidad_npcs_exterior[visual.get_instance_id()] = visual.visible
+		visual.visible = false
+
+
+func _restaurar_npcs_exteriores() -> void:
+	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not is_instance_valid(npc) or not npc is CanvasItem:
+			continue
+		var visual := npc as CanvasItem
+		var instance_id := visual.get_instance_id()
+		if _visibilidad_npcs_exterior.has(instance_id):
+			visual.visible = bool(_visibilidad_npcs_exterior[instance_id])
+	_visibilidad_npcs_exterior.clear()
+
+
 func _salir_del_interior() -> void:
 	if not _interior_activo or not is_instance_valid(_jugador):
 		return
+	_restaurar_npcs_exteriores()
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
 	_boton_entrar.visible = false
