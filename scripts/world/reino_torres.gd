@@ -75,6 +75,7 @@ var _jugador: Node2D
 var _posicion_exterior: Vector2 = Vector2.ZERO
 var _visibilidad_exterior: Dictionary = {}
 var _visibilidad_npcs_exterior: Dictionary = {}
+var _contenedor_npcs_exterior: Node = null
 var _estados_colision_exterior: Dictionary = {}
 var _capa_interior: Node2D
 var _aviso_panel: PanelContainer
@@ -817,6 +818,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_capa_interior.visible = true
 	_capa_interior.process_mode = Node.PROCESS_MODE_INHERIT
 	_construir_habitacion(entrada)
+	_ubicar_npcs_del_edificio_en_interior(entrada)
 	_jugador.global_position = to_global(Vector2(0, 70))
 	_limitar_camara_a_interior()
 	_interterior_colisiones(true)
@@ -831,6 +833,8 @@ func _ocultar_npcs_exteriores() -> void:
 	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not is_instance_valid(npc) or not npc is CanvasItem:
 			continue
+		if _contenedor_npcs_exterior == null:
+			_contenedor_npcs_exterior = npc.get_parent()
 		var visual := npc as CanvasItem
 		_visibilidad_npcs_exterior[visual.get_instance_id()] = visual.visible
 		visual.visible = false
@@ -841,15 +845,74 @@ func _restaurar_npcs_exteriores() -> void:
 		if not is_instance_valid(npc) or not npc is CanvasItem:
 			continue
 		var visual := npc as CanvasItem
-		var instance_id := visual.get_instance_id()
-		if _visibilidad_npcs_exterior.has(instance_id):
-			visual.visible = bool(_visibilidad_npcs_exterior[instance_id])
+		# Si continúa trabajando o descansando dentro, no reaparece en la calle.
+		visual.visible = not bool(npc.get_meta("rutina_en_edificio", false))
 	_visibilidad_npcs_exterior.clear()
+
+
+func _obtener_entrada_por_id(entrada_id: String) -> Dictionary:
+	for entrada: Dictionary in ENTRADAS:
+		if str(entrada.get("id", "")) == entrada_id:
+			return entrada
+	return {}
+
+
+func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
+	var entrada_id := str(entrada.get("id", ""))
+	var cuarto := _capa_interior.get_node_or_null("Habitacion_" + entrada_id) as Node2D
+	if not is_instance_valid(cuarto):
+		return
+	var posiciones := [
+		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
+		Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
+	]
+	var indice := 0
+	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not is_instance_valid(npc) or not npc is Node2D:
+			continue
+		if not bool(npc.get_meta("rutina_en_edificio", false)):
+			continue
+		if str(npc.get_meta("rutina_edificio_id", "")) != entrada_id:
+			continue
+		if npc.get_parent() != cuarto:
+			npc.reparent(cuarto, true)
+		var actor := npc as Node2D
+		actor.position = posiciones[indice % posiciones.size()]
+		actor.visible = true
+		indice += 1
+
+
+func sacar_npc_del_interior(npc: Node) -> void:
+	if not is_instance_valid(npc) or _contenedor_npcs_exterior == null:
+		return
+	if not _capa_interior.is_ancestor_of(npc):
+		return
+	var edificio_id := str(npc.get_meta("rutina_edificio_id", ""))
+	var entrada := _obtener_entrada_por_id(edificio_id)
+	npc.reparent(_contenedor_npcs_exterior, true)
+	if not entrada.is_empty() and npc is Node2D:
+		(npc as Node2D).global_position = to_global(entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
+	npc.visible = false
+
+
+func _devolver_npcs_del_interior_al_exterior() -> void:
+	if _contenedor_npcs_exterior == null:
+		return
+	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not is_instance_valid(npc) or not _capa_interior.is_ancestor_of(npc):
+			continue
+		var edificio_id := str(npc.get_meta("rutina_edificio_id", ""))
+		var entrada := _obtener_entrada_por_id(edificio_id)
+		npc.reparent(_contenedor_npcs_exterior, true)
+		if not entrada.is_empty() and npc is Node2D:
+			(npc as Node2D).global_position = to_global(entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
+		npc.visible = false
 
 
 func _salir_del_interior() -> void:
 	if not _interior_activo or not is_instance_valid(_jugador):
 		return
+	_devolver_npcs_del_interior_al_exterior()
 	_restaurar_npcs_exteriores()
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
