@@ -191,6 +191,13 @@ func _al_solicitar_destino_reino(clave: String) -> void:
 	# Torres es el destino local fijo de inicio. Debe resolverse aquí antes de
 		# cualquier desvío de red o validación de desbloqueo/catálogo remoto.
 	# También aceptamos los alias que pueden llegar desde registros antiguos.
+	if clave_normalizada == "hogar":
+		if GarliaMultiplayer.es_servidor_dedicado() or GarliaWorldNetwork.es_cliente_en_mundo_global():
+			push_warning("Main: Hogar privado todavía no está habilitado dentro del mundo global multijugador.")
+			return
+		_zone_manager.entrar_hogar()
+		return
+
 	if clave_normalizada in ["torres", "reino_torres", "reino:torres"]:
 		if _zone_manager.has_method("esta_en_expedicion") and _zone_manager.esta_en_expedicion():
 			_zone_manager.salir_expedicion()
@@ -340,6 +347,12 @@ func _actualizar_limites_camara_zona(tipo: String) -> void:
 		_camera.limit_top = -700
 		_camera.limit_bottom = 700
 		_camera.limit_enabled = true
+	elif tipo == "hogar":
+		_camera.limit_left = -1200
+		_camera.limit_right = 1200
+		_camera.limit_top = -800
+		_camera.limit_bottom = 800
+		_camera.limit_enabled = true
 	elif tipo == "expedicion:bosque":
 		_camera.limit_left = 0
 		_camera.limit_right = 5120
@@ -417,7 +430,23 @@ func _inicializar_runtime_de_zona() -> void:
 		call_deferred("_restaurar_garumis_vinculados")
 
 	var tipo_zona_actual: String = str(_zone_manager.obtener_tipo_actual())
-	if tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
+	if tipo_zona_actual == "hogar":
+		var estado_hogar_variant: Variant = GameState.world_state.flags.get("hogar_estado", {})
+		var posicion_hogar := Vector2.ZERO
+		var tiene_posicion_hogar := false
+		if estado_hogar_variant is Dictionary:
+			var jugador_hogar_variant: Variant = (estado_hogar_variant as Dictionary).get("jugador", {})
+			if jugador_hogar_variant is Dictionary:
+				var jugador_hogar := jugador_hogar_variant as Dictionary
+				posicion_hogar = Vector2(float(jugador_hogar.get("x", 0.0)), float(jugador_hogar.get("y", 180.0)))
+				tiene_posicion_hogar = jugador_hogar.has("x") and jugador_hogar.has("y")
+		if tiene_posicion_hogar:
+			_player.global_position = posicion_hogar
+		else:
+			var zona_hogar: Node = _zone_manager.obtener_zona_actual()
+			var spawn_hogar: Node2D = zona_hogar.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_hogar) else null
+			_player.global_position = spawn_hogar.global_position if is_instance_valid(spawn_hogar) else Vector2(0, 180)
+	elif tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
 		var zona_actual: Node = _zone_manager.obtener_zona_actual()
 		var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
 		_player.global_position = punto_aparicion.global_position if is_instance_valid(punto_aparicion) else Vector2(0, 120)
