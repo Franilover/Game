@@ -251,7 +251,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _preparar_barra_dash() -> void:
 	if not is_instance_valid(_stamina_bar_node):
 		return
-	_stamina_bar_node.visible = false
+	# La stamina inferior queda desactivada permanentemente; solo se usa
+	# el indicador flotante sobre el sprite durante la recarga del dash.
+	_stamina_bar_node.hide()
+	_stamina_value_node.hide()
 	_stamina_bar_node.min_value = 0.0
 	_stamina_bar_node.max_value = 1.0
 	_stamina_bar_node.value = 1.0
@@ -325,8 +328,19 @@ func _actualizar_indicador_recarga_dash() -> void:
 		return
 
 	_dash_recharge_indicator.value = actual / maximo
-	var transformacion: Transform2D = player.get_global_transform_with_canvas()
-	_dash_recharge_indicator.position = transformacion.origin + Vector2(-8.0, -44.0)
+	var sprite := player.get_node_or_null("Visual/Sprite2D") as Sprite2D
+	if sprite == null or sprite.texture == null:
+		_dash_recharge_indicator.visible = false
+		return
+
+	# Tomar el borde superior real del sprite evita ubicar la barra según
+	# el origen físico del jugador (que suele estar a la altura de los pies).
+	var transformacion_sprite: Transform2D = sprite.get_global_transform_with_canvas()
+	var borde_superior: Vector2 = transformacion_sprite * Vector2(
+		0.0,
+		-float(sprite.texture.get_height()) * 0.5
+	)
+	_dash_recharge_indicator.position = borde_superior + Vector2(-36.0, -8.0)
 
 
 func _preparar_aviso_descubrimiento() -> void:
