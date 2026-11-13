@@ -5,7 +5,6 @@ const CoordinatorScript = preload("res://scripts/gameplay/player/player_locomoti
 const ActionScript = preload("res://scripts/gameplay/player/player_action_controller.gd")
 const StaminaScript = preload("res://scripts/gameplay/player/player_stamina_controller.gd")
 const VisualScript = preload("res://scripts/characters/player_visual_controller.gd")
-const DashInputScript = preload("res://scripts/gameplay/player/player_dash_input_controller.gd")
 const InputScript = preload("res://scripts/gameplay/player/player_input_controller.gd")
 const PhysicsScript = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 
@@ -20,7 +19,6 @@ func _run() -> void:
 	_probar_limite_direccion_y_estado(errores)
 	_probar_coordinador(errores)
 	_probar_presentacion_visual(errores)
-	_probar_buffer_dash(errores)
 	_probar_adaptador_input(errores)
 	_probar_integracion_fisica(errores)
 
@@ -136,45 +134,29 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 	marcador.free()
 
  
-func _probar_buffer_dash(errores: Array[String]) -> void:
-	var dash_input = DashInputScript.new()
-	dash_input.solicitar()
-	if dash_input.actualizar(0.05, false):
-		errores.append("El dash se activó antes de completar su ventana de espera.")
-	if not dash_input.actualizar(0.08, false):
-		errores.append("El dash no se habilitó al completar la ventana de espera.")
-
-	dash_input.solicitar()
-	dash_input.cancelar_por_menu_reinos()
-	if dash_input.actualizar(0.2, false):
-		errores.append("Shift+M no canceló la solicitud de dash.")
-
-	dash_input.solicitar()
-	if dash_input.actualizar(0.2, true):
-		errores.append("El dash se activó mientras M seguía presionada.")
-
-	dash_input.solicitar()
-	dash_input.reiniciar()
-	if dash_input.actualizar(0.2, false):
-		errores.append("Reiniciar no limpió la solicitud pendiente de dash.")
-
 func _probar_adaptador_input(errores: Array[String]) -> void:
 	var input_controller = InputScript.new()
-	var evento_menu := InputEventKey.new()
-	evento_menu.keycode = KEY_M
-	evento_menu.shift_pressed = true
-	evento_menu.pressed = true
-	if not input_controller.es_combinacion_menu_reinos(evento_menu):
-		errores.append("El adaptador no reconoció Shift+M.")
-	evento_menu.echo = true
-	if input_controller.es_combinacion_menu_reinos(evento_menu):
-		errores.append("El adaptador trató una repetición de tecla como una nueva combinación.")
+	var evento_viaje := InputEventKey.new()
+	evento_viaje.keycode = KEY_M
+	evento_viaje.ctrl_pressed = true
+	evento_viaje.pressed = true
+	if not input_controller.es_combinacion_viaje(evento_viaje):
+		errores.append("El adaptador no reconoció Ctrl+M.")
+	evento_viaje.echo = true
+	if input_controller.es_combinacion_viaje(evento_viaje):
+		errores.append("El adaptador trató una repetición como una nueva combinación.")
+	var evento_shift := InputEventKey.new()
+	evento_shift.keycode = KEY_M
+	evento_shift.shift_pressed = true
+	evento_shift.pressed = true
+	if input_controller.es_combinacion_viaje(evento_shift):
+		errores.append("El adaptador reconoció Shift+M como viaje.")
 	var evento_ajeno := InputEventKey.new()
 	evento_ajeno.keycode = KEY_M
 	evento_ajeno.pressed = true
-	if input_controller.es_combinacion_menu_reinos(evento_ajeno):
-		errores.append("El adaptador reconoció M sin Shift como menú de reinos.")
-	if input_controller.es_combinacion_menu_reinos(InputEventMouseButton.new()):
+	if input_controller.es_combinacion_viaje(evento_ajeno):
+		errores.append("El adaptador reconoció M sin Ctrl como viaje.")
+	if input_controller.es_combinacion_viaje(InputEventMouseButton.new()):
 		errores.append("El adaptador reconoció un evento de ratón como combinación de teclado.")
 
 func _probar_integracion_fisica(errores: Array[String]) -> void:
