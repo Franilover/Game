@@ -640,19 +640,23 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 	var recompensas_variant: Variant = mision.get("recompensas", [])
 	var recompensas: Array = recompensas_variant as Array if recompensas_variant is Array else []
 	var inventario_anterior := inventario.serializar_estado_partida()
+	var cantidad_entregada := 0
 	for recompensa_variant in recompensas:
 		if not recompensa_variant is Dictionary:
 			continue
 		var recompensa := recompensa_variant as Dictionary
 		var tipo := str(recompensa.get("tipo", "")).strip_edges().to_lower()
 		if tipo != "item":
-			continue
+			inventario.cargar_estado_partida(inventario_anterior)
+			return false
 		var objeto := _construir_objeto_recompensa(recompensa)
 		if objeto.is_empty() or not inventario.agregar_objeto_desde_ui(objeto):
 			inventario.cargar_estado_partida(inventario_anterior)
 			return false
+		cantidad_entregada += 1
 	_recompensas_reclamadas[mision_id] = true
-	Events.notification_pushed.emit("Recompensas recibidas: " + str(mision.get("nombre", "Misión")))
+	if cantidad_entregada > 0:
+		Events.notification_pushed.emit("Recompensas recibidas: " + str(mision.get("nombre", "Misión")))
 	return true
 
 
