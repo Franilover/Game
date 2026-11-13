@@ -548,13 +548,18 @@ func _crear_luces_faroles() -> void:
 	# La luz 2D ilumina el mundo; el resplandor visible se dibuja en una
 	# CanvasLayer independiente para que CanvasModulate no lo apague.
 	var gradiente := Gradient.new()
-	gradiente.set_color(0, Color(1.0, 0.72, 0.34, 0.92))
+	# Centro cálido y bordes con pérdida progresiva de intensidad:
+	# evita un círculo marcado y deja que la luz se funda con la oscuridad.
+	gradiente.set_color(0, Color(1.0, 0.76, 0.43, 0.68))
 	gradiente.set_color(1, Color(1.0, 0.48, 0.12, 0.0))
+	gradiente.add_point(0.28, Color(1.0, 0.68, 0.34, 0.42))
+	gradiente.add_point(0.62, Color(1.0, 0.55, 0.22, 0.14))
+	gradiente.add_point(0.84, Color(1.0, 0.48, 0.12, 0.035))
 
 	var textura_luz := GradientTexture2D.new()
 	textura_luz.gradient = gradiente
-	textura_luz.width = 128
-	textura_luz.height = 128
+	textura_luz.width = 256
+	textura_luz.height = 256
 	textura_luz.fill = GradientTexture2D.FILL_RADIAL
 	textura_luz.fill_from = Vector2(0.5, 0.5)
 	textura_luz.fill_to = Vector2(0.5, 0.0)
@@ -582,7 +587,7 @@ func _crear_luces_faroles() -> void:
 		luz.name = "LuzFarol" + ("Oeste" if indice == 0 else "Este")
 		luz.position = posicion_local
 		luz.texture = textura_luz
-		luz.texture_scale = 2.8
+		luz.texture_scale = 3.8
 		luz.color = Color("#ffd18a")
 		luz.energy = 1.8
 		luz.range_item_cull_mask = 1
@@ -597,7 +602,7 @@ func _crear_luces_faroles() -> void:
 		brillo.name = "Brillo" + ("Oeste" if indice == 0 else "Este")
 		brillo.texture = textura_luz
 		brillo.position = posicion_global
-		brillo.scale = Vector2(0.95, 0.95)
+		brillo.scale = Vector2(1.45, 1.45)
 		brillo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		brillo.visible = false
 		var material_brillo := CanvasItemMaterial.new()
