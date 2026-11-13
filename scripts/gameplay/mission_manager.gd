@@ -14,6 +14,7 @@ var _misiones: Array[Dictionary] = []
 var _misiones_por_id: Dictionary = {}
 var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
+var _recompensas_reclamadas: Dictionary = {}
 var _entity_manager: WorldEntityManager = null
 var _world_data: WorldDataService = null
 
@@ -558,13 +559,15 @@ func _completar_mision(mision: Dictionary) -> void:
 func serializar_estado_partida() -> Dictionary:
 	return {
 		"estado": _estado.duplicate(true),
-		"progreso": _progreso.duplicate(true)
+		"progreso": _progreso.duplicate(true),
+		"recompensas_reclamadas": _recompensas_reclamadas.duplicate(true)
 	}
 
 
 func cargar_estado_partida(datos: Dictionary) -> void:
 	_estado.clear()
 	_progreso.clear()
+	_recompensas_reclamadas.clear()
 
 	var estado_variant: Variant = datos.get("estado", {})
 	if estado_variant is Dictionary:
@@ -573,6 +576,9 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	var progreso_variant: Variant = datos.get("progreso", {})
 	if progreso_variant is Dictionary:
 		_progreso = (progreso_variant as Dictionary).duplicate(true)
+	var reclamadas_variant: Variant = datos.get("recompensas_reclamadas", {})
+	if reclamadas_variant is Dictionary:
+		_recompensas_reclamadas = (reclamadas_variant as Dictionary).duplicate(true)
 
 	# El save puede sobrevivir a cambios del catálogo. Solo se conserva el
 	# estado conocido y se reconstruye el progreso contra objetivos actuales.
@@ -624,7 +630,7 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 	if inventario == null or not is_instance_valid(inventario):
 		return false
 	var estado_actual := str(_estado.get(mision_id, ""))
-	if estado_actual == "reclamada":
+	if bool(_recompensas_reclamadas.get(mision_id, false)):
 		return true
 	if estado_actual != "completada":
 		return false
@@ -645,7 +651,7 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 		if objeto.is_empty() or not inventario.agregar_objeto_desde_ui(objeto):
 			inventario.cargar_estado_partida(inventario_anterior)
 			return false
-	_estado[mision_id] = "reclamada"
+	_recompensas_reclamadas[mision_id] = true
 	Events.notification_pushed.emit("Recompensas recibidas: " + str(mision.get("nombre", "Misión")))
 	return true
 
