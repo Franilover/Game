@@ -257,12 +257,13 @@ func _process(_delta: float) -> void:
 
 func _crear_objetivos_entrada() -> void:
 	for entrada: Dictionary in ENTRADAS:
-		var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as ContextualActionTarget
+		var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
 		if not is_instance_valid(objetivo):
 			continue
 		objetivo.name = "ObjetivoEntrada_" + str(entrada.get("id", "edificio"))
 		objetivo.position = entrada.get("pos", Vector2.ZERO)
-		objetivo.configurar(
+		objetivo.call(
+			"configurar",
 			"Entrar: " + str(entrada.get("nombre", "edificio")),
 			80.0,
 			Callable(self, "_puede_interactuar_entrada").bind(entrada),
@@ -318,7 +319,6 @@ func _crear_aviso() -> void:
 	_boton_entrar.focus_mode = Control.FOCUS_NONE
 	_boton_entrar.z_index = 51
 	_boton_entrar.visible = false
-	_boton_entrar.pressed.connect(_al_pulsar_entrar)
 	PIXEL_UI_THEME.apply(_boton_entrar, false)
 	capa_ui.add_child(_boton_entrar)
 
