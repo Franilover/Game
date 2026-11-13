@@ -14,6 +14,7 @@ var _storage_id := ""
 var _storage_owner: Node = null
 var _storage_index := -1
 var _chest_ui: Node = null
+var _durmiendo: bool = false
 
 
 func configurar_cofre(storage_id: String, storage_owner: Node = null, storage_index: int = -1) -> void:
@@ -48,6 +49,8 @@ func get_interaction_priority() -> int:
 
 
 func get_interaction_text() -> String:
+	if _action_type == ActionType.BED and not _es_de_noche():
+		return "Solo dormir de noche"
 	return _interaction_text
 
 
@@ -153,11 +156,95 @@ func cerrar_cofre() -> void:
 	interfaz.queue_free()
 
 
+func _obtener_atmosfera() -> Node:
+	return get_tree().root.find_child("WorldAtmosphere", true, false)
+
+
+func _es_de_noche() -> bool:
+	var atmosfera := _obtener_atmosfera()
+	if not is_instance_valid(atmosfera) or not atmosfera.has_method("obtener_tiempo"):
+		return false
+	var tiempo: Dictionary = atmosfera.call("obtener_tiempo")
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return false
+	var horas_por_dia := maxf(float(tiempo.get("horas_por_dia", 24.0)), 1.0)
+	var hora_normalizada := fposmod(float(tiempo.get("hora_del_dia", 0.0)) / horas_por_dia, 1.0)
+	# Mantiene el mismo tramo nocturno que utiliza la iluminación de Torres.
+	return hora_normalizada >= 0.82 or hora_normalizada < 0.20
+
+
 func _dormir() -> void:
-	var escena := get_tree().current_scene
-	var atmosfera: Node = escena.find_child("WorldAtmosphere", true, false) if is_instance_valid(escena) else null
+	if _durmiendo:
+		return
+	var atmosfera := _obtener_atmosfera()
 	if not is_instance_valid(atmosfera) or not atmosfera.has_method("dormir_hasta_manana"):
 		push_warning("WorldInteractable: no se encontró el calendario para dormir.")
 		return
-	if not bool(atmosfera.call("dormir_hasta_manana")):
+	if not _es_de_noche():
+		# Durante el día la cama sigue mostrando por qué no está disponible.
+		return
+
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(jugador):
+		return
+
+	_durmiendo = true
+	var visual := jugador.get_node_or_null("Visual") as Node2D
+	var posicion_visual := visual.position if is_instance_valid(visual) else Vector2.ZERO
+	var escala_visual := visual.scale if is_instance_valid(visual) else Vector2.ONE
+	var fisica_activa := jugador.is_physics_processing()
+	var input_activo := jugador.is_processing_input()
+	var input_no_manejado_activo := jugador.is_processing_unhandled_input()
+
+	# Detener al personaje durante la pequeña animación para que no se desplace
+	# mientras cierra los ojos y se queda dormido.
+	jugador.set_physics_process(false)
+	jugador.set_process_input(false)
+	jugador.set_process_unhandled_input(false)
+
+	var capa := CanvasLayer.new()
+	capa.name = "TransicionDormir"
+	capa.layer = 100
+	var fundido := ColorRect.new()
+	fundido.name = "CerrarOjos"
+	fundido.color = Color(0.0, 0.0, 0.0, 0.0)
+	fundido.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fundido.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	capa.add_child(fundido)
+	var escena := get_tree().current_scene
+	if not is_instance_valid(escena):
+		escena = get_tree().root
+	escena.add_child(capa)
+	capa.add_to_group("modal_ui")
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	if is_instance_valid(visual):
+		tween.tween_property(visual, "position", posicion_visual + Vector2(0.0, 7.0), 0.42).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(visual, "scale", Vector2(escala_visual.x, escala_visual.y * 0.78), 0.42).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(fundido, "color:a", 1.0, 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
+
+	# La pantalla queda a oscuras durante el salto al día siguiente.
+	var pudo_dormir := bool(atmosfera.call("dormir_hasta_manana"))
+	if pudo_dormir and jugador.has_method("recuperar_cargas_por_descanso"):
+		jugador.call("recuperar_cargas_por_descanso")
+	if is_instance_valid(visual):
+		visual.position = posicion_visual
+		visual.scale = escala_visual
+
+	jugador.set_physics_process(fisica_activa)
+	jugador.set_process_input(input_activo)
+	jugador.set_process_unhandled_input(input_no_manejado_activo)
+
+	if pudo_dormir:
+		await get_tree().create_timer(0.18).timeout
+	else:
 		push_warning("WorldInteractable: no se pudo dormir en el estado actual del calendario.")
+
+	var salida := create_tween()
+	salida.tween_property(fundido, "color:a", 0.0, 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await salida.finished
+	if is_instance_valid(capa):
+		capa.queue_free()
+	_durmiendo = false
