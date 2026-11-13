@@ -617,6 +617,67 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 
 
 
+## Entrega las recompensas de una misión de forma idempotente.
+## Las recompensas de objeto deben incluir datos.item_data (definición de runtime)
+## o los campos equivalentes dentro de datos. El inventario confirma cada inserción.
+func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> bool:
+	if inventario == null or not is_instance_valid(inventario):
+		return false
+	var estado_actual := str(_estado.get(mision_id, ""))
+	if estado_actual == "reclamada":
+		return true
+	if estado_actual != "completada":
+		return false
+	var mision := obtener_mision(mision_id)
+	if mision.is_empty():
+		return false
+	var recompensas_variant: Variant = mision.get("recompensas", [])
+	var recompensas: Array = recompensas_variant as Array if recompensas_variant is Array else []
+	var inventario_anterior := inventario.serializar_estado_partida()
+	for recompensa_variant in recompensas:
+		if not recompensa_variant is Dictionary:
+			continue
+		var recompensa := recompensa_variant as Dictionary
+		var tipo := str(recompensa.get("tipo", "")).strip_edges().to_lower()
+		if tipo != "item":
+			continue
+		var objeto := _construir_objeto_recompensa(recompensa)
+		if objeto.is_empty() or not inventario.agregar_objeto_desde_ui(objeto):
+			inventario.cargar_estado_partida(inventario_anterior)
+			return false
+	_estado[mision_id] = "reclamada"
+	Events.notification_pushed.emit("Recompensas recibidas: " + str(mision.get("nombre", "Misión")))
+	return true
+
+
+func _construir_objeto_recompensa(recompensa: Dictionary) -> Dictionary:
+	var datos_variant: Variant = recompensa.get("datos", {})
+	var datos: Dictionary = datos_variant as Dictionary if datos_variant is Dictionary else {}
+	var objeto_variant: Variant = datos.get("item_data", datos.get("objeto", {}))
+	var objeto: Dictionary = objeto_variant.duplicate(true) if objeto_variant is Dictionary else {}
+	if objeto.is_empty():
+		var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
+		var nombre := str(datos.get("nombre", "")).strip_edges()
+		if item_id.is_empty() or nombre.is_empty():
+			return {}
+		objeto = {
+			"id": item_id,
+			"item_id": item_id,
+			"nombre": nombre,
+			"descripcion": str(datos.get("descripcion", "")),
+			"tipo": str(datos.get("tipo", "recurso")),
+			"max_stack": maxi(1, int(datos.get("max_stack", 1))),
+			"propiedades_game": (datos.get("propiedades_game", {}) as Dictionary).duplicate(true) if datos.get("propiedades_game", {}) is Dictionary else {}
+		}
+	var cantidad := maxi(1, int(recompensa.get("cantidad", 1)))
+	objeto["cantidad"] = cantidad
+	if not objeto.has("id") and objeto.has("item_id"):
+		objeto["id"] = objeto["item_id"]
+	if not objeto.has("max_stack"):
+		objeto["max_stack"] = 1
+	return objeto
+
+
 func obtener_estado_mision(mision_id: String) -> Dictionary:
 	var mision := obtener_mision(mision_id)
 
