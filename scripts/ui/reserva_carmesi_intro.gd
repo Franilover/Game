@@ -25,7 +25,8 @@ const PAGINAS: Array[Dictionary] = [
 @onready var page_counter: Label = $Content/PageCounter
 @onready var page_title: Label = $Content/PageTitle
 @onready var text_panel: PanelContainer = $Content/TextPanel
-@onready var page_text: Label = $Content/TextPanel/PageText
+@onready var inset_panel: PanelContainer = $Content/TextPanel/InsetPanel
+@onready var page_text: Label = $Content/TextPanel/InsetPanel/PageText
 @onready var previous_button: Button = $Content/Navigation/PreviousButton
 @onready var next_button: Button = $Content/Navigation/NextButton
 
@@ -42,20 +43,31 @@ func _ready() -> void:
 
 
 func _configurar_panel_texto() -> void:
-	# Panel cálido y continuo: separa la narración del fondo sin parecer una caja rígida.
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.105, 0.067, 0.057, 0.96)
-	estilo.border_color = Color(0.48, 0.25, 0.17, 0.95)
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(8)
-	estilo.shadow_color = Color(0.015, 0.008, 0.008, 0.48)
-	estilo.shadow_size = 12
-	estilo.shadow_offset = Vector2(0, 4)
-	estilo.content_margin_left = 30.0
-	estilo.content_margin_right = 30.0
-	estilo.content_margin_top = 22.0
-	estilo.content_margin_bottom = 22.0
-	text_panel.add_theme_stylebox_override("panel", estilo)
+	# Marco exterior con profundidad y un segundo plano interior para evitar el aspecto de bloque plano.
+	var marco := StyleBoxFlat.new()
+	marco.bg_color = Color(0.16, 0.075, 0.059, 0.98)
+	marco.border_color = Color(0.58, 0.30, 0.19, 1.0)
+	marco.set_border_width_all(2)
+	marco.set_corner_radius_all(5)
+	marco.shadow_color = Color(0.008, 0.004, 0.004, 0.62)
+	marco.shadow_size = 14
+	marco.shadow_offset = Vector2(0, 5)
+	marco.content_margin_left = 7.0
+	marco.content_margin_right = 7.0
+	marco.content_margin_top = 7.0
+	marco.content_margin_bottom = 7.0
+	text_panel.add_theme_stylebox_override("panel", marco)
+
+	var interior := StyleBoxFlat.new()
+	interior.bg_color = Color(0.075, 0.046, 0.041, 1.0)
+	interior.border_color = Color(0.31, 0.17, 0.12, 1.0)
+	interior.set_border_width_all(1)
+	interior.set_corner_radius_all(2)
+	interior.content_margin_left = 20.0
+	interior.content_margin_right = 20.0
+	interior.content_margin_top = 15.0
+	interior.content_margin_bottom = 15.0
+	inset_panel.add_theme_stylebox_override("panel", interior)
 
 
 func _actualizar_pagina() -> void:
