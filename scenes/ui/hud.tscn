@@ -260,7 +260,7 @@ theme_override_font_sizes/font_size = 10
 text = "100 / 100"
 horizontal_alignment = 2
 
-[node name name="InteractionPrompt" type="PanelContainer" parent="." unique_id=78175499]
+[node name="InteractionPrompt" type="PanelContainer" parent="." unique_id=78175499]
 visible = false
 layout_mode = 1
 anchors_preset = 7
