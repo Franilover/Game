@@ -369,6 +369,7 @@ func _ejecutar_accion_dialogo() -> void:
 			if cancel_button != null:
 				cancel_button.visible = false
 			hint_label.text = "Decisión registrada · [ LMB ] Continuar"
+			Events.notification_pushed.emit(_obtener_mensaje_reaccion_social(evento, _fuente.get_nombre()))
 			return
 
 		"aceptar_mision":
@@ -394,6 +395,22 @@ func _ejecutar_accion_dialogo() -> void:
 					action_button.visible = false
 					hint_label.text = "Abel te está siguiendo · [ LMB ] Cerrar"
 					return
+
+
+func _obtener_mensaje_reaccion_social(evento: String, nombre: String) -> String:
+	var mensajes := {
+		"ayudar": "Agradece tu ayuda.",
+		"apoyar": "Valora que lo hayas apoyado.",
+		"promesa_cumplida": "Recuerda que cumpliste tu promesa.",
+		"promesa_rota": "No olvidará que rompiste tu promesa.",
+		"decir_verdad": "Valora tu sinceridad.",
+		"mentir": "Tu mentira ha afectado su confianza.",
+		"demostrar_habilidad": "Ha tomado nota de tu habilidad.",
+		"compartir_conocimiento": "Aprecia lo que compartiste.",
+		"faltar_respeto": "Se ha sentido ofendido.",
+		"traicionar": "La traición ha dañado vuestra relación."
+	}
+	return nombre + ": " + str(mensajes.get(evento, "Recordará lo ocurrido."))
 
 
 func _normalizar_lineas(datos: Dictionary) -> Array[Dictionary]:
