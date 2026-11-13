@@ -212,9 +212,6 @@ func _input(event: InputEvent) -> void:
 		return
 	if _local_player.input_gate.esta_bloqueado():
 		return
-	if event is InputEventKey and (event as InputEventKey).keycode == KEY_M and (event as InputEventKey).shift_pressed:
-		_dash_local_pendiente = false
-		return
 	if event.is_action_pressed("dash"):
 		if event is InputEventKey and (event as InputEventKey).echo:
 			return
@@ -236,7 +233,7 @@ func actualizar_input_local(delta: float) -> void:
 		direccion = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var correr := Input.is_action_pressed("run") and not entrada_bloqueada
 	var sprint_eterium := Input.is_action_pressed("eterium_sprint") and not entrada_bloqueada
-	var curar_eterium := Input.is_action_pressed("focus") and not entrada_bloqueada
+	var curar_eterium := false
 	var dash := _dash_local_pendiente
 	var salto := _salto_local_pendiente
 	_dash_local_pendiente = false
