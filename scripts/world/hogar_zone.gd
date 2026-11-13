@@ -556,7 +556,7 @@ func _agregar_sprite_decoracion(indice: int) -> void:
 			if tipo == "cofre":
 				objetivo.call("configurar_cofre", str(item.get("cofre_id", "hogar_exterior_" + str(indice))), self, indice)
 			else:
-				objetivo.call("configurar_cama")
+				objetivo.call("configurar_cama", self, indice)
 			add_child(objetivo)
 		_objetivos_cofre.append(objetivo)
 	else:
@@ -647,6 +647,22 @@ func establecer_contenido_cofre(indice: int, objetos: Array) -> bool:
 	_decoraciones[indice]["contenido"] = contenido
 	_guardar_cambios_hogar()
 	return true
+
+
+func puede_interactuar_mueble(tipo: String, jugador: Node, indice: int) -> bool:
+	if _interior_abierto or _modo_construccion or _inventario_abierto or _menu_viaje_abierto or esta_cofre_abierto():
+		return false
+	if not is_instance_valid(jugador) or not jugador is Node2D:
+		return false
+	if indice < 0 or indice >= _decoraciones.size() or indice >= _sprites_decoracion.size():
+		return false
+	if str(_decoraciones[indice].get("tipo", "")) != tipo:
+		return false
+	var sprite := _sprites_decoracion[indice]
+	if not is_instance_valid(sprite):
+		return false
+	var distancia := 112.0 if tipo == "cofre" else 72.0
+	return (jugador as Node2D).global_position.distance_to(sprite.global_position) <= distancia
 
 
 func _puede_abrir_cofre(jugador: Node, indice: int) -> bool:
