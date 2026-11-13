@@ -1197,7 +1197,9 @@ func get_interaction_distance() -> float:
 		# alrededor de sus puestos. Desde el punto de entrada del jugador
 		# deben seguir siendo alcanzables sin tener que quedar encima de ellos.
 		if bool(get_meta("rutina_en_edificio", false)):
-			return 112.0
+			# Las habitaciones admiten varios puestos; el jugador debe poder
+			# hablar con cualquier residente sin tener que quedar encima.
+			return 160.0
 		return 64.0
 
 	return 48.0
