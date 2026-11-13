@@ -249,11 +249,7 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 		_rect(imagen, 2, 12, 5, 13, Color("#7F6B4D"))
 	if clave == "casa_estudio":
 		_rect(imagen, centro - 4, 4, 8, 5, Color("#46565A"))
-		_rect(imagen, centro - 2, 1, 4, 4, Color("#758A8A"))	if clave == "alfareria":
-		_rect(imagen, w - 12, h - 19, 4, 5, Color("#A85E42"))
-		_rect(imagen, w - 11, h - 20, 2, 2, Color("#D0A06A"))	if clave == "banos":
-		_rect(imagen, centro - 7, 5, 14, 3, Color("#4F7376"))
-		_rect(imagen, centro - 5, 6, 10, 1, Color("#9BBEB4"))
+		_rect(imagen, centro - 2, 1, 4, 4, Color("#758A8A"))
 	# Pocas marcas, colocadas en rejilla, dan textura sin ensuciar la silueta.
 	for i in range(5):
 		var px := 12 + int((indice + i * 11) % maxi(1, w - 24))
