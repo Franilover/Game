@@ -168,9 +168,15 @@ func _godot_is_below_4_4():
 func reconstruir_renderer_dual() -> void:
 	if not is_instance_valid(_display):
 		return
-	if _display.terrain == null:
+	if _display.terrain == null or _tileset_watcher == null:
 		return
-	_display.terrain._changed()
+
+	# TerrainDual.changed está conectado con CONNECT_DEFERRED. Emitir changed
+	# y consultar inmediatamente el diagnóstico deja una ventana en la que
+	# todavía no existen DisplayLayer. Para las reconstrucciones explícitas
+	# de arranque, leer las reglas y reconstruir el Display de forma síncrona.
+	_display.terrain.read_tileset(tile_set)
+	_display._terrain_changed()
 
 
 func _changed() -> void:
