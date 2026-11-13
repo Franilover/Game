@@ -111,6 +111,74 @@ func buscar_mision_por_clave(clave: String) -> Dictionary:
 	return {}
 
 
+func cumple_requisito_dialogo(requisito: Dictionary) -> bool:
+	var mision_clave := str(requisito.get("mision_clave", "")).strip_edges()
+	if mision_clave.is_empty():
+		return false
+
+	var mision := buscar_mision_por_clave(mision_clave)
+	if mision.is_empty():
+		return false
+
+	var mision_id := str(mision.get("id", "")).strip_edges()
+	if mision_id.is_empty():
+		return false
+
+	var estado_requerido := str(requisito.get("estado", "")).strip_edges().to_lower()
+	if not estado_requerido.is_empty() and str(_estado.get(mision_id, "disponible")) != estado_requerido:
+		return false
+
+	var objetivo_clave := str(requisito.get("objetivo_clave", "")).strip_edges()
+	if not objetivo_clave.is_empty():
+		var objetivo := _buscar_objetivo_por_clave(mision, objetivo_clave)
+		if objetivo.is_empty():
+			return false
+		var objetivo_id := str(objetivo.get("id", "")).strip_edges()
+		var progreso_minimo := maxi(
+			1,
+			int(requisito.get("progreso_objetivo_min", objetivo.get("cantidad_requerida", 1)))
+		)
+		if obtener_progreso(mision_id, objetivo_id) < progreso_minimo:
+			return false
+
+	return true
+
+
+func _buscar_objetivo_por_clave(mision: Dictionary, clave: String) -> Dictionary:
+	var objetivos_variant: Variant = mision.get("objetivos", [])
+	if not objetivos_variant is Array:
+		return {}
+	for objetivo_variant in objetivos_variant as Array:
+		if not objetivo_variant is Dictionary:
+			continue
+		var objetivo := objetivo_variant as Dictionary
+		if str(objetivo.get("clave", "")).strip_edges() == clave:
+			return objetivo.duplicate(true)
+	return {}
+
+
+func _objetivo_habilitado_por_dependencias(
+	mision_id: String,
+	objetivo: Dictionary
+) -> bool:
+	var datos_variant: Variant = objetivo.get("datos", {})
+	if not datos_variant is Dictionary:
+		return true
+	var datos := datos_variant as Dictionary
+	var requisito_clave := str(datos.get("requiere_objetivo_clave", "")).strip_edges()
+	if requisito_clave.is_empty():
+		return true
+
+	var mision := obtener_mision(mision_id)
+	var requisito := _buscar_objetivo_por_clave(mision, requisito_clave)
+	if requisito.is_empty():
+		return false
+
+	var requisito_id := str(requisito.get("id", "")).strip_edges()
+	var cantidad_requerida := maxi(1, int(requisito.get("cantidad_requerida", 1)))
+	return obtener_progreso(mision_id, requisito_id) >= cantidad_requerida
+
+
 func solicitar_aceptacion(identificador: String) -> bool:
 	var mision := obtener_mision(identificador)
 	if mision.is_empty():
@@ -330,6 +398,9 @@ func _registrar_evento(
 				continue
 
 			var objetivo := objetivo_variant as Dictionary
+
+			if not _objetivo_habilitado_por_dependencias(mision_id, objetivo):
+				continue
 
 			if str(objetivo.get("tipo", "")).strip_edges().to_lower() != tipo:
 				continue
