@@ -343,6 +343,12 @@ func _actualizar_admin_tab() -> void:
 		admin_tab.abrir(jugador)
 
 
+func _notificar_estado_inventario_a_hogar(abierto: bool) -> void:
+	for hogar in get_tree().get_nodes_in_group("hogar_zone"):
+		if is_instance_valid(hogar) and hogar.has_method("establecer_inventario_abierto"):
+			hogar.call("establecer_inventario_abierto", abierto)
+
+
 func toggle() -> void:
 	if _abierto:
 		cerrar()
@@ -358,6 +364,7 @@ func toggle_mapa() -> void:
 	if not _abierto:
 		_abierto = true
 		visible = true
+		_notificar_estado_inventario_a_hogar(true)
 		_actualizar_admin_tab()
 	tabs.current_tab = 4
 	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
@@ -372,6 +379,7 @@ func toggle_enciclopedia_garumis() -> void:
 	if not _abierto:
 		_abierto = true
 		visible = true
+		_notificar_estado_inventario_a_hogar(true)
 		_actualizar_admin_tab()
 	tabs.current_tab = 3
 	$Window/Margin/Column/TabButtons/Garumis.button_pressed = true
@@ -383,6 +391,7 @@ func toggle_enciclopedia_garumis() -> void:
 func abrir() -> void:
 	_abierto = true
 	visible = true
+	_notificar_estado_inventario_a_hogar(true)
 	_actualizar_admin_tab()
 
 	# Tab abre el inventario principal.
@@ -396,6 +405,7 @@ func abrir() -> void:
 
 func cerrar() -> void:
 	_abierto = false
+	_notificar_estado_inventario_a_hogar(false)
 
 	# Al cerrar, ningún control del inventario debe conservar el foco GUI.
 	# Esto evita que un Button de equipamiento retenga la siguiente entrada
