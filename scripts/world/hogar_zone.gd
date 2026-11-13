@@ -537,7 +537,6 @@ func _process(delta: float) -> void:
 	var jugador := _obtener_jugador()
 	if is_instance_valid(_prompt_entrada):
 		_prompt_entrada.call("establecer_accion", "Salir de la casa" if _interior_abierto else "Entrar a la casa")
-		_prompt_entrada.call("establecer_disponible", _puede_usar_puerta())
 	if _tiempo_actualizacion_estado >= 0.35 and is_instance_valid(jugador):
 		_tiempo_actualizacion_estado = 0.0
 		var estado := obtener_estado_guardado()
@@ -558,7 +557,15 @@ func _crear_prompt_entrada() -> void:
 	_prompt_entrada.offset_top = -88.0
 	_prompt_entrada.offset_right = 125.0
 	_prompt_entrada.offset_bottom = -48.0
-	_prompt_entrada.call("configurar", "Entrar a la casa", _al_clic_prompt_entrada)
+	_prompt_entrada.call(
+		"configurar",
+		"Entrar a la casa",
+		_al_clic_prompt_entrada,
+		_obtener_jugador,
+		_obtener_posicion_puerta,
+		68.0,
+		_puerta_habilitada
+	)
 	raiz.add_child(_prompt_entrada)
 
 
@@ -572,10 +579,7 @@ func _obtener_jugador() -> Node2D:
 	return get_tree().get_first_node_in_group("player") as Node2D
 
 
-func _puede_usar_puerta() -> bool:
-	var jugador := _obtener_jugador()
-	if not is_instance_valid(jugador):
-		return false
+func _puerta_habilitada() -> bool:
 	if _modo_construccion:
 		return false
 	if _interior_abierto:
@@ -585,8 +589,20 @@ func _puede_usar_puerta() -> bool:
 				return false
 			if interior.has_method("esta_editando") and bool(interior.call("esta_editando")):
 				return false
-	var objetivo := Vector2(4000.0, 144.0) if _interior_abierto else Vector2(0.0, -160.0)
-	return jugador.global_position.distance_to(objetivo) <= 68.0
+	return true
+
+
+func _obtener_posicion_puerta() -> Vector2:
+	return Vector2(4000.0, 144.0) if _interior_abierto else Vector2(0.0, -160.0)
+
+
+func _puede_usar_puerta() -> bool:
+	var jugador := _obtener_jugador()
+	return (
+		is_instance_valid(jugador)
+		and _puerta_habilitada()
+		and jugador.global_position.distance_to(_obtener_posicion_puerta()) <= 68.0
+	)
 
 
 func _obtener_interior() -> Node2D:
