@@ -353,6 +353,24 @@ func _ejecutar_accion_dialogo() -> void:
 	var tipo := str(accion.get("tipo", "")).strip_edges().to_lower()
 
 	match tipo:
+		"evento_social":
+			if not is_instance_valid(_fuente) or relationship_system == null:
+				return
+			var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+			var evento := str(accion.get("evento", "")).strip_edges()
+			var evento_id := str(accion.get("evento_id", "")).strip_edges()
+			var contexto_variant: Variant = accion.get("contexto", {})
+			var contexto: Dictionary = contexto_variant.duplicate(true) if contexto_variant is Dictionary else {}
+			var resultado := relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
+			if resultado.is_empty():
+				return
+			_acciones.clear()
+			action_button.visible = false
+			if cancel_button != null:
+				cancel_button.visible = false
+			hint_label.text = "Decisión registrada · [ LMB ] Continuar"
+			return
+
 		"aceptar_mision":
 			var clave := str(accion.get("mision_clave", "")).strip_edges()
 			if clave.is_empty():
