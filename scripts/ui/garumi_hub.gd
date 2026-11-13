@@ -164,20 +164,6 @@ func _obtener_origen_garumi(registro: Dictionary) -> String:
 	return ""
 
 
-func _obtener_salud_garumi(registro: Dictionary) -> Dictionary:
-	var id_instancia := str(registro.get("garumi_instancia_id", "")).strip_edges()
-	for nodo in get_tree().get_nodes_in_group("garumis"):
-		if not is_instance_valid(nodo):
-			continue
-		var id_nodo := str(nodo.get("_garumi_instancia_id")).strip_edges()
-		if id_instancia.is_empty() or id_nodo != id_instancia:
-			continue
-		var maximo := maxi(1, int(nodo.get("max_health")))
-		return {"actual": clampi(int(nodo.get("health")), 0, maximo), "max": maximo}
-	var max_guardado := maxi(1, int(registro.get("max_health", registro.get("vida_maxima", 100))))
-	return {"actual": clampi(int(registro.get("health", registro.get("vida", max_guardado))), 0, max_guardado), "max": max_guardado}
-
-
 func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
 	var claves: Array[String] = []
 	var asset_key := str(registro.get("asset_key", "")).strip_edges()
@@ -234,26 +220,6 @@ func _mostrar_detalle(registro: Dictionary, estado_registro: String) -> void:
 		sprite.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_detalle.add_child(sprite)
 
-	if estado_registro == "Vinculado":
-		var salud := _obtener_salud_garumi(registro)
-		var vida_maxima: int = salud["max"]
-		var vida_actual: int = salud["actual"]
-		var barra := ProgressBar.new()
-		barra.min_value = 0
-		barra.max_value = vida_maxima
-		barra.value = vida_actual
-		barra.show_percentage = false
-		barra.custom_minimum_size = Vector2(0, 16)
-		barra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		PIXEL_UI_THEME.apply(barra, false)
-		_detalle.add_child(barra)
-		var numeros_vida := Label.new()
-		numeros_vida.text = "%d / %d" % [vida_actual, vida_maxima]
-		numeros_vida.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		numeros_vida.add_theme_font_size_override("font_size", 12)
-		numeros_vida.add_theme_color_override("font_color", TEXTO)
-		_detalle.add_child(numeros_vida)
-
 	var boton_accion := Button.new()
 	boton_accion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_estilizar_boton_accion(boton_accion)
@@ -283,9 +249,10 @@ func _quitar_vinculo(registro: Dictionary) -> void:
 	if id_instancia.is_empty():
 		return
 	var registro_amigo := registro.duplicate(true)
-	var salud := _obtener_salud_garumi(registro)
-	registro_amigo["health"] = salud["actual"]
-	registro_amigo["max_health"] = salud["max"]
+	registro_amigo.erase("health")
+	registro_amigo.erase("max_health")
+	registro_amigo.erase("vida")
+	registro_amigo.erase("vida_maxima")
 	GameState.guardar_garumi_amigo(registro_amigo)
 	var vinculo_roto := false
 	var instancia_en_escena := false
