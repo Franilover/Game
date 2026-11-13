@@ -69,11 +69,16 @@ layout_mode = 2
 size_flags_horizontal = 4
 color = Color(0.61, 0.27, 0.19, 1)
 
-[node name="PageText" type="Label" parent="Content"]
+[node name="TextPanel" type="PanelContainer" parent="Content"]
+custom_minimum_size = Vector2(0, 226)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PageText" type="Label" parent="Content/TextPanel"]
 custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.88, 0.84, 0.77, 1)
+theme_override_colors/font_color = Color(0.93, 0.88, 0.79, 1)
 theme_override_font_sizes/font_size = 19
 text = "En el Abismo se extiende un territorio inmenso conocido como la Reserva Carmesí."
 horizontal_alignment = 1
