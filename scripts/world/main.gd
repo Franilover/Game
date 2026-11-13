@@ -1027,6 +1027,7 @@ func _configurar_admin() -> void:
 	var admin_tab := _inventory.get_node_or_null("Window/Margin/Column/Tabs/Admin") as AdminInventory
 	if admin_tab != null:
 		admin_tab.configurar_tiempo(_world_atmosphere)
+		admin_tab.configurar_aldeanos(RelationshipSystem, _zone_manager)
 
 func _configurar_pantalla() -> void:
 	_registrar_diagnostico_ventana("antes de _configurar_pantalla")
