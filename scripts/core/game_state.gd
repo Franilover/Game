@@ -6,6 +6,8 @@ class_name GameStateService
 ## Cada partida corresponde a un JSON independiente en user://partidas/.
 
 const SAVE_DIRECTORY := "user://partidas"
+const STORY_SAVE_DIRECTORY := "user://historia"
+const STORY_SAVE_ID := "reserva_carmesi"
 const SAVE_VERSION: int = 3
 const AUTOSAVE_INTERVAL: float = 10.0
 const MAIN_SCENE_PATH: String = "res://scenes/world/main.tscn"
@@ -18,6 +20,10 @@ var active_save_id: String = ""
 var active_save_name: String = ""
 
 var save_repository := SaveFileRepository.new()
+var story_save_repository := SaveFileRepository.new()
+
+var _historia_reserva_activa: bool = false
+var _historia_requiere_aplicar: bool = false
 
 var _autosave_timer: float = 0.0
 var _partida_aplicada_en_escena: bool = false
@@ -54,7 +60,7 @@ func configurar_dependencias(
 	_mission_manager = mission_manager
 	_world_data = world_data
 
-	if active_save_id.is_empty():
+	if active_save_id.is_empty() and not _historia_reserva_activa:
 		return
 
 	_guardado_rapido_conectado = false
@@ -65,6 +71,8 @@ func configurar_dependencias(
 func _ready() -> void:
 	save_repository.configurar(SAVE_DIRECTORY)
 	save_repository.asegurar_directorio()
+	story_save_repository.configurar(STORY_SAVE_DIRECTORY)
+	story_save_repository.asegurar_directorio()
 
 	get_tree().scene_changed.connect(
 		_al_cambiar_escena
@@ -80,7 +88,10 @@ func _process(delta: float) -> void:
 
 	if _autosave_timer >= AUTOSAVE_INTERVAL:
 		_autosave_timer = 0.0
-		guardar_partida()
+		if _historia_reserva_activa:
+			guardar_progreso_historia()
+		else:
+			guardar_partida()
 
 
 func _notification(what: int) -> void:
@@ -88,7 +99,81 @@ func _notification(what: int) -> void:
 		what == NOTIFICATION_WM_CLOSE_REQUEST
 		or what == NOTIFICATION_WM_GO_BACK_REQUEST
 	):
+		if _historia_reserva_activa:
+			guardar_progreso_historia()
+		else:
+			guardar_partida()
+
+
+# ============================================================
+# HISTORIA
+# ============================================================
+
+func historia_reserva_tiene_progreso() -> bool:
+	var datos := story_save_repository.leer_partida(STORY_SAVE_ID)
+	return not datos.is_empty() and datos.get("estado", {}) is Dictionary
+
+
+func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
+	# Si se llega desde una partida normal, conservarla antes de cambiar el
+	# estado en memoria. Historia utiliza un archivo independiente.
+	if not active_save_id.is_empty() and not _historia_reserva_activa:
 		guardar_partida()
+
+	_historia_reserva_activa = true
+	_historia_requiere_aplicar = false
+	_partida_aplicada_en_escena = false
+	_autosave_timer = 0.0
+
+	if nueva:
+		player_state = PlayerState.new()
+		world_state = WorldState.new()
+		discovery_state = DiscoveryState.new()
+	else:
+		var datos := story_save_repository.leer_partida(STORY_SAVE_ID)
+		var estado_variant: Variant = datos.get("estado", {})
+		if estado_variant is Dictionary:
+			_aplicar_estado_memoria(estado_variant as Dictionary)
+			_historia_requiere_aplicar = true
+		else:
+			# Si el archivo no existe o está dañado, iniciar una partida narrativa
+			# limpia en lugar de heredar accidentalmente el estado de Aventura.
+			player_state = PlayerState.new()
+			world_state = WorldState.new()
+			discovery_state = DiscoveryState.new()
+
+	world_state.flags["historia_iniciar_reserva_carmesi"] = true
+	return true
+
+
+func guardar_progreso_historia() -> bool:
+	if not _historia_reserva_activa or _guardado_en_curso:
+		return false
+	var jugador: Player = _player
+	if jugador == null or not is_instance_valid(jugador) or jugador.get("is_alive") == false:
+		return false
+	var escena := get_tree().current_scene
+	if not is_instance_valid(escena):
+		return false
+	var zone_manager := escena.get_node_or_null("World/ZoneManager")
+	if not is_instance_valid(zone_manager) or str(zone_manager.call("obtener_tipo_actual")) != "historia:reserva_carmesi":
+		return false
+
+	_guardado_en_curso = true
+	capturar_estado_desde_juego(jugador)
+	_sincronizar_garumis_vinculados_desde_escena()
+	var datos := {
+		"version": 1,
+		"id": STORY_SAVE_ID,
+		"nombre": "La Reserva Carmesí",
+		"actualizado_en": _ahora(),
+		"estado": _serializar_estado()
+	}
+	var resultado := story_save_repository.escribir_partida(STORY_SAVE_ID, datos)
+	_guardado_en_curso = false
+	if resultado:
+		print("GameState: progreso de Historia guardado → La Reserva Carmesí")
+	return resultado
 
 
 # ============================================================
@@ -178,6 +263,8 @@ func iniciar_partida(id: String) -> bool:
 		)
 		return false
 
+	_historia_reserva_activa = false
+	_historia_requiere_aplicar = false
 	var metadata := _extraer_metadata_partida(datos)
 
 	world_state.world_seed_valida = false
@@ -382,6 +469,8 @@ func actualizar_personaje_partida(
 # ============================================================
 
 func guardar_partida() -> bool:
+	if _historia_reserva_activa:
+		return false
 	if _guardado_en_curso:
 		return false
 
@@ -528,7 +617,7 @@ func _aplicar_estado_misiones() -> void:
 
 
 func _conectar_guardado_rapido() -> void:
-	if _guardado_rapido_conectado or active_save_id.is_empty():
+	if _guardado_rapido_conectado or (active_save_id.is_empty() and not _historia_reserva_activa):
 		return
 
 	var inventario: GarliaInventory = _inventory
@@ -554,7 +643,7 @@ func _conectar_guardado_rapido() -> void:
 
 
 func _al_cambio_guardable(_a = null, _b = null, _c = null, _d = null) -> void:
-	if active_save_id.is_empty():
+	if active_save_id.is_empty() and not _historia_reserva_activa:
 		return
 	if _guardado_rapido_pendiente:
 		return
@@ -564,9 +653,10 @@ func _al_cambio_guardable(_a = null, _b = null, _c = null, _d = null) -> void:
 
 func _ejecutar_guardado_rapido() -> void:
 	_guardado_rapido_pendiente = false
-	if active_save_id.is_empty():
-		return
-	guardar_partida()
+	if _historia_reserva_activa:
+		guardar_progreso_historia()
+	elif not active_save_id.is_empty():
+		guardar_partida()
 
 
 func _serializar_estado() -> Dictionary:
@@ -1063,7 +1153,10 @@ func _revisar_escena_actual() -> void:
 	if escena == null:
 		return
 
-	if active_save_id.is_empty() or _partida_aplicada_en_escena:
+	if _historia_reserva_activa:
+		if not _historia_requiere_aplicar or _partida_aplicada_en_escena:
+			return
+	elif active_save_id.is_empty() or _partida_aplicada_en_escena:
 		return
 
 	# GameState no depende del generador de mundo.
@@ -1164,10 +1257,14 @@ func _aplicar_estado_al_juego() -> void:
 	_guardado_rapido_conectado = false
 	_conectar_guardado_rapido()
 
-	print(
-		"GameState: partida cargada → ",
-		active_save_name
-	)
+	if _historia_reserva_activa:
+		_historia_requiere_aplicar = false
+		print("GameState: progreso narrativo restaurado → La Reserva Carmesí")
+	else:
+		print(
+			"GameState: partida cargada → ",
+			active_save_name
+		)
 
 
 func _cargar_inventario_al_juego(
