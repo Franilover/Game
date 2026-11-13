@@ -642,6 +642,11 @@ func _materializar_npcs_reino_torres() -> void:
 			if is_instance_valid(npc_existente):
 				npc_existente.datos["rutinas"] = rutinas_actualizadas
 				npc_existente.datos["ubicacion_clave"] = ubicacion
+				var hogar_existente := NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_hogar(npc_existente.get_nombre_visual(), ubicacion)
+				npc_existente.datos["posicion_hogar_local"] = hogar_existente
+				if not bool(npc_existente.get_meta("hogar_inicializado", false)):
+					npc_existente.global_position = zona.to_global(hogar_existente)
+					npc_existente.set_meta("hogar_inicializado", true)
 				var dialogo_actualizado := WorldData.obtener_dialogo_game(personaje_id)
 				if not dialogo_actualizado.is_empty():
 					npc_existente.datos["dialogo"] = dialogo_actualizado
@@ -703,6 +708,7 @@ func _materializar_npcs_reino_torres() -> void:
 		var posicion_hogar_local: Vector2 = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_hogar(npc.get_nombre_visual(), ubicacion) + desplazamiento_plaza
 		npc.datos["posicion_hogar_local"] = posicion_hogar_local
 		npc.global_position = zona.to_global(posicion_hogar_local)
+		npc.set_meta("hogar_inicializado", true)
 		npc.set_meta("personaje_game_id", personaje_id)
 		npc.add_to_group("torres_game_npc")
 		npc.remove_from_group("creatures")
