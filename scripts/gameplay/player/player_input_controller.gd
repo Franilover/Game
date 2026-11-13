@@ -7,7 +7,6 @@ class_name PlayerInputController
 
 func capturar() -> Dictionary:
 	return {
-		"focus_pressed": Input.is_action_pressed("focus"),
 		"dash_just_pressed": Input.is_action_just_pressed("dash"),
 		"run_pressed": Input.is_action_pressed("run"),
 		"direction": Input.get_vector(
@@ -16,13 +15,12 @@ func capturar() -> Dictionary:
 			"move_up",
 			"move_down"
 		),
-		"eterium_sprint_pressed": Input.is_action_pressed("eterium_sprint"),
-		"menu_key_pressed": Input.is_key_pressed(KEY_M)
+		"eterium_sprint_pressed": Input.is_action_pressed("eterium_sprint")
 	}
 
 
-func es_combinacion_menu_reinos(event: InputEvent) -> bool:
+static func es_combinacion_viaje(event: InputEvent) -> bool:
 	if not event is InputEventKey:
 		return false
 	var tecla := event as InputEventKey
-	return tecla.pressed and not tecla.echo and tecla.keycode == KEY_M and tecla.shift_pressed
+	return tecla.pressed and not tecla.echo and tecla.keycode == KEY_M and tecla.ctrl_pressed
