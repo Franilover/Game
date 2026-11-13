@@ -4,6 +4,7 @@ class_name WorldTerrainVisual
 const WATER_SHADER := preload("res://assets/shaders/agua_marina.gdshader")
 const GRASS_SHADER := preload("res://assets/shaders/pradera_superficie.gdshader")
 const FOREST_SHADER := preload("res://assets/shaders/bosque_superficie.gdshader")
+const DIRT_SHADER := preload("res://assets/shaders/tierra_superficie.gdshader")
 
 # Prueba de rendimiento: desactiva temporalmente las capas decorativas de variaciones.
 # El terreno base y sus transiciones TileMapDual siguen activos.
@@ -474,6 +475,11 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 		# Las coordenadas del shader se calculan en espacio global para que
 		# la variación superficial mantenga una sola fase entre tiles y chunks.
 		layer.material = grass_material
+	elif zone == 1:
+		var dirt_material := ShaderMaterial.new()
+		dirt_material.shader = DIRT_SHADER
+		# El suelo terroso conserva un patrón continuo entre tiles y chunks.
+		layer.material = dirt_material
 	elif zone == 8:
 		var forest_material := ShaderMaterial.new()
 		forest_material.shader = FOREST_SHADER
