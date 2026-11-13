@@ -1,6 +1,7 @@
 shader_type canvas_item;
 
 // Variación superficial determinista para Pradera.
+// Combina iluminación escalonada y matices verdes discretos.
 // El patrón usa coordenadas del mundo para continuar entre tiles y chunks.
 varying vec2 posicion_mundo;
 
