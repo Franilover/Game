@@ -36,6 +36,7 @@ const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
 const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_radial_menu.tscn")
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
+const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_input_controller.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
 @onready var _realm_menu: Control = $UI/RealmMenu
 var _reino_descubrimiento_elapsed: float = 0.0
@@ -171,10 +172,7 @@ func _iniciar_zonas() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not event is InputEventKey:
-		return
-	var tecla := event as InputEventKey
-	if not tecla.pressed or tecla.echo or tecla.keycode != KEY_M or not tecla.shift_pressed:
+	if not PLAYER_INPUT_CONTROLLER_SCRIPT.es_combinacion_viaje(event):
 		return
 	if _realm_menu == null or not is_instance_valid(_realm_menu):
 		return
