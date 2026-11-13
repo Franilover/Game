@@ -22,7 +22,8 @@ const ENTRADAS_INTERIORES: Dictionary = {
 	"casa_bruna": {"id": "vivienda_mason", "pos": Vector2(-235.0, 193.0)},
 	"casa_darven": {"id": "casa_oriente_b", "pos": Vector2(385.0, -108.0)},
 	"casa_saira": {"id": "casa_oriente_c", "pos": Vector2(385.0, 173.0)},
-	"casa_narel": {"id": "vivienda_oeste_09", "pos": Vector2(-520.0, -213.0)}
+	"casa_narel": {"id": "vivienda_oeste_09", "pos": Vector2(-520.0, -213.0)},
+	"castillo": {"id": "castillo", "pos": Vector2(0.0, -125.0)}
 }
 
 const POSICIONES: Dictionary = {
@@ -38,7 +39,8 @@ const POSICIONES: Dictionary = {
 	"casa_bruna": Vector2(-235.0, 193.0),
 	"casa_darven": Vector2(385.0, -108.0),
 	"casa_saira": Vector2(385.0, 173.0),
-	"casa_narel": Vector2(-520.0, -213.0)
+	"casa_narel": Vector2(-520.0, -213.0),
+	"castillo": Vector2(0.0, -125.0)
 }
 
 var _world_atmosphere: WorldAtmosphere = null
@@ -74,7 +76,9 @@ static func obtener_clave_hogar(nombre_npc: String, ubicacion_respaldo: String =
 		"bruna": "casa_bruna",
 		"darven": "casa_darven",
 		"saira": "casa_saira",
-		"narel": "casa_narel"
+		"narel": "casa_narel",
+		"abel": "castillo",
+		"liam": "castillo"
 	}
 	var ubicacion := str(hogares.get(clave, ubicacion_respaldo)).strip_edges().to_lower()
 	return ubicacion if POSICIONES.has(ubicacion) else "plaza"
@@ -193,6 +197,10 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos)
 
+	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
+	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
+		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
+
 	var ubicacion_respaldo := str(npc.datos.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	var hogar := obtener_clave_hogar(npc.get_nombre_visual(), ubicacion_respaldo)
 	var esta_en_horario := not rutina.is_empty()
@@ -304,6 +312,25 @@ func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
 	npc.remove_from_group("interactable")
 
 
+func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
+	# Abel y Liam residen en el castillo: salen durante el día y regresan
+	# al anochecer para dormir allí. Este respaldo sólo se usa mientras
+	# todavía no tienen horarios propios cargados desde sus datos.
+	if minutos >= 480 and minutos < 1200:
+		return {
+			"clave": "salida_diurna_castillo",
+			"ubicacion_clave": "plaza",
+			"actividad_clave": "recorrer_torres",
+			"activo": true
+		}
+	return {
+		"clave": "regreso_nocturno_castillo",
+		"ubicacion_clave": "castillo",
+		"actividad_clave": "dormir",
+		"activo": true
+	}
+
+
 func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 	var hogares: Dictionary = {
@@ -311,7 +338,9 @@ func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
 		"bruna": "casa_bruna",
 		"darven": "casa_darven",
 		"saira": "casa_saira",
-		"narel": "casa_narel"
+		"narel": "casa_narel",
+		"abel": "castillo",
+		"liam": "castillo"
 	}
 	var hogar := str(hogares.get(nombre, "plaza"))
 	var ubicacion := hogar
