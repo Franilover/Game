@@ -9,6 +9,7 @@ const ALTO := 1600.0
 const TAMANO_CELDA := 32.0
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+const CHEST_UI_SCRIPT = preload("res://scripts/ui/hogar_chest_inventory.gd")
 
 const CATALOGO := {
 	"arbol": {"nombre": "Árbol", "ruta": "res://assets/art/props/Árbol.png"},
@@ -27,6 +28,10 @@ const CATALOGO := {
 
 var _decoraciones: Array[Dictionary] = []
 var _sprites_decoracion: Array[Sprite2D] = []
+var _objetivos_cofre: Array[Node2D] = []
+var _siguiente_id_cofre := 1
+var _cofre_ui: Node = null
+var _capa_construccion: CanvasLayer
 var _version_estado := 1
 
 var _modo_construccion := false
@@ -131,7 +136,20 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 				"x": clampf(float(item.get("x", 0.0)), -ANCHO * 0.5, ANCHO * 0.5),
 				"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5, ALTO * 0.5),
 				"giro": float(item.get("giro", 0.0))
-			})
+			}
+			if str(item.get("tipo", "")) == "cofre":
+				var id_cofre := str(item.get("cofre_id", "")).strip_edges()
+				if id_cofre.is_empty():
+					id_cofre = _crear_id_cofre()
+				item["cofre_id"] = id_cofre
+				var contenido: Array = []
+				var guardado: Variant = item.get("contenido", [])
+				if guardado is Array:
+					for objeto in guardado:
+						contenido.append((objeto as Dictionary).duplicate(true) if objeto is Dictionary else {})
+				contenido.resize(32)
+				item["contenido"] = contenido
+			_decoraciones.append(item)
 	_interior_guardado_pendiente = bool(estado.get("interior_abierto", false))
 	var interior := _obtener_interior()
 	if is_instance_valid(interior):
@@ -149,12 +167,11 @@ func establecer_decoraciones(decoraciones: Array) -> void:
 func agregar_decoracion(tipo: String, posicion: Vector2, giro: float = 0.0) -> bool:
 	if not CATALOGO.has(tipo) or not _es_posicion_valida(tipo, posicion, giro):
 		return false
-	_decoraciones.append({
-		"tipo": tipo,
-		"x": posicion.x,
-		"y": posicion.y,
-		"giro": giro
-	})
+	var decoracion := {"tipo": tipo, "x": posicion.x, "y": posicion.y, "giro": giro}
+	if tipo == "cofre":
+		decoracion["cofre_id"] = _crear_id_cofre()
+		decoracion["contenido"] = _crear_contenido_vacio()
+	_decoraciones.append(decoracion)
 	_agregar_sprite_decoracion(_decoraciones.size() - 1)
 	return true
 
@@ -195,16 +212,16 @@ func obtener_limites() -> Rect2:
 
 
 func _crear_interfaz_construccion() -> void:
-	var capa := CanvasLayer.new()
-	capa.name = "InterfazConstruccion"
-	capa.layer = 30
-	add_child(capa)
+	_capa_construccion = CanvasLayer.new()
+	_capa_construccion.name = "InterfazConstruccion"
+	_capa_construccion.layer = 30
+	add_child(_capa_construccion)
 
 	var raiz := Control.new()
 	raiz.name = "Raiz"
 	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	raiz.mouse_filter = Control.MOUSE_FILTER_PASS
-	capa.add_child(raiz)
+	_capa_construccion.add_child(raiz)
 
 	_boton_modo = Button.new()
 	_boton_modo.text = "Construir [B]"
@@ -479,7 +496,11 @@ func _reconstruir_visual_decoraciones() -> void:
 	for sprite in _sprites_decoracion:
 		if is_instance_valid(sprite):
 			sprite.queue_free()
+	for objetivo in _objetivos_cofre:
+		if is_instance_valid(objetivo):
+			objetivo.queue_free()
 	_sprites_decoracion.clear()
+	_objetivos_cofre.clear()
 	for indice in range(_decoraciones.size()):
 		_agregar_sprite_decoracion(indice)
 
@@ -499,6 +520,17 @@ func _agregar_sprite_decoracion(indice: int) -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(sprite)
 	_sprites_decoracion.append(sprite)
+	if str(_decoraciones[indice].get("tipo", "")) == "cofre":
+		var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+		if is_instance_valid(objetivo):
+			objetivo.name = "InteraccionCofreExterior_" + str(indice)
+			objetivo.call("configurar", "Abrir cofre", 112.0,
+				Callable(self, "_puede_abrir_cofre").bind(indice),
+				Callable(self, "_interactuar_cofre").bind(indice))
+			add_child(objetivo)
+		_objetivos_cofre.append(objetivo)
+	else:
+		_objetivos_cofre.append(null)
 	_actualizar_sprite_decoracion(indice)
 	_actualizar_resaltado_seleccion()
 
@@ -513,6 +545,8 @@ func _actualizar_sprite_decoracion(indice: int) -> void:
 	sprite.position = Vector2(float(item.get("x", 0.0)), float(item.get("y", 0.0)))
 	sprite.rotation = float(item.get("giro", 0.0))
 	sprite.z_index = clampi(4 + int((sprite.position.y + ALTO * 0.5) / TAMANO_CELDA), 4, 60)
+	if indice < _objetivos_cofre.size() and is_instance_valid(_objetivos_cofre[indice]):
+		_objetivos_cofre[indice].position = sprite.position
 
 
 func _obtener_textura(tipo: String) -> Texture2D:
@@ -543,6 +577,87 @@ func _process(delta: float) -> void:
 		var estado := obtener_estado_guardado()
 		estado["jugador"] = {"x": jugador.global_position.x, "y": jugador.global_position.y}
 		GameState.world_state.flags["hogar_estado"] = estado
+
+
+func _crear_contenido_vacio() -> Array:
+	var contenido: Array = []
+	contenido.resize(32)
+	return contenido
+
+
+func _crear_id_cofre() -> String:
+	var id := "cofre_exterior_" + str(_siguiente_id_cofre)
+	_siguiente_id_cofre += 1
+	return id
+
+
+func obtener_contenido_cofre(indice: int) -> Array:
+	if indice < 0 or indice >= _decoraciones.size() or str(_decoraciones[indice].get("tipo", "")) != "cofre":
+		return []
+	var contenido: Variant = _decoraciones[indice].get("contenido", [])
+	var copia: Array = contenido.duplicate(true) if contenido is Array else []
+	copia.resize(32)
+	return copia
+
+
+func establecer_contenido_cofre(indice: int, objetos: Array) -> bool:
+	if indice < 0 or indice >= _decoraciones.size() or str(_decoraciones[indice].get("tipo", "")) != "cofre":
+		return false
+	var contenido := objetos.duplicate(true)
+	contenido.resize(32)
+	_decoraciones[indice]["contenido"] = contenido
+	_guardar_cambios_hogar()
+	return true
+
+
+func _puede_abrir_cofre(jugador: Node, indice: int) -> bool:
+	if _interior_abierto or _modo_construccion or esta_cofre_abierto():
+		return false
+	if indice < 0 or indice >= _decoraciones.size() or indice >= _sprites_decoracion.size():
+		return false
+	if str(_decoraciones[indice].get("tipo", "")) != "cofre" or not jugador is Node2D:
+		return false
+	var sprite := _sprites_decoracion[indice]
+	return is_instance_valid(sprite) and (jugador as Node2D).global_position.distance_to(sprite.global_position) <= 112.0
+
+
+func _interactuar_cofre(jugador: Node, indice: int) -> void:
+	if _puede_abrir_cofre(jugador, indice):
+		_abrir_cofre(indice)
+
+
+func _abrir_cofre(indice: int) -> void:
+	if esta_cofre_abierto() or indice < 0 or indice >= _decoraciones.size():
+		return
+	var jugador := _obtener_jugador()
+	var sprite: Sprite2D = _sprites_decoracion[indice] if indice < _sprites_decoracion.size() else null
+	if not is_instance_valid(jugador) or not is_instance_valid(sprite) or jugador.global_position.distance_to(sprite.global_position) > 112.0:
+		return
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if not is_instance_valid(inventario):
+		push_warning("HogarZone: no se encontró el inventario del jugador.")
+		return
+	var interfaz := CHEST_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	_cofre_ui = interfaz
+	add_child(interfaz)
+	interfaz.call("abrir", self, inventario, indice)
+
+
+func esta_cofre_abierto() -> bool:
+	return is_instance_valid(_cofre_ui)
+
+
+func cerrar_cofre() -> void:
+	if not is_instance_valid(_cofre_ui):
+		_cofre_ui = null
+		return
+	var interfaz := _cofre_ui
+	_cofre_ui = null
+	if interfaz.is_in_group("modal_ui"):
+		interfaz.remove_from_group("modal_ui")
+	interfaz.queue_free()
 
 
 func _crear_objetivo_puerta() -> void:
@@ -623,6 +738,8 @@ func _establecer_interior(activo: bool, mover_jugador: bool) -> void:
 		if is_instance_valid(sprite):
 			sprite.visible = not activo
 	_boton_modo.visible = not activo
+	if is_instance_valid(_capa_construccion):
+		_capa_construccion.visible = not activo
 	if mover_jugador:
 		var jugador := _obtener_jugador()
 		if is_instance_valid(jugador):
