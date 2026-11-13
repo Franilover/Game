@@ -55,7 +55,7 @@ func _process(_delta: float) -> void:
 		establecer_disponible(false)
 		return
 	var jugador := jugador_variant as Node2D
-	var objetivo := objetivo_variant as Vector2
+	var objetivo: Vector2 = objetivo_variant
 	establecer_disponible(jugador.is_inside_tree() and jugador.global_position.distance_to(objetivo) <= _distancia_maxima)
 
 func establecer_accion(accion: String) -> void:
