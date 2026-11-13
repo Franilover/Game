@@ -347,7 +347,7 @@ func _actualizar_estado_interfaz() -> void:
 func _input(event: InputEvent) -> void:
 	# El inventario tiene prioridad: Hogar no debe capturar B ni liberaciones
 	# del ratón mientras una pestaña del inventario está abierta.
-	if _inventario_abierto:
+	if _inventario_abierto or _menu_viaje_abierto:
 		return
 
 	# Finalizar el arrastre antes de la fase GUI, incluso si se suelta el ratón
