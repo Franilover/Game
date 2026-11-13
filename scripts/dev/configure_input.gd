@@ -31,8 +31,12 @@ func _run() -> void:
 	])
 
 	_set_action("run", [
-		_key(KEY_SHIFT),
+		_key(KEY_ALT),
 		_joy_button(JOY_BUTTON_LEFT_STICK),
+	])
+
+	_set_action("dash", [
+		_key(KEY_SHIFT),
 	])
 
 	# Interacción / acciones
@@ -62,7 +66,6 @@ func _run() -> void:
 	])
 
 	_set_action("dodge", [
-		_key(KEY_SPACE),
 		_joy_button(JOY_BUTTON_B),
 	])
 
@@ -73,7 +76,7 @@ func _run() -> void:
 	])
 
 	_set_action("focus", [
-		_key_physical(KEY_Q),
+		_key_physical(KEY_SPACE),
 		_joy_button(JOY_BUTTON_RIGHT_STICK),
 	])
 
@@ -94,7 +97,7 @@ func _run() -> void:
 	])
 
 	_set_action("map", [
-		_key_physical(KEY_M),
+		_key_ctrl(KEY_M),
 		_joy_button(JOY_BUTTON_DPAD_RIGHT),
 	])
 
@@ -166,6 +169,13 @@ func _key(key: Key) -> InputEventKey:
 func _key_physical(key: Key) -> InputEventKey:
 	var event := InputEventKey.new()
 	event.physical_keycode = key
+	return event
+
+
+func _key_ctrl(key: Key) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.physical_keycode = key
+	event.ctrl_pressed = true
 	return event
 
 
