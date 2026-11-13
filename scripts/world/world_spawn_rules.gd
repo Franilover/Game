@@ -105,10 +105,9 @@ func obtener_candidatos(ecosistema: Dictionary) -> Array:
 		_candidatos_por_ecosistema[ecosistema_id] = resultado
 	return resultado
 
-## Filtro de aparición inicial.
-## "numero_origen" numera registros dentro del linaje; no es un nivel ni una
-## generación. Sólo pueden aparecer formas normales iniciales del Original
-## habilitado y aprobadas en canon. Las formas finales se alcanzan evolucionando.
+## Filtro de aparición de especies Garumi normales.
+## Cada especie aprobada es independiente; numero_origen sólo determina su
+## posición dentro del catálogo del Original y no representa una etapa.
 func garumi_cumple_filtro_generacional(
 	garumi: Dictionary,
 	original_id_permitido: String,
@@ -119,27 +118,12 @@ func garumi_cumple_filtro_generacional(
 	var categoria := str(garumi.get("categoria_garumi", "")).strip_edges().to_lower()
 	if categoria != "normal":
 		return false
-	# El mundo sólo genera la forma inicial. Las formas evolucionadas se
-	# obtienen mediante la progresión de una instancia existente, nunca como
-	# encuentros independientes. Si falta el estado, se rechaza por seguridad.
-	var estado_evolutivo := str(garumi.get("estado_evolutivo", "")).strip_edges().to_lower()
-	if estado_evolutivo != "inicial":
-		return false
-	var evoluciona_de_id := str(garumi.get("evoluciona_de_id", "")).strip_edges()
-	if not evoluciona_de_id.is_empty() or bool(garumi.get("es_evolucion", false)):
-		return false
-	# Si el snapshot incluye estado documental, nunca permitir borradores.
-	# Si lo omite, el exportador debe garantizar que sólo entrega canon aprobado.
 	if garumi.has("estado_documentacion"):
 		var estado := str(garumi.get("estado_documentacion", "")).strip_edges().to_lower()
 		if estado not in ["aprobado", "canon"]:
 			return false
 	var original_id := str(garumi.get("original_id", "")).strip_edges()
-	if original_id != original_id_permitido.strip_edges():
-		return false
-	# El parámetro se conserva por compatibilidad con la configuración del
-	# spawner, pero no se compara con numero_origen: no representa generación.
-	return true
+	return original_id == original_id_permitido.strip_edges()
 
 ## Un Garumi sólo puede aparecer si su registro trae una regla ecológica
 ## explícita en "aparicion". Los selectores presentes se combinan por AND;
