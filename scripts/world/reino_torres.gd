@@ -646,14 +646,20 @@ func _actualizar_luces_faroles() -> void:
 	else:
 		intensidad = _obtener_intensidad_desde_modulacion()
 
+	# Los faroles pertenecen al exterior. Su CanvasLayer no se oculta junto
+	# con los CanvasItem hijos de la zona al entrar a una habitación.
+	var mostrar_faroles := intensidad > 0.01 and not _interior_activo
+	if is_instance_valid(_capa_brillos_faroles):
+		_capa_brillos_faroles.visible = not _interior_activo
+
 	for luz: PointLight2D in _luces_faroles:
 		if is_instance_valid(luz):
-			luz.enabled = intensidad > 0.01
+			luz.enabled = mostrar_faroles
 			luz.energy = 1.8 * intensidad
 
 	for brillo: Sprite2D in _brillos_faroles:
 		if is_instance_valid(brillo):
-			brillo.visible = intensidad > 0.01
+			brillo.visible = mostrar_faroles
 			brillo.modulate = Color(1.0, 0.82, 0.58, intensidad)
 
 
