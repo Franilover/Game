@@ -103,7 +103,7 @@ func _run() -> void:
 				"clave": "consulta_elian",
 				"tipo": "hablar_personaje",
 				"personaje_id": "darven",
-				"cantidad_requerida": 3
+				"cantidad_requerida": 1
 			},
 			{
 				"id": "regreso",
@@ -125,18 +125,18 @@ func _run() -> void:
 		"mision_clave": "mision_elian",
 		"estado": "activa",
 		"objetivo_clave": "consulta_elian",
-		"progreso_objetivo_min": 3
+		"progreso_objetivo_min": 1
 	}):
 		errores.append("El diálogo de regreso se habilitó antes de consultar a Darven.")
 	manager.registrar_dialogo("elian", "regreso")
 	if manager.obtener_progreso("mision_elian", "regreso") != 0:
 		errores.append("El objetivo de regreso avanzó antes de cumplir su requisito.")
-	manager.registrar_recoleccion("madera", 3)
+	manager.registrar_dialogo("darven", "consulta_elian")
 	if not manager.cumple_requisito_dialogo({
 		"mision_clave": "mision_elian",
 		"estado": "activa",
 		"objetivo_clave": "consulta_elian",
-		"progreso_objetivo_min": 3
+		"progreso_objetivo_min": 1
 	}):
 		errores.append("El diálogo de regreso no se habilitó tras consultar a Darven.")
 	manager.registrar_dialogo("elian", "regreso")
