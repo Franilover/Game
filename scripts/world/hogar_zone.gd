@@ -39,7 +39,7 @@ var _posicion_previa_valida := false
 var _boton_modo: Button
 var _panel_construccion: PanelContainer
 var _etiqueta_estado: Label
-var _objetivo_puerta: ContextualActionTarget
+var _objetivo_puerta: Node2D
 var _interior_abierto := false
 var _interior_guardado_pendiente := false
 var _tiempo_actualizacion_estado := 0.0
@@ -546,12 +546,13 @@ func _process(delta: float) -> void:
 
 
 func _crear_objetivo_puerta() -> void:
-	_objetivo_puerta = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as ContextualActionTarget
+	_objetivo_puerta = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
 	if not is_instance_valid(_objetivo_puerta):
 		push_error("HogarZone: no se pudo crear el objetivo contextual de la puerta.")
 		return
 	_objetivo_puerta.name = "ObjetivoContextualPuerta"
-	_objetivo_puerta.configurar(
+	_objetivo_puerta.call(
+		"configurar",
 		"Entrar a la casa",
 		68.0,
 		_puerta_habilitada,
