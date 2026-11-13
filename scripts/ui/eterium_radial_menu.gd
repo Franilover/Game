@@ -185,7 +185,9 @@ func _construir_interfaz_minijuego() -> void:
 
 
 func _iniciar_minijuego_curacion() -> void:
-	if not is_instance_valid(jugador):
+	if _admin_abierto() or _otra_interfaz_abierta() or visible_menu:
+		return
+	if not is_instance_valid(jugador) or not bool(jugador.get("is_alive")):
 		_limpiar_minijuego()
 		return
 	if int(jugador.get("health")) >= int(jugador.get("max_health")):
