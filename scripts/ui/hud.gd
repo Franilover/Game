@@ -1235,6 +1235,13 @@ func accion_controles_moviles(accion: String) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _modo_historia and event is InputEventKey:
+		var tecla_historia := event as InputEventKey
+		if tecla_historia.pressed and not tecla_historia.echo:
+			var codigo_historia := tecla_historia.keycode if tecla_historia.keycode != KEY_NONE else tecla_historia.physical_keycode
+			if codigo_historia in [KEY_M, KEY_G, KEY_T, KEY_F, KEY_SLASH, KEY_KP_DIVIDE]:
+				get_viewport().set_input_as_handled()
+				return
 	if event is InputEventKey:
 		var hand_key := event as InputEventKey
 		if hand_key.keycode == KEY_R:
