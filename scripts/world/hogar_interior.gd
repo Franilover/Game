@@ -5,6 +5,7 @@ extends Node2D
 const ANCHO := 560.0
 const ALTO := 352.0
 const CELDA := 32.0
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CATALOGO := {
 	"cama": {"nombre": "Cama", "ruta": "res://assets/art/places/Muebles/cama.png"},
 	"cofre": {"nombre": "Cofre", "ruta": "res://assets/art/places/Muebles/cofre.png"},
@@ -115,11 +116,13 @@ func _crear_interfaz() -> void:
 	boton.offset_right = -16
 	boton.offset_bottom = 52
 	boton.pressed.connect(alternar_editor)
+	PIXEL_UI_THEME.apply(boton)
 	raiz.add_child(boton)
 	_panel = PanelContainer.new()
 	_panel.position = Vector2(16, 60)
 	_panel.custom_minimum_size = Vector2(260, 0)
 	_panel.visible = false
+	PIXEL_UI_THEME.apply(_panel)
 	raiz.add_child(_panel)
 	var contenido := VBoxContainer.new()
 	_panel.add_child(contenido)
@@ -137,6 +140,7 @@ func _crear_interfaz() -> void:
 		item.text = str(CATALOGO[tipo].nombre)
 		item.custom_minimum_size = Vector2(110, 36)
 		item.pressed.connect(_seleccionar.bind(str(tipo)))
+		PIXEL_UI_THEME.apply(item)
 		lista.add_child(item)
 	var ayuda := Label.new()
 	ayuda.text = "Clic: colocar/mover · R: girar · Supr: quitar · Esc: salir"
@@ -173,6 +177,10 @@ func _establecer_editor(activo: bool) -> void:
 	_previa.visible = false
 	_tipo_actual = ""
 	_arrastrando = -1
+	if not activo:
+		_seleccion = -1
+		for indice in range(_sprites.size()):
+			_actualizar_sprite(indice)
 
 
 func cargar_estado_guardado(estado: Dictionary) -> void:
@@ -211,6 +219,7 @@ func _agregar_sprite(indice: int) -> void:
 	var item: Dictionary = _decoraciones[indice]
 	var textura := _textura(str(item.tipo))
 	if textura == null:
+		_sprites.append(null)
 		return
 	var sprite := Sprite2D.new()
 	sprite.texture = textura
@@ -234,6 +243,7 @@ func _actualizar_sprite(indice: int) -> void:
 
 
 func _seleccionar(tipo: String) -> void:
+	_arrastrando = -1
 	_tipo_actual = tipo
 	_seleccion = -1
 	_giro = 0.0
@@ -292,6 +302,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if raton.button_index == MOUSE_BUTTON_RIGHT and raton.pressed:
 		_tipo_actual = ""
 		_previa.visible = false
+		get_viewport().set_input_as_handled()
 		return
 	if raton.button_index != MOUSE_BUTTON_LEFT:
 		return
@@ -312,9 +323,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_mover(_arrastrando, _ajustar(get_global_mouse_position()))
 			_arrastrando = -1
 			_guardar()
+	get_viewport().set_input_as_handled()
 
 
 func _mover(indice: int, posicion: Vector2) -> void:
+	if indice < 0 or indice >= _decoraciones.size():
+		return
 	if not _es_valida(str(_decoraciones[indice].tipo), posicion, float(_decoraciones[indice].giro)):
 		return
 	_decoraciones[indice].x = posicion.x
