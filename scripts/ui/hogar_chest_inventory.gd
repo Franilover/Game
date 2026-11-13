@@ -193,7 +193,7 @@ func _transferir(contenedor_origen: String, indice_origen: int, contenedor_desti
 	var destino_items: Array = origen_items if contenedor_origen == contenedor_destino else _obtener_items(contenedor_destino)
 	if not _intercambiar_o_apilar(origen_items, indice_origen, destino_items, indice_destino):
 		return
- 	if contenedor_origen == "cofre" or contenedor_destino == "cofre":
+	if contenedor_origen == "cofre" or contenedor_destino == "cofre":
 		var datos_cofre: Array = origen_items if contenedor_origen == "cofre" else destino_items
 		if is_instance_valid(_contenedor):
 			_contenedor.call("establecer_contenido_cofre", datos_cofre)
