@@ -104,6 +104,18 @@ func obtener_relacion(personaje_id: String) -> Dictionary:
 	return nueva.duplicate(true)
 
 
+## Estado de la interacción antes de registrar la conversación actual.
+func obtener_estado_dialogo(personaje_id: String) -> Dictionary:
+	var relacion := obtener_relacion(personaje_id)
+	if relacion.is_empty():
+		return {}
+	var dia_actual := _obtener_clave_dia_actual()
+	return {
+		"primera_vez": not relacion.has("_ultimo_dialogo_dia"),
+		"primera_del_dia": str(relacion.get("_ultimo_dialogo_dia", "")) != dia_actual
+	}
+
+
 func modificar_relacion(
 	personaje_id: String,
 	cambios: Dictionary,
