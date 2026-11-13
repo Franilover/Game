@@ -35,6 +35,7 @@ func alternar(cliente: GarliaSupabaseClient, estado: GameStateService, tipo_zona
 	_reconstruir_destinos()
 	_abierto = true
 	visible = true
+	_notificar_estado_viaje_a_hogar(true)
 	if not is_in_group("modal_ui"):
 		add_to_group("modal_ui")
 	_panel.grab_focus()
@@ -43,8 +44,15 @@ func alternar(cliente: GarliaSupabaseClient, estado: GameStateService, tipo_zona
 func cerrar() -> void:
 	_abierto = false
 	visible = false
+	_notificar_estado_viaje_a_hogar(false)
 	if is_in_group("modal_ui"):
 		remove_from_group("modal_ui")
+
+
+func _notificar_estado_viaje_a_hogar(abierto: bool) -> void:
+	for hogar in get_tree().get_nodes_in_group("hogar_zone"):
+		if is_instance_valid(hogar) and hogar.has_method("establecer_menu_viaje_abierto"):
+			hogar.call("establecer_menu_viaje_abierto", abierto)
 
 
 
