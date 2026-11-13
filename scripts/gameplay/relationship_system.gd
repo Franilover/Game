@@ -127,16 +127,33 @@ func modificar_relacion(
 
 
 func registrar_dialogo(personaje_id: String, clave: String) -> Dictionary:
-	if personaje_id.is_empty():
+	var id := personaje_id.strip_edges()
+	var clave_dialogo := clave.strip_edges()
+	if id.is_empty() or clave_dialogo.is_empty():
 		return {}
+
+	# Un mismo tema sólo genera cercanía la primera vez. Repetir una
+	# conversación ya conocida no puede farmear amistad.
+	var recuerdos := _obtener_recuerdos()
+	var lista_variant: Variant = recuerdos.get(id, [])
+	if lista_variant is Array:
+		for recuerdo_variant in lista_variant as Array:
+			if not recuerdo_variant is Dictionary:
+				continue
+			var recuerdo_existente := recuerdo_variant as Dictionary
+			if (
+				str(recuerdo_existente.get("tipo", "")) == "dialogo"
+				and str(recuerdo_existente.get("clave", "")) == clave_dialogo
+			):
+				return obtener_relacion(id)
 
 	var recuerdo := {
 		"tipo": "dialogo",
-		"clave": clave,
+		"clave": clave_dialogo,
 		"importancia": 1.0,
 		"momento": Time.get_datetime_string_from_system(true)
 	}
-	return modificar_relacion(personaje_id, {"amistad": 0.5}, recuerdo)
+	return modificar_relacion(id, {"amistad": 0.5}, recuerdo)
 
 
 func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
