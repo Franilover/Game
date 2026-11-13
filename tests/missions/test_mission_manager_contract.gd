@@ -99,10 +99,10 @@ func _run() -> void:
 		"nombre": "Una hornada a tiempo",
 		"objetivos": [
 			{
-				"id": "madera",
-				"clave": "reunir_lenia",
-				"tipo": "recoger_item",
-				"item_id": "madera",
+				"id": "consulta",
+				"clave": "consulta_elian",
+				"tipo": "hablar_personaje",
+				"personaje_id": "darven",
 				"cantidad_requerida": 3
 			},
 			{
@@ -111,7 +111,7 @@ func _run() -> void:
 				"tipo": "hablar_personaje",
 				"personaje_id": "elian",
 				"cantidad_requerida": 1,
-				"datos": {"requiere_objetivo_clave": "reunir_lenia"}
+				"datos": {"requiere_objetivo_clave": "consulta_elian"}
 			}
 		],
 		"recompensas": []
@@ -124,10 +124,10 @@ func _run() -> void:
 	if manager.cumple_requisito_dialogo({
 		"mision_clave": "mision_elian",
 		"estado": "activa",
-		"objetivo_clave": "reunir_lenia",
+		"objetivo_clave": "consulta_elian",
 		"progreso_objetivo_min": 3
 	}):
-		errores.append("El diálogo de regreso se habilitó antes de reunir la madera.")
+		errores.append("El diálogo de regreso se habilitó antes de consultar a Darven.")
 	manager.registrar_dialogo("elian", "regreso")
 	if manager.obtener_progreso("mision_elian", "regreso") != 0:
 		errores.append("El objetivo de regreso avanzó antes de cumplir su requisito.")
@@ -135,10 +135,10 @@ func _run() -> void:
 	if not manager.cumple_requisito_dialogo({
 		"mision_clave": "mision_elian",
 		"estado": "activa",
-		"objetivo_clave": "reunir_lenia",
+		"objetivo_clave": "consulta_elian",
 		"progreso_objetivo_min": 3
 	}):
-		errores.append("El diálogo de regreso no se habilitó tras reunir la madera.")
+		errores.append("El diálogo de regreso no se habilitó tras consultar a Darven.")
 	manager.registrar_dialogo("elian", "regreso")
 	if not manager.esta_completada("mision_elian"):
 		errores.append("La misión social no se completó tras regresar con Elian.")
