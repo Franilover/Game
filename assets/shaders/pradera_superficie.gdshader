@@ -9,11 +9,8 @@ uniform float intensidad : hint_range(0.0, 0.22, 0.005) = 0.11;
 uniform float escala_detalle : hint_range(0.02, 0.16, 0.002) = 0.052;
 
 float hash_2d(vec2 p) {
-	p = vec2(
-		dot(p, vec2(127.1, 311.7)),
-		dot(p, vec2(269.5, 183.3))
-	);
-	return fract(sin(p.x + p.y) * 43758.5453);
+	// Hash compacto sin funciones trigonométricas: más apropiado para GPU integrada.
+	return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
 }
 
 float ruido_valor(vec2 p) {
