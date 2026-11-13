@@ -38,6 +38,7 @@ const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
+const CUTSCENE_DIRECTOR_SCRIPT = preload("res://scripts/gameplay/cutscene_director.gd")
 
 # Perfiles visuales locales por zona. Para habilitar uno en Aventura en el futuro,
 # basta con añadir aquí su clave de zona sin alterar el sistema climático global.
@@ -54,6 +55,7 @@ var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
 var _carga_historia_activa := false
+var _cutscene_director: CutsceneDirector = null
 
 
 func _ready() -> void:
@@ -870,6 +872,8 @@ func _configurar_camara() -> void:
 func _seguir_jugador() -> void:
 	if _player == null or _camera == null:
 		return
+	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo():
+		return
 	if is_instance_valid(_garumi_combat_arena) and _garumi_combat_arena.call("esta_activa"):
 		_camera.global_position = _garumi_combat_arena.call("obtener_centro")
 		_ultima_posicion_camara = _camera.global_position
@@ -1012,6 +1016,11 @@ func _configurar_dialogo() -> void:
 		return
 
 	_dialogue_system.configurar(_player, _hud, MissionManager, RelationshipSystem)
+	if not is_instance_valid(_cutscene_director):
+		_cutscene_director = CUTSCENE_DIRECTOR_SCRIPT.new() as CutsceneDirector
+		_cutscene_director.name = "CutsceneDirector"
+		add_child(_cutscene_director)
+	_cutscene_director.configurar(_player, _dialogue_system, _camera)
 
 
 func _configurar_admin() -> void:
