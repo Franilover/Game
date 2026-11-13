@@ -21,10 +21,15 @@ var _zona_fija: Node2D = null
 var _poligonos_fijos: Array[Polygon2D] = []
 var _limites_mapa_fijo := Rect2()
 var _tiempo_marcadores := 0.0
+var _centro_mapa_fijo := Vector2.ZERO
+var _zoom_mapa_fijo := 1.0
+var _arrastrando_mapa := false
+var _ultima_posicion_mouse := Vector2.ZERO
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	clip_contents = true
 	set_process(true)
 	_actualizar_bloqueo_modal()
 
@@ -68,12 +73,31 @@ func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String,
 		_limites_mapa_fijo = Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 	elif _tipo_zona == "expedicion:bosque":
 		_limites_mapa_fijo = Rect2(0.0, -1024.0, 5120.0, 2048.0)
+	_centro_mapa_fijo = _limites_mapa_fijo.get_center()
+	_zoom_mapa_fijo = 1.0
 	_ultima_actualizacion = Vector2i(2147483647, 2147483647)
 	_refrescar()
 
 
 func _process(delta: float) -> void:
-	if not visible or _player == null:
+	if not visible:
+		return
+	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+		var velocidad_pan := 520.0 / _zoom_mapa_fijo
+		var direccion := Vector2.ZERO
+		if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+			direccion.x -= 1.0
+		if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+			direccion.x += 1.0
+		if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+			direccion.y -= 1.0
+		if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+			direccion.y += 1.0
+		if direccion != Vector2.ZERO:
+			_centro_mapa_fijo += direccion.normalized() * velocidad_pan * delta
+			_limitar_centro_mapa()
+			queue_redraw()
+	if _player == null:
 		return
 	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
 		var posicion_jugador := _player.global_position
@@ -105,21 +129,47 @@ func _refrescar() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
-		var rueda := event as InputEventMouseButton
-		if rueda.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_zoom = minf(_zoom + 0.125, MAP_TILE_PIXELS_MAX / MAP_TILE_PIXELS_BASE)
+	if event is InputEventMouseButton:
+		var boton := event as InputEventMouseButton
+		if boton.button_index == MOUSE_BUTTON_MIDDLE:
+			_arrastrando_mapa = boton.pressed
+			_ultima_posicion_mouse = boton.position
+			accept_event()
+			return
+		if boton.pressed and (boton.button_index == MOUSE_BUTTON_WHEEL_UP or boton.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+			var factor := 1.15 if boton.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.15
+			if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+				_zoom_mapa_fijo = clampf(_zoom_mapa_fijo * factor, 1.0, 5.0)
+				_limitar_centro_mapa()
+			else:
+				_zoom = clampf(_zoom * factor, MAP_TILE_PIXELS_MIN / MAP_TILE_PIXELS_BASE, MAP_TILE_PIXELS_MAX / MAP_TILE_PIXELS_BASE)
 			accept_event()
 			queue_redraw()
-		elif rueda.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_zoom = maxf(_zoom - 0.125, MAP_TILE_PIXELS_MIN / MAP_TILE_PIXELS_BASE)
-			accept_event()
-			queue_redraw()
-	elif event is InputEventMagnifyGesture:
-		var gesto := event as InputEventMagnifyGesture
-		_zoom = clampf(_zoom * gesto.factor, MAP_TILE_PIXELS_MIN / MAP_TILE_PIXELS_BASE, MAP_TILE_PIXELS_MAX / MAP_TILE_PIXELS_BASE)
+			return
+	elif event is InputEventMouseMotion and _arrastrando_mapa:
+		var movimiento := event as InputEventMouseMotion
+		var mapa_rect := Rect2(4.0, 20.0, size.x - 8.0, size.y - 24.0)
+		var limites_vista := _obtener_limites_vista(mapa_rect)
+		_centro_mapa_fijo -= Vector2(
+			movimiento.relative.x * limites_vista.size.x / mapa_rect.size.x,
+			movimiento.relative.y * limites_vista.size.y / mapa_rect.size.y
+		)
+		_limitar_centro_mapa()
 		accept_event()
 		queue_redraw()
+		return
+	elif event is InputEventMagnifyGesture:
+		var gesto := event as InputEventMagnifyGesture
+		if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+			_zoom_mapa_fijo = clampf(_zoom_mapa_fijo * gesto.factor, 1.0, 5.0)
+			_limitar_centro_mapa()
+		else:
+			_zoom = clampf(_zoom * gesto.factor, MAP_TILE_PIXELS_MIN / MAP_TILE_PIXELS_BASE, MAP_TILE_PIXELS_MAX / MAP_TILE_PIXELS_BASE)
+		accept_event()
+		queue_redraw()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
+			accept_event()
 
 
 func _al_exploracion_actualizada() -> void:
@@ -176,7 +226,7 @@ func _draw() -> void:
 
 
 func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
-	var limites := _limites_mapa_fijo
+	var limites := _obtener_limites_vista(mapa_rect)
 	if limites.size.x <= 0.0 or limites.size.y <= 0.0:
 		return
 
@@ -399,6 +449,22 @@ func _dibujar_mapa_bosque(mapa_rect: Rect2, limites: Rect2) -> void:
 		_punto_a_mapa(Vector2(1980, -560), mapa_rect, limites)
 	])
 	draw_polyline(desvio, Color("#9b7950"), 2.0, true)
+
+
+func _obtener_limites_vista(mapa_rect: Rect2) -> Rect2:
+	if _limites_mapa_fijo.size.x <= 0.0 or _limites_mapa_fijo.size.y <= 0.0:
+		return _limites_mapa_fijo
+	var tamano := _limites_mapa_fijo.size / _zoom_mapa_fijo
+	return Rect2(_centro_mapa_fijo - tamano * 0.5, tamano)
+
+
+func _limitar_centro_mapa() -> void:
+	if _limites_mapa_fijo.size.x <= 0.0:
+		return
+	var tamano_vista := _limites_mapa_fijo.size / _zoom_mapa_fijo
+	var mitad := tamano_vista * 0.5
+	_centro_mapa_fijo.x = clampf(_centro_mapa_fijo.x, _limites_mapa_fijo.position.x + mitad.x, _limites_mapa_fijo.end.x - mitad.x)
+	_centro_mapa_fijo.y = clampf(_centro_mapa_fijo.y, _limites_mapa_fijo.position.y + mitad.y, _limites_mapa_fijo.end.y - mitad.y)
 
 
 func _punto_a_mapa(punto: Vector2, mapa_rect: Rect2, limites: Rect2) -> Vector2:
