@@ -892,7 +892,8 @@ func sacar_npc_del_interior(npc: Node) -> void:
 	npc.reparent(_contenedor_npcs_exterior, true)
 	if not entrada.is_empty() and npc is Node2D:
 		(npc as Node2D).global_position = to_global(entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
-	npc.visible = false
+	if npc is CanvasItem:
+		(npc as CanvasItem).visible = false
 
 
 func _devolver_npcs_del_interior_al_exterior() -> void:
