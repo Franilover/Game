@@ -15,6 +15,7 @@ var _move_timer: float = 0.0
 var _usar_direccion_externa: bool = false
 var _direccion_externa: Vector2 = Vector2.ZERO
 var _control_rutina: bool = false
+var _pausado_temporalmente: bool = false
 var _ruta_rutina: PackedVector2Array = PackedVector2Array()
 var _indice_ruta_rutina: int = 0
 
@@ -39,6 +40,7 @@ func configurar(
 	_move_timer = 0.0
 	_move_direction = Vector2.ZERO
 	_control_rutina = false
+	_pausado_temporalmente = false
 	_ruta_rutina.clear()
 	_indice_ruta_rutina = 0
 
@@ -52,6 +54,12 @@ func procesar(delta: float) -> void:
 		return
 
 	if not is_instance_valid(creature):
+		return
+
+	# Una conversación pausa el desplazamiento sin borrar la ruta ni cambiar
+	# el modo de control que tenía el NPC antes de hablar.
+	if _pausado_temporalmente:
+		creature.velocity = Vector2.ZERO
 		return
 
 	# Las rutinas de NPC usan rutas calculadas sobre la geometría estática.
@@ -109,6 +117,16 @@ func procesar(delta: float) -> void:
 	creature.move_and_slide()
 
 	_mantener_en_chunk()
+
+
+func pausar_temporalmente() -> void:
+	_pausado_temporalmente = true
+	if creature != null and is_instance_valid(creature):
+		creature.velocity = Vector2.ZERO
+
+
+func reanudar_temporalmente() -> void:
+	_pausado_temporalmente = false
 
 
 func rutina_terminada() -> bool:
