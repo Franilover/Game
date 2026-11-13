@@ -436,14 +436,24 @@ func _actualizar_multiplicador_terreno(delta: float) -> void:
 	_terrain_query_timer = 0.08
 
 	var zona := -1
-	if is_instance_valid(_world_context_ref) and _world_context_ref.tiene_mundo_activo():
+	if is_instance_valid(_terrain_visual_ref) and _terrain_visual_ref.has_method("obtener_zona_en_posicion"):
+		zona = int(_terrain_visual_ref.call("obtener_zona_en_posicion", global_position))
+
+	# Puede haber más de un renderer activo al cambiar de zona. Elegir el que
+	# realmente contiene la celda evita consultar un mapa anterior o inactivo.
+	if zona < 0:
+		for renderer_variant in get_tree().get_nodes_in_group("world_terrain_visual"):
+			if not is_instance_valid(renderer_variant) or not renderer_variant.has_method("obtener_zona_en_posicion"):
+				continue
+			var zona_candidata := int(renderer_variant.call("obtener_zona_en_posicion", global_position))
+			if zona_candidata >= 0:
+				_terrain_visual_ref = renderer_variant
+				zona = zona_candidata
+				break
+
+	if zona < 0 and is_instance_valid(_world_context_ref) and _world_context_ref.tiene_mundo_activo():
 		var tile := _world_context_ref.get_tile_at(global_position)
 		zona = _world_context_ref.get_zona_at(tile)
-	else:
-		if not is_instance_valid(_terrain_visual_ref):
-			_terrain_visual_ref = get_tree().get_first_node_in_group("world_terrain_visual")
-		if is_instance_valid(_terrain_visual_ref) and _terrain_visual_ref.has_method("obtener_zona_en_posicion"):
-			zona = int(_terrain_visual_ref.call("obtener_zona_en_posicion", global_position))
 
 	_terrain_speed_multiplier = WATER_SPEED_MULTIPLIER if WATER_ZONES.has(zona) else 1.0
 
