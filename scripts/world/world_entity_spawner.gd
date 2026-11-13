@@ -1635,6 +1635,9 @@ func _spawn_characters_in_chunk(
 		criatura_data["personaje_game_id"] = personaje_id
 		criatura_data["reino_game_id"] = reino_game_id
 		criatura_data["reino_nombre"] = str(personaje.get("reino_nombre", ""))
+		criatura_data["ubicacion_clave"] = str(personaje.get("ubicacion_clave", ""))
+		var rutinas_variant: Variant = personaje.get("rutinas", [])
+		criatura_data["rutinas"] = rutinas_variant.duplicate(true) if rutinas_variant is Array else []
 
 		var dialogo := _world_data.obtener_dialogo_game(personaje_id)
 		if not dialogo.is_empty():
