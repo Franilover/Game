@@ -13,7 +13,7 @@ var _player: Player = null
 var _dialogue: DialogueSystem = null
 var _camera: Camera2D = null
 var _ocupado: bool = false
-var _cancelada: bool = false
+var _generacion: int = 0
 var _clave_actual: String = ""
 var _tween_camara: Tween = null
 
@@ -40,16 +40,17 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 		push_warning("CutsceneDirector: faltan Player o DialogueSystem.")
 		return false
 
+	_generacion += 1
+	var generacion_actual := _generacion
 	_ocupado = true
-	_cancelada = false
 	_clave_actual = clave_limpia
 	if not is_in_group("modal_ui"):
 		add_to_group("modal_ui")
 	cinematica_iniciada.emit(_clave_actual)
 
 	for paso_variant in pasos:
-		if _cancelada:
-			break
+		if generacion_actual != _generacion:
+			return false
 		if not paso_variant is Dictionary:
 			continue
 		var paso := paso_variant as Dictionary
@@ -62,12 +63,18 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 					continue
 				if _dialogue.abrir(datos_variant as Dictionary):
 					await _dialogue.dialogue_finished
+					if generacion_actual != _generacion:
+						return false
 			"esperar":
 				var duracion := clampf(float(paso.get("segundos", 0.5)), 0.0, 60.0)
 				if duracion > 0.0:
 					await get_tree().create_timer(duracion).timeout
+					if generacion_actual != _generacion:
+						return false
 			"camara":
 				await _ejecutar_movimiento_camara(paso)
+				if generacion_actual != _generacion:
+					return false
 			"evento":
 				var evento := str(paso.get("clave", "")).strip_edges()
 				if not evento.is_empty():
@@ -80,8 +87,7 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 			_:
 				push_warning("CutsceneDirector: tipo de paso desconocido: " + tipo)
 
-	if not _cancelada:
-		_restaurar_camara()
+	_restaurar_camara()
 	_finalizar()
 	return true
 
@@ -89,7 +95,7 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 func cancelar() -> void:
 	if not _ocupado:
 		return
-	_cancelada = true
+	_generacion += 1
 	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
 		_tween_camara.kill()
 	if is_instance_valid(_dialogue) and _dialogue.esta_abierto():
@@ -131,7 +137,6 @@ func _finalizar() -> void:
 	var clave_finalizada := _clave_actual
 	_ocupado = false
 	_clave_actual = ""
-	_cancelada = false
 	if is_in_group("modal_ui"):
 		remove_from_group("modal_ui")
 	cinematica_finalizada.emit(clave_finalizada)
