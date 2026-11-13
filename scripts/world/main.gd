@@ -29,6 +29,7 @@ var _garumi_battle_party: Node = null
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
 var _world_atmosphere: WorldAtmosphere = null
+@onready var _world_climate_visuals: WorldClimateVisuals = $UI/FogOverlay
 var _world_generator: WorldGenerator = null
 @onready var _world_context: WorldContext = $Systems/WorldContext
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
@@ -36,6 +37,12 @@ const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
 const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_radial_menu.tscn")
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
+
+# Perfiles visuales locales por zona. Para habilitar uno en Aventura en el futuro,
+# basta con añadir aquí su clave de zona sin alterar el sistema climático global.
+const CLIMATE_PROFILES_BY_ZONE: Dictionary = {
+	"historia:reserva_carmesi": "niebla_carmesi",
+}
 const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_input_controller.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
 @onready var _realm_menu: Control = $UI/RealmMenu
@@ -312,6 +319,8 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
 	_actualizar_limites_camara_zona(tipo)
+	if is_instance_valid(_world_climate_visuals):
+		_world_climate_visuals.establecer_perfil_climatico(str(CLIMATE_PROFILES_BY_ZONE.get(tipo, "")))
 	var es_modo_historia := tipo == "historia:reserva_carmesi"
 	if is_instance_valid(_inventory):
 		_inventory.establecer_modo_historia(es_modo_historia)
