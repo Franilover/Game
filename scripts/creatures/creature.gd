@@ -1139,7 +1139,9 @@ func detener_movimiento() -> void:
 func can_interact(
 	_actor: Node
 ) -> bool:
-	return is_alive
+	# Una criatura oculta (por ejemplo, un aldeano que quedó fuera de la
+	# habitación activa) no debe conservar un objetivo de interacción.
+	return is_alive and is_visible_in_tree()
 
 
 func es_dialogable() -> bool:
