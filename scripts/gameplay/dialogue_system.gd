@@ -66,8 +66,12 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("primary_action"):
+		# Los clics sobre el botón quedan para el sistema GUI; los clics
+		# fuera de él siguen avanzando el diálogo normalmente.
 		if action_button != null and action_button.visible and event is InputEventMouseButton:
-			return
+			var posicion_mouse := get_viewport().get_mouse_position()
+			if action_button.get_global_rect().has_point(posicion_mouse):
+				return
 		_avanzar()
 		get_viewport().set_input_as_handled()
 		return
@@ -106,6 +110,7 @@ func abrir_desde(fuente: Creature) -> bool:
 
 
 func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
+	_fuente = fuente
 	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
 	var datos_seleccionados := _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
@@ -306,6 +311,13 @@ func _actualizar_boton_accion() -> void:
 		return
 
 	if _acciones.is_empty():
+		action_button.visible = false
+		if cancel_button != null:
+			cancel_button.visible = false
+		return
+
+	# La elección se presenta al terminar la conversación, no entre líneas.
+	if _indice_linea < _lineas.size() - 1:
 		action_button.visible = false
 		if cancel_button != null:
 			cancel_button.visible = false
