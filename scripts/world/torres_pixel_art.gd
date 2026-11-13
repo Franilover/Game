@@ -249,17 +249,9 @@ static func _dibujar_casa(imagen: Image, clave: String, variante: int) -> void:
 		_rect(imagen, 2, 12, 5, 13, Color("#7F6B4D"))
 	if clave == "casa_estudio":
 		_rect(imagen, centro - 4, 4, 8, 5, Color("#46565A"))
-		_rect(imagen, centro - 2, 1, 4, 4, Color("#758A8A"))
-	if clave == "aguas":
-		_rect(imagen, centro - 4, h - 19, 8, 4, Color("#305A63"))
-		_rect(imagen, centro - 3, h - 18, 6, 2, Color("#79A5A2"))
-	if clave == "alfareria":
+		_rect(imagen, centro - 2, 1, 4, 4, Color("#758A8A"))	if clave == "alfareria":
 		_rect(imagen, w - 12, h - 19, 4, 5, Color("#A85E42"))
-		_rect(imagen, w - 11, h - 20, 2, 2, Color("#D0A06A"))
-	if clave == "telar":
-		_rect(imagen, 3, h - 19, 5, 6, Color("#8A5550"))
-		_rect(imagen, 4, h - 18, 3, 4, Color("#C6A071"))
-	if clave == "banos":
+		_rect(imagen, w - 11, h - 20, 2, 2, Color("#D0A06A"))	if clave == "banos":
 		_rect(imagen, centro - 7, 5, 14, 3, Color("#4F7376"))
 		_rect(imagen, centro - 5, 6, 10, 1, Color("#9BBEB4"))
 	# Pocas marcas, colocadas en rejilla, dan textura sin ensuciar la silueta.
