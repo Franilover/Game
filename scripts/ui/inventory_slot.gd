@@ -138,6 +138,7 @@ func _get_drag_data(_position: Vector2) -> Variant:
 	var indice_datos := int(get_meta("inventory_index", get_index()))
 	return {
 		"tipo": "inventario_objeto",
+		"contenedor": str(get_meta("inventory_container", "jugador")),
 		"indice": indice_datos,
 		"datos": datos
 	}

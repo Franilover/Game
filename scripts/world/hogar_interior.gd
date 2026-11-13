@@ -6,6 +6,7 @@ const ANCHO := 560.0
 const ALTO := 352.0
 const CELDA := 32.0
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const CHEST_UI_SCRIPT = preload("res://scripts/ui/hogar_chest_inventory.gd")
 const CATALOGO := {
 	"cama": {"nombre": "Cama", "ruta": "res://assets/art/places/Muebles/cama.png"},
 	"cofre": {"nombre": "Cofre", "ruta": "res://assets/art/places/Muebles/cofre.png"},
@@ -24,6 +25,8 @@ var _previa: Sprite2D
 var _panel: PanelContainer
 var _estado: Label
 var _capa_ui: CanvasLayer
+var _cofre_ui: Node = null
+var _siguiente_id_cofre := 1
 
 
 func _ready() -> void:
@@ -150,6 +153,8 @@ func _crear_interfaz() -> void:
 
 func establecer_activo(activo: bool) -> void:
 	visible = activo
+	if not activo:
+		cerrar_cofre()
 	if is_instance_valid(_capa_ui):
 		_capa_ui.visible = activo
 	set_process(activo)
@@ -159,6 +164,8 @@ func establecer_activo(activo: bool) -> void:
 
 
 func alternar_editor() -> void:
+	if esta_cofre_abierto():
+		return
 	_establecer_editor(not _editor_activo)
 
 
@@ -166,7 +173,13 @@ func esta_editando() -> bool:
 	return _editor_activo
 
 
+func esta_cofre_abierto() -> bool:
+	return is_instance_valid(_cofre_ui)
+
+
 func _establecer_editor(activo: bool) -> void:
+	if activo and esta_cofre_abierto():
+		return
 	_editor_activo = activo
 	if activo:
 		if not is_in_group("modal_ui"):
@@ -185,25 +198,131 @@ func _establecer_editor(activo: bool) -> void:
 
 func cargar_estado_guardado(estado: Dictionary) -> void:
 	var datos: Variant = estado.get("decoraciones", [])
+	_siguiente_id_cofre = maxi(1, int(estado.get("siguiente_id_cofre", 1)))
 	_decoraciones.clear()
 	if datos is Array:
 		for entrada in datos:
-			if entrada is Dictionary and CATALOGO.has(str((entrada as Dictionary).get("tipo", ""))):
-				var item := entrada as Dictionary
-				var decoracion := {
-					"tipo": str(item.get("tipo", "")),
-					"x": clampf(float(item.get("x", 0.0)), -ANCHO * 0.5, ANCHO * 0.5),
-					"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5, ALTO * 0.5),
-					"giro": float(item.get("giro", 0.0))
-				}
-				if _es_valida(str(decoracion.tipo), Vector2(float(decoracion.x), float(decoracion.y)), float(decoracion.giro)):
-					_decoraciones.append(decoracion)
+			if not entrada is Dictionary:
+				continue
+			var item := (entrada as Dictionary).duplicate(true)
+			var tipo := str(item.get("tipo", ""))
+			if not CATALOGO.has(tipo):
+				continue
+			var decoracion := {
+				"tipo": tipo,
+				"x": clampf(float(item.get("x", 0.0)), -ANCHO * 0.5, ANCHO * 0.5),
+				"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5, ALTO * 0.5),
+				"giro": float(item.get("giro", 0.0))
+			}
+			if tipo == "cofre":
+				var id_cofre := str(item.get("cofre_id", "")).strip_edges()
+				if id_cofre.is_empty() or _id_cofre_ya_existe(id_cofre):
+					id_cofre = _crear_id_cofre()
+				decoracion["cofre_id"] = id_cofre
+				var contenido: Array = []
+				var contenido_guardado: Variant = item.get("contenido", [])
+				if contenido_guardado is Array:
+					for objeto in contenido_guardado:
+						contenido.append((objeto as Dictionary).duplicate(true) if objeto is Dictionary else {})
+				contenido.resize(32)
+				decoracion["contenido"] = contenido
+			if _es_valida(str(decoracion.tipo), Vector2(float(decoracion.x), float(decoracion.y)), float(decoracion.giro)):
+				_decoraciones.append(decoracion)
 	if is_inside_tree():
 		_reconstruir()
 
 
 func obtener_estado_guardado() -> Dictionary:
-	return {"version": 1, "decoraciones": _decoraciones.duplicate(true)}
+	return {
+		"version": 2,
+		"siguiente_id_cofre": _siguiente_id_cofre,
+		"decoraciones": _decoraciones.duplicate(true)
+	}
+
+
+func _crear_contenido_vacio() -> Array:
+	var contenido: Array = []
+	contenido.resize(32)
+	return contenido
+
+
+func _crear_id_cofre() -> String:
+	var candidato := ""
+	while candidato.is_empty() or _id_cofre_ya_existe(candidato):
+		candidato = "cofre_" + str(_siguiente_id_cofre)
+		_siguiente_id_cofre += 1
+	return candidato
+
+
+func _id_cofre_ya_existe(id_buscado: String) -> bool:
+	for decoracion in _decoraciones:
+		if str(decoracion.get("cofre_id", "")) == id_buscado:
+			return true
+	return false
+
+
+func obtener_contenido_cofre(indice: int) -> Array:
+	if indice < 0 or indice >= _decoraciones.size():
+		return []
+	if str(_decoraciones[indice].get("tipo", "")) != "cofre":
+		return []
+	var contenido_variant: Variant = _decoraciones[indice].get("contenido", [])
+	var contenido: Array = []
+	if contenido_variant is Array:
+		for objeto in contenido_variant:
+			contenido.append((objeto as Dictionary).duplicate(true) if objeto is Dictionary else {})
+	contenido.resize(32)
+	return contenido
+
+
+func establecer_contenido_cofre(indice: int, objetos: Array) -> bool:
+	if indice < 0 or indice >= _decoraciones.size():
+		return false
+	if str(_decoraciones[indice].get("tipo", "")) != "cofre":
+		return false
+	var contenido: Array = []
+	for objeto in objetos:
+		contenido.append((objeto as Dictionary).duplicate(true) if objeto is Dictionary else {})
+	contenido.resize(32)
+	_decoraciones[indice]["contenido"] = contenido
+	_guardar()
+	return true
+
+
+func _cofre_tiene_contenido(indice: int) -> bool:
+	for objeto in obtener_contenido_cofre(indice):
+		if objeto is Dictionary and not (objeto as Dictionary).is_empty():
+			return true
+	return false
+
+
+func _abrir_cofre(indice: int) -> void:
+	if esta_cofre_abierto() or indice < 0 or indice >= _decoraciones.size():
+		return
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	var sprite: Sprite2D = _sprites[indice] if indice < _sprites.size() else null
+	if not is_instance_valid(jugador) or not is_instance_valid(sprite):
+		return
+	if jugador.global_position.distance_to(sprite.global_position) > 112.0:
+		return
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if not is_instance_valid(inventario):
+		push_warning("HogarInterior: no se encontró el inventario del jugador.")
+		return
+	_cofre_ui = CHEST_UI_SCRIPT.new()
+	add_child(_cofre_ui)
+	_cofre_ui.call("abrir", self, inventario, indice)
+
+
+func cerrar_cofre() -> void:
+	if not is_instance_valid(_cofre_ui):
+		_cofre_ui = null
+		return
+	var interfaz := _cofre_ui
+	_cofre_ui = null
+	if interfaz.is_in_group("modal_ui"):
+		interfaz.remove_from_group("modal_ui")
+	interfaz.queue_free()
 
 
 func _reconstruir() -> void:
@@ -280,6 +399,10 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		KEY_DELETE, KEY_BACKSPACE:
 			if _seleccion >= 0 and _seleccion < _decoraciones.size():
+				if str(_decoraciones[_seleccion].get("tipo", "")) == "cofre" and _cofre_tiene_contenido(_seleccion):
+					_estado.text = "Vacía el cofre antes de retirarlo."
+					get_viewport().set_input_as_handled()
+					return
 				_decoraciones.remove_at(_seleccion)
 				_seleccion = -1
 				_reconstruir()
@@ -288,7 +411,16 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if esta_cofre_abierto():
+		return
 	if not _editor_activo:
+		if event is InputEventMouseButton:
+			var clic := event as InputEventMouseButton
+			if clic.button_index == MOUSE_BUTTON_LEFT and clic.pressed:
+				var indice_cofre := _buscar(get_global_mouse_position())
+				if indice_cofre >= 0 and str(_decoraciones[indice_cofre].get("tipo", "")) == "cofre":
+					_abrir_cofre(indice_cofre)
+					get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseMotion:
 		if _arrastrando >= 0:
@@ -310,7 +442,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		var posicion := _ajustar(get_global_mouse_position())
 		if not _tipo_actual.is_empty():
 			if _es_valida(_tipo_actual, posicion, _giro):
-				_decoraciones.append({"tipo": _tipo_actual, "x": posicion.x, "y": posicion.y, "giro": _giro})
+				var nueva_decoracion := {"tipo": _tipo_actual, "x": posicion.x, "y": posicion.y, "giro": _giro}
+				if _tipo_actual == "cofre":
+					nueva_decoracion["cofre_id"] = _crear_id_cofre()
+					nueva_decoracion["contenido"] = _crear_contenido_vacio()
+				_decoraciones.append(nueva_decoracion)
 				_reconstruir()
 				_guardar()
 				_actualizar_previa()
