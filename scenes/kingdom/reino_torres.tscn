@@ -959,7 +959,7 @@ texture = ExtResource("official_21")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(104, 102)
 
-[node name="Sprite_vivienda_mason" type="Sprite2D" parent="." unique_id=988479493]
+[node name="Sprite_casa_bruna" type="Sprite2D" parent="." unique_id=988479493]
 z_index = 3
 texture_filter = 1
 position = Vector2(-235, 152)
@@ -968,7 +968,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(96, 88)
 
-[node name="Sprite_casa_oriente_a" type="Sprite2D" parent="." unique_id=169486666]
+[node name="Sprite_casa_elian" type="Sprite2D" parent="." unique_id=169486666]
 z_index = 3
 texture_filter = 1
 position = Vector2(220, -158)
@@ -977,7 +977,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(96, 90)
 
-[node name="Sprite_casa_oriente_b" type="Sprite2D" parent="." unique_id=18387691]
+[node name="Sprite_casa_darven" type="Sprite2D" parent="." unique_id=18387691]
 z_index = 3
 texture_filter = 1
 position = Vector2(385, -148)
@@ -986,7 +986,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(96, 90)
 
-[node name="Sprite_casa_oriente_c" type="Sprite2D" parent="." unique_id=9389168]
+[node name="Sprite_casa_saira" type="Sprite2D" parent="." unique_id=9389168]
 z_index = 3
 texture_filter = 1
 position = Vector2(385, 118)
@@ -1238,7 +1238,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_vivienda_oeste_09" type="Sprite2D" parent="." unique_id=133680661]
+[node name="Sprite_casa_narel" type="Sprite2D" parent="." unique_id=133680661]
 z_index = 3
 texture_filter = 1
 position = Vector2(-520, -254)
