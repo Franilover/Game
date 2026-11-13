@@ -938,9 +938,21 @@ func _actualizar_panel_misiones() -> void:
 		var estado := str(estado_mision.get("estado", "disponible"))
 		var titulo_texto := str(mision.get("nombre", "Misión"))
 
+		var tarjeta := PanelContainer.new()
+		tarjeta.name = "MissionCard"
+		tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mission_list.add_child(tarjeta)
+
+		var margen_tarjeta := MarginContainer.new()
+		margen_tarjeta.add_theme_constant_override("margin_left", 12)
+		margen_tarjeta.add_theme_constant_override("margin_top", 8)
+		margen_tarjeta.add_theme_constant_override("margin_right", 12)
+		margen_tarjeta.add_theme_constant_override("margin_bottom", 8)
+		tarjeta.add_child(margen_tarjeta)
+
 		var bloque := VBoxContainer.new()
-		bloque.add_theme_constant_override("separation", 3)
-		mission_list.add_child(bloque)
+		bloque.add_theme_constant_override("separation", 4)
+		margen_tarjeta.add_child(bloque)
 
 		var encabezado := Label.new()
 		var indicador := "✓" if estado == "completada" else "○"
@@ -986,6 +998,9 @@ func _actualizar_panel_misiones() -> void:
 				)
 				objetivo_label.add_theme_font_size_override("font_size", 11)
 				bloque.add_child(objetivo_label)
+
+		# Las tarjetas heredan el mismo marco pixel-art que los paneles del menú.
+		PIXEL_UI_THEME.apply(tarjeta)
 
 
 func mostrar_panel_misiones() -> void:
