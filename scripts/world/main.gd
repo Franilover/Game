@@ -287,6 +287,11 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
 	_actualizar_limites_camara_zona(tipo)
+	var es_modo_historia := tipo == "historia:reserva_carmesi"
+	if is_instance_valid(_inventory):
+		_inventory.establecer_modo_historia(es_modo_historia)
+	if is_instance_valid(_hud):
+		_hud.establecer_modo_historia(es_modo_historia)
 
 	if tipo == "mundo_abierto" or tipo == "expedicion:bosque":
 		if _world_generator == null:
