@@ -166,6 +166,13 @@ func _intentar_ataque_rival() -> void:
 	if is_instance_valid(_estado):
 		_estado.text = "El Garumi salvaje te ha atacado."
 
+func _nombre(garumi: Garumi) -> String:
+	if not is_instance_valid(garumi):
+		return "Garumi"
+	var nombre := str(garumi.get("criatura_nombre")).strip_edges()
+	return nombre if not nombre.is_empty() else str(garumi.name)
+
+
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey:
 		return
