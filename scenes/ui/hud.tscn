@@ -124,15 +124,17 @@ texture = ExtResource("2_bo48s")
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=725132572]
 layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
+anchors_preset = 10
+anchor_left = 0.0
 anchor_top = 1.0
-anchor_right = 0.5
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -82.0
-offset_top = -12.0
-offset_right = -3.0
-offset_bottom = 0.0
+offset_left = 12.0
+offset_top = -39.0
+offset_right = -12.0
+offset_bottom = -22.0
+grow_horizontal = 2
+grow_vertical = 0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -155,6 +157,7 @@ theme_override_font_sizes/font_size = 10
 text = "100 / 100"
 
 [node name="StaminaBar" type="ProgressBar" parent="." unique_id=575214836]
+visible = false
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -223,15 +226,17 @@ stretch_mode = 5
 
 [node name="EteriumBar" type="ProgressBar" parent="." unique_id=316854426]
 layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
+anchors_preset = 10
+anchor_left = 0.0
 anchor_top = 1.0
-anchor_right = 0.5
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 3.0
-offset_top = -12.0
-offset_right = 82.0
-offset_bottom = 0.0
+offset_left = 12.0
+offset_top = -19.0
+offset_right = -12.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
