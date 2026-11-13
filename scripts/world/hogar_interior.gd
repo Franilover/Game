@@ -8,6 +8,7 @@ const CELDA := 32.0
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CHEST_UI_SCRIPT = preload("res://scripts/ui/hogar_chest_inventory.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const CATALOGO := {
 	"cama": {"nombre": "Cama", "ruta": "res://assets/art/places/Muebles/cama.png"},
 	"cofre": {"nombre": "Cofre", "ruta": "res://assets/art/places/Muebles/cofre.png"},
@@ -31,6 +32,7 @@ var _estado: Label
 var _capa_ui: CanvasLayer
 var _boton_amueblar: Button
 var _cofre_ui: Node = null
+var _objetivo_cofre_activo: Node = null
 var _siguiente_id_cofre := 1
 
 
@@ -195,6 +197,22 @@ func esta_cofre_abierto() -> bool:
 	return is_instance_valid(_cofre_ui)
 
 
+func registrar_cofre_abierto(interfaz: Node, objetivo: Node) -> void:
+	_cofre_ui = interfaz
+	_objetivo_cofre_activo = objetivo
+	if is_instance_valid(_boton_amueblar):
+		_boton_amueblar.visible = false
+
+
+func registrar_cofre_cerrado(interfaz: Node, objetivo: Node) -> void:
+	if _cofre_ui == interfaz:
+		_cofre_ui = null
+	if _objetivo_cofre_activo == objetivo:
+		_objetivo_cofre_activo = null
+	if is_instance_valid(_boton_amueblar):
+		_boton_amueblar.visible = visible and not _inventario_abierto and not _menu_viaje_abierto
+
+
 func _establecer_editor(activo: bool) -> void:
 	if activo and esta_cofre_abierto():
 		return
@@ -356,6 +374,9 @@ func _abrir_cofre(indice: int) -> void:
 
 
 func cerrar_cofre() -> void:
+	if is_instance_valid(_objetivo_cofre_activo) and _objetivo_cofre_activo.has_method("cerrar_cofre"):
+		_objetivo_cofre_activo.call("cerrar_cofre")
+		return
 	if not is_instance_valid(_cofre_ui):
 		_cofre_ui = null
 		return
@@ -365,7 +386,7 @@ func cerrar_cofre() -> void:
 		interfaz.remove_from_group("modal_ui")
 	interfaz.queue_free()
 	if is_instance_valid(_boton_amueblar):
-		_boton_amueblar.visible = visible
+		_boton_amueblar.visible = visible and not _inventario_abierto and not _menu_viaje_abierto
 
 
 func _reconstruir() -> void:
@@ -393,17 +414,16 @@ func _agregar_sprite(indice: int) -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(sprite)
 	_sprites.append(sprite)
-	if str(_decoraciones[indice].get("tipo", "")) == "cofre":
-		var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	var tipo := str(_decoraciones[indice].get("tipo", ""))
+	if tipo in ["cofre", "cama"]:
+		var objetivo: Node2D = WORLD_INTERACTABLE_SCRIPT.new() as Node2D
 		if is_instance_valid(objetivo):
-			objetivo.name = "InteraccionCofre_" + str(indice)
-			objetivo.call(
-				"configurar",
-				"Abrir cofre",
-				112.0,
-				Callable(self, "_puede_abrir_cofre_desde_interaccion").bind(indice),
-				Callable(self, "_abrir_cofre_desde_interaccion").bind(indice)
-			)
+			objetivo.name = "InteraccionMueble_" + str(indice)
+			objetivo.position = sprite.position
+			if tipo == "cofre":
+				objetivo.call("configurar_cofre", str(_decoraciones[indice].get("cofre_id", "hogar_interior_" + str(indice))), self, indice)
+			else:
+				objetivo.call("configurar_cama")
 			add_child(objetivo)
 		_objetivos_cofre.append(objetivo)
 	else:
