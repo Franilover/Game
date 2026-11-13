@@ -187,13 +187,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if npc.global_position.distance_to(destino_global) > DISTANCIA_LLEGADA:
 		var ruta := _crear_ruta(npc.global_position, destino_global)
 		if ruta.is_empty():
-			push_warning("NPCScheduleSystem: no se encontró una ruta transitable para " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
+			if str(npc.get_meta("rutina_error_firma", "")) != firma_nueva:
+				push_warning("NPCScheduleSystem: no se encontró una ruta transitable para " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
+				npc.set_meta("rutina_error_firma", firma_nueva)
 			movimiento.detener_por_rutina()
-			npc.set_meta("rutina_firma", firma_nueva)
-			npc.set_meta("rutina_actual", clave_rutina)
-			npc.set_meta("rutina_ubicacion", ubicacion)
-			npc.datos["actividad_actual"] = actividad
 			return
+		npc.set_meta("rutina_error_firma", "")
 		movimiento.establecer_ruta(ruta)
 	else:
 		movimiento.detener_por_rutina()
