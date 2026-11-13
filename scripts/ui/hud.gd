@@ -449,7 +449,7 @@ func _actualizar_stamina() -> void:
 	var stamina_maxima := _obtener_float(
 		player,
 		"max_stamina",
-		5.0
+		1.0
 	)
 
 	# PlayerStaminaController es la fuente de verdad de las cargas de dash.
