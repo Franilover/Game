@@ -588,11 +588,16 @@ func iniciar_combate_garumi(garumi: Node, jugador: Node) -> void:
 		return
 	if is_instance_valid(_garumi_battle_party):
 		_garumi_battle_party.call("finalizar")
-	_garumi_battle_party = CanvasLayer.new()
+	var contenedor_ui := get_node_or_null("UI") as CanvasLayer
+	if contenedor_ui == null:
+		push_error("Main: no existe el CanvasLayer UI; no se puede mostrar el HUD del encuentro Garumi.")
+		return
+	_garumi_battle_party = Control.new()
 	_garumi_battle_party.name = "GarumiBattleParty"
 	_garumi_battle_party.set_script(GARUMI_BATTLE_PARTY_SCRIPT)
-	add_child(_garumi_battle_party)
+	contenedor_ui.add_child(_garumi_battle_party)
 	_garumi_battle_party.call("iniciar", jugador, garumi)
+	print("Main: interfaz de encuentro Garumi agregada a UI; viewport=", get_viewport().get_visible_rect().size)
 
 
 func terminar_arena_garumi(garumi: Node = null) -> void:
