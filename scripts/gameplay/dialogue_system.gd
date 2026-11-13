@@ -1,6 +1,8 @@
 extends Node
 class_name DialogueSystem
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 
 signal dialogue_started(speaker: String)
 signal dialogue_finished
@@ -577,4 +579,5 @@ func _crear_interfaz() -> void:
 	column.add_child(hint_label)
 
 	ui_root.add_child(dialogue_panel)
+	PIXEL_UI_THEME.apply(dialogue_panel)
 	dialogue_panel.visible = false
