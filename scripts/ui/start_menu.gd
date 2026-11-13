@@ -281,17 +281,37 @@ func _obtener_argumento_capitulo() -> String:
 	return ""
 
 
-func _entrar_capitulo_desde_argumento(ruta_escena: String) -> void:
-	if not ruta_escena.begins_with("res://") or not ruta_escena.ends_with(".tscn"):
-		push_error("StartMenu: ruta de capítulo no válida: " + ruta_escena)
+func _entrar_capitulo_desde_argumento(clave_capitulo: String) -> void:
+	# La Reserva Carmesí tiene un guardado narrativo propio. Reanudarlo siempre
+	# desde GameState evita volver a mostrar la introducción en cada lanzamiento.
+	if clave_capitulo == "reserva_carmesi":
+		if GameState.historia_reserva_tiene_progreso():
+			GameState.preparar_historia_reserva_carmesi(false)
+			print("StartMenu: reanudando progreso de Historia → La Reserva Carmesí")
+			var error_reanudar := get_tree().change_scene_to_file("res://scenes/world/main.tscn")
+			if error_reanudar != OK:
+				push_error("StartMenu: no se pudo reanudar La Reserva Carmesí. Error: " + str(error_reanudar))
+				get_tree().quit(1)
+		else:
+			print("StartMenu: primera entrada a La Reserva Carmesí; mostrando introducción.")
+			var error_intro := get_tree().change_scene_to_file("res://scenes/story/reserva_carmesi_intro.tscn")
+			if error_intro != OK:
+				push_error("StartMenu: no se pudo abrir la introducción. Error: " + str(error_intro))
+				get_tree().quit(1)
+		return
+
+	# Los capítulos futuros pueden registrar una escena directa mientras se
+	# integra su propio sistema de guardado narrativo.
+	if not clave_capitulo.begins_with("res://") or not clave_capitulo.ends_with(".tscn"):
+		push_error("StartMenu: clave de capítulo no válida: " + clave_capitulo)
 		get_tree().quit(1)
 		return
-	if not ResourceLoader.exists(ruta_escena):
-		push_error("StartMenu: no existe la escena de capítulo: " + ruta_escena)
+	if not ResourceLoader.exists(clave_capitulo):
+		push_error("StartMenu: no existe la escena de capítulo: " + clave_capitulo)
 		get_tree().quit(1)
 		return
-	print("StartMenu: inicio directo del capítulo → ", ruta_escena)
-	var error := get_tree().change_scene_to_file(ruta_escena)
+	print("StartMenu: inicio directo del capítulo → ", clave_capitulo)
+	var error := get_tree().change_scene_to_file(clave_capitulo)
 	if error != OK:
 		push_error("StartMenu: no se pudo abrir el capítulo. Error: " + str(error))
 		get_tree().quit(1)
