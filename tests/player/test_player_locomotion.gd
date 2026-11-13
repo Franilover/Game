@@ -18,6 +18,7 @@ func _run() -> void:
 	_probar_intensidad_analogica(errores)
 	_probar_limite_direccion_y_estado(errores)
 	_probar_coordinador(errores)
+	_probar_recarga_dash_reutilizable(errores)
 	_probar_presentacion_visual(errores)
 	_probar_adaptador_input(errores)
 	_probar_integracion_fisica(errores)
@@ -89,6 +90,32 @@ func _probar_coordinador(errores: Array[String]) -> void:
 		errores.append("El coordinador devolvió una orientación incorrecta.")
 
  
+
+
+func _probar_recarga_dash_reutilizable(errores: Array[String]) -> void:
+	var stamina = StaminaScript.new()
+	stamina.configurar(1.0)
+	var actions = ActionScript.new()
+	var coordinator = CoordinatorScript.new()
+	coordinator.configurar(MovementScript.new(), actions, stamina)
+
+	if not coordinator.iniciar_dash(Vector2.RIGHT, 0.12, 0.8, 1.0):
+		errores.append("El primer dash de prueba no pudo iniciarse.")
+		return
+	coordinator.avanzar_accion(0.12)
+	coordinator.actualizar_cooldowns(3.0)
+
+	# Reproduce el último microinstante de recarga, donde una comparación
+	# aproximada podía conservar 0.99999 y bloquear el siguiente dash.
+	stamina.current = 0.999999
+	stamina.regeneration_timer = stamina.DURACION_RECARGA_DASH - 0.000001
+	stamina.actualizar(0.000001, true)
+	if stamina.current != stamina.maximum:
+		errores.append("La recarga terminó sin fijar la carga exactamente al 100 %.")
+	if not coordinator.iniciar_dash(Vector2.RIGHT, 0.12, 0.8, 1.0):
+		errores.append("El segundo dash no pudo iniciarse después de completar la recarga.")
+
+
 func _probar_presentacion_visual(errores: Array[String]) -> void:
 	var visual = VisualScript.new()
 	if visual.obtener_nombre_animacion(0, Vector2.DOWN) != "idle_down":
