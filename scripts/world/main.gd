@@ -588,10 +588,19 @@ func iniciar_combate_garumi(garumi: Node, jugador: Node) -> void:
 		return
 	if is_instance_valid(_garumi_battle_party):
 		_garumi_battle_party.call("finalizar")
-	_garumi_battle_party = CanvasLayer.new()
+	# Instanciar directamente el script evita dejar un CanvasLayer sin script
+	# si set_script no llega a aplicarlo durante la creación dinámica.
+	_garumi_battle_party = GARUMI_BATTLE_PARTY_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(_garumi_battle_party):
+		push_error("Main: no se pudo instanciar GarumiBattleParty.")
+		return
 	_garumi_battle_party.name = "GarumiBattleParty"
-	_garumi_battle_party.set_script(GARUMI_BATTLE_PARTY_SCRIPT)
 	add_child(_garumi_battle_party)
+	if not _garumi_battle_party.has_method("iniciar"):
+		push_error("Main: GarumiBattleParty no expone iniciar(); se cancela el HUD.")
+		_garumi_battle_party.queue_free()
+		_garumi_battle_party = null
+		return
 	_garumi_battle_party.call("iniciar", jugador, garumi)
 
 
