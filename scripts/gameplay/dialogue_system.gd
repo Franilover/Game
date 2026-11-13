@@ -175,8 +175,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	_abierto = true
 
 	if is_instance_valid(_fuente):
-		_fuente.detener_movimiento()
-		_fuente.tomar_control_movimiento()
+		_fuente.pausar_movimiento_temporal()
 
 	dialogue_panel.visible = true
 	print(
@@ -212,7 +211,7 @@ func cerrar() -> void:
 	_temporizador_texto = 0.0
 
 	if is_instance_valid(_fuente):
-		_fuente.liberar_control_movimiento()
+		_fuente.reanudar_movimiento_temporal()
 
 	_fuente = null
 	_acciones.clear()
