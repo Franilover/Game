@@ -158,6 +158,7 @@ func _create_layers() -> void:
 		#print('layer_config: %s' % layer_config)
 		var layer := DisplayLayer.new(world, _tileset_watcher, layer_config, terrain.layers[i])
 		add_child(layer)
+		layer.fijar_origen_shader()
 		layer.update_tiles_all(cached_cells)
 
 
@@ -222,3 +223,4 @@ func _update_properties() -> void:
 	self.z_index = world.z_index
 	for child in get_children(true):
 		child.update_properties(world)
+		child.fijar_origen_shader()
