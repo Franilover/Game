@@ -251,6 +251,7 @@ func _establecer_modo_construccion(activo: bool) -> void:
 func _seleccionar_tipo(tipo: String) -> void:
 	if not CATALOGO.has(tipo):
 		return
+	_indice_arrastrado = -1
 	_tipo_colocacion = tipo
 	_indice_seleccionado = -1
 	_giro_colocacion = 0.0
@@ -274,6 +275,17 @@ func _actualizar_estado_interfaz() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# Finalizar el arrastre antes de la fase GUI, incluso si se suelta el ratón
+	# encima del panel de construcción.
+	if _modo_construccion and event is InputEventMouseButton:
+		var raton := event as InputEventMouseButton
+		if raton.button_index == MOUSE_BUTTON_LEFT and not raton.pressed and _indice_arrastrado >= 0:
+			mover_decoracion(_indice_arrastrado, get_global_mouse_position())
+			_indice_arrastrado = -1
+			_guardar_cambios_hogar()
+			get_viewport().set_input_as_handled()
+			return
+
 	if event is not InputEventKey:
 		return
 	var tecla := event as InputEventKey
