@@ -72,7 +72,11 @@ func iniciar() -> void:
 	# se usa en partidas antiguas que todavía no tienen zona persistida.
 	var zona_guardada := str(GameState.world_state.flags.get("zona_actual_tipo", "")).strip_edges()
 	if zona_guardada == TIPO_HOGAR:
-		entrar_hogar()
+		if GarliaMultiplayer.es_servidor_dedicado() or GarliaWorldNetwork.es_cliente_en_mundo_global():
+			# Una sesión global nunca debe intentar reanudar una parcela local.
+			entrar_mundo_abierto()
+		else:
+			entrar_hogar()
 	elif zona_guardada == TIPO_REINO_TORRES:
 		entrar_reino("torres")
 	elif zona_guardada.begins_with("reino:"):
