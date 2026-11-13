@@ -182,12 +182,14 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 		for entrada in datos:
 			if entrada is Dictionary and CATALOGO.has(str((entrada as Dictionary).get("tipo", ""))):
 				var item := entrada as Dictionary
-				_decoraciones.append({
+				var decoracion := {
 					"tipo": str(item.get("tipo", "")),
-					"x": clampf(float(item.get("x", 0.0)), -ANCHO * 0.5 + 32, ANCHO * 0.5 - 32),
-					"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5 + 32, ALTO * 0.5 - 32),
+					"x": clampf(float(item.get("x", 0.0)), -ANCHO * 0.5, ANCHO * 0.5),
+					"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5, ALTO * 0.5),
 					"giro": float(item.get("giro", 0.0))
-				})
+				}
+				if _es_valida(str(decoracion.tipo), Vector2(float(decoracion.x), float(decoracion.y)), float(decoracion.giro)):
+					_decoraciones.append(decoracion)
 	if is_inside_tree():
 		_reconstruir()
 
@@ -242,7 +244,17 @@ func _seleccionar(tipo: String) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not _editor_activo or not event is InputEventKey:
+	if not _editor_activo:
+		return
+	if event is InputEventMouseButton:
+		var raton := event as InputEventMouseButton
+		if raton.button_index == MOUSE_BUTTON_LEFT and not raton.pressed and _arrastrando >= 0:
+			_mover(_arrastrando, _ajustar(get_global_mouse_position()))
+			_arrastrando = -1
+			_guardar()
+			get_viewport().set_input_as_handled()
+			return
+	if not event is InputEventKey:
 		return
 	var tecla := event as InputEventKey
 	if not tecla.pressed or tecla.echo:
