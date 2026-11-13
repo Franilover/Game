@@ -25,6 +25,7 @@ func _inicializar_terreno_dual() -> void:
 	# una extensión fija y sin WorldGenerator ni streaming compartido.
 	terreno.position = Vector2(-ANCHO * 0.5, -ALTO * 0.5)
 	terreno.configurar(20261113, 32, 32, WorldData)
+	terreno.cargar_datos_mundo()
 	await get_tree().process_frame
 	if not is_instance_valid(terreno) or not is_instance_valid(terreno.visual):
 		return
