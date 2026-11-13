@@ -236,9 +236,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if firma_anterior == firma_nueva:
 		var movimiento_actual := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 		if not esta_dentro and not edificio_id.is_empty() and movimiento_actual != null and movimiento_actual.rutina_terminada():
-			npc.set_meta("rutina_en_edificio", true)
-			npc.set_meta("rutina_edificio_id", edificio_id)
-			npc.visible = false
+			_marcar_npc_dentro_edificio(npc, edificio_id)
 		return
 
 	# Sin actividad programada, el destino siempre es su casa.
@@ -247,7 +245,10 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if not esta_en_horario and hogar_variant is Vector2:
 		destino_local = hogar_variant
 	elif not edificio_id.is_empty():
-		destino_local = edificio.get("pos", destino_local)
+		# El punto de rutina debe quedar justo fuera del umbral. Usar el
+		# centro de la puerta puede caer dentro de la colisión de fachada y
+		# hacer que AStar termine varias celdas antes del edificio.
+		destino_local = edificio.get("pos", destino_local) + Vector2(0.0, 28.0)
 
 	# La plaza es un punto de encuentro, no un único punto de llegada.
 	# Cada NPC ocupa un lugar estable alrededor del centro.
@@ -283,14 +284,24 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	else:
 		movimiento.detener_por_rutina()
 		if not edificio_id.is_empty():
-			npc.set_meta("rutina_en_edificio", true)
-			npc.set_meta("rutina_edificio_id", edificio_id)
-			npc.visible = false
+			_marcar_npc_dentro_edificio(npc, edificio_id)
 
 	npc.set_meta("rutina_firma", firma_nueva)
 	npc.set_meta("rutina_actual", clave_rutina)
 	npc.set_meta("rutina_ubicacion", ubicacion)
 	npc.datos["actividad_actual"] = actividad
+
+
+func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
+	# La llegada al umbral representa que el NPC entró. Se mantiene la misma
+	# instancia y se oculta del exterior hasta que se abra ese interior.
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento != null:
+		movimiento.detener_por_rutina()
+	npc.set_meta("rutina_en_edificio", true)
+	npc.set_meta("rutina_edificio_id", edificio_id)
+	npc.visible = false
+	npc.remove_from_group("interactable")
 
 
 func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
