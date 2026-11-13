@@ -2,6 +2,7 @@ extends Node2D
 class_name WorldTerrainVisual
 
 const WATER_SHADER := preload("res://assets/shaders/agua_marina.gdshader")
+const GRASS_SHADER := preload("res://assets/shaders/pradera_ondas.gdshader")
 
 # Prueba de rendimiento: desactiva temporalmente las capas decorativas de variaciones.
 # El terreno base y sus transiciones TileMapDual siguen activos.
@@ -466,7 +467,13 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	tile_set.set_terrain_name(0, 1, TERRAIN_NAMES[zone])
 
 	var layer := TileMapDual.new()
-	if zone >= 4 and zone <= 6:
+	if zone == 0:
+		var grass_material := ShaderMaterial.new()
+		grass_material.shader = GRASS_SHADER
+		# Las coordenadas del shader se calculan en espacio global para que
+		# las ondas mantengan una sola fase entre tiles y chunks de Pradera.
+		layer.material = grass_material
+	elif zone >= 4 and zone <= 6:
 		var water_material := ShaderMaterial.new()
 		water_material.shader = WATER_SHADER
 		# TileMapDual._ready() copia el material directo a display_material
