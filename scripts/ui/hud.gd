@@ -342,7 +342,7 @@ func _actualizar_indicador_recarga_dash() -> void:
 		0.0,
 		-float(sprite.texture.get_height()) * 0.5
 	)
-	_dash_recharge_indicator.position = borde_superior + Vector2(-36.0, -8.0)
+	_dash_recharge_indicator.position = borde_superior + Vector2(-36.0, -12.0)
 
 
 func _preparar_aviso_descubrimiento() -> void:
