@@ -1173,15 +1173,15 @@ func get_interaction_text() -> String:
 
 func interact(
 	_actor: Node
-) -> void:
+) -> bool:
 	if not es_dialogable():
-		return
+		return false
 
 	var dialogue_system := _dialogue_system_dependency
 	if dialogue_system == null or not is_instance_valid(dialogue_system):
-		return
-	if dialogue_system != null:
-		dialogue_system.abrir_desde(self)
+		return false
+
+	return bool(dialogue_system.abrir_desde(self))
 
 
 func _die() -> void:
