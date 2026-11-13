@@ -18,35 +18,51 @@ var _version_estado := 1
 
 
 func _ready() -> void:
-	queue_redraw()
+	call_deferred("_inicializar_terreno_dual")
 
 
-func _draw() -> void:
-	var parcela := Rect2(-ANCHO * 0.5, -ALTO * 0.5, ANCHO, ALTO)
-	draw_rect(parcela, COLOR_HIERBA)
-	# Variación discreta para que el terreno no sea una superficie plana.
-	for y in range(-24, 25):
-		for x in range(-36, 37):
-			if posmod(x * 17 + y * 31, 7) == 0:
-				var punto := Vector2(x * TAMANO_CUADRICULA, y * TAMANO_CUADRICULA)
-				draw_rect(Rect2(punto, Vector2(4, 4)), COLOR_HIERBA_CLARA)
-	# Camino de entrada hacia la casa.
-	draw_rect(Rect2(-48, 80, 96, 560), COLOR_CAMINO)
-	draw_rect(Rect2(-48, 80, 96, 560), COLOR_BORDE, false, 4.0)
-	# Parcela de cultivo inicial, lista para ampliar con el sistema de cultivo.
-	draw_rect(Rect2(240, 160, 384, 256), COLOR_TIERRA)
-	for x in range(252, 624, 32):
-		draw_line(Vector2(x, 176), Vector2(x, 400), Color(0.48, 0.36, 0.24, 1.0), 2.0)
-	# Límite visual de la propiedad.
-	draw_rect(parcela, COLOR_BORDE, false, 12.0)
-	# Decoraciones guardadas: cada entrada contiene tipo, x, y y giro.
-	for decoracion in _decoraciones:
-		var posicion := Vector2(float(decoracion.get("x", 0.0)), float(decoracion.get("y", 0.0)))
-		var tamano := Vector2(24.0, 24.0)
-		var color := Color(0.58, 0.43, 0.25, 1.0)
-		draw_set_transform(posicion, float(decoracion.get("giro", 0.0)), Vector2.ONE)
-		draw_rect(Rect2(-tamano * 0.5, tamano), color)
-		draw_set_transform(Vector2.ZERO)
+func _inicializar_terreno_dual() -> void:
+	var terreno := get_node_or_null("WorldTerrain") as WorldTerrain
+	if not is_instance_valid(terreno):
+		push_error("HogarZone: falta WorldTerrain.")
+		return
+
+	# Hogar usa exactamente el renderer Dual de las demás zonas, pero con
+	# una extensión fija y sin WorldGenerator ni streaming compartido.
+	terreno.position = Vector2(-ANCHO * 0.5, -ALTO * 0.5)
+	terreno.configurar(20261113, 32, 32, WorldData)
+	await get_tree().process_frame
+	if not is_instance_valid(terreno) or not is_instance_valid(terreno.visual):
+		return
+
+	terreno.visual.finalizar_preparacion_renderer()
+	terreno.visual.comenzar_lote()
+
+	var ancho_celdas := int(ANCHO / 32.0)
+	var alto_celdas := int(ALTO / 32.0)
+	for y in range(alto_celdas):
+		for x in range(ancho_celdas):
+			terreno.visual.set_zone(Vector2i(x, y), WorldTerrain.Zone.GRASS, 0, "Pradera")
+
+	# Camino de tierra desde la casa hasta la entrada de la parcela.
+	for y in range(19, 46):
+		for x in range(35, 40):
+			terreno.visual.set_zone(Vector2i(x, y), WorldTerrain.Zone.DIRT, 0, "Pradera")
+
+	# Suelo de cultivo inicial, separado del camino.
+	for y in range(30, 39):
+		for x in range(45, 58):
+			terreno.visual.set_zone(Vector2i(x, y), WorldTerrain.Zone.DIRT, 0, "Pradera")
+
+	terreno.visual.terminar_lote()
+	# Una sola invalidación para la parcela fija completa; el renderer Dual
+	# resuelve las esquinas y bordes entre Pradera y Tierra.
+	var orden: Array = []
+	orden.resize(ancho_celdas * alto_celdas)
+	for indice in range(orden.size()):
+		orden[indice] = indice
+	terreno.visual.marcar_region_generada_dirty(Vector2i.ZERO, orden, ancho_celdas, 0, orden.size())
+	terreno.visual.flush()
 
 
 func obtener_estado_guardado() -> Dictionary:
@@ -71,7 +87,6 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 					"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5, ALTO * 0.5),
 					"giro": float(item.get("giro", 0.0))
 				})
-	queue_redraw()
 
 
 func establecer_decoraciones(decoraciones: Array) -> void:
@@ -87,7 +102,6 @@ func agregar_decoracion(tipo: String, posicion: Vector2, giro: float = 0.0) -> b
 		"y": posicion.y,
 		"giro": giro
 	})
-	queue_redraw()
 	return true
 
 
