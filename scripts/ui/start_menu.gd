@@ -28,23 +28,23 @@ const COMMUNITY_SERVER_MANAGER_SCENE = preload("res://scenes/ui/community_server
 )
 
 @onready var email_input: LineEdit = (
-	$LoginOverlay/LoginPanel/Margin/Content/EmailInput
+	$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/EmailInput
 )
 
 @onready var password_input: LineEdit = (
-	$LoginOverlay/LoginPanel/Margin/Content/PasswordInput
+	$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/PasswordInput
 )
 
 @onready var message_label: Label = (
-	$LoginOverlay/LoginPanel/Margin/Content/Message
+	$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Message
 )
 
 @onready var login_button: Button = (
-	$LoginOverlay/LoginPanel/Margin/Content/Buttons/LoginButton
+	$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Buttons/LoginButton
 )
 
 @onready var close_button: Button = (
-	$LoginOverlay/LoginPanel/Margin/Content/Buttons/CloseButton
+	$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Buttons/CloseButton
 )
 
 @onready var multiplayer_overlay: ColorRect = (
@@ -121,6 +121,8 @@ func _ready() -> void:
 	start_button.pressed.connect(
 		_iniciar_partida
 	)
+	get_viewport().size_changed.connect(_ajustar_panel_login_a_pantalla)
+	call_deferred("_ajustar_panel_login_a_pantalla")
 
 	settings_button.pressed.connect(_abrir_configuracion)
 
@@ -509,6 +511,17 @@ func _salir() -> void:
 # CUENTA
 # ============================================================
 
+func _ajustar_panel_login_a_pantalla() -> void:
+	var panel := get_node_or_null("LoginOverlay/LoginCenter/LoginPanel") as PanelContainer
+	if panel == null:
+		return
+	var area := get_viewport_rect().size
+	panel.custom_minimum_size = Vector2(
+		minf(380.0, maxf(260.0, area.x - 32.0)),
+		minf(330.0, maxf(260.0, area.y - 32.0))
+	)
+
+
 func _abrir_login() -> void:
 	login_overlay.visible = true
 
@@ -532,19 +545,19 @@ func _actualizar_panel_cuenta() -> void:
 			username = "Explorador"
 
 		var titulo: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/Title
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Title
 		)
 
 		var subtitulo: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/Subtitle
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Subtitle
 		)
 
 		var email_label: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/EmailLabel
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/EmailLabel
 		)
 
 		var password_label: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/PasswordLabel
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/PasswordLabel
 		)
 
 		titulo.text = "Tu cuenta"
