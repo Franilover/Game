@@ -975,7 +975,7 @@ func admin_cambiar_especie(nueva_especie: Dictionary) -> bool:
 func admin_establecer_maximos(
 	vida: int,
 	eterium_maximo: int,
-	energia: float
+	_energia: float
 ) -> bool:
 	max_health = maxi(1, vida)
 	max_mana = maxi(1, eterium_maximo)
