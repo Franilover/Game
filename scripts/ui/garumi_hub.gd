@@ -191,6 +191,20 @@ func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_regis
 		boton_sprite.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), estado_registro))
 		marco_sprite.add_child(boton_sprite)
 
+		# Primer paso: mostrar únicamente el origen debajo del retrato.
+		var origen := _obtener_origen_garumi(registro)
+		if not origen.is_empty():
+			var etiqueta_origen := Label.new()
+			etiqueta_origen.text = origen
+			etiqueta_origen.custom_minimum_size = Vector2(88, 14)
+			etiqueta_origen.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			etiqueta_origen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			etiqueta_origen.clip_text = true
+			etiqueta_origen.tooltip_text = "Origen: " + origen
+			etiqueta_origen.add_theme_font_size_override("font_size", 8)
+			etiqueta_origen.add_theme_color_override("font_color", SECUNDARIO)
+			celda.add_child(etiqueta_origen)
+
 	if estado_registro == "Amigo":
 		var boton_vincular := Button.new()
 		boton_vincular.text = "Vincular"
@@ -199,6 +213,14 @@ func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_regis
 		_estilizar_boton_accion(boton_vincular)
 		boton_vincular.pressed.connect(_vincular_desde_amigos.bind(registro.duplicate(true)))
 		celda.add_child(boton_vincular)
+
+
+func _obtener_origen_garumi(registro: Dictionary) -> String:
+	for clave in ["origen_nombre", "nombre_original", "origen", "linaje"]:
+		var valor := str(registro.get(clave, "")).strip_edges()
+		if not valor.is_empty():
+			return valor
+	return ""
 
 
 func _obtener_salud_garumi(registro: Dictionary) -> Dictionary:
