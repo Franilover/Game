@@ -18,7 +18,7 @@ var _chest_ui: Node = null
 
 func configurar_cofre(storage_id: String, storage_owner: Node = null, storage_index: int = -1) -> void:
 	_action_type = ActionType.CHEST
-	_interaction_text = "Abrir cofre"
+	_interaction_text = "Abrir"
 	_interaction_distance = 88.0
 	_storage_id = storage_id.strip_edges()
 	_storage_owner = storage_owner
