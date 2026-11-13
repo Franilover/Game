@@ -126,6 +126,79 @@ func modificar_relacion(
 	return relacion.duplicate(true)
 
 
+## Registra consecuencias de acciones del jugador sobre un personaje.
+## evento_id permite que una misma promesa/misión no aplique dos veces el cambio.
+func registrar_evento_social(
+	personaje_id: String,
+	evento: String,
+	evento_id: String = "",
+	contexto: Dictionary = {}
+) -> Dictionary:
+	var id := personaje_id.strip_edges()
+	var clave_evento := evento.strip_edges().to_lower()
+	if id.is_empty() or clave_evento.is_empty():
+		return {}
+
+	var definicion := _obtener_impacto_evento(clave_evento)
+	if definicion.is_empty():
+		push_warning("RelationshipSystem: evento social desconocido: " + clave_evento)
+		return {}
+
+	var id_unico := evento_id.strip_edges()
+	if not id_unico.is_empty():
+		var recuerdos_previos := obtener_recuerdos(id)
+		for recuerdo_variant in recuerdos_previos:
+			if not recuerdo_variant is Dictionary:
+				continue
+			var recuerdo_existente := recuerdo_variant as Dictionary
+			if (
+				str(recuerdo_existente.get("tipo", "")) == "evento_social"
+				and str(recuerdo_existente.get("evento_id", "")) == id_unico
+			):
+				return obtener_relacion(id)
+
+	var personalidad := obtener_personalidad(id)
+	var cambios: Dictionary = definicion.get("cambios", {}).duplicate(true)
+	var rasgo := str(definicion.get("rasgo", ""))
+	var escala := 1.0
+	if not rasgo.is_empty():
+		var valor_rasgo := clampf(float(personalidad.get(rasgo, 50.0)), 0.0, 100.0)
+		escala = 0.75 + valor_rasgo / 200.0
+	if bool(definicion.get("inverso", false)):
+		escala = 1.25 - (escala - 0.75)
+
+	for eje in cambios.keys():
+		cambios[eje] = float(cambios[eje]) * escala
+
+	var recuerdo := {
+		"tipo": "evento_social",
+		"evento": clave_evento,
+		"evento_id": id_unico,
+		"importancia": float(definicion.get("importancia", 2.0)),
+		"contexto": contexto.duplicate(true),
+		"momento": Time.get_datetime_string_from_system(true)
+	}
+	return modificar_relacion(id, cambios, recuerdo)
+
+
+func _obtener_impacto_evento(evento: String) -> Dictionary:
+	# El rasgo modifica la intensidad de la reacción, no decide si la acción
+	# fue buena o mala. La escala permanece acotada entre 0.75 y 1.25.
+	var tabla := {
+		"ayudar": {"cambios": {"amistad": 1.5, "confianza": 1.0}, "rasgo": "generosidad"},
+		"apoyar": {"cambios": {"amistad": 2.0, "afecto": 1.0}, "rasgo": "sociabilidad"},
+		"promesa_cumplida": {"cambios": {"amistad": 1.5, "confianza": 4.0}, "rasgo": "prudencia", "inverso": true, "importancia": 3.0},
+		"promesa_rota": {"cambios": {"amistad": -3.0, "confianza": -10.0}, "rasgo": "prudencia", "importancia": 4.0},
+		"decir_verdad": {"cambios": {"confianza": 3.0}, "rasgo": "prudencia", "inverso": true},
+		"mentir": {"cambios": {"confianza": -8.0, "respeto": -1.0}, "rasgo": "prudencia", "importancia": 3.0},
+		"demostrar_habilidad": {"cambios": {"respeto": 2.5, "amistad": 0.5}, "rasgo": "curiosidad"},
+		"compartir_conocimiento": {"cambios": {"amistad": 1.0, "respeto": 1.5}, "rasgo": "curiosidad"},
+		"faltar_respeto": {"cambios": {"respeto": -7.0, "amistad": -2.0}, "rasgo": "agresividad", "importancia": 3.0},
+		"traicionar": {"cambios": {"confianza": -20.0, "amistad": -8.0, "afecto": -4.0}, "rasgo": "prudencia", "importancia": 5.0}
+	}
+	return (tabla.get(evento, {}) as Dictionary).duplicate(true)
+
+
 func registrar_dialogo(personaje_id: String, clave: String) -> Dictionary:
 	var id := personaje_id.strip_edges()
 	var clave_dialogo := clave.strip_edges()
