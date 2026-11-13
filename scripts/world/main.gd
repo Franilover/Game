@@ -1024,6 +1024,22 @@ func _configurar_dialogo() -> void:
 		_cutscene_director.name = "CutsceneDirector"
 		add_child(_cutscene_director)
 	_cutscene_director.configurar(_player, _dialogue_system, _camera)
+	if not _cutscene_director.evento_solicitado.is_connected(_al_evento_cinematica_solicitado):
+		_cutscene_director.evento_solicitado.connect(_al_evento_cinematica_solicitado)
+
+
+func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void:
+	if not evento.begins_with("social:"):
+		return
+	var personaje_id := str(datos.get("personaje_game_id", "")).strip_edges()
+	var accion_social := evento.trim_prefix("social:").strip_edges()
+	if personaje_id.is_empty() or accion_social.is_empty():
+		push_warning("Main: evento social de cinemática sin personaje o acción.")
+		return
+	var evento_id := str(datos.get("evento_id", "")).strip_edges()
+	var contexto_variant: Variant = datos.get("contexto", {})
+	var contexto: Dictionary = contexto_variant.duplicate(true) if contexto_variant is Dictionary else {}
+	RelationshipSystem.registrar_evento_social(personaje_id, accion_social, evento_id, contexto)
 
 
 func _configurar_admin() -> void:
