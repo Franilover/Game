@@ -65,7 +65,15 @@ func _pagina_siguiente() -> void:
 		_actualizar_pagina()
 		return
 
-	_volver_a_historia()
+	_comenzar_capitulo()
+
+
+func _comenzar_capitulo() -> void:
+	GameState.world_state.flags["historia_iniciar_reserva_carmesi"] = true
+	var error := get_tree().change_scene_to_file("res://scenes/world/main.tscn")
+	if error != OK:
+		GameState.world_state.flags.erase("historia_iniciar_reserva_carmesi")
+		push_error("Historia: no se pudo iniciar La Reserva Carmesí. Error: %s" % error)
 
 
 func _volver_a_historia() -> void:
