@@ -105,6 +105,20 @@ func obtener_relacion(personaje_id: String) -> Dictionary:
 
 
 ## Estado de la interacción antes de registrar la conversación actual.
+## Expone una copia del calendario actual para seleccionar diálogos contextuales.
+func obtener_contexto_temporal() -> Dictionary:
+	if (
+		_world_atmosphere == null
+		or not is_instance_valid(_world_atmosphere)
+		or not _world_atmosphere.has_method("obtener_tiempo")
+	):
+		return {}
+	var tiempo_variant: Variant = _world_atmosphere.call("obtener_tiempo")
+	if tiempo_variant is Dictionary:
+		return (tiempo_variant as Dictionary).duplicate(true)
+	return {}
+
+
 func obtener_estado_dialogo(personaje_id: String) -> Dictionary:
 	var relacion := obtener_relacion(personaje_id)
 	if relacion.is_empty():
