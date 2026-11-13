@@ -19,7 +19,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.075, 0.035, 0.035, 1)
+color = Color(0.055, 0.027, 0.028, 1)
 
 [node name="DistantLight" type="ColorRect" parent="."]
 layout_mode = 1
@@ -29,75 +29,76 @@ anchor_bottom = 1.0
 offset_left = -120.0
 grow_horizontal = 2
 mouse_filter = 2
-color = Color(0.24, 0.075, 0.065, 0.42)
+color = Color(0.24, 0.075, 0.065, 0.30)
 
 [node name="Content" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -390.0
-offset_top = -235.0
-offset_right = 390.0
-offset_bottom = 235.0
+anchor_left = 0.06
+anchor_top = 0.05
+anchor_right = 0.94
+anchor_bottom = 0.95
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 10
 
 [node name="PageCounter" type="Label" parent="Content"]
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.76, 0.58, 0.43, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "INTRODUCCIÓN  ·  01 / 04"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PageTitle" type="Label" parent="Content"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.84, 0.68, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 25
 text = "UN TERRITORIO DEL ABISMO"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
 [node name="Rule" type="ColorRect" parent="Content"]
-custom_minimum_size = Vector2(120, 2)
+custom_minimum_size = Vector2(100, 2)
 layout_mode = 2
 size_flags_horizontal = 4
 color = Color(0.61, 0.27, 0.19, 1)
 
 [node name="TextPanel" type="PanelContainer" parent="Content"]
-custom_minimum_size = Vector2(0, 226)
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PageText" type="Label" parent="Content/TextPanel"]
-custom_minimum_size = Vector2(0, 190)
+[node name="InsetPanel" type="PanelContainer" parent="Content/TextPanel"]
+layout_mode = 2
+
+[node name="PageText" type="Label" parent="Content/TextPanel/InsetPanel"]
+custom_minimum_size = Vector2(0, 108)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.93, 0.88, 0.79, 1)
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 17
 text = "En el Abismo se extiende un territorio inmenso conocido como la Reserva Carmesí."
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
 [node name="Navigation" type="HBoxContainer" parent="Content"]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="PreviousButton" type="Button" parent="Content/Navigation"]
-custom_minimum_size = Vector2(170, 44)
+custom_minimum_size = Vector2(150, 36)
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "Anterior"
 
 [node name="NextButton" type="Button" parent="Content/Navigation"]
-custom_minimum_size = Vector2(220, 44)
+custom_minimum_size = Vector2(190, 36)
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "Continuar"
