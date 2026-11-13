@@ -130,9 +130,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -80.0
-offset_top = -84.0
+offset_top = -40.0
 offset_right = 80.0
-offset_bottom = -68.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -140,6 +140,7 @@ theme_override_styles/background = SubResource("StyleBox_bar_background")
 theme_override_styles/fill = SubResource("StyleBox_health")
 value = 100.0
 show_percentage = false
+
 [node name="HealthValue" type="Label" parent="BottomLeft" unique_id=463424342]
 visible = false
 layout_mode = 0
@@ -229,9 +230,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -80.0
-offset_top = -66.0
+offset_top = -22.0
 offset_right = 80.0
-offset_bottom = -50.0
+offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -239,6 +240,7 @@ theme_override_styles/background = SubResource("StyleBoxFlat_136eg")
 theme_override_styles/fill = SubResource("StyleBox_eterium")
 value = 100.0
 show_percentage = false
+
 [node name="EteriumValue" type="Label" parent="BottomRight" unique_id=1948058690]
 visible = false
 layout_mode = 1
@@ -258,7 +260,7 @@ theme_override_font_sizes/font_size = 10
 text = "100 / 100"
 horizontal_alignment = 2
 
-[node name="InteractionPrompt" type="PanelContainer" parent="." unique_id=78175499]
+[node name name="InteractionPrompt" type="PanelContainer" parent="." unique_id=78175499]
 visible = false
 layout_mode = 1
 anchors_preset = 7
