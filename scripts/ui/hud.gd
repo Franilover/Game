@@ -27,6 +27,7 @@ var _world_atmosphere_ref: WorldAtmosphere = null
 var _calendar_panel: PanelContainer = null
 var _calendar_label: Label = null
 var _calendar_elapsed: float = 0.0
+var _modo_historia: bool = false
 var _eterium_ui_elapsed: float = 0.0
 
 var mostrar_contexto_mundo: bool = false
@@ -211,7 +212,7 @@ func _process(delta: float) -> void:
 			inventario_abierto = true
 			break
 	if is_instance_valid(_calendar_panel):
-		_calendar_panel.visible = not inventario_abierto and not _combate_garumi_activo
+		_calendar_panel.visible = not _modo_historia and not inventario_abierto and not _combate_garumi_activo
 	_calendar_elapsed += delta
 	if _calendar_elapsed >= 0.2:
 		_calendar_elapsed = 0.0
@@ -1323,6 +1324,12 @@ func _input(event: InputEvent) -> void:
 		if key_event.keycode == KEY_ESCAPE:
 			cerrar_panel_interaccion()
 			get_viewport().set_input_as_handled()
+
+
+func establecer_modo_historia(activo: bool) -> void:
+	_modo_historia = activo
+	if is_instance_valid(_calendar_panel):
+		_calendar_panel.visible = not activo
 
 
 func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
