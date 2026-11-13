@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/reserva_carmesi_map.gd" id="1_map"]
+
+[node name="ReservaCarmesi" type="Node2D"]
+
+[node name="Map" type="Node2D" parent="."]
+script = ExtResource("1_map")
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(256, 480)
+
+[node name="Landmarks" type="Node2D" parent="."]
+
+[node name="LlegadaAurora" type="Marker2D" parent="Landmarks"]
+position = Vector2(256, 480)
+
+[node name="PraderaCentral" type="Marker2D" parent="Landmarks"]
+position = Vector2(2912, 0)
+
+[node name="PabellonesAristocraticos" type="Marker2D" parent="Landmarks"]
+position = Vector2(4608, 1088)
+
+[node name="ClaroBosqueNorte" type="Marker2D" parent="Landmarks"]
+position = Vector2(2176, -1248)
