@@ -231,7 +231,7 @@ func _process(_delta: float) -> void:
 	_boton_dormir.visible = false
 	var entrada_cercana: Dictionary = {}
 	# El cuerpo del jugador puede quedar separado del punto de puerta por las colisiones de fachada.
-	var distancia_menor := 200.0
+	var distancia_menor := 80.0
 	var posicion_jugador_local := to_local(_jugador.global_position)
 	for entrada: Dictionary in ENTRADAS:
 		var distancia := posicion_jugador_local.distance_to(entrada["pos"])
