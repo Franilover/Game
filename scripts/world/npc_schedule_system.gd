@@ -10,6 +10,21 @@ const DISTANCIA_LLEGADA := 7.0
 
 # Puntos de actividad en coordenadas locales de ReinoTorres.
 # Se definen por ubicación, nunca por nombre de personaje.
+const ENTRADAS_INTERIORES: Dictionary = {
+	"panaderia": {"id": "panaderia", "pos": Vector2(-245.0, -117.0)},
+	"forja": {"id": "forja", "pos": Vector2(-360.0, -159.0)},
+	"cuartel": {"id": "cuartel", "pos": Vector2(730.0, -310.0)},
+	"registro": {"id": "registro", "pos": Vector2(730.0, -210.0)},
+	"casa_comercio": {"id": "casa_comercio", "pos": Vector2(930.0, -310.0)},
+	"archivo_real": {"id": "archivo_real", "pos": Vector2(-170.0, -610.0)},
+	"casa_estudio": {"id": "casa_estudio", "pos": Vector2(-410.0, -520.0)},
+	"casa_elian": {"id": "casa_oriente_a", "pos": Vector2(220.0, -117.0)},
+	"casa_bruna": {"id": "vivienda_mason", "pos": Vector2(-235.0, 193.0)},
+	"casa_darven": {"id": "casa_oriente_b", "pos": Vector2(385.0, -108.0)},
+	"casa_saira": {"id": "casa_oriente_c", "pos": Vector2(385.0, 173.0)},
+	"casa_narel": {"id": "vivienda_oeste_09", "pos": Vector2(-520.0, -213.0)}
+}
+
 const POSICIONES: Dictionary = {
 	"plaza": Vector2(0.0, 0.0),
 	"panaderia": Vector2(-205.0, -78.0),
@@ -107,14 +122,8 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
 		var npc := npc_variant as Creature
-		# Al entrar a un edificio, los NPC exteriores quedan ocultos. También
-		# pausamos sus rutinas para que no avancen mientras el jugador está dentro.
-		if not npc.visible:
-			var movimiento_oculto := npc.get_node_or_null("CreatureMovement") as CreatureMovement
-			if movimiento_oculto != null:
-				movimiento_oculto.detener_por_rutina()
-			npc.set_meta("rutina_firma", "")
-			continue
+		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
+		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
 		_aplicar_rutina(npc, dia_semana, minutos)
 
 
@@ -197,21 +206,47 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	var firma_anterior := str(npc.get_meta("rutina_firma", ""))
 	var firma_nueva := clave_rutina + "|" + ubicacion + "|" + actividad
+	var edificio_variant: Variant = ENTRADAS_INTERIORES.get(ubicacion, {})
+	var edificio: Dictionary = edificio_variant if edificio_variant is Dictionary else {}
+	var edificio_id := str(edificio.get("id", ""))
+	var esta_dentro := bool(npc.get_meta("rutina_en_edificio", false))
+	var edificio_actual := str(npc.get_meta("rutina_edificio_id", ""))
+
+	# Si cambió de destino mientras estaba dentro, sale desde la puerta antes
+	# de comenzar la nueva ruta. El nodo sigue siendo la misma instancia.
+	if esta_dentro and (not esta_en_horario or edificio_id != edificio_actual):
+		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
+			_zona.call("sacar_npc_del_interior", npc)
+		var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
+		if salida_variant is Dictionary:
+			var salida: Dictionary = salida_variant
+			npc.global_position = _zona.to_global(salida.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
+		npc.set_meta("rutina_en_edificio", false)
+		npc.set_meta("rutina_edificio_id", "")
+		npc.visible = not (is_instance_valid(_zona) and bool(_zona.get("_interior_activo")))
+
 	if firma_anterior == firma_nueva:
+		var movimiento_actual := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if not esta_dentro and not edificio_id.is_empty() and movimiento_actual != null and movimiento_actual.rutina_terminada():
+			npc.set_meta("rutina_en_edificio", true)
+			npc.set_meta("rutina_edificio_id", edificio_id)
+			npc.visible = false
 		return
 
-	# Cuando no hay una actividad programada, el destino siempre es su hogar.
-	# Esto cubre tanto las horas previas a abrir como los descansos y el cierre.
+	# Sin actividad programada, el destino siempre es su casa.
 	var destino_local: Vector2 = POSICIONES[ubicacion]
 	var hogar_variant: Variant = npc.datos.get("posicion_hogar_local", null)
 	if not esta_en_horario and hogar_variant is Vector2:
 		destino_local = hogar_variant
+	elif not edificio_id.is_empty():
+		destino_local = edificio.get("pos", destino_local)
 	var destino_global := _zona.to_global(destino_local)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
 		push_warning("NPCScheduleSystem: " + npc.get_nombre_visual() + " no tiene CreatureMovement.")
 		return
 
+	npc.visible = not (is_instance_valid(_zona) and bool(_zona.get("_interior_activo")))
 	if npc.global_position.distance_to(destino_global) > DISTANCIA_LLEGADA:
 		var ruta := _crear_ruta(npc.global_position, destino_global)
 		if ruta.is_empty():
@@ -225,6 +260,10 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		movimiento.establecer_ruta(ruta)
 	else:
 		movimiento.detener_por_rutina()
+		if not edificio_id.is_empty():
+			npc.set_meta("rutina_en_edificio", true)
+			npc.set_meta("rutina_edificio_id", edificio_id)
+			npc.visible = false
 
 	npc.set_meta("rutina_firma", firma_nueva)
 	npc.set_meta("rutina_actual", clave_rutina)
