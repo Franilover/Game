@@ -149,7 +149,8 @@ func _ready() -> void:
 	_crear_indicador_recarga_dash()
 	PIXEL_UI_THEME.apply(self)
 	if is_instance_valid(interaction_prompt):
-		PIXEL_UI_THEME.apply_interaction_prompt(interaction_prompt)
+		# La interacción contextual es solo texto; no debe parecer un botón de mouse.
+		interaction_prompt.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	_crear_selector_manos()
 	_crear_huecos_manos()
 	_preparar_location()
