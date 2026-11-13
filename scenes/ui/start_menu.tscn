@@ -148,19 +148,20 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.02, 0.015, 0.01, 0.72)
 
-[node name="LoginPanel" type="PanelContainer" parent="LoginOverlay" unique_id=2015400300]
+[node name="LoginCenter" type="CenterContainer" parent="LoginOverlay"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -190.0
-offset_top = -165.0
-offset_right = 190.0
-offset_bottom = 165.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+
+[node name="LoginPanel" type="PanelContainer" parent="LoginOverlay/LoginCenter" unique_id=2015400300]
+custom_minimum_size = Vector2(380, 330)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 
 [node name="Margin" type="MarginContainer" parent="LoginOverlay/LoginPanel" unique_id=1276907403]
 layout_mode = 2
@@ -169,11 +170,11 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 28
 theme_override_constants/margin_bottom = 24
 
-[node name="Content" type="VBoxContainer" parent="LoginOverlay/LoginPanel/Margin" unique_id=198965720]
+[node name="Content" type="VBoxContainer" parent="LoginOverlay/LoginCenter/LoginPanel/Margin" unique_id=198965720]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=431027519]
+[node name="Title" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=431027519]
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Iniciar sesión"
@@ -213,7 +214,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="LoginButton" type="Button" parent="LoginOverlay/LoginPanel/Margin/Content/Buttons" unique_id=692716021]
+[node name="LoginButton" type="Button" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Buttons" unique_id=692716021]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
