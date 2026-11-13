@@ -25,7 +25,7 @@ var pasos: Array[Dictionary] = [
 	{"tipo": "evento", "clave": "investigacion_narel_iniciada", "datos": {"origen": "cinematica"}}
 ]
 
-await $Systems/CutsceneDirector.ejecutar("introduccion_narel", pasos)
+await $CutsceneDirector.ejecutar("introduccion_narel", pasos)
 ```
 
 El nodo se crea desde `Main` y recibe Player, DialogueSystem y Camera2D. Mientras reproduce una secuencia se agrega a `modal_ui`, bloqueando movimiento, combate e interacciones. El diálogo sigue usando DialogueSystem y sus controles habituales. La cámara deja de seguir al jugador durante la secuencia y vuelve a él al finalizar.
