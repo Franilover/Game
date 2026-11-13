@@ -286,7 +286,7 @@ func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
 			continue
 		ruta.append(punto)
 	if ruta.is_empty() and origen.distance_to(destino) > DISTANCIA_LLEGADA:
-		ruta.append(_malla.get_point_position(destino_id))
+		ruta.append(destino)
 	return ruta
 
 
