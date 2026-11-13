@@ -260,9 +260,11 @@ func _crear_objetivos_entrada() -> void:
 			continue
 		objetivo.name = "ObjetivoEntrada_" + str(entrada.get("id", "edificio"))
 		objetivo.position = entrada.get("pos", Vector2.ZERO)
+		var nombre_lugar := str(entrada.get("nombre", "este lugar")).strip_edges()
+		var texto_interaccion := "Entrar: " + nombre_lugar
 		objetivo.call(
 			"configurar",
-			"Entrar",
+			texto_interaccion,
 			DISTANCIA_INTERACCION_ENTRADA,
 			Callable(self, "_puede_interactuar_entrada").bind(entrada),
 			Callable(self, "_interactuar_entrada").bind(entrada)
