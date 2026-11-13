@@ -307,6 +307,10 @@ func _actualizar_estado_interfaz() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact") and not (event is InputEventKey and (event as InputEventKey).echo):
+		if _interior_abierto:
+			var interior := _obtener_interior()
+			if is_instance_valid(interior) and interior.has_method("esta_editando") and bool(interior.call("esta_editando")):
+				return
 		if _puede_usar_puerta():
 			_establecer_interior(not _interior_abierto, true)
 			get_viewport().set_input_as_handled()
