@@ -442,6 +442,10 @@ func _inicializar_runtime_de_zona() -> void:
 				tiene_posicion_hogar = jugador_hogar.has("x") and jugador_hogar.has("y")
 		if tiene_posicion_hogar:
 			_player.global_position = posicion_hogar
+		elif GameState.player_state.position_valida:
+			# Respaldo para partidas guardadas dentro de Hogar antes de que
+			# ZoneManager haya creado una instantánea específica de la parcela.
+			_player.global_position = GameState.player_state.position
 		else:
 			var zona_hogar: Node = _zone_manager.obtener_zona_actual()
 			var spawn_hogar: Node2D = zona_hogar.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_hogar) else null
