@@ -65,7 +65,6 @@ var locomotion := PlayerLocomotionCoordinator.new()
 var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 var visual_controller := PlayerVisualController.new()
-var dash_input_controller := PlayerDashInputController.new()
 var input_controller = INPUT_CONTROLLER_SCRIPT.new()
 var physics_movement_controller := PlayerMovementPhysicsController.new()
 
@@ -95,7 +94,6 @@ var _red_correr: bool = false
 var _red_dash_pendiente: bool = false
 var _red_salto_pendiente: bool = false
 var _red_eterium_sprint: bool = false
-var _red_curar_eterium: bool = false
 var _apariencia_red_aplicada: bool = false
 
 
@@ -190,12 +188,6 @@ func _obtener_input_controller():
 	return input_controller
 
 
-func _input(event: InputEvent) -> void:
-	var controlador_entrada = _obtener_input_controller()
-	if controlador_entrada.es_combinacion_menu_reinos(event):
-		dash_input_controller.cancelar_por_menu_reinos()
-
-
 func aplicar_identidad_red(
 	nombre: String,
 	genero: String,
@@ -238,7 +230,7 @@ func configurar_control_remoto_servidor() -> void:
 	_red_eterium_sprint = false
 
 
-func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false, salto: bool = false, curar_eterium: bool = false) -> void:
+func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, sprint_eterium: bool = false, salto: bool = false, _curar_eterium: bool = false) -> void:
 	if not _red_servidor_controlado:
 		return
 	_red_direccion = direccion.limit_length(1.0)
@@ -246,7 +238,6 @@ func establecer_input_red(direccion: Vector2, correr: bool, dash: bool = false, 
 	_red_dash_pendiente = _red_dash_pendiente or dash
 	_red_salto_pendiente = _red_salto_pendiente or salto
 	_red_eterium_sprint = sprint_eterium
-	_red_curar_eterium = curar_eterium
 
 
 func _procesar_movimiento_red(delta: float) -> void:
@@ -280,10 +271,6 @@ func _procesar_movimiento_red(delta: float) -> void:
 			if state == State.DASH:
 				_procesar_dash(delta)
 				return
-
-	if _red_curar_eterium and not eterium.vida_eterium_compartidos():
-		_procesar_curacion_eterium(delta)
-		return
 
 	var eterium_sprint := false
 	if _red_eterium_sprint and direccion != Vector2.ZERO:
@@ -331,7 +318,6 @@ func _physics_process(delta: float) -> void:
 	# Si una interfaz está bloqueando el gameplay,
 	# no procesamos ningún input del jugador.
 	if _esta_bloqueado_por_interfaz():
-		dash_input_controller.reiniciar()
 		_movement_input_direction = Vector2.ZERO
 		velocity = Vector2.ZERO
 		if state != State.IDLE:
@@ -355,23 +341,10 @@ func _physics_process(delta: float) -> void:
 	var controlador_entrada = _obtener_input_controller()
 	var entrada: Dictionary = controlador_entrada.capturar()
 
-	# Curación con Eterium mientras se mantiene Q.
-	if bool(entrada.get("focus_pressed", false)) and not eterium.vida_eterium_compartidos():
-		_procesar_curacion_eterium(delta)
+	# Shift ejecuta el dash directamente; ya no comparte combinación con viaje.
+	if bool(entrada.get("dash_just_pressed", false)) and _puede_hacer_dash():
+		_iniciar_dash()
 		return
-
-	# Shift inicia el dash. Se espera una fracción de segundo para distinguir
-	# Shift solo de Shift+M (menú de reinos), sin disparar el dash por accidente.
-	if bool(entrada.get("dash_just_pressed", false)):
-		dash_input_controller.solicitar()
-
-	if dash_input_controller.actualizar(
-		delta,
-		bool(entrada.get("menu_key_pressed", false))
-	):
-		if _puede_hacer_dash():
-			_iniciar_dash()
-			return
 
 	var run_pressed := bool(entrada.get("run_pressed", false))
 
@@ -834,7 +807,6 @@ func reaparecer_en_red(posicion: Vector2) -> void:
 	_red_dash_pendiente = false
 	_red_salto_pendiente = false
 	_red_eterium_sprint = false
-	_red_curar_eterium = false
 	locomotion.reiniciar()
 	visible = true
 	if is_instance_valid(visual):
