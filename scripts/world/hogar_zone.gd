@@ -136,7 +136,7 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 	if is_instance_valid(interior):
 		var estado_interior: Variant = estado.get("interior_decoraciones", {})
 		if estado_interior is Dictionary:
-			interior.cargar_estado_guardado(estado_interior as Dictionary)
+			interior.call("cargar_estado_guardado", estado_interior as Dictionary)
 	if is_inside_tree():
 		_reconstruir_visual_decoraciones()
 

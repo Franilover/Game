@@ -158,8 +158,17 @@ func alternar_editor() -> void:
 	_establecer_editor(not _editor_activo)
 
 
+func esta_editando() -> bool:
+	return _editor_activo
+
+
 func _establecer_editor(activo: bool) -> void:
 	_editor_activo = activo
+	if activo:
+		if not is_in_group("modal_ui"):
+			add_to_group("modal_ui")
+	elif is_in_group("modal_ui"):
+		remove_from_group("modal_ui")
 	_panel.visible = activo
 	_previa.visible = false
 	_tipo_actual = ""
