@@ -34,6 +34,7 @@ var _giro_colocacion := 0.0
 var _indice_seleccionado := -1
 var _indice_arrastrado := -1
 var _sprite_previo: Sprite2D
+var _posicion_previa_valida := false
 var _boton_modo: Button
 var _panel_construccion: PanelContainer
 var _etiqueta_estado: Label
@@ -124,7 +125,7 @@ func establecer_decoraciones(decoraciones: Array) -> void:
 
 
 func agregar_decoracion(tipo: String, posicion: Vector2, giro: float = 0.0) -> bool:
-	if not CATALOGO.has(tipo) or not obtener_limites().has_point(posicion):
+	if not CATALOGO.has(tipo) or not _es_posicion_valida(tipo, posicion, giro):
 		return false
 	_decoraciones.append({
 		"tipo": tipo,
@@ -137,7 +138,12 @@ func agregar_decoracion(tipo: String, posicion: Vector2, giro: float = 0.0) -> b
 
 
 func mover_decoracion(indice: int, posicion: Vector2) -> bool:
-	if indice < 0 or indice >= _decoraciones.size() or not obtener_limites().has_point(posicion):
+	if indice < 0 or indice >= _decoraciones.size():
+		return false
+	var item: Dictionary = _decoraciones[indice]
+	var tipo := str(item.get("tipo", ""))
+	var giro := float(item.get("giro", 0.0))
+	if not _es_posicion_valida(tipo, posicion, giro):
 		return false
 	_decoraciones[indice]["x"] = posicion.x
 	_decoraciones[indice]["y"] = posicion.y
@@ -232,6 +238,8 @@ func _alternar_modo_construccion() -> void:
 
 
 func _establecer_modo_construccion(activo: bool) -> void:
+	if _modo_construccion == activo:
+		return
 	_modo_construccion = activo
 	_panel_construccion.visible = activo
 	_boton_modo.text = "Salir construcción [B]" if activo else "Construir [B]"
@@ -246,6 +254,7 @@ func _establecer_modo_construccion(activo: bool) -> void:
 		_indice_arrastrado = -1
 		_indice_seleccionado = -1
 		_sprite_previo.visible = false
+		_actualizar_resaltado_seleccion()
 
 
 func _seleccionar_tipo(tipo: String) -> void:
@@ -254,6 +263,7 @@ func _seleccionar_tipo(tipo: String) -> void:
 	_indice_arrastrado = -1
 	_tipo_colocacion = tipo
 	_indice_seleccionado = -1
+	_actualizar_resaltado_seleccion()
 	_giro_colocacion = 0.0
 	_sprite_previo.texture = _obtener_textura(tipo)
 	_sprite_previo.rotation = 0.0
@@ -280,7 +290,7 @@ func _input(event: InputEvent) -> void:
 	if _modo_construccion and event is InputEventMouseButton:
 		var raton := event as InputEventMouseButton
 		if raton.button_index == MOUSE_BUTTON_LEFT and not raton.pressed and _indice_arrastrado >= 0:
-			mover_decoracion(_indice_arrastrado, get_global_mouse_position())
+			mover_decoracion(_indice_arrastrado, _obtener_posicion_ajustada(get_global_mouse_position()))
 			_indice_arrastrado = -1
 			_guardar_cambios_hogar()
 			get_viewport().set_input_as_handled()
@@ -310,6 +320,7 @@ func _input(event: InputEvent) -> void:
 		KEY_DELETE, KEY_BACKSPACE:
 			if _indice_seleccionado >= 0 and quitar_decoracion(_indice_seleccionado):
 				_indice_seleccionado = -1
+				_actualizar_resaltado_seleccion()
 				_actualizar_estado_interfaz()
 				_guardar_cambios_hogar()
 			get_viewport().set_input_as_handled()
@@ -342,14 +353,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if raton.pressed:
-		var posicion := get_global_mouse_position()
+		var posicion := _obtener_posicion_ajustada(get_global_mouse_position())
 		if not _tipo_colocacion.is_empty():
 			if agregar_decoracion(_tipo_colocacion, posicion, _giro_colocacion):
 				_guardar_cambios_hogar()
 			_actualizar_sprite_previo()
 		else:
-			_indice_seleccionado = _buscar_decoracion(posicion)
+			_indice_seleccionado = _buscar_decoracion(get_global_mouse_position())
 			_indice_arrastrado = _indice_seleccionado
+			_actualizar_resaltado_seleccion()
 			_actualizar_estado_interfaz()
 	else:
 		if _indice_arrastrado >= 0:
@@ -364,9 +376,13 @@ func _girar_objeto() -> void:
 		_sprite_previo.rotation = _giro_colocacion
 		_actualizar_sprite_previo()
 	elif _indice_seleccionado >= 0 and _indice_seleccionado < _decoraciones.size():
-		_decoraciones[_indice_seleccionado]["giro"] = wrapf(float(_decoraciones[_indice_seleccionado]["giro"]) + PI * 0.5, 0.0, TAU)
-		_actualizar_sprite_decoracion(_indice_seleccionado)
-		_guardar_cambios_hogar()
+		var item: Dictionary = _decoraciones[_indice_seleccionado]
+		var nuevo_giro := wrapf(float(item.get("giro", 0.0)) + PI * 0.5, 0.0, TAU)
+		var posicion := Vector2(float(item.get("x", 0.0)), float(item.get("y", 0.0)))
+		if _es_posicion_valida(str(item.get("tipo", "")), posicion, nuevo_giro):
+			_decoraciones[_indice_seleccionado]["giro"] = nuevo_giro
+			_actualizar_sprite_decoracion(_indice_seleccionado)
+			_guardar_cambios_hogar()
 
 
 func _buscar_decoracion(posicion_global: Vector2) -> int:
@@ -384,10 +400,52 @@ func _buscar_decoracion(posicion_global: Vector2) -> int:
 func _actualizar_sprite_previo() -> void:
 	if not is_instance_valid(_sprite_previo):
 		return
-	var posicion := get_global_mouse_position()
+	var posicion := _obtener_posicion_ajustada(get_global_mouse_position())
+	_posicion_previa_valida = not _tipo_colocacion.is_empty() and _es_posicion_valida(_tipo_colocacion, posicion, _giro_colocacion)
 	_sprite_previo.position = to_local(posicion)
 	_sprite_previo.rotation = _giro_colocacion
+	_sprite_previo.modulate = Color(1.0, 1.0, 1.0, 0.65) if _posicion_previa_valida else Color(1.0, 0.35, 0.3, 0.65)
 	_sprite_previo.visible = not _tipo_colocacion.is_empty()
+
+
+func _obtener_posicion_ajustada(posicion_global: Vector2) -> Vector2:
+	var local := to_local(posicion_global)
+	var origen := Vector2(-ANCHO * 0.5, -ALTO * 0.5)
+	var celda := Vector2i(
+		floori((local.x - origen.x) / TAMANO_CELDA),
+		floori((local.y - origen.y) / TAMANO_CELDA)
+	)
+	return origen + Vector2(celda) * TAMANO_CELDA + Vector2.ONE * TAMANO_CELDA * 0.5
+
+
+func _es_posicion_valida(tipo: String, posicion: Vector2, giro: float = 0.0) -> bool:
+	if not CATALOGO.has(tipo):
+		return false
+	var textura := _obtener_textura(tipo)
+	if textura == null:
+		return false
+	var extents := textura.get_size() * 0.5
+	var coseno := absf(cos(giro))
+	var seno := absf(sin(giro))
+	var extents_rotados := Vector2(
+		extents.x * coseno + extents.y * seno,
+		extents.x * seno + extents.y * coseno
+	)
+	var limites := obtener_limites()
+	return (
+		posicion.x - extents_rotados.x >= limites.position.x
+		and posicion.x + extents_rotados.x <= limites.end.x
+		and posicion.y - extents_rotados.y >= limites.position.y
+		and posicion.y + extents_rotados.y <= limites.end.y
+	)
+
+
+func _actualizar_resaltado_seleccion() -> void:
+	for indice in range(_sprites_decoracion.size()):
+		var sprite: Sprite2D = _sprites_decoracion[indice]
+		if not is_instance_valid(sprite):
+			continue
+		sprite.modulate = Color("#FFE3A3") if indice == _indice_seleccionado else Color.WHITE
 
 
 func _reconstruir_visual_decoraciones() -> void:
@@ -415,6 +473,7 @@ func _agregar_sprite_decoracion(indice: int) -> void:
 	add_child(sprite)
 	_sprites_decoracion.append(sprite)
 	_actualizar_sprite_decoracion(indice)
+	_actualizar_resaltado_seleccion()
 
 
 func _actualizar_sprite_decoracion(indice: int) -> void:
