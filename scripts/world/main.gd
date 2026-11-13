@@ -52,7 +52,7 @@ const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/pl
 @onready var _story_loading_overlay: Control = $UI/StoryLoadingOverlay
 var _reino_descubrimiento_elapsed: float = 0.0
 var _torres_rutina_elapsed: float = 0.0
-var _npc_schedule_system: NPCScheduleSystem = null
+var _npc_schedule_system: Node = null
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
@@ -102,7 +102,7 @@ func _ready() -> void:
 		push_error("Main: falta World/ZoneManager.")
 		return
 
-	_npc_schedule_system = NPC_SCHEDULE_SYSTEM_SCRIPT.new() as NPCScheduleSystem
+	_npc_schedule_system = NPC_SCHEDULE_SYSTEM_SCRIPT.new() as Node
 	if is_instance_valid(_npc_schedule_system):
 		_npc_schedule_system.name = "NPCScheduleSystem"
 		add_child(_npc_schedule_system)
@@ -632,7 +632,7 @@ func _materializar_npcs_reino_torres() -> void:
 
 		var nombre := str(personaje.get("nombre", "NPC")).strip_edges()
 		var ubicacion := str(personaje.get("ubicacion_clave", "")).strip_edges().to_lower()
-		if ubicacion.is_empty() or ubicacion == "null" or not NPCScheduleSystem.tiene_ubicacion(ubicacion):
+		if ubicacion.is_empty() or ubicacion == "null" or not NPC_SCHEDULE_SYSTEM_SCRIPT.tiene_ubicacion(ubicacion):
 			ubicacion = "plaza"
 		var rutinas_variant: Variant = personaje.get("rutinas", [])
 		var rutinas_actualizadas: Array = rutinas_variant.duplicate(true) if rutinas_variant is Array else []
@@ -692,7 +692,7 @@ func _materializar_npcs_reino_torres() -> void:
 				float((creados % 3) - 1) * 28.0,
 				float(int(creados / 3)) * 24.0
 			)
-		var posicion_hogar_local := NPCScheduleSystem.obtener_posicion_inicial(ubicacion) + desplazamiento_plaza
+		var posicion_hogar_local: Vector2 = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_inicial(ubicacion) + desplazamiento_plaza
 		npc.datos["posicion_hogar_local"] = posicion_hogar_local
 		npc.global_position = zona.to_global(posicion_hogar_local)
 		npc.set_meta("personaje_game_id", personaje_id)
