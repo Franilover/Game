@@ -47,3 +47,62 @@ El nodo se crea desde `Main` y recibe Player, DialogueSystem y Camera2D. Mientra
 - La señal `evento_solicitado` permite conectar recompensas, misiones, flags o cambios sociales sin acoplar el director a esos sistemas.
 - `cancelar()` cierra el diálogo activo, detiene la interpolación de cámara y libera el bloqueo. Las esperas asíncronas usan una generación de ejecución para impedir que una secuencia cancelada continúe.
 - Los diálogos pueden usar las variantes y acciones que DialogueSystem ya admite.
+
+
+## Consecuencias sociales
+
+Las secuencias y los diálogos pueden registrar hechos con `RelationshipSystem.registrar_evento_social()`. El director de cinemáticas acepta eventos con el prefijo `social:`; sus datos deben incluir el ID de personaje.
+
+Ejemplo de pasos de una cinemática:
+
+```gdscript
+[
+	{
+		"tipo": "dialogo",
+		"datos": {
+			"lineas": [
+				{"hablante": "Narel", "texto": "¿Me ayudarías a revisar estos registros?"}
+			]
+		}
+	},
+	{
+		"tipo": "evento",
+		"clave": "social:ayudar",
+		"datos": {
+			"personaje_game_id": "ID_DEL_PERSONAJE",
+			"evento_id": "narel_archivo_ayuda_01",
+			"contexto": {"origen": "historia"}
+		}
+	}
+]
+```
+
+Los diálogos admiten una acción `evento_social` en sus acciones de elección:
+
+```json
+{
+  "tipo": "evento_social",
+  "evento": "promesa_cumplida",
+  "evento_id": "bruna_encargo_herreria_01",
+  "contexto": {"mision": "encargo_herreria"}
+}
+```
+
+### Eventos reconocidos
+
+| Evento | Efecto base |
+| --- | --- |
+| `ayudar` | Amistad +1.5, confianza +1 |
+| `apoyar` | Amistad +2, afecto +1 |
+| `promesa_cumplida` | Amistad +1.5, confianza +4 |
+| `promesa_rota` | Amistad -3, confianza -10 |
+| `decir_verdad` | Confianza +3 |
+| `mentir` | Confianza -8, respeto -1 |
+| `demostrar_habilidad` | Respeto +2.5, amistad +0.5 |
+| `compartir_conocimiento` | Amistad +1, respeto +1.5 |
+| `faltar_respeto` | Respeto -7, amistad -2 |
+| `traicionar` | Confianza -20, amistad -8, afecto -4 |
+
+Los valores se limitan al rango -100 a 100. Los rasgos de personalidad modulan la intensidad de la reacción con un multiplicador entre 0.75 y 1.25: generosidad influye en ayudar, sociabilidad en apoyar, curiosidad en conocimiento/habilidad, prudencia en confianza y agresividad en la respuesta al irrespeto. Los cambios se calculan de forma determinista, sin tiradas aleatorias.
+
+`evento_id` evita aplicar dos veces un mismo hecho mientras ese recuerdo permanezca en el historial reciente del personaje (máximo 32 recuerdos). Para hechos únicos de historia o misiones, usar una clave estable y específica.
