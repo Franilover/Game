@@ -268,10 +268,6 @@ func _crear_interfaz_construccion() -> void:
 		PIXEL_UI_THEME.apply(boton)
 		catalogo_ui.add_child(boton)
 
-	var ayuda := Label.new()
-	ayuda.text = "Clic: colocar/mover · R: girar · Supr: quitar · Clic derecho: cancelar · Esc: salir"
-	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	contenido.add_child(ayuda)
 
 
 func establecer_inventario_abierto(abierto: bool) -> void:
