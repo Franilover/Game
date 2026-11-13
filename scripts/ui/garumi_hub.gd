@@ -1,19 +1,14 @@
 extends Control
 class_name GarumiHub
 
-const ENCYCLOPEDIA_SCRIPT: Script = preload("res://scripts/ui/encyclopedia.gd")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TEXTO := Color(0.90, 0.79, 0.58, 1.0)
 const SECUNDARIO := Color(0.65, 0.52, 0.35, 1.0)
 const BORDE := Color(0.29, 0.19, 0.12, 1.0)
 
-var _subtab: String = "garumis"
-var _boton_garumis: Button
-var _boton_garudex: Button
 var _pagina_garumis: VBoxContainer
 var _lista_vinculados: GridContainer
 var _lista_amigos: GridContainer
-var _garudex: Control
 var _estado: Label
 var _detalle: VBoxContainer
 
@@ -39,17 +34,6 @@ func _crear_interfaz() -> void:
 	var columna := VBoxContainer.new()
 	columna.add_theme_constant_override("separation", 0)
 	margen.add_child(columna)
-
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 3)
-	columna.add_child(tabs)
-	_boton_garumis = _crear_boton_tab("Garumis")
-	_boton_garumis.button_pressed = true
-	_boton_garumis.pressed.connect(_mostrar_garumis)
-	tabs.add_child(_boton_garumis)
-	_boton_garudex = _crear_boton_tab("Garudex")
-	_boton_garudex.pressed.connect(_mostrar_garudex)
-	tabs.add_child(_boton_garudex)
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -95,14 +79,6 @@ func _crear_interfaz() -> void:
 	_detalle.add_theme_constant_override("separation", 6)
 	body.add_child(_detalle)
 
-	_garudex = Control.new()
-	_garudex.name = "GarudexCatalog"
-	_garudex.set_script(ENCYCLOPEDIA_SCRIPT)
-	_garudex.set("solo_garumis", true)
-	_garudex.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_garudex.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_garudex.visible = false
-	body.add_child(_garudex)
 	_estado = Label.new()
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_estado.add_theme_color_override("font_color", SECUNDARIO)
@@ -110,43 +86,8 @@ func _crear_interfaz() -> void:
 	columna.add_child(_estado)
 
 
-func _crear_boton_tab(texto: String) -> Button:
-	var boton := Button.new()
-	boton.text = texto
-	boton.toggle_mode = true
-	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	boton.custom_minimum_size = Vector2(0, 23)
-	boton.add_theme_font_size_override("font_size", 11)
-	boton.add_theme_color_override("font_color", SECUNDARIO)
-	boton.add_theme_color_override("font_hover_color", TEXTO)
-	boton.add_theme_color_override("font_pressed_color", TEXTO)
-	PIXEL_UI_THEME.apply(boton, false)
-	return boton
-
-
 func abrir_en_garumis() -> void:
-	_mostrar_garumis()
-
-
-func _mostrar_garumis() -> void:
-	_subtab = "garumis"
-	_boton_garumis.button_pressed = true
-	_boton_garudex.button_pressed = false
-	_pagina_garumis.visible = true
-	_detalle.visible = true
-	_garudex.visible = false
 	actualizar()
-
-
-func _mostrar_garudex() -> void:
-	_subtab = "garudex"
-	_boton_garumis.button_pressed = false
-	_boton_garudex.button_pressed = true
-	_pagina_garumis.visible = false
-	_detalle.visible = false
-	_garudex.visible = true
-	if _garudex.has_method("abrir_en_garumis"):
-		_garudex.call("abrir_en_garumis")
 
 
 func actualizar() -> void:
@@ -191,19 +132,19 @@ func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_regis
 		boton_sprite.pressed.connect(_mostrar_detalle.bind(registro.duplicate(true), estado_registro))
 		marco_sprite.add_child(boton_sprite)
 
-		# Primer paso: mostrar únicamente el origen debajo del retrato.
-		var origen := _obtener_origen_garumi(registro)
-		if not origen.is_empty():
-			var etiqueta_origen := Label.new()
-			etiqueta_origen.text = origen
-			etiqueta_origen.custom_minimum_size = Vector2(88, 14)
-			etiqueta_origen.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-			etiqueta_origen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			etiqueta_origen.clip_text = true
-			etiqueta_origen.tooltip_text = "Origen: " + origen
-			etiqueta_origen.add_theme_font_size_override("font_size", 8)
-			etiqueta_origen.add_theme_color_override("font_color", SECUNDARIO)
-			celda.add_child(etiqueta_origen)
+	# El origen se muestra incluso si el Garumi no tiene un sprite cargado.
+	var origen := _obtener_origen_garumi(registro)
+	if not origen.is_empty():
+		var etiqueta_origen := Label.new()
+		etiqueta_origen.text = origen
+		etiqueta_origen.custom_minimum_size = Vector2(88, 14)
+		etiqueta_origen.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		etiqueta_origen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		etiqueta_origen.clip_text = true
+		etiqueta_origen.tooltip_text = "Origen: " + origen
+		etiqueta_origen.add_theme_font_size_override("font_size", 8)
+		etiqueta_origen.add_theme_color_override("font_color", SECUNDARIO)
+		celda.add_child(etiqueta_origen)
 
 	if estado_registro == "Amigo":
 		var boton_vincular := Button.new()
