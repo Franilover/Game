@@ -62,6 +62,7 @@ var indice_hotbar_activo: int:
 var _arrastre_indice: int = -1
 var _arrastre_datos: Dictionary = {}
 var _abierto: bool = false
+var _modo_historia: bool = false
 var _player: Player = null
 var _world_items: GarliaWorldItems = null
 
@@ -73,6 +74,7 @@ var _slot_grids: Array[GridContainer] = []
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
 @onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DeleteButton
 @onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/EquipmentSlots
+@onready var _notas_texto: TextEdit = $Window/Margin/Column/Tabs/Notas/NotesText
 
 
 func _inicializar_navegacion_tabs() -> void:
@@ -90,6 +92,7 @@ func _inicializar_navegacion_tabs() -> void:
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
+	var boton_notas: Button = $Window/Margin/Column/TabButtons/Notas
 
 	boton_inventario.pressed.connect(func() -> void:
 		tabs.current_tab = 0
@@ -118,6 +121,9 @@ func _inicializar_navegacion_tabs() -> void:
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 		if admin_tab != null:
 			admin_tab.abrir(_player)
+	)
+	boton_notas.pressed.connect(func() -> void:
+		tabs.current_tab = 7
 	)
 
 	boton_inventario.button_pressed = true
@@ -261,6 +267,7 @@ func _ready() -> void:
 	_crear_slots_equipamiento()
 	delete_button.pressed.connect(_al_eliminar_seleccionado)
 	_inicializar_navegacion_tabs()
+	_cargar_notas_historia()
 	_limpiar_informacion()
 	PIXEL_UI_THEME.apply(self, false)
 
@@ -325,6 +332,40 @@ func _unhandled_input(event: InputEvent) -> void:
 			if visible:
 				cerrar()
 				get_viewport().set_input_as_handled()
+
+
+func establecer_modo_historia(activo: bool) -> void:
+	_modo_historia = activo
+	var botones := $Window/Margin/Column/TabButtons
+	for nombre in ["Crafteo", "Enciclopedia", "Garumis", "Mapa", "Relaciones", "Admin"]:
+		var boton := botones.get_node_or_null(nombre) as Button
+		if is_instance_valid(boton):
+			boton.visible = not activo
+	var boton_notas := botones.get_node_or_null("Notas") as Button
+	if is_instance_valid(boton_notas):
+		boton_notas.visible = activo
+	if activo:
+		var tabs := $Window/Margin/Column/Tabs as TabContainer
+		if tabs.current_tab != 0 and tabs.current_tab != 7:
+			tabs.current_tab = 0
+		$Window/Margin/Column/TabButtons/Inventario.button_pressed = true
+		_actualizar_admin_tab()
+	else:
+		_actualizar_admin_tab()
+
+
+func _cargar_notas_historia() -> void:
+	if not is_instance_valid(_notas_texto):
+		return
+	_notas_texto.text = str(GameState.world_state.flags.get("historia_notas", ""))
+	if not _notas_texto.text_changed.is_connected(_guardar_notas_historia):
+		_notas_texto.text_changed.connect(_guardar_notas_historia)
+
+
+func _guardar_notas_historia() -> void:
+	if not is_instance_valid(_notas_texto):
+		return
+	GameState.world_state.flags["historia_notas"] = _notas_texto.text
 
 
 func _actualizar_admin_tab() -> void:
