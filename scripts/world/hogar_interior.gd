@@ -20,6 +20,7 @@ var _sprites: Array[Sprite2D] = []
 var _objetivos_cofre: Array[Node2D] = []
 var _editor_activo := false
 var _inventario_abierto := false
+var _menu_viaje_abierto := false
 var _tipo_actual := ""
 var _giro := 0.0
 var _seleccion := -1
@@ -157,7 +158,7 @@ func establecer_activo(activo: bool) -> void:
 	if not activo:
 		cerrar_cofre()
 	if is_instance_valid(_capa_ui):
-		_capa_ui.visible = activo and not _inventario_abierto
+		_capa_ui.visible = activo and not _inventario_abierto and not _menu_viaje_abierto
 	set_process(activo)
 	set_process_unhandled_input(activo)
 	if not activo:
@@ -170,6 +171,14 @@ func establecer_inventario_abierto(abierto: bool) -> void:
 		_establecer_editor(false)
 	if is_instance_valid(_capa_ui):
 		_capa_ui.visible = visible and not abierto
+
+
+func establecer_menu_viaje_abierto(abierto: bool) -> void:
+	_menu_viaje_abierto = abierto
+	if abierto:
+		_establecer_editor(false)
+	if is_instance_valid(_capa_ui):
+		_capa_ui.visible = visible and not _inventario_abierto and not abierto
 
 
 func alternar_editor() -> void:
