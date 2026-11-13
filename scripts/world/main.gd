@@ -509,6 +509,8 @@ func _inicializar_runtime_de_zona() -> void:
 	)
 	if not MissionManager.recompensa_disponible.is_connected(_al_recompensa_mision_disponible):
 		MissionManager.recompensa_disponible.connect(_al_recompensa_mision_disponible)
+	if not _inventory.inventory_changed.is_connected(_al_cambio_inventario_reintentar_recompensas):
+		_inventory.inventory_changed.connect(_al_cambio_inventario_reintentar_recompensas)
 	_configurar_social()
 	_inicializar_ium()
 	_configurar_admin()
@@ -1176,6 +1178,16 @@ func _al_recompensa_mision_disponible(mision: Dictionary, _recompensas: Array[Di
 	if MissionManager.entregar_recompensas(mision_id, _inventory):
 		return
 	Events.notification_pushed.emit("Inventario lleno o recompensa incompleta. La recompensa sigue pendiente.")
+
+
+func _al_cambio_inventario_reintentar_recompensas() -> void:
+	call_deferred("_reintentar_recompensas_misiones")
+
+
+func _reintentar_recompensas_misiones() -> void:
+	if _inventory == null or not is_instance_valid(_inventory):
+		return
+	MissionManager.reintentar_recompensas_pendientes(_inventory)
 
 
 func _configurar_social() -> void:
