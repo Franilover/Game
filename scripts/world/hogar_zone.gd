@@ -650,6 +650,8 @@ func _abrir_cofre(indice: int) -> void:
 	if not is_instance_valid(interfaz):
 		return
 	_cofre_ui = interfaz
+	if is_instance_valid(_boton_modo):
+		_boton_modo.visible = false
 	add_child(interfaz)
 	interfaz.call("abrir", self, inventario, indice)
 
@@ -667,6 +669,8 @@ func cerrar_cofre() -> void:
 	if interfaz.is_in_group("modal_ui"):
 		interfaz.remove_from_group("modal_ui")
 	interfaz.queue_free()
+	if is_instance_valid(_boton_modo):
+		_boton_modo.visible = not _interior_abierto
 
 
 func _crear_objetivo_puerta() -> void:
