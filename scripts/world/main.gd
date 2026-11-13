@@ -442,9 +442,9 @@ func _inicializar_runtime_de_zona() -> void:
 				tiene_posicion_hogar = jugador_hogar.has("x") and jugador_hogar.has("y")
 		if tiene_posicion_hogar:
 			_player.global_position = posicion_hogar
-		elif GameState.player_state.position_valida:
-			# Respaldo para partidas guardadas dentro de Hogar antes de que
-			# ZoneManager haya creado una instantánea específica de la parcela.
+		elif str(GameState.world_state.flags.get("zona_actual_tipo", "")) == "hogar" and GameState.player_state.position_valida:
+			# Respaldo sólo si la partida se guardó estando en Hogar. No reutilizar
+			# coordenadas antiguas de Torres o Mundo Abierto al entrar por primera vez.
 			_player.global_position = GameState.player_state.position
 		else:
 			var zona_hogar: Node = _zone_manager.obtener_zona_actual()
