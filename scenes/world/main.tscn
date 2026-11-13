@@ -107,3 +107,58 @@ script = ExtResource("23_ium_repository")
 [node name="IUMManager" type="Node" parent="Systems"]
 script = ExtResource("13_ium")
 
+[node name="StoryLoadingOverlay" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+z_index = 1000
+process_mode = 3
+
+[node name="Backdrop" type="ColorRect" parent="UI/StoryLoadingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.045, 0.025, 0.024, 1)
+
+[node name="Center" type="CenterContainer" parent="UI/StoryLoadingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Content" type="VBoxContainer" parent="UI/StoryLoadingOverlay/Center"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Title" type="Label" parent="UI/StoryLoadingOverlay/Center/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.77, 0.63, 1)
+theme_override_font_sizes/font_size = 22
+text = "LA RESERVA CARMESÍ"
+horizontal_alignment = 1
+
+[node name="Rule" type="ColorRect" parent="UI/StoryLoadingOverlay/Center/Content"]
+custom_minimum_size = Vector2(120, 2)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.58, 0.25, 0.17, 1)
+
+[node name="Detail" type="Label" parent="UI/StoryLoadingOverlay/Center/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.62, 0.53, 1)
+theme_override_font_sizes/font_size = 14
+text = "Preparando el terreno..."
+horizontal_alignment = 1
