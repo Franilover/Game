@@ -1,12 +1,12 @@
 shader_type canvas_item;
 
-// La Pradera conserva su textura y sus máscaras de TileMapDual.
-// El efecto usa coordenadas globales para no reiniciarse en cada celda/chunk.
+// Líneas diagonales completamente estáticas.
+// Las coordenadas globales mantienen el patrón continuo entre tiles y chunks.
 varying vec2 posicion_mundo;
 
-uniform float velocidad_expansion : hint_range(0.0, 1.5) = 0.28;
-uniform float intensidad_onda : hint_range(0.0, 0.25) = 0.075;
-uniform float separacion_ondas : hint_range(0.005, 0.08) = 0.024;
+uniform float separacion_lineas : hint_range(24.0, 160.0) = 72.0;
+uniform float grosor_linea : hint_range(1.0, 14.0) = 4.0;
+uniform float contraste : hint_range(1.0, 1.8) = 1.22;
 
 void vertex() {
 	posicion_mundo = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
@@ -16,21 +16,20 @@ void fragment() {
 	vec4 base = texture(TEXTURE, UV) * COLOR;
 	vec2 p = floor(posicion_mundo / 2.0) * 2.0;
 
-	// Frentes amplios que se expanden en diagonal, con centros muy separados
-	// para que el patrón se perciba como un fenómeno del terreno completo.
-	vec2 celda = floor(p / 384.0);
-	vec2 centro = celda * 384.0 + vec2(192.0);
-	float distancia = length((p - centro) * vec2(0.82, 1.0));
-	float fase = distancia * separacion_ondas - TIME * velocidad_expansion;
-	float onda = sin(fase);
-	float cresta = smoothstep(0.72, 0.98, onda);
+	// Bandas paralelas en diagonal; no dependen de TIME ni de UV por tile.
+	float diagonal = (p.x + p.y * 0.62) / separacion_lineas;
+	float distancia_linea = abs(fract(diagonal) - 0.5) * separacion_lineas;
+	float linea = 1.0 - smoothstep(grosor_linea, grosor_linea + 2.0, distancia_linea);
 
-	// Una segunda dirección rompe la repetición circular sin crear oleaje.
-	float diagonal = p.x * 0.010 - p.y * 0.006;
-	float modulacion = 0.5 + 0.5 * sin(diagonal + fase * 0.22);
-	float brillo = cresta * modulacion;
+	// Separa mejor los tonos del pasto: sombras más profundas y luces más claras.
+	base.rgb = (base.rgb - vec3(0.42)) * contraste + vec3(0.42);
+	base.rgb = clamp(base.rgb, vec3(0.0), vec3(1.0));
 
-	base.rgb += vec3(0.075, 0.095, 0.045) * brillo * intensidad_onda;
-	base.rgb *= 1.0 + (onda * 0.5 + 0.5 - 0.5) * intensidad_onda * 0.24;
+	// Alternancia verde oscura / verde claro para que las líneas se distingan
+	// sin tapar el dibujo original del atlas.
+	float alternancia = step(0.5, fract(diagonal * 0.5));
+	vec3 tono_linea = mix(vec3(0.075, 0.16, 0.055), vec3(0.48, 0.62, 0.24), alternancia);
+	base.rgb = mix(base.rgb, tono_linea, linea * 0.24);
+
 	COLOR = base;
 }
