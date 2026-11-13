@@ -124,15 +124,15 @@ texture = ExtResource("2_bo48s")
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=725132572]
 layout_mode = 1
-anchors_preset = 10
-anchor_left = 0.0
+anchors_preset = 7
+anchor_left = 0.5
 anchor_top = 1.0
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = -39.0
-offset_right = -12.0
-offset_bottom = -22.0
+offset_left = -80.0
+offset_top = -84.0
+offset_right = 80.0
+offset_bottom = -68.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -140,7 +140,6 @@ theme_override_styles/background = SubResource("StyleBox_bar_background")
 theme_override_styles/fill = SubResource("StyleBox_health")
 value = 100.0
 show_percentage = false
-
 [node name="HealthValue" type="Label" parent="BottomLeft" unique_id=463424342]
 visible = false
 layout_mode = 0
@@ -224,15 +223,15 @@ stretch_mode = 5
 
 [node name="EteriumBar" type="ProgressBar" parent="." unique_id=316854426]
 layout_mode = 1
-anchors_preset = 10
-anchor_left = 0.0
+anchors_preset = 7
+anchor_left = 0.5
 anchor_top = 1.0
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = -19.0
-offset_right = -12.0
-offset_bottom = -2.0
+offset_left = -80.0
+offset_top = -66.0
+offset_right = 80.0
+offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
@@ -240,7 +239,6 @@ theme_override_styles/background = SubResource("StyleBoxFlat_136eg")
 theme_override_styles/fill = SubResource("StyleBox_eterium")
 value = 100.0
 show_percentage = false
-
 [node name="EteriumValue" type="Label" parent="BottomRight" unique_id=1948058690]
 visible = false
 layout_mode = 1
