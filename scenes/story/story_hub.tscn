@@ -1,0 +1,97 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/story_hub.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/art/UI/Menus/menu_background.png" id="2_background"]
+
+[node name="StoryHub" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 6
+texture_filter = 1
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.055, 0.025, 0.025, 0.78)
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -330.0
+offset_top = -205.0
+offset_right = 330.0
+offset_bottom = 205.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+
+[node name="Eyebrow" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.58, 0.43, 1)
+theme_override_font_sizes/font_size = 14
+text = "GARLIA  /  ARCHIVO NARRATIVO"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.84, 0.68, 1)
+theme_override_font_sizes/font_size = 38
+text = "HISTORIA"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.77, 0.69, 1)
+theme_override_font_sizes/font_size = 15
+text = "Relatos, personajes y lugares de Garlia."
+horizontal_alignment = 1
+
+[node name="ChapterButton" type="Button" parent="Content"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "CAPÍTULO 01   ·   LA RESERVA CARMESÍ"
+
+[node name="ChapterDescription" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.77, 0.69, 1)
+theme_override_font_sizes/font_size = 14
+text = "Una extensión privada del Abismo. Sus bosques y valles son el escenario de cacerías organizadas por la aristocracia."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Spacer" type="Control" parent="Content"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BackButton" type="Button" parent="Content"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Volver"
