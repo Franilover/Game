@@ -332,7 +332,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion:
 		if _indice_arrastrado >= 0:
-			mover_decoracion(_indice_arrastrado, get_global_mouse_position())
+			mover_decoracion(_indice_arrastrado, _obtener_posicion_ajustada(get_global_mouse_position()))
 		elif not _tipo_colocacion.is_empty():
 			_actualizar_sprite_previo()
 		return
