@@ -1192,7 +1192,7 @@ func _reintentar_recompensas_misiones() -> void:
 
 func _configurar_social() -> void:
 	SocialRepository.configurar(_supabase_client)
-	RelationshipSystem.configurar(SocialRepository, GameState)
+	RelationshipSystem.configurar(SocialRepository, GameState, _world_atmosphere)
 
 
 func _al_cargar_relaciones_ecologicas(relaciones: Array) -> void:
