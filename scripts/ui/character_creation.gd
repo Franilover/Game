@@ -71,10 +71,8 @@ func _normalizar_geometria_raiz() -> void:
 	# heredados ni de una posición guardada en el editor.
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	position = Vector2.ZERO
-	if get_parent() is Control:
-		var contenedor := get_parent() as Control
-		if contenedor.size.x > 0.0 and contenedor.size.y > 0.0:
-			size = contenedor.size
+	# PRESET_FULL_RECT ya ajusta el tamaño según el Control padre.
+	# Asignar size aquí provoca el warning de anchors opuestos no iguales.
 
 
 func _instalar_scroll_contenido() -> void:
