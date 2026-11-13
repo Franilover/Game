@@ -18,7 +18,12 @@ const POSICIONES: Dictionary = {
 	"registro": Vector2(690.0, -170.0),
 	"casa_comercio": Vector2(890.0, -260.0),
 	"casa_estudio": Vector2(-370.0, -482.0),
-	"archivo_real": Vector2(-130.0, -572.0)
+	"archivo_real": Vector2(-130.0, -572.0),
+	"casa_elian": Vector2(220.0, -117.0),
+	"casa_bruna": Vector2(-235.0, 193.0),
+	"casa_darven": Vector2(385.0, -108.0),
+	"casa_saira": Vector2(385.0, 173.0),
+	"casa_narel": Vector2(-520.0, -213.0)
 }
 
 var _world_atmosphere: WorldAtmosphere = null
@@ -45,6 +50,19 @@ static func obtener_posicion_inicial(clave: String) -> Vector2:
 	if posicion is Vector2:
 		return posicion
 	return Vector2.ZERO
+
+
+static func obtener_posicion_hogar(nombre_npc: String, ubicacion_respaldo: String = "plaza") -> Vector2:
+	var clave := nombre_npc.strip_edges().to_lower()
+	var hogares: Dictionary = {
+		"elian": "casa_elian",
+		"bruna": "casa_bruna",
+		"darven": "casa_darven",
+		"saira": "casa_saira",
+		"narel": "casa_narel"
+	}
+	var ubicacion := str(hogares.get(clave, ubicacion_respaldo)).to_lower()
+	return obtener_posicion_inicial(ubicacion)
 
 
 func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
@@ -78,7 +96,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 	if not bool(tiempo.get("calendario_cargado", false)):
 		return
 
-	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 7)
+	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 5)
 	var minutos := clampi(int(floor(float(tiempo.get("hora_del_dia", 0.0)) * 60.0)), 0, 1439)
 
 	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
@@ -156,7 +174,11 @@ func _construir_malla(zona: Node2D) -> void:
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
-	var rutina: Dictionary = _seleccionar_rutina(rutinas_variant, dia_semana, minutos)
+	var rutina: Dictionary
+	if dia_semana == 4:
+		rutina = _seleccionar_rutina_dia_libre(npc, minutos)
+	else:
+		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos)
 
 	var clave_rutina := str(rutina.get("clave", "descanso_base")).strip_edges()
 	var ubicacion := str(rutina.get("ubicacion_clave", npc.datos.get("ubicacion_clave", ""))).strip_edges().to_lower()
@@ -204,6 +226,64 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.datos["actividad_actual"] = actividad
 
 
+func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	var hogares: Dictionary = {
+		"elian": "casa_elian",
+		"bruna": "casa_bruna",
+		"darven": "casa_darven",
+		"saira": "casa_saira",
+		"narel": "casa_narel"
+	}
+	var hogar := str(hogares.get(nombre, "plaza"))
+	var ubicacion := hogar
+	var actividad := "descansar"
+	var clave := "dia_libre_casa"
+
+	if minutos >= 540 and minutos < 720:
+		clave = "dia_libre_manana"
+		actividad = "pasear"
+		match nombre:
+			"darven":
+				ubicacion = "cuartel"
+				actividad = "recorrer_alrededores"
+			"narel":
+				ubicacion = "archivo_real"
+				actividad = "leer"
+			_:
+				ubicacion = "plaza"
+	elif minutos >= 840 and minutos < 1020:
+		clave = "dia_libre_tarde"
+		actividad = "pasear"
+		match nombre:
+			"saira":
+				ubicacion = "casa_comercio"
+				actividad = "visitar_comerciantes"
+			"narel":
+				ubicacion = "casa_estudio"
+				actividad = "visitar_estudio"
+			"darven":
+				ubicacion = "plaza"
+				actividad = "descansar"
+			_:
+				ubicacion = "plaza"
+	elif minutos >= 1020 and minutos < 1200:
+		clave = "dia_libre_encuentro"
+		ubicacion = "plaza"
+		actividad = "conversar"
+	elif minutos >= 1200:
+		clave = "dia_libre_regreso"
+		ubicacion = hogar
+		actividad = "volver_a_casa"
+
+	return {
+		"clave": clave,
+		"ubicacion_clave": ubicacion,
+		"actividad_clave": actividad,
+		"activo": true
+	}
+
+
 func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int) -> Dictionary:
 	if not rutinas_variant is Array:
 		return {}
@@ -232,7 +312,7 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 			esta_activa = true
 		elif minutos < fin:
 			esta_activa = true
-			dia_referencia = posmod(dia_semana - 1, 7)
+			dia_referencia = posmod(dia_semana - 1, 5)
 
 		if not esta_activa or not _coincide_dia(rutina.get("dias_semana", []), dia_referencia):
 			continue
