@@ -186,6 +186,13 @@ func _iniciar_zonas() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _es_modo_historia() and event is InputEventKey:
+		var tecla_historia := event as InputEventKey
+		if tecla_historia.pressed and not tecla_historia.echo:
+			var codigo := tecla_historia.keycode if tecla_historia.keycode != KEY_NONE else tecla_historia.physical_keycode
+			if codigo in [KEY_M, KEY_G, KEY_T, KEY_F, KEY_SLASH, KEY_KP_DIVIDE]:
+				get_viewport().set_input_as_handled()
+				return
 	var input_controller = PLAYER_INPUT_CONTROLLER_SCRIPT.new()
 	if not input_controller.es_combinacion_viaje(event):
 		return
@@ -194,6 +201,10 @@ func _input(event: InputEvent) -> void:
 	if _realm_menu.has_method("alternar"):
 		_realm_menu.call("alternar", _supabase_client, GameState, _zone_manager.obtener_tipo_actual())
 		get_viewport().set_input_as_handled()
+
+
+func _es_modo_historia() -> bool:
+	return is_instance_valid(_zone_manager) and _zone_manager.obtener_tipo_actual() == "historia:reserva_carmesi"
 
 
 func _al_solicitar_destino_reino(clave: String) -> void:
