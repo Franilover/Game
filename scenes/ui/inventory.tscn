@@ -80,6 +80,20 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_tabs")
 text = "Inventario"
 
+[node name="Notas" type="Button" parent="Window/Margin/Column/TabButtons" unique_id=3001000208]
+visible = false
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.52, 0.35, 1)
+theme_override_colors/font_hovered_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/focus = SubResource("StyleBox_tab_focus")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_tabs")
+text = "Notas"
+
 [node name="Crafteo" type="Button" parent="Window/Margin/Column/TabButtons" unique_id=3001000206]
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
@@ -309,4 +323,24 @@ script = ExtResource("5_relationships")
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("6_admin_inventory")
+
+[node name="Notas" type="VBoxContainer" parent="Window/Margin/Column/Tabs" unique_id=3001000107]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="NotesTitle" type="Label" parent="Window/Margin/Column/Tabs/Notas"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
+theme_override_font_sizes/font_size = 16
+text = "NOTAS DE AURORA"
+
+[node name="NotesText" type="TextEdit" parent="Window/Margin/Column/Tabs/Notas"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.93, 0.86, 0.72, 1)
+theme_override_colors/font_placeholder_color = Color(0.65, 0.52, 0.35, 1)
+theme_override_font_sizes/font_size = 12
+placeholder_text = "Escribe aquí los detalles que Aurora quiera recordar..."
+wrap_mode = 1
 
