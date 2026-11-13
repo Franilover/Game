@@ -660,6 +660,7 @@ func _materializar_npcs_reino_torres() -> void:
 		npc.global_position = zona.to_global(posiciones[nombre])
 		npc.set_meta("personaje_game_id", personaje_id)
 		npc.add_to_group("torres_game_npc")
+		npc.remove_from_group("damageable")
 
 		var ai := npc.get_node_or_null("AIController")
 		if ai != null:
