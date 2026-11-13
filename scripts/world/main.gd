@@ -49,6 +49,7 @@ const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/pl
 @onready var _realm_menu: Control = $UI/RealmMenu
 @onready var _story_loading_overlay: Control = $UI/StoryLoadingOverlay
 var _reino_descubrimiento_elapsed: float = 0.0
+var _torres_rutina_elapsed: float = 0.0
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
@@ -272,6 +273,11 @@ func _process(delta: float) -> void:
 			_camera = camara_en_escena
 			_configurar_camara()
 	_seguir_jugador()
+
+	_torres_rutina_elapsed += delta
+	if _torres_rutina_elapsed >= 0.5:
+		_torres_rutina_elapsed = 0.0
+		_actualizar_rutinas_npcs_torres()
 
 	_reino_descubrimiento_elapsed += delta
 	if _reino_descubrimiento_elapsed >= 0.5:
@@ -671,6 +677,90 @@ func _materializar_npcs_reino_torres() -> void:
 
 	if creados > 0:
 		print("Main: NPC de Reino Torres materializados desde Supabase → ", creados)
+
+
+func _convertir_hora_rutina_a_minutos(valor: Variant) -> int:
+	var partes := str(valor).strip_edges().split(":")
+	if partes.size() < 2:
+		return -1
+	return clampi(int(partes[0]), 0, 23) * 60 + clampi(int(partes[1]), 0, 59)
+
+
+func _actualizar_rutinas_npcs_torres() -> void:
+	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "reino_torres":
+		return
+	if not is_instance_valid(_world_atmosphere):
+		return
+
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return
+	var zona := _zone_manager.obtener_zona_actual() as Node2D
+	if not is_instance_valid(zona):
+		return
+
+	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 7)
+	var minutos_actuales := int(round(float(tiempo.get("hora_del_dia", 0.0)) * 60.0))
+	var posiciones := {
+		"panaderia": Vector2(-205.0, -78.0),
+		"forja": Vector2(-320.0, -122.0),
+		"cuartel": Vector2(690.0, -248.0),
+		"registro": Vector2(690.0, -170.0),
+		"casa_comercio": Vector2(890.0, -260.0),
+		"casa_estudio": Vector2(-370.0, -482.0),
+		"archivo_real": Vector2(-130.0, -572.0)
+	}
+
+	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not npc_variant is Creature or not is_instance_valid(npc_variant):
+			continue
+		var npc := npc_variant as Creature
+		var rutinas_variant: Variant = npc.datos.get("rutinas", [])
+		if not rutinas_variant is Array:
+			continue
+
+		var rutina_actual: Dictionary = {}
+		var prioridad_actual := -2147483648
+		for rutina_variant in rutinas_variant as Array:
+			if not rutina_variant is Dictionary:
+				continue
+			var rutina := rutina_variant as Dictionary
+			var dias_variant: Variant = rutina.get("dias_semana", [])
+			if dias_variant is Array and not (dias_variant as Array).is_empty() and dia_semana not in (dias_variant as Array):
+				continue
+			var inicio := _convertir_hora_rutina_a_minutos(rutina.get("hora_inicio", ""))
+			var fin := _convertir_hora_rutina_a_minutos(rutina.get("hora_fin", ""))
+			if inicio < 0 or fin <= inicio or minutos_actuales < inicio or minutos_actuales >= fin:
+				continue
+			var prioridad := int(rutina.get("prioridad", 0))
+			if rutina_actual.is_empty() or prioridad > prioridad_actual:
+				rutina_actual = rutina
+				prioridad_actual = prioridad
+
+		var clave_rutina := str(rutina_actual.get("clave", "descanso"))
+		var ubicacion := str(rutina_actual.get("ubicacion_clave", npc.datos.get("ubicacion_clave", "")))
+		var actividad := str(rutina_actual.get("actividad_clave", "descansar"))
+		if str(npc.get_meta("rutina_actual", "")) == clave_rutina and str(npc.get_meta("rutina_ubicacion", "")) == ubicacion:
+			continue
+		npc.set_meta("rutina_actual", clave_rutina)
+		npc.set_meta("rutina_ubicacion", ubicacion)
+		npc.datos["actividad_actual"] = actividad
+
+		if not posiciones.has(ubicacion):
+			continue
+		var destino := zona.to_global(posiciones[ubicacion])
+		var distancia := npc.global_position.distance_to(destino)
+		if distancia <= 6.0:
+			npc.global_position = destino
+			continue
+
+		var tween_previo: Variant = npc.get_meta("rutina_tween", null)
+		if tween_previo is Tween and (tween_previo as Tween).is_running():
+			(tween_previo as Tween).kill()
+		var tween := npc.create_tween()
+		npc.set_meta("rutina_tween", tween)
+		var duracion := clampf(distancia / 90.0, 0.6, 3.5)
+		tween.tween_property(npc, "global_position", destino, duracion).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 ## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
