@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbqv2cii7qbmc"
-path="res://.godot/imported/Plava.png-6e3b10461fb09271fb75cfb6e2b84987.ctex"
+uid="uid://b58agoak7r8sb"
+path="res://.godot/imported/Plavar.png-528d721295e0b395e036b011765c7b63.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/garumis/Plava.png"
-dest_files=["res://.godot/imported/Plava.png-6e3b10461fb09271fb75cfb6e2b84987.ctex"]
+source_file="res://assets/art/garumis/Plavar.png"
+dest_files=["res://.godot/imported/Plavar.png-528d721295e0b395e036b011765c7b63.ctex"]
 
 [params]
 
