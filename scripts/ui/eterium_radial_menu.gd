@@ -91,11 +91,17 @@ func _input(event: InputEvent) -> void:
 	var tecla := event as InputEventKey
 	var es_espacio := tecla.keycode == KEY_SPACE or tecla.physical_keycode == KEY_SPACE
 	if es_espacio:
-		if not tecla.echo:
-			if tecla.pressed:
-				_al_presionar_espacio()
+		if tecla.pressed and not tecla.echo:
+			if _estado_minijuego == "curacion":
+				_registrar_toque_curacion()
+			elif tecla.ctrl_pressed:
+				_iniciar_minijuego_curacion()
+				if _estado_minijuego == "curacion":
+					_registrar_toque_curacion()
 			else:
-				_al_soltar_espacio()
+				_al_presionar_espacio()
+		elif not tecla.pressed:
+			_al_soltar_espacio()
 		get_viewport().set_input_as_handled()
 		return
 	if not tecla.pressed or tecla.echo:
@@ -120,6 +126,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	if _estado_minijuego == "curacion":
+		_tiempo_minijuego = maxf(_tiempo_minijuego - delta, 0.0)
+		_minijuego_tiempo.value = _tiempo_minijuego / DURACION_CURACION * 100.0
+		if _tiempo_minijuego <= 0.0:
+			_fallar_minijuego("Se agotó el tiempo de curación.")
 	if _estado_minijuego == "concentracion" and _espacio_pulsado:
 		_tiempo_sostenido += delta
 		_minijuego_barra.value = minf(100.0, _tiempo_sostenido / TIEMPO_CONCENTRACION * 100.0)
@@ -193,6 +204,19 @@ func _iniciar_minijuego_curacion() -> void:
 	_minijuego_barra.value = 0.0
 	_minijuego_tiempo.visible = true
 	_minijuego_tiempo.value = 100.0
+
+
+func _registrar_toque_curacion() -> void:
+	if _estado_minijuego != "curacion":
+		return
+	_toques_curacion += 1
+	_minijuego_barra.value = float(_toques_curacion) / float(TOQUES_CURACION_NECESARIOS) * 100.0
+	_actualizar_panel_minijuego(
+		"Curación · %d/%d" % [_toques_curacion, TOQUES_CURACION_NECESARIOS],
+		"Pulsa ESPACIO hasta completar la barra."
+	)
+	if _toques_curacion >= TOQUES_CURACION_NECESARIOS:
+		_completar_curacion()
 
 
 func _iniciar_concentracion() -> void:
@@ -336,7 +360,7 @@ func _al_cambio_vida_minijuego(vida: int, _maxima: int) -> void:
 	if _ultima_vida >= 0 and vida < _ultima_vida:
 		if _estado_minijuego == "concentracion":
 			_fallar_minijuego("Recibiste daño y perdiste la concentración.")
-		elif _estado_minijuego == "esperando_toques" and _espacio_pulsado:
+		elif _estado_minijuego == "curacion":
 			_fallar_minijuego("Recibiste daño durante la concentración.")
 	_ultima_vida = vida
 
