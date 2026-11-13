@@ -14,6 +14,9 @@ var _move_timer: float = 0.0
 
 var _usar_direccion_externa: bool = false
 var _direccion_externa: Vector2 = Vector2.ZERO
+var _control_rutina: bool = false
+var _ruta_rutina: PackedVector2Array = PackedVector2Array()
+var _indice_ruta_rutina: int = 0
 
 var _rng := RandomNumberGenerator.new()
 
@@ -35,6 +38,9 @@ func configurar(
 
 	_move_timer = 0.0
 	_move_direction = Vector2.ZERO
+	_control_rutina = false
+	_ruta_rutina.clear()
+	_indice_ruta_rutina = 0
 
 
 func configurar_chunk(nuevos_limites: Rect2) -> void:
@@ -46,6 +52,12 @@ func procesar(delta: float) -> void:
 		return
 
 	if not is_instance_valid(creature):
+		return
+
+	# Las rutinas de NPC usan rutas calculadas sobre la geometría estática.
+	# Este control tiene prioridad sobre la movilidad autónoma de criaturas.
+	if _control_rutina:
+		_procesar_ruta_rutina()
 		return
 
 	# Supabase es la fuente canónica: una criatura configurada como inmóvil
@@ -99,6 +111,48 @@ func procesar(delta: float) -> void:
 	_mantener_en_chunk()
 
 
+func establecer_ruta(ruta: PackedVector2Array) -> void:
+	_control_rutina = true
+	_ruta_rutina = ruta
+	_indice_ruta_rutina = 0
+	if creature == null or not is_instance_valid(creature):
+		return
+	while _indice_ruta_rutina < _ruta_rutina.size() and creature.global_position.distance_to(_ruta_rutina[_indice_ruta_rutina]) <= 7.0:
+		_indice_ruta_rutina += 1
+	if _indice_ruta_rutina >= _ruta_rutina.size():
+		creature.velocity = Vector2.ZERO
+
+
+func detener_por_rutina() -> void:
+	_control_rutina = true
+	_ruta_rutina.clear()
+	_indice_ruta_rutina = 0
+	_move_direction = Vector2.ZERO
+	_direccion_externa = Vector2.ZERO
+	if creature != null and is_instance_valid(creature):
+		creature.velocity = Vector2.ZERO
+
+
+func _procesar_ruta_rutina() -> void:
+	if creature == null or not is_instance_valid(creature):
+		return
+	if _indice_ruta_rutina >= _ruta_rutina.size() or move_speed <= 0.0:
+		creature.velocity = Vector2.ZERO
+		return
+
+	var destino := _ruta_rutina[_indice_ruta_rutina]
+	if creature.global_position.distance_to(destino) <= 7.0:
+		_indice_ruta_rutina += 1
+		if _indice_ruta_rutina >= _ruta_rutina.size():
+			creature.velocity = Vector2.ZERO
+			return
+		destino = _ruta_rutina[_indice_ruta_rutina]
+
+	var direccion := creature.global_position.direction_to(destino)
+	creature.velocity = direccion * move_speed
+	creature.move_and_slide()
+
+
 func establecer_direccion(direccion: Vector2) -> void:
 	if direccion.length_squared() <= 0.001:
 		_direccion_externa = Vector2.ZERO
@@ -117,6 +171,9 @@ func liberar_control() -> void:
 
 
 func detener() -> void:
+	_control_rutina = false
+	_ruta_rutina.clear()
+	_indice_ruta_rutina = 0
 	_move_direction = Vector2.ZERO
 	_direccion_externa = Vector2.ZERO
 
