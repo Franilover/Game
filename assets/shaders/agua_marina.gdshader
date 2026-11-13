@@ -1,11 +1,10 @@
 shader_type canvas_item;
 
 // La textura base sigue usando UV para respetar el atlas de cada tile.
-// La animación usa coordenadas globales: todas las piezas de agua comparten
-// la misma fase y las ondas continúan entre tiles y entre capas del Dual Grid.
+// El patrón usa coordenadas globales y permanece completamente estático.
+// Todas las piezas de agua comparten las mismas ondas entre tiles y capas.
 varying vec2 posicion_mundo;
 
-uniform float velocidad_onda : hint_range(0.0, 3.0) = 1.15;
 uniform float intensidad_onda : hint_range(0.0, 0.35) = 0.19;
 uniform float escala_onda : hint_range(0.005, 0.08) = 0.025;
 
@@ -20,14 +19,14 @@ void fragment() {
 	// el patrón en los límites de cada celda.
 	vec2 p = floor(posicion_mundo / 2.0) * 2.0;
 
-	// Ondas largas y diagonales que atraviesan toda la superficie continua.
-	float fase = p.y * escala_onda + p.x * escala_onda * 0.34 + TIME * velocidad_onda;
-	float modulacion = sin(p.x * escala_onda * 0.58 - TIME * 0.72) * 0.42;
+	// Ondas largas y diagonales fijas que atraviesan toda la superficie continua.
+	float fase = p.y * escala_onda + p.x * escala_onda * 0.34;
+	float modulacion = sin(p.x * escala_onda * 0.58) * 0.42;
 	float onda = sin(fase + modulacion);
 	float cresta = smoothstep(0.18, 0.92, onda);
 
 	// Reflejos secundarios con otra dirección y longitud de onda.
-	float fase_reflejo = p.y * escala_onda * 1.56 - p.x * escala_onda * 0.48 - TIME * 1.55;
+	float fase_reflejo = p.y * escala_onda * 1.56 - p.x * escala_onda * 0.48;
 	float reflejo = smoothstep(0.70, 0.98, sin(fase_reflejo) * 0.5 + 0.5);
 
 	float pulso = onda * 0.5 + 0.5;
