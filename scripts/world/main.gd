@@ -38,6 +38,7 @@ const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
+const NPC_SCHEDULE_SYSTEM_SCRIPT = preload("res://scripts/world/npc_schedule_system.gd")
 const CUTSCENE_DIRECTOR_SCRIPT = preload("res://scripts/gameplay/cutscene_director.gd")
 
 # Perfiles visuales locales por zona. Para habilitar uno en Aventura en el futuro,
@@ -51,6 +52,7 @@ const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/pl
 @onready var _story_loading_overlay: Control = $UI/StoryLoadingOverlay
 var _reino_descubrimiento_elapsed: float = 0.0
 var _torres_rutina_elapsed: float = 0.0
+var _npc_schedule_system: NPCScheduleSystem = null
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
@@ -99,6 +101,14 @@ func _ready() -> void:
 	if _zone_manager == null:
 		push_error("Main: falta World/ZoneManager.")
 		return
+
+	_npc_schedule_system = NPC_SCHEDULE_SYSTEM_SCRIPT.new() as NPCScheduleSystem
+	if is_instance_valid(_npc_schedule_system):
+		_npc_schedule_system.name = "NPCScheduleSystem"
+		add_child(_npc_schedule_system)
+		_npc_schedule_system.configurar(_world_atmosphere, _zone_manager)
+	else:
+		push_error("Main: no se pudo inicializar NPCScheduleSystem.")
 
 	if not _zone_manager.zona_cambiada.is_connected(_al_cambio_de_zona):
 		_zone_manager.zona_cambiada.connect(_al_cambio_de_zona)
@@ -603,15 +613,6 @@ func _materializar_npcs_reino_torres() -> void:
 	if not is_instance_valid(zona):
 		return
 
-	# Posiciones locales frente a los edificios de trabajo de la escena fija.
-	var posiciones := {
-		"Elian": Vector2(-205.0, -78.0),
-		"Bruna": Vector2(-320.0, -122.0),
-		"Darven": Vector2(690.0, -248.0),
-		"Saira": Vector2(890.0, -260.0),
-		"Narel": Vector2(-370.0, -482.0)
-	}
-
 	var existentes: Dictionary = {}
 	for npc_existente in get_tree().get_nodes_in_group("torres_game_npc"):
 		if npc_existente is Creature and is_instance_valid(npc_existente):
@@ -622,15 +623,17 @@ func _materializar_npcs_reino_torres() -> void:
 		if not personaje_variant is Dictionary:
 			continue
 		var personaje := personaje_variant as Dictionary
-		var nombre := str(personaje.get("nombre", "")).strip_edges()
-		if not posiciones.has(nombre):
-			continue
-		if str(personaje.get("reino_clave", "")).to_lower() != "torres":
+		if str(personaje.get("reino_clave", "")).strip_edges().to_lower() != "torres":
 			continue
 
 		var personaje_id := str(personaje.get("id", "")).strip_edges()
 		if personaje_id.is_empty() or existentes.has(personaje_id):
 			continue
+
+		var nombre := str(personaje.get("nombre", "NPC")).strip_edges()
+		var ubicacion := str(personaje.get("ubicacion_clave", "")).strip_edges().to_lower()
+		if ubicacion.is_empty() or ubicacion == "null" or not NPCScheduleSystem.tiene_ubicacion(ubicacion):
+			ubicacion = "plaza"
 
 		var criatura_id := str(personaje.get("criatura_id", "")).strip_edges()
 		var criatura_data := WorldData.obtener_criatura(criatura_id).duplicate(true)
@@ -642,7 +645,7 @@ func _materializar_npcs_reino_torres() -> void:
 		criatura_data["personaje_game_id"] = personaje_id
 		criatura_data["reino_game_id"] = str(personaje.get("reino_game_id", ""))
 		criatura_data["reino_nombre"] = "Torres"
-		criatura_data["ubicacion_clave"] = str(personaje.get("ubicacion_clave", ""))
+		criatura_data["ubicacion_clave"] = ubicacion
 		var rutinas_variant: Variant = personaje.get("rutinas", [])
 		criatura_data["rutinas"] = rutinas_variant.duplicate(true) if rutinas_variant is Array else []
 
@@ -655,7 +658,11 @@ func _materializar_npcs_reino_torres() -> void:
 			push_warning("Main: no se pudo instanciar el NPC " + nombre)
 			continue
 
-		npc.move_speed = 0.0
+		# Los NPC usan el movimiento del cuerpo CharacterBody2D, con máscara
+		# para geometría estática. No bloquean al jugador ni entre sí.
+		npc.move_speed = 48.0
+		npc.collision_layer = 0
+		npc.collision_mask = 1
 		npc.mostrar_nombre_debug = false
 		npc.configurar_dependencias(
 			_dialogue_system,
@@ -666,7 +673,16 @@ func _materializar_npcs_reino_torres() -> void:
 		)
 		npc.configurar(criatura_data)
 		$Entities.add_child(npc)
-		npc.global_position = zona.to_global(posiciones[nombre])
+
+		var desplazamiento_plaza := Vector2.ZERO
+		if ubicacion == "plaza":
+			desplazamiento_plaza = Vector2(
+				float((creados % 3) - 1) * 28.0,
+				float(int(creados / 3)) * 24.0
+			)
+		npc.global_position = zona.to_global(
+			NPCScheduleSystem.obtener_posicion_inicial(ubicacion) + desplazamiento_plaza
+		)
 		npc.set_meta("personaje_game_id", personaje_id)
 		npc.add_to_group("torres_game_npc")
 		npc.remove_from_group("damageable")
@@ -675,12 +691,12 @@ func _materializar_npcs_reino_torres() -> void:
 		if ai != null:
 			ai.set_process(false)
 			ai.set_physics_process(false)
-		var movimiento := npc.get_node_or_null("CreatureMovement")
+		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 		if movimiento != null:
-			if movimiento.has_method("detener"):
-				movimiento.call("detener")
+			movimiento.detener_por_rutina()
 			movimiento.set_process(false)
 			movimiento.set_physics_process(false)
+
 		existentes[personaje_id] = true
 		creados += 1
 
@@ -688,88 +704,9 @@ func _materializar_npcs_reino_torres() -> void:
 		print("Main: NPC de Reino Torres materializados desde Supabase → ", creados)
 
 
-func _convertir_hora_rutina_a_minutos(valor: Variant) -> int:
-	var partes := str(valor).strip_edges().split(":")
-	if partes.size() < 2:
-		return -1
-	return clampi(int(partes[0]), 0, 23) * 60 + clampi(int(partes[1]), 0, 59)
-
-
 func _actualizar_rutinas_npcs_torres() -> void:
-	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "reino_torres":
-		return
-	if not is_instance_valid(_world_atmosphere):
-		return
-
-	var tiempo := _world_atmosphere.obtener_tiempo()
-	if not bool(tiempo.get("calendario_cargado", false)):
-		return
-	var zona := _zone_manager.obtener_zona_actual() as Node2D
-	if not is_instance_valid(zona):
-		return
-
-	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 7)
-	var minutos_actuales := int(round(float(tiempo.get("hora_del_dia", 0.0)) * 60.0))
-	var posiciones := {
-		"panaderia": Vector2(-205.0, -78.0),
-		"forja": Vector2(-320.0, -122.0),
-		"cuartel": Vector2(690.0, -248.0),
-		"registro": Vector2(690.0, -170.0),
-		"casa_comercio": Vector2(890.0, -260.0),
-		"casa_estudio": Vector2(-370.0, -482.0),
-		"archivo_real": Vector2(-130.0, -572.0)
-	}
-
-	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not npc_variant is Creature or not is_instance_valid(npc_variant):
-			continue
-		var npc := npc_variant as Creature
-		var rutinas_variant: Variant = npc.datos.get("rutinas", [])
-		if not rutinas_variant is Array:
-			continue
-
-		var rutina_actual: Dictionary = {}
-		var prioridad_actual := -2147483648
-		for rutina_variant in rutinas_variant as Array:
-			if not rutina_variant is Dictionary:
-				continue
-			var rutina := rutina_variant as Dictionary
-			var dias_variant: Variant = rutina.get("dias_semana", [])
-			if dias_variant is Array and not (dias_variant as Array).is_empty() and dia_semana not in (dias_variant as Array):
-				continue
-			var inicio := _convertir_hora_rutina_a_minutos(rutina.get("hora_inicio", ""))
-			var fin := _convertir_hora_rutina_a_minutos(rutina.get("hora_fin", ""))
-			if inicio < 0 or fin <= inicio or minutos_actuales < inicio or minutos_actuales >= fin:
-				continue
-			var prioridad := int(rutina.get("prioridad", 0))
-			if rutina_actual.is_empty() or prioridad > prioridad_actual:
-				rutina_actual = rutina
-				prioridad_actual = prioridad
-
-		var clave_rutina := str(rutina_actual.get("clave", "descanso"))
-		var ubicacion := str(rutina_actual.get("ubicacion_clave", npc.datos.get("ubicacion_clave", "")))
-		var actividad := str(rutina_actual.get("actividad_clave", "descansar"))
-		if str(npc.get_meta("rutina_actual", "")) == clave_rutina and str(npc.get_meta("rutina_ubicacion", "")) == ubicacion:
-			continue
-		npc.set_meta("rutina_actual", clave_rutina)
-		npc.set_meta("rutina_ubicacion", ubicacion)
-		npc.datos["actividad_actual"] = actividad
-
-		if not posiciones.has(ubicacion):
-			continue
-		var destino := zona.to_global(posiciones[ubicacion])
-		var distancia := npc.global_position.distance_to(destino)
-		if distancia <= 6.0:
-			npc.global_position = destino
-			continue
-
-		var tween_previo: Variant = npc.get_meta("rutina_tween", null)
-		if tween_previo is Tween and (tween_previo as Tween).is_running():
-			(tween_previo as Tween).kill()
-		var tween := npc.create_tween()
-		npc.set_meta("rutina_tween", tween)
-		var duracion := clampf(distancia / 90.0, 0.6, 3.5)
-		tween.tween_property(npc, "global_position", destino, duracion).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if is_instance_valid(_npc_schedule_system):
+		_npc_schedule_system.actualizar(0.5)
 
 
 ## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
