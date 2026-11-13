@@ -54,6 +54,9 @@ func _ready() -> void:
 	_crear_interfaz_construccion()
 	_reconstruir_visual_decoraciones()
 	_crear_prompt_entrada()
+	var interior_inicial := _obtener_interior()
+	if is_instance_valid(interior_inicial):
+		interior_inicial.call("establecer_activo", false)
 	call_deferred("_inicializar_terreno_dual")
 	call_deferred("_restaurar_interior_guardado")
 
@@ -330,7 +333,7 @@ func _input(event: InputEvent) -> void:
 		if _interior_abierto:
 			var interior := _obtener_interior()
 			if is_instance_valid(interior):
-				interior.alternar_editor()
+				interior.call("alternar_editor")
 		else:
 			_alternar_modo_construccion()
 		get_viewport().set_input_as_handled()
@@ -581,8 +584,8 @@ func _puede_usar_puerta() -> bool:
 	return jugador.global_position.distance_to(objetivo) <= 68.0
 
 
-func _obtener_interior() -> Node:
-	return get_node_or_null("InteriorCasa")
+func _obtener_interior() -> Node2D:
+	return get_node_or_null("InteriorCasa") as Node2D
 
 
 func _establecer_interior(activo: bool, mover_jugador: bool) -> void:
@@ -613,7 +616,7 @@ func _establecer_interior(activo: bool, mover_jugador: bool) -> void:
 	if mover_jugador:
 		var jugador := _obtener_jugador()
 		if is_instance_valid(jugador):
-			jugador.global_position = Vector2(4000.0, 100.0) if activo else Vector2(0.0, -96.0)
+			jugador.global_position = Vector2(4000.0, 0.0) if activo else Vector2(0.0, -96.0)
 	_actualizar_limites_camara_interior(activo)
 	if mover_jugador:
 		_guardar_cambios_hogar()

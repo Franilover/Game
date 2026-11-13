@@ -35,6 +35,7 @@ func _ready() -> void:
 	_previa.visible = false
 	add_child(_previa)
 	_crear_interfaz()
+	_capa_ui.visible = visible
 	_reconstruir()
 
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/hogar_zone.gd" id="1_hogar"]
 [ext_resource type="Script" path="res://scripts/world/world_terrain.gd" id="3_world_terrain"]
