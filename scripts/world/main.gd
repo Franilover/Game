@@ -680,9 +680,9 @@ func _materializar_npcs_reino_torres() -> void:
 				float((creados % 3) - 1) * 28.0,
 				float(int(creados / 3)) * 24.0
 			)
-		npc.global_position = zona.to_global(
-			NPCScheduleSystem.obtener_posicion_inicial(ubicacion) + desplazamiento_plaza
-		)
+		var posicion_hogar_local := NPCScheduleSystem.obtener_posicion_inicial(ubicacion) + desplazamiento_plaza
+		npc.datos["posicion_hogar_local"] = posicion_hogar_local
+		npc.global_position = zona.to_global(posicion_hogar_local)
 		npc.set_meta("personaje_game_id", personaje_id)
 		npc.add_to_group("torres_game_npc")
 		npc.remove_from_group("damageable")
