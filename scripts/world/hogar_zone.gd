@@ -40,6 +40,12 @@ var _etiqueta_estado: Label
 
 
 func _ready() -> void:
+	_sprite_previo = Sprite2D.new()
+	_sprite_previo.name = "VistaPreviaConstruccion"
+	_sprite_previo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite_previo.z_index = 100
+	_sprite_previo.visible = false
+	add_child(_sprite_previo)
 	_crear_interfaz_construccion()
 	_reconstruir_visual_decoraciones()
 	call_deferred("_inicializar_terreno_dual")
