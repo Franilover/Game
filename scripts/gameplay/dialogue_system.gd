@@ -155,6 +155,12 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 				if lineas.is_empty():
 					return false
 
+	var clave_dialogo := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
+	if clave_dialogo == "principal" and is_instance_valid(_fuente) and relationship_system != null:
+		var personaje_id_interaccion := _fuente.get_personaje_game_id().strip_edges()
+		if not personaje_id_interaccion.is_empty():
+			lineas = _agregar_interaccion_universal(lineas, personaje_id_interaccion)
+
 	_lineas = lineas
 	_acciones.clear()
 
@@ -341,6 +347,88 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if not principal.is_empty():
 		return principal
 	return datos.duplicate(true)
+
+
+func _agregar_interaccion_universal(lineas_originales: Array[Dictionary], personaje_id: String) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	var social: RelationshipSystemService = relationship_system
+	if social == null or not is_instance_valid(_fuente):
+		return lineas_originales
+
+	var estado := social.obtener_estado_dialogo(personaje_id)
+	if estado.is_empty():
+		return lineas_originales
+
+	var relacion := social.obtener_relacion(personaje_id)
+	var nombre := _fuente.nombre_individual.strip_edges()
+	if nombre.is_empty():
+		nombre = _fuente.get_nombre().strip_edges()
+	var clave_nombre := nombre.to_lower()
+	var amistad := float(relacion.get("amistad", 0.0))
+	var saludo := "Hola. ¿Cómo va todo?"
+	var despedida := "Bueno, nos vemos. Que estés bien."
+
+	var saludos_primera := {
+		"elian": "¡Hola! Soy Elian. Creo que todavía no nos conocemos. ¿Cómo te llamas?",
+		"bruna": "Hola. Soy Bruna. Creo que no nos habíamos presentado.",
+		"darven": "Buenas. Soy Darven. No recuerdo haberte visto por aquí.",
+		"saira": "¡Hola! Soy Saira. ¿Cómo te llamas? Me gusta conocer gente nueva.",
+		"narel": "Hola. Soy Narel. Creo que aún no habíamos hablado."
+	}
+	var saludos_dia := {
+		"elian": "¡Hola! Qué bueno verte. ¿Cómo te ha ido hoy?",
+		"bruna": "Hola. ¿Cómo va tu día?",
+		"darven": "Buenas. ¿Todo en orden?",
+		"saira": "¡Hola de nuevo! ¿Cómo te está tratando el día?",
+		"narel": "Hola. ¿Cómo ha estado tu día?"
+	}
+	var saludos_repetidos := {
+		"elian": "¿Otra vez por aquí? Dime, ¿en qué te puedo ayudar?",
+		"bruna": "¿Necesitas algo más?",
+		"darven": "¿Volviste? ¿Hay algo que quieras consultar?",
+		"saira": "¡De nuevo por aquí! ¿Qué necesitas esta vez?",
+		"narel": "Volviste. ¿Querías preguntarme algo más?"
+	}
+	var saludos_cercanos := {
+		"elian": "¡Qué bueno verte! Siempre me alegra que pases por aquí.",
+		"bruna": "Hola. Me alegra verte otra vez.",
+		"darven": "Me alegra verte de nuevo. ¿Cómo has estado?",
+		"saira": "¡Qué gusto verte! Ya hacía falta una buena charla.",
+		"narel": "Qué bueno verte de nuevo. ¿Cómo te ha ido?"
+	}
+	var saludos_distantes := {
+		"elian": "Hola. ¿Necesitas algo?",
+		"bruna": "Hola. Dime qué necesitas.",
+		"darven": "Hola. ¿A qué vienes?",
+		"saira": "Hola. ¿Buscabas algo?",
+		"narel": "Hola. ¿Querías hablar conmigo?"
+	}
+	var despedidas := {
+		"elian": "Bueno, nos vemos. ¡Que te vaya bien!",
+		"bruna": "Está bien. Nos vemos luego.",
+		"darven": "De acuerdo. Nos vemos.",
+		"saira": "¡Nos vemos! Que tengas un buen día.",
+		"narel": "Hasta luego. Cuídate."
+	}
+
+	if bool(estado.get("primera_vez", false)):
+		saludo = str(saludos_primera.get(clave_nombre, "¡Hola! Creo que todavía no nos conocemos. ¿Cómo te llamas?"))
+	elif amistad <= -10.0:
+		saludo = str(saludos_distantes.get(clave_nombre, "Hola. ¿Necesitas algo?"))
+	elif amistad >= 20.0:
+		saludo = str(saludos_cercanos.get(clave_nombre, "¡Qué bueno verte de nuevo! ¿Cómo has estado?"))
+	elif bool(estado.get("primera_del_dia", false)):
+		saludo = str(saludos_dia.get(clave_nombre, "Hola. ¿Cómo va tu día?"))
+	else:
+		saludo = str(saludos_repetidos.get(clave_nombre, "¿Volviste? ¿Necesitabas algo más?"))
+
+	resultado.append({"texto": saludo, "hablante": nombre})
+	resultado.append_array(lineas_originales)
+	resultado.append({
+		"texto": str(despedidas.get(clave_nombre, despedida)),
+		"hablante": nombre
+	})
+	return resultado
 
 func _actualizar_boton_accion() -> void:
 	if action_button == null:
