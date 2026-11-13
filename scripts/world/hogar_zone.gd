@@ -9,6 +9,7 @@ const ALTO := 1600.0
 const TAMANO_CELDA := 32.0
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const CHEST_UI_SCRIPT = preload("res://scripts/ui/hogar_chest_inventory.gd")
 
 const CATALOGO := {
@@ -31,6 +32,7 @@ var _sprites_decoracion: Array[Sprite2D] = []
 var _objetivos_cofre: Array[Node2D] = []
 var _siguiente_id_cofre := 1
 var _cofre_ui: Node = null
+var _objetivo_cofre_activo: Node = null
 var _capa_construccion: CanvasLayer
 var _version_estado := 1
 
@@ -546,13 +548,15 @@ func _agregar_sprite_decoracion(indice: int) -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(sprite)
 	_sprites_decoracion.append(sprite)
-	if str(_decoraciones[indice].get("tipo", "")) == "cofre":
-		var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if tipo in ["cofre", "cama"]:
+		var objetivo: Node2D = WORLD_INTERACTABLE_SCRIPT.new() as Node2D
 		if is_instance_valid(objetivo):
-			objetivo.name = "InteraccionCofreExterior_" + str(indice)
-			objetivo.call("configurar", "Abrir cofre", 112.0,
-				Callable(self, "_puede_abrir_cofre").bind(indice),
-				Callable(self, "_interactuar_cofre").bind(indice))
+			objetivo.name = "InteraccionMueble_" + str(indice)
+			objetivo.position = sprite.position
+			if tipo == "cofre":
+				objetivo.call("configurar_cofre", str(item.get("cofre_id", "hogar_exterior_" + str(indice))), self, indice)
+			else:
+				objetivo.call("configurar_cama")
 			add_child(objetivo)
 		_objetivos_cofre.append(objetivo)
 	else:
@@ -686,7 +690,26 @@ func esta_cofre_abierto() -> bool:
 	return is_instance_valid(_cofre_ui)
 
 
+func registrar_cofre_abierto(interfaz: Node, objetivo: Node) -> void:
+	_cofre_ui = interfaz
+	_objetivo_cofre_activo = objetivo
+	if is_instance_valid(_boton_modo):
+		_boton_modo.visible = false
+
+
+func registrar_cofre_cerrado(interfaz: Node, objetivo: Node) -> void:
+	if _cofre_ui == interfaz:
+		_cofre_ui = null
+	if _objetivo_cofre_activo == objetivo:
+		_objetivo_cofre_activo = null
+	if is_instance_valid(_boton_modo):
+		_boton_modo.visible = not _interior_abierto and not _inventario_abierto and not _menu_viaje_abierto
+
+
 func cerrar_cofre() -> void:
+	if is_instance_valid(_objetivo_cofre_activo) and _objetivo_cofre_activo.has_method("cerrar_cofre"):
+		_objetivo_cofre_activo.call("cerrar_cofre")
+		return
 	if not is_instance_valid(_cofre_ui):
 		_cofre_ui = null
 		return
