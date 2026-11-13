@@ -1,7 +1,7 @@
 shader_type canvas_item;
 
 // Variación superficial determinista para Tierra.
-// Combina iluminación escalonada y matices verdes discretos.
+// Combina iluminación escalonada y matices cálidos discretos.
 // El patrón usa coordenadas del mundo para continuar entre tiles y chunks.
 varying vec2 posicion_mundo;
 
@@ -50,7 +50,7 @@ void fragment() {
 	float zona_color = floor(manchas * 3.0) / 2.0;
 	vec3 tierra_sombra = vec3(1.035, 0.965, 0.885);
 	vec3 tierra_sol = vec3(1.045, 1.015, 0.925);
-	vec3 tinte = mix(verde_sombra, verde_sol, zona_color);
+	vec3 tinte = mix(tierra_sombra, tierra_sol, zona_color);
 	base.rgb *= mix(vec3(1.0), tinte, variacion_color);
 	base.rgb = clamp(base.rgb, vec3(0.0), vec3(1.0));
 
