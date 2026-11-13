@@ -63,12 +63,15 @@ func actualizar(delta: float, puede_regenerar: bool) -> void:
 		regeneration_timer + maxf(delta, 0.0),
 		DURACION_RECARGA_DASH
 	)
-	var nuevo_actual := minf(
+	var nuevo_actual := maximum if regeneration_timer >= DURACION_RECARGA_DASH else minf(
 		regeneration_timer / DURACION_RECARGA_DASH * maximum,
 		maximum
 	)
-	if not is_equal_approx(current, nuevo_actual):
-		current = nuevo_actual
+	var cambio_real := not is_equal_approx(current, nuevo_actual)
+	# Asignar siempre el valor calculado: la comparación aproximada no debe
+	# dejar la carga en 0.99999 cuando el temporizador ya terminó.
+	current = nuevo_actual
+	if cambio_real or current >= maximum:
 		stamina_changed.emit(current, maximum)
 
 func reiniciar() -> void:
