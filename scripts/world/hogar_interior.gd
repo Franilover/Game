@@ -170,7 +170,7 @@ func establecer_inventario_abierto(abierto: bool) -> void:
 	if abierto:
 		_establecer_editor(false)
 	if is_instance_valid(_capa_ui):
-		_capa_ui.visible = visible and not abierto
+		_capa_ui.visible = visible and not abierto and not _menu_viaje_abierto
 
 
 func establecer_menu_viaje_abierto(abierto: bool) -> void:
