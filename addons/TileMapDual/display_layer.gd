@@ -170,3 +170,25 @@ func obtener_diagnostico() -> Dictionary:
 		),
 		"atlas_tiles": _diag_atlas_tiles,
 	}
+
+
+# Fija el origen del patrón procedural en coordenadas del mundo al crear
+# cada DisplayLayer. Así no depende de la cámara ni de cambios de streaming.
+func fijar_origen_shader() -> void:
+	var shader_material := material as ShaderMaterial
+	if shader_material == null or shader_material.shader == null:
+		return
+
+	var tiene_origen := false
+	for uniforme: Dictionary in shader_material.shader.get_shader_uniform_list():
+		if str(uniforme.get("name", "")) == "origen_mundo":
+			tiene_origen = true
+			break
+	if not tiene_origen:
+		return
+
+	# Cada DisplayLayer necesita su propia copia: sus offsets dual-grid
+	# son distintos y no deben sobrescribirse entre sí.
+	var material_local := shader_material.duplicate() as ShaderMaterial
+	material_local.set_shader_parameter("origen_mundo", global_position)
+	material = material_local
