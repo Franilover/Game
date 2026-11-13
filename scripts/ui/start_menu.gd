@@ -329,7 +329,7 @@ func _configurar_layout_responsive() -> void:
 	if area.x <= 0.0 or area.y <= 0.0:
 		return
 	_ajustar_panel_centrado(
-		get_node_or_null("LoginOverlay/LoginPanel") as Control,
+		get_node_or_null("LoginOverlay/LoginCenter/LoginPanel") as Control,
 		Vector2(380.0, 330.0),
 		area
 	)
@@ -592,19 +592,19 @@ func _actualizar_panel_cuenta() -> void:
 
 	else:
 		var titulo: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/Title
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Title
 		)
 
 		var subtitulo: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/Subtitle
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Subtitle
 		)
 
 		var email_label: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/EmailLabel
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/EmailLabel
 		)
 
 		var password_label: Label = (
-			$LoginOverlay/LoginPanel/Margin/Content/PasswordLabel
+			$LoginOverlay/LoginCenter/LoginPanel/Margin/Content/PasswordLabel
 		)
 
 		titulo.text = "Iniciar sesión"
