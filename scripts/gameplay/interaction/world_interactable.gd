@@ -26,10 +26,12 @@ func configurar_cofre(storage_id: String, storage_owner: Node = null, storage_in
 	add_to_group("interactable")
 
 
-func configurar_cama() -> void:
+func configurar_cama(storage_owner: Node = null, storage_index: int = -1) -> void:
 	_action_type = ActionType.BED
 	_interaction_text = "Dormir"
 	_interaction_distance = 72.0
+	_storage_owner = storage_owner
+	_storage_index = storage_index
 	add_to_group("interactable")
 
 
@@ -58,6 +60,10 @@ func can_interact(jugador: Node) -> bool:
 		if is_instance_valid(_storage_owner) and _storage_owner.has_method("esta_cofre_abierto"):
 			if bool(_storage_owner.call("esta_cofre_abierto")):
 				return false
+	if is_instance_valid(_storage_owner) and _storage_owner.has_method("puede_interactuar_mueble"):
+		var tipo := "cofre" if _action_type == ActionType.CHEST else "cama"
+		if not bool(_storage_owner.call("puede_interactuar_mueble", tipo, jugador, _storage_index)):
+			return false
 	return (jugador as Node2D).global_position.distance_to(global_position) <= _interaction_distance
 
 
