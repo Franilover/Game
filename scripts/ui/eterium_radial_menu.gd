@@ -126,6 +126,13 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	# También conserva el botón de concentración del mando (stick derecho).
+	var concentracion_mantenida := Input.is_action_pressed("focus")
+	if concentracion_mantenida and _estado_minijuego in ["", "espera_meditacion"] and not _espacio_pulsado:
+		_al_presionar_espacio()
+	elif _estado_minijuego == "concentracion" and _espacio_pulsado and not concentracion_mantenida:
+		_al_soltar_espacio()
+
 	if _estado_minijuego == "curacion":
 		_tiempo_minijuego = maxf(_tiempo_minijuego - delta, 0.0)
 		_minijuego_tiempo.value = _tiempo_minijuego / DURACION_CURACION * 100.0
