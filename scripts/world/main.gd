@@ -700,7 +700,7 @@ func _materializar_npcs_reino_torres() -> void:
 				float((creados % 3) - 1) * 28.0,
 				float(int(creados / 3)) * 24.0
 			)
-		var posicion_hogar_local: Vector2 = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_inicial(ubicacion) + desplazamiento_plaza
+		var posicion_hogar_local: Vector2 = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_hogar(npc.get_nombre_visual(), ubicacion) + desplazamiento_plaza
 		npc.datos["posicion_hogar_local"] = posicion_hogar_local
 		npc.global_position = zona.to_global(posicion_hogar_local)
 		npc.set_meta("personaje_game_id", personaje_id)
