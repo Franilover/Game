@@ -361,6 +361,14 @@ func configurar(nuevo_tile_size: int) -> void:
 	tile_size = nuevo_tile_size
 	add_to_group("world_terrain_visual")
 
+	# TileMapDual debe crear sus Display antes de recibir celdas. Preparar
+	# todas las capas aquí evita que set_zone consulte claves inexistentes.
+	for zone in range(ZONE_TEXTURES.size()):
+		_crear_capa_terreno(zone)
+
+	# Registrar todos los atlas antes de pintar la primera celda.
+	_preparar_atlas_zonas()
+
 
 func obtener_zona_en_posicion(posicion_global: Vector2) -> int:
 	var posicion_local := to_local(posicion_global)
@@ -369,20 +377,6 @@ func obtener_zona_en_posicion(posicion_global: Vector2) -> int:
 		floori(posicion_local.y / float(maxi(tile_size, 1)))
 	)
 	return int(_cell_zone.get(celda, -1))
-
-	# Las capas TileMapDual necesitan ejecutar _ready() antes de recibir
-	# celdas. Se crean todas por adelantado porque el primer chunk se pinta
-	# justo después de que WorldGenerator les da un frame de inicialización.
-	# Si se crean durante el pintado del chunk, sus Display internos todavía
-	# pueden no existir y sólo las capas de detalles terminan visibles.
-	for zone in range(ZONE_TEXTURES.size()):
-		_crear_capa_terreno(zone)
-
-	# Registrar todos los atlas antes de pintar la primera celda. TileMapDual
-	# reconstruye su TerrainDual al detectar cambios en el TileSet; añadir
-	# atlas de forma perezosa durante el streaming fuerza reconstrucciones
-	# completas repetidas del Display y su caché de celdas.
-	_preparar_atlas_zonas()
 
 
 func _preparar_atlas_zonas() -> void:
