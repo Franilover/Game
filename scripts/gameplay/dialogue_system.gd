@@ -265,7 +265,6 @@ func _mostrar_linea_actual() -> void:
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
 	text_label.text = ""
-	hint_label.text = "[ LMB ] Continuar · [ ESC ] Salir del diálogo"
 	_actualizar_boton_accion()
 
 
@@ -362,7 +361,6 @@ func _ejecutar_accion_dialogo() -> void:
 			action_button.visible = false
 			if cancel_button != null:
 				cancel_button.visible = false
-			hint_label.text = "Decisión registrada · [ LMB ] Continuar"
 			Events.notification_pushed.emit(_obtener_mensaje_reaccion_social(evento, _fuente.get_nombre()))
 			return
 
@@ -375,7 +373,6 @@ func _ejecutar_accion_dialogo() -> void:
 			if mission_manager_local != null and mission_manager_local.aceptar_mision(clave):
 				_acciones.clear()
 				action_button.visible = false
-				hint_label.text = "Misión aceptada · [ LMB ] Continuar"
 				Events.notification_pushed.emit(
 					"Misión aceptada: "
 					+ str(mission_manager_local.buscar_mision_por_clave(clave).get("nombre", clave))
@@ -387,7 +384,6 @@ func _ejecutar_accion_dialogo() -> void:
 				if _fuente.iniciar_seguimiento_jugador(player):
 					_acciones.clear()
 					action_button.visible = false
-					hint_label.text = "Abel te está siguiendo · [ LMB ] Cerrar"
 					return
 
 
@@ -567,16 +563,6 @@ func _crear_interfaz() -> void:
 	cancel_button.add_theme_font_size_override("font_size", 11)
 	cancel_button.pressed.connect(cerrar)
 	_botones_accion.add_child(cancel_button)
-
-	hint_label = Label.new()
-	hint_label.name = "Hint"
-	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	hint_label.add_theme_color_override(
-		"font_color",
-		Color(0.55, 0.48, 0.38, 1.0)
-	)
-	hint_label.add_theme_font_size_override("font_size", 9)
-	column.add_child(hint_label)
 
 	ui_root.add_child(dialogue_panel)
 	PIXEL_UI_THEME.apply(dialogue_panel)
