@@ -47,6 +47,7 @@ var _etiqueta_estado: Label
 var _objetivo_puerta: Node2D
 var _interior_abierto := false
 var _inventario_abierto := false
+var _menu_viaje_abierto := false
 var _interior_guardado_pendiente := false
 var _tiempo_actualizacion_estado := 0.0
 
@@ -279,6 +280,17 @@ func establecer_inventario_abierto(abierto: bool) -> void:
 		interior.call("establecer_inventario_abierto", abierto)
 	if is_instance_valid(_capa_construccion):
 		_capa_construccion.visible = not _interior_abierto and not abierto
+
+
+func establecer_menu_viaje_abierto(abierto: bool) -> void:
+	_menu_viaje_abierto = abierto
+	if abierto:
+		_establecer_modo_construccion(false)
+	var interior := _obtener_interior()
+	if is_instance_valid(interior) and interior.has_method("establecer_menu_viaje_abierto"):
+		interior.call("establecer_menu_viaje_abierto", abierto)
+	if is_instance_valid(_capa_construccion):
+		_capa_construccion.visible = not _interior_abierto and not _inventario_abierto and not abierto
 
 
 func _alternar_modo_construccion() -> void:
