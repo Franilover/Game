@@ -19,8 +19,9 @@ func capturar() -> Dictionary:
 	}
 
 
-static func es_combinacion_viaje(event: InputEvent) -> bool:
+func es_combinacion_viaje(event: InputEvent) -> bool:
 	if not event is InputEventKey:
 		return false
 	var tecla := event as InputEventKey
-	return tecla.pressed and not tecla.echo and tecla.keycode == KEY_M and tecla.ctrl_pressed
+	var es_m := tecla.keycode == KEY_M or tecla.physical_keycode == KEY_M
+	return tecla.pressed and not tecla.echo and es_m and tecla.ctrl_pressed
