@@ -5,6 +5,7 @@ const SLOT_SCENE: PackedScene = preload("res://scenes/ui/inventory_slot.tscn")
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 var _interior: Node = null
+var _contenedor: Node = null
 var _inventario: Node = null
 var _indice_cofre := -1
 var _slots_jugador: Array[InventorySlot] = []
@@ -20,6 +21,18 @@ func abrir(interior: Node, inventario: Node, indice_cofre: int) -> void:
 	_indice_cofre = indice_cofre
 	layer = 45
 	add_to_group("modal_ui")
+	add_to_group("chest_ui")
+	_crear_interfaz()
+	_refrescar()
+
+
+func abrir_contenedor(contenedor: Node, inventario: Node) -> void:
+	_contenedor = contenedor
+	_inventario = inventario
+	_indice_cofre = -1
+	layer = 45
+	add_to_group("modal_ui")
+	add_to_group("chest_ui")
 	_crear_interfaz()
 	_refrescar()
 
@@ -168,7 +181,7 @@ func _al_recibir_arrastre(slot: Button, datos: Dictionary) -> void:
 
 
 func _transferir(contenedor_origen: String, indice_origen: int, contenedor_destino: String, indice_destino: int) -> void:
-	if not is_instance_valid(_inventario) or not is_instance_valid(_interior):
+	if not is_instance_valid(_inventario) or (not is_instance_valid(_interior) and not is_instance_valid(_contenedor)):
 		return
 	if contenedor_origen not in ["jugador", "cofre"] or contenedor_destino not in ["jugador", "cofre"]:
 		return
@@ -180,9 +193,12 @@ func _transferir(contenedor_origen: String, indice_origen: int, contenedor_desti
 	var destino_items: Array = origen_items if contenedor_origen == contenedor_destino else _obtener_items(contenedor_destino)
 	if not _intercambiar_o_apilar(origen_items, indice_origen, destino_items, indice_destino):
 		return
-	if contenedor_origen == "cofre" or contenedor_destino == "cofre":
+ 	if contenedor_origen == "cofre" or contenedor_destino == "cofre":
 		var datos_cofre: Array = origen_items if contenedor_origen == "cofre" else destino_items
-		_interior.call("establecer_contenido_cofre", _indice_cofre, datos_cofre)
+		if is_instance_valid(_contenedor):
+			_contenedor.call("establecer_contenido_cofre", datos_cofre)
+		elif is_instance_valid(_interior):
+			_interior.call("establecer_contenido_cofre", _indice_cofre, datos_cofre)
 	_actualizar_inventario_jugador()
 	_refrescar()
 
@@ -192,8 +208,13 @@ func _obtener_items(contenedor: String) -> Array:
 		if items_jugador is Array:
 			return items_jugador
 		return []
-	var items_cofre: Variant = _interior.call("obtener_contenido_cofre", _indice_cofre)
-	return items_cofre if items_cofre is Array else []
+	if is_instance_valid(_contenedor):
+		var items_contenedor: Variant = _contenedor.call("obtener_contenido_cofre")
+		return items_contenedor if items_contenedor is Array else []
+	if is_instance_valid(_interior):
+		var items_cofre: Variant = _interior.call("obtener_contenido_cofre", _indice_cofre)
+		return items_cofre if items_cofre is Array else []
+	return []
 
 
 func _intercambiar_o_apilar(
@@ -275,5 +296,11 @@ func _refrescar() -> void:
 
 
 func _solicitar_cierre() -> void:
-	if is_instance_valid(_interior) and _interior.has_method("cerrar_cofre"):
+	if is_instance_valid(_contenedor) and _contenedor.has_method("cerrar_cofre"):
+		_contenedor.call("cerrar_cofre")
+	elif is_instance_valid(_interior) and _interior.has_method("cerrar_cofre"):
 		_interior.call("cerrar_cofre")
+
+
+func cerrar() -> void:
+	_solicitar_cierre()
