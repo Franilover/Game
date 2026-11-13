@@ -118,11 +118,11 @@ func _crear_interfaz() -> void:
 	_boton_amueblar = Button.new()
 	var boton := _boton_amueblar
 	boton.text = "Amueblar [B]"
-	boton.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	boton.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	boton.offset_left = -164
-	boton.offset_top = 14
+	boton.offset_top = -52
 	boton.offset_right = -16
-	boton.offset_bottom = 52
+	boton.offset_bottom = -14
 	boton.pressed.connect(alternar_editor)
 	PIXEL_UI_THEME.apply(boton)
 	raiz.add_child(boton)
