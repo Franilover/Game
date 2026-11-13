@@ -1,4 +1,4 @@
-extends CanvasLayer
+extends Control
 class_name GarumiBattleParty
 
 ## Encuentro directo: el jugador combate y el Garumi salvaje conserva su salud
@@ -10,7 +10,6 @@ const DISTANCIA_ATAQUE_RIVAL := 58.0
 
 var jugador: Node2D
 var rival: Garumi
-var _ui_root: Control
 var _panel: PanelContainer
 var _nombre_rival: Label
 var _vida_rival: ProgressBar
@@ -22,9 +21,13 @@ var _cooldown_rival := 0.8
 var _finalizando := false
 
 func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
-	# La interfaz del encuentro debe dibujarse por encima del HUD habitual.
-	layer = 120
+	# La interfaz se agrega al CanvasLayer UI existente de Main.
+	z_index = 120
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	size = get_viewport().get_visible_rect().size
 	visible = true
+	if not get_viewport().size_changed.is_connected(_actualizar_tamano_raiz):
+		get_viewport().size_changed.connect(_actualizar_tamano_raiz)
 	jugador = nuevo_jugador
 	rival = nuevo_rival
 	if not is_instance_valid(jugador) or not is_instance_valid(rival):
@@ -35,14 +38,13 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	_actualizar_interfaz()
 	print("GarumiBattleParty: encuentro directo iniciado; combate el jugador, no sus compañeros.")
 
+func _actualizar_tamano_raiz() -> void:
+	if is_instance_valid(self):
+		size = get_viewport().get_visible_rect().size
+
 func _crear_interfaz() -> void:
 	# Barra horizontal superior con el nombre y la salud del rival.
-	_ui_root = Control.new()
-	_ui_root.name = "EncounterUIRoot"
-	_ui_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_ui_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_ui_root)
-
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel = PanelContainer.new()
 	_panel.name = "GarumiWildEncounter"
 	_panel.anchor_left = 0.0
@@ -55,7 +57,7 @@ func _crear_interfaz() -> void:
 	_panel.offset_bottom = 62.0
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.z_index = 80
-	_ui_root.add_child(_panel)
+	add_child(_panel)
 
 	var fila := HBoxContainer.new()
 	fila.add_theme_constant_override("separation", 12)
@@ -95,7 +97,7 @@ func _crear_interfaz() -> void:
 	panel_acciones.offset_bottom = 132.0
 	panel_acciones.z_index = 80
 	panel_acciones.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_ui_root.add_child(panel_acciones)
+	add_child(panel_acciones)
 
 	_estado = Label.new()
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -128,7 +130,7 @@ func _crear_interfaz() -> void:
 	_boton_huir.offset_bottom = -14.0
 	_boton_huir.z_index = 90
 	_boton_huir.pressed.connect(_huir)
-	_ui_root.add_child(_boton_huir)
+	add_child(_boton_huir)
 	PIXEL_UI_THEME.apply(_boton_huir, false)
 
 
@@ -216,6 +218,6 @@ func finalizar() -> void:
 	_cambiar_estado_hud(false)
 	if is_instance_valid(_panel):
 		_panel.queue_free()
-	if is_instance_valid(_ui_root):
-		_ui_root.queue_free()
+	if is_instance_valid(get_viewport()) and get_viewport().size_changed.is_connected(_actualizar_tamano_raiz):
+		get_viewport().size_changed.disconnect(_actualizar_tamano_raiz)
 	queue_free()
