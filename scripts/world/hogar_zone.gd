@@ -131,25 +131,26 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 			if not entrada is Dictionary:
 				continue
 			var item := (entrada as Dictionary).duplicate(true)
-			_decoraciones.append({
-				"tipo": str(item.get("tipo", "decoracion")),
+			var tipo := str(item.get("tipo", "decoracion"))
+			var decoracion := {
+				"tipo": tipo,
 				"x": clampf(float(item.get("x", 0.0)), -ANCHO * 0.5, ANCHO * 0.5),
 				"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5, ALTO * 0.5),
 				"giro": float(item.get("giro", 0.0))
 			}
-			if str(item.get("tipo", "")) == "cofre":
+			if tipo == "cofre":
 				var id_cofre := str(item.get("cofre_id", "")).strip_edges()
-				if id_cofre.is_empty():
+				if id_cofre.is_empty() or _id_cofre_ya_existe(id_cofre):
 					id_cofre = _crear_id_cofre()
-				item["cofre_id"] = id_cofre
+				decoracion["cofre_id"] = id_cofre
 				var contenido: Array = []
 				var guardado: Variant = item.get("contenido", [])
 				if guardado is Array:
 					for objeto in guardado:
 						contenido.append((objeto as Dictionary).duplicate(true) if objeto is Dictionary else {})
 				contenido.resize(32)
-				item["contenido"] = contenido
-			_decoraciones.append(item)
+				decoracion["contenido"] = contenido
+			_decoraciones.append(decoracion)
 	_interior_guardado_pendiente = bool(estado.get("interior_abierto", false))
 	var interior := _obtener_interior()
 	if is_instance_valid(interior):
@@ -158,7 +159,6 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 			interior.call("cargar_estado_guardado", estado_interior as Dictionary)
 	if is_inside_tree():
 		_reconstruir_visual_decoraciones()
-
 
 func establecer_decoraciones(decoraciones: Array) -> void:
 	cargar_estado_guardado({"version": _version_estado, "decoraciones": decoraciones})
@@ -586,9 +586,18 @@ func _crear_contenido_vacio() -> Array:
 
 
 func _crear_id_cofre() -> String:
-	var id := "cofre_exterior_" + str(_siguiente_id_cofre)
-	_siguiente_id_cofre += 1
+	var id := ""
+	while id.is_empty() or _id_cofre_ya_existe(id):
+		id = "cofre_exterior_" + str(_siguiente_id_cofre)
+		_siguiente_id_cofre += 1
 	return id
+
+
+func _id_cofre_ya_existe(id_buscado: String) -> bool:
+	for decoracion in _decoraciones:
+		if str(decoracion.get("cofre_id", "")) == id_buscado:
+			return true
+	return false
 
 
 func obtener_contenido_cofre(indice: int) -> Array:
