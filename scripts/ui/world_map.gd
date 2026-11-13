@@ -17,7 +17,7 @@ var _ultima_actualizacion: Vector2i = Vector2i(2147483647, 2147483647)
 var _texturas: Dictionary = {}
 var _zoom: float = 1.0
 var _tipo_zona: String = "mundo_abierto"
-var _zona_fija: Node = null
+var _zona_fija: Node2D = null
 var _poligonos_fijos: Array[Polygon2D] = []
 var _limites_mapa_fijo := Rect2()
 var _tiempo_marcadores := 0.0
@@ -56,7 +56,7 @@ func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String,
 	_player = jugador
 	_world_context = contexto
 	_tipo_zona = tipo_zona
-	_zona_fija = zona
+	_zona_fija = zona as Node2D
 	_poligonos_fijos.clear()
 	_limites_mapa_fijo = Rect2()
 	if _world_context != null:
