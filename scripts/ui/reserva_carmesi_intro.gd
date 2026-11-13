@@ -116,7 +116,7 @@ func _pagina_siguiente() -> void:
 
 
 func _comenzar_capitulo() -> void:
-	GameState.world_state.flags["historia_iniciar_reserva_carmesi"] = true
+	GameState.preparar_historia_reserva_carmesi(true)
 	var error := get_tree().change_scene_to_file("res://scenes/world/main.tscn")
 	if error != OK:
 		GameState.world_state.flags.erase("historia_iniciar_reserva_carmesi")
