@@ -87,6 +87,10 @@ func _reconstruir_destinos() -> void:
 		agregados["torres"] = true
 
 	_agregar_destino("mundo_abierto", "Mundo Abierto", "EXPLORACIÓN", _tipo_zona_actual == "mundo_abierto")
+	# Hogar usa una escena y un guardado local; no se ofrece dentro del mundo
+	# global multijugador para evitar mezclar parcelas entre jugadores.
+	if not GarliaMultiplayer.es_servidor_dedicado() and not GarliaWorldNetwork.es_cliente_en_mundo_global():
+		_agregar_destino("hogar", "Hogar", "PROPIEDAD PRIVADA", _tipo_zona_actual == "hogar")
 
 
 func _agregar_destino(clave: String, nombre: String, categoria: String, actual: bool) -> void:
