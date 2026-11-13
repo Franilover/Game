@@ -165,10 +165,11 @@ func _actualizar_efectos() -> void:
 	var clima: Dictionary = clima_variant if clima_variant is Dictionary else {}
 	var visibilidad := clampf(float(clima.get("visibilidad", 1.0)), 0.0, 1.0)
 	if _shader_material != null:
-		_shader_material.set_shader_parameter("visibilidad", visibilidad)
 		# La niebla carmesí es un perfil opcional, no un filtro global.
-		var opacidad := 0.34 if _climate_profile_id == "niebla_carmesi" else 0.0
-		_shader_material.set_shader_parameter("opacidad_filtro", opacidad)
+		var perfil_carmesi_activo := _climate_profile_id == "niebla_carmesi"
+		_shader_material.set_shader_parameter("visibilidad", visibilidad if perfil_carmesi_activo else 1.0)
+		_shader_material.set_shader_parameter("opacidad_filtro", 0.34 if perfil_carmesi_activo else 0.0)
+		_shader_material.set_shader_parameter("densidad_particulas", 0.00075 if perfil_carmesi_activo else 0.0)
 	_actualizar_particulas(clima)
 
 
