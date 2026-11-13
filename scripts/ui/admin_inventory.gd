@@ -478,7 +478,7 @@ func _nombres_dias(dias_variant: Variant) -> String:
 		var dia := int(dia_variant)
 		if dia >= 0 and dia < nombres.size():
 			resultado.append(nombres[dia])
-	return ", ".join(resultado) if not resultado.is_empty() else "Sin días asignados"
+	return ", ".join(PackedStringArray(resultado)) if not resultado.is_empty() else "Sin días asignados"
 
 
 func _buscar_npc_aldeano(personaje_id: String, nombre: String) -> Creature:
