@@ -7,6 +7,7 @@ varying vec2 posicion_mundo;
 uniform float escala_mancha : hint_range(0.004, 0.05, 0.001) = 0.014;
 uniform float intensidad : hint_range(0.0, 0.22, 0.005) = 0.11;
 uniform float escala_detalle : hint_range(0.02, 0.16, 0.002) = 0.052;
+uniform float variacion_color : hint_range(0.0, 0.6, 0.01) = 0.35;
 
 float hash_2d(vec2 p) {
 	// Hash compacto sin funciones trigonométricas: más apropiado para GPU integrada.
@@ -39,10 +40,18 @@ void fragment() {
 	float detalle = ruido_valor(mundo_pixel * escala_detalle);
 	float tono = mix(manchas, detalle, 0.22);
 
-	// Cuatro niveles de variación, sin introducir colores ajenos al sprite.
+	// Cuatro niveles de iluminación, sin introducir colores ajenos al sprite.
 	float tono_escalonado = floor(tono * 4.0) / 3.0;
-	float variacion = (tono_escalonado - 0.5) * intensidad;
-	base.rgb = clamp(base.rgb * (1.0 + variacion), vec3(0.0), vec3(1.0));
+	float variacion_luz = (tono_escalonado - 0.5) * intensidad;
+	base.rgb *= 1.0 + variacion_luz;
+
+	// Matices verdes muy próximos entre sí forman pequeñas zonas de hierba densa.
+	float zona_color = floor(manchas * 3.0) / 2.0;
+	vec3 verde_sombra = vec3(0.975, 1.018, 0.965);
+	vec3 verde_sol = vec3(1.015, 1.025, 0.955);
+	vec3 tinte = mix(verde_sombra, verde_sol, zona_color);
+	base.rgb *= mix(vec3(1.0), tinte, variacion_color);
+	base.rgb = clamp(base.rgb, vec3(0.0), vec3(1.0));
 
 	// La transparencia original del atlas se conserva en los bordes DualTileMap.
 	COLOR = base;
