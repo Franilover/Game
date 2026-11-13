@@ -279,7 +279,7 @@ func establecer_inventario_abierto(abierto: bool) -> void:
 	if is_instance_valid(interior) and interior.has_method("establecer_inventario_abierto"):
 		interior.call("establecer_inventario_abierto", abierto)
 	if is_instance_valid(_capa_construccion):
-		_capa_construccion.visible = not _interior_abierto and not abierto
+		_capa_construccion.visible = not _interior_abierto and not abierto and not _menu_viaje_abierto
 
 
 func establecer_menu_viaje_abierto(abierto: bool) -> void:
@@ -778,7 +778,7 @@ func _establecer_interior(activo: bool, mover_jugador: bool) -> void:
 			sprite.visible = not activo
 	_boton_modo.visible = not activo
 	if is_instance_valid(_capa_construccion):
-		_capa_construccion.visible = not activo and not _inventario_abierto
+		_capa_construccion.visible = not activo and not _inventario_abierto and not _menu_viaje_abierto
 	if mover_jugador:
 		var jugador := _obtener_jugador()
 		if is_instance_valid(jugador):
