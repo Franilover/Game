@@ -20,6 +20,7 @@ var _tipo_zona: String = "mundo_abierto"
 var _zona_fija: Node = null
 var _poligonos_fijos: Array[Polygon2D] = []
 var _limites_mapa_fijo := Rect2()
+var _tiempo_marcadores := 0.0
 
 
 func _ready() -> void:
@@ -71,7 +72,7 @@ func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String,
 	_refrescar()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not visible or _player == null:
 		return
 	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
@@ -80,6 +81,11 @@ func _process(_delta: float) -> void:
 		if tile_fijo != _ultima_actualizacion:
 			_ultima_actualizacion = tile_fijo
 			queue_redraw()
+		if _tipo_zona == "reino_torres":
+			_tiempo_marcadores += delta
+			if _tiempo_marcadores >= 0.5:
+				_tiempo_marcadores = 0.0
+				queue_redraw()
 		return
 	if _world_context == null:
 		return
@@ -182,19 +188,93 @@ func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
 				continue
 			var puntos: PackedVector2Array = PackedVector2Array()
 			for punto in poligono.polygon:
-				puntos.append(_punto_a_mapa(poligono.to_global(punto), mapa_rect, limites))
+				var punto_global := poligono.to_global(punto)
+				var punto_local := _zona_fija.to_local(punto_global)
+				puntos.append(_punto_a_mapa(punto_local, mapa_rect, limites))
 			var color := poligono.color
 			if color.a > 0.05:
 				draw_colored_polygon(puntos, color)
-			# Los contornos se mantienen discretos para no convertir el mapa en
-			# una copia pixelada de cada detalle de la escena.
 			if puntos.size() >= 3:
 				var contorno := PackedVector2Array(puntos)
 				contorno.append(puntos[0])
 				draw_polyline(contorno, Color("#302316", 0.45), 1.0, true)
 
-	var posicion := _player.global_position if is_instance_valid(_player) else limites.get_center()
+	var posicion := limites.get_center()
+	if is_instance_valid(_player) and is_instance_valid(_zona_fija):
+		posicion = _zona_fija.to_local(_player.global_position)
 	_dibujar_marcador_jugador(_punto_a_mapa(posicion, mapa_rect, limites))
+	if _tipo_zona == "reino_torres":
+		_dibujar_marcadores_aldeanos(mapa_rect, limites)
+		_dibujar_leyenda_aldeanos()
+
+
+func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
+	if not is_instance_valid(_zona_fija):
+		return
+
+	var posiciones_edificios := {
+		"plaza": Vector2(0.0, 0.0),
+		"panaderia": Vector2(-205.0, -78.0),
+		"forja": Vector2(-320.0, -122.0),
+		"cuartel": Vector2(690.0, -248.0),
+		"registro": Vector2(690.0, -170.0),
+		"casa_comercio": Vector2(890.0, -260.0),
+		"casa_estudio": Vector2(-370.0, -482.0),
+		"archivo_real": Vector2(-130.0, -572.0),
+		"casa_elian": Vector2(220.0, -117.0),
+		"casa_bruna": Vector2(-235.0, 193.0),
+		"casa_darven": Vector2(385.0, -108.0),
+		"casa_saira": Vector2(385.0, 173.0),
+		"casa_narel": Vector2(-520.0, -213.0),
+		"castillo": Vector2(0.0, -125.0)
+	}
+	var aldeanos: Array[Node] = []
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if is_instance_valid(nodo) and nodo is Node2D:
+			aldeanos.append(nodo)
+	aldeanos.sort_custom(func(a: Node, b: Node) -> bool:
+		var datos_a: Variant = a.get("datos")
+		var datos_b: Variant = b.get("datos")
+		var nombre_a := str(datos_a.get("nombre", a.name)) if datos_a is Dictionary else a.name
+		var nombre_b := str(datos_b.get("nombre", b.name)) if datos_b is Dictionary else b.name
+		return nombre_a.to_lower() < nombre_b.to_lower()
+	)
+
+	var paleta := [
+		Color("#e5bd69"), Color("#8fc2a0"), Color("#d99579"),
+		Color("#a9a0d4"), Color("#8ebbd1"), Color("#d6a7c5"),
+		Color("#d1cf91")
+	]
+	var indice := 0
+	for aldeano in aldeanos:
+		var nombre := str(aldeano.call("get_nombre_visual")) if aldeano.has_method("get_nombre_visual") else aldeano.name
+		var posicion_local: Vector2
+		if bool(aldeano.get_meta("rutina_en_edificio", false)):
+			var clave := str(aldeano.get_meta("rutina_ubicacion", ""))
+			posicion_local = posiciones_edificios.get(clave, _zona_fija.to_local((aldeano as Node2D).global_position))
+		else:
+			posicion_local = _zona_fija.to_local((aldeano as Node2D).global_position)
+		if not Rect2(limites.position, limites.size).has_point(posicion_local):
+			continue
+		var punto := _punto_a_mapa(posicion_local, mapa_rect, limites)
+		var color: Color = paleta[indice % paleta.size()]
+		indice += 1
+		draw_circle(punto, 5.0, Color("#21170e"))
+		draw_circle(punto, 3.6, color)
+		draw_circle(punto, 1.2, Color("#fff2c2"))
+		var fuente := ThemeDB.fallback_font
+		if fuente != null:
+			draw_string(fuente, punto + Vector2(7.0, 3.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#21170e"))
+			draw_string(fuente, punto + Vector2(6.0, 2.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#f0dfbd"))
+
+
+func _dibujar_leyenda_aldeanos() -> void:
+	var fuente := ThemeDB.fallback_font
+	if fuente == null:
+		return
+	draw_string(fuente, Vector2(10.0, 13.0), "TORRES · ALDEANOS EN TIEMPO REAL", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 10, Color("#f0dfbd"))
+	draw_circle(Vector2(size.x - 15.0, 12.0), 3.5, Color("#d8b56a"))
+	draw_string(fuente, Vector2(size.x - 84.0, 13.0), "Tú", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#f0dfbd"))
 
 
 func _dibujar_mapa_bosque(mapa_rect: Rect2, limites: Rect2) -> void:
