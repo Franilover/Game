@@ -1608,6 +1608,10 @@ func _spawn_characters_in_chunk(
 		var reino_game_id := str(personaje.get("reino_game_id", ""))
 		var bioma_ids_variant: Variant = personaje.get("bioma_ids", [])
 
+		# Los personajes con ubicación fija pertenecen a escenas de reino.
+		# No deben aparecer aleatoriamente en chunks del mundo procedural.
+		if not str(personaje.get("ubicacion_clave", "")).strip_edges().is_empty():
+			continue
 		if personaje_id.is_empty() or reino_game_id.is_empty():
 			continue
 		if _entity_manager != null and _entity_manager.existe_persistente(personaje_id):
