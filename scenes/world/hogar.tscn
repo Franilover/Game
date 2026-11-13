@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/world/world_terrain.gd" id="3_world_terrain"]
 [ext_resource type="Script" path="res://scripts/world/world_terrain_visual.gd" id="4_world_terrain_visual"]
 [ext_resource type="Texture2D" uid="uid://b0n8tkv8qe56x" path="res://assets/art/places/Casa_Comun.png" id="2_casa"]
+[ext_resource type="Script" path="res://scripts/world/hogar_interior.gd" id="5_interior"]
 
 [sub_resource type="RectangleShape2D" id="BordeVertical"]
 size = Vector2(32, 1600)
@@ -27,6 +28,11 @@ texture_filter = 1
 position = Vector2(0, -260)
 scale = Vector2(1.8333334, 1.8333334)
 texture = ExtResource("2_casa")
+
+[node name="InteriorCasa" type="Node2D" parent="."]
+position = Vector2(4000, 0)
+visible = false
+script = ExtResource("5_interior")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(0, 180)

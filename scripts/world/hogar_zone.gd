@@ -38,6 +38,10 @@ var _posicion_previa_valida := false
 var _boton_modo: Button
 var _panel_construccion: PanelContainer
 var _etiqueta_estado: Label
+var _etiqueta_entrada: Label
+var _interior_abierto := false
+var _interior_guardado_pendiente := false
+var _tiempo_actualizacion_estado := 0.0
 
 
 func _ready() -> void:
@@ -49,7 +53,9 @@ func _ready() -> void:
 	add_child(_sprite_previo)
 	_crear_interfaz_construccion()
 	_reconstruir_visual_decoraciones()
+	_crear_prompt_entrada()
 	call_deferred("_inicializar_terreno_dual")
+	call_deferred("_restaurar_interior_guardado")
 
 
 func _inicializar_terreno_dual() -> void:
@@ -97,7 +103,9 @@ func _inicializar_terreno_dual() -> void:
 func obtener_estado_guardado() -> Dictionary:
 	return {
 		"version": _version_estado,
-		"decoraciones": _decoraciones.duplicate(true)
+		"decoraciones": _decoraciones.duplicate(true),
+		"interior_abierto": _interior_abierto,
+		"interior_decoraciones": _obtener_interior().obtener_estado_guardado() if is_instance_valid(_obtener_interior()) else {}
 	}
 
 
@@ -116,6 +124,12 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 				"y": clampf(float(item.get("y", 0.0)), -ALTO * 0.5, ALTO * 0.5),
 				"giro": float(item.get("giro", 0.0))
 			})
+	_interior_guardado_pendiente = bool(estado.get("interior_abierto", false))
+	var interior := _obtener_interior()
+	if is_instance_valid(interior):
+		var estado_interior: Variant = estado.get("interior_decoraciones", {})
+		if estado_interior is Dictionary:
+			interior.cargar_estado_guardado(estado_interior as Dictionary)
 	if is_inside_tree():
 		_reconstruir_visual_decoraciones()
 
@@ -285,6 +299,12 @@ func _actualizar_estado_interfaz() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("interact") and not event.is_echo():
+		if _puede_usar_puerta():
+			_establecer_interior(not _interior_abierto, true)
+			get_viewport().set_input_as_handled()
+			return
+
 	# Finalizar el arrastre antes de la fase GUI, incluso si se suelta el ratón
 	# encima del panel de construcción.
 	if _modo_construccion and event is InputEventMouseButton:
@@ -303,7 +323,12 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if tecla.keycode == KEY_B:
-		_alternar_modo_construccion()
+		if _interior_abierto:
+			var interior := _obtener_interior()
+			if is_instance_valid(interior):
+				interior.alternar_editor()
+		else:
+			_alternar_modo_construccion()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -496,9 +521,119 @@ func _obtener_textura(tipo: String) -> Texture2D:
 
 func _guardar_cambios_hogar() -> void:
 	var estado := obtener_estado_guardado()
-	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	var jugador := _obtener_jugador()
 	if is_instance_valid(jugador):
 		estado["jugador"] = {"x": jugador.global_position.x, "y": jugador.global_position.y}
 	GameState.world_state.flags["hogar_estado"] = estado
 	if not GameState.active_save_id.is_empty():
 		GameState.call_deferred("guardar_partida")
+
+
+
+func _process(delta: float) -> void:
+	_tiempo_actualizacion_estado += delta
+	var jugador := _obtener_jugador()
+	if is_instance_valid(_etiqueta_entrada):
+		var cerca := _puede_usar_puerta()
+		_etiqueta_entrada.visible = cerca
+		_etiqueta_entrada.text = "E · Salir de la casa" if _interior_abierto else "E · Entrar a la casa"
+	if _tiempo_actualizacion_estado >= 0.35 and is_instance_valid(jugador):
+		_tiempo_actualizacion_estado = 0.0
+		var estado := obtener_estado_guardado()
+		estado["jugador"] = {"x": jugador.global_position.x, "y": jugador.global_position.y}
+		GameState.world_state.flags["hogar_estado"] = estado
+
+
+func _crear_prompt_entrada() -> void:
+	var raiz := get_node_or_null("InterfazConstruccion/Raiz") as Control
+	if not is_instance_valid(raiz):
+		return
+	_etiqueta_entrada = Label.new()
+	_etiqueta_entrada.name = "PromptEntradaCasa"
+	_etiqueta_entrada.text = "E · Entrar a la casa"
+	_etiqueta_entrada.visible = false
+	_etiqueta_entrada.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_etiqueta_entrada.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_etiqueta_entrada.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_etiqueta_entrada.offset_left = -130.0
+	_etiqueta_entrada.offset_top = -76.0
+	_etiqueta_entrada.offset_right = 130.0
+	_etiqueta_entrada.offset_bottom = -48.0
+	_etiqueta_entrada.add_theme_color_override("font_color", Color("#F1E2C7"))
+	_etiqueta_entrada.add_theme_color_override("font_outline_color", Color("#33251D"))
+	_etiqueta_entrada.add_theme_constant_override("outline_size", 4)
+	raiz.add_child(_etiqueta_entrada)
+
+
+func _obtener_jugador() -> Node2D:
+	return get_tree().get_first_node_in_group("player") as Node2D
+
+
+func _puede_usar_puerta() -> bool:
+	var jugador := _obtener_jugador()
+	if not is_instance_valid(jugador):
+		return false
+	var objetivo := Vector2(4000.0, 144.0) if _interior_abierto else Vector2(0.0, -160.0)
+	return jugador.global_position.distance_to(objetivo) <= 68.0
+
+
+func _obtener_interior() -> Node:
+	return get_node_or_null("InteriorCasa")
+
+
+func _establecer_interior(activo: bool, mover_jugador: bool) -> void:
+	if _interior_abierto == activo:
+		return
+	_interior_abierto = activo
+	_establecer_modo_construccion(false)
+	var interior := _obtener_interior()
+	if is_instance_valid(interior):
+		interior.visible = activo
+		interior.set_process(active)
+		interior.set_process_unhandled_input(active)
+		if interior.has_method("establecer_activo"):
+			interior.call("establecer_activo", activo)
+	var terreno := get_node_or_null("WorldTerrain") as Node2D
+	var casa := get_node_or_null("Casa") as CanvasItem
+	var limites := get_node_or_null("Limites") as CanvasItem
+	if is_instance_valid(terreno):
+		terreno.visible = not activo
+	if is_instance_valid(casa):
+		casa.visible = not activo
+	if is_instance_valid(limites):
+		limites.visible = not activo
+	for sprite in _sprites_decoracion:
+		if is_instance_valid(sprite):
+			sprite.visible = not activo
+	_boton_modo.visible = not activo
+	if mover_jugador:
+		var jugador := _obtener_jugador()
+		if is_instance_valid(jugador):
+			jugador.global_position = Vector2(4000.0, 100.0) if activo else Vector2(0.0, -96.0)
+	_actualizar_limites_camara_interior(activo)
+	if mover_jugador:
+		_guardar_cambios_hogar()
+
+
+func _actualizar_limites_camara_interior(activo: bool) -> void:
+	var camara := get_viewport().get_camera_2d()
+	if not is_instance_valid(camara):
+		return
+	if activo:
+		camara.limit_left = 3712
+		camara.limit_right = 4288
+		camara.limit_top = -192
+		camara.limit_bottom = 192
+	else:
+		camara.limit_left = -1200
+		camara.limit_right = 1200
+		camara.limit_top = -800
+		camara.limit_bottom = 800
+	camara.limit_enabled = true
+
+
+func _restaurar_interior_guardado() -> void:
+	if not _interior_guardado_pendiente:
+		return
+	_interior_guardado_pendiente = false
+	_establecer_interior(true, false)
