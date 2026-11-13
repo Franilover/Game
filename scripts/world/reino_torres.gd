@@ -921,6 +921,38 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 		indice += 1
 
 
+func teletransportar_jugador_a_npc(npc: Node) -> bool:
+	if not is_instance_valid(npc) or not is_instance_valid(_jugador):
+		return false
+	if not get_tree().get_nodes_in_group("torres_game_npc").has(npc):
+		return false
+
+	var esta_en_edificio := bool(npc.get_meta("rutina_en_edificio", false))
+	var edificio_destino := str(npc.get_meta("rutina_edificio_id", ""))
+	if _interior_activo and esta_en_edificio and _entrada_interior_id == edificio_destino:
+		_jugador.global_position = (npc as Node2D).global_position + Vector2(42.0, 28.0)
+		return true
+
+	# Salir del interior actual antes de cambiar de edificio o ir al exterior.
+	if _interior_activo:
+		_salir_del_interior()
+
+	if esta_en_edificio:
+		var entrada := _obtener_entrada_por_id(edificio_destino)
+		if entrada.is_empty():
+			return false
+		_entrar_al_interior(entrada)
+		if not _interior_activo or not is_instance_valid(npc):
+			return false
+		_jugador.global_position = (npc as Node2D).global_position + Vector2(42.0, 28.0)
+		return true
+
+	if not npc is Node2D:
+		return false
+	_jugador.global_position = (npc as Node2D).global_position + Vector2(36.0, 24.0)
+	return true
+
+
 func sacar_npc_del_interior(npc: Node) -> void:
 	if not is_instance_valid(npc) or _contenedor_npcs_exterior == null:
 		return
