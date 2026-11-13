@@ -101,11 +101,15 @@ func _inicializar_terreno_dual() -> void:
 
 
 func obtener_estado_guardado() -> Dictionary:
+	var estado_interior: Dictionary = {}
+	var interior := _obtener_interior()
+	if is_instance_valid(interior) and interior.has_method("obtener_estado_guardado"):
+		estado_interior = interior.call("obtener_estado_guardado")
 	return {
 		"version": _version_estado,
 		"decoraciones": _decoraciones.duplicate(true),
 		"interior_abierto": _interior_abierto,
-		"interior_decoraciones": _obtener_interior().obtener_estado_guardado() if is_instance_valid(_obtener_interior()) else {}
+		"interior_decoraciones": estado_interior
 	}
 
 
@@ -299,7 +303,7 @@ func _actualizar_estado_interfaz() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("interact") and not event.is_echo():
+	if event.is_action_pressed("interact") and not (event is InputEventKey and (event as InputEventKey).echo):
 		if _puede_usar_puerta():
 			_establecer_interior(not _interior_abierto, true)
 			get_viewport().set_input_as_handled()
@@ -589,8 +593,8 @@ func _establecer_interior(activo: bool, mover_jugador: bool) -> void:
 	var interior := _obtener_interior()
 	if is_instance_valid(interior):
 		interior.visible = activo
-		interior.set_process(active)
-		interior.set_process_unhandled_input(active)
+		interior.set_process(activo)
+		interior.set_process_unhandled_input(activo)
 		if interior.has_method("establecer_activo"):
 			interior.call("establecer_activo", activo)
 	var terreno := get_node_or_null("WorldTerrain") as Node2D

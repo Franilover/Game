@@ -22,6 +22,7 @@ var _arrastrando := -1
 var _previa: Sprite2D
 var _panel: PanelContainer
 var _estado: Label
+var _capa_ui: CanvasLayer
 
 
 func _ready() -> void:
@@ -97,14 +98,14 @@ func _agregar_muro(nombre: String, posicion: Vector2, tamano: Vector2) -> void:
 
 
 func _crear_interfaz() -> void:
-	var capa := CanvasLayer.new()
-	capa.name = "InterfazAmueblado"
-	capa.layer = 31
-	add_child(capa)
+	_capa_ui = CanvasLayer.new()
+	_capa_ui.name = "InterfazAmueblado"
+	_capa_ui.layer = 31
+	add_child(_capa_ui)
 	var raiz := Control.new()
 	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	raiz.mouse_filter = Control.MOUSE_FILTER_PASS
-	capa.add_child(raiz)
+	_capa_ui.add_child(raiz)
 	var boton := Button.new()
 	boton.text = "Amueblar [B]"
 	boton.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
@@ -144,6 +145,8 @@ func _crear_interfaz() -> void:
 
 func establecer_activo(activo: bool) -> void:
 	visible = activo
+	if is_instance_valid(_capa_ui):
+		_capa_ui.visible = activo
 	set_process(activo)
 	set_process_unhandled_input(activo)
 	if not activo:
