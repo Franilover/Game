@@ -148,6 +148,8 @@ func _ready() -> void:
 	_configurar_referencias_ui()
 	_crear_indicador_recarga_dash()
 	PIXEL_UI_THEME.apply(self)
+	if is_instance_valid(interaction_prompt):
+		PIXEL_UI_THEME.apply_interaction_prompt(interaction_prompt)
 	_crear_selector_manos()
 	_crear_huecos_manos()
 	_preparar_location()
