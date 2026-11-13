@@ -593,6 +593,8 @@ func iniciar_combate_garumi(garumi: Node, jugador: Node) -> void:
 	_garumi_battle_party.set_script(GARUMI_BATTLE_PARTY_SCRIPT)
 	add_child(_garumi_battle_party)
 	_garumi_battle_party.call("iniciar", jugador, garumi)
+
+
 func terminar_arena_garumi(garumi: Node = null) -> void:
 	if is_instance_valid(_garumi_combat_arena):
 		if garumi != null and _garumi_combat_arena.get("garumi") != garumi:
