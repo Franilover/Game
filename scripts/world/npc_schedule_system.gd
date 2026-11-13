@@ -52,7 +52,7 @@ static func obtener_posicion_inicial(clave: String) -> Vector2:
 	return Vector2.ZERO
 
 
-static func obtener_posicion_hogar(nombre_npc: String, ubicacion_respaldo: String = "plaza") -> Vector2:
+static func obtener_clave_hogar(nombre_npc: String, ubicacion_respaldo: String = "plaza") -> String:
 	var clave := nombre_npc.strip_edges().to_lower()
 	var hogares: Dictionary = {
 		"elian": "casa_elian",
@@ -61,8 +61,12 @@ static func obtener_posicion_hogar(nombre_npc: String, ubicacion_respaldo: Strin
 		"saira": "casa_saira",
 		"narel": "casa_narel"
 	}
-	var ubicacion := str(hogares.get(clave, ubicacion_respaldo)).to_lower()
-	return obtener_posicion_inicial(ubicacion)
+	var ubicacion := str(hogares.get(clave, ubicacion_respaldo)).strip_edges().to_lower()
+	return ubicacion if POSICIONES.has(ubicacion) else "plaza"
+
+
+static func obtener_posicion_hogar(nombre_npc: String, ubicacion_respaldo: String = "plaza") -> Vector2:
+	return obtener_posicion_inicial(obtener_clave_hogar(nombre_npc, ubicacion_respaldo))
 
 
 func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
@@ -180,13 +184,14 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos)
 
-	var clave_rutina := str(rutina.get("clave", "descanso_base")).strip_edges()
-	var ubicacion := str(rutina.get("ubicacion_clave", npc.datos.get("ubicacion_clave", ""))).strip_edges().to_lower()
+	var ubicacion_respaldo := str(npc.datos.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+	var hogar := obtener_clave_hogar(npc.get_nombre_visual(), ubicacion_respaldo)
+	var esta_en_horario := not rutina.is_empty()
+	var clave_rutina := str(rutina.get("clave", "regreso_hogar")).strip_edges()
+	var ubicacion := str(rutina.get("ubicacion_clave", hogar)).strip_edges().to_lower()
 	if ubicacion.is_empty() or ubicacion == "null" or not POSICIONES.has(ubicacion):
-		ubicacion = str(npc.datos.get("ubicacion_clave", "")).strip_edges().to_lower()
-	if ubicacion.is_empty() or ubicacion == "null" or not POSICIONES.has(ubicacion):
-		ubicacion = "plaza"
-	var actividad := str(rutina.get("actividad_clave", "descansar")).strip_edges()
+		ubicacion = hogar
+	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
 	if actividad.is_empty():
 		actividad = "descansar"
 
@@ -195,11 +200,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if firma_anterior == firma_nueva:
 		return
 
+	# Cuando no hay una actividad programada, el destino siempre es su hogar.
+	# Esto cubre tanto las horas previas a abrir como los descansos y el cierre.
 	var destino_local: Vector2 = POSICIONES[ubicacion]
-	if rutina.is_empty():
-		var hogar_variant: Variant = npc.datos.get("posicion_hogar_local", null)
-		if hogar_variant is Vector2:
-			destino_local = hogar_variant
+	var hogar_variant: Variant = npc.datos.get("posicion_hogar_local", null)
+	if not esta_en_horario and hogar_variant is Vector2:
+		destino_local = hogar_variant
 	var destino_global := _zona.to_global(destino_local)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
