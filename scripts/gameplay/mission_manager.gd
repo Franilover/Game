@@ -660,6 +660,21 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 	return true
 
 
+## Reintenta entregas que quedaron pendientes cuando el inventario vuelve a tener espacio.
+func reintentar_recompensas_pendientes(inventario: GarliaInventory) -> void:
+	if inventario == null or not is_instance_valid(inventario):
+		return
+	for mision in _misiones:
+		var mision_id := str(mision.get("id", "")).strip_edges()
+		if mision_id.is_empty():
+			continue
+		if str(_estado.get(mision_id, "")) != "completada":
+			continue
+		if bool(_recompensas_reclamadas.get(mision_id, false)):
+			continue
+		entregar_recompensas(mision_id, inventario)
+
+
 func _construir_objeto_recompensa(recompensa: Dictionary) -> Dictionary:
 	var datos_variant: Variant = recompensa.get("datos", {})
 	var datos: Dictionary = datos_variant as Dictionary if datos_variant is Dictionary else {}
