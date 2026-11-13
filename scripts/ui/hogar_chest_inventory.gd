@@ -275,7 +275,7 @@ func _actualizar_inventario_jugador() -> void:
 
 
 func _refrescar() -> void:
-	if not is_instance_valid(_inventario) or not is_instance_valid(_interior):
+	if not is_instance_valid(_inventario) or (not is_instance_valid(_interior) and not is_instance_valid(_contenedor)):
 		return
 	var items_jugador: Array = _obtener_items("jugador")
 	var items_cofre: Array = _obtener_items("cofre")
