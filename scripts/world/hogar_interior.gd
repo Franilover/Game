@@ -150,10 +150,6 @@ func _crear_interfaz() -> void:
 		item.pressed.connect(_seleccionar.bind(str(tipo)))
 		PIXEL_UI_THEME.apply(item)
 		lista.add_child(item)
-	var ayuda := Label.new()
-	ayuda.text = "Clic: colocar/mover · R: girar · Supr: quitar · Esc: salir"
-	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	contenido.add_child(ayuda)
 
 
 func establecer_activo(activo: bool) -> void:
