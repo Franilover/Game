@@ -92,6 +92,57 @@ func _run() -> void:
 	if not manager.esta_completada("mision_contrato"):
 		errores.append("La misión no quedó en estado completada.")
 
+	# Una misión social debe bloquear el regreso hasta completar el objetivo previo.
+	var mision_social := {
+		"id": "mision_elian",
+		"clave": "mision_elian",
+		"nombre": "Una hornada a tiempo",
+		"objetivos": [
+			{
+				"id": "madera",
+				"clave": "reunir_lenia",
+				"tipo": "recoger_item",
+				"item_id": "madera",
+				"cantidad_requerida": 3
+			},
+			{
+				"id": "regreso",
+				"clave": "regreso",
+				"tipo": "hablar_personaje",
+				"personaje_id": "elian",
+				"cantidad_requerida": 1,
+				"datos": {"requiere_objetivo_clave": "reunir_lenia"}
+			}
+		],
+		"recompensas": []
+	}
+	manager._misiones = [mision_social]
+	manager._misiones_por_id = {"mision_elian": mision_social.duplicate(true)}
+	manager.cargar_estado_partida({})
+	if not manager.aceptar_mision("mision_elian"):
+		errores.append("No se pudo aceptar la misión social de Elian.")
+	if manager.cumple_requisito_dialogo({
+		"mision_clave": "mision_elian",
+		"estado": "activa",
+		"objetivo_clave": "reunir_lenia",
+		"progreso_objetivo_min": 3
+	}):
+		errores.append("El diálogo de regreso se habilitó antes de reunir la madera.")
+	manager.registrar_dialogo("elian", "regreso")
+	if manager.obtener_progreso("mision_elian", "regreso") != 0:
+		errores.append("El objetivo de regreso avanzó antes de cumplir su requisito.")
+	manager.registrar_recoleccion("madera", 3)
+	if not manager.cumple_requisito_dialogo({
+		"mision_clave": "mision_elian",
+		"estado": "activa",
+		"objetivo_clave": "reunir_lenia",
+		"progreso_objetivo_min": 3
+	}):
+		errores.append("El diálogo de regreso no se habilitó tras reunir la madera.")
+	manager.registrar_dialogo("elian", "regreso")
+	if not manager.esta_completada("mision_elian"):
+		errores.append("La misión social no se completó tras regresar con Elian.")
+
 	_finalizar(errores)
 
 
