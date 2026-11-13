@@ -359,6 +359,12 @@ func _actualizar_limites_camara_zona(tipo: String) -> void:
 		_camera.limit_top = -1024
 		_camera.limit_bottom = 1024
 		_camera.limit_enabled = true
+	elif tipo == "historia:reserva_carmesi":
+		_camera.limit_left = -640
+		_camera.limit_right = 6400
+		_camera.limit_top = -1760
+		_camera.limit_bottom = 1760
+		_camera.limit_enabled = true
 	else:
 		_camera.limit_enabled = false
 
@@ -450,6 +456,10 @@ func _inicializar_runtime_de_zona() -> void:
 			var zona_hogar: Node = _zone_manager.obtener_zona_actual()
 			var spawn_hogar: Node2D = zona_hogar.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_hogar) else null
 			_player.global_position = spawn_hogar.global_position if is_instance_valid(spawn_hogar) else Vector2(0, 180)
+	elif tipo_zona_actual == "historia:reserva_carmesi":
+		var zona_reserva: Node = _zone_manager.obtener_zona_actual()
+		var spawn_reserva: Node2D = zona_reserva.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_reserva) else null
+		_player.global_position = spawn_reserva.global_position if is_instance_valid(spawn_reserva) else Vector2(0, 0)
 	elif tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
 		var zona_actual: Node = _zone_manager.obtener_zona_actual()
 		var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
@@ -576,6 +586,12 @@ func _configurar_camara() -> void:
 		_camera.limit_right = 5120
 		_camera.limit_top = -1024
 		_camera.limit_bottom = 1024
+		_camera.limit_enabled = true
+	elif tipo_zona == "historia:reserva_carmesi":
+		_camera.limit_left = -640
+		_camera.limit_right = 6400
+		_camera.limit_top = -1760
+		_camera.limit_bottom = 1760
 		_camera.limit_enabled = true
 	else:
 		_camera.limit_enabled = false
