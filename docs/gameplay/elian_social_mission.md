@@ -2,7 +2,7 @@
 
 ## Objetivo narrativo
 
-Elian, panadero de Torres, se ha quedado corto de leña mientras prepara una hornada encargada. Pide al jugador tres piezas de madera para mantener el horno encendido. La misión sirve como primera plantilla de una misión social corta: petición, tarea, regreso y reconocimiento.
+Elian, panadero de Torres, espera una carreta con harina para terminar la hornada. Como no puede abandonar el horno, pide al jugador consultar a Darven en el puesto de guardia. La misión sirve como primera plantilla de una misión social corta: petición, conversación entre NPC, regreso y reconocimiento.
 
 ## Secuencia
 
@@ -24,7 +24,7 @@ Elian, panadero de Torres, se ha quedado corto de leña mientras prepara una hor
 ## Reglas técnicas añadidas
 
 - `MissionManagerService.cumple_requisito_dialogo()` valida estado de misión y progreso de objetivo antes de mostrar una variante narrativa.
-- `_objetivo_habilitado_por_dependencias()` evita que el diálogo de regreso avance antes de terminar la recolección.
+- ``_objetivo_habilitado_por_dependencias()` evita que el diálogo de regreso avance antes de consultar a Darven.
 - `DialogueSystem` prioriza las variantes condicionadas por misión sobre los saludos basados en amistad o confianza. Si no hay una variante de misión aplicable, mantiene la selección social existente.
 - La progresión se guarda con el estado y progreso normal de misiones.
 
