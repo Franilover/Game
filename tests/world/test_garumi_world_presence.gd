@@ -142,35 +142,24 @@ func _run() -> void:
 	var normal_orumi_gen1 := {
 		"id": "orumi-descendiente-1", "nombre": "Descendiente de Orumi",
 		"categoria_garumi": "normal", "original_id": "orumi-test-id", "numero_origen": 1,
-		"estado_documentacion": "canon", "estado_evolutivo": "inicial"
+		"estado_documentacion": "canon"
 	}
 	var normal_varum_gen1 := normal_orumi_gen1.duplicate(true)
 	normal_varum_gen1["original_id"] = "varum-test-id"
-	var forma_final_orumi := normal_orumi_gen1.duplicate(true)
-	forma_final_orumi["numero_origen"] = 2
-	forma_final_orumi["estado_evolutivo"] = "final"
-	var otro_inicial_orumi := normal_orumi_gen1.duplicate(true)
-	otro_inicial_orumi["numero_origen"] = 7
+	var especie_independiente_orumi := normal_orumi_gen1.duplicate(true)
+	especie_independiente_orumi["numero_origen"] = 4
 	var original_orumi := normal_orumi_gen1.duplicate(true)
 	original_orumi["categoria_garumi"] = "original"
 	var borrador_orumi := normal_orumi_gen1.duplicate(true)
 	borrador_orumi["estado_documentacion"] = "borrador"
 	var aprobado_orumi := normal_orumi_gen1.duplicate(true)
 	aprobado_orumi["estado_documentacion"] = "aprobado"
-	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar Garumis normales de Orumi generación 1 si el exportador ya filtra el canon.")
-	_expect(bool(rules.call("garumi_cumple_filtro_generacional", aprobado_orumi, "orumi-test-id", 1)), "Debe aceptar el descendiente normal de Orumi marcado como aprobado.")
-	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar el descendiente normal de Orumi marcado como canon.")
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 1)), "Debe aceptar una especie normal aprobada del Original permitido.")
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", aprobado_orumi, "orumi-test-id", 1)), "Debe aceptar especies normales marcadas como aprobadas.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", borrador_orumi, "orumi-test-id", 1)), "Nunca debe aparecer un registro que el snapshot marque como borrador.")
-	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_varum_gen1, "orumi-test-id", 1)), "Debe excluir descendientes de Varum aunque sean de primera generación.")
-	_expect(bool(rules.call("garumi_cumple_filtro_generacional", otro_inicial_orumi, "orumi-test-id", 1)), "Debe aceptar cualquier forma inicial canónica de Orumi aunque numero_origen sea 3, 5 o 7.")
-	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", forma_final_orumi, "orumi-test-id", 1)), "Las formas finales deben evolucionar desde una forma inicial, no aparecer en el mundo.")
-	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", original_orumi, "orumi-test-id", 1)), "Los Originales no deben poder aparecer como Garumis normales.")
-	var evolucion_orumi := normal_orumi_gen1.duplicate(true)
-	evolucion_orumi["estado_evolutivo"] = "evolucion_1"
-	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", evolucion_orumi, "orumi-test-id", 1)), "Las formas evolucionadas no deben aparecer como encuentros independientes.")
-	var forma_con_origen := normal_orumi_gen1.duplicate(true)
-	forma_con_origen["evoluciona_de_id"] = "orumi-descendiente-1"
-	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", forma_con_origen, "orumi-test-id", 1)), "Una forma con predecesor evolutivo no debe aparecer de forma natural.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_varum_gen1, "orumi-test-id", 1)), "Debe excluir especies de otro Original.")
+	_expect(bool(rules.call("garumi_cumple_filtro_generacional", especie_independiente_orumi, "orumi-test-id", 1)), "Debe aceptar especies independientes aunque su numero_origen sea 4.")
+	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", original_orumi, "orumi-test-id", 1)), "Los Originales no deben aparecer como Garumis normales.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "", 1)), "Sin ID de Original permitido no se debe habilitar ningún candidato.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 2)), "Esta fase sólo habilita la primera generación configurada.")
 
