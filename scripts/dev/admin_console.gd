@@ -933,7 +933,12 @@ func _comando_summon(nombre: String) -> void:
 			_agregar_linea("[color=#d88]Uso: /summon Garumi \"<nombre del Garumi>\"[/color]")
 			return
 
-		if nombre_garumi not in _obtener_nombres_garumis_visibles():
+		var nombre_garumi_actual := false
+		for nombre_actual in _obtener_nombres_garumis_visibles():
+			if nombre_actual.to_lower() == nombre_garumi.to_lower():
+				nombre_garumi_actual = true
+				break
+		if not nombre_garumi_actual:
 			_agregar_linea("[color=#d88]Ese Garumi ya no forma parte del catálogo actual.[/color]")
 			return
 
