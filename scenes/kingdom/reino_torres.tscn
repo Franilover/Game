@@ -11,23 +11,15 @@
 [ext_resource type="Texture2D" uid="uid://va6r63hx32e1" path="res://assets/art/places/Posada.png" id="official_21"]
 [ext_resource type="Texture2D" uid="uid://b0n8tkv8qe56x" path="res://assets/art/places/Casa_Comun.png" id="official_22"]
 [ext_resource type="Texture2D" uid="uid://x5nfn8gcqby4" path="res://assets/art/places/Forja.png" id="official_23"]
-[ext_resource type="Texture2D" uid="uid://d2b1pl2v23y4c" path="res://assets/art/places/Establos.png" id="official_24"]
 [ext_resource type="Texture2D" uid="uid://sktk4fpcs1wx" path="res://assets/art/places/Archivo_Real.png" id="official_25"]
 [ext_resource type="Texture2D" uid="uid://bgyrjbiq86w7t" path="res://assets/art/places/Sala_del_Consejo.png" id="official_26"]
 [ext_resource type="Texture2D" uid="uid://dhvu8kh40ubno" path="res://assets/art/places/Casa_de_Estudio_Oris.png" id="official_27"]
 [ext_resource type="Texture2D" uid="uid://xbj5r2qd0os1" path="res://assets/art/places/Casa_de_Comercio.png" id="official_28"]
-[ext_resource type="Texture2D" uid="uid://bfnm5e3yvi425" path="res://assets/art/places/Alojamiento_de_la_Caravana.png" id="official_29"]
 [ext_resource type="Texture2D" uid="uid://cfjsngoq8yc3h" path="res://assets/art/places/Registro_de_la_Puerta.png" id="official_30"]
 [ext_resource type="Texture2D" uid="uid://bfuqm7cesl5lg" path="res://assets/art/places/Taller_de_Reparaciones.png" id="official_31"]
-[ext_resource type="Texture2D" uid="uid://dbal1i40st347" path="res://assets/art/places/Almacen_Publico.png" id="official_32"]
 [ext_resource type="Texture2D" uid="uid://cw7o68fl15xin" path="res://assets/art/places/Granero.png" id="official_33"]
 [ext_resource type="Texture2D" uid="uid://ngrgd171772x" path="res://assets/art/places/Molino.png" id="official_34"]
-[ext_resource type="Texture2D" uid="uid://tyuf1aa3pqr5" path="res://assets/art/places/Obras_de_Agua.png" id="official_35"]
 [ext_resource type="Texture2D" uid="uid://8l050xd57nh7" path="res://assets/art/places/Corrales.png" id="official_36"]
-[ext_resource type="Texture2D" uid="uid://cv1ucnobhlx0j" path="res://assets/art/places/Deposito_Semillas.png" id="official_37"]
-[ext_resource type="Texture2D" uid="uid://bb4hlgvjnymuw" path="res://assets/art/places/Casa_de_los_Telares.png" id="official_38"]
-[ext_resource type="Texture2D" uid="uid://ctxwymjva8slo" path="res://assets/art/places/Alfareria.png" id="official_39"]
-[ext_resource type="Texture2D" uid="uid://risqmhc65ra7" path="res://assets/art/places/Baños_Publicos.png" id="official_40"]
 [ext_resource type="Texture2D" uid="uid://d0a5v42c67j5s" path="res://assets/art/places/Castillo.png" id="official_41"]
 [ext_resource type="Texture2D" uid="uid://mp46yeh2r0go" path="res://assets/art/places/Poste.png" id="official_42"]
 [ext_resource type="Texture2D" uid="uid://gy85sfyfqx63" path="res://assets/art/places/Pozo.png" id="official_43"]
@@ -56,9 +48,6 @@ size = Vector2(83, 65)
 
 [sub_resource type="RectangleShape2D" id="ForgeCollision"]
 size = Vector2(76, 42)
-
-[sub_resource type="RectangleShape2D" id="StableCollision"]
-size = Vector2(91, 40)
 
 [sub_resource type="RectangleShape2D" id="DistrictBuildingSmall"]
 size = Vector2(76, 52)
@@ -518,9 +507,6 @@ position = Vector2(-360, -188)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ForgeCollisionBody" unique_id=898648263]
 shape = SubResource("ForgeCollision")
 
-[node name="StableCollisionBody" type="StaticBody2D" parent="." unique_id=794648187]
-position = Vector2(382, 187)
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StableCollisionBody" unique_id=1905106029]
 shape = SubResource("StableCollision")
 
@@ -608,20 +594,11 @@ position = Vector2(-520, 210)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WestHome11CollisionBody" unique_id=1967644794]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="WeaverHouseCollisionBody" type="StaticBody2D" parent="." unique_id=881353665]
-position = Vector2(-675, -253)
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WeaverHouseCollisionBody" unique_id=1419428691]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="PotterHouseCollisionBody" type="StaticBody2D" parent="." unique_id=1386602068]
-position = Vector2(-739, 111)
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PotterHouseCollisionBody" unique_id=286773952]
 shape = SubResource("DistrictBuildingSmall")
-
-[node name="BathHouseCollisionBody" type="StaticBody2D" parent="." unique_id=1826680005]
-position = Vector2(-739, 221)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="BathHouseCollisionBody" unique_id=1864974714]
 shape = SubResource("DistrictBuildingSmall")
@@ -631,9 +608,6 @@ position = Vector2(930, -350)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TradeHouseCollisionBody" unique_id=1816253537]
 shape = SubResource("DistrictBuildingSmall")
-
-[node name="CaravanseraiCollisionBody" type="StaticBody2D" parent="." unique_id=1547514410]
-position = Vector2(930, -245)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CaravanseraiCollisionBody" unique_id=1540711263]
 shape = SubResource("DistrictBuildingSmall")
@@ -656,9 +630,6 @@ position = Vector2(930, 110)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RepairWorkshopCollisionBody" unique_id=1139055035]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="PublicStoreCollisionBody" type="StaticBody2D" parent="." unique_id=1109834059]
-position = Vector2(730, 110)
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PublicStoreCollisionBody" unique_id=546497195]
 shape = SubResource("DistrictBuildingSmall")
 
@@ -680,9 +651,6 @@ position = Vector2(-270, 265)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="MillHouseCollisionBody" unique_id=1854484088]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="WaterWorksCollisionBody" type="StaticBody2D" parent="." unique_id=2074716245]
-position = Vector2(250, 265)
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WaterWorksCollisionBody" unique_id=1814570750]
 shape = SubResource("DistrictBuildingSmall")
 
@@ -697,9 +665,6 @@ position = Vector2(-850, 610)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FarmersHallCollisionBody" unique_id=1099439501]
 shape = SubResource("DistrictBuildingSmall")
-
-[node name="SeedStoreCollisionBody" type="StaticBody2D" parent="." unique_id=1688114175]
-position = Vector2(800, 610)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SeedStoreCollisionBody" unique_id=1238420334]
 shape = SubResource("DistrictBuildingSmall")
@@ -1004,15 +969,6 @@ texture = ExtResource("official_23")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(104, 92)
 
-[node name="Sprite_establos" type="Sprite2D" parent="." unique_id=561484862]
-z_index = 3
-texture_filter = 1
-position = Vector2(382, 177)
-scale = Vector2(1.8333334, 1.8333334)
-texture = ExtResource("official_24")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(112, 88)
-
 [node name="Sprite_archivo_real" type="Sprite2D" parent="." unique_id=1552793400]
 z_index = 3
 texture_filter = 1
@@ -1049,15 +1005,6 @@ texture = ExtResource("official_28")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(122, 100)
 
-[node name="Sprite_alojamiento" type="Sprite2D" parent="." unique_id=1361057431]
-z_index = 3
-texture_filter = 1
-position = Vector2(930, -253)
-scale = Vector2(2.25, 2.25)
-texture = ExtResource("official_29")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(134, 108)
-
 [node name="Sprite_registro" type="Sprite2D" parent="." unique_id=516303441]
 z_index = 3
 texture_filter = 1
@@ -1075,15 +1022,6 @@ scale = Vector2(2, 2)
 texture = ExtResource("official_31")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(118, 96)
-
-[node name="Sprite_almacen" type="Sprite2D" parent="." unique_id=400546792]
-z_index = 3
-texture_filter = 1
-position = Vector2(730, 102)
-scale = Vector2(2, 2)
-texture = ExtResource("official_32")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(116, 96)
 
 [node name="Sprite_granero" type="Sprite2D" parent="." unique_id=759303847]
 z_index = 3
@@ -1103,15 +1041,6 @@ texture = ExtResource("official_34")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(114, 96)
 
-[node name="Sprite_aguas" type="Sprite2D" parent="." unique_id=206342847]
-z_index = 3
-texture_filter = 1
-position = Vector2(250, 257)
-scale = Vector2(2.125, 2.125)
-texture = ExtResource("official_35")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(124, 102)
-
 [node name="Sprite_corrales" type="Sprite2D" parent="." unique_id=1482489049]
 z_index = 3
 texture_filter = 1
@@ -1129,42 +1058,6 @@ scale = Vector2(2.125, 2.125)
 texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(126, 102)
-
-[node name="Sprite_semillas" type="Sprite2D" parent="." unique_id=988928640]
-z_index = 3
-texture_filter = 1
-position = Vector2(800, 602)
-scale = Vector2(2.0833333, 2.0833333)
-texture = ExtResource("official_37")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(122, 100)
-
-[node name="Sprite_telar" type="Sprite2D" parent="." unique_id=260174609]
-z_index = 3
-texture_filter = 1
-position = Vector2(-742, -261)
-scale = Vector2(1.875, 1.875)
-texture = ExtResource("official_38")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(100, 90)
-
-[node name="Sprite_alfareria" type="Sprite2D" parent="." unique_id=1614752931]
-z_index = 3
-texture_filter = 1
-position = Vector2(-738, 93)
-scale = Vector2(1.875, 1.875)
-texture = ExtResource("official_39")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(100, 90)
-
-[node name="Sprite_banos" type="Sprite2D" parent="." unique_id=942701324]
-z_index = 3
-texture_filter = 1
-position = Vector2(-738, 202)
-scale = Vector2(2.0416667, 2.0416667)
-texture = ExtResource("official_40")
-script = ExtResource("editor_sprite_fit")
-target_size = Vector2(108, 98)
 
 [node name="Sprite_vivienda_oeste_01" type="Sprite2D" parent="." unique_id=1801762545]
 z_index = 3
