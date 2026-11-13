@@ -346,8 +346,7 @@ func establecer_modo_historia(activo: bool) -> void:
 		boton_notas.visible = activo
 	if activo:
 		var tabs := $Window/Margin/Column/Tabs as TabContainer
-		if tabs.current_tab != 0 and tabs.current_tab != 7:
-			tabs.current_tab = 0
+		tabs.current_tab = 0
 		$Window/Margin/Column/TabButtons/Inventario.button_pressed = true
 		_actualizar_admin_tab()
 	else:
@@ -376,8 +375,8 @@ func _actualizar_admin_tab() -> void:
 	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
 	if datos_variant is Dictionary:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
-	boton_admin.visible = es_admin
-	admin_tab.visible = es_admin
+	boton_admin.visible = es_admin and not _modo_historia
+	admin_tab.visible = es_admin and not _modo_historia
 	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 6:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin:
