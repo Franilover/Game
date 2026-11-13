@@ -174,7 +174,11 @@ func _obtener_clave_dia_actual() -> String:
 		var tiempo_variant: Variant = _world_atmosphere.call("obtener_tiempo")
 		if tiempo_variant is Dictionary:
 			var tiempo := tiempo_variant as Dictionary
-			if tiempo.has("anio") and tiempo.has("dia"):
+			if (
+				bool(tiempo.get("calendario_cargado", false))
+				and tiempo.has("anio")
+				and tiempo.has("dia")
+			):
 				return "mundo:%d:%d" % [
 					int(tiempo.get("anio", 0)),
 					int(tiempo.get("dia", 1))
