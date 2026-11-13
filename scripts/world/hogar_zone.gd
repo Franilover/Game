@@ -227,11 +227,11 @@ func _crear_interfaz_construccion() -> void:
 
 	_boton_modo = Button.new()
 	_boton_modo.text = "Construir [B]"
-	_boton_modo.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_boton_modo.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_boton_modo.offset_left = -164.0
-	_boton_modo.offset_top = 14.0
+	_boton_modo.offset_top = -52.0
 	_boton_modo.offset_right = -16.0
-	_boton_modo.offset_bottom = 52.0
+	_boton_modo.offset_bottom = -14.0
 	_boton_modo.pressed.connect(_alternar_modo_construccion)
 	PIXEL_UI_THEME.apply(_boton_modo)
 	raiz.add_child(_boton_modo)
