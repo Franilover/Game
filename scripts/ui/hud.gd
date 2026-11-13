@@ -267,8 +267,10 @@ func _actualizar_barra_dash(actual: float, maximo: float) -> void:
 	_stamina_bar_node.min_value = 0.0
 	_stamina_bar_node.max_value = maxf(maximo, 1.0)
 	_stamina_bar_node.value = clampf(actual, 0.0, _stamina_bar_node.max_value)
-	# Solo aparece mientras la carga del dash se está recuperando.
-	_stamina_bar_node.visible = actual < maximo - 0.0001
+	# La barra inferior está retirada; la recarga se representa únicamente
+	# mediante DashRechargeAbovePlayer sobre el sprite.
+	_stamina_bar_node.hide()
+	_stamina_value_node.hide()
 
 func _configurar_referencias_ui() -> void:
 	_preparar_barra_dash()
