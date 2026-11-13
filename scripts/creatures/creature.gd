@@ -367,6 +367,17 @@ func _cargar_sprite() -> void:
 		sprite.texture = textura
 		return
 
+	# Mientras cada NPC recibe su sprite propio, reutilizamos el cuerpo humano
+	# base ya incluido en el proyecto. No generamos ni sustituimos arte del usuario.
+	if _es_humano() and not get_personaje_game_id().is_empty():
+		var sprite_humano_base := "res://assets/art/characters/Sprite-0004.png"
+		if ResourceLoader.exists(sprite_humano_base):
+			var textura_base := load(sprite_humano_base) as Texture2D
+			if textura_base != null:
+				sprite.texture = textura_base
+				set_meta("sprite_placeholder_humano", true)
+				return
+
 	sprite.texture = null
 
 
