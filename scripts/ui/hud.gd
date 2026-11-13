@@ -1251,7 +1251,7 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 		# Capturar Tab en _input para evitar que otro control consuma la entrada.
-		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_M and not hand_key.shift_pressed:
+		if hand_key.pressed and not hand_key.echo and hand_key.keycode == KEY_M and not hand_key.shift_pressed and not hand_key.ctrl_pressed:
 			var inventory_node := get_tree().get_first_node_in_group("inventory")
 			if inventory_node != null and inventory_node.has_method("toggle_mapa"):
 				inventory_node.call("toggle_mapa")
