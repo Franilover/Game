@@ -123,7 +123,7 @@ func _crear_slots(
 			continue
 		slot.set_meta("inventory_index", indice)
 		slot.set_meta("inventory_container", tipo_contenedor)
-		slot.custom_minimum_size = Vector2(40, 40)
+		slot.custom_minimum_size = Vector2(36, 36)
 		slot.arrastre_recibido.connect(_al_recibir_arrastre)
 		contenedor.add_child(slot)
 		destino.append(slot)

@@ -309,9 +309,12 @@ func _abrir_cofre(indice: int) -> void:
 	if not is_instance_valid(inventario):
 		push_warning("HogarInterior: no se encontró el inventario del jugador.")
 		return
-	_cofre_ui = CHEST_UI_SCRIPT.new()
-	add_child(_cofre_ui)
-	_cofre_ui.call("abrir", self, inventario, indice)
+	var interfaz := CHEST_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	_cofre_ui = interfaz
+	add_child(interfaz)
+	interfaz.call("abrir", self, inventario, indice)
 
 
 func cerrar_cofre() -> void:
