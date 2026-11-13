@@ -12,7 +12,7 @@ uniform sampler2D screen_texture : hint_screen_texture, filter_nearest;
 uniform vec4 fog_color : source_color = vec4(0.72, 0.75, 0.78, 1.0);
 uniform float visibilidad : hint_range(0.0, 1.0) = 1.0;
 uniform float intensidad_carmesi : hint_range(0.0, 0.65) = 0.34;
-uniform float densidad_particulas : hint_range(0.0, 0.01) = 0.0012;
+uniform float densidad_particulas : hint_range(0.0, 0.002) = 0.00016;
 uniform float velocidad_particulas : hint_range(0.1, 3.0) = 0.82;
 
 void fragment() {
@@ -26,8 +26,8 @@ void fragment() {
 
 	// Viñeta tenue para concentrar la mirada en el terreno.
 	float distancia_centro = length((SCREEN_UV - vec2(0.5)) * vec2(1.0, 0.72));
-	float viñeta = smoothstep(0.34, 0.92, distancia_centro) * 0.16;
-	color *= 1.0 - viñeta;
+	float vignette = smoothstep(0.34, 0.92, distancia_centro) * 0.16;
+	color *= 1.0 - vignette;
 
 	// Se conserva la niebla meteorológica existente.
 	float intensidad_niebla = clamp((1.0 - visibilidad) * 1.12, 0.0, 0.86);
