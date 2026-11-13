@@ -27,20 +27,18 @@ func configurar(
 	facing_marker = nuevo_marker
 	animation_player = nueva_animacion
 	sprite = visual.get_node_or_null("Sprite2D") as Sprite2D if is_instance_valid(visual) else null
-	# Image.load lee PNG directamente y evita depender de archivos .import
-	# que todavía no existan en un checkout limpio o en CI headless.
-	sprite_idle = _cargar_textura_directa(SPRITE_IDLE_PATH)
-	sprite_walk_left = _cargar_textura_directa(SPRITE_WALK_LEFT_PATH)
-	sprite_walk_back = _cargar_textura_directa(SPRITE_WALK_BACK_PATH)
+	# ResourceLoader usa las texturas importadas por Godot y conserva su
+	# compatibilidad con exportaciones; Image.load(ruta) lee el PNG crudo.
+	sprite_idle = _cargar_textura_importada(SPRITE_IDLE_PATH)
+	sprite_walk_left = _cargar_textura_importada(SPRITE_WALK_LEFT_PATH)
+	sprite_walk_back = _cargar_textura_importada(SPRITE_WALK_BACK_PATH)
 
 
-func _cargar_textura_directa(ruta: String) -> Texture2D:
-	var imagen := Image.new()
-	var error := imagen.load(ruta)
-	if error != OK:
-		push_error("PlayerVisualController: no se pudo cargar la imagen %s (error %s)." % [ruta, error])
-		return null
-	return ImageTexture.create_from_image(imagen)
+func _cargar_textura_importada(ruta: String) -> Texture2D:
+	var textura := ResourceLoader.load(ruta) as Texture2D
+	if textura == null:
+		push_error("PlayerVisualController: no se pudo cargar la textura importada %s." % ruta)
+	return textura
 
 
 func actualizar_direccion(facing: Vector2) -> void:
