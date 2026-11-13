@@ -12,6 +12,7 @@ const MUEBLE_HORNO: Texture2D = preload("res://assets/art/places/Muebles/horno.p
 const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.png")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 
 # Ampliación moderada respecto al interior original (448x272).
@@ -78,8 +79,6 @@ var _capa_interior: Node2D
 var _aviso_panel: PanelContainer
 var _aviso: Label
 var _boton_entrar: Button
-var _boton_dormir: Button
-var _camas_interactivas: Array[Vector2] = []
 var _entrada_aviso_actual: Dictionary = {}
 var _objetivos_entrada: Array[Node2D] = []
 var _terreno_dual_listo: bool = false
@@ -216,10 +215,6 @@ func _process(_delta: float) -> void:
 		posicion_local.y = clampf(posicion_local.y, -INTERIOR_MEDIO_ALTO + 30.0, INTERIOR_MEDIO_ALTO - 40.0)
 		_jugador.global_position = to_global(posicion_local)
 
-		_boton_dormir.visible = _hay_cama_cercana(posicion_local)
-		if _boton_dormir.visible:
-			_posicionar_boton_dormir()
-
 		var cerca_salida := posicion_local.y >= INTERIOR_MEDIO_ALTO - 60.0 \
 			and posicion_local.x >= -12.0 \
 			and posicion_local.x <= 132.0
@@ -231,7 +226,6 @@ func _process(_delta: float) -> void:
 			_salir_del_interior()
 		return
 
-	_boton_dormir.visible = false
 	var entrada_cercana: Dictionary = {}
 	# El cuerpo del jugador puede quedar separado del punto de puerta por las colisiones de fachada.
 	var distancia_menor := 80.0
@@ -322,18 +316,6 @@ func _crear_aviso() -> void:
 	PIXEL_UI_THEME.apply(_boton_entrar, false)
 	capa_ui.add_child(_boton_entrar)
 
-	_boton_dormir = Button.new()
-	_boton_dormir.name = "BotonDormir"
-	_boton_dormir.text = "Dormir"
-	_boton_dormir.custom_minimum_size = Vector2(88.0, 30.0)
-	_boton_dormir.mouse_filter = Control.MOUSE_FILTER_STOP
-	_boton_dormir.focus_mode = Control.FOCUS_NONE
-	_boton_dormir.z_index = 51
-	_boton_dormir.visible = false
-	_boton_dormir.pressed.connect(_al_pulsar_dormir)
-	PIXEL_UI_THEME.apply(_boton_dormir, false)
-	capa_ui.add_child(_boton_dormir)
-
 func _posicionar_boton_entrada() -> void:
 	if not is_instance_valid(_boton_entrar):
 		return
@@ -346,72 +328,6 @@ func _posicionar_boton_entrada() -> void:
 		(viewport.x - tamano.x) * 0.5,
 		viewport.y - tamano.y - 76.0
 	)
-
-
-func _posicionar_boton_dormir() -> void:
-	if not is_instance_valid(_boton_dormir) or not is_instance_valid(_jugador):
-		return
-	var posicion_pantalla: Vector2 = _jugador.get_global_transform_with_canvas().origin
-	var tamano := _boton_dormir.get_combined_minimum_size()
-	_boton_dormir.size = tamano
-	var viewport := get_viewport().get_visible_rect().size
-	_boton_dormir.position = Vector2(
-		clampf(posicion_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
-		clampf(posicion_pantalla.y - tamano.y - 28.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
-	)
-
-
-func _hay_cama_cercana(posicion_local: Vector2) -> bool:
-	for posicion_cama: Vector2 in _camas_interactivas:
-		if posicion_local.distance_to(posicion_cama) <= 56.0:
-			return true
-	return false
-
-
-func _al_pulsar_dormir() -> void:
-	if not _interior_activo or not is_instance_valid(_jugador):
-		return
-	if not _hay_cama_cercana(to_local(_jugador.global_position)):
-		_boton_dormir.visible = false
-		return
-	var escena := get_tree().current_scene
-	var atmosfera: Node = null
-	if is_instance_valid(escena):
-		atmosfera = escena.find_child("WorldAtmosphere", true, false)
-	if not is_instance_valid(atmosfera) or not atmosfera.has_method("dormir_hasta_manana"):
-		push_warning("ReinoTorres: no se encontró el calendario para dormir.")
-		return
-	if bool(atmosfera.call("dormir_hasta_manana")):
-		_boton_dormir.visible = false
-		print("ReinoTorres: el jugador descansó hasta la mañana siguiente.")
-
-
-func _input(evento: InputEvent) -> void:
-	if not evento is InputEventMouseButton:
-		return
-	var clic := evento as InputEventMouseButton
-	if not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT:
-		return
-
-	# Dormir conserva su botón contextual propio. Las puertas ahora usan
-	# el InteractionSystem y el aviso [LMB] compartido del HUD.
-	if _interior_activo and _boton_dormir.visible:
-		if _boton_dormir.get_global_rect().has_point(clic.position):
-			return
-		get_viewport().set_input_as_handled()
-		if not _hay_objeto_en_manos():
-			_al_pulsar_dormir()
-
-
-
-
-func _hay_objeto_en_manos() -> bool:
-	var inventario := get_tree().get_first_node_in_group("inventory")
-	if not is_instance_valid(inventario) or not inventario.has_method("obtener_objeto_mano_activa"):
-		return false
-	var izquierda: Dictionary = inventario.call("obtener_objeto_mano_activa", "izquierda")
-	var derecha: Dictionary = inventario.call("obtener_objeto_mano_activa", "derecha")
-	return not izquierda.is_empty() or not derecha.is_empty()
 
 
 func _crear_cesped_tilemap_dual() -> void:
@@ -885,8 +801,6 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_boton_entrar.visible = false
 	_posicion_exterior = _jugador.global_position
 	_entrada_interior_id = str(entrada.get("id", ""))
-	_camas_interactivas.clear()
-	_boton_dormir.visible = false
 	_visibilidad_exterior.clear()
 	_estados_colision_exterior.clear()
 	for child: Node in get_children():
@@ -913,9 +827,7 @@ func _salir_del_interior() -> void:
 		return
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
-	_boton_dormir.visible = false
 	_boton_entrar.visible = false
-	_camas_interactivas.clear()
 	for child: Node in get_children():
 		if child == _capa_interior or child == _aviso:
 			continue
@@ -1101,7 +1013,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			for i in range(4):
 				var posicion_litera := Vector2(-150 + (i % 2) * 300, -65 + int(i / 2) * 105)
 				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, posicion_litera, Vector2(0.85, 0.85), 1)
-				_camas_interactivas.append(posicion_litera)
 		"taller", "carpinteria":
 			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA, Vector2(0, 15), Vector2(2.2, 1.4), 1)
 			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(145, 65), Vector2.ONE, 1)
@@ -1112,7 +1023,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 		"vivienda":
 			var posicion_cama := Vector2(-145, -55)
 			_agregar_sprite_mueble(cuarto, "Cama", MUEBLE_CAMA, posicion_cama, Vector2.ONE, 1)
-			_camas_interactivas.append(posicion_cama)
 			_agregar_sprite_mueble(cuarto, "Mesa", MUEBLE_MESA, Vector2(75, 20), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(145, -75), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 70), Vector2.ONE, 1)
@@ -1131,6 +1041,19 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.z_index = z
 	padre.add_child(sprite)
+
+	# El tipo de mueble determina automáticamente su interacción compartida.
+	if textura == MUEBLE_CAMA or textura == MUEBLE_COFRE:
+		var objetivo: Node2D = WORLD_INTERACTABLE_SCRIPT.new() as Node2D
+		if not is_instance_valid(objetivo):
+			return
+		objetivo.name = "Interaccion_" + nombre
+		objetivo.position = posicion
+		if textura == MUEBLE_CAMA:
+			objetivo.call("configurar_cama")
+		else:
+			objetivo.call("configurar_cofre", "torres:" + _entrada_interior_id + ":" + nombre)
+		padre.add_child(objetivo)
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
