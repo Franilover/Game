@@ -89,7 +89,13 @@ func _abrir_cofre() -> void:
 	if not is_instance_valid(interfaz):
 		return
 	_chest_ui = interfaz
-	add_child(interfaz)
+	var padre_interfaz := get_parent()
+	if not is_instance_valid(padre_interfaz):
+		padre_interfaz = get_tree().current_scene
+	if not is_instance_valid(padre_interfaz):
+		_chest_ui = null
+		return
+	padre_interfaz.add_child(interfaz)
 	interfaz.call("abrir_contenedor", self, inventario)
 	if is_instance_valid(_storage_owner) and _storage_owner.has_method("registrar_cofre_abierto"):
 		_storage_owner.call("registrar_cofre_abierto", interfaz, self)
