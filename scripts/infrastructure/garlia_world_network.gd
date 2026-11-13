@@ -1618,7 +1618,7 @@ func _actualizar_estado_jugador(jugador: Player, registro: Dictionary) -> void:
 	if jugador == _local_player and jugador.is_alive and not estaba_vivo:
 		jugador.visible = true
 		jugador.set_physics_process(true)
-	jugador.max_stamina = clampf(float(registro.get("max_stamina", jugador.max_stamina)), 1.0, 5.0)
+	jugador.max_stamina = 1.0
 	if jugador.get("stamina_controller") != null:
 		var stamina_controller: Variant = jugador.get("stamina_controller")
 		if stamina_controller.has_method("establecer_maximo"):
