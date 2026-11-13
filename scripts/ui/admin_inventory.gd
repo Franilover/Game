@@ -427,6 +427,9 @@ func _mostrar_detalle_aldeano() -> void:
 			horario.text = "%s · %s–%s\n%s · %s" % [dias, str(rutina.get("hora_inicio", "--:--")), str(rutina.get("hora_fin", "--:--")), actividad, ubicacion]
 			horario.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			_detalle.add_child(horario)
+	var descanso := Label.new()
+	descanso.text = "Día 5 · Descanso semanal"
+	_detalle.add_child(descanso)
 
 	var separador_relaciones := _crear_separador_tiempo("Relación con el jugador")
 	_detalle.add_child(separador_relaciones)
