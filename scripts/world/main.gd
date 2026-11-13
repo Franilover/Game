@@ -161,7 +161,9 @@ func _al_reinos_game_cargados(_reinos: Array) -> void:
 		_reinos_game_servidor_listos = true
 		_intentar_iniciar_servidor_global()
 		return
-	if GameState.debe_iniciar_en_reino_torres():
+	# La zona de Historia puede haberse iniciado antes de que responda Supabase.
+	# No volver a ejecutar ZoneManager.iniciar() ni sustituirla por Torres.
+	if GameState.debe_iniciar_en_reino_torres() and _zone_manager.obtener_tipo_actual().is_empty() and not is_instance_valid(_zone_manager.obtener_zona_actual()):
 		_iniciar_zonas()
 
 func _verificar_inicio_de_zona() -> void:
