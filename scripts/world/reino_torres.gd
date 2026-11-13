@@ -105,10 +105,10 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"castillo","nombre":"Castillo de Torres","pos":Vector2(0,-125),"tipo":"castillo"},
 	{"id":"panaderia","nombre":"Panadería","pos":Vector2(-245,-117),"tipo":"panaderia"},
 	{"id":"posada","nombre":"Posada","pos":Vector2(-385,97),"tipo":"posada"},
-	{"id":"vivienda_mason","nombre":"Casa del cantero","pos":Vector2(-235,193),"tipo":"vivienda"},
-	{"id":"casa_oriente_a","nombre":"Vivienda oriental","pos":Vector2(220,-117),"tipo":"vivienda"},
-	{"id":"casa_oriente_b","nombre":"Vivienda oriental","pos":Vector2(385,-108),"tipo":"vivienda"},
-	{"id":"casa_oriente_c","nombre":"Vivienda oriental","pos":Vector2(385,173),"tipo":"vivienda"},
+	{"id":"vivienda_mason","nombre":"Casa de Bruna","pos":Vector2(-235,193),"tipo":"vivienda"},
+	{"id":"casa_oriente_a","nombre":"Casa de Elian","pos":Vector2(220,-117),"tipo":"vivienda"},
+	{"id":"casa_oriente_b","nombre":"Casa de Darven","pos":Vector2(385,-108),"tipo":"vivienda"},
+	{"id":"casa_oriente_c","nombre":"Casa de Saira","pos":Vector2(385,173),"tipo":"vivienda"},
 	{"id":"forja","nombre":"Forja","pos":Vector2(-360,-159),"tipo":"forja"},
 	{"id":"establos","nombre":"Establos","pos":Vector2(382,217),"tipo":"establos"},
 	{"id":"archivo_real","nombre":"Archivo real","pos":Vector2(-170,-610),"tipo":"archivo"},
@@ -138,7 +138,7 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"vivienda_oeste_06","nombre":"Vivienda del barrio oeste","pos":Vector2(-930,147),"tipo":"vivienda"},
 	{"id":"vivienda_oeste_07","nombre":"Vivienda del barrio oeste","pos":Vector2(-1040,257),"tipo":"vivienda"},
 	{"id":"vivienda_oeste_08","nombre":"Vivienda del barrio oeste","pos":Vector2(-930,257),"tipo":"vivienda"},
-	{"id":"vivienda_oeste_09","nombre":"Vivienda del barrio oeste","pos":Vector2(-520,-213),"tipo":"vivienda"},
+	{"id":"vivienda_oeste_09","nombre":"Casa de Narel","pos":Vector2(-520,-213),"tipo":"vivienda"},
 	{"id":"vivienda_oeste_10","nombre":"Vivienda del barrio oeste","pos":Vector2(-520,137),"tipo":"vivienda"},
 	{"id":"vivienda_oeste_11","nombre":"Vivienda del barrio oeste","pos":Vector2(-520,247),"tipo":"vivienda"}
 ]
