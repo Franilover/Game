@@ -4,7 +4,6 @@ class_name HUD
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const MISSION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_mission_panel.tscn")
 const INTERACTION_PANEL_SCENE: PackedScene = preload("res://scenes/ui/hud_interaction_panel.tscn")
-const DASH_CHARGES_SCENE: PackedScene = preload("res://scenes/ui/hud_dash_charges.tscn")
 const DISCOVERY_NOTICE_SCENE: PackedScene = preload("res://scenes/ui/hud_discovery_notice.tscn")
 const CALENDAR_CLOCK_SCENE: PackedScene = preload("res://scenes/ui/hud_calendar_clock.tscn")
 const HAND_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_slot.tscn")
@@ -44,7 +43,7 @@ var health_value: Label = null
 
 var stamina_bar: ProgressBar = null
 var stamina_value: Label = null
-var _stamina_pips: Array[Panel] = []
+var _dash_recharge_indicator: ProgressBar = null
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
@@ -147,6 +146,7 @@ func _ready() -> void:
 	add_to_group("hud")
 
 	_configurar_referencias_ui()
+	_crear_indicador_recarga_dash()
 	PIXEL_UI_THEME.apply(self)
 	_crear_selector_manos()
 	_crear_huecos_manos()
@@ -185,6 +185,7 @@ func _conectar_senal_game_state() -> void:
 
 func _process(delta: float) -> void:
 	_procesar_hold_companero(delta)
+	_actualizar_indicador_recarga_dash()
 	_eterium_ui_elapsed += delta
 	if _eterium_ui_elapsed >= 0.1:
 		_eterium_ui_elapsed = 0.0
@@ -243,55 +244,26 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func _preparar_puntos_dash() -> void:
+func _preparar_barra_dash() -> void:
 	if not is_instance_valid(_stamina_bar_node):
 		return
-	_stamina_bar_node.visible = false
+	_stamina_bar_node.visible = true
+	_stamina_bar_node.min_value = 0.0
+	_stamina_bar_node.max_value = 1.0
+	_stamina_bar_node.value = 1.0
 	_stamina_value_node.visible = false
 
-	var contenedor := DASH_CHARGES_SCENE.instantiate() as HBoxContainer
-	if contenedor == null:
-		push_error("HUD: no se pudo instanciar hud_dash_charges.tscn.")
+
+func _actualizar_barra_dash(actual: float, maximo: float) -> void:
+	if not is_instance_valid(_stamina_bar_node):
 		return
-	contenedor.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	contenedor.anchor_left = 0.5
-	contenedor.anchor_right = 0.5
-	contenedor.anchor_top = 1.0
-	contenedor.anchor_bottom = 1.0
-	contenedor.offset_left = -42.0
-	contenedor.offset_right = 42.0
-	contenedor.offset_top = -30.0
-	contenedor.offset_bottom = -12.0
-	contenedor.size = Vector2(84.0, 18.0)
-	add_child(contenedor)
-
-	_stamina_pips.clear()
-	for i in range(5):
-		var pip := contenedor.get_node_or_null("DashCharge" + str(i + 1)) as Panel
-		if pip != null:
-			_stamina_pips.append(pip)
-	_actualizar_puntos_dash(5.0, 5.0)
-
-
-func _actualizar_puntos_dash(actual: float, maximo: float) -> void:
-	for i in range(_stamina_pips.size()):
-		var pip := _stamina_pips[i]
-		var activo := float(i) < actual
-		var estilo := StyleBoxFlat.new()
-		estilo.bg_color = Color(0.78, 0.66, 0.46, 1.0) if activo else Color(0.075, 0.05, 0.035, 0.95)
-		estilo.border_width_left = 2
-		estilo.border_width_top = 2
-		estilo.border_width_right = 2
-		estilo.border_width_bottom = 2
-		estilo.border_color = Color(0.93, 0.84, 0.65, 1.0) if activo else Color(0.29, 0.19, 0.12, 1.0)
-		estilo.corner_radius_top_left = 7
-		estilo.corner_radius_top_right = 7
-		estilo.corner_radius_bottom_left = 7
-		estilo.corner_radius_bottom_right = 7
-		pip.add_theme_stylebox_override("panel", estilo)
+	_stamina_bar_node.min_value = 0.0
+	_stamina_bar_node.max_value = maxf(maximo, 1.0)
+	_stamina_bar_node.value = clampf(actual, 0.0, _stamina_bar_node.max_value)
+	_stamina_bar_node.visible = true
 
 func _configurar_referencias_ui() -> void:
-	_preparar_puntos_dash()
+	_preparar_barra_dash()
 	health_bar = _health_bar_node
 	health_value = _health_value_node
 	stamina_bar = _stamina_bar_node
@@ -302,6 +274,52 @@ func _configurar_referencias_ui() -> void:
 	interaction_prompt_action = _interaction_prompt_action_node
 	location_panel = _location_panel_node
 	location_label = _location_label_node
+
+
+func _crear_indicador_recarga_dash() -> void:
+	_dash_recharge_indicator = ProgressBar.new()
+	_dash_recharge_indicator.name = "DashRechargeAbovePlayer"
+	_dash_recharge_indicator.min_value = 0.0
+	_dash_recharge_indicator.max_value = 1.0
+	_dash_recharge_indicator.value = 1.0
+	_dash_recharge_indicator.custom_minimum_size = Vector2(48.0, 6.0)
+	_dash_recharge_indicator.size = Vector2(48.0, 6.0)
+	_dash_recharge_indicator.show_percentage = false
+	_dash_recharge_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dash_recharge_indicator.z_index = 90
+	_dash_recharge_indicator.visible = false
+
+	var fondo := StyleBoxFlat.new()
+	fondo.bg_color = Color(0.075, 0.05, 0.035, 0.96)
+	fondo.border_width_left = 1
+	fondo.border_width_top = 1
+	fondo.border_width_right = 1
+	fondo.border_width_bottom = 1
+	fondo.border_color = Color(0.29, 0.19, 0.12, 1.0)
+	var relleno := StyleBoxFlat.new()
+	relleno.bg_color = Color(0.78, 0.66, 0.46, 1.0)
+	_dash_recharge_indicator.add_theme_stylebox_override("background", fondo)
+	_dash_recharge_indicator.add_theme_stylebox_override("fill", relleno)
+	add_child(_dash_recharge_indicator)
+
+
+func _actualizar_indicador_recarga_dash() -> void:
+	if not is_instance_valid(_dash_recharge_indicator):
+		return
+	if not is_instance_valid(player) or not player.is_alive:
+		_dash_recharge_indicator.visible = false
+		return
+
+	var maximo := maxf(float(player.max_stamina), 0.001)
+	var actual := clampf(float(player.stamina), 0.0, maximo)
+	var recargando := actual < maximo - 0.0001
+	_dash_recharge_indicator.visible = recargando
+	if not recargando:
+		return
+
+	_dash_recharge_indicator.value = actual / maximo
+	var transformacion: Transform2D = player.get_global_transform_with_canvas()
+	_dash_recharge_indicator.position = transformacion.origin + Vector2(-24.0, -42.0)
 
 
 func _preparar_aviso_descubrimiento() -> void:
@@ -389,7 +407,7 @@ func _al_recibir_cambio_vida(actual: int, maximo: int) -> void:
 
 
 func _al_recibir_cambio_stamina(actual: float, maximo: float) -> void:
-	_actualizar_puntos_dash(actual, maximo)
+	_actualizar_barra_dash(actual, maximo)
 
 
 func _al_recibir_cambio_mana(actual: int, maximo: int) -> void:
@@ -444,7 +462,7 @@ func _actualizar_stamina() -> void:
 		if maximo_controlador != null:
 			stamina_maxima = float(maximo_controlador)
 
-	_actualizar_puntos_dash(stamina_actual, stamina_maxima)
+	_actualizar_barra_dash(stamina_actual, stamina_maxima)
 
 
 func _actualizar_eterium() -> void:
