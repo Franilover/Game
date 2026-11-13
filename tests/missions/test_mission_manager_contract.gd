@@ -78,6 +78,8 @@ func _run() -> void:
 	)
 	if not manager.aceptar_mision("mision_contrato"):
 		errores.append("No se pudo aceptar la misión de prueba.")
+	if manager.obtener_misiones_activas().size() != 1:
+		errores.append("El listado de misiones activas no incluyó la misión aceptada.")
 	manager.registrar_recoleccion("mineral", 3)
 	manager.registrar_dialogo("personaje_1")
 	# Un evento repetido después de completar no debe emitir otra recompensa.
@@ -91,6 +93,8 @@ func _run() -> void:
 		errores.append("La señal de recompensa no se emitió exactamente una vez.")
 	if not manager.esta_completada("mision_contrato"):
 		errores.append("La misión no quedó en estado completada.")
+	if not manager.obtener_misiones_activas().is_empty():
+		errores.append("Una misión completada permaneció en el listado de misiones activas.")
 
 	# Una misión social debe bloquear el regreso hasta completar el objetivo previo.
 	var mision_social := {
