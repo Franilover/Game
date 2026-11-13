@@ -858,6 +858,9 @@ func _conectar_senales_misiones() -> void:
 	if not manager.progreso_actualizado.is_connected(_al_progreso_mision):
 		manager.progreso_actualizado.connect(_al_progreso_mision)
 
+	if not manager.mision_aceptada.is_connected(_al_mision_aceptada):
+		manager.mision_aceptada.connect(_al_mision_aceptada)
+
 	if not manager.mision_completada.is_connected(_al_mision_completada):
 		manager.mision_completada.connect(_al_mision_completada)
 
@@ -868,6 +871,11 @@ func _al_progreso_mision(
 	_progreso: int,
 	_requerido: int
 ) -> void:
+	if _mission_panel_open:
+		_actualizar_panel_misiones()
+
+
+func _al_mision_aceptada(_mision: Dictionary) -> void:
 	if _mission_panel_open:
 		_actualizar_panel_misiones()
 
@@ -913,10 +921,12 @@ func _actualizar_panel_misiones() -> void:
 	if manager == null:
 		return
 
-	var misiones: Array[Dictionary] = manager.obtener_misiones()
+	# El registro general contiene también misiones disponibles/no aceptadas.
+	# El panel de la tecla F representa el diario activo del jugador.
+	var misiones: Array[Dictionary] = manager.obtener_misiones_activas()
 	if misiones.is_empty():
 		var vacio := Label.new()
-		vacio.text = "No hay misiones registradas."
+		vacio.text = "No tienes misiones activas."
 		vacio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vacio.add_theme_color_override("font_color", Color(0.72, 0.64, 0.52, 1.0))
 		mission_list.add_child(vacio)
