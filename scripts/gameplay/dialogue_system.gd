@@ -368,8 +368,8 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 	for variante_variant in variantes:
 		if not variante_variant is Dictionary:
 			continue
-		variante_variant = variante_variant as Dictionary
-		var requisito_contextual_variant: Variant = variante_variant.get("requisito_contextual", {})
+		var variante := variante_variant as Dictionary
+		var requisito_contextual_variant: Variant = variante.get("requisito_contextual", {})
 		if not requisito_contextual_variant is Dictionary:
 			continue
 		var requisito_contextual := requisito_contextual_variant as Dictionary
@@ -382,9 +382,9 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 			if not requisito_social.is_empty() and not _cumple_requisito_social_contextual(requisito_social, relacion):
 				continue
 
-		var prioridad := int(variante_variant.get("prioridad", 0))
+		var prioridad := int(variante.get("prioridad", 0))
 		if mejor.is_empty() or prioridad > mejor_prioridad:
-			mejor = variante_variant.duplicate(true)
+			mejor = variante.duplicate(true)
 			mejor_prioridad = prioridad
 
 	return mejor
@@ -397,14 +397,14 @@ func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -
 		tiene_condicion = true
 		var estaciones_variant: Variant = requisito.get("estaciones", [])
 		var estaciones: Array = estaciones_variant if estaciones_variant is Array else [estaciones_variant]
-		if not str(contexto.get("estacion_id", "")) in estaciones:
+		if not estaciones.has(str(contexto.get("estacion_id", ""))):
 			return false
 
 	if requisito.has("dias_de_estacion"):
 		tiene_condicion = true
 		var dias_variant: Variant = requisito.get("dias_de_estacion", [])
 		var dias: Array = dias_variant if dias_variant is Array else [dias_variant]
-		if not int(contexto.get("dia_de_estacion", 0)) in dias:
+		if not dias.has(int(contexto.get("dia_de_estacion", 0))):
 			return false
 
 	if requisito.has("dia_de_estacion_min"):
@@ -421,14 +421,14 @@ func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -
 		tiene_condicion = true
 		var dias_anio_variant: Variant = requisito.get("dias_del_anio", [])
 		var dias_anio: Array = dias_anio_variant if dias_anio_variant is Array else [dias_anio_variant]
-		if not int(contexto.get("dia", 0)) in dias_anio:
+		if not dias_anio.has(int(contexto.get("dia", 0))):
 			return false
 
 	if requisito.has("periodos"):
 		tiene_condicion = true
 		var periodos_variant: Variant = requisito.get("periodos", [])
 		var periodos: Array = periodos_variant if periodos_variant is Array else [periodos_variant]
-		if not str(contexto.get("periodo", "")) in periodos:
+		if not periodos.has(str(contexto.get("periodo", ""))):
 			return false
 
 	return tiene_condicion
