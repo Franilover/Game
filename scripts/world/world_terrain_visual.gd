@@ -469,7 +469,10 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 	if zone >= 4 and zone <= 6:
 		var water_material := ShaderMaterial.new()
 		water_material.shader = WATER_SHADER
-		layer.display_material = water_material
+		# TileMapDual._ready() copia el material directo a display_material
+		# antes de reemplazarlo por su ghost material invisible. Asignar
+		# display_material aquí sería prematuro: _ready() lo sobrescribiría.
+		layer.material = water_material
 	layer.name = "TerrainDual_Zone_%02d" % zone
 	layer.godot_4_3_compatibility = false
 	layer.z_as_relative = false
