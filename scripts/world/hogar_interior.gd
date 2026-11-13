@@ -7,6 +7,7 @@ const ALTO := 352.0
 const CELDA := 32.0
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CHEST_UI_SCRIPT = preload("res://scripts/ui/hogar_chest_inventory.gd")
+const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 const CATALOGO := {
 	"cama": {"nombre": "Cama", "ruta": "res://assets/art/places/Muebles/cama.png"},
 	"cofre": {"nombre": "Cofre", "ruta": "res://assets/art/places/Muebles/cofre.png"},
@@ -16,6 +17,7 @@ const CATALOGO := {
 
 var _decoraciones: Array[Dictionary] = []
 var _sprites: Array[Sprite2D] = []
+var _objetivos_cofre: Array[Node2D] = []
 var _editor_activo := false
 var _tipo_actual := ""
 var _giro := 0.0
@@ -296,6 +298,24 @@ func _cofre_tiene_contenido(indice: int) -> bool:
 	return false
 
 
+func _puede_abrir_cofre_desde_interaccion(jugador: Node, indice: int) -> bool:
+	if not visible or _editor_activo or esta_cofre_abierto():
+		return false
+	if indice < 0 or indice >= _decoraciones.size() or indice >= _sprites.size():
+		return false
+	if str(_decoraciones[indice].get("tipo", "")) != "cofre":
+		return false
+	var sprite := _sprites[indice]
+	if not is_instance_valid(sprite) or not jugador is Node2D:
+		return false
+	return (jugador as Node2D).global_position.distance_to(sprite.global_position) <= 112.0
+
+
+func _abrir_cofre_desde_interaccion(jugador: Node, indice: int) -> void:
+	if _puede_abrir_cofre_desde_interaccion(jugador, indice):
+		_abrir_cofre(indice)
+
+
 func _abrir_cofre(indice: int) -> void:
 	if esta_cofre_abierto() or indice < 0 or indice >= _decoraciones.size():
 		return
@@ -332,7 +352,11 @@ func _reconstruir() -> void:
 	for sprite in _sprites:
 		if is_instance_valid(sprite):
 			sprite.queue_free()
+	for objetivo in _objetivos_cofre:
+		if is_instance_valid(objetivo):
+			objetivo.queue_free()
 	_sprites.clear()
+	_objetivos_cofre.clear()
 	for i in range(_decoraciones.size()):
 		_agregar_sprite(i)
 
@@ -342,12 +366,27 @@ func _agregar_sprite(indice: int) -> void:
 	var textura := _textura(str(item.tipo))
 	if textura == null:
 		_sprites.append(null)
+		_objetivos_cofre.append(null)
 		return
 	var sprite := Sprite2D.new()
 	sprite.texture = textura
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(sprite)
 	_sprites.append(sprite)
+	if str(_decoraciones[indice].get("tipo", "")) == "cofre":
+		var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+		if is_instance_valid(objetivo):
+			objetivo.name = "InteraccionCofre_" + str(indice)
+			objetivo.configurar(
+				"Abrir cofre",
+				112.0,
+				Callable(self, "_puede_abrir_cofre_desde_interaccion").bind(indice),
+				Callable(self, "_abrir_cofre_desde_interaccion").bind(indice)
+			)
+			add_child(objetivo)
+		_objetivos_cofre.append(objetivo)
+	else:
+		_objetivos_cofre.append(null)
 	_actualizar_sprite(indice)
 
 
@@ -362,6 +401,8 @@ func _actualizar_sprite(indice: int) -> void:
 	sprite.rotation = float(item.giro)
 	sprite.z_index = 2 + int((sprite.position.y + ALTO * 0.5) / CELDA)
 	sprite.modulate = Color("#FFE3A3") if indice == _seleccion else Color.WHITE
+	if indice < _objetivos_cofre.size() and is_instance_valid(_objetivos_cofre[indice]):
+		_objetivos_cofre[indice].position = sprite.position
 
 
 func _seleccionar(tipo: String) -> void:
@@ -414,16 +455,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if esta_cofre_abierto():
-		return
-	if not _editor_activo:
-		if event is InputEventMouseButton:
-			var clic := event as InputEventMouseButton
-			if clic.button_index == MOUSE_BUTTON_LEFT and clic.pressed:
-				var indice_cofre := _buscar(get_global_mouse_position())
-				if indice_cofre >= 0 and str(_decoraciones[indice_cofre].get("tipo", "")) == "cofre":
-					_abrir_cofre(indice_cofre)
-					get_viewport().set_input_as_handled()
+	if esta_cofre_abierto() or not _editor_activo:
 		return
 	if event is InputEventMouseMotion:
 		if _arrastrando >= 0:
