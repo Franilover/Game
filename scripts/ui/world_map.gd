@@ -25,12 +25,26 @@ var _limites_mapa_fijo := Rect2()
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_process(true)
+	_actualizar_bloqueo_modal()
 
 	GameState.mapa_exploracion_actualizada.connect(
 		_al_exploracion_actualizada
 	)
 
 	_refrescar()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		_actualizar_bloqueo_modal()
+
+
+func _actualizar_bloqueo_modal() -> void:
+	if is_visible_in_tree():
+		if not is_in_group("modal_ui"):
+			add_to_group("modal_ui")
+	elif is_in_group("modal_ui"):
+		remove_from_group("modal_ui")
 
 
 func configurar(jugador: Node2D, contexto: WorldContext) -> void:
