@@ -267,6 +267,26 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if not variantes_variant is Array:
 		return datos.duplicate(true)
 
+	var principal: Dictionary = {}
+	var mission_manager_local: MissionManagerService = mission_manager
+	for variante_variant in variantes_variant as Array:
+		if not variante_variant is Dictionary:
+			continue
+
+		var variante := (variante_variant as Dictionary).duplicate(true)
+		var requisito_variant: Variant = variante.get("requisito", {})
+		if requisito_variant is Dictionary:
+			var requisito := requisito_variant as Dictionary
+			if not requisito.is_empty():
+				if mission_manager_local != null and mission_manager_local.cumple_requisito_dialogo(requisito):
+					return variante
+				continue
+
+		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
+			principal = variante
+
+	# Los estados de misión tienen prioridad sobre los saludos sociales.
+	# Si no hay una variante narrativa activa, se aplican amistad/confianza.
 	var personaje_id := ""
 	if is_instance_valid(_fuente):
 		personaje_id = _fuente.get_personaje_game_id().strip_edges()
@@ -274,52 +294,12 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		var social: RelationshipSystemService = relationship_system
 		if social != null:
 			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_variant as Array, personaje_id)
-			if seleccion is Dictionary and not (seleccion as Dictionary).is_empty():
-				return (seleccion as Dictionary).duplicate(true)
-
-	var principal: Dictionary = {}
-	for variante_variant in variantes_variant as Array:
-		if not variante_variant is Dictionary:
-			continue
-
-		var variante := (variante_variant as Dictionary).duplicate(true)
-		var requisito_variant: Variant = variante.get("requisito", {})
-
-		if requisito_variant is Dictionary:
-			var requisito := requisito_variant as Dictionary
-			var mision_clave := str(requisito.get("mision_clave", "")).strip_edges()
-			var estado_requerido := str(requisito.get("estado", "")).strip_edges().to_lower()
-
-			if not mision_clave.is_empty() and not estado_requerido.is_empty():
-				var mission_manager_local: MissionManagerService = mission_manager
-				if mission_manager_local == null:
-					continue
-
-				var mision: Dictionary = mission_manager_local.buscar_mision_por_clave(mision_clave)
-				if mision.is_empty():
-					continue
-
-				var mision_id := str(mision.get("id", ""))
-				var estado_actual := str(
-					mission_manager_local.obtener_estado_mision(mision_id).get(
-						"estado",
-						"disponible"
-					)
-				).to_lower()
-
-				if estado_actual == estado_requerido:
-					return variante
-
-				continue
-
-		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
-			principal = variante
+			if not seleccion.is_empty():
+				return seleccion.duplicate(true)
 
 	if not principal.is_empty():
 		return principal
-
 	return datos.duplicate(true)
-
 
 func _actualizar_boton_accion() -> void:
 	if action_button == null:
