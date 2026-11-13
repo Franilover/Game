@@ -50,13 +50,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 18
 
-[node name="Eyebrow" type="Label" parent="Content"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.76, 0.58, 0.43, 1)
-theme_override_font_sizes/font_size = 14
-text = "GARLIA  /  ARCHIVO NARRATIVO"
-horizontal_alignment = 1
-
 [node name="Title" type="Label" parent="Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.84, 0.68, 1)
@@ -64,26 +57,11 @@ theme_override_font_sizes/font_size = 38
 text = "HISTORIA"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Content"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.77, 0.69, 1)
-theme_override_font_sizes/font_size = 15
-text = "Relatos, personajes y lugares de Garlia."
-horizontal_alignment = 1
-
 [node name="ChapterButton" type="Button" parent="Content"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 21
 text = "CAPÍTULO 01   ·   LA RESERVA CARMESÍ"
-
-[node name="ChapterDescription" type="Label" parent="Content"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.77, 0.69, 1)
-theme_override_font_sizes/font_size = 14
-text = "Una extensión privada del Abismo. Sus bosques y valles son el escenario de cacerías organizadas por la aristocracia."
-horizontal_alignment = 1
-autowrap_mode = 3
 
 [node name="Spacer" type="Control" parent="Content"]
 custom_minimum_size = Vector2(0, 20)
