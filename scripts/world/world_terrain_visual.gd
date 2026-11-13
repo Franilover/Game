@@ -471,7 +471,7 @@ func _crear_capa_terreno(zone: int) -> TileMapDual:
 		var grass_material := ShaderMaterial.new()
 		grass_material.shader = GRASS_SHADER
 		# Las coordenadas del shader se calculan en espacio global para que
-		# las ondas mantengan una sola fase entre tiles y chunks de Pradera.
+		# la variación superficial mantenga una sola fase entre tiles y chunks.
 		layer.material = grass_material
 	elif zone >= 4 and zone <= 6:
 		var water_material := ShaderMaterial.new()
