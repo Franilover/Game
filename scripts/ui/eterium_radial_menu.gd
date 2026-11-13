@@ -7,7 +7,6 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 ## Pulsa X para abrir; usa los botones o las teclas 1–3.
 
 const COSTO_CURACION: int = 10
-const COSTO_CARGA_DASH: int = 10
 const RECUPERACION_MEDITACION: int = 20
 
 var jugador: Node = null
@@ -25,7 +24,6 @@ var _botones: Array[Button] = []
 const TIEMPO_CONCENTRACION := 4.0
 const VENTANA_TOQUES := 0.6
 const DURACION_CURACION := 5.0
-const DURACION_DASH_MINIJUEGO := 1.5
 const TOQUES_CURACION_NECESARIOS := 12
 const COSTO_FALLO_MINIJUEGO := 3
 var _minijuego_layer: Control
@@ -74,7 +72,7 @@ func _crear_interfaz() -> void:
 		return
 	_overlay.gui_input.connect(_al_input_overlay)
 	_botones.clear()
-	for i in range(3):
+	for i in range(2):
 		var boton := _overlay.get_node_or_null("MenuPanel/Options/AccionEterium%d" % (i + 1)) as Button
 		if boton == null:
 			push_error("EteriumRadialMenu: falta el botón de acción %d." % (i + 1))
@@ -255,16 +253,6 @@ func _completar_meditacion() -> void:
 	_limpiar_minijuego()
 
 
-func _recuperar_dash_directo() -> void:
-	if not is_instance_valid(jugador) or not jugador.has_method("recuperar_dash_con_eterium"):
-		return
-	var recuperadas: int = jugador.call("recuperar_dash_con_eterium", 1, COSTO_CARGA_DASH)
-	if recuperadas > 0:
-		_notificar("Dash recuperado (10 de Eterium).")
-	else:
-		_notificar("No puedes recuperar una carga: revisa Eterium y cargas.")
-
-
 func _fallar_minijuego(mensaje: String) -> void:
 	_estado_minijuego = ""
 	if is_instance_valid(jugador):
@@ -318,7 +306,7 @@ func _mostrar_minijuego() -> void:
 			_panel.offset_right = 150.0
 			_panel.offset_bottom = 50.0
 			_panel.custom_minimum_size = Vector2(300.0, 36.0)
-	_minijuego_tiempo.visible = _estado_minijuego in ["curacion", "dash_menu"]
+	_minijuego_tiempo.visible = _estado_minijuego == "curacion"
 	_indicador_tiempo.visible = _estado_minijuego == "concentracion"
 
 
@@ -377,10 +365,9 @@ func _cerrar() -> void:
 
 func _actualizar_resumen() -> void:
 	var eterium: Variant = jugador.get("eterium") if jugador != null and is_instance_valid(jugador) else null
-	if _botones.size() >= 3:
+	if _botones.size() >= 2:
 		_botones[0].disabled = jugador == null or int(jugador.get("health")) >= int(jugador.get("max_health"))
-		_botones[1].disabled = jugador == null or not jugador.has_method("recuperar_dash_con_eterium")
-		_botones[2].disabled = eterium == null or not eterium.has_method("mana") or not eterium.has_method("max_mana") or int(eterium.call("mana")) >= int(eterium.call("max_mana"))
+		_botones[1].disabled = eterium == null or not eterium.has_method("mana") or not eterium.has_method("max_mana") or int(eterium.call("mana")) >= int(eterium.call("max_mana"))
 
 func _seleccionar(indice: int) -> void:
 	cuadrante = indice
@@ -393,25 +380,10 @@ func _ejecutar_seleccion() -> void:
 		0:
 			_curarse()
 		1:
-			_recuperar_dash()
-		2:
 			_meditar()
 
 func _curarse() -> void:
 	_iniciar_minijuego_curacion()
-
-
-func _recuperar_dash() -> void:
-	if not is_instance_valid(jugador):
-		return
-	_estado_minijuego = "dash_menu"
-	_toques_curacion = 0
-	_tiempo_minijuego = DURACION_DASH_MINIJUEGO
-	_mostrar_minijuego()
-	_actualizar_panel_minijuego("DASH · 0/2", "ESPACIO × 2")
-	_minijuego_barra.value = 0.0
-	_minijuego_tiempo.visible = true
-	_minijuego_tiempo.value = 100.0
 
 
 func _meditar() -> void:
