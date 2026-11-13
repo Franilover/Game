@@ -105,8 +105,9 @@ func _crear_ui() -> void:
 	_eterium = _crear_spin(1, 999999)
 	izquierda.add_child(_campo("Eterium máximo", _eterium))
 
-	_energia = _crear_spin(1, 999999)
-	izquierda.add_child(_campo("Energía máxima", _energia))
+	_energia = _crear_spin(1, 1)
+	_energia.editable = false
+	izquierda.add_child(_campo("Carga de dash (única)", _energia))
 
 	var defaults := Button.new()
 	defaults.text = "Restablecer valores por defecto"
