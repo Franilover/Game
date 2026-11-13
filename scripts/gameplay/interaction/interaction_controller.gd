@@ -116,7 +116,12 @@ func interactuar(player: Node) -> bool:
 		return false
 	if not objetivo_actual.has_method("interact"):
 		return false
-	objetivo_actual.call("interact", player)
+
+	var resultado: Variant = objetivo_actual.call("interact", player)
+	if resultado is bool:
+		return resultado
+	# Los objetos y menús contextuales antiguos pueden seguir usando
+	# interact() sin valor de retorno; invocarlos cuenta como acción ejecutada.
 	return true
 
 func obtener_texto() -> String:
