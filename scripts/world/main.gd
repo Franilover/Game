@@ -172,7 +172,8 @@ func _iniciar_zonas() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not PLAYER_INPUT_CONTROLLER_SCRIPT.es_combinacion_viaje(event):
+	var input_controller = PLAYER_INPUT_CONTROLLER_SCRIPT.new()
+	if not input_controller.es_combinacion_viaje(event):
 		return
 	if _realm_menu == null or not is_instance_valid(_realm_menu):
 		return
