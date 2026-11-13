@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cmn23gd47tjqf" path="res://scripts/ui/start_menu.gd" id="1_start_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
 [ext_resource type="Texture2D" path="res://assets/art/UI/Menus/menu_background.png" id="4_menu_background"]
+[ext_resource type="Script" path="res://scripts/ui/story_navigation.gd" id="5_story_navigation"]
 
 
 
@@ -74,13 +75,10 @@ text = "GARLIA"
 horizontal_alignment = 1
 
 [node name="HistoriaButton" type="Button" parent="Center" unique_id=1127389707]
-modulate = Color(1, 1, 1, 0.42)
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-tooltip_text = "Historia — Próximamente"
 focus_mode = 1
 theme_override_font_sizes/font_size = 18
-disabled = true
 text = "Historia"
 
 [node name="StartButton" type="Button" parent="Center" unique_id=754464902]
@@ -364,3 +362,8 @@ text = "Volver"
 [node name="CharacterCreation" parent="." unique_id=1640942131 instance=ExtResource("2_character_creation")]
 layout_mode = 0
 anchors_preset = 0
+
+[node name="HistoriaNavigation" type="Node" parent="."]
+script = ExtResource("5_story_navigation")
+
+[connection signal="pressed" from="Center/HistoriaButton" to="HistoriaNavigation" method="abrir_historia"]
