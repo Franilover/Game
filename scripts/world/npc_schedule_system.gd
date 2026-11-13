@@ -88,6 +88,10 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		# Al entrar a un edificio, los NPC exteriores quedan ocultos. También
 		# pausamos sus rutinas para que no avancen mientras el jugador está dentro.
 		if not npc.visible:
+			var movimiento_oculto := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+			if movimiento_oculto != null:
+				movimiento_oculto.detener_por_rutina()
+			npc.set_meta("rutina_firma", "")
 			continue
 		_aplicar_rutina(npc, dia_semana, minutos)
 
@@ -170,6 +174,10 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		return
 
 	var destino_local: Vector2 = POSICIONES[ubicacion]
+	if rutina.is_empty():
+		var hogar_variant: Variant = npc.datos.get("posicion_hogar_local", null)
+		if hogar_variant is Vector2:
+			destino_local = hogar_variant
 	var destino_global := _zona.to_global(destino_local)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
@@ -181,6 +189,10 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		if ruta.is_empty():
 			push_warning("NPCScheduleSystem: no se encontró una ruta transitable para " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
 			movimiento.detener_por_rutina()
+			npc.set_meta("rutina_firma", firma_nueva)
+			npc.set_meta("rutina_actual", clave_rutina)
+			npc.set_meta("rutina_ubicacion", ubicacion)
+			npc.datos["actividad_actual"] = actividad
 			return
 		movimiento.establecer_ruta(ruta)
 	else:
