@@ -111,6 +111,10 @@ func procesar(delta: float) -> void:
 	_mantener_en_chunk()
 
 
+func rutina_terminada() -> bool:
+	return _control_rutina and _indice_ruta_rutina >= _ruta_rutina.size()
+
+
 func establecer_ruta(ruta: PackedVector2Array) -> void:
 	_control_rutina = true
 	_ruta_rutina = ruta
