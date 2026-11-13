@@ -13,7 +13,10 @@ const ZONE_WATER := 4
 const ZONE_FOREST := 8
 const TERRAIN_VISUAL_SCRIPT := preload("res://scripts/world/world_terrain_visual.gd")
 
+signal mapa_construido
+
 var terrain_renderer: Node
+var mapa_listo: bool = false
 
 
 func _ready() -> void:
@@ -28,6 +31,9 @@ func construir_mapa() -> void:
 	terrain_renderer.call("configurar", TILE_SIZE)
 	await get_tree().process_frame
 	terrain_renderer.call("finalizar_preparacion_renderer")
+
+	# Agrupar todas las escrituras evita recomponer el TileMapDual por cada celda.
+	terrain_renderer.call("comenzar_lote")
 
 	# Base continua de pradera: cada sector se pinta de forma explícita abajo.
 	for y in range(MAP_TOP, MAP_BOTTOM):
@@ -67,9 +73,13 @@ func construir_mapa() -> void:
 		Vector2i(20, 10), Vector2i(16, 25), Vector2i(25, 39)
 	], ZONE_DIRT, 1, "Tierra")
 
+	terrain_renderer.call("terminar_lote")
 	while bool(terrain_renderer.call("tiene_flush_pendiente")):
 		terrain_renderer.call("procesar_flush", 512)
 		await get_tree().process_frame
+
+	mapa_listo = true
+	mapa_construido.emit()
 
 
 func pintar(celda: Vector2i, zona: int, bioma: String) -> void:
