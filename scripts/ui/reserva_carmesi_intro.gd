@@ -1,7 +1,7 @@
 extends Control
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
-const VELOCIDAD_MAQUINA_ESCRIBIR := 34.0
+const VELOCIDAD_MAQUINA_ESCRIBIR := 18.0
 
 const PAGINAS: Array[Dictionary] = [
 	{
@@ -75,7 +75,7 @@ func _actualizar_pagina() -> void:
 	entrada.tween_property(page_title, "modulate:a", 1.0, 0.38)
 	entrada.tween_property(text_panel, "modulate:a", 1.0, 0.42).set_delay(0.06)
 
-	# El texto se revela por caracteres; la duración crece con la longitud del párrafo.
+	# Ritmo pausado para poder leer mientras aparecen los caracteres.
 	var cantidad_caracteres := page_text.get_total_character_count()
 	var duracion := maxf(1.0, float(cantidad_caracteres) / VELOCIDAD_MAQUINA_ESCRIBIR)
 	_texto_tween = create_tween()
