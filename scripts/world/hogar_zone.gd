@@ -8,7 +8,7 @@ const ANCHO := 2400.0
 const ALTO := 1600.0
 const TAMANO_CELDA := 32.0
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
-const CONTEXTUAL_ACTION_PROMPT_SCRIPT = preload("res://scripts/ui/contextual_action_prompt.gd")
+const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 
 const CATALOGO := {
 	"arbol": {"nombre": "Árbol", "ruta": "res://assets/art/props/Árbol.png"},
@@ -39,7 +39,7 @@ var _posicion_previa_valida := false
 var _boton_modo: Button
 var _panel_construccion: PanelContainer
 var _etiqueta_estado: Label
-var _prompt_entrada: Button
+var _objetivo_puerta: Node2D
 var _interior_abierto := false
 var _interior_guardado_pendiente := false
 var _tiempo_actualizacion_estado := 0.0
@@ -54,7 +54,7 @@ func _ready() -> void:
 	add_child(_sprite_previo)
 	_crear_interfaz_construccion()
 	_reconstruir_visual_decoraciones()
-	_crear_prompt_entrada()
+	_crear_objetivo_puerta()
 	var interior_inicial := _obtener_interior()
 	if is_instance_valid(interior_inicial):
 		interior_inicial.call("establecer_activo", false)
@@ -535,8 +535,9 @@ func _guardar_cambios_hogar() -> void:
 func _process(delta: float) -> void:
 	_tiempo_actualizacion_estado += delta
 	var jugador := _obtener_jugador()
-	if is_instance_valid(_prompt_entrada):
-		_prompt_entrada.call("establecer_accion", "Salir de la casa" if _interior_abierto else "Entrar a la casa")
+	if is_instance_valid(_objetivo_puerta):
+		_objetivo_puerta.global_position = _obtener_posicion_puerta()
+		_objetivo_puerta.call("establecer_texto", "Salir de la casa" if _interior_abierto else "Entrar a la casa")
 	if _tiempo_actualizacion_estado >= 0.35 and is_instance_valid(jugador):
 		_tiempo_actualizacion_estado = 0.0
 		var estado := obtener_estado_guardado()
@@ -544,33 +545,24 @@ func _process(delta: float) -> void:
 		GameState.world_state.flags["hogar_estado"] = estado
 
 
-func _crear_prompt_entrada() -> void:
-	var raiz := get_node_or_null("InterfazConstruccion/Raiz") as Control
-	if not is_instance_valid(raiz):
+func _crear_objetivo_puerta() -> void:
+	_objetivo_puerta = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(_objetivo_puerta):
+		push_error("HogarZone: no se pudo crear el objetivo contextual de la puerta.")
 		return
-	_prompt_entrada = CONTEXTUAL_ACTION_PROMPT_SCRIPT.new() as Button
-	if not is_instance_valid(_prompt_entrada):
-		push_error("HogarZone: no se pudo crear el aviso contextual de entrada.")
-		return
-	_prompt_entrada.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_prompt_entrada.offset_left = -125.0
-	_prompt_entrada.offset_top = -88.0
-	_prompt_entrada.offset_right = 125.0
-	_prompt_entrada.offset_bottom = -48.0
-	_prompt_entrada.call(
-		"configurar",
+	_objetivo_puerta.name = "ObjetivoContextualPuerta"
+	_objetivo_puerta.configurar(
 		"Entrar a la casa",
-		_al_clic_prompt_entrada,
-		_obtener_jugador,
-		_obtener_posicion_puerta,
 		68.0,
-		_puerta_habilitada
+		_puerta_habilitada,
+		_interactuar_puerta
 	)
-	raiz.add_child(_prompt_entrada)
+	add_child(_objetivo_puerta)
+	_objetivo_puerta.global_position = _obtener_posicion_puerta()
 
 
-func _al_clic_prompt_entrada() -> void:
-	if not _puede_usar_puerta():
+func _interactuar_puerta(_jugador: Node) -> void:
+	if not _puerta_habilitada(_jugador):
 		return
 	_establecer_interior(not _interior_abierto, true)
 
@@ -579,7 +571,7 @@ func _obtener_jugador() -> Node2D:
 	return get_tree().get_first_node_in_group("player") as Node2D
 
 
-func _puerta_habilitada() -> bool:
+func _puerta_habilitada(_jugador: Node = null) -> bool:
 	if _modo_construccion:
 		return false
 	if _interior_abierto:
@@ -598,11 +590,7 @@ func _obtener_posicion_puerta() -> Vector2:
 
 func _puede_usar_puerta() -> bool:
 	var jugador := _obtener_jugador()
-	return (
-		is_instance_valid(jugador)
-		and _puerta_habilitada()
-		and jugador.global_position.distance_to(_obtener_posicion_puerta()) <= 68.0
-	)
+	return is_instance_valid(jugador) and _puerta_habilitada(jugador) and jugador.global_position.distance_to(_obtener_posicion_puerta()) <= 68.0
 
 
 func _obtener_interior() -> Node2D:
