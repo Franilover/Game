@@ -873,7 +873,8 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 		"vivienda_mason": "casa_bruna",
 		"casa_oriente_b": "casa_darven",
 		"casa_oriente_c": "casa_saira",
-		"vivienda_oeste_09": "casa_narel"
+		"vivienda_oeste_09": "casa_narel",
+		"castillo": "castillo"
 	}
 	var ubicacion_rutina_esperada := str(ubicacion_rutina_por_entrada.get(entrada_id, ""))
 	var indice := 0
