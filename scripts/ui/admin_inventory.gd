@@ -28,6 +28,10 @@ var _minuto_spin: SpinBox
 var _dias_spin: SpinBox
 var _estacion_selector: OptionButton
 var _anio_spin: SpinBox
+var _relationship_system: Node = null
+var _zone_manager: Node = null
+var _campos_relacion: Dictionary = {}
+var _boton_guardar_relacion: Button = null
 
 
 func _ready() -> void:
@@ -42,6 +46,11 @@ func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: Garlia
 	_world_entity_spawner = spawner
 	_inventario = inventario
 	_world_items = world_items
+
+
+func configurar_aldeanos(relationship_system: Node, zone_manager: Node) -> void:
+	_relationship_system = relationship_system
+	_zone_manager = zone_manager
 
 
 func configurar_tiempo(atmosfera: WorldAtmosphere) -> void:
@@ -95,7 +104,7 @@ func _crear_ui() -> void:
 	encabezado.add_theme_constant_override("separation", 3)
 	titulo_columna.add_child(encabezado)
 
-	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"], ["tiempo", "Tiempo"]]:
+	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"], ["aldeanos", "Aldeanos"], ["tiempo", "Tiempo"]]:
 		var boton := Button.new()
 		boton.text = str(entrada[1])
 		boton.toggle_mode = true
@@ -203,8 +212,10 @@ func _cargar_lista() -> void:
 
 	if _modo == "criaturas":
 		_cargar_criaturas()
-	else:
+	elif _modo == "objetos":
 		_cargar_objetos()
+	else:
+		_cargar_aldeanos()
 
 
 func _cargar_criaturas() -> void:
@@ -255,6 +266,15 @@ func _cargar_objetos() -> void:
 
 		for item in objetos:
 			_crear_fila(str(item.get("nombre", "Objeto")), item)
+
+
+func _cargar_aldeanos() -> void:
+	var personajes: Array[Dictionary] = WorldData.obtener_personajes_game()
+	personajes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
+	)
+	for personaje in personajes:
+		_crear_fila(str(personaje.get("nombre", "Personaje")), personaje)
 
 
 func _obtener_grupo_objeto(item: Dictionary) -> String:
@@ -318,6 +338,10 @@ func _mostrar_detalle() -> void:
 		_cantidad.visible = false
 		return
 
+	if _modo == "aldeanos":
+		_mostrar_detalle_aldeano()
+		return
+
 	var nombre := str(_seleccion.get("nombre", "Elemento"))
 	var descripcion := str(_seleccion.get("descripcion", "Sin descripción."))
 
@@ -361,12 +385,159 @@ func _mostrar_detalle() -> void:
 	_boton_accion.disabled = false
 
 
+func _mostrar_detalle_aldeano() -> void:
+	var nombre := str(_seleccion.get("nombre", "Personaje"))
+	var personaje_id := str(_seleccion.get("id", ""))
+	var npc := _buscar_npc_aldeano(personaje_id, nombre)
+	var titulo := Label.new()
+	titulo.text = nombre
+	titulo.add_theme_font_size_override("font_size", 18)
+	_detalle.add_child(titulo)
+
+	var estado_actual := Label.new()
+	if npc != null:
+		var actividad := str(npc.datos.get("actividad_actual", npc.get_meta("rutina_actual", "Sin actividad")))
+		var ubicacion := str(npc.get_meta("rutina_ubicacion", _seleccion.get("ubicacion_clave", "Sin ubicación")))
+		estado_actual.text = "Ahora: %s\nLugar: %s" % [actividad.replace("_", " ").capitalize(), ubicacion.replace("_", " ").capitalize()]
+	else:
+		estado_actual.text = "Este personaje no está presente en la zona actual."
+	estado_actual.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detalle.add_child(estado_actual)
+
+	_boton_accion.text = "Teletransportarme hasta " + nombre
+	_boton_accion.disabled = npc == null
+	_cantidad.visible = false
+
+	_detalle.add_child(_crear_separador_tiempo("Horario semanal"))
+	var rutinas_variant: Variant = _seleccion.get("rutinas", [])
+	var rutinas: Array = rutinas_variant if rutinas_variant is Array else []
+	if rutinas.is_empty():
+		var sin_horario := Label.new()
+		sin_horario.text = "No tiene horarios configurados."
+		_detalle.add_child(sin_horario)
+	else:
+		for rutina_variant in rutinas:
+			if not rutina_variant is Dictionary:
+				continue
+			var rutina := rutina_variant as Dictionary
+			var dias := _nombres_dias(rutina.get("dias_semana", []))
+			var actividad := str(rutina.get("actividad_clave", "Actividad")).replace("_", " ").capitalize()
+			var ubicacion := str(rutina.get("ubicacion_clave", "Sin lugar")).replace("_", " ").capitalize()
+			var horario := Label.new()
+			horario.text = "%s · %s–%s\n%s · %s" % [dias, str(rutina.get("hora_inicio", "--:--")), str(rutina.get("hora_fin", "--:--")), actividad, ubicacion]
+			horario.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			_detalle.add_child(horario)
+
+	var separador_relaciones := _crear_separador_tiempo("Relación con el jugador")
+	_detalle.add_child(separador_relaciones)
+	_campos_relacion.clear()
+	if _relationship_system == null or not is_instance_valid(_relationship_system) or not _relationship_system.has_method("obtener_relacion"):
+		var sin_sistema := Label.new()
+		sin_sistema.text = "No se encontró el sistema de relaciones."
+		_detalle.add_child(sin_sistema)
+		return
+	var relacion_variant: Variant = _relationship_system.call("obtener_relacion", personaje_id)
+	if not relacion_variant is Dictionary or (relacion_variant as Dictionary).is_empty():
+		var sin_datos := Label.new()
+		sin_datos.text = "Todavía no hay datos sociales disponibles para este personaje."
+		_detalle.add_child(sin_datos)
+		return
+	var relacion := relacion_variant as Dictionary
+	for clave in ["amistad", "confianza", "respeto", "afecto"]:
+		var campo := SpinBox.new()
+		campo.min_value = -100.0
+		campo.max_value = 100.0
+		campo.step = 0.5
+		campo.value = float(relacion.get(clave, 0.0))
+		campo.custom_minimum_size = Vector2(82, 26)
+		_campos_relacion[clave] = campo
+		var fila := HBoxContainer.new()
+		var etiqueta := Label.new()
+		etiqueta.text = clave.capitalize()
+		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		fila.add_child(etiqueta)
+		fila.add_child(campo)
+		_detalle.add_child(fila)
+	_boton_guardar_relacion = Button.new()
+	_boton_guardar_relacion.text = "Guardar valores"
+	_boton_guardar_relacion.custom_minimum_size = Vector2(0, 26)
+	_boton_guardar_relacion.pressed.connect(_guardar_relacion_aldeano)
+	PIXEL_UI_THEME.apply(_boton_guardar_relacion, false)
+	_detalle.add_child(_boton_guardar_relacion)
+
+
+func _nombres_dias(dias_variant: Variant) -> String:
+	if not dias_variant is Array or (dias_variant as Array).is_empty():
+		return "Todos los días"
+	var nombres := ["Día 1", "Día 2", "Día 3", "Día 4", "Día 5"]
+	var resultado: Array[String] = []
+	for dia_variant in dias_variant as Array:
+		var dia := int(dia_variant)
+		if dia >= 0 and dia < nombres.size():
+			resultado.append(nombres[dia])
+	return ", ".join(resultado) if not resultado.is_empty() else "Sin días asignados"
+
+
+func _buscar_npc_aldeano(personaje_id: String, nombre: String) -> Creature:
+	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not npc_variant is Creature or not is_instance_valid(npc_variant):
+			continue
+		var npc := npc_variant as Creature
+		if not personaje_id.is_empty() and str(npc.datos.get("personaje_game_id", "")) == personaje_id:
+			return npc
+		if str(npc.get_nombre_visual()).strip_edges().to_lower() == nombre.strip_edges().to_lower():
+			return npc
+	return null
+
+
+func _guardar_relacion_aldeano() -> void:
+	if not _es_admin() or _seleccion.is_empty() or _relationship_system == null:
+		return
+	var personaje_id := str(_seleccion.get("id", ""))
+	var actual_variant: Variant = _relationship_system.call("obtener_relacion", personaje_id)
+	if not actual_variant is Dictionary:
+		_estado.text = "No se pudieron leer los valores actuales."
+		return
+	var actual := actual_variant as Dictionary
+	var cambios := {}
+	for clave in _campos_relacion:
+		var campo := _campos_relacion[clave] as SpinBox
+		cambios[clave] = float(campo.value) - float(actual.get(clave, 0.0))
+	var resultado: Variant = _relationship_system.call("modificar_relacion", personaje_id, cambios)
+	if resultado is Dictionary and not (resultado as Dictionary).is_empty():
+		_estado.text = "Valores de relación actualizados."
+	else:
+		_estado.text = "No se pudieron guardar los valores."
+
+
+func _teletransportar_a_aldeano() -> void:
+	if not _es_admin() or _seleccion.is_empty():
+		return
+	var npc := _buscar_npc_aldeano(str(_seleccion.get("id", "")), str(_seleccion.get("nombre", "")))
+	if npc == null:
+		_estado.text = "El personaje no está presente en esta zona."
+		return
+	if _zone_manager == null or not is_instance_valid(_zone_manager):
+		_estado.text = "No se encontró el administrador de zonas."
+		return
+	var zona: Node = _zone_manager.call("obtener_zona_actual") as Node
+	if zona == null or not zona.has_method("teletransportar_jugador_a_npc"):
+		_estado.text = "Esta zona todavía no permite teletransportarse hasta aldeanos."
+		return
+	if bool(zona.call("teletransportar_jugador_a_npc", npc)):
+		_estado.text = "Te teletransportaste hasta " + str(_seleccion.get("nombre", "el aldeano")) + "."
+	else:
+		_estado.text = "No se pudo encontrar una posición segura junto al personaje."
+
+
 func _ejecutar_accion() -> void:
 	if _seleccion.is_empty():
 		return
 
 	if _modo == "criaturas":
 		_invocar()
+	elif _modo == "aldeanos":
+		_teletransportar_a_aldeano()
 	else:
 		_dar_objeto()
 
