@@ -163,7 +163,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="Margin" type="MarginContainer" parent="LoginOverlay/LoginPanel" unique_id=1276907403]
+[node name="Margin" type="MarginContainer" parent="LoginOverlay/LoginCenter/LoginPanel" unique_id=1276907403]
 layout_mode = 2
 theme_override_constants/margin_left = 28
 theme_override_constants/margin_top = 24
@@ -180,37 +180,37 @@ theme_override_font_sizes/font_size = 26
 text = "Iniciar sesión"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1799794419]
+[node name="Subtitle" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=1799794419]
 layout_mode = 2
 text = "Usa tu cuenta de Garlia."
 horizontal_alignment = 1
 
-[node name="EmailLabel" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=648128192]
+[node name="EmailLabel" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=648128192]
 layout_mode = 2
 text = "Correo"
 
-[node name="EmailInput" type="LineEdit" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1874871142]
+[node name="EmailInput" type="LineEdit" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=1874871142]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 placeholder_text = "correo@ejemplo.com"
 
-[node name="PasswordLabel" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1008143552]
+[node name="PasswordLabel" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=1008143552]
 layout_mode = 2
 text = "Contraseña"
 
-[node name="PasswordInput" type="LineEdit" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=1460567700]
+[node name="PasswordInput" type="LineEdit" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=1460567700]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 placeholder_text = "Contraseña"
 secret = true
 
-[node name="Message" type="Label" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=439686178]
+[node name="Message" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=439686178]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 
-[node name="Buttons" type="HBoxContainer" parent="LoginOverlay/LoginPanel/Margin/Content" unique_id=333635625]
+[node name="Buttons" type="HBoxContainer" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=333635625]
 layout_mode = 2
 theme_override_constants/separation = 10
 
@@ -220,7 +220,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Entrar"
 
-[node name="CloseButton" type="Button" parent="LoginOverlay/LoginPanel/Margin/Content/Buttons" unique_id=1886830411]
+[node name="CloseButton" type="Button" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content/Buttons" unique_id=1886830411]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
