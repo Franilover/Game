@@ -519,39 +519,26 @@ func _obtener_nombres_criaturas() -> Array[String]:
 	return nombres
 
 
+const GARUMIS_ACTUALES_IDS: Array[String] = [
+	"4a409bba-fc4a-4b58-931f-9af1a6831710", # Plava
+	"98e5cae8-8eec-4cd8-ad9d-d84a1c691889", # Desello
+	"73c7e40b-942a-44cb-a9ad-76c37ca3fe30", # Velki
+	"3f947957-d6ff-4297-a7f4-6ff5e979327f", # Daruka
+	"84831011-0275-449a-9b78-cd3e809861e9", # Asterun
+	"95703c3b-95bf-4fc3-b7a1-0540efb55450"  # Vemil
+]
+
+
 func _obtener_nombres_garumis_visibles() -> Array[String]:
 	var nombres: Array[String] = []
 	for garumi in WorldData.obtener_garumis_game():
+		var garumi_id := str(garumi.get("id", "")).strip_edges()
+		if garumi_id not in GARUMIS_ACTUALES_IDS:
+			continue
 		var nombre := str(garumi.get("nombre", "")).strip_edges()
-		if nombre.is_empty():
+		if nombre.is_empty() or nombre in nombres:
 			continue
-
-		# WorldData contiene el catálogo disponible al juego. Si los registros
-		# incluyen metadatos de publicación, aceptamos canon o público y
-		# descartamos explícitamente borradores/privados.
-		var estado := str(garumi.get("estado", "")).strip_edges().to_lower()
-		var visibilidad := str(garumi.get("visibilidad", "")).strip_edges().to_lower()
-		var es_publico := bool(garumi.get("publico", garumi.get("es_publico", false)))
-		var es_canonico := bool(garumi.get("canonico", garumi.get("es_canonico", garumi.get("canon", false))))
-		var estado_visible := estado in ["canon", "canónico", "canonico", "publico", "público", "publicado", "aprobado"]
-		var visibilidad_visible := visibilidad in ["publico", "público", "public", "canon", "canónico", "canonico"]
-
-		if not estado.is_empty() and not estado_visible:
-			continue
-		if not visibilidad.is_empty() and not visibilidad_visible:
-			continue
-		if garumi.has("publicado") and not bool(garumi.get("publicado", false)) and not es_canonico and not estado_visible and not visibilidad_visible:
-			continue
-
-		var tiene_marcadores: bool = (
-			garumi.has("es_publico") or garumi.has("publico")
-			or garumi.has("canonico") or garumi.has("es_canonico") or garumi.has("canon")
-		)
-		if tiene_marcadores and not es_publico and not es_canonico and not estado_visible and not visibilidad_visible:
-			continue
-
-		if nombre not in nombres:
-			nombres.append(nombre)
+		nombres.append(nombre)
 	nombres.sort()
 	return nombres
 
@@ -944,6 +931,10 @@ func _comando_summon(nombre: String) -> void:
 			nombre_garumi = nombre_garumi.substr(1, nombre_garumi.length() - 2).strip_edges()
 		if nombre_garumi.is_empty():
 			_agregar_linea("[color=#d88]Uso: /summon Garumi \"<nombre del Garumi>\"[/color]")
+			return
+
+		if nombre_garumi not in _obtener_nombres_garumis_visibles():
+			_agregar_linea("[color=#d88]Ese Garumi ya no forma parte del catálogo actual.[/color]")
 			return
 
 		var resultado_garumi: Dictionary = world_generator.summon_garumi(nombre_garumi, posicion_invocacion)
