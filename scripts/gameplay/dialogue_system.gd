@@ -558,10 +558,13 @@ func _crear_interfaz() -> void:
 
 	portrait_rect = TextureRect.new()
 	portrait_rect.name = "SpeakerPortrait"
-	portrait_rect.custom_minimum_size = Vector2(64, 64)
+	# El retrato ocupa prácticamente toda la altura interior del panel.
+	# Al ser cuadrado y conservar el aspecto, el sprite crece sin deformarse.
+	portrait_rect.custom_minimum_size = Vector2(176, 176)
 	portrait_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	portrait_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	portrait_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	portrait_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content_row.add_child(portrait_rect)
 
