@@ -258,7 +258,7 @@ func _mostrar_linea_actual() -> void:
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
 	text_label.text = ""
-	hint_label.text = "[ LMB ] Continuar · [ ESC ] Cerrar"
+	hint_label.text = ""
 	_actualizar_boton_accion()
 
 
@@ -362,7 +362,7 @@ func _ejecutar_accion_dialogo() -> void:
 			if mission_manager_local != null and mission_manager_local.aceptar_mision(clave):
 				_acciones.clear()
 				action_button.visible = false
-				hint_label.text = "Misión aceptada · [ LMB ] Continuar"
+				hint_label.text = "Misión aceptada"
 				Events.notification_pushed.emit(
 					"Misión aceptada: "
 					+ str(mission_manager_local.buscar_mision_por_clave(clave).get("nombre", clave))
@@ -374,7 +374,7 @@ func _ejecutar_accion_dialogo() -> void:
 				if _fuente.iniciar_seguimiento_jugador(player):
 					_acciones.clear()
 					action_button.visible = false
-					hint_label.text = "Abel te está siguiendo · [ LMB ] Cerrar"
+					hint_label.text = "Abel te está siguiendo"
 					return
 
 
