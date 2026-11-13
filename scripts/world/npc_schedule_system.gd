@@ -191,6 +191,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				push_warning("NPCScheduleSystem: no se encontró una ruta transitable para " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
 				npc.set_meta("rutina_error_firma", firma_nueva)
 			movimiento.detener_por_rutina()
+			npc.set_meta("rutina_firma", "")
 			return
 		npc.set_meta("rutina_error_firma", "")
 		movimiento.establecer_ruta(ruta)
