@@ -98,6 +98,8 @@ var _limites_camara_anteriores: Dictionary = {}
 
 # Las entradas están cerca de la fachada de cada edificio. Cada clave tiene
 # su propio nombre, función y distribución interior.
+const DISTANCIA_INTERACCION_ENTRADA := 44.0
+
 const ENTRADAS: Array[Dictionary] = [
 	{"id":"castillo","nombre":"Castillo de Torres","pos":Vector2(0,-125),"tipo":"castillo"},
 	{"id":"panaderia","nombre":"Panadería","pos":Vector2(-245,-117),"tipo":"panaderia"},
@@ -228,7 +230,7 @@ func _process(_delta: float) -> void:
 
 	var entrada_cercana: Dictionary = {}
 	# El cuerpo del jugador puede quedar separado del punto de puerta por las colisiones de fachada.
-	var distancia_menor := 80.0
+	var distancia_menor := DISTANCIA_INTERACCION_ENTRADA
 	var posicion_jugador_local := to_local(_jugador.global_position)
 	for entrada: Dictionary in ENTRADAS:
 		var distancia := posicion_jugador_local.distance_to(entrada["pos"])
@@ -258,8 +260,8 @@ func _crear_objetivos_entrada() -> void:
 		objetivo.position = entrada.get("pos", Vector2.ZERO)
 		objetivo.call(
 			"configurar",
-			"Entrar: " + str(entrada.get("nombre", "edificio")),
-			80.0,
+			"Entrar",
+			DISTANCIA_INTERACCION_ENTRADA,
 			Callable(self, "_puede_interactuar_entrada").bind(entrada),
 			Callable(self, "_interactuar_entrada").bind(entrada)
 		)
@@ -271,7 +273,7 @@ func _puede_interactuar_entrada(jugador: Node, entrada: Dictionary) -> bool:
 	if _interior_activo or _transicionando or not is_instance_valid(jugador) or not jugador is Node2D:
 		return false
 	var posicion: Vector2 = to_global(entrada.get("pos", Vector2.ZERO))
-	return (jugador as Node2D).global_position.distance_to(posicion) <= 80.0
+	return (jugador as Node2D).global_position.distance_to(posicion) <= DISTANCIA_INTERACCION_ENTRADA
 
 
 func _interactuar_entrada(jugador: Node, entrada: Dictionary) -> void:
