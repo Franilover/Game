@@ -183,6 +183,7 @@ func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
 	if _tipo_zona == "expedicion:bosque":
 		_dibujar_mapa_bosque(mapa_rect, limites)
 	else:
+		_dibujar_terreno_tilemaps(mapa_rect, limites)
 		for poligono in _poligonos_fijos:
 			if not is_instance_valid(poligono) or poligono.polygon.size() < 3:
 				continue
@@ -199,6 +200,8 @@ func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
 				contorno.append(puntos[0])
 				draw_polyline(contorno, Color("#302316", 0.45), 1.0, true)
 
+		_dibujar_sprites_mapa(mapa_rect, limites)
+
 	var posicion := limites.get_center()
 	if is_instance_valid(_player) and is_instance_valid(_zona_fija):
 		posicion = _zona_fija.to_local(_player.global_position)
@@ -206,6 +209,95 @@ func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
 	if _tipo_zona == "reino_torres":
 		_dibujar_marcadores_aldeanos(mapa_rect, limites)
 		_dibujar_leyenda_aldeanos()
+
+
+func _dibujar_terreno_tilemaps(mapa_rect: Rect2, limites: Rect2) -> void:
+	if not is_instance_valid(_zona_fija):
+		return
+
+	# El terreno real de Torres vive en TileMapDual. Sus DisplayLayer son
+	# TileMapLayer normales, por lo que podemos leer sus celdas sin duplicar
+	# ni modificar el sistema de terreno del mundo.
+	var capas: Array[Node] = _zona_fija.find_children("*", "TileMapLayer", true, false)
+	for nodo_capa: Node in capas:
+		var capa := nodo_capa as TileMapLayer
+		if capa == null or capa.tile_set == null:
+			continue
+		var color_terreno := _obtener_color_capa_terreno(capa)
+		var tamano_tile := Vector2(capa.tile_set.tile_size)
+		if tamano_tile.x <= 0.0 or tamano_tile.y <= 0.0:
+			tamano_tile = Vector2(32.0, 32.0)
+		var tamano_mapa := Vector2(
+			tamano_tile.x * mapa_rect.size.x / limites.size.x,
+			tamano_tile.y * mapa_rect.size.y / limites.size.y
+		)
+		for celda: Vector2i in capa.get_used_cells():
+			var centro_global: Vector2 = capa.to_global(capa.map_to_local(celda))
+			var centro_local: Vector2 = _zona_fija.to_local(centro_global)
+			var centro_mapa: Vector2 = _punto_a_mapa(centro_local, mapa_rect, limites)
+			var rect_celda := Rect2(centro_mapa - tamano_mapa * 0.5, tamano_mapa + Vector2(0.35, 0.35))
+			draw_rect(rect_celda, color_terreno, true)
+
+
+func _obtener_color_capa_terreno(capa: TileMapLayer) -> Color:
+	var nodo_actual: Node = capa
+	while nodo_actual != null and nodo_actual != _zona_fija:
+		var nombre := nodo_actual.name
+		if nombre.begins_with("TerrainDual_Zone_"):
+			var indice_texto := nombre.trim_prefix("TerrainDual_Zone_")
+			var indice_zona := indice_texto.to_int()
+			match indice_zona:
+				0:
+					return Color("#526b3d")
+				1:
+					return Color("#806044")
+				2, 7:
+					return Color("#77766b")
+				3, 9:
+					return Color("#b49a62")
+				4, 5, 6:
+					return Color("#456b78")
+				8:
+					return Color("#304f32")
+		return Color("#526b3d")
+
+
+func _dibujar_sprites_mapa(mapa_rect: Rect2, limites: Rect2) -> void:
+	if not is_instance_valid(_zona_fija):
+		return
+
+	# Reutiliza los sprites que ya forman el reino: casas, castillo, árboles,
+	# pozo y postes. Se dibujan a escala de mapa y se excluyen los NPC porque
+	# tienen sus propios marcadores dinámicos.
+	var sprites: Array[Node] = _zona_fija.find_children("*", "Sprite2D", true, false)
+	for nodo_sprite: Node in sprites:
+		var sprite := nodo_sprite as Sprite2D
+		if sprite == null or sprite.texture == null or not sprite.is_visible_in_tree():
+			continue
+		var ancestro: Node = sprite
+		var es_aldeano := false
+		while ancestro != null and ancestro != _zona_fija:
+			if ancestro.is_in_group("torres_game_npc"):
+				es_aldeano = true
+				break
+			ancestro = ancestro.get_parent()
+		if es_aldeano:
+			continue
+
+		var posicion_local: Vector2 = _zona_fija.to_local(sprite.global_position)
+		if not Rect2(limites.position, limites.size).has_point(posicion_local):
+			continue
+		var centro_mapa: Vector2 = _punto_a_mapa(posicion_local, mapa_rect, limites)
+		var escala_global: Vector2 = sprite.global_scale.abs()
+		var tamano_sprite := sprite.texture.get_size() * escala_global
+		var tamano_mapa := Vector2(
+			tamano_sprite.x * mapa_rect.size.x / limites.size.x,
+			tamano_sprite.y * mapa_rect.size.y / limites.size.y
+		)
+		if tamano_mapa.x < 1.0 or tamano_mapa.y < 1.0:
+			continue
+		var rect_sprite := Rect2(centro_mapa - tamano_mapa * 0.5, tamano_mapa)
+		draw_texture_rect(sprite.texture, rect_sprite, false)
 
 
 func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
