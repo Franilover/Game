@@ -143,6 +143,32 @@ func _run() -> void:
 	if not manager.esta_completada("mision_elian"):
 		errores.append("La misión social no se completó tras regresar con Elian.")
 
+	# La reclamación de recompensas debe persistir sin cambiar el estado completado.
+	manager._recompensas_reclamadas["mision_elian"] = true
+	var guardado_recompensas := manager.serializar_estado_partida()
+	var restaurado := MissionManagerScript.new() as MissionManagerService
+	add_child(restaurado)
+	restaurado._misiones = manager._misiones.duplicate(true)
+	restaurado._misiones_por_id = manager._misiones_por_id.duplicate(true)
+	restaurado.cargar_estado_partida(guardado_recompensas)
+	if not bool(restaurado._recompensas_reclamadas.get("mision_elian", false)):
+		errores.append("La reclamación de recompensas no persistió.")
+	if restaurado.obtener_estado_mision("mision_elian").get("estado") != "completada":
+		errores.append("La reclamación alteró el estado narrativo de misión completada.")
+	var objeto_recompensa := manager._construir_objeto_recompensa({
+		"tipo": "item",
+		"cantidad": 2,
+		"datos": {
+			"item_data": {
+				"id": "item_prueba",
+				"nombre": "Objeto de prueba",
+				"max_stack": 10
+			}
+		}
+	})
+	if str(objeto_recompensa.get("id", "")) != "item_prueba" or int(objeto_recompensa.get("cantidad", 0)) != 2:
+		errores.append("La definición de objeto de recompensa no se normalizó correctamente.")
+
 	_finalizar(errores)
 
 
