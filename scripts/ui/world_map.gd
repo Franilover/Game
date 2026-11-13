@@ -259,7 +259,8 @@ func _obtener_color_capa_terreno(capa: TileMapLayer) -> Color:
 					return Color("#456b78")
 				8:
 					return Color("#304f32")
-		return Color("#526b3d")
+		nodo_actual = nodo_actual.get_parent()
+	return Color("#526b3d")
 
 
 func _dibujar_sprites_mapa(mapa_rect: Rect2, limites: Rect2) -> void:
