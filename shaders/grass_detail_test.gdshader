@@ -2,8 +2,6 @@ shader_type canvas_item;
 
 uniform float density : hint_range(0.0, 1.0) = 0.52;
 uniform float detail_strength : hint_range(0.0, 1.0) = 0.38;
-uniform float wind_strength : hint_range(0.0, 1.0) = 0.012;
-uniform float wind_speed : hint_range(0.0, 3.0) = 0.55;
 
 float hash21(vec2 p) {
     p = fract(p * vec2(127.1, 311.7));
@@ -30,7 +28,7 @@ float tuft(vec2 uv, vec2 cell) {
 
     // Two or three stepped pieces give the tuft a hand-drawn pixel shape.
     float step_y = floor(progress * 3.0) / 3.0;
-    float sway = sin(TIME * wind_speed + r * 6.28318) * wind_strength;
+    float sway = (r - 0.5) * 0.025; // Curvatura fija por mechón, sin viento animado.
     float x = center + sway * progress;
 
     // Slightly irregular sides stop every tuft from looking stamped.
