@@ -9,11 +9,13 @@ signal zona_cambiada(tipo: String, zona: Node)
 
 const MUNDO_ABIERTO_PATH := "res://scenes/world/mundo_abierto.tscn"
 const EXPEDICION_BOSQUE_PATH := "res://scenes/world/expedicion_bosque.tscn"
+const HOGAR_PATH := "res://scenes/world/hogar.tscn"
 const REINO_TORRES_ESCENA_PATH := "res://scenes/kingdom/reino_torres.tscn"
 
 const TIPO_REINO_TORRES := "reino_torres"
 const TIPO_MUNDO_ABIERTO := "mundo_abierto"
 const TIPO_EXPEDICION_BOSQUE := "expedicion:bosque"
+const TIPO_HOGAR := "hogar"
 
 var tipo_actual: String = ""
 var zona_actual: Node = null
@@ -69,7 +71,9 @@ func iniciar() -> void:
 	# Reanudar la última zona guardada. La regla de primera visita solo
 	# se usa en partidas antiguas que todavía no tienen zona persistida.
 	var zona_guardada := str(GameState.world_state.flags.get("zona_actual_tipo", "")).strip_edges()
-	if zona_guardada == TIPO_REINO_TORRES:
+	if zona_guardada == TIPO_HOGAR:
+		entrar_hogar()
+	elif zona_guardada == TIPO_REINO_TORRES:
 		entrar_reino("torres")
 	elif zona_guardada.begins_with("reino:"):
 		entrar_reino(zona_guardada.trim_prefix("reino:"))
@@ -311,6 +315,17 @@ func _guardar_partida_si_disponible() -> void:
 			push_warning("ZoneManager: no se pudo guardar el estado después del viaje.")
 
 
+func entrar_hogar() -> void:
+	if _transicionando:
+		return
+	if GarliaMultiplayer.es_servidor_dedicado() or GarliaWorldNetwork.es_cliente_en_mundo_global():
+		push_warning("ZoneManager: Hogar privado no está disponible dentro de una sesión de mundo global.")
+		return
+	if tipo_actual == TIPO_HOGAR and is_instance_valid(zona_actual):
+		return
+	_cambiar_zona(HOGAR_PATH, TIPO_HOGAR)
+
+
 func entrar_mundo_abierto() -> void:
 	if tipo_actual == TIPO_REINO_TORRES:
 		GameState.marcar_reino_torres_visitado()
@@ -449,6 +464,12 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		return
 
 	if is_instance_valid(zona_actual):
+		if tipo_actual == TIPO_HOGAR and zona_actual.has_method("obtener_estado_guardado"):
+			var estado_hogar: Dictionary = zona_actual.call("obtener_estado_guardado")
+			var jugador_hogar := _obtener_jugador_principal()
+			if is_instance_valid(jugador_hogar):
+				estado_hogar["jugador"] = {"x": jugador_hogar.global_position.x, "y": jugador_hogar.global_position.y}
+			GameState.world_state.flags["hogar_estado"] = estado_hogar.duplicate(true)
 		# El reloj vive dentro de WorldGenerator. Guardamos el calendario antes
 		# de descargar Mundo Abierto para que Torres no reinicie día/hora.
 		if tipo_actual == TIPO_MUNDO_ABIERTO or tipo_actual == TIPO_EXPEDICION_BOSQUE:
@@ -460,6 +481,10 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 
 	zona_actual = packed.instantiate()
 	zona_actual.name = "ZonaActiva"
+	if tipo == TIPO_HOGAR and zona_actual.has_method("cargar_estado_guardado"):
+		var estado_hogar_variant: Variant = GameState.world_state.flags.get("hogar_estado", {})
+		if estado_hogar_variant is Dictionary:
+			zona_actual.call("cargar_estado_guardado", (estado_hogar_variant as Dictionary).duplicate(true))
 	add_child(zona_actual)
 
 	if tipo != TIPO_MUNDO_ABIERTO and zona_actual.has_signal("salida_solicitada"):
