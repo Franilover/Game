@@ -292,6 +292,8 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_inventory.establecer_modo_historia(es_modo_historia)
 	if is_instance_valid(_hud):
 		_hud.establecer_modo_historia(es_modo_historia)
+	if is_instance_valid(_pause_menu):
+		_pause_menu.establecer_modo_historia(es_modo_historia)
 
 	if tipo == "mundo_abierto" or tipo == "expedicion:bosque":
 		if _world_generator == null:
