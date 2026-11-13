@@ -16,6 +16,7 @@ var _vida_rival: ProgressBar
 var _valor_vida_rival: Label
 var _estado: Label
 var _boton_vincular: Button
+var _boton_huir: Button
 var _cooldown_rival := 0.8
 var _finalizando := false
 
@@ -31,48 +32,95 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	print("GarumiBattleParty: encuentro directo iniciado; combate el jugador, no sus compañeros.")
 
 func _crear_interfaz() -> void:
+	# Barra horizontal superior con el nombre y la salud del rival.
 	_panel = PanelContainer.new()
 	_panel.name = "GarumiWildEncounter"
-	_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_panel.anchor_left = 1.0
+	_panel.anchor_left = 0.0
+	_panel.anchor_top = 0.0
 	_panel.anchor_right = 1.0
-	_panel.offset_left = -224.0
+	_panel.anchor_bottom = 0.0
+	_panel.offset_left = 16.0
 	_panel.offset_top = 12.0
-	_panel.offset_right = -12.0
-	_panel.offset_bottom = 116.0
-	_panel.custom_minimum_size = Vector2(212.0, 0.0)
+	_panel.offset_right = -16.0
+	_panel.offset_bottom = 62.0
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.z_index = 80
 	add_child(_panel)
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 4)
-	_panel.add_child(columna)
+
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 12)
+	fila.alignment = BoxContainer.ALIGNMENT_CENTER
+	_panel.add_child(fila)
+
 	_nombre_rival = Label.new()
-	_nombre_rival.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_nombre_rival.custom_minimum_size = Vector2(116.0, 0.0)
+	_nombre_rival.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_nombre_rival.add_theme_font_size_override("font_size", 14)
 	_nombre_rival.add_theme_color_override("font_color", Color(0.96, 0.82, 0.56))
-	columna.add_child(_nombre_rival)
+	fila.add_child(_nombre_rival)
+
 	_vida_rival = ProgressBar.new()
-	_vida_rival.custom_minimum_size = Vector2(0.0, 12.0)
+	_vida_rival.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_vida_rival.custom_minimum_size = Vector2(80.0, 14.0)
 	_vida_rival.show_percentage = false
-	columna.add_child(_vida_rival)
+	fila.add_child(_vida_rival)
+
 	_valor_vida_rival = Label.new()
-	_valor_vida_rival.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_valor_vida_rival.add_theme_font_size_override("font_size", 10)
-	columna.add_child(_valor_vida_rival)
+	_valor_vida_rival.custom_minimum_size = Vector2(72.0, 0.0)
+	_valor_vida_rival.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_valor_vida_rival.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_valor_vida_rival.add_theme_font_size_override("font_size", 11)
+	fila.add_child(_valor_vida_rival)
+	PIXEL_UI_THEME.apply(_panel, false)
+
+	# Mensaje y acción de vínculo bajo la barra.
+	var panel_acciones := VBoxContainer.new()
+	panel_acciones.anchor_left = 0.5
+	panel_acciones.anchor_top = 0.0
+	panel_acciones.anchor_right = 0.5
+	panel_acciones.anchor_bottom = 0.0
+	panel_acciones.offset_left = -132.0
+	panel_acciones.offset_top = 70.0
+	panel_acciones.offset_right = 132.0
+	panel_acciones.offset_bottom = 132.0
+	panel_acciones.z_index = 80
+	panel_acciones.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(panel_acciones)
+
 	_estado = Label.new()
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.add_theme_font_size_override("font_size", 10)
-	columna.add_child(_estado)
+	_estado.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel_acciones.add_child(_estado)
+
 	_boton_vincular = Button.new()
 	_boton_vincular.text = "Vincular Garumi (F)"
 	_boton_vincular.custom_minimum_size = Vector2(0.0, 28.0)
 	_boton_vincular.disabled = true
+	_boton_vincular.visible = false
 	_boton_vincular.pressed.connect(_forzar_vinculo)
-	columna.add_child(_boton_vincular)
-	PIXEL_UI_THEME.apply(_panel, false)
+	panel_acciones.add_child(_boton_vincular)
 	PIXEL_UI_THEME.apply(_boton_vincular, false)
+
+	# Botón de retirada fijo en la esquina inferior izquierda.
+	_boton_huir = Button.new()
+	_boton_huir.name = "HuirGarumi"
+	_boton_huir.text = "Huir"
+	_boton_huir.custom_minimum_size = Vector2(104.0, 34.0)
+	_boton_huir.anchor_left = 0.0
+	_boton_huir.anchor_top = 1.0
+	_boton_huir.anchor_right = 0.0
+	_boton_huir.anchor_bottom = 1.0
+	_boton_huir.offset_left = 14.0
+	_boton_huir.offset_top = -48.0
+	_boton_huir.offset_right = 118.0
+	_boton_huir.offset_bottom = -14.0
+	_boton_huir.z_index = 90
+	_boton_huir.pressed.connect(_huir)
+	add_child(_boton_huir)
+	PIXEL_UI_THEME.apply(_boton_huir, false)
+
 
 func _process(delta: float) -> void:
 	if _finalizando:
@@ -127,6 +175,15 @@ func _input(event: InputEvent) -> void:
 			_forzar_vinculo()
 			get_viewport().set_input_as_handled()
 
+func _huir() -> void:
+	if _finalizando:
+		return
+	# Retirarse cierra el enfrentamiento y restaura al Garumi salvaje sin vincularlo.
+	if is_instance_valid(rival) and rival.esta_enfrentamiento():
+		rival.finalizar_enfrentamiento()
+	finalizar()
+
+
 func _forzar_vinculo() -> void:
 	if not is_instance_valid(rival) or not is_instance_valid(jugador):
 		return
@@ -149,4 +206,6 @@ func finalizar() -> void:
 	_cambiar_estado_hud(false)
 	if is_instance_valid(_panel):
 		_panel.queue_free()
+	if is_instance_valid(_boton_huir):
+		_boton_huir.queue_free()
 	queue_free()
