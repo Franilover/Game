@@ -155,20 +155,6 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 				if lineas.is_empty():
 					return false
 
-	var clave_dialogo := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
-	# Las interacciones universales son opt-in. Los diálogos narrativos y
-	# funcionales conservan sus propias aperturas y cierres por defecto.
-	# Solo se insertan si el propio diálogo declara explícitamente esta opción.
-	if (
-		clave_dialogo == "principal"
-		and bool(datos.get("interaccion_universal", false))
-		and is_instance_valid(_fuente)
-		and relationship_system != null
-	):
-		var personaje_id_interaccion := _fuente.get_personaje_game_id().strip_edges()
-		if not personaje_id_interaccion.is_empty():
-			lineas = _agregar_interaccion_universal(lineas, personaje_id_interaccion)
-
 	_lineas = lineas
 	_acciones.clear()
 
@@ -346,6 +332,10 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if is_instance_valid(_fuente):
 		personaje_id = _fuente.get_personaje_game_id().strip_edges()
 	if not personaje_id.is_empty():
+		var contextual := _seleccionar_variante_contextual(variantes_variant as Array, personaje_id)
+		if not contextual.is_empty():
+			return contextual
+
 		var social: RelationshipSystemService = relationship_system
 		if social != null:
 			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_variant as Array, personaje_id)
@@ -355,6 +345,103 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if not principal.is_empty():
 		return principal
 	return datos.duplicate(true)
+
+
+## Selecciona variantes condicionadas por el calendario del mundo.
+## Una variante contextual puede combinar estación/día con requisitos sociales.
+func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) -> Dictionary:
+	var social: RelationshipSystemService = relationship_system
+	if social == null or not social.has_method("obtener_contexto_temporal"):
+		return {}
+
+	var contexto_variant: Variant = social.call("obtener_contexto_temporal")
+	if not contexto_variant is Dictionary:
+		return {}
+	var contexto := contexto_variant as Dictionary
+	if not bool(contexto.get("calendario_cargado", false)):
+		return {}
+
+	var relacion := social.obtener_relacion(personaje_id)
+	var mejor: Dictionary = {}
+	var mejor_prioridad := -2147483648
+
+	for variante_variant in variantes:
+		if not variante_variant is Dictionary:
+			continue
+		variante_variant = variante_variant as Dictionary
+		var requisito_contextual_variant: Variant = variante_variant.get("requisito_contextual", {})
+		if not requisito_contextual_variant is Dictionary:
+			continue
+		var requisito_contextual := requisito_contextual_variant as Dictionary
+		if requisito_contextual.is_empty() or not _cumple_requisito_contextual(requisito_contextual, contexto):
+			continue
+
+		var requisito_social_variant: Variant = variante_variant.get("requisito_social", {})
+		if requisito_social_variant is Dictionary:
+			var requisito_social := requisito_social_variant as Dictionary
+			if not requisito_social.is_empty() and not _cumple_requisito_social_contextual(requisito_social, relacion):
+				continue
+
+		var prioridad := int(variante_variant.get("prioridad", 0))
+		if mejor.is_empty() or prioridad > mejor_prioridad:
+			mejor = variante_variant.duplicate(true)
+			mejor_prioridad = prioridad
+
+	return mejor
+
+
+func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -> bool:
+	var tiene_condicion := false
+
+	if requisito.has("estaciones"):
+		tiene_condicion = true
+		var estaciones_variant: Variant = requisito.get("estaciones", [])
+		var estaciones: Array = estaciones_variant if estaciones_variant is Array else [estaciones_variant]
+		if not str(contexto.get("estacion_id", "")) in estaciones:
+			return false
+
+	if requisito.has("dias_de_estacion"):
+		tiene_condicion = true
+		var dias_variant: Variant = requisito.get("dias_de_estacion", [])
+		var dias: Array = dias_variant if dias_variant is Array else [dias_variant]
+		if not int(contexto.get("dia_de_estacion", 0)) in dias:
+			return false
+
+	if requisito.has("dia_de_estacion_min"):
+		tiene_condicion = true
+		if int(contexto.get("dia_de_estacion", 0)) < int(requisito.get("dia_de_estacion_min", 0)):
+			return false
+
+	if requisito.has("dia_de_estacion_max"):
+		tiene_condicion = true
+		if int(contexto.get("dia_de_estacion", 0)) > int(requisito.get("dia_de_estacion_max", 0)):
+			return false
+
+	if requisito.has("dias_del_anio"):
+		tiene_condicion = true
+		var dias_anio_variant: Variant = requisito.get("dias_del_anio", [])
+		var dias_anio: Array = dias_anio_variant if dias_anio_variant is Array else [dias_anio_variant]
+		if not int(contexto.get("dia", 0)) in dias_anio:
+			return false
+
+	if requisito.has("periodos"):
+		tiene_condicion = true
+		var periodos_variant: Variant = requisito.get("periodos", [])
+		var periodos: Array = periodos_variant if periodos_variant is Array else [periodos_variant]
+		if not str(contexto.get("periodo", "")) in periodos:
+			return false
+
+	return tiene_condicion
+
+
+func _cumple_requisito_social_contextual(requisito: Dictionary, relacion: Dictionary) -> bool:
+	for eje in ["amistad", "confianza", "respeto", "afecto"]:
+		var valor := float(relacion.get(eje, 0.0))
+		if requisito.has(eje + "_min") and valor < float(requisito.get(eje + "_min")):
+			return false
+		if requisito.has(eje + "_max") and valor > float(requisito.get(eje + "_max")):
+			return false
+	return true
 
 
 func _actualizar_boton_accion() -> void:
