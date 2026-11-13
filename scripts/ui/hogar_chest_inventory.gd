@@ -10,12 +10,15 @@ var _indice_cofre := -1
 var _slots_jugador: Array[InventorySlot] = []
 var _slots_cofre: Array[InventorySlot] = []
 var _panel: PanelContainer
+var _seleccion_contenedor := ""
+var _seleccion_indice := -1
 
 
 func abrir(interior: Node, inventario: Node, indice_cofre: int) -> void:
 	_interior = interior
 	_inventario = inventario
 	_indice_cofre = indice_cofre
+	layer = 45
 	add_to_group("modal_ui")
 	_crear_interfaz()
 	_refrescar()
@@ -105,7 +108,7 @@ func _crear_interfaz() -> void:
 	_crear_slots(rejilla_cofre, "cofre", 32, _slots_cofre)
 
 	var ayuda := Label.new()
-	ayuda.text = "Arrastra objetos entre ambos inventarios · Esc para cerrar"
+	ayuda.text = "Clic en un objeto y luego en el destino, o arrástralo · Esc para cerrar"
 	ayuda.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	columna.add_child(ayuda)
 	PIXEL_UI_THEME.apply(_panel)
@@ -125,6 +128,7 @@ func _crear_slots(
 		slot.set_meta("inventory_container", tipo_contenedor)
 		slot.custom_minimum_size = Vector2(36, 36)
 		slot.arrastre_recibido.connect(_al_recibir_arrastre)
+		slot.pressed.connect(_al_pulsar_slot.bind(slot))
 		contenedor.add_child(slot)
 		destino.append(slot)
 
@@ -140,13 +144,43 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
+func _al_pulsar_slot(slot: InventorySlot) -> void:
+	if not is_instance_valid(_inventario) or not is_instance_valid(_interior) or not is_instance_valid(slot):
+		return
+	var contenedor := str(slot.get_meta("inventory_container", ""))
+	var indice := int(slot.get_meta("inventory_index", -1))
+	if contenedor not in ["jugador", "cofre"] or indice < 0:
+		return
+	if _seleccion_indice < 0:
+		var items := _obtener_items(contenedor)
+		if indice >= items.size() or not items[indice] is Dictionary or (items[indice] as Dictionary).is_empty():
+			return
+		_seleccion_contenedor = contenedor
+		_seleccion_indice = indice
+		_refrescar()
+		return
+	if _seleccion_contenedor == contenedor and _seleccion_indice == indice:
+		_seleccion_contenedor = ""
+		_seleccion_indice = -1
+		_refrescar()
+		return
+	_transferir(_seleccion_contenedor, _seleccion_indice, contenedor, indice)
+	_seleccion_contenedor = ""
+	_seleccion_indice = -1
+	_refrescar()
+
+
 func _al_recibir_arrastre(slot: Button, datos: Dictionary) -> void:
+	var contenedor_origen := str(datos.get("contenedor", "jugador"))
+	var indice_origen := int(datos.get("indice", -1))
+	var contenedor_destino := str(slot.get_meta("inventory_container", ""))
+	var indice_destino := int(slot.get_meta("inventory_index", -1))
+	_transferir(contenedor_origen, indice_origen, contenedor_destino, indice_destino)
+
+
+func _transferir(contenedor_origen: String, indice_origen: int, contenedor_destino: String, indice_destino: int) -> void:
 	if not is_instance_valid(_inventario) or not is_instance_valid(_interior):
 		return
-	var contenedor_origen := str(datos.get("contenedor", "jugador"))
-	var contenedor_destino := str(slot.get_meta("inventory_container", ""))
-	var indice_origen := int(datos.get("indice", -1))
-	var indice_destino := int(slot.get_meta("inventory_index", -1))
 	if contenedor_origen not in ["jugador", "cofre"] or contenedor_destino not in ["jugador", "cofre"]:
 		return
 	if indice_origen < 0 or indice_destino < 0:
@@ -162,7 +196,6 @@ func _al_recibir_arrastre(slot: Button, datos: Dictionary) -> void:
 		_interior.call("establecer_contenido_cofre", _indice_cofre, datos_cofre)
 	_actualizar_inventario_jugador()
 	_refrescar()
-
 
 func _obtener_items(contenedor: String) -> Array:
 	if contenedor == "jugador":
@@ -238,12 +271,14 @@ func _refrescar() -> void:
 	var items_cofre: Array = _obtener_items("cofre")
 	for indice in range(_slots_jugador.size()):
 		var slot := _slots_jugador[indice]
+		slot.modulate = Color("#FFE3A3") if _seleccion_contenedor == "jugador" and _seleccion_indice == indice else Color.WHITE
 		if indice < items_jugador.size() and items_jugador[indice] is Dictionary and not items_jugador[indice].is_empty():
 			slot.configurar(items_jugador[indice])
 		else:
 			slot.limpiar()
 	for indice in range(_slots_cofre.size()):
 		var slot := _slots_cofre[indice]
+		slot.modulate = Color("#FFE3A3") if _seleccion_contenedor == "cofre" and _seleccion_indice == indice else Color.WHITE
 		if indice < items_cofre.size() and items_cofre[indice] is Dictionary and not items_cofre[indice].is_empty():
 			slot.configurar(items_cofre[indice])
 		else:
