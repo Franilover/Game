@@ -64,6 +64,10 @@ func buscar_objetivo(player: Node, distancia_base: float) -> Node:
 			continue
 		if not candidato.is_inside_tree():
 			continue
+		# Los NPC exteriores pueden seguir registrados en EntityManager aunque
+		# estén ocultos al entrar a una casa. Nunca deben ganar la selección.
+		if candidato is CanvasItem and not (candidato as CanvasItem).is_visible_in_tree():
+			continue
 		if not es_objetivo_contextual(candidato):
 			continue
 
