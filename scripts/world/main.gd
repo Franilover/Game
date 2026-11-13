@@ -55,7 +55,7 @@ var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
 var _carga_historia_activa := false
-var _cutscene_director: CutsceneDirector = null
+var _cutscene_director: Variant = null
 
 
 func _ready() -> void:
@@ -1024,7 +1024,7 @@ func _configurar_dialogo() -> void:
 
 	_dialogue_system.configurar(_player, _hud, MissionManager, RelationshipSystem)
 	if not is_instance_valid(_cutscene_director):
-		_cutscene_director = CUTSCENE_DIRECTOR_SCRIPT.new() as CutsceneDirector
+		_cutscene_director = CUTSCENE_DIRECTOR_SCRIPT.new()
 		_cutscene_director.name = "CutsceneDirector"
 		add_child(_cutscene_director)
 	_cutscene_director.configurar(_player, _dialogue_system, _camera)
