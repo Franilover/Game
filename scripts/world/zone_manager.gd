@@ -9,12 +9,14 @@ signal zona_cambiada(tipo: String, zona: Node)
 
 const MUNDO_ABIERTO_PATH := "res://scenes/world/mundo_abierto.tscn"
 const EXPEDICION_BOSQUE_PATH := "res://scenes/world/expedicion_bosque.tscn"
+const RESERVA_CARMESI_PATH := "res://scenes/world/reserva_carmesi.tscn"
 const HOGAR_PATH := "res://scenes/world/hogar.tscn"
 const REINO_TORRES_ESCENA_PATH := "res://scenes/kingdom/reino_torres.tscn"
 
 const TIPO_REINO_TORRES := "reino_torres"
 const TIPO_MUNDO_ABIERTO := "mundo_abierto"
 const TIPO_EXPEDICION_BOSQUE := "expedicion:bosque"
+const TIPO_RESERVA_CARMESI := "historia:reserva_carmesi"
 const TIPO_HOGAR := "hogar"
 
 var tipo_actual: String = ""
@@ -71,7 +73,12 @@ func iniciar() -> void:
 	# Reanudar la última zona guardada. La regla de primera visita solo
 	# se usa en partidas antiguas que todavía no tienen zona persistida.
 	var zona_guardada := str(GameState.world_state.flags.get("zona_actual_tipo", "")).strip_edges()
-	if zona_guardada == TIPO_HOGAR:
+	if bool(GameState.world_state.flags.get("historia_iniciar_reserva_carmesi", false)):
+		GameState.world_state.flags.erase("historia_iniciar_reserva_carmesi")
+		entrar_reserva_carmesi()
+	elif zona_guardada == TIPO_RESERVA_CARMESI:
+		entrar_reserva_carmesi()
+	elif zona_guardada == TIPO_HOGAR:
 		if GarliaMultiplayer.es_servidor_dedicado() or GarliaWorldNetwork.es_cliente_en_mundo_global():
 			# Una sesión global nunca debe intentar reanudar una parcela local.
 			entrar_mundo_abierto()
@@ -442,6 +449,10 @@ func obtener_zona_actual() -> Node:
 
 func entrar_expedicion_bosque() -> void:
 	_cambiar_zona(EXPEDICION_BOSQUE_PATH, TIPO_EXPEDICION_BOSQUE)
+
+
+func entrar_reserva_carmesi() -> void:
+	_cambiar_zona(RESERVA_CARMESI_PATH, TIPO_RESERVA_CARMESI)
 
 
 func obtener_world_generator() -> WorldGenerator:
