@@ -13,10 +13,17 @@ const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
 var abierto: bool = false
 var _inventory: Node = null
 var _settings_panel: SettingsPanel = null
+var _modo_historia: bool = false
 
 
 func configurar(inventario: Node) -> void:
 	_inventory = inventario
+
+
+func establecer_modo_historia(activo: bool) -> void:
+	_modo_historia = activo
+	if is_instance_valid(mundo_button):
+		mundo_button.visible = not activo
 
 
 func _ready() -> void:
@@ -32,6 +39,7 @@ func _ready() -> void:
 
 	# Mundo sigue reservado; Configuración ya tiene panel funcional.
 	mundo_button.disabled = true
+	mundo_button.visible = not _modo_historia
 	configuracion_button.disabled = false
 	PIXEL_UI_THEME.apply(self)
 
