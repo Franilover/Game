@@ -252,7 +252,7 @@ func _cargar_catalogo_garumis() -> void:
 		return
 	var consulta := (
 		"select=entidad_id,tipo_registro,nombre,numero_global,numero_origen,"
-		+ "categoria_garumi,original_id,nombre_original,estado_evolutivo,"
+		+ "categoria_garumi,original_id,nombre_original,"
 		+ "estado_documentacion,descripcion,letra_original,orden_catalogo"
 		+ "&order=orden_catalogo.asc"
 	)
