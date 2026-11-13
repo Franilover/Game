@@ -15,13 +15,19 @@ var _regalos: Array = []
 var _cargado: bool = false
 var _repository: Node = null
 var _game_state: Node = null
+var _world_atmosphere: Node = null
 
 
 
 
-func configurar(repository: Node, game_state: Node = null) -> void:
+func configurar(
+	repository: Node,
+	game_state: Node = null,
+	world_atmosphere: Node = null
+) -> void:
 	_repository = repository
 	_game_state = game_state
+	_world_atmosphere = world_atmosphere
 	if _repository == null or _game_state == null:
 		push_error("RelationshipSystem: dependencias no configuradas.")
 		return
@@ -205,28 +211,55 @@ func registrar_dialogo(personaje_id: String, clave: String) -> Dictionary:
 	if id.is_empty() or clave_dialogo.is_empty():
 		return {}
 
-	# Un mismo tema sólo genera cercanía la primera vez. Repetir una
-	# conversación ya conocida no puede farmear amistad.
-	var recuerdos := _obtener_recuerdos()
-	var lista_variant: Variant = recuerdos.get(id, [])
-	if lista_variant is Array:
-		for recuerdo_variant in lista_variant as Array:
-			if not recuerdo_variant is Dictionary:
-				continue
-			var recuerdo_existente := recuerdo_variant as Dictionary
-			if (
-				str(recuerdo_existente.get("tipo", "")) == "dialogo"
-				and str(recuerdo_existente.get("clave", "")) == clave_dialogo
-			):
-				return obtener_relacion(id)
+	var relacion_actual := obtener_relacion(id)
+	if relacion_actual.is_empty():
+		return {}
 
+	var dia_actual := _obtener_clave_dia_actual()
+	var primera_conversacion_del_dia := (
+		str(relacion_actual.get("_ultimo_dialogo_dia", "")) != dia_actual
+	)
+	var cambios := {"amistad": 0.5} if primera_conversacion_del_dia else {}
 	var recuerdo := {
 		"tipo": "dialogo",
 		"clave": clave_dialogo,
 		"importancia": 1.0,
+		"amistad_diaria": primera_conversacion_del_dia,
+		"dia_mundo": dia_actual,
 		"momento": Time.get_datetime_string_from_system(true)
 	}
-	return modificar_relacion(id, {"amistad": 0.5}, recuerdo)
+
+	var relacion_actualizada := modificar_relacion(id, cambios, recuerdo)
+	if relacion_actualizada.is_empty():
+		return {}
+
+	relacion_actualizada["_ultimo_dialogo_dia"] = dia_actual
+	var relaciones := _obtener_relaciones_guardadas()
+	relaciones[id] = relacion_actualizada.duplicate(true)
+	_guardar_relaciones(relaciones)
+	return relacion_actualizada
+
+
+func _obtener_clave_dia_actual() -> String:
+	if (
+		_world_atmosphere != null
+		and is_instance_valid(_world_atmosphere)
+		and _world_atmosphere.has_method("obtener_tiempo")
+	):
+		var tiempo_variant: Variant = _world_atmosphere.call("obtener_tiempo")
+		if tiempo_variant is Dictionary:
+			var tiempo := tiempo_variant as Dictionary
+			if (
+				bool(tiempo.get("calendario_cargado", false))
+				and tiempo.has("anio")
+				and tiempo.has("dia")
+			):
+				return "mundo:%d:%d" % [
+					int(tiempo.get("anio", 0)),
+					int(tiempo.get("dia", 1))
+				]
+
+	return "real:" + Time.get_date_string_from_system()
 
 
 func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
