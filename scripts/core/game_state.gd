@@ -122,6 +122,7 @@ func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
 
 	_historia_reserva_activa = true
 	_historia_requiere_aplicar = false
+	_guardado_rapido_conectado = false
 	_partida_aplicada_en_escena = false
 	_autosave_timer = 0.0
 
@@ -265,6 +266,7 @@ func iniciar_partida(id: String) -> bool:
 
 	_historia_reserva_activa = false
 	_historia_requiere_aplicar = false
+	_guardado_rapido_conectado = false
 	var metadata := _extraer_metadata_partida(datos)
 
 	world_state.world_seed_valida = false
