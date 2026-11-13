@@ -483,6 +483,11 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 	zona_actual.name = "ZonaActiva"
 	if tipo == TIPO_HOGAR and zona_actual.has_method("cargar_estado_guardado"):
 		var estado_hogar_variant: Variant = GameState.world_state.flags.get("hogar_estado", {})
+		if not estado_hogar_variant is Dictionary or (estado_hogar_variant as Dictionary).is_empty():
+			# En partidas guardadas mientras el jugador estaba dentro de Hogar,
+			# GameState conserva la última instantánea genérica de la zona.
+			if str(GameState.world_state.flags.get("zona_actual_tipo", "")) == TIPO_HOGAR:
+				estado_hogar_variant = GameState.world_state.flags.get("estado_zona_actual", {})
 		if estado_hogar_variant is Dictionary:
 			zona_actual.call("cargar_estado_guardado", (estado_hogar_variant as Dictionary).duplicate(true))
 	add_child(zona_actual)
