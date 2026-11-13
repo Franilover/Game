@@ -257,7 +257,7 @@ func _process(_delta: float) -> void:
 
 func _crear_objetivos_entrada() -> void:
 	for entrada: Dictionary in ENTRADAS:
-		var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+		var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as ContextualActionTarget
 		if not is_instance_valid(objetivo):
 			continue
 		objetivo.name = "ObjetivoEntrada_" + str(entrada.get("id", "edificio"))
