@@ -507,6 +507,8 @@ func _inicializar_runtime_de_zona() -> void:
 		_world_generator.entity_manager if _world_generator != null else null,
 		WorldData
 	)
+	if not MissionManager.recompensa_disponible.is_connected(_al_recompensa_mision_disponible):
+		MissionManager.recompensa_disponible.connect(_al_recompensa_mision_disponible)
 	_configurar_social()
 	_inicializar_ium()
 	_configurar_admin()
@@ -1163,6 +1165,17 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 
 	var nombre: String = proceso.get("nombre", "Proceso")
 	print("Main: Proceso IUM equipado → ", nombre)
+
+
+func _al_recompensa_mision_disponible(mision: Dictionary, _recompensas: Array[Dictionary]) -> void:
+	if _inventory == null or not is_instance_valid(_inventory):
+		return
+	var mision_id := str(mision.get("id", "")).strip_edges()
+	if mision_id.is_empty():
+		return
+	if MissionManager.entregar_recompensas(mision_id, _inventory):
+		return
+	Events.notification_pushed.emit("Inventario lleno o recompensa incompleta. La recompensa sigue pendiente.")
 
 
 func _configurar_social() -> void:
