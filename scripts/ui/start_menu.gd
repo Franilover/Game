@@ -111,6 +111,11 @@ func _ready() -> void:
 		call_deferred("_entrar_runtime_servidor")
 		return
 
+	var chapter_argument := _obtener_argumento_capitulo()
+	if not chapter_argument.is_empty():
+		call_deferred("_entrar_capitulo_desde_argumento", chapter_argument)
+		return
+
 	SupabaseClient.configurar_dependencias(GarliaAuth)
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
@@ -267,6 +272,29 @@ func _ready() -> void:
 	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_layout_responsive)
 	_configurar_layout_responsive()
+
+
+func _obtener_argumento_capitulo() -> String:
+	for argumento in OS.get_cmdline_user_args():
+		if argumento.begins_with("--garlia-chapter="):
+			return argumento.trim_prefix("--garlia-chapter=").strip_edges()
+	return ""
+
+
+func _entrar_capitulo_desde_argumento(ruta_escena: String) -> void:
+	if not ruta_escena.begins_with("res://") or not ruta_escena.ends_with(".tscn"):
+		push_error("StartMenu: ruta de capítulo no válida: " + ruta_escena)
+		get_tree().quit(1)
+		return
+	if not ResourceLoader.exists(ruta_escena):
+		push_error("StartMenu: no existe la escena de capítulo: " + ruta_escena)
+		get_tree().quit(1)
+		return
+	print("StartMenu: inicio directo del capítulo → ", ruta_escena)
+	var error := get_tree().change_scene_to_file(ruta_escena)
+	if error != OK:
+		push_error("StartMenu: no se pudo abrir el capítulo. Error: " + str(error))
+		get_tree().quit(1)
 
 
 func _debug_ventana_inicio() -> void:
