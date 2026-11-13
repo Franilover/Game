@@ -46,11 +46,13 @@ var _panel_construccion: PanelContainer
 var _etiqueta_estado: Label
 var _objetivo_puerta: Node2D
 var _interior_abierto := false
+var _inventario_abierto := false
 var _interior_guardado_pendiente := false
 var _tiempo_actualizacion_estado := 0.0
 
 
 func _ready() -> void:
+	add_to_group("hogar_zone")
 	_sprite_previo = Sprite2D.new()
 	_sprite_previo.name = "VistaPreviaConstruccion"
 	_sprite_previo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -272,6 +274,17 @@ func _crear_interfaz_construccion() -> void:
 	contenido.add_child(ayuda)
 
 
+func establecer_inventario_abierto(abierto: bool) -> void:
+	_inventario_abierto = abierto
+	if abierto:
+		_establecer_modo_construccion(false)
+	var interior := _obtener_interior()
+	if is_instance_valid(interior) and interior.has_method("establecer_inventario_abierto"):
+		interior.call("establecer_inventario_abierto", abierto)
+	if is_instance_valid(_capa_construccion):
+		_capa_construccion.visible = not _interior_abierto and not abierto
+
+
 func _alternar_modo_construccion() -> void:
 	_establecer_modo_construccion(not _modo_construccion)
 
@@ -324,6 +337,11 @@ func _actualizar_estado_interfaz() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# El inventario tiene prioridad: Hogar no debe capturar B ni liberaciones
+	# del ratón mientras una pestaña del inventario está abierta.
+	if _inventario_abierto:
+		return
+
 	# Finalizar el arrastre antes de la fase GUI, incluso si se suelta el ratón
 	# encima del panel de construcción.
 	if _modo_construccion and event is InputEventMouseButton:
@@ -752,7 +770,7 @@ func _establecer_interior(activo: bool, mover_jugador: bool) -> void:
 			sprite.visible = not activo
 	_boton_modo.visible = not activo
 	if is_instance_valid(_capa_construccion):
-		_capa_construccion.visible = not activo
+		_capa_construccion.visible = not activo and not _inventario_abierto
 	if mover_jugador:
 		var jugador := _obtener_jugador()
 		if is_instance_valid(jugador):
