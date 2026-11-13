@@ -108,7 +108,7 @@ func _probar_recarga_dash_reutilizable(errores: Array[String]) -> void:
 	# Reproduce el último microinstante de recarga, donde una comparación
 	# aproximada podía conservar 0.99999 y bloquear el siguiente dash.
 	stamina.current = 0.999999
-	stamina.regeneration_timer = stamina.DURACION_RECARGA_DASH - 0.000001
+	stamina.regeneration_timer = 3.0 - 0.000001
 	stamina.actualizar(0.000001, true)
 	if stamina.current != stamina.maximum:
 		errores.append("La recarga terminó sin fijar la carga exactamente al 100 %.")
