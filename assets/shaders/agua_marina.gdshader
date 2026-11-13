@@ -1,22 +1,33 @@
 shader_type canvas_item;
 
-// Ondas de luz animadas sobre el agua. Se conserva el UV original para
-// evitar que el muestreo salga del atlas y genere bordes o píxeles deformados.
+// La textura base sigue usando UV para respetar el atlas de cada tile.
+// La animación usa coordenadas globales: todas las piezas de agua comparten
+// la misma fase y las ondas continúan entre tiles y entre capas del Dual Grid.
+varying vec2 posicion_mundo;
+
 uniform float velocidad_onda : hint_range(0.0, 3.0) = 1.15;
 uniform float intensidad_onda : hint_range(0.0, 0.35) = 0.19;
-uniform float escala_onda : hint_range(1.0, 80.0) = 24.0;
+uniform float escala_onda : hint_range(0.005, 0.08) = 0.025;
+
+void vertex() {
+	posicion_mundo = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
+}
 
 void fragment() {
 	vec4 base = texture(TEXTURE, UV) * COLOR;
 
-	// Dos movimientos cruzados crean ondas que recorren la superficie.
-	float fase = UV.y * escala_onda + UV.x * 7.0 + TIME * velocidad_onda;
-	float modulacion = sin(UV.x * 17.0 - TIME * 0.72) * 0.42;
+	// Cuantización sutil para conservar el carácter pixel-art sin reiniciar
+	// el patrón en los límites de cada celda.
+	vec2 p = floor(posicion_mundo / 2.0) * 2.0;
+
+	// Ondas largas y diagonales que atraviesan toda la superficie continua.
+	float fase = p.y * escala_onda + p.x * escala_onda * 0.34 + TIME * velocidad_onda;
+	float modulacion = sin(p.x * escala_onda * 0.58 - TIME * 0.72) * 0.42;
 	float onda = sin(fase + modulacion);
 	float cresta = smoothstep(0.18, 0.92, onda);
 
-	// Una segunda línea de reflejo evita que el agua parezca sólo parpadear.
-	float fase_reflejo = UV.y * 39.0 - UV.x * 11.0 - TIME * 1.55;
+	// Reflejos secundarios con otra dirección y longitud de onda.
+	float fase_reflejo = p.y * escala_onda * 1.56 - p.x * escala_onda * 0.48 - TIME * 1.55;
 	float reflejo = smoothstep(0.70, 0.98, sin(fase_reflejo) * 0.5 + 0.5);
 
 	float pulso = onda * 0.5 + 0.5;
