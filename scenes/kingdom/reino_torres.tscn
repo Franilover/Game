@@ -507,9 +507,6 @@ position = Vector2(-360, -188)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ForgeCollisionBody" unique_id=898648263]
 shape = SubResource("ForgeCollision")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StableCollisionBody" unique_id=1905106029]
-shape = SubResource("StableCollision")
-
 [node name="RoyalArchiveCollisionBody" type="StaticBody2D" parent="." unique_id=327291069]
 position = Vector2(-170, -650)
 
@@ -594,22 +591,10 @@ position = Vector2(-520, 210)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WestHome11CollisionBody" unique_id=1967644794]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="WeaverHouseCollisionBody" unique_id=1419428691]
-shape = SubResource("DistrictBuildingSmall")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PotterHouseCollisionBody" unique_id=286773952]
-shape = SubResource("DistrictBuildingSmall")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="BathHouseCollisionBody" unique_id=1864974714]
-shape = SubResource("DistrictBuildingSmall")
-
 [node name="TradeHouseCollisionBody" type="StaticBody2D" parent="." unique_id=1422237852]
 position = Vector2(930, -350)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TradeHouseCollisionBody" unique_id=1816253537]
-shape = SubResource("DistrictBuildingSmall")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CaravanseraiCollisionBody" unique_id=1540711263]
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="GuardBarracksCollisionBody" type="StaticBody2D" parent="." unique_id=791510463]
@@ -630,9 +615,6 @@ position = Vector2(930, 110)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RepairWorkshopCollisionBody" unique_id=1139055035]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PublicStoreCollisionBody" unique_id=546497195]
-shape = SubResource("DistrictBuildingSmall")
-
 [node name="CartwrightCollisionBody" type="StaticBody2D" parent="." unique_id=1206000459]
 position = Vector2(930, 220)
 
@@ -651,9 +633,6 @@ position = Vector2(-270, 265)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="MillHouseCollisionBody" unique_id=1854484088]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="WaterWorksCollisionBody" unique_id=1814570750]
-shape = SubResource("DistrictBuildingSmall")
-
 [node name="AnimalPensCollisionBody" type="StaticBody2D" parent="." unique_id=1679686116]
 position = Vector2(450, 265)
 
@@ -664,9 +643,6 @@ shape = SubResource("DistrictBuildingSmall")
 position = Vector2(-850, 610)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FarmersHallCollisionBody" unique_id=1099439501]
-shape = SubResource("DistrictBuildingSmall")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="SeedStoreCollisionBody" unique_id=1238420334]
 shape = SubResource("DistrictBuildingSmall")
 
 [node name="Sprite_Arbol_Real_01" type="Sprite2D" parent="." unique_id=445200790]
