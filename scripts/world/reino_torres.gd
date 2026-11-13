@@ -11,6 +11,7 @@ const MUEBLE_MESA: Texture2D = preload("res://assets/art/places/Muebles/mesa.png
 const MUEBLE_HORNO: Texture2D = preload("res://assets/art/places/Muebles/horno.png")
 const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.png")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 
 # Ampliación moderada respecto al interior original (448x272).
@@ -80,6 +81,7 @@ var _boton_entrar: Button
 var _boton_dormir: Button
 var _camas_interactivas: Array[Vector2] = []
 var _entrada_aviso_actual: Dictionary = {}
+var _objetivos_entrada: Array[Node2D] = []
 var _terreno_dual_listo: bool = false
 var _atmosfera_mundo: Node = null
 var _luces_faroles: Array[PointLight2D] = []
@@ -150,6 +152,7 @@ func _ready() -> void:
 	_capa_interior.visible = false
 	add_child(_capa_interior)
 	_crear_aviso()
+	_crear_objetivos_entrada()
 	# Preparar primero todos los elementos que sustituyen polígonos vectoriales.
 	# Esta fase es síncrona: no debe quedar un frame donde Torres muestre sus
 	# superficies de diseño antes de recibir sus sprites definitivos.
@@ -246,12 +249,40 @@ func _process(_delta: float) -> void:
 		_boton_entrar.visible = false
 		return
 
-	_aviso.text = "Entrar"
+	_aviso.text = ""
 	_aviso_panel.visible = false
-	_boton_entrar.text = "Entrar: " + str(entrada_cercana.get("nombre", "edificio"))
-	_boton_entrar.visible = true
-	_posicionar_boton_entrada()
+	_boton_entrar.visible = false
 
+
+
+func _crear_objetivos_entrada() -> void:
+	for entrada: Dictionary in ENTRADAS:
+		var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+		if not is_instance_valid(objetivo):
+			continue
+		objetivo.name = "ObjetivoEntrada_" + str(entrada.get("id", "edificio"))
+		objetivo.position = entrada.get("pos", Vector2.ZERO)
+		objetivo.configurar(
+			"Entrar: " + str(entrada.get("nombre", "edificio")),
+			80.0,
+			Callable(self, "_puede_interactuar_entrada").bind(entrada),
+			Callable(self, "_interactuar_entrada").bind(entrada)
+		)
+		add_child(objetivo)
+		_objetivos_entrada.append(objetivo)
+
+
+func _puede_interactuar_entrada(jugador: Node, entrada: Dictionary) -> bool:
+	if _interior_activo or _transicionando or not is_instance_valid(jugador) or not jugador is Node2D:
+		return false
+	var posicion: Vector2 = to_global(entrada.get("pos", Vector2.ZERO))
+	return (jugador as Node2D).global_position.distance_to(posicion) <= 80.0
+
+
+func _interactuar_entrada(jugador: Node, entrada: Dictionary) -> void:
+	if not _puede_interactuar_entrada(jugador, entrada):
+		return
+	_entrar_al_interior(entrada.duplicate(true))
 
 
 func _crear_aviso() -> void:
@@ -362,35 +393,16 @@ func _input(evento: InputEvent) -> void:
 	if not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT:
 		return
 
-	# La cama toma prioridad sobre el uso de las manos y el combate.
-	# El botón conserva su propio clic; fuera de él, ningún sistema de gameplay
-	# debe recibir el mismo evento mientras la interacción de dormir esté activa.
+	# Dormir conserva su botón contextual propio. Las puertas ahora usan
+	# el InteractionSystem y el aviso [LMB] compartido del HUD.
 	if _interior_activo and _boton_dormir.visible:
 		if _boton_dormir.get_global_rect().has_point(clic.position):
 			return
 		get_viewport().set_input_as_handled()
 		if not _hay_objeto_en_manos():
 			_al_pulsar_dormir()
-		return
-
-	# El botón visible gestiona su propio clic. También se admite pulsar
-	# directamente sobre la puerta para entrar sin depender del botón flotante.
-	if _entrada_aviso_actual.is_empty():
-		return
-	if is_instance_valid(_boton_entrar) and _boton_entrar.visible and _boton_entrar.get_global_rect().has_point(clic.position):
-		return
-	var posicion_clic_mundo := get_global_mouse_position()
-	var posicion_puerta := to_global(_entrada_aviso_actual["pos"])
-	if posicion_clic_mundo.distance_to(posicion_puerta) > 140.0:
-		return
-	get_viewport().set_input_as_handled()
-	_entrar_al_interior(_entrada_aviso_actual.duplicate(true))
 
 
-func _al_pulsar_entrar() -> void:
-	if _interior_activo or _entrada_aviso_actual.is_empty():
-		return
-	_entrar_al_interior(_entrada_aviso_actual.duplicate(true))
 
 
 func _hay_objeto_en_manos() -> bool:
