@@ -27,6 +27,7 @@ var _previa: Sprite2D
 var _panel: PanelContainer
 var _estado: Label
 var _capa_ui: CanvasLayer
+var _boton_amueblar: Button
 var _cofre_ui: Node = null
 var _siguiente_id_cofre := 1
 
@@ -113,7 +114,8 @@ func _crear_interfaz() -> void:
 	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	raiz.mouse_filter = Control.MOUSE_FILTER_PASS
 	_capa_ui.add_child(raiz)
-	var boton := Button.new()
+	_boton_amueblar = Button.new()
+	var boton := _boton_amueblar
 	boton.text = "Amueblar [B]"
 	boton.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	boton.offset_left = -164
@@ -333,6 +335,8 @@ func _abrir_cofre(indice: int) -> void:
 	if not is_instance_valid(interfaz):
 		return
 	_cofre_ui = interfaz
+	if is_instance_valid(_boton_amueblar):
+		_boton_amueblar.visible = false
 	add_child(interfaz)
 	interfaz.call("abrir", self, inventario, indice)
 
@@ -346,6 +350,8 @@ func cerrar_cofre() -> void:
 	if interfaz.is_in_group("modal_ui"):
 		interfaz.remove_from_group("modal_ui")
 	interfaz.queue_free()
+	if is_instance_valid(_boton_amueblar):
+		_boton_amueblar.visible = visible
 
 
 func _reconstruir() -> void:
