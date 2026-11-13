@@ -57,6 +57,7 @@ var _material_particulas: ParticleProcessMaterial
 var _textura_lluvia: Texture2D
 var _textura_nieve: Texture2D
 var _ultimo_tipo_clima: String = ""
+var _climate_profile_id: String = ""
 
 
 func _ready() -> void:
@@ -78,6 +79,12 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	_actualizar_efectos()
+
+
+## Activa un perfil visual de clima local. Un identificador vacío deja el filtro especial apagado.
+func establecer_perfil_climatico(perfil_id: String) -> void:
+	_climate_profile_id = perfil_id.strip_edges().to_lower()
 	_actualizar_efectos()
 
 
@@ -159,6 +166,9 @@ func _actualizar_efectos() -> void:
 	var visibilidad := clampf(float(clima.get("visibilidad", 1.0)), 0.0, 1.0)
 	if _shader_material != null:
 		_shader_material.set_shader_parameter("visibilidad", visibilidad)
+		# La niebla carmesí es un perfil opcional, no un filtro global.
+		var opacidad := 0.34 if _climate_profile_id == "niebla_carmesi" else 0.0
+		_shader_material.set_shader_parameter("opacidad_filtro", opacidad)
 	_actualizar_particulas(clima)
 
 
