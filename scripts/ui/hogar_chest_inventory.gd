@@ -58,20 +58,13 @@ func _crear_interfaz() -> void:
 	margen.add_child(columna)
 
 	var encabezado := HBoxContainer.new()
+	encabezado.alignment = BoxContainer.ALIGNMENT_END
 	columna.add_child(encabezado)
-	var titulo := Label.new()
-	titulo.name = "Title"
-	titulo.text = "COFRE"
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	encabezado.add_child(titulo)
 	var cerrar := Button.new()
 	cerrar.text = "X"
 	cerrar.custom_minimum_size = Vector2(34, 28)
 	cerrar.pressed.connect(_solicitar_cierre)
 	encabezado.add_child(cerrar)
-
-	var separador := HSeparator.new()
-	columna.add_child(separador)
 
 	var paneles := HBoxContainer.new()
 	paneles.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -107,10 +100,6 @@ func _crear_interfaz() -> void:
 	_crear_slots(rejilla_jugador, "jugador", 18, _slots_jugador)
 	_crear_slots(rejilla_cofre, "cofre", 32, _slots_cofre)
 
-	var ayuda := Label.new()
-	ayuda.text = "Clic en un objeto y luego en el destino, o arrástralo · Esc para cerrar"
-	ayuda.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	columna.add_child(ayuda)
 	PIXEL_UI_THEME.apply(_panel)
 
 
