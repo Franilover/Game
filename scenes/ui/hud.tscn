@@ -173,6 +173,7 @@ value = 100.0
 show_percentage = false
 
 [node name="StaminaValue" type="Label" parent="." unique_id=819463251]
+visible = false
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
