@@ -11,16 +11,45 @@ render_mode unshaded;
 uniform sampler2D screen_texture : hint_screen_texture, filter_nearest;
 uniform vec4 fog_color : source_color = vec4(0.72, 0.75, 0.78, 1.0);
 uniform float visibilidad : hint_range(0.0, 1.0) = 1.0;
+uniform float intensidad_carmesi : hint_range(0.0, 0.65) = 0.34;
+uniform float densidad_particulas : hint_range(0.0, 0.01) = 0.0012;
+uniform float velocidad_particulas : hint_range(0.1, 3.0) = 0.82;
 
 void fragment() {
 	vec4 escena = texture(screen_texture, SCREEN_UV);
-	float intensidad = clamp((1.0 - visibilidad) * 1.12, 0.0, 0.86);
-	float radio = mix(0.92, 0.30, intensidad);
-	float distancia_centro = length((SCREEN_UV - vec2(0.5)) * vec2(1.0, 0.68));
+	vec3 color = escena.rgb;
+
+	// Filtro ambiental carmesí: oscurece ligeramente y desplaza los tonos
+	// hacia rojos apagados sin borrar el contraste de los sprites.
+	vec3 tono_carmesi = color * vec3(0.91, 0.53, 0.59) + vec3(0.025, 0.0, 0.012);
+	color = mix(color, tono_carmesi, intensidad_carmesi);
+
+	// Viñeta tenue para concentrar la mirada en el terreno.
+	float distancia_centro = length((SCREEN_UV - vec2(0.5)) * vec2(1.0, 0.72));
+	float viñeta = smoothstep(0.34, 0.92, distancia_centro) * 0.16;
+	color *= 1.0 - viñeta;
+
+	// Se conserva la niebla meteorológica existente.
+	float intensidad_niebla = clamp((1.0 - visibilidad) * 1.12, 0.0, 0.86);
+	float radio = mix(0.92, 0.30, intensidad_niebla);
 	float mascara = smoothstep(radio * 0.34, radio, distancia_centro);
 	float grano = fract(sin(dot(floor(SCREEN_UV * vec2(180.0, 100.0)), vec2(12.9898, 78.233))) * 43758.5453);
-	float opacidad = mascara * intensidad * (0.48 + grano * 0.12);
-	COLOR = mix(escena, fog_color, clamp(opacidad, 0.0, 0.78));
+	float opacidad_niebla = mascara * intensidad_niebla * (0.48 + grano * 0.12);
+	color = mix(color, fog_color.rgb, clamp(opacidad_niebla, 0.0, 0.78));
+
+	// Pequeños píxeles rojos: cada intervalo genera una distribución nueva,
+	// de modo que aparecen y desaparecen en ráfagas breves e irregulares.
+	vec2 tamano_pixel = SCREEN_PIXEL_SIZE * 2.0;
+	vec2 celda = floor(SCREEN_UV / tamano_pixel);
+	float intervalo = floor(TIME * velocidad_particulas);
+	vec2 semilla = celda + vec2(intervalo * 17.1, intervalo * 9.2);
+	float azar = fract(sin(dot(semilla, vec2(12.9898, 78.233))) * 43758.5453);
+	float particula = step(1.0 - densidad_particulas, azar);
+	float fase = fract(TIME * velocidad_particulas);
+	float pulso = smoothstep(0.02, 0.18, fase) * (1.0 - smoothstep(0.76, 0.98, fase));
+	color += vec3(0.82, 0.035, 0.075) * particula * pulso * 0.9;
+
+	COLOR = vec4(color, escena.a);
 }
 """
 
