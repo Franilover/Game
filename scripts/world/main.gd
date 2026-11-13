@@ -616,7 +616,7 @@ func _materializar_npcs_reino_torres() -> void:
 	var existentes: Dictionary = {}
 	for npc_existente in get_tree().get_nodes_in_group("torres_game_npc"):
 		if npc_existente is Creature and is_instance_valid(npc_existente):
-			existentes[(npc_existente as Creature).get_personaje_game_id()] = true
+			existentes[(npc_existente as Creature).get_personaje_game_id()] = npc_existente
 
 	var creados := 0
 	for personaje_variant in WorldData.obtener_personajes_game():
@@ -627,13 +627,26 @@ func _materializar_npcs_reino_torres() -> void:
 			continue
 
 		var personaje_id := str(personaje.get("id", "")).strip_edges()
-		if personaje_id.is_empty() or existentes.has(personaje_id):
+		if personaje_id.is_empty():
 			continue
 
 		var nombre := str(personaje.get("nombre", "NPC")).strip_edges()
 		var ubicacion := str(personaje.get("ubicacion_clave", "")).strip_edges().to_lower()
 		if ubicacion.is_empty() or ubicacion == "null" or not NPCScheduleSystem.tiene_ubicacion(ubicacion):
 			ubicacion = "plaza"
+		var rutinas_variant: Variant = personaje.get("rutinas", [])
+		var rutinas_actualizadas: Array = rutinas_variant.duplicate(true) if rutinas_variant is Array else []
+
+		if existentes.has(personaje_id):
+			var npc_existente := existentes[personaje_id] as Creature
+			if is_instance_valid(npc_existente):
+				npc_existente.datos["rutinas"] = rutinas_actualizadas
+				npc_existente.datos["ubicacion_clave"] = ubicacion
+				var dialogo_actualizado := WorldData.obtener_dialogo_game(personaje_id)
+				if not dialogo_actualizado.is_empty():
+					npc_existente.datos["dialogo"] = dialogo_actualizado
+				npc_existente.set_meta("rutina_firma", "")
+			continue
 
 		var criatura_id := str(personaje.get("criatura_id", "")).strip_edges()
 		var criatura_data := WorldData.obtener_criatura(criatura_id).duplicate(true)
@@ -646,8 +659,7 @@ func _materializar_npcs_reino_torres() -> void:
 		criatura_data["reino_game_id"] = str(personaje.get("reino_game_id", ""))
 		criatura_data["reino_nombre"] = "Torres"
 		criatura_data["ubicacion_clave"] = ubicacion
-		var rutinas_variant: Variant = personaje.get("rutinas", [])
-		criatura_data["rutinas"] = rutinas_variant.duplicate(true) if rutinas_variant is Array else []
+		criatura_data["rutinas"] = rutinas_actualizadas
 
 		var dialogo := WorldData.obtener_dialogo_game(personaje_id)
 		if not dialogo.is_empty():
