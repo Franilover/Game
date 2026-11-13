@@ -8,6 +8,7 @@ const ANCHO := 2400.0
 const ALTO := 1600.0
 const TAMANO_CELDA := 32.0
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const CONTEXTUAL_ACTION_PROMPT_SCRIPT = preload("res://scripts/ui/contextual_action_prompt.gd")
 
 const CATALOGO := {
 	"arbol": {"nombre": "Árbol", "ruta": "res://assets/art/props/Árbol.png"},
@@ -38,7 +39,7 @@ var _posicion_previa_valida := false
 var _boton_modo: Button
 var _panel_construccion: PanelContainer
 var _etiqueta_estado: Label
-var _etiqueta_entrada: Label
+var _prompt_entrada: Button
 var _interior_abierto := false
 var _interior_guardado_pendiente := false
 var _tiempo_actualizacion_estado := 0.0
@@ -306,19 +307,6 @@ func _actualizar_estado_interfaz() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("interact") and not (event is InputEventKey and (event as InputEventKey).echo):
-		if _interior_abierto:
-			var interior := _obtener_interior()
-			if is_instance_valid(interior):
-				if interior.has_method("esta_cofre_abierto") and bool(interior.call("esta_cofre_abierto")):
-					return
-				if interior.has_method("esta_editando") and bool(interior.call("esta_editando")):
-					return
-		if _puede_usar_puerta():
-			_establecer_interior(not _interior_abierto, true)
-			get_viewport().set_input_as_handled()
-			return
-
 	# Finalizar el arrastre antes de la fase GUI, incluso si se suelta el ratón
 	# encima del panel de construcción.
 	if _modo_construccion and event is InputEventMouseButton:
@@ -547,10 +535,9 @@ func _guardar_cambios_hogar() -> void:
 func _process(delta: float) -> void:
 	_tiempo_actualizacion_estado += delta
 	var jugador := _obtener_jugador()
-	if is_instance_valid(_etiqueta_entrada):
-		var cerca := _puede_usar_puerta()
-		_etiqueta_entrada.visible = cerca
-		_etiqueta_entrada.text = "E · Salir de la casa" if _interior_abierto else "E · Entrar a la casa"
+	if is_instance_valid(_prompt_entrada):
+		_prompt_entrada.call("establecer_accion", "Salir de la casa" if _interior_abierto else "Entrar a la casa")
+		_prompt_entrada.call("establecer_disponible", _puede_usar_puerta())
 	if _tiempo_actualizacion_estado >= 0.35 and is_instance_valid(jugador):
 		_tiempo_actualizacion_estado = 0.0
 		var estado := obtener_estado_guardado()
@@ -562,21 +549,23 @@ func _crear_prompt_entrada() -> void:
 	var raiz := get_node_or_null("InterfazConstruccion/Raiz") as Control
 	if not is_instance_valid(raiz):
 		return
-	_etiqueta_entrada = Label.new()
-	_etiqueta_entrada.name = "PromptEntradaCasa"
-	_etiqueta_entrada.text = "E · Entrar a la casa"
-	_etiqueta_entrada.visible = false
-	_etiqueta_entrada.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_etiqueta_entrada.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_etiqueta_entrada.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_etiqueta_entrada.offset_left = -130.0
-	_etiqueta_entrada.offset_top = -76.0
-	_etiqueta_entrada.offset_right = 130.0
-	_etiqueta_entrada.offset_bottom = -48.0
-	_etiqueta_entrada.add_theme_color_override("font_color", Color("#F1E2C7"))
-	_etiqueta_entrada.add_theme_color_override("font_outline_color", Color("#33251D"))
-	_etiqueta_entrada.add_theme_constant_override("outline_size", 4)
-	raiz.add_child(_etiqueta_entrada)
+	_prompt_entrada = CONTEXTUAL_ACTION_PROMPT_SCRIPT.new() as Button
+	if not is_instance_valid(_prompt_entrada):
+		push_error("HogarZone: no se pudo crear el aviso contextual de entrada.")
+		return
+	_prompt_entrada.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_prompt_entrada.offset_left = -125.0
+	_prompt_entrada.offset_top = -88.0
+	_prompt_entrada.offset_right = 125.0
+	_prompt_entrada.offset_bottom = -48.0
+	_prompt_entrada.call("configurar", "Entrar a la casa", _al_clic_prompt_entrada)
+	raiz.add_child(_prompt_entrada)
+
+
+func _al_clic_prompt_entrada() -> void:
+	if not _puede_usar_puerta():
+		return
+	_establecer_interior(not _interior_abierto, true)
 
 
 func _obtener_jugador() -> Node2D:
@@ -587,6 +576,15 @@ func _puede_usar_puerta() -> bool:
 	var jugador := _obtener_jugador()
 	if not is_instance_valid(jugador):
 		return false
+	if _modo_construccion:
+		return false
+	if _interior_abierto:
+		var interior := _obtener_interior()
+		if is_instance_valid(interior):
+			if interior.has_method("esta_cofre_abierto") and bool(interior.call("esta_cofre_abierto")):
+				return false
+			if interior.has_method("esta_editando") and bool(interior.call("esta_editando")):
+				return false
 	var objetivo := Vector2(4000.0, 144.0) if _interior_abierto else Vector2(0.0, -160.0)
 	return jugador.global_position.distance_to(objetivo) <= 68.0
 
