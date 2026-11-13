@@ -78,5 +78,39 @@ func establecer_decoraciones(decoraciones: Array) -> void:
 	cargar_estado_guardado({"version": _version_estado, "decoraciones": decoraciones})
 
 
+func agregar_decoracion(tipo: String, posicion: Vector2, giro: float = 0.0) -> bool:
+	if tipo.strip_edges().is_empty() or not obtener_limites().has_point(posicion):
+		return false
+	_decoraciones.append({
+		"tipo": tipo.strip_edges(),
+		"x": posicion.x,
+		"y": posicion.y,
+		"giro": giro
+	})
+	queue_redraw()
+	return true
+
+
+func mover_decoracion(indice: int, posicion: Vector2) -> bool:
+	if indice < 0 or indice >= _decoraciones.size() or not obtener_limites().has_point(posicion):
+		return false
+	_decoraciones[indice]["x"] = posicion.x
+	_decoraciones[indice]["y"] = posicion.y
+	queue_redraw()
+	return true
+
+
+func quitar_decoracion(indice: int) -> bool:
+	if indice < 0 or indice >= _decoraciones.size():
+		return false
+	_decoraciones.remove_at(indice)
+	queue_redraw()
+	return true
+
+
+func obtener_decoraciones() -> Array[Dictionary]:
+	return _decoraciones.duplicate(true)
+
+
 func obtener_limites() -> Rect2:
 	return Rect2(-ANCHO * 0.5, -ALTO * 0.5, ANCHO, ALTO)
