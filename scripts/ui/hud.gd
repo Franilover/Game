@@ -287,8 +287,10 @@ func _crear_indicador_recarga_dash() -> void:
 	_dash_recharge_indicator.min_value = 0.0
 	_dash_recharge_indicator.max_value = 1.0
 	_dash_recharge_indicator.value = 1.0
-	_dash_recharge_indicator.custom_minimum_size = Vector2(48.0, 6.0)
-	_dash_recharge_indicator.size = Vector2(48.0, 6.0)
+	# Indicador de recarga más largo, anclado sobre el personaje y
+	# ligeramente desplazado a la derecha para que no quede centrado sobre él.
+	_dash_recharge_indicator.custom_minimum_size = Vector2(72.0, 6.0)
+	_dash_recharge_indicator.size = Vector2(72.0, 6.0)
 	_dash_recharge_indicator.show_percentage = false
 	_dash_recharge_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dash_recharge_indicator.z_index = 90
@@ -324,7 +326,7 @@ func _actualizar_indicador_recarga_dash() -> void:
 
 	_dash_recharge_indicator.value = actual / maximo
 	var transformacion: Transform2D = player.get_global_transform_with_canvas()
-	_dash_recharge_indicator.position = transformacion.origin + Vector2(-24.0, -42.0)
+	_dash_recharge_indicator.position = transformacion.origin + Vector2(-8.0, -44.0)
 
 
 func _preparar_aviso_descubrimiento() -> void:
