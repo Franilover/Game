@@ -838,6 +838,9 @@ func _ocultar_npcs_exteriores() -> void:
 		var visual := npc as CanvasItem
 		_visibilidad_npcs_exterior[visual.get_instance_id()] = visual.visible
 		visual.visible = false
+		# Ocultarlo no basta: el sistema de clics sigue encontrándolo
+		# mientras pertenezca al grupo interactable.
+		npc.remove_from_group("interactable")
 
 
 func _restaurar_npcs_exteriores() -> void:
@@ -845,8 +848,12 @@ func _restaurar_npcs_exteriores() -> void:
 		if not is_instance_valid(npc) or not npc is CanvasItem:
 			continue
 		var visual := npc as CanvasItem
-		# Si continúa trabajando o descansando dentro, no reaparece en la calle.
-		visual.visible = not bool(npc.get_meta("rutina_en_edificio", false))
+		var sigue_dentro := bool(npc.get_meta("rutina_en_edificio", false))
+		visual.visible = not sigue_dentro
+		if sigue_dentro:
+			npc.remove_from_group("interactable")
+		elif npc is Creature:
+			npc.add_to_group("interactable")
 	_visibilidad_npcs_exterior.clear()
 
 
@@ -879,6 +886,8 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 		var actor := npc as Node2D
 		actor.position = posiciones[indice % posiciones.size()]
 		actor.visible = true
+		# Los NPC trasladados al cuarto sí pueden recibir interacciones.
+		npc.add_to_group("interactable")
 		indice += 1
 
 
@@ -894,6 +903,7 @@ func sacar_npc_del_interior(npc: Node) -> void:
 		(npc as Node2D).global_position = to_global(entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
 	if npc is CanvasItem:
 		(npc as CanvasItem).visible = false
+	npc.remove_from_group("interactable")
 
 
 func _devolver_npcs_del_interior_al_exterior() -> void:
