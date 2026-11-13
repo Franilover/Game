@@ -2,8 +2,9 @@ shader_type canvas_item;
 
 // Variación superficial determinista para Bosque.
 // Combina iluminación escalonada y matices verdes discretos.
-// El patrón usa coordenadas del mundo para continuar entre tiles y chunks.
-varying vec2 posicion_mundo;
+// El patrón usa un origen de mundo fijo por DisplayLayer para continuar entre tiles y chunks, independiente de la cámara.
+varying vec2 posicion_local;
+uniform vec2 origen_mundo = vec2(0.0);
 
 uniform float escala_mancha : hint_range(0.004, 0.05, 0.001) = 0.009;
 uniform float intensidad : hint_range(0.0, 0.22, 0.005) = 0.085;
@@ -29,14 +30,14 @@ float ruido_valor(vec2 p) {
 }
 
 void vertex() {
-	posicion_mundo = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
+	posicion_local = VERTEX;
 }
 
 void fragment() {
 	vec4 base = texture(TEXTURE, UV) * COLOR;
 
 	// Cuantizar la posición evita ruido subpíxel y conserva el aspecto pixel art.
-	vec2 mundo_pixel = floor(posicion_mundo / 2.0) * 2.0;
+	vec2 mundo_pixel = floor((posicion_local + origen_mundo) / 2.0) * 2.0;
 	float manchas = ruido_valor(mundo_pixel * escala_mancha);
 	float detalle = ruido_valor(mundo_pixel * escala_detalle);
 	float tono = mix(manchas, detalle, 0.22);
