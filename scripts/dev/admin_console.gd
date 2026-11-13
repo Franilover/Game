@@ -87,6 +87,12 @@ func _input(event: InputEvent) -> void:
 		return
 
 	var tecla: InputEventKey = event as InputEventKey
+	if _esta_en_modo_historia():
+		if tecla.pressed and not tecla.echo:
+			var codigo := tecla.keycode if tecla.keycode != KEY_NONE else tecla.physical_keycode
+			if codigo in [KEY_T, KEY_SLASH, KEY_KP_DIVIDE]:
+				get_viewport().set_input_as_handled()
+		return
 
 	if not tecla.pressed or tecla.echo:
 		return
@@ -108,6 +114,15 @@ func _input(event: InputEvent) -> void:
 	if tecla.keycode == KEY_ESCAPE:
 		cerrar()
 		get_viewport().set_input_as_handled()
+
+
+
+func _esta_en_modo_historia() -> bool:
+	var escena_actual := get_tree().current_scene
+	if not is_instance_valid(escena_actual):
+		return false
+	var gestor := escena_actual.get_node_or_null("World/ZoneManager")
+	return is_instance_valid(gestor) and gestor.has_method("obtener_tipo_actual") and gestor.call("obtener_tipo_actual") == "historia:reserva_carmesi"
 
 
 func _shortcut_input(_event: InputEvent) -> void:
