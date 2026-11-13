@@ -248,6 +248,20 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		destino_local = hogar_variant
 	elif not edificio_id.is_empty():
 		destino_local = edificio.get("pos", destino_local)
+
+	# La plaza es un punto de encuentro, no un único punto de llegada.
+	# Cada NPC ocupa un lugar estable alrededor del centro.
+	if ubicacion == "plaza":
+		var posiciones_plaza: Dictionary = {
+			"elian": Vector2(-72.0, 24.0),
+			"bruna": Vector2(64.0, 32.0),
+			"darven": Vector2(-24.0, -64.0),
+			"saira": Vector2(76.0, -52.0),
+			"narel": Vector2(-88.0, -48.0),
+			"abel": Vector2(12.0, 76.0),
+			"liam": Vector2(104.0, 20.0)
+		}
+		destino_local += posiciones_plaza.get(npc.get_nombre_visual().strip_edges().to_lower(), Vector2.ZERO)
 	var destino_global := _zona.to_global(destino_local)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
