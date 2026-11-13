@@ -214,7 +214,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	# Si cambió de destino mientras estaba dentro, sale desde la puerta antes
 	# de comenzar la nueva ruta. El nodo sigue siendo la misma instancia.
-	if esta_dentro and (not esta_en_horario or edificio_id != edificio_actual):
+	if esta_dentro and edificio_id != edificio_actual:
 		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
 			_zona.call("sacar_npc_del_interior", npc)
 		var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
@@ -224,6 +224,14 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		npc.set_meta("rutina_en_edificio", false)
 		npc.set_meta("rutina_edificio_id", "")
 		npc.visible = not (is_instance_valid(_zona) and bool(_zona.get("_interior_activo")))
+
+	# Si la actividad cambia pero sigue en el mismo edificio, permanece dentro.
+	if esta_dentro and edificio_id == edificio_actual:
+		npc.set_meta("rutina_firma", firma_nueva)
+		npc.set_meta("rutina_actual", clave_rutina)
+		npc.set_meta("rutina_ubicacion", ubicacion)
+		npc.datos["actividad_actual"] = actividad
+		return
 
 	if firma_anterior == firma_nueva:
 		var movimiento_actual := npc.get_node_or_null("CreatureMovement") as CreatureMovement
