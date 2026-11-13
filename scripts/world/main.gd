@@ -37,6 +37,7 @@ const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
 const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_radial_menu.tscn")
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
+const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
 
 # Perfiles visuales locales por zona. Para habilitar uno en Aventura en el futuro,
 # basta con añadir aquí su clave de zona sin alterar el sistema climático global.
@@ -65,6 +66,11 @@ func _ready() -> void:
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
 	WorldData.configurar_dependencias(_supabase_client)
+
+	if not WorldData.mundo_listo.is_connected(_al_mundo_datos_listo_para_npcs):
+		WorldData.mundo_listo.connect(_al_mundo_datos_listo_para_npcs)
+	if not WorldData.mundo_actualizado.is_connected(_al_mundo_datos_listo_para_npcs):
+		WorldData.mundo_actualizado.connect(_al_mundo_datos_listo_para_npcs)
 	if GarliaMultiplayer.es_servidor_dedicado():
 		GlobalWorldStore.restaurar_en_game_state(GameState)
 
@@ -437,6 +443,7 @@ func _al_mundo_inicializado() -> void:
 
 func _inicializar_runtime_de_zona() -> void:
 	_player = $Entities/Player as Player
+	_retirar_npcs_reino_torres()
 
 	if _player == null:
 		push_error("Main: no se encontró Entities/Player.")
@@ -537,6 +544,9 @@ func _inicializar_runtime_de_zona() -> void:
 	else:
 		print("Main: mundo abierto listo.")
 
+	if tipo_zona_actual == "reino_torres":
+		call_deferred("_materializar_npcs_reino_torres")
+
 	if GarliaMultiplayer.es_servidor_dedicado():
 		GarliaWorldNetwork.inicializar_mundo_servidor(
 			self,
@@ -555,6 +565,112 @@ func _inicializar_runtime_de_zona() -> void:
 			_world_generator.entity_manager if _world_generator != null else null,
 			tipo_zona_actual
 		)
+
+
+func _al_mundo_datos_listo_para_npcs() -> void:
+	if is_instance_valid(_zone_manager) and _zone_manager.obtener_tipo_actual() == "reino_torres":
+		call_deferred("_materializar_npcs_reino_torres")
+
+
+func _retirar_npcs_reino_torres() -> void:
+	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+		if is_instance_valid(npc):
+			npc.queue_free()
+
+
+func _materializar_npcs_reino_torres() -> void:
+	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "reino_torres":
+		return
+	if not WorldData.cargado:
+		return
+
+	var zona: Node = _zone_manager.obtener_zona_actual()
+	if not is_instance_valid(zona):
+		return
+
+	# Posiciones locales frente a los edificios de trabajo de la escena fija.
+	var posiciones := {
+		"Elian": Vector2(-205.0, -78.0),
+		"Bruna": Vector2(-320.0, -122.0),
+		"Darven": Vector2(690.0, -248.0),
+		"Saira": Vector2(890.0, -260.0),
+		"Narel": Vector2(-370.0, -482.0)
+	}
+
+	var existentes: Dictionary = {}
+	for npc_existente in get_tree().get_nodes_in_group("torres_game_npc"):
+		if npc_existente is Creature and is_instance_valid(npc_existente):
+			existentes[(npc_existente as Creature).get_personaje_game_id()] = true
+
+	var creados := 0
+	for personaje_variant in WorldData.obtener_personajes_game():
+		if not personaje_variant is Dictionary:
+			continue
+		var personaje := personaje_variant as Dictionary
+		var nombre := str(personaje.get("nombre", "")).strip_edges()
+		if not posiciones.has(nombre):
+			continue
+		if str(personaje.get("reino_clave", "")).to_lower() != "torres":
+			continue
+
+		var personaje_id := str(personaje.get("id", "")).strip_edges()
+		if personaje_id.is_empty() or existentes.has(personaje_id):
+			continue
+
+		var criatura_id := str(personaje.get("criatura_id", "")).strip_edges()
+		var criatura_data := WorldData.obtener_criatura(criatura_id).duplicate(true)
+		if criatura_data.is_empty():
+			push_warning("Main: no se pudo resolver el cuerpo humano del NPC " + nombre)
+			continue
+
+		criatura_data["nombre_individual"] = nombre
+		criatura_data["personaje_game_id"] = personaje_id
+		criatura_data["reino_game_id"] = str(personaje.get("reino_game_id", ""))
+		criatura_data["reino_nombre"] = "Torres"
+		criatura_data["ubicacion_clave"] = str(personaje.get("ubicacion_clave", ""))
+		var rutinas_variant: Variant = personaje.get("rutinas", [])
+		criatura_data["rutinas"] = rutinas_variant.duplicate(true) if rutinas_variant is Array else []
+
+		var dialogo := WorldData.obtener_dialogo_game(personaje_id)
+		if not dialogo.is_empty():
+			criatura_data["dialogo"] = dialogo
+
+		var npc := CREATURE_SCENE.instantiate() as Creature
+		if npc == null:
+			push_warning("Main: no se pudo instanciar el NPC " + nombre)
+			continue
+
+		npc.move_speed = 0.0
+		npc.mostrar_nombre_debug = false
+		npc.configurar_dependencias(
+			_dialogue_system,
+			MissionManager,
+			$Entities,
+			_world_items,
+			WorldData
+		)
+		npc.configurar(criatura_data)
+		$Entities.add_child(npc)
+		npc.global_position = zona.to_global(posiciones[nombre])
+		npc.set_meta("personaje_game_id", personaje_id)
+		npc.add_to_group("torres_game_npc")
+
+		var ai := npc.get_node_or_null("AIController")
+		if ai != null:
+			ai.set_process(false)
+			ai.set_physics_process(false)
+		var movimiento := npc.get_node_or_null("CreatureMovement")
+		if movimiento != null:
+			if movimiento.has_method("detener"):
+				movimiento.call("detener")
+			movimiento.set_process(false)
+			movimiento.set_physics_process(false)
+		npc.set_physics_process(false)
+		existentes[personaje_id] = true
+		creados += 1
+
+	if creados > 0:
+		print("Main: NPC de Reino Torres materializados desde Supabase → ", creados)
 
 
 ## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
