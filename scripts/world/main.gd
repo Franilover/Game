@@ -362,7 +362,7 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 
 
 func _conectar_carga_visual_historia(zona: Node) -> void:
-	var mapa := zona.get_node_or_null("Map") if is_instance_valid(zona) else null
+	var mapa: Node = zona.get_node_or_null("Map") if is_instance_valid(zona) else null
 	if mapa == null or not mapa.has_signal("mapa_construido"):
 		_al_mapa_historia_construido()
 		return
