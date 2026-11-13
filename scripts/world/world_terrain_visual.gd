@@ -2,7 +2,7 @@ extends Node2D
 class_name WorldTerrainVisual
 
 const WATER_SHADER := preload("res://assets/shaders/agua_marina.gdshader")
-const GRASS_SHADER := preload("res://assets/shaders/pradera_ondas.gdshader")
+const GRASS_SHADER := preload("res://assets/shaders/pradera_superficie.gdshader")
 
 # Prueba de rendimiento: desactiva temporalmente las capas decorativas de variaciones.
 # El terreno base y sus transiciones TileMapDual siguen activos.
