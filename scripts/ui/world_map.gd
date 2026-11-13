@@ -148,7 +148,7 @@ func _gui_input(event: InputEvent) -> void:
 			return
 	elif event is InputEventMouseMotion and _arrastrando_mapa:
 		var movimiento := event as InputEventMouseMotion
-		var mapa_rect := Rect2(4.0, 20.0, size.x - 8.0, size.y - 24.0)
+		var mapa_rect := Rect2(Vector2.ZERO, size)
 		var limites_vista := _obtener_limites_vista(mapa_rect)
 		_centro_mapa_fijo -= Vector2(
 			movimiento.relative.x * limites_vista.size.x / mapa_rect.size.x,
@@ -195,7 +195,7 @@ func _clave_tile(tile: Vector2i) -> String:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#191009"), true)
-	var mapa_rect := Rect2(4.0, 20.0, size.x - 8.0, size.y - 24.0)
+	var mapa_rect := Rect2(Vector2.ZERO, size) if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque" else Rect2(4.0, 20.0, size.x - 8.0, size.y - 24.0)
 	if mapa_rect.size.x <= 0.0 or mapa_rect.size.y <= 0.0:
 		return
 	draw_rect(mapa_rect, Color("#26170d"), true)
@@ -258,7 +258,6 @@ func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
 	_dibujar_marcador_jugador(_punto_a_mapa(posicion, mapa_rect, limites))
 	if _tipo_zona == "reino_torres":
 		_dibujar_marcadores_aldeanos(mapa_rect, limites)
-		_dibujar_leyenda_aldeanos()
 
 
 func _dibujar_terreno_tilemaps(mapa_rect: Rect2, limites: Rect2) -> void:
@@ -409,15 +408,6 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 		if fuente != null:
 			draw_string(fuente, punto + Vector2(7.0, 3.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#21170e"))
 			draw_string(fuente, punto + Vector2(6.0, 2.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#f0dfbd"))
-
-
-func _dibujar_leyenda_aldeanos() -> void:
-	var fuente := ThemeDB.fallback_font
-	if fuente == null:
-		return
-	draw_string(fuente, Vector2(10.0, 13.0), "TORRES · ALDEANOS EN TIEMPO REAL", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 10, Color("#f0dfbd"))
-	draw_circle(Vector2(size.x - 15.0, 12.0), 3.5, Color("#d8b56a"))
-	draw_string(fuente, Vector2(size.x - 84.0, 13.0), "Tú", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#f0dfbd"))
 
 
 func _dibujar_mapa_bosque(mapa_rect: Rect2, limites: Rect2) -> void:
