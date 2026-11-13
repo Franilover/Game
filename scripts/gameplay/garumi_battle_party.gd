@@ -39,22 +39,19 @@ func iniciar(nuevo_jugador: Node2D, nuevo_rival: Garumi) -> void:
 	print("GarumiBattleParty: encuentro directo iniciado; combate el jugador, no sus compañeros.")
 
 func _actualizar_tamano_raiz() -> void:
-	if is_instance_valid(self):
-		size = get_viewport().get_visible_rect().size
+	if not is_instance_valid(self):
+		return
+	size = get_viewport().get_visible_rect().size
+	_actualizar_diseno()
 
 func _crear_interfaz() -> void:
 	# Barra horizontal superior con el nombre y la salud del rival.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel = PanelContainer.new()
 	_panel.name = "GarumiWildEncounter"
-	_panel.anchor_left = 0.0
-	_panel.anchor_top = 0.0
-	_panel.anchor_right = 1.0
-	_panel.anchor_bottom = 0.0
-	_panel.offset_left = 16.0
-	_panel.offset_top = 12.0
-	_panel.offset_right = -16.0
-	_panel.offset_bottom = 62.0
+	_panel.position = Vector2(16.0, 12.0)
+	_panel.custom_minimum_size = Vector2(0.0, 50.0)
+	_panel.size = Vector2(maxf(0.0, size.x - 32.0), 50.0)
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.z_index = 80
 	add_child(_panel)
@@ -87,14 +84,8 @@ func _crear_interfaz() -> void:
 
 	# Mensaje y acción de vínculo bajo la barra.
 	var panel_acciones := VBoxContainer.new()
-	panel_acciones.anchor_left = 0.5
-	panel_acciones.anchor_top = 0.0
-	panel_acciones.anchor_right = 0.5
-	panel_acciones.anchor_bottom = 0.0
-	panel_acciones.offset_left = -132.0
-	panel_acciones.offset_top = 70.0
-	panel_acciones.offset_right = 132.0
-	panel_acciones.offset_bottom = 132.0
+	panel_acciones.position = Vector2((size.x - 264.0) * 0.5, 70.0)
+	panel_acciones.size = Vector2(264.0, 62.0)
 	panel_acciones.z_index = 80
 	panel_acciones.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel_acciones)
@@ -120,18 +111,26 @@ func _crear_interfaz() -> void:
 	_boton_huir.name = "HuirGarumi"
 	_boton_huir.text = "Huir"
 	_boton_huir.custom_minimum_size = Vector2(104.0, 34.0)
-	_boton_huir.anchor_left = 0.0
-	_boton_huir.anchor_top = 1.0
-	_boton_huir.anchor_right = 0.0
-	_boton_huir.anchor_bottom = 1.0
-	_boton_huir.offset_left = 14.0
-	_boton_huir.offset_top = -48.0
-	_boton_huir.offset_right = 118.0
-	_boton_huir.offset_bottom = -14.0
+	_boton_huir.position = Vector2(14.0, size.y - 48.0)
+	_boton_huir.size = Vector2(104.0, 34.0)
 	_boton_huir.z_index = 90
 	_boton_huir.pressed.connect(_huir)
 	add_child(_boton_huir)
 	PIXEL_UI_THEME.apply(_boton_huir, false)
+	_actualizar_diseno()
+
+
+func _actualizar_diseno() -> void:
+	if is_instance_valid(_panel):
+		_panel.position = Vector2(16.0, 12.0)
+		_panel.size = Vector2(maxf(0.0, size.x - 32.0), 50.0)
+	var acciones := get_node_or_null("VBoxContainer") as VBoxContainer
+	if is_instance_valid(acciones):
+		acciones.position = Vector2((size.x - 264.0) * 0.5, 70.0)
+		acciones.size = Vector2(264.0, 62.0)
+	if is_instance_valid(_boton_huir):
+		_boton_huir.position = Vector2(14.0, size.y - 48.0)
+		_boton_huir.size = Vector2(104.0, 34.0)
 
 
 func _process(delta: float) -> void:
