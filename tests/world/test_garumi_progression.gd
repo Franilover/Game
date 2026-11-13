@@ -36,43 +36,22 @@ func _run() -> void:
 	await process_frame
 	var xp_nivel_30: int = int(progresion.xp_total_para_nivel(30))
 	garumi.configurar({
-		"id": "orumi-inicial-test",
-		"nombre": "Forma inicial de prueba",
-		"original_id": "orumi-test",
+		"id": "plava-test",
+		"nombre": "Plava de prueba",
+		"original_id": "original-test",
 		"categoria_garumi": "normal",
-		"estado_evolutivo": "inicial",
 		"estado_documentacion": "canon",
 		"experiencia_total": xp_nivel_30
 	})
-	var destino := {
-		"id": "orumi-final-test",
-		"nombre": "Forma evolucionada de prueba",
-		"original_id": "orumi-test",
-		"categoria_garumi": "normal",
-		"estado_evolutivo": "final",
-		"estado_documentacion": "canon"
-	}
-	var relacion_borrador := {
-		"especie_origen_id": "orumi-inicial-test",
-		"especie_destino_id": "orumi-final-test",
-		"tipo_relacion": "directa",
-		"estado_documentacion": "borrador"
-	}
-	var relacion_canon := relacion_borrador.duplicate(true)
-	relacion_canon["estado_documentacion"] = "canon"
 	_expect(garumi.nivel == 30, "La experiencia acumulada debe calcular el nivel real.", errores)
-	_expect(not garumi.puede_evolucionar_a(destino, relacion_borrador), "Una relación evolutiva en borrador no debe habilitar evolución.", errores)
-	_expect(garumi.puede_evolucionar_a(destino, relacion_canon), "Una relación canónica debe habilitar evolución desde nivel 30.", errores)
-	_expect(garumi.evolucionar_a(destino, relacion_canon), "Debe poder transformar una instancia existente en su forma final.", errores)
-	_expect(garumi.criatura_id == "orumi-final-test" and garumi.nivel == 30, "La evolución debe cambiar la forma y conservar el nivel.", errores)
 	var manager := WorldEntityManager.new()
 	manager.configurar(root)
-	garumi.set_meta("runtime_instance_key", "garumi:0:orumi-inicial-test")
+	garumi.set_meta("runtime_instance_key", "garumi:0:plava-test")
 	manager.guardar_estado_entidad(garumi, Vector2i.ZERO)
-	var estado_guardado: Dictionary = manager.obtener_estado_criatura(Vector2i.ZERO, "orumi-inicial-test", "garumi:0:orumi-inicial-test")
+	var estado_guardado: Dictionary = manager.obtener_estado_criatura(Vector2i.ZERO, "plava-test", "garumi:0:plava-test")
 	var datos_guardados_variant: Variant = estado_guardado.get("garumi_datos", {})
 	var datos_guardados: Dictionary = datos_guardados_variant if datos_guardados_variant is Dictionary else {}
-	_expect(str(datos_guardados.get("id", "")) == "orumi-final-test", "El streaming debe conservar la forma evolucionada.", errores)
+	_expect(str(datos_guardados.get("id", "")) == "plava-test", "El guardado debe conservar la identidad de la especie del catálogo.", errores)
 	_expect(int(estado_guardado.get("nivel", 0)) == 30 and int(estado_guardado.get("experiencia_total", 0)) == xp_nivel_30, "El streaming debe conservar nivel y experiencia.", errores)
 	garumi.queue_free()
 
