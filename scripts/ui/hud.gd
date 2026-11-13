@@ -59,7 +59,6 @@ var _interaction_panel_open: bool = false
 
 var mission_panel: PanelContainer = null
 var mission_list: VBoxContainer = null
-var mission_hint: Label = null
 var _mission_panel_open: bool = false
 
 var discovery_notice: Label = null
@@ -898,7 +897,6 @@ func _preparar_panel_misiones() -> void:
 	mission_panel.position = Vector2(-280.0, -210.0)
 	mission_panel.size = Vector2(560.0, 420.0)
 	mission_list = mission_panel.get_node("Margin/Column/MissionList") as VBoxContainer
-	mission_hint = mission_panel.get_node("Margin/Column/MissionHint") as Label
 	add_child(mission_panel)
 	PIXEL_UI_THEME.apply(mission_panel)
 
