@@ -643,7 +643,8 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 	var cantidad_entregada := 0
 	for recompensa_variant in recompensas:
 		if not recompensa_variant is Dictionary:
-			continue
+			inventario.cargar_estado_partida(inventario_anterior)
+			return false
 		var recompensa := recompensa_variant as Dictionary
 		var tipo := str(recompensa.get("tipo", "")).strip_edges().to_lower()
 		if tipo != "item":
