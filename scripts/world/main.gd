@@ -39,13 +39,18 @@ const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle
 const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_input_controller.gd")
 @onready var _zone_manager: Node2D = $World/ZoneManager
 @onready var _realm_menu: Control = $UI/RealmMenu
+@onready var _story_loading_overlay: Control = $UI/StoryLoadingOverlay
 var _reino_descubrimiento_elapsed: float = 0.0
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
+var _carga_historia_activa := false
 
 
 func _ready() -> void:
+	_carga_historia_activa = bool(GameState.world_state.flags.get("historia_iniciar_reserva_carmesi", false))
+	if is_instance_valid(_story_loading_overlay):
+		_story_loading_overlay.visible = _carga_historia_activa
 	_registrar_diagnostico_ventana("_ready: inicio")
 	call_deferred("_diagnostico_ventana_diferido")
 	SupabaseClient.configurar_dependencias(GarliaAuth)
@@ -98,10 +103,17 @@ func _ready() -> void:
 		_configurar_camara()
 		_configurar_hud(_world_context, null)
 
+	# La Reserva Carmesí es una escena local: no debe esperar el catálogo remoto
+	# de reinos para comenzar el capítulo.
+	var iniciar_historia := bool(GameState.world_state.flags.get("historia_iniciar_reserva_carmesi", false))
+	if is_instance_valid(_story_loading_overlay):
+		_story_loading_overlay.visible = iniciar_historia
 	_supabase_client.cargar_reinos_game()
 	_reinos_game_servidor_listos = not _supabase_client.obtener_reinos_game().is_empty()
 	if GarliaMultiplayer.es_servidor_dedicado():
 		_esperar_datos_mundo_servidor()
+	elif iniciar_historia:
+		_iniciar_zonas()
 	elif not GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
 	elif not _supabase_client.obtener_reinos_game().is_empty():
@@ -294,6 +306,8 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_hud.establecer_modo_historia(es_modo_historia)
 	if is_instance_valid(_pause_menu):
 		_pause_menu.establecer_modo_historia(es_modo_historia)
+	if es_modo_historia and _carga_historia_activa:
+		_conectar_carga_visual_historia(_zona)
 
 	if tipo == "mundo_abierto" or tipo == "expedicion:bosque":
 		if _world_generator == null:
@@ -343,6 +357,24 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_world_context.configurar(null, null, WorldData)
 		_world_items.establecer_generacion_habilitada(false)
 		_inicializar_runtime_de_zona()
+
+
+func _conectar_carga_visual_historia(zona: Node) -> void:
+	var mapa := zona.get_node_or_null("Map") if is_instance_valid(zona) else null
+	if mapa == null or not mapa.has_signal("mapa_construido"):
+		_al_mapa_historia_construido()
+		return
+	var callback := Callable(self, "_al_mapa_historia_construido")
+	if not mapa.is_connected("mapa_construido", callback):
+		mapa.connect("mapa_construido", callback, CONNECT_ONE_SHOT)
+	if bool(mapa.get("mapa_listo")):
+		_al_mapa_historia_construido()
+
+
+func _al_mapa_historia_construido() -> void:
+	_carga_historia_activa = false
+	if is_instance_valid(_story_loading_overlay):
+		_story_loading_overlay.visible = false
 
 
 func _actualizar_limites_camara_zona(tipo: String) -> void:
