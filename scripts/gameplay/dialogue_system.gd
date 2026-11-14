@@ -987,6 +987,44 @@ func _cerrar_selector_conversacion() -> void:
 
 
 func _crear_opciones_conversacion() -> Array[Dictionary]:
+	# Los temas narrativos proceden de dialogos_game. El fallback mantiene
+	# compatibilidad con NPC que todavía no tienen temas propios en Supabase.
+	if is_instance_valid(_fuente):
+		var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+		var datos_dialogo := _fuente.get_dialogue_data()
+		var temas_variant: Variant = datos_dialogo.get("temas_conversacion", [])
+		if temas_variant is Array:
+			var opciones_datos: Array[Dictionary] = []
+			var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null else {}
+			var recuerdos: Array = relationship_system.obtener_recuerdos(personaje_id) if relationship_system != null else []
+			for tema_variant in temas_variant as Array:
+				if not tema_variant is Dictionary:
+					continue
+				var tema := tema_variant as Dictionary
+				if not _cumple_requisitos_tema_conversacion(tema, relacion, recuerdos):
+					continue
+				var clave_tema := str(tema.get("clave", "")).strip_edges()
+				var ya_conversado := _recuerdos_contienen_tema(recuerdos, clave_tema)
+				var respuesta := str(tema.get("respuesta", "")).strip_edges()
+				if ya_conversado:
+					var repetida := str(tema.get("respuesta_repetida", "")).strip_edges()
+					if not repetida.is_empty():
+						respuesta = repetida
+				var texto_jugador := str(tema.get("jugador", "")).strip_edges()
+				var titulo := str(tema.get("texto", "")).strip_edges()
+				if clave_tema.is_empty() or texto_jugador.is_empty() or respuesta.is_empty() or titulo.is_empty():
+					continue
+				opciones_datos.append({
+					"clave": clave_tema,
+					"texto": titulo,
+					"jugador": texto_jugador,
+					"respuesta": respuesta,
+					"evento": str(tema.get("evento", "interesarse")),
+					"importancia": float(tema.get("importancia", 1.0))
+				})
+			if not opciones_datos.is_empty():
+				return opciones_datos
+
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges()
 	var planes := "Hoy quiero cumplir con mis responsabilidades y reservar algo de tiempo para descansar."
@@ -1058,6 +1096,34 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 	]
 
 
+func _cumple_requisitos_tema_conversacion(tema: Dictionary, relacion: Dictionary, recuerdos: Array) -> bool:
+	var requisito_social_variant: Variant = tema.get("requisito_social", {})
+	if requisito_social_variant is Dictionary:
+		var requisito_social := requisito_social_variant as Dictionary
+		for eje in ["amistad", "confianza", "respeto", "afecto"]:
+			var valor := float(relacion.get(eje, 0.0))
+			if requisito_social.has(eje + "_min") and valor < float(requisito_social.get(eje + "_min", 0.0)):
+				return false
+			if requisito_social.has(eje + "_max") and valor > float(requisito_social.get(eje + "_max", 0.0)):
+				return false
+	var requiere_tema := str(tema.get("requiere_tema", "")).strip_edges()
+	if not requiere_tema.is_empty() and not _recuerdos_contienen_tema(recuerdos, requiere_tema):
+		return false
+	return true
+
+
+func _recuerdos_contienen_tema(recuerdos: Array, clave_tema: String) -> bool:
+	if clave_tema.is_empty():
+		return false
+	for recuerdo_variant in recuerdos:
+		if not recuerdo_variant is Dictionary:
+			continue
+		var recuerdo := recuerdo_variant as Dictionary
+		if str(recuerdo.get("tipo", "")) == "tema_conversacion" and str(recuerdo.get("clave", "")) == clave_tema:
+			return true
+	return false
+
+
 func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	if not _abierto or not is_instance_valid(_fuente):
 		return
@@ -1066,9 +1132,18 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	if jugador.is_empty() or respuesta.is_empty():
 		return
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	var clave_tema := str(opcion.get("clave", "")).strip_edges()
 	var evento := str(opcion.get("evento", "interesarse")).strip_edges()
 	if relationship_system != null and not personaje_id.is_empty():
-		var contexto := {"origen": "tema_conversacion", "tema": str(opcion.get("texto", ""))}
+		if not clave_tema.is_empty():
+			relationship_system.registrar_recuerdo(personaje_id, {
+				"tipo": "tema_conversacion",
+				"clave": clave_tema,
+				"titulo": str(opcion.get("texto", "")),
+				"importancia": float(opcion.get("importancia", 1.0)),
+				"momento": Time.get_datetime_string_from_system(true)
+			})
+		var contexto := {"origen": "tema_conversacion", "tema": str(opcion.get("texto", "")), "clave_tema": clave_tema}
 		relationship_system.registrar_evento_social(personaje_id, evento, _crear_id_evento_respuesta(personaje_id, evento), contexto)
 	_cerrar_selector_conversacion()
 	_acciones.clear()
