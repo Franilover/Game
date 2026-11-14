@@ -279,23 +279,37 @@ func _actualizar_rutinas_personajes_game_en_vivo(mundo_remoto: Dictionary) -> vo
 			continue
 		personajes_remotos[personaje_id] = personaje_remoto
 
-	var cambio := false
+	var indices_actuales: Dictionary = {}
 	for indice in range(_personajes_game.size()):
-		var personaje_actual := _personajes_game[indice].duplicate(true)
-		var personaje_id := str(personaje_actual.get("id", "")).strip_edges()
-		if personaje_id.is_empty() or not personajes_remotos.has(personaje_id):
+		var id_actual := str(_personajes_game[indice].get("id", "")).strip_edges()
+		if not id_actual.is_empty():
+			indices_actuales[id_actual] = indice
+
+	var cambio := false
+	# El snapshot incluido puede ser anterior a la incorporación de personajes_game
+	# y no contener ningún aldeano. En una partida activa también debemos insertar
+	# los personajes remotos nuevos, no sólo actualizar rutinas de los existentes.
+	for personaje_id_variant in personajes_remotos.keys():
+		var personaje_id := str(personaje_id_variant)
+		var personaje_remoto: Dictionary = personajes_remotos[personaje_id]
+		if not indices_actuales.has(personaje_id):
+			_personajes_game.append(personaje_remoto.duplicate(true))
+			indices_actuales[personaje_id] = _personajes_game.size() - 1
+			cambio = true
 			continue
 
-		var personaje_remoto: Dictionary = personajes_remotos[personaje_id]
+		var indice := int(indices_actuales[personaje_id])
+		var personaje_actual := _personajes_game[indice].duplicate(true)
 		var rutinas_remotas_variant: Variant = personaje_remoto.get("rutinas", [])
 		var rutinas_remotas: Array = rutinas_remotas_variant.duplicate(true) if rutinas_remotas_variant is Array else []
 		var rutinas_actuales_variant: Variant = personaje_actual.get("rutinas", [])
 		var rutinas_actuales: Array = rutinas_actuales_variant if rutinas_actuales_variant is Array else []
-		if rutinas_actuales == rutinas_remotas:
+		var ubicacion_remota := str(personaje_remoto.get("ubicacion_clave", personaje_actual.get("ubicacion_clave", "")))
+		if rutinas_actuales == rutinas_remotas and str(personaje_actual.get("ubicacion_clave", "")) == ubicacion_remota:
 			continue
 
 		personaje_actual["rutinas"] = rutinas_remotas
-		personaje_actual["ubicacion_clave"] = str(personaje_remoto.get("ubicacion_clave", personaje_actual.get("ubicacion_clave", "")))
+		personaje_actual["ubicacion_clave"] = ubicacion_remota
 		_personajes_game[indice] = personaje_actual
 		cambio = true
 
@@ -303,7 +317,7 @@ func _actualizar_rutinas_personajes_game_en_vivo(mundo_remoto: Dictionary) -> vo
 		return
 
 	mundo["personajes_game"] = _personajes_game.duplicate(true)
-	print("WorldData: rutinas de NPC sincronizadas en vivo → ", personajes_remotos.size(), " personajes.")
+	print("WorldData: personajes y rutinas sincronizados en vivo → ", _personajes_game.size(), " habitantes.")
 	mundo_actualizado.emit()
 
 
