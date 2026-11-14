@@ -256,8 +256,10 @@ func _al_mision_aceptada(mision: Dictionary) -> void:
 	var hora := float(tiempo.get("hora_del_dia", 12.0))
 	var dias_espera := maxi(0, int(mision.get("seguimiento_dias", mision.get("duracion_dias", 0))))
 	if dias_espera <= 0:
-		var plazo := str(mision.get("plazo", mision.get("duracion", mision.get("tipo_plazo", "")))).to_lower()
-		if plazo.contains("largo") or plazo.contains("seman"):
+		var plazo := str(mision.get("plazo", mision.get("duracion", mision.get("tipo_plazo", mision.get("tipo", ""))))).to_lower()
+		var objetivos_variant: Variant = mision.get("objetivos", [])
+		var cantidad_objetivos := (objetivos_variant as Array).size() if objetivos_variant is Array else 0
+		if plazo.contains("largo") or plazo.contains("seman") or plazo.contains("principal") or cantidad_objetivos >= 3:
 			dias_espera = 3
 	var iniciativas := _obtener_iniciativas()
 	var misiones_variant: Variant = iniciativas.get("misiones", {})
@@ -304,6 +306,8 @@ func _actualizar_iniciativas(
 		return false
 	_obtener_npcs_torres()
 	var iniciativas := _obtener_iniciativas()
+	if not _puede_iniciar_iniciativa_global(iniciativas, tiempo):
+		return false
 	var misiones_variant: Variant = iniciativas.get("misiones", {})
 	var misiones: Dictionary = misiones_variant if misiones_variant is Dictionary else {}
 	for mision_id_variant in misiones.keys():
@@ -332,6 +336,7 @@ func _actualizar_iniciativas(
 			registro["seguimiento_realizado"] = true
 			misiones[mision_id] = registro
 			iniciativas["misiones"] = misiones
+			_registrar_iniciativa_global(iniciativas, tiempo)
 			_guardar_iniciativas(iniciativas)
 			return true
 
@@ -359,9 +364,27 @@ func _actualizar_iniciativas(
 		if dialogo.abrir_iniciativa_npc(datos_amigo, personaje):
 			ultima[personaje_id] = dia_actual
 			iniciativas["ultima_iniciativa_dia"] = ultima
+			_registrar_iniciativa_global(iniciativas, tiempo)
 			_guardar_iniciativas(iniciativas)
 			return true
 	return false
+
+
+func _puede_iniciar_iniciativa_global(iniciativas: Dictionary, tiempo: Dictionary) -> bool:
+	var ultima_variant: Variant = iniciativas.get("ultima_global", {})
+	if not ultima_variant is Dictionary:
+		return true
+	var ultima := ultima_variant as Dictionary
+	if str(ultima.get("dia", "")) != _clave_dia(tiempo):
+		return true
+	return float(tiempo.get("hora_del_dia", 0.0)) - float(ultima.get("hora", 0.0)) >= 4.0
+
+
+func _registrar_iniciativa_global(iniciativas: Dictionary, tiempo: Dictionary) -> void:
+	iniciativas["ultima_global"] = {
+		"dia": _clave_dia(tiempo),
+		"hora": float(tiempo.get("hora_del_dia", 0.0))
+	}
 
 
 func _seguimiento_mision_vencido(registro: Dictionary, tiempo: Dictionary) -> bool:
