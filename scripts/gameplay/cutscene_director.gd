@@ -84,6 +84,8 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	if not is_in_group("modal_ui"):
 		add_to_group("modal_ui")
 	_capturar_y_ocultar_ui()
+	if _modo_cinematica == "planeada":
+		_ocultar_npcs_fuera_de_cinematica()
 	cinematica_iniciada.emit(_clave_actual)
 
 	for paso_variant in pasos:
@@ -102,6 +104,9 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				var dialogo_abierto := false
 				if paso.has("npc"):
 					var fuente_dialogo := _buscar_npc(str(paso.get("npc", "")))
+					if _modo_cinematica == "planeada" and is_instance_valid(fuente_dialogo):
+						_guardar_estado_npc(fuente_dialogo)
+						fuente_dialogo.show()
 					dialogo_abierto = _dialogue.abrir(datos_variant as Dictionary, fuente_dialogo, true)
 				else:
 					dialogo_abierto = _dialogue.abrir(datos_variant as Dictionary)
@@ -288,6 +293,19 @@ func _ocultar_elemento_ui(nodo: Node) -> void:
 		item.hide()
 
 
+func _ocultar_npcs_fuera_de_cinematica() -> void:
+	# Las cinemáticas planeadas muestran únicamente a los NPC que participan
+	# explícitamente. Así se evita que las rutinas del pueblo distraigan al fondo.
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature:
+			continue
+		var npc := nodo as Creature
+		if not is_instance_valid(npc):
+			continue
+		_guardar_estado_npc(npc)
+		npc.hide()
+
+
 func _guardar_estado_npc(npc: Creature) -> void:
 	if not is_instance_valid(npc):
 		return
@@ -331,6 +349,7 @@ func _ejecutar_ruta_npc(paso: Dictionary, generacion: int) -> void:
 		return
 	if _modo_cinematica == "planeada":
 		_guardar_estado_npc(npc)
+		npc.show()
 	var puntos_variant: Variant = paso.get("puntos", [])
 	var puntos: Array = puntos_variant if puntos_variant is Array else []
 	if puntos.is_empty() and paso.has("x") and paso.has("y"):
