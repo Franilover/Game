@@ -536,16 +536,18 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 		if frase_jugador.is_empty():
 			return {}
 		match clave_nombre:
+		var respuesta_npc := str(recuerdo.get("respuesta_npc", "")).strip_edges()
+		match clave_nombre:
 			"elian":
-				texto = "Me he quedado pensando en nuestra conversación sobre %s. Recuerdo que dijiste: %s ¿Cómo lo ves ahora?" % [titulo_tema, frase_jugador]
+				texto = "Me acordé de lo que hablamos sobre %s. Te conté esto: %s ¿Has pensado algo más desde entonces?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Me he quedado pensando en nuestra conversación sobre %s. Recuerdo que dijiste: %s ¿Cómo lo ves ahora?" % [titulo_tema, frase_jugador]
 			"bruna":
-				texto = "Sobre lo que hablamos de %s: recuerdo tu punto de vista. Dijiste: %s ¿Sigues pensando igual?" % [titulo_tema, frase_jugador]
+				texto = "Sobre lo que hablamos de %s: te expliqué cómo lo veía. %s ¿Has llegado a alguna conclusión?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Sobre lo que hablamos de %s: recuerdo tu punto de vista. Dijiste: %s ¿Sigues pensando igual?" % [titulo_tema, frase_jugador]
 			"darven":
-				texto = "Quería retomar lo que hablamos sobre %s. Recuerdo que comentaste: %s ¿Ha cambiado algo desde entonces?" % [titulo_tema, frase_jugador]
+				texto = "Quería retomar lo que hablamos sobre %s. Te comenté: %s ¿Has observado algo nuevo?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Quería retomar lo que hablamos sobre %s. Recuerdo que comentaste: %s ¿Ha cambiado algo desde entonces?" % [titulo_tema, frase_jugador]
 			"saira":
-				texto = "¡Oye! Me acordé de nuestra charla sobre %s. Dijiste algo que se me quedó dando vueltas: %s ¿Todavía lo ves así?" % [titulo_tema, frase_jugador]
+				texto = "¡Me acordé de nuestra charla sobre %s! Te conté: %s ¿Y tú, has descubierto algo más?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "¡Oye! Me acordé de nuestra charla sobre %s. Dijiste algo que se me quedó dando vueltas: %s ¿Todavía lo ves así?" % [titulo_tema, frase_jugador]
 			"narel":
-				texto = "He vuelto sobre nuestra conversación acerca de %s. Tu comentario fue: %s ¿Mantienes esa conclusión?" % [titulo_tema, frase_jugador]
+				texto = "He vuelto sobre nuestra conversación acerca de %s. Mi respuesta entonces fue: %s ¿Has encontrado algo que cambie nuestra interpretación?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "He vuelto sobre nuestra conversación acerca de %s. Tu comentario fue: %s ¿Mantienes esa conclusión?" % [titulo_tema, frase_jugador]
 			_:
 				texto = "Recuerdo que hablamos sobre %s y que dijiste: %s" % [titulo_tema, frase_jugador]
 	elif tipo == "evento_social":
@@ -1280,7 +1282,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 					"jugador": texto_jugador,
 					"respuesta": respuesta,
 					"evento": str(tema.get("evento", "interesarse")),
-					"importancia": float(tema.get("importancia", 1.0))
+					"importancia": _obtener_importancia_tema(tema)
 				})
 			return opciones_datos
 
@@ -1353,6 +1355,19 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 		{"texto": "Pedirle un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": consejo, "evento": "interesarse"},
 		{"texto": "Hablar sobre Torres", "jugador": "¿Qué opinas de vivir en Torres?", "respuesta": opinion_torres, "evento": "interesarse"}
 	]
+
+
+## Los temas bloqueados por confianza, amistad o conversaciones previas
+## representan avances personales y deben poder reaparecer como recuerdos.
+func _obtener_importancia_tema(tema: Dictionary) -> float:
+	if tema.has("importancia"):
+		return clampf(float(tema.get("importancia", 1.0)), 1.0, 5.0)
+	var requisito_social_variant: Variant = tema.get("requisito_social", {})
+	if requisito_social_variant is Dictionary and not (requisito_social_variant as Dictionary).is_empty():
+		return 3.0
+	if not str(tema.get("requiere_tema", "")).strip_edges().is_empty():
+		return 3.0
+	return 1.0
 
 
 func _cumple_requisitos_tema_conversacion(tema: Dictionary, relacion: Dictionary, recuerdos: Array) -> bool:
