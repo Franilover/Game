@@ -1356,6 +1356,8 @@ func _abrir_selector_items(modo: String) -> void:
 		boton.icon = ItemIconResolver.obtener_icono(objeto)
 		boton.text = nombre + "  x" + str(maxi(1, int(objeto.get("cantidad", 1))))
 		boton.tooltip_text = nombre
+		if modo == "regalo":
+			boton.tooltip_text += "\n" + _obtener_etiqueta_preferencia_regalo(personaje_id, item_id)
 		boton.set_meta("indice_inventario", indice)
 		boton.pressed.connect(_seleccionar_item_interaccion.bind(indice, item_id, modo))
 		_selector_items_grid.add_child(boton)
@@ -1438,7 +1440,7 @@ func _seleccionar_item_interaccion(indice: int, item_id_esperado: String, modo: 
 			Events.notification_pushed.emit("No se pudo registrar el regalo; el objeto volvió a tu inventario.")
 			return
 		var datos_regalo := relationship_system.evaluar_regalo(personaje_id, item_id)
-		respuesta_npc = _crear_reaccion_regalo(nombre_item, datos_regalo)
+		respuesta_npc = _crear_reaccion_regalo(nombre_item, datos_regalo, _fuente.get_nombre_visual())
 	else:
 		respuesta_npc = _crear_respuesta_pregunta_item(objeto, personaje_id, item_id)
 
@@ -1449,15 +1451,74 @@ func _seleccionar_item_interaccion(indice: int, item_id_esperado: String, modo: 
 		Events.notification_pushed.emit(_fuente.get_nombre() + " recibió " + nombre_item + ".")
 
 
-func _crear_reaccion_regalo(nombre_item: String, datos_regalo: Dictionary) -> String:
+func _obtener_etiqueta_preferencia_regalo(personaje_id: String, item_id: String) -> String:
+	if relationship_system == null or not relationship_system.conoce_item(personaje_id, item_id):
+		return "Todavía no sabe qué piensa de este objeto"
+	var reaccion := str(relationship_system.evaluar_regalo(personaje_id, item_id).get("reaccion", "neutral")).strip_edges().to_lower()
+	match reaccion:
+		"encanta":
+			return "Le encanta"
+		"gusta":
+			return "Le gusta"
+		"no_gusta":
+			return "No le gusta"
+		"detesta":
+			return "Lo detesta"
+		_:
+			return "Le resulta indiferente"
+
+
+func _crear_reaccion_regalo(nombre_item: String, datos_regalo: Dictionary, personaje_nombre: String = "") -> String:
 	var reaccion := str(datos_regalo.get("reaccion", "neutral")).strip_edges().to_lower()
-	if reaccion in ["adorado", "favorito", "muy_amado", "encanta", "muy_positivo"]:
+	var respuestas_por_personaje := {
+		"elian": {
+			"encanta": "¡Muchas gracias! {item} me viene perfecto. Me gusta poder guardar un detalle así para disfrutarlo con calma.",
+			"gusta": "Gracias por {item}. Es un detalle sencillo, pero de esos que alegran el día.",
+			"neutral": "Gracias por pensar en mí. No es algo que suela buscar, pero aprecio el gesto.",
+			"no_gusta": "Gracias por el detalle. No es algo que necesite, aunque valoro que te hayas acordado de mí.",
+			"detesta": "Prefiero ser sincero: {item} no es algo que me agrade. Aun así, gracias por la intención."
+		},
+		"bruna": {
+			"encanta": "Esto sí que me sirve. Gracias por {item}; voy a encontrarle un buen uso.",
+			"gusta": "Gracias por {item}. Es útil y eso ya es bastante más de lo que puedo decir de muchos regalos.",
+			"neutral": "Gracias. No es algo que hubiera elegido, pero no voy a despreciar el gesto.",
+			"no_gusta": "No es de mi gusto, pero entiendo la intención. Gracias.",
+			"detesta": "No voy a fingir que me gusta {item}. Aun así, agradezco que hayas pensado en mí."
+		},
+		"darven": {
+			"encanta": "Gracias. {item} me será de mucha utilidad; aprecio que hayas pensado en algo práctico.",
+			"gusta": "Gracias por {item}. Seguro que puedo darle un buen uso.",
+			"neutral": "Te agradezco el detalle. No es algo que necesite ahora mismo, pero lo tendré en cuenta.",
+			"no_gusta": "Gracias por la intención. No es algo que vaya a utilizar mucho, pero aprecio el gesto.",
+			"detesta": "No es un objeto que me agrade, pero no quiero que confundas eso con despreciar tu intención."
+		},
+		"saira": {
+			"encanta": "¡Qué buen hallazgo! {item} tiene justo esa clase de encanto que me gusta encontrar en los caminos.",
+			"gusta": "¡Gracias! Me gusta {item}; seguro que terminaré contándote de dónde viene o qué me recuerda.",
+			"neutral": "Gracias por el detalle. No es algo que hubiera buscado, pero siempre es interesante recibir algo inesperado.",
+			"no_gusta": "No termina de convencerme, pero no voy a rechazarlo sin más. Gracias por acordarte de mí.",
+			"detesta": "No es precisamente lo que me gusta encontrar en mis viajes. Aun así, agradezco el gesto."
+		},
+		"narel": {
+			"encanta": "Interesante elección. Gracias por {item}; me gustaría observarlo con más detenimiento.",
+			"gusta": "Gracias por {item}. Puede que encuentre algún detalle que merezca la pena estudiar.",
+			"neutral": "Gracias. No tengo una opinión formada sobre este objeto, pero aprecio que lo compartas conmigo.",
+			"no_gusta": "No es un objeto que me interese especialmente, aunque agradezco la consideración.",
+			"detesta": "Debo admitir que {item} no me agrada. Eso no quita que valore tu intención."
+		}
+	}
+	var personaje := personaje_nombre.strip_edges().to_lower()
+	var respuestas: Dictionary = respuestas_por_personaje.get(personaje, {})
+	var respuesta := str(respuestas.get(reaccion, "")).replace("{item}", nombre_item)
+	if not respuesta.is_empty():
+		return respuesta
+	if reaccion == "encanta":
 		return "¡Muchas gracias! " + nombre_item + " es uno de mis objetos favoritos. Me alegra que pensaras en mí."
-	if reaccion in ["le_gusta", "gusta", "positivo", "bueno", "muy_bueno"]:
+	if reaccion == "gusta":
 		return "Gracias por " + nombre_item + ". Es un detalle que aprecio."
-	if reaccion in ["no_le_gusta", "desagrado", "negativo", "malo"]:
+	if reaccion == "no_gusta":
 		return "Gracias por el gesto, aunque " + nombre_item + " no es algo que suela apreciar."
-	if reaccion in ["odia", "detesta", "muy_negativo"]:
+	if reaccion == "detesta":
 		return "No debiste traerme " + nombre_item + ". No es algo que me agrade."
 	return "Gracias por el regalo. Recordaré que pensaste en mí."
 
