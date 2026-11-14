@@ -963,6 +963,7 @@ func obtener_narrativa_personaje(personaje_id: String) -> Dictionary:
 			"lineas_tercera_tension": conversacion.get("lineas_tercera_tension", []).duplicate(true),
 			"lineas_alternativas": conversacion.get("lineas_alternativas", []).duplicate(true),
 			"requisitos_texto": "Misión ayuda_horno_elian completada y etapa narrativa habilitada.",
+			"mision_clave": "ayuda_horno_elian", "mision_estado": "completada", "etapa_minima": 1,
 			"gesto_a": str(gestos.get("gesto_a", "asentir")),
 			"gesto_b": str(gestos.get("gesto_b", "asentir"))
 		})
@@ -974,7 +975,9 @@ func obtener_narrativa_personaje(personaje_id: String) -> Dictionary:
 		var copia := acontecimiento.duplicate(true)
 		copia["titulo"] = _titulo_narrativo(str(copia.get("clave", "")))
 		copia["tipo"] = "cotidiano"
-		copia["requisitos_texto"] = "Selección diaria; requiere ambos NPC presentes, disponibles y próximos al jugador."
+		copia["requisitos_texto"] = "Misión ayuda_horno_elian completada; selección diaria y ambos NPC presentes, disponibles y próximos al jugador."
+		copia["mision_clave"] = "ayuda_horno_elian"
+		copia["mision_estado"] = "completada"
 		resultado["eventos"].append(copia)
 	return resultado
 
