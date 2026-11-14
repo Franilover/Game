@@ -1460,4 +1460,4 @@ func obtener_conversaciones_npc() -> Dictionary:
 
 func guardar_conversaciones_npc(progreso: Dictionary) -> void:
 	world_state.flags["conversaciones_npc"] = progreso.duplicate(true)
-	_solicitar_guardado_rapido()
+	_al_cambio_guardable()
