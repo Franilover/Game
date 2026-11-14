@@ -1039,6 +1039,7 @@ func _configurar_interaccion(world_gen: WorldGenerator = null) -> void:
 		_interaction_system.objetivo_cambiado.connect(_al_cambio_objetivo_interaccion)
 
 	_interaction_system.configurar(_player, _inventory.inventory_controller if _inventory != null else null, _world_items, _player.input_gate, world_gen.entity_manager if world_gen != null else null)
+	_interaction_system.configurar_conversaciones(_npc_conversation_system, _dialogue_system)
 
 func _al_cambio_objetivo_interaccion(objetivo: Node) -> void:
 	if _hud == null:
