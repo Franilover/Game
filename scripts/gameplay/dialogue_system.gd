@@ -1380,6 +1380,13 @@ func _crear_opcion_dia_social() -> Dictionary:
 			respuesta = "Bastante bien. Ya han pasado algunas personas por el comercio y todavía espero recibir más movimiento." if es_manana else "Ha sido un día entretenido. Han pasado clientes y también han llegado algunas noticias interesantes."
 		"narel":
 			respuesta = "La mañana ha sido productiva. He podido revisar algunas notas antes de que empiecen las demás tareas." if es_manana else "He tenido un día lleno de ideas y documentos. Todavía estoy ordenando algunas cosas, pero avancé bastante."
+	match nombre:
+		"mara":
+			respuesta = "Tranquila. Salí a hacer unas compras y luego di una vuelta por la plaza. No suelo quedarme mucho rato fuera."
+		"ivo":
+			respuesta = "Bien, aunque hoy tuve que parar un par de veces para descansar. Igual alcancé a saludar a medio reino, así que no fue un mal día."
+		"nima":
+			respuesta = "Bastante bien. Avancé con unas notas sobre fenómenos Oris y después fui a conversar un rato. Necesitaba despejarme."
 	return _crear_opcion_social("preguntar_dia", "Preguntar por su día", frase, respuesta)
 
 
@@ -1397,6 +1404,13 @@ func _crear_opcion_gustos_social() -> Dictionary:
 			respuesta = "Me gusta recorrer los puestos, descubrir mercancías curiosas y escuchar historias de quienes vienen de otros lugares."
 		"narel":
 			respuesta = "Me gusta leer y observar cosas que normalmente pasan desapercibidas. A veces empiezo por curiosidad y termino investigando durante horas."
+	match nombre:
+		"mara":
+			respuesta = "Me gustan los paseos tranquilos, cocinar algo sencillo y escuchar a la gente cuando no hay demasiada prisa. También agradezco tener tiempo para mí."
+		"ivo":
+			respuesta = "Me gusta conversar, enterarme de las novedades y sentarme a escuchar historias. Si hay comida de por medio, mejor todavía."
+		"nima":
+			respuesta = "Me gusta investigar, pero también salir con amigos, probar comidas nuevas y recorrer lugares. Si sólo estudiara, me perdería demasiadas cosas."
 	return _crear_opcion_social("gustos", "Preguntar qué le gusta hacer", "¿Qué te gusta hacer cuando tienes tiempo libre?", respuesta)
 
 
@@ -1413,6 +1427,13 @@ func _crear_opcion_consejo_social() -> Dictionary:
 			respuesta = "Pregunta, compara y escucha más de una versión. La primera historia rara vez cuenta todo."
 		"narel":
 			respuesta = "Separa los hechos de tus interpretaciones. Después podrás decidir qué pregunta merece investigarse."
+	match _nombre_social_actual():
+		"mara":
+			respuesta = "No tienes que contarle todo a todo el mundo. Está bien tomarte tu tiempo y decidir con quién te sientes a salvo."
+		"ivo":
+			respuesta = "No gastes todas tus fuerzas intentando seguirle el ritmo a los demás. A veces descansar un rato te permite disfrutar mucho más del día."
+		"nima":
+			respuesta = "Ten curiosidad por muchas cosas. Investigar algo en serio está bien, pero también conviene salir, conocer gente y escuchar otras experiencias."
 	return _crear_opcion_social("consejo_personal", "Pedirle un consejo", "¿Qué consejo me darías?", respuesta, "compartir_conocimiento")
 
 
@@ -1480,6 +1501,13 @@ func _crear_opcion_trabajo_social() -> Dictionary:
 			respuesta = "Paso bastante tiempo revisando documentos y comparando observaciones. Una investigación rara vez avanza en línea recta."
 	if not actividad.is_empty():
 		respuesta += " Ahora mismo estoy con " + actividad + "."
+	match nombre:
+		"mara":
+			respuesta = "No tengo un trabajo aquí. Me ocupo de mis cosas y procuro pasar desapercibida. Por ahora eso me basta."
+		"ivo":
+			respuesta = "No trabajo. Entre mis descansos y las vueltas que doy por el pueblo ya tengo el día bastante ocupado."
+		"nima":
+			respuesta = "Estudio por mi cuenta. Ahora estoy observando algunos fenómenos Oris, pero también leo sobre otras materias cuando encuentro algo interesante."
 	return _crear_opcion_social("hablar_trabajo", "Hablar sobre su trabajo", "¿Cómo van tus responsabilidades últimamente?", respuesta)
 
 
@@ -1496,6 +1524,13 @@ func _crear_opcion_reino_social() -> Dictionary:
 			respuesta = "Por aquí pasan mercancías y noticias de muchos lugares. A veces basta escuchar a los viajeros para saber qué ocurre más allá."
 		"narel":
 			respuesta = "El reino reúne oficios, conocimientos y vidas distintas. Creo que entender cómo se relacionan es tan importante como estudiar cada parte."
+	match _nombre_social_actual():
+		"mara":
+			respuesta = "Me gusta que aquí cada quien pueda hacer su vida. Mientras pueda vivir tranquila y nadie se meta demasiado en mis asuntos, estoy bien."
+		"ivo":
+			respuesta = "Me gusta este lugar. Siempre encuentro a alguien con quien hablar, y si me canso sé que puedo sentarme un rato en la posada o en la plaza."
+		"nima":
+			respuesta = "Hay muchas cosas que todavía no entiendo del reino. Me gusta estudiar sus fenómenos, pero también conocer a quienes viven aquí; cada persona sabe algo distinto."
 	return _crear_opcion_social("hablar_reino", "Hablar sobre el reino", "¿Qué piensas del lugar en el que vivimos?", respuesta)
 
 
@@ -1512,6 +1547,13 @@ func _crear_opcion_novedades_social() -> Dictionary:
 			respuesta = "Han llegado algunos productos y rumores de fuera. Todavía no sé cuáles merecen atención, pero seguro que algo interesante sale de ahí."
 		"narel":
 			respuesta = "He encontrado una referencia curiosa en unos documentos. Aún no puedo asegurar qué significa, pero merece la pena seguir revisándola."
+	match _nombre_social_actual():
+		"mara":
+			respuesta = "Nada importante. Aunque creo que ya estoy empezando a reconocer algunas caras de la plaza. Supongo que eso es bueno."
+		"ivo":
+			respuesta = "Me encontré con varias personas hoy. Todos parecen empeñados en que no me quede encerrado en casa. Es difícil aburrirse así."
+		"nima":
+			respuesta = "Estoy comparando unas observaciones sobre fenómenos Oris. También quedé con unos amigos para comer; no todo puede ser apuntar y medir."
 	return _crear_opcion_social("hablar_novedades", "Compartir novedades", "¿Ha ocurrido algo interesante últimamente?", respuesta)
 
 
@@ -1528,6 +1570,16 @@ func _crear_opcion_preocupacion_social() -> Dictionary:
 			respuesta = "Me preocupa que un mal cálculo afecte al comercio y a quienes dependen de él."
 		"narel":
 			respuesta = "Me preocupa confundir una hipótesis convincente con una conclusión verdadera. Hay que saber cuándo todavía faltan pruebas."
+	match _nombre_social_actual():
+		"mara":
+			if int(_fuente.get_meta("confianza_local", 0)) >= 3:
+				respuesta = "Hay cosas de mi pasado que prefiero no contar todavía. Tu compañía me ha ayudado a sentirme un poco más tranquila, pero necesito ir despacio."
+			else:
+				respuesta = "A veces me cuesta acostumbrarme a vivir en un lugar nuevo. Prefiero no hablar mucho de eso, pero agradezco poder estar tranquila."
+		"ivo":
+			respuesta = "A veces me frustra cansarme tan rápido. Quiero acompañar a mis amigos a todas partes, pero hay días en que el cuerpo no me sigue el ritmo."
+		"nima":
+			respuesta = "Me preocupa dedicar tanto tiempo a investigar que termine dejando de lado a mis amigos. Estoy intentando organizarme mejor."
 	return _crear_opcion_social("hablar_preocupacion", "Hablar de lo que le preocupa", "¿Hay algo que te preocupe últimamente?", respuesta, "interesarse", 1.5)
 
 
@@ -1995,6 +2047,10 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 		return
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var clave_tema := str(opcion.get("clave", "")).strip_edges()
+	if str(_fuente.get_meta("habitante_local_clave", "")) == "mara" and not bool(opcion.get("despedida", false)):
+		var confianza_mara := int(_fuente.get_meta("confianza_local", 0))
+		_fuente.set_meta("confianza_local", mini(confianza_mara + 1, 5))
+
 	var evento := str(opcion.get("evento", "interesarse")).strip_edges()
 	var es_despedida := bool(opcion.get("despedida", false))
 	if relationship_system != null and not personaje_id.is_empty():
