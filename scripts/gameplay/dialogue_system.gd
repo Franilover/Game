@@ -535,7 +535,6 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 		var frase_jugador := str(recuerdo.get("frase_jugador", "")).strip_edges()
 		if frase_jugador.is_empty():
 			return {}
-		match clave_nombre:
 		var respuesta_npc := str(recuerdo.get("respuesta_npc", "")).strip_edges()
 		match clave_nombre:
 			"elian":
