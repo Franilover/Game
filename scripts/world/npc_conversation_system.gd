@@ -28,7 +28,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"elian","texto":"Eso es suficiente para organizar los pedidos. Prefiero ajustar el trabajo antes que hacer esperar a todos."},
 			{"npc":"saira","texto":"Entonces la próxima entrega te encontrará preparado."}
 		],
-		"lineas_siguientes": [{"npc":"saira","texto":"El conductor volvió a pasar por Torres. Esta vez llegó con tiempo de sobra."},{"npc":"elian","texto":"Y yo pude preparar la hornada sin cambiar la receta a mitad del trabajo."},{"npc":"saira","texto":"Parece que los avisos y la revisión del camino sirvieron para algo."},{"npc":"elian","texto":"Sí. Cuando vuelva a llegar harina, apartaré una parte para quienes ayudaron."}]
+		"lineas_siguientes": [{"npc":"saira","texto":"El conductor volvió a pasar por Torres. Esta vez llegó con tiempo de sobra."},{"npc":"elian","texto":"Y yo pude preparar la hornada sin cambiar la receta a mitad del trabajo."},{"npc":"saira","texto":"Parece que los avisos y la revisión del camino sirvieron para algo."},{"npc":"elian","texto":"Sí. Cuando vuelva a llegar harina, apartaré una parte para quienes ayudaron."}],
+		"lineas_tercera_etapa": [{"npc":"saira","texto":"Ahora puedo avisarte de las entregas con más precisión. Ya sé cuánto margen necesitas."},{"npc":"elian","texto":"Y yo puedo organizar los pedidos sin cambiar todo a última hora. Nos entendimos bien."},{"npc":"saira","texto":"La próxima vez que pase por Torres, no vendré sólo por trabajo."},{"npc":"elian","texto":"Entonces dejaré algo preparado para compartir. No hace falta que traigas noticias cada vez."}]
 	},
 	{
 		"clave": "bruna_darven_camino",
@@ -47,7 +48,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"darven","texto":"Me encargaré de que el acceso quede libre mientras trabajan."},
 			{"npc":"bruna","texto":"Bien. Así cada cual hace su parte y terminamos antes."}
 		],
-		"lineas_siguientes": [{"npc":"bruna","texto":"El tramo ya está más firme. Revisé las piedras después del mantenimiento."},{"npc":"darven","texto":"El equipo terminó ayer. También dejaron libre el paso para las carretas."},{"npc":"bruna","texto":"Bien. Haré una última comprobación del eje de prueba antes de darlo por resuelto."},{"npc":"darven","texto":"Avísame si encuentras algo. Esta vez podremos corregirlo antes de que cause otro retraso."}]
+		"lineas_siguientes": [{"npc":"bruna","texto":"El tramo ya está más firme. Revisé las piedras después del mantenimiento."},{"npc":"darven","texto":"El equipo terminó ayer. También dejaron libre el paso para las carretas."},{"npc":"bruna","texto":"Bien. Haré una última comprobación del eje de prueba antes de darlo por resuelto."},{"npc":"darven","texto":"Avísame si encuentras algo. Esta vez podremos corregirlo antes de que cause otro retraso."}],
+		"lineas_tercera_etapa": [{"npc":"darven","texto":"El registro del camino queda actualizado. Si vuelve a deteriorarse, sabremos dónde empezar."},{"npc":"bruna","texto":"Y yo conservaré las medidas de las piezas. No tendremos que improvisar otra vez."},{"npc":"darven","texto":"Admito que tu insistencia ayudó a que revisáramos el tramo completo."},{"npc":"bruna","texto":"Y yo admito que mantener el paso vigilado mientras trabajaban fue útil. No estuvo mal coordinado."}]
 	},
 	{
 		"clave": "bruna_narel_evidencia",
@@ -66,7 +68,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"bruna","texto":"Eso evitará que alguien confunda una medición vieja con el estado actual."},
 			{"npc":"narel","texto":"Exactamente. Una anotación útil también debe indicar cuándo dejó de ser válida."}
 		],
-		"lineas_siguientes": [{"npc":"narel","texto":"Comparé las marcas nuevas con las primeras. La diferencia respalda la explicación del terreno."},{"npc":"bruna","texto":"¿Y la carga? ¿También la revisaste?"},{"npc":"narel","texto":"Sí. La distribución contribuyó, aunque por sí sola no explica todo el daño."},{"npc":"bruna","texto":"Entonces deja ambas causas en el informe. Así nadie simplifica el problema."}]
+		"lineas_siguientes": [{"npc":"narel","texto":"Comparé las marcas nuevas con las primeras. La diferencia respalda la explicación del terreno."},{"npc":"bruna","texto":"¿Y la carga? ¿También la revisaste?"},{"npc":"narel","texto":"Sí. La distribución contribuyó, aunque por sí sola no explica todo el daño."},{"npc":"bruna","texto":"Entonces deja ambas causas en el informe. Así nadie simplifica el problema."}],
+		"lineas_tercera_etapa": [{"npc":"bruna","texto":"Guardé una copia de las medidas que tomaste. Pueden servir para la próxima revisión."},{"npc":"narel","texto":"Las ordené por fecha y condición del terreno. Así podremos compararlas sin mezclar resultados."},{"npc":"bruna","texto":"Bien. La próxima vez que algo se rompa, tendremos un punto de partida."},{"npc":"narel","texto":"Y una razón para comprobar primero las piezas antes de formular una explicación."}]
 	},
 	{
 		"clave": "darven_saira_avisos",
@@ -85,7 +88,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"saira","texto":"Le transmitiré eso. Es mejor una respuesta clara que un sí apresurado."},
 			{"npc":"darven","texto":"Gracias. Así evitamos que alguien confunda una revisión con una reparación terminada."}
 		],
-		"lineas_siguientes": [{"npc":"saira","texto":"Los comerciantes ya están usando el aviso actualizado. Dos cambiaron sus horarios."},{"npc":"darven","texto":"La revisión terminó, pero mantendremos el registro por si vuelve a deteriorarse."},{"npc":"saira","texto":"Les diré que pueden retomar la ruta con cuidado y que avisen si notan algo."},{"npc":"darven","texto":"Eso basta. La información útil llega antes que los rumores."}]
+		"lineas_siguientes": [{"npc":"saira","texto":"Los comerciantes ya están usando el aviso actualizado. Dos cambiaron sus horarios."},{"npc":"darven","texto":"La revisión terminó, pero mantendremos el registro por si vuelve a deteriorarse."},{"npc":"saira","texto":"Les diré que pueden retomar la ruta con cuidado y que avisen si notan algo."},{"npc":"darven","texto":"Eso basta. La información útil llega antes que los rumores."}],
+		"lineas_tercera_etapa": [{"npc":"saira","texto":"Ya no tengo que repetir el mismo aviso a cada comerciante. La información está llegando por la ruta."},{"npc":"darven","texto":"Eso libera tiempo para vigilar otros tramos. Mantendré el registro abierto."},{"npc":"saira","texto":"Cuando encuentre una noticia útil, sabré dónde llevarla y qué detalles necesitas."},{"npc":"darven","texto":"Y yo sabré distinguir cuándo hace falta actuar y cuándo basta con informar. Es un buen acuerdo."}]
 	},
 	{
 		"clave": "elian_narel_hornada",
@@ -104,7 +108,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"elian","texto":"Menos mal. La próxima vez puedes ayudarme a amasar y sacar tus propias conclusiones."},
 			{"npc":"narel","texto":"Acepto. Será una observación más directa que leer una descripción."}
 		],
-		"lineas_siguientes": [{"npc":"elian","texto":"Narel, guardé una hogaza de la receta ajustada. Quería que la probaras con calma."},{"npc":"narel","texto":"La textura es más uniforme. Esta vez no traje una libreta para anotarlo."},{"npc":"elian","texto":"Mejor. Puedes venir a comer sin convertir cada visita en una investigación."},{"npc":"narel","texto":"Lo intentaré. Aunque admito que la comparación sería interesante."}]
+		"lineas_siguientes": [{"npc":"elian","texto":"Narel, guardé una hogaza de la receta ajustada. Quería que la probaras con calma."},{"npc":"narel","texto":"La textura es más uniforme. Esta vez no traje una libreta para anotarlo."},{"npc":"elian","texto":"Mejor. Puedes venir a comer sin convertir cada visita en una investigación."},{"npc":"narel","texto":"Lo intentaré. Aunque admito que la comparación sería interesante."}],
+		"lineas_tercera_etapa": [{"npc":"elian","texto":"La receta quedó anotada junto a las observaciones de aquella hornada."},{"npc":"narel","texto":"Y añadí una nota: la textura también depende del tiempo de reposo. No todo estaba en la harina."},{"npc":"elian","texto":"Eso explica por qué la segunda tanda salió distinta. La próxima vez lo tendremos en cuenta."},{"npc":"narel","texto":"Me gustaría ayudar a prepararla. Así podremos comprobarlo sin depender sólo de las notas."}]
 	}
 ]
 
@@ -193,7 +198,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 		var clave := str(conversacion.get("clave", ""))
 		var progreso_variant: Variant = _progreso_parejas.get(clave, {})
 		var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
-		if int(progreso.get("etapa", 0)) >= 2:
+		if int(progreso.get("etapa", 0)) >= 3:
 			continue
 		if bool(_vistas_por_dia.get(clave, false)):
 			continue
@@ -247,6 +252,10 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 		var siguientes_variant: Variant = _conversacion_activa.get("lineas_siguientes", [])
 		if siguientes_variant is Array and not (siguientes_variant as Array).is_empty():
 			_conversacion_activa["lineas"] = (siguientes_variant as Array).duplicate(true)
+	elif etapa == 2:
+		var tercera_variant: Variant = _conversacion_activa.get("lineas_tercera_etapa", [])
+		if tercera_variant is Array and not (tercera_variant as Array).is_empty():
+			_conversacion_activa["lineas"] = (tercera_variant as Array).duplicate(true)
 	var anio := int(tiempo.get("anio", 0))
 	var dia := int(tiempo.get("dia", 1))
 	var hora := float(tiempo.get("hora_del_dia", 12.0))
@@ -401,10 +410,30 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 		var clave := str(_conversacion_activa.get("clave", ""))
 		var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
 		if not clave.is_empty():
-			_progreso_parejas[clave] = {
-				"etapa": mini(etapa + 1, 2),
-				"completada": etapa >= 1
-			}
+			var progreso_variant: Variant = _progreso_parejas.get(clave, {})
+			var progreso: Dictionary = progreso_variant.duplicate(true) if progreso_variant is Dictionary else {}
+			var efecto_variant: Variant = _conversacion_activa.get("efectos_etapa", [])
+			var efectos: Array = efecto_variant if efecto_variant is Array else []
+			var efecto: Dictionary = {}
+			if etapa < efectos.size() and efectos[etapa] is Dictionary:
+				efecto = efectos[etapa]
+			for atributo in ["confianza", "tension", "colaboracion"]:
+				progreso[atributo] = clampf(float(progreso.get(atributo, 0.0)) + float(efecto.get(atributo, 0.0)), -5.0, 5.0)
+			var historial: Array = progreso.get("historial", []).duplicate(true)
+			var tiempo_actual := _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+			historial.append({
+				"etapa": etapa + 1,
+				"dia": int(tiempo_actual.get("dia", 0)),
+				"anio": int(tiempo_actual.get("anio", 0)),
+				"resumen": str(efecto.get("resumen", ""))
+			})
+			while historial.size() > 12:
+				historial.pop_front()
+			progreso["historial"] = historial
+			progreso["etapa"] = mini(etapa + 1, 3)
+			progreso["completada"] = etapa >= 2
+			progreso["ultimo_resumen"] = str(efecto.get("resumen", ""))
+			_progreso_parejas[clave] = progreso
 			if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 				_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
 	_ocultar_burbujas()
