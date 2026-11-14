@@ -20,6 +20,12 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"elian","texto":"Me alegra. La próxima vez espero tener los ingredientes antes de encender el horno."},
 			{"npc":"saira","texto":"Puedo avisarte cuando el cargamento salga. Así no tendrás que calcularlo a ciegas."},
 			{"npc":"elian","texto":"Eso me ayudaría bastante. Y si pasas temprano, te guardaré pan recién hecho."}
+		],
+		"lineas_alternativas": [
+			{"npc":"elian","texto":"La gente pregunta si la harina volverá a llegar con retraso."},
+			{"npc":"saira","texto":"Les dije que el aviso de ruta ya está circulando. No puedo prometer que no haya demoras, pero sí avisar a tiempo."},
+			{"npc":"elian","texto":"Eso es suficiente para organizar los pedidos. Prefiero ajustar el trabajo antes que hacer esperar a todos."},
+			{"npc":"saira","texto":"Entonces la próxima entrega te encontrará preparado."}
 		]
 	},
 	{
@@ -31,6 +37,12 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"bruna","texto":"Entonces no basta con llevar una rueda de repuesto. Hay que corregir el paso."},
 			{"npc":"darven","texto":"Ya lo incluí en la revisión de la ruta. No quiero que otra carreta tenga que detenerse allí."},
 			{"npc":"bruna","texto":"Bien. Cuando sepas cuándo van a repararlo, avísame. Puedo preparar las piezas necesarias."}
+		],
+		"lineas_alternativas": [
+			{"npc":"darven","texto":"El equipo de mantenimiento podrá revisar el tramo mañana por la mañana."},
+			{"npc":"bruna","texto":"Dejaré las piezas preparadas hoy. No quiero que pierdan tiempo esperando material."},
+			{"npc":"darven","texto":"Me encargaré de que el acceso quede libre mientras trabajan."},
+			{"npc":"bruna","texto":"Bien. Así cada cual hace su parte y terminamos antes."}
 		]
 	},
 	{
@@ -42,6 +54,12 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"bruna","texto":"No necesitabas una teoría complicada. La carga estaba mal distribuida y el terreno terminó de hacer el resto."},
 			{"npc":"narel","texto":"Lo sé. Por eso separé las marcas observadas de la explicación que propuse."},
 			{"npc":"bruna","texto":"Eso está bien. Si cambian las condiciones, revisamos la conclusión. No antes."}
+		],
+		"lineas_alternativas": [
+			{"npc":"bruna","texto":"¿Terminaste de ordenar las notas de la carreta?"},
+			{"npc":"narel","texto":"Sí. Añadí una sección para separar las observaciones nuevas de las anteriores."},
+			{"npc":"bruna","texto":"Eso evitará que alguien confunda una medición vieja con el estado actual."},
+			{"npc":"narel","texto":"Exactamente. Una anotación útil también debe indicar cuándo dejó de ser válida."}
 		]
 	},
 	{
@@ -53,6 +71,12 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"darven","texto":"Agradezco que transmitieras el aviso sin exagerarlo. No hacía falta provocar alarma."},
 			{"npc":"saira","texto":"Una ruta complicada ya es suficiente problema. No necesito inventar otro para que me escuchen."},
 			{"npc":"darven","texto":"Si recibes noticias nuevas, tráelas al registro. Las contrastaremos antes de actuar."}
+		],
+		"lineas_alternativas": [
+			{"npc":"saira","texto":"Un comerciante me preguntó si ya puede volver a usar el camino habitual."},
+			{"npc":"darven","texto":"Puede pasar con precaución. La reparación completa todavía no está terminada."},
+			{"npc":"saira","texto":"Le transmitiré eso. Es mejor una respuesta clara que un sí apresurado."},
+			{"npc":"darven","texto":"Gracias. Así evitamos que alguien confunda una revisión con una reparación terminada."}
 		]
 	},
 	{
@@ -64,6 +88,12 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"elian","texto":"Un poco. Tuve que ajustar la receta con la cantidad que llegó."},
 			{"npc":"narel","texto":"Anoté la proporción que mencionaste. Podría servir para comparar futuras tandas."},
 			{"npc":"elian","texto":"Puedes anotarla, claro. Pero tendrás que probar el pan para saber si la comparación merece la pena."}
+		],
+		"lineas_alternativas": [
+			{"npc":"elian","texto":"¿Sigues comparando las proporciones de aquella hornada?"},
+			{"npc":"narel","texto":"Sólo las anoté para recordar cómo cambió la textura. No pretendo convertir el pan en un experimento."},
+			{"npc":"elian","texto":"Menos mal. La próxima vez puedes ayudarme a amasar y sacar tus propias conclusiones."},
+			{"npc":"narel","texto":"Acepto. Será una observación más directa que leer una descripción."}
 		]
 	}
 ]
@@ -156,7 +186,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 			continue
 		if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR:
 			continue
-		_iniciar_conversacion(conversacion, npc_a, npc_b)
+		_iniciar_conversacion(conversacion)
 		_vistas_por_dia[clave] = true
 		return
 
@@ -186,8 +216,16 @@ func _npc_puede_conversar(npc: Creature) -> bool:
 	return true
 
 
-func _iniciar_conversacion(conversacion: Dictionary, npc_a: Creature, npc_b: Creature) -> void:
+func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	_conversacion_activa = conversacion.duplicate(true)
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	var dia := int(tiempo.get("dia", 1))
+	var alternativas_variant: Variant = _conversacion_activa.get("lineas_alternativas", [])
+	if alternativas_variant is Array and not (alternativas_variant as Array).is_empty():
+		var alternativas := alternativas_variant as Array
+		var ciclo := posmod(dia, alternativas.size() + 1)
+		if ciclo > 0 and alternativas[ciclo - 1] is Array:
+			_conversacion_activa["lineas"] = (alternativas[ciclo - 1] as Array).duplicate(true)
 	_indice_linea = 0
 	_temporizador_linea = 0.0
 	_mostrar_linea_actual()
