@@ -699,13 +699,13 @@ position = Vector2(0, 48)
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="BakerCollisionBody" unique_id=1413108461]
-shape = SubResource("HouseCollision")
+shape = SubResource("Shape_panaderia")
 
 [node name="InnCollisionBody" type="StaticBody2D" parent="Grupo_edificio_posada" unique_id=2117178088]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InnCollisionBody" unique_id=107889364]
-shape = SubResource("InnCollision")
+shape = SubResource("Shape_posada")
 
 [node name="Casa_Bruna" type="StaticBody2D" parent="Grupo_casa_bruna" unique_id=1666745475]
 position = Vector2(0, 14)
@@ -735,25 +735,25 @@ shape = SubResource("HouseCollision")
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ForgeCollisionBody" unique_id=898648263]
-shape = SubResource("ForgeCollision")
+shape = SubResource("Shape_forja")
 
 [node name="RoyalArchiveCollisionBody" type="StaticBody2D" parent="Grupo_edificio_archivo_real" unique_id=327291069]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RoyalArchiveCollisionBody" unique_id=1060946113]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_archivo_real")
 
 [node name="CouncilHallCollisionBody" type="StaticBody2D" parent="Grupo_edificio_sala_consejo" unique_id=34028565]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CouncilHallCollisionBody" unique_id=1366112128]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_sala_consejo")
 
 [node name="OrisStudyCollisionBody" type="StaticBody2D" parent="Grupo_edificio_casa_estudio" unique_id=1583734070]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="OrisStudyCollisionBody" unique_id=557097082]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_casa_estudio")
 
 [node name="Casa_Vacia_01" type="StaticBody2D" parent="Grupo_casa_vacia_01" unique_id=689874531]
 position = Vector2(0, 14)
@@ -825,49 +825,49 @@ shape = SubResource("DistrictBuildingSmall")
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TradeHouseCollisionBody" unique_id=1816253537]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_casa_comercio")
 
 [node name="GuardBarracksCollisionBody" type="StaticBody2D" parent="Grupo_edificio_cuartel" unique_id=791510463]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GuardBarracksCollisionBody" unique_id=790719879]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_cuartel")
 
 [node name="GateOfficeCollisionBody" type="StaticBody2D" parent="Grupo_edificio_registro" unique_id=1621744559]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GateOfficeCollisionBody" unique_id=775306894]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_registro")
 
 [node name="RepairWorkshopCollisionBody" type="StaticBody2D" parent="Grupo_edificio_reparaciones" unique_id=830654552]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RepairWorkshopCollisionBody" unique_id=1139055035]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_reparaciones")
 
 [node name="CartwrightCollisionBody" type="StaticBody2D" parent="Grupo_edificio_carpinteria" unique_id=1206000459]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CartwrightCollisionBody" unique_id=1105853429]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_carpinteria")
 
 [node name="GrainStoreCollisionBody" type="StaticBody2D" parent="Grupo_edificio_granero" unique_id=1258069034]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GrainStoreCollisionBody" unique_id=964452449]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_granero")
 
 [node name="MillHouseCollisionBody" type="StaticBody2D" parent="Grupo_edificio_molino" unique_id=530008660]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="MillHouseCollisionBody" unique_id=1854484088]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_molino")
 
 [node name="AnimalPensCollisionBody" type="StaticBody2D" parent="Grupo_edificio_corrales" unique_id=1679686116]
 position = Vector2(0, 18)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AnimalPensCollisionBody" unique_id=410790172]
-shape = SubResource("DistrictBuildingSmall")
+shape = SubResource("Shape_corrales")
 
 [node name="FarmersHallCollisionBody" type="StaticBody2D" parent="Grupo_casa_granjeros" unique_id=417207060]
 position = Vector2(0, 8)
