@@ -87,6 +87,8 @@ var _sistema_clima_torres: Node = null
 var _nivel_charcos_torres: float = 0.0
 var _tiempo_ambiente_torres: float = 0.0
 var _aviso_evento_torres: Label = null
+var _decoracion_evento_torres: Node2D = null
+var _evento_decoracion_actual: String = ""
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -159,6 +161,7 @@ func _ready() -> void:
 	_crear_ventanas_hogares()
 	_crear_charcos_torres()
 	_crear_aviso_evento_torres()
+	_crear_contenedor_decoracion_eventos()
 	# Las capas estáticas deben reconstruir su caché antes de añadir
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
 	# iniciales de las celdas serializadas de la escena.
@@ -681,6 +684,7 @@ func _actualizar_ambiente_torres(delta: float) -> void:
 	_tiempo_ambiente_torres = 0.0
 	_actualizar_ventanas_hogares()
 	_actualizar_aviso_evento_torres()
+	_actualizar_decoracion_evento_torres()
 	if _charcos_torres.is_empty():
 		return
 	if not is_instance_valid(_sistema_clima_torres):
@@ -759,6 +763,99 @@ func _actualizar_aviso_evento_torres() -> void:
 	_aviso_evento_torres.text = titulo
 	_aviso_evento_torres.visible = true
 
+
+
+## Los acontecimientos modifican físicamente la plaza. Los puestos y adornos
+## sólo existen durante su evento; al terminar se retiran sin alterar el mapa base.
+func _crear_contenedor_decoracion_eventos() -> void:
+	_decoracion_evento_torres = Node2D.new()
+	_decoracion_evento_torres.name = "DecoracionEventosComunitarios"
+	_decoracion_evento_torres.z_index = 4
+	_decoracion_evento_torres.visible = false
+	add_child(_decoracion_evento_torres)
+
+
+func _actualizar_decoracion_evento_torres() -> void:
+	if not is_instance_valid(_decoracion_evento_torres) or _interior_activo:
+		return
+	if not is_instance_valid(_atmosfera_mundo):
+		_atmosfera_mundo = get_tree().root.find_child("WorldAtmosphere", true, false)
+	if not is_instance_valid(_atmosfera_mundo) or not _atmosfera_mundo.has_method("obtener_tiempo"):
+		return
+	var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return
+
+	var minutos := int(floor(float(tiempo.get("hora_del_dia", 0.0)) * 60.0))
+	var dia := int(tiempo.get("dia", 1))
+	var dia_semana := posmod(dia - 1, 5)
+	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
+	var evento := ""
+	if dia_estacion == 1 and minutos >= 840 and minutos < 1200:
+		evento = "temporada"
+	elif dia_semana == 4 and minutos >= 540 and minutos < 1020:
+		evento = "mercado"
+	elif dia_semana == 4 and minutos >= 1020 and minutos < 1200:
+		evento = "comida"
+
+	if evento == _evento_decoracion_actual:
+		return
+	_evento_decoracion_actual = evento
+	for hijo: Node in _decoracion_evento_torres.get_children():
+		_decoracion_evento_torres.remove_child(hijo)
+		hijo.queue_free()
+	_decoracion_evento_torres.visible = not evento.is_empty()
+	if evento.is_empty():
+		return
+
+	var variante := posmod(dia, 4)
+	match evento:
+		"mercado":
+			# Dos puestos laterales mantienen libre el pozo y el eje central.
+			_crear_sprite_evento("PuestoMercadoOeste", "puesto", variante, Vector2(-112.0, -54.0), Vector2.ONE, 4)
+			_crear_sprite_evento("MercanciaMercadoOeste", "mercancia", variante, Vector2(-112.0, -42.0), Vector2.ONE, 5)
+			_crear_sprite_evento("PuestoMercadoEste", "puesto_azul", variante + 1, Vector2(112.0, -54.0), Vector2.ONE, 4)
+			_crear_sprite_evento("MercanciaMercadoEste", "mercancia", variante + 2, Vector2(112.0, -42.0), Vector2.ONE, 5)
+		"comida":
+			for indice in range(3):
+				var x := -104.0 + float(indice) * 104.0
+				var mesa := Sprite2D.new()
+				mesa.name = "MesaComunitaria_%02d" % indice
+				mesa.texture = MUEBLE_MESA
+				mesa.position = Vector2(x, 66.0)
+				mesa.scale = Vector2(0.9, 0.8)
+				mesa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			mesa.z_index = 4
+			_decoracion_evento_torres.add_child(mesa)
+				_crear_sprite_evento("ComidaMesa_%02d" % indice, "comida", variante + indice, Vector2(x, 54.0), Vector2.ONE, 5)
+		"temporada":
+			var estacion := str(tiempo.get("estacion", "temporada")).to_lower()
+			var variante_estacional := absi(estacion.hash()) % 4
+			_crear_sprite_evento("GuirnaldaNorteOeste", "guirnalda", variante_estacional, Vector2(-112.0, -112.0), Vector2.ONE, 5)
+			_crear_sprite_evento("GuirnaldaNorteEste", "guirnalda", variante_estacional + 1, Vector2(112.0, -112.0), Vector2.ONE, 5)
+			_crear_sprite_evento("FloresOeste", "flores", variante_estacional, Vector2(-158.0, 108.0), Vector2.ONE, 5)
+			_crear_sprite_evento("FloresEste", "flores", variante_estacional + 2, Vector2(158.0, 108.0), Vector2.ONE, 5)
+
+
+func _crear_sprite_evento(
+	nombre: String,
+	tipo: String,
+	variante: int,
+	posicion: Vector2,
+	escala: Vector2,
+	z: int
+) -> void:
+	if not is_instance_valid(_decoracion_evento_torres):
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = nombre
+	sprite.texture = TORRES_PIXEL_ART.crear_decoracion(tipo, variante)
+	sprite.position = posicion
+	sprite.scale = escala
+	sprite.centered = true
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = z
+	_decoracion_evento_torres.add_child(sprite)
 
 
 func _crear_luces_faroles() -> void:
