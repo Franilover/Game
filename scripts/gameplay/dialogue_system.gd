@@ -28,6 +28,10 @@ var _respuestas_container: GridContainer = null
 var _inventario: InventoryController = null
 var _boton_regalo: Button = null
 var _boton_preguntar_item: Button = null
+var _boton_conversar: Button = null
+var _dialogue_content_row: HBoxContainer = null
+var _selector_conversacion: PanelContainer = null
+var _selector_conversacion_grid: GridContainer = null
 var _selector_items: PanelContainer = null
 var _selector_items_grid: GridContainer = null
 var _selector_items_titulo: Label = null
@@ -52,15 +56,17 @@ func configurar(
 	nuevo_player: Player,
 	nuevo_ui_root: HUD,
 	nuevo_mission_manager: MissionManagerService = null,
-	nuevo_relationship_system: RelationshipSystemService = null,
-	nuevo_inventario: InventoryController = null
+	nuevo_relationship_system: RelationshipSystemService = null
 ) -> void:
 	player = nuevo_player
 	ui_root = nuevo_ui_root
 	mission_manager = nuevo_mission_manager
 	relationship_system = nuevo_relationship_system
-	_inventario = nuevo_inventario
 	_crear_interfaz()
+
+
+func configurar_inventario(nuevo_inventario: InventoryController) -> void:
+	_inventario = nuevo_inventario
 
 
 func _process(delta: float) -> void:
@@ -90,6 +96,8 @@ func _input(event: InputEvent) -> void:
 			var posicion_mouse := get_viewport().get_mouse_position()
 			if _selector_items != null and _selector_items.visible and _selector_items.get_global_rect().has_point(posicion_mouse):
 				return
+			if _selector_conversacion != null and _selector_conversacion.visible and _selector_conversacion.get_global_rect().has_point(posicion_mouse):
+				return
 			if action_button != null and action_button.visible and action_button.get_global_rect().has_point(posicion_mouse):
 				return
 			if _boton_regalo != null and _boton_regalo.visible and _boton_regalo.get_global_rect().has_point(posicion_mouse):
@@ -109,6 +117,8 @@ func _input(event: InputEvent) -> void:
 		if key_event.keycode == KEY_ESCAPE:
 			if _selector_items != null and _selector_items.visible:
 				_cerrar_selector_items()
+			elif _selector_conversacion != null and _selector_conversacion.visible:
+				_cerrar_selector_conversacion()
 			else:
 				cerrar()
 			get_viewport().set_input_as_handled()
@@ -222,9 +232,11 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		_boton_regalo.visible = true
 	if _boton_preguntar_item != null:
 		_boton_preguntar_item.visible = true
+	if _boton_conversar != null:
+		_boton_conversar.visible = true
 	print(
 		"DialogueSystem: PANEL VISIBLE → ",
-		dialogue_panel.get_path(),
+		dialogue_panel.get_path() if dialogue_panel.is_inside_tree() else dialogue_panel.name,
 		" | pos=",
 		dialogue_panel.position,
 		" | size=",
@@ -267,6 +279,7 @@ func cerrar() -> void:
 	if cancel_button != null:
 		cancel_button.visible = false
 	_cerrar_selector_items()
+	_cerrar_selector_conversacion()
 	if dialogue_panel != null:
 		dialogue_panel.visible = false
 
@@ -939,6 +952,117 @@ func _obtener_reaccion_despedida_rutina() -> String:
 	return "Hasta luego. Me ha gustado conversar contigo."
 
 
+
+func _abrir_selector_conversacion() -> void:
+	if not _abierto or _selector_conversacion == null or not is_instance_valid(_fuente):
+		return
+	for hijo in _selector_conversacion_grid.get_children():
+		_selector_conversacion_grid.remove_child(hijo)
+		hijo.queue_free()
+	var opciones := _crear_opciones_conversacion()
+	for indice in range(opciones.size()):
+		var opcion: Dictionary = opciones[indice]
+		var boton := Button.new()
+		boton.text = str(opcion.get("texto", "Conversar"))
+		boton.custom_minimum_size = Vector2(0, 42)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.add_theme_font_size_override("font_size", 11)
+		boton.pressed.connect(_seleccionar_tema_conversacion.bind(opcion))
+		_selector_conversacion_grid.add_child(boton)
+	_respuestas.clear()
+	_limpiar_botones_respuesta()
+	if _dialogue_content_row != null:
+		_dialogue_content_row.visible = false
+	_selector_conversacion.visible = true
+	PIXEL_UI_THEME.apply(_selector_conversacion)
+
+
+func _cerrar_selector_conversacion() -> void:
+	if _selector_conversacion != null:
+		_selector_conversacion.visible = false
+	if _dialogue_content_row != null:
+		_dialogue_content_row.visible = true
+
+
+func _crear_opciones_conversacion() -> Array[Dictionary]:
+	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges()
+	var planes := "Hoy quiero cumplir con mis responsabilidades y reservar algo de tiempo para descansar."
+	var cumplido := "Gracias. Es agradable que alguien se fije en el esfuerzo que pongo."
+	var aficiones := "Cuando tengo tiempo libre, intento descansar y hacer algo distinto a mis obligaciones."
+	var preocupacion := "Hay asuntos que prefiero ordenar con calma. Gracias por interesarte."
+	match nombre:
+		"elian":
+			planes = "Quiero terminar la hornada y atender la panadería. Después espero tener un rato tranquilo."
+			cumplido = "¡Gracias! A veces uno pasa tantas horas entre harina y hornos que olvida que su trabajo también alegra a los demás."
+			aficiones = "Me gusta caminar y probar recetas nuevas. No todo tiene que terminar convertido en pan para vender."
+			preocupacion = "A veces me preocupa no llegar a todos los pedidos sin descuidar la calidad."
+		"bruna":
+			planes = "Tengo trabajo pendiente con las herramientas y las piezas. Después quiero revisar mis propios proyectos."
+			cumplido = "Lo aprecio. No busco reconocimiento, pero se agradece que notes el cuidado que pongo en cada pieza."
+			aficiones = "Me gusta reparar cosas por gusto, aunque intento que mis días libres no se conviertan en otra jornada de trabajo."
+			preocupacion = "Me preocupa que una pieza falle cuando alguien dependa de ella. Por eso reviso cada detalle."
+		"darven":
+			planes = "Hoy seguiré atento a la seguridad de Torres. Cuando acabe mi turno, revisaré los alrededores."
+			cumplido = "Gracias. Cumplir con mi deber es lo esperado, aunque escuchar eso hace que la guardia pese menos."
+			aficiones = "Disfruto los paseos tranquilos. Incluso fuera de servicio me cuesta dejar de observar los caminos."
+			preocupacion = "Me preocupa pasar por alto una señal importante. La tranquilidad del pueblo depende de prestar atención."
+		"saira":
+			planes = "Tengo que atender el comercio y revisar algunas cuentas. También quiero enterarme de las novedades."
+			cumplido = "¡Qué amable! En el comercio una escucha muchas opiniones; no todas son tan agradables como la tuya."
+			aficiones = "Me gusta recorrer los puestos y descubrir mercancías curiosas sin tener que pensar en los precios."
+			preocupacion = "Me preocupa que un mal cálculo afecte al comercio y a quienes dependen de él."
+		"narel":
+			planes = "Quiero avanzar con mis observaciones y consultar algunos documentos. Quizá encuentre algo interesante."
+			cumplido = "Gracias. A veces me concentro tanto en investigar que olvido que alguien puede valorar el esfuerzo."
+			aficiones = "Leo por placer, aunque a veces termino investigando algo sin darme cuenta."
+			preocupacion = "Me preocupa confundir una hipótesis convincente con una conclusión verdadera."
+		"abel":
+			planes = "Hoy debo atender varios asuntos del reino. Espero escuchar a los habitantes y dejar un momento para descansar."
+			cumplido = "Te agradezco el comentario. Las responsabilidades no suelen venir acompañadas de elogios."
+			aficiones = "Aprecio los momentos tranquilos, conversar con los habitantes y conocer el reino sin reuniones."
+			preocupacion = "Me preocupa tomar decisiones sin escuchar a quienes vivirán con sus consecuencias."
+		"liam":
+			planes = "Quiero terminar mis obligaciones y salir un rato del castillo. Siempre ocurre algo interesante en Torres."
+			cumplido = "¡Gracias! No sabía que te habías fijado. Me has alegrado el día."
+			aficiones = "Me gusta salir del castillo, caminar por la plaza y escuchar las historias de la gente."
+			preocupacion = "A veces siento que todavía tengo mucho que aprender. Quiero encontrar una forma de ayudar."
+
+	if not actividad.is_empty() and not planes.to_lower().contains(actividad.to_lower()):
+		planes += " Ahora mismo estoy con " + actividad + "."
+	return [
+		{"texto": "Preguntar planes de hoy", "jugador": "¿Qué planes tienes para hoy?", "respuesta": planes, "evento": "interesarse"},
+		{"texto": "Dar un cumplido", "jugador": "Quería decirte que haces un buen trabajo. Se nota el esfuerzo que pones.", "respuesta": cumplido, "evento": "apoyar"},
+		{"texto": "Preguntar por sus aficiones", "jugador": "¿Qué te gusta hacer cuando tienes tiempo libre?", "respuesta": aficiones, "evento": "interesarse"},
+		{"texto": "Preguntar qué le preocupa", "jugador": "¿Hay algo que te preocupe últimamente?", "respuesta": preocupacion, "evento": "interesarse"}
+	]
+
+
+func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
+	if not _abierto or not is_instance_valid(_fuente):
+		return
+	var jugador := str(opcion.get("jugador", "")).strip_edges()
+	var respuesta := str(opcion.get("respuesta", "")).strip_edges()
+	if jugador.is_empty() or respuesta.is_empty():
+		return
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	var evento := str(opcion.get("evento", "interesarse")).strip_edges()
+	if relationship_system != null and not personaje_id.is_empty():
+		var contexto := {"origen": "tema_conversacion", "tema": str(opcion.get("texto", ""))}
+		relationship_system.registrar_evento_social(personaje_id, evento, _crear_id_evento_respuesta(personaje_id, evento), contexto)
+	_cerrar_selector_conversacion()
+	_acciones.clear()
+	_respuestas.clear()
+	_limpiar_botones_respuesta()
+	_lineas = [
+		{"hablante": "Tú", "texto": jugador},
+		{"hablante": _fuente.get_nombre_visual(), "texto": respuesta}
+	]
+	_indice_linea = 0
+	_mostrar_linea_actual()
+	_actualizar_boton_accion()
+
+
 func _crear_botones_respuesta() -> void:
 	if _respuestas_container == null:
 		return
@@ -1096,12 +1220,15 @@ func _crear_icono_interaccion(tipo: String) -> Texture2D:
 	var svg := ""
 	if tipo == "regalo":
 		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h34v21H7zM4 14h40v8H4zM24 14v28"/><path d="M24 14c-2-11-16-11-16-4 0 6 8 6 16 4Zm0 0c2-11 16-11 16-4 0 6-8 6-16 4Z"/></g></svg>"""
+	elif tipo == "dialogo":
+		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9h34v25H22l-10 8v-8H7z"/><path d="M15 18h18M15 25h12"/></g></svg>"""
 	else:
-		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17a7.5 7.5 0 1 1 12.8 5.3c-3.2 3.1-5.8 4-5.8 9.2"/><path d="M24 39h.02"/></g></svg>"""
+		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17a7.5 7.5 0 1 1 12.8 5.3c-3.2 3.1-5.8 4-5.8 9.2"/><path d="M24 39h.02"/></g></svg>"""
 	var imagen := Image.new()
 	var error_svg := imagen.load_svg_from_string(svg)
 	if error_svg != OK or imagen.is_empty():
 		return null
+	imagen.resize(28, 28, Image.INTERPOLATE_LANCZOS)
 	return ImageTexture.create_from_image(imagen)
 
 
@@ -1133,7 +1260,6 @@ func _abrir_selector_items(modo: String) -> void:
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.icon = ItemIconResolver.obtener_icono(objeto)
-		boton.icon_max_width = 30
 		boton.text = nombre + "  x" + str(maxi(1, int(objeto.get("cantidad", 1))))
 		boton.tooltip_text = nombre
 		boton.set_meta("indice_inventario", indice)
@@ -1332,6 +1458,7 @@ func _crear_interfaz() -> void:
 	dialogue_panel.add_child(margin)
 
 	var content_row := HBoxContainer.new()
+	_dialogue_content_row = content_row
 	content_row.name = "DialogueContent"
 	content_row.add_theme_constant_override("separation", 14)
 	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -1421,7 +1548,6 @@ func _crear_interfaz() -> void:
 	_boton_regalo.custom_minimum_size = Vector2(48, 48)
 	_boton_regalo.icon = _crear_icono_interaccion("regalo")
 	_boton_regalo.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boton_regalo.icon_max_width = 28
 	_boton_regalo.tooltip_text = "Regalar un objeto"
 	_boton_regalo.pressed.connect(_abrir_selector_items.bind("regalo"))
 	columna_social.add_child(_boton_regalo)
@@ -1431,10 +1557,58 @@ func _crear_interfaz() -> void:
 	_boton_preguntar_item.custom_minimum_size = Vector2(48, 48)
 	_boton_preguntar_item.icon = _crear_icono_interaccion("pregunta")
 	_boton_preguntar_item.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boton_preguntar_item.icon_max_width = 28
 	_boton_preguntar_item.tooltip_text = "Preguntar por un objeto"
 	_boton_preguntar_item.pressed.connect(_abrir_selector_items.bind("pregunta"))
 	columna_social.add_child(_boton_preguntar_item)
+
+	_boton_conversar = Button.new()
+	_boton_conversar.name = "DialogueTalkButton"
+	_boton_conversar.custom_minimum_size = Vector2(48, 48)
+	_boton_conversar.icon = _crear_icono_interaccion("dialogo")
+	_boton_conversar.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boton_conversar.tooltip_text = "Elegir tema de conversación"
+	_boton_conversar.pressed.connect(_abrir_selector_conversacion)
+	columna_social.add_child(_boton_conversar)
+
+	_selector_conversacion = PanelContainer.new()
+	_selector_conversacion.name = "DialogueTopicSelector"
+	_selector_conversacion.visible = false
+	_selector_conversacion.mouse_filter = Control.MOUSE_FILTER_STOP
+	_selector_conversacion.z_index = 30
+	_selector_conversacion.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_selector_conversacion.offset_left = 12.0
+	_selector_conversacion.offset_top = 12.0
+	_selector_conversacion.offset_right = -12.0
+	_selector_conversacion.offset_bottom = -12.0
+	dialogue_panel.add_child(_selector_conversacion)
+	var topic_margin := MarginContainer.new()
+	topic_margin.add_theme_constant_override("margin_left", 18)
+	topic_margin.add_theme_constant_override("margin_top", 14)
+	topic_margin.add_theme_constant_override("margin_right", 18)
+	topic_margin.add_theme_constant_override("margin_bottom", 14)
+	_selector_conversacion.add_child(topic_margin)
+	var topic_column := VBoxContainer.new()
+	topic_column.add_theme_constant_override("separation", 10)
+	topic_margin.add_child(topic_column)
+	var topic_header := HBoxContainer.new()
+	topic_column.add_child(topic_header)
+	var topic_title := Label.new()
+	topic_title.text = "¿De qué te gustaría hablar?"
+	topic_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	topic_title.add_theme_font_size_override("font_size", 14)
+	topic_header.add_child(topic_title)
+	var topic_back := Button.new()
+	topic_back.text = "Volver"
+	topic_back.custom_minimum_size = Vector2(72, 30)
+	topic_back.pressed.connect(_cerrar_selector_conversacion)
+	topic_header.add_child(topic_back)
+	_selector_conversacion_grid = GridContainer.new()
+	_selector_conversacion_grid.columns = 2
+	_selector_conversacion_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_selector_conversacion_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_selector_conversacion_grid.add_theme_constant_override("h_separation", 8)
+	_selector_conversacion_grid.add_theme_constant_override("v_separation", 8)
+	topic_column.add_child(_selector_conversacion_grid)
 
 	_selector_items = PanelContainer.new()
 	_selector_items.name = "DialogueItemSelector"
