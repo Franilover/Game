@@ -790,47 +790,47 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 
 	var habitantes: Array[Dictionary] = [
 		{
-			"clave":"magda", "nombre":"Magda", "hogar":"vivienda_oeste_01",
+			"clave":"mara", "nombre":"Mara", "hogar":"vivienda_oeste_01",
 			"rutinas":[
-				{"clave":"magda_paseo_manana","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"pasear_por_la_plaza"},
-				{"clave":"magda_compra_pan","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
-				{"clave":"magda_descanso_plaza","hora_inicio":"11:30","hora_fin":"14:00","ubicacion_clave":"plaza","actividad_clave":"conversar_y_descansar"},
-				{"clave":"magda_compra_comida","hora_inicio":"14:00","hora_fin":"15:30","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
-				{"clave":"magda_paseo_tarde","hora_inicio":"15:30","hora_fin":"18:00","ubicacion_clave":"plaza","actividad_clave":"pasear"},
-				{"clave":"magda_regreso","hora_inicio":"18:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"volver_a_casa"}
+				{"clave":"mara_paseo_manana","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"pasear_por_la_plaza"},
+				{"clave":"mara_compra_pan","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"mara_descanso_plaza","hora_inicio":"11:30","hora_fin":"14:00","ubicacion_clave":"plaza","actividad_clave":"conversar_y_descansar"},
+				{"clave":"mara_compra_comida","hora_inicio":"14:00","hora_fin":"15:30","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
+				{"clave":"mara_paseo_tarde","hora_inicio":"15:30","hora_fin":"18:00","ubicacion_clave":"plaza","actividad_clave":"pasear"},
+				{"clave":"mara_regreso","hora_inicio":"18:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"volver_a_casa"}
 			]
 		},
 		{
-			"clave":"sofia", "nombre":"Sofia", "hogar":"vivienda_oeste_02",
+			"clave":"ivo", "nombre":"Ivo", "hogar":"vivienda_oeste_02",
 			"rutinas":[
-				{"clave":"sofia_paseo","hora_inicio":"08:00","hora_fin":"09:30","ubicacion_clave":"plaza","actividad_clave":"dar_un_paseo"},
-				{"clave":"sofia_compra","hora_inicio":"09:30","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
-				{"clave":"sofia_posada","hora_inicio":"11:30","hora_fin":"13:30","ubicacion_clave":"posada","actividad_clave":"visitar_la_posada"},
-				{"clave":"sofia_plaza","hora_inicio":"13:30","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"encontrarse_con_vecinos"},
-				{"clave":"sofia_compra_pan","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
-				{"clave":"sofia_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"volver_a_casa"}
+				{"clave":"ivo_paseo","hora_inicio":"08:00","hora_fin":"09:30","ubicacion_clave":"plaza","actividad_clave":"dar_un_paseo"},
+				{"clave":"ivo_compra","hora_inicio":"09:30","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
+				{"clave":"ivo_posada","hora_inicio":"11:30","hora_fin":"13:30","ubicacion_clave":"posada","actividad_clave":"visitar_la_posada"},
+				{"clave":"ivo_plaza","hora_inicio":"13:30","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"encontrarse_con_vecinos"},
+				{"clave":"ivo_compra_pan","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"ivo_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"volver_a_casa"}
 			]
 		},
 		{
-			"clave":"aurora", "nombre":"Aurora", "hogar":"vivienda_oeste_03",
+			"clave":"nima", "nombre":"Nima", "hogar":"vivienda_oeste_03",
 			"rutinas":[
-				{"clave":"aurora_plaza","hora_inicio":"08:00","hora_fin":"10:30","ubicacion_clave":"plaza","actividad_clave":"observar_el_pueblo"},
-				{"clave":"aurora_compra_pan","hora_inicio":"10:30","hora_fin":"12:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
-				{"clave":"aurora_paseo","hora_inicio":"12:00","hora_fin":"14:30","ubicacion_clave":"plaza","actividad_clave":"pasear_y_saludar"},
-				{"clave":"aurora_comercio","hora_inicio":"14:30","hora_fin":"16:00","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_articulos"},
-				{"clave":"aurora_plaza_tarde","hora_inicio":"16:00","hora_fin":"18:00","ubicacion_clave":"plaza","actividad_clave":"conversar_con_vecinos"},
-				{"clave":"aurora_regreso","hora_inicio":"18:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_03","actividad_clave":"volver_a_casa"}
+				{"clave":"nima_plaza","hora_inicio":"08:00","hora_fin":"10:30","ubicacion_clave":"plaza","actividad_clave":"observar_el_pueblo"},
+				{"clave":"nima_compra_pan","hora_inicio":"10:30","hora_fin":"12:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"nima_paseo","hora_inicio":"12:00","hora_fin":"14:30","ubicacion_clave":"plaza","actividad_clave":"pasear_y_saludar"},
+				{"clave":"nima_comercio","hora_inicio":"14:30","hora_fin":"16:00","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_articulos"},
+				{"clave":"nima_plaza_tarde","hora_inicio":"16:00","hora_fin":"18:00","ubicacion_clave":"plaza","actividad_clave":"conversar_con_vecinos"},
+				{"clave":"nima_regreso","hora_inicio":"18:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_03","actividad_clave":"volver_a_casa"}
 			]
 		},
 		{
-			"clave":"tomas", "nombre":"Tomas", "hogar":"vivienda_oeste_04",
+			"clave":"taren", "nombre":"Taren", "hogar":"vivienda_oeste_04",
 			"rutinas":[
-				{"clave":"tomas_paseo","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"recorrer_el_reino"},
-				{"clave":"tomas_comercio","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
-				{"clave":"tomas_posada","hora_inicio":"11:30","hora_fin":"13:00","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
-				{"clave":"tomas_plaza","hora_inicio":"13:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"pasar_la_tarde"},
-				{"clave":"tomas_panaderia","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
-				{"clave":"tomas_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_04","actividad_clave":"volver_a_casa"}
+				{"clave":"taren_paseo","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"recorrer_el_reino"},
+				{"clave":"taren_comercio","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
+				{"clave":"taren_posada","hora_inicio":"11:30","hora_fin":"13:00","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
+				{"clave":"taren_plaza","hora_inicio":"13:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"pasar_la_tarde"},
+				{"clave":"taren_panaderia","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"taren_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_04","actividad_clave":"volver_a_casa"}
 			]
 		}
 	]
