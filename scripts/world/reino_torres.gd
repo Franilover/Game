@@ -833,7 +833,7 @@ func _actualizar_decoracion_evento_torres() -> void:
 				mesa.texture = MUEBLE_MESA
 				mesa.position = Vector2(x, 66.0)
 				mesa.scale = Vector2(0.9, 0.8)
-					mesa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				mesa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				mesa.z_index = 4
 				_decoracion_evento_torres.add_child(mesa)
 				_crear_sprite_evento("ComidaMesa_%02d" % indice, "comida", variante + indice, Vector2(x, 54.0), Vector2.ONE, 5)
