@@ -1024,6 +1024,10 @@ func _configurar_dialogo() -> void:
 	_cutscene_director.configurar(_player, _dialogue_system, _camera)
 	if not _cutscene_director.evento_solicitado.is_connected(_al_evento_cinematica_solicitado):
 		_cutscene_director.evento_solicitado.connect(_al_evento_cinematica_solicitado)
+	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_signal("cinematica_acontecimiento_solicitada"):
+		var callback_cinematica := Callable(self, "_al_cinematica_acontecimiento_solicitada")
+		if not _npc_conversation_system.is_connected("cinematica_acontecimiento_solicitada", callback_cinematica):
+			_npc_conversation_system.connect("cinematica_acontecimiento_solicitada", callback_cinematica)
 
 
 func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void:
@@ -1038,6 +1042,34 @@ func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void
 	var contexto_variant: Variant = datos.get("contexto", {})
 	var contexto: Dictionary = contexto_variant.duplicate(true) if contexto_variant is Dictionary else {}
 	RelationshipSystem.registrar_evento_social(personaje_id, accion_social, evento_id, contexto)
+
+
+
+## Un acontecimiento cotidiano puede recibir un breve plano de presentación.
+## Sólo se muestra si el jugador está cerca y no hay otra interfaz abierta.
+func _al_cinematica_acontecimiento_solicitada(posicion_global: Vector2) -> void:
+	if not is_instance_valid(_player) or not is_instance_valid(_camera):
+		return
+	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
+		return
+	if is_instance_valid(_dialogue_system) and _dialogue_system.esta_abierto():
+		return
+	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return
+	if _player.global_position.distance_to(posicion_global) > 360.0:
+		return
+	var zoom_actual := _camera.zoom.x
+	var pasos: Array[Dictionary] = [
+		{
+			"tipo": "camara",
+			"x": posicion_global.x,
+			"y": posicion_global.y,
+			"zoom": zoom_actual * 1.12,
+			"duracion": 0.9
+		},
+		{"tipo": "esperar", "segundos": 1.4}
+	]
+	await _cutscene_director.ejecutar("acontecimiento_social_torres", pasos)
 
 
 func _configurar_admin() -> void:
