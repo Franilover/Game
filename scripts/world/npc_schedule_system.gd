@@ -487,7 +487,19 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 func _coincide_dia(dias_variant: Variant, dia: int) -> bool:
 	if not dias_variant is Array or (dias_variant as Array).is_empty():
 		return true
-	return dia in (dias_variant as Array)
+
+	# WorldData llega desde JSON/RPC y sus números pueden venir como float
+	# (por ejemplo 0.0). No usar "in" aquí: la comparación Variant puede
+	# distinguir tipos numéricos aunque representen el mismo día.
+	for dia_variant in dias_variant as Array:
+		if dia_variant is int or dia_variant is float:
+			if is_equal_approx(float(dia_variant), float(dia)):
+				return true
+		elif dia_variant is String:
+			var dia_texto := str(dia_variant).strip_edges()
+			if dia_texto.is_valid_int() and int(dia_texto) == dia:
+				return true
+	return false
 
 
 func _hora_a_minutos(valor: Variant) -> int:
