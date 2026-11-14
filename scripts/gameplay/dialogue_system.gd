@@ -229,8 +229,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
 	if (
-		_respuestas.is_empty()
-		and not tiene_acciones_finales
+		not tiene_acciones_finales
 		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
 	):
 		_respuestas = _crear_opciones_conversacion()
@@ -248,16 +247,6 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		for accion_variant in acciones_variant as Array:
 			if accion_variant is Dictionary:
 				_acciones.append((accion_variant as Dictionary).duplicate(true))
-
-	# Las conversaciones cotidianas muestran sus opciones automáticamente al terminar.
-	# Las escenas con acciones de misión conservan su flujo original.
-	if (
-		_respuestas.is_empty()
-		and _acciones.is_empty()
-		and is_instance_valid(_fuente)
-		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
-	):
-		_respuestas = _crear_opciones_conversacion()
 
 	_indice_linea = 0
 	_abierto = true
@@ -1449,8 +1438,12 @@ func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dic
 			if clave == "estado_animo" and confianza < 10.0:
 				puntuacion -= 1.0
 			if relationship_system != null and is_instance_valid(_fuente):
-				puntuacion -= float(_contar_veces_tema(relationship_system.obtener_recuerdos(_fuente.get_personaje_game_id()), clave)) * 0.35
+				puntuacion -= float(_contar_veces_tema(relationship_system.obtener_recuerdos(_fuente.get_personaje_game_id()), clave)) * 2.0
 			var dia_rotacion := int(Time.get_unix_time_from_system() / 86400.0)
+			if relationship_system != null:
+				var tiempo_variant: Variant = relationship_system.obtener_contexto_temporal()
+				if tiempo_variant is Dictionary and bool((tiempo_variant as Dictionary).get("calendario_cargado", false)):
+					dia_rotacion = int((tiempo_variant as Dictionary).get("anio", 0)) * 1000 + int((tiempo_variant as Dictionary).get("dia", 1))
 			puntuacion += float(posmod(hash(clave + str(dia_rotacion)), 100)) / 1000.0
 			if puntuacion > mejor_puntuacion:
 				mejor_puntuacion = puntuacion
