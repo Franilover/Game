@@ -17,6 +17,8 @@ var _generacion: int = 0
 var _clave_actual: String = ""
 var _tween_camara: Tween = null
 var _zoom_original := Vector2.ONE
+var _estado_ui_cinematica: Array[Dictionary] = []
+var _estado_npcs_cinematica: Dictionary = {}
 
 
 func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = null) -> void:
@@ -49,6 +51,7 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 	_clave_actual = clave_limpia
 	if not is_in_group("modal_ui"):
 		add_to_group("modal_ui")
+	_capturar_y_ocultar_ui()
 	cinematica_iniciada.emit(_clave_actual)
 
 	for paso_variant in pasos:
@@ -84,8 +87,16 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 					return false
 			"mirar_npc":
 				_ejecutar_mirar_npc(paso)
+			"preparar_npc":
+				_preparar_npc_cinematica(paso)
+			"fijar_npc":
+				_fijar_npc_cinematica(str(paso.get("npc", "")))
+			"ruta_npc":
+				await _ejecutar_ruta_npc(paso, generacion_actual)
+				if generacion_actual != _generacion:
+					return false
 			"mover_npc":
-				await _ejecutar_mover_npc(paso, generacion_actual)
+				await _ejecutar_ruta_npc(paso, generacion_actual)
 				if generacion_actual != _generacion:
 					return false
 			"evento":
@@ -199,27 +210,107 @@ func _ejecutar_gesto_npc(paso: Dictionary) -> void:
 		sprite.rotation = rotacion_base
 
 
-func _ejecutar_mover_npc(paso: Dictionary, generacion: int) -> void:
+func _capturar_y_ocultar_ui() -> void:
+	_estado_ui_cinematica.clear()
+	for grupo in ["hud", "inventory"]:
+		for nodo in get_tree().get_nodes_in_group(grupo):
+			if nodo is CanvasItem and is_instance_valid(nodo):
+				_estado_ui_cinematica.append({"nodo": nodo, "visible": (nodo as CanvasItem).visible})
+				(nodo as CanvasItem).hide()
+
+
+func _guardar_estado_npc(npc: Creature) -> void:
+	if not is_instance_valid(npc):
+		return
+	var id := str(npc.get_instance_id())
+	if _estado_npcs_cinematica.has(id):
+		return
+	var metas := {}
+	for clave in ["rutina_en_edificio", "rutina_en_transito", "actividad_social_activa", "acercamiento_social_activo", "conversacion_npc_bloqueada", "cinematica_npc_activa"]:
+		metas[clave] = {"tenia": npc.has_meta(clave), "valor": npc.get_meta(clave, null)}
+	_estado_npcs_cinematica[id] = {
+		"nodo": npc, "posicion": npc.global_position, "visible": npc.visible,
+		"velocity": npc.velocity, "process_mode": npc.process_mode, "metas": metas
+	}
+	npc.set_meta("cinematica_npc_activa", true)
+	npc.velocity = Vector2.ZERO
+	npc.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+func _preparar_npc_cinematica(paso: Dictionary) -> void:
 	var npc := _buscar_npc(str(paso.get("npc", "")))
-	if npc == null:
+	if not is_instance_valid(npc):
 		return
-	var schedule := get_tree().get_first_node_in_group("npc_schedule_system")
-	if not is_instance_valid(schedule) or not schedule.has_method("iniciar_actividad_social"):
+	_guardar_estado_npc(npc)
+	npc.global_position = Vector2(float(paso.get("x", npc.global_position.x)), float(paso.get("y", npc.global_position.y)))
+	npc.show()
+	npc.set_meta("rutina_en_edificio", false)
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("actividad_social_activa", false)
+	npc.set_meta("acercamiento_social_activo", false)
+
+
+func _fijar_npc_cinematica(nombre: String) -> void:
+	var npc := _buscar_npc(nombre)
+	if is_instance_valid(npc):
+		_guardar_estado_npc(npc)
+
+
+func _ejecutar_ruta_npc(paso: Dictionary, generacion: int) -> void:
+	var npc := _buscar_npc(str(paso.get("npc", "")))
+	if not is_instance_valid(npc):
 		return
-	# Las coordenadas del paso son locales a la zona activa, igual que
-	# las órdenes sociales del NPCScheduleSystem.
-	var destino := Vector2(float(paso.get("x", 0.0)), float(paso.get("y", 0.0)))
-	var duracion := clampf(float(paso.get("duracion", 5.0)), 1.0, 30.0)
-	if not bool(schedule.call("iniciar_actividad_social", npc, destino, duracion)):
-		return
-	var tiempo := 0.0
-	while is_instance_valid(npc) and bool(npc.get_meta("actividad_social_activa", false)):
+	_guardar_estado_npc(npc)
+	var puntos_variant: Variant = paso.get("puntos", [])
+	var puntos: Array = puntos_variant if puntos_variant is Array else []
+	if puntos.is_empty() and paso.has("x") and paso.has("y"):
+		puntos = [Vector2(float(paso.get("x", 0.0)), float(paso.get("y", 0.0)))]
+	for punto_variant in puntos:
+		if generacion != _generacion or not is_instance_valid(npc):
+			return
+		var destino := Vector2.ZERO
+		if punto_variant is Vector2:
+			destino = punto_variant
+		elif punto_variant is Dictionary:
+			destino = Vector2(float(punto_variant.get("x", npc.global_position.x)), float(punto_variant.get("y", npc.global_position.y)))
+		else:
+			continue
+		var distancia := npc.global_position.distance_to(destino)
+		var duracion := clampf(float(paso.get("duracion_por_tramo", maxf(0.25, distancia / 65.0))), 0.15, 20.0)
+		var tween := create_tween()
+		tween.set_trans(Tween.TRANS_SINE)
+		tween.set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(npc, "global_position", destino, duracion)
+		await tween.finished
 		if generacion != _generacion:
 			return
-		if tiempo >= 35.0:
-			break
-		await get_tree().create_timer(0.2).timeout
-		tiempo += 0.2
+	var pausa := clampf(float(paso.get("pausa", 0.0)), 0.0, 15.0)
+	if pausa > 0.0:
+		await get_tree().create_timer(pausa).timeout
+
+
+func _restaurar_estado_temporal() -> void:
+	for estado in _estado_npcs_cinematica.values():
+		var npc: Creature = estado.get("nodo") as Creature
+		if not is_instance_valid(npc):
+			continue
+		npc.process_mode = int(estado.get("process_mode", Node.PROCESS_MODE_INHERIT))
+		npc.global_position = estado.get("posicion", npc.global_position)
+		npc.visible = bool(estado.get("visible", true))
+		npc.velocity = estado.get("velocity", Vector2.ZERO)
+		var metas: Dictionary = estado.get("metas", {})
+		for clave in metas:
+			var dato: Dictionary = metas[clave]
+			if bool(dato.get("tenia", false)):
+				npc.set_meta(clave, dato.get("valor"))
+			else:
+				npc.remove_meta(clave)
+	_estado_npcs_cinematica.clear()
+	for estado_ui in _estado_ui_cinematica:
+		var nodo: CanvasItem = estado_ui.get("nodo") as CanvasItem
+		if is_instance_valid(nodo):
+			nodo.visible = bool(estado_ui.get("visible", true))
+	_estado_ui_cinematica.clear()
 
 
 func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
@@ -265,6 +356,7 @@ func _restaurar_camara() -> void:
 func _finalizar() -> void:
 	if not _ocupado:
 		return
+	_restaurar_estado_temporal()
 	var clave_finalizada := _clave_actual
 	_ocupado = false
 	_clave_actual = ""
