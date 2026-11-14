@@ -13,6 +13,19 @@ const AFECTO_INICIATIVA_MINIMO := 5.0
 const DURACION_LINEA := 3.2
 const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
+# Sucesos cotidianos breves. Se elige uno por día de forma determinista,
+# respetando quién está presente y evitando repetir los últimos acontecimientos.
+const ACONTECIMIENTOS_DIARIOS: Array[Dictionary] = [
+	{"clave":"elian_saira_paquete","npc_a":"elian","npc_b":"saira","lineas":[{"npc":"saira","texto":"Dejé un pequeño paquete junto al horno. No era urgente, así que no quise interrumpirte."},{"npc":"elian","texto":"Lo vi al llegar. Gracias por traerlo hasta aquí; hoy tenía las manos ocupadas desde temprano."},{"npc":"saira","texto":"No todo lo que transporto tiene que convertirse en un encargo."},{"npc":"elian","texto":"Entonces la próxima vez te guardaré algo para el camino."}]},
+	{"clave":"bruna_darven_cartel","npc_a":"bruna","npc_b":"darven","lineas":[{"npc":"darven","texto":"El cartel de la plaza volvió a torcerse. Esta vez lo encontré antes de que cayera."},{"npc":"bruna","texto":"Puedo reforzar el soporte, pero alguien tendrá que dejar de colgar avisos en el borde."},{"npc":"darven","texto":"Hablaré con quienes lo usan. No quiero que termines reparándolo cada dos días."},{"npc":"bruna","texto":"Con que no lo conviertan en un tablón de anuncios improvisado, me basta."}]},
+	{"clave":"narel_saira_noticia","npc_a":"narel","npc_b":"saira","lineas":[{"npc":"narel","texto":"Mencionaste una luz extraña cerca del camino. ¿Alguien más la vio?"},{"npc":"saira","texto":"Dos viajeros hablaron de un reflejo entre los árboles, pero ninguno se acercó."},{"npc":"narel","texto":"Entonces lo anotaré como un testimonio sin verificar, no como un fenómeno confirmado."},{"npc":"saira","texto":"Por eso te lo cuento a ti. Sabía que no ibas a convertirlo en una historia enorme."}]},
+	{"clave":"elian_bruna_pan","npc_a":"elian","npc_b":"bruna","lineas":[{"npc":"elian","texto":"Aparté una pieza de pan de la última hornada. Quedó más dura de lo que esperaba."},{"npc":"bruna","texto":"No está tan mal. Servirá para probar si el filo de mi herramienta nueva aguanta."},{"npc":"elian","texto":"Preferiría que no usaras mi pan como material de prueba."},{"npc":"bruna","texto":"Entonces la próxima vez hazlo un poco más blando. Problema resuelto."}]},
+	{"clave":"darven_narel_turno","npc_a":"darven","npc_b":"narel","lineas":[{"npc":"darven","texto":"Hoy la plaza estuvo más tranquila durante el cambio de turno."},{"npc":"narel","texto":"¿Lo atribuyes a la hora o a que hubo menos viajeros?"},{"npc":"darven","texto":"A ambas cosas, probablemente. No tengo suficientes días comparables."},{"npc":"narel","texto":"Puedo llevar un registro sencillo. Así no dependeremos sólo de la impresión."}]},
+	{"clave":"bruna_saira_cierre","npc_a":"bruna","npc_b":"saira","lineas":[{"npc":"saira","texto":"Un comerciante me ofreció unas hebillas viejas a cambio de una entrega."},{"npc":"bruna","texto":"Si no están partidas, puedo aprovechar el metal. Tráelas cuando vuelvas."},{"npc":"saira","texto":"No prometo que sean bonitas."},{"npc":"bruna","texto":"No te pedí que lo fueran. Sólo que no se desarmen al tocarlas."}]},
+	{"clave":"elian_darven_merienda","npc_a":"elian","npc_b":"darven","lineas":[{"npc":"elian","texto":"Te dejé una merienda en el mostrador. Ayer terminaste el turno bastante tarde."},{"npc":"darven","texto":"La encontré. No hacía falta que te tomaras esa molestia."},{"npc":"elian","texto":"No es molestia preparar una porción más."},{"npc":"darven","texto":"Entonces procuraré pasar antes de que se enfríe la próxima vez."}]},
+	{"clave":"narel_bruna_medidas","npc_a":"narel","npc_b":"bruna","lineas":[{"npc":"narel","texto":"He ordenado las notas de las últimas reparaciones. Hay una medida que se repite."},{"npc":"bruna","texto":"Si es la del soporte pequeño, ya la conozco. Hice tres iguales esta semana."},{"npc":"narel","texto":"Precisamente. Parece que esa pieza está resolviendo más de un problema."},{"npc":"bruna","texto":"Entonces dejaré un par preparados. No cuesta nada adelantarse."}]}
+]
+
 # Conversaciones ambientales vinculadas al incidente de la carreta.
 # Cada pareja conserva su propia conversación; sólo se muestran después
 # de completar la misión que establece el acontecimiento.
@@ -202,8 +215,7 @@ func actualizar(
 
 	if _actualizar_iniciativas(jugador, dialogo, gestor_misiones):
 		return
-	if _mision_carreta_completada(gestor_misiones):
-		_buscar_conversacion(jugador)
+	_buscar_conversacion(jugador)
 
 
 ## Permite que el jugador presencie la conversación activa al interactuar
@@ -725,24 +737,82 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 	if npcs.size() < 2:
 		return
 
-	for conversacion in CONVERSACIONES:
-		var clave := str(conversacion.get("clave", ""))
-		var progreso_variant: Variant = _progreso_parejas.get(clave, {})
-		var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
-		if int(progreso.get("etapa", 0)) >= 3:
+	# Las cadenas narrativas principales conservan su condición de desbloqueo.
+	if _mision_carreta_completada(_mission_manager):
+		for conversacion in CONVERSACIONES:
+			var clave := str(conversacion.get("clave", ""))
+			var progreso_variant: Variant = _progreso_parejas.get(clave, {})
+			var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
+			if int(progreso.get("etapa", 0)) >= 3:
+				continue
+			if bool(_vistas_por_dia.get(clave, false)):
+				continue
+			var npc_a := _npc_por_nombre.get(str(conversacion.get("npc_a", ""))) as Creature
+			var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
+			if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+				continue
+			if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
+				continue
+			if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR:
+				continue
+			_iniciar_conversacion(conversacion)
+			_vistas_por_dia[clave] = true
+			return
+
+	_buscar_acontecimiento_diario(jugador, tiempo, clave_dia, npcs)
+
+
+func _buscar_acontecimiento_diario(
+	jugador: Node2D,
+	tiempo: Dictionary,
+	clave_dia: String,
+	npcs: Array[Creature]
+) -> void:
+	var diario_variant: Variant = _progreso_parejas.get("_acontecimientos_diarios", {})
+	var diario: Dictionary = diario_variant.duplicate(true) if diario_variant is Dictionary else {}
+	if str(diario.get("ultimo_dia", "")) == clave_dia:
+		return
+	if bool(_vistas_por_dia.get("acontecimiento_diario", false)):
+		return
+
+	var historial_variant: Variant = diario.get("historial", [])
+	var historial: Array = historial_variant.duplicate(true) if historial_variant is Array else []
+	var claves_recientes: Array[String] = []
+	for registro_variant in historial.slice(maxi(0, historial.size() - 3)):
+		if registro_variant is Dictionary:
+			claves_recientes.append(str((registro_variant as Dictionary).get("clave", "")))
+
+	# La fecha determina el orden inicial, de modo que la partida no repite
+	# resultados distintos al recargar el mismo día.
+	var base := posmod(int(tiempo.get("anio", 0)) * 367 + int(tiempo.get("dia", 1)), ACONTECIMIENTOS_DIARIOS.size())
+	for desplazamiento in range(ACONTECIMIENTOS_DIARIOS.size()):
+		var indice := posmod(base + desplazamiento, ACONTECIMIENTOS_DIARIOS.size())
+		var acontecimiento: Dictionary = ACONTECIMIENTOS_DIARIOS[indice]
+		var clave := str(acontecimiento.get("clave", ""))
+		if clave.is_empty() or clave in claves_recientes:
 			continue
-		if bool(_vistas_por_dia.get(clave, false)):
-			continue
-		var npc_a := _npc_por_nombre.get(str(conversacion.get("npc_a", ""))) as Creature
-		var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
+		var npc_a := _npc_por_nombre.get(str(acontecimiento.get("npc_a", ""))) as Creature
+		var npc_b := _npc_por_nombre.get(str(acontecimiento.get("npc_b", ""))) as Creature
 		if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
 			continue
 		if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
 			continue
 		if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR:
 			continue
-		_iniciar_conversacion(conversacion)
-		_vistas_por_dia[clave] = true
+
+		var evento := acontecimiento.duplicate(true)
+		evento["clave"] = "diario_%s_%s" % [clave, clave_dia.replace(":", "_")]
+		_iniciar_conversacion(evento)
+		_vistas_por_dia["acontecimiento_diario"] = true
+		historial.append({"dia": clave_dia, "clave": clave})
+		while historial.size() > 12:
+			historial.pop_front()
+		diario["ultimo_dia"] = clave_dia
+		diario["ultimo_evento"] = clave
+		diario["historial"] = historial
+		_progreso_parejas["_acontecimientos_diarios"] = diario
+		if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+			_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
 		return
 
 
