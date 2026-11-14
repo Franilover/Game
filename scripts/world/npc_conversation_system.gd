@@ -968,7 +968,7 @@ func _mision_carreta_completada(gestor_misiones: Node) -> bool:
 func _esta_en_reunion_castillo() -> bool:
 	if not is_instance_valid(_zone_manager):
 		return false
-	var zona := _zone_manager.obtener_zona_actual()
+	var zona: Node = _zone_manager.obtener_zona_actual()
 	return (
 		is_instance_valid(zona)
 		and bool(zona.get("_interior_activo"))
