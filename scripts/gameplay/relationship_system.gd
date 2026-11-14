@@ -357,6 +357,15 @@ func obtener_recuerdo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 	if mejor_indice < 0:
 		return {}
 	var resultado := (lista[mejor_indice] as Dictionary).duplicate(true)
+	if str(resultado.get("recuerdo_uid", "")).is_empty():
+		resultado["recuerdo_uid"] = "%s:%d:%d" % [
+			id,
+			Time.get_ticks_usec(),
+			mejor_indice
+		]
+		lista[mejor_indice] = resultado.duplicate(true)
+		recuerdos[id] = lista
+		_game_state.call("guardar_recuerdos_sociales", recuerdos)
 	resultado["_indice_recuerdo"] = mejor_indice
 	return resultado
 
