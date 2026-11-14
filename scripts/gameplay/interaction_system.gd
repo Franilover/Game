@@ -14,6 +14,8 @@ var inventory: InventoryController = null
 var world_items: GarliaWorldItems = null
 var input_gate: GameplayInputGate = null
 var entity_manager: WorldEntityManager = null
+var _npc_conversation_system: Node = null
+var _dialogue_system: DialogueSystem = null
 
 var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
@@ -103,6 +105,18 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool,
 	_buscar_objetivo()
 	if interaction_controller.objetivo_actual != null:
 		var objetivo_ejecutado := interaction_controller.objetivo_actual
+		if (
+			objetivo_ejecutado is Creature
+			and is_instance_valid(_npc_conversation_system)
+			and _npc_conversation_system.has_method("intentar_intervenir_conversacion")
+			and _npc_conversation_system.call(
+				"intentar_intervenir_conversacion",
+				objetivo_ejecutado,
+				player,
+				_dialogue_system
+			)
+		):
+			return true
 		var resultado := interaction_controller.interactuar(player)
 
 		# Una recolección exitosa puede llamar queue_free(), que no elimina el
@@ -135,6 +149,11 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool,
 				return true
 
 	return false
+
+
+func configurar_conversaciones(sistema: Node, dialogo: DialogueSystem) -> void:
+	_npc_conversation_system = sistema
+	_dialogue_system = dialogo
 
 
 func _entrada_bloqueada_por_router() -> bool:
