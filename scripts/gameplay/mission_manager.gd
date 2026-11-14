@@ -216,6 +216,8 @@ func aceptar_mision(identificador: String, personaje_origen_id: String = "") -> 
 	var estado := str(_estado.get(mision_id, "disponible"))
 
 	if estado == "activa":
+		if not personaje_origen_id.strip_edges().is_empty():
+			_origen_misiones[mision_id] = personaje_origen_id.strip_edges()
 		return true
 
 	if estado == "completada" or estado == "reclamada":
