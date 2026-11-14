@@ -1209,7 +1209,7 @@ func _al_cinematica_narrativa_solicitada(
 		{"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.6},
 		{"tipo":"esperar","segundos":0.5}
 	]
-	await _cutscene_director.ejecutar("relacion_%s_etapa_%d" % [clave, etapa], pasos)
+	await _cutscene_director.ejecutar("relacion_%s_etapa_%d" % [clave, etapa], pasos, "en_vivo")
 
 
 
@@ -1250,7 +1250,7 @@ func _al_cinematica_acontecimiento_solicitada(
 		{"tipo":"gesto_npc","npc":nombre_b,"gesto":"saludar","duracion":0.65},
 		{"tipo":"esperar","segundos":0.45}
 	]
-	await _cutscene_director.ejecutar("acontecimiento_%s" % clave, pasos)
+	await _cutscene_director.ejecutar("acontecimiento_%s" % clave, pasos, "en_vivo")
 
 
 func _configurar_admin() -> void:
