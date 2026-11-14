@@ -195,7 +195,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if dia_semana == 4:
 		rutina = _seleccionar_rutina_dia_libre(npc, minutos)
 	else:
-		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos)
+		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
 
 	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
@@ -424,7 +424,7 @@ func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
 	}
 
 
-func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int) -> Dictionary:
+func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int, nombre_npc: String = "?") -> Dictionary:
 	if not rutinas_variant is Array:
 		return {}
 
@@ -476,9 +476,9 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 			inicio_mejor = inicio
 
 	if mejor.is_empty():
-		var firma_fallo := "%d|%d|%s" % [dia_semana, minutos, ";".join(diagnostico_rechazos)]
+		var firma_fallo := "%s|%d|%d|%s" % [nombre_npc, dia_semana, minutos, ";".join(diagnostico_rechazos)]
 		if str(get_meta("ultimo_diagnostico_selector", "")) != firma_fallo:
-			print("NPCScheduleSystem: SELECTOR SIN COINCIDENCIA | dia=", dia_semana, " minuto=", minutos, " total=", (rutinas_variant as Array).size(), " | ", " || ".join(diagnostico_rechazos))
+			print("NPCScheduleSystem: SELECTOR SIN COINCIDENCIA | npc=", nombre_npc, " dia=", dia_semana, " minuto=", minutos, " total=", (rutinas_variant as Array).size(), " | ", " || ".join(diagnostico_rechazos))
 			set_meta("ultimo_diagnostico_selector", firma_fallo)
 
 	return mejor
