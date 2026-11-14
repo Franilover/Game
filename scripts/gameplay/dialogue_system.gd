@@ -1418,7 +1418,49 @@ func _crear_opcion_consejo_social() -> Dictionary:
 
 func _crear_opcion_ayuda_social() -> Dictionary:
 	var respuesta := _obtener_respuesta_ayuda_npc()
-	return _crear_opcion_social("preguntar_ayuda", "Preguntar si necesita ayuda", "¿Necesitas ayuda con algo?", respuesta, "interesarse", 1.5)
+	var opcion := _crear_opcion_social(
+		"preguntar_ayuda",
+		"Preguntar si necesita ayuda",
+		"¿Necesitas ayuda con algo?",
+		respuesta,
+		"interesarse",
+		1.5
+	)
+	var mision_disponible := _obtener_mision_disponible_para_npc()
+	if not mision_disponible.is_empty():
+		opcion["respuesta"] = "Sí, todavía tengo ese encargo pendiente. Si sigues dispuesto a ayudarme, puedo explicártelo otra vez. " + str(mision_disponible.get("descripcion", ""))
+		opcion["acciones"] = [{
+			"tipo": "aceptar_mision",
+			"mision_clave": str(mision_disponible.get("clave", "")),
+			"texto": "Aceptar el encargo"
+		}]
+	return opcion
+
+
+func _obtener_mision_disponible_para_npc() -> Dictionary:
+	if mission_manager == null or not is_instance_valid(_fuente):
+		return {}
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return {}
+	for mision_variant in mission_manager.obtener_misiones():
+		if not mision_variant is Dictionary:
+			continue
+		var mision := mision_variant as Dictionary
+		var mision_id := str(mision.get("id", "")).strip_edges()
+		if mision_id.is_empty():
+			continue
+		var estado := mission_manager.obtener_estado_mision(mision_id)
+		if str(estado.get("estado", "disponible")) != "disponible":
+			continue
+		var origen := str(estado.get(
+			"npc_origen_personaje_game_id",
+			mision.get("npc_origen_personaje_game_id", mision.get("personaje_origen_id", ""))
+		)).strip_edges()
+		if origen != personaje_id:
+			continue
+		return mision.duplicate(true)
+	return {}
 
 
 func _crear_opcion_trabajo_social() -> Dictionary:
