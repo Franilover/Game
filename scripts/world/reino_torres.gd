@@ -161,7 +161,6 @@ func _ready() -> void:
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
 	# iniciales de las celdas serializadas de la escena.
 	await _crear_cesped_tilemap_dual()
-	_crear_flores_terreno()
 	await _crear_muralla_montana()
 	await _crear_rio_marino_tilemap()
 
@@ -904,69 +903,6 @@ func _crear_luces_faroles() -> void:
 
 	print("ReinoTorres: %d postes con iluminación tenue preparados." % _luces_faroles.size())
 	_actualizar_luces_faroles()
-
-
-func _crear_flores_terreno() -> void:
-	var pradera := get_node_or_null("TerrainDual_Zone_00") as TileMapDual
-	var bosque := get_node_or_null("TerrainDual_Zone_08") as TileMapDual
-	if not is_instance_valid(pradera) or not is_instance_valid(bosque):
-		push_warning("ReinoTorres: no se pudieron localizar los TileMapDual de pradera y bosque para colocar flores.")
-		return
-
-	var texturas: Array[Texture2D] = [
-		preload("res://assets/art/props/Flor Azul.png"),
-		preload("res://assets/art/props/Flor Morada.png")
-	]
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 824731
-	var posiciones_usadas: Array[Vector2] = []
-	var cantidades: Array[Dictionary] = [
-		{"capa": pradera, "cantidad": 18, "nombre": "Pradera"},
-		{"capa": bosque, "cantidad": 58, "nombre": "Bosque"}
-	]
-
-	for configuracion: Dictionary in cantidades:
-		var capa: TileMapDual = configuracion["capa"]
-		var celdas: Array[Vector2i] = capa.get_used_cells()
-		# Mezcla determinista: la distribución se mantiene igual entre partidas.
-		for indice in range(celdas.size() - 1, 0, -1):
-			var otro_indice := rng.randi_range(0, indice)
-			var temporal: Vector2i = celdas[indice]
-			celdas[indice] = celdas[otro_indice]
-			celdas[otro_indice] = temporal
-
-		var creadas := 0
-		for celda: Vector2i in celdas:
-			if creadas >= int(configuracion["cantidad"]):
-				break
-			var posicion_global: Vector2 = capa.to_global(capa.map_to_local(celda))
-			var posicion_local: Vector2 = to_local(posicion_global)
-
-			# Mantener despejado el núcleo urbano y sus ejes principales.
-			if absf(posicion_local.x) < 500.0 and absf(posicion_local.y) < 330.0:
-				continue
-			var demasiado_cerca := false
-			for posicion_existente: Vector2 in posiciones_usadas:
-				if posicion_global.distance_to(posicion_existente) < 38.0:
-					demasiado_cerca = true
-					break
-			if demasiado_cerca:
-				continue
-
-			var flor := Sprite2D.new()
-			flor.name = "Flor_%s_%02d" % [str(configuracion["nombre"]), creadas + 1]
-			flor.texture = texturas[rng.randi_range(0, texturas.size() - 1)]
-			flor.position = posicion_local
-			flor.centered = true
-			flor.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			flor.z_index = 2
-			add_child(flor)
-			posiciones_usadas.append(posicion_global)
-			creadas += 1
-
-		print("ReinoTorres: flores colocadas en %s: %d/%d." % [
-			str(configuracion["nombre"]), creadas, int(configuracion["cantidad"])
-		])
 
 
 func _actualizar_luces_faroles() -> void:
