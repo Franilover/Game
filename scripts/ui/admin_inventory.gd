@@ -755,7 +755,7 @@ func _mostrar_pruebas_narrativas() -> void:
 			estado_mision.select(i)
 	_controles_debug["mision_estado"] = estado_mision
 	_fila_control_debug("Estado de misión", estado_mision)
-	for par in [["etapa", "Etapa narrativa", 0.0, 3.0], ["dia", "Día", 1.0, 365.0], ["anio", "Año", -100000.0, 100000.0], ["hora", "Hora", 0.0, 23.0]]:
+	for par in [["etapa", "Etapa narrativa", 0.0, 2.0], ["dia", "Día", 1.0, 365.0], ["anio", "Año", -100000.0, 100000.0], ["hora", "Hora", 0.0, 23.0]]:
 		var spin := _crear_spin_debug(float(_escenario_debug.get(str(par[0]), 0.0)), float(par[2]), float(par[3]))
 		_controles_debug[str(par[0])] = spin
 		_fila_control_debug(str(par[1]), spin)
