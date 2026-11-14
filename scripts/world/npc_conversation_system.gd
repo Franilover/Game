@@ -3,6 +3,7 @@ class_name NPCConversationSystem
 
 signal cinematica_acontecimiento_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
 signal cinematica_narrativa_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2, etapa: int)
+signal cinematica_reunion_nocturna_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
 
 const INTERVALO_BUSQUEDA := 0.5
 const DISTANCIA_ENTRE_NPC := 180.0
@@ -32,6 +33,94 @@ const ACONTECIMIENTOS_DIARIOS: Array[Dictionary] = [
 # Conversaciones ambientales vinculadas al incidente de la carreta.
 # Cada pareja conserva su propia conversación; sólo se muestran después
 # de completar la misión que establece el acontecimiento.
+# Conversaciones propias de la reunión nocturna. Se selecciona como máximo
+# una por noche, se evita repetir las tres últimas y algunas reciben una
+# breve puesta en escena de cámara.
+const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
+	{
+		"clave":"noche_darven_saira_rumores",
+		"npc_a":"darven","npc_b":"saira","cinematica":true,
+		"lineas":[
+			{"npc":"saira","texto":"En el camino escuché que alguien vio luces cerca de la vieja cantera. Cada viajero lo cuenta de una forma distinta."},
+			{"npc":"darven","texto":"¿Alguno dio una hora o un lugar preciso? No quiero enviar a nadie a buscar un relato que cambia cada vez."},
+			{"npc":"saira","texto":"Dos coincidieron en el tramo, pero no en la hora. Puedo preguntarles de nuevo cuando regresen."},
+			{"npc":"darven","texto":"Hazlo. Prefiero esperar una noche más antes que convertir un rumor en una alarma."}
+		]
+	},
+	{
+		"clave":"noche_bruna_narel_bomba",
+		"npc_a":"bruna","npc_b":"narel","cinematica":false,
+		"lineas":[
+			{"npc":"narel","texto":"He estado pensando en la bomba del pozo. El desgaste parece concentrarse en una sola unión."},
+			{"npc":"bruna","texto":"Eso no significa que el resto esté bien. Si sólo cambias esa pieza, quizá vuelva a fallar por otra parte."},
+			{"npc":"narel","texto":"Por eso quería comparar las medidas antes de proponer una reparación."},
+			{"npc":"bruna","texto":"Mañana la desmontamos juntos. Tú tomas las medidas y yo reviso las piezas. Así tendremos algo concreto."}
+		]
+	},
+	{
+		"clave":"noche_mara_darven_puerta",
+		"npc_a":"mara","npc_b":"darven","cinematica":true,
+		"lineas":[
+			{"npc":"darven","texto":"Hoy preguntaron por una persona que llegó hace poco a Torres. No di ningún nombre."},
+			{"npc":"mara","texto":"¿Querían saber dónde vive?"},
+			{"npc":"darven","texto":"Querían que confirmara quién entra y quién sale. Les dije que no tenían motivo para exigirlo."},
+			{"npc":"mara","texto":"Gracias. No te pediré que mientas por mí. Sólo que no entregues la vida de alguien a cualquiera que pregunte."},
+			{"npc":"darven","texto":"Eso también forma parte de mi trabajo. Si vuelven, hablaré con ellos yo mismo."}
+		]
+	},
+	{
+		"clave":"noche_nima_narel_oris",
+		"npc_a":"nima","npc_b":"narel","cinematica":false,
+		"lineas":[
+			{"npc":"nima","texto":"Hoy vi una variación en el fenómeno que estoy estudiando. No se repitió cuando intenté observarlo de nuevo."},
+			{"npc":"narel","texto":"¿Anotaste las condiciones? Hora, distancia y cualquier cambio del entorno."},
+			{"npc":"nima","texto":"Sí. También anoté que estaba cansada y que había gente hablando cerca. No quiero descartar esas variables."},
+			{"npc":"narel","texto":"Buena decisión. Y recuerda que puedes dejar las notas para mañana. No tienes que resolverlo todo esta noche."},
+			{"npc":"nima","texto":"Lo sé. De hecho, mañana había quedado con unos amigos. No pienso cancelar otra vez."}
+		]
+	},
+	{
+		"clave":"noche_ivo_elian_mesa",
+		"npc_a":"ivo","npc_b":"elian","cinematica":true,
+		"lineas":[
+			{"npc":"elian","texto":"Te guardé un sitio cerca de la mesa. Hoy casi no te vi durante la tarde."},
+			{"npc":"ivo","texto":"Me cansé antes de llegar al mercado. No quería que todos cambiaran sus planes por mí."},
+			{"npc":"elian","texto":"No tienes que seguir el ritmo de nadie para estar aquí. La comida no se va a marchar."},
+			{"npc":"ivo","texto":"A veces se me olvida que puedo venir, sentarme y ya está. Gracias por reservarme el sitio."}
+		]
+	},
+	{
+		"clave":"noche_mara_nima_confianza",
+		"npc_a":"mara","npc_b":"nima","cinematica":false,
+		"lineas":[
+			{"npc":"nima","texto":"Esta tarde iba a preguntarte algo, pero parecías ocupada. ¿Prefieres que no insista?"},
+			{"npc":"mara","texto":"Puedes preguntar. Yo decidiré qué quiero responder."},
+			{"npc":"nima","texto":"Me parece justo. En realidad sólo quería saber si te gustaría venir con nosotros a la plaza mañana."},
+			{"npc":"mara","texto":"Eso sí puedo responderlo. Me gustaría. Gracias por invitarme sin pedir explicaciones."}
+		]
+	},
+	{
+		"clave":"noche_saira_ivo_viajes",
+		"npc_a":"saira","npc_b":"ivo","cinematica":false,
+		"lineas":[
+			{"npc":"ivo","texto":"Siempre vuelves con alguna historia de tus viajes. ¿Nunca te cansas de estar en movimiento?"},
+			{"npc":"saira","texto":"Claro que sí. Por eso aprendí a detenerme en lugares donde la gente me hace sentir bienvenida."},
+			{"npc":"ivo","texto":"Yo suelo detenerme porque el cuerpo me obliga. A veces me gustaría elegirlo yo."},
+			{"npc":"saira","texto":"Entonces mañana podemos elegir un paseo corto. El destino puede esperar; lo importante es que lo disfrutemos."}
+		]
+	},
+	{
+		"clave":"noche_abel_darven_guardia",
+		"npc_a":"abel","npc_b":"darven","cinematica":false,
+		"lineas":[
+			{"npc":"abel","texto":"¿Crees que deberíamos ampliar las rondas nocturnas? Últimamente hay más movimiento en los caminos."},
+			{"npc":"darven","texto":"Más rondas también significan menos descanso. Primero revisaría qué tramos necesitan atención de verdad."},
+			{"npc":"abel","texto":"No quiero esperar a que ocurra algo para reaccionar."},
+			{"npc":"darven","texto":"Y yo no quiero agotar a la guardia por una impresión. Mañana revisamos los registros y decidimos con datos."}
+		]
+	}
+]
+
 const CONVERSACIONES: Array[Dictionary] = [
 	{
 		"clave": "elian_saira_hornada",
@@ -254,6 +343,8 @@ func actualizar(
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
 		return
 
+	if _buscar_conversacion_reunion_nocturna(jugador, tiempo_actual):
+		return
 	if _actualizar_iniciativas(jugador, dialogo, gestor_misiones):
 		return
 	_buscar_conversacion(jugador)
@@ -874,6 +965,91 @@ func _mision_carreta_completada(gestor_misiones: Node) -> bool:
 	return not mision_id.is_empty() and bool(gestor_misiones.call("esta_completada", mision_id))
 
 
+func _esta_en_reunion_castillo() -> bool:
+	if not is_instance_valid(_zone_manager):
+		return false
+	var zona := _zone_manager.obtener_zona_actual()
+	return (
+		is_instance_valid(zona)
+		and bool(zona.get("_interior_activo"))
+		and str(zona.get("_entrada_interior_id")) == "castillo"
+	)
+
+
+func _npc_puede_participar_reunion(npc: Creature) -> bool:
+	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+		return false
+	if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != "castillo":
+		return false
+	for meta_clave in ["conversacion_npc_bloqueada", "cinematica_npc_activa", "acercamiento_social_activo", "actividad_social_activa"]:
+		if bool(npc.get_meta(meta_clave, false)):
+			return false
+	return npc.velocity.length() <= 5.0
+
+
+func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) -> bool:
+	var hora := float(tiempo.get("hora_del_dia", 0.0))
+	if hora < 21.0 or hora >= 24.0 or not _esta_en_reunion_castillo():
+		return false
+	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
+		return false
+	if is_instance_valid(_world_atmosphere) and not bool(tiempo.get("calendario_cargado", false)):
+		return false
+	var clave_dia := "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
+	if str(_vistas_por_dia.get("reunion_castillo", "")) == clave_dia:
+		return false
+	_obtener_npcs_torres()
+	var diario_variant: Variant = _progreso_parejas.get("_reuniones_nocturnas", {})
+	var diario: Dictionary = diario_variant.duplicate(true) if diario_variant is Dictionary else {}
+	if str(diario.get("ultimo_dia", "")) == clave_dia:
+		_vistas_por_dia["reunion_castillo"] = clave_dia
+		return false
+	var historial_variant: Variant = diario.get("historial", [])
+	var historial: Array = historial_variant.duplicate(true) if historial_variant is Array else []
+	var recientes: Array[String] = []
+	for registro_variant in historial.slice(maxi(0, historial.size() - 3)):
+		if registro_variant is Dictionary:
+			recientes.append(str((registro_variant as Dictionary).get("clave", "")))
+	var base := posmod(int(tiempo.get("anio", 0)) * 367 + int(tiempo.get("dia", 1)), CONVERSACIONES_REUNION_CASTILLO.size())
+	for desplazamiento in range(CONVERSACIONES_REUNION_CASTILLO.size()):
+		var indice := posmod(base + desplazamiento, CONVERSACIONES_REUNION_CASTILLO.size())
+		var conversacion: Dictionary = CONVERSACIONES_REUNION_CASTILLO[indice]
+		var clave := str(conversacion.get("clave", ""))
+		if clave.is_empty() or clave in recientes:
+			continue
+		var npc_a := _npc_por_nombre.get(str(conversacion.get("npc_a", ""))) as Creature
+		var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
+		if not _npc_puede_participar_reunion(npc_a) or not _npc_puede_participar_reunion(npc_b):
+			continue
+		if jugador.global_position.distance_to((npc_a.global_position + npc_b.global_position) * 0.5) > DISTANCIA_JUGADOR + 240.0:
+			continue
+		var evento := conversacion.duplicate(true)
+		evento["_reunion_castillo"] = true
+		evento["clave"] = "reunion_%s_%s" % [clave, clave_dia.replace(":", "_")]
+		_iniciar_conversacion(evento)
+		_vistas_por_dia["reunion_castillo"] = clave_dia
+		historial.append({"dia": clave_dia, "clave": clave})
+		while historial.size() > 16:
+			historial.pop_front()
+		diario["ultimo_dia"] = clave_dia
+		diario["ultimo_evento"] = clave
+		diario["historial"] = historial
+		_progreso_parejas["_reuniones_nocturnas"] = diario
+		if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+			_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+		if bool(evento.get("cinematica", false)):
+			var zona := _zone_manager.obtener_zona_actual() as Node2D
+			var centro := (npc_a.global_position + npc_b.global_position) * 0.5
+			cinematica_reunion_nocturna_solicitada.emit(
+				clave,
+				npc_a.get_nombre_visual(),
+				npc_b.get_nombre_visual(),
+				centro
+			)
+		return true
+	return false
+
+
 func _buscar_conversacion(jugador: Node2D) -> void:
 	var tiempo := _world_atmosphere.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
@@ -1186,6 +1362,8 @@ func _obtener_npcs_torres() -> Array[Creature]:
 
 
 func _npc_puede_conversar(npc: Creature) -> bool:
+	if bool(_conversacion_activa.get("_reunion_castillo", false)):
+		return _esta_en_reunion_castillo() and _npc_puede_participar_reunion(npc)
 	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
 		return false
 	# Un NPC ocupado en otra interacción, acercamiento o actividad no puede
@@ -1449,7 +1627,7 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):
 		_guardar_objeto_del_acontecimiento()
 		_iniciar_actividad_del_acontecimiento()
-	if completada and not _conversacion_activa.is_empty():
+	if completada and not bool(_conversacion_activa.get("_reunion_castillo", false)) and not _conversacion_activa.is_empty():
 		var clave := str(_conversacion_activa.get("clave", ""))
 		var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
 		if not clave.is_empty():
