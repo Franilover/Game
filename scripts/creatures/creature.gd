@@ -1195,13 +1195,11 @@ func get_interaction_priority() -> int:
 
 func get_interaction_distance() -> float:
 	if es_dialogable():
-		# Las habitaciones son compactas y los NPC quedan distribuidos
-		# alrededor de sus puestos. Desde el punto de entrada del jugador
-		# deben seguir siendo alcanzables sin tener que quedar encima de ellos.
+		# Dentro de los edificios se usa el mismo alcance corto que en el
+		# exterior. El aviso aparece al acercarse al personaje, no desde el
+		# otro extremo de la habitación.
 		if bool(get_meta("rutina_en_edificio", false)):
-			# Las habitaciones admiten varios puestos; el jugador debe poder
-			# hablar con cualquier residente sin tener que quedar encima.
-			return 160.0
+			return 64.0
 		return 64.0
 
 	return 48.0
