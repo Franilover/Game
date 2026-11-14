@@ -234,7 +234,10 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
-	if not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
+	if _respuestas.is_empty() and not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
+		# Las opciones contextuales definidas por una escena o cinemática
+		# tienen prioridad; sólo generamos las opciones sociales genéricas
+		# cuando el diálogo no trae respuestas propias.
 		_respuestas = _crear_opciones_conversacion()
 	_limpiar_botones_respuesta()
 
