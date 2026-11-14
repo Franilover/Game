@@ -561,7 +561,10 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	]
 	var centro: Vector2 = centros[posmod(grupo, centros.size())]
 	var offsets: Array[Vector2] = [Vector2(-24.0, 0.0), Vector2(24.0, 0.0), Vector2(0.0, 22.0)]
-	var destino_global := _zona.to_global(centro + offsets[puesto])
+	var contenedor_npc := npc.get_parent() as Node2D
+	if not is_instance_valid(contenedor_npc):
+		return
+	var destino_global := contenedor_npc.to_global(centro + offsets[puesto])
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
 		return
