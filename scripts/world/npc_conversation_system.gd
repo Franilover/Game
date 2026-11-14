@@ -963,7 +963,7 @@ func obtener_narrativa_personaje(personaje_id: String) -> Dictionary:
 			"lineas_tercera_tension": conversacion.get("lineas_tercera_tension", []).duplicate(true),
 			"lineas_alternativas": conversacion.get("lineas_alternativas", []).duplicate(true),
 			"requisitos_texto": "Misión ayuda_horno_elian completada y etapa narrativa habilitada.",
-			"mision_clave": "ayuda_horno_elian", "mision_estado": "completada", "etapa_minima": 1,
+			"mision_clave": "ayuda_horno_elian", "mision_estado": "completada", "etapa_minima": 0,
 			"gesto_a": str(gestos.get("gesto_a", "asentir")),
 			"gesto_b": str(gestos.get("gesto_b", "asentir"))
 		})
