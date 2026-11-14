@@ -80,6 +80,12 @@ var _atmosfera_mundo: Node = null
 var _luces_faroles: Array[PointLight2D] = []
 var _brillos_faroles: Array[Sprite2D] = []
 var _capa_brillos_faroles: CanvasLayer = null
+var _ventanas_hogares: Array[Sprite2D] = []
+var _charcos_torres: Array[Polygon2D] = []
+var _brillos_charcos_torres: Array[Polygon2D] = []
+var _sistema_clima_torres: Node = null
+var _nivel_charcos_torres: float = 0.0
+var _tiempo_ambiente_torres: float = 0.0
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -149,6 +155,8 @@ func _ready() -> void:
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
 	_crear_luces_faroles()
+	_crear_ventanas_hogares()
+	_crear_charcos_torres()
 	# Las capas estáticas deben reconstruir su caché antes de añadir
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
 	# iniciales de las celdas serializadas de la escena.
@@ -191,6 +199,7 @@ func _crear_rio_marino_tilemap() -> void:
 
 func _process(_delta: float) -> void:
 	_actualizar_luces_faroles()
+	_actualizar_ambiente_torres(_delta)
 	if not is_instance_valid(_jugador):
 		_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	if not is_instance_valid(_jugador):
@@ -542,6 +551,151 @@ func _cargar_arboles_pixelart() -> void:
 		_agregar_sprite_pixelart("Pixel_" + String(prefijo), textura, limites, maxi(tronco.z_index, copa.z_index))
 		tronco.visible = false
 		copa.visible = false
+
+
+## Iluminación cálida en las viviendas habitadas. Las casas vacías permanecen
+## apagadas; las ventanas acompañan el ciclo real de día y noche.
+func _crear_ventanas_hogares() -> void:
+	var imagen := Image.create(5, 5, false, Image.FORMAT_RGBA8)
+	imagen.fill(Color(0.0, 0.0, 0.0, 0.0))
+	var marco := Color("#563b2a")
+	var luz := Color("#ffd58a")
+	for y in range(5):
+		for x in range(5):
+			if x == 0 or x == 4 or y == 0 or y == 4:
+				imagen.set_pixel(x, y, marco)
+			else:
+				imagen.set_pixel(x, y, luz)
+	var textura_ventana := ImageTexture.create_from_image(imagen)
+	var hogares_ocupados: Array[String] = [
+		"Sprite_Casa_Bruna",
+		"Sprite_Casa_Narel",
+		"Sprite_Casa_Elian",
+		"Sprite_Casa_Darven",
+		"Sprite_Casa_Saira",
+		"Sprite_Casa_Vacia_01",
+		"Sprite_Casa_Vacia_02",
+		"Sprite_Casa_Vacia_03",
+		"Sprite_casa_granjeros"
+	]
+	for nombre_casa in hogares_ocupados:
+		var casa := get_node_or_null(NodePath(nombre_casa)) as Sprite2D
+		if not is_instance_valid(casa):
+			push_warning("ReinoTorres: no se encontró la vivienda para iluminar: " + nombre_casa)
+			continue
+		for posicion_ventana in [Vector2(-10.0, -5.0), Vector2(10.0, -5.0)]:
+			var ventana := Sprite2D.new()
+			ventana.name = "VentanaIluminada"
+			ventana.texture = textura_ventana
+			ventana.position = posicion_ventana
+			ventana.z_index = 1
+			ventana.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			ventana.visible = false
+			casa.add_child(ventana)
+			_ventanas_hogares.append(ventana)
+
+
+func _actualizar_ventanas_hogares() -> void:
+	if _ventanas_hogares.is_empty():
+		return
+	var intensidad := 0.0
+	if not is_instance_valid(_atmosfera_mundo):
+		_atmosfera_mundo = get_tree().root.find_child("WorldAtmosphere", true, false)
+	if is_instance_valid(_atmosfera_mundo) and _atmosfera_mundo.has_method("obtener_tiempo"):
+		var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
+		if bool(tiempo.get("calendario_cargado", false)):
+			var horas_por_dia := maxf(float(tiempo.get("horas_por_dia", 24.0)), 1.0)
+			var hora_normalizada := fposmod(float(tiempo.get("hora_del_dia", 0.0)) / horas_por_dia, 1.0)
+			if hora_normalizada >= 0.82 or hora_normalizada < 0.20:
+				intensidad = 1.0
+			elif hora_normalizada >= 0.72:
+				intensidad = _suavizar_luz((hora_normalizada - 0.72) / 0.10)
+			elif hora_normalizada < 0.30:
+				intensidad = 1.0 - _suavizar_luz((hora_normalizada - 0.20) / 0.10)
+	for ventana in _ventanas_hogares:
+		if is_instance_valid(ventana):
+			ventana.visible = intensidad > 0.02 and not _interior_activo
+			ventana.modulate = Color(1.0, 0.91, 0.72, intensidad)
+
+
+## Los charcos se forman lentamente con la lluvia y desaparecen después,
+## dejando reflejos discretos sobre los caminos y sus bordes.
+func _crear_charcos_torres() -> void:
+	var ubicaciones: Array[Dictionary] = [
+		{"pos": Vector2(-300.0, 86.0), "rx": 17.0, "ry": 5.0},
+		{"pos": Vector2(-238.0, 188.0), "rx": 13.0, "ry": 4.0},
+		{"pos": Vector2(242.0, 182.0), "rx": 18.0, "ry": 5.0},
+		{"pos": Vector2(326.0, 82.0), "rx": 14.0, "ry": 4.0},
+		{"pos": Vector2(-520.0, -86.0), "rx": 16.0, "ry": 5.0},
+		{"pos": Vector2(520.0, -86.0), "rx": 15.0, "ry": 4.0},
+		{"pos": Vector2(-520.0, 390.0), "rx": 18.0, "ry": 5.0},
+		{"pos": Vector2(520.0, 390.0), "rx": 16.0, "ry": 5.0}
+	]
+	for indice in range(ubicaciones.size()):
+		var ubicacion: Dictionary = ubicaciones[indice]
+		var radio_x := float(ubicacion.get("rx", 14.0))
+		var radio_y := float(ubicacion.get("ry", 4.0))
+		var charco := Polygon2D.new()
+		charco.name = "CharcoLluvia_%02d" % indice
+		charco.position = ubicacion.get("pos", Vector2.ZERO)
+		charco.polygon = _crear_poligono_elipse(radio_x, radio_y)
+		charco.color = Color("#58798a")
+		charco.z_index = -5
+		charco.z_as_relative = false
+		charco.modulate.a = 0.0
+		add_child(charco)
+		_charcos_torres.append(charco)
+
+		var brillo := Polygon2D.new()
+		brillo.name = "ReflejoCharco_%02d" % indice
+		brillo.position = charco.position + Vector2(-radio_x * 0.22, -0.8)
+		brillo.polygon = _crear_poligono_elipse(radio_x * 0.42, maxf(radio_y * 0.20, 1.0))
+		brillo.color = Color("#c5d9df")
+		brillo.z_index = -4
+		brillo.z_as_relative = false
+		brillo.modulate.a = 0.0
+		add_child(brillo)
+		_brillos_charcos_torres.append(brillo)
+
+
+func _crear_poligono_elipse(radio_x: float, radio_y: float) -> PackedVector2Array:
+	var puntos := PackedVector2Array()
+	for indice in range(12):
+		var angulo := TAU * float(indice) / 12.0
+		puntos.append(Vector2(cos(angulo) * radio_x, sin(angulo) * radio_y))
+	return puntos
+
+
+func _actualizar_ambiente_torres(delta: float) -> void:
+	_tiempo_ambiente_torres += delta
+	if _tiempo_ambiente_torres < 0.20:
+		return
+	var paso := _tiempo_ambiente_torres
+	_tiempo_ambiente_torres = 0.0
+	_actualizar_ventanas_hogares()
+	if _charcos_torres.is_empty():
+		return
+	if not is_instance_valid(_sistema_clima_torres):
+		_sistema_clima_torres = get_tree().root.find_child("ClimateSystem", true, false)
+	var precipitacion := 0.0
+	if is_instance_valid(_sistema_clima_torres) and _sistema_clima_torres.has_method("obtener_estado"):
+		var estado: Dictionary = _sistema_clima_torres.call("obtener_estado")
+		var clima_variant: Variant = estado.get("clima", {})
+		if clima_variant is Dictionary:
+			precipitacion = clampf(float((clima_variant as Dictionary).get("precipitacion", 0.0)), 0.0, 1.0)
+	if precipitacion > 0.02:
+		_nivel_charcos_torres = move_toward(_nivel_charcos_torres, precipitacion, paso * 0.22)
+	else:
+		_nivel_charcos_torres = move_toward(_nivel_charcos_torres, 0.0, paso * 0.018)
+	for indice in range(_charcos_torres.size()):
+		var charco := _charcos_torres[indice]
+		if is_instance_valid(charco):
+			charco.modulate.a = _nivel_charcos_torres * 0.78
+		if indice < _brillos_charcos_torres.size():
+			var brillo := _brillos_charcos_torres[indice]
+			if is_instance_valid(brillo):
+				brillo.modulate.a = _nivel_charcos_torres * 0.48
+
 
 
 func _crear_luces_faroles() -> void:
