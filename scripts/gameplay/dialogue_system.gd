@@ -37,6 +37,7 @@ var _selector_items_titulo: Label = null
 var _modo_selector_items: String = ""
 
 var _abierto: bool = false
+var _dialogo_en_transito: bool = false
 var _lineas: Array[Dictionary] = []
 var _indice_linea: int = 0
 var _fuente: Creature = null
@@ -91,6 +92,9 @@ func _process(delta: float) -> void:
 	if _indice_caracter >= _texto_completo.length():
 		_marcar_recuerdo_pendiente_mostrado()
 		_marcar_variante_pendiente_mostrada()
+		if _dialogo_en_transito and _indice_linea >= _lineas.size() - 1:
+			cerrar()
+			return
 
 
 func _input(event: InputEvent) -> void:
@@ -225,10 +229,11 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		for respuesta_variant in respuestas_variant as Array:
 			if respuesta_variant is Dictionary and _respuestas.size() < 4:
 				_respuestas.append((respuesta_variant as Dictionary).duplicate(true))
+	_dialogo_en_transito = _es_dialogo_en_transito(datos_seleccionados)
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
-	if not tiene_acciones_finales and is_instance_valid(_fuente):
+	if not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito:
 		_respuestas = _crear_opciones_conversacion()
 	_limpiar_botones_respuesta()
 
@@ -253,9 +258,9 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 
 	dialogue_panel.visible = true
 	if _boton_regalo != null:
-		_boton_regalo.visible = true
+		_boton_regalo.visible = not _dialogo_en_transito
 	if _boton_preguntar_item != null:
-		_boton_preguntar_item.visible = true
+		_boton_preguntar_item.visible = not _dialogo_en_transito
 	print(
 		"DialogueSystem: PANEL VISIBLE → ",
 		dialogue_panel.get_path() if dialogue_panel.is_inside_tree() else dialogue_panel.name,
@@ -297,6 +302,7 @@ func cerrar() -> void:
 		_fuente.reanudar_movimiento_temporal()
 
 	_fuente = null
+	_dialogo_en_transito = false
 	_acciones.clear()
 	_recuerdo_pendiente_mostrar.clear()
 	_personaje_recuerdo_pendiente = ""
@@ -493,6 +499,14 @@ func _actualizar_retrato(hablante: String) -> void:
 	portrait_rect.visible = textura != null
 
 
+
+
+## Los encuentros durante un desplazamiento son breves: el NPC no se detiene a conversar.
+func _es_dialogo_en_transito(dialogo: Dictionary) -> bool:
+	var clave := str(dialogo.get("clave", "")).strip_edges().to_lower()
+	if clave == "rutina_en_transito":
+		return true
+	return is_instance_valid(_fuente) and bool(_fuente.get_meta("rutina_en_transito", false))
 
 
 func _es_dialogo_cotidiano(dialogo: Dictionary) -> bool:
