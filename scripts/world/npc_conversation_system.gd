@@ -2,6 +2,7 @@ extends Node
 class_name NPCConversationSystem
 
 signal cinematica_acontecimiento_solicitada(posicion_global: Vector2)
+signal cinematica_narrativa_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2, etapa: int)
 
 const INTERVALO_BUSQUEDA := 0.5
 const DISTANCIA_ENTRE_NPC := 180.0
@@ -1209,6 +1210,18 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 			_progreso_parejas[clave] = progreso
 			if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 				_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+			if not bool(_conversacion_activa.get("_acontecimiento_diario", false)) and etapa < 3:
+				var npc_a_cinematica := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
+				var npc_b_cinematica := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
+				if is_instance_valid(npc_a_cinematica) and is_instance_valid(npc_b_cinematica):
+					var centro_cinematica := (npc_a_cinematica.global_position + npc_b_cinematica.global_position) * 0.5
+					cinematica_narrativa_solicitada.emit(
+						clave,
+						npc_a_cinematica.get_nombre(),
+						npc_b_cinematica.get_nombre(),
+						centro_cinematica,
+						etapa + 1
+					)
 	_ocultar_burbujas()
 	_conversacion_activa.clear()
 	_indice_linea = 0
