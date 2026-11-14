@@ -1191,7 +1191,7 @@ func _guardar_objeto_del_acontecimiento() -> void:
 
 
 func _restaurar_objeto_evento_diario(tiempo: Dictionary) -> void:
-	var zona := _zone_manager.obtener_zona_actual() as Node2D if is_instance_valid(_zone_manager) else null
+	var zona: Node2D = _zone_manager.obtener_zona_actual() as Node2D if is_instance_valid(_zone_manager) else null
 	if not is_instance_valid(zona):
 		return
 	var diario_variant: Variant = _progreso_parejas.get("_acontecimientos_diarios", {})
@@ -1503,6 +1503,7 @@ func _mostrar_linea_actual(reiniciar_temporizador: bool = true) -> void:
 		if etiqueta != null:
 			etiqueta.text = npc.get_nombre_visual() + ": " + texto
 		burbuja.visible = true
+		call_deferred("_ajustar_burbuja_a_pantalla", npc, burbuja)
 	if reiniciar_temporizador:
 		_temporizador_linea = DURACION_LINEA
 
@@ -1544,6 +1545,46 @@ func _obtener_burbuja(npc: Creature) -> PanelContainer:
 	_burbujas[clave] = panel
 	return panel
 
+
+## Mantiene las burbujas dentro del área visible de la cámara.
+## Si el NPC está cerca del borde superior, coloca el texto debajo;
+## también corrige el eje horizontal y respeta un margen de seguridad.
+func _ajustar_burbuja_a_pantalla(npc: Creature, panel: PanelContainer) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(panel) or not panel.visible:
+		return
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var tamano_viewport := viewport.get_visible_rect().size
+	if tamano_viewport.x <= 0.0 or tamano_viewport.y <= 0.0:
+		return
+
+	var transformacion_canvas := viewport.get_canvas_transform()
+	var posicion_npc_pantalla := transformacion_canvas * npc.global_position
+	var tamano_panel := panel.get_combined_minimum_size()
+	if panel.size.x > 0.0:
+		tamano_panel.x = maxf(tamano_panel.x, panel.size.x)
+	if panel.size.y > 0.0:
+		tamano_panel.y = maxf(tamano_panel.y, panel.size.y)
+	tamano_panel.x = minf(tamano_panel.x, tamano_viewport.x - 16.0)
+	tamano_panel.y = minf(tamano_panel.y, tamano_viewport.y - 16.0)
+
+	const MARGEN_SEGURIDAD := 8.0
+	const SEPARACION_NPC := 18.0
+	var max_x := maxf(MARGEN_SEGURIDAD, tamano_viewport.x - tamano_panel.x - MARGEN_SEGURIDAD)
+	var x_pantalla := clampf(
+		posicion_npc_pantalla.x - tamano_panel.x * 0.5,
+		MARGEN_SEGURIDAD,
+		max_x
+	)
+	var y_pantalla := posicion_npc_pantalla.y - tamano_panel.y - SEPARACION_NPC
+	if y_pantalla < MARGEN_SEGURIDAD:
+		y_pantalla = posicion_npc_pantalla.y + SEPARACION_NPC
+	var max_y := maxf(MARGEN_SEGURIDAD, tamano_viewport.y - tamano_panel.y - MARGEN_SEGURIDAD)
+	y_pantalla = clampf(y_pantalla, MARGEN_SEGURIDAD, max_y)
+
+	var origen_mundo := transformacion_canvas.affine_inverse() * Vector2(x_pantalla, y_pantalla)
+	panel.position = npc.to_local(origen_mundo)
 
 
 ## Después de cada acontecimiento, los participantes realizan una acción
