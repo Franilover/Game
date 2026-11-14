@@ -883,7 +883,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			npc.set_meta("estado_salud", "enfermedad_cronica")
 			npc.set_meta("fatiga_frecuente", true)
 		elif clave == "mara":
-			npc.set_meta("confianza_local", 0)
+			npc.set_meta("confianza_local", int(GameState.world_state.flags.get("confianza_mara", 0)))
 			npc.set_meta("identidad_protegida", true)
 		npc.set_meta("habitante_local_clave", clave)
 		npc.set_meta("hogar_inicializado", true)
