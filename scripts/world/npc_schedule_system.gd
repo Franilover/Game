@@ -176,7 +176,13 @@ func finalizar_acercamiento_social(npc: Creature) -> void:
 	if not is_instance_valid(npc):
 		return
 	npc.remove_meta("acercamiento_social_activo")
-	if not is_instance_valid(_world_atmosphere):
+	if not is_instance_valid(_world_atmosphere) or not is_instance_valid(_zone_manager):
+		return
+	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres" or not _malla_lista:
+		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento != null:
+			movimiento.detener_por_rutina()
+		npc.set_meta("rutina_firma", "")
 		return
 	var tiempo := _world_atmosphere.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
