@@ -17,7 +17,7 @@ const TIENDAS: Dictionary = {
 	},
 	"casa_comercio": {
 		"nombre": "Casa de comercio",
-		"productos": ["arco aoris", "plumas aoris"],
+		"productos": ["carta aoris", "pluma aoris", "arco aoris", "espada aoris", "casco aoris", "pechera aoris"],
 		"actividades": ["comerciar"]
 	}
 }
@@ -34,8 +34,12 @@ const PRECIOS_BASE: Dictionary = {
 	"pico de madera": 14,
 	"pala de piedra": 20,
 	"pico de piedra": 24,
-	"plumas aoris": 4,
+	"pluma aoris": 4,
+	"carta aoris": 18,
 	"arco aoris": 30,
+	"espada aoris": 90,
+	"casco aoris": 80,
+	"pechera aoris": 100,
 	"botas aoris": 60,
 	"casco aoris": 80,
 	"pechera aoris": 100,

@@ -299,7 +299,7 @@ func _perfil_comerciante() -> Array[String]:
 		"saira":
 			return ["ropa", "comida", "material", "herramienta", "objeto"]
 		"narel", "nima":
-			return ["libro", "papel", "tinta", "cristal", "mineral", "investigación", "oris"]
+			return ["libro", "papel", "tinta", "cristal", "mineral", "investigación", "oris", "aoris", "carta", "espada", "armadura", "arco", "pluma"]
 		"mara":
 			return ["ropa", "comida", "herramienta", "material", "medicina"]
 		"ivo":
