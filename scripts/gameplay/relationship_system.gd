@@ -334,6 +334,26 @@ func evaluar_regalo(personaje_id: String, item_id: String) -> Dictionary:
 	}
 
 
+## Un objeto se considera conocido cuando existe una reacción específica
+## cargada para ese NPC en personaje_regalos_v1.
+func conoce_item(personaje_id: String, item_id: String) -> bool:
+	var id_personaje := personaje_id.strip_edges()
+	var id_item := item_id.strip_edges()
+	if id_personaje.is_empty() or id_item.is_empty():
+		return false
+	for regalo_variant in _regalos:
+		if not regalo_variant is Dictionary:
+			continue
+		var regalo := regalo_variant as Dictionary
+		if (
+			str(regalo.get("personaje_game_id", "")).strip_edges() == id_personaje
+			and str(regalo.get("item_id", "")).strip_edges() == id_item
+			and bool(regalo.get("activo", true))
+		):
+			return true
+	return false
+
+
 func registrar_regalo(personaje_id: String, item_id: String) -> Dictionary:
 	if personaje_id.is_empty() or item_id.is_empty():
 		return {}
