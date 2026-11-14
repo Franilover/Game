@@ -25,6 +25,13 @@ var _botones_accion: HBoxContainer = null
 var _acciones: Array[Dictionary] = []
 var _respuestas: Array[Dictionary] = []
 var _respuestas_container: GridContainer = null
+var _inventario: InventoryController = null
+var _boton_regalo: Button = null
+var _boton_preguntar_item: Button = null
+var _selector_items: PanelContainer = null
+var _selector_items_grid: GridContainer = null
+var _selector_items_titulo: Label = null
+var _modo_selector_items: String = ""
 
 var _abierto: bool = false
 var _lineas: Array[Dictionary] = []
@@ -41,11 +48,18 @@ func _ready() -> void:
 	add_to_group("dialogue_system")
 
 
-func configurar(nuevo_player: Player, nuevo_ui_root: HUD, nuevo_mission_manager: MissionManagerService = null, nuevo_relationship_system: RelationshipSystemService = null) -> void:
+func configurar(
+	nuevo_player: Player,
+	nuevo_ui_root: HUD,
+	nuevo_mission_manager: MissionManagerService = null,
+	nuevo_relationship_system: RelationshipSystemService = null,
+	nuevo_inventario: InventoryController = null
+) -> void:
 	player = nuevo_player
 	ui_root = nuevo_ui_root
 	mission_manager = nuevo_mission_manager
 	relationship_system = nuevo_relationship_system
+	_inventario = nuevo_inventario
 	_crear_interfaz()
 
 
@@ -71,11 +85,16 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event.is_action_pressed("primary_action"):
-		# Los clics sobre el botón quedan para el sistema GUI; los clics
-		# fuera de él siguen avanzando el diálogo normalmente.
-		if action_button != null and action_button.visible and event is InputEventMouseButton:
+		# Los clics sobre controles de diálogo pertenecen a la interfaz.
+		if event is InputEventMouseButton:
 			var posicion_mouse := get_viewport().get_mouse_position()
-			if action_button.get_global_rect().has_point(posicion_mouse):
+			if _selector_items != null and _selector_items.visible and _selector_items.get_global_rect().has_point(posicion_mouse):
+				return
+			if action_button != null and action_button.visible and action_button.get_global_rect().has_point(posicion_mouse):
+				return
+			if _boton_regalo != null and _boton_regalo.visible and _boton_regalo.get_global_rect().has_point(posicion_mouse):
+				return
+			if _boton_preguntar_item != null and _boton_preguntar_item.visible and _boton_preguntar_item.get_global_rect().has_point(posicion_mouse):
 				return
 		_avanzar()
 		get_viewport().set_input_as_handled()
@@ -88,7 +107,10 @@ func _input(event: InputEvent) -> void:
 			return
 
 		if key_event.keycode == KEY_ESCAPE:
-			cerrar()
+			if _selector_items != null and _selector_items.visible:
+				_cerrar_selector_items()
+			else:
+				cerrar()
 			get_viewport().set_input_as_handled()
 
 
@@ -240,6 +262,11 @@ func cerrar() -> void:
 		action_button.visible = false
 	if cancel_button != null:
 		cancel_button.visible = false
+	_cerrar_selector_items()
+	if _boton_regalo != null:
+		_boton_regalo.visible = false
+	if _boton_preguntar_item != null:
+		_boton_preguntar_item.visible = false
 
 	if dialogue_panel != null:
 		dialogue_panel.visible = false
@@ -1065,6 +1092,210 @@ func _normalizar_lineas(datos: Dictionary) -> Array[Dictionary]:
 	return resultado
 
 
+
+func _crear_icono_interaccion(tipo: String) -> Texture2D:
+	var svg := ""
+	if tipo == "regalo":
+		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h34v21H7zM4 14h40v8H4zM24 14v28"/><path d="M24 14c-2-11-16-11-16-4 0 6 8 6 16 4Zm0 0c2-11 16-11 16-4 0 6-8 6-16 4Z"/></g></svg>"""
+	else:
+		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17a7.5 7.5 0 1 1 12.8 5.3c-3.2 3.1-5.8 4-5.8 9.2"/><path d="M24 39h.02"/></g></svg>"""
+	var imagen := Image.load_svg_from_string(svg)
+	if imagen == null or imagen.is_empty():
+		return null
+	return ImageTexture.create_from_image(imagen)
+
+
+func _abrir_selector_items(modo: String) -> void:
+	if not _abierto or _selector_items == null or _inventario == null:
+		if _inventario == null:
+			Events.notification_pushed.emit("No se pudo acceder al inventario.")
+		return
+	if not is_instance_valid(_fuente):
+		return
+	_modo_selector_items = modo
+	_selector_items_titulo.text = "Regalar un objeto" if modo == "regalo" else "¿Qué objeto quieres consultar?"
+	for hijo in _selector_items_grid.get_children():
+		_selector_items_grid.remove_child(hijo)
+		hijo.queue_free()
+
+	var items: Array[Dictionary] = _inventario.runtime.state.items
+	var cantidad_items := 0
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	for indice in range(items.size()):
+		var objeto: Dictionary = items[indice]
+		if objeto.is_empty():
+			continue
+		cantidad_items += 1
+		var item_id := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
+		var nombre := str(objeto.get("nombre", "Objeto")).strip_edges()
+		var boton := Button.new()
+		boton.custom_minimum_size = Vector2(138, 48)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.icon = ItemIconResolver.obtener_icono(objeto)
+		boton.icon_max_width = 30
+		boton.text = nombre + "  x" + str(maxi(1, int(objeto.get("cantidad", 1))))
+		boton.tooltip_text = nombre
+		var conocido := (
+			modo == "pregunta"
+			and relationship_system != null
+			and not item_id.is_empty()
+			and relationship_system.conoce_item(personaje_id, item_id)
+		)
+		boton.pressed.connect(_seleccionar_item_interaccion.bind(indice, item_id, modo))
+		_selector_items_grid.add_child(boton)
+		if conocido:
+			var brillo := StyleBoxFlat.new()
+			brillo.bg_color = Color("#4B3924")
+			brillo.border_color = Color("#F2D18A")
+			brillo.set_border_width_all(2)
+			brillo.shadow_color = Color(0.95, 0.72, 0.30, 0.72)
+			brillo.shadow_size = 7
+			brillo.corner_radius_top_left = 4
+			brillo.corner_radius_top_right = 4
+			brillo.corner_radius_bottom_left = 4
+			brillo.corner_radius_bottom_right = 4
+			boton.add_theme_stylebox_override("normal", brillo)
+			boton.add_theme_stylebox_override("hover", brillo)
+			boton.add_theme_stylebox_override("pressed", brillo)
+
+	if cantidad_items == 0:
+		var vacio := Label.new()
+		vacio.text = "No tienes objetos disponibles."
+		vacio.custom_minimum_size = Vector2(420, 44)
+		_selector_items_grid.add_child(vacio)
+	PIXEL_UI_THEME.apply(_selector_items)
+	# El brillo se aplica después del tema para conservar el borde dorado.
+	if modo == "pregunta":
+		for indice in range(items.size()):
+			var objeto: Dictionary = items[indice]
+			if objeto.is_empty():
+				continue
+			var item_id := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
+			if relationship_system == null or not relationship_system.conoce_item(personaje_id, item_id):
+				continue
+			var boton_conocido := _buscar_boton_item(indice)
+			if boton_conocido != null:
+				var brillo := StyleBoxFlat.new()
+				brillo.bg_color = Color("#4B3924")
+				brillo.border_color = Color("#F2D18A")
+				brillo.set_border_width_all(2)
+				brillo.shadow_color = Color(0.95, 0.72, 0.30, 0.72)
+				brillo.shadow_size = 7
+				brillo.corner_radius_top_left = 4
+				brillo.corner_radius_top_right = 4
+				brillo.corner_radius_bottom_left = 4
+				brillo.corner_radius_bottom_right = 4
+				boton_conocido.add_theme_stylebox_override("normal", brillo)
+				boton_conocido.add_theme_stylebox_override("hover", brillo)
+				boton_conocido.add_theme_stylebox_override("pressed", brillo)
+	_selector_items.visible = true
+
+
+func _buscar_boton_item(indice_inventario: int) -> Button:
+	for boton_variant in _selector_items_grid.get_children():
+		if not boton_variant is Button:
+			continue
+		var boton := boton_variant as Button
+		if boton.has_meta("indice_inventario") and int(boton.get_meta("indice_inventario")) == indice_inventario:
+			return boton
+	return null
+
+
+func _cerrar_selector_items() -> void:
+	if _selector_items != null:
+		_selector_items.visible = false
+	_modo_selector_items = ""
+
+
+func _seleccionar_item_interaccion(indice: int, item_id_esperado: String, modo: String) -> void:
+	if not _abierto or _inventario == null or not is_instance_valid(_fuente):
+		return
+	var objeto := _inventario.obtener_item(indice)
+	if objeto.is_empty():
+		_cerrar_selector_items()
+		return
+	var item_id := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
+	if item_id != item_id_esperado:
+		_cerrar_selector_items()
+		Events.notification_pushed.emit("El inventario cambió. Vuelve a seleccionar el objeto.")
+		return
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	var nombre_item := str(objeto.get("nombre", "objeto")).strip_edges()
+	var respuesta_npc := ""
+
+	if modo == "regalo":
+		if relationship_system == null or relationship_system.obtener_relacion(personaje_id).is_empty():
+			Events.notification_pushed.emit("No se pudo registrar el regalo.")
+			return
+		if not _inventario.quitar_cantidad_desde_ui(indice, 1):
+			Events.notification_pushed.emit("No se pudo retirar el objeto del inventario.")
+			return
+		var relacion_resultado: Dictionary = relationship_system.registrar_regalo(personaje_id, item_id)
+		if relacion_resultado.is_empty():
+			_inventario.agregar_objeto_desde_ui(objeto)
+			Events.notification_pushed.emit("No se pudo registrar el regalo; el objeto volvió a tu inventario.")
+			return
+		var datos_regalo := relationship_system.evaluar_regalo(personaje_id, item_id)
+		respuesta_npc = _crear_reaccion_regalo(nombre_item, datos_regalo)
+	else:
+		respuesta_npc = _crear_respuesta_pregunta_item(objeto, personaje_id, item_id)
+
+	_cerrar_selector_items()
+	var texto_jugador := "Quiero darte esto: " + nombre_item + "." if modo == "regalo" else "¿Qué puedes contarme sobre " + nombre_item + "?"
+	_mostrar_intercambio_item(texto_jugador, respuesta_npc)
+	if modo == "regalo":
+		Events.notification_pushed.emit(_fuente.get_nombre() + " recibió " + nombre_item + ".")
+
+
+func _crear_reaccion_regalo(nombre_item: String, datos_regalo: Dictionary) -> String:
+	var reaccion := str(datos_regalo.get("reaccion", "neutral")).strip_edges().to_lower()
+	match reaccion:
+		"adorado", "favorito", "muy_amado", "encanta":
+			return "¡Muchas gracias! " + nombre_item + " es uno de mis objetos favoritos. Me alegra que pensaras en mí."
+		"le_gusta", "gusta", "positivo", "bueno":
+			return "Gracias por " + nombre_item + ". Es un detalle que aprecio."
+		"no_le_gusta", "desagrado", "negativo", "malo":
+			return "Gracias por el gesto, aunque " + nombre_item + " no es algo que suela apreciar."
+		"odia", "detesta", "muy_negativo":
+			return "No debiste traerme " + nombre_item + ". No es algo que me agrade."
+	return "Gracias por el regalo. Recordaré que pensaste en mí."
+
+
+func _crear_respuesta_pregunta_item(objeto: Dictionary, personaje_id: String, item_id: String) -> String:
+	var nombre_item := str(objeto.get("nombre", "ese objeto")).strip_edges()
+	if relationship_system != null and relationship_system.conoce_item(personaje_id, item_id):
+		var datos_conocidos := relationship_system.evaluar_regalo(personaje_id, item_id)
+		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
+		var reaccion := str(datos_conocidos.get("reaccion", "")).strip_edges()
+		var respuesta := "Sí, conozco " + nombre_item + "."
+		if not descripcion.is_empty():
+			respuesta += " " + descripcion
+		if not reaccion.is_empty() and reaccion.to_lower() != "neutral":
+			respuesta += " Tengo una opinión bastante clara sobre ese objeto: " + reaccion + "."
+		return respuesta
+	return "No conozco " + nombre_item + ". ¿Dónde lo encontraste? No recuerdo haber visto uno antes."
+
+
+func _mostrar_intercambio_item(texto_jugador: String, texto_npc: String) -> void:
+	if texto_jugador.is_empty() or texto_npc.is_empty():
+		return
+	_respuestas.clear()
+	_limpiar_botones_respuesta()
+	_acciones.clear()
+	if action_button != null:
+		action_button.visible = false
+	if cancel_button != null:
+		cancel_button.visible = false
+	_lineas.append({"hablante": "Tú", "texto": texto_jugador})
+	_lineas.append({
+		"hablante": _fuente.get_nombre_visual() if is_instance_valid(_fuente) else "",
+		"texto": texto_npc
+	})
+	_indice_linea = _lineas.size() - 2
+	_mostrar_linea_actual()
+
+
 func _crear_interfaz() -> void:
 	if ui_root == null:
 		return
@@ -1188,6 +1419,83 @@ func _crear_interfaz() -> void:
 	_respuestas_container.add_theme_constant_override("h_separation", 8)
 	_respuestas_container.add_theme_constant_override("v_separation", 6)
 	column.add_child(_respuestas_container)
+
+	var columna_social := VBoxContainer.new()
+	columna_social.name = "DialogueSocialActions"
+	columna_social.custom_minimum_size = Vector2(48, 0)
+	columna_social.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	columna_social.add_theme_constant_override("separation", 8)
+	content_row.add_child(columna_social)
+
+	_boton_regalo = Button.new()
+	_boton_regalo.name = "DialogueGiftButton"
+	_boton_regalo.custom_minimum_size = Vector2(48, 48)
+	_boton_regalo.icon = _crear_icono_interaccion("regalo")
+	_boton_regalo.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boton_regalo.icon_max_width = 28
+	_boton_regalo.tooltip_text = "Regalar un objeto"
+	_boton_regalo.pressed.connect(_abrir_selector_items.bind("regalo"))
+	columna_social.add_child(_boton_regalo)
+
+	_boton_preguntar_item = Button.new()
+	_boton_preguntar_item.name = "DialogueAskItemButton"
+	_boton_preguntar_item.custom_minimum_size = Vector2(48, 48)
+	_boton_preguntar_item.icon = _crear_icono_interaccion("pregunta")
+	_boton_preguntar_item.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boton_preguntar_item.icon_max_width = 28
+	_boton_preguntar_item.tooltip_text = "Preguntar por un objeto"
+	_boton_preguntar_item.pressed.connect(_abrir_selector_items.bind("pregunta"))
+	columna_social.add_child(_boton_preguntar_item)
+
+	_selector_items = PanelContainer.new()
+	_selector_items.name = "DialogueItemSelector"
+	_selector_items.visible = false
+	_selector_items.mouse_filter = Control.MOUSE_FILTER_STOP
+	_selector_items.z_index = 20
+	_selector_items.set_anchors_preset(Control.PRESET_CENTER)
+	_selector_items.offset_left = -238.0
+	_selector_items.offset_top = -112.0
+	_selector_items.offset_right = 238.0
+	_selector_items.offset_bottom = 112.0
+	_selector_items.custom_minimum_size = Vector2(476, 224)
+	dialogue_panel.add_child(_selector_items)
+
+	var selector_margin := MarginContainer.new()
+	selector_margin.add_theme_constant_override("margin_left", 12)
+	selector_margin.add_theme_constant_override("margin_top", 10)
+	selector_margin.add_theme_constant_override("margin_right", 12)
+	selector_margin.add_theme_constant_override("margin_bottom", 10)
+	_selector_items.add_child(selector_margin)
+
+	var selector_column := VBoxContainer.new()
+	selector_column.add_theme_constant_override("separation", 8)
+	selector_margin.add_child(selector_column)
+
+	var selector_header := HBoxContainer.new()
+	selector_column.add_child(selector_header)
+	_selector_items_titulo = Label.new()
+	_selector_items_titulo.name = "ItemSelectorTitle"
+	_selector_items_titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_selector_items_titulo.add_theme_font_size_override("font_size", 13)
+	selector_header.add_child(_selector_items_titulo)
+
+	var selector_close := Button.new()
+	selector_close.text = "X"
+	selector_close.custom_minimum_size = Vector2(28, 28)
+	selector_close.pressed.connect(_cerrar_selector_items)
+	selector_header.add_child(selector_close)
+
+	var selector_scroll := ScrollContainer.new()
+	selector_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	selector_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	selector_column.add_child(selector_scroll)
+
+	_selector_items_grid = GridContainer.new()
+	_selector_items_grid.columns = 3
+	_selector_items_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_selector_items_grid.add_theme_constant_override("h_separation", 6)
+	_selector_items_grid.add_theme_constant_override("v_separation", 6)
+	selector_scroll.add_child(_selector_items_grid)
 
 	ui_root.add_child(dialogue_panel)
 	PIXEL_UI_THEME.apply(dialogue_panel)
