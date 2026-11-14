@@ -11,6 +11,8 @@ const DISTANCIA_LLEGADA := 7.0
 # terrenos cuestan más. Mantener el mínimo en 1 preserva la heurística AStar.
 const COSTE_CAMINO_TIERRA := 1.0
 const COSTE_OTRO_TERRENO := 1.55
+# Espera breve para agrupar varios cambios de posición/tamaño en una sola reconstrucción.
+const ESPERA_RECONSTRUCCION_NAVEGACION := 1.0
 
 # Puntos de actividad en coordenadas locales de ReinoTorres.
 # Se definen por ubicación, nunca por nombre de personaje.
@@ -65,6 +67,8 @@ var _malla: AStarGrid2D = null
 var _malla_lista := false
 var _construyendo_malla := false
 var _tiempo_actualizacion := 0.0
+var _firma_colisiones := ""
+var _tiempo_cambio_colisiones := -1.0
 
 
 func configurar(atmosfera: WorldAtmosphere, zone_manager: Node) -> void:
@@ -132,6 +136,11 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		call_deferred("_construir_malla", zona_actual)
 		return
 	if not _malla_lista or _malla == null:
+		return
+
+	# Los edificios pueden moverse o cambiar sus colisiones durante la sesión.
+	# Comprobar cada medio segundo evita trabajo por frame y agrupa cambios.
+	if _detectar_cambios_geometria(zona_actual, delta):
 		return
 
 	var tiempo := _world_atmosphere.obtener_tiempo()
@@ -275,6 +284,70 @@ func _invalidar_malla() -> void:
 	_malla = null
 	_malla_lista = false
 	_construyendo_malla = false
+	_firma_colisiones = ""
+	_tiempo_cambio_colisiones = -1.0
+
+
+## Detecta cambios en cuerpos y formas físicas de Torres, sin inspeccionar
+## los NPC ni al jugador. Devuelve true mientras espera o reconstruye.
+func _detectar_cambios_geometria(zona: Node2D, delta: float) -> bool:
+	if _construyendo_malla:
+		return true
+	var firma_actual := _obtener_firma_colisiones(zona)
+	if _firma_colisiones.is_empty():
+		_firma_colisiones = firma_actual
+		return false
+	if firma_actual != _firma_colisiones:
+		_firma_colisiones = firma_actual
+		_tiempo_cambio_colisiones = 0.0
+		return true
+	if _tiempo_cambio_colisiones < 0.0:
+		return false
+	_tiempo_cambio_colisiones += maxf(delta, INTERVALO_ACTUALIZACION)
+	if _tiempo_cambio_colisiones < ESPERA_RECONSTRUCCION_NAVEGACION:
+		return true
+	_tiempo_cambio_colisiones = -1.0
+	_malla_lista = false
+	call_deferred("_construir_malla", zona)
+	return true
+
+
+func _obtener_firma_colisiones(raiz: Node) -> String:
+	var partes: PackedStringArray = []
+	_agregar_firma_colisiones(raiz, partes)
+	return "|".join(partes)
+
+
+func _agregar_firma_colisiones(nodo: Node, partes: PackedStringArray) -> void:
+	if nodo is StaticBody2D or nodo is AnimatableBody2D:
+		var cuerpo := nodo as CollisionObject2D
+		partes.append("BODY:%s:%s:%d:%d" % [
+			str(cuerpo.get_path()),
+			str(cuerpo.global_transform),
+			cuerpo.collision_layer,
+			cuerpo.collision_mask
+		])
+	elif nodo is CollisionShape2D:
+		var forma := nodo as CollisionShape2D
+		var geometria := "sin_forma"
+		if forma.shape != null:
+			geometria = "%d:%s" % [forma.shape.get_instance_id(), str(forma.shape.get_rect())]
+		partes.append("SHAPE:%s:%s:%s:%s" % [
+			str(forma.get_path()),
+			str(forma.global_transform),
+			str(forma.disabled),
+			geometria
+		])
+	elif nodo is CollisionPolygon2D:
+		var poligono := nodo as CollisionPolygon2D
+		partes.append("POLYGON:%s:%s:%s:%s" % [
+			str(poligono.get_path()),
+			str(poligono.global_transform),
+			str(poligono.disabled),
+			str(poligono.polygon)
+		])
+	for hijo in nodo.get_children():
+		_agregar_firma_colisiones(hijo, partes)
 
 
 func _construir_malla(zona: Node2D) -> void:
@@ -328,7 +401,28 @@ func _construir_malla(zona: Node2D) -> void:
 	_malla = nueva_malla
 	_malla_lista = true
 	_construyendo_malla = false
+	_firma_colisiones = _obtener_firma_colisiones(zona)
+	_tiempo_cambio_colisiones = -1.0
+	_reiniciar_rutas_npc_tras_reconstruccion()
 	print("NPCScheduleSystem: navegación de Torres lista (", TAMANO_MALLA.x * TAMANO_MALLA.y, " celdas).")
+
+
+## Tras mover un edificio, las rutas activas se invalidan para que el
+## siguiente ciclo de horarios las calcule sobre la nueva geometría.
+func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
+	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not npc_variant is Creature or not is_instance_valid(npc_variant):
+			continue
+		var npc := npc_variant as Creature
+		if bool(npc.get_meta("actividad_social_activa", false)) or bool(npc.get_meta("acercamiento_social_activo", false)):
+			continue
+		if not bool(npc.get_meta("rutina_en_transito", false)):
+			continue
+		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento != null:
+			movimiento.detener_por_rutina()
+		npc.set_meta("rutina_en_transito", false)
+		npc.set_meta("rutina_firma", "")
 
 
 ## Aplica un coste menor a las celdas del atlas Tierra (zona 1).
