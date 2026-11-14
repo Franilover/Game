@@ -41,6 +41,9 @@ var _dialogos_admin: Array[Dictionary] = []
 var _escenas_admin: Array[Dictionary] = []
 var _eventos_admin: Array[Dictionary] = []
 var _botones_pestana_narrativa: Dictionary = {}
+var _escenario_debug: Dictionary = {}
+var _controles_debug: Dictionary = {}
+var _resultado_debug: VBoxContainer = null
 
 
 func _ready() -> void:
@@ -492,7 +495,7 @@ func _crear_inspector_narrativo(personaje_id: String) -> void:
 	pestanas.add_theme_constant_override("separation", 3)
 	_detalle.add_child(pestanas)
 	_botones_pestana_narrativa.clear()
-	for entrada in [["dialogos", "Diálogos"], ["escenas", "Escenas"], ["eventos", "Eventos"]]:
+	for entrada in [["dialogos", "Diálogos"], ["escenas", "Escenas"], ["eventos", "Eventos"], ["pruebas", "Pruebas"]]:
 		var boton := Button.new()
 		boton.text = str(entrada[1])
 		boton.toggle_mode = true
@@ -513,6 +516,7 @@ func _crear_inspector_narrativo(personaje_id: String) -> void:
 	_dialogos_admin = _copiar_registros(catalogo.get("dialogos", []))
 	_escenas_admin = _copiar_registros(catalogo.get("escenas", []))
 	_eventos_admin = _copiar_registros(catalogo.get("eventos", []))
+	_inicializar_escenario_debug(personaje_id)
 	_mostrar_pestana_narrativa()
 
 
@@ -573,6 +577,8 @@ func _mostrar_pestana_narrativa() -> void:
 			_mostrar_escenas_admin()
 		"eventos":
 			_mostrar_eventos_admin()
+		"pruebas":
+			_mostrar_pruebas_narrativas()
 
 
 func _mostrar_dialogos_admin() -> void:
@@ -589,6 +595,7 @@ func _mostrar_dialogos_admin() -> void:
 		dialogo["clave"] = clave
 		_texto_narrativo(str(dialogo.get("titulo", registro.get("titulo", clave))), true)
 		_texto_narrativo("Requisitos: " + _requisitos_narrativos(registro, dialogo))
+		_texto_narrativo("Escenario actual: " + str(_evaluar_requisitos_narrativos(registro, dialogo).get("estado", "No evaluado")))
 		var lineas: Array = dialogo.get("lineas", []) if dialogo.get("lineas", []) is Array else []
 		for linea_variant in lineas:
 			if linea_variant is Dictionary:
@@ -621,6 +628,7 @@ func _mostrar_escenas_admin() -> void:
 			str(escena.get("npc_a", "?")), str(escena.get("npc_b", "?")),
 			str(escena.get("etapas", "1–3")), str(escena.get("requisitos_texto", "Etapa narrativa disponible."))
 		])
+		_texto_narrativo("Escenario actual: " + str(_evaluar_requisitos_narrativos(escena).get("estado", "No evaluado")))
 		_mostrar_lineas_escena_admin("Etapa 1", escena.get("lineas", []))
 		_mostrar_lineas_escena_admin("Etapa 2", escena.get("lineas_siguientes", []))
 		_mostrar_lineas_escena_admin("Etapa 3", escena.get("lineas_tercera_etapa", []))
@@ -679,6 +687,212 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 	await _cutscene_director.ejecutar("admin_preview_" + str(escena.get("clave", "escena")), pasos)
 
 
+
+func _inicializar_escenario_debug(personaje_id: String) -> void:
+	_escenario_debug = {
+		"amistad": 0.0, "confianza": 0.0, "respeto": 0.0, "afecto": 0.0,
+		"mision_clave": "", "mision_estado": "sin_aceptar",
+		"etapa": 0, "dia": 1, "anio": 1, "hora": 12
+	}
+	if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_relacion"):
+		var relacion: Variant = _relationship_system.call("obtener_relacion", personaje_id)
+		if relacion is Dictionary:
+			for clave in ["amistad", "confianza", "respeto", "afecto"]:
+				_escenario_debug[clave] = float(relacion.get(clave, 0.0))
+	if is_instance_valid(_atmosfera):
+		var tiempo := _atmosfera.obtener_tiempo()
+		_escenario_debug["dia"] = int(tiempo.get("dia", 1))
+		_escenario_debug["anio"] = int(tiempo.get("anio", 1))
+		_escenario_debug["hora"] = int(floor(float(tiempo.get("hora_del_dia", 12.0))))
+	_controles_debug.clear()
+
+
+func _crear_spin_debug(valor: float, minimo: float, maximo: float, paso: float = 1.0) -> SpinBox:
+	var spin := SpinBox.new()
+	spin.min_value = minimo
+	spin.max_value = maximo
+	spin.step = paso
+	spin.value = valor
+	spin.custom_minimum_size = Vector2(72, 25)
+	return spin
+
+
+func _fila_control_debug(etiqueta_texto: String, control: Control) -> void:
+	var fila := HBoxContainer.new()
+	var etiqueta := Label.new()
+	etiqueta.text = etiqueta_texto
+	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila.add_child(etiqueta)
+	fila.add_child(control)
+	_contenido_narrativo.add_child(fila)
+
+
+func _mostrar_pruebas_narrativas() -> void:
+	_texto_narrativo("Laboratorio de condiciones narrativas", true)
+	_texto_narrativo("Valores temporales: no modifican la partida, las relaciones, el calendario ni las misiones reales.")
+	for clave in ["amistad", "confianza", "respeto", "afecto"]:
+		var spin := _crear_spin_debug(float(_escenario_debug.get(clave, 0.0)), -100.0, 100.0, 0.5)
+		_controles_debug[clave] = spin
+		_fila_control_debug(clave.capitalize(), spin)
+	var mision := LineEdit.new()
+	mision.placeholder_text = "Clave de misión (opcional)"
+	mision.text = str(_escenario_debug.get("mision_clave", ""))
+	_controles_debug["mision_clave"] = mision
+	_fila_control_debug("Misión", mision)
+	var estado_mision := OptionButton.new()
+	for opcion in [["Sin aceptar", "sin_aceptar"], ["Activa", "activa"], ["Completada", "completada"]]:
+		estado_mision.add_item(str(opcion[0]))
+		estado_mision.set_item_metadata(estado_mision.item_count - 1, str(opcion[1]))
+	for i in range(estado_mision.item_count):
+		if str(estado_mision.get_item_metadata(i)) == str(_escenario_debug.get("mision_estado", "sin_aceptar")):
+			estado_mision.select(i)
+	_controles_debug["mision_estado"] = estado_mision
+	_fila_control_debug("Estado de misión", estado_mision)
+	for par in [["etapa", "Etapa narrativa", 0.0, 3.0], ["dia", "Día", 1.0, 365.0], ["anio", "Año", -100000.0, 100000.0], ["hora", "Hora", 0.0, 23.0]]:
+		var spin := _crear_spin_debug(float(_escenario_debug.get(str(par[0]), 0.0)), float(par[2]), float(par[3]))
+		_controles_debug[str(par[0])] = spin
+		_fila_control_debug(str(par[1]), spin)
+	var acciones := HBoxContainer.new()
+	var aplicar := Button.new()
+	aplicar.text = "Evaluar escenario"
+	aplicar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	aplicar.pressed.connect(_aplicar_escenario_debug)
+	PIXEL_UI_THEME.apply(aplicar, false)
+	acciones.add_child(aplicar)
+	var reiniciar := Button.new()
+	reiniciar.text = "Restablecer"
+	reiniciar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reiniciar.pressed.connect(_restablecer_escenario_debug)
+	PIXEL_UI_THEME.apply(reiniciar, false)
+	acciones.add_child(reiniciar)
+	_contenido_narrativo.add_child(acciones)
+	_resultado_debug = VBoxContainer.new()
+	_resultado_debug.add_theme_constant_override("separation", 4)
+	_contenido_narrativo.add_child(_resultado_debug)
+	_mostrar_resultados_debug()
+
+
+func _aplicar_escenario_debug() -> void:
+	if not _es_admin():
+		return
+	for clave in ["amistad", "confianza", "respeto", "afecto", "etapa", "dia", "anio", "hora"]:
+		var control := _controles_debug.get(clave) as SpinBox
+		if is_instance_valid(control):
+			_escenario_debug[clave] = control.value
+	var mision := _controles_debug.get("mision_clave") as LineEdit
+	if is_instance_valid(mision):
+		_escenario_debug["mision_clave"] = mision.text.strip_edges()
+	var estado := _controles_debug.get("mision_estado") as OptionButton
+	if is_instance_valid(estado) and estado.selected >= 0:
+		_escenario_debug["mision_estado"] = str(estado.get_item_metadata(estado.selected))
+	_mostrar_resultados_debug()
+	_estado.text = "Escenario narrativo temporal aplicado. La partida no fue modificada."
+
+
+func _restablecer_escenario_debug() -> void:
+	_inicializar_escenario_debug(str(_seleccion.get("id", "")))
+	_mostrar_pestana_narrativa()
+
+
+func _mostrar_resultados_debug() -> void:
+	if not is_instance_valid(_resultado_debug):
+		return
+	for hijo in _resultado_debug.get_children():
+		hijo.queue_free()
+	var todos: Array[Dictionary] = []
+	for registro in _dialogos_admin:
+		var dialogo_variant: Variant = registro.get("dialogo", {})
+		var dialogo: Dictionary = dialogo_variant if dialogo_variant is Dictionary else {}
+		todos.append({"tipo":"Diálogo","nombre":str(registro.get("titulo", registro.get("clave", "Diálogo"))),"datos":registro,"contenido":dialogo})
+	for escena in _escenas_admin:
+		todos.append({"tipo":"Escena","nombre":str(escena.get("titulo", escena.get("clave", "Escena"))),"datos":escena,"contenido":{}})
+	for evento in _eventos_admin:
+		todos.append({"tipo":"Evento","nombre":str(evento.get("titulo", evento.get("clave", "Evento"))),"datos":evento,"contenido":{}})
+	var compatibles := 0
+	for entrada in todos:
+		var evaluacion := _evaluar_requisitos_narrativos(entrada["datos"], entrada["contenido"])
+		var estado := str(evaluacion.get("estado", "No evaluable"))
+		if estado == "Cumple":
+			compatibles += 1
+		var etiqueta := Label.new()
+		etiqueta.text = "%s · %s — %s" % [str(entrada["tipo"]), str(entrada["nombre"]), estado]
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_resultado_debug.add_child(etiqueta)
+		for detalle in evaluacion.get("detalles", []):
+			var nota := Label.new()
+			nota.text = "  · " + str(detalle)
+			nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			_resultado_debug.add_child(nota)
+	var resumen := Label.new()
+	resumen.text = "Compatibles: %d / %d. Requisitos no estructurados quedan como no verificables." % [compatibles, todos.size()]
+	resumen.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_resultado_debug.add_child(resumen)
+
+
+func _evaluar_requisitos_narrativos(registro: Dictionary, contenido: Dictionary = {}) -> Dictionary:
+	var fallos: Array[String] = []
+	var detalles: Array[String] = []
+	var reconocidos := 0
+	var fuentes: Array[Dictionary] = [registro, contenido]
+	var escenario := _escenario_debug
+	var alias_relacion := {
+		"amistad":["amistad_minima","amistad_min","min_amistad","amistad_requerida"],
+		"confianza":["confianza_minima","confianza_min","min_confianza","confianza_requerida"],
+		"respeto":["respeto_minimo","respeto_min","min_respeto","respeto_requerido"],
+		"afecto":["afecto_minimo","afecto_min","min_afecto","afecto_requerido"]
+	}
+	for fuente in fuentes:
+		for relacion in alias_relacion:
+			for clave in alias_relacion[relacion]:
+				if fuente.has(clave) and (fuente[clave] is int or fuente[clave] is float):
+					reconocidos += 1
+					var requerido := float(fuente[clave])
+					var actual := float(escenario.get(relacion, 0.0))
+					var cumple := actual >= requerido
+					detalles.append("%s: %.1f / %.1f %s" % [relacion.capitalize(), actual, requerido, "OK" if cumple else "NO"])
+					if not cumple:
+						fallos.append(relacion)
+		for clave_etapa in ["etapa_minima","etapa_min","min_etapa","etapa_requerida"]:
+			if fuente.has(clave_etapa) and (fuente[clave_etapa] is int or fuente[clave_etapa] is float):
+				reconocidos += 1
+				var requerido_etapa := int(fuente[clave_etapa])
+				var cumple_etapa := int(escenario.get("etapa", 0)) >= requerido_etapa
+				detalles.append("Etapa: %d / %d %s" % [int(escenario.get("etapa", 0)), requerido_etapa, "OK" if cumple_etapa else "NO"])
+				if not cumple_etapa:
+					fallos.append("etapa")
+		for clave_dia in ["dia_minimo","dia_min","min_dia","dia_requerido"]:
+			if fuente.has(clave_dia) and (fuente[clave_dia] is int or fuente[clave_dia] is float):
+				reconocidos += 1
+				var requerido_dia := int(fuente[clave_dia])
+				var cumple_dia := int(escenario.get("dia", 1)) >= requerido_dia
+				detalles.append("Día: %d / %d %s" % [int(escenario.get("dia", 1)), requerido_dia, "OK" if cumple_dia else "NO"])
+				if not cumple_dia:
+					fallos.append("día")
+		for clave_anio in ["anio_minimo","anio_min","min_anio","anio_requerido"]:
+			if fuente.has(clave_anio) and (fuente[clave_anio] is int or fuente[clave_anio] is float):
+				reconocidos += 1
+				var requerido_anio := int(fuente[clave_anio])
+				var cumple_anio := int(escenario.get("anio", 1)) >= requerido_anio
+				detalles.append("Año: %d / %d %s" % [int(escenario.get("anio", 1)), requerido_anio, "OK" if cumple_anio else "NO"])
+				if not cumple_anio:
+					fallos.append("año")
+		var mision_clave := str(fuente.get("mision_clave", fuente.get("mission_key", ""))).strip_edges()
+		var mision_estado_requerido := str(fuente.get("mision_estado", fuente.get("mission_status", ""))).strip_edges().to_lower()
+		if not mision_clave.is_empty() or not mision_estado_requerido.is_empty():
+			reconocidos += 1
+			var clave_coincide := mision_clave.is_empty() or mision_clave == str(escenario.get("mision_clave", ""))
+			var estado_coincide := mision_estado_requerido.is_empty() or mision_estado_requerido == str(escenario.get("mision_estado", ""))
+			var cumple_mision := clave_coincide and estado_coincide
+			detalles.append("Misión: %s · %s %s" % [str(escenario.get("mision_clave", "sin clave")), str(escenario.get("mision_estado", "sin_aceptar")), "OK" if cumple_mision else "NO"])
+			if not cumple_mision:
+				fallos.append("misión")
+	if reconocidos == 0:
+		return {"estado":"No evaluable","detalles":["No hay requisitos estructurados compatibles con este simulador; revisa el texto original."]}
+	if not fallos.is_empty():
+		return {"estado":"No cumple","detalles":detalles}
+	return {"estado":"Cumple","detalles":detalles}
+
+
 func _mostrar_eventos_admin() -> void:
 	_texto_narrativo("Eventos asociados: %d" % _eventos_admin.size(), true)
 	if _eventos_admin.is_empty():
@@ -690,6 +904,7 @@ func _mostrar_eventos_admin() -> void:
 			str(evento.get("tipo", "cotidiano")), str(evento.get("npc_a", "?")),
 			str(evento.get("npc_b", "?")), str(evento.get("requisitos_texto", "Fecha y NPC disponibles."))
 		])
+		_texto_narrativo("Escenario actual: " + str(_evaluar_requisitos_narrativos(evento).get("estado", "No evaluado")))
 		var lineas: Array = evento.get("lineas", []) if evento.get("lineas", []) is Array else []
 		for linea_variant in lineas:
 			if linea_variant is Dictionary:
