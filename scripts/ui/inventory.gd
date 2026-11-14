@@ -374,13 +374,16 @@ func _guardar_notas_historia() -> void:
 
 func _actualizar_admin_tab() -> void:
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
-	var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
+	var admin_tab := get_node_or_null("Window/Margin/Column/Tabs/Admin") as AdminInventory
 	var jugador := _player
 	var es_admin := false
 	var datos_variant: Variant = GameState.obtener_configuracion_personaje_admin()
 	if datos_variant is Dictionary:
 		es_admin = str((datos_variant as Dictionary).get("rol", "explorador")).to_lower() == "admin"
 	boton_admin.visible = es_admin and not _modo_historia
+	if not is_instance_valid(admin_tab):
+		push_warning("Inventario: no se encontró la pestaña Admin; se omite su actualización.")
+		return
 	admin_tab.visible = es_admin and not _modo_historia
 	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 6:
 		$Window/Margin/Column/Tabs.current_tab = 0
