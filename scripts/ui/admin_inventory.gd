@@ -621,16 +621,27 @@ func _mostrar_escenas_admin() -> void:
 			str(escena.get("npc_a", "?")), str(escena.get("npc_b", "?")),
 			str(escena.get("etapas", "1–3")), str(escena.get("requisitos_texto", "Etapa narrativa disponible."))
 		])
-		for linea_variant in escena.get("lineas", []):
-			if linea_variant is Dictionary:
-				var linea := linea_variant as Dictionary
-				_texto_narrativo(str(linea.get("npc", "")) + ": " + str(linea.get("texto", "")))
+		_mostrar_lineas_escena_admin("Etapa 1", escena.get("lineas", []))
+		_mostrar_lineas_escena_admin("Etapa 2", escena.get("lineas_siguientes", []))
+		_mostrar_lineas_escena_admin("Etapa 3", escena.get("lineas_tercera_etapa", []))
+		_mostrar_lineas_escena_admin("Variante con tensión", escena.get("lineas_tercera_tension", []))
+		_mostrar_lineas_escena_admin("Variante alternativa", escena.get("lineas_alternativas", []))
 		var boton := Button.new()
 		boton.text = "Ver escena"
 		boton.disabled = not is_instance_valid(_cutscene_director)
 		boton.pressed.connect(_ver_escena_admin.bind(escena))
 		PIXEL_UI_THEME.apply(boton, false)
 		_contenido_narrativo.add_child(boton)
+
+
+func _mostrar_lineas_escena_admin(titulo: String, valor: Variant) -> void:
+	if not valor is Array or (valor as Array).is_empty():
+		return
+	_texto_narrativo(titulo, true)
+	for linea_variant in valor as Array:
+		if linea_variant is Dictionary:
+			var linea := linea_variant as Dictionary
+			_texto_narrativo(str(linea.get("npc", "")) + ": " + str(linea.get("texto", "")))
 
 
 func _ver_escena_admin(escena: Dictionary) -> void:
