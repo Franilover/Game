@@ -809,12 +809,26 @@ func _iniciar_bienvenida_torres() -> void:
 			{"texto":"¿La posada recibe viajeros?","jugador":"¿La posada recibe viajeros?","respuesta":"Sí, es el lugar más práctico para descansar si todavía no tienes dónde quedarte."},
 			{"texto":"¿Dónde queda la casa de Bruna?","jugador":"¿Dónde vive Bruna?","respuesta":"Su casa está junto a la zona de la forja. Es fácil encontrarla si sigues el camino hacia los talleres."}
 		])
+	_agregar_parada_tour_elian(pasos, "casa_bruna", Vector2(-235.0, 152.0),
+		"Por aquí vive Bruna. Su casa queda cerca de la forja, donde suele pasar buena parte del día trabajando. Si la encuentras en casa, seguramente estará descansando o preparando sus próximos encargos.",
+		[
+			{"texto":"¿Bruna trabaja en la forja?","jugador":"¿Bruna trabaja en la forja que vimos antes?","respuesta":"Sí, suele estar allí ocupándose de sus trabajos. Es bastante dedicada y conoce muy bien sus herramientas."},
+			{"texto":"¿Puedo visitarla?","jugador":"¿Puedo pasar a saludarla cuando esté en casa?","respuesta":"Si está en casa y no tiene algo urgente entre manos, claro. Siempre puedes acercarte y preguntar."},
+			{"texto":"¿Hace mucho que vive aquí?","jugador":"¿Bruna lleva mucho tiempo viviendo en el reino?","respuesta":"Ya lleva un buen tiempo aquí. Se ha ganado un lugar entre los vecinos gracias a su trabajo."}
+		])
 	_agregar_parada_tour_elian(pasos, "viviendas_oriente", Vector2(330.0, -70.0),
 		"Por este lado están las casas de varios vecinos. La mía es la de allí; Darven vive un poco más al norte y Saira al otro lado del camino. Si los buscas, ya sabes dónde encontrarlos.",
 		[
 			{"texto":"¿Cuál es tu casa?","jugador":"¿Cuál de estas casas es la tuya?","respuesta":"La que está más cerca de la panadería y de este camino. Suelo estar entrando y saliendo por el trabajo."},
 			{"texto":"¿Darven vive cerca?","jugador":"¿Darven vive cerca de aquí?","respuesta":"Sí, su casa queda hacia el norte. Aunque muchas veces lo encontrarás en sus rondas o atendiendo el puesto de guardia."},
 			{"texto":"¿Y Saira?","jugador":"¿Dónde puedo encontrar a Saira?","respuesta":"Su casa está hacia el sur de este barrio. También puedes encontrarla en la casa de comercio cuando está trabajando."}
+		])
+	_agregar_parada_tour_elian(pasos, "casa_saira", Vector2(385.0, 118.0),
+		"Y esta es la casa de Saira. Está cerca del camino que conecta las viviendas con la zona comercial. Cuando no está atendiendo el comercio, suele venir por aquí a descansar.",
+		[
+			{"texto":"¿Saira trabaja en el comercio?","jugador":"¿Saira es quien atiende la casa de comercio?","respuesta":"Sí, suele encargarse de buena parte de la actividad comercial. También está pendiente de los encargos y de la mercancía."},
+			{"texto":"¿Es fácil encontrarla?","jugador":"¿Dónde puedo encontrar a Saira durante el día?","respuesta":"Lo más sencillo es buscarla en la casa de comercio cuando está trabajando. Si no está allí, probablemente haya salido a resolver algún asunto."},
+			{"texto":"¿Puedo visitarla?","jugador":"¿Puedo pasar a saludarla cuando esté en casa?","respuesta":"Claro, siempre que no esté ocupada. Saira suele recibir bien a quienes se acercan con respeto."}
 		])
 	_agregar_parada_tour_elian(pasos, "barrio_norte", Vector2(-150.0, -570.0),
 		"Este es el barrio de los asuntos públicos y el estudio. Aquí están el archivo real, la sala del consejo y la casa de estudio de Oris. Se viene a consultar documentos, tratar asuntos del reino o estudiar.",
@@ -838,7 +852,7 @@ func _iniciar_bienvenida_torres() -> void:
 			{"texto":"¿Qué hay más al oeste?","jugador":"¿Qué hay siguiendo el camino hacia el oeste?","respuesta":"Más viviendas y caminos que conectan con la zona de trabajo agrícola. Podemos seguir hacia allí."}
 		])
 	_agregar_parada_tour_elian(pasos, "barrio_agricola", Vector2(-620.0, 430.0),
-		"Y este es el sector agrícola. El granero sirve para guardar las cosechas, el molino ayuda a procesar el grano y los corrales reúnen a los animales. La casa de los agricultores queda más al sur.",
+		"Y este es el sector agrícola. El granero sirve para guardar las cosechas, el molino ayuda a procesar el grano y los corrales reúnen a los animales. Los caminos de esta zona conectan con las tierras de cultivo.",
 		[
 			{"texto":"¿De dónde llega el grano?","jugador":"¿El grano llega desde los campos cercanos?","respuesta":"Sí, buena parte del trabajo empieza en las tierras de cultivo. Después se almacena o se procesa según lo que haga falta."},
 			{"texto":"¿Para qué se usa el molino?","jugador":"¿Qué se hace exactamente en el molino?","respuesta":"Se procesa el grano para obtener harina y otros productos que luego se usan en el reino."},
