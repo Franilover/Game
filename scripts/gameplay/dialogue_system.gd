@@ -202,15 +202,16 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		if not personaje_id.is_empty():
 			if mission_manager != null:
 				mission_manager.registrar_dialogo_desde_fuente(personaje_id, str(datos_seleccionados.get("clave", "principal")), _fuente)
-			var datos_actualizados := _seleccionar_dialogo(datos)
-			if str(datos_actualizados.get("clave", "")) != str(datos_seleccionados.get("clave", "")):
-				datos_seleccionados = datos_actualizados
-				lineas = _normalizar_lineas(datos_seleccionados)
-				if lineas.is_empty():
-					return false
+			if not iniciativa_directa:
+				var datos_actualizados := _seleccionar_dialogo(datos)
+				if str(datos_actualizados.get("clave", "")) != str(datos_seleccionados.get("clave", "")):
+					datos_seleccionados = datos_actualizados
+					lineas = _normalizar_lineas(datos_seleccionados)
+					if lineas.is_empty():
+						return false
 
 	var recuerdo_para_mencionar: Dictionary = {}
-	if _es_dialogo_cotidiano(datos_seleccionados) and relationship_system != null and is_instance_valid(_fuente):
+	if not iniciativa_directa and _es_dialogo_cotidiano(datos_seleccionados) and relationship_system != null and is_instance_valid(_fuente):
 		var id_recuerdo := _fuente.get_personaje_game_id().strip_edges()
 		if not id_recuerdo.is_empty():
 			var recuerdo_candidato: Dictionary = relationship_system.obtener_recuerdo_pendiente_mencionar(id_recuerdo)
