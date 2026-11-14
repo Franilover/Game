@@ -325,6 +325,12 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
 			principal = variante
 
+	# Durante los desplazamientos, el NPC responde según su relación y
+	# comunica el destino actual de su rutina sin interrumpir el horario.
+	var dialogo_rutina := _crear_dialogo_rutina_en_transito()
+	if not dialogo_rutina.is_empty():
+		return dialogo_rutina
+
 	# Los estados de misión tienen prioridad sobre los saludos sociales.
 	# Si no hay una variante narrativa activa, se aplican amistad/confianza.
 	var personaje_id := ""
@@ -387,6 +393,49 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 			mejor_prioridad = prioridad
 
 	return mejor
+
+
+func _crear_dialogo_rutina_en_transito() -> Dictionary:
+	if not is_instance_valid(_fuente) or not bool(_fuente.get_meta("rutina_en_transito", false)):
+		return {}
+
+	var destino_clave := str(_fuente.get_meta("rutina_ubicacion", "plaza")).strip_edges().to_lower()
+	var destinos := {
+		"plaza": "la plaza",
+		"panaderia": "la panadería",
+		"forja": "la forja",
+		"cuartel": "el cuartel de la guardia",
+		"registro": "el registro",
+		"casa_comercio": "la casa de comercio",
+		"casa_estudio": "la casa de estudio",
+		"archivo_real": "el archivo real",
+		"casa_elian": "su casa",
+		"casa_bruna": "su casa",
+		"casa_darven": "su casa",
+		"casa_saira": "su casa",
+		"casa_narel": "su casa",
+		"castillo": "el castillo"
+	}
+	var destino := str(destinos.get(destino_clave, "su próximo destino"))
+	var amable := false
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	if not personaje_id.is_empty() and relationship_system != null:
+		var relacion_actual := relationship_system.obtener_relacion(personaje_id)
+		amable = (
+			float(relacion_actual.get("amistad", 0.0)) >= 20.0
+			or float(relacion_actual.get("afecto", 0.0)) >= 15.0
+			or float(relacion_actual.get("confianza", 0.0)) >= 20.0
+		)
+
+	var texto := ""
+	if amable:
+		texto = "¡Hola! Me alegra verte, pero ahora voy hacia %s. Allí puedes encontrarme y hablaremos con más calma." % destino
+	else:
+		texto = "Ahora estoy ocupado, dame unos segundos. Voy hacia %s; puedes encontrarme allí." % destino
+	return {
+		"clave": "rutina_en_transito",
+		"lineas": [{"hablante": _fuente.get_nombre_visual(), "texto": texto}]
+	}
 
 
 func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -> bool:
