@@ -1,7 +1,7 @@
 extends Node
 class_name NPCConversationSystem
 
-signal cinematica_acontecimiento_solicitada(posicion_global: Vector2)
+signal cinematica_acontecimiento_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
 signal cinematica_narrativa_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2, etapa: int)
 
 const INTERVALO_BUSQUEDA := 0.5
@@ -1020,8 +1020,18 @@ func _obtener_npcs_torres() -> Array[Creature]:
 func _npc_puede_conversar(npc: Creature) -> bool:
 	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
 		return false
-	if bool(npc.get_meta("rutina_en_edificio", false)) or bool(npc.get_meta("rutina_en_transito", false)):
-		return false
+	# Un NPC ocupado en otra interacción, acercamiento o actividad no puede
+	# ser tomado por una conversación ambiental distinta.
+	for meta_clave in [
+		"rutina_en_edificio",
+		"rutina_en_transito",
+		"actividad_social_activa",
+		"acercamiento_social_activo",
+		"conversacion_npc_bloqueada",
+		"cinematica_npc_activa"
+	]:
+		if bool(npc.get_meta(meta_clave, false)):
+			return false
 	if npc.velocity.length() > 5.0:
 		return false
 	return true
@@ -1216,17 +1226,48 @@ func _iniciar_actividad_del_acontecimiento() -> void:
 	var npc_b := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
 	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
 		return
+
 	var destino: Vector2 = actividad.get("destino", Vector2.ZERO)
 	var duracion := float(actividad.get("duracion", 5.0))
-	# Ambos participantes acuden al mismo punto: entrega, encuentro, comida
-	# compartida, revisión o consulta según el acontecimiento del día.
 	var desplazamiento := Vector2(24.0, 0.0)
 	var inicio_a: bool = bool(sistema.call("iniciar_actividad_social", npc_a, destino + desplazamiento, duracion))
+	if not inicio_a:
+		return
 	var inicio_b: bool = bool(sistema.call("iniciar_actividad_social", npc_b, destino - desplazamiento, duracion))
-	if inicio_a and inicio_b:
-		var zona := _zone_manager.obtener_zona_actual() as Node2D if is_instance_valid(_zone_manager) else null
-		if is_instance_valid(zona):
-			cinematica_acontecimiento_solicitada.emit(zona.to_global(destino))
+	if not inicio_b:
+		if sistema.has_method("_finalizar_actividad_social"):
+			sistema.call("_finalizar_actividad_social", npc_a)
+		return
+
+	# La cámara espera hasta que ambos hayan llegado. Así no presenta el
+	# encuentro mientras los NPC todavía caminan hacia el lugar.
+	var movimiento_a := npc_a.get_node_or_null("CreatureMovement") as CreatureMovement
+	var movimiento_b := npc_b.get_node_or_null("CreatureMovement") as CreatureMovement
+	var espera := 0.0
+	while espera < 24.0:
+		if not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+			return
+		if not bool(npc_a.get_meta("actividad_social_activa", false)) or not bool(npc_b.get_meta("actividad_social_activa", false)):
+			return
+		var llego_a := is_instance_valid(movimiento_a) and movimiento_a.rutina_terminada()
+		var llego_b := is_instance_valid(movimiento_b) and movimiento_b.rutina_terminada()
+		if llego_a and llego_b:
+			break
+		await get_tree().create_timer(0.15).timeout
+		espera += 0.15
+	if espera >= 24.0 or not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return
+	if npc_a.global_position.distance_to(npc_b.global_position) > 110.0:
+		return
+	var zona := _zone_manager.obtener_zona_actual() as Node2D if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona):
+		return
+	cinematica_acontecimiento_solicitada.emit(
+		clave,
+		npc_a.get_nombre_visual(),
+		npc_b.get_nombre_visual(),
+		zona.to_global(destino)
+	)
 
 
 func _ocultar_burbujas() -> void:
