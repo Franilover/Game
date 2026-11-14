@@ -764,18 +764,22 @@ func _agregar_sprite_pixelart(nombre: String, textura: Texture2D, limites: Rect2
 func _cargar_sprites_de_torres() -> void:
 	for building: Dictionary in SPRITE_BUILDINGS:
 		var clave := String(building["key"])
+
+		# Ocultar primero los antiguos polígonos vectoriales del edificio.
+		# Los sprites guardados en la escena son la fuente visual definitiva.
+		_ocultar_placeholder(building["hide"])
+		var sprite_existente := get_node_or_null(NodePath("Sprite_" + clave)) as Sprite2D
+		if is_instance_valid(sprite_existente):
+			print("ReinoTorres: sprite oficial de escena activo para ", clave)
+			continue
+
+		# Solo generar arte procedural cuando el edificio todavía no tiene
+		# un Sprite2D editable definido en la escena.
 		var texture := _buscar_textura(building["paths"])
 		var tiene_textura_personalizada := texture != null
 		if not tiene_textura_personalizada:
 			texture = TORRES_PIXEL_ART.crear_edificio(clave, absi(clave.hash()) % 7)
 
-		# Los sprites oficiales están guardados en la escena para editarlos desde Godot.
-		_ocultar_placeholder(building["hide"])
-		var sprite_existente := get_node_or_null(NodePath("Sprite_" + clave)) as Sprite2D
-		if is_instance_valid(sprite_existente):
-			if tiene_textura_personalizada:
-				print("ReinoTorres: sprite oficial de escena activo para ", clave)
-			continue
 		var sprite := Sprite2D.new()
 		sprite.name = "Sprite_" + clave.capitalize()
 		sprite.texture = texture
