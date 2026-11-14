@@ -161,7 +161,7 @@ func abrir_desde(fuente: Creature) -> bool:
 	return abrir(datos_variant as Dictionary, fuente)
 
 
-func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
+func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool = false) -> bool:
 	_recuerdo_pendiente_mostrar.clear()
 	_personaje_recuerdo_pendiente = ""
 	_variante_pendiente_mostrar.clear()
@@ -169,7 +169,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	_ciclo_variante_pendiente = ""
 	_fuente = fuente
 	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
-	var datos_seleccionados := _seleccionar_dialogo(datos)
+	var datos_seleccionados := datos.duplicate(true) if iniciativa_directa else _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
 	var acciones_debug: Array = []
 	var acciones_variant_debug: Variant = datos_seleccionados.get("acciones", [])
@@ -233,7 +233,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
-	if not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito:
+	if not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
 		_respuestas = _crear_opciones_conversacion()
 	_limpiar_botones_respuesta()
 
@@ -283,6 +283,14 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	Events.dialog_opened.emit(hablante, _texto_completo)
 
 	return true
+
+
+## Abre una iniciativa social del NPC sin que las variantes cotidianas
+## del diálogo normal sustituyan la pregunta contextual.
+func abrir_iniciativa_npc(datos: Dictionary, fuente: Creature) -> bool:
+	if not is_instance_valid(fuente) or _abierto:
+		return false
+	return abrir(datos, fuente, true)
 
 
 func cerrar() -> void:
@@ -1102,7 +1110,7 @@ func _ejecutar_accion_dialogo() -> void:
 				return
 
 			var mission_manager_local: MissionManagerService = mission_manager
-			if mission_manager_local != null and mission_manager_local.aceptar_mision(clave):
+			if mission_manager_local != null and mission_manager_local.aceptar_mision(clave, _fuente.get_personaje_game_id() if is_instance_valid(_fuente) else ""):
 				_acciones.clear()
 				action_button.visible = false
 				Events.notification_pushed.emit(
