@@ -124,6 +124,12 @@ static func crear_decoracion(tipo: String, variante: int = 0) -> Texture2D:
 		tamano = Vector2i(64, 40)
 	elif tipo == "lampara":
 		tamano = Vector2i(12, 24)
+	elif tipo in ["mercancia", "comida"]:
+		tamano = Vector2i(32, 20)
+	elif tipo == "guirnalda":
+		tamano = Vector2i(64, 16)
+	elif tipo == "flores":
+		tamano = Vector2i(24, 20)
 	var imagen := Image.create(tamano.x, tamano.y, false, Image.FORMAT_RGBA8)
 	imagen.fill(TRANSPARENTE)
 
@@ -138,6 +144,14 @@ static func crear_decoracion(tipo: String, variante: int = 0) -> Texture2D:
 			_dibujar_puesto(imagen, variante, true)
 		"lampara":
 			_dibujar_lampara(imagen)
+		"mercancia":
+			_dibujar_mercancia(imagen, variante)
+		"comida":
+			_dibujar_comida(imagen, variante)
+		"guirnalda":
+			_dibujar_guirnalda(imagen, variante)
+		"flores":
+			_dibujar_flores(imagen, variante)
 	return ImageTexture.create_from_image(imagen)
 
 
@@ -372,6 +386,61 @@ static func _dibujar_lampara(imagen: Image) -> void:
 	_rect(imagen, 4, 2, 5, 4, Color("#F0CD78"))
 	_rect(imagen, 5, 3, 2, 2, Color("#F7E2A2"))
 	_rect(imagen, 4, 21, 5, 2, Color("#86603B"))
+
+
+static func _dibujar_mercancia(imagen: Image, variante: int) -> void:
+	var tonos: Array[Color] = [
+		Color("#A7A64B"), Color("#C36D3C"), Color("#78934B"), Color("#6C9AA0")
+	]
+	var producto: Color = tonos[posmod(variante, tonos.size())]
+	_rect(imagen, 1, 15, 30, 4, Color("#493426"))
+	_rect(imagen, 3, 7, 8, 9, Color("#8B6039"))
+	_rect(imagen, 4, 8, 6, 6, Color("#B1844D"))
+	_rect(imagen, 12, 5, 8, 11, Color("#563A28"))
+	_rect(imagen, 13, 6, 6, 9, producto)
+	_rect(imagen, 22, 8, 8, 8, Color("#765038"))
+	for x in [5, 8, 14, 17, 24, 27]:
+		var y := 4 if x in [5, 14, 24] else 6
+		_rect(imagen, x, y, 3, 3, producto.lightened(0.12))
+	_rect(imagen, 4, 16, 24, 1, Color("#C19A61"))
+
+
+static func _dibujar_comida(imagen: Image, variante: int) -> void:
+	_rect(imagen, 2, 8, 28, 10, Color("#493426"))
+	_rect(imagen, 4, 7, 24, 9, Color("#D0B17A"))
+	_rect(imagen, 6, 8, 20, 6, Color("#F0D6A0"))
+	var principal: Color = Color("#A95136") if variante % 2 == 0 else Color("#B68B45")
+	_rect(imagen, 8, 8, 6, 5, principal)
+	_rect(imagen, 17, 9, 7, 4, Color("#6C8845"))
+	_rect(imagen, 12, 6, 5, 3, Color("#D7B65F"))
+	_rect(imagen, 5, 15, 22, 1, Color("#8B6947"))
+
+
+static func _dibujar_guirnalda(imagen: Image, variante: int) -> void:
+	var hilo := Color("#60432F")
+	_rect(imagen, 1, 3, 62, 1, hilo)
+	var colores: Array[Color] = [
+		Color("#A94F3A"), Color("#D0B16E"), Color("#557B58"), Color("#668D9A")
+	]
+	for indice in range(8):
+		var x := 3 + indice * 8
+		var color: Color = colores[posmod(indice + variante, colores.size())]
+		_rect(imagen, x, 4, 5, 7, hilo)
+		_rect(imagen, x + 1, 5, 3, 5, color)
+		_rect(imagen, x + 1, 5, 1, 2, color.lightened(0.18))
+
+
+static func _dibujar_flores(imagen: Image, variante: int) -> void:
+	var hojas: Color = Color("#496B3A")
+	var flores: Array[Color] = [
+		Color("#D4B86E"), Color("#B96C58"), Color("#D6D0B2"), Color("#8B9B9A")
+	]
+	_rect(imagen, 2, 15, 20, 3, Color("#3E3328"))
+	for indice in range(5):
+		var x := 3 + indice * 4
+		_rect(imagen, x, 8 + (indice % 2) * 2, 3, 8, hojas)
+		_rect(imagen, x - 1, 5 + (indice % 2) * 2, 5, 4, flores[posmod(indice + variante, flores.size())])
+		_rect(imagen, x, 6 + (indice % 2) * 2, 2, 2, Color("#F0DDA5"))
 
 
 static func _rect(imagen: Image, x: int, y: int, ancho: int, alto: int, color: Color) -> void:
