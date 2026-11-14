@@ -221,7 +221,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	var firma_anterior := str(npc.get_meta("rutina_firma", ""))
 	var firma_diagnostico := str(npc.get_meta("rutina_diagnostico", ""))
-	var diagnostico_actual := "%s|%s|%s|%d" % [clave_rutina, ubicacion, actividad, minutos]
+	var diagnostico_actual := "%s|%s|%s|%d" % [clave_rutina, ubicacion, actividad, dia_semana]
 	if firma_diagnostico != diagnostico_actual:
 		print("NPCScheduleSystem: ", npc.get_nombre_visual(), " | día=", dia_semana + 1, " | minuto=", minutos, " | rutina=", clave_rutina, " | destino=", ubicacion, " | hogar=", hogar, " | rutinas_cargadas=", rutinas_variant.size() if rutinas_variant is Array else -1)
 		npc.set_meta("rutina_diagnostico", diagnostico_actual)
@@ -431,17 +431,26 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 	var mejor: Dictionary = {}
 	var prioridad_mejor := -2147483648
 	var inicio_mejor := -1
+	var diagnostico_rechazos: Array[String] = []
 
-	for rutina_variant in rutinas_variant as Array:
+	for indice in range((rutinas_variant as Array).size()):
+		var rutina_variant: Variant = (rutinas_variant as Array)[indice]
 		if not rutina_variant is Dictionary:
+			diagnostico_rechazos.append("[" + str(indice) + "] no_es_diccionario")
 			continue
 		var rutina := rutina_variant as Dictionary
-		if not bool(rutina.get("activo", true)):
+		var clave := str(rutina.get("clave", "sin_clave"))
+		var activo := bool(rutina.get("activo", true))
+		if not activo:
+			diagnostico_rechazos.append(clave + ": inactiva")
 			continue
 
-		var inicio := _hora_a_minutos(rutina.get("hora_inicio", ""))
-		var fin := _hora_a_minutos(rutina.get("hora_fin", ""))
+		var inicio_raw: Variant = rutina.get("hora_inicio", "")
+		var fin_raw: Variant = rutina.get("hora_fin", "")
+		var inicio := _hora_a_minutos(inicio_raw)
+		var fin := _hora_a_minutos(fin_raw)
 		if inicio < 0 or fin < 0 or inicio == fin:
+			diagnostico_rechazos.append(clave + ": hora_invalida inicio=" + str(inicio_raw) + " fin=" + str(fin_raw) + " parseadas=" + str(inicio) + "/" + str(fin))
 			continue
 
 		var dia_referencia := dia_semana
@@ -454,7 +463,10 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 			esta_activa = true
 			dia_referencia = posmod(dia_semana - 1, 5)
 
-		if not esta_activa or not _coincide_dia(rutina.get("dias_semana", []), dia_referencia):
+		var dias_variant: Variant = rutina.get("dias_semana", [])
+		var coincide_dia := _coincide_dia(dias_variant, dia_referencia)
+		if not esta_activa or not coincide_dia:
+			diagnostico_rechazos.append(clave + ": " + ("fuera_de_hora" if not esta_activa else "dia_no_coincide") + " ahora=" + str(minutos) + " rango=" + str(inicio) + "-" + str(fin) + " dia=" + str(dia_referencia) + " dias=" + str(dias_variant))
 			continue
 
 		var prioridad := int(rutina.get("prioridad", 0))
@@ -462,6 +474,12 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 			mejor = rutina.duplicate(true)
 			prioridad_mejor = prioridad
 			inicio_mejor = inicio
+
+	if mejor.is_empty():
+		var firma_fallo := "%d|%d|%s" % [dia_semana, minutos, ";".join(diagnostico_rechazos)]
+		if str(get_meta("ultimo_diagnostico_selector", "")) != firma_fallo:
+			print("NPCScheduleSystem: SELECTOR SIN COINCIDENCIA | dia=", dia_semana, " minuto=", minutos, " total=", (rutinas_variant as Array).size(), " | ", " || ".join(diagnostico_rechazos))
+			set_meta("ultimo_diagnostico_selector", firma_fallo)
 
 	return mejor
 
