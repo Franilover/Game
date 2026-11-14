@@ -1098,8 +1098,9 @@ func _crear_icono_interaccion(tipo: String) -> Texture2D:
 		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h34v21H7zM4 14h40v8H4zM24 14v28"/><path d="M24 14c-2-11-16-11-16-4 0 6 8 6 16 4Zm0 0c2-11 16-11 16-4 0 6-8 6-16 4Z"/></g></svg>"""
 	else:
 		svg = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><g fill="none" stroke="#FFF3D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17a7.5 7.5 0 1 1 12.8 5.3c-3.2 3.1-5.8 4-5.8 9.2"/><path d="M24 39h.02"/></g></svg>"""
-	var imagen := Image.load_svg_from_string(svg)
-	if imagen == null or imagen.is_empty():
+	var imagen := Image.new()
+	var error_svg := imagen.load_svg_from_string(svg)
+	if error_svg != OK or imagen.is_empty():
 		return null
 	return ImageTexture.create_from_image(imagen)
 
