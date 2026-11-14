@@ -673,8 +673,15 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
 		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a}
 	]
+	var clave_etapa := "lineas"
+	match int(_escenario_debug.get("etapa", 0)):
+		1:
+			clave_etapa = "lineas_siguientes"
+		2, 3:
+			clave_etapa = "lineas_tercera_etapa"
+	var lineas_escena: Variant = escena.get(clave_etapa, escena.get("lineas", []))
 	var lineas_preview: Array[Dictionary] = []
-	for item in escena.get("lineas", []):
+	for item in lineas_escena:
 		if item is Dictionary:
 			var linea := item as Dictionary
 			lineas_preview.append({"hablante":str(linea.get("npc","")),"texto":str(linea.get("texto",""))})
@@ -683,7 +690,7 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 	pasos.append({"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.65})
 	pasos.append({"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.65})
 	pasos.append({"tipo":"esperar","segundos":0.5})
-	_estado.text = "Reproduciendo vista previa: " + str(escena.get("titulo", "Escena"))
+	_estado.text = "Vista previa · etapa %d · %s" % [int(_escenario_debug.get("etapa", 0)), str(escena.get("titulo", "Escena"))]
 	await _cutscene_director.ejecutar("admin_preview_" + str(escena.get("clave", "escena")), pasos)
 
 
@@ -691,7 +698,7 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 func _inicializar_escenario_debug(personaje_id: String) -> void:
 	_escenario_debug = {
 		"amistad": 0.0, "confianza": 0.0, "respeto": 0.0, "afecto": 0.0,
-		"mision_clave": "", "mision_estado": "sin_aceptar",
+		"mision_clave": "ayuda_horno_elian", "mision_estado": "sin_aceptar",
 		"etapa": 0, "dia": 1, "anio": 1, "hora": 12
 	}
 	if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_relacion"):
@@ -834,6 +841,11 @@ func _evaluar_requisitos_narrativos(registro: Dictionary, contenido: Dictionary 
 	var detalles: Array[String] = []
 	var reconocidos := 0
 	var fuentes: Array[Dictionary] = [registro, contenido]
+	for fuente_base in [registro, contenido]:
+		for clave_anidada in ["requisitos", "requisitos_game", "condiciones", "condiciones_game", "desbloqueo"]:
+			var anidado: Variant = fuente_base.get(clave_anidada, {})
+			if anidado is Dictionary:
+				fuentes.append(anidado)
 	var escenario := _escenario_debug
 	var alias_relacion := {
 		"amistad":["amistad_minima","amistad_min","min_amistad","amistad_requerida"],
@@ -876,6 +888,14 @@ func _evaluar_requisitos_narrativos(registro: Dictionary, contenido: Dictionary 
 				detalles.append("Año: %d / %d %s" % [int(escenario.get("anio", 1)), requerido_anio, "OK" if cumple_anio else "NO"])
 				if not cumple_anio:
 					fallos.append("año")
+		for clave_hora in ["hora_minima","hora_min","min_hora","hora_requerida"]:
+			if fuente.has(clave_hora) and (fuente[clave_hora] is int or fuente[clave_hora] is float):
+				reconocidos += 1
+				var requerida_hora := int(fuente[clave_hora])
+				var cumple_hora := int(escenario.get("hora", 0)) >= requerida_hora
+				detalles.append("Hora: %02d:00 / %02d:00 %s" % [int(escenario.get("hora", 0)), requerida_hora, "OK" if cumple_hora else "NO"])
+				if not cumple_hora:
+					fallos.append("hora")
 		var mision_clave := str(fuente.get("mision_clave", fuente.get("mission_key", ""))).strip_edges()
 		var mision_estado_requerido := str(fuente.get("mision_estado", fuente.get("mission_status", ""))).strip_edges().to_lower()
 		if not mision_clave.is_empty() or not mision_estado_requerido.is_empty():
