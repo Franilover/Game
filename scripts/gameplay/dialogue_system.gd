@@ -1486,6 +1486,8 @@ func _obtener_mision_disponible_para_npc() -> Dictionary:
 
 func _crear_opcion_trabajo_social() -> Dictionary:
 	var nombre := _nombre_social_actual()
+	if nombre_npc.strip_edges().to_lower() == "saira":
+		return "Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges() if is_instance_valid(_fuente) else ""
 	var respuesta := "Tengo algunas tareas pendientes, como cualquiera. Intento organizarme para que no se me acumulen."
 	match nombre:
@@ -1592,8 +1594,6 @@ func _obtener_respuesta_ayuda_npc() -> String:
 		return "No tengo un encargo concreto. Me gustaría poder acompañar a mis amigos sin tener que parar tanto, pero hoy prefiero descansar un poco."
 	if nombre_local == "nima":
 		return "Por ahora sigo reuniendo observaciones sobre algunos fenómenos Oris. Si encuentro algo que podamos comprobar juntos, te lo diré."
-	if nombre_npc.strip_edges().to_lower() == "saira":
-		return "Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var lineas_activas: Array[String] = []
 	var lineas_disponibles: Array[String] = []
