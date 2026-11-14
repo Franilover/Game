@@ -1119,7 +1119,7 @@ func _al_cinematica_narrativa_solicitada(
 	var escena: Dictionary = escena_variant
 	var zoom_actual := _camera.zoom.x
 	var pasos: Array[Dictionary] = [
-		{"tipo":"camara","x":posicion_global.x,"y":posicion_global.y,"zoom":zoom_actual * (1.08 if etapa == 1 else 1.14),"duracion":0.75},
+		{"tipo":"camara","x":centro_real.x,"y":centro_real.y,"zoom":zoom_actual * (1.08 if etapa == 1 else 1.14),"duracion":0.75},
 		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
 		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
 		{"tipo":"esperar","segundos":0.25},
