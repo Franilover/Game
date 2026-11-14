@@ -15,11 +15,6 @@ const TIENDAS: Dictionary = {
 		"productos": ["espada de madera", "espada de piedra"],
 		"actividades": ["forjar", "revisar_herramientas"]
 	},
-	"carpinteria": {
-		"nombre": "Carpintería",
-		"productos": ["pala de madera", "pala de piedra", "pico de madera", "pico de piedra"],
-		"actividades": ["trabajar_madera", "atender"]
-	},
 	"casa_comercio": {
 		"nombre": "Casa de comercio",
 		"productos": ["arco aoris", "plumas aoris"],
@@ -224,7 +219,10 @@ func _actualizar_catalogo() -> void:
 	)
 
 	if _productos.is_empty():
-		_mostrar_estado("Esta tienda todavía no tiene productos con imagen disponibles en el catálogo.")
+		if str(_tienda.get("ubicacion", "")) == "panaderia":
+			_mostrar_estado("Todavía no hay pan registrado en el catálogo del juego.")
+		else:
+			_mostrar_estado("Esta tienda todavía no tiene productos con imagen disponibles en el catálogo.")
 		return
 
 	_estado.text = ""
