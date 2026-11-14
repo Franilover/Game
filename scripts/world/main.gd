@@ -26,7 +26,6 @@ var _garumi_combat_arena: Node2D = null
 var _garumi_battle_party: Node = null
 @onready var _supabase_client: GarliaSupabaseClient = get_node_or_null("/root/SupabaseClient") as GarliaSupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
-@onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
 var _world_atmosphere: WorldAtmosphere = null
 @onready var _world_climate_visuals: WorldClimateVisuals = $UI/FogOverlay
