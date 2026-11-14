@@ -1066,9 +1066,28 @@ func _al_cinematica_acontecimiento_solicitada(posicion_global: Vector2) -> void:
 			"y": posicion_global.y,
 			"zoom": zoom_actual * 1.12,
 			"duracion": 0.9
-		},
-		{"tipo": "esperar", "segundos": 1.4}
+		}
 	]
+	var npc_cercanos: Array[Dictionary] = []
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature or not is_instance_valid(nodo):
+			continue
+		var npc := nodo as Creature
+		var distancia := npc.global_position.distance_to(posicion_global)
+		if distancia <= 190.0:
+			npc_cercanos.append({"npc": npc.get_nombre(), "distancia": distancia})
+	npc_cercanos.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("distancia", INF)) < float(b.get("distancia", INF))
+	)
+	if not npc_cercanos.is_empty():
+		var primero := str(npc_cercanos[0].get("npc", ""))
+		pasos.append({"tipo": "mirar_npc", "npc": primero, "hacia_npc": str(npc_cercanos[1].get("npc", "")) if npc_cercanos.size() > 1 else ""})
+		pasos.append({"tipo": "gesto_npc", "npc": primero, "gesto": "asentir", "duracion": 0.55})
+	if npc_cercanos.size() > 1:
+		var segundo := str(npc_cercanos[1].get("npc", ""))
+		pasos.append({"tipo": "mirar_npc", "npc": segundo, "hacia_npc": str(npc_cercanos[0].get("npc", ""))})
+		pasos.append({"tipo": "gesto_npc", "npc": segundo, "gesto": "saludar", "duracion": 0.65})
+	pasos.append({"tipo": "esperar", "segundos": 0.45})
 	await _cutscene_director.ejecutar("acontecimiento_social_torres", pasos)
 
 
