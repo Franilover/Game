@@ -186,13 +186,16 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 		return false
 	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
 		return false
-	if not _mision_carreta_completada(gestor_misiones):
+	if not is_instance_valid(_world_atmosphere) or not _mision_carreta_completada(gestor_misiones):
 		return false
 
 	var nombre := npc_interactuado.get_nombre_visual().strip_edges().to_lower()
 	if not _conversacion_activa.is_empty():
 		var participa := nombre == str(_conversacion_activa.get("npc_a", "")) or nombre == str(_conversacion_activa.get("npc_b", ""))
 		if participa:
+			# La burbuja de la intervención actual puede haberse ocultado si el
+			# jugador estaba lejos. Se vuelve a mostrar sin reiniciar su tiempo.
+			_mostrar_linea_actual(false)
 			return true
 		return false
 
@@ -388,7 +391,7 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 		_mostrar_linea_actual()
 
 
-func _mostrar_linea_actual() -> void:
+func _mostrar_linea_actual(reiniciar_temporizador: bool = true) -> void:
 	var lineas: Array = _conversacion_activa.get("lineas", [])
 	if _indice_linea < 0 or _indice_linea >= lineas.size():
 		_finalizar_conversacion()
@@ -415,7 +418,8 @@ func _mostrar_linea_actual() -> void:
 		if etiqueta != null:
 			etiqueta.text = npc.get_nombre_visual() + ": " + texto
 		burbuja.visible = true
-	_temporizador_linea = DURACION_LINEA
+	if reiniciar_temporizador:
+		_temporizador_linea = DURACION_LINEA
 
 
 func _obtener_burbuja(npc: Creature) -> PanelContainer:
