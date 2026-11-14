@@ -2,6 +2,7 @@ extends Node
 class_name DialogueSystem
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const NPC_MARKET_SHOP_SCRIPT = preload("res://scripts/ui/npc_market_shop.gd")
 
 
 signal dialogue_started(speaker: String)
@@ -28,6 +29,8 @@ var _respuestas_container: GridContainer = null
 var _inventario: InventoryController = null
 var _boton_regalo: Button = null
 var _boton_preguntar_item: Button = null
+var _boton_tienda_mercado: Button = null
+var _tienda_mercado: PanelContainer = null
 var _dialogue_content_row: HBoxContainer = null
 var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
@@ -108,6 +111,8 @@ func _input(event: InputEvent) -> void:
 		# Los clics sobre controles de diálogo pertenecen a la interfaz.
 		if event is InputEventMouseButton:
 			var posicion_mouse := get_viewport().get_mouse_position()
+			if _tienda_mercado != null and is_instance_valid(_tienda_mercado) and _tienda_mercado.visible and _tienda_mercado.get_global_rect().has_point(posicion_mouse):
+				return
 			if _selector_items != null and _selector_items.visible and _selector_items.get_global_rect().has_point(posicion_mouse):
 				return
 			if _selector_conversacion != null and _selector_conversacion.visible and _selector_conversacion.get_global_rect().has_point(posicion_mouse):
@@ -138,7 +143,9 @@ func _input(event: InputEvent) -> void:
 			return
 
 		if key_event.keycode == KEY_ESCAPE:
-			if _selector_items != null and _selector_items.visible:
+			if _tienda_mercado != null and is_instance_valid(_tienda_mercado) and _tienda_mercado.visible:
+				_cerrar_tienda_mercado()
+			elif _selector_items != null and _selector_items.visible:
 				_cerrar_selector_items()
 			elif _selector_conversacion != null and _selector_conversacion.visible:
 				_cerrar_selector_conversacion()
@@ -288,6 +295,8 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		_boton_regalo.visible = not _dialogo_en_transito
 	if _boton_preguntar_item != null:
 		_boton_preguntar_item.visible = not _dialogo_en_transito
+	if _boton_tienda_mercado != null:
+		_boton_tienda_mercado.visible = not _dialogo_en_transito and _es_horario_mercado()
 	print(
 		"DialogueSystem: PANEL VISIBLE → ",
 		dialogue_panel.get_path() if dialogue_panel.is_inside_tree() else dialogue_panel.name,
@@ -351,6 +360,7 @@ func cerrar() -> void:
 		action_button.visible = false
 	if cancel_button != null:
 		cancel_button.visible = false
+	_cerrar_tienda_mercado()
 	_cerrar_selector_items()
 	_cerrar_selector_conversacion()
 	if dialogue_panel != null:
@@ -2318,6 +2328,58 @@ func _normalizar_lineas(datos: Dictionary) -> Array[Dictionary]:
 
 
 
+func _es_horario_mercado() -> bool:
+	var atmosfera := get_tree().root.find_child("WorldAtmosphere", true, false)
+	if not is_instance_valid(atmosfera) or not atmosfera.has_method("obtener_tiempo"):
+		return false
+	var tiempo: Dictionary = atmosfera.call("obtener_tiempo")
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return false
+	var dia := int(tiempo.get("dia", 1))
+	var hora := float(tiempo.get("hora_del_dia", 0.0))
+	var minutos := int(floor(hora * 60.0))
+	return posmod(dia - 1, 5) == 4 and minutos >= 540 and minutos < 1020
+
+
+func _abrir_tienda_mercado() -> void:
+	if not _abierto or _dialogo_en_transito or not _es_horario_mercado() or not is_instance_valid(_fuente):
+		return
+	if not is_instance_valid(_inventario):
+		return
+	var encontrados := get_tree().root.find_children("*", "GarliaWorldItems", true, false)
+	var world_items: GarliaWorldItems = null
+	for nodo in encontrados:
+		if nodo is GarliaWorldItems:
+			world_items = nodo as GarliaWorldItems
+			break
+	if world_items == null or world_items.obtener_catalogo().is_empty():
+		Events.notification_pushed.emit("El catálogo de mercancías todavía no está disponible.")
+		return
+	_cerrar_selector_items()
+	_cerrar_selector_conversacion()
+	if is_instance_valid(_tienda_mercado):
+		_tienda_mercado.queue_free()
+	_tienda_mercado = NPC_MARKET_SHOP_SCRIPT.new() as PanelContainer
+	if _tienda_mercado == null:
+		return
+	_tienda_mercado.name = "NPCMarketShop"
+	_tienda_mercado.z_index = 40
+	_tienda_mercado.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_tienda_mercado.configurar(_fuente, _inventario, world_items)
+	_tienda_mercado.solicitar_cierre.connect(_cerrar_tienda_mercado)
+	dialogue_panel.add_child(_tienda_mercado)
+	if _dialogue_content_row != null:
+		_dialogue_content_row.visible = false
+
+
+func _cerrar_tienda_mercado() -> void:
+	if is_instance_valid(_tienda_mercado):
+		_tienda_mercado.queue_free()
+	_tienda_mercado = null
+	if _abierto and is_instance_valid(_dialogue_content_row):
+		_dialogue_content_row.visible = true
+
+
 func _crear_icono_interaccion(tipo: String) -> Texture2D:
 	var svg := ""
 	if tipo == "regalo":
@@ -2723,6 +2785,15 @@ func _crear_interfaz() -> void:
 	_boton_preguntar_item.tooltip_text = "Preguntar por un objeto"
 	_boton_preguntar_item.pressed.connect(_abrir_selector_items.bind("pregunta"))
 	columna_social.add_child(_boton_preguntar_item)
+
+	_boton_tienda_mercado = Button.new()
+	_boton_tienda_mercado.name = "DialogueMarketShopButton"
+	_boton_tienda_mercado.custom_minimum_size = Vector2(48, 48)
+	_boton_tienda_mercado.text = "$"
+	_boton_tienda_mercado.tooltip_text = "Comprar y vender durante el mercado"
+	_boton_tienda_mercado.visible = false
+	_boton_tienda_mercado.pressed.connect(_abrir_tienda_mercado)
+	columna_social.add_child(_boton_tienda_mercado)
 
 	_selector_conversacion = PanelContainer.new()
 	_selector_conversacion.name = "DialogueTopicSelector"
