@@ -694,7 +694,7 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 		return
 	# Cerrar el inventario/admin antes de mover la cámara: así la vista previa
 	# queda completamente visible y el jugador no conserva el foco de la UI.
-	if is_instance_valid(__inventario) and _inventario.has_method("cerrar"):
+	if is_instance_valid(_inventario) and _inventario.has_method("cerrar"):
 		_inventario.cerrar()
 	var centro := (npc_a.global_position + npc_b.global_position) * 0.5
 	var camara := get_viewport().get_camera_2d()
