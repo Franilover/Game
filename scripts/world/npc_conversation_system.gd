@@ -1217,8 +1217,8 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 					var centro_cinematica := (npc_a_cinematica.global_position + npc_b_cinematica.global_position) * 0.5
 					cinematica_narrativa_solicitada.emit(
 						clave,
-						npc_a_cinematica.get_nombre(),
-						npc_b_cinematica.get_nombre(),
+						npc_a_cinematica.get_nombre_visual(),
+						npc_b_cinematica.get_nombre_visual(),
 						centro_cinematica,
 						etapa + 1
 					)
