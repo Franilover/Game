@@ -467,6 +467,86 @@ position = Vector2(4.8333282, -297)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CastleCollisionBody" unique_id=1453127070]
 shape = SubResource("CastleCollision")
 
+[node name="Grupo_casa_bruna" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_bruna"]
+position = Vector2(-820, -320)
+
+[node name="Grupo_casa_elian" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_elian"]
+position = Vector2(820, -320)
+
+[node name="Grupo_casa_darven" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_darven"]
+position = Vector2(1080, -320)
+
+[node name="Grupo_casa_saira" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_saira"]
+position = Vector2(820, -60)
+
+[node name="Grupo_casa_vacia_01" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_01"]
+position = Vector2(-820, -60)
+
+[node name="Grupo_casa_vacia_02" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_02"]
+position = Vector2(-1080, -60)
+
+[node name="Grupo_casa_vacia_03" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_03"]
+position = Vector2(-820, 220)
+
+[node name="Grupo_casa_vacia_04" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_04"]
+position = Vector2(-1080, 220)
+
+[node name="Grupo_casa_vacia_05" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_05"]
+position = Vector2(-820, 540)
+
+[node name="Grupo_casa_vacia_06" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_06"]
+position = Vector2(-1080, 540)
+
+[node name="Grupo_casa_vacia_07" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_07"]
+position = Vector2(1080, -60)
+
+[node name="Grupo_casa_vacia_08" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_08"]
+position = Vector2(820, 220)
+
+[node name="Grupo_casa_narel" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_narel"]
+position = Vector2(-1080, -320)
+
+[node name="Grupo_casa_vacia_10" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_10"]
+position = Vector2(1080, 220)
+
+[node name="Grupo_casa_vacia_11" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_11"]
+position = Vector2(820, 540)
+
+[node name="Grupo_casa_granjeros" type="Node2D" parent="."]
+
+[node name="Entrada" type="Marker2D" parent="Grupo_casa_granjeros"]
+position = Vector2(1080, 540)
+
 [node name="BakerCollisionBody" type="StaticBody2D" parent="." unique_id=957773066]
 position = Vector2(-220, -48)
 
@@ -479,25 +559,25 @@ position = Vector2(-400, 84)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InnCollisionBody" unique_id=107889364]
 shape = SubResource("InnCollision")
 
-[node name="Casa_Bruna" type="StaticBody2D" parent="." unique_id=1666745475]
+[node name="Casa_Bruna" type="StaticBody2D" parent="Grupo_casa_bruna" unique_id=1666745475]
 position = Vector2(-820, -360)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Bruna" unique_id=1288703388]
 shape = SubResource("HouseCollision")
 
-[node name="Casa_Elian" type="StaticBody2D" parent="." unique_id=1426582656]
+[node name="Casa_Elian" type="StaticBody2D" parent="Grupo_casa_elian" unique_id=1426582656]
 position = Vector2(820, -360)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Elian" unique_id=1558992717]
 shape = SubResource("HouseCollision")
 
-[node name="Casa_Darven" type="StaticBody2D" parent="." unique_id=2098323229]
+[node name="Casa_Darven" type="StaticBody2D" parent="Grupo_casa_darven" unique_id=2098323229]
 position = Vector2(1080, -360)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Darven" unique_id=1604576087]
 shape = SubResource("HouseCollision")
 
-[node name="Casa_Saira" type="StaticBody2D" parent="." unique_id=1313463682]
+[node name="Casa_Saira" type="StaticBody2D" parent="Grupo_casa_saira" unique_id=1313463682]
 position = Vector2(820, -100)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Saira" unique_id=988752159]
@@ -527,67 +607,67 @@ position = Vector2(-420, -91)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="OrisStudyCollisionBody" unique_id=557097082]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_01" type="StaticBody2D" parent="." unique_id=689874531]
+[node name="Casa_Vacia_01" type="StaticBody2D" parent="Grupo_casa_vacia_01" unique_id=689874531]
 position = Vector2(-820, -100)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_01" unique_id=863297955]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_02" type="StaticBody2D" parent="." unique_id=1565616470]
+[node name="Casa_Vacia_02" type="StaticBody2D" parent="Grupo_casa_vacia_02" unique_id=1565616470]
 position = Vector2(-1080, -100)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_02" unique_id=1522488637]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_03" type="StaticBody2D" parent="." unique_id=775321165]
+[node name="Casa_Vacia_03" type="StaticBody2D" parent="Grupo_casa_vacia_03" unique_id=775321165]
 position = Vector2(-820, 180)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_03" unique_id=1296429590]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_04" type="StaticBody2D" parent="." unique_id=1745315483]
+[node name="Casa_Vacia_04" type="StaticBody2D" parent="Grupo_casa_vacia_04" unique_id=1745315483]
 position = Vector2(-1080, 180)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_04" unique_id=69696839]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_05" type="StaticBody2D" parent="." unique_id=1359688642]
+[node name="Casa_Vacia_05" type="StaticBody2D" parent="Grupo_casa_vacia_05" unique_id=1359688642]
 position = Vector2(-820, 500)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_05" unique_id=1649261960]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_06" type="StaticBody2D" parent="." unique_id=1160665617]
+[node name="Casa_Vacia_06" type="StaticBody2D" parent="Grupo_casa_vacia_06" unique_id=1160665617]
 position = Vector2(-1080, 500)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_06" unique_id=1513613114]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_07" type="StaticBody2D" parent="." unique_id=253019377]
+[node name="Casa_Vacia_07" type="StaticBody2D" parent="Grupo_casa_vacia_07" unique_id=253019377]
 position = Vector2(1080, -100)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_07" unique_id=89560665]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_08" type="StaticBody2D" parent="." unique_id=105761202]
+[node name="Casa_Vacia_08" type="StaticBody2D" parent="Grupo_casa_vacia_08" unique_id=105761202]
 position = Vector2(820, 180)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_08" unique_id=240526544]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Narel" type="StaticBody2D" parent="." unique_id=279640052]
+[node name="Casa_Narel" type="StaticBody2D" parent="Grupo_casa_narel" unique_id=279640052]
 position = Vector2(-1080, -360)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Narel" unique_id=1466812583]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_10" type="StaticBody2D" parent="." unique_id=1442189004]
+[node name="Casa_Vacia_10" type="StaticBody2D" parent="Grupo_casa_vacia_10" unique_id=1442189004]
 position = Vector2(1080, 180)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_10" unique_id=1897923521]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="Casa_Vacia_11" type="StaticBody2D" parent="." unique_id=112161142]
+[node name="Casa_Vacia_11" type="StaticBody2D" parent="Grupo_casa_vacia_11" unique_id=112161142]
 position = Vector2(820, 500)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Casa_Vacia_11" unique_id=1967644794]
@@ -641,7 +721,7 @@ position = Vector2(450, 265)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AnimalPensCollisionBody" unique_id=410790172]
 shape = SubResource("DistrictBuildingSmall")
 
-[node name="FarmersHallCollisionBody" type="StaticBody2D" parent="." unique_id=417207060]
+[node name="FarmersHallCollisionBody" type="StaticBody2D" parent="Grupo_casa_granjeros" unique_id=417207060]
 position = Vector2(1080, 500)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FarmersHallCollisionBody" unique_id=1099439501]
@@ -902,7 +982,7 @@ texture = ExtResource("official_21")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(104, 102)
 
-[node name="Sprite_Casa_Bruna" type="Sprite2D" parent="." unique_id=988479493]
+[node name="Sprite_Casa_Bruna" type="Sprite2D" parent="Grupo_casa_bruna" unique_id=988479493]
 z_index = 3
 texture_filter = 1
 position = Vector2(-820, -374)
@@ -911,7 +991,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(96, 88)
 
-[node name="Sprite_Casa_Elian" type="Sprite2D" parent="." unique_id=169486666]
+[node name="Sprite_Casa_Elian" type="Sprite2D" parent="Grupo_casa_elian" unique_id=169486666]
 z_index = 3
 texture_filter = 1
 position = Vector2(820, -374)
@@ -920,7 +1000,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(96, 90)
 
-[node name="Sprite_Casa_Darven" type="Sprite2D" parent="." unique_id=18387691]
+[node name="Sprite_Casa_Darven" type="Sprite2D" parent="Grupo_casa_darven" unique_id=18387691]
 z_index = 3
 texture_filter = 1
 position = Vector2(1080, -374)
@@ -929,7 +1009,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(96, 90)
 
-[node name="Sprite_Casa_Saira" type="Sprite2D" parent="." unique_id=9389168]
+[node name="Sprite_Casa_Saira" type="Sprite2D" parent="Grupo_casa_saira" unique_id=9389168]
 z_index = 3
 texture_filter = 1
 position = Vector2(820, -114)
@@ -1055,7 +1135,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(126, 102)
 
-[node name="Sprite_Casa_Vacia_01" type="Sprite2D" parent="." unique_id=1801762545]
+[node name="Sprite_Casa_Vacia_01" type="Sprite2D" parent="Grupo_casa_vacia_01" unique_id=1801762545]
 z_index = 3
 texture_filter = 1
 position = Vector2(-820, -114)
@@ -1064,7 +1144,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_02" type="Sprite2D" parent="." unique_id=1824537837]
+[node name="Sprite_Casa_Vacia_02" type="Sprite2D" parent="Grupo_casa_vacia_02" unique_id=1824537837]
 z_index = 3
 texture_filter = 1
 position = Vector2(-1080, -114)
@@ -1073,7 +1153,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_03" type="Sprite2D" parent="." unique_id=2107454953]
+[node name="Sprite_Casa_Vacia_03" type="Sprite2D" parent="Grupo_casa_vacia_03" unique_id=2107454953]
 z_index = 3
 texture_filter = 1
 position = Vector2(-820, 166)
@@ -1082,7 +1162,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_04" type="Sprite2D" parent="." unique_id=2116111228]
+[node name="Sprite_Casa_Vacia_04" type="Sprite2D" parent="Grupo_casa_vacia_04" unique_id=2116111228]
 z_index = 3
 texture_filter = 1
 position = Vector2(-1080, 166)
@@ -1091,7 +1171,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_05" type="Sprite2D" parent="." unique_id=1438870135]
+[node name="Sprite_Casa_Vacia_05" type="Sprite2D" parent="Grupo_casa_vacia_05" unique_id=1438870135]
 z_index = 3
 texture_filter = 1
 position = Vector2(-820, 486)
@@ -1100,7 +1180,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_06" type="Sprite2D" parent="." unique_id=359503228]
+[node name="Sprite_Casa_Vacia_06" type="Sprite2D" parent="Grupo_casa_vacia_06" unique_id=359503228]
 z_index = 3
 texture_filter = 1
 position = Vector2(-1080, 486)
@@ -1109,7 +1189,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_07" type="Sprite2D" parent="." unique_id=546229844]
+[node name="Sprite_Casa_Vacia_07" type="Sprite2D" parent="Grupo_casa_vacia_07" unique_id=546229844]
 z_index = 3
 texture_filter = 1
 position = Vector2(1080, -114)
@@ -1118,7 +1198,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_08" type="Sprite2D" parent="." unique_id=600886225]
+[node name="Sprite_Casa_Vacia_08" type="Sprite2D" parent="Grupo_casa_vacia_08" unique_id=600886225]
 z_index = 3
 texture_filter = 1
 position = Vector2(820, 166)
@@ -1127,7 +1207,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Narel" type="Sprite2D" parent="." unique_id=133680661]
+[node name="Sprite_Casa_Narel" type="Sprite2D" parent="Grupo_casa_narel" unique_id=133680661]
 z_index = 3
 texture_filter = 1
 position = Vector2(-1080, -374)
@@ -1136,7 +1216,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_10" type="Sprite2D" parent="." unique_id=328832531]
+[node name="Sprite_Casa_Vacia_10" type="Sprite2D" parent="Grupo_casa_vacia_10" unique_id=328832531]
 z_index = 3
 texture_filter = 1
 position = Vector2(1080, 166)
@@ -1145,7 +1225,7 @@ texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
 
-[node name="Sprite_Casa_Vacia_11" type="Sprite2D" parent="." unique_id=560379736]
+[node name="Sprite_Casa_Vacia_11" type="Sprite2D" parent="Grupo_casa_vacia_11" unique_id=560379736]
 z_index = 3
 texture_filter = 1
 position = Vector2(820, 486)
