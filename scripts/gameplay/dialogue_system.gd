@@ -348,11 +348,6 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			if not seleccion.is_empty():
 				return seleccion.duplicate(true)
 
-	# Los requisitos narrativos de misión se resuelven antes de este saludo de tránsito.
-	var dialogo_rutina := _crear_dialogo_rutina_en_transito()
-	if not dialogo_rutina.is_empty():
-		return dialogo_rutina
-
 	if not principal.is_empty():
 		return principal
 	return datos.duplicate(true)
