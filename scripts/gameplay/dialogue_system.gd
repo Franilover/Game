@@ -808,7 +808,8 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 		{
 			"texto": "Preguntar cómo va su trabajo",
 			"jugador": "¿Cómo va todo con lo que estás haciendo?",
-			"respuesta": _obtener_reaccion_pregunta_rutina()
+			"respuesta": _obtener_reaccion_pregunta_rutina(),
+			"evento": "interesarse"
 		},
 		{
 			"texto": "Reconocer su esfuerzo",
@@ -825,7 +826,8 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 		{
 			"texto": "Despedirme con amabilidad",
 			"jugador": "No quiero interrumpirte más. Nos vemos luego.",
-			"respuesta": _obtener_reaccion_despedida_rutina()
+			"respuesta": _obtener_reaccion_despedida_rutina(),
+			"evento": "despedida_amable"
 		}
 	]
 	return respuestas
@@ -952,7 +954,7 @@ func _seleccionar_respuesta(indice: int) -> void:
 			"clave_dialogo": str(_lineas[0].get("texto", "")) if not _lineas.is_empty() else "",
 			"respuesta_jugador": texto_jugador
 		}
-		var evento_id := "%s:%s:%s" % [personaje_id, evento, str(Time.get_ticks_msec())]
+		var evento_id := _crear_id_evento_respuesta(personaje_id, evento)
 		relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
 
 	_respuestas.clear()
@@ -965,6 +967,20 @@ func _seleccionar_respuesta(indice: int) -> void:
 	_indice_linea += 1
 	_mostrar_linea_actual()
 	_actualizar_boton_accion()
+
+
+func _crear_id_evento_respuesta(personaje_id: String, evento: String) -> String:
+	var dia_clave := Time.get_date_string_from_system()
+	if relationship_system != null and relationship_system.has_method("obtener_contexto_temporal"):
+		var contexto_temporal_variant: Variant = relationship_system.call("obtener_contexto_temporal")
+		if contexto_temporal_variant is Dictionary:
+			var contexto_temporal := contexto_temporal_variant as Dictionary
+			if bool(contexto_temporal.get("calendario_cargado", false)):
+				dia_clave = "mundo:%d:%d" % [
+					int(contexto_temporal.get("anio", 0)),
+					int(contexto_temporal.get("dia", 1))
+				]
+	return "%s:dialogo:%s:%s" % [personaje_id, evento, dia_clave]
 
 
 func _obtener_mensaje_reaccion_social(evento: String, nombre: String) -> String:
