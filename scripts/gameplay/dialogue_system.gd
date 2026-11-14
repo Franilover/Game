@@ -1578,7 +1578,10 @@ func _crear_opcion_preocupacion_social() -> Dictionary:
 			respuesta = "Me preocupa confundir una hipótesis convincente con una conclusión verdadera. Hay que saber cuándo todavía faltan pruebas."
 	match _nombre_social_actual():
 		"mara":
-			if int(_fuente.get_meta("confianza_local", 0)) >= 3:
+			var confianza_mara := int(_fuente.get_meta("confianza_local", 0))
+			if confianza_mara >= 5:
+				respuesta = "Tuve que dejar mi hogar por motivos políticos. No puedo contarte todos los detalles todavía, pero aquí intento empezar de nuevo sin que me encuentren. Gracias por no presionarme."
+			elif confianza_mara >= 3:
 				respuesta = "Hay cosas de mi pasado que prefiero no contar todavía. Tu compañía me ha ayudado a sentirme un poco más tranquila, pero necesito ir despacio."
 			else:
 				respuesta = "A veces me cuesta acostumbrarme a vivir en un lugar nuevo. Prefiero no hablar mucho de eso, pero agradezco poder estar tranquila."
