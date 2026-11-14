@@ -301,17 +301,19 @@ func _cargar_sprite() -> void:
 		return
 
 
-	if _es_humano() and not nombre_individual.is_empty():
-		rutas.append(
-			"res://assets/art/characters/"
-			+ nombre_individual
-			+ ".png"
-		)
-		rutas.append(
-			"res://assets/art/characters/"
-			+ nombre_individual
-			+ ".PNG"
-		)
+	if _es_humano():
+		var sprite_personaje := str(datos.get("sprite_key", nombre_individual)).strip_edges()
+		if not sprite_personaje.is_empty():
+			rutas.append(
+				"res://assets/art/characters/"
+				+ sprite_personaje
+				+ ".png"
+			)
+			rutas.append(
+				"res://assets/art/characters/"
+				+ sprite_personaje
+				+ ".PNG"
+			)
 
 	# Las criaturas pueden tener su sprite canónico en una carpeta propia
 	# o en la raíz de creatures. Ambos formatos son compatibles.
