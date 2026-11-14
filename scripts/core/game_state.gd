@@ -43,6 +43,7 @@ signal descubrimientos_mundo_actualizados
 signal descubrimiento_mundo(nivel: String, id: String)
 signal garumis_vinculados_actualizados
 signal garumis_amigos_actualizados
+signal dinero_cambiado(cantidad: int)
 
 
 func configurar_dependencias(
@@ -1361,6 +1362,30 @@ func _extraer_metadata_partida(
 	}
 
 
+
+
+func obtener_dinero() -> int:
+	# Las partidas antiguas reciben un saldo inicial al adoptar el sistema.
+	if not world_state.flags.has("dinero"):
+		world_state.flags["dinero"] = 100
+	return maxi(0, int(world_state.flags.get("dinero", 0)))
+
+
+func establecer_dinero(cantidad: int) -> void:
+	var nuevo_saldo := maxi(0, cantidad)
+	if obtener_dinero() == nuevo_saldo:
+		return
+	world_state.flags["dinero"] = nuevo_saldo
+	dinero_cambiado.emit(nuevo_saldo)
+	call_deferred("_ejecutar_guardado_rapido")
+
+
+func modificar_dinero(cambio: int) -> bool:
+	var saldo_actual := obtener_dinero()
+	if cambio < 0 and saldo_actual < -cambio:
+		return false
+	establecer_dinero(saldo_actual + cambio)
+	return true
 
 
 func tiene_semilla_mundo() -> bool:
