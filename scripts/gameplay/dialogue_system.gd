@@ -33,6 +33,7 @@ var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
 var _selector_conversacion_titulo: Label = null
 var _menu_social_actual: String = ""
+var _usa_menu_social: bool = false
 var _selector_items: PanelContainer = null
 var _selector_items_grid: GridContainer = null
 var _selector_items_titulo: Label = null
@@ -165,6 +166,7 @@ func abrir_desde(fuente: Creature) -> bool:
 
 func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool = false) -> bool:
 	_recuerdo_pendiente_mostrar.clear()
+	_usa_menu_social = false
 	_personaje_recuerdo_pendiente = ""
 	_variante_pendiente_mostrar.clear()
 	_personaje_variante_pendiente = ""
@@ -236,10 +238,10 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
-	if _respuestas.is_empty() and not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
-		# Las opciones contextuales definidas por una escena o cinemática
-		# tienen prioridad; sólo generamos las opciones sociales genéricas
-		# cuando el diálogo no trae respuestas propias.
+	if not iniciativa_directa and not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
+		# En conversaciones normales el menú social es estable y sustituye
+		# las respuestas rotativas. Las escenas directas conservan sus opciones.
+		_usa_menu_social = true
 		_respuestas = _crear_menu_principal_social()
 	_limpiar_botones_respuesta()
 
@@ -306,6 +308,8 @@ func cerrar() -> void:
 	_abierto = false
 	_lineas.clear()
 	_respuestas.clear()
+	_usa_menu_social = false
+	_menu_social_actual = ""
 	_limpiar_botones_respuesta()
 	_indice_linea = 0
 	_texto_completo = ""
@@ -1280,7 +1284,7 @@ func _cerrar_selector_conversacion() -> void:
 		_selector_conversacion.visible = false
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
-	if _abierto and is_instance_valid(_fuente):
+	if _abierto and is_instance_valid(_fuente) and _usa_menu_social:
 		_respuestas = _crear_menu_principal_social()
 		_limpiar_botones_respuesta()
 		_actualizar_boton_accion()
@@ -1940,7 +1944,7 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
 	_acciones.clear()
-	_respuestas = _crear_menu_principal_social() if not es_despedida else []
+	_respuestas = _crear_menu_principal_social() if _usa_menu_social and not es_despedida else []
 	_limpiar_botones_respuesta()
 	_lineas = [{"hablante": _fuente.get_nombre_visual(), "texto": respuesta}]
 	_indice_linea = 0
@@ -2016,7 +2020,7 @@ func _seleccionar_respuesta(indice: int) -> void:
 			})
 
 	var es_despedida := bool(opcion.get("despedida", false))
-	_respuestas = _crear_menu_principal_social() if not es_despedida and is_instance_valid(_fuente) else []
+	_respuestas = _crear_menu_principal_social() if _usa_menu_social and not es_despedida and is_instance_valid(_fuente) else []
 	_limpiar_botones_respuesta()
 	# La elección del jugador ya queda registrada en el sistema social.
 	# Sólo mostramos la reacción del NPC para evitar repetir literalmente
