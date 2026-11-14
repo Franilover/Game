@@ -580,7 +580,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			npc.global_position = _zona.to_global(salida.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
 		npc.set_meta("rutina_en_edificio", false)
 		npc.set_meta("rutina_edificio_id", "")
-		npc.visible = not (is_instance_valid(_zona) and bool(_zona.get("_interior_activo")))
+		npc.visible = not (is_instance_valid(_zona) and (_zona.get("_interior_activo") == true))
 
 	# Si la actividad cambia pero sigue en el mismo edificio, permanece dentro.
 	# Durante la reunión nocturna, además rota entre pequeños grupos del salón.
@@ -661,7 +661,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		push_warning("NPCScheduleSystem: " + npc.get_nombre_visual() + " no tiene CreatureMovement.")
 		return
 
-	npc.visible = not (is_instance_valid(_zona) and bool(_zona.get("_interior_activo")))
+	npc.visible = not (is_instance_valid(_zona) and (_zona.get("_interior_activo") == true))
 	if npc.global_position.distance_to(destino_global) > DISTANCIA_LLEGADA:
 		var ruta := _crear_ruta(npc.global_position, destino_global)
 		if ruta.is_empty():
