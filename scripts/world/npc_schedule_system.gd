@@ -304,6 +304,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			return
 		npc.set_meta("rutina_error_firma", "")
 		movimiento.establecer_ruta(ruta)
+		print("NPCScheduleSystem: ", npc.get_nombre_visual(), " -> ", ubicacion, " (", actividad, ") | puntos de ruta: ", ruta.size())
 	else:
 		movimiento.detener_por_rutina()
 		if not edificio_id.is_empty():
