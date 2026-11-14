@@ -713,6 +713,7 @@ func _materializar_npcs_reino_torres() -> void:
 		npc.datos["posicion_hogar_local"] = posicion_hogar_local
 		npc.global_position = zona.to_global(posicion_hogar_local)
 		npc.set_meta("hogar_inicializado", true)
+		print("Main: NPC ", nombre, " | hogar=", hogar_clave, " | lugar_base=", ubicacion, " | rutinas=", rutinas_actualizadas.size())
 		npc.set_meta("personaje_game_id", personaje_id)
 		npc.add_to_group("torres_game_npc")
 		npc.remove_from_group("creatures")
