@@ -31,7 +31,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 		],
 		"lineas_siguientes": [{"npc":"saira","texto":"El conductor volvió a pasar por Torres. Esta vez llegó con tiempo de sobra."},{"npc":"elian","texto":"Y yo pude preparar la hornada sin cambiar la receta a mitad del trabajo."},{"npc":"saira","texto":"Parece que los avisos y la revisión del camino sirvieron para algo."},{"npc":"elian","texto":"Sí. Cuando vuelva a llegar harina, apartaré una parte para quienes ayudaron."}],
 		"lineas_tercera_etapa": [{"npc":"saira","texto":"Ahora puedo avisarte de las entregas con más precisión. Ya sé cuánto margen necesitas."},{"npc":"elian","texto":"Y yo puedo organizar los pedidos sin cambiar todo a última hora. Nos entendimos bien."},{"npc":"saira","texto":"La próxima vez que pase por Torres, no vendré sólo por trabajo."},{"npc":"elian","texto":"Entonces dejaré algo preparado para compartir. No hace falta que traigas noticias cada vez."}],
-		"lineas_tercera_tension": [{"npc":"darven","texto":"El registro sigue incompleto. No puedo dar por resuelto el tramo sólo porque ahora parezca firme."},{"npc":"bruna","texto":"Y yo no voy a repetir una inspección cada vez que alguien dude de las piezas."},{"npc":"darven","texto":"No cuestiono tu trabajo. Necesito que el informe y la reparación coincidan."},{"npc":"bruna","texto":"Entonces revisemos ambos juntos. Pero esta vez no decidas antes de mirar."}]
+
 	},
 	{
 		"clave": "bruna_darven_camino",
@@ -52,7 +52,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"bruna","texto":"Bien. Así cada cual hace su parte y terminamos antes."}
 		],
 		"lineas_siguientes": [{"npc":"bruna","texto":"El tramo ya está más firme. Revisé las piedras después del mantenimiento."},{"npc":"darven","texto":"El equipo terminó ayer. También dejaron libre el paso para las carretas."},{"npc":"bruna","texto":"Bien. Haré una última comprobación del eje de prueba antes de darlo por resuelto."},{"npc":"darven","texto":"Avísame si encuentras algo. Esta vez podremos corregirlo antes de que cause otro retraso."}],
-		"lineas_tercera_etapa": [{"npc":"darven","texto":"El registro del camino queda actualizado. Si vuelve a deteriorarse, sabremos dónde empezar."},{"npc":"bruna","texto":"Y yo conservaré las medidas de las piezas. No tendremos que improvisar otra vez."},{"npc":"darven","texto":"Admito que tu insistencia ayudó a que revisáramos el tramo completo."},{"npc":"bruna","texto":"Y yo admito que mantener el paso vigilado mientras trabajaban fue útil. No estuvo mal coordinado."}]
+		"lineas_tercera_etapa": [{"npc":"darven","texto":"El registro del camino queda actualizado. Si vuelve a deteriorarse, sabremos dónde empezar."},{"npc":"bruna","texto":"Y yo conservaré las medidas de las piezas. No tendremos que improvisar otra vez."},{"npc":"darven","texto":"Admito que tu insistencia ayudó a que revisáramos el tramo completo."},{"npc":"bruna","texto":"Y yo admito que mantener el paso vigilado mientras trabajaban fue útil. No estuvo mal coordinado."}],
+"lineas_tercera_tension": [{"npc":"darven","texto":"El registro sigue incompleto. No puedo dar por resuelto el tramo sólo porque ahora parezca firme."},{"npc":"bruna","texto":"Y yo no voy a repetir una inspección cada vez que alguien dude de las piezas."},{"npc":"darven","texto":"No cuestiono tu trabajo. Necesito que el informe y la reparación coincidan."},{"npc":"bruna","texto":"Entonces revisemos ambos juntos. Pero esta vez no decidas antes de mirar."}]
 	},
 	{
 		"clave": "bruna_narel_evidencia",
