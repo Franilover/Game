@@ -65,7 +65,8 @@ func _al_reglas_cargadas(reglas: Array) -> void:
 		if personaje_id.is_empty():
 			continue
 		_reglas[personaje_id] = regla.duplicate(true)
-	_cargado = not _reglas.is_empty()
+	# La consulta terminó correctamente aunque algunos NPC no tengan perfil social aún.
+	_cargado = true
 	reglas_sociales_cargadas.emit()
 
 
@@ -87,11 +88,14 @@ func obtener_relacion(personaje_id: String) -> Dictionary:
 		if guardada is Dictionary:
 			return (guardada as Dictionary).duplicate(true)
 
-	var regla_variant: Variant = _reglas.get(personaje_id, {})
-	if not regla_variant is Dictionary:
+	var personaje := WorldData.obtener_personaje_game_por_id(personaje_id)
+	if personaje.is_empty():
 		return {}
 
-	var regla := regla_variant as Dictionary
+	# Un NPC sin fila en personaje_social_v1 comienza neutral y puede
+	# acumular amistad/recuerdos normalmente. No se inventa personalidad canónica.
+	var regla_variant: Variant = _reglas.get(personaje_id, {})
+	var regla: Dictionary = regla_variant as Dictionary if regla_variant is Dictionary else {}
 	var nueva := {
 		"amistad": float(regla.get("amistad_inicial", 0.0)),
 		"confianza": float(regla.get("confianza_inicial", 0.0)),
@@ -531,9 +535,16 @@ func registrar_regalo(personaje_id: String, item_id: String, nombre_item: String
 
 func obtener_personalidad(personaje_id: String) -> Dictionary:
 	var regla: Variant = _reglas.get(personaje_id, {})
-	if regla is Dictionary:
+	if regla is Dictionary and not (regla as Dictionary).is_empty():
 		return (regla as Dictionary).duplicate(true)
-	return {}
+	# Valores neutrales para NPC sin perfil social específico en Supabase.
+	return {
+		"sociabilidad": 50.0,
+		"curiosidad": 50.0,
+		"generosidad": 50.0,
+		"prudencia": 50.0,
+		"agresividad": 50.0
+	}
 
 
 func seleccionar_variante_dialogo(variantes: Array, personaje_id: String) -> Dictionary:

@@ -132,23 +132,19 @@ func _actualizar() -> void:
 		estado.text = "Cargando relaciones sociales..."
 		return
 
-	var reglas_variant: Variant = sistema.call("obtener_reglas_sociales")
-	if not reglas_variant is Dictionary:
-		estado.text = "No se pudieron leer las relaciones sociales."
+	# La lista social parte del catálogo canónico de personajes_game.
+	# Las reglas de personalidad son opcionales: su ausencia no debe ocultar aldeanos.
+	var personajes: Array[Dictionary] = WorldData.obtener_personajes_game()
+	if personajes.is_empty():
+		estado.text = "Todavía no hay habitantes disponibles."
 		return
 
-	var reglas: Dictionary = reglas_variant as Dictionary
-	if reglas.is_empty():
-		estado.text = "Todavía no hay personajes configurados para relaciones."
-		return
-
-	for personaje_id_variant in reglas.keys():
-		var personaje_id := str(personaje_id_variant)
-		var regla_variant: Variant = reglas.get(personaje_id_variant, {})
-		if not regla_variant is Dictionary:
+	for personaje in personajes:
+		if not bool(personaje.get("activo", true)):
 			continue
-
-		var personaje: Dictionary = WorldData.obtener_personaje_game_por_id(personaje_id)
+		var personaje_id := str(personaje.get("id", "")).strip_edges()
+		if personaje_id.is_empty():
+			continue
 		var nombre := str(personaje.get("nombre", "")).strip_edges()
 		if nombre.is_empty():
 			nombre = personaje_id
