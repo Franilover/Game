@@ -307,15 +307,19 @@ func _cargar_sprite() -> void:
 	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\"):
 		for extension in [".png", ".PNG"]:
 			var ruta_personaje: String = "res://assets/art/characters/" + sprite_key_local + str(extension)
-			if not ResourceLoader.exists(ruta_personaje):
+			if not FileAccess.file_exists(ruta_personaje) and not ResourceLoader.exists(ruta_personaje):
 				continue
-			var textura_personaje := load(ruta_personaje) as Texture2D
+			var recurso_personaje: Resource = ResourceLoader.load(ruta_personaje)
+			var textura_personaje := recurso_personaje as Texture2D
 			if textura_personaje != null:
 				sprite.texture = textura_personaje
+				sprite.visible = true
 				remove_meta("sprite_placeholder_humano")
+				remove_meta("sprite_key_no_encontrado")
 				set_meta("sprite_key_cargado", sprite_key_local)
 				return
 		set_meta("sprite_key_no_encontrado", sprite_key_local)
+		push_warning("Creature: no se pudo cargar el sprite local '%s'." % sprite_key_local)
 
 	if _es_humano():
 		var sprite_personaje := str(datos.get("sprite_key", nombre_individual)).strip_edges()
