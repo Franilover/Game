@@ -165,7 +165,12 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		for respuesta_variant in respuestas_variant as Array:
 			if respuesta_variant is Dictionary:
 				_respuestas.append((respuesta_variant as Dictionary).duplicate(true))
-	if _respuestas.is_empty() and str(datos_seleccionados.get("clave", "")).begins_with("rutina_"):
+	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
+	if (
+		_respuestas.is_empty()
+		and _acciones.is_empty()
+		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
+	):
 		_respuestas = _crear_respuestas_rutina()
 	_limpiar_botones_respuesta()
 
@@ -814,6 +819,11 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 			"jugador": "He aprendido algo que creo que podría interesarte.",
 			"respuesta": _obtener_reaccion_conocimiento_rutina(),
 			"evento": "compartir_conocimiento"
+		},
+		{
+			"texto": "Despedirme con amabilidad",
+			"jugador": "No quiero interrumpirte más. Nos vemos luego.",
+			"respuesta": _obtener_reaccion_despedida_rutina()
 		}
 	]
 	return respuestas
@@ -877,6 +887,26 @@ func _obtener_reaccion_conocimiento_rutina() -> String:
 		"liam":
 			return "¿En serio? Me gusta escuchar cosas nuevas. Cuéntame un poco más."
 	return "Me interesa lo que dices. Cuéntame más cuando tengamos un momento."
+
+
+func _obtener_reaccion_despedida_rutina() -> String:
+	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
+	match nombre.to_lower():
+		"elian":
+			return "No interrumpes. Me alegra que hayas pasado; cuando vuelva a tener un momento, seguimos hablando."
+		"bruna":
+			return "Está bien. Tengo que terminar esto, pero podemos continuar la conversación otro día."
+		"darven":
+			return "De acuerdo. Mantente a salvo y avísame si ocurre algo que deba saber."
+		"saira":
+			return "Hasta luego. Si vuelves a pasar, quizá tenga alguna novedad que contarte."
+		"narel":
+			return "Gracias por entenderlo. No olvides lo que querías contarme; me interesa escucharlo después."
+		"abel":
+			return "Hasta pronto. Agradezco que te hayas tomado el tiempo de conversar conmigo."
+		"liam":
+			return "¡Nos vemos! Espero que volvamos a encontrarnos pronto."
+	return "Hasta luego. Me ha gustado conversar contigo."
 
 
 func _crear_botones_respuesta() -> void:
@@ -1034,11 +1064,11 @@ func _crear_interfaz() -> void:
 	# tamaños heredados de otros paneles del HUD.
 	dialogue_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	dialogue_panel.offset_left = -360.0
-	dialogue_panel.offset_top = -238.0
+	dialogue_panel.offset_top = -278.0
 	dialogue_panel.offset_right = 360.0
 	dialogue_panel.offset_bottom = -18.0
-	dialogue_panel.custom_minimum_size = Vector2(720.0, 220.0)
-	dialogue_panel.size = Vector2(720.0, 220.0)
+	dialogue_panel.custom_minimum_size = Vector2(720.0, 260.0)
+	dialogue_panel.size = Vector2(720.0, 260.0)
 	dialogue_panel.clip_contents = false
 	dialogue_panel.z_as_relative = false
 
