@@ -198,6 +198,11 @@ func iniciar_actividad_social(npc: Creature, destino_local: Vector2, duracion: f
 func _actualizar_actividad_social(npc: Creature, delta: float) -> bool:
 	if not bool(npc.get_meta("actividad_social_activa", false)):
 		return false
+	if _esta_lloviendo_en_posicion(npc.global_position):
+		# La actividad al aire libre se interrumpe para que la rutina normal
+		# pueda enviarlo a un edificio cercano.
+		_finalizar_actividad_social(npc)
+		return false
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
 		_finalizar_actividad_social(npc)
