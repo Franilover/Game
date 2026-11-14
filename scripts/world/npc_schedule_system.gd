@@ -7,6 +7,10 @@ const ORIGEN_MAPA := Vector2(-1152.0, -672.0)
 const TAMANO_MALLA := Vector2i(72, 42)
 const RADIO_COLISION_NPC := 14.0
 const DISTANCIA_LLEGADA := 7.0
+# Coste de desplazamiento: los caminos de tierra (zona 1 de WorldTerrainVisual)
+# son la superficie preferida; el resto del terreno sigue siendo transitable.
+const COSTE_CAMINO_TIERRA := 0.48
+const COSTE_OTRO_TERRENO := 1.0
 
 # Puntos de actividad en coordenadas locales de ReinoTorres.
 # Se definen por ubicación, nunca por nombre de personaje.
@@ -56,6 +60,7 @@ const POSICIONES: Dictionary = {
 var _world_atmosphere: WorldAtmosphere = null
 var _zone_manager: Node = null
 var _zona: Node2D = null
+var _terreno_visual: Node = null
 var _malla: AStarGrid2D = null
 var _malla_lista := false
 var _construyendo_malla := false
@@ -266,6 +271,7 @@ func finalizar_acercamiento_social(npc: Creature) -> void:
 
 func _invalidar_malla() -> void:
 	_zona = null
+	_terreno_visual = null
 	_malla = null
 	_malla_lista = false
 	_construyendo_malla = false
@@ -281,6 +287,7 @@ func _construir_malla(zona: Node2D) -> void:
 		_construyendo_malla = false
 		return
 
+	_terreno_visual = get_tree().get_first_node_in_group("world_terrain_visual")
 	var nueva_malla := AStarGrid2D.new()
 	nueva_malla.region = Rect2i(Vector2i.ZERO, TAMANO_MALLA)
 	nueva_malla.cell_size = Vector2(TAMANO_CELDA, TAMANO_CELDA)
@@ -311,6 +318,8 @@ func _construir_malla(zona: Node2D) -> void:
 			consulta.transform = Transform2D(0.0, centro_global)
 			if not espacio.intersect_shape(consulta, 1).is_empty():
 				nueva_malla.set_point_solid(id, true)
+			else:
+				_aplicar_preferencia_terreno(nueva_malla, id, centro_global)
 
 	if not is_instance_valid(zona) or zona != _zona:
 		_construyendo_malla = false
@@ -320,6 +329,17 @@ func _construir_malla(zona: Node2D) -> void:
 	_malla_lista = true
 	_construyendo_malla = false
 	print("NPCScheduleSystem: navegación de Torres lista (", TAMANO_MALLA.x * TAMANO_MALLA.y, " celdas).")
+
+
+## Aplica un coste menor a las celdas del atlas Tierra (zona 1).
+## Los demás terrenos conservan su coste normal y siguen disponibles como
+## desvíos o atajos cuando el camino de tierra no resulte conveniente.
+func _aplicar_preferencia_terreno(malla: AStarGrid2D, celda: Vector2i, posicion_global: Vector2) -> void:
+	if not is_instance_valid(_terreno_visual) or not _terreno_visual.has_method("obtener_zona_en_posicion"):
+		return
+	var zona_terreno: int = int(_terreno_visual.call("obtener_zona_en_posicion", posicion_global))
+	var coste: float = COSTE_CAMINO_TIERRA if zona_terreno == 1 else COSTE_OTRO_TERRENO
+	malla.set_point_weight_scale(celda, coste)
 
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
