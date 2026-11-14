@@ -168,7 +168,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	if (
 		_respuestas.is_empty()
-		and _acciones.is_empty()
+		and acciones_debug.is_empty()
 		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
 	):
 		_respuestas = _crear_respuestas_rutina()
