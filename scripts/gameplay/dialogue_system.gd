@@ -106,6 +106,10 @@ func _input(event: InputEvent) -> void:
 				return
 			if _selector_conversacion != null and _selector_conversacion.visible and _selector_conversacion.get_global_rect().has_point(posicion_mouse):
 				return
+			# Las respuestas también son controles interactivos: el clic no debe
+			# convertirse en un avance del diálogo antes de llegar al Button.
+			if _respuestas_container != null and _respuestas_container.visible and _respuestas_container.get_global_rect().has_point(posicion_mouse):
+				return
 			if action_button != null and action_button.visible and action_button.get_global_rect().has_point(posicion_mouse):
 				return
 			if _boton_regalo != null and _boton_regalo.visible and _boton_regalo.get_global_rect().has_point(posicion_mouse):
@@ -1541,7 +1545,8 @@ func _seleccionar_respuesta(indice: int) -> void:
 			"clave_dialogo": str(_lineas[0].get("texto", "")) if not _lineas.is_empty() else "",
 			"respuesta_jugador": texto_jugador
 		}
-		var evento_id := _crear_id_evento_respuesta(personaje_id, evento)
+		var clave_opcion := str(opcion.get("clave", texto_jugador)).strip_edges()
+		var evento_id := _crear_id_evento_respuesta(personaje_id, evento, clave_opcion)
 		relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
 
 	_respuestas.clear()
@@ -1556,7 +1561,11 @@ func _seleccionar_respuesta(indice: int) -> void:
 	_actualizar_boton_accion()
 
 
-func _crear_id_evento_respuesta(personaje_id: String, evento: String) -> String:
+func _crear_id_evento_respuesta(
+	personaje_id: String,
+	evento: String,
+	identificador_opcion: String = ""
+) -> String:
 	var dia_clave := Time.get_date_string_from_system()
 	if relationship_system != null and relationship_system.has_method("obtener_contexto_temporal"):
 		var contexto_temporal_variant: Variant = relationship_system.call("obtener_contexto_temporal")
@@ -1567,7 +1576,10 @@ func _crear_id_evento_respuesta(personaje_id: String, evento: String) -> String:
 					int(contexto_temporal.get("anio", 0)),
 					int(contexto_temporal.get("dia", 1))
 				]
-	return "%s:dialogo:%s:%s" % [personaje_id, evento, dia_clave]
+	var sufijo_opcion := ""
+	if not identificador_opcion.strip_edges().is_empty():
+		sufijo_opcion = ":%s" % str(hash(identificador_opcion.strip_edges()))
+	return "%s:dialogo:%s:%s%s" % [personaje_id, evento, dia_clave, sufijo_opcion]
 
 
 func _obtener_mensaje_reaccion_social(evento: String, nombre: String) -> String:
