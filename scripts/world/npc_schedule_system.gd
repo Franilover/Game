@@ -90,10 +90,10 @@ static func obtener_clave_hogar(nombre_npc: String, ubicacion_respaldo: String =
 		"narel": "casa_narel",
 		"abel": "castillo",
 		"liam": "castillo",
-		"magda": "vivienda_oeste_01",
-		"sofia": "vivienda_oeste_02",
-		"aurora": "vivienda_oeste_03",
-		"tomas": "vivienda_oeste_04"
+		"mara": "vivienda_oeste_01",
+		"ivo": "vivienda_oeste_02",
+		"nima": "vivienda_oeste_03",
+		"taren": "vivienda_oeste_04"
 	}
 	var ubicacion := str(hogares.get(clave, ubicacion_respaldo)).strip_edges().to_lower()
 	return ubicacion if POSICIONES.has(ubicacion) else "plaza"
