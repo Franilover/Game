@@ -78,6 +78,16 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 				await _ejecutar_movimiento_camara(paso)
 				if generacion_actual != _generacion:
 					return false
+			"gesto_npc":
+				await _ejecutar_gesto_npc(paso)
+				if generacion_actual != _generacion:
+					return false
+			"mirar_npc":
+				_ejecutar_mirar_npc(paso)
+			"mover_npc":
+				await _ejecutar_mover_npc(paso, generacion_actual)
+				if generacion_actual != _generacion:
+					return false
 			"evento":
 				var evento := str(paso.get("clave", "")).strip_edges()
 				if not evento.is_empty():
@@ -109,6 +119,109 @@ func cancelar() -> void:
 		_camera.global_position = _player.global_position
 		_camera.zoom = _zoom_original
 	_finalizar()
+
+
+
+func _buscar_npc(clave: String) -> Creature:
+	var buscada := clave.strip_edges().to_lower()
+	if buscada.is_empty():
+		return null
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature:
+			continue
+		var npc := nodo as Creature
+		if not is_instance_valid(npc):
+			continue
+		var nombre := npc.get_nombre().strip_edges().to_lower()
+		var id := npc.get_id().strip_edges().to_lower()
+		if nombre == buscada or id == buscada:
+			return npc
+	return null
+
+
+func _ejecutar_mirar_npc(paso: Dictionary) -> void:
+	var npc := _buscar_npc(str(paso.get("npc", "")))
+	if npc == null:
+		return
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	var objetivo := _buscar_npc(str(paso.get("hacia_npc", "")))
+	if objetivo != null:
+		sprite.flip_h = objetivo.global_position.x < npc.global_position.x
+	elif paso.has("izquierda"):
+		sprite.flip_h = bool(paso.get("izquierda", false))
+
+
+func _ejecutar_gesto_npc(paso: Dictionary) -> void:
+	var npc := _buscar_npc(str(paso.get("npc", "")))
+	if npc == null:
+		return
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	var gesto := str(paso.get("gesto", "asentir")).strip_edges().to_lower()
+	var duracion := clampf(float(paso.get("duracion", 0.55)), 0.15, 2.5)
+	var posicion_base := sprite.position
+	var escala_base := sprite.scale
+	var rotacion_base := sprite.rotation
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	match gesto:
+		"asentir":
+			tween.tween_property(sprite, "position:y", posicion_base.y - 3.0, duracion * 0.35)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.65)
+		"saludar":
+			tween.tween_property(sprite, "rotation", rotacion_base - 0.10, duracion * 0.25)
+			tween.tween_property(sprite, "rotation", rotacion_base + 0.10, duracion * 0.25)
+			tween.tween_property(sprite, "rotation", rotacion_base, duracion * 0.5)
+		"trabajar":
+			tween.tween_property(sprite, "rotation", rotacion_base - 0.07, duracion * 0.25)
+			tween.tween_property(sprite, "rotation", rotacion_base + 0.07, duracion * 0.25)
+			tween.tween_property(sprite, "rotation", rotacion_base, duracion * 0.5)
+		"sorpresa":
+			tween.tween_property(sprite, "scale", escala_base * 1.08, duracion * 0.3)
+			tween.tween_property(sprite, "scale", escala_base, duracion * 0.7)
+		"negar":
+			tween.tween_property(sprite, "rotation", rotacion_base + 0.09, duracion * 0.2)
+			tween.tween_property(sprite, "rotation", rotacion_base - 0.09, duracion * 0.2)
+			tween.tween_property(sprite, "rotation", rotacion_base, duracion * 0.6)
+		_:
+			tween.tween_property(sprite, "position:y", posicion_base.y - 2.0, duracion * 0.5)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.5)
+	await tween.finished
+	if is_instance_valid(sprite):
+		sprite.position = posicion_base
+		sprite.scale = escala_base
+		sprite.rotation = rotacion_base
+
+
+func _ejecutar_mover_npc(paso: Dictionary, generacion: int) -> void:
+	var npc := _buscar_npc(str(paso.get("npc", "")))
+	if npc == null:
+		return
+	var schedule := get_tree().get_first_node_in_group("npc_schedule_system")
+	if not is_instance_valid(schedule) or not schedule.has_method("iniciar_actividad_social"):
+		return
+	var zona_manager := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(zona_manager) or not zona_manager.has_method("obtener_zona_actual"):
+		return
+	var zona := zona_manager.call("obtener_zona_actual") as Node2D
+	if not is_instance_valid(zona):
+		return
+	var destino := Vector2(float(paso.get("x", 0.0)), float(paso.get("y", 0.0)))
+	var duracion := clampf(float(paso.get("duracion", 5.0)), 1.0, 30.0)
+	if not bool(schedule.call("iniciar_actividad_social", npc, destino, duracion)):
+		return
+	var tiempo := 0.0
+	while is_instance_valid(npc) and bool(npc.get_meta("actividad_social_activa", false)):
+		if generacion != _generacion:
+			return
+		if tiempo >= 35.0:
+			break
+		await get_tree().create_timer(0.2).timeout
+		tiempo += 0.2
 
 
 func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
