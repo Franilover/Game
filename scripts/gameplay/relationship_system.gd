@@ -423,15 +423,34 @@ func marcar_recuerdo_mencionado(
 
 
 ## Compatibilidad con llamadas antiguas.
+## Busca exclusivamente regalos para que un evento social importante no los oculte.
 func tomar_regalo_pendiente_mencionar(personaje_id: String) -> Dictionary:
-	var recuerdo := obtener_recuerdo_pendiente_mencionar(personaje_id)
-	if str(recuerdo.get("tipo", "")) != "regalo":
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
 		return {}
-	var indice := int(recuerdo.get("_indice_recuerdo", -1))
+	var lista := obtener_recuerdos(id)
+	var mejor_indice := -1
+	var mejor_importancia := -1.0
+	for i in range(lista.size()):
+		if not lista[i] is Dictionary:
+			continue
+		var candidato := (lista[i] as Dictionary).duplicate(true)
+		if (
+			str(candidato.get("tipo", "")) != "regalo"
+			or bool(candidato.get("mencionado_en_dialogo", false))
+			or str(candidato.get("item_nombre", "")).strip_edges().is_empty()
+		):
+			continue
+		var importancia := float(candidato.get("importancia", 1.0))
+		if importancia > mejor_importancia:
+			mejor_importancia = importancia
+			mejor_indice = i
+	if mejor_indice < 0:
+		return {}
+	var recuerdo := (lista[mejor_indice] as Dictionary).duplicate(true)
 	var uid := str(recuerdo.get("recuerdo_uid", ""))
-	if not marcar_recuerdo_mencionado(personaje_id, indice, uid):
+	if not marcar_recuerdo_mencionado(id, mejor_indice, uid):
 		return {}
-	recuerdo.erase("_indice_recuerdo")
 	return recuerdo
 
 
