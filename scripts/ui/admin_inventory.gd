@@ -34,7 +34,7 @@ var _campos_relacion: Dictionary = {}
 var _boton_guardar_relacion: Button = null
 var _dialogue_system: DialogueSystem = null
 var _cutscene_director: CutsceneDirector = null
-var _npc_conversation_system: NPCConversationSystem = null
+var _npc_conversation_system: Node = null
 var _contenido_narrativo: VBoxContainer = null
 var _pestana_narrativa := "dialogos"
 var _dialogos_admin: Array[Dictionary] = []
@@ -65,7 +65,7 @@ func configurar_aldeanos(relationship_system: Node, zone_manager: Node) -> void:
 	_zone_manager = zone_manager
 
 
-func configurar_narrativa(dialogue_system: DialogueSystem, cutscene_director: CutsceneDirector, npc_conversation_system: NPCConversationSystem) -> void:
+func configurar_narrativa(dialogue_system: DialogueSystem, cutscene_director: CutsceneDirector, npc_conversation_system: Node) -> void:
 	_dialogue_system = dialogue_system
 	_cutscene_director = cutscene_director
 	_npc_conversation_system = npc_conversation_system
