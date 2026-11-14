@@ -428,11 +428,19 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		npc.visible = not (is_instance_valid(_zona) and bool(_zona.get("_interior_activo")))
 
 	# Si la actividad cambia pero sigue en el mismo edificio, permanece dentro.
+	# Durante la reunión nocturna, además rota entre pequeños grupos del salón.
 	if esta_dentro and edificio_id == edificio_actual:
+		if clave_rutina == "reunion_nocturna_castillo":
+			_actualizar_movimiento_reunion_castillo(npc, minutos)
+			npc.datos["actividad_actual"] = "conversando con los demás"
+			npc.set_meta("actividad_actual", "conversando con los demás")
+			npc.set_meta("rutina_en_transito", false)
+			npc.remove_meta("viajando")
+		else:
+			npc.datos["actividad_actual"] = actividad
 		npc.set_meta("rutina_firma", firma_nueva)
 		npc.set_meta("rutina_actual", clave_rutina)
 		npc.set_meta("rutina_ubicacion", ubicacion)
-		npc.datos["actividad_actual"] = actividad
 		return
 
 	if firma_anterior == firma_nueva:
@@ -522,6 +530,53 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.set_meta("rutina_actual", clave_rutina)
 	npc.set_meta("rutina_ubicacion", ubicacion)
 	npc.datos["actividad_actual"] = actividad
+
+
+## Reorganiza la reunión en grupos pequeños. Cada cinco minutos los
+## habitantes cambian de grupo y ocupan otro punto cercano para continuar
+## conversando con personas distintas.
+func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(_zona) or not _malla_lista:
+		return
+	var fase := maxi(0, int((minutos - 1260) / 5))
+	if int(npc.get_meta("reunion_castillo_fase", -1)) == fase:
+		return
+	var habitantes: Array[Creature] = []
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if nodo is Creature and is_instance_valid(nodo):
+			var asistente := nodo as Creature
+			if bool(asistente.get_meta("rutina_en_edificio", false)) and str(asistente.get_meta("rutina_edificio_id", "")) == "castillo":
+				habitantes.append(asistente)
+	habitantes.sort_custom(func(a: Creature, b: Creature) -> bool: return a.get_nombre_visual() < b.get_nombre_visual())
+	var indice := habitantes.find(npc)
+	if indice < 0:
+		return
+	var cantidad := maxi(1, habitantes.size())
+	var indice_social := posmod(indice + fase * 3, cantidad)
+	var grupo := int(indice_social / 3)
+	var puesto := posmod(indice_social, 3)
+	var centros: Array[Vector2] = [
+		Vector2(-145.0, -65.0), Vector2(0.0, -65.0), Vector2(145.0, -65.0),
+		Vector2(-145.0, 75.0), Vector2(0.0, 75.0), Vector2(145.0, 75.0)
+	]
+	var centro: Vector2 = centros[posmod(grupo, centros.size())]
+	var offsets: Array[Vector2] = [Vector2(-24.0, 0.0), Vector2(24.0, 0.0), Vector2(0.0, 22.0)]
+	var destino_global := _zona.to_global(centro + offsets[puesto])
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento == null:
+		return
+	if npc.global_position.distance_to(destino_global) > DISTANCIA_LLEGADA:
+		var ruta := _crear_ruta(npc.global_position, destino_global)
+		if not ruta.is_empty():
+			movimiento.establecer_ruta(ruta)
+			npc.set_meta("rutina_en_transito", true)
+		else:
+			movimiento.detener_por_rutina()
+			npc.set_meta("rutina_en_transito", false)
+	else:
+		movimiento.detener_por_rutina()
+		npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("reunion_castillo_fase", fase)
 
 
 func _esta_lloviendo_en_posicion(posicion: Vector2) -> bool:
