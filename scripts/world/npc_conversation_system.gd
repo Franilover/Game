@@ -16,14 +16,14 @@ const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 # Sucesos cotidianos breves. Se elige uno por día de forma determinista,
 # respetando quién está presente y evitando repetir los últimos acontecimientos.
 const ACONTECIMIENTOS_DIARIOS: Array[Dictionary] = [
-	{"clave":"elian_saira_paquete","npc_a":"elian","npc_b":"saira","lineas":[{"npc":"saira","texto":"Dejé un pequeño paquete junto al horno. No era urgente, así que no quise interrumpirte."},{"npc":"elian","texto":"Lo vi al llegar. Gracias por traerlo hasta aquí; hoy tenía las manos ocupadas desde temprano."},{"npc":"saira","texto":"No todo lo que transporto tiene que convertirse en un encargo."},{"npc":"elian","texto":"Entonces la próxima vez te guardaré algo para el camino."}]},
-	{"clave":"bruna_darven_cartel","npc_a":"bruna","npc_b":"darven","lineas":[{"npc":"darven","texto":"El cartel de la plaza volvió a torcerse. Esta vez lo encontré antes de que cayera."},{"npc":"bruna","texto":"Puedo reforzar el soporte, pero alguien tendrá que dejar de colgar avisos en el borde."},{"npc":"darven","texto":"Hablaré con quienes lo usan. No quiero que termines reparándolo cada dos días."},{"npc":"bruna","texto":"Con que no lo conviertan en un tablón de anuncios improvisado, me basta."}]},
-	{"clave":"narel_saira_noticia","npc_a":"narel","npc_b":"saira","lineas":[{"npc":"narel","texto":"Mencionaste una luz extraña cerca del camino. ¿Alguien más la vio?"},{"npc":"saira","texto":"Dos viajeros hablaron de un reflejo entre los árboles, pero ninguno se acercó."},{"npc":"narel","texto":"Entonces lo anotaré como un testimonio sin verificar, no como un fenómeno confirmado."},{"npc":"saira","texto":"Por eso te lo cuento a ti. Sabía que no ibas a convertirlo en una historia enorme."}]},
-	{"clave":"elian_bruna_pan","npc_a":"elian","npc_b":"bruna","lineas":[{"npc":"elian","texto":"Aparté una pieza de pan de la última hornada. Quedó más dura de lo que esperaba."},{"npc":"bruna","texto":"No está tan mal. Servirá para probar si el filo de mi herramienta nueva aguanta."},{"npc":"elian","texto":"Preferiría que no usaras mi pan como material de prueba."},{"npc":"bruna","texto":"Entonces la próxima vez hazlo un poco más blando. Problema resuelto."}]},
-	{"clave":"darven_narel_turno","npc_a":"darven","npc_b":"narel","lineas":[{"npc":"darven","texto":"Hoy la plaza estuvo más tranquila durante el cambio de turno."},{"npc":"narel","texto":"¿Lo atribuyes a la hora o a que hubo menos viajeros?"},{"npc":"darven","texto":"A ambas cosas, probablemente. No tengo suficientes días comparables."},{"npc":"narel","texto":"Puedo llevar un registro sencillo. Así no dependeremos sólo de la impresión."}]},
-	{"clave":"bruna_saira_cierre","npc_a":"bruna","npc_b":"saira","lineas":[{"npc":"saira","texto":"Un comerciante me ofreció unas hebillas viejas a cambio de una entrega."},{"npc":"bruna","texto":"Si no están partidas, puedo aprovechar el metal. Tráelas cuando vuelvas."},{"npc":"saira","texto":"No prometo que sean bonitas."},{"npc":"bruna","texto":"No te pedí que lo fueran. Sólo que no se desarmen al tocarlas."}]},
-	{"clave":"elian_darven_merienda","npc_a":"elian","npc_b":"darven","lineas":[{"npc":"elian","texto":"Te dejé una merienda en el mostrador. Ayer terminaste el turno bastante tarde."},{"npc":"darven","texto":"La encontré. No hacía falta que te tomaras esa molestia."},{"npc":"elian","texto":"No es molestia preparar una porción más."},{"npc":"darven","texto":"Entonces procuraré pasar antes de que se enfríe la próxima vez."}]},
-	{"clave":"narel_bruna_medidas","npc_a":"narel","npc_b":"bruna","lineas":[{"npc":"narel","texto":"He ordenado las notas de las últimas reparaciones. Hay una medida que se repite."},{"npc":"bruna","texto":"Si es la del soporte pequeño, ya la conozco. Hice tres iguales esta semana."},{"npc":"narel","texto":"Precisamente. Parece que esa pieza está resolviendo más de un problema."},{"npc":"bruna","texto":"Entonces dejaré un par preparados. No cuesta nada adelantarse."}]}
+	{"clave":"elian_saira_paquete","objeto_visual":"Paquete","tipo_visual":"paquete","npc_a":"elian","npc_b":"saira","lineas":[{"npc":"saira","texto":"Dejé un pequeño paquete junto al horno. No era urgente, así que no quise interrumpirte."},{"npc":"elian","texto":"Lo vi al llegar. Gracias por traerlo hasta aquí; hoy tenía las manos ocupadas desde temprano."},{"npc":"saira","texto":"No todo lo que transporto tiene que convertirse en un encargo."},{"npc":"elian","texto":"Entonces la próxima vez te guardaré algo para el camino."}]},
+	{"clave":"bruna_darven_cartel","objeto_visual":"Aviso","tipo_visual":"cartel","npc_a":"bruna","npc_b":"darven","lineas":[{"npc":"darven","texto":"El cartel de la plaza volvió a torcerse. Esta vez lo encontré antes de que cayera."},{"npc":"bruna","texto":"Puedo reforzar el soporte, pero alguien tendrá que dejar de colgar avisos en el borde."},{"npc":"darven","texto":"Hablaré con quienes lo usan. No quiero que termines reparándolo cada dos días."},{"npc":"bruna","texto":"Con que no lo conviertan en un tablón de anuncios improvisado, me basta."}]},
+	{"clave":"narel_saira_noticia","objeto_visual":"Notas","tipo_visual":"notas","npc_a":"narel","npc_b":"saira","lineas":[{"npc":"narel","texto":"Mencionaste una luz extraña cerca del camino. ¿Alguien más la vio?"},{"npc":"saira","texto":"Dos viajeros hablaron de un reflejo entre los árboles, pero ninguno se acercó."},{"npc":"narel","texto":"Entonces lo anotaré como un testimonio sin verificar, no como un fenómeno confirmado."},{"npc":"saira","texto":"Por eso te lo cuento a ti. Sabía que no ibas a convertirlo en una historia enorme."}]},
+	{"clave":"elian_bruna_pan","objeto_visual":"Pan","tipo_visual":"pan","npc_a":"elian","npc_b":"bruna","lineas":[{"npc":"elian","texto":"Aparté una pieza de pan de la última hornada. Quedó más dura de lo que esperaba."},{"npc":"bruna","texto":"No está tan mal. Servirá para probar si el filo de mi herramienta nueva aguanta."},{"npc":"elian","texto":"Preferiría que no usaras mi pan como material de prueba."},{"npc":"bruna","texto":"Entonces la próxima vez hazlo un poco más blando. Problema resuelto."}]},
+	{"clave":"darven_narel_turno","objeto_visual":"Registro","tipo_visual":"notas","npc_a":"darven","npc_b":"narel","lineas":[{"npc":"darven","texto":"Hoy la plaza estuvo más tranquila durante el cambio de turno."},{"npc":"narel","texto":"¿Lo atribuyes a la hora o a que hubo menos viajeros?"},{"npc":"darven","texto":"A ambas cosas, probablemente. No tengo suficientes días comparables."},{"npc":"narel","texto":"Puedo llevar un registro sencillo. Así no dependeremos sólo de la impresión."}]},
+	{"clave":"bruna_saira_cierre","objeto_visual":"Hebillas","tipo_visual":"metal","npc_a":"bruna","npc_b":"saira","lineas":[{"npc":"saira","texto":"Un comerciante me ofreció unas hebillas viejas a cambio de una entrega."},{"npc":"bruna","texto":"Si no están partidas, puedo aprovechar el metal. Tráelas cuando vuelvas."},{"npc":"saira","texto":"No prometo que sean bonitas."},{"npc":"bruna","texto":"No te pedí que lo fueran. Sólo que no se desarmen al tocarlas."}]},
+	{"clave":"elian_darven_merienda","objeto_visual":"Merienda","tipo_visual":"paquete","npc_a":"elian","npc_b":"darven","lineas":[{"npc":"elian","texto":"Te dejé una merienda en el mostrador. Ayer terminaste el turno bastante tarde."},{"npc":"darven","texto":"La encontré. No hacía falta que te tomaras esa molestia."},{"npc":"elian","texto":"No es molestia preparar una porción más."},{"npc":"darven","texto":"Entonces procuraré pasar antes de que se enfríe la próxima vez."}]},
+	{"clave":"narel_bruna_medidas","objeto_visual":"Medidas","tipo_visual":"notas","npc_a":"narel","npc_b":"bruna","lineas":[{"npc":"narel","texto":"He ordenado las notas de las últimas reparaciones. Hay una medida que se repite."},{"npc":"bruna","texto":"Si es la del soporte pequeño, ya la conozco. Hice tres iguales esta semana."},{"npc":"narel","texto":"Precisamente. Parece que esa pieza está resolviendo más de un problema."},{"npc":"bruna","texto":"Entonces dejaré un par preparados. No cuesta nada adelantarse."}]}
 ]
 
 # Conversaciones ambientales vinculadas al incidente de la carreta.
@@ -156,6 +156,8 @@ var _indice_linea := 0
 var _npc_por_nombre: Dictionary = {}
 var _burbujas: Dictionary = {}
 var _vistas_por_dia: Dictionary = {}
+var _objeto_evento_diario: Node2D = null
+var _zona_objeto_evento: Node2D = null
 
 
 func configurar(
@@ -195,6 +197,9 @@ func actualizar(
 		return
 	if not is_instance_valid(_world_atmosphere):
 		return
+	var tiempo_actual := _world_atmosphere.obtener_tiempo()
+	if bool(tiempo_actual.get("calendario_cargado", false)):
+		_restaurar_objeto_evento_diario(tiempo_actual)
 
 	if not _conversacion_activa.is_empty():
 		_actualizar_conversacion(delta, jugador, dialogo)
@@ -801,6 +806,7 @@ func _buscar_acontecimiento_diario(
 
 		var evento := acontecimiento.duplicate(true)
 		evento["clave"] = "diario_%s_%s" % [clave, clave_dia.replace(":", "_")]
+		evento["_acontecimiento_diario"] = true
 		_iniciar_conversacion(evento)
 		_vistas_por_dia["acontecimiento_diario"] = true
 		historial.append({"dia": clave_dia, "clave": clave})
@@ -813,6 +819,113 @@ func _buscar_acontecimiento_diario(
 		if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 			_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
 		return
+
+
+func _guardar_objeto_del_acontecimiento() -> void:
+	var etiqueta := str(_conversacion_activa.get("objeto_visual", "")).strip_edges()
+	if etiqueta.is_empty():
+		return
+	var npc_nombre := str(_conversacion_activa.get("npc_b", "")).strip_edges().to_lower()
+	var npc := _npc_por_nombre.get(npc_nombre) as Creature
+	if not is_instance_valid(npc):
+		return
+	var tiempo := _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var clave_dia := "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
+	var diario_variant: Variant = _progreso_parejas.get("_acontecimientos_diarios", {})
+	var diario: Dictionary = diario_variant.duplicate(true) if diario_variant is Dictionary else {}
+	diario["objeto_dia"] = clave_dia
+	diario["objeto_etiqueta"] = etiqueta
+	diario["objeto_tipo"] = str(_conversacion_activa.get("tipo_visual", "paquete"))
+	diario["objeto_posicion"] = npc.global_position + Vector2(20.0, 12.0)
+	_progreso_parejas["_acontecimientos_diarios"] = diario
+	if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+		_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+	_restaurar_objeto_evento_diario(tiempo)
+
+
+func _restaurar_objeto_evento_diario(tiempo: Dictionary) -> void:
+	var zona := _zone_manager.obtener_zona_actual() as Node2D if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona):
+		return
+	if is_instance_valid(_objeto_evento_diario) and _zona_objeto_evento != zona:
+		_objeto_evento_diario.queue_free()
+		_objeto_evento_diario = null
+		_zona_objeto_evento = null
+	if is_instance_valid(_objeto_evento_diario):
+		return
+	var diario_variant: Variant = _progreso_parejas.get("_acontecimientos_diarios", {})
+	if not diario_variant is Dictionary:
+		return
+	var diario := diario_variant as Dictionary
+	var clave_dia := "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
+	if str(diario.get("objeto_dia", "")) != clave_dia:
+		return
+	var posicion_variant: Variant = diario.get("objeto_posicion", Vector2.ZERO)
+	if not posicion_variant is Vector2:
+		return
+	var etiqueta := str(diario.get("objeto_etiqueta", "")).strip_edges()
+	if etiqueta.is_empty():
+		return
+	_crear_objeto_visual_evento(zona, posicion_variant as Vector2, etiqueta, str(diario.get("objeto_tipo", "paquete")))
+
+
+func _crear_objeto_visual_evento(zona: Node2D, posicion: Vector2, etiqueta: String, tipo: String) -> void:
+	var objeto := Node2D.new()
+	objeto.name = "DailyEventProp"
+	objeto.global_position = posicion
+	objeto.z_index = 12
+	var base := Polygon2D.new()
+	base.polygon = PackedVector2Array([
+		Vector2(-10.0, -5.0), Vector2(10.0, -5.0),
+		Vector2(10.0, 5.0), Vector2(-10.0, 5.0)
+	])
+	var acento := Polygon2D.new()
+	acento.polygon = PackedVector2Array([
+		Vector2(-10.0, -5.0), Vector2(10.0, -5.0),
+		Vector2(10.0, -2.0), Vector2(-10.0, -2.0)
+	])
+	match tipo:
+		"notas":
+			base.color = Color("#D6C49A")
+			acento.color = Color("#806B4D")
+			base.polygon = PackedVector2Array([Vector2(-9,-6),Vector2(9,-6),Vector2(9,6),Vector2(-9,6)])
+			acento.polygon = PackedVector2Array([Vector2(-5,-6),Vector2(-3,-6),Vector2(-3,6),Vector2(-5,6)])
+		"metal":
+			base.color = Color("#85877F")
+			acento.color = Color("#C3BDA7")
+			base.polygon = PackedVector2Array([Vector2(-9,-3),Vector2(-5,-7),Vector2(7,-7),Vector2(10,-2),Vector2(7,5),Vector2(-7,5)])
+		"cartel":
+			base.color = Color("#765035")
+			acento.color = Color("#C8AD7A")
+			base.polygon = PackedVector2Array([Vector2(-2,-11),Vector2(2,-11),Vector2(2,9),Vector2(-2,9)])
+		"pan":
+			base.color = Color("#B9854E")
+			acento.color = Color("#E0BB7B")
+			base.polygon = PackedVector2Array([Vector2(-9,2),Vector2(-8,-3),Vector2(-4,-7),Vector2(5,-7),Vector2(9,-2),Vector2(8,4),Vector2(3,7),Vector2(-6,6)])
+		_:
+			base.color = Color("#8B6847")
+			acento.color = Color("#D4B17A")
+	objeto.add_child(base)
+	objeto.add_child(acento)
+	var sombra := Polygon2D.new()
+	sombra.polygon = PackedVector2Array([Vector2(-12,7),Vector2(12,7),Vector2(9,10),Vector2(-9,10)])
+	sombra.color = Color(0.05, 0.035, 0.02, 0.42)
+	objeto.add_child(sombra)
+	objeto.move_child(sombra, 0)
+	var nombre := Label.new()
+	nombre.text = etiqueta
+	nombre.position = Vector2(-34.0, -25.0)
+	nombre.custom_minimum_size = Vector2(68.0, 0.0)
+	nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nombre.add_theme_font_override("font", FONT_PIXEL)
+	nombre.add_theme_font_size_override("font_size", 7)
+	nombre.add_theme_color_override("font_color", Color("#F2E8D8"))
+	nombre.add_theme_color_override("font_outline_color", Color("#17110D"))
+	nombre.add_theme_constant_override("outline_size", 2)
+	objeto.add_child(nombre)
+	zona.add_child(objeto)
+	_objeto_evento_diario = objeto
+	_zona_objeto_evento = zona
 
 
 func _obtener_npcs_torres() -> Array[Creature]:
@@ -1015,6 +1128,8 @@ func _ocultar_burbujas() -> void:
 
 
 func _finalizar_conversacion(completada: bool = false) -> void:
+	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):
+		_guardar_objeto_del_acontecimiento()
 	if completada and not _conversacion_activa.is_empty():
 		var clave := str(_conversacion_activa.get("clave", ""))
 		var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
