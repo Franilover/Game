@@ -90,7 +90,9 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 			_:
 				push_warning("CutsceneDirector: tipo de paso desconocido: " + tipo)
 
-	_restaurar_camara()
+	await _restaurar_camara()
+	if generacion_actual != _generacion:
+		return false
 	_finalizar()
 	return true
 
@@ -103,6 +105,9 @@ func cancelar() -> void:
 		_tween_camara.kill()
 	if is_instance_valid(_dialogue) and _dialogue.esta_abierto():
 		_dialogue.cerrar()
+	if is_instance_valid(_camera) and is_instance_valid(_player):
+		_camera.global_position = _player.global_position
+		_camera.zoom = _zoom_original
 	_finalizar()
 
 
@@ -143,6 +148,7 @@ func _restaurar_camara() -> void:
 	_tween_camara.set_parallel(true)
 	_tween_camara.tween_property(_camera, "global_position", _player.global_position, 0.65)
 	_tween_camara.tween_property(_camera, "zoom", _zoom_original, 0.65)
+	await _tween_camara.finished
 
 
 func _finalizar() -> void:
