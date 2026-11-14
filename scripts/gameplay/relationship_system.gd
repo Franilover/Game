@@ -305,8 +305,20 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 		]
 	lista.append(nuevo_recuerdo)
 
-	if lista.size() > 32:
-		lista = lista.slice(maxi(lista.size() - 32, 0))
+	while lista.size() > 32:
+		var indice_descartar := -1
+		var menor_importancia := 3.0
+		for i in range(lista.size()):
+			if not lista[i] is Dictionary:
+				indice_descartar = i
+				break
+			var importancia := float((lista[i] as Dictionary).get("importancia", 1.0))
+			if importancia < menor_importancia:
+				menor_importancia = importancia
+				indice_descartar = i
+		if indice_descartar < 0:
+			break
+		lista.remove_at(indice_descartar)
 
 	recuerdos[personaje_id] = lista
 	_game_state.call("guardar_recuerdos_sociales", recuerdos)
