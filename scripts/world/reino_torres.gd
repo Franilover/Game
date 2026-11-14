@@ -933,6 +933,11 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 			movimiento.detener_por_rutina()
 		npc.set_meta("rutina_en_edificio", true)
 		npc.set_meta("rutina_edificio_id", entrada_id)
+		npc.set_meta("rutina_en_transito", false)
+		npc.remove_meta("viajando")
+		if entrada_id == "castillo":
+			npc.datos["actividad_actual"] = "conversando con los demás"
+			npc.set_meta("actividad_actual", "conversando con los demás")
 		var actor := npc as Node2D
 		if entrada_id == "castillo":
 			if indice < posiciones_castillo.size():
