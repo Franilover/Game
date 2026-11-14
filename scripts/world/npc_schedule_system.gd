@@ -7,10 +7,10 @@ const ORIGEN_MAPA := Vector2(-1152.0, -672.0)
 const TAMANO_MALLA := Vector2i(72, 42)
 const RADIO_COLISION_NPC := 14.0
 const DISTANCIA_LLEGADA := 7.0
-# Coste de desplazamiento: los caminos de tierra (zona 1 de WorldTerrainVisual)
-# son la superficie preferida; el resto del terreno sigue siendo transitable.
-const COSTE_CAMINO_TIERRA := 0.48
-const COSTE_OTRO_TERRENO := 1.0
+# Coste de desplazamiento: Tierra (zona 1) conserva el coste base y los demás
+# terrenos cuestan más. Mantener el mínimo en 1 preserva la heurística AStar.
+const COSTE_CAMINO_TIERRA := 1.0
+const COSTE_OTRO_TERRENO := 1.55
 
 # Puntos de actividad en coordenadas locales de ReinoTorres.
 # Se definen por ubicación, nunca por nombre de personaje.
