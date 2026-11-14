@@ -222,9 +222,9 @@ func _process(_delta: float) -> void:
 		var distancia := posicion_jugador_local.distance_to(entrada["pos"])
 		if distancia < distancia_menor:
 			distancia_menor = distancia
-			entrada_cercana = entrada
+			entrada_cercana = entrada.duplicate(true)
 
-	_entrada_aviso_actual = entrada_cercana
+	_entrada_aviso_actual = entrada_cercana.duplicate(true)
 	if entrada_cercana.is_empty():
 		_aviso.text = ""
 		_aviso_panel.visible = false
