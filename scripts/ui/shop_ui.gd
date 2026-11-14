@@ -92,6 +92,8 @@ func _ready() -> void:
 	_construir_interfaz()
 	if is_instance_valid(_world_items) and not _world_items.catalogo_cargado.is_connected(_al_catalogo_cargado):
 		_world_items.catalogo_cargado.connect(_al_catalogo_cargado)
+	if not GameState.dinero_cambiado.is_connected(_al_cambiar_dinero):
+		GameState.dinero_cambiado.connect(_al_cambiar_dinero)
 	call_deferred("_actualizar_catalogo")
 
 
@@ -141,7 +143,7 @@ func _construir_interfaz() -> void:
 	columna.add_child(encabezado)
 
 	var titulo := Label.new()
-	titulo.text = str(_tienda.get("nombre", "Tienda"))
+	titulo.text = "%s · %s" % [str(_tienda.get("nombre", "Tienda")), str(_tienda.get("vendedor", "Comerciante"))]
 	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	titulo.add_theme_font_size_override("font_size", 18)
 	encabezado.add_child(titulo)
@@ -317,6 +319,10 @@ func _comprar_producto(producto: Dictionary) -> void:
 	Events.notification_pushed.emit("Compraste " + str(producto.get("nombre", "un objeto")))
 
 
+func _al_cambiar_dinero(_cantidad: int) -> void:
+	_actualizar_balance()
+
+
 func _actualizar_balance() -> void:
 	if is_instance_valid(_balance):
 		_balance.text = "Tu dinero: %d monedas" % GameState.obtener_dinero()
@@ -337,6 +343,8 @@ func _hablar_con_vendedor() -> void:
 func cerrar_tienda() -> void:
 	if is_instance_valid(_world_items) and _world_items.catalogo_cargado.is_connected(_al_catalogo_cargado):
 		_world_items.catalogo_cargado.disconnect(_al_catalogo_cargado)
+	if GameState.dinero_cambiado.is_connected(_al_cambiar_dinero):
+		GameState.dinero_cambiado.disconnect(_al_cambiar_dinero)
 	if is_instance_valid(_jugador):
 		_jugador.set_physics_process(_jugador_fisica_previa)
 		_jugador.set_process_input(_jugador_input_previo)
