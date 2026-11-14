@@ -31,6 +31,8 @@ var _boton_preguntar_item: Button = null
 var _dialogue_content_row: HBoxContainer = null
 var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
+var _selector_conversacion_titulo: Label = null
+var _menu_social_actual: String = ""
 var _selector_items: PanelContainer = null
 var _selector_items_grid: GridContainer = null
 var _selector_items_titulo: Label = null
@@ -238,7 +240,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		# Las opciones contextuales definidas por una escena o cinemática
 		# tienen prioridad; sólo generamos las opciones sociales genéricas
 		# cuando el diálogo no trae respuestas propias.
-		_respuestas = _crear_opciones_conversacion()
+		_respuestas = _crear_menu_principal_social()
 	_limpiar_botones_respuesta()
 
 	if is_instance_valid(_fuente):
@@ -1243,14 +1245,18 @@ func _obtener_reaccion_despedida_rutina() -> String:
 
 
 func _abrir_selector_conversacion() -> void:
+	_abrir_submenu_social("hablar")
+
+
+func _abrir_submenu_social(categoria: String) -> void:
 	if not _abierto or _selector_conversacion == null or not is_instance_valid(_fuente):
 		return
+	_menu_social_actual = categoria
 	for hijo in _selector_conversacion_grid.get_children():
 		_selector_conversacion_grid.remove_child(hijo)
 		hijo.queue_free()
-	var opciones := _crear_opciones_conversacion()
-	for indice in range(opciones.size()):
-		var opcion: Dictionary = opciones[indice]
+	var opciones := _crear_opciones_submenu_social(categoria)
+	for opcion in opciones:
 		var boton := Button.new()
 		boton.text = str(opcion.get("texto", "Conversar"))
 		boton.custom_minimum_size = Vector2(0, 42)
@@ -1262,15 +1268,297 @@ func _abrir_selector_conversacion() -> void:
 	_limpiar_botones_respuesta()
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = false
+	if _selector_conversacion_titulo != null:
+		_selector_conversacion_titulo.text = "¿Qué quieres preguntar?" if categoria == "preguntar" else "¿De qué quieres hablar?"
 	_selector_conversacion.visible = true
 	PIXEL_UI_THEME.apply(_selector_conversacion)
 
 
 func _cerrar_selector_conversacion() -> void:
+	_menu_social_actual = ""
 	if _selector_conversacion != null:
 		_selector_conversacion.visible = false
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
+	if _abierto and is_instance_valid(_fuente):
+		_respuestas = _crear_menu_principal_social()
+		_limpiar_botones_respuesta()
+		_actualizar_boton_accion()
+
+
+func _crear_menu_principal_social() -> Array[Dictionary]:
+	return [
+		{"clave":"menu_preguntar","texto":"Preguntar","tipo_menu":"preguntar"},
+		{"clave":"menu_hablar","texto":"Hablar","tipo_menu":"hablar"},
+		{"clave":"menu_cumplido","texto":"Dar cumplido","tipo_menu":"cumplido"},
+		{"clave":"menu_despedirse","texto":"Despedirse","tipo_menu":"despedirse"}
+	]
+
+
+func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
+	var opciones: Array[Dictionary] = []
+	if categoria == "preguntar":
+		opciones.append(_crear_opcion_dia_social())
+		opciones.append(_crear_opcion_gustos_social())
+		opciones.append(_crear_opcion_consejo_social())
+		opciones.append(_crear_opcion_ayuda_social())
+	else:
+		opciones.append(_crear_opcion_trabajo_social())
+		opciones.append(_crear_opcion_reino_social())
+		opciones.append(_crear_opcion_novedades_social())
+		opciones.append(_crear_opcion_preocupacion_social())
+	return opciones
+
+
+func _crear_opcion_social(clave: String, titulo: String, frase_jugador: String, respuesta: String, evento: String = "interesarse", importancia: float = 1.0) -> Dictionary:
+	return {
+		"clave": clave,
+		"texto": titulo,
+		"jugador": frase_jugador,
+		"respuesta": respuesta,
+		"evento": evento,
+		"importancia": importancia
+	}
+
+
+func _nombre_social_actual() -> String:
+	return _fuente.get_nombre_visual().strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+
+
+func _crear_opcion_dia_social() -> Dictionary:
+	var contexto: Dictionary = {}
+	if relationship_system != null and relationship_system.has_method("obtener_contexto_temporal"):
+		var contexto_variant: Variant = relationship_system.obtener_contexto_temporal()
+		if contexto_variant is Dictionary:
+			contexto = contexto_variant
+	var hora := int(contexto.get("hora", contexto.get("hora_actual", contexto.get("hora_dia", 12))))
+	var periodo := str(contexto.get("periodo", "")).strip_edges().to_lower()
+	var es_manana := (hora >= 5 and hora < 12) or periodo in ["manana", "mañana"]
+	var frase := "¿Cómo va tu mañana?" if es_manana else "¿Cómo te ha ido hoy?"
+	var nombre := _nombre_social_actual()
+	var respuesta := "La mañana va bastante bien. He podido avanzar con mis cosas y todavía queda tiempo para lo que falta." if es_manana else "Ha sido un día bastante normal. He tenido mis cosas que hacer, pero nada fuera de lo común."
+	match nombre:
+		"elian":
+			respuesta = "La mañana va bien. Ya he adelantado parte del trabajo de la panadería; espero que el resto salga igual de tranquilo." if es_manana else "Ha sido un día movido en la panadería, pero todo ha salido bastante bien. Ahora agradezco poder tomarme un respiro."
+		"bruna":
+			respuesta = "Bien, por ahora. He podido avanzar con algunas piezas y todavía tengo tiempo para revisar lo que queda." if es_manana else "Ha sido un día largo entre herramientas y encargos. Por suerte, he podido dejar varias cosas terminadas."
+		"darven":
+			respuesta = "La mañana está tranquila. He revisado los caminos y no he visto nada fuera de lo normal." if es_manana else "El día ha transcurrido sin incidentes importantes. Eso siempre es una buena noticia para el reino."
+		"saira":
+			respuesta = "Bastante bien. Ya han pasado algunas personas por el comercio y todavía espero recibir más movimiento." if es_manana else "Ha sido un día entretenido. Han pasado clientes y también han llegado algunas noticias interesantes."
+		"narel":
+			respuesta = "La mañana ha sido productiva. He podido revisar algunas notas antes de que empiecen las demás tareas." if es_manana else "He tenido un día lleno de ideas y documentos. Todavía estoy ordenando algunas cosas, pero avancé bastante."
+	return _crear_opcion_social("preguntar_dia", "Preguntar por su día", frase, respuesta)
+
+
+func _crear_opcion_gustos_social() -> Dictionary:
+	var nombre := _nombre_social_actual()
+	var respuesta := "Me gusta tener un rato libre para descansar, pasear y hacer algo que me interese."
+	match nombre:
+		"elian":
+			respuesta = "Me gusta caminar por el reino, probar recetas nuevas y compartir algo rico con los demás. También disfruto los ratos tranquilos."
+		"bruna":
+			respuesta = "Me gusta reparar cosas por gusto y trabajar en proyectos propios. Aunque intento que mis días libres no se conviertan en otra jornada de trabajo."
+		"darven":
+			respuesta = "Disfruto los paseos tranquilos. Cuando tengo tiempo libre suelo recorrer los alrededores, aunque me cuesta dejar de estar atento."
+		"saira":
+			respuesta = "Me gusta recorrer los puestos, descubrir mercancías curiosas y escuchar historias de quienes vienen de otros lugares."
+		"narel":
+			respuesta = "Me gusta leer y observar cosas que normalmente pasan desapercibidas. A veces empiezo por curiosidad y termino investigando durante horas."
+	return _crear_opcion_social("gustos", "Preguntar qué le gusta hacer", "¿Qué te gusta hacer cuando tienes tiempo libre?", respuesta)
+
+
+func _crear_opcion_consejo_social() -> Dictionary:
+	var respuesta := "Mi consejo sería que observes bien la situación, preguntes cuando tengas dudas y no te apresures a decidir."
+	match _nombre_social_actual():
+		"elian":
+			respuesta = "No intentes terminarlo todo de una vez. Haz las cosas con calma y deja un poco de tiempo para descansar; hasta una buena receta necesita su tiempo."
+		"bruna":
+			respuesta = "Asegúrate de entender el problema antes de empezar a arreglarlo. Trabajar dos veces por falta de atención es perder el tiempo."
+		"darven":
+			respuesta = "No tomes una decisión con información incompleta. Comprueba lo importante y piensa quién podría verse afectado."
+		"saira":
+			respuesta = "Pregunta, compara y escucha más de una versión. La primera historia rara vez cuenta todo."
+		"narel":
+			respuesta = "Separa los hechos de tus interpretaciones. Después podrás decidir qué pregunta merece investigarse."
+	return _crear_opcion_social("consejo_personal", "Pedirle un consejo", "¿Qué consejo me darías?", respuesta, "compartir_conocimiento")
+
+
+func _crear_opcion_ayuda_social() -> Dictionary:
+	var respuesta := _obtener_respuesta_ayuda_npc()
+	return _crear_opcion_social("preguntar_ayuda", "Preguntar si necesita ayuda", "¿Necesitas ayuda con algo?", respuesta, "interesarse", 1.5)
+
+
+func _crear_opcion_trabajo_social() -> Dictionary:
+	var nombre := _nombre_social_actual()
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges() if is_instance_valid(_fuente) else ""
+	var respuesta := "Tengo algunas tareas pendientes, como cualquiera. Intento organizarme para que no se me acumulen."
+	match nombre:
+		"elian":
+			respuesta = "La panadería siempre tiene algo que hacer: preparar la masa, vigilar el horno y atender a quienes vienen. Me gusta que el trabajo termine siendo algo que podemos compartir."
+		"bruna":
+			respuesta = "Casi siempre estoy reparando o fabricando algo. Lo importante es entender para qué servirá cada pieza antes de ponerse a trabajar."
+		"darven":
+			respuesta = "Mi trabajo consiste en mantener los caminos seguros y estar atento a cualquier problema. A veces parece rutinario, pero conviene no confiarse."
+		"saira":
+			respuesta = "El comercio nunca se queda quieto. Hay que revisar cuentas, atender a la gente y estar pendiente de lo que llega desde fuera."
+		"narel":
+			respuesta = "Paso bastante tiempo revisando documentos y comparando observaciones. Una investigación rara vez avanza en línea recta."
+	if not actividad.is_empty():
+		respuesta += " Ahora mismo estoy con " + actividad + "."
+	return _crear_opcion_social("hablar_trabajo", "Hablar sobre su trabajo", "¿Cómo van tus responsabilidades últimamente?", respuesta)
+
+
+func _crear_opcion_reino_social() -> Dictionary:
+	var respuesta := "Creo que el reino se construye con el trabajo cotidiano de quienes viven aquí. Siempre hay algo que se puede mejorar."
+	match _nombre_social_actual():
+		"elian":
+			respuesta = "Me gusta que la gente se reúna en la plaza y pase por la panadería. Esas pequeñas costumbres hacen que el reino se sienta como un hogar."
+		"bruna":
+			respuesta = "El reino necesita que cuidemos sus caminos, herramientas y edificios. Si cada cual mantiene su parte, todos vivimos mejor."
+		"darven":
+			respuesta = "Un reino tranquilo depende de que sus habitantes puedan trabajar y descansar sin miedo. Eso es lo que intento proteger."
+		"saira":
+			respuesta = "Por aquí pasan mercancías y noticias de muchos lugares. A veces basta escuchar a los viajeros para saber qué ocurre más allá."
+		"narel":
+			respuesta = "El reino reúne oficios, conocimientos y vidas distintas. Creo que entender cómo se relacionan es tan importante como estudiar cada parte."
+	return _crear_opcion_social("hablar_reino", "Hablar sobre el reino", "¿Qué piensas del lugar en el que vivimos?", respuesta)
+
+
+func _crear_opcion_novedades_social() -> Dictionary:
+	var respuesta := "Últimamente no ha ocurrido nada extraordinario, aunque siempre aparece alguna pequeña novedad."
+	match _nombre_social_actual():
+		"elian":
+			respuesta = "He estado probando una receta nueva. Todavía estoy ajustando algunos detalles, pero creo que pronto podré compartirla."
+		"bruna":
+			respuesta = "Estoy pensando en mejorar algunas herramientas del taller. Si encuentro una forma sencilla de hacerlo, quizá pueda ahorrar bastante trabajo."
+		"darven":
+			respuesta = "He estado revisando algunos tramos de los caminos. Por ahora todo parece en orden, pero prefiero comprobarlo personalmente."
+		"saira":
+			respuesta = "Han llegado algunos productos y rumores de fuera. Todavía no sé cuáles merecen atención, pero seguro que algo interesante sale de ahí."
+		"narel":
+			respuesta = "He encontrado una referencia curiosa en unos documentos. Aún no puedo asegurar qué significa, pero merece la pena seguir revisándola."
+	return _crear_opcion_social("hablar_novedades", "Compartir novedades", "¿Ha ocurrido algo interesante últimamente?", respuesta)
+
+
+func _crear_opcion_preocupacion_social() -> Dictionary:
+	var respuesta := "Hay algunas cosas que me preocupan, pero intento ocuparme de ellas con calma."
+	match _nombre_social_actual():
+		"elian":
+			respuesta = "A veces me preocupa no llegar a todos los pedidos sin descuidar la calidad. Prefiero hacer menos y hacerlo bien."
+		"bruna":
+			respuesta = "Me preocupa que una pieza falle cuando alguien dependa de ella. Por eso reviso cada detalle antes de darla por terminada."
+		"darven":
+			respuesta = "Me preocupa pasar por alto una señal importante. La tranquilidad del pueblo depende de prestar atención."
+		"saira":
+			respuesta = "Me preocupa que un mal cálculo afecte al comercio y a quienes dependen de él."
+		"narel":
+			respuesta = "Me preocupa confundir una hipótesis convincente con una conclusión verdadera. Hay que saber cuándo todavía faltan pruebas."
+	return _crear_opcion_social("hablar_preocupacion", "Hablar de lo que le preocupa", "¿Hay algo que te preocupe últimamente?", respuesta, "interesarse", 1.5)
+
+
+func _obtener_respuesta_ayuda_npc() -> String:
+	if not is_instance_valid(_fuente):
+		return "Gracias por ofrecerte. Ahora mismo no tengo nada que pedirte."
+	var nombre_npc := _fuente.get_nombre_visual()
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	var lineas_activas: Array[String] = []
+	var lineas_disponibles: Array[String] = []
+	if mission_manager != null:
+		for mision_variant in mission_manager.obtener_misiones_activas():
+			if not mision_variant is Dictionary:
+				continue
+			var mision := mision_variant as Dictionary
+			var origen := str(mision.get("npc_origen_personaje_game_id", mision.get("personaje_origen_id", ""))).strip_edges()
+			if origen != personaje_id:
+				continue
+			var nombre_mision := str(mision.get("nombre", "un encargo")).strip_edges()
+			var detalle := ""
+			var objetivos_variant: Variant = mision.get("objetivos", [])
+			if objetivos_variant is Array:
+				for objetivo_variant in objetivos_variant as Array:
+					if not objetivo_variant is Dictionary:
+						continue
+					var objetivo := objetivo_variant as Dictionary
+					if bool(objetivo.get("completado", false)):
+						continue
+					detalle = str(objetivo.get("descripcion", objetivo.get("nombre", ""))).strip_edges()
+					if detalle.is_empty():
+						detalle = "progreso %d/%d" % [int(objetivo.get("progreso", 0)), int(objetivo.get("cantidad_requerida", 1))]
+					else:
+						detalle += " (%d/%d)" % [int(objetivo.get("progreso", 0)), int(objetivo.get("cantidad_requerida", 1))]
+					break
+			lineas_activas.append(nombre_mision + (": " + detalle if not detalle.is_empty() else " sigue en marcha"))
+		for mision_base_variant in mission_manager.obtener_misiones():
+			if not mision_base_variant is Dictionary:
+				continue
+			var mision_base := mision_base_variant as Dictionary
+			var origen_base := str(mision_base.get("npc_origen_personaje_game_id", mision_base.get("personaje_origen_id", ""))).strip_edges()
+			if origen_base != personaje_id:
+				continue
+			var id_mision := str(mision_base.get("id", "")).strip_edges()
+			if id_mision.is_empty():
+				continue
+			var estado := mission_manager.obtener_estado_mision(id_mision)
+			if str(estado.get("estado", "disponible")) != "disponible":
+				continue
+			var nombre_mision_base := str(mision_base.get("nombre", "un encargo")).strip_edges()
+			var descripcion := str(mision_base.get("descripcion", "")).strip_edges()
+			lineas_disponibles.append(nombre_mision_base + (": " + descripcion if not descripcion.is_empty() else ""))
+	if not lineas_activas.is_empty() or not lineas_disponibles.is_empty():
+		var texto := ""
+		if not lineas_activas.is_empty():
+			texto += "Sí, hay algo que seguimos teniendo pendiente. "
+			for detalle_activo in lineas_activas:
+				texto += detalle_activo + ". "
+		if not lineas_disponibles.is_empty():
+			texto += "También podría ofrecerte estos encargos: "
+			for detalle_disponible in lineas_disponibles:
+				texto += detalle_disponible + ". "
+		return texto.strip_edges()
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges()
+	if not actividad.is_empty():
+		return "Gracias por ofrecerte. Ahora mismo estoy con " + actividad + ", pero puedo arreglármelas por mi cuenta."
+	match _nombre_social_actual():
+		"elian":
+			return "Gracias por ofrecerte. Por ahora tengo la panadería bajo control, pero si surge algún encargo te lo diré."
+		"bruna":
+			return "Se agradece. De momento puedo ocuparme de mis reparaciones, aunque siempre viene bien tener a alguien dispuesto a echar una mano."
+		"darven":
+			return "Gracias. Por ahora no necesito apoyo, pero si surge algún problema en los caminos te avisaré."
+		"saira":
+			return "Qué amable. De momento puedo atender el comercio, pero nunca está de más contar con alguien de confianza."
+		"narel":
+			return "Gracias por ofrecerte. Por ahora puedo continuar con mis investigaciones, aunque quizá necesite ayuda más adelante."
+	return "Gracias por ofrecerte. Si necesito algo, te lo haré saber."
+
+
+func _crear_opcion_cumplido_social() -> Dictionary:
+	var respuesta := "Gracias. Es agradable que alguien se haya fijado en el esfuerzo que pongo."
+	match _nombre_social_actual():
+		"elian":
+			respuesta = "¡Gracias! A veces uno pasa tantas horas entre harina y hornos que olvida que su trabajo también alegra a los demás."
+		"bruna":
+			respuesta = "Lo aprecio. No busco reconocimiento, pero se agradece que notes el cuidado que pongo en cada pieza."
+		"darven":
+			respuesta = "Gracias. Cumplir con mi deber es lo esperado, aunque escuchar eso hace que la guardia pese menos."
+		"saira":
+			respuesta = "¡Qué amable! En el comercio una escucha muchas opiniones; no todas son tan agradables como la tuya."
+		"narel":
+			respuesta = "Gracias. A veces me concentro tanto en investigar que olvido que alguien puede valorar el esfuerzo."
+	return _crear_opcion_social("cumplido", "Dar cumplido", "Quería decirte que valoro lo que haces. Se nota el esfuerzo que pones.", respuesta, "apoyar")
+
+
+func _crear_opcion_despedida_social() -> Dictionary:
+	return {
+		"clave":"despedirse",
+		"texto":"Despedirse",
+		"jugador":"Ha sido bueno hablar contigo. Nos vemos.",
+		"respuesta":_obtener_reaccion_despedida_rutina(),
+		"evento":"despedida_amable",
+		"despedida":true,
+		"importancia":1.0
+	}
 
 
 func _crear_opciones_conversacion() -> Array[Dictionary]:
@@ -1631,8 +1919,9 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var clave_tema := str(opcion.get("clave", "")).strip_edges()
 	var evento := str(opcion.get("evento", "interesarse")).strip_edges()
+	var es_despedida := bool(opcion.get("despedida", false))
 	if relationship_system != null and not personaje_id.is_empty():
-		if not clave_tema.is_empty():
+		if not clave_tema.is_empty() and not es_despedida:
 			relationship_system.registrar_recuerdo(personaje_id, {
 				"tipo": "tema_conversacion",
 				"clave": clave_tema,
@@ -1642,16 +1931,18 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 				"importancia": float(opcion.get("importancia", 1.0)),
 				"momento": Time.get_datetime_string_from_system(true)
 			})
-		var contexto := {"origen": "tema_conversacion", "tema": str(opcion.get("texto", "")), "clave_tema": clave_tema}
-		relationship_system.registrar_evento_social(personaje_id, evento, _crear_id_evento_respuesta(personaje_id, evento), contexto)
-	_cerrar_selector_conversacion()
+		if not evento.is_empty():
+			var contexto := {"origen": "menu_social", "tema": str(opcion.get("texto", "")), "clave_tema": clave_tema, "respuesta_jugador": jugador}
+			relationship_system.registrar_evento_social(personaje_id, evento, _crear_id_evento_respuesta(personaje_id, evento, clave_tema), contexto)
+	_menu_social_actual = ""
+	if _selector_conversacion != null:
+		_selector_conversacion.visible = false
+	if _dialogue_content_row != null:
+		_dialogue_content_row.visible = true
 	_acciones.clear()
-	_respuestas.clear()
+	_respuestas = _crear_menu_principal_social() if not es_despedida else []
 	_limpiar_botones_respuesta()
-	_lineas = [
-		{"hablante": "Tú", "texto": jugador},
-		{"hablante": _fuente.get_nombre_visual(), "texto": respuesta}
-	]
+	_lineas = [{"hablante": _fuente.get_nombre_visual(), "texto": respuesta}]
 	_indice_linea = 0
 	_mostrar_linea_actual()
 	_actualizar_boton_accion()
@@ -1685,6 +1976,16 @@ func _seleccionar_respuesta(indice: int) -> void:
 	if indice < 0 or indice >= _respuestas.size() or not _abierto:
 		return
 	var opcion: Dictionary = _respuestas[indice]
+	var tipo_menu := str(opcion.get("tipo_menu", "")).strip_edges()
+	if tipo_menu == "preguntar" or tipo_menu == "hablar":
+		_abrir_submenu_social(tipo_menu)
+		return
+	if tipo_menu == "cumplido":
+		_seleccionar_tema_conversacion(_crear_opcion_cumplido_social())
+		return
+	if tipo_menu == "despedirse":
+		_seleccionar_tema_conversacion(_crear_opcion_despedida_social())
+		return
 	var texto_jugador := str(opcion.get("jugador", opcion.get("texto_jugador", opcion.get("texto", "")))).strip_edges()
 	var texto_npc := str(opcion.get("respuesta", opcion.get("reaccion", ""))).strip_edges()
 	if texto_jugador.is_empty() or texto_npc.is_empty():
@@ -1715,9 +2016,7 @@ func _seleccionar_respuesta(indice: int) -> void:
 			})
 
 	var es_despedida := bool(opcion.get("despedida", false))
-	_respuestas.clear()
-	if not es_despedida and is_instance_valid(_fuente):
-		_respuestas = _crear_opciones_conversacion()
+	_respuestas = _crear_menu_principal_social() if not es_despedida and is_instance_valid(_fuente) else []
 	_limpiar_botones_respuesta()
 	# La elección del jugador ya queda registrada en el sistema social.
 	# Sólo mostramos la reacción del NPC para evitar repetir literalmente
@@ -2264,6 +2563,7 @@ func _crear_interfaz() -> void:
 	var topic_header := HBoxContainer.new()
 	topic_column.add_child(topic_header)
 	var topic_title := Label.new()
+	_selector_conversacion_titulo = topic_title
 	topic_title.text = "¿De qué te gustaría hablar?"
 	topic_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	topic_title.add_theme_font_size_override("font_size", 14)
