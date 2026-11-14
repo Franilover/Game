@@ -191,11 +191,15 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 				if lineas.is_empty():
 					return false
 
-	if _es_dialogo_cotidiano(datos_seleccionados):
-		var recuerdo_regalo := _obtener_dialogo_recuerdo_regalo_pendiente()
-		if not recuerdo_regalo.is_empty():
-			datos_seleccionados = recuerdo_regalo
-			lineas = _normalizar_lineas(datos_seleccionados)
+	var recuerdo_para_mencionar: Dictionary = {}
+	if _es_dialogo_cotidiano(datos_seleccionados) and relationship_system != null and is_instance_valid(_fuente):
+		var id_recuerdo := _fuente.get_personaje_game_id().strip_edges()
+		if not id_recuerdo.is_empty():
+			recuerdo_para_mencionar = relationship_system.obtener_recuerdo_pendiente_mencionar(id_recuerdo)
+			var dialogo_recuerdo := _crear_dialogo_recuerdo_social(recuerdo_para_mencionar)
+			if not dialogo_recuerdo.is_empty():
+				datos_seleccionados = dialogo_recuerdo
+				lineas = _normalizar_lineas(datos_seleccionados)
 
 	_lineas = lineas
 	_acciones.clear()
@@ -251,6 +255,12 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		dialogue_panel.size
 	)
 	_mostrar_linea_actual()
+
+	if not recuerdo_para_mencionar.is_empty() and relationship_system != null:
+		var id_recuerdo_mostrado := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
+		var indice_recuerdo := int(recuerdo_para_mencionar.get("_indice_recuerdo", -1))
+		if not id_recuerdo_mostrado.is_empty() and indice_recuerdo >= 0:
+			relationship_system.marcar_recuerdo_mencionado(id_recuerdo_mostrado, indice_recuerdo)
 
 	var hablante := str(_lineas[0].get("hablante", "")).strip_edges()
 	if hablante.is_empty() and is_instance_valid(_fuente):
@@ -379,37 +389,81 @@ func _es_dialogo_cotidiano(dialogo: Dictionary) -> bool:
 	return clave == "principal" or clave.begins_with("rutina_")
 
 
-func _obtener_dialogo_recuerdo_regalo_pendiente() -> Dictionary:
-	if relationship_system == null or not is_instance_valid(_fuente):
-		return {}
-	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
-	if personaje_id.is_empty():
-		return {}
-	var recuerdo: Dictionary = relationship_system.tomar_regalo_pendiente_mencionar(personaje_id)
-	if recuerdo.is_empty():
-		return {}
-	var item_nombre := str(recuerdo.get("item_nombre", "")).strip_edges()
-	if item_nombre.is_empty():
+func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
+	if recuerdo.is_empty() or not is_instance_valid(_fuente):
 		return {}
 	var nombre := _fuente.get_nombre_visual().strip_edges()
 	var clave_nombre := nombre.to_lower()
-	var reaccion := str(recuerdo.get("reaccion", "neutral")).strip_edges().to_lower()
+	var tipo := str(recuerdo.get("tipo", "")).strip_edges()
 	var texto := ""
-	match clave_nombre:
-		"elian":
-			texto = "Por cierto, todavía tengo presente el %s que me regalaste. Me ha alegrado tener ese detalle cerca." % item_nombre if reaccion in ["encanta", "gusta"] else "He estado pensando en el %s que me diste. Gracias por acordarte de mí." % item_nombre
-		"bruna":
-			texto = "Le encontré utilidad al %s que me trajiste. No suelo decirlo, pero fue un buen regalo." % item_nombre if reaccion in ["encanta", "gusta"] else "Sobre el %s que me diste: gracias por el gesto. Lo tengo presente."
-		"darven":
-			texto = "El %s que me entregaste me ha resultado útil. Aprecio que hayas pensado en ello." % item_nombre if reaccion in ["encanta", "gusta"] else "Quería agradecerte de nuevo el %s. Fue un gesto considerado." % item_nombre
-		"saira":
-			texto = "¡Ah! El %s que me regalaste. Me hizo ilusión; estas pequeñas cosas también cuentan historias." % item_nombre if reaccion in ["encanta", "gusta"] else "Me acuerdo del %s que me diste. Gracias, fue un detalle bonito."
-		"narel":
-			texto = "He conservado el %s que me diste. Es interesante cómo un objeto puede adquirir significado por su contexto." % item_nombre if reaccion in ["encanta", "gusta"] else "Recuerdo el %s que me entregaste. Gracias por el detalle." % item_nombre
-		_:
-			texto = "Quería agradecerte otra vez el %s que me regalaste." % item_nombre
+	if tipo == "regalo":
+		var item_nombre := str(recuerdo.get("item_nombre", "")).strip_edges()
+		if item_nombre.is_empty():
+			return {}
+		var reaccion := str(recuerdo.get("reaccion", "neutral")).strip_edges().to_lower()
+		match clave_nombre:
+			"elian":
+				texto = "Por cierto, todavía tengo presente el %s que me regalaste. Me ha alegrado tener ese detalle cerca." % item_nombre if reaccion in ["encanta", "gusta"] else "He estado pensando en el %s que me diste. Gracias por acordarte de mí." % item_nombre
+			"bruna":
+				texto = "Le encontré utilidad al %s que me trajiste. No suelo decirlo, pero fue un buen regalo." % item_nombre if reaccion in ["encanta", "gusta"] else "Sobre el %s que me diste: gracias por el gesto. Lo tengo presente."
+			"darven":
+				texto = "El %s que me entregaste me ha resultado útil. Aprecio que hayas pensado en ello." % item_nombre if reaccion in ["encanta", "gusta"] else "Quería agradecerte de nuevo el %s. Fue un gesto considerado." % item_nombre
+			"saira":
+				texto = "¡Ah! El %s que me regalaste. Me hizo ilusión; estas pequeñas cosas también cuentan historias." % item_nombre if reaccion in ["encanta", "gusta"] else "Me acuerdo del %s que me diste. Gracias, fue un detalle bonito." % item_nombre
+			"narel":
+				texto = "He conservado el %s que me diste. Es interesante cómo un objeto puede adquirir significado por su contexto." % item_nombre if reaccion in ["encanta", "gusta"] else "Recuerdo el %s que me entregaste. Gracias por el detalle." % item_nombre
+			_:
+				texto = "Quería agradecerte otra vez el %s que me regalaste." % item_nombre
+	elif tipo == "evento_social":
+		var evento := str(recuerdo.get("evento", "")).strip_edges().to_lower()
+		var contexto_variant: Variant = recuerdo.get("contexto", {})
+		var contexto: Dictionary = contexto_variant if contexto_variant is Dictionary else {}
+		var detalle := str(contexto.get("asunto", contexto.get("descripcion", ""))).strip_edges()
+		var frase := ""
+		match evento:
+			"promesa_cumplida":
+				frase = "Cumpliste lo que me prometiste. No lo he olvidado."
+			"promesa_rota":
+				frase = "Sigo recordando que no cumpliste lo que me prometiste. Me cuesta dejarlo atrás."
+			"mentir":
+				frase = "Todavía tengo presente aquella mentira. Necesitaré tiempo para recuperar la confianza."
+			"decir_verdad":
+				frase = "He pensado en lo que me dijiste. Aprecio que hayas sido sincero conmigo."
+			"traicionar":
+				frase = "Lo que ocurrió entre nosotros fue importante. No puedo fingir que la confianza sigue igual."
+			"faltar_respeto":
+				frase = "No he olvidado cómo me hablaste aquella vez. Espero que podamos tratarnos con más consideración."
+			"ayudar":
+				frase = "Recuerdo que estuviste ahí para ayudarme. No doy ese gesto por sentado."
+			"apoyar":
+				frase = "Me acuerdo de que me apoyaste cuando lo necesitaba. Significó bastante."
+			"compartir_conocimiento":
+				frase = "He seguido pensando en lo que compartiste conmigo. Me resultó útil escucharte."
+			"demostrar_habilidad":
+				frase = "Recuerdo lo que me demostraste. Has dejado una buena impresión."
+			_:
+				return {}
+		if not detalle.is_empty():
+			frase = detalle + ": " + frase
+		match clave_nombre:
+			"elian":
+				texto = "Quería hablarte de algo que todavía recuerdo. " + frase
+			"bruna":
+				texto = frase + " Prefiero ser clara contigo."
+			"darven":
+				texto = "Hay algo que considero importante dejar claro. " + frase
+			"saira":
+				texto = "Oye, hay algo de lo que pasó que todavía me ronda. " + frase
+			"narel":
+				texto = "He revisado mentalmente lo ocurrido y hay algo que quiero señalar. " + frase
+			_:
+				texto = frase
+	else:
+		return {}
+	if texto.is_empty():
+		return {}
 	return {
-		"clave": "recuerdo_regalo",
+		"clave": "recuerdo_social",
 		"lineas": [{"hablante": nombre, "texto": texto}]
 	}
 
@@ -1216,6 +1270,8 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 				"tipo": "tema_conversacion",
 				"clave": clave_tema,
 				"titulo": str(opcion.get("texto", "")),
+				"frase_jugador": jugador,
+				"respuesta_npc": respuesta,
 				"importancia": float(opcion.get("importancia", 1.0)),
 				"momento": Time.get_datetime_string_from_system(true)
 			})
