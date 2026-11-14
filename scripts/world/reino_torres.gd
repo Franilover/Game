@@ -583,7 +583,11 @@ func _crear_ventanas_hogares() -> void:
 		if not is_instance_valid(casa):
 			push_warning("ReinoTorres: no se encontró la vivienda para iluminar: " + nombre_casa)
 			continue
-		for posicion_ventana in [Vector2(-10.0, -5.0), Vector2(10.0, -5.0)]:
+		var posiciones_ventana: Array[Vector2] = [
+			Vector2(-10.0, -5.0),
+			Vector2(10.0, -5.0)
+		]
+		for posicion_ventana: Vector2 in posiciones_ventana:
 			var ventana := Sprite2D.new()
 			ventana.name = "VentanaIluminada"
 			ventana.texture = textura_ventana
@@ -637,7 +641,8 @@ func _crear_charcos_torres() -> void:
 		var radio_y := float(ubicacion.get("ry", 4.0))
 		var charco := Polygon2D.new()
 		charco.name = "CharcoLluvia_%02d" % indice
-		charco.position = ubicacion.get("pos", Vector2.ZERO)
+		var posicion_charco: Vector2 = ubicacion.get("pos", Vector2.ZERO)
+		charco.position = posicion_charco
 		charco.polygon = _crear_poligono_elipse(radio_x, radio_y)
 		charco.color = Color("#58798a")
 		charco.z_index = -5
