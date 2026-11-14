@@ -161,6 +161,8 @@ func _ready() -> void:
 	_preparar_panel_interaccion()
 	_preparar_panel_misiones()
 	_preparar_reloj_calendario()
+	if not GameState.dinero_cambiado.is_connected(_al_cambiar_dinero):
+		GameState.dinero_cambiado.connect(_al_cambiar_dinero)
 	_conectar_senales_misiones()
 
 	if location_panel:
@@ -1410,13 +1412,17 @@ func _preparar_reloj_calendario() -> void:
 	_calendar_panel.anchor_right = 1.0
 	_calendar_panel.anchor_top = 0.0
 	_calendar_panel.anchor_bottom = 0.0
-	_calendar_panel.offset_left = -174.0
+	_calendar_panel.offset_left = -202.0
 	_calendar_panel.offset_top = 12.0
 	_calendar_panel.offset_right = -12.0
-	_calendar_panel.offset_bottom = 82.0
+	_calendar_panel.offset_bottom = 100.0
 	_calendar_label = _calendar_panel.get_node("CalendarText") as Label
 	add_child(_calendar_panel)
 	PIXEL_UI_THEME.apply(_calendar_panel)
+
+
+func _al_cambiar_dinero(_cantidad: int) -> void:
+	_actualizar_reloj_calendario()
 
 
 func _actualizar_reloj_calendario() -> void:
@@ -1436,7 +1442,7 @@ func _actualizar_reloj_calendario() -> void:
 	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
 	var anio := int(tiempo.get("anio", 0))
 	var fecha := "Día %d · %s" % [dia_estacion, estacion] if dia_estacion > 0 else estacion
-	_calendar_label.text = "%s   %s\n%s · Año %d" % [hora, periodo, fecha, anio]
+	_calendar_label.text = "%s   %s\n%s · Año %d\nMonedas: %d" % [hora, periodo, fecha, anio, GameState.obtener_dinero()]
 
 
 
