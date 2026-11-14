@@ -300,10 +300,7 @@ func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2
 	if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR + 48.0 and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR + 48.0:
 		return false
 
-	var lineas: Array = _conversacion_activa.get("lineas", [])
-	if _indice_linea < 0 or _indice_linea >= lineas.size() or not lineas[_indice_linea] is Dictionary:
-		return false
-	var linea_actual: Dictionary = lineas[_indice_linea]
+	var otro_nombre := npc_b_nombre if nombre == npc_a_nombre else npc_a_nombre
 	var nombre_visible := npc_interactuado.get_nombre_visual()
 	var respuestas: Array[Dictionary] = _crear_respuestas_intervencion(nombre)
 	var datos_dialogo := {
