@@ -767,10 +767,124 @@ func _materializar_npcs_reino_torres() -> void:
 		existentes[personaje_id] = npc
 		creados += 1
 
+	_materializar_habitantes_sin_oficio(zona)
 	if creados > 0:
 		print("Main: NPC de Reino Torres materializados desde Supabase → ", creados)
 	if _bienvenida_torres_pendiente:
 		call_deferred("_iniciar_bienvenida_torres")
+
+
+## Habitantes civiles de Torres. No tienen empleos ni registros canónicos
+## en Supabase: sus hogares, preferencias y recorridos son datos locales.
+func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
+	if not is_instance_valid(zona):
+		return
+	var plantilla: Creature = null
+	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if npc_variant is Creature and is_instance_valid(npc_variant):
+			plantilla = npc_variant as Creature
+			break
+	if not is_instance_valid(plantilla):
+		push_warning("Main: no hay un NPC humano para usar como plantilla de los habitantes civiles.")
+		return
+
+	var habitantes: Array[Dictionary] = [
+		{
+			"clave":"magda", "nombre":"Magda", "hogar":"vivienda_oeste_01",
+			"rutinas":[
+				{"clave":"magda_paseo_manana","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"pasear_por_la_plaza"},
+				{"clave":"magda_compra_pan","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"magda_descanso_plaza","hora_inicio":"11:30","hora_fin":"14:00","ubicacion_clave":"plaza","actividad_clave":"conversar_y_descansar"},
+				{"clave":"magda_compra_comida","hora_inicio":"14:00","hora_fin":"15:30","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
+				{"clave":"magda_paseo_tarde","hora_inicio":"15:30","hora_fin":"18:00","ubicacion_clave":"plaza","actividad_clave":"pasear"},
+				{"clave":"magda_regreso","hora_inicio":"18:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"volver_a_casa"}
+			]
+		},
+		{
+			"clave":"sofia", "nombre":"Sofia", "hogar":"vivienda_oeste_02",
+			"rutinas":[
+				{"clave":"sofia_paseo","hora_inicio":"08:00","hora_fin":"09:30","ubicacion_clave":"plaza","actividad_clave":"dar_un_paseo"},
+				{"clave":"sofia_compra","hora_inicio":"09:30","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
+				{"clave":"sofia_posada","hora_inicio":"11:30","hora_fin":"13:30","ubicacion_clave":"posada","actividad_clave":"visitar_la_posada"},
+				{"clave":"sofia_plaza","hora_inicio":"13:30","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"encontrarse_con_vecinos"},
+				{"clave":"sofia_compra_pan","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"sofia_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"volver_a_casa"}
+			]
+		},
+		{
+			"clave":"aurora", "nombre":"Aurora", "hogar":"vivienda_oeste_03",
+			"rutinas":[
+				{"clave":"aurora_plaza","hora_inicio":"08:00","hora_fin":"10:30","ubicacion_clave":"plaza","actividad_clave":"observar_el_pueblo"},
+				{"clave":"aurora_compra_pan","hora_inicio":"10:30","hora_fin":"12:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"aurora_paseo","hora_inicio":"12:00","hora_fin":"14:30","ubicacion_clave":"plaza","actividad_clave":"pasear_y_saludar"},
+				{"clave":"aurora_comercio","hora_inicio":"14:30","hora_fin":"16:00","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_articulos"},
+				{"clave":"aurora_plaza_tarde","hora_inicio":"16:00","hora_fin":"18:00","ubicacion_clave":"plaza","actividad_clave":"conversar_con_vecinos"},
+				{"clave":"aurora_regreso","hora_inicio":"18:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_03","actividad_clave":"volver_a_casa"}
+			]
+		},
+		{
+			"clave":"tomas", "nombre":"Tomas", "hogar":"vivienda_oeste_04",
+			"rutinas":[
+				{"clave":"tomas_paseo","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"recorrer_el_reino"},
+				{"clave":"tomas_comercio","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
+				{"clave":"tomas_posada","hora_inicio":"11:30","hora_fin":"13:00","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
+				{"clave":"tomas_plaza","hora_inicio":"13:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"pasar_la_tarde"},
+				{"clave":"tomas_panaderia","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+				{"clave":"tomas_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_04","actividad_clave":"volver_a_casa"}
+			]
+		}
+	]
+
+	var existentes_locales: Dictionary = {}
+	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if npc_variant is Creature and is_instance_valid(npc_variant):
+			var npc_existente := npc_variant as Creature
+			var clave_existente := str(npc_existente.get_meta("habitante_local_clave", ""))
+			if not clave_existente.is_empty():
+				existentes_locales[clave_existente] = npc_existente
+
+	for habitante in habitantes:
+		var clave := str(habitante.get("clave", ""))
+		if existentes_locales.has(clave):
+			continue
+		var datos := plantilla.datos.duplicate(true)
+		datos.erase("personaje_game_id")
+		datos["nombre_individual"] = str(habitante.get("nombre", "Habitante"))
+		datos["ubicacion_clave"] = "plaza"
+		datos["hogar_clave"] = str(habitante.get("hogar", "plaza"))
+		datos["rutinas"] = habitante.get("rutinas", []).duplicate(true)
+		datos["dialogo"] = []
+		var npc := CREATURE_SCENE.instantiate() as Creature
+		if npc == null:
+			continue
+		npc.move_speed = 48.0
+		npc.collision_layer = 0
+		npc.collision_mask = 1
+		npc.mostrar_nombre_debug = false
+		npc.configurar_dependencias(_dialogue_system, MissionManager, $Entities, _world_items, WorldData)
+		npc.configurar(datos)
+		$Entities.add_child(npc)
+		if is_instance_valid(_player):
+			npc.add_collision_exception_with(_player)
+		npc.remove_from_group("creatures")
+		npc.remove_from_group("damageable")
+		npc.add_to_group("torres_game_npc")
+		npc.set_meta("habitante_sin_oficio", true)
+		npc.set_meta("habitante_local_clave", clave)
+		npc.set_meta("hogar_inicializado", true)
+		var hogar_local := NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_inicial(str(habitante.get("hogar", "plaza")))
+		npc.datos["posicion_hogar_local"] = hogar_local
+		npc.global_position = zona.to_global(hogar_local)
+		var ai := npc.get_node_or_null("AIController")
+		if ai != null:
+			ai.set_process(false)
+			ai.set_physics_process(false)
+		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento != null:
+			movimiento.detener_por_rutina()
+			movimiento.set_process(false)
+			movimiento.set_physics_process(false)
+		print("Main: habitante civil materializado → ", habitante.get("nombre", clave), " | hogar=", habitante.get("hogar", "plaza"))
 
 
 ## Primera llegada al reino: el guardia recibe al jugador y Elian lo acompaña
