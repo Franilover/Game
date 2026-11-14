@@ -315,13 +315,26 @@ func obtener_recuerdos(personaje_id: String) -> Array:
 
 
 func evaluar_regalo(personaje_id: String, item_id: String) -> Dictionary:
+	var id_personaje := personaje_id.strip_edges()
+	var id_item := item_id.strip_edges()
+	if id_personaje.is_empty() or id_item.is_empty():
+		return {
+			"reaccion": "neutral",
+			"amistad": 0.0,
+			"confianza": 0.0,
+			"respeto": 0.0,
+			"afecto": 0.0
+		}
+
 	for regalo_variant in _regalos:
 		if not regalo_variant is Dictionary:
 			continue
 		var regalo := regalo_variant as Dictionary
-		if str(regalo.get("personaje_game_id", "")) != personaje_id:
+		if str(regalo.get("personaje_game_id", "")).strip_edges() != id_personaje:
 			continue
-		if str(regalo.get("item_id", "")) != item_id:
+		if str(regalo.get("item_id", "")).strip_edges() != id_item:
+			continue
+		if not bool(regalo.get("activo", true)):
 			continue
 		return regalo.duplicate(true)
 
