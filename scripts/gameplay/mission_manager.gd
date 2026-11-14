@@ -199,6 +199,21 @@ func solicitar_aceptacion(identificador: String) -> bool:
 	return true
 
 
+## Conserva qué NPC presentó una misión aunque el jugador la rechace.
+func registrar_origen_mision(identificador: String, personaje_origen_id: String) -> void:
+	var origen := personaje_origen_id.strip_edges()
+	if origen.is_empty():
+		return
+	var mision := obtener_mision(identificador)
+	if mision.is_empty():
+		mision = buscar_mision_por_clave(identificador)
+	if mision.is_empty():
+		return
+	var mision_id := str(mision.get("id", "")).strip_edges()
+	if not mision_id.is_empty():
+		_origen_misiones[mision_id] = origen
+
+
 func aceptar_mision(identificador: String, personaje_origen_id: String = "") -> bool:
 	var mision := obtener_mision(identificador)
 
