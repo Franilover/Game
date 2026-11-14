@@ -2022,7 +2022,9 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 		for accion_tema_variant in acciones_tema_variant as Array:
 			if accion_tema_variant is Dictionary:
 				_acciones.append((accion_tema_variant as Dictionary).duplicate(true))
-	_establecer_menu_principal_social(_usa_menu_social and not es_despedida)
+	_establecer_menu_principal_social(
+		_usa_menu_social and not es_despedida and _acciones.is_empty()
+	)
 	_limpiar_botones_respuesta()
 	_lineas = [{"hablante": _fuente.get_nombre_visual(), "texto": respuesta}]
 	_indice_linea = 0
