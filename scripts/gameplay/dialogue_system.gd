@@ -1271,7 +1271,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 				if not _cumple_requisitos_tema_conversacion(tema, relacion, recuerdos):
 					continue
 				var clave_tema := str(tema.get("clave", "")).strip_edges()
-				var respuesta := _obtener_respuesta_tema(tema, clave_tema, recuerdos)
+				var respuesta := _obtener_respuesta_tema(tema, clave_tema, recuerdos, relacion)
 				var texto_jugador := str(tema.get("jugador", "")).strip_edges()
 				var titulo := str(tema.get("texto", "")).strip_edges()
 				if clave_tema.is_empty() or texto_jugador.is_empty() or respuesta.is_empty() or titulo.is_empty():
@@ -1409,15 +1409,47 @@ func _contar_veces_tema(recuerdos: Array, clave_tema: String) -> int:
 ## Las conversaciones repetidas pueden rotar entre varias respuestas.
 ## Se aceptan tanto respuestas_repetidas como una respuesta_repetida única
 ## para conservar compatibilidad con los temas ya guardados.
-func _obtener_respuesta_tema(tema: Dictionary, clave_tema: String, recuerdos: Array) -> String:
-	var respuesta_inicial := str(tema.get("respuesta", "")).strip_edges()
+## Selecciona una respuesta según la relación actual y rota sus respuestas posteriores.
+## Las variantes no alteran el desbloqueo del tema: sólo cambian la actitud con que
+## el personaje responde una vez que el jugador ha llegado a esa conversación.
+func _obtener_respuesta_tema(
+	tema: Dictionary,
+	clave_tema: String,
+	recuerdos: Array,
+	relacion: Dictionary = {}
+) -> String:
 	var veces_conversado := _contar_veces_tema(recuerdos, clave_tema)
+	var respuesta_fuente: Dictionary = tema
+	var variantes_variant: Variant = tema.get("variantes_actitud", [])
+	var mejor_prioridad := -2147483648
+	if variantes_variant is Array:
+		for variante_variant in variantes_variant as Array:
+			if not variante_variant is Dictionary:
+				continue
+			var variante := variante_variant as Dictionary
+			var requisito_variant: Variant = variante.get("requisito_social", {})
+			if not requisito_variant is Dictionary:
+				continue
+			var requisito := requisito_variant as Dictionary
+			if requisito.is_empty() or not _cumple_requisito_social_contextual(requisito, relacion):
+				continue
+			var prioridad := int(variante.get("prioridad", 0))
+			if prioridad > mejor_prioridad:
+				mejor_prioridad = prioridad
+				respuesta_fuente = variante
+
+	var respuesta_inicial := str(
+		respuesta_fuente.get("respuesta", tema.get("respuesta", ""))
+	).strip_edges()
 	if veces_conversado <= 0:
 		return respuesta_inicial
 
-	var repetidas_variant: Variant = tema.get(
+	var repetidas_variant: Variant = respuesta_fuente.get(
 		"respuestas_repetidas",
-		tema.get("respuesta_repetida", [])
+		respuesta_fuente.get(
+			"respuesta_repetida",
+			tema.get("respuestas_repetidas", tema.get("respuesta_repetida", []))
+		)
 	)
 	if repetidas_variant is Array:
 		var opciones_validas: Array[String] = []
