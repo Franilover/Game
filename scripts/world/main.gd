@@ -1024,6 +1024,9 @@ func _configurar_dialogo() -> void:
 	_cutscene_director.configurar(_player, _dialogue_system, _camera)
 	if not _cutscene_director.evento_solicitado.is_connected(_al_evento_cinematica_solicitado):
 		_cutscene_director.evento_solicitado.connect(_al_evento_cinematica_solicitado)
+	var admin_tab := get_node_or_null("UI/Inventory/Window/Margin/Column/Tabs/Admin") as AdminInventory
+	if is_instance_valid(admin_tab):
+		admin_tab.configurar_narrativa(_dialogue_system, _cutscene_director, _npc_conversation_system)
 	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_signal("cinematica_narrativa_solicitada"):
 		var callback_narrativa := Callable(self, "_al_cinematica_narrativa_solicitada")
 		if not _npc_conversation_system.is_connected("cinematica_narrativa_solicitada", callback_narrativa):
