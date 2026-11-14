@@ -1038,7 +1038,9 @@ func _cargar_sprites_de_torres() -> void:
 		# Ocultar primero los antiguos polígonos vectoriales del edificio.
 		# Los sprites guardados en la escena son la fuente visual definitiva.
 		_ocultar_placeholder(building["hide"])
-		var sprite_existente := get_node_or_null(NodePath(String(building.get("sprite_node", "Sprite_" + clave)))) as Sprite2D
+		var grupo_edificio := _obtener_grupo_entrada({"id": clave})
+		var contenedor_sprite: Node = grupo_edificio if is_instance_valid(grupo_edificio) else self
+		var sprite_existente := contenedor_sprite.get_node_or_null(NodePath(String(building.get("sprite_node", "Sprite_" + clave)))) as Sprite2D
 		if is_instance_valid(sprite_existente):
 			print("ReinoTorres: sprite oficial de escena activo para ", clave)
 			continue
@@ -1062,7 +1064,6 @@ func _cargar_sprites_de_torres() -> void:
 			var scale_factor := minf(target_size.x / texture_size.x, target_size.y / texture_size.y)
 			sprite.scale = Vector2.ONE * scale_factor
 		sprite.z_index = 3
-		var grupo_edificio := _obtener_grupo_entrada({"id": clave})
 		if is_instance_valid(grupo_edificio):
 			grupo_edificio.add_child(sprite)
 		else:
