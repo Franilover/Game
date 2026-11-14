@@ -332,6 +332,16 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
 
+	# Reunión habitual del pueblo: todos los habitantes se reúnen en el
+	# castillo antes de retirarse a dormir. Termina al llegar la medianoche.
+	if minutos >= 1260:
+		rutina = {
+			"clave": "reunion_nocturna_castillo",
+			"ubicacion_clave": "castillo",
+			"actividad_clave": "reunirse_con_los_demas",
+			"activo": true
+		}
+
 	# Las rutinas de trabajo y los horarios canónicos permanecen intactos.
 	# Sólo se matizan los momentos libres en la plaza con una actividad diaria
 	# estable y una pequeña variación de posición.
