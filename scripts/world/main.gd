@@ -809,6 +809,15 @@ func _iniciar_bienvenida_torres() -> void:
 			{"texto":"¿La posada recibe viajeros?","jugador":"¿La posada recibe viajeros?","respuesta":"Sí, es el lugar más práctico para descansar si todavía no tienes dónde quedarte."},
 			{"texto":"¿Dónde queda la casa de Bruna?","jugador":"¿Dónde vive Bruna?","respuesta":"Su casa está junto a la zona de la forja. Es fácil encontrarla si sigues el camino hacia los talleres."}
 		])
+	_agregar_conversacion_tour_elian(pasos, "Bruna", Vector2(-235.0, 152.0), [
+		{"hablante":"Elian","texto":"¡Bruna! Justo te estábamos mencionando. ¿Cómo va el trabajo?"},
+		{"hablante":"Bruna","texto":"Hola, Elian. Bien, estoy terminando unas piezas. ¿Y tú? ¿Ya estás haciendo de guía?"},
+		{"hablante":"Elian","texto":"¡Alguien tenía que enseñarle el lugar! Además, así aprovecho de saludarte."}
+	], [
+		{"texto":"¿Se conocen desde hace mucho?","jugador":"¿Ustedes se conocen desde hace mucho?","respuesta":"Desde hace bastante. Nos cruzamos seguido por el trabajo y la plaza.","clave":"bruna_conocerse"},
+		{"texto":"¿Qué estás fabricando?","jugador":"Bruna, ¿qué estás preparando ahora?","respuesta":"Estoy terminando unas piezas para reparar herramientas. Si quedan bien, mañana podré entregarlas.","clave":"bruna_trabajo"},
+		{"texto":"Se nota que se llevan bien","jugador":"Se nota que se conocen y se llevan bien.","respuesta":"¡Claro! Vivir en el mismo reino hace que uno termine conociendo a los demás.","clave":"bruna_amistad"}
+	])
 	_agregar_parada_tour_elian(pasos, "casa_bruna", Vector2(-235.0, 152.0),
 		"Por aquí vive Bruna. Su casa queda cerca de la forja, donde suele pasar buena parte del día trabajando. Si la encuentras en casa, seguramente estará descansando o preparando sus próximos encargos.",
 		[
@@ -816,6 +825,15 @@ func _iniciar_bienvenida_torres() -> void:
 			{"texto":"¿Puedo visitarla?","jugador":"¿Puedo pasar a saludarla cuando esté en casa?","respuesta":"Si está en casa y no tiene algo urgente entre manos, claro. Siempre puedes acercarte y preguntar."},
 			{"texto":"¿Hace mucho que vive aquí?","jugador":"¿Bruna lleva mucho tiempo viviendo en el reino?","respuesta":"Ya lleva un buen tiempo aquí. Se ha ganado un lugar entre los vecinos gracias a su trabajo."}
 		])
+	_agregar_conversacion_tour_elian(pasos, "Darven", Vector2(330.0, -70.0), [
+		{"hablante":"Elian","texto":"¡Darven! ¿Todo tranquilo por la entrada?"},
+		{"hablante":"Darven","texto":"Por ahora sí. Ya recibí a quien acaba de llegar y le indiqué que podía recorrer el reino."},
+		{"hablante":"Elian","texto":"Perfecto, yo me encargo de que no se pierda. ¡Nos vemos luego!"}
+	], [
+		{"texto":"¿Siempre estás en la entrada?","jugador":"¿Siempre te toca vigilar la entrada?","respuesta":"Los turnos cambian, pero siempre hay alguien encargado de revisar el acceso y mantener el orden.","clave":"darven_turnos"},
+		{"texto":"¿Es difícil ser guardia?","jugador":"¿Es difícil trabajar como guardia?","respuesta":"Hay que estar atento y saber cuándo intervenir. La mayoría de los días son tranquilos, y eso es bueno.","clave":"darven_guardia"},
+		{"texto":"Gracias por recibirme","jugador":"Gracias por recibirme cuando llegué.","respuesta":"Es parte de mi trabajo. Me alegra que hayas podido empezar a conocer el reino.","clave":"darven_agradecer"}
+	])
 	_agregar_parada_tour_elian(pasos, "viviendas_oriente", Vector2(330.0, -70.0),
 		"Por este lado están las casas de varios vecinos. La mía es la de allí; Darven vive un poco más al norte y Saira al otro lado del camino. Si los buscas, ya sabes dónde encontrarlos.",
 		[
@@ -823,6 +841,15 @@ func _iniciar_bienvenida_torres() -> void:
 			{"texto":"¿Darven vive cerca?","jugador":"¿Darven vive cerca de aquí?","respuesta":"Sí, su casa queda hacia el norte. Aunque muchas veces lo encontrarás en sus rondas o atendiendo el puesto de guardia."},
 			{"texto":"¿Y Saira?","jugador":"¿Dónde puedo encontrar a Saira?","respuesta":"Su casa está hacia el sur de este barrio. También puedes encontrarla en la casa de comercio cuando está trabajando."}
 		])
+	_agregar_conversacion_tour_elian(pasos, "Saira", Vector2(385.0, 118.0), [
+		{"hablante":"Elian","texto":"¡Saira! ¿Cómo va todo por el comercio?"},
+		{"hablante":"Saira","texto":"Bastante bien. Llegaron algunas mercancías nuevas y todavía estoy organizando los encargos."},
+		{"hablante":"Elian","texto":"¡Eso suena a que no te faltará trabajo! Luego pasaré a mirar qué llegó."}
+	], [
+		{"texto":"¿Qué mercancías llegaron?","jugador":"¿Qué tipo de mercancías llegaron?","respuesta":"Un poco de todo. Todavía estoy revisando las cajas, así que prefiero no prometer nada hasta terminar el inventario.","clave":"saira_mercancias"},
+		{"texto":"¿Necesitas ayuda?","jugador":"¿Te vendría bien una mano con los encargos?","respuesta":"Gracias por ofrecerte. Si surge algo que pueda hacerse sin interrumpir el inventario, te lo haré saber.","clave":"saira_ayuda"},
+		{"texto":"¿Sueles hablar con Elian?","jugador":"¿Sueles encontrarte con Elian por aquí?","respuesta":"Sí, a menudo. Siempre aparece buscando algo para la panadería o preguntando qué novedades hay.","clave":"saira_elian"}
+	])
 	_agregar_parada_tour_elian(pasos, "casa_saira", Vector2(385.0, 118.0),
 		"Y esta es la casa de Saira. Está cerca del camino que conecta las viviendas con la zona comercial. Cuando no está atendiendo el comercio, suele venir por aquí a descansar.",
 		[
@@ -844,6 +871,15 @@ func _iniciar_bienvenida_torres() -> void:
 			{"texto":"¿Puedo hablar con la guardia?","jugador":"¿Puedo acudir al cuartel si necesito ayuda?","respuesta":"Claro. Si tienes un problema o necesitas informar de algo, el cuartel es un buen lugar para empezar."},
 			{"texto":"¿Qué puedo reparar aquí?","jugador":"¿Qué puedo llevar al taller de reparaciones?","respuesta":"Depende del trabajo que necesites. En el taller pueden revisar objetos y encargarse de distintas reparaciones; la carpintería se ocupa de los trabajos de madera."}
 		])
+	_agregar_conversacion_tour_elian(pasos, "Narel", Vector2(-540.0, -245.0), [
+		{"hablante":"Elian","texto":"¡Narel! ¿Sigues con tus apuntes? Estamos recorriendo el reino y pensé que quizá te encontraríamos por aquí."},
+		{"hablante":"Narel","texto":"Hola, Elian. Sí, estoy ordenando unas observaciones. Aunque supongo que puedo hacer una pausa."},
+		{"hablante":"Elian","texto":"Te presento a nuestro nuevo vecino. Si tiene curiosidad por tus estudios, seguro que le interesará escucharte."}
+	], [
+		{"texto":"¿Qué estás investigando?","jugador":"¿Qué estás investigando en estos apuntes?","respuesta":"Estoy comparando algunas observaciones. Todavía no tengo una conclusión, pero ya encontré patrones que vale la pena revisar.","clave":"narel_investigacion"},
+		{"texto":"¿Dónde consigues información?","jugador":"¿Dónde consultas la información para tus estudios?","respuesta":"En el archivo real y en mis propias notas. También suelo hablar con quienes conocen bien cada zona.","clave":"narel_fuentes"},
+		{"texto":"No quiero interrumpir","jugador":"No quiero interrumpir tu trabajo. Gracias por hablar conmigo.","respuesta":"No te preocupes. Una pausa breve también ayuda a ordenar las ideas.","clave":"narel_pausa"}
+	])
 	_agregar_parada_tour_elian(pasos, "barrio_oeste", Vector2(-540.0, -245.0),
 		"Por el oeste hay viviendas y caminos más tranquilos. La casa de Narel está por aquí; suele estar ocupado con sus apuntes, pero si tienes curiosidad por sus investigaciones, puedes pasar a saludarlo.",
 		[
@@ -943,6 +979,39 @@ func _agregar_parada_tour_elian(
 	pasos.append({"tipo":"dialogo","npc":"Elian","datos":{
 		"clave":"bienvenida_tour_%s" % clave,
 		"lineas":[{"hablante":"Elian","texto":explicacion}],
+		"respuestas":respuestas
+	}})
+
+
+func _agregar_conversacion_tour_elian(
+	pasos: Array[Dictionary],
+	nombre_npc: String,
+	posicion: Vector2,
+	lineas: Array[Dictionary],
+	preguntas: Array[Dictionary]
+) -> void:
+	pasos.append({"tipo":"preparar_npc","npc":nombre_npc,"x":posicion.x - 42.0,"y":posicion.y + 12.0})
+	pasos.append({"tipo":"mirar_npc","npc":nombre_npc,"hacia_npc":"Elian"})
+	pasos.append({"tipo":"mirar_npc","npc":"Elian","hacia_npc":nombre_npc})
+	pasos.append({"tipo":"gesto_npc","npc":nombre_npc,"gesto":"saludar","duracion":0.55})
+	var respuestas: Array[Dictionary] = []
+	for pregunta_variant in preguntas:
+		if not pregunta_variant is Dictionary:
+			continue
+		var pregunta := (pregunta_variant as Dictionary).duplicate(true)
+		pregunta["despedida"] = true
+		pregunta["evento"] = "interesarse"
+		respuestas.append(pregunta)
+	respuestas.append({
+		"clave":"dejar_conversar_%s" % nombre_npc.to_lower(),
+		"texto":"Dejarlos seguir conversando",
+		"jugador":"Los dejo conversar. Nos vemos luego.",
+		"respuesta":"¡Hasta luego! Nos vemos por el reino.",
+		"despedida":true
+	})
+	pasos.append({"tipo":"dialogo","npc":nombre_npc,"datos":{
+		"clave":"bienvenida_conversacion_elian_%s" % nombre_npc.to_lower(),
+		"lineas":lineas,
 		"respuestas":respuestas
 	}})
 
