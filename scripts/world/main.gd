@@ -1024,6 +1024,10 @@ func _configurar_dialogo() -> void:
 	_cutscene_director.configurar(_player, _dialogue_system, _camera)
 	if not _cutscene_director.evento_solicitado.is_connected(_al_evento_cinematica_solicitado):
 		_cutscene_director.evento_solicitado.connect(_al_evento_cinematica_solicitado)
+	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_signal("cinematica_narrativa_solicitada"):
+		var callback_narrativa := Callable(self, "_al_cinematica_narrativa_solicitada")
+		if not _npc_conversation_system.is_connected("cinematica_narrativa_solicitada", callback_narrativa):
+			_npc_conversation_system.connect("cinematica_narrativa_solicitada", callback_narrativa)
 	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_signal("cinematica_acontecimiento_solicitada"):
 		var callback_cinematica := Callable(self, "_al_cinematica_acontecimiento_solicitada")
 		if not _npc_conversation_system.is_connected("cinematica_acontecimiento_solicitada", callback_cinematica):
@@ -1042,6 +1046,48 @@ func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void
 	var contexto_variant: Variant = datos.get("contexto", {})
 	var contexto: Dictionary = contexto_variant.duplicate(true) if contexto_variant is Dictionary else {}
 	RelationshipSystem.registrar_evento_social(personaje_id, accion_social, evento_id, contexto)
+
+
+## Las etapas de una relación entre NPC pueden cerrar con una escena visual propia.
+## La conversación ya contiene el diálogo; esta secuencia añade puesta en escena sin repetirlo.
+func _al_cinematica_narrativa_solicitada(
+	clave: String,
+	nombre_a: String,
+	nombre_b: String,
+	posicion_global: Vector2,
+	etapa: int
+) -> void:
+	if not is_instance_valid(_player) or not is_instance_valid(_camera):
+		return
+	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
+		return
+	if is_instance_valid(_dialogue_system) and _dialogue_system.esta_abierto():
+		return
+	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return
+	if _player.global_position.distance_to(posicion_global) > 320.0:
+		return
+
+	var escenas: Dictionary = {
+		"elian_saira_hornada": {"gesto_a":"asentir","gesto_b":"saludar"},
+		"bruna_darven_camino": {"gesto_a":"negar","gesto_b":"asentir"},
+		"bruna_narel_medidas": {"gesto_a":"trabajar","gesto_b":"asentir"},
+		"darven_saira_avisos": {"gesto_a":"asentir","gesto_b":"saludar"},
+		"elian_narel_hornada": {"gesto_a":"saludar","gesto_b":"asentir"}
+	}
+	var escena_variant: Variant = escenas.get(clave, {"gesto_a":"asentir","gesto_b":"asentir"})
+	var escena: Dictionary = escena_variant
+	var zoom_actual := _camera.zoom.x
+	var pasos: Array[Dictionary] = [
+		{"tipo":"camara","x":posicion_global.x,"y":posicion_global.y,"zoom":zoom_actual * (1.08 if etapa == 1 else 1.14),"duracion":0.75},
+		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
+		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
+		{"tipo":"esperar","segundos":0.25},
+		{"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.6},
+		{"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.6},
+		{"tipo":"esperar","segundos":0.5}
+	]
+	await _cutscene_director.ejecutar("relacion_%s_etapa_%d" % [clave, etapa], pasos)
 
 
 
