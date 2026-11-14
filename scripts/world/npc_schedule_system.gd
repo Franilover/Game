@@ -488,7 +488,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if not evento_comunitario.is_empty() and _puede_participar_en_evento(rutina):
 		var clave_evento := str(evento_comunitario.get("clave", ""))
 		var desplazamiento_evento := _obtener_desplazamiento_evento(
-			npc.get_nombre_visual(), clave_evento, evento_comunitario
+			npc.get_nombre_visual(), clave_evento
 		)
 		rutina = {
 			"clave": clave_evento,
@@ -933,8 +933,7 @@ func _puede_participar_en_evento(rutina: Dictionary) -> bool:
 
 func _obtener_desplazamiento_evento(
 	nombre_npc: String,
-	clave_evento: String,
-	evento: Dictionary
+	clave_evento: String
 ) -> Vector2:
 	var posiciones: Array[Vector2] = [
 		Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
