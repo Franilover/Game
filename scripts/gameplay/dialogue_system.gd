@@ -35,6 +35,7 @@ var _selector_conversacion_grid: GridContainer = null
 var _selector_conversacion_scroll: ScrollContainer = null
 var _selector_conversacion_estado: Label = null
 var _selector_conversacion_contador: Label = null
+var _selector_conversacion_titulo: Label = null
 var _respuestas_titulo: Label = null
 var _selector_items: PanelContainer = null
 var _selector_items_grid: GridContainer = null
@@ -1234,6 +1235,8 @@ func _abrir_selector_conversacion() -> void:
 		_selector_conversacion_grid.remove_child(hijo)
 		hijo.queue_free()
 	var opciones := _crear_opciones_conversacion()
+	if _selector_conversacion_titulo != null and is_instance_valid(_fuente):
+		_selector_conversacion_titulo.text = "Conversar con " + _fuente.get_nombre_visual()
 	if _selector_conversacion_contador != null:
 		_selector_conversacion_contador.text = "%d temas disponibles" % opciones.size()
 	if _selector_conversacion_estado != null:
@@ -2147,7 +2150,9 @@ func _crear_interfaz() -> void:
 	var topic_header := HBoxContainer.new()
 	topic_column.add_child(topic_header)
 	var topic_title := Label.new()
-	topic_title.text = "¿De qué te gustaría hablar?"
+	_selector_conversacion_titulo = topic_title
+	topic_title.name = "TopicTitle"
+	topic_title.text = "Conversar"
 	topic_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	topic_title.add_theme_font_size_override("font_size", 14)
 	topic_header.add_child(topic_title)
