@@ -759,14 +759,13 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 			_vistas_por_dia[clave] = true
 			return
 
-	_buscar_acontecimiento_diario(jugador, tiempo, clave_dia, npcs)
+	_buscar_acontecimiento_diario(jugador, tiempo, clave_dia)
 
 
 func _buscar_acontecimiento_diario(
 	jugador: Node2D,
 	tiempo: Dictionary,
-	clave_dia: String,
-	npcs: Array[Creature]
+	clave_dia: String
 ) -> void:
 	var diario_variant: Variant = _progreso_parejas.get("_acontecimientos_diarios", {})
 	var diario: Dictionary = diario_variant.duplicate(true) if diario_variant is Dictionary else {}
