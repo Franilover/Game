@@ -86,6 +86,7 @@ var _brillos_charcos_torres: Array[Polygon2D] = []
 var _sistema_clima_torres: Node = null
 var _nivel_charcos_torres: float = 0.0
 var _tiempo_ambiente_torres: float = 0.0
+var _aviso_evento_torres: Label = null
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -157,6 +158,7 @@ func _ready() -> void:
 	_crear_luces_faroles()
 	_crear_ventanas_hogares()
 	_crear_charcos_torres()
+	_crear_aviso_evento_torres()
 	# Las capas estáticas deben reconstruir su caché antes de añadir
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
 	# iniciales de las celdas serializadas de la escena.
@@ -678,6 +680,7 @@ func _actualizar_ambiente_torres(delta: float) -> void:
 	var paso := _tiempo_ambiente_torres
 	_tiempo_ambiente_torres = 0.0
 	_actualizar_ventanas_hogares()
+	_actualizar_aviso_evento_torres()
 	if _charcos_torres.is_empty():
 		return
 	if not is_instance_valid(_sistema_clima_torres):
@@ -700,6 +703,61 @@ func _actualizar_ambiente_torres(delta: float) -> void:
 			var brillo := _brillos_charcos_torres[indice]
 			if is_instance_valid(brillo):
 				brillo.modulate.a = _nivel_charcos_torres * 0.48
+
+
+
+## Indicador discreto sobre la plaza para que el jugador sepa cuándo hay
+## mercado, comida vecinal o celebración estacional.
+func _crear_aviso_evento_torres() -> void:
+	_aviso_evento_torres = Label.new()
+	_aviso_evento_torres.name = "AvisoEventoComunitario"
+	_aviso_evento_torres.position = Vector2(-120.0, -154.0)
+	_aviso_evento_torres.size = Vector2(240.0, 22.0)
+	_aviso_evento_torres.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_aviso_evento_torres.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_aviso_evento_torres.add_theme_color_override("font_color", Color("#f4dfb5"))
+	_aviso_evento_torres.add_theme_color_override("font_outline_color", Color("#33271f"))
+	_aviso_evento_torres.add_theme_constant_override("outline_size", 3)
+	_aviso_evento_torres.add_theme_font_size_override("font_size", 12)
+	_aviso_evento_torres.z_index = 12
+	_aviso_evento_torres.visible = false
+	add_child(_aviso_evento_torres)
+
+
+func _actualizar_aviso_evento_torres() -> void:
+	if not is_instance_valid(_aviso_evento_torres):
+		return
+	if _interior_activo or not is_instance_valid(_atmosfera_mundo):
+		_aviso_evento_torres.visible = false
+		return
+	if not _atmosfera_mundo.has_method("obtener_tiempo"):
+		_aviso_evento_torres.visible = false
+		return
+	var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
+	if not bool(tiempo.get("calendario_cargado", false)):
+		_aviso_evento_torres.visible = false
+		return
+	var minutos := int(floor(float(tiempo.get("hora_del_dia", 0.0)) * 60.0))
+	var dia := int(tiempo.get("dia", 1))
+	var dia_semana := posmod(dia - 1, 5)
+	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
+	var titulo := ""
+	if dia_estacion == 1 and minutos >= 840 and minutos < 1200:
+		titulo = "CELEBRACION DE TEMPORADA"
+	elif dia_semana == 4 and minutos >= 540 and minutos < 1020:
+		titulo = "MERCADO VECINAL"
+	elif dia_semana == 4 and minutos >= 1020 and minutos < 1200:
+		titulo = "COMIDA COMUNITARIA"
+	if titulo.is_empty():
+		_aviso_evento_torres.visible = false
+		return
+	if is_instance_valid(_jugador):
+		var centro_plaza := to_global(Vector2.ZERO)
+		if _jugador.global_position.distance_to(centro_plaza) > 420.0:
+			_aviso_evento_torres.visible = false
+			return
+	_aviso_evento_torres.text = titulo
+	_aviso_evento_torres.visible = true
 
 
 
