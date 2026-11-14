@@ -191,6 +191,12 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 				if lineas.is_empty():
 					return false
 
+	if _es_dialogo_cotidiano(datos_seleccionados):
+		var recuerdo_regalo := _obtener_dialogo_recuerdo_regalo_pendiente()
+		if not recuerdo_regalo.is_empty():
+			datos_seleccionados = recuerdo_regalo
+			lineas = _normalizar_lineas(datos_seleccionados)
+
 	_lineas = lineas
 	_acciones.clear()
 	_respuestas.clear()
@@ -365,6 +371,47 @@ func _actualizar_retrato(hablante: String) -> void:
 	portrait_rect.texture = textura
 	portrait_rect.visible = textura != null
 
+
+
+
+func _es_dialogo_cotidiano(dialogo: Dictionary) -> bool:
+	var clave := str(dialogo.get("clave", "")).strip_edges().to_lower()
+	return clave == "principal" or clave.begins_with("rutina_")
+
+
+func _obtener_dialogo_recuerdo_regalo_pendiente() -> Dictionary:
+	if relationship_system == null or not is_instance_valid(_fuente):
+		return {}
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return {}
+	var recuerdo: Dictionary = relationship_system.tomar_regalo_pendiente_mencionar(personaje_id)
+	if recuerdo.is_empty():
+		return {}
+	var item_nombre := str(recuerdo.get("item_nombre", "")).strip_edges()
+	if item_nombre.is_empty():
+		return {}
+	var nombre := _fuente.get_nombre_visual().strip_edges()
+	var clave_nombre := nombre.to_lower()
+	var reaccion := str(recuerdo.get("reaccion", "neutral")).strip_edges().to_lower()
+	var texto := ""
+	match clave_nombre:
+		"elian":
+			texto = "Por cierto, todavía tengo presente el %s que me regalaste. Me ha alegrado tener ese detalle cerca." % item_nombre if reaccion in ["encanta", "gusta"] else "He estado pensando en el %s que me diste. Gracias por acordarte de mí." % item_nombre
+		"bruna":
+			texto = "Le encontré utilidad al %s que me trajiste. No suelo decirlo, pero fue un buen regalo." % item_nombre if reaccion in ["encanta", "gusta"] else "Sobre el %s que me diste: gracias por el gesto. Lo tengo presente."
+		"darven":
+			texto = "El %s que me entregaste me ha resultado útil. Aprecio que hayas pensado en ello." % item_nombre if reaccion in ["encanta", "gusta"] else "Quería agradecerte de nuevo el %s. Fue un gesto considerado." % item_nombre
+		"saira":
+			texto = "¡Ah! El %s que me regalaste. Me hizo ilusión; estas pequeñas cosas también cuentan historias." % item_nombre if reaccion in ["encanta", "gusta"] else "Me acuerdo del %s que me diste. Gracias, fue un detalle bonito."
+		"narel":
+			texto = "He conservado el %s que me diste. Es interesante cómo un objeto puede adquirir significado por su contexto." % item_nombre if reaccion in ["encanta", "gusta"] else "Recuerdo el %s que me entregaste. Gracias por el detalle." % item_nombre
+		_:
+			texto = "Quería agradecerte otra vez el %s que me regalaste." % item_nombre
+	return {
+		"clave": "recuerdo_regalo",
+		"lineas": [{"hablante": nombre, "texto": texto}]
+	}
 
 
 func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
