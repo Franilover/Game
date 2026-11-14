@@ -847,18 +847,22 @@ func _restaurar_objeto_evento_diario(tiempo: Dictionary) -> void:
 	var zona := _zone_manager.obtener_zona_actual() as Node2D if is_instance_valid(_zone_manager) else null
 	if not is_instance_valid(zona):
 		return
-	if is_instance_valid(_objeto_evento_diario) and _zona_objeto_evento != zona:
-		_objeto_evento_diario.queue_free()
-		_objeto_evento_diario = null
-		_zona_objeto_evento = null
-	if is_instance_valid(_objeto_evento_diario):
-		return
 	var diario_variant: Variant = _progreso_parejas.get("_acontecimientos_diarios", {})
 	if not diario_variant is Dictionary:
 		return
 	var diario := diario_variant as Dictionary
 	var clave_dia := "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
 	if str(diario.get("objeto_dia", "")) != clave_dia:
+		if is_instance_valid(_objeto_evento_diario):
+			_objeto_evento_diario.queue_free()
+		_objeto_evento_diario = null
+		_zona_objeto_evento = null
+		return
+	if is_instance_valid(_objeto_evento_diario) and _zona_objeto_evento != zona:
+		_objeto_evento_diario.queue_free()
+		_objeto_evento_diario = null
+		_zona_objeto_evento = null
+	if is_instance_valid(_objeto_evento_diario):
 		return
 	var posicion_variant: Variant = diario.get("objeto_posicion", Vector2.ZERO)
 	if not posicion_variant is Vector2:
@@ -872,7 +876,6 @@ func _restaurar_objeto_evento_diario(tiempo: Dictionary) -> void:
 func _crear_objeto_visual_evento(zona: Node2D, posicion: Vector2, etiqueta: String, tipo: String) -> void:
 	var objeto := Node2D.new()
 	objeto.name = "DailyEventProp"
-	objeto.global_position = posicion
 	objeto.z_index = 12
 	var base := Polygon2D.new()
 	base.polygon = PackedVector2Array([
@@ -924,6 +927,7 @@ func _crear_objeto_visual_evento(zona: Node2D, posicion: Vector2, etiqueta: Stri
 	nombre.add_theme_constant_override("outline_size", 2)
 	objeto.add_child(nombre)
 	zona.add_child(objeto)
+	objeto.global_position = posicion
 	_objeto_evento_diario = objeto
 	_zona_objeto_evento = zona
 
