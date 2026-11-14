@@ -1232,6 +1232,14 @@ func interact(
 			padre.add_child(interfaz)
 			return
 
+	# Si este NPC está conversando con otro habitante, la interacción
+	# permite presenciar ese intercambio en vez de abrir un diálogo individual.
+	var sistema_conversacion := get_tree().get_first_node_in_group("npc_conversation_system")
+	if is_instance_valid(sistema_conversacion) and sistema_conversacion.has_method("intentar_observar_conversacion"):
+		var jugador := _actor as Node2D
+		if sistema_conversacion.call("intentar_observar_conversacion", self, jugador, _mission_manager_dependency):
+			return
+
 	abrir_dialogo()
 
 
