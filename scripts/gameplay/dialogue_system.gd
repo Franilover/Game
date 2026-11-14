@@ -166,9 +166,11 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 			if respuesta_variant is Dictionary:
 				_respuestas.append((respuesta_variant as Dictionary).duplicate(true))
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
+	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
+	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
 	if (
 		_respuestas.is_empty()
-		and acciones_debug.is_empty()
+		and not tiene_acciones_finales
 		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
 	):
 		_respuestas = _crear_respuestas_rutina()
