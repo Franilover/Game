@@ -259,8 +259,9 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	if not recuerdo_para_mencionar.is_empty() and relationship_system != null:
 		var id_recuerdo_mostrado := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
 		var indice_recuerdo := int(recuerdo_para_mencionar.get("_indice_recuerdo", -1))
+		var uid_recuerdo := str(recuerdo_para_mencionar.get("recuerdo_uid", ""))
 		if not id_recuerdo_mostrado.is_empty() and indice_recuerdo >= 0:
-			relationship_system.marcar_recuerdo_mencionado(id_recuerdo_mostrado, indice_recuerdo)
+			relationship_system.marcar_recuerdo_mencionado(id_recuerdo_mostrado, indice_recuerdo, uid_recuerdo)
 
 	var hablante := str(_lineas[0].get("hablante", "")).strip_edges()
 	if hablante.is_empty() and is_instance_valid(_fuente):
