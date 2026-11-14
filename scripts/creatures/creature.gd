@@ -2,6 +2,7 @@ extends Entity
 class_name Creature
 
 const PIXELGRAFIA_FONT = preload("res://assets/fonts/Pixelgrafia.ttf")
+const SHOP_UI_SCRIPT = preload("res://scripts/ui/shop_ui.gd")
 
 signal configuracion_actualizada
 signal danio_recibido(cantidad: int, atacante: Node)
@@ -1206,9 +1207,10 @@ func get_interaction_distance() -> float:
 
 
 func get_interaction_text() -> String:
+	if not SHOP_UI_SCRIPT.tienda_para_npc(self).is_empty():
+		return "Comprar"
 	if es_dialogable():
 		return "Hablar"
-
 	return "Examinar"
 
 
@@ -1218,11 +1220,26 @@ func interact(
 	if not es_dialogable():
 		return
 
+	var tienda := SHOP_UI_SCRIPT.tienda_para_npc(self)
+	if not tienda.is_empty() and is_instance_valid(_world_items_dependency):
+		var inventario := get_tree().get_first_node_in_group("inventory") as GarliaInventory
+		var interfaz := SHOP_UI_SCRIPT.new() as CanvasLayer
+		if is_instance_valid(inventario) and is_instance_valid(interfaz):
+			interfaz.configurar(self, inventario, _world_items_dependency, _actor)
+			var padre := get_tree().current_scene
+			if not is_instance_valid(padre):
+				padre = get_tree().root
+			padre.add_child(interfaz)
+			return
+
+	abrir_dialogo()
+
+
+func abrir_dialogo() -> void:
 	var dialogue_system := _dialogue_system_dependency
 	if dialogue_system == null or not is_instance_valid(dialogue_system):
 		return
-	if dialogue_system != null:
-		dialogue_system.abrir_desde(self)
+	dialogue_system.abrir_desde(self)
 
 
 func _die() -> void:
