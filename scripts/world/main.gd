@@ -558,7 +558,7 @@ func _inicializar_runtime_de_zona() -> void:
 	var tipo_zona_actual: String = str(_zone_manager.obtener_tipo_actual())
 	if tipo_zona_actual == "hogar":
 		if _zone_manager.has_method("consumir_entrada_hogar_desde_torres") and bool(_zone_manager.call("consumir_entrada_hogar_desde_torres")):
-			_player.global_position = Vector2(1080.0, 0.0)
+			_player.global_position = Vector2(1100.0, 0.0)
 			_player.velocity = Vector2.ZERO
 		else:
 			var estado_hogar_variant: Variant = GameState.world_state.flags.get("hogar_estado", {})	
@@ -587,7 +587,7 @@ func _inicializar_runtime_de_zona() -> void:
 	elif tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
 		var zona_actual: Node = _zone_manager.obtener_zona_actual()
 		if tipo_zona_actual == "reino_torres" and _zone_manager.has_method("consumir_retorno_hogar_a_torres") and bool(_zone_manager.call("consumir_retorno_hogar_a_torres")):
-			_player.global_position = Vector2(-1080.0, 0.0)
+			_player.global_position = Vector2(-1120.0, 0.0)
 			_player.velocity = Vector2.ZERO
 		else:
 			var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
