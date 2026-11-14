@@ -27,7 +27,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"saira","texto":"Les dije que el aviso de ruta ya está circulando. No puedo prometer que no haya demoras, pero sí avisar a tiempo."},
 			{"npc":"elian","texto":"Eso es suficiente para organizar los pedidos. Prefiero ajustar el trabajo antes que hacer esperar a todos."},
 			{"npc":"saira","texto":"Entonces la próxima entrega te encontrará preparado."}
-		]
+		],
+		"lineas_siguientes": [{"npc":"saira","texto":"El conductor volvió a pasar por Torres. Esta vez llegó con tiempo de sobra."},{"npc":"elian","texto":"Y yo pude preparar la hornada sin cambiar la receta a mitad del trabajo."},{"npc":"saira","texto":"Parece que los avisos y la revisión del camino sirvieron para algo."},{"npc":"elian","texto":"Sí. Cuando vuelva a llegar harina, apartaré una parte para quienes ayudaron."}]
 	},
 	{
 		"clave": "bruna_darven_camino",
@@ -45,7 +46,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"bruna","texto":"Dejaré las piezas preparadas hoy. No quiero que pierdan tiempo esperando material."},
 			{"npc":"darven","texto":"Me encargaré de que el acceso quede libre mientras trabajan."},
 			{"npc":"bruna","texto":"Bien. Así cada cual hace su parte y terminamos antes."}
-		]
+		],
+		"lineas_siguientes": [{"npc":"bruna","texto":"El tramo ya está más firme. Revisé las piedras después del mantenimiento."},{"npc":"darven","texto":"El equipo terminó ayer. También dejaron libre el paso para las carretas."},{"npc":"bruna","texto":"Bien. Haré una última comprobación del eje de prueba antes de darlo por resuelto."},{"npc":"darven","texto":"Avísame si encuentras algo. Esta vez podremos corregirlo antes de que cause otro retraso."}]
 	},
 	{
 		"clave": "bruna_narel_evidencia",
@@ -63,7 +65,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"narel","texto":"Sí. Añadí una sección para separar las observaciones nuevas de las anteriores."},
 			{"npc":"bruna","texto":"Eso evitará que alguien confunda una medición vieja con el estado actual."},
 			{"npc":"narel","texto":"Exactamente. Una anotación útil también debe indicar cuándo dejó de ser válida."}
-		]
+		],
+		"lineas_siguientes": [{"npc":"narel","texto":"Comparé las marcas nuevas con las primeras. La diferencia respalda la explicación del terreno."},{"npc":"bruna","texto":"¿Y la carga? ¿También la revisaste?"},{"npc":"narel","texto":"Sí. La distribución contribuyó, aunque por sí sola no explica todo el daño."},{"npc":"bruna","texto":"Entonces deja ambas causas en el informe. Así nadie simplifica el problema."}]
 	},
 	{
 		"clave": "darven_saira_avisos",
@@ -81,7 +84,8 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"darven","texto":"Puede pasar con precaución. La reparación completa todavía no está terminada."},
 			{"npc":"saira","texto":"Le transmitiré eso. Es mejor una respuesta clara que un sí apresurado."},
 			{"npc":"darven","texto":"Gracias. Así evitamos que alguien confunda una revisión con una reparación terminada."}
-		]
+		],
+		"lineas_siguientes": [{"npc":"saira","texto":"Los comerciantes ya están usando el aviso actualizado. Dos cambiaron sus horarios."},{"npc":"darven","texto":"La revisión terminó, pero mantendremos el registro por si vuelve a deteriorarse."},{"npc":"saira","texto":"Les diré que pueden retomar la ruta con cuidado y que avisen si notan algo."},{"npc":"darven","texto":"Eso basta. La información útil llega antes que los rumores."}]
 	},
 	{
 		"clave": "elian_narel_hornada",
@@ -99,12 +103,15 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"narel","texto":"Sólo las anoté para recordar cómo cambió la textura. No pretendo convertir el pan en un experimento."},
 			{"npc":"elian","texto":"Menos mal. La próxima vez puedes ayudarme a amasar y sacar tus propias conclusiones."},
 			{"npc":"narel","texto":"Acepto. Será una observación más directa que leer una descripción."}
-		]
+		],
+		"lineas_siguientes": [{"npc":"elian","texto":"Narel, guardé una hogaza de la receta ajustada. Quería que la probaras con calma."},{"npc":"narel","texto":"La textura es más uniforme. Esta vez no traje una libreta para anotarlo."},{"npc":"elian","texto":"Mejor. Puedes venir a comer sin convertir cada visita en una investigación."},{"npc":"narel","texto":"Lo intentaré. Aunque admito que la comparación sería interesante."}]
 	}
 ]
 
 var _world_atmosphere: WorldAtmosphere = null
 var _zone_manager: Node = null
+var _game_state: Node = null
+var _progreso_parejas: Dictionary = {}
 var _temporizador_busqueda := 0.0
 var _temporizador_linea := 0.0
 var _conversacion_activa: Dictionary = {}
@@ -114,9 +121,12 @@ var _burbujas: Dictionary = {}
 var _vistas_por_dia: Dictionary = {}
 
 
-func configurar(atmosfera: WorldAtmosphere, zone_manager: Node) -> void:
+func configurar(atmosfera: WorldAtmosphere, zone_manager: Node, game_state: Node = null) -> void:
 	_world_atmosphere = atmosfera
 	_zone_manager = zone_manager
+	_game_state = game_state
+	if is_instance_valid(_game_state) and _game_state.has_method("obtener_conversaciones_npc"):
+		_progreso_parejas = _game_state.call("obtener_conversaciones_npc") as Dictionary
 
 
 func actualizar(
@@ -181,6 +191,10 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 
 	for conversacion in CONVERSACIONES:
 		var clave := str(conversacion.get("clave", ""))
+		var progreso_variant: Variant = _progreso_parejas.get(clave, {})
+		var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
+		if int(progreso.get("etapa", 0)) >= 2:
+			continue
 		if bool(_vistas_por_dia.get(clave, false)):
 			continue
 		var npc_a := _npc_por_nombre.get(str(conversacion.get("npc_a", ""))) as Creature
@@ -224,6 +238,15 @@ func _npc_puede_conversar(npc: Creature) -> bool:
 func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	_conversacion_activa = conversacion.duplicate(true)
 	var tiempo := _world_atmosphere.obtener_tiempo()
+	var clave_progreso := str(_conversacion_activa.get("clave", ""))
+	var progreso_variant: Variant = _progreso_parejas.get(clave_progreso, {})
+	var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
+	var etapa := int(progreso.get("etapa", 0))
+	_conversacion_activa["_etapa_progreso"] = etapa
+	if etapa == 1:
+		var siguientes_variant: Variant = _conversacion_activa.get("lineas_siguientes", [])
+		if siguientes_variant is Array and not (siguientes_variant as Array).is_empty():
+			_conversacion_activa["lineas"] = (siguientes_variant as Array).duplicate(true)
 	var anio := int(tiempo.get("anio", 0))
 	var dia := int(tiempo.get("dia", 1))
 	var hora := float(tiempo.get("hora_del_dia", 12.0))
@@ -248,7 +271,7 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 				if alternativa_variant is Array and not (alternativa_variant as Array).is_empty():
 					variantes.append(alternativa_variant)
 
-	if not variantes.is_empty():
+	if etapa == 0 and not variantes.is_empty():
 		var tono := str(_conversacion_activa.get("tono_relacion", "cordial"))
 		var desplazamiento := 0
 		match tono:
@@ -293,7 +316,7 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 		_indice_linea += 1
 		var lineas: Array = _conversacion_activa.get("lineas", [])
 		if _indice_linea >= lineas.size():
-			_finalizar_conversacion()
+			_finalizar_conversacion(true)
 			return
 		_mostrar_linea_actual()
 
@@ -373,7 +396,17 @@ func _ocultar_burbujas() -> void:
 			burbuja.visible = false
 
 
-func _finalizar_conversacion() -> void:
+func _finalizar_conversacion(completada: bool = false) -> void:
+	if completada and not _conversacion_activa.is_empty():
+		var clave := str(_conversacion_activa.get("clave", ""))
+		var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
+		if not clave.is_empty():
+			_progreso_parejas[clave] = {
+				"etapa": mini(etapa + 1, 2),
+				"completada": etapa >= 1
+			}
+			if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+				_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
 	_ocultar_burbujas()
 	_conversacion_activa.clear()
 	_indice_linea = 0
