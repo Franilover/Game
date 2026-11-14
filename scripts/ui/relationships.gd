@@ -172,7 +172,8 @@ func _actualizar() -> void:
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
 		PIXEL_UI_THEME.apply(boton, false)
 
-		var textura := _cargar_retrato(asset_key, nombre)
+		var textura_cara := _cargar_retrato_cara(asset_key, nombre)
+		var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
 		if textura != null:
 			var retrato := TextureRect.new()
 			retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
