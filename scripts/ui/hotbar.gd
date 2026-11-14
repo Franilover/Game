@@ -455,12 +455,14 @@ func _configurar_slot(
 			cantidad_objeto > 1
 		)
 
-	slot.tooltip_text = str(
-		datos.get(
-			"nombre",
-			"Objeto"
-		)
-	)
+	var nombre_objeto := str(datos.get("nombre", "Objeto"))
+	var categoria_variant: Variant = datos.get("categoria", {})
+	var categoria_texto := ""
+	if categoria_variant is Dictionary:
+		categoria_texto = str((categoria_variant as Dictionary).get("nombre", "")).strip_edges()
+	slot.tooltip_text = nombre_objeto
+	if not categoria_texto.is_empty():
+		slot.tooltip_text += "\nCategoría: " + categoria_texto
 
 
 func _actualizar_seleccion() -> void:

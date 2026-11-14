@@ -381,22 +381,25 @@ func _mostrar_detalle() -> void:
 	_detalle.add_child(titulo)
 	_detalle.move_child(titulo, 1)
 
+	var tiene_categoria := false
 	if _modo == "objetos":
 		var categoria_variant: Variant = _seleccion.get("categoria", {})
-		if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
+		if categoria_variant is Dictionary:
 			var categoria := categoria_variant as Dictionary
-			var etiqueta_categoria := Label.new()
-			etiqueta_categoria.text = "CATEGORÍA · " + str(categoria.get("nombre", "Sin categoría")).to_upper()
-			etiqueta_categoria.tooltip_text = str(categoria.get("descripcion", ""))
-			etiqueta_categoria.add_theme_font_size_override("font_size", 10)
-			_detalle.add_child(etiqueta_categoria)
-			_detalle.move_child(etiqueta_categoria, 2)
+			tiene_categoria = not categoria.is_empty()
+			if tiene_categoria:
+				var etiqueta_categoria := Label.new()
+				etiqueta_categoria.text = "CATEGORÍA · " + str(categoria.get("nombre", "Sin categoría")).to_upper()
+				etiqueta_categoria.tooltip_text = str(categoria.get("descripcion", ""))
+				etiqueta_categoria.add_theme_font_size_override("font_size", 10)
+				_detalle.add_child(etiqueta_categoria)
+				_detalle.move_child(etiqueta_categoria, 2)
 
 	var info := Label.new()
 	info.text = descripcion
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detalle.add_child(info)
-	_detalle.move_child(info, 3 if _modo == "objetos" and _seleccion.get("categoria", {}) is Dictionary and not (_seleccion.get("categoria", {}) as Dictionary).is_empty() else 2)
+	_detalle.move_child(info, 3 if tiene_categoria else 2)
 
 	if _modo == "objetos":
 		_cantidad.visible = true

@@ -35,7 +35,16 @@ func configurar(
 	datos = nuevos_datos.duplicate(true)
 	var nombre := str(datos.get("nombre", "Objeto"))
 	var descripcion := str(datos.get("descripcion", "")).strip_edges()
-	tooltip_text = nombre if descripcion.is_empty() else nombre + "\n" + descripcion
+	var categoria_variant: Variant = datos.get("categoria", {})
+	var categoria_texto := ""
+	if categoria_variant is Dictionary:
+		categoria_texto = str((categoria_variant as Dictionary).get("nombre", "")).strip_edges()
+	var lineas: PackedStringArray = [nombre]
+	if not categoria_texto.is_empty():
+		lineas.append("Categoría: " + categoria_texto)
+	if not descripcion.is_empty():
+		lineas.append(descripcion)
+	tooltip_text = "\n".join(lineas)
 
 	actualizar()
 
