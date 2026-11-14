@@ -220,6 +220,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		actividad = "descansar"
 
 	var firma_anterior := str(npc.get_meta("rutina_firma", ""))
+	var firma_diagnostico := str(npc.get_meta("rutina_diagnostico", ""))
+	var diagnostico_actual := "%s|%s|%s|%d" % [clave_rutina, ubicacion, actividad, minutos]
+	if firma_diagnostico != diagnostico_actual:
+		print("NPCScheduleSystem: ", npc.get_nombre_visual(), " | día=", dia_semana + 1, " | minuto=", minutos, " | rutina=", clave_rutina, " | destino=", ubicacion, " | hogar=", hogar, " | rutinas_cargadas=", rutinas_variant.size() if rutinas_variant is Array else -1)
+		npc.set_meta("rutina_diagnostico", diagnostico_actual)
 	var firma_nueva := clave_rutina + "|" + ubicacion + "|" + actividad
 	var edificio_variant: Variant = ENTRADAS_INTERIORES.get(ubicacion, {})
 	var edificio: Dictionary = edificio_variant if edificio_variant is Dictionary else {}
