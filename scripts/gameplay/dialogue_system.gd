@@ -122,6 +122,11 @@ func _input(event: InputEvent) -> void:
 				return
 			if _boton_preguntar_item != null and _boton_preguntar_item.visible and _boton_preguntar_item.get_global_rect().has_point(posicion_mouse):
 				return
+			# Si el diálogo está esperando una respuesta relevante, los clics
+			# fuera de los botones no pueden avanzar ni cerrar esa decisión.
+			if not _respuestas.is_empty():
+				get_viewport().set_input_as_handled()
+				return
 		_avanzar()
 		get_viewport().set_input_as_handled()
 		return
@@ -234,6 +239,20 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		for respuesta_variant in respuestas_variant as Array:
 			if respuesta_variant is Dictionary and _respuestas.size() < 4:
 				_respuestas.append((respuesta_variant as Dictionary).duplicate(true))
+	# Registrar el origen incluso si el jugador rechaza el encargo. Así puede
+	# volver a encontrarlo al preguntar si el NPC necesita ayuda.
+	if mission_manager != null and is_instance_valid(_fuente):
+		var acciones_oferta_variant: Variant = datos_seleccionados.get("acciones", [])
+		if acciones_oferta_variant is Array:
+			for accion_oferta_variant in acciones_oferta_variant as Array:
+				if not accion_oferta_variant is Dictionary:
+					continue
+				var accion_oferta := accion_oferta_variant as Dictionary
+				if str(accion_oferta.get("tipo", "")).strip_edges().to_lower() == "aceptar_mision":
+					mission_manager.registrar_origen_mision(
+						str(accion_oferta.get("mision_clave", "")).strip_edges(),
+						_fuente.get_personaje_game_id().strip_edges()
+					)
 	_dialogo_en_transito = _es_dialogo_en_transito(datos_seleccionados)
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
@@ -1506,13 +1525,16 @@ func _obtener_respuesta_ayuda_npc() -> String:
 			if not mision_base_variant is Dictionary:
 				continue
 			var mision_base := mision_base_variant as Dictionary
-			var origen_base := str(mision_base.get("npc_origen_personaje_game_id", mision_base.get("personaje_origen_id", ""))).strip_edges()
-			if origen_base != personaje_id:
-				continue
 			var id_mision := str(mision_base.get("id", "")).strip_edges()
 			if id_mision.is_empty():
 				continue
 			var estado := mission_manager.obtener_estado_mision(id_mision)
+			var origen_base := str(estado.get(
+				"npc_origen_personaje_game_id",
+				mision_base.get("npc_origen_personaje_game_id", mision_base.get("personaje_origen_id", ""))
+			)).strip_edges()
+			if origen_base != personaje_id:
+				continue
 			if str(estado.get("estado", "disponible")) != "disponible":
 				continue
 			var nombre_mision_base := str(mision_base.get("nombre", "un encargo")).strip_edges()
@@ -1953,6 +1975,11 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
 	_acciones.clear()
+	var acciones_tema_variant: Variant = opcion.get("acciones", [])
+	if acciones_tema_variant is Array:
+		for accion_tema_variant in acciones_tema_variant as Array:
+			if accion_tema_variant is Dictionary:
+				_acciones.append((accion_tema_variant as Dictionary).duplicate(true))
 	_establecer_menu_principal_social(_usa_menu_social and not es_despedida)
 	_limpiar_botones_respuesta()
 	_lineas = [{"hablante": _fuente.get_nombre_visual(), "texto": respuesta}]
