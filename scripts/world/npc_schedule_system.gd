@@ -202,8 +202,15 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
 
 	var ubicacion_respaldo := str(npc.datos.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
-	var hogar := obtener_clave_hogar(npc.get_nombre_visual(), ubicacion_respaldo)
+	var hogar := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
+	if not POSICIONES.has(hogar):
+		hogar = obtener_clave_hogar(npc.get_nombre_visual(), "plaza")
 	var esta_en_horario := not rutina.is_empty()
+	if rutinas_variant is Array and (rutinas_variant as Array).is_empty() and nombre_npc not in ["abel", "liam"] and dia_semana != 4:
+		var firma_aviso := "rutinas_vacias:" + nombre_npc
+		if str(npc.get_meta("rutina_error_firma", "")) != firma_aviso:
+			push_warning("NPCScheduleSystem: " + npc.get_nombre_visual() + " no recibió rutinas desde WorldData; ubicación de trabajo=" + ubicacion_respaldo + ". No se confundirá ese campo con su hogar.")
+			npc.set_meta("rutina_error_firma", firma_aviso)
 	var clave_rutina := str(rutina.get("clave", "regreso_hogar")).strip_edges()
 	var ubicacion := str(rutina.get("ubicacion_clave", hogar)).strip_edges().to_lower()
 	if ubicacion.is_empty() or ubicacion == "null" or not POSICIONES.has(ubicacion):
