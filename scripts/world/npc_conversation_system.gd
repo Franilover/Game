@@ -14,6 +14,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	{
 		"clave": "elian_saira_hornada",
 		"tono_relacion": "cercana",
+		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Saira y Elian acuerdan coordinar los avisos de entrega."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"La entrega llega a tiempo y ambos comparten el resultado."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Su coordinación continúa incluso cuando no hay problemas con la ruta."}],
 		"npc_a": "elian",
 		"npc_b": "saira",
 		"lineas": [
@@ -29,11 +30,13 @@ const CONVERSACIONES: Array[Dictionary] = [
 			{"npc":"saira","texto":"Entonces la próxima entrega te encontrará preparado."}
 		],
 		"lineas_siguientes": [{"npc":"saira","texto":"El conductor volvió a pasar por Torres. Esta vez llegó con tiempo de sobra."},{"npc":"elian","texto":"Y yo pude preparar la hornada sin cambiar la receta a mitad del trabajo."},{"npc":"saira","texto":"Parece que los avisos y la revisión del camino sirvieron para algo."},{"npc":"elian","texto":"Sí. Cuando vuelva a llegar harina, apartaré una parte para quienes ayudaron."}],
-		"lineas_tercera_etapa": [{"npc":"saira","texto":"Ahora puedo avisarte de las entregas con más precisión. Ya sé cuánto margen necesitas."},{"npc":"elian","texto":"Y yo puedo organizar los pedidos sin cambiar todo a última hora. Nos entendimos bien."},{"npc":"saira","texto":"La próxima vez que pase por Torres, no vendré sólo por trabajo."},{"npc":"elian","texto":"Entonces dejaré algo preparado para compartir. No hace falta que traigas noticias cada vez."}]
+		"lineas_tercera_etapa": [{"npc":"saira","texto":"Ahora puedo avisarte de las entregas con más precisión. Ya sé cuánto margen necesitas."},{"npc":"elian","texto":"Y yo puedo organizar los pedidos sin cambiar todo a última hora. Nos entendimos bien."},{"npc":"saira","texto":"La próxima vez que pase por Torres, no vendré sólo por trabajo."},{"npc":"elian","texto":"Entonces dejaré algo preparado para compartir. No hace falta que traigas noticias cada vez."}],
+		"lineas_tercera_tension": [{"npc":"darven","texto":"El registro sigue incompleto. No puedo dar por resuelto el tramo sólo porque ahora parezca firme."},{"npc":"bruna","texto":"Y yo no voy a repetir una inspección cada vez que alguien dude de las piezas."},{"npc":"darven","texto":"No cuestiono tu trabajo. Necesito que el informe y la reparación coincidan."},{"npc":"bruna","texto":"Entonces revisemos ambos juntos. Pero esta vez no decidas antes de mirar."}]
 	},
 	{
 		"clave": "bruna_darven_camino",
 		"tono_relacion": "tensa",
+		"efectos_etapa": [{"confianza":0.0,"tension":1.0,"colaboracion":0.5,"resumen":"Bruna insiste en reparar el tramo y Darven registra el problema."},{"confianza":0.5,"tension":-1.5,"colaboracion":1.0,"resumen":"La revisión conjunta reduce sus diferencias."},{"confianza":0.5,"tension":-1.0,"colaboracion":0.5,"resumen":"Ambos reconocen el valor del trabajo del otro."}],
 		"npc_a": "bruna",
 		"npc_b": "darven",
 		"lineas": [
@@ -54,6 +57,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	{
 		"clave": "bruna_narel_evidencia",
 		"tono_relacion": "cercana",
+		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Bruna y Narel acuerdan contrastar mediciones y observaciones."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Separan las causas del daño con mejores evidencias."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Conservan un registro compartido para futuras revisiones."}],
 		"npc_a": "bruna",
 		"npc_b": "narel",
 		"lineas": [
@@ -74,6 +78,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	{
 		"clave": "darven_saira_avisos",
 		"tono_relacion": "prudente",
+		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Saira y Darven establecen un canal para transmitir avisos fiables."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Los comerciantes reciben información más clara."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"La cooperación permite distribuir mejor las tareas de vigilancia."}],
 		"npc_a": "darven",
 		"npc_b": "saira",
 		"lineas": [
@@ -94,6 +99,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	{
 		"clave": "elian_narel_hornada",
 		"tono_relacion": "cordial",
+		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Elian y Narel comparten observaciones sobre la hornada."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Narel aporta notas y Elian explica el proceso práctico."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Acuerdan preparar juntos una nueva hornada."}],
 		"npc_a": "elian",
 		"npc_b": "narel",
 		"lineas": [
@@ -256,6 +262,10 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 		var tercera_variant: Variant = _conversacion_activa.get("lineas_tercera_etapa", [])
 		if tercera_variant is Array and not (tercera_variant as Array).is_empty():
 			_conversacion_activa["lineas"] = (tercera_variant as Array).duplicate(true)
+		var tension := float(progreso.get("tension", 0.0))
+		var lineas_tensas_variant: Variant = _conversacion_activa.get("lineas_tercera_tension", [])
+		if tension > 0.0 and lineas_tensas_variant is Array and not (lineas_tensas_variant as Array).is_empty():
+			_conversacion_activa["lineas"] = (lineas_tensas_variant as Array).duplicate(true)
 	var anio := int(tiempo.get("anio", 0))
 	var dia := int(tiempo.get("dia", 1))
 	var hora := float(tiempo.get("hora_del_dia", 12.0))
