@@ -23,6 +23,8 @@ var cancel_button: Button = null
 var _botones_accion: HBoxContainer = null
 
 var _acciones: Array[Dictionary] = []
+var _respuestas: Array[Dictionary] = []
+var _respuestas_container: VBoxContainer = null
 
 var _abierto: bool = false
 var _lineas: Array[Dictionary] = []
@@ -157,6 +159,15 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 
 	_lineas = lineas
 	_acciones.clear()
+	_respuestas.clear()
+	var respuestas_variant: Variant = datos_seleccionados.get("respuestas", datos_seleccionados.get("choices", []))
+	if respuestas_variant is Array:
+		for respuesta_variant in respuestas_variant as Array:
+			if respuesta_variant is Dictionary:
+				_respuestas.append((respuesta_variant as Dictionary).duplicate(true))
+	if _respuestas.is_empty() and str(datos_seleccionados.get("clave", "")).begins_with("rutina_"):
+		_respuestas = _crear_respuestas_rutina()
+	_limpiar_botones_respuesta()
 
 	if is_instance_valid(_fuente):
 		var personaje_id_social := _fuente.get_personaje_game_id().strip_edges()
@@ -205,6 +216,8 @@ func cerrar() -> void:
 
 	_abierto = false
 	_lineas.clear()
+	_respuestas.clear()
+	_limpiar_botones_respuesta()
 	_indice_linea = 0
 	_texto_completo = ""
 	_indice_caracter = 0
@@ -232,6 +245,10 @@ func _avanzar() -> void:
 	if _indice_caracter < _texto_completo.length():
 		_indice_caracter = _texto_completo.length()
 		text_label.text = _texto_completo
+		return
+
+	if _indice_linea >= _lineas.size() - 1 and not _respuestas.is_empty():
+		_actualizar_boton_accion()
 		return
 
 	_indice_linea += 1
@@ -499,6 +516,7 @@ func _obtener_texto_rutina_personaje(
 				return ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
 
 	var es_dia_libre := rutina_clave.begins_with("dia_libre")
+	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
 	var ubicaciones_hogar: Array[String] = ["casa_elian", "casa_bruna", "casa_darven", "casa_saira", "casa_narel", "castillo"]
 	var esta_en_hogar := ubicaciones_hogar.has(ubicacion)
 
@@ -687,6 +705,21 @@ func _actualizar_boton_accion() -> void:
 	if action_button == null:
 		return
 
+	var texto_terminado := _indice_caracter >= _texto_completo.length()
+	var es_ultima_linea := _indice_linea >= _lineas.size() - 1
+	var mostrar_respuestas := not _respuestas.is_empty() and es_ultima_linea and texto_terminado
+	if _respuestas_container != null:
+		_respuestas_container.visible = mostrar_respuestas
+	if mostrar_respuestas:
+		if _respuestas_container.get_child_count() == 0:
+			_crear_botones_respuesta()
+		action_button.visible = false
+		if cancel_button != null:
+			cancel_button.visible = false
+		return
+	if _respuestas_container != null:
+		_respuestas_container.visible = false
+
 	if _acciones.is_empty():
 		action_button.visible = false
 		if cancel_button != null:
@@ -761,6 +794,123 @@ func _ejecutar_accion_dialogo() -> void:
 					_acciones.clear()
 					action_button.visible = false
 					return
+
+
+func _crear_respuestas_rutina() -> Array[Dictionary]:
+	return [
+		{
+			"texto": "Preguntar cómo va su trabajo",
+			"jugador": "¿Cómo va todo con lo que estás haciendo?",
+			"respuesta": _obtener_reaccion_pregunta_rutina()
+		},
+		{
+			"texto": "Reconocer su esfuerzo",
+			"jugador": "Se nota todo el esfuerzo que pones en esto. Gracias por lo que haces.",
+			"respuesta": _obtener_reaccion_apoyo_rutina(),
+			"evento": "apoyar"
+		},
+		{
+			"texto": "Compartir algo que aprendí",
+			"jugador": "He aprendido algo que creo que podría interesarte.",
+			"respuesta": _obtener_reaccion_conocimiento_rutina(),
+			"evento": "compartir_conocimiento"
+		}
+	]
+
+
+func _obtener_reaccion_pregunta_rutina() -> String:
+	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
+	match nombre.to_lower():
+		"elian": return "Va bien. Cada tanda tiene sus pequeños problemas, pero ya conozco el ritmo del horno."
+		"bruna": return "El trabajo avanza. Lo importante es no apresurar una pieza y tener que empezar de nuevo."
+		"darven": return "Todo está en orden por ahora. Aun así, prefiero comprobarlo personalmente antes de darlo por hecho."
+		"saira": return "Bastante bien. Siempre hay algo que revisar: precios, encargos o mercancía que todavía no llega."
+		"narel": return "He avanzado, aunque todavía necesito contrastar algunas observaciones antes de sacar conclusiones."
+		"abel": return "El reino sigue adelante. Mi tarea consiste en escuchar sus problemas antes de que se vuelvan más grandes."
+		"liam": return "Todo tranquilo por ahora. A veces viene bien salir y ver qué ocurre fuera del castillo."
+	return "Voy avanzando. Gracias por preguntar; no todos se detienen a hacerlo."
+
+
+func _obtener_reaccion_apoyo_rutina() -> String:
+	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
+	match nombre.to_lower():
+		"elian": return "Gracias. A veces sólo se ve el pan terminado y no todo el trabajo que hay detrás."
+		"bruna": return "Lo aprecio. Una pieza bien hecha lleva tiempo, incluso cuando nadie nota los detalles."
+		"darven": return "Gracias. La guardia suele pasar desapercibida cuando todo marcha bien, y eso también es una buena señal."
+		"saira": return "Me alegra que lo notes. Mantener un comercio en marcha requiere más cuentas de las que parece."
+		"narel": return "Gracias. Investigar puede ser solitario; se agradece que alguien valore el esfuerzo."
+		"abel": return "Te agradezco que lo digas. Gobernar también consiste en atender tareas que casi nadie llega a ver."
+		"liam": return "Gracias. A veces parece que sólo estoy dando vueltas, pero también intento ayudar a mi manera."
+	return "Gracias por decirlo. Significa más de lo que imaginas."
+
+
+func _obtener_reaccion_conocimiento_rutina() -> String:
+	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
+	match nombre.to_lower():
+		"elian": return "¿Ah, sí? Cuéntame. Siempre se puede aprender algo nuevo, incluso lejos del horno."
+		"bruna": return "Eso podría servirme. ¿Tiene que ver con materiales, herramientas o algo completamente distinto?"
+		"darven": return "Te escucho. Cualquier conocimiento que ayude a prevenir un problema merece atención."
+		"saira": return "Eso suena interesante. La información también tiene valor; cuéntame qué descubriste."
+		"narel": return "¡Eso sí que me interesa! ¿Dónde lo aprendiste? Tal vez podamos comprobarlo juntos."
+		"abel": return "Me interesa conocerlo. Las decisiones del reino mejoran cuando escuchamos nuevas perspectivas."
+		"liam": return "¿En serio? Me gusta escuchar cosas nuevas. Cuéntame un poco más."
+	return "Me interesa lo que dices. Cuéntame más cuando tengamos un momento."
+
+
+func _crear_botones_respuesta() -> void:
+	if _respuestas_container == null:
+		return
+	for indice in range(_respuestas.size()):
+		var opcion: Dictionary = _respuestas[indice]
+		var boton := Button.new()
+		boton.text = str(opcion.get("texto", "Responder"))
+		boton.custom_minimum_size = Vector2(460, 30)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.add_theme_font_size_override("font_size", 11)
+		boton.pressed.connect(_seleccionar_respuesta.bind(indice))
+		_respuestas_container.add_child(boton)
+	PIXEL_UI_THEME.apply(_respuestas_container)
+
+
+func _limpiar_botones_respuesta() -> void:
+	if _respuestas_container == null:
+		return
+	for hijo in _respuestas_container.get_children():
+		_respuestas_container.remove_child(hijo)
+		hijo.queue_free()
+	_respuestas_container.visible = false
+
+
+func _seleccionar_respuesta(indice: int) -> void:
+	if indice < 0 or indice >= _respuestas.size() or not _abierto:
+		return
+	var opcion: Dictionary = _respuestas[indice]
+	var texto_jugador := str(opcion.get("jugador", opcion.get("texto_jugador", opcion.get("texto", "")))).strip_edges()
+	var texto_npc := str(opcion.get("respuesta", opcion.get("reaccion", ""))).strip_edges()
+	if texto_jugador.is_empty() or texto_npc.is_empty():
+		return
+
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
+	var evento := str(opcion.get("evento", "")).strip_edges().to_lower()
+	if not personaje_id.is_empty() and not evento.is_empty() and relationship_system != null:
+		var contexto := {
+			"origen": "respuesta_dialogo",
+			"clave_dialogo": str(_lineas[0].get("texto", "")) if not _lineas.is_empty() else "",
+			"respuesta_jugador": texto_jugador
+		}
+		var evento_id := "%s:%s:%s" % [personaje_id, evento, str(Time.get_ticks_msec())]
+		relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
+
+	_respuestas.clear()
+	_limpiar_botones_respuesta()
+	_lineas.append({"hablante": "Tú", "texto": texto_jugador})
+	_lineas.append({
+		"hablante": _fuente.get_nombre_visual() if is_instance_valid(_fuente) else "",
+		"texto": texto_npc
+	})
+	_indice_linea += 1
+	_mostrar_linea_actual()
+	_actualizar_boton_accion()
 
 
 func _obtener_mensaje_reaccion_social(evento: String, nombre: String) -> String:
@@ -959,6 +1109,12 @@ func _crear_interfaz() -> void:
 	cancel_button.add_theme_font_size_override("font_size", 11)
 	cancel_button.pressed.connect(cerrar)
 	_botones_accion.add_child(cancel_button)
+
+	_respuestas_container = VBoxContainer.new()
+	_respuestas_container.name = "DialogueResponses"
+	_respuestas_container.visible = false
+	_respuestas_container.add_theme_constant_override("separation", 5)
+	column.add_child(_respuestas_container)
 
 	ui_root.add_child(dialogue_panel)
 	PIXEL_UI_THEME.apply(dialogue_panel)
