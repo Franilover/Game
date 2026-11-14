@@ -1003,7 +1003,7 @@ func _configurar_dialogo() -> void:
 		push_error("Main: no se encontró Systems/DialogueSystem.")
 		return
 
-	_dialogue_system.configurar(_player, _hud, MissionManager, RelationshipSystem)
+	_dialogue_system.configurar(_player, _hud, MissionManager, RelationshipSystem, _inventory.inventory_controller if is_instance_valid(_inventory) else null)
 	if not is_instance_valid(_cutscene_director):
 		_cutscene_director = CUTSCENE_DIRECTOR_SCRIPT.new()
 		_cutscene_director.name = "CutsceneDirector"
