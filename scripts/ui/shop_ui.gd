@@ -7,19 +7,19 @@ const ITEM_ICON_RESOLVER = preload("res://scripts/ui/item_icon_resolver.gd")
 const TIENDAS: Dictionary = {
 	"panaderia": {
 		"nombre": "Panadería",
-		"productos": ["pan", "manzana"]
+		"productos": ["pan"]
 	},
 	"forja": {
 		"nombre": "Forja",
-		"productos": ["espada", "escudo", "botas", "flecha"]
+		"productos": ["espada de madera", "espada de piedra"]
 	},
 	"carpinteria": {
 		"nombre": "Carpintería",
-		"productos": ["pala", "pico", "arco", "madera"]
+		"productos": ["madera", "pala de madera", "pala de piedra", "pico de madera", "pico de piedra"]
 	},
 	"casa_comercio": {
 		"nombre": "Casa de comercio",
-		"productos": ["manzana", "pluma", "flecha", "botas"]
+		"productos": ["arco aoris", "botas aoris", "casco aoris", "pechera aoris", "sombrero aoris", "plumas aoris"]
 	}
 }
 
@@ -35,8 +35,13 @@ const PRECIOS_BASE: Dictionary = {
 	"pico de madera": 14,
 	"pala de piedra": 20,
 	"pico de piedra": 24,
-	"pluma aoris": 10,
-	"arco aoris": 30
+	"madera": 2,
+	"plumas aoris": 4,
+	"arco aoris": 30,
+	"botas aoris": 60,
+	"casco aoris": 80,
+	"pechera aoris": 100,
+	"sombrero aoris": 70
 }
 
 var _vendedor: Node = null
@@ -197,11 +202,7 @@ func _actualizar_catalogo() -> void:
 		var item := (item_variant as Dictionary).duplicate(true)
 		var nombre := str(item.get("nombre", "")).strip_edges()
 		var nombre_busqueda := nombre.to_lower()
-		var coincide := false
-		for palabra_variant in palabras:
-			if nombre_busqueda.contains(str(palabra_variant)):
-				coincide = true
-				break
+		var coincide := nombre_busqueda in palabras
 		if not coincide:
 			continue
 		var textura := ITEM_ICON_RESOLVER.obtener_icono(item)
@@ -308,7 +309,6 @@ func _comprar_producto(producto: Dictionary) -> void:
 	_actualizar_balance()
 	_mostrar_estado("Compraste %s." % str(producto.get("nombre", "el objeto")))
 	Events.notification_pushed.emit("Compraste " + str(producto.get("nombre", "un objeto")))
-	GameState.call_deferred("_ejecutar_guardado_rapido")
 
 
 func _actualizar_balance() -> void:
