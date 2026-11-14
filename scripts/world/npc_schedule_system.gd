@@ -293,6 +293,12 @@ func _invalidar_malla() -> void:
 func _detectar_cambios_geometria(zona: Node2D, delta: float) -> bool:
 	if _construyendo_malla:
 		return true
+	# Al entrar a un edificio, ReinoTorres desactiva temporalmente las
+	# colisiones exteriores. No debemos interpretar ese cambio técnico como
+	# una mudanza de edificios; al salir se restauran y se retoma la vigilancia.
+	var interior := zona.get_node_or_null("InteriorActivo")
+	if interior is CanvasItem and (interior as CanvasItem).visible:
+		return false
 	var firma_actual := _obtener_firma_colisiones(zona)
 	if _firma_colisiones.is_empty():
 		_firma_colisiones = firma_actual
