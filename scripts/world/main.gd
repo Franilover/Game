@@ -768,72 +768,49 @@ func _materializar_npcs_reino_torres() -> void:
 ## Primera llegada a Torres: presentación breve del pueblo y sus habitantes.
 ## Se ejecuta una sola vez en una partida nueva; no interrumpe cargas ni regresos.
 func _iniciar_bienvenida_torres() -> void:
-	if not _bienvenida_torres_pendiente or _bienvenida_torres_en_curso:
+	if _bienvenida_torres_en_curso or not is_instance_valid(_cutscene_director):
 		return
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
 		return
-	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
-		return
-	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
-		return
-
 	var npcs: Array[Creature] = []
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if nodo is Creature and is_instance_valid(nodo) and nodo.is_visible_in_tree() and nodo.is_alive:
+		if nodo is Creature and is_instance_valid(nodo) and nodo.is_alive:
 			npcs.append(nodo as Creature)
 	if npcs.is_empty():
 		return
 	npcs.sort_custom(func(a: Creature, b: Creature) -> bool:
 		return a.global_position.distance_squared_to(_player.global_position) < b.global_position.distance_squared_to(_player.global_position)
 	)
-
 	_bienvenida_torres_en_curso = true
 	var zoom_revelacion := clampf(_camera.zoom.x * 0.78, 1.15, 1.65)
 	var pasos: Array[Dictionary] = [
-		{"tipo":"camara","x":_player.global_position.x,"y":_player.global_position.y,"zoom":zoom_revelacion,"duracion":1.25},
+		{"tipo":"camara","x":_player.global_position.x,"y":_player.global_position.y - 90.0,"zoom":zoom_revelacion,"duracion":1.4},
 		{"tipo":"dialogo","datos":{"clave":"bienvenida_torres_inicio","lineas":[
-			{"hablante":"Narración","texto":"El camino te ha traído hasta Torres. Entre sus casas y talleres, el pueblo sigue con su propio ritmo."},
-			{"hablante":"Narración","texto":"No conoces todavía sus calles ni a quienes viven aquí. Eso puede cambiar, poco a poco."}
-		]}}
+			{"hablante":"Narración","texto":"El camino te ha traído hasta Torres. Las casas, los talleres y sus calles guardan el ritmo cotidiano de quienes viven aquí."},
+			{"hablante":"Narración","texto":"Aún no conoces sus rostros, pero pronto descubrirás que cada puerta guarda una historia."}
+		]}},
+		{"tipo":"camara","x":_player.global_position.x - 105.0,"y":_player.global_position.y - 35.0,"zoom":zoom_revelacion * 0.92,"duracion":1.15},
+		{"tipo":"camara","x":_player.global_position.x + 105.0,"y":_player.global_position.y + 15.0,"zoom":zoom_revelacion * 0.92,"duracion":1.15}
 	]
-
 	var presentaciones := mini(3, npcs.size())
 	for indice in range(presentaciones):
 		var npc := npcs[indice]
 		var nombre := npc.get_nombre_visual().strip_edges()
 		if nombre.is_empty():
 			continue
-		pasos.append({
-			"tipo":"camara",
-			"x":npc.global_position.x,
-			"y":npc.global_position.y,
-			"zoom":clampf(_camera.zoom.x * 0.92, 1.2, 1.8),
-			"duracion":0.85
-		})
-		pasos.append({"tipo":"mirar_npc","npc":nombre,"izquierda":_player.global_position.x < npc.global_position.x})
+		# Se presentan en una posición temporal próxima al jugador; la rutina
+		# original y la ubicación interior quedan guardadas por CutsceneDirector.
+		var lado := -1.0 if indice % 2 == 0 else 1.0
+		var punto := _player.global_position + Vector2(lado * (48.0 + indice * 12.0), 18.0 + indice * 5.0)
+		pasos.append({"tipo":"preparar_npc","npc":nombre,"x":punto.x,"y":punto.y})
+		pasos.append({"tipo":"camara","x":punto.x,"y":punto.y,"zoom":clampf(_camera.zoom.x * 0.92,1.2,1.8),"duracion":0.85})
+		pasos.append({"tipo":"mirar_npc","npc":nombre,"izquierda":_player.global_position.x < punto.x})
 		pasos.append({"tipo":"gesto_npc","npc":nombre,"gesto":"saludar" if indice == 0 else "asentir","duracion":0.7})
-		pasos.append({
-			"tipo":"dialogo",
-			"datos":{
-				"clave":"bienvenida_torres_%s" % str(indice + 1),
-				"lineas":[{"hablante":nombre,"texto":_obtener_saludo_bienvenida_torres(nombre)}]
-			}
-		})
-
-	pasos.append({
-		"tipo":"camara",
-		"x":_player.global_position.x,
-		"y":_player.global_position.y,
-		"zoom":_camera.zoom.x,
-		"duracion":0.9
-	})
-	pasos.append({
-		"tipo":"dialogo",
-		"datos":{"clave":"bienvenida_torres_cierre","lineas":[
-			{"hablante":"Narración","texto":"Torres ya forma parte de tu historia. Puedes recorrer el pueblo, conocer a sus habitantes y encontrar tu propio lugar."}
-		]}
-	})
-
+		pasos.append({"tipo":"dialogo","datos":{"clave":"bienvenida_torres_%s" % str(indice + 1),"lineas":[{"hablante":nombre,"texto":_obtener_saludo_bienvenida_torres(nombre)}]}})
+	pasos.append({"tipo":"camara","x":_player.global_position.x,"y":_player.global_position.y,"zoom":_camera.zoom.x,"duracion":0.9})
+	pasos.append({"tipo":"dialogo","datos":{"clave":"bienvenida_torres_cierre","lineas":[
+		{"hablante":"Narración","texto":"Torres ya forma parte de tu historia. Puedes recorrer el pueblo, conocer a sus habitantes y encontrar tu propio lugar."}
+	]}})
 	var completada: bool = await _cutscene_director.ejecutar("bienvenida_inicial_torres", pasos)
 	_bienvenida_torres_en_curso = false
 	if not completada:
