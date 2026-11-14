@@ -1053,6 +1053,35 @@ func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void
 
 ## Las etapas de una relación entre NPC pueden cerrar con una escena visual propia.
 ## La conversación ya contiene el diálogo; esta secuencia añade puesta en escena sin repetirlo.
+func _buscar_npc_cinematica(nombre: String) -> Creature:
+	var buscado := nombre.strip_edges().to_lower()
+	if buscado.is_empty():
+		return null
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature or not is_instance_valid(nodo):
+			continue
+		var npc := nodo as Creature
+		if npc.get_nombre_visual().strip_edges().to_lower() == buscado:
+			return npc
+	return null
+
+
+func _npc_libre_para_cinematica(npc: Creature, permitir_actividad_social: bool = false) -> bool:
+	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+		return false
+	if bool(npc.get_meta("rutina_en_edificio", false)):
+		return false
+	if bool(npc.get_meta("acercamiento_social_activo", false)):
+		return false
+	if bool(npc.get_meta("conversacion_npc_bloqueada", false)) or bool(npc.get_meta("cinematica_npc_activa", false)):
+		return false
+	if bool(npc.get_meta("rutina_en_transito", false)) and not (permitir_actividad_social and bool(npc.get_meta("actividad_social_activa", false))):
+		return false
+	if not permitir_actividad_social and bool(npc.get_meta("actividad_social_activa", false)):
+		return false
+	return npc.velocity.length() <= 5.0
+
+
 func _al_cinematica_narrativa_solicitada(
 	clave: String,
 	nombre_a: String,
@@ -1068,7 +1097,14 @@ func _al_cinematica_narrativa_solicitada(
 		return
 	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
 		return
-	if _player.global_position.distance_to(posicion_global) > 320.0:
+	var npc_a := _buscar_npc_cinematica(nombre_a)
+	var npc_b := _buscar_npc_cinematica(nombre_b)
+	if not _npc_libre_para_cinematica(npc_a) or not _npc_libre_para_cinematica(npc_b):
+		return
+	if npc_a == npc_b or npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
+		return
+	var centro_real := (npc_a.global_position + npc_b.global_position) * 0.5
+	if _player.global_position.distance_to(centro_real) > 260.0:
 		return
 
 	var escenas: Dictionary = {
@@ -1096,7 +1132,12 @@ func _al_cinematica_narrativa_solicitada(
 
 ## Un acontecimiento cotidiano puede recibir un breve plano de presentación.
 ## Sólo se muestra si el jugador está cerca y no hay otra interfaz abierta.
-func _al_cinematica_acontecimiento_solicitada(posicion_global: Vector2) -> void:
+func _al_cinematica_acontecimiento_solicitada(
+	clave: String,
+	nombre_a: String,
+	nombre_b: String,
+	posicion_global: Vector2
+) -> void:
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
 		return
 	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
@@ -1105,39 +1146,28 @@ func _al_cinematica_acontecimiento_solicitada(posicion_global: Vector2) -> void:
 		return
 	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
 		return
-	if _player.global_position.distance_to(posicion_global) > 360.0:
+	var npc_a := _buscar_npc_cinematica(nombre_a)
+	var npc_b := _buscar_npc_cinematica(nombre_b)
+	if not _npc_libre_para_cinematica(npc_a, true) or not _npc_libre_para_cinematica(npc_b, true):
 		return
+	if not bool(npc_a.get_meta("actividad_social_activa", false)) or not bool(npc_b.get_meta("actividad_social_activa", false)):
+		return
+	if npc_a == npc_b or npc_a.global_position.distance_to(npc_b.global_position) > 110.0:
+		return
+	var centro_real := (npc_a.global_position + npc_b.global_position) * 0.5
+	if _player.global_position.distance_to(centro_real) > 320.0:
+		return
+
 	var zoom_actual := _camera.zoom.x
 	var pasos: Array[Dictionary] = [
-		{
-			"tipo": "camara",
-			"x": posicion_global.x,
-			"y": posicion_global.y,
-			"zoom": zoom_actual * 1.12,
-			"duracion": 0.9
-		}
+		{"tipo":"camara","x":centro_real.x,"y":centro_real.y,"zoom":zoom_actual * 1.12,"duracion":0.9},
+		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
+		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
+		{"tipo":"gesto_npc","npc":nombre_a,"gesto":"asentir","duracion":0.55},
+		{"tipo":"gesto_npc","npc":nombre_b,"gesto":"saludar","duracion":0.65},
+		{"tipo":"esperar","segundos":0.45}
 	]
-	var npc_cercanos: Array[Dictionary] = []
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not nodo is Creature or not is_instance_valid(nodo):
-			continue
-		var npc := nodo as Creature
-		var distancia := npc.global_position.distance_to(posicion_global)
-		if distancia <= 190.0:
-			npc_cercanos.append({"npc": npc.get_nombre(), "distancia": distancia})
-	npc_cercanos.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return float(a.get("distancia", INF)) < float(b.get("distancia", INF))
-	)
-	if not npc_cercanos.is_empty():
-		var primero := str(npc_cercanos[0].get("npc", ""))
-		pasos.append({"tipo": "mirar_npc", "npc": primero, "hacia_npc": str(npc_cercanos[1].get("npc", "")) if npc_cercanos.size() > 1 else ""})
-		pasos.append({"tipo": "gesto_npc", "npc": primero, "gesto": "asentir", "duracion": 0.55})
-	if npc_cercanos.size() > 1:
-		var segundo := str(npc_cercanos[1].get("npc", ""))
-		pasos.append({"tipo": "mirar_npc", "npc": segundo, "hacia_npc": str(npc_cercanos[0].get("npc", ""))})
-		pasos.append({"tipo": "gesto_npc", "npc": segundo, "gesto": "saludar", "duracion": 0.65})
-	pasos.append({"tipo": "esperar", "segundos": 0.45})
-	await _cutscene_director.ejecutar("acontecimiento_social_torres", pasos)
+	await _cutscene_director.ejecutar("acontecimiento_%s" % clave, pasos)
 
 
 func _configurar_admin() -> void:
