@@ -24,7 +24,7 @@ var _botones_accion: HBoxContainer = null
 
 var _acciones: Array[Dictionary] = []
 var _respuestas: Array[Dictionary] = []
-var _respuestas_container: VBoxContainer = null
+var _respuestas_container: GridContainer = null
 
 var _abierto: bool = false
 var _lineas: Array[Dictionary] = []
@@ -163,7 +163,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	var respuestas_variant: Variant = datos_seleccionados.get("respuestas", datos_seleccionados.get("choices", []))
 	if respuestas_variant is Array:
 		for respuesta_variant in respuestas_variant as Array:
-			if respuesta_variant is Dictionary:
+			if respuesta_variant is Dictionary and _respuestas.size() < 4:
 				_respuestas.append((respuesta_variant as Dictionary).duplicate(true))
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
@@ -918,7 +918,7 @@ func _crear_botones_respuesta() -> void:
 		var opcion: Dictionary = _respuestas[indice]
 		var boton := Button.new()
 		boton.text = str(opcion.get("texto", "Responder"))
-		boton.custom_minimum_size = Vector2(460, 30)
+		boton.custom_minimum_size = Vector2(0, 34)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.add_theme_font_size_override("font_size", 11)
 		boton.pressed.connect(_seleccionar_respuesta.bind(indice))
@@ -1164,10 +1164,13 @@ func _crear_interfaz() -> void:
 	cancel_button.pressed.connect(cerrar)
 	_botones_accion.add_child(cancel_button)
 
-	_respuestas_container = VBoxContainer.new()
+	_respuestas_container = GridContainer.new()
 	_respuestas_container.name = "DialogueResponses"
+	_respuestas_container.columns = 2
+	_respuestas_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_respuestas_container.visible = false
-	_respuestas_container.add_theme_constant_override("separation", 5)
+	_respuestas_container.add_theme_constant_override("h_separation", 8)
+	_respuestas_container.add_theme_constant_override("v_separation", 6)
 	column.add_child(_respuestas_container)
 
 	ui_root.add_child(dialogue_panel)
