@@ -14,6 +14,7 @@ var _misiones: Array[Dictionary] = []
 var _misiones_por_id: Dictionary = {}
 var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
+var _origen_misiones: Dictionary = {}
 var _recompensas_reclamadas: Dictionary = {}
 var _entity_manager: WorldEntityManager = null
 var _world_data: WorldDataService = null
@@ -221,6 +222,8 @@ func aceptar_mision(identificador: String, personaje_origen_id: String = "") -> 
 		return false
 
 	_estado[mision_id] = "activa"
+	if not personaje_origen_id.strip_edges().is_empty():
+		_origen_misiones[mision_id] = personaje_origen_id.strip_edges()
 
 	if not _progreso.has(mision_id):
 		_progreso[mision_id] = {}
@@ -562,6 +565,7 @@ func _completar_mision(mision: Dictionary) -> void:
 func serializar_estado_partida() -> Dictionary:
 	return {
 		"estado": _estado.duplicate(true),
+		"origen_misiones": _origen_misiones.duplicate(true),
 		"progreso": _progreso.duplicate(true),
 		"recompensas_reclamadas": _recompensas_reclamadas.duplicate(true)
 	}
@@ -569,12 +573,16 @@ func serializar_estado_partida() -> Dictionary:
 
 func cargar_estado_partida(datos: Dictionary) -> void:
 	_estado.clear()
+	_origen_misiones.clear()
 	_progreso.clear()
 	_recompensas_reclamadas.clear()
 
 	var estado_variant: Variant = datos.get("estado", {})
 	if estado_variant is Dictionary:
 		_estado = (estado_variant as Dictionary).duplicate(true)
+	var origenes_variant: Variant = datos.get("origen_misiones", {})
+	if origenes_variant is Dictionary:
+		_origen_misiones = (origenes_variant as Dictionary).duplicate(true)
 
 	var progreso_variant: Variant = datos.get("progreso", {})
 	if progreso_variant is Dictionary:
@@ -754,6 +762,12 @@ func obtener_estado_mision(mision_id: String) -> Dictionary:
 		)
 	)
 	resultado["objetivos"] = progreso_resultado
+	resultado["npc_origen_personaje_game_id"] = str(
+		_origen_misiones.get(
+			mision_id,
+			mision.get("npc_origen_personaje_game_id", mision.get("personaje_origen_id", ""))
+		)
+	)
 
 	return resultado
 
