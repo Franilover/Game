@@ -1071,11 +1071,12 @@ func _npc_libre_para_cinematica(npc: Creature, permitir_actividad_social: bool =
 		return false
 	if bool(npc.get_meta("rutina_en_edificio", false)):
 		return false
-	if bool(npc.get_meta("acercamiento_social_activo", false)):
+	var actividad_social := permitir_actividad_social and bool(npc.get_meta("actividad_social_activa", false))
+	if bool(npc.get_meta("acercamiento_social_activo", false)) and not actividad_social:
 		return false
 	if bool(npc.get_meta("conversacion_npc_bloqueada", false)) or bool(npc.get_meta("cinematica_npc_activa", false)):
 		return false
-	if bool(npc.get_meta("rutina_en_transito", false)) and not (permitir_actividad_social and bool(npc.get_meta("actividad_social_activa", false))):
+	if bool(npc.get_meta("rutina_en_transito", false)) and not actividad_social:
 		return false
 	if not permitir_actividad_social and bool(npc.get_meta("actividad_social_activa", false)):
 		return false
