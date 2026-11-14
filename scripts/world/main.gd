@@ -1071,7 +1071,7 @@ func _al_cinematica_narrativa_solicitada(
 	var escenas: Dictionary = {
 		"elian_saira_hornada": {"gesto_a":"asentir","gesto_b":"saludar"},
 		"bruna_darven_camino": {"gesto_a":"negar","gesto_b":"asentir"},
-		"bruna_narel_medidas": {"gesto_a":"trabajar","gesto_b":"asentir"},
+		"bruna_narel_evidencia": {"gesto_a":"trabajar","gesto_b":"asentir"},
 		"darven_saira_avisos": {"gesto_a":"asentir","gesto_b":"saludar"},
 		"elian_narel_hornada": {"gesto_a":"saludar","gesto_b":"asentir"}
 	}
