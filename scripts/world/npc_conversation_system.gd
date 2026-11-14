@@ -137,6 +137,7 @@ func configurar(atmosfera: WorldAtmosphere, zone_manager: Node, game_state: Node
 	_world_atmosphere = atmosfera
 	_zone_manager = zone_manager
 	_game_state = game_state
+	add_to_group("npc_conversation_system")
 	if is_instance_valid(_game_state) and _game_state.has_method("obtener_conversaciones_npc"):
 		_progreso_parejas = _game_state.call("obtener_conversaciones_npc") as Dictionary
 
@@ -173,6 +174,52 @@ func actualizar(
 		return
 
 	_buscar_conversacion(jugador)
+
+
+## Permite que el jugador presencie la conversación activa al interactuar
+## con cualquiera de sus participantes. No abre un diálogo individual ni
+## reinicia la intervención que ya está en curso.
+func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D, gestor_misiones: Node) -> bool:
+	if not is_instance_valid(npc_interactuado) or not is_instance_valid(jugador):
+		return false
+	if not npc_interactuado.is_in_group("torres_game_npc"):
+		return false
+	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return false
+	if not _mision_carreta_completada(gestor_misiones):
+		return false
+
+	var nombre := npc_interactuado.get_nombre_visual().strip_edges().to_lower()
+	if not _conversacion_activa.is_empty():
+		var participa := nombre == str(_conversacion_activa.get("npc_a", "")) or nombre == str(_conversacion_activa.get("npc_b", ""))
+		if participa:
+			return true
+		return false
+
+	if not bool(_world_atmosphere.obtener_tiempo().get("calendario_cargado", false)):
+		return false
+	_obtener_npcs_torres()
+	for conversacion in CONVERSACIONES:
+		if nombre != str(conversacion.get("npc_a", "")) and nombre != str(conversacion.get("npc_b", "")):
+			continue
+		var progreso_variant: Variant = _progreso_parejas.get(str(conversacion.get("clave", "")), {})
+		var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
+		if int(progreso.get("etapa", 0)) >= 3:
+			continue
+		var npc_a := _npc_por_nombre.get(str(conversacion.get("npc_a", ""))) as Creature
+		var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
+		if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+			continue
+		if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
+			continue
+		if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR:
+			continue
+		_iniciar_conversacion(conversacion)
+		var tiempo := _world_atmosphere.obtener_tiempo()
+		_vistas_por_dia["dia"] = "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
+		_vistas_por_dia[str(conversacion.get("clave", ""))] = true
+		return true
+	return false
 
 
 func _mision_carreta_completada(gestor_misiones: Node) -> bool:
