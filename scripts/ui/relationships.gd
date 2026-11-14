@@ -243,6 +243,21 @@ func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
 	return null
 
 
+func _cargar_retrato_cara(asset_key: String, nombre: String) -> Texture2D:
+	var claves: Array[String] = []
+	if not asset_key.is_empty():
+		claves.append(asset_key)
+	if not nombre.is_empty() and nombre not in claves:
+		claves.append(nombre)
+	for clave in claves:
+		var ruta := "res://assets/art/characters/heads/" + clave + ".png"
+		if ResourceLoader.exists(ruta):
+			var recurso: Resource = load(ruta)
+			if recurso is Texture2D:
+				return recurso as Texture2D
+	return null
+
+
 func _seleccionar(personaje_id: String, nombre: String) -> void:
 	_personaje_seleccionado_id = personaje_id
 	for boton in _botones:
@@ -261,16 +276,18 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var relacion: Dictionary = relacion_variant as Dictionary
 	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
 	var asset_key := str(datos_personaje.get("asset_key", nombre))
-	var textura := _cargar_retrato(asset_key, nombre)
+	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
+	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
 	if textura != null:
-		var skin := TextureRect.new()
-		skin.custom_minimum_size = Vector2(0.0, 136.0)
-		skin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		skin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		skin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		skin.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		skin.texture = textura
-		detalle.add_child(skin)
+		var retrato_cara := TextureRect.new()
+		retrato_cara.name = "CharacterFace"
+		retrato_cara.custom_minimum_size = Vector2(0.0, 88.0)
+		retrato_cara.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		retrato_cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		retrato_cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		retrato_cara.texture = textura
+		detalle.add_child(retrato_cara)
 
 	var titulo := Label.new()
 	titulo.text = nombre
