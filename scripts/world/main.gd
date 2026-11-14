@@ -12,7 +12,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _inventory: GarliaInventory = $UI/Inventory
 @onready var _interaction_system: InteractionSystem = $Systems/InteractionSystem
 @onready var _combat_system: CombatSystem = $Systems/CombatSystem
-@onready var _dialogue_system: DialogueSystem = $Systems/DialogueSystem
+var _dialogue_system: DialogueSystem = null
 @onready var _ium_manager: IUMManager = $Systems/IUMManager
 @onready var _ium_lab: IUMLab = $UI/IUMLab
 @onready var _admin_console: AdminConsole = $UI/AdminConsole
@@ -24,7 +24,7 @@ var _world_entity_spawner: WorldEntitySpawner = null
 var _eterium_radial_menu: Control = null
 var _garumi_combat_arena: Node2D = null
 var _garumi_battle_party: Node = null
-@onready var _supabase_client: GarliaSupabaseClient = SupabaseClient
+@onready var _supabase_client: GarliaSupabaseClient = get_node_or_null("/root/SupabaseClient") as GarliaSupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _game_camera: Camera2D = $GameCamera
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
@@ -66,7 +66,20 @@ func _ready() -> void:
 		_story_loading_overlay.visible = _carga_historia_activa
 	_registrar_diagnostico_ventana("_ready: inicio")
 	call_deferred("_diagnostico_ventana_diferido")
-	SupabaseClient.configurar_dependencias(GarliaAuth)
+	var nodo_dialogo := get_node_or_null("Systems/DialogueSystem")
+	if nodo_dialogo != null:
+		if not nodo_dialogo is DialogueSystem:
+			nodo_dialogo.set_script(load("res://scripts/gameplay/dialogue_system.gd"))
+		_dialogue_system = nodo_dialogo as DialogueSystem
+	if not is_instance_valid(_dialogue_system):
+		push_error("Main: Systems/DialogueSystem no tiene un DialogueSystem válido.")
+		return
+	if not is_instance_valid(_supabase_client):
+		_supabase_client = get_node_or_null("/root/SupabaseClient") as GarliaSupabaseClient
+	if not is_instance_valid(_supabase_client):
+		push_error("Main: falta el autoload /root/SupabaseClient; no se puede iniciar el mundo.")
+		return
+	_supabase_client.configurar_dependencias(GarliaAuth)
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
 	GarliaSalas.configurar_dependencias(GarliaAuth)
 
@@ -94,6 +107,9 @@ func _ready() -> void:
 		else:
 			push_error("Main: falta Systems/WorldAtmosphere/ClimateSystem; el clima no podrá simularse.")
 
+	if not is_instance_valid(_supabase_client):
+		push_error("Main: SupabaseClient no está disponible al activar el mundo.")
+		return
 	_supabase_client.establecer_mundo_activo(true)
 	if not _supabase_client.relaciones_ecologicas_cargadas.is_connected(_al_cargar_relaciones_ecologicas):
 		_supabase_client.relaciones_ecologicas_cargadas.connect(_al_cargar_relaciones_ecologicas)
@@ -802,11 +818,12 @@ func _configurar_camara() -> void:
 	if camara_actual != null:
 		camara_actual.enabled = false
 
-	_camera = _game_camera
-
-	if _camera == null:
-		push_error("Main: falta GameCamera en la escena.")
-		return
+	_camera = get_node_or_null("GameCamera") as Camera2D
+	if not is_instance_valid(_camera):
+		_camera = Camera2D.new()
+		_camera.name = "GameCamera"
+		add_child(_camera)
+		push_warning("Main: no existía GameCamera en esta escena; se creó una cámara de respaldo.")
 
 	_camera.enabled = true
 	_camera.zoom = Vector2(camera_zoom, camera_zoom)
