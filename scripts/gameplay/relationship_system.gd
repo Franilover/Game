@@ -392,7 +392,9 @@ func marcar_recuerdo_mencionado(
 			if str((lista[i] as Dictionary).get("recuerdo_uid", "")) == recuerdo_uid:
 				indice = i
 				break
-	if indice < 0:
+		if indice < 0:
+			return false
+	else:
 		indice = indice_respaldo
 	if indice < 0 or indice >= lista.size() or not lista[indice] is Dictionary:
 		return false
