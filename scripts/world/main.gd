@@ -38,6 +38,7 @@ const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
 const NPC_SCHEDULE_SYSTEM_SCRIPT = preload("res://scripts/world/npc_schedule_system.gd")
+const NPC_CONVERSATION_SYSTEM_SCRIPT = preload("res://scripts/world/npc_conversation_system.gd")
 const CUTSCENE_DIRECTOR_SCRIPT = preload("res://scripts/gameplay/cutscene_director.gd")
 
 # Perfiles visuales locales por zona. Para habilitar uno en Aventura en el futuro,
@@ -52,6 +53,7 @@ const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/pl
 var _reino_descubrimiento_elapsed: float = 0.0
 var _torres_rutina_elapsed: float = 0.0
 var _npc_schedule_system: Node = null
+var _npc_conversation_system: NPCConversationSystem = null
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
@@ -120,6 +122,14 @@ func _ready() -> void:
 		_npc_schedule_system.configurar(_world_atmosphere, _zone_manager)
 	else:
 		push_error("Main: no se pudo inicializar NPCScheduleSystem.")
+
+	_npc_conversation_system = NPC_CONVERSATION_SYSTEM_SCRIPT.new() as NPCConversationSystem
+	if is_instance_valid(_npc_conversation_system):
+		_npc_conversation_system.name = "NPCConversationSystem"
+		add_child(_npc_conversation_system)
+		_npc_conversation_system.configurar(_world_atmosphere, _zone_manager)
+	else:
+		push_error("Main: no se pudo inicializar NPCConversationSystem.")
 
 	if not _zone_manager.zona_cambiada.is_connected(_al_cambio_de_zona):
 		_zone_manager.zona_cambiada.connect(_al_cambio_de_zona)
@@ -750,6 +760,8 @@ func _materializar_npcs_reino_torres() -> void:
 func _actualizar_rutinas_npcs_torres() -> void:
 	if is_instance_valid(_npc_schedule_system):
 		_npc_schedule_system.actualizar(0.5)
+	if is_instance_valid(_npc_conversation_system):
+		_npc_conversation_system.actualizar(0.5, _player, _dialogue_system, MissionManager)
 
 
 ## Reconstruye las instancias vinculadas después de cargar el estado de la partida.
