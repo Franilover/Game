@@ -345,8 +345,10 @@ func obtener_recuerdo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 		if tipo == "regalo":
 			if str(recuerdo.get("item_nombre", "")).strip_edges().is_empty():
 				continue
-		elif tipo == "evento_social":
+		elif tipo == "evento_social" or tipo == "tema_conversacion":
 			if float(recuerdo.get("importancia", 0.0)) < 3.0:
+				continue
+			if tipo == "tema_conversacion" and str(recuerdo.get("frase_jugador", "")).strip_edges().is_empty():
 				continue
 		else:
 			continue
