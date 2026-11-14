@@ -957,6 +957,11 @@ func obtener_narrativa_personaje(personaje_id: String) -> Dictionary:
 		resultado["escenas"].append({
 			"clave": clave, "titulo": _titulo_narrativo(clave),
 			"npc_a": npc_a, "npc_b": npc_b, "etapas": "1, 2 y 3",
+			"lineas": conversacion.get("lineas", []).duplicate(true),
+			"lineas_siguientes": conversacion.get("lineas_siguientes", []).duplicate(true),
+			"lineas_tercera_etapa": conversacion.get("lineas_tercera_etapa", []).duplicate(true),
+			"lineas_tercera_tension": conversacion.get("lineas_tercera_tension", []).duplicate(true),
+			"lineas_alternativas": conversacion.get("lineas_alternativas", []).duplicate(true),
 			"requisitos_texto": "Misión ayuda_horno_elian completada y etapa narrativa habilitada.",
 			"gesto_a": str(gestos.get("gesto_a", "asentir")),
 			"gesto_b": str(gestos.get("gesto_b", "asentir"))
