@@ -17,12 +17,12 @@ const TIENDAS: Dictionary = {
 	},
 	"carpinteria": {
 		"nombre": "Carpintería",
-		"productos": ["madera", "pala de madera", "pala de piedra", "pico de madera", "pico de piedra"],
+		"productos": ["pala de madera", "pala de piedra", "pico de madera", "pico de piedra"],
 		"actividades": ["trabajar_madera", "atender"]
 	},
 	"casa_comercio": {
 		"nombre": "Casa de comercio",
-		"productos": ["arco aoris", "botas aoris", "casco aoris", "pechera aoris", "sombrero aoris", "plumas aoris"],
+		"productos": ["arco aoris", "plumas aoris"],
 		"actividades": ["comerciar"]
 	}
 }
@@ -39,7 +39,6 @@ const PRECIOS_BASE: Dictionary = {
 	"pico de madera": 14,
 	"pala de piedra": 20,
 	"pico de piedra": 24,
-	"madera": 2,
 	"plumas aoris": 4,
 	"arco aoris": 30,
 	"botas aoris": 60,
