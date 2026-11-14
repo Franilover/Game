@@ -23,7 +23,12 @@ const ENTRADAS_INTERIORES: Dictionary = {
 	"casa_darven": {"id": "casa_oriente_b", "pos": Vector2(385.0, -108.0)},
 	"casa_saira": {"id": "casa_oriente_c", "pos": Vector2(385.0, 173.0)},
 	"casa_narel": {"id": "vivienda_oeste_09", "pos": Vector2(-520.0, -213.0)},
-	"castillo": {"id": "castillo", "pos": Vector2(0.0, -125.0)}
+	"castillo": {"id": "castillo", "pos": Vector2(0.0, -125.0)},
+	"posada": {"id": "posada", "pos": Vector2(-385.0, 97.0)},
+	"vivienda_oeste_01": {"id": "vivienda_oeste_01", "pos": Vector2(-1040.0, -313.0)},
+	"vivienda_oeste_02": {"id": "vivienda_oeste_02", "pos": Vector2(-930.0, -313.0)},
+	"vivienda_oeste_03": {"id": "vivienda_oeste_03", "pos": Vector2(-1040.0, -213.0)},
+	"vivienda_oeste_04": {"id": "vivienda_oeste_04", "pos": Vector2(-930.0, -213.0)}
 }
 
 const POSICIONES: Dictionary = {
@@ -40,7 +45,12 @@ const POSICIONES: Dictionary = {
 	"casa_darven": Vector2(385.0, -108.0),
 	"casa_saira": Vector2(385.0, 173.0),
 	"casa_narel": Vector2(-520.0, -213.0),
-	"castillo": Vector2(0.0, -125.0)
+	"castillo": Vector2(0.0, -125.0),
+	"posada": Vector2(-385.0, 97.0),
+	"vivienda_oeste_01": Vector2(-1040.0, -313.0),
+	"vivienda_oeste_02": Vector2(-930.0, -313.0),
+	"vivienda_oeste_03": Vector2(-1040.0, -213.0),
+	"vivienda_oeste_04": Vector2(-930.0, -213.0)
 }
 
 var _world_atmosphere: WorldAtmosphere = null
@@ -79,7 +89,11 @@ static func obtener_clave_hogar(nombre_npc: String, ubicacion_respaldo: String =
 		"saira": "casa_saira",
 		"narel": "casa_narel",
 		"abel": "castillo",
-		"liam": "castillo"
+		"liam": "castillo",
+		"magda": "vivienda_oeste_01",
+		"sofia": "vivienda_oeste_02",
+		"aurora": "vivienda_oeste_03",
+		"tomas": "vivienda_oeste_04"
 	}
 	var ubicacion := str(hogares.get(clave, ubicacion_respaldo)).strip_edges().to_lower()
 	return ubicacion if POSICIONES.has(ubicacion) else "plaza"
@@ -314,7 +328,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		return
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
-	if dia_semana == 4:
+	if dia_semana == 4 and not bool(npc.get_meta("habitante_sin_oficio", false)):
 		rutina = _seleccionar_rutina_dia_libre(npc, minutos)
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
@@ -540,7 +554,43 @@ func _seleccionar_refugio_lluvia(npc: Creature, hogar: String) -> String:
 	return mejor_clave
 
 
+func _registrar_compra_habitante(npc: Creature, edificio_id: String) -> void:
+	if not is_instance_valid(npc) or not bool(npc.get_meta("habitante_sin_oficio", false)):
+		return
+	var actividad := str(npc.get_meta("rutina_actual", ""))
+	if not actividad.begins_with("comprar_"):
+		return
+	if not is_instance_valid(_world_atmosphere):
+		return
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	var clave_dia := "%s-%s-%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("mes", 0)),
+		str(tiempo.get("dia", 0))
+	]
+	var compras_variant: Variant = npc.get_meta("compras_realizadas", {})
+	var compras: Dictionary = compras_variant.duplicate(true) if compras_variant is Dictionary else {}
+	var clave_compra := clave_dia + "|" + actividad
+	if compras.has(clave_compra):
+		return
+	var articulos := {
+		"comprar_pan": "pan",
+		"comprar_comida": "comida preparada",
+		"comprar_mercaderia": "artículos de uso diario",
+		"comprar_articulos": "artículos variados"
+	}
+	compras[clave_compra] = {
+		"dia": clave_dia,
+		"tienda": edificio_id,
+		"actividad": actividad,
+		"articulo": str(articulos.get(actividad, "provisiones"))
+	}
+	npc.set_meta("compras_realizadas", compras)
+	npc.datos["ultima_compra_ambiental"] = compras[clave_compra]
+
+
 func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
+	_registrar_compra_habitante(npc, edificio_id)
 	# La llegada al umbral representa que el NPC entró. Se mantiene la misma
 	# instancia y se oculta del exterior hasta que se abra ese interior.
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
