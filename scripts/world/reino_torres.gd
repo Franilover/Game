@@ -246,9 +246,11 @@ func _process(_delta: float) -> void:
 		_boton_entrar.visible = false
 		return
 
-	_aviso.text = ""
+	_aviso.text = "¿Entrar en " + str(entrada_cercana.get("nombre", "este lugar")) + "?"
 	_aviso_panel.visible = false
-	_boton_entrar.visible = false
+	_boton_entrar.text = "Entrar"
+	_boton_entrar.visible = true
+	_posicionar_boton_entrada()
 
 
 
@@ -285,6 +287,12 @@ func _interactuar_entrada(jugador: Node, entrada: Dictionary) -> void:
 	_entrar_al_interior(entrada.duplicate(true))
 
 
+func _al_pulsar_boton_entrar() -> void:
+	if _entrada_aviso_actual.is_empty() or not is_instance_valid(_jugador):
+		return
+	_interactuar_entrada(_jugador, _entrada_aviso_actual.duplicate(true))
+
+
 func _crear_aviso() -> void:
 	# Aviso flotante con el mismo panel pixel-art y tratamiento tipográfico del resto de la interfaz.
 	_aviso_panel = PanelContainer.new()
@@ -318,6 +326,7 @@ func _crear_aviso() -> void:
 	_boton_entrar.focus_mode = Control.FOCUS_NONE
 	_boton_entrar.z_index = 51
 	_boton_entrar.visible = false
+	_boton_entrar.pressed.connect(_al_pulsar_boton_entrar)
 	PIXEL_UI_THEME.apply(_boton_entrar, false)
 	capa_ui.add_child(_boton_entrar)
 
