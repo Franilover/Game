@@ -32,6 +32,14 @@ var _relationship_system: Node = null
 var _zone_manager: Node = null
 var _campos_relacion: Dictionary = {}
 var _boton_guardar_relacion: Button = null
+var _dialogue_system: DialogueSystem = null
+var _cutscene_director: CutsceneDirector = null
+var _npc_conversation_system: NPCConversationSystem = null
+var _contenido_narrativo: VBoxContainer = null
+var _pestana_narrativa := "dialogos"
+var _dialogos_admin: Array[Dictionary] = []
+var _escenas_admin: Array[Dictionary] = []
+var _eventos_admin: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -51,6 +59,12 @@ func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: Garlia
 func configurar_aldeanos(relationship_system: Node, zone_manager: Node) -> void:
 	_relationship_system = relationship_system
 	_zone_manager = zone_manager
+
+
+func configurar_narrativa(dialogue_system: DialogueSystem, cutscene_director: CutsceneDirector, npc_conversation_system: NPCConversationSystem) -> void:
+	_dialogue_system = dialogue_system
+	_cutscene_director = cutscene_director
+	_npc_conversation_system = npc_conversation_system
 
 
 func configurar_tiempo(atmosfera: WorldAtmosphere) -> void:
@@ -430,6 +444,7 @@ func _mostrar_detalle_aldeano() -> void:
 	var descanso := Label.new()
 	descanso.text = "Día 5 · Descanso semanal"
 	_detalle.add_child(descanso)
+	_crear_inspector_narrativo(personaje_id)
 
 	var separador_relaciones := _crear_separador_tiempo("Relación con el jugador")
 	_detalle.add_child(separador_relaciones)
@@ -467,6 +482,211 @@ func _mostrar_detalle_aldeano() -> void:
 	_boton_guardar_relacion.pressed.connect(_guardar_relacion_aldeano)
 	PIXEL_UI_THEME.apply(_boton_guardar_relacion, false)
 	_detalle.add_child(_boton_guardar_relacion)
+
+
+
+func _crear_inspector_narrativo(personaje_id: String) -> void:
+	_detalle.add_child(_crear_separador_tiempo("Contenido narrativo"))
+	var pestanas := HBoxContainer.new()
+	pestanas.add_theme_constant_override("separation", 3)
+	_detalle.add_child(pestanas)
+	for entrada in [["dialogos", "Diálogos"], ["escenas", "Escenas"], ["eventos", "Eventos"]]:
+		var boton := Button.new()
+		boton.text = str(entrada[1])
+		boton.toggle_mode = true
+		boton.button_pressed = _pestana_narrativa == str(entrada[0])
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.pressed.connect(_cambiar_pestana_narrativa.bind(str(entrada[0])))
+		PIXEL_UI_THEME.apply(boton, false)
+		pestanas.add_child(boton)
+	_contenido_narrativo = VBoxContainer.new()
+	_contenido_narrativo.add_theme_constant_override("separation", 5)
+	_detalle.add_child(_contenido_narrativo)
+	var catalogo: Dictionary = {}
+	if is_instance_valid(_npc_conversation_system):
+		var datos: Variant = _npc_conversation_system.call("obtener_narrativa_personaje", personaje_id)
+		if datos is Dictionary:
+			catalogo = datos
+	_dialogos_admin = _copiar_registros(catalogo.get("dialogos", []))
+	_escenas_admin = _copiar_registros(catalogo.get("escenas", []))
+	_eventos_admin = _copiar_registros(catalogo.get("eventos", []))
+	_mostrar_pestana_narrativa()
+
+
+func _copiar_registros(valor: Variant) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	if valor is Array:
+		for item in valor:
+			if item is Dictionary:
+				resultado.append((item as Dictionary).duplicate(true))
+	return resultado
+
+
+func _cambiar_pestana_narrativa(pestana: String) -> void:
+	_pestana_narrativa = pestana
+	_mostrar_pestana_narrativa()
+
+
+func _limpiar_narrativa() -> void:
+	if not is_instance_valid(_contenido_narrativo):
+		return
+	for hijo in _contenido_narrativo.get_children():
+		hijo.queue_free()
+
+
+func _texto_narrativo(texto: String, titulo: bool = false) -> void:
+	var etiqueta := Label.new()
+	etiqueta.text = texto
+	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if titulo:
+		etiqueta.add_theme_font_size_override("font_size", 12)
+	_contenido_narrativo.add_child(etiqueta)
+
+
+func _requisitos_narrativos(registro: Dictionary, dialogo: Dictionary = {}) -> String:
+	var partes: Array[String] = []
+	for fuente in [registro, dialogo]:
+		for clave in ["requisitos", "condiciones", "requisito", "desbloqueo", "restricciones"]:
+			if not fuente.has(clave):
+				continue
+			var valor: Variant = fuente.get(clave)
+			if valor is String and not str(valor).is_empty():
+				partes.append(str(valor))
+			elif valor is Array or valor is Dictionary:
+				partes.append(JSON.stringify(valor))
+	return "\n".join(partes) if not partes.is_empty() else "Sin requisitos declarados en los datos."
+
+
+func _mostrar_pestana_narrativa() -> void:
+	_limpiar_narrativa()
+	match _pestana_narrativa:
+		"dialogos":
+			_mostrar_dialogos_admin()
+		"escenas":
+			_mostrar_escenas_admin()
+		"eventos":
+			_mostrar_eventos_admin()
+
+
+func _mostrar_dialogos_admin() -> void:
+	_texto_narrativo("Diálogos registrados: %d" % _dialogos_admin.size(), true)
+	if _dialogos_admin.is_empty():
+		_texto_narrativo("No hay diálogos de este personaje en WorldData.")
+		return
+	for registro in _dialogos_admin:
+		var contenido_variant: Variant = registro.get("dialogo", {})
+		var dialogo: Dictionary = contenido_variant.duplicate(true) if contenido_variant is Dictionary else {}
+		if contenido_variant is Array:
+			dialogo["lineas"] = (contenido_variant as Array).duplicate(true)
+		var clave := str(registro.get("clave", "principal"))
+		dialogo["clave"] = clave
+		_texto_narrativo(str(dialogo.get("titulo", registro.get("titulo", clave))), true)
+		_texto_narrativo("Requisitos: " + _requisitos_narrativos(registro, dialogo))
+		var lineas: Array = dialogo.get("lineas", []) if dialogo.get("lineas", []) is Array else []
+		for linea_variant in lineas:
+			if linea_variant is Dictionary:
+				var linea := linea_variant as Dictionary
+				_texto_narrativo(str(linea.get("hablante", linea.get("npc", ""))) + ": " + str(linea.get("texto", "")))
+		var boton := Button.new()
+		boton.text = "Simular diálogo"
+		boton.disabled = not is_instance_valid(_dialogue_system) or lineas.is_empty()
+		boton.pressed.connect(_simular_dialogo_admin.bind(dialogo))
+		PIXEL_UI_THEME.apply(boton, false)
+		_contenido_narrativo.add_child(boton)
+
+
+func _simular_dialogo_admin(dialogo: Dictionary) -> void:
+	if not _es_admin() or not is_instance_valid(_dialogue_system):
+		return
+	# La fuente nula evita registrar recuerdos, relaciones o avance de misión.
+	if _dialogue_system.abrir(dialogo.duplicate(true), null, true):
+		_estado.text = "Vista previa de diálogo: sin guardar progreso."
+
+
+func _mostrar_escenas_admin() -> void:
+	_texto_narrativo("Escenas registradas: %d" % _escenas_admin.size(), true)
+	if _escenas_admin.is_empty():
+		_texto_narrativo("No hay escenas narrativas registradas.")
+		return
+	for escena in _escenas_admin:
+		_texto_narrativo(str(escena.get("titulo", escena.get("clave", "Escena"))), true)
+		_texto_narrativo("Participantes: %s y %s\nEtapas: %s\nRequisitos: %s" % [
+			str(escena.get("npc_a", "?")), str(escena.get("npc_b", "?")),
+			str(escena.get("etapas", "1–3")), str(escena.get("requisitos_texto", "Etapa narrativa disponible."))
+		])
+		var boton := Button.new()
+		boton.text = "Ver escena"
+		boton.disabled = not is_instance_valid(_cutscene_director)
+		boton.pressed.connect(_ver_escena_admin.bind(escena))
+		PIXEL_UI_THEME.apply(boton, false)
+		_contenido_narrativo.add_child(boton)
+
+
+func _ver_escena_admin(escena: Dictionary) -> void:
+	if not _es_admin() or not is_instance_valid(_cutscene_director):
+		return
+	var nombre_a := str(escena.get("npc_a", ""))
+	var nombre_b := str(escena.get("npc_b", ""))
+	var npc_a := _buscar_npc_aldeano("", nombre_a)
+	var npc_b := _buscar_npc_aldeano("", nombre_b)
+	if npc_a == null or npc_b == null:
+		_estado.text = "Ambos NPC deben estar presentes en Torres."
+		return
+	if _cutscene_director.esta_activo():
+		_estado.text = "Ya hay una cinemática en reproducción."
+		return
+	var centro := (npc_a.global_position + npc_b.global_position) * 0.5
+	var camara := get_viewport().get_camera_2d()
+	var zoom := camara.zoom.x * 1.12 if camara != null else 2.0
+	var pasos: Array[Dictionary] = [
+		{"tipo":"camara","x":centro.x,"y":centro.y,"zoom":zoom,"duracion":0.75},
+		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
+		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
+		{"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.65},
+		{"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.65},
+		{"tipo":"esperar","segundos":0.5}
+	]
+	_estado.text = "Reproduciendo vista previa: " + str(escena.get("titulo", "Escena"))
+	await _cutscene_director.ejecutar("admin_preview_" + str(escena.get("clave", "escena")), pasos)
+
+
+func _mostrar_eventos_admin() -> void:
+	_texto_narrativo("Eventos asociados: %d" % _eventos_admin.size(), true)
+	if _eventos_admin.is_empty():
+		_texto_narrativo("No hay acontecimientos registrados.")
+		return
+	for evento in _eventos_admin:
+		_texto_narrativo(str(evento.get("titulo", evento.get("clave", "Evento"))), true)
+		_texto_narrativo("Tipo: %s\nParticipantes: %s y %s\nRequisitos: %s" % [
+			str(evento.get("tipo", "cotidiano")), str(evento.get("npc_a", "?")),
+			str(evento.get("npc_b", "?")), str(evento.get("requisitos_texto", "Fecha y NPC disponibles."))
+		])
+		var lineas: Array = evento.get("lineas", []) if evento.get("lineas", []) is Array else []
+		for linea_variant in lineas:
+			if linea_variant is Dictionary:
+				var linea := linea_variant as Dictionary
+				_texto_narrativo(str(linea.get("npc", "")) + ": " + str(linea.get("texto", "")))
+		var boton := Button.new()
+		boton.text = "Simular evento"
+		boton.disabled = not is_instance_valid(_dialogue_system) or lineas.is_empty()
+		boton.pressed.connect(_simular_evento_admin.bind(evento))
+		PIXEL_UI_THEME.apply(boton, false)
+		_contenido_narrativo.add_child(boton)
+
+
+func _simular_evento_admin(evento: Dictionary) -> void:
+	if not _es_admin() or not is_instance_valid(_dialogue_system):
+		return
+	var lineas_preview: Array[Dictionary] = []
+	for item in evento.get("lineas", []):
+		if item is Dictionary:
+			var linea := item as Dictionary
+			lineas_preview.append({"hablante":str(linea.get("npc","")),"texto":str(linea.get("texto",""))})
+	if lineas_preview.is_empty():
+		return
+	var datos := {"clave":"admin_preview_" + str(evento.get("clave","evento")),"lineas":lineas_preview}
+	if _dialogue_system.abrir(datos, null, true):
+		_estado.text = "Vista previa de evento: sin guardar progreso."
 
 
 func _nombres_dias(dias_variant: Variant) -> String:
