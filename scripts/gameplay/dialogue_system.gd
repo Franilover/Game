@@ -1719,12 +1719,14 @@ func _seleccionar_respuesta(indice: int) -> void:
 	if not es_despedida and is_instance_valid(_fuente):
 		_respuestas = _crear_opciones_conversacion()
 	_limpiar_botones_respuesta()
-	_lineas.append({"hablante": "Tú", "texto": texto_jugador})
+	# La elección del jugador ya queda registrada en el sistema social.
+	# Sólo mostramos la reacción del NPC para evitar repetir literalmente
+	# la opción seleccionada como otra línea de diálogo.
 	_lineas.append({
 		"hablante": _fuente.get_nombre_visual() if is_instance_valid(_fuente) else "",
 		"texto": texto_npc
 	})
-	_indice_linea += 1
+	_indice_linea = _lineas.size() - 1
 	_mostrar_linea_actual()
 	_actualizar_boton_accion()
 
