@@ -784,9 +784,17 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		if npc_variant is Creature and is_instance_valid(npc_variant):
 			plantilla = npc_variant as Creature
 			break
-	if not is_instance_valid(plantilla):
-		push_warning("Main: no hay un NPC humano para usar como plantilla de los habitantes civiles.")
-		return
+
+	# Los habitantes locales no deben depender de que Supabase haya entregado
+	# primero otro NPC para servir de plantilla.
+	var datos_plantilla: Dictionary = {
+		"id": "habitante_local",
+		"nombre": "Humano",
+		"stats_dnd": {"hp_max": 20, "ac": 10}
+	}
+	if is_instance_valid(plantilla):
+		datos_plantilla = plantilla.datos.duplicate(true)
+		datos_plantilla["nombre"] = "Humano"
 
 	var habitantes: Array[Dictionary] = [
 		{
@@ -845,7 +853,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		var clave := str(habitante.get("clave", ""))
 		if existentes_locales.has(clave):
 			continue
-		var datos := plantilla.datos.duplicate(true)
+		var datos := datos_plantilla.duplicate(true)
 		datos.erase("personaje_game_id")
 		datos["nombre_individual"] = str(habitante.get("nombre", "Habitante"))
 		datos["sprite_key"] = str(habitante.get("sprite", ""))
@@ -871,6 +879,9 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		npc.configurar_dependencias(_dialogue_system, MissionManager, $Entities, _world_items, WorldData)
 		npc.configurar(datos)
 		$Entities.add_child(npc)
+		# Reintentar con el nodo ya dentro del árbol para asegurar que Godot
+		# resuelva la textura importada del personaje.
+		npc.call_deferred("_cargar_sprite")
 		if is_instance_valid(_player):
 			npc.add_collision_exception_with(_player)
 		npc.remove_from_group("creatures")
