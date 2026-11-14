@@ -305,14 +305,14 @@ func _actualizar_retrato(hablante: String) -> void:
 func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	var variantes_variant: Variant = datos.get("variantes", [])
 	if not variantes_variant is Array:
-		return datos.duplicate(true)
+		var dialogo_rutina_sin_variantes := _crear_dialogo_rutina_en_transito()
+		return dialogo_rutina_sin_variantes if not dialogo_rutina_sin_variantes.is_empty() else datos.duplicate(true)
 
 	var principal: Dictionary = {}
 	var mission_manager_local: MissionManagerService = mission_manager
 	for variante_variant in variantes_variant as Array:
 		if not variante_variant is Dictionary:
 			continue
-
 		var variante := (variante_variant as Dictionary).duplicate(true)
 		var requisito_variant: Variant = variante.get("requisito", {})
 		if requisito_variant is Dictionary:
@@ -321,18 +321,15 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 				if mission_manager_local != null and mission_manager_local.cumple_requisito_dialogo(requisito):
 					return variante
 				continue
-
 		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
 			principal = variante
 
-	# Durante los desplazamientos, el NPC responde según su relación y
-	# comunica el destino actual de su rutina sin interrumpir el horario.
+	# Las respuestas de tránsito son propias de cada personaje. Las variantes
+	# con requisitos de misión ya se resolvieron arriba y conservan prioridad.
 	var dialogo_rutina := _crear_dialogo_rutina_en_transito()
 	if not dialogo_rutina.is_empty():
 		return dialogo_rutina
 
-	# Los estados de misión tienen prioridad sobre los saludos sociales.
-	# Si no hay una variante narrativa activa, se aplican amistad/confianza.
 	var personaje_id := ""
 	if is_instance_valid(_fuente):
 		personaje_id = _fuente.get_personaje_game_id().strip_edges()
@@ -340,7 +337,6 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		var contextual := _seleccionar_variante_contextual(variantes_variant as Array, personaje_id)
 		if not contextual.is_empty():
 			return contextual
-
 		var social: RelationshipSystemService = relationship_system
 		if social != null:
 			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_variant as Array, personaje_id)
@@ -350,49 +346,6 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if not principal.is_empty():
 		return principal
 	return datos.duplicate(true)
-
-
-## Selecciona variantes condicionadas por el calendario del mundo.
-## Una variante contextual puede combinar estación/día con requisitos sociales.
-func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) -> Dictionary:
-	var social: RelationshipSystemService = relationship_system
-	if social == null or not social.has_method("obtener_contexto_temporal"):
-		return {}
-
-	var contexto_variant: Variant = social.call("obtener_contexto_temporal")
-	if not contexto_variant is Dictionary:
-		return {}
-	var contexto := contexto_variant as Dictionary
-	if not bool(contexto.get("calendario_cargado", false)):
-		return {}
-
-	var relacion := social.obtener_relacion(personaje_id)
-	var mejor: Dictionary = {}
-	var mejor_prioridad := -2147483648
-
-	for variante_variant in variantes:
-		if not variante_variant is Dictionary:
-			continue
-		var variante := variante_variant as Dictionary
-		var requisito_contextual_variant: Variant = variante.get("requisito_contextual", {})
-		if not requisito_contextual_variant is Dictionary:
-			continue
-		var requisito_contextual := requisito_contextual_variant as Dictionary
-		if requisito_contextual.is_empty() or not _cumple_requisito_contextual(requisito_contextual, contexto):
-			continue
-
-		var requisito_social_variant: Variant = variante_variant.get("requisito_social", {})
-		if requisito_social_variant is Dictionary:
-			var requisito_social := requisito_social_variant as Dictionary
-			if not requisito_social.is_empty() and not _cumple_requisito_social_contextual(requisito_social, relacion):
-				continue
-
-		var prioridad := int(variante.get("prioridad", 0))
-		if mejor.is_empty() or prioridad > mejor_prioridad:
-			mejor = variante.duplicate(true)
-			mejor_prioridad = prioridad
-
-	return mejor
 
 
 func _crear_dialogo_rutina_en_transito() -> Dictionary:
@@ -417,6 +370,7 @@ func _crear_dialogo_rutina_en_transito() -> Dictionary:
 		"castillo": "el castillo"
 	}
 	var destino := str(destinos.get(destino_clave, "su próximo destino"))
+	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
 	var amable := false
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	if not personaje_id.is_empty() and relationship_system != null:
@@ -428,10 +382,24 @@ func _crear_dialogo_rutina_en_transito() -> Dictionary:
 		)
 
 	var texto := ""
-	if amable:
-		texto = "¡Hola! Me alegra verte, pero ahora voy hacia %s. Allí puedes encontrarme y hablaremos con más calma." % destino
-	else:
-		texto = "Ahora estoy ocupado, dame unos segundos. Voy hacia %s; puedes encontrarme allí." % destino
+	match nombre:
+		"elian":
+			texto = ("¡Qué bueno verte! Llevo el pan todavía en la cabeza. Primero tengo que llegar a %s; búscame allí y te guardo un momento para conversar." if amable else "Disculpa, no puedo detenerme ahora. Tengo que llegar a %s antes de que se enfríe el trabajo. Allí podremos hablar.") % destino
+		"bruna":
+			texto = ("¡Eh, me alegra encontrarte! Voy a %s a terminar un encargo. Cuando deje las herramientas, hablamos tranquilamente." if amable else "Ahora no puedo parar; tengo un encargo entre manos. Voy a %s. Si necesitas algo, espérame allí.") % destino
+		"darven":
+			texto = ("Me alegra verte. Estoy siguiendo mi ronda hacia %s; cuando termine de asegurar la zona, tendrás toda mi atención." if amable else "En servicio. No puedo abandonar mi recorrido: me dirijo a %s. Si es importante, búscame allí.") % destino
+		"saira":
+			texto = ("¡Qué casualidad verte! Voy hacia %s, tengo unas cuentas que revisar. Si pasas por allí, podemos ponernos al día." if amable else "Ahora mismo voy con prisa; debo atender un asunto en %s. Allí estaré disponible cuando termine.") % destino
+		"narel":
+			texto = ("¡Ah, hola! Justo iba pensando en algo que debo consultar en %s. Acompáñame con la conversación allí; ahora temo perder el hilo." if amable else "Perdona, estoy intentando no olvidar una idea. Debo llegar a %s y dejar mis notas en orden. Hablemos después.") % destino
+		"abel":
+			texto = ("Me alegra que hayas venido. Me dirijo a %s; allí podremos hablar sin descuidar mis obligaciones." if amable else "Ahora debo continuar hacia %s. Cuando haya atendido mis responsabilidades, podremos conversar.") % destino
+		"liam":
+			texto = ("¡Hola! Voy camino a %s. Si me encuentras allí, podremos conversar un poco más." if amable else "Disculpa, tengo que llegar a %s. Búscame allí cuando termine lo que debo hacer.") % destino
+		_:
+			texto = ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
+
 	return {
 		"clave": "rutina_en_transito",
 		"lineas": [{"hablante": _fuente.get_nombre_visual(), "texto": texto}]
