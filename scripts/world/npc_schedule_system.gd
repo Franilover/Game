@@ -55,6 +55,7 @@ var _tiempo_actualizacion := 0.0
 func configurar(atmosfera: WorldAtmosphere, zone_manager: Node) -> void:
 	_world_atmosphere = atmosfera
 	_zone_manager = zone_manager
+	add_to_group("npc_schedule_system")
 
 
 static func tiene_ubicacion(clave: String) -> bool:
@@ -131,6 +132,61 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		_aplicar_rutina(npc, dia_semana, minutos)
 
 
+## Reserva temporalmente el movimiento de un NPC para que pueda acercarse
+## al jugador usando la misma malla AStar de sus rutinas habituales.
+func iniciar_acercamiento_social(npc: Creature, jugador: Node2D) -> bool:
+	if not is_instance_valid(npc) or not is_instance_valid(jugador):
+		return false
+	if not _malla_lista or _malla == null:
+		return false
+	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("rutina_en_edificio", false)):
+		return false
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento == null:
+		return false
+
+	var hacia_npc := jugador.global_position.direction_to(npc.global_position)
+	if hacia_npc.length_squared() <= 0.001:
+		hacia_npc = Vector2.RIGHT
+	var direcciones: Array[Vector2] = [
+		hacia_npc,
+		Vector2.RIGHT,
+		Vector2.DOWN,
+		Vector2.LEFT,
+		Vector2.UP,
+		Vector2(1.0, 1.0).normalized(),
+		Vector2(-1.0, 1.0).normalized(),
+		Vector2(-1.0, -1.0).normalized(),
+		Vector2(1.0, -1.0).normalized()
+	]
+	for direccion in direcciones:
+		var destino := jugador.global_position + direccion * 48.0
+		var ruta := _crear_ruta(npc.global_position, destino)
+		if ruta.is_empty():
+			continue
+		npc.set_meta("acercamiento_social_activo", true)
+		movimiento.establecer_ruta(ruta)
+		return true
+	return false
+
+
+## Al terminar o cancelar la iniciativa, el NPC retoma su destino canónico
+## desde la posición actual, sin perder su horario.
+func finalizar_acercamiento_social(npc: Creature) -> void:
+	if not is_instance_valid(npc):
+		return
+	npc.remove_meta("acercamiento_social_activo")
+	if not is_instance_valid(_world_atmosphere):
+		return
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return
+	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 5)
+	var minutos := clampi(int(floor(float(tiempo.get("hora_del_dia", 0.0)) * 60.0)), 0, 1439)
+	npc.set_meta("rutina_firma", "")
+	_aplicar_rutina(npc, dia_semana, minutos)
+
+
 func _invalidar_malla() -> void:
 	_zona = null
 	_malla = null
@@ -190,6 +246,8 @@ func _construir_malla(zona: Node2D) -> void:
 
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
+	if bool(npc.get_meta("acercamiento_social_activo", false)):
+		return
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
 	if dia_semana == 4:
