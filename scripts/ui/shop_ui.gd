@@ -41,8 +41,6 @@ const PRECIOS_BASE: Dictionary = {
 	"casco aoris": 80,
 	"pechera aoris": 100,
 	"botas aoris": 60,
-	"casco aoris": 80,
-	"pechera aoris": 100,
 	"sombrero aoris": 70
 }
 
