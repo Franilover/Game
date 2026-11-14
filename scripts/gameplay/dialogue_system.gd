@@ -28,7 +28,6 @@ var _respuestas_container: GridContainer = null
 var _inventario: InventoryController = null
 var _boton_regalo: Button = null
 var _boton_preguntar_item: Button = null
-var _boton_conversar: Button = null
 var _dialogue_content_row: HBoxContainer = null
 var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
@@ -115,8 +114,6 @@ func _input(event: InputEvent) -> void:
 			if _boton_regalo != null and _boton_regalo.visible and _boton_regalo.get_global_rect().has_point(posicion_mouse):
 				return
 			if _boton_preguntar_item != null and _boton_preguntar_item.visible and _boton_preguntar_item.get_global_rect().has_point(posicion_mouse):
-				return
-			if _boton_conversar != null and _boton_conversar.visible and _boton_conversar.get_global_rect().has_point(posicion_mouse):
 				return
 		_avanzar()
 		get_viewport().set_input_as_handled()
@@ -236,7 +233,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		and not tiene_acciones_finales
 		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
 	):
-		_respuestas = _crear_respuestas_rutina()
+		_respuestas = _crear_opciones_conversacion()
 	_limpiar_botones_respuesta()
 
 	if is_instance_valid(_fuente):
@@ -252,6 +249,16 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 			if accion_variant is Dictionary:
 				_acciones.append((accion_variant as Dictionary).duplicate(true))
 
+	# Las conversaciones cotidianas muestran sus opciones automáticamente al terminar.
+	# Las escenas con acciones de misión conservan su flujo original.
+	if (
+		_respuestas.is_empty()
+		and _acciones.is_empty()
+		and is_instance_valid(_fuente)
+		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
+	):
+		_respuestas = _crear_opciones_conversacion()
+
 	_indice_linea = 0
 	_abierto = true
 
@@ -263,8 +270,6 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		_boton_regalo.visible = true
 	if _boton_preguntar_item != null:
 		_boton_preguntar_item.visible = true
-	if _boton_conversar != null:
-		_boton_conversar.visible = true
 	print(
 		"DialogueSystem: PANEL VISIBLE → ",
 		dialogue_panel.get_path() if dialogue_panel.is_inside_tree() else dialogue_panel.name,
@@ -1287,7 +1292,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 					"evento": str(tema.get("evento", "interesarse")),
 					"importancia": _obtener_importancia_tema(tema)
 				})
-			return opciones_datos
+			return _completar_opciones_conversacion(opciones_datos, relacion)
 
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges()
@@ -1350,14 +1355,123 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 
 	if not actividad.is_empty() and not planes.to_lower().contains(actividad.to_lower()):
 		planes += " Ahora mismo estoy con " + actividad + "."
-	return [
-		{"texto": "Preguntar planes de hoy", "jugador": "¿Qué planes tienes para hoy?", "respuesta": planes, "evento": "interesarse"},
-		{"texto": "Dar un cumplido", "jugador": "Quería decirte que haces un buen trabajo. Se nota el esfuerzo que pones.", "respuesta": cumplido, "evento": "apoyar"},
-		{"texto": "Preguntar por sus aficiones", "jugador": "¿Qué te gusta hacer cuando tienes tiempo libre?", "respuesta": aficiones, "evento": "interesarse"},
-		{"texto": "Preguntar qué le preocupa", "jugador": "¿Hay algo que te preocupe últimamente?", "respuesta": preocupacion, "evento": "interesarse"},
-		{"texto": "Pedirle un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": consejo, "evento": "interesarse"},
-		{"texto": "Hablar sobre Torres", "jugador": "¿Qué opinas de vivir en Torres?", "respuesta": opinion_torres, "evento": "interesarse"}
+	var opciones_generales: Array[Dictionary] = [
+		{"clave": "planes_hoy", "texto": "Preguntar por sus planes de hoy", "jugador": "¿Qué planes tienes para hoy?", "respuesta": planes, "evento": "interesarse", "importancia": 1.0},
+		{"clave": "cumplido", "texto": "Dar un cumplido", "jugador": "Quería decirte que haces un buen trabajo. Se nota el esfuerzo que pones.", "respuesta": cumplido, "evento": "apoyar", "importancia": 1.0},
+		{"clave": "aficiones", "texto": "Preguntar por sus aficiones", "jugador": "¿Qué te gusta hacer cuando tienes tiempo libre?", "respuesta": aficiones, "evento": "interesarse", "importancia": 1.0},
+		{"clave": "preocupaciones", "texto": "Preguntar qué le preocupa", "jugador": "¿Hay algo que te preocupe últimamente?", "respuesta": preocupacion, "evento": "interesarse", "importancia": 1.5},
+		{"clave": "consejo", "texto": "Pedirle un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": consejo, "evento": "compartir_conocimiento", "importancia": 1.0},
+		{"clave": "opinion_torres", "texto": "Hablar sobre Torres", "jugador": "¿Qué opinas de vivir en Torres?", "respuesta": opinion_torres, "evento": "interesarse", "importancia": 1.0}
 	]
+	var estado := "Supongo que hoy estoy bien. Ha sido un día bastante normal, aunque siempre hay algo que pensar."
+	match nombre:
+		"elian":
+			estado = "Estoy bien, gracias. Ha sido un día tranquilo y eso me permite llevar el trabajo sin apuros."
+		"bruna":
+			estado = "Estoy bien. Algo cansada, quizá, pero nada que no se solucione terminando el trabajo pendiente."
+		"darven":
+			estado = "Me encuentro bien. Mientras todo siga tranquilo y no haya incidentes, puedo decir que es un buen día."
+		"saira":
+			estado = "Bastante bien. Un poco ocupada, pero siempre aparece algo interesante que anima el día."
+		"narel":
+			estado = "Diría que bien. He tenido algunas ideas dando vueltas y todavía estoy ordenándolas."
+	opciones_generales.append({
+		"clave": "estado_animo",
+		"texto": "Preguntar cómo se siente",
+		"jugador": "¿Cómo te has sentido últimamente?",
+		"respuesta": estado,
+		"evento": "interesarse",
+		"importancia": 2.0
+	})
+	return _completar_opciones_conversacion(opciones_generales, relationship_system.obtener_relacion(_fuente.get_personaje_game_id()) if relationship_system != null else {})
+
+
+func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dictionary) -> Array[Dictionary]:
+	var candidatas := opciones.duplicate(true)
+	var elegidas: Array[Dictionary] = []
+	var usadas: Array[String] = []
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var confianza := float(relacion.get("confianza", 0.0))
+	var amistad := float(relacion.get("amistad", 0.0))
+	var afecto := float(relacion.get("afecto", 0.0))
+	var respeto := float(relacion.get("respeto", 0.0))
+
+	var respuesta_estado := "He estado bien, aunque algunos días se hacen más largos que otros."
+	var respuesta_consejo := "Te diría que observes bien la situación antes de decidir. A veces ayuda escuchar otra perspectiva."
+	match nombre:
+		"elian":
+			respuesta_estado = "Estoy bien. A veces termino cansado, pero me gusta tener una rutina y saber que mi trabajo sirve para alguien."
+			respuesta_consejo = "No te exijas terminar todo hoy. Haz las cosas con calma y deja un poco de tiempo para descansar."
+		"bruna":
+			respuesta_estado = "Estoy bien. Si algo me preocupa, prefiero ocuparme de ello en vez de darle vueltas."
+			respuesta_consejo = "Asegúrate de entender el problema antes de empezar a arreglarlo. Trabajar dos veces por falta de atención es perder el tiempo."
+		"darven":
+			respuesta_estado = "Estoy bien, gracias. Ha sido un día tranquilo, y espero que siga así."
+			respuesta_consejo = "No tomes una decisión con información incompleta. Comprueba lo importante y piensa quién podría verse afectado."
+		"saira":
+			respuesta_estado = "Bastante bien. Hay días agotadores, pero siempre aparece una conversación o una noticia que los vuelve interesantes."
+			respuesta_consejo = "Pregunta, compara y escucha más de una versión. La primera historia rara vez cuenta todo."
+		"narel":
+			respuesta_estado = "Me encuentro bien. He tenido bastante en qué pensar, aunque todavía estoy intentando ordenar algunas ideas."
+			respuesta_consejo = "Separa los hechos de tus interpretaciones. Después podrás decidir qué pregunta merece investigarse."
+	var opciones_generales: Array[Dictionary] = [
+		{"clave": "estado_animo", "texto": "Preguntar cómo se siente", "jugador": "¿Cómo te has sentido últimamente?", "respuesta": respuesta_estado, "evento": "interesarse", "importancia": 2.0},
+		{"clave": "consejo_personal", "texto": "Pedir un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": respuesta_consejo, "evento": "compartir_conocimiento", "importancia": 1.0}
+	]
+	for general in opciones_generales:
+		var ya_existe := false
+		for candidata in candidatas:
+			if str(candidata.get("clave", "")) == str(general.get("clave", "")):
+				ya_existe = true
+				break
+		if not ya_existe:
+			candidatas.append(general)
+
+	while elegidas.size() < 3 and not candidatas.is_empty():
+		var mejor_indice := -1
+		var mejor_puntuacion := -INF
+		for i in range(candidatas.size()):
+			var opcion: Dictionary = candidatas[i]
+			var clave := str(opcion.get("clave", "")).strip_edges()
+			if clave.is_empty() or usadas.has(clave):
+				continue
+			var texto := (clave + " " + str(opcion.get("texto", "")) + " " + str(opcion.get("jugador", ""))).to_lower()
+			var puntuacion := float(opcion.get("importancia", 1.0)) * 1.5
+			if not actividad.is_empty():
+				for palabra in actividad.split(" ", false):
+					if palabra.length() >= 4 and texto.contains(palabra):
+						puntuacion += 5.0
+			if (confianza >= 20.0 or amistad >= 25.0 or afecto >= 15.0) and (texto.contains("preocup") or texto.contains("siente") or texto.contains("personal") or texto.contains("proyecto")):
+				puntuacion += 2.0
+			if respeto >= 20.0 and (texto.contains("consejo") or texto.contains("trabajo") or texto.contains("conocimiento")):
+				puntuacion += 1.5
+			if clave == "estado_animo" and confianza < 10.0:
+				puntuacion -= 1.0
+			if relationship_system != null and is_instance_valid(_fuente):
+				puntuacion -= float(_contar_veces_tema(relationship_system.obtener_recuerdos(_fuente.get_personaje_game_id()), clave)) * 0.35
+			var dia_rotacion := int(Time.get_unix_time_from_system() / 86400.0)
+			puntuacion += float(posmod(hash(clave + str(dia_rotacion)), 100)) / 1000.0
+			if puntuacion > mejor_puntuacion:
+				mejor_puntuacion = puntuacion
+				mejor_indice = i
+		if mejor_indice < 0:
+			break
+		var seleccionada: Dictionary = candidatas[mejor_indice]
+		elegidas.append(seleccionada)
+		usadas.append(str(seleccionada.get("clave", "")))
+
+	elegidas.append({
+		"clave": "despedirse",
+		"texto": "Despedirse",
+		"jugador": "Ha sido bueno hablar contigo. Nos vemos.",
+		"respuesta": _obtener_reaccion_despedida_rutina(),
+		"evento": "despedida_amable",
+		"despedida": true,
+		"importancia": 1.0
+	})
+	return elegidas
+
 
 
 ## Los temas bloqueados por confianza, amistad o conversaciones previas
@@ -1539,17 +1653,32 @@ func _seleccionar_respuesta(indice: int) -> void:
 
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
 	var evento := str(opcion.get("evento", "")).strip_edges().to_lower()
-	if not personaje_id.is_empty() and not evento.is_empty() and relationship_system != null:
-		var contexto := {
-			"origen": "respuesta_dialogo",
-			"clave_dialogo": str(_lineas[0].get("texto", "")) if not _lineas.is_empty() else "",
-			"respuesta_jugador": texto_jugador
-		}
-		var clave_opcion := str(opcion.get("clave", texto_jugador)).strip_edges()
-		var evento_id := _crear_id_evento_respuesta(personaje_id, evento, clave_opcion)
-		relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
+	var clave_opcion := str(opcion.get("clave", texto_jugador)).strip_edges()
+	if not personaje_id.is_empty() and relationship_system != null:
+		if not evento.is_empty():
+			var contexto := {
+				"origen": "respuesta_dialogo",
+				"clave_dialogo": str(_lineas[0].get("texto", "")) if not _lineas.is_empty() else "",
+				"respuesta_jugador": texto_jugador,
+				"clave_opcion": clave_opcion
+			}
+			var evento_id := _crear_id_evento_respuesta(personaje_id, evento, clave_opcion)
+			relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
+		if not clave_opcion.is_empty() and not bool(opcion.get("despedida", false)):
+			relationship_system.registrar_recuerdo(personaje_id, {
+				"tipo": "tema_conversacion",
+				"clave": clave_opcion,
+				"titulo": str(opcion.get("texto", "")),
+				"frase_jugador": texto_jugador,
+				"respuesta_npc": texto_npc,
+				"importancia": float(opcion.get("importancia", 1.0)),
+				"momento": Time.get_datetime_string_from_system(true)
+			})
 
+	var es_despedida := bool(opcion.get("despedida", false))
 	_respuestas.clear()
+	if not es_despedida and is_instance_valid(_fuente):
+		_respuestas = _crear_opciones_conversacion()
 	_limpiar_botones_respuesta()
 	_lineas.append({"hablante": "Tú", "texto": texto_jugador})
 	_lineas.append({
@@ -2070,15 +2199,6 @@ func _crear_interfaz() -> void:
 	_boton_preguntar_item.tooltip_text = "Preguntar por un objeto"
 	_boton_preguntar_item.pressed.connect(_abrir_selector_items.bind("pregunta"))
 	columna_social.add_child(_boton_preguntar_item)
-
-	_boton_conversar = Button.new()
-	_boton_conversar.name = "DialogueTalkButton"
-	_boton_conversar.custom_minimum_size = Vector2(48, 48)
-	_boton_conversar.icon = _crear_icono_interaccion("dialogo")
-	_boton_conversar.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boton_conversar.tooltip_text = "Elegir tema de conversación"
-	_boton_conversar.pressed.connect(_abrir_selector_conversacion)
-	columna_social.add_child(_boton_conversar)
 
 	_selector_conversacion = PanelContainer.new()
 	_selector_conversacion.name = "DialogueTopicSelector"
