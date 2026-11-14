@@ -300,6 +300,22 @@ func _cargar_sprite() -> void:
 		queue_redraw()
 		return
 
+	# Los habitantes locales pueden tener una clave visual explícita aunque
+	# sus datos provengan de una plantilla de criatura. Priorizarla evita que
+	# _es_humano() o el nombre del registro impidan cargar su arte propio.
+	var sprite_key_local := str(datos.get("sprite_key", "")).strip_edges()
+	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\\\"):
+		for extension in [".png", ".PNG"]:
+			var ruta_personaje := "res://assets/art/characters/" + sprite_key_local + extension
+			if not ResourceLoader.exists(ruta_personaje):
+				continue
+			var textura_personaje := load(ruta_personaje) as Texture2D
+			if textura_personaje != null:
+				sprite.texture = textura_personaje
+				remove_meta("sprite_placeholder_humano")
+				set_meta("sprite_key_cargado", sprite_key_local)
+				return
+		set_meta("sprite_key_no_encontrado", sprite_key_local)
 
 	if _es_humano():
 		var sprite_personaje := str(datos.get("sprite_key", nombre_individual)).strip_edges()
