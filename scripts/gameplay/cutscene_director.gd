@@ -19,9 +19,13 @@ var _tween_camara: Tween = null
 var _zoom_original := Vector2.ONE
 var _estado_ui_cinematica: Array[Dictionary] = []
 var _estado_npcs_cinematica: Dictionary = {}
+var _modo_cinematica: String = "planeada"
+var _pausa_previa: bool = false
+var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
 
 
 func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = null) -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_player = player
 	_dialogue = dialogue
 	_camera = camera
@@ -37,7 +41,7 @@ func obtener_clave_actual() -> String:
 	return _clave_actual
 
 
-func ejecutar(clave: String, pasos: Array) -> bool:
+func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	var clave_limpia := clave.strip_edges()
 	if _ocupado or clave_limpia.is_empty() or pasos.is_empty():
 		return false
@@ -49,6 +53,12 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 	var generacion_actual := _generacion
 	_ocupado = true
 	_clave_actual = clave_limpia
+	_modo_cinematica = "en_vivo" if tipo.strip_edges().to_lower() in ["en_vivo", "vivo", "live"] else "planeada"
+	if _modo_cinematica == "planeada":
+		_pausa_previa = get_tree().paused
+		_process_mode_dialogo_previo = _dialogue.process_mode
+		_dialogue.process_mode = Node.PROCESS_MODE_ALWAYS
+		get_tree().paused = true
 	if not is_in_group("modal_ui"):
 		add_to_group("modal_ui")
 	_capturar_y_ocultar_ui()
@@ -88,9 +98,11 @@ func ejecutar(clave: String, pasos: Array) -> bool:
 			"mirar_npc":
 				_ejecutar_mirar_npc(paso)
 			"preparar_npc":
-				_preparar_npc_cinematica(paso)
+				if _modo_cinematica == "planeada":
+					_preparar_npc_cinematica(paso)
 			"fijar_npc":
-				_fijar_npc_cinematica(str(paso.get("npc", "")))
+				if _modo_cinematica == "planeada":
+					_fijar_npc_cinematica(str(paso.get("npc", "")))
 			"ruta_npc":
 				await _ejecutar_ruta_npc(paso, generacion_actual)
 				if generacion_actual != _generacion:
@@ -212,11 +224,36 @@ func _ejecutar_gesto_npc(paso: Dictionary) -> void:
 
 func _capturar_y_ocultar_ui() -> void:
 	_estado_ui_cinematica.clear()
-	for grupo in ["hud", "inventory"]:
-		for nodo in get_tree().get_nodes_in_group(grupo):
-			if nodo is CanvasItem and is_instance_valid(nodo):
-				_estado_ui_cinematica.append({"nodo": nodo, "visible": (nodo as CanvasItem).visible})
-				(nodo as CanvasItem).hide()
+	var ui_root := get_parent().get_node_or_null("UI") if is_instance_valid(get_parent()) else null
+	if not is_instance_valid(ui_root):
+		for grupo in ["hud", "inventory"]:
+			for nodo in get_tree().get_nodes_in_group(grupo):
+				_ocultar_elemento_ui(nodo)
+		return
+
+	var hud := ui_root.get_node_or_null("HUD")
+	for nodo in ui_root.get_children():
+		if nodo == hud:
+			for elemento_hud in hud.get_children():
+				_ocultar_elemento_ui(elemento_hud)
+		else:
+			_ocultar_elemento_ui(nodo)
+
+
+func _ocultar_elemento_ui(nodo: Node) -> void:
+	if not is_instance_valid(nodo):
+		return
+	var panel_dialogo: Node = _dialogue.dialogue_panel if is_instance_valid(_dialogue) else null
+	if nodo == panel_dialogo:
+		return
+	if is_instance_valid(panel_dialogo) and nodo.is_ancestor_of(panel_dialogo):
+		for hijo in nodo.get_children():
+			_ocultar_elemento_ui(hijo)
+		return
+	if nodo is CanvasItem:
+		var item := nodo as CanvasItem
+		_estado_ui_cinematica.append({"nodo": item, "visible": item.visible})
+		item.hide()
 
 
 func _guardar_estado_npc(npc: Creature) -> void:
@@ -260,7 +297,8 @@ func _ejecutar_ruta_npc(paso: Dictionary, generacion: int) -> void:
 	var npc := _buscar_npc(str(paso.get("npc", "")))
 	if not is_instance_valid(npc):
 		return
-	_guardar_estado_npc(npc)
+	if _modo_cinematica == "planeada":
+		_guardar_estado_npc(npc)
 	var puntos_variant: Variant = paso.get("puntos", [])
 	var puntos: Array = puntos_variant if puntos_variant is Array else []
 	if puntos.is_empty() and paso.has("x") and paso.has("y"):
@@ -357,9 +395,14 @@ func _finalizar() -> void:
 	if not _ocupado:
 		return
 	_restaurar_estado_temporal()
+	if _modo_cinematica == "planeada":
+		if is_instance_valid(_dialogue):
+			_dialogue.process_mode = _process_mode_dialogo_previo
+		get_tree().paused = _pausa_previa
 	var clave_finalizada := _clave_actual
 	_ocupado = false
 	_clave_actual = ""
+	_modo_cinematica = "planeada"
 	if is_in_group("modal_ui"):
 		remove_from_group("modal_ui")
 	cinematica_finalizada.emit(clave_finalizada)
