@@ -146,6 +146,12 @@ func establecer_ruta(ruta: PackedVector2Array) -> void:
 	_rutina_completada = false
 	if creature == null or not is_instance_valid(creature):
 		return
+
+	# Una orden de rutina debe reactivar el cuerpo que ejecuta
+	# Creature._physics_process(); desactivar sólo el nodo hijo de movimiento
+	# no basta si el NPC fue pausado por otro sistema.
+	creature.set_process(true)
+	creature.set_physics_process(true)
 	while _indice_ruta_rutina < _ruta_rutina.size() and creature.global_position.distance_to(_ruta_rutina[_indice_ruta_rutina]) <= 7.0:
 		_indice_ruta_rutina += 1
 	if _indice_ruta_rutina >= _ruta_rutina.size():
