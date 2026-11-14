@@ -400,9 +400,6 @@ func _crear_dialogo_rutina_en_transito() -> Dictionary:
 	return _crear_dialogo_rutina_contextual()
 
 
-func _crear_dialogo_rutina_contextual() -> Dictionary:
-
-
 ## Construye una respuesta desde el estado real que publica NPCScheduleSystem.
 ## El horario y la ubicación siguen siendo responsabilidad del sistema de rutinas;
 ## aquí sólo se adapta la conversación a ese estado.
@@ -506,28 +503,29 @@ func _obtener_texto_rutina_personaje(
 				return ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
 
 	var es_dia_libre := rutina_clave.begins_with("dia_libre")
-	var esta_en_casa := ubicacion.begins_with("casa_") or ubicacion == "castillo"
-	if esta_en_casa or actividad in ["volver_a_casa", "dormir", "descansar"] and not en_transito:
-		match nombre:
-			"elian":
-				return "Ya terminé con el horno por hoy. En casa puedo dejar de mirar el reloj y pensar en la próxima tanda." if not amable else "Pasa si quieres. Ya no tengo que vigilar el horno; me viene bien descansar y conversar un rato."
-			"bruna":
-				return "Por fin puedo dejar las herramientas. Mañana revisaré el trabajo con la cabeza más despejada." if not amable else "Estoy guardando mis cosas. Siéntate un momento; aquí no hace falta hablar por encima del ruido de la forja."
-			"darven":
-				return "La guardia también necesita descanso. Ya entregué el turno y no estoy de servicio ahora." if not amable else "El turno terminó. Me alegra tener un rato tranquilo; podemos hablar sin que esté pendiente de cada movimiento."
-			"saira":
-				return "Estoy haciendo cuentas y ordenando algunas notas. No todo el comercio ocurre detrás de un mostrador." if not amable else "Justo estaba cerrando mis cuentas. Quédate un momento; siempre es agradable conversar sin tener clientes esperando."
-			"narel":
-				return "Estoy intentando ordenar mis apuntes antes de olvidar por qué los escribí." if not amable else "He apartado los documentos por un rato. Si quieres, podemos conversar; quizá una pregunta tuya me ayude a ver algo de otra manera."
-			"abel":
-				return "Mis responsabilidades en el castillo no terminan cuando cae la noche. Ahora debo atender asuntos internos." if not amable else "He reservado este momento para los asuntos del castillo. Aun así, podemos conversar un poco."
-			"liam":
-				return "Estoy descansando en el castillo. Si necesitas algo, procura no interrumpir los asuntos de los demás." if not amable else "Aquí estoy tomando un respiro. Me alegra que hayas venido; podemos hablar un rato."
-			_:
-				return "Estoy en casa por ahora. Cuando termine lo que tengo entre manos, podremos conversar." if not amable else "Estoy descansando un momento en casa. Quédate si quieres, podemos conversar."
+	var ubicaciones_hogar: Array[String] = ["casa_elian", "casa_bruna", "casa_darven", "casa_saira", "casa_narel", "castillo"]
+	var esta_en_hogar := ubicaciones_hogar.has(ubicacion)
 
-	# Los días libres tienen pequeñas actividades propias, aunque el NPC no esté trabajando.
+	# Los días libres tienen pequeñas actividades propias, incluso cuando el NPC se queda en casa.
 	if es_dia_libre:
+		if esta_en_hogar:
+			match nombre:
+				"elian":
+					return "Hoy dejé el horno apagado. Estoy en casa disfrutando de una mañana sin pedidos." if not amable else "Hoy no hay hornadas pendientes. Quédate un rato; me alegra compartir contigo un día tranquilo."
+				"bruna":
+					return "Hoy no hay encargos ni herramientas que revisar. Me quedaré en casa un rato." if not amable else "Me tomé el día libre y estoy descansando en casa. Podemos conversar sin prisas."
+				"darven":
+					return "Hoy no estoy de guardia. Me quedaré cerca de casa y descansaré antes del siguiente turno." if not amable else "Incluso un guardia necesita un día tranquilo. Me alegra que hayas venido a conversar."
+				"saira":
+					return "Hoy mantengo el comercio cerrado. Estoy aprovechando para revisar mis asuntos personales." if not amable else "Hoy no hay cuentas del comercio que atender. Quédate un momento, podemos hablar con calma."
+				"narel":
+					return "Intento no convertir mi día libre en otra jornada de estudio. Por ahora me quedaré en casa." if not amable else "He dejado los documentos a un lado por hoy. Me vendrá bien conversar de algo distinto."
+				"abel":
+					return "Hoy tengo menos obligaciones y permaneceré en el castillo." if not amable else "He reservado parte del día para descansar aquí. Será agradable conversar sin reuniones pendientes."
+				"liam":
+					return "Hoy no tengo que salir del castillo. Aprovecharé para descansar." if not amable else "Estoy disfrutando de un día tranquilo en el castillo. Me alegra que hayas pasado."
+				_:
+					return "Hoy estoy descansando en casa. No tengo prisa por volver a mis obligaciones."
 		match nombre:
 			"elian":
 				return "Hoy no hay hornadas pendientes. Salí a tomar aire y ver qué se cuenta por la plaza." if not amable else "Hoy dejé descansar el horno. Me alegra encontrarte fuera de la rutina; ¿cómo te ha ido?"
@@ -545,6 +543,26 @@ func _obtener_texto_rutina_personaje(
 				return "Aproveché el día libre para salir un rato del castillo." if not amable else "Hoy no tengo tantas obligaciones. ¿Te apetece dar una vuelta por la plaza?"
 			_:
 				return "Hoy llevo un ritmo más tranquilo. No tengo prisa por volver a mis obligaciones." if not amable else "Hoy estoy libre y puedo conversar un rato contigo."
+
+	# En días laborables, la casa también tiene conversaciones propias.
+	if esta_en_hogar:
+		match nombre:
+			"elian":
+				return "Ya terminé con el horno por hoy. En casa puedo dejar de mirar el reloj y pensar en la próxima tanda." if not amable else "Pasa si quieres. Ya no tengo que vigilar el horno; me viene bien descansar y conversar un rato."
+			"bruna":
+				return "Por fin puedo dejar las herramientas. Mañana revisaré el trabajo con la cabeza más despejada." if not amable else "Estoy guardando mis cosas. Siéntate un momento; aquí no hace falta hablar por encima del ruido de la forja."
+			"darven":
+				return "La guardia también necesita descanso. Ya entregué el turno y no estoy de servicio ahora." if not amable else "El turno terminó. Me alegra tener un rato tranquilo; podemos hablar sin que esté pendiente de cada movimiento."
+			"saira":
+				return "Estoy haciendo cuentas y ordenando algunas notas. No todo el comercio ocurre detrás de un mostrador." if not amable else "Justo estaba cerrando mis cuentas. Quédate un momento; siempre es agradable conversar sin tener clientes esperando."
+			"narel":
+				return "Estoy intentando ordenar mis apuntes antes de olvidar por qué los escribí." if not amable else "He apartado los documentos por un rato. Si quieres, podemos conversar; quizá una pregunta tuya me ayude a ver algo de otra manera."
+			"abel":
+				return "Mis responsabilidades en el castillo no terminan cuando cae la noche. Ahora debo atender asuntos internos." if not amable else "He reservado este momento para los asuntos del castillo. Aun así, podemos conversar un poco."
+			"liam":
+				return "Estoy descansando en el castillo. Si necesitas algo, procura no interrumpir los asuntos de los demás." if not amable else "Aquí estoy tomando un respiro. Me alegra que hayas venido; podemos hablar un rato."
+			_:
+				return "Estoy en casa por ahora. Cuando termine lo que tengo entre manos, podremos conversar." if not amable else "Estoy descansando un momento en casa. Quédate si quieres, podemos conversar."
 
 	# Diálogos de trabajo: cada actividad tiene una respuesta propia, no sólo un cambio de destino.
 	match nombre:
