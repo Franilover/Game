@@ -22,6 +22,7 @@ var _estado_npcs_cinematica: Dictionary = {}
 var _modo_cinematica: String = "planeada"
 var _pausa_previa: bool = false
 var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
+var _seguimiento_camara_npcs: Array[String] = []
 
 
 func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = null) -> void:
@@ -31,6 +32,23 @@ func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = nul
 	_camera = camera
 	if is_instance_valid(_camera):
 		_zoom_original = _camera.zoom
+
+
+func _process(delta: float) -> void:
+	if _modo_cinematica != "en_vivo" or _seguimiento_camara_npcs.is_empty() or not is_instance_valid(_camera):
+		return
+	var posiciones: Array[Vector2] = []
+	for nombre in _seguimiento_camara_npcs:
+		var npc := _buscar_npc(nombre)
+		if is_instance_valid(npc) and npc.is_visible_in_tree() and npc.is_alive:
+			posiciones.append(npc.global_position)
+	if posiciones.is_empty():
+		return
+	var centro := Vector2.ZERO
+	for posicion in posiciones:
+		centro += posicion
+	centro /= float(posiciones.size())
+	_camera.global_position = _camera.global_position.lerp(centro, clampf(delta * 5.0, 0.0, 1.0))
 
 
 func esta_activo() -> bool:
@@ -358,6 +376,14 @@ func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
 		float(paso.get("x", _camera.global_position.x)),
 		float(paso.get("y", _camera.global_position.y))
 	)
+	_seguimiento_camara_npcs.clear()
+	if _modo_cinematica == "en_vivo":
+		var seguimiento_variant: Variant = paso.get("seguir_npcs", [])
+		if seguimiento_variant is Array:
+			for nombre_variant in seguimiento_variant:
+				var nombre := str(nombre_variant).strip_edges()
+				if not nombre.is_empty():
+					_seguimiento_camara_npcs.append(nombre)
 	var objetivo_path := str(paso.get("objetivo", "")).strip_edges()
 	if not objetivo_path.is_empty():
 		var objetivo := get_tree().root.get_node_or_null(objetivo_path) as Node2D
@@ -372,12 +398,14 @@ func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
 	_tween_camara.set_trans(Tween.TRANS_SINE)
 	_tween_camara.set_ease(Tween.EASE_IN_OUT)
 	_tween_camara.set_parallel(true)
-	_tween_camara.tween_property(_camera, "global_position", destino, duracion)
+	if _seguimiento_camara_npcs.is_empty():
+		_tween_camara.tween_property(_camera, "global_position", destino, duracion)
 	_tween_camara.tween_property(_camera, "zoom", Vector2.ONE * zoom_objetivo, duracion)
 	await _tween_camara.finished
 
 
 func _restaurar_camara() -> void:
+	_seguimiento_camara_npcs.clear()
 	if not is_instance_valid(_camera) or not is_instance_valid(_player):
 		return
 	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
@@ -403,6 +431,7 @@ func _finalizar() -> void:
 	_ocupado = false
 	_clave_actual = ""
 	_modo_cinematica = "planeada"
+	_seguimiento_camara_npcs.clear()
 	if is_in_group("modal_ui"):
 		remove_from_group("modal_ui")
 	cinematica_finalizada.emit(clave_finalizada)
