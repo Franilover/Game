@@ -18,6 +18,7 @@ var _control_rutina: bool = false
 var _pausado_temporalmente: bool = false
 var _ruta_rutina: PackedVector2Array = PackedVector2Array()
 var _indice_ruta_rutina: int = 0
+var _rutina_completada: bool = false
 
 var _rng := RandomNumberGenerator.new()
 
@@ -43,6 +44,7 @@ func configurar(
 	_pausado_temporalmente = false
 	_ruta_rutina.clear()
 	_indice_ruta_rutina = 0
+	_rutina_completada = false
 
 
 func configurar_chunk(nuevos_limites: Rect2) -> void:
@@ -130,18 +132,24 @@ func reanudar_temporalmente() -> void:
 
 
 func rutina_terminada() -> bool:
-	return _control_rutina and _indice_ruta_rutina >= _ruta_rutina.size()
+	return _control_rutina and _rutina_completada
+
+
+func rutina_en_ejecucion() -> bool:
+	return _control_rutina and not _rutina_completada and _indice_ruta_rutina < _ruta_rutina.size()
 
 
 func establecer_ruta(ruta: PackedVector2Array) -> void:
 	_control_rutina = true
 	_ruta_rutina = ruta
 	_indice_ruta_rutina = 0
+	_rutina_completada = false
 	if creature == null or not is_instance_valid(creature):
 		return
 	while _indice_ruta_rutina < _ruta_rutina.size() and creature.global_position.distance_to(_ruta_rutina[_indice_ruta_rutina]) <= 7.0:
 		_indice_ruta_rutina += 1
 	if _indice_ruta_rutina >= _ruta_rutina.size():
+		_rutina_completada = true
 		creature.velocity = Vector2.ZERO
 
 
@@ -149,6 +157,7 @@ func detener_por_rutina() -> void:
 	_control_rutina = true
 	_ruta_rutina.clear()
 	_indice_ruta_rutina = 0
+	_rutina_completada = false
 	_move_direction = Vector2.ZERO
 	_direccion_externa = Vector2.ZERO
 	if creature != null and is_instance_valid(creature):
@@ -159,6 +168,7 @@ func _procesar_ruta_rutina() -> void:
 	if creature == null or not is_instance_valid(creature):
 		return
 	if _indice_ruta_rutina >= _ruta_rutina.size() or move_speed <= 0.0:
+		_rutina_completada = _indice_ruta_rutina >= _ruta_rutina.size()
 		creature.velocity = Vector2.ZERO
 		return
 
@@ -166,6 +176,7 @@ func _procesar_ruta_rutina() -> void:
 	if creature.global_position.distance_to(destino) <= 7.0:
 		_indice_ruta_rutina += 1
 		if _indice_ruta_rutina >= _ruta_rutina.size():
+			_rutina_completada = true
 			creature.velocity = Vector2.ZERO
 			return
 		destino = _ruta_rutina[_indice_ruta_rutina]
@@ -196,6 +207,7 @@ func detener() -> void:
 	_control_rutina = false
 	_ruta_rutina.clear()
 	_indice_ruta_rutina = 0
+	_rutina_completada = false
 	_move_direction = Vector2.ZERO
 	_direccion_externa = Vector2.ZERO
 
