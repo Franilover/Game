@@ -1448,3 +1448,16 @@ func _nombre_partida_por_defecto() -> String:
 		numero += 1
 
 	return "Partida " + str(numero)
+
+
+## Progreso narrativo de conversaciones entre NPC.
+func obtener_conversaciones_npc() -> Dictionary:
+	var progreso_variant: Variant = world_state.flags.get("conversaciones_npc", {})
+	if progreso_variant is Dictionary:
+		return (progreso_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func guardar_conversaciones_npc(progreso: Dictionary) -> void:
+	world_state.flags["conversaciones_npc"] = progreso.duplicate(true)
+	_solicitar_guardado_rapido()
