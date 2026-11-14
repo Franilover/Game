@@ -957,7 +957,10 @@ func _agregar_parada_tour_elian(
 	explicacion: String,
 	preguntas: Array[Dictionary]
 ) -> void:
+	# Primero se revela el lugar; dejamos un instante para que el jugador
+	# pueda reconocer los edificios antes de que Elian empiece a explicarlos.
 	pasos.append({"tipo":"camara","x":posicion.x,"y":posicion.y - 75.0,"zoom":1.25,"duracion":1.1})
+	pasos.append({"tipo":"esperar","segundos":0.65})
 	pasos.append({"tipo":"mover_jugador","x":posicion.x,"y":posicion.y,"duracion":1.5})
 	pasos.append({"tipo":"ruta_npc","npc":"Elian","puntos":[posicion + Vector2(42.0, 12.0)],"duracion_por_tramo":1.5})
 	pasos.append({"tipo":"mirar_npc","npc":"Elian","izquierda":true})
@@ -990,6 +993,12 @@ func _agregar_conversacion_tour_elian(
 	lineas: Array[Dictionary],
 	preguntas: Array[Dictionary]
 ) -> void:
+	# Las conversaciones espontáneas también deben ocurrir en el sitio
+	# que se está mostrando, nunca antes del desplazamiento de cámara.
+	pasos.append({"tipo":"camara","x":posicion.x,"y":posicion.y - 75.0,"zoom":1.25,"duracion":1.0})
+	pasos.append({"tipo":"esperar","segundos":0.55})
+	pasos.append({"tipo":"mover_jugador","x":posicion.x,"y":posicion.y,"duracion":1.25})
+	pasos.append({"tipo":"ruta_npc","npc":"Elian","puntos":[posicion + Vector2(42.0, 12.0)],"duracion_por_tramo":1.25})
 	pasos.append({"tipo":"preparar_npc","npc":nombre_npc,"x":posicion.x - 42.0,"y":posicion.y + 12.0})
 	pasos.append({"tipo":"mirar_npc","npc":nombre_npc,"hacia_npc":"Elian"})
 	pasos.append({"tipo":"mirar_npc","npc":"Elian","hacia_npc":nombre_npc})
