@@ -1431,10 +1431,11 @@ func _actualizar_reloj_calendario() -> void:
 	# En reinos fijos no existe WorldAtmosphere. Conservamos la última
 	# lectura válida en vez de reemplazar el reloj por "no disponible".
 	if not is_instance_valid(_world_atmosphere_ref):
+		_calendar_label.text = "GARLIA\nMonedas: %d" % GameState.obtener_dinero()
 		return
 	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
-		_calendar_label.text = "GARLIA\nCargando calendario…"
+		_calendar_label.text = "GARLIA\nCargando calendario…\nMonedas: %d" % GameState.obtener_dinero()
 		return
 	var hora := str(tiempo.get("hora", "--:--"))
 	var periodo := str(tiempo.get("periodo", ""))
