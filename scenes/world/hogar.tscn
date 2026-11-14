@@ -35,7 +35,7 @@ visible = false
 script = ExtResource("5_interior")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
-position = Vector2(0, 180)
+position = Vector2(0, 0)
 
 [node name="EntradaCasa" type="Marker2D" parent="."]
 position = Vector2(0, -160)
