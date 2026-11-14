@@ -217,12 +217,18 @@ func _actualizar_panel_detalle() -> void:
 			var item_id := str(ingrediente.get("item_id", ""))
 			var cantidad := maxi(1, int(ingrediente.get("cantidad", 1)))
 			var disponible := _obtener_cantidad_item(inventario_disponible, item_id)
-			var color := "#8fbd78" if disponible >= cantidad else "#c87964"
-			partes.append("[color=" + color + "]" + _nombre_item(item_id) + "  " + str(disponible) + "/" + str(cantidad) + "[/color]")
+			var objeto_ingrediente := _buscar_item_catalogo(item_id)
+			var tiene_sprite := not objeto_ingrediente.is_empty() and ItemIconResolver.tiene_icono(objeto_ingrediente)
+			var color := "#8fbd78" if disponible >= cantidad and tiene_sprite else "#c87964"
+			var texto_ingrediente := _nombre_item(item_id) + "  " + str(disponible) + "/" + str(cantidad)
+			if not tiene_sprite:
+				texto_ingrediente += " · falta ilustración"
+			partes.append("[color=" + color + "]" + texto_ingrediente + "[/color]")
 	else:
 		partes.append("No hay materiales definidos.")
 	_detalle_ingredientes.text = "\n".join(partes)
-	_boton_craftear.disabled = _inventory == null or not _puede_craftear(_receta_seleccionada, inventario_disponible)
+	var ingredientes_ilustrados := _receta_ingredientes_tienen_sprites(_receta_seleccionada)
+	_boton_craftear.disabled = _inventory == null or not ingredientes_ilustrados or not _puede_craftear(_receta_seleccionada, inventario_disponible)
 
 
 func _craftear_seleccionado() -> void:
@@ -261,23 +267,27 @@ func _texto_ingredientes(receta: Dictionary) -> String:
 
 
 func _receta_tiene_sprites(receta: Dictionary) -> bool:
+	# La tarjeta representa el objeto que se fabrica. Los ingredientes sin
+	# ilustración se muestran como pendientes, pero no se habilita su uso.
 	var resultado_variant: Variant = receta.get("resultado", {})
 	if not resultado_variant is Dictionary:
 		return false
 	var resultado := resultado_variant as Dictionary
 	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
-	if item_resultado.is_empty() or not ItemIconResolver.tiene_icono(item_resultado):
-		return false
+	return not item_resultado.is_empty() and ItemIconResolver.tiene_icono(item_resultado)
 
+
+func _receta_ingredientes_tienen_sprites(receta: Dictionary) -> bool:
 	var ingredientes_variant: Variant = receta.get("ingredientes", [])
-	if ingredientes_variant is Array:
-		for ingrediente_variant in ingredientes_variant as Array:
-			if not ingrediente_variant is Dictionary:
-				return false
-			var ingrediente := ingrediente_variant as Dictionary
-			var item_ingrediente := _buscar_item_catalogo(str(ingrediente.get("item_id", "")))
-			if item_ingrediente.is_empty() or not ItemIconResolver.tiene_icono(item_ingrediente):
-				return false
+	if not ingredientes_variant is Array or (ingredientes_variant as Array).is_empty():
+		return false
+	for ingrediente_variant in ingredientes_variant as Array:
+		if not ingrediente_variant is Dictionary:
+			return false
+		var ingrediente := ingrediente_variant as Dictionary
+		var item_ingrediente := _buscar_item_catalogo(str(ingrediente.get("item_id", "")))
+		if item_ingrediente.is_empty() or not ItemIconResolver.tiene_icono(item_ingrediente):
+			return false
 	return true
 
 
@@ -336,6 +346,9 @@ func _craftear(receta: Dictionary) -> void:
 
 	var items: Array[Dictionary] = inventario.obtener_objetos()
 
+	if not _receta_ingredientes_tienen_sprites(receta):
+		_estado.text = "Esta receta todavía no está disponible: falta ilustrar uno o más ingredientes."
+		return
 	if not _puede_craftear(receta, items):
 		_estado.text = "Faltan materiales para " + str(receta.get("nombre", "esta receta")) + "."
 		return
