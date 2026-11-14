@@ -1453,6 +1453,10 @@ func _configurar_dialogo() -> void:
 		var callback_cinematica := Callable(self, "_al_cinematica_acontecimiento_solicitada")
 		if not _npc_conversation_system.is_connected("cinematica_acontecimiento_solicitada", callback_cinematica):
 			_npc_conversation_system.connect("cinematica_acontecimiento_solicitada", callback_cinematica)
+	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_signal("cinematica_reunion_nocturna_solicitada"):
+		var callback_reunion := Callable(self, "_al_cinematica_reunion_nocturna_solicitada")
+		if not _npc_conversation_system.is_connected("cinematica_reunion_nocturna_solicitada", callback_reunion):
+			_npc_conversation_system.connect("cinematica_reunion_nocturna_solicitada", callback_reunion)
 	if _bienvenida_torres_pendiente and str(_zone_manager.obtener_tipo_actual()) == "reino_torres":
 		call_deferred("_iniciar_bienvenida_torres")
 
@@ -1589,6 +1593,62 @@ func _al_cinematica_acontecimiento_solicitada(
 		{"tipo":"esperar","segundos":0.45}
 	]
 	await _cutscene_director.ejecutar("acontecimiento_%s" % clave, pasos, "en_vivo")
+
+
+## Escenas breves que acompañan algunas conversaciones de la reunión nocturna.
+## Se ejecutan dentro del salón y no interrumpen el diálogo ambiental de las burbujas.
+func _al_cinematica_reunion_nocturna_solicitada(
+	clave: String,
+	nombre_a: String,
+	nombre_b: String,
+	posicion_global: Vector2
+) -> void:
+	if not is_instance_valid(_player) or not is_instance_valid(_camera):
+		return
+	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
+		return
+	if is_instance_valid(_dialogue_system) and _dialogue_system.esta_abierto():
+		return
+	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return
+	var zona := _zone_manager.obtener_zona_actual()
+	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")) or str(zona.get("_entrada_interior_id")) != "castillo":
+		return
+	var npc_a := _buscar_npc_cinematica(nombre_a)
+	var npc_b := _buscar_npc_cinematica(nombre_b)
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
+		return
+	for npc in [npc_a, npc_b]:
+		if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != "castillo":
+			return
+		if not npc.is_visible_in_tree() or not npc.is_alive:
+			return
+	var centro := (npc_a.global_position + npc_b.global_position) * 0.5
+	if _player.global_position.distance_to(centro) > 520.0:
+		return
+	var gesto_a := "asentir"
+	var gesto_b := "asentir"
+	match clave:
+		"noche_darven_saira_rumores":
+			gesto_a = "negar"
+			gesto_b = "asentir"
+		"noche_mara_darven_puerta":
+			gesto_a = "sorpresa"
+			gesto_b = "asentir"
+		"noche_ivo_elian_mesa":
+			gesto_a = "asentir"
+			gesto_b = "saludar"
+	var zoom_actual := _camera.zoom.x
+	var pasos: Array[Dictionary] = [
+		{"tipo":"camara","x":centro.x,"y":centro.y,"seguir_npcs":[nombre_a,nombre_b],"zoom":zoom_actual * 1.12,"duracion":0.8},
+		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
+		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
+		{"tipo":"esperar","segundos":0.2},
+		{"tipo":"gesto_npc","npc":nombre_a,"gesto":gesto_a,"duracion":0.65},
+		{"tipo":"gesto_npc","npc":nombre_b,"gesto":gesto_b,"duracion":0.65},
+		{"tipo":"esperar","segundos":0.35}
+	]
+	await _cutscene_director.ejecutar("reunion_nocturna_%s" % clave, pasos, "en_vivo")
 
 
 func _configurar_admin() -> void:
