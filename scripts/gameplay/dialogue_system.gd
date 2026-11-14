@@ -415,6 +415,24 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 				texto = "He conservado el %s que me diste. Es interesante cómo un objeto puede adquirir significado por su contexto." % item_nombre if reaccion in ["encanta", "gusta"] else "Recuerdo el %s que me entregaste. Gracias por el detalle." % item_nombre
 			_:
 				texto = "Quería agradecerte otra vez el %s que me regalaste." % item_nombre
+	elif tipo == "tema_conversacion":
+		var titulo_tema := str(recuerdo.get("titulo", "aquella conversación")).strip_edges()
+		var frase_jugador := str(recuerdo.get("frase_jugador", "")).strip_edges()
+		if frase_jugador.is_empty():
+			return {}
+		match clave_nombre:
+			"elian":
+				texto = "Me he quedado pensando en nuestra conversación sobre %s. Recuerdo que dijiste: %s ¿Cómo lo ves ahora?" % [titulo_tema, frase_jugador]
+			"bruna":
+				texto = "Sobre lo que hablamos de %s: recuerdo tu punto de vista. Dijiste: %s ¿Sigues pensando igual?" % [titulo_tema, frase_jugador]
+			"darven":
+				texto = "Quería retomar lo que hablamos sobre %s. Recuerdo que comentaste: %s ¿Ha cambiado algo desde entonces?" % [titulo_tema, frase_jugador]
+			"saira":
+				texto = "¡Oye! Me acordé de nuestra charla sobre %s. Dijiste algo que se me quedó dando vueltas: %s ¿Todavía lo ves así?" % [titulo_tema, frase_jugador]
+			"narel":
+				texto = "He vuelto sobre nuestra conversación acerca de %s. Tu comentario fue: %s ¿Mantienes esa conclusión?" % [titulo_tema, frase_jugador]
+			_:
+				texto = "Recuerdo que hablamos sobre %s y que dijiste: %s" % [titulo_tema, frase_jugador]
 	elif tipo == "evento_social":
 		var evento := str(recuerdo.get("evento", "")).strip_edges().to_lower()
 		var contexto_variant: Variant = recuerdo.get("contexto", {})
