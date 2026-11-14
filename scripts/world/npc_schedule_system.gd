@@ -127,6 +127,8 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
 		var npc := npc_variant as Creature
+		if _actualizar_actividad_social(npc, delta):
+			continue
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
 		_aplicar_rutina(npc, dia_semana, minutos)
@@ -168,6 +170,57 @@ func iniciar_acercamiento_social(npc: Creature, jugador: Node2D) -> bool:
 		movimiento.establecer_ruta(ruta)
 		return true
 	return false
+
+
+
+## Envía temporalmente a un NPC a una actividad cotidiana. Al terminar,
+## recupera su rutina desde la posición alcanzada.
+func iniciar_actividad_social(npc: Creature, destino_local: Vector2, duracion: float = 5.0) -> bool:
+	if not is_instance_valid(npc) or not _malla_lista or _malla == null or not is_instance_valid(_zona):
+		return false
+	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("rutina_en_edificio", false)):
+		return false
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento == null:
+		return false
+	var destino_global := _zona.to_global(destino_local)
+	var ruta := _crear_ruta(npc.global_position, destino_global)
+	if ruta.is_empty():
+		return false
+	npc.set_meta("actividad_social_activa", true)
+	npc.set_meta("actividad_social_tiempo", maxf(duracion, 1.0))
+	npc.set_meta("acercamiento_social_activo", true)
+	npc.set_meta("rutina_en_transito", true)
+	movimiento.establecer_ruta(ruta)
+	return true
+
+
+func _actualizar_actividad_social(npc: Creature, delta: float) -> bool:
+	if not bool(npc.get_meta("actividad_social_activa", false)):
+		return false
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento == null:
+		_finalizar_actividad_social(npc)
+		return false
+	if movimiento.rutina_terminada():
+		var restante := float(npc.get_meta("actividad_social_tiempo", 5.0)) - delta
+		npc.set_meta("actividad_social_tiempo", restante)
+		if restante <= 0.0:
+			_finalizar_actividad_social(npc)
+	return true
+
+
+func _finalizar_actividad_social(npc: Creature) -> void:
+	if not is_instance_valid(npc):
+		return
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento != null:
+		movimiento.detener_por_rutina()
+	npc.remove_meta("actividad_social_activa")
+	npc.remove_meta("actividad_social_tiempo")
+	npc.remove_meta("acercamiento_social_activo")
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("rutina_firma", "")
 
 
 ## Al terminar o cancelar la iniciativa, el NPC retoma su destino canónico
@@ -252,7 +305,7 @@ func _construir_malla(zona: Node2D) -> void:
 
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
-	if bool(npc.get_meta("acercamiento_social_activo", false)):
+	if bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
 		return
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
