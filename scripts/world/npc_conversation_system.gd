@@ -5,6 +5,9 @@ const INTERVALO_BUSQUEDA := 0.5
 const DISTANCIA_ENTRE_NPC := 180.0
 const DISTANCIA_JUGADOR := 220.0
 const DISTANCIA_INICIATIVA := 112.0
+const DISTANCIA_BUSQUEDA_INICIATIVA := 280.0
+const DISTANCIA_LLEGADA_INICIATIVA := 76.0
+const TIEMPO_MAX_ACERCAMIENTO := 16.0
 const AMISTAD_INICIATIVA_MINIMA := 8.0
 const AFECTO_INICIATIVA_MINIMO := 5.0
 const DURACION_LINEA := 3.2
@@ -130,6 +133,9 @@ var _relationship_system: RelationshipSystemService = null
 var _mission_manager: MissionManagerService = null
 var _progreso_parejas: Dictionary = {}
 var _npc_por_id: Dictionary = {}
+var _acercamiento_activo: Dictionary = {}
+var _intentos_acercamiento_hasta: Dictionary = {}
+var _tiempo_sistema := 0.0
 var _temporizador_busqueda := 0.0
 var _temporizador_linea := 0.0
 var _conversacion_activa: Dictionary = {}
@@ -165,10 +171,13 @@ func actualizar(
 	dialogo: DialogueSystem,
 	gestor_misiones: Node
 ) -> void:
+	_tiempo_sistema += maxf(delta, 0.0)
 	if not is_instance_valid(_zone_manager):
+		_cancelar_acercamiento()
 		_ocultar_burbujas()
 		return
 	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		_cancelar_acercamiento()
 		_finalizar_conversacion()
 		return
 	if not is_instance_valid(_world_atmosphere):
@@ -176,6 +185,9 @@ func actualizar(
 
 	if not _conversacion_activa.is_empty():
 		_actualizar_conversacion(delta, jugador, dialogo)
+		return
+	if not _acercamiento_activo.is_empty():
+		_actualizar_acercamiento(delta, jugador, dialogo)
 		return
 
 	_temporizador_busqueda += delta
@@ -295,13 +307,11 @@ func _actualizar_iniciativas(
 	dialogo: DialogueSystem,
 	gestor_misiones: Node
 ) -> bool:
-	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
-		return false
-	if not is_instance_valid(dialogo):
+	if not is_instance_valid(jugador) or not jugador.is_inside_tree() or not is_instance_valid(dialogo):
 		return false
 	if jugador is CharacterBody2D and (jugador as CharacterBody2D).velocity.length() > 8.0:
 		return false
-	if is_instance_valid(dialogo) and dialogo.esta_abierto():
+	if dialogo.esta_abierto():
 		return false
 	var tiempo := _world_atmosphere.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
@@ -310,6 +320,7 @@ func _actualizar_iniciativas(
 	var iniciativas := _obtener_iniciativas()
 	if not _puede_iniciar_iniciativa_global(iniciativas, tiempo):
 		return false
+
 	var misiones_variant: Variant = iniciativas.get("misiones", {})
 	var misiones: Dictionary = misiones_variant if misiones_variant is Dictionary else {}
 	for mision_id_variant in misiones.keys():
@@ -319,9 +330,6 @@ func _actualizar_iniciativas(
 			continue
 		var registro := registro_variant as Dictionary
 		if bool(registro.get("seguimiento_realizado", false)):
-			continue
-		var npc := _npc_por_id.get(str(registro.get("personaje_id", ""))) as Creature
-		if not _npc_puede_conversar(npc) or jugador.global_position.distance_to(npc.global_position) > DISTANCIA_INICIATIVA:
 			continue
 		if not _seguimiento_mision_vencido(registro, tiempo):
 			continue
@@ -333,26 +341,29 @@ func _actualizar_iniciativas(
 		var estado := str(estado_mision.get("estado", ""))
 		if estado != "activa" and estado != "completada" and estado != "reclamada":
 			continue
+		var npc := _npc_por_id.get(str(registro.get("personaje_id", ""))) as Creature
+		if not _npc_puede_acercarse(npc):
+			continue
+		var distancia := jugador.global_position.distance_to(npc.global_position)
+		if distancia > DISTANCIA_BUSQUEDA_INICIATIVA or _esta_en_enfriamiento_acercamiento(npc.get_personaje_game_id()):
+			continue
 		var datos_dialogo := _crear_dialogo_seguimiento_mision(npc, registro, estado == "completada" or estado == "reclamada")
-		if dialogo.abrir_iniciativa_npc(datos_dialogo, npc):
-			registro["seguimiento_realizado"] = true
-			misiones[mision_id] = registro
-			iniciativas["misiones"] = misiones
-			_registrar_iniciativa_global(iniciativas, tiempo)
-			_guardar_iniciativas(iniciativas)
+		if _intentar_iniciativa_o_acercamiento(npc, jugador, dialogo, datos_dialogo, "mision", mision_id, registro, tiempo):
 			return true
 
 	var ultima_variant: Variant = iniciativas.get("ultima_iniciativa_dia", {})
 	var ultima: Dictionary = ultima_variant if ultima_variant is Dictionary else {}
 	var dia_actual := _clave_dia(tiempo)
-	for npc in _npc_por_id.values():
-		if not npc is Creature:
+	for npc_variant in _npc_por_id.values():
+		if not npc_variant is Creature:
 			continue
-		var personaje := npc as Creature
-		if not _npc_puede_conversar(personaje) or jugador.global_position.distance_to(personaje.global_position) > DISTANCIA_INICIATIVA:
+		var personaje := npc_variant as Creature
+		if not _npc_puede_acercarse(personaje):
 			continue
 		var personaje_id := personaje.get_personaje_game_id().strip_edges()
 		if personaje_id.is_empty() or str(ultima.get(personaje_id, "")) == dia_actual:
+			continue
+		if _esta_en_enfriamiento_acercamiento(personaje_id):
 			continue
 		if not is_instance_valid(_relationship_system):
 			continue
@@ -362,14 +373,161 @@ func _actualizar_iniciativas(
 		var dia_ultima := str(ultima.get(personaje_id, ""))
 		if not dia_ultima.is_empty() and _dias_entre_claves(dia_ultima, tiempo) < 2:
 			continue
+		if jugador.global_position.distance_to(personaje.global_position) > DISTANCIA_BUSQUEDA_INICIATIVA:
+			continue
 		var datos_amigo := _crear_dialogo_iniciativa_amigo(personaje, tiempo)
-		if dialogo.abrir_iniciativa_npc(datos_amigo, personaje):
-			ultima[personaje_id] = dia_actual
-			iniciativas["ultima_iniciativa_dia"] = ultima
-			_registrar_iniciativa_global(iniciativas, tiempo)
-			_guardar_iniciativas(iniciativas)
+		if _intentar_iniciativa_o_acercamiento(personaje, jugador, dialogo, datos_amigo, "amistad", "", {}, tiempo):
 			return true
 	return false
+
+
+func _npc_puede_acercarse(npc: Creature) -> bool:
+	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+		return false
+	if bool(npc.get_meta("rutina_en_edificio", false)) or bool(npc.get_meta("rutina_en_transito", false)):
+		return false
+	if bool(npc.get_meta("acercamiento_social_activo", false)):
+		return false
+	return true
+
+
+func _intentar_iniciativa_o_acercamiento(
+	npc: Creature,
+	jugador: Node2D,
+	dialogo: DialogueSystem,
+	datos_dialogo: Dictionary,
+	tipo: String,
+	mision_id: String,
+	registro_mision: Dictionary,
+	tiempo: Dictionary
+) -> bool:
+	var distancia := jugador.global_position.distance_to(npc.global_position)
+	if distancia <= DISTANCIA_INICIATIVA:
+		if not dialogo.abrir_iniciativa_npc(datos_dialogo, npc):
+			return false
+		_registrar_iniciativa_realizada(npc, tipo, mision_id, registro_mision, tiempo)
+		return true
+
+	var sistema_rutinas := get_tree().get_first_node_in_group("npc_schedule_system") as NPCScheduleSystem
+	if not is_instance_valid(sistema_rutinas):
+		return false
+	if not sistema_rutinas.iniciar_acercamiento_social(npc, jugador):
+		_intentos_acercamiento_hasta[npc.get_personaje_game_id()] = _tiempo_sistema + 20.0
+		return false
+	_acercamiento_activo = {
+		"npc": npc,
+		"jugador_inicio": jugador.global_position,
+		"tiempo_restante": TIEMPO_MAX_ACERCAMIENTO,
+		"datos_dialogo": datos_dialogo.duplicate(true),
+		"tipo": tipo,
+		"mision_id": mision_id,
+		"registro_mision": registro_mision.duplicate(true),
+		"personaje_id": npc.get_personaje_game_id(),
+		"dialogo_iniciado": false
+	}
+	return true
+
+
+func _actualizar_acercamiento(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+	var npc := _acercamiento_activo.get("npc") as Creature
+	if not is_instance_valid(npc):
+		_cancelar_acercamiento()
+		return
+	if bool(_acercamiento_activo.get("dialogo_iniciado", false)):
+		if is_instance_valid(dialogo) and dialogo.esta_abierto():
+			return
+		_finalizar_acercamiento()
+		return
+	if not is_instance_valid(jugador) or not jugador.is_inside_tree() or not is_instance_valid(dialogo):
+		_cancelar_acercamiento()
+		return
+	if dialogo.esta_abierto():
+		_cancelar_acercamiento()
+		return
+	if not _npc_puede_acercarse(npc) or npc.velocity.length() > 5.0:
+		_cancelar_acercamiento()
+		return
+	if jugador is CharacterBody2D and (jugador as CharacterBody2D).velocity.length() > 8.0:
+		_cancelar_acercamiento()
+		return
+	var posicion_inicial: Vector2 = _acercamiento_activo.get("jugador_inicio", jugador.global_position)
+	if jugador.global_position.distance_to(posicion_inicial) > 72.0:
+		_cancelar_acercamiento()
+		return
+	_acercamiento_activo["tiempo_restante"] = float(_acercamiento_activo.get("tiempo_restante", TIEMPO_MAX_ACERCAMIENTO)) - maxf(delta, 0.0)
+	if jugador.global_position.distance_to(npc.global_position) <= DISTANCIA_LLEGADA_INICIATIVA:
+		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento != null:
+			movimiento.detener_por_rutina()
+		var datos_dialogo_variant: Variant = _acercamiento_activo.get("datos_dialogo", {})
+		var datos_dialogo: Dictionary = datos_dialogo_variant if datos_dialogo_variant is Dictionary else {}
+		if dialogo.abrir_iniciativa_npc(datos_dialogo, npc):
+			_acercamiento_activo["dialogo_iniciado"] = true
+			var tiempo := _world_atmosphere.obtener_tiempo()
+			_registrar_iniciativa_realizada(
+				npc,
+				str(_acercamiento_activo.get("tipo", "")),
+				str(_acercamiento_activo.get("mision_id", "")),
+				_acercamiento_activo.get("registro_mision", {}) as Dictionary,
+				tiempo
+			)
+			return
+		_cancelar_acercamiento()
+		return
+	var movimiento_actual := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if float(_acercamiento_activo.get("tiempo_restante", 0.0)) <= 0.0 or (movimiento_actual != null and movimiento_actual.rutina_terminada()):
+		_cancelar_acercamiento()
+
+
+func _registrar_iniciativa_realizada(
+	npc: Creature,
+	tipo: String,
+	mision_id: String,
+	registro_mision: Dictionary,
+	tiempo: Dictionary
+) -> void:
+	var iniciativas := _obtener_iniciativas()
+	if tipo == "mision":
+		var misiones_variant: Variant = iniciativas.get("misiones", {})
+		var misiones: Dictionary = misiones_variant if misiones_variant is Dictionary else {}
+		var registro := registro_mision.duplicate(true)
+		registro["seguimiento_realizado"] = true
+		misiones[mision_id] = registro
+		iniciativas["misiones"] = misiones
+	elif tipo == "amistad":
+		var ultima_variant: Variant = iniciativas.get("ultima_iniciativa_dia", {})
+		var ultima: Dictionary = ultima_variant if ultima_variant is Dictionary else {}
+		ultima[npc.get_personaje_game_id()] = _clave_dia(tiempo)
+		iniciativas["ultima_iniciativa_dia"] = ultima
+	_registrar_iniciativa_global(iniciativas, tiempo)
+	_guardar_iniciativas(iniciativas)
+
+
+func _esta_en_enfriamiento_acercamiento(personaje_id: String) -> bool:
+	return _tiempo_sistema < float(_intentos_acercamiento_hasta.get(personaje_id, 0.0))
+
+
+func _cancelar_acercamiento() -> void:
+	if _acercamiento_activo.is_empty():
+		return
+	var npc := _acercamiento_activo.get("npc") as Creature
+	var personaje_id := str(_acercamiento_activo.get("personaje_id", ""))
+	if not bool(_acercamiento_activo.get("dialogo_iniciado", false)) and not personaje_id.is_empty():
+		_intentos_acercamiento_hasta[personaje_id] = _tiempo_sistema + 20.0
+	if is_instance_valid(npc):
+		var sistema_rutinas := get_tree().get_first_node_in_group("npc_schedule_system") as NPCScheduleSystem
+		if is_instance_valid(sistema_rutinas):
+			sistema_rutinas.finalizar_acercamiento_social(npc)
+	_acercamiento_activo.clear()
+
+
+func _finalizar_acercamiento() -> void:
+	var npc := _acercamiento_activo.get("npc") as Creature
+	if is_instance_valid(npc):
+		var sistema_rutinas := get_tree().get_first_node_in_group("npc_schedule_system") as NPCScheduleSystem
+		if is_instance_valid(sistema_rutinas):
+			sistema_rutinas.finalizar_acercamiento_social(npc)
+	_acercamiento_activo.clear()
 
 
 func _puede_iniciar_iniciativa_global(iniciativas: Dictionary, tiempo: Dictionary) -> bool:
