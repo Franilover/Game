@@ -797,7 +797,7 @@ func _ejecutar_accion_dialogo() -> void:
 
 
 func _crear_respuestas_rutina() -> Array[Dictionary]:
-	return [
+	var respuestas: Array[Dictionary] = [
 		{
 			"texto": "Preguntar cómo va su trabajo",
 			"jugador": "¿Cómo va todo con lo que estás haciendo?",
@@ -816,44 +816,66 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 			"evento": "compartir_conocimiento"
 		}
 	]
+	return respuestas
 
 
 func _obtener_reaccion_pregunta_rutina() -> String:
 	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
 	match nombre.to_lower():
-		"elian": return "Va bien. Cada tanda tiene sus pequeños problemas, pero ya conozco el ritmo del horno."
-		"bruna": return "El trabajo avanza. Lo importante es no apresurar una pieza y tener que empezar de nuevo."
-		"darven": return "Todo está en orden por ahora. Aun así, prefiero comprobarlo personalmente antes de darlo por hecho."
-		"saira": return "Bastante bien. Siempre hay algo que revisar: precios, encargos o mercancía que todavía no llega."
-		"narel": return "He avanzado, aunque todavía necesito contrastar algunas observaciones antes de sacar conclusiones."
-		"abel": return "El reino sigue adelante. Mi tarea consiste en escuchar sus problemas antes de que se vuelvan más grandes."
-		"liam": return "Todo tranquilo por ahora. A veces viene bien salir y ver qué ocurre fuera del castillo."
+		"elian":
+			return "Va bien. Cada tanda tiene sus pequeños problemas, pero ya conozco el ritmo del horno."
+		"bruna":
+			return "El trabajo avanza. Lo importante es no apresurar una pieza y tener que empezar de nuevo."
+		"darven":
+			return "Todo está en orden por ahora. Aun así, prefiero comprobarlo personalmente antes de darlo por hecho."
+		"saira":
+			return "Bastante bien. Siempre hay algo que revisar: precios, encargos o mercancía que todavía no llega."
+		"narel":
+			return "He avanzado, aunque todavía necesito contrastar algunas observaciones antes de sacar conclusiones."
+		"abel":
+			return "El reino sigue adelante. Mi tarea consiste en escuchar sus problemas antes de que se vuelvan más grandes."
+		"liam":
+			return "Todo tranquilo por ahora. A veces viene bien salir y ver qué ocurre fuera del castillo."
 	return "Voy avanzando. Gracias por preguntar; no todos se detienen a hacerlo."
 
 
 func _obtener_reaccion_apoyo_rutina() -> String:
 	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
 	match nombre.to_lower():
-		"elian": return "Gracias. A veces sólo se ve el pan terminado y no todo el trabajo que hay detrás."
-		"bruna": return "Lo aprecio. Una pieza bien hecha lleva tiempo, incluso cuando nadie nota los detalles."
-		"darven": return "Gracias. La guardia suele pasar desapercibida cuando todo marcha bien, y eso también es una buena señal."
-		"saira": return "Me alegra que lo notes. Mantener un comercio en marcha requiere más cuentas de las que parece."
-		"narel": return "Gracias. Investigar puede ser solitario; se agradece que alguien valore el esfuerzo."
-		"abel": return "Te agradezco que lo digas. Gobernar también consiste en atender tareas que casi nadie llega a ver."
-		"liam": return "Gracias. A veces parece que sólo estoy dando vueltas, pero también intento ayudar a mi manera."
+		"elian":
+			return "Gracias. A veces sólo se ve el pan terminado y no todo el trabajo que hay detrás."
+		"bruna":
+			return "Lo aprecio. Una pieza bien hecha lleva tiempo, incluso cuando nadie nota los detalles."
+		"darven":
+			return "Gracias. La guardia suele pasar desapercibida cuando todo marcha bien, y eso también es una buena señal."
+		"saira":
+			return "Me alegra que lo notes. Mantener un comercio en marcha requiere más cuentas de las que parece."
+		"narel":
+			return "Gracias. Investigar puede ser solitario; se agradece que alguien valore el esfuerzo."
+		"abel":
+			return "Te agradezco que lo digas. Gobernar también consiste en atender tareas que casi nadie llega a ver."
+		"liam":
+			return "Gracias. A veces parece que sólo estoy dando vueltas, pero también intento ayudar a mi manera."
 	return "Gracias por decirlo. Significa más de lo que imaginas."
 
 
 func _obtener_reaccion_conocimiento_rutina() -> String:
 	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
 	match nombre.to_lower():
-		"elian": return "¿Ah, sí? Cuéntame. Siempre se puede aprender algo nuevo, incluso lejos del horno."
-		"bruna": return "Eso podría servirme. ¿Tiene que ver con materiales, herramientas o algo completamente distinto?"
-		"darven": return "Te escucho. Cualquier conocimiento que ayude a prevenir un problema merece atención."
-		"saira": return "Eso suena interesante. La información también tiene valor; cuéntame qué descubriste."
-		"narel": return "¡Eso sí que me interesa! ¿Dónde lo aprendiste? Tal vez podamos comprobarlo juntos."
-		"abel": return "Me interesa conocerlo. Las decisiones del reino mejoran cuando escuchamos nuevas perspectivas."
-		"liam": return "¿En serio? Me gusta escuchar cosas nuevas. Cuéntame un poco más."
+		"elian":
+			return "¿Ah, sí? Cuéntame. Siempre se puede aprender algo nuevo, incluso lejos del horno."
+		"bruna":
+			return "Eso podría servirme. ¿Tiene que ver con materiales, herramientas o algo completamente distinto?"
+		"darven":
+			return "Te escucho. Cualquier conocimiento que ayude a prevenir un problema merece atención."
+		"saira":
+			return "Eso suena interesante. La información también tiene valor; cuéntame qué descubriste."
+		"narel":
+			return "¡Eso sí que me interesa! ¿Dónde lo aprendiste? Tal vez podamos comprobarlo juntos."
+		"abel":
+			return "Me interesa conocerlo. Las decisiones del reino mejoran cuando escuchamos nuevas perspectivas."
+		"liam":
+			return "¿En serio? Me gusta escuchar cosas nuevas. Cuéntame un poco más."
 	return "Me interesa lo que dices. Cuéntame más cuando tengamos un momento."
 
 
