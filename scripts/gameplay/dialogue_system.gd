@@ -535,9 +535,10 @@ func _actualizar_retrato(hablante: String) -> void:
 			continue
 		for extension in [".png", ".PNG"]:
 			var ruta: String = "res://assets/art/characters/heads/" + nombre_retrato + str(extension)
-			if not ResourceLoader.exists(ruta):
+			if not FileAccess.file_exists(ruta) and not ResourceLoader.exists(ruta):
 				continue
-			textura = load(ruta) as Texture2D
+			var recurso_retrato: Resource = ResourceLoader.load(ruta)
+			textura = recurso_retrato as Texture2D
 			if textura != null:
 				break
 		if textura != null:
