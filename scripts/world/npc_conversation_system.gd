@@ -275,6 +275,126 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 	return false
 
 
+
+## Permite que el jugador intervenga en una conversación ambiental sin sustituir
+## la cadena entre NPC. El diálogo modal pausa el avance de las burbujas y,
+## al cerrarse, la conversación continúa desde la intervención siguiente.
+func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2D, dialogo: DialogueSystem) -> bool:
+	if _conversacion_activa.is_empty():
+		return false
+	if not is_instance_valid(npc_interactuado) or not is_instance_valid(jugador) or not is_instance_valid(dialogo):
+		return false
+	if dialogo.esta_abierto() or not npc_interactuado.is_inside_tree():
+		return false
+
+	var nombre := npc_interactuado.get_nombre_visual().strip_edges().to_lower()
+	var npc_a_nombre := str(_conversacion_activa.get("npc_a", ""))
+	var npc_b_nombre := str(_conversacion_activa.get("npc_b", ""))
+	if nombre != npc_a_nombre and nombre != npc_b_nombre:
+		return false
+
+	var npc_a := _npc_por_nombre.get(npc_a_nombre) as Creature
+	var npc_b := _npc_por_nombre.get(npc_b_nombre) as Creature
+	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		return false
+	if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR + 48.0 and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR + 48.0:
+		return false
+
+	var lineas: Array = _conversacion_activa.get("lineas", [])
+	if _indice_linea < 0 or _indice_linea >= lineas.size() or not lineas[_indice_linea] is Dictionary:
+		return false
+	var linea_actual: Dictionary = lineas[_indice_linea]
+	var hablante_actual := str(linea_actual.get("npc", "")).strip_edges().to_lower()
+	var otro_nombre := npc_b_nombre if nombre == npc_a_nombre else npc_a_nombre
+	var otro_npc := _npc_por_nombre.get(otro_nombre) as Creature
+	if not is_instance_valid(otro_npc):
+		return false
+
+	var tema := str(linea_actual.get("texto", "")).strip_edges()
+	var nombre_visible := npc_interactuado.get_nombre_visual()
+	var nombre_otro := otro_npc.get_nombre_visual()
+	var respuestas: Array[Dictionary] = _crear_respuestas_intervencion(nombre, nombre_otro, tema)
+	var datos_dialogo := {
+		"clave": "intervencion_social_%s_%s_%d" % [nombre, otro_nombre, int(Time.get_unix_time_from_system())],
+		"lineas": [
+			{"hablante": nombre_visible, "texto": "¡Ah, justo estábamos hablando de esto! ¿Tú qué opinas?"},
+		],
+		"respuestas": respuestas,
+		"_iniciativa_npc": true
+	}
+	if not dialogo.abrir_iniciativa_npc(datos_dialogo, npc_interactuado):
+		return false
+
+	_ocultar_burbujas()
+	return true
+
+
+func _crear_respuestas_intervencion(nombre_npc: String, nombre_otro: String, tema: String) -> Array[Dictionary]:
+	var respuestas: Array[Dictionary] = []
+	var respuesta_interes := "Sí, es un tema que nos importa. Me alegra que te interese."
+	var respuesta_pregunta := "Lo estábamos comentando porque surgió mientras hablábamos. Podemos contarte más."
+	var respuesta_opinion := "Puede ser. Cada uno lo ve desde su experiencia, y está bien escucharlo."
+	var despedida := "Claro, no te preocupes. Ya seguiremos hablando. ¡Nos vemos!"
+
+	match nombre_npc:
+		"elian":
+			respuesta_interes = "¡Sí! A veces uno empieza hablando de una cosa y termina descubriendo otra. Me alegra que te unas."
+			respuesta_pregunta = "¡Buena pregunta! Darven y yo lo estábamos comentando porque nos pareció importante. Si quieres, luego te cuento el resto."
+			respuesta_opinion = "No lo había pensado de esa manera. Está bien escuchar otra perspectiva; así la conversación se pone más interesante."
+			despedida = "¡Claro! No te preocupes, ya tendremos tiempo de conversar. ¡Nos vemos!"
+		"bruna":
+			respuesta_interes = "Es un asunto que merece atención. Si te interesa, puedes quedarte a escuchar."
+			respuesta_pregunta = "Lo mencionamos por algo que ocurrió hace poco. Prefiero explicar los detalles antes de sacar conclusiones."
+			respuesta_opinion = "Puede que tengas razón. Habría que comprobarlo antes de decidir."
+			despedida = "De acuerdo. Nos vemos luego."
+		"darven":
+			respuesta_interes = "Es bueno que prestes atención. Estas cosas conviene hablarlas con calma."
+			respuesta_pregunta = "Lo comentábamos por una situación reciente. Puedo explicártela cuando terminemos aquí."
+			respuesta_opinion = "Es una posibilidad. La tendré en cuenta, aunque primero habrá que revisar los hechos."
+			despedida = "Está bien. Que tengas buen día."
+		"saira":
+			respuesta_interes = "¡Claro! Siempre viene bien escuchar a alguien más. Las conversaciones no tienen por qué ser de dos."
+			respuesta_pregunta = "La historia tiene un poco más de contexto. Si quieres, después te cuento cómo empezó."
+			respuesta_opinion = "¡Mira, eso no lo había considerado! Tendré que acordarme la próxima vez que salga de viaje."
+			despedida = "¡Nos vemos! Ya nos pondremos al día."
+		"narel":
+			respuesta_interes = "Me parece bien que preguntes. Escuchar distintas observaciones ayuda a entender mejor el asunto."
+			respuesta_pregunta = "Estábamos comparando lo que sabemos con lo que todavía no hemos podido comprobar."
+			respuesta_opinion = "Es una observación válida. La anotaré como otra posibilidad, no como una conclusión."
+			despedida = "De acuerdo. Espero que podamos continuar esta conversación en otro momento."
+
+	var contexto := " sobre %s" % tema if not tema.is_empty() else ""
+	respuestas.append({
+		"clave": "intervencion_comentar",
+		"texto": "Comentar que te parece interesante",
+		"jugador": "Me parece interesante lo que están hablando%s." % contexto,
+		"respuesta": respuesta_interes,
+		"importancia": 0.5
+	})
+	respuestas.append({
+		"clave": "intervencion_preguntar",
+		"texto": "Preguntar de qué se trata",
+		"jugador": "¿Cómo empezó esta conversación? ¿De qué estaban hablando?",
+		"respuesta": respuesta_pregunta,
+		"importancia": 0.5
+	})
+	respuestas.append({
+		"clave": "intervencion_opinar",
+		"texto": "Dar tu propia opinión",
+		"jugador": "Desde mi punto de vista, también podría haber otra explicación.",
+		"respuesta": respuesta_opinion,
+		"importancia": 0.75
+	})
+	respuestas.append({
+		"clave": "intervencion_despedida",
+		"texto": "Dejarlos continuar",
+		"jugador": "Bueno, los dejo seguir conversando. ¡Nos vemos!",
+		"respuesta": despedida,
+		"despedida": true
+	})
+	return respuestas
+
+
 ## Guarda el origen de cada encargo aceptado para que el mismo NPC pueda
 ## interesarse por el progreso en el momento adecuado.
 func _al_mision_aceptada(mision: Dictionary) -> void:
