@@ -341,6 +341,24 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if actividad.is_empty():
 		actividad = "descansar"
 
+	# La lluvia modifica temporalmente las actividades al aire libre.
+	# Los NPC que ya están dentro o cuyo trabajo ocurre en un edificio continúan allí.
+	var clima_lluvioso := _esta_lloviendo_en_posicion(npc.global_position)
+	var esta_en_edificio := bool(npc.get_meta("rutina_en_edificio", false))
+	if not clima_lluvioso:
+		npc.remove_meta("refugio_lluvia_clave")
+		npc.remove_meta("reaccion_climatica")
+	elif not esta_en_edificio and not ENTRADAS_INTERIORES.has(ubicacion):
+		var refugio_guardado := str(npc.get_meta("refugio_lluvia_clave", "")).strip_edges()
+		var refugio := refugio_guardado if ENTRADAS_INTERIORES.has(refugio_guardado) else _seleccionar_refugio_lluvia(npc, hogar)
+		if not refugio.is_empty():
+			npc.set_meta("refugio_lluvia_clave", refugio)
+			npc.set_meta("reaccion_climatica", "resguardarse_de_la_lluvia")
+			ubicacion = refugio
+			actividad = "resguardarse_de_la_lluvia"
+			clave_rutina = "refugio_lluvia"
+			esta_en_horario = true
+
 	var firma_anterior := str(npc.get_meta("rutina_firma", ""))
 	var firma_diagnostico := str(npc.get_meta("rutina_diagnostico", ""))
 	var diagnostico_actual := "%s|%s|%s|%d" % [clave_rutina, ubicacion, actividad, dia_semana]
@@ -463,6 +481,45 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.set_meta("rutina_actual", clave_rutina)
 	npc.set_meta("rutina_ubicacion", ubicacion)
 	npc.datos["actividad_actual"] = actividad
+
+
+func _esta_lloviendo_en_posicion(posicion: Vector2) -> bool:
+	if not is_instance_valid(_world_atmosphere):
+		return false
+	var sistema := _world_atmosphere.get_node_or_null("ClimateSystem")
+	if sistema == null or not sistema.has_method("obtener_estado_para_posicion"):
+		return false
+	var estado_variant: Variant = sistema.call("obtener_estado_para_posicion", posicion, "")
+	if not estado_variant is Dictionary:
+		return false
+	var clima_variant: Variant = (estado_variant as Dictionary).get("clima", {})
+	if not clima_variant is Dictionary:
+		return false
+	var clima := clima_variant as Dictionary
+	var tipo := str(clima.get("tipo", "despejado"))
+	return tipo in ["lluvia", "tormenta"] and float(clima.get("precipitacion", 0.0)) >= 0.18
+
+
+func _seleccionar_refugio_lluvia(npc: Creature, hogar: String) -> String:
+	if not is_instance_valid(npc) or not is_instance_valid(_zona):
+		return ""
+	var mejor_clave := ""
+	var mejor_puntuacion := INF
+	for clave_variant in ENTRADAS_INTERIORES.keys():
+		var clave := str(clave_variant)
+		var entrada_variant: Variant = ENTRADAS_INTERIORES.get(clave, {})
+		if not entrada_variant is Dictionary:
+			continue
+		var entrada := entrada_variant as Dictionary
+		var posicion_local: Vector2 = entrada.get("pos", Vector2.ZERO)
+		var distancia := npc.global_position.distance_to(_zona.to_global(posicion_local + Vector2(0.0, 28.0)))
+		# Su propia casa tiene preferencia moderada, sin obligarlo a cruzar
+		# todo el pueblo cuando hay un refugio cercano.
+		var puntuacion := distancia * (0.78 if clave == hogar else 1.0)
+		if puntuacion < mejor_puntuacion:
+			mejor_puntuacion = puntuacion
+			mejor_clave = clave
+	return mejor_clave
 
 
 func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
