@@ -1137,28 +1137,8 @@ func _abrir_selector_items(modo: String) -> void:
 		boton.text = nombre + "  x" + str(maxi(1, int(objeto.get("cantidad", 1))))
 		boton.tooltip_text = nombre
 		boton.set_meta("indice_inventario", indice)
-		var conocido := (
-			modo == "pregunta"
-			and relationship_system != null
-			and not item_id.is_empty()
-			and relationship_system.conoce_item(personaje_id, item_id)
-		)
 		boton.pressed.connect(_seleccionar_item_interaccion.bind(indice, item_id, modo))
 		_selector_items_grid.add_child(boton)
-		if conocido:
-			var brillo := StyleBoxFlat.new()
-			brillo.bg_color = Color("#4B3924")
-			brillo.border_color = Color("#F2D18A")
-			brillo.set_border_width_all(2)
-			brillo.shadow_color = Color(0.95, 0.72, 0.30, 0.72)
-			brillo.shadow_size = 7
-			brillo.corner_radius_top_left = 4
-			brillo.corner_radius_top_right = 4
-			brillo.corner_radius_bottom_left = 4
-			brillo.corner_radius_bottom_right = 4
-			boton.add_theme_stylebox_override("normal", brillo)
-			boton.add_theme_stylebox_override("hover", brillo)
-			boton.add_theme_stylebox_override("pressed", brillo)
 
 	if cantidad_items == 0:
 		var vacio := Label.new()
@@ -1172,8 +1152,8 @@ func _abrir_selector_items(modo: String) -> void:
 			var objeto: Dictionary = items[indice]
 			if objeto.is_empty():
 				continue
-			var item_id := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
-			if relationship_system == null or not relationship_system.conoce_item(personaje_id, item_id):
+			var item_id_brillo := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
+			if relationship_system == null or not relationship_system.conoce_item(personaje_id, item_id_brillo):
 				continue
 			var boton_conocido := _buscar_boton_item(indice)
 			if boton_conocido != null:
