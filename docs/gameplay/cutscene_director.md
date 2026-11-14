@@ -37,6 +37,9 @@ El nodo se crea desde `Main` y recibe Player, DialogueSystem y Camera2D. Mientra
 | `dialogo` | `datos` | Abre un diálogo normal mediante DialogueSystem y espera a que termine. |
 | `esperar` | `segundos` | Pausa la secuencia; máximo 60 segundos. |
 | `camara` | `x`, `y`, `duracion`, opcional `objetivo`, `zoom` | Desplaza suavemente la cámara y permite acercar/alejar (zoom entre 0.5 y 5). |
+| `mirar_npc` | `npc`, opcional `hacia_npc` o `izquierda` | Orienta el sprite del NPC hacia otro personaje o dirección. |
+| `gesto_npc` | `npc`, `gesto`, opcional `duracion` | Ejecuta un gesto visual breve: `asentir`, `saludar`, `trabajar`, `sorpresa` o `negar`. |
+| `mover_npc` | `npc`, `x`, `y`, opcional `duracion` | Envía al NPC por la navegación AStar de sus rutinas y espera a que termine la actividad. Coordenadas locales de la zona. |
 | `evento` | `clave`, opcional `datos` | Emite `evento_solicitado(clave, datos)` para que misiones u otros sistemas reaccionen. |
 | `notificacion` | `texto` | Publica una notificación mediante Events. |
 
@@ -111,3 +114,27 @@ Los valores se limitan al rango -100 a 100. Los rasgos de personalidad modulan l
 ## Planos breves de acontecimientos de Torres
 
 Cuando dos NPC terminan un acontecimiento diario y ambos inician su desplazamiento compartido, el sistema solicita un plano de presentación. Main sólo lo reproduce si el jugador está en Torres, a menos de 360 px del lugar y no hay otro diálogo o cinemática activa. La cámara se desplaza hacia el punto de encuentro, aumenta ligeramente el zoom, mantiene el plano 1.4 segundos y regresa suavemente al jugador. Si el jugador está lejos, el acontecimiento continúa sin interrumpirlo.
+
+
+## Actuaciones de personajes
+
+Las escenas pueden encadenar orientación, gestos, desplazamientos sociales, cámara y diálogo. Los gestos se aplican al Sprite2D existente y restauran su transformación al terminar; no requieren sprites nuevos ni sustituyen las animaciones de movimiento.
+
+Ejemplo de una breve escena entre dos NPC ya presentes en Torres:
+
+```gdscript
+var pasos: Array[Dictionary] = [
+	{"tipo": "camara", "x": 320.0, "y": -80.0, "zoom": 2.3, "duracion": 0.9},
+	{"tipo": "mirar_npc", "npc": "bruna", "hacia_npc": "darven"},
+	{"tipo": "gesto_npc", "npc": "bruna", "gesto": "negar"},
+	{"tipo": "mirar_npc", "npc": "darven", "hacia_npc": "bruna"},
+	{"tipo": "gesto_npc", "npc": "darven", "gesto": "asentir"},
+	{"tipo": "dialogo", "datos": {"lineas": [
+		{"hablante": "Darven", "texto": "Revisé el soporte. Esta vez debería resistir."},
+		{"hablante": "Bruna", "texto": "Lo comprobaré mañana. No pienso prometerlo antes de probarlo."}
+	]}}
+]
+await $CutsceneDirector.ejecutar("bruna_darven_revision", pasos)
+```
+
+Los acontecimientos cotidianos de Torres ya usan una versión corta de estas actuaciones: el plano se centra en los dos NPC cercanos y alterna orientación y gestos. Las escenas completas pueden invocarse desde misiones o eventos narrativos mediante el mismo director.
