@@ -938,6 +938,58 @@ func _crear_objeto_visual_evento(zona: Node2D, posicion: Vector2, etiqueta: Stri
 	_zona_objeto_evento = zona
 
 
+
+## Catálogo de lectura para el inspector de administración. Devuelve copias, nunca referencias mutables.
+func obtener_narrativa_personaje(personaje_id: String) -> Dictionary:
+	var resultado := {"dialogos": [], "escenas": [], "eventos": []}
+	if personaje_id.strip_edges().is_empty():
+		return resultado
+	resultado["dialogos"] = WorldData.obtener_dialogos_game_de_personaje(personaje_id)
+	var personaje := WorldData.obtener_personaje_game_por_id(personaje_id)
+	var nombre := str(personaje.get("nombre", "")).strip_edges().to_lower()
+	for conversacion in CONVERSACIONES:
+		var npc_a := str(conversacion.get("npc_a", "")).to_lower()
+		var npc_b := str(conversacion.get("npc_b", "")).to_lower()
+		if nombre != npc_a and nombre != npc_b:
+			continue
+		var clave := str(conversacion.get("clave", ""))
+		var gestos := _obtener_gestos_escena_admin(clave)
+		resultado["escenas"].append({
+			"clave": clave, "titulo": _titulo_narrativo(clave),
+			"npc_a": npc_a, "npc_b": npc_b, "etapas": "1, 2 y 3",
+			"requisitos_texto": "Misión ayuda_horno_elian completada y etapa narrativa habilitada.",
+			"gesto_a": str(gestos.get("gesto_a", "asentir")),
+			"gesto_b": str(gestos.get("gesto_b", "asentir"))
+		})
+	for acontecimiento in ACONTECIMIENTOS_DIARIOS:
+		var npc_a := str(acontecimiento.get("npc_a", "")).to_lower()
+		var npc_b := str(acontecimiento.get("npc_b", "")).to_lower()
+		if nombre != npc_a and nombre != npc_b:
+			continue
+		var copia := acontecimiento.duplicate(true)
+		copia["titulo"] = _titulo_narrativo(str(copia.get("clave", "")))
+		copia["tipo"] = "cotidiano"
+		copia["requisitos_texto"] = "Selección diaria; requiere ambos NPC presentes, disponibles y próximos al jugador."
+		resultado["eventos"].append(copia)
+	return resultado
+
+
+func _obtener_gestos_escena_admin(clave: String) -> Dictionary:
+	var gestos: Dictionary = {
+		"elian_saira_hornada":{"gesto_a":"asentir","gesto_b":"saludar"},
+		"bruna_darven_camino":{"gesto_a":"negar","gesto_b":"asentir"},
+		"bruna_narel_evidencia":{"gesto_a":"trabajar","gesto_b":"asentir"},
+		"darven_saira_avisos":{"gesto_a":"asentir","gesto_b":"saludar"},
+		"elian_narel_hornada":{"gesto_a":"saludar","gesto_b":"asentir"}
+	}
+	var resultado: Variant = gestos.get(clave, {})
+	return resultado.duplicate(true) if resultado is Dictionary else {}
+
+
+func _titulo_narrativo(clave: String) -> String:
+	return clave.replace("_", " ").capitalize()
+
+
 func _obtener_npcs_torres() -> Array[Creature]:
 	var resultado: Array[Creature] = []
 	_npc_por_nombre.clear()
