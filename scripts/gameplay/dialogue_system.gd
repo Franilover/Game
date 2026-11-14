@@ -32,11 +32,6 @@ var _boton_conversar: Button = null
 var _dialogue_content_row: HBoxContainer = null
 var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
-var _selector_conversacion_scroll: ScrollContainer = null
-var _selector_conversacion_estado: Label = null
-var _selector_conversacion_contador: Label = null
-var _selector_conversacion_titulo: Label = null
-var _respuestas_titulo: Label = null
 var _selector_items: PanelContainer = null
 var _selector_items_grid: GridContainer = null
 var _selector_items_titulo: Label = null
@@ -1027,8 +1022,6 @@ func _actualizar_boton_accion() -> void:
 	var texto_terminado := _indice_caracter >= _texto_completo.length()
 	var es_ultima_linea := _indice_linea >= _lineas.size() - 1
 	var mostrar_respuestas := not _respuestas.is_empty() and es_ultima_linea and texto_terminado
-	if _respuestas_titulo != null:
-		_respuestas_titulo.visible = mostrar_respuestas
 	if _respuestas_container != null:
 		_respuestas_container.visible = mostrar_respuestas
 	if mostrar_respuestas:
@@ -1235,25 +1228,13 @@ func _abrir_selector_conversacion() -> void:
 		_selector_conversacion_grid.remove_child(hijo)
 		hijo.queue_free()
 	var opciones := _crear_opciones_conversacion()
-	if _selector_conversacion_titulo != null and is_instance_valid(_fuente):
-		_selector_conversacion_titulo.text = "Conversar con " + _fuente.get_nombre_visual()
-	if _selector_conversacion_contador != null:
-		_selector_conversacion_contador.text = "%d temas disponibles" % opciones.size()
-	if _selector_conversacion_estado != null:
-		_selector_conversacion_estado.visible = opciones.is_empty()
-	if _selector_conversacion_scroll != null:
-		_selector_conversacion_scroll.visible = not opciones.is_empty()
 	for indice in range(opciones.size()):
 		var opcion: Dictionary = opciones[indice]
 		var boton := Button.new()
-		boton.name = "DialogueTopicOption_%02d" % indice
-		boton.text = str(opcion.get("texto", "Conversar")).strip_edges()
-		boton.custom_minimum_size = Vector2(0, 48)
+		boton.text = str(opcion.get("texto", "Conversar"))
+		boton.custom_minimum_size = Vector2(0, 42)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.add_theme_font_size_override("font_size", 11)
-		boton.tooltip_text = str(opcion.get("jugador", ""))
-		boton.focus_mode = Control.FOCUS_ALL
 		boton.pressed.connect(_seleccionar_tema_conversacion.bind(opcion))
 		_selector_conversacion_grid.add_child(boton)
 	_respuestas.clear()
@@ -1262,8 +1243,6 @@ func _abrir_selector_conversacion() -> void:
 		_dialogue_content_row.visible = false
 	_selector_conversacion.visible = true
 	PIXEL_UI_THEME.apply(_selector_conversacion)
-	if _selector_conversacion_grid.get_child_count() > 0:
-		(_selector_conversacion_grid.get_child(0) as Control).grab_focus()
 
 
 func _cerrar_selector_conversacion() -> void:
@@ -1271,8 +1250,6 @@ func _cerrar_selector_conversacion() -> void:
 		_selector_conversacion.visible = false
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
-	if _boton_conversar != null and is_instance_valid(_boton_conversar):
-		_boton_conversar.grab_focus()
 
 
 func _crear_opciones_conversacion() -> Array[Dictionary]:
@@ -1529,13 +1506,10 @@ func _crear_botones_respuesta() -> void:
 	for indice in range(_respuestas.size()):
 		var opcion: Dictionary = _respuestas[indice]
 		var boton := Button.new()
-		boton.name = "DialogueResponse_%02d" % indice
 		boton.text = str(opcion.get("texto", "Responder"))
-		boton.custom_minimum_size = Vector2(0, 42)
+		boton.custom_minimum_size = Vector2(0, 34)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.add_theme_font_size_override("font_size", 10)
-		boton.tooltip_text = str(opcion.get("jugador", opcion.get("texto_jugador", "")))
-		boton.focus_mode = Control.FOCUS_ALL
+		boton.add_theme_font_size_override("font_size", 11)
 		boton.pressed.connect(_seleccionar_respuesta.bind(indice))
 		_respuestas_container.add_child(boton)
 	PIXEL_UI_THEME.apply(_respuestas_container)
@@ -1548,8 +1522,6 @@ func _limpiar_botones_respuesta() -> void:
 		_respuestas_container.remove_child(hijo)
 		hijo.queue_free()
 	_respuestas_container.visible = false
-	if _respuestas_titulo != null:
-		_respuestas_titulo.visible = false
 
 
 func _seleccionar_respuesta(indice: int) -> void:
@@ -1937,40 +1909,6 @@ func _mostrar_intercambio_item(texto_jugador: String, texto_npc: String) -> void
 	_mostrar_linea_actual()
 
 
-func _crear_boton_social(
-	contenedor: VBoxContainer,
-	nombre: String,
-	icono: String,
-	etiqueta: String,
-	descripcion: String
-) -> Button:
-	var grupo := VBoxContainer.new()
-	grupo.name = nombre + "Group"
-	grupo.add_theme_constant_override("separation", 2)
-	contenedor.add_child(grupo)
-
-	var boton := Button.new()
-	boton.name = nombre
-	boton.custom_minimum_size = Vector2(46, 42)
-	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	boton.icon = _crear_icono_interaccion(icono)
-	boton.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	boton.tooltip_text = descripcion
-	boton.focus_mode = Control.FOCUS_ALL
-	grupo.add_child(boton)
-
-	var texto := Label.new()
-	texto.text = etiqueta
-	texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	texto.add_theme_font_size_override("font_size", 8)
-	texto.add_theme_color_override("font_color", Color("#E8D3AC"))
-	texto.add_theme_color_override("font_outline_color", Color("#302014"))
-	texto.add_theme_constant_override("outline_size", 2)
-	texto.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	grupo.add_child(texto)
-	return boton
-
-
 func _crear_interfaz() -> void:
 	if ui_root == null:
 		return
@@ -2087,14 +2025,6 @@ func _crear_interfaz() -> void:
 	cancel_button.pressed.connect(cerrar)
 	_botones_accion.add_child(cancel_button)
 
-	_respuestas_titulo = Label.new()
-	_respuestas_titulo.name = "DialogueResponsesTitle"
-	_respuestas_titulo.text = "¿Qué respondes?"
-	_respuestas_titulo.add_theme_font_size_override("font_size", 10)
-	_respuestas_titulo.add_theme_color_override("font_color", Color("#E8D3AC"))
-	_respuestas_titulo.visible = false
-	column.add_child(_respuestas_titulo)
-
 	_respuestas_container = GridContainer.new()
 	_respuestas_container.name = "DialogueResponses"
 	_respuestas_container.columns = 2
@@ -2106,28 +2036,37 @@ func _crear_interfaz() -> void:
 
 	var columna_social := VBoxContainer.new()
 	columna_social.name = "DialogueSocialActions"
-	columna_social.custom_minimum_size = Vector2(62, 0)
+	columna_social.custom_minimum_size = Vector2(48, 0)
 	columna_social.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	columna_social.add_theme_constant_override("separation", 7)
+	columna_social.add_theme_constant_override("separation", 8)
 	content_row.add_child(columna_social)
 
-	_boton_regalo = _crear_boton_social(
-		columna_social, "DialogueGiftButton", "regalo", "Regalar",
-		"Regalar un objeto del inventario"
-	)
+	_boton_regalo = Button.new()
+	_boton_regalo.name = "DialogueGiftButton"
+	_boton_regalo.custom_minimum_size = Vector2(48, 48)
+	_boton_regalo.icon = _crear_icono_interaccion("regalo")
+	_boton_regalo.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boton_regalo.tooltip_text = "Regalar un objeto"
 	_boton_regalo.pressed.connect(_abrir_selector_items.bind("regalo"))
+	columna_social.add_child(_boton_regalo)
 
-	_boton_preguntar_item = _crear_boton_social(
-		columna_social, "DialogueAskItemButton", "pregunta", "Consultar",
-		"Preguntar por un objeto de tu inventario"
-	)
+	_boton_preguntar_item = Button.new()
+	_boton_preguntar_item.name = "DialogueAskItemButton"
+	_boton_preguntar_item.custom_minimum_size = Vector2(48, 48)
+	_boton_preguntar_item.icon = _crear_icono_interaccion("pregunta")
+	_boton_preguntar_item.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boton_preguntar_item.tooltip_text = "Preguntar por un objeto"
 	_boton_preguntar_item.pressed.connect(_abrir_selector_items.bind("pregunta"))
+	columna_social.add_child(_boton_preguntar_item)
 
-	_boton_conversar = _crear_boton_social(
-		columna_social, "DialogueTalkButton", "dialogo", "Conversar",
-		"Elegir un tema para hablar con este personaje"
-	)
+	_boton_conversar = Button.new()
+	_boton_conversar.name = "DialogueTalkButton"
+	_boton_conversar.custom_minimum_size = Vector2(48, 48)
+	_boton_conversar.icon = _crear_icono_interaccion("dialogo")
+	_boton_conversar.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boton_conversar.tooltip_text = "Elegir tema de conversación"
 	_boton_conversar.pressed.connect(_abrir_selector_conversacion)
+	columna_social.add_child(_boton_conversar)
 
 	_selector_conversacion = PanelContainer.new()
 	_selector_conversacion.name = "DialogueTopicSelector"
@@ -2152,9 +2091,7 @@ func _crear_interfaz() -> void:
 	var topic_header := HBoxContainer.new()
 	topic_column.add_child(topic_header)
 	var topic_title := Label.new()
-	_selector_conversacion_titulo = topic_title
-	topic_title.name = "TopicTitle"
-	topic_title.text = "Conversar"
+	topic_title.text = "¿De qué te gustaría hablar?"
 	topic_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	topic_title.add_theme_font_size_override("font_size", 14)
 	topic_header.add_child(topic_title)
@@ -2163,36 +2100,13 @@ func _crear_interfaz() -> void:
 	topic_back.custom_minimum_size = Vector2(72, 30)
 	topic_back.pressed.connect(_cerrar_selector_conversacion)
 	topic_header.add_child(topic_back)
-	_selector_conversacion_contador = Label.new()
-	_selector_conversacion_contador.name = "TopicCount"
-	_selector_conversacion_contador.add_theme_font_size_override("font_size", 9)
-	_selector_conversacion_contador.add_theme_color_override("font_color", Color("#C8AD82"))
-	topic_column.add_child(_selector_conversacion_contador)
-
-	_selector_conversacion_scroll = ScrollContainer.new()
-	_selector_conversacion_scroll.name = "TopicScroll"
-	_selector_conversacion_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_selector_conversacion_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_selector_conversacion_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	topic_column.add_child(_selector_conversacion_scroll)
-
 	_selector_conversacion_grid = GridContainer.new()
-	_selector_conversacion_grid.columns = 1
+	_selector_conversacion_grid.columns = 2
 	_selector_conversacion_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_selector_conversacion_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_selector_conversacion_grid.add_theme_constant_override("v_separation", 6)
-	_selector_conversacion_scroll.add_child(_selector_conversacion_grid)
-
-	_selector_conversacion_estado = Label.new()
-	_selector_conversacion_estado.name = "TopicEmptyState"
-	_selector_conversacion_estado.text = "Ahora mismo no hay temas nuevos para conversar. Puedes volver a hablar más tarde."
-	_selector_conversacion_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_selector_conversacion_estado.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_selector_conversacion_estado.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_selector_conversacion_estado.visible = false
-	_selector_conversacion_estado.add_theme_font_size_override("font_size", 11)
-	_selector_conversacion_estado.add_theme_color_override("font_color", Color("#D8C6A6"))
-	topic_column.add_child(_selector_conversacion_estado)
+	_selector_conversacion_grid.add_theme_constant_override("h_separation", 8)
+	_selector_conversacion_grid.add_theme_constant_override("v_separation", 8)
+	topic_column.add_child(_selector_conversacion_grid)
 
 	_selector_items = PanelContainer.new()
 	_selector_items.name = "DialogueItemSelector"
