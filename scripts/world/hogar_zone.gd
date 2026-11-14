@@ -747,7 +747,7 @@ func cerrar_cofre() -> void:
 func _crear_salida_camino_torres() -> void:
 	var salida := Area2D.new()
 	salida.name = "SalidaCaminoTorres"
-	salida.position = Vector2(1170.0, 0.0)
+	salida.position = Vector2(1200.0, 0.0)
 	salida.collision_layer = 0
 	salida.collision_mask = 1
 	var forma := CollisionShape2D.new()
