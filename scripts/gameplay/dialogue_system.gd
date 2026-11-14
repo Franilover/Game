@@ -2062,13 +2062,18 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 		return
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var clave_tema := str(opcion.get("clave", "")).strip_edges()
-	if str(_fuente.get_meta("habitante_local_clave", "")) == "mara" and not bool(opcion.get("despedida", false)):
-		var confianza_mara := int(GameState.world_state.flags.get("confianza_mara", _fuente.get_meta("confianza_local", 0)))
-		confianza_mara = mini(confianza_mara + 1, 5)
-		GameState.world_state.flags["confianza_mara"] = confianza_mara
-		_fuente.set_meta("confianza_local", confianza_mara)
-		if GameState.has_method("guardar_partida"):
-			GameState.call_deferred("guardar_partida")
+	if str(_fuente.get_meta("habitante_local_clave", "")) == "mara" and not bool(opcion.get("despedida", false)) and not clave_tema.is_empty():
+		var temas_variant: Variant = GameState.world_state.flags.get("mara_temas_confianza", {})
+		var temas_confianza: Dictionary = temas_variant.duplicate(true) if temas_variant is Dictionary else {}
+		if not temas_confianza.has(clave_tema):
+			temas_confianza[clave_tema] = true
+			var confianza_mara := int(GameState.world_state.flags.get("confianza_mara", _fuente.get_meta("confianza_local", 0)))
+			confianza_mara = mini(confianza_mara + 1, 5)
+			GameState.world_state.flags["mara_temas_confianza"] = temas_confianza
+			GameState.world_state.flags["confianza_mara"] = confianza_mara
+			_fuente.set_meta("confianza_local", confianza_mara)
+			if GameState.has_method("guardar_partida"):
+				GameState.call_deferred("guardar_partida")
 
 	var evento := str(opcion.get("evento", "interesarse")).strip_edges()
 	var es_despedida := bool(opcion.get("despedida", false))
