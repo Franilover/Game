@@ -195,9 +195,10 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	if _es_dialogo_cotidiano(datos_seleccionados) and relationship_system != null and is_instance_valid(_fuente):
 		var id_recuerdo := _fuente.get_personaje_game_id().strip_edges()
 		if not id_recuerdo.is_empty():
-			recuerdo_para_mencionar = relationship_system.obtener_recuerdo_pendiente_mencionar(id_recuerdo)
-			var dialogo_recuerdo := _crear_dialogo_recuerdo_social(recuerdo_para_mencionar)
+			var recuerdo_candidato: Dictionary = relationship_system.obtener_recuerdo_pendiente_mencionar(id_recuerdo)
+			var dialogo_recuerdo := _crear_dialogo_recuerdo_social(recuerdo_candidato)
 			if not dialogo_recuerdo.is_empty():
+				recuerdo_para_mencionar = recuerdo_candidato
 				datos_seleccionados = dialogo_recuerdo
 				lineas = _normalizar_lineas(datos_seleccionados)
 
@@ -438,6 +439,7 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 		var contexto_variant: Variant = recuerdo.get("contexto", {})
 		var contexto: Dictionary = contexto_variant if contexto_variant is Dictionary else {}
 		var detalle := str(contexto.get("asunto", contexto.get("descripcion", ""))).strip_edges()
+		var frase_jugador := str(contexto.get("respuesta_jugador", "")).strip_edges()
 		var frase := ""
 		match evento:
 			"promesa_cumplida":
@@ -464,6 +466,8 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 				return {}
 		if not detalle.is_empty():
 			frase = detalle + ": " + frase
+		if not frase_jugador.is_empty():
+			frase = "Recuerdo que dijiste: %s %s" % [frase_jugador, frase]
 		match clave_nombre:
 			"elian":
 				texto = "Quería hablarte de algo que todavía recuerdo. " + frase
