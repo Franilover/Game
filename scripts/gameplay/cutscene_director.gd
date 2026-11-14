@@ -16,12 +16,15 @@ var _ocupado: bool = false
 var _generacion: int = 0
 var _clave_actual: String = ""
 var _tween_camara: Tween = null
+var _zoom_original := Vector2.ONE
 
 
 func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = null) -> void:
 	_player = player
 	_dialogue = dialogue
 	_camera = camera
+	if is_instance_valid(_camera):
+		_zoom_original = _camera.zoom
 
 
 func esta_activo() -> bool:
@@ -116,19 +119,30 @@ func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
 		if is_instance_valid(objetivo):
 			destino = objetivo.global_position
 	var duracion := clampf(float(paso.get("duracion", 0.8)), 0.0, 15.0)
+	var zoom_objetivo := float(paso.get("zoom", _camera.zoom.x))
+	zoom_objetivo = clampf(zoom_objetivo, 0.5, 5.0)
 	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
 		_tween_camara.kill()
 	_tween_camara = create_tween()
 	_tween_camara.set_trans(Tween.TRANS_SINE)
 	_tween_camara.set_ease(Tween.EASE_IN_OUT)
+	_tween_camara.set_parallel(true)
 	_tween_camara.tween_property(_camera, "global_position", destino, duracion)
+	_tween_camara.tween_property(_camera, "zoom", Vector2.ONE * zoom_objetivo, duracion)
 	await _tween_camara.finished
 
 
 func _restaurar_camara() -> void:
 	if not is_instance_valid(_camera) or not is_instance_valid(_player):
 		return
-	_camera.global_position = _player.global_position
+	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
+		_tween_camara.kill()
+	_tween_camara = create_tween()
+	_tween_camara.set_trans(Tween.TRANS_SINE)
+	_tween_camara.set_ease(Tween.EASE_IN_OUT)
+	_tween_camara.set_parallel(true)
+	_tween_camara.tween_property(_camera, "global_position", _player.global_position, 0.65)
+	_tween_camara.tween_property(_camera, "zoom", _zoom_original, 0.65)
 
 
 func _finalizar() -> void:
