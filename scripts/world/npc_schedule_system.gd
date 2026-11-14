@@ -246,7 +246,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		if not esta_dentro and not edificio_id.is_empty() and movimiento_actual != null:
 			if movimiento_actual.rutina_terminada():
 				_marcar_npc_dentro_edificio(npc, edificio_id)
-			elif not movimiento_actual.rutina_en_ejecucion():
+			elif movimiento_actual.rutina_en_ejecucion():
+				# Mantener activo el cuerpo que procesa el movimiento incluso si
+				# otra rutina o transición pausó temporalmente al NPC.
+				npc.set_process(true)
+				npc.set_physics_process(true)
+			else:
 				# Si otra acción detuvo la ruta antes de llegar, se recupera el
 				# recorrido en vez de dejar al NPC abandonado fuera del trabajo.
 				var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
