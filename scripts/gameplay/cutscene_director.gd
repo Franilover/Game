@@ -22,6 +22,7 @@ var _estado_npcs_cinematica: Dictionary = {}
 var _modo_cinematica: String = "planeada"
 var _pausa_previa: bool = false
 var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
+var _process_mode_panel_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
 var _seguimiento_camara_npcs: Array[String] = []
 
 
@@ -76,6 +77,9 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 		_pausa_previa = get_tree().paused
 		_process_mode_dialogo_previo = _dialogue.process_mode
 		_dialogue.process_mode = Node.PROCESS_MODE_ALWAYS
+		if is_instance_valid(_dialogue.dialogue_panel):
+			_process_mode_panel_dialogo_previo = _dialogue.dialogue_panel.process_mode
+			_dialogue.dialogue_panel.process_mode = Node.PROCESS_MODE_ALWAYS
 		get_tree().paused = true
 	if not is_in_group("modal_ui"):
 		add_to_group("modal_ui")
@@ -426,6 +430,8 @@ func _finalizar() -> void:
 	if _modo_cinematica == "planeada":
 		if is_instance_valid(_dialogue):
 			_dialogue.process_mode = _process_mode_dialogo_previo
+			if is_instance_valid(_dialogue.dialogue_panel):
+				_dialogue.dialogue_panel.process_mode = _process_mode_panel_dialogo_previo
 		get_tree().paused = _pausa_previa
 	var clave_finalizada := _clave_actual
 	_ocupado = false
