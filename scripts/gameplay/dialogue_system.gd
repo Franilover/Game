@@ -534,7 +534,7 @@ func _actualizar_retrato(hablante: String) -> void:
 		if nombre_retrato.is_empty() or nombre_retrato.contains("/") or nombre_retrato.contains("\\"):
 			continue
 		for extension in [".png", ".PNG"]:
-			var ruta := "res://assets/art/characters/heads/" + nombre_retrato + extension
+			var ruta: String = "res://assets/art/characters/heads/" + nombre_retrato + str(extension)
 			if not ResourceLoader.exists(ruta):
 				continue
 			textura = load(ruta) as Texture2D
