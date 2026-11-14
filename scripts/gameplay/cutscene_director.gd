@@ -204,12 +204,8 @@ func _ejecutar_mover_npc(paso: Dictionary, generacion: int) -> void:
 	var schedule := get_tree().get_first_node_in_group("npc_schedule_system")
 	if not is_instance_valid(schedule) or not schedule.has_method("iniciar_actividad_social"):
 		return
-	var zona_manager := get_tree().get_first_node_in_group("zone_manager")
-	if not is_instance_valid(zona_manager) or not zona_manager.has_method("obtener_zona_actual"):
-		return
-	var zona := zona_manager.call("obtener_zona_actual") as Node2D
-	if not is_instance_valid(zona):
-		return
+	# Las coordenadas del paso son locales a la zona activa, igual que
+	# las órdenes sociales del NPCScheduleSystem.
 	var destino := Vector2(float(paso.get("x", 0.0)), float(paso.get("y", 0.0)))
 	var duracion := clampf(float(paso.get("duracion", 5.0)), 1.0, 30.0)
 	if not bool(schedule.call("iniciar_actividad_social", npc, destino, duracion)):
