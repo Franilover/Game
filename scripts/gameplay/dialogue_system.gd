@@ -1464,7 +1464,7 @@ func _seleccionar_item_interaccion(indice: int, item_id_esperado: String, modo: 
 		if not _inventario.quitar_cantidad_desde_ui(indice, 1):
 			Events.notification_pushed.emit("No se pudo retirar el objeto del inventario.")
 			return
-		var relacion_resultado: Dictionary = relationship_system.registrar_regalo(personaje_id, item_id)
+		var relacion_resultado: Dictionary = relationship_system.registrar_regalo(personaje_id, item_id, nombre_item)
 		if relacion_resultado.is_empty():
 			_inventario.agregar_objeto_desde_ui(objeto)
 			Events.notification_pushed.emit("No se pudo registrar el regalo; el objeto volvió a tu inventario.")
