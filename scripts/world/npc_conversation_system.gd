@@ -295,6 +295,8 @@ func _actualizar_iniciativas(
 ) -> bool:
 	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
 		return false
+	if not is_instance_valid(dialogo):
+		return false
 	if jugador is CharacterBody2D and (jugador as CharacterBody2D).velocity.length() > 8.0:
 		return false
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
