@@ -228,10 +228,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
-	if (
-		not tiene_acciones_finales
-		and (clave_dialogo_respuestas == "principal" or clave_dialogo_respuestas.begins_with("rutina_"))
-	):
+	if not tiene_acciones_finales and is_instance_valid(_fuente):
 		_respuestas = _crear_opciones_conversacion()
 	_limpiar_botones_respuesta()
 
