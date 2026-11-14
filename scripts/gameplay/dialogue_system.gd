@@ -993,7 +993,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 		var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 		var datos_dialogo := _fuente.get_dialogue_data()
 		var temas_variant: Variant = datos_dialogo.get("temas_conversacion", [])
-		if temas_variant is Array:
+		if temas_variant is Array and not (temas_variant as Array).is_empty():
 			var opciones_datos: Array[Dictionary] = []
 			var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null else {}
 			var recuerdos: Array = relationship_system.obtener_recuerdos(personaje_id) if relationship_system != null else []
