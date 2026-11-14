@@ -326,14 +326,8 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
 			principal = variante
 
-	# Durante los desplazamientos, el NPC responde según su relación y
-	# comunica el destino actual de su rutina sin interrumpir el horario.
-	var dialogo_rutina := _crear_dialogo_rutina_contextual()
-	if not dialogo_rutina.is_empty():
-		return dialogo_rutina
-
-	# Los estados de misión tienen prioridad sobre los saludos sociales.
-	# Si no hay una variante narrativa activa, se aplican amistad/confianza.
+	# Los estados de misión y las variantes narrativas específicas conservan prioridad.
+	# Si no hay una conversación especial por calendario o relación, habla según su rutina.
 	var personaje_id := ""
 	if is_instance_valid(_fuente):
 		personaje_id = _fuente.get_personaje_game_id().strip_edges()
@@ -345,8 +339,12 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		var social: RelationshipSystemService = relationship_system
 		if social != null:
 			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_variant as Array, personaje_id)
-			if not seleccion.is_empty():
+			if not seleccion.is_empty() and str(seleccion.get("clave", "")).strip_edges().to_lower() != "principal":
 				return seleccion.duplicate(true)
+
+	var dialogo_rutina := _crear_dialogo_rutina_contextual()
+	if not dialogo_rutina.is_empty():
+		return dialogo_rutina
 
 	if not principal.is_empty():
 		return principal
@@ -431,7 +429,7 @@ func _crear_dialogo_rutina_contextual() -> Dictionary:
 	if texto.is_empty():
 		return {}
 
-	var clave_dialogo := "rutina_en_transito" if en_transito else "rutina_" + (rutina_clave if not rutina_clave.is_empty() else actividad)
+	var clave_dialogo := "rutina_en_transito" if en_transito else "rutina_contextual"
 	return {
 		"clave": clave_dialogo,
 		"lineas": [{"hablante": _fuente.get_nombre_visual(), "texto": texto}]
