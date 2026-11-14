@@ -872,7 +872,23 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 	var cuarto := _capa_interior.get_node_or_null("Habitacion_" + entrada_id) as Node2D
 	if not is_instance_valid(cuarto):
 		return
-	var posiciones := [
+	# El castillo reúne a muchos más habitantes que una vivienda normal.
+	# Los distribuimos alrededor del perímetro, dejando libre el centro y las
+	# dos mesas para que puedan circular y conversar sin formar una pila.
+	var posiciones_castillo: Array[Vector2] = [
+		Vector2(-210.0, -140.0), Vector2(-150.0, -140.0),
+		Vector2(-90.0, -140.0), Vector2(90.0, -140.0),
+		Vector2(150.0, -140.0), Vector2(210.0, -140.0),
+		Vector2(-225.0, -70.0), Vector2(-165.0, -70.0),
+		Vector2(165.0, -70.0), Vector2(225.0, -70.0),
+		Vector2(-225.0, 5.0), Vector2(-165.0, 5.0),
+		Vector2(165.0, 5.0), Vector2(225.0, 5.0),
+		Vector2(-225.0, 80.0), Vector2(-165.0, 80.0),
+		Vector2(165.0, 80.0), Vector2(225.0, 80.0),
+		Vector2(-180.0, 135.0), Vector2(-120.0, 135.0),
+		Vector2(120.0, 135.0), Vector2(180.0, 135.0)
+	]
+	var posiciones_normales: Array[Vector2] = [
 		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
 		Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
 	]
@@ -918,7 +934,20 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 		npc.set_meta("rutina_en_edificio", true)
 		npc.set_meta("rutina_edificio_id", entrada_id)
 		var actor := npc as Node2D
-		actor.position = posiciones[indice % posiciones.size()]
+		if entrada_id == "castillo":
+			if indice < posiciones_castillo.size():
+				actor.position = posiciones_castillo[indice]
+			else:
+				# Respaldo para reuniones con más asistentes que plazas
+				# predefinidas: añade filas laterales sin reutilizar coordenadas.
+				var extra := indice - posiciones_castillo.size()
+				var columna := posmod(extra, 6)
+				var fila := int(extra / 6)
+				var lado := -1.0 if columna < 3 else 1.0
+				var desplazamiento := posmod(columna, 3) * 52.0
+				actor.position = Vector2(lado * (105.0 + desplazamiento), -20.0 + fila * 42.0)
+		else:
+			actor.position = posiciones_normales[indice % posiciones_normales.size()]
 		actor.visible = true
 		# Los NPC trasladados al cuarto sí pueden recibir interacciones.
 		npc.add_to_group("interactable")
