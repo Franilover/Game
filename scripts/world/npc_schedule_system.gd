@@ -197,6 +197,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
 
+	# Las rutinas de trabajo y los horarios canónicos permanecen intactos.
+	# Sólo se matizan los momentos libres en la plaza con una actividad diaria
+	# estable y una pequeña variación de posición.
+	rutina = _aplicar_variacion_tiempo_libre(npc, rutina, dia_semana, minutos)
+
 	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
@@ -225,7 +230,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if firma_diagnostico != diagnostico_actual:
 		print("NPCScheduleSystem: ", npc.get_nombre_visual(), " | día=", dia_semana + 1, " | minuto=", minutos, " | rutina=", clave_rutina, " | destino=", ubicacion, " | hogar=", hogar, " | rutinas_cargadas=", rutinas_variant.size() if rutinas_variant is Array else -1)
 		npc.set_meta("rutina_diagnostico", diagnostico_actual)
-	var firma_nueva := clave_rutina + "|" + ubicacion + "|" + actividad
+	var variacion_posicion: Vector2 = rutina.get("variacion_posicion", Vector2.ZERO)
+	var firma_nueva := clave_rutina + "|" + ubicacion + "|" + actividad + "|" + str(variacion_posicion)
 	var edificio_variant: Variant = ENTRADAS_INTERIORES.get(ubicacion, {})
 	var edificio: Dictionary = edificio_variant if edificio_variant is Dictionary else {}
 	var edificio_id := str(edificio.get("id", ""))
@@ -309,6 +315,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			"liam": Vector2(104.0, 20.0)
 		}
 		destino_local += posiciones_plaza.get(npc.get_nombre_visual().strip_edges().to_lower(), Vector2.ZERO)
+		destino_local += variacion_posicion
 	var destino_global := _zona.to_global(destino_local)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
@@ -352,6 +359,70 @@ func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
 	npc.set_meta("rutina_edificio_id", edificio_id)
 	npc.visible = false
 	npc.remove_from_group("interactable")
+
+
+## Añade variedad ambiental sin sustituir horarios ni destinos de trabajo.
+## La elección depende del día del mundo y del tramo horario, por lo que no
+## cambia en cada actualización del sistema.
+func _aplicar_variacion_tiempo_libre(
+	npc: Creature,
+	rutina_base: Dictionary,
+	dia_semana: int,
+	minutos: int
+) -> Dictionary:
+	if rutina_base.is_empty():
+		return rutina_base
+
+	var clave_base := str(rutina_base.get("clave", ""))
+	var ubicacion_base := str(rutina_base.get("ubicacion_clave", ""))
+	if not clave_base.begins_with("dia_libre") or ubicacion_base != "plaza":
+		return rutina_base
+
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	var actividades_por_personaje: Dictionary = {
+		"elian": ["acomodar_pedidos", "conversar_con_vecinos", "compartir_pan"],
+		"bruna": ["revisar_herramientas", "observar_trabajos", "descansar_un_rato"],
+		"darven": ["vigilar_plaza", "revisar_avisos", "conversar_con_habitantes"],
+		"saira": ["saludar_comerciantes", "compartir_noticias", "escuchar_historias"],
+		"narel": ["tomar_notas", "observar_entorno", "leer_apuntes"]
+	}
+	if not actividades_por_personaje.has(nombre):
+		return rutina_base
+
+	var tramo := 0
+	if minutos >= 840 and minutos < 1020:
+		tramo = 1
+	elif minutos >= 1020:
+		tramo = 2
+
+	var tiempo := _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var clave_dia := "%s:%s:%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("mes", 0)),
+		str(tiempo.get("dia", dia_semana))
+	]
+	var actividades: Array = actividades_por_personaje[nombre]
+	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo))) % actividades.size()
+
+	var resultado := rutina_base.duplicate(true)
+	resultado["actividad_clave"] = str(actividades[indice])
+	resultado["variacion_posicion"] = _obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
+	resultado["variacion_diaria"] = clave_dia
+	return resultado
+
+
+func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int) -> Vector2:
+	# Desplazamientos cortos alrededor del punto habitual de cada habitante.
+	# Se conservan dentro de la plaza y no alteran rutas de trabajo.
+	var desplazamientos: Array[Vector2] = [
+		Vector2(-20.0, -12.0),
+		Vector2(16.0, -16.0),
+		Vector2(20.0, 12.0),
+		Vector2(-16.0, 16.0),
+		Vector2(0.0, -20.0)
+	]
+	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo) + "|pos")) % desplazamientos.size()
+	return desplazamientos[indice]
 
 
 func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
