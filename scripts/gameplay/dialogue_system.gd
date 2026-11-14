@@ -218,6 +218,10 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		_fuente.pausar_movimiento_temporal()
 
 	dialogue_panel.visible = true
+	if _boton_regalo != null:
+		_boton_regalo.visible = true
+	if _boton_preguntar_item != null:
+		_boton_preguntar_item.visible = true
 	print(
 		"DialogueSystem: PANEL VISIBLE → ",
 		dialogue_panel.get_path(),
@@ -263,11 +267,6 @@ func cerrar() -> void:
 	if cancel_button != null:
 		cancel_button.visible = false
 	_cerrar_selector_items()
-	if _boton_regalo != null:
-		_boton_regalo.visible = false
-	if _boton_preguntar_item != null:
-		_boton_preguntar_item.visible = false
-
 	if dialogue_panel != null:
 		dialogue_panel.visible = false
 
@@ -1136,6 +1135,7 @@ func _abrir_selector_items(modo: String) -> void:
 		boton.icon_max_width = 30
 		boton.text = nombre + "  x" + str(maxi(1, int(objeto.get("cantidad", 1))))
 		boton.tooltip_text = nombre
+		boton.set_meta("indice_inventario", indice)
 		var conocido := (
 			modo == "pregunta"
 			and relationship_system != null
