@@ -83,6 +83,7 @@ var _construyendo_malla := false
 var _tiempo_actualizacion := 0.0
 var _firma_colisiones := ""
 var _tiempo_cambio_colisiones := -1.0
+var _ultimo_aviso_evento_comunitario := ""
 
 
 func configurar(atmosfera: WorldAtmosphere, zone_manager: Node) -> void:
@@ -481,6 +482,26 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# estable y una pequeña variación de posición.
 	rutina = _aplicar_variacion_tiempo_libre(npc, rutina, dia_semana, minutos)
 
+	# Los acontecimientos comunitarios sólo ocupan horas libres o días de
+	# descanso. Nunca desplazan a un NPC de su trabajo, guardia o investigación.
+	var evento_comunitario: Dictionary = _obtener_evento_comunitario(dia_semana, minutos)
+	if not evento_comunitario.is_empty() and _puede_participar_en_evento(rutina):
+		var clave_evento := str(evento_comunitario.get("clave", ""))
+		var desplazamiento_evento := _obtener_desplazamiento_evento(
+			npc.get_nombre_visual(), clave_evento, evento_comunitario
+		)
+		rutina = {
+			"clave": clave_evento,
+			"ubicacion_clave": "plaza",
+			"actividad_clave": str(evento_comunitario.get("actividad", "participar_en_evento")),
+			"variacion_posicion": desplazamiento_evento,
+			"activo": true
+		}
+		npc.set_meta("evento_comunitario_actual", clave_evento)
+		_notificar_evento_comunitario(evento_comunitario)
+	else:
+		npc.set_meta("evento_comunitario_actual", "")
+
 	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
@@ -868,6 +889,85 @@ func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int)
 	]
 	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo) + "|pos")) % desplazamientos.size()
 	return desplazamientos[indice]
+
+
+## Calendario comunitario local de Torres. Usa el ciclo de cinco días que
+## ya emplean las rutinas y el primer día de cada estación del calendario.
+func _obtener_evento_comunitario(dia_semana: int, minutos: int) -> Dictionary:
+	if not is_instance_valid(_world_atmosphere):
+		return {}
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
+	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
+	if dia_estacion == 1 and minutos >= 840 and minutos < 1200:
+		return {
+			"clave": "celebracion_estacional",
+			"nombre": "Celebración de temporada",
+			"actividad": "celebrar_el_cambio_de_estacion",
+			"aviso": "Hoy los vecinos celebran el comienzo de una nueva estación en la plaza."
+		}
+	if dia_semana != 4:
+		return {}
+	if minutos >= 540 and minutos < 1020:
+		return {
+			"clave": "mercado_vecinal",
+			"nombre": "Mercado vecinal",
+			"actividad": "visitar_el_mercado",
+			"aviso": "Hoy hay mercado vecinal en la plaza de Torres."
+		}
+	if minutos >= 1020 and minutos < 1200:
+		return {
+			"clave": "comida_comunitaria",
+			"nombre": "Comida comunitaria",
+			"actividad": "compartir_comida_con_vecinos",
+			"aviso": "Los vecinos se reúnen en la plaza para compartir comida."
+		}
+	return {}
+
+
+func _puede_participar_en_evento(rutina: Dictionary) -> bool:
+	if rutina.is_empty():
+		return true
+	var clave := str(rutina.get("clave", "")).strip_edges().to_lower()
+	return clave.begins_with("dia_libre")
+
+
+func _obtener_desplazamiento_evento(
+	nombre_npc: String,
+	clave_evento: String,
+	evento: Dictionary
+) -> Vector2:
+	var posiciones: Array[Vector2] = [
+		Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
+		Vector2(-24.0, -112.0), Vector2(32.0, -108.0),
+		Vector2(88.0, -80.0), Vector2(112.0, -24.0),
+		Vector2(96.0, 48.0), Vector2(48.0, 96.0),
+		Vector2(-16.0, 112.0), Vector2(-80.0, 88.0),
+		Vector2(-120.0, 32.0), Vector2(-48.0, -40.0),
+		Vector2(16.0, -48.0), Vector2(64.0, 16.0),
+		Vector2(8.0, 56.0), Vector2(-64.0, 8.0)
+	]
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var fecha := "%s|%s|%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("dia", 0)),
+		str(tiempo.get("estacion_id", ""))
+	]
+	var indice := posmod(hash(nombre_npc.strip_edges().to_lower() + "|" + clave_evento + "|" + fecha), posiciones.size())
+	return posiciones[indice]
+
+
+func _notificar_evento_comunitario(evento: Dictionary) -> void:
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var firma := "%s|%s|%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("dia", 0)),
+		str(evento.get("clave", ""))
+	]
+	if firma == _ultimo_aviso_evento_comunitario:
+		return
+	_ultimo_aviso_evento_comunitario = firma
+	var aviso := str(evento.get("aviso", evento.get("nombre", "Hay una actividad comunitaria en la plaza.")))
+	Events.notification_pushed.emit(aviso)
 
 
 func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
