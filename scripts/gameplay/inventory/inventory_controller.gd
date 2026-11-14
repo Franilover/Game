@@ -232,6 +232,15 @@ func agregar_objeto_desde_ui(datos: Dictionary) -> bool:
 		inventario_cambio.emit()
 	return resultado
 
+## Operación de interfaz para entregar objetos a otro personaje.
+## No representa una acción de gameplay y por eso no depende del input gate.
+func quitar_cantidad_desde_ui(indice: int, cantidad: int = 1) -> bool:
+	var resultado: bool = runtime.quitar_cantidad(indice, cantidad)
+	if resultado:
+		inventario_cambio.emit()
+	return resultado
+
+
 func quitar_cantidad(indice: int, cantidad: int = 1) -> bool:
 	if not puede_interactuar():
 		return false
