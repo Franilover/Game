@@ -1292,7 +1292,7 @@ func _ocultar_placeholder(prefixes: Array) -> void:
 func _crear_entrada_hogar_al_final_del_camino() -> void:
 	var entrada := Area2D.new()
 	entrada.name = "HomeRoadExit"
-	entrada.position = Vector2(-1135.0, 0.0)
+	entrada.position = Vector2(-1180.0, 0.0)
 	entrada.collision_layer = 0
 	entrada.collision_mask = 1
 	var forma := CollisionShape2D.new()
