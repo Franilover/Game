@@ -553,7 +553,7 @@ func _texto_narrativo(texto: String, titulo: bool = false) -> void:
 func _requisitos_narrativos(registro: Dictionary, dialogo: Dictionary = {}) -> String:
 	var partes: Array[String] = []
 	for fuente in [registro, dialogo]:
-		for clave in ["requisitos", "condiciones", "requisito", "desbloqueo", "restricciones"]:
+		for clave in ["requisitos", "requisitos_game", "condiciones", "condiciones_game", "requisito", "desbloqueo", "desbloqueo_game", "restricciones", "requirements"]:
 			if not fuente.has(clave):
 				continue
 			var valor: Variant = fuente.get(clave)
@@ -621,6 +621,10 @@ func _mostrar_escenas_admin() -> void:
 			str(escena.get("npc_a", "?")), str(escena.get("npc_b", "?")),
 			str(escena.get("etapas", "1–3")), str(escena.get("requisitos_texto", "Etapa narrativa disponible."))
 		])
+		for linea_variant in escena.get("lineas", []):
+			if linea_variant is Dictionary:
+				var linea := linea_variant as Dictionary
+				_texto_narrativo(str(linea.get("npc", "")) + ": " + str(linea.get("texto", "")))
 		var boton := Button.new()
 		boton.text = "Ver escena"
 		boton.disabled = not is_instance_valid(_cutscene_director)
@@ -648,11 +652,18 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 	var pasos: Array[Dictionary] = [
 		{"tipo":"camara","x":centro.x,"y":centro.y,"zoom":zoom,"duracion":0.75},
 		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
-		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
-		{"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.65},
-		{"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.65},
-		{"tipo":"esperar","segundos":0.5}
+		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a}
 	]
+	var lineas_preview: Array[Dictionary] = []
+	for item in escena.get("lineas", []):
+		if item is Dictionary:
+			var linea := item as Dictionary
+			lineas_preview.append({"hablante":str(linea.get("npc","")),"texto":str(linea.get("texto",""))})
+	if not lineas_preview.is_empty():
+		pasos.append({"tipo":"dialogo","datos":{"clave":"admin_preview_" + str(escena.get("clave","escena")),"lineas":lineas_preview}})
+	pasos.append({"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.65})
+	pasos.append({"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.65})
+	pasos.append({"tipo":"esperar","segundos":0.5})
 	_estado.text = "Reproduciendo vista previa: " + str(escena.get("titulo", "Escena"))
 	await _cutscene_director.ejecutar("admin_preview_" + str(escena.get("clave", "escena")), pasos)
 
