@@ -187,6 +187,11 @@ func _al_mundo_remoto(
 		# modo, un cache antiguo con ia_config={} deja mudas sus habilidades.
 		if _partida_activa():
 			_actualizar_configuracion_ia_en_vivo(mundo_remoto)
+			# Las rutinas de NPC son datos de simulación y deben sincronizarse
+			# durante la partida. Si quedan sólo en _mundo_pendiente, los NPC
+			# creados desde un cache antiguo reciben una lista vacía y nunca salen
+			# de sus casas, aunque Supabase ya tenga sus horarios.
+			_actualizar_rutinas_personajes_game_en_vivo(mundo_remoto)
 
 		_mundo_pendiente = mundo_remoto.duplicate(true)
 
@@ -257,6 +262,49 @@ func _actualizar_configuracion_ia_en_vivo(mundo_remoto: Dictionary) -> void:
 			ai.configurar_criatura()
 
 	print("WorldData: configuraciones de IA canónicas sincronizadas en vivo → ", configuraciones.size(), " especies.")
+
+
+func _actualizar_rutinas_personajes_game_en_vivo(mundo_remoto: Dictionary) -> void:
+	var personajes_remotos_variant: Variant = mundo_remoto.get("personajes_game", [])
+	if not personajes_remotos_variant is Array:
+		return
+
+	var personajes_remotos: Dictionary = {}
+	for personaje_variant in personajes_remotos_variant as Array:
+		if not personaje_variant is Dictionary:
+			continue
+		var personaje_remoto := personaje_variant as Dictionary
+		var personaje_id := str(personaje_remoto.get("id", "")).strip_edges()
+		if personaje_id.is_empty():
+			continue
+		personajes_remotos[personaje_id] = personaje_remoto
+
+	var cambio := false
+	for indice in range(_personajes_game.size()):
+		var personaje_actual := _personajes_game[indice].duplicate(true)
+		var personaje_id := str(personaje_actual.get("id", "")).strip_edges()
+		if personaje_id.is_empty() or not personajes_remotos.has(personaje_id):
+			continue
+
+		var personaje_remoto: Dictionary = personajes_remotos[personaje_id]
+		var rutinas_remotas_variant: Variant = personaje_remoto.get("rutinas", [])
+		var rutinas_remotas: Array = rutinas_remotas_variant.duplicate(true) if rutinas_remotas_variant is Array else []
+		var rutinas_actuales_variant: Variant = personaje_actual.get("rutinas", [])
+		var rutinas_actuales: Array = rutinas_actuales_variant if rutinas_actuales_variant is Array else []
+		if rutinas_actuales == rutinas_remotas:
+			continue
+
+		personaje_actual["rutinas"] = rutinas_remotas
+		personaje_actual["ubicacion_clave"] = str(personaje_remoto.get("ubicacion_clave", personaje_actual.get("ubicacion_clave", "")))
+		_personajes_game[indice] = personaje_actual
+		cambio = true
+
+	if not cambio:
+		return
+
+	mundo["personajes_game"] = _personajes_game.duplicate(true)
+	print("WorldData: rutinas de NPC sincronizadas en vivo → ", personajes_remotos.size(), " personajes.")
+	mundo_actualizado.emit()
 
 
 func _recopilar_configuraciones_ia(valor: Variant, salida: Dictionary) -> void:
