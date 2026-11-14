@@ -386,7 +386,7 @@ func _npc_puede_acercarse(npc: Creature) -> bool:
 		return false
 	if bool(npc.get_meta("rutina_en_edificio", false)) or bool(npc.get_meta("rutina_en_transito", false)):
 		return false
-	if bool(npc.get_meta("acercamiento_social_activo", false)):
+	if bool(npc.get_meta("acercamiento_social_activo", false)) or npc.velocity.length() > 5.0:
 		return false
 	return true
 
@@ -444,7 +444,10 @@ func _actualizar_acercamiento(delta: float, jugador: Node2D, dialogo: DialogueSy
 	if dialogo.esta_abierto():
 		_cancelar_acercamiento()
 		return
-	if not _npc_puede_acercarse(npc) or npc.velocity.length() > 5.0:
+	if not npc.is_alive or not npc.is_visible_in_tree():
+		_cancelar_acercamiento()
+		return
+	if bool(npc.get_meta("rutina_en_edificio", false)) or bool(npc.get_meta("rutina_en_transito", false)):
 		_cancelar_acercamiento()
 		return
 	if jugador is CharacterBody2D and (jugador as CharacterBody2D).velocity.length() > 8.0:
