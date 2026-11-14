@@ -790,7 +790,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 
 	var habitantes: Array[Dictionary] = [
 		{
-			"clave":"mara", "nombre":"Mara", "sprite":"Magda", "hogar":"vivienda_oeste_01",
+			"clave":"mara", "nombre":"Mara", "sprite":"Mara", "hogar":"vivienda_oeste_01",
 			"personalidad":"Reservada, observadora y cautelosa. Es una refugiada política que llegó al reino para mantenerse a salvo. No rechaza la compañía, pero necesita tiempo y confianza antes de hablar de su pasado.",
 			"historia":"Refugiada política que evita llamar la atención y protege su identidad.",
 			"rutinas":[
@@ -804,7 +804,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			]
 		},
 		{
-			"clave":"ivo", "nombre":"Ivo", "sprite":"Sofia", "hogar":"vivienda_oeste_02",
+			"clave":"ivo", "nombre":"Ivo", "sprite":"Ivo", "hogar":"vivienda_oeste_02",
 			"personalidad":"Sociable, bromista y atento. Conoce a mucha gente y suele detenerse a conversar con cualquiera. Vive con una enfermedad que le provoca cansancio y le obliga a descansar a menudo; intenta que eso no sea lo único que los demás vean en él.",
 			"historia":"Joven del reino con una enfermedad persistente y episodios de fatiga. Sus amistades buscan maneras de ayudarlo.",
 			"rutinas":[
@@ -819,7 +819,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			]
 		},
 		{
-			"clave":"nima", "nombre":"Nima", "sprite":"Aurora", "hogar":"vivienda_oeste_03",
+			"clave":"nima", "nombre":"Nima", "sprite":"Nima", "hogar":"vivienda_oeste_03",
 			"personalidad":"Curiosa, independiente y entusiasta. Estudia fenómenos Oris por cuenta propia, toma notas y contrasta observaciones, pero también disfruta conversar, pasear, comer con amigos y enterarse de lo que ocurre en el reino.",
 			"historia":"Joven investigadora independiente interesada en fenómenos Oris y otros temas naturales.",
 			"rutinas":[
