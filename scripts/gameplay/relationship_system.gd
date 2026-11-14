@@ -225,6 +225,8 @@ func _obtener_impacto_evento(evento: String) -> Dictionary:
 		"mentir": {"cambios": {"confianza": -8.0, "respeto": -1.0}, "rasgo": "prudencia", "importancia": 3.0},
 		"demostrar_habilidad": {"cambios": {"respeto": 2.5, "amistad": 0.5}, "rasgo": "curiosidad"},
 		"compartir_conocimiento": {"cambios": {"amistad": 1.0, "respeto": 1.5}, "rasgo": "curiosidad"},
+		"interesarse": {"cambios": {"amistad": 0.8, "confianza": 0.4}, "rasgo": "sociabilidad", "importancia": 1.0},
+		"despedida_amable": {"cambios": {"amistad": 0.4, "afecto": 0.5}, "rasgo": "sociabilidad", "importancia": 1.0},
 		"faltar_respeto": {"cambios": {"respeto": -7.0, "amistad": -2.0}, "rasgo": "agresividad", "importancia": 3.0},
 		"traicionar": {"cambios": {"confianza": -20.0, "amistad": -8.0, "afecto": -4.0}, "rasgo": "prudencia", "importancia": 5.0}
 	}
