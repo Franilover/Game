@@ -1231,15 +1231,14 @@ func _seleccionar_item_interaccion(indice: int, item_id_esperado: String, modo: 
 
 func _crear_reaccion_regalo(nombre_item: String, datos_regalo: Dictionary) -> String:
 	var reaccion := str(datos_regalo.get("reaccion", "neutral")).strip_edges().to_lower()
-	match reaccion:
-		"adorado", "favorito", "muy_amado", "encanta":
-			return "¡Muchas gracias! " + nombre_item + " es uno de mis objetos favoritos. Me alegra que pensaras en mí."
-		"le_gusta", "gusta", "positivo", "bueno":
-			return "Gracias por " + nombre_item + ". Es un detalle que aprecio."
-		"no_le_gusta", "desagrado", "negativo", "malo":
-			return "Gracias por el gesto, aunque " + nombre_item + " no es algo que suela apreciar."
-		"odia", "detesta", "muy_negativo":
-			return "No debiste traerme " + nombre_item + ". No es algo que me agrade."
+	if reaccion in ["adorado", "favorito", "muy_amado", "encanta", "muy_positivo"]:
+		return "¡Muchas gracias! " + nombre_item + " es uno de mis objetos favoritos. Me alegra que pensaras en mí."
+	if reaccion in ["le_gusta", "gusta", "positivo", "bueno", "muy_bueno"]:
+		return "Gracias por " + nombre_item + ". Es un detalle que aprecio."
+	if reaccion in ["no_le_gusta", "desagrado", "negativo", "malo"]:
+		return "Gracias por el gesto, aunque " + nombre_item + " no es algo que suela apreciar."
+	if reaccion in ["odia", "detesta", "muy_negativo"]:
+		return "No debiste traerme " + nombre_item + ". No es algo que me agrade."
 	return "Gracias por el regalo. Recordaré que pensaste en mí."
 
 
@@ -1248,12 +1247,21 @@ func _crear_respuesta_pregunta_item(objeto: Dictionary, personaje_id: String, it
 	if relationship_system != null and relationship_system.conoce_item(personaje_id, item_id):
 		var datos_conocidos := relationship_system.evaluar_regalo(personaje_id, item_id)
 		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
-		var reaccion := str(datos_conocidos.get("reaccion", "")).strip_edges()
+		var reaccion := str(datos_conocidos.get("reaccion", "neutral")).strip_edges().to_lower()
 		var respuesta := "Sí, conozco " + nombre_item + "."
 		if not descripcion.is_empty():
 			respuesta += " " + descripcion
-		if not reaccion.is_empty() and reaccion.to_lower() != "neutral":
-			respuesta += " Tengo una opinión bastante clara sobre ese objeto: " + reaccion + "."
+		match reaccion:
+			"adorado", "favorito", "muy_amado", "encanta", "muy_positivo":
+				respuesta += " Es uno de los objetos que más aprecio."
+			"le_gusta", "gusta", "positivo", "bueno", "muy_bueno":
+				respuesta += " Me parece un objeto útil y agradable."
+			"no_le_gusta", "desagrado", "negativo", "malo":
+				respuesta += " No es uno de mis objetos preferidos."
+			"odia", "detesta", "muy_negativo":
+				respuesta += " No me agrada demasiado."
+			_:
+				respuesta += " Lo conozco, aunque no tengo una opinión especial sobre él."
 		return respuesta
 	return "No conozco " + nombre_item + ". ¿Dónde lo encontraste? No recuerdo haber visto uno antes."
 
