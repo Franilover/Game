@@ -305,7 +305,7 @@ func _actualizar_retrato(hablante: String) -> void:
 func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	var variantes_variant: Variant = datos.get("variantes", [])
 	if not variantes_variant is Array:
-		var dialogo_rutina_sin_variantes := _crear_dialogo_rutina_en_transito()
+		var dialogo_rutina_sin_variantes := _crear_dialogo_rutina_contextual()
 		return dialogo_rutina_sin_variantes if not dialogo_rutina_sin_variantes.is_empty() else datos.duplicate(true)
 
 	var principal: Dictionary = {}
@@ -328,7 +328,7 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 
 	# Durante los desplazamientos, el NPC responde según su relación y
 	# comunica el destino actual de su rutina sin interrumpir el horario.
-	var dialogo_rutina := _crear_dialogo_rutina_en_transito()
+	var dialogo_rutina := _crear_dialogo_rutina_contextual()
 	if not dialogo_rutina.is_empty():
 		return dialogo_rutina
 
@@ -397,10 +397,65 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 
 
 func _crear_dialogo_rutina_en_transito() -> Dictionary:
-	if not is_instance_valid(_fuente) or not bool(_fuente.get_meta("rutina_en_transito", false)):
+	return _crear_dialogo_rutina_contextual()
+
+
+func _crear_dialogo_rutina_contextual() -> Dictionary:
+
+
+## Construye una respuesta desde el estado real que publica NPCScheduleSystem.
+## El horario y la ubicación siguen siendo responsabilidad del sistema de rutinas;
+## aquí sólo se adapta la conversación a ese estado.
+func _crear_dialogo_rutina_contextual() -> Dictionary:
+	if not is_instance_valid(_fuente):
 		return {}
 
-	var destino_clave := str(_fuente.get_meta("rutina_ubicacion", "plaza")).strip_edges().to_lower()
+	var rutina_clave := str(_fuente.get_meta("rutina_actual", "")).strip_edges().to_lower()
+	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower()
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower()
+	var en_transito := bool(_fuente.get_meta("rutina_en_transito", false))
+	var dentro_edificio := bool(_fuente.get_meta("rutina_en_edificio", false))
+	if rutina_clave.is_empty() and ubicacion.is_empty() and actividad.is_empty() and not en_transito:
+		return {}
+
+	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
+	var destino := _nombre_ubicacion_rutina(ubicacion)
+	var amable := _relacion_amable_actual()
+	var texto := _obtener_texto_rutina_personaje(
+		nombre,
+		rutina_clave,
+		ubicacion,
+		actividad,
+		destino,
+		en_transito,
+		dentro_edificio,
+		amable
+	)
+	if texto.is_empty():
+		return {}
+
+	var clave_dialogo := "rutina_en_transito" if en_transito else "rutina_" + (rutina_clave if not rutina_clave.is_empty() else actividad)
+	return {
+		"clave": clave_dialogo,
+		"lineas": [{"hablante": _fuente.get_nombre_visual(), "texto": texto}]
+	}
+
+
+func _relacion_amable_actual() -> bool:
+	if not is_instance_valid(_fuente) or relationship_system == null:
+		return false
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return false
+	var relacion_actual := relationship_system.obtener_relacion(personaje_id)
+	return (
+		float(relacion_actual.get("amistad", 0.0)) >= 20.0
+		or float(relacion_actual.get("afecto", 0.0)) >= 15.0
+		or float(relacion_actual.get("confianza", 0.0)) >= 20.0
+	)
+
+
+func _nombre_ubicacion_rutina(ubicacion: String) -> String:
 	var destinos := {
 		"plaza": "la plaza",
 		"panaderia": "la panadería",
@@ -417,41 +472,147 @@ func _crear_dialogo_rutina_en_transito() -> Dictionary:
 		"casa_narel": "su casa",
 		"castillo": "el castillo"
 	}
-	var destino := str(destinos.get(destino_clave, "su próximo destino"))
-	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
-	var amable := false
-	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
-	if not personaje_id.is_empty() and relationship_system != null:
-		var relacion_actual := relationship_system.obtener_relacion(personaje_id)
-		amable = (
-			float(relacion_actual.get("amistad", 0.0)) >= 20.0
-			or float(relacion_actual.get("afecto", 0.0)) >= 15.0
-			or float(relacion_actual.get("confianza", 0.0)) >= 20.0
-		)
+	return str(destinos.get(ubicacion, "su próximo destino"))
 
-	var texto := ""
+
+func _obtener_texto_rutina_personaje(
+	nombre: String,
+	rutina_clave: String,
+	ubicacion: String,
+	actividad: String,
+	destino: String,
+	en_transito: bool,
+	dentro_edificio: bool,
+	amable: bool
+) -> String:
+	# Los diálogos de tránsito aprobados conservan la voz individual de cada NPC.
+	if en_transito:
+		match nombre:
+			"elian":
+				return ("¡Qué bueno verte! Llevo el pan todavía en la cabeza. Primero tengo que llegar a %s; búscame allí y te guardo un momento para conversar." if amable else "Disculpa, no puedo detenerme ahora. Tengo que llegar a %s antes de que se enfríe el trabajo. Allí podremos hablar.") % destino
+			"bruna":
+				return ("¡Eh, me alegra encontrarte! Voy a %s a terminar un encargo. Cuando deje las herramientas, hablamos tranquilamente." if amable else "Ahora no puedo parar; tengo un encargo entre manos. Voy a %s. Si necesitas algo, espérame allí.") % destino
+			"darven":
+				return ("Me alegra verte. Estoy siguiendo mi ronda hacia %s; cuando termine de asegurar la zona, tendrás toda mi atención." if amable else "En servicio. No puedo abandonar mi recorrido: me dirijo a %s. Si es importante, búscame allí.") % destino
+			"saira":
+				return ("¡Qué casualidad verte! Voy hacia %s, tengo unas cuentas que revisar. Si pasas por allí, podemos ponernos al día." if amable else "Ahora mismo voy con prisa; debo atender un asunto en %s. Allí estaré disponible cuando termine.") % destino
+			"narel":
+				return ("¡Ah, hola! Justo iba pensando en algo que debo consultar en %s. Acompáñame con la conversación allí; ahora temo perder el hilo." if amable else "Perdona, estoy intentando no olvidar una idea. Debo llegar a %s y dejar mis notas en orden. Hablemos después.") % destino
+			"abel":
+				return ("Me alegra que hayas venido. Me dirijo a %s; allí podremos hablar sin descuidar mis obligaciones." if amable else "Ahora debo continuar hacia %s. Cuando haya atendido mis responsabilidades, podremos conversar.") % destino
+			"liam":
+				return ("¡Hola! Voy camino a %s. Si me encuentras allí, podremos conversar un poco más." if amable else "Disculpa, tengo que llegar a %s. Búscame allí cuando termine lo que debo hacer.") % destino
+			_:
+				return ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
+
+	var es_dia_libre := rutina_clave.begins_with("dia_libre")
+	var esta_en_casa := ubicacion.begins_with("casa_") or ubicacion == "castillo"
+	if esta_en_casa or actividad in ["volver_a_casa", "dormir", "descansar"] and not en_transito:
+		match nombre:
+			"elian":
+				return "Ya terminé con el horno por hoy. En casa puedo dejar de mirar el reloj y pensar en la próxima tanda." if not amable else "Pasa si quieres. Ya no tengo que vigilar el horno; me viene bien descansar y conversar un rato."
+			"bruna":
+				return "Por fin puedo dejar las herramientas. Mañana revisaré el trabajo con la cabeza más despejada." if not amable else "Estoy guardando mis cosas. Siéntate un momento; aquí no hace falta hablar por encima del ruido de la forja."
+			"darven":
+				return "La guardia también necesita descanso. Ya entregué el turno y no estoy de servicio ahora." if not amable else "El turno terminó. Me alegra tener un rato tranquilo; podemos hablar sin que esté pendiente de cada movimiento."
+			"saira":
+				return "Estoy haciendo cuentas y ordenando algunas notas. No todo el comercio ocurre detrás de un mostrador." if not amable else "Justo estaba cerrando mis cuentas. Quédate un momento; siempre es agradable conversar sin tener clientes esperando."
+			"narel":
+				return "Estoy intentando ordenar mis apuntes antes de olvidar por qué los escribí." if not amable else "He apartado los documentos por un rato. Si quieres, podemos conversar; quizá una pregunta tuya me ayude a ver algo de otra manera."
+			"abel":
+				return "Mis responsabilidades en el castillo no terminan cuando cae la noche. Ahora debo atender asuntos internos." if not amable else "He reservado este momento para los asuntos del castillo. Aun así, podemos conversar un poco."
+			"liam":
+				return "Estoy descansando en el castillo. Si necesitas algo, procura no interrumpir los asuntos de los demás." if not amable else "Aquí estoy tomando un respiro. Me alegra que hayas venido; podemos hablar un rato."
+			_:
+				return "Estoy en casa por ahora. Cuando termine lo que tengo entre manos, podremos conversar." if not amable else "Estoy descansando un momento en casa. Quédate si quieres, podemos conversar."
+
+	# Los días libres tienen pequeñas actividades propias, aunque el NPC no esté trabajando.
+	if es_dia_libre:
+		match nombre:
+			"elian":
+				return "Hoy no hay hornadas pendientes. Salí a tomar aire y ver qué se cuenta por la plaza." if not amable else "Hoy dejé descansar el horno. Me alegra encontrarte fuera de la rutina; ¿cómo te ha ido?"
+			"bruna":
+				return "Hoy no tengo encargos. Estoy aprovechando para despejarme y mirar el pueblo con calma." if not amable else "Me tomé el día para mí. Es bueno salir de la forja de vez en cuando; podemos caminar y conversar."
+			"darven":
+				return "Hoy no estoy de guardia. Aun así, me gusta mantenerme cerca de los accesos." if not amable else "Estoy libre por hoy. Cuesta dejar la costumbre de observarlo todo, pero puedo dedicarte un momento."
+			"saira":
+				return "Hoy no abrí el comercio. Estoy visitando algunos puestos y viendo qué novedades llegaron." if not amable else "Me concedí un día sin mostrador ni cuentas. Ven, cuéntame qué has descubierto últimamente."
+			"narel":
+				return "Intento que un día libre no termine convertido en otra jornada de investigación." if not amable else "Hoy quería despejar la cabeza, aunque ya encontré algo interesante que observar. ¿Me acompañas?"
+			"abel":
+				return "Hoy mis obligaciones son menores, pero sigo pendiente del castillo." if not amable else "Tengo algo más de tiempo libre hoy. Será agradable conversar sin atender una reunión."
+			"liam":
+				return "Aproveché el día libre para salir un rato del castillo." if not amable else "Hoy no tengo tantas obligaciones. ¿Te apetece dar una vuelta por la plaza?"
+			_:
+				return "Hoy llevo un ritmo más tranquilo. No tengo prisa por volver a mis obligaciones." if not amable else "Hoy estoy libre y puedo conversar un rato contigo."
+
+	# Diálogos de trabajo: cada actividad tiene una respuesta propia, no sólo un cambio de destino.
 	match nombre:
 		"elian":
-			texto = ("¡Qué bueno verte! Llevo el pan todavía en la cabeza. Primero tengo que llegar a %s; búscame allí y te guardo un momento para conversar." if amable else "Disculpa, no puedo detenerme ahora. Tengo que llegar a %s antes de que se enfríe el trabajo. Allí podremos hablar.") % destino
+			match actividad:
+				"hornear":
+					return "Estoy preparando la masa para la primera tanda. Si el horno mantiene bien el calor, tendremos pan listo a tiempo." if not amable else "Llegaste justo cuando empieza lo interesante. Mira cómo cambia la masa antes de entrar al horno."
+				"atender":
+					return "Estoy atendiendo los pedidos. Si buscas pan, dime qué necesitas y revisaré lo que queda." if not amable else "¡Qué bueno verte! Estoy atendiendo, pero puedo reservarte algo de la tanda que acaba de salir."
+				"limpiar":
+					return "Estoy limpiando la panadería antes de cerrar. No quiero dejar restos para la mañana." if not amable else "Ya casi termino de ordenar. Cuando acabe, te cuento cómo salió la última hornada."
 		"bruna":
-			texto = ("¡Eh, me alegra encontrarte! Voy a %s a terminar un encargo. Cuando deje las herramientas, hablamos tranquilamente." if amable else "Ahora no puedo parar; tengo un encargo entre manos. Voy a %s. Si necesitas algo, espérame allí.") % destino
+			match actividad:
+				"forjar":
+					return "Estoy trabajando el metal. Necesito mantener el ritmo y la temperatura; hablaré contigo cuando termine esta pieza." if not amable else "Observa el color del metal. No golpeo hasta que está en el punto correcto; es cuestión de paciencia."
+				"revisar_herramientas":
+					return "Estoy comprobando las herramientas. Una pieza desgastada puede arruinar un trabajo entero." if not amable else "Estoy revisando mis herramientas. Si quieres, puedo enseñarte qué señales busco antes de volver a usarlas."
 		"darven":
-			texto = ("Me alegra verte. Estoy siguiendo mi ronda hacia %s; cuando termine de asegurar la zona, tendrás toda mi atención." if amable else "En servicio. No puedo abandonar mi recorrido: me dirijo a %s. Si es importante, búscame allí.") % destino
+			match actividad:
+				"vigilar_acceso":
+					return "Estoy controlando el acceso al registro. Si vienes por un trámite, espera a que termine la inspección." if not amable else "Estoy revisando quién entra y sale. Ya conozco tu rostro, pero debo mantener el procedimiento."
+				"vigilar":
+					return "Este puesto requiere atención constante. No puedo apartarme mientras estoy de guardia." if not amable else "Todo está tranquilo por ahora. Aun así, no debo descuidar el puesto; podemos hablar mientras mantengo la vigilancia."
+				"patrullar":
+					return "Estoy recorriendo el camino. Si detecto algo fuera de lugar, debo informar al cuartel." if not amable else "La ronda está tranquila. Puedes acompañarme un tramo, pero mantente atento a los alrededores."
+				"recorrer_alrededores":
+					return "Aunque hoy esté libre, prefiero conocer bien los alrededores." if not amable else "Estoy dando una vuelta por costumbre. Si quieres, caminamos juntos un trecho."
 		"saira":
-			texto = ("¡Qué casualidad verte! Voy hacia %s, tengo unas cuentas que revisar. Si pasas por allí, podemos ponernos al día." if amable else "Ahora mismo voy con prisa; debo atender un asunto en %s. Allí estaré disponible cuando termine.") % destino
+			match actividad:
+				"comerciar":
+					return "Estoy atendiendo el comercio. Si buscas algo, dime qué es y revisaré las existencias." if not amable else "¡Llegaste! Estoy atendiendo, pero puedo mostrarte primero algunas mercancías que acaban de llegar."
+				"ordenar_mercancia":
+					return "Estoy ordenando el inventario. Si no registro bien cada pieza, luego no sabré qué puedo ofrecer." if not amable else "Estoy poniendo en orden las mercancías. Siempre aparece algo interesante entre los cargamentos."
+				"visitar_comerciantes":
+					return "Estoy visitando a otros comerciantes para conocer sus precios y novedades." if not amable else "Acompáñame si quieres. Siempre se aprende algo escuchando cómo negocian los demás."
 		"narel":
-			texto = ("¡Ah, hola! Justo iba pensando en algo que debo consultar en %s. Acompáñame con la conversación allí; ahora temo perder el hilo." if amable else "Perdona, estoy intentando no olvidar una idea. Debo llegar a %s y dejar mis notas en orden. Hablemos después.") % destino
+			match actividad:
+				"investigar_oris":
+					return "Estoy comparando observaciones sobre Oris. Necesito terminar esta anotación antes de cambiar de tema." if not amable else "Encontré una diferencia interesante en estas observaciones de Oris. Quiero enseñártela cuando termine de comprobarla."
+				"consultar_archivos":
+					return "Estoy consultando registros antiguos. Prefiero verificar las fuentes antes de aceptar una conclusión." if not amable else "He encontrado una referencia que podría aclarar una de mis observaciones. ¿Quieres ayudarme a revisarla?"
+				"registrar_observaciones":
+					return "Estoy pasando mis observaciones al registro. Si no las anoto ahora, los detalles se perderán." if not amable else "Estoy dejando constancia de lo que observé hoy. Después podemos revisar juntos qué significan los resultados."
+				"leer":
+					return "Estoy leyendo un documento que puede servirme para la investigación." if not amable else "Este texto tiene una referencia curiosa. Cuando termine este apartado, me gustaría comentártela."
+				"visitar_estudio":
+					return "Estoy pasando por la casa de estudio para consultar unas notas." if not amable else "Voy a revisar unas notas en la casa de estudio. Si te interesa, puedes acompañarme."
 		"abel":
-			texto = ("Me alegra que hayas venido. Me dirijo a %s; allí podremos hablar sin descuidar mis obligaciones." if amable else "Ahora debo continuar hacia %s. Cuando haya atendido mis responsabilidades, podremos conversar.") % destino
+			match actividad:
+				"recorrer_torres":
+					return "Estoy recorriendo Torres para conocer de primera mano cómo marcha el reino." if not amable else "Me gusta escuchar a quienes viven aquí. Si tienes algo que contarme, este recorrido es un buen momento."
+				"dormir":
+					return "El castillo está en calma. Debo recuperar fuerzas para las responsabilidades de mañana." if not amable else "Por hoy he terminado. Podemos conversar un momento antes de que descanse."
 		"liam":
-			texto = ("¡Hola! Voy camino a %s. Si me encuentras allí, podremos conversar un poco más." if amable else "Disculpa, tengo que llegar a %s. Búscame allí cuando termine lo que debo hacer.") % destino
-		_:
-			texto = ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
+			match actividad:
+				"recorrer_torres":
+					return "Estoy dando una vuelta por Torres. No quiero pasar todo el día dentro del castillo." if not amable else "Salí a recorrer el pueblo. Si quieres, podemos ver qué está pasando en la plaza."
+				"dormir":
+					return "Ya es hora de descansar. Mañana habrá más que hacer." if not amable else "Voy a descansar. Me alegra haberte visto antes de terminar el día."
 
-	return {
-		"clave": "rutina_en_transito",
-		"lineas": [{"hablante": _fuente.get_nombre_visual(), "texto": texto}]
-	}
+	# Respaldo contextual para actividades nuevas que lleguen desde datos sin
+	# necesidad de cambiar el motor de diálogo cada vez.
+	var verbo := actividad.replace("_", " ").strip_edges()
+	if verbo.is_empty():
+		verbo = "atender mis asuntos"
+	if dentro_edificio:
+		return ("Estoy ocupado con %s aquí. Cuando termine, podremos conversar." if not amable else "Estoy con %s, pero me alegra que hayas venido. Podemos hablar mientras continúo.") % verbo
+	return ("Estoy en %s y tengo que ocuparme de %s. Hablemos cuando termine." if not amable else "Estoy en %s con %s. Quédate un momento si quieres; podemos conversar.") % [destino, verbo]
 
 
 func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -> bool:
