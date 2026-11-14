@@ -40,6 +40,7 @@ var _pestana_narrativa := "dialogos"
 var _dialogos_admin: Array[Dictionary] = []
 var _escenas_admin: Array[Dictionary] = []
 var _eventos_admin: Array[Dictionary] = []
+var _botones_pestana_narrativa: Dictionary = {}
 
 
 func _ready() -> void:
@@ -490,6 +491,7 @@ func _crear_inspector_narrativo(personaje_id: String) -> void:
 	var pestanas := HBoxContainer.new()
 	pestanas.add_theme_constant_override("separation", 3)
 	_detalle.add_child(pestanas)
+	_botones_pestana_narrativa.clear()
 	for entrada in [["dialogos", "Diálogos"], ["escenas", "Escenas"], ["eventos", "Eventos"]]:
 		var boton := Button.new()
 		boton.text = str(entrada[1])
@@ -499,6 +501,7 @@ func _crear_inspector_narrativo(personaje_id: String) -> void:
 		boton.pressed.connect(_cambiar_pestana_narrativa.bind(str(entrada[0])))
 		PIXEL_UI_THEME.apply(boton, false)
 		pestanas.add_child(boton)
+		_botones_pestana_narrativa[str(entrada[0])] = boton
 	_contenido_narrativo = VBoxContainer.new()
 	_contenido_narrativo.add_theme_constant_override("separation", 5)
 	_detalle.add_child(_contenido_narrativo)
@@ -524,6 +527,10 @@ func _copiar_registros(valor: Variant) -> Array[Dictionary]:
 
 func _cambiar_pestana_narrativa(pestana: String) -> void:
 	_pestana_narrativa = pestana
+	for clave in _botones_pestana_narrativa:
+		var boton := _botones_pestana_narrativa[clave] as Button
+		if is_instance_valid(boton):
+			boton.button_pressed = str(clave) == _pestana_narrativa
 	_mostrar_pestana_narrativa()
 
 
