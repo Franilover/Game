@@ -258,7 +258,9 @@ func _al_mision_aceptada(mision: Dictionary) -> void:
 	if dias_espera <= 0:
 		var plazo := str(mision.get("plazo", mision.get("duracion", mision.get("tipo_plazo", mision.get("tipo", ""))))).to_lower()
 		var objetivos_variant: Variant = mision.get("objetivos", [])
-		var cantidad_objetivos := (objetivos_variant as Array).size() if objetivos_variant is Array else 0
+		var cantidad_objetivos := 0
+		if objetivos_variant is Array:
+			cantidad_objetivos = (objetivos_variant as Array).size()
 		if plazo.contains("largo") or plazo.contains("seman") or plazo.contains("principal") or cantidad_objetivos >= 3:
 			dias_espera = 3
 	var iniciativas := _obtener_iniciativas()
