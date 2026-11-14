@@ -272,11 +272,14 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
 				var destino_reintento_global := _zona.to_global(destino_reintento)
 				if npc.global_position.distance_to(destino_reintento_global) <= DISTANCIA_LLEGADA:
-					_marcar_npc_dentro_edificio(npc, edificio_id)
+					npc.set_meta("rutina_en_transito", false)
+					if not edificio_id.is_empty():
+						_marcar_npc_dentro_edificio(npc, edificio_id)
 				else:
 					var ruta_reintento := _crear_ruta(npc.global_position, destino_reintento_global)
 					if not ruta_reintento.is_empty():
 						movimiento_actual.establecer_ruta(ruta_reintento)
+						npc.set_meta("rutina_en_transito", true)
 					elif str(npc.get_meta("rutina_error_firma", "")) != firma_nueva:
 						push_warning("NPCScheduleSystem: no se pudo reanudar la ruta de " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
 						npc.set_meta("rutina_error_firma", firma_nueva)
