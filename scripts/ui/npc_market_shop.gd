@@ -132,7 +132,7 @@ func _actualizar_lista() -> void:
 		if disponibles == 0:
 			_estado.text = "Se ha agotado la mercancía de hoy."
 	else:
-		var objetos: Array[Dictionary] = _inventario.obtener_objetos() if is_instance_valid(_inventario) else []
+		var objetos: Array[Dictionary] = _inventario.runtime.state.items.duplicate(true) if is_instance_valid(_inventario) else []
 		var vendibles := 0
 		for indice in range(objetos.size()):
 			var objeto: Dictionary = objetos[indice]
@@ -232,7 +232,7 @@ func _vender(indice: int, item_id: String, precio: int) -> void:
 func _buscar_ultimo_item(item_id: String) -> int:
 	if not is_instance_valid(_inventario):
 		return -1
-	var objetos: Array[Dictionary] = _inventario.obtener_objetos()
+	var objetos: Array[Dictionary] = _inventario.runtime.state.items.duplicate(true)
 	for indice in range(objetos.size() - 1, -1, -1):
 		var item := _inventario.obtener_item(indice)
 		if str(item.get("item_id", item.get("id", ""))) == item_id:
@@ -260,17 +260,31 @@ func _generar_catalogo_personal() -> void:
 		if puntuacion > 0:
 			candidatos.append({"item_id": id, "nombre": str(item.get("nombre", "Objeto")), "precio": _precio_base(item), "puntuacion": puntuacion})
 	if candidatos.is_empty():
+		var catalogo_fallback: Array[Dictionary] = []
 		for item in _world_items.obtener_catalogo():
 			if item.is_empty() or not _es_comerciable(item):
 				continue
-			candidatos.append({"item_id": str(item.get("item_id", "")), "nombre": str(item.get("nombre", "Objeto")), "precio": _precio_base(item), "puntuacion": 0})
+			catalogo_fallback.append({"item_id": str(item.get("item_id", "")), "nombre": str(item.get("nombre", "Objeto")), "precio": _precio_base(item), "puntuacion": 0})
+		catalogo_fallback.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return str(a.get("item_id", "")) < str(b.get("item_id", ""))
+		)
+		# Si no hay etiquetas semánticas en el catálogo, cada vecino recibe
+		# una selección distinta y estable, no una copia de la tienda ajena.
+		var inicio := posmod(_npc.get_personaje_game_id().hash(), maxi(1, catalogo_fallback.size())) if is_instance_valid(_npc) else 0
+		for offset in range(catalogo_fallback.size()):
+			candidatos.append(catalogo_fallback[posmod(inicio + offset, catalogo_fallback.size())])
 	candidatos.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if int(a.get("puntuacion", 0)) == int(b.get("puntuacion", 0)):
 			return str(a.get("item_id", "")) < str(b.get("item_id", ""))
 		return int(a.get("puntuacion", 0)) > int(b.get("puntuacion", 0))
 	)
-	for indice in range(mini(MAX_PRODUCTOS, candidatos.size())):
-		_productos.append(candidatos[indice].duplicate(true))
+	if candidatos.is_empty():
+		return
+	var inicio_catalogo := 0
+	if int(candidatos[0].get("puntuacion", 0)) == 0 and is_instance_valid(_npc):
+		inicio_catalogo = posmod(_npc.get_personaje_game_id().hash(), candidatos.size())
+	for offset in range(mini(MAX_PRODUCTOS, candidatos.size())):
+		_productos.append(candidatos[posmod(inicio_catalogo + offset, candidatos.size())].duplicate(true))
 
 
 func _perfil_comerciante() -> Array[String]:
