@@ -16,6 +16,13 @@ const EXTENSIONES_IMAGEN: Array[String] = [
 # Los archivos que solo se descubren con DirAccess pueden quedar fuera de una exportación.
 const TEXTURAS_INCLUIDAS: Array[Texture2D] = [
 	preload("res://assets/art/items/Arco Aoris.png"),
+	preload("res://assets/art/items/Carta Aoris.png"),
+	preload("res://assets/art/items/Casco Aoris.png"),
+	preload("res://assets/art/items/Espada Aoris.png"),
+	preload("res://assets/art/items/Espada Hemocongelante.png"),
+	preload("res://assets/art/items/Espada de Feliros.png"),
+	preload("res://assets/art/items/Espada de Topacio.png"),
+	preload("res://assets/art/items/Pechera Aoris.png"),
 	preload("res://assets/art/items/Botas de Hierro.png"),
 	preload("res://assets/art/items/Escudo.png"),
 	preload("res://assets/art/items/Espada de Madera.png"),
@@ -75,6 +82,16 @@ static func obtener_icono(
 
 	var clave := _normalizar_nombre(nombre)
 
+	# Nombres canónicos de Supabase que difieren ligeramente del archivo artístico.
+	var alias_sprite := {
+		"cartasaoris": "Carta Aoris.png",
+		"espadatopacio": "Espada de Topacio.png"
+	}
+	if alias_sprite.has(clave):
+		var ruta_alias := ITEMS_ASSET_ROOT.path_join(str(alias_sprite[clave]))
+		_rutas_por_nombre[clave] = ruta_alias
+		return _cargar_textura(ruta_alias)
+
 	if _rutas_por_nombre.has(clave):
 		return _cargar_textura(str(_rutas_por_nombre[clave]))
 
@@ -96,6 +113,10 @@ static func obtener_icono(
 
 	_nombres_sin_icono[clave] = true
 	return null
+
+
+static func tiene_icono(datos: Dictionary) -> bool:
+	return obtener_icono(datos) != null
 
 
 static func _asegurar_indice() -> void:

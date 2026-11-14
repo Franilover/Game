@@ -104,6 +104,7 @@ func cargar_catalogo() -> void:
 		str(GarliaAuth.SUPABASE_URL)
 		+ "/rest/v1/items_game"
 		+ "?select=item_id,tipo,max_stack,propiedades,"
+		+ "categoria:categorias_items_game!items_game_categoria_clave_fkey(clave,nombre,descripcion,orden),"
 		+ "item:items!inner("
 		+ "id,nombre,descripcion,origen,"
 		+ "propiedades_fisicas,estado_fisico,"
@@ -216,6 +217,14 @@ func _al_recibir_catalogo(
 			item["propiedades_game"] = (propiedades as Dictionary).duplicate(true)
 		else:
 			item["propiedades_game"] = {}
+
+		var categoria_variant: Variant = fila_game.get("categoria", null)
+		if categoria_variant is Dictionary:
+			item["categoria"] = (categoria_variant as Dictionary).duplicate(true)
+			item["categoria_clave"] = str((categoria_variant as Dictionary).get("clave", ""))
+		else:
+			item["categoria"] = {}
+			item["categoria_clave"] = ""
 
 		catalogo.append(item)
 
@@ -330,7 +339,8 @@ func _procesar_siguiente_drop() -> void:
 		+ "plantilla:plantillas_geometricas!worldbuilder_tipos_objeto_plantilla_id_fkey(categoria)"
 		+ " ),"
 		+ "items_game!inner("
-		+ "item_id,tipo,max_stack,propiedades"
+		+ "item_id,tipo,max_stack,propiedades,"
+		+ "categoria:categorias_items_game!items_game_categoria_clave_fkey(clave,nombre,descripcion,orden)"
 		+ ")"
 		+ ")"
 		+ "&criatura_id=eq."
@@ -427,6 +437,14 @@ func _al_recibir_drops(
 			item["propiedades_game"] = (propiedades as Dictionary).duplicate(true)
 		else:
 			item["propiedades_game"] = {}
+
+		var categoria_variant: Variant = item_game.get("categoria", null)
+		if categoria_variant is Dictionary:
+			item["categoria"] = (categoria_variant as Dictionary).duplicate(true)
+			item["categoria_clave"] = str((categoria_variant as Dictionary).get("clave", ""))
+		else:
+			item["categoria"] = {}
+			item["categoria_clave"] = ""
 
 		item["cantidad"] = 1
 		resultado_drops.append(item)
@@ -557,6 +575,10 @@ func _generar_world_item(
 	datos: Dictionary,
 	posicion: Vector2
 ) -> bool:
+	if not ItemIconResolver.tiene_icono(datos):
+		print("GarliaWorldItems: objeto no implementado todavía; falta su sprite → ", str(datos.get("nombre", "Objeto")))
+		return false
+
 	var entities := _entities_root
 	if entities == null or not is_instance_valid(entities):
 		print("GarliaWorldItems: no se configuró el root de entidades.")

@@ -70,6 +70,7 @@ var _world_items: GarliaWorldItems = null
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
 var _slot_grids: Array[GridContainer] = []
 @onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
+@onready var item_category: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
 @onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemDescription
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
 @onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DeleteButton
@@ -915,6 +916,15 @@ func _mostrar_informacion() -> void:
 			lineas.append("%s: %s" % [str(etiquetas[clave]), str(valor)])
 
 	item_name.text = nombre
+	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
+	if not categoria.is_empty():
+		item_category.text = "CATEGORÍA · " + str(categoria.get("nombre", "Sin categoría")).to_upper()
+		item_category.tooltip_text = str(categoria.get("descripcion", ""))
+		item_category.visible = true
+	else:
+		item_category.text = ""
+		item_category.tooltip_text = ""
+		item_category.visible = false
 	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción ni propiedades adicionales registradas."
 	item_description.visible = true
 	delete_button.disabled = false
@@ -925,8 +935,26 @@ func _mostrar_informacion() -> void:
 	item_icon.visible = textura != null
 
 
+func _obtener_categoria_objeto(datos: Dictionary) -> Dictionary:
+	var categoria_variant: Variant = datos.get("categoria", {})
+	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
+		return (categoria_variant as Dictionary).duplicate(true)
+
+	if _world_items != null and is_instance_valid(_world_items):
+		var item_id := str(datos.get("item_id", datos.get("id", ""))).strip_edges()
+		if not item_id.is_empty():
+			var catalogo_item := _world_items.buscar_item_por_id(item_id)
+			var categoria_catalogo: Variant = catalogo_item.get("categoria", {})
+			if categoria_catalogo is Dictionary:
+				return (categoria_catalogo as Dictionary).duplicate(true)
+	return {}
+
+
 func _limpiar_informacion() -> void:
 	item_name.text = ""
+	item_category.text = ""
+	item_category.tooltip_text = ""
+	item_category.visible = false
 	item_description.text = ""
 	item_description.visible = false
 	item_icon.texture = null

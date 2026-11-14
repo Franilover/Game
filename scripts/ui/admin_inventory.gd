@@ -259,16 +259,30 @@ func _cargar_objetos() -> void:
 
 	var catalogo: Array[Dictionary] = _world_items.obtener_catalogo()
 	var grupos: Dictionary = {}
+	var ordenes_grupos: Dictionary = {}
 
 	for item in catalogo:
-		var grupo := _obtener_grupo_objeto(item)
+		# Los objetos sin arte propio permanecen en Supabase, pero todavía no
+		# se ofrecen como contenido jugable ni como objetos de prueba del admin.
+		if not ItemIconResolver.tiene_icono(item):
+			continue
+		var categoria_variant: Variant = item.get("categoria", {})
+		if not categoria_variant is Dictionary or (categoria_variant as Dictionary).is_empty():
+			continue
+		var categoria := categoria_variant as Dictionary
+		var grupo := str(categoria.get("nombre", "Sin categoría"))
 		if not grupos.has(grupo):
 			grupos[grupo] = []
+			ordenes_grupos[grupo] = int(categoria.get("orden", 999))
 		grupos[grupo].append(item)
 
 	var claves: Array = grupos.keys()
 	claves.sort_custom(func(a: Variant, b: Variant) -> bool:
-		return str(a).to_lower() < str(b).to_lower()
+		var orden_a := int(ordenes_grupos.get(str(a), 999))
+		var orden_b := int(ordenes_grupos.get(str(b), 999))
+		if orden_a == orden_b:
+			return str(a).to_lower() < str(b).to_lower()
+		return orden_a < orden_b
 	)
 
 	for grupo in claves:
@@ -296,30 +310,10 @@ func _cargar_aldeanos() -> void:
 
 
 func _obtener_grupo_objeto(item: Dictionary) -> String:
-	var tags_variant: Variant = item.get("tags", item.get("etiquetas", null))
-
-	if tags_variant is Array:
-		var tags := tags_variant as Array
-		if not tags.is_empty():
-			return str(tags[0])
-
-	if tags_variant is String and not str(tags_variant).strip_edges().is_empty():
-		return str(tags_variant).strip_edges()
-
-	var propiedades_variant: Variant = item.get("propiedades_game", {})
-	if propiedades_variant is Dictionary:
-		var propiedades := propiedades_variant as Dictionary
-		for clave in ["categoria", "tipo", "grupo"]:
-			var valor := str(propiedades.get(clave, "")).strip_edges()
-			if not valor.is_empty():
-				return valor
-
-	for clave in ["categoria", "tipo", "tipo_item", "grupo"]:
-		var valor := str(item.get(clave, "")).strip_edges()
-		if not valor.is_empty():
-			return valor
-
-	return "Otros"
+	var categoria_variant: Variant = item.get("categoria", {})
+	if categoria_variant is Dictionary:
+		return str((categoria_variant as Dictionary).get("nombre", "Sin categoría"))
+	return "Sin categoría"
 
 
 func _crear_fila(nombre: String, datos: Dictionary) -> void:
@@ -387,11 +381,22 @@ func _mostrar_detalle() -> void:
 	_detalle.add_child(titulo)
 	_detalle.move_child(titulo, 1)
 
+	if _modo == "objetos":
+		var categoria_variant: Variant = _seleccion.get("categoria", {})
+		if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
+			var categoria := categoria_variant as Dictionary
+			var etiqueta_categoria := Label.new()
+			etiqueta_categoria.text = "CATEGORÍA · " + str(categoria.get("nombre", "Sin categoría")).to_upper()
+			etiqueta_categoria.tooltip_text = str(categoria.get("descripcion", ""))
+			etiqueta_categoria.add_theme_font_size_override("font_size", 10)
+			_detalle.add_child(etiqueta_categoria)
+			_detalle.move_child(etiqueta_categoria, 2)
+
 	var info := Label.new()
 	info.text = descripcion
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detalle.add_child(info)
-	_detalle.move_child(info, 2)
+	_detalle.move_child(info, 3 if _modo == "objetos" and _seleccion.get("categoria", {}) is Dictionary and not (_seleccion.get("categoria", {}) as Dictionary).is_empty() else 2)
 
 	if _modo == "objetos":
 		_cantidad.visible = true
