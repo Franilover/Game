@@ -252,25 +252,32 @@ objetivos AS (
   FROM contenido c
   JOIN public.personajes p ON lower(p.nombre) = lower(c.nombre)
   JOIN public.personajes_game pg ON pg.personaje_id = p.id
+),
+cambios AS (
+  SELECT
+    dg.id AS dialogo_id,
+    jsonb_set(
+      dg.dialogo,
+      '{temas_conversacion}',
+      coalesce(dg.dialogo->'temas_conversacion', '[]'::jsonb) || agregados.nuevos,
+      true
+    ) AS dialogo_actualizado
+  FROM public.dialogos_game dg
+  JOIN objetivos o ON dg.personaje_id = o.personaje_game_id
+  CROSS JOIN LATERAL (
+    SELECT coalesce(jsonb_agg(nuevo ORDER BY nuevo->>'clave'), '[]'::jsonb) AS nuevos
+    FROM jsonb_array_elements(o.temas) AS nuevo
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM jsonb_array_elements(coalesce(dg.dialogo->'temas_conversacion', '[]'::jsonb)) AS existente
+      WHERE existente->>'clave' = nuevo->>'clave'
+    )
+  ) agregados
+  WHERE dg.clave = 'principal'
+    AND jsonb_typeof(dg.dialogo) = 'object'
+    AND jsonb_array_length(agregados.nuevos) > 0
 )
 UPDATE public.dialogos_game dg
-SET dialogo = jsonb_set(
-  dg.dialogo,
-  '{temas_conversacion}',
-  coalesce(dg.dialogo->'temas_conversacion', '[]'::jsonb) || agregados.nuevos,
-  true
-)
-FROM objetivos o
-CROSS JOIN LATERAL (
-  SELECT coalesce(jsonb_agg(nuevo ORDER BY nuevo->>'clave'), '[]'::jsonb) AS nuevos
-  FROM jsonb_array_elements(o.temas) AS nuevo
-  WHERE NOT EXISTS (
-    SELECT 1
-    FROM jsonb_array_elements(coalesce(dg.dialogo->'temas_conversacion', '[]'::jsonb)) AS existente
-    WHERE existente->>'clave' = nuevo->>'clave'
-  )
-) agregados
-WHERE dg.personaje_id = o.personaje_game_id
-  AND dg.clave = 'principal'
-  AND jsonb_typeof(dg.dialogo) = 'object'
-  AND jsonb_array_length(agregados.nuevos) > 0;
+SET dialogo = cambios.dialogo_actualizado
+FROM cambios
+WHERE dg.id = cambios.dialogo_id;
