@@ -1281,7 +1281,7 @@ func sacar_npc_del_interior(npc: Node) -> void:
 	var entrada := _obtener_entrada_por_id(edificio_id)
 	npc.reparent(_contenedor_npcs_exterior, true)
 	if not entrada.is_empty() and npc is Node2D:
-		(npc as Node2D).global_position = to_global(entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
+		(npc as Node2D).global_position = _obtener_posicion_entrada_global(entrada) + Vector2(0.0, 28.0)
 	if npc is CanvasItem:
 		(npc as CanvasItem).visible = false
 	npc.remove_from_group("interactable")
@@ -1297,7 +1297,7 @@ func _devolver_npcs_del_interior_al_exterior() -> void:
 		var entrada := _obtener_entrada_por_id(edificio_id)
 		npc.reparent(_contenedor_npcs_exterior, true)
 		if not entrada.is_empty() and npc is Node2D:
-			(npc as Node2D).global_position = to_global(entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
+			(npc as Node2D).global_position = _obtener_posicion_entrada_global(entrada) + Vector2(0.0, 28.0)
 		if npc is CanvasItem:
 			(npc as CanvasItem).visible = false
 
