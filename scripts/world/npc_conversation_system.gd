@@ -808,6 +808,7 @@ func _buscar_acontecimiento_diario(
 			continue
 
 		var evento := acontecimiento.duplicate(true)
+		evento["_clave_acontecimiento"] = clave
 		evento["clave"] = "diario_%s_%s" % [clave, clave_dia.replace(":", "_")]
 		evento["_acontecimiento_diario"] = true
 		_iniciar_conversacion(evento)
@@ -1204,7 +1205,7 @@ func _obtener_burbuja(npc: Creature) -> PanelContainer:
 ## Después de cada acontecimiento, los participantes realizan una acción
 ## breve relacionada con lo que acaban de hablar.
 func _iniciar_actividad_del_acontecimiento() -> void:
-	var clave := str(_conversacion_activa.get("clave", ""))
+	var clave := str(_conversacion_activa.get("_clave_acontecimiento", _conversacion_activa.get("clave", "")))
 	var actividades: Dictionary = {
 		"elian_saira_paquete": {"destino": Vector2(-205.0, -78.0), "duracion": 4.0},
 		"bruna_darven_cartel": {"destino": Vector2(0.0, 0.0), "duracion": 6.0},
