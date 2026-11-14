@@ -366,9 +366,9 @@ func _obtener_flags_partida() -> Dictionary:
 
 
 func _cargar_stock_persistente() -> void:
-	var flags := _obtener_flags_partida()
-	if flags.is_empty():
+	if not is_instance_valid(_game_state):
 		return
+	var flags := _obtener_flags_partida()
 	var todos_variant: Variant = flags.get("mercado_stock", {})
 	var todos: Dictionary = todos_variant as Dictionary if todos_variant is Dictionary else {}
 	var stock_variant: Variant = todos.get(_clave_stock(), {})
@@ -382,9 +382,9 @@ func _cargar_stock_persistente() -> void:
 
 
 func _guardar_stock_persistente() -> void:
-	var flags := _obtener_flags_partida()
-	if flags.is_empty():
+	if not is_instance_valid(_game_state):
 		return
+	var flags := _obtener_flags_partida()
 	var todos_variant: Variant = flags.get("mercado_stock", {})
 	var todos: Dictionary = todos_variant.duplicate(true) if todos_variant is Dictionary else {}
 	todos[_clave_stock()] = _stock.duplicate(true)
