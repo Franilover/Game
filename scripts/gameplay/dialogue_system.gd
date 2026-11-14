@@ -48,6 +48,9 @@ var _temporizador_texto: float = 0.0
 var _intervalo_caracter: float = 0.018
 var _recuerdo_pendiente_mostrar: Dictionary = {}
 var _personaje_recuerdo_pendiente: String = ""
+var _variante_pendiente_mostrar: Dictionary = {}
+var _personaje_variante_pendiente: String = ""
+var _ciclo_variante_pendiente: String = ""
 
 
 func _ready() -> void:
@@ -88,6 +91,7 @@ func _process(delta: float) -> void:
 	_actualizar_boton_accion()
 	if _indice_caracter >= _texto_completo.length():
 		_marcar_recuerdo_pendiente_mostrado()
+		_marcar_variante_pendiente_mostrada()
 
 
 func _input(event: InputEvent) -> void:
@@ -155,6 +159,9 @@ func abrir_desde(fuente: Creature) -> bool:
 func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 	_recuerdo_pendiente_mostrar.clear()
 	_personaje_recuerdo_pendiente = ""
+	_variante_pendiente_mostrar.clear()
+	_personaje_variante_pendiente = ""
+	_ciclo_variante_pendiente = ""
 	_fuente = fuente
 	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
 	var datos_seleccionados := _seleccionar_dialogo(datos)
@@ -208,6 +215,7 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 				datos_seleccionados = dialogo_recuerdo
 				lineas = _normalizar_lineas(datos_seleccionados)
 
+	_preparar_registro_variante(datos_seleccionados)
 	_lineas = lineas
 	_acciones.clear()
 	_respuestas.clear()
@@ -297,6 +305,9 @@ func cerrar() -> void:
 	_acciones.clear()
 	_recuerdo_pendiente_mostrar.clear()
 	_personaje_recuerdo_pendiente = ""
+	_variante_pendiente_mostrar.clear()
+	_personaje_variante_pendiente = ""
+	_ciclo_variante_pendiente = ""
 
 	if action_button != null:
 		action_button.visible = false
@@ -316,6 +327,7 @@ func _avanzar() -> void:
 		_indice_caracter = _texto_completo.length()
 		text_label.text = _texto_completo
 		_marcar_recuerdo_pendiente_mostrado()
+		_marcar_variante_pendiente_mostrada()
 		return
 
 	if _indice_linea >= _lineas.size() - 1 and not _respuestas.is_empty():
@@ -345,6 +357,87 @@ func _marcar_recuerdo_pendiente_mostrado() -> void:
 	if relationship_system.marcar_recuerdo_mencionado(_personaje_recuerdo_pendiente, indice, uid):
 		_recuerdo_pendiente_mostrar.clear()
 		_personaje_recuerdo_pendiente = ""
+
+
+## Prepara el registro de una variante que debe dejar de repetirse tras verla.
+func _preparar_registro_variante(datos_dialogo: Dictionary) -> void:
+	_variante_pendiente_mostrar.clear()
+	_personaje_variante_pendiente = ""
+	_ciclo_variante_pendiente = ""
+	if relationship_system == null or not is_instance_valid(_fuente):
+		return
+	var clave := str(datos_dialogo.get("clave", "")).strip_edges()
+	var ciclo := _obtener_ciclo_variante(datos_dialogo)
+	if clave.is_empty() or ciclo.is_empty():
+		return
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return
+	_variante_pendiente_mostrar = datos_dialogo.duplicate(true)
+	_personaje_variante_pendiente = personaje_id
+	_ciclo_variante_pendiente = ciclo
+
+
+## Las variantes sociales y de misión son únicas; las estacionales reaparecen
+## sólo en el siguiente año del calendario del mundo.
+func _obtener_ciclo_variante(variante: Dictionary) -> String:
+	var repeticion := str(variante.get("repeticion", "")).strip_edges().to_lower()
+	var contexto: Dictionary = {}
+	if relationship_system != null and relationship_system.has_method("obtener_contexto_temporal"):
+		var contexto_variant: Variant = relationship_system.call("obtener_contexto_temporal")
+		if contexto_variant is Dictionary:
+			contexto = contexto_variant
+	var anio := int(contexto.get("anio", 0))
+	var dia := int(contexto.get("dia", 0))
+	var requisito_social_variant: Variant = variante.get("requisito_social", {})
+	var requisito_mision_variant: Variant = variante.get("requisito", {})
+	var requisito_contextual_variant: Variant = variante.get("requisito_contextual", {})
+	if repeticion == "siempre":
+		return ""
+	if repeticion == "unica":
+		return "unica"
+	if repeticion == "diaria":
+		return "dia:%d:%d" % [anio, dia]
+	if repeticion == "anual":
+		return "anio:%d" % anio
+	if repeticion == "social" or (requisito_social_variant is Dictionary and not (requisito_social_variant as Dictionary).is_empty()):
+		return "unica"
+	if requisito_mision_variant is Dictionary and not (requisito_mision_variant as Dictionary).is_empty():
+		return "unica"
+	if requisito_contextual_variant is Dictionary and not (requisito_contextual_variant as Dictionary).is_empty():
+		var requisito_contextual := requisito_contextual_variant as Dictionary
+		if requisito_contextual.has("dias_del_anio") or requisito_contextual.has("dias_de_estacion") or requisito_contextual.has("dia_de_estacion_min") or requisito_contextual.has("dia_de_estacion_max"):
+			return "anio:%d" % anio
+		if requisito_contextual.has("estaciones"):
+			return "estacion:%d:%s" % [anio, str(contexto.get("estacion_id", ""))]
+		if requisito_contextual.has("periodos"):
+			return "periodo:%d:%s" % [anio, str(contexto.get("periodo", ""))]
+		return "dia:%d:%d" % [anio, dia]
+	return ""
+
+
+func _variante_ya_mostrada(variante: Dictionary, personaje_id: String) -> bool:
+	var clave := str(variante.get("clave", "")).strip_edges()
+	var ciclo := _obtener_ciclo_variante(variante)
+	if clave.is_empty() or ciclo.is_empty() or relationship_system == null:
+		return false
+	return relationship_system.variante_dialogo_ya_mostrada(personaje_id, clave, ciclo)
+
+
+func _marcar_variante_pendiente_mostrada() -> void:
+	if _variante_pendiente_mostrar.is_empty() or relationship_system == null:
+		return
+	if _personaje_variante_pendiente.is_empty() or _ciclo_variante_pendiente.is_empty():
+		return
+	var clave := str(_variante_pendiente_mostrar.get("clave", "")).strip_edges()
+	if relationship_system.registrar_variante_dialogo_mostrada(
+		_personaje_variante_pendiente,
+		clave,
+		_ciclo_variante_pendiente
+	):
+		_variante_pendiente_mostrar.clear()
+		_personaje_variante_pendiente = ""
+		_ciclo_variante_pendiente = ""
 
 
 func _mostrar_linea_actual() -> void:
@@ -529,7 +622,11 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		if requisito_variant is Dictionary:
 			var requisito := requisito_variant as Dictionary
 			if not requisito.is_empty():
-				if mission_manager_local != null and mission_manager_local.cumple_requisito_dialogo(requisito):
+				if (
+					mission_manager_local != null
+					and mission_manager_local.cumple_requisito_dialogo(requisito)
+					and not _variante_ya_mostrada(variante, _obtener_personaje_id_actual())
+				):
 					return variante
 				continue
 
@@ -548,9 +645,23 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 
 		var social: RelationshipSystemService = relationship_system
 		if social != null:
-			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_variant as Array, personaje_id)
+			var variantes_sociales_disponibles: Array = []
+			for variante_social_variant in variantes_variant as Array:
+				if not variante_social_variant is Dictionary:
+					continue
+				var variante_social := variante_social_variant as Dictionary
+				if not _variante_ya_mostrada(variante_social, personaje_id):
+					variantes_sociales_disponibles.append(variante_social)
+			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_sociales_disponibles, personaje_id)
 			if not seleccion.is_empty() and str(seleccion.get("clave", "")).strip_edges().to_lower() != "principal":
 				return seleccion.duplicate(true)
+
+		# El diálogo raíz puede ser una introducción narrativa o el inicio de una misión.
+		# Se conserva para el primer encuentro si no existe una variante principal explícita.
+		if principal.is_empty() and (datos.has("lineas") or datos.has("texto")):
+			var estado_inicial := social.obtener_estado_dialogo(personaje_id) if social != null else {}
+			if bool(estado_inicial.get("primera_vez", false)):
+				return datos.duplicate(true)
 
 	var dialogo_rutina := _crear_dialogo_rutina_contextual()
 	if not dialogo_rutina.is_empty():
@@ -559,6 +670,12 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if not principal.is_empty():
 		return principal
 	return datos.duplicate(true)
+
+
+func _obtener_personaje_id_actual() -> String:
+	if not is_instance_valid(_fuente):
+		return ""
+	return _fuente.get_personaje_game_id().strip_edges()
 
 
 ## Selecciona variantes condicionadas por el calendario del mundo.
@@ -588,6 +705,8 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 			continue
 		var requisito_contextual := requisito_contextual_variant as Dictionary
 		if requisito_contextual.is_empty() or not _cumple_requisito_contextual(requisito_contextual, contexto):
+			continue
+		if _variante_ya_mostrada(variante, personaje_id):
 			continue
 
 		var requisito_social_variant: Variant = variante_variant.get("requisito_social", {})
