@@ -20,6 +20,23 @@ var _personaje_seleccionado_id := ""
 func _ready() -> void:
 	_crear_ui()
 	PIXEL_UI_THEME.apply(self, false)
+
+	# La pestaña puede abrirse antes de que WorldData termine de recibir
+	# personajes_game desde Supabase. Escuchar ambos eventos evita dejar
+	# la lista vacía hasta volver a abrir el menú.
+	if WorldData.has_signal("mundo_listo"):
+		var senal_mundo_listo: Signal = WorldData.mundo_listo
+		if not senal_mundo_listo.is_connected(_al_catalogo_personajes_actualizado):
+			senal_mundo_listo.connect(_al_catalogo_personajes_actualizado)
+	if WorldData.has_signal("mundo_actualizado"):
+		var senal_mundo_actualizado: Signal = WorldData.mundo_actualizado
+		if not senal_mundo_actualizado.is_connected(_al_catalogo_personajes_actualizado):
+			senal_mundo_actualizado.connect(_al_catalogo_personajes_actualizado)
+
+	_actualizar()
+
+
+func _al_catalogo_personajes_actualizado() -> void:
 	_actualizar()
 
 
@@ -140,8 +157,8 @@ func _actualizar() -> void:
 		return
 
 	for personaje in personajes:
-		if not bool(personaje.get("activo", true)):
-			continue
+		# El catálogo ya contiene habitantes jugables/sociales; no excluirlos
+		# por campos opcionales de activación que pueden faltar en snapshots antiguos.
 		var personaje_id := str(personaje.get("id", "")).strip_edges()
 		if personaje_id.is_empty():
 			continue

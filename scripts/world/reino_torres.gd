@@ -815,15 +815,16 @@ func _crear_sprite_evento(
 
 
 func _crear_luces_faroles() -> void:
-	# Los nodos reales de la escena son Sprite_poste_oeste y Sprite_poste_este.
-	# La luz 2D ilumina el mundo; el resplandor visible se dibuja en una
-	# CanvasLayer independiente para que CanvasModulate no lo apague.
+	# Los dos postes originales se conservan y se añaden otros a intervalos
+	# regulares sobre el camino principal de Torres.
+	# La luz 2D ilumina el suelo; el brillo tenue queda sobre una CanvasLayer
+	# para que CanvasModulate no lo apague.
 	var gradiente: Gradient = Gradient.new()
-	gradiente.set_color(0, Color(1.0, 0.76, 0.43, 0.68))
+	gradiente.set_color(0, Color(1.0, 0.76, 0.43, 0.34))
 	gradiente.set_color(1, Color(1.0, 0.48, 0.12, 0.0))
-	gradiente.add_point(0.28, Color(1.0, 0.68, 0.34, 0.42))
-	gradiente.add_point(0.62, Color(1.0, 0.55, 0.22, 0.14))
-	gradiente.add_point(0.84, Color(1.0, 0.48, 0.12, 0.035))
+	gradiente.add_point(0.28, Color(1.0, 0.68, 0.34, 0.22))
+	gradiente.add_point(0.62, Color(1.0, 0.55, 0.22, 0.07))
+	gradiente.add_point(0.84, Color(1.0, 0.48, 0.12, 0.015))
 
 	var textura_luz: GradientTexture2D = GradientTexture2D.new()
 	textura_luz.gradient = gradiente
@@ -839,23 +840,48 @@ func _crear_luces_faroles() -> void:
 	_capa_brillos_faroles.follow_viewport_enabled = true
 	add_child(_capa_brillos_faroles)
 
-	var nombres_faroles: Array[String] = ["Sprite_poste_oeste", "Sprite_poste_este"]
-	for indice in range(nombres_faroles.size()):
-		var farol := get_node_or_null(NodePath(nombres_faroles[indice])) as Sprite2D
-		if not is_instance_valid(farol):
-			push_warning("ReinoTorres: no se encontró el farol: " + nombres_faroles[indice])
-			continue
+	var faroles: Array[Dictionary] = [
+		{"nombre": "Oeste", "nodo": "Sprite_poste_oeste"},
+		{"nombre": "OesteExterior", "posicion": Vector2(-600.0, 12.0)},
+		{"nombre": "OesteInterior", "posicion": Vector2(-150.0, 12.0)},
+		{"nombre": "EsteInterior", "posicion": Vector2(150.0, 12.0)},
+		{"nombre": "EsteExterior", "posicion": Vector2(600.0, 12.0)},
+		{"nombre": "Este", "nodo": "Sprite_poste_este"}
+	]
 
-		var posicion_global: Vector2 = farol.to_global(Vector2(0.0, -8.0))
+	for farol_datos: Dictionary in faroles:
+		var farol: Sprite2D = null
+		var posicion_global := Vector2.ZERO
+		if farol_datos.has("nodo"):
+			farol = get_node_or_null(NodePath(str(farol_datos["nodo"]))) as Sprite2D
+			if not is_instance_valid(farol):
+				push_warning("ReinoTorres: no se encontró el farol: " + str(farol_datos["nodo"]))
+				continue
+			posicion_global = farol.to_global(Vector2(0.0, -8.0))
+		else:
+			var poste_existente := get_node_or_null("Sprite_poste_oeste") as Sprite2D
+			if not is_instance_valid(poste_existente):
+				continue
+			farol = Sprite2D.new()
+			farol.name = "Sprite_poste_" + str(farol_datos["nombre"])
+			farol.texture = poste_existente.texture
+			farol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			farol.centered = poste_existente.centered
+			farol.scale = poste_existente.scale
+			farol.z_index = poste_existente.z_index
+			farol.position = farol_datos["posicion"]
+			add_child(farol)
+			posicion_global = farol.to_global(Vector2(0.0, -8.0))
+
+		var nombre_farol := str(farol_datos["nombre"])
 		var posicion_local: Vector2 = to_local(posicion_global)
-
 		var luz: PointLight2D = PointLight2D.new()
-		luz.name = "LuzFarol" + ("Oeste" if indice == 0 else "Este")
+		luz.name = "LuzFarol" + nombre_farol
 		luz.position = posicion_local
 		luz.texture = textura_luz
-		luz.texture_scale = 3.8
-		luz.color = Color("#ffd18a")
-		luz.energy = 1.8
+		luz.texture_scale = 2.8
+		luz.color = Color("#ffd9a6")
+		luz.energy = 0.72
 		luz.range_item_cull_mask = 1
 		luz.blend_mode = Light2D.BLEND_MODE_ADD
 		luz.shadow_enabled = false
@@ -864,10 +890,10 @@ func _crear_luces_faroles() -> void:
 		_luces_faroles.append(luz)
 
 		var brillo: Sprite2D = Sprite2D.new()
-		brillo.name = "Brillo" + ("Oeste" if indice == 0 else "Este")
+		brillo.name = "Brillo" + nombre_farol
 		brillo.texture = textura_luz
 		brillo.position = posicion_global
-		brillo.scale = Vector2(1.45, 1.45)
+		brillo.scale = Vector2(0.9, 0.9)
 		brillo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		brillo.visible = false
 		var material_brillo: CanvasItemMaterial = CanvasItemMaterial.new()
@@ -876,14 +902,7 @@ func _crear_luces_faroles() -> void:
 		_capa_brillos_faroles.add_child(brillo)
 		_brillos_faroles.append(brillo)
 
-	if _luces_faroles.size() != 2 or _brillos_faroles.size() != 2:
-		push_warning(
-			"ReinoTorres: faroles preparados: %d luces y %d brillos."
-			% [_luces_faroles.size(), _brillos_faroles.size()]
-		)
-	else:
-		print("ReinoTorres: dos faroles con luz y resplandor preparados.")
-
+	print("ReinoTorres: %d postes con iluminación tenue preparados." % _luces_faroles.size())
 	_actualizar_luces_faroles()
 
 
@@ -989,12 +1008,12 @@ func _actualizar_luces_faroles() -> void:
 	for luz: PointLight2D in _luces_faroles:
 		if is_instance_valid(luz):
 			luz.enabled = mostrar_faroles
-			luz.energy = 1.8 * intensidad
+			luz.energy = 0.72 * intensidad
 
 	for brillo: Sprite2D in _brillos_faroles:
 		if is_instance_valid(brillo):
 			brillo.visible = mostrar_faroles
-			brillo.modulate = Color(1.0, 0.82, 0.58, intensidad)
+			brillo.modulate = Color(1.0, 0.86, 0.68, intensidad * 0.55)
 
 
 func _obtener_intensidad_desde_modulacion() -> float:
