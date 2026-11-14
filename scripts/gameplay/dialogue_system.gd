@@ -1299,6 +1299,14 @@ func _crear_menu_principal_social() -> Array[Dictionary]:
 	]
 
 
+func _establecer_menu_principal_social(mostrar: bool) -> void:
+	_respuestas.clear()
+	if not mostrar:
+		return
+	for opcion in _crear_menu_principal_social():
+		_respuestas.append(opcion)
+
+
 func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 	var opciones: Array[Dictionary] = []
 	if categoria == "preguntar":
@@ -1945,7 +1953,7 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
 	_acciones.clear()
-	_respuestas = _crear_menu_principal_social() if _usa_menu_social and not es_despedida else []
+	_establecer_menu_principal_social(_usa_menu_social and not es_despedida)
 	_limpiar_botones_respuesta()
 	_lineas = [{"hablante": _fuente.get_nombre_visual(), "texto": respuesta}]
 	_indice_linea = 0
@@ -2021,7 +2029,7 @@ func _seleccionar_respuesta(indice: int) -> void:
 			})
 
 	var es_despedida := bool(opcion.get("despedida", false))
-	_respuestas = _crear_menu_principal_social() if _usa_menu_social and not es_despedida and is_instance_valid(_fuente) else []
+	_establecer_menu_principal_social(_usa_menu_social and not es_despedida and is_instance_valid(_fuente))
 	_limpiar_botones_respuesta()
 	# La elección del jugador ya queda registrada en el sistema social.
 	# Sólo mostramos la reacción del NPC para evitar repetir literalmente
