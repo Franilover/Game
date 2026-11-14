@@ -1443,7 +1443,7 @@ func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dic
 			var clave := str(opcion.get("clave", "")).strip_edges()
 			if clave.is_empty() or usadas.has(clave):
 				continue
-			var texto := (clave + " " + str(opcion.get("texto", "")) + " " + str(opcion.get("jugador", ""))).to_lower()
+			var texto := (clave + " " + str(opcion.get("texto", "")) + " " + str(opcion.get("jugador", "")) + " " + str(opcion.get("respuesta", ""))).to_lower()
 			var puntuacion := float(opcion.get("importancia", 1.0)) * 1.5
 			if not actividad.is_empty():
 				for palabra in actividad.split(" ", false):
