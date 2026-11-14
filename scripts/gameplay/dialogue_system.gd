@@ -1587,6 +1587,13 @@ func _obtener_respuesta_ayuda_npc() -> String:
 	if not is_instance_valid(_fuente):
 		return "Gracias por ofrecerte. Ahora mismo no tengo nada que pedirte."
 	var nombre_npc := _fuente.get_nombre_visual()
+	var nombre_local := str(_fuente.get_meta("habitante_local_clave", ""))
+	if nombre_local == "ivo":
+		return "No tengo un encargo concreto. Me gustaría poder acompañar a mis amigos sin tener que parar tanto, pero hoy prefiero descansar un poco."
+	if nombre_local == "nima":
+		return "Por ahora sigo reuniendo observaciones sobre algunos fenómenos Oris. Si encuentro algo que podamos comprobar juntos, te lo diré."
+	if nombre_npc.strip_edges().to_lower() == "saira":
+		return "Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var lineas_activas: Array[String] = []
 	var lineas_disponibles: Array[String] = []
@@ -2048,8 +2055,12 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var clave_tema := str(opcion.get("clave", "")).strip_edges()
 	if str(_fuente.get_meta("habitante_local_clave", "")) == "mara" and not bool(opcion.get("despedida", false)):
-		var confianza_mara := int(_fuente.get_meta("confianza_local", 0))
-		_fuente.set_meta("confianza_local", mini(confianza_mara + 1, 5))
+		var confianza_mara := int(GameState.world_state.flags.get("confianza_mara", _fuente.get_meta("confianza_local", 0)))
+		confianza_mara = mini(confianza_mara + 1, 5)
+		GameState.world_state.flags["confianza_mara"] = confianza_mara
+		_fuente.set_meta("confianza_local", confianza_mara)
+		if GameState.has_method("guardar_partida"):
+			GameState.call_deferred("guardar_partida")
 
 	var evento := str(opcion.get("evento", "interesarse")).strip_edges()
 	var es_despedida := bool(opcion.get("despedida", false))
