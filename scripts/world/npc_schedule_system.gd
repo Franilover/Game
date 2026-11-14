@@ -243,8 +243,23 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	if firma_anterior == firma_nueva:
 		var movimiento_actual := npc.get_node_or_null("CreatureMovement") as CreatureMovement
-		if not esta_dentro and not edificio_id.is_empty() and movimiento_actual != null and movimiento_actual.rutina_terminada():
-			_marcar_npc_dentro_edificio(npc, edificio_id)
+		if not esta_dentro and not edificio_id.is_empty() and movimiento_actual != null:
+			if movimiento_actual.rutina_terminada():
+				_marcar_npc_dentro_edificio(npc, edificio_id)
+			elif not movimiento_actual.rutina_en_ejecucion():
+				# Si otra acción detuvo la ruta antes de llegar, se recupera el
+				# recorrido en vez de dejar al NPC abandonado fuera del trabajo.
+				var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
+				var destino_reintento_global := _zona.to_global(destino_reintento)
+				if npc.global_position.distance_to(destino_reintento_global) <= DISTANCIA_LLEGADA:
+					_marcar_npc_dentro_edificio(npc, edificio_id)
+				else:
+					var ruta_reintento := _crear_ruta(npc.global_position, destino_reintento_global)
+					if not ruta_reintento.is_empty():
+						movimiento_actual.establecer_ruta(ruta_reintento)
+					elif str(npc.get_meta("rutina_error_firma", "")) != firma_nueva:
+						push_warning("NPCScheduleSystem: no se pudo reanudar la ruta de " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
+						npc.set_meta("rutina_error_firma", firma_nueva)
 		return
 
 	# Sin actividad programada, el destino siempre es su casa.
