@@ -304,7 +304,7 @@ func _cargar_sprite() -> void:
 	# sus datos provengan de una plantilla de criatura. Priorizarla evita que
 	# _es_humano() o el nombre del registro impidan cargar su arte propio.
 	var sprite_key_local := str(datos.get("sprite_key", "")).strip_edges()
-	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\\\"):
+	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\"):
 		for extension in [".png", ".PNG"]:
 			var ruta_personaje := "res://assets/art/characters/" + sprite_key_local + extension
 			if not ResourceLoader.exists(ruta_personaje):
