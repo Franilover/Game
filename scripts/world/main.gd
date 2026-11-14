@@ -65,11 +65,7 @@ func _ready() -> void:
 		_story_loading_overlay.visible = _carga_historia_activa
 	_registrar_diagnostico_ventana("_ready: inicio")
 	call_deferred("_diagnostico_ventana_diferido")
-	var nodo_dialogo := get_node_or_null("Systems/DialogueSystem")
-	if nodo_dialogo != null:
-		if not nodo_dialogo is DialogueSystem:
-			nodo_dialogo.set_script(load("res://scripts/gameplay/dialogue_system.gd"))
-		_dialogue_system = nodo_dialogo as DialogueSystem
+	_dialogue_system = get_node_or_null("Systems/DialogueSystem") as DialogueSystem
 	if not is_instance_valid(_dialogue_system):
 		push_error("Main: Systems/DialogueSystem no tiene un DialogueSystem válido.")
 		return
