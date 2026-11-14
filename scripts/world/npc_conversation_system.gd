@@ -836,7 +836,8 @@ func _guardar_objeto_del_acontecimiento() -> void:
 	diario["objeto_dia"] = clave_dia
 	diario["objeto_etiqueta"] = etiqueta
 	diario["objeto_tipo"] = str(_conversacion_activa.get("tipo_visual", "paquete"))
-	diario["objeto_posicion"] = npc.global_position + Vector2(20.0, 12.0)
+	var posicion_objeto := npc.global_position + Vector2(20.0, 12.0)
+	diario["objeto_posicion"] = [posicion_objeto.x, posicion_objeto.y]
 	_progreso_parejas["_acontecimientos_diarios"] = diario
 	if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 		_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
@@ -864,13 +865,15 @@ func _restaurar_objeto_evento_diario(tiempo: Dictionary) -> void:
 		_zona_objeto_evento = null
 	if is_instance_valid(_objeto_evento_diario):
 		return
-	var posicion_variant: Variant = diario.get("objeto_posicion", Vector2.ZERO)
-	if not posicion_variant is Vector2:
+	var posicion_variant: Variant = diario.get("objeto_posicion", [])
+	if not posicion_variant is Array or (posicion_variant as Array).size() < 2:
 		return
+	var posicion_datos := posicion_variant as Array
+	var posicion := Vector2(float(posicion_datos[0]), float(posicion_datos[1]))
 	var etiqueta := str(diario.get("objeto_etiqueta", "")).strip_edges()
 	if etiqueta.is_empty():
 		return
-	_crear_objeto_visual_evento(zona, posicion_variant as Vector2, etiqueta, str(diario.get("objeto_tipo", "paquete")))
+	_crear_objeto_visual_evento(zona, posicion, etiqueta, str(diario.get("objeto_tipo", "paquete")))
 
 
 func _crear_objeto_visual_evento(zona: Node2D, posicion: Vector2, etiqueta: String, tipo: String) -> void:
