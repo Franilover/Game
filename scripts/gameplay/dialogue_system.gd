@@ -509,28 +509,39 @@ func _actualizar_retrato(hablante: String) -> void:
 		return
 
 	var nombre := hablante.strip_edges()
+	var nombres_retrato: Array[String] = []
 	if is_instance_valid(_fuente):
-		var nombre_individual := _fuente.nombre_individual.strip_edges()
-		if nombre_individual.is_empty():
-			nombre_individual = _fuente.get_nombre().strip_edges()
-		if nombre.is_empty() or nombre.to_lower() == _fuente.get_nombre().strip_edges().to_lower():
-			nombre = nombre_individual
+		var nombre_individual := _fuente.get_nombre_visual().strip_edges()
+		var nombre_registro := _fuente.get_nombre().strip_edges()
+		var hablante_es_fuente := (
+			nombre.is_empty()
+			or nombre.to_lower() == nombre_individual.to_lower()
+			or nombre.to_lower() == nombre_registro.to_lower()
+		)
+		if hablante_es_fuente:
+			var sprite_key := str(_fuente.datos.get("sprite_key", "")).strip_edges()
+			if not sprite_key.is_empty():
+				nombres_retrato.append(sprite_key)
+			if not nombre_individual.is_empty():
+				nombres_retrato.append(nombre_individual)
+			if not nombre_registro.is_empty():
+				nombres_retrato.append(nombre_registro)
+	if not nombre.is_empty() and not nombres_retrato.has(nombre):
+		nombres_retrato.append(nombre)
 
-	if nombre.is_empty():
-		portrait_rect.texture = null
-		portrait_rect.visible = false
-		return
-
-	var rutas: Array[String] = [
-		"res://assets/art/characters/heads/" + nombre + ".png",
-		"res://assets/art/characters/heads/" + nombre + ".PNG"
-	]
 	var textura: Texture2D = null
-	for ruta in rutas:
-		if ResourceLoader.exists(ruta):
+	for nombre_retrato in nombres_retrato:
+		if nombre_retrato.is_empty() or nombre_retrato.contains("/") or nombre_retrato.contains("\\\\"):
+			continue
+		for extension in [".png", ".PNG"]:
+			var ruta := "res://assets/art/characters/heads/" + nombre_retrato + extension
+			if not ResourceLoader.exists(ruta):
+				continue
 			textura = load(ruta) as Texture2D
 			if textura != null:
 				break
+		if textura != null:
+			break
 
 	portrait_rect.texture = textura
 	portrait_rect.visible = textura != null
