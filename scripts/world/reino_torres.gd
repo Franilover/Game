@@ -132,6 +132,7 @@ const ENTRADAS: Array[Dictionary] = [
 func _ready() -> void:
 	_expedition_entrance.body_entered.connect(_al_entrar_entrada_expedicion)
 	_expedition_entrance.body_exited.connect(_al_salir_entrada_expedicion)
+	_crear_entrada_hogar_al_final_del_camino()
 	_crear_selector_viajes()
 	_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	_capa_interior = Node2D.new()
@@ -1284,6 +1285,34 @@ func _ocultar_placeholder(prefixes: Array) -> void:
 				break
 
 
+
+
+## Salida peatonal al final del camino oriental de Torres.
+## Separa el acceso a la expedición (portón) del regreso directo al Hogar.
+func _crear_entrada_hogar_al_final_del_camino() -> void:
+	var entrada := Area2D.new()
+	entrada.name = "HomeRoadExit"
+	entrada.position = Vector2(1480.0, 0.0)
+	entrada.collision_layer = 0
+	entrada.collision_mask = 1
+	var forma := CollisionShape2D.new()
+	var rectangulo := RectangleShape2D.new()
+	rectangulo.size = Vector2(72.0, 112.0)
+	forma.shape = rectangulo
+	entrada.add_child(forma)
+	entrada.body_entered.connect(_al_llegar_al_final_del_camino)
+	add_child(entrada)
+
+
+func _al_llegar_al_final_del_camino(body: Node2D) -> void:
+	if _transicionando or _interior_activo or body == null or not body.is_in_group("player"):
+		return
+	if not is_instance_valid(zone_manager) or not zone_manager.has_method("entrar_hogar"):
+		push_warning("ReinoTorres: no se encontró ZoneManager para viajar al Hogar.")
+		return
+	_transicionando = true
+	await zone_manager.call("entrar_hogar")
+	_transicionando = false
 
 
 func _al_entrar_entrada_expedicion(body: Node2D) -> void:
