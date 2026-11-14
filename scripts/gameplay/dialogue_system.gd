@@ -1004,12 +1004,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 				if not _cumple_requisitos_tema_conversacion(tema, relacion, recuerdos):
 					continue
 				var clave_tema := str(tema.get("clave", "")).strip_edges()
-				var ya_conversado := _recuerdos_contienen_tema(recuerdos, clave_tema)
-				var respuesta := str(tema.get("respuesta", "")).strip_edges()
-				if ya_conversado:
-					var repetida := str(tema.get("respuesta_repetida", "")).strip_edges()
-					if not repetida.is_empty():
-						respuesta = repetida
+				var respuesta := _obtener_respuesta_tema(tema, clave_tema, recuerdos)
 				var texto_jugador := str(tema.get("jugador", "")).strip_edges()
 				var titulo := str(tema.get("texto", "")).strip_edges()
 				if clave_tema.is_empty() or texto_jugador.is_empty() or respuesta.is_empty() or titulo.is_empty():
@@ -1112,15 +1107,50 @@ func _cumple_requisitos_tema_conversacion(tema: Dictionary, relacion: Dictionary
 
 
 func _recuerdos_contienen_tema(recuerdos: Array, clave_tema: String) -> bool:
+	return _contar_veces_tema(recuerdos, clave_tema) > 0
+
+
+func _contar_veces_tema(recuerdos: Array, clave_tema: String) -> int:
 	if clave_tema.is_empty():
-		return false
+		return 0
+	var cantidad := 0
 	for recuerdo_variant in recuerdos:
 		if not recuerdo_variant is Dictionary:
 			continue
 		var recuerdo := recuerdo_variant as Dictionary
-		if str(recuerdo.get("tipo", "")) == "tema_conversacion" and str(recuerdo.get("clave", "")) == clave_tema:
-			return true
-	return false
+		if (
+			str(recuerdo.get("tipo", "")) == "tema_conversacion"
+			and str(recuerdo.get("clave", "")).strip_edges() == clave_tema
+		):
+			cantidad += 1
+	return cantidad
+
+
+## Las conversaciones repetidas pueden rotar entre varias respuestas.
+## Se aceptan tanto respuestas_repetidas como una respuesta_repetida única
+## para conservar compatibilidad con los temas ya guardados.
+func _obtener_respuesta_tema(tema: Dictionary, clave_tema: String, recuerdos: Array) -> String:
+	var respuesta_inicial := str(tema.get("respuesta", "")).strip_edges()
+	var veces_conversado := _contar_veces_tema(recuerdos, clave_tema)
+	if veces_conversado <= 0:
+		return respuesta_inicial
+
+	var repetidas_variant: Variant = tema.get(
+		"respuestas_repetidas",
+		tema.get("respuesta_repetida", [])
+	)
+	if repetidas_variant is Array:
+		var opciones_validas: Array[String] = []
+		for respuesta_variant in repetidas_variant as Array:
+			var texto := str(respuesta_variant).strip_edges()
+			if not texto.is_empty():
+				opciones_validas.append(texto)
+		if not opciones_validas.is_empty():
+			var indice := posmod(veces_conversado - 1, opciones_validas.size())
+			return opciones_validas[indice]
+
+	var repetida := str(repetidas_variant).strip_edges()
+	return repetida if not repetida.is_empty() else respuesta_inicial
 
 
 func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
