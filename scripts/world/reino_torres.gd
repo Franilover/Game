@@ -1307,11 +1307,12 @@ func _crear_entrada_hogar_al_final_del_camino() -> void:
 func _al_llegar_al_final_del_camino(body: Node2D) -> void:
 	if _transicionando or _interior_activo or body == null or not body.is_in_group("player"):
 		return
-	if not is_instance_valid(zone_manager) or not zone_manager.has_method("entrar_hogar"):
+	var gestor_zonas := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(gestor_zonas) or not gestor_zonas.has_method("entrar_hogar"):
 		push_warning("ReinoTorres: no se encontró ZoneManager para viajar al Hogar.")
 		return
 	_transicionando = true
-	await zone_manager.call("entrar_hogar")
+	gestor_zonas.call("entrar_hogar")
 	_transicionando = false
 
 
