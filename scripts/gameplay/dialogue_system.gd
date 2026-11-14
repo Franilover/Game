@@ -419,7 +419,6 @@ func _crear_dialogo_rutina_contextual() -> Dictionary:
 	var texto := _obtener_texto_rutina_personaje(
 		nombre,
 		rutina_clave,
-		ubicacion,
 		actividad,
 		destino,
 		en_transito,
@@ -473,7 +472,6 @@ func _nombre_ubicacion_rutina(ubicacion: String) -> String:
 func _obtener_texto_rutina_personaje(
 	nombre: String,
 	rutina_clave: String,
-	ubicacion: String,
 	actividad: String,
 	destino: String,
 	en_transito: bool,
