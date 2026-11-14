@@ -1022,8 +1022,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 					"evento": str(tema.get("evento", "interesarse")),
 					"importancia": float(tema.get("importancia", 1.0))
 				})
-			if not opciones_datos.is_empty():
-				return opciones_datos
+			return opciones_datos
 
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges()
