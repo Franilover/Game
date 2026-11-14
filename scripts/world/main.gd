@@ -826,10 +826,10 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 				{"clave":"nima_estudio_manana","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"casa_estudio","actividad_clave":"estudiar_fenomenos_oris"},
 				{"clave":"nima_archivo","hora_inicio":"10:00","hora_fin":"11:00","ubicacion_clave":"archivo_real","actividad_clave":"consultar_documentos"},
 				{"clave":"nima_plaza","hora_inicio":"11:00","hora_fin":"13:00","ubicacion_clave":"plaza","actividad_clave":"reunirse_con_amigos"},
-				{"clave":"nima_posada","hora_inicio":"13:00","hora_fin":"14:30","ubicacion_clave":"posada","actividad_clave":"comer_con_conocidos"},
-				{"clave":"nima_estudio_tarde","hora_inicio":"14:30","hora_fin":"16:00","ubicacion_clave":"casa_estudio","actividad_clave":"ordenar_notas"},
-				{"clave":"nima_plaza_tarde","hora_inicio":"16:00","hora_fin":"18:00","ubicacion_clave":"plaza","actividad_clave":"pasear_y_conversar"},
-				{"clave":"nima_regreso","hora_inicio":"18:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_03","actividad_clave":"volver_a_casa"}
+				{"clave":"nima_posada","hora_inicio":"12:30","hora_fin":"14:00","ubicacion_clave":"posada","actividad_clave":"comer_con_conocidos"},
+				{"clave":"nima_plaza_tarde","hora_inicio":"14:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"pasear_y_conversar"},
+				{"clave":"nima_estudio_tarde","hora_inicio":"16:00","hora_fin":"17:30","ubicacion_clave":"casa_estudio","actividad_clave":"ordenar_notas"},
+				{"clave":"nima_regreso","hora_inicio":"17:30","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_03","actividad_clave":"volver_a_casa"}
 			]
 		}
 	]
