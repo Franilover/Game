@@ -644,7 +644,7 @@ func _materializar_npcs_reino_torres() -> void:
 	if not WorldData.cargado:
 		return
 
-	var zona := _zone_manager.obtener_zona_actual() as Node2D
+	var zona: Node = _zone_manager.obtener_zona_actual() as Node2D
 	if not is_instance_valid(zona):
 		return
 
