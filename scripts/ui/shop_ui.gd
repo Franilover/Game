@@ -7,19 +7,23 @@ const ITEM_ICON_RESOLVER = preload("res://scripts/ui/item_icon_resolver.gd")
 const TIENDAS: Dictionary = {
 	"panaderia": {
 		"nombre": "Panadería",
-		"productos": ["pan"]
+		"productos": ["pan"],
+		"actividades": ["atender"]
 	},
 	"forja": {
 		"nombre": "Forja",
-		"productos": ["espada de madera", "espada de piedra"]
+		"productos": ["espada de madera", "espada de piedra"],
+		"actividades": ["forjar", "revisar_herramientas"]
 	},
 	"carpinteria": {
 		"nombre": "Carpintería",
-		"productos": ["madera", "pala de madera", "pala de piedra", "pico de madera", "pico de piedra"]
+		"productos": ["madera", "pala de madera", "pala de piedra", "pico de madera", "pico de piedra"],
+		"actividades": ["trabajar_madera", "atender"]
 	},
 	"casa_comercio": {
 		"nombre": "Casa de comercio",
-		"productos": ["arco aoris", "botas aoris", "casco aoris", "pechera aoris", "sombrero aoris", "plumas aoris"]
+		"productos": ["arco aoris", "botas aoris", "casco aoris", "pechera aoris", "sombrero aoris", "plumas aoris"],
+		"actividades": ["comerciar"]
 	}
 }
 
@@ -69,6 +73,11 @@ static func tienda_para_npc(npc: Node) -> Dictionary:
 	if not tienda_variant is Dictionary:
 		return {}
 	var resultado := (tienda_variant as Dictionary).duplicate(true)
+	var datos_variant: Variant = npc.get("datos")
+	var actividad := str((datos_variant as Dictionary).get("actividad_actual", "")) if datos_variant is Dictionary else ""
+	var actividades: Array = resultado.get("actividades", [])
+	if not actividades.has(actividad):
+		return {}
 	resultado["ubicacion"] = ubicacion
 	resultado["vendedor"] = str(npc.call("get_nombre_visual")) if npc.has_method("get_nombre_visual") else "Comerciante"
 	return resultado
