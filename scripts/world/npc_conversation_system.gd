@@ -183,8 +183,6 @@ func actualizar(
 		return
 	_temporizador_busqueda = 0.0
 
-	if not _mision_carreta_completada(gestor_misiones):
-		return
 	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
 		return
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
