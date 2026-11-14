@@ -127,7 +127,7 @@ func _ready() -> void:
 	if is_instance_valid(_npc_conversation_system):
 		_npc_conversation_system.name = "NPCConversationSystem"
 		add_child(_npc_conversation_system)
-		_npc_conversation_system.configurar(_world_atmosphere, _zone_manager)
+		_npc_conversation_system.configurar(_world_atmosphere, _zone_manager, GameState)
 	else:
 		push_error("Main: no se pudo inicializar NPCConversationSystem.")
 
