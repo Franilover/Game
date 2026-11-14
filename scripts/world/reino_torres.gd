@@ -70,10 +70,6 @@ var _visibilidad_npcs_exterior: Dictionary = {}
 var _contenedor_npcs_exterior: Node = null
 var _estados_colision_exterior: Dictionary = {}
 var _capa_interior: Node2D
-var _aviso_panel: PanelContainer
-var _aviso: Label
-var _boton_entrar: Button
-var _entrada_aviso_actual: Dictionary = {}
 var _objetivos_entrada: Array[Node2D] = []
 var _terreno_dual_listo: bool = false
 var _atmosfera_mundo: Node = null
@@ -148,7 +144,6 @@ func _ready() -> void:
 	_capa_interior.name = "InteriorActivo"
 	_capa_interior.visible = false
 	add_child(_capa_interior)
-	_crear_aviso()
 	_crear_objetivos_entrada()
 	# Preparar primero todos los elementos que sustituyen polígonos vectoriales.
 	# Esta fase es síncrona: no debe quedar un frame donde Torres muestre sus
@@ -207,141 +202,92 @@ func _process(_delta: float) -> void:
 	_actualizar_ambiente_torres(_delta)
 	if not is_instance_valid(_jugador):
 		_jugador = get_tree().get_first_node_in_group("player") as Node2D
-	if not is_instance_valid(_jugador):
+	if not is_instance_valid(_jugador) or not _interior_activo:
 		return
+	var posicion_local := to_local(_jugador.global_position)
+	posicion_local.x = clampf(posicion_local.x, -INTERIOR_MEDIO_ANCHO + 30.0, INTERIOR_MEDIO_ANCHO - 30.0)
+	posicion_local.y = clampf(posicion_local.y, -INTERIOR_MEDIO_ALTO + 30.0, INTERIOR_MEDIO_ALTO - 40.0)
+	_jugador.global_position = to_global(posicion_local)
+	var cerca_salida := posicion_local.y >= INTERIOR_MEDIO_ALTO - 60.0 \
+		and posicion_local.x >= -12.0 \
+		and posicion_local.x <= 132.0
+	if cerca_salida:
+		_salir_del_interior()
 
-	if _interior_activo:
-		# El interior es cerrado: limita la posición del jugador al área transitable.
-		# La única salida es el umbral de la puerta, que devuelve al exterior automáticamente.
-		var posicion_local := to_local(_jugador.global_position)
-		posicion_local.x = clampf(posicion_local.x, -INTERIOR_MEDIO_ANCHO + 30.0, INTERIOR_MEDIO_ANCHO - 30.0)
-		posicion_local.y = clampf(posicion_local.y, -INTERIOR_MEDIO_ALTO + 30.0, INTERIOR_MEDIO_ALTO - 40.0)
-		_jugador.global_position = to_global(posicion_local)
 
-		var cerca_salida := posicion_local.y >= INTERIOR_MEDIO_ALTO - 60.0 \
-			and posicion_local.x >= -12.0 \
-			and posicion_local.x <= 132.0
-		_entrada_aviso_actual.clear()
-		_boton_entrar.visible = false
-		_aviso_panel.visible = false
-		_aviso.text = ""
-		if cerca_salida:
-			_salir_del_interior()
-		return
+func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
+	var grupos := {
+		"casa_bruna": "Grupo_casa_bruna",
+		"casa_elian": "Grupo_casa_elian",
+		"casa_darven": "Grupo_casa_darven",
+		"casa_saira": "Grupo_casa_saira",
+		"casa_vacia_01": "Grupo_casa_vacia_01",
+		"casa_vacia_02": "Grupo_casa_vacia_02",
+		"casa_vacia_03": "Grupo_casa_vacia_03",
+		"casa_vacia_04": "Grupo_casa_vacia_04",
+		"casa_vacia_05": "Grupo_casa_vacia_05",
+		"casa_vacia_06": "Grupo_casa_vacia_06",
+		"casa_vacia_07": "Grupo_casa_vacia_07",
+		"casa_vacia_08": "Grupo_casa_vacia_08",
+		"casa_narel": "Grupo_casa_narel",
+		"casa_vacia_10": "Grupo_casa_vacia_10",
+		"casa_vacia_11": "Grupo_casa_vacia_11",
+		"casa_granjeros": "Grupo_casa_granjeros"
+	}
+	var grupo_nombre := str(grupos.get(str(entrada.get("id", "")), ""))
+	if grupo_nombre.is_empty():
+		return null
+	return get_node_or_null(grupo_nombre) as Node2D
 
-	var entrada_cercana: Dictionary = {}
-	# El cuerpo del jugador puede quedar separado del punto de puerta por las colisiones de fachada.
-	var distancia_menor := DISTANCIA_INTERACCION_ENTRADA
-	var posicion_jugador_local := to_local(_jugador.global_position)
-	for entrada: Dictionary in ENTRADAS:
-		var distancia := posicion_jugador_local.distance_to(entrada["pos"])
-		if distancia < distancia_menor:
-			distancia_menor = distancia
-			entrada_cercana = entrada.duplicate(true)
 
-	_entrada_aviso_actual = entrada_cercana.duplicate(true)
-	if entrada_cercana.is_empty():
-		_aviso.text = ""
-		_aviso_panel.visible = false
-		_boton_entrar.visible = false
-		return
+func _obtener_marcador_entrada(entrada: Dictionary) -> Marker2D:
+	var grupo := _obtener_grupo_entrada(entrada)
+	if not is_instance_valid(grupo):
+		return null
+	return grupo.get_node_or_null("Entrada") as Marker2D
 
-	_aviso.text = "¿Entrar en " + str(entrada_cercana.get("nombre", "este lugar")) + "?"
-	_aviso_panel.visible = false
-	_boton_entrar.text = "Entrar"
-	_boton_entrar.visible = true
-	_posicionar_boton_entrada()
 
+func _obtener_posicion_entrada_global(entrada: Dictionary) -> Vector2:
+	var marcador := _obtener_marcador_entrada(entrada)
+	if is_instance_valid(marcador):
+		return marcador.global_position
+	return to_global(entrada.get("pos", Vector2.ZERO))
 
 
 func _crear_objetivos_entrada() -> void:
 	for entrada: Dictionary in ENTRADAS:
+		var grupo := _obtener_grupo_entrada(entrada)
+		var marcador := _obtener_marcador_entrada(entrada)
 		var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
 		if not is_instance_valid(objetivo):
 			continue
 		objetivo.name = "ObjetivoEntrada_" + str(entrada.get("id", "edificio"))
-		objetivo.position = entrada.get("pos", Vector2.ZERO)
+		objetivo.position = marcador.position if is_instance_valid(marcador) else entrada.get("pos", Vector2.ZERO)
 		var nombre_lugar := str(entrada.get("nombre", "este lugar")).strip_edges()
-		var texto_interaccion := "Entrar: " + nombre_lugar
 		objetivo.call(
 			"configurar",
-			texto_interaccion,
+			"Entrar: " + nombre_lugar,
 			DISTANCIA_INTERACCION_ENTRADA,
 			Callable(self, "_puede_interactuar_entrada").bind(entrada),
 			Callable(self, "_interactuar_entrada").bind(entrada)
 		)
-		add_child(objetivo)
+		if is_instance_valid(grupo):
+			grupo.add_child(objetivo)
+		else:
+			add_child(objetivo)
 		_objetivos_entrada.append(objetivo)
 
 
 func _puede_interactuar_entrada(jugador: Node, entrada: Dictionary) -> bool:
 	if _interior_activo or _transicionando or not is_instance_valid(jugador) or not jugador is Node2D:
 		return false
-	var posicion: Vector2 = to_global(entrada.get("pos", Vector2.ZERO))
-	return (jugador as Node2D).global_position.distance_to(posicion) <= DISTANCIA_INTERACCION_ENTRADA
+	return (jugador as Node2D).global_position.distance_to(_obtener_posicion_entrada_global(entrada)) <= DISTANCIA_INTERACCION_ENTRADA
 
 
 func _interactuar_entrada(jugador: Node, entrada: Dictionary) -> void:
 	if not _puede_interactuar_entrada(jugador, entrada):
 		return
 	_entrar_al_interior(entrada.duplicate(true))
-
-
-func _al_pulsar_boton_entrar() -> void:
-	if _entrada_aviso_actual.is_empty() or not is_instance_valid(_jugador):
-		return
-	_interactuar_entrada(_jugador, _entrada_aviso_actual.duplicate(true))
-
-
-func _crear_aviso() -> void:
-	# Aviso flotante con el mismo panel pixel-art y tratamiento tipográfico del resto de la interfaz.
-	_aviso_panel = PanelContainer.new()
-	_aviso_panel.name = "AvisoEntradaPanel"
-	_aviso_panel.z_index = 50
-	_aviso_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_aviso_panel.custom_minimum_size = Vector2(0.0, 30.0)
-
-	_aviso = Label.new()
-	_aviso.name = "AvisoEntrada"
-	_aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_aviso.add_theme_color_override("font_color", Color("#FFF3D6"))
-	_aviso.add_theme_color_override("font_outline_color", Color("#302014"))
-	_aviso.add_theme_constant_override("outline_size", 2)
-	_aviso.add_theme_font_size_override("font_size", 11)
-	_aviso_panel.add_child(_aviso)
-	PIXEL_UI_THEME.apply(_aviso_panel, false)
-	_aviso_panel.visible = false
-
-	var capa_ui := CanvasLayer.new()
-	capa_ui.name = "AvisoEntradaLayer"
-	capa_ui.layer = 110
-	add_child(capa_ui)
-	capa_ui.add_child(_aviso_panel)
-
-	_boton_entrar = Button.new()
-	_boton_entrar.name = "BotonEntrar"
-	_boton_entrar.text = "Entrar"
-	_boton_entrar.custom_minimum_size = Vector2(88.0, 30.0)
-	_boton_entrar.mouse_filter = Control.MOUSE_FILTER_STOP
-	_boton_entrar.focus_mode = Control.FOCUS_NONE
-	_boton_entrar.z_index = 51
-	_boton_entrar.visible = false
-	_boton_entrar.pressed.connect(_al_pulsar_boton_entrar)
-	PIXEL_UI_THEME.apply(_boton_entrar, false)
-	capa_ui.add_child(_boton_entrar)
-
-func _posicionar_boton_entrada() -> void:
-	if not is_instance_valid(_boton_entrar):
-		return
-	# La interacción queda anclada al HUD, no a la transformación de cámara
-	# del jugador. Así siempre aparece en una posición visible del viewport.
-	var viewport := get_viewport().get_visible_rect().size
-	var tamano := _boton_entrar.get_combined_minimum_size()
-	_boton_entrar.size = tamano
-	_boton_entrar.position = Vector2(
-		(viewport.x - tamano.x) * 0.5,
-		viewport.y - tamano.y - 76.0
-	)
 
 
 func _crear_cesped_tilemap_dual() -> void:
@@ -1116,7 +1062,11 @@ func _cargar_sprites_de_torres() -> void:
 			var scale_factor := minf(target_size.x / texture_size.x, target_size.y / texture_size.y)
 			sprite.scale = Vector2.ONE * scale_factor
 		sprite.z_index = 3
-		add_child(sprite)
+		var grupo_edificio := _obtener_grupo_entrada({"id": clave})
+		if is_instance_valid(grupo_edificio):
+			grupo_edificio.add_child(sprite)
+		else:
+			add_child(sprite)
 		if tiene_textura_personalizada:
 			print("ReinoTorres: sprite externo cargado para ", clave)
 		else:
@@ -1128,7 +1078,6 @@ func _cargar_sprites_de_torres() -> void:
 func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
 		return
-	_boton_entrar.visible = false
 	_ocultar_npcs_exteriores()
 	_posicion_exterior = _jugador.global_position
 	_entrada_interior_id = str(entrada.get("id", ""))
@@ -1149,8 +1098,6 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_limitar_camara_a_interior()
 	_interterior_colisiones(true)
 	_interior_activo = true
-	_aviso_panel.visible = false
-	_aviso.text = ""
 	print("ReinoTorres: entrando a ", entrada["id"])
 
 
@@ -1362,7 +1309,6 @@ func _salir_del_interior() -> void:
 	_restaurar_npcs_exteriores()
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
-	_boton_entrar.visible = false
 	for child: Node in get_children():
 		if child == _capa_interior or child == _aviso:
 			continue
@@ -1376,8 +1322,6 @@ func _salir_del_interior() -> void:
 	_interterior_colisiones(false)
 	_interior_activo = false
 	_entrada_interior_id = ""
-	_aviso_panel.visible = false
-	_aviso.text = ""
 	print("ReinoTorres: regreso al exterior.")
 
 
