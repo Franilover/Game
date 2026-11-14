@@ -198,7 +198,7 @@ func solicitar_aceptacion(identificador: String) -> bool:
 	return true
 
 
-func aceptar_mision(identificador: String) -> bool:
+func aceptar_mision(identificador: String, personaje_origen_id: String = "") -> bool:
 	var mision := obtener_mision(identificador)
 
 	if mision.is_empty():
@@ -225,7 +225,10 @@ func aceptar_mision(identificador: String) -> bool:
 	if not _progreso.has(mision_id):
 		_progreso[mision_id] = {}
 
-	mision_aceptada.emit(mision)
+	var datos_emision := mision.duplicate(true)
+	if not personaje_origen_id.strip_edges().is_empty():
+		datos_emision["npc_origen_personaje_game_id"] = personaje_origen_id.strip_edges()
+	mision_aceptada.emit(datos_emision)
 
 	print(
 		"MissionManager: misión aceptada → ",
