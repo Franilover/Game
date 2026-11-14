@@ -786,8 +786,8 @@ func _iniciar_bienvenida_torres() -> void:
 	var pasos: Array[Dictionary] = [
 		{"tipo":"camara","x":_player.global_position.x,"y":_player.global_position.y - 90.0,"zoom":zoom_revelacion,"duracion":1.4},
 		{"tipo":"dialogo","datos":{"clave":"bienvenida_torres_inicio","lineas":[
-			{"hablante":"Narración","texto":"El camino te ha traído hasta Torres. Las casas, los talleres y sus calles guardan el ritmo cotidiano de quienes viven aquí."},
-			{"hablante":"Narración","texto":"Aún no conoces sus rostros, pero pronto descubrirás que cada puerta guarda una historia."}
+			{"hablante":"Pensamientos","texto":"Bueno, por fin llegué. Así que este es el reino del que tanto había oído hablar. Parece que hay bastante gente por aquí."},
+			{"hablante":"Pensamientos","texto":"No conozco a nadie todavía. Será mejor que recorra un poco el lugar y vea por dónde empezar."}
 		]}},
 		{"tipo":"camara","x":_player.global_position.x - 105.0,"y":_player.global_position.y - 35.0,"zoom":zoom_revelacion * 0.92,"duracion":1.15},
 		{"tipo":"camara","x":_player.global_position.x + 105.0,"y":_player.global_position.y + 15.0,"zoom":zoom_revelacion * 0.92,"duracion":1.15}
@@ -809,7 +809,7 @@ func _iniciar_bienvenida_torres() -> void:
 		pasos.append({"tipo":"dialogo","datos":{"clave":"bienvenida_torres_%s" % str(indice + 1),"lineas":[{"hablante":nombre,"texto":_obtener_saludo_bienvenida_torres(nombre)}]}})
 	pasos.append({"tipo":"camara","x":_player.global_position.x,"y":_player.global_position.y,"zoom":_camera.zoom.x,"duracion":0.9})
 	pasos.append({"tipo":"dialogo","datos":{"clave":"bienvenida_torres_cierre","lineas":[
-		{"hablante":"Narración","texto":"Torres ya forma parte de tu historia. Puedes recorrer el pueblo, conocer a sus habitantes y encontrar tu propio lugar."}
+		{"hablante":"Pensamientos","texto":"Parece un buen lugar para empezar de nuevo. Todavía tengo mucho que conocer, pero puedo ir con calma."}
 	]}})
 	var completada: bool = await _cutscene_director.ejecutar("bienvenida_inicial_torres", pasos)
 	_bienvenida_torres_en_curso = false
@@ -824,17 +824,17 @@ func _iniciar_bienvenida_torres() -> void:
 func _obtener_saludo_bienvenida_torres(nombre: String) -> String:
 	match nombre.strip_edges().to_lower():
 		"elian":
-			return "Bienvenido a Torres. Si necesitas descansar un momento, puedes pasar por aquí cuando quieras."
+			return "¡Hola! ¿Acabas de llegar? Si necesitas descansar, puedes pasar por aquí."
 		"bruna":
-			return "Bienvenido. La plaza está cerca y casi siempre hay alguien dispuesto a echar una mano."
+			return "¡Hola! La plaza queda por allí. A esta hora suele haber gente dando vueltas."
 		"darven":
-			return "Bienvenido a Torres. Si todavía no conoces bien los caminos, pregunta antes de salir del pueblo."
+			return "Hola. Si todavía no ubicas bien los caminos, pregunta nomás. Al principio es fácil perderse."
 		"saira":
-			return "¡Hola! Acabo de volver de viaje. Si quieres saber qué hay más allá de Torres, podemos conversar."
+			return "¡Hola! Justo acabo de volver de viaje. Si te da curiosidad lo que hay fuera del reino, después te cuento."
 		"narel":
-			return "Me alegra que haya llegado alguien nuevo. Torres tiene más historias de las que parece."
+			return "Qué bueno que haya llegado alguien nuevo. Ya verás que aquí siempre está pasando algo."
 		_:
-			return "Bienvenido a Torres. Espero que encuentres pronto tu lugar entre nosotros."
+			return "¡Hola! Espero que te acomodes pronto por aquí. Cualquier cosa, pregunta."
 
 
 func _actualizar_rutinas_npcs_torres() -> void:
