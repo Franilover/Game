@@ -40,6 +40,11 @@ func buscar_objetivo(player: Node, distancia_base: float) -> Node:
 	# "interactable". Esto evita perder la interacción durante cambios de zona
 	# si el registro del EntityManager todavía no se ha sincronizado.
 	var candidatos_grupo := player.get_tree().get_nodes_in_group("interactable")
+	# Los NPC de Torres tienen un grupo de ciclo de vida propio. No dependemos
+	# de que una transición de interior ya haya añadido "interactable":
+	# al iniciar la partida también deben poder seleccionarse desde el exterior.
+	var npc_torres := player.get_tree().get_nodes_in_group("torres_game_npc")
+	candidatos_grupo.append_array(npc_torres)
 	for candidato_variant in candidatos_grupo:
 		if not candidato_variant is Node:
 			continue
