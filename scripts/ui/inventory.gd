@@ -964,6 +964,9 @@ func _limpiar_informacion() -> void:
 
 
 func agregar_objeto(datos_objeto: Dictionary) -> bool:
+	if not ItemIconResolver.tiene_icono(datos_objeto):
+		push_warning("Inventario: no se agregó el objeto porque todavía no tiene sprite → " + str(datos_objeto.get("nombre", "Objeto")))
+		return false
 	var resultado: bool = inventory_controller.agregar_objeto(datos_objeto)
 	if resultado:
 		actualizar()
@@ -972,6 +975,9 @@ func agregar_objeto(datos_objeto: Dictionary) -> bool:
 	return resultado
 
 func agregar_objeto_desde_ui(datos_objeto: Dictionary) -> bool:
+	if not ItemIconResolver.tiene_icono(datos_objeto):
+		push_warning("Inventario: no se agregó el objeto porque todavía no tiene sprite → " + str(datos_objeto.get("nombre", "Objeto")))
+		return false
 	var resultado: bool = inventory_controller.agregar_objeto_desde_ui(datos_objeto)
 	if resultado:
 		actualizar()
@@ -1040,6 +1046,9 @@ func quitar_cantidad(indice: int, cantidad: int) -> bool:
 	return true
 
 func establecer_objeto(indice: int, datos_objeto: Dictionary) -> bool:
+	if not datos_objeto.is_empty() and not ItemIconResolver.tiene_icono(datos_objeto):
+		push_warning("Inventario: no se estableció el objeto porque todavía no tiene sprite → " + str(datos_objeto.get("nombre", "Objeto")))
+		return false
 	var resultado: bool = inventory_controller.establecer_objeto(indice, datos_objeto)
 	if resultado:
 		actualizar()

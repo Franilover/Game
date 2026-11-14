@@ -121,8 +121,14 @@ func _renderizar_recetas() -> void:
 	# El contador ocupaba una línea útil de la interfaz.
 	_estado.text = ""
 
+	var recetas_visibles := 0
 	for receta in _recetas:
+		if not _receta_tiene_sprites(receta):
+			continue
 		_crear_tarjeta_receta(receta)
+		recetas_visibles += 1
+	if recetas_visibles == 0:
+		_estado.text = "No hay recetas disponibles con los objetos que ya tienen ilustración."
 
 
 func _crear_tarjeta_receta(receta: Dictionary) -> void:
@@ -139,6 +145,10 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	PIXEL_UI_THEME.apply(panel, false)
 
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
+	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
+	var categoria_variant: Variant = item_resultado.get("categoria", {})
+	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
+		panel.tooltip_text += "\nCategoría: " + str((categoria_variant as Dictionary).get("nombre", ""))
 	var icono := TextureRect.new()
 	icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	icono.offset_left = 7
@@ -190,6 +200,10 @@ func _actualizar_panel_detalle() -> void:
 	)
 
 	var partes: Array[String] = []
+	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
+	var categoria_variant: Variant = item_resultado.get("categoria", {})
+	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
+		partes.append("[b]Categoría:[/b] " + str((categoria_variant as Dictionary).get("nombre", "")))
 	var ingredientes_variant: Variant = _receta_seleccionada.get("ingredientes", [])
 	var inventario_disponible: Array[Dictionary] = []
 	if _inventory != null:
@@ -244,6 +258,27 @@ func _texto_ingredientes(receta: Dictionary) -> String:
 		partes.append(_nombre_item(id) + " x" + str(cantidad))
 
 	return "Materiales: " + ", ".join(partes)
+
+
+func _receta_tiene_sprites(receta: Dictionary) -> bool:
+	var resultado_variant: Variant = receta.get("resultado", {})
+	if not resultado_variant is Dictionary:
+		return false
+	var resultado := resultado_variant as Dictionary
+	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
+	if item_resultado.is_empty() or not ItemIconResolver.tiene_icono(item_resultado):
+		return false
+
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+	if ingredientes_variant is Array:
+		for ingrediente_variant in ingredientes_variant as Array:
+			if not ingrediente_variant is Dictionary:
+				return false
+			var ingrediente := ingrediente_variant as Dictionary
+			var item_ingrediente := _buscar_item_catalogo(str(ingrediente.get("item_id", "")))
+			if item_ingrediente.is_empty() or not ItemIconResolver.tiene_icono(item_ingrediente):
+				return false
+	return true
 
 
 func _buscar_item_catalogo(item_id: String) -> Dictionary:
@@ -321,6 +356,9 @@ func _craftear(receta: Dictionary) -> void:
 
 	if objeto_resultado.is_empty():
 		_estado.text = "El objeto resultado no está en el catálogo del juego."
+		return
+	if not ItemIconResolver.tiene_icono(objeto_resultado):
+		_estado.text = "Este objeto todavía no está implementado: falta su ilustración."
 		return
 
 	objeto_resultado["cantidad"] = output_cantidad
