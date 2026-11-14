@@ -1287,12 +1287,12 @@ func _ocultar_placeholder(prefixes: Array) -> void:
 
 
 
-## Salida peatonal al final del camino oriental de Torres.
+## Salida peatonal al final del camino occidental de Torres.
 ## Separa el acceso a la expedición (portón) del regreso directo al Hogar.
 func _crear_entrada_hogar_al_final_del_camino() -> void:
 	var entrada := Area2D.new()
 	entrada.name = "HomeRoadExit"
-	entrada.position = Vector2(1480.0, 0.0)
+	entrada.position = Vector2(-1135.0, 0.0)
 	entrada.collision_layer = 0
 	entrada.collision_mask = 1
 	var forma := CollisionShape2D.new()
