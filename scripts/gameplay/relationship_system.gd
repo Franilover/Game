@@ -314,6 +314,36 @@ func obtener_recuerdos(personaje_id: String) -> Array:
 	return []
 
 
+
+## Consume una sola vez el recuerdo de regalo para convertirlo en diálogo cotidiano.
+## La marca se guarda junto al recuerdo para evitar repetir la misma mención.
+func tomar_regalo_pendiente_mencionar(personaje_id: String) -> Dictionary:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return {}
+	var recuerdos := _obtener_recuerdos()
+	var lista_variant: Variant = recuerdos.get(id, [])
+	if not lista_variant is Array:
+		return {}
+	var lista: Array = lista_variant
+	for i in range(lista.size()):
+		if not lista[i] is Dictionary:
+			continue
+		var recuerdo: Dictionary = lista[i]
+		if str(recuerdo.get("tipo", "")) != "regalo":
+			continue
+		if bool(recuerdo.get("mencionado_en_dialogo", false)):
+			continue
+		if str(recuerdo.get("item_nombre", "")).strip_edges().is_empty():
+			continue
+		recuerdo["mencionado_en_dialogo"] = true
+		lista[i] = recuerdo
+		recuerdos[id] = lista
+		_game_state.call("guardar_recuerdos_sociales", recuerdos)
+		return recuerdo.duplicate(true)
+	return {}
+
+
 func evaluar_regalo(personaje_id: String, item_id: String) -> Dictionary:
 	var id_personaje := personaje_id.strip_edges()
 	var id_item := item_id.strip_edges()
