@@ -4,6 +4,9 @@ class_name NPCConversationSystem
 const INTERVALO_BUSQUEDA := 0.5
 const DISTANCIA_ENTRE_NPC := 180.0
 const DISTANCIA_JUGADOR := 220.0
+const DISTANCIA_INICIATIVA := 112.0
+const AMISTAD_INICIATIVA_MINIMA := 8.0
+const AFECTO_INICIATIVA_MINIMO := 5.0
 const DURACION_LINEA := 3.2
 const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
@@ -123,7 +126,10 @@ const CONVERSACIONES: Array[Dictionary] = [
 var _world_atmosphere: WorldAtmosphere = null
 var _zone_manager: Node = null
 var _game_state: Node = null
+var _relationship_system: RelationshipSystemService = null
+var _mission_manager: MissionManagerService = null
 var _progreso_parejas: Dictionary = {}
+var _npc_por_id: Dictionary = {}
 var _temporizador_busqueda := 0.0
 var _temporizador_linea := 0.0
 var _conversacion_activa: Dictionary = {}
@@ -133,13 +139,24 @@ var _burbujas: Dictionary = {}
 var _vistas_por_dia: Dictionary = {}
 
 
-func configurar(atmosfera: WorldAtmosphere, zone_manager: Node, game_state: Node = null) -> void:
+func configurar(
+	atmosfera: WorldAtmosphere,
+	zone_manager: Node,
+	game_state: Node = null,
+	relationship_system: RelationshipSystemService = null,
+	mission_manager: MissionManagerService = null
+) -> void:
 	_world_atmosphere = atmosfera
 	_zone_manager = zone_manager
 	_game_state = game_state
+	_relationship_system = relationship_system
+	_mission_manager = mission_manager
 	add_to_group("npc_conversation_system")
 	if is_instance_valid(_game_state) and _game_state.has_method("obtener_conversaciones_npc"):
-		_progreso_parejas = _game_state.call("obtener_conversaciones_npc") as Dictionary
+		var progreso_variant: Variant = _game_state.call("obtener_conversaciones_npc")
+		_progreso_parejas = progreso_variant.duplicate(true) if progreso_variant is Dictionary else {}
+	if is_instance_valid(_mission_manager) and not _mission_manager.mision_aceptada.is_connected(_al_mision_aceptada):
+		_mission_manager.mision_aceptada.connect(_al_mision_aceptada)
 
 
 func actualizar(
@@ -173,7 +190,10 @@ func actualizar(
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
 		return
 
-	_buscar_conversacion(jugador)
+	if _actualizar_iniciativas(jugador, dialogo, gestor_misiones):
+		return
+	if _mision_carreta_completada(gestor_misiones):
+		_buscar_conversacion(jugador)
 
 
 ## Permite que el jugador presencie la conversación activa al interactuar
@@ -223,6 +243,274 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 		_vistas_por_dia[str(conversacion.get("clave", ""))] = true
 		return true
 	return false
+
+
+## Guarda el origen de cada encargo aceptado para que el mismo NPC pueda
+## interesarse por el progreso en el momento adecuado.
+func _al_mision_aceptada(mision: Dictionary) -> void:
+	var personaje_id := str(mision.get("npc_origen_personaje_game_id", "")).strip_edges()
+	var mision_id := str(mision.get("id", "")).strip_edges()
+	if personaje_id.is_empty() or mision_id.is_empty() or not is_instance_valid(_world_atmosphere):
+		return
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return
+	var hora := float(tiempo.get("hora_del_dia", 12.0))
+	var dias_espera := maxi(0, int(mision.get("seguimiento_dias", mision.get("duracion_dias", 0))))
+	if dias_espera <= 0:
+		var plazo := str(mision.get("plazo", mision.get("duracion", mision.get("tipo_plazo", "")))).to_lower()
+		if plazo.contains("largo") or plazo.contains("seman"):
+			dias_espera = 3
+	var iniciativas := _obtener_iniciativas()
+	var misiones_variant: Variant = iniciativas.get("misiones", {})
+	var misiones: Dictionary = misiones_variant.duplicate(true) if misiones_variant is Dictionary else {}
+	misiones[mision_id] = {
+		"personaje_id": personaje_id,
+		"nombre": str(mision.get("nombre", "el encargo")),
+		"dia_aceptacion": int(tiempo.get("dia", 1)),
+		"anio_aceptacion": int(tiempo.get("anio", 0)),
+		"hora_aceptacion": hora,
+		"dias_espera": dias_espera,
+		"seguimiento_realizado": false
+	}
+	iniciativas["misiones"] = misiones
+	_guardar_iniciativas(iniciativas)
+
+
+func _obtener_iniciativas() -> Dictionary:
+	var iniciativas_variant: Variant = _progreso_parejas.get("_iniciativas", {})
+	return iniciativas_variant.duplicate(true) if iniciativas_variant is Dictionary else {}
+
+
+func _guardar_iniciativas(iniciativas: Dictionary) -> void:
+	_progreso_parejas["_iniciativas"] = iniciativas.duplicate(true)
+	if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+		_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+
+
+func _actualizar_iniciativas(
+	jugador: Node2D,
+	dialogo: DialogueSystem,
+	gestor_misiones: Node
+) -> bool:
+	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
+		return false
+	if jugador is CharacterBody2D and (jugador as CharacterBody2D).velocity.length() > 8.0:
+		return false
+	if is_instance_valid(dialogo) and dialogo.esta_abierto():
+		return false
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return false
+	_obtener_npcs_torres()
+	var iniciativas := _obtener_iniciativas()
+	var misiones_variant: Variant = iniciativas.get("misiones", {})
+	var misiones: Dictionary = misiones_variant if misiones_variant is Dictionary else {}
+	for mision_id_variant in misiones.keys():
+		var mision_id := str(mision_id_variant)
+		var registro_variant: Variant = misiones.get(mision_id, {})
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		if bool(registro.get("seguimiento_realizado", false)):
+			continue
+		var npc := _npc_por_id.get(str(registro.get("personaje_id", ""))) as Creature
+		if not _npc_puede_conversar(npc) or jugador.global_position.distance_to(npc.global_position) > DISTANCIA_INICIATIVA:
+			continue
+		if not _seguimiento_mision_vencido(registro, tiempo):
+			continue
+		if not is_instance_valid(gestor_misiones) or not gestor_misiones.has_method("obtener_estado_mision"):
+			continue
+		var estado_mision: Dictionary = gestor_misiones.call("obtener_estado_mision", mision_id)
+		if estado_mision.is_empty():
+			continue
+		var estado := str(estado_mision.get("estado", ""))
+		if estado != "activa" and estado != "completada" and estado != "reclamada":
+			continue
+		var datos_dialogo := _crear_dialogo_seguimiento_mision(npc, registro, estado == "completada" or estado == "reclamada")
+		if dialogo.abrir_iniciativa_npc(datos_dialogo, npc):
+			registro["seguimiento_realizado"] = true
+			misiones[mision_id] = registro
+			iniciativas["misiones"] = misiones
+			_guardar_iniciativas(iniciativas)
+			return true
+
+	var ultima_variant: Variant = iniciativas.get("ultima_iniciativa_dia", {})
+	var ultima: Dictionary = ultima_variant if ultima_variant is Dictionary else {}
+	var dia_actual := _clave_dia(tiempo)
+	for npc in _npc_por_id.values():
+		if not npc is Creature:
+			continue
+		var personaje := npc as Creature
+		if not _npc_puede_conversar(personaje) or jugador.global_position.distance_to(personaje.global_position) > DISTANCIA_INICIATIVA:
+			continue
+		var personaje_id := personaje.get_personaje_game_id().strip_edges()
+		if personaje_id.is_empty() or str(ultima.get(personaje_id, "")) == dia_actual:
+			continue
+		if not is_instance_valid(_relationship_system):
+			continue
+		var relacion := _relationship_system.obtener_relacion(personaje_id)
+		if float(relacion.get("amistad", 0.0)) < AMISTAD_INICIATIVA_MINIMA and float(relacion.get("afecto", 0.0)) < AFECTO_INICIATIVA_MINIMO:
+			continue
+		var dia_ultima := str(ultima.get(personaje_id, ""))
+		if not dia_ultima.is_empty() and _dias_entre_claves(dia_ultima, tiempo) < 2:
+			continue
+		var datos_amigo := _crear_dialogo_iniciativa_amigo(personaje, tiempo)
+		if dialogo.abrir_iniciativa_npc(datos_amigo, personaje):
+			ultima[personaje_id] = dia_actual
+			iniciativas["ultima_iniciativa_dia"] = ultima
+			_guardar_iniciativas(iniciativas)
+			return true
+	return false
+
+
+func _seguimiento_mision_vencido(registro: Dictionary, tiempo: Dictionary) -> bool:
+	var dias_espera := maxi(0, int(registro.get("dias_espera", 0)))
+	var dias_transcurridos := _dias_transcurridos(
+		int(registro.get("anio_aceptacion", 0)),
+		int(registro.get("dia_aceptacion", 1)),
+		int(tiempo.get("anio", 0)),
+		int(tiempo.get("dia", 1))
+	)
+	var hora_actual := float(tiempo.get("hora_del_dia", 0.0))
+	if dias_espera > 0:
+		return dias_transcurridos >= dias_espera and hora_actual >= 8.0
+	var hora_aceptacion := float(registro.get("hora_aceptacion", 12.0))
+	var dias_hasta_consulta := 1 if hora_aceptacion >= 18.0 else 0
+	return dias_transcurridos >= dias_hasta_consulta and hora_actual >= 18.0
+
+
+func _dias_transcurridos(anio_inicio: int, dia_inicio: int, anio_actual: int, dia_actual: int) -> int:
+	if anio_actual < anio_inicio:
+		return 0
+	if anio_actual == anio_inicio:
+		return maxi(0, dia_actual - dia_inicio)
+	return maxi(0, (anio_actual - anio_inicio) * 365 + dia_actual - dia_inicio)
+
+
+func _clave_dia(tiempo: Dictionary) -> String:
+	return "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
+
+
+func _dias_entre_claves(clave: String, tiempo: Dictionary) -> int:
+	var partes := clave.split(":")
+	if partes.size() != 2:
+		return 999
+	return _dias_transcurridos(int(partes[0]), int(partes[1]), int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1)))
+
+
+func _crear_dialogo_seguimiento_mision(npc: Creature, registro: Dictionary, completada: bool) -> Dictionary:
+	var nombre := npc.get_nombre_visual()
+	var mision := str(registro.get("nombre", "el encargo"))
+	var pregunta := "¿Cómo te ha ido con " + mision + "? No quería estar preguntándote a cada rato, pero me acordé del encargo."
+	if completada:
+		pregunta = "Me enteré de que terminaste " + mision + ". ¿Cómo te fue al final?"
+	match nombre.to_lower():
+		"elian":
+			pregunta = "Hola, me acordé del encargo de " + mision + ". ¿Cómo te está yendo? Espero que no te haya dado demasiados problemas."
+		"bruna":
+			pregunta = "Una cosa: ¿cómo va " + mision + "? Prefiero preguntar antes de dar por hecho que todo salió bien."
+		"darven":
+			pregunta = "Quería hacer seguimiento de " + mision + ". ¿Todo marcha según lo previsto o surgió algún inconveniente?"
+		"saira":
+			pregunta = "¡Justo quería preguntarte por " + mision + "! ¿Cómo va todo? No me gusta dejar un encargo sin saber cómo sigue."
+		"narel":
+			pregunta = "He estado pensando en " + mision + ". ¿Qué resultados has obtenido hasta ahora? Me interesa saber si apareció algo inesperado."
+	if completada:
+		pregunta = "¡Supe que terminaste " + mision + "! ¿Cómo te fue? ¿Resultó como esperabas?"
+	var respuestas := _crear_respuestas_iniciativa(npc, "mision", completada)
+	return {
+		"clave": "iniciativa_mision_" + str(registro.get("personaje_id", "")) + "_" + str(registro.get("dia_aceptacion", 0)),
+		"lineas": [{"hablante": nombre, "texto": pregunta}],
+		"respuestas": respuestas,
+		"_iniciativa_npc": true
+	}
+
+
+func _crear_dialogo_iniciativa_amigo(npc: Creature, tiempo: Dictionary) -> Dictionary:
+	var nombre := npc.get_nombre_visual()
+	var pregunta := "¡Me alegra verte! ¿Cómo has estado? ¿Tienes algún plan para hoy?"
+	if float(tiempo.get("hora_del_dia", 12.0)) >= 18.0:
+		pregunta = "¡Qué bueno verte! ¿Cómo estuvo tu día? ¿Harás algo mañana?"
+	match nombre.to_lower():
+		"elian":
+			pregunta = "¡Qué bueno verte! ¿Cómo has estado? Si tienes un rato libre, podríamos compartir algo de pan."
+		"bruna":
+			pregunta = "Hola. ¿Cómo va todo? ¿Tienes algún plan o vas a dejar que el día te sorprenda?"
+		"darven":
+			pregunta = "¿Todo bien? Te he visto por aquí y quería saber si tienes algún asunto entre manos hoy."
+		"saira":
+			pregunta = "¡Ah, justo a quien quería encontrar! ¿Cómo estás? ¿Tienes planes para hoy o vas a improvisar?"
+		"narel":
+			pregunta = "Me preguntaba cómo te ha ido estos días. ¿Tienes algún plan para hoy o algo que te interese investigar?"
+	return {
+		"clave": "iniciativa_amigo_" + npc.get_personaje_game_id(),
+		"lineas": [{"hablante": nombre, "texto": pregunta}],
+		"respuestas": _crear_respuestas_iniciativa(npc, "amistad", false),
+		"_iniciativa_npc": true
+	}
+
+
+func _crear_respuestas_iniciativa(npc: Creature, tipo: String, completada: bool) -> Array[Dictionary]:
+	var nombre := npc.get_nombre_visual().to_lower()
+	var respuesta_positiva := "Me alegra escucharlo. Espero que siga yendo bien."
+	var respuesta_dificil := "Vaya, lo siento. Si puedo ayudarte con algo, dímelo."
+	var respuesta_neutra := "Ya veo. A veces está bien tomarse el tiempo para decidir."
+	match nombre:
+		"elian":
+			respuesta_positiva = "Me alegra. Si necesitas descansar un poco, sabes dónde encontrarme."
+			respuesta_dificil = "Lo siento. Si te sirve, puedo guardarte algo de pan para cuando vuelvas."
+			respuesta_neutra = "Está bien. No hace falta tener todo resuelto desde temprano."
+		"bruna":
+			respuesta_positiva = "Bien. Entonces sigue a tu ritmo y no descuides los detalles."
+			respuesta_dificil = "Si hay una parte que se pueda reparar o resolver, podemos pensar cómo hacerlo."
+			respuesta_neutra = "No es mala idea. A veces conviene mirar antes de decidir."
+		"darven":
+			respuesta_positiva = "Me alegra. Mantén ese ritmo, pero no olvides revisar los riesgos."
+			respuesta_dificil = "Entiendo. Si aparece un problema concreto, puedo ayudarte a buscar una solución."
+			respuesta_neutra = "De acuerdo. Lo importante es tener claro qué puedes hacer y qué no."
+		"saira":
+			respuesta_positiva = "¡Eso suena bien! Luego me cuentas cómo salió; siempre me gustan las buenas noticias."
+			respuesta_dificil = "Vaya, espero que mejore. Si escucho algo que pueda servirte, te lo haré saber."
+			respuesta_neutra = "¡También vale! A veces los mejores días son los que no tienen demasiados planes."
+		"narel":
+			respuesta_positiva = "Interesante. Espero que puedas llevarlo a cabo; luego me gustaría saber qué descubriste."
+			respuesta_dificil = "Comprendo. Quizá convenga separar lo que sabes de lo que todavía falta averiguar."
+			respuesta_neutra = "Es razonable. No siempre hace falta formular una conclusión de inmediato."
+	var pregunta_mision := tipo == "mision"
+	if pregunta_mision and completada:
+		respuesta_positiva = "Me alegra que lo hayas conseguido. Gracias por volver a contarme cómo salió."
+		respuesta_dificil = "Bueno, al menos ya sabes qué salió mal. Eso también sirve para la próxima."
+		respuesta_neutra = "Entiendo. Lo importante es que pudiste cerrar el asunto."
+	return [
+		{
+			"texto": "Contarle que va bien",
+			"jugador": "Va bastante bien. Estoy avanzando y creo que podré resolverlo.",
+			"respuesta": respuesta_positiva,
+			"evento": "interesarse",
+			"clave": "iniciativa_" + tipo + "_va_bien",
+			"importancia": 1.0,
+			"despedida": true
+		},
+		{
+			"texto": "Decir que ha sido difícil",
+			"jugador": "La verdad, me está costando más de lo que esperaba.",
+			"respuesta": respuesta_dificil,
+			"evento": "apoyar",
+			"clave": "iniciativa_" + tipo + "_dificil",
+			"importancia": 1.0,
+			"despedida": true
+		},
+		{
+			"texto": "Responder con calma",
+			"jugador": "Todavía estoy viendo cómo organizarme. Te contaré cuando tenga algo más claro.",
+			"respuesta": respuesta_neutra,
+			"evento": "interesarse",
+			"clave": "iniciativa_" + tipo + "_calma",
+			"importancia": 1.0,
+			"despedida": true
+		}
+	]
 
 
 func _mision_carreta_completada(gestor_misiones: Node) -> bool:
@@ -275,6 +563,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 func _obtener_npcs_torres() -> Array[Creature]:
 	var resultado: Array[Creature] = []
 	_npc_por_nombre.clear()
+	_npc_por_id.clear()
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not nodo is Creature or not is_instance_valid(nodo):
 			continue
@@ -283,6 +572,9 @@ func _obtener_npcs_torres() -> Array[Creature]:
 		if clave.is_empty():
 			continue
 		_npc_por_nombre[clave] = npc
+		var personaje_id := npc.get_personaje_game_id().strip_edges()
+		if not personaje_id.is_empty():
+			_npc_por_id[personaje_id] = npc
 		resultado.append(npc)
 	return resultado
 
