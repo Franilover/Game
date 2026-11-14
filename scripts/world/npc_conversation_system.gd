@@ -2,8 +2,8 @@ extends Node
 class_name NPCConversationSystem
 
 const INTERVALO_BUSQUEDA := 0.5
-const DISTANCIA_ENTRE_NPC := 150.0
-const DISTANCIA_JUGADOR := 300.0
+const DISTANCIA_ENTRE_NPC := 180.0
+const DISTANCIA_JUGADOR := 220.0
 const DURACION_LINEA := 3.2
 const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
@@ -305,8 +305,8 @@ func _obtener_burbuja(npc: Creature) -> PanelContainer:
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.z_index = 100
 	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color("#171717")
-	estilo.border_color = Color("#B4BEFE")
+	estilo.bg_color = Color("#2B211B")
+	estilo.border_color = Color("#A98A67")
 	estilo.set_border_width_all(1)
 	estilo.set_corner_radius_all(3)
 	estilo.content_margin_left = 6.0
@@ -321,8 +321,8 @@ func _obtener_burbuja(npc: Creature) -> PanelContainer:
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	etiqueta.add_theme_font_override("font", FONT_PIXEL)
 	etiqueta.add_theme_font_size_override("font_size", 8)
-	etiqueta.add_theme_color_override("font_color", Color("#F2F2F2"))
-	etiqueta.add_theme_color_override("font_outline_color", Color("#111111"))
+	etiqueta.add_theme_color_override("font_color", Color("#F2E8D8"))
+	etiqueta.add_theme_color_override("font_outline_color", Color("#17110D"))
 	etiqueta.add_theme_constant_override("outline_size", 2)
 	panel.add_child(etiqueta)
 	npc.add_child(panel)
