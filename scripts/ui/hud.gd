@@ -1443,7 +1443,7 @@ func _actualizar_reloj_calendario() -> void:
 	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
 	var anio := int(tiempo.get("anio", 0))
 	var fecha := "Día %d · %s" % [dia_estacion, estacion] if dia_estacion > 0 else estacion
-	_calendar_label.text = "%s   %s\n%s · Año %d\nMonedas: %d" % [hora, periodo, fecha, anio, GameState.obtener_dinero()]
+	_calendar_label.text = "%s   %s\nMonedas: %d\n%s · Año %d" % [hora, periodo, GameState.obtener_dinero(), fecha, anio]
 
 
 
