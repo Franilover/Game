@@ -1537,7 +1537,7 @@ func _crear_respuesta_pregunta_item(objeto: Dictionary, personaje_id: String, it
 				respuesta += " Es uno de los objetos que más aprecio."
 			"le_gusta", "gusta", "positivo", "bueno", "muy_bueno":
 				respuesta += " Me parece un objeto útil y agradable."
-			"no_le_gusta", "desagrado", "negativo", "malo":
+			"no_gusta", "no_le_gusta", "desagrado", "negativo", "malo":
 				respuesta += " No es uno de mis objetos preferidos."
 			"odia", "detesta", "muy_negativo":
 				respuesta += " No me agrada demasiado."
