@@ -28,7 +28,7 @@ var pasos: Array[Dictionary] = [
 await $CutsceneDirector.ejecutar("introduccion_narel", pasos)
 ```
 
-El nodo se crea desde `Main` y recibe Player, DialogueSystem y Camera2D. Mientras reproduce una secuencia se agrega a `modal_ui`, bloqueando movimiento, combate e interacciones. El diálogo sigue usando DialogueSystem y sus controles habituales. La cámara deja de seguir al jugador durante la secuencia y vuelve a él al finalizar.
+El nodo se crea desde `Main` y recibe Player, DialogueSystem y Camera2D. Mientras reproduce una secuencia se agrega a `modal_ui`, bloqueando movimiento, combate e interacciones. El diálogo sigue usando DialogueSystem y sus controles habituales. La cámara deja de seguir al jugador durante la secuencia y vuelve a él con una transición suave al finalizar. El zoom original también se restaura; al cancelar, la cámara vuelve inmediatamente a su estado normal.
 
 ## Tipos de paso
 
@@ -36,7 +36,7 @@ El nodo se crea desde `Main` y recibe Player, DialogueSystem y Camera2D. Mientra
 | --- | --- | --- |
 | `dialogo` | `datos` | Abre un diálogo normal mediante DialogueSystem y espera a que termine. |
 | `esperar` | `segundos` | Pausa la secuencia; máximo 60 segundos. |
-| `camara` | `x`, `y`, `duracion`, opcional `objetivo` | Desplaza suavemente la cámara a coordenadas globales o a un Node2D indicado por ruta absoluta. |
+| `camara` | `x`, `y`, `duracion`, opcional `objetivo`, `zoom` | Desplaza suavemente la cámara y permite acercar/alejar (zoom entre 0.5 y 5). |
 | `evento` | `clave`, opcional `datos` | Emite `evento_solicitado(clave, datos)` para que misiones u otros sistemas reaccionen. |
 | `notificacion` | `texto` | Publica una notificación mediante Events. |
 
@@ -106,3 +106,8 @@ Los diálogos admiten una acción `evento_social` en sus acciones de elección:
 Los valores se limitan al rango -100 a 100. Los rasgos de personalidad modulan la intensidad de la reacción con un multiplicador entre 0.75 y 1.25: generosidad influye en ayudar, sociabilidad en apoyar, curiosidad en conocimiento/habilidad, prudencia en confianza y agresividad en la respuesta al irrespeto. Los cambios se calculan de forma determinista, sin tiradas aleatorias.
 
 `evento_id` evita aplicar dos veces un mismo hecho mientras ese recuerdo permanezca en el historial reciente del personaje (máximo 32 recuerdos). Para hechos únicos de historia o misiones, usar una clave estable y específica.
+
+
+## Planos breves de acontecimientos de Torres
+
+Cuando dos NPC terminan un acontecimiento diario y ambos inician su desplazamiento compartido, el sistema solicita un plano de presentación. Main sólo lo reproduce si el jugador está en Torres, a menos de 360 px del lugar y no hay otro diálogo o cinemática activa. La cámara se desplaza hacia el punto de encuentro, aumenta ligeramente el zoom, mantiene el plano 1.4 segundos y regresa suavemente al jugador. Si el jugador está lejos, el acontecimiento continúa sin interrumpirlo.
