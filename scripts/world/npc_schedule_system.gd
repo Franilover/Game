@@ -476,9 +476,9 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 			inicio_mejor = inicio
 
 	if mejor.is_empty():
-		var firma_fallo := "%s|%d|%d|%s" % [nombre_npc, dia_semana, minutos, ";".join(diagnostico_rechazos)]
+		var firma_fallo := "%s|%d|%d|%s" % [nombre_npc, dia_semana, minutos, str(diagnostico_rechazos)]
 		if str(get_meta("ultimo_diagnostico_selector", "")) != firma_fallo:
-			print("NPCScheduleSystem: SELECTOR SIN COINCIDENCIA | npc=", nombre_npc, " dia=", dia_semana, " minuto=", minutos, " total=", (rutinas_variant as Array).size(), " | ", " || ".join(diagnostico_rechazos))
+			print("NPCScheduleSystem: SELECTOR SIN COINCIDENCIA | npc=", nombre_npc, " dia=", dia_semana, " minuto=", minutos, " total=", (rutinas_variant as Array).size(), " | ", str(diagnostico_rechazos))
 			set_meta("ultimo_diagnostico_selector", firma_fallo)
 
 	return mejor
