@@ -639,6 +639,13 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if is_instance_valid(_fuente):
 		personaje_id = _fuente.get_personaje_game_id().strip_edges()
 	if not personaje_id.is_empty():
+		# El diálogo raíz puede ser la presentación narrativa o el inicio de una misión.
+		# Se muestra antes de las variantes sociales en el primer encuentro.
+		if principal.is_empty() and (datos.has("lineas") or datos.has("texto")):
+			var estado_inicial := relationship_system.obtener_estado_dialogo(personaje_id) if relationship_system != null else {}
+			if bool(estado_inicial.get("primera_vez", false)):
+				return datos.duplicate(true)
+
 		var contextual := _seleccionar_variante_contextual(variantes_variant as Array, personaje_id)
 		if not contextual.is_empty():
 			return contextual
@@ -655,13 +662,6 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_sociales_disponibles, personaje_id)
 			if not seleccion.is_empty() and str(seleccion.get("clave", "")).strip_edges().to_lower() != "principal":
 				return seleccion.duplicate(true)
-
-		# El diálogo raíz puede ser una introducción narrativa o el inicio de una misión.
-		# Se conserva para el primer encuentro si no existe una variante principal explícita.
-		if principal.is_empty() and (datos.has("lineas") or datos.has("texto")):
-			var estado_inicial := social.obtener_estado_dialogo(personaje_id) if social != null else {}
-			if bool(estado_inicial.get("primera_vez", false)):
-				return datos.duplicate(true)
 
 	var dialogo_rutina := _crear_dialogo_rutina_contextual()
 	if not dialogo_rutina.is_empty():
