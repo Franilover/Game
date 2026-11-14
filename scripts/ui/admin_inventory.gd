@@ -623,9 +623,9 @@ func _mostrar_escenas_admin() -> void:
 		_texto_narrativo("No hay escenas narrativas registradas.")
 		return
 	for escena in _escenas_admin:
-		_texto_narrativo(str(escena.get("titulo", escena.get("clave", "Escena"))), true)
+		_texto_narrativo(_nombre_con_inicial_mayuscula(str(escena.get("titulo", escena.get("clave", "Escena")))), true)
 		_texto_narrativo("Participantes: %s y %s\nEtapas: %s\nRequisitos: %s" % [
-			str(escena.get("npc_a", "?")), str(escena.get("npc_b", "?")),
+			_nombre_con_inicial_mayuscula(str(escena.get("npc_a", "?"))), _nombre_con_inicial_mayuscula(str(escena.get("npc_b", "?"))),
 			str(escena.get("etapas", "1–3")), str(escena.get("requisitos_texto", "Etapa narrativa disponible."))
 		])
 		_texto_narrativo("Escenario actual: " + str(_evaluar_requisitos_narrativos(escena).get("estado", "No evaluado")))
@@ -647,9 +647,36 @@ func _mostrar_lineas_escena_admin(titulo: String, valor: Variant) -> void:
 		return
 	_texto_narrativo(titulo, true)
 	for linea_variant in valor as Array:
-		if linea_variant is Dictionary:
-			var linea := linea_variant as Dictionary
-			_texto_narrativo(str(linea.get("npc", "")) + ": " + str(linea.get("texto", "")))
+		if not linea_variant is Dictionary:
+			continue
+		var linea := linea_variant as Dictionary
+		var hablante := _nombre_con_inicial_mayuscula(str(linea.get("npc", "")))
+		var fila := HBoxContainer.new()
+		fila.add_theme_constant_override("separation", 6)
+		var npc := _buscar_npc_aldeano("", str(linea.get("npc", "")))
+		if is_instance_valid(npc):
+			var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+			if is_instance_valid(sprite) and is_instance_valid(sprite.texture):
+				var retrato := TextureRect.new()
+				retrato.custom_minimum_size = Vector2(32, 32)
+				retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				retrato.texture = sprite.texture
+				fila.add_child(retrato)
+		var etiqueta := Label.new()
+		etiqueta.text = hablante + ": " + str(linea.get("texto", ""))
+		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		fila.add_child(etiqueta)
+		_contenido_narrativo.add_child(fila)
+
+
+func _nombre_con_inicial_mayuscula(nombre: String) -> String:
+	var texto := nombre.strip_edges()
+	if texto.is_empty():
+		return texto
+	return texto.left(1).to_upper() + texto.substr(1)
 
 
 func _ver_escena_admin(escena: Dictionary) -> void:
@@ -660,14 +687,21 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 	var npc_a := _buscar_npc_aldeano("", nombre_a)
 	var npc_b := _buscar_npc_aldeano("", nombre_b)
 	if npc_a == null or npc_b == null:
-		_estado.text = "Ambos NPC deben estar presentes en Torres."
+		_estado.text = "Ambos NPC deben estar presentes en la zona actual."
 		return
 	if _cutscene_director.esta_activo():
 		_estado.text = "Ya hay una cinemática en reproducción."
 		return
+	# Cerrar el inventario/admin antes de mover la cámara: así la vista previa
+	# queda completamente visible y el jugador no conserva el foco de la UI.
+	if is_instance_valid(__inventario) and _inventario.has_method("cerrar"):
+		_inventario.cerrar()
 	var centro := (npc_a.global_position + npc_b.global_position) * 0.5
 	var camara := get_viewport().get_camera_2d()
-	var zoom := camara.zoom.x * 1.12 if camara != null else 2.0
+	var distancia := npc_a.global_position.distance_to(npc_b.global_position)
+	# Ajustar el encuadre para que ambos personajes y el espacio entre ellos
+	# queden visibles, incluso cuando la escena ocurre dentro de un edificio.
+	var zoom := clampf(2.35 - distancia / 420.0, 1.25, 2.35)
 	var pasos: Array[Dictionary] = [
 		{"tipo":"camara","x":centro.x,"y":centro.y,"zoom":zoom,"duracion":0.75},
 		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
