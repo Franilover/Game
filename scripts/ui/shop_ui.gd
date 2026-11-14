@@ -149,14 +149,20 @@ func _construir_interfaz() -> void:
 	encabezado.add_child(titulo)
 
 	var hablar := Button.new()
+	hablar.name = "ShopTalkButton"
 	hablar.text = "Hablar"
+	hablar.custom_minimum_size = Vector2(104.0, 36.0)
 	hablar.pressed.connect(_hablar_con_vendedor)
 	encabezado.add_child(hablar)
+	PIXEL_UI_THEME.apply(hablar, false)
 
 	var cerrar := Button.new()
+	cerrar.name = "ShopCloseButton"
 	cerrar.text = "Cerrar"
+	cerrar.custom_minimum_size = Vector2(92.0, 36.0)
 	cerrar.pressed.connect(cerrar_tienda)
 	encabezado.add_child(cerrar)
+	PIXEL_UI_THEME.apply(cerrar, false)
 
 	_balance = Label.new()
 	_balance.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -234,51 +240,53 @@ func _actualizar_catalogo() -> void:
 
 
 func _crear_fila_producto(producto: Dictionary) -> void:
-	var fila := PanelContainer.new()
+	var fila := HBoxContainer.new()
 	fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila.add_theme_constant_override("separation", 10)
 	_lista.add_child(fila)
-	PIXEL_UI_THEME.apply(fila, false)
 
-	var contenido := HBoxContainer.new()
-	contenido.add_theme_constant_override("separation", 12)
-	fila.add_child(contenido)
-
-	var imagen := TextureRect.new()
-	imagen.custom_minimum_size = Vector2(64.0, 64.0)
-	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	imagen.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	imagen.texture = ITEM_ICON_RESOLVER.obtener_icono(producto)
-	contenido.add_child(imagen)
-
-	var detalles := VBoxContainer.new()
-	detalles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	detalles.add_theme_constant_override("separation", 2)
-	contenido.add_child(detalles)
-
-	var nombre := Label.new()
-	nombre.text = str(producto.get("nombre", "Objeto"))
-	nombre.add_theme_font_size_override("font_size", 13)
-	detalles.add_child(nombre)
-
-	var descripcion := Label.new()
-	var texto_descripcion := str(producto.get("descripcion", "")).strip_edges()
-	descripcion.text = texto_descripcion if not texto_descripcion.is_empty() else "Sin descripción registrada."
-	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	descripcion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	detalles.add_child(descripcion)
+	# Cada producto se presenta como un botón pixel art seleccionable.
+	# La compra conserva su botón independiente para evitar compras accidentales.
+	var producto_boton := Button.new()
+	producto_boton.name = "ShopProductButton"
+	producto_boton.toggle_mode = true
+	producto_boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	producto_boton.custom_minimum_size = Vector2(0.0, 72.0)
+	producto_boton.text = str(producto.get("nombre", "Objeto"))
+	producto_boton.icon = ITEM_ICON_RESOLVER.obtener_icono(producto)
+	producto_boton.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	producto_boton.expand_icon = true
+	producto_boton.icon_max_width = 48
+	producto_boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	producto_boton.add_theme_font_size_override("font_size", 12)
+	producto_boton.tooltip_text = str(producto.get("descripcion", ""))
+	producto_boton.pressed.connect(func() -> void:
+		for otro in _lista.find_children("ShopProductButton", "Button", true, false):
+			if otro != producto_boton:
+				(otro as Button).button_pressed = false
+		producto_boton.button_pressed = true
+		var descripcion_texto := str(producto.get("descripcion", "")).strip_edges()
+		_mostrar_estado(descripcion_texto if not descripcion_texto.is_empty() else "Sin descripción registrada.")
+	)
+	fila.add_child(producto_boton)
+	PIXEL_UI_THEME.apply(producto_boton, false)
 
 	var precio := Label.new()
-	precio.text = "Precio: %d monedas" % int(producto.get("precio_tienda", 1))
-	detalles.add_child(precio)
+	precio.text = "%d monedas" % int(producto.get("precio_tienda", 1))
+	precio.custom_minimum_size = Vector2(84.0, 0.0)
+	precio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	precio.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	fila.add_child(precio)
 
 	var comprar := Button.new()
+	comprar.name = "ShopBuyButton"
 	comprar.text = "Comprar"
-	comprar.custom_minimum_size = Vector2(92.0, 38.0)
+	comprar.custom_minimum_size = Vector2(104.0, 42.0)
 	comprar.pressed.connect(func() -> void:
 		_comprar_producto(producto)
 	)
-	contenido.add_child(comprar)
+	fila.add_child(comprar)
+	PIXEL_UI_THEME.apply(comprar, false)
 
 
 func _obtener_precio(item: Dictionary) -> int:
