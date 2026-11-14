@@ -24,6 +24,7 @@ var _pausa_previa: bool = false
 var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
 var _process_mode_panel_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
 var _seguimiento_camara_npcs: Array[String] = []
+var _pulsaciones_escape_cinematica: int = 0
 
 
 func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = null) -> void:
@@ -33,6 +34,17 @@ func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = nul
 	_camera = camera
 	if is_instance_valid(_camera):
 		_zoom_original = _camera.zoom
+
+
+func _input(event: InputEvent) -> void:
+	if not _ocupado or not event is InputEventKey:
+		return
+	var tecla := event as InputEventKey
+	if not tecla.pressed or tecla.echo or (tecla.keycode != KEY_ESCAPE and tecla.physical_keycode != KEY_ESCAPE):
+		return
+	_pulsaciones_escape_cinematica += 1
+	if _pulsaciones_escape_cinematica >= 3:
+		cancelar()
 
 
 func _process(delta: float) -> void:
@@ -71,6 +83,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	_generacion += 1
 	var generacion_actual := _generacion
 	_ocupado = true
+	_pulsaciones_escape_cinematica = 0
 	_clave_actual = clave_limpia
 	_modo_cinematica = "en_vivo" if tipo.strip_edges().to_lower() in ["en_vivo", "vivo", "live"] else "planeada"
 	if _modo_cinematica == "planeada":
@@ -484,6 +497,7 @@ func _finalizar() -> void:
 		get_tree().paused = _pausa_previa
 	var clave_finalizada := _clave_actual
 	_ocupado = false
+	_pulsaciones_escape_cinematica = 0
 	_clave_actual = ""
 	_modo_cinematica = "planeada"
 	_seguimiento_camara_npcs.clear()
