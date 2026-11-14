@@ -1271,6 +1271,8 @@ func _cerrar_selector_conversacion() -> void:
 		_selector_conversacion.visible = false
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
+	if _boton_conversar != null and is_instance_valid(_boton_conversar):
+		_boton_conversar.grab_focus()
 
 
 func _crear_opciones_conversacion() -> Array[Dictionary]:
