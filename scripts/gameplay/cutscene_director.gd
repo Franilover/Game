@@ -133,8 +133,10 @@ func _buscar_npc(clave: String) -> Creature:
 		if not is_instance_valid(npc):
 			continue
 		var nombre := npc.get_nombre().strip_edges().to_lower()
+		var nombre_visual := npc.get_nombre_visual().strip_edges().to_lower()
 		var id := npc.get_id().strip_edges().to_lower()
-		if nombre == buscada or id == buscada:
+		var personaje_id := npc.get_personaje_game_id().strip_edges().to_lower()
+		if nombre == buscada or nombre_visual == buscada or id == buscada or personaje_id == buscada:
 			return npc
 	return null
 
