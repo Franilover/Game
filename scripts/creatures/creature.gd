@@ -306,7 +306,7 @@ func _cargar_sprite() -> void:
 	var sprite_key_local := str(datos.get("sprite_key", "")).strip_edges()
 	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\"):
 		for extension in [".png", ".PNG"]:
-			var ruta_personaje := "res://assets/art/characters/" + sprite_key_local + extension
+			var ruta_personaje: String = "res://assets/art/characters/" + sprite_key_local + str(extension)
 			if not ResourceLoader.exists(ruta_personaje):
 				continue
 			var textura_personaje := load(ruta_personaje) as Texture2D
