@@ -92,9 +92,9 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 		if not paso_variant is Dictionary:
 			continue
 		var paso := paso_variant as Dictionary
-		var tipo := str(paso.get("tipo", "")).strip_edges().to_lower()
+		var tipo_paso := str(paso.get("tipo", "")).strip_edges().to_lower()
 
-		match tipo:
+		match tipo_paso:
 			"dialogo":
 				var datos_variant: Variant = paso.get("datos", paso)
 				if not datos_variant is Dictionary:
@@ -143,7 +143,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				if not mensaje.is_empty():
 					Events.notification_pushed.emit(mensaje)
 			_:
-				push_warning("CutsceneDirector: tipo de paso desconocido: " + tipo)
+				push_warning("CutsceneDirector: tipo de paso desconocido: " + tipo_paso)
 
 	await _restaurar_camara()
 	if generacion_actual != _generacion:
