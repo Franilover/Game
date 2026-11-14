@@ -1138,6 +1138,8 @@ func _configurar_dialogo() -> void:
 		var callback_cinematica := Callable(self, "_al_cinematica_acontecimiento_solicitada")
 		if not _npc_conversation_system.is_connected("cinematica_acontecimiento_solicitada", callback_cinematica):
 			_npc_conversation_system.connect("cinematica_acontecimiento_solicitada", callback_cinematica)
+	if _bienvenida_torres_pendiente and str(_zone_manager.obtener_tipo_actual()) == "reino_torres":
+		call_deferred("_iniciar_bienvenida_torres")
 
 
 func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void:
