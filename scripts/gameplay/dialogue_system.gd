@@ -1486,8 +1486,12 @@ func _obtener_mision_disponible_para_npc() -> Dictionary:
 
 func _crear_opcion_trabajo_social() -> Dictionary:
 	var nombre := _nombre_social_actual()
-	if nombre_npc.strip_edges().to_lower() == "saira":
-		return "Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
+	if nombre_npc.strip_edges().to_lower() == "saira" and GameState.has_method("obtener_conversaciones_npc"):
+		var progreso_historias: Variant = GameState.call("obtener_conversaciones_npc")
+		if progreso_historias is Dictionary:
+			var investigacion_variant: Variant = (progreso_historias as Dictionary).get("nima_ivo_investigacion", {})
+			if investigacion_variant is Dictionary and int((investigacion_variant as Dictionary).get("etapa", 0)) >= 1:
+				return "Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges() if is_instance_valid(_fuente) else ""
 	var respuesta := "Tengo algunas tareas pendientes, como cualquiera. Intento organizarme para que no se me acumulen."
 	match nombre:
@@ -1590,6 +1594,10 @@ func _obtener_respuesta_ayuda_npc() -> String:
 		return "Gracias por ofrecerte. Ahora mismo no tengo nada que pedirte."
 	var nombre_npc := _fuente.get_nombre_visual()
 	var nombre_local := str(_fuente.get_meta("habitante_local_clave", ""))
+	if nombre_local == "mara":
+		if int(_fuente.get_meta("confianza_local", 0)) >= 3:
+			return "Te agradezco que preguntes. Por ahora sólo necesito que respetes mi tranquilidad y no hagas preguntas sobre dónde vivía antes."
+		return "Gracias por ofrecerte. Por ahora estoy bien; prefiero ocuparme de mis cosas con discreción."
 	if nombre_local == "ivo":
 		return "No tengo un encargo concreto. Me gustaría poder acompañar a mis amigos sin tener que parar tanto, pero hoy prefiero descansar un poco."
 	if nombre_local == "nima":
