@@ -315,9 +315,9 @@ func obtener_recuerdos(personaje_id: String) -> Array:
 
 
 
-## Consume una sola vez el recuerdo de regalo para convertirlo en diálogo cotidiano.
-## La marca se guarda junto al recuerdo para evitar repetir la misma mención.
-func tomar_regalo_pendiente_mencionar(personaje_id: String) -> Dictionary:
+## Devuelve el recuerdo social pendiente más importante sin consumirlo.
+## Se marca después de que DialogueSystem haya mostrado la primera línea.
+func obtener_recuerdo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 	var id := personaje_id.strip_edges()
 	if id.is_empty():
 		return {}
@@ -326,22 +326,68 @@ func tomar_regalo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 	if not lista_variant is Array:
 		return {}
 	var lista: Array = lista_variant
+	var mejor_indice := -1
+	var mejor_importancia := -1.0
 	for i in range(lista.size()):
 		if not lista[i] is Dictionary:
 			continue
-		var recuerdo: Dictionary = lista[i]
-		if str(recuerdo.get("tipo", "")) != "regalo":
-			continue
+		var recuerdo := (lista[i] as Dictionary).duplicate(true)
+		var tipo := str(recuerdo.get("tipo", "")).strip_edges()
 		if bool(recuerdo.get("mencionado_en_dialogo", false)):
 			continue
-		if str(recuerdo.get("item_nombre", "")).strip_edges().is_empty():
+		if tipo == "regalo":
+			if str(recuerdo.get("item_nombre", "")).strip_edges().is_empty():
+				continue
+		elif tipo == "evento_social":
+			if float(recuerdo.get("importancia", 0.0)) < 3.0:
+				continue
+		else:
 			continue
-		recuerdo["mencionado_en_dialogo"] = true
-		lista[i] = recuerdo
-		recuerdos[id] = lista
-		_game_state.call("guardar_recuerdos_sociales", recuerdos)
-		return recuerdo.duplicate(true)
-	return {}
+		var importancia := float(recuerdo.get("importancia", 1.0))
+		if importancia > mejor_importancia:
+			mejor_importancia = importancia
+			mejor_indice = i
+	if mejor_indice < 0:
+		return {}
+	var resultado := (lista[mejor_indice] as Dictionary).duplicate(true)
+	resultado["_indice_recuerdo"] = mejor_indice
+	return resultado
+
+
+## Marca un recuerdo como mencionado sólo después de mostrar su diálogo.
+func marcar_recuerdo_mencionado(personaje_id: String, indice_recuerdo: int) -> bool:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return false
+	var recuerdos := _obtener_recuerdos()
+	var lista_variant: Variant = recuerdos.get(id, [])
+	if not lista_variant is Array:
+		return false
+	var lista: Array = lista_variant
+	if indice_recuerdo < 0 or indice_recuerdo >= lista.size():
+		return false
+	if not lista[indice_recuerdo] is Dictionary:
+		return false
+	var recuerdo := (lista[indice_recuerdo] as Dictionary).duplicate(true)
+	if bool(recuerdo.get("mencionado_en_dialogo", false)):
+		return false
+	recuerdo["mencionado_en_dialogo"] = true
+	lista[indice_recuerdo] = recuerdo
+	recuerdos[id] = lista
+	_game_state.call("guardar_recuerdos_sociales", recuerdos)
+	return true
+
+
+## Compatibilidad con llamadas antiguas.
+func tomar_regalo_pendiente_mencionar(personaje_id: String) -> Dictionary:
+	var recuerdo := obtener_recuerdo_pendiente_mencionar(personaje_id)
+	if str(recuerdo.get("tipo", "")) != "regalo":
+		return {}
+	var indice := int(recuerdo.get("_indice_recuerdo", -1))
+	if not marcar_recuerdo_mencionado(personaje_id, indice):
+		return {}
+	recuerdo.erase("_indice_recuerdo")
+	return recuerdo
 
 
 func evaluar_regalo(personaje_id: String, item_id: String) -> Dictionary:
