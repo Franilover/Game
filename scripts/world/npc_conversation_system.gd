@@ -13,6 +13,7 @@ const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 const CONVERSACIONES: Array[Dictionary] = [
 	{
 		"clave": "elian_saira_hornada",
+		"tono_relacion": "cercana",
 		"npc_a": "elian",
 		"npc_b": "saira",
 		"lineas": [
@@ -30,6 +31,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	},
 	{
 		"clave": "bruna_darven_camino",
+		"tono_relacion": "tensa",
 		"npc_a": "bruna",
 		"npc_b": "darven",
 		"lineas": [
@@ -47,6 +49,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	},
 	{
 		"clave": "bruna_narel_evidencia",
+		"tono_relacion": "cercana",
 		"npc_a": "bruna",
 		"npc_b": "narel",
 		"lineas": [
@@ -64,6 +67,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	},
 	{
 		"clave": "darven_saira_avisos",
+		"tono_relacion": "prudente",
 		"npc_a": "darven",
 		"npc_b": "saira",
 		"lineas": [
@@ -81,6 +85,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 	},
 	{
 		"clave": "elian_narel_hornada",
+		"tono_relacion": "cordial",
 		"npc_a": "elian",
 		"npc_b": "narel",
 		"lineas": [
@@ -219,13 +224,44 @@ func _npc_puede_conversar(npc: Creature) -> bool:
 func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	_conversacion_activa = conversacion.duplicate(true)
 	var tiempo := _world_atmosphere.obtener_tiempo()
+	var anio := int(tiempo.get("anio", 0))
 	var dia := int(tiempo.get("dia", 1))
+	var hora := float(tiempo.get("hora_del_dia", 12.0))
+	var franja := 0
+	if hora >= 6.0 and hora < 12.0:
+		franja = 1
+	elif hora >= 12.0 and hora < 18.0:
+		franja = 2
+	elif hora >= 18.0:
+		franja = 3
+
+	# lineas_alternativas admite tanto el formato antiguo (una lista plana
+	# de intervenciones) como una lista de listas para futuras variantes.
 	var alternativas_variant: Variant = _conversacion_activa.get("lineas_alternativas", [])
+	var variantes: Array = []
 	if alternativas_variant is Array and not (alternativas_variant as Array).is_empty():
 		var alternativas := alternativas_variant as Array
-		var ciclo := posmod(dia, alternativas.size() + 1)
-		if ciclo > 0 and alternativas[ciclo - 1] is Array:
-			_conversacion_activa["lineas"] = (alternativas[ciclo - 1] as Array).duplicate(true)
+		if alternativas[0] is Dictionary:
+			variantes.append(alternativas)
+		else:
+			for alternativa_variant in alternativas:
+				if alternativa_variant is Array and not (alternativa_variant as Array).is_empty():
+					variantes.append(alternativa_variant)
+
+	if not variantes.is_empty():
+		var tono := str(_conversacion_activa.get("tono_relacion", "cordial"))
+		var desplazamiento := 0
+		match tono:
+			"cercana":
+				desplazamiento = 1
+			"tensa":
+				desplazamiento = 2
+			"prudente":
+				desplazamiento = 3
+		var indice := posmod(anio + dia + franja + desplazamiento, variantes.size() + 1)
+		if indice > 0:
+			_conversacion_activa["lineas"] = (variantes[indice - 1] as Array).duplicate(true)
+
 	_indice_linea = 0
 	_temporizador_linea = 0.0
 	_mostrar_linea_actual()
