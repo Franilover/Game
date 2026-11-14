@@ -132,6 +132,11 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 		_actualizar_stamina()
 		_actualizar_eterium()
 
+func establecer_modo_cinematica(activo: bool) -> void:
+	# El director conserva y restaura la visibilidad completa del HUD.
+	visible = not activo
+
+
 func _desconectar_senales_player() -> void:
 	if not is_instance_valid(player):
 		return
