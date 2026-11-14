@@ -1611,7 +1611,7 @@ func _al_cinematica_reunion_nocturna_solicitada(
 		return
 	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
 		return
-	var zona := _zone_manager.obtener_zona_actual()
+	var zona: Node = _zone_manager.obtener_zona_actual()
 	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")) or str(zona.get("_entrada_interior_id")) != "castillo":
 		return
 	var npc_a := _buscar_npc_cinematica(nombre_a)
