@@ -32,6 +32,7 @@ var _boton_conversar: Button = null
 var _dialogue_content_row: HBoxContainer = null
 var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
+var _selector_conversacion_scroll: ScrollContainer = null
 var _selector_conversacion_estado: Label = null
 var _selector_conversacion_contador: Label = null
 var _respuestas_titulo: Label = null
@@ -1237,6 +1238,8 @@ func _abrir_selector_conversacion() -> void:
 		_selector_conversacion_contador.text = "%d temas disponibles" % opciones.size()
 	if _selector_conversacion_estado != null:
 		_selector_conversacion_estado.visible = opciones.is_empty()
+	if _selector_conversacion_scroll != null:
+		_selector_conversacion_scroll.visible = not opciones.is_empty()
 	for indice in range(opciones.size()):
 		var opcion: Dictionary = opciones[indice]
 		var boton := Button.new()
@@ -2159,19 +2162,19 @@ func _crear_interfaz() -> void:
 	_selector_conversacion_contador.add_theme_color_override("font_color", Color("#C8AD82"))
 	topic_column.add_child(_selector_conversacion_contador)
 
-	var topic_scroll := ScrollContainer.new()
-	topic_scroll.name = "TopicScroll"
-	topic_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	topic_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	topic_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	topic_column.add_child(topic_scroll)
+	_selector_conversacion_scroll = ScrollContainer.new()
+	_selector_conversacion_scroll.name = "TopicScroll"
+	_selector_conversacion_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_selector_conversacion_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_selector_conversacion_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	topic_column.add_child(_selector_conversacion_scroll)
 
 	_selector_conversacion_grid = GridContainer.new()
 	_selector_conversacion_grid.columns = 1
 	_selector_conversacion_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_selector_conversacion_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_selector_conversacion_grid.add_theme_constant_override("v_separation", 6)
-	topic_scroll.add_child(_selector_conversacion_grid)
+	_selector_conversacion_scroll.add_child(_selector_conversacion_grid)
 
 	_selector_conversacion_estado = Label.new()
 	_selector_conversacion_estado.name = "TopicEmptyState"
