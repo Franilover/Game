@@ -582,6 +582,57 @@ func _cumple_requisito_social(requisito: Dictionary, relacion: Dictionary) -> bo
 	return true
 
 
+
+## Evita repetir variantes narrativas que ya se mostraron.
+## ciclo distingue una variante única de una que puede reaparecer en otro periodo.
+func variante_dialogo_ya_mostrada(
+	personaje_id: String,
+	clave_variante: String,
+	ciclo: String = "unica"
+) -> bool:
+	var id := personaje_id.strip_edges()
+	var clave := clave_variante.strip_edges()
+	if id.is_empty() or clave.is_empty():
+		return false
+	var relacion := obtener_relacion(id)
+	var vistas_variant: Variant = relacion.get("_variantes_dialogo_vistas", {})
+	if not vistas_variant is Dictionary:
+		return false
+	var clave_registro := "%s::%s" % [clave, ciclo.strip_edges()]
+	return bool((vistas_variant as Dictionary).get(clave_registro, false))
+
+
+func registrar_variante_dialogo_mostrada(
+	personaje_id: String,
+	clave_variante: String,
+	ciclo: String = "unica"
+) -> bool:
+	var id := personaje_id.strip_edges()
+	var clave := clave_variante.strip_edges()
+	if id.is_empty() or clave.is_empty():
+		return false
+	var relacion := obtener_relacion(id)
+	if relacion.is_empty():
+		return false
+	var vistas_variant: Variant = relacion.get("_variantes_dialogo_vistas", {})
+	var vistas: Dictionary = vistas_variant.duplicate(true) if vistas_variant is Dictionary else {}
+	var clave_registro := "%s::%s" % [clave, ciclo.strip_edges()]
+	if bool(vistas.get(clave_registro, false)):
+		return false
+	vistas[clave_registro] = true
+	# Mantiene acotado el estado auxiliar incluso si se añaden muchas variantes.
+	while vistas.size() > 64:
+		var claves := vistas.keys()
+		if claves.is_empty():
+			break
+		vistas.erase(claves[0])
+	relacion["_variantes_dialogo_vistas"] = vistas
+	var relaciones := _obtener_relaciones_guardadas()
+	relaciones[id] = relacion.duplicate(true)
+	_guardar_relaciones(relaciones)
+	return true
+
+
 func _obtener_relaciones_guardadas() -> Dictionary:
 	var variant: Variant = _game_state.call("obtener_relaciones_sociales")
 	if variant is Dictionary:
