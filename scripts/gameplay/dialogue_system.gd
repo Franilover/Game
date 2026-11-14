@@ -531,7 +531,7 @@ func _actualizar_retrato(hablante: String) -> void:
 
 	var textura: Texture2D = null
 	for nombre_retrato in nombres_retrato:
-		if nombre_retrato.is_empty() or nombre_retrato.contains("/") or nombre_retrato.contains("\\\\"):
+		if nombre_retrato.is_empty() or nombre_retrato.contains("/") or nombre_retrato.contains("\\"):
 			continue
 		for extension in [".png", ".PNG"]:
 			var ruta := "res://assets/art/characters/heads/" + nombre_retrato + extension
