@@ -65,6 +65,7 @@ func _ready() -> void:
 	_crear_interfaz_construccion()
 	_reconstruir_visual_decoraciones()
 	_crear_objetivo_puerta()
+	_crear_salida_camino_torres()
 	var interior_inicial := _obtener_interior()
 	if is_instance_valid(interior_inicial):
 		interior_inicial.call("establecer_activo", false)
@@ -95,9 +96,13 @@ func _inicializar_terreno_dual() -> void:
 		for x in range(ancho_celdas):
 			terreno.visual.set_zone(Vector2i(x, y), WorldTerrain.Zone.GRASS, 0, "Pradera")
 
-	# Camino de tierra desde la casa hasta la entrada de la parcela.
-	for y in range(19, 46):
+	# Camino de tierra que sale desde la fachada de la casa y cruza
+	# la parcela hacia el este. El primer tramo lo une con la puerta.
+	for y in range(19, 26):
 		for x in range(35, 40):
+			terreno.visual.set_zone(Vector2i(x, y), WorldTerrain.Zone.DIRT, 0, "Pradera")
+	for y in range(23, 27):
+		for x in range(38, 75):
 			terreno.visual.set_zone(Vector2i(x, y), WorldTerrain.Zone.DIRT, 0, "Pradera")
 
 	# Suelo de cultivo inicial, separado del camino.
@@ -736,6 +741,32 @@ func cerrar_cofre() -> void:
 	interfaz.queue_free()
 	if is_instance_valid(_boton_modo):
 		_boton_modo.visible = not _interior_abierto
+
+
+## Conecta el extremo oriental del camino con la entrada occidental de Torres.
+func _crear_salida_camino_torres() -> void:
+	var salida := Area2D.new()
+	salida.name = "SalidaCaminoTorres"
+	salida.position = Vector2(1170.0, 0.0)
+	salida.collision_layer = 0
+	salida.collision_mask = 1
+	var forma := CollisionShape2D.new()
+	var rectangulo := RectangleShape2D.new()
+	rectangulo.size = Vector2(64.0, 112.0)
+	forma.shape = rectangulo
+	salida.add_child(forma)
+	salida.body_entered.connect(_al_llegar_al_final_camino_torres)
+	add_child(salida)
+
+
+func _al_llegar_al_final_camino_torres(body: Node2D) -> void:
+	if body == null or not body.is_in_group("player") or _interior_abierto or _modo_construccion:
+		return
+	var gestor_zonas := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(gestor_zonas) or not gestor_zonas.has_method("salir_hogar_por_camino"):
+		push_warning("HogarZone: no se encontró ZoneManager para regresar a Torres.")
+		return
+	gestor_zonas.call("salir_hogar_por_camino")
 
 
 func _crear_objetivo_puerta() -> void:
