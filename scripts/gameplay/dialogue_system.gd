@@ -104,6 +104,8 @@ func _input(event: InputEvent) -> void:
 				return
 			if _boton_preguntar_item != null and _boton_preguntar_item.visible and _boton_preguntar_item.get_global_rect().has_point(posicion_mouse):
 				return
+			if _boton_conversar != null and _boton_conversar.visible and _boton_conversar.get_global_rect().has_point(posicion_mouse):
+				return
 		_avanzar()
 		get_viewport().set_input_as_handled()
 		return
@@ -991,42 +993,58 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 	var cumplido := "Gracias. Es agradable que alguien se fije en el esfuerzo que pongo."
 	var aficiones := "Cuando tengo tiempo libre, intento descansar y hacer algo distinto a mis obligaciones."
 	var preocupacion := "Hay asuntos que prefiero ordenar con calma. Gracias por interesarte."
+	var consejo := "Mi consejo es que no intentes resolverlo todo de una vez. Da un paso y observa qué cambia."
+	var opinion_torres := "Torres es un lugar con personas distintas. Si uno presta atención, siempre descubre algo nuevo."
 	match nombre:
 		"elian":
 			planes = "Quiero terminar la hornada y atender la panadería. Después espero tener un rato tranquilo."
 			cumplido = "¡Gracias! A veces uno pasa tantas horas entre harina y hornos que olvida que su trabajo también alegra a los demás."
 			aficiones = "Me gusta caminar y probar recetas nuevas. No todo tiene que terminar convertido en pan para vender."
 			preocupacion = "A veces me preocupa no llegar a todos los pedidos sin descuidar la calidad."
+			consejo = "No apures una buena receta. Es mejor preparar algo bien y a tiempo que entregar cualquier cosa por terminar antes."
+			opinion_torres = "Torres tiene buen movimiento. La gente necesita un lugar donde reunirse y compartir algo recién hecho."
 		"bruna":
 			planes = "Tengo trabajo pendiente con las herramientas y las piezas. Después quiero revisar mis propios proyectos."
 			cumplido = "Lo aprecio. No busco reconocimiento, pero se agradece que notes el cuidado que pongo en cada pieza."
 			aficiones = "Me gusta reparar cosas por gusto, aunque intento que mis días libres no se conviertan en otra jornada de trabajo."
 			preocupacion = "Me preocupa que una pieza falle cuando alguien dependa de ella. Por eso reviso cada detalle."
+			consejo = "Antes de dar algo por terminado, comprueba los detalles. La paciencia evita muchos problemas."
+			opinion_torres = "Torres necesita buenos caminos, edificios firmes y gente dispuesta a cuidar lo que construye."
 		"darven":
 			planes = "Hoy seguiré atento a la seguridad de Torres. Cuando acabe mi turno, revisaré los alrededores."
 			cumplido = "Gracias. Cumplir con mi deber es lo esperado, aunque escuchar eso hace que la guardia pese menos."
 			aficiones = "Disfruto los paseos tranquilos. Incluso fuera de servicio me cuesta dejar de observar los caminos."
 			preocupacion = "Me preocupa pasar por alto una señal importante. La tranquilidad del pueblo depende de prestar atención."
+			consejo = "Mantén la calma y observa antes de actuar. Una decisión apresurada puede poner a otros en peligro."
+			opinion_torres = "Un pueblo seguro permite que todos trabajen y descansen sin miedo. Eso es lo que intento proteger."
 		"saira":
 			planes = "Tengo que atender el comercio y revisar algunas cuentas. También quiero enterarme de las novedades."
 			cumplido = "¡Qué amable! En el comercio una escucha muchas opiniones; no todas son tan agradables como la tuya."
 			aficiones = "Me gusta recorrer los puestos y descubrir mercancías curiosas sin tener que pensar en los precios."
 			preocupacion = "Me preocupa que un mal cálculo afecte al comercio y a quienes dependen de él."
+			consejo = "Escucha, compara y no te quedes con la primera impresión. Siempre conviene conocer varias versiones."
+			opinion_torres = "Torres es un punto de encuentro. Las mercancías y las noticias que llegan dicen mucho de lo que ocurre fuera."
 		"narel":
 			planes = "Quiero avanzar con mis observaciones y consultar algunos documentos. Quizá encuentre algo interesante."
 			cumplido = "Gracias. A veces me concentro tanto en investigar que olvido que alguien puede valorar el esfuerzo."
 			aficiones = "Leo por placer, aunque a veces termino investigando algo sin darme cuenta."
 			preocupacion = "Me preocupa confundir una hipótesis convincente con una conclusión verdadera."
+			consejo = "Distingue lo que sabes de lo que supones. Una buena pregunta puede valer más que una respuesta apresurada."
+			opinion_torres = "Torres reúne oficios, conocimientos y vidas distintas. Su mayor fortaleza está en sus habitantes."
 		"abel":
 			planes = "Hoy debo atender varios asuntos del reino. Espero escuchar a los habitantes y dejar un momento para descansar."
 			cumplido = "Te agradezco el comentario. Las responsabilidades no suelen venir acompañadas de elogios."
 			aficiones = "Aprecio los momentos tranquilos, conversar con los habitantes y conocer el reino sin reuniones."
 			preocupacion = "Me preocupa tomar decisiones sin escuchar a quienes vivirán con sus consecuencias."
+			consejo = "Antes de decidir, escucha a quienes se verán afectados. La responsabilidad empieza por comprenderlos."
+			opinion_torres = "Torres es importante por su gente. Quiero que sea un lugar donde todos puedan construir una vida tranquila."
 		"liam":
 			planes = "Quiero terminar mis obligaciones y salir un rato del castillo. Siempre ocurre algo interesante en Torres."
 			cumplido = "¡Gracias! No sabía que te habías fijado. Me has alegrado el día."
 			aficiones = "Me gusta salir del castillo, caminar por la plaza y escuchar las historias de la gente."
 			preocupacion = "A veces siento que todavía tengo mucho que aprender. Quiero encontrar una forma de ayudar."
+			consejo = "No esperes a saberlo todo para intentar algo bueno. Aprende de cada paso y no tengas miedo de preguntar."
+			opinion_torres = "Me gusta que en Torres siempre haya alguien haciendo algo. A veces sólo hace falta salir y conocer mejor el lugar."
 
 	if not actividad.is_empty() and not planes.to_lower().contains(actividad.to_lower()):
 		planes += " Ahora mismo estoy con " + actividad + "."
@@ -1034,7 +1052,9 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 		{"texto": "Preguntar planes de hoy", "jugador": "¿Qué planes tienes para hoy?", "respuesta": planes, "evento": "interesarse"},
 		{"texto": "Dar un cumplido", "jugador": "Quería decirte que haces un buen trabajo. Se nota el esfuerzo que pones.", "respuesta": cumplido, "evento": "apoyar"},
 		{"texto": "Preguntar por sus aficiones", "jugador": "¿Qué te gusta hacer cuando tienes tiempo libre?", "respuesta": aficiones, "evento": "interesarse"},
-		{"texto": "Preguntar qué le preocupa", "jugador": "¿Hay algo que te preocupe últimamente?", "respuesta": preocupacion, "evento": "interesarse"}
+		{"texto": "Preguntar qué le preocupa", "jugador": "¿Hay algo que te preocupe últimamente?", "respuesta": preocupacion, "evento": "interesarse"},
+		{"texto": "Pedirle un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": consejo, "evento": "interesarse"},
+		{"texto": "Hablar sobre Torres", "jugador": "¿Qué opinas de vivir en Torres?", "respuesta": opinion_torres, "evento": "interesarse"}
 	]
 
 
