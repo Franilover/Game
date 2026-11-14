@@ -1038,7 +1038,6 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 		if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 			_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
 		if bool(evento.get("cinematica", false)):
-			var zona := _zone_manager.obtener_zona_actual() as Node2D
 			var centro := (npc_a.global_position + npc_b.global_position) * 0.5
 			cinematica_reunion_nocturna_solicitada.emit(
 				clave,
