@@ -823,7 +823,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			]
 		},
 		{
-			"clave":"taren", "nombre":"Taren", "hogar":"vivienda_oeste_04",
+			"clave":"taren", "nombre":"Taren", "sprite":"Liam", "hogar":"vivienda_oeste_04",
 			"rutinas":[
 				{"clave":"taren_paseo","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"recorrer_el_reino"},
 				{"clave":"taren_comercio","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
