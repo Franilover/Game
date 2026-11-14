@@ -1389,28 +1389,42 @@ func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dic
 	var respuesta_estado := "He estado bien, aunque algunos días se hacen más largos que otros."
 	var respuesta_consejo := "Te diría que observes bien la situación antes de decidir. A veces ayuda escuchar otra perspectiva."
 	var respuesta_cumplido := "Gracias. Es agradable que alguien se haya fijado en el esfuerzo que pongo."
+	var respuesta_planes := "Hoy quiero cumplir con mis responsabilidades y reservar algo de tiempo para descansar."
+	var respuesta_aficiones := "Cuando tengo tiempo libre, intento descansar y hacer algo distinto a mis obligaciones."
 	match nombre:
 		"elian":
 			respuesta_estado = "Estoy bien. A veces termino cansado, pero me gusta tener una rutina y saber que mi trabajo sirve para alguien."
 			respuesta_consejo = "No te exijas terminar todo hoy. Haz las cosas con calma y deja un poco de tiempo para descansar."
 			respuesta_cumplido = "Gracias. A veces uno sólo ve el pan terminado y no todo el trabajo que hay detrás. Me alegra que lo valores."
+			respuesta_planes = "Quiero terminar la hornada y atender la panadería. Después espero tener un rato tranquilo."
+			respuesta_aficiones = "Me gusta caminar y probar recetas nuevas. No todo tiene que terminar convertido en pan para vender."
 		"bruna":
 			respuesta_estado = "Estoy bien. Si algo me preocupa, prefiero ocuparme de ello en vez de darle vueltas."
 			respuesta_consejo = "Asegúrate de entender el problema antes de empezar a arreglarlo. Trabajar dos veces por falta de atención es perder el tiempo."
 			respuesta_cumplido = "Lo aprecio. No busco reconocimiento, pero se agradece que notes el cuidado que pongo en cada pieza."
+			respuesta_planes = "Tengo trabajo pendiente con las herramientas y las piezas. Después quiero revisar mis propios proyectos."
+			respuesta_aficiones = "Me gusta reparar cosas por gusto, aunque intento que mis días libres no se conviertan en otra jornada de trabajo."
 		"darven":
 			respuesta_estado = "Estoy bien, gracias. Ha sido un día tranquilo, y espero que siga así."
 			respuesta_consejo = "No tomes una decisión con información incompleta. Comprueba lo importante y piensa quién podría verse afectado."
 			respuesta_cumplido = "Gracias. Cumplir con mi deber es lo esperado, aunque escuchar eso hace que la guardia pese menos."
+			respuesta_planes = "Hoy seguiré atento a la seguridad de Torres. Cuando acabe mi turno, revisaré los alrededores."
+			respuesta_aficiones = "Disfruto los paseos tranquilos. Incluso fuera de servicio me cuesta dejar de observar los caminos."
 		"saira":
 			respuesta_estado = "Bastante bien. Hay días agotadores, pero siempre aparece una conversación o una noticia que los vuelve interesantes."
 			respuesta_consejo = "Pregunta, compara y escucha más de una versión. La primera historia rara vez cuenta todo."
 			respuesta_cumplido = "¡Qué amable! En el comercio una escucha muchas opiniones; no todas son tan agradables como la tuya."
+			respuesta_planes = "Tengo que atender el comercio y revisar algunas cuentas. También quiero enterarme de las novedades."
+			respuesta_aficiones = "Me gusta recorrer los puestos y descubrir mercancías curiosas sin tener que pensar en los precios."
 		"narel":
 			respuesta_estado = "Me encuentro bien. He tenido bastante en qué pensar, aunque todavía estoy intentando ordenar algunas ideas."
 			respuesta_consejo = "Separa los hechos de tus interpretaciones. Después podrás decidir qué pregunta merece investigarse."
 			respuesta_cumplido = "Gracias. A veces me concentro tanto en investigar que olvido que alguien puede valorar el esfuerzo."
+			respuesta_planes = "Quiero avanzar con mis observaciones y consultar algunos documentos. Quizá encuentre algo interesante."
+			respuesta_aficiones = "Leo por placer, aunque a veces termino investigando algo sin darme cuenta."
 	var opciones_generales: Array[Dictionary] = [
+		{"clave": "planes_hoy", "texto": "Preguntar por sus planes de hoy", "jugador": "¿Qué planes tienes para hoy?", "respuesta": respuesta_planes, "evento": "interesarse", "importancia": 1.0},
+		{"clave": "aficiones", "texto": "Preguntar por sus aficiones", "jugador": "¿Qué te gusta hacer cuando tienes tiempo libre?", "respuesta": respuesta_aficiones, "evento": "interesarse", "importancia": 1.0},
 		{"clave": "estado_animo", "texto": "Preguntar cómo se siente", "jugador": "¿Cómo te has sentido últimamente?", "respuesta": respuesta_estado, "evento": "interesarse", "importancia": 2.0},
 		{"clave": "consejo_personal", "texto": "Pedir un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": respuesta_consejo, "evento": "compartir_conocimiento", "importancia": 1.0},
 		{"clave": "cumplido_personal", "texto": "Dar un cumplido", "jugador": "Quería decirte que valoro lo que haces. Se nota el esfuerzo que pones.", "respuesta": respuesta_cumplido, "evento": "apoyar", "importancia": 1.0}
@@ -1453,7 +1467,7 @@ func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dic
 				var tiempo_variant: Variant = relationship_system.obtener_contexto_temporal()
 				if tiempo_variant is Dictionary and bool((tiempo_variant as Dictionary).get("calendario_cargado", false)):
 					dia_rotacion = int((tiempo_variant as Dictionary).get("anio", 0)) * 1000 + int((tiempo_variant as Dictionary).get("dia", 1))
-			puntuacion += float(posmod(hash(clave + str(dia_rotacion)), 100)) / 1000.0
+			puntuacion += float(posmod(hash(clave + str(dia_rotacion)), 100)) / 20.0
 			if puntuacion > mejor_puntuacion:
 				mejor_puntuacion = puntuacion
 				mejor_indice = i
