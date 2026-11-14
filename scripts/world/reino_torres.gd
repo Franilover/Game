@@ -161,6 +161,7 @@ func _ready() -> void:
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
 	# iniciales de las celdas serializadas de la escena.
 	await _crear_cesped_tilemap_dual()
+	_crear_flores_terreno()
 	await _crear_muralla_montana()
 	await _crear_rio_marino_tilemap()
 
@@ -817,16 +818,14 @@ func _crear_luces_faroles() -> void:
 	# Los nodos reales de la escena son Sprite_poste_oeste y Sprite_poste_este.
 	# La luz 2D ilumina el mundo; el resplandor visible se dibuja en una
 	# CanvasLayer independiente para que CanvasModulate no lo apague.
-	var gradiente := Gradient.new()
-	# Centro cálido y bordes con pérdida progresiva de intensidad:
-	# evita un círculo marcado y deja que la luz se funda con la oscuridad.
+	var gradiente: Gradient = Gradient.new()
 	gradiente.set_color(0, Color(1.0, 0.76, 0.43, 0.68))
 	gradiente.set_color(1, Color(1.0, 0.48, 0.12, 0.0))
 	gradiente.add_point(0.28, Color(1.0, 0.68, 0.34, 0.42))
 	gradiente.add_point(0.62, Color(1.0, 0.55, 0.22, 0.14))
 	gradiente.add_point(0.84, Color(1.0, 0.48, 0.12, 0.035))
 
-	var textura_luz := GradientTexture2D.new()
+	var textura_luz: GradientTexture2D = GradientTexture2D.new()
 	textura_luz.gradient = gradiente
 	textura_luz.width = 256
 	textura_luz.height = 256
@@ -840,20 +839,17 @@ func _crear_luces_faroles() -> void:
 	_capa_brillos_faroles.follow_viewport_enabled = true
 	add_child(_capa_brillos_faroles)
 
-	var nombres_faroles := ["Sprite_poste_oeste", "Sprite_poste_este"]
+	var nombres_faroles: Array[String] = ["Sprite_poste_oeste", "Sprite_poste_este"]
 	for indice in range(nombres_faroles.size()):
 		var farol := get_node_or_null(NodePath(nombres_faroles[indice])) as Sprite2D
 		if not is_instance_valid(farol):
 			push_warning("ReinoTorres: no se encontró el farol: " + nombres_faroles[indice])
 			continue
 
-		# Coordenada global calculada desde el sprite, sin posiciones aproximadas del mapa.
-		# Bajar el foco desde la parte alta del poste hacia la zona de la lámpara.
-		var posicion_global := farol.to_global(Vector2(0.0, -8.0))
-		var posicion_local := to_local(posicion_global)
+		var posicion_global: Vector2 = farol.to_global(Vector2(0.0, -8.0))
+		var posicion_local: Vector2 = to_local(posicion_global)
 
-		# Luz real para iluminar el suelo y los elementos cercanos del mundo.
-		var luz := PointLight2D.new()
+		var luz: PointLight2D = PointLight2D.new()
 		luz.name = "LuzFarol" + ("Oeste" if indice == 0 else "Este")
 		luz.position = posicion_local
 		luz.texture = textura_luz
@@ -867,15 +863,14 @@ func _crear_luces_faroles() -> void:
 		add_child(luz)
 		_luces_faroles.append(luz)
 
-		# Resplandor visible independiente de la iluminación del CanvasItem.
-		var brillo := Sprite2D.new()
+		var brillo: Sprite2D = Sprite2D.new()
 		brillo.name = "Brillo" + ("Oeste" if indice == 0 else "Este")
 		brillo.texture = textura_luz
 		brillo.position = posicion_global
 		brillo.scale = Vector2(1.45, 1.45)
 		brillo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		brillo.visible = false
-		var material_brillo := CanvasItemMaterial.new()
+		var material_brillo: CanvasItemMaterial = CanvasItemMaterial.new()
 		material_brillo.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		brillo.material = material_brillo
 		_capa_brillos_faroles.add_child(brillo)
@@ -890,6 +885,69 @@ func _crear_luces_faroles() -> void:
 		print("ReinoTorres: dos faroles con luz y resplandor preparados.")
 
 	_actualizar_luces_faroles()
+
+
+func _crear_flores_terreno() -> void:
+	var pradera := get_node_or_null("TerrainDual_Zone_00") as TileMapDual
+	var bosque := get_node_or_null("TerrainDual_Zone_08") as TileMapDual
+	if not is_instance_valid(pradera) or not is_instance_valid(bosque):
+		push_warning("ReinoTorres: no se pudieron localizar los TileMapDual de pradera y bosque para colocar flores.")
+		return
+
+	var texturas: Array[Texture2D] = [
+		preload("res://assets/art/props/Flor Azul.png"),
+		preload("res://assets/art/props/Flor Morada.png")
+	]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 824731
+	var posiciones_usadas: Array[Vector2] = []
+	var cantidades: Array[Dictionary] = [
+		{"capa": pradera, "cantidad": 18, "nombre": "Pradera"},
+		{"capa": bosque, "cantidad": 58, "nombre": "Bosque"}
+	]
+
+	for configuracion: Dictionary in cantidades:
+		var capa: TileMapDual = configuracion["capa"]
+		var celdas: Array[Vector2i] = capa.get_used_cells()
+		# Mezcla determinista: la distribución se mantiene igual entre partidas.
+		for indice in range(celdas.size() - 1, 0, -1):
+			var otro_indice := rng.randi_range(0, indice)
+			var temporal: Vector2i = celdas[indice]
+			celdas[indice] = celdas[otro_indice]
+			celdas[otro_indice] = temporal
+
+		var creadas := 0
+		for celda: Vector2i in celdas:
+			if creadas >= int(configuracion["cantidad"]):
+				break
+			var posicion_global: Vector2 = capa.to_global(capa.map_to_local(celda))
+			var posicion_local: Vector2 = to_local(posicion_global)
+
+			# Mantener despejado el núcleo urbano y sus ejes principales.
+			if absf(posicion_local.x) < 500.0 and absf(posicion_local.y) < 330.0:
+				continue
+			var demasiado_cerca := false
+			for posicion_existente: Vector2 in posiciones_usadas:
+				if posicion_global.distance_to(posicion_existente) < 38.0:
+					demasiado_cerca = true
+					break
+			if demasiado_cerca:
+				continue
+
+			var flor := Sprite2D.new()
+			flor.name = "Flor_%s_%02d" % [str(configuracion["nombre"]), creadas + 1]
+			flor.texture = texturas[rng.randi_range(0, texturas.size() - 1)]
+			flor.position = posicion_local
+			flor.centered = true
+			flor.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			flor.z_index = 2
+			add_child(flor)
+			posiciones_usadas.append(posicion_global)
+			creadas += 1
+
+		print("ReinoTorres: flores colocadas en %s: %d/%d." % [
+			str(configuracion["nombre"]), creadas, int(configuracion["cantidad"])
+		])
 
 
 func _actualizar_luces_faroles() -> void:
