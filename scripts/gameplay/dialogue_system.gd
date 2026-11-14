@@ -1335,10 +1335,11 @@ func _crear_opcion_dia_social() -> Dictionary:
 		var contexto_variant: Variant = relationship_system.obtener_contexto_temporal()
 		if contexto_variant is Dictionary:
 			contexto = contexto_variant
-	var hora := int(contexto.get("hora", contexto.get("hora_actual", contexto.get("hora_dia", 12))))
+	var hora := float(contexto.get("hora_del_dia", 12.0))
 	var periodo := str(contexto.get("periodo", "")).strip_edges().to_lower()
-	var es_manana := (hora >= 5 and hora < 12) or periodo in ["manana", "mañana"]
-	var frase := "¿Cómo va tu mañana?" if es_manana else "¿Cómo te ha ido hoy?"
+	var es_manana := periodo in ["amanecer", "manana", "mañana"] or (hora >= 5.0 and hora < 12.0)
+	var es_noche := periodo == "noche" or hora >= 18.0 or hora < 5.0
+	var frase := "¿Cómo va tu mañana?" if es_manana else ("¿Cómo te ha ido hoy?" if es_noche else "¿Cómo va tu día?")
 	var nombre := _nombre_social_actual()
 	var respuesta := "La mañana va bastante bien. He podido avanzar con mis cosas y todavía queda tiempo para lo que falta." if es_manana else "Ha sido un día bastante normal. He tenido mis cosas que hacer, pero nada fuera de lo común."
 	match nombre:
