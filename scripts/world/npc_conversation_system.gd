@@ -1127,6 +1127,41 @@ func _obtener_burbuja(npc: Creature) -> PanelContainer:
 	return panel
 
 
+
+## Después de cada acontecimiento, los participantes realizan una acción
+## breve relacionada con lo que acaban de hablar.
+func _iniciar_actividad_del_acontecimiento() -> void:
+	var clave := str(_conversacion_activa.get("clave", ""))
+	var actividades: Dictionary = {
+		"elian_saira_paquete": {"destino": Vector2(-205.0, -78.0), "duracion": 4.0},
+		"bruna_darven_cartel": {"destino": Vector2(0.0, 0.0), "duracion": 6.0},
+		"narel_saira_noticia": {"destino": Vector2(-370.0, -482.0), "duracion": 7.0},
+		"elian_bruna_pan": {"destino": Vector2(0.0, 0.0), "duracion": 9.0},
+		"darven_narel_turno": {"destino": Vector2(690.0, -170.0), "duracion": 6.0},
+		"bruna_saira_cierre": {"destino": Vector2(-320.0, -122.0), "duracion": 7.0},
+		"elian_darven_merienda": {"destino": Vector2(-205.0, -78.0), "duracion": 10.0},
+		"narel_bruna_medidas": {"destino": Vector2(-320.0, -122.0), "duracion": 8.0}
+	}
+	var actividad_variant: Variant = actividades.get(clave, {})
+	if not actividad_variant is Dictionary or actividad_variant.is_empty():
+		return
+	var actividad: Dictionary = actividad_variant
+	var sistema := get_tree().get_first_node_in_group("npc_schedule_system")
+	if not is_instance_valid(sistema) or not sistema.has_method("iniciar_actividad_social"):
+		return
+	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
+	var npc_b := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
+	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		return
+	var destino: Vector2 = actividad.get("destino", Vector2.ZERO)
+	var duracion := float(actividad.get("duracion", 5.0))
+	# Ambos participantes acuden al mismo punto: entrega, encuentro, comida
+	# compartida, revisión o consulta según el acontecimiento del día.
+	var desplazamiento := Vector2(24.0, 0.0)
+	sistema.call("iniciar_actividad_social", npc_a, destino + desplazamiento, duracion)
+	sistema.call("iniciar_actividad_social", npc_b, destino - desplazamiento, duracion)
+
+
 func _ocultar_burbujas() -> void:
 	for burbuja_variant in _burbujas.values():
 		var burbuja := burbuja_variant as PanelContainer
@@ -1137,6 +1172,7 @@ func _ocultar_burbujas() -> void:
 func _finalizar_conversacion(completada: bool = false) -> void:
 	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):
 		_guardar_objeto_del_acontecimiento()
+		_iniciar_actividad_del_acontecimiento()
 	if completada and not _conversacion_activa.is_empty():
 		var clave := str(_conversacion_activa.get("clave", ""))
 		var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
