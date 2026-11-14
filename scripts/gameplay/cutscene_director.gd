@@ -99,7 +99,8 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				var datos_variant: Variant = paso.get("datos", paso)
 				if not datos_variant is Dictionary:
 					continue
-				if _dialogue.abrir(datos_variant as Dictionary):
+				var fuente_dialogo := _buscar_npc(str(paso.get("npc", ""))) if paso.has("npc") else null
+				if _dialogue.abrir(datos_variant as Dictionary, fuente_dialogo, true):
 					await _dialogue.dialogue_finished
 					if generacion_actual != _generacion:
 						return false
@@ -127,6 +128,10 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 					_fijar_npc_cinematica(str(paso.get("npc", "")))
 			"ruta_npc":
 				await _ejecutar_ruta_npc(paso, generacion_actual)
+				if generacion_actual != _generacion:
+					return false
+			"mover_jugador":
+				await _ejecutar_ruta_jugador(paso, generacion_actual)
 				if generacion_actual != _generacion:
 					return false
 			"mover_npc":
@@ -347,6 +352,26 @@ func _ejecutar_ruta_npc(paso: Dictionary, generacion: int) -> void:
 	var pausa := clampf(float(paso.get("pausa", 0.0)), 0.0, 15.0)
 	if pausa > 0.0:
 		await get_tree().create_timer(pausa).timeout
+
+
+func _ejecutar_ruta_jugador(paso: Dictionary, generacion: int) -> void:
+	if not is_instance_valid(_player):
+		return
+	var destino := Vector2(
+		float(paso.get("x", _player.global_position.x)),
+		float(paso.get("y", _player.global_position.y))
+	)
+	var distancia := _player.global_position.distance_to(destino)
+	var duracion := clampf(float(paso.get("duracion", maxf(0.25, distancia / 90.0))), 0.15, 20.0)
+	if _player is CharacterBody2D:
+		(_player as CharacterBody2D).velocity = Vector2.ZERO
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(_player, "global_position", destino, duracion)
+	await tween.finished
+	if generacion == _generacion and is_instance_valid(_player) and _player is CharacterBody2D:
+		(_player as CharacterBody2D).velocity = Vector2.ZERO
 
 
 func _restaurar_estado_temporal() -> void:
