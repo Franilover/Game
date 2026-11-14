@@ -304,16 +304,8 @@ func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2
 	if _indice_linea < 0 or _indice_linea >= lineas.size() or not lineas[_indice_linea] is Dictionary:
 		return false
 	var linea_actual: Dictionary = lineas[_indice_linea]
-	var hablante_actual := str(linea_actual.get("npc", "")).strip_edges().to_lower()
-	var otro_nombre := npc_b_nombre if nombre == npc_a_nombre else npc_a_nombre
-	var otro_npc := _npc_por_nombre.get(otro_nombre) as Creature
-	if not is_instance_valid(otro_npc):
-		return false
-
-	var tema := str(linea_actual.get("texto", "")).strip_edges()
 	var nombre_visible := npc_interactuado.get_nombre_visual()
-	var nombre_otro := otro_npc.get_nombre_visual()
-	var respuestas: Array[Dictionary] = _crear_respuestas_intervencion(nombre, nombre_otro, tema)
+	var respuestas: Array[Dictionary] = _crear_respuestas_intervencion(nombre)
 	var datos_dialogo := {
 		"clave": "intervencion_social_%s_%s_%d" % [nombre, otro_nombre, int(Time.get_unix_time_from_system())],
 		"lineas": [
@@ -329,7 +321,7 @@ func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2
 	return true
 
 
-func _crear_respuestas_intervencion(nombre_npc: String, nombre_otro: String, tema: String) -> Array[Dictionary]:
+func _crear_respuestas_intervencion(nombre_npc: String) -> Array[Dictionary]:
 	var respuestas: Array[Dictionary] = []
 	var respuesta_interes := "Sí, es un tema que nos importa. Me alegra que te interese."
 	var respuesta_pregunta := "Lo estábamos comentando porque surgió mientras hablábamos. Podemos contarte más."
@@ -363,11 +355,10 @@ func _crear_respuestas_intervencion(nombre_npc: String, nombre_otro: String, tem
 			respuesta_opinion = "Es una observación válida. La anotaré como otra posibilidad, no como una conclusión."
 			despedida = "De acuerdo. Espero que podamos continuar esta conversación en otro momento."
 
-	var contexto := " sobre %s" % tema if not tema.is_empty() else ""
 	respuestas.append({
 		"clave": "intervencion_comentar",
 		"texto": "Comentar que te parece interesante",
-		"jugador": "Me parece interesante lo que están hablando%s." % contexto,
+		"jugador": "Me parece interesante lo que están hablando.",
 		"respuesta": respuesta_interes,
 		"importancia": 0.5
 	})
