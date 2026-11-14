@@ -552,12 +552,14 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	if indice < 0:
 		return
 	var cantidad := maxi(1, habitantes.size())
-	var indice_social := posmod(indice + fase * 3, cantidad)
+	var indice_social := posmod(indice + fase, cantidad)
 	var grupo := int(indice_social / 3)
 	var puesto := posmod(indice_social, 3)
 	var centros: Array[Vector2] = [
-		Vector2(-145.0, -65.0), Vector2(0.0, -65.0), Vector2(145.0, -65.0),
-		Vector2(-145.0, 75.0), Vector2(0.0, 75.0), Vector2(145.0, 75.0)
+		Vector2(-170.0, -105.0), Vector2(-55.0, -105.0),
+		Vector2(55.0, -105.0), Vector2(170.0, -105.0),
+		Vector2(-170.0, 105.0), Vector2(-55.0, 105.0),
+		Vector2(55.0, 105.0), Vector2(170.0, 105.0)
 	]
 	var centro: Vector2 = centros[posmod(grupo, centros.size())]
 	var offsets: Array[Vector2] = [Vector2(-24.0, 0.0), Vector2(24.0, 0.0), Vector2(0.0, 22.0)]
