@@ -790,7 +790,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 
 	var habitantes: Array[Dictionary] = [
 		{
-			"clave":"mara", "nombre":"Mara", "hogar":"vivienda_oeste_01",
+			"clave":"mara", "nombre":"Mara", "sprite":"Magda", "hogar":"vivienda_oeste_01",
 			"rutinas":[
 				{"clave":"mara_paseo_manana","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"plaza","actividad_clave":"pasear_por_la_plaza"},
 				{"clave":"mara_compra_pan","hora_inicio":"10:00","hora_fin":"11:30","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
@@ -801,7 +801,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			]
 		},
 		{
-			"clave":"ivo", "nombre":"Ivo", "hogar":"vivienda_oeste_02",
+			"clave":"ivo", "nombre":"Ivo", "sprite":"Sofia", "hogar":"vivienda_oeste_02",
 			"rutinas":[
 				{"clave":"ivo_paseo","hora_inicio":"08:00","hora_fin":"09:30","ubicacion_clave":"plaza","actividad_clave":"dar_un_paseo"},
 				{"clave":"ivo_compra","hora_inicio":"09:30","hora_fin":"11:30","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
@@ -812,7 +812,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			]
 		},
 		{
-			"clave":"nima", "nombre":"Nima", "hogar":"vivienda_oeste_03",
+			"clave":"nima", "nombre":"Nima", "sprite":"Aurora", "hogar":"vivienda_oeste_03",
 			"rutinas":[
 				{"clave":"nima_plaza","hora_inicio":"08:00","hora_fin":"10:30","ubicacion_clave":"plaza","actividad_clave":"observar_el_pueblo"},
 				{"clave":"nima_compra_pan","hora_inicio":"10:30","hora_fin":"12:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
@@ -850,6 +850,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		var datos := plantilla.datos.duplicate(true)
 		datos.erase("personaje_game_id")
 		datos["nombre_individual"] = str(habitante.get("nombre", "Habitante"))
+		datos["sprite_key"] = str(habitante.get("sprite", ""))
 		datos["ubicacion_clave"] = "plaza"
 		datos["hogar_clave"] = str(habitante.get("hogar", "plaza"))
 		datos["rutinas"] = habitante.get("rutinas", []).duplicate(true)
