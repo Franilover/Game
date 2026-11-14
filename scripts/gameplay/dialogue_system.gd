@@ -313,6 +313,7 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	for variante_variant in variantes_variant as Array:
 		if not variante_variant is Dictionary:
 			continue
+
 		var variante := (variante_variant as Dictionary).duplicate(true)
 		var requisito_variant: Variant = variante.get("requisito", {})
 		if requisito_variant is Dictionary:
@@ -321,15 +322,18 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 				if mission_manager_local != null and mission_manager_local.cumple_requisito_dialogo(requisito):
 					return variante
 				continue
+
 		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
 			principal = variante
 
-	# Las respuestas de tránsito son propias de cada personaje. Las variantes
-	# con requisitos de misión ya se resolvieron arriba y conservan prioridad.
+	# Durante los desplazamientos, el NPC responde según su relación y
+	# comunica el destino actual de su rutina sin interrumpir el horario.
 	var dialogo_rutina := _crear_dialogo_rutina_en_transito()
 	if not dialogo_rutina.is_empty():
 		return dialogo_rutina
 
+	# Los estados de misión tienen prioridad sobre los saludos sociales.
+	# Si no hay una variante narrativa activa, se aplican amistad/confianza.
 	var personaje_id := ""
 	if is_instance_valid(_fuente):
 		personaje_id = _fuente.get_personaje_game_id().strip_edges()
@@ -337,15 +341,64 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		var contextual := _seleccionar_variante_contextual(variantes_variant as Array, personaje_id)
 		if not contextual.is_empty():
 			return contextual
+
 		var social: RelationshipSystemService = relationship_system
 		if social != null:
 			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_variant as Array, personaje_id)
 			if not seleccion.is_empty():
 				return seleccion.duplicate(true)
 
+	# Los requisitos narrativos de misión se resuelven antes de este saludo de tránsito.
+	var dialogo_rutina := _crear_dialogo_rutina_en_transito()
+	if not dialogo_rutina.is_empty():
+		return dialogo_rutina
+
 	if not principal.is_empty():
 		return principal
 	return datos.duplicate(true)
+
+
+## Selecciona variantes condicionadas por el calendario del mundo.
+## Una variante contextual puede combinar estación/día con requisitos sociales.
+func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) -> Dictionary:
+	var social: RelationshipSystemService = relationship_system
+	if social == null or not social.has_method("obtener_contexto_temporal"):
+		return {}
+
+	var contexto_variant: Variant = social.call("obtener_contexto_temporal")
+	if not contexto_variant is Dictionary:
+		return {}
+	var contexto := contexto_variant as Dictionary
+	if not bool(contexto.get("calendario_cargado", false)):
+		return {}
+
+	var relacion := social.obtener_relacion(personaje_id)
+	var mejor: Dictionary = {}
+	var mejor_prioridad := -2147483648
+
+	for variante_variant in variantes:
+		if not variante_variant is Dictionary:
+			continue
+		var variante := variante_variant as Dictionary
+		var requisito_contextual_variant: Variant = variante.get("requisito_contextual", {})
+		if not requisito_contextual_variant is Dictionary:
+			continue
+		var requisito_contextual := requisito_contextual_variant as Dictionary
+		if requisito_contextual.is_empty() or not _cumple_requisito_contextual(requisito_contextual, contexto):
+			continue
+
+		var requisito_social_variant: Variant = variante_variant.get("requisito_social", {})
+		if requisito_social_variant is Dictionary:
+			var requisito_social := requisito_social_variant as Dictionary
+			if not requisito_social.is_empty() and not _cumple_requisito_social_contextual(requisito_social, relacion):
+				continue
+
+		var prioridad := int(variante.get("prioridad", 0))
+		if mejor.is_empty() or prioridad > mejor_prioridad:
+			mejor = variante.duplicate(true)
+			mejor_prioridad = prioridad
+
+	return mejor
 
 
 func _crear_dialogo_rutina_en_transito() -> Dictionary:
