@@ -367,7 +367,7 @@ func conoce_item(personaje_id: String, item_id: String) -> bool:
 	return false
 
 
-func registrar_regalo(personaje_id: String, item_id: String) -> Dictionary:
+func registrar_regalo(personaje_id: String, item_id: String, nombre_item: String = "") -> Dictionary:
 	if personaje_id.is_empty() or item_id.is_empty():
 		return {}
 
@@ -381,6 +381,7 @@ func registrar_regalo(personaje_id: String, item_id: String) -> Dictionary:
 	var recuerdo := {
 		"tipo": "regalo",
 		"item_id": item_id,
+		"item_nombre": nombre_item.strip_edges(),
 		"reaccion": str(regalo.get("reaccion", "neutral")),
 		"importancia": 2.0,
 		"momento": Time.get_datetime_string_from_system(true)
