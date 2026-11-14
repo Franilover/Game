@@ -652,10 +652,11 @@ func _relacion_amable_actual() -> bool:
 	if personaje_id.is_empty():
 		return false
 	var relacion_actual := relationship_system.obtener_relacion(personaje_id)
+	# La confianza y el respeto no equivalen por sí solos a cercanía afectiva.
+	# Un NPC puede confiar en el jugador o respetarlo y mantener un trato formal.
 	return (
 		float(relacion_actual.get("amistad", 0.0)) >= 20.0
 		or float(relacion_actual.get("afecto", 0.0)) >= 15.0
-		or float(relacion_actual.get("confianza", 0.0)) >= 20.0
 	)
 
 
