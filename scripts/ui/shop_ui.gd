@@ -256,7 +256,6 @@ func _crear_fila_producto(producto: Dictionary) -> void:
 	producto_boton.icon = ITEM_ICON_RESOLVER.obtener_icono(producto)
 	producto_boton.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	producto_boton.expand_icon = true
-	producto_boton.icon_max_width = 48
 	producto_boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	producto_boton.add_theme_font_size_override("font_size", 12)
 	producto_boton.tooltip_text = str(producto.get("descripcion", ""))
