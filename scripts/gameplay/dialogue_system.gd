@@ -1486,12 +1486,17 @@ func _obtener_mision_disponible_para_npc() -> Dictionary:
 
 func _crear_opcion_trabajo_social() -> Dictionary:
 	var nombre := _nombre_social_actual()
-	if nombre_npc.strip_edges().to_lower() == "saira" and GameState.has_method("obtener_conversaciones_npc"):
+	if nombre == "saira" and GameState.has_method("obtener_conversaciones_npc"):
 		var progreso_historias: Variant = GameState.call("obtener_conversaciones_npc")
 		if progreso_historias is Dictionary:
 			var investigacion_variant: Variant = (progreso_historias as Dictionary).get("nima_ivo_investigacion", {})
 			if investigacion_variant is Dictionary and int((investigacion_variant as Dictionary).get("etapa", 0)) >= 1:
-				return "Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
+				return _crear_opcion_social(
+					"hablar_trabajo",
+					"Hablar sobre su trabajo",
+					"¿Cómo van tus responsabilidades últimamente?",
+					"Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
+				)
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges() if is_instance_valid(_fuente) else ""
 	var respuesta := "Tengo algunas tareas pendientes, como cualquiera. Intento organizarme para que no se me acumulen."
 	match nombre:
