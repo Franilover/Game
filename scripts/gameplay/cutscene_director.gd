@@ -99,8 +99,13 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				var datos_variant: Variant = paso.get("datos", paso)
 				if not datos_variant is Dictionary:
 					continue
-				var fuente_dialogo := _buscar_npc(str(paso.get("npc", ""))) if paso.has("npc") else null
-				if _dialogue.abrir(datos_variant as Dictionary, fuente_dialogo, true):
+				var dialogo_abierto := false
+				if paso.has("npc"):
+					var fuente_dialogo := _buscar_npc(str(paso.get("npc", "")))
+					dialogo_abierto = _dialogue.abrir(datos_variant as Dictionary, fuente_dialogo, true)
+				else:
+					dialogo_abierto = _dialogue.abrir(datos_variant as Dictionary)
+				if dialogo_abierto:
 					await _dialogue.dialogue_finished
 					if generacion_actual != _generacion:
 						return false
