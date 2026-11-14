@@ -1,6 +1,8 @@
 extends Node
 class_name NPCConversationSystem
 
+signal cinematica_acontecimiento_solicitada(posicion_global: Vector2)
+
 const INTERVALO_BUSQUEDA := 0.5
 const DISTANCIA_ENTRE_NPC := 180.0
 const DISTANCIA_JUGADOR := 220.0
@@ -1158,8 +1160,12 @@ func _iniciar_actividad_del_acontecimiento() -> void:
 	# Ambos participantes acuden al mismo punto: entrega, encuentro, comida
 	# compartida, revisión o consulta según el acontecimiento del día.
 	var desplazamiento := Vector2(24.0, 0.0)
-	sistema.call("iniciar_actividad_social", npc_a, destino + desplazamiento, duracion)
-	sistema.call("iniciar_actividad_social", npc_b, destino - desplazamiento, duracion)
+	var inicio_a: bool = bool(sistema.call("iniciar_actividad_social", npc_a, destino + desplazamiento, duracion))
+	var inicio_b: bool = bool(sistema.call("iniciar_actividad_social", npc_b, destino - desplazamiento, duracion))
+	if inicio_a and inicio_b:
+		var zona := _zone_manager.obtener_zona_actual() as Node2D if is_instance_valid(_zone_manager) else null
+		if is_instance_valid(zona):
+			cinematica_acontecimiento_solicitada.emit(zona.to_global(destino))
 
 
 func _ocultar_burbujas() -> void:
