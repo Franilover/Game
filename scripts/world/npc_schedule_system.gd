@@ -255,10 +255,13 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	if firma_anterior == firma_nueva:
 		var movimiento_actual := npc.get_node_or_null("CreatureMovement") as CreatureMovement
-		if not esta_dentro and not edificio_id.is_empty() and movimiento_actual != null:
+		if not esta_dentro and movimiento_actual != null:
 			if movimiento_actual.rutina_terminada():
-				_marcar_npc_dentro_edificio(npc, edificio_id)
+				npc.set_meta("rutina_en_transito", false)
+				if not edificio_id.is_empty():
+					_marcar_npc_dentro_edificio(npc, edificio_id)
 			elif movimiento_actual.rutina_en_ejecucion():
+				npc.set_meta("rutina_en_transito", true)
 				# Mantener activo el cuerpo que procesa el movimiento incluso si
 				# otra rutina o transición pausó temporalmente al NPC.
 				npc.set_process(true)
@@ -321,9 +324,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			return
 		npc.set_meta("rutina_error_firma", "")
 		movimiento.establecer_ruta(ruta)
+		npc.set_meta("rutina_en_transito", true)
 		print("NPCScheduleSystem: ", npc.get_nombre_visual(), " -> ", ubicacion, " (", actividad, ") | puntos de ruta: ", ruta.size())
 	else:
 		movimiento.detener_por_rutina()
+		npc.set_meta("rutina_en_transito", false)
 		if not edificio_id.is_empty():
 			_marcar_npc_dentro_edificio(npc, edificio_id)
 
@@ -340,6 +345,7 @@ func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
 	if movimiento != null:
 		movimiento.detener_por_rutina()
 	npc.set_meta("rutina_en_edificio", true)
+	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_edificio_id", edificio_id)
 	npc.visible = false
 	npc.remove_from_group("interactable")
