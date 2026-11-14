@@ -53,7 +53,7 @@ const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/pl
 var _reino_descubrimiento_elapsed: float = 0.0
 var _torres_rutina_elapsed: float = 0.0
 var _npc_schedule_system: Node = null
-var _npc_conversation_system: NPCConversationSystem = null
+var _npc_conversation_system: Node = null
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
@@ -123,7 +123,7 @@ func _ready() -> void:
 	else:
 		push_error("Main: no se pudo inicializar NPCScheduleSystem.")
 
-	_npc_conversation_system = NPC_CONVERSATION_SYSTEM_SCRIPT.new() as NPCConversationSystem
+	_npc_conversation_system = NPC_CONVERSATION_SYSTEM_SCRIPT.new() as Node
 	if is_instance_valid(_npc_conversation_system):
 		_npc_conversation_system.name = "NPCConversationSystem"
 		add_child(_npc_conversation_system)
