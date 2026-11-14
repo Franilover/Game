@@ -641,8 +641,9 @@ func _materializar_npcs_reino_torres() -> void:
 			var npc_existente := existentes[personaje_id] as Creature
 			if is_instance_valid(npc_existente):
 				npc_existente.datos["rutinas"] = rutinas_actualizadas
-				npc_existente.datos["ubicacion_clave"] = ubicacion
-				var hogar_existente := NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_hogar(npc_existente.get_nombre_visual(), ubicacion)
+				npc_existente.datos["ubicacion_clave"] = ubicacion # Lugar de trabajo/respaldo, nunca el hogar.
+				npc_existente.datos["hogar_clave"] = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_clave_hogar(npc_existente.get_nombre_visual(), "plaza")
+				var hogar_existente := NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_hogar(npc_existente.get_nombre_visual(), "plaza")
 				npc_existente.datos["posicion_hogar_local"] = hogar_existente
 				if not bool(npc_existente.get_meta("hogar_inicializado", false)):
 					npc_existente.global_position = zona.to_global(hogar_existente)
@@ -663,7 +664,8 @@ func _materializar_npcs_reino_torres() -> void:
 		criatura_data["personaje_game_id"] = personaje_id
 		criatura_data["reino_game_id"] = str(personaje.get("reino_game_id", ""))
 		criatura_data["reino_nombre"] = "Torres"
-		criatura_data["ubicacion_clave"] = ubicacion
+		criatura_data["ubicacion_clave"] = ubicacion # Lugar de trabajo/respaldo, nunca el hogar.
+		criatura_data["hogar_clave"] = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_clave_hogar(nombre, "plaza")
 		criatura_data["rutinas"] = rutinas_actualizadas
 
 		var dialogo := WorldData.obtener_dialogo_game(personaje_id)
@@ -705,7 +707,9 @@ func _materializar_npcs_reino_torres() -> void:
 				float((creados % 3) - 1) * 28.0,
 				float(int(creados / 3)) * 24.0
 			)
-		var posicion_hogar_local: Vector2 = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_hogar(npc.get_nombre_visual(), ubicacion) + desplazamiento_plaza
+		var hogar_clave := NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_clave_hogar(nombre, "plaza")
+		npc.datos["hogar_clave"] = hogar_clave
+		var posicion_hogar_local: Vector2 = NPC_SCHEDULE_SYSTEM_SCRIPT.obtener_posicion_inicial(hogar_clave) + desplazamiento_plaza
 		npc.datos["posicion_hogar_local"] = posicion_hogar_local
 		npc.global_position = zona.to_global(posicion_hogar_local)
 		npc.set_meta("hogar_inicializado", true)
