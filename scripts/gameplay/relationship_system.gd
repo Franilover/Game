@@ -296,14 +296,21 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 
 	var recuerdos := _obtener_recuerdos()
 	var lista: Array = recuerdos.get(personaje_id, [])
-	lista.append(recuerdo.duplicate(true))
+	var nuevo_recuerdo := recuerdo.duplicate(true)
+	if str(nuevo_recuerdo.get("recuerdo_uid", "")).is_empty():
+		nuevo_recuerdo["recuerdo_uid"] = "%s:%d:%d" % [
+			personaje_id,
+			Time.get_ticks_usec(),
+			lista.size()
+		]
+	lista.append(nuevo_recuerdo)
 
 	if lista.size() > 32:
 		lista = lista.slice(maxi(lista.size() - 32, 0))
 
 	recuerdos[personaje_id] = lista
 	_game_state.call("guardar_recuerdos_sociales", recuerdos)
-	recuerdo_registrado.emit(personaje_id, recuerdo.duplicate(true))
+	recuerdo_registrado.emit(personaje_id, nuevo_recuerdo.duplicate(true))
 
 
 func obtener_recuerdos(personaje_id: String) -> Array:
@@ -355,7 +362,11 @@ func obtener_recuerdo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 
 
 ## Marca un recuerdo como mencionado sólo después de mostrar su diálogo.
-func marcar_recuerdo_mencionado(personaje_id: String, indice_recuerdo: int) -> bool:
+func marcar_recuerdo_mencionado(
+	personaje_id: String,
+	indice_respaldo: int,
+	recuerdo_uid: String = ""
+) -> bool:
 	var id := personaje_id.strip_edges()
 	if id.is_empty():
 		return false
@@ -364,15 +375,23 @@ func marcar_recuerdo_mencionado(personaje_id: String, indice_recuerdo: int) -> b
 	if not lista_variant is Array:
 		return false
 	var lista: Array = lista_variant
-	if indice_recuerdo < 0 or indice_recuerdo >= lista.size():
+	var indice := -1
+	if not recuerdo_uid.is_empty():
+		for i in range(lista.size()):
+			if not lista[i] is Dictionary:
+				continue
+			if str((lista[i] as Dictionary).get("recuerdo_uid", "")) == recuerdo_uid:
+				indice = i
+				break
+	if indice < 0:
+		indice = indice_respaldo
+	if indice < 0 or indice >= lista.size() or not lista[indice] is Dictionary:
 		return false
-	if not lista[indice_recuerdo] is Dictionary:
-		return false
-	var recuerdo := (lista[indice_recuerdo] as Dictionary).duplicate(true)
+	var recuerdo := (lista[indice] as Dictionary).duplicate(true)
 	if bool(recuerdo.get("mencionado_en_dialogo", false)):
 		return false
 	recuerdo["mencionado_en_dialogo"] = true
-	lista[indice_recuerdo] = recuerdo
+	lista[indice] = recuerdo
 	recuerdos[id] = lista
 	_game_state.call("guardar_recuerdos_sociales", recuerdos)
 	return true
@@ -384,7 +403,8 @@ func tomar_regalo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 	if str(recuerdo.get("tipo", "")) != "regalo":
 		return {}
 	var indice := int(recuerdo.get("_indice_recuerdo", -1))
-	if not marcar_recuerdo_mencionado(personaje_id, indice):
+	var uid := str(recuerdo.get("recuerdo_uid", ""))
+	if not marcar_recuerdo_mencionado(personaje_id, indice, uid):
 		return {}
 	recuerdo.erase("_indice_recuerdo")
 	return recuerdo
