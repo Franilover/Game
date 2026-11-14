@@ -714,7 +714,7 @@ func _materializar_npcs_reino_torres() -> void:
 
 		# Los NPC usan el movimiento del cuerpo CharacterBody2D, con máscara
 		# para geometría estática. No bloquean al jugador ni entre sí.
-		npc.move_speed = 30.0 if clave == "ivo" else (43.0 if clave == "mara" else 48.0)
+		npc.move_speed = 48.0
 		npc.collision_layer = 0
 		npc.collision_mask = 1
 		npc.mostrar_nombre_debug = false
@@ -864,7 +864,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		var npc := CREATURE_SCENE.instantiate() as Creature
 		if npc == null:
 			continue
-		npc.move_speed = 48.0
+		npc.move_speed = 30.0 if clave == "ivo" else (43.0 if clave == "mara" else 48.0)
 		npc.collision_layer = 0
 		npc.collision_mask = 1
 		npc.mostrar_nombre_debug = false
