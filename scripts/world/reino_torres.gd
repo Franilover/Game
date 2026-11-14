@@ -907,6 +907,17 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 		"casa_darven": "casa_darven",
 		"casa_saira": "casa_saira",
 		"casa_narel": "casa_narel",
+		"casa_vacia_01": "vivienda_oeste_01",
+		"casa_vacia_02": "vivienda_oeste_02",
+		"casa_vacia_03": "vivienda_oeste_03",
+		"casa_vacia_04": "vivienda_oeste_04",
+		"casa_vacia_05": "vivienda_oeste_05",
+		"casa_vacia_06": "vivienda_oeste_06",
+		"casa_vacia_07": "vivienda_oeste_07",
+		"casa_vacia_08": "vivienda_oeste_08",
+		"casa_vacia_10": "vivienda_oeste_10",
+		"casa_vacia_11": "vivienda_oeste_11",
+		"casa_granjeros": "casa_granjeros",
 		"castillo": "castillo"
 	}
 	var ubicacion_rutina_esperada := str(ubicacion_rutina_por_entrada.get(entrada_id, ""))
