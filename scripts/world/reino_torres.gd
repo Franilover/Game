@@ -82,7 +82,7 @@ var _brillos_charcos_torres: Array[Polygon2D] = []
 var _sistema_clima_torres: Node = null
 var _nivel_charcos_torres: float = 0.0
 var _tiempo_ambiente_torres: float = 0.0
-var _aviso_evento_torres: Label = null
+var _aviso_evento_torres_evento_torres: Label = null
 var _decoracion_evento_torres: Node2D = null
 var _evento_decoracion_actual: String = ""
 
@@ -155,7 +155,7 @@ func _ready() -> void:
 	_crear_luces_faroles()
 	_crear_ventanas_hogares()
 	_crear_charcos_torres()
-	_crear_aviso_evento_torres()
+	_crear_aviso_evento_torres_evento_torres()
 	_crear_contenedor_decoracion_eventos()
 	# Las capas estáticas deben reconstruir su caché antes de añadir
 	# elementos procedurales. En Godot 4.4+ TileMapDual no infiere los cambios
@@ -639,7 +639,7 @@ func _actualizar_ambiente_torres(delta: float) -> void:
 	var paso := _tiempo_ambiente_torres
 	_tiempo_ambiente_torres = 0.0
 	_actualizar_ventanas_hogares()
-	_actualizar_aviso_evento_torres()
+	_actualizar_aviso_evento_torres_evento_torres()
 	_actualizar_decoracion_evento_torres()
 	if _charcos_torres.is_empty():
 		return
@@ -668,34 +668,34 @@ func _actualizar_ambiente_torres(delta: float) -> void:
 
 ## Indicador discreto sobre la plaza para que el jugador sepa cuándo hay
 ## mercado, comida vecinal o celebración estacional.
-func _crear_aviso_evento_torres() -> void:
-	_aviso_evento_torres = Label.new()
-	_aviso_evento_torres.name = "AvisoEventoComunitario"
-	_aviso_evento_torres.position = Vector2(-120.0, -154.0)
-	_aviso_evento_torres.size = Vector2(240.0, 22.0)
-	_aviso_evento_torres.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_aviso_evento_torres.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_aviso_evento_torres.add_theme_color_override("font_color", Color("#f4dfb5"))
-	_aviso_evento_torres.add_theme_color_override("font_outline_color", Color("#33271f"))
-	_aviso_evento_torres.add_theme_constant_override("outline_size", 3)
-	_aviso_evento_torres.add_theme_font_size_override("font_size", 12)
-	_aviso_evento_torres.z_index = 12
-	_aviso_evento_torres.visible = false
-	add_child(_aviso_evento_torres)
+func _crear_aviso_evento_torres_evento_torres() -> void:
+	_aviso_evento_torres_evento_torres = Label.new()
+	_aviso_evento_torres_evento_torres.name = "AvisoEventoComunitario"
+	_aviso_evento_torres_evento_torres.position = Vector2(-120.0, -154.0)
+	_aviso_evento_torres_evento_torres.size = Vector2(240.0, 22.0)
+	_aviso_evento_torres_evento_torres.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_aviso_evento_torres_evento_torres.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_aviso_evento_torres_evento_torres.add_theme_color_override("font_color", Color("#f4dfb5"))
+	_aviso_evento_torres_evento_torres.add_theme_color_override("font_outline_color", Color("#33271f"))
+	_aviso_evento_torres_evento_torres.add_theme_constant_override("outline_size", 3)
+	_aviso_evento_torres_evento_torres.add_theme_font_size_override("font_size", 12)
+	_aviso_evento_torres_evento_torres.z_index = 12
+	_aviso_evento_torres_evento_torres.visible = false
+	add_child(_aviso_evento_torres_evento_torres)
 
 
-func _actualizar_aviso_evento_torres() -> void:
-	if not is_instance_valid(_aviso_evento_torres):
+func _actualizar_aviso_evento_torres_evento_torres() -> void:
+	if not is_instance_valid(_aviso_evento_torres_evento_torres):
 		return
 	if _interior_activo or not is_instance_valid(_atmosfera_mundo):
-		_aviso_evento_torres.visible = false
+		_aviso_evento_torres_evento_torres.visible = false
 		return
 	if not _atmosfera_mundo.has_method("obtener_tiempo"):
-		_aviso_evento_torres.visible = false
+		_aviso_evento_torres_evento_torres.visible = false
 		return
 	var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
 	if not bool(tiempo.get("calendario_cargado", false)):
-		_aviso_evento_torres.visible = false
+		_aviso_evento_torres_evento_torres.visible = false
 		return
 	var minutos := int(floor(float(tiempo.get("hora_del_dia", 0.0)) * 60.0))
 	var dia := int(tiempo.get("dia", 1))
@@ -709,15 +709,15 @@ func _actualizar_aviso_evento_torres() -> void:
 	elif dia_semana == 4 and minutos >= 1020 and minutos < 1200:
 		titulo = "COMIDA COMUNITARIA"
 	if titulo.is_empty():
-		_aviso_evento_torres.visible = false
+		_aviso_evento_torres_evento_torres.visible = false
 		return
 	if is_instance_valid(_jugador):
 		var centro_plaza := to_global(Vector2.ZERO)
 		if _jugador.global_position.distance_to(centro_plaza) > 420.0:
-			_aviso_evento_torres.visible = false
+			_aviso_evento_torres_evento_torres.visible = false
 			return
-	_aviso_evento_torres.text = titulo
-	_aviso_evento_torres.visible = true
+	_aviso_evento_torres_evento_torres.text = titulo
+	_aviso_evento_torres_evento_torres.visible = true
 
 
 
@@ -1143,7 +1143,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_visibilidad_exterior.clear()
 	_estados_colision_exterior.clear()
 	for child: Node in get_children():
-		if child == _capa_interior or child == _aviso:
+		if child == _capa_interior or child == _aviso_evento_torres:
 			continue
 		if child is CanvasItem:
 			_visibilidad_exterior[child.get_instance_id()] = (child as CanvasItem).visible
@@ -1369,7 +1369,7 @@ func _salir_del_interior() -> void:
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
 	for child: Node in get_children():
-		if child == _capa_interior or child == _aviso:
+		if child == _capa_interior or child == _aviso_evento_torres:
 			continue
 		if child is CanvasItem and _visibilidad_exterior.has(child.get_instance_id()):
 			(child as CanvasItem).visible = bool(_visibilidad_exterior[child.get_instance_id()])
