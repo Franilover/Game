@@ -23,6 +23,8 @@ var tipo_actual: String = ""
 var zona_actual: Node = null
 var _transicionando: bool = false
 var _salida_reino_pendiente: bool = false
+var _entrada_hogar_desde_torres_pendiente: bool = false
+var _retorno_hogar_a_torres_pendiente: bool = false
 var _debug_registrado: bool = false
 var _supabase_client: GarliaSupabaseClient = null
 
@@ -334,7 +336,27 @@ func entrar_hogar() -> void:
 		return
 	if tipo_actual == TIPO_HOGAR and is_instance_valid(zona_actual):
 		return
+	_entrada_hogar_desde_torres_pendiente = tipo_actual == TIPO_REINO_TORRES
 	_cambiar_zona(HOGAR_PATH, TIPO_HOGAR)
+
+
+func salir_hogar_por_camino() -> void:
+	if _transicionando or tipo_actual != TIPO_HOGAR:
+		return
+	_retorno_hogar_a_torres_pendiente = true
+	_cambiar_zona(REINO_TORRES_ESCENA_PATH, TIPO_REINO_TORRES)
+
+
+func consumir_entrada_hogar_desde_torres() -> bool:
+	var pendiente := _entrada_hogar_desde_torres_pendiente
+	_entrada_hogar_desde_torres_pendiente = false
+	return pendiente
+
+
+func consumir_retorno_hogar_a_torres() -> bool:
+	var pendiente := _retorno_hogar_a_torres_pendiente
+	_retorno_hogar_a_torres_pendiente = false
+	return pendiente
 
 
 func entrar_mundo_abierto() -> void:
