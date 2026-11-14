@@ -1388,25 +1388,32 @@ func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dic
 
 	var respuesta_estado := "He estado bien, aunque algunos días se hacen más largos que otros."
 	var respuesta_consejo := "Te diría que observes bien la situación antes de decidir. A veces ayuda escuchar otra perspectiva."
+	var respuesta_cumplido := "Gracias. Es agradable que alguien se haya fijado en el esfuerzo que pongo."
 	match nombre:
 		"elian":
 			respuesta_estado = "Estoy bien. A veces termino cansado, pero me gusta tener una rutina y saber que mi trabajo sirve para alguien."
 			respuesta_consejo = "No te exijas terminar todo hoy. Haz las cosas con calma y deja un poco de tiempo para descansar."
+			respuesta_cumplido = "Gracias. A veces uno sólo ve el pan terminado y no todo el trabajo que hay detrás. Me alegra que lo valores."
 		"bruna":
 			respuesta_estado = "Estoy bien. Si algo me preocupa, prefiero ocuparme de ello en vez de darle vueltas."
 			respuesta_consejo = "Asegúrate de entender el problema antes de empezar a arreglarlo. Trabajar dos veces por falta de atención es perder el tiempo."
+			respuesta_cumplido = "Lo aprecio. No busco reconocimiento, pero se agradece que notes el cuidado que pongo en cada pieza."
 		"darven":
 			respuesta_estado = "Estoy bien, gracias. Ha sido un día tranquilo, y espero que siga así."
 			respuesta_consejo = "No tomes una decisión con información incompleta. Comprueba lo importante y piensa quién podría verse afectado."
+			respuesta_cumplido = "Gracias. Cumplir con mi deber es lo esperado, aunque escuchar eso hace que la guardia pese menos."
 		"saira":
 			respuesta_estado = "Bastante bien. Hay días agotadores, pero siempre aparece una conversación o una noticia que los vuelve interesantes."
 			respuesta_consejo = "Pregunta, compara y escucha más de una versión. La primera historia rara vez cuenta todo."
+			respuesta_cumplido = "¡Qué amable! En el comercio una escucha muchas opiniones; no todas son tan agradables como la tuya."
 		"narel":
 			respuesta_estado = "Me encuentro bien. He tenido bastante en qué pensar, aunque todavía estoy intentando ordenar algunas ideas."
 			respuesta_consejo = "Separa los hechos de tus interpretaciones. Después podrás decidir qué pregunta merece investigarse."
+			respuesta_cumplido = "Gracias. A veces me concentro tanto en investigar que olvido que alguien puede valorar el esfuerzo."
 	var opciones_generales: Array[Dictionary] = [
 		{"clave": "estado_animo", "texto": "Preguntar cómo se siente", "jugador": "¿Cómo te has sentido últimamente?", "respuesta": respuesta_estado, "evento": "interesarse", "importancia": 2.0},
-		{"clave": "consejo_personal", "texto": "Pedir un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": respuesta_consejo, "evento": "compartir_conocimiento", "importancia": 1.0}
+		{"clave": "consejo_personal", "texto": "Pedir un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": respuesta_consejo, "evento": "compartir_conocimiento", "importancia": 1.0},
+		{"clave": "cumplido_personal", "texto": "Dar un cumplido", "jugador": "Quería decirte que valoro lo que haces. Se nota el esfuerzo que pones.", "respuesta": respuesta_cumplido, "evento": "apoyar", "importancia": 1.0}
 	]
 	for general in opciones_generales:
 		var ya_existe := false
@@ -1437,6 +1444,8 @@ func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dic
 				puntuacion += 1.5
 			if clave == "estado_animo" and confianza < 10.0:
 				puntuacion -= 1.0
+			if clave == "cumplido_personal" and (amistad >= 15.0 or afecto >= 10.0):
+				puntuacion += 1.5
 			if relationship_system != null and is_instance_valid(_fuente):
 				puntuacion -= float(_contar_veces_tema(relationship_system.obtener_recuerdos(_fuente.get_personaje_game_id()), clave)) * 2.0
 			var dia_rotacion := int(Time.get_unix_time_from_system() / 86400.0)
