@@ -752,7 +752,7 @@ func _crear_salida_camino_torres() -> void:
 	salida.collision_mask = 1
 	var forma := CollisionShape2D.new()
 	var rectangulo := RectangleShape2D.new()
-	rectangulo.size = Vector2(64.0, 112.0)
+	rectangulo.size = Vector2(24.0, 112.0)
 	forma.shape = rectangulo
 	salida.add_child(forma)
 	salida.body_entered.connect(_al_llegar_al_final_camino_torres)
