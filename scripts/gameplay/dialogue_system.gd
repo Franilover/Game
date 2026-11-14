@@ -46,6 +46,8 @@ var _texto_completo: String = ""
 var _indice_caracter: int = 0
 var _temporizador_texto: float = 0.0
 var _intervalo_caracter: float = 0.018
+var _recuerdo_pendiente_mostrar: Dictionary = {}
+var _personaje_recuerdo_pendiente: String = ""
 
 
 func _ready() -> void:
@@ -84,6 +86,8 @@ func _process(delta: float) -> void:
 	_indice_caracter += 1
 	text_label.text = _texto_completo.substr(0, _indice_caracter)
 	_actualizar_boton_accion()
+	if _indice_caracter >= _texto_completo.length():
+		_marcar_recuerdo_pendiente_mostrado()
 
 
 func _input(event: InputEvent) -> void:
@@ -149,6 +153,8 @@ func abrir_desde(fuente: Creature) -> bool:
 
 
 func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
+	_recuerdo_pendiente_mostrar.clear()
+	_personaje_recuerdo_pendiente = ""
 	_fuente = fuente
 	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
 	var datos_seleccionados := _seleccionar_dialogo(datos)
@@ -255,14 +261,10 @@ func abrir(datos: Dictionary, fuente: Creature = null) -> bool:
 		" | size=",
 		dialogue_panel.size
 	)
-	_mostrar_linea_actual()
-
 	if not recuerdo_para_mencionar.is_empty() and relationship_system != null:
-		var id_recuerdo_mostrado := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
-		var indice_recuerdo := int(recuerdo_para_mencionar.get("_indice_recuerdo", -1))
-		var uid_recuerdo := str(recuerdo_para_mencionar.get("recuerdo_uid", ""))
-		if not id_recuerdo_mostrado.is_empty() and indice_recuerdo >= 0:
-			relationship_system.marcar_recuerdo_mencionado(id_recuerdo_mostrado, indice_recuerdo, uid_recuerdo)
+		_recuerdo_pendiente_mostrar = recuerdo_para_mencionar.duplicate(true)
+		_personaje_recuerdo_pendiente = _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
+	_mostrar_linea_actual()
 
 	var hablante := str(_lineas[0].get("hablante", "")).strip_edges()
 	if hablante.is_empty() and is_instance_valid(_fuente):
@@ -293,6 +295,8 @@ func cerrar() -> void:
 
 	_fuente = null
 	_acciones.clear()
+	_recuerdo_pendiente_mostrar.clear()
+	_personaje_recuerdo_pendiente = ""
 
 	if action_button != null:
 		action_button.visible = false
@@ -311,6 +315,7 @@ func _avanzar() -> void:
 	if _indice_caracter < _texto_completo.length():
 		_indice_caracter = _texto_completo.length()
 		text_label.text = _texto_completo
+		_marcar_recuerdo_pendiente_mostrado()
 		return
 
 	if _indice_linea >= _lineas.size() - 1 and not _respuestas.is_empty():
@@ -324,6 +329,22 @@ func _avanzar() -> void:
 		return
 
 	_mostrar_linea_actual()
+
+
+## Consume el recuerdo sólo cuando el jugador ha podido ver la primera línea completa.
+## Cerrar el diálogo durante el texto progresivo no lo marca como mencionado.
+func _marcar_recuerdo_pendiente_mostrado() -> void:
+	if _recuerdo_pendiente_mostrar.is_empty() or relationship_system == null:
+		return
+	if _personaje_recuerdo_pendiente.is_empty():
+		return
+	var indice := int(_recuerdo_pendiente_mostrar.get("_indice_recuerdo", -1))
+	var uid := str(_recuerdo_pendiente_mostrar.get("recuerdo_uid", ""))
+	if indice < 0:
+		return
+	if relationship_system.marcar_recuerdo_mencionado(_personaje_recuerdo_pendiente, indice, uid):
+		_recuerdo_pendiente_mostrar.clear()
+		_personaje_recuerdo_pendiente = ""
 
 
 func _mostrar_linea_actual() -> void:
