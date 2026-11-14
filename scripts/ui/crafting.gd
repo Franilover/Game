@@ -8,7 +8,7 @@ const HTTP_TIMEOUT: float = 8.0
 var _request: HTTPRequest
 var _recetas: Array[Dictionary] = []
 var _cargando: bool = false
-@onready var _lista: GridContainer = $Margin/Column/Content/RecipeScroll/RecipeGrid
+@onready var _lista: VBoxContainer = $Margin/Column/Content/RecipeScroll/RecipeList
 @onready var _lista_scroll: ScrollContainer = $Margin/Column/Content/RecipeScroll
 @onready var _estado: Label = $Margin/Column/Status
 @onready var _detalle_nombre: Label = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/RecipeName
@@ -118,20 +118,72 @@ func _renderizar_recetas() -> void:
 		_estado.text = "No hay recetas disponibles."
 		return
 
-	# El contador ocupaba una línea útil de la interfaz.
 	_estado.text = ""
-
+	var grupos: Dictionary = {}
 	var recetas_visibles := 0
+
 	for receta in _recetas:
 		if not _receta_tiene_sprites(receta):
 			continue
-		_crear_tarjeta_receta(receta)
+		var resultado_variant: Variant = receta.get("resultado", {})
+		var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
+		var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
+		var categoria_variant: Variant = item_resultado.get("categoria", {})
+		var categoria: Dictionary = categoria_variant as Dictionary if categoria_variant is Dictionary else {}
+		var clave := str(categoria.get("clave", "sin_categoria"))
+		if not grupos.has(clave):
+			grupos[clave] = {
+				"nombre": str(categoria.get("nombre", "Sin categoría")),
+				"orden": int(categoria.get("orden", 999)),
+				"recetas": []
+			}
+		(grupos[clave]["recetas"] as Array).append(receta)
 		recetas_visibles += 1
+
+	var claves: Array = grupos.keys()
+	claves.sort_custom(func(a: Variant, b: Variant) -> bool:
+		var grupo_a: Dictionary = grupos[a]
+		var grupo_b: Dictionary = grupos[b]
+		var orden_a := int(grupo_a.get("orden", 999))
+		var orden_b := int(grupo_b.get("orden", 999))
+		if orden_a == orden_b:
+			return str(grupo_a.get("nombre", a)) < str(grupo_b.get("nombre", b))
+		return orden_a < orden_b
+	)
+
+	for clave_variant in claves:
+		var grupo: Dictionary = grupos[clave_variant]
+		var seccion := VBoxContainer.new()
+		seccion.name = "Categoria_" + str(clave_variant)
+		seccion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		seccion.add_theme_constant_override("separation", 4)
+		_lista.add_child(seccion)
+
+		var encabezado := Button.new()
+		encabezado.name = "CategoryHeading"
+		encabezado.text = str(grupo.get("nombre", "Sin categoría")).to_upper()
+		encabezado.custom_minimum_size = Vector2(0, 24)
+		encabezado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		encabezado.focus_mode = Control.FOCUS_NONE
+		encabezado.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		seccion.add_child(encabezado)
+		PIXEL_UI_THEME.apply(encabezado, false)
+
+		var rejilla := GridContainer.new()
+		rejilla.name = "RecipeGrid"
+		rejilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rejilla.add_theme_constant_override("h_separation", 6)
+		rejilla.add_theme_constant_override("v_separation", 6)
+		seccion.add_child(rejilla)
+		for receta_variant in grupo.get("recetas", []) as Array:
+			if receta_variant is Dictionary:
+				_crear_tarjeta_receta(receta_variant as Dictionary, rejilla)
+
 	if recetas_visibles == 0:
 		_estado.text = "No hay recetas disponibles con los objetos que ya tienen ilustración."
 
 
-func _crear_tarjeta_receta(receta: Dictionary) -> void:
+func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	var panel := Button.new()
 	panel.custom_minimum_size = Vector2(56, 56)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -141,7 +193,7 @@ func _crear_tarjeta_receta(receta: Dictionary) -> void:
 	panel.pressed.connect(func() -> void:
 		_seleccionar_receta(receta)
 	)
-	_lista.add_child(panel)
+	rejilla.add_child(panel)
 	PIXEL_UI_THEME.apply(panel, false)
 
 	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
@@ -173,8 +225,9 @@ func _ajustar_columnas_recetas() -> void:
 		return
 	var separacion := 6
 	var ancho_util := maxi(1, int(_lista_scroll.size.x))
-	var columnas := floori(float(ancho_util + separacion) / 62.0)
-	_lista.columns = clampi(columnas, 3, 8)
+	var columnas := clampi(floori(float(ancho_util + separacion) / 62.0), 3, 8)
+	for rejilla in _lista.find_children("RecipeGrid", "GridContainer", true, false):
+		(rejilla as GridContainer).columns = columnas
 
 
 func _seleccionar_receta(receta: Dictionary) -> void:

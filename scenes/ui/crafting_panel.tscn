@@ -44,12 +44,10 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 1.0
 
-[node name="RecipeGrid" type="GridContainer" parent="Margin/Column/Content/RecipeScroll"]
+[node name="RecipeList" type="VBoxContainer" parent="Margin/Column/Content/RecipeScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-columns = 5
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
+theme_override_constants/separation = 8
 
 [node name="DetailPanel" type="PanelContainer" parent="Margin/Column/Content"]
 custom_minimum_size = Vector2(112, 0)

@@ -231,17 +231,23 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ItemName" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText" unique_id=1080046545]
+[node name="ItemName" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText" unique_id=1080046545]
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
-theme_override_font_sizes/font_size = 16
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+focus_mode = 0
+mouse_filter = 2
 text = ""
 
-[node name="ItemCategory" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText"]
+[node name="ItemCategory" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText"]
 visible = false
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.62, 0.45, 1)
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10
+focus_mode = 0
+mouse_filter = 2
 text = ""
 
 [node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText" unique_id=1325010840]

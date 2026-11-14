@@ -69,8 +69,8 @@ var _world_items: GarliaWorldItems = null
 
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
 var _slot_grids: Array[GridContainer] = []
-@onready var item_name: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
-@onready var item_category: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
+@onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
+@onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
 @onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemDescription
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
 @onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DeleteButton
@@ -918,7 +918,7 @@ func _mostrar_informacion() -> void:
 	item_name.text = nombre
 	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
 	if not categoria.is_empty():
-		item_category.text = "CATEGORÍA · " + str(categoria.get("nombre", "Sin categoría")).to_upper()
+		item_category.text = str(categoria.get("nombre", "Sin categoría")).to_upper()
 		item_category.tooltip_text = str(categoria.get("descripcion", ""))
 		item_category.visible = true
 	else:
