@@ -1277,7 +1277,8 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
 	var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
 	var indice := posmod(hash(nombre + "|" + fecha + "|" + str(minutos / 5)), desplazamientos.size())
-	var destino := ancla + (desplazamientos[indice] as Vector2)
+	var desplazamiento: Vector2 = desplazamientos[indice]
+	var destino := ancla + desplazamiento
 	for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
 			continue
