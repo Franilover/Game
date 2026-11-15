@@ -468,15 +468,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
 
-	# Reunión habitual del pueblo: todos los habitantes se reúnen en el
-	# castillo antes de retirarse a dormir. Termina al llegar la medianoche.
-	if minutos >= 1260:
-		rutina = {
-			"clave": "reunion_nocturna_castillo",
-			"ubicacion_clave": "castillo",
-			"actividad_clave": "reunirse_con_los_demas",
-			"activo": true
-		}
+	# Las reuniones nocturnas ya no desplazan a toda la población.
+	# Cada personaje conserva su horario y sólo acude si su propia rutina lo indica.
 
 	# Las rutinas de trabajo y los horarios canónicos permanecen intactos.
 	# Sólo se matizan los momentos libres en la plaza con una actividad diaria
@@ -577,6 +570,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		npc.set_meta("rutina_diagnostico", diagnostico_actual)
 	var variacion_posicion: Vector2 = rutina.get("variacion_posicion", Vector2.ZERO)
 	var firma_nueva := clave_rutina + "|" + ubicacion + "|" + actividad + "|" + str(variacion_posicion)
+	if firma_anterior != firma_nueva and not _esperar_desfase_cambio_rutina(npc, firma_nueva):
+		return
 	var edificio_variant: Variant = ENTRADAS_INTERIORES.get(ubicacion, {})
 	var edificio: Dictionary = edificio_variant if edificio_variant is Dictionary else {}
 	var edificio_id := str(edificio.get("id", ""))
@@ -599,6 +594,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Si la actividad cambia pero sigue en el mismo edificio, permanece dentro.
 	# Durante la reunión nocturna, además rota entre pequeños grupos del salón.
 	if esta_dentro and edificio_id == edificio_actual:
+		_actualizar_rutina_interior(npc, edificio_actual, minutos)
 		if clave_rutina == "reunion_nocturna_castillo":
 			_actualizar_movimiento_reunion_castillo(npc, minutos)
 			npc.datos["actividad_actual"] = "conversando con los demás"
@@ -942,6 +938,86 @@ func _buscar_npc_por_nombre(nombre_buscado: String) -> Creature:
 ## Cuando Ivo y Elian coinciden realmente dentro de la panadería, se anima
 ## una interacción ambiental discreta. No se crea ninguna copia ni se fuerza
 ## a ninguno a cambiar su horario.
+## Escalona los cambios de horario para que los habitantes no salgan todos a la vez.
+func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var dias_por_anio := maxi(1, int(_world_atmosphere.dias_por_anio)) if is_instance_valid(_world_atmosphere) else 365
+	var dia_global := int(tiempo.get("anio", 0)) * dias_por_anio + int(tiempo.get("dia", 1))
+	var minuto_global := dia_global * 1440 + int(tiempo.get("hora_del_dia", 0.0) * 60.0)
+	var firma_pendiente := str(npc.get_meta("rutina_cambio_pendiente", ""))
+	if firma_pendiente != firma:
+		npc.set_meta("rutina_cambio_pendiente", firma)
+		npc.set_meta("rutina_cambio_inicio", minuto_global)
+	var id := npc.get_personaje_game_id().strip_edges()
+	if id.is_empty():
+		id = npc.get_nombre_visual().strip_edges().to_lower()
+	var espera := posmod(hash(id + "|" + firma), 5)
+	var inicio := int(npc.get_meta("rutina_cambio_inicio", minuto_global))
+	if minuto_global - inicio < espera:
+		return false
+	npc.remove_meta("rutina_cambio_pendiente")
+	npc.remove_meta("rutina_cambio_inicio")
+	return true
+
+
+## Pequeños recorridos dentro del edificio: los NPC no quedan congelados
+## durante toda una franja horaria. Se activan sólo al abrir ese interior.
+func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int) -> void:
+	if not is_instance_valid(npc):
+		return
+	var interior_activo := bool(_zona.get("_interior_activo")) if is_instance_valid(_zona) else false
+	var interior_actual := str(_zona.get("_entrada_interior_id")) if is_instance_valid(_zona) else ""
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if not interior_activo or interior_actual != edificio_id or npc.get_parent() == _zona:
+		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+			if is_instance_valid(movimiento):
+				movimiento.detener_por_rutina()
+			npc.remove_meta("rutina_paseo_interior_activo")
+			npc.set_meta("rutina_en_transito", false)
+		return
+	if not is_instance_valid(movimiento):
+		return
+	if bool(npc.get_meta("animacion_panaderia_activa", false)):
+		return
+	if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+		if movimiento.rutina_terminada():
+			npc.remove_meta("rutina_paseo_interior_activo")
+			npc.set_meta("rutina_en_transito", false)
+			var pausa := 2 + posmod(hash(npc.get_nombre_visual() + "|" + edificio_id + "|" + str(minutos)), 5)
+			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + pausa, 1440))
+		return
+	var siguiente := int(npc.get_meta("rutina_paseo_interior_siguiente", -1))
+	if siguiente >= 0 and minutos != siguiente and posmod(minutos - siguiente, 1440) > 720:
+		return
+	if siguiente >= 0 and minutos != siguiente and posmod(minutos - siguiente, 1440) < 720:
+		return
+	var puntos: Array[Vector2] = [
+		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
+		Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
+	]
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	var indice := posmod(hash(nombre + "|" + edificio_id + "|" + str(minutos / 5)), puntos.size())
+	var destino_local: Vector2 = puntos[indice]
+	for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
+			continue
+		var otro := otro_variant as Creature
+		if otro.get_parent() == npc.get_parent() and otro.position.distance_to(destino_local) < 38.0:
+			destino_local = puntos[posmod(indice + 1, puntos.size())]
+			break
+	var contenedor := npc.get_parent() as Node2D
+	if not is_instance_valid(contenedor):
+		return
+	var destino_global := contenedor.to_global(destino_local)
+	if npc.global_position.distance_to(destino_global) <= DISTANCIA_LLEGADA:
+		npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + 3, 1440))
+		return
+	var ruta := PackedVector2Array([destino_global])
+	movimiento.establecer_ruta(ruta)
+	npc.set_meta("rutina_paseo_interior_activo", true)
+	npc.set_meta("rutina_en_transito", true)
+
+
 func _actualizar_interaccion_panaderia() -> void:
 	var ivo := _buscar_npc_por_nombre("ivo")
 	var elian := _buscar_npc_por_nombre("elian")
@@ -1045,7 +1121,12 @@ func _aplicar_variacion_tiempo_libre(
 		"bruna": ["revisar_herramientas", "observar_trabajos", "descansar_un_rato"],
 		"darven": ["vigilar_plaza", "revisar_avisos", "conversar_con_habitantes"],
 		"saira": ["saludar_comerciantes", "compartir_noticias", "escuchar_historias"],
-		"narel": ["tomar_notas", "observar_entorno", "leer_apuntes"]
+		"narel": ["tomar_notas", "observar_entorno", "leer_apuntes"],
+		"mara": ["pasear_sin_prisa", "observar_la_plaza", "visitar_un_puesto"],
+		"ivo": ["descansar_y_saludar", "sentarse_un_rato", "pasear_a_su_ritmo"],
+		"nima": ["tomar_notas", "observar_fenomenos", "conversar_con_vecinos"],
+		"abel": ["revisar_asuntos", "leer_informes", "conversar_con_guardias"],
+		"liam": ["ordenar_documentos", "recorrer_el_castillo", "descansar_un_rato"]
 	}
 	if not actividades_por_personaje.has(nombre):
 		return rutina_base
@@ -1245,7 +1326,10 @@ func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
 		"saira": "casa_saira",
 		"narel": "casa_narel",
 		"abel": "castillo",
-		"liam": "castillo"
+		"liam": "castillo",
+		"mara": "vivienda_oeste_01",
+		"ivo": "vivienda_oeste_02",
+		"nima": "vivienda_oeste_03"
 	}
 	var hogar := str(hogares.get(nombre, "plaza"))
 	var ubicacion := hogar
@@ -1262,6 +1346,18 @@ func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
 			"narel":
 				ubicacion = "archivo_real"
 				actividad = "leer"
+			"mara":
+				ubicacion = hogar
+				actividad = "ordenar_sus_espacios"
+			"ivo":
+				ubicacion = hogar
+				actividad = "descansar"
+			"nima":
+				ubicacion = "casa_estudio"
+				actividad = "revisar_apuntes"
+			"abel", "liam":
+				ubicacion = "castillo"
+				actividad = "atender_asuntos_del_castillo"
 			_:
 				ubicacion = "plaza"
 	elif minutos >= 840 and minutos < 1020:
@@ -1271,12 +1367,27 @@ func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
 			"saira":
 				ubicacion = "casa_comercio"
 				actividad = "visitar_comerciantes"
-			"narel":
+			"narel", "nima":
 				ubicacion = "casa_estudio"
 				actividad = "visitar_estudio"
 			"darven":
 				ubicacion = "plaza"
 				actividad = "descansar"
+			"mara":
+				ubicacion = "plaza"
+				actividad = "pasear_sin_prisa"
+			"ivo":
+				ubicacion = "plaza"
+				actividad = "descansar_y_saludar"
+			"elian":
+				ubicacion = hogar
+				actividad = "descansar_del_trabajo"
+			"bruna":
+				ubicacion = hogar
+				actividad = "revisar_sus_herramientas"
+			"abel", "liam":
+				ubicacion = "castillo"
+				actividad = "organizar_asuntos_internos"
 			_:
 				ubicacion = "plaza"
 	elif minutos >= 1020 and minutos < 1200:
