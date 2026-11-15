@@ -1681,6 +1681,28 @@ func _crear_objeto_visual_evento(zona: Node2D, posicion: Vector2, etiqueta: Stri
 	objeto.global_position = posicion
 	_objeto_evento_diario = objeto
 	_zona_objeto_evento = zona
+	# La aparición del objeto puede llamar la atención de quienes estén cerca.
+	call_deferred("_reaccionar_a_objeto_cotidiano", objeto)
+
+
+## Reacción discreta de habitantes cercanos cuando aparece un objeto de una escena.
+## No los desplaza ni inicia conversaciones nuevas.
+func _reaccionar_a_objeto_cotidiano(objeto: Node2D) -> void:
+	if not is_instance_valid(objeto) or not objeto.is_inside_tree():
+		return
+	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return
+	var reaccionados := 0
+	for npc in _obtener_npcs_torres():
+		if reaccionados >= 3:
+			break
+		if not _npc_puede_reaccionar_evento(npc):
+			continue
+		if npc.global_position.distance_to(objeto.global_position) > 128.0:
+			continue
+		if _iniciar_reaccion_visual(npc, "mirada_rapida"):
+			reaccionados += 1
+
 
 
 
