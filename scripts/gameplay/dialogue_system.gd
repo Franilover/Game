@@ -530,8 +530,8 @@ func _resolver_texto_por_personalidad(
 	var ejes_relacion := ["amistad", "confianza", "respeto", "afecto"]
 	for eje in ejes_relacion:
 		var valor_relacion := float(relacion.get(eje, 0.0))
-		var clave_alta := eje + "_alta"
-		var clave_baja := eje + "_baja"
+		var clave_alta: String = str(eje) + "_alta"
+		var clave_baja: String = str(eje) + "_baja"
 		if valor_relacion >= 25.0 and variantes_relacion.has(clave_alta):
 			candidatos.append({"clave": clave_alta, "peso": valor_relacion - 25.0, "orden": candidatos.size()})
 		elif valor_relacion <= -15.0 and variantes_relacion.has(clave_baja):
@@ -541,8 +541,8 @@ func _resolver_texto_por_personalidad(
 	var ejes_personalidad := ["sociabilidad", "curiosidad", "generosidad", "prudencia", "agresividad"]
 	for eje in ejes_personalidad:
 		var valor_personalidad := float(personalidad.get(eje, 50.0))
-		var clave_alta := eje + "_alta"
-		var clave_baja := eje + "_baja"
+		var clave_alta: String = str(eje) + "_alta"
+		var clave_baja: String = str(eje) + "_baja"
 		if valor_personalidad >= 65.0 and variantes_personalidad.has(clave_alta):
 			candidatos.append({"clave": clave_alta, "peso": valor_personalidad - 65.0, "orden": candidatos.size()})
 		elif valor_personalidad <= 35.0 and variantes_personalidad.has(clave_baja):
