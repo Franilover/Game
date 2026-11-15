@@ -1907,6 +1907,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 					"evento": str(tema.get("evento", "interesarse")),
 					"importancia": _obtener_importancia_tema(tema)
 				})
+			_agregar_opciones_conocimiento_npc(opciones_datos, personaje_id)
 			return _completar_opciones_conversacion(opciones_datos, relacion)
 
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
@@ -1998,7 +1999,52 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 		"evento": "interesarse",
 		"importancia": 2.0
 	})
+	_agregar_opciones_conocimiento_npc(opciones_generales, _fuente.get_personaje_game_id())
 	return _completar_opciones_conversacion(opciones_generales, relationship_system.obtener_relacion(_fuente.get_personaje_game_id()) if relationship_system != null else {})
+
+
+## Los conocimientos que llegaron por conversaciones entre habitantes pueden
+## convertirse en temas del diálogo individual, conservando su procedencia.
+func _agregar_opciones_conocimiento_npc(opciones: Array[Dictionary], personaje_id: String) -> void:
+	if relationship_system == null or not is_instance_valid(relationship_system):
+		return
+	for conocimiento_variant in relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		var clave_conocimiento := str(conocimiento.get("clave", "")).strip_edges()
+		var titulo := str(conocimiento.get("titulo", conocimiento.get("tema", "un asunto"))).replace("_", " ").strip_edges()
+		var detalle := str(conocimiento.get("detalle", "")).strip_edges()
+		if clave_conocimiento.is_empty() or detalle.is_empty():
+			continue
+		var clave_opcion := "conocimiento_" + clave_conocimiento
+		var ya_existe := false
+		for opcion_existente in opciones:
+			if str(opcion_existente.get("clave", "")) == clave_opcion:
+				ya_existe = true
+				break
+		if ya_existe:
+			continue
+		var fuente := str(conocimiento.get("transmitido_por", conocimiento.get("fuente", ""))).strip_edges()
+		var respuesta := ""
+		if fuente == "viajeros":
+			respuesta = "Escuché este relato de unos viajeros. "
+		elif not fuente.is_empty():
+			respuesta = "Me llegó por " + fuente.capitalize() + ". "
+		else:
+			respuesta = "Esto es lo que sé hasta ahora. "
+		respuesta += detalle
+		var verificacion := str(conocimiento.get("verificacion", "")).strip_edges()
+		if verificacion in ["testimonio_no_verificado", "rumor_no_verificado"]:
+			respuesta += " Por ahora no está verificado y prefiero no presentarlo como un hecho."
+		opciones.append({
+			"clave": clave_opcion,
+			"texto": "Preguntar por " + titulo,
+			"jugador": "¿Qué sabes sobre " + titulo + "?",
+			"respuesta": respuesta,
+			"evento": "interesarse",
+			"importancia": 2.5
+		})
 
 
 func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dictionary) -> Array[Dictionary]:
