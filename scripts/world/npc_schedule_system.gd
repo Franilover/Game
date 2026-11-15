@@ -503,8 +503,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
 
-	# Las reuniones nocturnas ya no desplazan a toda la población.
-	# Cada personaje conserva su horario y sólo acude si su propia rutina lo indica.
+	# La reunión nocturna se añade después como actividad social opcional
+	# para grupos disponibles; trabajo, invitaciones y eventos conservan prioridad.
 
 	# Las rutinas de trabajo y los horarios canónicos permanecen intactos.
 	# Sólo se matizan los momentos libres con actividades propias.
