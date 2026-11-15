@@ -105,7 +105,7 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 
 	var edit := Button.new()
 	edit.text = "✎"
-	edit.tooltip_text = "Editar nombre y configuración del mundo"
+	edit.tooltip_text = ""
 	edit.custom_minimum_size = Vector2(36 if get_viewport_rect().size.x < 560.0 else 44, 42)
 	edit.pressed.connect(_editar_partida.bind(partida_id))
 	row.add_child(edit)
