@@ -229,6 +229,12 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 					return false
 			"mirar_npc":
 				_ejecutar_mirar_npc(paso)
+			"orientar_grupo":
+				_ejecutar_orientar_grupo(paso)
+			"gesto_grupo":
+				await _ejecutar_gesto_grupo(paso)
+				if generacion_actual != _generacion:
+					return false
 			"fundido":
 				await _ejecutar_fundido(paso)
 				if generacion_actual != _generacion:
@@ -366,6 +372,43 @@ func _ejecutar_mirar_npc(paso: Dictionary) -> void:
 		sprite.flip_h = objetivo.global_position.x < npc.global_position.x
 	elif paso.has("izquierda"):
 		sprite.flip_h = bool(paso.get("izquierda", false))
+
+
+func _ejecutar_orientar_grupo(paso: Dictionary) -> void:
+	var objetivo := _buscar_npc(str(paso.get("hacia_npc", "")))
+	if not is_instance_valid(objetivo):
+		return
+	var participantes_variant: Variant = paso.get("npcs", [])
+	if not participantes_variant is Array:
+		return
+	for nombre_variant in participantes_variant:
+		var npc := _buscar_npc(str(nombre_variant))
+		if not is_instance_valid(npc) or npc == objetivo:
+			continue
+		var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+		if not is_instance_valid(sprite):
+			continue
+		_guardar_estado_sprite_cinematica(sprite)
+		sprite.flip_h = objetivo.global_position.x < npc.global_position.x
+
+
+func _ejecutar_gesto_grupo(paso: Dictionary) -> void:
+	var participantes_variant: Variant = paso.get("npcs", [])
+	if not participantes_variant is Array:
+		return
+	var tweens: Array[Tween] = []
+	for nombre_variant in participantes_variant:
+		var accion := {
+			"npc": str(nombre_variant),
+			"gesto": str(paso.get("gesto", "asentir")),
+			"duracion": float(paso.get("duracion", 0.5))
+		}
+		var tween := _crear_tween_gesto_npc(accion)
+		if tween != null:
+			tweens.append(tween)
+	for tween in tweens:
+		if is_instance_valid(tween):
+			await tween.finished
 
 
 func _crear_tween_gesto_npc(paso: Dictionary) -> Tween:
