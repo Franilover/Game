@@ -35,6 +35,8 @@ var _pausa_previa: bool = false
 var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
 var _process_mode_panel_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
 var _seguimiento_camara_npcs: Array[String] = []
+var _zoom_seguimiento_base: float = 1.0
+var _margen_encuadre_seguimiento: float = 76.0
 
 
 func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = null) -> void:
@@ -67,11 +69,23 @@ func _process(delta: float) -> void:
 			posiciones.append(npc.global_position)
 	if posiciones.is_empty():
 		return
-	var centro := Vector2.ZERO
-	for posicion in posiciones:
-		centro += posicion
-	centro /= float(posiciones.size())
-	_camera.global_position = _camera.global_position.lerp(centro, clampf(delta * 5.0, 0.0, 1.0))
+
+	var limites := Rect2(posiciones[0], Vector2.ZERO)
+	for indice in range(1, posiciones.size()):
+		limites = limites.expand(posiciones[indice])
+	var centro := limites.get_center()
+	var tamano_necesario := limites.size + Vector2.ONE * _margen_encuadre_seguimiento * 2.0
+	var tamano_viewport := get_viewport().get_visible_rect().size
+	var zoom_ajustado := _zoom_seguimiento_base
+	if tamano_necesario.x > 0.0 and tamano_necesario.y > 0.0 and tamano_viewport.x > 0.0 and tamano_viewport.y > 0.0:
+		var zoom_horizontal := tamano_viewport.x / tamano_necesario.x
+		var zoom_vertical := tamano_viewport.y / tamano_necesario.y
+		zoom_ajustado = minf(_zoom_seguimiento_base, minf(zoom_horizontal, zoom_vertical))
+	zoom_ajustado = clampf(zoom_ajustado, 0.65, _zoom_seguimiento_base)
+
+	var factor := clampf(delta * 4.5, 0.0, 1.0)
+	_camera.global_position = _camera.global_position.lerp(centro, factor)
+	_camera.zoom = _camera.zoom.lerp(Vector2.ONE * zoom_ajustado, clampf(delta * 2.8, 0.0, 1.0))
 
 
 func esta_activo() -> bool:
@@ -413,6 +427,12 @@ func _crear_tween_gesto_npc(paso: Dictionary) -> Tween:
 		"encogerse":
 			tween.tween_property(sprite, "scale", escala_base * 0.94, duracion * 0.35)
 			tween.tween_property(sprite, "scale", escala_base, duracion * 0.65)
+		"acomodarse":
+			tween.tween_property(sprite, "position:x", posicion_base.x - 1.4, duracion * 0.28)
+			tween.tween_property(sprite, "position:y", posicion_base.y - 0.8, duracion * 0.18)
+			tween.tween_property(sprite, "position:x", posicion_base.x + 1.1, duracion * 0.28)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.12)
+			tween.tween_property(sprite, "position:x", posicion_base.x, duracion * 0.14)
 		_:
 			tween.tween_property(sprite, "position:y", posicion_base.y - 2.0, duracion * 0.5)
 			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.5)
@@ -727,7 +747,7 @@ func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
 		if seguimiento_variant is Array:
 			for nombre_variant in seguimiento_variant:
 				var nombre := str(nombre_variant).strip_edges()
-				if not nombre.is_empty():
+				if not nombre.is_empty() and not _seguimiento_camara_npcs.has(nombre):
 					_seguimiento_camara_npcs.append(nombre)
 	var objetivo_path := str(paso.get("objetivo", "")).strip_edges()
 	if not objetivo_path.is_empty():
@@ -737,6 +757,8 @@ func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
 	var duracion := clampf(float(paso.get("duracion", 0.8)), 0.0, 15.0)
 	var zoom_objetivo := float(paso.get("zoom", _camera.zoom.x))
 	zoom_objetivo = clampf(zoom_objetivo, 0.5, 5.0)
+	_zoom_seguimiento_base = zoom_objetivo
+	_margen_encuadre_seguimiento = clampf(float(paso.get("margen_encuadre", 76.0)), 24.0, 220.0)
 	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
 		_tween_camara.kill()
 	_tween_camara = create_tween()
