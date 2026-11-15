@@ -459,6 +459,11 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		datos_criatura["nivel"] = garumi.nivel
 		datos_criatura["experiencia_total"] = garumi.experiencia_total
 		datos_criatura["eterium_actual"] = garumi.eterium_actual
+	var ai := criatura.get_node_or_null("AIController") as CreatureAI
+	if ai != null:
+		var necesidades_runtime := ai._obtener_estado_necesidades()
+		if not necesidades_runtime.is_empty():
+			datos_criatura["necesidades_runtime"] = necesidades_runtime
 	_runtime_state_by_key[key] = datos_criatura
 	# FULL y DATA pueden materializar el mismo spawn con claves técnicas
 	# diferentes. La especie es única por chunk en los spawns naturales.
