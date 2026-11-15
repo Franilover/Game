@@ -1243,9 +1243,16 @@ func _actualizar_reacciones_al_jugador(delta: float, jugador: Node2D, dialogo: D
 		return
 	_temporizador_reaccion_jugador = 0.0
 
-	var velocidad_jugador := jugador.velocity.length()
-	var estado_jugador := int(jugador.get("state")) if jugador.get("state") != null else -1
-	var esta_dasheando := estado_jugador == 4
+	# actualizar() recibe Node2D por contrato, pero el jugador real es
+	# CharacterBody2D. Consultar velocity sólo después de comprobar el tipo
+	# evita acceder a una propiedad inexistente si se reutiliza este servicio.
+	var velocidad_jugador := Vector2.ZERO
+	if jugador is CharacterBody2D:
+		velocidad_jugador = (jugador as CharacterBody2D).velocity
+	var estado_jugador := -1
+	if jugador is Player:
+		estado_jugador = int((jugador as Player).state)
+	var esta_dasheando := estado_jugador == Player.State.DASH
 	# Caminar normalmente no provoca reacciones; correr o usar dash sí.
 	if not esta_dasheando and velocidad_jugador < 112.0:
 		return
