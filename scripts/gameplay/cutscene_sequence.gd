@@ -52,6 +52,29 @@ func _validar_accion_simultanea(accion: Dictionary, paso_indice: int, accion_ind
 	return errores
 
 
+func _recopilar_parametros(valor: Variant, encontrados: Dictionary) -> void:
+	if valor is String:
+		var texto := str(valor)
+		var cursor := 0
+		while cursor < texto.length():
+			var inicio := texto.find("{{", cursor)
+			if inicio < 0:
+				break
+			var fin := texto.find("}}", inicio + 2)
+			if fin < 0:
+				break
+			var nombre := texto.substr(inicio + 2, fin - inicio - 2).strip_edges()
+			if not nombre.is_empty():
+				encontrados[nombre] = true
+			cursor = fin + 2
+	elif valor is Dictionary:
+		for elemento in valor.values():
+			_recopilar_parametros(elemento, encontrados)
+	elif valor is Array:
+		for elemento in valor:
+			_recopilar_parametros(elemento, encontrados)
+
+
 func validar() -> Array[String]:
 	var errores: Array[String] = []
 	if clave.strip_edges().is_empty():
@@ -60,6 +83,16 @@ func validar() -> Array[String]:
 		errores.append("La secuencia no contiene pasos.")
 	if modo not in ["planeada", "en_vivo"]:
 		errores.append("El modo debe ser planeada o en_vivo.")
+
+	var parametros_declarados: Dictionary = {}
+	for nombre in parametros_requeridos:
+		parametros_declarados[str(nombre)] = true
+	var parametros_usados: Dictionary = {}
+	_recopilar_parametros(clave, parametros_usados)
+	_recopilar_parametros(pasos, parametros_usados)
+	for nombre in parametros_usados:
+		if not parametros_declarados.has(nombre):
+			errores.append("El parámetro {{%s}} se usa pero no está declarado en parametros_requeridos." % nombre)
 
 	var tipos_validos := [
 		"dialogo", "esperar", "camara", "gesto_npc",
