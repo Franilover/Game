@@ -25,6 +25,10 @@ var _tween_fundido: Tween = null
 var _capa_fundido: CanvasLayer = null
 var _panel_fundido: ColorRect = null
 var _cancelando: bool = false
+var _tweens_actores: Array[Tween] = []
+var _posicion_jugador_inicio := Vector2.ZERO
+var _velocidad_jugador_inicio := Vector2.ZERO
+var _jugador_movido_cinematica: bool = false
 var _modo_cinematica: String = "planeada"
 var _pausa_previa: bool = false
 var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
@@ -91,6 +95,8 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	var generacion_actual := _generacion
 	_ocupado = true
 	_cancelando = false
+	_tweens_actores.clear()
+	_jugador_movido_cinematica = false
 	if is_instance_valid(_camera):
 		_zoom_original = _camera.zoom
 		_offset_original = _camera.offset
@@ -215,6 +221,11 @@ func cancelar() -> void:
 		_tween_camara.kill()
 	if is_instance_valid(_tween_fundido) and _tween_fundido.is_running():
 		_tween_fundido.kill()
+	_detener_tweens_actores()
+	if _jugador_movido_cinematica and is_instance_valid(_player):
+		_player.global_position = _posicion_jugador_inicio
+		if _player is CharacterBody2D:
+			(_player as CharacterBody2D).velocity = _velocidad_jugador_inicio
 	if is_instance_valid(_dialogue) and _dialogue.esta_abierto():
 		_dialogue.cerrar()
 	await _restaurar_camara()
@@ -288,6 +299,7 @@ func _crear_tween_gesto_npc(paso: Dictionary) -> Tween:
 	var escala_base := sprite.scale
 	var rotacion_base := sprite.rotation
 	var tween := create_tween()
+	_tweens_actores.append(tween)
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	match gesto:
@@ -425,15 +437,17 @@ func _ejecutar_temblor_camara(paso: Dictionary) -> void:
 	var intensidad := clampf(float(paso.get("intensidad", 2.0)), 0.0, 12.0)
 	var duracion := clampf(float(paso.get("duracion", 0.35)), 0.05, 2.0)
 	var ciclos := clampi(int(paso.get("ciclos", 3)), 1, 8)
-	var tween := create_tween()
-	tween.set_trans(Tween.TRANS_SINE)
-	tween.set_ease(Tween.EASE_IN_OUT)
+	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
+		_tween_camara.kill()
+	_tween_camara = create_tween()
+	_tween_camara.set_trans(Tween.TRANS_SINE)
+	_tween_camara.set_ease(Tween.EASE_IN_OUT)
 	for indice in range(ciclos):
 		var signo := 1.0 if indice % 2 == 0 else -1.0
-		tween.tween_property(_camera, "offset", _offset_original + Vector2(intensidad * signo, -intensidad * 0.35 * signo), duracion / float(ciclos * 2))
-		tween.tween_property(_camera, "offset", _offset_original + Vector2(-intensidad * signo, intensidad * 0.35 * signo), duracion / float(ciclos * 2))
-	tween.tween_property(_camera, "offset", _offset_original, 0.08)
-	await tween.finished
+		_tween_camara.tween_property(_camera, "offset", _offset_original + Vector2(intensidad * signo, -intensidad * 0.35 * signo), duracion / float(ciclos * 2))
+		_tween_camara.tween_property(_camera, "offset", _offset_original + Vector2(-intensidad * signo, intensidad * 0.35 * signo), duracion / float(ciclos * 2))
+	_tween_camara.tween_property(_camera, "offset", _offset_original, 0.08)
+	await _tween_camara.finished
 
 
 func _capturar_y_ocultar_ui() -> void:
@@ -544,6 +558,7 @@ func _ejecutar_ruta_npc(paso: Dictionary, generacion: int) -> void:
 		var distancia := npc.global_position.distance_to(destino)
 		var duracion := clampf(float(paso.get("duracion_por_tramo", maxf(0.25, distancia / 65.0))), 0.15, 20.0)
 		var tween := create_tween()
+		_tweens_actores.append(tween)
 		tween.set_trans(Tween.TRANS_SINE)
 		tween.set_ease(Tween.EASE_IN_OUT)
 		tween.tween_property(npc, "global_position", destino, duracion)
@@ -558,6 +573,10 @@ func _ejecutar_ruta_npc(paso: Dictionary, generacion: int) -> void:
 func _ejecutar_ruta_jugador(paso: Dictionary, generacion: int) -> void:
 	if not is_instance_valid(_player):
 		return
+	if not _jugador_movido_cinematica:
+		_posicion_jugador_inicio = _player.global_position
+		_velocidad_jugador_inicio = (_player as CharacterBody2D).velocity if _player is CharacterBody2D else Vector2.ZERO
+		_jugador_movido_cinematica = true
 	var destino := Vector2(
 		float(paso.get("x", _player.global_position.x)),
 		float(paso.get("y", _player.global_position.y))
@@ -567,6 +586,7 @@ func _ejecutar_ruta_jugador(paso: Dictionary, generacion: int) -> void:
 	if _player is CharacterBody2D:
 		(_player as CharacterBody2D).velocity = Vector2.ZERO
 	var tween := create_tween()
+	_tweens_actores.append(tween)
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(_player, "global_position", destino, duracion)
@@ -575,7 +595,15 @@ func _ejecutar_ruta_jugador(paso: Dictionary, generacion: int) -> void:
 		(_player as CharacterBody2D).velocity = Vector2.ZERO
 
 
+func _detener_tweens_actores() -> void:
+	for tween in _tweens_actores:
+		if is_instance_valid(tween) and tween.is_running():
+			tween.kill()
+	_tweens_actores.clear()
+
+
 func _restaurar_estado_temporal() -> void:
+	_detener_tweens_actores()
 	for estado in _estado_npcs_cinematica.values():
 		var npc: Creature = estado.get("nodo") as Creature
 		if not is_instance_valid(npc):
