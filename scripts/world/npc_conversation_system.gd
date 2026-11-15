@@ -8,6 +8,8 @@ signal cinematica_reunion_nocturna_solicitada(clave: String, npc_a: String, npc_
 const INTERVALO_BUSQUEDA := 0.5
 const DISTANCIA_ENTRE_NPC := 180.0
 const DISTANCIA_JUGADOR := 220.0
+const DISTANCIA_ENTRADA_OBSERVACION := DISTANCIA_JUGADOR + 80.0
+const DISTANCIA_SALIDA_OBSERVACION := DISTANCIA_JUGADOR + 120.0
 const DISTANCIA_INICIATIVA := 112.0
 const DISTANCIA_BUSQUEDA_INICIATIVA := 280.0
 const DISTANCIA_LLEGADA_INICIATIVA := 76.0
@@ -280,6 +282,7 @@ var _temporizador_busqueda := 0.0
 var _temporizador_linea := 0.0
 var _conversacion_activa: Dictionary = {}
 var _indice_linea := 0
+var _jugador_observando_conversacion := false
 var _npc_por_nombre: Dictionary = {}
 var _burbujas: Dictionary = {}
 var _vistas_por_dia: Dictionary = {}
@@ -371,6 +374,7 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 		if participa:
 			# La burbuja de la intervención actual puede haberse ocultado si el
 			# jugador estaba lejos. Se vuelve a mostrar sin reiniciar su tiempo.
+			_jugador_observando_conversacion = true
 			_mostrar_linea_actual(false)
 			return true
 		return false
@@ -1386,6 +1390,7 @@ func _npc_puede_conversar(npc: Creature) -> bool:
 
 func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	_conversacion_activa = conversacion.duplicate(true)
+	_jugador_observando_conversacion = false
 	var tiempo := _world_atmosphere.obtener_tiempo()
 	var clave_progreso := str(_conversacion_activa.get("clave", ""))
 	var progreso_variant: Variant = _progreso_parejas.get(clave_progreso, {})
@@ -1451,6 +1456,7 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
 		_ocultar_burbujas()
+		_jugador_observando_conversacion = false
 		return
 	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
 		_finalizar_conversacion()
@@ -1464,9 +1470,22 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 1.5:
 		_finalizar_conversacion()
 		return
-	if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR + 80.0 and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR + 80.0:
+	var distancia_a := jugador.global_position.distance_to(npc_a.global_position)
+	var distancia_b := jugador.global_position.distance_to(npc_b.global_position)
+	var distancia_jugador := minf(distancia_a, distancia_b)
+	if _jugador_observando_conversacion:
+		if distancia_jugador > DISTANCIA_SALIDA_OBSERVACION:
+			_ocultar_burbujas()
+			_jugador_observando_conversacion = false
+			return
+	elif distancia_jugador > DISTANCIA_ENTRADA_OBSERVACION:
 		_ocultar_burbujas()
 		return
+	else:
+		# Al volver a acercarse se recupera la intervención actual. No se reinicia
+		# el tiempo de lectura: alejarse no permite congelar una frase indefinidamente.
+		_jugador_observando_conversacion = true
+		_mostrar_linea_actual(false)
 
 	_temporizador_linea -= delta
 	if _temporizador_linea <= 0.0:
@@ -1722,3 +1741,4 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 	_conversacion_activa.clear()
 	_indice_linea = 0
 	_temporizador_linea = 0.0
+	_jugador_observando_conversacion = false
