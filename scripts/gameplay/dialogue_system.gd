@@ -2278,7 +2278,7 @@ func _cumple_requisitos_tema_conversacion(tema: Dictionary, relacion: Dictionary
 	if _nombre_social_actual() == "mara" and (clave_tema.contains("pasado") or clave_tema.contains("historia_personal")) and float(relacion.get("confianza", 0.0)) < 35.0:
 		return false
 	# Ivo no convierte su cansancio en tema público; primero debe existir confianza.
-	if _nombre_social_actual() == "ivo" and (clave_tema.contains("fatiga") or clave_tema.contains("cansancio") or clave_tema.contains("salud")) and float(relacion.get("confianza", 0.0)) < 25.0:
+	if _nombre_social_actual() == "ivo" and (clave_tema == "descanso" or clave_tema.contains("fatiga") or clave_tema.contains("cansancio") or clave_tema.contains("salud")) and float(relacion.get("confianza", 0.0)) < 25.0:
 		return false
 	var limite_variant: Variant = tema.get("limite_personal", {})
 	if limite_variant is Dictionary:
