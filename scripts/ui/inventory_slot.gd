@@ -8,6 +8,8 @@ signal arrastre_recibido(slot: Button, datos: Dictionary)
 
 
 var datos: Dictionary = {}
+var _seleccionado_actual: bool = false
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 
 @onready var icon_texture: TextureRect = $Icon
@@ -57,6 +59,17 @@ func limpiar() -> void:
 
 func esta_ocupado() -> bool:
 	return not datos.is_empty()
+
+
+func establecer_seleccionado(activo: bool) -> void:
+	_seleccionado_actual = activo
+	var normal := PIXEL_UI_THEME.slot_style(activo)
+	var hover := PIXEL_UI_THEME.slot_style(true)
+	if normal != null:
+		add_theme_stylebox_override("normal", normal)
+	if hover != null:
+		add_theme_stylebox_override("hover", hover)
+		add_theme_stylebox_override("pressed", hover)
 
 
 func obtener_datos() -> Dictionary:
