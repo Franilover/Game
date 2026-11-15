@@ -22,6 +22,9 @@ var _rutina_completada: bool = false
 
 var _rng := RandomNumberGenerator.new()
 
+const DISTANCIA_SEPARACION_NPC := 38.0
+const FUERZA_SEPARACION_NPC := 1.8
+
 
 func configurar(
 	nueva_criatura: CharacterBody2D,
@@ -115,6 +118,8 @@ func procesar(delta: float) -> void:
 			maxf(delta * 2.8, 0.0)
 		)
 
+	if direccion_actual.length_squared() > 0.001:
+		direccion_actual = _direccion_evitar_superposicion_npcs(direccion_actual)
 	creature.velocity = direccion_actual * move_speed
 	creature.move_and_slide()
 
@@ -188,8 +193,51 @@ func _procesar_ruta_rutina() -> void:
 		destino = _ruta_rutina[_indice_ruta_rutina]
 
 	var direccion := creature.global_position.direction_to(destino)
+	direccion = _direccion_evitar_superposicion_npcs(direccion)
 	creature.velocity = direccion * move_speed
 	creature.move_and_slide()
+
+
+## Evita que dos habitantes sigan exactamente el mismo punto o se atraviesen.
+## Sólo afecta a NPC de Torres; criaturas y jugadores conservan su movimiento.
+func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
+	if (
+		direccion.length_squared() <= 0.001
+		or not creature is Creature
+		or not (creature as Creature).is_in_group("torres_game_npc")
+	):
+		return direccion
+
+	var repulsion := Vector2.ZERO
+	var npc_actual := creature as Creature
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature or nodo == npc_actual or not is_instance_valid(nodo):
+			continue
+		var otro := nodo as Creature
+		if not otro.is_alive or otro.get_parent() != npc_actual.get_parent():
+			continue
+		var diferencia := npc_actual.global_position - otro.global_position
+		var distancia := diferencia.length()
+		if distancia >= DISTANCIA_SEPARACION_NPC:
+			continue
+
+		var alejamiento := Vector2.ZERO
+		if distancia > 0.01:
+			alejamiento = diferencia / distancia
+		else:
+			var nombre_a := npc_actual.get_nombre_visual().strip_edges().to_lower()
+			var nombre_b := otro.get_nombre_visual().strip_edges().to_lower()
+			var clave := nombre_a + "|" + nombre_b if nombre_a < nombre_b else nombre_b + "|" + nombre_a
+			var angulo := float(posmod(hash(clave), 360)) * PI / 180.0
+			alejamiento = Vector2.RIGHT.rotated(angulo)
+			if nombre_a > nombre_b:
+				alejamiento = -alejamiento
+		var peso := clampf((DISTANCIA_SEPARACION_NPC - distancia) / DISTANCIA_SEPARACION_NPC, 0.0, 1.0)
+		repulsion += alejamiento * peso
+
+	if repulsion.length_squared() <= 0.001:
+		return direccion
+	return (direccion + repulsion.normalized() * FUERZA_SEPARACION_NPC).normalized()
 
 
 func establecer_direccion(direccion: Vector2) -> void:
