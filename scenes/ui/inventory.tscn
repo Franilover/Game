@@ -213,7 +213,7 @@ size_flags_vertical = 0
 theme_override_constants/separation = 8
 
 [node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel" unique_id=1747754024]
-custom_minimum_size = Vector2(0, 88)
+custom_minimum_size = Vector2(0, 102)
 layout_mode = 2
 theme_override_constants/separation = 10
 
@@ -256,7 +256,7 @@ mouse_filter = 2
 text = ""
 
 [node name="DescriptionPanel" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText"]
-custom_minimum_size = Vector2(0, 42)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
