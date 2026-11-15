@@ -470,7 +470,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		return
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
-	if dia_semana == 4 and not bool(npc.get_meta("habitante_sin_oficio", false)):
+	var nombre_para_descanso := npc.get_nombre_visual().strip_edges().to_lower()
+	if dia_semana == 4 and (not bool(npc.get_meta("habitante_sin_oficio", false)) or nombre_para_descanso in ["mara", "ivo", "nima"]):
 		rutina = _seleccionar_rutina_dia_libre(npc, minutos)
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
@@ -1019,7 +1020,7 @@ func _obtener_rutina_encuentro_trio(
 			var participante := participantes[nombre] as Creature
 			var base: Dictionary
 			var lista: Variant = participante.datos.get("rutinas", [])
-			if dia_candidato == 4 and not bool(participante.get_meta("habitante_sin_oficio", false)):
+			if dia_candidato == 4 and (not bool(participante.get_meta("habitante_sin_oficio", false)) or nombre in ["mara", "ivo", "nima"]):
 				base = _seleccionar_rutina_dia_libre(participante, minutos)
 			else:
 				base = _seleccionar_rutina(lista, dia_candidato, minutos, participante.get_nombre_visual())
@@ -1039,7 +1040,7 @@ func _obtener_rutina_encuentro_trio(
 		var participante := participantes[nombre] as Creature
 		var base_actual: Dictionary
 		var lista_actual: Variant = participante.datos.get("rutinas", [])
-		if dia_semana == 4 and not bool(participante.get_meta("habitante_sin_oficio", false)):
+		if dia_semana == 4 and (not bool(participante.get_meta("habitante_sin_oficio", false)) or nombre in ["mara", "ivo", "nima"]):
 			base_actual = _seleccionar_rutina_dia_libre(participante, minutos)
 		else:
 			base_actual = _seleccionar_rutina(lista_actual, dia_semana, minutos, participante.get_nombre_visual())
