@@ -16,36 +16,48 @@ static func es_objeto_ataque(objeto: Dictionary) -> bool:
 
 static func es_arma(objeto: Dictionary) -> bool:
 	var tipo := str(objeto.get("tipo", "")).strip_edges().to_lower()
-	if tipo == "arma":
+	if _etiqueta_indica_arma(tipo) or bool(objeto.get("es_arma", false)):
 		return true
 
-	# Compatibilidad con partidas antiguas y objetos cuyo tipo de catálogo
-	# es genérico, pero cuya clasificación canónica sí declara que son armas.
-	if bool(objeto.get("es_arma", false)):
-		return true
-
-	var categorias: Array[String] = []
-	for clave in ["categoria", "categoria_canonica"]:
-		var valor := str(objeto.get(clave, "")).strip_edges().to_lower()
-		if not valor.is_empty():
-			categorias.append(valor)
+	# Los registros del catálogo guardan categoria como objeto relacionado
+	# (clave/nombre), no siempre como texto plano.
+	for clave in ["categoria", "categoria_canonica", "categoria_clave"]:
+		var valor: Variant = objeto.get(clave, "")
+		if valor is Dictionary:
+			var categoria := valor as Dictionary
+			for campo in ["clave", "nombre", "nombre_humano", "categoria_canonica"]:
+				if _etiqueta_indica_arma(str(categoria.get(campo, ""))):
+					return true
+		elif _etiqueta_indica_arma(str(valor)):
+			return true
 
 	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
 	if tipo_objeto_variant is Dictionary:
 		var tipo_objeto := tipo_objeto_variant as Dictionary
-		var categoria_tipo := str(tipo_objeto.get("categoria_canonica", "")).strip_edges().to_lower()
-		if not categoria_tipo.is_empty():
-			categorias.append(categoria_tipo)
+		if _etiqueta_indica_arma(str(tipo_objeto.get("categoria_canonica", ""))):
+			return true
+		for campo in ["clave", "nombre_humano", "nombre"]:
+			if _etiqueta_indica_arma(str(tipo_objeto.get(campo, ""))):
+				return true
 		var plantilla_variant: Variant = tipo_objeto.get("plantilla", {})
 		if plantilla_variant is Dictionary:
-			var categoria_plantilla := str((plantilla_variant as Dictionary).get("categoria", "")).strip_edges().to_lower()
-			if not categoria_plantilla.is_empty():
-				categorias.append(categoria_plantilla)
+			var plantilla := plantilla_variant as Dictionary
+			if _etiqueta_indica_arma(str(plantilla.get("categoria", ""))):
+				return true
 
-	for categoria in categorias:
-		if "arma" in categoria:
-			return true
 	return false
+
+
+static func _etiqueta_indica_arma(etiqueta: String) -> bool:
+	var normalizada := etiqueta.strip_edges().to_lower()
+	return (
+		normalizada == "arma"
+		or normalizada.begins_with("arma_")
+		or normalizada.begins_with("armas")
+		or "arma cuerpo" in normalizada
+		or "arma de " in normalizada
+		or normalizada in ["espada", "espadas", "sword", "swords"]
+	)
 
 
 static func obtener_propiedades_game(objeto: Dictionary) -> Dictionary:
