@@ -1159,7 +1159,7 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.offset_left = -134.0 if tecla == "Q" else 86.0
 	slot.offset_right = -86.0 if tecla == "Q" else 134.0
 	PIXEL_UI_THEME.apply(slot)
-		slot.tooltip_text= ""
+	slot.tooltip_text = ""
 	var etiqueta_tecla := slot.get_node_or_null("HandKey") as Label
 	if etiqueta_tecla != null:
 		etiqueta_tecla.text = tecla
@@ -1194,7 +1194,7 @@ func _actualizar_hueco_mano(slot: Button, mano: String) -> void:
 	var datos: Dictionary = _inventory_ref.obtener_objeto_mano_activa(mano)
 	slot.icon = ItemIconResolver.obtener_icono(datos) if not datos.is_empty() else null
 	slot.text = "" if not datos.is_empty() else "—"
-		slot.tooltip_text= ""
+	slot.tooltip_text = ""
 
 
 func _crear_selector_manos() -> void:
@@ -1470,7 +1470,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 	_garumi_companero_slot.offset_right = 64.0
 	_garumi_companero_slot.offset_bottom = 64.0
 	PIXEL_UI_THEME.apply(_garumi_companero_slot)
-		_garumi_companero_slot.tooltip_text= ""
+	_garumi_companero_slot.tooltip_text = ""
 	var etiqueta := _garumi_companero_slot.get_node_or_null("HandKey") as Label
 	if is_instance_valid(etiqueta):
 		etiqueta.text = "R"
