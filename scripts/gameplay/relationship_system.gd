@@ -222,6 +222,10 @@ func registrar_evento_social(
 		"promesa_cumplida": contador = "promesas_cumplidas"
 		"promesa_rota": contador = "promesas_rotas"
 		"ayudar": contador = "ayudas"
+		"apoyar": contador = "apoyos"
+		"compartir_conocimiento": contador = "conocimientos_compartidos"
+		"mentir": contador = "mentiras"
+		"traicionar": contador = "traiciones"
 		"faltar_respeto": contador = "faltas_respeto"
 	if not contador.is_empty():
 		tendencias[contador] = int(tendencias.get(contador, 0)) + 1
@@ -725,6 +729,10 @@ func obtener_tendencias_sociales(personaje_id: String) -> Dictionary:
 		"promesas_cumplidas": 0,
 		"promesas_rotas": 0,
 		"ayudas": 0,
+		"apoyos": 0,
+		"conocimientos_compartidos": 0,
+		"mentiras": 0,
+		"traiciones": 0,
 		"faltas_respeto": 0
 	}
 	for recuerdo_variant in obtener_recuerdos(personaje_id):
@@ -741,6 +749,14 @@ func obtener_tendencias_sociales(personaje_id: String) -> Dictionary:
 				resultado["promesas_rotas"] = int(resultado["promesas_rotas"]) + 1
 			"ayudar":
 				resultado["ayudas"] = int(resultado["ayudas"]) + 1
+			"apoyar":
+				resultado["apoyos"] = int(resultado["apoyos"]) + 1
+			"compartir_conocimiento":
+				resultado["conocimientos_compartidos"] = int(resultado["conocimientos_compartidos"]) + 1
+			"mentir":
+				resultado["mentiras"] = int(resultado["mentiras"]) + 1
+			"traicionar":
+				resultado["traiciones"] = int(resultado["traiciones"]) + 1
 			"faltar_respeto":
 				resultado["faltas_respeto"] = int(resultado["faltas_respeto"]) + 1
 	return resultado
