@@ -1140,6 +1140,12 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 		var lista_hoy: Variant = eventos_dia.get("claves", [])
 		if lista_hoy is Array:
 			conversaciones_hoy = (lista_hoy as Array).duplicate()
+	elif str(diario.get("ultimo_dia", "")) == clave_dia:
+		# Compatibilidad con partidas guardadas antes del contador de varias
+		# conversaciones por noche: conserva la charla que ya ocurrió.
+		var ultima := str(diario.get("ultimo_evento", ""))
+		if not ultima.is_empty():
+			conversaciones_hoy.append(ultima)
 	if conversaciones_hoy.size() >= MAX_CONVERSACIONES_REUNION_NOCHE:
 		return false
 	var historial_variant: Variant = diario.get("historial", [])
