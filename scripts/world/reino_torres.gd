@@ -1182,6 +1182,14 @@ func _obtener_entrada_por_id(entrada_id: String) -> Dictionary:
 	return {}
 
 
+func sincronizar_npcs_del_interior() -> void:
+	if not _interior_activo:
+		return
+	var entrada := _obtener_entrada_por_id(_entrada_interior_id)
+	if not entrada.is_empty():
+		_ubicar_npcs_del_edificio_en_interior(entrada)
+
+
 func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 	var entrada_id := str(entrada.get("id", ""))
 	var cuarto := _capa_interior.get_node_or_null("Habitacion_" + entrada_id) as Node2D
@@ -1251,6 +1259,10 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 		# Si el jugador entra antes de que termine la caminata, el NPC debe
 		# estar atendiendo dentro igualmente, no quedarse fuera de la sala.
 		if not ya_asignado_a_esta_puerta and not va_a_este_edificio:
+			continue
+		# La sincronización puede ejecutarse cada ciclo de horarios. No reiniciar
+		# la posición ni interrumpir paseos de NPCs que ya están en esta sala.
+		if ya_asignado_a_esta_puerta and npc.get_parent() == cuarto:
 			continue
 		if npc.get_parent() != cuarto:
 			npc.reparent(cuarto, true)
