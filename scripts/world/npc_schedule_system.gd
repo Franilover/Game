@@ -447,6 +447,8 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
 		var npc := npc_variant as Creature
+		if not npc.is_alive:
+			continue
 		if bool(npc.get_meta("actividad_social_activa", false)) or bool(npc.get_meta("acercamiento_social_activo", false)):
 			continue
 		if not bool(npc.get_meta("rutina_en_transito", false)):
