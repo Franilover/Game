@@ -2,7 +2,7 @@ extends Entity
 class_name Creature
 
 const PIXELGRAFIA_FONT = preload("res://assets/fonts/Pixelgrafia.ttf")
-const SHOP_UI_SCRIPT = preload("res://scripts/ui/shop_ui.gd")
+const SHOP_UI_PATH := "res://scripts/ui/shop_ui.gd"
 
 signal configuracion_actualizada
 signal danio_recibido(cantidad: int, atacante: Node)
@@ -1244,10 +1244,14 @@ func interact(
 	if not es_dialogable():
 		return
 
-	var tienda := SHOP_UI_SCRIPT.tienda_para_npc(self)
+	var shop_script := ResourceLoader.load(SHOP_UI_PATH) as Script
+	if shop_script == null:
+		return
+	var tienda_variant: Variant = shop_script.call("tienda_para_npc", self)
+	var tienda: Dictionary = tienda_variant as Dictionary if tienda_variant is Dictionary else {}
 	if not tienda.is_empty() and is_instance_valid(_world_items_dependency):
 		var inventario := get_tree().get_first_node_in_group("inventory") as GarliaInventory
-		var interfaz := SHOP_UI_SCRIPT.new() as CanvasLayer
+		var interfaz := shop_script.new() as CanvasLayer
 		if is_instance_valid(inventario) and is_instance_valid(interfaz):
 			interfaz.configurar(self, inventario, _world_items_dependency, _actor)
 			var padre := get_tree().current_scene
