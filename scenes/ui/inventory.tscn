@@ -245,15 +245,24 @@ focus_mode = 0
 mouse_filter = 2
 text = ""
 
-[node name="ItemCategory" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText"]
+[node name="CategoryStatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ItemCategory" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/CategoryStatsRow"]
 visible = false
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 0
 theme_override_font_sizes/font_size = 10
 focus_mode = 0
 mouse_filter = 2
 text = ""
+
+[node name="StatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/CategoryStatsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
 
 [node name="DescriptionPanel" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText"]
 custom_minimum_size = Vector2(0, 56)
