@@ -415,6 +415,7 @@ func _configurar_slot(
 	var cantidad := slot.get_node_or_null(
 		"ItemQuantity"
 	) as Label
+	slot.tooltip_text = ""
 
 	if datos.is_empty():
 		if icon:
@@ -425,7 +426,6 @@ func _configurar_slot(
 			cantidad.visible = false
 			cantidad.text = ""
 
-				slot.tooltip_text = ""
 
 		return
 
