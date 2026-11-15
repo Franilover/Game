@@ -1247,7 +1247,7 @@ func _actualizar_reacciones_al_jugador(delta: float, jugador: Node2D, dialogo: D
 	var estado_jugador := int(jugador.get("state")) if jugador.get("state") != null else -1
 	var esta_dasheando := estado_jugador == 4
 	# Caminar normalmente no provoca reacciones; correr o usar dash sí.
-	if not esta_dasheando and velocidad_jugador < 185.0:
+	if not esta_dasheando and velocidad_jugador < 112.0:
 		return
 
 	var distancia_reaccion := 112.0 if esta_dasheando else 88.0
