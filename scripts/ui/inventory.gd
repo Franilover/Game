@@ -70,7 +70,8 @@ var _world_items: GarliaWorldItems = null
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
 var _slot_grids: Array[GridContainer] = []
 @onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
-@onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
+@onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/CategoryStatsRow/ItemCategory
+@onready var stats_row: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/CategoryStatsRow/StatsRow
 @onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel/DescriptionScroll/ItemDescription
 @onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame/ItemIcon
@@ -979,6 +980,8 @@ func _mostrar_informacion() -> void:
 		item_category.text = ""
 		item_category.tooltip_text = ""
 		item_category.visible = false
+
+	_actualizar_datos_visuales_objeto(objeto_seleccionado)
 	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción registrada."
 	item_description.visible = true
 
@@ -1005,6 +1008,125 @@ func _mostrar_informacion() -> void:
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
 	item_icon.texture = textura
 	item_icon.visible = textura != null
+
+
+func _actualizar_datos_visuales_objeto(objeto: Dictionary) -> void:
+	for hijo in stats_row.get_children():
+		hijo.queue_free()
+
+	var tipo := str(objeto.get("tipo", "")).strip_edges().to_lower()
+	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
+	if tipo.is_empty() and tipo_objeto_variant is Dictionary:
+		tipo = str((tipo_objeto_variant as Dictionary).get("categoria_canonica", "")).strip_edges().to_lower()
+
+	# Las pociones muestran únicamente recursos que el efecto realmente restaura.
+	if tipo in ["consumible", "pocion", "poción"]:
+		var efectos := _obtener_efectos_consumible(objeto)
+		if int(efectos.get("vida", 0)) > 0:
+			_agregar_dato_visual("slot_life", int(efectos["vida"]), Color(0.36, 0.10, 0.10, 1.0))
+		if int(efectos.get("eterium", 0)) > 0:
+			_agregar_dato_visual("slot_eterium", int(efectos["eterium"]), Color(0.10, 0.24, 0.43, 1.0))
+		return
+
+	# Daño y alcance usan los mismos valores por defecto que CombatSystem.
+	if CombatItemResolver.es_arma(objeto):
+		var combat_system := get_node_or_null("/root/Main/Systems/CombatSystem")
+		var danio_defecto := 8
+		var alcance_defecto := 64.0
+		if is_instance_valid(combat_system):
+			danio_defecto = int(combat_system.get("danio_arma_defecto"))
+			alcance_defecto = float(combat_system.get("alcance_arma"))
+		var danio := CombatItemResolver.obtener_danio_arma(objeto, danio_defecto)
+		var alcance := CombatItemResolver.obtener_alcance_arma(objeto, alcance_defecto)
+		if danio > 0:
+			_agregar_dato_visual("slot_damage", danio, Color(0.34, 0.10, 0.09, 1.0))
+		if alcance > 0.0:
+			_agregar_dato_visual("slot_area", int(round(alcance)), Color(0.30, 0.20, 0.12, 1.0))
+		var modalidad := "A DISTANCIA" if CombatItemResolver.obtener_modo_ataque(objeto) == "distancia" else "CUERPO A CUERPO"
+		_agregar_etiqueta_modalidad(modalidad)
+
+
+func _obtener_efectos_consumible(objeto: Dictionary) -> Dictionary:
+	var resultado := {"vida": 0, "eterium": 0}
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return resultado
+	var uso_variant: Variant = (propiedades_variant as Dictionary).get("uso", {})
+	if not uso_variant is Dictionary:
+		return resultado
+	var uso := uso_variant as Dictionary
+	if not bool(uso.get("permitido", true)):
+		return resultado
+
+	var efectos_variant: Variant = uso.get("efectos", null)
+	var efectos: Array = efectos_variant as Array if efectos_variant is Array else [uso]
+	for efecto_variant in efectos:
+		if not efecto_variant is Dictionary:
+			continue
+		var efecto := efecto_variant as Dictionary
+		var recurso := str(efecto.get("recurso", efecto.get("efecto", ""))).strip_edges().to_lower()
+		var magnitud_variant: Variant = efecto.get("magnitud", efecto.get("cantidad", 0))
+		if not (magnitud_variant is int or magnitud_variant is float):
+			continue
+		var magnitud := maxi(0, int(magnitud_variant))
+		if recurso in ["vida", "salud", "health"]:
+			resultado["vida"] = int(resultado["vida"]) + magnitud
+		elif recurso in ["eterium", "mana"]:
+			resultado["eterium"] = int(resultado["eterium"]) + magnitud
+	return resultado
+
+
+func _agregar_dato_visual(nombre_sprite: String, valor: int, color_fondo: Color) -> void:
+	var ruta := "res://assets/art/UI/Menus/%s.png" % nombre_sprite
+	var textura := load(ruta) as Texture2D
+	if textura == null:
+		push_warning("Inventario: no se encontró el sprite de dato " + ruta)
+		return
+
+	var marco := PanelContainer.new()
+	marco.custom_minimum_size = Vector2(42, 24)
+	marco.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = color_fondo
+	estilo.corner_radius_top_left = 3
+	estilo.corner_radius_top_right = 3
+	estilo.corner_radius_bottom_left = 3
+	estilo.corner_radius_bottom_right = 3
+	marco.add_theme_stylebox_override("panel", estilo)
+	marco.add_theme_constant_override("margin_left", 4)
+	marco.add_theme_constant_override("margin_top", 2)
+	marco.add_theme_constant_override("margin_right", 4)
+	marco.add_theme_constant_override("margin_bottom", 2)
+
+	var contenido := HBoxContainer.new()
+	contenido.add_theme_constant_override("separation", 3)
+	marco.add_child(contenido)
+	var icono := TextureRect.new()
+	icono.texture = textura
+	icono.custom_minimum_size = Vector2(16, 16)
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	contenido.add_child(icono)
+
+	var etiqueta := Label.new()
+	etiqueta.text = str(valor)
+	etiqueta.add_theme_color_override("font_color", Color(0.98, 0.91, 0.78, 1.0))
+	etiqueta.add_theme_font_size_override("font_size", 11)
+	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	contenido.add_child(etiqueta)
+	stats_row.add_child(marco)
+
+
+func _agregar_etiqueta_modalidad(texto: String) -> void:
+	var etiqueta := Label.new()
+	etiqueta.text = texto
+	etiqueta.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.82, 0.67, 1.0))
+	etiqueta.add_theme_font_size_override("font_size", 9)
+	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stats_row.add_child(etiqueta)
+
 
 func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
