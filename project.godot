@@ -49,6 +49,8 @@ enabled=PackedStringArray("res://addons/TileMapDual/plugin.cfg", "res://addons/A
 
 [gui]
 
+# Desactiva en la práctica los tooltips automáticos al pasar el cursor.
+timers/tooltip_delay=999999.0
 theme/custom="res://assets/fonts/pixelgrafia_theme.tres"
 
 [input]
