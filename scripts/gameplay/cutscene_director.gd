@@ -406,7 +406,7 @@ func _ejecutar_acciones_simultaneas(paso: Dictionary) -> void:
 	for accion_variant in acciones_variant:
 		if not accion_variant is Dictionary:
 			continue
-		var accion: Dictionary = accion_variant
+		var accion := accion_variant as Dictionary
 		match str(accion.get("tipo", "")).strip_edges().to_lower():
 			"gesto_npc":
 				var tween := _crear_tween_gesto_npc(accion)
