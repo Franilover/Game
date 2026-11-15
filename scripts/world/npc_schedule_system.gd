@@ -830,11 +830,14 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 
 	var habitantes: Array[Creature] = []
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if nodo is Creature and is_instance_valid(nodo):
+		if nodo is Creature and is_instance_valid(nodo) and not nodo.is_queued_for_deletion():
 			var asistente := nodo as Creature
 			var asiste_reunion := (
-				asistente == npc
-				or str(asistente.get_meta("rutina_actual", "")) == "reunion_nocturna_castillo"
+				asistente.is_alive
+				and (
+					asistente == npc
+					or str(asistente.get_meta("rutina_actual", "")) == "reunion_nocturna_castillo"
+				)
 			)
 			if asiste_reunion:
 				habitantes.append(asistente)
@@ -1946,7 +1949,12 @@ func _debe_asistir_grupo_reunion_castillo(npc: Creature, fecha: String) -> bool:
 		_asistencia_reunion_cache.clear()
 		var habitantes: Array[Creature] = []
 		for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-			if nodo is Creature and is_instance_valid(nodo) and (nodo as Creature).is_alive:
+			if (
+				nodo is Creature
+				and is_instance_valid(nodo)
+				and not nodo.is_queued_for_deletion()
+				and (nodo as Creature).is_alive
+			):
 				habitantes.append(nodo as Creature)
 		habitantes.sort_custom(func(a: Creature, b: Creature) -> bool:
 			var id_a := a.get_personaje_game_id().strip_edges()
