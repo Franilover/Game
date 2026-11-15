@@ -30,6 +30,12 @@ func _probar_clasificacion(errores: Array[String]) -> void:
 		errores.append("No conservó la compatibilidad del indicador es_arma.")
 	if not Resolver.es_arma({"categoria": "arma cuerpo a cuerpo"}):
 		errores.append("No reconoció una categoría directa de arma.")
+	if not Resolver.es_arma({"tipo": "arma_cuerpo_a_cuerpo"}):
+		errores.append("No reconoció un tipo de arma con sufijo de modalidad.")
+	if not Resolver.es_arma({"tipo": "equipo", "categoria": {"clave": "espadas", "nombre": "Espadas"}}):
+		errores.append("No reconoció la categoría relacionada del catálogo.")
+	if not Resolver.es_arma({"tipo": "equipo", "categoria_clave": "armas"}):
+		errores.append("No reconoció categoria_clave del catálogo.")
 	if not Resolver.es_arma({
 		"tipo_objeto": {"categoria_canonica": "arma"}
 	}):
