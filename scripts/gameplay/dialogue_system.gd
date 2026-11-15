@@ -2067,10 +2067,22 @@ func _agregar_opcion_consecuencia_social(opciones: Array[Dictionary], personaje_
 		clave = "consecuencia_promesas_rotas"
 		texto = "las promesas"
 		respuesta = "Recuerdo que algunas cosas que prometiste no llegaron a ocurrir. No voy a fingir que no pasó; la confianza necesita tiempo para recuperarse."
-	elif int(tendencias.get("ayudas", 0)) >= 3:
+	elif int(tendencias.get("traiciones", 0)) >= 1 or int(tendencias.get("mentiras", 0)) >= 2:
+		clave = "consecuencia_confianza"
+		texto = "la confianza entre nosotros"
+		respuesta = "Algunas cosas que ocurrieron cambiaron la forma en que confío en ti. No voy a ignorarlas, pero tampoco cerraré la puerta a que las cosas mejoren con el tiempo."
+	elif int(tendencias.get("faltas_respeto", 0)) >= 2:
+		clave = "consecuencia_limites"
+		texto = "el respeto"
+		respuesta = "Algunas conversaciones anteriores me hicieron sentir que no estabas escuchando mis límites. Prefiero que podamos hablar con más cuidado."
+	elif int(tendencias.get("apoyos", 0)) >= 4 or int(tendencias.get("ayudas", 0)) >= 3:
 		clave = "consecuencia_apoyo"
 		texto = "la ayuda que has ofrecido"
 		respuesta = "Has estado presente en varias ocasiones. No olvido esos gestos, aunque a veces no encuentre la forma de agradecértelos."
+	elif int(tendencias.get("conocimientos_compartidos", 0)) >= 3:
+		clave = "consecuencia_intereses_compartidos"
+		texto = "lo que hemos aprendido juntos"
+		respuesta = "Hemos compartido varias ideas y conocimientos. Me gusta que nuestras conversaciones no se queden siempre en lo superficial."
 	elif int(tendencias.get("faltas_respeto", 0)) >= 2:
 		clave = "consecuencia_limites"
 		texto = "el respeto"
