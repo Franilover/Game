@@ -38,7 +38,9 @@ var limites_chunk: Rect2 = Rect2()
 var entorno: String = "tierra"
 
 var _movimiento: CreatureMovement = null
-var _dialogue_system_dependency: DialogueSystem = null
+# Node evita una dependencia circular: DialogueSystem usa Creature como fuente
+# de diálogo, mientras Creature sólo necesita invocar su API pública.
+var _dialogue_system_dependency: Node = null
 var _mission_manager_dependency: MissionManagerService = null
 var _effects_root: Node = null
 var _world_items_dependency: GarliaWorldItems = null
@@ -77,7 +79,7 @@ var _caminando_fps: float = 8.0
 
 
 func configurar_dependencias(
-	dialogue_system: DialogueSystem,
+	dialogue_system: Node,
 	mission_manager: MissionManagerService,
 	effects_root: Node,
 	world_items: GarliaWorldItems,
@@ -1266,10 +1268,11 @@ func interact(
 
 
 func abrir_dialogo() -> void:
-	var dialogue_system := _dialogue_system_dependency
-	if dialogue_system == null or not is_instance_valid(dialogue_system):
+	if not is_instance_valid(_dialogue_system_dependency):
 		return
-	dialogue_system.abrir_desde(self)
+	if not _dialogue_system_dependency.has_method("abrir_desde"):
+		return
+	_dialogue_system_dependency.call("abrir_desde", self)
 
 
 func _die() -> void:
