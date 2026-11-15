@@ -2786,7 +2786,7 @@ func _abrir_selector_items(modo: String) -> void:
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.icon = ItemIconResolver.obtener_icono(objeto)
 		boton.text = nombre + "  x" + str(maxi(1, int(objeto.get("cantidad", 1))))
-				boton.tooltip_text = ""
+		boton.tooltip_text = ""
 		if modo == "regalo":
 		boton.set_meta("indice_inventario", indice)
 		boton.pressed.connect(_seleccionar_item_interaccion.bind(indice, item_id, modo))
