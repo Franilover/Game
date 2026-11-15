@@ -22,7 +22,7 @@ var _rutina_completada: bool = false
 
 var _rng := RandomNumberGenerator.new()
 
-const DISTANCIA_SEPARACION_NPC := 38.0
+const DISTANCIA_SEPARACION_NPC := 30.0
 const FUERZA_SEPARACION_NPC := 1.8
 
 
@@ -230,7 +230,10 @@ func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
 			var clave := nombre_a + "|" + nombre_b if nombre_a < nombre_b else nombre_b + "|" + nombre_a
 			var angulo := float(posmod(hash(clave), 360)) * PI / 180.0
 			alejamiento = Vector2.RIGHT.rotated(angulo)
-			if nombre_a > nombre_b:
+			var invertir := nombre_a > nombre_b
+			if nombre_a == nombre_b:
+				invertir = npc_actual.get_instance_id() > otro.get_instance_id()
+			if invertir:
 				alejamiento = -alejamiento
 		var peso := clampf((DISTANCIA_SEPARACION_NPC - distancia) / DISTANCIA_SEPARACION_NPC, 0.0, 1.0)
 		repulsion += alejamiento * peso
