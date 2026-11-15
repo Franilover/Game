@@ -1257,23 +1257,57 @@ func _actualizar_animacion_ocio_exterior(npc: Creature) -> void:
 	npc.set_meta("animacion_ocio_exterior_posicion", sprite.position)
 	npc.set_meta("animacion_ocio_exterior_rotacion", sprite.rotation)
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	var posicion_base := sprite.position
+	var rotacion_base := sprite.rotation
 	var tween := create_tween()
 	tween.set_loops()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
-	if nombre == "mara":
-		tween.tween_property(sprite, "rotation", 0.025, 1.1)
-		tween.tween_interval(1.0)
-		tween.tween_property(sprite, "rotation", 0.0, 0.55)
-		tween.tween_interval(1.4)
-	elif nombre == "nima":
-		tween.tween_property(sprite, "rotation", -0.025, 0.75)
-		tween.tween_property(sprite, "rotation", 0.0, 0.5)
-		tween.tween_interval(1.1)
-	else:
-		tween.tween_property(sprite, "position:y", sprite.position.y - 0.55, 1.0)
-		tween.tween_property(sprite, "position:y", sprite.position.y, 1.0)
-		tween.tween_interval(0.8)
+	match nombre:
+		"mara":
+			# Mira brevemente alrededor y vuelve a una postura reservada.
+			tween.tween_property(sprite, "rotation", rotacion_base + 0.025, 1.1)
+			tween.tween_interval(1.0)
+			tween.tween_property(sprite, "rotation", rotacion_base, 0.55)
+			tween.tween_interval(1.4)
+		"nima", "narel":
+			# Pequeñas inclinaciones, como si observaran algo con curiosidad.
+			tween.tween_property(sprite, "rotation", rotacion_base - 0.025, 0.75)
+			tween.tween_property(sprite, "rotation", rotacion_base, 0.5)
+			tween.tween_interval(1.1)
+		"bruna":
+			# Cambia el peso de un lado a otro, sin abandonar su sitio.
+			tween.tween_property(sprite, "position:x", posicion_base.x + 0.45, 0.8)
+			tween.tween_property(sprite, "rotation", rotacion_base - 0.018, 0.45)
+			tween.tween_property(sprite, "position:x", posicion_base.x, 0.8)
+			tween.tween_property(sprite, "rotation", rotacion_base, 0.45)
+			tween.tween_interval(0.9)
+		"darven":
+			# Una mirada breve a ambos lados, propia de alguien atento al entorno.
+			tween.tween_property(sprite, "rotation", rotacion_base + 0.018, 0.65)
+			tween.tween_interval(0.45)
+			tween.tween_property(sprite, "rotation", rotacion_base - 0.018, 0.65)
+			tween.tween_property(sprite, "rotation", rotacion_base, 0.45)
+			tween.tween_interval(1.0)
+		"saira":
+			# Se acomoda suavemente antes de continuar observando la plaza.
+			tween.tween_property(sprite, "position:x", posicion_base.x - 0.45, 0.9)
+			tween.tween_property(sprite, "position:x", posicion_base.x, 0.9)
+			tween.tween_interval(1.0)
+		"ivo":
+			# Movimiento más lento y pausado para sus descansos.
+			tween.tween_property(sprite, "position:y", posicion_base.y - 0.35, 1.6)
+			tween.tween_property(sprite, "position:y", posicion_base.y, 1.6)
+			tween.tween_interval(1.4)
+		"elian":
+			# Una animación tranquila mientras descansa fuera de la panadería.
+			tween.tween_property(sprite, "position:y", posicion_base.y - 0.5, 1.1)
+			tween.tween_property(sprite, "position:y", posicion_base.y, 1.1)
+			tween.tween_interval(1.0)
+		_:
+			tween.tween_property(sprite, "position:y", posicion_base.y - 0.45, 1.0)
+			tween.tween_property(sprite, "position:y", posicion_base.y, 1.0)
+			tween.tween_interval(0.8)
 	npc.set_meta("animacion_ocio_exterior_tween", tween)
 
 
