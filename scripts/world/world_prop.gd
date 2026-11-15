@@ -51,6 +51,9 @@ func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nu
 	variante = nueva_variante
 	semilla = nueva_semilla
 	datos = nuevos_datos.duplicate(true)
+	set_meta("atractor_refugio", bool(datos.get("atractor_refugio", false)))
+	if datos.has("refugio_clave"):
+		set_meta("refugio_clave", str(datos.get("refugio_clave", "")).strip_edges())
 
 	interactuable = (
 		tipo == "recurso"
