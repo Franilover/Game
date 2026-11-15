@@ -96,7 +96,7 @@ func validar() -> Array[String]:
 
 	var tipos_validos := [
 		"dialogo", "esperar", "camara", "gesto_npc",
-		"acciones_simultaneas", "mirar_npc", "orientar_grupo", "gesto_grupo", "interrupcion", "fundido",
+		"acciones_simultaneas", "mirar_npc", "orientar_grupo", "gesto_grupo", "interrupcion", "incorporar_npc", "retirar_npc", "fundido",
 		"temblor_camara", "preparar_npc", "fijar_npc",
 		"ruta_npc", "mover_jugador", "mover_npc",
 		"evento", "notificacion"
@@ -171,6 +171,11 @@ func validar() -> Array[String]:
 						errores.append("Paso %d: la acción %d no es un Dictionary." % [numero_paso, accion_indice + 1])
 						continue
 					errores.append_array(_validar_accion_simultanea(accion_variant as Dictionary, indice, accion_indice))
+			"incorporar_npc", "retirar_npc":
+				if not _campo_presente(paso, "npc"):
+					errores.append("Paso %d: %s necesita un NPC." % [numero_paso, tipo])
+				if not _campo_presente(paso, "x") or not _campo_presente(paso, "y"):
+					errores.append("Paso %d: %s necesita coordenadas x/y." % [numero_paso, tipo])
 			"preparar_npc", "fijar_npc":
 				if not _campo_presente(paso, "npc"):
 					errores.append("Paso %d: %s necesita un NPC." % [numero_paso, tipo])
