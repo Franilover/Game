@@ -1594,11 +1594,15 @@ func _al_cinematica_narrativa_solicitada(
 	var zoom_actual := _camera.zoom.x
 	var pasos: Array[Dictionary] = [
 		{"tipo":"camara","x":centro_real.x,"y":centro_real.y,"seguir_npcs":[nombre_a,nombre_b],"zoom":zoom_actual * (1.08 if etapa == 1 else 1.14),"duracion":0.75},
-		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
-		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
+		{"tipo":"acciones_simultaneas","acciones":[
+			{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
+			{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a}
+		]},
 		{"tipo":"esperar","segundos":0.25},
-		{"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.6},
-		{"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.6},
+		{"tipo":"acciones_simultaneas","acciones":[
+			{"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.6},
+			{"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.6}
+		]},
 		{"tipo":"esperar","segundos":0.5}
 	]
 	await _cutscene_director.ejecutar("relacion_%s_etapa_%d" % [clave, etapa], pasos, "en_vivo")
@@ -1640,10 +1644,12 @@ func _al_cinematica_acontecimiento_solicitada(
 	var zoom_actual := _camera.zoom.x
 	var pasos: Array[Dictionary] = [
 		{"tipo":"camara","x":centro_real.x,"y":centro_real.y,"seguir_npcs":[nombre_a,nombre_b],"zoom":zoom_actual * 1.12,"duracion":0.9},
-		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
-		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
-		{"tipo":"gesto_npc","npc":nombre_a,"gesto":"asentir","duracion":0.55},
-		{"tipo":"gesto_npc","npc":nombre_b,"gesto":"saludar","duracion":0.65},
+		{"tipo":"acciones_simultaneas","acciones":[
+			{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
+			{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
+			{"tipo":"gesto_npc","npc":nombre_a,"gesto":"asentir","duracion":0.55},
+			{"tipo":"gesto_npc","npc":nombre_b,"gesto":"saludar","duracion":0.65}
+		]},
 		{"tipo":"esperar","segundos":0.45}
 	]
 	await _cutscene_director.ejecutar("acontecimiento_%s" % clave, pasos, "en_vivo")
@@ -1699,11 +1705,15 @@ func _al_cinematica_reunion_nocturna_solicitada(
 	var zoom_actual := _camera.zoom.x
 	var pasos: Array[Dictionary] = [
 		{"tipo":"camara","x":centro.x,"y":centro.y,"seguir_npcs":[nombre_a,nombre_b],"zoom":zoom_actual * 1.12,"duracion":0.8},
-		{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
-		{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
+		{"tipo":"acciones_simultaneas","acciones":[
+			{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
+			{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a}
+		]},
 		{"tipo":"esperar","segundos":0.2},
-		{"tipo":"gesto_npc","npc":nombre_a,"gesto":gesto_a,"duracion":0.65},
-		{"tipo":"gesto_npc","npc":nombre_b,"gesto":gesto_b,"duracion":0.65},
+		{"tipo":"acciones_simultaneas","acciones":[
+			{"tipo":"gesto_npc","npc":nombre_a,"gesto":gesto_a,"duracion":0.65},
+			{"tipo":"gesto_npc","npc":nombre_b,"gesto":gesto_b,"duracion":0.65}
+		]},
 		{"tipo":"esperar","segundos":0.35}
 	]
 	await _cutscene_director.ejecutar("reunion_nocturna_%s" % clave, pasos, "en_vivo")
