@@ -842,7 +842,7 @@ func _actualizar_perfil_button() -> void:
 		username.left(1).to_upper()
 	)
 
-		profile_button.tooltip_text= ""
+	profile_button.tooltip_text = ""
 
 
 
