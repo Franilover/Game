@@ -1074,6 +1074,8 @@ func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int) -> void:
 	if not is_instance_valid(npc):
 		return
+	if edificio_id == "castillo":
+		return
 	var interior_activo := bool(_zona.get("_interior_activo")) if is_instance_valid(_zona) else false
 	var interior_actual := str(_zona.get("_entrada_interior_id")) if is_instance_valid(_zona) else ""
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
