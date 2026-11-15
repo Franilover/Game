@@ -143,7 +143,6 @@ func _run() -> void:
 	if alimento_no_permitido.consumir_por_criatura(["otro-id"]):
 		_fail("Una criatura consumió un recurso fuera de su lista permitida.")
 		return
-	alimento.free()
 	alimento_no_permitido.free()
 
 	# Los ataques de contacto deben acercarse antes de iniciar el golpe.
