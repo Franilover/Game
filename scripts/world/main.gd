@@ -319,6 +319,10 @@ func _process(delta: float) -> void:
 			_configurar_camara()
 	_seguir_jugador()
 
+	# Si el jugador cancela una escena, el director libera su estado aunque
+	# la coroutine original estuviera esperando una animación ya interrumpida.
+	if _procesando_cinematica_pendiente and is_instance_valid(_cutscene_director) and not _cutscene_director.esta_activo():
+		_procesando_cinematica_pendiente = false
 	_cinematica_proximidad_elapsed += delta
 	if _cinematica_proximidad_elapsed >= 0.25:
 		_cinematica_proximidad_elapsed = 0.0
