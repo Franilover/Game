@@ -29,6 +29,7 @@ var _tweens_actores: Array[Tween] = []
 var _posicion_jugador_inicio := Vector2.ZERO
 var _velocidad_jugador_inicio := Vector2.ZERO
 var _jugador_movido_cinematica: bool = false
+var _estado_rutas_npc: Dictionary = {}
 var _modo_cinematica: String = "planeada"
 var _pausa_previa: bool = false
 var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
@@ -121,7 +122,11 @@ func ejecutar_recurso(
 	var modo_ejecucion := tipo_override.strip_edges()
 	if modo_ejecucion.is_empty():
 		modo_ejecucion = secuencia.modo
-	var pasos_resueltos: Array = _resolver_parametros_cinematica(secuencia.pasos, parametros)
+	var pasos_variant: Variant = _resolver_parametros_cinematica(secuencia.pasos, parametros)
+	if not pasos_variant is Array:
+		push_warning("CutsceneDirector [%s]: los pasos resueltos no forman una lista." % secuencia.clave)
+		return false
+	var pasos_resueltos: Array = pasos_variant
 	var clave_resuelta := str(_resolver_parametros_cinematica(secuencia.clave, parametros))
 	return await ejecutar(clave_resuelta, pasos_resueltos, modo_ejecucion)
 
@@ -140,6 +145,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	_cancelando = false
 	_tweens_actores.clear()
 	_jugador_movido_cinematica = false
+	_estado_rutas_npc.clear()
 	if is_instance_valid(_camera):
 		_zoom_original = _camera.zoom
 		_offset_original = _camera.offset
@@ -268,6 +274,12 @@ func cancelar() -> void:
 		_player.global_position = _posicion_jugador_inicio
 		if _player is CharacterBody2D:
 			(_player as CharacterBody2D).velocity = _velocidad_jugador_inicio
+	for estado_ruta in _estado_rutas_npc.values():
+		var npc_ruta: Creature = estado_ruta.get("nodo") as Creature
+		if is_instance_valid(npc_ruta):
+			npc_ruta.global_position = estado_ruta.get("posicion", npc_ruta.global_position)
+			npc_ruta.velocity = estado_ruta.get("velocity", npc_ruta.velocity)
+	_estado_rutas_npc.clear()
 	if is_instance_valid(_dialogue) and _dialogue.esta_abierto():
 		_dialogue.cerrar()
 	await _restaurar_camara()
@@ -583,6 +595,14 @@ func _ejecutar_ruta_npc(paso: Dictionary, generacion: int) -> void:
 	if _modo_cinematica == "planeada":
 		_guardar_estado_npc(npc)
 		npc.show()
+	elif _modo_cinematica == "en_vivo":
+		var id_ruta := str(npc.get_instance_id())
+		if not _estado_rutas_npc.has(id_ruta):
+			_estado_rutas_npc[id_ruta] = {
+				"nodo": npc,
+				"posicion": npc.global_position,
+				"velocity": npc.velocity
+			}
 	var puntos_variant: Variant = paso.get("puntos", [])
 	var puntos: Array = puntos_variant if puntos_variant is Array else []
 	if puntos.is_empty() and paso.has("x") and paso.has("y"):
@@ -753,6 +773,7 @@ func _finalizar() -> void:
 	_clave_actual = ""
 	_modo_cinematica = "planeada"
 	_seguimiento_camara_npcs.clear()
+	_estado_rutas_npc.clear()
 	if is_in_group("modal_ui"):
 		remove_from_group("modal_ui")
 	cinematica_finalizada.emit(clave_finalizada)
