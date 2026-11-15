@@ -81,7 +81,7 @@ func _process(delta: float) -> void:
 		var zoom_horizontal := tamano_viewport.x / tamano_necesario.x
 		var zoom_vertical := tamano_viewport.y / tamano_necesario.y
 		zoom_ajustado = minf(_zoom_seguimiento_base, minf(zoom_horizontal, zoom_vertical))
-	zoom_ajustado = clampf(zoom_ajustado, 0.65, _zoom_seguimiento_base)
+	zoom_ajustado = clampf(zoom_ajustado, 0.5, maxf(0.5, _zoom_seguimiento_base))
 
 	var factor := clampf(delta * 4.5, 0.0, 1.0)
 	_camera.global_position = _camera.global_position.lerp(centro, factor)
@@ -767,7 +767,8 @@ func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
 	_tween_camara.set_parallel(true)
 	if _seguimiento_camara_npcs.is_empty():
 		_tween_camara.tween_property(_camera, "global_position", destino, duracion)
-	_tween_camara.tween_property(_camera, "zoom", Vector2.ONE * zoom_objetivo, duracion)
+	if _seguimiento_camara_npcs.is_empty():
+		_tween_camara.tween_property(_camera, "zoom", Vector2.ONE * zoom_objetivo, duracion)
 	var offset_objetivo := Vector2(
 		float(paso.get("offset_x", _offset_original.x)),
 		float(paso.get("offset_y", _offset_original.y))
