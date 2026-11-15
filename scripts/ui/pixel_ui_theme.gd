@@ -60,6 +60,11 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 		control.add_theme_color_override("font_outline_color", Color("#302014"))
 		control.add_theme_constant_override("outline_size", 2)
 
+	# El foco de teclado no debe dibujar el contorno blanco predeterminado de Godot.
+	# Los estados normal, hover y pressed ya tienen el diseño visual propio del juego.
+	if control is BaseButton:
+		control.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
 	var is_slot_button := control is Button and (
 		control.name == "InventorySlot"
 		or control.name == "EquipmentSlot"
