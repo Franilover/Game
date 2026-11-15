@@ -243,6 +243,18 @@ func _run() -> void:
 	if float(ai._obtener_estado_necesidades().get("fatiga", 100.0)) >= 70.0:
 		_fail("La actividad de descanso seleccionada no recuperó la fatiga.")
 		return
+	ai._fatiga_actual = 31.0
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria != "reposar":
+		_fail("El descanso terminó antes de alcanzar el umbral de salida.")
+		return
+	ai._fatiga_actual = 30.0
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria == "reposar":
+		_fail("El descanso no terminó al alcanzar el umbral de salida.")
+		return
 
 	# Seguir una especie no debe convertirse automáticamente en un ataque al contacto.
 	ai.configuracion_ia = {"respuestas_ecologicas": {"competencia": "perseguir"}}
