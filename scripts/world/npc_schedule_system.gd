@@ -524,6 +524,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			npc.set_meta("rutina_error_firma", firma_aviso)
 	var clave_rutina := str(rutina.get("clave", "regreso_hogar")).strip_edges()
 	var ubicacion := str(rutina.get("ubicacion_clave", hogar)).strip_edges().to_lower()
+	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
+	if actividad.is_empty():
+		actividad = "descansar"
 	# Ivo sólo va a comprar pan si Elian tiene turno en la panadería en
 	# este mismo tramo. Si no coincide, aprovecha ese rato en la plaza.
 	if nombre_npc == "ivo" and ubicacion == "panaderia" and not _el_npc_tiene_rutina_en_ubicacion("elian", "panaderia", dia_semana, minutos):
@@ -534,9 +537,6 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		rutina["variacion_posicion"] = Vector2(18.0, 132.0)
 	if ubicacion.is_empty() or ubicacion == "null" or not POSICIONES.has(ubicacion):
 		ubicacion = hogar
-	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
-	if actividad.is_empty():
-		actividad = "descansar"
 
 	# La lluvia modifica temporalmente las actividades al aire libre.
 	# Los NPC que ya están dentro o cuyo trabajo ocurre en un edificio continúan allí.
