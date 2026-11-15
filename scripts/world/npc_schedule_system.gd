@@ -569,7 +569,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			npc.set_meta("resumen_dia_reunion_rutina", str(npc.get_meta("rutina_actual", "")))
 			npc.set_meta("resumen_dia_reunion_ubicacion", str(npc.get_meta("rutina_ubicacion", "")))
 	else:
-		for clave_social_castillo in ["grupo_social_castillo_id", "grupo_social_castillo_nombres", "puesto_social_castillo"]:
+		for clave_social_castillo in [
+			"grupo_social_castillo_id", "grupo_social_castillo_nombres",
+			"puesto_social_castillo", "reunion_castillo_fase",
+			"reunion_castillo_firma_asistentes", "reunion_castillo_dia"
+		]:
 			npc.remove_meta(clave_social_castillo)
 	var ubicacion := str(rutina.get("ubicacion_clave", hogar)).strip_edges().to_lower()
 	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
@@ -860,7 +864,10 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	var contenedor_npc := npc.get_parent() as Node2D
 	if not is_instance_valid(contenedor_npc):
 		return
-	var destino_global := contenedor_npc.to_global(centro_grupo + offsets[puesto_npc])
+	var cantidad_integrantes := maxi(1, (grupos[grupo_npc] as Array).size())
+	var puesto_destino := posmod(puesto_npc + fase, cantidad_integrantes)
+	puesto_destino = mini(puesto_destino, offsets.size() - 1)
+	var destino_global := contenedor_npc.to_global(centro_grupo + offsets[puesto_destino])
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
 		return
