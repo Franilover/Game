@@ -707,13 +707,14 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.datos["actividad_actual"] = actividad
 
 
-## Reorganiza la reunión en grupos pequeños. Cada cinco minutos los
-## habitantes cambian de grupo y ocupan otro punto cercano para continuar
-## conversando con personas distintas.
+## Reorganiza la reunión en grupos pequeños con pausas largas.
+## Los habitantes permanecen conversando durante 45 minutos del mundo antes
+## de cambiar de grupo, evitando desplazamientos constantes que interrumpan
+## las conversaciones y hagan que la reunión parezca una ronda de patrullaje.
 func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> void:
 	if not is_instance_valid(npc) or not is_instance_valid(_zona) or not _malla_lista:
 		return
-	var fase := maxi(0, int((minutos - 1260) / 5))
+	var fase := maxi(0, int((minutos - 1260) / 45))
 	if int(npc.get_meta("reunion_castillo_fase", -1)) == fase:
 		return
 	var habitantes: Array[Creature] = []
