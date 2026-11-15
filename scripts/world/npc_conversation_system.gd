@@ -300,6 +300,8 @@ var _zona_objeto_evento: Node2D = null
 var _temporizador_saludos := 0.0
 var _saludos_espontaneos: Dictionary = {}
 var _reacciones_evento_vistas: Dictionary = {}
+var _reacciones_jugador: Dictionary = {}
+var _temporizador_reaccion_jugador := 0.0
 
 
 func configurar(
@@ -353,6 +355,7 @@ func actualizar(
 		return
 
 	_actualizar_saludos_espontaneos(delta)
+	_actualizar_reacciones_al_jugador(delta, jugador, dialogo)
 
 	_temporizador_busqueda += delta
 	if _temporizador_busqueda < INTERVALO_BUSQUEDA:
@@ -1228,6 +1231,50 @@ func _procesar_reacciones_evento_comunitario(tipo_evento: String) -> void:
 		if _iniciar_reaccion_visual(npc, gesto):
 			reaccionados += 1
 
+## Los habitantes reaccionan si el jugador pasa rápidamente muy cerca.
+## La reacción es breve, individual y tiene enfriamiento propio por NPC.
+func _actualizar_reacciones_al_jugador(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
+		return
+	if is_instance_valid(dialogo) and dialogo.esta_abierto():
+		return
+	_temporizador_reaccion_jugador += maxf(delta, 0.0)
+	if _temporizador_reaccion_jugador < 0.12:
+		return
+	_temporizador_reaccion_jugador = 0.0
+
+	var velocidad_jugador := jugador.velocity.length()
+	var estado_jugador := int(jugador.get("state")) if jugador.get("state") != null else -1
+	var esta_dasheando := estado_jugador == 4
+	# Caminar normalmente no provoca reacciones; correr o usar dash sí.
+	if not esta_dasheando and velocidad_jugador < 185.0:
+		return
+
+	var distancia_reaccion := 112.0 if esta_dasheando else 88.0
+	var npcs := _obtener_npcs_torres()
+	for npc in npcs:
+		if not _npc_puede_reaccionar_evento(npc):
+			continue
+		if npc.global_position.distance_to(jugador.global_position) > distancia_reaccion:
+			continue
+		var id := npc.get_personaje_game_id().strip_edges()
+		if id.is_empty():
+			id = npc.get_nombre_visual().strip_edges().to_lower()
+		var ultimo := float(_reacciones_jugador.get(id, -1000.0))
+		if _tiempo_sistema - ultimo < 14.0:
+			continue
+		var gesto := "sobresalto" if esta_dasheando else "mirada_rapida"
+		# Cada habitante conserva un matiz reconocible sin alterar su personalidad
+		# ni inventar cambios de relación con el jugador.
+		if not esta_dasheando and posmod(hash(id), 3) == 0:
+			gesto = "sobresalto"
+		if _iniciar_reaccion_visual(npc, gesto):
+			_reacciones_jugador[id] = _tiempo_sistema
+			if _reacciones_jugador.size() > 64:
+				_reacciones_jugador.clear()
+				_reacciones_jugador[id] = _tiempo_sistema
+
+
 func _npc_puede_reaccionar_evento(npc: Creature) -> bool:
 	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
 		return false
@@ -1260,6 +1307,12 @@ func _iniciar_reaccion_visual(npc: Creature, gesto: String) -> bool:
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	match gesto:
+		"sobresalto":
+			tween.tween_property(sprite, "scale", escala_base * Vector2(0.90, 1.08), 0.10)
+			tween.tween_property(sprite, "scale", escala_base, 0.24)
+		"mirada_rapida":
+			tween.tween_property(sprite, "scale", escala_base * Vector2(1.035, 0.965), 0.12)
+			tween.tween_property(sprite, "scale", escala_base, 0.22)
 		"aplaudir":
 			tween.tween_property(sprite, "scale", escala_base * Vector2(1.04, 0.96), 0.14)
 			tween.tween_property(sprite, "scale", escala_base, 0.14)
