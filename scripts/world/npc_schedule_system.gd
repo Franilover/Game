@@ -593,7 +593,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if not clima_lluvioso:
 		npc.remove_meta("refugio_lluvia_clave")
 		npc.remove_meta("reaccion_climatica")
-	elif esta_en_edificio:
+	elif esta_en_edificio and clave_rutina != "reunion_nocturna_castillo":
 		# Si ya encontró techo, permanece allí mientras siga lloviendo,
 		# aunque su horario habitual indique una actividad exterior.
 		var edificio_actual_meta := str(npc.get_meta("rutina_edificio_id", ""))
@@ -606,7 +606,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				esta_en_horario = true
 				npc.set_meta("reaccion_climatica", "resguardarse_de_la_lluvia")
 				break
-	elif not ENTRADAS_INTERIORES.has(ubicacion):
+	elif clave_rutina != "reunion_nocturna_castillo" and not ENTRADAS_INTERIORES.has(ubicacion):
 		var refugio_guardado := str(npc.get_meta("refugio_lluvia_clave", "")).strip_edges()
 		var refugio := refugio_guardado if ENTRADAS_INTERIORES.has(refugio_guardado) else _seleccionar_refugio_lluvia(npc, hogar)
 		if not refugio.is_empty():
