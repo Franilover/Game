@@ -600,6 +600,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			if is_instance_valid(movimiento_interior):
 				movimiento_interior.detener_por_rutina()
 			npc.remove_meta("rutina_paseo_interior_activo")
+			npc.remove_meta("rutina_paseo_interior_siguiente")
 			npc.set_meta("rutina_en_transito", false)
 		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
 			_zona.call("sacar_npc_del_interior", npc)
