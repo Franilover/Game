@@ -1412,6 +1412,10 @@ func restaurar_estado_guardado(estado: Dictionary) -> void:
 		# _entrar_al_interior captura la posición actual como salida; sustituirla
 		# por la posición exterior original guardada, no por la interior.
 		_posicion_exterior = posicion_exterior_guardada
+	else:
+		# Compatibilidad con saves antiguos sin coordenadas exteriores:
+		# volver a la puerta del edificio en vez de quedar en el interior.
+		_posicion_exterior = _obtener_posicion_entrada_global(entrada_guardada)
 	_jugador.global_position = posicion_interior
 	print("ReinoTorres: interior restaurado → ", entrada_id)
 
