@@ -7,7 +7,6 @@ mouse_filter = 0
 expand_icon = true
 icon_alignment = 1
 text = "—"
-tooltip_text = "Espacio de mano"
 
 [node name="HandKey" type="Label" parent="."]
 offset_left = 4.0
