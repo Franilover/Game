@@ -1744,6 +1744,23 @@ func _ejecutar_cinematica_intercambio_social(
 		tercero = _buscar_tercero_cinematica(nombre_a, nombre_b, centro)
 	var usar_tercero := is_instance_valid(tercero) and (es_encuentro_trio or posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 1)
 	var usar_interrupcion := posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 0
+	if es_encuentro_trio and is_instance_valid(tercero):
+		var npc_a_grupo := _buscar_npc_cinematica(nombre_a)
+		var npc_b_grupo := _buscar_npc_cinematica(nombre_b)
+		var centro_grupo := (npc_a_grupo.global_position + npc_b_grupo.global_position + tercero.global_position) / 3.0
+		var secuencia_grupo := load("res://resources/cutscenes/reunion_trio.tres") as CutsceneSequence
+		if is_instance_valid(secuencia_grupo):
+			await _cutscene_director.ejecutar_recurso(secuencia_grupo, {
+				"clave": clave,
+				"npc_a": nombre_a,
+				"npc_b": nombre_b,
+				"tercero": tercero.get_nombre_visual(),
+				"x": centro_grupo.x,
+				"y": centro_grupo.y,
+				"zoom": zoom,
+				"duracion_camara": duracion_camara
+			}, "en_vivo")
+			return
 	var ruta_secuencia := "res://resources/cutscenes/intercambio_con_tercero.tres" if usar_tercero else ("res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres")
 	var invertir_turno := posmod(hash(nombre_a + "|" + nombre_b + "|" + clave), 2) == 1
 	var interrumpe := nombre_a if invertir_turno else nombre_b
