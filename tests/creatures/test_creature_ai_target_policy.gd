@@ -4,6 +4,7 @@ const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
+const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
 
 
 func _ready() -> void:
@@ -138,7 +139,31 @@ func _run() -> void:
 	if str(refugio_prop.get_meta("refugio_clave", "")) != "cueva-segura":
 		_fail("El refugio no conservó su clave de búsqueda.")
 		return
-	refugio_prop.free()
+	var refugio_root := Node2D.new()
+	get_tree().root.add_child(refugio_root)
+	var refugio_manager := WorldEntityManagerScript.new() as WorldEntityManager
+	refugio_manager.configurar(refugio_root)
+	refugio_prop.position = Vector2(40.0, 0.0)
+	if not refugio_manager.registrar_global(refugio_prop):
+		_fail("No se pudo registrar el refugio de prueba.")
+		return
+	ai.entity_manager = refugio_manager
+	ai.configuracion_ia = {"horario": {
+		"buscar_refugio": true,
+		"refugio_objetivo": "cueva-segura",
+		"radio_refugio": 100.0
+	}}
+	ai.actividad_horaria = "reposar"
+	if ai._buscar_refugio() != refugio_prop:
+		_fail("La IA no encontró un WorldProp configurado como refugio.")
+		return
+	ai.objetivo = refugio_prop
+	if not ai._es_objetivo_refugio():
+		_fail("La IA no reconoció el WorldProp como destino de refugio.")
+		return
+	ai.objetivo = null
+	refugio_root.queue_free()
+	refugio_manager.free()
 
 	var alimento := WorldItemScript.new() as WorldItem
 	alimento.configurar({"item_id": "recurso-test", "cantidad": 1})
