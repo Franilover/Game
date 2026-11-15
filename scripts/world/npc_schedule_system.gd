@@ -185,6 +185,11 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
 		_aplicar_rutina(npc, dia_semana, minutos)
 		_actualizar_paseo_ambiental_exterior(npc, minutos)
+	# Si el jugador cargó una partida dentro de un edificio, algunos NPC
+	# pueden materializarse después de reconstruir la habitación. Una vez que
+	# sus rutinas están actualizadas, incorporar a los que trabajan allí.
+	if is_instance_valid(_zona) and _zona.has_method("sincronizar_npcs_del_interior"):
+		_zona.call("sincronizar_npcs_del_interior")
 	_actualizar_interaccion_panaderia()
 
 
