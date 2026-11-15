@@ -678,6 +678,32 @@ func _deduplicar_npcs_reino_torres() -> void:
 		npc.queue_free()
 
 
+func _retirar_npcs_canonicos_ausentes() -> void:
+	var identidades_canonicas: Dictionary = {}
+	for personaje_variant in WorldData.obtener_personajes_game():
+		if not personaje_variant is Dictionary:
+			continue
+		var personaje := personaje_variant as Dictionary
+		if str(personaje.get("reino_clave", "")).strip_edges().to_lower() != "torres":
+			continue
+		var personaje_id := str(personaje.get("id", "")).strip_edges()
+		if not personaje_id.is_empty():
+			identidades_canonicas[personaje_id] = true
+
+	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not npc_variant is Creature or not is_instance_valid(npc_variant):
+			continue
+		var npc := npc_variant as Creature
+		var personaje_id := npc.get_personaje_game_id().strip_edges()
+		if personaje_id.is_empty() or identidades_canonicas.has(personaje_id):
+			continue
+		# Los personajes locales sin registro canónico conservan su instancia;
+		# sólo se retiran identidades que ya no pertenecen al catálogo de Torres.
+		npc.remove_from_group("torres_game_npc")
+		npc.remove_from_group("interactable")
+		npc.queue_free()
+
+
 func _materializar_npcs_reino_torres() -> void:
 	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "reino_torres":
 		return
@@ -689,6 +715,7 @@ func _materializar_npcs_reino_torres() -> void:
 		return
 
 	_deduplicar_npcs_reino_torres()
+	_retirar_npcs_canonicos_ausentes()
 	var existentes: Dictionary = {}
 	for npc_existente in get_tree().get_nodes_in_group("torres_game_npc"):
 		if npc_existente is Creature and is_instance_valid(npc_existente):
