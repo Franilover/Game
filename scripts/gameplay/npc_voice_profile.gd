@@ -80,7 +80,7 @@ static func adaptar(texto_original: String, nombre_personaje: String) -> String:
 			["No quiero inventar una explicación", "No quiero sacar conclusiones porque sí"],
 			["Ivo, ¿te parece si anoto cuándo te cansas y qué estabas haciendo antes?", "Oye, Ivo, ¿te tinca que anote cuándo te cansas y qué estabas haciendo antes?"],
 			["Sólo reunir observaciones y ver si aparece algún patrón.", "Por ahora quiero juntar datos y ver si se repite algo."],
-			["De acuerdo. Si sirve para entender qué me pasa, puedo ayudarte.", "Ya, si sirve para cachar qué me pasa, te ayudo."]
+			["De acuerdo. Si sirve para entender qué me pasa, puedo ayudarte.", "Ya, si sirve para cachar qué me pasa, te ayudo."],
 			["reunir observaciones", "juntar observaciones"],
 			["¿Me acompañas?", "¿Vienes conmigo?"]
 		]
