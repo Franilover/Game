@@ -1851,7 +1851,7 @@ func _registrar_rutina_compartida() -> void:
 func _buscar_encuentro_trio_mara_ivo_nima(jugador: Node2D, clave_dia: String) -> bool:
 	if not is_instance_valid(jugador) or not is_instance_valid(_relationship_system):
 		return false
-	if bool(_vistas_por_dia.get("encuentro_trio_mara_ivo_nima", false)):
+	if str(_vistas_por_dia.get("encuentro_trio_mara_ivo_nima", "")) == clave_dia:
 		return false
 	var nombres: Array[String] = ["mara", "ivo", "nima"]
 	var participantes: Dictionary = {}
@@ -1912,7 +1912,7 @@ func _buscar_encuentro_trio_mara_ivo_nima(jugador: Node2D, clave_dia: String) ->
 		"_sin_progreso_etapa": true,
 		"_cinematica_trio": true
 	})
-	_vistas_por_dia["encuentro_trio_mara_ivo_nima"] = true
+	_vistas_por_dia["encuentro_trio_mara_ivo_nima"] = clave_dia
 	return true
 
 
