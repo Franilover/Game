@@ -490,12 +490,17 @@ func _mostrar_linea_actual() -> void:
 	if hablante.is_empty() and is_instance_valid(_fuente):
 		hablante = _fuente.get_nombre()
 
-	var texto := str(
+	var texto_base := str(
 		linea.get(
 			"texto",
 			linea.get("text", "")
 		)
 	).strip_edges()
+	var texto := _resolver_texto_por_personalidad(
+		texto_base,
+		linea.get("variantes_personalidad", {}),
+		linea.get("variantes_relacion", {})
+	)
 
 	speaker_label.text = hablante
 	_actualizar_retrato(hablante)
@@ -504,6 +509,62 @@ func _mostrar_linea_actual() -> void:
 	_temporizador_texto = 0.0
 	text_label.text = ""
 	_actualizar_boton_accion()
+
+
+## Resuelve variantes declaradas en los datos narrativos usando el perfil social
+## de Supabase y la relación guardada en la partida. Las claves son deterministas.
+func _resolver_texto_por_personalidad(
+	texto_base: String,
+	variantes_personalidad_variant: Variant,
+	variantes_relacion_variant: Variant
+) -> String:
+	var texto := texto_base
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
+	if personaje_id.is_empty() or relationship_system == null:
+		return texto
+
+	var personalidad := relationship_system.obtener_personalidad(personaje_id)
+	var relacion := relationship_system.obtener_relacion(personaje_id)
+	var candidatos: Array[Dictionary] = []
+	var variantes_relacion: Dictionary = variantes_relacion_variant if variantes_relacion_variant is Dictionary else {}
+	var ejes_relacion := ["amistad", "confianza", "respeto", "afecto"]
+	for eje in ejes_relacion:
+		var valor_relacion := float(relacion.get(eje, 0.0))
+		var clave_alta := eje + "_alta"
+		var clave_baja := eje + "_baja"
+		if valor_relacion >= 25.0 and variantes_relacion.has(clave_alta):
+			candidatos.append({"clave": clave_alta, "peso": valor_relacion - 25.0, "orden": candidatos.size()})
+		elif valor_relacion <= -15.0 and variantes_relacion.has(clave_baja):
+			candidatos.append({"clave": clave_baja, "peso": absf(valor_relacion) - 15.0, "orden": candidatos.size()})
+
+	var variantes_personalidad: Dictionary = variantes_personalidad_variant if variantes_personalidad_variant is Dictionary else {}
+	var ejes_personalidad := ["sociabilidad", "curiosidad", "generosidad", "prudencia", "agresividad"]
+	for eje in ejes_personalidad:
+		var valor_personalidad := float(personalidad.get(eje, 50.0))
+		var clave_alta := eje + "_alta"
+		var clave_baja := eje + "_baja"
+		if valor_personalidad >= 65.0 and variantes_personalidad.has(clave_alta):
+			candidatos.append({"clave": clave_alta, "peso": valor_personalidad - 65.0, "orden": candidatos.size()})
+		elif valor_personalidad <= 35.0 and variantes_personalidad.has(clave_baja):
+			candidatos.append({"clave": clave_baja, "peso": 35.0 - valor_personalidad, "orden": candidatos.size()})
+
+	if candidatos.is_empty():
+		return texto
+	candidatos.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if not is_equal_approx(float(a.get("peso", 0.0)), float(b.get("peso", 0.0))):
+			return float(a.get("peso", 0.0)) > float(b.get("peso", 0.0))
+		return int(a.get("orden", 0)) < int(b.get("orden", 0))
+	)
+	var clave_elegida := str(candidatos[0].get("clave", ""))
+	if variantes_relacion.has(clave_elegida):
+		var texto_relacion := str(variantes_relacion.get(clave_elegida, "")).strip_edges()
+		if not texto_relacion.is_empty():
+			return texto_relacion
+	if variantes_personalidad.has(clave_elegida):
+		var texto_personalidad := str(variantes_personalidad.get(clave_elegida, "")).strip_edges()
+		if not texto_personalidad.is_empty():
+			return texto_personalidad
+	return texto
 
 
 func _actualizar_retrato(hablante: String) -> void:
@@ -2230,7 +2291,12 @@ func _seleccionar_respuesta(indice: int) -> void:
 		_seleccionar_tema_conversacion(_crear_opcion_despedida_social())
 		return
 	var texto_jugador := str(opcion.get("jugador", opcion.get("texto_jugador", opcion.get("texto", "")))).strip_edges()
-	var texto_npc := str(opcion.get("respuesta", opcion.get("reaccion", ""))).strip_edges()
+	var texto_npc_base := str(opcion.get("respuesta", opcion.get("reaccion", ""))).strip_edges()
+	var texto_npc := _resolver_texto_por_personalidad(
+		texto_npc_base,
+		opcion.get("respuesta_variantes_personalidad", {}),
+		opcion.get("respuesta_variantes_relacion", {})
+	)
 	if texto_jugador.is_empty() or texto_npc.is_empty():
 		return
 
