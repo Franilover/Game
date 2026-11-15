@@ -886,12 +886,26 @@ func _es_objetivo_ecologico_valido(candidato: Node2D) -> bool:
 			candidato as Creature
 		)
 
-		return tipo_relacion in [
-			"depredacion",
-			"parasitismo"
-		]
+	return not _obtener_respuesta_ecologica(tipo_relacion).is_empty()
 
-	return false
+
+func _obtener_respuesta_ecologica(tipo_relacion: String) -> String:
+	var tipo := tipo_relacion.strip_edges().to_lower()
+	if tipo.is_empty():
+		return ""
+
+	# Compatibilidad: las relaciones depredación/parasitismo mantienen
+	# su respuesta histórica si no existe una regla específica.
+	var respuestas: Variant = configuracion_ia.get("respuestas_ecologicas", {})
+	if respuestas is Dictionary and (respuestas as Dictionary).has(tipo):
+		var respuesta := str((respuestas as Dictionary).get(tipo, "")).strip_edges().to_lower()
+		if respuesta in ["atacar", "huir", "perseguir", "investigar"]:
+			return respuesta
+		return ""
+
+	if tipo in ["depredacion", "parasitismo"]:
+		return "atacar"
+	return ""
 
 
 func _obtener_relacion_ecologica(
@@ -1052,13 +1066,9 @@ func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 		var relacion := _obtener_relacion_ecologica(
 			candidato as Creature
 		)
-
-		match relacion:
-			"depredacion", "parasitismo":
-				return "atacar"
-
-			_:
-				pass
+		var respuesta_ecologica := _obtener_respuesta_ecologica(relacion)
+		if not respuesta_ecologica.is_empty():
+			return respuesta_ecologica
 
 	match perfil:
 		Perfil.DRAMARIAS:
