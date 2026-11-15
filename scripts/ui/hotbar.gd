@@ -460,7 +460,6 @@ func _configurar_slot(
 	var categoria_texto := ""
 	if categoria_variant is Dictionary:
 		categoria_texto = str((categoria_variant as Dictionary).get("nombre", "")).strip_edges()
-	if not categoria_texto.is_empty():
 
 
 func _actualizar_seleccion() -> void:
