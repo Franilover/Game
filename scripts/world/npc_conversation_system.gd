@@ -453,7 +453,7 @@ func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2
 	if not cerca_de_participantes:
 		return false
 
-	var otros_nombres: Array[String] = []
+	var otros_nombres := PackedStringArray()
 	for participante_nombre in [npc_a_nombre, npc_b_nombre, npc_c_nombre]:
 		if not participante_nombre.is_empty() and participante_nombre != nombre:
 			otros_nombres.append(participante_nombre)
