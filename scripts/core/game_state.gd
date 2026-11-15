@@ -551,10 +551,25 @@ func capturar_estado_desde_juego(jugador: Player) -> void:
 	if is_instance_valid(escena_actual):
 		var zone_manager := escena_actual.get_node_or_null("World/ZoneManager")
 		if is_instance_valid(zone_manager):
-			world_state.flags["zona_actual_tipo"] = str(zone_manager.call("obtener_tipo_actual"))
+			var tipo_zona := str(zone_manager.call("obtener_tipo_actual"))
+			world_state.flags["zona_actual_tipo"] = tipo_zona
 			var zona := zone_manager.call("obtener_zona_actual") as Node
 			if is_instance_valid(zona) and zona.has_method("obtener_estado_guardado"):
-				world_state.flags["estado_zona_actual"] = zona.call("obtener_estado_guardado").duplicate(true)
+				var estado_zona_variant: Variant = zona.call("obtener_estado_guardado")
+				if estado_zona_variant is Dictionary:
+					var estado_zona := (estado_zona_variant as Dictionary).duplicate(true)
+					world_state.flags["estado_zona_actual"] = estado_zona
+					# HogarZone actualiza su posición en segundo plano cada 0.35 s.
+					# Un guardado manual/cierre puede ocurrir antes de ese tick;
+					# sincronizarla aquí evita reanudar en una posición antigua.
+					if tipo_zona == "hogar":
+						estado_zona["jugador"] = {
+							"x": jugador.global_position.x,
+							"y": jugador.global_position.y
+						}
+						world_state.flags["hogar_estado"] = estado_zona.duplicate(true)
+				else:
+					world_state.flags.erase("estado_zona_actual")
 			else:
 				world_state.flags.erase("estado_zona_actual")
 
