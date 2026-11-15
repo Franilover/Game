@@ -205,8 +205,8 @@ func _physics_process(delta: float) -> void:
 		_actualizar_velocidad_ambiental()
 
 	_actualizar_rutina()
-	_actualizar_necesidades(delta)
 	_aplicar_prioridad_necesidades()
+	_actualizar_necesidades(delta)
 	_publicar_actividad_rutina()
 
 	# La locomoción corre en otro nodo y en cada frame físico; detenerla aquí
@@ -432,7 +432,10 @@ func _procesar_estado(delta: float) -> void:
 	# Una amenaza con respuesta válida siempre tiene prioridad sobre comer.
 	if actividad_horaria == "alimentarse" and _obtener_ids_alimento().size() > 0:
 		var respuesta_amenaza := _obtener_respuesta_a_objetivo() if objetivo_detectado else ""
-		if respuesta_amenaza not in ["atacar", "huir", "perseguir", "investigar"]:
+		var interrumpe_comida := respuesta_amenaza in ["atacar", "huir", "investigar"]
+		if respuesta_amenaza == "perseguir" and not _es_seguimiento_ecologico(objetivo):
+			interrumpe_comida = true
+		if not interrumpe_comida:
 			_procesar_alimentacion()
 			return
 
@@ -1305,7 +1308,7 @@ func _obtener_ids_alimento() -> Array[String]:
 
 
 func _es_alimento_configurado(item: WorldItem) -> bool:
-	if item == null or not is_instance_valid(item):
+	if item == null or not is_instance_valid(item) or item.is_queued_for_deletion():
 		return false
 	var ids := _obtener_ids_alimento()
 	if ids.is_empty():
