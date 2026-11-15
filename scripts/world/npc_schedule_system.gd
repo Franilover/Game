@@ -656,9 +656,24 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			"saira": Vector2(76.0, -52.0),
 			"narel": Vector2(-88.0, -48.0),
 			"abel": Vector2(12.0, 76.0),
-			"liam": Vector2(104.0, 20.0)
+			"liam": Vector2(104.0, 20.0),
+			# Los tres habitantes locales ocupan sectores distintos del borde
+			# de la plaza; ninguno usa el punto central como destino por defecto.
+			"mara": Vector2(-132.0, -28.0),
+			"ivo": Vector2(18.0, 132.0),
+			"nima": Vector2(132.0, -18.0)
 		}
-		destino_local += posiciones_plaza.get(npc.get_nombre_visual().strip_edges().to_lower(), Vector2.ZERO)
+		var nombre_plaza := npc.get_nombre_visual().strip_edges().to_lower()
+		var posicion_plaza: Vector2
+		if posiciones_plaza.has(nombre_plaza):
+			posicion_plaza = posiciones_plaza[nombre_plaza]
+		else:
+			# Los NPC adicionales también se reparten alrededor del perímetro,
+			# en vez de acumularse en el centro de la plaza.
+			var indice_perimetro := posmod(hash(nombre_plaza), 12)
+			var angulo_perimetro := TAU * float(indice_perimetro) / 12.0
+			posicion_plaza = Vector2(cos(angulo_perimetro) * 118.0, sin(angulo_perimetro) * 118.0)
+		destino_local += posicion_plaza
 		destino_local += variacion_posicion
 	var destino_global := _zona.to_global(destino_local)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
