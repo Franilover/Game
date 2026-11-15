@@ -1637,6 +1637,7 @@ func _mostrar_linea_actual(reiniciar_temporizador: bool = true) -> void:
 		_finalizar_conversacion()
 		return
 	var texto := str(linea.get("texto", "")).strip_edges()
+	texto = NPCVoiceProfile.adaptar(texto, npc.get_nombre_visual())
 	if texto.is_empty():
 		_finalizar_conversacion()
 		return
