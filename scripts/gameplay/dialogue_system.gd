@@ -2260,6 +2260,15 @@ func _obtener_importancia_tema(tema: Dictionary) -> float:
 
 
 func _cumple_requisitos_tema_conversacion(tema: Dictionary, relacion: Dictionary, recuerdos: Array) -> bool:
+	for eje in ["amistad", "confianza", "respeto", "afecto"]:
+		if tema.has(eje + "_min") and float(relacion.get(eje, 0.0)) < float(tema.get(eje + "_min", 0.0)):
+			return false
+		if tema.has(eje + "_max") and float(relacion.get(eje, 0.0)) > float(tema.get(eje + "_max", 0.0)):
+			return false
+	# Mara no recibe preguntas sobre su pasado antes de que exista confianza.
+	var clave_tema := str(tema.get("clave", "")).strip_edges().to_lower()
+	if _nombre_social_actual() == "mara" and (clave_tema.contains("pasado") or clave_tema.contains("historia_personal")) and float(relacion.get("confianza", 0.0)) < 35.0:
+		return false
 	var limite_variant: Variant = tema.get("limite_personal", {})
 	if limite_variant is Dictionary:
 		var limite := limite_variant as Dictionary
