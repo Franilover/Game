@@ -32,15 +32,20 @@ func validar() -> Array[String]:
 			errores.append("Paso %d: tipo vacío o no reconocido (%s)." % [indice + 1, tipo])
 			continue
 		if tipo == "acciones_simultaneas":
-			var acciones: Variant = paso.get("acciones", [])
-			if not acciones is Array or acciones.is_empty():
-				errores.append("Paso %d: acciones_simultaneas necesita acciones." % (indice + 1))
+			var acciones_variant: Variant = paso.get("acciones", [])
+			if not acciones_variant is Array:
+				errores.append("Paso %d: acciones_simultaneas necesita una lista." % (indice + 1))
+				continue
+			var acciones: Array = acciones_variant
+			if acciones.is_empty():
+				errores.append("Paso %d: acciones_simultaneas no puede estar vacía." % (indice + 1))
 				continue
 			for accion_indice in range(acciones.size()):
-				var accion: Variant = acciones[accion_indice]
-				if not accion is Dictionary:
+				var accion_variant: Variant = acciones[accion_indice]
+				if not accion_variant is Dictionary:
 					errores.append("Paso %d: la acción %d no es un Dictionary." % [indice + 1, accion_indice + 1])
 					continue
+				var accion: Dictionary = accion_variant
 				var tipo_accion := str(accion.get("tipo", "")).strip_edges().to_lower()
 				if tipo_accion not in ["gesto_npc", "mirar_npc"]:
 					errores.append("Paso %d: acción simultánea no compatible (%s)." % [indice + 1, tipo_accion])
