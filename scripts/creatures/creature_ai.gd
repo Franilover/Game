@@ -92,6 +92,7 @@ var _objetivo_alimento: WorldItem = null
 var _alimentacion_realizada: bool = false
 var _hambre_actual: float = 0.0
 var _fatiga_actual: float = 0.0
+var _descanso_por_fatiga: bool = false
 
 
 func configurar_dependencias(
@@ -1245,10 +1246,16 @@ func _actualizar_necesidades(delta: float) -> void:
 	var fatiga_rate: Variant = necesidades.get("fatiga_por_segundo", null)
 	if actividad_horaria not in ["dormir", "reposar"] and (fatiga_rate is int or fatiga_rate is float):
 		_fatiga_actual = clampf(_fatiga_actual + maxf(float(fatiga_rate), 0.0) * delta, 0.0, 100.0)
-	if actividad_horaria in ["dormir", "reposar"]:
-		var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
-		if recuperacion is int or recuperacion is float:
-			_fatiga_actual = clampf(_fatiga_actual - maxf(float(recuperacion), 0.0) * delta, 0.0, 100.0)
+	if actividad_horaria in ["dormir", "reposar"] and criatura != null and is_instance_valid(criatura):
+		# Caminar hasta un refugio no cuenta como descanso; la recuperación
+		# comienza al detenerse y puede mejorar si el refugio ofrece cobertura.
+		if criatura.velocity.length_squared() <= 1.0:
+			var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
+			if recuperacion is int or recuperacion is float:
+				var multiplicador := 1.0
+				if _es_objetivo_refugio() and criatura.global_position.distance_to(objetivo.global_position) <= 28.0:
+					multiplicador = maxf(float(necesidades.get("multiplicador_recuperacion_en_refugio", 1.0)), 0.0)
+				_fatiga_actual = clampf(_fatiga_actual - maxf(float(recuperacion), 0.0) * multiplicador * delta, 0.0, 100.0)
 
 
 func _aplicar_prioridad_necesidades() -> void:
@@ -1259,11 +1266,19 @@ func _aplicar_prioridad_necesidades() -> void:
 	var umbral_hambre := clampf(float(necesidades.get("umbral_hambre", 70.0)), 0.0, 100.0)
 	var actividad_descanso := str(necesidades.get("actividad_descanso", "reposar")).strip_edges().to_lower()
 	var actividad_comida := str(necesidades.get("actividad_alimentacion", "alimentarse")).strip_edges().to_lower()
-	# El descanso tiene prioridad cuando ambas necesidades son altas.
+	# El descanso tiene prioridad cuando ambas necesidades son altas. Se usa
+	# histéresis para evitar alternar entre explorar y reposar cada pocos frames.
 	var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
-	if _fatiga_actual >= umbral_fatiga and (recuperacion is int or recuperacion is float) and float(recuperacion) > 0.0 and actividad_descanso in ["reposar", "dormir"]:
-		actividad_horaria = actividad_descanso
-	elif _hambre_actual >= umbral_hambre and not _obtener_ids_alimento().is_empty() and actividad_comida == "alimentarse":
+	var puede_recuperar := (recuperacion is int or recuperacion is float) and float(recuperacion) > 0.0
+	if puede_recuperar and actividad_descanso in ["reposar", "dormir"]:
+		if _fatiga_actual >= umbral_fatiga:
+			_descanso_por_fatiga = true
+		var umbral_salida := clampf(float(necesidades.get("umbral_fatiga_salida", umbral_fatiga * 0.5)), 0.0, umbral_fatiga)
+		if _descanso_por_fatiga and _fatiga_actual <= umbral_salida:
+			_descanso_por_fatiga = false
+		if _descanso_por_fatiga:
+			actividad_horaria = actividad_descanso
+	if not _descanso_por_fatiga and _hambre_actual >= umbral_hambre and not _obtener_ids_alimento().is_empty() and actividad_comida == "alimentarse":
 		actividad_horaria = actividad_comida
 
 
