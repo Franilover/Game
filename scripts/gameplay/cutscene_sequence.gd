@@ -96,7 +96,7 @@ func validar() -> Array[String]:
 
 	var tipos_validos := [
 		"dialogo", "esperar", "camara", "gesto_npc",
-		"acciones_simultaneas", "mirar_npc", "fundido",
+		"acciones_simultaneas", "mirar_npc", "orientar_grupo", "gesto_grupo", "fundido",
 		"temblor_camara", "preparar_npc", "fijar_npc",
 		"ruta_npc", "mover_jugador", "mover_npc",
 		"evento", "notificacion"
@@ -124,6 +124,22 @@ func validar() -> Array[String]:
 					errores.append("Paso %d: mirar_npc necesita un NPC." % numero_paso)
 				if not _campo_presente(paso, "hacia_npc") and not paso.has("izquierda"):
 					errores.append("Paso %d: mirar_npc necesita hacia_npc o izquierda." % numero_paso)
+			"orientar_grupo":
+				if not _campo_presente(paso, "hacia_npc"):
+					errores.append("Paso %d: orientar_grupo necesita hacia_npc." % numero_paso)
+				var orientados: Variant = paso.get("npcs", [])
+				if not orientados is Array or (orientados as Array).is_empty():
+					errores.append("Paso %d: orientar_grupo necesita una lista de NPC." % numero_paso)
+			"gesto_grupo":
+				var participantes: Variant = paso.get("npcs", [])
+				if not participantes is Array or (participantes as Array).is_empty():
+					errores.append("Paso %d: gesto_grupo necesita una lista de NPC." % numero_paso)
+				var gesto_grupo := str(paso.get("gesto", "asentir")).strip_edges().to_lower()
+				if not _es_parametro_dinamico(paso.get("gesto", "")) and gesto_grupo not in [
+					"asentir", "saludar", "trabajar", "sorpresa", "negar",
+					"reir", "triste", "inquieto", "aplaudir", "encogerse", "acomodarse"
+				]:
+					errores.append("Paso %d: gesto grupal no reconocido (%s)." % [numero_paso, gesto_grupo])
 			"acciones_simultaneas":
 				var acciones_variant: Variant = paso.get("acciones", [])
 				if not acciones_variant is Array:
