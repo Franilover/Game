@@ -820,14 +820,14 @@ func _actualizar_estado_cuenta() -> void:
 
 	if autenticado:
 		_actualizar_perfil_button()
-				profile_button.tooltip_text= ""
+		profile_button.tooltip_text = ""
 	else:
 		profile_button.text = "P"
-				profile_button.tooltip_text= ""
+		profile_button.tooltip_text = ""
 
 	# El acceso multijugador permanece desactivado mientras se trabaja en esa función.
 	multiplayer_button.disabled = true
-		multiplayer_button.tooltip_text= ""
+	multiplayer_button.tooltip_text = ""
 
 
 func _actualizar_perfil_button() -> void:
