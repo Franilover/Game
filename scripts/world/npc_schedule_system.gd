@@ -1857,13 +1857,17 @@ func _obtener_rutina_reunion_castillo(
 	var clave := str(rutina_actual.get("clave", "")).strip_edges().to_lower()
 	if clave.begins_with("invitacion_") or clave.begins_with("evento_") or clave.begins_with("encuentro_trio_"):
 		return {}
-	if bool(npc.get_meta("rutina_en_transito", false)) and not bool(npc.get_meta("rutina_en_edificio", false)):
+	if (
+		bool(npc.get_meta("rutina_en_transito", false))
+		and not bool(npc.get_meta("rutina_en_edificio", false))
+		and str(npc.get_meta("rutina_actual", "")) != "reunion_nocturna_castillo"
+	):
 		return {}
 
 	var actividad := str(rutina_actual.get("actividad_clave", npc.get_meta("actividad_actual", ""))).strip_edges().to_lower()
 	var actividades_ocupadas: Array[String] = [
 		"trabaj", "atender", "guard", "ronda", "patrull", "vigilar",
-		"investig", "estudi", "repar", "hornear", "comerci", "servir"
+		"investig", "estudi", "repar", "hornear", "panader", "comerci", "servir"
 	]
 	for patron in actividades_ocupadas:
 		if actividad.contains(patron):
