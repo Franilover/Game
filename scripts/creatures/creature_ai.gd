@@ -1391,12 +1391,14 @@ func _debe_buscar_refugio() -> bool:
 
 
 func _es_objetivo_refugio() -> bool:
-	if objetivo == null or not is_instance_valid(objetivo) or not objetivo is Creature:
-		return false
-	return bool((objetivo as Creature).get_meta("atractor_refugio", false))
+	return (
+		objetivo is Node2D
+		and is_instance_valid(objetivo)
+		and bool(objetivo.get_meta("atractor_refugio", false))
+	)
 
 
-func _buscar_refugio() -> Creature:
+func _buscar_refugio() -> Node2D:
 	if entity_manager == null or not is_instance_valid(entity_manager):
 		return null
 
@@ -1418,18 +1420,37 @@ func _buscar_refugio() -> Creature:
 		return null
 
 	var radio := maxf(float(horario.get("radio_refugio", 180.0)), 1.0)
-	var mejor: Creature = null
+	var mejor: Node2D = null
 	var mejor_distancia := INF
 	for entidad_variant in entity_manager.obtener_entidades_activas():
-		if not entidad_variant is Creature:
+		if not entidad_variant is Node2D:
 			continue
-		var candidata := entidad_variant as Creature
-		if candidata == criatura or not is_instance_valid(candidata) or not candidata.is_alive:
+		var candidata := entidad_variant as Node2D
+		if candidata == criatura or not is_instance_valid(candidata):
 			continue
 		if not bool(candidata.get_meta("atractor_refugio", false)):
 			continue
-		var nombre := str(candidata.datos.get("nombre", "")).strip_edges().to_lower()
-		if nombre not in nombres_refugio:
+		if "is_alive" in candidata and not bool(candidata.get("is_alive")):
+			continue
+		var datos_candidata: Dictionary = {}
+		if candidata is Creature:
+			datos_candidata = (candidata as Creature).datos
+		elif candidata is WorldProp:
+			datos_candidata = (candidata as WorldProp).datos
+		else:
+			continue
+		var claves_refugio := [
+			str(datos_candidata.get("nombre", "")).strip_edges().to_lower(),
+			str(datos_candidata.get("refugio_clave", "")).strip_edges().to_lower(),
+			str(candidata.get_meta("refugio_clave", "")).strip_edges().to_lower(),
+			candidata.name.strip_edges().to_lower()
+		]
+		var coincide := false
+		for clave in claves_refugio:
+			if not clave.is_empty() and clave in nombres_refugio:
+				coincide = true
+				break
+		if not coincide:
 			continue
 		var distancia := criatura.global_position.distance_to(candidata.global_position)
 		if distancia <= radio and distancia < mejor_distancia:
