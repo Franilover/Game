@@ -2160,7 +2160,7 @@ func _contar_veces_tema(recuerdos: Array, clave_tema: String) -> int:
 			str(recuerdo.get("tipo", "")) == "tema_conversacion"
 			and str(recuerdo.get("clave", "")).strip_edges() == clave_tema
 		):
-			cantidad += 1
+			cantidad += maxi(1, int(recuerdo.get("veces_conversado", 1)))
 	return cantidad
 
 
