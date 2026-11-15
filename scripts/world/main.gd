@@ -61,6 +61,9 @@ var _carga_historia_activa := false
 var _cutscene_director: Variant = null
 var _bienvenida_torres_pendiente := false
 var _bienvenida_torres_en_curso := false
+var _cinematicas_pendientes: Array[Dictionary] = []
+var _cinematica_proximidad_elapsed: float = 0.0
+var _procesando_cinematica_pendiente: bool = false
 
 
 func _ready() -> void:
@@ -315,6 +318,12 @@ func _process(delta: float) -> void:
 			_camera = camara_en_escena
 			_configurar_camara()
 	_seguir_jugador()
+
+	_cinematica_proximidad_elapsed += delta
+	if _cinematica_proximidad_elapsed >= 0.25:
+		_cinematica_proximidad_elapsed = 0.0
+		if not _procesando_cinematica_pendiente:
+			call_deferred("_procesar_cinematicas_pendientes")
 
 	_torres_rutina_elapsed += delta
 	if _torres_rutina_elapsed >= 0.5:
@@ -1549,8 +1558,12 @@ func _al_cinematica_narrativa_solicitada(
 	nombre_a: String,
 	nombre_b: String,
 	posicion_global: Vector2,
-	etapa: int
+	etapa: int,
+	desde_cola: bool = false
 ) -> void:
+	if not desde_cola:
+		_encolar_cinematica_proximidad("narrativa", clave, nombre_a, nombre_b, posicion_global, etapa)
+		return
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
 		return
 	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
@@ -1598,8 +1611,12 @@ func _al_cinematica_acontecimiento_solicitada(
 	clave: String,
 	nombre_a: String,
 	nombre_b: String,
-	posicion_global: Vector2
+	posicion_global: Vector2,
+	desde_cola: bool = false
 ) -> void:
+	if not desde_cola:
+		_encolar_cinematica_proximidad("acontecimiento", clave, nombre_a, nombre_b, posicion_global)
+		return
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
 		return
 	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
@@ -1638,8 +1655,12 @@ func _al_cinematica_reunion_nocturna_solicitada(
 	clave: String,
 	nombre_a: String,
 	nombre_b: String,
-	posicion_global: Vector2
+	posicion_global: Vector2,
+	desde_cola: bool = false
 ) -> void:
+	if not desde_cola:
+		_encolar_cinematica_proximidad("reunion", clave, nombre_a, nombre_b, posicion_global)
+		return
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
 		return
 	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
@@ -1686,6 +1707,125 @@ func _al_cinematica_reunion_nocturna_solicitada(
 		{"tipo":"esperar","segundos":0.35}
 	]
 	await _cutscene_director.ejecutar("reunion_nocturna_%s" % clave, pasos, "en_vivo")
+
+
+## Las señales cinematográficas no se descartan por estar el jugador lejos,
+## ocupado en otra escena o entrando a un interior. Se conservan hasta que
+## el jugador llega al lugar y los participantes siguen disponibles.
+func _encolar_cinematica_proximidad(
+	tipo: String,
+	clave: String,
+	nombre_a: String,
+	nombre_b: String,
+	posicion_global: Vector2,
+	etapa: int = 0
+) -> void:
+	var clave_pendiente := "%s|%s|%s|%s|%d" % [
+		tipo, clave, nombre_a.to_lower(), nombre_b.to_lower(), etapa
+	]
+	for pendiente in _cinematicas_pendientes:
+		if str(pendiente.get("id", "")) == clave_pendiente:
+			return
+	_cinematicas_pendientes.append({
+			"id": clave_pendiente,
+			"tipo": tipo,
+			"clave": clave,
+			"npc_a": nombre_a,
+			"npc_b": nombre_b,
+			"posicion": posicion_global,
+			"etapa": etapa,
+			"creada_ms": Time.get_ticks_msec()
+	})
+	while _cinematicas_pendientes.size() > 16:
+		_cinematicas_pendientes.pop_front()
+
+
+func _procesar_cinematicas_pendientes() -> void:
+	if _procesando_cinematica_pendiente or _cinematicas_pendientes.is_empty():
+		return
+	if not is_instance_valid(_player) or not is_instance_valid(_camera):
+		return
+	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
+		return
+	if is_instance_valid(_dialogue_system) and _dialogue_system.esta_abierto():
+		return
+	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return
+
+	for indice in range(_cinematicas_pendientes.size()):
+		var pendiente: Dictionary = _cinematicas_pendientes[indice]
+		var tipo := str(pendiente.get("tipo", ""))
+		var nombre_a := str(pendiente.get("npc_a", ""))
+		var nombre_b := str(pendiente.get("npc_b", ""))
+		var clave := str(pendiente.get("clave", ""))
+		var posicion: Vector2 = pendiente.get("posicion", Vector2.ZERO)
+		var npc_a := _buscar_npc_cinematica(nombre_a)
+		var npc_b := _buscar_npc_cinematica(nombre_b)
+
+		if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
+			_cinematicas_pendientes.remove_at(indice)
+			return
+		var centro_actual := (npc_a.global_position + npc_b.global_position) * 0.5
+		# Si los participantes ya abandonaron el lugar, la escena dejó de ser
+		# actual y no debe reproducirse mucho después como un recuerdo atrasado.
+		if centro_actual.distance_to(posicion) > 240.0:
+			_cinematicas_pendientes.remove_at(indice)
+			return
+
+		var distancia_activacion := 0.0
+		match tipo:
+			"narrativa":
+				if not _npc_libre_para_cinematica(npc_a) or not _npc_libre_para_cinematica(npc_b):
+					continue
+				if npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
+					continue
+				distancia_activacion = 260.0
+			"acontecimiento":
+				if not _npc_libre_para_cinematica(npc_a, true) or not _npc_libre_para_cinematica(npc_b, true):
+					continue
+				if not bool(npc_a.get_meta("actividad_social_activa", false)) or not bool(npc_b.get_meta("actividad_social_activa", false)):
+					_cinematicas_pendientes.remove_at(indice)
+					return
+				if npc_a.global_position.distance_to(npc_b.global_position) > 110.0:
+					continue
+				distancia_activacion = 320.0
+			"reunion":
+				var zona: Node = _zone_manager.obtener_zona_actual()
+				if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")) or str(zona.get("_entrada_interior_id")) != "castillo":
+					continue
+				var participantes_validos := true
+				for npc in [npc_a, npc_b]:
+					if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != "castillo" or not npc.is_visible_in_tree() or not npc.is_alive:
+						participantes_validos = false
+						break
+				if not participantes_validos:
+					continue
+				distancia_activacion = 520.0
+			_:
+			_cinematicas_pendientes.remove_at(indice)
+			return
+
+		if _player.global_position.distance_to(posicion) > distancia_activacion:
+			continue
+
+		_cinematicas_pendientes.remove_at(indice)
+		_procesando_cinematica_pendiente = true
+		match tipo:
+			"narrativa":
+				await _al_cinematica_narrativa_solicitada(
+					clave, nombre_a, nombre_b, posicion,
+					int(pendiente.get("etapa", 0)), true
+				)
+			"acontecimiento":
+				await _al_cinematica_acontecimiento_solicitada(
+					clave, nombre_a, nombre_b, posicion, true
+				)
+			"reunion":
+				await _al_cinematica_reunion_nocturna_solicitada(
+					clave, nombre_a, nombre_b, posicion, true
+				)
+		_procesando_cinematica_pendiente = false
+		return
 
 
 func _configurar_admin() -> void:
