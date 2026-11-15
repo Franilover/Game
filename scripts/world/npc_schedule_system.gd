@@ -917,18 +917,16 @@ func _registrar_compra_habitante(npc: Creature, edificio_id: String) -> void:
 
 ## Evita que Ivo programe la compra de pan cuando Elian no trabaja
 ## en la panadería en ese tramo. No modifica la rutina del panadero.
-func _el_npc_tiene_rutina_en_ubicacion(nombre_buscado: String, ubicacion_buscada: String, dia_semana: int, minutos: int) -> bool:
+func _el_npc_tiene_rutina_en_ubicacion(nombre_buscado: String, ubicacion_buscada: String, _dia_semana: int, _minutos: int) -> bool:
 	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
 			continue
 		var candidato := candidato_variant as Creature
 		if candidato.get_nombre_visual().strip_edges().to_lower() != nombre_buscado:
 			continue
-		if bool(candidato.get_meta("rutina_en_edificio", false)) and str(candidato.get_meta("rutina_edificio_id", "")) == ubicacion_buscada:
-			return true
-		var rutinas: Variant = candidato.datos.get("rutinas", [])
-		var rutina_actual := _seleccionar_rutina(rutinas, dia_semana, minutos, nombre_buscado)
-		return str(rutina_actual.get("ubicacion_clave", "")).strip_edges().to_lower() == ubicacion_buscada
+		# Para sincronizar una compra compartida exigimos presencia física,
+		# no basta con que el horario diga que el NPC va camino al local.
+		return bool(candidato.get_meta("rutina_en_edificio", false)) and str(candidato.get_meta("rutina_edificio_id", "")) == ubicacion_buscada
 	return false
 
 
