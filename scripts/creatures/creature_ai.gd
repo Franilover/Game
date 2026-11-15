@@ -1509,9 +1509,9 @@ func _aplicar_respuesta_ambiental_rutina() -> void:
 	var estado := _obtener_estado_ambiental()
 	var ambiente_variant: Variant = estado.get("ambiente", {})
 	if ambiente_variant is Dictionary:
+		var respuesta := _obtener_respuesta_ambiental()
 		var temperatura: Variant = (ambiente_variant as Dictionary).get("temperatura_c", null)
 		if temperatura is int or temperatura is float:
-			var respuesta := _obtener_respuesta_ambiental()
 			if float(temperatura) < float(respuesta.get("temperatura_minima_c", 0.0)):
 				var actividad_frio := str(respuesta.get("actividad_con_frio", "reposar")).strip_edges().to_lower()
 				if not actividad_frio.is_empty():
