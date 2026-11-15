@@ -606,6 +606,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Durante la reunión nocturna, además rota entre pequeños grupos del salón.
 	if esta_dentro and edificio_id == edificio_actual:
 		_actualizar_rutina_interior(npc, edificio_actual, minutos)
+		npc.set_meta("actividad_actual", actividad)
+		_actualizar_animacion_actividad_interior(npc)
 		if clave_rutina == "reunion_nocturna_castillo":
 			_actualizar_movimiento_reunion_castillo(npc, minutos)
 			npc.datos["actividad_actual"] = "conversando con los demás"
@@ -1064,6 +1066,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var interior_actual := str(_zona.get("_entrada_interior_id")) if is_instance_valid(_zona) else ""
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if not interior_activo or interior_actual != edificio_id or npc.get_parent() == _zona:
+		_detener_animacion_actividad_interior(npc)
 		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
 			if is_instance_valid(movimiento):
 				movimiento.detener_por_rutina()
@@ -1082,9 +1085,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + pausa, 1440))
 		return
 	var siguiente := int(npc.get_meta("rutina_paseo_interior_siguiente", -1))
-	if siguiente >= 0 and minutos != siguiente and posmod(minutos - siguiente, 1440) > 720:
-		return
-	if siguiente >= 0 and minutos != siguiente and posmod(minutos - siguiente, 1440) < 720:
+	if siguiente >= 0 and posmod(minutos - siguiente, 1440) > 720:
 		return
 	var puntos: Array[Vector2] = [
 		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
@@ -1111,6 +1112,60 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	movimiento.establecer_ruta(ruta)
 	npc.set_meta("rutina_paseo_interior_activo", true)
 	npc.set_meta("rutina_en_transito", true)
+
+
+## Animaciones discretas según la tarea actual. No sustituyen sprites ni
+## inventan gestos complejos: dan vida a las tareas mientras el NPC trabaja.
+func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
+	if not is_instance_valid(npc):
+		return
+	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("animacion_panaderia_activa", false)):
+		return
+	if bool(npc.get_meta("animacion_actividad_interior_activa", false)):
+		return
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if not is_instance_valid(sprite):
+		return
+	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).to_lower()
+	npc.set_meta("animacion_actividad_interior_activa", true)
+	npc.set_meta("animacion_actividad_interior_posicion", sprite.position)
+	npc.set_meta("animacion_actividad_interior_rotacion", sprite.rotation)
+	npc.set_meta("animacion_actividad_interior_escala", sprite.scale)
+	var tween := create_tween()
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	if actividad.contains("leer") or actividad.contains("nota") or actividad.contains("estudi") or actividad.contains("investig"):
+		tween.tween_property(sprite, "rotation", 0.035, 0.9)
+		tween.tween_interval(0.8)
+		tween.tween_property(sprite, "rotation", 0.0, 0.45)
+		tween.tween_interval(1.0)
+	elif actividad.contains("forj") or actividad.contains("herramient") or actividad.contains("hornear") or actividad.contains("atender") or actividad.contains("trabaj"):
+		tween.tween_property(sprite, "position:y", sprite.position.y - 1.0, 0.28)
+		tween.tween_property(sprite, "position:y", sprite.position.y, 0.32)
+		tween.tween_interval(0.4)
+	else:
+		tween.tween_property(sprite, "position:y", sprite.position.y - 0.7, 0.8)
+		tween.tween_property(sprite, "position:y", sprite.position.y, 0.8)
+		tween.tween_interval(0.7)
+	npc.set_meta("animacion_actividad_interior_tween", tween)
+
+
+func _detener_animacion_actividad_interior(npc: Creature) -> void:
+	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_actividad_interior_activa", false)):
+		return
+	var tween_variant: Variant = npc.get_meta("animacion_actividad_interior_tween", null)
+	if tween_variant is Tween and is_instance_valid(tween_variant):
+		(tween_variant as Tween).kill()
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if is_instance_valid(sprite):
+		var posicion: Variant = npc.get_meta("animacion_actividad_interior_posicion", sprite.position)
+		var escala: Variant = npc.get_meta("animacion_actividad_interior_escala", sprite.scale)
+		sprite.position = posicion if posicion is Vector2 else sprite.position
+		sprite.scale = escala if escala is Vector2 else sprite.scale
+		sprite.rotation = float(npc.get_meta("animacion_actividad_interior_rotacion", sprite.rotation))
+	for clave in ["animacion_actividad_interior_activa", "animacion_actividad_interior_posicion", "animacion_actividad_interior_rotacion", "animacion_actividad_interior_escala", "animacion_actividad_interior_tween"]:
+		npc.remove_meta(clave)
 
 
 func _actualizar_interaccion_panaderia() -> void:
