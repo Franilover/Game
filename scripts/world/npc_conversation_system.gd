@@ -299,6 +299,7 @@ var _objeto_evento_diario: Node2D = null
 var _zona_objeto_evento: Node2D = null
 var _temporizador_saludos := 0.0
 var _saludos_espontaneos: Dictionary = {}
+var _reacciones_evento_vistas: Dictionary = {}
 
 
 func configurar(
@@ -319,6 +320,8 @@ func configurar(
 		_progreso_parejas = progreso_variant.duplicate(true) if progreso_variant is Dictionary else {}
 	if is_instance_valid(_mission_manager) and not _mission_manager.mision_aceptada.is_connected(_al_mision_aceptada):
 		_mission_manager.mision_aceptada.connect(_al_mision_aceptada)
+	if not Events.notification_pushed.is_connected(_al_aviso_mundo_para_npcs):
+		Events.notification_pushed.connect(_al_aviso_mundo_para_npcs)
 
 
 func actualizar(
@@ -1166,6 +1169,114 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 			)
 		return true
 	return false
+
+
+## Los acontecimientos comunitarios también provocan pequeñas respuestas
+## visibles entre quienes ya están presentes en la plaza.
+func _al_aviso_mundo_para_npcs(mensaje: String) -> void:
+	var texto := mensaje.strip_edges().to_lower()
+	var tipo_evento := ""
+	if texto.contains("celebración de temporada") or texto.contains("comienzo de una nueva estación"):
+		tipo_evento = "celebracion"
+	elif texto.contains("mercado vecinal"):
+		tipo_evento = "mercado"
+	elif texto.contains("compartir comida") or texto.contains("comida comunitaria"):
+		tipo_evento = "comida"
+	if tipo_evento.is_empty() or not is_instance_valid(_zone_manager):
+		return
+	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return
+
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var firma := "%s:%s:%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("dia", 0)),
+		tipo_evento
+	]
+	if _reacciones_evento_vistas.has(firma):
+		return
+	_reacciones_evento_vistas[firma] = true
+	if _reacciones_evento_vistas.size() > 24:
+		_reacciones_evento_vistas.clear()
+		_reacciones_evento_vistas[firma] = true
+
+	var npcs := _obtener_npcs_torres()
+	var reaccionados := 0
+	for npc_variant in npcs:
+		if reaccionados >= 8:
+			break
+		var npc := npc_variant as Creature
+		if not _npc_puede_reaccionar_evento(npc):
+			continue
+		if str(npc.get_meta("rutina_ubicacion", "")).strip_edges().to_lower() != "plaza":
+			continue
+		var gesto := "asentir"
+		if tipo_evento == "celebracion":
+			gesto = "aplaudir" if posmod(hash(npc.get_nombre_visual()), 3) == 0 else "reir"
+		elif tipo_evento == "mercado":
+			gesto = "acomodarse" if posmod(hash(npc.get_nombre_visual()), 2) == 0 else "asentir"
+		elif tipo_evento == "comida":
+			gesto = "reir" if posmod(hash(npc.get_nombre_visual()), 2) == 0 else "asentir"
+		if _iniciar_reaccion_visual(npc, gesto):
+			reaccionados += 1
+
+
+func _npc_puede_reaccionar_evento(npc: Creature) -> bool:
+	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+		return false
+	if npc.velocity.length() > 5.0 or not is_instance_valid(npc.get_node_or_null("Sprite2D")):
+		return false
+	for meta_clave in [
+		"rutina_en_edificio",
+		"rutina_en_transito",
+		"acercamiento_social_activo",
+		"conversacion_npc_bloqueada",
+		"cinematica_npc_activa",
+		"_conversacion_ambiental_activa",
+		"saludo_espontaneo_activo",
+		"reaccion_evento_activa"
+	]:
+		if bool(npc.get_meta(meta_clave, false)):
+			return false
+	return true
+
+
+func _iniciar_reaccion_visual(npc: Creature, gesto: String) -> bool:
+	if not _npc_puede_reaccionar_evento(npc):
+		return false
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if not is_instance_valid(sprite):
+		return false
+	var escala_base := sprite.scale
+	npc.set_meta("reaccion_evento_activa", true)
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	match gesto:
+		"aplaudir":
+			tween.tween_property(sprite, "scale", escala_base * Vector2(1.04, 0.96), 0.14)
+			tween.tween_property(sprite, "scale", escala_base, 0.14)
+			tween.tween_property(sprite, "scale", escala_base * Vector2(1.03, 0.97), 0.14)
+			tween.tween_property(sprite, "scale", escala_base, 0.18)
+		"reir":
+			tween.tween_property(sprite, "scale:y", escala_base.y * 0.96, 0.15)
+			tween.tween_property(sprite, "scale:y", escala_base.y, 0.16)
+			tween.tween_property(sprite, "scale:y", escala_base.y * 0.975, 0.14)
+			tween.tween_property(sprite, "scale:y", escala_base.y, 0.18)
+		_:
+			tween.tween_property(sprite, "scale:y", escala_base.y * 0.97, 0.16)
+			tween.tween_property(sprite, "scale:y", escala_base.y, 0.2)
+	tween.tween_callback(_finalizar_reaccion_visual.bind(npc, sprite, escala_base))
+	npc.set_meta("reaccion_evento_tween", tween)
+	return true
+
+
+func _finalizar_reaccion_visual(npc: Creature, sprite: Sprite2D, escala_base: Vector2) -> void:
+	if is_instance_valid(sprite):
+		sprite.scale = escala_base
+	if is_instance_valid(npc):
+		npc.remove_meta("reaccion_evento_activa")
+		npc.remove_meta("reaccion_evento_tween")
 
 
 ## Reconocimientos breves cuando dos habitantes coinciden de forma natural.
