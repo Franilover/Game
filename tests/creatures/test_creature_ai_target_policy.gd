@@ -3,6 +3,7 @@ extends Node
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
+const WorldPropScript = preload("res://scripts/world/world_prop.gd")
 
 
 func _ready() -> void:
@@ -126,6 +127,19 @@ func _run() -> void:
 	presa.free()
 
 	# La alimentación sólo reconoce IDs declarados por la configuración.
+	var refugio_prop := WorldPropScript.new() as WorldProp
+	refugio_prop.configurar("cueva", "bosque", 0, 1, {
+		"atractor_refugio": true,
+		"refugio_clave": "cueva-segura"
+	})
+	if not bool(refugio_prop.get_meta("atractor_refugio", false)):
+		_fail("Un WorldProp configurado como refugio no publicó su atributo.")
+		return
+	if str(refugio_prop.get_meta("refugio_clave", "")) != "cueva-segura":
+		_fail("El refugio no conservó su clave de búsqueda.")
+		return
+	refugio_prop.free()
+
 	var alimento := WorldItemScript.new() as WorldItem
 	alimento.configurar({"item_id": "recurso-test", "cantidad": 1})
 	ai.configuracion_ia = {"alimentacion": {"item_ids": ["recurso-test"]}}
