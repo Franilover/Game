@@ -1894,8 +1894,12 @@ func _buscar_encuentro_trio_mara_ivo_nima(jugador: Node2D, clave_dia: String) ->
 			{"npc":"ivo","texto":"Entonces quedémonos un rato. Sin planes demasiado largos."}
 		]
 	else:
-		var etapa_apoyo := int((_progreso_parejas.get("mara_ivo_apoyo", {}) as Dictionary).get("etapa", 0))
-		var etapa_investigacion := int((_progreso_parejas.get("nima_ivo_investigacion", {}) as Dictionary).get("etapa", 0))
+		var apoyo_variant: Variant = _progreso_parejas.get("mara_ivo_apoyo", {})
+		var investigacion_variant: Variant = _progreso_parejas.get("nima_ivo_investigacion", {})
+		var apoyo_progreso: Dictionary = apoyo_variant if apoyo_variant is Dictionary else {}
+		var investigacion_progreso: Dictionary = investigacion_variant if investigacion_variant is Dictionary else {}
+		var etapa_apoyo := int(apoyo_progreso.get("etapa", 0))
+		var etapa_investigacion := int(investigacion_progreso.get("etapa", 0))
 		if etapa_apoyo >= 2 and etapa_investigacion >= 2:
 			lineas = [
 				{"npc":"nima","texto":"Ya ordené las observaciones y sé qué preguntas siguen abiertas. Hoy prefiero dejar el cuaderno en casa."},
