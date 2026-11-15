@@ -1104,7 +1104,9 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var interior_activo := bool(_zona.get("_interior_activo")) if is_instance_valid(_zona) else false
 	var interior_actual := str(_zona.get("_entrada_interior_id")) if is_instance_valid(_zona) else ""
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
-	if not interior_activo or interior_actual != edificio_id or npc.get_parent() == _zona:
+	var padre_npc := npc.get_parent()
+	var esta_en_cuarto := is_instance_valid(padre_npc) and str(padre_npc.name) == "Habitacion_" + edificio_id
+	if not interior_activo or interior_actual != edificio_id or not esta_en_cuarto:
 		_detener_animacion_actividad_interior(npc)
 		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
 			if is_instance_valid(movimiento):
