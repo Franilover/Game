@@ -913,7 +913,7 @@ func _crear_dialogo_iniciativa_amigo(npc: Creature, tiempo: Dictionary) -> Dicti
 func _agregar_respuesta_invitacion(respuestas: Array[Dictionary], npc: Creature, tiempo: Dictionary) -> void:
 	if not is_instance_valid(npc):
 		return
-	var invitaciones_variant: Variant = _game_state.get("world_state").get("flags", {}).get("invitaciones_npc", {}) if is_instance_valid(_game_state) else {}
+	var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
 	if invitaciones_variant is Dictionary:
 		var pendiente_variant: Variant = (invitaciones_variant as Dictionary).get(npc.get_personaje_game_id(), {})
 		if pendiente_variant is Dictionary and str((pendiente_variant as Dictionary).get("estado", "")) == "aceptada":
