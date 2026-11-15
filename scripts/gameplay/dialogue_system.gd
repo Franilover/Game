@@ -657,11 +657,21 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 
 func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	var variantes_variant: Variant = datos.get("variantes", [])
+	var personaje_id := _obtener_personaje_id_actual()
+
 	if not variantes_variant is Array:
+		# Aunque el registro no tenga variantes, la primera conversación debe
+		# conservar sus líneas de presentación antes de usar texto de rutina.
+		if not personaje_id.is_empty() and relationship_system != null:
+			var estado_inicial := relationship_system.obtener_estado_dialogo(personaje_id)
+			if bool(estado_inicial.get("primera_vez", false)) and (datos.has("lineas") or datos.has("texto")):
+				return datos.duplicate(true)
 		var dialogo_rutina_sin_variantes := _crear_dialogo_rutina_contextual()
 		return dialogo_rutina_sin_variantes if not dialogo_rutina_sin_variantes.is_empty() else datos.duplicate(true)
 
 	var principal: Dictionary = {}
+	var mejor_mision: Dictionary = {}
+	var prioridad_mision := -2147483648
 	var mission_manager_local: MissionManagerService = mission_manager
 	for variante_variant in variantes_variant as Array:
 		if not variante_variant is Dictionary:
@@ -675,22 +685,25 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 				if (
 					mission_manager_local != null
 					and mission_manager_local.cumple_requisito_dialogo(requisito)
-					and not _variante_ya_mostrada(variante, _obtener_personaje_id_actual())
+					and not _variante_ya_mostrada(variante, personaje_id)
 				):
-					return variante
+					var prioridad := int(variante.get("prioridad", 0))
+					if mejor_mision.is_empty() or prioridad > prioridad_mision:
+						mejor_mision = variante
+						prioridad_mision = prioridad
 				continue
 
 		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
 			principal = variante
 
-	# Los estados de misión y las variantes narrativas específicas conservan prioridad.
-	# Si no hay una conversación especial por calendario o relación, habla según su rutina.
-	var personaje_id := ""
-	if is_instance_valid(_fuente):
-		personaje_id = _fuente.get_personaje_game_id().strip_edges()
+	# Las variantes de misión elegibles conservan prioridad; si coinciden varias,
+	# se selecciona la de mayor prioridad y no la primera según el orden del JSON.
+	if not mejor_mision.is_empty():
+		return mejor_mision
+
+	# La presentación inicial no debe quedar desplazada por una frase de rutina
+	# ni por una variante social.
 	if not personaje_id.is_empty():
-		# La presentación inicial no debe quedar desplazada por una frase de rutina
-		# ni por una variante social. Las variantes de misión ya se resolvieron arriba.
 		var estado_inicial := relationship_system.obtener_estado_dialogo(personaje_id) if relationship_system != null else {}
 		if bool(estado_inicial.get("primera_vez", false)):
 			if not principal.is_empty():
@@ -722,7 +735,6 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	if not principal.is_empty():
 		return principal
 	return datos.duplicate(true)
-
 
 func _obtener_personaje_id_actual() -> String:
 	if not is_instance_valid(_fuente):
