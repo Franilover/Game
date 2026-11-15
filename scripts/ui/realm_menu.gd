@@ -108,7 +108,7 @@ func _agregar_destino(clave: String, nombre: String, categoria: String, actual: 
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boton.disabled = actual
 	boton.focus_mode = Control.FOCUS_ALL
-		boton.tooltip_text= ""
+	boton.tooltip_text = ""
 	_estilizar_boton(boton, actual)
 	boton.pressed.connect(_seleccionar_destino.bind(clave))
 	_lista.add_child(boton)
