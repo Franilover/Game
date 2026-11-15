@@ -482,6 +482,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# estable y una pequeña variación de posición.
 	rutina = _aplicar_variacion_tiempo_libre(npc, rutina, dia_semana, minutos)
 
+	# Una invitación aceptada ocupa únicamente una franja libre del día acordado.
+	var invitacion := _obtener_rutina_invitacion(npc, rutina, minutos)
+	if not invitacion.is_empty():
+		rutina = invitacion
+
 	# Los acontecimientos comunitarios sólo ocupan horas libres o días de
 	# descanso. Nunca desplazan a un NPC de su trabajo, guardia o investigación.
 	var evento_comunitario: Dictionary = _obtener_evento_comunitario(dia_semana, minutos)
@@ -889,6 +894,48 @@ func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int)
 	]
 	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo) + "|pos")) % desplazamientos.size()
 	return desplazamientos[indice]
+
+
+## Convierte una invitación aceptada en una visita breve a la plaza.
+## Sólo desplaza una rutina libre; nunca sustituye trabajo, guardia o descanso.
+func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minutos: int) -> Dictionary:
+	if not is_instance_valid(npc) or not _puede_participar_en_evento(rutina_actual):
+		return {}
+	if minutos < 1020 or minutos >= 1140:
+		return {}
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return {}
+	var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
+	if not invitaciones_variant is Dictionary:
+		return {}
+	var invitaciones: Dictionary = invitaciones_variant.duplicate(true)
+	var invitacion_variant: Variant = invitaciones.get(personaje_id, {})
+	if not invitacion_variant is Dictionary:
+		return {}
+	var invitacion := invitacion_variant as Dictionary
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	if (
+		int(invitacion.get("anio", -1)) != int(tiempo.get("anio", -2))
+		or int(invitacion.get("dia", -1)) != int(tiempo.get("dia", -2))
+		or str(invitacion.get("estado", "")) != "aceptada"
+	):
+		return {}
+	var hora_inicio := float(invitacion.get("hora_inicio", 17.0))
+	var hora_fin := float(invitacion.get("hora_fin", 19.0))
+	var hora_actual := float(minutos) / 60.0
+	if hora_actual < hora_inicio or hora_actual >= hora_fin:
+		return {}
+	var ubicacion := str(invitacion.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+	if not POSICIONES.has(ubicacion):
+		ubicacion = "plaza"
+	npc.set_meta("invitacion_npc_activa", true)
+	return {
+		"clave": "invitacion_aceptada",
+		"ubicacion_clave": ubicacion,
+		"actividad_clave": "esperar_encuentro_con_el_jugador",
+		"activo": true
+	}
 
 
 ## Calendario comunitario local de Torres. Usa el ciclo de cinco días que
