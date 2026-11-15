@@ -235,6 +235,10 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				await _ejecutar_gesto_grupo(paso)
 				if generacion_actual != _generacion:
 					return false
+			"interrupcion":
+				await _ejecutar_interrupcion(paso)
+				if generacion_actual != _generacion:
+					return false
 			"fundido":
 				await _ejecutar_fundido(paso)
 				if generacion_actual != _generacion:
@@ -390,6 +394,43 @@ func _ejecutar_orientar_grupo(paso: Dictionary) -> void:
 			continue
 		_guardar_estado_sprite_cinematica(sprite)
 		sprite.flip_h = objetivo.global_position.x < npc.global_position.x
+
+
+## Una interrupción breve: quien escucha toma el turno y los demás cambian
+## su atención hacia esa persona. No modifica diálogos ni relaciones.
+func _ejecutar_interrupcion(paso: Dictionary) -> void:
+	var interrumpe := str(paso.get("interrumpe", "")).strip_edges()
+	var interrumpido := str(paso.get("interrumpido", "")).strip_edges()
+	var npc_que_interrumpe := _buscar_npc(interrumpe)
+	var npc_interrumpido := _buscar_npc(interrumpido)
+	if not is_instance_valid(npc_que_interrumpe) or not is_instance_valid(npc_interrumpido):
+		return
+	if npc_que_interrumpe == npc_interrumpido:
+		return
+
+	var oyentes_variant: Variant = paso.get("oyentes", [])
+	if oyentes_variant is Array:
+		for nombre_variant in oyentes_variant:
+			var oyente := _buscar_npc(str(nombre_variant))
+			if is_instance_valid(oyente) and oyente != npc_que_interrumpe:
+				var sprite_oyente := oyente.get_node_or_null("Sprite2D") as Sprite2D
+				if is_instance_valid(sprite_oyente):
+					_guardar_estado_sprite_cinematica(sprite_oyente)
+					sprite_oyente.flip_h = npc_que_interrumpe.global_position.x < oyente.global_position.x
+
+	var tween_interrumpe := _crear_tween_gesto_npc({
+		"npc": interrumpe,
+		"gesto": str(paso.get("gesto_interrumpe", "saludar")),
+		"duracion": float(paso.get("duracion", 0.5))
+	})
+	var tween_interrumpido := _crear_tween_gesto_npc({
+		"npc": interrumpido,
+		"gesto": str(paso.get("gesto_interrumpido", "sorpresa")),
+		"duracion": float(paso.get("duracion_reaccion", 0.42))
+	})
+	for tween in [tween_interrumpe, tween_interrumpido]:
+		if is_instance_valid(tween):
+			await tween.finished
 
 
 func _ejecutar_gesto_grupo(paso: Dictionary) -> void:
