@@ -699,6 +699,34 @@ func registrar_variante_dialogo_mostrada(
 
 
 ## Relaciones entre habitantes. Se guardan aparte de la relación jugador-NPC.
+## Resume patrones de comportamiento persistentes hacia un personaje.
+## Sólo cuenta eventos sociales registrados y evita deducir intenciones.
+func obtener_tendencias_sociales(personaje_id: String) -> Dictionary:
+	var resultado := {
+		"promesas_cumplidas": 0,
+		"promesas_rotas": 0,
+		"ayudas": 0,
+		"faltas_respeto": 0
+	}
+	for recuerdo_variant in obtener_recuerdos(personaje_id):
+		if not recuerdo_variant is Dictionary:
+			continue
+		var recuerdo := recuerdo_variant as Dictionary
+		if str(recuerdo.get("tipo", "")) != "evento_social":
+			continue
+		var evento := str(recuerdo.get("evento", ""))
+		match evento:
+			"promesa_cumplida":
+				resultado["promesas_cumplidas"] = int(resultado["promesas_cumplidas"]) + 1
+			"promesa_rota":
+				resultado["promesas_rotas"] = int(resultado["promesas_rotas"]) + 1
+			"ayudar":
+				resultado["ayudas"] = int(resultado["ayudas"]) + 1
+			"faltar_respeto":
+				resultado["faltas_respeto"] = int(resultado["faltas_respeto"]) + 1
+	return resultado
+
+
 func obtener_relacion_entre_npc(personaje_a: String, personaje_b: String) -> Dictionary:
 	var clave := _clave_pareja_npc(personaje_a, personaje_b)
 	if clave.is_empty():
