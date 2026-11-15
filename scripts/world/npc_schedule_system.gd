@@ -583,8 +583,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		npc.set_meta("rutina_diagnostico", diagnostico_actual)
 	var variacion_posicion: Vector2 = rutina.get("variacion_posicion", Vector2.ZERO)
 	var firma_nueva := clave_rutina + "|" + ubicacion + "|" + actividad + "|" + str(variacion_posicion)
-	if firma_anterior != firma_nueva and not _esperar_desfase_cambio_rutina(npc, firma_nueva):
-		return
+	if firma_anterior != firma_nueva:
+		if not _esperar_desfase_cambio_rutina(npc, firma_nueva):
+			return
+		npc.remove_meta("rutina_paseo_exterior_activo")
+		npc.remove_meta("rutina_paseo_exterior_siguiente")
 	var edificio_variant: Variant = ENTRADAS_INTERIORES.get(ubicacion, {})
 	var edificio: Dictionary = edificio_variant if edificio_variant is Dictionary else {}
 	var edificio_id := str(edificio.get("id", ""))
