@@ -589,8 +589,8 @@ func _procesar_persiguiendo() -> void:
 		criatura.tomar_control_movimiento()
 		return
 
-	# "Perseguir" también puede significar seguir/acompañar. Sólo una relación
-	# configurada como "atacar" permite convertir la aproximación en combate.
+	# Una relación ecológica explícita de seguimiento acompaña sin atacar;
+	# las persecuciones heredadas de perfiles agresivos conservan el combate.
 	var seguimiento_ecologico := respuesta == "perseguir" and _es_seguimiento_ecologico(objetivo)
 	if seguimiento_ecologico:
 		var interaccion_variant: Variant = configuracion_ia.get("interaccion_ecologica", {})
