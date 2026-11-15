@@ -71,6 +71,7 @@ func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String,
 			if nodo is Polygon2D:
 				_poligonos_fijos.append(nodo as Polygon2D)
 		_limites_mapa_fijo = Rect2(-1200.0, -700.0, 2400.0, 1400.0)
+		_actualizar_limites_mapa_contenido()
 	elif _tipo_zona == "expedicion:bosque":
 		_limites_mapa_fijo = Rect2(0.0, -1024.0, 5120.0, 2048.0)
 	_centro_mapa_fijo = _limites_mapa_fijo.get_center()
@@ -109,6 +110,8 @@ func _process(delta: float) -> void:
 			_tiempo_marcadores += delta
 			if _tiempo_marcadores >= 0.5:
 				_tiempo_marcadores = 0.0
+				if _actualizar_limites_mapa_contenido():
+					_limitar_centro_mapa()
 				queue_redraw()
 		return
 	if _world_context == null:
@@ -354,22 +357,6 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 	if not is_instance_valid(_zona_fija):
 		return
 
-	var posiciones_edificios := {
-		"plaza": Vector2(0.0, 0.0),
-		"panaderia": Vector2(-205.0, -78.0),
-		"forja": Vector2(-320.0, -122.0),
-		"cuartel": Vector2(690.0, -248.0),
-		"registro": Vector2(690.0, -170.0),
-		"casa_comercio": Vector2(890.0, -260.0),
-		"casa_estudio": Vector2(-370.0, -482.0),
-		"archivo_real": Vector2(-130.0, -572.0),
-		"casa_elian": Vector2(220.0, -117.0),
-		"casa_bruna": Vector2(-235.0, 193.0),
-		"casa_darven": Vector2(385.0, -108.0),
-		"casa_saira": Vector2(385.0, 173.0),
-		"casa_narel": Vector2(-520.0, -213.0),
-		"castillo": Vector2(0.0, -125.0)
-	}
 	var aldeanos: Array[Node] = []
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
 		if is_instance_valid(nodo) and nodo is Node2D:
@@ -391,9 +378,12 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 	for aldeano in aldeanos:
 		var nombre: String = str(aldeano.call("get_nombre_visual")) if aldeano.has_method("get_nombre_visual") else aldeano.name
 		var posicion_local: Vector2
-		if bool(aldeano.get_meta("rutina_en_edificio", false)):
-			var clave := str(aldeano.get_meta("rutina_ubicacion", ""))
-			posicion_local = posiciones_edificios.get(clave, _zona_fija.to_local((aldeano as Node2D).global_position))
+		if bool(aldeano.get_meta("rutina_en_edificio", false)) and _zona_fija.has_method("obtener_posicion_mapa_npc"):
+			var posicion_edificio: Variant = _zona_fija.call("obtener_posicion_mapa_npc", aldeano)
+			if posicion_edificio is Vector2:
+				posicion_local = posicion_edificio
+			else:
+				posicion_local = _zona_fija.to_local((aldeano as Node2D).global_position)
 		else:
 			posicion_local = _zona_fija.to_local((aldeano as Node2D).global_position)
 		if not Rect2(limites.position, limites.size).has_point(posicion_local):
@@ -408,6 +398,49 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 		if fuente != null:
 			draw_string(fuente, punto + Vector2(7.0, 3.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#21170e"))
 			draw_string(fuente, punto + Vector2(6.0, 2.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#f0dfbd"))
+
+
+func _actualizar_limites_mapa_contenido() -> bool:
+	if not is_instance_valid(_zona_fija) or _tipo_zona != "reino_torres":
+		return false
+
+	var limites := _limites_mapa_fijo
+	for nodo in _zona_fija.find_children("*", "Sprite2D", true, false):
+		var sprite := nodo as Sprite2D
+		if sprite == null or sprite.texture == null or not sprite.is_visible_in_tree():
+			continue
+		var ancestro: Node = sprite
+		var es_npc := false
+		while ancestro != null and ancestro != _zona_fija:
+			if ancestro.is_in_group("torres_game_npc"):
+				es_npc = true
+				break
+			ancestro = ancestro.get_parent()
+		if es_npc:
+			continue
+
+		var rect_sprite := sprite.get_rect()
+		var esquinas := [
+			rect_sprite.position,
+			Vector2(rect_sprite.end.x, rect_sprite.position.y),
+			rect_sprite.end,
+			Vector2(rect_sprite.position.x, rect_sprite.end.y)
+		]
+		var limites_sprite := Rect2()
+		var primer_punto := true
+		for esquina: Vector2 in esquinas:
+			var punto := _zona_fija.to_local(sprite.to_global(esquina))
+			if primer_punto:
+				limites_sprite = Rect2(punto, Vector2.ZERO)
+				primer_punto = false
+			else:
+				limites_sprite = limites_sprite.expand(punto)
+		limites = limites.merge(limites_sprite)
+
+	if limites == _limites_mapa_fijo:
+		return false
+	_limites_mapa_fijo = limites
+	return true
 
 
 func _dibujar_mapa_bosque(mapa_rect: Rect2, limites: Rect2) -> void:
