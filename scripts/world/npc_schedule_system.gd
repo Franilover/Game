@@ -707,42 +707,58 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.datos["actividad_actual"] = actividad
 
 
-## Reorganiza la reunión en grupos pequeños con pausas largas.
-## Los habitantes permanecen conversando durante 45 minutos del mundo antes
-## de cambiar de grupo, evitando desplazamientos constantes que interrumpan
-## las conversaciones y hagan que la reunión parezca una ronda de patrullaje.
+## Agrupa a los asistentes según sus vínculos reales y distribuye sus
+## desplazamientos durante la fase para que no abandonen todos la conversación.
 func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> void:
 	if not is_instance_valid(npc) or not is_instance_valid(_zona) or not _malla_lista:
 		return
 	var fase := maxi(0, int((minutos - 1260) / 45))
 	if int(npc.get_meta("reunion_castillo_fase", -1)) == fase:
 		return
+	var inicio_fase := 1260 + fase * 45
+	var id_npc := npc.get_personaje_game_id().strip_edges()
+	var retraso := posmod(hash(id_npc if not id_npc.is_empty() else npc.get_nombre_visual()), 9)
+	if minutos < inicio_fase + retraso:
+		return
+
 	var habitantes: Array[Creature] = []
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
 		if nodo is Creature and is_instance_valid(nodo):
 			var asistente := nodo as Creature
 			if bool(asistente.get_meta("rutina_en_edificio", false)) and str(asistente.get_meta("rutina_edificio_id", "")) == "castillo":
 				habitantes.append(asistente)
-	habitantes.sort_custom(func(a: Creature, b: Creature) -> bool: return a.get_nombre_visual() < b.get_nombre_visual())
-	var indice := habitantes.find(npc)
-	if indice < 0:
+	habitantes.sort_custom(func(a: Creature, b: Creature) -> bool:
+		var id_a := a.get_personaje_game_id().strip_edges()
+		var id_b := b.get_personaje_game_id().strip_edges()
+		return id_a < id_b if id_a != id_b else a.get_nombre_visual() < b.get_nombre_visual()
+	)
+	var grupos := _formar_grupos_sociales_castillo(habitantes)
+	var grupo_npc := -1
+	var puesto_npc := -1
+	for indice_grupo in range(grupos.size()):
+		var grupo: Array = grupos[indice_grupo]
+		var indice_puesto := grupo.find(npc)
+		if indice_puesto >= 0:
+			grupo_npc = indice_grupo
+			puesto_npc = indice_puesto
+			break
+	if grupo_npc < 0:
 		return
-	var cantidad := maxi(1, habitantes.size())
-	var indice_social := posmod(indice + fase, cantidad)
-	var grupo := int(indice_social / 3)
-	var puesto := posmod(indice_social, 3)
+
 	var centros: Array[Vector2] = [
 		Vector2(-170.0, -105.0), Vector2(-55.0, -105.0),
 		Vector2(55.0, -105.0), Vector2(170.0, -105.0),
 		Vector2(-170.0, 105.0), Vector2(-55.0, 105.0),
 		Vector2(55.0, 105.0), Vector2(170.0, 105.0)
 	]
-	var centro: Vector2 = centros[posmod(grupo, centros.size())]
-	var offsets: Array[Vector2] = [Vector2(-24.0, 0.0), Vector2(24.0, 0.0), Vector2(0.0, 22.0)]
+	var offsets: Array[Vector2] = [
+		Vector2(-24.0, 0.0), Vector2(24.0, 0.0), Vector2(0.0, 22.0)
+	]
 	var contenedor_npc := npc.get_parent() as Node2D
 	if not is_instance_valid(contenedor_npc):
 		return
-	var destino_global := contenedor_npc.to_global(centro + offsets[puesto])
+	var centro: Vector2 = centros[posmod(grupo_npc, centros.size())]
+	var destino_global := contenedor_npc.to_global(centro + offsets[puesto_npc])
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
 		return
@@ -758,6 +774,62 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 		movimiento.detener_por_rutina()
 		npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("reunion_castillo_fase", fase)
+
+
+## Construye grupos de hasta tres personas priorizando amistades y vínculos
+## positivos. Los NPC sin una relación destacable conservan un espacio propio.
+func _formar_grupos_sociales_castillo(habitantes: Array[Creature]) -> Array:
+	var grupos: Array = []
+	var disponibles: Array[Creature] = habitantes.duplicate()
+	while not disponibles.is_empty():
+		var primero: Creature = disponibles.pop_front()
+		var grupo: Array[Creature] = [primero]
+		var mejor_indice := -1
+		var mejor_puntuacion := 8.0
+		for indice in range(disponibles.size()):
+			var puntuacion := _puntuacion_vinculo_castillo(primero, disponibles[indice])
+			if puntuacion > mejor_puntuacion:
+				mejor_puntuacion = puntuacion
+				mejor_indice = indice
+		if mejor_indice >= 0:
+			grupo.append(disponibles.pop_at(mejor_indice))
+			var mejor_tercero := -1
+			var mejor_media := 6.0
+			for indice in range(disponibles.size()):
+				var candidato: Creature = disponibles[indice]
+				var media := (
+					_puntuacion_vinculo_castillo(grupo[0], candidato)
+					+ _puntuacion_vinculo_castillo(grupo[1], candidato)
+				) * 0.5
+				if media > mejor_media:
+					mejor_media = media
+					mejor_tercero = indice
+			if mejor_tercero >= 0:
+				grupo.append(disponibles.pop_at(mejor_tercero))
+		grupos.append(grupo)
+	return grupos
+
+
+## La puntuación combina amistad, confianza, afecto, colaboración y respeto;
+## la tensión reduce la afinidad. No crea vínculos cuando los datos son neutros.
+func _puntuacion_vinculo_castillo(a: Creature, b: Creature) -> float:
+	if not is_instance_valid(a) or not is_instance_valid(b):
+		return -100.0
+	var id_a := a.get_personaje_game_id().strip_edges()
+	var id_b := b.get_personaje_game_id().strip_edges()
+	if id_a.is_empty() or id_b.is_empty() or id_a == id_b:
+		return -100.0
+	var relacion: Dictionary = RelationshipSystem.obtener_relacion_entre_npc(id_a, id_b)
+	if relacion.is_empty():
+		return 0.0
+	return (
+		float(relacion.get("amistad", 0.0)) * 0.35
+		+ float(relacion.get("confianza", 0.0)) * 0.20
+		+ float(relacion.get("afecto", 0.0)) * 0.20
+		+ float(relacion.get("colaboracion", 0.0)) * 0.15
+		+ float(relacion.get("respeto", 0.0)) * 0.10
+		- float(relacion.get("tension", 0.0)) * 0.35
+	)
 
 
 func _esta_lloviendo_en_posicion(posicion: Vector2) -> bool:
