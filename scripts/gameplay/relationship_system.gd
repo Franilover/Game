@@ -214,7 +214,22 @@ func registrar_evento_social(
 		"contexto": contexto.duplicate(true),
 		"momento": Time.get_datetime_string_from_system(true)
 	}
-	return modificar_relacion(id, cambios, recuerdo)
+	var resultado := modificar_relacion(id, cambios, recuerdo)
+	var tendencias_variant: Variant = resultado.get("_tendencias_sociales", {})
+	var tendencias: Dictionary = tendencias_variant.duplicate(true) if tendencias_variant is Dictionary else {}
+	var contador := ""
+	match clave_evento:
+		"promesa_cumplida": contador = "promesas_cumplidas"
+		"promesa_rota": contador = "promesas_rotas"
+		"ayudar": contador = "ayudas"
+		"faltar_respeto": contador = "faltas_respeto"
+	if not contador.is_empty():
+		tendencias[contador] = int(tendencias.get(contador, 0)) + 1
+		resultado["_tendencias_sociales"] = tendencias
+		var relaciones_actuales := _obtener_relaciones_guardadas()
+		relaciones_actuales[id] = resultado.duplicate(true)
+		_guardar_relaciones(relaciones_actuales)
+	return resultado
 
 
 func _obtener_impacto_evento(evento: String) -> Dictionary:
@@ -702,6 +717,10 @@ func registrar_variante_dialogo_mostrada(
 ## Resume patrones de comportamiento persistentes hacia un personaje.
 ## Sólo cuenta eventos sociales registrados y evita deducir intenciones.
 func obtener_tendencias_sociales(personaje_id: String) -> Dictionary:
+	var relacion := obtener_relacion(personaje_id)
+	var tendencias_guardadas: Variant = relacion.get("_tendencias_sociales", {})
+	if tendencias_guardadas is Dictionary and not (tendencias_guardadas as Dictionary).is_empty():
+		return (tendencias_guardadas as Dictionary).duplicate(true)
 	var resultado := {
 		"promesas_cumplidas": 0,
 		"promesas_rotas": 0,
