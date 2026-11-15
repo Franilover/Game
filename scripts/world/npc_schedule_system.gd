@@ -1085,7 +1085,11 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + pausa, 1440))
 		return
 	var siguiente := int(npc.get_meta("rutina_paseo_interior_siguiente", -1))
-	if siguiente >= 0 and posmod(minutos - siguiente, 1440) > 720:
+	if siguiente < 0:
+		var espera_inicial := 1 + posmod(hash(npc.get_nombre_visual() + "|" + edificio_id), 6)
+		npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + espera_inicial, 1440))
+		return
+	if posmod(minutos - siguiente, 1440) > 720:
 		return
 	var puntos: Array[Vector2] = [
 		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
@@ -1120,14 +1124,18 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 	if not is_instance_valid(npc):
 		return
 	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("animacion_panaderia_activa", false)):
+		_detener_animacion_actividad_interior(npc)
 		return
+	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).to_lower()
 	if bool(npc.get_meta("animacion_actividad_interior_activa", false)):
-		return
+		if str(npc.get_meta("animacion_actividad_interior_clave", "")) == actividad:
+			return
+		_detener_animacion_actividad_interior(npc)
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
 	if not is_instance_valid(sprite):
 		return
-	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).to_lower()
 	npc.set_meta("animacion_actividad_interior_activa", true)
+	npc.set_meta("animacion_actividad_interior_clave", actividad)
 	npc.set_meta("animacion_actividad_interior_posicion", sprite.position)
 	npc.set_meta("animacion_actividad_interior_rotacion", sprite.rotation)
 	npc.set_meta("animacion_actividad_interior_escala", sprite.scale)
@@ -1164,7 +1172,7 @@ func _detener_animacion_actividad_interior(npc: Creature) -> void:
 		sprite.position = posicion if posicion is Vector2 else sprite.position
 		sprite.scale = escala if escala is Vector2 else sprite.scale
 		sprite.rotation = float(npc.get_meta("animacion_actividad_interior_rotacion", sprite.rotation))
-	for clave in ["animacion_actividad_interior_activa", "animacion_actividad_interior_posicion", "animacion_actividad_interior_rotacion", "animacion_actividad_interior_escala", "animacion_actividad_interior_tween"]:
+	for clave in ["animacion_actividad_interior_activa", "animacion_actividad_interior_clave", "animacion_actividad_interior_posicion", "animacion_actividad_interior_rotacion", "animacion_actividad_interior_escala", "animacion_actividad_interior_tween"]:
 		npc.remove_meta(clave)
 
 
