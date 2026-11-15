@@ -668,7 +668,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# La plaza es un punto de encuentro, no un único punto de llegada.
 	# Cada NPC ocupa un lugar estable alrededor del centro.
 	if ubicacion == "plaza":
-		var posiciones_plaza: Dictionary = {
+		var posicion_absoluta_variant: Variant = rutina.get("posicion_absoluta_plaza", null)
+		if posicion_absoluta_variant is Vector2:
+			destino_local = posicion_absoluta_variant
+		else:
+			var posiciones_plaza: Dictionary = {
 			"elian": Vector2(-72.0, 24.0),
 			"bruna": Vector2(64.0, 32.0),
 			"darven": Vector2(-24.0, -64.0),
@@ -682,18 +686,18 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			"ivo": Vector2(18.0, 132.0),
 			"nima": Vector2(132.0, -18.0)
 		}
-		var nombre_plaza := npc.get_nombre_visual().strip_edges().to_lower()
-		var posicion_plaza: Vector2
-		if posiciones_plaza.has(nombre_plaza):
-			posicion_plaza = posiciones_plaza[nombre_plaza]
-		else:
-			# Los NPC adicionales también se reparten alrededor del perímetro,
-			# en vez de acumularse en el centro de la plaza.
-			var indice_perimetro := posmod(hash(nombre_plaza), 12)
-			var angulo_perimetro := TAU * float(indice_perimetro) / 12.0
-			posicion_plaza = Vector2(cos(angulo_perimetro) * 118.0, sin(angulo_perimetro) * 118.0)
-		destino_local += posicion_plaza
-		destino_local += variacion_posicion
+			var nombre_plaza := npc.get_nombre_visual().strip_edges().to_lower()
+			var posicion_plaza: Vector2
+			if posiciones_plaza.has(nombre_plaza):
+				posicion_plaza = posiciones_plaza[nombre_plaza]
+			else:
+				# Los NPC adicionales también se reparten alrededor del perímetro,
+				# en vez de acumularse en el centro de la plaza.
+				var indice_perimetro := posmod(hash(nombre_plaza), 12)
+				var angulo_perimetro := TAU * float(indice_perimetro) / 12.0
+				posicion_plaza = Vector2(cos(angulo_perimetro) * 118.0, sin(angulo_perimetro) * 118.0)
+			destino_local += posicion_plaza
+			destino_local += variacion_posicion
 	var destino_global := _zona.to_global(destino_local)
 	if ubicacion == "plaza":
 		npc.set_meta("rutina_ancla_ocio", destino_global)
@@ -1035,7 +1039,7 @@ func _obtener_rutina_encuentro_trio(
 		"clave": "encuentro_trio_mara_ivo_nima",
 		"ubicacion_clave": "plaza",
 		"actividad_clave": "reunirse_con_amigos",
-		"variacion_posicion": posicion,
+		"posicion_absoluta_plaza": posicion,
 		"activo": true
 	}
 
