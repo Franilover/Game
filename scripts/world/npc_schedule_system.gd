@@ -976,14 +976,20 @@ func _iniciar_animacion_compartida_panaderia(npc: Creature, rol: String) -> void
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	if rol == "cliente":
-		tween.tween_property(sprite, "position:y", sprite.position.y - 1.5, 0.65)
-		tween.tween_property(sprite, "position:y", sprite.position.y, 0.65)
-		tween.tween_interval(0.35)
+		# El cliente se inclina hacia el mostrador, espera y asiente como al recibir el pedido.
+		tween.tween_property(sprite, "position:x", sprite.position.x - 2.0, 0.35)
+		tween.tween_property(sprite, "position:y", sprite.position.y - 1.4, 0.28)
+		tween.tween_property(sprite, "position:y", sprite.position.y, 0.28)
+		tween.tween_property(sprite, "position:x", sprite.position.x, 0.35)
+		tween.tween_interval(0.7)
 	else:
-		tween.tween_property(sprite, "rotation", 0.035, 0.8)
-		tween.tween_property(sprite, "rotation", -0.025, 0.8)
-		tween.tween_property(sprite, "rotation", 0.0, 0.4)
-		tween.tween_interval(0.3)
+		# El panadero responde con una inclinación y vuelve a su postura de trabajo.
+		tween.tween_property(sprite, "rotation", 0.045, 0.35)
+		tween.tween_property(sprite, "position:y", sprite.position.y - 1.0, 0.3)
+		tween.tween_property(sprite, "position:y", sprite.position.y, 0.3)
+		tween.tween_property(sprite, "rotation", -0.025, 0.35)
+		tween.tween_property(sprite, "rotation", 0.0, 0.3)
+		tween.tween_interval(0.65)
 	npc.set_meta("animacion_panaderia_tween", tween)
 
 
