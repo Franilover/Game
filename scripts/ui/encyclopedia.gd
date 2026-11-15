@@ -430,7 +430,7 @@ func _construir_lista_criaturas() -> void:
 	for criatura in criaturas:
 		var nombre := str(criatura.get("nombre", "Criatura"))
 		var boton := _crear_boton_registro(nombre, _obtener_textura_criatura(criatura), false)
-		boton.tooltip_text = nombre
+		boton.tooltip_text = ""
 		boton.pressed.connect(_mostrar_criatura_desde_grid.bind(criatura.duplicate(true)))
 		_garumi_grid.add_child(boton)
 
@@ -492,7 +492,7 @@ func _construir_grid_garumis() -> void:
 			_obtener_textura_garumi(registro),
 			not conocido
 		)
-		boton.tooltip_text = nombre if conocido else "Garumi no descubierto"
+		boton.tooltip_text = ""
 		boton.pressed.connect(_mostrar_garumi_desde_grid.bind(registro.duplicate(true)))
 		_garumi_grid.add_child(boton)
 
