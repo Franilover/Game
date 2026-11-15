@@ -200,22 +200,22 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
 	var categoria_variant: Variant = item_resultado.get("categoria", {})
 	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
-	var icono := TextureRect.new()
-	icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icono.offset_left = 7
-	icono.offset_top = 7
-	icono.offset_right = -7
-	icono.offset_bottom = -7
-	icono.custom_minimum_size = Vector2(42, 42)
-	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	icono.texture = ItemIconResolver.obtener_icono(
-		_buscar_item_catalogo(str(resultado.get("item_id", "")))
-	)
-	panel.add_child(icono)
+		var icono := TextureRect.new()
+		icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icono.offset_left = 7
+		icono.offset_top = 7
+		icono.offset_right = -7
+		icono.offset_bottom = -7
+		icono.custom_minimum_size = Vector2(42, 42)
+		icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icono.texture = ItemIconResolver.obtener_icono(
+			_buscar_item_catalogo(str(resultado.get("item_id", "")))
+		)
+		panel.add_child(icono)
 
 
 
