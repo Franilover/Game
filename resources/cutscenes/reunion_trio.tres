@@ -1,0 +1,71 @@
+[gd_resource type="Resource" script_class="CutsceneSequence" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/cutscene_sequence.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+clave = "reunion_trio_{{clave}}"
+descripcion = "Encuadre de tres personas que ya se han reunido: atención compartida, saludos y reacciones naturales sin desplazar a nadie."
+modo = "en_vivo"
+pasos = Array[Dictionary]([{
+"tipo": "camara",
+"x": "{{x}}",
+"y": "{{y}}",
+"seguir_npcs": ["{{npc_a}}", "{{npc_b}}", "{{tercero}}"],
+"zoom": "{{zoom}}",
+"duracion": "{{duracion_camara}}",
+"margen_encuadre": 108.0
+}, {
+"tipo": "orientar_grupo",
+"npcs": ["{{npc_a}}", "{{npc_b}}"],
+"hacia_npc": "{{tercero}}"
+}, {
+"tipo": "orientar_grupo",
+"npcs": ["{{tercero}}"],
+"hacia_npc": "{{npc_a}}"
+}, {
+"tipo": "acciones_simultaneas",
+"acciones": [{
+"tipo": "gesto_npc",
+"npc": "{{npc_a}}",
+"gesto": "acomodarse",
+"duracion": 0.45
+}, {
+"tipo": "gesto_npc",
+"npc": "{{npc_b}}",
+"gesto": "saludar",
+"duracion": 0.55
+}, {
+"tipo": "gesto_npc",
+"npc": "{{tercero}}",
+"gesto": "asentir",
+"duracion": 0.5
+}]
+}, {
+"tipo": "esperar",
+"segundos": 0.45,
+"variacion": 0.15
+}, {
+"tipo": "acciones_simultaneas",
+"acciones": [{
+"tipo": "gesto_npc",
+"npc": "{{npc_a}}",
+"gesto": "asentir",
+"duracion": 0.5
+}, {
+"tipo": "gesto_npc",
+"npc": "{{npc_b}}",
+"gesto": "acomodarse",
+"duracion": 0.45
+}, {
+"tipo": "gesto_npc",
+"npc": "{{tercero}}",
+"gesto": "saludar",
+"duracion": 0.55
+}]
+}, {
+"tipo": "esperar",
+"segundos": 0.7,
+"variacion": 0.2
+}])
+parametros_requeridos = PackedStringArray("clave", "npc_a", "npc_b", "tercero", "x", "y", "zoom", "duracion_camara")
