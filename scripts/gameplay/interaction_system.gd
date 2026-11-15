@@ -39,11 +39,6 @@ func configurar(
 		interaction_controller.objetivo_cambiado.connect(_cambiar_objetivo)
 	interaction_controller.configurar_entidades(entity_manager)
 
-	print(
-		"InteractionSystem: configurado."
-	)
-
-
 	_cambiar_objetivo(null)
 	_buscar_objetivo()
 
@@ -193,16 +188,9 @@ func _cambiar_objetivo(nuevo_objetivo: Node) -> void:
 	objetivo_cambiado.emit(objetivo_actual)
 
 	if objetivo_actual == null:
-		print("InteractionSystem: objetivo contextual = <ninguno>")
 		return
 
 	var texto := "Recoger"
 	if objetivo_actual is Creature:
 		texto = (objetivo_actual as Creature).get_interaction_text()
 
-	print(
-		"InteractionSystem: objetivo contextual = ",
-		objetivo_actual.name,
-		" | accion = ",
-		texto
-	)
