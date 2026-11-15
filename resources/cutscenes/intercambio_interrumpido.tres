@@ -53,9 +53,9 @@ pasos = Array[Dictionary]([{
 "variacion": 0.08
 }, {
 "tipo": "interrupcion",
-"interrumpe": "{{npc_b}}",
-"interrumpido": "{{npc_a}}",
-"oyentes": ["{{npc_a}}"],
+"interrumpe": "{{interrumpe}}",
+"interrumpido": "{{interrumpido}}",
+"oyentes": ["{{interrumpido}}"],
 "gesto_interrumpe": "saludar",
 "gesto_interrumpido": "sorpresa",
 "duracion": 0.52,
@@ -90,4 +90,4 @@ pasos = Array[Dictionary]([{
 "segundos": "{{pausa_despues}}",
 "variacion": 0.18
 }])
-parametros_requeridos = PackedStringArray("clave", "x", "y", "npc_a", "npc_b", "zoom", "duracion_camara", "pausa_antes", "pausa_despues", "gesto_a", "gesto_b", "duracion_gesto")
+parametros_requeridos = PackedStringArray("clave", "x", "y", "npc_a", "npc_b", "interrumpe", "interrumpido", "zoom", "duracion_camara", "pausa_antes", "pausa_despues", "gesto_a", "gesto_b", "duracion_gesto")
