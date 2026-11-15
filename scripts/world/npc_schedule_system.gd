@@ -1040,15 +1040,6 @@ func _obtener_rutina_encuentro_trio(
 	}
 
 
-func _buscar_npc_por_nombre(nombre_buscado: String) -> Creature:
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if nodo is Creature and is_instance_valid(nodo):
-			var candidato := nodo as Creature
-			if candidato.get_nombre_visual().strip_edges().to_lower() == nombre_buscado:
-				return candidato
-	return null
-
-
 ## Escalona los cambios de horario para que los habitantes no salgan todos a la vez.
 func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
