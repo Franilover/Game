@@ -2429,15 +2429,16 @@ func _normalizar_lineas(datos: Dictionary) -> Array[Dictionary]:
 		if texto.is_empty():
 			continue
 
-		resultado.append({
-			"texto": texto,
-			"hablante": str(
-				linea.get(
-					"hablante",
-					linea.get("speaker", "")
-				)
-			).strip_edges()
-		})
+		# Conservar metadatos narrativos (variantes de personalidad/relación,
+		# condiciones y presentación) para que el motor pueda resolverlos al mostrar.
+		linea["texto"] = texto
+		linea["hablante"] = str(
+			linea.get(
+				"hablante",
+				linea.get("speaker", "")
+			)
+		).strip_edges()
+		resultado.append(linea)
 
 	return resultado
 
