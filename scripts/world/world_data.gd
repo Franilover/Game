@@ -265,18 +265,24 @@ func _actualizar_configuracion_ia_en_vivo(mundo_remoto: Dictionary) -> void:
 
 
 func _actualizar_rutinas_personajes_game_en_vivo(mundo_remoto: Dictionary) -> void:
-	var personajes_remotos_variant: Variant = mundo_remoto.get("personajes_game", [])
+	# Sólo un snapshot que incluya explícitamente el catálogo puede confirmar
+	# altas y bajas. Los snapshots antiguos sin este campo no deben vaciarlo.
+	if not mundo_remoto.has("personajes_game"):
+		return
+	var personajes_remotos_variant: Variant = mundo_remoto.get("personajes_game")
 	if not personajes_remotos_variant is Array:
 		return
 
 	var personajes_remotos: Dictionary = {}
 	for personaje_variant in personajes_remotos_variant as Array:
 		if not personaje_variant is Dictionary:
-			continue
+			return
 		var personaje_remoto := personaje_variant as Dictionary
 		var personaje_id := str(personaje_remoto.get("id", "")).strip_edges()
-		if personaje_id.is_empty():
-			continue
+		# Un registro incompleto o duplicado invalida la sincronización completa:
+		# no interpretarlo como una baja legítima de otros personajes.
+		if personaje_id.is_empty() or personajes_remotos.has(personaje_id):
+			return
 		personajes_remotos[personaje_id] = personaje_remoto
 
 	var indices_actuales: Dictionary = {}
@@ -285,16 +291,16 @@ func _actualizar_rutinas_personajes_game_en_vivo(mundo_remoto: Dictionary) -> vo
 		if not id_actual.is_empty():
 			indices_actuales[id_actual] = indice
 
-	var cambio := false
-	# El snapshot incluido puede ser anterior a la incorporación de personajes_game
-	# y no contener ningún aldeano. En una partida activa también debemos insertar
-	# los personajes remotos nuevos, no sólo actualizar rutinas de los existentes.
+	var personajes_actualizados: Array[Dictionary] = []
+	var cambio := personajes_remotos.size() != _personajes_game.size()
+	# El snapshot es la lista completa de personajes. Conservamos los campos
+	# locales ya cargados de cada registro, pero aceptamos altas y bajas y
+	# sincronizamos los horarios/ubicaciones que sí se actualizan en caliente.
 	for personaje_id_variant in personajes_remotos.keys():
 		var personaje_id := str(personaje_id_variant)
 		var personaje_remoto: Dictionary = personajes_remotos[personaje_id]
 		if not indices_actuales.has(personaje_id):
-			_personajes_game.append(personaje_remoto.duplicate(true))
-			indices_actuales[personaje_id] = _personajes_game.size() - 1
+			personajes_actualizados.append(personaje_remoto.duplicate(true))
 			cambio = true
 			continue
 
@@ -305,19 +311,18 @@ func _actualizar_rutinas_personajes_game_en_vivo(mundo_remoto: Dictionary) -> vo
 		var rutinas_actuales_variant: Variant = personaje_actual.get("rutinas", [])
 		var rutinas_actuales: Array = rutinas_actuales_variant if rutinas_actuales_variant is Array else []
 		var ubicacion_remota := str(personaje_remoto.get("ubicacion_clave", personaje_actual.get("ubicacion_clave", "")))
-		if rutinas_actuales == rutinas_remotas and str(personaje_actual.get("ubicacion_clave", "")) == ubicacion_remota:
-			continue
-
-		personaje_actual["rutinas"] = rutinas_remotas
-		personaje_actual["ubicacion_clave"] = ubicacion_remota
-		_personajes_game[indice] = personaje_actual
-		cambio = true
+		if rutinas_actuales != rutinas_remotas or str(personaje_actual.get("ubicacion_clave", "")) != ubicacion_remota:
+			personaje_actual["rutinas"] = rutinas_remotas
+			personaje_actual["ubicacion_clave"] = ubicacion_remota
+			cambio = true
+		personajes_actualizados.append(personaje_actual)
 
 	if not cambio:
 		return
 
+	_personajes_game = personajes_actualizados
 	mundo["personajes_game"] = _personajes_game.duplicate(true)
-	print("WorldData: personajes y rutinas sincronizados en vivo → ", _personajes_game.size(), " habitantes.")
+	print("WorldData: catálogo de personajes sincronizado en vivo → ", _personajes_game.size(), " habitantes.")
 	mundo_actualizado.emit()
 
 
