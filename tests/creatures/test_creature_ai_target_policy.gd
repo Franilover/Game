@@ -196,6 +196,10 @@ func _run() -> void:
 	if ai.actividad_horaria != "reposar":
 		_fail("La fatiga alta no activó el descanso configurado.")
 		return
+	ai._actualizar_necesidades(2.0)
+	if float(ai._obtener_estado_necesidades().get("fatiga", 100.0)) >= 70.0:
+		_fail("La actividad de descanso seleccionada no recuperó la fatiga.")
+		return
 
 	# Seguir una especie no debe convertirse automáticamente en un ataque al contacto.
 	ai.configuracion_ia = {"respuestas_ecologicas": {"competencia": "perseguir"}}
