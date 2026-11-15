@@ -987,6 +987,7 @@ func _obtener_texto_rutina_personaje(
 	dentro_edificio: bool,
 	amable: bool
 ) -> String:
+	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
 	# Los diálogos de tránsito aprobados conservan la voz individual de cada NPC.
 	if en_transito:
 		match nombre:
@@ -1013,7 +1014,6 @@ func _obtener_texto_rutina_personaje(
 				return ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
 
 	var es_dia_libre := rutina_clave.begins_with("dia_libre")
-	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
 	var ubicaciones_hogar: Array[String] = ["casa_elian", "casa_bruna", "casa_darven", "casa_saira", "casa_narel", "castillo"]
 	var esta_en_hogar := ubicaciones_hogar.has(ubicacion)
 
