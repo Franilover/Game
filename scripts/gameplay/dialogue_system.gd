@@ -2452,6 +2452,18 @@ func _seleccionar_respuesta(indice: int) -> void:
 	if indice < 0 or indice >= _respuestas.size() or not _abierto:
 		return
 	var opcion: Dictionary = _respuestas[indice]
+	var invitacion_variant: Variant = opcion.get("invitacion", {})
+	if invitacion_variant is Dictionary and not (invitacion_variant as Dictionary).is_empty():
+		var invitacion := (invitacion_variant as Dictionary).duplicate(true)
+		var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
+		var invitaciones: Dictionary = invitaciones_variant.duplicate(true) if invitaciones_variant is Dictionary else {}
+		var personaje_invitado := str(invitacion.get("personaje_id", "")).strip_edges()
+		if not personaje_invitado.is_empty():
+			invitaciones[personaje_invitado] = invitacion
+			GameState.world_state.flags["invitaciones_npc"] = invitaciones
+			if GameState.has_method("guardar_partida"):
+				GameState.call_deferred("guardar_partida")
+			Events.notification_pushed.emit("Aceptaste la invitación de " + str(invitacion.get("nombre", "tu amistad")) + ". Quedaron para mañana en la plaza.")
 	var tipo_menu := str(opcion.get("tipo_menu", "")).strip_edges()
 	if tipo_menu == "preguntar" or tipo_menu == "hablar":
 		_abrir_submenu_social(tipo_menu)
