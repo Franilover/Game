@@ -1712,6 +1712,28 @@ func _al_cinematica_reunion_nocturna_solicitada(
 ## Las señales cinematográficas no se descartan por estar el jugador lejos,
 ## ocupado en otra escena o entrando a un interior. Se conservan hasta que
 ## el jugador llega al lugar y los participantes siguen disponibles.
+func _prioridad_cinematica(tipo: String) -> int:
+	match tipo:
+		"narrativa":
+			return 3
+		"reunion":
+			return 2
+		"acontecimiento":
+			return 1
+	return 0
+
+
+func _caducidad_cinematica_ms(tipo: String) -> int:
+	match tipo:
+		"narrativa":
+			return 180000
+		"reunion":
+			return 180000
+		"acontecimiento":
+			return 90000
+	return 0
+
+
 func _encolar_cinematica_proximidad(
 	tipo: String,
 	clave: String,
@@ -1726,18 +1748,33 @@ func _encolar_cinematica_proximidad(
 	for pendiente in _cinematicas_pendientes:
 		if str(pendiente.get("id", "")) == clave_pendiente:
 			return
+	var creada_ms := Time.get_ticks_msec()
 	_cinematicas_pendientes.append({
-			"id": clave_pendiente,
-			"tipo": tipo,
-			"clave": clave,
-			"npc_a": nombre_a,
-			"npc_b": nombre_b,
-			"posicion": posicion_global,
-			"etapa": etapa,
-			"creada_ms": Time.get_ticks_msec()
+		"id": clave_pendiente,
+		"tipo": tipo,
+		"clave": clave,
+		"npc_a": nombre_a,
+		"npc_b": nombre_b,
+		"posicion": posicion_global,
+		"etapa": etapa,
+		"prioridad": _prioridad_cinematica(tipo),
+		"creada_ms": creada_ms
 	})
+	# Si la cola se llena, conserva las escenas importantes y descarta primero
+	# la petición menos prioritaria; entre iguales, la más antigua.
 	while _cinematicas_pendientes.size() > 16:
-		_cinematicas_pendientes.pop_front()
+		var indice_descartar := 0
+		var prioridad_menor := 2147483647
+		var mas_antigua := 2147483647
+		for indice in range(_cinematicas_pendientes.size()):
+			var candidata: Dictionary = _cinematicas_pendientes[indice]
+			var prioridad := int(candidata.get("prioridad", 0))
+			var momento := int(candidata.get("creada_ms", 0))
+			if prioridad < prioridad_menor or (prioridad == prioridad_menor and momento < mas_antigua):
+				prioridad_menor = prioridad
+				mas_antigua = momento
+				indice_descartar = indice
+		_cinematicas_pendientes.remove_at(indice_descartar)
 
 
 func _procesar_cinematicas_pendientes() -> void:
@@ -1752,25 +1789,38 @@ func _procesar_cinematicas_pendientes() -> void:
 	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
 		return
 
-	for indice in range(_cinematicas_pendientes.size()):
+	var ahora_ms := Time.get_ticks_msec()
+	var mejor_indice := -1
+	var mejor_puntuacion := -INF
+	var momento_mejor := 2147483647
+
+	# Recorremos de atrás hacia delante para poder limpiar entradas sin alterar
+	# los índices que todavía quedan por revisar.
+	for indice in range(_cinematicas_pendientes.size() - 1, -1, -1):
 		var pendiente: Dictionary = _cinematicas_pendientes[indice]
 		var tipo := str(pendiente.get("tipo", ""))
+		var creada_ms := int(pendiente.get("creada_ms", ahora_ms))
+		var caducidad_ms := _caducidad_cinematica_ms(tipo)
+		if caducidad_ms <= 0 or ahora_ms - creada_ms > caducidad_ms:
+			_cinematicas_pendientes.remove_at(indice)
+			continue
+
 		var nombre_a := str(pendiente.get("npc_a", ""))
 		var nombre_b := str(pendiente.get("npc_b", ""))
 		var clave := str(pendiente.get("clave", ""))
 		var posicion: Vector2 = pendiente.get("posicion", Vector2.ZERO)
 		var npc_a := _buscar_npc_cinematica(nombre_a)
 		var npc_b := _buscar_npc_cinematica(nombre_b)
-
 		if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
 			_cinematicas_pendientes.remove_at(indice)
-			return
+			continue
+
 		var centro_actual := (npc_a.global_position + npc_b.global_position) * 0.5
-		# Si los participantes ya abandonaron el lugar, la escena dejó de ser
-		# actual y no debe reproducirse mucho después como un recuerdo atrasado.
+		# La escena sólo sigue vigente mientras sus participantes permanezcan
+		# cerca del lugar donde ocurrió el acontecimiento.
 		if centro_actual.distance_to(posicion) > 240.0:
 			_cinematicas_pendientes.remove_at(indice)
-			return
+			continue
 
 		var distancia_activacion := 0.0
 		match tipo:
@@ -1799,30 +1849,51 @@ func _procesar_cinematicas_pendientes() -> void:
 					continue
 				distancia_activacion = 520.0
 			_:
-				_cinematicas_pendientes.remove_at(indice)
-				return
-
-		if _player.global_position.distance_to(posicion) > distancia_activacion:
+			_cinematicas_pendientes.remove_at(indice)
 			continue
 
-		_cinematicas_pendientes.remove_at(indice)
-		_procesando_cinematica_pendiente = true
-		match tipo:
-			"narrativa":
-				await _al_cinematica_narrativa_solicitada(
-					clave, nombre_a, nombre_b, posicion,
-					int(pendiente.get("etapa", 0)), true
-				)
-			"acontecimiento":
-				await _al_cinematica_acontecimiento_solicitada(
-					clave, nombre_a, nombre_b, posicion, true
-				)
-			"reunion":
-				await _al_cinematica_reunion_nocturna_solicitada(
-					clave, nombre_a, nombre_b, posicion, true
-				)
-		_procesando_cinematica_pendiente = false
+		var distancia_jugador := _player.global_position.distance_to(posicion)
+		if distancia_jugador > distancia_activacion:
+			continue
+
+		# La prioridad evita que una escena cotidiana tape una secuencia narrativa
+		# importante. La distancia desempata para mostrar lo que sucede cerca.
+		var puntuacion := float(int(pendiente.get("prioridad", _prioridad_cinematica(tipo)))) * 10000.0 - distancia_jugador
+		if (
+			puntuacion > mejor_puntuacion
+			or (is_equal_approx(puntuacion, mejor_puntuacion) and creada_ms < momento_mejor)
+		):
+			mejor_puntuacion = puntuacion
+			momento_mejor = creada_ms
+			mejor_indice = indice
+
+	if mejor_indice < 0:
 		return
+
+	var pendiente_elegida: Dictionary = _cinematicas_pendientes[mejor_indice]
+	_cinematicas_pendientes.remove_at(mejor_indice)
+	var tipo_elegido := str(pendiente_elegida.get("tipo", ""))
+	var clave_elegida := str(pendiente_elegida.get("clave", ""))
+	var nombre_a_elegido := str(pendiente_elegida.get("npc_a", ""))
+	var nombre_b_elegido := str(pendiente_elegida.get("npc_b", ""))
+	var posicion_elegida: Vector2 = pendiente_elegida.get("posicion", Vector2.ZERO)
+	_procesando_cinematica_pendiente = true
+	match tipo_elegido:
+		"narrativa":
+			await _al_cinematica_narrativa_solicitada(
+				clave_elegida, nombre_a_elegido, nombre_b_elegido, posicion_elegida,
+				int(pendiente_elegida.get("etapa", 0)), true
+			)
+		"acontecimiento":
+			await _al_cinematica_acontecimiento_solicitada(
+				clave_elegida, nombre_a_elegido, nombre_b_elegido, posicion_elegida, true
+			)
+		"reunion":
+			await _al_cinematica_reunion_nocturna_solicitada(
+				clave_elegida, nombre_a_elegido, nombre_b_elegido, posicion_elegida, true
+			)
+	_procesando_cinematica_pendiente = false
+
 
 
 func _configurar_admin() -> void:
