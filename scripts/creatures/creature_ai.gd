@@ -1460,6 +1460,8 @@ func _buscar_refugio() -> Node2D:
 			str(candidata.get_meta("refugio_clave", "")).strip_edges().to_lower(),
 			str(candidata.name).strip_edges().to_lower()
 		]
+		if candidata is WorldProp:
+			claves_refugio.append(str((candidata as WorldProp).tipo).strip_edges().to_lower())
 		var coincide := false
 		for clave in claves_refugio:
 			if not clave.is_empty() and clave in nombres_refugio:
