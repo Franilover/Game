@@ -1039,6 +1039,10 @@ func _obtener_rutina_encuentro_trio(
 	# elige uno de forma estable para esa semana, sin interrumpir sus oficios.
 	var dias_disponibles: Array[int] = []
 	for dia_candidato in range(5):
+		# El quinto día ya tiene mercado y comida comunitaria en esta franja;
+		# no se debe elegir como fecha para una reunión privada del trío.
+		if dia_candidato == 4:
+			continue
 		var todos_libres := true
 		for nombre in nombres:
 			var participante := participantes[nombre] as Creature
