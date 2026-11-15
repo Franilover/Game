@@ -16,6 +16,8 @@ const DISTANCIA_INICIATIVA := 112.0
 const DISTANCIA_BUSQUEDA_INICIATIVA := 280.0
 const DISTANCIA_LLEGADA_INICIATIVA := 76.0
 const TIEMPO_MAX_ACERCAMIENTO := 16.0
+const DISTANCIA_SALUDO_ESPONTANEO := 54.0
+const ENFRIAMIENTO_SALUDO_ESPONTANEO := 85.0
 const AMISTAD_INICIATIVA_MINIMA := 8.0
 const AFECTO_INICIATIVA_MINIMO := 5.0
 const DURACION_LINEA_MINIMA := 2.4
@@ -295,6 +297,8 @@ var _burbujas: Dictionary = {}
 var _vistas_por_dia: Dictionary = {}
 var _objeto_evento_diario: Node2D = null
 var _zona_objeto_evento: Node2D = null
+var _temporizador_saludos := 0.0
+var _saludos_espontaneos: Dictionary = {}
 
 
 func configurar(
@@ -344,6 +348,8 @@ func actualizar(
 	if not _acercamiento_activo.is_empty():
 		_actualizar_acercamiento(delta, jugador, dialogo)
 		return
+
+	_actualizar_saludos_espontaneos(delta)
 
 	_temporizador_busqueda += delta
 	if _temporizador_busqueda < INTERVALO_BUSQUEDA:
@@ -1160,6 +1166,114 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 			)
 		return true
 	return false
+
+
+## Reconocimientos breves cuando dos habitantes coinciden de forma natural.
+## No inicia diálogo, no altera rutas ni modifica la relación entre ellos.
+func _actualizar_saludos_espontaneos(delta: float) -> void:
+	_temporizador_saludos += maxf(delta, 0.0)
+	if _temporizador_saludos < 0.65:
+		return
+	_temporizador_saludos = 0.0
+
+	var npcs := _obtener_npcs_torres()
+	if npcs.size() < 2:
+		return
+
+	for i in range(npcs.size()):
+		var npc_a := npcs[i]
+		if not _npc_puede_saludar_espontaneamente(npc_a):
+			continue
+		for j in range(i + 1, npcs.size()):
+			var npc_b := npcs[j]
+			if not _npc_puede_saludar_espontaneamente(npc_b):
+				continue
+			if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_SALUDO_ESPONTANEO:
+				continue
+
+			var id_a := npc_a.get_personaje_game_id().strip_edges()
+			var id_b := npc_b.get_personaje_game_id().strip_edges()
+			if id_a.is_empty() or id_b.is_empty():
+				continue
+			var clave := id_a + "|" + id_b if id_a < id_b else id_b + "|" + id_a
+			var ultimo_saludo := float(_saludos_espontaneos.get(clave, -1000.0))
+			if _tiempo_sistema - ultimo_saludo < ENFRIAMIENTO_SALUDO_ESPONTANEO:
+				continue
+
+			var relacion: Dictionary = {}
+			if is_instance_valid(_relationship_system):
+				relacion = _relationship_system.obtener_relacion_entre_npc(id_a, id_b)
+			var cercania := (
+				float(relacion.get("amistad", 0.0))
+				+ float(relacion.get("confianza", 0.0))
+				+ float(relacion.get("afecto", 0.0))
+			)
+			var tension := float(relacion.get("tension", 0.0))
+			# Si existe una relación muy deteriorada, ambos pueden seguir de largo.
+			if tension >= 4.0 and cercania <= 0.0:
+				_saludos_espontaneos[clave] = _tiempo_sistema
+				continue
+
+			var saludo_cercano := cercania >= 4.0 and tension < 2.0
+			var gesto_a := _iniciar_gesto_saludo(npc_a, saludo_cercano)
+			var gesto_b := _iniciar_gesto_saludo(npc_b, saludo_cercano)
+			if gesto_a or gesto_b:
+				_saludos_espontaneos[clave] = _tiempo_sistema
+				if _saludos_espontaneos.size() > 96:
+					var claves_antiguas := _saludos_espontaneos.keys()
+					for indice in range(mini(24, claves_antiguas.size())):
+						_saludos_espontaneos.erase(claves_antiguas[indice])
+				return
+
+
+func _npc_puede_saludar_espontaneamente(npc: Creature) -> bool:
+	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+		return false
+	if npc.velocity.length() > 5.0:
+		return false
+	for meta_clave in [
+		"rutina_en_edificio",
+		"rutina_en_transito",
+		"actividad_social_activa",
+		"acercamiento_social_activo",
+		"conversacion_npc_bloqueada",
+		"cinematica_npc_activa",
+		"_conversacion_ambiental_activa",
+		"saludo_espontaneo_activo"
+	]:
+		if bool(npc.get_meta(meta_clave, false)):
+			return false
+	return is_instance_valid(npc.get_node_or_null("Sprite2D"))
+
+
+func _iniciar_gesto_saludo(npc: Creature, saludo_cercano: bool) -> bool:
+	if not _npc_puede_saludar_espontaneamente(npc):
+		return false
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if not is_instance_valid(sprite):
+		return false
+	var rotacion_base := sprite.rotation
+	npc.set_meta("saludo_espontaneo_activo", true)
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(sprite, "rotation", rotacion_base + 0.035, 0.13)
+	tween.tween_property(sprite, "rotation", rotacion_base, 0.16)
+	if saludo_cercano:
+		tween.tween_interval(0.12)
+		tween.tween_property(sprite, "rotation", rotacion_base + 0.025, 0.12)
+		tween.tween_property(sprite, "rotation", rotacion_base, 0.16)
+	tween.tween_callback(_finalizar_gesto_saludo.bind(npc, sprite, rotacion_base))
+	npc.set_meta("saludo_espontaneo_tween", tween)
+	return true
+
+
+func _finalizar_gesto_saludo(npc: Creature, sprite: Sprite2D, rotacion_base: float) -> void:
+	if is_instance_valid(sprite):
+		sprite.rotation = rotacion_base
+	if is_instance_valid(npc):
+		npc.remove_meta("saludo_espontaneo_activo")
+		npc.remove_meta("saludo_espontaneo_tween")
 
 
 func _buscar_conversacion(jugador: Node2D) -> void:
