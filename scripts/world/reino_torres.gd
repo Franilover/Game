@@ -99,6 +99,33 @@ var _limites_camara_anteriores: Dictionary = {}
 # su propio nombre, función y distribución interior.
 const DISTANCIA_INTERACCION_ENTRADA := 44.0
 
+const UBICACION_RUTINA_POR_ENTRADA: Dictionary = {
+	"panaderia": "panaderia",
+	"forja": "forja",
+	"cuartel": "cuartel",
+	"registro": "registro",
+	"casa_comercio": "casa_comercio",
+	"archivo_real": "archivo_real",
+	"casa_estudio": "casa_estudio",
+	"casa_elian": "casa_elian",
+	"casa_bruna": "casa_bruna",
+	"casa_darven": "casa_darven",
+	"casa_saira": "casa_saira",
+	"casa_narel": "casa_narel",
+	"casa_vacia_01": "vivienda_oeste_01",
+	"casa_vacia_02": "vivienda_oeste_02",
+	"casa_vacia_03": "vivienda_oeste_03",
+	"casa_vacia_04": "vivienda_oeste_04",
+	"casa_vacia_05": "vivienda_oeste_05",
+	"casa_vacia_06": "vivienda_oeste_06",
+	"casa_vacia_07": "vivienda_oeste_07",
+	"casa_vacia_08": "vivienda_oeste_08",
+	"casa_vacia_10": "vivienda_oeste_10",
+	"casa_vacia_11": "vivienda_oeste_11",
+	"casa_granjeros": "casa_granjeros",
+	"castillo": "castillo"
+}
+
 const ENTRADAS: Array[Dictionary] = [
 	{"id":"castillo","nombre":"Castillo de Torres","pos":Vector2(4.8333282,-179),"tipo":"castillo"},
 	{"id":"panaderia","nombre":"Panadería","pos":Vector2(-245,-95),"tipo":"panaderia"},
@@ -267,6 +294,33 @@ func _obtener_posicion_entrada_global(entrada: Dictionary) -> Vector2:
 	if is_instance_valid(marcador):
 		return marcador.global_position
 	return to_global(entrada.get("pos", Vector2.ZERO))
+
+
+func obtener_posicion_mapa_npc(npc: Node) -> Variant:
+	if not is_instance_valid(npc):
+		return null
+
+	var entrada_id := str(npc.get_meta("rutina_edificio_id", "")).strip_edges()
+	if entrada_id.is_empty():
+		var ubicacion := str(npc.get_meta("rutina_ubicacion", "")).strip_edges()
+		for id_entrada: String in UBICACION_RUTINA_POR_ENTRADA:
+			if str(UBICACION_RUTINA_POR_ENTRADA[id_entrada]) == ubicacion:
+				entrada_id = id_entrada
+				break
+	if entrada_id.is_empty():
+		return null
+
+	var grupo := _obtener_grupo_entrada({"id": entrada_id})
+	if not is_instance_valid(grupo):
+		return null
+
+	# El sprite real es la referencia visual del edificio. Si falta, el grupo
+	# de la escena sigue proporcionando una posición estable y editable.
+	for nodo in grupo.find_children("*", "Sprite2D", true, false):
+		var sprite := nodo as Sprite2D
+		if sprite != null and sprite.texture != null and sprite.is_visible_in_tree():
+			return to_local(sprite.global_position)
+	return to_local(grupo.global_position)
 
 
 func _crear_objetivos_entrada() -> void:
@@ -1217,33 +1271,7 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 	]
 	# Las claves de rutina y los IDs de puerta no siempre tienen el mismo
 	# nombre (por ejemplo, casa_elian -> casa_oriente_a).
-	var ubicacion_rutina_por_entrada := {
-		"panaderia": "panaderia",
-		"forja": "forja",
-		"cuartel": "cuartel",
-		"registro": "registro",
-		"casa_comercio": "casa_comercio",
-		"archivo_real": "archivo_real",
-		"casa_estudio": "casa_estudio",
-		"casa_elian": "casa_elian",
-		"casa_bruna": "casa_bruna",
-		"casa_darven": "casa_darven",
-		"casa_saira": "casa_saira",
-		"casa_narel": "casa_narel",
-		"casa_vacia_01": "vivienda_oeste_01",
-		"casa_vacia_02": "vivienda_oeste_02",
-		"casa_vacia_03": "vivienda_oeste_03",
-		"casa_vacia_04": "vivienda_oeste_04",
-		"casa_vacia_05": "vivienda_oeste_05",
-		"casa_vacia_06": "vivienda_oeste_06",
-		"casa_vacia_07": "vivienda_oeste_07",
-		"casa_vacia_08": "vivienda_oeste_08",
-		"casa_vacia_10": "vivienda_oeste_10",
-		"casa_vacia_11": "vivienda_oeste_11",
-		"casa_granjeros": "casa_granjeros",
-		"castillo": "castillo"
-	}
-	var ubicacion_rutina_esperada := str(ubicacion_rutina_por_entrada.get(entrada_id, ""))
+	var ubicacion_rutina_esperada := str(UBICACION_RUTINA_POR_ENTRADA.get(entrada_id, ""))
 	var indice := 0
 	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not is_instance_valid(npc) or not npc is Node2D:
