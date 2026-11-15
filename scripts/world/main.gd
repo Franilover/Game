@@ -1592,20 +1592,12 @@ func _al_cinematica_narrativa_solicitada(
 	var escena_variant: Variant = escenas.get(clave, {"gesto_a":"asentir","gesto_b":"asentir"})
 	var escena: Dictionary = escena_variant
 	var zoom_actual := _camera.zoom.x
-	var pasos: Array[Dictionary] = [
-		{"tipo":"camara","x":centro_real.x,"y":centro_real.y,"seguir_npcs":[nombre_a,nombre_b],"zoom":zoom_actual * (1.08 if etapa == 1 else 1.14),"duracion":0.75},
-		{"tipo":"acciones_simultaneas","acciones":[
-			{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
-			{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a}
-		]},
-		{"tipo":"esperar","segundos":0.25},
-		{"tipo":"acciones_simultaneas","acciones":[
-			{"tipo":"gesto_npc","npc":nombre_a,"gesto":str(escena.get("gesto_a","asentir")),"duracion":0.6},
-			{"tipo":"gesto_npc","npc":nombre_b,"gesto":str(escena.get("gesto_b","asentir")),"duracion":0.6}
-		]},
-		{"tipo":"esperar","segundos":0.5}
-	]
-	await _cutscene_director.ejecutar("relacion_%s_etapa_%d" % [clave, etapa], pasos, "en_vivo")
+	await _ejecutar_cinematica_intercambio_social(
+		"relacion_%s_etapa_%d" % [clave, etapa], nombre_a, nombre_b, centro_real,
+		zoom_actual * (1.08 if etapa == 1 else 1.14),
+		str(escena.get("gesto_a", "asentir")), str(escena.get("gesto_b", "asentir")),
+		0.75, 0.25, 0.5, 0.6
+	)
 
 
 
@@ -1642,17 +1634,10 @@ func _al_cinematica_acontecimiento_solicitada(
 		return
 
 	var zoom_actual := _camera.zoom.x
-	var pasos: Array[Dictionary] = [
-		{"tipo":"camara","x":centro_real.x,"y":centro_real.y,"seguir_npcs":[nombre_a,nombre_b],"zoom":zoom_actual * 1.12,"duracion":0.9},
-		{"tipo":"acciones_simultaneas","acciones":[
-			{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
-			{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a},
-			{"tipo":"gesto_npc","npc":nombre_a,"gesto":"asentir","duracion":0.55},
-			{"tipo":"gesto_npc","npc":nombre_b,"gesto":"saludar","duracion":0.65}
-		]},
-		{"tipo":"esperar","segundos":0.45}
-	]
-	await _cutscene_director.ejecutar("acontecimiento_%s" % clave, pasos, "en_vivo")
+	await _ejecutar_cinematica_intercambio_social(
+		"acontecimiento_%s" % clave, nombre_a, nombre_b, centro_real,
+		zoom_actual * 1.12, "asentir", "saludar", 0.9, 0.0, 0.45, 0.6
+	)
 
 
 ## Escenas breves que acompañan algunas conversaciones de la reunión nocturna.
@@ -1703,20 +1688,45 @@ func _al_cinematica_reunion_nocturna_solicitada(
 			gesto_a = "asentir"
 			gesto_b = "saludar"
 	var zoom_actual := _camera.zoom.x
-	var pasos: Array[Dictionary] = [
-		{"tipo":"camara","x":centro.x,"y":centro.y,"seguir_npcs":[nombre_a,nombre_b],"zoom":zoom_actual * 1.12,"duracion":0.8},
-		{"tipo":"acciones_simultaneas","acciones":[
-			{"tipo":"mirar_npc","npc":nombre_a,"hacia_npc":nombre_b},
-			{"tipo":"mirar_npc","npc":nombre_b,"hacia_npc":nombre_a}
-		]},
-		{"tipo":"esperar","segundos":0.2},
-		{"tipo":"acciones_simultaneas","acciones":[
-			{"tipo":"gesto_npc","npc":nombre_a,"gesto":gesto_a,"duracion":0.65},
-			{"tipo":"gesto_npc","npc":nombre_b,"gesto":gesto_b,"duracion":0.65}
-		]},
-		{"tipo":"esperar","segundos":0.35}
-	]
-	await _cutscene_director.ejecutar("reunion_nocturna_%s" % clave, pasos, "en_vivo")
+	await _ejecutar_cinematica_intercambio_social(
+		"reunion_nocturna_%s" % clave, nombre_a, nombre_b, centro,
+		zoom_actual * 1.12, gesto_a, gesto_b, 0.8, 0.2, 0.35, 0.65
+	)
+
+
+func _ejecutar_cinematica_intercambio_social(
+	clave: String,
+	nombre_a: String,
+	nombre_b: String,
+	centro: Vector2,
+	zoom: float,
+	gesto_a: String,
+	gesto_b: String,
+	duracion_camara: float,
+	pausa_antes: float,
+	pausa_despues: float,
+	duracion_gesto: float
+) -> void:
+	if not is_instance_valid(_cutscene_director):
+		return
+	var secuencia := load("res://resources/cutscenes/intercambio_social.tres") as CutsceneSequence
+	if not is_instance_valid(secuencia):
+		push_warning("Main: no se pudo cargar la secuencia intercambio_social.tres.")
+		return
+	await _cutscene_director.ejecutar_recurso(secuencia, {
+		"clave": clave,
+		"npc_a": nombre_a,
+		"npc_b": nombre_b,
+		"x": centro.x,
+		"y": centro.y,
+		"zoom": zoom,
+		"gesto_a": gesto_a,
+		"gesto_b": gesto_b,
+		"duracion_camara": duracion_camara,
+		"pausa_antes": pausa_antes,
+		"pausa_despues": pausa_despues,
+		"duracion_gesto": duracion_gesto
+	}, "en_vivo")
 
 
 ## Las señales cinematográficas no se descartan por estar el jugador lejos,
