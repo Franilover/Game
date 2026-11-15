@@ -135,6 +135,12 @@ func _run() -> void:
 	if not alimento.is_queued_for_deletion():
 		_fail("El recurso consumido no se retiró del mundo.")
 		return
+	var pila := WorldItemScript.new() as WorldItem
+	pila.configurar({"item_id": "recurso-test", "cantidad": 3})
+	if not pila.consumir_por_criatura(["recurso-test"]) or int(pila.obtener_datos().get("cantidad", 0)) != 2:
+		_fail("La alimentación debe consumir una unidad, no destruir toda la pila.")
+		return
+	pila.free()
 	var alimento_no_permitido := WorldItemScript.new() as WorldItem
 	alimento_no_permitido.configurar({"item_id": "recurso-ajeno", "cantidad": 1})
 	if ai._es_alimento_configurado(alimento_no_permitido):
@@ -144,6 +150,60 @@ func _run() -> void:
 		_fail("Una criatura consumió un recurso fuera de su lista permitida.")
 		return
 	alimento_no_permitido.free()
+
+	# Las necesidades son opt-in y los valores se limitan al intervalo 0..100.
+	ai.configuracion_ia = {"necesidades": {
+		"hambre_por_segundo": 10.0,
+		"fatiga_por_segundo": 20.0,
+		"recuperacion_fatiga_por_segundo": 5.0,
+		"umbral_hambre": 50.0,
+		"umbral_fatiga": 60.0
+	}}
+	ai.actividad_horaria = "explorar"
+	ai._hambre_actual = 0.0
+	ai._fatiga_actual = 0.0
+	ai._actualizar_necesidades(2.0)
+	var necesidades_estado := ai._obtener_estado_necesidades()
+	if not is_equal_approx(float(necesidades_estado.get("hambre", -1.0)), 20.0):
+		_fail("El hambre no aumentó según su tasa configurada.")
+		return
+	if not is_equal_approx(float(necesidades_estado.get("fatiga", -1.0)), 40.0):
+		_fail("La fatiga no aumentó según su tasa configurada.")
+		return
+	ai.actividad_horaria = "reposar"
+	ai._actualizar_necesidades(2.0)
+	if not is_equal_approx(float(ai._obtener_estado_necesidades().get("fatiga", -1.0)), 70.0):
+		_fail("El descanso no recuperó fatiga correctamente.")
+		return
+	ai.configuracion_ia = {"necesidades": {"umbral_fatiga": 60.0, "recuperacion_fatiga_por_segundo": 5.0}}
+	ai._fatiga_actual = 70.0
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria != "reposar":
+		_fail("La fatiga alta no activó el descanso configurado.")
+		return
+
+	# Seguir una especie no debe convertirse automáticamente en un ataque al contacto.
+	ai.configuracion_ia = {"respuestas_ecologicas": {"competencia": "perseguir"}}
+	ai.relaciones_ecologicas = [{
+		"criatura_origen_id": actor.criatura_id,
+		"criatura_destino_id": "objetivo-seguimiento",
+		"ecosistema_id": "ecosistema-prueba",
+		"tipo_relacion": "competencia"
+	}]
+	var seguidor := CreatureScript.new() as Creature
+	seguidor.criatura_id = "objetivo-seguimiento"
+	seguidor.datos = {"id": seguidor.criatura_id, "nombre": "Objetivo"}
+	seguidor.position = Vector2(5.0, 0.0)
+	ai.objetivo = seguidor
+	ai.objetivo_detectado = true
+	ai.perfil = AIScript.Perfil.GENERICO
+	ai._cambiar_estado(AIScript.Estado.PERSIGUIENDO)
+	ai._procesar_persiguiendo()
+	if ai.estado == AIScript.Estado.ATACANDO:
+		_fail("Una relación de seguimiento inició combate.")
+		return
+	seguidor.free()
 
 	# Los ataques de contacto deben acercarse antes de iniciar el golpe.
 	player.remove_meta("garlia_bosque_asesino")
