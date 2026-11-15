@@ -2083,10 +2083,6 @@ func _agregar_opcion_consecuencia_social(opciones: Array[Dictionary], personaje_
 		clave = "consecuencia_intereses_compartidos"
 		texto = "lo que hemos aprendido juntos"
 		respuesta = "Hemos compartido varias ideas y conocimientos. Me gusta que nuestras conversaciones no se queden siempre en lo superficial."
-	elif int(tendencias.get("faltas_respeto", 0)) >= 2:
-		clave = "consecuencia_limites"
-		texto = "el respeto"
-		respuesta = "Algunas conversaciones anteriores me hicieron sentir que no estabas escuchando mis límites. Prefiero que podamos hablar con más cuidado."
 	if clave.is_empty():
 		return
 	for existente in opciones:
