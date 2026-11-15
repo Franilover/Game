@@ -809,7 +809,15 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
 		if nodo is Creature and is_instance_valid(nodo):
 			var asistente := nodo as Creature
-			if bool(asistente.get_meta("rutina_en_edificio", false)) and str(asistente.get_meta("rutina_edificio_id", "")) == "castillo":
+			var asiste_reunion := (
+				asistente == npc
+				or str(asistente.get_meta("rutina_actual", "")) == "reunion_nocturna_castillo"
+			)
+			if (
+				asiste_reunion
+				and bool(asistente.get_meta("rutina_en_edificio", false))
+				and str(asistente.get_meta("rutina_edificio_id", "")) == "castillo"
+			):
 				habitantes.append(asistente)
 	habitantes.sort_custom(func(a: Creature, b: Creature) -> bool:
 		var id_a := a.get_personaje_game_id().strip_edges()
@@ -829,20 +837,26 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	if grupo_npc < 0:
 		return
 
-	var centros: Array[Vector2] = [
-		Vector2(-170.0, -105.0), Vector2(-55.0, -105.0),
-		Vector2(55.0, -105.0), Vector2(170.0, -105.0),
-		Vector2(-170.0, 105.0), Vector2(-55.0, 105.0),
-		Vector2(55.0, 105.0), Vector2(170.0, 105.0)
-	]
+	# Doce sectores separados para hasta 36 asistentes en grupos de tres.
+	# Si el elenco crece, las filas adicionales se calculan sin reutilizar plazas.
+	var centros: Array[Vector2] = []
+	for fila in range(3):
+		for columna in range(4):
+			centros.append(Vector2(-165.0 + columna * 110.0, -100.0 + fila * 100.0))
+	var centro_grupo: Vector2
+	if grupo_npc < centros.size():
+		centro_grupo = centros[grupo_npc]
+	else:
+		var fila_extra := int(grupo_npc / 4)
+		var columna_extra := posmod(grupo_npc, 4)
+		centro_grupo = Vector2(-165.0 + columna_extra * 110.0, -100.0 + fila_extra * 100.0)
 	var offsets: Array[Vector2] = [
 		Vector2(-24.0, 0.0), Vector2(24.0, 0.0), Vector2(0.0, 22.0)
 	]
 	var contenedor_npc := npc.get_parent() as Node2D
 	if not is_instance_valid(contenedor_npc):
 		return
-	var centro: Vector2 = centros[posmod(grupo_npc, centros.size())]
-	var destino_global := contenedor_npc.to_global(centro + offsets[puesto_npc])
+	var destino_global := contenedor_npc.to_global(centro_grupo + offsets[puesto_npc])
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
 		return
@@ -857,6 +871,17 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	else:
 		movimiento.detener_por_rutina()
 		npc.set_meta("rutina_en_transito", false)
+	var nombres_grupo: Array[String] = []
+	for integrante_variant in grupos[grupo_npc]:
+		if integrante_variant is Creature and is_instance_valid(integrante_variant):
+			nombres_grupo.append((integrante_variant as Creature).get_nombre_visual())
+	for integrante_variant in grupos[grupo_npc]:
+		if integrante_variant is Creature and is_instance_valid(integrante_variant):
+			var integrante := integrante_variant as Creature
+			integrante.set_meta("grupo_social_castillo_id", grupo_npc)
+			integrante.set_meta("grupo_social_castillo_nombres", nombres_grupo.duplicate())
+			integrante.set_meta("puesto_social_castillo", grupos[grupo_npc].find(integrante))
+			integrante.set_meta("reunion_castillo_dia", str(_world_atmosphere.obtener_tiempo().get("anio", 0)) + ":" + str(_world_atmosphere.obtener_tiempo().get("dia", 1)))
 	npc.set_meta("reunion_castillo_fase", fase)
 
 
@@ -1185,14 +1210,27 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	]
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 	var indice := posmod(hash(nombre + "|" + edificio_id + "|" + str(minutos / 5)), puntos.size())
-	var destino_local: Vector2 = puntos[indice]
-	for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
-			continue
-		var otro := otro_variant as Creature
-		if otro.get_parent() == npc.get_parent() and otro.position.distance_to(destino_local) < 38.0:
-			destino_local = puntos[posmod(indice + 1, puntos.size())]
+	var destino_local := Vector2.ZERO
+	var destino_disponible := false
+	for desplazamiento_punto in range(puntos.size()):
+		var candidato: Vector2 = puntos[posmod(indice + desplazamiento_punto, puntos.size())]
+		var ocupado := false
+		for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+			if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
+				continue
+			var otro := otro_variant as Creature
+			if otro.get_parent() != npc.get_parent():
+				continue
+			if otro.position.distance_to(candidato) < 38.0:
+				ocupado = true
+				break
+		if not ocupado:
+			destino_local = candidato
+			destino_disponible = true
 			break
+	if not destino_disponible:
+		npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + 3, 1440))
+		return
 	var contenedor := npc.get_parent() as Node2D
 	if not is_instance_valid(contenedor):
 		return
@@ -1349,6 +1387,54 @@ func _detener_animacion_ocio_exterior(npc: Creature) -> void:
 		sprite.rotation = float(npc.get_meta("animacion_ocio_exterior_rotacion", sprite.rotation))
 	for clave in ["animacion_ocio_exterior_activa", "animacion_ocio_exterior_posicion", "animacion_ocio_exterior_rotacion", "animacion_ocio_exterior_tween"]:
 		npc.remove_meta(clave)
+
+
+## Separación suave de seguridad para NPC quietos que coinciden en el mismo espacio.
+## No interfiere con rutas, conversaciones, cinemáticas ni actividades sociales.
+func _separar_npcs_superpuestos() -> void:
+	var npcs: Array[Creature] = []
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if nodo is Creature and is_instance_valid(nodo):
+			var npc := nodo as Creature
+			if npc.is_alive and npc.is_inside_tree():
+				npcs.append(npc)
+	for indice_a in range(npcs.size()):
+		var a := npcs[indice_a]
+		if not _npc_puede_ajustar_separacion(a):
+			continue
+		for indice_b in range(indice_a + 1, npcs.size()):
+			var b := npcs[indice_b]
+			if a.get_parent() != b.get_parent() or not _npc_puede_ajustar_separacion(b):
+				continue
+			var diferencia := a.global_position - b.global_position
+			var distancia := diferencia.length()
+			var distancia_minima := RADIO_COLISION_NPC * 2.0
+			if distancia >= distancia_minima:
+				continue
+			var direccion := diferencia.normalized()
+			if distancia < 0.01:
+				var clave := a.get_nombre_visual() + "|" + b.get_nombre_visual()
+				var angulo := float(posmod(hash(clave), 360)) * PI / 180.0
+				direccion = Vector2.RIGHT.rotated(angulo)
+			var ajuste := (distancia_minima - distancia + 1.0) * 0.5
+			a.global_position += direccion * ajuste
+			b.global_position -= direccion * ajuste
+
+
+func _npc_puede_ajustar_separacion(npc: Creature) -> bool:
+	if not is_instance_valid(npc) or not npc.is_alive or npc.velocity.length() > 5.0:
+		return false
+	for clave in [
+		"rutina_en_transito",
+		"actividad_social_activa",
+		"acercamiento_social_activo",
+		"conversacion_npc_bloqueada",
+		"_conversacion_ambiental_activa",
+		"cinematica_npc_activa"
+	]:
+		if bool(npc.get_meta(clave, false)):
+			return false
+	return true
 
 
 ## Pequeños paseos alrededor del punto asignado. Mantienen al NPC en su
