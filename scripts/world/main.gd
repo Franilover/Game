@@ -1629,7 +1629,7 @@ func _al_cinematica_acontecimiento_solicitada(
 	var npc_b := _buscar_npc_cinematica(nombre_b)
 	if not _npc_libre_para_cinematica(npc_a, true) or not _npc_libre_para_cinematica(npc_b, true):
 		return
-	if not bool(npc_a.get_meta("actividad_social_activa", false)) or not bool(npc_b.get_meta("actividad_social_activa", false)):
+	if not desde_cola and (not bool(npc_a.get_meta("actividad_social_activa", false)) or not bool(npc_b.get_meta("actividad_social_activa", false))):
 		return
 	if npc_a == npc_b or npc_a.global_position.distance_to(npc_b.global_position) > 110.0:
 		return
@@ -1783,9 +1783,6 @@ func _procesar_cinematicas_pendientes() -> void:
 			"acontecimiento":
 				if not _npc_libre_para_cinematica(npc_a, true) or not _npc_libre_para_cinematica(npc_b, true):
 					continue
-				if not bool(npc_a.get_meta("actividad_social_activa", false)) or not bool(npc_b.get_meta("actividad_social_activa", false)):
-					_cinematicas_pendientes.remove_at(indice)
-					return
 				if npc_a.global_position.distance_to(npc_b.global_position) > 110.0:
 					continue
 				distancia_activacion = 320.0
@@ -1802,8 +1799,8 @@ func _procesar_cinematicas_pendientes() -> void:
 					continue
 				distancia_activacion = 520.0
 			_:
-			_cinematicas_pendientes.remove_at(indice)
-			return
+				_cinematicas_pendientes.remove_at(indice)
+				return
 
 		if _player.global_position.distance_to(posicion) > distancia_activacion:
 			continue
