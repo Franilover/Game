@@ -20,6 +20,11 @@ func buscar_objetivo(player: Node, distancia_base: float) -> Node:
 	var mejor_objetivo: Node = null
 	var mejor_prioridad: int = -2147483648
 	var mejor_distancia_sq: float = INF
+	var mejor_orientacion: float = -1.0
+	var direccion_jugador := Vector2.DOWN
+	var facing_variant: Variant = player.get("facing")
+	if facing_variant is Vector2 and (facing_variant as Vector2).length_squared() > 0.01:
+		direccion_jugador = (facing_variant as Vector2).normalized()
 
 	var candidatos: Array = []
 	var vistos: Dictionary = {}
@@ -100,12 +105,25 @@ func buscar_objetivo(player: Node, distancia_base: float) -> Node:
 		if candidato.has_method("get_interaction_priority"):
 			prioridad = int(candidato.call("get_interaction_priority"))
 
+		# Entre NPC de igual prioridad, favorece al que queda delante del
+		# jugador. La distancia resuelve empates y no altera la prioridad de
+		# cofres, camas ni objetos recolectables.
+		var orientacion := 0.0
+		if candidato is Creature and (candidato as Creature).es_dialogable():
+			var hacia_objetivo := player.global_position.direction_to(candidato_2d.global_position)
+			if hacia_objetivo.length_squared() > 0.01:
+				orientacion = maxf(direccion_jugador.dot(hacia_objetivo), 0.0)
+
+		var misma_prioridad := prioridad == mejor_prioridad
+		var mejor_orientado := orientacion > mejor_orientacion + 0.15
+		var orientacion_equivalente := absf(orientacion - mejor_orientacion) <= 0.15
 		if prioridad > mejor_prioridad or (
-			prioridad == mejor_prioridad
-			and distancia_sq < mejor_distancia_sq
+			misma_prioridad
+			and (mejor_orientado or (orientacion_equivalente and distancia_sq < mejor_distancia_sq))
 		):
 			mejor_prioridad = prioridad
 			mejor_distancia_sq = distancia_sq
+			mejor_orientacion = orientacion
 			mejor_objetivo = candidato
 
 	establecer_objetivo(mejor_objetivo)
