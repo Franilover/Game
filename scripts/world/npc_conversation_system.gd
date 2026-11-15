@@ -56,6 +56,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 	{
 		"clave":"noche_bruna_narel_bomba",
 		"npc_a":"bruna","npc_b":"narel","cinematica":false,
+		"rutina_compartida":{"clave":"bruna_narel_revision","intervalo_dias":7,"lineas":[{"npc":"bruna","texto":"¿Trajiste las medidas que tomaste? Podemos revisar la unión antes de que empiece el trabajo."},{"npc":"narel","texto":"Sí. Las dejé ordenadas por pieza para que podamos comparar sin mezclar observaciones."},{"npc":"bruna","texto":"Bien. Revisamos primero la unión y después vemos si el resto necesita atención."}],"lineas_repetidas":[{"npc":"narel","texto":"He actualizado las medidas desde la última revisión."},{"npc":"bruna","texto":"Entonces comparemos los cambios. Así sabremos si hace falta intervenir otra vez."}]},
 		"lineas":[
 			{"npc":"narel","texto":"He estado pensando en la bomba del pozo. El desgaste parece concentrarse en una sola unión."},
 			{"npc":"bruna","texto":"Eso no significa que el resto esté bien. Si sólo cambias esa pieza, quizá vuelva a fallar por otra parte."},
@@ -98,6 +99,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 	{
 		"clave":"noche_mara_nima_confianza",
 		"npc_a":"mara","npc_b":"nima","cinematica":false,
+		"rutina_compartida":{"clave":"mara_nima_paseo","intervalo_dias":7,"lineas":[{"npc":"nima","texto":"Me alegra que hayas podido venir. Podemos dar una vuelta por la plaza sin apurarnos."},{"npc":"mara","texto":"Sí. Me gusta que podamos pasar un rato juntas sin que todo gire alrededor de preguntas."},{"npc":"nima","texto":"Entonces podemos repetirlo cuando ambas tengamos tiempo."}],"lineas_repetidas":[{"npc":"mara","texto":"Hoy también tenía ganas de salir un rato."},{"npc":"nima","texto":"Me alegra que hayamos coincidido. No hace falta tener un plan complicado."}]},
 		"lineas":[
 			{"npc":"nima","texto":"Esta tarde iba a preguntarte algo, pero parecías ocupada. ¿Prefieres que no insista?"},
 			{"npc":"mara","texto":"Puedes preguntar. Yo decidiré qué quiero responder."},
@@ -108,6 +110,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 	{
 		"clave":"noche_saira_ivo_viajes",
 		"npc_a":"saira","npc_b":"ivo","cinematica":false,
+		"rutina_compartida":{"clave":"saira_ivo_paseo","intervalo_dias":7,"lineas":[{"npc":"saira","texto":"Hoy podemos hacer ese paseo corto del que hablamos. Elegimos el camino y volvemos cuando quieras."},{"npc":"ivo","texto":"Me parece bien. Si necesito descansar, paramos un momento; no quiero que tengas que cambiar tus planes."},{"npc":"saira","texto":"No hay prisa. Podemos disfrutar el paseo a nuestro ritmo."}],"lineas_repetidas":[{"npc":"ivo","texto":"Me vino bien salir un rato. ¿Te apetece repetir el paseo?"},{"npc":"saira","texto":"Claro. No necesitamos ir lejos para aprovechar la tarde."}]},
 		"lineas":[
 			{"npc":"ivo","texto":"Siempre vuelves con alguna historia de tus viajes. ¿Nunca te cansas de estar en movimiento?"},
 			{"npc":"saira","texto":"Claro que sí. Por eso aprendí a detenerme en lugares donde la gente me hace sentir bienvenida."},
@@ -1131,6 +1134,8 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 	var npcs := _obtener_npcs_torres()
 	if npcs.size() < 2:
 		return
+	if _buscar_rutina_compartida(jugador, tiempo, clave_dia):
+		return
 
 	# Las historias cotidianas de los habitantes locales no dependen de la misión
 	# de la carreta ni de relaciones canónicas almacenadas en Supabase.
@@ -1770,6 +1775,85 @@ func _ocultar_burbujas() -> void:
 			burbuja.visible = false
 
 
+## Programa un encuentro recurrente únicamente cuando la conversación
+## original lo propuso explícitamente.
+func _registrar_rutina_compartida() -> void:
+	var rutina_variant: Variant = _conversacion_activa.get("rutina_compartida", {})
+	if not rutina_variant is Dictionary or (rutina_variant as Dictionary).is_empty():
+		return
+	var rutina := (rutina_variant as Dictionary).duplicate(true)
+	var clave := str(rutina.get("clave", "")).strip_edges()
+	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", "")).to_lower()) as Creature
+	var npc_b := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", "")).to_lower()) as Creature
+	if clave.is_empty() or not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var numero_dia := int(tiempo.get("anio", 0)) * 365 + int(tiempo.get("dia", 1))
+	var rutinas_variant: Variant = _progreso_parejas.get("_rutinas_compartidas", {})
+	var rutinas: Dictionary = rutinas_variant.duplicate(true) if rutinas_variant is Dictionary else {}
+	var anterior_variant: Variant = rutinas.get(clave, {})
+	var anterior: Dictionary = anterior_variant if anterior_variant is Dictionary else {}
+	rutina["npc_a_id"] = npc_a.get_personaje_game_id()
+	rutina["npc_b_id"] = npc_b.get_personaje_game_id()
+	rutina["proximo_dia"] = numero_dia + (1 if anterior.is_empty() else maxi(1, int(rutina.get("intervalo_dias", 7))))
+	rutina["veces_realizada"] = int(anterior.get("veces_realizada", 0))
+	rutinas[clave] = rutina
+	_progreso_parejas["_rutinas_compartidas"] = rutinas
+	if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+		_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+
+
+## Las rutinas se repiten con cadencia moderada y sólo se muestran si los
+## participantes coinciden de forma natural y el jugador está cerca.
+func _buscar_rutina_compartida(jugador: Node2D, tiempo: Dictionary, clave_dia: String) -> bool:
+	var rutinas_variant: Variant = _progreso_parejas.get("_rutinas_compartidas", {})
+	if not rutinas_variant is Dictionary:
+		return false
+	var numero_dia := int(tiempo.get("anio", 0)) * 365 + int(tiempo.get("dia", 1))
+	var rutinas := (rutinas_variant as Dictionary).duplicate(true)
+	for clave_variant in rutinas.keys():
+		var clave := str(clave_variant)
+		var rutina_variant: Variant = rutinas.get(clave, {})
+		if not rutina_variant is Dictionary:
+			continue
+		var rutina := rutina_variant as Dictionary
+		if numero_dia < int(rutina.get("proximo_dia", 0)):
+			continue
+		var npc_a := _npc_por_id.get(str(rutina.get("npc_a_id", ""))) as Creature
+		var npc_b := _npc_por_id.get(str(rutina.get("npc_b_id", ""))) as Creature
+		if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+			continue
+		if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
+			continue
+		if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR:
+			continue
+		var lineas_variant: Variant = rutina.get("lineas", [])
+		var realizadas := int(rutina.get("veces_realizada", 0))
+		if realizadas > 0:
+			var repetidas_variant: Variant = rutina.get("lineas_repetidas", [])
+			if repetidas_variant is Array and not (repetidas_variant as Array).is_empty():
+				lineas_variant = repetidas_variant
+		if not lineas_variant is Array or (lineas_variant as Array).is_empty():
+			continue
+		_iniciar_conversacion({
+			"clave": "rutina_compartida_%s_%s" % [clave, clave_dia.replace(":", "_")],
+			"npc_a": str(rutina.get("npc_a", "")),
+			"npc_b": str(rutina.get("npc_b", "")),
+			"lineas": (lineas_variant as Array).duplicate(true),
+			"solo_ambiental_local": true,
+			"_rutina_compartida_clave": clave
+		})
+		rutina["veces_realizada"] = realizadas + 1
+		rutina["proximo_dia"] = numero_dia + maxi(1, int(rutina.get("intervalo_dias", 7)))
+		rutinas[clave] = rutina
+		_progreso_parejas["_rutinas_compartidas"] = rutinas
+		if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+			_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+		_vistas_por_dia["rutina_compartida_" + clave] = true
+		return true
+	return false
+
+
 ## Actualiza la relación entre participantes y distribuye sólo los conocimientos
 ## declarados por la escena. El diálogo por sí solo no confirma los rumores.
 func _registrar_dinamica_social_conversacion() -> void:
@@ -1861,6 +1945,7 @@ func _registrar_dinamica_social_conversacion() -> void:
 func _finalizar_conversacion(completada: bool = false) -> void:
 	if completada and not _conversacion_activa.is_empty():
 		_registrar_dinamica_social_conversacion()
+		_registrar_rutina_compartida()
 	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):
 		_guardar_objeto_del_acontecimiento()
 		_iniciar_actividad_del_acontecimiento()
