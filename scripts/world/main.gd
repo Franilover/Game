@@ -128,7 +128,7 @@ func _ready() -> void:
 	if is_instance_valid(_npc_schedule_system):
 		_npc_schedule_system.name = "NPCScheduleSystem"
 		add_child(_npc_schedule_system)
-		_npc_schedule_system.configurar(_world_atmosphere, _zone_manager)
+		_npc_schedule_system.configurar(_world_atmosphere, _zone_manager, RelationshipSystem)
 	else:
 		push_error("Main: no se pudo inicializar NPCScheduleSystem.")
 
