@@ -2,6 +2,7 @@ extends Node
 
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
+const WorldItemScript = preload("res://scripts/world/world_item.gd")
 
 
 func _ready() -> void:
@@ -120,6 +121,30 @@ func _run() -> void:
 		_fail("La depredación perdió su respuesta histórica por defecto.")
 		return
 	presa.free()
+
+	# La alimentación sólo reconoce IDs declarados por la configuración.
+	var alimento := WorldItemScript.new() as WorldItem
+	alimento.configurar({"item_id": "recurso-test", "cantidad": 1})
+	ai.configuracion_ia = {"alimentacion": {"item_ids": ["recurso-test"]}}
+	if not ai._es_alimento_configurado(alimento):
+		_fail("La IA no reconoció un alimento declarado explícitamente.")
+		return
+	if not alimento.consumir_por_criatura(ai._obtener_ids_alimento()):
+		_fail("Un alimento permitido no pudo ser consumido.")
+		return
+	if not alimento.is_queued_for_deletion():
+		_fail("El recurso consumido no se retiró del mundo.")
+		return
+	var alimento_no_permitido := WorldItemScript.new() as WorldItem
+	alimento_no_permitido.configurar({"item_id": "recurso-ajeno", "cantidad": 1})
+	if ai._es_alimento_configurado(alimento_no_permitido):
+		_fail("La IA aceptó un recurso que no figura en su dieta.")
+		return
+	if alimento_no_permitido.consumir_por_criatura(["otro-id"]):
+		_fail("Una criatura consumió un recurso fuera de su lista permitida.")
+		return
+	alimento.free()
+	alimento_no_permitido.free()
 
 	# Los ataques de contacto deben acercarse antes de iniciar el golpe.
 	player.remove_meta("garlia_bosque_asesino")
