@@ -44,7 +44,7 @@ func configurar(
 		lineas.append("Categoría: " + categoria_texto)
 	if not descripcion.is_empty():
 		lineas.append(descripcion)
-	tooltip_text = "\n".join(lineas)
+		tooltip_text= ""
 
 	actualizar()
 
