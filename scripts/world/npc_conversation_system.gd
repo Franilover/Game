@@ -1483,6 +1483,11 @@ func _npc_puede_conversar(npc: Creature) -> bool:
 
 func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	_conversacion_activa = conversacion.duplicate(true)
+	for clave_participante in ["npc_a", "npc_b", "npc_c"]:
+		var nombre_participante := str(_conversacion_activa.get(clave_participante, "")).strip_edges().to_lower()
+		var participante := _npc_por_nombre.get(nombre_participante) as Creature
+		if is_instance_valid(participante):
+			participante.set_meta("_conversacion_ambiental_activa", true)
 	_jugador_observando_conversacion = false
 	var tiempo := _world_atmosphere.obtener_tiempo()
 	var clave_progreso := str(_conversacion_activa.get("clave", ""))
@@ -2129,6 +2134,12 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 						centro_cinematica,
 						etapa + 1
 					)
+	for clave_participante in ["npc_a", "npc_b", "npc_c"]:
+		var nombre_participante := str(_conversacion_activa.get(clave_participante, "")).strip_edges().to_lower()
+		var participante := _npc_por_nombre.get(nombre_participante) as Creature
+		if is_instance_valid(participante):
+			participante.remove_meta("_conversacion_ambiental_activa")
+			participante.set_meta("rutina_paseo_exterior_siguiente", posmod(int(_world_atmosphere.obtener_tiempo().get("hora_del_dia", 0.0) * 60.0) + 3, 1440))
 	_ocultar_burbujas()
 	_conversacion_activa.clear()
 	_indice_linea = 0
