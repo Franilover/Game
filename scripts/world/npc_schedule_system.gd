@@ -175,6 +175,10 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
 		var npc := npc_variant as Creature
+		# Un NPC muerto conserva su instancia para que el estado visual no se
+		# confunda con una baja del catálogo, pero nunca debe reanudar rutinas.
+		if not npc.is_alive:
+			continue
 		if _actualizar_actividad_social(npc, delta):
 			continue
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
