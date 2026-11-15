@@ -1437,6 +1437,20 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 
 	if etapa == 0 and not variantes.is_empty():
 		var tono := str(_conversacion_activa.get("tono_relacion", "cordial"))
+		if is_instance_valid(_relationship_system):
+			var npc_a_relacion := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", "")).to_lower()) as Creature
+			var npc_b_relacion := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", "")).to_lower()) as Creature
+			if is_instance_valid(npc_a_relacion) and is_instance_valid(npc_b_relacion):
+				var relacion_par: Dictionary = _relationship_system.obtener_relacion_entre_npc(
+					npc_a_relacion.get_personaje_game_id(),
+					npc_b_relacion.get_personaje_game_id()
+				)
+				if float(relacion_par.get("tension", 0.0)) >= 1.0:
+					tono = "tensa"
+				elif float(relacion_par.get("confianza", 0.0)) >= 1.0 and float(relacion_par.get("colaboracion", 0.0)) > 0.0:
+					tono = "cercana"
+				elif float(relacion_par.get("confianza", 0.0)) <= -1.0:
+					tono = "prudente"
 		var desplazamiento := 0
 		match tono:
 			"cercana":
