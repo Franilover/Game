@@ -587,7 +587,8 @@ func _procesar_persiguiendo() -> void:
 
 	# "Perseguir" también puede significar seguir/acompañar. Sólo una relación
 	# configurada como "atacar" permite convertir la aproximación en combate.
-	if respuesta == "perseguir" and _es_seguimiento_ecologico(objetivo):
+	var seguimiento_ecologico := respuesta == "perseguir" and _es_seguimiento_ecologico(objetivo)
+	if seguimiento_ecologico:
 		var interaccion_variant: Variant = configuracion_ia.get("interaccion_ecologica", {})
 		var interaccion: Dictionary = interaccion_variant if interaccion_variant is Dictionary else {}
 		var distancia_seguimiento := maxf(float(interaccion.get("distancia_seguimiento", 36.0)), 8.0)
@@ -612,7 +613,7 @@ func _procesar_persiguiendo() -> void:
 
 	criatura.establecer_direccion_movimiento(direccion)
 
-	if respuesta == "atacar" and distancia <= _obtener_distancia_contacto():
+	if (respuesta == "atacar" or (respuesta == "perseguir" and not seguimiento_ecologico)) and distancia <= _obtener_distancia_contacto():
 		_cambiar_estado(Estado.ATACANDO)
 
 
