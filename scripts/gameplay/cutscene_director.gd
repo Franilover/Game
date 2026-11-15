@@ -194,6 +194,9 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 						return false
 			"esperar":
 				var duracion := clampf(float(paso.get("segundos", 0.5)), 0.0, 60.0)
+				var variacion := clampf(float(paso.get("variacion", 0.0)), 0.0, 2.0)
+				if variacion > 0.0:
+					duracion = clampf(duracion + randf_range(-variacion, variacion), 0.0, 60.0)
 				if duracion > 0.0:
 					await get_tree().create_timer(duracion).timeout
 					if generacion_actual != _generacion:
