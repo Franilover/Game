@@ -996,21 +996,30 @@ func _obtener_rutina_encuentro_trio(
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
 	var anio := int(tiempo.get("anio", 0))
 	var semana := int((int(tiempo.get("dia", 1)) - 1) / 5)
-	var dia_elegido := posmod(hash("mara_ivo_nima|" + str(anio) + "|" + str(semana)), 5)
+	# Busca primero los días en que los tres tienen tiempo libre real. Luego
+	# elige uno de forma estable para esa semana, sin interrumpir sus oficios.
+	var dias_disponibles: Array[int] = []
+	for dia_candidato in range(5):
+		var todos_libres := true
+		for nombre in nombres:
+			var participante := participantes[nombre] as Creature
+			var base: Dictionary
+			var lista: Variant = participante.datos.get("rutinas", [])
+			if dia_candidato == 4 and not bool(participante.get_meta("habitante_sin_oficio", false)):
+				base = _seleccionar_rutina_dia_libre(participante, minutos)
+			else:
+				base = _seleccionar_rutina(lista, dia_candidato, minutos, participante.get_nombre_visual())
+			if not _puede_participar_en_evento(base):
+				todos_libres = false
+				break
+		if todos_libres:
+			dias_disponibles.append(dia_candidato)
+	if dias_disponibles.is_empty():
+		return {}
+	var indice_dia := posmod(hash("mara_ivo_nima|" + str(anio) + "|" + str(semana)), dias_disponibles.size())
+	var dia_elegido := dias_disponibles[indice_dia]
 	if dia_semana != dia_elegido or not _puede_participar_en_evento(rutina_actual):
 		return {}
-	# Verifica también a los otros dos: no se convoca a nadie desde un turno,
-	# una guardia, una investigación o una tarea que siga activa.
-	for nombre in nombres:
-		var participante := participantes[nombre] as Creature
-		var base: Dictionary
-		var lista: Variant = participante.datos.get("rutinas", [])
-		if dia_semana == 4 and not bool(participante.get_meta("habitante_sin_oficio", false)):
-			base = _seleccionar_rutina_dia_libre(participante, minutos)
-		else:
-			base = _seleccionar_rutina(lista, dia_semana, minutos, participante.get_nombre_visual())
-		if not _puede_participar_en_evento(base):
-			return {}
 	var posiciones: Dictionary = {
 		"mara": Vector2(-42.0, 18.0),
 		"ivo": Vector2(42.0, 18.0),
