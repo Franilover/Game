@@ -81,8 +81,31 @@ func obtener_clave_actual() -> String:
 	return _clave_actual
 
 
-## Ejecuta una secuencia guardada como recurso .tres/.res y validada en el Inspector.
-func ejecutar_recurso(secuencia: CutsceneSequence, tipo_override: String = "") -> bool:
+func _resolver_parametros_cinematica(valor: Variant, parametros: Dictionary) -> Variant:
+	if valor is String:
+		var texto := str(valor)
+		for nombre in parametros:
+			texto = texto.replace("{{%s}}" % str(nombre), str(parametros[nombre]))
+		return texto
+	if valor is Dictionary:
+		var diccionario: Dictionary = {}
+		for clave in valor:
+			diccionario[clave] = _resolver_parametros_cinematica(valor[clave], parametros)
+		return diccionario
+	if valor is Array:
+		var lista: Array = []
+		for elemento in valor:
+			lista.append(_resolver_parametros_cinematica(elemento, parametros))
+		return lista
+	return valor
+
+
+## Ejecuta una secuencia .tres/.res, valida sus pasos y resuelve marcadores {{parametro}}.
+func ejecutar_recurso(
+	secuencia: CutsceneSequence,
+	parametros: Dictionary = {},
+	tipo_override: String = ""
+) -> bool:
 	if not is_instance_valid(secuencia):
 		push_warning("CutsceneDirector: el recurso de secuencia no es válido.")
 		return false
@@ -91,10 +114,15 @@ func ejecutar_recurso(secuencia: CutsceneSequence, tipo_override: String = "") -
 		for error in errores:
 			push_warning("CutsceneDirector [%s]: %s" % [secuencia.clave, error])
 		return false
+	for nombre_requerido in secuencia.parametros_requeridos:
+		if not parametros.has(nombre_requerido):
+			push_warning("CutsceneDirector [%s]: falta el parámetro '%s'." % [secuencia.clave, nombre_requerido])
+			return false
 	var modo_ejecucion := tipo_override.strip_edges()
 	if modo_ejecucion.is_empty():
 		modo_ejecucion = secuencia.modo
-	return await ejecutar(secuencia.clave, secuencia.pasos, modo_ejecucion)
+	var pasos_resueltos: Array = _resolver_parametros_cinematica(secuencia.pasos, parametros)
+	return await ejecutar(secuencia.clave, pasos_resueltos, modo_ejecucion)
 
 
 func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
