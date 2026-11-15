@@ -26,7 +26,7 @@ const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 const ACONTECIMIENTOS_DIARIOS: Array[Dictionary] = [
 	{"clave":"elian_saira_paquete","objeto_visual":"Paquete","tipo_visual":"paquete","npc_a":"elian","npc_b":"saira","lineas":[{"npc":"saira","texto":"Dejé un pequeño paquete junto al horno. No era urgente, así que no quise interrumpirte."},{"npc":"elian","texto":"Lo vi al llegar. Gracias por traerlo hasta aquí; hoy tenía las manos ocupadas desde temprano."},{"npc":"saira","texto":"No todo lo que transporto tiene que convertirse en un encargo."},{"npc":"elian","texto":"Entonces la próxima vez te guardaré algo para el camino."}]},
 	{"clave":"bruna_darven_cartel","objeto_visual":"Aviso","tipo_visual":"cartel","npc_a":"bruna","npc_b":"darven","lineas":[{"npc":"darven","texto":"El cartel de la plaza volvió a torcerse. Esta vez lo encontré antes de que cayera."},{"npc":"bruna","texto":"Puedo reforzar el soporte, pero alguien tendrá que dejar de colgar avisos en el borde."},{"npc":"darven","texto":"Hablaré con quienes lo usan. No quiero que termines reparándolo cada dos días."},{"npc":"bruna","texto":"Con que no lo conviertan en un tablón de anuncios improvisado, me basta."}]},
-	{"clave":"narel_saira_noticia","objeto_visual":"Notas","tipo_visual":"notas","npc_a":"narel","npc_b":"saira","lineas":[{"npc":"narel","texto":"Mencionaste una luz extraña cerca del camino. ¿Alguien más la vio?"},{"npc":"saira","texto":"Dos viajeros hablaron de un reflejo entre los árboles, pero ninguno se acercó."},{"npc":"narel","texto":"Entonces lo anotaré como un testimonio sin verificar, no como un fenómeno confirmado."},{"npc":"saira","texto":"Por eso te lo cuento a ti. Sabía que no ibas a convertirlo en una historia enorme."}]},
+	{"clave":"narel_saira_noticia","objeto_visual":"Notas","tipo_visual":"notas","npc_a":"narel","npc_b":"saira","conocimientos":[{"clave":"reflejo_arboles","tema":"reflejo_en_el_camino","detalle":"Dos viajeros reportaron un reflejo entre los árboles; ninguno se acercó.","verificacion":"testimonio_no_verificado","fuente":"viajeros","destinatario":"saira"}],"transmisiones":[{"clave":"reflejo_arboles","origen":"saira","destino":"narel"}],"lineas":[{"npc":"narel","texto":"Mencionaste una luz extraña cerca del camino. ¿Alguien más la vio?"},{"npc":"saira","texto":"Dos viajeros hablaron de un reflejo entre los árboles, pero ninguno se acercó."},{"npc":"narel","texto":"Entonces lo anotaré como un testimonio sin verificar, no como un fenómeno confirmado."},{"npc":"saira","texto":"Por eso te lo cuento a ti. Sabía que no ibas a convertirlo en una historia enorme."}]},
 	{"clave":"elian_bruna_pan","objeto_visual":"Pan","tipo_visual":"pan","npc_a":"elian","npc_b":"bruna","lineas":[{"npc":"elian","texto":"Aparté una pieza de pan de la última hornada. Quedó más dura de lo que esperaba."},{"npc":"bruna","texto":"No está tan mal. Servirá para probar si el filo de mi herramienta nueva aguanta."},{"npc":"elian","texto":"Preferiría que no usaras mi pan como material de prueba."},{"npc":"bruna","texto":"Entonces la próxima vez hazlo un poco más blando. Problema resuelto."}]},
 	{"clave":"darven_narel_turno","objeto_visual":"Registro","tipo_visual":"notas","npc_a":"darven","npc_b":"narel","lineas":[{"npc":"darven","texto":"Hoy la plaza estuvo más tranquila durante el cambio de turno."},{"npc":"narel","texto":"¿Lo atribuyes a la hora o a que hubo menos viajeros?"},{"npc":"darven","texto":"A ambas cosas, probablemente. No tengo suficientes días comparables."},{"npc":"narel","texto":"Puedo llevar un registro sencillo. Así no dependeremos sólo de la impresión."}]},
 	{"clave":"bruna_saira_cierre","objeto_visual":"Hebillas","tipo_visual":"metal","npc_a":"bruna","npc_b":"saira","lineas":[{"npc":"saira","texto":"Un comerciante me ofreció unas hebillas viejas a cambio de una entrega."},{"npc":"bruna","texto":"Si no están partidas, puedo aprovechar el metal. Tráelas cuando vuelvas."},{"npc":"saira","texto":"No prometo que sean bonitas."},{"npc":"bruna","texto":"No te pedí que lo fueran. Sólo que no se desarmen al tocarlas."}]},
@@ -44,6 +44,8 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 	{
 		"clave":"noche_darven_saira_rumores",
 		"npc_a":"darven","npc_b":"saira","cinematica":true,
+		"conocimientos":[{"clave":"luces_cantera","tema":"luces_cerca_de_la_cantera","detalle":"Viajeros reportaron luces cerca de la vieja cantera; los relatos no coinciden en la hora.","verificacion":"rumor_no_verificado","fuente":"viajeros","destinatario":"saira"}],
+		"transmisiones":[{"clave":"luces_cantera","origen":"saira","destino":"darven"}],
 		"lineas":[
 			{"npc":"saira","texto":"En el camino escuché que alguien vio luces cerca de la vieja cantera. Cada viajero lo cuenta de una forma distinta."},
 			{"npc":"darven","texto":"¿Alguno dio una hora o un lugar preciso? No quiero enviar a nadie a buscar un relato que cambia cada vez."},
@@ -1691,7 +1693,86 @@ func _ocultar_burbujas() -> void:
 			burbuja.visible = false
 
 
+## Actualiza la relación entre participantes y distribuye sólo los conocimientos
+## declarados por la escena. El diálogo por sí solo no confirma los rumores.
+func _registrar_dinamica_social_conversacion() -> void:
+	if not is_instance_valid(_relationship_system):
+		return
+	var nombre_a := str(_conversacion_activa.get("npc_a", "")).strip_edges().to_lower()
+	var nombre_b := str(_conversacion_activa.get("npc_b", "")).strip_edges().to_lower()
+	var npc_a := _npc_por_nombre.get(nombre_a) as Creature
+	var npc_b := _npc_por_nombre.get(nombre_b) as Creature
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return
+	var id_a := npc_a.get_personaje_game_id().strip_edges()
+	var id_b := npc_b.get_personaje_game_id().strip_edges()
+	if id_a.is_empty() or id_b.is_empty() or id_a == id_b:
+		return
+
+	var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
+	var cambios: Dictionary = {}
+	var efectos_variant: Variant = _conversacion_activa.get("efectos_etapa", [])
+	if efectos_variant is Array and etapa >= 0 and etapa < (efectos_variant as Array).size():
+		var efecto_variant: Variant = (efectos_variant as Array)[etapa]
+		if efecto_variant is Dictionary:
+			var efecto := efecto_variant as Dictionary
+			for eje in ["amistad", "confianza", "respeto", "afecto", "tension", "colaboracion"]:
+				if efecto.has(eje):
+					cambios[eje] = float(efecto.get(eje, 0.0))
+	_relationship_system.registrar_interaccion_entre_npc(
+		id_a,
+		id_b,
+		cambios,
+		{
+			"tipo": "conversacion_npc",
+			"clave": str(_conversacion_activa.get("clave", "")),
+			"etapa": etapa + 1,
+			"momento": Time.get_datetime_string_from_system(true)
+		}
+	)
+
+	var conocimientos_variant: Variant = _conversacion_activa.get("conocimientos", [])
+	if conocimientos_variant is Array:
+		for conocimiento_variant in conocimientos_variant as Array:
+			if not conocimiento_variant is Dictionary:
+				continue
+			var conocimiento := (conocimiento_variant as Dictionary).duplicate(true)
+			var destinatario := str(conocimiento.get("destinatario", "")).strip_edges().to_lower()
+			conocimiento.erase("destinatario")
+			if destinatario.is_empty():
+				_relationship_system.registrar_conocimiento_npc(id_a, conocimiento)
+				_relationship_system.registrar_conocimiento_npc(id_b, conocimiento)
+			else:
+				var npc_destinatario := _npc_por_nombre.get(destinatario) as Creature
+				if is_instance_valid(npc_destinatario):
+					_relationship_system.registrar_conocimiento_npc(
+						npc_destinatario.get_personaje_game_id(),
+						conocimiento
+					)
+
+	var transmisiones_variant: Variant = _conversacion_activa.get("transmisiones", [])
+	if transmisiones_variant is Array:
+		for transmision_variant in transmisiones_variant as Array:
+			if not transmision_variant is Dictionary:
+				continue
+			var transmision := transmision_variant as Dictionary
+			var origen_nombre := str(transmision.get("origen", "")).strip_edges().to_lower()
+			var destino_nombre := str(transmision.get("destino", "")).strip_edges().to_lower()
+			var npc_origen := _npc_por_nombre.get(origen_nombre) as Creature
+			var npc_destino := _npc_por_nombre.get(destino_nombre) as Creature
+			if not is_instance_valid(npc_origen) or not is_instance_valid(npc_destino):
+				continue
+			_relationship_system.transmitir_conocimiento_npc(
+				npc_origen.get_personaje_game_id(),
+				npc_destino.get_personaje_game_id(),
+				str(transmision.get("clave", "")),
+				{"conversacion": str(_conversacion_activa.get("clave", ""))}
+			)
+
+
 func _finalizar_conversacion(completada: bool = false) -> void:
+	if completada and not _conversacion_activa.is_empty():
+		_registrar_dinamica_social_conversacion()
 	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):
 		_guardar_objeto_del_acontecimiento()
 		_iniciar_actividad_del_acontecimiento()
