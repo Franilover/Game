@@ -168,6 +168,8 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		for clave_ambiental in ["bioma_id", "ecosistema_id", "habitat_id", "habitat_clave"]:
 			if dato.has(clave_ambiental):
 				criatura_data[clave_ambiental] = dato[clave_ambiental]
+		if dato.has("necesidades_runtime"):
+			criatura_data["necesidades_runtime"] = dato["necesidades_runtime"]
 		if categoria_entidad == "garumi":
 			criatura_data["categoria_entidad"] = "garumi"
 			criatura_data["asset_key"] = str(criatura_data.get("asset_key", criatura_data.get("nombre", "")))
@@ -842,6 +844,8 @@ func _spawn_chunk_interno(
 		)
 		if not estado_previo.is_empty() and not bool(estado_previo.get("is_alive", true)):
 			continue
+		if estado_previo.has("necesidades_runtime"):
+			criatura_data["necesidades_runtime"] = estado_previo["necesidades_runtime"]
 
 		var criatura: Node = _entity_factory.crear_criatura(criatura_data)
 
@@ -1018,6 +1022,8 @@ func _spawn_garumis_en_chunk(
 				continue
 
 			var garumi_data := elegido.duplicate(true)
+			if estado_previo.has("necesidades_runtime"):
+				garumi_data["necesidades_runtime"] = estado_previo["necesidades_runtime"]
 			# Restaurar datos de instancia sin permitir que una partida antigua
 			# reintroduzca identidades de especies retiradas del catálogo.
 			var datos_garumi_guardados_variant: Variant = estado_previo.get("garumi_datos", {})
