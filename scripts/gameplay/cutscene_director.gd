@@ -736,12 +736,60 @@ func _ocultar_npcs_fuera_de_cinematica() -> void:
 		npc.hide()
 
 
+func _detener_animaciones_rutina_temporales(npc: Creature) -> void:
+	if not is_instance_valid(npc):
+		return
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	var animaciones: Array[Dictionary] = [
+		{
+			"tween": "animacion_ocio_exterior_tween",
+			"posicion": "animacion_ocio_exterior_posicion",
+			"rotacion": "animacion_ocio_exterior_rotacion",
+			"claves": ["animacion_ocio_exterior_activa", "animacion_ocio_exterior_posicion", "animacion_ocio_exterior_rotacion", "animacion_ocio_exterior_tween"]
+		},
+		{
+			"tween": "animacion_actividad_interior_tween",
+			"posicion": "animacion_actividad_interior_posicion",
+			"rotacion": "animacion_actividad_interior_rotacion",
+			"escala": "animacion_actividad_interior_escala",
+			"claves": ["animacion_actividad_interior_activa", "animacion_actividad_interior_clave", "animacion_actividad_interior_posicion", "animacion_actividad_interior_rotacion", "animacion_actividad_interior_escala", "animacion_actividad_interior_tween"]
+		},
+		{
+			"tween": "animacion_panaderia_tween",
+			"posicion": "animacion_panaderia_posicion",
+			"rotacion": "animacion_panaderia_rotacion",
+			"claves": ["animacion_panaderia_activa", "animacion_panaderia_rol", "animacion_panaderia_posicion", "animacion_panaderia_rotacion", "animacion_panaderia_tween"]
+		}
+	]
+	for animacion in animaciones:
+		var tween_variant: Variant = npc.get_meta(str(animacion.get("tween", "")), null)
+		if tween_variant is Tween and is_instance_valid(tween_variant):
+			(tween_variant as Tween).kill()
+		if is_instance_valid(sprite):
+			var posicion_clave := str(animacion.get("posicion", ""))
+			if npc.has_meta(posicion_clave):
+				var posicion: Variant = npc.get_meta(posicion_clave)
+				if posicion is Vector2:
+					sprite.position = posicion
+			var rotacion_clave := str(animacion.get("rotacion", ""))
+			if npc.has_meta(rotacion_clave):
+				sprite.rotation = float(npc.get_meta(rotacion_clave))
+			var escala_clave := str(animacion.get("escala", ""))
+			if not escala_clave.is_empty() and npc.has_meta(escala_clave):
+				var escala: Variant = npc.get_meta(escala_clave)
+				if escala is Vector2:
+					sprite.scale = escala
+		for clave in animacion.get("claves", []):
+			npc.remove_meta(str(clave))
+
+
 func _guardar_estado_npc(npc: Creature) -> void:
 	if not is_instance_valid(npc):
 		return
 	var id := str(npc.get_instance_id())
 	if _estado_npcs_cinematica.has(id):
 		return
+	_detener_animaciones_rutina_temporales(npc)
 	var metas := {}
 	for clave in ["rutina_en_edificio", "rutina_en_transito", "actividad_social_activa", "acercamiento_social_activo", "conversacion_npc_bloqueada", "cinematica_npc_activa"]:
 		metas[clave] = {"tenia": npc.has_meta(clave), "valor": npc.get_meta(clave, null)}
