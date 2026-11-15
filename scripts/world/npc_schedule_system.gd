@@ -913,11 +913,22 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 	var invitacion_variant: Variant = invitaciones.get(personaje_id, {})
 	if not invitacion_variant is Dictionary:
 		return {}
-	var invitacion := invitacion_variant as Dictionary
+	var invitacion := (invitacion_variant as Dictionary).duplicate(true)
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var anio_actual := int(tiempo.get("anio", 0))
+	var dia_actual := int(tiempo.get("dia", 1))
+	var anio_objetivo := int(invitacion.get("anio", -1))
+	var dia_objetivo := int(invitacion.get("dia", -1))
+	if anio_actual > anio_objetivo or (anio_actual == anio_objetivo and dia_actual > dia_objetivo):
+		invitacion["estado"] = "caducada"
+		invitaciones[personaje_id] = invitacion
+		GameState.world_state.flags["invitaciones_npc"] = invitaciones
+		if GameState.has_method("guardar_partida"):
+			GameState.call_deferred("guardar_partida")
+		return {}
 	if (
-		int(invitacion.get("anio", -1)) != int(tiempo.get("anio", -2))
-		or int(invitacion.get("dia", -1)) != int(tiempo.get("dia", -2))
+		anio_objetivo != anio_actual
+		or dia_objetivo != dia_actual
 		or str(invitacion.get("estado", "")) != "aceptada"
 	):
 		return {}
