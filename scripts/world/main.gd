@@ -1715,6 +1715,9 @@ func _ejecutar_cinematica_intercambio_social(
 		return
 	var usar_interrupcion := posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 0
 	var ruta_secuencia := "res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres"
+	var invertir_turno := posmod(hash(nombre_a + "|" + nombre_b + "|" + clave), 2) == 1
+	var interrumpe := nombre_a if invertir_turno else nombre_b
+	var interrumpido := nombre_b if invertir_turno else nombre_a
 	var secuencia := load(ruta_secuencia) as CutsceneSequence
 	if not is_instance_valid(secuencia):
 		push_warning("Main: no se pudo cargar la secuencia intercambio_social.tres.")
@@ -1723,6 +1726,8 @@ func _ejecutar_cinematica_intercambio_social(
 		"clave": clave,
 		"npc_a": nombre_a,
 		"npc_b": nombre_b,
+		"interrumpe": interrumpe,
+		"interrumpido": interrumpido,
 		"x": centro.x,
 		"y": centro.y,
 		"zoom": zoom,
