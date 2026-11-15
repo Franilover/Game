@@ -159,17 +159,17 @@ func esta_abierto() -> bool:
 
 
 func abrir_desde(fuente: Creature) -> bool:
-	print("DialogueSystem: abrir_desde() → ", fuente.name if is_instance_valid(fuente) else "<invalido>")
+	
 	if fuente == null or not is_instance_valid(fuente):
-		print("DialogueSystem: fuente invalida.")
+		
 		return false
 
 	if not fuente is Creature:
-		print("DialogueSystem: fuente de diálogo inválida.")
+		
 		return false
 
 	var datos_variant: Variant = fuente.get_dialogue_data()
-	print("DialogueSystem: datos recibidos = ", datos_variant is Dictionary, " | claves = ", datos_variant.keys() if datos_variant is Dictionary else [])
+	
 	if not datos_variant is Dictionary:
 		return false
 
@@ -184,7 +184,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	_personaje_variante_pendiente = ""
 	_ciclo_variante_pendiente = ""
 	_fuente = fuente
-	print("DialogueSystem: abrir() | fuente = ", fuente.name if is_instance_valid(fuente) else "<ninguna>")
+	
 	var datos_seleccionados := datos.duplicate(true) if iniciativa_directa else _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
 	var acciones_debug: Array = []
@@ -192,17 +192,8 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	if acciones_variant_debug is Array:
 		acciones_debug = acciones_variant_debug
 
-	print(
-		"DialogueSystem: variante = ",
-		str(datos_seleccionados.get("clave", "<sin clave>")),
-		" | lineas = ",
-		lineas.size(),
-		" | acciones = ",
-		acciones_debug.size()
-	)
-
 	if lineas.is_empty():
-		print("DialogueSystem: ABORTADO → no hay lineas normalizadas.")
+		
 		return false
 
 	if dialogue_panel == null:
@@ -218,9 +209,12 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		if not personaje_id.is_empty():
 			if mission_manager != null:
 				mission_manager.registrar_dialogo_desde_fuente(personaje_id, str(datos_seleccionados.get("clave", "principal")), _fuente)
-			if not iniciativa_directa:
+			if not iniciativa_directa and mission_manager != null:
+				# Sólo hay que volver a seleccionar si el registro de misión pudo
+				# cambiar requisitos. Sin gestor, repetir la selección puede sortear
+				# otra variante social aunque el estado del mundo no haya cambiado.
 				var datos_actualizados := _seleccionar_dialogo(datos)
-				if str(datos_actualizados.get("clave", "")) != str(datos_seleccionados.get("clave", "")):
+				if datos_actualizados != datos_seleccionados:
 					datos_seleccionados = datos_actualizados
 					lineas = _normalizar_lineas(datos_seleccionados)
 					if lineas.is_empty():
@@ -297,14 +291,6 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		_boton_preguntar_item.visible = not _dialogo_en_transito
 	if _boton_tienda_mercado != null:
 		_boton_tienda_mercado.visible = not _dialogo_en_transito and _es_horario_mercado()
-	print(
-		"DialogueSystem: PANEL VISIBLE → ",
-		dialogue_panel.get_path() if dialogue_panel.is_inside_tree() else dialogue_panel.name,
-		" | pos=",
-		dialogue_panel.position,
-		" | size=",
-		dialogue_panel.size
-	)
 	if not recuerdo_para_mencionar.is_empty() and relationship_system != null:
 		_recuerdo_pendiente_mostrar = recuerdo_para_mencionar.duplicate(true)
 		_personaje_recuerdo_pendiente = _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
