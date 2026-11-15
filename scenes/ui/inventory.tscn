@@ -217,7 +217,12 @@ custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel" unique_id=3001000001]
+[node name="ItemIconFrame" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel"]
+custom_minimum_size = Vector2(74, 74)
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame" unique_id=3001000001]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 0
@@ -316,19 +321,16 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="SkinPanel" type="Control" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea" unique_id=3001000004]
+[node name="SkinPanel" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea" unique_id=3001000004]
 custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="Skin" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel" unique_id=3001000005]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 texture = ExtResource("2_skin")
 texture_filter = 1
 expand_mode = 1
