@@ -698,6 +698,183 @@ func registrar_variante_dialogo_mostrada(
 	return true
 
 
+## Relaciones entre habitantes. Se guardan aparte de la relación jugador-NPC.
+func obtener_relacion_entre_npc(personaje_a: String, personaje_b: String) -> Dictionary:
+	var clave := _clave_pareja_npc(personaje_a, personaje_b)
+	if clave.is_empty():
+		return {}
+	var datos := _obtener_datos_conversaciones_npc()
+	var relaciones_variant: Variant = datos.get("_relaciones_npc", {})
+	var relaciones: Dictionary = relaciones_variant if relaciones_variant is Dictionary else {}
+	var relacion_variant: Variant = relaciones.get(clave, {})
+	var resultado := {
+		"amistad": 0.0,
+		"confianza": 0.0,
+		"respeto": 0.0,
+		"afecto": 0.0,
+		"tension": 0.0,
+		"colaboracion": 0.0,
+		"interacciones": 0,
+		"historial": []
+	}
+	if relacion_variant is Dictionary:
+		resultado.merge((relacion_variant as Dictionary).duplicate(true), true)
+	return resultado
+
+
+func registrar_interaccion_entre_npc(
+	personaje_a: String,
+	personaje_b: String,
+	cambios: Dictionary = {},
+	recuerdo: Dictionary = {}
+) -> Dictionary:
+	var clave := _clave_pareja_npc(personaje_a, personaje_b)
+	if clave.is_empty():
+		return {}
+	var relacion := obtener_relacion_entre_npc(personaje_a, personaje_b)
+	for eje in ["amistad", "confianza", "respeto", "afecto", "colaboracion"]:
+		if cambios.has(eje):
+			relacion[eje] = clampf(
+				float(relacion.get(eje, 0.0)) + float(cambios.get(eje, 0.0)),
+				-100.0,
+				100.0
+			)
+	if cambios.has("tension"):
+		relacion["tension"] = clampf(
+			float(relacion.get("tension", 0.0)) + float(cambios.get("tension", 0.0)),
+			0.0,
+			100.0
+		)
+	relacion["interacciones"] = maxi(0, int(relacion.get("interacciones", 0))) + 1
+	relacion["ultimo_contacto"] = Time.get_datetime_string_from_system(true)
+	if not recuerdo.is_empty():
+		var historial_variant: Variant = relacion.get("historial", [])
+		var historial: Array = historial_variant.duplicate(true) if historial_variant is Array else []
+		historial.append(recuerdo.duplicate(true))
+		while historial.size() > 12:
+			historial.pop_front()
+		relacion["historial"] = historial
+	var datos := _obtener_datos_conversaciones_npc()
+	var relaciones_variant: Variant = datos.get("_relaciones_npc", {})
+	var relaciones: Dictionary = relaciones_variant.duplicate(true) if relaciones_variant is Dictionary else {}
+	relaciones[clave] = relacion.duplicate(true)
+	datos["_relaciones_npc"] = relaciones
+	_guardar_datos_conversaciones_npc(datos)
+	return relacion.duplicate(true)
+
+
+## Registra información conocida por un habitante sin convertir un testimonio
+## en un hecho confirmado. La procedencia se conserva al actualizar el registro.
+func registrar_conocimiento_npc(personaje_id: String, conocimiento: Dictionary) -> bool:
+	var id := personaje_id.strip_edges()
+	var clave := str(conocimiento.get("clave", "")).strip_edges()
+	if id.is_empty() or clave.is_empty():
+		return false
+	var datos := _obtener_datos_conversaciones_npc()
+	var todos_variant: Variant = datos.get("_conocimientos_npc", {})
+	var todos: Dictionary = todos_variant.duplicate(true) if todos_variant is Dictionary else {}
+	var lista_variant: Variant = todos.get(id, [])
+	var lista: Array = lista_variant.duplicate(true) if lista_variant is Array else []
+	var indice := -1
+	for i in range(lista.size()):
+		if lista[i] is Dictionary and str((lista[i] as Dictionary).get("clave", "")) == clave:
+			indice = i
+			break
+	var registro: Dictionary = lista[indice].duplicate(true) if indice >= 0 and lista[indice] is Dictionary else {}
+	var primera_vez := str(registro.get("conocido_desde", ""))
+	var fuentes_variant: Variant = registro.get("fuentes", [])
+	var fuentes: Array = fuentes_variant.duplicate(true) if fuentes_variant is Array else []
+	for campo in conocimiento.keys():
+		if campo not in ["fuentes", "cadena_transmision", "conocido_desde"]:
+			registro[campo] = conocimiento[campo]
+	var fuente := str(conocimiento.get("fuente", "")).strip_edges()
+	if not fuente.is_empty() and fuente not in fuentes:
+		fuentes.append(fuente)
+	registro["clave"] = clave
+	registro["fuentes"] = fuentes
+	registro["conocido_desde"] = primera_vez if not primera_vez.is_empty() else Time.get_datetime_string_from_system(true)
+	registro["ultimo_contacto"] = Time.get_datetime_string_from_system(true)
+	if conocimiento.has("cadena_transmision"):
+		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
+		if cadena_variant is Array:
+			registro["cadena_transmision"] = cadena_variant.duplicate(true)
+	if indice >= 0:
+		lista[indice] = registro
+	else:
+		lista.append(registro)
+	while lista.size() > 48:
+		lista.pop_front()
+	todos[id] = lista
+	datos["_conocimientos_npc"] = todos
+	_guardar_datos_conversaciones_npc(datos)
+	return true
+
+
+func obtener_conocimientos_npc(personaje_id: String) -> Array:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return []
+	var datos := _obtener_datos_conversaciones_npc()
+	var todos_variant: Variant = datos.get("_conocimientos_npc", {})
+	if not todos_variant is Dictionary:
+		return []
+	var lista_variant: Variant = (todos_variant as Dictionary).get(id, [])
+	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+
+
+## La transmisión sólo ocurre cuando una conversación la autoriza explícitamente.
+func transmitir_conocimiento_npc(
+	personaje_origen: String,
+	personaje_destino: String,
+	clave_conocimiento: String,
+	contexto: Dictionary = {}
+) -> bool:
+	var origen := personaje_origen.strip_edges()
+	var destino := personaje_destino.strip_edges()
+	var clave := clave_conocimiento.strip_edges()
+	if origen.is_empty() or destino.is_empty() or origen == destino or clave.is_empty():
+		return false
+	for conocimiento_variant in obtener_conocimientos_npc(origen):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := (conocimiento_variant as Dictionary).duplicate(true)
+		if str(conocimiento.get("clave", "")) != clave:
+			continue
+		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
+		var cadena: Array = cadena_variant.duplicate(true) if cadena_variant is Array else []
+		cadena.append({
+			"de": origen,
+			"a": destino,
+			"momento": Time.get_datetime_string_from_system(true),
+			"contexto": contexto.duplicate(true)
+		})
+		conocimiento["cadena_transmision"] = cadena
+		conocimiento["fuente"] = origen
+		conocimiento["transmitido_por"] = origen
+		return registrar_conocimiento_npc(destino, conocimiento)
+	return false
+
+
+func _clave_pareja_npc(personaje_a: String, personaje_b: String) -> String:
+	var a := personaje_a.strip_edges()
+	var b := personaje_b.strip_edges()
+	if a.is_empty() or b.is_empty() or a == b:
+		return ""
+	return a + "|" + b if a < b else b + "|" + a
+
+
+func _obtener_datos_conversaciones_npc() -> Dictionary:
+	if _game_state == null or not is_instance_valid(_game_state) or not _game_state.has_method("obtener_conversaciones_npc"):
+		return {}
+	var datos_variant: Variant = _game_state.call("obtener_conversaciones_npc")
+	return datos_variant.duplicate(true) if datos_variant is Dictionary else {}
+
+
+func _guardar_datos_conversaciones_npc(datos: Dictionary) -> void:
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+		_game_state.call("guardar_conversaciones_npc", datos)
+
+
 func _obtener_relaciones_guardadas() -> Dictionary:
 	var variant: Variant = _game_state.call("obtener_relaciones_sociales")
 	if variant is Dictionary:
