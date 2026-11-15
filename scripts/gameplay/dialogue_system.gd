@@ -1070,6 +1070,20 @@ func _obtener_texto_rutina_personaje(
 			_:
 				return "Estoy en casa por ahora. Cuando termine lo que tengo entre manos, podremos conversar." if not amable else "Estoy descansando un momento en casa. Quédate si quieres, podemos conversar."
 
+	# La compra de pan sólo se anuncia si Elian está realmente en la panadería.
+	if nombre == "ivo" and ubicacion == "panaderia" and actividad == "comprar_pan":
+		var elian_presente := false
+		for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+			if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
+				continue
+			var candidato := candidato_variant as Creature
+			if candidato.get_nombre_visual().strip_edges().to_lower() == "elian":
+				elian_presente = bool(candidato.get_meta("rutina_en_edificio", false)) and str(candidato.get_meta("rutina_edificio_id", "")) == "panaderia"
+				break
+		if elian_presente:
+			return "Vine por pan y Elian está atendiendo. Siempre sabe qué tanda acaba de salir; voy a esperar un momento." if amable else "Estoy aquí para comprar pan. Elian está atendiendo, así que esperaré mi turno."
+		return "Vine a buscar pan, pero Elian todavía no está. Volveré cuando esté atendiendo." if amable else "La panadería aún no está atendida por Elian. Tendré que volver más tarde."
+
 	# Diálogos de trabajo: cada actividad tiene una respuesta propia, no sólo un cambio de destino.
 	match nombre:
 		"elian":
