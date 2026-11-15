@@ -586,7 +586,7 @@ func _procesar_persiguiendo() -> void:
 
 	# "Perseguir" también puede significar seguir/acompañar. Sólo una relación
 	# configurada como "atacar" permite convertir la aproximación en combate.
-	if respuesta == "perseguir":
+	if respuesta == "perseguir" and _es_seguimiento_ecologico(objetivo):
 		var interaccion_variant: Variant = configuracion_ia.get("interaccion_ecologica", {})
 		var interaccion: Dictionary = interaccion_variant if interaccion_variant is Dictionary else {}
 		var distancia_seguimiento := maxf(float(interaccion.get("distancia_seguimiento", 36.0)), 8.0)
@@ -749,6 +749,11 @@ func _actualizar_percepcion() -> void:
 
 	var deteccion := _obtener_distancia_deteccion()
 
+	if _es_objetivo_refugio():
+		var horario_variant: Variant = configuracion_ia.get("horario", {})
+		if horario_variant is Dictionary:
+			var radio_refugio := maxf(float((horario_variant as Dictionary).get("radio_refugio", 180.0)), 1.0)
+			deteccion = maxf(deteccion, radio_refugio)
 	if distancia <= deteccion:
 		objetivo_detectado = true
 		ultima_posicion_objetivo = objetivo.global_position
@@ -925,6 +930,19 @@ func _es_objetivo_ecologico_valido(candidato: Node2D) -> bool:
 		)
 
 	return not _obtener_respuesta_ecologica(tipo_relacion).is_empty()
+
+
+func _es_seguimiento_ecologico(candidato: Node2D) -> bool:
+	if not candidato is Creature:
+		return false
+	var relacion := _obtener_relacion_ecologica(candidato as Creature)
+	if relacion.is_empty():
+		return false
+	var respuestas_variant: Variant = configuracion_ia.get("respuestas_ecologicas", {})
+	if not respuestas_variant is Dictionary:
+		return false
+	var respuestas := respuestas_variant as Dictionary
+	return respuestas.has(relacion) and str(respuestas.get(relacion, "")).strip_edges().to_lower() == "perseguir"
 
 
 func _obtener_respuesta_ecologica(tipo_relacion: String) -> String:
@@ -1192,13 +1210,12 @@ func _actualizar_rutina() -> void:
 
 	_aplicar_respuesta_ambiental_rutina()
 
-	# Cada bloque horario de alimentación permite una comida. Al abandonar
-	# la actividad se habilita la siguiente, sin inventar un medidor de hambre.
+	# La alimentación programada queda limitada a una unidad por bloque.
+	# Las necesidades fisiológicas son opcionales y sólo operan si la especie las declara.
 	if actividad_horaria != "alimentarse":
 		_alimentacion_realizada = false
 		_objetivo_alimento = null
 
-	_publicar_actividad_rutina()
 
 
 func _publicar_actividad_rutina() -> void:
@@ -1223,7 +1240,7 @@ func _actualizar_necesidades(delta: float) -> void:
 	if hambre_rate is int or hambre_rate is float:
 		_hambre_actual = clampf(_hambre_actual + maxf(float(hambre_rate), 0.0) * delta, 0.0, 100.0)
 	var fatiga_rate: Variant = necesidades.get("fatiga_por_segundo", null)
-	if fatiga_rate is int or fatiga_rate is float:
+	if actividad_horaria not in ["dormir", "reposar"] and (fatiga_rate is int or fatiga_rate is float):
 		_fatiga_actual = clampf(_fatiga_actual + maxf(float(fatiga_rate), 0.0) * delta, 0.0, 100.0)
 	if actividad_horaria in ["dormir", "reposar"]:
 		var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
@@ -1240,7 +1257,8 @@ func _aplicar_prioridad_necesidades() -> void:
 	var actividad_descanso := str(necesidades.get("actividad_descanso", "reposar")).strip_edges().to_lower()
 	var actividad_comida := str(necesidades.get("actividad_alimentacion", "alimentarse")).strip_edges().to_lower()
 	# El descanso tiene prioridad cuando ambas necesidades son altas.
-	if _fatiga_actual >= umbral_fatiga and necesidades.has("recuperacion_fatiga_por_segundo") and actividad_descanso in ["reposar", "dormir"]:
+	var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
+	if _fatiga_actual >= umbral_fatiga and (recuperacion is int or recuperacion is float) and float(recuperacion) > 0.0 and actividad_descanso in ["reposar", "dormir"]:
 		actividad_horaria = actividad_descanso
 	elif _hambre_actual >= umbral_hambre and not _obtener_ids_alimento().is_empty() and actividad_comida == "alimentarse":
 		actividad_horaria = actividad_comida
@@ -1349,7 +1367,7 @@ func _debe_buscar_refugio() -> bool:
 	if not horario_variant is Dictionary:
 		return false
 	var horario := horario_variant as Dictionary
-	return bool(horario.get("buscar_refugio", false)) and actividad_horaria not in ["dormir", "reposar", "cazar"]
+	return bool(horario.get("buscar_refugio", false)) and actividad_horaria != "cazar"
 
 
 func _es_objetivo_refugio() -> bool:
@@ -1366,8 +1384,17 @@ func _buscar_refugio() -> Creature:
 	if not horario_variant is Dictionary:
 		return null
 	var horario := horario_variant as Dictionary
-	var nombre_refugio := str(horario.get("refugio_objetivo", "")).strip_edges()
-	if nombre_refugio.is_empty():
+	var nombres_refugio: Array[String] = []
+	var nombre_unico := str(horario.get("refugio_objetivo", "")).strip_edges().to_lower()
+	if not nombre_unico.is_empty():
+		nombres_refugio.append(nombre_unico)
+	var nombres_variant: Variant = horario.get("refugio_objetivos", [])
+	if nombres_variant is Array:
+		for nombre_variant in nombres_variant as Array:
+			var nombre := str(nombre_variant).strip_edges().to_lower()
+			if not nombre.is_empty() and nombre not in nombres_refugio:
+				nombres_refugio.append(nombre)
+	if nombres_refugio.is_empty():
 		return null
 
 	var radio := maxf(float(horario.get("radio_refugio", 180.0)), 1.0)
@@ -1379,8 +1406,10 @@ func _buscar_refugio() -> Creature:
 		var candidata := entidad_variant as Creature
 		if candidata == criatura or not is_instance_valid(candidata) or not candidata.is_alive:
 			continue
+		if not bool(candidata.get_meta("atractor_refugio", false)):
+			continue
 		var nombre := str(candidata.datos.get("nombre", "")).strip_edges().to_lower()
-		if nombre != nombre_refugio.to_lower():
+		if nombre not in nombres_refugio:
 			continue
 		var distancia := criatura.global_position.distance_to(candidata.global_position)
 		if distancia <= radio and distancia < mejor_distancia:
