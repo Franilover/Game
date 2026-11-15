@@ -813,11 +813,7 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 				asistente == npc
 				or str(asistente.get_meta("rutina_actual", "")) == "reunion_nocturna_castillo"
 			)
-			if (
-				asiste_reunion
-				and bool(asistente.get_meta("rutina_en_edificio", false))
-				and str(asistente.get_meta("rutina_edificio_id", "")) == "castillo"
-			):
+			if asiste_reunion:
 				habitantes.append(asistente)
 	habitantes.sort_custom(func(a: Creature, b: Creature) -> bool:
 		var id_a := a.get_personaje_game_id().strip_edges()
