@@ -189,6 +189,7 @@ func registrar_evento_social(
 			var recuerdo_existente := recuerdo_variant as Dictionary
 			if (
 				str(recuerdo_existente.get("tipo", "")) == "evento_social"
+				and str(recuerdo_existente.get("evento", "")).strip_edges().to_lower() == clave_evento
 				and str(recuerdo_existente.get("evento_id", "")) == id_unico
 			):
 				return obtener_relacion(id)
