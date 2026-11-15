@@ -473,6 +473,7 @@ func cerrar() -> void:
 
 	objeto_seleccionado.clear()
 	indice_seleccionado = -1
+	_actualizar_resaltado_seleccion()
 
 	_limpiar_informacion()
 
@@ -609,8 +610,8 @@ func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
 	_actualizar_resaltado_seleccion()
 	if indice_seleccionado >= 0:
 		seleccionar_slot(indice_seleccionado)
-	else:
-		_emitir_objeto_activo()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
 
 func _al_iniciar_arrastre(slot: Button, datos: Dictionary) -> void:
 	_arrastre_indice = _indice_datos_de_slot(slot)
