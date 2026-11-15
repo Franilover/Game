@@ -1795,6 +1795,8 @@ func _registrar_rutina_compartida() -> void:
 	var anterior: Dictionary = anterior_variant if anterior_variant is Dictionary else {}
 	rutina["npc_a_id"] = npc_a.get_personaje_game_id()
 	rutina["npc_b_id"] = npc_b.get_personaje_game_id()
+	rutina["npc_a"] = str(_conversacion_activa.get("npc_a", "")).to_lower()
+	rutina["npc_b"] = str(_conversacion_activa.get("npc_b", "")).to_lower()
 	rutina["proximo_dia"] = numero_dia + (1 if anterior.is_empty() else maxi(1, int(rutina.get("intervalo_dias", 7))))
 	rutina["veces_realizada"] = int(anterior.get("veces_realizada", 0))
 	rutinas[clave] = rutina
