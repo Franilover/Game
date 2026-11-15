@@ -1048,10 +1048,7 @@ func _obtener_rutina_encuentro_trio(
 			var participante := participantes[nombre] as Creature
 			var base: Dictionary
 			var lista: Variant = participante.datos.get("rutinas", [])
-			if dia_candidato == 4 and (not bool(participante.get_meta("habitante_sin_oficio", false)) or nombre in ["mara", "ivo", "nima"]):
-				base = _seleccionar_rutina_dia_libre(participante, minutos)
-			else:
-				base = _seleccionar_rutina(lista, dia_candidato, minutos, participante.get_nombre_visual())
+			base = _seleccionar_rutina(lista, dia_candidato, minutos, participante.get_nombre_visual())
 			if not _puede_participar_en_evento(base):
 				todos_libres = false
 				break
