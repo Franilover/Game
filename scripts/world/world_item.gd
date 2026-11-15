@@ -13,6 +13,7 @@ var _mission_manager: MissionManager = null
 @onready var _etiqueta: Label = get_node_or_null("InteractionLabel") as Label
 @onready var _icono: Sprite2D = get_node_or_null("ItemIcon") as Sprite2D
 var _etiqueta_visible: bool = false
+var _consumido_por_criatura: bool = false
 
 
 func _ready() -> void:
@@ -31,6 +32,7 @@ func configurar_dependencias(jugador: Player, inventario: GarliaInventory, missi
 
 
 func configurar(nuevos_datos: Dictionary) -> void:
+	_consumido_por_criatura = false
 	datos_objeto = nuevos_datos.duplicate(true)
 	nombre = str(datos_objeto.get("nombre", "Objeto"))
 	_registrar_coleccionable_expedicion()
@@ -154,6 +156,19 @@ func _dibujar_objeto_generico(borde: Color) -> void:
 	draw_rect(Rect2(-9.0, -9.0, 18.0, 18.0), borde)
 	draw_rect(Rect2(-7.0, -7.0, 14.0, 14.0), objeto)
 	draw_rect(Rect2(-3.0, -3.0, 6.0, 6.0), Color(0.85, 0.72, 0.42, 1.0))
+
+
+func consumir_por_criatura(item_ids_permitidos: Array) -> bool:
+	if _consumido_por_criatura or datos_objeto.is_empty():
+		return false
+	var item_id := str(datos_objeto.get("item_id", datos_objeto.get("id", ""))).strip_edges()
+	if item_id.is_empty() or item_id not in item_ids_permitidos:
+		return false
+	if int(datos_objeto.get("cantidad", 1)) <= 0:
+		return false
+	_consumido_por_criatura = true
+	queue_free()
+	return true
 
 
 func can_interact(persona: Node) -> bool:
