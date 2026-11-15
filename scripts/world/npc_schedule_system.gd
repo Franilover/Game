@@ -1099,6 +1099,9 @@ func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int) -> void:
 	if not is_instance_valid(npc):
 		return
+	if bool(npc.get_meta("cinematica_npc_activa", false)) or bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+		_detener_animacion_actividad_interior(npc)
+		return
 	if edificio_id == "castillo":
 		return
 	var interior_activo := bool(_zona.get("_interior_activo")) if is_instance_valid(_zona) else false
@@ -1166,7 +1169,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 	if not is_instance_valid(npc):
 		return
-	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("animacion_panaderia_activa", false)):
+	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("animacion_panaderia_activa", false)) or bool(npc.get_meta("cinematica_npc_activa", false)) or bool(npc.get_meta("_conversacion_ambiental_activa", false)):
 		_detener_animacion_actividad_interior(npc)
 		return
 	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).to_lower()
@@ -1390,6 +1393,10 @@ func _actualizar_interaccion_panaderia() -> void:
 		and bool(elian.get_meta("rutina_en_edificio", false))
 		and str(ivo.get_meta("rutina_edificio_id", "")) == "panaderia"
 		and str(elian.get_meta("rutina_edificio_id", "")) == "panaderia"
+		and not bool(ivo.get_meta("cinematica_npc_activa", false))
+		and not bool(elian.get_meta("cinematica_npc_activa", false))
+		and not bool(ivo.get_meta("_conversacion_ambiental_activa", false))
+		and not bool(elian.get_meta("_conversacion_ambiental_activa", false))
 	)
 	if coinciden:
 		_iniciar_animacion_compartida_panaderia(ivo, "cliente")
