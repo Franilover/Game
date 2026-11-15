@@ -1572,7 +1572,9 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
 	var npc_b := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
 	var nombre_c := str(_conversacion_activa.get("npc_c", ""))
-	var npc_c := _npc_por_nombre.get(nombre_c) as Creature if not nombre_c.is_empty() else null
+	var npc_c: Creature = null
+	if not nombre_c.is_empty():
+		npc_c = _npc_por_nombre.get(nombre_c) as Creature
 	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
 		_finalizar_conversacion()
 		return
