@@ -1217,7 +1217,20 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 		if movimiento.rutina_terminada():
 			npc.remove_meta("rutina_paseo_exterior_activo")
 			npc.set_meta("rutina_en_transito", false)
-			var pausa := 4 + posmod(hash(npc.get_nombre_visual() + "|exterior|" + str(minutos / 5)), 11)
+			var nombre_pausa := npc.get_nombre_visual().strip_edges().to_lower()
+			var pausa_base := 4
+			var rango_pausa := 11
+			match nombre_pausa:
+				"ivo":
+					pausa_base = 9
+					rango_pausa = 12
+				"mara", "darven", "bruna":
+					pausa_base = 7
+					rango_pausa = 10
+				"nima", "saira", "elian":
+					pausa_base = 3
+					rango_pausa = 9
+			var pausa := pausa_base + posmod(hash(nombre_pausa + "|exterior|" + str(minutos / 5)), rango_pausa)
 			npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + pausa, 1440))
 		return
 	var jugador := get_tree().get_first_node_in_group("player") as Node2D
@@ -1236,16 +1249,35 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	if not npc.has_meta("rutina_ancla_ocio"):
 		npc.set_meta("rutina_ancla_ocio", npc.global_position)
 	var ancla: Vector2 = npc.get_meta("rutina_ancla_ocio", npc.global_position)
-	var desplazamientos: Array[Vector2] = [
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	var desplazamientos_por_personaje: Dictionary = {
+		# Elian suele volver hacia el acceso de la panadería y detenerse a saludar.
+		"elian": [Vector2(-24.0, -8.0), Vector2(-12.0, 22.0), Vector2(18.0, 12.0), Vector2(8.0, -24.0)],
+		# Bruna hace recorridos cortos; no suele alejarse demasiado de su punto.
+		"bruna": [Vector2(-14.0, 8.0), Vector2(12.0, -10.0), Vector2(18.0, 18.0)],
+		# Darven mantiene una vuelta más amplia y ordenada por el perímetro.
+		"darven": [Vector2(-30.0, -18.0), Vector2(28.0, -16.0), Vector2(30.0, 20.0), Vector2(-26.0, 24.0)],
+		# Saira se mueve entre distintos sectores, como si revisara puestos y saludara.
+		"saira": [Vector2(26.0, -22.0), Vector2(34.0, 8.0), Vector2(-18.0, 26.0), Vector2(-30.0, -8.0)],
+		# Narel se detiene cerca de puntos de observación y cambia de dirección.
+		"narel": [Vector2(-22.0, -26.0), Vector2(8.0, -34.0), Vector2(24.0, 6.0)],
+		# Mara prefiere bordear la plaza y evitar el centro.
+		"mara": [Vector2(-34.0, -12.0), Vector2(-26.0, 22.0), Vector2(12.0, 32.0)],
+		# Ivo recorre distancias menores y descansa más entre paseos.
+		"ivo": [Vector2(-12.0, 8.0), Vector2(12.0, -8.0), Vector2(18.0, 12.0)],
+		# Nima alterna observación y pequeños cambios de posición.
+		"nima": [Vector2(0.0, -30.0), Vector2(24.0, -18.0), Vector2(-18.0, -20.0), Vector2(12.0, 24.0)]
+	}
+	var desplazamientos: Array = desplazamientos_por_personaje.get(nombre, [
 		Vector2(-28.0, -12.0), Vector2(24.0, -18.0),
 		Vector2(32.0, 10.0), Vector2(-18.0, 28.0),
 		Vector2(4.0, -34.0), Vector2(18.0, 32.0),
 		Vector2(-34.0, 12.0)
-	]
+	])
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
 	var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
-	var indice := posmod(hash(npc.get_nombre_visual() + "|" + fecha + "|" + str(minutos / 5)), desplazamientos.size())
-	var destino := ancla + desplazamientos[indice]
+	var indice := posmod(hash(nombre + "|" + fecha + "|" + str(minutos / 5)), desplazamientos.size())
+	var destino := ancla + (desplazamientos[indice] as Vector2)
 	for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
 			continue
