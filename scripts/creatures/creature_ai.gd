@@ -162,6 +162,7 @@ func _ready() -> void:
 
 	_encontrar_movimiento()
 	_refrescar_configuracion()
+	_restaurar_necesidades_runtime()
 	_aplicar_configuracion_movimiento()
 	_cambiar_estado_forzado(estado_inicial)
 
@@ -1265,7 +1266,22 @@ func _aplicar_prioridad_necesidades() -> void:
 
 
 func _obtener_estado_necesidades() -> Dictionary:
+	if _obtener_config_necesidades().is_empty():
+		return {}
 	return {"hambre": _hambre_actual, "fatiga": _fatiga_actual}
+
+
+func _restaurar_necesidades_runtime() -> void:
+	if criatura == null or not is_instance_valid(criatura):
+		return
+	if _obtener_config_necesidades().is_empty():
+		return
+	var estado_variant: Variant = criatura.datos.get("necesidades_runtime", {})
+	if not estado_variant is Dictionary:
+		return
+	var estado_guardado := estado_variant as Dictionary
+	_hambre_actual = clampf(float(estado_guardado.get("hambre", 0.0)), 0.0, 100.0)
+	_fatiga_actual = clampf(float(estado_guardado.get("fatiga", 0.0)), 0.0, 100.0)
 
 
 
