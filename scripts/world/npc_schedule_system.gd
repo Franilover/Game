@@ -1057,7 +1057,7 @@ func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 	var id := npc.get_personaje_game_id().strip_edges()
 	if id.is_empty():
 		id = npc.get_nombre_visual().strip_edges().to_lower()
-	var espera := posmod(hash(id + "|" + firma), 5)
+	var espera := posmod(hash(id + "|" + firma), 9)
 	var inicio := int(npc.get_meta("rutina_cambio_inicio", minuto_global))
 	if minuto_global - inicio < espera:
 		return false
