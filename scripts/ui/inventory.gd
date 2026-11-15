@@ -71,7 +71,8 @@ var _world_items: GarliaWorldItems = null
 var _slot_grids: Array[GridContainer] = []
 @onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
 @onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
-@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemDescription
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel/ItemDescription
+@onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
 @onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/DeleteButton
 @onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/UseButton
@@ -277,6 +278,7 @@ func _ready() -> void:
 	_cargar_notas_historia()
 	_limpiar_informacion()
 	PIXEL_UI_THEME.apply(self, false)
+	_aplicar_fondos_inventario()
 
 
 func _al_cambio_mano_desde_controlador(
@@ -505,6 +507,29 @@ func _inicializar_hotbar() -> void:
 		hotbar_indices.append(indice_mochila if indice_mochila < slot_count else -1)
 
 
+func _aplicar_fondos_inventario() -> void:
+	var estilo_boton := PIXEL_UI_THEME.button_surface_style()
+	if estilo_boton == null:
+		return
+
+	# Cada grupo conserva su VBox y su Grid originales, pero queda contenido
+	# en una superficie con el mismo acabado que los botones de la interfaz.
+	for grupo_variant in grid.get_children():
+		var grupo := grupo_variant as VBoxContainer
+		if grupo == null:
+			continue
+		var contenedor := grupo.get_parent() as PanelContainer
+		if contenedor != null:
+			contenedor.add_theme_stylebox_override("panel", estilo_boton)
+			contenedor.add_theme_constant_override("margin_left", 5)
+			contenedor.add_theme_constant_override("margin_top", 5)
+			contenedor.add_theme_constant_override("margin_right", 5)
+			contenedor.add_theme_constant_override("margin_bottom", 5)
+
+	if is_instance_valid(description_panel):
+		description_panel.add_theme_stylebox_override("panel", estilo_boton)
+
+
 func _crear_slots() -> void:
 	for slot in slot_nodes:
 		if is_instance_valid(slot):
@@ -523,7 +548,12 @@ func _crear_slots() -> void:
 		panel_grupo.name = "Grupo_" + str(grupo)
 		panel_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		panel_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		grid.add_child(panel_grupo)
+		var marco_grupo := PanelContainer.new()
+		marco_grupo.name = "Marco_" + str(grupo)
+		marco_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		marco_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		grid.add_child(marco_grupo)
+		marco_grupo.add_child(panel_grupo)
 
 		var titulo := panel_grupo.get_node("Title") as Label
 		var rejilla := panel_grupo.get_node("Slots") as GridContainer
