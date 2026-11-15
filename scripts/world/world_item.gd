@@ -164,8 +164,14 @@ func consumir_por_criatura(item_ids_permitidos: Array) -> bool:
 	var item_id := str(datos_objeto.get("item_id", datos_objeto.get("id", ""))).strip_edges()
 	if item_id.is_empty() or item_id not in item_ids_permitidos:
 		return false
-	if int(datos_objeto.get("cantidad", 1)) <= 0:
+	var cantidad := int(datos_objeto.get("cantidad", 1))
+	if cantidad <= 0:
 		return false
+	if cantidad > 1:
+		datos_objeto["cantidad"] = cantidad - 1
+		_actualizar_icono()
+		queue_redraw()
+		return true
 	_consumido_por_criatura = true
 	queue_free()
 	return true
