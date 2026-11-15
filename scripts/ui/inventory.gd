@@ -71,7 +71,7 @@ var _world_items: GarliaWorldItems = null
 var _slot_grids: Array[GridContainer] = []
 @onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
 @onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
-@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel/ItemDescription
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel/DescriptionScroll/ItemDescription
 @onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame/ItemIcon
 @onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame
@@ -969,76 +969,8 @@ func _mostrar_informacion() -> void:
 	if cantidad > 1:
 		lineas.append("Cantidad: %d" % cantidad)
 
-	var propiedades_variant: Variant = objeto_seleccionado.get("propiedades_game", {})
-	var propiedades: Dictionary = {}
-	if propiedades_variant is Dictionary:
-		propiedades = propiedades_variant as Dictionary
-	var tipo := str(objeto_seleccionado.get("tipo", "")).strip_edges().to_lower()
-	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
-	var categoria_clave := str(objeto_seleccionado.get("categoria_clave", categoria.get("clave", ""))).to_lower()
-	var tipo_objeto_variant: Variant = objeto_seleccionado.get("tipo_objeto", {})
-	var categoria_canonica := ""
-	if tipo_objeto_variant is Dictionary:
-		categoria_canonica = str((tipo_objeto_variant as Dictionary).get("categoria_canonica", "")).to_lower()
-	if tipo.is_empty():
-		tipo = categoria_canonica
-	if tipo.is_empty():
-		tipo = categoria_clave
-
-	var etiquetas: Dictionary = {}
-	match tipo:
-		"arma":
-			etiquetas = {"danio": "Daño", "alcance": "Alcance", "ancho_ataque": "Ancho de ataque", "durabilidad": "Durabilidad", "modo_ataque": "Modalidad"}
-		"herramienta":
-			etiquetas = {"durabilidad": "Durabilidad", "alcance": "Alcance", "capacidad_recoleccion": "Capacidad", "material": "Material"}
-		"armadura":
-			etiquetas = {"defensa": "Defensa", "proteccion": "Protección", "durabilidad": "Durabilidad", "ranura_equipamiento": "Ranura", "material": "Material"}
-		"consumible":
-			etiquetas = {"uso": "Uso", "durabilidad": "Durabilidad"}
-		"material":
-			etiquetas = {"composicion": "Composición", "dureza": "Dureza", "fractura": "Fractura", "material": "Material"}
-		_:
-			etiquetas = {"durabilidad": "Durabilidad", "dureza": "Dureza", "fractura": "Fractura", "composicion": "Composición", "material": "Material", "ranura_equipamiento": "Ranura"}
-
-	# Las propiedades de uso pueden contener efectos estructurados; resumimos
-	# únicamente los recursos y magnitudes realmente registrados.
-	var uso_variant: Variant = propiedades.get("uso", {})
-	if uso_variant is Dictionary:
-		var uso := uso_variant as Dictionary
-		var tipo_uso := str(uso.get("tipo", "")).strip_edges()
-		if not tipo_uso.is_empty():
-			lineas.append("Uso: " + tipo_uso.replace("_", " ").capitalize())
-		var efectos_variant: Variant = uso.get("efectos", null)
-		if efectos_variant is Array:
-			for efecto_variant in efectos_variant as Array:
-				if not efecto_variant is Dictionary:
-					continue
-				var efecto := efecto_variant as Dictionary
-				var recurso := str(efecto.get("recurso", efecto.get("efecto", ""))).strip_edges()
-				var magnitud: Variant = efecto.get("magnitud", efecto.get("cantidad", null))
-				if not recurso.is_empty() and (magnitud is int or magnitud is float):
-					lineas.append("Efecto: %s +%s" % [recurso.capitalize(), str(magnitud)])
-
-	for clave_variant in etiquetas.keys():
-		var clave := str(clave_variant)
-		if not propiedades.has(clave):
-			continue
-		var valor: Variant = propiedades.get(clave)
-		if valor == null or valor is Dictionary or valor is Array or str(valor).strip_edges().is_empty():
-			continue
-		if clave == "durabilidad" and (valor is int or valor is float):
-			var maxima := maxi(1, int(valor))
-			var actual := clampi(int(objeto_seleccionado.get("durabilidad_actual", maxima)), 0, maxima)
-			lineas.append("Durabilidad: %d / %d" % [actual, maxima])
-			continue
-		lineas.append("%s: %s" % [str(etiquetas[clave]), str(valor)])
-
-	if not categoria_canonica.is_empty() and lineas.size() == 0:
-		lineas.append("Tipo: " + categoria_canonica.capitalize())
-	elif not categoria_clave.is_empty() and lineas.size() == 0:
-		lineas.append("Categoría: " + categoria_clave.capitalize())
-
 	item_name.text = nombre
+	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
 	if not categoria.is_empty():
 		item_category.text = str(categoria.get("nombre", "Sin categoría")).to_upper()
 		item_category.tooltip_text = ""
@@ -1047,8 +979,15 @@ func _mostrar_informacion() -> void:
 		item_category.text = ""
 		item_category.tooltip_text = ""
 		item_category.visible = false
-	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción ni propiedades adicionales registradas."
+	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción registrada."
 	item_description.visible = true
+
+	var propiedades_variant: Variant = objeto_seleccionado.get("propiedades_game", {})
+	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
+	var tipo := str(objeto_seleccionado.get("tipo", "")).strip_edges().to_lower()
+	var tipo_objeto_variant: Variant = objeto_seleccionado.get("tipo_objeto", {})
+	if tipo.is_empty() and tipo_objeto_variant is Dictionary:
+		tipo = str((tipo_objeto_variant as Dictionary).get("categoria_canonica", "")).to_lower()
 
 	var tiene_uso := _objeto_tiene_uso_valido(objeto_seleccionado)
 	var es_armadura := tipo == "armadura" and not str(propiedades.get("ranura_equipamiento", "")).strip_edges().is_empty()
@@ -1066,7 +1005,6 @@ func _mostrar_informacion() -> void:
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
 	item_icon.texture = textura
 	item_icon.visible = textura != null
-
 
 func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
