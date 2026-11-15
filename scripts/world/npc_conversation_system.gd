@@ -1795,7 +1795,8 @@ func _registrar_rutina_compartida() -> void:
 	if clave.is_empty() or not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
 		return
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
-	var numero_dia := int(tiempo.get("anio", 0)) * 365 + int(tiempo.get("dia", 1))
+	var dias_por_anio := maxi(1, _world_atmosphere.dias_por_anio if is_instance_valid(_world_atmosphere) else 365)
+	var numero_dia := int(tiempo.get("anio", 0)) * dias_por_anio + int(tiempo.get("dia", 1))
 	var rutinas_variant: Variant = _progreso_parejas.get("_rutinas_compartidas", {})
 	var rutinas: Dictionary = rutinas_variant.duplicate(true) if rutinas_variant is Dictionary else {}
 	var anterior_variant: Variant = rutinas.get(clave, {})
