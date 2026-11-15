@@ -75,6 +75,7 @@ const POSICIONES: Dictionary = {
 
 var _world_atmosphere: WorldAtmosphere = null
 var _zone_manager: Node = null
+var _relationship_system: RelationshipSystemService = null
 var _zona: Node2D = null
 var _terreno_visual: Node = null
 var _malla: AStarGrid2D = null
@@ -86,9 +87,14 @@ var _tiempo_cambio_colisiones := -1.0
 var _ultimo_aviso_evento_comunitario := ""
 
 
-func configurar(atmosfera: WorldAtmosphere, zone_manager: Node) -> void:
+func configurar(
+	atmosfera: WorldAtmosphere,
+	zone_manager: Node,
+	relationship_system: RelationshipSystemService = null
+) -> void:
 	_world_atmosphere = atmosfera
 	_zone_manager = zone_manager
+	_relationship_system = relationship_system
 	add_to_group("npc_schedule_system")
 
 
