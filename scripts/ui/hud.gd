@@ -1159,7 +1159,7 @@ func _crear_hueco_mano(nombre: String, tecla: String) -> Button:
 	slot.offset_left = -134.0 if tecla == "Q" else 86.0
 	slot.offset_right = -86.0 if tecla == "Q" else 134.0
 	PIXEL_UI_THEME.apply(slot)
-	slot.tooltip_text = "Mano " + ("izquierda" if tecla == "Q" else "derecha") + " (" + tecla + ")"
+		slot.tooltip_text= ""
 	var etiqueta_tecla := slot.get_node_or_null("HandKey") as Label
 	if etiqueta_tecla != null:
 		etiqueta_tecla.text = tecla
@@ -1194,7 +1194,7 @@ func _actualizar_hueco_mano(slot: Button, mano: String) -> void:
 	var datos: Dictionary = _inventory_ref.obtener_objeto_mano_activa(mano)
 	slot.icon = ItemIconResolver.obtener_icono(datos) if not datos.is_empty() else null
 	slot.text = "" if not datos.is_empty() else "—"
-	slot.tooltip_text = ("Mano izquierda (Q): " if mano == "izquierda" else "Mano derecha (E): ") + str(datos.get("nombre", "Vacía"))
+		slot.tooltip_text= ""
 
 
 func _crear_selector_manos() -> void:
@@ -1234,7 +1234,7 @@ func _abrir_selector_mano(mano: String) -> void:
 		# en espacios vacíos para evitar superponer texto sobre los objetos.
 		button.text = "" if not datos.is_empty() else str(i + 1)
 		button.icon = ItemIconResolver.obtener_icono(datos) if not datos.is_empty() else null
-		button.tooltip_text = str(i + 1) + " · " + str(datos.get("nombre", "Vacío")) if not datos.is_empty() else str(i + 1) + " · Vacío"
+				button.tooltip_text= ""
 
 	# Posición local respecto al HUD: justo encima del botón que abrió el selector.
 	_hand_selector.size = Vector2(42, 0)
@@ -1470,7 +1470,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 	_garumi_companero_slot.offset_right = 64.0
 	_garumi_companero_slot.offset_bottom = 64.0
 	PIXEL_UI_THEME.apply(_garumi_companero_slot)
-	_garumi_companero_slot.tooltip_text = "Compañero (R): guardar o liberar · mantener R para elegir"
+		_garumi_companero_slot.tooltip_text= ""
 	var etiqueta := _garumi_companero_slot.get_node_or_null("HandKey") as Label
 	if is_instance_valid(etiqueta):
 		etiqueta.text = "R"
@@ -1575,7 +1575,7 @@ func _abrir_selector_companero() -> void:
 		boton.name = "ElegirGarumi%d" % (i + 1)
 		boton.custom_minimum_size = Vector2(42, 42)
 		boton.text = ""
-		boton.tooltip_text = "%d · %s" % [i + 1, str(garumi.get("criatura_nombre"))]
+				boton.tooltip_text= ""
 		var tecla := boton.get_node_or_null("HandKey") as Label
 		if is_instance_valid(tecla):
 			tecla.text = str(i + 1)
@@ -1632,9 +1632,9 @@ func _actualizar_selector_companero() -> void:
 	_garumi_companero_slot.text = "" if retrato != null else "—"
 	if is_instance_valid(_garumi_companero_actual):
 		var guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
-		_garumi_companero_slot.tooltip_text = "%s · %s (R)" % [str(_garumi_companero_actual.get("criatura_nombre")), "guardado" if guardado else "acompañándote"]
+				_garumi_companero_slot.tooltip_text= ""
 	else:
-		_garumi_companero_slot.tooltip_text = "Sin compañero · mantener R para elegir"
+				_garumi_companero_slot.tooltip_text= ""
 
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
