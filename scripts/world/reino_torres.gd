@@ -1261,6 +1261,15 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 				var lado := -1.0 if columna < 3 else 1.0
 				var desplazamiento := posmod(columna, 3) * 52.0
 				actor.position = Vector2(lado * (105.0 + desplazamiento), -20.0 + fila * 42.0)
+		elif entrada_id == "panaderia":
+			var nombre_panaderia := (npc as Creature).get_nombre_visual().strip_edges().to_lower()
+			match nombre_panaderia:
+				"elian":
+					actor.position = Vector2(-42.0, 34.0)
+				"ivo":
+					actor.position = Vector2(42.0, 34.0)
+				_:
+					actor.position = posiciones_normales[indice % posiciones_normales.size()]
 		else:
 			actor.position = posiciones_normales[indice % posiciones_normales.size()]
 		actor.visible = true
