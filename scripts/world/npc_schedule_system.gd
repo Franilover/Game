@@ -85,6 +85,8 @@ var _tiempo_actualizacion := 0.0
 var _firma_colisiones := ""
 var _tiempo_cambio_colisiones := -1.0
 var _ultimo_aviso_evento_comunitario := ""
+var _fecha_asistencia_reunion_cache := ""
+var _asistencia_reunion_cache: Dictionary = {}
 
 
 func configurar(
@@ -1899,16 +1901,12 @@ func _obtener_rutina_reunion_castillo(
 	if not rutina_libre:
 		return {}
 
-	# Abel y Liam sostienen la costumbre del castillo; el resto rota para que
-	# la reunión tenga caras conocidas sin vaciar el reino cada noche.
-	if nombre not in ["abel", "liam"]:
-		var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
-		var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
-		var id := npc.get_personaje_game_id().strip_edges()
-		if id.is_empty():
-			id = nombre
-		if posmod(hash("reunion_castillo|" + fecha + "|" + id), 4) == 0:
-			return {}
+	# La asistencia rota por grupos sociales completos, no por individuo.
+	# Así los amigos suelen coincidir sin vaciar el reino cada noche.
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
+	if not _debe_asistir_grupo_reunion_castillo(npc, fecha):
+		return {}
 
 	return {
 		"clave": "reunion_nocturna_castillo",
@@ -1916,6 +1914,55 @@ func _obtener_rutina_reunion_castillo(
 		"actividad_clave": "conversar_con_amigos",
 		"activo": true
 	}
+
+
+func _debe_asistir_grupo_reunion_castillo(npc: Creature, fecha: String) -> bool:
+	if not is_instance_valid(npc):
+		return false
+	var id_actual := npc.get_personaje_game_id().strip_edges()
+	if id_actual.is_empty():
+		id_actual = npc.get_nombre_visual().strip_edges().to_lower()
+	if _fecha_asistencia_reunion_cache != fecha or not _asistencia_reunion_cache.has(id_actual):
+		_fecha_asistencia_reunion_cache = fecha
+		_asistencia_reunion_cache.clear()
+		var habitantes: Array[Creature] = []
+		for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+			if nodo is Creature and is_instance_valid(nodo) and (nodo as Creature).is_alive:
+				habitantes.append(nodo as Creature)
+		habitantes.sort_custom(func(a: Creature, b: Creature) -> bool:
+			var id_a := a.get_personaje_game_id().strip_edges()
+			var id_b := b.get_personaje_game_id().strip_edges()
+			if id_a.is_empty():
+				id_a = a.get_nombre_visual().to_lower()
+			if id_b.is_empty():
+				id_b = b.get_nombre_visual().to_lower()
+			return id_a < id_b
+		)
+		var grupos := _formar_grupos_sociales_castillo(habitantes)
+		for grupo_variant in grupos:
+			var grupo: Array = grupo_variant
+			var ids_grupo: Array[String] = []
+			var anfitrion := false
+			for integrante_variant in grupo:
+				if not integrante_variant is Creature or not is_instance_valid(integrante_variant):
+					continue
+				var integrante := integrante_variant as Creature
+				var id_integrante := integrante.get_personaje_game_id().strip_edges()
+				if id_integrante.is_empty():
+					id_integrante = integrante.get_nombre_visual().strip_edges().to_lower()
+				ids_grupo.append(id_integrante)
+				if integrante.get_nombre_visual().strip_edges().to_lower() in ["abel", "liam"]:
+					anfitrion = true
+			var asiste := anfitrion or posmod(hash("reunion_castillo|" + fecha + "|" + "|".join(ids_grupo)), 4) != 0
+			for integrante_variant in grupo:
+				if not integrante_variant is Creature or not is_instance_valid(integrante_variant):
+					continue
+				var integrante := integrante_variant as Creature
+				var id_integrante := integrante.get_personaje_game_id().strip_edges()
+				if id_integrante.is_empty():
+					id_integrante = integrante.get_nombre_visual().strip_edges().to_lower()
+				_asistencia_reunion_cache[id_integrante] = asiste
+	return bool(_asistencia_reunion_cache.get(id_actual, false))
 
 
 func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
