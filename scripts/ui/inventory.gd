@@ -73,7 +73,9 @@ var _slot_grids: Array[GridContainer] = []
 @onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
 @onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel/ItemDescription
 @onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel
-@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
+@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame/ItemIcon
+@onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame
+@onready var skin_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel
 @onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/DeleteButton
 @onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/UseButton
 @onready var equip_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/EquipButton
@@ -526,6 +528,21 @@ func _aplicar_fondos_inventario() -> void:
 
 	if is_instance_valid(description_panel):
 		description_panel.add_theme_stylebox_override("panel", estilo_boton)
+
+	# El icono ampliado y la silueta del personaje usan el mismo marco de slot
+	# que las ranuras de equipamiento, manteniendo un acabado coherente.
+	var estilo_slot := PIXEL_UI_THEME.slot_style(false)
+	if estilo_slot != null:
+		if is_instance_valid(item_icon_frame):
+			item_icon_frame.add_theme_stylebox_override("panel", estilo_slot)
+		if is_instance_valid(skin_panel):
+			skin_panel.add_theme_stylebox_override("panel", estilo_slot)
+	for panel in [item_icon_frame, skin_panel]:
+		if is_instance_valid(panel):
+			panel.add_theme_constant_override("margin_left", 4)
+			panel.add_theme_constant_override("margin_top", 4)
+			panel.add_theme_constant_override("margin_right", 4)
+			panel.add_theme_constant_override("margin_bottom", 4)
 
 
 func _crear_slots() -> void:
