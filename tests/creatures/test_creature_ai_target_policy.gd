@@ -94,6 +94,33 @@ func _run() -> void:
 		_fail("El perfil genérico perdió el comportamiento compatible por defecto.")
 		return
 
+	# Las relaciones ecológicas adicionales sólo producen conductas cuando
+	# la configuración de esa especie define una respuesta explícita.
+	var presa := CreatureScript.new() as Creature
+	presa.criatura_id = "target-policy-presa"
+	presa.criatura_nombre = "Presa de prueba"
+	presa.datos = {"id": presa.criatura_id, "nombre": presa.criatura_nombre}
+	actor.datos["ecosistema_id"] = "ecosistema-prueba"
+	ai.relaciones_ecologicas = [{
+		"criatura_origen_id": actor.criatura_id,
+		"criatura_destino_id": presa.criatura_id,
+		"ecosistema_id": "ecosistema-prueba",
+		"tipo_relacion": "competencia"
+	}]
+	ai.configuracion_ia = {"respuestas_ecologicas": {"competencia": "huir"}}
+	if ai._obtener_respuesta_para_objetivo(presa) != "huir":
+		_fail("La regla ecológica configurable no aplicó la respuesta de huida.")
+		return
+	ai.configuracion_ia = {}
+	if not ai._obtener_respuesta_para_objetivo(presa).is_empty():
+		_fail("Una relación ecológica sin respuesta explícita inventó una conducta.")
+		return
+	ai.relaciones_ecologicas[0]["tipo_relacion"] = "depredacion"
+	if ai._obtener_respuesta_para_objetivo(presa) != "atacar":
+		_fail("La depredación perdió su respuesta histórica por defecto.")
+		return
+	presa.free()
+
 	# Los ataques de contacto deben acercarse antes de iniciar el golpe.
 	player.remove_meta("garlia_bosque_asesino")
 	actor.criatura_nombre = "Depredador de prueba"
