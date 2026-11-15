@@ -12,12 +12,54 @@ class_name CutsceneSequence
 @export var parametros_requeridos: PackedStringArray = []
 
 
+func _es_parametro_dinamico(valor: Variant) -> bool:
+	if not valor is String:
+		return false
+	var texto := str(valor)
+	return texto.contains("{{") and texto.contains("}}")
+
+
+func _campo_presente(datos: Dictionary, campo: String) -> bool:
+	if not datos.has(campo):
+		return false
+	var valor: Variant = datos[campo]
+	if _es_parametro_dinamico(valor):
+		return true
+	if valor is String:
+		return not str(valor).strip_edges().is_empty()
+	return valor != null
+
+
+func _validar_accion_simultanea(accion: Dictionary, paso_indice: int, accion_indice: int) -> Array[String]:
+	var errores: Array[String] = []
+	var tipo_accion := str(accion.get("tipo", "")).strip_edges().to_lower()
+	var prefijo := "Paso %d, acción %d" % [paso_indice + 1, accion_indice + 1]
+	if tipo_accion not in ["gesto_npc", "mirar_npc"]:
+		errores.append("%s: tipo simultáneo no compatible (%s)." % [prefijo, tipo_accion])
+		return errores
+	if not _campo_presente(accion, "npc"):
+		errores.append("%s: falta identificar al NPC." % prefijo)
+	if tipo_accion == "mirar_npc":
+		if not _campo_presente(accion, "hacia_npc") and not accion.has("izquierda"):
+			errores.append("%s: mirar_npc necesita hacia_npc o izquierda." % prefijo)
+	elif accion.has("gesto"):
+		var gesto := str(accion.get("gesto", "")).strip_edges().to_lower()
+		if not _es_parametro_dinamico(accion.get("gesto")) and gesto not in [
+			"asentir", "saludar", "trabajar", "sorpresa", "negar",
+			"reir", "triste", "inquieto", "aplaudir", "encogerse"
+		]:
+			errores.append("%s: gesto no reconocido (%s)." % [prefijo, gesto])
+	return errores
+
+
 func validar() -> Array[String]:
 	var errores: Array[String] = []
 	if clave.strip_edges().is_empty():
 		errores.append("La secuencia necesita una clave.")
 	if pasos.is_empty():
 		errores.append("La secuencia no contiene pasos.")
+	if modo not in ["planeada", "en_vivo"]:
+		errores.append("El modo debe ser planeada o en_vivo.")
 
 	var tipos_validos := [
 		"dialogo", "esperar", "camara", "gesto_npc",
@@ -29,25 +71,68 @@ func validar() -> Array[String]:
 	for indice in range(pasos.size()):
 		var paso: Dictionary = pasos[indice]
 		var tipo := str(paso.get("tipo", "")).strip_edges().to_lower()
-		if tipo.is_empty() or not tipos_validos.has(tipo):
-			errores.append("Paso %d: tipo vacío o no reconocido (%s)." % [indice + 1, tipo])
+		var numero_paso := indice + 1
+		if tipo.is_empty() or tipo not in tipos_validos:
+			errores.append("Paso %d: tipo vacío o no reconocido (%s)." % [numero_paso, tipo])
 			continue
-		if tipo == "acciones_simultaneas":
-			var acciones_variant: Variant = paso.get("acciones", [])
-			if not acciones_variant is Array:
-				errores.append("Paso %d: acciones_simultaneas necesita una lista." % (indice + 1))
-				continue
-			var acciones := acciones_variant as Array
-			if acciones.is_empty():
-				errores.append("Paso %d: acciones_simultaneas no puede estar vacía." % (indice + 1))
-				continue
-			for accion_indice in range(acciones.size()):
-				var accion_variant: Variant = acciones[accion_indice]
-				if not accion_variant is Dictionary:
-					errores.append("Paso %d: la acción %d no es un Dictionary." % [indice + 1, accion_indice + 1])
+
+		match tipo:
+			"gesto_npc":
+				if not _campo_presente(paso, "npc"):
+					errores.append("Paso %d: gesto_npc necesita un NPC." % numero_paso)
+				var gesto := str(paso.get("gesto", "asentir")).strip_edges().to_lower()
+				if paso.has("gesto") and not _es_parametro_dinamico(paso.get("gesto")) and gesto not in [
+					"asentir", "saludar", "trabajar", "sorpresa", "negar",
+					"reir", "triste", "inquieto", "aplaudir", "encogerse"
+				]:
+					errores.append("Paso %d: gesto no reconocido (%s)." % [numero_paso, gesto])
+			"mirar_npc":
+				if not _campo_presente(paso, "npc"):
+					errores.append("Paso %d: mirar_npc necesita un NPC." % numero_paso)
+				if not _campo_presente(paso, "hacia_npc") and not paso.has("izquierda"):
+					errores.append("Paso %d: mirar_npc necesita hacia_npc o izquierda." % numero_paso)
+			"acciones_simultaneas":
+				var acciones_variant: Variant = paso.get("acciones", [])
+				if not acciones_variant is Array:
+					errores.append("Paso %d: acciones_simultaneas necesita una lista." % numero_paso)
 					continue
-				var accion := accion_variant as Dictionary
-				var tipo_accion := str(accion.get("tipo", "")).strip_edges().to_lower()
-				if not ["gesto_npc", "mirar_npc"].has(tipo_accion):
-					errores.append("Paso %d: acción simultánea no compatible (%s)." % [indice + 1, tipo_accion])
+				var acciones := acciones_variant as Array
+				if acciones.is_empty():
+					errores.append("Paso %d: acciones_simultaneas no puede estar vacía." % numero_paso)
+					continue
+				for accion_indice in range(acciones.size()):
+					var accion_variant: Variant = acciones[accion_indice]
+					if not accion_variant is Dictionary:
+						errores.append("Paso %d: la acción %d no es un Dictionary." % [numero_paso, accion_indice + 1])
+						continue
+					errores.append_array(_validar_accion_simultanea(accion_variant as Dictionary, indice, accion_indice))
+			"preparar_npc", "fijar_npc":
+				if not _campo_presente(paso, "npc"):
+					errores.append("Paso %d: %s necesita un NPC." % [numero_paso, tipo])
+			"ruta_npc", "mover_npc":
+				if not _campo_presente(paso, "npc"):
+					errores.append("Paso %d: %s necesita un NPC." % [numero_paso, tipo])
+				var tiene_puntos := paso.get("puntos", []) is Array and not (paso.get("puntos", []) as Array).is_empty()
+				var tiene_coordenadas := _campo_presente(paso, "x") and _campo_presente(paso, "y")
+				if not tiene_puntos and not tiene_coordenadas:
+					errores.append("Paso %d: %s necesita puntos o coordenadas x/y." % [numero_paso, tipo])
+			"mover_jugador":
+				if not _campo_presente(paso, "x") or not _campo_presente(paso, "y"):
+					errores.append("Paso %d: mover_jugador necesita coordenadas x/y." % numero_paso)
+			"fundido":
+				var modo_fundido := str(paso.get("modo", "entrada")).strip_edges().to_lower()
+				if paso.has("modo") and not _es_parametro_dinamico(paso.get("modo")) and modo_fundido not in [
+					"entrada", "salida", "oscurecer", "cerrar"
+				]:
+					errores.append("Paso %d: modo de fundido no reconocido (%s)." % [numero_paso, modo_fundido])
+			"evento":
+				if not _campo_presente(paso, "clave"):
+					errores.append("Paso %d: evento necesita una clave." % numero_paso)
+			"notificacion":
+				if not _campo_presente(paso, "texto"):
+					errores.append("Paso %d: notificacion necesita texto." % numero_paso)
+			"dialogo":
+				var datos_variant: Variant = paso.get("datos", paso)
+				if not datos_variant is Dictionary:
+					errores.append("Paso %d: los datos del diálogo deben ser un Dictionary." % numero_paso)
 	return errores
