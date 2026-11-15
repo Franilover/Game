@@ -311,9 +311,18 @@ func _actualizar_rutinas_personajes_game_en_vivo(mundo_remoto: Dictionary) -> vo
 		var rutinas_actuales_variant: Variant = personaje_actual.get("rutinas", [])
 		var rutinas_actuales: Array = rutinas_actuales_variant if rutinas_actuales_variant is Array else []
 		var ubicacion_remota := str(personaje_remoto.get("ubicacion_clave", personaje_actual.get("ubicacion_clave", "")))
-		if rutinas_actuales != rutinas_remotas or str(personaje_actual.get("ubicacion_clave", "")) != ubicacion_remota:
+		var reino_remoto := str(personaje_remoto.get("reino_clave", personaje_actual.get("reino_clave", "")))
+		var reino_game_id_remoto := str(personaje_remoto.get("reino_game_id", personaje_actual.get("reino_game_id", "")))
+		if (
+			rutinas_actuales != rutinas_remotas
+			or str(personaje_actual.get("ubicacion_clave", "")) != ubicacion_remota
+			or str(personaje_actual.get("reino_clave", "")) != reino_remoto
+			or str(personaje_actual.get("reino_game_id", "")) != reino_game_id_remoto
+		):
 			personaje_actual["rutinas"] = rutinas_remotas
 			personaje_actual["ubicacion_clave"] = ubicacion_remota
+			personaje_actual["reino_clave"] = reino_remoto
+			personaje_actual["reino_game_id"] = reino_game_id_remoto
 			cambio = true
 		personajes_actualizados.append(personaje_actual)
 
