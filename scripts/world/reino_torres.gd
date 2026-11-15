@@ -101,12 +101,19 @@ const DISTANCIA_INTERACCION_ENTRADA := 44.0
 
 const UBICACION_RUTINA_POR_ENTRADA: Dictionary = {
 	"panaderia": "panaderia",
+	"posada": "posada",
 	"forja": "forja",
 	"cuartel": "cuartel",
 	"registro": "registro",
 	"casa_comercio": "casa_comercio",
 	"archivo_real": "archivo_real",
+	"sala_consejo": "sala_consejo",
 	"casa_estudio": "casa_estudio",
+	"reparaciones": "reparaciones",
+	"carpinteria": "carpinteria",
+	"granero": "granero",
+	"molino": "molino",
+	"corrales": "corrales",
 	"casa_elian": "casa_elian",
 	"casa_bruna": "casa_bruna",
 	"casa_darven": "casa_darven",
@@ -303,7 +310,7 @@ func obtener_posicion_mapa_npc(npc: Node) -> Variant:
 	var entrada_id := str(npc.get_meta("rutina_edificio_id", "")).strip_edges()
 	if entrada_id.is_empty():
 		var ubicacion := str(npc.get_meta("rutina_ubicacion", "")).strip_edges()
-		for id_entrada: String in UBICACION_RUTINA_POR_ENTRADA:
+		for id_entrada in UBICACION_RUTINA_POR_ENTRADA:
 			if str(UBICACION_RUTINA_POR_ENTRADA[id_entrada]) == ubicacion:
 				entrada_id = id_entrada
 				break
