@@ -1219,22 +1219,74 @@ func _detener_animacion_actividad_interior(npc: Creature) -> void:
 		npc.remove_meta(clave)
 
 
+## Idle exterior con variaciones pequeñas por personaje. Se detiene durante
+## conversaciones, desplazamientos y cinemáticas para no competir con sus gestos.
+func _actualizar_animacion_ocio_exterior(npc: Creature) -> void:
+	if not is_instance_valid(npc) or bool(npc.get_meta("animacion_ocio_exterior_activa", false)):
+		return
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if not is_instance_valid(sprite):
+		return
+	npc.set_meta("animacion_ocio_exterior_activa", true)
+	npc.set_meta("animacion_ocio_exterior_posicion", sprite.position)
+	npc.set_meta("animacion_ocio_exterior_rotacion", sprite.rotation)
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	var tween := create_tween()
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	if nombre == "mara":
+		tween.tween_property(sprite, "rotation", 0.025, 1.1)
+		tween.tween_interval(1.0)
+		tween.tween_property(sprite, "rotation", 0.0, 0.55)
+		tween.tween_interval(1.4)
+	elif nombre == "nima":
+		tween.tween_property(sprite, "rotation", -0.025, 0.75)
+		tween.tween_property(sprite, "rotation", 0.0, 0.5)
+		tween.tween_interval(1.1)
+	else:
+		tween.tween_property(sprite, "position:y", sprite.position.y - 0.55, 1.0)
+		tween.tween_property(sprite, "position:y", sprite.position.y, 1.0)
+		tween.tween_interval(0.8)
+	npc.set_meta("animacion_ocio_exterior_tween", tween)
+
+
+func _detener_animacion_ocio_exterior(npc: Creature) -> void:
+	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_ocio_exterior_activa", false)):
+		return
+	var tween_variant: Variant = npc.get_meta("animacion_ocio_exterior_tween", null)
+	if tween_variant is Tween and is_instance_valid(tween_variant):
+		(tween_variant as Tween).kill()
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if is_instance_valid(sprite):
+		var posicion: Variant = npc.get_meta("animacion_ocio_exterior_posicion", sprite.position)
+		sprite.position = posicion if posicion is Vector2 else sprite.position
+		sprite.rotation = float(npc.get_meta("animacion_ocio_exterior_rotacion", sprite.rotation))
+	for clave in ["animacion_ocio_exterior_activa", "animacion_ocio_exterior_posicion", "animacion_ocio_exterior_rotacion", "animacion_ocio_exterior_tween"]:
+		npc.remove_meta(clave)
+
+
 ## Pequeños paseos alrededor del punto asignado. Mantienen al NPC en su
 ## zona de actividad y usan rutas reales, con pausas individuales y sin sincronía.
 func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	if not is_instance_valid(npc):
 		return
+	if bool(npc.get_meta("rutina_en_edificio", false)):
+		_detener_animacion_ocio_exterior(npc)
+		return
 	if (
-		bool(npc.get_meta("rutina_en_edificio", false))
-		or bool(npc.get_meta("rutina_en_transito", false))
+		bool(npc.get_meta("rutina_en_transito", false))
 		or bool(npc.get_meta("actividad_social_activa", false))
 		or bool(npc.get_meta("acercamiento_social_activo", false))
 		or bool(npc.get_meta("_conversacion_ambiental_activa", false))
 		or bool(npc.get_meta("cinematica_npc_activa", false))
 	):
+		_detener_animacion_ocio_exterior(npc)
 		return
 	if str(npc.get_meta("rutina_ubicacion", "")) != "plaza":
+		_detener_animacion_ocio_exterior(npc)
 		return
+	_actualizar_animacion_ocio_exterior(npc)
 	if str(npc.get_meta("rutina_actual", "")).begins_with("encuentro_trio_"):
 		return
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
