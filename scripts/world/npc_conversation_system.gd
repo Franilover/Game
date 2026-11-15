@@ -1769,6 +1769,17 @@ func _registrar_dinamica_social_conversacion() -> void:
 				{"conversacion": str(_conversacion_activa.get("clave", ""))}
 			)
 
+	# RelationshipSystem escribe directamente en GameState. Sincronizamos
+	# estas dos ramas antes de que el progreso de la escena vuelva a guardarse,
+	# para no sobrescribir los conocimientos y vínculos recién registrados.
+	if is_instance_valid(_game_state) and _game_state.has_method("obtener_conversaciones_npc"):
+		var guardado_variant: Variant = _game_state.call("obtener_conversaciones_npc")
+		if guardado_variant is Dictionary:
+			var guardado := guardado_variant as Dictionary
+			for clave_social in ["_relaciones_npc", "_conocimientos_npc"]:
+				if guardado.has(clave_social):
+					_progreso_parejas[clave_social] = guardado[clave_social].duplicate(true)
+
 
 func _finalizar_conversacion(completada: bool = false) -> void:
 	if completada and not _conversacion_activa.is_empty():
