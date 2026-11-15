@@ -2788,7 +2788,7 @@ func _abrir_selector_items(modo: String) -> void:
 		boton.text = nombre + "  x" + str(maxi(1, int(objeto.get("cantidad", 1))))
 		boton.tooltip_text = ""
 		if modo == "regalo":
-		boton.set_meta("indice_inventario", indice)
+			boton.set_meta("indice_inventario", indice)
 		boton.pressed.connect(_seleccionar_item_interaccion.bind(indice, item_id, modo))
 		_selector_items_grid.add_child(boton)
 
