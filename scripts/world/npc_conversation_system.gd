@@ -1219,27 +1219,39 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 					continue
 				if ("charla_diaria_%s_%s" % [id_a, id_b]) in recientes:
 					continue
-				var puntuacion := 0.0
-				if is_instance_valid(_relationship_system):
-					var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(id_a, id_b)
-					puntuacion = (
-						float(relacion.get("amistad", 0.0))
-						+ float(relacion.get("confianza", 0.0))
-						+ float(relacion.get("afecto", 0.0))
-						- float(relacion.get("tension", 0.0)) * 2.0
-					)
+				var puntuacion := _puntuacion_pareja_reunion(candidato_a, candidato_b)
 				if puntuacion > mejor_puntuacion:
 					mejor_puntuacion = puntuacion
 					mejor_a = candidato_a
 					mejor_b = candidato_b
 		if not is_instance_valid(mejor_a) or not is_instance_valid(mejor_b):
 			continue
-		if jugador.global_position.distance_to((mejor_a.global_position + mejor_b.global_position) * 0.5) > DISTANCIA_JUGADOR + 240.0:
+
+		var mejor_c: Creature = null
+		var mejor_puntuacion_tercero := -INF
+		for candidato_variant in integrantes:
+			if not candidato_variant is Creature:
+				continue
+			var candidato_c := candidato_variant as Creature
+			if candidato_c == mejor_a or candidato_c == mejor_b:
+				continue
+			var puntuacion_tercero := (
+				_puntuacion_pareja_reunion(mejor_a, candidato_c)
+				+ _puntuacion_pareja_reunion(mejor_b, candidato_c)
+			) * 0.5
+			if puntuacion_tercero > mejor_puntuacion_tercero:
+				mejor_puntuacion_tercero = puntuacion_tercero
+				mejor_c = candidato_c
+
+		var centro_grupo := (mejor_a.global_position + mejor_b.global_position) * 0.5
+		if is_instance_valid(mejor_c):
+			centro_grupo = (mejor_a.global_position + mejor_b.global_position + mejor_c.global_position) / 3.0
+		if jugador.global_position.distance_to(centro_grupo) > DISTANCIA_JUGADOR + 240.0:
 			continue
 		var id_mejor_a := mejor_a.get_personaje_game_id().strip_edges()
 		var id_mejor_b := mejor_b.get_personaje_game_id().strip_edges()
 		var clave_diaria := "charla_diaria_%s_%s" % [id_mejor_a, id_mejor_b]
-		var evento_diario := _crear_conversacion_diaria_castillo(mejor_a, mejor_b, clave_diaria)
+		var evento_diario := _crear_conversacion_diaria_castillo(mejor_a, mejor_b, clave_diaria, mejor_c)
 		if _registrar_conversacion_reunion_castillo(evento_diario, mejor_a, mejor_b, clave_diaria, clave_dia, diario, historial):
 			return true
 	return false
@@ -1258,6 +1270,15 @@ func _registrar_conversacion_reunion_castillo(
 		return false
 	if not _npc_puede_participar_reunion(npc_a) or not _npc_puede_participar_reunion(npc_b):
 		return false
+	var npc_c: Creature = null
+	var nombre_c := str(evento.get("npc_c", "")).strip_edges().to_lower()
+	if not nombre_c.is_empty():
+		npc_c = _npc_por_nombre.get(nombre_c) as Creature
+		if (
+			not _npc_puede_participar_reunion(npc_c)
+			or int(npc_c.get_meta("grupo_social_castillo_id", -1)) != int(npc_a.get_meta("grupo_social_castillo_id", -2))
+		):
+			return false
 	evento["_reunion_castillo"] = true
 	evento["clave"] = "reunion_%s_%s" % [clave, clave_dia.replace(":", "_")]
 	_iniciar_conversacion(evento)
@@ -1276,9 +1297,14 @@ func _registrar_conversacion_reunion_castillo(
 	claves_eventos.append(clave)
 	var parejas_variant: Variant = eventos.get("parejas", [])
 	var parejas: Array = parejas_variant.duplicate() if parejas_variant is Array else []
-	var clave_pareja := _clave_pareja_reunion(npc_a, npc_b)
-	if not clave_pareja.is_empty() and clave_pareja not in parejas:
-		parejas.append(clave_pareja)
+	var participantes_reunion: Array[Creature] = [npc_a, npc_b]
+	if is_instance_valid(npc_c):
+		participantes_reunion.append(npc_c)
+	for i in range(participantes_reunion.size()):
+		for j in range(i + 1, participantes_reunion.size()):
+			var clave_pareja := _clave_pareja_reunion(participantes_reunion[i], participantes_reunion[j])
+			if not clave_pareja.is_empty() and clave_pareja not in parejas:
+				parejas.append(clave_pareja)
 	diario["eventos_dia"] = {"dia": clave_dia, "claves": claves_eventos, "parejas": parejas}
 	diario["ultimo_dia"] = clave_dia
 	diario["ultimo_evento"] = clave
@@ -1311,23 +1337,48 @@ func _clave_pareja_reunion(npc_a: Creature, npc_b: Creature) -> String:
 	return id_a + "|" + id_b if id_a < id_b else id_b + "|" + id_a
 
 
-func _crear_conversacion_diaria_castillo(npc_a: Creature, npc_b: Creature, clave: String) -> Dictionary:
+func _crear_conversacion_diaria_castillo(
+	npc_a: Creature,
+	npc_b: Creature,
+	clave: String,
+	npc_c: Creature = null
+) -> Dictionary:
 	var nombre_a := npc_a.get_nombre_visual()
 	var nombre_b := npc_b.get_nombre_visual()
 	var resumen_a := _describir_dia_npc(npc_a)
 	var resumen_b := _describir_dia_npc(npc_b)
-	return {
+	var lineas: Array[Dictionary] = [
+		{"npc": nombre_a, "texto": "¿Qué tal te fue hoy? Parecía que no ibas a tener un momento libre."},
+		{"npc": nombre_b, "texto": resumen_b + " Ahora me viene bien sentarme un rato."}
+	]
+	var evento := {
 		"clave": clave,
 		"npc_a": nombre_a.to_lower(),
 		"npc_b": nombre_b.to_lower(),
-		"cinematica": false,
-		"lineas": [
-			{"npc": nombre_a, "texto": "¿Qué tal te fue hoy? Parecía que no ibas a tener un momento libre."},
-			{"npc": nombre_b, "texto": resumen_b + " Ahora me viene bien sentarme un rato."},
-			{"npc": nombre_a, "texto": resumen_a + " ¿Hubo algo que te llamara la atención?"},
-			{"npc": nombre_b, "texto": "Sí, aunque prefiero contártelo con calma. Me alegra que hayamos coincidido esta noche."}
-		]
+		"cinematica": false
 	}
+	if is_instance_valid(npc_c):
+		var nombre_c := npc_c.get_nombre_visual()
+		lineas.append({"npc": nombre_c, "texto": _describir_dia_npc(npc_c) + " ¿Ustedes pudieron terminar todo lo que tenían pendiente?"})
+		evento["npc_c"] = nombre_c.to_lower()
+	lineas.append({"npc": nombre_a, "texto": resumen_a + " Me alegra que podamos sentarnos juntos un rato."})
+	lineas.append({"npc": nombre_b, "texto": "Mañana seguimos con lo que falte. Por ahora, disfrutemos la noche."})
+	evento["lineas"] = lineas
+	return evento
+
+
+func _puntuacion_pareja_reunion(npc_a: Creature, npc_b: Creature) -> float:
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or not is_instance_valid(_relationship_system):
+		return 0.0
+	var id_a := npc_a.get_personaje_game_id().strip_edges()
+	var id_b := npc_b.get_personaje_game_id().strip_edges()
+	var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(id_a, id_b)
+	return (
+		float(relacion.get("amistad", 0.0))
+		+ float(relacion.get("confianza", 0.0))
+		+ float(relacion.get("afecto", 0.0))
+		- float(relacion.get("tension", 0.0)) * 2.0
+	)
 
 
 func _describir_dia_npc(npc: Creature) -> String:
