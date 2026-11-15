@@ -182,6 +182,15 @@ func _run() -> void:
 		return
 	ai.configuracion_ia = {"necesidades": {"umbral_fatiga": 60.0, "recuperacion_fatiga_por_segundo": 5.0}}
 	ai._fatiga_actual = 70.0
+	actor.datos["necesidades_runtime"] = {"hambre": 42.0, "fatiga": 18.0}
+	ai._hambre_actual = 0.0
+	ai._fatiga_actual = 0.0
+	ai._restaurar_necesidades_runtime()
+	if not is_equal_approx(ai._hambre_actual, 42.0) or not is_equal_approx(ai._fatiga_actual, 18.0):
+		_fail("Las necesidades fisiológicas no se restauraron desde el estado runtime.")
+		return
+	if not is_equal_approx(float(ai._obtener_estado_necesidades().get("hambre", -1.0)), 42.0):
+		_fail("El estado de necesidades no quedó disponible para el guardado.")
 	ai.actividad_horaria = "explorar"
 	ai._aplicar_prioridad_necesidades()
 	if ai.actividad_horaria != "reposar":
