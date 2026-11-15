@@ -1065,10 +1065,9 @@ func _obtener_rutina_encuentro_trio(
 		var participante := participantes[nombre] as Creature
 		var base_actual: Dictionary
 		var lista_actual: Variant = participante.datos.get("rutinas", [])
-		if dia_semana == 4 and (not bool(participante.get_meta("habitante_sin_oficio", false)) or nombre in ["mara", "ivo", "nima"]):
-			base_actual = _seleccionar_rutina_dia_libre(participante, minutos)
-		else:
-			base_actual = _seleccionar_rutina(lista_actual, dia_semana, minutos, participante.get_nombre_visual())
+		# El día 5 está excluido de los candidatos del encuentro privado;
+		# aquí sólo se evalúan horarios ordinarios de los días 1 a 4.
+		base_actual = _seleccionar_rutina(lista_actual, dia_semana, minutos, participante.get_nombre_visual())
 		if not _obtener_rutina_invitacion(participante, base_actual, minutos).is_empty():
 			return {}
 	var posiciones: Dictionary = {
