@@ -17,6 +17,19 @@ pasos = Array[Dictionary]([{
 }, {
 "tipo": "acciones_simultaneas",
 "acciones": [{
+"tipo": "gesto_npc",
+"npc": "{{npc_a}}",
+"gesto": "acomodarse",
+"duracion": 0.48
+}, {
+"tipo": "gesto_npc",
+"npc": "{{npc_b}}",
+"gesto": "acomodarse",
+"duracion": 0.48
+}]
+}, {
+"tipo": "acciones_simultaneas",
+"acciones": [{
 "tipo": "mirar_npc",
 "npc": "{{npc_a}}",
 "hacia_npc": "{{npc_b}}"
