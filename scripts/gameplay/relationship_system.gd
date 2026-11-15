@@ -230,7 +230,6 @@ func _obtener_impacto_evento(evento: String) -> Dictionary:
 		"demostrar_habilidad": {"cambios": {"respeto": 2.5, "amistad": 0.5}, "rasgo": "curiosidad"},
 		"compartir_conocimiento": {"cambios": {"amistad": 1.0, "respeto": 1.5}, "rasgo": "curiosidad"},
 		"interesarse": {"cambios": {"amistad": 0.8, "confianza": 0.4}, "rasgo": "sociabilidad", "importancia": 1.0},
-		"despedida_amable": {"cambios": {"amistad": 0.4, "afecto": 0.5}, "rasgo": "sociabilidad", "importancia": 1.0},
 		"faltar_respeto": {"cambios": {"respeto": -7.0, "amistad": -2.0}, "rasgo": "agresividad", "importancia": 3.0},
 		"traicionar": {"cambios": {"confianza": -20.0, "amistad": -8.0, "afecto": -4.0}, "rasgo": "prudencia", "importancia": 5.0}
 	}
@@ -301,13 +300,50 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 	var recuerdos := _obtener_recuerdos()
 	var lista: Array = recuerdos.get(personaje_id, [])
 	var nuevo_recuerdo := recuerdo.duplicate(true)
-	if str(nuevo_recuerdo.get("recuerdo_uid", "")).is_empty():
-		nuevo_recuerdo["recuerdo_uid"] = "%s:%d:%d" % [
-			personaje_id,
-			Time.get_ticks_usec(),
-			lista.size()
-		]
-	lista.append(nuevo_recuerdo)
+	var tipo := str(nuevo_recuerdo.get("tipo", "")).strip_edges()
+	var clave := str(nuevo_recuerdo.get("clave", "")).strip_edges()
+	var indice_existente := -1
+
+	# Un tema recurrente conserva una memoria estable en vez de llenar el
+	# historial con copias idénticas. Se actualizan el último intercambio y
+	# el contador para que el selector pueda dar prioridad a temas menos usados.
+	if tipo == "tema_conversacion" and not clave.is_empty():
+		for i in range(lista.size()):
+			if not lista[i] is Dictionary:
+				continue
+			var existente := lista[i] as Dictionary
+			if (
+				str(existente.get("tipo", "")) == "tema_conversacion"
+				and str(existente.get("clave", "")).strip_edges() == clave
+			):
+				indice_existente = i
+				break
+
+	if indice_existente >= 0:
+		var existente := (lista[indice_existente] as Dictionary).duplicate(true)
+		var veces := maxi(1, int(existente.get("veces_conversado", 1))) + 1
+		var uid := str(existente.get("recuerdo_uid", ""))
+		var mencionado := bool(existente.get("mencionado_en_dialogo", false))
+		var primera_vez := str(existente.get("primer_momento", existente.get("momento", "")))
+		for campo in nuevo_recuerdo.keys():
+			existente[campo] = nuevo_recuerdo[campo]
+		existente["recuerdo_uid"] = uid if not uid.is_empty() else "%s:%d:%d" % [personaje_id, Time.get_ticks_usec(), indice_existente]
+		existente["veces_conversado"] = veces
+		existente["primer_momento"] = primera_vez
+		existente["mencionado_en_dialogo"] = mencionado
+		lista[indice_existente] = existente
+		nuevo_recuerdo = existente.duplicate(true)
+	else:
+		if str(nuevo_recuerdo.get("recuerdo_uid", "")).is_empty():
+			nuevo_recuerdo["recuerdo_uid"] = "%s:%d:%d" % [
+				personaje_id,
+				Time.get_ticks_usec(),
+				lista.size()
+			]
+		if tipo == "tema_conversacion":
+			nuevo_recuerdo["veces_conversado"] = 1
+			nuevo_recuerdo["primer_momento"] = str(nuevo_recuerdo.get("momento", ""))
+		lista.append(nuevo_recuerdo)
 
 	while lista.size() > 32:
 		var indice_descartar := -1
