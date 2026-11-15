@@ -88,6 +88,8 @@ var world_atmosphere: WorldAtmosphere = null
 
 var actividad_horaria: String = "explorar"
 var _brillo_horario_activo: bool = false
+var _objetivo_alimento: WorldItem = null
+var _alimentacion_realizada: bool = false
 
 
 func configurar_dependencias(
@@ -419,6 +421,14 @@ func _procesar_estado(delta: float) -> void:
 	if actividad_horaria == "proteger":
 		_procesar_proteccion(delta)
 		return
+
+	# La alimentación sólo se activa si la especie declara alimentos concretos.
+	# Una amenaza con respuesta válida siempre tiene prioridad sobre comer.
+	if actividad_horaria == "alimentarse" and _obtener_ids_alimento().size() > 0:
+		var respuesta_amenaza := _obtener_respuesta_a_objetivo() if objetivo_detectado else ""
+		if respuesta_amenaza not in ["atacar", "huir", "perseguir", "investigar"]:
+			_procesar_alimentacion()
+			return
 
 	match estado:
 		Estado.IDLE:
@@ -1154,10 +1164,99 @@ func _actualizar_rutina() -> void:
 
 	_aplicar_respuesta_ambiental_rutina()
 
+	# Cada bloque horario de alimentación permite una comida. Al abandonar
+	# la actividad se habilita la siguiente, sin inventar un medidor de hambre.
+	if actividad_horaria != "alimentarse":
+		_alimentacion_realizada = false
+		_objetivo_alimento = null
+
 	# Publicar siempre el estado horario, incluso si falta o está mal formada
 	# la configuración; así no quedan metadatos de una rutina anterior.
 	criatura.set_meta("actividad_horaria", actividad_horaria)
 	_actualizar_atraccion_refugio(actividad_horaria in ["proteger", "atraer"])
+
+
+
+func _obtener_ids_alimento() -> Array[String]:
+	var resultado: Array[String] = []
+	var alimentacion_variant: Variant = configuracion_ia.get("alimentacion", {})
+	if not alimentacion_variant is Dictionary:
+		return resultado
+	var ids_variant: Variant = (alimentacion_variant as Dictionary).get("item_ids", [])
+	if ids_variant is String:
+		var id_unico := (ids_variant as String).strip_edges()
+		if not id_unico.is_empty():
+			resultado.append(id_unico)
+	elif ids_variant is Array:
+		for id_variant in ids_variant as Array:
+			var item_id := str(id_variant).strip_edges()
+			if not item_id.is_empty() and item_id not in resultado:
+				resultado.append(item_id)
+	return resultado
+
+
+func _es_alimento_configurado(item: WorldItem) -> bool:
+	if item == null or not is_instance_valid(item) or not item.is_inside_tree():
+		return false
+	var ids := _obtener_ids_alimento()
+	if ids.is_empty():
+		return false
+	var datos_item := item.obtener_datos()
+	var item_id := str(datos_item.get("item_id", datos_item.get("id", ""))).strip_edges()
+	return not item_id.is_empty() and item_id in ids and int(datos_item.get("cantidad", 1)) > 0
+
+
+func _buscar_alimento() -> WorldItem:
+	if entity_manager == null or not is_instance_valid(entity_manager):
+		return null
+	var radio := 180.0
+	var alimentacion_variant: Variant = configuracion_ia.get("alimentacion", {})
+	if alimentacion_variant is Dictionary:
+		radio = maxf(float((alimentacion_variant as Dictionary).get("radio_busqueda", radio)), 1.0)
+	var mejor: WorldItem = null
+	var mejor_distancia := INF
+	for entidad_variant in entity_manager.obtener_entidades_activas():
+		if not entidad_variant is WorldItem:
+			continue
+		var candidata := entidad_variant as WorldItem
+		if not _es_alimento_configurado(candidata):
+			continue
+		var distancia := criatura.global_position.distance_to(candidata.global_position)
+		if distancia <= radio and distancia < mejor_distancia:
+			mejor = candidata
+			mejor_distancia = distancia
+	return mejor
+
+
+func _procesar_alimentacion() -> void:
+	if _alimentacion_realizada:
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+		return
+	if _objetivo_alimento == null or not _es_alimento_configurado(_objetivo_alimento):
+		_objetivo_alimento = _buscar_alimento()
+	if _objetivo_alimento == null:
+		criatura.detener_movimiento()
+		criatura.tomar_control_movimiento()
+		return
+	var alimentacion_variant: Variant = configuracion_ia.get("alimentacion", {})
+	var config: Dictionary = alimentacion_variant if alimentacion_variant is Dictionary else {}
+	var distancia_consumo := maxf(float(config.get("distancia_consumo", 20.0)), 1.0)
+	var distancia := criatura.global_position.distance_to(_objetivo_alimento.global_position)
+	criatura.tomar_control_movimiento()
+	if distancia > distancia_consumo:
+		_establecer_velocidad(_obtener_velocidad_persecucion())
+		criatura.establecer_direccion_movimiento(
+			criatura.global_position.direction_to(_objetivo_alimento.global_position)
+		)
+		return
+	criatura.detener_movimiento()
+	if _objetivo_alimento.consumir_por_criatura(_obtener_ids_alimento()):
+		_alimentacion_realizada = true
+		_objetivo_alimento = null
+		_establecer_velocidad(_velocidad_normal)
+	else:
+		_objetivo_alimento = null
 
 
 func _hora_en_bloque(hora: float, inicio: float, fin: float) -> bool:
