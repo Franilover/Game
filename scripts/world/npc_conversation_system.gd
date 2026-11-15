@@ -1894,14 +1894,26 @@ func _buscar_encuentro_trio_mara_ivo_nima(jugador: Node2D, clave_dia: String) ->
 			{"npc":"ivo","texto":"Entonces quedémonos un rato. Sin planes demasiado largos."}
 		]
 	else:
-		lineas = [
-			{"npc":"nima","texto":"He dejado las notas en casa. Hoy quería encontrarme con ustedes sin estar pendiente del cuaderno."},
-			{"npc":"ivo","texto":"Eso sí que es una novedad. ¿Podemos hablar de algo que no sea mi cansancio?"},
-			{"npc":"mara","texto":"Podemos intentarlo. Aunque no prometo que Nima no encuentre algo interesante que observar."},
-			{"npc":"nima","texto":"Sólo si ustedes me dan motivos. Por ahora me basta con que hayamos coincidido."},
-			{"npc":"ivo","texto":"Me gusta esto. Estamos los tres y nadie tiene que seguir el ritmo de los demás."},
-			{"npc":"mara","texto":"Entonces aprovechemos el rato. Podemos quedarnos aquí todo el tiempo que nos apetezca."}
-		]
+		var etapa_apoyo := int((_progreso_parejas.get("mara_ivo_apoyo", {}) as Dictionary).get("etapa", 0))
+		var etapa_investigacion := int((_progreso_parejas.get("nima_ivo_investigacion", {}) as Dictionary).get("etapa", 0))
+		if etapa_apoyo >= 2 and etapa_investigacion >= 2:
+			lineas = [
+				{"npc":"nima","texto":"Ya ordené las observaciones y sé qué preguntas siguen abiertas. Hoy prefiero dejar el cuaderno en casa."},
+				{"npc":"ivo","texto":"Y yo he aprendido que puedo pedir compañía sin sentir que les estoy cambiando los planes."},
+				{"npc":"mara","texto":"Eso hace más fácil estar juntos. No tenemos que convertir cada paseo en una obligación."},
+				{"npc":"nima","texto":"Me alegra que podamos hablar de otras cosas y seguir siendo honestos cuando algo nos preocupa."},
+				{"npc":"ivo","texto":"Entonces hoy no hay notas ni recorridos largos. Sólo nosotros tres."},
+				{"npc":"mara","texto":"Me parece un buen plan. Nos quedamos mientras estemos a gusto."}
+			]
+		else:
+			lineas = [
+				{"npc":"nima","texto":"He dejado las notas en casa. Hoy quería encontrarme con ustedes sin estar pendiente del cuaderno."},
+				{"npc":"ivo","texto":"Eso sí que es una novedad. ¿Podemos hablar de algo que no sea mi cansancio?"},
+				{"npc":"mara","texto":"Podemos intentarlo. Aunque no prometo que Nima no encuentre algo interesante que observar."},
+				{"npc":"nima","texto":"Sólo si ustedes me dan motivos. Por ahora me basta con que hayamos coincidido."},
+				{"npc":"ivo","texto":"Me gusta esto. Estamos los tres y nadie tiene que seguir el ritmo de los demás."},
+				{"npc":"mara","texto":"Entonces aprovechemos el rato. Podemos quedarnos aquí todo el tiempo que nos apetezca."}
+			]
 	_iniciar_conversacion({
 		"clave": "encuentro_trio_mara_ivo_nima_" + clave_dia.replace(":", "_"),
 		"npc_a": "mara",
