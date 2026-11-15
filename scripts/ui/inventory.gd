@@ -902,7 +902,9 @@ func _mostrar_informacion() -> void:
 		lineas.append("Cantidad: %d" % cantidad)
 
 	var propiedades_variant: Variant = objeto_seleccionado.get("propiedades_game", {})
-	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+	var propiedades: Dictionary = {}
+	if propiedades_variant is Dictionary:
+		propiedades = propiedades_variant as Dictionary
 	var tipo := str(objeto_seleccionado.get("tipo", "")).strip_edges().to_lower()
 	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
 	var categoria_clave := str(objeto_seleccionado.get("categoria_clave", categoria.get("clave", ""))).to_lower()
@@ -910,6 +912,10 @@ func _mostrar_informacion() -> void:
 	var categoria_canonica := ""
 	if tipo_objeto_variant is Dictionary:
 		categoria_canonica = str((tipo_objeto_variant as Dictionary).get("categoria_canonica", "")).to_lower()
+	if tipo.is_empty():
+		tipo = categoria_canonica
+	if tipo.is_empty():
+		tipo = categoria_clave
 
 	var etiquetas: Dictionary = {}
 	match tipo:
@@ -931,6 +937,9 @@ func _mostrar_informacion() -> void:
 	var uso_variant: Variant = propiedades.get("uso", {})
 	if uso_variant is Dictionary:
 		var uso := uso_variant as Dictionary
+		var tipo_uso := str(uso.get("tipo", "")).strip_edges()
+		if not tipo_uso.is_empty():
+			lineas.append("Uso: " + tipo_uso.replace("_", " ").capitalize())
 		var efectos_variant: Variant = uso.get("efectos", null)
 		if efectos_variant is Array:
 			for efecto_variant in efectos_variant as Array:
