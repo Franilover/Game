@@ -1166,11 +1166,12 @@ func _restaurar_npcs_exteriores() -> void:
 			continue
 		var visual := npc as CanvasItem
 		var sigue_dentro := bool(npc.get_meta("rutina_en_edificio", false))
-		visual.visible = not sigue_dentro
-		if sigue_dentro:
-			npc.remove_from_group("interactable")
-		elif npc is Creature:
+		var visible_antes := bool(_visibilidad_npcs_exterior.get(visual.get_instance_id(), not sigue_dentro))
+		visual.visible = not sigue_dentro and visible_antes
+		if visual.visible and npc is Creature:
 			npc.add_to_group("interactable")
+		else:
+			npc.remove_from_group("interactable")
 	_visibilidad_npcs_exterior.clear()
 
 
