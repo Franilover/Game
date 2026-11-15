@@ -23,16 +23,13 @@ custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 focus_mode = 0
 text = "‹"
-tooltip_text = "Opción anterior"
 
 [node name="Siguiente" type="Button" parent="."]
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
 focus_mode = 0
 text = "›"
-tooltip_text = "Opción siguiente"
 
 [node name="Color" type="ColorPickerButton" parent="."]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
-tooltip_text = "Cambiar color"
