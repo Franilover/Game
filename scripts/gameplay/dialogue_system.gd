@@ -52,7 +52,7 @@ var _fuente: Creature = null
 var _texto_completo: String = ""
 var _indice_caracter: int = 0
 var _temporizador_texto: float = 0.0
-var _intervalo_caracter: float = 0.018
+var _intervalo_caracter: float = 0.006
 var _recuerdo_pendiente_mostrar: Dictionary = {}
 var _personaje_recuerdo_pendiente: String = ""
 var _variante_pendiente_mostrar: Dictionary = {}
@@ -88,12 +88,15 @@ func _process(delta: float) -> void:
 	if _indice_caracter >= _texto_completo.length():
 		return
 
-	_temporizador_texto -= delta
-	if _temporizador_texto > 0.0:
+	# Acumula tiempo y revela varios caracteres por fotograma cuando hace falta.
+	# Así la velocidad no queda limitada a un carácter por frame.
+	_temporizador_texto += delta
+	var caracteres_a_revelar := int(_temporizador_texto / _intervalo_caracter)
+	if caracteres_a_revelar <= 0:
 		return
 
-	_temporizador_texto = _intervalo_caracter
-	_indice_caracter += 1
+	_temporizador_texto -= float(caracteres_a_revelar) * _intervalo_caracter
+	_indice_caracter = mini(_indice_caracter + caracteres_a_revelar, _texto_completo.length())
 	text_label.text = _texto_completo.substr(0, _indice_caracter)
 	_actualizar_boton_accion()
 	if _indice_caracter >= _texto_completo.length():
