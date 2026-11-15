@@ -471,6 +471,19 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
 	var nombre_para_descanso := npc.get_nombre_visual().strip_edges().to_lower()
+	# Elian mantiene la panadería abierta durante la última hora de compras.
+	# Es un ajuste local de la simulación: no modifica horarios canónicos en Supabase.
+	if nombre_para_descanso == "elian" and rutinas_variant is Array:
+		var rutinas_elian: Array = (rutinas_variant as Array).duplicate(true)
+		for indice_rutina in range(rutinas_elian.size()):
+			var rutina_variant: Variant = rutinas_elian[indice_rutina]
+			if rutina_variant is Dictionary and str(rutina_variant.get("clave", "")) == "cerrar_panaderia":
+				var cierre: Dictionary = rutina_variant.duplicate(true)
+				cierre["hora_fin"] = "17:00"
+				rutinas_elian[indice_rutina] = cierre
+		rutinas_variant = rutinas_elian
+	# El índice 4 representa el día número 5 del calendario: descanso para
+	# todos los NPC con oficio. Los habitantes sin oficio conservan sus rutinas.
 	if dia_semana == 4 and (not bool(npc.get_meta("habitante_sin_oficio", false)) or nombre_para_descanso in ["mara", "ivo", "nima"]):
 		rutina = _seleccionar_rutina_dia_libre(npc, minutos)
 	else:
@@ -1280,6 +1293,15 @@ func _detener_animacion_ocio_exterior(npc: Creature) -> void:
 func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	if not is_instance_valid(npc):
 		return
+	# En días laborales, un NPC con oficio no hace paseos ambientales al azar.
+	# Sus desplazamientos sólo proceden de la rutina laboral (por ejemplo,
+	# la ronda de Darven); el día 5 sí puede disfrutar de su descanso.
+	if not bool(npc.get_meta("habitante_sin_oficio", false)):
+		var tiempo_trabajo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+		var dia_trabajo := posmod(int(tiempo_trabajo.get("dia", 1)) - 1, 5)
+		if dia_trabajo != 4:
+			_detener_animacion_ocio_exterior(npc)
+			return
 	if bool(npc.get_meta("rutina_en_edificio", false)):
 		_detener_animacion_ocio_exterior(npc)
 		return
