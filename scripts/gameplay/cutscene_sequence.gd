@@ -9,6 +9,7 @@ class_name CutsceneSequence
 @export_multiline var descripcion: String = ""
 @export_enum("planeada", "en_vivo") var modo: String = "planeada"
 @export var pasos: Array[Dictionary] = []
+@export var parametros_requeridos: PackedStringArray = []
 
 
 func validar() -> Array[String]:
