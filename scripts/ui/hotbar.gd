@@ -425,7 +425,7 @@ func _configurar_slot(
 			cantidad.visible = false
 			cantidad.text = ""
 
-				slot.tooltip_text= ""
+				slot.tooltip_text = ""
 
 		return
 
@@ -460,9 +460,8 @@ func _configurar_slot(
 	var categoria_texto := ""
 	if categoria_variant is Dictionary:
 		categoria_texto = str((categoria_variant as Dictionary).get("nombre", "")).strip_edges()
-		slot.tooltip_text= ""
+		slot.tooltip_text = ""
 	if not categoria_texto.is_empty():
-				slot.tooltip_text += ""
 
 
 func _actualizar_seleccion() -> void:
