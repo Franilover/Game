@@ -1698,6 +1698,27 @@ func _al_cinematica_reunion_nocturna_solicitada(
 	)
 
 
+func _buscar_tercero_cinematica(nombre_a: String, nombre_b: String, centro: Vector2) -> Creature:
+	var npc_a := nombre_a.strip_edges().to_lower()
+	var npc_b := nombre_b.strip_edges().to_lower()
+	var mejor: Creature = null
+	var distancia_mejor := 115.0
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature or not is_instance_valid(nodo):
+			continue
+		var candidato := nodo as Creature
+		var nombre := candidato.get_nombre_visual().strip_edges().to_lower()
+		if nombre.is_empty() or nombre == npc_a or nombre == npc_b:
+			continue
+		if not _npc_libre_para_cinematica(candidato):
+			continue
+		var distancia := candidato.global_position.distance_to(centro)
+		if distancia < distancia_mejor:
+			distancia_mejor = distancia
+			mejor = candidato
+	return mejor
+
+
 func _ejecutar_cinematica_intercambio_social(
 	clave: String,
 	nombre_a: String,
@@ -1713,16 +1734,18 @@ func _ejecutar_cinematica_intercambio_social(
 ) -> void:
 	if not is_instance_valid(_cutscene_director):
 		return
+	var tercero := _buscar_tercero_cinematica(nombre_a, nombre_b, centro)
+	var usar_tercero := is_instance_valid(tercero) and posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 1
 	var usar_interrupcion := posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 0
-	var ruta_secuencia := "res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres"
+	var ruta_secuencia := "res://resources/cutscenes/intercambio_con_tercero.tres" if usar_tercero else ("res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres")
 	var invertir_turno := posmod(hash(nombre_a + "|" + nombre_b + "|" + clave), 2) == 1
 	var interrumpe := nombre_a if invertir_turno else nombre_b
 	var interrumpido := nombre_b if invertir_turno else nombre_a
 	var secuencia := load(ruta_secuencia) as CutsceneSequence
 	if not is_instance_valid(secuencia):
-		push_warning("Main: no se pudo cargar la secuencia intercambio_social.tres.")
+		push_warning("Main: no se pudo cargar la secuencia de intercambio social.")
 		return
-	await _cutscene_director.ejecutar_recurso(secuencia, {
+	var parametros := {
 		"clave": clave,
 		"npc_a": nombre_a,
 		"npc_b": nombre_b,
@@ -1737,7 +1760,25 @@ func _ejecutar_cinematica_intercambio_social(
 		"pausa_antes": pausa_antes,
 		"pausa_despues": pausa_despues,
 		"duracion_gesto": duracion_gesto
-	}, "en_vivo")
+	}
+	if usar_tercero:
+		var npc_a_obj := _buscar_npc_cinematica(nombre_a)
+		var npc_b_obj := _buscar_npc_cinematica(nombre_b)
+		var eje := (npc_b_obj.global_position - npc_a_obj.global_position).normalized()
+		if eje.length_squared() < 0.01:
+			eje = Vector2.RIGHT
+		var lateral := Vector2(-eje.y, eje.x)
+		var posicion_llegada := centro + lateral * 34.0
+		var direccion_salida := (tercero.global_position - centro).normalized()
+		if direccion_salida.length_squared() < 0.01:
+			direccion_salida = lateral
+		var posicion_salida := tercero.global_position + direccion_salida * 28.0
+		parametros["tercero"] = tercero.get_nombre_visual()
+		parametros["tercero_llegada_x"] = posicion_llegada.x
+		parametros["tercero_llegada_y"] = posicion_llegada.y
+		parametros["tercero_salida_x"] = posicion_salida.x
+		parametros["tercero_salida_y"] = posicion_salida.y
+	await _cutscene_director.ejecutar_recurso(secuencia, parametros, "en_vivo")
 
 
 ## Las señales cinematográficas no se descartan por estar el jugador lejos,
