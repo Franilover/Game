@@ -1136,10 +1136,14 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 	var eventos_dia_variant: Variant = diario.get("eventos_dia", {})
 	var eventos_dia: Dictionary = eventos_dia_variant if eventos_dia_variant is Dictionary else {}
 	var conversaciones_hoy: Array = []
+	var parejas_hoy: Array = []
 	if str(eventos_dia.get("dia", "")) == clave_dia:
 		var lista_hoy: Variant = eventos_dia.get("claves", [])
 		if lista_hoy is Array:
 			conversaciones_hoy = (lista_hoy as Array).duplicate()
+		var parejas_variant: Variant = eventos_dia.get("parejas", [])
+		if parejas_variant is Array:
+			parejas_hoy = (parejas_variant as Array).duplicate()
 	elif str(diario.get("ultimo_dia", "")) == clave_dia:
 		# Compatibilidad con partidas guardadas antes del contador de varias
 		# conversaciones por noche: conserva la charla que ya ocurrió.
@@ -1171,6 +1175,8 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 		if not _npc_puede_participar_reunion(npc_a) or not _npc_puede_participar_reunion(npc_b):
 			continue
 		if int(npc_a.get_meta("grupo_social_castillo_id", -1)) != int(npc_b.get_meta("grupo_social_castillo_id", -2)):
+			continue
+		if _clave_pareja_reunion(npc_a, npc_b) in parejas_hoy:
 			continue
 		if jugador.global_position.distance_to((npc_a.global_position + npc_b.global_position) * 0.5) > DISTANCIA_JUGADOR + 240.0:
 			continue
@@ -1208,8 +1214,10 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 				var candidato_b := integrantes[j] as Creature
 				var id_a := candidato_a.get_personaje_game_id().strip_edges()
 				var id_b := candidato_b.get_personaje_game_id().strip_edges()
-				var clave_par := "charla_diaria_%s_%s" % [id_a, id_b]
-				if clave_par in recientes:
+				var clave_par := _clave_pareja_reunion(candidato_a, candidato_b)
+				if clave_par in parejas_hoy:
+					continue
+				if ("charla_diaria_%s_%s" % [id_a, id_b]) in recientes:
 					continue
 				var puntuacion := 0.0
 				if is_instance_valid(_relationship_system):
@@ -1266,7 +1274,12 @@ func _registrar_conversacion_reunion_castillo(
 		if claves_variant is Array:
 			claves_eventos = (claves_variant as Array).duplicate()
 	claves_eventos.append(clave)
-	diario["eventos_dia"] = {"dia": clave_dia, "claves": claves_eventos}
+	var parejas_variant: Variant = eventos.get("parejas", [])
+	var parejas: Array = parejas_variant.duplicate() if parejas_variant is Array else []
+	var clave_pareja := _clave_pareja_reunion(npc_a, npc_b)
+	if not clave_pareja.is_empty() and clave_pareja not in parejas:
+		parejas.append(clave_pareja)
+	diario["eventos_dia"] = {"dia": clave_dia, "claves": claves_eventos, "parejas": parejas}
 	diario["ultimo_dia"] = clave_dia
 	diario["ultimo_evento"] = clave
 	diario["historial"] = historial
@@ -1282,6 +1295,20 @@ func _registrar_conversacion_reunion_castillo(
 			centro
 		)
 	return true
+
+
+func _clave_pareja_reunion(npc_a: Creature, npc_b: Creature) -> String:
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return ""
+	var id_a := npc_a.get_personaje_game_id().strip_edges()
+	var id_b := npc_b.get_personaje_game_id().strip_edges()
+	if id_a.is_empty():
+		id_a = npc_a.get_nombre_visual().strip_edges().to_lower()
+	if id_b.is_empty():
+		id_b = npc_b.get_nombre_visual().strip_edges().to_lower()
+	if id_a == id_b:
+		return ""
+	return id_a + "|" + id_b if id_a < id_b else id_b + "|" + id_a
 
 
 func _crear_conversacion_diaria_castillo(npc_a: Creature, npc_b: Creature, clave: String) -> Dictionary:
