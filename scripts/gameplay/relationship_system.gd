@@ -578,7 +578,16 @@ func seleccionar_variante_dialogo(variantes: Array, personaje_id: String) -> Dic
 		if (
 			mejor.is_empty()
 			or prioridad > mejor_prioridad
-			or (prioridad == mejor_prioridad and especificidad > mejor_especificidad)
+			or (
+				prioridad == mejor_prioridad
+				and (
+					especificidad > mejor_especificidad
+					or (
+						especificidad == mejor_especificidad
+						and str(variante.get("clave", "")) < str(mejor.get("clave", ""))
+					)
+				)
+			)
 		):
 			mejor = variante.duplicate(true)
 			mejor_prioridad = prioridad
