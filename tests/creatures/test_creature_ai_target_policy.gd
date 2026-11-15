@@ -162,6 +162,7 @@ func _run() -> void:
 		_fail("La IA no reconoció el WorldProp como destino de refugio.")
 		return
 	ai.objetivo = null
+	ai.entity_manager = null
 	refugio_root.queue_free()
 	refugio_manager.free()
 
