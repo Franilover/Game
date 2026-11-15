@@ -194,8 +194,6 @@ func _crear_boton_ium(ium: Dictionary) -> Button:
 		[]
 	)
 
-	if not oris.is_empty():
-
 	btn.pressed.connect(
 		func():
 			_agregar_ium_al_canvas(ium)
