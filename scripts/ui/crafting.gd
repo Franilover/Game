@@ -188,7 +188,7 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	panel.custom_minimum_size = Vector2(56, 56)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.name = "InventorySlot"
-	panel.tooltip_text = str(receta.get("nombre", "Receta"))
+		panel.tooltip_text= ""
 	panel.text = ""
 	panel.pressed.connect(func() -> void:
 		_seleccionar_receta(receta)
@@ -200,7 +200,7 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
 	var categoria_variant: Variant = item_resultado.get("categoria", {})
 	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
-		panel.tooltip_text += "\nCategoría: " + str((categoria_variant as Dictionary).get("nombre", ""))
+				panel.tooltip_text += ""
 	var icono := TextureRect.new()
 	icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	icono.offset_left = 7
