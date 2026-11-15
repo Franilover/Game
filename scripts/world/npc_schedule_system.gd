@@ -673,19 +673,19 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			destino_local = posicion_absoluta_variant
 		else:
 			var posiciones_plaza: Dictionary = {
-			"elian": Vector2(-72.0, 24.0),
-			"bruna": Vector2(64.0, 32.0),
-			"darven": Vector2(-24.0, -64.0),
-			"saira": Vector2(76.0, -52.0),
-			"narel": Vector2(-88.0, -48.0),
-			"abel": Vector2(12.0, 76.0),
-			"liam": Vector2(104.0, 20.0),
-			# Los tres habitantes locales ocupan sectores distintos del borde
-			# de la plaza; ninguno usa el punto central como destino por defecto.
-			"mara": Vector2(-132.0, -28.0),
-			"ivo": Vector2(18.0, 132.0),
-			"nima": Vector2(132.0, -18.0)
-		}
+				"elian": Vector2(-72.0, 24.0),
+				"bruna": Vector2(64.0, 32.0),
+				"darven": Vector2(-24.0, -64.0),
+				"saira": Vector2(76.0, -52.0),
+				"narel": Vector2(-88.0, -48.0),
+				"abel": Vector2(12.0, 76.0),
+				"liam": Vector2(104.0, 20.0),
+				# Los tres habitantes locales ocupan sectores distintos del borde
+				# de la plaza; ninguno usa el punto central como destino por defecto.
+				"mara": Vector2(-132.0, -28.0),
+				"ivo": Vector2(18.0, 132.0),
+				"nima": Vector2(132.0, -18.0)
+			}
 			var nombre_plaza := npc.get_nombre_visual().strip_edges().to_lower()
 			var posicion_plaza: Vector2
 			if posiciones_plaza.has(nombre_plaza):
