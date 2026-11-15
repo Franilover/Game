@@ -679,6 +679,11 @@ func _deduplicar_npcs_reino_torres() -> void:
 
 
 func _retirar_npcs_canonicos_ausentes() -> void:
+	# El campo es opcional en snapshots antiguos. Su ausencia no demuestra que
+	# todos los personajes hayan sido eliminados; sólo una lista explícita
+	# puede actuar como catálogo autoritativo para retirar instancias.
+	if not WorldData.mundo.has("personajes_game"):
+		return
 	var identidades_canonicas: Dictionary = {}
 	for personaje_variant in WorldData.obtener_personajes_game():
 		if not personaje_variant is Dictionary:
