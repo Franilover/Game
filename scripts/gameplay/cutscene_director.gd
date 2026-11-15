@@ -83,6 +83,22 @@ func obtener_clave_actual() -> String:
 	return _clave_actual
 
 
+## Ejecuta una secuencia guardada como recurso .tres/.res y validada en el Inspector.
+func ejecutar_recurso(secuencia: CutsceneSequence, tipo_override: String = "") -> bool:
+	if not is_instance_valid(secuencia):
+		push_warning("CutsceneDirector: el recurso de secuencia no es válido.")
+		return false
+	var errores := secuencia.validar()
+	if not errores.is_empty():
+		for error in errores:
+			push_warning("CutsceneDirector [%s]: %s" % [secuencia.clave, error])
+		return false
+	var modo_ejecucion := tipo_override.strip_edges()
+	if modo_ejecucion.is_empty():
+		modo_ejecucion = secuencia.modo
+	return await ejecutar(secuencia.clave, secuencia.pasos, modo_ejecucion)
+
+
 func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	var clave_limpia := clave.strip_edges()
 	if _ocupado or clave_limpia.is_empty() or pasos.is_empty():
