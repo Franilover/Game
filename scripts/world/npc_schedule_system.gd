@@ -594,6 +594,13 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Si cambió de destino mientras estaba dentro, sale desde la puerta antes
 	# de comenzar la nueva ruta. El nodo sigue siendo la misma instancia.
 	if esta_dentro and edificio_id != edificio_actual:
+		_detener_animacion_actividad_interior(npc)
+		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+			var movimiento_interior := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+			if is_instance_valid(movimiento_interior):
+				movimiento_interior.detener_por_rutina()
+			npc.remove_meta("rutina_paseo_interior_activo")
+			npc.set_meta("rutina_en_transito", false)
 		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
 			_zona.call("sacar_npc_del_interior", npc)
 		var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
