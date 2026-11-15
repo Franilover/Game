@@ -96,7 +96,7 @@ func validar() -> Array[String]:
 
 	var tipos_validos := [
 		"dialogo", "esperar", "camara", "gesto_npc",
-		"acciones_simultaneas", "mirar_npc", "orientar_grupo", "gesto_grupo", "fundido",
+		"acciones_simultaneas", "mirar_npc", "orientar_grupo", "gesto_grupo", "interrupcion", "fundido",
 		"temblor_camara", "preparar_npc", "fijar_npc",
 		"ruta_npc", "mover_jugador", "mover_npc",
 		"evento", "notificacion"
@@ -130,6 +130,22 @@ func validar() -> Array[String]:
 				var orientados: Variant = paso.get("npcs", [])
 				if not orientados is Array or (orientados as Array).is_empty():
 					errores.append("Paso %d: orientar_grupo necesita una lista de NPC." % numero_paso)
+
+			"interrupcion":
+				if not _campo_presente(paso, "interrumpe") or not _campo_presente(paso, "interrumpido"):
+					errores.append("Paso %d: interrupcion necesita interrumpe e interrumpido." % numero_paso)
+				if paso.has("oyentes") and not paso.get("oyentes") is Array:
+					errores.append("Paso %d: oyentes debe ser una lista." % numero_paso)
+				var gesto_interrumpe := str(paso.get("gesto_interrumpe", "saludar")).strip_edges().to_lower()
+				var gesto_interrumpido := str(paso.get("gesto_interrumpido", "sorpresa")).strip_edges().to_lower()
+				var gestos_interrupcion := [
+					"asentir", "saludar", "trabajar", "sorpresa", "negar",
+					"reir", "triste", "inquieto", "aplaudir", "encogerse", "acomodarse"
+				]
+				if not _es_parametro_dinamico(paso.get("gesto_interrumpe", "saludar")) and gesto_interrumpe not in gestos_interrupcion:
+					errores.append("Paso %d: gesto de interrupción no reconocido (%s)." % [numero_paso, gesto_interrumpe])
+				if not _es_parametro_dinamico(paso.get("gesto_interrumpido", "sorpresa")) and gesto_interrumpido not in gestos_interrupcion:
+					errores.append("Paso %d: reacción a interrupción no reconocida (%s)." % [numero_paso, gesto_interrumpido])
 			"gesto_grupo":
 				var participantes: Variant = paso.get("npcs", [])
 				if not participantes is Array or (participantes as Array).is_empty():
