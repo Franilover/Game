@@ -350,6 +350,10 @@ jobs:
             exit 1
           fi
 
+      # Verifies stable atlas registration and real DisplayLayer composition.
+      - name: Run TileMapDual terrain regression test
+        run: godot --headless --path . --script res://tests/world/test_world_terrain_visual.gd
+
       - name: Run Garumi world presence regression test
         shell: bash
         run: |
@@ -360,10 +364,6 @@ jobs:
             echo "Garumi world presence test reported script or assertion errors."
             exit 1
           fi
-
-      # Verifies stable atlas registration and real DisplayLayer composition.
-      - name: Run TileMapDual terrain regression test
-        run: godot --headless --path . --script res://tests/world/test_world_terrain_visual.gd
 
       - name: Run Garumi encyclopedia shortcut smoke test
         shell: bash
