@@ -88,7 +88,7 @@ func obtener_relacion(personaje_id: String) -> Dictionary:
 		if guardada is Dictionary:
 			return (guardada as Dictionary).duplicate(true)
 
-	var personaje := WorldData.obtener_personaje_game_por_id(personaje_id)
+	var personaje: Dictionary = WorldData.obtener_personaje_game_por_id(personaje_id)
 	if personaje.is_empty():
 		return {}
 
