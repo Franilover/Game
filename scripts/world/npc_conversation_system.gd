@@ -1699,13 +1699,27 @@ func _reaccionar_a_objeto_cotidiano(objeto: Node2D) -> void:
 		return
 	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
 		return
-	var reaccionados := 0
+	var candidatos: Array[Dictionary] = []
 	for npc in _obtener_npcs_torres():
-		if reaccionados >= 3:
-			break
 		if not _npc_puede_reaccionar_evento(npc):
 			continue
-		if npc.global_position.distance_to(objeto.global_position) > 128.0:
+		var distancia := npc.global_position.distance_to(objeto.global_position)
+		if distancia > 128.0:
+			continue
+		candidatos.append({"npc": npc, "distancia": distancia})
+
+	# La reacción pertenece a quienes realmente están mirando desde cerca,
+	# no a los primeros NPC que casualmente devuelve el grupo.
+	candidatos.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return float(a.get("distancia", INF)) < float(b.get("distancia", INF))
+	)
+	var reaccionados := 0
+	for candidato in candidatos:
+		if reaccionados >= 3:
+			break
+		var npc := candidato.get("npc") as Creature
+		if not is_instance_valid(npc):
 			continue
 		if _iniciar_reaccion_visual(npc, "mirada_rapida"):
 			reaccionados += 1
