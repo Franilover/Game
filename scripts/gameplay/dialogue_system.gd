@@ -1004,6 +1004,11 @@ func _obtener_texto_rutina_personaje(
 				return ("Me alegra que hayas venido. Me dirijo a %s; allí podremos hablar sin descuidar mis obligaciones." if amable else "Ahora debo continuar hacia %s. Cuando haya atendido mis responsabilidades, podremos conversar.") % destino
 			"liam":
 				return ("¡Hola! Voy camino a %s. Si me encuentras allí, podremos conversar un poco más." if amable else "Disculpa, tengo que llegar a %s. Búscame allí cuando termine lo que debo hacer.") % destino
+			"ivo":
+				if rutina_clave == "ivo_paseo_sin_panadero":
+					return "Mejor doy una vuelta por la plaza; Elian no está atendiendo ahora." if amable else "No voy a la panadería si Elian no está. Seguiré por la plaza."
+				if actividad == "comprar_pan" and ubicacion == "panaderia":
+					return "Voy hacia la panadería. Si Elian sigue atendiendo cuando llegue, compraré algo de pan." if amable else "Voy a la panadería, pero primero comprobaré si Elian está atendiendo."
 			_:
 				return ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
 
@@ -1080,9 +1085,11 @@ func _obtener_texto_rutina_personaje(
 			if candidato.get_nombre_visual().strip_edges().to_lower() == "elian":
 				elian_presente = bool(candidato.get_meta("rutina_en_edificio", false)) and str(candidato.get_meta("rutina_edificio_id", "")) == "panaderia"
 				break
-		if elian_presente:
+		if dentro_edificio and elian_presente:
 			return "Vine por pan y Elian está atendiendo. Siempre sabe qué tanda acaba de salir; voy a esperar un momento." if amable else "Estoy aquí para comprar pan. Elian está atendiendo, así que esperaré mi turno."
-		return "Vine a buscar pan, pero Elian todavía no está. Volveré cuando esté atendiendo." if amable else "La panadería aún no está atendida por Elian. Tendré que volver más tarde."
+		if dentro_edificio:
+			return "Vine a comprobar si Elian estaba atendiendo, pero aún no ha llegado. Esperaré un poco o volveré luego." if amable else "Elian no está atendiendo todavía. Esperaré un momento o regresaré más tarde."
+		return "Voy hacia la panadería; si Elian está atendiendo cuando llegue, compraré algo." if amable else "Me dirijo a la panadería, pero primero comprobaré si Elian está atendiendo."
 
 	# Diálogos de trabajo: cada actividad tiene una respuesta propia, no sólo un cambio de destino.
 	match nombre:
