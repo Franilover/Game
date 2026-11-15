@@ -239,6 +239,14 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				await _ejecutar_interrupcion(paso)
 				if generacion_actual != _generacion:
 					return false
+			"incorporar_npc":
+				await _ejecutar_entrada_social(paso, generacion_actual)
+				if generacion_actual != _generacion:
+					return false
+			"retirar_npc":
+				await _ejecutar_salida_social(paso, generacion_actual)
+				if generacion_actual != _generacion:
+					return false
 			"fundido":
 				await _ejecutar_fundido(paso)
 				if generacion_actual != _generacion:
@@ -394,6 +402,49 @@ func _ejecutar_orientar_grupo(paso: Dictionary) -> void:
 			continue
 		_guardar_estado_sprite_cinematica(sprite)
 		sprite.flip_h = objetivo.global_position.x < npc.global_position.x
+
+
+## Entrada y salida gradual de un tercer participante en una conversación.
+## Se congela su rutina durante la escena y se conserva su punto de salida al restaurar.
+func _mover_participante_social(paso: Dictionary, generacion: int, es_salida: bool) -> void:
+	var npc := _buscar_npc(str(paso.get("npc", "")))
+	if not is_instance_valid(npc):
+		return
+	_guardar_estado_npc(npc)
+	npc.show()
+	npc.set_meta("rutina_en_edificio", false)
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("actividad_social_activa", false)
+	npc.set_meta("acercamiento_social_activo", false)
+	var destino := Vector2(
+		float(paso.get("x", npc.global_position.x)),
+		float(paso.get("y", npc.global_position.y))
+	)
+	var distancia := npc.global_position.distance_to(destino)
+	var duracion := clampf(float(paso.get("duracion", maxf(0.3, distancia / 58.0))), 0.25, 8.0)
+	if distancia > 2.0:
+		var tween := create_tween()
+		_tweens_actores.append(tween)
+		tween.set_trans(Tween.TRANS_SINE)
+		tween.set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(npc, "global_position", destino, duracion)
+		await tween.finished
+	if generacion != _generacion or not is_instance_valid(npc):
+		return
+	if es_salida:
+		var id_estado := str(npc.get_instance_id())
+		var estado: Dictionary = _estado_npcs_cinematica.get(id_estado, {})
+		if not estado.is_empty():
+			estado["posicion"] = destino
+			_estado_npcs_cinematica[id_estado] = estado
+
+
+func _ejecutar_entrada_social(paso: Dictionary, generacion: int) -> void:
+	await _mover_participante_social(paso, generacion, false)
+
+
+func _ejecutar_salida_social(paso: Dictionary, generacion: int) -> void:
+	await _mover_participante_social(paso, generacion, true)
 
 
 ## Una interrupción breve: quien escucha toma el turno y los demás cambian
