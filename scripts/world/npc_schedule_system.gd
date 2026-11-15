@@ -185,6 +185,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
 		_aplicar_rutina(npc, dia_semana, minutos)
 		_actualizar_paseo_ambiental_exterior(npc, minutos)
+	_separar_npcs_superpuestos()
 	# Si el jugador cargó una partida dentro de un edificio, algunos NPC
 	# pueden materializarse después de reconstruir la habitación. Una vez que
 	# sus rutinas están actualizadas, incorporar a los que trabajan allí.
@@ -542,6 +543,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
 
+	# Reunión social nocturna: sólo invita a quienes ya terminaron sus tareas.
+	# La asistencia rota cada noche y no sustituye trabajo, guardias ni planes aceptados.
+	var reunion_castillo := _obtener_rutina_reunion_castillo(npc, rutina, minutos)
+	if not reunion_castillo.is_empty():
+		rutina = reunion_castillo
+
 	var ubicacion_respaldo := str(npc.datos.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	var hogar := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
 	if not POSICIONES.has(hogar):
@@ -553,6 +560,17 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			push_warning("NPCScheduleSystem: " + npc.get_nombre_visual() + " no recibió rutinas desde WorldData; ubicación de trabajo=" + ubicacion_respaldo + ". No se confundirá ese campo con su hogar.")
 			npc.set_meta("rutina_error_firma", firma_aviso)
 	var clave_rutina := str(rutina.get("clave", "regreso_hogar")).strip_edges()
+	if clave_rutina == "reunion_nocturna_castillo":
+		var tiempo_reunion: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+		var dia_reunion := "%s:%s" % [str(tiempo_reunion.get("anio", 0)), str(tiempo_reunion.get("dia", 1))]
+		if str(npc.get_meta("resumen_dia_reunion_clave", "")) != dia_reunion:
+			npc.set_meta("resumen_dia_reunion_clave", dia_reunion)
+			npc.set_meta("resumen_dia_reunion_actividad", str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))))
+			npc.set_meta("resumen_dia_reunion_rutina", str(npc.get_meta("rutina_actual", "")))
+			npc.set_meta("resumen_dia_reunion_ubicacion", str(npc.get_meta("rutina_ubicacion", "")))
+	else:
+		for clave_social_castillo in ["grupo_social_castillo_id", "grupo_social_castillo_nombres", "puesto_social_castillo"]:
+			npc.remove_meta(clave_social_castillo)
 	var ubicacion := str(rutina.get("ubicacion_clave", hogar)).strip_edges().to_lower()
 	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
 	if actividad.is_empty():
@@ -1732,6 +1750,70 @@ func _notificar_evento_comunitario(evento: Dictionary) -> void:
 	_ultimo_aviso_evento_comunitario = firma
 	var aviso := str(evento.get("aviso", evento.get("nombre", "Hay una actividad comunitaria en la plaza.")))
 	Events.notification_pushed.emit(aviso)
+
+
+func _obtener_rutina_reunion_castillo(
+	npc: Creature,
+	rutina_actual: Dictionary,
+	minutos: int
+) -> Dictionary:
+	if not is_instance_valid(npc) or minutos < 1260 or minutos >= 1410:
+		return {}
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	if nombre.is_empty():
+		return {}
+
+	var clave := str(rutina_actual.get("clave", "")).strip_edges().to_lower()
+	if clave.begins_with("invitacion_") or clave.begins_with("evento_") or clave.begins_with("encuentro_trio_"):
+		return {}
+	if bool(npc.get_meta("rutina_en_transito", false)) and not bool(npc.get_meta("rutina_en_edificio", false)):
+		return {}
+
+	var actividad := str(rutina_actual.get("actividad_clave", npc.get_meta("actividad_actual", ""))).strip_edges().to_lower()
+	var actividades_ocupadas: Array[String] = [
+		"trabaj", "atender", "guard", "ronda", "patrull", "vigilar",
+		"investig", "estudi", "repar", "hornear", "comerci", "servir"
+	]
+	for patron in actividades_ocupadas:
+		if actividad.contains(patron):
+			return {}
+
+	var ubicacion := str(rutina_actual.get("ubicacion_clave", "")).strip_edges().to_lower()
+	var hogar := obtener_clave_hogar(npc.get_nombre_visual(), "plaza")
+	var actividad_libre := (
+		actividad.is_empty()
+		or actividad.contains("descans")
+		or actividad.contains("dorm")
+		or actividad.contains("pase")
+		or actividad.contains("convers")
+		or actividad.contains("volver")
+	)
+	var rutina_libre := (
+		rutina_actual.is_empty()
+		or clave.begins_with("dia_libre")
+		or actividad_libre
+		or ubicacion == hogar
+	)
+	if not rutina_libre:
+		return {}
+
+	# Abel y Liam sostienen la costumbre del castillo; el resto rota para que
+	# la reunión tenga caras conocidas sin vaciar el reino cada noche.
+	if nombre not in ["abel", "liam"]:
+		var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+		var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
+		var id := npc.get_personaje_game_id().strip_edges()
+		if id.is_empty():
+			id = nombre
+		if posmod(hash("reunion_castillo|" + fecha + "|" + id), 4) == 0:
+			return {}
+
+	return {
+		"clave": "reunion_nocturna_castillo",
+		"ubicacion_clave": "castillo",
+		"actividad_clave": "conversar_con_amigos",
+		"activo": true
+	}
 
 
 func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
