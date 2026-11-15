@@ -1,0 +1,93 @@
+[gd_resource type="Resource" script_class="CutsceneSequence" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/cutscene_sequence.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+clave = "intercambio_interrumpido_{{clave}}"
+descripcion = "Intercambio social con cambio de turno: un personaje interrumpe, los participantes redirigen su atención y la conversación continúa."
+modo = "en_vivo"
+pasos = Array[Dictionary]([{
+"tipo": "camara",
+"x": "{{x}}",
+"y": "{{y}}",
+"seguir_npcs": ["{{npc_a}}", "{{npc_b}}"],
+"zoom": "{{zoom}}",
+"duracion": "{{duracion_camara}}"
+}, {
+"tipo": "acciones_simultaneas",
+"acciones": [{
+"tipo": "gesto_npc",
+"npc": "{{npc_a}}",
+"gesto": "acomodarse",
+"duracion": 0.48
+}, {
+"tipo": "gesto_npc",
+"npc": "{{npc_b}}",
+"gesto": "acomodarse",
+"duracion": 0.48
+}]
+}, {
+"tipo": "acciones_simultaneas",
+"acciones": [{
+"tipo": "mirar_npc",
+"npc": "{{npc_a}}",
+"hacia_npc": "{{npc_b}}"
+}, {
+"tipo": "mirar_npc",
+"npc": "{{npc_b}}",
+"hacia_npc": "{{npc_a}}"
+}]
+}, {
+"tipo": "esperar",
+"segundos": "{{pausa_antes}}",
+"variacion": 0.12
+}, {
+"tipo": "gesto_npc",
+"npc": "{{npc_a}}",
+"gesto": "{{gesto_a}}",
+"duracion": "{{duracion_gesto}}"
+}, {
+"tipo": "esperar",
+"segundos": 0.18,
+"variacion": 0.08
+}, {
+"tipo": "interrupcion",
+"interrumpe": "{{npc_b}}",
+"interrumpido": "{{npc_a}}",
+"oyentes": ["{{npc_a}}"],
+"gesto_interrumpe": "saludar",
+"gesto_interrumpido": "sorpresa",
+"duracion": 0.52,
+"duracion_reaccion": 0.38
+}, {
+"tipo": "esperar",
+"segundos": 0.16,
+"variacion": 0.1
+}, {
+"tipo": "orientar_grupo",
+"npcs": ["{{npc_a}}"],
+"hacia_npc": "{{npc_b}}"
+}, {
+"tipo": "gesto_npc",
+"npc": "{{npc_b}}",
+"gesto": "{{gesto_b}}",
+"duracion": "{{duracion_gesto}}"
+}, {
+"tipo": "acciones_simultaneas",
+"acciones": [{
+"tipo": "gesto_npc",
+"npc": "{{npc_a}}",
+"gesto": "asentir",
+"duracion": 0.42
+}, {
+"tipo": "mirar_npc",
+"npc": "{{npc_a}}",
+"hacia_npc": "{{npc_b}}"
+}]
+}, {
+"tipo": "esperar",
+"segundos": "{{pausa_despues}}",
+"variacion": 0.18
+}])
+parametros_requeridos = PackedStringArray("clave", "x", "y", "npc_a", "npc_b", "zoom", "duracion_camara", "pausa_antes", "pausa_despues", "gesto_a", "gesto_b", "duracion_gesto")
