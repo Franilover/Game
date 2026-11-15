@@ -90,6 +90,8 @@ var actividad_horaria: String = "explorar"
 var _brillo_horario_activo: bool = false
 var _objetivo_alimento: WorldItem = null
 var _alimentacion_realizada: bool = false
+var _hambre_actual: float = 0.0
+var _fatiga_actual: float = 0.0
 
 
 func configurar_dependencias(
@@ -202,6 +204,9 @@ func _physics_process(delta: float) -> void:
 		_actualizar_velocidad_ambiental()
 
 	_actualizar_rutina()
+	_actualizar_necesidades(delta)
+	_aplicar_prioridad_necesidades()
+	_publicar_actividad_rutina()
 
 	# La locomoción corre en otro nodo y en cada frame físico; detenerla aquí
 	# evita que avance entre dos ticks de decisión de la máquina de estados.
@@ -558,14 +563,37 @@ func _procesar_persiguiendo() -> void:
 		_cambiar_estado(Estado.INVESTIGANDO)
 		return
 
+	var respuesta := _obtener_respuesta_a_objetivo()
+	if respuesta == "huir":
+		_cambiar_estado(Estado.HUYENDO)
+		return
+	if respuesta == "investigar":
+		ultima_posicion_objetivo = objetivo.global_position
+		_cambiar_estado(Estado.INVESTIGANDO)
+		return
+	if respuesta not in ["atacar", "perseguir"]:
+		_cambiar_estado(Estado.EXPLORANDO)
+		return
+
 	var distancia := criatura.global_position.distance_to(
 		objetivo.global_position
 	)
 
-	if _es_objetivo_refugio() and criatura.global_position.distance_to(objetivo.global_position) <= 28.0:
+	if _es_objetivo_refugio() and distancia <= 28.0:
 		criatura.detener_movimiento()
 		criatura.tomar_control_movimiento()
 		return
+
+	# "Perseguir" también puede significar seguir/acompañar. Sólo una relación
+	# configurada como "atacar" permite convertir la aproximación en combate.
+	if respuesta == "perseguir":
+		var interaccion_variant: Variant = configuracion_ia.get("interaccion_ecologica", {})
+		var interaccion: Dictionary = interaccion_variant if interaccion_variant is Dictionary else {}
+		var distancia_seguimiento := maxf(float(interaccion.get("distancia_seguimiento", 36.0)), 8.0)
+		if distancia <= distancia_seguimiento:
+			criatura.detener_movimiento()
+			criatura.tomar_control_movimiento()
+			return
 
 	var maxima := _obtener_distancia_maxima_persecucion()
 	if maxima > 0.0 and distancia > maxima:
@@ -583,7 +611,7 @@ func _procesar_persiguiendo() -> void:
 
 	criatura.establecer_direccion_movimiento(direccion)
 
-	if distancia <= _obtener_distancia_contacto():
+	if respuesta == "atacar" and distancia <= _obtener_distancia_contacto():
 		_cambiar_estado(Estado.ATACANDO)
 
 
@@ -1170,10 +1198,56 @@ func _actualizar_rutina() -> void:
 		_alimentacion_realizada = false
 		_objetivo_alimento = null
 
+	_publicar_actividad_rutina()
+
+
+func _publicar_actividad_rutina() -> void:
+	if criatura == null or not is_instance_valid(criatura):
+		return
 	# Publicar siempre el estado horario, incluso si falta o está mal formada
 	# la configuración; así no quedan metadatos de una rutina anterior.
 	criatura.set_meta("actividad_horaria", actividad_horaria)
 	_actualizar_atraccion_refugio(actividad_horaria in ["proteger", "atraer"])
+
+
+func _obtener_config_necesidades() -> Dictionary:
+	var valor: Variant = configuracion_ia.get("necesidades", {})
+	return valor.duplicate(true) if valor is Dictionary else {}
+
+
+func _actualizar_necesidades(delta: float) -> void:
+	var necesidades := _obtener_config_necesidades()
+	if necesidades.is_empty():
+		return
+	var hambre_rate: Variant = necesidades.get("hambre_por_segundo", null)
+	if hambre_rate is int or hambre_rate is float:
+		_hambre_actual = clampf(_hambre_actual + maxf(float(hambre_rate), 0.0) * delta, 0.0, 100.0)
+	var fatiga_rate: Variant = necesidades.get("fatiga_por_segundo", null)
+	if fatiga_rate is int or fatiga_rate is float:
+		_fatiga_actual = clampf(_fatiga_actual + maxf(float(fatiga_rate), 0.0) * delta, 0.0, 100.0)
+	if actividad_horaria in ["dormir", "reposar"]:
+		var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
+		if recuperacion is int or recuperacion is float:
+			_fatiga_actual = clampf(_fatiga_actual - maxf(float(recuperacion), 0.0) * delta, 0.0, 100.0)
+
+
+func _aplicar_prioridad_necesidades() -> void:
+	var necesidades := _obtener_config_necesidades()
+	if necesidades.is_empty():
+		return
+	var umbral_fatiga := clampf(float(necesidades.get("umbral_fatiga", 75.0)), 0.0, 100.0)
+	var umbral_hambre := clampf(float(necesidades.get("umbral_hambre", 70.0)), 0.0, 100.0)
+	var actividad_descanso := str(necesidades.get("actividad_descanso", "reposar")).strip_edges().to_lower()
+	var actividad_comida := str(necesidades.get("actividad_alimentacion", "alimentarse")).strip_edges().to_lower()
+	# El descanso tiene prioridad cuando ambas necesidades son altas.
+	if _fatiga_actual >= umbral_fatiga and necesidades.has("recuperacion_fatiga_por_segundo") and actividad_descanso in ["reposar", "dormir"]:
+		actividad_horaria = actividad_descanso
+	elif _hambre_actual >= umbral_hambre and not _obtener_ids_alimento().is_empty() and actividad_comida == "alimentarse":
+		actividad_horaria = actividad_comida
+
+
+func _obtener_estado_necesidades() -> Dictionary:
+	return {"hambre": _hambre_actual, "fatiga": _fatiga_actual}
 
 
 
@@ -1253,6 +1327,10 @@ func _procesar_alimentacion() -> void:
 	criatura.detener_movimiento()
 	if _objetivo_alimento.consumir_por_criatura(_obtener_ids_alimento()):
 		_alimentacion_realizada = true
+		var necesidades := _obtener_config_necesidades()
+		if not necesidades.is_empty():
+			var reduccion := maxf(float(necesidades.get("hambre_reducida_por_comida", 35.0)), 0.0)
+			_hambre_actual = clampf(_hambre_actual - reduccion, 0.0, 100.0)
 		_objetivo_alimento = null
 		_establecer_velocidad(_velocidad_normal)
 	else:
@@ -1391,6 +1469,21 @@ func _aplicar_respuesta_ambiental_rutina() -> void:
 				var actividad_calor := str(respuesta.get("actividad_con_calor", "reposar")).strip_edges().to_lower()
 				if not actividad_calor.is_empty():
 					actividad_horaria = actividad_calor
+		var clima_variant: Variant = estado.get("clima", {})
+		if clima_variant is Dictionary:
+			var clima := clima_variant as Dictionary
+			var precipitacion := float(clima.get("precipitacion", 0.0))
+			var viento := float(clima.get("viento", 0.0))
+			var visibilidad := float(clima.get("visibilidad", 1.0))
+			var actividad_clima := ""
+			if precipitacion >= float(respuesta.get("umbral_lluvia", 0.65)):
+				actividad_clima = str(respuesta.get("actividad_con_lluvia", ""))
+			elif viento >= float(respuesta.get("umbral_viento", 0.75)):
+				actividad_clima = str(respuesta.get("actividad_con_viento", ""))
+			elif visibilidad <= float(respuesta.get("umbral_visibilidad_baja", 0.35)):
+				actividad_clima = str(respuesta.get("actividad_con_baja_visibilidad", ""))
+			if not actividad_clima.strip_edges().is_empty():
+				actividad_horaria = actividad_clima.strip_edges().to_lower()
 	for evento_variant in estado.get("eventos", []):
 		if not evento_variant is Dictionary:
 			continue
