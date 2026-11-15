@@ -182,10 +182,7 @@ func _crear_boton_ium(ium: Dictionary) -> Button:
 		"IUM"
 	)
 
-	btn.tooltip_text = ium.get(
-		"descripcion",
-		""
-	)
+		btn.tooltip_text= ""
 
 	btn.custom_minimum_size = Vector2(0, 32)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -198,10 +195,7 @@ func _crear_boton_ium(ium: Dictionary) -> Button:
 	)
 
 	if not oris.is_empty():
-		btn.tooltip_text += (
-			"\nOris: "
-			+ ", ".join(oris)
-		)
+				btn.tooltip_text += ""
 
 	btn.pressed.connect(
 		func():
@@ -335,9 +329,7 @@ func _crear_slot_canvas(
 
 	btn_conectar.text = "→"
 
-	btn_conectar.tooltip_text = (
-		"Conectar desde aquí"
-	)
+		btn_conectar.tooltip_text= ""
 
 	btn_conectar.custom_minimum_size = Vector2(24, 20)
 	_estilizar_boton(btn_conectar)
