@@ -1252,25 +1252,25 @@ func _iniciar_gesto_saludo(npc: Creature, saludo_cercano: bool) -> bool:
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
 	if not is_instance_valid(sprite):
 		return false
-	var rotacion_base := sprite.rotation
+	var escala_base := sprite.scale
 	npc.set_meta("saludo_espontaneo_activo", true)
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(sprite, "rotation", rotacion_base + 0.035, 0.13)
-	tween.tween_property(sprite, "rotation", rotacion_base, 0.16)
+	tween.tween_property(sprite, "scale:y", escala_base.y * 0.96, 0.13)
+	tween.tween_property(sprite, "scale:y", escala_base.y, 0.17)
 	if saludo_cercano:
 		tween.tween_interval(0.12)
-		tween.tween_property(sprite, "rotation", rotacion_base + 0.025, 0.12)
-		tween.tween_property(sprite, "rotation", rotacion_base, 0.16)
-	tween.tween_callback(_finalizar_gesto_saludo.bind(npc, sprite, rotacion_base))
+		tween.tween_property(sprite, "scale:y", escala_base.y * 0.975, 0.12)
+		tween.tween_property(sprite, "scale:y", escala_base.y, 0.17)
+	tween.tween_callback(_finalizar_gesto_saludo.bind(npc, sprite, escala_base))
 	npc.set_meta("saludo_espontaneo_tween", tween)
 	return true
 
 
-func _finalizar_gesto_saludo(npc: Creature, sprite: Sprite2D, rotacion_base: float) -> void:
+func _finalizar_gesto_saludo(npc: Creature, sprite: Sprite2D, escala_base: Vector2) -> void:
 	if is_instance_valid(sprite):
-		sprite.rotation = rotacion_base
+		sprite.scale = escala_base
 	if is_instance_valid(npc):
 		npc.remove_meta("saludo_espontaneo_activo")
 		npc.remove_meta("saludo_espontaneo_tween")
