@@ -122,7 +122,8 @@ func ejecutar_recurso(
 	if modo_ejecucion.is_empty():
 		modo_ejecucion = secuencia.modo
 	var pasos_resueltos: Array = _resolver_parametros_cinematica(secuencia.pasos, parametros)
-	return await ejecutar(secuencia.clave, pasos_resueltos, modo_ejecucion)
+	var clave_resuelta := str(_resolver_parametros_cinematica(secuencia.clave, parametros))
+	return await ejecutar(clave_resuelta, pasos_resueltos, modo_ejecucion)
 
 
 func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
