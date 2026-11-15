@@ -842,17 +842,43 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		}
 	]
 	var existentes_locales: Dictionary = {}
+	var existentes_por_nombre: Dictionary = {}
 	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
 		if npc_variant is Creature and is_instance_valid(npc_variant):
 			var npc_existente := npc_variant as Creature
 			var clave_existente := str(npc_existente.get_meta("habitante_local_clave", ""))
 			if not clave_existente.is_empty():
 				existentes_locales[clave_existente] = npc_existente
+			var nombre_existente := npc_existente.get_nombre_visual().strip_edges().to_lower()
+			if not nombre_existente.is_empty() and not existentes_por_nombre.has(nombre_existente):
+				existentes_por_nombre[nombre_existente] = npc_existente
 
 	for habitante in habitantes:
 		var clave := str(habitante.get("clave", ""))
 		if existentes_locales.has(clave):
 			continue
+
+		# Mara, Ivo y Nima ya pueden venir como personajes canónicos desde
+		# Supabase. En ese caso se enriquece esa misma instancia con sus datos
+		# sociales locales; nunca se crea una segunda copia del personaje.
+		var nombre_habitante := str(habitante.get("nombre", "Habitante")).strip_edges().to_lower()
+		var npc_canonico := existentes_por_nombre.get(nombre_habitante) as Creature
+		if is_instance_valid(npc_canonico):
+			npc_canonico.set_meta("habitante_local_clave", clave)
+			npc_canonico.set_meta("habitante_sin_oficio", true)
+			npc_canonico.set_meta("perfil_personalidad", str(habitante.get("personalidad", "")))
+			npc_canonico.set_meta("historia_local", str(habitante.get("historia", "")))
+			var rutinas_canonicas: Variant = npc_canonico.datos.get("rutinas", [])
+			if not rutinas_canonicas is Array or (rutinas_canonicas as Array).is_empty():
+				npc_canonico.datos["rutinas"] = habitante.get("rutinas", []).duplicate(true)
+			if clave == "ivo":
+				npc_canonico.set_meta("estado_salud", "enfermedad_cronica")
+				npc_canonico.set_meta("fatiga_frecuente", true)
+			elif clave == "mara":
+				npc_canonico.set_meta("confianza_local", int(GameState.world_state.flags.get("confianza_mara", 0)))
+				npc_canonico.set_meta("identidad_protegida", true)
+			continue
+
 		var datos := datos_plantilla.duplicate(true)
 		datos.erase("personaje_game_id")
 		datos["nombre_individual"] = str(habitante.get("nombre", "Habitante"))
