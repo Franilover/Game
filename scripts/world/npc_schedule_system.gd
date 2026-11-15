@@ -1095,7 +1095,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		if movimiento.rutina_terminada():
 			npc.remove_meta("rutina_paseo_interior_activo")
 			npc.set_meta("rutina_en_transito", false)
-			var pausa := 2 + posmod(hash(npc.get_nombre_visual() + "|" + edificio_id + "|" + str(minutos)), 5)
+			var pausa := 3 + posmod(hash(npc.get_nombre_visual() + "|" + edificio_id + "|" + str(minutos / 5)), 8)
 			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + pausa, 1440))
 		return
 	var siguiente := int(npc.get_meta("rutina_paseo_interior_siguiente", -1))
@@ -1105,9 +1105,11 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		return
 	if posmod(minutos - siguiente, 1440) > 720:
 		return
+	# Puntos compactos para que funcionen en interiores pequeños y grandes.
+	# Cada personaje usa un orden distinto y no todos parten al mismo tiempo.
 	var puntos: Array[Vector2] = [
-		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
-		Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
+		Vector2(-42.0, 12.0), Vector2(42.0, 12.0),
+		Vector2(0.0, -18.0), Vector2(0.0, 38.0)
 	]
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 	var indice := posmod(hash(nombre + "|" + edificio_id + "|" + str(minutos / 5)), puntos.size())
@@ -1213,7 +1215,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 		if movimiento.rutina_terminada():
 			npc.remove_meta("rutina_paseo_exterior_activo")
 			npc.set_meta("rutina_en_transito", false)
-			var pausa := 3 + posmod(hash(npc.get_nombre_visual() + "|" + str(minutos)), 7)
+			var pausa := 4 + posmod(hash(npc.get_nombre_visual() + "|exterior|" + str(minutos / 5)), 11)
 			npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + pausa, 1440))
 		return
 	var jugador := get_tree().get_first_node_in_group("player") as Node2D
