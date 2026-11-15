@@ -913,6 +913,16 @@ func _crear_dialogo_iniciativa_amigo(npc: Creature, tiempo: Dictionary) -> Dicti
 func _agregar_respuesta_invitacion(respuestas: Array[Dictionary], npc: Creature, tiempo: Dictionary) -> void:
 	if not is_instance_valid(npc):
 		return
+	var invitaciones_variant: Variant = _game_state.get("world_state").get("flags", {}).get("invitaciones_npc", {}) if is_instance_valid(_game_state) else {}
+	if invitaciones_variant is Dictionary:
+		var pendiente_variant: Variant = (invitaciones_variant as Dictionary).get(npc.get_personaje_game_id(), {})
+		if pendiente_variant is Dictionary and str((pendiente_variant as Dictionary).get("estado", "")) == "aceptada":
+			var anio_pendiente := int((pendiente_variant as Dictionary).get("anio", -1))
+			var dia_pendiente := int((pendiente_variant as Dictionary).get("dia", -1))
+			var anio_actual := int(tiempo.get("anio", 0))
+			var dia_actual_guardado := int(tiempo.get("dia", 1))
+			if anio_pendiente > anio_actual or (anio_pendiente == anio_actual and dia_pendiente >= dia_actual_guardado):
+				return
 	var dia_actual := int(tiempo.get("dia", 1))
 	var anio_actual := int(tiempo.get("anio", 0))
 	var dias_por_anio := maxi(1, _world_atmosphere.dias_por_anio if is_instance_valid(_world_atmosphere) else 365)
