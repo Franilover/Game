@@ -110,7 +110,7 @@ func buscar_objetivo(player: Node, distancia_base: float) -> Node:
 		# cofres, camas ni objetos recolectables.
 		var orientacion := 0.0
 		if candidato is Creature and (candidato as Creature).es_dialogable():
-			var hacia_objetivo := player.global_position.direction_to(candidato_2d.global_position)
+			var hacia_objetivo: Vector2 = player.global_position.direction_to(candidato_2d.global_position)
 			if hacia_objetivo.length_squared() > 0.01:
 				orientacion = maxf(direccion_jugador.dot(hacia_objetivo), 0.0)
 
