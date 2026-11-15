@@ -428,7 +428,22 @@ func _mover_participante_social(paso: Dictionary, generacion: int, es_salida: bo
 		tween.set_trans(Tween.TRANS_SINE)
 		tween.set_ease(Tween.EASE_IN_OUT)
 		tween.tween_property(npc, "global_position", destino, duracion)
+		var tween_pasos: Tween = null
+		var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+		if is_instance_valid(sprite):
+			_guardar_estado_sprite_cinematica(sprite)
+			var altura_base := sprite.position.y
+			var cantidad_pasos := maxi(1, int(ceil(duracion * 4.0)))
+			tween_pasos = create_tween()
+			_tweens_actores.append(tween_pasos)
+			tween_pasos.set_trans(Tween.TRANS_SINE)
+			tween_pasos.set_ease(Tween.EASE_IN_OUT)
+			for _paso in range(cantidad_pasos):
+				tween_pasos.tween_property(sprite, "position:y", altura_base - 1.2, duracion / float(cantidad_pasos * 2))
+				tween_pasos.tween_property(sprite, "position:y", altura_base, duracion / float(cantidad_pasos * 2))
 		await tween.finished
+		if is_instance_valid(tween_pasos):
+			await tween_pasos.finished
 	if generacion != _generacion or not is_instance_valid(npc):
 		return
 	if es_salida:
