@@ -981,6 +981,11 @@ func _mostrar_informacion() -> void:
 		var valor: Variant = propiedades.get(clave)
 		if valor == null or valor is Dictionary or valor is Array or str(valor).strip_edges().is_empty():
 			continue
+		if clave == "durabilidad" and (valor is int or valor is float):
+			var maxima := maxi(1, int(valor))
+			var actual := clampi(int(objeto_seleccionado.get("durabilidad_actual", maxima)), 0, maxima)
+			lineas.append("Durabilidad: %d / %d" % [actual, maxima])
+			continue
 		lineas.append("%s: %s" % [str(etiquetas[clave]), str(valor)])
 
 	if not categoria_canonica.is_empty() and lineas.size() == 0:
