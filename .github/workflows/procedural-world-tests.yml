@@ -137,17 +137,6 @@ jobs:
             exit 1
           fi
 
-      - name: Run Garumi encyclopedia shortcut smoke test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
-            echo "Garumi encyclopedia regression test reported errors."
-            exit 1
-          fi
-
       - name: Run creature AI target policy regression test
         shell: bash
         run: |
@@ -386,3 +375,14 @@ jobs:
       # Verifies stable atlas registration and real DisplayLayer composition.
       - name: Run TileMapDual terrain regression test
         run: godot --headless --path . --script res://tests/world/test_world_terrain_visual.gd
+
+      - name: Run Garumi encyclopedia shortcut smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_garumi_encyclopedia.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiEncyclopedia: FAIL:' <<<"$output"; then
+            echo "Garumi encyclopedia regression test reported errors."
+            exit 1
+          fi
