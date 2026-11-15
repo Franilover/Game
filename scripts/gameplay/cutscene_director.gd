@@ -265,11 +265,25 @@ func cancelar() -> void:
 		return
 	_cancelando = true
 	_generacion += 1
-	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
-		_tween_camara.kill()
-	if is_instance_valid(_tween_fundido) and _tween_fundido.is_running():
-		_tween_fundido.kill()
-	_detener_tweens_actores()
+	if is_instance_valid(_dialogue) and _dialogue.esta_abierto():
+		_dialogue.cerrar()
+
+	# Acelera los tweens hasta completarlos en vez de matarlos: así sus
+	# coroutines reciben finished y pueden salir limpiamente por generación.
+	var tweens_pendientes: Array[Tween] = []
+	for tween in [_tween_camara, _tween_fundido]:
+		if is_instance_valid(tween) and tween.is_running():
+			tween.set_speed_scale(1000.0)
+			tweens_pendientes.append(tween)
+	for tween in _tweens_actores:
+		if is_instance_valid(tween) and tween.is_running():
+			tween.set_speed_scale(1000.0)
+			if not tweens_pendientes.has(tween):
+				tweens_pendientes.append(tween)
+	for tween in tweens_pendientes:
+		if is_instance_valid(tween) and tween.is_running():
+			await tween.finished
+
 	if _jugador_movido_cinematica and is_instance_valid(_player):
 		_player.global_position = _posicion_jugador_inicio
 		if _player is CharacterBody2D:
@@ -280,8 +294,6 @@ func cancelar() -> void:
 			npc_ruta.global_position = estado_ruta.get("posicion", npc_ruta.global_position)
 			npc_ruta.velocity = estado_ruta.get("velocity", npc_ruta.velocity)
 	_estado_rutas_npc.clear()
-	if is_instance_valid(_dialogue) and _dialogue.esta_abierto():
-		_dialogue.cerrar()
 	await _restaurar_camara()
 	await _restaurar_fundido()
 	_finalizar()
