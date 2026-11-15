@@ -501,6 +501,7 @@ func _mostrar_linea_actual() -> void:
 		linea.get("variantes_personalidad", {}),
 		linea.get("variantes_relacion", {})
 	)
+	texto = NPCVoiceProfile.adaptar(texto, hablante if not hablante.is_empty() else _fuente.get_nombre_visual() if is_instance_valid(_fuente) else "")
 
 	speaker_label.text = hablante
 	_actualizar_retrato(hablante)
