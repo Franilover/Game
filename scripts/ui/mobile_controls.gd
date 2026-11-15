@@ -94,11 +94,7 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	boton.add_theme_stylebox_override("pressed", pressed)
 	boton.add_theme_stylebox_override("focus", normal)
 	boton.custom_minimum_size = Vector2(tamano_accion, tamano_accion)
-	boton.tooltip_text = str({
-		"interact": "Interactuar", "primary_action": "Acción principal",
-		"secondary_action": "Acción secundaria", "run": "Dash / correr",
-		"jump": "Saltar", "inventory": "Abrir inventario"
-	}.get(accion, accion.capitalize()))
+	boton.tooltip_text = ""
 
 
 func _distribuir_controles() -> void:
