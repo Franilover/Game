@@ -514,17 +514,15 @@ func _aplicar_fondos_inventario() -> void:
 
 	# Cada grupo conserva su VBox y su Grid originales, pero queda contenido
 	# en una superficie con el mismo acabado que los botones de la interfaz.
-	for grupo_variant in grid.get_children():
-		var grupo := grupo_variant as VBoxContainer
-		if grupo == null:
+	for contenedor_variant in grid.get_children():
+		var contenedor := contenedor_variant as PanelContainer
+		if contenedor == null:
 			continue
-		var contenedor := grupo.get_parent() as PanelContainer
-		if contenedor != null:
-			contenedor.add_theme_stylebox_override("panel", estilo_boton)
-			contenedor.add_theme_constant_override("margin_left", 5)
-			contenedor.add_theme_constant_override("margin_top", 5)
-			contenedor.add_theme_constant_override("margin_right", 5)
-			contenedor.add_theme_constant_override("margin_bottom", 5)
+		contenedor.add_theme_stylebox_override("panel", estilo_boton)
+		contenedor.add_theme_constant_override("margin_left", 5)
+		contenedor.add_theme_constant_override("margin_top", 5)
+		contenedor.add_theme_constant_override("margin_right", 5)
+		contenedor.add_theme_constant_override("margin_bottom", 5)
 
 	if is_instance_valid(description_panel):
 		description_panel.add_theme_stylebox_override("panel", estilo_boton)
