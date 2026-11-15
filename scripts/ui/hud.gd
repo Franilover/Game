@@ -306,7 +306,8 @@ func _crear_indicador_recarga_dash() -> void:
 	_dash_recharge_indicator.size = Vector2(72.0, 6.0)
 	_dash_recharge_indicator.show_percentage = false
 	_dash_recharge_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dash_recharge_indicator.z_index = 90
+	# Mantenerlo sobre el mundo, sin darle prioridad sobre las demás interfaces.
+	_dash_recharge_indicator.z_index = 10
 	_dash_recharge_indicator.visible = false
 
 	var fondo := StyleBoxFlat.new()
@@ -330,6 +331,12 @@ func _actualizar_indicador_recarga_dash() -> void:
 		_dash_recharge_indicator.visible = false
 		return
 
+	# El indicador es contextual al mundo: nunca debe quedar sobre el inventario.
+	for nodo in get_tree().get_nodes_in_group("inventory"):
+		if nodo is CanvasItem and (nodo as CanvasItem).visible:
+			_dash_recharge_indicator.visible = false
+			return
+
 	var maximo := maxf(float(player.max_stamina), 0.001)
 	var actual := clampf(float(player.stamina), 0.0, maximo)
 	var recargando := actual < maximo - 0.0001
@@ -350,7 +357,7 @@ func _actualizar_indicador_recarga_dash() -> void:
 		0.0,
 		-float(sprite.texture.get_height()) * 0.5
 	)
-	_dash_recharge_indicator.position = borde_superior + Vector2(-36.0, -12.0)
+	_dash_recharge_indicator.position = borde_superior + Vector2(-36.0, -4.0)
 
 
 func _preparar_aviso_descubrimiento() -> void:
