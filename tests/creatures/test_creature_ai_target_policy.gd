@@ -150,7 +150,8 @@ func _run() -> void:
 	ai.entity_manager = refugio_manager
 	ai.configuracion_ia = {"horario": {
 		"buscar_refugio": true,
-		"refugio_objetivo": "cueva-segura",
+		"refugio_objetivo": "refugio-alternativo",
+		"refugio_objetivos": ["cueva"],
 		"radio_refugio": 100.0
 	}}
 	ai.actividad_horaria = "reposar"
