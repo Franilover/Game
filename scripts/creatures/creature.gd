@@ -1230,8 +1230,16 @@ func get_interaction_distance() -> float:
 	return 48.0
 
 
+func _obtener_tienda_npc() -> Dictionary:
+	var shop_script := ResourceLoader.load(SHOP_UI_PATH) as Script
+	if shop_script == null:
+		return {}
+	var tienda_variant: Variant = shop_script.call("tienda_para_npc", self)
+	return tienda_variant as Dictionary if tienda_variant is Dictionary else {}
+
+
 func get_interaction_text() -> String:
-	if not SHOP_UI_SCRIPT.tienda_para_npc(self).is_empty():
+	if not _obtener_tienda_npc().is_empty():
 		return "Comprar"
 	if es_dialogable():
 		return "Hablar"
@@ -1244,14 +1252,11 @@ func interact(
 	if not es_dialogable():
 		return
 
-	var shop_script := ResourceLoader.load(SHOP_UI_PATH) as Script
-	if shop_script == null:
-		return
-	var tienda_variant: Variant = shop_script.call("tienda_para_npc", self)
-	var tienda: Dictionary = tienda_variant as Dictionary if tienda_variant is Dictionary else {}
+	var tienda := _obtener_tienda_npc()
 	if not tienda.is_empty() and is_instance_valid(_world_items_dependency):
+		var shop_script := ResourceLoader.load(SHOP_UI_PATH) as Script
 		var inventario := get_tree().get_first_node_in_group("inventory") as GarliaInventory
-		var interfaz := shop_script.new() as CanvasLayer
+		var interfaz := shop_script.new() as CanvasLayer if shop_script != null else null
 		if is_instance_valid(inventario) and is_instance_valid(interfaz):
 			interfaz.configurar(self, inventario, _world_items_dependency, _actor)
 			var padre := get_tree().current_scene
