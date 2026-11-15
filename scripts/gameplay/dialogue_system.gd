@@ -1312,7 +1312,6 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 			"texto": "Despedirme con amabilidad",
 			"jugador": "No quiero interrumpirte más. Nos vemos luego.",
 			"respuesta": _obtener_reaccion_despedida_rutina(),
-			"evento": "despedida_amable"
 		}
 	]
 	return respuestas
@@ -1379,8 +1378,41 @@ func _obtener_reaccion_conocimiento_rutina() -> String:
 
 
 func _obtener_reaccion_despedida_rutina() -> String:
-	var nombre := _fuente.get_nombre_visual().strip_edges() if is_instance_valid(_fuente) else ""
-	match nombre.to_lower():
+	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var relacion: Dictionary = {}
+	if relationship_system != null and is_instance_valid(_fuente):
+		relacion = relationship_system.obtener_relacion(_fuente.get_personaje_game_id())
+	var amistad := float(relacion.get("amistad", 0.0))
+	var confianza := float(relacion.get("confianza", 0.0))
+	var afecto := float(relacion.get("afecto", 0.0))
+	var cercania := amistad >= 20.0 or confianza >= 20.0 or afecto >= 15.0
+	var mucha_cercania := amistad >= 45.0 or confianza >= 45.0 or afecto >= 35.0
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var esta_ocupado := false
+	for palabra in ["trabaj", "estudi", "investig", "repar", "vigilar", "atend", "descans"]:
+		if actividad.contains(palabra):
+			esta_ocupado = true
+			break
+
+	match nombre:
+		"mara":
+			if mucha_cercania:
+				return "Me alegra que hayas venido. Gracias por hacerme compañía; la próxima vez podremos hablar con más calma."
+			if cercania:
+				return "Gracias por la charla. Me alegra que podamos conversar así. Nos vemos por Torres."
+			return "Está bien. Cuídate y procura no llamar demasiado la atención. Yo volveré a lo mío."
+		"nima":
+			if mucha_cercania:
+				return "Me gustó mucho esta conversación. Cuando nos encontremos otra vez te contaré si descubrí algo nuevo."
+			if esta_ocupado:
+				return "Voy a volver a mis notas antes de perder el hilo, pero me gustó que pasaras. ¡Hablamos luego!"
+			return "Voy a seguir con mis cosas un rato. Luego quizá salga a conversar con los demás. ¡Nos vemos!"
+		"ivo":
+			if mucha_cercania:
+				return "Me alegró verte. Voy a tomarme un descanso, pero espero que volvamos a encontrarnos pronto."
+			if esta_ocupado:
+				return "Voy a sentarme un rato antes de seguir recorriendo Torres. ¡Gracias por pasar!"
+			return "Ha sido bueno conversar. Me quedaré un rato por aquí; seguro que nos vemos de nuevo."
 		"elian":
 			return "No interrumpes. Me alegra que hayas pasado; cuando vuelva a tener un momento, seguimos hablando."
 		"bruna":
@@ -1839,7 +1871,6 @@ func _crear_opcion_despedida_social() -> Dictionary:
 		"texto":"Despedirse",
 		"jugador":"Ha sido bueno hablar contigo. Nos vemos.",
 		"respuesta":_obtener_reaccion_despedida_rutina(),
-		"evento":"despedida_amable",
 		"despedida":true,
 		"importancia":1.0
 	}
@@ -2077,7 +2108,6 @@ func _completar_opciones_conversacion(opciones: Array[Dictionary], relacion: Dic
 		"texto": "Despedirse",
 		"jugador": "Ha sido bueno hablar contigo. Nos vemos.",
 		"respuesta": _obtener_reaccion_despedida_rutina(),
-		"evento": "despedida_amable",
 		"despedida": true,
 		"importancia": 1.0
 	})
