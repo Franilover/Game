@@ -477,9 +477,14 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Las reuniones nocturnas ya no desplazan a toda la población.
 	# Cada personaje conserva su horario y sólo acude si su propia rutina lo indica.
 
+	# Los encuentros grupales sólo sustituyen tiempo realmente libre y requieren
+	# que los tres participantes tengan vínculos e historia compartida.
+	var encuentro_trio := _obtener_rutina_encuentro_trio(npc, dia_semana, minutos, rutina)
+	if not encuentro_trio.is_empty():
+		rutina = encuentro_trio
+
 	# Las rutinas de trabajo y los horarios canónicos permanecen intactos.
-	# Sólo se matizan los momentos libres en la plaza con una actividad diaria
-	# estable y una pequeña variación de posición.
+	# Sólo se matizan los momentos libres con actividades propias.
 	rutina = _aplicar_variacion_tiempo_libre(npc, rutina, dia_semana, minutos)
 
 	# Una invitación aceptada ocupa únicamente una franja libre del día acordado.
@@ -944,6 +949,90 @@ func _buscar_npc_por_nombre(nombre_buscado: String) -> Creature:
 ## Cuando Ivo y Elian coinciden realmente dentro de la panadería, se anima
 ## una interacción ambiental discreta. No se crea ninguna copia ni se fuerza
 ## a ninguno a cambiar su horario.
+## Reunión ocasional de Mara, Ivo y Nima. Sólo ocurre cuando la historia y
+## los tres vínculos individuales ya justifican que compartan tiempo.
+func _obtener_rutina_encuentro_trio(
+	npc_actual: Creature,
+	dia_semana: int,
+	minutos: int,
+	rutina_actual: Dictionary
+) -> Dictionary:
+	if minutos < 1020 or minutos >= 1140 or not is_instance_valid(_relationship_system):
+		return {}
+	var nombres: Array[String] = ["mara", "ivo", "nima"]
+	if npc_actual.get_nombre_visual().strip_edges().to_lower() not in nombres:
+		return {}
+	var progreso: Dictionary = {}
+	if GameState.has_method("obtener_conversaciones_npc"):
+		var progreso_variant: Variant = GameState.call("obtener_conversaciones_npc")
+		if progreso_variant is Dictionary:
+			progreso = progreso_variant
+	var apoyo_variant: Variant = progreso.get("mara_ivo_apoyo", {})
+	var investigacion_variant: Variant = progreso.get("nima_ivo_investigacion", {})
+	if not apoyo_variant is Dictionary or not investigacion_variant is Dictionary:
+		return {}
+	if int((apoyo_variant as Dictionary).get("etapa", 0)) < 1 or int((investigacion_variant as Dictionary).get("etapa", 0)) < 1:
+		return {}
+	var participantes: Dictionary = {}
+	for nombre in nombres:
+		var participante := _buscar_npc_por_nombre(nombre)
+		if not is_instance_valid(participante) or not participante.is_alive:
+			return {}
+		participantes[nombre] = participante
+	var pares: Array[Array] = [["mara", "ivo"], ["mara", "nima"], ["ivo", "nima"]]
+	for par in pares:
+		var a := participantes[str(par[0])] as Creature
+		var b := participantes[str(par[1])] as Creature
+		var relacion := _relationship_system.obtener_relacion_entre_npc(
+			a.get_personaje_game_id(), b.get_personaje_game_id()
+		)
+		if int(relacion.get("interacciones", 0)) < 1:
+			return {}
+		var cercania := float(relacion.get("amistad", 0.0)) + float(relacion.get("confianza", 0.0)) + float(relacion.get("afecto", 0.0)) + float(relacion.get("colaboracion", 0.0))
+		if cercania < 0.5 or float(relacion.get("tension", 0.0)) >= 4.0:
+			return {}
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
+	var anio := int(tiempo.get("anio", 0))
+	var semana := int((int(tiempo.get("dia", 1)) - 1) / 5)
+	var dia_elegido := posmod(hash("mara_ivo_nima|" + str(anio) + "|" + str(semana)), 5)
+	if dia_semana != dia_elegido or not _puede_participar_en_evento(rutina_actual):
+		return {}
+	# Verifica también a los otros dos: no se convoca a nadie desde un turno,
+	# una guardia, una investigación o una tarea que siga activa.
+	for nombre in nombres:
+		var participante := participantes[nombre] as Creature
+		var base: Dictionary
+		var lista: Variant = participante.datos.get("rutinas", [])
+		if dia_semana == 4 and not bool(participante.get_meta("habitante_sin_oficio", false)):
+			base = _seleccionar_rutina_dia_libre(participante, minutos)
+		else:
+			base = _seleccionar_rutina(lista, dia_semana, minutos, participante.get_nombre_visual())
+		if not _puede_participar_en_evento(base):
+			return {}
+	var posiciones: Dictionary = {
+		"mara": Vector2(-42.0, 18.0),
+		"ivo": Vector2(42.0, 18.0),
+		"nima": Vector2(0.0, -32.0)
+	}
+	var posicion: Vector2 = posiciones[npc_actual.get_nombre_visual().strip_edges().to_lower()]
+	return {
+		"clave": "encuentro_trio_mara_ivo_nima",
+		"ubicacion_clave": "plaza",
+		"actividad_clave": "reunirse_con_amigos",
+		"variacion_posicion": posicion,
+		"activo": true
+	}
+
+
+func _buscar_npc_por_nombre(nombre_buscado: String) -> Creature:
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if nodo is Creature and is_instance_valid(nodo):
+			var candidato := nodo as Creature
+			if candidato.get_nombre_visual().strip_edges().to_lower() == nombre_buscado:
+				return candidato
+	return null
+
+
 ## Escalona los cambios de horario para que los habitantes no salgan todos a la vez.
 func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
