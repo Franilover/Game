@@ -1196,7 +1196,7 @@ func _obtener_ids_alimento() -> Array[String]:
 
 
 func _es_alimento_configurado(item: WorldItem) -> bool:
-	if item == null or not is_instance_valid(item) or not item.is_inside_tree():
+	if item == null or not is_instance_valid(item):
 		return false
 	var ids := _obtener_ids_alimento()
 	if ids.is_empty():
