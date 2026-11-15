@@ -482,7 +482,10 @@ func desactivar_como_proxy() -> void:
 
 
 func get_personaje_game_id() -> String:
-	return str(datos.get("personaje_game_id", "")).strip_edges()
+	var personaje_id := str(datos.get("personaje_game_id", "")).strip_edges()
+	if personaje_id.is_empty():
+		personaje_id = str(get_meta("personaje_game_id", "")).strip_edges()
+	return personaje_id
 
 
 func get_datos() -> Dictionary:
