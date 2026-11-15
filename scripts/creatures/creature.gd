@@ -1256,7 +1256,9 @@ func interact(
 	if not tienda.is_empty() and is_instance_valid(_world_items_dependency):
 		var shop_script := ResourceLoader.load(SHOP_UI_PATH) as Script
 		var inventario := get_tree().get_first_node_in_group("inventory") as GarliaInventory
-		var interfaz := shop_script.new() as CanvasLayer if shop_script != null else null
+		var interfaz: CanvasLayer = null
+		if shop_script != null:
+			interfaz = shop_script.new() as CanvasLayer
 		if is_instance_valid(inventario) and is_instance_valid(interfaz):
 			interfaz.configurar(self, inventario, _world_items_dependency, _actor)
 			var padre := get_tree().current_scene
