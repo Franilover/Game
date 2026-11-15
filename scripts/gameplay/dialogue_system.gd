@@ -418,6 +418,8 @@ func _obtener_ciclo_variante(variante: Dictionary) -> String:
 			contexto = contexto_variant
 	var anio := int(contexto.get("anio", 0))
 	var dia := int(contexto.get("dia", 0))
+	var calendario_cargado := bool(contexto.get("calendario_cargado", false))
+	var estacion_id := str(contexto.get("estacion_id", "")).strip_edges()
 	var requisito_social_variant: Variant = variante.get("requisito_social", {})
 	var requisito_mision_variant: Variant = variante.get("requisito", {})
 	var requisito_contextual_variant: Variant = variante.get("requisito_contextual", {})
@@ -425,13 +427,17 @@ func _obtener_ciclo_variante(variante: Dictionary) -> String:
 		return ""
 	if repeticion == "unica":
 		return "unica"
+	if repeticion in ["diaria", "diario", "semanal", "semanalmente", "estacional", "por_estacion", "anual", "anualmente"] and not calendario_cargado:
+		return ""
 	if repeticion == "diaria" or repeticion == "diario":
 		return "dia:%d:%d" % [anio, dia]
 	if repeticion == "semanal" or repeticion == "semanalmente":
 		var semana := int(floor(float(maxi(dia, 1) - 1) / 7.0))
 		return "semana:%d:%d" % [anio, semana]
 	if repeticion == "estacional" or repeticion == "por_estacion":
-		return "estacion:%d:%s" % [anio, str(contexto.get("estacion_id", ""))]
+		if estacion_id.is_empty():
+			return ""
+		return "estacion:%d:%s" % [anio, estacion_id]
 	if repeticion == "anual" or repeticion == "anualmente":
 		return "anio:%d" % anio
 	if repeticion == "social" or (requisito_social_variant is Dictionary and not (requisito_social_variant as Dictionary).is_empty()):
@@ -698,7 +704,16 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 					if (
 						mejor_mision.is_empty()
 						or prioridad > prioridad_mision
-						or (prioridad == prioridad_mision and especificidad > especificidad_mision)
+						or (
+							prioridad == prioridad_mision
+							and (
+								especificidad > especificidad_mision
+								or (
+									especificidad == especificidad_mision
+									and str(variante.get("clave", "")) < str(mejor_mision.get("clave", ""))
+								)
+							)
+						)
 					):
 						mejor_mision = variante
 						prioridad_mision = prioridad
@@ -808,7 +823,16 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 		if (
 			mejor.is_empty()
 			or prioridad > mejor_prioridad
-			or (prioridad == mejor_prioridad and especificidad > mejor_especificidad)
+			or (
+				prioridad == mejor_prioridad
+				and (
+					especificidad > mejor_especificidad
+					or (
+						especificidad == mejor_especificidad
+						and str(variante.get("clave", "")) < str(mejor.get("clave", ""))
+					)
+				)
+			)
 		):
 			mejor = variante.duplicate(true)
 			mejor_prioridad = prioridad
