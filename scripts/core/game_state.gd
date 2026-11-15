@@ -954,6 +954,7 @@ func obtener_relaciones_sociales() -> Dictionary:
 
 func guardar_relaciones_sociales(relaciones: Dictionary) -> void:
 	world_state.flags["relaciones_sociales"] = relaciones.duplicate(true)
+	_al_cambio_guardable()
 
 
 func _sincronizar_garumis_vinculados_desde_escena() -> void:
@@ -1109,6 +1110,7 @@ func obtener_recuerdos_sociales() -> Dictionary:
 
 func guardar_recuerdos_sociales(recuerdos: Dictionary) -> void:
 	world_state.flags["recuerdos_sociales"] = recuerdos.duplicate(true)
+	_al_cambio_guardable()
 
 
 func establecer_proceso_ium_equipado(proceso: Dictionary) -> void:
