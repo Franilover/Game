@@ -42,6 +42,8 @@ static func button_surface_style() -> StyleBoxTexture:
 
 
 static func _apply_control(control: Control, use_pixel_titles: bool = true) -> void:
+	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
+	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
 		# Un único recurso dibuja tanto el fondo como el borde del panel.
 		var panel := _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
