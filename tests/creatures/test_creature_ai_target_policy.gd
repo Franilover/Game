@@ -32,6 +32,9 @@ func _run() -> void:
 	if ai.objetivo != null:
 		_fail("Una criatura neutral eligió al jugador sin respuesta definida.")
 		return
+	if ai._es_objetivo_ecologico_valido(player):
+		_fail("Una entidad que no es Creature fue aceptada como objetivo ecológico.")
+		return
 
 	# El comportamiento agresivo sí define una reacción ejecutable.
 	actor.comportamiento = "agresivo"
