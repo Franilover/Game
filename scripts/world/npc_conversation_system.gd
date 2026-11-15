@@ -1104,7 +1104,11 @@ func _esta_en_reunion_castillo() -> bool:
 func _npc_puede_participar_reunion(npc: Creature) -> bool:
 	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
 		return false
-	if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != "castillo":
+	if (
+		not bool(npc.get_meta("rutina_en_edificio", false))
+		or str(npc.get_meta("rutina_edificio_id", "")) != "castillo"
+		or str(npc.get_meta("rutina_actual", "")) != "reunion_nocturna_castillo"
+	):
 		return false
 	for meta_clave in ["conversacion_npc_bloqueada", "cinematica_npc_activa", "acercamiento_social_activo", "actividad_social_activa"]:
 		if bool(npc.get_meta(meta_clave, false)):
@@ -1114,7 +1118,7 @@ func _npc_puede_participar_reunion(npc: Creature) -> bool:
 
 func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) -> bool:
 	var hora := float(tiempo.get("hora_del_dia", 0.0))
-	if hora < 21.0 or hora >= 24.0 or not _esta_en_reunion_castillo():
+	if hora < 21.0 or hora >= 23.5 or not _esta_en_reunion_castillo():
 		return false
 	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
 		return false
@@ -1123,7 +1127,7 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 	var clave_dia := "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
 	if str(_vistas_por_dia.get("reunion_castillo", "")) == clave_dia:
 		return false
-	_obtener_npcs_torres()
+	var npcs := _obtener_npcs_torres()
 	var diario_variant: Variant = _progreso_parejas.get("_reuniones_nocturnas", {})
 	var diario: Dictionary = diario_variant.duplicate(true) if diario_variant is Dictionary else {}
 	if str(diario.get("ultimo_dia", "")) == clave_dia:
@@ -1135,6 +1139,9 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 	for registro_variant in historial.slice(maxi(0, historial.size() - 3)):
 		if registro_variant is Dictionary:
 			recientes.append(str((registro_variant as Dictionary).get("clave", "")))
+
+	# Primero se conservan las conversaciones escritas a mano, pero sólo
+	# cuando sus participantes pertenecen al mismo grupo de esa noche.
 	var base := posmod(int(tiempo.get("anio", 0)) * 367 + int(tiempo.get("dia", 1)), CONVERSACIONES_REUNION_CASTILLO.size())
 	for desplazamiento in range(CONVERSACIONES_REUNION_CASTILLO.size()):
 		var indice := posmod(base + desplazamiento, CONVERSACIONES_REUNION_CASTILLO.size())
@@ -1146,32 +1153,151 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 		var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
 		if not _npc_puede_participar_reunion(npc_a) or not _npc_puede_participar_reunion(npc_b):
 			continue
+		if int(npc_a.get_meta("grupo_social_castillo_id", -1)) != int(npc_b.get_meta("grupo_social_castillo_id", -2)):
+			continue
 		if jugador.global_position.distance_to((npc_a.global_position + npc_b.global_position) * 0.5) > DISTANCIA_JUGADOR + 240.0:
 			continue
 		var evento := conversacion.duplicate(true)
-		evento["_reunion_castillo"] = true
-		evento["clave"] = "reunion_%s_%s" % [clave, clave_dia.replace(":", "_")]
-		_iniciar_conversacion(evento)
-		_vistas_por_dia["reunion_castillo"] = clave_dia
-		historial.append({"dia": clave_dia, "clave": clave})
-		while historial.size() > 16:
-			historial.pop_front()
-		diario["ultimo_dia"] = clave_dia
-		diario["ultimo_evento"] = clave
-		diario["historial"] = historial
-		_progreso_parejas["_reuniones_nocturnas"] = diario
-		if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
-			_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
-		if bool(evento.get("cinematica", false)):
-			var centro := (npc_a.global_position + npc_b.global_position) * 0.5
-			cinematica_reunion_nocturna_solicitada.emit(
-				clave,
-				npc_a.get_nombre_visual(),
-				npc_b.get_nombre_visual(),
-				centro
-			)
-		return true
+		if _registrar_conversacion_reunion_castillo(evento, npc_a, npc_b, clave, clave_dia, diario, historial):
+			return true
+
+	# Si no coincide una escena prefabricada, cualquier grupo de amigos puede
+	# tener una charla breve sobre cómo les fue durante el día.
+	var grupos: Dictionary = {}
+	for npc in npcs:
+		if not _npc_puede_participar_reunion(npc):
+			continue
+		var grupo_id := int(npc.get_meta("grupo_social_castillo_id", -1))
+		if grupo_id < 0:
+			continue
+		if not grupos.has(grupo_id):
+			grupos[grupo_id] = []
+		(grupos[grupo_id] as Array).append(npc)
+	var grupos_ordenados := grupos.keys()
+	grupos_ordenados.sort()
+	for grupo_id in grupos_ordenados:
+		var integrantes: Array = grupos[grupo_id]
+		if integrantes.size() < 2:
+			continue
+		integrantes.sort_custom(func(a: Creature, b: Creature) -> bool:
+			return a.get_nombre_visual() < b.get_nombre_visual()
+		)
+		var mejor_a: Creature = null
+		var mejor_b: Creature = null
+		var mejor_puntuacion := -INF
+		for i in range(integrantes.size()):
+			for j in range(i + 1, integrantes.size()):
+				var candidato_a := integrantes[i] as Creature
+				var candidato_b := integrantes[j] as Creature
+				var id_a := candidato_a.get_personaje_game_id().strip_edges()
+				var id_b := candidato_b.get_personaje_game_id().strip_edges()
+				var clave_par := "charla_diaria_%s_%s" % [id_a, id_b]
+				if clave_par in recientes:
+					continue
+				var puntuacion := 0.0
+				if is_instance_valid(_relationship_system):
+					var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(id_a, id_b)
+					puntuacion = (
+						float(relacion.get("amistad", 0.0))
+						+ float(relacion.get("confianza", 0.0))
+						+ float(relacion.get("afecto", 0.0))
+						- float(relacion.get("tension", 0.0)) * 2.0
+					)
+				if puntuacion > mejor_puntuacion:
+					mejor_puntuacion = puntuacion
+					mejor_a = candidato_a
+					mejor_b = candidato_b
+		if not is_instance_valid(mejor_a) or not is_instance_valid(mejor_b):
+			continue
+		if jugador.global_position.distance_to((mejor_a.global_position + mejor_b.global_position) * 0.5) > DISTANCIA_JUGADOR + 240.0:
+			continue
+		var id_mejor_a := mejor_a.get_personaje_game_id().strip_edges()
+		var id_mejor_b := mejor_b.get_personaje_game_id().strip_edges()
+		var clave_diaria := "charla_diaria_%s_%s" % [id_mejor_a, id_mejor_b]
+		var evento_diario := _crear_conversacion_diaria_castillo(mejor_a, mejor_b, clave_diaria)
+		if _registrar_conversacion_reunion_castillo(evento_diario, mejor_a, mejor_b, clave_diaria, clave_dia, diario, historial):
+			return true
 	return false
+
+
+func _registrar_conversacion_reunion_castillo(
+	evento: Dictionary,
+	npc_a: Creature,
+	npc_b: Creature,
+	clave: String,
+	clave_dia: String,
+	diario: Dictionary,
+	historial: Array
+) -> bool:
+	if evento.is_empty() or not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return false
+	if not _npc_puede_participar_reunion(npc_a) or not _npc_puede_participar_reunion(npc_b):
+		return false
+	evento["_reunion_castillo"] = true
+	evento["clave"] = "reunion_%s_%s" % [clave, clave_dia.replace(":", "_")]
+	_iniciar_conversacion(evento)
+	_vistas_por_dia["reunion_castillo"] = clave_dia
+	historial.append({"dia": clave_dia, "clave": clave})
+	while historial.size() > 16:
+		historial.pop_front()
+	diario["ultimo_dia"] = clave_dia
+	diario["ultimo_evento"] = clave
+	diario["historial"] = historial
+	_progreso_parejas["_reuniones_nocturnas"] = diario
+	if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
+		_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+	if bool(evento.get("cinematica", false)):
+		var centro := (npc_a.global_position + npc_b.global_position) * 0.5
+		cinematica_reunion_nocturna_solicitada.emit(
+			clave,
+			npc_a.get_nombre_visual(),
+			npc_b.get_nombre_visual(),
+			centro
+		)
+	return true
+
+
+func _crear_conversacion_diaria_castillo(npc_a: Creature, npc_b: Creature, clave: String) -> Dictionary:
+	var nombre_a := npc_a.get_nombre_visual()
+	var nombre_b := npc_b.get_nombre_visual()
+	var resumen_a := _describir_dia_npc(npc_a)
+	var resumen_b := _describir_dia_npc(npc_b)
+	return {
+		"clave": clave,
+		"npc_a": nombre_a.to_lower(),
+		"npc_b": nombre_b.to_lower(),
+		"cinematica": false,
+		"lineas": [
+			{"npc": nombre_a, "texto": "¿Qué tal te fue hoy? Parecía que no ibas a tener un momento libre."},
+			{"npc": nombre_b, "texto": resumen_b + " Ahora me viene bien sentarme un rato."},
+			{"npc": nombre_a, "texto": resumen_a + " ¿Hubo algo que te llamara la atención?"},
+			{"npc": nombre_b, "texto": "Sí, aunque prefiero contártelo con calma. Me alegra que hayamos coincidido esta noche."}
+		]
+	}
+
+
+func _describir_dia_npc(npc: Creature) -> String:
+	var actividad := str(npc.get_meta("resumen_dia_reunion_actividad", "")).strip_edges().to_lower()
+	var rutina := str(npc.get_meta("resumen_dia_reunion_rutina", "")).strip_edges().to_lower()
+	var texto := actividad + " " + rutina
+	if texto.contains("panader") or texto.contains("hornear") or texto.contains("amasar"):
+		return "Pasé buena parte del día en la panadería."
+	if texto.contains("guard") or texto.contains("ronda") or texto.contains("patrull") or texto.contains("vigilar"):
+		return "Me tocó estar pendiente de los caminos y de la seguridad del pueblo."
+	if texto.contains("investig") or texto.contains("estudi") or texto.contains("oris") or texto.contains("apunt"):
+		return "Pasé buena parte del día investigando y ordenando mis observaciones."
+	if texto.contains("forja") or texto.contains("repar") or texto.contains("herramient"):
+		return "Estuve trabajando con herramientas y reparaciones."
+	if texto.contains("comerci") or texto.contains("venta") or texto.contains("tienda"):
+		return "Tuve bastante movimiento atendiendo asuntos del comercio."
+	if texto.contains("pase") or texto.contains("recorr"):
+		return "Salí a recorrer Torres y a ver qué estaba pasando."
+	if texto.contains("descans") or texto.contains("dorm"):
+		return "Hoy tuve un día más tranquilo y pude descansar."
+	if texto.is_empty():
+		return "Hoy tuve varias cosas que atender, aunque ya terminé por ahora."
+	return "Estuve ocupado con " + texto.replace("_", " ") + "."
+
 
 
 ## Los acontecimientos comunitarios también provocan pequeñas respuestas
