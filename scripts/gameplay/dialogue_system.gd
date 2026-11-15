@@ -1014,7 +1014,7 @@ func _obtener_texto_rutina_personaje(
 				return ("Me alegra verte, pero tengo que llegar a %s. Allí podremos conversar." if amable else "Ahora debo continuar hacia %s. Puedes encontrarme allí cuando termine.") % destino
 
 	var es_dia_libre := rutina_clave.begins_with("dia_libre")
-	var ubicaciones_hogar: Array[String] = ["casa_elian", "casa_bruna", "casa_darven", "casa_saira", "casa_narel", "castillo"]
+	var ubicaciones_hogar: Array[String] = ["casa_elian", "casa_bruna", "casa_darven", "casa_saira", "casa_narel", "castillo", "vivienda_oeste_01", "vivienda_oeste_02", "vivienda_oeste_03"]
 	var esta_en_hogar := ubicaciones_hogar.has(ubicacion)
 
 	# Los días libres tienen pequeñas actividades propias, incluso cuando el NPC se queda en casa.
@@ -1035,6 +1035,12 @@ func _obtener_texto_rutina_personaje(
 					return "Hoy tengo menos obligaciones y permaneceré en el castillo." if not amable else "He reservado parte del día para descansar aquí. Será agradable conversar sin reuniones pendientes."
 				"liam":
 					return "Hoy no tengo que salir del castillo. Aprovecharé para descansar." if not amable else "Estoy disfrutando de un día tranquilo en el castillo. Me alegra que hayas pasado."
+				"mara":
+					return "Hoy prefiero quedarme en casa. No todo el tiempo libre tiene que compartirse." if not amable else "Me tomé el día con calma y me quedaré aquí un rato. Gracias por pasar."
+				"ivo":
+					return "Hoy voy a descansar en casa. Si salgo, será sólo un rato y a mi ritmo." if not amable else "Hoy necesito una mañana tranquila en casa. Más tarde quizá salga un poco."
+				"nima":
+					return "Hoy me quedaré en casa un rato. Puedo revisar mis apuntes después; ahora quiero descansar." if not amable else "He dejado las notas a un lado por ahora. Me vendrá bien una mañana tranquila."
 				_:
 					return "Hoy estoy descansando en casa. No tengo prisa por volver a mis obligaciones."
 		match nombre:
@@ -1072,6 +1078,12 @@ func _obtener_texto_rutina_personaje(
 				return "Mis responsabilidades en el castillo no terminan cuando cae la noche. Ahora debo atender asuntos internos." if not amable else "He reservado este momento para los asuntos del castillo. Aun así, podemos conversar un poco."
 			"liam":
 				return "Estoy descansando en el castillo. Si necesitas algo, procura no interrumpir los asuntos de los demás." if not amable else "Aquí estoy tomando un respiro. Me alegra que hayas venido; podemos hablar un rato."
+			"mara":
+				return "Estoy en casa por ahora. Prefiero tener un rato tranquilo antes de volver a salir." if not amable else "Pasa si quieres. Aquí puedo descansar sin tener que estar pendiente de la plaza."
+			"ivo":
+				return "Estoy descansando en casa. No tengo prisa por salir ni por seguir el ritmo de nadie." if not amable else "Me quedé en casa para recuperar fuerzas. Podemos conversar un rato si quieres."
+			"nima":
+				return "Estoy ordenando algunas notas en casa, pero no pienso pasarme el día estudiando." if not amable else "He dejado un espacio para descansar entre mis apuntes. Me alegra que hayas venido."
 			_:
 				return "Estoy en casa por ahora. Cuando termine lo que tengo entre manos, podremos conversar." if not amable else "Estoy descansando un momento en casa. Quédate si quieres, podemos conversar."
 
