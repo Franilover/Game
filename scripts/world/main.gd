@@ -1849,8 +1849,8 @@ func _procesar_cinematicas_pendientes() -> void:
 					continue
 				distancia_activacion = 520.0
 			_:
-			_cinematicas_pendientes.remove_at(indice)
-			continue
+				_cinematicas_pendientes.remove_at(indice)
+				continue
 
 		var distancia_jugador := _player.global_position.distance_to(posicion)
 		if distancia_jugador > distancia_activacion:
