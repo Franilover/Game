@@ -180,7 +180,7 @@ func _actualizar() -> void:
 		boton.clip_contents = true
 		boton.text = ""
 		boton.set_meta("personaje_id", personaje_id)
-		boton.tooltip_text = nombre
+				boton.tooltip_text= ""
 		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
 		PIXEL_UI_THEME.apply(boton, false)
