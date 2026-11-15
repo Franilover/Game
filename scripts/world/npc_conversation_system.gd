@@ -889,12 +889,75 @@ func _crear_dialogo_iniciativa_amigo(npc: Creature, tiempo: Dictionary) -> Dicti
 			pregunta = "¡Ah, justo a quien quería encontrar! ¿Cómo estás? ¿Tienes planes para hoy o vas a improvisar?"
 		"narel":
 			pregunta = "Me preguntaba cómo te ha ido estos días. ¿Tienes algún plan para hoy o algo que te interese investigar?"
+	var respuestas := _crear_respuestas_iniciativa(npc, "amistad", false)
+	_agregar_respuesta_invitacion(respuestas, npc, tiempo)
 	return {
 		"clave": "iniciativa_amigo_" + npc.get_personaje_game_id(),
 		"lineas": [{"hablante": nombre, "texto": pregunta}],
-		"respuestas": _crear_respuestas_iniciativa(npc, "amistad", false),
+		"respuestas": respuestas,
 		"_iniciativa_npc": true
 	}
+
+
+## Una amistad consolidada puede proponer un encuentro concreto para el día
+## siguiente. La aceptación se guarda y la rutina del NPC respeta su horario.
+func _agregar_respuesta_invitacion(respuestas: Array[Dictionary], npc: Creature, tiempo: Dictionary) -> void:
+	if not is_instance_valid(npc):
+		return
+	var dia_actual := int(tiempo.get("dia", 1))
+	var anio_actual := int(tiempo.get("anio", 0))
+	var dia_objetivo := dia_actual + 1
+	var anio_objetivo := anio_actual
+	if dia_objetivo > 365:
+		dia_objetivo = 1
+		anio_objetivo += 1
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	var propuesta := "Si tienes tiempo mañana, podríamos encontrarnos en la plaza a última hora de la tarde."
+	var respuesta := "Me gustaría. A veces es bueno reservar un rato para conversar sin ninguna obligación."
+	match nombre:
+		"elian":
+			propuesta = "Mañana, después de terminar la hornada, estaré un rato en la plaza. ¿Te gustaría venir a compartir algo?"
+		"bruna":
+			propuesta = "Mañana tendré un rato libre por la tarde. Si te apetece, podemos encontrarnos en la plaza y conversar."
+		"darven":
+			propuesta = "Mañana, cuando termine mi turno, pasaré por la plaza. Si estás por allí, podemos conversar un rato."
+		"saira":
+			propuesta = "Mañana estaré en la plaza al final de la tarde. ¿Te apetece que nos pongamos al día?"
+		"narel":
+			propuesta = "Mañana quiero despejarme un rato después de revisar mis notas. ¿Te gustaría acompañarme a la plaza?"
+		"mara":
+			propuesta = "Mañana pensaba salir un rato a la plaza. Si te apetece acompañarme, podríamos conversar; no hace falta que sea mucho tiempo."
+		"nima":
+			propuesta = "Mañana quiero tomarme un descanso de mis notas y pasar por la plaza. ¿Te gustaría venir conmigo?"
+		"ivo":
+			propuesta = "Mañana estaré un rato en la plaza. Podríamos sentarnos y conversar, así no tengo que recorrer medio reino para verte."
+	respuestas.append({
+		"texto": "Aceptar la invitación",
+		"jugador": "¡Claro! Mañana nos vemos en la plaza.",
+		"respuesta": respuesta,
+		"evento": "apoyar",
+		"clave": "invitacion_aceptada_" + npc.get_personaje_game_id(),
+		"importancia": 2.0,
+		"despedida": true,
+		"invitacion": {
+			"personaje_id": npc.get_personaje_game_id(),
+			"nombre": npc.get_nombre_visual(),
+			"anio": anio_objetivo,
+			"dia": dia_objetivo,
+			"hora_inicio": 17.0,
+			"hora_fin": 19.0,
+			"ubicacion_clave": "plaza",
+			"estado": "aceptada"
+		}
+	})
+	respuestas.append({
+		"texto": "Dejarlo para otro momento",
+		"jugador": "Me gustaría, pero prefiero que lo dejemos para otra ocasión.",
+		"respuesta": "No pasa nada. Ya encontraremos otro momento.",
+		"clave": "invitacion_rechazada_" + npc.get_personaje_game_id(),
+		"importancia": 0.5,
+		"despedida": true
+	})
 
 
 func _crear_respuestas_iniciativa(npc: Creature, tipo: String, completada: bool) -> Array[Dictionary]:
