@@ -929,11 +929,9 @@ func _es_objetivo_permitido(candidato: Node2D) -> bool:
 
 
 func _es_objetivo_ecologico_valido(candidato: Node2D) -> bool:
-	if candidato is Creature:
-		var tipo_relacion := _obtener_relacion_ecologica(
-			candidato as Creature
-		)
-
+	if not candidato is Creature:
+		return false
+	var tipo_relacion := _obtener_relacion_ecologica(candidato as Creature)
 	return not _obtener_respuesta_ecologica(tipo_relacion).is_empty()
 
 
