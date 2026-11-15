@@ -44,7 +44,7 @@ static func adaptar(texto_original: String, nombre_personaje: String) -> String:
 		],
 		"darven": [
 			["Este acceso se mantiene vigilado", "Estoy vigilando este acceso"],
-			["Alto. Este acceso está bajo vigilancia por orden de la guardia.", "Alto. Este acceso está bajo vigilancia de la guardia."],
+			["Alto. Este acceso se mantiene vigilado por orden de la guardia.", "Alto. Este acceso está bajo vigilancia de la guardia."],
 			["Si es importante, búscame allí", "Si es urgente, búscame allá"],
 			["No puedo abandonar mi recorrido", "No puedo dejar la ronda botada"]
 		],
