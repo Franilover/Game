@@ -172,8 +172,13 @@ func _run() -> void:
 		return
 	ai.actividad_horaria = "reposar"
 	ai._actualizar_necesidades(2.0)
-	if not is_equal_approx(float(ai._obtener_estado_necesidades().get("fatiga", -1.0)), 70.0):
+	if not is_equal_approx(float(ai._obtener_estado_necesidades().get("fatiga", -1.0)), 30.0):
 		_fail("El descanso no recuperó fatiga correctamente.")
+		return
+	ai.configuracion_ia = {"horario": {"buscar_refugio": true, "refugio_objetivo": "Refugio de prueba"}}
+	ai.actividad_horaria = "reposar"
+	if not ai._debe_buscar_refugio():
+		_fail("La criatura no pudo buscar refugio durante el descanso.")
 		return
 	ai.configuracion_ia = {"necesidades": {"umbral_fatiga": 60.0, "recuperacion_fatiga_por_segundo": 5.0}}
 	ai._fatiga_actual = 70.0
@@ -202,6 +207,18 @@ func _run() -> void:
 	ai._procesar_persiguiendo()
 	if ai.estado == AIScript.Estado.ATACANDO:
 		_fail("Una relación de seguimiento inició combate.")
+		return
+	if not ai._es_seguimiento_ecologico(seguidor):
+		_fail("La IA no identificó la relación de seguimiento explícita.")
+		return
+	# Un perfil que usa persecución agresiva conserva el ataque al llegar.
+	ai.objetivo = player
+	ai.perfil = AIScript.Perfil.CAMBIAFORMAS
+	ai.configuracion_ia = {}
+	ai._cambiar_estado(AIScript.Estado.PERSIGUIENDO)
+	ai._procesar_persiguiendo()
+	if ai.estado != AIScript.Estado.ATACANDO:
+		_fail("La persecución agresiva perdió su transición histórica a combate.")
 		return
 	seguidor.free()
 
