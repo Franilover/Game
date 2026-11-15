@@ -562,15 +562,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			push_warning("NPCScheduleSystem: " + npc.get_nombre_visual() + " no recibió rutinas desde WorldData; ubicación de trabajo=" + ubicacion_respaldo + ". No se confundirá ese campo con su hogar.")
 			npc.set_meta("rutina_error_firma", firma_aviso)
 	var clave_rutina := str(rutina.get("clave", "regreso_hogar")).strip_edges()
-	if clave_rutina == "reunion_nocturna_castillo":
-		var tiempo_reunion: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
-		var dia_reunion := "%s:%s" % [str(tiempo_reunion.get("anio", 0)), str(tiempo_reunion.get("dia", 1))]
-		if str(npc.get_meta("resumen_dia_reunion_clave", "")) != dia_reunion:
-			npc.set_meta("resumen_dia_reunion_clave", dia_reunion)
-			npc.set_meta("resumen_dia_reunion_actividad", str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))))
-			npc.set_meta("resumen_dia_reunion_rutina", str(npc.get_meta("rutina_actual", "")))
-			npc.set_meta("resumen_dia_reunion_ubicacion", str(npc.get_meta("rutina_ubicacion", "")))
-	else:
+	if clave_rutina != "reunion_nocturna_castillo":
 		for clave_social_castillo in [
 			"grupo_social_castillo_id", "grupo_social_castillo_nombres",
 			"puesto_social_castillo", "reunion_castillo_fase",
@@ -589,6 +581,33 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		actividad = "pasear_y_saludar"
 		rutina["actividad_clave"] = actividad
 		rutina["variacion_posicion"] = Vector2(18.0, 132.0)
+
+	# Conserva una actividad significativa del día para que las charlas
+	# nocturnas puedan comentar trabajo, paseos o investigaciones recientes.
+	var tiempo_resumen: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var dia_resumen := "%s:%s" % [str(tiempo_resumen.get("anio", 0)), str(tiempo_resumen.get("dia", 1))]
+	if str(npc.get_meta("resumen_dia_reunion_clave", "")) != dia_resumen:
+		npc.set_meta("resumen_dia_reunion_clave", dia_resumen)
+		npc.set_meta("resumen_dia_reunion_actividad", "")
+		npc.set_meta("resumen_dia_reunion_rutina", "")
+		npc.set_meta("resumen_dia_reunion_ubicacion", "")
+	if clave_rutina != "reunion_nocturna_castillo":
+		var actividad_resumen := actividad.strip_edges().to_lower()
+		var es_descanso := (
+			actividad_resumen.is_empty()
+			or actividad_resumen.contains("descans")
+			or actividad_resumen.contains("dorm")
+			or actividad_resumen.contains("volver")
+		)
+		if not es_descanso:
+			npc.set_meta("resumen_dia_reunion_actividad", actividad)
+			npc.set_meta("resumen_dia_reunion_rutina", clave_rutina)
+			npc.set_meta("resumen_dia_reunion_ubicacion", ubicacion)
+	elif str(npc.get_meta("resumen_dia_reunion_actividad", "")).strip_edges().is_empty():
+		npc.set_meta("resumen_dia_reunion_actividad", str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))))
+		npc.set_meta("resumen_dia_reunion_rutina", str(npc.get_meta("rutina_actual", "")))
+		npc.set_meta("resumen_dia_reunion_ubicacion", str(npc.get_meta("rutina_ubicacion", "")))
+
 	if ubicacion.is_empty() or ubicacion == "null" or not POSICIONES.has(ubicacion):
 		ubicacion = hogar
 
