@@ -916,6 +916,15 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			]
 		}
 	]
+	var nombres_canonicos_globales: Dictionary = {}
+	for personaje_variant in WorldData.obtener_personajes_game():
+		if not personaje_variant is Dictionary:
+			continue
+		var personaje := personaje_variant as Dictionary
+		var nombre_canonico := str(personaje.get("nombre", "")).strip_edges().to_lower()
+		if not nombre_canonico.is_empty():
+			nombres_canonicos_globales[nombre_canonico] = true
+
 	var existentes_locales: Dictionary = {}
 	var existentes_por_nombre: Dictionary = {}
 	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
@@ -952,6 +961,11 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 			elif clave == "mara":
 				npc_canonico.set_meta("confianza_local", int(GameState.world_state.flags.get("confianza_mara", 0)))
 				npc_canonico.set_meta("identidad_protegida", true)
+			continue
+
+		# Si el personaje tiene registro canónico en otro reino, no crear aquí
+		# una segunda versión local sin ID que rompa sus relaciones persistentes.
+		if nombres_canonicos_globales.has(nombre_habitante):
 			continue
 
 		var datos := datos_plantilla.duplicate(true)
