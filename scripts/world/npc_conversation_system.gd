@@ -1,6 +1,8 @@
 extends Node
 class_name NPCConversationSystem
 
+const NPC_VOICE_PROFILE = preload("res://scripts/gameplay/npc_voice_profile.gd")
+
 signal cinematica_acontecimiento_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
 signal cinematica_narrativa_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2, etapa: int)
 signal cinematica_reunion_nocturna_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
@@ -1637,7 +1639,7 @@ func _mostrar_linea_actual(reiniciar_temporizador: bool = true) -> void:
 		_finalizar_conversacion()
 		return
 	var texto := str(linea.get("texto", "")).strip_edges()
-	texto = NPCVoiceProfile.adaptar(texto, npc.get_nombre_visual())
+	texto = NPC_VOICE_PROFILE.adaptar(texto, npc.get_nombre_visual())
 	if texto.is_empty():
 		_finalizar_conversacion()
 		return
