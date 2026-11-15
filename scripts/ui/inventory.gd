@@ -579,14 +579,37 @@ func _indice_datos_de_slot(slot: Button) -> int:
 	return -1
 
 
+func _actualizar_resaltado_seleccion() -> void:
+	for slot_variant in slot_nodes:
+		var slot := slot_variant as InventorySlot
+		if slot == null:
+			continue
+		slot.establecer_seleccionado(
+			_indice_datos_de_slot(slot) == indice_seleccionado
+		)
+
+
 func _al_recibir_arrastre(slot: Button, datos_arrastre: Dictionary) -> void:
+	# Este controlador solo acepta movimientos originados en el inventario
+	# del jugador; los contenedores externos gestionan sus propias transferencias.
+	if str(datos_arrastre.get("contenedor", "jugador")) != "jugador":
+		return
 	var indice_destino: int = _indice_datos_de_slot(slot)
 	var indice_origen: int = int(datos_arrastre.get("indice", -1))
-	if indice_origen < 0 or indice_destino < 0:
+	if indice_origen < 0 or indice_destino < 0 or indice_origen == indice_destino:
 		return
-	if inventory_controller.intercambiar_o_apilar(indice_origen, indice_destino):
-		actualizar()
-		inventory_changed.emit()
+	if not inventory_controller.intercambiar_o_apilar(indice_origen, indice_destino):
+		return
+
+	# La selección nunca debe conservar datos antiguos tras un intercambio,
+	# apilado o movimiento de objetos.
+	if indice_seleccionado == indice_origen and items[indice_origen].is_empty():
+		indice_seleccionado = indice_destino
+	actualizar()
+	_actualizar_resaltado_seleccion()
+	if indice_seleccionado >= 0:
+		seleccionar_slot(indice_seleccionado)
+	else:
 		_emitir_objeto_activo()
 
 func _al_iniciar_arrastre(slot: Button, datos: Dictionary) -> void:
@@ -662,20 +685,19 @@ func seleccionar_slot(indice: int) -> void:
 	if indice < 0:
 		indice_seleccionado = -1
 		objeto_seleccionado.clear()
-
+		_actualizar_resaltado_seleccion()
 		_limpiar_informacion()
-
 		inventory_selection_changed.emit(
 			-1,
 			{}
 		)
-
 		return
 
 	if indice >= items.size():
 		return
 
 	indice_seleccionado = indice
+	_actualizar_resaltado_seleccion()
 
 	# Las ranuras de los grupos laterales representan directamente las manos.
 	# Al seleccionar una, también pasa a ser la ranura activa de Q o E para que
@@ -981,13 +1003,13 @@ func _mostrar_informacion() -> void:
 	var es_armadura := tipo == "armadura" and not str(propiedades.get("ranura_equipamiento", "")).strip_edges().is_empty()
 	var es_colocable := _world_items != null and is_instance_valid(_world_items) and _world_items.es_objeto_colocable(objeto_seleccionado)
 	use_button.visible = tiene_uso
-	use_button.disabled = not tiene_uso
+	use_button.disabled = not tiene_uso or _player == null or not is_instance_valid(_player)
 	equip_button.visible = es_armadura
 	equip_button.disabled = not es_armadura
 	place_button.visible = es_colocable
-	place_button.disabled = not es_colocable
+	place_button.disabled = not es_colocable or _player == null or not is_instance_valid(_player)
 	delete_button.text = "SOLTAR"
-	delete_button.disabled = indice_seleccionado < 0
+	delete_button.disabled = indice_seleccionado < 0 or _world_items == null or not is_instance_valid(_world_items) or _player == null or not is_instance_valid(_player)
 	delete_button.visible = true
 
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
