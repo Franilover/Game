@@ -46,7 +46,7 @@ func _validar_accion_simultanea(accion: Dictionary, paso_indice: int, accion_ind
 		var gesto := str(accion.get("gesto", "")).strip_edges().to_lower()
 		if not _es_parametro_dinamico(accion.get("gesto")) and gesto not in [
 			"asentir", "saludar", "trabajar", "sorpresa", "negar",
-			"reir", "triste", "inquieto", "aplaudir", "encogerse"
+			"reir", "triste", "inquieto", "aplaudir", "encogerse", "acomodarse"
 		]:
 			errores.append("%s: gesto no reconocido (%s)." % [prefijo, gesto])
 	return errores
@@ -116,7 +116,7 @@ func validar() -> Array[String]:
 				var gesto := str(paso.get("gesto", "asentir")).strip_edges().to_lower()
 				if paso.has("gesto") and not _es_parametro_dinamico(paso.get("gesto")) and gesto not in [
 					"asentir", "saludar", "trabajar", "sorpresa", "negar",
-					"reir", "triste", "inquieto", "aplaudir", "encogerse"
+					"reir", "triste", "inquieto", "aplaudir", "encogerse", "acomodarse"
 				]:
 					errores.append("Paso %d: gesto no reconocido (%s)." % [numero_paso, gesto])
 			"mirar_npc":
