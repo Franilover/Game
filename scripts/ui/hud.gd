@@ -333,7 +333,7 @@ func _actualizar_indicador_recarga_dash() -> void:
 
 	# El indicador es contextual al mundo: nunca debe quedar sobre el inventario.
 	for nodo in get_tree().get_nodes_in_group("inventory"):
-		if nodo is CanvasItem and (nodo as CanvasItem).visible:
+		if nodo is CanvasItem and (nodo as CanvasItem).is_visible_in_tree():
 			_dash_recharge_indicator.visible = false
 			return
 
