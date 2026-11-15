@@ -665,6 +665,10 @@ func _deduplicar_npcs_reino_torres() -> void:
 		var npc := npc_variant as Creature
 		var personaje_id := npc.get_personaje_game_id().strip_edges()
 		var clave_local := str(npc.get_meta("habitante_local_clave", "")).strip_edges()
+		if personaje_id.is_empty() and clave_local.is_empty():
+			var nombre_local := npc.get_nombre_visual().strip_edges().to_lower()
+			if nombre_local in ["mara", "ivo", "nima"]:
+				clave_local = nombre_local
 		var identidad := "personaje:" + personaje_id if not personaje_id.is_empty() else ("local:" + clave_local if not clave_local.is_empty() else "")
 		if identidad.is_empty():
 			continue
