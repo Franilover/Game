@@ -1392,14 +1392,26 @@ func restaurar_estado_guardado(estado: Dictionary) -> void:
 		push_warning("ReinoTorres: no se pudo restaurar el interior; entrada desconocida: " + entrada_id)
 		return
 
+	# GameState ya colocó al jugador en sus coordenadas guardadas dentro
+	# de la habitación. Conservarlas antes de reconstruir la capa interior.
+	var posicion_interior := _jugador.global_position
+	var posicion_exterior_guardada := Vector2.ZERO
+	var tiene_posicion_exterior := false
 	var exterior_variant: Variant = estado.get("posicion_exterior", {})
 	if exterior_variant is Dictionary:
 		var exterior := exterior_variant as Dictionary
-		_posicion_exterior = Vector2(float(exterior.get("x", 0.0)), float(exterior.get("y", 0.0)))
-		_jugador.global_position = _posicion_exterior
+		if exterior.has("x") and exterior.has("y"):
+			posicion_exterior_guardada = Vector2(
+				float(exterior.get("x", 0.0)),
+				float(exterior.get("y", 0.0))
+			)
+			tiene_posicion_exterior = true
 
-	var posicion_interior := _jugador.global_position
 	_entrar_al_interior(entrada_guardada)
+	if tiene_posicion_exterior:
+		# _entrar_al_interior captura la posición actual como salida; sustituirla
+		# por la posición exterior original guardada, no por la interior.
+		_posicion_exterior = posicion_exterior_guardada
 	_jugador.global_position = posicion_interior
 	print("ReinoTorres: interior restaurado → ", entrada_id)
 
