@@ -1348,8 +1348,10 @@ func _procesar_alimentacion() -> void:
 	if _objetivo_alimento == null or not _es_alimento_configurado(_objetivo_alimento):
 		_objetivo_alimento = _buscar_alimento()
 	if _objetivo_alimento == null:
-		criatura.detener_movimiento()
-		criatura.tomar_control_movimiento()
+		# Sin alimento a la vista, la criatura sigue recorriendo su entorno
+		# en vez de quedarse inmóvil durante todo el bloque de alimentación.
+		_establecer_velocidad(_velocidad_normal)
+		criatura.liberar_control_movimiento()
 		return
 	var alimentacion_variant: Variant = configuracion_ia.get("alimentacion", {})
 	var config: Dictionary = alimentacion_variant if alimentacion_variant is Dictionary else {}
