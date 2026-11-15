@@ -973,6 +973,8 @@ func _obtener_rutina_encuentro_trio(
 ) -> Dictionary:
 	if minutos < 1020 or minutos >= 1140 or not is_instance_valid(_relationship_system):
 		return {}
+	if not _obtener_evento_comunitario(dia_semana, minutos).is_empty():
+		return {}
 	var nombres: Array[String] = ["mara", "ivo", "nima"]
 	if npc_actual.get_nombre_visual().strip_edges().to_lower() not in nombres:
 		return {}
@@ -1032,6 +1034,17 @@ func _obtener_rutina_encuentro_trio(
 	var dia_elegido := dias_disponibles[indice_dia]
 	if dia_semana != dia_elegido or not _puede_participar_en_evento(rutina_actual):
 		return {}
+	# Comprueba también las invitaciones ya aceptadas de los otros dos.
+	for nombre in nombres:
+		var participante := participantes[nombre] as Creature
+		var base_actual: Dictionary
+		var lista_actual: Variant = participante.datos.get("rutinas", [])
+		if dia_semana == 4 and not bool(participante.get_meta("habitante_sin_oficio", false)):
+			base_actual = _seleccionar_rutina_dia_libre(participante, minutos)
+		else:
+			base_actual = _seleccionar_rutina(lista_actual, dia_semana, minutos, participante.get_nombre_visual())
+		if not _obtener_rutina_invitacion(participante, base_actual, minutos).is_empty():
+			return {}
 	var posiciones: Dictionary = {
 		"mara": Vector2(-42.0, 18.0),
 		"ivo": Vector2(42.0, 18.0),
