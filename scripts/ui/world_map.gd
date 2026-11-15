@@ -378,7 +378,11 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 	for aldeano in aldeanos:
 		var nombre: String = str(aldeano.call("get_nombre_visual")) if aldeano.has_method("get_nombre_visual") else aldeano.name
 		var posicion_local: Vector2
-		if bool(aldeano.get_meta("rutina_en_edificio", false)) and _zona_fija.has_method("obtener_posicion_mapa_npc"):
+		var tiene_edificio := (
+			bool(aldeano.get_meta("rutina_en_edificio", false))
+			or not str(aldeano.get_meta("rutina_edificio_id", "")).strip_edges().is_empty()
+		)
+		if tiene_edificio and _zona_fija.has_method("obtener_posicion_mapa_npc"):
 			var posicion_edificio: Variant = _zona_fija.call("obtener_posicion_mapa_npc", aldeano)
 			if posicion_edificio is Vector2:
 				posicion_local = posicion_edificio
