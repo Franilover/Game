@@ -1430,7 +1430,7 @@ func _detener_animacion_ocio_exterior(npc: Creature) -> void:
 func _separar_npcs_superpuestos() -> void:
 	var npcs: Array[Creature] = []
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if nodo is Creature and is_instance_valid(nodo):
+		if nodo is Creature and is_instance_valid(nodo) and not nodo.is_queued_for_deletion():
 			var npc := nodo as Creature
 			if npc.is_alive and npc.is_inside_tree():
 				npcs.append(npc)
