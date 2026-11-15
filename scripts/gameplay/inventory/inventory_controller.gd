@@ -267,9 +267,11 @@ func soltar_objeto_al_mundo(
 	if objeto.is_empty():
 		return false
 	# La creación/registración en el mundo ocurre antes de retirar el origen.
+	# Soltar desde el inventario es una acción de interfaz: debe poder completarse
+	# aunque el GameplayInputGate bloquee las acciones del personaje con el menú abierto.
 	if not world_items.soltar_objeto_al_mundo(objeto, posicion):
 		return false
-	return quitar_objeto(indice)
+	return quitar_cantidad_desde_ui(indice, int(objeto.get("cantidad", 1)))
 
 func establecer_objeto(indice: int, datos: Dictionary) -> bool:
 	if not puede_interactuar():
