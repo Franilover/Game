@@ -425,9 +425,14 @@ func _obtener_ciclo_variante(variante: Dictionary) -> String:
 		return ""
 	if repeticion == "unica":
 		return "unica"
-	if repeticion == "diaria":
+	if repeticion == "diaria" or repeticion == "diario":
 		return "dia:%d:%d" % [anio, dia]
-	if repeticion == "anual":
+	if repeticion == "semanal" or repeticion == "semanalmente":
+		var semana := int(floor(float(maxi(dia, 1) - 1) / 7.0))
+		return "semana:%d:%d" % [anio, semana]
+	if repeticion == "estacional" or repeticion == "por_estacion":
+		return "estacion:%d:%s" % [anio, str(contexto.get("estacion_id", ""))]
+	if repeticion == "anual" or repeticion == "anualmente":
 		return "anio:%d" % anio
 	if repeticion == "social" or (requisito_social_variant is Dictionary and not (requisito_social_variant as Dictionary).is_empty()):
 		return "unica"
@@ -672,6 +677,7 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	var principal: Dictionary = {}
 	var mejor_mision: Dictionary = {}
 	var prioridad_mision := -2147483648
+	var especificidad_mision := -1
 	var mission_manager_local: MissionManagerService = mission_manager
 	for variante_variant in variantes_variant as Array:
 		if not variante_variant is Dictionary:
@@ -688,9 +694,15 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 					and not _variante_ya_mostrada(variante, personaje_id)
 				):
 					var prioridad := int(variante.get("prioridad", 0))
-					if mejor_mision.is_empty() or prioridad > prioridad_mision:
+					var especificidad := _obtener_especificidad_variante(variante)
+					if (
+						mejor_mision.is_empty()
+						or prioridad > prioridad_mision
+						or (prioridad == prioridad_mision and especificidad > especificidad_mision)
+					):
 						mejor_mision = variante
 						prioridad_mision = prioridad
+						especificidad_mision = especificidad
 				continue
 
 		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
@@ -736,6 +748,17 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		return principal
 	return datos.duplicate(true)
 
+## Desempata variantes de igual prioridad favoreciendo la condición más concreta.
+## Así el resultado no depende del orden en que Supabase entregue el JSON.
+func _obtener_especificidad_variante(variante: Dictionary) -> int:
+	var especificidad := 0
+	for campo in ["requisito", "requisito_contextual", "requisito_social"]:
+		var requisito_variant: Variant = variante.get(campo, {})
+		if requisito_variant is Dictionary:
+			especificidad += (requisito_variant as Dictionary).size()
+	return especificidad
+
+
 func _obtener_personaje_id_actual() -> String:
 	if not is_instance_valid(_fuente):
 		return ""
@@ -759,6 +782,7 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 	var relacion := social.obtener_relacion(personaje_id)
 	var mejor: Dictionary = {}
 	var mejor_prioridad := -2147483648
+	var mejor_especificidad := -1
 
 	for variante_variant in variantes:
 		if not variante_variant is Dictionary:
@@ -780,9 +804,15 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 				continue
 
 		var prioridad := int(variante.get("prioridad", 0))
-		if mejor.is_empty() or prioridad > mejor_prioridad:
+		var especificidad := _obtener_especificidad_variante(variante)
+		if (
+			mejor.is_empty()
+			or prioridad > mejor_prioridad
+			or (prioridad == mejor_prioridad and especificidad > mejor_especificidad)
+		):
 			mejor = variante.duplicate(true)
 			mejor_prioridad = prioridad
+			mejor_especificidad = especificidad
 
 	return mejor
 
