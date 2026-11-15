@@ -1908,6 +1908,8 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 					"importancia": _obtener_importancia_tema(tema)
 				})
 			_agregar_opciones_conocimiento_npc(opciones_datos, personaje_id)
+			_agregar_opcion_acontecimiento_actual(opciones_datos)
+			_agregar_opcion_consecuencia_social(opciones_datos, personaje_id)
 			return _completar_opciones_conversacion(opciones_datos, relacion)
 
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
@@ -2000,11 +2002,94 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 		"importancia": 2.0
 	})
 	_agregar_opciones_conocimiento_npc(opciones_generales, _fuente.get_personaje_game_id())
+	_agregar_opcion_acontecimiento_actual(opciones_generales)
+	_agregar_opcion_consecuencia_social(opciones_generales, _fuente.get_personaje_game_id())
 	return _completar_opciones_conversacion(opciones_generales, relationship_system.obtener_relacion(_fuente.get_personaje_game_id()) if relationship_system != null else {})
 
 
 ## Los conocimientos que llegaron por conversaciones entre habitantes pueden
 ## convertirse en temas del diálogo individual, conservando su procedencia.
+## Los acontecimientos comunitarios actuales generan temas temporales para
+## quienes realmente están participando en ellos.
+func _agregar_opcion_acontecimiento_actual(opciones: Array[Dictionary]) -> void:
+	if not is_instance_valid(_fuente):
+		return
+	var clave_evento := str(_fuente.get_meta("evento_comunitario_actual", "")).strip_edges()
+	if clave_evento.is_empty():
+		return
+	var titulo := ""
+	var respuesta := ""
+	match clave_evento:
+		"mercado_vecinal":
+			titulo = "el mercado de hoy"
+			respuesta = "Hoy hay bastante movimiento en la plaza. Me gusta encontrarme con los demás sin tener que organizarlo todo de antemano."
+		"comida_comunitaria":
+			titulo = "la comida comunitaria"
+			respuesta = "Es agradable compartir un rato con los vecinos. No siempre tenemos tiempo para sentarnos todos juntos."
+		"celebracion_estacional":
+			titulo = "el cambio de estación"
+			respuesta = "El cambio de estación siempre modifica el ritmo del reino. Hoy parece que todos han encontrado un momento para reunirse."
+		_:
+			titulo = str(_fuente.get_meta("actividad_actual", "la actividad de hoy")).replace("_", " ")
+			respuesta = "Hoy hay una actividad comunitaria en Torres. Es una buena ocasión para encontrarse con otros habitantes."
+	if titulo.is_empty():
+		return
+	var clave := "acontecimiento_" + clave_evento
+	for existente in opciones:
+		if str(existente.get("clave", "")) == clave:
+			return
+	opciones.append({
+		"clave": clave,
+		"texto": "Hablar sobre " + titulo,
+		"jugador": "¿Qué te parece " + titulo + "?",
+		"respuesta": respuesta,
+		"evento": "interesarse",
+		"importancia": 2.0
+	})
+
+
+## Los patrones se forman a partir de acciones repetidas y persistentes,
+## no de una sola respuesta aislada.
+func _agregar_opcion_consecuencia_social(opciones: Array[Dictionary], personaje_id: String) -> void:
+	if relationship_system == null or not is_instance_valid(relationship_system):
+		return
+	if not relationship_system.has_method("obtener_tendencias_sociales"):
+		return
+	var tendencias: Dictionary = relationship_system.call("obtener_tendencias_sociales", personaje_id)
+	var texto := ""
+	var respuesta := ""
+	var clave := ""
+	if int(tendencias.get("promesas_cumplidas", 0)) >= 2:
+		clave = "consecuencia_constancia"
+		texto = "tu constancia"
+		respuesta = "He notado que sueles cumplir lo que dices. Con el tiempo, eso hace más fácil confiar en alguien."
+	elif int(tendencias.get("promesas_rotas", 0)) >= 2:
+		clave = "consecuencia_promesas_rotas"
+		texto = "las promesas"
+		respuesta = "Recuerdo que algunas cosas que prometiste no llegaron a ocurrir. No voy a fingir que no pasó; la confianza necesita tiempo para recuperarse."
+	elif int(tendencias.get("ayudas", 0)) >= 3:
+		clave = "consecuencia_apoyo"
+		texto = "la ayuda que has ofrecido"
+		respuesta = "Has estado presente en varias ocasiones. No olvido esos gestos, aunque a veces no encuentre la forma de agradecértelos."
+	elif int(tendencias.get("faltas_respeto", 0)) >= 2:
+		clave = "consecuencia_limites"
+		texto = "el respeto"
+		respuesta = "Algunas conversaciones anteriores me hicieron sentir que no estabas escuchando mis límites. Prefiero que podamos hablar con más cuidado."
+	if clave.is_empty():
+		return
+	for existente in opciones:
+		if str(existente.get("clave", "")) == clave:
+			return
+	opciones.append({
+		"clave": clave,
+		"texto": "Hablar sobre " + texto,
+		"jugador": "Quería hablar sobre cómo han sido nuestras últimas interacciones.",
+		"respuesta": respuesta,
+		"evento": "interesarse",
+		"importancia": 3.5
+	})
+
+
 func _agregar_opciones_conocimiento_npc(opciones: Array[Dictionary], personaje_id: String) -> void:
 	if relationship_system == null or not is_instance_valid(relationship_system):
 		return
@@ -2175,6 +2260,17 @@ func _obtener_importancia_tema(tema: Dictionary) -> float:
 
 
 func _cumple_requisitos_tema_conversacion(tema: Dictionary, relacion: Dictionary, recuerdos: Array) -> bool:
+	var limite_variant: Variant = tema.get("limite_personal", {})
+	if limite_variant is Dictionary:
+		var limite := limite_variant as Dictionary
+		for eje in ["amistad", "confianza", "respeto", "afecto"]:
+			if limite.has(eje + "_min") and float(relacion.get(eje, 0.0)) < float(limite.get(eje + "_min", 0.0)):
+				return false
+			if limite.has(eje + "_max") and float(relacion.get(eje, 0.0)) > float(limite.get(eje + "_max", 0.0)):
+				return false
+		var requiere_recuerdo := str(limite.get("requiere_tema", "")).strip_edges()
+		if not requiere_recuerdo.is_empty() and not _recuerdos_contienen_tema(recuerdos, requiere_recuerdo):
+			return false
 	var requisito_social_variant: Variant = tema.get("requisito_social", {})
 	if requisito_social_variant is Dictionary:
 		var requisito_social := requisito_social_variant as Dictionary
