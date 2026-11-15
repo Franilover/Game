@@ -892,6 +892,12 @@ func _crear_dialogo_iniciativa_amigo(npc: Creature, tiempo: Dictionary) -> Dicti
 			pregunta = "¡Ah, justo a quien quería encontrar! ¿Cómo estás? ¿Tienes planes para hoy o vas a improvisar?"
 		"narel":
 			pregunta = "Me preguntaba cómo te ha ido estos días. ¿Tienes algún plan para hoy o algo que te interese investigar?"
+		"mara":
+			pregunta = "Hola. Me alegra verte. ¿Cómo ha estado tu día? Si tienes tiempo, podemos conversar un momento."
+		"nima":
+			pregunta = "¡Qué bueno verte! Hoy terminé unas notas y pensaba salir un rato. ¿Cómo te ha ido?"
+		"ivo":
+			pregunta = "¡Justo quería saludarte! Hoy voy a mi ritmo, pero tengo ganas de conversar. ¿Cómo estás?"
 	var respuestas := _crear_respuestas_iniciativa(npc, "amistad", false)
 	_agregar_respuesta_invitacion(respuestas, npc, tiempo)
 	return {
@@ -909,9 +915,10 @@ func _agregar_respuesta_invitacion(respuestas: Array[Dictionary], npc: Creature,
 		return
 	var dia_actual := int(tiempo.get("dia", 1))
 	var anio_actual := int(tiempo.get("anio", 0))
+	var dias_por_anio := maxi(1, _world_atmosphere.dias_por_anio if is_instance_valid(_world_atmosphere) else 365)
 	var dia_objetivo := dia_actual + 1
 	var anio_objetivo := anio_actual
-	if dia_objetivo > 365:
+	if dia_objetivo > dias_por_anio:
 		dia_objetivo = 1
 		anio_objetivo += 1
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
