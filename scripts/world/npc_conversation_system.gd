@@ -375,7 +375,11 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 
 	var nombre := npc_interactuado.get_nombre_visual().strip_edges().to_lower()
 	if not _conversacion_activa.is_empty():
-		var participa := nombre == str(_conversacion_activa.get("npc_a", "")) or nombre == str(_conversacion_activa.get("npc_b", ""))
+		var participa := (
+			nombre == str(_conversacion_activa.get("npc_a", ""))
+			or nombre == str(_conversacion_activa.get("npc_b", ""))
+			or nombre == str(_conversacion_activa.get("npc_c", ""))
+		)
 		if participa:
 			# La burbuja de la intervención actual puede haberse ocultado si el
 			# jugador estaba lejos. Se vuelve a mostrar sin reiniciar su tiempo.
@@ -1151,6 +1155,8 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 	var npcs := _obtener_npcs_torres()
 	if npcs.size() < 2:
 		return
+	if _buscar_encuentro_trio_mara_ivo_nima(jugador, clave_dia):
+		return
 	if _buscar_rutina_compartida(jugador, tiempo, clave_dia):
 		return
 
@@ -1565,7 +1571,12 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 
 	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
 	var npc_b := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
+	var nombre_c := str(_conversacion_activa.get("npc_c", ""))
+	var npc_c := _npc_por_nombre.get(nombre_c) as Creature if not nombre_c.is_empty() else null
 	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		_finalizar_conversacion()
+		return
+	if not nombre_c.is_empty() and not _npc_puede_conversar(npc_c):
 		_finalizar_conversacion()
 		return
 	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 1.5:
@@ -1574,6 +1585,11 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 	var distancia_a := jugador.global_position.distance_to(npc_a.global_position)
 	var distancia_b := jugador.global_position.distance_to(npc_b.global_position)
 	var distancia_jugador := minf(distancia_a, distancia_b)
+	if is_instance_valid(npc_c):
+		if npc_a.global_position.distance_to(npc_c.global_position) > DISTANCIA_ENTRE_NPC * 1.5 or npc_b.global_position.distance_to(npc_c.global_position) > DISTANCIA_ENTRE_NPC * 1.5:
+			_finalizar_conversacion()
+			return
+		distancia_jugador = minf(distancia_jugador, jugador.global_position.distance_to(npc_c.global_position))
 	if _jugador_observando_conversacion:
 		if distancia_jugador > DISTANCIA_SALIDA_OBSERVACION:
 			_ocultar_burbujas()
@@ -1823,6 +1839,75 @@ func _registrar_rutina_compartida() -> void:
 		_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
 
 
+## Conversación de tres participantes: sólo se activa cuando el encuentro
+## programado está completo y las tres personas están realmente presentes.
+func _buscar_encuentro_trio_mara_ivo_nima(jugador: Node2D, clave_dia: String) -> bool:
+	if not is_instance_valid(jugador) or not is_instance_valid(_relationship_system):
+		return false
+	if bool(_vistas_por_dia.get("encuentro_trio_mara_ivo_nima", false)):
+		return false
+	var nombres: Array[String] = ["mara", "ivo", "nima"]
+	var participantes: Dictionary = {}
+	for nombre in nombres:
+		var npc := _npc_por_nombre.get(nombre) as Creature
+		if not _npc_puede_conversar(npc):
+			return false
+		if str(npc.get_meta("rutina_actual", "")) != "encuentro_trio_mara_ivo_nima":
+			return false
+		if str(npc.get_meta("rutina_ubicacion", "")) != "plaza":
+			return false
+		participantes[nombre] = npc
+	var mara := participantes["mara"] as Creature
+	var ivo := participantes["ivo"] as Creature
+	var nima := participantes["nima"] as Creature
+	if mara.global_position.distance_to(ivo.global_position) > 150.0:
+		return false
+	if mara.global_position.distance_to(nima.global_position) > 150.0 or ivo.global_position.distance_to(nima.global_position) > 150.0:
+		return false
+	var centro := (mara.global_position + ivo.global_position + nima.global_position) / 3.0
+	if jugador.global_position.distance_to(centro) > DISTANCIA_JUGADOR + 45.0:
+		return false
+	var relacion_mara_ivo := _relationship_system.obtener_relacion_entre_npc(mara.get_personaje_game_id(), ivo.get_personaje_game_id())
+	var relacion_mara_nima := _relationship_system.obtener_relacion_entre_npc(mara.get_personaje_game_id(), nima.get_personaje_game_id())
+	var relacion_ivo_nima := _relationship_system.obtener_relacion_entre_npc(ivo.get_personaje_game_id(), nima.get_personaje_game_id())
+	var cercania_total := 0.0
+	var tension_total := 0.0
+	for relacion in [relacion_mara_ivo, relacion_mara_nima, relacion_ivo_nima]:
+		if int(relacion.get("interacciones", 0)) < 1:
+			return false
+		cercania_total += float(relacion.get("amistad", 0.0)) + float(relacion.get("confianza", 0.0)) + float(relacion.get("afecto", 0.0)) + float(relacion.get("colaboracion", 0.0))
+		tension_total += float(relacion.get("tension", 0.0))
+	var lineas: Array[Dictionary]
+	if tension_total >= 4.0 or cercania_total < 5.0:
+		lineas = [
+			{"npc":"nima","texto":"He dejado las notas a un lado por un rato. No hace falta que convirtamos cada encuentro en una investigación."},
+			{"npc":"ivo","texto":"Eso me tranquiliza. Hoy prefiero que no todo gire alrededor de cómo me encuentro."},
+			{"npc":"mara","texto":"Podemos hablar de cualquier otra cosa. Y si alguno quiere marcharse, no tiene que dar explicaciones."},
+			{"npc":"nima","texto":"De acuerdo. Quería pasar tiempo con ustedes, no hacerles preguntas."},
+			{"npc":"ivo","texto":"Entonces quedémonos un rato. Sin planes demasiado largos."}
+		]
+	else:
+		lineas = [
+			{"npc":"nima","texto":"He dejado las notas en casa. Hoy quería encontrarme con ustedes sin estar pendiente del cuaderno."},
+			{"npc":"ivo","texto":"Eso sí que es una novedad. ¿Podemos hablar de algo que no sea mi cansancio?"},
+			{"npc":"mara","texto":"Podemos intentarlo. Aunque no prometo que Nima no encuentre algo interesante que observar."},
+			{"npc":"nima","texto":"Sólo si ustedes me dan motivos. Por ahora me basta con que hayamos coincidido."},
+			{"npc":"ivo","texto":"Me gusta esto. Estamos los tres y nadie tiene que seguir el ritmo de los demás."},
+			{"npc":"mara","texto":"Entonces aprovechemos el rato. Podemos quedarnos aquí todo el tiempo que nos apetezca."}
+		]
+	_iniciar_conversacion({
+		"clave": "encuentro_trio_mara_ivo_nima_" + clave_dia.replace(":", "_"),
+		"npc_a": "mara",
+		"npc_b": "ivo",
+		"npc_c": "nima",
+		"lineas": lineas,
+		"solo_ambiental_local": true,
+		"_cinematica_trio": true
+	})
+	_vistas_por_dia["encuentro_trio_mara_ivo_nima"] = true
+	return true
+
+
 ## Las rutinas se repiten con cadencia moderada y sólo se muestran si los
 ## participantes coinciden de forma natural y el jugador está cerca.
 func _buscar_rutina_compartida(jugador: Node2D, tiempo: Dictionary, clave_dia: String) -> bool:
@@ -1913,6 +1998,23 @@ func _registrar_dinamica_social_conversacion() -> void:
 		}
 	)
 
+	# En una escena de tres, se conserva el historial de cada vínculo sin
+	# conceder aumentos automáticos de amistad o confianza.
+	var nombre_c := str(_conversacion_activa.get("npc_c", "")).strip_edges().to_lower()
+	if not nombre_c.is_empty():
+		var npc_c := _npc_por_nombre.get(nombre_c) as Creature
+		if is_instance_valid(npc_c):
+			var id_c := npc_c.get_personaje_game_id().strip_edges()
+			if not id_c.is_empty() and id_c != id_a and id_c != id_b:
+				var recuerdo_trio := {
+					"tipo": "encuentro_grupal",
+					"clave": str(_conversacion_activa.get("clave", "")),
+					"participantes": [nombre_a, nombre_b, nombre_c],
+					"momento": Time.get_datetime_string_from_system(true)
+				}
+				_relationship_system.registrar_interaccion_entre_npc(id_a, id_c, {}, recuerdo_trio)
+				_relationship_system.registrar_interaccion_entre_npc(id_b, id_c, {}, recuerdo_trio)
+
 	var conocimientos_variant: Variant = _conversacion_activa.get("conocimientos", [])
 	if conocimientos_variant is Array:
 		for conocimiento_variant in conocimientos_variant as Array:
@@ -1970,6 +2072,18 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):
 		_guardar_objeto_del_acontecimiento()
 		_iniciar_actividad_del_acontecimiento()
+	if completada and bool(_conversacion_activa.get("_cinematica_trio", false)):
+		var npc_a_trio := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
+		var npc_b_trio := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
+		if is_instance_valid(npc_a_trio) and is_instance_valid(npc_b_trio):
+			var centro_trio := (npc_a_trio.global_position + npc_b_trio.global_position) * 0.5
+			cinematica_narrativa_solicitada.emit(
+				"encuentro_trio_mara_ivo_nima",
+				npc_a_trio.get_nombre_visual(),
+				npc_b_trio.get_nombre_visual(),
+				centro_trio,
+				1
+			)
 	if completada and not bool(_conversacion_activa.get("_reunion_castillo", false)) and not _conversacion_activa.is_empty():
 		var clave := str(_conversacion_activa.get("clave", ""))
 		var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
