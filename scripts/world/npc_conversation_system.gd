@@ -431,17 +431,33 @@ func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2
 	var nombre := npc_interactuado.get_nombre_visual().strip_edges().to_lower()
 	var npc_a_nombre := str(_conversacion_activa.get("npc_a", ""))
 	var npc_b_nombre := str(_conversacion_activa.get("npc_b", ""))
-	if nombre != npc_a_nombre and nombre != npc_b_nombre:
+	var npc_c_nombre := str(_conversacion_activa.get("npc_c", ""))
+	if nombre != npc_a_nombre and nombre != npc_b_nombre and nombre != npc_c_nombre:
 		return false
 
 	var npc_a := _npc_por_nombre.get(npc_a_nombre) as Creature
 	var npc_b := _npc_por_nombre.get(npc_b_nombre) as Creature
+	var npc_c: Creature = null
+	if not npc_c_nombre.is_empty():
+		npc_c = _npc_por_nombre.get(npc_c_nombre) as Creature
 	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
 		return false
-	if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR + 48.0 and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR + 48.0:
+	if not npc_c_nombre.is_empty() and not _npc_puede_conversar(npc_c):
+		return false
+	var cerca_de_participantes := (
+		jugador.global_position.distance_to(npc_a.global_position) <= DISTANCIA_JUGADOR + 48.0
+		or jugador.global_position.distance_to(npc_b.global_position) <= DISTANCIA_JUGADOR + 48.0
+	)
+	if is_instance_valid(npc_c):
+		cerca_de_participantes = cerca_de_participantes or jugador.global_position.distance_to(npc_c.global_position) <= DISTANCIA_JUGADOR + 48.0
+	if not cerca_de_participantes:
 		return false
 
-	var otro_nombre := npc_b_nombre if nombre == npc_a_nombre else npc_a_nombre
+	var otros_nombres: Array[String] = []
+	for participante_nombre in [npc_a_nombre, npc_b_nombre, npc_c_nombre]:
+		if not participante_nombre.is_empty() and participante_nombre != nombre:
+			otros_nombres.append(participante_nombre)
+	var otro_nombre := " y ".join(otros_nombres)
 	var nombre_visible := npc_interactuado.get_nombre_visual()
 	var respuestas: Array[Dictionary] = _crear_respuestas_intervencion(nombre)
 	var datos_dialogo := {
