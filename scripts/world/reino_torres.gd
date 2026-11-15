@@ -1130,6 +1130,21 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	print("ReinoTorres: entrando a ", entrada["id"])
 
 
+## Registra NPCs creados después de entrar a un edificio. La entidad sigue
+## perteneciendo al contenedor exterior y debe permanecer oculta/no interactuable
+## hasta que el jugador vuelva a salir del interior.
+func registrar_npc_materializado(npc: Node) -> void:
+	if not _interior_activo or not is_instance_valid(npc):
+		return
+	if _contenedor_npcs_exterior == null:
+		_contenedor_npcs_exterior = npc.get_parent()
+	if is_instance_valid(_contenedor_npcs_exterior) and npc.get_parent() != _contenedor_npcs_exterior:
+		npc.reparent(_contenedor_npcs_exterior, true)
+	if npc is CanvasItem:
+		(npc as CanvasItem).visible = false
+	npc.remove_from_group("interactable")
+
+
 func _ocultar_npcs_exteriores() -> void:
 	_visibilidad_npcs_exterior.clear()
 	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
