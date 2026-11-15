@@ -180,6 +180,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
 		_aplicar_rutina(npc, dia_semana, minutos)
+		_actualizar_paseo_ambiental_exterior(npc, minutos)
 	_actualizar_interaccion_panaderia()
 
 
@@ -694,6 +695,10 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		destino_local += posicion_plaza
 		destino_local += variacion_posicion
 	var destino_global := _zona.to_global(destino_local)
+	if ubicacion == "plaza":
+		npc.set_meta("rutina_ancla_ocio", destino_global)
+	else:
+		npc.remove_meta("rutina_ancla_ocio")
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
 		push_warning("NPCScheduleSystem: " + npc.get_nombre_visual() + " no tiene CreatureMovement.")
@@ -1183,6 +1188,72 @@ func _detener_animacion_actividad_interior(npc: Creature) -> void:
 		sprite.rotation = float(npc.get_meta("animacion_actividad_interior_rotacion", sprite.rotation))
 	for clave in ["animacion_actividad_interior_activa", "animacion_actividad_interior_clave", "animacion_actividad_interior_posicion", "animacion_actividad_interior_rotacion", "animacion_actividad_interior_escala", "animacion_actividad_interior_tween"]:
 		npc.remove_meta(clave)
+
+
+## Pequeños paseos alrededor del punto asignado. Mantienen al NPC en su
+## zona de actividad y usan rutas reales, con pausas individuales y sin sincronía.
+func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
+	if not is_instance_valid(npc):
+		return
+	if (
+		bool(npc.get_meta("rutina_en_edificio", false))
+		or bool(npc.get_meta("rutina_en_transito", false))
+		or bool(npc.get_meta("actividad_social_activa", false))
+		or bool(npc.get_meta("acercamiento_social_activo", false))
+		or bool(npc.get_meta("_conversacion_ambiental_activa", false))
+		or bool(npc.get_meta("cinematica_npc_activa", false))
+	):
+		return
+	if str(npc.get_meta("rutina_ubicacion", "")) != "plaza":
+		return
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if not is_instance_valid(movimiento):
+		return
+	if bool(npc.get_meta("rutina_paseo_exterior_activo", false)):
+		if movimiento.rutina_terminada():
+			npc.remove_meta("rutina_paseo_exterior_activo")
+			npc.set_meta("rutina_en_transito", false)
+			var pausa := 3 + posmod(hash(npc.get_nombre_visual() + "|" + str(minutos)), 7)
+			npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + pausa, 1440))
+		return
+	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	if is_instance_valid(jugador) and jugador.global_position.distance_to(npc.global_position) < 58.0:
+		npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + 1, 1440))
+		return
+	var siguiente := int(npc.get_meta("rutina_paseo_exterior_siguiente", -1))
+	if siguiente < 0:
+		var espera := 1 + posmod(hash(npc.get_nombre_visual() + "|plaza"), 8)
+		npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + espera, 1440))
+		return
+	if posmod(minutos - siguiente, 1440) > 720:
+		return
+	if not is_instance_valid(_zona) or not _malla_lista:
+		return
+	var ancla: Vector2 = npc.get_meta("rutina_ancla_ocio", npc.global_position)
+	var desplazamientos: Array[Vector2] = [
+		Vector2(-28.0, -12.0), Vector2(24.0, -18.0),
+		Vector2(32.0, 10.0), Vector2(-18.0, 28.0),
+		Vector2(4.0, -34.0), Vector2(18.0, 32.0),
+		Vector2(-34.0, 12.0)
+	]
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
+	var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
+	var indice := posmod(hash(npc.get_nombre_visual() + "|" + fecha + "|" + str(minutos / 5)), desplazamientos.size())
+	var destino := ancla + desplazamientos[indice]
+	for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
+			continue
+		var otro := otro_variant as Creature
+		if not bool(otro.get_meta("rutina_en_edificio", false)) and otro.global_position.distance_to(destino) < 28.0:
+			destino = ancla + desplazamientos[posmod(indice + 1, desplazamientos.size())]
+			break
+	var ruta := _crear_ruta(npc.global_position, _zona.to_global(destino))
+	if ruta.is_empty():
+		npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + 2, 1440))
+		return
+	movimiento.establecer_ruta(ruta)
+	npc.set_meta("rutina_paseo_exterior_activo", true)
+	npc.set_meta("rutina_en_transito", true)
 
 
 func _actualizar_interaccion_panaderia() -> void:
