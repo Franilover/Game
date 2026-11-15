@@ -478,12 +478,6 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Las reuniones nocturnas ya no desplazan a toda la población.
 	# Cada personaje conserva su horario y sólo acude si su propia rutina lo indica.
 
-	# Los encuentros grupales sólo sustituyen tiempo realmente libre y requieren
-	# que los tres participantes tengan vínculos e historia compartida.
-	var encuentro_trio := _obtener_rutina_encuentro_trio(npc, dia_semana, minutos, rutina)
-	if not encuentro_trio.is_empty():
-		rutina = encuentro_trio
-
 	# Las rutinas de trabajo y los horarios canónicos permanecen intactos.
 	# Sólo se matizan los momentos libres con actividades propias.
 	rutina = _aplicar_variacion_tiempo_libre(npc, rutina, dia_semana, minutos)
@@ -512,6 +506,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		_notificar_evento_comunitario(evento_comunitario)
 	else:
 		npc.set_meta("evento_comunitario_actual", "")
+
+	# El encuentro de tres sólo puede usar tiempo libre que no esté reservado
+	# por invitaciones ni acontecimientos comunitarios.
+	var encuentro_trio := _obtener_rutina_encuentro_trio(npc, dia_semana, minutos, rutina)
+	if not encuentro_trio.is_empty():
+		rutina = encuentro_trio
 
 	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
