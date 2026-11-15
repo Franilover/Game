@@ -1231,6 +1231,8 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 		return
 	if not is_instance_valid(_zona) or not _malla_lista:
 		return
+	if not npc.has_meta("rutina_ancla_ocio"):
+		npc.set_meta("rutina_ancla_ocio", npc.global_position)
 	var ancla: Vector2 = npc.get_meta("rutina_ancla_ocio", npc.global_position)
 	var desplazamientos: Array[Vector2] = [
 		Vector2(-28.0, -12.0), Vector2(24.0, -18.0),
@@ -1249,7 +1251,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 		if not bool(otro.get_meta("rutina_en_edificio", false)) and otro.global_position.distance_to(destino) < 28.0:
 			destino = ancla + desplazamientos[posmod(indice + 1, desplazamientos.size())]
 			break
-	var ruta := _crear_ruta(npc.global_position, _zona.to_global(destino))
+	var ruta := _crear_ruta(npc.global_position, destino)
 	if ruta.is_empty():
 		npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + 2, 1440))
 		return
