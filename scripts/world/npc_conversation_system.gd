@@ -1829,7 +1829,8 @@ func _buscar_rutina_compartida(jugador: Node2D, tiempo: Dictionary, clave_dia: S
 	var rutinas_variant: Variant = _progreso_parejas.get("_rutinas_compartidas", {})
 	if not rutinas_variant is Dictionary:
 		return false
-	var numero_dia := int(tiempo.get("anio", 0)) * 365 + int(tiempo.get("dia", 1))
+	var dias_por_anio := maxi(1, _world_atmosphere.dias_por_anio if is_instance_valid(_world_atmosphere) else 365)
+	var numero_dia := int(tiempo.get("anio", 0)) * dias_por_anio + int(tiempo.get("dia", 1))
 	var rutinas := (rutinas_variant as Dictionary).duplicate(true)
 	for clave_variant in rutinas.keys():
 		var clave := str(clave_variant)
