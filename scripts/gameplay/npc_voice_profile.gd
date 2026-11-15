@@ -23,7 +23,6 @@ static func adaptar(texto_original: String, nombre_personaje: String) -> String:
 		["procurar ", "tratar de "],
 		["en este momento", "ahora"],
 		["por el momento", "por ahora"],
-		["No hace falta que", "No tienes que"],
 		["si necesitas", "si te hace falta"],
 		["Si necesitas", "Si te hace falta"]
 	]
