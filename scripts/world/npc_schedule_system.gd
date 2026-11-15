@@ -797,8 +797,6 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	if not is_instance_valid(npc) or not is_instance_valid(_zona) or not _malla_lista:
 		return
 	var fase := maxi(0, int((minutos - 1260) / 45))
-	if int(npc.get_meta("reunion_castillo_fase", -1)) == fase:
-		return
 	var inicio_fase := 1260 + fase * 45
 	var id_npc := npc.get_personaje_game_id().strip_edges()
 	var retraso := posmod(hash(id_npc if not id_npc.is_empty() else npc.get_nombre_visual()), 9)
@@ -820,6 +818,16 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 		var id_b := b.get_personaje_game_id().strip_edges()
 		return id_a < id_b if id_a != id_b else a.get_nombre_visual() < b.get_nombre_visual()
 	)
+	var ids_asistentes: Array[String] = []
+	for asistente in habitantes:
+		var id_asistente := asistente.get_personaje_game_id().strip_edges()
+		ids_asistentes.append(id_asistente if not id_asistente.is_empty() else asistente.get_nombre_visual().to_lower())
+	var firma_asistentes := "|".join(ids_asistentes)
+	if (
+		int(npc.get_meta("reunion_castillo_fase", -1)) == fase
+		and str(npc.get_meta("reunion_castillo_firma_asistentes", "")) == firma_asistentes
+	):
+		return
 	var grupos := _formar_grupos_sociales_castillo(habitantes)
 	var grupo_npc := -1
 	var puesto_npc := -1
@@ -879,6 +887,7 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 			integrante.set_meta("puesto_social_castillo", grupos[grupo_npc].find(integrante))
 			integrante.set_meta("reunion_castillo_dia", str(_world_atmosphere.obtener_tiempo().get("anio", 0)) + ":" + str(_world_atmosphere.obtener_tiempo().get("dia", 1)))
 	npc.set_meta("reunion_castillo_fase", fase)
+	npc.set_meta("reunion_castillo_firma_asistentes", firma_asistentes)
 
 
 ## Construye grupos de hasta tres personas priorizando amistades y vínculos
