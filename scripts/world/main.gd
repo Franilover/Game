@@ -1734,8 +1734,14 @@ func _ejecutar_cinematica_intercambio_social(
 ) -> void:
 	if not is_instance_valid(_cutscene_director):
 		return
-	var tercero := _buscar_tercero_cinematica(nombre_a, nombre_b, centro)
 	var es_encuentro_trio := clave.contains("encuentro_trio_mara_ivo_nima")
+	var tercero: Creature
+	if es_encuentro_trio:
+		tercero = _buscar_npc_cinematica("nima")
+		if not is_instance_valid(tercero) or tercero.global_position.distance_to(centro) > 150.0:
+			tercero = null
+	else:
+		tercero = _buscar_tercero_cinematica(nombre_a, nombre_b, centro)
 	var usar_tercero := is_instance_valid(tercero) and (es_encuentro_trio or posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 1)
 	var usar_interrupcion := posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 0
 	var ruta_secuencia := "res://resources/cutscenes/intercambio_con_tercero.tres" if usar_tercero else ("res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres")
