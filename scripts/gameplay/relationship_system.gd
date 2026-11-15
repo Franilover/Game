@@ -311,28 +311,30 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 		for i in range(lista.size()):
 			if not lista[i] is Dictionary:
 				continue
-			var existente := lista[i] as Dictionary
+			var candidato_existente := lista[i] as Dictionary
 			if (
-				str(existente.get("tipo", "")) == "tema_conversacion"
-				and str(existente.get("clave", "")).strip_edges() == clave
+				str(candidato_existente.get("tipo", "")) == "tema_conversacion"
+				and str(candidato_existente.get("clave", "")).strip_edges() == clave
 			):
 				indice_existente = i
 				break
 
 	if indice_existente >= 0:
-		var existente := (lista[indice_existente] as Dictionary).duplicate(true)
-		var veces := maxi(1, int(existente.get("veces_conversado", 1))) + 1
-		var uid := str(existente.get("recuerdo_uid", ""))
-		var mencionado := bool(existente.get("mencionado_en_dialogo", false))
-		var primera_vez := str(existente.get("primer_momento", existente.get("momento", "")))
+		var registro_actualizado := (lista[indice_existente] as Dictionary).duplicate(true)
+		var veces := maxi(1, int(registro_actualizado.get("veces_conversado", 1))) + 1
+		var uid := str(registro_actualizado.get("recuerdo_uid", ""))
+		var mencionado := bool(registro_actualizado.get("mencionado_en_dialogo", false))
+		var primera_vez := str(registro_actualizado.get("primer_momento", registro_actualizado.get("momento", "")))
+		var importancia_anterior := float(registro_actualizado.get("importancia", 1.0))
 		for campo in nuevo_recuerdo.keys():
-			existente[campo] = nuevo_recuerdo[campo]
-		existente["recuerdo_uid"] = uid if not uid.is_empty() else "%s:%d:%d" % [personaje_id, Time.get_ticks_usec(), indice_existente]
-		existente["veces_conversado"] = veces
-		existente["primer_momento"] = primera_vez
-		existente["mencionado_en_dialogo"] = mencionado
-		lista[indice_existente] = existente
-		nuevo_recuerdo = existente.duplicate(true)
+			registro_actualizado[campo] = nuevo_recuerdo[campo]
+		registro_actualizado["recuerdo_uid"] = uid if not uid.is_empty() else "%s:%d:%d" % [personaje_id, Time.get_ticks_usec(), indice_existente]
+		registro_actualizado["veces_conversado"] = veces
+		registro_actualizado["primer_momento"] = primera_vez
+		registro_actualizado["mencionado_en_dialogo"] = mencionado
+		registro_actualizado["importancia"] = maxf(importancia_anterior, float(nuevo_recuerdo.get("importancia", 1.0)))
+		lista[indice_existente] = registro_actualizado
+		nuevo_recuerdo = registro_actualizado.duplicate(true)
 	else:
 		if str(nuevo_recuerdo.get("recuerdo_uid", "")).is_empty():
 			nuevo_recuerdo["recuerdo_uid"] = "%s:%d:%d" % [
@@ -347,7 +349,7 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 
 	while lista.size() > 32:
 		var indice_descartar := -1
-		var menor_importancia := 3.0
+		var menor_importancia := INF
 		for i in range(lista.size()):
 			if not lista[i] is Dictionary:
 				indice_descartar = i
