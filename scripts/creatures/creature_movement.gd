@@ -211,7 +211,12 @@ func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
 	var repulsion := Vector2.ZERO
 	var npc_actual := creature as Creature
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not nodo is Creature or nodo == npc_actual or not is_instance_valid(nodo):
+		if (
+			not nodo is Creature
+			or nodo == npc_actual
+			or not is_instance_valid(nodo)
+			or nodo.is_queued_for_deletion()
+		):
 			continue
 		var otro := nodo as Creature
 		if not otro.is_alive or otro.get_parent() != npc_actual.get_parent():
