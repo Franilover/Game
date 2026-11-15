@@ -17,8 +17,14 @@ var _generacion: int = 0
 var _clave_actual: String = ""
 var _tween_camara: Tween = null
 var _zoom_original := Vector2.ONE
+var _offset_original := Vector2.ZERO
 var _estado_ui_cinematica: Array[Dictionary] = []
 var _estado_npcs_cinematica: Dictionary = {}
+var _estado_sprites_cinematica: Dictionary = {}
+var _tween_fundido: Tween = null
+var _capa_fundido: CanvasLayer = null
+var _panel_fundido: ColorRect = null
+var _cancelando: bool = false
 var _modo_cinematica: String = "planeada"
 var _pausa_previa: bool = false
 var _process_mode_dialogo_previo: int = Node.PROCESS_MODE_INHERIT
@@ -34,6 +40,7 @@ func configurar(player: Player, dialogue: DialogueSystem, camera: Camera2D = nul
 	_camera = camera
 	if is_instance_valid(_camera):
 		_zoom_original = _camera.zoom
+		_offset_original = _camera.offset
 
 
 func _input(event: InputEvent) -> void:
@@ -83,6 +90,10 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	_generacion += 1
 	var generacion_actual := _generacion
 	_ocupado = true
+	_cancelando = false
+	if is_instance_valid(_camera):
+		_zoom_original = _camera.zoom
+		_offset_original = _camera.offset
 	_pulsaciones_escape_cinematica = 0
 	_clave_actual = clave_limpia
 	_modo_cinematica = "en_vivo" if tipo.strip_edges().to_lower() in ["en_vivo", "vivo", "live"] else "planeada"
@@ -141,8 +152,20 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				await _ejecutar_gesto_npc(paso)
 				if generacion_actual != _generacion:
 					return false
+			"acciones_simultaneas":
+				await _ejecutar_acciones_simultaneas(paso)
+				if generacion_actual != _generacion:
+					return false
 			"mirar_npc":
 				_ejecutar_mirar_npc(paso)
+			"fundido":
+				await _ejecutar_fundido(paso)
+				if generacion_actual != _generacion:
+					return false
+			"temblor_camara":
+				await _ejecutar_temblor_camara(paso)
+				if generacion_actual != _generacion:
+					return false
 			"preparar_npc":
 				if _modo_cinematica == "planeada":
 					_preparar_npc_cinematica(paso)
@@ -176,22 +199,28 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	await _restaurar_camara()
 	if generacion_actual != _generacion:
 		return false
+	await _restaurar_fundido()
+	if generacion_actual != _generacion:
+		return false
 	_finalizar()
 	return true
 
 
 func cancelar() -> void:
-	if not _ocupado:
+	if not _ocupado or _cancelando:
 		return
+	_cancelando = true
 	_generacion += 1
 	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
 		_tween_camara.kill()
+	if is_instance_valid(_tween_fundido) and _tween_fundido.is_running():
+		_tween_fundido.kill()
 	if is_instance_valid(_dialogue) and _dialogue.esta_abierto():
 		_dialogue.cerrar()
-	if is_instance_valid(_camera) and is_instance_valid(_player):
-		_camera.global_position = _player.global_position
-		_camera.zoom = _zoom_original
+	await _restaurar_camara()
+	await _restaurar_fundido()
 	_finalizar()
+	_cancelando = false
 
 
 
@@ -214,27 +243,45 @@ func _buscar_npc(clave: String) -> Creature:
 	return null
 
 
+func _guardar_estado_sprite_cinematica(sprite: Sprite2D) -> void:
+	if not is_instance_valid(sprite):
+		return
+	var id := str(sprite.get_instance_id())
+	if _estado_sprites_cinematica.has(id):
+		return
+	_estado_sprites_cinematica[id] = {
+		"nodo": sprite,
+		"position": sprite.position,
+		"scale": sprite.scale,
+		"rotation": sprite.rotation,
+		"flip_h": sprite.flip_h,
+		"flip_v": sprite.flip_v
+	}
+
+
 func _ejecutar_mirar_npc(paso: Dictionary) -> void:
 	var npc := _buscar_npc(str(paso.get("npc", "")))
-	if npc == null:
+	if not is_instance_valid(npc):
 		return
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
-	if sprite == null:
+	if not is_instance_valid(sprite):
 		return
+	_guardar_estado_sprite_cinematica(sprite)
 	var objetivo := _buscar_npc(str(paso.get("hacia_npc", "")))
-	if objetivo != null:
+	if is_instance_valid(objetivo):
 		sprite.flip_h = objetivo.global_position.x < npc.global_position.x
 	elif paso.has("izquierda"):
 		sprite.flip_h = bool(paso.get("izquierda", false))
 
 
-func _ejecutar_gesto_npc(paso: Dictionary) -> void:
+func _crear_tween_gesto_npc(paso: Dictionary) -> Tween:
 	var npc := _buscar_npc(str(paso.get("npc", "")))
-	if npc == null:
-		return
+	if not is_instance_valid(npc):
+		return null
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
-	if sprite == null:
-		return
+	if not is_instance_valid(sprite):
+		return null
+	_guardar_estado_sprite_cinematica(sprite)
 	var gesto := str(paso.get("gesto", "asentir")).strip_edges().to_lower()
 	var duracion := clampf(float(paso.get("duracion", 0.55)), 0.15, 2.5)
 	var posicion_base := sprite.position
@@ -262,14 +309,131 @@ func _ejecutar_gesto_npc(paso: Dictionary) -> void:
 			tween.tween_property(sprite, "rotation", rotacion_base + 0.09, duracion * 0.2)
 			tween.tween_property(sprite, "rotation", rotacion_base - 0.09, duracion * 0.2)
 			tween.tween_property(sprite, "rotation", rotacion_base, duracion * 0.6)
+		"reir":
+			tween.tween_property(sprite, "position:y", posicion_base.y - 2.5, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y - 2.0, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.4)
+		"triste":
+			tween.tween_property(sprite, "position:y", posicion_base.y + 1.5, duracion * 0.35)
+			tween.tween_property(sprite, "rotation", rotacion_base + 0.035, duracion * 0.25)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.4)
+		"inquieto":
+			tween.tween_property(sprite, "rotation", rotacion_base - 0.045, duracion * 0.2)
+			tween.tween_property(sprite, "rotation", rotacion_base + 0.045, duracion * 0.2)
+			tween.tween_property(sprite, "rotation", rotacion_base, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y - 1.5, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.2)
+		"aplaudir":
+			tween.tween_property(sprite, "position:y", posicion_base.y - 2.0, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y - 2.0, duracion * 0.2)
+			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.4)
+		"encogerse":
+			tween.tween_property(sprite, "scale", escala_base * 0.94, duracion * 0.35)
+			tween.tween_property(sprite, "scale", escala_base, duracion * 0.65)
 		_:
 			tween.tween_property(sprite, "position:y", posicion_base.y - 2.0, duracion * 0.5)
 			tween.tween_property(sprite, "position:y", posicion_base.y, duracion * 0.5)
+	return tween
+
+
+func _ejecutar_gesto_npc(paso: Dictionary) -> void:
+	var tween := _crear_tween_gesto_npc(paso)
+	if tween != null:
+		await tween.finished
+
+
+func _ejecutar_acciones_simultaneas(paso: Dictionary) -> void:
+	var acciones_variant: Variant = paso.get("acciones", [])
+	if not acciones_variant is Array:
+		return
+	var tweens: Array[Tween] = []
+	for accion_variant in acciones_variant:
+		if not accion_variant is Dictionary:
+			continue
+		var accion: Dictionary = accion_variant
+		match str(accion.get("tipo", "")).strip_edges().to_lower():
+			"gesto_npc":
+				var tween := _crear_tween_gesto_npc(accion)
+				if tween != null:
+					tweens.append(tween)
+			"mirar_npc":
+				_ejecutar_mirar_npc(accion)
+	for tween in tweens:
+		if is_instance_valid(tween):
+			await tween.finished
+
+
+func _crear_panel_fundido() -> void:
+	if is_instance_valid(_panel_fundido):
+		return
+	_capa_fundido = CanvasLayer.new()
+	_capa_fundido.name = "CinematicFadeLayer"
+	_capa_fundido.layer = 100
+	add_child(_capa_fundido)
+	_panel_fundido = ColorRect.new()
+	_panel_fundido.name = "FadeOverlay"
+	_panel_fundido.color = Color(0.0, 0.0, 0.0, 0.0)
+	_panel_fundido.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_fundido.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel_fundido.hide()
+	_capa_fundido.add_child(_panel_fundido)
+
+
+func _ejecutar_fundido(paso: Dictionary) -> void:
+	_crear_panel_fundido()
+	if not is_instance_valid(_panel_fundido):
+		return
+	if is_instance_valid(_tween_fundido) and _tween_fundido.is_running():
+		_tween_fundido.kill()
+	var modo := str(paso.get("modo", "entrada")).strip_edges().to_lower()
+	var alpha_objetivo := 1.0 if modo in ["salida", "oscurecer", "cerrar"] else 0.0
+	var duracion := clampf(float(paso.get("duracion", 0.55)), 0.0, 4.0)
+	if alpha_objetivo > 0.0:
+		_panel_fundido.show()
+	_tween_fundido = create_tween()
+	_tween_fundido.set_trans(Tween.TRANS_SINE)
+	_tween_fundido.set_ease(Tween.EASE_IN_OUT)
+	_tween_fundido.tween_property(_panel_fundido, "color:a", alpha_objetivo, duracion)
+	await _tween_fundido.finished
+	if alpha_objetivo <= 0.0 and is_instance_valid(_panel_fundido):
+		_panel_fundido.hide()
+
+
+func _restaurar_fundido() -> void:
+	if not is_instance_valid(_panel_fundido):
+		return
+	if is_instance_valid(_tween_fundido) and _tween_fundido.is_running():
+		_tween_fundido.kill()
+	if _panel_fundido.color.a <= 0.001:
+		_panel_fundido.hide()
+		return
+	_panel_fundido.show()
+	_tween_fundido = create_tween()
+	_tween_fundido.set_trans(Tween.TRANS_SINE)
+	_tween_fundido.set_ease(Tween.EASE_IN_OUT)
+	_tween_fundido.tween_property(_panel_fundido, "color:a", 0.0, 0.35)
+	await _tween_fundido.finished
+	if is_instance_valid(_panel_fundido):
+		_panel_fundido.hide()
+
+
+func _ejecutar_temblor_camara(paso: Dictionary) -> void:
+	if not is_instance_valid(_camera):
+		return
+	var intensidad := clampf(float(paso.get("intensidad", 2.0)), 0.0, 12.0)
+	var duracion := clampf(float(paso.get("duracion", 0.35)), 0.05, 2.0)
+	var ciclos := clampi(int(paso.get("ciclos", 3)), 1, 8)
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	for indice in range(ciclos):
+		var signo := 1.0 if indice % 2 == 0 else -1.0
+		tween.tween_property(_camera, "offset", _offset_original + Vector2(intensidad * signo, -intensidad * 0.35 * signo), duracion / float(ciclos * 2))
+		tween.tween_property(_camera, "offset", _offset_original + Vector2(-intensidad * signo, intensidad * 0.35 * signo), duracion / float(ciclos * 2))
+	tween.tween_property(_camera, "offset", _offset_original, 0.08)
 	await tween.finished
-	if is_instance_valid(sprite):
-		sprite.position = posicion_base
-		sprite.scale = escala_base
-		sprite.rotation = rotacion_base
 
 
 func _capturar_y_ocultar_ui() -> void:
@@ -428,6 +592,16 @@ func _restaurar_estado_temporal() -> void:
 			else:
 				npc.remove_meta(clave)
 	_estado_npcs_cinematica.clear()
+	for estado_sprite in _estado_sprites_cinematica.values():
+		var sprite: Sprite2D = estado_sprite.get("nodo") as Sprite2D
+		if not is_instance_valid(sprite):
+			continue
+		sprite.position = estado_sprite.get("position", sprite.position)
+		sprite.scale = estado_sprite.get("scale", sprite.scale)
+		sprite.rotation = float(estado_sprite.get("rotation", sprite.rotation))
+		sprite.flip_h = bool(estado_sprite.get("flip_h", sprite.flip_h))
+		sprite.flip_v = bool(estado_sprite.get("flip_v", sprite.flip_v))
+	_estado_sprites_cinematica.clear()
 	for estado_ui in _estado_ui_cinematica:
 		var nodo: CanvasItem = estado_ui.get("nodo") as CanvasItem
 		if is_instance_valid(nodo):
@@ -467,6 +641,11 @@ func _ejecutar_movimiento_camara(paso: Dictionary) -> void:
 	if _seguimiento_camara_npcs.is_empty():
 		_tween_camara.tween_property(_camera, "global_position", destino, duracion)
 	_tween_camara.tween_property(_camera, "zoom", Vector2.ONE * zoom_objetivo, duracion)
+	var offset_objetivo := Vector2(
+		float(paso.get("offset_x", _offset_original.x)),
+		float(paso.get("offset_y", _offset_original.y))
+	)
+	_tween_camara.tween_property(_camera, "offset", offset_objetivo, duracion)
 	await _tween_camara.finished
 
 
@@ -482,6 +661,7 @@ func _restaurar_camara() -> void:
 	_tween_camara.set_parallel(true)
 	_tween_camara.tween_property(_camera, "global_position", _player.global_position, 0.65)
 	_tween_camara.tween_property(_camera, "zoom", _zoom_original, 0.65)
+	_tween_camara.tween_property(_camera, "offset", _offset_original, 0.65)
 	await _tween_camara.finished
 
 
@@ -489,6 +669,9 @@ func _finalizar() -> void:
 	if not _ocupado:
 		return
 	_restaurar_estado_temporal()
+	if is_instance_valid(_panel_fundido):
+		_panel_fundido.color = Color(0.0, 0.0, 0.0, 0.0)
+		_panel_fundido.hide()
 	if _modo_cinematica == "planeada":
 		if is_instance_valid(_dialogue):
 			_dialogue.process_mode = _process_mode_dialogo_previo
