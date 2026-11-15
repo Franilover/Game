@@ -152,6 +152,11 @@ func validar() -> Array[String]:
 			"mover_jugador":
 				if not _campo_presente(paso, "x") or not _campo_presente(paso, "y"):
 					errores.append("Paso %d: mover_jugador necesita coordenadas x/y." % numero_paso)
+			"esperar":
+				if paso.has("variacion") and not _es_parametro_dinamico(paso.get("variacion")):
+					var variacion: Variant = paso.get("variacion")
+					if (variacion is int or variacion is float) and float(variacion) < 0.0:
+						errores.append("Paso %d: la variación de espera no puede ser negativa." % numero_paso)
 			"fundido":
 				var modo_fundido := str(paso.get("modo", "entrada")).strip_edges().to_lower()
 				if paso.has("modo") and not _es_parametro_dinamico(paso.get("modo")) and modo_fundido not in [
