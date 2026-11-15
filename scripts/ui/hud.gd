@@ -1634,7 +1634,7 @@ func _actualizar_selector_companero() -> void:
 		var guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
 		_garumi_companero_slot.tooltip_text = ""
 	else:
-				_garumi_companero_slot.tooltip_text= ""
+		_garumi_companero_slot.tooltip_text = ""
 
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
