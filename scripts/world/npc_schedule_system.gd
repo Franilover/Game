@@ -174,6 +174,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
 		_aplicar_rutina(npc, dia_semana, minutos)
+	_actualizar_interaccion_panaderia()
 
 
 ## Reserva temporalmente el movimiento de un NPC para que pueda acercarse
@@ -523,6 +524,14 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			npc.set_meta("rutina_error_firma", firma_aviso)
 	var clave_rutina := str(rutina.get("clave", "regreso_hogar")).strip_edges()
 	var ubicacion := str(rutina.get("ubicacion_clave", hogar)).strip_edges().to_lower()
+	# Ivo sólo va a comprar pan si Elian tiene turno en la panadería en
+	# este mismo tramo. Si no coincide, aprovecha ese rato en la plaza.
+	if nombre_npc == "ivo" and ubicacion == "panaderia" and not _el_npc_tiene_rutina_en_ubicacion("elian", "panaderia", dia_semana, minutos):
+		clave_rutina = "ivo_paseo_sin_panadero"
+		ubicacion = "plaza"
+		actividad = "pasear_y_saludar"
+		rutina["actividad_clave"] = actividad
+		rutina["variacion_posicion"] = Vector2(18.0, 132.0)
 	if ubicacion.is_empty() or ubicacion == "null" or not POSICIONES.has(ubicacion):
 		ubicacion = hogar
 	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
@@ -904,6 +913,95 @@ func _registrar_compra_habitante(npc: Creature, edificio_id: String) -> void:
 	}
 	npc.set_meta("compras_realizadas", compras)
 	npc.datos["ultima_compra_ambiental"] = compras[clave_compra]
+
+
+## Evita que Ivo programe la compra de pan cuando Elian no trabaja
+## en la panadería en ese tramo. No modifica la rutina del panadero.
+func _el_npc_tiene_rutina_en_ubicacion(nombre_buscado: String, ubicacion_buscada: String, dia_semana: int, minutos: int) -> bool:
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
+			continue
+		var candidato := candidato_variant as Creature
+		if candidato.get_nombre_visual().strip_edges().to_lower() != nombre_buscado:
+			continue
+		if bool(candidato.get_meta("rutina_en_edificio", false)) and str(candidato.get_meta("rutina_edificio_id", "")) == ubicacion_buscada:
+			return true
+		var rutinas: Variant = candidato.datos.get("rutinas", [])
+		var rutina_actual := _seleccionar_rutina(rutinas, dia_semana, minutos, nombre_buscado)
+		return str(rutina_actual.get("ubicacion_clave", "")).strip_edges().to_lower() == ubicacion_buscada
+	return false
+
+
+func _buscar_npc_por_nombre(nombre_buscado: String) -> Creature:
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if candidato_variant is Creature and is_instance_valid(candidato_variant):
+			var candidato := candidato_variant as Creature
+			if candidato.get_nombre_visual().strip_edges().to_lower() == nombre_buscado:
+				return candidato
+	return null
+
+
+## Cuando Ivo y Elian coinciden realmente dentro de la panadería, se anima
+## una interacción ambiental discreta. No se crea ninguna copia ni se fuerza
+## a ninguno a cambiar su horario.
+func _actualizar_interaccion_panaderia() -> void:
+	var ivo := _buscar_npc_por_nombre("ivo")
+	var elian := _buscar_npc_por_nombre("elian")
+	var coinciden := (
+		is_instance_valid(ivo)
+		and is_instance_valid(elian)
+		and bool(ivo.get_meta("rutina_en_edificio", false))
+		and bool(elian.get_meta("rutina_en_edificio", false))
+		and str(ivo.get_meta("rutina_edificio_id", "")) == "panaderia"
+		and str(elian.get_meta("rutina_edificio_id", "")) == "panaderia"
+	)
+	if coinciden:
+		_iniciar_animacion_compartida_panaderia(ivo, "cliente")
+		_iniciar_animacion_compartida_panaderia(elian, "panadero")
+	else:
+		_detener_animacion_compartida_panaderia(ivo)
+		_detener_animacion_compartida_panaderia(elian)
+
+
+func _iniciar_animacion_compartida_panaderia(npc: Creature, rol: String) -> void:
+	if not is_instance_valid(npc) or bool(npc.get_meta("animacion_panaderia_activa", false)):
+		return
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if not is_instance_valid(sprite):
+		return
+	npc.set_meta("animacion_panaderia_activa", true)
+	npc.set_meta("animacion_panaderia_rol", rol)
+	npc.set_meta("animacion_panaderia_posicion", sprite.position)
+	npc.set_meta("animacion_panaderia_rotacion", sprite.rotation)
+	var tween := create_tween()
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	if rol == "cliente":
+		tween.tween_property(sprite, "position:y", sprite.position.y - 1.5, 0.65)
+		tween.tween_property(sprite, "position:y", sprite.position.y, 0.65)
+		tween.tween_interval(0.35)
+	else:
+		tween.tween_property(sprite, "rotation", 0.035, 0.8)
+		tween.tween_property(sprite, "rotation", -0.025, 0.8)
+		tween.tween_property(sprite, "rotation", 0.0, 0.4)
+		tween.tween_interval(0.3)
+	npc.set_meta("animacion_panaderia_tween", tween)
+
+
+func _detener_animacion_compartida_panaderia(npc: Creature) -> void:
+	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_panaderia_activa", false)):
+		return
+	var tween_variant: Variant = npc.get_meta("animacion_panaderia_tween", null)
+	if tween_variant is Tween and is_instance_valid(tween_variant):
+		(tween_variant as Tween).kill()
+	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
+	if is_instance_valid(sprite):
+		var posicion: Variant = npc.get_meta("animacion_panaderia_posicion", sprite.position)
+		sprite.position = posicion if posicion is Vector2 else sprite.position
+		sprite.rotation = float(npc.get_meta("animacion_panaderia_rotacion", sprite.rotation))
+	for clave in ["animacion_panaderia_activa", "animacion_panaderia_rol", "animacion_panaderia_posicion", "animacion_panaderia_rotacion", "animacion_panaderia_tween"]:
+		npc.remove_meta(clave)
 
 
 func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
