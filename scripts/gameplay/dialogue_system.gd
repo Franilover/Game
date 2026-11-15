@@ -3,6 +3,7 @@ class_name DialogueSystem
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const NPC_MARKET_SHOP_SCRIPT = preload("res://scripts/ui/npc_market_shop.gd")
+const NPC_VOICE_PROFILE = preload("res://scripts/gameplay/npc_voice_profile.gd")
 
 
 signal dialogue_started(speaker: String)
@@ -504,7 +505,7 @@ func _mostrar_linea_actual() -> void:
 	var nombre_voz := hablante
 	if nombre_voz.is_empty() and is_instance_valid(_fuente):
 		nombre_voz = _fuente.get_nombre_visual()
-	texto = NPCVoiceProfile.adaptar(texto, nombre_voz)
+	texto = NPC_VOICE_PROFILE.adaptar(texto, nombre_voz)
 
 	speaker_label.text = hablante
 	_actualizar_retrato(hablante)
