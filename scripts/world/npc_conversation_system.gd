@@ -1902,6 +1902,7 @@ func _buscar_encuentro_trio_mara_ivo_nima(jugador: Node2D, clave_dia: String) ->
 		"npc_c": "nima",
 		"lineas": lineas,
 		"solo_ambiental_local": true,
+		"_sin_progreso_etapa": true,
 		"_cinematica_trio": true
 	})
 	_vistas_por_dia["encuentro_trio_mara_ivo_nima"] = true
@@ -2084,7 +2085,7 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 				centro_trio,
 				1
 			)
-	if completada and not bool(_conversacion_activa.get("_reunion_castillo", false)) and not _conversacion_activa.is_empty():
+	if completada and not bool(_conversacion_activa.get("_reunion_castillo", false)) and not bool(_conversacion_activa.get("_sin_progreso_etapa", false)) and not _conversacion_activa.is_empty():
 		var clave := str(_conversacion_activa.get("clave", ""))
 		var etapa := int(_conversacion_activa.get("_etapa_progreso", 0))
 		if not clave.is_empty():
