@@ -3133,7 +3133,7 @@ func _crear_interfaz() -> void:
 	_boton_regalo.custom_minimum_size = Vector2(48, 48)
 	_boton_regalo.icon = _crear_icono_interaccion("regalo")
 	_boton_regalo.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_boton_regalo.tooltip_text = ""
+	_boton_regalo.tooltip_text = ""
 	_boton_regalo.pressed.connect(_abrir_selector_items.bind("regalo"))
 	columna_social.add_child(_boton_regalo)
 
@@ -3142,7 +3142,7 @@ func _crear_interfaz() -> void:
 	_boton_preguntar_item.custom_minimum_size = Vector2(48, 48)
 	_boton_preguntar_item.icon = _crear_icono_interaccion("pregunta")
 	_boton_preguntar_item.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_boton_preguntar_item.tooltip_text = ""
+	_boton_preguntar_item.tooltip_text = ""
 	_boton_preguntar_item.pressed.connect(_abrir_selector_items.bind("pregunta"))
 	columna_social.add_child(_boton_preguntar_item)
 
@@ -3150,7 +3150,7 @@ func _crear_interfaz() -> void:
 	_boton_tienda_mercado.name = "DialogueMarketShopButton"
 	_boton_tienda_mercado.custom_minimum_size = Vector2(48, 48)
 	_boton_tienda_mercado.text = "$"
-		_boton_tienda_mercado.tooltip_text = ""
+	_boton_tienda_mercado.tooltip_text = ""
 	_boton_tienda_mercado.visible = false
 	_boton_tienda_mercado.pressed.connect(_abrir_tienda_mercado)
 	columna_social.add_child(_boton_tienda_mercado)
