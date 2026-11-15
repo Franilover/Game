@@ -1235,6 +1235,11 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 			var candidato_c := candidato_variant as Creature
 			if candidato_c == mejor_a or candidato_c == mejor_b:
 				continue
+			if (
+				_clave_pareja_reunion(mejor_a, candidato_c) in parejas_hoy
+				or _clave_pareja_reunion(mejor_b, candidato_c) in parejas_hoy
+			):
+				continue
 			var puntuacion_tercero := (
 				_puntuacion_pareja_reunion(mejor_a, candidato_c)
 				+ _puntuacion_pareja_reunion(mejor_b, candidato_c)
@@ -1250,6 +1255,10 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 			continue
 		var id_mejor_a := mejor_a.get_personaje_game_id().strip_edges()
 		var id_mejor_b := mejor_b.get_personaje_game_id().strip_edges()
+		if id_mejor_a.is_empty():
+			id_mejor_a = mejor_a.get_nombre_visual().strip_edges().to_lower()
+		if id_mejor_b.is_empty():
+			id_mejor_b = mejor_b.get_nombre_visual().strip_edges().to_lower()
 		var clave_diaria := "charla_diaria_%s_%s" % [id_mejor_a, id_mejor_b]
 		var evento_diario := _crear_conversacion_diaria_castillo(mejor_a, mejor_b, clave_diaria, mejor_c)
 		if _registrar_conversacion_reunion_castillo(evento_diario, mejor_a, mejor_b, clave_diaria, clave_dia, diario, historial):
