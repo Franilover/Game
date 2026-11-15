@@ -1443,7 +1443,7 @@ func _buscar_refugio() -> Node2D:
 			str(datos_candidata.get("nombre", "")).strip_edges().to_lower(),
 			str(datos_candidata.get("refugio_clave", "")).strip_edges().to_lower(),
 			str(candidata.get_meta("refugio_clave", "")).strip_edges().to_lower(),
-			candidata.name.strip_edges().to_lower()
+			str(candidata.name).strip_edges().to_lower()
 		]
 		var coincide := false
 		for clave in claves_refugio:
