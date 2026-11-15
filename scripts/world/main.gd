@@ -647,8 +647,35 @@ func _al_mundo_datos_listo_para_npcs() -> void:
 
 func _retirar_npcs_reino_torres() -> void:
 	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
-		if is_instance_valid(npc):
-			npc.queue_free()
+		if not is_instance_valid(npc):
+			continue
+		# Retirar la identidad del grupo inmediatamente: queue_free() difiere
+		# la destrucción hasta el final del frame y otra materialización podría
+		# encontrar todavía esta instancia durante ese intervalo.
+		npc.remove_from_group("torres_game_npc")
+		npc.remove_from_group("interactable")
+		npc.queue_free()
+
+
+func _deduplicar_npcs_reino_torres() -> void:
+	var identidades_vistas: Dictionary = {}
+	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not npc_variant is Creature or not is_instance_valid(npc_variant):
+			continue
+		var npc := npc_variant as Creature
+		var personaje_id := npc.get_personaje_game_id().strip_edges()
+		var clave_local := str(npc.get_meta("habitante_local_clave", "")).strip_edges()
+		var identidad := "personaje:" + personaje_id if not personaje_id.is_empty() else ("local:" + clave_local if not clave_local.is_empty() else "")
+		if identidad.is_empty():
+			continue
+		if not identidades_vistas.has(identidad):
+			identidades_vistas[identidad] = npc
+			continue
+		# Una identidad canónica o local sólo puede tener una instancia activa
+		# dentro del reino. Se elimina del grupo antes de diferir su destrucción.
+		npc.remove_from_group("torres_game_npc")
+		npc.remove_from_group("interactable")
+		npc.queue_free()
 
 
 func _materializar_npcs_reino_torres() -> void:
@@ -661,6 +688,7 @@ func _materializar_npcs_reino_torres() -> void:
 	if not is_instance_valid(zona):
 		return
 
+	_deduplicar_npcs_reino_torres()
 	var existentes: Dictionary = {}
 	for npc_existente in get_tree().get_nodes_in_group("torres_game_npc"):
 		if npc_existente is Creature and is_instance_valid(npc_existente):
@@ -764,6 +792,8 @@ func _materializar_npcs_reino_torres() -> void:
 		print("Main: NPC ", nombre, " | hogar=", hogar_clave, " | lugar_base=", ubicacion, " | rutinas=", rutinas_actualizadas.size())
 		npc.set_meta("personaje_game_id", personaje_id)
 		npc.add_to_group("torres_game_npc")
+		if zona.has_method("registrar_npc_materializado"):
+			zona.call("registrar_npc_materializado", npc)
 		npc.remove_from_group("creatures")
 		npc.remove_from_group("damageable")
 
@@ -926,6 +956,8 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		npc.remove_from_group("creatures")
 		npc.remove_from_group("damageable")
 		npc.add_to_group("torres_game_npc")
+		if zona.has_method("registrar_npc_materializado"):
+			zona.call("registrar_npc_materializado", npc)
 		npc.set_meta("habitante_sin_oficio", true)
 		npc.set_meta("perfil_personalidad", str(habitante.get("personalidad", "")))
 		npc.set_meta("historia_local", str(habitante.get("historia", "")))
