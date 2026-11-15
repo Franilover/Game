@@ -699,6 +699,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			destino_local += posicion_plaza
 			destino_local += variacion_posicion
 	var destino_global := _zona.to_global(destino_local)
+	if clave_rutina.begins_with("encuentro_trio_"):
+		npc.remove_meta("rutina_paseo_exterior_activo")
+		npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + 7 + posmod(hash(npc.get_nombre_visual()), 5), 1440))
 	if ubicacion == "plaza":
 		npc.set_meta("rutina_ancla_ocio", destino_global)
 	else:
@@ -1202,6 +1205,8 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	):
 		return
 	if str(npc.get_meta("rutina_ubicacion", "")) != "plaza":
+		return
+	if str(npc.get_meta("rutina_actual", "")).begins_with("encuentro_trio_"):
 		return
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if not is_instance_valid(movimiento):
