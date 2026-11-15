@@ -1191,7 +1191,13 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 		tween.tween_interval(0.8)
 		tween.tween_property(sprite, "rotation", 0.0, 0.45)
 		tween.tween_interval(1.0)
-	elif actividad.contains("forj") or actividad.contains("herramient") or actividad.contains("hornear") or actividad.contains("atender") or actividad.contains("trabaj"):
+	elif actividad.contains("vigilar") or actividad.contains("observar") or actividad.contains("recorrer"):
+		tween.tween_property(sprite, "rotation", -0.025, 0.8)
+		tween.tween_interval(0.55)
+		tween.tween_property(sprite, "rotation", 0.025, 0.8)
+		tween.tween_property(sprite, "rotation", 0.0, 0.45)
+		tween.tween_interval(0.7)
+	elif actividad.contains("forj") or actividad.contains("herramient") or actividad.contains("hornear") or actividad.contains("atender") or actividad.contains("trabaj") or actividad.contains("limpiar") or actividad.contains("ordenar") or actividad.contains("revisar") or actividad.contains("preparar") or actividad.contains("organizar") or actividad.contains("cuidar") or actividad.contains("reparar") or actividad.contains("comerci") or actividad.contains("comprar"):
 		tween.tween_property(sprite, "position:y", sprite.position.y - 1.0, 0.28)
 		tween.tween_property(sprite, "position:y", sprite.position.y, 0.32)
 		tween.tween_interval(0.4)
