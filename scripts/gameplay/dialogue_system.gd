@@ -159,7 +159,7 @@ func esta_abierto() -> bool:
 
 
 func abrir_desde(fuente: Creature) -> bool:
-	
+
 	if fuente == null or not is_instance_valid(fuente):
 		
 		return false
@@ -169,7 +169,7 @@ func abrir_desde(fuente: Creature) -> bool:
 		return false
 
 	var datos_variant: Variant = fuente.get_dialogue_data()
-	
+
 	if not datos_variant is Dictionary:
 		return false
 
@@ -184,14 +184,9 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	_personaje_variante_pendiente = ""
 	_ciclo_variante_pendiente = ""
 	_fuente = fuente
-	
+
 	var datos_seleccionados := datos.duplicate(true) if iniciativa_directa else _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
-	var acciones_debug: Array = []
-	var acciones_variant_debug: Variant = datos_seleccionados.get("acciones", [])
-	if acciones_variant_debug is Array:
-		acciones_debug = acciones_variant_debug
-
 	if lineas.is_empty():
 		
 		return false
