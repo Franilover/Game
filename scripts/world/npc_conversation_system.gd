@@ -16,6 +16,8 @@ const DISTANCIA_INICIATIVA := 112.0
 const DISTANCIA_BUSQUEDA_INICIATIVA := 280.0
 const DISTANCIA_LLEGADA_INICIATIVA := 76.0
 const TIEMPO_MAX_ACERCAMIENTO := 16.0
+const MAX_CONVERSACIONES_REUNION_NOCHE := 3
+const ENFRIAMIENTO_CONVERSACION_REUNION := 42.0
 const DISTANCIA_SALUDO_ESPONTANEO := 54.0
 const ENFRIAMIENTO_SALUDO_ESPONTANEO := 85.0
 const AMISTAD_INICIATIVA_MINIMA := 8.0
@@ -287,6 +289,7 @@ var _npc_por_id: Dictionary = {}
 var _acercamiento_activo: Dictionary = {}
 var _intentos_acercamiento_hasta: Dictionary = {}
 var _tiempo_sistema := 0.0
+var _ultima_conversacion_reunion := -1000.0
 var _temporizador_busqueda := 0.0
 var _temporizador_linea := 0.0
 var _conversacion_activa: Dictionary = {}
@@ -1124,14 +1127,20 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 		return false
 	if is_instance_valid(_world_atmosphere) and not bool(tiempo.get("calendario_cargado", false)):
 		return false
-	var clave_dia := "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
-	if str(_vistas_por_dia.get("reunion_castillo", "")) == clave_dia:
+	if _tiempo_sistema - _ultima_conversacion_reunion < ENFRIAMIENTO_CONVERSACION_REUNION:
 		return false
+	var clave_dia := "%d:%d" % [int(tiempo.get("anio", 0)), int(tiempo.get("dia", 1))]
 	var npcs := _obtener_npcs_torres()
 	var diario_variant: Variant = _progreso_parejas.get("_reuniones_nocturnas", {})
 	var diario: Dictionary = diario_variant.duplicate(true) if diario_variant is Dictionary else {}
-	if str(diario.get("ultimo_dia", "")) == clave_dia:
-		_vistas_por_dia["reunion_castillo"] = clave_dia
+	var eventos_dia_variant: Variant = diario.get("eventos_dia", {})
+	var eventos_dia: Dictionary = eventos_dia_variant if eventos_dia_variant is Dictionary else {}
+	var conversaciones_hoy: Array = []
+	if str(eventos_dia.get("dia", "")) == clave_dia:
+		var lista_hoy: Variant = eventos_dia.get("claves", [])
+		if lista_hoy is Array:
+			conversaciones_hoy = (lista_hoy as Array).duplicate()
+	if conversaciones_hoy.size() >= MAX_CONVERSACIONES_REUNION_NOCHE:
 		return false
 	var historial_variant: Variant = diario.get("historial", [])
 	var historial: Array = historial_variant.duplicate(true) if historial_variant is Array else []
@@ -1139,6 +1148,8 @@ func _buscar_conversacion_reunion_nocturna(jugador: Node2D, tiempo: Dictionary) 
 	for registro_variant in historial.slice(maxi(0, historial.size() - 3)):
 		if registro_variant is Dictionary:
 			recientes.append(str((registro_variant as Dictionary).get("clave", "")))
+	for clave_hoy_variant in conversaciones_hoy:
+		recientes.append(str(clave_hoy_variant))
 
 	# Primero se conservan las conversaciones escritas a mano, pero sólo
 	# cuando sus participantes pertenecen al mismo grupo de esa noche.
@@ -1236,10 +1247,20 @@ func _registrar_conversacion_reunion_castillo(
 	evento["_reunion_castillo"] = true
 	evento["clave"] = "reunion_%s_%s" % [clave, clave_dia.replace(":", "_")]
 	_iniciar_conversacion(evento)
+	_ultima_conversacion_reunion = _tiempo_sistema
 	_vistas_por_dia["reunion_castillo"] = clave_dia
 	historial.append({"dia": clave_dia, "clave": clave})
 	while historial.size() > 16:
 		historial.pop_front()
+	var eventos_variant: Variant = diario.get("eventos_dia", {})
+	var eventos: Dictionary = eventos_variant.duplicate(true) if eventos_variant is Dictionary else {}
+	var claves_eventos: Array = []
+	if str(eventos.get("dia", "")) == clave_dia:
+		var claves_variant: Variant = eventos.get("claves", [])
+		if claves_variant is Array:
+			claves_eventos = (claves_variant as Array).duplicate()
+	claves_eventos.append(clave)
+	diario["eventos_dia"] = {"dia": clave_dia, "claves": claves_eventos}
 	diario["ultimo_dia"] = clave_dia
 	diario["ultimo_evento"] = clave
 	diario["historial"] = historial
