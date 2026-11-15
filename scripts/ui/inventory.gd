@@ -73,7 +73,10 @@ var _slot_grids: Array[GridContainer] = []
 @onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemCategory
 @onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemDescription
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIcon
-@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DeleteButton
+@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/DeleteButton
+@onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/UseButton
+@onready var equip_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/EquipButton
+@onready var place_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/PlaceButton
 @onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/EquipmentSlots
 @onready var _notas_texto: TextEdit = $Window/Margin/Column/Tabs/Notas/NotesText
 
@@ -266,7 +269,10 @@ func _ready() -> void:
 	_inicializar_hotbar()
 	_crear_slots()
 	_crear_slots_equipamiento()
-	delete_button.pressed.connect(_al_eliminar_seleccionado)
+	delete_button.pressed.connect(_al_soltar_seleccionado)
+	use_button.pressed.connect(_al_usar_seleccionado)
+	equip_button.pressed.connect(_al_equipar_seleccionado)
+	place_button.pressed.connect(_al_colocar_seleccionado)
 	_inicializar_navegacion_tabs()
 	_cargar_notas_historia()
 	_limpiar_informacion()
@@ -896,30 +902,64 @@ func _mostrar_informacion() -> void:
 		lineas.append("Cantidad: %d" % cantidad)
 
 	var propiedades_variant: Variant = objeto_seleccionado.get("propiedades_game", {})
-	if propiedades_variant is Dictionary:
-		var propiedades := propiedades_variant as Dictionary
-		var etiquetas := {
-			"durabilidad": "Durabilidad",
-			"dureza": "Dureza",
-			"fractura": "Fractura",
-			"composicion": "Composición",
-			"material": "Material",
-			"ranura_equipamiento": "Ranura"
-		}
-		for clave_variant in etiquetas.keys():
-			var clave := str(clave_variant)
-			if not propiedades.has(clave):
-				continue
-			var valor: Variant = propiedades.get(clave)
-			if valor == null or str(valor).strip_edges().is_empty():
-				continue
-			lineas.append("%s: %s" % [str(etiquetas[clave]), str(valor)])
+	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+	var tipo := str(objeto_seleccionado.get("tipo", "")).strip_edges().to_lower()
+	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
+	var categoria_clave := str(objeto_seleccionado.get("categoria_clave", categoria.get("clave", ""))).to_lower()
+	var tipo_objeto_variant: Variant = objeto_seleccionado.get("tipo_objeto", {})
+	var categoria_canonica := ""
+	if tipo_objeto_variant is Dictionary:
+		categoria_canonica = str((tipo_objeto_variant as Dictionary).get("categoria_canonica", "")).to_lower()
+
+	var etiquetas: Dictionary = {}
+	match tipo:
+		"arma":
+			etiquetas = {"danio": "Daño", "alcance": "Alcance", "ancho_ataque": "Ancho de ataque", "durabilidad": "Durabilidad", "modo_ataque": "Modalidad"}
+		"herramienta":
+			etiquetas = {"durabilidad": "Durabilidad", "alcance": "Alcance", "capacidad_recoleccion": "Capacidad", "material": "Material"}
+		"armadura":
+			etiquetas = {"defensa": "Defensa", "proteccion": "Protección", "durabilidad": "Durabilidad", "ranura_equipamiento": "Ranura", "material": "Material"}
+		"consumible":
+			etiquetas = {"uso": "Uso", "durabilidad": "Durabilidad"}
+		"material":
+			etiquetas = {"composicion": "Composición", "dureza": "Dureza", "fractura": "Fractura", "material": "Material"}
+		_:
+			etiquetas = {"durabilidad": "Durabilidad", "dureza": "Dureza", "fractura": "Fractura", "composicion": "Composición", "material": "Material", "ranura_equipamiento": "Ranura"}
+
+	# Las propiedades de uso pueden contener efectos estructurados; resumimos
+	# únicamente los recursos y magnitudes realmente registrados.
+	var uso_variant: Variant = propiedades.get("uso", {})
+	if uso_variant is Dictionary:
+		var uso := uso_variant as Dictionary
+		var efectos_variant: Variant = uso.get("efectos", null)
+		if efectos_variant is Array:
+			for efecto_variant in efectos_variant as Array:
+				if not efecto_variant is Dictionary:
+					continue
+				var efecto := efecto_variant as Dictionary
+				var recurso := str(efecto.get("recurso", efecto.get("efecto", ""))).strip_edges()
+				var magnitud: Variant = efecto.get("magnitud", efecto.get("cantidad", null))
+				if not recurso.is_empty() and (magnitud is int or magnitud is float):
+					lineas.append("Efecto: %s +%s" % [recurso.capitalize(), str(magnitud)])
+
+	for clave_variant in etiquetas.keys():
+		var clave := str(clave_variant)
+		if not propiedades.has(clave):
+			continue
+		var valor: Variant = propiedades.get(clave)
+		if valor == null or valor is Dictionary or valor is Array or str(valor).strip_edges().is_empty():
+			continue
+		lineas.append("%s: %s" % [str(etiquetas[clave]), str(valor)])
+
+	if not categoria_canonica.is_empty() and lineas.size() == 0:
+		lineas.append("Tipo: " + categoria_canonica.capitalize())
+	elif not categoria_clave.is_empty() and lineas.size() == 0:
+		lineas.append("Categoría: " + categoria_clave.capitalize())
 
 	item_name.text = nombre
-	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
 	if not categoria.is_empty():
 		item_category.text = str(categoria.get("nombre", "Sin categoría")).to_upper()
-		item_category.tooltip_text = str(categoria.get("descripcion", ""))
+		item_category.tooltip_text = ""
 		item_category.visible = true
 	else:
 		item_category.text = ""
@@ -927,12 +967,107 @@ func _mostrar_informacion() -> void:
 		item_category.visible = false
 	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción ni propiedades adicionales registradas."
 	item_description.visible = true
-	delete_button.disabled = false
+
+	var tiene_uso := _objeto_tiene_uso_valido(objeto_seleccionado)
+	var es_armadura := tipo == "armadura" and not str(propiedades.get("ranura_equipamiento", "")).strip_edges().is_empty()
+	var es_colocable := _world_items != null and is_instance_valid(_world_items) and _world_items.es_objeto_colocable(objeto_seleccionado)
+	use_button.visible = tiene_uso
+	use_button.disabled = not tiene_uso
+	equip_button.visible = es_armadura
+	equip_button.disabled = not es_armadura
+	place_button.visible = es_colocable
+	place_button.disabled = not es_colocable
+	delete_button.text = "SOLTAR"
+	delete_button.disabled = indice_seleccionado < 0
 	delete_button.visible = true
 
 	var textura: Texture2D = ItemIconResolver.obtener_icono(objeto_seleccionado)
 	item_icon.texture = textura
 	item_icon.visible = textura != null
+
+
+func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+	var uso_variant: Variant = (propiedades_variant as Dictionary).get("uso", {})
+	if not uso_variant is Dictionary:
+		return false
+	var uso := uso_variant as Dictionary
+	if not bool(uso.get("permitido", true)) or str(uso.get("tipo", "")).strip_edges().is_empty():
+		return false
+	var efectos_variant: Variant = uso.get("efectos", null)
+	if efectos_variant is Array:
+		for efecto_variant in efectos_variant as Array:
+			if not efecto_variant is Dictionary:
+				continue
+			var efecto := efecto_variant as Dictionary
+			var recurso := str(efecto.get("recurso", efecto.get("efecto", ""))).to_lower()
+			var magnitud: Variant = efecto.get("magnitud", efecto.get("cantidad", 0))
+			if recurso in ["vida", "salud", "health", "stamina", "eterium", "mana"] and (magnitud is int or magnitud is float) and float(magnitud) > 0.0:
+				return true
+		return false
+	var recurso := str(uso.get("recurso", uso.get("efecto", ""))).to_lower()
+	var magnitud: Variant = uso.get("magnitud", uso.get("cantidad", 0))
+	return recurso in ["vida", "salud", "health", "stamina", "eterium", "mana"] and (magnitud is int or magnitud is float) and float(magnitud) > 0.0
+
+
+func _al_usar_seleccionado() -> void:
+	if indice_seleccionado < 0 or _player == null or not is_instance_valid(_player):
+		return
+	if inventory_controller.usar_objeto_en_indice(indice_seleccionado, _player):
+		_refrescar_objeto_seleccionado()
+
+
+func _al_soltar_seleccionado() -> void:
+	if indice_seleccionado < 0 or _player == null or not is_instance_valid(_player):
+		return
+	var posicion := _player.global_position + Vector2(28.0, 0.0)
+	if _soltar_objeto_en_posicion(indice_seleccionado, posicion):
+		_refrescar_objeto_seleccionado()
+
+
+func _al_equipar_seleccionado() -> void:
+	if indice_seleccionado < 0:
+		return
+	var propiedades_variant: Variant = objeto_seleccionado.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return
+	var ranura := str((propiedades_variant as Dictionary).get("ranura_equipamiento", "")).strip_edges().to_lower()
+	for slot_variant in equipment_slots.get_children():
+		if not slot_variant is InventoryEquipmentSlot:
+			continue
+		var slot := slot_variant as InventoryEquipmentSlot
+		if slot.obtener_clave() == ranura:
+			_al_equipar_objeto(slot, objeto_seleccionado)
+			_refrescar_objeto_seleccionado()
+			return
+
+
+func _al_colocar_seleccionado() -> void:
+	if indice_seleccionado < 0 or _player == null or not is_instance_valid(_player):
+		return
+	if _world_items == null or not is_instance_valid(_world_items):
+		return
+	if not _world_items.colocar_objeto(objeto_seleccionado, _player.global_position + Vector2(28.0, 0.0)):
+		return
+	if inventory_controller.quitar_cantidad_desde_ui(indice_seleccionado, 1):
+		actualizar()
+		_refrescar_objeto_seleccionado()
+		inventory_changed.emit()
+		_emitir_objeto_activo()
+
+
+func _refrescar_objeto_seleccionado() -> void:
+	if indice_seleccionado < 0 or indice_seleccionado >= items.size() or items[indice_seleccionado].is_empty():
+		seleccionar_slot(-1)
+		actualizar()
+		return
+	objeto_seleccionado = items[indice_seleccionado].duplicate(true)
+	actualizar()
+	_mostrar_informacion()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
 
 
 func _obtener_categoria_objeto(datos: Dictionary) -> Dictionary:
@@ -961,6 +1096,9 @@ func _limpiar_informacion() -> void:
 	item_icon.visible = false
 	delete_button.disabled = true
 	delete_button.visible = false
+	use_button.visible = false
+	equip_button.visible = false
+	place_button.visible = false
 
 
 func agregar_objeto(datos_objeto: Dictionary) -> bool:
