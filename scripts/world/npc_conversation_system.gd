@@ -14,7 +14,9 @@ const DISTANCIA_LLEGADA_INICIATIVA := 76.0
 const TIEMPO_MAX_ACERCAMIENTO := 16.0
 const AMISTAD_INICIATIVA_MINIMA := 8.0
 const AFECTO_INICIATIVA_MINIMO := 5.0
-const DURACION_LINEA := 3.2
+const DURACION_LINEA_MINIMA := 2.4
+const DURACION_LINEA_MAXIMA := 6.0
+const SEGUNDOS_POR_CARACTER := 0.045
 const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 # Sucesos cotidianos breves. Se elige uno por día de forma determinista,
@@ -1505,7 +1507,14 @@ func _mostrar_linea_actual(reiniciar_temporizador: bool = true) -> void:
 		burbuja.visible = true
 		call_deferred("_ajustar_burbuja_a_pantalla", npc, burbuja)
 	if reiniciar_temporizador:
-		_temporizador_linea = DURACION_LINEA
+		# Las intervenciones breves no se quedan suspendidas y las largas
+		# reciben tiempo suficiente para leerse sin acelerar toda la escena.
+		var duracion := clampf(
+			1.2 + float(texto.length()) * SEGUNDOS_POR_CARACTER,
+			DURACION_LINEA_MINIMA,
+			DURACION_LINEA_MAXIMA
+		)
+		_temporizador_linea = duracion
 
 
 func _obtener_burbuja(npc: Creature) -> PanelContainer:
