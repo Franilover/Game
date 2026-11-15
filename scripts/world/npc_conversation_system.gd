@@ -1199,7 +1199,15 @@ func _al_aviso_mundo_para_npcs(mensaje: String) -> void:
 	if _reacciones_evento_vistas.size() > 24:
 		_reacciones_evento_vistas.clear()
 		_reacciones_evento_vistas[firma] = true
+	# La señal se emite mientras el sistema de horarios todavía está
+	# actualizando a los habitantes; diferir permite que todos reciban
+	# primero su rutina y ubicación del acontecimiento.
+	call_deferred("_procesar_reacciones_evento_comunitario", tipo_evento)
 
+
+func _procesar_reacciones_evento_comunitario(tipo_evento: String) -> void:
+	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		return
 	var npcs := _obtener_npcs_torres()
 	var reaccionados := 0
 	for npc_variant in npcs:
@@ -1219,7 +1227,6 @@ func _al_aviso_mundo_para_npcs(mensaje: String) -> void:
 			gesto = "reir" if posmod(hash(npc.get_nombre_visual()), 2) == 0 else "asentir"
 		if _iniciar_reaccion_visual(npc, gesto):
 			reaccionados += 1
-
 
 func _npc_puede_reaccionar_evento(npc: Creature) -> bool:
 	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
