@@ -1246,9 +1246,9 @@ func _actualizar_reacciones_al_jugador(delta: float, jugador: Node2D, dialogo: D
 	# actualizar() recibe Node2D por contrato, pero el jugador real es
 	# CharacterBody2D. Consultar velocity sólo después de comprobar el tipo
 	# evita acceder a una propiedad inexistente si se reutiliza este servicio.
-	var velocidad_jugador := Vector2.ZERO
+	var velocidad_jugador := 0.0
 	if jugador is CharacterBody2D:
-		velocidad_jugador = (jugador as CharacterBody2D).velocity
+		velocidad_jugador = (jugador as CharacterBody2D).velocity.length()
 	var estado_jugador := -1
 	if jugador is Player:
 		estado_jugador = int((jugador as Player).state)
