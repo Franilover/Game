@@ -1713,7 +1713,9 @@ func _ejecutar_cinematica_intercambio_social(
 ) -> void:
 	if not is_instance_valid(_cutscene_director):
 		return
-	var secuencia := load("res://resources/cutscenes/intercambio_social.tres") as CutsceneSequence
+	var usar_interrupcion := posmod(hash(clave + "|" + nombre_a + "|" + nombre_b), 3) == 0
+	var ruta_secuencia := "res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres"
+	var secuencia := load(ruta_secuencia) as CutsceneSequence
 	if not is_instance_valid(secuencia):
 		push_warning("Main: no se pudo cargar la secuencia intercambio_social.tres.")
 		return
