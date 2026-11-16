@@ -53,6 +53,7 @@ var _texto_completo: String = ""
 var _indice_caracter: int = 0
 var _temporizador_texto: float = 0.0
 var _intervalo_caracter: float = 0.006
+var _ultimo_toque_dialogo_msec: int = -1000
 var _recuerdo_pendiente_mostrar: Dictionary = {}
 var _personaje_recuerdo_pendiente: String = ""
 var _variante_pendiente_mostrar: Dictionary = {}
@@ -111,7 +112,21 @@ func _input(event: InputEvent) -> void:
 	if not _abierto:
 		return
 
+	# Android/iOS envían InputEventScreenTouch, que no necesariamente activa
+	# primary_action. Se procesa aquí antes de que el evento llegue al mundo.
+	if event is InputEventScreenTouch:
+		var toque := event as InputEventScreenTouch
+		if toque.pressed and _procesar_toque_dialogo(toque.position):
+			_ultimo_toque_dialogo_msec = Time.get_ticks_msec()
+			get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed("primary_action"):
+		# Godot puede emular el toque como clic de ratón. Evita que un mismo
+		# toque avance dos líneas al llegar también como InputEventMouseButton.
+		if event is InputEventMouseButton and Time.get_ticks_msec() - _ultimo_toque_dialogo_msec < 250:
+			get_viewport().set_input_as_handled()
+			return
 		# Los clics sobre controles de diálogo pertenecen a la interfaz.
 		if event is InputEventMouseButton:
 			var posicion_mouse := get_viewport().get_mouse_position()
@@ -156,6 +171,47 @@ func _input(event: InputEvent) -> void:
 			else:
 				cerrar()
 			get_viewport().set_input_as_handled()
+
+
+func _procesar_toque_dialogo(posicion: Vector2) -> bool:
+	if dialogue_panel == null or not is_instance_valid(dialogue_panel):
+		return false
+	if not dialogue_panel.get_global_rect().has_point(posicion):
+		return false
+
+	# Los paneles secundarios y sus botones conservan su propia interacción.
+	for control in [
+		_tienda_mercado,
+		_selector_items,
+		_selector_conversacion,
+		action_button,
+		cancel_button,
+		_boton_regalo,
+		_boton_preguntar_item,
+		_boton_tienda_mercado
+	]:
+		if _toque_sobre_control(control, posicion):
+			return false
+
+	# Las respuestas son decisiones explícitas: tocar el resto del panel no
+	# debe seleccionar una opción ni saltarse la espera.
+	if not _respuestas.is_empty():
+		if _toque_sobre_control(_respuestas_container, posicion):
+			return false
+		return true
+
+	# Primer toque: completar la línea. Segundo toque: avanzar.
+	_avanzar()
+	return true
+
+
+func _toque_sobre_control(control: Control, posicion: Vector2) -> bool:
+	return (
+		control != null
+		and is_instance_valid(control)
+		and control.is_visible_in_tree()
+		and control.get_global_rect().has_point(posicion)
+	)
 
 
 func esta_abierto() -> bool:
@@ -534,6 +590,8 @@ func _mostrar_linea_actual() -> void:
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
 	text_label.text = ""
+	if hint_label != null:
+		hint_label.text = "Toca para continuar" if DisplayServer.is_touchscreen_available() else "Clic / acción principal para continuar"
 	_actualizar_boton_accion()
 
 
@@ -3225,6 +3283,15 @@ func _crear_interfaz() -> void:
 	)
 	text_label.add_theme_font_size_override("font_size", 13)
 	column.add_child(text_label)
+
+	hint_label = Label.new()
+	hint_label.name = "DialogueContinueHint"
+	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint_label.add_theme_color_override("font_color", Color(0.62, 0.55, 0.43, 1.0))
+	hint_label.add_theme_font_size_override("font_size", 9)
+	column.add_child(hint_label)
 
 	_botones_accion = HBoxContainer.new()
 	_botones_accion.name = "DialogueActions"
