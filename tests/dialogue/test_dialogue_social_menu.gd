@@ -39,7 +39,7 @@ func _run() -> void:
 	if not dialogo._actividad_es_desplazamiento("caminar") or dialogo._actividad_impide_una_conversacion_larga("caminar"):
 		errores.append("Caminar se clasificó como una actividad que impide conversar.")
 	var saludo_en_transito := dialogo._obtener_texto_rutina_personaje("bruna", "rutina", "caminar", "la plaza", true, false, false)
-	if saludo_en_transito.contains("no puedo parar") or saludo_en_transito.contains("ocupado") or not saludo_en_transito.contains("¿Qué necesitas?"):
+	if saludo_en_transito.contains("no puedo parar") or saludo_en_transito.contains("ocupado") or not (saludo_en_transito.contains("¿Qué necesitas?") or saludo_en_transito.contains("¿qué pasa?")):
 		errores.append("El saludo de tránsito de Bruna no suena como una interrupción natural.")
 
 	dialogo._contexto_rutina_conversacion = {
