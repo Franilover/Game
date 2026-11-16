@@ -59,7 +59,7 @@ func _process(delta: float) -> void:
 
 	_tiempo_consumo = minf(_tiempo_consumo + delta, TIEMPO_CONSUMO_ALIMENTO)
 	if is_instance_valid(_barra_consumo):
-		_barra_consumo.value = _tiempo_consumo / TIEMPO_CONSUMO_ALIMENTO * 100.0
+		_barra_consumo.value = _tiempo_consumo / TIEMPO_CONSUMO_ALIMENTO
 	if _tiempo_consumo >= TIEMPO_CONSUMO_ALIMENTO:
 		_completar_consumo()
 
@@ -87,22 +87,20 @@ func _crear_indicador_consumo() -> void:
 	_etiqueta_consumo.add_theme_color_override("font_color", Color(0.94, 0.86, 0.72, 1.0))
 	_etiqueta_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenedor.add_child(_etiqueta_consumo)
-	_barra_consumo = ProgressBar.new()
+	_barra_consumo = TextureProgressBar.new()
 	_barra_consumo.min_value = 0.0
-	_barra_consumo.max_value = 100.0
+	_barra_consumo.max_value = 1.0
 	_barra_consumo.value = 0.0
-	_barra_consumo.show_percentage = false
+	_barra_consumo.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
+	_barra_consumo.texture_progress = preload("res://assets/art/UI/Menus/bar_fill_stamina.png")
+	_barra_consumo.texture_over = preload("res://assets/art/UI/Menus/bar_frame.png")
+	_barra_consumo.stretch_margin_left = 3
+	_barra_consumo.stretch_margin_top = 2
+	_barra_consumo.stretch_margin_right = 3
+	_barra_consumo.stretch_margin_bottom = 2
 	_barra_consumo.position = Vector2(0.0, 19.0)
 	_barra_consumo.size = Vector2(184.0, 12.0)
 	_barra_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var fondo := StyleBoxFlat.new()
-	fondo.bg_color = Color(0.12, 0.10, 0.08, 0.92)
-	fondo.border_color = Color(0.43, 0.34, 0.24, 1.0)
-	fondo.set_border_width_all(1)
-	var progreso := StyleBoxFlat.new()
-	progreso.bg_color = Color(0.72, 0.52, 0.30, 1.0)
-	_barra_consumo.add_theme_stylebox_override("background", fondo)
-	_barra_consumo.add_theme_stylebox_override("fill", progreso)
 	contenedor.add_child(_barra_consumo)
 	contenedor.visible = false
 
