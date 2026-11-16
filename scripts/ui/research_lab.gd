@@ -51,10 +51,10 @@ func _crear_interfaz() -> void:
 	_panel.name = "ResearchLabPanel"
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_panel.offset_left = -310.0
-	_panel.offset_top = -172.0
+	_panel.offset_top = -170.0
 	_panel.offset_right = 310.0
-	_panel.offset_bottom = 172.0
-	_panel.custom_minimum_size = Vector2(620.0, 344.0)
+	_panel.offset_bottom = 170.0
+	_panel.custom_minimum_size = Vector2(620.0, 340.0)
 	add_child(_panel)
 
 	var margen := MarginContainer.new()
@@ -65,7 +65,7 @@ func _crear_interfaz() -> void:
 	_panel.add_child(margen)
 
 	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 10)
+	columna.add_theme_constant_override("separation", 7)
 	margen.add_child(columna)
 
 	var cabecera := HBoxContainer.new()
@@ -87,6 +87,7 @@ func _crear_interfaz() -> void:
 	var descripcion := Label.new()
 	descripcion.text = "Selecciona los elementos que quieres estudiar y el procedimiento que deseas aplicar."
 	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	descripcion.add_theme_font_size_override("font_size", 10)
 	columna.add_child(descripcion)
 
 	var cuerpo := HBoxContainer.new()
@@ -117,7 +118,7 @@ func _crear_interfaz() -> void:
 	var columna_prueba := VBoxContainer.new()
 	columna_prueba.custom_minimum_size = Vector2(240, 0)
 	columna_prueba.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_prueba.add_theme_constant_override("separation", 9)
+	columna_prueba.add_theme_constant_override("separation", 6)
 	cuerpo.add_child(columna_prueba)
 
 	var titulo_procedimiento := Label.new()
@@ -138,7 +139,7 @@ func _crear_interfaz() -> void:
 	var nota := Label.new()
 	nota.text = "Puedes seleccionar entre uno y cuatro elementos. Las pruebas preliminares no consumen ni modifican objetos."
 	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	nota.add_theme_font_size_override("font_size", 11)
+	nota.add_theme_font_size_override("font_size", 9)
 	columna_prueba.add_child(nota)
 
 	_resultado_label = Label.new()
@@ -146,12 +147,12 @@ func _crear_interfaz() -> void:
 	_resultado_label.text = "El resultado de la prueba aparecerá aquí."
 	_resultado_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_resultado_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_resultado_label.custom_minimum_size = Vector2(230, 62)
+	_resultado_label.custom_minimum_size = Vector2(230, 52)
 	columna_prueba.add_child(_resultado_label)
 
 	var ejecutar := Button.new()
 	ejecutar.text = "Realizar prueba"
-	ejecutar.custom_minimum_size = Vector2(0, 38)
+	ejecutar.custom_minimum_size = Vector2(0, 34)
 	ejecutar.pressed.connect(_ejecutar_prueba)
 	columna_prueba.add_child(ejecutar)
 
@@ -292,3 +293,9 @@ func _unir_textos(elementos: Array[String]) -> String:
 			resultado += ", "
 		resultado += elemento
 	return resultado
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		queue_free()
+		get_viewport().set_input_as_handled()
