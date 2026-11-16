@@ -16,6 +16,8 @@ const SPRITE_WALK_BACK_PATH := "res://assets/art/characters/Sprite-0004_Walking_
 var sprite_idle: Texture2D = null
 var sprite_walk_left: Texture2D = null
 var sprite_walk_back: Texture2D = null
+var _tween_comida: Tween = null
+var _sprite_comida: Sprite2D = null
 
 
 func configurar(
@@ -86,6 +88,63 @@ func _actualizar_sprite_direccional(estado: int, facing: Vector2) -> void:
 		"up":
 			if sprite_walk_back != null:
 				sprite.texture = sprite_walk_back
+
+
+func reproducir_animacion_comer(objeto: Dictionary) -> void:
+	if not is_instance_valid(visual):
+		return
+	if is_instance_valid(_tween_comida) and _tween_comida.is_running():
+		_tween_comida.kill()
+	if is_instance_valid(_sprite_comida):
+		_sprite_comida.queue_free()
+		_sprite_comida = null
+
+	var textura := ItemIconResolver.obtener_icono(objeto)
+	if textura == null:
+		_reproducir_saltito_comiendo()
+		return
+
+	_sprite_comida = Sprite2D.new()
+	_sprite_comida.name = "AlimentoAnimado"
+	_sprite_comida.texture = textura
+	_sprite_comida.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite_comida.scale = Vector2(0.62, 0.62)
+	_sprite_comida.z_index = 8
+	var posicion_boca := sprite.position + Vector2(0.0, -5.0) if is_instance_valid(sprite) else Vector2(0.0, -26.0)
+	_sprite_comida.position = posicion_boca + Vector2(13.0, 17.0)
+	visual.add_child(_sprite_comida)
+
+	_tween_comida = visual.create_tween()
+	_tween_comida.set_trans(Tween.TRANS_SINE)
+	_tween_comida.set_ease(Tween.EASE_OUT)
+	_tween_comida.tween_property(_sprite_comida, "position", posicion_boca + Vector2(0.0, -25.0), 0.22)
+	_tween_comida.tween_interval(0.08)
+	_tween_comida.tween_callback(_reproducir_saltito_comiendo)
+	_tween_comida.set_trans(Tween.TRANS_QUAD)
+	_tween_comida.set_ease(Tween.EASE_IN)
+	_tween_comida.tween_property(_sprite_comida, "position", posicion_boca, 0.18)
+	_tween_comida.parallel().tween_property(_sprite_comida, "scale", Vector2(0.18, 0.18), 0.18)
+	_tween_comida.parallel().tween_property(_sprite_comida, "modulate:a", 0.0, 0.18)
+	_tween_comida.tween_callback(_limpiar_sprite_comida)
+
+
+func _reproducir_saltito_comiendo() -> void:
+	if not is_instance_valid(visual):
+		return
+	var posicion_inicial := visual.position
+	var salto := visual.create_tween()
+	salto.set_trans(Tween.TRANS_SINE)
+	salto.set_ease(Tween.EASE_OUT)
+	salto.tween_property(visual, "position", posicion_inicial + Vector2(0.0, -6.0), 0.12)
+	salto.set_ease(Tween.EASE_IN)
+	salto.tween_property(visual, "position", posicion_inicial, 0.14)
+
+
+func _limpiar_sprite_comida() -> void:
+	if is_instance_valid(_sprite_comida):
+		_sprite_comida.queue_free()
+	_sprite_comida = null
+	_tween_comida = null
 
 
 func _obtener_direccion(facing: Vector2) -> String:
