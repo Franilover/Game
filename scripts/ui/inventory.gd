@@ -145,6 +145,37 @@ func _inicializar_navegacion_tabs() -> void:
 	_actualizar_admin_tab()
 
 
+func _conectar_senales_descubrimiento_tabs() -> void:
+	if GameState.has_signal("enciclopedia_actualizada"):
+		if not GameState.enciclopedia_actualizada.is_connected(_actualizar_visibilidad_tabs_descubrimiento):
+			GameState.enciclopedia_actualizada.connect(_actualizar_visibilidad_tabs_descubrimiento)
+	if GameState.has_signal("descubrimientos_mundo_actualizados"):
+		if not GameState.descubrimientos_mundo_actualizados.is_connected(_actualizar_visibilidad_tabs_descubrimiento):
+			GameState.descubrimientos_mundo_actualizados.connect(_actualizar_visibilidad_tabs_descubrimiento)
+
+
+func _actualizar_visibilidad_tabs_descubrimiento(_dato = null) -> void:
+	var desbloqueadas := (
+		not _modo_historia
+		and GameState.has_method("ha_descubierto_criatura_o_garumi")
+		and bool(GameState.call("ha_descubierto_criatura_o_garumi"))
+	)
+	var botones := $Window/Margin/Column/TabButtons
+	for nombre in ["Enciclopedia", "Garumis"]:
+		var boton := botones.get_node_or_null(nombre) as Button
+		if is_instance_valid(boton):
+			boton.visible = desbloqueadas
+
+	# Si el estado cambia por una carga o migración mientras una de estas
+	# páginas estaba seleccionada, regresar al inventario sin dejar una página
+	# inaccesible abierta.
+	if not desbloqueadas:
+		var tabs := $Window/Margin/Column/Tabs as TabContainer
+		if tabs.current_tab in [2, 3]:
+			tabs.current_tab = 0
+			$Window/Margin/Column/TabButtons/Inventario.button_pressed = true
+
+
 func configurar(
 	player: Player = null,
 	world_entity_spawner: WorldEntitySpawner = null,
@@ -290,6 +321,8 @@ func _ready() -> void:
 	equip_button.pressed.connect(_al_equipar_seleccionado)
 	place_button.pressed.connect(_al_colocar_seleccionado)
 	_inicializar_navegacion_tabs()
+	_conectar_senales_descubrimiento_tabs()
+	_actualizar_visibilidad_tabs_descubrimiento()
 	_cargar_notas_historia()
 	_limpiar_informacion()
 	PIXEL_UI_THEME.apply(self, false)
@@ -380,6 +413,7 @@ func establecer_modo_historia(activo: bool) -> void:
 		_actualizar_admin_tab()
 	else:
 		_actualizar_admin_tab()
+	_actualizar_visibilidad_tabs_descubrimiento()
 
 
 func _cargar_notas_historia() -> void:
@@ -444,6 +478,8 @@ func toggle_mapa() -> void:
 
 
 func toggle_enciclopedia_garumis() -> void:
+	if not GameState.has_method("ha_descubierto_criatura_o_garumi") or not bool(GameState.call("ha_descubierto_criatura_o_garumi")):
+		return
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
 	if _abierto and tabs.current_tab == 3:
 		cerrar()
