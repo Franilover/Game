@@ -27,7 +27,7 @@ var _tiempo_consumo: float = 0.0
 var _slot_consumo: int = -1
 var _identidad_consumo: String = ""
 var _boton_consumo: int = MOUSE_BUTTON_NONE
-var _barra_consumo: ProgressBar = null
+var _barra_consumo: TextureProgressBar = null
 var _etiqueta_consumo: Label = null
 
 func _ready() -> void:
