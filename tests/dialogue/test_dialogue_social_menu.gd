@@ -26,6 +26,17 @@ func _run() -> void:
 	if voz_darven != "¿Te apetece hablar?":
 		errores.append("El perfil común impuso un modismo que no corresponde a todas las voces.")
 
+	var npc := CreatureScene.instantiate() as Creature
+	var dialogo := DialogueSystemScript.new() as DialogueSystem
+	if npc == null or dialogo == null:
+		_fail(["No se pudieron crear los objetos de prueba."])
+		return
+
+	add_child(npc)
+	add_child(dialogo)
+	npc.set_meta("rutina_en_transito", true)
+	dialogo._fuente = npc
+
 	# Las respuestas de rutina también deben distinguir a los habitantes,
 	# incluso cuando no tienen un tema narrativo cargado desde los datos.
 	npc.nombre_individual = "Mara"
@@ -45,16 +56,6 @@ func _run() -> void:
 		errores.append("Nima recibió una respuesta de conocimiento que no refleja su cautela.")
 	npc.nombre_individual = "Bruna"
 
-	var npc := CreatureScene.instantiate() as Creature
-	var dialogo := DialogueSystemScript.new() as DialogueSystem
-	if npc == null or dialogo == null:
-		_fail(["No se pudieron crear los objetos de prueba."])
-		return
-
-	add_child(npc)
-	add_child(dialogo)
-	npc.set_meta("rutina_en_transito", true)
-	dialogo._fuente = npc
 
 	if dialogo._es_dialogo_en_transito({"clave": "rutina_contextual"}):
 		errores.append("Una conversación cotidiana se clasificó como diálogo de tránsito por la marca de movimiento.")
