@@ -2,6 +2,7 @@ extends Control
 class_name GarumiHub
 
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+const GARUDEX_SCRIPT: Script = preload("res://scripts/ui/encyclopedia.gd")
 const TEXTO := Color(0.90, 0.79, 0.58, 1.0)
 const SECUNDARIO := Color(0.65, 0.52, 0.35, 1.0)
 const BORDE := Color(0.29, 0.19, 0.12, 1.0)
@@ -11,6 +12,10 @@ var _lista_vinculados: GridContainer
 var _lista_amigos: GridContainer
 var _estado: Label
 var _detalle: VBoxContainer
+var _garudex: Control
+var _subtab: String = "garumis"
+var _boton_vinculos: Button
+var _boton_garudex: Button
 
 
 func _ready() -> void:
@@ -34,6 +39,20 @@ func _crear_interfaz() -> void:
 	var columna := VBoxContainer.new()
 	columna.add_theme_constant_override("separation", 0)
 	margen.add_child(columna)
+
+	var barra_subtabs := HBoxContainer.new()
+	barra_subtabs.add_theme_constant_override("separation", 4)
+	columna.add_child(barra_subtabs)
+	_boton_vinculos = Button.new()
+	_boton_vinculos.text = "Vínculos"
+	_boton_vinculos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_boton_vinculos.pressed.connect(_mostrar_vinculos)
+	barra_subtabs.add_child(_boton_vinculos)
+	_boton_garudex = Button.new()
+	_boton_garudex.text = "Garudex"
+	_boton_garudex.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_boton_garudex.pressed.connect(_mostrar_garudex)
+	barra_subtabs.add_child(_boton_garudex)
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -83,11 +102,38 @@ func _crear_interfaz() -> void:
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_estado.add_theme_color_override("font_color", SECUNDARIO)
 	_estado.add_theme_font_size_override("font_size", 10)
+
+	_garudex = Control.new()
+	_garudex.name = "Garudex"
+	_garudex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_garudex.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_garudex.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_garudex.set_script(GARUDEX_SCRIPT)
+	_garudex.set("solo_garumis", true)
+	_garudex.visible = false
+	columna.add_child(_garudex)
 	columna.add_child(_estado)
 
 
 func abrir_en_garumis() -> void:
+	_mostrar_vinculos()
+
+
+func _mostrar_vinculos() -> void:
+	_subtab = "garumis"
+	_pagina_garumis.visible = true
+	_garudex.visible = false
+	_estado.visible = true
 	actualizar()
+
+
+func _mostrar_garudex() -> void:
+	_subtab = "garudex"
+	_pagina_garumis.visible = false
+	_garudex.visible = true
+	_estado.visible = false
+	if _garudex.has_method("abrir_en_garumis"):
+		_garudex.call("abrir_en_garumis")
 
 
 func actualizar() -> void:
