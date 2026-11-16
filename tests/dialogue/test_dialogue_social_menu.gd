@@ -57,7 +57,7 @@ func _run() -> void:
 		"en_transito": false
 	}
 	var despedida_trabajando := dialogo._obtener_reaccion_despedida_rutina()
-	if not despedida_trabajando.contains("Termina la pieza") or despedida_trabajando.contains("No interrumpes"):
+	if not despedida_trabajando.contains("terminar esta pieza") or despedida_trabajando.contains("No interrumpes"):
 		errores.append("La despedida contradice el contexto de Bruna mientras trabaja en una pieza.")
 
 	dialogo._contexto_rutina_conversacion = {
