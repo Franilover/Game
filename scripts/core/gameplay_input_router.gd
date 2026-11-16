@@ -104,7 +104,7 @@ func _iniciar_consumo(mano: String, accion: String) -> void:
 	_tiempo_consumo = 0.0
 	if is_instance_valid(_barra_consumo):
 		_barra_consumo.value = 0.0
-		_barra_consumo.get_parent().visible = true
+		(_barra_consumo.get_parent() as Control).visible = true
 
 
 func _cancelar_consumo() -> void:
@@ -113,7 +113,7 @@ func _cancelar_consumo() -> void:
 	_tiempo_consumo = 0.0
 	if is_instance_valid(_barra_consumo):
 		_barra_consumo.value = 0.0
-		_barra_consumo.get_parent().visible = false
+		(_barra_consumo.get_parent() as Control).visible = false
 
 
 func _completar_consumo() -> void:
