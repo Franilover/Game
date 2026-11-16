@@ -44,7 +44,7 @@ var health_value: Label = null
 
 var stamina_bar: ProgressBar = null
 var stamina_value: Label = null
-var _dash_recharge_indicator: TextureProgressBar = null
+var _dash_recharge_indicator: TexturedProgressBar = null
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
@@ -295,22 +295,13 @@ func _configurar_referencias_ui() -> void:
 
 
 func _crear_indicador_recarga_dash() -> void:
-	_dash_recharge_indicator = TextureProgressBar.new()
+	_dash_recharge_indicator = TexturedProgressBar.new()
 	_dash_recharge_indicator.name = "DashRechargeAbovePlayer"
-	_dash_recharge_indicator.min_value = 0.0
-	_dash_recharge_indicator.max_value = 1.0
-	_dash_recharge_indicator.value = 1.0
-	_dash_recharge_indicator.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
-	_dash_recharge_indicator.texture_progress = preload("res://assets/art/UI/Menus/bar_fill_stamina.png")
-	_dash_recharge_indicator.texture_over = preload("res://assets/art/UI/Menus/bar_frame.png")
-	_dash_recharge_indicator.stretch_margin_left = 3
-	_dash_recharge_indicator.stretch_margin_top = 2
-	_dash_recharge_indicator.stretch_margin_right = 3
-	_dash_recharge_indicator.stretch_margin_bottom = 2
-	# Indicador de recarga anclado sobre el personaje.
-	_dash_recharge_indicator.custom_minimum_size = Vector2(160.0, 16.0)
-	_dash_recharge_indicator.size = Vector2(160.0, 16.0)
-	_dash_recharge_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dash_recharge_indicator.configurar(
+		preload("res://assets/art/UI/Menus/bar_fill_stamina.png"),
+		preload("res://assets/art/UI/Menus/bar_frame.png"),
+		Vector2(160.0, 16.0)
+	)
 	_dash_recharge_indicator.z_index = 10
 	_dash_recharge_indicator.visible = false
 	add_child(_dash_recharge_indicator)
@@ -344,12 +335,12 @@ func _actualizar_indicador_recarga_dash(delta: float) -> void:
 	var recargando := actual < maximo - 0.0001
 	_dash_recharge_indicator.visible = recargando
 	if not recargando:
-		_dash_recharge_indicator.value = 1.0
+		_dash_recharge_indicator.actualizar_progreso(1.0)
 		return
 
 	# PlayerStaminaController ya recupera la carga de forma continua durante 3 s.
 	# Mostrar su valor real evita una segunda interpolación que impedía completar la barra.
-	_dash_recharge_indicator.value = actual / maximo
+	_dash_recharge_indicator.actualizar_progreso(actual / maximo)
 	var sprite := player.get_node_or_null("Visual/Sprite2D") as Sprite2D
 	if sprite == null or sprite.texture == null:
 		_dash_recharge_indicator.visible = false
