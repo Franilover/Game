@@ -2031,6 +2031,22 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 	if not promesas.is_empty():
 		var promesa: Dictionary = promesas[0]
 		return {"tipo": "cumplir_promesa", "promesa_id": str(promesa.get("id", "")), "clave_conocimiento": str(promesa.get("clave_conocimiento", ""))}
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento_asunto := conocimiento_variant as Dictionary
+		if not bool(conocimiento_asunto.get("requiere_ayuda", false)):
+			continue
+		if str(conocimiento_asunto.get("personaje_relacionado", "")) != pareja_id:
+			continue
+		var clave_asunto := str(conocimiento_asunto.get("clave", "")).strip_edges()
+		if not clave_asunto.is_empty():
+			_relationship_system.registrar_asunto_pendiente_npc(personaje_id, {
+				"clave": clave_asunto,
+				"personaje_relacionado": pareja_id,
+				"descripcion": str(conocimiento_asunto.get("asunto", conocimiento_asunto.get("titulo", clave_asunto))),
+				"origen": "conocimiento_npc"
+			})
 	var asuntos: Array = _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id)
 	if not asuntos.is_empty():
 		var asunto: Dictionary = asuntos[0]
