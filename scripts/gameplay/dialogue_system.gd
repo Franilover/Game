@@ -56,6 +56,9 @@ var _texto_completo: String = ""
 var _indice_caracter: int = 0
 var _temporizador_texto: float = 0.0
 var _intervalo_caracter: float = 0.006
+var _temporizador_lectura_transito: float = 0.0
+const INTERVALO_CARACTER_CAMINANDO: float = 0.028
+const TIEMPO_LECTURA_TRANSITO: float = 2.5
 var _ultimo_toque_dialogo_msec: int = -1000
 var _recuerdo_pendiente_mostrar: Dictionary = {}
 var _personaje_recuerdo_pendiente: String = ""
@@ -91,6 +94,11 @@ func _process(delta: float) -> void:
 		return
 
 	if _indice_caracter >= _texto_completo.length():
+		if _dialogo_en_transito and _indice_linea >= _lineas.size() - 1:
+			_temporizador_lectura_transito += delta
+			if _temporizador_lectura_transito >= TIEMPO_LECTURA_TRANSITO:
+				cerrar()
+			return
 		return
 
 	# Acumula tiempo y revela varios caracteres por fotograma cuando hace falta.
@@ -107,9 +115,7 @@ func _process(delta: float) -> void:
 	if _indice_caracter >= _texto_completo.length():
 		_marcar_recuerdo_pendiente_mostrado()
 		_marcar_variante_pendiente_mostrada()
-		if _dialogo_en_transito and _indice_linea >= _lineas.size() - 1:
-			cerrar()
-			return
+		# El cierre de una línea de tránsito se aplaza en _process para dejarla visible.
 
 
 func _input(event: InputEvent) -> void:
@@ -603,6 +609,8 @@ func _mostrar_linea_actual() -> void:
 	_texto_completo = texto
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
+	_temporizador_lectura_transito = 0.0
+	_intervalo_caracter = INTERVALO_CARACTER_CAMINANDO if _dialogo_requiere_lectura_lenta() else 0.006
 	text_label.text = ""
 	if hint_label != null:
 		hint_label.text = "Toca para continuar" if DisplayServer.is_touchscreen_available() else "Clic / acción principal para continuar"
