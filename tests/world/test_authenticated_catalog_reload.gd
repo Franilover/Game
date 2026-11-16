@@ -41,10 +41,12 @@ func _run() -> void:
 	if not errores.is_empty():
 		for error in errores:
 			push_error("AuthenticatedCatalogReload: FAIL: " + error)
+		auth.free()
 		get_tree().quit(1)
 		return
 
 	print("AuthenticatedCatalogReload: PASS")
+	auth.free()
 	get_tree().quit(0)
 
 
