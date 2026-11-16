@@ -123,17 +123,24 @@ func _renderizar_recetas() -> void:
 	var recetas_visibles := 0
 
 	for receta in _recetas:
-		if not _receta_tiene_sprites(receta):
-			continue
 		var resultado_variant: Variant = receta.get("resultado", {})
 		var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
 		var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
 		var categoria_variant: Variant = item_resultado.get("categoria", {})
 		var categoria: Dictionary = categoria_variant as Dictionary if categoria_variant is Dictionary else {}
-		var clave := str(categoria.get("clave", "sin_categoria"))
+		# La categoría del catálogo mejora la agrupación, pero no debe decidir
+		# si una receta existe: el catálogo o el sprite pueden llegar después.
+		var clave := str(categoria.get("clave", ""))
+		var nombre_categoria := str(categoria.get("nombre", ""))
+		if clave.is_empty():
+			clave = str(receta.get("categoria", "sin_categoria")).strip_edges().to_lower()
+		if nombre_categoria.is_empty():
+			nombre_categoria = str(receta.get("categoria", "Otras recetas")).replace("_", " ").capitalize()
+		if clave.is_empty():
+			clave = "sin_categoria"
 		if not grupos.has(clave):
 			grupos[clave] = {
-				"nombre": str(categoria.get("nombre", "Sin categoría")),
+				"nombre": nombre_categoria,
 				"orden": int(categoria.get("orden", 999)),
 				"recetas": []
 			}
@@ -180,7 +187,7 @@ func _renderizar_recetas() -> void:
 				_crear_tarjeta_receta(receta_variant as Dictionary, rejilla)
 
 	if recetas_visibles == 0:
-		_estado.text = "No hay recetas disponibles con los objetos que ya tienen ilustración."
+		_estado.text = "No hay recetas disponibles."
 
 
 func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
@@ -196,26 +203,40 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	rejilla.add_child(panel)
 	PIXEL_UI_THEME.apply(panel, false)
 
-	var resultado: Dictionary = receta.get("resultado", {}) as Dictionary
+	var resultado_variant: Variant = receta.get("resultado", {})
+	var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
 	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
-	var categoria_variant: Variant = item_resultado.get("categoria", {})
-	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
+	var nombre_resultado := str(item_resultado.get("nombre", resultado.get("nombre", receta.get("nombre", "Objeto"))))
+	var textura_resultado := ItemIconResolver.obtener_icono(item_resultado) if not item_resultado.is_empty() else null
+	if textura_resultado != null:
 		var icono := TextureRect.new()
 		icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		icono.offset_left = 7
-		icono.offset_top = 7
+		icono.offset_top = 4
 		icono.offset_right = -7
-		icono.offset_bottom = -7
-		icono.custom_minimum_size = Vector2(42, 42)
-		icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		icono.offset_bottom = -15
+		icono.custom_minimum_size = Vector2(42, 36)
 		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		icono.texture = ItemIconResolver.obtener_icono(
-			_buscar_item_catalogo(str(resultado.get("item_id", "")))
-		)
+		icono.texture = textura_resultado
 		panel.add_child(icono)
+
+	var nombre_label := Label.new()
+	nombre_label.name = "RecipeItemName"
+	nombre_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	nombre_label.offset_left = 2
+	nombre_label.offset_top = 2 if textura_resultado == null else 39
+	nombre_label.offset_right = -2
+	nombre_label.offset_bottom = -2
+	nombre_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nombre_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nombre_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nombre_label.text = nombre_resultado
+	nombre_label.add_theme_font_size_override("font_size", 8 if textura_resultado != null else 9)
+	nombre_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(nombre_label)
 
 
 
