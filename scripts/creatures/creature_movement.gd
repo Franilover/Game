@@ -83,6 +83,7 @@ func procesar(delta: float) -> void:
 	# el modo de control que tenía el NPC antes de hablar.
 	if _pausado_temporalmente:
 		creature.velocity = Vector2.ZERO
+		_reiniciar_seguro_atasco()
 		return
 
 	# Las rutinas de NPC usan rutas calculadas sobre la geometría estática.
@@ -187,6 +188,7 @@ func establecer_ruta(ruta: PackedVector2Array) -> void:
 
 func detener_por_rutina() -> void:
 	_control_rutina = true
+	_reiniciar_seguro_atasco()
 	_ruta_rutina.clear()
 	_indice_ruta_rutina = 0
 	_rutina_completada = false
@@ -352,6 +354,7 @@ func liberar_control() -> void:
 
 func detener() -> void:
 	_control_rutina = false
+	_reiniciar_seguro_atasco()
 	_ruta_rutina.clear()
 	_indice_ruta_rutina = 0
 	_rutina_completada = false
