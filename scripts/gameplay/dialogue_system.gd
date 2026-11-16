@@ -641,10 +641,11 @@ func _actualizar_retrato(hablante: String) -> void:
 
 ## Los encuentros durante un desplazamiento son breves: el NPC no se detiene a conversar.
 func _es_dialogo_en_transito(dialogo: Dictionary) -> bool:
+	# La marca de movimiento puede seguir activa mientras el NPC está pausado
+	# para conversar. Sólo el contenido elegido como diálogo de tránsito debe
+	# suprimir el menú social; no se consulta el estado físico de la rutina.
 	var clave := str(dialogo.get("clave", "")).strip_edges().to_lower()
-	if clave == "rutina_en_transito":
-		return true
-	return is_instance_valid(_fuente) and bool(_fuente.get_meta("rutina_en_transito", false))
+	return clave == "rutina_en_transito"
 
 
 func _es_dialogo_cotidiano(dialogo: Dictionary) -> bool:
