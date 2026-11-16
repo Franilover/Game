@@ -178,10 +178,6 @@ theme_override_font_sizes/font_size = 26
 text = "Iniciar sesión"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=1799794419]
-layout_mode = 2
-text = "Usa tu cuenta de Garlia."
-horizontal_alignment = 1
 
 [node name="EmailLabel" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=648128192]
 layout_mode = 2
