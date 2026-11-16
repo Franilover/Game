@@ -731,3 +731,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadió `NPCBuildingEntryCollision` para verificar la desactivación de colisión exterior, la restauración de capas/máscaras y la recuperación de formas al entrar.
 - CI Godot 4.7: **PASS**, run `43920496439`, 36 pasos completados sin fallos.
 - Falta una prueba visual en Reino Torres con varios NPC dirigiéndose simultáneamente a la misma puerta; el contrato confirma el ciclo de colisiones, no la navegación física completa.
+
+
+## Sexagésima cuarta barrida — Continuidad del menú social
+
+- `DialogueSystem._cerrar_selector_conversacion()` reconstruye las cuatro acciones principales cuando se cierra el selector social.
+- Después de responder a un tema cotidiano, al terminar de mostrarse la respuesta vuelven a aparecer `Preguntar`, `Hablar`, `Dar cumplido` y `Despedirse`.
+- El test `DialogueSocialMenu` ya se ejecuta como escena del proyecto y verifica tanto el cierre del selector como la recuperación del menú después de una respuesta casual.
+- Se amplió el filtro de CI para incluir `tests/dialogue/**`; los contratos de diálogo no volverán a quedar fuera de la batería por un filtro de rutas.
+- CI Godot 4.7: **PASS**, run `43921504449`, 37 pasos completados sin fallos.
+- La prueba sigue siendo headless; queda validar la experiencia con Ivo, Mara y Nira dentro de una partida real, incluyendo interrupciones, regalos y preguntas.
