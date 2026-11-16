@@ -821,3 +821,15 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - El ciclo de objetivos repetidos y el reciclaje del historial se cubren con la prueba NPC Mind.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1694.
 - No hay generación de diálogo: se conservan textos escritos y escenas ambientales existentes.
+
+
+
+## Memoria social y asuntos entre habitantes
+
+- Las promesas y asuntos pendientes se guardan entre partidas. Los NPC pueden buscar a la persona implicada para cumplir una promesa o pedir/recibir ayuda.
+- Los habitantes comparten conocimientos marcados como públicos/compartibles cuando el otro aún no los conoce, conservando procedencia y cadena de transmisión.
+- La tensión entre dos habitantes puede provocar un encuentro para intentar resolver el desacuerdo; la resolución modifica tensión, confianza/amistad y recuerdos.
+- Los cambios dejan recuerdos individuales en ambos NPC y afectan sus vínculos futuros.
+- Los compromisos originados en recuerdos usan identificadores estables para no reaparecer tras resolverse.
+- Estos encuentros aún no presentan diálogo visual NPC-NPC; no hay generación de texto. La narración visible se mantiene escrita y queda pendiente conectar estos motivos a conversaciones ambientales.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1708.
