@@ -1,6 +1,6 @@
 # Garlia — Auditoría del estado actual
 
-Fecha: 2026-11-05
+Fecha: 2026-11-16
 
 ## Evidencia revisada
 
@@ -34,7 +34,7 @@ Se detectaron especialmente:
 
 El proyecto está activo y saludable.
 
-Datos relevantes actuales:
+Datos relevantes del último recuento documentado (2026-11-05):
 
 - 9 biomas
 - 14 ecosistemas
@@ -667,7 +667,7 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Los datos de progreso con tipos incorrectos se rechazan sin romper la carga de la partida.
 - Se añadió `MissionManagerContract` para verificar normalización, serialización, finalización idempotente y emisión única de `recompensa_disponible`.
 - El workflow Godot 4.7 ejecutó el nuevo contrato correctamente en el run `42213469008`.
-- La aplicación efectiva de recompensas al inventario/estado del jugador continúa pendiente: no se asumió un esquema de recompensa ni se modificó Supabase.
+- En esa barrida, la aplicación efectiva de recompensas seguía pendiente; quedó resuelta en la sexagésima primera barrida, usando el catálogo canónico de items y sin modificar Supabase.
 
 
 
@@ -690,5 +690,22 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - `MissionManagerService.cargar_estado_partida()` valida estados y progreso contra los objetivos vigentes, limita cantidades y descarta referencias de objetivos inexistentes.
 - Contratos ejecutados: `SaveFileRepositoryContract`, `InventoryPickupContract`, `InventoryDropContract` y `MissionManagerContract`.
 - CI completo Godot 4.7: **success**, run `42213469008`, commit de código `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`. También pasaron locomoción, combate, IA, ciclo de vida, snapshot y terreno.
-- Pendiente funcional: aplicar/reclamar recompensas con el esquema canónico correcto; esta barrida no modificó Supabase ni tablas/RPC/datos.
+- Pendiente funcional en esa barrida: aplicar/reclamar recompensas con el esquema canónico correcto. La siguiente barrida documenta la resolución; esta barrida histórica no modificó Supabase.
 
+
+
+## Sexagésima primera barrida — Compilación Godot 4.7 y recompensas canónicas
+
+- Se corrigió la inferencia de tipo del token en Crafteo para Godot 4.7.
+- `GarliaAuth` ahora usa la clave publicable solo en `apikey` para login/refresh; Crafteo agrega `Authorization: Bearer` únicamente si existe un JWT real.
+- `CombatItemResolver` reconoce categorías de arma descriptivas como `arma especial`.
+- El test climático se ejecuta como escena del proyecto para disponer de autoloads; el test de locomoción se ejecuta en escena y compara recursos importados con ResourceLoader.
+- `GarumiHub` incluye subpestañas Vínculos y Garudex; la tecla G abre Vínculos y el catálogo queda accesible desde la misma sección.
+- El catálogo de pruebas usa sprites que existen en el repositorio (`Desell`, `Velki` y `Plava`), sin crear arte sustituto.
+- Se protegió `MissionManagerService.entregar_recompensas()` con un bloqueo transaccional. El rollback de una entrega parcial ya no programa reintentos recursivos a través de `inventory_changed`.
+- Las recompensas canónicas que contienen solo `item_id` se resuelven mediante `GarliaWorldItems.buscar_item_por_id()`. Si el catálogo aún está cargando, la recompensa permanece pendiente y se reintenta al recibir `catalogo_cargado`.
+- La consulta de solo lectura a Supabase confirmó que la misión activa «Conocer a Abel» recompensa una Espada de Madera mediante UUID y que `datos` está vacío; `items` + `items_game` aportan nombre, tipo, max_stack y propiedades.
+- Se añadieron `MissionRewardDelivery` y pruebas para rollback, ausencia de reintentos recursivos, resolución por UUID e idempotencia.
+- CI Godot 4.7: **PASS**, run `43916861872`, 33 pasos completados sin fallos.
+- Rama de trabajo: `fix/p0-godot47-crafting-token-type`. PR #12 sigue en borrador. Sin cambios en `main` ni mutaciones de Supabase.
+- Pendiente: validar continuidad de una partida real tras entregar recompensa, offline end-to-end, pruebas visuales Android/PC y flujos NPC/móvil con dispositivo real.
