@@ -2146,6 +2146,9 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 			+ clampf(520.0 - distancia, 0.0, 520.0) * 0.025
 			+ presion_social * 0.08
 		)
+		# Las experiencias recientes pueden reforzar o enfriar un vínculo,
+		# incluso antes de que sus valores sociales cambien mucho.
+		puntuacion += _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
 		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
 			puntuacion -= 8.0
 		if not _relationship_system.obtener_promesas_pendientes_npc(id_npc, id_candidato).is_empty():
@@ -2158,6 +2161,56 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 			mejor_puntuacion = puntuacion
 			mejor = candidato
 	return mejor
+
+
+## Resume las últimas experiencias compartidas con una persona.
+## Los recuerdos recientes pesan más; la influencia queda acotada para que
+## una mala experiencia no borre por sí sola una relación consolidada.
+func _calcular_influencia_recuerdos_sociales(personaje_id: String, pareja_id: String) -> float:
+	if not is_instance_valid(_relationship_system) or not _relationship_system.has_method("obtener_recuerdos"):
+		return 0.0
+	var recuerdos: Array = _relationship_system.obtener_recuerdos(personaje_id)
+	var influencia := 0.0
+	var consideradas := 0
+	for indice in range(recuerdos.size() - 1, -1, -1):
+		var recuerdo_variant: Variant = recuerdos[indice]
+		if not recuerdo_variant is Dictionary:
+			continue
+		var recuerdo := recuerdo_variant as Dictionary
+		if str(recuerdo.get("tipo", "")) != "experiencia_npc":
+			continue
+		if str(recuerdo.get("con_personaje", "")).strip_edges().to_lower() != pareja_id.strip_edges().to_lower():
+			continue
+		var resultado := clampf(float(recuerdo.get("resultado", 0.0)), -1.0, 1.0)
+		var importancia := clampf(float(recuerdo.get("importancia", 1.0)) / 3.0, 0.25, 1.0)
+		influencia += resultado * importancia * (1.0 / (1.0 + float(consideradas) * 0.35)) * 5.0
+		consideradas += 1
+		if consideradas >= 6:
+			break
+	return clampf(influencia, -15.0, 15.0)
+
+
+func _registrar_experiencia_social_npc(
+	personaje_id: String,
+	pareja_id: String,
+	tipo_experiencia: String,
+	objetivo_id: String,
+	resultado: float
+) -> void:
+	if not is_instance_valid(_relationship_system) or not _relationship_system.has_method("registrar_recuerdo"):
+		return
+	for participante in [personaje_id, pareja_id]:
+		var otro := pareja_id if participante == personaje_id else personaje_id
+		_relationship_system.registrar_recuerdo(participante, {
+			"tipo": "experiencia_npc",
+			"evento": tipo_experiencia,
+			"actividad": tipo_experiencia,
+			"evento_id": objetivo_id,
+			"con_personaje": otro,
+			"resultado": clampf(resultado, -1.0, 1.0),
+			"importancia": 2.5,
+			"momento": _clave_fecha_actual()
+		})
 
 
 func _hay_noticia_compartible(personaje_id: String, pareja_id: String) -> bool:
@@ -2272,6 +2325,19 @@ func _finalizar_objetivo_social_npc(
 					"importancia": 3.0,
 					"momento": _clave_fecha_actual()
 				})
+		var resultado_experiencia := 0.35
+		match tipo_motivo:
+			"cumplir_promesa":
+				resultado_experiencia = 0.65
+			"resolver_asunto":
+				resultado_experiencia = 0.8
+			"compartir_noticia":
+				resultado_experiencia = 0.45
+			"resolver_desacuerdo":
+				resultado_experiencia = 0.15
+		_registrar_experiencia_social_npc(
+			personaje_id, pareja_id, tipo_motivo, objetivo_id, resultado_experiencia
+		)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
