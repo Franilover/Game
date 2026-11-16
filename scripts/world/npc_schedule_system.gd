@@ -702,6 +702,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		npc.set_meta("rutina_firma", firma_nueva)
 		npc.set_meta("rutina_actual", clave_rutina)
 		npc.set_meta("rutina_ubicacion", ubicacion)
+		npc.set_meta("rutina_destino_es_edificio", not edificio_id.is_empty())
+		npc.set_meta("rutina_edificio_objetivo", edificio_id)
 		return
 
 	if firma_anterior == firma_nueva:
@@ -816,6 +818,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.set_meta("rutina_firma", firma_nueva)
 	npc.set_meta("rutina_actual", clave_rutina)
 	npc.set_meta("rutina_ubicacion", ubicacion)
+	npc.set_meta("rutina_destino_es_edificio", not edificio_id.is_empty())
+	npc.set_meta("rutina_edificio_objetivo", edificio_id)
 	npc.datos["actividad_actual"] = actividad
 
 
