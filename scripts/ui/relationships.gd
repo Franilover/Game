@@ -161,7 +161,7 @@ func _actualizar() -> void:
 		}
 
 		var boton := Button.new()
-		boton.name = "SlotRelationshipPortrait"
+		boton.name = "RelationshipPortraitButton"
 		boton.custom_minimum_size = TAMANO_RETRATO
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.size_flags_vertical = Control.SIZE_FILL
