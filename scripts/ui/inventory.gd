@@ -81,6 +81,7 @@ var _slot_grids: Array[GridContainer] = []
 @onready var stats_row: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/CategoryStatsRow/StatsRow
 @onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/DescriptionPanel/DescriptionScroll/ItemDescription
 @onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/DescriptionPanel
+@onready var detail_block: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/ItemIconFrame/ItemIcon
 @onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/ItemIconFrame
 @onready var skin_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel
@@ -577,13 +578,12 @@ func _aplicar_fondos_inventario() -> void:
 		contenedor.add_theme_constant_override("margin_right", 5)
 		contenedor.add_theme_constant_override("margin_bottom", 5)
 
-	var bloque_detalle := get_node_or_null("Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock") as PanelContainer
-	if is_instance_valid(bloque_detalle):
-		bloque_detalle.add_theme_stylebox_override("panel", estilo_boton)
-		bloque_detalle.add_theme_constant_override("margin_left", 7)
-		bloque_detalle.add_theme_constant_override("margin_top", 6)
-		bloque_detalle.add_theme_constant_override("margin_right", 7)
-		bloque_detalle.add_theme_constant_override("margin_bottom", 6)
+	if is_instance_valid(detail_block):
+		detail_block.add_theme_stylebox_override("panel", estilo_boton)
+		detail_block.add_theme_constant_override("margin_left", 7)
+		detail_block.add_theme_constant_override("margin_top", 6)
+		detail_block.add_theme_constant_override("margin_right", 7)
+		detail_block.add_theme_constant_override("margin_bottom", 6)
 
 	# El nombre y las etiquetas de categoría/modalidad usan la misma
 	# superficie que los botones de la interfaz.
@@ -1027,6 +1027,7 @@ func _al_eliminar_seleccionado() -> void:
 
 
 func _mostrar_informacion() -> void:
+	detail_block.visible = true
 	objeto_seleccionado = _enriquecer_datos_objeto(objeto_seleccionado)
 	var nombre := str(objeto_seleccionado.get("nombre", "Objeto"))
 	var lineas: PackedStringArray = []
@@ -1390,6 +1391,7 @@ func _obtener_categoria_objeto(datos: Dictionary) -> Dictionary:
 
 
 func _limpiar_informacion() -> void:
+	detail_block.visible = false
 	item_name.text = ""
 	item_category.text = ""
 	item_category.tooltip_text = ""
