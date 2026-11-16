@@ -1897,8 +1897,8 @@ func _actualizar_mente_npc(npc: Creature, minutos: int, tiempo: Dictionary) -> v
 		delta_minutos += 1440
 	if delta_minutos <= 0:
 		return
-	# Evita aplicar de golpe horas excesivas si el calendario se adelantó o
-	# el sistema estuvo fuera de escena. El tiempo restante se procesa después.
+	# Limita cada lote a dos horas. Si el salto fue mayor, el siguiente tick
+	# continúa desde el minuto realmente procesado.
 	delta_minutos = mini(delta_minutos, 120)
 	if delta_minutos < 5:
 		return
@@ -1907,7 +1907,7 @@ func _actualizar_mente_npc(npc: Creature, minutos: int, tiempo: Dictionary) -> v
 	var satisfacciones := _obtener_satisfaccion_actividad(actividad)
 	mind.call("procesar_intervalo", personaje_id, float(delta_minutos) / 60.0, satisfacciones)
 	npc.set_meta("npc_mind_fecha_procesada", fecha)
-	npc.set_meta("npc_mind_minuto_procesado", minutos)
+	npc.set_meta("npc_mind_minuto_procesado", posmod(minuto_anterior + delta_minutos, 1440))
 
 
 func _obtener_satisfaccion_actividad(actividad: String) -> Dictionary:
