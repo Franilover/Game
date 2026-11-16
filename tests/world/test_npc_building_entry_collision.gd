@@ -29,17 +29,17 @@ func _run() -> void:
 	# La captura original debe sobrevivir a llamadas repetidas y restaurarse
 	# al abandonar el edificio.
 	npc.collision_layer = 16
-	zona.desactivar_colision_npc_exterior(npc)
-	zona.restaurar_colision_npc(npc)
+	zona.call("desactivar_colision_npc_exterior", npc)
+	zona.call("restaurar_colision_npc", npc)
 	if npc.collision_layer != 4 or npc.collision_mask != 6:
 		errores.append("La restauración no recuperó las capas/máscaras originales.")
 
 	var forma := CollisionShape2D.new()
 	forma.shape = CircleShape2D.new()
 	npc.add_child(forma)
-	zona._estados_colision_exterior[forma.get_instance_id()] = false
+	zona.set("_estados_colision_exterior", {forma.get_instance_id(): false})
 	forma.disabled = true
-	zona._restaurar_formas_colision_npc(npc)
+	zona.call("_restaurar_formas_colision_npc", npc)
 	await get_tree().process_frame
 	if forma.disabled:
 		errores.append("El NPC no recuperó su forma de colisión al entrar al interior.")
