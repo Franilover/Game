@@ -2170,49 +2170,42 @@ func iniciar_conversacion_social_autonoma(npc_a: Creature, npc_b: Creature, moti
 	if nombre_a.is_empty() or nombre_b.is_empty():
 		return false
 	var tipo := str(motivo.get("tipo", "visitar_amigo"))
-	var detalle := str(motivo.get("descripcion", motivo.get("titulo", ""))).strip_edges()
 	var lineas: Array[Dictionary] = []
 	match tipo:
 		"cumplir_promesa":
-			if detalle.is_empty():
-				detalle = "lo que hablamos"
 			lineas = [
-				{"npc": nombre_a, "texto": "Quería hablar contigo. Te dije que volvería con esto y no quería dejarlo pendiente."},
-				{"npc": nombre_b, "texto": "Me acuerdo. ¿Pudiste resolverlo?"},
-				{"npc": nombre_a, "texto": "Sí. " + detalle + "."},
-				{"npc": nombre_b, "texto": "Gracias por acordarte y por venir a contármelo."}
+				{"npc": nombre_a, "texto": "Quería verte. Te dije que me ocuparía de aquello y ya pude hacerlo."},
+				{"npc": nombre_b, "texto": "¿Sí? ¿Cómo te fue?"},
+				{"npc": nombre_a, "texto": "Salió bien. Prefería venir a contártelo en persona."},
+				{"npc": nombre_b, "texto": "Gracias por cumplirlo. Me alegra que lo resolvieras."}
 			]
 		"resolver_asunto":
-			if detalle.is_empty():
-				detalle = "lo que te preocupaba"
 			lineas = [
-				{"npc": nombre_a, "texto": "Me quedé pensando en lo que me contaste. ¿Todavía necesitas ayuda con eso?"},
-				{"npc": nombre_b, "texto": "Sí, todavía me vendría bien una mano."},
-				{"npc": nombre_a, "texto": "De acuerdo. " + detalle + ". Veamos cómo podemos solucionarlo."},
-				{"npc": nombre_b, "texto": "Te lo agradezco. No quería seguir dándole vueltas a solas."}
+				{"npc": nombre_a, "texto": "Me acordé de lo que me contaste. ¿Todavía necesitas ayuda?"},
+				{"npc": nombre_b, "texto": "Sí, aún no he podido resolverlo."},
+				{"npc": nombre_a, "texto": "Si quieres, lo vemos juntos. Quizá encontremos una salida."},
+				{"npc": nombre_b, "texto": "Me vendría bien. Gracias por ofrecerte."}
 			]
 		"compartir_noticia":
-			if detalle.is_empty():
-				detalle = "algo que pasó hace poco"
 			lineas = [
-				{"npc": nombre_a, "texto": "¿Tienes un momento? Quería contarte algo que escuché."},
-				{"npc": nombre_b, "texto": "Claro, dime. ¿Qué ocurrió?"},
-				{"npc": nombre_a, "texto": "Se está hablando de " + detalle + ". Todavía no sé si está confirmado."},
-				{"npc": nombre_b, "texto": "Gracias por avisarme. Lo tendré presente, pero esperaré a saber más."}
+				{"npc": nombre_a, "texto": "¿Has oído algo sobre lo que pasó estos días?"},
+				{"npc": nombre_b, "texto": "No mucho. ¿Qué sabes?"},
+				{"npc": nombre_a, "texto": "Me llegó un comentario, aunque todavía no sé si es cierto."},
+				{"npc": nombre_b, "texto": "Entonces lo tendré en cuenta, pero esperemos a confirmarlo."}
 			]
 		"resolver_desacuerdo":
 			lineas = [
-				{"npc": nombre_a, "texto": "No me gustó cómo terminó nuestra última conversación. ¿Podemos hablarlo con calma?"},
-				{"npc": nombre_b, "texto": "Sí. Yo también creo que nos quedamos con cosas por decir."},
-				{"npc": nombre_a, "texto": "No espero que pensemos igual, pero quiero entender mejor tu punto."},
-				{"npc": nombre_b, "texto": "De acuerdo. Podemos empezar por escucharnos."}
+				{"npc": nombre_a, "texto": "Quería hablar de lo que pasó entre nosotros. No me gustó cómo terminó."},
+				{"npc": nombre_b, "texto": "A mí tampoco. Creo que los dos nos quedamos molestos."},
+				{"npc": nombre_a, "texto": "No quiero que sigamos así. ¿Podemos aclararlo?"},
+				{"npc": nombre_b, "texto": "Sí. Empecemos por escucharnos."}
 			]
 		_:
 			lineas = [
-				{"npc": nombre_a, "texto": "Me alegra que hayamos coincidido. ¿Cómo te ha ido estos días?"},
-				{"npc": nombre_b, "texto": "He tenido días tranquilos y otros bastante ocupados. ¿Y tú?"},
-				{"npc": nombre_a, "texto": "Bien, aunque me hacía falta conversar un rato sin estar pendiente de otras cosas."},
-				{"npc": nombre_b, "texto": "A mí también. Podemos repetirlo cuando volvamos a tener tiempo."}
+				{"npc": nombre_a, "texto": "¿Tienes un rato? Hace días que no conversamos."},
+				{"npc": nombre_b, "texto": "Sí, justo tenía un momento libre. ¿Cómo has estado?"},
+				{"npc": nombre_a, "texto": "Con bastante que hacer, pero bien. Me alegra que coincidamos."},
+				{"npc": nombre_b, "texto": "A mí también. Podemos charlar un rato."}
 			]
 	_iniciar_conversacion({
 		"clave": "social_autonoma_%s_%s_%s" % [nombre_a, nombre_b, str(motivo.get("tipo", "charla"))],
