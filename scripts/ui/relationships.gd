@@ -296,17 +296,6 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	detalle.add_child(fondo_retrato)
 
 	if textura != null:
-		var fondo_retrato := Button.new()
-		fondo_retrato.name = "CharacterFaceFrame"
-		fondo_retrato.text = ""
-		fondo_retrato.custom_minimum_size = Vector2(0.0, 96.0)
-		fondo_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		fondo_retrato.focus_mode = Control.FOCUS_NONE
-		fondo_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fondo_retrato.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		PIXEL_UI_THEME.apply(fondo_retrato, false)
-		detalle.add_child(fondo_retrato)
-
 		var retrato_cara := TextureRect.new()
 		retrato_cara.name = "CharacterFace"
 		retrato_cara.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
