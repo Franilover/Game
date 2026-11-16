@@ -995,10 +995,11 @@ func _mostrar_informacion() -> void:
 
 	var tiene_uso := _objeto_tiene_uso_valido(objeto_seleccionado)
 	var categoria_clave := _obtener_clave_categoria_objeto(objeto_seleccionado)
-	use_button.text = "COMER" if categoria_clave == "alimentos_bebidas" else "USAR"
+	var es_alimento := categoria_clave == "alimentos_bebidas"
+	use_button.text = "COMER" if es_alimento else "USAR"
 	var es_armadura := tipo == "armadura" and not str(propiedades.get("ranura_equipamiento", "")).strip_edges().is_empty()
 	var es_colocable := _world_items != null and is_instance_valid(_world_items) and _world_items.es_objeto_colocable(objeto_seleccionado)
-	use_button.visible = tiene_uso
+	use_button.visible = tiene_uso or es_alimento
 	use_button.disabled = not tiene_uso or _player == null or not is_instance_valid(_player)
 	equip_button.visible = es_armadura
 	equip_button.disabled = not es_armadura
@@ -1254,6 +1255,8 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 	if item_id.is_empty():
 		return resultado
 	var canonico := _world_items.buscar_item_por_id(item_id)
+	if canonico.is_empty():
+		canonico = _world_items.buscar_item_por_nombre(str(resultado.get("nombre", "")))
 	if canonico.is_empty():
 		return resultado
 	# Las partidas antiguas pueden guardar solo la identidad del objeto.
