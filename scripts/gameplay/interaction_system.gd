@@ -126,10 +126,12 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool,
 		if resultado:
 			return true
 
-	# Primero se intenta usar un consumible de la mano seleccionada. Esto va
-	# después de la interacción contextual para no gastar objetos al recoger.
-	if inventory != null and inventory.usar_objeto_mano(mano, player):
-		return true
+	# Los alimentos requieren mantener el clic durante un segundo; el
+	# GameplayInputRouter gestiona ese gesto. Otros consumibles conservan el
+	# uso inmediato para no alterar sus controles existentes.
+	if inventory != null and not inventory.es_alimento_en_mano(mano):
+		if inventory.usar_objeto_mano(mano, player):
+			return true
 
 	# Si no hay una interacción contextual válida, la mano puede colocar su
 	# objeto. El combate sigue después, en CombatSystem, si tampoco se colocó.
@@ -174,6 +176,11 @@ func _objetivo_sigue_disponible() -> bool:
 	if objetivo_actual is Node2D:
 		return player.global_position.distance_to((objetivo_actual as Node2D).global_position) <= interaction_distance
 	return false
+
+
+func hay_interaccion_contextual() -> bool:
+	_buscar_objetivo()
+	return interaction_controller.objetivo_actual != null
 
 
 func obtener_texto_interaccion() -> String:
