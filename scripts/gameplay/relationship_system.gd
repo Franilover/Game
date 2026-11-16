@@ -896,10 +896,13 @@ func registrar_asunto_pendiente_npc(personaje_id: String, asunto: Dictionary) ->
 	var datos := _obtener_datos_conversaciones_npc()
 	var todos_variant: Variant = datos.get("_asuntos_pendientes_npc", [])
 	var todos: Array = todos_variant.duplicate(true) if todos_variant is Array else []
+	var id_solicitado := str(asunto.get("id", "")).strip_edges()
 	for existente_variant in todos:
 		if not existente_variant is Dictionary:
 			continue
 		var existente := existente_variant as Dictionary
+		if not id_solicitado.is_empty() and str(existente.get("id", "")) == id_solicitado:
+			return id_solicitado
 		if (
 			str(existente.get("personaje_id", "")) == id
 			and str(existente.get("clave", "")) == clave
@@ -977,10 +980,13 @@ func registrar_promesa_entre_npc(personaje_promitente: String, personaje_destino
 	var datos := _obtener_datos_conversaciones_npc()
 	var todas_variant: Variant = datos.get("_promesas_npc", [])
 	var todas: Array = todas_variant.duplicate(true) if todas_variant is Array else []
+	var id_solicitado := str(promesa.get("id", "")).strip_edges()
 	for existente_variant in todas:
 		if not existente_variant is Dictionary:
 			continue
 		var existente := existente_variant as Dictionary
+		if not id_solicitado.is_empty() and str(existente.get("id", "")) == id_solicitado:
+			return id_solicitado
 		if (
 			str(existente.get("promitente", "")) == origen
 			and str(existente.get("destinatario", "")) == destino
