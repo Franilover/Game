@@ -1956,14 +1956,16 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 			return false
 		var pareja_id := pareja.get_personaje_game_id().strip_edges()
 		var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(personaje_id, pareja_id)
-		var tipo := "visitar_amigo" if (
+		var motivo := _seleccionar_motivo_encuentro_social(personaje_id, pareja_id, relacion)
+		var tipo := str(motivo.get("tipo", "visitar_amigo" if (
 			float(relacion.get("amistad", 0.0)) >= 18.0
 			or float(relacion.get("afecto", 0.0)) >= 12.0
-		) else "buscar_compania"
-		var objetivo_id := "%s:%s" % [tipo, pareja_id.to_lower()]
+		) else "buscar_compania"))
+		var objetivo_id := "%s:%s:%s" % [tipo, pareja_id.to_lower(), _clave_fecha_actual()]
 		objetivo = {
 			"id": objetivo_id,
 			"tipo": tipo,
+			"motivo": motivo.duplicate(true),
 			"objetivo_personaje": pareja_id,
 			"nombre_objetivo": pareja.get_nombre_visual(),
 			"prioridad": clampf(presion_social / 100.0, 0.55, 0.95),
@@ -2022,6 +2024,39 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 	return true
 
 
+func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: String, relacion: Dictionary) -> Dictionary:
+	if not is_instance_valid(_relationship_system):
+		return {"tipo": "visitar_amigo"}
+	var promesas: Array = _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id)
+	if not promesas.is_empty():
+		var promesa: Dictionary = promesas[0]
+		return {"tipo": "cumplir_promesa", "promesa_id": str(promesa.get("id", "")), "clave_conocimiento": str(promesa.get("clave_conocimiento", ""))}
+	var asuntos: Array = _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id)
+	if not asuntos.is_empty():
+		var asunto: Dictionary = asuntos[0]
+		return {"tipo": "resolver_asunto", "asunto_id": str(asunto.get("id", "")), "clave": str(asunto.get("clave", ""))}
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		var tipo_conocimiento := str(conocimiento.get("tipo", "")).to_lower()
+		var compartible := bool(conocimiento.get("compartible", false)) or tipo_conocimiento in ["noticia", "evento_publico", "conocimiento_compartible"]
+		var clave := str(conocimiento.get("clave", "")).strip_edges()
+		if not compartible or clave.is_empty():
+			continue
+		if _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+			continue
+		return {"tipo": "compartir_noticia", "clave_conocimiento": clave}
+	if float(relacion.get("tension", 0.0)) >= 18.0:
+		return {"tipo": "resolver_desacuerdo"}
+	return {
+		"tipo": "visitar_amigo" if (
+			float(relacion.get("amistad", 0.0)) >= 18.0
+			or float(relacion.get("afecto", 0.0)) >= 12.0
+		) else "buscar_compania"
+	}
+
+
 func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Creature:
 	var mejor: Creature = null
 	var mejor_puntuacion := -INF
@@ -2066,10 +2101,31 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		)
 		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
 			puntuacion -= 8.0
+		if not _relationship_system.obtener_promesas_pendientes_npc(id_npc, id_candidato).is_empty():
+			puntuacion += 16.0
+		if not _relationship_system.obtener_asuntos_pendientes_npc(id_npc, id_candidato).is_empty():
+			puntuacion += 12.0
+		if _hay_noticia_compartible(id_npc, id_candidato):
+			puntuacion += 8.0
 		if puntuacion > mejor_puntuacion:
 			mejor_puntuacion = puntuacion
 			mejor = candidato
 	return mejor
+
+
+func _hay_noticia_compartible(personaje_id: String, pareja_id: String) -> bool:
+	if not is_instance_valid(_relationship_system):
+		return false
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		var tipo := str(conocimiento.get("tipo", "")).to_lower()
+		var compartible := bool(conocimiento.get("compartible", false)) or tipo in ["noticia", "evento_publico", "conocimiento_compartible"]
+		var clave := str(conocimiento.get("clave", "")).strip_edges()
+		if compartible and not clave.is_empty() and not _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+			return true
+	return false
 
 
 func _obtener_punto_encuentro_social(npc: Creature, pareja: Creature) -> Vector2:
@@ -2115,16 +2171,44 @@ func _finalizar_objetivo_social_npc(
 	mind.call("registrar_resultado_actividad", personaje_id, str(objetivo.get("tipo", "buscar_compania")), 0.65)
 	mind.call("completar_objetivo", personaje_id, objetivo_id, true)
 	if is_instance_valid(_relationship_system) and not pareja_id.is_empty():
-		_relationship_system.registrar_interaccion_entre_npc(
-			personaje_id,
-			pareja_id,
-			{"amistad": 0.6, "confianza": 0.25, "afecto": 0.35},
-			{
-				"tipo": str(objetivo.get("tipo", "buscar_compania")),
-				"objetivo": objetivo_id,
-				"momento": _clave_fecha_actual()
-			}
-		)
+		var motivo: Dictionary = objetivo.get("motivo", {})
+		var tipo_motivo := str(motivo.get("tipo", objetivo.get("tipo", "buscar_compania")))
+		var cambios := {"amistad": 0.6, "confianza": 0.25, "afecto": 0.35}
+		var recuerdo := {
+			"tipo": tipo_motivo,
+			"objetivo": objetivo_id,
+			"momento": _clave_fecha_actual()
+		}
+		match tipo_motivo:
+			"cumplir_promesa":
+				var promesa_id := str(motivo.get("promesa_id", ""))
+				if not promesa_id.is_empty():
+					_relationship_system.resolver_promesa_entre_npc(promesa_id, true)
+				var clave_promesa := str(motivo.get("clave_conocimiento", ""))
+				if not clave_promesa.is_empty():
+					_relationship_system.transmitir_conocimiento_npc(personaje_id, pareja_id, clave_promesa, {"motivo": "promesa_cumplida"})
+			"resolver_asunto":
+				var asunto_id := str(motivo.get("asunto_id", ""))
+				if not asunto_id.is_empty():
+					_relationship_system.resolver_asunto_pendiente_npc(asunto_id, true)
+				cambios["amistad"] = 1.0
+				cambios["confianza"] = 0.8
+			"compartir_noticia":
+				var clave_noticia := str(motivo.get("clave_conocimiento", ""))
+				if not clave_noticia.is_empty() and _relationship_system.transmitir_conocimiento_npc(personaje_id, pareja_id, clave_noticia, {"motivo": "charla_entre_habitantes"}):
+					cambios["amistad"] = 1.1
+					cambios["respeto"] = 0.7
+					recuerdo["evento"] = "compartir_conocimiento"
+				else:
+					cambios["amistad"] = 0.2
+			"resolver_desacuerdo":
+				cambios["amistad"] = 0.8
+				cambios["confianza"] = 0.6
+				cambios["tension"] = -4.0
+			_:
+				pass
+		recuerdo["tipo"] = tipo_motivo
+		_relationship_system.registrar_interaccion_entre_npc(personaje_id, pareja_id, cambios, recuerdo)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
