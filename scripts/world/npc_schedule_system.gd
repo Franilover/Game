@@ -185,6 +185,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		# confunda con una baja del catálogo, pero nunca debe reanudar rutinas.
 		if not npc.is_alive:
 			continue
+		_actualizar_mente_npc(npc, minutos, tiempo)
 		if _actualizar_actividad_social(npc, delta):
 			continue
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
@@ -1714,19 +1715,8 @@ func _aplicar_variacion_tiempo_libre(
 		return rutina_base
 
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
-	var actividades_por_personaje: Dictionary = {
-		"elian": ["acomodar_pedidos", "conversar_con_vecinos", "compartir_pan"],
-		"bruna": ["revisar_herramientas", "observar_trabajos", "descansar_un_rato"],
-		"darven": ["vigilar_plaza", "revisar_avisos", "conversar_con_habitantes"],
-		"saira": ["saludar_comerciantes", "compartir_noticias", "escuchar_historias"],
-		"narel": ["tomar_notas", "observar_entorno", "leer_apuntes"],
-		"mara": ["pasear_sin_prisa", "observar_la_plaza", "visitar_un_puesto"],
-		"ivo": ["descansar_y_saludar", "sentarse_un_rato", "pasear_a_su_ritmo"],
-		"nima": ["tomar_notas", "observar_fenomenos", "conversar_con_vecinos"],
-		"abel": ["revisar_asuntos", "leer_informes", "conversar_con_guardias"],
-		"liam": ["ordenar_documentos", "recorrer_el_castillo", "descansar_un_rato"]
-	}
-	if not actividades_por_personaje.has(nombre):
+	var actividades_por_personaje: Dictionary = _obtener_opciones_ocio_npc(nombre)
+	if actividades_por_personaje.is_empty():
 		return rutina_base
 
 	var tramo := 0
@@ -1741,15 +1731,201 @@ func _aplicar_variacion_tiempo_libre(
 		str(tiempo.get("mes", 0)),
 		str(tiempo.get("dia", dia_semana))
 	]
-	var actividades: Array = actividades_por_personaje[nombre]
-	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo))) % actividades.size()
+	var clave_decision := clave_dia + "|" + str(tramo)
+	var decision_guardada: Variant = npc.get_meta("npc_mind_rutina_decidida", {})
+	if (
+		str(npc.get_meta("npc_mind_decision_key", "")) == clave_decision
+		and decision_guardada is Dictionary
+		and not (decision_guardada as Dictionary).is_empty()
+	):
+		return (decision_guardada as Dictionary).duplicate(true)
+
+	var mind := get_node_or_null("/root/NPCMind")
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		personaje_id = nombre
+
+	var opciones: Array = actividades_por_personaje.get("opciones", [])
+	var elegida: Dictionary = {}
+	if is_instance_valid(mind) and mind.has_method("elegir_actividad"):
+		var perfil: Dictionary = {}
+		if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_personalidad"):
+			var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
+			var rasgos: Dictionary = {}
+			for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
+				if personalidad.has(rasgo):
+					rasgos[rasgo] = float(personalidad[rasgo])
+			perfil["rasgos"] = rasgos
+		mind.call("registrar_personaje", personaje_id, perfil)
+
+		# La experiencia del tramo anterior modifica las próximas elecciones.
+		var clave_anterior := str(npc.get_meta("npc_mind_decision_key", ""))
+		if not clave_anterior.is_empty():
+			var actividad_anterior := str(npc.get_meta("npc_mind_actividad", ""))
+			var necesidad_anterior := str(npc.get_meta("npc_mind_necesidad_clave", ""))
+			var presion_inicial := float(npc.get_meta("npc_mind_necesidad_inicio", 0.0))
+			if not actividad_anterior.is_empty() and not necesidad_anterior.is_empty():
+				var necesidades_actuales: Dictionary = mind.call("obtener_necesidades", personaje_id)
+				var presion_final := float(necesidades_actuales.get(necesidad_anterior, presion_inicial))
+				var resultado := clampf((presion_inicial - presion_final) / 25.0, -1.0, 1.0)
+				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado)
+
+		var resultado_eleccion: Dictionary = mind.call("elegir_actividad", personaje_id, opciones)
+		var actividad_elegida := str(resultado_eleccion.get("actividad", ""))
+		for opcion_variant in opciones:
+			if opcion_variant is Dictionary and str(opcion_variant.get("id", "")) == actividad_elegida:
+				elegida = (opcion_variant as Dictionary).duplicate(true)
+				break
+
+	if elegida.is_empty():
+		# Respaldo determinista si el servicio mental no está disponible.
+		var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo))) % opciones.size()
+		elegida = (opciones[indice] as Dictionary).duplicate(true)
 
 	var resultado := rutina_base.duplicate(true)
-	resultado["actividad_clave"] = str(actividades[indice])
+	var actividad := str(elegida.get("id", ""))
+	resultado["actividad_clave"] = actividad
 	resultado["variacion_posicion"] = _obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
 	resultado["variacion_diaria"] = clave_dia
+	npc.set_meta("npc_mind_decision_key", clave_decision)
+	npc.set_meta("npc_mind_actividad", actividad)
+	var necesidades_actividad: Dictionary = elegida.get("necesidades", {})
+	var necesidad_principal := ""
+	var mayor_peso := -1.0
+	for necesidad_variant in necesidades_actividad:
+		var peso := float(necesidades_actividad[necesidad_variant])
+		if peso > mayor_peso:
+			mayor_peso = peso
+			necesidad_principal = str(necesidad_variant)
+	npc.set_meta("npc_mind_necesidad_clave", necesidad_principal)
+	var mind_actual := get_node_or_null("/root/NPCMind")
+	if is_instance_valid(mind_actual) and mind_actual.has_method("obtener_necesidades"):
+		var necesidades_inicio: Dictionary = mind_actual.call("obtener_necesidades", personaje_id)
+		npc.set_meta("npc_mind_necesidad_inicio", float(necesidades_inicio.get(necesidad_principal, 0.0)))
+	npc.set_meta("npc_mind_rutina_decidida", resultado.duplicate(true))
 	return resultado
 
+
+func _obtener_opciones_ocio_npc(nombre: String) -> Dictionary:
+	var opciones_por_personaje: Dictionary = {
+		"elian": [
+			{"id":"acomodar_pedidos","necesidades":{"autonomia":0.45,"curiosidad":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":8.0},
+			{"id":"conversar_con_vecinos","necesidades":{"socializacion":0.9,"diversion":0.3},"afinidad_rasgos":{"sociabilidad":0.85},"coste":5.0},
+			{"id":"compartir_pan","necesidades":{"socializacion":0.65,"diversion":0.7},"afinidad_rasgos":{"generosidad":0.85,"sociabilidad":0.65},"coste":8.0}
+		],
+		"bruna": [
+			{"id":"revisar_herramientas","necesidades":{"curiosidad":0.8,"autonomia":0.3},"afinidad_rasgos":{"curiosidad":0.7,"prudencia":0.7},"coste":8.0},
+			{"id":"observar_trabajos","necesidades":{"curiosidad":0.55,"socializacion":0.2},"afinidad_rasgos":{"curiosidad":0.65},"coste":5.0},
+			{"id":"descansar_un_rato","necesidades":{"descanso":0.95,"diversion":0.2},"coste":2.0}
+		],
+		"darven": [
+			{"id":"vigilar_plaza","necesidades":{"seguridad":0.8,"autonomia":0.25},"afinidad_rasgos":{"prudencia":0.8},"coste":5.0},
+			{"id":"revisar_avisos","necesidades":{"curiosidad":0.6,"autonomia":0.2},"afinidad_rasgos":{"prudencia":0.65},"coste":4.0},
+			{"id":"conversar_con_habitantes","necesidades":{"socializacion":0.8,"diversion":0.2},"afinidad_rasgos":{"sociabilidad":0.75},"coste":5.0}
+		],
+		"saira": [
+			{"id":"saludar_comerciantes","necesidades":{"socializacion":0.8,"autonomia":0.25},"afinidad_rasgos":{"sociabilidad":0.85},"coste":5.0},
+			{"id":"compartir_noticias","necesidades":{"socializacion":0.55,"curiosidad":0.6},"afinidad_rasgos":{"curiosidad":0.75,"sociabilidad":0.65},"coste":6.0},
+			{"id":"escuchar_historias","necesidades":{"socializacion":0.7,"diversion":0.5},"afinidad_rasgos":{"sociabilidad":0.7},"coste":4.0}
+		],
+		"narel": [
+			{"id":"tomar_notas","necesidades":{"curiosidad":0.95,"autonomia":0.2},"afinidad_rasgos":{"curiosidad":0.9},"coste":7.0},
+			{"id":"observar_entorno","necesidades":{"curiosidad":0.8,"diversion":0.15},"afinidad_rasgos":{"curiosidad":0.8,"prudencia":0.6},"coste":5.0},
+			{"id":"leer_apuntes","necesidades":{"curiosidad":0.75,"descanso":0.1},"afinidad_rasgos":{"curiosidad":0.85},"coste":3.0}
+		],
+		"mara": [
+			{"id":"pasear_sin_prisa","necesidades":{"autonomia":0.75,"diversion":0.45},"afinidad_rasgos":{"independencia":0.8},"coste":4.0},
+			{"id":"observar_la_plaza","necesidades":{"curiosidad":0.55,"seguridad":0.15},"afinidad_rasgos":{"prudencia":0.6},"coste":3.0},
+			{"id":"visitar_un_puesto","necesidades":{"diversion":0.65,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.55},"coste":6.0}
+		],
+		"ivo": [
+			{"id":"descansar_y_saludar","necesidades":{"descanso":0.8,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.45},"coste":2.0},
+			{"id":"sentarse_un_rato","necesidades":{"descanso":0.95,"autonomia":0.2},"coste":1.0},
+			{"id":"pasear_a_su_ritmo","necesidades":{"autonomia":0.65,"diversion":0.35},"afinidad_rasgos":{"independencia":0.75},"coste":3.0}
+		],
+		"nima": [
+			{"id":"tomar_notas","necesidades":{"curiosidad":0.95,"autonomia":0.2},"afinidad_rasgos":{"curiosidad":0.9},"coste":7.0},
+			{"id":"observar_fenomenos","necesidades":{"curiosidad":0.9,"diversion":0.2},"afinidad_rasgos":{"curiosidad":0.85},"coste":5.0},
+			{"id":"conversar_con_vecinos","necesidades":{"socializacion":0.65,"diversion":0.25},"afinidad_rasgos":{"sociabilidad":0.65},"coste":4.0}
+		],
+		"abel": [
+			{"id":"revisar_asuntos","necesidades":{"seguridad":0.55,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.8},"coste":5.0},
+			{"id":"leer_informes","necesidades":{"curiosidad":0.7,"autonomia":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":4.0},
+			{"id":"conversar_con_guardias","necesidades":{"socializacion":0.65,"seguridad":0.25},"afinidad_rasgos":{"sociabilidad":0.55},"coste":5.0}
+		],
+		"liam": [
+			{"id":"ordenar_documentos","necesidades":{"curiosidad":0.45,"autonomia":0.35},"afinidad_rasgos":{"prudencia":0.65},"coste":4.0},
+			{"id":"recorrer_el_castillo","necesidades":{"seguridad":0.5,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.7},"coste":5.0},
+			{"id":"descansar_un_rato","necesidades":{"descanso":0.85,"diversion":0.15},"coste":2.0}
+		]
+	}
+	return {"opciones": opciones_por_personaje.get(nombre, [])}
+
+
+func _actualizar_mente_npc(npc: Creature, minutos: int, tiempo: Dictionary) -> void:
+	var mind := get_node_or_null("/root/NPCMind")
+	if not is_instance_valid(mind) or not mind.has_method("procesar_intervalo"):
+		return
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		personaje_id = npc.get_nombre_visual().strip_edges().to_lower()
+	if personaje_id.is_empty():
+		return
+
+	var personalidad: Dictionary = {}
+	if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_personalidad"):
+		personalidad = _relationship_system.obtener_personalidad(personaje_id)
+	var rasgos: Dictionary = {}
+	for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
+		if personalidad.has(rasgo):
+			rasgos[rasgo] = float(personalidad[rasgo])
+	mind.call("registrar_personaje", personaje_id, {"rasgos": rasgos})
+
+	var fecha := "%s:%s:%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("mes", 0)),
+		str(tiempo.get("dia", 1))
+	]
+	var fecha_anterior := str(npc.get_meta("npc_mind_fecha_procesada", ""))
+	if fecha_anterior.is_empty():
+		npc.set_meta("npc_mind_fecha_procesada", fecha)
+		npc.set_meta("npc_mind_minuto_procesado", minutos)
+		return
+	var minuto_anterior := int(npc.get_meta("npc_mind_minuto_procesado", minutos))
+	var delta_minutos := minutos - minuto_anterior
+	if fecha != fecha_anterior and delta_minutos < 0:
+		delta_minutos += 1440
+	if delta_minutos <= 0:
+		return
+	# Evita aplicar de golpe horas excesivas si el calendario se adelantó o
+	# el sistema estuvo fuera de escena. El tiempo restante se procesa después.
+	delta_minutos = mini(delta_minutos, 120)
+	if delta_minutos < 5:
+		return
+
+	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).strip_edges().to_lower()
+	var satisfacciones := _obtener_satisfaccion_actividad(actividad)
+	mind.call("procesar_intervalo", personaje_id, float(delta_minutos) / 60.0, satisfacciones)
+	npc.set_meta("npc_mind_fecha_procesada", fecha)
+	npc.set_meta("npc_mind_minuto_procesado", minutos)
+
+
+func _obtener_satisfaccion_actividad(actividad: String) -> Dictionary:
+	var texto := actividad.to_lower()
+	var satisfacciones: Dictionary = {}
+	if texto.contains("descans") or texto.contains("dorm") or texto.contains("sentarse"):
+		satisfacciones["descanso"] = 2.0
+	if texto.contains("convers") or texto.contains("salud") or texto.contains("compart") or texto.contains("historia") or texto.contains("amigos"):
+		satisfacciones["socializacion"] = 1.8
+		satisfacciones["diversion"] = 0.6
+	if texto.contains("notas") or texto.contains("observar") or texto.contains("leer") or texto.contains("investig") or texto.contains("informes"):
+		satisfacciones["curiosidad"] = 1.8
+	if texto.contains("pasear") or texto.contains("visitar") or texto.contains("recorrer"):
+		satisfacciones["autonomia"] = 1.3
+		satisfacciones["diversion"] = 1.0
+	if texto.contains("vigilar") or texto.contains("revisar"):
+		satisfacciones["seguridad"] = 0.8
+	return satisfacciones
 
 func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int) -> Vector2:
 	# Desplazamientos cortos alrededor del punto habitual de cada habitante.
