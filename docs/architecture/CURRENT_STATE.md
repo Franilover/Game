@@ -741,3 +741,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se amplió el filtro de CI para incluir `tests/dialogue/**`; los contratos de diálogo no volverán a quedar fuera de la batería por un filtro de rutas.
 - CI Godot 4.7: **PASS**, run `43921504449`, 37 pasos completados sin fallos.
 - La prueba sigue siendo headless; queda validar la experiencia con Ivo, Mara y Nira dentro de una partida real, incluyendo interrupciones, regalos y preguntas.
+
+
+## Sexagésima quinta barrida — Recuperación del catálogo de especies
+
+- La consulta de solo lectura a Supabase confirma tres filas activas en `especies_jugables`: Feerin, Humano y Necromancer. La tabla concede SELECT a `anon` y `authenticated`, y la política pública filtra `activo = true`; no se modificó la base de datos.
+- El cliente ya cacheaba y reemitía el catálogo, pero si la respuesta REST era válida y vacía agotaba los tres intentos iniciales y dejaba de comprobar automáticamente. Si el fallo ocurría mientras la pantalla de creación seguía abierta, podía permanecer sin especies hasta que otra escena volviera a solicitar el catálogo.
+- Ahora una respuesta vacía se comunica a la UI y mantiene una recuperación automática: tres intentos rápidos y, agotados estos, una nueva comprobación cada 30 segundos. Las respuestas válidas no vacías se guardan en caché y reinician el contador.
+- Se añadió `SpeciesCatalogRetry` para verificar caché, emisión de catálogo y programación de recuperación después de una respuesta vacía.
+- CI Godot 4.7: **PASS**, run `43923629275`, 39 pasos completados sin fallos.
+- Esta prueba cubre el manejo local de respuestas, no la llamada REST en red ni la visualización en un dispositivo. Sigue pendiente validar el selector dentro del flujo real de creación de personaje en Android/PC.
