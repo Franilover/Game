@@ -33,6 +33,9 @@ var _boton_preguntar_item: Button = null
 var _boton_tienda_mercado: Button = null
 var _tienda_mercado: PanelContainer = null
 var _dialogue_content_row: HBoxContainer = null
+var _dialogue_margin: MarginContainer = null
+var _dialogue_text_column: VBoxContainer = null
+var _dialogue_social_column: VBoxContainer = null
 var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
 var _selector_conversacion_titulo: Label = null
@@ -3211,16 +3214,8 @@ func _crear_interfaz() -> void:
 	dialogue_panel.visible = false
 	dialogue_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	dialogue_panel.z_index = 3000
-	# El HUD es el Control raíz dentro del CanvasLayer. Usamos
-	# coordenadas relativas al centro inferior para no depender de
-	# tamaños heredados de otros paneles del HUD.
+	# El tamaño final se adapta al viewport para evitar recortes en móviles.
 	dialogue_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	dialogue_panel.offset_left = -360.0
-	dialogue_panel.offset_top = -278.0
-	dialogue_panel.offset_right = 360.0
-	dialogue_panel.offset_bottom = -18.0
-	dialogue_panel.custom_minimum_size = Vector2(720.0, 260.0)
-	dialogue_panel.size = Vector2(720.0, 260.0)
 	dialogue_panel.clip_contents = false
 	dialogue_panel.z_as_relative = false
 
@@ -3239,6 +3234,7 @@ func _crear_interfaz() -> void:
 	)
 
 	var margin := MarginContainer.new()
+	_dialogue_margin = margin
 	margin.add_theme_constant_override("margin_left", 22)
 	margin.add_theme_constant_override("margin_top", 18)
 	margin.add_theme_constant_override("margin_right", 22)
@@ -3265,6 +3261,7 @@ func _crear_interfaz() -> void:
 	content_row.add_child(portrait_rect)
 
 	var column := VBoxContainer.new()
+	_dialogue_text_column = column
 	column.name = "DialogueText"
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
@@ -3334,6 +3331,7 @@ func _crear_interfaz() -> void:
 	column.add_child(_respuestas_container)
 
 	var columna_social := VBoxContainer.new()
+	_dialogue_social_column = columna_social
 	columna_social.name = "DialogueSocialActions"
 	columna_social.custom_minimum_size = Vector2(48, 0)
 	columna_social.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -3461,3 +3459,70 @@ func _crear_interfaz() -> void:
 	ui_root.add_child(dialogue_panel)
 	PIXEL_UI_THEME.apply(dialogue_panel)
 	dialogue_panel.visible = false
+	if not get_viewport().size_changed.is_connected(_adaptar_panel_dialogo):
+		get_viewport().size_changed.connect(_adaptar_panel_dialogo)
+	_adaptar_panel_dialogo()
+
+
+func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
+	if dialogue_panel == null or not is_instance_valid(dialogue_panel):
+		return
+	var viewport_size := tamano_viewport
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		viewport_size = get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+
+	var ancho := maxf(240.0, minf(720.0, viewport_size.x - 24.0))
+	var alto := maxf(180.0, minf(260.0, viewport_size.y - 24.0))
+	dialogue_panel.offset_left = -ancho * 0.5
+	dialogue_panel.offset_top = -alto - 12.0
+	dialogue_panel.offset_right = ancho * 0.5
+	dialogue_panel.offset_bottom = -12.0
+	dialogue_panel.custom_minimum_size = Vector2(ancho, alto)
+	dialogue_panel.size = Vector2(ancho, alto)
+
+	var compacto := viewport_size.x < 520.0
+	var movil := viewport_size.x < 720.0
+	if _dialogue_margin != null:
+		var margen := 8 if compacto else (12 if movil else 22)
+		for lado in ["margin_left", "margin_right"]:
+			_dialogue_margin.add_theme_constant_override(lado, margen)
+		_dialogue_margin.add_theme_constant_override("margin_top", 10 if movil else 18)
+		_dialogue_margin.add_theme_constant_override("margin_bottom", 8 if movil else 14)
+	if _dialogue_content_row != null:
+		_dialogue_content_row.add_theme_constant_override("separation", 6 if compacto else (10 if movil else 14))
+	if portrait_rect != null:
+		portrait_rect.visible = not compacto
+		var retrato := 80.0 if compacto else (120.0 if movil else 176.0)
+		portrait_rect.custom_minimum_size = Vector2(retrato, retrato)
+	if _dialogue_social_column != null:
+		var social_size := 36.0 if compacto else (40.0 if movil else 48.0)
+		_dialogue_social_column.custom_minimum_size = Vector2(social_size, 0.0)
+		for boton in [_boton_regalo, _boton_preguntar_item, _boton_tienda_mercado]:
+			if boton != null:
+				boton.custom_minimum_size = Vector2(social_size, social_size)
+	if _dialogue_text_column != null:
+		_dialogue_text_column.add_theme_constant_override("separation", 6 if movil else 8)
+	if speaker_label != null:
+		speaker_label.add_theme_font_size_override("font_size", 13 if movil else 14)
+	if text_label != null:
+		text_label.add_theme_font_size_override("font_size", 12 if compacto else 13)
+	if hint_label != null:
+		hint_label.add_theme_font_size_override("font_size", 8 if movil else 9)
+	if action_button != null:
+		action_button.custom_minimum_size = Vector2(110 if compacto else (140 if movil else 180), 32 if movil else 34)
+	if cancel_button != null:
+		cancel_button.custom_minimum_size = Vector2(76 if compacto else (100 if movil else 120), 32 if movil else 34)
+	if _selector_items != null:
+		var selector_ancho := minf(476.0, maxf(220.0, ancho - 24.0))
+		var selector_alto := minf(224.0, maxf(160.0, alto - 24.0))
+		_selector_items.offset_left = -selector_ancho * 0.5
+		_selector_items.offset_top = -selector_alto * 0.5
+		_selector_items.offset_right = selector_ancho * 0.5
+		_selector_items.offset_bottom = selector_alto * 0.5
+		_selector_items.custom_minimum_size = Vector2(selector_ancho, selector_alto)
+	if _selector_items_grid != null:
+		_selector_items_grid.columns = 1 if ancho < 360.0 else 2
+	if _selector_conversacion_grid != null:
+		_selector_conversacion_grid.columns = 1 if ancho < 380.0 else 2
