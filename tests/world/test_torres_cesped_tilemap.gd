@@ -82,7 +82,7 @@ func _run() -> void:
 	if bosque == null or bosque.get_cell_source_id(Vector2i(0, 0)) == -1:
 		_fail("Falta el borde arbolado en la esquina del reino.")
 		return
-	if pradera == null or pradera.get_cell_source_id(Vector2i(30, 45)) == -1:
+	if pradera == null or pradera.get_cell_source_id(Vector2i(26, 45)) == -1:
 		_fail("Falta una zona abierta de pradera entre los barrios.")
 		return
 
