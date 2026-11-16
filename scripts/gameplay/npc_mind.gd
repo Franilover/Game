@@ -343,8 +343,19 @@ func establecer_objetivo(personaje_id: String, objetivo: Dictionary) -> bool:
 			_guardar_mentes()
 			_emitir_cambio(id)
 			return true
-	if objetivos.size() >= MAX_OBJETIVOS:
-		return false
+	while objetivos.size() >= MAX_OBJETIVOS:
+		var indice_terminal := -1
+		for i in range(objetivos.size()):
+			if not objetivos[i] is Dictionary:
+				indice_terminal = i
+				break
+			var estado_objetivo := str((objetivos[i] as Dictionary).get("estado", "activo"))
+			if estado_objetivo == "completado" or estado_objetivo == "abandonado":
+				indice_terminal = i
+				break
+		if indice_terminal < 0:
+			return false
+		objetivos.remove_at(indice_terminal)
 	var nuevo := objetivo.duplicate(true)
 	nuevo["id"] = clave
 	nuevo["estado"] = "activo"
