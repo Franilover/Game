@@ -172,6 +172,14 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_tabs")
 text = "Admin"
 
+[node name="CloseButton" type="Button" parent="Window/Margin/Column/TabButtons"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 16
+theme_override_styles/focus = SubResource("StyleBox_tab_focus")
+text = "×"
+
 [node name="Tabs" type="TabContainer" parent="Window/Margin/Column" unique_id=3001000100]
 layout_mode = 2
 size_flags_vertical = 3
