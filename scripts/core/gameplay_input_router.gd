@@ -115,8 +115,6 @@ func _iniciar_consumo(mano: String, accion: String) -> void:
 	var objeto := _inventory_ui.obtener_objeto_mano_activa(mano) if is_instance_valid(_inventory_ui) else {}
 	_identidad_consumo = str(objeto.get("item_id", objeto.get("id", objeto.get("nombre", ""))))
 	_tiempo_consumo = 0.0
-	_slot_consumo = -1
-	_identidad_consumo = ""
 	if is_instance_valid(_barra_consumo):
 		_barra_consumo.value = 0.0
 		(_barra_consumo.get_parent() as Control).visible = true
@@ -126,6 +124,8 @@ func _cancelar_consumo() -> void:
 	_mano_consumo_activa = ""
 	_accion_consumo_activa = ""
 	_tiempo_consumo = 0.0
+	_slot_consumo = -1
+	_identidad_consumo = ""
 	if is_instance_valid(_barra_consumo):
 		_barra_consumo.value = 0.0
 		(_barra_consumo.get_parent() as Control).visible = false
