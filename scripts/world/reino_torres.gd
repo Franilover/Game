@@ -13,7 +13,7 @@ const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.p
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
-const RESEARCH_LAB_UI_SCRIPT = preload("res://scripts/ui/research_lab.gd")
+const RESEARCH_LAB_UI_SCENE: PackedScene = preload("res://scenes/ui/research_lab.tscn")
 const TAMANO_PIXEL_MUNDO := 8.0
 
 # Ampliación moderada respecto al interior original (448x272).
@@ -1698,7 +1698,7 @@ func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> v
 	if not is_instance_valid(inventario):
 		Events.notification_pushed.emit("No se pudo acceder al inventario.")
 		return
-	var interfaz := RESEARCH_LAB_UI_SCRIPT.new() as CanvasLayer
+	var interfaz := RESEARCH_LAB_UI_SCENE.instantiate() as CanvasLayer
 	if not is_instance_valid(interfaz):
 		return
 	get_tree().root.add_child(interfaz)
