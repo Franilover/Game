@@ -619,6 +619,15 @@ func _mostrar_linea_actual() -> void:
 
 ## Resuelve variantes declaradas en los datos narrativos usando el perfil social
 ## de Supabase y la relación guardada en la partida. Las claves son deterministas.
+## Los NPC que están caminando hablan con un ritmo más pausado para que el
+## jugador pueda leer el saludo sin que el diálogo desaparezca enseguida.
+func _dialogo_requiere_lectura_lenta() -> bool:
+	if _dialogo_en_transito:
+		return true
+	var actividad := str(_contexto_rutina_conversacion.get("actividad", "")).strip_edges()
+	return _actividad_es_desplazamiento(actividad)
+
+
 func _resolver_texto_por_personalidad(
 	texto_base: String,
 	variantes_personalidad_variant: Variant,
@@ -1462,6 +1471,15 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 		}
 	]
 	return respuestas
+
+
+func _obtener_frase_despedida_jugador_rutina() -> String:
+	var actividad := str(_contexto_rutina_conversacion.get("actividad", "")).strip_edges()
+	if _actividad_es_desplazamiento(actividad):
+		return "Bueno, sigue con tu camino. Nos vemos luego."
+	if _actividad_impide_una_conversacion_larga(actividad):
+		return "Te dejo seguir con lo tuyo. Hablamos luego."
+	return "Bueno, no te quito más tiempo. Nos vemos luego."
 
 
 func _obtener_reaccion_pregunta_rutina() -> String:
