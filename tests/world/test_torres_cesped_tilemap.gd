@@ -36,6 +36,21 @@ func _run() -> void:
 	if not _validar_distribucion_urbana(torres):
 		return
 
+	if torres.get_node_or_null("TerrenoRioMarino") != null:
+		_fail("Torres no debe crear un río ni usar el atlas Marino.")
+		return
+	if torres.get_node_or_null("Sprite_poste_oeste") == null or torres.get_node_or_null("Sprite_poste_este") == null:
+		_fail("Faltan los postes principales del pueblo.")
+		return
+	var poste_oeste := torres.get_node("Sprite_poste_oeste") as Sprite2D
+	var poste_este := torres.get_node("Sprite_poste_este") as Sprite2D
+	if poste_oeste.position.distance_to(Vector2(-600.0, -475.0)) > 0.1 or poste_este.position.distance_to(Vector2(600.0, -475.0)) > 0.1:
+		_fail("Los postes principales no coinciden con las nuevas calles.")
+		return
+	if torres.get_node_or_null("Sprite_poste_OesteCentroNorte") == null or torres.get_node_or_null("Sprite_poste_EsteCentroSur") == null:
+		_fail("Faltan postes de iluminación en las calles residenciales.")
+		return
+
 	var total_cells := 0
 	for zone in EXPECTED_ATLASES.keys():
 		var layer := torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
