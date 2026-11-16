@@ -28,6 +28,7 @@ func _ready() -> void:
 		_al_input_gui
 	)
 
+	establecer_seleccionado(false)
 	actualizar()
 
 
@@ -63,13 +64,15 @@ func esta_ocupado() -> bool:
 
 func establecer_seleccionado(activo: bool) -> void:
 	_seleccionado_actual = activo
-	var normal := PIXEL_UI_THEME.slot_style(activo)
-	var hover := PIXEL_UI_THEME.slot_style(true)
+	var normal := PIXEL_UI_THEME.button_pressed_style() if activo else PIXEL_UI_THEME.button_surface_style()
+	var hover := PIXEL_UI_THEME.button_hover_style()
+	var pressed := PIXEL_UI_THEME.button_pressed_style()
 	if normal != null:
 		add_theme_stylebox_override("normal", normal)
 	if hover != null:
 		add_theme_stylebox_override("hover", hover)
-		add_theme_stylebox_override("pressed", hover)
+	if pressed != null:
+		add_theme_stylebox_override("pressed", pressed)
 
 
 func obtener_datos() -> Dictionary:
