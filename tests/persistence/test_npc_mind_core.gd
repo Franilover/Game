@@ -212,6 +212,28 @@ func _run() -> void:
 
 	var schedule := ScheduleScript.new() as NPCScheduleSystem
 	schedule._relationship_system = relationship
+	relationship.registrar_recuerdo("ivo", {
+		"tipo": "experiencia_npc",
+		"evento": "ayudar",
+		"con_personaje": "mara",
+		"resultado": 0.8,
+		"importancia": 2.5
+	})
+	var recuerdo_positivo := schedule._calcular_influencia_recuerdos_sociales("ivo", "mara")
+	var recuerdo_ajeno := schedule._calcular_influencia_recuerdos_sociales("ivo", "narel")
+	if recuerdo_positivo <= 0.0:
+		errores.append("Una experiencia positiva no reforzó la preferencia social por esa persona.")
+	if not is_zero_approx(recuerdo_ajeno):
+		errores.append("Un recuerdo social influyó en la elección de una persona distinta.")
+	relationship.registrar_recuerdo("ivo", {
+		"tipo": "experiencia_npc",
+		"evento": "desacuerdo",
+		"con_personaje": "bruna",
+		"resultado": -0.8,
+		"importancia": 2.5
+	})
+	if schedule._calcular_influencia_recuerdos_sociales("ivo", "bruna") >= 0.0:
+		errores.append("Una experiencia negativa no redujo la preferencia social por esa persona.")
 	relationship.registrar_conocimiento_npc("ivo", {
 		"clave": "detalle_puente",
 		"tipo": "nota_personal",
