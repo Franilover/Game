@@ -260,7 +260,7 @@ func _construir_editor_partida() -> void:
 	columna_semilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	datos_fila.add_child(columna_semilla)
 	var label_semilla := Label.new()
-	label_semilla.text = "Semilla (solo lectura)"
+	label_semilla.text = "Semilla"
 	columna_semilla.add_child(label_semilla)
 	_semilla_label = Label.new()
 	_semilla_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -271,7 +271,7 @@ func _construir_editor_partida() -> void:
 	columna_especie.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	datos_fila.add_child(columna_especie)
 	var label_especie := Label.new()
-	label_especie.text = "Especie (solo lectura)"
+	label_especie.text = "Especie"
 	columna_especie.add_child(label_especie)
 	_especie_label = Label.new()
 	_especie_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -352,8 +352,7 @@ func _editar_partida(id: String) -> void:
 	_id_pendiente_editar = id
 	title_label.visible = true
 	title_label.text = "Editar mundo"
-	subtitle_label.visible = true
-	subtitle_label.text = "Personaliza el nombre y el aspecto de tu personaje."
+	subtitle_label.visible = false
 	scroll_container.visible = false
 	create_button.visible = false
 	status_label.visible = false
