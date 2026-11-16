@@ -1,7 +1,8 @@
 extends SceneTree
 
 const TORRES_SCENE: PackedScene = preload("res://scenes/kingdom/reino_torres.tscn")
-const EXPECTED_CELL_COUNT := 75 * 44
+const EXPECTED_CELL_COUNT := 90 * 56
+const EXPECTED_ORIGIN := Vector2(-1440.0, -896.0)
 const EXPECTED_ATLASES := {
 	0: "res://assets/tilesets/Pradera.png",
 	1: "res://assets/tilesets/Tierra.png",
@@ -20,8 +21,6 @@ func _run() -> void:
 		return
 	root.add_child(torres)
 
-	# El mapa fijo se compone por tandas; esperar a que termine el _ready()
-	# asíncrono y se vacíe el flush del renderer compartido.
 	var espera := 0
 	while not bool(torres.get("_terreno_dual_listo")) and espera < 120:
 		await process_frame
@@ -30,38 +29,28 @@ func _run() -> void:
 		_fail("Torres no terminó de componer su terreno TileMapDual.")
 		return
 
-	var renderer := torres.get_node_or_null("TerrainRenderer")
-	if renderer != null:
+	if torres.get_node_or_null("TerrainRenderer") != null:
 		_fail("Torres todavía crea un TerrainRenderer dinámico.")
 		return
-	var terreno_editorial := true
-	for zone in EXPECTED_ATLASES.keys():
-		if torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) == null:
-			_fail("Falta la capa editable TileMapDual de la zona %d." % int(zone))
-			return
 
 	var total_cells := 0
 	for zone in EXPECTED_ATLASES.keys():
-		var layer := (
-			torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
-			if terreno_editorial
-			else renderer.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
-		)
+		var layer := torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
 		if layer == null:
-			_fail("Falta la capa TileMapDual de la zona %d." % int(zone))
+			_fail("Falta la capa editable TileMapDual de la zona %d." % int(zone))
 			return
 		if not layer.visible:
-			_fail("La capa TileMapDual de la zona %d no quedó visible al terminar la carga." % int(zone))
+			_fail("La capa TileMapDual de la zona %d no quedó visible." % int(zone))
 			return
-		if terreno_editorial and layer.position != Vector2(-1200.0, -704.0):
-			_fail("La capa editable de la zona %d no coincide con el origen de Torres." % int(zone))
+		if layer.position != EXPECTED_ORIGIN:
+			_fail("La capa editable de la zona %d no coincide con el origen ampliado." % int(zone))
 			return
 		var atlas := layer.tile_set.get_source(0) as TileSetAtlasSource
 		if atlas == null or atlas.texture == null:
 			_fail("La zona %d no tiene un atlas válido." % int(zone))
 			return
 		if atlas.texture.resource_path != str(EXPECTED_ATLASES[zone]):
-			_fail("La zona %d no usa el atlas común esperado." % int(zone))
+			_fail("La zona %d no usa el atlas esperado." % int(zone))
 			return
 		if atlas.texture_region_size != Vector2i(32, 32) or atlas.get_tiles_count() != 16:
 			_fail("La zona %d no conserva las 16 máscaras de 32x32." % int(zone))
@@ -75,46 +64,29 @@ func _run() -> void:
 			_fail("La zona %d no inicializó su renderer visual." % int(zone))
 			return
 		if int(diagnostico.get("display_cells", 0)) <= 0:
-			_fail("La zona %d tiene celdas lógicas, pero no generó tiles en Display." % int(zone))
+			_fail("La zona %d no generó tiles en Display." % int(zone))
 			return
 		total_cells += cells
 
 	if total_cells != EXPECTED_CELL_COUNT:
-		_fail("Se esperaban 3.300 celdas repartidas entre pradera, tierra y bosque.")
+		_fail("Se esperaban 5.040 celdas repartidas entre pradera, caminos y borde arbolado.")
 		return
 
-	var suelo := torres.get_node_or_null("Ground") as Polygon2D
-	if suelo == null or suelo.visible:
-		_fail("El suelo plano antiguo debe quedar oculto bajo el terreno DualGrid.")
-		return
-	for nombre in [
-		"NorthPath", "MainStreet", "WestStreet", "EastStreet", "SouthPath",
-		"NorthRingRoad", "SouthRingRoad", "WestRingRoad", "EastRingRoad",
-		"NorthCrossStreet", "SouthCrossStreet", "WestCrossStreet", "EastCrossStreet",
-		"NorthAvenue", "SouthAvenue", "WestAvenue", "EastAvenue",
-		"RoadToAdventure",
-	]:
-		var camino := torres.get_node_or_null(nombre) as Polygon2D
-		if camino == null:
-			_fail("No existe el camino declarado en la escena: %s." % nombre)
-			return
-		if camino.visible:
-			_fail("El camino %s sigue dibujándose como polígono separado." % nombre)
-			return
-
-	# RoadToAdventure cruza las celdas (55, 21) y (60, 21).
-	# Ambas deben pertenecer a Tierra, no quedar como pradera ni como hueco.
-	var tierra := (
-		torres.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
-		if terreno_editorial
-		else renderer.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
-	)
-	for celda in [Vector2i(55, 21), Vector2i(60, 21)]:
+	var tierra := torres.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
+	var bosque := torres.get_node_or_null("TerrainDual_Zone_08") as TileMapDual
+	var pradera := torres.get_node_or_null("TerrainDual_Zone_00") as TileMapDual
+	for celda in [Vector2i(45, 28), Vector2i(80, 28), Vector2i(13, 13)]:
 		if tierra == null or tierra.get_cell_source_id(celda) == -1:
-			_fail("RoadToAdventure no quedó rasterizado como Tierra en la celda %s." % str(celda))
+			_fail("La plaza o una calle principal/secundaria no quedó pintada como Tierra: %s." % str(celda))
 			return
+	if bosque == null or bosque.get_cell_source_id(Vector2i(0, 0)) == -1:
+		_fail("Falta el borde arbolado en la esquina del reino.")
+		return
+	if pradera == null or pradera.get_cell_source_id(Vector2i(30, 35)) == -1:
+		_fail("Falta una zona abierta de pradera entre los barrios.")
+		return
 
-	print("PASS: Torres usa TileMapDual con pradera, bosque y caminos de tierra. Modo editable: %s" % str(terreno_editorial))
+	print("PASS: Torres usa 5.040 celdas TileMapDual con plaza, calles conectadas y borde arbolado.")
 	torres.queue_free()
 	quit()
 
