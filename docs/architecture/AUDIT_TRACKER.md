@@ -116,13 +116,13 @@ La auditoría anterior observó que:
 - Las afirmaciones sobre RLS dependen de las políticas y grants reales de Supabase, que no se modificaron en esta fase.
 
 
-## Actualización de rama — 2026-11-06
+## Actualización de rama — 2026-11-16
 
-Esta sección sustituye los estados históricos solo para los hallazgos que se han vuelto a verificar. No se deben asumir resueltos los demás registros sin reproducirlos contra `refactor/p1-player-locomotion`.
+Esta sección sustituye los estados históricos para los hallazgos revalidados en `fix/p0-godot47-crafting-token-type`.
 
-- CI completo Godot 4.7: `success`, run `42213469008`, commit `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`.
-- `INV-01`, `ITEM-03` y `SAVE-01`: **Resuelto verificado**.
-- Contratos de estado/progreso de misiones y de soltado de inventario: **PASS**.
-- Aplicación de recompensas, recuperación ante interrupción real de proceso, autenticación/RLS, offline y renderizado visual siguen en el backlog.
-- La rama permanece aislada; `main` no se modificó y Supabase no se tocó.
+- CI completo Godot 4.7: `success`, run `43916861872`, commit `84539b44daa2d2c9e103745c14c1aa7de3c116f6`; 33 pasos, sin fallos.
+- `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01` y `MISS-01`: **Resuelto verificado**.
+- Las recompensas de misiones resuelven UUIDs desde el catálogo canónico; rollback y reintentos no generan ciclos recursivos.
+- Auth/RLS por endpoint, offline end-to-end, continuidad de guardado de una partida completa y pruebas visuales Android/PC siguen en el backlog.
+- PR #12 sigue en borrador. `main` no se modificó; Supabase se consultó solo en lectura y no recibió cambios.
 
