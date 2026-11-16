@@ -87,11 +87,19 @@ func obtener_estado(personaje_id: String) -> Dictionary:
 
 
 func obtener_necesidades(personaje_id: String) -> Dictionary:
-	return obtener_estado(personaje_id).get("necesidades", {}).duplicate(true)
+	var estado := obtener_estado(personaje_id)
+	var necesidades_variant: Variant = estado.get("necesidades", {})
+	if necesidades_variant is Dictionary:
+		return (necesidades_variant as Dictionary).duplicate(true)
+	return {}
 
 
 func obtener_rasgos(personaje_id: String) -> Dictionary:
-	return obtener_estado(personaje_id).get("rasgos", {}).duplicate(true)
+	var estado := obtener_estado(personaje_id)
+	var rasgos_variant: Variant = estado.get("rasgos", {})
+	if rasgos_variant is Dictionary:
+		return (rasgos_variant as Dictionary).duplicate(true)
+	return {}
 
 
 func obtener_preferencia_actividad(personaje_id: String, actividad: String) -> float:
