@@ -1,8 +1,8 @@
 extends SceneTree
 
 const TORRES_SCENE: PackedScene = preload("res://scenes/kingdom/reino_torres.tscn")
-const EXPECTED_CELL_COUNT := 90 * 56
-const EXPECTED_ORIGIN := Vector2(-1440.0, -896.0)
+const EXPECTED_CELL_COUNT := 104 * 68
+const EXPECTED_ORIGIN := Vector2(-1664.0, -1088.0)
 const EXPECTED_ATLASES := {
 	0: "res://assets/tilesets/Pradera.png",
 	1: "res://assets/tilesets/Tierra.png",
@@ -69,20 +69,20 @@ func _run() -> void:
 		total_cells += cells
 
 	if total_cells != EXPECTED_CELL_COUNT:
-		_fail("Se esperaban 5.040 celdas repartidas entre pradera, caminos y borde arbolado.")
+		_fail("Se esperaban 7.072 celdas repartidas entre pradera, caminos y borde arbolado.")
 		return
 
 	var tierra := torres.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
 	var bosque := torres.get_node_or_null("TerrainDual_Zone_08") as TileMapDual
 	var pradera := torres.get_node_or_null("TerrainDual_Zone_00") as TileMapDual
-	for celda in [Vector2i(45, 28), Vector2i(80, 28), Vector2i(13, 13)]:
+	for celda in [Vector2i(52, 34), Vector2i(80, 34), Vector2i(13, 34)]:
 		if tierra == null or tierra.get_cell_source_id(celda) == -1:
 			_fail("La plaza o una calle principal/secundaria no quedó pintada como Tierra: %s." % str(celda))
 			return
 	if bosque == null or bosque.get_cell_source_id(Vector2i(0, 0)) == -1:
 		_fail("Falta el borde arbolado en la esquina del reino.")
 		return
-	if pradera == null or pradera.get_cell_source_id(Vector2i(30, 35)) == -1:
+	if pradera == null or pradera.get_cell_source_id(Vector2i(30, 45)) == -1:
 		_fail("Falta una zona abierta de pradera entre los barrios.")
 		return
 
