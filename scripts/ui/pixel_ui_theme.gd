@@ -41,6 +41,14 @@ static func button_surface_style() -> StyleBoxTexture:
 	return _texture_style("button_normal.png", 5)
 
 
+static func button_hover_style() -> StyleBoxTexture:
+	return _texture_style("button_hover.png", 5)
+
+
+static func button_pressed_style() -> StyleBoxTexture:
+	return _texture_style("button_pressed.png", 5)
+
+
 static func _apply_control(control: Control, use_pixel_titles: bool = true) -> void:
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
@@ -70,10 +78,7 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 		control.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 	var is_slot_button := control is Button and (
-		control.name == "InventorySlot"
-		or control.name == "EquipmentSlot"
-		or control.name.ends_with("HandSlot")
-		or control.name.begins_with("Slot")
+		control.name.ends_with("HandSlot")
 	)
 	if is_slot_button:
 		var slot := slot_style(false)
