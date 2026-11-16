@@ -1215,7 +1215,7 @@ func _obtener_texto_rutina_personaje(
 		"bruna":
 			match actividad:
 				"forjar":
-					return "Estoy trabajando el metal. Necesito mantener el ritmo y la temperatura; hablaré contigo cuando termine esta pieza." if not amable else "Observa el color del metal. No golpeo hasta que está en el punto correcto; es cuestión de paciencia."
+					return "Estoy trabajando el metal. ¿Necesitabas algo?" if not amable else "Observa el color del metal. No golpeo hasta que está en el punto correcto; es cuestión de paciencia."
 				"revisar_herramientas":
 					return "Estoy comprobando las herramientas. Una pieza desgastada puede arruinar un trabajo entero." if not amable else "Estoy revisando mis herramientas. Si quieres, puedo enseñarte qué señales busco antes de volver a usarlas."
 		"darven":
@@ -1223,7 +1223,7 @@ func _obtener_texto_rutina_personaje(
 				"vigilar_acceso":
 					return "Estoy controlando el acceso al registro. Si vienes por un trámite, espera a que termine la inspección." if not amable else "Estoy revisando quién entra y sale. Ya conozco tu rostro, pero debo mantener el procedimiento."
 				"vigilar":
-					return "Este puesto requiere atención constante. No puedo apartarme mientras estoy de guardia." if not amable else "Todo está tranquilo por ahora. Aun así, no debo descuidar el puesto; podemos hablar mientras mantengo la vigilancia."
+					return "Estoy vigilando este puesto. ¿Vienes por algo relacionado con la guardia?" if not amable else "Todo está tranquilo por ahora. Aun así, no debo descuidar el puesto; podemos hablar mientras mantengo la vigilancia."
 				"patrullar":
 					return "Estoy recorriendo el camino. Si detecto algo fuera de lugar, debo informar al cuartel." if not amable else "La ronda está tranquila. Puedes acompañarme un tramo, pero mantente atento a los alrededores."
 				"recorrer_alrededores":
@@ -1239,7 +1239,7 @@ func _obtener_texto_rutina_personaje(
 		"narel":
 			match actividad:
 				"investigar_oris":
-					return "Estoy comparando observaciones sobre Oris. Necesito terminar esta anotación antes de cambiar de tema." if not amable else "Encontré una diferencia interesante en estas observaciones de Oris. Quiero enseñártela cuando termine de comprobarla."
+					return "Estoy comparando observaciones sobre Oris. ¿Qué querías comentarme?" if not amable else "Encontré una diferencia interesante en estas observaciones de Oris. Quiero enseñártela cuando termine de comprobarla."
 				"consultar_archivos":
 					return "Estoy consultando registros antiguos. Prefiero verificar las fuentes antes de aceptar una conclusión." if not amable else "He encontrado una referencia que podría aclarar una de mis observaciones. ¿Quieres ayudarme a revisarla?"
 				"registrar_observaciones":
@@ -1272,8 +1272,8 @@ func _obtener_texto_rutina_personaje(
 	if verbo.is_empty():
 		verbo = "atender mis asuntos"
 	if dentro_edificio:
-		return ("Estoy ocupado con %s aquí. Cuando termine, podremos conversar." if not amable else "Estoy con %s, pero me alegra que hayas venido. Podemos hablar mientras continúo.") % verbo
-	return ("Estoy en %s y tengo que ocuparme de %s. Hablemos cuando termine." if not amable else "Estoy en %s con %s. Quédate un momento si quieres; podemos conversar.") % [destino, verbo]
+		return ("Estoy con %s aquí. ¿Qué necesitabas?" if not amable else "Estoy con %s, pero me alegra que hayas venido. Cuéntame, ¿qué pasa?") % verbo
+	return ("Estoy en %s con %s. ¿Necesitabas algo?" if not amable else "Voy por %s mientras me ocupo de %s. ¿Qué pasa?") % [destino, verbo]
 
 
 func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -> bool:
