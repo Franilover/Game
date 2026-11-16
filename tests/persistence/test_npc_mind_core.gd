@@ -204,6 +204,7 @@ func _run() -> void:
 	if str(motivo_promesa.get("tipo", "")) != "cumplir_promesa" or str(motivo_promesa.get("promesa_id", "")) != promesa_motivo_id:
 		errores.append("El NPC no priorizó una promesa pendiente con su destinataria.")
 
+	relationship.resolver_promesa_entre_npc(promesa_motivo_id, true)
 	relationship.registrar_conocimiento_npc("ivo", {
 		"clave": "herramienta_rota",
 		"tipo": "problema",
@@ -220,7 +221,6 @@ func _run() -> void:
 	)
 	if str(motivo_asunto_generado.get("tipo", "")) != "resolver_asunto":
 		errores.append("Un problema que requiere ayuda no generó un asunto social.")
-	relationship.resolver_promesa_entre_npc(promesa_motivo_id, true)
 	var motivo_asunto: Dictionary = schedule.call("_seleccionar_motivo_encuentro_social", "ivo", "mara", relacion_social)
 	if str(motivo_asunto.get("tipo", "")) != "resolver_asunto":
 		errores.append("El NPC no eligió resolver un asunto pendiente con la persona indicada.")
