@@ -86,7 +86,7 @@ func _run() -> void:
 		_fail("Falta una zona abierta de pradera entre los barrios.")
 		return
 
-	print("PASS: Torres usa 5.040 celdas TileMapDual con plaza, calles conectadas y borde arbolado.")
+	print("PASS: Torres usa 7.072 celdas TileMapDual con plaza, calles conectadas y borde arbolado.")
 	torres.queue_free()
 	quit()
 
