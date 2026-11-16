@@ -62,6 +62,7 @@ var _personaje_recuerdo_pendiente: String = ""
 var _variante_pendiente_mostrar: Dictionary = {}
 var _personaje_variante_pendiente: String = ""
 var _ciclo_variante_pendiente: String = ""
+var _contexto_rutina_conversacion: Dictionary = {}
 
 
 func _ready() -> void:
@@ -255,6 +256,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	_personaje_variante_pendiente = ""
 	_ciclo_variante_pendiente = ""
 	_fuente = fuente
+	_contexto_rutina_conversacion = _capturar_contexto_rutina_actual()
 
 	var datos_seleccionados := datos.duplicate(true) if iniciativa_directa else _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
@@ -419,6 +421,7 @@ func cerrar() -> void:
 
 	_fuente = null
 	_dialogo_en_transito = false
+	_contexto_rutina_conversacion.clear()
 	_acciones.clear()
 	_recuerdo_pendiente_mostrar.clear()
 	_personaje_recuerdo_pendiente = ""
@@ -1258,6 +1261,11 @@ func _obtener_texto_rutina_personaje(
 				"dormir":
 					return "Ya es hora de descansar. Mañana habrá más que hacer." if not amable else "Voy a descansar. Me alegra haberte visto antes de terminar el día."
 
+	# Caminar o desplazarse no es estar ocupado: el NPC puede responder sin
+	# describir una acción cotidiana como si fuera una obligación laboral.
+	if _actividad_es_desplazamiento(actividad):
+		return ("Voy camino a %s. ¿Necesitabas algo?" if amable else "Voy hacia %s. Si no es urgente, hablamos cuando llegue.") % destino
+
 	# Respaldo contextual para actividades nuevas que lleguen desde datos sin
 	# necesidad de cambiar el motor de diálogo cada vez.
 	var verbo := actividad.replace("_", " ").strip_edges()
@@ -1506,8 +1514,73 @@ func _obtener_reaccion_conocimiento_rutina() -> String:
 	return "Me interesa lo que dices. Cuéntame más cuando tengamos un momento."
 
 
+func _capturar_contexto_rutina_actual() -> Dictionary:
+	if not is_instance_valid(_fuente):
+		return {}
+	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower()
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower()
+	return {
+		"rutina_clave": str(_fuente.get_meta("rutina_actual", "")).strip_edges().to_lower(),
+		"ubicacion": ubicacion,
+		"destino": _nombre_ubicacion_rutina(ubicacion),
+		"actividad": actividad,
+		"en_transito": bool(_fuente.get_meta("rutina_en_transito", false)),
+		"dentro_edificio": bool(_fuente.get_meta("rutina_en_edificio", false)),
+		"amable": _relacion_amable_actual()
+	}
+
+
+func _actividad_es_desplazamiento(actividad: String) -> bool:
+	var clave := actividad.strip_edges().to_lower()
+	for termino in ["caminar", "pasear", "recorrer", "desplaz", "dirigir", "ir_a", "volver", "regresar", "viajar"]:
+		if clave.contains(termino):
+			return true
+	return false
+
+
+func _actividad_impide_una_conversacion_larga(actividad: String) -> bool:
+	var clave := actividad.strip_edges().to_lower()
+	for termino in ["trabaj", "estudi", "investig", "repar", "vigilar", "atend", "forj", "horne", "comerci", "ordenar", "consult", "leer", "registrar", "inspeccion"]:
+		if clave.contains(termino):
+			return true
+	return false
+
+
 func _obtener_reaccion_despedida_rutina() -> String:
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var contexto := _contexto_rutina_conversacion
+	var actividad_contextual := str(contexto.get("actividad", "")).strip_edges().to_lower()
+	var destino_contextual := str(contexto.get("destino", "el pueblo"))
+	if bool(contexto.get("en_transito", false)):
+		match nombre:
+			"elian":
+				return "Claro, sigue hacia %s. Nos vemos cuando llegues." % destino_contextual
+			"bruna":
+				return "Ve a terminar tu encargo. No te entretengo más; hablamos luego."
+			"darven":
+				return "Continúa con tu ronda. Nos vemos cuando termines el recorrido."
+			"saira":
+				return "Anda, atiende ese asunto. Ya nos pondremos al día."
+			"narel":
+				return "No te distraigo más. Termina de ordenar tus ideas y hablamos después."
+			_:
+				return "Sigue con lo que ibas a hacer. Hablamos después."
+	if _actividad_impide_una_conversacion_larga(actividad_contextual):
+		match nombre:
+			"elian":
+				return "Te dejo seguir con la panadería. Nos vemos luego."
+			"bruna":
+				return "Termina la pieza con calma; no te distraigo más. Hablamos luego."
+			"darven":
+				return "Sigue atento a la guardia. Nos vemos cuando termine tu turno."
+			"saira":
+				return "Te dejo atender el comercio. Nos vemos luego."
+			"narel":
+				return "Termina tus notas; hablamos cuando tengas un momento."
+			_:
+				return "Te dejo continuar con lo que estabas haciendo. Hablamos luego."
+	if _actividad_es_desplazamiento(actividad_contextual):
+		return "No te entretengo más. Nos vemos por %s." % destino_contextual
 	var relacion: Dictionary = {}
 	if relationship_system != null and is_instance_valid(_fuente):
 		relacion = relationship_system.obtener_relacion(_fuente.get_personaje_game_id())
