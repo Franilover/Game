@@ -2299,7 +2299,7 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 		_mostrar_linea_actual()
 
 
-func actualizar_conversacion_social_autonoma(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+func _actualizar_conversacion_social_autonoma(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
 	if _conversacion_activa.is_empty():
 		return
 	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
