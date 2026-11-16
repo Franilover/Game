@@ -1051,6 +1051,24 @@ func resolver_promesa_entre_npc(promesa_id: String, cumplida: bool = true) -> bo
 			registrar_interaccion_entre_npc(promitente, destinatario, {"confianza": 1.5, "amistad": 0.5}, {"tipo": "promesa_cumplida", "promesa_id": clave})
 		else:
 			registrar_interaccion_entre_npc(promitente, destinatario, {"confianza": -3.0, "amistad": -1.0, "tension": 1.5}, {"tipo": "promesa_rota", "promesa_id": clave})
+		var evento := "promesa_cumplida" if cumplida else "promesa_rota"
+		var importancia := 3.0 if cumplida else 4.0
+		registrar_recuerdo(promitente, {
+			"tipo": "evento_social",
+			"evento": evento,
+			"evento_id": clave,
+			"con_personaje": destinatario,
+			"importancia": importancia,
+			"momento": Time.get_datetime_string_from_system(true)
+		})
+		registrar_recuerdo(destinatario, {
+			"tipo": "evento_social",
+			"evento": evento,
+			"evento_id": clave,
+			"con_personaje": promitente,
+			"importancia": importancia,
+			"momento": Time.get_datetime_string_from_system(true)
+		})
 		return true
 	return false
 
