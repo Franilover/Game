@@ -45,8 +45,6 @@ var health_value: Label = null
 var stamina_bar: ProgressBar = null
 var stamina_value: Label = null
 var _dash_recharge_indicator: TextureProgressBar = null
-var _dash_visual_value: float = 0.0
-var _dash_indicator_recharging: bool = false
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
@@ -336,16 +334,12 @@ func _actualizar_indicador_recarga_dash(delta: float) -> void:
 	var recargando := actual < maximo - 0.0001
 	_dash_recharge_indicator.visible = recargando
 	if not recargando:
-		_dash_indicator_recharging = false
-		_dash_visual_value = 0.0
-		_dash_recharge_indicator.value = 0.0
+		_dash_recharge_indicator.value = 1.0
 		return
 
-	if not _dash_indicator_recharging:
-		_dash_visual_value = 0.0
-		_dash_indicator_recharging = true
-	_dash_visual_value = move_toward(_dash_visual_value, actual / maximo, delta * 1.0)
-	_dash_recharge_indicator.value = _dash_visual_value
+	# PlayerStaminaController ya recupera la carga de forma continua durante 3 s.
+	# Mostrar su valor real evita una segunda interpolación que impedía completar la barra.
+	_dash_recharge_indicator.value = actual / maximo
 	var sprite := player.get_node_or_null("Visual/Sprite2D") as Sprite2D
 	if sprite == null or sprite.texture == null:
 		_dash_recharge_indicator.visible = false
@@ -358,7 +352,7 @@ func _actualizar_indicador_recarga_dash(delta: float) -> void:
 		0.0,
 		-float(sprite.texture.get_height()) * 0.5
 	)
-	_dash_recharge_indicator.position = borde_superior + Vector2(-36.0, -4.0)
+	_dash_recharge_indicator.position = borde_superior + Vector2(-80.0, -4.0)
 
 
 func _preparar_aviso_descubrimiento() -> void:
