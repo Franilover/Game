@@ -1271,6 +1271,7 @@ func registrar_npc_materializado(npc: Node) -> void:
 		_contenedor_npcs_exterior = npc.get_parent()
 	if is_instance_valid(_contenedor_npcs_exterior) and npc.get_parent() != _contenedor_npcs_exterior:
 		npc.reparent(_contenedor_npcs_exterior, true)
+	desactivar_colision_npc_exterior(npc)
 	if npc is CanvasItem:
 		(npc as CanvasItem).visible = false
 	npc.remove_from_group("interactable")
