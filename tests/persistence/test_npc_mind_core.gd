@@ -86,6 +86,16 @@ func _run() -> void:
 		errores.append("No se pudo completar el objetivo.")
 	if not mind.obtener_objetivos_activos("ivo").is_empty():
 		errores.append("Un objetivo completado siguió activo.")
+	for indice_objetivo in range(7):
+		var id_objetivo := "objetivo_social_%s" % indice_objetivo
+		if not mind.establecer_objetivo("ivo", {"id": id_objetivo, "tipo": "social", "prioridad": 0.6}):
+			errores.append("No se pudo registrar el objetivo social %s." % indice_objetivo)
+			break
+		if not mind.completar_objetivo("ivo", id_objetivo):
+			errores.append("No se pudo cerrar el objetivo social %s." % indice_objetivo)
+			break
+	if not mind.establecer_objetivo("ivo", {"id": "visitar_ivo_amigo", "tipo": "visitar_amigo", "prioridad": 0.8}):
+		errores.append("Los objetivos completados bloquearon nuevos objetivos sociales.")
 
 	var persistido: Dictionary = game_state.saved.get("ivo", {})
 	if persistido.is_empty():
