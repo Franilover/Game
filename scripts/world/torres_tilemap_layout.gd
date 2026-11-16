@@ -11,10 +11,10 @@ const BASE_ATLAS_TILE := Vector2i(2, 1)
 
 
 static func zone_for_point(point: Vector2, cell: Vector2i) -> int:
-	if _is_road(point):
-		return 1
 	if _is_forest_border(point, cell):
 		return 8
+	if _is_road(point):
+		return 1
 	return 0
 
 
@@ -41,6 +41,12 @@ static func _is_road(point: Vector2) -> bool:
 		return true
 	if _near_segment(point, Vector2(760.0, 190.0), Vector2(1280.0, 190.0), 25.0):
 		return true
+	# Pequeños accesos frente a las hileras de viviendas, conectados a las calles laterales.
+	for y_acceso in [-506.0, -196.0, 154.0, 744.0]:
+		if _near_segment(point, Vector2(-1280.0, y_acceso), Vector2(-880.0, y_acceso), 22.0):
+			return true
+		if _near_segment(point, Vector2(880.0, y_acceso), Vector2(1350.0, y_acceso), 22.0):
+			return true
 
 	if _near_segment(point, Vector2(-330.0, -10.0), Vector2(-650.0, 70.0), 29.0):
 		return true
