@@ -470,10 +470,11 @@ func _actualizar_limites_camara_zona(tipo: String) -> void:
 	if not is_instance_valid(_camera):
 		return
 	if tipo == "reino_torres":
-		_camera.limit_left = -1200
-		_camera.limit_right = 1200
-		_camera.limit_top = -700
-		_camera.limit_bottom = 700
+		# Límites del mapa ampliado de Torres: 104 × 68 tiles de 32 px.
+		_camera.limit_left = -1664
+		_camera.limit_right = 1664
+		_camera.limit_top = -1088
+		_camera.limit_bottom = 1088
 		_camera.limit_enabled = true
 	elif tipo == "hogar":
 		_camera.limit_left = -1200
@@ -1392,12 +1393,13 @@ func _configurar_camara() -> void:
 	_camera.drag_vertical_enabled = false
 	var tipo_zona: String = str(_zone_manager.obtener_tipo_actual()) if is_instance_valid(_zone_manager) else ""
 	if tipo_zona == "reino_torres":
-		# Límites del Ground de reino_torres.tscn; Camera2D calcula el área
-		# visible según el zoom para no mostrar fuera del borde del reino.
-		_camera.limit_left = -1200
-		_camera.limit_right = 1200
-		_camera.limit_top = -700
-		_camera.limit_bottom = 700
+		# Límites del mapa ampliado: origen (-1664, -1088), tamaño 3328 × 2176.
+		# Se aplican al iniciar y al cambiar de zona para mantener la cámara
+		# dentro del nuevo perímetro sin cortar los bordes del reino.
+		_camera.limit_left = -1664
+		_camera.limit_right = 1664
+		_camera.limit_top = -1088
+		_camera.limit_bottom = 1088
 		_camera.limit_enabled = true
 	elif tipo_zona == "expedicion:bosque":
 		_camera.limit_left = 0
