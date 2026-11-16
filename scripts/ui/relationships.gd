@@ -392,6 +392,26 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	barra_amistad.custom_minimum_size = Vector2(0.0, 16.0)
 	barra_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	PIXEL_UI_THEME.apply(barra_amistad, false)
+	# Usar las mismas texturas de las barras de vida; evitar el relleno
+	# rectangular predeterminado de ProgressBar.
+	var marco_amistad := load("res://assets/art/UI/Menus/bar_frame.png") as Texture2D
+	var relleno_amistad := load("res://assets/art/UI/Menus/bar_fill_health.png") as Texture2D
+	if marco_amistad != null:
+		var estilo_marco := StyleBoxTexture.new()
+		estilo_marco.texture = marco_amistad
+		estilo_marco.texture_margin_left = 3
+		estilo_marco.texture_margin_top = 3
+		estilo_marco.texture_margin_right = 3
+		estilo_marco.texture_margin_bottom = 3
+		barra_amistad.add_theme_stylebox_override("background", estilo_marco)
+	if relleno_amistad != null:
+		var estilo_relleno := StyleBoxTexture.new()
+		estilo_relleno.texture = relleno_amistad
+		estilo_relleno.texture_margin_left = 2
+		estilo_relleno.texture_margin_top = 2
+		estilo_relleno.texture_margin_right = 2
+		estilo_relleno.texture_margin_bottom = 2
+		barra_amistad.add_theme_stylebox_override("fill", estilo_relleno)
 	contenido_amistad.add_child(barra_amistad)
 
 
