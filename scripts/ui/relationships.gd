@@ -71,7 +71,7 @@ func _al_reglas_sociales_cargadas() -> void:
 func _al_relacion_cambiada(personaje_id: String, relacion: Dictionary) -> void:
 	if personaje_id != _personaje_seleccionado_id or not is_instance_valid(detalle):
 		return
-	var barra := detalle.get_node_or_null("FriendshipBar") as ProgressBar
+	var barra := detalle.get_node_or_null("FriendshipPanel/FriendshipMargin/FriendshipContent/FriendshipBar") as ProgressBar
 	if barra == null:
 		return
 	barra.value = _amistad_a_valor_visual(float(relacion.get("amistad", 0.0)))
@@ -109,10 +109,6 @@ func _crear_ui() -> void:
 	lista.add_theme_constant_override("h_separation", SEPARACION_RETRATOS)
 	lista.add_theme_constant_override("v_separation", SEPARACION_RETRATOS)
 	_lista_scroll.add_child(lista)
-
-	var separador := VSeparator.new()
-	separador.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	contenido.add_child(separador)
 
 	detalle = VBoxContainer.new()
 	detalle.custom_minimum_size = Vector2(170.0, 0.0)
@@ -340,10 +336,32 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 		detalle.add_child(estado_relacion)
 		return
 
+	# Agrupar amistad y progreso sobre la misma superficie que los botones.
+	var panel_amistad := PanelContainer.new()
+	panel_amistad.name = "FriendshipPanel"
+	panel_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var fondo_amistad := PIXEL_UI_THEME.button_surface_style()
+	if fondo_amistad != null:
+		panel_amistad.add_theme_stylebox_override("panel", fondo_amistad)
+	detalle.add_child(panel_amistad)
+
+	var margen_amistad := MarginContainer.new()
+	margen_amistad.name = "FriendshipMargin"
+	margen_amistad.add_theme_constant_override("margin_left", 7)
+	margen_amistad.add_theme_constant_override("margin_top", 5)
+	margen_amistad.add_theme_constant_override("margin_right", 7)
+	margen_amistad.add_theme_constant_override("margin_bottom", 5)
+	panel_amistad.add_child(margen_amistad)
+
+	var contenido_amistad := VBoxContainer.new()
+	contenido_amistad.name = "FriendshipContent"
+	contenido_amistad.add_theme_constant_override("separation", 4)
+	margen_amistad.add_child(contenido_amistad)
+
 	var etiqueta_amistad := Label.new()
 	etiqueta_amistad.text = "Amistad"
 	etiqueta_amistad.add_theme_font_size_override("font_size", 10)
-	detalle.add_child(etiqueta_amistad)
+	contenido_amistad.add_child(etiqueta_amistad)
 
 	var amistad_guardada := float(relacion.get("amistad", 0.0))
 	var amistad_visual := _amistad_a_valor_visual(amistad_guardada)
@@ -356,7 +374,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	barra_amistad.custom_minimum_size = Vector2(0.0, 16.0)
 	barra_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	PIXEL_UI_THEME.apply(barra_amistad, false)
-	detalle.add_child(barra_amistad)
+	contenido_amistad.add_child(barra_amistad)
 
 
 func _amistad_a_valor_visual(amistad: float) -> float:
