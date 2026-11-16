@@ -809,3 +809,15 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Al terminar cada tramo se registra el resultado para aprendizaje incremental. La elección queda estable durante ese tramo.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1685.
 - Las rutinas laborales y los compromisos existentes siguen teniendo prioridad. La autonomía todavía está limitada a ocio de días libres; no hay simulación offline ni planes sociales autónomos complejos.
+
+
+
+## Objetivos sociales autónomos
+
+- En horas libres de días de descanso, la necesidad de socialización puede generar `buscar_compania` o `visitar_amigo`.
+- Los compañeros se seleccionan según vínculos, tensión y distancia; el NPC navega hasta ellos y registra el encuentro como una interacción social persistente.
+- El resultado reduce necesidades sociales, modifica gradualmente preferencias y actualiza el historial del vínculo.
+- Se respetan horarios, edificios, conversaciones y disponibilidad del compañero. Los objetivos se cancelan o esperan con límites claros.
+- El ciclo de objetivos repetidos y el reciclaje del historial se cubren con la prueba NPC Mind.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1694.
+- No hay generación de diálogo: se conservan textos escritos y escenas ambientales existentes.
