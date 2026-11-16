@@ -3,7 +3,7 @@
 **Última actualización:** 2026-11-16  
 **Repositorio:** `Franilover/Game`  
 **Rama auditada:** `fix/p0-godot47-crafting-token-type`  
-**Commit validado por CI:** `cb383ef5d5cc7174492dad546c7a2714a577ed3e`  
+**Commit validado por CI:** `1ceaad725f31e47cbd6446e502463c9eb422fc2b`  
 **Pull request de correcciones:** [#12](https://github.com/Franilover/Game/pull/12)  
 **Método:** inspección estática del código actual y CI completo Godot 4.7. No equivale a una prueba visual ni a una validación manual de gameplay.
 
@@ -18,8 +18,8 @@
 
 ## Resumen ejecutivo
 
-- El CI Godot 4.7 del commit `cb383ef` terminó en **success** (run `43923629275`, 39 pasos completados).
-- `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01`, `MISS-01`, `DIA-01`, `MOBILE-01` y `NPC-01` tienen contratos automatizados aprobados en la rama actual. `SPECIES-01` tiene prueba de reintento aprobada y queda pendiente validar el endpoint en ejecución real.
+- El CI Godot 4.7 del commit `1ceaad7` terminó en **success** (run `43924866198`, 40 pasos completados).
+- `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01`, `MISS-01`, `DIA-01`, `MOBILE-01` y `NPC-01` tienen contratos automatizados aprobados en la rama actual. `SPECIES-01` tiene prueba de reintento aprobada y queda pendiente validar el endpoint en ejecución real. `AUTH-02` ya vuelve a solicitar catálogos al restaurar/iniciar sesión; el contrato de disparadores pasó CI.
 - La entrega de recompensas ahora resuelve `item_id` mediante el catálogo canónico `GarliaWorldItems`, aplica rollback atómico y evita reintentos recursivos por `inventory_changed`.
 - El catálogo real de Supabase se consultó solo en lectura: la misión activa «Conocer a Abel» recompensa una Espada de Madera mediante UUID; no se modificaron tablas, funciones, políticas ni datos.
 - La corrección de compilación Godot 4.7, encabezados de Auth, Garudex, locomoción, continuidad del menú social, diálogos móviles y entradas NPC también pasan la batería actual.
@@ -37,8 +37,8 @@ Estados permitidos: **Abierto**, **En verificación**, **Corregido pendiente de 
 | ITEM-03 | Alta | Soltar objetos desde inventario | `InventoryController.soltar_objeto_al_mundo()` obtiene el objeto actual desde runtime y solo lo descuenta después de que `GarliaWorldItems` confirma el registro. La UI entrega índice/posición, no una copia antigua del arrastre. | Resuelto verificado | `InventoryDropContract: PASS` en CI Godot 4.7 run `42213469008`; prueba de infraestructura ausente conserva ID y cantidad. |
 | ITEM-02 | Media | Catálogo de objetos | La generación inicial depende de `catalogo`; no se encontró un fallback local equivalente. Algunos fallos HTTP terminan en `carga_fallida` sin reintento. | Abierto | Arranque offline y reconexión; definir catálogo local versionado/snapshot sin duplicar la autoridad canónica. |
 | SPECIES-01 | Alta | Catálogo de especies | Supabase contiene tres especies activas (`Feerin`, `Humano`, `Necromancer`) y la tabla tiene SELECT para `anon`/`authenticated` con política pública limitada a `activo = true`. El cliente cachea y reemite el catálogo; antes detenía la recuperación tras tres respuestas vacías, sin comprobar de nuevo hasta que otra escena llamara la carga. Ahora emite el estado vacío y programa reintentos de recuperación cada 30 s tras los intentos rápidos. | Corregido pendiente de prueba | `SpeciesCatalogRetry: PASS` en CI Godot 4.7 run `43923629275`; falta confirmar la solicitud REST real y el selector dentro del flujo de creación en Android/PC. |\n| AUTH-01 | Alta | Supabase Auth | Login y renovación en `GarliaAuth` ya envían la clave publicable solo en `apikey`; Crafteo agrega `Authorization` únicamente si existe un JWT real. Otras rutas de `SupabaseClient` siguen usando clave publicable sin Bearer y requieren cotejo individual con RLS. | En verificación | Probar restauración/refresh y revisar permisos de cada endpoint protegido antes de introducir JWT genérico. |
-| AUTH-02 | Alta | Restauración de sesión | Las cargas iniciales diferidas de catálogos pueden terminar si todavía no hay sesión restaurada. No se encontró una conexión clara que repita todas esas cargas al finalizar la restauración. | En verificación | Trazar `session_restore_finished`, cargas iniciales y reintentos por dominio. Probar inicio en frío con sesión persistida. |
-| SAVE-01 | Alta | Persistencia | `SaveFileRepository` escribe en temporal, valida JSON, conserva respaldo durante el reemplazo y recupera el último save válido. `GameStateRoundtrip` verifica ida/vuelta de salud, Eterium, stamina, posición/tile/orientación, inventario, interior/zona, proceso IUM, tiempo ambiental y estado/progreso/reclamación de misiones. | Resuelto verificado | `SaveFileRepositoryContract: PASS` y `GameStateRoundtrip: PASS` en CI Godot 4.7 run `43923629275`. Sigue pendiente una prueba visual de partida completa con cierre y reanudación. |
+| AUTH-02 | Alta | Restauración de sesión | Las cargas que requieren sesión podían salir antes de que terminara el refresh token y no repetirse después; iniciar sesión manualmente tampoco reactivaba todos los catálogos. `GarliaSupabaseClient` ahora escucha `session_restored` y `login_succeeded`, y vuelve a solicitar Eterium runtime, reglas de especie, reglas sociales, regalos, relaciones ecológicas y reinos; evita duplicar solicitudes HTTP en curso. | Corregido pendiente de prueba | `AuthenticatedCatalogReload: PASS` en CI Godot 4.7 run `43924866198`; falta comprobar refresh real con sesión persistida y endpoints en ejecución integrada. |
+| SAVE-01 | Alta | Persistencia | `SaveFileRepository` escribe en temporal, valida JSON, conserva respaldo durante el reemplazo y recupera el último save válido. `GameStateRoundtrip` verifica ida/vuelta de salud, Eterium, stamina, posición/tile/orientación, inventario, interior/zona, proceso IUM, tiempo ambiental y estado/progreso/reclamación de misiones. | Resuelto verificado | `SaveFileRepositoryContract: PASS` y `GameStateRoundtrip: PASS` en CI Godot 4.7 run `43924866198`. Sigue pendiente una prueba visual de partida completa con cierre y reanudación. |
 | DIA-01 | Alta | Continuidad de diálogo | Tras cerrar el selector social o responder un tema cotidiano, el menú principal podía no reconstruir sus botones. `DialogueSystem` vuelve a establecer `Preguntar`, `Hablar`, `Dar cumplido` y `Despedirse`; el contrato ejecuta cierre de selector y respuesta casual. | Resuelto verificado | `DialogueSocialMenu: PASS` en CI Godot 4.7 run `43921504449`. |
 | MOBILE-01 | Alta | Entrada táctil | El joystick podía capturar toques sobre el diálogo en zonas superpuestas. Ahora ignora y libera movimiento mientras hay diálogo abierto; el layout del panel y selectores se adapta al viewport. | Resuelto verificado | `MobileControlsDialogueTouch` y `DialogueMobileLayout: PASS` en CI Godot 4.7 run `43921504449`. |
 | NPC-01 | Alta | Entradas a edificios | Los NPC marcados como dentro del edificio se ocultan en el exterior, pero el cuerpo físico podía conservar `collision_layer` y `collision_mask`; el nodo invisible bloqueaba el umbral y otros NPC no podían entrar. Se añade captura/restauración de capas y máscaras, y recuperación de las formas de colisión al reparentar al interior. | Resuelto verificado | `NPCBuildingEntryCollision: PASS` en CI Godot 4.7 run `43920496439`; cubre colisión exterior desactivada, restauración de capas/máscaras y reactivación de formas originales. |
@@ -123,9 +123,9 @@ La auditoría anterior observó que:
 
 Esta sección sustituye los estados históricos para los hallazgos revalidados en `fix/p0-godot47-crafting-token-type`.
 
-- CI completo Godot 4.7: `success`, run `43923629275`, commit `cb383ef5d5cc7174492dad546c7a2714a577ed3e`; 39 pasos, sin fallos.
+- CI completo Godot 4.7: `success`, run `43924866198`, commit `1ceaad725f31e47cbd6446e502463c9eb422fc2b`; 40 pasos, sin fallos.
 - `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01` y `MISS-01`: **Resuelto verificado**.
 - Las recompensas de misiones resuelven UUIDs desde el catálogo canónico; rollback y reintentos no generan ciclos recursivos.
-- Auth/RLS por endpoint, offline end-to-end, continuidad de guardado de una partida completa, solicitud REST real del catálogo de especies y pruebas visuales Android/PC siguen en el backlog.
+- Auth/RLS por endpoint, refresh real de sesión, offline end-to-end, continuidad de guardado de una partida completa, solicitud REST real del catálogo de especies y pruebas visuales Android/PC siguen en el backlog.
 - PR #12 sigue en borrador. `main` no se modificó; Supabase se consultó solo en lectura y no recibió cambios.
 
