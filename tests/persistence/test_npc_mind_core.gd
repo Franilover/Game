@@ -118,6 +118,12 @@ func _run() -> void:
 	var eleccion := mind.elegir_actividad("ivo", actividades)
 	if str(eleccion.get("actividad", "")) != "charlar":
 		errores.append("La selección no priorizó la necesidad social y la personalidad.")
+	var afinidad_emocional := mind.evaluar_actividad("ivo", {
+		"id": "descansar",
+		"afinidad_emocional": {"animo": 0.5, "estres": 0.1, "energia": 0.75}
+	})
+	if float(afinidad_emocional.get("componentes", {}).get("estado_emocional", 0.0)) <= 0.0:
+		errores.append("El estado emocional no influyó en la afinidad de una actividad.")
 
 	var preferencia_inicial := mind.registrar_resultado_actividad("ivo", "charlar", 1.0)
 	if preferencia_inicial <= 0.0 or preferencia_inicial >= 1.0:
@@ -128,6 +134,12 @@ func _run() -> void:
 
 	if not mind.establecer_objetivo("ivo", {"id": "visitar_mara", "prioridad": 0.8, "tipo": "social"}):
 		errores.append("No se pudo establecer un objetivo.")
+	var actividad_objetivo := mind.evaluar_actividad("ivo", {
+		"id": "visitar_mara",
+		"prioridad": 0.0
+	})
+	if float(actividad_objetivo.get("componentes", {}).get("objetivos", 0.0)) <= 0.0:
+		errores.append("Un objetivo activo no influyó en la evaluación de una actividad relacionada.")
 	if mind.obtener_objetivos_activos("ivo").size() != 1:
 		errores.append("El objetivo activo no se conservó.")
 	if not mind.completar_objetivo("ivo", "visitar_mara"):
