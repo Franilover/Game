@@ -181,3 +181,16 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - La prueba de núcleo cubre procesamiento temporal, satisfacción, actualización emocional y que Ivo/Mara tengan conjuntos de actividades distintos.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1685](https://github.com/Franilover/Game/actions/runs/43935581554).
 - Alcance actual: la autonomía se aplica a alternativas de ocio de día libre, no reemplaza trabajo, guardias, investigaciones ni compromisos. La simulación offline y la iniciativa social basada en objetivos quedan para siguientes etapas.
+
+
+
+## Objetivos sociales autónomos de NPC (2026-11-16)
+
+- `NPCScheduleSystem` genera objetivos sociales a partir de la necesidad de socialización y los vínculos registrados: `buscar_compania` o `visitar_amigo`.
+- La elección de pareja considera amistad, afecto, confianza, colaboración, tensión y distancia; descarta habitantes muertos, ocupados, en tránsito, dentro de edificios o en conversaciones.
+- El objetivo queda registrado en `NPCMind` y persiste en el estado mental. La referencia de ejecución (NPC destino, espera y temporizador) vive en metadatos de la instancia y se reconstruye si la partida vuelve a cargar.
+- El NPC traza una ruta hacia un punto cercano a la otra persona, espera el encuentro y completa la interacción tras permanecer juntos. La interacción alivia socialización/diversión, actualiza aprendizaje y registra un recuerdo de relación.
+- Los objetivos sociales sólo interrumpen ocio de días libres, entre 09:00–20:00. No desplazan trabajo, guardias, horarios de edificios ni compromisos. Un objetivo se cancela si el compañero desaparece, entra en un edificio o inicia otra interacción; los compañeros en tránsito tienen una espera máxima.
+- Los objetivos completados/abandonados se reciclan para que el historial limitado no impida crear objetivos futuros.
+- Prueba NPC Mind: valida ciclo de objetivos repetidos y reciclaje del límite. CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1694](https://github.com/Franilover/Game/actions/runs/43936746181).
+- La conversación visible sigue utilizando líneas escritas y condiciones del sistema narrativo existente; no se genera texto automáticamente. El encuentro social puede servir de contexto para escenas ambientales ya definidas.
