@@ -231,10 +231,10 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
 [node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent" unique_id=1747754024]
-custom_minimum_size = Vector2(0, 102)
+custom_minimum_size = Vector2(0, 74)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="ItemIconFrame" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel"]
 custom_minimum_size = Vector2(74, 74)
@@ -250,12 +250,40 @@ expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
 
-[node name="InfoText" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel" unique_id=3001000010]
+[node name="DescriptionPanel" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel"]
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 7
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 7
+theme_override_constants/margin_bottom = 5
+
+[node name="DescriptionScroll" type="ScrollContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/DescriptionPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/DescriptionPanel/DescriptionScroll" unique_id=1325010840]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.95, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Selecciona un objeto para estudiar sus propiedades."
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="MetadataRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent"]
+custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ItemName" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText" unique_id=1080046545]
+[node name="ItemName" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow" unique_id=1080046545]
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -264,11 +292,12 @@ focus_mode = 0
 mouse_filter = 2
 text = ""
 
-[node name="CategoryStatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText"]
+[node name="CategoryStatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
-[node name="ItemCategory" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText/CategoryStatsRow"]
+[node name="ItemCategory" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/CategoryStatsRow"]
 visible = false
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
@@ -278,37 +307,10 @@ focus_mode = 0
 mouse_filter = 2
 text = ""
 
-[node name="StatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText/CategoryStatsRow"]
+[node name="StatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/CategoryStatsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
-
-[node name="DescriptionPanel" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/margin_left = 7
-theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 7
-theme_override_constants/margin_bottom = 5
-
-[node name="DescriptionScroll" type="ScrollContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 1
-
-[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel/DescriptionScroll" unique_id=1325010840]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 0
-theme_override_colors/font_color = Color(0.95, 0.88, 0.7, 1)
-theme_override_font_sizes/font_size = 11
-text = "Selecciona un objeto para estudiar sus propiedades."
-vertical_alignment = 1
-autowrap_mode = 2
 
 [node name="ActionRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent"]
 layout_mode = 2
