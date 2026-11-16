@@ -24,6 +24,7 @@ const RPC_MUNDO := (
 const HTTP_TIMEOUT: float = 20.0
 const MAX_INTENTOS_INICIALES: int = 3
 const RETRASO_REINTENTO: float = 1.5
+const INTERVALO_REINTENTO_ESPECIES: float = 30.0
 const INTERVALO_SINCRONIZACION: float = 60.0
 const RPC_ETERIUM_RUNTIME := (
 	"/rest/v1/rpc/get_eterium_runtime_v1"
@@ -435,8 +436,13 @@ func _al_completar_especies_jugables(
 		if especie_variant is Dictionary:
 			especies.append((especie_variant as Dictionary).duplicate(true))
 
-	if especies.is_empty() and _intentos_especies_jugables < MAX_INTENTOS_INICIALES:
+	if especies.is_empty():
+		# Una respuesta vacía puede deberse a que el catálogo aún se está
+		# publicando o a una inconsistencia temporal. No la tratamos como éxito
+		# definitivo: notificamos el estado y mantenemos una comprobación lenta.
+		_especies_jugables.clear()
 		print("SupabaseClient: Supabase respondió sin especies activas; se comprobará de nuevo.")
+		especies_jugables_cargadas.emit([])
 		_reintentar_carga_especies_jugables("catálogo vacío")
 		return
 
@@ -452,13 +458,15 @@ func _al_completar_especies_jugables(
 func _reintentar_carga_especies_jugables(motivo: String) -> void:
 	if _reintento_especies_programado or not _especies_jugables.is_empty():
 		return
+	var espera := RETRASO_REINTENTO * float(maxi(_intentos_especies_jugables, 1))
 	if _intentos_especies_jugables >= MAX_INTENTOS_INICIALES:
-		print("SupabaseClient: agotados los intentos de especies jugables (%s)." % motivo)
-		return
+		# Tras los intentos rápidos iniciales, conservar recuperación automática
+		# sin martillar el endpoint: una comprobación cada 30 segundos.
+		_intentos_especies_jugables = 0
+		espera = INTERVALO_REINTENTO_ESPECIES
 
 	_reintento_especies_programado = true
-	var espera := RETRASO_REINTENTO * float(_intentos_especies_jugables)
-	print("SupabaseClient: reintentando especies jugables → intento %d/%d en %.1fs (%s)" % [_intentos_especies_jugables + 1, MAX_INTENTOS_INICIALES, espera, motivo])
+	print("SupabaseClient: reintentando especies jugables en %.1fs (%s)." % [espera, motivo])
 	await get_tree().create_timer(espera).timeout
 	_reintento_especies_programado = false
 	if not is_inside_tree() or not _especies_jugables.is_empty():
