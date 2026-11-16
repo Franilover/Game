@@ -164,6 +164,15 @@ func _distribuir_controles() -> void:
 func _input(event: InputEvent) -> void:
 	if solo_dispositivos_moviles and not _es_dispositivo_movil():
 		return
+	if _hay_dialogo_abierto():
+		# Un dedo sobre el diálogo nunca debe quedar capturado por el joystick
+		# que ocupa la esquina inferior izquierda en móviles.
+		if _joystick_touch_index != -1:
+			_joystick_touch_index = -1
+			_joystick_vector = Vector2.ZERO
+			_actualizar_visual_joystick()
+			_actualizar_acciones_joystick()
+		return
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		var punto_local: Vector2 = $Movement.get_global_transform_with_canvas().affine_inverse() * touch.position
@@ -186,6 +195,13 @@ func _input(event: InputEvent) -> void:
 			var punto_local: Vector2 = $Movement.get_global_transform_with_canvas().affine_inverse() * drag.position
 			_actualizar_joystick_desde_local(punto_local)
 			get_viewport().set_input_as_handled()
+
+
+func _hay_dialogo_abierto() -> bool:
+	for nodo in get_tree().get_nodes_in_group("dialogue_system"):
+		if is_instance_valid(nodo) and nodo.has_method("esta_abierto") and bool(nodo.call("esta_abierto")):
+			return true
+	return false
 
 
 func _actualizar_joystick_desde_local(punto_local: Vector2) -> void:
