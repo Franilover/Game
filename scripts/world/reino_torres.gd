@@ -548,9 +548,9 @@ func _crear_muralla_montana() -> void:
 		celdas_muralla[Vector2i(x, 55)] = true
 	for y in range(1, 55):
 		celdas_muralla[Vector2i(0, y)] = true
-	for y in range(1, 26):
+	for y in range(1, 24):
 		celdas_muralla[Vector2i(89, y)] = true
-	for y in range(31, 55):
+	for y in range(32, 55):
 		celdas_muralla[Vector2i(89, y)] = true
 
 	for celda_variant in celdas_muralla.keys():
