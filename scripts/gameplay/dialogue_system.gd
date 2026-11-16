@@ -116,9 +116,12 @@ func _input(event: InputEvent) -> void:
 	# primary_action. Se procesa aquí antes de que el evento llegue al mundo.
 	if event is InputEventScreenTouch:
 		var toque := event as InputEventScreenTouch
-		if toque.pressed and _procesar_toque_dialogo(toque.position):
+		if toque.pressed and dialogue_panel != null and is_instance_valid(dialogue_panel) and dialogue_panel.get_global_rect().has_point(toque.position):
+			# También se registra si el toque cae sobre un botón: así no se
+			# procesa dos veces cuando Godot emite el clic de ratón equivalente.
 			_ultimo_toque_dialogo_msec = Time.get_ticks_msec()
-			get_viewport().set_input_as_handled()
+			if _procesar_toque_dialogo(toque.position):
+				get_viewport().set_input_as_handled()
 		return
 
 	if event.is_action_pressed("primary_action"):
@@ -141,6 +144,10 @@ func _input(event: InputEvent) -> void:
 			if _respuestas_container != null and _respuestas_container.visible and _respuestas_container.get_global_rect().has_point(posicion_mouse):
 				return
 			if action_button != null and action_button.visible and action_button.get_global_rect().has_point(posicion_mouse):
+				return
+			if cancel_button != null and cancel_button.visible and cancel_button.get_global_rect().has_point(posicion_mouse):
+				return
+			if _boton_tienda_mercado != null and _boton_tienda_mercado.visible and _boton_tienda_mercado.get_global_rect().has_point(posicion_mouse):
 				return
 			if _boton_regalo != null and _boton_regalo.visible and _boton_regalo.get_global_rect().has_point(posicion_mouse):
 				return
