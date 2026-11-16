@@ -5,6 +5,10 @@ const DialogueSystemScript = preload("res://scripts/gameplay/dialogue_system.gd"
 
 
 func _ready() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
 	var errores: Array[String] = []
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
@@ -12,8 +16,8 @@ func _ready() -> void:
 		_fail(["No se pudieron crear los objetos de prueba."])
 		return
 
-	get_tree().root.add_child(npc)
-	get_tree().root.add_child(dialogo)
+	add_child(npc)
+	add_child(dialogo)
 	npc.set_meta("rutina_en_transito", true)
 	dialogo._fuente = npc
 
