@@ -34,6 +34,7 @@ var _panel: PanelContainer
 func _ready() -> void:
 	layer = 90
 	add_to_group("modal_ui")
+	add_to_group("research_lab_ui")
 
 
 func configurar(inventario: InventoryController, estacion_id: String) -> void:
@@ -49,11 +50,11 @@ func _crear_interfaz() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "ResearchLabPanel"
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.offset_left = -370.0
-	_panel.offset_top = -235.0
-	_panel.offset_right = 370.0
-	_panel.offset_bottom = 235.0
-	_panel.custom_minimum_size = Vector2(740.0, 470.0)
+	_panel.offset_left = -300.0
+	_panel.offset_top = -160.0
+	_panel.offset_right = 300.0
+	_panel.offset_bottom = 160.0
+	_panel.custom_minimum_size = Vector2(600.0, 320.0)
 	add_child(_panel)
 
 	var margen := MarginContainer.new()
@@ -94,7 +95,7 @@ func _crear_interfaz() -> void:
 	columna.add_child(cuerpo)
 
 	var columna_items := VBoxContainer.new()
-	columna_items.custom_minimum_size = Vector2(350, 0)
+	columna_items.custom_minimum_size = Vector2(270, 0)
 	columna_items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columna_items.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cuerpo.add_child(columna_items)
@@ -114,7 +115,7 @@ func _crear_interfaz() -> void:
 	scroll.add_child(_items_columna)
 
 	var columna_prueba := VBoxContainer.new()
-	columna_prueba.custom_minimum_size = Vector2(300, 0)
+	columna_prueba.custom_minimum_size = Vector2(240, 0)
 	columna_prueba.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columna_prueba.add_theme_constant_override("separation", 9)
 	cuerpo.add_child(columna_prueba)
@@ -124,7 +125,7 @@ func _crear_interfaz() -> void:
 	columna_prueba.add_child(titulo_procedimiento)
 
 	_procedimiento = OptionButton.new()
-	_procedimiento.custom_minimum_size = Vector2(280, 34)
+	_procedimiento.custom_minimum_size = Vector2(230, 30)
 	for procedimiento in PROCEDIMIENTOS_POR_ESTACION[_estacion_id]:
 		_procedimiento.add_item(str(procedimiento))
 	columna_prueba.add_child(_procedimiento)
@@ -145,7 +146,7 @@ func _crear_interfaz() -> void:
 	_resultado_label.text = "El resultado de la prueba aparecerá aquí."
 	_resultado_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_resultado_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_resultado_label.custom_minimum_size = Vector2(280, 90)
+	_resultado_label.custom_minimum_size = Vector2(230, 62)
 	columna_prueba.add_child(_resultado_label)
 
 	var ejecutar := Button.new()
@@ -268,9 +269,9 @@ func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dicti
 			if not categoria.is_empty():
 				detalle += " (%s)" % categoria
 			resumen.append(detalle)
-		return "Comparas %s. La estación permite revisar sus diferencias visibles y sus datos conocidos. No se han alterado las muestras." % ", ".join(resumen)
+		return "Comparas %s. La estación permite revisar sus diferencias visibles y sus datos conocidos. No se han alterado las muestras." % _unir_textos(resumen)
 
-	return "La prueba con %s ha terminado. Todavía no hay una reacción definida para esta combinación y procedimiento. Los elementos se conservaron intactos." % ", ".join(nombres)
+	return "La prueba con %s ha terminado. Todavía no hay una reacción definida para esta combinación y procedimiento. Los elementos se conservaron intactos." % _unir_textos(nombres)
 
 
 func _obtener_categoria(objeto: Dictionary) -> String:
@@ -280,3 +281,12 @@ func _obtener_categoria(objeto: Dictionary) -> String:
 	if categoria is String and not str(categoria).strip_edges().is_empty():
 		return str(categoria).strip_edges()
 	return str(objeto.get("categoria_nombre", objeto.get("categoria_clave", ""))).strip_edges()
+
+
+func _unir_textos(elementos: Array[String]) -> String:
+	var resultado := ""
+	for elemento in elementos:
+		if not resultado.is_empty():
+			resultado += ", "
+		resultado += elemento
+	return resultado
