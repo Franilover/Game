@@ -1,10 +1,10 @@
 extends Control
 class_name GarliaMobileControls
 
-## Capa táctil de Android. Reutiliza el InputMap para no duplicar gameplay.
+## Capa táctil para dispositivos móviles. Reutiliza el InputMap del juego.
 ## El layout se calcula en píxeles de viewport y se adapta a orientación/tamaño.
 
-@export var solo_android: bool = true
+@export var solo_dispositivos_moviles: bool = true
 @export_range(96, 180, 4) var tamano_joystick: int = 136
 @export_range(48, 96, 2) var tamano_accion: int = 68
 @export_range(8, 48, 2) var margen_borde: int = 20
@@ -12,6 +12,7 @@ class_name GarliaMobileControls
 
 var _acciones_presionadas: Dictionary = {}
 var _botones: Dictionary = {}
+var _botones_hud: Dictionary = {}
 var _joystick_touch_index: int = -1
 var _joystick_vector := Vector2.ZERO
 var _joystick_radio: float = 54.0
@@ -20,7 +21,7 @@ var _joystick_radio: float = 54.0
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	if solo_android and not OS.has_feature("android"):
+	if solo_dispositivos_moviles and not _es_dispositivo_movil():
 		hide()
 		return
 
@@ -34,9 +35,24 @@ func _ready() -> void:
 		"inventory": $Actions/Inventory,
 	}
 
+	_botones_hud = {
+		"toggle_map": $Actions/Map,
+		"toggle_missions": $Actions/Missions,
+		"toggle_garumi_selector": $Actions/Garumis,
+		"garumi_slot_1": $Actions/Garumi1,
+		"garumi_slot_2": $Actions/Garumi2,
+		"garumi_slot_3": $Actions/Garumi3,
+	}
 	for accion in _botones:
 		_configurar_boton(_botones[accion] as BaseButton, str(accion))
 		_estilizar_boton(_botones[accion] as Button, str(accion))
+	for accion in _botones_hud:
+		var boton_hud := _botones_hud[accion] as Button
+		boton_hud.pressed.connect(_solicitar_hud.bind(str(accion)))
+		_estilizar_boton(boton_hud, str(accion))
+	_estilizar_boton($Actions/Meditate, "meditate")
+	$Actions/Meditate.button_down.connect(_presionar_espacio)
+	$Actions/Meditate.button_up.connect(_soltar_espacio)
 	get_viewport().size_changed.connect(_distribuir_controles)
 	_distribuir_controles()
 
