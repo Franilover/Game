@@ -75,6 +75,7 @@ text = "GARLIA"
 horizontal_alignment = 1
 
 [node name="HistoriaButton" type="Button" parent="Center" unique_id=1127389707]
+disabled = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 focus_mode = 1
