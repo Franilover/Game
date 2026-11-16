@@ -1,6 +1,6 @@
 extends RefCounted
 ## Distribución urbana compartida de Torres.
-## 104 x 68 celdas de 32 px, con plaza central, barrios laterales y zona agrícola.
+## Plaza central, manzanas residenciales compactas y servicios próximos al núcleo.
 
 const TILE_SIZE := 32
 const ORIGIN := Vector2(-1664.0, -1088.0)
@@ -27,40 +27,40 @@ static func _is_road(point: Vector2) -> bool:
 	if absf(point.x) <= 370.0 and absf(point.y) <= 270.0:
 		return true
 
-	# Calles de acceso a los barrios residenciales occidental y oriental.
-	for x_calle: float in [-1024.0, 1024.0]:
-		if _near_segment(point, Vector2(x_calle, -1000.0), Vector2(x_calle, 1020.0), 30.0):
+	# Calles longitudinales que conectan el centro con los dos barrios.
+	for x_calle: float in [-600.0, 600.0]:
+		if _near_segment(point, Vector2(x_calle, -560.0), Vector2(x_calle, 520.0), 30.0):
 			return true
 
-	# Las calles transversales siguen las manzanas, no una cuadrícula uniforme.
-	for y_calle: float in [-700.0, -300.0, -180.0, 150.0, 430.0, 720.0, 850.0, 980.0]:
-		if _near_segment(point, Vector2(-1600.0, y_calle), Vector2(-960.0, y_calle), 25.0):
+	# Calles cortas entre las filas de viviendas; forman manzanas reconocibles.
+	for y_calle: float in [-475.0, -225.0, 25.0, 275.0]:
+		if _near_segment(point, Vector2(-1100.0, y_calle), Vector2(-650.0, y_calle), 25.0):
 			return true
-		if _near_segment(point, Vector2(960.0, y_calle), Vector2(1600.0, y_calle), 25.0):
+		if _near_segment(point, Vector2(650.0, y_calle), Vector2(1100.0, y_calle), 25.0):
 			return true
 
-	# Conexiones de los edificios públicos, comerciales y productivos.
-	if _near_segment(point, Vector2(-420.0, 0.0), Vector2(-650.0, 180.0), 30.0):
+	# Accesos de los edificios públicos y talleres alrededor de la plaza.
+	if _near_segment(point, Vector2(-500.0, 0.0), Vector2(-500.0, 242.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(-650.0, 180.0), Vector2(-650.0, 520.0), 27.0):
+	if _near_segment(point, Vector2(500.0, 0.0), Vector2(500.0, 246.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(420.0, 0.0), Vector2(650.0, 180.0), 30.0):
+	if _near_segment(point, Vector2(-520.0, -250.0), Vector2(-520.0, -365.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(650.0, 180.0), Vector2(650.0, 650.0), 27.0):
+	if _near_segment(point, Vector2(520.0, -250.0), Vector2(520.0, -362.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(-1024.0, -600.0), Vector2(-850.0, -600.0), 26.0):
+	if _near_segment(point, Vector2(-420.0, 250.0), Vector2(-420.0, 494.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(850.0, -600.0), Vector2(1024.0, -600.0), 26.0):
+	if _near_segment(point, Vector2(-160.0, 250.0), Vector2(-160.0, 494.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(-1024.0, 520.0), Vector2(-900.0, 520.0), 25.0):
+
+	# El granero, el molino y los corrales quedan en el borde productivo.
+	if _near_segment(point, Vector2(-760.0, 450.0), Vector2(-760.0, 667.0), 25.0):
 		return true
-	if _near_segment(point, Vector2(-900.0, 520.0), Vector2(-650.0, 520.0), 25.0):
+	if _near_segment(point, Vector2(-500.0, 450.0), Vector2(-500.0, 664.0), 25.0):
 		return true
-	if _near_segment(point, Vector2(650.0, 430.0), Vector2(1024.0, 430.0), 25.0):
+	if _near_segment(point, Vector2(650.0, 450.0), Vector2(650.0, 716.0), 25.0):
 		return true
-	if _near_segment(point, Vector2(650.0, 650.0), Vector2(1024.0, 720.0), 25.0):
-		return true
-	if _near_segment(point, Vector2(1024.0, 980.0), Vector2(900.0, 980.0), 25.0):
+	if _near_segment(point, Vector2(650.0, 716.0), Vector2(950.0, 898.0), 25.0):
 		return true
 	return false
 
