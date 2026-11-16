@@ -33,6 +33,9 @@ func _run() -> void:
 		_fail("Torres todavía crea un TerrainRenderer dinámico.")
 		return
 
+	if not _validar_distribucion_urbana(torres):
+		return
+
 	var total_cells := 0
 	for zone in EXPECTED_ATLASES.keys():
 		var layer := torres.get_node_or_null("TerrainDual_Zone_%02d" % int(zone)) as TileMapDual
@@ -89,6 +92,45 @@ func _run() -> void:
 	print("PASS: Torres usa 7.072 celdas TileMapDual con plaza, calles conectadas y borde arbolado.")
 	torres.queue_free()
 	quit()
+
+
+
+func _validar_distribucion_urbana(torres: Node2D) -> bool:
+	var posiciones: Dictionary = {
+		"Grupo_edificio_castillo": Vector2(0.0, -850.0),
+		"Grupo_edificio_archivo_real": Vector2(-190.0, -280.0),
+		"Grupo_edificio_sala_consejo": Vector2(190.0, -280.0),
+		"Grupo_casa_bruna": Vector2(-1320.0, -760.0),
+		"Grupo_casa_elian": Vector2(1320.0, -760.0),
+		"Grupo_casa_darven": Vector2(1500.0, -350.0),
+		"Grupo_casa_saira": Vector2(1180.0, -220.0),
+		"Grupo_casa_narel": Vector2(-1500.0, -350.0),
+		"Grupo_casa_vacia_06": Vector2(-920.0, 920.0),
+		"Grupo_casa_granjeros": Vector2(900.0, 950.0),
+	}
+	for nombre: String in posiciones:
+		var edificio := torres.get_node_or_null(nombre) as Node2D
+		if edificio == null:
+			_fail("Falta el nodo urbano %s." % nombre)
+			return false
+		if edificio.position.distance_to(posiciones[nombre]) > 0.1:
+			_fail("La posición de %s no coincide con el nuevo barrio." % nombre)
+			return false
+
+	var archivo := torres.get_node("Grupo_edificio_archivo_real/Entrada") as Marker2D
+	var consejo := torres.get_node("Grupo_edificio_sala_consejo/Entrada") as Marker2D
+	if archivo.global_position.distance_to(Vector2(-190.0, -217.0)) > 0.1:
+		_fail("La entrada del Archivo Real no coincide con su nueva ubicación.")
+		return false
+	if consejo.global_position.distance_to(Vector2(190.0, -212.0)) > 0.1:
+		_fail("La entrada de la Sala del Consejo no coincide con su nueva ubicación.")
+		return false
+
+	var salida := torres.get_node_or_null("ExpeditionEntrance") as Area2D
+	if salida == null or salida.position.distance_to(Vector2(1600.0, 0.0)) > 0.1:
+		_fail("La salida oriental no se trasladó al límite ampliado.")
+		return false
+	return true
 
 
 func _fail(message: String) -> void:
