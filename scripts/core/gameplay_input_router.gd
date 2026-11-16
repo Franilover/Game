@@ -27,7 +27,7 @@ var _tiempo_consumo: float = 0.0
 var _slot_consumo: int = -1
 var _identidad_consumo: String = ""
 var _boton_consumo: int = MOUSE_BUTTON_NONE
-var _barra_consumo: TextureProgressBar = null
+var _barra_consumo: TexturedProgressBar = null
 var _etiqueta_consumo: Label = null
 
 func _ready() -> void:
@@ -59,7 +59,7 @@ func _process(delta: float) -> void:
 
 	_tiempo_consumo = minf(_tiempo_consumo + delta, TIEMPO_CONSUMO_ALIMENTO)
 	if is_instance_valid(_barra_consumo):
-		_barra_consumo.value = _tiempo_consumo / TIEMPO_CONSUMO_ALIMENTO
+		_barra_consumo.actualizar_progreso(_tiempo_consumo / TIEMPO_CONSUMO_ALIMENTO)
 	if _tiempo_consumo >= TIEMPO_CONSUMO_ALIMENTO:
 		_completar_consumo()
 
@@ -92,17 +92,12 @@ func _crear_indicador_consumo() -> void:
 	_etiqueta_consumo.add_theme_color_override("font_color", Color(0.94, 0.86, 0.72, 1.0))
 	_etiqueta_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenedor.add_child(_etiqueta_consumo)
-	_barra_consumo = TextureProgressBar.new()
-	_barra_consumo.min_value = 0.0
-	_barra_consumo.max_value = 1.0
-	_barra_consumo.value = 0.0
-	_barra_consumo.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
-	_barra_consumo.texture_progress = preload("res://assets/art/UI/Menus/bar_fill_stamina.png")
-	_barra_consumo.texture_over = preload("res://assets/art/UI/Menus/bar_frame.png")
-	_barra_consumo.stretch_margin_left = 3
-	_barra_consumo.stretch_margin_top = 2
-	_barra_consumo.stretch_margin_right = 3
-	_barra_consumo.stretch_margin_bottom = 2
+	_barra_consumo = TexturedProgressBar.new()
+	_barra_consumo.configurar(
+		preload("res://assets/art/UI/Menus/bar_fill_stamina.png"),
+		preload("res://assets/art/UI/Menus/bar_frame.png"),
+		Vector2(160.0, 16.0)
+	)
 	_barra_consumo.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_barra_consumo.offset_left = -80.0
 	_barra_consumo.offset_right = 80.0
@@ -126,7 +121,7 @@ func _iniciar_consumo(mano: String, accion: String, boton: int = MOUSE_BUTTON_NO
 	_identidad_consumo = str(objeto.get("item_id", objeto.get("id", objeto.get("nombre", ""))))
 	_tiempo_consumo = 0.0
 	if is_instance_valid(_barra_consumo):
-		_barra_consumo.value = 0.0
+		_barra_consumo.actualizar_progreso(0.0)
 		(_barra_consumo.get_parent() as Control).visible = true
 
 
