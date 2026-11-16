@@ -97,18 +97,18 @@ func _run() -> void:
 
 func _validar_distribucion_urbana(torres: Node2D) -> bool:
 	var posiciones: Dictionary = {
-		"Grupo_edificio_castillo": Vector2(0.-850),
-		"Grupo_edificio_archivo_real": Vector2(-170.-280),
-		"Grupo_edificio_sala_consejo": Vector2(170.-280),
-		"Grupo_edificio_cuartel": Vector2(520.-430),
-		"Grupo_edificio_carpinteria": Vector2(-160.430),
-		"Grupo_casa_bruna": Vector2(-1000.-350),
-		"Grupo_casa_elian": Vector2(700.-350),
-		"Grupo_casa_darven": Vector2(850.-350),
-		"Grupo_casa_saira": Vector2(1000.-350),
-		"Grupo_casa_narel": Vector2(-850.-350),
-		"Grupo_casa_vacia_06": Vector2(-850.150),
-		"Grupo_casa_granjeros": Vector2(950.850),
+		"Grupo_edificio_castillo": Vector2(0.0, -850.0),
+		"Grupo_edificio_archivo_real": Vector2(-170.0, -280.0),
+		"Grupo_edificio_sala_consejo": Vector2(170.0, -280.0),
+		"Grupo_edificio_cuartel": Vector2(520.0, -430.0),
+		"Grupo_edificio_carpinteria": Vector2(-160.0, 430.0),
+		"Grupo_casa_bruna": Vector2(-1000.0, -350.0),
+		"Grupo_casa_elian": Vector2(700.0, -350.0),
+		"Grupo_casa_darven": Vector2(850.0, -350.0),
+		"Grupo_casa_saira": Vector2(1000.0, -350.0),
+		"Grupo_casa_narel": Vector2(-850.0, -350.0),
+		"Grupo_casa_vacia_06": Vector2(-850.0, 150.0),
+		"Grupo_casa_granjeros": Vector2(950.0, 850.0),
 	}
 	for nombre: String in posiciones:
 		var edificio := torres.get_node_or_null(nombre) as Node2D
