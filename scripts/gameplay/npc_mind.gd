@@ -363,7 +363,7 @@ func _crear_estado_inicial(perfil: Dictionary = {}) -> Dictionary:
 		for clave_variant in rasgos_perfil:
 			var clave := str(clave_variant).strip_edges().to_lower()
 			if rasgos.has(clave):
-				rasgos[clave] = clampf(float(rasgos_perfil[clave_variant]), 0.0, 1.0)
+				rasgos[clave] = _normalizar_rasgo(rasgos_perfil[clave_variant])
 	return {
 		"version": VERSION_ESTADO,
 		"necesidades": necesidades,
@@ -386,7 +386,7 @@ func _aplicar_perfil_solo_si_neutro(personaje_id: String, perfil: Dictionary) ->
 		for clave_variant in perfil_rasgos:
 			var clave := str(clave_variant).strip_edges().to_lower()
 			if rasgos.has(clave) and is_equal_approx(float(rasgos[clave]), 0.5):
-				rasgos[clave] = clampf(float(perfil_rasgos[clave_variant]), 0.0, 1.0)
+				rasgos[clave] = _normalizar_rasgo(perfil_rasgos[clave_variant])
 	estado["rasgos"] = rasgos
 	_mentes[personaje_id] = estado
 	_guardar_mentes()
@@ -403,6 +403,15 @@ func _obtener_estado_mutable(personaje_id: String) -> Dictionary:
 	var estado: Dictionary = (estado_variant as Dictionary).duplicate(true)
 	_normalizar_estado(estado)
 	return estado
+
+
+func _normalizar_rasgo(valor: Variant) -> float:
+	var numero := float(valor)
+	# RelationshipSystem entrega perfiles sociales en escala 0-100;
+	# los perfiles propios de NPCMind pueden usar 0.0-1.0.
+	if numero > 1.0:
+		numero /= 100.0
+	return clampf(numero, 0.0, 1.0)
 
 
 func _normalizar_estado(estado: Dictionary) -> void:
