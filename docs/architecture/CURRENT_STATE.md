@@ -797,3 +797,15 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - GameState guarda y restaura `npc_mentes` dentro de `world_state.flags`; el guardado sigue siendo local por partida.
 - Se añadió una regresión headless específica y CI Godot 4.7 pasó **41/41 pasos** en run #1677.
 - No se modificó Supabase. No se reemplazaron horarios existentes ni se habilitó aún la autonomía en tiempo real.
+
+
+
+## NPC Mind — primera acción autónoma en Torres
+
+- `NPCScheduleSystem` ya consume el estado mental persistente para elegir entre alternativas de ocio en los días libres.
+- La selección depende de necesidades, rasgos, aprendizaje previo, coste y prioridad; cada NPC conserva un repertorio de acciones distinto.
+- Las acciones reutilizan navegación y ubicaciones existentes, por lo que pueden llevar al habitante a la plaza, panadería, forja, archivo, vivienda o castillo.
+- El tiempo del mundo modifica necesidades por intervalos; las actividades alivian necesidades asociadas y actualizan ánimo, estrés y energía.
+- Al terminar cada tramo se registra el resultado para aprendizaje incremental. La elección queda estable durante ese tramo.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1685.
+- Las rutinas laborales y los compromisos existentes siguen teniendo prioridad. La autonomía todavía está limitada a ocio de días libres; no hay simulación offline ni planes sociales autónomos complejos.
