@@ -1264,6 +1264,8 @@ func _obtener_texto_rutina_personaje(
 	# Caminar o desplazarse no es estar ocupado: el NPC puede responder sin
 	# describir una acción cotidiana como si fuera una obligación laboral.
 	if _actividad_es_desplazamiento(actividad):
+		if destino == "su próximo destino":
+			return "Voy dando una vuelta por aquí. ¿Qué necesitabas?" if not amable else "Estoy dando una vuelta por aquí. ¿Qué pasa?"
 		return ("Voy camino a %s. ¿Necesitabas algo?" if amable else "Voy hacia %s. Si no es urgente, hablamos cuando llegue.") % destino
 
 	# Respaldo contextual para actividades nuevas que lleguen desde datos sin
@@ -1532,7 +1534,7 @@ func _capturar_contexto_rutina_actual() -> Dictionary:
 
 func _actividad_es_desplazamiento(actividad: String) -> bool:
 	var clave := actividad.strip_edges().to_lower()
-	for termino in ["caminar", "pasear", "recorrer", "desplaz", "dirigir", "ir_a", "volver", "regresar", "viajar"]:
+	for termino in ["camin", "pase", "recorr", "desplaz", "dirig", "ir_a", "volv", "regres", "viaj", "andar"]:
 		if clave.contains(termino):
 			return true
 	return false
@@ -1580,6 +1582,8 @@ func _obtener_reaccion_despedida_rutina() -> String:
 			_:
 				return "Tengo que seguir con lo que estaba haciendo. Hablamos luego."
 	if _actividad_es_desplazamiento(actividad_contextual):
+		if destino_contextual == "su próximo destino":
+			return "Voy a seguir con mi recorrido. Nos vemos luego."
 		return "Voy a seguir hacia %s. Nos vemos luego." % destino_contextual
 	var relacion: Dictionary = {}
 	if relationship_system != null and is_instance_valid(_fuente):
