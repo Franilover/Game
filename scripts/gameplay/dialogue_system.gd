@@ -1104,8 +1104,21 @@ func _obtener_texto_rutina_personaje(
 	amable: bool
 ) -> String:
 	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	# El movimiento dentro de un edificio es desplazamiento local, no un viaje
+	# hacia la ubicación siguiente de la rutina. Nunca anunciar un destino exterior.
+	if dentro_edificio and _actividad_es_desplazamiento(actividad):
+		match nombre:
+			"elian":
+				return "Estoy dando una vuelta por aquí. ¿Qué necesitabas?" if amable else "Ando ocupado por aquí dentro. Dime, ¿qué pasa?"
+			"bruna":
+				return "Solo estoy dando una vuelta por aquí. ¿Qué se te ofrece?" if amable else "Estoy recorriendo un poco el lugar. ¿Necesitas algo?"
+			"darven":
+				return "Estoy revisando que todo esté en orden por aquí. ¿Ocurrió algo?"
+			_:
+				return "Estoy dando una vuelta por aquí. ¿Qué necesitabas?"
+
 	# Los diálogos de tránsito aprobados conservan la voz individual de cada NPC.
-	if en_transito:
+	if en_transito and not dentro_edificio:
 		match nombre:
 			"elian":
 				return ("¡Qué bueno verte! Voy hacia %s a dejar algo listo. ¿Qué necesitabas?" if amable else "Voy hacia %s. ¿Necesitas algo antes de que siga?") % destino
@@ -1475,6 +1488,8 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 
 func _obtener_frase_despedida_jugador_rutina() -> String:
 	var actividad := str(_contexto_rutina_conversacion.get("actividad", "")).strip_edges()
+	if bool(_contexto_rutina_conversacion.get("dentro_edificio", false)) and _actividad_es_desplazamiento(actividad):
+		return "Bueno, te dejo seguir con lo que hacías por aquí. Nos vemos luego."
 	if _actividad_es_desplazamiento(actividad):
 		return "Bueno, sigue con tu camino. Nos vemos luego."
 	if _actividad_impide_una_conversacion_larga(actividad):
@@ -1579,6 +1594,8 @@ func _obtener_reaccion_despedida_rutina() -> String:
 	var contexto := _contexto_rutina_conversacion
 	var actividad_contextual := str(contexto.get("actividad", "")).strip_edges().to_lower()
 	var destino_contextual := str(contexto.get("destino", "el pueblo"))
+	if bool(contexto.get("dentro_edificio", false)) and _actividad_es_desplazamiento(actividad_contextual):
+		return "Voy a seguir dando una vuelta por aquí. Nos vemos luego."
 	if _actividad_es_desplazamiento(actividad_contextual):
 		if destino_contextual == "su próximo destino":
 			return "Voy a seguir con mi recorrido. Nos vemos luego."
