@@ -129,3 +129,10 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Auth/RLS por endpoint, refresh real de sesión, offline end-to-end, continuidad de guardado de una partida completa, solicitud REST real del catálogo de especies y pruebas visuales Android/PC siguen en el backlog.
 - PR #12 sigue en borrador. `main` no se modificó; Supabase se consultó solo en lectura y no recibió cambios.
 
+
+## Actualización de diálogo — 2026-11-16
+
+- `DialogueSystem` aplica un ritmo de revelado más lento cuando la actividad capturada del NPC indica desplazamiento; los diálogos explícitos de tránsito conservan la última línea 2,5 s antes del cierre automático.
+- Las despedidas y la frase del jugador se adaptan a caminar frente a trabajo, evitando tratar un paseo como una obligación laboral.
+- `DialogueSocialMenu` comprueba ritmo pausado y despedidas de tránsito/trabajo. CI Godot 4.7: run `43929922701` (#1654), 40 pasos completados sin fallos.
+- Pendiente: prueba visual en partida real y revisión de las frases que llegan desde datos externos; CI headless no demuestra legibilidad física en Android.
