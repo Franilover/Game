@@ -22,6 +22,40 @@ func _ready() -> void:
 	if not dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"}):
 		errores.append("Un diálogo de tránsito explícito dejó de reconocerse.")
 
+	# Al cerrar el selector Hablar/Preguntar debe reaparecer el menú social
+	# principal, incluso después de una conversación cotidiana.
+	dialogo._abierto = true
+	dialogo._usa_menu_social = true
+	dialogo._lineas = [{"hablante": "Ivo", "texto": "Hola."}]
+	dialogo._indice_linea = 0
+	dialogo._texto_completo = "Hola."
+	dialogo._indice_caracter = dialogo._texto_completo.length()
+	dialogo._selector_conversacion = PanelContainer.new()
+	dialogo.add_child(dialogo._selector_conversacion)
+	dialogo._selector_conversacion.visible = true
+	dialogo._selector_conversacion_grid = GridContainer.new()
+	dialogo.add_child(dialogo._selector_conversacion_grid)
+	dialogo._dialogue_content_row = HBoxContainer.new()
+	dialogo.add_child(dialogo._dialogue_content_row)
+	dialogo._dialogue_content_row.visible = false
+	dialogo._respuestas_container = GridContainer.new()
+	dialogo.add_child(dialogo._respuestas_container)
+	dialogo.action_button = Button.new()
+	dialogo.add_child(dialogo.action_button)
+	dialogo.cancel_button = Button.new()
+	dialogo.add_child(dialogo.cancel_button)
+	dialogo._cerrar_selector_conversacion()
+
+	var claves_menu: Array[String] = []
+	for opcion in dialogo._respuestas:
+		claves_menu.append(str(opcion.get("clave", "")))
+	if claves_menu != ["menu_preguntar", "menu_hablar", "menu_cumplido", "menu_despedirse"]:
+		errores.append("No reaparecieron Preguntar, Hablar, Dar cumplido y Despedirse.")
+	if dialogo._selector_conversacion.visible or not dialogo._dialogue_content_row.visible:
+		errores.append("El selector no devolvió el diálogo a su panel principal.")
+	if not dialogo._respuestas_container.visible or dialogo._respuestas_container.get_child_count() != 4:
+		errores.append("Los cuatro botones del menú social no se reconstruyeron.")
+
 	npc.queue_free()
 	dialogo.queue_free()
 	await get_tree().process_frame
