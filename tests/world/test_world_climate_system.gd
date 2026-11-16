@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const ATMOSPHERE_SCRIPT = preload("res://scripts/world/world_atmosphere.gd")
 const CLIMATE_SCRIPT = preload("res://scripts/world/world_climate_system.gd")
@@ -14,7 +14,7 @@ class MockWorldData extends Node:
 		}
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
@@ -200,9 +200,9 @@ func _run() -> void:
 		return
 
 	print("PASS: seasonal lighting, deterministic local weather, habitat temperature, fog visibility, seasonal events, and phenomena.")
-	quit()
+	get_tree().quit()
 
 
 func _fail(message: String) -> void:
 	push_error("World climate regression: " + message)
-	quit(1)
+	get_tree().quit(1)
