@@ -56,9 +56,9 @@ assets/art/kingdom/torres/
 - Cuando encuentra un sprite, oculta únicamente las formas visuales de ese edificio; las colisiones y los rótulos se conservan.
 - El sprite se ajusta automáticamente dentro del tamaño objetivo definido para cada edificio, sin deformar su proporción.
 - El generador `scripts/world/torres_pixel_art.gd` crea fachadas, tejados, ventanas, puertas y detalles por oficio a baja resolución. Los caminos, plaza, canal, muros, campos, árboles y puestos reciben texturas con filtrado nearest.
-- El suelo de Torres usa el mismo renderer `WorldTerrainVisual` y las mismas capas `TileMapDual` que la expedición fija. El mapa sigue siendo manual y conserva su distribución; sus 75×44 celdas se clasifican en pradera, bosque perimetral y caminos de tierra según las formas existentes.
+- El suelo de Torres usa tres capas `TileMapDual` editables. El mapa ampliado ocupa 90×56 celdas de 32 px (2.880×1.792 px), con pradera, calles/plaza de tierra y un borde arbolado. La distribución se regenera con `tools/editor/redesign_torres_tilemaps.gd`.
 - Los caminos se componen con `Tierra.png`, la superficie interior con `Pradera.png` y el borde vegetal con `Bosque.png`. `TileMapDual` resuelve las transiciones y esquinas con las mismas 16 máscaras por atlas.
-- Para cambiar el trazado de una calle, edita el polígono correspondiente en `scenes/kingdom/reino_torres.tscn`; el terreno se vuelve a rasterizar a partir de esa forma al cargar la zona.
+- Para rediseñar el trazado, abre `scenes/kingdom/reino_torres.tscn` y ejecuta `tools/editor/redesign_torres_tilemaps.gd` desde el panel de scripts del editor. El script vuelve a pintar las tres capas, guarda la escena y deja los TileMaps editables para ajustes manuales posteriores.
 - Para cambiar el tamaño o la posición de un sprite, modifica el registro correspondiente en `SPRITE_BUILDINGS` dentro de `scripts/world/reino_torres.gd`.
 
 Los nombres deben coincidir exactamente con los de la lista. No hace falta editar la escena cada vez que se añade una imagen.
