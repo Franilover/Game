@@ -129,6 +129,7 @@ func _crear_interfaz() -> void:
 	_procedimiento.custom_minimum_size = Vector2(230, 30)
 	for procedimiento in PROCEDIMIENTOS_POR_ESTACION[_estacion_id]:
 		_procedimiento.add_item(str(procedimiento))
+	_procedimiento.select(0)
 	columna_prueba.add_child(_procedimiento)
 
 	_seleccion_label = Label.new()
