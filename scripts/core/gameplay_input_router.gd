@@ -20,8 +20,111 @@ var _dialogue_system: DialogueSystem = null
 var _hud: HUD = null
 var _debug_console: Node = null
 
+const TIEMPO_CONSUMO_ALIMENTO := 1.0
+var _mano_consumo_activa: String = ""
+var _accion_consumo_activa: String = ""
+var _tiempo_consumo: float = 0.0
+var _barra_consumo: ProgressBar = null
+var _etiqueta_consumo: Label = null
+
 func _ready() -> void:
 	add_to_group("gameplay_input_router")
+	_crear_indicador_consumo()
+
+
+func _process(delta: float) -> void:
+	if _mano_consumo_activa.is_empty():
+		return
+	if esta_bloqueado() or not Input.is_action_pressed(_accion_consumo_activa):
+		_cancelar_consumo()
+		return
+	if _inventory_ui == null or not is_instance_valid(_inventory_ui):
+		_cancelar_consumo()
+		return
+	if not _inventory_ui.puede_consumir_alimento_en_mano(_mano_consumo_activa):
+		_cancelar_consumo()
+		return
+
+	_tiempo_consumo = minf(_tiempo_consumo + delta, TIEMPO_CONSUMO_ALIMENTO)
+	if is_instance_valid(_barra_consumo):
+		_barra_consumo.value = _tiempo_consumo / TIEMPO_CONSUMO_ALIMENTO * 100.0
+	if _tiempo_consumo >= TIEMPO_CONSUMO_ALIMENTO:
+		_completar_consumo()
+
+
+func _crear_indicador_consumo() -> void:
+	var capa := CanvasLayer.new()
+	capa.name = "IndicadorConsumo"
+	capa.layer = 30
+	add_child(capa)
+	var contenedor := Control.new()
+	contenedor.name = "Contenedor"
+	contenedor.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	contenedor.offset_left = -92.0
+	contenedor.offset_right = 92.0
+	contenedor.offset_top = -82.0
+	contenedor.offset_bottom = -48.0
+	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	capa.add_child(contenedor)
+	_etiqueta_consumo = Label.new()
+	_etiqueta_consumo.text = "COMIENDO"
+	_etiqueta_consumo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_etiqueta_consumo.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_etiqueta_consumo.offset_bottom = 16.0
+	_etiqueta_consumo.add_theme_font_size_override("font_size", 10)
+	_etiqueta_consumo.add_theme_color_override("font_color", Color(0.94, 0.86, 0.72, 1.0))
+	_etiqueta_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contenedor.add_child(_etiqueta_consumo)
+	_barra_consumo = ProgressBar.new()
+	_barra_consumo.min_value = 0.0
+	_barra_consumo.max_value = 100.0
+	_barra_consumo.value = 0.0
+	_barra_consumo.show_percentage = false
+	_barra_consumo.position = Vector2(0.0, 19.0)
+	_barra_consumo.size = Vector2(184.0, 12.0)
+	_barra_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fondo := StyleBoxFlat.new()
+	fondo.bg_color = Color(0.12, 0.10, 0.08, 0.92)
+	fondo.border_color = Color(0.43, 0.34, 0.24, 1.0)
+	fondo.set_border_width_all(1)
+	var progreso := StyleBoxFlat.new()
+	progreso.bg_color = Color(0.72, 0.52, 0.30, 1.0)
+	_barra_consumo.add_theme_stylebox_override("background", fondo)
+	_barra_consumo.add_theme_stylebox_override("fill", progreso)
+	contenedor.add_child(_barra_consumo)
+	contenedor.visible = false
+
+
+func _iniciar_consumo(mano: String, accion: String) -> void:
+	if _mano_consumo_activa == mano:
+		return
+	_cancelar_consumo()
+	_mano_consumo_activa = mano
+	_accion_consumo_activa = accion
+	_tiempo_consumo = 0.0
+	if is_instance_valid(_barra_consumo):
+		_barra_consumo.value = 0.0
+		_barra_consumo.get_parent().visible = true
+
+
+func _cancelar_consumo() -> void:
+	_mano_consumo_activa = ""
+	_accion_consumo_activa = ""
+	_tiempo_consumo = 0.0
+	if is_instance_valid(_barra_consumo):
+		_barra_consumo.value = 0.0
+		_barra_consumo.get_parent().visible = false
+
+
+func _completar_consumo() -> void:
+	var mano := _mano_consumo_activa
+	var accion := _accion_consumo_activa
+	_cancelar_consumo()
+	if GarliaWorldNetwork.es_cliente_en_mundo_global():
+		GarliaWorldNetwork.solicitar_accion_local("primary" if accion == "primary_action" else "secondary")
+		return
+	if _inventory_ui != null and is_instance_valid(_inventory_ui):
+		_inventory_ui.usar_objeto_mano(mano)
 
 func configurar_sistemas(interaction: InteractionSystem, combat: CombatSystem) -> void:
 	_interaction_system = interaction
@@ -43,38 +146,45 @@ func configurar_bloqueos(
 func _unhandled_input(event: InputEvent) -> void:
 	if not _es_accion_primaria_o_secundaria(event):
 		return
-
-	# Si una interfaz modal está abierta, no consumimos el evento:
-	# la UI (Buttons, inventario, diálogo, etc.) debe recibirlo.
+	if not event.is_action_pressed("primary_action") and not event.is_action_pressed("secondary_action"):
+		return
 	if esta_bloqueado():
 		return
 
-	# En el mundo global las acciones se resuelven exclusivamente en servidor.
-	# No ejecutamos combate/interacción local en una copia independiente.
+	var accion := "primary_action" if event.is_action_pressed("primary_action") else "secondary_action"
+	var mano := "izquierda" if accion == "primary_action" else "derecha"
+	var hay_contexto := (
+		_interaction_system != null
+		and get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
+		and _interaction_system.hay_interaccion_contextual()
+	)
+	if (
+		not hay_contexto
+		and _inventory_ui != null
+		and is_instance_valid(_inventory_ui)
+		and _inventory_ui.puede_consumir_alimento_en_mano(mano)
+	):
+		_iniciar_consumo(mano, accion)
+		get_viewport().set_input_as_handled()
+		return
+
 	if GarliaWorldNetwork.es_cliente_en_mundo_global():
-		if event.is_action_pressed("primary_action"):
-			GarliaWorldNetwork.solicitar_accion_local("primary")
-		else:
-			GarliaWorldNetwork.solicitar_accion_local("secondary")
+		GarliaWorldNetwork.solicitar_accion_local("primary" if accion == "primary_action" else "secondary")
 		get_viewport().set_input_as_handled()
 		return
 
 	var combate_garumi_activo := not get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
-
-	if event.is_action_pressed("primary_action"):
+	if accion == "primary_action":
 		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
 			return
-
 		if _combat_system != null and _combat_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
 			return
-
-	if event.is_action_pressed("secondary_action"):
+	else:
 		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_secundaria():
 			get_viewport().set_input_as_handled()
 			return
-
 		if _combat_system != null and _combat_system.procesar_accion_secundaria():
 			get_viewport().set_input_as_handled()
 			return
