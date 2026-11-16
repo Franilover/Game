@@ -1,6 +1,7 @@
 extends Node
 
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
+const NPCScheduleScript = preload("res://scripts/world/npc_schedule_system.gd")
 
 
 func _ready() -> void:
@@ -27,6 +28,17 @@ func _run() -> void:
 	if movimiento == null:
 		_fail(["El NPC no contiene CreatureMovement."])
 		return
+
+	var agenda := NPCScheduleScript.new() as NPCScheduleSystem
+	get_tree().root.add_child(agenda)
+	agenda._malla = AStarGrid2D.new()
+	agenda._malla.region = Rect2i(Vector2i.ZERO, Vector2i(5, 5))
+	agenda._malla.cell_size = Vector2.ONE
+	agenda._malla.update()
+	agenda._malla.set_point_solid(Vector2i(2, 2), true)
+	var celda_cercana := agenda._buscar_celda_transitable_cercana(Vector2i(2, 2))
+	if Vector2(celda_cercana - Vector2i(2, 2)).length_squared() != 1.0:
+		errores.append("La búsqueda de celda libre no eligió la alternativa más cercana.")
 
 	var direccion := movimiento._direccion_evitar_superposicion_npcs(Vector2.RIGHT)
 	if absf(direccion.y) < 0.2:
@@ -67,10 +79,18 @@ func _run() -> void:
 	if absf(direccion_recuperacion.y) <= absf(direccion_recuperacion.x):
 		errores.append("El seguro de atasco no activa un rodeo lateral tras perder progreso.")
 
+	# Un NPC oculto dentro de un edificio no puede participar en la
+	# separación exterior ni desplazar a quienes esperan en la puerta.
+	npc_b.set_meta("rutina_en_edificio", true)
+	npc_b.visible = false
+	if agenda._npc_puede_ajustar_separacion(npc_b):
+		errores.append("Un NPC oculto dentro de un edificio sigue participando en la separación exterior.")
+
 	npc_a.remove_from_group("torres_game_npc")
 	npc_b.remove_from_group("torres_game_npc")
 	npc_a.queue_free()
 	npc_b.queue_free()
+	agenda.queue_free()
 	await get_tree().process_frame
 
 	if not errores.is_empty():
