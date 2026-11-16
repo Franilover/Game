@@ -1078,10 +1078,13 @@ func _obtener_efectos_consumible(objeto: Dictionary) -> Dictionary:
 
 func _agregar_dato_visual(nombre_sprite: String, valor: int, color_fondo: Color) -> void:
 	var ruta := "res://assets/art/UI/Menus/%s.png" % nombre_sprite
-	var textura := load(ruta) as Texture2D
-	if textura == null:
-		push_warning("Inventario: no se encontró el sprite de dato " + ruta)
+	# Estos sprites pueden llegar al proyecto sin su .import generado todavía.
+	# Leer el PNG directamente evita depender del caché de importación del editor.
+	var imagen := Image.load_from_file(ruta)
+	if imagen == null or imagen.is_empty():
+		push_warning("Inventario: no se pudo leer el sprite de dato " + ruta)
 		return
+	var textura: Texture2D = ImageTexture.create_from_image(imagen)
 
 	var marco := PanelContainer.new()
 	marco.custom_minimum_size = Vector2(42, 24)
