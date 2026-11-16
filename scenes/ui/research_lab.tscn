@@ -43,12 +43,6 @@ custom_minimum_size = Vector2(82, 32)
 layout_mode = 2
 text = "Cerrar"
 
-[node name="Description" type="Label" parent="Panel/Margin/Column"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Selecciona los elementos que quieres estudiar y el procedimiento que deseas aplicar."
-autowrap_mode = 3
-
 [node name="Body" type="HBoxContainer" parent="Panel/Margin/Column"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -80,30 +74,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ProcedureTitle" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
-layout_mode = 2
-text = "PROCEDIMIENTO"
-
 [node name="Procedure" type="OptionButton" parent="Panel/Margin/Column/Body/ProcedureColumn"]
 custom_minimum_size = Vector2(230, 30)
 layout_mode = 2
-
-[node name="Selection" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
-layout_mode = 2
-text = "Elementos seleccionados: 0/4"
-autowrap_mode = 3
-
-[node name="Note" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 9
-text = "Puedes seleccionar entre uno y cuatro elementos. Las pruebas preliminares no consumen ni modifican objetos."
-autowrap_mode = 3
 
 [node name="Result" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
 custom_minimum_size = Vector2(230, 52)
 layout_mode = 2
 size_flags_vertical = 3
-text = "El resultado de la prueba aparecerá aquí."
 autowrap_mode = 3
 
 [node name="Run" type="Button" parent="Panel/Margin/Column/Body/ProcedureColumn"]
