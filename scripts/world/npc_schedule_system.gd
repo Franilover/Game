@@ -1938,6 +1938,11 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float) -> bool:
 		return false
 	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
 	if objetivo.is_empty():
+		var rutina_actual := str(npc.get_meta("rutina_actual", "")).strip_edges().to_lower()
+		if not rutina_actual.begins_with("dia_libre"):
+			return false
+		if str(npc.get_meta("npc_social_siguiente_intento", "")) == _clave_fecha_actual():
+			return false
 		var necesidades: Dictionary = mind.call("obtener_necesidades", personaje_id)
 		var presion_social := float(necesidades.get("socializacion", 0.0))
 		if presion_social < 68.0:
@@ -1978,6 +1983,9 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float) -> bool:
 	if movimiento == null:
 		return false
 	var distancia := npc.global_position.distance_to(pareja_actual.global_position)
+	if movimiento.rutina_terminada():
+		npc.set_meta("rutina_en_transito", false)
+		npc.set_meta("npc_objetivo_social_en_curso", false)
 	if distancia > 78.0:
 		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
 		npc.set_meta("npc_objetivo_social_en_curso", false)
@@ -2011,6 +2019,10 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		if candidato == npc or not candidato.is_alive:
 			continue
 		if bool(candidato.get_meta("rutina_en_edificio", false)):
+			continue
+		if bool(candidato.get_meta("rutina_en_transito", false)):
+			continue
+		if not (candidato.get_meta("npc_objetivo_social", {}) as Dictionary).is_empty():
 			continue
 		if bool(candidato.get_meta("_conversacion_ambiental_activa", false)):
 			continue
