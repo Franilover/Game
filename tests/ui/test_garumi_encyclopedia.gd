@@ -34,7 +34,39 @@ func _run() -> void:
 	var tabs := inventario.get_node("Window/Margin/Column/Tabs") as TabContainer
 	var enciclopedia := inventario.get_node("Window/Margin/Column/Tabs/Enciclopedia") as Control
 	var garumis_tab := inventario.get_node("Window/Margin/Column/Tabs/Garumis") as Control
+	var boton_enciclopedia := inventario.get_node("Window/Margin/Column/TabButtons/Enciclopedia") as Button
+	var boton_garumis := inventario.get_node("Window/Margin/Column/TabButtons/Garumis") as Button
 	_check(garumis_tab.has_method("abrir_en_garumis"), "Garumis debe ser una pestaña independiente.")
+	_check(not boton_enciclopedia.visible and not boton_garumis.visible, "Ambas pestañas deben iniciar ocultas sin descubrimientos.")
+
+	# G no debe abrir una pestaña bloqueada.
+	var tecla_bloqueada := InputEventKey.new()
+	tecla_bloqueada.pressed = true
+	tecla_bloqueada.keycode = KEY_G
+	tecla_bloqueada.physical_keycode = KEY_G
+	Input.parse_input_event(tecla_bloqueada)
+	await get_tree().process_frame
+	_check(not inventario.visible, "G no debe abrir Garumis antes del primer descubrimiento.")
+	var soltar_bloqueada := InputEventKey.new()
+	soltar_bloqueada.keycode = KEY_G
+	soltar_bloqueada.physical_keycode = KEY_G
+	soltar_bloqueada.pressed = false
+	Input.parse_input_event(soltar_bloqueada)
+	await get_tree().process_frame
+
+	# Descubrir un Garumi desbloquea las dos pestañas.
+	_check(GameState.registrar_garumi_descubierto("garumi-desbloqueo-test"), "Debe registrar el primer Garumi descubierto.")
+	await get_tree().process_frame
+	_check(boton_enciclopedia.visible and boton_garumis.visible, "Descubrir un Garumi debe mostrar ambas pestañas.")
+
+	# El descubrimiento de una criatura también debe desbloquearlas aunque no exista un Garumi descubierto.
+	GameState.world_state.flags.erase("enciclopedia_garumis")
+	GameState.discovery_state = DiscoveryState.new()
+	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
+	_check(not boton_enciclopedia.visible and not boton_garumis.visible, "Sin descubrimientos de criaturas ni Garumis, ambas pestañas vuelven a ocultarse.")
+	_check(GameState.registrar_descubrimiento_mundo({"id": "bioma-test"}, {"id": "ecosistema-test"}, [], [{"id": "criatura-desbloqueo-test"}]), "Debe registrar el descubrimiento de una criatura.")
+	await get_tree().process_frame
+	_check(boton_enciclopedia.visible and boton_garumis.visible, "Descubrir una criatura debe mostrar ambas pestañas.")
 
 	# Recorrer el pipeline real de entrada de Godot; no llamar _input() directamente.
 	var tecla := InputEventKey.new()
