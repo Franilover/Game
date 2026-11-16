@@ -2161,6 +2161,10 @@ func iniciar_conversacion_social_autonoma(npc_a: Creature, npc_b: Creature, moti
 	if not npc_a.is_alive or not npc_b.is_alive:
 		return false
 	_obtener_npcs_torres()
+	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		return false
+	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
+		return false
 	var nombre_a := npc_a.get_nombre_visual().strip_edges().to_lower()
 	var nombre_b := npc_b.get_nombre_visual().strip_edges().to_lower()
 	if nombre_a.is_empty() or nombre_b.is_empty():
