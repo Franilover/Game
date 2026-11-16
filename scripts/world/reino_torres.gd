@@ -13,6 +13,7 @@ const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.p
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
+const RESEARCH_LAB_UI_SCRIPT = preload("res://scripts/ui/research_lab.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 
 # Ampliación moderada respecto al interior original (448x272).
@@ -144,7 +145,7 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"forja","nombre":"Forja","pos":Vector2(-360,-139),"tipo":"forja"},
 	{"id":"archivo_real","nombre":"Archivo real","pos":Vector2(-170,-594),"tipo":"archivo"},
 	{"id":"sala_consejo","nombre":"Sala del consejo","pos":Vector2(170,-590),"tipo":"consejo"},
-	{"id":"casa_estudio","nombre":"Casa de estudio de Oris","pos":Vector2(-410,-499),"tipo":"oris"},
+	{"id":"casa_estudio","nombre":"Laboratorio de Oris","pos":Vector2(-410,-499),"tipo":"laboratorio"},
 	{"id":"casa_comercio","nombre":"Casa de comercio","pos":Vector2(930,-292),"tipo":"comercio"},
 	{"id":"cuartel","nombre":"Cuartel de la guardia","pos":Vector2(730,-290),"tipo":"cuartel"},
 	{"id":"registro","nombre":"Registro de la puerta","pos":Vector2(730,-189),"tipo":"registro"},
@@ -1602,6 +1603,18 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 		"oris":
 			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA, Vector2(0, 25), Vector2(2.0, 1.4), 1)
 			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA, Vector2(-130, -65), Vector2(1.0, 1.1), 1)
+		"laboratorio":
+			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA, Vector2(-185, -105), Vector2(1.45, 1.2), 1)
+			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-185, -55))
+			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA, Vector2(-35, -105), Vector2(1.35, 1.15), 1)
+			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(-35, -55))
+			_agregar_sprite_mueble(cuarto, "HornoTratamiento", MUEBLE_HORNO, Vector2(145, -105), Vector2(1.35, 1.35), 1)
+			_agregar_estacion_laboratorio(cuarto, "termica", "Aplicar tratamiento térmico", Vector2(145, -48))
+			_agregar_sprite_mueble(cuarto, "MesaObservacion", MUEBLE_MESA, Vector2(-125, 75), Vector2(1.35, 1.15), 1)
+			_agregar_estacion_laboratorio(cuarto, "observacion", "Observar estructuras", Vector2(-125, 120))
+			_agregar_sprite_mueble(cuarto, "MesaEterium", MUEBLE_MESA, Vector2(65, 75), Vector2(1.45, 1.15), 1)
+			_agregar_estacion_laboratorio(cuarto, "eterium", "Estudiar Eterium", Vector2(65, 120))
+			_agregar_sprite_mueble(cuarto, "AlmacenMuestras", MUEBLE_COFRE, Vector2(220, 85), Vector2(0.9, 0.9), 1)
 		"comercio", "registro", "almacen":
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -75), Vector2(2.6, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA, Vector2(0, 55), Vector2(1.5, 1), 2)
@@ -1650,6 +1663,46 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 		else:
 			objetivo.call("configurar_cofre", "torres:" + _entrada_interior_id + ":" + nombre)
 		padre.add_child(objetivo)
+
+
+func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: String, posicion: Vector2) -> void:
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "EstacionLaboratorio_" + estacion_id
+	objetivo.position = posicion
+	objetivo.call(
+		"configurar",
+		texto,
+		56.0,
+		Callable(self, "_puede_interactuar_estacion_laboratorio").bind(estacion_id),
+		Callable(self, "_interactuar_estacion_laboratorio").bind(estacion_id)
+	)
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> bool:
+	return _interior_activo and _entrada_interior_id == "casa_estudio" and estacion_id in ["examen", "mezclas", "termica", "observacion", "eterium"]
+
+
+func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> void:
+	if not _puede_interactuar_estacion_laboratorio(_jugador, estacion_id):
+		return
+	if get_tree().get_first_node_in_group("research_lab_ui") != null:
+		return
+	var inventario_ui := get_tree().get_first_node_in_group("inventory")
+	if not is_instance_valid(inventario_ui):
+		Events.notification_pushed.emit("No se pudo acceder al inventario.")
+		return
+	var inventario := inventario_ui.get("inventory_controller") as InventoryController
+	if not is_instance_valid(inventario):
+		Events.notification_pushed.emit("No se pudo acceder al inventario.")
+		return
+	var interfaz := RESEARCH_LAB_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	get_tree().root.add_child(interfaz)
+	interfaz.call("configurar", inventario, estacion_id)
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
