@@ -45,8 +45,10 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
-		# Un único recurso dibuja tanto el fondo como el borde del panel.
-		var panel := _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
+		# El panel de detalle del crafteo comparte exactamente la superficie
+		# de los botones. Mantener esta excepción aquí evita que una nueva
+		# aplicación global del tema restaure el marco clásico del panel.
+		var panel: StyleBox = button_surface_style() if control.name == "DetailPanel" else _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
