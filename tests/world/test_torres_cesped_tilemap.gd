@@ -78,9 +78,9 @@ func _run() -> void:
 	var tierra := torres.get_node_or_null("TerrainDual_Zone_01") as TileMapDual
 	var bosque := torres.get_node_or_null("TerrainDual_Zone_08") as TileMapDual
 	var pradera := torres.get_node_or_null("TerrainDual_Zone_00") as TileMapDual
-	for celda in [Vector2i(52, 34), Vector2i(80, 34), Vector2i(13, 34)]:
+	for celda in [Vector2i(52, 34), Vector2i(80, 34), Vector2i(13, 34), Vector2i(25, 24), Vector2i(78, 24)]:
 		if tierra == null or tierra.get_cell_source_id(celda) == -1:
-			_fail("La plaza o una calle principal/secundaria no quedó pintada como Tierra: %s." % str(celda))
+			_fail("La plaza, una calle principal o las calles residenciales no quedaron pintadas como Tierra: %s." % str(celda))
 			return
 	if bosque == null or bosque.get_cell_source_id(Vector2i(0, 0)) == -1:
 		_fail("Falta el borde arbolado en la esquina del reino.")
