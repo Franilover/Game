@@ -32,6 +32,20 @@ func _run() -> void:
 	if absf(direccion.y) < 0.2:
 		errores.append("Un NPC que encuentra a otro delante no cede lateralmente.")
 
+	npc_a.set_meta("rutina_en_transito", true)
+	npc_b.set_meta("rutina_en_transito", true)
+	npc_a.set_meta("rutina_destino_es_edificio", true)
+	npc_b.set_meta("rutina_destino_es_edificio", true)
+	npc_a.set_meta("rutina_edificio_objetivo", "panaderia")
+	npc_b.set_meta("rutina_edificio_objetivo", "panaderia")
+	var direccion_mismo_edificio := movimiento._direccion_evitar_superposicion_npcs(Vector2.RIGHT)
+	if direccion_mismo_edificio.distance_to(Vector2.RIGHT) > 0.01:
+		errores.append("NPC que van al mismo edificio siguen desviándose entre sí.")
+	npc_b.set_meta("rutina_edificio_objetivo", "posada")
+	var direccion_edificios_distintos := movimiento._direccion_evitar_superposicion_npcs(Vector2.RIGHT)
+	if absf(direccion_edificios_distintos.y) < 0.2:
+		errores.append("NPC con destinos distintos dejaron de ceder el paso.")
+
 	movimiento._ultima_posicion_seguro = npc_a.global_position
 	movimiento._tiempo_sin_progreso = 0.0
 	var direccion_recuperacion := Vector2.RIGHT
