@@ -186,6 +186,8 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if not npc.is_alive:
 			continue
 		_actualizar_mente_npc(npc, minutos, tiempo)
+		if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+			continue
 		if _actualizar_actividad_social(npc, delta):
 			continue
 		if _actualizar_objetivo_social_npc(npc, delta, minutos):
@@ -2044,7 +2046,12 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 	var promesas: Array = _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id)
 	if not promesas.is_empty():
 		var promesa: Dictionary = promesas[0]
-		return {"tipo": "cumplir_promesa", "promesa_id": str(promesa.get("id", "")), "clave_conocimiento": str(promesa.get("clave_conocimiento", ""))}
+		return {
+			"tipo": "cumplir_promesa",
+			"promesa_id": str(promesa.get("id", "")),
+			"clave_conocimiento": str(promesa.get("clave_conocimiento", "")),
+			"descripcion": str(promesa.get("descripcion", promesa.get("titulo", "")))
+		}
 	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
 		if not conocimiento_variant is Dictionary:
 			continue
@@ -2065,7 +2072,12 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 	var asuntos: Array = _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id)
 	if not asuntos.is_empty():
 		var asunto: Dictionary = asuntos[0]
-		return {"tipo": "resolver_asunto", "asunto_id": str(asunto.get("id", "")), "clave": str(asunto.get("clave", ""))}
+		return {
+			"tipo": "resolver_asunto",
+			"asunto_id": str(asunto.get("id", "")),
+			"clave": str(asunto.get("clave", "")),
+			"descripcion": str(asunto.get("descripcion", asunto.get("asunto", "")))
+		}
 	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
 		if not conocimiento_variant is Dictionary:
 			continue
@@ -2077,7 +2089,11 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 			continue
 		if _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
 			continue
-		return {"tipo": "compartir_noticia", "clave_conocimiento": clave}
+		return {
+			"tipo": "compartir_noticia",
+			"clave_conocimiento": clave,
+			"titulo": str(conocimiento.get("titulo", conocimiento.get("descripcion", "")))
+		}
 	if float(relacion.get("tension", 0.0)) >= 18.0:
 		return {"tipo": "resolver_desacuerdo"}
 	return {
@@ -2266,6 +2282,10 @@ func _finalizar_objetivo_social_npc(
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_firma", "")
 	npc.set_meta("npc_social_siguiente_intento", _clave_fecha_actual())
+	if is_instance_valid(pareja):
+		var sistema_conversaciones := get_tree().get_first_node_in_group("npc_conversation_system")
+		if is_instance_valid(sistema_conversaciones) and sistema_conversaciones.has_method("iniciar_conversacion_social_autonoma"):
+			sistema_conversaciones.call("iniciar_conversacion_social_autonoma", npc, pareja, motivo)
 
 
 func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: String) -> void:
