@@ -33,7 +33,7 @@ static func _is_road(point: Vector2) -> bool:
 			return true
 
 	# Las calles transversales siguen las manzanas, no una cuadrícula uniforme.
-	for y_calle: float in [-700.0, -300.0, -180.0, 150.0, 430.0, 720.0, 980.0]:
+	for y_calle: float in [-700.0, -300.0, -180.0, 150.0, 430.0, 720.0, 850.0, 980.0]:
 		if _near_segment(point, Vector2(-1600.0, y_calle), Vector2(-960.0, y_calle), 25.0):
 			return true
 		if _near_segment(point, Vector2(960.0, y_calle), Vector2(1600.0, y_calle), 25.0):
