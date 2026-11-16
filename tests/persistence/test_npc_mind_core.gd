@@ -4,7 +4,7 @@ const MindScript = preload("res://scripts/gameplay/npc_mind.gd")
 
 
 class FakeGameState:
-	extends RefCounted
+	extends Node
 	var saved: Dictionary = {}
 
 	func obtener_mentes_npc() -> Dictionary:
