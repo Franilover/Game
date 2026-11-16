@@ -1014,13 +1014,19 @@ func _actualizar_datos_visuales_objeto(objeto: Dictionary) -> void:
 	for hijo in stats_row.get_children():
 		hijo.queue_free()
 
+	var categoria_clave := _obtener_clave_categoria_objeto(objeto)
 	var tipo := str(objeto.get("tipo", "")).strip_edges().to_lower()
 	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
 	if tipo.is_empty() and tipo_objeto_variant is Dictionary:
 		tipo = str((tipo_objeto_variant as Dictionary).get("categoria_canonica", "")).strip_edges().to_lower()
 
-	# Las pociones muestran únicamente recursos que el efecto realmente restaura.
-	if tipo in ["consumible", "pocion", "poción"]:
+	# La categoría determina qué familia de estadísticas corresponde mostrar.
+	# Los valores siguen procediendo de las propiedades reales del objeto.
+	var es_alimento_o_preparado := categoria_clave in [
+		"alimentos_bebidas",
+		"medicina_preparados"
+	]
+	if es_alimento_o_preparado or tipo in ["consumible", "pocion", "poción"]:
 		var efectos := _obtener_efectos_consumible(objeto)
 		if int(efectos.get("vida", 0)) > 0:
 			_agregar_dato_visual("slot_life", int(efectos["vida"]))
@@ -1028,8 +1034,9 @@ func _actualizar_datos_visuales_objeto(objeto: Dictionary) -> void:
 			_agregar_dato_visual("slot_eterium", int(efectos["eterium"]))
 		return
 
-	# Daño y alcance usan los mismos valores por defecto que CombatSystem.
-	if CombatItemResolver.es_arma(objeto):
+	# La categoría general de armas y combate también activa sus datos
+	# ofensivos; CombatItemResolver aporta los valores y modalidad efectivos.
+	if categoria_clave == "armas_combate" or CombatItemResolver.es_arma(objeto):
 		var combat_system := get_node_or_null("/root/Main/Systems/CombatSystem")
 		var danio_defecto := 8
 		var alcance_defecto := 64.0
@@ -1044,6 +1051,31 @@ func _actualizar_datos_visuales_objeto(objeto: Dictionary) -> void:
 			_agregar_dato_visual("slot_area", int(round(alcance)))
 		var modalidad := "A DISTANCIA" if CombatItemResolver.obtener_modo_ataque(objeto) == "distancia" else "CUERPO A CUERPO"
 		_agregar_etiqueta_modalidad(modalidad)
+
+
+func _obtener_clave_categoria_objeto(objeto: Dictionary) -> String:
+	var categoria := _obtener_categoria_objeto(objeto)
+	var clave := str(
+		categoria.get(
+			"clave",
+			categoria.get("categoria_clave", objeto.get("categoria_clave", ""))
+		)
+	).strip_edges().to_lower()
+	if not clave.is_empty():
+		return clave
+
+	var categoria_directa: Variant = objeto.get("categoria", "")
+	if categoria_directa is String:
+		return str(categoria_directa).strip_edges().to_lower()
+	if categoria_directa is Dictionary:
+		var categoria_dict := categoria_directa as Dictionary
+		return str(
+			categoria_dict.get(
+				"clave",
+				categoria_dict.get("categoria_clave", categoria_dict.get("slug", ""))
+			)
+		).strip_edges().to_lower()
+	return str(objeto.get("categoria_clave", "")).strip_edges().to_lower()
 
 
 func _obtener_efectos_consumible(objeto: Dictionary) -> Dictionary:
