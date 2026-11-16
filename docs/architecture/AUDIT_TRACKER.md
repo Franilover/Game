@@ -206,3 +206,13 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Los encuentros sociales priorizan compromisos pendientes, asuntos de ayuda, noticias no compartidas y, después, desacuerdos con tensión >= 18. Resolver un desacuerdo reduce tensión; ayudar y compartir información fortalecen vínculos y dejan recuerdos individuales para ambos participantes.
 - El historial de promesas, asuntos, relaciones y conocimientos se guarda localmente en el estado de la partida. No se generan textos con IA. Estos encuentros aún no muestran una conversación visual NPC-NPC: registran motivos, consecuencias y recuerdos; la integración con líneas ambientales escritas queda para una etapa posterior.
 - Pruebas NPC Mind cubren registro, transmisión, resolución, selección de motivo y recuperación de promesas/asuntos desde recuerdos. CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1708](https://github.com/Franilover/Game/actions/runs/43938773401).
+
+## Conversaciones ambientales desde objetivos sociales autónomos (2026-11-16)
+
+- Los encuentros que completa `NPCScheduleSystem` ahora pueden iniciar una conversación ambiental mediante el grupo `npc_conversation_system`.
+- Se añadieron líneas escritas para cumplir promesas, tratar asuntos pendientes, compartir noticias, resolver desacuerdos y encuentros cotidianos. Las líneas pasan por el perfil de voz de cada participante.
+- Las conversaciones sociales autónomas usan las burbujas ambientales existentes y sólo se muestran cuando el jugador está cerca. Su temporizador continúa aunque el jugador se aleje o tenga abierto otro diálogo.
+- Mientras dura el intercambio, el horario no vuelve a mover a los participantes. Al terminar, se liberan los metadatos de conversación y recuperan sus rutinas.
+- Se evita aplicar dos veces los cambios de relación: las consecuencias y recuerdos se registran al completar el objetivo social; la capa de conversación sólo presenta el intercambio.
+- No se añadió generación de texto por IA ni se modificó Supabase.
+- Validación pendiente: ejecutar CI Godot 4.7 para esta integración y revisar la presentación en una partida real, especialmente Android.
