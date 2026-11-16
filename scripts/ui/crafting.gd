@@ -20,6 +20,7 @@ var _reintento_recetas_programado: bool = false
 @onready var _detalle_ingredientes: RichTextLabel = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/Ingredients
 @onready var _boton_craftear: Button = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/CraftButton
 var _receta_seleccionada: Dictionary = {}
+var _tarjeta_receta_seleccionada: Button = null
 var _inventory: Node = null
 var _world_items: GarliaWorldItems = null
 
@@ -189,6 +190,7 @@ func _renderizar_recetas() -> void:
 		child.queue_free()
 
 	_receta_seleccionada.clear()
+	_tarjeta_receta_seleccionada = null
 	_actualizar_panel_detalle()
 	if _recetas.is_empty():
 		_estado.text = "No hay recetas disponibles."
@@ -288,8 +290,9 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	panel.name = "InventorySlot"
 	panel.tooltip_text = ""
 	panel.text = ""
+	panel.toggle_mode = true
 	panel.pressed.connect(func() -> void:
-		_seleccionar_receta(receta)
+		_seleccionar_receta(receta, panel)
 	)
 	rejilla.add_child(panel)
 	PIXEL_UI_THEME.apply(panel, false)
@@ -336,7 +339,12 @@ func _ajustar_columnas_recetas() -> void:
 		rejilla.columns = mini(columnas, 8)
 
 
-func _seleccionar_receta(receta: Dictionary) -> void:
+func _seleccionar_receta(receta: Dictionary, tarjeta: Button) -> void:
+	if is_instance_valid(_tarjeta_receta_seleccionada) and _tarjeta_receta_seleccionada != tarjeta:
+		_tarjeta_receta_seleccionada.set_pressed_no_signal(false)
+	_tarjeta_receta_seleccionada = tarjeta
+	if is_instance_valid(_tarjeta_receta_seleccionada):
+		_tarjeta_receta_seleccionada.set_pressed_no_signal(true)
 	_receta_seleccionada = receta.duplicate(true)
 	_actualizar_panel_detalle()
 
