@@ -19,7 +19,7 @@ func _run() -> void:
 	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
 	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
 	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
-	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Desel", "garumi_debug_preview": true})
+	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Desell", "garumi_debug_preview": true})
 	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
 	var sprite_garumi := garumi_node.get_node("Sprite2D") as Sprite2D
@@ -32,7 +32,7 @@ func _run() -> void:
 
 	# Los sprites nuevos deben resolverse por nombre visible incluso cuando
 	# asset_key contiene una clave antigua o inexistente del catálogo.
-	for nombre_sprite in ["Velki", "Velkor"]:
+	for nombre_sprite in ["Velki", "Plava"]
 		var garumi_sprite_test: Node = GARUMI_SCENE.instantiate()
 		get_tree().root.add_child(garumi_sprite_test)
 		garumi_sprite_test.call("configurar", {
