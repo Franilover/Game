@@ -678,6 +678,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			npc.set_meta("rutina_en_transito", false)
 		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
 			_zona.call("sacar_npc_del_interior", npc)
+		if (
+			is_instance_valid(_zona)
+			and not bool(_zona.get("_interior_activo"))
+			and _zona.has_method("restaurar_colision_npc")
+		):
+			_zona.call("restaurar_colision_npc", npc)
 		var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
 		if salida_variant is Dictionary:
 			var salida: Dictionary = salida_variant
@@ -1681,6 +1687,8 @@ func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
+	if is_instance_valid(_zona) and _zona.has_method("desactivar_colision_npc_exterior"):
+		_zona.call("desactivar_colision_npc_exterior", npc)
 	npc.set_meta("rutina_en_edificio", true)
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_edificio_id", edificio_id)
