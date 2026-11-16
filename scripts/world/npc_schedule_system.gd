@@ -1784,8 +1784,16 @@ func _aplicar_variacion_tiempo_libre(
 
 	var resultado := rutina_base.duplicate(true)
 	var actividad := str(elegida.get("id", ""))
+	var ubicacion_elegida := str(elegida.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+	if not POSICIONES.has(ubicacion_elegida):
+		ubicacion_elegida = "plaza"
 	resultado["actividad_clave"] = actividad
-	resultado["variacion_posicion"] = _obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
+	resultado["ubicacion_clave"] = ubicacion_elegida
+	resultado["variacion_posicion"] = (
+		_obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
+		if ubicacion_elegida == "plaza"
+		else Vector2.ZERO
+	)
 	resultado["variacion_diaria"] = clave_dia
 	npc.set_meta("npc_mind_decision_key", clave_decision)
 	npc.set_meta("npc_mind_actividad", actividad)
@@ -1809,14 +1817,14 @@ func _aplicar_variacion_tiempo_libre(
 func _obtener_opciones_ocio_npc(nombre: String) -> Dictionary:
 	var opciones_por_personaje: Dictionary = {
 		"elian": [
-			{"id":"acomodar_pedidos","necesidades":{"autonomia":0.45,"curiosidad":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":8.0},
+			{"id":"acomodar_pedidos","ubicacion_clave":"panaderia","necesidades":{"autonomia":0.45,"curiosidad":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":8.0},
 			{"id":"conversar_con_vecinos","necesidades":{"socializacion":0.9,"diversion":0.3},"afinidad_rasgos":{"sociabilidad":0.85},"coste":5.0},
-			{"id":"compartir_pan","necesidades":{"socializacion":0.65,"diversion":0.7},"afinidad_rasgos":{"generosidad":0.85,"sociabilidad":0.65},"coste":8.0}
+			{"id":"compartir_pan","ubicacion_clave":"panaderia","necesidades":{"socializacion":0.65,"diversion":0.7},"afinidad_rasgos":{"generosidad":0.85,"sociabilidad":0.65},"coste":8.0}
 		],
 		"bruna": [
-			{"id":"revisar_herramientas","necesidades":{"curiosidad":0.8,"autonomia":0.3},"afinidad_rasgos":{"curiosidad":0.7,"prudencia":0.7},"coste":8.0},
+			{"id":"revisar_herramientas","ubicacion_clave":"forja","necesidades":{"curiosidad":0.8,"autonomia":0.3},"afinidad_rasgos":{"curiosidad":0.7,"prudencia":0.7},"coste":8.0},
 			{"id":"observar_trabajos","necesidades":{"curiosidad":0.55,"socializacion":0.2},"afinidad_rasgos":{"curiosidad":0.65},"coste":5.0},
-			{"id":"descansar_un_rato","necesidades":{"descanso":0.95,"diversion":0.2},"coste":2.0}
+			{"id":"descansar_un_rato","ubicacion_clave":"casa_bruna","necesidades":{"descanso":0.95,"diversion":0.2},"coste":2.0}
 		],
 		"darven": [
 			{"id":"vigilar_plaza","necesidades":{"seguridad":0.8,"autonomia":0.25},"afinidad_rasgos":{"prudencia":0.8},"coste":5.0},
@@ -1829,33 +1837,33 @@ func _obtener_opciones_ocio_npc(nombre: String) -> Dictionary:
 			{"id":"escuchar_historias","necesidades":{"socializacion":0.7,"diversion":0.5},"afinidad_rasgos":{"sociabilidad":0.7},"coste":4.0}
 		],
 		"narel": [
-			{"id":"tomar_notas","necesidades":{"curiosidad":0.95,"autonomia":0.2},"afinidad_rasgos":{"curiosidad":0.9},"coste":7.0},
+			{"id":"tomar_notas","ubicacion_clave":"archivo_real","necesidades":{"curiosidad":0.95,"autonomia":0.2},"afinidad_rasgos":{"curiosidad":0.9},"coste":7.0},
 			{"id":"observar_entorno","necesidades":{"curiosidad":0.8,"diversion":0.15},"afinidad_rasgos":{"curiosidad":0.8,"prudencia":0.6},"coste":5.0},
-			{"id":"leer_apuntes","necesidades":{"curiosidad":0.75,"descanso":0.1},"afinidad_rasgos":{"curiosidad":0.85},"coste":3.0}
+			{"id":"leer_apuntes","ubicacion_clave":"archivo_real","necesidades":{"curiosidad":0.75,"descanso":0.1},"afinidad_rasgos":{"curiosidad":0.85},"coste":3.0}
 		],
 		"mara": [
 			{"id":"pasear_sin_prisa","necesidades":{"autonomia":0.75,"diversion":0.45},"afinidad_rasgos":{"independencia":0.8},"coste":4.0},
 			{"id":"observar_la_plaza","necesidades":{"curiosidad":0.55,"seguridad":0.15},"afinidad_rasgos":{"prudencia":0.6},"coste":3.0},
-			{"id":"visitar_un_puesto","necesidades":{"diversion":0.65,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.55},"coste":6.0}
+			{"id":"visitar_un_puesto","ubicacion_clave":"casa_comercio","necesidades":{"diversion":0.65,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.55},"coste":6.0}
 		],
 		"ivo": [
-			{"id":"descansar_y_saludar","necesidades":{"descanso":0.8,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.45},"coste":2.0},
-			{"id":"sentarse_un_rato","necesidades":{"descanso":0.95,"autonomia":0.2},"coste":1.0},
+			{"id":"descansar_y_saludar","ubicacion_clave":"plaza","necesidades":{"descanso":0.8,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.45},"coste":2.0},
+			{"id":"sentarse_un_rato","ubicacion_clave":"vivienda_oeste_02","necesidades":{"descanso":0.95,"autonomia":0.2},"coste":1.0},
 			{"id":"pasear_a_su_ritmo","necesidades":{"autonomia":0.65,"diversion":0.35},"afinidad_rasgos":{"independencia":0.75},"coste":3.0}
 		],
 		"nima": [
 			{"id":"tomar_notas","necesidades":{"curiosidad":0.95,"autonomia":0.2},"afinidad_rasgos":{"curiosidad":0.9},"coste":7.0},
-			{"id":"observar_fenomenos","necesidades":{"curiosidad":0.9,"diversion":0.2},"afinidad_rasgos":{"curiosidad":0.85},"coste":5.0},
+			{"id":"observar_fenomenos","ubicacion_clave":"casa_estudio","necesidades":{"curiosidad":0.9,"diversion":0.2},"afinidad_rasgos":{"curiosidad":0.85},"coste":5.0},
 			{"id":"conversar_con_vecinos","necesidades":{"socializacion":0.65,"diversion":0.25},"afinidad_rasgos":{"sociabilidad":0.65},"coste":4.0}
 		],
 		"abel": [
-			{"id":"revisar_asuntos","necesidades":{"seguridad":0.55,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.8},"coste":5.0},
-			{"id":"leer_informes","necesidades":{"curiosidad":0.7,"autonomia":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":4.0},
-			{"id":"conversar_con_guardias","necesidades":{"socializacion":0.65,"seguridad":0.25},"afinidad_rasgos":{"sociabilidad":0.55},"coste":5.0}
+			{"id":"revisar_asuntos","ubicacion_clave":"castillo","necesidades":{"seguridad":0.55,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.8},"coste":5.0},
+			{"id":"leer_informes","ubicacion_clave":"castillo","necesidades":{"curiosidad":0.7,"autonomia":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":4.0},
+			{"id":"conversar_con_guardias","ubicacion_clave":"castillo","necesidades":{"socializacion":0.65,"seguridad":0.25},"afinidad_rasgos":{"sociabilidad":0.55},"coste":5.0}
 		],
 		"liam": [
-			{"id":"ordenar_documentos","necesidades":{"curiosidad":0.45,"autonomia":0.35},"afinidad_rasgos":{"prudencia":0.65},"coste":4.0},
-			{"id":"recorrer_el_castillo","necesidades":{"seguridad":0.5,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.7},"coste":5.0},
+			{"id":"ordenar_documentos","ubicacion_clave":"castillo","necesidades":{"curiosidad":0.45,"autonomia":0.35},"afinidad_rasgos":{"prudencia":0.65},"coste":4.0},
+			{"id":"recorrer_el_castillo","ubicacion_clave":"castillo","necesidades":{"seguridad":0.5,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.7},"coste":5.0},
 			{"id":"descansar_un_rato","necesidades":{"descanso":0.85,"diversion":0.15},"coste":2.0}
 		]
 	}
