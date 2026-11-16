@@ -1023,9 +1023,9 @@ func _actualizar_datos_visuales_objeto(objeto: Dictionary) -> void:
 	if tipo in ["consumible", "pocion", "poción"]:
 		var efectos := _obtener_efectos_consumible(objeto)
 		if int(efectos.get("vida", 0)) > 0:
-			_agregar_dato_visual("slot_life", int(efectos["vida"]), Color(0.36, 0.10, 0.10, 1.0))
+			_agregar_dato_visual("slot_life", int(efectos["vida"]))
 		if int(efectos.get("eterium", 0)) > 0:
-			_agregar_dato_visual("slot_eterium", int(efectos["eterium"]), Color(0.10, 0.24, 0.43, 1.0))
+			_agregar_dato_visual("slot_eterium", int(efectos["eterium"]))
 		return
 
 	# Daño y alcance usan los mismos valores por defecto que CombatSystem.
@@ -1039,9 +1039,9 @@ func _actualizar_datos_visuales_objeto(objeto: Dictionary) -> void:
 		var danio := CombatItemResolver.obtener_danio_arma(objeto, danio_defecto)
 		var alcance := CombatItemResolver.obtener_alcance_arma(objeto, alcance_defecto)
 		if danio > 0:
-			_agregar_dato_visual("slot_damage", danio, Color(0.34, 0.10, 0.09, 1.0))
+			_agregar_dato_visual("slot_damage", danio)
 		if alcance > 0.0:
-			_agregar_dato_visual("slot_area", int(round(alcance)), Color(0.30, 0.20, 0.12, 1.0))
+			_agregar_dato_visual("slot_area", int(round(alcance)))
 		var modalidad := "A DISTANCIA" if CombatItemResolver.obtener_modo_ataque(objeto) == "distancia" else "CUERPO A CUERPO"
 		_agregar_etiqueta_modalidad(modalidad)
 
@@ -1076,50 +1076,42 @@ func _obtener_efectos_consumible(objeto: Dictionary) -> Dictionary:
 	return resultado
 
 
-func _agregar_dato_visual(nombre_sprite: String, valor: int, color_fondo: Color) -> void:
+func _agregar_dato_visual(nombre_sprite: String, valor: int) -> void:
 	var ruta := "res://assets/art/UI/Menus/%s.png" % nombre_sprite
-	# Estos sprites pueden llegar al proyecto sin su .import generado todavía.
-	# Leer el PNG directamente evita depender del caché de importación del editor.
 	var imagen := Image.load_from_file(ruta)
 	if imagen == null or imagen.is_empty():
 		push_warning("Inventario: no se pudo leer el sprite de dato " + ruta)
 		return
 	var textura: Texture2D = ImageTexture.create_from_image(imagen)
 
-	var marco := PanelContainer.new()
+	# El sprite dibujado por el usuario ya incluye el fondo y el símbolo.
+	# Se usa como fondo completo; no se genera un segundo panel ni otro icono.
+	var marco := Control.new()
 	marco.custom_minimum_size = Vector2(42, 24)
 	marco.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = color_fondo
-	estilo.corner_radius_top_left = 3
-	estilo.corner_radius_top_right = 3
-	estilo.corner_radius_bottom_left = 3
-	estilo.corner_radius_bottom_right = 3
-	marco.add_theme_stylebox_override("panel", estilo)
-	marco.add_theme_constant_override("margin_left", 4)
-	marco.add_theme_constant_override("margin_top", 2)
-	marco.add_theme_constant_override("margin_right", 4)
-	marco.add_theme_constant_override("margin_bottom", 2)
 
-	var contenido := HBoxContainer.new()
-	contenido.add_theme_constant_override("separation", 3)
-	marco.add_child(contenido)
-	var icono := TextureRect.new()
-	icono.texture = textura
-	icono.custom_minimum_size = Vector2(16, 16)
-	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	contenido.add_child(icono)
+	var fondo := TextureRect.new()
+	fondo.texture = textura
+	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fondo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	fondo.stretch_mode = TextureRect.STRETCH_SCALE
+	fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marco.add_child(fondo)
 
 	var etiqueta := Label.new()
 	etiqueta.text = str(valor)
+	etiqueta.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	etiqueta.offset_left = -22
+	etiqueta.offset_right = -3
+	etiqueta.offset_top = 0
+	etiqueta.offset_bottom = 0
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	etiqueta.add_theme_color_override("font_color", Color(0.98, 0.91, 0.78, 1.0))
 	etiqueta.add_theme_font_size_override("font_size", 11)
-	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	contenido.add_child(etiqueta)
+	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marco.add_child(etiqueta)
 	stats_row.add_child(marco)
-
 
 func _agregar_etiqueta_modalidad(texto: String) -> void:
 	var etiqueta := Label.new()
