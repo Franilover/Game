@@ -191,19 +191,70 @@ func _renderizar_recetas() -> void:
 		return
 
 	_estado.text = ""
-	# Todas las recetas comparten una sola cuadrícula para formar filas
-	# continuas, sin separar los objetos por categorías.
-	var rejilla := GridContainer.new()
-	rejilla.name = "RecipeGrid"
-	rejilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	rejilla.add_theme_constant_override("h_separation", 6)
-	rejilla.add_theme_constant_override("v_separation", 6)
-	_lista.add_child(rejilla)
-
+	var grupos: Dictionary = {}
 	for receta in _recetas:
-		_crear_tarjeta_receta(receta, rejilla)
+		var resultado_variant: Variant = receta.get("resultado", {})
+		var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
+		var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
+		var categoria_variant: Variant = item_resultado.get("categoria", {})
+		var categoria: Dictionary = categoria_variant as Dictionary if categoria_variant is Dictionary else {}
+		var clave := str(categoria.get("clave", "")).strip_edges().to_lower()
+		var nombre_categoria := str(categoria.get("nombre", ""))
+		if clave.is_empty():
+			clave = str(receta.get("categoria", "sin_categoria")).strip_edges().to_lower()
+		if nombre_categoria.is_empty():
+			nombre_categoria = str(receta.get("categoria", "Otras recetas")).replace("_", " ").capitalize()
+		if clave.is_empty():
+			clave = "sin_categoria"
+		if not grupos.has(clave):
+			grupos[clave] = {
+				"nombre": nombre_categoria,
+				"orden": int(categoria.get("orden", 999)),
+				"recetas": []
+			}
+		(grupos[clave]["recetas"] as Array).append(receta)
 
-	_ajustar_columnas_recetas()
+	var claves: Array = grupos.keys()
+	claves.sort_custom(func(a: Variant, b: Variant) -> bool:
+		var grupo_a: Dictionary = grupos[a]
+		var grupo_b: Dictionary = grupos[b]
+		var orden_a := int(grupo_a.get("orden", 999))
+		var orden_b := int(grupo_b.get("orden", 999))
+		if orden_a == orden_b:
+			return str(grupo_a.get("nombre", a)) < str(grupo_b.get("nombre", b))
+		return orden_a < orden_b
+	)
+
+	for clave_variant in claves:
+		var grupo: Dictionary = grupos[clave_variant]
+		var seccion := VBoxContainer.new()
+		seccion.name = "Categoria_" + str(clave_variant)
+		seccion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		seccion.add_theme_constant_override("separation", 4)
+		_lista.add_child(seccion)
+
+		var encabezado := Button.new()
+		encabezado.name = "CategoryHeading"
+		encabezado.text = str(grupo.get("nombre", "Sin categoría")).to_upper()
+		encabezado.custom_minimum_size = Vector2(0, 24)
+		encabezado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		encabezado.focus_mode = Control.FOCUS_NONE
+		encabezado.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		seccion.add_child(encabezado)
+		PIXEL_UI_THEME.apply(encabezado, false)
+
+		var rejilla := GridContainer.new()
+		rejilla.name = "RecipeGrid"
+		rejilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rejilla.columns = 3
+		rejilla.add_theme_constant_override("h_separation", 6)
+		rejilla.add_theme_constant_override("v_separation", 6)
+		seccion.add_child(rejilla)
+		for receta_variant in grupo.get("recetas", []) as Array:
+			if receta_variant is Dictionary:
+				_crear_tarjeta_receta(receta_variant as Dictionary, rejilla)
+
+	call_deferred("_ajustar_columnas_recetas")
 
 
 func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
@@ -252,13 +303,16 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 
 
 func _ajustar_columnas_recetas() -> void:
-	if not is_instance_valid(_lista) or not is_instance_valid(_lista_scroll):
+	if not is_instance_valid(_lista):
 		return
 	var separacion := 6
-	var ancho_util := maxi(1, int(_lista_scroll.size.x))
-	var columnas := clampi(floori(float(ancho_util + separacion) / 62.0), 3, 8)
-	for rejilla in _lista.find_children("RecipeGrid", "GridContainer", true, false):
-		(rejilla as GridContainer).columns = columnas
+	for rejilla_variant in _lista.find_children("RecipeGrid", "GridContainer", true, false):
+		var rejilla := rejilla_variant as GridContainer
+		# Cada categoría calcula sus columnas según el ancho real disponible.
+		# Así sus sprites se distribuyen horizontalmente y saltan a otra fila.
+		var ancho_util := maxi(64, int(rejilla.size.x))
+		var columnas := maxi(1, floori(float(ancho_util + separacion) / 70.0))
+		rejilla.columns = mini(columnas, 8)
 
 
 func _seleccionar_receta(receta: Dictionary) -> void:
