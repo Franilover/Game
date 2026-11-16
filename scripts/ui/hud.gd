@@ -8,6 +8,7 @@ const DISCOVERY_NOTICE_SCENE: PackedScene = preload("res://scenes/ui/hud_discove
 const CALENDAR_CLOCK_SCENE: PackedScene = preload("res://scenes/ui/hud_calendar_clock.tscn")
 const HAND_SLOT_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_slot.tscn")
 const HAND_ITEM_SELECTOR_SCENE: PackedScene = preload("res://scenes/ui/hud_hand_item_selector.tscn")
+const TEXTURED_PROGRESS_BAR = preload("res://scripts/ui/textured_progress_bar.gd")
 
 var player: Player = null
 var world_context: WorldContext = null
@@ -44,7 +45,7 @@ var health_value: Label = null
 
 var stamina_bar: ProgressBar = null
 var stamina_value: Label = null
-var _dash_recharge_indicator: TexturedProgressBar = null
+var _dash_recharge_indicator = null
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
@@ -295,7 +296,7 @@ func _configurar_referencias_ui() -> void:
 
 
 func _crear_indicador_recarga_dash() -> void:
-	_dash_recharge_indicator = TexturedProgressBar.new()
+	_dash_recharge_indicator = TEXTURED_PROGRESS_BAR.new()
 	_dash_recharge_indicator.name = "DashRechargeAbovePlayer"
 	_dash_recharge_indicator.configurar(
 		preload("res://assets/art/UI/Menus/bar_fill_stamina.png"),
