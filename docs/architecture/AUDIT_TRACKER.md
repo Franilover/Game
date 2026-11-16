@@ -3,7 +3,7 @@
 **Última actualización:** 2026-11-16  
 **Repositorio:** `Franilover/Game`  
 **Rama auditada:** `fix/p0-godot47-crafting-token-type`  
-**Commit validado por CI:** `2aae9f75b3f33c6933b5c6f93c800219c34750f3`  
+**Commit validado por CI:** `cb383ef5d5cc7174492dad546c7a2714a577ed3e`  
 **Pull request de correcciones:** [#12](https://github.com/Franilover/Game/pull/12)  
 **Método:** inspección estática del código actual y CI completo Godot 4.7. No equivale a una prueba visual ni a una validación manual de gameplay.
 
