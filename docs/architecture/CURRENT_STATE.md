@@ -709,3 +709,14 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - CI Godot 4.7: **PASS**, run `43916861872`, 33 pasos completados sin fallos.
 - Rama de trabajo: `fix/p0-godot47-crafting-token-type`. PR #12 sigue en borrador. Sin cambios en `main` ni mutaciones de Supabase.
 - Pendiente: validar continuidad de una partida real tras entregar recompensa, offline end-to-end, pruebas visuales Android/PC y flujos NPC/móvil con dispositivo real.
+
+
+## Sexagésima segunda barrida — Interacción móvil de diálogos
+
+- `GarliaMobileControls` consulta el grupo `dialogue_system` antes de capturar toques del joystick. Mientras hay un diálogo abierto, el joystick no roba toques destinados a botones o respuestas.
+- Si el diálogo se abre mientras el joystick mantiene una dirección, el control libera el dedo y emite las acciones de movimiento en estado neutral.
+- `DialogueSystem` adapta el panel al viewport: ancho/alto, márgenes, retrato, tamaños de botones sociales, acciones principales y columnas de selectores.
+- En pantallas estrechas se oculta el retrato para conservar espacio de texto y se pasa el selector de objetos a una columna; en paisaje compacto recupera el retrato reducido y dos columnas.
+- Se añadieron `MobileControlsDialogueTouch` y `DialogueMobileLayout` para verificar bloqueo del joystick durante diálogo, liberación de movimiento, multitáctil y medidas en 360×640, 640×360 y 960×540.
+- CI Godot 4.7: **PASS**, run `43918828793`, 35 pasos completados sin fallos.
+- La validación headless no sustituye la prueba en dispositivo Android: falta revisar safe areas, orientación real, tamaño físico de botones y legibilidad en varios DPI.
