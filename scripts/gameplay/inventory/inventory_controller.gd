@@ -65,10 +65,10 @@ func obtener_objeto_mano_activa(mano: String) -> Dictionary:
 	return runtime.obtener_item(obtener_indice_mano_activa(mano))
 
 
-func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
+func usar_objeto_mano(mano: String, usuario: Player = null, objeto_override: Dictionary = {}) -> bool:
 	if mano not in ["izquierda", "derecha"]:
 		return false
-	return usar_objeto_en_indice(obtener_indice_mano_activa(mano), usuario, mano)
+	return _usar_objeto_en_indice(obtener_indice_mano_activa(mano), usuario, mano, true, objeto_override)
 
 
 func es_alimento_en_mano(mano: String) -> bool:
@@ -91,8 +91,8 @@ func puede_usar_alimento_en_mano(mano: String) -> bool:
 	return not _obtener_definicion_uso(objeto).is_empty()
 
 
-func usar_objeto_desde_ui(indice: int, usuario: Player) -> bool:
-	return _usar_objeto_en_indice(indice, usuario, "", false)
+func usar_objeto_desde_ui(indice: int, usuario: Player, objeto_override: Dictionary = {}) -> bool:
+	return _usar_objeto_en_indice(indice, usuario, "", false, objeto_override)
 
 
 func usar_objeto_en_indice(
@@ -107,14 +107,15 @@ func _usar_objeto_en_indice(
 	indice: int,
 	usuario: Player,
 	mano: String,
-	validar_input: bool
+	validar_input: bool,
+	objeto_override: Dictionary = {}
 ) -> bool:
 	if validar_input and not puede_interactuar():
 		return false
 	if indice < 0:
 		return false
 
-	var objeto := runtime.obtener_item(indice)
+	var objeto := objeto_override.duplicate(true) if not objeto_override.is_empty() else runtime.obtener_item(indice)
 	if objeto.is_empty():
 		return false
 
@@ -129,7 +130,17 @@ func _usar_objeto_en_indice(
 	if efectos_aplicados <= 0:
 		return false
 
-	if not quitar_cantidad(indice, 1):
+	var retirado := false
+	if validar_input:
+		retirado = quitar_cantidad(indice, 1)
+	else:
+		# La propia ventana del inventario mantiene activo el input gate.
+		# La acción explícita desde su botón puede retirar el objeto directamente
+		# del runtime sin habilitar otras acciones de gameplay.
+		retirado = runtime.quitar_cantidad(indice, 1)
+		if retirado:
+			inventario_cambio.emit()
+	if not retirado:
 		return false
 
 	Events.notification_pushed.emit(
