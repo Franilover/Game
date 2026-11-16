@@ -324,6 +324,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run authenticated catalog reload regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_authenticated_catalog_reload.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|AuthenticatedCatalogReload: FAIL:' <<<"$output"; then
+            echo "Authenticated catalog reload regression test reported errors."
+            exit 1
+          fi
+
       - name: Run Player VitalState restoration contract test
         shell: bash
         run: |
