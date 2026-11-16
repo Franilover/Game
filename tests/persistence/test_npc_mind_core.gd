@@ -71,7 +71,7 @@ func _run() -> void:
 	if not mind.obtener_objetivos_activos("ivo").is_empty():
 		errores.append("Un objetivo completado siguió activo.")
 
-	var persistido := game_state.saved.get("ivo", {})
+	var persistido: Dictionary = game_state.saved.get("ivo", {})
 	if persistido.is_empty():
 		errores.append("El estado mental no se escribió en GameState.")
 
