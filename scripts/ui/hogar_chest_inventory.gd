@@ -11,7 +11,6 @@ var _indice_cofre := -1
 var _slots_jugador: Array[InventorySlot] = []
 var _slots_cofre: Array[InventorySlot] = []
 var _panel: PanelContainer
-var _mensaje_sin_datos_jugador: Label
 var _seleccion_contenedor := ""
 var _seleccion_indice := -1
 
@@ -101,11 +100,6 @@ func _crear_interfaz() -> void:
 	var titulo_jugador := Label.new()
 	titulo_jugador.text = "INVENTARIO"
 	panel_jugador.add_child(titulo_jugador)
-	_mensaje_sin_datos_jugador = Label.new()
-	_mensaje_sin_datos_jugador.text = "No hay datos"
-	_mensaje_sin_datos_jugador.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_mensaje_sin_datos_jugador.visible = false
-	panel_jugador.add_child(_mensaje_sin_datos_jugador)
 	var rejilla_jugador := GridContainer.new()
 	rejilla_jugador.name = "GridJugador"
 	rejilla_jugador.columns = 6
@@ -310,9 +304,6 @@ func _refrescar() -> void:
 		return
 	var items_jugador: Array = _obtener_items("jugador")
 	var items_cofre: Array = _obtener_items("cofre")
-	var jugador_tiene_datos := _contiene_objetos(items_jugador)
-		if is_instance_valid(_mensaje_sin_datos_jugador):
-		_mensaje_sin_datos_jugador.visible = not jugador_tiene_datos
 	for indice in range(_slots_jugador.size()):
 		var slot := _slots_jugador[indice]
 		slot.modulate = Color("#FFE3A3") if _seleccion_contenedor == "jugador" and _seleccion_indice == indice else Color.WHITE
@@ -339,10 +330,3 @@ func _solicitar_cierre() -> void:
 func cerrar() -> void:
 	_solicitar_cierre()
 
-
-
-func _contiene_objetos(items: Array) -> bool:
-	for item in items:
-		if item is Dictionary and not (item as Dictionary).is_empty():
-			return true
-	return false
