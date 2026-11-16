@@ -3,6 +3,7 @@ extends Node
 const MindScript = preload("res://scripts/gameplay/npc_mind.gd")
 const ScheduleScript = preload("res://scripts/world/npc_schedule_system.gd")
 const RelationshipScript = preload("res://scripts/gameplay/relationship_system.gd")
+const VoiceProfileScript = preload("res://scripts/gameplay/npc_voice_profile.gd")
 
 
 class FakeGameState:
@@ -43,6 +44,31 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
+	var dialogo_ivo: Array[Dictionary] = VoiceProfileScript.construir_dialogo_social(
+		"ivo", "mara", "buscar_compania", 0
+	)
+	var dialogo_bruna: Array[Dictionary] = VoiceProfileScript.construir_dialogo_social(
+		"bruna", "mara", "buscar_compania", 0
+	)
+	if dialogo_ivo.size() != 4 or dialogo_bruna.size() != 4:
+		errores.append("Las conversaciones sociales no generaron cuatro intervenciones.")
+	elif str(dialogo_ivo[0].get("texto", "")) == str(dialogo_bruna[0].get("texto", "")):
+		errores.append("Ivo y Bruna recibieron la misma voz en una conversación cotidiana.")
+	var noticia_dialogo: Array[Dictionary] = VoiceProfileScript.construir_dialogo_social(
+		"narel", "saira", "compartir_noticia", 0, "cordial", "el mercado cerrará temprano"
+	)
+	if noticia_dialogo.size() != 4 or not str(noticia_dialogo[2].get("texto", "")).contains("el mercado cerrará temprano"):
+		errores.append("La conversación de noticias no incorporó el dato conocido.")
+	var dialogo_con_historia: Array[Dictionary] = VoiceProfileScript.construir_dialogo_social(
+		"mara", "nima", "visitar_amigo", 0, "cercana", "", "Me quedé pensando en lo que hablamos la última vez."
+	)
+	if dialogo_con_historia.is_empty() or str(dialogo_con_historia[0].get("texto", "")) != "Me quedé pensando en lo que hablamos la última vez.":
+		errores.append("La conversación no retomó la historia compartida de la pareja.")
+	var dialogo_variante: Array[Dictionary] = VoiceProfileScript.construir_dialogo_social(
+		"ivo", "mara", "buscar_compania", 1
+	)
+	if dialogo_variante.is_empty() or str(dialogo_variante[0].get("texto", "")) == str(dialogo_ivo[0].get("texto", "")):
+		errores.append("La selección de variantes repitió la misma apertura.")
 	var game_state := FakeGameState.new()
 	var mind := MindScript.new() as NPCMindService
 	mind.configurar(game_state)
