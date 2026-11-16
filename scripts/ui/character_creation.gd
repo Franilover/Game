@@ -63,6 +63,11 @@ func _ready() -> void:
 	_actualizar_vista_previa()
 	if not SupabaseClient.especies_jugables_cargadas.is_connected(_on_species_loaded):
 		SupabaseClient.especies_jugables_cargadas.connect(_on_species_loaded)
+	# Primero hidratar desde caché: la petición inicial puede haber terminado
+	# antes de que esta escena conectara su señal.
+	var especies_en_cache: Array = SupabaseClient.obtener_especies_jugables()
+	if not especies_en_cache.is_empty():
+		_on_species_loaded(especies_en_cache)
 	SupabaseClient.cargar_especies_jugables()
 
 
@@ -210,10 +215,12 @@ func _on_species_loaded(data: Array) -> void:
 	if not species.item_selected.is_connected(_on_species_selected):
 		species.item_selected.connect(_on_species_selected)
 	if species.item_count > 0:
+		status.visible = false
 		_seleccionar_especie_humana()
 		_actualizar_genero_segun_especie()
 	else:
 		status.text = "No hay especies jugables disponibles."
+		status.visible = true
 	_update_confirm()
 
 func _crear_vista_previa() -> void:
