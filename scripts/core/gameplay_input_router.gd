@@ -26,6 +26,7 @@ var _accion_consumo_activa: String = ""
 var _tiempo_consumo: float = 0.0
 var _slot_consumo: int = -1
 var _identidad_consumo: String = ""
+var _boton_consumo: int = MOUSE_BUTTON_NONE
 var _barra_consumo: ProgressBar = null
 var _etiqueta_consumo: Label = null
 
@@ -37,7 +38,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _mano_consumo_activa.is_empty():
 		return
-	if esta_bloqueado() or not Input.is_action_pressed(_accion_consumo_activa):
+	var sigue_presionado := Input.is_mouse_button_pressed(_boton_consumo) if _boton_consumo != MOUSE_BUTTON_NONE else Input.is_action_pressed(_accion_consumo_activa)
+	if esta_bloqueado() or not sigue_presionado:
 		_cancelar_consumo()
 		return
 	if _inventory_ui == null or not is_instance_valid(_inventory_ui):
@@ -105,12 +107,13 @@ func _crear_indicador_consumo() -> void:
 	contenedor.visible = false
 
 
-func _iniciar_consumo(mano: String, accion: String) -> void:
+func _iniciar_consumo(mano: String, accion: String, boton: int = MOUSE_BUTTON_NONE) -> void:
 	if _mano_consumo_activa == mano:
 		return
 	_cancelar_consumo()
 	_mano_consumo_activa = mano
 	_accion_consumo_activa = accion
+	_boton_consumo = boton
 	_slot_consumo = _inventory_ui.obtener_indice_mano_activa(mano) if is_instance_valid(_inventory_ui) else -1
 	var objeto := _inventory_ui.obtener_objeto_mano_activa(mano) if is_instance_valid(_inventory_ui) else {}
 	_identidad_consumo = str(objeto.get("item_id", objeto.get("id", objeto.get("nombre", ""))))
@@ -123,6 +126,7 @@ func _iniciar_consumo(mano: String, accion: String) -> void:
 func _cancelar_consumo() -> void:
 	_mano_consumo_activa = ""
 	_accion_consumo_activa = ""
+	_boton_consumo = MOUSE_BUTTON_NONE
 	_tiempo_consumo = 0.0
 	_slot_consumo = -1
 	_identidad_consumo = ""
@@ -158,6 +162,35 @@ func configurar_bloqueos(
 	_hud = hud
 	_debug_console = debug_console
 
+func _input(event: InputEvent) -> void:
+	# Capturar el ratón antes de que otro nodo consuma el evento.
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if not mouse_event.pressed or mouse_event.button_index not in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		return
+	if esta_bloqueado():
+		return
+	var accion := "primary_action" if mouse_event.button_index == MOUSE_BUTTON_LEFT else "secondary_action"
+	var mano := "izquierda" if mouse_event.button_index == MOUSE_BUTTON_LEFT else "derecha"
+	if _intentar_iniciar_consumo(mano, accion, mouse_event.button_index):
+		get_viewport().set_input_as_handled()
+
+
+func _intentar_iniciar_consumo(mano: String, accion: String, boton: int = MOUSE_BUTTON_NONE) -> bool:
+	var hay_contexto := (
+		_interaction_system != null
+		and get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
+		and _interaction_system.hay_interaccion_contextual()
+	)
+	if hay_contexto or _inventory_ui == null or not is_instance_valid(_inventory_ui):
+		return false
+	if not _inventory_ui.puede_consumir_alimento_en_mano(mano):
+		return false
+	_iniciar_consumo(mano, accion, boton)
+	return true
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not _es_accion_primaria_o_secundaria(event):
 		return
@@ -168,18 +201,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var accion := "primary_action" if event.is_action_pressed("primary_action") else "secondary_action"
 	var mano := "izquierda" if accion == "primary_action" else "derecha"
-	var hay_contexto := (
-		_interaction_system != null
-		and get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
-		and _interaction_system.hay_interaccion_contextual()
-	)
-	if (
-		not hay_contexto
-		and _inventory_ui != null
-		and is_instance_valid(_inventory_ui)
-		and _inventory_ui.puede_consumir_alimento_en_mano(mano)
-	):
-		_iniciar_consumo(mano, accion)
+	if _intentar_iniciar_consumo(mano, accion):
 		get_viewport().set_input_as_handled()
 		return
 
