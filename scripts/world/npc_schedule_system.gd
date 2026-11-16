@@ -1974,6 +1974,7 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 			return false
 		npc.set_meta("npc_objetivo_social", objetivo.duplicate(true))
 		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
+		npc.set_meta("npc_objetivo_social_espera", 0.0)
 		npc.set_meta("npc_objetivo_social_en_curso", false)
 
 	var pareja_actual := _buscar_npc_por_id_social(str(objetivo.get("objetivo_personaje", "")))
@@ -1981,9 +1982,16 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 		return false
 	if bool(pareja_actual.get_meta("rutina_en_edificio", false)) or bool(pareja_actual.get_meta("_conversacion_ambiental_activa", false)):
+		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 		return false
 	if bool(pareja_actual.get_meta("rutina_en_transito", false)):
+		var espera := float(npc.get_meta("npc_objetivo_social_espera", 0.0)) + maxf(delta, 0.0)
+		npc.set_meta("npc_objetivo_social_espera", espera)
+		if espera >= 45.0:
+			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+			return false
 		return true
+	npc.set_meta("npc_objetivo_social_espera", 0.0)
 
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
@@ -2032,6 +2040,8 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		if objetivo_candidato is Dictionary and not (objetivo_candidato as Dictionary).is_empty():
 			continue
 		if bool(candidato.get_meta("_conversacion_ambiental_activa", false)):
+			continue
+		if bool(candidato.get_meta("actividad_social_activa", false)):
 			continue
 		var movimiento_candidato := candidato.get_node_or_null("CreatureMovement") as CreatureMovement
 		if movimiento_candidato == null:
@@ -2120,6 +2130,7 @@ func _finalizar_objetivo_social_npc(
 		movimiento.detener_por_rutina()
 	npc.remove_meta("npc_objetivo_social")
 	npc.remove_meta("npc_objetivo_social_tiempo")
+	npc.remove_meta("npc_objetivo_social_espera")
 	npc.remove_meta("npc_objetivo_social_en_curso")
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_firma", "")
