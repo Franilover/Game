@@ -19,11 +19,17 @@ var _recompensas_reclamadas: Dictionary = {}
 var _entrega_recompensas_en_curso: bool = false
 var _entity_manager: WorldEntityManager = null
 var _world_data: WorldDataService = null
+var _world_items: GarliaWorldItems = null
 
 
-func configurar_dependencias(entity_manager: WorldEntityManager = null, world_data: WorldDataService = null) -> void:
+func configurar_dependencias(
+	entity_manager: WorldEntityManager = null,
+	world_data: WorldDataService = null,
+	world_items: GarliaWorldItems = null
+) -> void:
 	_entity_manager = entity_manager
 	_world_data = world_data
+	_world_items = world_items
 
 	if _world_data == null:
 		push_error("MissionManager: WorldDataService no configurado.")
@@ -730,6 +736,12 @@ func _construir_objeto_recompensa(recompensa: Dictionary) -> Dictionary:
 	var datos: Dictionary = datos_variant as Dictionary if datos_variant is Dictionary else {}
 	var objeto_variant: Variant = datos.get("item_data", datos.get("objeto", {}))
 	var objeto: Dictionary = objeto_variant.duplicate(true) if objeto_variant is Dictionary else {}
+	if objeto.is_empty():
+		var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
+		# Las recompensas canónicas suelen guardar solo el UUID del item.
+		# Resolverlo contra el catálogo ya cargado evita duplicar datos de Supabase.
+		if not item_id.is_empty() and _world_items != null and is_instance_valid(_world_items):
+			objeto = _world_items.buscar_item_por_id(item_id)
 	if objeto.is_empty():
 		var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
 		var nombre := str(datos.get("nombre", "")).strip_edges()
