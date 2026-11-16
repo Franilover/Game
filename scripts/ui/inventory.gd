@@ -585,19 +585,25 @@ func _aplicar_fondos_inventario() -> void:
 		bloque_detalle.add_theme_constant_override("margin_right", 7)
 		bloque_detalle.add_theme_constant_override("margin_bottom", 6)
 
-	# El icono ampliado conserva el marco de slot; la representación del
-	# personaje usa la superficie de botón para distinguirla del equipamiento.
-	var estilo_slot := PIXEL_UI_THEME.slot_style(false)
-	if estilo_slot != null and is_instance_valid(item_icon_frame):
-		item_icon_frame.add_theme_stylebox_override("panel", estilo_slot)
+	# El nombre y el sprite quedan integrados directamente en el bloque grande:
+	# no deben dibujar superficies individuales encima del fondo principal.
+	if is_instance_valid(item_name):
+		item_name.flat = true
+		var sin_fondo := StyleBoxEmpty.new()
+		item_name.add_theme_stylebox_override("normal", sin_fondo)
+		item_name.add_theme_stylebox_override("hover", sin_fondo)
+		item_name.add_theme_stylebox_override("pressed", sin_fondo)
+		item_name.add_theme_stylebox_override("focus", sin_fondo)
+	if is_instance_valid(item_icon_frame):
+		item_icon_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		item_icon_frame.add_theme_constant_override("margin_left", 4)
+		item_icon_frame.add_theme_constant_override("margin_top", 4)
+		item_icon_frame.add_theme_constant_override("margin_right", 4)
+		item_icon_frame.add_theme_constant_override("margin_bottom", 4)
 	if is_instance_valid(skin_panel):
 		skin_panel.add_theme_stylebox_override("panel", estilo_boton)
-	for panel in [item_icon_frame, skin_panel]:
-		if is_instance_valid(panel):
-			panel.add_theme_constant_override("margin_left", 4)
-			panel.add_theme_constant_override("margin_top", 4)
-			panel.add_theme_constant_override("margin_right", 4)
-			panel.add_theme_constant_override("margin_bottom", 4)
+		for margen in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
+			skin_panel.add_theme_constant_override(margen, 4)
 
 
 func _crear_slots() -> void:
