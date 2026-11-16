@@ -191,75 +191,19 @@ func _renderizar_recetas() -> void:
 		return
 
 	_estado.text = ""
-	var grupos: Dictionary = {}
-	var recetas_visibles := 0
+	# Todas las recetas comparten una sola cuadrícula para formar filas
+	# continuas, sin separar los objetos por categorías.
+	var rejilla := GridContainer.new()
+	rejilla.name = "RecipeGrid"
+	rejilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rejilla.add_theme_constant_override("h_separation", 6)
+	rejilla.add_theme_constant_override("v_separation", 6)
+	_lista.add_child(rejilla)
 
 	for receta in _recetas:
-		var resultado_variant: Variant = receta.get("resultado", {})
-		var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
-		var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
-		var categoria_variant: Variant = item_resultado.get("categoria", {})
-		var categoria: Dictionary = categoria_variant as Dictionary if categoria_variant is Dictionary else {}
-		# La categoría del catálogo mejora la agrupación, pero no debe decidir
-		# si una receta existe: el catálogo o el sprite pueden llegar después.
-		var clave := str(categoria.get("clave", ""))
-		var nombre_categoria := str(categoria.get("nombre", ""))
-		if clave.is_empty():
-			clave = str(receta.get("categoria", "sin_categoria")).strip_edges().to_lower()
-		if nombre_categoria.is_empty():
-			nombre_categoria = str(receta.get("categoria", "Otras recetas")).replace("_", " ").capitalize()
-		if clave.is_empty():
-			clave = "sin_categoria"
-		if not grupos.has(clave):
-			grupos[clave] = {
-				"nombre": nombre_categoria,
-				"orden": int(categoria.get("orden", 999)),
-				"recetas": []
-			}
-		(grupos[clave]["recetas"] as Array).append(receta)
-		recetas_visibles += 1
+		_crear_tarjeta_receta(receta, rejilla)
 
-	var claves: Array = grupos.keys()
-	claves.sort_custom(func(a: Variant, b: Variant) -> bool:
-		var grupo_a: Dictionary = grupos[a]
-		var grupo_b: Dictionary = grupos[b]
-		var orden_a := int(grupo_a.get("orden", 999))
-		var orden_b := int(grupo_b.get("orden", 999))
-		if orden_a == orden_b:
-			return str(grupo_a.get("nombre", a)) < str(grupo_b.get("nombre", b))
-		return orden_a < orden_b
-	)
-
-	for clave_variant in claves:
-		var grupo: Dictionary = grupos[clave_variant]
-		var seccion := VBoxContainer.new()
-		seccion.name = "Categoria_" + str(clave_variant)
-		seccion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		seccion.add_theme_constant_override("separation", 4)
-		_lista.add_child(seccion)
-
-		var encabezado := Button.new()
-		encabezado.name = "CategoryHeading"
-		encabezado.text = str(grupo.get("nombre", "Sin categoría")).to_upper()
-		encabezado.custom_minimum_size = Vector2(0, 24)
-		encabezado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		encabezado.focus_mode = Control.FOCUS_NONE
-		encabezado.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		seccion.add_child(encabezado)
-		PIXEL_UI_THEME.apply(encabezado, false)
-
-		var rejilla := GridContainer.new()
-		rejilla.name = "RecipeGrid"
-		rejilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		rejilla.add_theme_constant_override("h_separation", 6)
-		rejilla.add_theme_constant_override("v_separation", 6)
-		seccion.add_child(rejilla)
-		for receta_variant in grupo.get("recetas", []) as Array:
-			if receta_variant is Dictionary:
-				_crear_tarjeta_receta(receta_variant as Dictionary, rejilla)
-
-	if recetas_visibles == 0:
-		_estado.text = "No hay recetas disponibles."
+	_ajustar_columnas_recetas()
 
 
 func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
@@ -293,32 +237,17 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	if textura_resultado != null:
 		var icono := TextureRect.new()
 		icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		icono.offset_left = 7
-		icono.offset_top = 4
-		icono.offset_right = -7
-		icono.offset_bottom = -15
-		icono.custom_minimum_size = Vector2(42, 36)
+		icono.offset_left = 5
+		icono.offset_top = 5
+		icono.offset_right = -5
+		icono.offset_bottom = -5
+		icono.custom_minimum_size = Vector2(54, 54)
 		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		icono.texture = textura_resultado
 		panel.add_child(icono)
-
-	var nombre_label := Label.new()
-	nombre_label.name = "RecipeItemName"
-	nombre_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	nombre_label.offset_left = 2
-	nombre_label.offset_top = 2 if textura_resultado == null else 39
-	nombre_label.offset_right = -2
-	nombre_label.offset_bottom = -2
-	nombre_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	nombre_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	nombre_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	nombre_label.text = nombre_resultado
-	nombre_label.add_theme_font_size_override("font_size", 8 if textura_resultado != null else 9)
-	nombre_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(nombre_label)
 
 
 
