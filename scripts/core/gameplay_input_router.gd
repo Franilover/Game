@@ -24,6 +24,8 @@ const TIEMPO_CONSUMO_ALIMENTO := 1.0
 var _mano_consumo_activa: String = ""
 var _accion_consumo_activa: String = ""
 var _tiempo_consumo: float = 0.0
+var _slot_consumo: int = -1
+var _identidad_consumo: String = ""
 var _barra_consumo: ProgressBar = null
 var _etiqueta_consumo: Label = null
 
@@ -42,6 +44,14 @@ func _process(delta: float) -> void:
 		_cancelar_consumo()
 		return
 	if not _inventory_ui.puede_consumir_alimento_en_mano(_mano_consumo_activa):
+		_cancelar_consumo()
+		return
+	if _inventory_ui.obtener_indice_mano_activa(_mano_consumo_activa) != _slot_consumo:
+		_cancelar_consumo()
+		return
+	var objeto_actual := _inventory_ui.obtener_objeto_mano_activa(_mano_consumo_activa)
+	var identidad_actual := str(objeto_actual.get("item_id", objeto_actual.get("id", objeto_actual.get("nombre", ""))))
+	if identidad_actual != _identidad_consumo:
 		_cancelar_consumo()
 		return
 
@@ -101,7 +111,12 @@ func _iniciar_consumo(mano: String, accion: String) -> void:
 	_cancelar_consumo()
 	_mano_consumo_activa = mano
 	_accion_consumo_activa = accion
+	_slot_consumo = _inventory_ui.obtener_indice_mano_activa(mano) if is_instance_valid(_inventory_ui) else -1
+	var objeto := _inventory_ui.obtener_objeto_mano_activa(mano) if is_instance_valid(_inventory_ui) else {}
+	_identidad_consumo = str(objeto.get("item_id", objeto.get("id", objeto.get("nombre", ""))))
 	_tiempo_consumo = 0.0
+	_slot_consumo = -1
+	_identidad_consumo = ""
 	if is_instance_valid(_barra_consumo):
 		_barra_consumo.value = 0.0
 		(_barra_consumo.get_parent() as Control).visible = true
