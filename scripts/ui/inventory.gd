@@ -599,7 +599,7 @@ func _aplicar_fondos_inventario() -> void:
 		etiqueta.add_theme_constant_override("h_separation", 0)
 		etiqueta.add_theme_constant_override("outline_size", 0)
 	if is_instance_valid(item_icon_frame):
-		item_icon_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		item_icon_frame.add_theme_stylebox_override("panel", estilo_boton)
 		for margen in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
 			item_icon_frame.add_theme_constant_override(margen, 4)
 	if is_instance_valid(description_panel):
