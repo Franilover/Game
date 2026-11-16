@@ -16,6 +16,7 @@ var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
 var _origen_misiones: Dictionary = {}
 var _recompensas_reclamadas: Dictionary = {}
+var _entrega_recompensas_en_curso: bool = false
 var _entity_manager: WorldEntityManager = null
 var _world_data: WorldDataService = null
 
@@ -654,7 +655,13 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 ## Entrega las recompensas de una misión de forma idempotente.
 ## Las recompensas de objeto deben incluir datos.item_data (definición de runtime)
 ## o los campos equivalentes dentro de datos. El inventario confirma cada inserción.
+func esta_entregando_recompensas() -> bool:
+	return _entrega_recompensas_en_curso
+
+
 func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> bool:
+	if _entrega_recompensas_en_curso:
+		return false
 	if inventario == null or not is_instance_valid(inventario):
 		return false
 	var estado_actual := str(_estado.get(mision_id, ""))
@@ -665,6 +672,21 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 	var mision := obtener_mision(mision_id)
 	if mision.is_empty():
 		return false
+
+	# La restauración transaccional del inventario también emite
+	# inventory_changed. Mantener este bloqueo durante toda la operación evita
+	# que Main programe otro reintento por el mismo rollback.
+	_entrega_recompensas_en_curso = true
+	var resultado := _entregar_recompensas_transaccional(mision_id, mision, inventario)
+	_entrega_recompensas_en_curso = false
+	return resultado
+
+
+func _entregar_recompensas_transaccional(
+	mision_id: String,
+	mision: Dictionary,
+	inventario: GarliaInventory
+) -> bool:
 	var recompensas_variant: Variant = mision.get("recompensas", [])
 	var recompensas: Array = recompensas_variant as Array if recompensas_variant is Array else []
 	var inventario_anterior := inventario.serializar_estado_partida()
@@ -687,7 +709,6 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 	if cantidad_entregada > 0:
 		Events.notification_pushed.emit("Recompensas recibidas: " + str(mision.get("nombre", "Misión")))
 	return true
-
 
 ## Reintenta entregas que quedaron pendientes cuando el inventario vuelve a tener espacio.
 func reintentar_recompensas_pendientes(inventario: GarliaInventory) -> void:
