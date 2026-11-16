@@ -74,7 +74,10 @@ func usar_objeto_mano(mano: String, usuario: Player = null, objeto_override: Dic
 func es_alimento_en_mano(mano: String) -> bool:
 	if mano not in ["izquierda", "derecha"]:
 		return false
-	var objeto := obtener_objeto_mano_activa(mano)
+	return _es_categoria_alimento(obtener_objeto_mano_activa(mano))
+
+
+func _es_categoria_alimento(objeto: Dictionary) -> bool:
 	if objeto.is_empty():
 		return false
 	var categoria_variant: Variant = objeto.get("categoria", {})
@@ -128,8 +131,11 @@ func _usar_objeto_en_indice(
 	if usuario == null or not is_instance_valid(usuario):
 		return false
 
+	var es_alimento := _es_categoria_alimento(objeto)
 	var efectos_aplicados := _aplicar_efectos_uso(uso, usuario)
-	if efectos_aplicados <= 0:
+	# Comer consume el alimento aunque la vida, el Eterium o la stamina
+	# ya estén al máximo. Los efectos se aplican solo cuando hay margen.
+	if efectos_aplicados <= 0 and not es_alimento:
 		return false
 
 	var retirado := false
@@ -146,8 +152,10 @@ func _usar_objeto_en_indice(
 		return false
 
 	Events.notification_pushed.emit(
-		"Usaste " + str(objeto.get("nombre", "Objeto"))
+		("Comiste " if es_alimento else "Usaste ") + str(objeto.get("nombre", "Objeto"))
 	)
+	if es_alimento and usuario.has_method("reproducir_animacion_comer"):
+		usuario.call("reproducir_animacion_comer", objeto)
 	if mano in ["izquierda", "derecha"]:
 		_emitir_mano_objeto_cambiado(mano)
 	return true
