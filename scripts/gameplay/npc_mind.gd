@@ -277,7 +277,10 @@ func _calcular_afinidad_objetivos(estado: Dictionary, actividad: Dictionary, cla
 	var objetivos_variant: Variant = estado.get("objetivos", [])
 	if not objetivos_variant is Array:
 		return 0.0
-	var etiquetas_actividad: Array = actividad.get("etiquetas", []) if actividad.get("etiquetas", []) is Array else []
+	var etiquetas_actividad: Array = []
+	var etiquetas_variant: Variant = actividad.get("etiquetas", [])
+	if etiquetas_variant is Array:
+		etiquetas_actividad = etiquetas_variant
 	var mejor_puntuacion := 0.0
 	for objetivo_variant in objetivos_variant:
 		if not objetivo_variant is Dictionary:
@@ -314,7 +317,9 @@ func _calcular_afinidad_emocional(estado: Dictionary, actividad: Dictionary) -> 
 	if not afinidades_variant is Dictionary:
 		return 0.0
 	var emocion_variant: Variant = estado.get("estado_emocional", {})
-	var emocion: Dictionary = emocion_variant if emocion_variant is Dictionary else {}
+	var emocion: Dictionary = {}
+	if emocion_variant is Dictionary:
+		emocion = emocion_variant
 	var valores_actuales := {
 		"animo": (clampf(float(emocion.get("animo", 0.0)), -1.0, 1.0) + 1.0) * 0.5,
 		"estres": clampf(float(emocion.get("estres", 0.0)), 0.0, 1.0),
