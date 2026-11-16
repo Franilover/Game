@@ -43,6 +43,9 @@ func _run() -> void:
 	var saludo_en_transito := dialogo._obtener_texto_rutina_personaje("bruna", "rutina", "caminar", "la plaza", true, false, false)
 	if saludo_en_transito.contains("no puedo parar") or saludo_en_transito.contains("ocupado") or not (saludo_en_transito.contains("¿Qué necesitas?") or saludo_en_transito.contains("¿qué pasa?")):
 		errores.append("El saludo de tránsito de Bruna no suena como una interrupción natural.")
+	var saludo_en_edificio := dialogo._obtener_texto_rutina_personaje("bruna", "rutina", "caminar", "la plaza", true, true, false)
+	if saludo_en_edificio.contains("plaza") or saludo_en_edificio.contains("Voy hacia") or saludo_en_edificio.contains("Tengo que llegar"):
+		errores.append("Un NPC que camina dentro de un edificio anunció un destino exterior.")
 
 	if not dialogo._dialogo_requiere_lectura_lenta():
 		errores.append("Un NPC que camina no activa el ritmo de lectura pausado.")
@@ -68,6 +71,12 @@ func _run() -> void:
 	var despedida_en_transito := dialogo._obtener_reaccion_despedida_rutina()
 	if not despedida_en_transito.contains("Voy a seguir hacia la plaza"):
 		errores.append("La despedida de un NPC que camina en tránsito no debe cambiar a un encargo laboral.")
+	dialogo._contexto_rutina_conversacion["dentro_edificio"] = true
+	var despedida_en_edificio := dialogo._obtener_reaccion_despedida_rutina()
+	if despedida_en_edificio.contains("plaza") or despedida_en_edificio.contains("Voy a seguir hacia"):
+		errores.append("La despedida de un NPC que camina dentro del edificio anunció un destino exterior.")
+	if not dialogo._obtener_frase_despedida_jugador_rutina().contains("por aquí"):
+		errores.append("La despedida del jugador no reconoce que el NPC camina dentro del edificio.")
 
 	# Al cerrar el selector Hablar/Preguntar debe reaparecer el menú social
 	# principal, incluso después de una conversación cotidiana.
