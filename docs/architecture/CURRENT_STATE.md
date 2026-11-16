@@ -751,3 +751,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadió `SpeciesCatalogRetry` para verificar caché, emisión de catálogo y programación de recuperación después de una respuesta vacía.
 - CI Godot 4.7: **PASS**, run `43923629275`, 39 pasos completados sin fallos.
 - Esta prueba cubre el manejo local de respuestas, no la llamada REST en red ni la visualización en un dispositivo. Sigue pendiente validar el selector dentro del flujo real de creación de personaje en Android/PC.
+
+
+## Sexagésima sexta barrida — Cargas después de restaurar sesión
+
+- `GarliaAuth` restaura la sesión de forma asíncrona. Los primeros intentos de `GarliaSupabaseClient` para catálogos protegidos podían ocurrir antes de que el refresh terminara; al iniciar sesión manualmente tampoco se repetían automáticamente todas esas cargas.
+- `GarliaSupabaseClient.configurar_dependencias()` ahora escucha `session_restored` y `login_succeeded`. Si la sesión ya está autenticada al inyectar la dependencia, también programa la carga.
+- Al quedar disponible la autenticación se solicitan Eterium runtime, reglas Eterium por especie, reglas sociales, preferencias de regalos, relaciones ecológicas y reinos. Cada HTTPRequest comprueba que no haya otra petición en curso antes de iniciar una nueva.
+- Se añadió `AuthenticatedCatalogReload`, que verifica el caso de sesión ya autenticada, la señal de restauración y el login normal, comprobando que cada catálogo se solicite una sola vez por evento.
+- CI Godot 4.7: **PASS**, run `43924866198`, 40 pasos completados sin fallos.
+- La prueba valida la coordinación de señales con un fixture, no el refresh real ni las respuestas de red. Falta comprobar una sesión persistida real y la disponibilidad efectiva de cada endpoint.
