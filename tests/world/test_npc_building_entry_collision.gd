@@ -11,7 +11,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
-	var zona := ReinoTorresScript.new() as ReinoTorres
+	var zona := ReinoTorresScript.new() as Node2D
 	var sistema := NPCScheduleScript.new() as NPCScheduleSystem
 	sistema._zona = zona
 	var npc := CreatureScript.new() as Creature
