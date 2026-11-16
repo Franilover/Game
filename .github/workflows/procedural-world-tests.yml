@@ -280,6 +280,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run NPC mind core regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/persistence/test_npc_mind_core.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NPCMindCore: FAIL:' <<<"$output"; then
+            echo "NPC mind core regression test reported errors."
+            exit 1
+          fi
+
       - name: Run mission manager persistence contract test
         shell: bash
         run: |
