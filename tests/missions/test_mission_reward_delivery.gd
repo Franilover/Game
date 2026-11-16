@@ -3,6 +3,7 @@ extends Node
 const MissionManagerScript = preload("res://scripts/gameplay/mission_manager.gd")
 const InventoryScene = preload("res://scenes/ui/inventory.tscn")
 const WorldItemsScript = preload("res://scripts/infrastructure/garlia_world_items.gd")
+const WorldDataScript = preload("res://scripts/world/world_data.gd")
 
 
 func _ready() -> void:
@@ -150,7 +151,8 @@ func _probar_resolucion_item_canonico(errores: Array[String]) -> void:
 		"datos": {}
 	}
 	var gestor := _crear_gestor([recompensa])
-	gestor.configurar_dependencias(null, null, world_items)
+	var world_data := WorldDataScript.new() as WorldDataService
+	gestor.configurar_dependencias(null, world_data, world_items)
 	var mision := gestor.obtener_mision("mision_recompensa_test")
 	var recompensas: Array = mision.get("recompensas", [])
 	var objeto := gestor._construir_objeto_recompensa(recompensas[0] as Dictionary) if not recompensas.is_empty() else {}
