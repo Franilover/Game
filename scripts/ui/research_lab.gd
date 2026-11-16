@@ -5,10 +5,10 @@ extends CanvasLayer
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 const PROCEDIMIENTOS_POR_ESTACION: Dictionary = {
-	"examen": ["Examinar", "Medir", "Comparar"],
-	"mezclas": ["Mezclar", "Disolver", "Ensamblar"],
+	"examen": ["Examinar", "Medir"],
+	"mezclas": ["Preparar muestra"],
 	"termica": ["Calentar", "Enfriar", "Fundir"],
-	"observacion": ["Observar estructura", "Comparar"],
+	"observacion": ["Observar estructura"],
 	"eterium": ["Observar Eterium", "Aplicar Eterium"]
 }
 
@@ -25,13 +25,12 @@ const TITULOS_ESTACION: Dictionary = {
 @onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
 @onready var _items_columna: VBoxContainer = $Panel/Margin/Column/Body/ItemsColumn/ItemScroll/ItemsList
 @onready var _procedimiento: OptionButton = $Panel/Margin/Column/Body/ProcedureColumn/Procedure
-@onready var _seleccion_label: Label = $Panel/Margin/Column/Body/ProcedureColumn/Selection
 @onready var _resultado_label: Label = $Panel/Margin/Column/Body/ProcedureColumn/Result
 @onready var _boton_ejecutar: Button = $Panel/Margin/Column/Body/ProcedureColumn/Run
 
 var _inventario: InventoryController = null
 var _estacion_id := "examen"
-var _seleccionados: Array[int] = []
+var _indice_seleccionado := -1
 var _botones_items: Dictionary = {}
 
 
@@ -55,7 +54,7 @@ func _crear_interfaz() -> void:
 	for nombre_procedimiento in PROCEDIMIENTOS_POR_ESTACION[_estacion_id]:
 		_procedimiento.add_item(str(nombre_procedimiento))
 	_procedimiento.select(0)
-	_resultado_label.text = "El resultado de la prueba aparecerá aquí."
+	_resultado_label.text = ""
 	_cargar_objetos()
 	PIXEL_UI_THEME.apply(_panel)
 
@@ -67,7 +66,7 @@ func _cargar_objetos() -> void:
 		_items_columna.remove_child(hijo)
 		hijo.queue_free()
 	_botones_items.clear()
-	_seleccionados.clear()
+	_indice_seleccionado = -1
 
 	if not is_instance_valid(_inventario):
 		var aviso := Label.new()
@@ -106,46 +105,32 @@ func _cargar_objetos() -> void:
 
 func _alternar_seleccion(indice: int, boton: Button) -> void:
 	if boton.button_pressed:
-		if _seleccionados.size() >= 4:
-			boton.button_pressed = false
-			Events.notification_pushed.emit("La estación admite hasta cuatro elementos por prueba.")
-			return
-		if not _seleccionados.has(indice):
-			_seleccionados.append(indice)
+		for otro_indice in _botones_items:
+			if int(otro_indice) != indice:
+				var otro_boton: Button = _botones_items[otro_indice]
+				otro_boton.button_pressed = false
+		_indice_seleccionado = indice
 	else:
-		_seleccionados.erase(indice)
-	_actualizar_seleccion()
-
-
-func _actualizar_seleccion() -> void:
-	if is_instance_valid(_seleccion_label):
-		_seleccion_label.text = "Elementos seleccionados: %d/4" % _seleccionados.size()
+		_indice_seleccionado = -1
 
 
 func _ejecutar_prueba() -> void:
 	if not is_instance_valid(_inventario):
 		_resultado_label.text = "No se pudo acceder al inventario."
 		return
-
-	var procedimiento := _procedimiento.get_item_text(_procedimiento.selected).strip_edges()
-	var requiere_varios := procedimiento in ["Comparar", "Mezclar", "Disolver", "Ensamblar"]
-	var minimo := 2 if requiere_varios else 1
-	if _seleccionados.size() < minimo:
-		_resultado_label.text = "Selecciona al menos %d elemento(s) para este procedimiento." % minimo
+	if _indice_seleccionado < 0:
+		_resultado_label.text = "Selecciona un objeto."
 		return
 
-	var objetos: Array[Dictionary] = []
-	var nombres: Array[String] = []
-	for indice in _seleccionados:
-		var objeto := _inventario.obtener_item(indice)
-		if objeto.is_empty():
-			_resultado_label.text = "El inventario cambió. Vuelve a seleccionar los elementos."
-			_cargar_objetos()
-			return
-		objetos.append(objeto)
-		nombres.append(str(objeto.get("nombre", "Objeto")))
+	var procedimiento := _procedimiento.get_item_text(_procedimiento.selected).strip_edges()
+	var objeto := _inventario.obtener_item(_indice_seleccionado)
+	if objeto.is_empty():
+		_resultado_label.text = "El inventario cambió. Vuelve a seleccionar el objeto."
+		_cargar_objetos()
+		return
 
-	_resultado_label.text = _describir_resultado_preliminar(procedimiento, objetos, nombres)
+	var nombre := str(objeto.get("nombre", "Objeto"))
+	_resultado_label.text = _describir_resultado_preliminar(procedimiento, [objeto], [nombre])
 
 
 func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dictionary], nombres: Array[String]) -> String:
@@ -162,16 +147,6 @@ func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dicti
 		resultado += " La observación no modifica el objeto."
 		return resultado
 
-	if procedimiento == "Comparar":
-		var resumen: Array[String] = []
-		for objeto in objetos:
-			var categoria := _obtener_categoria(objeto)
-			var detalle := str(objeto.get("nombre", "Objeto"))
-			if not categoria.is_empty():
-				detalle += " (%s)" % categoria
-			resumen.append(detalle)
-		return "Comparas %s. La estación permite revisar sus diferencias visibles y sus datos conocidos. No se han alterado las muestras." % _unir_textos(resumen)
-
 	return "La prueba con %s ha terminado. Todavía no hay una reacción definida para esta combinación y procedimiento. Los elementos se conservaron intactos." % _unir_textos(nombres)
 
 
@@ -182,15 +157,6 @@ func _obtener_categoria(objeto: Dictionary) -> String:
 	if categoria is String and not str(categoria).strip_edges().is_empty():
 		return str(categoria).strip_edges()
 	return str(objeto.get("categoria_nombre", objeto.get("categoria_clave", ""))).strip_edges()
-
-
-func _unir_textos(elementos: Array[String]) -> String:
-	var resultado := ""
-	for elemento in elementos:
-		if not resultado.is_empty():
-			resultado += ", "
-		resultado += elemento
-	return resultado
 
 
 func _input(event: InputEvent) -> void:
