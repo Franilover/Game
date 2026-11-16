@@ -2,17 +2,39 @@ extends Node
 
 const MindScript = preload("res://scripts/gameplay/npc_mind.gd")
 const ScheduleScript = preload("res://scripts/world/npc_schedule_system.gd")
+const RelationshipScript = preload("res://scripts/gameplay/relationship_system.gd")
 
 
 class FakeGameState:
 	extends Node
 	var saved: Dictionary = {}
+	var conversations: Dictionary = {}
+	var memories: Dictionary = {}
+	var social_relations: Dictionary = {}
 
 	func obtener_mentes_npc() -> Dictionary:
 		return saved.duplicate(true)
 
 	func guardar_mentes_npc(mentes: Dictionary) -> void:
 		saved = mentes.duplicate(true)
+
+	func obtener_conversaciones_npc() -> Dictionary:
+		return conversations.duplicate(true)
+
+	func guardar_conversaciones_npc(value: Dictionary) -> void:
+		conversations = value.duplicate(true)
+
+	func obtener_recuerdos_sociales() -> Dictionary:
+		return memories.duplicate(true)
+
+	func guardar_recuerdos_sociales(value: Dictionary) -> void:
+		memories = value.duplicate(true)
+
+	func obtener_relaciones_sociales() -> Dictionary:
+		return social_relations.duplicate(true)
+
+	func guardar_relaciones_sociales(value: Dictionary) -> void:
+		social_relations = value.duplicate(true)
 
 
 func _ready() -> void:
@@ -111,6 +133,45 @@ func _run() -> void:
 	if cantidad_preferencias != 1:
 		errores.append("Las preferencias aprendidas no se persistieron correctamente.")
 
+	var relationship := RelationshipScript.new() as RelationshipSystemService
+	relationship._game_state = game_state
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "festival_plaza",
+		"tipo": "noticia",
+		"compartible": true,
+		"titulo": "Preparativos del festival",
+		"fuente": "ivo"
+	})
+	if relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
+		errores.append("Un NPC conoció una noticia que nunca recibió.")
+	if not relationship.transmitir_conocimiento_npc("ivo", "mara", "festival_plaza", {"motivo": "test"}):
+		errores.append("No se pudo transmitir una noticia entre habitantes.")
+	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
+		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
+
+	var promesa_id := relationship.registrar_promesa_entre_npc("ivo", "mara", {
+		"clave": "devolver_libro",
+		"descripcion": "Devolver el libro prestado"
+	})
+	if promesa_id.is_empty() or relationship.obtener_promesas_pendientes_npc("ivo", "mara").size() != 1:
+		errores.append("La promesa entre habitantes no quedó pendiente.")
+	if not relationship.resolver_promesa_entre_npc(promesa_id, true):
+		errores.append("No se pudo cumplir una promesa entre habitantes.")
+	if not relationship.obtener_promesas_pendientes_npc("ivo", "mara").is_empty():
+		errores.append("Una promesa cumplida siguió pendiente.")
+
+	var asunto_id := relationship.registrar_asunto_pendiente_npc("ivo", {
+		"clave": "reparar_carro",
+		"personaje_relacionado": "mara",
+		"descripcion": "Necesita ayuda con una rueda"
+	})
+	if asunto_id.is_empty() or relationship.obtener_asuntos_pendientes_npc("ivo", "mara").size() != 1:
+		errores.append("El asunto pendiente no se conservó.")
+	if not relationship.resolver_asunto_pendiente_npc(asunto_id):
+		errores.append("No se pudo resolver el asunto pendiente.")
+	if not relationship.obtener_asuntos_pendientes_npc("ivo", "mara").is_empty():
+		errores.append("Un asunto resuelto siguió pendiente.")
+
 	var schedule := ScheduleScript.new() as NPCScheduleSystem
 	var ocio_ivo: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "ivo")
 	var ocio_mara: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "mara")
@@ -130,6 +191,7 @@ func _run() -> void:
 		if not actividades_mara.has("pasear_sin_prisa") or actividades_mara.has("sentarse_un_rato"):
 			errores.append("El perfil de ocio de Mara no conserva sus alternativas propias.")
 	schedule.free()
+	relationship.free()
 	mind.free()
 	mind_recargada.free()
 	if not errores.is_empty():
