@@ -247,6 +247,10 @@ func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
 		var otro := nodo as Creature
 		if not otro.is_alive or otro.get_parent() != npc_actual.get_parent():
 			continue
+		# Quienes van al mismo edificio pueden cruzarse por el umbral.
+		# La evitación lateral entre ellos los hacía empujarse fuera de la puerta.
+		if _comparten_entrada_destino(npc_actual, otro):
+			continue
 
 		var diferencia := npc_actual.global_position - otro.global_position
 		var distancia := diferencia.length()
@@ -282,6 +286,21 @@ func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
 	if repulsion.length_squared() <= 0.001:
 		return direccion
 	return (direccion + repulsion.normalized() * 1.2).normalized()
+
+
+## Dos NPC que se dirigen al mismo edificio no deben apartarse mutuamente
+## durante la aproximación: sus cuerpos no bloquean el paso y ambos pueden
+## alcanzar el umbral sin quedar atrapados en un rodeo lateral.
+func _comparten_entrada_destino(a: Creature, b: Creature) -> bool:
+	if not is_instance_valid(a) or not is_instance_valid(b):
+		return false
+	if not bool(a.get_meta("rutina_en_transito", false)) or not bool(b.get_meta("rutina_en_transito", false)):
+		return false
+	if not bool(a.get_meta("rutina_destino_es_edificio", false)) or not bool(b.get_meta("rutina_destino_es_edificio", false)):
+		return false
+	var destino_a := str(a.get_meta("rutina_edificio_objetivo", "")).strip_edges()
+	var destino_b := str(b.get_meta("rutina_edificio_objetivo", "")).strip_edges()
+	return not destino_a.is_empty() and destino_a == destino_b
 
 
 ## Si el cuerpo deja de avanzar, alterna el rodeo sin cancelar su destino.
