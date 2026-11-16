@@ -42,7 +42,19 @@ func _ready() -> void:
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
 	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
 	call_deferred("_ajustar_columnas_recetas")
-	_cargar_recetas()
+	# GarliaAuth restaura la sesión de forma asíncrona al iniciar el juego.
+	# Esperamos ese resultado para no consultar recetas con un contexto
+	# anónimo mientras la sesión del jugador todavía se está recuperando.
+	if GarliaAuth.esta_restaurando_sesion():
+		if not GarliaAuth.session_restore_finished.is_connected(_al_finalizar_restauracion_auth):
+			GarliaAuth.session_restore_finished.connect(_al_finalizar_restauracion_auth, CONNECT_ONE_SHOT)
+	else:
+		_cargar_recetas()
+
+
+func _al_finalizar_restauracion_auth() -> void:
+	if is_inside_tree():
+		_cargar_recetas()
 
 
 
