@@ -204,7 +204,6 @@ func _probar_integracion_fisica(errores: Array[String]) -> void:
 func _textura_coincide_con_archivo(textura: Texture2D, ruta: String) -> bool:
 	if textura == null:
 		return false
-	var imagen := Image.new()
-	if imagen.load(ruta) != OK:
-		return false
-	return textura.get_image().get_data() == imagen.get_data()
+	# Las texturas importadas pueden cambiar formato/comprensión respecto al PNG
+	# fuente; comprobar la ruta del recurso evita comparar buffers distintos.
+	return textura.resource_path == ruta
