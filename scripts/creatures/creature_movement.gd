@@ -84,7 +84,7 @@ func procesar(delta: float) -> void:
 	# Las rutinas de NPC usan rutas calculadas sobre la geometría estática.
 	# Este control tiene prioridad sobre la movilidad autónoma de criaturas.
 	if _control_rutina:
-		_procesar_ruta_rutina()
+		_procesar_ruta_rutina(delta)
 		return
 
 	# Supabase es la fuente canónica: una criatura configurada como inmóvil
@@ -192,7 +192,7 @@ func detener_por_rutina() -> void:
 		creature.velocity = Vector2.ZERO
 
 
-func _procesar_ruta_rutina() -> void:
+func _procesar_ruta_rutina(delta: float) -> void:
 	if creature == null or not is_instance_valid(creature):
 		return
 	if _indice_ruta_rutina >= _ruta_rutina.size() or move_speed <= 0.0:
@@ -211,7 +211,7 @@ func _procesar_ruta_rutina() -> void:
 
 	var direccion := creature.global_position.direction_to(destino)
 	direccion = _direccion_evitar_superposicion_npcs(direccion)
-	direccion = _aplicar_seguro_atasco_npc(direccion, get_physics_process_delta_time())
+	direccion = _aplicar_seguro_atasco_npc(direccion, delta)
 	creature.velocity = direccion * move_speed
 	creature.move_and_slide()
 
