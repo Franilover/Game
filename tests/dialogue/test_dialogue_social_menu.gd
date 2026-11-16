@@ -34,7 +34,7 @@ func _run() -> void:
 		"en_transito": false
 	}
 	var despedida_caminando := dialogo._obtener_reaccion_despedida_rutina()
-	if not despedida_caminando.contains("No te entretengo más"):
+	if not despedida_caminando.contains("Voy a seguir hacia la plaza"):
 		errores.append("La despedida de un NPC que camina no reconoce que sólo está desplazándose.")
 	if not dialogo._actividad_es_desplazamiento("caminar") or dialogo._actividad_impide_una_conversacion_larga("caminar"):
 		errores.append("Caminar se clasificó como una actividad que impide conversar.")
