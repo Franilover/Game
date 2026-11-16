@@ -654,7 +654,7 @@ position = Vector2(-1180, 780)
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_06" type="Node2D" parent="."]
-position = Vector2(-920, 720)
+position = Vector2(-920, 920)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_06"]
 position = Vector2(0, 54)
