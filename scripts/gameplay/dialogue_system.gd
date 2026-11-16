@@ -1457,7 +1457,7 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 		},
 		{
 			"texto": "Despedirme con amabilidad",
-			"jugador": "No quiero interrumpirte más. Nos vemos luego.",
+			"jugador": _obtener_frase_despedida_jugador_rutina(),
 			"respuesta": _obtener_reaccion_despedida_rutina(),
 		}
 	]
@@ -1561,6 +1561,10 @@ func _obtener_reaccion_despedida_rutina() -> String:
 	var contexto := _contexto_rutina_conversacion
 	var actividad_contextual := str(contexto.get("actividad", "")).strip_edges().to_lower()
 	var destino_contextual := str(contexto.get("destino", "el pueblo"))
+	if _actividad_es_desplazamiento(actividad_contextual):
+		if destino_contextual == "su próximo destino":
+			return "Voy a seguir con mi recorrido. Nos vemos luego."
+		return "Voy a seguir hacia %s. Nos vemos luego." % destino_contextual
 	if bool(contexto.get("en_transito", false)):
 		match nombre:
 			"elian":
@@ -1589,10 +1593,6 @@ func _obtener_reaccion_despedida_rutina() -> String:
 				return "Voy a terminar estas notas. Hablamos cuando pueda apartar la vista de ellas."
 			_:
 				return "Tengo que seguir con lo que estaba haciendo. Hablamos luego."
-	if _actividad_es_desplazamiento(actividad_contextual):
-		if destino_contextual == "su próximo destino":
-			return "Voy a seguir con mi recorrido. Nos vemos luego."
-		return "Voy a seguir hacia %s. Nos vemos luego." % destino_contextual
 	var relacion: Dictionary = {}
 	if relationship_system != null and is_instance_valid(_fuente):
 		relacion = relationship_system.obtener_relacion(_fuente.get_personaje_game_id())
