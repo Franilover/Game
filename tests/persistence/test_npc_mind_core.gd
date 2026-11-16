@@ -173,6 +173,45 @@ func _run() -> void:
 		errores.append("Un asunto resuelto siguió pendiente.")
 
 	var schedule := ScheduleScript.new() as NPCScheduleSystem
+	schedule._relationship_system = relationship
+	var promesa_motivo_id := relationship.registrar_promesa_entre_npc("ivo", "mara", {
+		"clave": "contar_noticia",
+		"descripcion": "Contar una noticia pendiente"
+	})
+	var relacion_social: Dictionary = relationship.obtener_relacion_entre_npc("ivo", "mara")
+	var motivo_promesa: Dictionary = schedule.call("_seleccionar_motivo_encuentro_social", "ivo", "mara", relacion_social)
+	if str(motivo_promesa.get("tipo", "")) != "cumplir_promesa" or str(motivo_promesa.get("promesa_id", "")) != promesa_motivo_id:
+		errores.append("El NPC no priorizó una promesa pendiente con su destinataria.")
+
+	relationship.registrar_asunto_pendiente_npc("ivo", {
+		"clave": "ayuda_herramienta",
+		"personaje_relacionado": "mara",
+		"descripcion": "Necesita ayuda con una herramienta"
+	})
+	relationship.resolver_promesa_entre_npc(promesa_motivo_id, true)
+	var motivo_asunto: Dictionary = schedule.call("_seleccionar_motivo_encuentro_social", "ivo", "mara", relacion_social)
+	if str(motivo_asunto.get("tipo", "")) != "resolver_asunto":
+		errores.append("El NPC no eligió resolver un asunto pendiente con la persona indicada.")
+
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "mercado_cerrado",
+		"tipo": "noticia",
+		"compartible": true,
+		"titulo": "El mercado cerrará temprano",
+		"fuente": "ivo"
+	})
+	relationship.resolver_asunto_pendiente_npc(str(motivo_asunto.get("asunto_id", "")), true)
+	var motivo_noticia: Dictionary = schedule.call("_seleccionar_motivo_encuentro_social", "ivo", "mara", relacion_social)
+	if str(motivo_noticia.get("tipo", "")) != "compartir_noticia" or str(motivo_noticia.get("clave_conocimiento", "")) != "mercado_cerrado":
+		errores.append("El NPC no eligió compartir una noticia que la otra persona desconoce.")
+
+	relationship.registrar_interaccion_entre_npc("ivo", "mara", {"tension": 22.0})
+	relationship.transmitir_conocimiento_npc("ivo", "mara", "mercado_cerrado", {"motivo": "test"})
+	var relacion_tensa: Dictionary = relationship.obtener_relacion_entre_npc("ivo", "mara")
+	var motivo_desacuerdo: Dictionary = schedule.call("_seleccionar_motivo_encuentro_social", "ivo", "mara", relacion_tensa)
+	if str(motivo_desacuerdo.get("tipo", "")) != "resolver_desacuerdo":
+		errores.append("Los NPC no detectaron un desacuerdo cuando no quedaban noticias pendientes.")
+
 	var ocio_ivo: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "ivo")
 	var ocio_mara: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "mara")
 	var opciones_ivo: Array = ocio_ivo.get("opciones", [])
