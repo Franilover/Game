@@ -2229,7 +2229,7 @@ func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
 		# AStar no devuelve puntos cuando origen y destino están en la misma
 		# celda. En ese caso aún puede faltar el pequeño tramo hasta el umbral.
 		if inicio_id == destino_id and origen.distance_to(destino) <= DISTANCIA_MAXIMA_UMBRAL:
-			return PackedVector2Array([destino])
+			return PackedVector2Array([_malla.get_point_position(destino_id)])
 		return PackedVector2Array()
 
 	var ruta := PackedVector2Array()
@@ -2237,8 +2237,8 @@ func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
 		if ruta.is_empty() and origen.distance_to(punto) <= DISTANCIA_LLEGADA:
 			continue
 		ruta.append(punto)
-	if ruta.is_empty() and origen.distance_to(destino) > DISTANCIA_LLEGADA:
-		ruta.append(destino)
+	if ruta.is_empty() and origen.distance_to(posicion_final) > DISTANCIA_LLEGADA:
+		ruta.append(posicion_final)
 	return ruta
 
 
