@@ -843,3 +843,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - La presentación no vuelve a aplicar amistad, confianza, promesas, asuntos ni transmisión de conocimientos: esos efectos ya pertenecen al cierre del objetivo social.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1717](https://github.com/Franilover/Game/actions/runs/43940597598). La importación/compilación y la suite de regresión pasaron.
 - Alcance actual: líneas breves escritas por tipo de motivo, sin generación de texto. Sigue pendiente revisar la presentación en una partida real, especialmente Android.
+
+## Variedad contextual de conversaciones sociales
+
+- Los diálogos ambientales autónomos disponen de tres variantes por motivo social y alternan con el historial de interacciones de cada pareja.
+- El nivel de confianza/amistad y la tensión orientan el tono: cercano, cordial o tenso.
+- Cada personaje aplica ajustes de voz propios, conservando el registro ya definido para Elian, Bruna, Darven, Saira, Narel, Mara, Ivo y Nima.
+- Las conversaciones de compañía pueden retomar una ayuda, una promesa cumplida, una noticia o una conversación previa de la pareja.
+- Las noticias incorporan el título que el NPC realmente conoce; se conserva la cautela cuando no está confirmado.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1719](https://github.com/Franilover/Game/actions/runs/43941877535).
