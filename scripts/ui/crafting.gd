@@ -95,7 +95,10 @@ func _cargar_recetas() -> void:
 	if resultado != OK:
 		_cargando = false
 		_estado.text = "No se pudieron cargar las recetas."
-		print("Crafting: error iniciando consulta → ", resultado)
+		push_error("Crafting[%s]: no se pudo iniciar GET de recetas → %s" % [str(get_instance_id()), str(resultado)])
+	else:
+		_estado.text = "Consultando recetas..."
+		print("Crafting[%s]: GET recetas iniciado. Auth=%s" % [str(get_instance_id()), str(GarliaAuth.esta_autenticado())])
 
 
 func _al_recibir_recetas(
@@ -105,23 +108,31 @@ func _al_recibir_recetas(
 	body: PackedByteArray
 ) -> void:
 	_cargando = false
+	var texto_respuesta := body.get_string_from_utf8()
+	print("Crafting[%s]: callback recetas result=%d HTTP=%d bytes=%d" % [str(get_instance_id()), resultado, response_code, body.size()])
 
 	if resultado != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300:
 		_estado.text = "No se pudieron cargar las recetas."
-		print("Crafting: Supabase respondió HTTP ", response_code)
+		push_error("Crafting[%s]: fallo HTTP recetas: %s" % [str(get_instance_id()), texto_respuesta.left(500)])
 		return
 
-	var datos: Variant = JSON.parse_string(body.get_string_from_utf8())
-
-	if not datos is Array:
+	var json := JSON.new()
+	var error_parseo := json.parse(texto_respuesta)
+	if error_parseo != OK:
 		_estado.text = "Respuesta de recetas inválida."
+		push_error("Crafting[%s]: JSON inválido: %s" % [str(get_instance_id()), texto_respuesta.left(500)])
+		return
+	if not json.data is Array:
+		_estado.text = "Respuesta de recetas inválida."
+		push_error("Crafting[%s]: se esperaba Array y llegó %s" % [str(get_instance_id()), type_string(typeof(json.data))])
 		return
 
 	_recetas.clear()
-	for fila_variant in datos as Array:
+	for fila_variant in json.data as Array:
 		if fila_variant is Dictionary:
 			_recetas.append((fila_variant as Dictionary).duplicate(true))
 
+	print("Crafting[%s]: recetas recibidas=%d; filas JSON=%d" % [str(get_instance_id()), _recetas.size(), (json.data as Array).size()])
 	_renderizar_recetas()
 
 
@@ -131,8 +142,10 @@ func _al_catalogo_cargado(_items: Array) -> void:
 
 func _renderizar_recetas() -> void:
 	if _lista == null:
+		push_error("Crafting[%s]: RecipeList no existe; no se puede renderizar." % str(get_instance_id()))
 		return
 
+	print("Crafting[%s]: renderizando %d recetas." % [str(get_instance_id()), _recetas.size()])
 	for child in _lista.get_children():
 		child.queue_free()
 
