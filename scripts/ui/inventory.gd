@@ -993,6 +993,8 @@ func _mostrar_informacion() -> void:
 		tipo = str((tipo_objeto_variant as Dictionary).get("categoria_canonica", "")).to_lower()
 
 	var tiene_uso := _objeto_tiene_uso_valido(objeto_seleccionado)
+	var categoria_clave := _obtener_clave_categoria_objeto(objeto_seleccionado)
+	use_button.text = "COMER" if categoria_clave == "alimentos_bebidas" else "USAR"
 	var es_armadura := tipo == "armadura" and not str(propiedades.get("ranura_equipamiento", "")).strip_edges().is_empty()
 	var es_colocable := _world_items != null and is_instance_valid(_world_items) and _world_items.es_objeto_colocable(objeto_seleccionado)
 	use_button.visible = tiene_uso
@@ -1184,7 +1186,9 @@ func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
 func _al_usar_seleccionado() -> void:
 	if indice_seleccionado < 0 or _player == null or not is_instance_valid(_player):
 		return
-	if inventory_controller.usar_objeto_en_indice(indice_seleccionado, _player):
+	# La acción desde el inventario es explícita y no debe quedar bloqueada
+	# por el GameplayInputGate que el propio menú mantiene activo.
+	if inventory_controller.usar_objeto_desde_ui(indice_seleccionado, _player):
 		_refrescar_objeto_seleccionado()
 
 
@@ -1300,7 +1304,16 @@ func usar_objeto_activo(usuario: Player = null) -> bool:
 
 func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
 	var actor := usuario if usuario != null else _player
-	return inventory_controller.usar_objeto_mano(mano, actor)
+	if not inventory_controller.usar_objeto_mano(mano, actor):
+		return false
+	actualizar()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+	return true
+
+
+func puede_consumir_alimento_en_mano(mano: String) -> bool:
+	return inventory_controller.puede_usar_alimento_en_mano(mano)
 
 
 func usar_objeto_en_indice(indice: int, usuario: Player = null) -> bool:
