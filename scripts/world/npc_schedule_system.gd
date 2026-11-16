@@ -188,7 +188,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		_actualizar_mente_npc(npc, minutos, tiempo)
 		if _actualizar_actividad_social(npc, delta):
 			continue
-		if _actualizar_objetivo_social_npc(npc, delta):
+		if _actualizar_objetivo_social_npc(npc, delta, minutos):
 			continue
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
@@ -1922,7 +1922,7 @@ func _actualizar_mente_npc(npc: Creature, minutos: int, tiempo: Dictionary) -> v
 
 ## Genera y ejecuta objetivos sociales a partir de necesidades y vínculos.
 ## El NPC elige a quién acercarse; el objetivo no se impone desde el horario.
-func _actualizar_objetivo_social_npc(npc: Creature, delta: float) -> bool:
+func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) -> bool:
 	var mind := get_node_or_null("/root/NPCMind")
 	if not is_instance_valid(mind) or not is_instance_valid(_relationship_system):
 		return false
@@ -1937,6 +1937,10 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float) -> bool:
 	if personaje_id.is_empty():
 		return false
 	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
+	if minutos < 540 or minutos >= 1200:
+		if not objetivo.is_empty():
+			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+		return false
 	if objetivo.is_empty():
 		var rutina_actual := str(npc.get_meta("rutina_actual", "")).strip_edges().to_lower()
 		if not rutina_actual.begins_with("dia_libre"):
@@ -1978,6 +1982,8 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float) -> bool:
 		return false
 	if bool(pareja_actual.get_meta("rutina_en_edificio", false)) or bool(pareja_actual.get_meta("_conversacion_ambiental_activa", false)):
 		return false
+	if bool(pareja_actual.get_meta("rutina_en_transito", false)):
+		return true
 
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
