@@ -1591,7 +1591,7 @@ func _obtener_reaccion_despedida_rutina() -> String:
 	var mucha_cercania := amistad >= 45.0 or confianza >= 45.0 or afecto >= 35.0
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
 	var esta_ocupado := false
-	for palabra in ["trabaj", "estudi", "investig", "repar", "vigilar", "atend", "descans"]:
+	for palabra in ["trabaj", "estudi", "investig", "repar", "vigilar", "atend", "forj", "horne", "comerci", "ordenar", "consult", "leer", "registrar", "inspeccion"]:
 		if actividad.contains(palabra):
 			esta_ocupado = true
 			break
