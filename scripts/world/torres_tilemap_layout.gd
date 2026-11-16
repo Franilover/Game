@@ -1,11 +1,11 @@
 extends RefCounted
-## Distribución compartida del terreno de Torres.
-## Se utiliza tanto al regenerar las capas en ejecución como desde el editor.
+## Distribución urbana compartida de Torres.
+## 104 x 68 celdas de 32 px, con plaza central, barrios laterales y zona agrícola.
 
 const TILE_SIZE := 32
-const ORIGIN := Vector2(-1440.0, -896.0)
-const COLUMNS := 90
-const ROWS := 56
+const ORIGIN := Vector2(-1664.0, -1088.0)
+const COLUMNS := 104
+const ROWS := 68
 const ZONES := [0, 1, 8]
 const BASE_ATLAS_TILE := Vector2i(2, 1)
 
@@ -19,48 +19,48 @@ static func zone_for_point(point: Vector2, cell: Vector2i) -> int:
 
 
 static func _is_road(point: Vector2) -> bool:
-	if _near_segment(point, Vector2(-1440.0, 0.0), Vector2(1440.0, 0.0), 46.0):
+	# Ejes principales y plaza pública.
+	if _near_segment(point, Vector2(-1664.0, 0.0), Vector2(1664.0, 0.0), 48.0):
 		return true
-	if _near_segment(point, Vector2(0.0, -896.0), Vector2(0.0, 896.0), 46.0):
+	if _near_segment(point, Vector2(0.0, -1088.0), Vector2(0.0, 1088.0), 48.0):
 		return true
-
-	if absf(point.x) <= 350.0 and absf(point.y) <= 245.0:
-		return true
-	if absf(point.x) <= 390.0 and absf(point.y) <= 190.0:
+	if absf(point.x) <= 370.0 and absf(point.y) <= 270.0:
 		return true
 
-	if _near_segment(point, Vector2(-1024.0, -760.0), Vector2(-1024.0, 760.0), 27.0):
-		return true
-	if _near_segment(point, Vector2(1024.0, -760.0), Vector2(1024.0, 760.0), 27.0):
-		return true
-	if _near_segment(point, Vector2(-1280.0, -480.0), Vector2(-760.0, -480.0), 25.0):
-		return true
-	if _near_segment(point, Vector2(760.0, -480.0), Vector2(1280.0, -480.0), 25.0):
-		return true
-	if _near_segment(point, Vector2(-1280.0, 190.0), Vector2(-760.0, 190.0), 25.0):
-		return true
-	if _near_segment(point, Vector2(760.0, 190.0), Vector2(1280.0, 190.0), 25.0):
-		return true
-	# Pequeños accesos frente a las hileras de viviendas, conectados a las calles laterales.
-	for y_acceso: float in [-506.0, -196.0, 154.0, 744.0]:
-		if _near_segment(point, Vector2(-1280.0, y_acceso), Vector2(-880.0, y_acceso), 22.0):
-			return true
-		if _near_segment(point, Vector2(880.0, y_acceso), Vector2(1350.0, y_acceso), 22.0):
+	# Calles de acceso a los barrios residenciales occidental y oriental.
+	for x_calle: float in [-1024.0, 1024.0]:
+		if _near_segment(point, Vector2(x_calle, -1000.0), Vector2(x_calle, 1020.0), 30.0):
 			return true
 
-	if _near_segment(point, Vector2(-330.0, -10.0), Vector2(-650.0, 70.0), 29.0):
+	# Las calles transversales siguen las manzanas, no una cuadrícula uniforme.
+	for y_calle: float in [-700.0, -300.0, -180.0, 150.0, 430.0, 720.0, 980.0]:
+		if _near_segment(point, Vector2(-1600.0, y_calle), Vector2(-960.0, y_calle), 25.0):
+			return true
+		if _near_segment(point, Vector2(960.0, y_calle), Vector2(1600.0, y_calle), 25.0):
+			return true
+
+	# Conexiones de los edificios públicos, comerciales y productivos.
+	if _near_segment(point, Vector2(-420.0, 0.0), Vector2(-650.0, 180.0), 30.0):
 		return true
-	if _near_segment(point, Vector2(-650.0, 70.0), Vector2(-700.0, -420.0), 25.0):
+	if _near_segment(point, Vector2(-650.0, 180.0), Vector2(-650.0, 520.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(330.0, -10.0), Vector2(650.0, 65.0), 29.0):
+	if _near_segment(point, Vector2(420.0, 0.0), Vector2(650.0, 180.0), 30.0):
 		return true
-	if _near_segment(point, Vector2(650.0, 65.0), Vector2(790.0, -420.0), 25.0):
+	if _near_segment(point, Vector2(650.0, 180.0), Vector2(650.0, 650.0), 27.0):
 		return true
-	if _near_segment(point, Vector2(-900.0, 520.0), Vector2(900.0, 520.0), 27.0):
+	if _near_segment(point, Vector2(-1024.0, -600.0), Vector2(-850.0, -600.0), 26.0):
 		return true
-	if _near_segment(point, Vector2(-700.0, 190.0), Vector2(-700.0, 520.0), 25.0):
+	if _near_segment(point, Vector2(850.0, -600.0), Vector2(1024.0, -600.0), 26.0):
 		return true
-	if _near_segment(point, Vector2(650.0, 190.0), Vector2(650.0, 520.0), 25.0):
+	if _near_segment(point, Vector2(-1024.0, 520.0), Vector2(-900.0, 520.0), 25.0):
+		return true
+	if _near_segment(point, Vector2(-900.0, 520.0), Vector2(-650.0, 520.0), 25.0):
+		return true
+	if _near_segment(point, Vector2(650.0, 430.0), Vector2(1024.0, 430.0), 25.0):
+		return true
+	if _near_segment(point, Vector2(650.0, 650.0), Vector2(1024.0, 720.0), 25.0):
+		return true
+	if _near_segment(point, Vector2(1024.0, 980.0), Vector2(900.0, 980.0), 25.0):
 		return true
 	return false
 
