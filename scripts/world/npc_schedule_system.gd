@@ -2209,6 +2209,7 @@ func _finalizar_objetivo_social_npc(
 			"momento": _clave_fecha_actual()
 		}
 		var interaccion_registrada := false
+		var evento_memoria := ""
 		match tipo_motivo:
 			"cumplir_promesa":
 				var promesa_id := str(motivo.get("promesa_id", ""))
@@ -2223,23 +2224,36 @@ func _finalizar_objetivo_social_npc(
 					_relationship_system.resolver_asunto_pendiente_npc(asunto_id, true)
 				cambios["amistad"] = 1.0
 				cambios["confianza"] = 0.8
+				evento_memoria = "ayudar"
 			"compartir_noticia":
 				var clave_noticia := str(motivo.get("clave_conocimiento", ""))
 				if not clave_noticia.is_empty() and _relationship_system.transmitir_conocimiento_npc(personaje_id, pareja_id, clave_noticia, {"motivo": "charla_entre_habitantes"}):
 					cambios["amistad"] = 1.1
 					cambios["respeto"] = 0.7
 					recuerdo["evento"] = "compartir_conocimiento"
+					evento_memoria = "compartir_conocimiento"
 				else:
 					cambios["amistad"] = 0.2
 			"resolver_desacuerdo":
 				cambios["amistad"] = 0.8
 				cambios["confianza"] = 0.6
 				cambios["tension"] = -4.0
+				evento_memoria = "apoyar"
 			_:
 				pass
 		recuerdo["tipo"] = tipo_motivo
 		if not interaccion_registrada:
 			_relationship_system.registrar_interaccion_entre_npc(personaje_id, pareja_id, cambios, recuerdo)
+		if not evento_memoria.is_empty():
+			for participante_id in [personaje_id, pareja_id]:
+				_relationship_system.registrar_recuerdo(participante_id, {
+					"tipo": "evento_social",
+					"evento": evento_memoria,
+					"evento_id": objetivo_id,
+					"con_personaje": pareja_id if participante_id == personaje_id else personaje_id,
+					"importancia": 3.0,
+					"momento": _clave_fecha_actual()
+				})
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
