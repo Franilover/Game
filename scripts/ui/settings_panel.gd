@@ -5,18 +5,24 @@ signal closed
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTROLES := [
-	{"label": "Moverse", "keys": "W · A · S · D"},
-	{"label": "Mano izquierda", "keys": "Q"},
-	{"label": "Mano derecha", "keys": "E"},
-	{"label": "Recuperar Eterium / Curarse / Meditar", "keys": "ESPACIO"},
-	{"label": "Seleccionar Garumi", "keys": "1 · 2 · 3"},
+	{"label": "Moverse", "keys": "W · A · S · D / FLECHAS"},
+	{"label": "Correr", "keys": "CTRL"},
 	{"label": "Dash", "keys": "SHIFT"},
+	{"label": "Recuperar Eterium / Curarse / Meditar", "keys": "ESPACIO"},
+	{"label": "Acción principal", "keys": "CLIC IZQUIERDO"},
+	{"label": "Acción secundaria", "keys": "CLIC DERECHO"},
+	{"label": "Selector de mano izquierda", "keys": "Q"},
+	{"label": "Selector de mano derecha", "keys": "E"},
+	{"label": "Seleccionar objeto en mano / Hotbar", "keys": "1 · 2 · 3 · 4 · 5 · 6"},
+	{"label": "Usar dones del compañero", "keys": "1 · 2 · 3"},
+	{"label": "Cambiar compañero / Abrir selector", "keys": "R / MANTENER R"},
 	{"label": "Misiones", "keys": "F"},
 	{"label": "Mapa", "keys": "M"},
-	{"label": "Viajar", "keys": "SHIFT + M"},
+	{"label": "Viajar entre reinos", "keys": "CTRL + M"},
+	{"label": "Inventario", "keys": "TAB / I"},
+	{"label": "Garudex", "keys": "G"},
 	{"label": "Pausa", "keys": "ESC"}
 ]
-
 var _panel: Panel
 var _center: CenterContainer
 
