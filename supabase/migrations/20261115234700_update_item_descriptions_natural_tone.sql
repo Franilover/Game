@@ -30,7 +30,7 @@ BEGIN
             ('289f5fe8-b8b8-4784-b69f-bb5264963f8a'::uuid, 'Un medallón dorado con un símbolo del sol grabado en el centro.'),
             ('878a5507-9564-4dbb-a7e6-752e17e3ffe2'::uuid, 'Un pequeño dispositivo diseñado para reducir la luz a su alrededor.'),
             ('3e4276b3-05c8-4214-a6c2-05f43e1597c5'::uuid, 'Una pala sencilla hecha de madera, útil para remover tierra y trabajar el suelo.'),
-            ('eba98757-ea3a-4fe4-a215-7dd6a9a99bda'::uuid, 'Una pala con una hoja de piedra y un mango de madera.'),
+            ('eba98757-eea3-4fe4-a215-7dd6a9a99bda'::uuid, 'Una pala con una hoja de piedra y un mango de madera.'),
             ('988dc246-6f86-4301-90f7-22a32d386ff7'::uuid, 'Pan recién horneado, sencillo y fácil de llevar contigo.'),
             ('e6cbaf78-b344-4e8a-b93c-ee6dcfa19ba4'::uuid, 'Un paraguas especial que permite descender lentamente desde lugares elevados.'),
             ('e5100787-8d50-4a39-b799-5e2484ac6a7f'::uuid, 'Una pechera ligera con aberturas en la espalda para dejar espacio a las alas.'),
