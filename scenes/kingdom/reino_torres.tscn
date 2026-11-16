@@ -482,85 +482,85 @@ position = Vector2(4.8333282, -291)
 position = Vector2(0, 112)
 
 [node name="Grupo_edificio_panaderia" type="Node2D" parent="."]
-position = Vector2(-245, -157)
+position = Vector2(-470, -150)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_panaderia"]
 position = Vector2(0, 62)
 
 [node name="Grupo_edificio_posada" type="Node2D" parent="."]
-position = Vector2(-385, 52)
+position = Vector2(470, -150)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_posada"]
 position = Vector2(0, 67)
 
 [node name="Grupo_edificio_forja" type="Node2D" parent="."]
-position = Vector2(-360, -201)
+position = Vector2(-620, 40)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_forja"]
 position = Vector2(0, 62)
 
 [node name="Grupo_edificio_archivo_real" type="Node2D" parent="."]
-position = Vector2(-170, -657)
+position = Vector2(-180, -112)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_archivo_real"]
 position = Vector2(0, 63)
 
 [node name="Grupo_edificio_sala_consejo" type="Node2D" parent="."]
-position = Vector2(170, -658)
+position = Vector2(180, -112)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_sala_consejo"]
 position = Vector2(0, 68)
 
 [node name="Grupo_edificio_casa_estudio" type="Node2D" parent="."]
-position = Vector2(-410, -564)
+position = Vector2(-650, -360)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_casa_estudio"]
 position = Vector2(0, 65)
 
 [node name="Grupo_edificio_casa_comercio" type="Node2D" parent="."]
-position = Vector2(930, -358)
+position = Vector2(620, 40)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_casa_comercio"]
 position = Vector2(0, 66)
 
 [node name="Grupo_edificio_cuartel" type="Node2D" parent="."]
-position = Vector2(730, -358)
+position = Vector2(780, -360)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_cuartel"]
 position = Vector2(0, 68)
 
 [node name="Grupo_edificio_registro" type="Node2D" parent="."]
-position = Vector2(730, -250)
+position = Vector2(1000, -250)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_registro"]
 position = Vector2(0, 61)
 
 [node name="Grupo_edificio_reparaciones" type="Node2D" parent="."]
-position = Vector2(930, 102)
+position = Vector2(650, 230)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_reparaciones"]
 position = Vector2(0, 64)
 
 [node name="Grupo_edificio_carpinteria" type="Node2D" parent="."]
-position = Vector2(930, 212)
+position = Vector2(850, 230)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_carpinteria"]
 position = Vector2(0, 64)
 
 [node name="Grupo_edificio_granero" type="Node2D" parent="."]
-position = Vector2(-450, 257)
+position = Vector2(-650, 330)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_granero"]
 position = Vector2(0, 67)
 
 [node name="Grupo_edificio_molino" type="Node2D" parent="."]
-position = Vector2(-270, 257)
+position = Vector2(-430, 330)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_molino"]
 position = Vector2(0, 64)
 
 [node name="Grupo_edificio_corrales" type="Node2D" parent="."]
-position = Vector2(450, 257)
+position = Vector2(500, 360)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_corrales"]
 position = Vector2(0, 66)
@@ -600,97 +600,97 @@ position = Vector2(0, -6)
 shape = SubResource("CastleCollision")
 
 [node name="Grupo_casa_bruna" type="Node2D" parent="."]
-position = Vector2(-820, -374)
+position = Vector2(-950, -390)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_bruna"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_elian" type="Node2D" parent="."]
-position = Vector2(820, -374)
+position = Vector2(950, -390)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_elian"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_darven" type="Node2D" parent="."]
-position = Vector2(1080, -374)
+position = Vector2(1120, -390)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_darven"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_saira" type="Node2D" parent="."]
-position = Vector2(820, -114)
+position = Vector2(950, -120)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_saira"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_01" type="Node2D" parent="."]
-position = Vector2(-820, -114)
+position = Vector2(-950, -120)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_01"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_02" type="Node2D" parent="."]
-position = Vector2(-1080, -114)
+position = Vector2(-1120, -120)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_02"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_03" type="Node2D" parent="."]
-position = Vector2(-820, 166)
+position = Vector2(-950, 170)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_03"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_04" type="Node2D" parent="."]
-position = Vector2(-1080, 166)
+position = Vector2(-1120, 170)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_04"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_05" type="Node2D" parent="."]
-position = Vector2(-820, 486)
+position = Vector2(-950, 500)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_05"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_06" type="Node2D" parent="."]
-position = Vector2(-1080, 486)
+position = Vector2(-1120, 500)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_06"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_07" type="Node2D" parent="."]
-position = Vector2(1080, -114)
+position = Vector2(1120, -120)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_07"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_08" type="Node2D" parent="."]
-position = Vector2(820, 166)
+position = Vector2(950, 170)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_08"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_narel" type="Node2D" parent="."]
-position = Vector2(-1080, -374)
+position = Vector2(-1120, -390)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_narel"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_10" type="Node2D" parent="."]
-position = Vector2(1080, 166)
+position = Vector2(1120, 170)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_10"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_11" type="Node2D" parent="."]
-position = Vector2(820, 486)
+position = Vector2(950, 500)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_11"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_granjeros" type="Node2D" parent="."]
-position = Vector2(1080, 492)
+position = Vector2(1120, 520)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_granjeros"]
 position = Vector2(0, 48)
