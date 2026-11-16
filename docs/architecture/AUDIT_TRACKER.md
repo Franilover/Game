@@ -215,4 +215,5 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Mientras dura el intercambio, el horario no vuelve a mover a los participantes. Al terminar, se liberan los metadatos de conversación y recuperan sus rutinas.
 - Se evita aplicar dos veces los cambios de relación: las consecuencias y recuerdos se registran al completar el objetivo social; la capa de conversación sólo presenta el intercambio.
 - No se añadió generación de texto por IA ni se modificó Supabase.
-- Validación pendiente: ejecutar CI Godot 4.7 para esta integración y revisar la presentación en una partida real, especialmente Android.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1717](https://github.com/Franilover/Game/actions/runs/43940597598). El primer intento detectó un error de alcance de la variable `motivo`; se corrigió antes de esta ejecución exitosa.
+- Sigue pendiente revisar la presentación en una partida real, especialmente Android.
