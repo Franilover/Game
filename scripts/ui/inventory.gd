@@ -76,10 +76,10 @@ var _world_items: GarliaWorldItems = null
 
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
 var _slot_grids: Array[GridContainer] = []
-@onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText/ItemName
-@onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText/CategoryStatsRow/ItemCategory
-@onready var stats_row: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText/CategoryStatsRow/StatsRow
-@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel/DescriptionScroll/ItemDescription
+@onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/ItemName
+@onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/CategoryStatsRow/ItemCategory
+@onready var stats_row: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/CategoryStatsRow/StatsRow
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/DescriptionPanel/DescriptionScroll/ItemDescription
 @onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/ItemIconFrame/ItemIcon
 @onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/ItemIconFrame
@@ -595,11 +595,11 @@ func _aplicar_fondos_inventario() -> void:
 		item_name.add_theme_stylebox_override("pressed", sin_fondo)
 		item_name.add_theme_stylebox_override("focus", sin_fondo)
 	if is_instance_valid(item_icon_frame):
-		item_icon_frame.add_theme_stylebox_override("panel", estilo_boton)
-		item_icon_frame.add_theme_constant_override("margin_left", 4)
-		item_icon_frame.add_theme_constant_override("margin_top", 4)
-		item_icon_frame.add_theme_constant_override("margin_right", 4)
-		item_icon_frame.add_theme_constant_override("margin_bottom", 4)
+		item_icon_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		for margen in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
+			item_icon_frame.add_theme_constant_override(margen, 4)
+	if is_instance_valid(description_panel):
+		description_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	if is_instance_valid(skin_panel):
 		skin_panel.add_theme_stylebox_override("panel", estilo_boton)
 		for margen in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
