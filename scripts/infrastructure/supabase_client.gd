@@ -21,7 +21,7 @@ const RPC_MUNDO := (
 )
 
 
-const HTTP_TIMEOUT: float = 15.0
+const HTTP_TIMEOUT: float = 20.0
 const MAX_INTENTOS_INICIALES: int = 3
 const RETRASO_REINTENTO: float = 1.5
 const INTERVALO_SINCRONIZACION: float = 60.0
@@ -66,6 +66,8 @@ var _sincronizacion_inicial_realizada: bool = false
 var _eterium_runtime: Dictionary = {}
 var _especie_eterium_game: Array = []
 var _especies_jugables: Array = []
+var _intentos_especies_jugables: int = 0
+var _reintento_especies_programado: bool = false
 var _personaje_social: Array = []
 var _personaje_regalos: Array = []
 var _relaciones_ecologicas: Array = []
@@ -367,7 +369,7 @@ func obtener_reino_game(clave: String) -> Dictionary:
 func cargar_especies_jugables() -> void:
 	# Las especies jugables son catálogo público del juego.
 	# Supabase RLS permite SELECT a anon y authenticated; no requieren sesión.
-	if _auth == null:
+	if _auth == null or not _especies_jugables.is_empty():
 		return
 
 	if _http_especies == null:
@@ -375,8 +377,8 @@ func cargar_especies_jugables() -> void:
 	if _http_especies.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
 
+	_intentos_especies_jugables += 1
 	var headers := _crear_headers()
-
 	var resultado := _http_especies.request(
 		_auth.SUPABASE_URL + API_ESPECIES_JUGABLES,
 		headers,
@@ -385,6 +387,9 @@ func cargar_especies_jugables() -> void:
 
 	if resultado != OK:
 		print("SupabaseClient: no se pudo solicitar especies jugables → ", resultado)
+		call_deferred("_reintentar_carga_especies_jugables", "inicio de solicitud " + str(resultado))
+	else:
+		print("SupabaseClient: solicitando especies jugables → intento %d/%d" % [_intentos_especies_jugables, MAX_INTENTOS_INICIALES])
 
 
 func _al_completar_especies_jugables(
@@ -394,16 +399,15 @@ func _al_completar_especies_jugables(
 	cuerpo: PackedByteArray
 ) -> void:
 	if resultado != HTTPRequest.RESULT_SUCCESS:
-		print("SupabaseClient: error de red cargando especies jugables.")
+		print("SupabaseClient: error de red cargando especies jugables. Resultado: ", resultado)
+		_reintentar_carga_especies_jugables("resultado de red " + str(resultado))
 		return
 
 	if codigo_http < 200 or codigo_http >= 300:
-		print(
-			"SupabaseClient: HTTP ",
-			codigo_http,
-			" cargando especies jugables → ",
-			cuerpo.get_string_from_utf8()
-		)
+		if codigo_http == 429 or codigo_http >= 500:
+			_reintentar_carga_especies_jugables("HTTP " + str(codigo_http))
+		else:
+			print("SupabaseClient: HTTP ", codigo_http, " cargando especies jugables → ", cuerpo.get_string_from_utf8())
 		return
 
 	var json := JSON.new()
@@ -420,11 +424,28 @@ func _al_completar_especies_jugables(
 		if especie_variant is Dictionary:
 			especies.append((especie_variant as Dictionary).duplicate(true))
 
+	_intentos_especies_jugables = 0
 	_especies_jugables = especies
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
 	especies_jugables_cargadas.emit(especies.duplicate(true))
 
 
+
+func _reintentar_carga_especies_jugables(motivo: String) -> void:
+	if _reintento_especies_programado or not _especies_jugables.is_empty():
+		return
+	if _intentos_especies_jugables >= MAX_INTENTOS_INICIALES:
+		print("SupabaseClient: agotados los intentos de especies jugables (%s)." % motivo)
+		return
+
+	_reintento_especies_programado = true
+	var espera := RETRASO_REINTENTO * float(_intentos_especies_jugables)
+	print("SupabaseClient: reintentando especies jugables → intento %d/%d en %.1fs (%s)" % [_intentos_especies_jugables + 1, MAX_INTENTOS_INICIALES, espera, motivo])
+	await get_tree().create_timer(espera).timeout
+	_reintento_especies_programado = false
+	if not is_inside_tree() or not _especies_jugables.is_empty():
+		return
+	cargar_especies_jugables()
 
 func obtener_especies_jugables() -> Array:
 	return _especies_jugables.duplicate(true)
