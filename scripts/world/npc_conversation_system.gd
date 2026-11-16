@@ -2151,7 +2151,82 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	print("NPCConversationSystem: conversación ambiental iniciada: ", conversacion.get("clave", ""))
 
 
+## Inicia una conversación breve generada por un encuentro social ya resuelto
+## por NPCScheduleSystem. Sus efectos sociales no se vuelven a aplicar aquí.
+func iniciar_conversacion_social_autonoma(npc_a: Creature, npc_b: Creature, motivo: Dictionary) -> bool:
+	if not _conversacion_activa.is_empty():
+		return false
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
+		return false
+	if not npc_a.is_alive or not npc_b.is_alive:
+		return false
+	_obtener_npcs_torres()
+	var nombre_a := npc_a.get_nombre_visual().strip_edges().to_lower()
+	var nombre_b := npc_b.get_nombre_visual().strip_edges().to_lower()
+	if nombre_a.is_empty() or nombre_b.is_empty():
+		return false
+	var tipo := str(motivo.get("tipo", "visitar_amigo"))
+	var detalle := str(motivo.get("descripcion", motivo.get("titulo", ""))).strip_edges()
+	var lineas: Array[Dictionary] = []
+	match tipo:
+		"cumplir_promesa":
+			if detalle.is_empty():
+				detalle = "lo que hablamos"
+			lineas = [
+				{"npc": nombre_a, "texto": "Quería hablar contigo. Te dije que volvería con esto y no quería dejarlo pendiente."},
+				{"npc": nombre_b, "texto": "Me acuerdo. ¿Pudiste resolverlo?"},
+				{"npc": nombre_a, "texto": "Sí. " + detalle + "."},
+				{"npc": nombre_b, "texto": "Gracias por acordarte y por venir a contármelo."}
+			]
+		"resolver_asunto":
+			if detalle.is_empty():
+				detalle = "lo que te preocupaba"
+			lineas = [
+				{"npc": nombre_a, "texto": "Me quedé pensando en lo que me contaste. ¿Todavía necesitas ayuda con eso?"},
+				{"npc": nombre_b, "texto": "Sí, todavía me vendría bien una mano."},
+				{"npc": nombre_a, "texto": "De acuerdo. " + detalle + ". Veamos cómo podemos solucionarlo."},
+				{"npc": nombre_b, "texto": "Te lo agradezco. No quería seguir dándole vueltas a solas."}
+			]
+		"compartir_noticia":
+			if detalle.is_empty():
+				detalle = "algo que pasó hace poco"
+			lineas = [
+				{"npc": nombre_a, "texto": "¿Tienes un momento? Quería contarte algo que escuché."},
+				{"npc": nombre_b, "texto": "Claro, dime. ¿Qué ocurrió?"},
+				{"npc": nombre_a, "texto": "Se está hablando de " + detalle + ". Todavía no sé si está confirmado."},
+				{"npc": nombre_b, "texto": "Gracias por avisarme. Lo tendré presente, pero esperaré a saber más."}
+			]
+		"resolver_desacuerdo":
+			lineas = [
+				{"npc": nombre_a, "texto": "No me gustó cómo terminó nuestra última conversación. ¿Podemos hablarlo con calma?"},
+				{"npc": nombre_b, "texto": "Sí. Yo también creo que nos quedamos con cosas por decir."},
+				{"npc": nombre_a, "texto": "No espero que pensemos igual, pero quiero entender mejor tu punto."},
+				{"npc": nombre_b, "texto": "De acuerdo. Podemos empezar por escucharnos."}
+			]
+		_:
+			lineas = [
+				{"npc": nombre_a, "texto": "Me alegra que hayamos coincidido. ¿Cómo te ha ido estos días?"},
+				{"npc": nombre_b, "texto": "He tenido días tranquilos y otros bastante ocupados. ¿Y tú?"},
+				{"npc": nombre_a, "texto": "Bien, aunque me hacía falta conversar un rato sin estar pendiente de otras cosas."},
+				{"npc": nombre_b, "texto": "A mí también. Podemos repetirlo cuando volvamos a tener tiempo."}
+			]
+	_iniciar_conversacion({
+		"clave": "social_autonoma_%s_%s_%s" % [nombre_a, nombre_b, str(motivo.get("tipo", "charla"))],
+		"npc_a": nombre_a,
+		"npc_b": nombre_b,
+		"lineas": lineas,
+		"solo_ambiental_local": true,
+		"_sin_progreso_etapa": true,
+		"_sin_dinamica_social": true,
+		"_social_autonoma": true
+	})
+	return not _conversacion_activa.is_empty()
+
+
 func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+	if bool(_conversacion_activa.get("_social_autonoma", false)):
+		_actualizar_conversacion_social_autonoma(delta, jugador, dialogo)
+		return
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
 		_ocultar_burbujas()
 		_jugador_observando_conversacion = false
@@ -2205,6 +2280,46 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 			_finalizar_conversacion(true)
 			return
 		_mostrar_linea_actual()
+
+
+func actualizar_conversacion_social_autonoma(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+	if _conversacion_activa.is_empty():
+		return
+	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
+	var npc_b := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
+	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		_finalizar_conversacion()
+		return
+	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 2.0:
+		_finalizar_conversacion()
+		return
+
+	var observando := false
+	if is_instance_valid(jugador) and jugador.is_inside_tree():
+		var distancia := minf(
+			jugador.global_position.distance_to(npc_a.global_position),
+			jugador.global_position.distance_to(npc_b.global_position)
+		)
+		observando = distancia <= DISTANCIA_ENTRADA_OBSERVACION
+	if is_instance_valid(dialogo) and dialogo.esta_abierto():
+		observando = false
+	if observando:
+		_jugador_observando_conversacion = true
+		_mostrar_linea_actual(false)
+	else:
+		_jugador_observando_conversacion = false
+		_ocultar_burbujas()
+
+	# El reloj social avanza aunque el jugador esté lejos o tenga otro diálogo abierto.
+	_temporizador_linea -= maxf(delta, 0.0)
+	if _temporizador_linea <= 0.0:
+		_indice_linea += 1
+		var lineas: Array = _conversacion_activa.get("lineas", [])
+		if _indice_linea >= lineas.size():
+			_finalizar_conversacion(true)
+			return
+		if observando:
+			_mostrar_linea_actual()
 
 
 func _mostrar_linea_actual(reiniciar_temporizador: bool = true) -> void:
@@ -2677,7 +2792,7 @@ func _registrar_dinamica_social_conversacion() -> void:
 
 
 func _finalizar_conversacion(completada: bool = false) -> void:
-	if completada and not _conversacion_activa.is_empty():
+	if completada and not _conversacion_activa.is_empty() and not bool(_conversacion_activa.get("_sin_dinamica_social", false)):
 		_registrar_dinamica_social_conversacion()
 		_registrar_rutina_compartida()
 	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):
