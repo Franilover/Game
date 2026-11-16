@@ -1252,9 +1252,9 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 	if _world_items == null or not is_instance_valid(_world_items):
 		return resultado
 	var item_id := str(resultado.get("item_id", resultado.get("id", ""))).strip_edges()
-	if item_id.is_empty():
-		return resultado
-	var canonico := _world_items.buscar_item_por_id(item_id)
+	var canonico: Dictionary = {}
+	if not item_id.is_empty():
+		canonico = _world_items.buscar_item_por_id(item_id)
 	if canonico.is_empty():
 		canonico = _world_items.buscar_item_por_nombre(str(resultado.get("nombre", "")))
 	if canonico.is_empty():
