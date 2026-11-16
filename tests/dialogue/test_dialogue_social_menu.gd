@@ -36,7 +36,7 @@ func _run() -> void:
 	var despedida_caminando := dialogo._obtener_reaccion_despedida_rutina()
 	if not despedida_caminando.contains("Voy a seguir hacia la plaza"):
 		errores.append("La despedida de un NPC que camina no reconoce que sólo está desplazándose.")
-	if not dialogo._actividad_es_desplazamiento("caminar") or dialogo._actividad_impide_una_conversacion_larga("caminar"):
+	if not dialogo._actividad_es_desplazamiento("caminar") or not dialogo._actividad_es_desplazamiento("caminando") or not dialogo._actividad_es_desplazamiento("paseando") or not dialogo._actividad_es_desplazamiento("recorriendo") or dialogo._actividad_impide_una_conversacion_larga("caminar"):
 		errores.append("Caminar se clasificó como una actividad que impide conversar.")
 	var saludo_en_transito := dialogo._obtener_texto_rutina_personaje("bruna", "rutina", "caminar", "la plaza", true, false, false)
 	if saludo_en_transito.contains("no puedo parar") or saludo_en_transito.contains("ocupado") or not (saludo_en_transito.contains("¿Qué necesitas?") or saludo_en_transito.contains("¿qué pasa?")):
