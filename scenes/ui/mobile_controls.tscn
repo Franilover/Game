@@ -116,3 +116,44 @@ offset_bottom = 122.0
 mouse_filter = 0
 text = "Tab"
 
+[node name="Map" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+mouse_filter = 0
+text = "Mapa"
+
+[node name="Missions" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+mouse_filter = 0
+text = "Misiones"
+
+[node name="Garumis" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+mouse_filter = 0
+text = "Garumis"
+
+[node name="Garumi1" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 0
+mouse_filter = 0
+text = "1"
+
+[node name="Garumi2" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 0
+mouse_filter = 0
+text = "2"
+
+[node name="Garumi3" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 0
+mouse_filter = 0
+text = "3"
+
+[node name="Meditate" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+mouse_filter = 0
+text = "Meditar"
