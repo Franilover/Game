@@ -225,13 +225,13 @@ custom_minimum_size = Vector2(0, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel" unique_id=1747754024]
+[node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock" unique_id=1747754024]
 custom_minimum_size = Vector2(0, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="ItemIconFrame" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel"]
+[node name="ItemIconFrame" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel"]
 custom_minimum_size = Vector2(74, 74)
 layout_mode = 2
 size_flags_vertical = 0
@@ -245,7 +245,7 @@ expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
 
-[node name="InfoText" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel" unique_id=3001000010]
+[node name="InfoText" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel" unique_id=3001000010]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
