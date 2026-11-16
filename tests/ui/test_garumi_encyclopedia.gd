@@ -68,6 +68,13 @@ func _run() -> void:
 	await get_tree().process_frame
 	_check(boton_enciclopedia.visible and boton_garumis.visible, "Descubrir una criatura debe mostrar ambas pestañas.")
 
+	# El desbloqueo debe sobrevivir a la serialización y carga de la partida.
+	var estado_guardado: Dictionary = GameState.call("_serializar_estado")
+	GameState.discovery_state = DiscoveryState.new()
+	GameState.call("_aplicar_estado_memoria", estado_guardado)
+	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
+	_check(boton_enciclopedia.visible and boton_garumis.visible, "El descubrimiento debe mantenerse tras guardar y cargar la partida.")
+
 	# Recorrer el pipeline real de entrada de Godot; no llamar _input() directamente.
 	var tecla := InputEventKey.new()
 	tecla.pressed = true
