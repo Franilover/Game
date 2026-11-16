@@ -372,7 +372,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . res://tests/world/test_garumi_world_presence.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          output="$(timeout 45s godot --headless --path . res://tests/world/test_garumi_world_presence.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiWorldPresence: FAIL:' <<<"$output"; then
             echo "Garumi world presence test reported script or assertion errors."
