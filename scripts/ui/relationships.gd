@@ -385,7 +385,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var amistad_visual := _amistad_a_valor_visual(amistad_guardada)
 	var barra_amistad := ProgressBar.new()
 	barra_amistad.name = "FriendshipBar"
-	barra_amistad.min_value = 1.0
+	barra_amistad.min_value = 0.0
 	barra_amistad.max_value = 100.0
 	barra_amistad.value = amistad_visual
 	barra_amistad.show_percentage = false
@@ -396,7 +396,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 
 
 func _amistad_a_valor_visual(amistad: float) -> float:
-	return clampf(roundi((amistad + 100.0) * 0.495 + 1.0), 1.0, 100.0)
+	return clampf(amistad, 0.0, 100.0)
 
 
 func _limpiar() -> void:
