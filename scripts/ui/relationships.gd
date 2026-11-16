@@ -20,6 +20,9 @@ var _personaje_seleccionado_id := ""
 func _ready() -> void:
 	_crear_ui()
 	PIXEL_UI_THEME.apply(self, false)
+	var panel_detalle := get_node_or_null("DetailPanelRight") as PanelContainer
+	if is_instance_valid(panel_detalle):
+		panel_detalle.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
 
 	# La pestaña puede abrirse antes de que WorldData termine de recibir
 	# personajes_game desde Supabase. Escuchar ambos eventos evita dejar
@@ -110,13 +113,28 @@ func _crear_ui() -> void:
 	lista.add_theme_constant_override("v_separation", SEPARACION_RETRATOS)
 	_lista_scroll.add_child(lista)
 
+	var panel_detalle := PanelContainer.new()
+	panel_detalle.name = "DetailPanelRight"
+	panel_detalle.custom_minimum_size = Vector2(170.0, 0.0)
+	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_detalle.size_flags_stretch_ratio = 0.8
+	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	contenido.add_child(panel_detalle)
+
+	var margen_detalle := MarginContainer.new()
+	margen_detalle.name = "DetailPanelMargin"
+	margen_detalle.add_theme_constant_override("margin_left", 7)
+	margen_detalle.add_theme_constant_override("margin_top", 7)
+	margen_detalle.add_theme_constant_override("margin_right", 7)
+	margen_detalle.add_theme_constant_override("margin_bottom", 7)
+	panel_detalle.add_child(margen_detalle)
+
 	detalle = VBoxContainer.new()
-	detalle.custom_minimum_size = Vector2(170.0, 0.0)
+	detalle.name = "DetailContent"
 	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	detalle.size_flags_stretch_ratio = 0.8
 	detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detalle.add_theme_constant_override("separation", 8)
-	contenido.add_child(detalle)
+	margen_detalle.add_child(detalle)
 
 	estado = Label.new()
 	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
