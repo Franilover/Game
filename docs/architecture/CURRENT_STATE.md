@@ -862,3 +862,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se amplió `test_npc_mind_core.gd` para comprobar que objetivos y estado emocional participan en la evaluación.
 - Cambios en la rama `fix/p0-godot47-crafting-token-type`; no se modificó `main` ni Supabase.
 - Pendiente: CI Godot 4.7 y revisión de los resultados dentro de una partida. La evaluación sigue siendo determinista y no genera texto.
+
+## Memoria episódica social y elección de compañía
+
+- Al finalizar una interacción autónoma entre NPC, ambos participantes reciben un recuerdo `experiencia_npc` con contraparte, tipo de encuentro, resultado, importancia y fecha de mundo.
+- La selección futura de compañía consulta hasta seis experiencias recientes relevantes con cada candidato. Las positivas aumentan su puntuación; las negativas la reducen.
+- Los recuerdos más recientes pesan más y la influencia total se limita a [-15, 15], por lo que no sustituye los valores persistentes de amistad, confianza, afecto o tensión.
+- Se añadieron pruebas para experiencias positivas, negativas y recuerdos de terceras personas.
+- La memoria utiliza el almacenamiento local de recuerdos sociales existente. No modifica Supabase ni genera texto.
+- Pendiente: ejecutar CI Godot 4.7 y validar en partida que los encuentros reflejen las experiencias sin crear preferencias rígidas.
