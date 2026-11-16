@@ -36,7 +36,7 @@ func _run() -> void:
 	movimiento._tiempo_sin_progreso = 0.0
 	var direccion_recuperacion := Vector2.RIGHT
 	for _i in range(10):
-		direccion_recuperacion = movimiento._aplicar_seguro_atasco_npc(direccion_recuperacion, 0.1)
+		direccion_recuperacion = movimiento._aplicar_seguro_atasco_npc(Vector2.RIGHT, 0.1)
 	if absf(direccion_recuperacion.y) <= absf(direccion_recuperacion.x):
 		errores.append("El seguro de atasco no activa un rodeo lateral tras perder progreso.")
 
