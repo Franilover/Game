@@ -1313,7 +1313,12 @@ func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
 
 
 func puede_consumir_alimento_en_mano(mano: String) -> bool:
-	return inventory_controller.puede_usar_alimento_en_mano(mano)
+	if mano not in ["izquierda", "derecha"]:
+		return false
+	var objeto := inventory_controller.obtener_objeto_mano_activa(mano)
+	if objeto.is_empty() or _obtener_clave_categoria_objeto(objeto) != "alimentos_bebidas":
+		return false
+	return _objeto_tiene_uso_valido(objeto)
 
 
 func usar_objeto_en_indice(indice: int, usuario: Player = null) -> bool:
