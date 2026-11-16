@@ -107,6 +107,7 @@ func _inicializar_navegacion_tabs() -> void:
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
+	var boton_cerrar: Button = $Window/Margin/Column/TabButtons/CloseButton
 	var boton_notas: Button = $Window/Margin/Column/TabButtons/Notas
 
 	boton_inventario.pressed.connect(func() -> void:
@@ -140,6 +141,7 @@ func _inicializar_navegacion_tabs() -> void:
 	boton_notas.pressed.connect(func() -> void:
 		tabs.current_tab = 7
 	)
+	boton_cerrar.pressed.connect(cerrar)
 
 	boton_inventario.button_pressed = true
 	_actualizar_admin_tab()
