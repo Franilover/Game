@@ -23,6 +23,8 @@ var _rutina_completada: bool = false
 # Seguro local contra bloqueos: registra el progreso y alterna el rodeo cuando
 # otro habitante, una esquina o una entrada impiden avanzar.
 var _ultima_posicion_seguro: Vector2 = Vector2.ZERO
+var _seguro_inicializado: bool = false
+var _direccion_base_atasco: Vector2 = Vector2.ZERO
 var _tiempo_sin_progreso: float = 0.0
 var _lado_desvio: float = 1.0
 var _tiempo_cambio_lado: float = 0.0
@@ -59,6 +61,8 @@ func configurar(
 	_indice_ruta_rutina = 0
 	_rutina_completada = false
 	_ultima_posicion_seguro = nueva_criatura.global_position if is_instance_valid(nueva_criatura) else Vector2.ZERO
+	_seguro_inicializado = is_instance_valid(nueva_criatura)
+	_direccion_base_atasco = Vector2.ZERO
 	_tiempo_sin_progreso = 0.0
 	_lado_desvio = -1.0 if posmod(semilla, 2) == 0 else 1.0
 	_tiempo_cambio_lado = 0.0
@@ -291,8 +295,9 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 		return direccion
 
 	var posicion_actual := creature.global_position
-	if _ultima_posicion_seguro == Vector2.ZERO:
+	if not _seguro_inicializado:
 		_ultima_posicion_seguro = posicion_actual
+		_seguro_inicializado = true
 		return direccion
 
 	var avance := posicion_actual.distance_to(_ultima_posicion_seguro)
@@ -300,26 +305,32 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	if avance >= UMBRAL_PROGRESO_NPC:
 		_tiempo_sin_progreso = 0.0
 		_tiempo_cambio_lado = 0.0
+		_direccion_base_atasco = Vector2.ZERO
 		return direccion
 
 	_tiempo_sin_progreso += maxf(delta, 0.0)
 	if _tiempo_sin_progreso < TIEMPO_REACCION_ATASCO_NPC:
+		_direccion_base_atasco = direccion.normalized()
 		return direccion
+	if _direccion_base_atasco.length_squared() <= 0.001:
+		_direccion_base_atasco = direccion.normalized()
 
 	_tiempo_cambio_lado += maxf(delta, 0.0)
 	if _tiempo_cambio_lado >= INTERVALO_CAMBIO_LADO_NPC:
 		_lado_desvio *= -1.0
 		_tiempo_cambio_lado = 0.0
 
-	var lateral := direccion.normalized().orthogonal() * _lado_desvio
-	return (lateral * 0.92 + direccion.normalized() * 0.08).normalized()
+	var lateral := _direccion_base_atasco.orthogonal() * _lado_desvio
+	return (lateral * 0.92 + _direccion_base_atasco * 0.08).normalized()
 
 
 func _reiniciar_seguro_atasco() -> void:
 	_tiempo_sin_progreso = 0.0
 	_tiempo_cambio_lado = 0.0
+	_direccion_base_atasco = Vector2.ZERO
 	if creature != null and is_instance_valid(creature):
 		_ultima_posicion_seguro = creature.global_position
+		_seguro_inicializado = true
 
 func establecer_direccion(direccion: Vector2) -> void:
 	if direccion.length_squared() <= 0.001:
