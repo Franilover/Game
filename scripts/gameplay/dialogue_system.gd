@@ -2251,8 +2251,8 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 			consejo = "Haz preguntas, pero escucha también las respuestas. A veces un detalle pequeño cambia lo que creías saber."
 			opinion_torres = "En Torres hay muchas cosas que todavía no entiendo. Lo mejor es que siempre encuentro a alguien dispuesto a contarme algo."
 
-	if not actividad.is_empty() and not planes.to_lower().contains(actividad.to_lower()):
-		planes += " Ahora mismo estoy con " + actividad + "."
+	# La actividad ya aparece en el saludo contextual. No concatenar aquí
+	# claves internas del horario como "estoy con pasear" o "estoy con hornear".
 	var opciones_generales: Array[Dictionary] = [
 		{"clave": "planes_hoy", "texto": "Preguntar por sus planes de hoy", "jugador": "¿Qué planes tienes para hoy?", "respuesta": planes, "evento": "interesarse", "importancia": 1.0},
 		{"clave": "cumplido", "texto": "Dar un cumplido", "jugador": "Quería decirte que haces un buen trabajo. Se nota el esfuerzo que pones.", "respuesta": cumplido, "evento": "apoyar", "importancia": 1.0},
@@ -2261,7 +2261,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 		{"clave": "consejo", "texto": "Pedirle un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": consejo, "evento": "compartir_conocimiento", "importancia": 1.0},
 		{"clave": "opinion_torres", "texto": "Hablar sobre Torres", "jugador": "¿Qué opinas de vivir en Torres?", "respuesta": opinion_torres, "evento": "interesarse", "importancia": 1.0}
 	]
-	var estado := "Supongo que hoy estoy bien. Ha sido un día bastante normal, aunque siempre hay algo que pensar."
+	var estado := "Bien, gracias. ¿Y tú? Hoy ha sido un día bastante normal."
 	match nombre:
 		"elian":
 			estado = "Estoy bien, gracias. Ha sido un día tranquilo y eso me permite llevar el trabajo sin apuros."
