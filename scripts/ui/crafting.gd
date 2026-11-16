@@ -230,22 +230,38 @@ func _renderizar_recetas() -> void:
 	)
 
 	for clave_variant in claves:
-		var grupo: Dictionary = grupos[clave_variant]
-		var seccion := VBoxContainer.new()
+		# Cada categoría tiene una única superficie de botón que agrupa
+		# visualmente su título y todas sus recetas.
+		var seccion := PanelContainer.new()
 		seccion.name = "Categoria_" + str(clave_variant)
 		seccion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		seccion.add_theme_constant_override("separation", 4)
+		var fondo_categoria := PIXEL_UI_THEME.button_surface_style()
+		if fondo_categoria != null:
+			seccion.add_theme_stylebox_override("panel", fondo_categoria)
 		_lista.add_child(seccion)
 
-		var encabezado := Button.new()
+		var margen_categoria := MarginContainer.new()
+		margen_categoria.add_theme_constant_override("margin_left", 7)
+		margen_categoria.add_theme_constant_override("margin_top", 6)
+		margen_categoria.add_theme_constant_override("margin_right", 7)
+		margen_categoria.add_theme_constant_override("margin_bottom", 6)
+		seccion.add_child(margen_categoria)
+
+		var contenido_categoria := VBoxContainer.new()
+		contenido_categoria.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		contenido_categoria.add_theme_constant_override("separation", 5)
+		margen_categoria.add_child(contenido_categoria)
+
+		var encabezado := Label.new()
 		encabezado.name = "CategoryHeading"
 		encabezado.text = str(grupo.get("nombre", "Sin categoría")).to_upper()
-		encabezado.custom_minimum_size = Vector2(0, 24)
+		encabezado.custom_minimum_size = Vector2(0, 20)
 		encabezado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		encabezado.focus_mode = Control.FOCUS_NONE
-		encabezado.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		seccion.add_child(encabezado)
-		PIXEL_UI_THEME.apply(encabezado, false)
+		encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		encabezado.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		encabezado.add_theme_color_override("font_color", Color("#E6D0A6"))
+		encabezado.add_theme_font_size_override("font_size", 12)
+		contenido_categoria.add_child(encabezado)
 
 		var rejilla := GridContainer.new()
 		rejilla.name = "RecipeGrid"
@@ -253,7 +269,7 @@ func _renderizar_recetas() -> void:
 		rejilla.columns = 3
 		rejilla.add_theme_constant_override("h_separation", 6)
 		rejilla.add_theme_constant_override("v_separation", 6)
-		seccion.add_child(rejilla)
+		contenido_categoria.add_child(rejilla)
 		for receta_variant in grupo.get("recetas", []) as Array:
 			if receta_variant is Dictionary:
 				_crear_tarjeta_receta(receta_variant as Dictionary, rejilla)
