@@ -174,6 +174,27 @@ func _run() -> void:
 
 	var schedule := ScheduleScript.new() as NPCScheduleSystem
 	schedule._relationship_system = relationship
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "detalle_puente",
+		"tipo": "nota_personal",
+		"promesa_para": "mara",
+		"clave_promesa": "contar_detalle_puente",
+		"clave_conocimiento": "detalle_puente",
+		"promesa": "Contar lo que averiguó del puente",
+		"fuente": "ivo"
+	})
+	var motivo_promesa_generada: Dictionary = schedule.call(
+		"_seleccionar_motivo_encuentro_social",
+		"ivo",
+		"mara",
+		relationship.obtener_relacion_entre_npc("ivo", "mara")
+	)
+	if str(motivo_promesa_generada.get("tipo", "")) != "cumplir_promesa":
+		errores.append("Una promesa guardada en los recuerdos no generó un objetivo de cumplimiento.")
+	var promesa_auto_id := str(motivo_promesa_generada.get("promesa_id", ""))
+	if promesa_auto_id.is_empty() or not relationship.resolver_promesa_entre_npc(promesa_auto_id, true):
+		errores.append("No se pudo cerrar la promesa recuperada desde el recuerdo.")
+
 	var promesa_motivo_id := relationship.registrar_promesa_entre_npc("ivo", "mara", {
 		"clave": "contar_noticia",
 		"descripcion": "Contar una noticia pendiente"
@@ -183,11 +204,22 @@ func _run() -> void:
 	if str(motivo_promesa.get("tipo", "")) != "cumplir_promesa" or str(motivo_promesa.get("promesa_id", "")) != promesa_motivo_id:
 		errores.append("El NPC no priorizó una promesa pendiente con su destinataria.")
 
-	relationship.registrar_asunto_pendiente_npc("ivo", {
-		"clave": "ayuda_herramienta",
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "herramienta_rota",
+		"tipo": "problema",
+		"requiere_ayuda": true,
 		"personaje_relacionado": "mara",
-		"descripcion": "Necesita ayuda con una herramienta"
+		"asunto": "Necesita ayuda con una herramienta",
+		"fuente": "ivo"
 	})
+	var motivo_asunto_generado: Dictionary = schedule.call(
+		"_seleccionar_motivo_encuentro_social",
+		"ivo",
+		"mara",
+		relacion_social
+	)
+	if str(motivo_asunto_generado.get("tipo", "")) != "resolver_asunto":
+		errores.append("Un problema que requiere ayuda no generó un asunto social.")
 	relationship.resolver_promesa_entre_npc(promesa_motivo_id, true)
 	var motivo_asunto: Dictionary = schedule.call("_seleccionar_motivo_encuentro_social", "ivo", "mara", relacion_social)
 	if str(motivo_asunto.get("tipo", "")) != "resolver_asunto":
