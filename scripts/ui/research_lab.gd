@@ -123,6 +123,15 @@ func _alternar_seleccion(indice: int, boton: Button) -> void:
 		_indice_seleccionado = indice
 	else:
 		_indice_seleccionado = -1
+	_actualizar_seleccion()
+
+
+func _actualizar_seleccion() -> void:
+	# Mantiene sincronizado el estado visual de los botones con la selección única.
+	for indice in _botones_items:
+		var boton: Button = _botones_items[indice]
+		boton.set_pressed_no_signal(int(indice) == _indice_seleccionado)
+	_boton_ejecutar.disabled = _indice_seleccionado < 0
 
 
 func _ejecutar_prueba() -> void:
