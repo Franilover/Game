@@ -1290,6 +1290,23 @@ func accion_controles_moviles(accion: String) -> void:
 			var inventory_node := get_tree().get_first_node_in_group("inventory")
 			if inventory_node != null and inventory_node.has_method("toggle"):
 				inventory_node.call_deferred("toggle")
+		"toggle_map":
+			var map_inventory := get_tree().get_first_node_in_group("inventory")
+			if map_inventory != null and map_inventory.has_method("toggle_mapa"):
+				map_inventory.call("toggle_mapa")
+		"toggle_missions":
+			_toggle_panel_misiones()
+		"toggle_garumi_selector":
+			if _r_selector_abierto:
+				_cerrar_selector_companero()
+			else:
+				_abrir_selector_companero()
+		"garumi_slot_1":
+			_usar_don_companero(0)
+		"garumi_slot_2":
+			_usar_don_companero(1)
+		"garumi_slot_3":
+			_usar_don_companero(2)
 
 
 func _input(event: InputEvent) -> void:
