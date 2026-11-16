@@ -761,3 +761,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadió `AuthenticatedCatalogReload`, que verifica el caso de sesión ya autenticada, la señal de restauración y el login normal, comprobando que cada catálogo se solicite una sola vez por evento.
 - CI Godot 4.7: **PASS**, run `43924866198`, 40 pasos completados sin fallos.
 - La prueba valida la coordinación de señales con un fixture, no el refresh real ni las respuestas de red. Falta comprobar una sesión persistida real y la disponibilidad efectiva de cada endpoint.
+
+
+## Sexagésima séptima barrida — Ritmo y coherencia de diálogo en tránsito
+
+- El texto de diálogo de NPCs cuya rutina indica caminar, pasear o desplazarse ahora se revela a 0,028 s por carácter (aprox. 36 caracteres por segundo), frente al intervalo general de 0,006 s.
+- Los diálogos marcados explícitamente como tránsito dejan la última línea visible 2,5 s después de terminar de revelarse, en vez de cerrarse inmediatamente.
+- La despedida distingue el desplazamiento del trabajo: el NPC que camina continúa hacia su destino y el jugador responde con una despedida acorde; quien trabaja vuelve a su tarea sin frases de paseo.
+- `DialogueSocialMenu` cubre el ritmo lento y las despedidas coherentes de caminar/tránsito/trabajo.
+- CI Godot 4.7: **PASS**, run `43929922701` (#1654), 40 pasos completados sin fallos.
+- La prueba es headless. Falta revisar la legibilidad en una partida real, en especial Android, y rastrear cualquier frase contradictoria que provenga de datos externos.
