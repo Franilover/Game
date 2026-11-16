@@ -2805,7 +2805,7 @@ func _abrir_selector_items(modo: String) -> void:
 			if objeto.is_empty():
 				continue
 			var item_id_brillo := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
-			if relationship_system == null or not relationship_system.conoce_item(personaje_id, item_id_brillo):
+			if not _npc_ya_consulto_item(personaje_id, item_id_brillo):
 				continue
 			var boton_conocido := _buscar_boton_item(indice)
 			if boton_conocido != null:
@@ -2873,6 +2873,7 @@ func _seleccionar_item_interaccion(indice: int, item_id_esperado: String, modo: 
 		respuesta_npc = _crear_reaccion_regalo(nombre_item, datos_regalo, _fuente.get_nombre_visual())
 	else:
 		respuesta_npc = _crear_respuesta_pregunta_item(objeto, personaje_id, item_id)
+		_registrar_consulta_investigacion(personaje_id, item_id, nombre_item, respuesta_npc)
 
 	_cerrar_selector_items()
 	var texto_jugador := "Quiero darte esto: " + nombre_item + "." if modo == "regalo" else "¿Qué puedes contarme sobre " + nombre_item + "?"
@@ -2955,26 +2956,141 @@ func _crear_reaccion_regalo(nombre_item: String, datos_regalo: Dictionary, perso
 
 func _crear_respuesta_pregunta_item(objeto: Dictionary, personaje_id: String, item_id: String) -> String:
 	var nombre_item := str(objeto.get("nombre", "ese objeto")).strip_edges()
-	if relationship_system != null and relationship_system.conoce_item(personaje_id, item_id):
-		var datos_conocidos := relationship_system.evaluar_regalo(personaje_id, item_id)
-		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
-		var reaccion := str(datos_conocidos.get("reaccion", "neutral")).strip_edges().to_lower()
-		var respuesta := "Sí, conozco " + nombre_item + "."
-		if not descripcion.is_empty():
-			respuesta += " " + descripcion
-		match reaccion:
-			"adorado", "favorito", "muy_amado", "encanta", "muy_positivo":
-				respuesta += " Es uno de los objetos que más aprecio."
-			"le_gusta", "gusta", "positivo", "bueno", "muy_bueno":
-				respuesta += " Me parece un objeto útil y agradable."
-			"no_gusta", "no_le_gusta", "desagrado", "negativo", "malo":
-				respuesta += " No es uno de mis objetos preferidos."
-			"odia", "detesta", "muy_negativo":
-				respuesta += " No me agrada demasiado."
-			_:
-				respuesta += " Lo conozco, aunque no tengo una opinión especial sobre él."
-		return respuesta
-	return "No conozco " + nombre_item + ". ¿Dónde lo encontraste? No recuerdo haber visto uno antes."
+	var consultas := _obtener_consultas_investigacion()
+	var por_personaje_variant: Variant = consultas.get(personaje_id, {})
+	if por_personaje_variant is Dictionary:
+		var consulta_previa: Variant = (por_personaje_variant as Dictionary).get(item_id, {})
+		if consulta_previa is Dictionary:
+			var respuesta_previa := str((consulta_previa as Dictionary).get("respuesta", "")).strip_edges()
+			if not respuesta_previa.is_empty():
+				return "Ya habíamos hablado de " + nombre_item + ". " + respuesta_previa
+
+	var claves := _obtener_claves_conocimiento_item(objeto)
+	var es_arma := _contiene_clave_conocimiento(claves, ["arma", "armas", "combate", "espada", "arco", "hacha", "lanza", "herramienta", "herramientas", "armadura", "equipo"])
+	var es_material := _contiene_clave_conocimiento(claves, ["material", "materiales", "mineral", "minerales", "metal", "metales", "recurso", "recursos", "planta", "plantas", "alimento", "bebida", "sustancia", "ingrediente", "componente"])
+	var es_oris := _contiene_clave_conocimiento(claves, ["oris", "eterium", "ium", "fenomeno", "fenomenos", "poder", "poderes", "don", "emision", "recepcion"])
+	var es_documento := _contiene_clave_conocimiento(claves, ["documento", "libro", "registro", "carta", "nota", "manuscrito", "archivo"])
+	var es_artefacto := _contiene_clave_conocimiento(claves, ["artefacto", "reliquia", "antiguo", "ruina"])
+
+	var nombre_npc := personaje_id.strip_edges().to_lower()
+	var respuesta := "No tengo experiencia suficiente con " + nombre_item + " para decirte algo fiable. Quizá otra persona pueda reconocerlo."
+
+	match nombre_npc:
+		"saira":
+			if es_material or _contiene_clave_conocimiento(claves, ["comercio", "mercancia", "producto", "consumible", "alimentos_bebidas"]):
+				respuesta = "He visto mercancías de este tipo en los puestos y durante los viajes de los comerciantes. Puedo orientarte sobre su procedencia y dónde suele encontrarse, aunque no sabría explicar todas sus propiedades."
+			elif es_arma:
+				respuesta = "He visto herramientas y armas parecidas entre las mercancías que llegan al reino. Para revisar cómo está fabricada, Bruna seguramente podrá ayudarte mejor."
+			else:
+				respuesta = "No lo reconozco a primera vista. Si averiguo algo entre los comerciantes que pasan por aquí, te lo comentaré."
+		"nima":
+			if es_oris:
+				respuesta = "Hay algo en ese objeto que merece observarse desde el estudio de los fenómenos Oris. Por ahora sólo puedo plantear una hipótesis; habría que probar cómo responde antes de sacar conclusiones."
+			elif es_arma:
+				respuesta = "Puedo examinar su estructura y buscar indicios de alguna aplicación de Oris, aunque no asumiría que la tiene. Si encontramos una reacción, podríamos estudiarla en el laboratorio."
+			else:
+				respuesta = "No parece relacionado con lo que estoy estudiando ahora. Aun así, podríamos observarlo y comprobar si presenta algún comportamiento fuera de lo común."
+		"narel":
+			if es_documento or es_artefacto or es_oris:
+				respuesta = "Podría compararlo con referencias y observaciones anteriores. No tengo una identificación segura todavía, pero hay detalles que convendría contrastar antes de atribuirle un origen."
+			elif es_arma or es_material:
+				respuesta = "Puedo ayudarte a ordenar lo que se sabe de sus materiales y procedencia. Para evaluar su fabricación o funcionamiento, convendría consultar también a alguien especializado."
+		"bruna":
+			if es_arma or es_material:
+				respuesta = "Puedo revisar cómo está hecho, qué materiales utiliza y qué señales de desgaste tiene. Si quieres saber si puede repararse o modificarse, tendría que examinarlo con más detalle."
+			else:
+				respuesta = "No es un objeto que trabaje habitualmente. Si tiene piezas, materiales o mecanismos que pueda revisar, quizá pueda orientarte."
+		"darven":
+			if es_arma:
+				respuesta = "He visto equipo de este tipo durante mis rondas. Puedo comentarte su uso práctico y qué conviene revisar para mantenerlo en buen estado, aunque no conozco necesariamente su origen."
+			else:
+				respuesta = "No reconozco ese objeto por mi trabajo. Si lo encontraste fuera del reino, recuerda dónde estaba; la procedencia puede ser importante."
+		"ivo":
+			if _contiene_clave_conocimiento(claves, ["alimento", "bebida", "alimentos_bebidas"]):
+				respuesta = "He probado cosas parecidas. Puedo contarte cómo me sentaron, aunque no soy precisamente un experto en sus ingredientes."
+		"mara":
+			respuesta = "No conozco bien ese objeto. Si me cuentas dónde lo encontraste, quizá pueda ayudarte a pensar quién tendría experiencia con algo así."
+
+	return respuesta
+
+
+func _obtener_claves_conocimiento_item(objeto: Dictionary) -> Array[String]:
+	var claves: Array[String] = []
+	for campo in ["nombre", "categoria_clave", "categoria_nombre", "tipo", "subcategoria", "familia", "origen", "grupo", "clase", "tipo_objeto"]:
+		var valor := str(objeto.get(campo, "")).strip_edges()
+		if not valor.is_empty():
+			claves.append(_normalizar_clave_conocimiento(valor))
+
+	var categoria: Variant = objeto.get("categoria", {})
+	if categoria is Dictionary:
+		var datos_categoria := categoria as Dictionary
+		for campo in ["clave", "nombre", "tipo"]:
+			var valor := str(datos_categoria.get(campo, "")).strip_edges()
+			if not valor.is_empty():
+				claves.append(_normalizar_clave_conocimiento(valor))
+	elif categoria is String and not str(categoria).strip_edges().is_empty():
+		claves.append(_normalizar_clave_conocimiento(str(categoria)))
+
+	var propiedades: Variant = objeto.get("propiedades_game", {})
+	if propiedades is Dictionary:
+		var datos_propiedades := propiedades as Dictionary
+		for campo in ["tipo", "familia", "origen", "afinidad", "categoria", "efecto", "poder"]:
+			var valor := str(datos_propiedades.get(campo, "")).strip_edges()
+			if not valor.is_empty():
+				claves.append(_normalizar_clave_conocimiento(valor))
+		for campo in ["tags", "etiquetas"]:
+			var etiquetas: Variant = datos_propiedades.get(campo, [])
+			if etiquetas is Array:
+				for etiqueta in etiquetas:
+					claves.append(_normalizar_clave_conocimiento(str(etiqueta)))
+	var tags: Variant = objeto.get("tags", objeto.get("etiquetas", []))
+	if tags is Array:
+		for tag in tags:
+			claves.append(_normalizar_clave_conocimiento(str(tag)))
+	return claves
+
+
+func _normalizar_clave_conocimiento(valor: String) -> String:
+	return valor.strip_edges().to_lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u").replace("ñ", "n").replace(" ", "_").replace("-", "_")
+
+
+func _contiene_clave_conocimiento(claves: Array[String], terminos: Array[String]) -> bool:
+	for clave in claves:
+		for termino in terminos:
+			if clave == termino or clave.contains(termino):
+				return true
+	return false
+
+
+func _obtener_consultas_investigacion() -> Dictionary:
+	if not GameState.has_method("obtener_conversaciones_npc"):
+		return {}
+	var progreso: Dictionary = GameState.call("obtener_conversaciones_npc")
+	var consultas: Variant = progreso.get("consultas_investigacion", {})
+	return (consultas as Dictionary).duplicate(true) if consultas is Dictionary else {}
+
+
+func _npc_ya_consulto_item(personaje_id: String, item_id: String) -> bool:
+	var consultas := _obtener_consultas_investigacion()
+	var npc_variant: Variant = consultas.get(personaje_id, {})
+	return npc_variant is Dictionary and (npc_variant as Dictionary).has(item_id)
+
+
+func _registrar_consulta_investigacion(personaje_id: String, item_id: String, nombre_item: String, respuesta: String) -> void:
+	if personaje_id.is_empty() or item_id.is_empty() or not GameState.has_method("obtener_conversaciones_npc") or not GameState.has_method("guardar_conversaciones_npc"):
+		return
+	var progreso: Dictionary = GameState.call("obtener_conversaciones_npc")
+	var consultas_variant: Variant = progreso.get("consultas_investigacion", {})
+	var consultas: Dictionary = (consultas_variant as Dictionary).duplicate(true) if consultas_variant is Dictionary else {}
+	var npc_variant: Variant = consultas.get(personaje_id, {})
+	var por_personaje: Dictionary = (npc_variant as Dictionary).duplicate(true) if npc_variant is Dictionary else {}
+	por_personaje[item_id] = {
+		"nombre": nombre_item,
+		"respuesta": respuesta
+	}
+	consultas[personaje_id] = por_personaje
+	progreso["consultas_investigacion"] = consultas
+	GameState.call("guardar_conversaciones_npc", progreso)
 
 
 func _mostrar_intercambio_item(texto_jugador: String, texto_npc: String) -> void:
