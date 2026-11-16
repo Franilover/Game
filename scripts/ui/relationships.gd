@@ -340,7 +340,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var panel_amistad := PanelContainer.new()
 	panel_amistad.name = "FriendshipPanel"
 	panel_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var fondo_amistad := PIXEL_UI_THEME.button_surface_style()
+	var fondo_amistad: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
 	if fondo_amistad != null:
 		panel_amistad.add_theme_stylebox_override("panel", fondo_amistad)
 	detalle.add_child(panel_amistad)
