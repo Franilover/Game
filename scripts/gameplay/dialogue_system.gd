@@ -256,12 +256,14 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	_dialogo_en_transito = _es_dialogo_en_transito(datos_seleccionados)
 	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
-	var tiene_acciones_finales := acciones_final_variant is Array and not (acciones_final_variant as Array).is_empty()
-	if not iniciativa_directa and not tiene_acciones_finales and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
-		# En conversaciones normales el menú social es estable y sustituye
-		# las respuestas rotativas. Las escenas directas conservan sus opciones.
+	var tiene_accion_exclusiva := _dialogo_tiene_accion_final_exclusiva(acciones_final_variant)
+	if not iniciativa_directa and not tiene_accion_exclusiva and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
+		# Las conversaciones cotidianas conservan el menú social aunque sus
+		# datos incluyan acciones auxiliares. Sólo las escenas que necesitan
+		# resolver una misión, un seguimiento o un evento mantienen su cierre propio.
 		_usa_menu_social = true
 		_respuestas = _crear_menu_principal_social()
+		_acciones.clear()
 	_limpiar_botones_respuesta()
 
 	if is_instance_valid(_fuente):
@@ -312,6 +314,20 @@ func abrir_iniciativa_npc(datos: Dictionary, fuente: Creature) -> bool:
 	if not is_instance_valid(fuente) or _abierto:
 		return false
 	return abrir(datos, fuente, true)
+
+
+## Estas acciones requieren una resolución propia y no deben mezclarse con
+## las opciones habituales de conversación.
+func _dialogo_tiene_accion_final_exclusiva(acciones_variant: Variant) -> bool:
+	if not acciones_variant is Array:
+		return false
+	for accion_variant in acciones_variant as Array:
+		if not accion_variant is Dictionary:
+			continue
+		var tipo := str((accion_variant as Dictionary).get("tipo", "")).strip_edges().to_lower()
+		if tipo in ["aceptar_mision", "seguir_jugador", "evento_social"]:
+			return true
+	return false
 
 
 func cerrar() -> void:
