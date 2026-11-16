@@ -1232,6 +1232,8 @@ func _limpiar_informacion() -> void:
 	item_category.text = ""
 	item_category.tooltip_text = ""
 	item_category.visible = false
+	for hijo in stats_row.get_children():
+		hijo.queue_free()
 	item_description.text = ""
 	item_description.visible = false
 	item_icon.texture = null
