@@ -2036,6 +2036,7 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 		var clave_promesa := str(conocimiento_promesa.get("clave_promesa", conocimiento_promesa.get("clave", ""))).strip_edges()
 		if not clave_promesa.is_empty():
 			_relationship_system.registrar_promesa_entre_npc(personaje_id, pareja_id, {
+				"id": "promesa_memoria:%s:%s" % [personaje_id, clave_promesa],
 				"clave": clave_promesa,
 				"descripcion": str(conocimiento_promesa.get("promesa", conocimiento_promesa.get("titulo", clave_promesa))),
 				"clave_conocimiento": str(conocimiento_promesa.get("clave_conocimiento", ""))
@@ -2055,6 +2056,7 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 		var clave_asunto := str(conocimiento_asunto.get("clave", "")).strip_edges()
 		if not clave_asunto.is_empty():
 			_relationship_system.registrar_asunto_pendiente_npc(personaje_id, {
+				"id": "asunto_memoria:%s:%s" % [personaje_id, clave_asunto],
 				"clave": clave_asunto,
 				"personaje_relacionado": pareja_id,
 				"descripcion": str(conocimiento_asunto.get("asunto", conocimiento_asunto.get("titulo", clave_asunto))),
