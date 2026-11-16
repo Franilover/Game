@@ -40,6 +40,10 @@ func _ready() -> void:
 	PIXEL_UI_THEME.apply(self, false)
 	var fondo_detalle := get_node_or_null("Margin/Column/Content/DetailPanel") as PanelContainer
 	if fondo_detalle != null:
+		# El panel de detalle usa exclusivamente la superficie normal de botón.
+		# Limpiar primero el estilo de panel clásico evita conservar su marco
+		# anterior si la escena o el tema global lo habían aplicado.
+		fondo_detalle.remove_theme_stylebox_override("panel")
 		var estilo_boton := PIXEL_UI_THEME.button_surface_style()
 		if estilo_boton != null:
 			fondo_detalle.add_theme_stylebox_override("panel", estilo_boton)
