@@ -585,15 +585,19 @@ func _aplicar_fondos_inventario() -> void:
 		bloque_detalle.add_theme_constant_override("margin_right", 7)
 		bloque_detalle.add_theme_constant_override("margin_bottom", 6)
 
-	# El nombre y el sprite quedan integrados directamente en el bloque grande:
-	# no deben dibujar superficies individuales encima del fondo principal.
-	if is_instance_valid(item_name):
-		item_name.flat = true
-		var sin_fondo := StyleBoxEmpty.new()
-		item_name.add_theme_stylebox_override("normal", sin_fondo)
-		item_name.add_theme_stylebox_override("hover", sin_fondo)
-		item_name.add_theme_stylebox_override("pressed", sin_fondo)
-		item_name.add_theme_stylebox_override("focus", sin_fondo)
+	# El nombre y las etiquetas de categoría/modalidad usan la misma
+	# superficie que los botones de la interfaz.
+	for etiqueta_variant in [item_name, item_category]:
+		var etiqueta := etiqueta_variant as Button
+		if not is_instance_valid(etiqueta):
+			continue
+		etiqueta.flat = false
+		etiqueta.add_theme_stylebox_override("normal", estilo_boton)
+		etiqueta.add_theme_stylebox_override("hover", PIXEL_UI_THEME.button_hover_style())
+		etiqueta.add_theme_stylebox_override("pressed", PIXEL_UI_THEME.button_pressed_style())
+		etiqueta.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		etiqueta.add_theme_constant_override("h_separation", 0)
+		etiqueta.add_theme_constant_override("outline_size", 0)
 	if is_instance_valid(item_icon_frame):
 		item_icon_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 		for margen in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
@@ -1212,12 +1216,18 @@ func _agregar_dato_visual(nombre_sprite: String, valor: int) -> void:
 	stats_row.add_child(marco)
 
 func _agregar_etiqueta_modalidad(texto: String) -> void:
-	var etiqueta := Label.new()
+	var etiqueta := Button.new()
 	etiqueta.text = texto
+	etiqueta.custom_minimum_size = Vector2(0, 24)
 	etiqueta.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	etiqueta.focus_mode = Control.FOCUS_NONE
+	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	etiqueta.add_theme_color_override("font_color", Color(0.91, 0.82, 0.67, 1.0))
 	etiqueta.add_theme_font_size_override("font_size", 9)
-	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	etiqueta.add_theme_stylebox_override("normal", PIXEL_UI_THEME.button_surface_style())
+	etiqueta.add_theme_stylebox_override("hover", PIXEL_UI_THEME.button_hover_style())
+	etiqueta.add_theme_stylebox_override("pressed", PIXEL_UI_THEME.button_pressed_style())
+	etiqueta.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	stats_row.add_child(etiqueta)
 
 
