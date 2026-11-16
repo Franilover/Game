@@ -141,16 +141,9 @@ func _ajustar_columnas_retratos() -> void:
 func _actualizar() -> void:
 	_limpiar()
 
-	var sistema := _relationship_system
-	if sistema == null or not sistema.has_method("esta_cargado"):
-		estado.text = "Las relaciones todavía no están disponibles."
-		return
-	if not bool(sistema.call("esta_cargado")):
-		estado.text = "Cargando relaciones sociales..."
-		return
-
-	# La lista social parte del catálogo canónico de personajes_game.
-	# Las reglas de personalidad son opcionales: su ausencia no debe ocultar aldeanos.
+	# La lista visual depende del catálogo de personajes, no de que el
+	# servicio de relaciones haya terminado de cargar. Antes se retornaba
+	# aquí y se ocultaban todos los habitantes durante una carga social lenta.
 	var personajes: Array[Dictionary] = WorldData.obtener_personajes_game()
 	if personajes.is_empty():
 		estado.text = "Todavía no hay habitantes disponibles."
@@ -280,18 +273,28 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	_limpiar_detalle()
 
 	var sistema := _relationship_system
-	if sistema == null:
-		return
+	var relacion: Dictionary = {}
+	if sistema != null and is_instance_valid(sistema) and sistema.has_method("esta_cargado"):
+		if bool(sistema.call("esta_cargado")):
+			var relacion_variant: Variant = sistema.call("obtener_relacion", personaje_id)
+			if relacion_variant is Dictionary:
+				relacion = relacion_variant as Dictionary
 
-	var relacion_variant: Variant = sistema.call("obtener_relacion", personaje_id)
-	if not relacion_variant is Dictionary:
-		return
-
-	var relacion: Dictionary = relacion_variant as Dictionary
 	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
 	var asset_key := str(datos_personaje.get("asset_key", nombre))
 	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
 	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
+	var fondo_retrato := Button.new()
+	fondo_retrato.name = "CharacterFaceFrame"
+	fondo_retrato.text = ""
+	fondo_retrato.custom_minimum_size = Vector2(0.0, 96.0)
+	fondo_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fondo_retrato.focus_mode = Control.FOCUS_NONE
+	fondo_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fondo_retrato.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	PIXEL_UI_THEME.apply(fondo_retrato, false)
+	detalle.add_child(fondo_retrato)
+
 	if textura != null:
 		var fondo_retrato := Button.new()
 		fondo_retrato.name = "CharacterFaceFrame"
@@ -317,6 +320,16 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 		retrato_cara.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		retrato_cara.texture = textura
 		fondo_retrato.add_child(retrato_cara)
+	else:
+		var iniciales := Label.new()
+		iniciales.name = "CharacterFaceFallback"
+		iniciales.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		iniciales.text = nombre.substr(0, 2).to_upper()
+		iniciales.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		iniciales.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		iniciales.add_theme_font_size_override("font_size", 24)
+		iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fondo_retrato.add_child(iniciales)
 
 	var titulo := Button.new()
 	titulo.name = "CharacterName"
@@ -330,6 +343,13 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	titulo.add_theme_color_override("font_color", Color("#FFF3D6"))
 	PIXEL_UI_THEME.apply(titulo, false)
 	detalle.add_child(titulo)
+
+	if relacion.is_empty():
+		var estado_relacion := Label.new()
+		estado_relacion.text = "Relaciones sociales cargando..."
+		estado_relacion.add_theme_font_size_override("font_size", 9)
+		detalle.add_child(estado_relacion)
+		return
 
 	var etiqueta_amistad := Label.new()
 	etiqueta_amistad.text = "Amistad"
