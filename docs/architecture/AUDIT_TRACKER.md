@@ -166,3 +166,18 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Prueba `tests/persistence/test_npc_mind_core.tscn`: necesidades, satisfacción, elección, aprendizaje positivo/negativo, objetivos, normalización y roundtrip desde GameState.
 - CI Godot 4.7: **41 pasos completados, 0 fallos**, run [#1677](https://github.com/Franilover/Game/actions/runs/43934161188).
 - Alcance deliberado: aún no se conecta la elección de actividades al movimiento/rutinas ni se simula tiempo fuera de pantalla. Esa integración se hará después de validar el núcleo.
+
+
+
+## NPC Mind — primera conexión con comportamiento en mundo (2026-11-16)
+
+- `NPCScheduleSystem` consulta el servicio `NPCMind` durante la actualización de habitantes vivos en Torres.
+- El núcleo procesa intervalos de tiempo del calendario del mundo (en lotes de al menos cinco minutos de juego), aumenta necesidades y aplica alivio según la actividad que el NPC realiza.
+- El estado emocional (ánimo, estrés y energía) se recalcula desde las necesidades; no se usa para generar texto.
+- En los días libres y franjas de ocio de plaza, los habitantes con perfil definido evalúan tres alternativas propias. La utilidad considera necesidades, rasgos sociales, preferencias aprendidas, coste y prioridad.
+- La decisión queda fijada durante el tramo para evitar cambios de actividad cada tick.
+- Las decisiones pueden dirigir al NPC a lugares concretos (por ejemplo, Elian a la panadería, Bruna a la forja, Narel al archivo, Ivo a su vivienda y los miembros de la casa real al castillo); se reutiliza el sistema existente de navegación/entrada a edificios.
+- Al finalizar el tramo, el resultado observado en la necesidad principal se registra como experiencia positiva/negativa y modifica gradualmente las preferencias futuras.
+- La prueba de núcleo cubre procesamiento temporal, satisfacción, actualización emocional y que Ivo/Mara tengan conjuntos de actividades distintos.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1685](https://github.com/Franilover/Game/actions/runs/43935581554).
+- Alcance actual: la autonomía se aplica a alternativas de ocio de día libre, no reemplaza trabajo, guardias, investigaciones ni compromisos. La simulación offline y la iniciativa social basada en objetivos quedan para siguientes etapas.
