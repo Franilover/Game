@@ -6,7 +6,7 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 const PROCEDIMIENTOS_POR_ESTACION: Dictionary = {
 	"examen": ["Examinar", "Medir", "Comparar"],
-	"mezclas": ["Mezclar", "Disolver"],
+	"mezclas": ["Mezclar", "Disolver", "Ensamblar"],
 	"termica": ["Calentar", "Enfriar", "Fundir"],
 	"observacion": ["Observar estructura", "Comparar"],
 	"eterium": ["Observar Eterium", "Aplicar Eterium"]
@@ -14,7 +14,7 @@ const PROCEDIMIENTOS_POR_ESTACION: Dictionary = {
 
 const TITULOS_ESTACION: Dictionary = {
 	"examen": "MESA DE EXAMINACIÓN",
-	"mezclas": "ESTACIÓN DE MEZCLAS",
+	"mezclas": "ESTACIÓN DE PREPARACIÓN",
 	"termica": "ESTACIÓN TÉRMICA",
 	"observacion": "ESTACIÓN DE OBSERVACIÓN",
 	"eterium": "ESTACIÓN DE ETERIUM"
@@ -50,11 +50,11 @@ func _crear_interfaz() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "ResearchLabPanel"
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.offset_left = -300.0
-	_panel.offset_top = -160.0
-	_panel.offset_right = 300.0
-	_panel.offset_bottom = 160.0
-	_panel.custom_minimum_size = Vector2(600.0, 320.0)
+	_panel.offset_left = -310.0
+	_panel.offset_top = -172.0
+	_panel.offset_right = 310.0
+	_panel.offset_bottom = 172.0
+	_panel.custom_minimum_size = Vector2(620.0, 344.0)
 	add_child(_panel)
 
 	var margen := MarginContainer.new()
@@ -227,7 +227,7 @@ func _ejecutar_prueba() -> void:
 		return
 
 	var procedimiento := _procedimiento.get_item_text(_procedimiento.selected).strip_edges()
-	var requiere_varios := procedimiento in ["Comparar", "Mezclar", "Disolver"]
+	var requiere_varios := procedimiento in ["Comparar", "Mezclar", "Disolver", "Ensamblar"]
 	var minimo := 2 if requiere_varios else 1
 	if _seleccionados.size() < minimo:
 		_resultado_label.text = "Selecciona al menos %d elemento(s) para este procedimiento." % minimo
@@ -249,6 +249,7 @@ func _ejecutar_prueba() -> void:
 
 func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dictionary], nombres: Array[String]) -> String:
 	if procedimiento in ["Examinar", "Observar estructura", "Observar Eterium", "Medir"]:
+
 		var objeto := objetos[0]
 		var nombre := nombres[0]
 		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
@@ -262,6 +263,7 @@ func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dicti
 		return resultado
 
 	if procedimiento in ["Comparar"]:
+
 		var resumen: Array[String] = []
 		for objeto in objetos:
 			var categoria := _obtener_categoria(objeto)
