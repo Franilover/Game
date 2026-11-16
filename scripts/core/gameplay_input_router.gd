@@ -21,13 +21,14 @@ var _hud: HUD = null
 var _debug_console: Node = null
 
 const TIEMPO_CONSUMO_ALIMENTO := 1.0
+const TEXTURED_PROGRESS_BAR = preload("res://scripts/ui/textured_progress_bar.gd")
 var _mano_consumo_activa: String = ""
 var _accion_consumo_activa: String = ""
 var _tiempo_consumo: float = 0.0
 var _slot_consumo: int = -1
 var _identidad_consumo: String = ""
 var _boton_consumo: int = MOUSE_BUTTON_NONE
-var _barra_consumo: TexturedProgressBar = null
+var _barra_consumo = null
 var _etiqueta_consumo: Label = null
 
 func _ready() -> void:
@@ -92,7 +93,7 @@ func _crear_indicador_consumo() -> void:
 	_etiqueta_consumo.add_theme_color_override("font_color", Color(0.94, 0.86, 0.72, 1.0))
 	_etiqueta_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenedor.add_child(_etiqueta_consumo)
-	_barra_consumo = TexturedProgressBar.new()
+	_barra_consumo = TEXTURED_PROGRESS_BAR.new()
 	_barra_consumo.configurar(
 		preload("res://assets/art/UI/Menus/bar_fill_stamina.png"),
 		preload("res://assets/art/UI/Menus/bar_frame.png"),
