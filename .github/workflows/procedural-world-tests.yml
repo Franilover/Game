@@ -269,6 +269,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run game state roundtrip persistence contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/persistence/test_game_state_roundtrip.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GameStateRoundtrip: FAIL:' <<<"$output"; then
+            echo "Game state roundtrip regression test reported errors."
+            exit 1
+          fi
+
       - name: Run mission manager persistence contract test
         shell: bash
         run: |
