@@ -33,7 +33,7 @@ var _rng := RandomNumberGenerator.new()
 
 const DISTANCIA_SEPARACION_NPC := 34.0
 const DISTANCIA_CEDER_PASO_NPC := 27.0
-const UMBRAL_PROGRESO_NPC := 0.45
+const FACTOR_PROGRESO_NPC := 0.25
 const TIEMPO_REACCION_ATASCO_NPC := 0.8
 const INTERVALO_CAMBIO_LADO_NPC := 0.75
 
@@ -302,7 +302,8 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 
 	var avance := posicion_actual.distance_to(_ultima_posicion_seguro)
 	_ultima_posicion_seguro = posicion_actual
-	if avance >= UMBRAL_PROGRESO_NPC:
+	var umbral_progreso := maxf(move_speed * maxf(delta, 0.0) * FACTOR_PROGRESO_NPC, 0.05)
+	if avance >= umbral_progreso:
 		_tiempo_sin_progreso = 0.0
 		_tiempo_cambio_lado = 0.0
 		_direccion_base_atasco = Vector2.ZERO
