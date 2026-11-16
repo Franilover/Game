@@ -476,91 +476,91 @@ z_as_relative = false
 script = ExtResource("2_reino")
 
 [node name="Grupo_edificio_castillo" type="Node2D" parent="."]
-position = Vector2(0, -850)
+position = Vector2(0,-850)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_castillo"]
 position = Vector2(0, 112)
 
 [node name="Grupo_edificio_panaderia" type="Node2D" parent="."]
-position = Vector2(-450, -120)
+position = Vector2(-360,-120)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_panaderia"]
 position = Vector2(0, 62)
 
 [node name="Grupo_edificio_posada" type="Node2D" parent="."]
-position = Vector2(450, -120)
+position = Vector2(360,-120)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_posada"]
 position = Vector2(0, 67)
 
 [node name="Grupo_edificio_forja" type="Node2D" parent="."]
-position = Vector2(-650, 180)
+position = Vector2(-500,180)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_forja"]
 position = Vector2(0, 62)
 
 [node name="Grupo_edificio_archivo_real" type="Node2D" parent="."]
-position = Vector2(-190, -280)
+position = Vector2(-170,-280)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_archivo_real"]
 position = Vector2(0, 63)
 
 [node name="Grupo_edificio_sala_consejo" type="Node2D" parent="."]
-position = Vector2(190, -280)
+position = Vector2(170,-280)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_sala_consejo"]
 position = Vector2(0, 68)
 
 [node name="Grupo_edificio_casa_estudio" type="Node2D" parent="."]
-position = Vector2(-850, -600)
+position = Vector2(-520,-430)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_casa_estudio"]
 position = Vector2(0, 65)
 
 [node name="Grupo_edificio_casa_comercio" type="Node2D" parent="."]
-position = Vector2(650, 180)
+position = Vector2(500,180)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_casa_comercio"]
 position = Vector2(0, 66)
 
 [node name="Grupo_edificio_cuartel" type="Node2D" parent="."]
-position = Vector2(850, -600)
+position = Vector2(520,-430)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_cuartel"]
 position = Vector2(0, 68)
 
 [node name="Grupo_edificio_registro" type="Node2D" parent="."]
-position = Vector2(1480, 0)
+position = Vector2(1480,0)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_registro"]
 position = Vector2(0, 61)
 
 [node name="Grupo_edificio_reparaciones" type="Node2D" parent="."]
-position = Vector2(650, 430)
+position = Vector2(-420,430)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_reparaciones"]
 position = Vector2(0, 64)
 
 [node name="Grupo_edificio_carpinteria" type="Node2D" parent="."]
-position = Vector2(900, 430)
+position = Vector2(-160,430)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_carpinteria"]
 position = Vector2(0, 64)
 
 [node name="Grupo_edificio_granero" type="Node2D" parent="."]
-position = Vector2(-900, 520)
+position = Vector2(-760,600)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_granero"]
 position = Vector2(0, 67)
 
 [node name="Grupo_edificio_molino" type="Node2D" parent="."]
-position = Vector2(-650, 520)
+position = Vector2(-500,600)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_molino"]
 position = Vector2(0, 64)
 
 [node name="Grupo_edificio_corrales" type="Node2D" parent="."]
-position = Vector2(650, 650)
+position = Vector2(650,650)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_edificio_corrales"]
 position = Vector2(0, 66)
@@ -600,97 +600,97 @@ position = Vector2(0, -6)
 shape = SubResource("CastleCollision")
 
 [node name="Grupo_casa_bruna" type="Node2D" parent="."]
-position = Vector2(-1320, -760)
+position = Vector2(-1000,-350)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_bruna"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_elian" type="Node2D" parent="."]
-position = Vector2(1320, -760)
+position = Vector2(700,-350)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_elian"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_darven" type="Node2D" parent="."]
-position = Vector2(1500, -350)
+position = Vector2(850,-350)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_darven"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_saira" type="Node2D" parent="."]
-position = Vector2(1180, -220)
+position = Vector2(1000,-350)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_saira"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_01" type="Node2D" parent="."]
-position = Vector2(-1180, -220)
+position = Vector2(-700,-350)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_01"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_02" type="Node2D" parent="."]
-position = Vector2(-1500, 80)
+position = Vector2(-1000,-100)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_02"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_03" type="Node2D" parent="."]
-position = Vector2(-1180, 360)
+position = Vector2(-850,-100)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_03"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_04" type="Node2D" parent="."]
-position = Vector2(-1500, 650)
+position = Vector2(-700,-100)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_04"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_05" type="Node2D" parent="."]
-position = Vector2(-1180, 780)
+position = Vector2(-1000,150)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_05"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_06" type="Node2D" parent="."]
-position = Vector2(-920, 920)
+position = Vector2(-850,150)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_06"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_07" type="Node2D" parent="."]
-position = Vector2(1500, 80)
+position = Vector2(700,-100)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_07"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_08" type="Node2D" parent="."]
-position = Vector2(1180, 360)
+position = Vector2(850,-100)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_08"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_narel" type="Node2D" parent="."]
-position = Vector2(-1500, -350)
+position = Vector2(-850,-350)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_narel"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_10" type="Node2D" parent="."]
-position = Vector2(1500, 650)
+position = Vector2(1000,-100)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_10"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_vacia_11" type="Node2D" parent="."]
-position = Vector2(1180, 780)
+position = Vector2(850,150)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_vacia_11"]
 position = Vector2(0, 54)
 
 [node name="Grupo_casa_granjeros" type="Node2D" parent="."]
-position = Vector2(900, 950)
+position = Vector2(950,850)
 
 [node name="Entrada" type="Marker2D" parent="Grupo_casa_granjeros"]
 position = Vector2(0, 48)
@@ -1011,35 +1011,35 @@ texture = ExtResource("official_tree")
 [node name="Sprite_Arbol_Ciudad_09" type="Sprite2D" parent="." unique_id=1372938754]
 z_index = 2
 texture_filter = 1
-position = Vector2(-820, -350)
+position = Vector2(-1150,-500)
 scale = Vector2(1.375, 1.625)
 texture = ExtResource("official_tree")
 
 [node name="Sprite_Arbol_Ciudad_10" type="Sprite2D" parent="." unique_id=766097845]
 z_index = 2
 texture_filter = 1
-position = Vector2(820, -350)
+position = Vector2(1150,-500)
 scale = Vector2(1.375, 1.625)
 texture = ExtResource("official_tree")
 
 [node name="Sprite_Arbol_Ciudad_13" type="Sprite2D" parent="." unique_id=1552278688]
 z_index = 2
 texture_filter = 1
-position = Vector2(500, 850)
+position = Vector2(1200,650)
 scale = Vector2(1.375, 1.625)
 texture = ExtResource("official_tree")
 
 [node name="Sprite_Arbol_Ciudad_11" type="Sprite2D" parent="." unique_id=1614706418]
 z_index = 2
 texture_filter = 1
-position = Vector2(-820, 900)
+position = Vector2(-1150,850)
 scale = Vector2(1.375, 1.625)
 texture = ExtResource("official_tree")
 
 [node name="Sprite_Arbol_Ciudad_12" type="Sprite2D" parent="." unique_id=934437187]
 z_index = 2
 texture_filter = 1
-position = Vector2(820, 900)
+position = Vector2(1150,850)
 scale = Vector2(1.375, 1.625)
 texture = ExtResource("official_tree")
 
