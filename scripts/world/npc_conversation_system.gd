@@ -2165,59 +2165,79 @@ func iniciar_conversacion_social_autonoma(npc_a: Creature, npc_b: Creature, moti
 		return false
 	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
 		return false
+
 	var nombre_a := npc_a.get_nombre_visual().strip_edges().to_lower()
 	var nombre_b := npc_b.get_nombre_visual().strip_edges().to_lower()
-	if nombre_a.is_empty() or nombre_b.is_empty():
+	var id_a := npc_a.get_personaje_game_id().strip_edges()
+	var id_b := npc_b.get_personaje_game_id().strip_edges()
+	if nombre_a.is_empty() or nombre_b.is_empty() or id_a.is_empty() or id_b.is_empty():
 		return false
-	var tipo := str(motivo.get("tipo", "visitar_amigo"))
-	var lineas: Array[Dictionary] = []
-	match tipo:
-		"cumplir_promesa":
-			lineas = [
-				{"npc": nombre_a, "texto": "Quería verte. Te dije que me ocuparía de aquello y ya pude hacerlo."},
-				{"npc": nombre_b, "texto": "¿Sí? ¿Cómo te fue?"},
-				{"npc": nombre_a, "texto": "Salió bien. Prefería venir a contártelo en persona."},
-				{"npc": nombre_b, "texto": "Gracias por cumplirlo. Me alegra que lo resolvieras."}
-			]
-		"resolver_asunto":
-			lineas = [
-				{"npc": nombre_a, "texto": "Me acordé de lo que me contaste. ¿Todavía necesitas ayuda?"},
-				{"npc": nombre_b, "texto": "Sí, aún no he podido resolverlo."},
-				{"npc": nombre_a, "texto": "Si quieres, lo vemos juntos. Quizá encontremos una salida."},
-				{"npc": nombre_b, "texto": "Me vendría bien. Gracias por ofrecerte."}
-			]
-		"compartir_noticia":
-			lineas = [
-				{"npc": nombre_a, "texto": "¿Has oído algo sobre lo que pasó estos días?"},
-				{"npc": nombre_b, "texto": "No mucho. ¿Qué sabes?"},
-				{"npc": nombre_a, "texto": "Me llegó un comentario, aunque todavía no sé si es cierto."},
-				{"npc": nombre_b, "texto": "Entonces lo tendré en cuenta, pero esperemos a confirmarlo."}
-			]
-		"resolver_desacuerdo":
-			lineas = [
-				{"npc": nombre_a, "texto": "Quería hablar de lo que pasó entre nosotros. No me gustó cómo terminó."},
-				{"npc": nombre_b, "texto": "A mí tampoco. Creo que los dos nos quedamos molestos."},
-				{"npc": nombre_a, "texto": "No quiero que sigamos así. ¿Podemos aclararlo?"},
-				{"npc": nombre_b, "texto": "Sí. Empecemos por escucharnos."}
-			]
-		_:
-			lineas = [
-				{"npc": nombre_a, "texto": "¿Tienes un rato? Hace días que no conversamos."},
-				{"npc": nombre_b, "texto": "Sí, justo tenía un momento libre. ¿Cómo has estado?"},
-				{"npc": nombre_a, "texto": "Con bastante que hacer, pero bien. Me alegra que coincidamos."},
-				{"npc": nombre_b, "texto": "A mí también. Podemos charlar un rato."}
-			]
+
+	var tipo := str(motivo.get("tipo", "buscar_compania"))
+	var relacion: Dictionary = {}
+	if is_instance_valid(_relationship_system):
+		relacion = _relationship_system.obtener_relacion_entre_npc(id_a, id_b)
+	var tono := "cordial"
+	var tension := float(relacion.get("tension", 0.0))
+	var confianza := float(relacion.get("confianza", 0.0))
+	var amistad := float(relacion.get("amistad", 0.0))
+	if tension >= 1.0:
+		tono = "tensa"
+	elif confianza >= 1.0 or amistad >= 2.0:
+		tono = "cercana"
+
+	var historial_variant: Variant = relacion.get("historial", [])
+	var historial: Array = historial_variant if historial_variant is Array else []
+	var indice_variante := int(relacion.get("interacciones", 0)) + historial.size()
+	var antecedente := _obtener_referencia_historial_social(historial, tipo)
+	var detalle := str(motivo.get("titulo", motivo.get("descripcion", "")))
+	var lineas := NPC_VOICE_PROFILE.construir_dialogo_social(
+		nombre_a,
+		nombre_b,
+		tipo,
+		indice_variante,
+		tono,
+		detalle,
+		antecedente
+	)
+	if lineas.is_empty():
+		return false
+
 	_iniciar_conversacion({
-		"clave": "social_autonoma_%s_%s_%s" % [nombre_a, nombre_b, str(motivo.get("tipo", "charla"))],
+		"clave": "social_autonoma_%s_%s_%s_%d" % [nombre_a, nombre_b, tipo, indice_variante],
 		"npc_a": nombre_a,
 		"npc_b": nombre_b,
 		"lineas": lineas,
 		"solo_ambiental_local": true,
 		"_sin_progreso_etapa": true,
 		"_sin_dinamica_social": true,
-		"_social_autonoma": true
+		"_social_autonoma": true,
+		"_tono_social": tono,
+		"_variante_social": indice_variante
 	})
 	return not _conversacion_activa.is_empty()
+
+
+func _obtener_referencia_historial_social(historial: Array, tipo_actual: String) -> String:
+	for indice in range(historial.size() - 1, -1, -1):
+		if not historial[indice] is Dictionary:
+			continue
+		var recuerdo := historial[indice] as Dictionary
+		var evento := str(recuerdo.get("evento", recuerdo.get("tipo", ""))).strip_edges()
+		match evento:
+			"promesa_cumplida":
+				if tipo_actual not in ["cumplir_promesa"]:
+					return "Después de lo que resolvimos la otra vez, quería saber cómo estabas."
+			"ayudar", "resolver_asunto":
+				if tipo_actual != "resolver_asunto":
+					return "Me acordé de cuando te eché una mano. ¿Cómo siguió todo?"
+			"compartir_conocimiento", "compartir_noticia":
+				if tipo_actual != "compartir_noticia":
+					return "Me quedé pensando en lo que me contaste la última vez."
+			"apoyar", "resolver_desacuerdo":
+				if tipo_actual != "resolver_desacuerdo":
+					return "La otra vez me hizo bien que pudiéramos hablar con calma."
+	return ""
 
 
 func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
