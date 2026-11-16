@@ -42,6 +42,13 @@ func _run() -> void:
 	if saludo_en_transito.contains("no puedo parar") or saludo_en_transito.contains("ocupado") or not (saludo_en_transito.contains("¿Qué necesitas?") or saludo_en_transito.contains("¿qué pasa?")):
 		errores.append("El saludo de tránsito de Bruna no suena como una interrupción natural.")
 
+	if not dialogo._dialogo_requiere_lectura_lenta():
+		errores.append("Un NPC que camina no activa el ritmo de lectura pausado.")
+	dialogo._contexto_rutina_conversacion["actividad"] = "trabajar"
+	if dialogo._dialogo_requiere_lectura_lenta():
+		errores.append("Un NPC que trabaja recibió el ajuste de lectura reservado al desplazamiento.")
+	dialogo._contexto_rutina_conversacion["actividad"] = "caminar"
+
 	dialogo._contexto_rutina_conversacion = {
 		"actividad": "forjar",
 		"destino": "la forja",
