@@ -1,0 +1,112 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/research_lab.gd" id="1_script"]
+
+[node name="ResearchLab" type="CanvasLayer"]
+layer = 90
+script = ExtResource("1_script")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -170.0
+offset_right = 310.0
+offset_bottom = 170.0
+custom_minimum_size = Vector2(620, 340)
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="Column" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="Header" type="HBoxContainer" parent="Panel/Margin/Column"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Panel/Margin/Column/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+text = "LABORATORIO"
+
+[node name="Close" type="Button" parent="Panel/Margin/Column/Header"]
+custom_minimum_size = Vector2(82, 32)
+layout_mode = 2
+text = "Cerrar"
+
+[node name="Description" type="Label" parent="Panel/Margin/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Selecciona los elementos que quieres estudiar y el procedimiento que deseas aplicar."
+autowrap_mode = 3
+
+[node name="Body" type="HBoxContainer" parent="Panel/Margin/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="ItemsColumn" type="VBoxContainer" parent="Panel/Margin/Column/Body"]
+custom_minimum_size = Vector2(270, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ItemsTitle" type="Label" parent="Panel/Margin/Column/Body/ItemsColumn"]
+layout_mode = 2
+text = "OBJETOS DISPONIBLES"
+
+[node name="ItemScroll" type="ScrollContainer" parent="Panel/Margin/Column/Body/ItemsColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ItemsList" type="VBoxContainer" parent="Panel/Margin/Column/Body/ItemsColumn/ItemScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="ProcedureColumn" type="VBoxContainer" parent="Panel/Margin/Column/Body"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ProcedureTitle" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
+layout_mode = 2
+text = "PROCEDIMIENTO"
+
+[node name="Procedure" type="OptionButton" parent="Panel/Margin/Column/Body/ProcedureColumn"]
+custom_minimum_size = Vector2(230, 30)
+layout_mode = 2
+
+[node name="Selection" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
+layout_mode = 2
+text = "Elementos seleccionados: 0/4"
+autowrap_mode = 3
+
+[node name="Note" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Puedes seleccionar entre uno y cuatro elementos. Las pruebas preliminares no consumen ni modifican objetos."
+autowrap_mode = 3
+
+[node name="Result" type="Label" parent="Panel/Margin/Column/Body/ProcedureColumn"]
+custom_minimum_size = Vector2(230, 52)
+layout_mode = 2
+size_flags_vertical = 3
+text = "El resultado de la prueba aparecerá aquí."
+autowrap_mode = 3
+
+[node name="Run" type="Button" parent="Panel/Margin/Column/Body/ProcedureColumn"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Realizar prueba"
