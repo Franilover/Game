@@ -886,6 +886,189 @@ func obtener_conocimientos_npc(personaje_id: String) -> Array:
 	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
 
 
+## Registra un asunto concreto que un habitante quiere resolver con otra persona.
+## Los campos de contexto son datos del juego; este servicio no inventa narración.
+func registrar_asunto_pendiente_npc(personaje_id: String, asunto: Dictionary) -> String:
+	var id := personaje_id.strip_edges()
+	var clave := str(asunto.get("clave", "")).strip_edges()
+	if id.is_empty() or clave.is_empty():
+		return ""
+	var datos := _obtener_datos_conversaciones_npc()
+	var todos_variant: Variant = datos.get("_asuntos_pendientes_npc", [])
+	var todos: Array = todos_variant.duplicate(true) if todos_variant is Array else []
+	for existente_variant in todos:
+		if not existente_variant is Dictionary:
+			continue
+		var existente := existente_variant as Dictionary
+		if (
+			str(existente.get("personaje_id", "")) == id
+			and str(existente.get("clave", "")) == clave
+			and str(existente.get("estado", "pendiente")) == "pendiente"
+		):
+			return str(existente.get("id", ""))
+	var nuevo := asunto.duplicate(true)
+	nuevo["id"] = str(nuevo.get("id", "%s:%s:%d" % [id, clave, Time.get_ticks_usec()]))
+	nuevo["personaje_id"] = id
+	nuevo["estado"] = "pendiente"
+	nuevo["creado"] = Time.get_datetime_string_from_system(true)
+	todos.append(nuevo)
+	while todos.size() > 64:
+		todos.pop_front()
+	datos["_asuntos_pendientes_npc"] = todos
+	_guardar_datos_conversaciones_npc(datos)
+	return str(nuevo["id"])
+
+
+func obtener_asuntos_pendientes_npc(personaje_id: String, con_personaje: String = "") -> Array:
+	var id := personaje_id.strip_edges()
+	var otro := con_personaje.strip_edges()
+	if id.is_empty():
+		return []
+	var datos := _obtener_datos_conversaciones_npc()
+	var todos_variant: Variant = datos.get("_asuntos_pendientes_npc", [])
+	if not todos_variant is Array:
+		return []
+	var resultado: Array = []
+	for asunto_variant in todos_variant:
+		if not asunto_variant is Dictionary:
+			continue
+		var asunto := (asunto_variant as Dictionary).duplicate(true)
+		if str(asunto.get("personaje_id", "")) != id or str(asunto.get("estado", "pendiente")) != "pendiente":
+			continue
+		var relacionado := str(asunto.get("personaje_relacionado", ""))
+		if not otro.is_empty() and relacionado != otro:
+			continue
+		resultado.append(asunto)
+	return resultado
+
+
+func resolver_asunto_pendiente_npc(asunto_id: String, resuelto: bool = true) -> bool:
+	var clave := asunto_id.strip_edges()
+	if clave.is_empty():
+		return false
+	var datos := _obtener_datos_conversaciones_npc()
+	var todos_variant: Variant = datos.get("_asuntos_pendientes_npc", [])
+	if not todos_variant is Array:
+		return false
+	var todos: Array = todos_variant.duplicate(true)
+	for i in range(todos.size()):
+		if not todos[i] is Dictionary:
+			continue
+		var asunto := (todos[i] as Dictionary).duplicate(true)
+		if str(asunto.get("id", "")) != clave or str(asunto.get("estado", "pendiente")) != "pendiente":
+			continue
+		asunto["estado"] = "resuelto" if resuelto else "aplazado"
+		asunto["resuelto"] = Time.get_datetime_string_from_system(true)
+		todos[i] = asunto
+		datos["_asuntos_pendientes_npc"] = todos
+		_guardar_datos_conversaciones_npc(datos)
+		return true
+	return false
+
+
+## Una promesa tiene emisor y destinatario explícitos y permanece pendiente
+## hasta que se cumple o se rompe; no depende de que ambos NPC estén cargados.
+func registrar_promesa_entre_npc(personaje_promitente: String, personaje_destino: String, promesa: Dictionary) -> String:
+	var origen := personaje_promitente.strip_edges()
+	var destino := personaje_destino.strip_edges()
+	var clave := str(promesa.get("clave", promesa.get("descripcion", ""))).strip_edges()
+	if origen.is_empty() or destino.is_empty() or origen == destino or clave.is_empty():
+		return ""
+	var datos := _obtener_datos_conversaciones_npc()
+	var todas_variant: Variant = datos.get("_promesas_npc", [])
+	var todas: Array = todas_variant.duplicate(true) if todas_variant is Array else []
+	for existente_variant in todas:
+		if not existente_variant is Dictionary:
+			continue
+		var existente := existente_variant as Dictionary
+		if (
+			str(existente.get("promitente", "")) == origen
+			and str(existente.get("destinatario", "")) == destino
+			and str(existente.get("clave", "")) == clave
+			and str(existente.get("estado", "pendiente")) == "pendiente"
+		):
+			return str(existente.get("id", ""))
+	var nueva := promesa.duplicate(true)
+	nueva["id"] = str(nueva.get("id", "promesa:%s:%s:%d" % [origen, destino, Time.get_ticks_usec()]))
+	nueva["promitente"] = origen
+	nueva["destinatario"] = destino
+	nueva["clave"] = clave
+	nueva["estado"] = "pendiente"
+	nueva["creada"] = Time.get_datetime_string_from_system(true)
+	todas.append(nueva)
+	while todas.size() > 64:
+		todas.pop_front()
+	datos["_promesas_npc"] = todas
+	_guardar_datos_conversaciones_npc(datos)
+	return str(nueva["id"])
+
+
+func obtener_promesas_pendientes_npc(personaje_id: String, con_personaje: String = "") -> Array:
+	var id := personaje_id.strip_edges()
+	var otro := con_personaje.strip_edges()
+	if id.is_empty():
+		return []
+	var datos := _obtener_datos_conversaciones_npc()
+	var todas_variant: Variant = datos.get("_promesas_npc", [])
+	if not todas_variant is Array:
+		return []
+	var resultado: Array = []
+	for promesa_variant in todas_variant:
+		if not promesa_variant is Dictionary:
+			continue
+		var promesa := (promesa_variant as Dictionary).duplicate(true)
+		if str(promesa.get("promitente", "")) != id or str(promesa.get("estado", "pendiente")) != "pendiente":
+			continue
+		if not otro.is_empty() and str(promesa.get("destinatario", "")) != otro:
+			continue
+		resultado.append(promesa)
+	return resultado
+
+
+func resolver_promesa_entre_npc(promesa_id: String, cumplida: bool = true) -> bool:
+	var clave := promesa_id.strip_edges()
+	if clave.is_empty():
+		return false
+	var datos := _obtener_datos_conversaciones_npc()
+	var todas_variant: Variant = datos.get("_promesas_npc", [])
+	if not todas_variant is Array:
+		return false
+	var todas: Array = todas_variant.duplicate(true)
+	for i in range(todas.size()):
+		if not todas[i] is Dictionary:
+			continue
+		var promesa := (todas[i] as Dictionary).duplicate(true)
+		if str(promesa.get("id", "")) != clave or str(promesa.get("estado", "pendiente")) != "pendiente":
+			continue
+		promesa["estado"] = "cumplida" if cumplida else "rota"
+		promesa["resuelta"] = Time.get_datetime_string_from_system(true)
+		todas[i] = promesa
+		datos["_promesas_npc"] = todas
+		_guardar_datos_conversaciones_npc(datos)
+		var promitente := str(promesa.get("promitente", ""))
+		var destinatario := str(promesa.get("destinatario", ""))
+		if cumplida:
+			registrar_interaccion_entre_npc(promitente, destinatario, {"confianza": 1.5, "amistad": 0.5}, {"tipo": "promesa_cumplida", "promesa_id": clave})
+		else:
+			registrar_interaccion_entre_npc(promitente, destinatario, {"confianza": -3.0, "amistad": -1.0, "tension": 1.5}, {"tipo": "promesa_rota", "promesa_id": clave})
+		return true
+	return false
+
+
+func obtener_conocimiento_npc(personaje_id: String, clave: String) -> Dictionary:
+	var buscada := clave.strip_edges()
+	if buscada.is_empty():
+		return {}
+	for conocimiento_variant in obtener_conocimientos_npc(personaje_id):
+		if conocimiento_variant is Dictionary and str((conocimiento_variant as Dictionary).get("clave", "")) == buscada:
+			return (conocimiento_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func conoce_conocimiento_npc(personaje_id: String, clave: String) -> bool:
+	return not obtener_conocimiento_npc(personaje_id, clave).is_empty()
+
+
 ## La transmisión sólo ocurre cuando una conversación la autoriza explícitamente.
 func transmitir_conocimiento_npc(
 	personaje_origen: String,
