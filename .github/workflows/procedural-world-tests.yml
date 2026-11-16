@@ -394,7 +394,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/player/test_player_locomotion.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          output="$(timeout 45s godot --headless --path . res://tests/player/test_player_locomotion.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerLocomotion: FAIL:' <<<"$output"; then
             echo "Player locomotion regression test reported errors."
