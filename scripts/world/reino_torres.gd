@@ -198,38 +198,6 @@ func _ready() -> void:
 	# iniciales de las celdas serializadas de la escena.
 	await _crear_cesped_tilemap_dual()
 	await _crear_muralla_montana()
-	await _crear_rio_marino_tilemap()
-
-
-
-func _crear_rio_marino_tilemap() -> void:
-	# El río reutiliza el compositor TileMapDual y el atlas Marino del mundo.
-	# Su origen se ajusta al antiguo cauce: 59 celdas de 32 px forman una
-	# franja continua entre los dos puentes, sin geometría vectorial.
-	var terreno := WorldTerrainVisual.new()
-	terreno.name = "TerrenoRioMarino"
-	terreno.position = Vector2(-1184, -694)
-	add_child(terreno)
-	terreno.configurar(32)
-
-	# El agua debe quedar sobre el suelo opaco y bajo los puentes.
-	# WorldTerrainVisual usa por defecto z_index ~ -4091, apropiado para
-	# terrenos de fondo como la muralla, pero demasiado bajo para el canal.
-	for hijo in terreno.get_children():
-		if hijo is TileMapDual:
-			hijo.z_index = -8
-			hijo.z_as_relative = false
-
-	# TileMapDual crea sus Display durante _ready(); esperar antes de pintar.
-	await get_tree().process_frame
-	await get_tree().process_frame
-	terreno.finalizar_preparacion_renderer()
-
-	for x in range(2, 61):
-		terreno.set_zone(Vector2i(x, 38), 4, 4, "Marino")
-
-	terreno.flush()
-	print("ReinoTorres: río Marino creado con TileMapDual.")
 
 
 
@@ -566,8 +534,6 @@ func _texturizar_mapa_pixelart() -> void:
 	var superficies: Array[Dictionary] = [
 		{"nombre": "Plaza", "tipo": "plaza"},
 		{"nombre": "PlazaInset", "tipo": "plaza"},
-		{"nombre": "CanalBridgeWest", "tipo": "puente"},
-		{"nombre": "CanalBridgeEast", "tipo": "puente"},
 		{"nombre": "RoyalGardenWalk", "tipo": "plaza"},
 		{"nombre": "RoyalGardenCross", "tipo": "plaza"},
 		{"nombre": "GardenSoil", "tipo": "tierra"},
@@ -968,20 +934,21 @@ func _crear_luces_faroles() -> void:
 	_capa_brillos_faroles.follow_viewport_enabled = true
 	add_child(_capa_brillos_faroles)
 
+	# Los postes siguen las calles longitudinales de los barrios y los accesos
+	# norte/sur del centro; quedan sobre caminos y no en los extremos del mapa.
 	var faroles: Array[Dictionary] = [
-		{"nombre": "Oeste", "nodo": "Sprite_poste_oeste"},
-		{"nombre": "OesteExterior", "posicion": Vector2(-600.0, 12.0)},
-		{"nombre": "OesteInterior", "posicion": Vector2(-150.0, 12.0)},
-		{"nombre": "EsteInterior", "posicion": Vector2(150.0, 12.0)},
-		{"nombre": "EsteExterior", "posicion": Vector2(600.0, 12.0)},
-		{"nombre": "Este", "nodo": "Sprite_poste_este"},
-		{"nombre": "BarrioOesteNorte", "posicion": Vector2(-1024.0, -500.0)},
-		{"nombre": "BarrioOesteCentro", "posicion": Vector2(-1024.0, 300.0)},
-		{"nombre": "BarrioOesteSur", "posicion": Vector2(-1024.0, 760.0)},
-		{"nombre": "BarrioEsteNorte", "posicion": Vector2(1024.0, -500.0)},
-		{"nombre": "BarrioEsteCentro", "posicion": Vector2(1024.0, 300.0)},
-		{"nombre": "BarrioEsteSur", "posicion": Vector2(1024.0, 760.0)},
-		{"nombre": "SectorAgricola", "posicion": Vector2(0.0, 850.0)}
+		{"nombre": "OesteNorte", "nodo": "Sprite_poste_oeste"},
+		{"nombre": "OesteCentroNorte", "posicion": Vector2(-600.0, -225.0)},
+		{"nombre": "OesteCentro", "posicion": Vector2(-600.0, 25.0)},
+		{"nombre": "OesteCentroSur", "posicion": Vector2(-600.0, 275.0)},
+		{"nombre": "OesteSur", "posicion": Vector2(-600.0, 500.0)},
+		{"nombre": "EsteNorte", "nodo": "Sprite_poste_este"},
+		{"nombre": "EsteCentroNorte", "posicion": Vector2(600.0, -225.0)},
+		{"nombre": "EsteCentro", "posicion": Vector2(600.0, 25.0)},
+		{"nombre": "EsteCentroSur", "posicion": Vector2(600.0, 275.0)},
+		{"nombre": "EsteSur", "posicion": Vector2(600.0, 500.0)},
+		{"nombre": "AccesoNorte", "posicion": Vector2(0.0, -500.0)},
+		{"nombre": "AccesoSur", "posicion": Vector2(0.0, 500.0)}
 	]
 
 	for farol_datos: Dictionary in faroles:
