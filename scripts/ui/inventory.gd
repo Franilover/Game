@@ -147,6 +147,11 @@ func configurar(
 ) -> void:
 	_player = player
 	_world_items = world_items
+	if _world_items != null:
+		if not _world_items.catalogo_cargado.is_connected(_al_catalogo_items_cargado):
+			_world_items.catalogo_cargado.connect(_al_catalogo_items_cargado)
+		if not _world_items.catalogo.is_empty():
+			call_deferred("_al_catalogo_items_cargado", _world_items.catalogo)
 	_configurar_admin_inventory(world_entity_spawner)
 	_configurar_world_map(world_context)
 	_configurar_relationships(relationship_system)
@@ -612,7 +617,9 @@ func actualizar() -> void:
 		if items[indice_datos].is_empty():
 			slot.limpiar()
 		else:
-			slot.configurar(items[indice_datos])
+			# Resolver nombre, descripción y categoría desde el catálogo cuando
+			# la partida solo conserva item_id.
+			slot.configurar(_enriquecer_datos_objeto(items[indice_datos]))
 
 
 func _indice_datos_desde_visual(visual_index: int) -> int:
@@ -1247,6 +1254,17 @@ func _refrescar_objeto_seleccionado() -> void:
 	_emitir_objeto_activo()
 
 
+func _al_catalogo_items_cargado(_catalogo: Array) -> void:
+	# Las partidas pueden abrir el inventario antes de que Supabase termine
+	# de entregar el catálogo; refrescar los slots y el detalle al recibirlo.
+	if not is_inside_tree():
+		return
+	actualizar()
+	if indice_seleccionado >= 0 and indice_seleccionado < items.size() and not items[indice_seleccionado].is_empty():
+		objeto_seleccionado = _enriquecer_datos_objeto(items[indice_seleccionado])
+		_mostrar_informacion()
+
+
 func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 	var resultado := datos.duplicate(true)
 	if _world_items == null or not is_instance_valid(_world_items):
@@ -1262,7 +1280,7 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 	# Las partidas antiguas pueden guardar solo la identidad del objeto.
 	# Completar los campos de gameplay desde items_game permite que la UI y
 	# el consumo lean siempre las propiedades canónicas actuales.
-	for clave in ["propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
+	for clave in ["nombre", "descripcion", "origen", "propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
 		if not canonico.has(clave):
 			continue
 		var valor_actual: Variant = resultado.get(clave, null)
@@ -1275,9 +1293,16 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 						propiedades_combinadas[propiedad] = (valor_actual as Dictionary)[propiedad]
 			resultado[clave] = propiedades_combinadas
 			continue
-		var esta_vacio: bool = valor_actual == null or valor_actual == ""
-		if valor_actual is Dictionary:
+		var esta_vacio: bool = valor_actual == null
+		if valor_actual is String:
+			var texto_actual := str(valor_actual).strip_edges()
+			esta_vacio = texto_actual.is_empty()
+			if clave == "nombre" and texto_actual.to_lower() == "objeto":
+				esta_vacio = true
+		elif valor_actual is Dictionary:
 			esta_vacio = (valor_actual as Dictionary).is_empty()
+		elif valor_actual is Array:
+			esta_vacio = (valor_actual as Array).is_empty()
 		if esta_vacio:
 			resultado[clave] = valor_canonico.duplicate(true) if valor_canonico is Dictionary or valor_canonico is Array else valor_canonico
 	return resultado
