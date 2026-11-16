@@ -226,6 +226,8 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 		"necesidades": 0.0,
 		"personalidad": 0.0,
 		"aprendizaje": 0.0,
+		"objetivos": 0.0,
+		"estado_emocional": 0.0,
 		"prioridad": 0.0,
 		"coste": 0.0,
 		"riesgo": 0.0
@@ -251,6 +253,8 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 			componentes["personalidad"] += (1.0 - absf(valor_actual - objetivo)) * 8.0
 
 	componentes["aprendizaje"] = obtener_preferencia_actividad(id, clave) * 12.0
+	componentes["objetivos"] = _calcular_afinidad_objetivos(estado, actividad, clave)
+	componentes["estado_emocional"] = _calcular_afinidad_emocional(estado, actividad)
 	componentes["prioridad"] = clampf(float(actividad.get("prioridad", 0.0)), 0.0, 100.0) * 0.1
 	componentes["coste"] = -clampf(float(actividad.get("coste", 0.0)), 0.0, 100.0) * 0.15
 	componentes["riesgo"] = -clampf(float(actividad.get("riesgo", 0.0)), 0.0, 100.0) * 0.2
@@ -264,6 +268,68 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 		"disponible": true,
 		"componentes": componentes
 	}
+
+
+## Los objetivos activos influyen en la elección sólo si describen una actividad
+## concreta o comparten etiquetas con ella. La prioridad evita que un objetivo
+## secundario domine necesidades urgentes.
+func _calcular_afinidad_objetivos(estado: Dictionary, actividad: Dictionary, clave_actividad: String) -> float:
+	var objetivos_variant: Variant = estado.get("objetivos", [])
+	if not objetivos_variant is Array:
+		return 0.0
+	var etiquetas_actividad: Array = actividad.get("etiquetas", []) if actividad.get("etiquetas", []) is Array else []
+	var mejor_puntuacion := 0.0
+	for objetivo_variant in objetivos_variant:
+		if not objetivo_variant is Dictionary:
+			continue
+		var objetivo := objetivo_variant as Dictionary
+		if str(objetivo.get("estado", "activo")) != "activo":
+			continue
+		var coincide := false
+		var actividad_objetivo := str(objetivo.get("actividad", objetivo.get("actividad_clave", ""))).strip_edges().to_lower()
+		if not actividad_objetivo.is_empty() and actividad_objetivo == clave_actividad:
+			coincide = true
+		var actividades_objetivo: Variant = objetivo.get("actividades", [])
+		if actividades_objetivo is Array:
+			for actividad_objetivo_variant in actividades_objetivo:
+				if str(actividad_objetivo_variant).strip_edges().to_lower() == clave_actividad:
+					coincide = true
+					break
+		var etiquetas_objetivo: Variant = objetivo.get("etiquetas", [])
+		if etiquetas_objetivo is Array:
+			for etiqueta_variant in etiquetas_objetivo:
+				if str(etiqueta_variant) in etiquetas_actividad:
+					coincide = true
+					break
+		if coincide:
+			var prioridad := clampf(float(objetivo.get("prioridad", 0.5)), 0.0, 1.0)
+			mejor_puntuacion = maxf(mejor_puntuacion, prioridad * 12.0)
+	return mejor_puntuacion
+
+
+## El ánimo, el estrés y la energía modulan actividades que declaran
+## una afinidad emocional. Los valores objetivo usan escala 0-1.
+func _calcular_afinidad_emocional(estado: Dictionary, actividad: Dictionary) -> float:
+	var afinidades_variant: Variant = actividad.get("afinidad_emocional", {})
+	if not afinidades_variant is Dictionary:
+		return 0.0
+	var emocion_variant: Variant = estado.get("estado_emocional", {})
+	var emocion: Dictionary = emocion_variant if emocion_variant is Dictionary else {}
+	var valores_actuales := {
+		"animo": (clampf(float(emocion.get("animo", 0.0)), -1.0, 1.0) + 1.0) * 0.5,
+		"estres": clampf(float(emocion.get("estres", 0.0)), 0.0, 1.0),
+		"energia": clampf(float(emocion.get("energia", 75.0)) / 100.0, 0.0, 1.0)
+	}
+	var puntuacion := 0.0
+	var cantidad := 0
+	for clave_variant in afinidades_variant:
+		var clave := str(clave_variant).strip_edges().to_lower()
+		if not valores_actuales.has(clave):
+			continue
+		var objetivo := clampf(float(afinidades_variant[clave_variant]), 0.0, 1.0)
+		puntuacion += (1.0 - absf(float(valores_actuales[clave]) - objetivo)) * 6.0
+		cantidad += 1
+	return puntuacion / float(cantidad) if cantidad > 0 else 0.0
 
 
 ## Selecciona la actividad con mayor utilidad. No ejecuta la actividad.
