@@ -381,6 +381,17 @@ jobs:
       - name: Run TileMapDual terrain regression test
         run: godot --headless --path . --script res://tests/world/test_world_terrain_visual.gd
 
+      - name: Run mobile dialogue touch and multitouch regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_mobile_controls_dialogue_touch.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|MobileControlsDialogueTouch: FAIL:' <<<"$output"; then
+            echo "Mobile dialogue touch regression test reported errors."
+            exit 1
+          fi
+
       - name: Run Garumi world presence regression test
         shell: bash
         run: |
