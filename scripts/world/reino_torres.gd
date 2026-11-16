@@ -15,6 +15,7 @@ const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interact
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const RESEARCH_LAB_UI_SCENE: PackedScene = preload("res://scenes/ui/research_lab.tscn")
 const TAMANO_PIXEL_MUNDO := 8.0
+const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 
 # Ampliación moderada respecto al interior original (448x272).
 # Mantiene el espacio compacto y reduce los bordes visibles sin vaciar la sala.
@@ -392,10 +393,30 @@ func _crear_cesped_tilemap_dual() -> void:
 		for celda: Vector2i in celdas:
 			posiciones_unicas[celda] = true
 
-	var posiciones_esperadas := 90 * 56
+	var posiciones_esperadas := TORRES_TILEMAP_LAYOUT.COLUMNS * TORRES_TILEMAP_LAYOUT.ROWS
+	var necesita_reconstruccion := posiciones_unicas.size() != posiciones_esperadas
+	for capa: TileMapDual in capas:
+		if capa.position != TORRES_TILEMAP_LAYOUT.ORIGIN:
+			necesita_reconstruccion = true
+
+	# Si la escena todavía conserva el mapa anterior, regenerar las capas en
+	# ejecución evita cargar un reino recortado. El EditorScript permite guardar
+	# esta misma distribución como TileMaps editables en la escena.
+	if necesita_reconstruccion:
+		_reconstruir_tilemaps_torres(capas)
+		celdas_por_capa.clear()
+		posiciones_unicas.clear()
+		celdas_totales = 0
+		for capa: TileMapDual in capas:
+			var celdas_nuevas: Array[Vector2i] = capa.get_used_cells()
+			celdas_por_capa[capa] = celdas_nuevas
+			celdas_totales += celdas_nuevas.size()
+			for celda: Vector2i in celdas_nuevas:
+				posiciones_unicas[celda] = true
+
 	if posiciones_unicas.size() != posiciones_esperadas:
 		push_error(
-			"ReinoTorres: la huella del terreno debe cubrir %d posiciones únicas; contiene %d (%d celdas entre las capas)."
+			"ReinoTorres: la huella ampliada debe cubrir %d posiciones únicas; contiene %d (%d celdas entre las capas)."
 			% [posiciones_esperadas, posiciones_unicas.size(), celdas_totales]
 		)
 		return
@@ -473,6 +494,37 @@ func _crear_cesped_tilemap_dual() -> void:
 		"ReinoTorres: terreno TileMapDual de escena reconstruido y visible (%d celdas en %d posiciones)."
 		% [celdas_totales, posiciones_unicas.size()]
 	)
+
+func _reconstruir_tilemaps_torres(capas: Array[TileMapDual]) -> void:
+	var capas_por_zona: Dictionary = {}
+	for zona: int in TORRES_TILEMAP_LAYOUT.ZONES:
+		var capa := get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
+		if not is_instance_valid(capa):
+			push_error("ReinoTorres: no se puede reconstruir la capa de terreno %d." % zona)
+			return
+		capa.clear()
+		capa.position = TORRES_TILEMAP_LAYOUT.ORIGIN
+		capas_por_zona[zona] = capa
+
+	for y in range(TORRES_TILEMAP_LAYOUT.ROWS):
+		for x in range(TORRES_TILEMAP_LAYOUT.COLUMNS):
+			var celda := Vector2i(x, y)
+			var punto := TORRES_TILEMAP_LAYOUT.ORIGIN + Vector2(
+				(float(x) + 0.5) * TORRES_TILEMAP_LAYOUT.TILE_SIZE,
+				(float(y) + 0.5) * TORRES_TILEMAP_LAYOUT.TILE_SIZE
+			)
+			var zona: int = TORRES_TILEMAP_LAYOUT.zone_for_point(punto, celda)
+			var capa: TileMapDual = capas_por_zona[zona]
+			capa.set_cell(celda, 0, TORRES_TILEMAP_LAYOUT.BASE_ATLAS_TILE)
+
+	for zona: int in TORRES_TILEMAP_LAYOUT.ZONES:
+		var capa: TileMapDual = capas_por_zona[zona]
+		capa.update_internals()
+	print("ReinoTorres: terreno ampliado regenerado (%d x %d celdas)." % [
+		TORRES_TILEMAP_LAYOUT.COLUMNS,
+		TORRES_TILEMAP_LAYOUT.ROWS
+	])
+
 
 func _crear_muralla_montana() -> void:
 	# Reutiliza el mismo compositor procedural y el mismo atlas de Montaña
