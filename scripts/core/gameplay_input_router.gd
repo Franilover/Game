@@ -134,7 +134,7 @@ func _cancelar_consumo() -> void:
 	_slot_consumo = -1
 	_identidad_consumo = ""
 	if is_instance_valid(_barra_consumo):
-		_barra_consumo.value = 0.0
+		_barra_consumo.actualizar_progreso(0.0)
 		(_barra_consumo.get_parent() as Control).visible = false
 
 
