@@ -34,7 +34,9 @@ const RASGOS_NEUTRALES := {
 	"curiosidad": 0.5,
 	"prudencia": 0.5,
 	"independencia": 0.5,
-	"disciplina": 0.5
+	"disciplina": 0.5,
+	"generosidad": 0.5,
+	"agresividad": 0.5
 }
 
 var _game_state: Node = null
@@ -124,6 +126,47 @@ func avanzar_tiempo(personaje_id: String, horas: float) -> Dictionary:
 		var tasa := float(TASAS_NECESIDAD_POR_HORA[clave])
 		necesidades[clave] = clampf(actual + tasa * delta_horas, 0.0, 100.0)
 	estado["necesidades"] = necesidades
+	_mentes[id] = estado
+	_guardar_mentes()
+	_emitir_cambio(id)
+	return obtener_estado(id)
+
+
+## Procesa un tramo de tiempo y sus efectos en una sola escritura de guardado.
+## satisfacciones contiene puntos de alivio por hora para cada necesidad.
+func procesar_intervalo(
+	personaje_id: String,
+	horas: float,
+	satisfacciones_por_hora: Dictionary = {}
+) -> Dictionary:
+	var id := personaje_id.strip_edges().to_lower()
+	if id.is_empty() or horas <= 0.0:
+		return obtener_estado(id)
+	var delta_horas := clampf(horas, 0.0, MAX_HORAS_POR_ACTUALIZACION)
+	var estado := _obtener_estado_mutable(id)
+	var necesidades: Dictionary = estado.get("necesidades", {}).duplicate(true)
+	for clave in TASAS_NECESIDAD_POR_HORA:
+		var presion := float(necesidades.get(clave, 0.0))
+		var aumento := float(TASAS_NECESIDAD_POR_HORA[clave]) * delta_horas
+		var alivio := maxf(0.0, float(satisfacciones_por_hora.get(clave, 0.0))) * delta_horas
+		necesidades[clave] = clampf(presion + aumento - alivio, 0.0, 100.0)
+	estado["necesidades"] = necesidades
+
+	var presion_total := 0.0
+	for valor in necesidades.values():
+		presion_total += float(valor)
+	var presion_media := presion_total / maxf(1.0, float(necesidades.size()))
+	var emocion: Dictionary = estado.get("estado_emocional", {}).duplicate(true)
+	emocion["animo"] = clampf((50.0 - presion_media) / 50.0, -1.0, 1.0)
+	emocion["estres"] = clampf(
+		(float(necesidades.get("descanso", 0.0)) * 0.45
+		+ float(necesidades.get("seguridad", 0.0)) * 0.35
+		+ float(necesidades.get("socializacion", 0.0)) * 0.2) / 100.0,
+		0.0,
+		1.0
+	)
+	emocion["energia"] = clampf(100.0 - float(necesidades.get("descanso", 0.0)), 0.0, 100.0)
+	estado["estado_emocional"] = emocion
 	_mentes[id] = estado
 	_guardar_mentes()
 	_emitir_cambio(id)
