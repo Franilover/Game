@@ -32,7 +32,7 @@ func _run() -> void:
 
 	# Los sprites nuevos deben resolverse por nombre visible incluso cuando
 	# asset_key contiene una clave antigua o inexistente del catálogo.
-	for nombre_sprite in ["Velki", "Plava"]
+	for nombre_sprite in ["Velki", "Plava"]:
 		var garumi_sprite_test: Node = GARUMI_SCENE.instantiate()
 		get_tree().root.add_child(garumi_sprite_test)
 		garumi_sprite_test.call("configurar", {
@@ -67,7 +67,7 @@ func _run() -> void:
 	if not guardados.is_empty():
 		var estado_guardado := guardados[0] as Dictionary
 		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
-		_expect(str(estado_guardado.get("asset_key", "")) == "Desel", "El streaming debe conservar la clave del sprite.")
+		_expect(str(estado_guardado.get("asset_key", "")) == "Desell", "El streaming debe conservar la clave del sprite.")
 		_expect(str(estado_guardado.get("nombre", "")) == "Garumi scene test", "El streaming debe conservar el nombre visible del Garumi.")
 		_expect(bool(estado_guardado.get("garumi_debug_preview", false)), "El streaming debe conservar que la instancia es sólo un prototipo de depuración.")
 		_expect(str(estado_guardado.get("habitat_clave", "")) == "tierra", "El streaming debe conservar el entorno de tierra del Garumi.")
