@@ -3,6 +3,13 @@ class_name GarliaInventory
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
+const ICONOS_DATOS_VISUALES: Dictionary = {
+	"slot_life": preload("res://assets/art/UI/Menus/slot_life.png"),
+	"slot_damage": preload("res://assets/art/UI/Menus/slot_damage.png"),
+	"slot_area": preload("res://assets/art/UI/Menus/slot_area.png"),
+	"slot_eterium": preload("res://assets/art/UI/Menus/slot_eterium.png")
+}
+
 const SLOT_SCENE: PackedScene = preload(
 	"res://scenes/ui/inventory_slot.tscn"
 )
@@ -1120,12 +1127,11 @@ func _obtener_efectos_consumible(objeto: Dictionary) -> Dictionary:
 
 
 func _agregar_dato_visual(nombre_sprite: String, valor: int) -> void:
-	var ruta := "res://assets/art/UI/Menus/%s.png" % nombre_sprite
-	var imagen := Image.load_from_file(ruta)
-	if imagen == null or imagen.is_empty():
-		push_warning("Inventario: no se pudo leer el sprite de dato " + ruta)
+	var textura_variant: Variant = ICONOS_DATOS_VISUALES.get(nombre_sprite, null)
+	if not textura_variant is Texture2D:
+		push_warning("Inventario: no existe el recurso importado para el sprite de dato " + nombre_sprite)
 		return
-	var textura: Texture2D = ImageTexture.create_from_image(imagen)
+	var textura := textura_variant as Texture2D
 
 	# El sprite dibujado por el usuario ya incluye el fondo y el símbolo.
 	# Se usa como fondo completo; no se genera un segundo panel ni otro icono.
