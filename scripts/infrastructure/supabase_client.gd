@@ -78,6 +78,10 @@ var _auth: GarliaAuth = null
 
 func configurar_dependencias(auth: GarliaAuth) -> void:
 	_auth = auth
+	# La dependencia puede inyectarse después del _ready del autoload.
+	# Reintentamos al recibirla para no perder la carga inicial del catálogo.
+	if is_inside_tree():
+		call_deferred("cargar_especies_jugables")
 
 
 func establecer_mundo_activo(activo: bool) -> void:
@@ -369,7 +373,12 @@ func obtener_reino_game(clave: String) -> Dictionary:
 func cargar_especies_jugables() -> void:
 	# Las especies jugables son catálogo público del juego.
 	# Supabase RLS permite SELECT a anon y authenticated; no requieren sesión.
-	if _auth == null or not _especies_jugables.is_empty():
+	if _auth == null:
+		return
+
+	# Reemitir el caché permite que escenas creadas más tarde reciban el catálogo.
+	if not _especies_jugables.is_empty():
+		especies_jugables_cargadas.emit(_especies_jugables.duplicate(true))
 		return
 
 	if _http_especies == null:
@@ -387,7 +396,7 @@ func cargar_especies_jugables() -> void:
 
 	if resultado != OK:
 		print("SupabaseClient: no se pudo solicitar especies jugables → ", resultado)
-		call_deferred("_reintentar_carga_especies_jugables", "inicio de solicitud " + str(resultado))
+		_reintentar_carga_especies_jugables("inicio de solicitud " + str(resultado))
 	else:
 		print("SupabaseClient: solicitando especies jugables → intento %d/%d" % [_intentos_especies_jugables, MAX_INTENTOS_INICIALES])
 
@@ -404,7 +413,7 @@ func _al_completar_especies_jugables(
 		return
 
 	if codigo_http < 200 or codigo_http >= 300:
-		if codigo_http == 429 or codigo_http >= 500:
+		if codigo_http == 408 or codigo_http == 425 or codigo_http == 429 or codigo_http >= 500:
 			_reintentar_carga_especies_jugables("HTTP " + str(codigo_http))
 		else:
 			print("SupabaseClient: HTTP ", codigo_http, " cargando especies jugables → ", cuerpo.get_string_from_utf8())
@@ -413,10 +422,12 @@ func _al_completar_especies_jugables(
 	var json := JSON.new()
 	if json.parse(cuerpo.get_string_from_utf8()) != OK:
 		print("SupabaseClient: especies jugables no son JSON válido.")
+		_reintentar_carga_especies_jugables("respuesta JSON inválida")
 		return
 
 	if not json.data is Array:
 		print("SupabaseClient: especies jugables no son una lista.")
+		_reintentar_carga_especies_jugables("formato de respuesta inesperado")
 		return
 
 	var especies: Array = []
@@ -424,9 +435,16 @@ func _al_completar_especies_jugables(
 		if especie_variant is Dictionary:
 			especies.append((especie_variant as Dictionary).duplicate(true))
 
+	if especies.is_empty() and _intentos_especies_jugables < MAX_INTENTOS_INICIALES:
+		print("SupabaseClient: Supabase respondió sin especies activas; se comprobará de nuevo.")
+		_reintentar_carga_especies_jugables("catálogo vacío")
+		return
+
 	_intentos_especies_jugables = 0
 	_especies_jugables = especies
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
+	if especies.is_empty():
+		push_warning("SupabaseClient: el catálogo de especies sigue vacío tras los reintentos.")
 	especies_jugables_cargadas.emit(especies.duplicate(true))
 
 
