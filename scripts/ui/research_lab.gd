@@ -1,6 +1,6 @@
 extends CanvasLayer
-## Interfaz de trabajo del laboratorio. Las pruebas no consumen objetos hasta que
-## exista una reacción definida y confirmada para sus materiales.
+## Interfaz editable de trabajo del laboratorio.
+## Las pruebas preliminares no consumen objetos ni modifican sus datos.
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
@@ -20,21 +20,26 @@ const TITULOS_ESTACION: Dictionary = {
 	"eterium": "ESTACIÓN DE ETERIUM"
 }
 
+@onready var _titulo: Label = $Panel/Margin/Column/Header/Title
+@onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
+@onready var _items_columna: VBoxContainer = $Panel/Margin/Column/Body/ItemsColumn/ItemScroll/ItemsList
+@onready var _procedimiento: OptionButton = $Panel/Margin/Column/Body/ProcedureColumn/Procedure
+@onready var _seleccion_label: Label = $Panel/Margin/Column/Body/ProcedureColumn/Selection
+@onready var _resultado_label: Label = $Panel/Margin/Column/Body/ProcedureColumn/Result
+@onready var _boton_ejecutar: Button = $Panel/Margin/Column/Body/ProcedureColumn/Run
+
 var _inventario: InventoryController = null
 var _estacion_id := "examen"
 var _seleccionados: Array[int] = []
 var _botones_items: Dictionary = {}
-var _procedimiento: OptionButton
-var _seleccion_label: Label
-var _resultado_label: Label
-var _items_columna: VBoxContainer
-var _panel: PanelContainer
 
 
 func _ready() -> void:
 	layer = 90
 	add_to_group("modal_ui")
 	add_to_group("research_lab_ui")
+	_boton_cerrar.pressed.connect(queue_free)
+	_boton_ejecutar.pressed.connect(_ejecutar_prueba)
 
 
 func configurar(inventario: InventoryController, estacion_id: String) -> void:
@@ -44,121 +49,14 @@ func configurar(inventario: InventoryController, estacion_id: String) -> void:
 
 
 func _crear_interfaz() -> void:
-	if _panel != null:
-		return
-
-	_panel = PanelContainer.new()
-	_panel.name = "ResearchLabPanel"
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.offset_left = -310.0
-	_panel.offset_top = -170.0
-	_panel.offset_right = 310.0
-	_panel.offset_bottom = 170.0
-	_panel.custom_minimum_size = Vector2(620.0, 340.0)
-	add_child(_panel)
-
-	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 16)
-	margen.add_theme_constant_override("margin_top", 14)
-	margen.add_theme_constant_override("margin_right", 16)
-	margen.add_theme_constant_override("margin_bottom", 14)
-	_panel.add_child(margen)
-
-	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 7)
-	margen.add_child(columna)
-
-	var cabecera := HBoxContainer.new()
-	columna.add_child(cabecera)
-
-	var titulo := Label.new()
-	titulo.name = "Title"
-	titulo.text = str(TITULOS_ESTACION.get(_estacion_id, "LABORATORIO"))
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	titulo.add_theme_font_size_override("font_size", 17)
-	cabecera.add_child(titulo)
-
-	var cerrar := Button.new()
-	cerrar.text = "Cerrar"
-	cerrar.custom_minimum_size = Vector2(82, 32)
-	cerrar.pressed.connect(queue_free)
-	cabecera.add_child(cerrar)
-
-	var descripcion := Label.new()
-	descripcion.text = "Selecciona los elementos que quieres estudiar y el procedimiento que deseas aplicar."
-	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	descripcion.add_theme_font_size_override("font_size", 10)
-	columna.add_child(descripcion)
-
-	var cuerpo := HBoxContainer.new()
-	cuerpo.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cuerpo.add_theme_constant_override("separation", 14)
-	columna.add_child(cuerpo)
-
-	var columna_items := VBoxContainer.new()
-	columna_items.custom_minimum_size = Vector2(270, 0)
-	columna_items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_items.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cuerpo.add_child(columna_items)
-
-	var titulo_items := Label.new()
-	titulo_items.text = "OBJETOS DISPONIBLES"
-	columna_items.add_child(titulo_items)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	columna_items.add_child(scroll)
-
-	_items_columna = VBoxContainer.new()
-	_items_columna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_items_columna.add_theme_constant_override("separation", 5)
-	scroll.add_child(_items_columna)
-
-	var columna_prueba := VBoxContainer.new()
-	columna_prueba.custom_minimum_size = Vector2(240, 0)
-	columna_prueba.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_prueba.add_theme_constant_override("separation", 6)
-	cuerpo.add_child(columna_prueba)
-
-	var titulo_procedimiento := Label.new()
-	titulo_procedimiento.text = "PROCEDIMIENTO"
-	columna_prueba.add_child(titulo_procedimiento)
-
-	_procedimiento = OptionButton.new()
-	_procedimiento.custom_minimum_size = Vector2(230, 30)
-	for procedimiento in PROCEDIMIENTOS_POR_ESTACION[_estacion_id]:
-		_procedimiento.add_item(str(procedimiento))
+	_titulo.text = str(TITULOS_ESTACION.get(_estacion_id, "LABORATORIO"))
+	_procedimiento.clear()
+	for nombre_procedimiento in PROCEDIMIENTOS_POR_ESTACION[_estacion_id]:
+		_procedimiento.add_item(str(nombre_procedimiento))
 	_procedimiento.select(0)
-	columna_prueba.add_child(_procedimiento)
-
-	_seleccion_label = Label.new()
-	_seleccion_label.text = "Elementos seleccionados: 0/4"
-	_seleccion_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	columna_prueba.add_child(_seleccion_label)
-
-	var nota := Label.new()
-	nota.text = "Puedes seleccionar entre uno y cuatro elementos. Las pruebas preliminares no consumen ni modifican objetos."
-	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	nota.add_theme_font_size_override("font_size", 9)
-	columna_prueba.add_child(nota)
-
-	_resultado_label = Label.new()
-	_resultado_label.name = "ExperimentResult"
 	_resultado_label.text = "El resultado de la prueba aparecerá aquí."
-	_resultado_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_resultado_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_resultado_label.custom_minimum_size = Vector2(230, 52)
-	columna_prueba.add_child(_resultado_label)
-
-	var ejecutar := Button.new()
-	ejecutar.text = "Realizar prueba"
-	ejecutar.custom_minimum_size = Vector2(0, 34)
-	ejecutar.pressed.connect(_ejecutar_prueba)
-	columna_prueba.add_child(ejecutar)
-
 	_cargar_objetos()
-	PIXEL_UI_THEME.apply(_panel)
+	PIXEL_UI_THEME.apply(self)
 
 
 func _cargar_objetos() -> void:
@@ -187,7 +85,7 @@ func _cargar_objetos() -> void:
 		boton.toggle_mode = true
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.custom_minimum_size = Vector2(0, 38)
+		boton.custom_minimum_size = Vector2(0, 34)
 		boton.text = "%s  x%d" % [
 			str(objeto.get("nombre", "Objeto")),
 			maxi(1, int(objeto.get("cantidad", 1)))
@@ -251,7 +149,6 @@ func _ejecutar_prueba() -> void:
 
 func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dictionary], nombres: Array[String]) -> String:
 	if procedimiento in ["Examinar", "Observar estructura", "Observar Eterium", "Medir"]:
-
 		var objeto := objetos[0]
 		var nombre := nombres[0]
 		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
@@ -264,8 +161,7 @@ func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dicti
 		resultado += " La observación no modifica el objeto."
 		return resultado
 
-	if procedimiento in ["Comparar"]:
-
+	if procedimiento == "Comparar":
 		var resumen: Array[String] = []
 		for objeto in objetos:
 			var categoria := _obtener_categoria(objeto)
