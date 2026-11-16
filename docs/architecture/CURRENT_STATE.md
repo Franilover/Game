@@ -833,3 +833,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Los compromisos originados en recuerdos usan identificadores estables para no reaparecer tras resolverse.
 - Estos encuentros aún no presentan diálogo visual NPC-NPC; no hay generación de texto. La narración visible se mantiene escrita y queda pendiente conectar estos motivos a conversaciones ambientales.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1708.
+
+## Conversaciones visibles para encuentros sociales autónomos
+
+- Cuando un NPC termina de reunirse con otro por una promesa, un asunto pendiente, una noticia, un desacuerdo o una necesidad de compañía, `NPCScheduleSystem` solicita una conversación ambiental.
+- `NPCConversationSystem` presenta cuatro intervenciones escritas con las burbujas existentes y el perfil de voz de cada personaje.
+- La conversación avanza sin depender de la posición del jugador ni de que tenga cerrado el diálogo modal. Si el jugador se acerca, puede observar las intervenciones que aún estén en curso.
+- Los participantes quedan temporalmente fuera de la actualización de sus rutinas para evitar que se alejen durante la charla; al finalizar, recuperan el horario normal.
+- La presentación no vuelve a aplicar amistad, confianza, promesas, asuntos ni transmisión de conocimientos: esos efectos ya pertenecen al cierre del objetivo social.
+- Alcance actual: líneas breves escritas por tipo de motivo, sin generación de texto. La revisión visual en runtime y Android y la validación CI de esta última integración siguen pendientes.
