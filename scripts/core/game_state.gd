@@ -800,6 +800,16 @@ func registrar_garumi_descubierto(garumi_id: String) -> bool:
 	return true
 
 
+func ha_descubierto_criatura_o_garumi() -> bool:
+	# El desbloqueo se conserva en el estado de la partida: no depende de
+	# llevar un Garumi vinculado ni de mantener viva a la criatura.
+	return (
+		not obtener_criaturas_descubiertas().is_empty()
+		or not obtener_garumis_descubiertos().is_empty()
+		or not discovery_state.creatures.is_empty()
+	)
+
+
 func obtener_garumis_descubiertos() -> Dictionary:
 	var registros_variant: Variant = world_state.flags.get("enciclopedia_garumis", {})
 	if registros_variant is Dictionary:
