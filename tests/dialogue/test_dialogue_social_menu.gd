@@ -26,6 +26,25 @@ func _run() -> void:
 	if voz_darven != "¿Te apetece hablar?":
 		errores.append("El perfil común impuso un modismo que no corresponde a todas las voces.")
 
+	# Las respuestas de rutina también deben distinguir a los habitantes,
+	# incluso cuando no tienen un tema narrativo cargado desde los datos.
+	npc.nombre_individual = "Mara"
+	if not dialogo._obtener_reaccion_pregunta_rutina().contains("hablar con todo el mundo"):
+		errores.append("Mara recibió una respuesta genérica al preguntarle cómo está.")
+	if not dialogo._obtener_reaccion_apoyo_rutina().contains("dejar que alguien se acerque"):
+		errores.append("Mara recibió una respuesta de apoyo que no refleja su carácter reservado.")
+	npc.nombre_individual = "Ivo"
+	if not dialogo._obtener_reaccion_pregunta_rutina().contains("me pasé con el paseo"):
+		errores.append("Ivo recibió una respuesta genérica al preguntarle cómo está.")
+	if not dialogo._obtener_reaccion_conocimiento_rutina().contains("no siempre pueda ir a comprobarlas"):
+		errores.append("Ivo recibió una respuesta de conocimiento que no considera su propio ritmo.")
+	npc.nombre_individual = "Nima"
+	if not dialogo._obtener_reaccion_pregunta_rutina().contains("descansar la cabeza"):
+		errores.append("Nima recibió una respuesta genérica al preguntarle cómo está.")
+	if not dialogo._obtener_reaccion_conocimiento_rutina().contains("antes de sacar conclusiones"):
+		errores.append("Nima recibió una respuesta de conocimiento que no refleja su cautela.")
+	npc.nombre_individual = "Bruna"
+
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
 	if npc == null or dialogo == null:
