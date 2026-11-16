@@ -315,6 +315,13 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 		_reiniciar_seguro_atasco()
 		return direccion
 
+	# Si otro habitante cercano comparte el edificio de destino, el rodeo
+	# lateral empeora la congestión de la puerta. Ambos pueden cruzarse:
+	# los cuerpos de los NPC no bloquean físicamente el paso.
+	if _hay_otro_npc_cercano_con_mismo_destino():
+		_reiniciar_seguro_atasco()
+		return direccion
+
 	var posicion_actual := creature.global_position
 	if not _seguro_inicializado:
 		_ultima_posicion_seguro = posicion_actual
@@ -344,6 +351,28 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 
 	var lateral := _direccion_base_atasco.orthogonal() * _lado_desvio
 	return (lateral * 0.92 + _direccion_base_atasco * 0.08).normalized()
+
+
+func _hay_otro_npc_cercano_con_mismo_destino() -> bool:
+	if not creature is Creature:
+		return false
+	var npc_actual := creature as Creature
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if (
+			not nodo is Creature
+			or nodo == npc_actual
+			or not is_instance_valid(nodo)
+			or nodo.is_queued_for_deletion()
+		):
+			continue
+		var otro := nodo as Creature
+		if not otro.is_alive or otro.get_parent() != npc_actual.get_parent():
+			continue
+		if not _comparten_entrada_destino(npc_actual, otro):
+			continue
+		if npc_actual.global_position.distance_to(otro.global_position) <= DISTANCIA_CEDER_PASO_NPC * 2.0:
+			return true
+	return false
 
 
 func _reiniciar_seguro_atasco() -> void:
