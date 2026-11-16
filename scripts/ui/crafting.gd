@@ -230,6 +230,7 @@ func _renderizar_recetas() -> void:
 	)
 
 	for clave_variant in claves:
+		var grupo: Dictionary = grupos[clave_variant]
 		# Cada categoría tiene una única superficie de botón que agrupa
 		# visualmente su título y todas sus recetas.
 		var seccion := PanelContainer.new()
