@@ -61,6 +61,8 @@ var _carga_historia_activa := false
 var _cutscene_director: Variant = null
 var _bienvenida_torres_pendiente := false
 var _bienvenida_torres_en_curso := false
+var _bienvenida_torres_omitida := false
+var _bienvenida_omitir_layer: CanvasLayer = null
 var _cinematicas_pendientes: Array[Dictionary] = []
 var _cinematica_proximidad_elapsed: float = 0.0
 var _procesando_cinematica_pendiente: bool = false
@@ -1062,6 +1064,8 @@ func _iniciar_bienvenida_torres() -> void:
 		return
 
 	_bienvenida_torres_en_curso = true
+	_bienvenida_torres_omitida = false
+	_crear_boton_omitir_bienvenida()
 	var posicion_inicial := _player.global_position
 	var zoom_revelacion := clampf(_camera.zoom.x * 0.82, 1.15, 1.65)
 	var pasos: Array[Dictionary] = [
@@ -1187,12 +1191,48 @@ func _iniciar_bienvenida_torres() -> void:
 
 	var completada: bool = await _cutscene_director.ejecutar("bienvenida_inicial_torres", pasos)
 	_bienvenida_torres_en_curso = false
-	if not completada:
+	if is_instance_valid(_bienvenida_omitir_layer):
+		_bienvenida_omitir_layer.queue_free()
+		_bienvenida_omitir_layer = null
+	if not completada and not _bienvenida_torres_omitida:
 		return
 	_bienvenida_torres_pendiente = false
 	GameState.world_state.flags["bienvenida_torres_vista"] = true
 	if GameState.has_method("guardar_partida"):
 		GameState.call_deferred("guardar_partida")
+
+
+## Mantiene el control fuera del árbol UI que CutsceneDirector oculta durante la secuencia.
+func _crear_boton_omitir_bienvenida() -> void:
+	if is_instance_valid(_bienvenida_omitir_layer):
+		_bienvenida_omitir_layer.queue_free()
+	_bienvenida_omitir_layer = CanvasLayer.new()
+	_bienvenida_omitir_layer.name = "BienvenidaOmitirLayer"
+	_bienvenida_omitir_layer.layer = 120
+	_bienvenida_omitir_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_bienvenida_omitir_layer)
+
+	var boton := Button.new()
+	boton.name = "OmitirBienvenida"
+	boton.text = "Omitir"
+	boton.focus_mode = Control.FOCUS_NONE
+	boton.process_mode = Node.PROCESS_MODE_ALWAYS
+	boton.custom_minimum_size = Vector2(112.0, 42.0)
+	boton.anchor_left = 1.0
+	boton.anchor_right = 1.0
+	boton.offset_left = -132.0
+	boton.offset_top = 18.0
+	boton.offset_right = -16.0
+	boton.offset_bottom = 60.0
+	boton.pressed.connect(_omitir_bienvenida_torres)
+	_bienvenida_omitir_layer.add_child(boton)
+
+
+func _omitir_bienvenida_torres() -> void:
+	if not _bienvenida_torres_en_curso or not is_instance_valid(_cutscene_director):
+		return
+	_bienvenida_torres_omitida = true
+	await _cutscene_director.cancelar()
 
 
 func _buscar_npc_bienvenida(nombre_buscado: String) -> Creature:
