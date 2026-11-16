@@ -1554,33 +1554,33 @@ func _obtener_reaccion_despedida_rutina() -> String:
 	if bool(contexto.get("en_transito", false)):
 		match nombre:
 			"elian":
-				return "Claro, sigue hacia %s. Nos vemos cuando llegues." % destino_contextual
+				return "Tengo que llegar a %s. Nos vemos allí." % destino_contextual
 			"bruna":
-				return "Ve a terminar tu encargo. No te entretengo más; hablamos luego."
+				return "Tengo que terminar mi encargo. Hablamos luego."
 			"darven":
-				return "Continúa con tu ronda. Nos vemos cuando termines el recorrido."
+				return "Tengo que seguir con la ronda. Nos vemos luego."
 			"saira":
-				return "Anda, atiende ese asunto. Ya nos pondremos al día."
+				return "Tengo que atender ese asunto. Ya nos pondremos al día."
 			"narel":
-				return "No te distraigo más. Termina de ordenar tus ideas y hablamos después."
+				return "Voy a ordenar mis notas antes de que se me olvide lo que estaba revisando. Hablamos después."
 			_:
-				return "Sigue con lo que ibas a hacer. Hablamos después."
+				return "Tengo que seguir con lo que iba a hacer. Hablamos después."
 	if _actividad_impide_una_conversacion_larga(actividad_contextual):
 		match nombre:
 			"elian":
-				return "Te dejo seguir con la panadería. Nos vemos luego."
+				return "Tengo que seguir con la panadería. Nos vemos luego."
 			"bruna":
-				return "Termina la pieza con calma; no te distraigo más. Hablamos luego."
+				return "Tengo que terminar esta pieza. Hablamos luego."
 			"darven":
-				return "Sigue atento a la guardia. Nos vemos cuando termine tu turno."
+				return "Tengo que seguir atento a la guardia. Nos vemos luego."
 			"saira":
-				return "Te dejo atender el comercio. Nos vemos luego."
+				return "Tengo que seguir atendiendo el comercio. Nos vemos luego."
 			"narel":
-				return "Termina tus notas; hablamos cuando tengas un momento."
+				return "Voy a terminar estas notas. Hablamos cuando pueda apartar la vista de ellas."
 			_:
-				return "Te dejo continuar con lo que estabas haciendo. Hablamos luego."
+				return "Tengo que seguir con lo que estaba haciendo. Hablamos luego."
 	if _actividad_es_desplazamiento(actividad_contextual):
-		return "No te entretengo más. Nos vemos por %s." % destino_contextual
+		return "Voy a seguir hacia %s. Nos vemos luego." % destino_contextual
 	var relacion: Dictionary = {}
 	if relationship_system != null and is_instance_valid(_fuente):
 		relacion = relationship_system.obtener_relacion(_fuente.get_personaje_game_id())
