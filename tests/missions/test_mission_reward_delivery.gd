@@ -164,5 +164,6 @@ func _probar_resolucion_item_canonico(errores: Array[String]) -> void:
 		errores.append("La recompensa perdió tipo o max_stack del catálogo.")
 	if int((objeto.get("propiedades_game", {}) as Dictionary).get("danio", 0)) != 8:
 		errores.append("La recompensa no conservó propiedades_game del catálogo.")
-	gestor.queue_free()
+	gestor.free()
 	world_items.free()
+	world_data.free()
