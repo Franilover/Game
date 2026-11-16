@@ -1275,7 +1275,7 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 						propiedades_combinadas[propiedad] = (valor_actual as Dictionary)[propiedad]
 			resultado[clave] = propiedades_combinadas
 			continue
-		var esta_vacio := valor_actual == null or valor_actual == ""
+		var esta_vacio: bool = valor_actual == null or valor_actual == ""
 		if valor_actual is Dictionary:
 			esta_vacio = (valor_actual as Dictionary).is_empty()
 		if esta_vacio:
