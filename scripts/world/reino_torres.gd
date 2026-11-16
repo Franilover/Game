@@ -403,7 +403,7 @@ func _crear_cesped_tilemap_dual() -> void:
 	# ejecución evita cargar un reino recortado. El EditorScript permite guardar
 	# esta misma distribución como TileMaps editables en la escena.
 	if necesita_reconstruccion:
-		_reconstruir_tilemaps_torres(capas)
+		_reconstruir_tilemaps_torres()
 		celdas_por_capa.clear()
 		posiciones_unicas.clear()
 		celdas_totales = 0
@@ -495,7 +495,7 @@ func _crear_cesped_tilemap_dual() -> void:
 		% [celdas_totales, posiciones_unicas.size()]
 	)
 
-func _reconstruir_tilemaps_torres(capas: Array[TileMapDual]) -> void:
+func _reconstruir_tilemaps_torres() -> void:
 	var capas_por_zona: Dictionary = {}
 	for zona: int in TORRES_TILEMAP_LAYOUT.ZONES:
 		var capa := get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
