@@ -960,6 +960,7 @@ func _al_eliminar_seleccionado() -> void:
 
 
 func _mostrar_informacion() -> void:
+	objeto_seleccionado = _enriquecer_datos_objeto(objeto_seleccionado)
 	var nombre := str(objeto_seleccionado.get("nombre", "Objeto"))
 	var lineas: PackedStringArray = []
 	var descripcion := str(objeto_seleccionado.get("descripcion", "")).strip_edges()
@@ -1158,7 +1159,8 @@ func _agregar_etiqueta_modalidad(texto: String) -> void:
 
 
 func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
-	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	var datos := _enriquecer_datos_objeto(objeto)
+	var propiedades_variant: Variant = datos.get("propiedades_game", {})
 	if not propiedades_variant is Dictionary:
 		return false
 	var uso_variant: Variant = (propiedades_variant as Dictionary).get("uso", {})
@@ -1188,7 +1190,8 @@ func _al_usar_seleccionado() -> void:
 		return
 	# La acción desde el inventario es explícita y no debe quedar bloqueada
 	# por el GameplayInputGate que el propio menú mantiene activo.
-	if inventory_controller.usar_objeto_desde_ui(indice_seleccionado, _player):
+	var datos_uso := _enriquecer_datos_objeto(obtener_objeto(indice_seleccionado))
+	if inventory_controller.usar_objeto_desde_ui(indice_seleccionado, _player, datos_uso):
 		_refrescar_objeto_seleccionado()
 
 
@@ -1243,8 +1246,32 @@ func _refrescar_objeto_seleccionado() -> void:
 	_emitir_objeto_activo()
 
 
+func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
+	var resultado := datos.duplicate(true)
+	if _world_items == null or not is_instance_valid(_world_items):
+		return resultado
+	var item_id := str(resultado.get("item_id", resultado.get("id", ""))).strip_edges()
+	if item_id.is_empty():
+		return resultado
+	var canonico := _world_items.buscar_item_por_id(item_id)
+	if canonico.is_empty():
+		return resultado
+	# Las partidas antiguas pueden guardar solo la identidad del objeto.
+	# Completar los campos de gameplay desde items_game permite que la UI y
+	# el consumo lean siempre las propiedades canónicas actuales.
+	for clave in ["propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
+		var valor_actual: Variant = resultado.get(clave, null)
+		var esta_vacio := valor_actual == null or valor_actual == ""
+		if valor_actual is Dictionary:
+			esta_vacio = (valor_actual as Dictionary).is_empty()
+		if esta_vacio and canonico.has(clave):
+			resultado[clave] = canonico[clave].duplicate(true) if canonico[clave] is Dictionary or canonico[clave] is Array else canonico[clave]
+	return resultado
+
+
 func _obtener_categoria_objeto(datos: Dictionary) -> Dictionary:
-	var categoria_variant: Variant = datos.get("categoria", {})
+	var enriquecido := _enriquecer_datos_objeto(datos)
+	var categoria_variant: Variant = enriquecido.get("categoria", {})
 	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
 		return (categoria_variant as Dictionary).duplicate(true)
 
@@ -1304,7 +1331,8 @@ func usar_objeto_activo(usuario: Player = null) -> bool:
 
 func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
 	var actor := usuario if usuario != null else _player
-	if not inventory_controller.usar_objeto_mano(mano, actor):
+	var datos_uso := _enriquecer_datos_objeto(inventory_controller.obtener_objeto_mano_activa(mano))
+	if not inventory_controller.usar_objeto_mano(mano, actor, datos_uso):
 		return false
 	actualizar()
 	inventory_changed.emit()
@@ -1315,7 +1343,7 @@ func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
 func puede_consumir_alimento_en_mano(mano: String) -> bool:
 	if mano not in ["izquierda", "derecha"]:
 		return false
-	var objeto := inventory_controller.obtener_objeto_mano_activa(mano)
+	var objeto := _enriquecer_datos_objeto(inventory_controller.obtener_objeto_mano_activa(mano))
 	if objeto.is_empty() or _obtener_clave_categoria_objeto(objeto) != "alimentos_bebidas":
 		return false
 	return _objeto_tiene_uso_valido(objeto)
