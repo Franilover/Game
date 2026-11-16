@@ -736,14 +736,13 @@ func _construir_objeto_recompensa(recompensa: Dictionary) -> Dictionary:
 	var datos: Dictionary = datos_variant as Dictionary if datos_variant is Dictionary else {}
 	var objeto_variant: Variant = datos.get("item_data", datos.get("objeto", {}))
 	var objeto: Dictionary = objeto_variant.duplicate(true) if objeto_variant is Dictionary else {}
+	var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
 	if objeto.is_empty():
-		var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
 		# Las recompensas canónicas suelen guardar solo el UUID del item.
 		# Resolverlo contra el catálogo ya cargado evita duplicar datos de Supabase.
 		if not item_id.is_empty() and _world_items != null and is_instance_valid(_world_items):
 			objeto = _world_items.buscar_item_por_id(item_id)
 	if objeto.is_empty():
-		var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
 		var nombre := str(datos.get("nombre", "")).strip_edges()
 		if item_id.is_empty() or nombre.is_empty():
 			return {}
