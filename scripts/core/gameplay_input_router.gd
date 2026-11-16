@@ -69,20 +69,25 @@ func _crear_indicador_consumo() -> void:
 	capa.name = "IndicadorConsumo"
 	capa.layer = 30
 	add_child(capa)
+	# CanvasLayer no tiene un rectángulo de Control propio. Crear un lienzo
+	# de pantalla completo para que los anclajes inferiores se resuelvan bien.
 	var contenedor := Control.new()
 	contenedor.name = "Contenedor"
-	contenedor.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	contenedor.offset_left = -80.0
-	contenedor.offset_right = 80.0
-	contenedor.offset_top = -82.0
-	contenedor.offset_bottom = -48.0
+	contenedor.set_anchors_preset(Control.PRESET_FULL_RECT)
+	contenedor.offset_left = 0.0
+	contenedor.offset_top = 0.0
+	contenedor.offset_right = 0.0
+	contenedor.offset_bottom = 0.0
 	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	capa.add_child(contenedor)
 	_etiqueta_consumo = Label.new()
 	_etiqueta_consumo.text = "COMIENDO"
 	_etiqueta_consumo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_etiqueta_consumo.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_etiqueta_consumo.offset_bottom = 16.0
+	_etiqueta_consumo.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_etiqueta_consumo.offset_left = -80.0
+	_etiqueta_consumo.offset_right = 80.0
+	_etiqueta_consumo.offset_top = -82.0
+	_etiqueta_consumo.offset_bottom = -66.0
 	_etiqueta_consumo.add_theme_font_size_override("font_size", 10)
 	_etiqueta_consumo.add_theme_color_override("font_color", Color(0.94, 0.86, 0.72, 1.0))
 	_etiqueta_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -98,7 +103,11 @@ func _crear_indicador_consumo() -> void:
 	_barra_consumo.stretch_margin_top = 2
 	_barra_consumo.stretch_margin_right = 3
 	_barra_consumo.stretch_margin_bottom = 2
-	_barra_consumo.position = Vector2(0.0, 19.0)
+	_barra_consumo.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_barra_consumo.offset_left = -80.0
+	_barra_consumo.offset_right = 80.0
+	_barra_consumo.offset_top = -63.0
+	_barra_consumo.offset_bottom = -47.0
 	_barra_consumo.size = Vector2(160.0, 16.0)
 	_barra_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenedor.add_child(_barra_consumo)
