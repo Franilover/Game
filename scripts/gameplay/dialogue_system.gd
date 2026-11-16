@@ -278,6 +278,8 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		for accion_variant in acciones_variant as Array:
 			if accion_variant is Dictionary:
 				_acciones.append((accion_variant as Dictionary).duplicate(true))
+	if _usa_menu_social:
+		_acciones.clear()
 
 	_indice_linea = 0
 	_abierto = true
