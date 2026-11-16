@@ -3469,7 +3469,7 @@ func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
 		return
 	var viewport_size := tamano_viewport
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
-		viewport_size = get_viewport_rect().size
+		viewport_size = get_viewport().get_visible_rect().size
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
 
