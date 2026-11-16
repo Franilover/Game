@@ -558,8 +558,13 @@ func _inicializar_runtime_de_zona() -> void:
 	_configurar_dialogo()
 	MissionManager.configurar_dependencias(
 		_world_generator.entity_manager if _world_generator != null else null,
-		WorldData
+		WorldData,
+		_world_items
 	)
+	if not _world_items.catalogo_cargado.is_connected(_al_catalogo_items_cargado):
+		_world_items.catalogo_cargado.connect(_al_catalogo_items_cargado)
+	if not _world_items.obtener_catalogo().is_empty():
+		call_deferred("_al_catalogo_items_cargado", _world_items.obtener_catalogo())
 	if not MissionManager.recompensa_disponible.is_connected(_al_recompensa_mision_disponible):
 		MissionManager.recompensa_disponible.connect(_al_recompensa_mision_disponible)
 	if not _inventory.inventory_changed.is_connected(_al_cambio_inventario_reintentar_recompensas):
@@ -2261,6 +2266,12 @@ func _al_equipar_proceso(proceso: Dictionary) -> void:
 
 	var nombre: String = proceso.get("nombre", "Proceso")
 	print("Main: Proceso IUM equipado → ", nombre)
+
+
+func _al_catalogo_items_cargado(_items: Array) -> void:
+	# Una misión puede completarse antes de que termine la primera carga del
+	# catálogo. Reintentar al recibir los datos canónicos evita dejarla pendiente.
+	call_deferred("_reintentar_recompensas_misiones")
 
 
 func _al_recompensa_mision_disponible(mision: Dictionary, _recompensas: Array[Dictionary]) -> void:
