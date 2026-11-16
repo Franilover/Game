@@ -162,7 +162,7 @@ func _distribuir_controles() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if solo_android and not OS.has_feature("android"):
+	if solo_dispositivos_moviles and not _es_dispositivo_movil():
 		return
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
@@ -322,6 +322,11 @@ func _exit_tree() -> void:
 
 func _liberar_todas_las_acciones() -> void:
 	_soltar_espacio()
+	_joystick_touch_index = -1
+	_joystick_vector = Vector2.ZERO
+	if is_inside_tree():
+		_actualizar_visual_joystick()
+		_actualizar_acciones_joystick()
 	for accion_variant in _acciones_presionadas.keys():
 		var accion := str(accion_variant)
 		if InputMap.has_action(accion):
