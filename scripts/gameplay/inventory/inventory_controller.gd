@@ -81,6 +81,8 @@ func es_alimento_en_mano(mano: String) -> bool:
 	var clave := str(objeto.get("categoria_clave", ""))
 	if categoria_variant is Dictionary:
 		clave = str((categoria_variant as Dictionary).get("clave", clave))
+	elif categoria_variant is String and not str(categoria_variant).strip_edges().is_empty():
+		clave = str(categoria_variant)
 	return clave.strip_edges().to_lower() == "alimentos_bebidas"
 
 
