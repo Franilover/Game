@@ -33,10 +33,10 @@ static func _is_road(point: Vector2) -> bool:
 			return true
 
 	# Calles cortas entre las filas de viviendas; forman manzanas reconocibles.
-	for y_calle: float in [-475.0, -225.0, 25.0, 275.0]:
-		if _near_segment(point, Vector2(-1100.0, y_calle), Vector2(-650.0, y_calle), 25.0):
+	for y_calle: float in [-296.0, -46.0, 204.0]:
+		if _near_segment(point, Vector2(-1100.0, y_calle), Vector2(-650.0, y_calle), 20.0):
 			return true
-		if _near_segment(point, Vector2(650.0, y_calle), Vector2(1100.0, y_calle), 25.0):
+		if _near_segment(point, Vector2(650.0, y_calle), Vector2(1100.0, y_calle), 20.0):
 			return true
 
 	# Accesos de los edificios públicos y talleres alrededor de la plaza.
