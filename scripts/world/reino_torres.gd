@@ -974,7 +974,14 @@ func _crear_luces_faroles() -> void:
 		{"nombre": "OesteInterior", "posicion": Vector2(-150.0, 12.0)},
 		{"nombre": "EsteInterior", "posicion": Vector2(150.0, 12.0)},
 		{"nombre": "EsteExterior", "posicion": Vector2(600.0, 12.0)},
-		{"nombre": "Este", "nodo": "Sprite_poste_este"}
+		{"nombre": "Este", "nodo": "Sprite_poste_este"},
+		{"nombre": "BarrioOesteNorte", "posicion": Vector2(-1024.0, -500.0)},
+		{"nombre": "BarrioOesteCentro", "posicion": Vector2(-1024.0, 300.0)},
+		{"nombre": "BarrioOesteSur", "posicion": Vector2(-1024.0, 760.0)},
+		{"nombre": "BarrioEsteNorte", "posicion": Vector2(1024.0, -500.0)},
+		{"nombre": "BarrioEsteCentro", "posicion": Vector2(1024.0, 300.0)},
+		{"nombre": "BarrioEsteSur", "posicion": Vector2(1024.0, 760.0)},
+		{"nombre": "SectorAgricola", "posicion": Vector2(0.0, 850.0)}
 	]
 
 	for farol_datos: Dictionary in faroles:
