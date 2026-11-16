@@ -847,6 +847,7 @@ func _crear_slots_equipamiento() -> void:
 		if slot == null:
 			continue
 		equipment_slots.add_child(slot)
+		PIXEL_UI_THEME.apply(slot, false)
 		slot.configurar(str(entrada[0]), str(entrada[1]))
 		slot.objeto_equipado.connect(_al_equipar_objeto)
 		slot.objeto_desequipado.connect(_al_desequipar_objeto)
