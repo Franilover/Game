@@ -771,3 +771,17 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - `DialogueSocialMenu` cubre el ritmo lento y las despedidas coherentes de caminar/tránsito/trabajo.
 - CI Godot 4.7: **PASS**, run `43929922701` (#1654), 40 pasos completados sin fallos.
 - La prueba es headless. Falta revisar la legibilidad en una partida real, en especial Android, y rastrear cualquier frase contradictoria que provenga de datos externos.
+
+
+
+## Sexagésima octava barrida — Voces y contenido cotidiano de los NPC
+
+- Se revisaron las respuestas de rutina y el fallback del menú social para que Mara, Ivo y Nima tengan reacciones propias incluso cuando no hay temas narrativos cargados desde datos.
+- Mara responde con calma y reserva; Ivo habla con franqueza y humor sobre su propio ritmo; Nima mantiene la curiosidad, pero recuerda que conversa con una persona y no sólo con un tema de estudio.
+- Las conversaciones ambientales de Mara/Ivo, Nima/Ivo y Saira/Ivo ahora avanzan mediante bromas, preguntas, límites y propuestas concretas, con menos frases explicativas.
+- Los perfiles de voz ya no convierten expresiones de todos los NPC al mismo registro; cada adaptación queda asociada al personaje.
+- Se corrigieron respuestas de movimiento dentro de edificios para que hablen del lugar en el que están y no de un destino exterior. También se eliminó la concatenación de nombres internos de actividad en los planes cotidianos.
+- Se añadieron aserciones para las voces y respuestas de rutina de Mara, Ivo y Nima a `DialogueSocialMenu`.
+- CI Godot 4.7: **PASS**, run `43932011916`, 40 pasos completados sin fallos.
+- Falta revisar los textos en una partida real y confirmar su legibilidad/naturalidad en Android. La prueba headless verifica contratos y frases, no sustituye una lectura jugada.
+- No se cambiaron los datos canónicos de diálogos en Supabase.
