@@ -2,6 +2,7 @@ extends Node
 
 const MissionManagerScript = preload("res://scripts/gameplay/mission_manager.gd")
 const InventoryScene = preload("res://scenes/ui/inventory.tscn")
+const WorldItemsScript = preload("res://scripts/infrastructure/garlia_world_items.gd")
 
 
 func _ready() -> void:
@@ -12,6 +13,7 @@ func _run() -> void:
 	var errores: Array[String] = []
 	await _probar_rollback_sin_reintento_recursivo(errores)
 	await _probar_entrega_idempotente(errores)
+	_probar_resolucion_item_canonico(errores)
 	if not errores.is_empty():
 		for error in errores:
 			push_error("MissionRewardDelivery: FAIL: " + error)
@@ -128,3 +130,37 @@ func _probar_entrega_idempotente(errores: Array[String]) -> void:
 	inventario.queue_free()
 	gestor.queue_free()
 	await get_tree().process_frame
+
+
+func _probar_resolucion_item_canonico(errores: Array[String]) -> void:
+	var world_items := WorldItemsScript.new() as GarliaWorldItems
+	world_items.catalogo = [{
+		"id": "item_uuid_canonico",
+		"item_id": "item_uuid_canonico",
+		"nombre": "Espada de Madera",
+		"descripcion": "Espada de prueba desde catálogo.",
+		"tipo": "arma",
+		"max_stack": 1,
+		"propiedades_game": {"danio": 8}
+	}]
+	var recompensa := {
+		"tipo": "item",
+		"item_id": "item_uuid_canonico",
+		"cantidad": 1,
+		"datos": {}
+	}
+	var gestor := _crear_gestor([recompensa])
+	gestor.configurar_dependencias(null, null, world_items)
+	var mision := gestor.obtener_mision("mision_recompensa_test")
+	var recompensas: Array = mision.get("recompensas", [])
+	var objeto := gestor._construir_objeto_recompensa(recompensas[0] as Dictionary) if not recompensas.is_empty() else {}
+	if str(objeto.get("id", "")) != "item_uuid_canonico":
+		errores.append("No se resolvió el item_id de la recompensa contra GarliaWorldItems.")
+	if str(objeto.get("nombre", "")) != "Espada de Madera":
+		errores.append("La recompensa no conservó el nombre canónico del item.")
+	if str(objeto.get("tipo", "")) != "arma" or int(objeto.get("max_stack", 0)) != 1:
+		errores.append("La recompensa perdió tipo o max_stack del catálogo.")
+	if int((objeto.get("propiedades_game", {}) as Dictionary).get("danio", 0)) != 8:
+		errores.append("La recompensa no conservó propiedades_game del catálogo.")
+	gestor.queue_free()
+	world_items.free()
