@@ -22,6 +22,7 @@ var _meditar_presionado: bool = false
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	if solo_dispositivos_moviles and not _es_dispositivo_movil():
 		hide()
 		return
@@ -52,6 +53,8 @@ func _ready() -> void:
 		boton_hud.pressed.connect(_solicitar_hud.bind(str(accion)))
 		_estilizar_boton(boton_hud, str(accion))
 	_estilizar_boton($Actions/Meditate, "meditate")
+	_estilizar_boton($Actions/Pause, "pause_menu")
+	$Actions/Pause.pressed.connect(_alternar_pausa)
 	$Actions/Meditate.button_down.connect(_presionar_espacio)
 	$Actions/Meditate.button_up.connect(_soltar_espacio)
 	get_viewport().size_changed.connect(_distribuir_controles)
@@ -90,10 +93,10 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 		"run": "Dash", "jump": "Salto", "inventory": "Bolsa",
 		"toggle_map": "Mapa", "toggle_missions": "Misiones", "toggle_garumi_selector": "Garumis",
 		"garumi_slot_1": "1", "garumi_slot_2": "2", "garumi_slot_3": "3",
-		"meditate": "Meditar"
+		"meditate": "Meditar", "pause_menu": "Pausa"
 	}
 	boton.text = str(nombres.get(accion, "•"))
-	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "run", "jump"]
+	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "pause_menu", "run", "jump"]
 	boton.add_theme_font_size_override("font_size", 10 if texto_largo else 18)
 	boton.add_theme_color_override("font_color", Color("#eee8d5"))
 	boton.add_theme_color_override("font_hover_color", Color("#ffffff"))
@@ -145,6 +148,7 @@ func _distribuir_controles() -> void:
 	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
 	_posicionar($Actions/Map, Vector2(margen + a + gap, margen), Vector2(pequeno, pequeno))
 	_posicionar($Actions/Missions, Vector2(margen + a + gap + pequeno + 6.0, margen), Vector2(pequeno, pequeno))
+	_posicionar($Actions/Pause, Vector2(margen + a + gap + (pequeno + 6.0) * 2.0, margen), Vector2(pequeno, pequeno))
 	_posicionar($Actions/Garumis, Vector2(right - pequeno, margen), Vector2(pequeno, pequeno))
 	for i in range(3):
 		var boton_garumi := _botones_hud["garumi_slot_%d" % (i + 1)] as Button
@@ -222,6 +226,13 @@ func _actualizar_acciones_joystick() -> void:
 
 func _es_dispositivo_movil() -> bool:
 	return OS.has_feature("android") or OS.has_feature("ios")
+
+
+func _alternar_pausa() -> void:
+	var evento := InputEventKey.new()
+	evento.keycode = KEY_ESCAPE
+	evento.pressed = true
+	Input.parse_input_event(evento)
 
 
 func _presionar_espacio() -> void:
