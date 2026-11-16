@@ -72,8 +72,8 @@ func _crear_indicador_consumo() -> void:
 	var contenedor := Control.new()
 	contenedor.name = "Contenedor"
 	contenedor.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	contenedor.offset_left = -92.0
-	contenedor.offset_right = 92.0
+	contenedor.offset_left = -80.0
+	contenedor.offset_right = 80.0
 	contenedor.offset_top = -82.0
 	contenedor.offset_bottom = -48.0
 	contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -99,7 +99,7 @@ func _crear_indicador_consumo() -> void:
 	_barra_consumo.stretch_margin_right = 3
 	_barra_consumo.stretch_margin_bottom = 2
 	_barra_consumo.position = Vector2(0.0, 19.0)
-	_barra_consumo.size = Vector2(184.0, 12.0)
+	_barra_consumo.size = Vector2(160.0, 16.0)
 	_barra_consumo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenedor.add_child(_barra_consumo)
 	contenedor.visible = false
