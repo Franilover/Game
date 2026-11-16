@@ -472,30 +472,49 @@ func _obtener_especie_jugable_canonica(especie_id: String, token: String) -> Dic
 	if especie_id.is_empty() or token.is_empty():
 		return {}
 	if _especies_jugables_cache.is_empty():
-		var request := HTTPRequest.new()
-		request.timeout = 12.0
-		request.process_mode = Node.PROCESS_MODE_ALWAYS
-		add_child(request)
 		var headers := PackedStringArray([
 			"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
 			"Authorization: Bearer " + token
 		])
 		var url: String = GarliaAuth.SUPABASE_URL + "/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
-		var error := request.request(url, headers, HTTPClient.METHOD_GET)
-		if error != OK:
-			request.queue_free()
+		var catalogo_valido := false
+		for intento in range(3):
+			var request := HTTPRequest.new()
+			request.timeout = 12.0
+			request.process_mode = Node.PROCESS_MODE_ALWAYS
+			add_child(request)
+			var error := request.request(url, headers, HTTPClient.METHOD_GET)
+			if error != OK:
+				request.queue_free()
+				push_warning("GarliaWorldNetwork: no se pudo iniciar la carga del catálogo de especies (intento %d/3)." % [intento + 1])
+			else:
+				var response: Array = await request.request_completed
+				request.queue_free()
+				var resultado_red := int(response[0])
+				var codigo_http := int(response[1])
+				if resultado_red == HTTPRequest.RESULT_SUCCESS and codigo_http >= 200 and codigo_http < 300:
+					var parsed: Variant = JSON.parse_string(PackedByteArray(response[3]).get_string_from_utf8())
+					if parsed is Array:
+						var especies_recibidas: Array = []
+						for especie_variant in parsed as Array:
+							if especie_variant is Dictionary:
+								especies_recibidas.append((especie_variant as Dictionary).duplicate(true))
+						if not especies_recibidas.is_empty():
+							_especies_jugables_cache = especies_recibidas
+							catalogo_valido = true
+							break
+						push_warning("GarliaWorldNetwork: Supabase devolvió un catálogo de especies vacío.")
+					else:
+						push_warning("GarliaWorldNetwork: respuesta del catálogo de especies con formato inválido.")
+				else:
+					push_warning("GarliaWorldNetwork: falló la carga de especies (red %d, HTTP %d)." % [resultado_red, codigo_http])
+					if codigo_http > 0 and codigo_http < 500 and codigo_http != 408 and codigo_http != 425 and codigo_http != 429:
+						break
+			if intento < 2:
+				await get_tree().create_timer(0.5 * float(intento + 1), true, false).timeout
+		if not catalogo_valido:
+			push_warning("GarliaWorldNetwork: no se pudo verificar el catálogo de especies tras 3 intentos.")
 			return {}
-		var response: Array = await request.request_completed
-		request.queue_free()
-		if int(response[0]) != HTTPRequest.RESULT_SUCCESS or int(response[1]) < 200 or int(response[1]) >= 300:
-			push_warning("GarliaWorldNetwork: no se pudo verificar el catálogo de especies jugables.")
-			return {}
-		var parsed: Variant = JSON.parse_string(PackedByteArray(response[3]).get_string_from_utf8())
-		if not parsed is Array:
-			return {}
-		for especie_variant in parsed as Array:
-			if especie_variant is Dictionary:
-				_especies_jugables_cache.append((especie_variant as Dictionary).duplicate(true))
 	for especie_variant in _especies_jugables_cache:
 		if not especie_variant is Dictionary:
 			continue
