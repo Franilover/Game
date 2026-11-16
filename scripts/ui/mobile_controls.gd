@@ -16,6 +16,7 @@ var _botones_hud: Dictionary = {}
 var _joystick_touch_index: int = -1
 var _joystick_vector := Vector2.ZERO
 var _joystick_radio: float = 54.0
+var _meditar_presionado: bool = false
 
 
 func _ready() -> void:
@@ -118,7 +119,7 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 
 
 func _distribuir_controles() -> void:
-	if not is_inside_tree() or (solo_android and not OS.has_feature("android")):
+	if not is_inside_tree() or (solo_dispositivos_moviles and not _es_dispositivo_movil()):
 		return
 	var viewport_size := get_viewport_rect().size
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
@@ -224,6 +225,9 @@ func _es_dispositivo_movil() -> bool:
 
 
 func _presionar_espacio() -> void:
+	if _meditar_presionado:
+		return
+	_meditar_presionado = true
 	var evento := InputEventKey.new()
 	evento.keycode = KEY_SPACE
 	evento.physical_keycode = KEY_SPACE
@@ -232,6 +236,9 @@ func _presionar_espacio() -> void:
 
 
 func _soltar_espacio() -> void:
+	if not _meditar_presionado:
+		return
+	_meditar_presionado = false
 	var evento := InputEventKey.new()
 	evento.keycode = KEY_SPACE
 	evento.physical_keycode = KEY_SPACE
@@ -303,6 +310,7 @@ func _exit_tree() -> void:
 
 
 func _liberar_todas_las_acciones() -> void:
+	_soltar_espacio()
 	for accion_variant in _acciones_presionadas.keys():
 		var accion := str(accion_variant)
 		if InputMap.has_action(accion):
