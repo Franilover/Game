@@ -2,6 +2,7 @@ extends Node
 
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const DialogueSystemScript = preload("res://scripts/gameplay/dialogue_system.gd")
+const NPCVoiceProfileScript = preload("res://scripts/gameplay/npc_voice_profile.gd")
 
 
 func _ready() -> void:
@@ -10,6 +11,21 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
+
+	# Las voces se adaptan por personaje, sin imponer el mismo registro a todos.
+	var voz_mara := NPCVoiceProfileScript.adaptar("Podemos quedarnos aquí. No hay ninguna prisa.", "Mara")
+	if voz_mara != "Si quieres, nos quedamos aquí. No tenemos apuro.":
+		errores.append("Mara no conserva su tono tranquilo y reservado.")
+	var voz_ivo := NPCVoiceProfileScript.adaptar("Se me acabó la energía antes de llegar a la otra punta de la plaza.", "Ivo")
+	if voz_ivo != "Me quedé sin fuerzas antes de llegar al otro lado de la plaza.":
+		errores.append("Ivo no conserva su forma directa y cotidiana de hablar.")
+	var voz_nima := NPCVoiceProfileScript.adaptar("No quiero inventar una explicación. Sólo reunir observaciones y ver si aparece algún patrón.", "Nima")
+	if voz_nima != "No quiero sacar conclusiones sin pruebas. Quiero juntar observaciones y ver si aparece algún patrón.":
+		errores.append("Nima no conserva su curiosidad cuidadosa sin sonar como un informe.")
+	var voz_darven := NPCVoiceProfileScript.adaptar("¿Te apetece hablar?", "Darven")
+	if voz_darven != "¿Te apetece hablar?":
+		errores.append("El perfil común impuso un modismo que no corresponde a todas las voces.")
+
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
 	if npc == null or dialogo == null:
