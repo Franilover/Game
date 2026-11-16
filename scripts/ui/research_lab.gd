@@ -56,7 +56,16 @@ func _crear_interfaz() -> void:
 	_procedimiento.select(0)
 	_resultado_label.text = ""
 	_cargar_objetos()
+	_aplicar_estilo_laboratorio()
+
+
+func _aplicar_estilo_laboratorio() -> void:
+	# El marco principal utiliza la misma superficie dibujada que los botones
+	# del resto de la interfaz, en lugar del panel genérico/transparente.
 	PIXEL_UI_THEME.apply(_panel)
+	var fondo_button := PIXEL_UI_THEME.button_surface_style()
+	if fondo_button != null:
+		_panel.add_theme_stylebox_override("panel", fondo_button)
 
 
 func _cargar_objetos() -> void:
@@ -93,6 +102,8 @@ func _cargar_objetos() -> void:
 		boton.icon = ItemIconResolver.obtener_icono(objeto)
 		boton.pressed.connect(_alternar_seleccion.bind(indice, boton))
 		_items_columna.add_child(boton)
+		boton.icon_max_width = 36
+		boton.custom_minimum_size = Vector2(0, 42)
 		_botones_items[indice] = boton
 
 	if disponibles == 0:
