@@ -52,6 +52,7 @@ func _run() -> void:
 		)
 		garumi_sprite_test.queue_free()
 
+	print("GarumiWorldPresence: sprites loaded")
 	var salud_antes := int(garumi_node.get("health"))
 	garumi_node.call("take_damage", 999, "test")
 	_expect(int(garumi_node.get("health")) == salud_antes and bool(garumi_node.get("is_alive")), "El daño común debe dejar vivo al Garumi hasta tener absorción específica.")
@@ -85,6 +86,7 @@ func _run() -> void:
 	personaje_persistente.queue_free()
 	manager.free()
 	await get_tree().process_frame
+	print("GarumiWorldPresence: chunk lifecycle passed")
 
 	var data: Node = WORLD_DATA_SCRIPT.new()
 	data.set("mundo", {
@@ -116,6 +118,7 @@ func _run() -> void:
 		(catalogo[0] as Dictionary)["nombre"] = "mutado"
 		var original: Dictionary = data.call("obtener_garumi_game", "test-garumi-001")
 		_expect(str(original.get("nombre", "")) == "Garumi de prueba", "El catálogo expuesto debe devolver copias, no referencias mutables.")
+	print("GarumiWorldPresence: catalog passed")
 	var diagnostico: Dictionary = data.call("obtener_diagnostico_garumis_game")
 	_expect(int(diagnostico.get("catalogo", 0)) == 1, "El diagnóstico debe contar el catálogo validado.")
 
@@ -163,6 +166,7 @@ func _run() -> void:
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "", 1)), "Sin ID de Original permitido no se debe habilitar ningún candidato.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 2)), "Esta fase sólo habilita la primera generación configurada.")
 
+	print("GarumiWorldPresence: spawn generation rules passed")
 	var bioma := {"id": "bioma-prueba"}
 	var ecosistema := {"id": "ecosistema-prueba"}
 	var habitats: Array = [
@@ -191,6 +195,7 @@ func _run() -> void:
 	_expect(str(elegido.get("id", "")) == "g-1", "La selección ponderada debe devolver el candidato válido.")
 	data.free()
 	rules.free()
+	print("GarumiWorldPresence: ecology rules passed")
 
 	if _failed:
 		get_tree().quit(1)
