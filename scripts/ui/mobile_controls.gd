@@ -85,11 +85,15 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	if boton == null:
 		return
 	var nombres := {
-		"interact": "F", "primary_action": "A", "secondary_action": "B",
-		"run": "⇢", "jump": "↑", "inventory": "Tab"
+		"interact": "Usar", "primary_action": "Mano I", "secondary_action": "Mano D",
+		"run": "Dash", "jump": "Salto", "inventory": "Bolsa",
+		"toggle_map": "Mapa", "toggle_missions": "Misiones", "toggle_garumi_selector": "Garumis",
+		"garumi_slot_1": "1", "garumi_slot_2": "2", "garumi_slot_3": "3",
+		"meditate": "Meditar"
 	}
 	boton.text = str(nombres.get(accion, "•"))
-	boton.add_theme_font_size_override("font_size", 18 if accion.begins_with("hand_")  else 22)
+	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "run", "jump"]
+	boton.add_theme_font_size_override("font_size", 10 if texto_largo else 18)
 	boton.add_theme_color_override("font_color", Color("#eee8d5"))
 	boton.add_theme_color_override("font_hover_color", Color("#ffffff"))
 	boton.add_theme_color_override("font_pressed_color", Color("#b4cbe0"))
@@ -131,19 +135,25 @@ func _distribuir_controles() -> void:
 	$Movement/JoystickKnob.size = $Movement/JoystickKnob.custom_minimum_size
 	_joystick_radio = joystick_size * 0.30
 	_actualizar_visual_joystick()
-	# Disposición en dos zonas: utilidades arriba a la izquierda y combate abajo a la derecha.
+	# Utilidades arriba a la izquierda; Garumis arriba a la derecha.
 	var a := clampf(float(tamano_accion) - (8.0 if compacto else 0.0), 48.0, 68.0)
-	var gap := maxf(float(separacion), 12.0)
+	var pequeno := clampf(a * 0.72, 38.0, 48.0)
+	var gap := maxf(float(separacion), 10.0)
 	var right := viewport_size.x - margen
 	var bottom := viewport_size.y - margen
-	# Inventario e IUM quedan separados del joystick; las ranuras de mano del HUD son seleccionables.
 	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
-	# Acciones de combate en bloque compacto, con separación real entre hitboxes.
+	_posicionar($Actions/Map, Vector2(margen + a + gap, margen), Vector2(pequeno, pequeno))
+	_posicionar($Actions/Missions, Vector2(margen + a + gap + pequeno + 6.0, margen), Vector2(pequeno, pequeno))
+	_posicionar($Actions/Garumis, Vector2(right - pequeno, margen), Vector2(pequeno, pequeno))
+	for i in range(3):
+		var boton_garumi := _botones_hud["garumi_slot_%d" % (i + 1)] as Button
+		_posicionar(boton_garumi, Vector2(right - (pequeno + gap) * (i + 2), margen), Vector2(pequeno, pequeno))
 	_posicionar($Actions/Primary, Vector2(right - a, bottom - a), Vector2(a, a))
 	_posicionar($Actions/Jump, Vector2(right - a * 2.0 - gap, bottom - a * 1.65 - gap), Vector2(a, a))
 	_posicionar($Actions/Secondary, Vector2(right - a * 2.0 - gap, bottom - a * 0.45), Vector2(a, a))
 	_posicionar($Actions/Interact, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 0.45), Vector2(a, a))
 	_posicionar($Actions/Dash, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 1.65 - gap), Vector2(a, a))
+	_posicionar($Actions/Meditate, Vector2(margen + joystick_size + gap, bottom - pequeno), Vector2(pequeno, pequeno))
 
 
 func _input(event: InputEvent) -> void:
@@ -207,6 +217,26 @@ func _actualizar_acciones_joystick() -> void:
 		evento.pressed = fuerza > 0.12
 		evento.strength = fuerza
 		Input.parse_input_event(evento)
+
+
+func _es_dispositivo_movil() -> bool:
+	return OS.has_feature("android") or OS.has_feature("ios")
+
+
+func _presionar_espacio() -> void:
+	var evento := InputEventKey.new()
+	evento.keycode = KEY_SPACE
+	evento.physical_keycode = KEY_SPACE
+	evento.pressed = true
+	Input.parse_input_event(evento)
+
+
+func _soltar_espacio() -> void:
+	var evento := InputEventKey.new()
+	evento.keycode = KEY_SPACE
+	evento.physical_keycode = KEY_SPACE
+	evento.pressed = false
+	Input.parse_input_event(evento)
 
 
 func _solicitar_inventario() -> void:
