@@ -26,6 +26,37 @@ func _run() -> void:
 	if not dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"}):
 		errores.append("Un diálogo de tránsito explícito dejó de reconocerse.")
 
+	# Las frases de rutina distinguen desplazarse de estar trabajando.
+	npc.nombre_individual = "Bruna"
+	dialogo._contexto_rutina_conversacion = {
+		"actividad": "caminar",
+		"destino": "la plaza",
+		"en_transito": false
+	}
+	var despedida_caminando := dialogo._obtener_reaccion_despedida_rutina()
+	if not despedida_caminando.contains("No te entretengo más"):
+		errores.append("La despedida de un NPC que camina no reconoce que sólo está desplazándose.")
+	if not dialogo._actividad_es_desplazamiento("caminar") or dialogo._actividad_impide_una_conversacion_larga("caminar"):
+		errores.append("Caminar se clasificó como una actividad que impide conversar.")
+
+	dialogo._contexto_rutina_conversacion = {
+		"actividad": "forjar",
+		"destino": "la forja",
+		"en_transito": false
+	}
+	var despedida_trabajando := dialogo._obtener_reaccion_despedida_rutina()
+	if not despedida_trabajando.contains("Termina la pieza") or despedida_trabajando.contains("No interrumpes"):
+		errores.append("La despedida contradice el contexto de Bruna mientras trabaja en una pieza.")
+
+	dialogo._contexto_rutina_conversacion = {
+		"actividad": "caminar",
+		"destino": "la plaza",
+		"en_transito": true
+	}
+	var despedida_en_transito := dialogo._obtener_reaccion_despedida_rutina()
+	if not despedida_en_transito.contains("encargo") and despedida_en_transito.contains("No te entretengo"):
+		errores.append("La despedida de tránsito no mantiene el contexto de la actividad del NPC.")
+
 	# Al cerrar el selector Hablar/Preguntar debe reaparecer el menú social
 	# principal, incluso después de una conversación cotidiana.
 	dialogo._abierto = true
