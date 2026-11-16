@@ -197,7 +197,7 @@ func _renderizar_recetas() -> void:
 
 func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	var panel := Button.new()
-	panel.custom_minimum_size = Vector2(56, 56)
+	panel.custom_minimum_size = Vector2(64, 64)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.name = "InventorySlot"
 	panel.tooltip_text = ""
@@ -210,9 +210,16 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 
 	var resultado_variant: Variant = receta.get("resultado", {})
 	var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
+	var nombre_resultado := str(resultado.get("nombre", receta.get("nombre", "Objeto"))).strip_edges()
 	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
-	var nombre_resultado := str(item_resultado.get("nombre", resultado.get("nombre", receta.get("nombre", "Objeto"))))
-	var textura_resultado := ItemIconResolver.obtener_icono(item_resultado) if not item_resultado.is_empty() else null
+	if item_resultado.is_empty():
+		item_resultado = _buscar_item_catalogo_por_nombre(nombre_resultado)
+	if not item_resultado.is_empty():
+		nombre_resultado = str(item_resultado.get("nombre", nombre_resultado))
+	var datos_icono := item_resultado.duplicate(true)
+	if datos_icono.is_empty():
+		datos_icono = {"nombre": nombre_resultado}
+	var textura_resultado := ItemIconResolver.obtener_icono(datos_icono)
 	if textura_resultado != null:
 		var icono := TextureRect.new()
 		icono.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -273,9 +280,14 @@ func _actualizar_panel_detalle() -> void:
 	_detalle_nombre.text = str(_receta_seleccionada.get("nombre", "Receta"))
 	var resultado_variant: Variant = _receta_seleccionada.get("resultado", {})
 	var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
-	_detalle_icono.texture = ItemIconResolver.obtener_icono(
-		_buscar_item_catalogo(str(resultado.get("item_id", "")))
-	)
+	var nombre_resultado := str(resultado.get("nombre", _receta_seleccionada.get("nombre", "")))
+	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
+	if item_resultado.is_empty():
+		item_resultado = _buscar_item_catalogo_por_nombre(nombre_resultado)
+	var datos_icono := item_resultado.duplicate(true)
+	if datos_icono.is_empty():
+		datos_icono = {"nombre": nombre_resultado}
+	_detalle_icono.texture = ItemIconResolver.obtener_icono(datos_icono)
 
 	var partes: Array[String] = []
 	var ingredientes_variant: Variant = _receta_seleccionada.get("ingredientes", [])
@@ -367,6 +379,14 @@ func _buscar_item_catalogo(item_id: String) -> Dictionary:
 	if _world_items == null or not is_instance_valid(_world_items):
 		return {}
 	return _world_items.buscar_item_por_id(item_id)
+
+
+func _buscar_item_catalogo_por_nombre(nombre: String) -> Dictionary:
+	if _world_items == null or not is_instance_valid(_world_items):
+		return {}
+	if nombre.strip_edges().is_empty():
+		return {}
+	return _world_items.buscar_item_por_nombre(nombre)
 
 
 func _nombre_item(item_id: String) -> String:
