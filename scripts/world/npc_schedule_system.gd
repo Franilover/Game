@@ -3,8 +3,9 @@ class_name NPCScheduleSystem
 
 const INTERVALO_ACTUALIZACION := 0.5
 const TAMANO_CELDA := 32.0
-const ORIGEN_MAPA := Vector2(-1152.0, -672.0)
-const TAMANO_MALLA := Vector2i(72, 42)
+# Debe coincidir con el mapa de Torres: 104 x 68 celdas de 32 px.
+const ORIGEN_MAPA := Vector2(-1664.0, -1088.0)
+const TAMANO_MALLA := Vector2i(104, 68)
 const RADIO_COLISION_NPC := 14.0
 const DISTANCIA_LLEGADA := 7.0
 # Coste de desplazamiento: Tierra (zona 1) conserva el coste base y los demás
@@ -14,65 +15,67 @@ const COSTE_OTRO_TERRENO := 1.55
 # Espera breve para agrupar varios cambios de posición/tamaño en una sola reconstrucción.
 const ESPERA_RECONSTRUCCION_NAVEGACION := 1.0
 
-# Puntos de actividad en coordenadas locales de ReinoTorres.
-# Se definen por ubicación, nunca por nombre de personaje.
+# Coordenadas locales relativas al origen de cada edificio. El destino real
+# se sitúa 28 px al sur de este punto, en el umbral de la entrada.
+# Se mantienen sincronizadas con ReinoTorres.ENTRADAS y SPRITE_BUILDINGS.
 const ENTRADAS_INTERIORES: Dictionary = {
-	"panaderia": {"id": "panaderia", "pos": Vector2(-220.0, -20.0)},
-	"forja": {"id": "forja", "pos": Vector2(-360.0, -190.0)},
-	"cuartel": {"id": "cuartel", "pos": Vector2(250.0, -305.0)},
-	"registro": {"id": "registro", "pos": Vector2(420.0, -255.0)},
-	"casa_comercio": {"id": "casa_comercio", "pos": Vector2(420.0, -95.0)},
-	"archivo_real": {"id": "archivo_real", "pos": Vector2(-150.0, 70.0)},
-	"casa_estudio": {"id": "casa_estudio", "pos": Vector2(-420.0, -55.0)},
-	"casa_elian": {"id": "casa_elian", "pos": Vector2(820.0, -320.0)},
-	"casa_bruna": {"id": "casa_bruna", "pos": Vector2(-820.0, -320.0)},
-	"casa_darven": {"id": "casa_darven", "pos": Vector2(1080.0, -320.0)},
-	"casa_saira": {"id": "casa_saira", "pos": Vector2(820.0, -60.0)},
-	"casa_narel": {"id": "casa_narel", "pos": Vector2(-1080.0, -320.0)},
-	"castillo": {"id": "castillo", "pos": Vector2(0.0, -125.0)},
-	"posada": {"id": "posada", "pos": Vector2(-400.0, 110.0)},
-	"vivienda_oeste_01": {"id": "casa_vacia_01", "pos": Vector2(-820.0, -60.0)},
-	"vivienda_oeste_02": {"id": "casa_vacia_02", "pos": Vector2(-1080.0, -60.0)},
-	"vivienda_oeste_03": {"id": "casa_vacia_03", "pos": Vector2(-820.0, 220.0)},
-	"vivienda_oeste_04": {"id": "casa_vacia_04", "pos": Vector2(-1080.0, 220.0)},
-	"vivienda_oeste_05": {"id": "casa_vacia_05", "pos": Vector2(-820.0, 540.0)},
-	"vivienda_oeste_06": {"id": "casa_vacia_06", "pos": Vector2(-1080.0, 540.0)},
-	"vivienda_oeste_07": {"id": "casa_vacia_07", "pos": Vector2(1080.0, -60.0)},
-	"vivienda_oeste_08": {"id": "casa_vacia_08", "pos": Vector2(820.0, 220.0)},
-	"vivienda_oeste_10": {"id": "casa_vacia_10", "pos": Vector2(1080.0, 220.0)},
-	"vivienda_oeste_11": {"id": "casa_vacia_11", "pos": Vector2(820.0, 540.0)},
-	"casa_granjeros": {"id": "casa_granjeros", "pos": Vector2(1080.0, 540.0)}
+	"panaderia": {"id": "panaderia", "pos": Vector2(-360.0, -86.0)},
+	"posada": {"id": "posada", "pos": Vector2(360.0, -81.0)},
+	"forja": {"id": "forja", "pos": Vector2(-500.0, 214.0)},
+	"cuartel": {"id": "cuartel", "pos": Vector2(520.0, -390.0)},
+	"registro": {"id": "registro", "pos": Vector2(1480.0, 33.0)},
+	"casa_comercio": {"id": "casa_comercio", "pos": Vector2(500.0, 218.0)},
+	"archivo_real": {"id": "archivo_real", "pos": Vector2(-170.0, -245.0)},
+	"sala_consejo": {"id": "sala_consejo", "pos": Vector2(170.0, -240.0)},
+	"casa_estudio": {"id": "casa_estudio", "pos": Vector2(-520.0, -393.0)},
+	"casa_elian": {"id": "casa_elian", "pos": Vector2(700.0, -324.0)},
+	"casa_bruna": {"id": "casa_bruna", "pos": Vector2(-1000.0, -324.0)},
+	"casa_darven": {"id": "casa_darven", "pos": Vector2(850.0, -324.0)},
+	"casa_saira": {"id": "casa_saira", "pos": Vector2(1000.0, -324.0)},
+	"casa_narel": {"id": "casa_narel", "pos": Vector2(-850.0, -324.0)},
+	"castillo": {"id": "castillo", "pos": Vector2(0.0, -766.0)},
+	"vivienda_oeste_01": {"id": "casa_vacia_01", "pos": Vector2(-700.0, -324.0)},
+	"vivienda_oeste_02": {"id": "casa_vacia_02", "pos": Vector2(-1000.0, -74.0)},
+	"vivienda_oeste_03": {"id": "casa_vacia_03", "pos": Vector2(-850.0, -74.0)},
+	"vivienda_oeste_04": {"id": "casa_vacia_04", "pos": Vector2(-700.0, -74.0)},
+	"vivienda_oeste_05": {"id": "casa_vacia_05", "pos": Vector2(-1000.0, 176.0)},
+	"vivienda_oeste_06": {"id": "casa_vacia_06", "pos": Vector2(-850.0, 176.0)},
+	"vivienda_oeste_07": {"id": "casa_vacia_07", "pos": Vector2(700.0, -74.0)},
+	"vivienda_oeste_08": {"id": "casa_vacia_08", "pos": Vector2(850.0, -74.0)},
+	"vivienda_oeste_10": {"id": "casa_vacia_10", "pos": Vector2(1000.0, -74.0)},
+	"vivienda_oeste_11": {"id": "casa_vacia_11", "pos": Vector2(850.0, 176.0)},
+	"casa_granjeros": {"id": "casa_granjeros", "pos": Vector2(950.0, 870.0)}
 }
 
 const POSICIONES: Dictionary = {
 	"plaza": Vector2(0.0, 0.0),
-	"panaderia": Vector2(-220.0, -20.0),
-	"forja": Vector2(-360.0, -190.0),
-	"cuartel": Vector2(250.0, -305.0),
-	"registro": Vector2(420.0, -255.0),
-	"casa_comercio": Vector2(420.0, -95.0),
-	"casa_estudio": Vector2(-420.0, -55.0),
-	"archivo_real": Vector2(-150.0, 70.0),
-	"casa_elian": Vector2(820.0, -320.0),
-	"casa_bruna": Vector2(-820.0, -320.0),
-	"casa_darven": Vector2(1080.0, -320.0),
-	"casa_saira": Vector2(820.0, -60.0),
-	"casa_narel": Vector2(-1080.0, -320.0),
-	"castillo": Vector2(0.0, -125.0),
-	"posada": Vector2(-400.0, 110.0),
-	"vivienda_oeste_01": Vector2(-820.0, -60.0),
-	"vivienda_oeste_02": Vector2(-1080.0, -60.0),
-	"vivienda_oeste_03": Vector2(-820.0, 220.0),
-	"vivienda_oeste_04": Vector2(-1080.0, 220.0),
-	"vivienda_oeste_05": Vector2(-820.0, 540.0),
-	"vivienda_oeste_06": Vector2(-1080.0, 540.0),
-	"vivienda_oeste_07": Vector2(1080.0, -60.0),
-	"vivienda_oeste_08": Vector2(820.0, 220.0),
-	"vivienda_oeste_10": Vector2(1080.0, 220.0),
-	"vivienda_oeste_11": Vector2(820.0, 540.0),
-	"casa_granjeros": Vector2(1080.0, 540.0)
+	"panaderia": Vector2(-360.0, -86.0),
+	"posada": Vector2(360.0, -81.0),
+	"forja": Vector2(-500.0, 214.0),
+	"cuartel": Vector2(520.0, -390.0),
+	"registro": Vector2(1480.0, 33.0),
+	"casa_comercio": Vector2(500.0, 218.0),
+	"archivo_real": Vector2(-170.0, -245.0),
+	"sala_consejo": Vector2(170.0, -240.0),
+	"casa_estudio": Vector2(-520.0, -393.0),
+	"casa_elian": Vector2(700.0, -324.0),
+	"casa_bruna": Vector2(-1000.0, -324.0),
+	"casa_darven": Vector2(850.0, -324.0),
+	"casa_saira": Vector2(1000.0, -324.0),
+	"casa_narel": Vector2(-850.0, -324.0),
+	"castillo": Vector2(0.0, -766.0),
+	"vivienda_oeste_01": Vector2(-700.0, -324.0),
+	"vivienda_oeste_02": Vector2(-1000.0, -74.0),
+	"vivienda_oeste_03": Vector2(-850.0, -74.0),
+	"vivienda_oeste_04": Vector2(-700.0, -74.0),
+	"vivienda_oeste_05": Vector2(-1000.0, 176.0),
+	"vivienda_oeste_06": Vector2(-850.0, 176.0),
+	"vivienda_oeste_07": Vector2(700.0, -74.0),
+	"vivienda_oeste_08": Vector2(850.0, -74.0),
+	"vivienda_oeste_10": Vector2(1000.0, -74.0),
+	"vivienda_oeste_11": Vector2(850.0, 176.0),
+	"casa_granjeros": Vector2(950.0, 870.0)
 }
-
 var _world_atmosphere: WorldAtmosphere = null
 var _zone_manager: Node = null
 var _relationship_system: RelationshipSystemService = null
