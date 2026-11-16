@@ -76,18 +76,18 @@ var _world_items: GarliaWorldItems = null
 
 @onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
 var _slot_grids: Array[GridContainer] = []
-@onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ItemName
-@onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/CategoryStatsRow/ItemCategory
-@onready var stats_row: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/CategoryStatsRow/StatsRow
-@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel/DescriptionScroll/ItemDescription
-@onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/DescriptionPanel
-@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame/ItemIcon
-@onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/ItemIconFrame
+@onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ItemName
+@onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/CategoryStatsRow/ItemCategory
+@onready var stats_row: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/CategoryStatsRow/StatsRow
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/DescriptionPanel/DescriptionScroll/ItemDescription
+@onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/DescriptionPanel
+@onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/ItemIconFrame/ItemIcon
+@onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/ItemIconFrame
 @onready var skin_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel
-@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/DeleteButton
-@onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/UseButton
-@onready var equip_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/EquipButton
-@onready var place_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InfoPanel/InfoText/ActionRow/PlaceButton
+@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/DeleteButton
+@onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/UseButton
+@onready var equip_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/EquipButton
+@onready var place_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/PlaceButton
 @onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/EquipmentSlots
 @onready var _notas_texto: TextEdit = $Window/Margin/Column/Tabs/Notas/NotesText
 
@@ -577,8 +577,13 @@ func _aplicar_fondos_inventario() -> void:
 		contenedor.add_theme_constant_override("margin_right", 5)
 		contenedor.add_theme_constant_override("margin_bottom", 5)
 
-	if is_instance_valid(description_panel):
-		description_panel.add_theme_stylebox_override("panel", estilo_boton)
+	var bloque_detalle := get_node_or_null("Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock") as PanelContainer
+	if is_instance_valid(bloque_detalle):
+		bloque_detalle.add_theme_stylebox_override("panel", estilo_boton)
+		bloque_detalle.add_theme_constant_override("margin_left", 7)
+		bloque_detalle.add_theme_constant_override("margin_top", 6)
+		bloque_detalle.add_theme_constant_override("margin_right", 7)
+		bloque_detalle.add_theme_constant_override("margin_bottom", 6)
 
 	# El icono ampliado conserva el marco de slot; la representación del
 	# personaje usa la superficie de botón para distinguirla del equipamiento.
