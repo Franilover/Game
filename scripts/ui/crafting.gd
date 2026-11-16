@@ -34,6 +34,11 @@ func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 func _ready() -> void:
 	set_process_mode(Node.PROCESS_MODE_ALWAYS)
 	PIXEL_UI_THEME.apply(self, false)
+	var fondo_detalle := get_node_or_null("Margin/Column/Content/DetailPanel") as PanelContainer
+	if fondo_detalle != null:
+		var estilo_boton := PIXEL_UI_THEME.button_surface_style()
+		if estilo_boton != null:
+			fondo_detalle.add_theme_stylebox_override("panel", estilo_boton)
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
 	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
 	call_deferred("_ajustar_columnas_recetas")
@@ -273,10 +278,6 @@ func _actualizar_panel_detalle() -> void:
 	)
 
 	var partes: Array[String] = []
-	var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
-	var categoria_variant: Variant = item_resultado.get("categoria", {})
-	if categoria_variant is Dictionary and not (categoria_variant as Dictionary).is_empty():
-		partes.append("[b]Categoría:[/b] " + str((categoria_variant as Dictionary).get("nombre", "")))
 	var ingredientes_variant: Variant = _receta_seleccionada.get("ingredientes", [])
 	var inventario_disponible: Array[Dictionary] = []
 	if _inventory != null:
@@ -294,8 +295,6 @@ func _actualizar_panel_detalle() -> void:
 			var tiene_sprite := not objeto_ingrediente.is_empty() and ItemIconResolver.tiene_icono(objeto_ingrediente)
 			var color := "#8fbd78" if disponible >= cantidad and tiene_sprite else "#c87964"
 			var texto_ingrediente := _nombre_item(item_id) + "  " + str(disponible) + "/" + str(cantidad)
-			if not tiene_sprite:
-				texto_ingrediente += " · falta ilustración"
 			partes.append("[color=" + color + "]" + texto_ingrediente + "[/color]")
 	else:
 		partes.append("No hay materiales definidos.")
