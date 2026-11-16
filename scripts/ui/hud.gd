@@ -44,7 +44,7 @@ var health_value: Label = null
 
 var stamina_bar: ProgressBar = null
 var stamina_value: Label = null
-var _dash_recharge_indicator: ProgressBar = null
+var _dash_recharge_indicator: TextureProgressBar = null
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
@@ -295,32 +295,24 @@ func _configurar_referencias_ui() -> void:
 
 
 func _crear_indicador_recarga_dash() -> void:
-	_dash_recharge_indicator = ProgressBar.new()
+	_dash_recharge_indicator = TextureProgressBar.new()
 	_dash_recharge_indicator.name = "DashRechargeAbovePlayer"
 	_dash_recharge_indicator.min_value = 0.0
 	_dash_recharge_indicator.max_value = 1.0
 	_dash_recharge_indicator.value = 1.0
-	# Indicador de recarga más largo, anclado sobre el personaje y
-	# ligeramente desplazado a la derecha para que no quede centrado sobre él.
-	_dash_recharge_indicator.custom_minimum_size = Vector2(72.0, 6.0)
-	_dash_recharge_indicator.size = Vector2(72.0, 6.0)
-	_dash_recharge_indicator.show_percentage = false
+	_dash_recharge_indicator.fill_mode = TextureProgressBar.FILL_LEFT_TO_RIGHT
+	_dash_recharge_indicator.texture_progress = preload("res://assets/art/UI/Menus/bar_fill_stamina.png")
+	_dash_recharge_indicator.texture_over = preload("res://assets/art/UI/Menus/bar_frame.png")
+	_dash_recharge_indicator.stretch_margin_left = 3
+	_dash_recharge_indicator.stretch_margin_top = 2
+	_dash_recharge_indicator.stretch_margin_right = 3
+	_dash_recharge_indicator.stretch_margin_bottom = 2
+	# Indicador de recarga anclado sobre el personaje.
+	_dash_recharge_indicator.custom_minimum_size = Vector2(72.0, 8.0)
+	_dash_recharge_indicator.size = Vector2(72.0, 8.0)
 	_dash_recharge_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Mantenerlo sobre el mundo, sin darle prioridad sobre las demás interfaces.
 	_dash_recharge_indicator.z_index = 10
 	_dash_recharge_indicator.visible = false
-
-	var fondo := StyleBoxFlat.new()
-	fondo.bg_color = Color(0.075, 0.05, 0.035, 0.96)
-	fondo.border_width_left = 1
-	fondo.border_width_top = 1
-	fondo.border_width_right = 1
-	fondo.border_width_bottom = 1
-	fondo.border_color = Color(0.29, 0.19, 0.12, 1.0)
-	var relleno := StyleBoxFlat.new()
-	relleno.bg_color = Color(0.78, 0.66, 0.46, 1.0)
-	_dash_recharge_indicator.add_theme_stylebox_override("background", fondo)
-	_dash_recharge_indicator.add_theme_stylebox_override("fill", relleno)
 	add_child(_dash_recharge_indicator)
 
 
