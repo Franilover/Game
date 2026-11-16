@@ -150,3 +150,19 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - `DialogueSocialMenu` comprueba perfiles de voz y reacciones diferenciadas; CI Godot 4.7: run `43932011916`, **40 pasos completados sin fallos**.
 - La validación es headless. Falta revisar la lectura y naturalidad en una partida real, especialmente en Android.
 - No se modificaron filas de `dialogos_game`, tablas, RPC ni políticas de Supabase; los cambios de contenido se limitaron a diálogos locales/fallback y conversaciones ambientales del código.
+
+
+
+## NPC Mind — núcleo de estado interno y aprendizaje (2026-11-16)
+
+- Se incorporó `NPCMindService` como autoload `NPCMind`, separado de diálogo, navegación y animación.
+- Estado individual versionado por habitante: necesidades (descanso, socialización, diversión, seguridad, curiosidad y autonomía), rasgos normalizados, estado emocional inicial, preferencias aprendidas, objetivos y contador de decisiones.
+- Las necesidades evolucionan por horas de mundo mediante una función explícita; satisfacción reduce presión sin exceder el rango 0–100.
+- Evaluación de actividades combina presión de necesidades, afinidad de rasgos, preferencias aprendidas, prioridad, coste y riesgo. El servicio puntúa y selecciona; todavía no ejecuta acciones ni sustituye el horario.
+- Aprendizaje incremental de resultados de actividad usa media acumulada y confianza progresiva para que una sola experiencia no se convierta en preferencia absoluta.
+- Los objetivos individuales se pueden establecer, completar y abandonar, con límite de cinco objetivos activos/registrados por personaje.
+- `GameStateService` persiste el bloque `npc_mentes` dentro del guardado local de la partida. No se creó almacenamiento remoto ni se modificó Supabase.
+- Los perfiles sociales existentes en escala 0–100 se normalizan a 0–1 al incorporarlos al núcleo.
+- Prueba `tests/persistence/test_npc_mind_core.tscn`: necesidades, satisfacción, elección, aprendizaje positivo/negativo, objetivos, normalización y roundtrip desde GameState.
+- CI Godot 4.7: **41 pasos completados, 0 fallos**, run [#1677](https://github.com/Franilover/Game/actions/runs/43934161188).
+- Alcance deliberado: aún no se conecta la elección de actividades al movimiento/rutinas ni se simula tiempo fuera de pantalla. Esa integración se hará después de validar el núcleo.
