@@ -720,3 +720,14 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron `MobileControlsDialogueTouch` y `DialogueMobileLayout` para verificar bloqueo del joystick durante diálogo, liberación de movimiento, multitáctil y medidas en 360×640, 640×360 y 960×540.
 - CI Godot 4.7: **PASS**, run `43918828793`, 35 pasos completados sin fallos.
 - La validación headless no sustituye la prueba en dispositivo Android: falta revisar safe areas, orientación real, tamaño físico de botones y legibilidad en varios DPI.
+
+
+## Sexagésima tercera barrida — Colisiones de NPC en entradas
+
+- `NPCScheduleSystem._marcar_npc_dentro_edificio()` oculta al NPC que llega al umbral y ahora desactiva también sus `collision_layer` y `collision_mask` del exterior. Así, el cuerpo invisible no bloquea la puerta para otros NPC.
+- `ReinoTorres` conserva los valores originales de capa/máscara y los restaura al salir del edificio; al trasladar NPC al interior recupera las capas y formas de colisión que correspondían.
+- Los NPC que abandonan su rutina mientras el jugador permanece dentro siguen sin colisionar en el exterior oculto; al salir el jugador se restaura su estado según si continúan dentro o ya salieron.
+- Los NPC materializados mientras un interior está abierto también quedan sin colisión exterior hasta restaurar el mundo.
+- Se añadió `NPCBuildingEntryCollision` para verificar la desactivación de colisión exterior, la restauración de capas/máscaras y la recuperación de formas al entrar.
+- CI Godot 4.7: **PASS**, run `43920496439`, 36 pasos completados sin fallos.
+- Falta una prueba visual en Reino Torres con varios NPC dirigiéndose simultáneamente a la misma puerta; el contrato confirma el ciclo de colisiones, no la navegación física completa.
