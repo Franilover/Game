@@ -1084,14 +1084,14 @@ func _iniciar_bienvenida_torres() -> void:
 
 	# Cada parada representa un barrio completo. Las casas sin habitantes
 	# conocidos no se presentan ni se convierten en puntos del recorrido.
-	_agregar_parada_tour_elian(pasos, "plaza", Vector2(0.0, -85.0),
+	_agregar_parada_tour_elian(pasos, "plaza", _obtener_posicion_tour(["Sprite_pozo"], Vector2(0.0, 95.0)),
 		"Estamos en la plaza, uno de los puntos donde más gente se cruza. Desde aquí se llega al castillo, la panadería, la posada y la forja. La casa de Bruna queda cerca de la zona de trabajo.",
 		[
 			{"texto":"¿Qué hacen en el castillo?","jugador":"¿Qué hacen en el castillo?","respuesta":"Allí se atienden los asuntos principales del reino. Si necesitas resolver algo importante, probablemente tendrás que pasar por allí."},
 			{"texto":"¿La posada recibe viajeros?","jugador":"¿La posada recibe viajeros?","respuesta":"Sí, es el lugar más práctico para descansar si todavía no tienes dónde quedarte."},
 			{"texto":"¿Dónde queda la casa de Bruna?","jugador":"¿Dónde vive Bruna?","respuesta":"Su casa está junto a la zona de la forja. Es fácil encontrarla si sigues el camino hacia los talleres."}
 		])
-	_agregar_conversacion_tour_elian(pasos, "Bruna", Vector2(-235.0, 152.0), [
+	_agregar_conversacion_tour_elian(pasos, "Bruna", _obtener_posicion_tour(["Grupo_edificio_forja/Entrada"]), [
 		{"hablante":"Elian","texto":"¡Bruna! Justo te estábamos mencionando. ¿Cómo va el trabajo?"},
 		{"hablante":"Bruna","texto":"Hola, Elian. Bien, estoy terminando unas piezas. ¿Y tú? ¿Ya estás haciendo de guía?"},
 		{"hablante":"Elian","texto":"¡Alguien tenía que enseñarle el lugar! Además, así aprovecho de saludarte."}
@@ -1100,14 +1100,14 @@ func _iniciar_bienvenida_torres() -> void:
 		{"texto":"¿Qué estás fabricando?","jugador":"Bruna, ¿qué estás preparando ahora?","respuesta":"Estoy terminando unas piezas para reparar herramientas. Si quedan bien, mañana podré entregarlas.","clave":"bruna_trabajo"},
 		{"texto":"Se nota que se llevan bien","jugador":"Se nota que se conocen y se llevan bien.","respuesta":"¡Claro! Vivir en el mismo reino hace que uno termine conociendo a los demás.","clave":"bruna_amistad"}
 	])
-	_agregar_parada_tour_elian(pasos, "casa_bruna", Vector2(-235.0, 152.0),
+	_agregar_parada_tour_elian(pasos, "casa_bruna", _obtener_posicion_tour(["Grupo_casa_bruna/Entrada"]),
 		"Por aquí vive Bruna. Su casa queda cerca de la forja, donde suele pasar buena parte del día trabajando. Si la encuentras en casa, seguramente estará descansando o preparando sus próximos encargos.",
 		[
 			{"texto":"¿Bruna trabaja en la forja?","jugador":"¿Bruna trabaja en la forja que vimos antes?","respuesta":"Sí, suele estar allí ocupándose de sus trabajos. Es bastante dedicada y conoce muy bien sus herramientas."},
 			{"texto":"¿Puedo visitarla?","jugador":"¿Puedo pasar a saludarla cuando esté en casa?","respuesta":"Si está en casa y no tiene algo urgente entre manos, claro. Siempre puedes acercarte y preguntar."},
 			{"texto":"¿Hace mucho que vive aquí?","jugador":"¿Bruna lleva mucho tiempo viviendo en el reino?","respuesta":"Ya lleva un buen tiempo aquí. Se ha ganado un lugar entre los vecinos gracias a su trabajo."}
 		])
-	_agregar_conversacion_tour_elian(pasos, "Darven", Vector2(330.0, -70.0), [
+	_agregar_conversacion_tour_elian(pasos, "Darven", _obtener_posicion_tour(["Grupo_edificio_cuartel/Entrada"]), [
 		{"hablante":"Elian","texto":"¡Darven! ¿Todo tranquilo por la entrada?"},
 		{"hablante":"Darven","texto":"Por ahora sí. Ya recibí a quien acaba de llegar y le indiqué que podía recorrer el reino."},
 		{"hablante":"Elian","texto":"Perfecto, yo me encargo de que no se pierda. ¡Nos vemos luego!"}
@@ -1116,14 +1116,14 @@ func _iniciar_bienvenida_torres() -> void:
 		{"texto":"¿Es difícil ser guardia?","jugador":"¿Es difícil trabajar como guardia?","respuesta":"Hay que estar atento y saber cuándo intervenir. La mayoría de los días son tranquilos, y eso es bueno.","clave":"darven_guardia"},
 		{"texto":"Gracias por recibirme","jugador":"Gracias por recibirme cuando llegué.","respuesta":"Es parte de mi trabajo. Me alegra que hayas podido empezar a conocer el reino.","clave":"darven_agradecer"}
 	])
-	_agregar_parada_tour_elian(pasos, "viviendas_oriente", Vector2(330.0, -70.0),
+	_agregar_parada_tour_elian(pasos, "viviendas_oriente", _obtener_posicion_tour(["Grupo_casa_elian/Entrada", "Grupo_casa_darven/Entrada", "Grupo_casa_saira/Entrada"]),
 		"Por este lado están las casas de varios vecinos. La mía es la de allí; Darven vive un poco más al norte y Saira al otro lado del camino. Si los buscas, ya sabes dónde encontrarlos.",
 		[
 			{"texto":"¿Cuál es tu casa?","jugador":"¿Cuál de estas casas es la tuya?","respuesta":"La que está más cerca de la panadería y de este camino. Suelo estar entrando y saliendo por el trabajo."},
 			{"texto":"¿Darven vive cerca?","jugador":"¿Darven vive cerca de aquí?","respuesta":"Sí, su casa queda hacia el norte. Aunque muchas veces lo encontrarás en sus rondas o atendiendo el puesto de guardia."},
 			{"texto":"¿Y Saira?","jugador":"¿Dónde puedo encontrar a Saira?","respuesta":"Su casa está hacia el sur de este barrio. También puedes encontrarla en la casa de comercio cuando está trabajando."}
 		])
-	_agregar_conversacion_tour_elian(pasos, "Saira", Vector2(385.0, 118.0), [
+	_agregar_conversacion_tour_elian(pasos, "Saira", _obtener_posicion_tour(["Grupo_edificio_casa_comercio/Entrada"]), [
 		{"hablante":"Elian","texto":"¡Saira! ¿Cómo va todo por el comercio?"},
 		{"hablante":"Saira","texto":"Bastante bien. Llegaron algunas mercancías nuevas y todavía estoy organizando los encargos."},
 		{"hablante":"Elian","texto":"¡Eso suena a que no te faltará trabajo! Luego pasaré a mirar qué llegó."}
@@ -1132,28 +1132,28 @@ func _iniciar_bienvenida_torres() -> void:
 		{"texto":"¿Necesitas ayuda?","jugador":"¿Te vendría bien una mano con los encargos?","respuesta":"Gracias por ofrecerte. Si surge algo que pueda hacerse sin interrumpir el inventario, te lo haré saber.","clave":"saira_ayuda"},
 		{"texto":"¿Sueles hablar con Elian?","jugador":"¿Sueles encontrarte con Elian por aquí?","respuesta":"Sí, a menudo. Siempre aparece buscando algo para la panadería o preguntando qué novedades hay.","clave":"saira_elian"}
 	])
-	_agregar_parada_tour_elian(pasos, "casa_saira", Vector2(385.0, 118.0),
+	_agregar_parada_tour_elian(pasos, "casa_saira", _obtener_posicion_tour(["Grupo_casa_saira/Entrada"]),
 		"Y esta es la casa de Saira. Está cerca del camino que conecta las viviendas con la zona comercial. Cuando no está atendiendo el comercio, suele venir por aquí a descansar.",
 		[
 			{"texto":"¿Saira trabaja en el comercio?","jugador":"¿Saira es quien atiende la casa de comercio?","respuesta":"Sí, suele encargarse de buena parte de la actividad comercial. También está pendiente de los encargos y de la mercancía."},
 			{"texto":"¿Es fácil encontrarla?","jugador":"¿Dónde puedo encontrar a Saira durante el día?","respuesta":"Lo más sencillo es buscarla en la casa de comercio cuando está trabajando. Si no está allí, probablemente haya salido a resolver algún asunto."},
 			{"texto":"¿Puedo visitarla?","jugador":"¿Puedo pasar a saludarla cuando esté en casa?","respuesta":"Claro, siempre que no esté ocupada. Saira suele recibir bien a quienes se acercan con respeto."}
 		])
-	_agregar_parada_tour_elian(pasos, "barrio_norte", Vector2(-150.0, -570.0),
+	_agregar_parada_tour_elian(pasos, "barrio_norte", _obtener_posicion_tour(["Grupo_edificio_archivo_real/Entrada", "Grupo_edificio_sala_consejo/Entrada", "Grupo_edificio_casa_estudio/Entrada"]),
 		"Este es el barrio de los asuntos públicos y el estudio. Aquí están el archivo real, la sala del consejo y la casa de estudio de Oris. Se viene a consultar documentos, tratar asuntos del reino o estudiar.",
 		[
 			{"texto":"¿Puedo consultar el archivo?","jugador":"¿Cualquiera puede consultar el archivo real?","respuesta":"Depende de los documentos. Algunos son de consulta general y otros requieren permiso. Lo mejor es preguntar antes de entrar."},
 			{"texto":"¿Qué se hace en la sala del consejo?","jugador":"¿Para qué se usa la sala del consejo?","respuesta":"Allí se reúnen quienes tienen que discutir decisiones y asuntos que afectan al reino."},
 			{"texto":"¿Qué se estudia en la casa de Oris?","jugador":"¿Qué se estudia en la casa de Oris?","respuesta":"Es un lugar dedicado al estudio de Oris. Si te interesa aprender, seguramente encontrarás a alguien dispuesto a orientarte."}
 		])
-	_agregar_parada_tour_elian(pasos, "barrio_comercial", Vector2(820.0, -235.0),
+	_agregar_parada_tour_elian(pasos, "barrio_comercial", _obtener_posicion_tour(["Grupo_edificio_casa_comercio/Entrada", "Grupo_edificio_cuartel/Entrada", "Grupo_edificio_registro/Entrada", "Grupo_edificio_reparaciones/Entrada", "Grupo_edificio_carpinteria/Entrada"]),
 		"Este sector reúne varios servicios: la casa de comercio, el cuartel de la guardia y el registro de la puerta. Más adelante están el taller de reparaciones y la carpintería.",
 		[
 			{"texto":"¿Dónde se hacen los trámites de entrada?","jugador":"¿El registro sirve para los trámites de entrada?","respuesta":"Exactamente. Allí se lleva el registro relacionado con quienes entran y salen por la puerta."},
 			{"texto":"¿Puedo hablar con la guardia?","jugador":"¿Puedo acudir al cuartel si necesito ayuda?","respuesta":"Claro. Si tienes un problema o necesitas informar de algo, el cuartel es un buen lugar para empezar."},
 			{"texto":"¿Qué puedo reparar aquí?","jugador":"¿Qué puedo llevar al taller de reparaciones?","respuesta":"Depende del trabajo que necesites. En el taller pueden revisar objetos y encargarse de distintas reparaciones; la carpintería se ocupa de los trabajos de madera."}
 		])
-	_agregar_conversacion_tour_elian(pasos, "Narel", Vector2(-540.0, -245.0), [
+	_agregar_conversacion_tour_elian(pasos, "Narel", _obtener_posicion_tour(["Grupo_casa_narel/Entrada"]), [
 		{"hablante":"Elian","texto":"¡Narel! ¿Sigues con tus apuntes? Estamos recorriendo el reino y pensé que quizá te encontraríamos por aquí."},
 		{"hablante":"Narel","texto":"Hola, Elian. Sí, estoy ordenando unas observaciones. Aunque supongo que puedo hacer una pausa."},
 		{"hablante":"Elian","texto":"Te presento a nuestro nuevo vecino. Si tiene curiosidad por tus estudios, seguro que le interesará escucharte."}
@@ -1162,14 +1162,14 @@ func _iniciar_bienvenida_torres() -> void:
 		{"texto":"¿Dónde consigues información?","jugador":"¿Dónde consultas la información para tus estudios?","respuesta":"En el archivo real y en mis propias notas. También suelo hablar con quienes conocen bien cada zona.","clave":"narel_fuentes"},
 		{"texto":"No quiero interrumpir","jugador":"No quiero interrumpir tu trabajo. Gracias por hablar conmigo.","respuesta":"No te preocupes. Una pausa breve también ayuda a ordenar las ideas.","clave":"narel_pausa"}
 	])
-	_agregar_parada_tour_elian(pasos, "barrio_oeste", Vector2(-540.0, -245.0),
+	_agregar_parada_tour_elian(pasos, "barrio_oeste", _obtener_posicion_tour(["Grupo_casa_narel/Entrada", "Grupo_casa_bruna/Entrada", "Grupo_casa_vacia_01/Entrada"]),
 		"Por el oeste hay viviendas y caminos más tranquilos. La casa de Narel está por aquí; suele estar ocupado con sus apuntes, pero si tienes curiosidad por sus investigaciones, puedes pasar a saludarlo.",
 		[
 			{"texto":"¿Narel vive aquí?","jugador":"¿Esta es la casa de Narel?","respuesta":"Sí, es la suya. A veces está dentro trabajando y otras veces sale a consultar documentos o tomar notas."},
 			{"texto":"¿Es una zona muy habitada?","jugador":"¿Vive mucha gente por este barrio?","respuesta":"Hay varias viviendas, aunque no todos los vecinos llevan el mismo horario. Con el tiempo irás reconociendo quién suele estar por aquí."},
 			{"texto":"¿Qué hay más al oeste?","jugador":"¿Qué hay siguiendo el camino hacia el oeste?","respuesta":"Más viviendas y caminos que conectan con la zona de trabajo agrícola. Podemos seguir hacia allí."}
 		])
-	_agregar_parada_tour_elian(pasos, "barrio_agricola", Vector2(-620.0, 430.0),
+	_agregar_parada_tour_elian(pasos, "barrio_agricola", _obtener_posicion_tour(["Grupo_edificio_granero/Entrada", "Grupo_edificio_molino/Entrada", "Grupo_edificio_corrales/Entrada"]),
 		"Y este es el sector agrícola. El granero sirve para guardar las cosechas, el molino ayuda a procesar el grano y los corrales reúnen a los animales. Los caminos de esta zona conectan con las tierras de cultivo.",
 		[
 			{"texto":"¿De dónde llega el grano?","jugador":"¿El grano llega desde los campos cercanos?","respuesta":"Sí, buena parte del trabajo empieza en las tierras de cultivo. Después se almacena o se procesa según lo que haga falta."},
@@ -1230,6 +1230,29 @@ func _crear_dialogo_presentacion_elian() -> Dictionary:
 			{"clave":"preguntar_elian","texto":"Antes, cuéntame un poco de ti","jugador":"Antes de salir, ¿me cuentas un poco de ti?","respuesta":"¡Por supuesto! Trabajo en la panadería. Me gusta conocer gente y siempre termino enterándome de alguna novedad. Ya tendremos tiempo de hablar más; por ahora, ¡vamos a dar una vuelta!","despedida":true}
 		]
 	}
+
+
+## Obtiene el punto de visita desde los marcadores reales del mapa.
+## Así el recorrido de bienvenida sigue los edificios aunque cambien de posición.
+func _obtener_posicion_tour(rutas: Array[String], desplazamiento: Vector2 = Vector2.ZERO) -> Vector2:
+	var zona: Node = _zone_manager.obtener_zona_actual() if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona):
+		return _player.global_position if is_instance_valid(_player) else Vector2.ZERO
+
+	var centro := Vector2.ZERO
+	var encontrados := 0
+	for ruta in rutas:
+		var marcador := zona.get_node_or_null(ruta) as Node2D
+		if not is_instance_valid(marcador):
+			continue
+		centro += marcador.global_position
+		encontrados += 1
+
+	if encontrados == 0:
+		push_warning("Main: no se encontraron marcadores para el recorrido inicial: " + str(rutas))
+		return _player.global_position if is_instance_valid(_player) else Vector2.ZERO
+
+	return centro / float(encontrados) + desplazamiento
 
 
 func _agregar_parada_tour_elian(
