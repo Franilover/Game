@@ -200,6 +200,9 @@ func _run() -> void:
 		return
 
 	print("PASS: seasonal lighting, deterministic local weather, habitat temperature, fog visibility, seasonal events, and phenomena.")
+	# Liberar los nodos creados por el test antes de cerrar el árbol.
+	atmosphere.free()
+	world_data.free()
 	get_tree().quit()
 
 
