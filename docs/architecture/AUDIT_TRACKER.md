@@ -194,3 +194,15 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Los objetivos completados/abandonados se reciclan para que el historial limitado no impida crear objetivos futuros.
 - Prueba NPC Mind: valida ciclo de objetivos repetidos y reciclaje del límite. CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1694](https://github.com/Franilover/Game/actions/runs/43936746181).
 - La conversación visible sigue utilizando líneas escritas y condiciones del sistema narrativo existente; no se genera texto automáticamente. El encuentro social puede servir de contexto para escenas ambientales ya definidas.
+
+
+
+## Memoria social y asuntos entre NPC (2026-11-16)
+
+- `RelationshipSystemService` ahora conserva asuntos pendientes y promesas entre habitantes dentro de `conversaciones_npc`, junto con el resto de relaciones y conocimientos. Los estados cerrados se mantienen en el historial y no vuelven a generarse desde el mismo recuerdo.
+- Una promesa se registra con emisor, destinatario y clave; puede incluir una clave de conocimiento que debe compartirse al cumplirla. Los recuerdos que contienen `promesa_para` y `clave_promesa` pueden materializar esa promesa una sola vez.
+- Los conocimientos marcados explícitamente con `requiere_ayuda` y `personaje_relacionado` generan asuntos que el NPC puede tratar con esa persona.
+- Los conocimientos con `compartible=true` o tipo `noticia`, `evento_publico` o `conocimiento_compartible` pueden transmitirse si el destinatario aún no los conoce. Se conserva la procedencia y cadena de transmisión.
+- Los encuentros sociales priorizan compromisos pendientes, asuntos de ayuda, noticias no compartidas y, después, desacuerdos con tensión >= 18. Resolver un desacuerdo reduce tensión; ayudar y compartir información fortalecen vínculos y dejan recuerdos individuales para ambos participantes.
+- El historial de promesas, asuntos, relaciones y conocimientos se guarda localmente en el estado de la partida. No se generan textos con IA. Estos encuentros aún no muestran una conversación visual NPC-NPC: registran motivos, consecuencias y recuerdos; la integración con líneas ambientales escritas queda para una etapa posterior.
+- Pruebas NPC Mind cubren registro, transmisión, resolución, selección de motivo y recuperación de promesas/asuntos desde recuerdos. CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1708](https://github.com/Franilover/Game/actions/runs/43938773401).
