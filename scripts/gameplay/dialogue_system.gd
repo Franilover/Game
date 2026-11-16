@@ -1091,19 +1091,19 @@ func _obtener_texto_rutina_personaje(
 	if en_transito:
 		match nombre:
 			"elian":
-				return ("¡Qué bueno verte! Llevo el pan todavía en la cabeza. Primero tengo que llegar a %s; búscame allí y te guardo un momento para conversar." if amable else "Disculpa, no puedo detenerme ahora. Tengo que llegar a %s antes de que se enfríe el trabajo. Allí podremos hablar.") % destino
+				return ("¡Qué bueno verte! Voy hacia %s a dejar algo listo. ¿Qué necesitabas?" if amable else "Voy hacia %s. ¿Necesitas algo antes de que siga?") % destino
 			"bruna":
-				return ("¡Eh, me alegra encontrarte! Voy a %s a terminar un encargo. Cuando deje las herramientas, hablamos tranquilamente." if amable else "Ahora no puedo parar; tengo un encargo entre manos. Voy a %s. Si necesitas algo, espérame allí.") % destino
+				return ("¡Eh, me alegra encontrarte! Voy a %s a terminar un encargo. ¿Qué necesitas?" if amable else "Tengo que llegar a %s para terminar un encargo. Dime, ¿qué pasa?") % destino
 			"darven":
-				return ("Me alegra verte. Estoy siguiendo mi ronda hacia %s; cuando termine de asegurar la zona, tendrás toda mi atención." if amable else "En servicio. No puedo abandonar mi recorrido: me dirijo a %s. Si es importante, búscame allí.") % destino
+				return ("Me alegra verte. Sigo mi ronda hacia %s. ¿Ocurrió algo?" if amable else "Sigo mi ronda hacia %s. Dime, ¿hay algún problema?") % destino
 			"saira":
-				return ("¡Qué casualidad verte! Voy hacia %s, tengo unas cuentas que revisar. Si pasas por allí, podemos ponernos al día." if amable else "Ahora mismo voy con prisa; debo atender un asunto en %s. Allí estaré disponible cuando termine.") % destino
+				return ("¡Qué casualidad verte! Voy hacia %s a revisar unas cuentas. ¿Qué se te ofrece?" if amable else "Tengo que atender un asunto en %s. ¿Necesitas algo antes de que siga?") % destino
 			"narel":
-				return ("¡Ah, hola! Justo iba pensando en algo que debo consultar en %s. Acompáñame con la conversación allí; ahora temo perder el hilo." if amable else "Perdona, estoy intentando no olvidar una idea. Debo llegar a %s y dejar mis notas en orden. Hablemos después.") % destino
+				return ("¡Ah, hola! Voy hacia %s a consultar unas notas. ¿Qué querías contarme?" if amable else "Voy hacia %s a ordenar unas notas. Dime, ¿qué necesitas?") % destino
 			"abel":
-				return ("Me alegra que hayas venido. Me dirijo a %s; allí podremos hablar sin descuidar mis obligaciones." if amable else "Ahora debo continuar hacia %s. Cuando haya atendido mis responsabilidades, podremos conversar.") % destino
+				return ("Me alegra que hayas venido. Voy hacia %s. ¿Hay algo que quieras comentarme?" if amable else "Tengo que continuar hacia %s, pero dime qué necesitas.") % destino
 			"liam":
-				return ("¡Hola! Voy camino a %s. Si me encuentras allí, podremos conversar un poco más." if amable else "Disculpa, tengo que llegar a %s. Búscame allí cuando termine lo que debo hacer.") % destino
+				return ("¡Hola! Voy camino a %s. ¿Qué pasa?" if amable else "Voy hacia %s. ¿Necesitas algo antes de que continúe?") % destino
 			"ivo":
 				if rutina_clave == "ivo_paseo_sin_panadero":
 					return "Mejor doy una vuelta por la plaza; Elian no está atendiendo ahora." if amable else "No voy a la panadería si Elian no está. Seguiré por la plaza."
