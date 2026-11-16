@@ -11,6 +11,8 @@ var _indice_cofre := -1
 var _slots_jugador: Array[InventorySlot] = []
 var _slots_cofre: Array[InventorySlot] = []
 var _panel: PanelContainer
+var _mensaje_sin_datos_jugador: Label
+var _mensaje_sin_datos_cofre: Label
 var _seleccion_contenedor := ""
 var _seleccion_indice := -1
 
@@ -84,12 +86,27 @@ func _crear_interfaz() -> void:
 	paneles.add_theme_constant_override("separation", 12)
 	columna.add_child(paneles)
 
+	var fondo_jugador := PanelContainer.new()
+	fondo_jugador.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fondo_jugador.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	paneles.add_child(fondo_jugador)
+	var margen_jugador := MarginContainer.new()
+	margen_jugador.add_theme_constant_override("margin_left", 7)
+	margen_jugador.add_theme_constant_override("margin_right", 7)
+	margen_jugador.add_theme_constant_override("margin_top", 7)
+	margen_jugador.add_theme_constant_override("margin_bottom", 7)
+	fondo_jugador.add_child(margen_jugador)
 	var panel_jugador := VBoxContainer.new()
 	panel_jugador.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	paneles.add_child(panel_jugador)
+	margen_jugador.add_child(panel_jugador)
 	var titulo_jugador := Label.new()
 	titulo_jugador.text = "INVENTARIO"
 	panel_jugador.add_child(titulo_jugador)
+	_mensaje_sin_datos_jugador = Label.new()
+	_mensaje_sin_datos_jugador.text = "No hay datos"
+	_mensaje_sin_datos_jugador.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mensaje_sin_datos_jugador.visible = false
+	panel_jugador.add_child(_mensaje_sin_datos_jugador)
 	var rejilla_jugador := GridContainer.new()
 	rejilla_jugador.name = "GridJugador"
 	rejilla_jugador.columns = 6
@@ -97,12 +114,27 @@ func _crear_interfaz() -> void:
 	rejilla_jugador.add_theme_constant_override("v_separation", 3)
 	panel_jugador.add_child(rejilla_jugador)
 
+	var fondo_cofre := PanelContainer.new()
+	fondo_cofre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fondo_cofre.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	paneles.add_child(fondo_cofre)
+	var margen_cofre := MarginContainer.new()
+	margen_cofre.add_theme_constant_override("margin_left", 7)
+	margen_cofre.add_theme_constant_override("margin_right", 7)
+	margen_cofre.add_theme_constant_override("margin_top", 7)
+	margen_cofre.add_theme_constant_override("margin_bottom", 7)
+	fondo_cofre.add_child(margen_cofre)
 	var panel_cofre := VBoxContainer.new()
 	panel_cofre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	paneles.add_child(panel_cofre)
+	margen_cofre.add_child(panel_cofre)
 	var titulo_cofre := Label.new()
-	titulo_cofre.text = "COFRE · 32 ESPACIOS"
+	titulo_cofre.text = "COFRE"
 	panel_cofre.add_child(titulo_cofre)
+	_mensaje_sin_datos_cofre = Label.new()
+	_mensaje_sin_datos_cofre.text = "No hay datos"
+	_mensaje_sin_datos_cofre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mensaje_sin_datos_cofre.visible = false
+	panel_cofre.add_child(_mensaje_sin_datos_cofre)
 	var rejilla_cofre := GridContainer.new()
 	rejilla_cofre.name = "GridCofre"
 	rejilla_cofre.columns = 8
@@ -114,6 +146,11 @@ func _crear_interfaz() -> void:
 	_crear_slots(rejilla_cofre, "cofre", 32, _slots_cofre)
 
 	PIXEL_UI_THEME.apply(_panel)
+	for fondo in [fondo_jugador, fondo_cofre]:
+		PIXEL_UI_THEME.apply(fondo)
+		var estilo_button := PIXEL_UI_THEME.button_surface_style()
+		if estilo_button != null:
+			fondo.add_theme_stylebox_override("panel", estilo_button)
 
 
 func _crear_slots(
@@ -279,6 +316,12 @@ func _refrescar() -> void:
 		return
 	var items_jugador: Array = _obtener_items("jugador")
 	var items_cofre: Array = _obtener_items("cofre")
+	var jugador_tiene_datos := _contiene_objetos(items_jugador)
+	var cofre_tiene_datos := _contiene_objetos(items_cofre)
+	if is_instance_valid(_mensaje_sin_datos_jugador):
+		_mensaje_sin_datos_jugador.visible = not jugador_tiene_datos
+	if is_instance_valid(_mensaje_sin_datos_cofre):
+		_mensaje_sin_datos_cofre.visible = not cofre_tiene_datos
 	for indice in range(_slots_jugador.size()):
 		var slot := _slots_jugador[indice]
 		slot.modulate = Color("#FFE3A3") if _seleccion_contenedor == "jugador" and _seleccion_indice == indice else Color.WHITE
@@ -304,3 +347,11 @@ func _solicitar_cierre() -> void:
 
 func cerrar() -> void:
 	_solicitar_cierre()
+
+
+
+func _contiene_objetos(items: Array) -> bool:
+	for item in items:
+		if item is Dictionary and not (item as Dictionary).is_empty():
+			return true
+	return false
