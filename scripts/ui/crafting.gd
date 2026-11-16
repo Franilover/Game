@@ -287,7 +287,7 @@ func _crear_tarjeta_receta(receta: Dictionary, rejilla: GridContainer) -> void:
 	panel.custom_minimum_size = Vector2(64, 64)
 	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	panel.name = "InventorySlot"
+	panel.name = "CraftingRecipeButton"
 	panel.tooltip_text = ""
 	panel.text = ""
 	panel.toggle_mode = true
