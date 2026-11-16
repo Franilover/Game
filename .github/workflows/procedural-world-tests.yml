@@ -313,6 +313,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run Supabase species catalog retry regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_species_catalog_retry.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|SpeciesCatalogRetry: FAIL:' <<<"$output"; then
+            echo "Supabase species catalog retry regression test reported errors."
+            exit 1
+          fi
+
       - name: Run Player VitalState restoration contract test
         shell: bash
         run: |
