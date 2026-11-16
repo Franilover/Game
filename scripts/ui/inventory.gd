@@ -79,15 +79,15 @@ var _slot_grids: Array[GridContainer] = []
 @onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ItemName
 @onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/CategoryStatsRow/ItemCategory
 @onready var stats_row: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/CategoryStatsRow/StatsRow
-@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/DescriptionPanel/DescriptionScroll/ItemDescription
-@onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/DescriptionPanel
+@onready var item_description: Label = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel/DescriptionScroll/ItemDescription
+@onready var description_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/ItemIconFrame/ItemIcon
 @onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/ItemIconFrame
 @onready var skin_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel
-@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/DeleteButton
-@onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/UseButton
-@onready var equip_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/EquipButton
-@onready var place_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow/PlaceButton
+@onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow/DeleteButton
+@onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow/UseButton
+@onready var equip_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow/EquipButton
+@onready var place_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow/PlaceButton
 @onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/EquipmentSlots
 @onready var _notas_texto: TextEdit = $Window/Margin/Column/Tabs/Notas/NotesText
 
@@ -595,7 +595,7 @@ func _aplicar_fondos_inventario() -> void:
 		item_name.add_theme_stylebox_override("pressed", sin_fondo)
 		item_name.add_theme_stylebox_override("focus", sin_fondo)
 	if is_instance_valid(item_icon_frame):
-		item_icon_frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		item_icon_frame.add_theme_stylebox_override("panel", estilo_boton)
 		item_icon_frame.add_theme_constant_override("margin_left", 4)
 		item_icon_frame.add_theme_constant_override("margin_top", 4)
 		item_icon_frame.add_theme_constant_override("margin_right", 4)
