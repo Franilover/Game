@@ -2972,7 +2972,9 @@ func _crear_respuesta_pregunta_item(objeto: Dictionary, personaje_id: String, it
 	var es_documento := _contiene_clave_conocimiento(claves, ["documento", "libro", "registro", "carta", "nota", "manuscrito", "archivo"])
 	var es_artefacto := _contiene_clave_conocimiento(claves, ["artefacto", "reliquia", "antiguo", "ruina"])
 
-	var nombre_npc := personaje_id.strip_edges().to_lower()
+	var nombre_npc := _nombre_social_actual()
+	if nombre_npc.is_empty():
+		nombre_npc = personaje_id.strip_edges().to_lower()
 	var respuesta := "No tengo experiencia suficiente con " + nombre_item + " para decirte algo fiable. Quizá otra persona pueda reconocerlo."
 
 	match nombre_npc:
