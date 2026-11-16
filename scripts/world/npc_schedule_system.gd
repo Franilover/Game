@@ -2022,11 +2022,13 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 			continue
 		if bool(candidato.get_meta("rutina_en_transito", false)):
 			continue
-		if not (candidato.get_meta("npc_objetivo_social", {}) as Dictionary).is_empty():
+		var objetivo_candidato: Variant = candidato.get_meta("npc_objetivo_social", {})
+		if objetivo_candidato is Dictionary and not (objetivo_candidato as Dictionary).is_empty():
 			continue
 		if bool(candidato.get_meta("_conversacion_ambiental_activa", false)):
 			continue
-		if not candidato.get_node_or_null("CreatureMovement") is CreatureMovement:
+		var movimiento_candidato := candidato.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento_candidato == null:
 			continue
 		var id_candidato := candidato.get_personaje_game_id().strip_edges()
 		if id_candidato.is_empty() or id_candidato == id_npc:
