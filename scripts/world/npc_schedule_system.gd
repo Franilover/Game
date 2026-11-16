@@ -2214,11 +2214,11 @@ func _finalizar_objetivo_social_npc(
 ) -> void:
 	var pareja_id := pareja.get_personaje_game_id().strip_edges()
 	var objetivo_id := str(objetivo.get("id", ""))
+	var motivo: Dictionary = objetivo.get("motivo", {})
 	mind.call("aplicar_satisfaccion", personaje_id, {"socializacion": 22.0, "diversion": 8.0})
 	mind.call("registrar_resultado_actividad", personaje_id, str(objetivo.get("tipo", "buscar_compania")), 0.65)
 	mind.call("completar_objetivo", personaje_id, objetivo_id, true)
 	if is_instance_valid(_relationship_system) and not pareja_id.is_empty():
-		var motivo: Dictionary = objetivo.get("motivo", {})
 		var tipo_motivo := str(motivo.get("tipo", objetivo.get("tipo", "buscar_compania")))
 		var cambios := {"amistad": 0.6, "confianza": 0.25, "afecto": 0.35}
 		var recuerdo := {
