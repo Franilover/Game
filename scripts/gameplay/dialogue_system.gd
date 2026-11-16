@@ -187,7 +187,7 @@ func _procesar_toque_dialogo(posicion: Vector2) -> bool:
 		return false
 
 	# Los paneles secundarios y sus botones conservan su propia interacción.
-	for control in [
+	var controles_interactivos: Array[Control] = [
 		_tienda_mercado,
 		_selector_items,
 		_selector_conversacion,
@@ -196,7 +196,8 @@ func _procesar_toque_dialogo(posicion: Vector2) -> bool:
 		_boton_regalo,
 		_boton_preguntar_item,
 		_boton_tienda_mercado
-	]:
+	]
+	for control in controles_interactivos:
 		if _toque_sobre_control(control, posicion):
 			return false
 
