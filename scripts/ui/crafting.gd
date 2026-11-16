@@ -66,8 +66,15 @@ func _cargar_recetas() -> void:
 		+ "&order=nombre.asc"
 	)
 
+	# Mantener el mismo contexto de autenticación que el resto de las
+	# consultas REST del juego. Sin Authorization, esta petición podía
+	# ejecutarse como anon aunque el jugador ya tuviera sesión iniciada.
+	var token := GarliaAuth.access_token
+	if token.is_empty():
+		token = GarliaAuth.SUPABASE_PUBLISHABLE_KEY
 	var headers := PackedStringArray([
 		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
+		"Authorization: Bearer " + token,
 		"Accept: application/json"
 	])
 
