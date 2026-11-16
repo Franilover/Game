@@ -737,7 +737,18 @@ func _aplicar_estado_memoria(
 	else:
 		world_state.flags = {}
 
-	discovery_state.from_dictionary(world_state.flags)
+	var descubrimientos_variant: Variant = world_state.flags.get("descubrimientos_mundo", {})
+	var datos_descubrimientos: Dictionary = {}
+	if descubrimientos_variant is Dictionary:
+		datos_descubrimientos = (descubrimientos_variant as Dictionary).duplicate(true)
+	else:
+		# Compatibilidad con partidas antiguas que guardaban los registros
+		# directamente en flags.
+		for clave in ["criaturas", "biomas", "ecosistemas", "habitats"]:
+			if world_state.flags.has(clave):
+				datos_descubrimientos[clave] = world_state.flags[clave]
+	datos_descubrimientos["mapa_terreno_explorado"] = world_state.flags.get("mapa_terreno_explorado", {})
+	discovery_state.from_dictionary(datos_descubrimientos)
 
 
 # ============================================================
