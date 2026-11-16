@@ -217,3 +217,12 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - No se añadió generación de texto por IA ni se modificó Supabase.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1717](https://github.com/Franilover/Game/actions/runs/43940597598). El primer intento detectó un error de alcance de la variable `motivo`; se corrigió antes de esta ejecución exitosa.
 - Sigue pendiente revisar la presentación en una partida real, especialmente Android.
+
+## Variedad de conversaciones sociales (2026-11-16)
+
+- `NPCVoiceProfile` ahora construye tres variantes por motivo social: promesas, ayuda, noticias, desacuerdos, visitas y compañía.
+- La selección rota según el historial de interacciones de la pareja y cambia según confianza, amistad y tensión.
+- Los diálogos usan expresiones propias de Elian, Bruna, Darven, Saira, Narel, Mara, Ivo y Nima sin imponer modismos uniformes.
+- Las conversaciones pueden retomar antecedentes reales del historial de la pareja y el título de una noticia conocida; no se inventan hechos adicionales.
+- Se añadieron pruebas de voces diferenciadas, rotación de variantes, continuidad histórica e inclusión de información compartida.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1719](https://github.com/Franilover/Game/actions/runs/43941877535).
