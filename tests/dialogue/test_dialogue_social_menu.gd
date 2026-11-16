@@ -56,6 +56,25 @@ func _ready() -> void:
 	if not dialogo._respuestas_container.visible or dialogo._respuestas_container.get_child_count() != 4:
 		errores.append("Los cuatro botones del menú social no se reconstruyeron.")
 
+	# Tras elegir un tema casual, el menú principal debe volver al terminar
+	# la respuesta del NPC, no desaparecer después de una sola interacción.
+	dialogo.speaker_label = Label.new()
+	dialogo.add_child(dialogo.speaker_label)
+	dialogo.text_label = Label.new()
+	dialogo.add_child(dialogo.text_label)
+	dialogo.hint_label = Label.new()
+	dialogo.add_child(dialogo.hint_label)
+	dialogo._seleccionar_tema_conversacion({
+		"clave": "trabajo",
+		"texto": "Trabajo",
+		"jugador": "¿Cómo va el trabajo?",
+		"respuesta": "Todo marcha bien."
+	})
+	dialogo._indice_caracter = dialogo._texto_completo.length()
+	dialogo._actualizar_boton_accion()
+	if dialogo._respuestas.size() != 4 or dialogo._respuestas_container.get_child_count() != 4:
+		errores.append("El menú social no volvió tras responder a un tema cotidiano.")
+
 	npc.queue_free()
 	dialogo.queue_free()
 	await get_tree().process_frame
