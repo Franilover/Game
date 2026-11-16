@@ -225,18 +225,23 @@ custom_minimum_size = Vector2(0, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock" unique_id=1747754024]
+[node name="DetailContent" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="InfoPanel" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent" unique_id=1747754024]
 custom_minimum_size = Vector2(0, 102)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="ItemIconFrame" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel"]
+[node name="ItemIconFrame" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel"]
 custom_minimum_size = Vector2(74, 74)
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/ItemIconFrame" unique_id=3001000001]
+[node name="ItemIcon" type="TextureRect" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/ItemIconFrame" unique_id=3001000001]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_vertical = 0
@@ -245,12 +250,12 @@ expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
 
-[node name="InfoText" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel" unique_id=3001000010]
+[node name="InfoText" type="VBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel" unique_id=3001000010]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ItemName" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText" unique_id=1080046545]
+[node name="ItemName" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText" unique_id=1080046545]
 custom_minimum_size = Vector2(0, 26)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -259,11 +264,11 @@ focus_mode = 0
 mouse_filter = 2
 text = ""
 
-[node name="CategoryStatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText"]
+[node name="CategoryStatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText"]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="ItemCategory" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/CategoryStatsRow"]
+[node name="ItemCategory" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText/CategoryStatsRow"]
 visible = false
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
@@ -273,13 +278,13 @@ focus_mode = 0
 mouse_filter = 2
 text = ""
 
-[node name="StatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/CategoryStatsRow"]
+[node name="StatsRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText/CategoryStatsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="DescriptionPanel" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText"]
-custom_minimum_size = Vector2(0, 56)
+[node name="DescriptionPanel" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -288,14 +293,14 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 7
 theme_override_constants/margin_bottom = 5
 
-[node name="DescriptionScroll" type="ScrollContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/DescriptionPanel"]
+[node name="DescriptionScroll" type="ScrollContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 1
 
-[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/DescriptionPanel/DescriptionScroll" unique_id=1325010840]
+[node name="ItemDescription" type="Label" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/DescriptionPanel/DescriptionScroll" unique_id=1325010840]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
@@ -305,37 +310,41 @@ text = "Selecciona un objeto para estudiar sus propiedades."
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="ActionRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText"]
+[node name="ActionRow" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/InfoText"]
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="UseButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow"]
+[node name="UseButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow"]
 custom_minimum_size = Vector2(48, 24)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 theme_override_styles/focus = SubResource("StyleBox_tab_focus")
 text = "USAR"
 visible = false
 
-[node name="EquipButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow"]
+[node name="EquipButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow"]
 custom_minimum_size = Vector2(56, 24)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 theme_override_styles/focus = SubResource("StyleBox_tab_focus")
 text = "EQUIPAR"
 visible = false
 
-[node name="PlaceButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow"]
+[node name="PlaceButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow"]
 custom_minimum_size = Vector2(58, 24)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 theme_override_styles/focus = SubResource("StyleBox_tab_focus")
 text = "COLOCAR"
 visible = false
 
-[node name="DeleteButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/InfoPanel/InfoText/ActionRow" unique_id=3001000002]
+[node name="DeleteButton" type="Button" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow" unique_id=3001000002]
 custom_minimum_size = Vector2(54, 24)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 theme_override_styles/focus = SubResource("StyleBox_tab_focus")
 text = "SOLTAR"
