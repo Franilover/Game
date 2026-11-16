@@ -188,6 +188,8 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		_actualizar_mente_npc(npc, minutos, tiempo)
 		if _actualizar_actividad_social(npc, delta):
 			continue
+		if _actualizar_objetivo_social_npc(npc, delta):
+			continue
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
 		_aplicar_rutina(npc, dia_semana, minutos)
@@ -1916,6 +1918,217 @@ func _actualizar_mente_npc(npc: Creature, minutos: int, tiempo: Dictionary) -> v
 	mind.call("procesar_intervalo", personaje_id, float(delta_minutos) / 60.0, satisfacciones)
 	npc.set_meta("npc_mind_fecha_procesada", fecha)
 	npc.set_meta("npc_mind_minuto_procesado", posmod(minuto_anterior + delta_minutos, 1440))
+
+
+## Genera y ejecuta objetivos sociales a partir de necesidades y vínculos.
+## El NPC elige a quién acercarse; el objetivo no se impone desde el horario.
+func _actualizar_objetivo_social_npc(npc: Creature, delta: float) -> bool:
+	var mind := get_node_or_null("/root/NPCMind")
+	if not is_instance_valid(mind) or not is_instance_valid(_relationship_system):
+		return false
+	if not mind.has_method("obtener_necesidades") or not mind.has_method("establecer_objetivo"):
+		return false
+	if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+		return false
+	if bool(npc.get_meta("rutina_en_edificio", false)):
+		return false
+
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return false
+	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
+	if objetivo.is_empty():
+		var necesidades: Dictionary = mind.call("obtener_necesidades", personaje_id)
+		var presion_social := float(necesidades.get("socializacion", 0.0))
+		if presion_social < 68.0:
+			return false
+		var pareja := _seleccionar_companero_social(npc, presion_social)
+		if pareja == null:
+			return false
+		var pareja_id := pareja.get_personaje_game_id().strip_edges()
+		var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(personaje_id, pareja_id)
+		var tipo := "visitar_amigo" if (
+			float(relacion.get("amistad", 0.0)) >= 18.0
+			or float(relacion.get("afecto", 0.0)) >= 12.0
+		) else "buscar_compania"
+		var objetivo_id := "%s:%s" % [tipo, pareja_id.to_lower()]
+		objetivo = {
+			"id": objetivo_id,
+			"tipo": tipo,
+			"objetivo_personaje": pareja_id,
+			"nombre_objetivo": pareja.get_nombre_visual(),
+			"prioridad": clampf(presion_social / 100.0, 0.55, 0.95),
+			"creado_dia": _clave_fecha_actual(),
+			"estado": "activo"
+		}
+		if not bool(mind.call("establecer_objetivo", personaje_id, objetivo)):
+			return false
+		npc.set_meta("npc_objetivo_social", objetivo.duplicate(true))
+		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
+		npc.set_meta("npc_objetivo_social_en_curso", false)
+
+	var pareja_actual := _buscar_npc_por_id_social(str(objetivo.get("objetivo_personaje", "")))
+	if not is_instance_valid(pareja_actual) or not pareja_actual.is_alive:
+		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+		return false
+	if bool(pareja_actual.get_meta("rutina_en_edificio", false)) or bool(pareja_actual.get_meta("_conversacion_ambiental_activa", false)):
+		return false
+
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento == null:
+		return false
+	var distancia := npc.global_position.distance_to(pareja_actual.global_position)
+	if distancia > 78.0:
+		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
+		npc.set_meta("npc_objetivo_social_en_curso", false)
+		if not bool(npc.get_meta("rutina_en_transito", false)):
+			var ruta := _crear_ruta(npc.global_position, _obtener_punto_encuentro_social(npc, pareja_actual))
+			if ruta.is_empty():
+				_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+				return false
+			npc.set_meta("rutina_en_transito", true)
+			npc.set_meta("npc_objetivo_social_en_curso", true)
+			movimiento.establecer_ruta(ruta)
+		return true
+
+	if movimiento.rutina_terminada():
+		npc.set_meta("npc_objetivo_social_en_curso", false)
+		var tiempo_social := float(npc.get_meta("npc_objetivo_social_tiempo", 0.0)) + maxf(delta, 0.0)
+		npc.set_meta("npc_objetivo_social_tiempo", tiempo_social)
+		if tiempo_social >= 12.0:
+			_finalizar_objetivo_social_npc(npc, pareja_actual, mind, personaje_id, objetivo)
+	return true
+
+
+func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Creature:
+	var mejor: Creature = null
+	var mejor_puntuacion := -INF
+	var id_npc := npc.get_personaje_game_id().strip_edges()
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
+			continue
+		var candidato := candidato_variant as Creature
+		if candidato == npc or not candidato.is_alive:
+			continue
+		if bool(candidato.get_meta("rutina_en_edificio", false)):
+			continue
+		if bool(candidato.get_meta("_conversacion_ambiental_activa", false)):
+			continue
+		if not candidato.get_node_or_null("CreatureMovement") is CreatureMovement:
+			continue
+		var id_candidato := candidato.get_personaje_game_id().strip_edges()
+		if id_candidato.is_empty() or id_candidato == id_npc:
+			continue
+		if npc.global_position.distance_to(candidato.global_position) > 520.0:
+			continue
+		var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(id_npc, id_candidato)
+		var amistad := float(relacion.get("amistad", 0.0))
+		var afecto := float(relacion.get("afecto", 0.0))
+		var confianza := float(relacion.get("confianza", 0.0))
+		var tension := float(relacion.get("tension", 0.0))
+		var colaboracion := float(relacion.get("colaboracion", 0.0))
+		var distancia := npc.global_position.distance_to(candidato.global_position)
+		var puntuacion := (
+			amistad * 0.22 + afecto * 0.18 + confianza * 0.08
+			+ colaboracion * 0.06 - tension * 0.2
+			+ clampf(520.0 - distancia, 0.0, 520.0) * 0.025
+			+ presion_social * 0.08
+		)
+		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
+			puntuacion -= 8.0
+		if puntuacion > mejor_puntuacion:
+			mejor_puntuacion = puntuacion
+			mejor = candidato
+	return mejor
+
+
+func _obtener_punto_encuentro_social(npc: Creature, pareja: Creature) -> Vector2:
+	var direccion := pareja.global_position.direction_to(npc.global_position)
+	if direccion.length_squared() < 0.001:
+		direccion = Vector2.RIGHT
+	var candidatos: Array[Vector2] = [
+		pareja.global_position + direccion * 58.0,
+		pareja.global_position + Vector2.RIGHT * 58.0,
+		pareja.global_position + Vector2.DOWN * 58.0,
+		pareja.global_position + Vector2.LEFT * 58.0,
+		pareja.global_position + Vector2.UP * 58.0
+	]
+	for punto in candidatos:
+		var ruta := _crear_ruta(npc.global_position, punto)
+		if not ruta.is_empty():
+			return punto
+	return pareja.global_position
+
+
+func _buscar_npc_por_id_social(personaje_id: String) -> Creature:
+	var buscado := personaje_id.strip_edges().to_lower()
+	if buscado.is_empty():
+		return null
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if candidato_variant is Creature and is_instance_valid(candidato_variant):
+			var candidato := candidato_variant as Creature
+			if candidato.get_personaje_game_id().strip_edges().to_lower() == buscado:
+				return candidato
+	return null
+
+
+func _finalizar_objetivo_social_npc(
+	npc: Creature,
+	pareja: Creature,
+	mind: Node,
+	personaje_id: String,
+	objetivo: Dictionary
+) -> void:
+	var pareja_id := pareja.get_personaje_game_id().strip_edges()
+	var objetivo_id := str(objetivo.get("id", ""))
+	mind.call("aplicar_satisfaccion", personaje_id, {"socializacion": 22.0, "diversion": 8.0})
+	mind.call("registrar_resultado_actividad", personaje_id, str(objetivo.get("tipo", "buscar_compania")), 0.65)
+	mind.call("completar_objetivo", personaje_id, objetivo_id, true)
+	if is_instance_valid(_relationship_system) and not pareja_id.is_empty():
+		_relationship_system.registrar_interaccion_entre_npc(
+			personaje_id,
+			pareja_id,
+			{"amistad": 0.6, "confianza": 0.25, "afecto": 0.35},
+			{
+				"tipo": str(objetivo.get("tipo", "buscar_compania")),
+				"objetivo": objetivo_id,
+				"momento": _clave_fecha_actual()
+			}
+		)
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento != null:
+		movimiento.detener_por_rutina()
+	npc.remove_meta("npc_objetivo_social")
+	npc.remove_meta("npc_objetivo_social_tiempo")
+	npc.remove_meta("npc_objetivo_social_en_curso")
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("rutina_firma", "")
+	npc.set_meta("npc_social_siguiente_intento", _clave_fecha_actual())
+
+
+func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: String) -> void:
+	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento != null:
+		movimiento.detener_por_rutina()
+	if not objetivo.is_empty():
+		mind.call("completar_objetivo", personaje_id, str(objetivo.get("id", "")), false)
+	npc.remove_meta("npc_objetivo_social")
+	npc.remove_meta("npc_objetivo_social_tiempo")
+	npc.remove_meta("npc_objetivo_social_en_curso")
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("rutina_firma", "")
+
+
+func _clave_fecha_actual() -> String:
+	if not is_instance_valid(_world_atmosphere):
+		return ""
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	return "%s:%s:%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("mes", 0)),
+		str(tiempo.get("dia", 1))
+	]
 
 
 func _obtener_satisfaccion_actividad(actividad: String) -> Dictionary:
