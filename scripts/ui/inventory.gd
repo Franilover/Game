@@ -578,14 +578,13 @@ func _aplicar_fondos_inventario() -> void:
 	if is_instance_valid(description_panel):
 		description_panel.add_theme_stylebox_override("panel", estilo_boton)
 
-	# El icono ampliado y la silueta del personaje usan el mismo marco de slot
-	# que las ranuras de equipamiento, manteniendo un acabado coherente.
+	# El icono ampliado conserva el marco de slot; la representación del
+	# personaje usa la superficie de botón para distinguirla del equipamiento.
 	var estilo_slot := PIXEL_UI_THEME.slot_style(false)
-	if estilo_slot != null:
-		if is_instance_valid(item_icon_frame):
-			item_icon_frame.add_theme_stylebox_override("panel", estilo_slot)
-		if is_instance_valid(skin_panel):
-			skin_panel.add_theme_stylebox_override("panel", estilo_slot)
+	if estilo_slot != null and is_instance_valid(item_icon_frame):
+		item_icon_frame.add_theme_stylebox_override("panel", estilo_slot)
+	if is_instance_valid(skin_panel):
+		skin_panel.add_theme_stylebox_override("panel", estilo_boton)
 	for panel in [item_icon_frame, skin_panel]:
 		if is_instance_valid(panel):
 			panel.add_theme_constant_override("margin_left", 4)
