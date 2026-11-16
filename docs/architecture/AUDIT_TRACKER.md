@@ -136,3 +136,17 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Las despedidas y la frase del jugador se adaptan a caminar frente a trabajo, evitando tratar un paseo como una obligación laboral.
 - `DialogueSocialMenu` comprueba ritmo pausado y despedidas de tránsito/trabajo. CI Godot 4.7: run `43929922701` (#1654), 40 pasos completados sin fallos.
 - Pendiente: prueba visual en partida real y revisión de las frases que llegan desde datos externos; CI headless no demuestra legibilidad física en Android.
+
+
+
+## Actualización de diálogo — 2026-11-16 (contexto interior y voces)
+
+- Los NPC que caminan dentro de un edificio ya no anuncian el destino exterior de su siguiente tramo. Los saludos y despedidas describen el movimiento local y usan el contexto `dentro_edificio`.
+- Las despedidas distinguen también si el personaje está caminando, trabajando o simplemente conversando; caminar no se presenta como una tarea que impide hablar.
+- `NPCVoiceProfile` deja de aplicar normalizaciones generales que empujaban a todos los habitantes al mismo registro. Conserva ajustes puntuales por personaje.
+- El fallback social incorpora respuestas diferenciadas para Mara, Ivo y Nima en planes, aficiones, preocupaciones, consejos, estado de ánimo y reacciones de rutina.
+- Se reescribieron conversaciones ambientales de Mara/Ivo, Nima/Ivo y Saira/Ivo para que la confianza, el humor, los límites y el interés se expresen mediante sus intercambios, sin convertir cada línea en una explicación de trasfondo.
+- Los planes cotidianos ya no concatenan claves internas de horario como texto visible.
+- `DialogueSocialMenu` comprueba perfiles de voz y reacciones diferenciadas; CI Godot 4.7: run `43932011916`, **40 pasos completados sin fallos**.
+- La validación es headless. Falta revisar la lectura y naturalidad en una partida real, especialmente en Android.
+- No se modificaron filas de `dialogos_game`, tablas, RPC ni políticas de Supabase; los cambios de contenido se limitaron a diálogos locales/fallback y conversaciones ambientales del código.
