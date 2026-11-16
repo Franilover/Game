@@ -1050,6 +1050,12 @@ func admin_guardar_estado() -> void:
 	})
 	_game_state_ref.guardar_partida()
 
+func reproducir_animacion_comer(objeto: Dictionary) -> void:
+	if not is_instance_valid(visual_controller):
+		return
+	visual_controller.reproducir_animacion_comer(objeto)
+
+
 func _update_visual() -> void:
 	visual_controller.actualizar_estado(state, facing)
 
