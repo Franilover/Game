@@ -36,6 +36,8 @@ func _run() -> void:
 	var despedida_caminando := dialogo._obtener_reaccion_despedida_rutina()
 	if not despedida_caminando.contains("Voy a seguir hacia la plaza"):
 		errores.append("La despedida de un NPC que camina no reconoce que sólo está desplazándose.")
+	if not dialogo._obtener_frase_despedida_jugador_rutina().contains("sigue con tu camino"):
+		errores.append("La despedida del jugador sigue tratando como ocupado a un NPC que sólo camina.")
 	if not dialogo._actividad_es_desplazamiento("caminar") or not dialogo._actividad_es_desplazamiento("caminando") or not dialogo._actividad_es_desplazamiento("paseando") or not dialogo._actividad_es_desplazamiento("recorriendo") or dialogo._actividad_impide_una_conversacion_larga("caminar"):
 		errores.append("Caminar se clasificó como una actividad que impide conversar.")
 	var saludo_en_transito := dialogo._obtener_texto_rutina_personaje("bruna", "rutina", "caminar", "la plaza", true, false, false)
@@ -64,8 +66,8 @@ func _run() -> void:
 		"en_transito": true
 	}
 	var despedida_en_transito := dialogo._obtener_reaccion_despedida_rutina()
-	if not despedida_en_transito.contains("encargo") and despedida_en_transito.contains("No te entretengo"):
-		errores.append("La despedida de tránsito no mantiene el contexto de la actividad del NPC.")
+	if not despedida_en_transito.contains("Voy a seguir hacia la plaza"):
+		errores.append("La despedida de un NPC que camina en tránsito no debe cambiar a un encargo laboral.")
 
 	# Al cerrar el selector Hablar/Preguntar debe reaparecer el menú social
 	# principal, incluso después de una conversación cotidiana.
