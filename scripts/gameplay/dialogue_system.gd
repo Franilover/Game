@@ -1291,6 +1291,16 @@ func _obtener_texto_rutina_personaje(
 				"dormir":
 					return "Ya es hora de descansar. Mañana habrá más que hacer." if not amable else "Voy a descansar. Me alegra haberte visto antes de terminar el día."
 
+	# Mara, Ivo y Nima también tienen una respuesta propia cuando su
+	# actividad concreta no necesita una línea especial.
+	match nombre:
+		"mara":
+			return "Estaba tomando un rato para mí. ¿Qué pasó?" if not amable else "Me estaba dando un respiro. Qué bueno que pasaste, ¿cómo va tu día?"
+		"ivo":
+			return "Voy a mi ritmo, como siempre. ¿Qué necesitas?" if not amable else "Estoy aprovechando el día sin apurarme. ¿Tú cómo vas?"
+		"nima":
+			return "Estoy ordenando unas ideas antes de seguir. ¿Qué querías preguntarme?" if not amable else "Estaba pensando en algo que vi hoy. Si tienes un momento, te cuento."
+
 	# Caminar o desplazarse no es estar ocupado: el NPC puede responder sin
 	# describir una acción cotidiana como si fuera una obligación laboral.
 	if _actividad_es_desplazamiento(actividad):
@@ -2219,6 +2229,27 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 			preocupacion = "A veces siento que todavía tengo mucho que aprender. Quiero encontrar una forma de ayudar."
 			consejo = "No esperes a saberlo todo para intentar algo bueno. Aprende de cada paso y no tengas miedo de preguntar."
 			opinion_torres = "Me gusta que en Torres siempre haya alguien haciendo algo. A veces sólo hace falta salir y conocer mejor el lugar."
+		"mara":
+			planes = "Hoy quiero hacer mis cosas con calma. Si después me apetece, saldré a ver qué hay por la plaza."
+			cumplido = "Gracias. No siempre sé qué responder cuando me dicen algo así, pero lo aprecio."
+			aficiones = "Me gusta caminar sin tener que llegar a ninguna parte y encontrar algún rincón tranquilo."
+			preocupacion = "A veces me cuesta saber cuánto contar de mí. Prefiero conocer bien a alguien antes de confiar."
+			consejo = "No tienes que responder de inmediato. Date tiempo para pensar qué quieres hacer."
+			opinion_torres = "Torres puede ser un lugar tranquilo si uno encuentra su espacio. No todos necesitamos estar rodeados de gente."
+		"ivo":
+			planes = "Quiero pasar por la plaza y quizá comprar algo en la panadería. Si me canso, haré una pausa."
+			cumplido = "¡Gracias! Me alegra que lo digas. A veces uno necesita escuchar algo bueno en medio del día."
+			aficiones = "Me gusta conversar, probar algo rico y salir a pasear. No hace falta ir muy lejos para pasarlo bien."
+			preocupacion = "Me frustra tener que calcular cuánto puedo caminar algunos días. Igual intento no dejar de hacer mis planes."
+			consejo = "No te compares con el ritmo de los demás. Encuentra uno que puedas mantener y disfruta el camino."
+			opinion_torres = "Me gusta Torres porque siempre hay alguien con quien conversar. Hasta un paseo corto puede terminar siendo un buen día."
+		"nima":
+			planes = "Quiero revisar unas notas y después salir un rato. Llevo demasiado tiempo mirando los mismos apuntes."
+			cumplido = "Gracias. Me cuesta dejar de pensar en lo que falta, así que viene bien que alguien note lo que ya hice."
+			aficiones = "Me gusta investigar cosas que despiertan mi curiosidad, pero también disfruto conversar y salir con mis amigos."
+			preocupacion = "Me preocupa entusiasmarme con una idea y pasar por alto algo que la contradiga."
+			consejo = "Haz preguntas, pero escucha también las respuestas. A veces un detalle pequeño cambia lo que creías saber."
+			opinion_torres = "En Torres hay muchas cosas que todavía no entiendo. Lo mejor es que siempre encuentro a alguien dispuesto a contarme algo."
 
 	if not actividad.is_empty() and not planes.to_lower().contains(actividad.to_lower()):
 		planes += " Ahora mismo estoy con " + actividad + "."
@@ -2242,6 +2273,12 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 			estado = "Bastante bien. Un poco ocupada, pero siempre aparece algo interesante que anima el día."
 		"narel":
 			estado = "Diría que bien. He tenido algunas ideas dando vueltas y todavía estoy ordenándolas."
+		"mara":
+			estado = "Estoy bien. Hoy necesitaba un poco de tranquilidad, nada más."
+		"ivo":
+			estado = "Bien, aunque hoy voy a tomarme las cosas con calma. ¿Y tú?"
+		"nima":
+			estado = "Bien. Tengo varias cosas en la cabeza, pero por ahora puedo dejarlas a un lado."
 	opciones_generales.append({
 		"clave": "estado_animo",
 		"texto": "Preguntar cómo se siente",
