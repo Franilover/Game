@@ -8,6 +8,7 @@ const ORIGEN_MAPA := Vector2(-1664.0, -1088.0)
 const TAMANO_MALLA := Vector2i(104, 68)
 const RADIO_COLISION_NPC := 14.0
 const DISTANCIA_LLEGADA := 7.0
+const DISTANCIA_MAXIMA_UMBRAL := 36.0
 # Coste de desplazamiento: Tierra (zona 1) conserva el coste base y los demás
 # terrenos cuestan más. Mantener el mínimo en 1 preserva la heurística AStar.
 const COSTE_CAMINO_TIERRA := 1.0
@@ -1465,7 +1466,13 @@ func _separar_npcs_superpuestos() -> void:
 
 
 func _npc_puede_ajustar_separacion(npc: Creature) -> bool:
-	if not is_instance_valid(npc) or not npc.is_alive or npc.velocity.length() > 5.0:
+	if (
+		not is_instance_valid(npc)
+		or not npc.is_alive
+		or not npc.visible
+		or bool(npc.get_meta("rutina_en_edificio", false))
+		or npc.velocity.length() > 5.0
+	):
 		return false
 	for clave in [
 		"rutina_en_transito",
@@ -2210,6 +2217,13 @@ func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
 	if inicio_id.x < 0 or destino_id.x < 0:
 		return PackedVector2Array()
 
+	# No aceptar una celda de llegada arbitrariamente alejada de la puerta.
+	# Una búsqueda amplia podía escoger una celda libre al otro lado del muro
+	# y el sistema ocultaba al NPC como si ya hubiera entrado.
+	var posicion_final := _malla.get_point_position(destino_id)
+	if posicion_final.distance_to(destino) > DISTANCIA_MAXIMA_UMBRAL:
+		return PackedVector2Array()
+
 	var puntos := _malla.get_point_path(inicio_id, destino_id)
 	if puntos.is_empty():
 		return PackedVector2Array()
@@ -2236,14 +2250,15 @@ func _posicion_a_celda(posicion: Vector2) -> Vector2i:
 func _buscar_celda_transitable_cercana(celda: Vector2i) -> Vector2i:
 	if _malla == null:
 		return Vector2i(-1, -1)
-	for radio in range(0, 6):
-		for y in range(-radio, radio + 1):
-			for x in range(-radio, radio + 1):
-				if radio > 0 and maxi(absi(x), absi(y)) != radio:
-					continue
-				var candidata := celda + Vector2i(x, y)
-				if not _malla.is_in_boundsv(candidata):
-					continue
-				if not _malla.is_point_solid(candidata):
-					return candidata
-	return Vector2i(-1, -1)
+	var mejor := Vector2i(-1, -1)
+	var mejor_distancia := INF
+	for y in range(-5, 6):
+		for x in range(-5, 6):
+			var candidata := celda + Vector2i(x, y)
+			if not _malla.is_in_boundsv(candidata) or _malla.is_point_solid(candidata):
+				continue
+			var distancia := Vector2(candidata - celda).length_squared()
+			if distancia < mejor_distancia:
+				mejor = candidata
+				mejor_distancia = distancia
+	return mejor
