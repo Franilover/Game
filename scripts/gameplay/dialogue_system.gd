@@ -3056,7 +3056,7 @@ func _normalizar_clave_conocimiento(valor: String) -> String:
 	return valor.strip_edges().to_lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u").replace("ñ", "n").replace(" ", "_").replace("-", "_")
 
 
-func _contiene_clave_conocimiento(claves: Array[String], terminos: Array[String]) -> bool:
+func _contiene_clave_conocimiento(claves: Array[String], terminos: Array) -> bool:
 	for clave in claves:
 		for termino in terminos:
 			if clave == termino or clave.contains(termino):
