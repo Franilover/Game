@@ -425,11 +425,15 @@ func _aplicar_perfil_solo_si_neutro(personaje_id: String, perfil: Dictionary) ->
 	var estado := _obtener_estado_mutable(personaje_id)
 	var rasgos: Dictionary = estado.get("rasgos", {}).duplicate(true)
 	var perfil_rasgos: Variant = perfil.get("rasgos", {})
+	var cambiado := false
 	if perfil_rasgos is Dictionary:
 		for clave_variant in perfil_rasgos:
 			var clave := str(clave_variant).strip_edges().to_lower()
 			if rasgos.has(clave) and is_equal_approx(float(rasgos[clave]), 0.5):
 				rasgos[clave] = _normalizar_rasgo(perfil_rasgos[clave_variant])
+				cambiado = true
+	if not cambiado:
+		return
 	estado["rasgos"] = rasgos
 	_mentes[personaje_id] = estado
 	_guardar_mentes()
