@@ -20,6 +20,7 @@ const TITULOS_ESTACION: Dictionary = {
 	"eterium": "ESTACIÓN DE ETERIUM"
 }
 
+@onready var _panel: PanelContainer = $Panel
 @onready var _titulo: Label = $Panel/Margin/Column/Header/Title
 @onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
 @onready var _items_columna: VBoxContainer = $Panel/Margin/Column/Body/ItemsColumn/ItemScroll/ItemsList
@@ -56,7 +57,7 @@ func _crear_interfaz() -> void:
 	_procedimiento.select(0)
 	_resultado_label.text = "El resultado de la prueba aparecerá aquí."
 	_cargar_objetos()
-	PIXEL_UI_THEME.apply(self)
+	PIXEL_UI_THEME.apply(_panel)
 
 
 func _cargar_objetos() -> void:
