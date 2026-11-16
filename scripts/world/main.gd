@@ -2275,10 +2275,17 @@ func _al_recompensa_mision_disponible(mision: Dictionary, _recompensas: Array[Di
 
 
 func _al_cambio_inventario_reintentar_recompensas() -> void:
+	# La entrega puede emitir inventory_changed tanto al insertar como al
+	# restaurar el inventario tras una entrega parcial. No reintentar dentro
+	# de esa misma transacción: se volvería a ejecutar indefinidamente si sigue lleno.
+	if MissionManager.esta_entregando_recompensas():
+		return
 	call_deferred("_reintentar_recompensas_misiones")
 
 
 func _reintentar_recompensas_misiones() -> void:
+	if MissionManager.esta_entregando_recompensas():
+		return
 	if _inventory == null or not is_instance_valid(_inventory):
 		return
 	MissionManager.reintentar_recompensas_pendientes(_inventory)
