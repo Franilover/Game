@@ -785,3 +785,15 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - CI Godot 4.7: **PASS**, run `43932011916`, 40 pasos completados sin fallos.
 - Falta revisar los textos en una partida real y confirmar su legibilidad/naturalidad en Android. La prueba headless verifica contratos y frases, no sustituye una lectura jugada.
 - No se cambiaron los datos canónicos de diálogos en Supabase.
+
+
+
+## Núcleo NPC Mind — primera etapa
+
+- Añadido `NPCMindService` (`NPCMind` autoload) para representar el estado interno persistente de cada habitante.
+- Incluye necesidades, rasgos, estado emocional inicial, preferencias de actividad aprendidas, objetivos y evaluación de utilidad.
+- La selección de actividad es una evaluación pura: devuelve la mejor opción disponible y no controla directamente movimiento ni animaciones.
+- El aprendizaje usa resultados acotados de -1 a 1, media acumulada y confianza progresiva.
+- GameState guarda y restaura `npc_mentes` dentro de `world_state.flags`; el guardado sigue siendo local por partida.
+- Se añadió una regresión headless específica y CI Godot 4.7 pasó **41/41 pasos** en run #1677.
+- No se modificó Supabase. No se reemplazaron horarios existentes ni se habilitó aún la autonomía en tiempo real.
