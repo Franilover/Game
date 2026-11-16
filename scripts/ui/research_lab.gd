@@ -130,13 +130,11 @@ func _ejecutar_prueba() -> void:
 		return
 
 	var nombre := str(objeto.get("nombre", "Objeto"))
-	_resultado_label.text = _describir_resultado_preliminar(procedimiento, [objeto], [nombre])
+	_resultado_label.text = _describir_resultado_preliminar(procedimiento, objeto, nombre)
 
 
-func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dictionary], nombres: Array[String]) -> String:
+func _describir_resultado_preliminar(procedimiento: String, objeto: Dictionary, nombre: String) -> String:
 	if procedimiento in ["Examinar", "Observar estructura", "Observar Eterium", "Medir"]:
-		var objeto := objetos[0]
-		var nombre := nombres[0]
 		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
 		var categoria := _obtener_categoria(objeto)
 		var resultado := "Examinas %s." % nombre
@@ -147,7 +145,7 @@ func _describir_resultado_preliminar(procedimiento: String, objetos: Array[Dicti
 		resultado += " La observación no modifica el objeto."
 		return resultado
 
-	return "La prueba con %s ha terminado. Todavía no hay una reacción definida para esta combinación y procedimiento. Los elementos se conservaron intactos." % _unir_textos(nombres)
+	return "La prueba con %s ha terminado. Todavía no hay una reacción definida para este procedimiento. El objeto se conservó intacto." % nombre
 
 
 func _obtener_categoria(objeto: Dictionary) -> String:
