@@ -16,6 +16,7 @@ on:
       - "scripts/world/npc_conversation_system.gd"
       - "scripts/gameplay/dialogue_system.gd"
       - "scripts/gameplay/relationship_system.gd"
+      - "scripts/gameplay/npc_mind.gd"
       - "scripts/gameplay/cutscene_director.gd"
       - "scripts/gameplay/cutscene_sequence.gd"
       - "scripts/world/world_*.gd"
