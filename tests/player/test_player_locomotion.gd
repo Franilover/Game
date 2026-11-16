@@ -131,9 +131,14 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 
 	var raiz_visual := Node2D.new()
 	var sprite := Sprite2D.new()
+	sprite.name = "Sprite2D"
 	raiz_visual.add_child(sprite)
 	var marcador := ColorRect.new()
 	visual.configurar(raiz_visual, marcador, null)
+	if visual.sprite == null:
+		errores.append("El controlador visual no encontró el nodo Sprite2D.")
+	if visual.sprite_idle == null or visual.sprite_walk_left == null or visual.sprite_walk_back == null:
+		errores.append("El controlador visual no cargó todas las texturas importadas.")
 	visual.actualizar_direccion(Vector2.RIGHT)
 	if not marcador.position.is_equal_approx(Vector2(12.0, -26.0)):
 		errores.append("El marcador visual no conservó el desplazamiento lateral.")
