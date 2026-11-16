@@ -329,8 +329,18 @@ func _actualizar_indicador_recarga_dash(delta: float) -> void:
 			_dash_recharge_indicator.visible = false
 			return
 
+	# Leer la misma fuente de verdad que utiliza el controlador de dash.
 	var maximo := maxf(float(player.max_stamina), 0.001)
 	var actual := clampf(float(player.stamina), 0.0, maximo)
+	var controlador: Variant = player.get("stamina_controller")
+	if controlador != null:
+		var actual_controlador: Variant = controlador.get("current")
+		var maximo_controlador: Variant = controlador.get("maximum")
+		if actual_controlador != null:
+			actual = float(actual_controlador)
+		if maximo_controlador != null:
+			maximo = maxf(float(maximo_controlador), 0.001)
+	actual = clampf(actual, 0.0, maximo)
 	var recargando := actual < maximo - 0.0001
 	_dash_recharge_indicator.visible = recargando
 	if not recargando:
@@ -352,7 +362,11 @@ func _actualizar_indicador_recarga_dash(delta: float) -> void:
 		0.0,
 		-float(sprite.texture.get_height()) * 0.5
 	)
-	_dash_recharge_indicator.position = borde_superior + Vector2(-80.0, -4.0)
+	# El sprite entrega coordenadas de pantalla; convertirlas al espacio local
+	# del HUD (CanvasLayer) evita que la barra termine en una esquina.
+	var transformacion_hud: Transform2D = get_global_transform_with_canvas()
+	var punto_local_hud: Vector2 = transformacion_hud.affine_inverse() * borde_superior
+	_dash_recharge_indicator.position = punto_local_hud + Vector2(-80.0, -4.0)
 
 
 func _preparar_aviso_descubrimiento() -> void:
