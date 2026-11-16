@@ -841,4 +841,5 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - La conversación avanza sin depender de la posición del jugador ni de que tenga cerrado el diálogo modal. Si el jugador se acerca, puede observar las intervenciones que aún estén en curso.
 - Los participantes quedan temporalmente fuera de la actualización de sus rutinas para evitar que se alejen durante la charla; al finalizar, recuperan el horario normal.
 - La presentación no vuelve a aplicar amistad, confianza, promesas, asuntos ni transmisión de conocimientos: esos efectos ya pertenecen al cierre del objetivo social.
-- Alcance actual: líneas breves escritas por tipo de motivo, sin generación de texto. La revisión visual en runtime y Android y la validación CI de esta última integración siguen pendientes.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1717](https://github.com/Franilover/Game/actions/runs/43940597598). La importación/compilación y la suite de regresión pasaron.
+- Alcance actual: líneas breves escritas por tipo de motivo, sin generación de texto. Sigue pendiente revisar la presentación en una partida real, especialmente Android.
