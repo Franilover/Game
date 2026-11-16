@@ -157,6 +157,8 @@ func _describir_resultado_preliminar(procedimiento: String, objeto: Dictionary, 
 	if procedimiento in ["Examinar", "Observar estructura", "Observar Eterium", "Medir"]:
 		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
 		var categoria := _obtener_categoria(objeto)
+		if categoria.is_empty() and descripcion.is_empty():
+			return "No hay datos."
 		var resultado := "Examinas %s." % nombre
 		if not categoria.is_empty():
 			resultado += " Está clasificado como %s." % categoria
