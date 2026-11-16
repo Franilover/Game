@@ -45,6 +45,8 @@ var health_value: Label = null
 var stamina_bar: ProgressBar = null
 var stamina_value: Label = null
 var _dash_recharge_indicator: TextureProgressBar = null
+var _dash_visual_value: float = 0.0
+var _dash_indicator_recharging: bool = false
 
 var eterium_bar: ProgressBar = null
 var eterium_value: Label = null
@@ -197,7 +199,7 @@ func _conectar_senal_game_state() -> void:
 
 func _process(delta: float) -> void:
 	_procesar_hold_companero(delta)
-	_actualizar_indicador_recarga_dash()
+	_actualizar_indicador_recarga_dash(delta)
 	_eterium_ui_elapsed += delta
 	if _eterium_ui_elapsed >= 0.1:
 		_eterium_ui_elapsed = 0.0
@@ -308,15 +310,15 @@ func _crear_indicador_recarga_dash() -> void:
 	_dash_recharge_indicator.stretch_margin_right = 3
 	_dash_recharge_indicator.stretch_margin_bottom = 2
 	# Indicador de recarga anclado sobre el personaje.
-	_dash_recharge_indicator.custom_minimum_size = Vector2(72.0, 8.0)
-	_dash_recharge_indicator.size = Vector2(72.0, 8.0)
+	_dash_recharge_indicator.custom_minimum_size = Vector2(160.0, 16.0)
+	_dash_recharge_indicator.size = Vector2(160.0, 16.0)
 	_dash_recharge_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dash_recharge_indicator.z_index = 10
 	_dash_recharge_indicator.visible = false
 	add_child(_dash_recharge_indicator)
 
 
-func _actualizar_indicador_recarga_dash() -> void:
+func _actualizar_indicador_recarga_dash(delta: float) -> void:
 	if not is_instance_valid(_dash_recharge_indicator):
 		return
 	if not is_instance_valid(player) or not player.is_alive:
@@ -334,9 +336,16 @@ func _actualizar_indicador_recarga_dash() -> void:
 	var recargando := actual < maximo - 0.0001
 	_dash_recharge_indicator.visible = recargando
 	if not recargando:
+		_dash_indicator_recharging = false
+		_dash_visual_value = 0.0
+		_dash_recharge_indicator.value = 0.0
 		return
 
-	_dash_recharge_indicator.value = actual / maximo
+	if not _dash_indicator_recharging:
+		_dash_visual_value = 0.0
+		_dash_indicator_recharging = true
+	_dash_visual_value = move_toward(_dash_visual_value, actual / maximo, delta * 1.0)
+	_dash_recharge_indicator.value = _dash_visual_value
 	var sprite := player.get_node_or_null("Visual/Sprite2D") as Sprite2D
 	if sprite == null or sprite.texture == null:
 		_dash_recharge_indicator.visible = false
