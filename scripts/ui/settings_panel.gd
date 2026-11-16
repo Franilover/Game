@@ -33,6 +33,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_construir_interfaz()
 	PIXEL_UI_THEME.apply(self)
+	_aplicar_fondos_button()
 	get_viewport().size_changed.connect(_ajustar_panel_a_pantalla)
 	_ajustar_panel_a_pantalla()
 
@@ -69,31 +70,30 @@ func _construir_interfaz() -> void:
 	columna.add_theme_constant_override("separation", 10)
 	margen.add_child(columna)
 
+	var titulo_panel := _crear_seccion_button(columna, "SettingsTitlePanel", 8)
 	var titulo := Label.new()
 	titulo.text = "Configuración"
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 27)
-	columna.add_child(titulo)
+	titulo_panel.add_child(titulo)
 
-	var separador := HSeparator.new()
-	columna.add_child(separador)
+	var volumen_panel := _crear_seccion_button(columna, "SettingsVolumePanel", 10)
+	volumen_panel.add_theme_constant_override("separation", 8)
+	_agregar_control_volumen(volumen_panel, "Volumen general", "Master")
+	_agregar_control_volumen(volumen_panel, "Música", "Musica")
+	_agregar_control_volumen(volumen_panel, "Efectos de sonido", "Efectos")
 
-	_agregar_control_volumen(columna, "Volumen general", "Master")
-	_agregar_control_volumen(columna, "Música", "Musica")
-	_agregar_control_volumen(columna, "Efectos de sonido", "Efectos")
-
-	var separador_controles := HSeparator.new()
-	columna.add_child(separador_controles)
-
+	var controles_panel := _crear_seccion_button(columna, "SettingsControlsPanel", 10)
+	controles_panel.add_theme_constant_override("separation", 6)
 	var controles_titulo := Label.new()
 	controles_titulo.text = "CONTROLES"
 	controles_titulo.add_theme_font_size_override("font_size", 15)
-	columna.add_child(controles_titulo)
+	controles_panel.add_child(controles_titulo)
 
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 120)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	columna.add_child(scroll)
+	controles_panel.add_child(scroll)
 
 	var lista := VBoxContainer.new()
 	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -106,6 +106,35 @@ func _construir_interfaz() -> void:
 	cerrar.custom_minimum_size = Vector2(0, 40)
 	cerrar.pressed.connect(_cerrar)
 	columna.add_child(cerrar)
+
+
+func _crear_seccion_button(contenedor: VBoxContainer, nombre: String, padding: int) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.name = nombre
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	contenedor.add_child(panel)
+
+	var margen := MarginContainer.new()
+	margen.add_theme_constant_override("margin_left", padding)
+	margen.add_theme_constant_override("margin_top", padding)
+	margen.add_theme_constant_override("margin_right", padding)
+	margen.add_theme_constant_override("margin_bottom", padding)
+	panel.add_child(margen)
+
+	var contenido := VBoxContainer.new()
+	contenido.add_theme_constant_override("separation", 6)
+	margen.add_child(contenido)
+	return contenido
+
+
+func _aplicar_fondos_button() -> void:
+	for nombre in ["SettingsTitlePanel", "SettingsVolumePanel", "SettingsControlsPanel"]:
+		var panel := find_child(nombre, true, false) as PanelContainer
+		if panel == null:
+			continue
+		var fondo := PIXEL_UI_THEME.button_surface_style()
+		if fondo != null:
+			panel.add_theme_stylebox_override("panel", fondo)
 
 
 func _ajustar_panel_a_pantalla() -> void:
