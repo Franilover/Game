@@ -12,7 +12,6 @@ var _slots_jugador: Array[InventorySlot] = []
 var _slots_cofre: Array[InventorySlot] = []
 var _panel: PanelContainer
 var _mensaje_sin_datos_jugador: Label
-var _mensaje_sin_datos_cofre: Label
 var _seleccion_contenedor := ""
 var _seleccion_indice := -1
 
@@ -130,11 +129,6 @@ func _crear_interfaz() -> void:
 	var titulo_cofre := Label.new()
 	titulo_cofre.text = "COFRE"
 	panel_cofre.add_child(titulo_cofre)
-	_mensaje_sin_datos_cofre = Label.new()
-	_mensaje_sin_datos_cofre.text = "No hay datos"
-	_mensaje_sin_datos_cofre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_mensaje_sin_datos_cofre.visible = false
-	panel_cofre.add_child(_mensaje_sin_datos_cofre)
 	var rejilla_cofre := GridContainer.new()
 	rejilla_cofre.name = "GridCofre"
 	rejilla_cofre.columns = 8
@@ -317,11 +311,8 @@ func _refrescar() -> void:
 	var items_jugador: Array = _obtener_items("jugador")
 	var items_cofre: Array = _obtener_items("cofre")
 	var jugador_tiene_datos := _contiene_objetos(items_jugador)
-	var cofre_tiene_datos := _contiene_objetos(items_cofre)
-	if is_instance_valid(_mensaje_sin_datos_jugador):
+		if is_instance_valid(_mensaje_sin_datos_jugador):
 		_mensaje_sin_datos_jugador.visible = not jugador_tiene_datos
-	if is_instance_valid(_mensaje_sin_datos_cofre):
-		_mensaje_sin_datos_cofre.visible = not cofre_tiene_datos
 	for indice in range(_slots_jugador.size()):
 		var slot := _slots_jugador[indice]
 		slot.modulate = Color("#FFE3A3") if _seleccion_contenedor == "jugador" and _seleccion_indice == indice else Color.WHITE
