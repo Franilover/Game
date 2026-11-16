@@ -1263,12 +1263,23 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 	# Completar los campos de gameplay desde items_game permite que la UI y
 	# el consumo lean siempre las propiedades canónicas actuales.
 	for clave in ["propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
+		if not canonico.has(clave):
+			continue
 		var valor_actual: Variant = resultado.get(clave, null)
+		var valor_canonico: Variant = canonico[clave]
+		if clave == "propiedades_game" and valor_canonico is Dictionary:
+			var propiedades_combinadas := (valor_canonico as Dictionary).duplicate(true)
+			if valor_actual is Dictionary:
+				for propiedad in (valor_actual as Dictionary).keys():
+					if not propiedades_combinadas.has(propiedad):
+						propiedades_combinadas[propiedad] = (valor_actual as Dictionary)[propiedad]
+			resultado[clave] = propiedades_combinadas
+			continue
 		var esta_vacio := valor_actual == null or valor_actual == ""
 		if valor_actual is Dictionary:
 			esta_vacio = (valor_actual as Dictionary).is_empty()
-		if esta_vacio and canonico.has(clave):
-			resultado[clave] = canonico[clave].duplicate(true) if canonico[clave] is Dictionary or canonico[clave] is Array else canonico[clave]
+		if esta_vacio:
+			resultado[clave] = valor_canonico.duplicate(true) if valor_canonico is Dictionary or valor_canonico is Array else valor_canonico
 	return resultado
 
 
