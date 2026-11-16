@@ -1109,9 +1109,9 @@ func _obtener_texto_rutina_personaje(
 	if dentro_edificio and _actividad_es_desplazamiento(actividad):
 		match nombre:
 			"elian":
-				return "Estoy dando una vuelta por aquí. ¿Qué necesitabas?" if amable else "Ando ocupado por aquí dentro. Dime, ¿qué pasa?"
+				return "Estoy dando una vuelta por aquí. ¿Qué necesitabas?" if amable else "Daba una vuelta por aquí. ¿Qué pasa?"
 			"bruna":
-				return "Solo estoy dando una vuelta por aquí. ¿Qué se te ofrece?" if amable else "Estoy recorriendo un poco el lugar. ¿Necesitas algo?"
+				return "Solo estoy dando una vuelta por aquí. ¿Qué se te ofrece?" if amable else "Daba una vuelta por aquí. ¿Necesitas algo?"
 			"darven":
 				return "Estoy revisando que todo esté en orden por aquí. ¿Ocurrió algo?"
 			_:
@@ -1520,6 +1520,12 @@ func _obtener_reaccion_pregunta_rutina() -> String:
 			return "Bastante bien. Siempre hay algo que revisar: precios, encargos o mercancía que todavía no llega."
 		"narel":
 			return "He avanzado, aunque todavía necesito contrastar algunas observaciones antes de sacar conclusiones."
+		"mara":
+			return "Estoy bien. Me apetecía salir un rato, aunque hoy no tenía muchas ganas de hablar con todo el mundo."
+		"ivo":
+			return "Bien, aunque voy a descansar un poco antes de seguir. Hoy me pasé con el paseo."
+		"nima":
+			return "Bien. Avancé con unas notas, pero creo que ya toca descansar la cabeza."
 		"abel":
 			return "El reino sigue adelante. Mi tarea consiste en escuchar sus problemas antes de que se vuelvan más grandes."
 		"liam":
@@ -1540,6 +1546,12 @@ func _obtener_reaccion_apoyo_rutina() -> String:
 			return "Me alegra que lo notes. Mantener un comercio en marcha requiere más cuentas de las que parece."
 		"narel":
 			return "Gracias. Investigar puede ser solitario; se agradece que alguien valore el esfuerzo."
+		"mara":
+			return "Gracias. No siempre me resulta fácil dejar que alguien se acerque, así que lo valoro."
+		"ivo":
+			return "Gracias. A veces me cuesta pedir ayuda sin sentir que estoy dando trabajo a los demás."
+		"nima":
+			return "Gracias. Me ayuda que alguien se interese, incluso cuando todavía no tengo resultados."
 		"abel":
 			return "Te agradezco que lo digas. Gobernar también consiste en atender tareas que casi nadie llega a ver."
 		"liam":
@@ -1560,6 +1572,12 @@ func _obtener_reaccion_conocimiento_rutina() -> String:
 			return "Eso suena interesante. La información también tiene valor; cuéntame qué descubriste."
 		"narel":
 			return "¡Eso sí que me interesa! ¿Dónde lo aprendiste? Tal vez podamos comprobarlo juntos."
+		"mara":
+			return "Cuéntame. Puede que no sepa mucho del tema, pero me interesa escucharte."
+		"ivo":
+			return "¿En serio? Cuéntame. Me gusta aprender cosas nuevas, aunque no siempre pueda ir a comprobarlas contigo."
+		"nima":
+			return "¡Cuéntame! ¿Dónde lo viste? Quiero entenderlo antes de sacar conclusiones."
 		"abel":
 			return "Me interesa conocerlo. Las decisiones del reino mejoran cuando escuchamos nuevas perspectivas."
 		"liam":
