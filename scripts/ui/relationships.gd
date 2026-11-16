@@ -293,20 +293,42 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
 	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
 	if textura != null:
+		var fondo_retrato := Button.new()
+		fondo_retrato.name = "CharacterFaceFrame"
+		fondo_retrato.text = ""
+		fondo_retrato.custom_minimum_size = Vector2(0.0, 96.0)
+		fondo_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		fondo_retrato.focus_mode = Control.FOCUS_NONE
+		fondo_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fondo_retrato.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		PIXEL_UI_THEME.apply(fondo_retrato, false)
+		detalle.add_child(fondo_retrato)
+
 		var retrato_cara := TextureRect.new()
 		retrato_cara.name = "CharacterFace"
-		retrato_cara.custom_minimum_size = Vector2(0.0, 88.0)
-		retrato_cara.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		retrato_cara.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		retrato_cara.offset_left = 5.0
+		retrato_cara.offset_top = 4.0
+		retrato_cara.offset_right = -5.0
+		retrato_cara.offset_bottom = -4.0
 		retrato_cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		retrato_cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		retrato_cara.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		retrato_cara.texture = textura
-		detalle.add_child(retrato_cara)
+		fondo_retrato.add_child(retrato_cara)
 
-	var titulo := Label.new()
+	var titulo := Button.new()
+	titulo.name = "CharacterName"
 	titulo.text = nombre
+	titulo.custom_minimum_size = Vector2(0.0, 28.0)
+	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titulo.focus_mode = Control.FOCUS_NONE
+	titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	titulo.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	titulo.add_theme_font_size_override("font_size", 13)
-	titulo.add_theme_color_override("font_color", Color(0.9, 0.79, 0.58, 1.0))
+	titulo.add_theme_color_override("font_color", Color("#FFF3D6"))
+	PIXEL_UI_THEME.apply(titulo, false)
 	detalle.add_child(titulo)
 
 	var etiqueta_amistad := Label.new()
