@@ -125,10 +125,10 @@ func iniciar_sesion(
 		+ "/auth/v1/token?grant_type=password"
 	)
 
+	# La clave publicable autentica el proyecto mediante apikey; no es un JWT.
 	var headers := PackedStringArray([
 		"Content-Type: application/json",
-		"apikey: " + SUPABASE_PUBLISHABLE_KEY,
-		"Authorization: Bearer " + SUPABASE_PUBLISHABLE_KEY
+		"apikey: " + SUPABASE_PUBLISHABLE_KEY
 	])
 
 	var body: String = JSON.stringify({
