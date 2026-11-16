@@ -265,6 +265,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run mission reward delivery rollback regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/missions/test_mission_reward_delivery.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|MissionRewardDelivery: FAIL:' <<<"$output"; then
+            echo "Mission reward delivery regression test reported errors."
+            exit 1
+          fi
+
       - name: Run world snapshot validator contract test
         shell: bash
         run: |
