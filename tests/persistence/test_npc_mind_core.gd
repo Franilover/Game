@@ -29,6 +29,10 @@ func _run() -> void:
 		"necesidades": {"socializacion": 70.0, "descanso": 15.0}
 	}
 	var estado := mind.registrar_personaje("Ivo", perfil)
+
+	var perfil_social := mind.registrar_personaje("Narel", {"rasgos": {"sociabilidad": 80.0}})
+	if not is_equal_approx(float(perfil_social.get("rasgos", {}).get("sociabilidad", 0.0)), 0.8):
+		errores.append("Los rasgos sociales en escala 0-100 no se normalizaron.")
 	if not is_equal_approx(float(estado.get("necesidades", {}).get("socializacion", 0.0)), 70.0):
 		errores.append("El perfil inicial no aplicó sus necesidades.")
 	if not is_equal_approx(float(estado.get("rasgos", {}).get("sociabilidad", 0.0)), 0.9):
