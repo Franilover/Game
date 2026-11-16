@@ -852,3 +852,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Las conversaciones de compañía pueden retomar una ayuda, una promesa cumplida, una noticia o una conversación previa de la pareja.
 - Las noticias incorporan el título que el NPC realmente conoce; se conserva la cautela cuando no está confirmado.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1719](https://github.com/Franilover/Game/actions/runs/43941877535).
+
+
+## NPC Mind — objetivos y estado emocional en las decisiones
+
+- La evaluación de actividades ya considera objetivos personales activos cuando la actividad coincide con su identificador, una lista de actividades aceptadas o etiquetas compartidas.
+- La prioridad del objetivo modula su influencia; sólo se toma la mejor coincidencia para evitar que acumular objetivos multiplique artificialmente la puntuación.
+- Las actividades pueden declarar `afinidad_emocional` para que ánimo, estrés y energía influyan en su utilidad. Las afinidades usan escala 0–1.
+- Se amplió `test_npc_mind_core.gd` para comprobar que objetivos y estado emocional participan en la evaluación.
+- Cambios en la rama `fix/p0-godot47-crafting-token-type`; no se modificó `main` ni Supabase.
+- Pendiente: CI Godot 4.7 y revisión de los resultados dentro de una partida. La evaluación sigue siendo determinista y no genera texto.
