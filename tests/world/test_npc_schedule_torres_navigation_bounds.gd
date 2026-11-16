@@ -35,7 +35,7 @@ func _ready() -> void:
 			errores.append("Falta la entrada de rutina: " + clave)
 			continue
 		var entrada: Dictionary = entrada_variant
-		var destino := entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0)
+		var destino: Vector2 = entrada.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0)
 		if destino.distance_to(puertas_esperadas[clave]) > 0.1:
 			errores.append("La ruta de " + clave + " no termina en su puerta real.")
 
