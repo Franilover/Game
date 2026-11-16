@@ -9,7 +9,7 @@ var _ultima_posicion_camara: Vector2 = Vector2.INF
 @onready var _input_router: GameplayInputRouter = $Systems/GameplayInputRouter
 
 @onready var _hud: HUD = $UI/HUD
-@onready var _inventory: GarliaInventory = $UI/Inventory
+@onready var _inventory = $UI/Inventory
 @onready var _interaction_system: InteractionSystem = $Systems/InteractionSystem
 @onready var _combat_system: CombatSystem = $Systems/CombatSystem
 var _dialogue_system: DialogueSystem = null
