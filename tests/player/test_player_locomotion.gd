@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const MovementScript = preload("res://scripts/gameplay/player/player_movement_controller.gd")
 const CoordinatorScript = preload("res://scripts/gameplay/player/player_locomotion_coordinator.gd")
@@ -9,7 +9,7 @@ const InputScript = preload("res://scripts/gameplay/player/player_input_controll
 const PhysicsScript = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
@@ -26,11 +26,11 @@ func _run() -> void:
 	if not errores.is_empty():
 		for error in errores:
 			push_error("PlayerLocomotion: FAIL: " + error)
-		quit(1)
+		get_tree().quit(1)
 		return
 
 	print("PlayerLocomotion: PASS")
-	quit(0)
+	get_tree().quit(0)
 
 
 func _probar_intensidad_analogica(errores: Array[String]) -> void:
