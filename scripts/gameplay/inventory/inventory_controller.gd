@@ -71,12 +71,45 @@ func usar_objeto_mano(mano: String, usuario: Player = null) -> bool:
 	return usar_objeto_en_indice(obtener_indice_mano_activa(mano), usuario, mano)
 
 
+func es_alimento_en_mano(mano: String) -> bool:
+	if mano not in ["izquierda", "derecha"]:
+		return false
+	var objeto := obtener_objeto_mano_activa(mano)
+	if objeto.is_empty():
+		return false
+	var categoria_variant: Variant = objeto.get("categoria", {})
+	var clave := str(objeto.get("categoria_clave", ""))
+	if categoria_variant is Dictionary:
+		clave = str((categoria_variant as Dictionary).get("clave", clave))
+	return clave.strip_edges().to_lower() == "alimentos_bebidas"
+
+
+func puede_usar_alimento_en_mano(mano: String) -> bool:
+	if not es_alimento_en_mano(mano):
+		return false
+	var objeto := obtener_objeto_mano_activa(mano)
+	return not _obtener_definicion_uso(objeto).is_empty()
+
+
+func usar_objeto_desde_ui(indice: int, usuario: Player) -> bool:
+	return _usar_objeto_en_indice(indice, usuario, "", false)
+
+
 func usar_objeto_en_indice(
 	indice: int,
 	usuario: Player = null,
 	mano: String = ""
 ) -> bool:
-	if not puede_interactuar():
+	return _usar_objeto_en_indice(indice, usuario, mano, true)
+
+
+func _usar_objeto_en_indice(
+	indice: int,
+	usuario: Player,
+	mano: String,
+	validar_input: bool
+) -> bool:
+	if validar_input and not puede_interactuar():
 		return false
 	if indice < 0:
 		return false
