@@ -2027,6 +2027,19 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: String, relacion: Dictionary) -> Dictionary:
 	if not is_instance_valid(_relationship_system):
 		return {"tipo": "visitar_amigo"}
+	for conocimiento_promesa_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_promesa_variant is Dictionary:
+			continue
+		var conocimiento_promesa := conocimiento_promesa_variant as Dictionary
+		if str(conocimiento_promesa.get("promesa_para", "")) != pareja_id:
+			continue
+		var clave_promesa := str(conocimiento_promesa.get("clave_promesa", conocimiento_promesa.get("clave", ""))).strip_edges()
+		if not clave_promesa.is_empty():
+			_relationship_system.registrar_promesa_entre_npc(personaje_id, pareja_id, {
+				"clave": clave_promesa,
+				"descripcion": str(conocimiento_promesa.get("promesa", conocimiento_promesa.get("titulo", clave_promesa))),
+				"clave_conocimiento": str(conocimiento_promesa.get("clave_conocimiento", ""))
+			})
 	var promesas: Array = _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id)
 	if not promesas.is_empty():
 		var promesa: Dictionary = promesas[0]
@@ -2195,11 +2208,12 @@ func _finalizar_objetivo_social_npc(
 			"objetivo": objetivo_id,
 			"momento": _clave_fecha_actual()
 		}
+		var interaccion_registrada := false
 		match tipo_motivo:
 			"cumplir_promesa":
 				var promesa_id := str(motivo.get("promesa_id", ""))
 				if not promesa_id.is_empty():
-					_relationship_system.resolver_promesa_entre_npc(promesa_id, true)
+					interaccion_registrada = _relationship_system.resolver_promesa_entre_npc(promesa_id, true)
 				var clave_promesa := str(motivo.get("clave_conocimiento", ""))
 				if not clave_promesa.is_empty():
 					_relationship_system.transmitir_conocimiento_npc(personaje_id, pareja_id, clave_promesa, {"motivo": "promesa_cumplida"})
@@ -2224,7 +2238,8 @@ func _finalizar_objetivo_social_npc(
 			_:
 				pass
 		recuerdo["tipo"] = tipo_motivo
-		_relationship_system.registrar_interaccion_entre_npc(personaje_id, pareja_id, cambios, recuerdo)
+		if not interaccion_registrada:
+			_relationship_system.registrar_interaccion_entre_npc(personaje_id, pareja_id, cambios, recuerdo)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
