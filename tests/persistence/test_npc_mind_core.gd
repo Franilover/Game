@@ -280,6 +280,23 @@ func _run() -> void:
 	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
 
+	# La asistencia a un evento comunitario produce conocimiento por observación directa.
+	var observacion_evento := {
+		"clave": "mercado_vecinal",
+		"evento_id": "mercado_vecinal:2026:18",
+		"nombre": "Mercado vecinal",
+		"aviso": "Los vecinos se reunieron en la plaza."
+	}
+	if not relationship.registrar_observacion_evento_npc("mara", observacion_evento, "2026:18"):
+		errores.append("La asistencia al mercado no generó una observación directa.")
+	if relationship.registrar_observacion_evento_npc("mara", observacion_evento, "2026:18"):
+		errores.append("La misma asistencia generó dos observaciones independientes.")
+	var recuerdo_evento := relationship.obtener_evaluacion_creencia_npc(
+		"mara", "evento_comunitario:mercado_vecinal:2026:18"
+	)
+	if str(recuerdo_evento.get("estado", "")) != "conocimiento_sostenido":
+		errores.append("La observación directa no quedó diferenciada de un rumor.")
+
 	# La confianza de cada NPC depende de evidencias independientes, no de ecos.
 	if not relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
 		"fuente_id": "viajero_1",
