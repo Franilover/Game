@@ -14,6 +14,12 @@ const CATALOGO := {
 	"cofre": {"nombre": "Cofre", "ruta": "res://assets/art/places/Muebles/cofre.png"},
 	"horno": {"nombre": "Horno", "ruta": "res://assets/art/places/Muebles/horno.png"},
 	"mesa": {"nombre": "Mesa", "ruta": "res://assets/art/places/Muebles/mesa.png"},
+	"mesa_platos": {"nombre": "Mesa servida", "ruta": "res://assets/art/places/Muebles/mesa platos.png"},
+	"mesa_documentos": {"nombre": "Mesa de trabajo", "ruta": "res://assets/art/places/Muebles/mesa documentos.png"},
+	"silla": {"nombre": "Silla", "ruta": "res://assets/art/places/Muebles/Silla.png"},
+	"asiento": {"nombre": "Asiento", "ruta": "res://assets/art/places/Muebles/asiento.png"},
+	"estanteria_pan": {"nombre": "Estantería", "ruta": "res://assets/art/places/Muebles/estanteria con pan.png"},
+	"yunque": {"nombre": "Yunque", "ruta": "res://assets/art/places/Muebles/Yunque.png"},
 	"calendario": {"nombre": "Calendario", "ruta": "res://assets/art/places/Muebles/calendario.svg"}
 }
 
