@@ -904,6 +904,57 @@ func obtener_conocimientos_npc(personaje_id: String) -> Array:
 	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
 
 
+## Registra un acontecimiento comunitario que el habitante presencia directamente.
+## La observación sólo se atribuye a quien participa en la rutina del evento.
+func registrar_observacion_evento_npc(
+	personaje_id: String,
+	evento: Dictionary,
+	momento: String = ""
+) -> bool:
+	var id := personaje_id.strip_edges()
+	var clave_evento := str(evento.get("clave", "")).strip_edges().to_lower()
+	var evento_id := str(evento.get("evento_id", "")).strip_edges()
+	if id.is_empty() or clave_evento.is_empty() or evento_id.is_empty():
+		return false
+	var clave_conocimiento := "evento_comunitario:%s" % evento_id
+	var conocimiento_existente := obtener_conocimiento_npc(id, clave_conocimiento)
+	if not conocimiento_existente.is_empty():
+		var evidencias_variant: Variant = conocimiento_existente.get("evidencias", [])
+		if evidencias_variant is Array:
+			for evidencia_variant in evidencias_variant:
+				if not evidencia_variant is Dictionary:
+					continue
+				var evidencia_existente := evidencia_variant as Dictionary
+				if (
+					str(evidencia_existente.get("fuente_id", "")) == evento_id
+					and str(evidencia_existente.get("direccion", "apoya")) == "apoya"
+				):
+					return false
+	var momento_registro := momento if not momento.strip_edges().is_empty() else Time.get_datetime_string_from_system(true)
+	var titulo := str(evento.get("nombre", clave_evento.replace("_", " "))).strip_edges()
+	var detalle := str(evento.get("aviso", evento.get("detalle", titulo))).strip_edges()
+	if not registrar_conocimiento_npc(id, {
+		"clave": clave_conocimiento,
+		"tema": clave_evento,
+		"titulo": titulo,
+		"detalle": detalle,
+		"tipo": "evento_comunitario",
+		"verificacion": "observacion_directa",
+		"fuente": evento_id,
+		"compartible": true,
+		"privacidad": "publico",
+		"momento": momento_registro
+	}):
+		return false
+	return registrar_evidencia_conocimiento_npc(id, clave_conocimiento, {
+		"fuente_id": evento_id,
+		"tipo": "observacion",
+		"direccion": "apoya",
+		"detalle": detalle,
+		"momento": momento_registro
+	})
+
+
 ## Registra evidencia para la creencia de un NPC sin convertirla en verdad
 ## global. Cada personaje mantiene su propia evaluación del mismo hecho.
 func registrar_evidencia_conocimiento_npc(
