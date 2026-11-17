@@ -7,6 +7,7 @@ var _atmosfera: Node = null
 var _panel: PanelContainer
 var _info: Label
 var _grid: GridContainer
+var _ancho_celda: float = 36.0
 
 
 func abrir(atmosfera: Node) -> void:
@@ -36,10 +37,12 @@ func _crear_interfaz() -> void:
 
 	_panel = PanelContainer.new()
 	_panel.name = "CalendarPanel"
-	_panel.custom_minimum_size = Vector2(332.0, 292.0)
+	var viewport_size := get_viewport().get_visible_rect().size
+	var ancho_panel := minf(332.0, maxf(220.0, viewport_size.x - 24.0))
+	_panel.custom_minimum_size = Vector2(ancho_panel, minf(292.0, maxf(180.0, viewport_size.y - 24.0)))
+	_ancho_celda = clampf((ancho_panel - 56.0) / 7.0, 24.0, 36.0)
 	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	PIXEL_UI_THEME.apply(_panel, false)
 	centrador.add_child(_panel)
 
 	var contenido := VBoxContainer.new()
@@ -49,6 +52,7 @@ func _crear_interfaz() -> void:
 	var encabezado := HBoxContainer.new()
 	contenido.add_child(encabezado)
 	var titulo := Label.new()
+	titulo.name = "CalendarTitle"
 	titulo.text = "CALENDARIO"
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -75,7 +79,7 @@ func _crear_interfaz() -> void:
 	contenido.add_child(etiqueta_dias)
 
 	var desplazamiento := ScrollContainer.new()
-	desplazamiento.custom_minimum_size = Vector2(292.0, 176.0)
+	desplazamiento.custom_minimum_size = Vector2(maxf(180.0, ancho_panel - 40.0), maxf(80.0, minf(176.0, viewport_size.y - 140.0)))
 	desplazamiento.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	desplazamiento.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	contenido.add_child(desplazamiento)
@@ -86,6 +90,7 @@ func _crear_interfaz() -> void:
 	_grid.add_theme_constant_override("h_separation", 4)
 	_grid.add_theme_constant_override("v_separation", 4)
 	desplazamiento.add_child(_grid)
+	PIXEL_UI_THEME.apply(raiz)
 
 
 func _actualizar_calendario() -> void:
@@ -121,7 +126,7 @@ func _actualizar_calendario() -> void:
 
 	for dia in range(1, duracion + 1):
 		var celda := PanelContainer.new()
-		celda.custom_minimum_size = Vector2(36.0, 30.0)
+		celda.custom_minimum_size = Vector2(_ancho_celda, 30.0)
 		if dia == dia_actual:
 			var resaltado := StyleBoxFlat.new()
 			resaltado.bg_color = Color("#9b5939")
@@ -139,6 +144,7 @@ func _actualizar_calendario() -> void:
 		numero.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		celda.add_child(numero)
+		PIXEL_UI_THEME.apply(numero, false)
 		_grid.add_child(celda)
 
 
