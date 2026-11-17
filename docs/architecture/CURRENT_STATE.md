@@ -898,3 +898,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - El perfil conserva hasta 32 hábitos y se guarda en el estado local de cada NPC.
 - Se añadieron pruebas de consolidación, separación temporal, no duplicación diaria y persistencia.
 - Compatible con partidas anteriores: el campo se inicializa al normalizar estados antiguos.
+
+
+## Personalidad social como límite de autonomía (2026-11-16)
+- La sociabilidad de cada NPC se consulta desde el perfil social definido en Supabase (personaje_social_v1); no se aprende ni se incrementa por repetir conversaciones.
+- La sociabilidad regula el umbral de necesidad para iniciar encuentros: perfiles más reservados requieren una necesidad social mayor.
+- Los perfiles con sociabilidad baja solo buscan o aceptan encuentros casuales cuando existe un vínculo suficiente. Promesas, asuntos pendientes o noticias relevantes permiten encuentros justificados aunque el NPC sea reservado.
+- La selección considera la disposición de ambas personas, no solo la iniciativa de quien se acerca. Así, un NPC sociable no fuerza encuentros casuales con alguien reservado.
+- Se añadieron pruebas para perfiles reservados/sociables, vínculos cercanos y excepciones por motivos concretos.
+- Se utilizan los campos actuales de Supabase; no se modificó el esquema ni se escribieron datos en Supabase.
+- Pendiente: ejecutar las pruebas con Godot 4.7 y validar en partida la frecuencia y selección de encuentros.
