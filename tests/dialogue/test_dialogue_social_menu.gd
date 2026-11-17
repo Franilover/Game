@@ -376,6 +376,18 @@ func _run() -> void:
 	await get_tree().process_frame
 	camara_prueba.zoom = Vector2(2.0, 2.0)
 	director_prueba.configurar(jugador_prueba, dialogo, camara_prueba)
+	# Incluso si un recurso antiguo solicita el modo en vivo, se normaliza a escena congelada.
+	if director_prueba._normalizar_modo_cinematica("en_vivo") != "planeada":
+		errores.append("El director todavía permite cinematográficas en tiempo real.")
+	for ruta_recurso in [
+		"res://resources/cutscenes/intercambio_social.tres",
+		"res://resources/cutscenes/intercambio_interrumpido.tres",
+		"res://resources/cutscenes/intercambio_con_tercero.tres",
+		"res://resources/cutscenes/reunion_trio.tres"
+	]:
+		var secuencia := load(ruta_recurso) as CutsceneSequence
+		if not is_instance_valid(secuencia) or secuencia.modo != "planeada":
+			errores.append("La secuencia %s no está configurada como reproducción congelada." % ruta_recurso)
 	jugador_prueba.velocity = Vector2(25.0, 0.0)
 	jugador_prueba.state = Player.State.RUN
 	camara_prueba.global_position = Vector2(600.0, 400.0)

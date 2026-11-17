@@ -1966,7 +1966,7 @@ func _ejecutar_cinematica_intercambio_social(
 				"y": centro_grupo.y,
 				"zoom": zoom,
 				"duracion_camara": duracion_camara
-			}, "en_vivo")
+			}, "planeada")
 			return
 	var ruta_secuencia := "res://resources/cutscenes/intercambio_con_tercero.tres" if usar_tercero else ("res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres")
 	var invertir_turno := posmod(hash(nombre_a + "|" + nombre_b + "|" + clave), 2) == 1
@@ -1976,14 +1976,20 @@ func _ejecutar_cinematica_intercambio_social(
 	if not is_instance_valid(secuencia):
 		push_warning("Main: no se pudo cargar la secuencia de intercambio social.")
 		return
+	var centro_encuadre := centro
+	if usar_tercero:
+		# El tercer participante conserva la posición que tenía al capturar la escena.
+		var npc_a_obj := _buscar_npc_cinematica(nombre_a)
+		var npc_b_obj := _buscar_npc_cinematica(nombre_b)
+		centro_encuadre = (npc_a_obj.global_position + npc_b_obj.global_position + tercero.global_position) / 3.0
 	var parametros := {
 		"clave": clave,
 		"npc_a": nombre_a,
 		"npc_b": nombre_b,
 		"interrumpe": interrumpe,
 		"interrumpido": interrumpido,
-		"x": centro.x,
-		"y": centro.y,
+		"x": centro_encuadre.x,
+		"y": centro_encuadre.y,
 		"zoom": zoom,
 		"gesto_a": gesto_a,
 		"gesto_b": gesto_b,
@@ -1993,24 +1999,8 @@ func _ejecutar_cinematica_intercambio_social(
 		"duracion_gesto": duracion_gesto
 	}
 	if usar_tercero:
-		var npc_a_obj := _buscar_npc_cinematica(nombre_a)
-		var npc_b_obj := _buscar_npc_cinematica(nombre_b)
-		var eje := (npc_b_obj.global_position - npc_a_obj.global_position).normalized()
-		if eje.length_squared() < 0.01:
-			eje = Vector2.RIGHT
-		var lateral := Vector2(-eje.y, eje.x)
-		var posicion_llegada := centro + lateral * 34.0
-		var direccion_salida := (tercero.global_position - centro).normalized()
-		if direccion_salida.length_squared() < 0.01:
-			direccion_salida = lateral
-		var posicion_salida := tercero.global_position + direccion_salida * 28.0
 		parametros["tercero"] = tercero.get_nombre_visual()
-		parametros["tercero_llegada_x"] = posicion_llegada.x
-		parametros["tercero_llegada_y"] = posicion_llegada.y
-		parametros["tercero_salida_x"] = posicion_salida.x
-		parametros["tercero_salida_y"] = posicion_salida.y
-	await _cutscene_director.ejecutar_recurso(secuencia, parametros, "en_vivo")
-
+	await _cutscene_director.ejecutar_recurso(secuencia, parametros, "planeada")
 
 ## Las señales cinematográficas no se descartan por estar el jugador lejos,
 ## ocupado en otra escena o entrando a un interior. Se conservan hasta que

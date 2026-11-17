@@ -6,7 +6,7 @@
 script = ExtResource("1")
 clave = "reunion_trio_{{clave}}"
 descripcion = "Encuadre de tres personas que ya se han reunido: atención compartida, saludos y reacciones naturales sin desplazar a nadie."
-modo = "en_vivo"
+modo = "planeada"
 pasos = Array[Dictionary]([{
 "tipo": "camara",
 "x": "{{x}}",

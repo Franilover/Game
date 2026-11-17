@@ -88,6 +88,11 @@ func _process(delta: float) -> void:
 	_camera.zoom = _camera.zoom.lerp(Vector2.ONE * zoom_ajustado, clampf(delta * 2.8, 0.0, 1.0))
 
 
+func _normalizar_modo_cinematica(_tipo: String) -> String:
+	# El mundo se congela y la secuencia se reproduce sobre una instantánea.
+	return "planeada"
+
+
 func esta_activo() -> bool:
 	return _ocupado
 
@@ -163,7 +168,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	# El zoom y offset originales se capturan en configurar(). No volver a
 	# capturarlos aquí: una escena anterior no debe contaminar el siguiente retorno.
 	_clave_actual = clave_limpia
-	_modo_cinematica = "en_vivo" if tipo.strip_edges().to_lower() in ["en_vivo", "vivo", "live"] else "planeada"
+	_modo_cinematica = _normalizar_modo_cinematica(tipo)
 	if _modo_cinematica == "planeada":
 		_pausa_previa = get_tree().paused
 		_process_mode_dialogo_previo = _dialogue.process_mode
@@ -176,7 +181,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 		add_to_group("modal_ui")
 	_capturar_y_ocultar_ui()
 	if _modo_cinematica == "planeada":
-		_ocultar_npcs_fuera_de_cinematica()
+		_congelar_npcs_del_mundo()
 	cinematica_iniciada.emit(_clave_actual)
 
 	for paso_variant in pasos:
@@ -723,17 +728,11 @@ func _ocultar_elemento_ui(nodo: Node) -> void:
 		item.hide()
 
 
-func _ocultar_npcs_fuera_de_cinematica() -> void:
-	# Las cinemáticas planeadas muestran únicamente a los NPC que participan
-	# explícitamente. Así se evita que las rutinas del pueblo distraigan al fondo.
+func _congelar_npcs_del_mundo() -> void:
+	# Mantiene a cada NPC visible en su posición capturada y detiene sus rutinas.
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not nodo is Creature:
-			continue
-		var npc := nodo as Creature
-		if not is_instance_valid(npc):
-			continue
-		_guardar_estado_npc(npc)
-		npc.hide()
+		if nodo is Creature and is_instance_valid(nodo):
+			_guardar_estado_npc(nodo as Creature)
 
 
 func _detener_animaciones_rutina_temporales(npc: Creature) -> void:

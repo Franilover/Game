@@ -6,7 +6,7 @@
 script = ExtResource("1")
 clave = "intercambio_social_{{clave}}"
 descripcion = "Intercambio breve entre dos NPC: encuadre, contacto visual y reacciones simultáneas."
-modo = "en_vivo"
+modo = "planeada"
 pasos = Array[Dictionary]([{
 "tipo": "camara",
 "x": "{{x}}",
