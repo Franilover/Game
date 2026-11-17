@@ -541,7 +541,6 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		}
 		npc.set_meta("evento_comunitario_actual", clave_evento)
 		npc.set_meta("evento_comunitario_datos", evento_comunitario.duplicate(true))
-		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
 		_notificar_evento_comunitario(evento_comunitario)
 	else:
 		npc.set_meta("evento_comunitario_actual", "")
@@ -836,6 +835,13 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.set_meta("rutina_destino_es_edificio", not edificio_id.is_empty())
 	npc.set_meta("rutina_edificio_objetivo", edificio_id)
 	npc.datos["actividad_actual"] = actividad
+	# La observación se intenta después de resolver el desplazamiento y actualizar
+	# la rutina; así sólo cuenta cuando el NPC ya llegó al punto del evento.
+	if (
+		not evento_comunitario.is_empty()
+		and str(rutina.get("clave", "")) == str(evento_comunitario.get("clave", ""))
+	):
+		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
 
 
 ## Agrupa a los asistentes según sus vínculos reales y distribuye sus
