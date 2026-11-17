@@ -325,7 +325,7 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	var umbral_progreso := maxf(move_speed * maxf(delta, 0.0) * FACTOR_PROGRESO_NPC, 0.05)
 	if avance >= umbral_progreso:
 		_tiempo_sin_progreso = 0.0
-			_direccion_base_atasco = Vector2.ZERO
+		_direccion_base_atasco = Vector2.ZERO
 		_direccion_desvio_atasco = Vector2.ZERO
 		return direccion
 
