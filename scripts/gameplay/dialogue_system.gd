@@ -422,7 +422,12 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 func abrir_iniciativa_npc(datos: Dictionary, fuente: Creature) -> bool:
 	if not is_instance_valid(fuente) or _abierto:
 		return false
-	return abrir(datos, fuente, true)
+	# Toda iniciativa dirigida al jugador entra al mismo flujo social. Las
+	# opciones individuales deciden si la conversación continúa o se despide.
+	var datos_unificados := datos.duplicate(true)
+	if not datos_unificados.has("_continuar_menu_social"):
+		datos_unificados["_continuar_menu_social"] = true
+	return abrir(datos_unificados, fuente, true)
 
 
 func _debe_usar_menu_social(
