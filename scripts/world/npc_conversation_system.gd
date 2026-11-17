@@ -2261,7 +2261,7 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 			for linea_variant in lineas_historia:
 				if not linea_variant is Dictionary:
 					continue
-			var linea_historia := linea_variant as Dictionary
+				var linea_historia := linea_variant as Dictionary
 				var texto_historia := str(linea_historia.get("texto", ""))
 				var npc_linea_historia := _npc_por_nombre.get(str(linea_historia.get("npc", "")).to_lower()) as Creature
 				if is_instance_valid(npc_linea_historia):
