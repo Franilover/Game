@@ -5,19 +5,11 @@ extends CanvasLayer
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 const PROCEDIMIENTOS_POR_ESTACION: Dictionary = {
-	"examen": ["Examinar", "Medir"],
-	"mezclas": ["Preparar muestra"],
-	"termica": ["Calentar", "Enfriar", "Fundir"],
-	"observacion": ["Observar estructura"],
-	"eterium": ["Observar Eterium", "Aplicar Eterium"]
+	"examen": ["Analizar objeto"]
 }
 
 const TITULOS_ESTACION: Dictionary = {
-	"examen": "MESA DE EXAMINACIÓN",
-	"mezclas": "ESTACIÓN DE PREPARACIÓN",
-	"termica": "ESTACIÓN TÉRMICA",
-	"observacion": "ESTACIÓN DE OBSERVACIÓN",
-	"eterium": "ESTACIÓN DE ETERIUM"
+	"examen": "ANÁLISIS DE OBJETOS"
 }
 
 @onready var _panel: PanelContainer = $Panel
@@ -154,12 +146,12 @@ func _ejecutar_prueba() -> void:
 
 
 func _describir_resultado_preliminar(procedimiento: String, objeto: Dictionary, nombre: String) -> String:
-	if procedimiento in ["Examinar", "Observar estructura", "Observar Eterium", "Medir"]:
+	if procedimiento == "Analizar objeto":
 		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
 		var categoria := _obtener_categoria(objeto)
 		if categoria.is_empty() and descripcion.is_empty():
 			return "No hay datos."
-		var resultado := "Examinas %s." % nombre
+		var resultado := "Analizas %s." % nombre
 		if not categoria.is_empty():
 			resultado += " Está clasificado como %s." % categoria
 		if not descripcion.is_empty():
