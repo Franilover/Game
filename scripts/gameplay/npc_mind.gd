@@ -273,9 +273,6 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 	}
 
 
-## Los objetivos activos influyen en la elección sólo si describen una actividad
-## concreta o comparten etiquetas con ella. La prioridad evita que un objetivo
-## secundario domine necesidades urgentes.
 ## La experiencia acumulada en un lugar influye gradualmente en futuras decisiones.
 ## Una muestra aislada tiene poco peso; la preferencia se estabiliza con repetición.
 func obtener_preferencia_lugar(personaje_id: String, ubicacion: String) -> float:
@@ -320,6 +317,10 @@ func registrar_resultado_lugar(personaje_id: String, ubicacion: String, resultad
 	_emitir_cambio(id)
 	return obtener_preferencia_lugar(id, clave)
 
+
+## Los objetivos activos influyen en la elección sólo si describen una actividad
+## concreta o comparten etiquetas con ella. La prioridad evita que un objetivo
+## secundario domine necesidades urgentes.
 
 func _calcular_afinidad_objetivos(estado: Dictionary, actividad: Dictionary, clave_actividad: String) -> float:
 	var objetivos_variant: Variant = estado.get("objetivos", [])
