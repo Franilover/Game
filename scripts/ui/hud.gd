@@ -1458,7 +1458,10 @@ func _es_interfaz_movil() -> bool:
 
 
 func _actualizar_layout_hud_movil() -> void:
-	if not is_inside_tree() or not _es_interfaz_movil():
+	if not is_inside_tree():
+		return
+	_actualizar_layout_hud_superior()
+	if not _es_interfaz_movil():
 		return
 	var viewport_size := get_viewport_rect().size
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
@@ -1559,7 +1562,6 @@ func _preparar_boton_monedas() -> void:
 	_coin_button.name = "CoinBalance"
 	_coin_button.custom_minimum_size = Vector2(112.0, 38.0)
 	_coin_button.text = "Monedas: %d" % GameState.obtener_dinero()
-	_coin_button.disabled = true
 	PIXEL_UI_THEME.apply(_coin_button)
 	add_child(_coin_button)
 	_actualizar_boton_monedas()
@@ -1594,6 +1596,8 @@ func _alternar_calendario_visual() -> void:
 	if _calendar_open:
 		_cerrar_calendario_visual()
 	else:
+		if is_instance_valid(_garumi_mobile_menu):
+			_garumi_mobile_menu.hide()
 		_calendar_open = true
 		_actualizar_calendario_visual()
 		_calendar_panel.show()
