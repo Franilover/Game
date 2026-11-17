@@ -175,7 +175,8 @@ func _actualizar() -> void:
 		var asset_key := str(personaje.get("asset_key", nombre)).strip_edges()
 		_personajes_por_id[personaje_id] = {
 			"nombre": nombre,
-			"asset_key": asset_key
+			"asset_key": asset_key,
+			"sprite_key": str(personaje.get("sprite_key", "")).strip_edges()
 		}
 
 		var boton := Button.new()
@@ -264,6 +265,29 @@ func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
 	return null
 
 
+func _cargar_sprite_mapa(sprite_key: String, nombre: String, tiene_personaje: bool) -> Texture2D:
+	var claves: Array[String] = []
+	if not sprite_key.is_empty() and not sprite_key.contains("/") and not sprite_key.contains("\\"):
+		claves.append(sprite_key)
+	if not nombre.is_empty() and not nombre.contains("/") and not nombre.contains("\\") and nombre not in claves:
+		claves.append(nombre)
+	for clave in claves:
+		for extension in [".png", ".PNG"]:
+			var ruta := "res://assets/art/characters/" + clave + extension
+			if not ResourceLoader.exists(ruta):
+				continue
+			var recurso: Resource = load(ruta)
+			if recurso is Texture2D:
+				return recurso as Texture2D
+
+	# Es el mismo fallback que utiliza Creature._cargar_sprite() en el mapa.
+	if tiene_personaje:
+		var ruta_base := "res://assets/art/characters/Sprite-0004.png"
+		if ResourceLoader.exists(ruta_base):
+			return load(ruta_base) as Texture2D
+	return null
+
+
 func _cargar_retrato_cara(asset_key: String, nombre: String) -> Texture2D:
 	var claves: Array[String] = []
 	if not asset_key.is_empty():
@@ -296,43 +320,72 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 
 	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
 	var asset_key := str(datos_personaje.get("asset_key", nombre))
+	var sprite_key := str(datos_personaje.get("sprite_key", "")).strip_edges()
 	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
-	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
-	var fondo_retrato := Button.new()
-	fondo_retrato.name = "CharacterFaceFrame"
-	fondo_retrato.text = ""
-	fondo_retrato.custom_minimum_size = Vector2(0.0, 96.0)
-	fondo_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fondo_retrato.focus_mode = Control.FOCUS_NONE
-	fondo_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fondo_retrato.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	PIXEL_UI_THEME.apply(fondo_retrato, false)
-	detalle.add_child(fondo_retrato)
+	var textura_retrato := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
+	var textura_mapa := _cargar_sprite_mapa(sprite_key, nombre, not personaje_id.is_empty())
 
-	if textura != null:
-		var retrato_cara := TextureRect.new()
-		retrato_cara.name = "CharacterFace"
-		retrato_cara.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		retrato_cara.offset_left = 5.0
-		retrato_cara.offset_top = 4.0
-		retrato_cara.offset_right = -5.0
-		retrato_cara.offset_bottom = -4.0
-		retrato_cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		retrato_cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		retrato_cara.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		retrato_cara.texture = textura
-		fondo_retrato.add_child(retrato_cara)
-	else:
-		var iniciales := Label.new()
-		iniciales.name = "CharacterFaceFallback"
-		iniciales.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		iniciales.text = nombre.substr(0, 2).to_upper()
-		iniciales.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		iniciales.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		iniciales.add_theme_font_size_override("font_size", 24)
-		iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fondo_retrato.add_child(iniciales)
+	# Las dos referencias visuales comparten el mismo ancho: retrato de perfil
+	# a la izquierda y sprite real de exploración a la derecha.
+	var fila_imagenes := HBoxContainer.new()
+	fila_imagenes.name = "CharacterImagesRow"
+	fila_imagenes.custom_minimum_size = Vector2(0.0, 112.0)
+	fila_imagenes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila_imagenes.add_theme_constant_override("separation", 5)
+	detalle.add_child(fila_imagenes)
+
+	var columna_retrato := VBoxContainer.new()
+	columna_retrato.name = "PortraitColumn"
+	columna_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna_retrato.size_flags_stretch_ratio = 1.0
+	columna_retrato.add_theme_constant_override("separation", 3)
+	fila_imagenes.add_child(columna_retrato)
+
+	var etiqueta_retrato := Label.new()
+	etiqueta_retrato.text = "Retrato"
+	etiqueta_retrato.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta_retrato.add_theme_font_size_override("font_size", 8)
+	columna_retrato.add_child(etiqueta_retrato)
+
+	var retrato_cara := TextureRect.new()
+	retrato_cara.name = "CharacterFace"
+	retrato_cara.custom_minimum_size = Vector2(0.0, 94.0)
+	retrato_cara.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	retrato_cara.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	retrato_cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	retrato_cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	retrato_cara.texture = textura_retrato
+	if textura_retrato == null:
+		retrato_cara.custom_minimum_size = Vector2(0.0, 94.0)
+		retrato_cara.tooltip_text = "Retrato no disponible"
+	columna_retrato.add_child(retrato_cara)
+
+	var columna_mapa := VBoxContainer.new()
+	columna_mapa.name = "MapSpriteColumn"
+	columna_mapa.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna_mapa.size_flags_stretch_ratio = 1.0
+	columna_mapa.add_theme_constant_override("separation", 3)
+	fila_imagenes.add_child(columna_mapa)
+
+	var etiqueta_mapa := Label.new()
+	etiqueta_mapa.text = "En el mapa"
+	etiqueta_mapa.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta_mapa.add_theme_font_size_override("font_size", 8)
+	columna_mapa.add_child(etiqueta_mapa)
+
+	var sprite_mapa := TextureRect.new()
+	sprite_mapa.name = "CharacterMapSprite"
+	sprite_mapa.custom_minimum_size = Vector2(0.0, 94.0)
+	sprite_mapa.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sprite_mapa.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sprite_mapa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sprite_mapa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sprite_mapa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite_mapa.texture = textura_mapa
+	if textura_mapa == null:
+		sprite_mapa.tooltip_text = "Sprite de mapa no disponible"
+	columna_mapa.add_child(sprite_mapa)
 
 	var titulo := Button.new()
 	titulo.name = "CharacterName"
