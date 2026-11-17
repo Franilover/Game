@@ -56,7 +56,7 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 		# El panel de detalle del crafteo comparte exactamente la superficie
 		# de los botones. Mantener esta excepción aquí evita que una nueva
 		# aplicación global del tema restaure el marco clásico del panel.
-		var panel: StyleBox = button_surface_style() if control.name == "DetailPanel" else _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
+		var panel: StyleBox = button_surface_style() if control.name in ["DetailPanel", "SpeakerPortraitFrame"] else _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
