@@ -2,6 +2,7 @@
 
 [ext_resource type="Material" uid="uid://cmbcfxlkxxnwq" path="res://addons/TileMapDual/ghost_material.tres" id="2_kixsf"]
 [ext_resource type="Script" uid="uid://bpu8c76t82ih2" path="res://scripts/world/reino_torres.gd" id="2_reino"]
+[ext_resource type="Script" path="res://scripts/world/torres_muralla_editor.gd" id="torres_wall_editor"]
 [ext_resource type="Texture2D" uid="uid://uauvarvrj8u7" path="res://assets/tilesets/Pradera.png" id="3_yrcbl"]
 [ext_resource type="Script" uid="uid://cnorbhdwg6btn" path="res://addons/TileMapDual/tile_map_dual.gd" id="4_7dy5d"]
 [ext_resource type="Texture2D" uid="uid://chwqofuh14evd" path="res://assets/tilesets/Tierra.png" id="5_h2dg4"]
@@ -1471,3 +1472,6 @@ scale = Vector2(1.7083334, 1.7083334)
 texture = ExtResource("official_22")
 script = ExtResource("editor_sprite_fit")
 target_size = Vector2(84, 82)
+
+[node name="EditorMurallaGenerator" type="Node" parent="."]
+script = ExtResource("torres_wall_editor")
