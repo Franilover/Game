@@ -73,6 +73,8 @@ var _estilo_panel_dialogo_normal: StyleBox = null
 ## pero una superficie de botón para distinguir el cuadro sin perder legibilidad.
 func configurar_estilo_cinematica(activar: bool) -> void:
 	if not is_instance_valid(dialogue_panel):
+		_crear_interfaz()
+	if not is_instance_valid(dialogue_panel):
 		return
 	if activar:
 		if _estilo_panel_dialogo_normal == null:
