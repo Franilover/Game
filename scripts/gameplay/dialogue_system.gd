@@ -2009,7 +2009,11 @@ func _crear_opcion_trabajo_social() -> Dictionary:
 		"ivo":
 			respuesta = "No trabajo. Entre mis descansos y las vueltas que doy por el pueblo ya tengo el día bastante ocupado."
 		"nima":
-			respuesta = "Estudio por mi cuenta. Ahora estoy observando algunos fenómenos Oris, pero también leo sobre otras materias cuando encuentro algo interesante."
+			var actividad_nima := _obtener_descripcion_actividad_dialogo(actividad)
+			if not actividad_nima.is_empty():
+				respuesta = "Estudio por mi cuenta. Ahora mismo estoy " + actividad_nima + "."
+			else:
+				respuesta = "Estudio por mi cuenta. También leo sobre otras materias cuando encuentro algo interesante."
 	return _crear_opcion_social("hablar_trabajo", "Hablar sobre su trabajo", "¿Cómo van tus responsabilidades últimamente?", respuesta)
 
 

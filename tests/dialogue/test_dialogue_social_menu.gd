@@ -139,6 +139,16 @@ func _run() -> void:
 	var ayuda_caminando := dialogo._obtener_respuesta_ayuda_npc()
 	if ayuda_caminando.contains("estoy con caminar") or ayuda_caminando.contains("estoy con pasear"):
 		errores.append("La respuesta sobre ayuda presenta caminar como una tarea laboral.")
+	npc.nombre_individual = "Nima"
+	npc.datos["actividad_actual"] = "caminar"
+	var trabajo_nima_caminando := dialogo._crear_opcion_trabajo_social()
+	if str(trabajo_nima_caminando.get("respuesta", "")).contains("observando algunos fenómenos Oris"):
+		errores.append("Nima afirma estar observando fenómenos Oris aunque sólo está caminando.")
+	npc.datos["actividad_actual"] = "investigar_oris"
+	var trabajo_nima_investigando := dialogo._crear_opcion_trabajo_social()
+	if not str(trabajo_nima_investigando.get("respuesta", "")).contains("investigando fenómenos Oris"):
+		errores.append("Nima no refleja su investigación actual al hablar de sus estudios.")
+	npc.nombre_individual = "Bruna"
 	npc.datos["actividad_actual"] = "forjar"
 	var trabajo_forjando := dialogo._crear_opcion_trabajo_social()
 	if not str(trabajo_forjando.get("respuesta", "")).contains("trabajando en la forja"):
