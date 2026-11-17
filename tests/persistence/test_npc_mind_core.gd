@@ -289,6 +289,34 @@ func _run() -> void:
 	if not is_equal_approx(confianza_testimonio_inicial, confianza_testimonio_repetido):
 		errores.append("Repetir el testimonio de la misma persona aumentó la confianza.")
 
+	# Las transmisiones desde fuentes distintas conservan sus rutas de procedencia.
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "rutas_independientes",
+		"tipo": "noticia",
+		"compartible": true,
+		"fuente": "viajero_1",
+		"cadena_transmision": [{"de": "viajero_1", "a": "ivo"}]
+	})
+	if not relationship.transmitir_conocimiento_npc("ivo", "mara", "rutas_independientes"):
+		errores.append("No se transmitió la primera ruta de conocimiento.")
+	relationship.registrar_conocimiento_npc("narel", {
+		"clave": "rutas_independientes",
+		"tipo": "noticia",
+		"compartible": true,
+		"fuente": "guardia_2",
+		"cadena_transmision": [{"de": "guardia_2", "a": "narel"}]
+	})
+	if not relationship.transmitir_conocimiento_npc("narel", "mara", "rutas_independientes"):
+		errores.append("No se transmitió la segunda ruta de conocimiento.")
+	var conocimiento_rutas := relationship.obtener_conocimiento_npc("mara", "rutas_independientes")
+	var rutas_variant: Variant = conocimiento_rutas.get("rutas_transmision", [])
+	if not rutas_variant is Array or (rutas_variant as Array).size() != 2:
+		errores.append("La segunda fuente reemplazó la ruta de transmisión que Mara ya conocía.")
+	else:
+		var firmas_rutas := JSON.stringify(rutas_variant)
+		if not firmas_rutas.contains("viajero_1") or not firmas_rutas.contains("guardia_2"):
+			errores.append("Las rutas conservadas no identifican ambas fuentes originales.")
+
 	# La asistencia a un evento comunitario produce conocimiento por observación directa.
 	var observacion_evento := {
 		"clave": "mercado_vecinal",
