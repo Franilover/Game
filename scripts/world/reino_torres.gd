@@ -15,6 +15,7 @@ const MUEBLE_SILLA_FRENTE: Texture2D = preload("res://assets/art/places/Muebles/
 const MUEBLE_ASIENTO: Texture2D = preload("res://assets/art/places/Muebles/asiento.png")
 const MUEBLE_YUNQUE: Texture2D = preload("res://assets/art/places/Muebles/Yunque.png")
 const MUEBLE_ESTANTERIA_PAN: Texture2D = preload("res://assets/art/places/Muebles/estanteria con pan.png")
+const MUEBLE_ARMARIO: Texture2D = preload("res://assets/art/places/Muebles/armario.png")
 const MUEBLE_MESA_DOCUMENTOS: Texture2D = preload("res://assets/art/places/Muebles/mesa documentos.png")
 const MUEBLE_MESA_PLATOS: Texture2D = preload("res://assets/art/places/Muebles/mesa platos.png")
 const MERCADO_PUESTO: Texture2D = preload("res://assets/art/places/Mercado Puesto.png")
@@ -29,8 +30,8 @@ const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout
 
 # Ampliación moderada respecto al interior original (448x272).
 # Mantiene el espacio compacto y reduce los bordes visibles sin vaciar la sala.
-const INTERIOR_ANCHO := 560.0
-const INTERIOR_ALTO := 352.0
+const INTERIOR_ANCHO := 512.0
+const INTERIOR_ALTO := 320.0
 const INTERIOR_MEDIO_ANCHO := INTERIOR_ANCHO / 2.0
 const INTERIOR_MEDIO_ALTO := INTERIOR_ALTO / 2.0
 
@@ -1655,76 +1656,107 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	var tipo := str(entrada["tipo"])
 	match tipo:
 		"castillo":
-			_agregar_sprite_mueble(cuarto, "MesaDelTrono", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -70), Vector2(1.5, 1.0), 1)
-			_agregar_sprite_mueble(cuarto, "MesaAudiencias", MUEBLE_MESA, Vector2(0, 45), Vector2(2.2, 1), 1)
-			for i in range(2):
-				_agregar_sprite_mueble(cuarto, "AsientoAudiencia%d" % i, MUEBLE_ASIENTO, Vector2(-95 + i * 190, 105), Vector2.ONE, 1)
-		"panaderia":
-			_agregar_sprite_mueble(cuarto, "Horno", MUEBLE_HORNO, Vector2(-150, -75), Vector2(2, 2), 1)
-			_agregar_sprite_mueble(cuarto, "EstanteriaPan", MUEBLE_ESTANTERIA_PAN, Vector2(85, -85), Vector2(1.5, 1.5), 1)
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA_PLATOS, Vector2(90, -5), Vector2(1.3, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "MesaAmasado", MUEBLE_MESA, Vector2(70, 85), Vector2(1.3, 1), 1)
-			_agregar_sprite_mueble(cuarto, "SillaPanadero", MUEBLE_SILLA_DERECHA, Vector2(155, 95), Vector2.ONE, 1, true)
-		"posada":
-			for i in range(3):
-				var x := -110.0 + float(i) * 110.0
-				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, -15), Vector2(1.0, 0.9), 1)
-				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 28), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(2.0, 1), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoBarra", MUEBLE_ASIENTO, Vector2(0, -52), Vector2.ONE, 1)
-		"forja":
-			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-145, -70), Vector2(2, 2), 1)
-			_agregar_sprite_mueble(cuarto, "Yunque", MUEBLE_YUNQUE, Vector2(105, 35), Vector2(1.4, 1.4), 1)
-			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA_DOCUMENTOS, Vector2(115, 105), Vector2(1.2, 1), 1)
-		"archivo":
-			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 65), Vector2(1.8, 1), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoConsulta", MUEBLE_SILLA_FRENTE, Vector2(0, 115), Vector2.ONE, 1)
-		"consejo":
-			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.3, 1.5), 1)
+			_agregar_sprite_mueble(cuarto, "MesaDelTrono", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -78), Vector2(1.5, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaAudiencias", MUEBLE_MESA, Vector2(0, 28), Vector2(2.0, 1), 1)
 			for i in range(4):
-				var x := -150.0 + float(i % 2) * 300.0
-				var y := -95.0 if i < 2 else 95.0
+				var x := -150.0 + float(i) * 100.0
+				_agregar_sprite_mueble(cuarto, "AsientoAudiencia%d" % i, MUEBLE_ASIENTO, Vector2(x, 88), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCastilloOeste", MUEBLE_ARMARIO, Vector2(-205, -125), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCastilloEste", MUEBLE_ARMARIO, Vector2(205, -125), Vector2(0.9, 0.9), 1)
+		"panaderia":
+			# Zona de producción a la izquierda y exhibición continua al fondo.
+			_agregar_sprite_mueble(cuarto, "Horno", MUEBLE_HORNO, Vector2(-190, -78), Vector2(1.8, 1.8), 1)
+			for i in range(4):
+				_agregar_sprite_mueble(cuarto, "EstanteriaPan%d" % i, MUEBLE_ESTANTERIA_PAN, Vector2(-35 + i * 66, -122), Vector2(1.35, 1.35), 1)
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA_PLATOS, Vector2(65, -12), Vector2(1.25, 1.05), 1)
+			_agregar_sprite_mueble(cuarto, "MesaAmasado", MUEBLE_MESA, Vector2(-35, 78), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "SillaPanadero", MUEBLE_SILLA_DERECHA, Vector2(55, 105), Vector2.ONE, 1, true)
+			_agregar_sprite_mueble(cuarto, "AlmacenHarina", MUEBLE_ARMARIO, Vector2(-205, 65), Vector2(0.9, 0.9), 1)
+		"posada":
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -112), Vector2(1.8, 1), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioPosada", MUEBLE_ARMARIO, Vector2(-205, -110), Vector2(0.9, 0.9), 1)
+			for i in range(3):
+				var x := -112.0 + float(i) * 112.0
+				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, -12), Vector2(0.95, 0.9), 1)
+				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
+		"forja":
+			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-175, -82), Vector2(1.8, 1.8), 1)
+			_agregar_sprite_mueble(cuarto, "Yunque", MUEBLE_YUNQUE, Vector2(65, -20), Vector2(1.3, 1.3), 1)
+			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA_DOCUMENTOS, Vector2(105, 92), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenForja", MUEBLE_ARMARIO, Vector2(-190, 95), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MaterialesForja", MUEBLE_COFRE, Vector2(195, 95), Vector2(0.85, 0.85), 1)
+		"archivo":
+			_agregar_sprite_mueble(cuarto, "EstanteArchivoOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteArchivoCentro", MUEBLE_ARMARIO, Vector2(-95, -105), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteArchivoEste", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA_DOCUMENTOS, Vector2(45, 38), Vector2(1.5, 1), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoConsulta", MUEBLE_SILLA_FRENTE, Vector2(45, 88), Vector2.ONE, 1)
+		"consejo":
+			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.0, 1.25), 1)
+			for i in range(6):
+				var x := -180.0 + float(i % 3) * 180.0
+				var y := -95.0 if i < 3 else 85.0
 				_agregar_sprite_mueble(cuarto, "SillaConsejo%d" % i, MUEBLE_SILLA_DERECHA, Vector2(x, y), Vector2.ONE, 1, x > 0.0)
+			_agregar_sprite_mueble(cuarto, "ArmarioConsejo", MUEBLE_ARMARIO, Vector2(205, -120), Vector2(0.85, 0.85), 1)
 		"oris":
-			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 25), Vector2(1.8, 1.3), 1)
-			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA_PLATOS, Vector2(-130, -65), Vector2(1.0, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA_FRENTE, Vector2(0, 85), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioOrisOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioOrisEste", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA_PLATOS, Vector2(-105, 5), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA_DOCUMENTOS, Vector2(65, 28), Vector2(1.5, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA_FRENTE, Vector2(65, 82), Vector2.ONE, 1)
 		"laboratorio":
-			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-185, -105), Vector2(1.35, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA_DERECHA, Vector2(-225, -55), Vector2.ONE, 1)
-			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-185, -55))
-			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA_PLATOS, Vector2(-35, -105), Vector2(1.2, 1.05), 1)
-			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(-35, -55))
-			_agregar_sprite_mueble(cuarto, "HornoTratamiento", MUEBLE_HORNO, Vector2(145, -105), Vector2(1.35, 1.35), 1)
-			_agregar_estacion_laboratorio(cuarto, "termica", "Aplicar tratamiento térmico", Vector2(145, -48))
-			_agregar_sprite_mueble(cuarto, "MesaObservacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-125, 75), Vector2(1.25, 1.05), 1)
-			_agregar_estacion_laboratorio(cuarto, "observacion", "Observar estructuras", Vector2(-125, 120))
-			_agregar_sprite_mueble(cuarto, "MesaEterium", MUEBLE_MESA_PLATOS, Vector2(65, 75), Vector2(1.25, 1.05), 1)
-			_agregar_estacion_laboratorio(cuarto, "eterium", "Estudiar Eterium", Vector2(65, 120))
-			_agregar_sprite_mueble(cuarto, "AlmacenMuestras", MUEBLE_COFRE, Vector2(220, 85), Vector2(0.9, 0.9), 1)
+			# Tres estaciones de trabajo agrupadas en la pared norte.
+			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-165, -105), Vector2(1.2, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA_DERECHA, Vector2(-205, -55), Vector2.ONE, 1)
+			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-165, -55))
+			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA_PLATOS, Vector2(0, -105), Vector2(1.1, 1.0), 1)
+			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(0, -55))
+			_agregar_sprite_mueble(cuarto, "HornoTratamiento", MUEBLE_HORNO, Vector2(165, -105), Vector2(1.25, 1.25), 1)
+			_agregar_estacion_laboratorio(cuarto, "termica", "Aplicar tratamiento térmico", Vector2(165, -48))
+			_agregar_sprite_mueble(cuarto, "MesaObservacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 70), Vector2(1.15, 1.0), 1)
+			_agregar_estacion_laboratorio(cuarto, "observacion", "Observar estructuras", Vector2(-105, 112))
+			_agregar_sprite_mueble(cuarto, "MesaEterium", MUEBLE_MESA_PLATOS, Vector2(75, 70), Vector2(1.15, 1.0), 1)
+			_agregar_estacion_laboratorio(cuarto, "eterium", "Estudiar Eterium", Vector2(75, 112))
+			_agregar_sprite_mueble(cuarto, "AlmacenMuestras", MUEBLE_COFRE, Vector2(215, 78), Vector2(0.85, 0.85), 1)
 		"comercio", "registro", "almacen":
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -75), Vector2(2.2, 1), 1)
-			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 55), Vector2(1.5, 1), 2)
-			_agregar_sprite_mueble(cuarto, "SillaInventario", MUEBLE_SILLA_FRENTE, Vector2(0, 105), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(1.9, 1), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-190, -95), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteComercioEste", MUEBLE_ARMARIO, Vector2(190, -95), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 55), Vector2(1.35, 1), 2)
+			_agregar_sprite_mueble(cuarto, "SillaInventario", MUEBLE_SILLA_FRENTE, Vector2(0, 103), Vector2.ONE, 1)
 		"cuartel":
 			for i in range(4):
-				var posicion_litera := Vector2(-150 + (i % 2) * 300, -65 + int(i / 2) * 105)
-				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, posicion_litera, Vector2(0.85, 0.85), 1)
+				var posicion_litera := Vector2(-145 + (i % 2) * 290, -72 + int(i / 2) * 112)
+				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, posicion_litera, Vector2(0.82, 0.82), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCuartelOeste", MUEBLE_ARMARIO, Vector2(-205, -118), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCuartelEste", MUEBLE_ARMARIO, Vector2(205, -118), Vector2(0.85, 0.85), 1)
 		"taller", "carpinteria":
-			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 15), Vector2(1.8, 1.2), 1)
-			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(145, 65), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "AsientoTrabajo", MUEBLE_ASIENTO, Vector2(0, 70), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA_DOCUMENTOS, Vector2(-25, 5), Vector2(1.6, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(180, 72), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioHerramientas", MUEBLE_ARMARIO, Vector2(-190, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioMateriales", MUEBLE_ARMARIO, Vector2(190, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoTrabajo", MUEBLE_ASIENTO, Vector2(-25, 65), Vector2.ONE, 1)
 		"granero", "molino", "semillas":
-			_agregar_sprite_mueble(cuarto, "MesaPesaje", MUEBLE_MESA, Vector2(0, 55), Vector2(1.6, 1), 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenOeste", MUEBLE_ARMARIO, Vector2(-190, -100), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenEste", MUEBLE_ARMARIO, Vector2(190, -100), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "MesaPesaje", MUEBLE_MESA, Vector2(0, 45), Vector2(1.5, 1), 1)
+			_agregar_sprite_mueble(cuarto, "SacoAlmacen", MUEBLE_COFRE, Vector2(-145, 88), Vector2(0.85, 0.85), 1)
+		"corrales":
+			_agregar_sprite_mueble(cuarto, "AlmacenForraje", MUEBLE_COFRE, Vector2(-175, -90), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaPreparacion", MUEBLE_MESA, Vector2(100, 65), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCorrales", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(0.85, 0.85), 1)
 		"alfareria":
 			_agregar_sprite_mueble(cuarto, "HornoCeramica", MUEBLE_HORNO, Vector2(-130, -65), Vector2(1.8, 1.8), 1)
+			_agregar_sprite_mueble(cuarto, "MesaCeramica", MUEBLE_MESA, Vector2(65, 50), Vector2(1.3, 1), 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenCeramica", MUEBLE_ARMARIO, Vector2(190, -100), Vector2(0.9, 0.9), 1)
 		"vivienda":
-			var posicion_cama := Vector2(-145, -55)
-			_agregar_sprite_mueble(cuarto, "Cama", MUEBLE_CAMA, posicion_cama, Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Mesa", MUEBLE_MESA_PLATOS, Vector2(75, 20), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Silla", MUEBLE_SILLA_FRENTE, Vector2(75, 65), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(145, -75), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 70), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Cama", MUEBLE_CAMA, Vector2(-145, -55), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Armario", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "Mesa", MUEBLE_MESA_PLATOS, Vector2(65, 20), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Silla", MUEBLE_SILLA_FRENTE, Vector2(65, 65), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(165, -75), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 78), Vector2(0.9, 0.9), 1)
 
 
 func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1, flip_h: bool = false) -> void:
