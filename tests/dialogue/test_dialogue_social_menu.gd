@@ -91,6 +91,21 @@ func _run() -> void:
 		if escena_ivo_texto.contains("todos cambiaran sus planes por mí") or escena_ivo_texto.contains("la comida no se va a marchar"):
 			errores.append("La escena de Ivo y Elian conserva una respuesta demasiado escrita para la situación.")
 
+	# Las cadenas con etapas son historia; reuniones y sucesos diarios
+	# siguen siendo opcionales y pueden volver a aparecer.
+	var historia_principal: Dictionary = NPCConversationSystemScript.CONVERSACIONES[0]
+	var historia_local: Dictionary = NPCConversationSystemScript.CONVERSACIONES_HABITANTES[0]
+	var charla_reunion: Dictionary = NPCConversationSystemScript.CONVERSACIONES_REUNION_CASTILLO[0]
+	var acontecimiento: Dictionary = NPCConversationSystemScript.ACONTECIMIENTOS_DIARIOS[0]
+	if not NPCConversationSystemScript.es_conversacion_historia(historia_principal):
+		errores.append("Las cadenas principales deben clasificarse como historia.")
+	if not NPCConversationSystemScript.es_conversacion_historia(historia_local):
+		errores.append("Las historias locales de habitantes deben clasificarse como historia.")
+	if not NPCConversationSystemScript.es_conversacion_opcional(charla_reunion):
+		errores.append("Las reuniones ambientales deben ser opcionales.")
+	if not NPCConversationSystemScript.es_conversacion_opcional(acontecimiento):
+		errores.append("Los acontecimientos diarios deben ser opcionales.")
+
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
 	if npc == null or dialogo == null:
