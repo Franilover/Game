@@ -4,19 +4,10 @@ extends CanvasLayer
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
-const PROCEDIMIENTOS_POR_ESTACION: Dictionary = {
-	"examen": ["Analizar objeto"]
-}
-
-const TITULOS_ESTACION: Dictionary = {
-	"examen": "ANÁLISIS DE OBJETOS"
-}
-
 @onready var _panel: PanelContainer = $Panel
 @onready var _titulo: Label = $Panel/Margin/Column/Header/Title
 @onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
 @onready var _items_columna: VBoxContainer = $Panel/Margin/Column/Body/ItemsColumn/ItemScroll/ItemsList
-@onready var _procedimiento: OptionButton = $Panel/Margin/Column/Body/ProcedureColumn/Procedure
 @onready var _resultado_label: Label = $Panel/Margin/Column/Body/ProcedureColumn/Result
 @onready var _boton_ejecutar: Button = $Panel/Margin/Column/Body/ProcedureColumn/Run
 
@@ -36,16 +27,12 @@ func _ready() -> void:
 
 func configurar(inventario: InventoryController, estacion_id: String) -> void:
 	_inventario = inventario
-	_estacion_id = estacion_id if PROCEDIMIENTOS_POR_ESTACION.has(estacion_id) else "examen"
+	_estacion_id = "examen"
 	_crear_interfaz()
 
 
 func _crear_interfaz() -> void:
 	_titulo.text = str(TITULOS_ESTACION.get(_estacion_id, "LABORATORIO"))
-	_procedimiento.clear()
-	for nombre_procedimiento in PROCEDIMIENTOS_POR_ESTACION[_estacion_id]:
-		_procedimiento.add_item(str(nombre_procedimiento))
-	_procedimiento.select(0)
 	_resultado_label.text = ""
 	_cargar_objetos()
 	_aplicar_estilo_laboratorio()
@@ -134,7 +121,6 @@ func _ejecutar_prueba() -> void:
 		_resultado_label.text = "Selecciona un objeto."
 		return
 
-	var procedimiento := _procedimiento.get_item_text(_procedimiento.selected).strip_edges()
 	var objeto := _inventario.obtener_item(_indice_seleccionado)
 	if objeto.is_empty():
 		_resultado_label.text = "El inventario cambió. Vuelve a seleccionar el objeto."
@@ -142,11 +128,10 @@ func _ejecutar_prueba() -> void:
 		return
 
 	var nombre := str(objeto.get("nombre", "Objeto"))
-	_resultado_label.text = _describir_resultado_preliminar(procedimiento, objeto, nombre)
+	_resultado_label.text = _describir_analisis(objeto, nombre)
 
 
-func _describir_resultado_preliminar(procedimiento: String, objeto: Dictionary, nombre: String) -> String:
-	if procedimiento == "Analizar objeto":
+func _describir_analisis(objeto: Dictionary, nombre: String) -> String:
 		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
 		var categoria := _obtener_categoria(objeto)
 		if categoria.is_empty() and descripcion.is_empty():
@@ -159,7 +144,6 @@ func _describir_resultado_preliminar(procedimiento: String, objeto: Dictionary, 
 		resultado += " La observación no modifica el objeto."
 		return resultado
 
-	return "La prueba con %s ha terminado. Todavía no hay una reacción definida para este procedimiento. El objeto se conservó intacto." % nombre
 
 
 func _obtener_categoria(objeto: Dictionary) -> String:
