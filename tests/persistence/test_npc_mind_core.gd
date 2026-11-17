@@ -321,9 +321,6 @@ func _run() -> void:
 		errores.append("Un NPC reservado ignoró recuerdos negativos repetidos al evaluar un encuentro.")
 	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido, true, "narel"):
 		errores.append("Un motivo concreto no permitió resolver una situación con alguien que generó desconfianza.")
-	var influencia_recuerdo_antiguo := schedule._calcular_influencia_recuerdos_sociales(
-		"mara", "bruna", "2026:11:16"
-	)
 	relationship.registrar_recuerdo("mara", {
 		"tipo": "experiencia_npc",
 		"evento": "ayuda_antigua",
@@ -332,8 +329,19 @@ func _run() -> void:
 		"importancia": 3.0,
 		"momento": "2026:10:01"
 	})
-	var influencia_recuerdo_reciente := schedule._calcular_influencia_recuerdos_sociales(
+	var influencia_recuerdo_antiguo := schedule._calcular_influencia_recuerdos_sociales(
 		"mara", "bruna", "2026:11:16"
+	)
+	relationship.registrar_recuerdo("ivo", {
+		"tipo": "experiencia_npc",
+		"evento": "ayuda_reciente",
+		"con_personaje": "bruna",
+		"resultado": 1.0,
+		"importancia": 3.0,
+		"momento": "2026:11:16"
+	})
+	var influencia_recuerdo_reciente := schedule._calcular_influencia_recuerdos_sociales(
+		"ivo", "bruna", "2026:11:16"
 	)
 	if influencia_recuerdo_reciente <= influencia_recuerdo_antiguo:
 		errores.append("Un recuerdo antiguo conservó la misma influencia que uno reciente.")
