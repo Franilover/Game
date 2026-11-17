@@ -1,10 +1,10 @@
 # Garlia — Registro persistente de auditoría
 
-**Última actualización:** 2026-11-06  
+**Última actualización:** 2026-11-16  
 **Repositorio:** `Franilover/Game`  
-**Rama auditada:** `refactor/p1-player-locomotion`  
-**Commit validado por CI:** `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`  
-**Pull request de terreno:** [#3](https://github.com/Franilover/Game/pull/3)  
+**Rama auditada:** `fix/p0-godot47-crafting-token-type`  
+**Commit validado por CI:** `1ceaad725f31e47cbd6446e502463c9eb422fc2b`  
+**Pull request de correcciones:** [#12](https://github.com/Franilover/Game/pull/12)  
 **Método:** inspección estática del código actual y CI completo Godot 4.7. No equivale a una prueba visual ni a una validación manual de gameplay.
 
 ## Para continuar en otra sesión
@@ -18,12 +18,13 @@
 
 ## Resumen ejecutivo
 
-- El CI completo Godot 4.7 del commit `820d1b3` terminó en **success** (run `42213469008`).
-- Los hallazgos `INV-01`, `ITEM-03` y `SAVE-01` quedaron corregidos y verificados mediante contratos automatizados.
-- La recogida parcial ahora es atómica; soltar objetos solo retira el objeto tras registrar el WorldItem; el guardado usa temporal, validación y respaldo recuperable.
-- El contrato de estado/progreso de misiones también pasa CI. La aplicación/reclamación efectiva de recompensas sigue pendiente de confirmar su esquema canónico.
-- Los hallazgos restantes de esta tabla provienen de una auditoría anterior y deben revalidarse contra esta rama antes de tratarlos como defectos vigentes.
-- No se modificó Supabase ni se integró la rama en `main`.
+- El CI Godot 4.7 del commit `1ceaad7` terminó en **success** (run `43924866198`, 40 pasos completados).
+- `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01`, `MISS-01`, `DIA-01`, `MOBILE-01` y `NPC-01` tienen contratos automatizados aprobados en la rama actual. `SPECIES-01` tiene prueba de reintento aprobada y queda pendiente validar el endpoint en ejecución real. `AUTH-02` ya vuelve a solicitar catálogos al restaurar/iniciar sesión; el contrato de disparadores pasó CI.
+- La entrega de recompensas ahora resuelve `item_id` mediante el catálogo canónico `GarliaWorldItems`, aplica rollback atómico y evita reintentos recursivos por `inventory_changed`.
+- El catálogo real de Supabase se consultó solo en lectura: la misión activa «Conocer a Abel» recompensa una Espada de Madera mediante UUID; no se modificaron tablas, funciones, políticas ni datos.
+- La corrección de compilación Godot 4.7, encabezados de Auth, Garudex, locomoción, continuidad del menú social, diálogos móviles y entradas NPC también pasan la batería actual.
+- Las pruebas son headless/contractuales; todavía falta validar una partida visual en Android/PC y el flujo offline completo.
+- No se modificó Supabase ni se integró la rama en `main`. 
 
 ## Registro de hallazgos
 
@@ -35,10 +36,13 @@ Estados permitidos: **Abierto**, **En verificación**, **Corregido pendiente de 
 | ITEM-01 | Alta | Drops | La auditoría anterior describía pérdida de solicitudes; el código actual `_reintentar_drop_actual()` reencola la solicitud tras fallos y la conserva al agotar los reintentos. No se encontró un contrato que cubra timeout, HTTP no-2xx, JSON inválido o duplicación tras reintento. | En verificación | Añadir pruebas de fallo al iniciar request, desconexión/timeout, HTTP no-2xx y JSON inválido; verificar reintentos limitados, recuperación y ausencia de drops duplicados. |
 | ITEM-03 | Alta | Soltar objetos desde inventario | `InventoryController.soltar_objeto_al_mundo()` obtiene el objeto actual desde runtime y solo lo descuenta después de que `GarliaWorldItems` confirma el registro. La UI entrega índice/posición, no una copia antigua del arrastre. | Resuelto verificado | `InventoryDropContract: PASS` en CI Godot 4.7 run `42213469008`; prueba de infraestructura ausente conserva ID y cantidad. |
 | ITEM-02 | Media | Catálogo de objetos | La generación inicial depende de `catalogo`; no se encontró un fallback local equivalente. Algunos fallos HTTP terminan en `carga_fallida` sin reintento. | Abierto | Arranque offline y reconexión; definir catálogo local versionado/snapshot sin duplicar la autoridad canónica. |
-| AUTH-01 | Alta | Supabase Auth | `GarliaSupabaseClient._crear_headers()` no incorpora el JWT de usuario como `Authorization: Bearer <user JWT>`; `GarliaAuth` usa la clave publicable como Bearer en el flujo inspeccionado. | En verificación | Revisar encabezados en todas las rutas, sesiones reales y políticas RLS. No asumir que todas las tablas fallan sin inspeccionar sus permisos. |
-| AUTH-02 | Alta | Restauración de sesión | Las cargas iniciales diferidas de catálogos pueden terminar si todavía no hay sesión restaurada. No se encontró una conexión clara que repita todas esas cargas al finalizar la restauración. | En verificación | Trazar `session_restore_finished`, cargas iniciales y reintentos por dominio. Probar inicio en frío con sesión persistida. |
-| SAVE-01 | Alta | Persistencia | `SaveFileRepository` escribe en temporal, valida JSON, conserva respaldo durante el reemplazo y recupera el último save válido. La escritura se verifica por bytes UTF-8, no por `get_error()` al final del cursor. | Resuelto verificado | `SaveFileRepositoryContract: PASS` en CI Godot 4.7 run `42213469008`; cubre sobrescritura, corrupción, recuperación, bloqueo de destino y limpieza. |
-| WORLD-01 | Alta | Snapshot offline | `WorldDataService._mundo_valido()` acepta un diccionario solo por contener `biomas` como arreglo. Un snapshot incompleto puede desplazar uno válido. | Abierto | Probar JSON mínimo, tipos incorrectos, campos obligatorios ausentes y compatibilidad de versiones. |
+| SPECIES-01 | Alta | Catálogo de especies | Supabase contiene tres especies activas (`Feerin`, `Humano`, `Necromancer`) y la tabla tiene SELECT para `anon`/`authenticated` con política pública limitada a `activo = true`. El cliente cachea y reemite el catálogo; antes detenía la recuperación tras tres respuestas vacías, sin comprobar de nuevo hasta que otra escena llamara la carga. Ahora emite el estado vacío y programa reintentos de recuperación cada 30 s tras los intentos rápidos. | Corregido pendiente de prueba | `SpeciesCatalogRetry: PASS` en CI Godot 4.7 run `43923629275`; falta confirmar la solicitud REST real y el selector dentro del flujo de creación en Android/PC. |\n| AUTH-01 | Alta | Supabase Auth | Login y renovación en `GarliaAuth` ya envían la clave publicable solo en `apikey`; Crafteo agrega `Authorization` únicamente si existe un JWT real. Otras rutas de `SupabaseClient` siguen usando clave publicable sin Bearer y requieren cotejo individual con RLS. | En verificación | Probar restauración/refresh y revisar permisos de cada endpoint protegido antes de introducir JWT genérico. |
+| AUTH-02 | Alta | Restauración de sesión | Las cargas que requieren sesión podían salir antes de que terminara el refresh token y no repetirse después; iniciar sesión manualmente tampoco reactivaba todos los catálogos. `GarliaSupabaseClient` ahora escucha `session_restored` y `login_succeeded`, y vuelve a solicitar Eterium runtime, reglas de especie, reglas sociales, regalos, relaciones ecológicas y reinos; evita duplicar solicitudes HTTP en curso. | Corregido pendiente de prueba | `AuthenticatedCatalogReload: PASS` en CI Godot 4.7 run `43924866198`; falta comprobar refresh real con sesión persistida y endpoints en ejecución integrada. |
+| SAVE-01 | Alta | Persistencia | `SaveFileRepository` escribe en temporal, valida JSON, conserva respaldo durante el reemplazo y recupera el último save válido. `GameStateRoundtrip` verifica ida/vuelta de salud, Eterium, stamina, posición/tile/orientación, inventario, interior/zona, proceso IUM, tiempo ambiental y estado/progreso/reclamación de misiones. | Resuelto verificado | `SaveFileRepositoryContract: PASS` y `GameStateRoundtrip: PASS` en CI Godot 4.7 run `43924866198`. Sigue pendiente una prueba visual de partida completa con cierre y reanudación. |
+| DIA-01 | Alta | Continuidad de diálogo | Tras cerrar el selector social o responder un tema cotidiano, el menú principal podía no reconstruir sus botones. `DialogueSystem` vuelve a establecer `Preguntar`, `Hablar`, `Dar cumplido` y `Despedirse`; el contrato ejecuta cierre de selector y respuesta casual. | Resuelto verificado | `DialogueSocialMenu: PASS` en CI Godot 4.7 run `43921504449`. |
+| MOBILE-01 | Alta | Entrada táctil | El joystick podía capturar toques sobre el diálogo en zonas superpuestas. Ahora ignora y libera movimiento mientras hay diálogo abierto; el layout del panel y selectores se adapta al viewport. | Resuelto verificado | `MobileControlsDialogueTouch` y `DialogueMobileLayout: PASS` en CI Godot 4.7 run `43921504449`. |
+| NPC-01 | Alta | Entradas a edificios | Los NPC marcados como dentro del edificio se ocultan en el exterior, pero el cuerpo físico podía conservar `collision_layer` y `collision_mask`; el nodo invisible bloqueaba el umbral y otros NPC no podían entrar. Se añade captura/restauración de capas y máscaras, y recuperación de las formas de colisión al reparentar al interior. | Resuelto verificado | `NPCBuildingEntryCollision: PASS` en CI Godot 4.7 run `43920496439`; cubre colisión exterior desactivada, restauración de capas/máscaras y reactivación de formas originales. |
+| WORLD-01 | Alta | Snapshot offline | `WorldDataService` y `GarliaSupabaseClient` delegan la validación del snapshot a `WorldSnapshotValidator`; el contrato verifica estructura jerárquica, campos obligatorios, tipos incorrectos y el JSON incluido en el proyecto. | Resuelto verificado | `WorldSnapshotValidatorContract: PASS` en CI Godot 4.7 run `43916861872`. La recuperación offline end-to-end sigue cubierta por `START-01`. |
 | START-01 | Alta | Inicio de partida | La ruta de inicio a Reino Torres reintenta mientras `reinos_game` esté vacío; no se observó un fallback local equivalente en esa espera. | En verificación | Inicio de jugador nuevo completamente offline y reconexión posterior. |
 | WORLD-02 | Media | Mutabilidad del estado | Algunos getters de `WorldData` parecen devolver referencias internas en vez de copias profundas. | En verificación | Buscar todos los consumidores y comprobar si alguno muta los diccionarios/arreglos recibidos. |
 | STREAM-01 | Media | LOD de entidades | `DATA_RADIUS=3` supera `VISIBLE_RADIUS=2`; el precálculo de entidades consulta contexto de terreno basado en chunks cargados. Los chunks de solo datos pueden no tener contexto y producir listas vacías antes del fallback runtime. | En verificación | Registrar un chunk exterior a radio visible: contexto disponible, resultado de precálculo y resultado al entrar en radio visible. |
@@ -46,11 +50,11 @@ Estados permitidos: **Abierto**, **En verificación**, **Corregido pendiente de 
 | TERR-01 | Alta | Renderizado del terreno | La composición por `z_index` se deriva del identificador numérico de zona, no de una regla explícita de prioridad de bordes. Es una causa posible de solapamiento, no una causa raíz demostrada. | En verificación | Capturas reproducibles con combinaciones Pradera/Tierra, inspección de orden de dibujo y comparación de imagen esperada. |
 | TERR-02 | Alta por verificar | Atlas/renderizado | En `world_terrain_visual.gd`, `_crear_base_tile()` asigna `atlas.texture_region_size = Vector2i(tile_size, tile_size)` y crea tiles de atlas por coordenadas `TILE_SEQUENCE`; el comentario dice que la máscara alfa se normaliza antes de registrar el atlas, pero en la función no aparece ninguna operación de normalización/recorte alfa. El atlas sí segmenta la textura en regiones de tamaño `tile_size`. Esto es una pista concreta si el arte de borde debe sobresalir de la celda, pero todavía no demuestra que sea la causa visible: hay que contrastar el PNG original, la región de atlas y el resultado renderizado. Además, las capas se ordenan con `z_index = -4095 + zone`, por lo que una zona con ID mayor se dibuja encima de una menor cuando sus píxeles son opacos. | En verificación | Comparar PNG original y regiones 32×32 del atlas; probar un borde con píxeles fuera del límite de celda; registrar coordenadas/capa/z-index y captura. No cambiar código hasta que una prueba mínima discrimine recorte de atlas frente a oclusión por orden de capas. |
 | PERF-01 | Media | Presupuesto de frames | El presupuesto adaptativo observa parte del trabajo de datos, pero el coste agregado de preparación, pintura y TileMapDual puede superar el objetivo por frame. | En verificación | Perfilar por fase en resolución fija y hardware objetivo; no optimizar sin medir. |
-| TEST-01 | Media | CI | Las pruebas cubren invariantes de terreno/TileMapDual, pero no se encontró una suite equivalente para inventario, persistencia, Auth y offline end-to-end. | Abierto | Añadir pruebas deterministas para los contratos descritos, sin depender de servicios remotos reales. |
+| TEST-01 | Media | CI | CI cubre inventario, persistencia, misiones/recompensas, locomoción, combate, IA, Garumis, clima, snapshot, terreno, toque de diálogo, continuidad del menú social, multitáctil, layout móvil y colisión de entrada NPC. Auth, modo offline end-to-end, cierre/reanudación de partida real y validación física de pantalla siguen sin cobertura integral. | En verificación | Añadir pruebas de sesión/restauración y una partida completa sin servicios remotos; complementar con pruebas manuales visuales en Android/PC. |
 | TEST-02 | Baja | CI | El workflow `.github/workflows/procedural-world-tests.yml` no parece incluir `scripts/world/world_generator.gd` en sus filtros de rutas, aunque puede afectar inicialización del renderizador. | Abierto | Revisar `paths`/ `paths-ignore` y confirmar con cambios aislados de ese archivo. |
 | DOC-01 | Baja | Documentación | Hay comentarios en `world_terrain_visual.gd` que parecen describir una capa compartida o un orden que no coincide con la implementación por capas/z-index actual. | Abierto | Contrastar cada comentario con el código y corregirlos cuando se autorice la fase de cambios. |
-| INV-03 | Baja/Media | Carga de inventario | `cargar_estado_partida()` acepta el arreglo guardado completo y `_normalizar_capacidades_runtime()` solo amplía `items` si es menor que `slot_count`; no recorta si el guardado trae más slots que la UI actual. Como `_crear_slots()` crea exactamente `slot_count` controles, los objetos en índices superiores pueden quedar invisibles en la cuadrícula aunque sigan en el estado y puedan referenciarse desde una hotbar persistida. | En verificación | Cargar un save con más elementos que `slot_count`; decidir si se migra, se preserva con UI ampliada o se valida explícitamente sin perder objetos. |\n| INV-02 | Media | Identidad del objeto al equipar | `Inventory._buscar_indice_objeto()` intenta primero por ID, pero si no encuentra coincidencia cae al nombre incluso cuando el objeto solicitado sí tiene ID. Si existen dos objetos con el mismo nombre y distinto ID, puede seleccionar otra entrada; `equipar_desde_inventario()` reemplaza esa entrada por el equipo anterior mientras equipa la copia recibida. Riesgo de pérdida/duplicación o de equipar el objeto equivocado. | Abierto | Probar dos items con igual nombre y distinto ID, incluyendo un ID no presente en inventario; comparar inventario y equipo antes/después. Preferir coincidencia estricta por ID cuando exista. |
-| MISS-01 | Alta | Recompensas/ciclo de misiones | `WorldDataService` carga `misiones_game` y entrega copias profundas; `MissionManagerService` las usa para aceptar misiones y acumular progreso. Al completar, cambia directamente el estado a `completada`, copia `mision.recompensas` y emite `recompensa_disponible`. En la rama auditada, no aparece ningún consumidor de esa señal ni una función de reclamar/aplicar recompensas; la búsqueda de `recompensas` en código encuentra la declaración/emisión y la extracción de datos en `MissionManager`. `HUD` conecta `mision_completada` solo para refrescar la lista y no presenta recompensas ni acción de reclamación. `GameState` serializa/restaura solo `estado` y `progreso`; no existe estado separado de recompensa pendiente/reclamada en el contrato inspeccionado. La finalización sí dispara guardado rápido mediante `mision_completada`, por lo que el estado `completada` puede persistir aunque la recompensa no se aplique. Evidencia estática fuerte de un flujo de recompensa incompleto; no es aún confirmación de runtime. | En verificación | Prueba funcional con misión que otorgue un objeto: registrar inventario antes/después de completar, cerrar/recargar y comprobar estado y duplicación/pérdida. Antes de corregir, revisar definiciones reales de `recompensas` en datos locales/remotos y descartar consumidores indirectos fuera de las referencias localizadas. |
+| INV-03 | Baja/Media | Carga de inventario | `cargar_estado_partida()` acepta el arreglo guardado completo y `_normalizar_capacidades_runtime()` solo amplía `items` si es menor que `slot_count`; no recorta si el guardado trae más slots que la UI actual. Como `_crear_slots()` crea exactamente `slot_count` controles, los objetos en índices superiores pueden quedar invisibles en la cuadrícula aunque sigan en el estado y puedan referenciarse desde una hotbar persistida. | En verificación | Cargar un save con más elementos que `slot_count`; decidir si se migra, se preserva con UI ampliada o se valida explícitamente sin perder objetos. |\n| INV-02 | Media | Identidad del objeto al equipar | El código actual busca por ID cuando el objeto solicitado tiene ID; solo permite fallback por nombre si tanto el objeto solicitado como el slot carecen de ID. El hallazgo antiguo no coincide con la implementación actual. | No reproducido | Añadir un contrato con nombres iguales e IDs distintos para conservar evidencia automatizada. |
+| MISS-01 | Alta | Recompensas/ciclo de misiones | `Main` consume `recompensa_disponible`; `MissionManager` guarda `recompensas_reclamadas`, aplica recompensas de forma idempotente y revierte entregas parciales. Se añadió bloqueo durante la transacción para que el `inventory_changed` emitido por rollback no genere un bucle de reintentos. Las recompensas canónicas que solo contienen `item_id` se resuelven contra `GarliaWorldItems`; al cargar el catálogo se reintentan las recompensas pendientes. La lectura de Supabase confirmó que «Conocer a Abel» entrega una Espada de Madera por UUID con `datos` vacío. | Resuelto verificado | `MissionRewardDelivery: PASS` y `MissionManagerContract: PASS` en CI Godot 4.7 run `43916861872`; cubre rollback con inventario lleno, reintento, resolución por UUID e idempotencia. La prueba de continuidad de una partida guardada tras entrega queda en la siguiente fase. |
 | SOCIAL-01 | Media | Relaciones sociales | `RelationshipSystem` carga reglas y regalos desde `SocialRepository`; no se encontró fallback local. Si las reglas no cargan, `obtener_relacion()` puede devolver `{}` y `registrar_dialogo()` no modifica la relación. `SocialRepository` emite error y descarta la respuesta fallida sin reintento visible. | Abierto | Probar reglas/regalos con red ausente y restauración de conexión; definir caché local si se requiere gameplay social offline. |
 | CONFIG-01 | Baja | Configuración/perfilado | `project.godot` usa viewport base 960×540 y overrides de ventana 1920×1080; métricas anteriores tomadas con otra resolución no son comparables directamente. | Abierto | Fijar perfil de prueba, renderer, resolución y equipo antes de comparar rendimiento. |
 
@@ -115,13 +119,110 @@ La auditoría anterior observó que:
 - Las afirmaciones sobre RLS dependen de las políticas y grants reales de Supabase, que no se modificaron en esta fase.
 
 
-## Actualización de rama — 2026-11-06
+## Actualización de rama — 2026-11-16
 
-Esta sección sustituye los estados históricos solo para los hallazgos que se han vuelto a verificar. No se deben asumir resueltos los demás registros sin reproducirlos contra `refactor/p1-player-locomotion`.
+Esta sección sustituye los estados históricos para los hallazgos revalidados en `fix/p0-godot47-crafting-token-type`.
 
-- CI completo Godot 4.7: `success`, run `42213469008`, commit `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`.
-- `INV-01`, `ITEM-03` y `SAVE-01`: **Resuelto verificado**.
-- Contratos de estado/progreso de misiones y de soltado de inventario: **PASS**.
-- Aplicación de recompensas, recuperación ante interrupción real de proceso, autenticación/RLS, offline y renderizado visual siguen en el backlog.
-- La rama permanece aislada; `main` no se modificó y Supabase no se tocó.
+- CI completo Godot 4.7: `success`, run `43924866198`, commit `1ceaad725f31e47cbd6446e502463c9eb422fc2b`; 40 pasos, sin fallos.
+- `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01` y `MISS-01`: **Resuelto verificado**.
+- Las recompensas de misiones resuelven UUIDs desde el catálogo canónico; rollback y reintentos no generan ciclos recursivos.
+- Auth/RLS por endpoint, refresh real de sesión, offline end-to-end, continuidad de guardado de una partida completa, solicitud REST real del catálogo de especies y pruebas visuales Android/PC siguen en el backlog.
+- PR #12 sigue en borrador. `main` no se modificó; Supabase se consultó solo en lectura y no recibió cambios.
 
+
+## Actualización de diálogo — 2026-11-16
+
+- `DialogueSystem` aplica un ritmo de revelado más lento cuando la actividad capturada del NPC indica desplazamiento; los diálogos explícitos de tránsito conservan la última línea 2,5 s antes del cierre automático.
+- Las despedidas y la frase del jugador se adaptan a caminar frente a trabajo, evitando tratar un paseo como una obligación laboral.
+- `DialogueSocialMenu` comprueba ritmo pausado y despedidas de tránsito/trabajo. CI Godot 4.7: run `43929922701` (#1654), 40 pasos completados sin fallos.
+- Pendiente: prueba visual en partida real y revisión de las frases que llegan desde datos externos; CI headless no demuestra legibilidad física en Android.
+
+
+
+## Actualización de diálogo — 2026-11-16 (contexto interior y voces)
+
+- Los NPC que caminan dentro de un edificio ya no anuncian el destino exterior de su siguiente tramo. Los saludos y despedidas describen el movimiento local y usan el contexto `dentro_edificio`.
+- Las despedidas distinguen también si el personaje está caminando, trabajando o simplemente conversando; caminar no se presenta como una tarea que impide hablar.
+- `NPCVoiceProfile` deja de aplicar normalizaciones generales que empujaban a todos los habitantes al mismo registro. Conserva ajustes puntuales por personaje.
+- El fallback social incorpora respuestas diferenciadas para Mara, Ivo y Nima en planes, aficiones, preocupaciones, consejos, estado de ánimo y reacciones de rutina.
+- Se reescribieron conversaciones ambientales de Mara/Ivo, Nima/Ivo y Saira/Ivo para que la confianza, el humor, los límites y el interés se expresen mediante sus intercambios, sin convertir cada línea en una explicación de trasfondo.
+- Los planes cotidianos ya no concatenan claves internas de horario como texto visible.
+- `DialogueSocialMenu` comprueba perfiles de voz y reacciones diferenciadas; CI Godot 4.7: run `43932011916`, **40 pasos completados sin fallos**.
+- La validación es headless. Falta revisar la lectura y naturalidad en una partida real, especialmente en Android.
+- No se modificaron filas de `dialogos_game`, tablas, RPC ni políticas de Supabase; los cambios de contenido se limitaron a diálogos locales/fallback y conversaciones ambientales del código.
+
+
+
+## NPC Mind — núcleo de estado interno y aprendizaje (2026-11-16)
+
+- Se incorporó `NPCMindService` como autoload `NPCMind`, separado de diálogo, navegación y animación.
+- Estado individual versionado por habitante: necesidades (descanso, socialización, diversión, seguridad, curiosidad y autonomía), rasgos normalizados, estado emocional inicial, preferencias aprendidas, objetivos y contador de decisiones.
+- Las necesidades evolucionan por horas de mundo mediante una función explícita; satisfacción reduce presión sin exceder el rango 0–100.
+- Evaluación de actividades combina presión de necesidades, afinidad de rasgos, preferencias aprendidas, prioridad, coste y riesgo. El servicio puntúa y selecciona; todavía no ejecuta acciones ni sustituye el horario.
+- Aprendizaje incremental de resultados de actividad usa media acumulada y confianza progresiva para que una sola experiencia no se convierta en preferencia absoluta.
+- Los objetivos individuales se pueden establecer, completar y abandonar, con límite de cinco objetivos activos/registrados por personaje.
+- `GameStateService` persiste el bloque `npc_mentes` dentro del guardado local de la partida. No se creó almacenamiento remoto ni se modificó Supabase.
+- Los perfiles sociales existentes en escala 0–100 se normalizan a 0–1 al incorporarlos al núcleo.
+- Prueba `tests/persistence/test_npc_mind_core.tscn`: necesidades, satisfacción, elección, aprendizaje positivo/negativo, objetivos, normalización y roundtrip desde GameState.
+- CI Godot 4.7: **41 pasos completados, 0 fallos**, run [#1677](https://github.com/Franilover/Game/actions/runs/43934161188).
+- Alcance deliberado: aún no se conecta la elección de actividades al movimiento/rutinas ni se simula tiempo fuera de pantalla. Esa integración se hará después de validar el núcleo.
+
+
+
+## NPC Mind — primera conexión con comportamiento en mundo (2026-11-16)
+
+- `NPCScheduleSystem` consulta el servicio `NPCMind` durante la actualización de habitantes vivos en Torres.
+- El núcleo procesa intervalos de tiempo del calendario del mundo (en lotes de al menos cinco minutos de juego), aumenta necesidades y aplica alivio según la actividad que el NPC realiza.
+- El estado emocional (ánimo, estrés y energía) se recalcula desde las necesidades; no se usa para generar texto.
+- En los días libres y franjas de ocio de plaza, los habitantes con perfil definido evalúan tres alternativas propias. La utilidad considera necesidades, rasgos sociales, preferencias aprendidas, coste y prioridad.
+- La decisión queda fijada durante el tramo para evitar cambios de actividad cada tick.
+- Las decisiones pueden dirigir al NPC a lugares concretos (por ejemplo, Elian a la panadería, Bruna a la forja, Narel al archivo, Ivo a su vivienda y los miembros de la casa real al castillo); se reutiliza el sistema existente de navegación/entrada a edificios.
+- Al finalizar el tramo, el resultado observado en la necesidad principal se registra como experiencia positiva/negativa y modifica gradualmente las preferencias futuras.
+- La prueba de núcleo cubre procesamiento temporal, satisfacción, actualización emocional y que Ivo/Mara tengan conjuntos de actividades distintos.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1685](https://github.com/Franilover/Game/actions/runs/43935581554).
+- Alcance actual: la autonomía se aplica a alternativas de ocio de día libre, no reemplaza trabajo, guardias, investigaciones ni compromisos. La simulación offline y la iniciativa social basada en objetivos quedan para siguientes etapas.
+
+
+
+## Objetivos sociales autónomos de NPC (2026-11-16)
+
+- `NPCScheduleSystem` genera objetivos sociales a partir de la necesidad de socialización y los vínculos registrados: `buscar_compania` o `visitar_amigo`.
+- La elección de pareja considera amistad, afecto, confianza, colaboración, tensión y distancia; descarta habitantes muertos, ocupados, en tránsito, dentro de edificios o en conversaciones.
+- El objetivo queda registrado en `NPCMind` y persiste en el estado mental. La referencia de ejecución (NPC destino, espera y temporizador) vive en metadatos de la instancia y se reconstruye si la partida vuelve a cargar.
+- El NPC traza una ruta hacia un punto cercano a la otra persona, espera el encuentro y completa la interacción tras permanecer juntos. La interacción alivia socialización/diversión, actualiza aprendizaje y registra un recuerdo de relación.
+- Los objetivos sociales sólo interrumpen ocio de días libres, entre 09:00–20:00. No desplazan trabajo, guardias, horarios de edificios ni compromisos. Un objetivo se cancela si el compañero desaparece, entra en un edificio o inicia otra interacción; los compañeros en tránsito tienen una espera máxima.
+- Los objetivos completados/abandonados se reciclan para que el historial limitado no impida crear objetivos futuros.
+- Prueba NPC Mind: valida ciclo de objetivos repetidos y reciclaje del límite. CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1694](https://github.com/Franilover/Game/actions/runs/43936746181).
+- La conversación visible sigue utilizando líneas escritas y condiciones del sistema narrativo existente; no se genera texto automáticamente. El encuentro social puede servir de contexto para escenas ambientales ya definidas.
+
+
+
+## Memoria social y asuntos entre NPC (2026-11-16)
+
+- `RelationshipSystemService` ahora conserva asuntos pendientes y promesas entre habitantes dentro de `conversaciones_npc`, junto con el resto de relaciones y conocimientos. Los estados cerrados se mantienen en el historial y no vuelven a generarse desde el mismo recuerdo.
+- Una promesa se registra con emisor, destinatario y clave; puede incluir una clave de conocimiento que debe compartirse al cumplirla. Los recuerdos que contienen `promesa_para` y `clave_promesa` pueden materializar esa promesa una sola vez.
+- Los conocimientos marcados explícitamente con `requiere_ayuda` y `personaje_relacionado` generan asuntos que el NPC puede tratar con esa persona.
+- Los conocimientos con `compartible=true` o tipo `noticia`, `evento_publico` o `conocimiento_compartible` pueden transmitirse si el destinatario aún no los conoce. Se conserva la procedencia y cadena de transmisión.
+- Los encuentros sociales priorizan compromisos pendientes, asuntos de ayuda, noticias no compartidas y, después, desacuerdos con tensión >= 18. Resolver un desacuerdo reduce tensión; ayudar y compartir información fortalecen vínculos y dejan recuerdos individuales para ambos participantes.
+- El historial de promesas, asuntos, relaciones y conocimientos se guarda localmente en el estado de la partida. No se generan textos con IA. Estos encuentros aún no muestran una conversación visual NPC-NPC: registran motivos, consecuencias y recuerdos; la integración con líneas ambientales escritas queda para una etapa posterior.
+- Pruebas NPC Mind cubren registro, transmisión, resolución, selección de motivo y recuperación de promesas/asuntos desde recuerdos. CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1708](https://github.com/Franilover/Game/actions/runs/43938773401).
+
+## Conversaciones ambientales desde objetivos sociales autónomos (2026-11-16)
+
+- Los encuentros que completa `NPCScheduleSystem` ahora pueden iniciar una conversación ambiental mediante el grupo `npc_conversation_system`.
+- Se añadieron líneas escritas para cumplir promesas, tratar asuntos pendientes, compartir noticias, resolver desacuerdos y encuentros cotidianos. Las líneas pasan por el perfil de voz de cada participante.
+- Las conversaciones sociales autónomas usan las burbujas ambientales existentes y sólo se muestran cuando el jugador está cerca. Su temporizador continúa aunque el jugador se aleje o tenga abierto otro diálogo.
+- Mientras dura el intercambio, el horario no vuelve a mover a los participantes. Al terminar, se liberan los metadatos de conversación y recuperan sus rutinas.
+- Se evita aplicar dos veces los cambios de relación: las consecuencias y recuerdos se registran al completar el objetivo social; la capa de conversación sólo presenta el intercambio.
+- No se añadió generación de texto por IA ni se modificó Supabase.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1717](https://github.com/Franilover/Game/actions/runs/43940597598). El primer intento detectó un error de alcance de la variable `motivo`; se corrigió antes de esta ejecución exitosa.
+- Sigue pendiente revisar la presentación en una partida real, especialmente Android.
+
+## Variedad de conversaciones sociales (2026-11-16)
+
+- `NPCVoiceProfile` ahora construye tres variantes por motivo social: promesas, ayuda, noticias, desacuerdos, visitas y compañía.
+- La selección rota según el historial de interacciones de la pareja y cambia según confianza, amistad y tensión.
+- Los diálogos usan expresiones propias de Elian, Bruna, Darven, Saira, Narel, Mara, Ivo y Nima sin imponer modismos uniformes.
+- Las conversaciones pueden retomar antecedentes reales del historial de la pareja y el título de una noticia conocida; no se inventan hechos adicionales.
+- Se añadieron pruebas de voces diferenciadas, rotación de variantes, continuidad histórica e inclusión de información compartida.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1719](https://github.com/Franilover/Game/actions/runs/43941877535).

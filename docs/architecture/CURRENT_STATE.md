@@ -1,6 +1,6 @@
 # Garlia — Auditoría del estado actual
 
-Fecha: 2026-11-05
+Fecha: 2026-11-16
 
 ## Evidencia revisada
 
@@ -34,7 +34,7 @@ Se detectaron especialmente:
 
 El proyecto está activo y saludable.
 
-Datos relevantes actuales:
+Datos relevantes del último recuento documentado (2026-11-05):
 
 - 9 biomas
 - 14 ecosistemas
@@ -667,7 +667,7 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Los datos de progreso con tipos incorrectos se rechazan sin romper la carga de la partida.
 - Se añadió `MissionManagerContract` para verificar normalización, serialización, finalización idempotente y emisión única de `recompensa_disponible`.
 - El workflow Godot 4.7 ejecutó el nuevo contrato correctamente en el run `42213469008`.
-- La aplicación efectiva de recompensas al inventario/estado del jugador continúa pendiente: no se asumió un esquema de recompensa ni se modificó Supabase.
+- En esa barrida, la aplicación efectiva de recompensas seguía pendiente; quedó resuelta en la sexagésima primera barrida, usando el catálogo canónico de items y sin modificar Supabase.
 
 
 
@@ -690,5 +690,191 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - `MissionManagerService.cargar_estado_partida()` valida estados y progreso contra los objetivos vigentes, limita cantidades y descarta referencias de objetivos inexistentes.
 - Contratos ejecutados: `SaveFileRepositoryContract`, `InventoryPickupContract`, `InventoryDropContract` y `MissionManagerContract`.
 - CI completo Godot 4.7: **success**, run `42213469008`, commit de código `820d1b3c854f60ee110509586ceb2ec8e9c3bc01`. También pasaron locomoción, combate, IA, ciclo de vida, snapshot y terreno.
-- Pendiente funcional: aplicar/reclamar recompensas con el esquema canónico correcto; esta barrida no modificó Supabase ni tablas/RPC/datos.
+- Pendiente funcional en esa barrida: aplicar/reclamar recompensas con el esquema canónico correcto. La siguiente barrida documenta la resolución; esta barrida histórica no modificó Supabase.
 
+
+
+## Sexagésima primera barrida — Compilación Godot 4.7 y recompensas canónicas
+
+- Se corrigió la inferencia de tipo del token en Crafteo para Godot 4.7.
+- `GarliaAuth` ahora usa la clave publicable solo en `apikey` para login/refresh; Crafteo agrega `Authorization: Bearer` únicamente si existe un JWT real.
+- `CombatItemResolver` reconoce categorías de arma descriptivas como `arma especial`.
+- El test climático se ejecuta como escena del proyecto para disponer de autoloads; el test de locomoción se ejecuta en escena y compara recursos importados con ResourceLoader.
+- `GarumiHub` incluye subpestañas Vínculos y Garudex; la tecla G abre Vínculos y el catálogo queda accesible desde la misma sección.
+- El catálogo de pruebas usa sprites que existen en el repositorio (`Desell`, `Velki` y `Plava`), sin crear arte sustituto.
+- Se protegió `MissionManagerService.entregar_recompensas()` con un bloqueo transaccional. El rollback de una entrega parcial ya no programa reintentos recursivos a través de `inventory_changed`.
+- Las recompensas canónicas que contienen solo `item_id` se resuelven mediante `GarliaWorldItems.buscar_item_por_id()`. Si el catálogo aún está cargando, la recompensa permanece pendiente y se reintenta al recibir `catalogo_cargado`.
+- La consulta de solo lectura a Supabase confirmó que la misión activa «Conocer a Abel» recompensa una Espada de Madera mediante UUID y que `datos` está vacío; `items` + `items_game` aportan nombre, tipo, max_stack y propiedades.
+- Se añadieron `MissionRewardDelivery` y pruebas para rollback, ausencia de reintentos recursivos, resolución por UUID e idempotencia.
+- CI Godot 4.7: **PASS**, run `43916861872`, 33 pasos completados sin fallos.
+- Rama de trabajo: `fix/p0-godot47-crafting-token-type`. PR #12 sigue en borrador. Sin cambios en `main` ni mutaciones de Supabase.
+- Pendiente: validar continuidad de una partida real tras entregar recompensa, offline end-to-end, pruebas visuales Android/PC y flujos NPC/móvil con dispositivo real.
+
+
+## Sexagésima segunda barrida — Interacción móvil de diálogos
+
+- `GarliaMobileControls` consulta el grupo `dialogue_system` antes de capturar toques del joystick. Mientras hay un diálogo abierto, el joystick no roba toques destinados a botones o respuestas.
+- Si el diálogo se abre mientras el joystick mantiene una dirección, el control libera el dedo y emite las acciones de movimiento en estado neutral.
+- `DialogueSystem` adapta el panel al viewport: ancho/alto, márgenes, retrato, tamaños de botones sociales, acciones principales y columnas de selectores.
+- En pantallas estrechas se oculta el retrato para conservar espacio de texto y se pasa el selector de objetos a una columna; en paisaje compacto recupera el retrato reducido y dos columnas.
+- Se añadieron `MobileControlsDialogueTouch` y `DialogueMobileLayout` para verificar bloqueo del joystick durante diálogo, liberación de movimiento, multitáctil y medidas en 360×640, 640×360 y 960×540.
+- CI Godot 4.7: **PASS**, run `43918828793`, 35 pasos completados sin fallos.
+- La validación headless no sustituye la prueba en dispositivo Android: falta revisar safe areas, orientación real, tamaño físico de botones y legibilidad en varios DPI.
+
+
+## Sexagésima tercera barrida — Colisiones de NPC en entradas
+
+- `NPCScheduleSystem._marcar_npc_dentro_edificio()` oculta al NPC que llega al umbral y ahora desactiva también sus `collision_layer` y `collision_mask` del exterior. Así, el cuerpo invisible no bloquea la puerta para otros NPC.
+- `ReinoTorres` conserva los valores originales de capa/máscara y los restaura al salir del edificio; al trasladar NPC al interior recupera las capas y formas de colisión que correspondían.
+- Los NPC que abandonan su rutina mientras el jugador permanece dentro siguen sin colisionar en el exterior oculto; al salir el jugador se restaura su estado según si continúan dentro o ya salieron.
+- Los NPC materializados mientras un interior está abierto también quedan sin colisión exterior hasta restaurar el mundo.
+- Se añadió `NPCBuildingEntryCollision` para verificar la desactivación de colisión exterior, la restauración de capas/máscaras y la recuperación de formas al entrar.
+- CI Godot 4.7: **PASS**, run `43920496439`, 36 pasos completados sin fallos.
+- Falta una prueba visual en Reino Torres con varios NPC dirigiéndose simultáneamente a la misma puerta; el contrato confirma el ciclo de colisiones, no la navegación física completa.
+
+
+## Sexagésima cuarta barrida — Continuidad del menú social
+
+- `DialogueSystem._cerrar_selector_conversacion()` reconstruye las cuatro acciones principales cuando se cierra el selector social.
+- Después de responder a un tema cotidiano, al terminar de mostrarse la respuesta vuelven a aparecer `Preguntar`, `Hablar`, `Dar cumplido` y `Despedirse`.
+- El test `DialogueSocialMenu` ya se ejecuta como escena del proyecto y verifica tanto el cierre del selector como la recuperación del menú después de una respuesta casual.
+- Se amplió el filtro de CI para incluir `tests/dialogue/**`; los contratos de diálogo no volverán a quedar fuera de la batería por un filtro de rutas.
+- CI Godot 4.7: **PASS**, run `43921504449`, 37 pasos completados sin fallos.
+- La prueba sigue siendo headless; queda validar la experiencia con Ivo, Mara y Nira dentro de una partida real, incluyendo interrupciones, regalos y preguntas.
+
+
+## Sexagésima quinta barrida — Recuperación del catálogo de especies
+
+- La consulta de solo lectura a Supabase confirma tres filas activas en `especies_jugables`: Feerin, Humano y Necromancer. La tabla concede SELECT a `anon` y `authenticated`, y la política pública filtra `activo = true`; no se modificó la base de datos.
+- El cliente ya cacheaba y reemitía el catálogo, pero si la respuesta REST era válida y vacía agotaba los tres intentos iniciales y dejaba de comprobar automáticamente. Si el fallo ocurría mientras la pantalla de creación seguía abierta, podía permanecer sin especies hasta que otra escena volviera a solicitar el catálogo.
+- Ahora una respuesta vacía se comunica a la UI y mantiene una recuperación automática: tres intentos rápidos y, agotados estos, una nueva comprobación cada 30 segundos. Las respuestas válidas no vacías se guardan en caché y reinician el contador.
+- Se añadió `SpeciesCatalogRetry` para verificar caché, emisión de catálogo y programación de recuperación después de una respuesta vacía.
+- CI Godot 4.7: **PASS**, run `43923629275`, 39 pasos completados sin fallos.
+- Esta prueba cubre el manejo local de respuestas, no la llamada REST en red ni la visualización en un dispositivo. Sigue pendiente validar el selector dentro del flujo real de creación de personaje en Android/PC.
+
+
+## Sexagésima sexta barrida — Cargas después de restaurar sesión
+
+- `GarliaAuth` restaura la sesión de forma asíncrona. Los primeros intentos de `GarliaSupabaseClient` para catálogos protegidos podían ocurrir antes de que el refresh terminara; al iniciar sesión manualmente tampoco se repetían automáticamente todas esas cargas.
+- `GarliaSupabaseClient.configurar_dependencias()` ahora escucha `session_restored` y `login_succeeded`. Si la sesión ya está autenticada al inyectar la dependencia, también programa la carga.
+- Al quedar disponible la autenticación se solicitan Eterium runtime, reglas Eterium por especie, reglas sociales, preferencias de regalos, relaciones ecológicas y reinos. Cada HTTPRequest comprueba que no haya otra petición en curso antes de iniciar una nueva.
+- Se añadió `AuthenticatedCatalogReload`, que verifica el caso de sesión ya autenticada, la señal de restauración y el login normal, comprobando que cada catálogo se solicite una sola vez por evento.
+- CI Godot 4.7: **PASS**, run `43924866198`, 40 pasos completados sin fallos.
+- La prueba valida la coordinación de señales con un fixture, no el refresh real ni las respuestas de red. Falta comprobar una sesión persistida real y la disponibilidad efectiva de cada endpoint.
+
+
+## Sexagésima séptima barrida — Ritmo y coherencia de diálogo en tránsito
+
+- El texto de diálogo de NPCs cuya rutina indica caminar, pasear o desplazarse ahora se revela a 0,028 s por carácter (aprox. 36 caracteres por segundo), frente al intervalo general de 0,006 s.
+- Los diálogos marcados explícitamente como tránsito dejan la última línea visible 2,5 s después de terminar de revelarse, en vez de cerrarse inmediatamente.
+- La despedida distingue el desplazamiento del trabajo: el NPC que camina continúa hacia su destino y el jugador responde con una despedida acorde; quien trabaja vuelve a su tarea sin frases de paseo.
+- `DialogueSocialMenu` cubre el ritmo lento y las despedidas coherentes de caminar/tránsito/trabajo.
+- CI Godot 4.7: **PASS**, run `43929922701` (#1654), 40 pasos completados sin fallos.
+- La prueba es headless. Falta revisar la legibilidad en una partida real, en especial Android, y rastrear cualquier frase contradictoria que provenga de datos externos.
+
+
+
+## Sexagésima octava barrida — Voces y contenido cotidiano de los NPC
+
+- Se revisaron las respuestas de rutina y el fallback del menú social para que Mara, Ivo y Nima tengan reacciones propias incluso cuando no hay temas narrativos cargados desde datos.
+- Mara responde con calma y reserva; Ivo habla con franqueza y humor sobre su propio ritmo; Nima mantiene la curiosidad, pero recuerda que conversa con una persona y no sólo con un tema de estudio.
+- Las conversaciones ambientales de Mara/Ivo, Nima/Ivo y Saira/Ivo ahora avanzan mediante bromas, preguntas, límites y propuestas concretas, con menos frases explicativas.
+- Los perfiles de voz ya no convierten expresiones de todos los NPC al mismo registro; cada adaptación queda asociada al personaje.
+- Se corrigieron respuestas de movimiento dentro de edificios para que hablen del lugar en el que están y no de un destino exterior. También se eliminó la concatenación de nombres internos de actividad en los planes cotidianos.
+- Se añadieron aserciones para las voces y respuestas de rutina de Mara, Ivo y Nima a `DialogueSocialMenu`.
+- CI Godot 4.7: **PASS**, run `43932011916`, 40 pasos completados sin fallos.
+- Falta revisar los textos en una partida real y confirmar su legibilidad/naturalidad en Android. La prueba headless verifica contratos y frases, no sustituye una lectura jugada.
+- No se cambiaron los datos canónicos de diálogos en Supabase.
+
+
+
+## Núcleo NPC Mind — primera etapa
+
+- Añadido `NPCMindService` (`NPCMind` autoload) para representar el estado interno persistente de cada habitante.
+- Incluye necesidades, rasgos, estado emocional inicial, preferencias de actividad aprendidas, objetivos y evaluación de utilidad.
+- La selección de actividad es una evaluación pura: devuelve la mejor opción disponible y no controla directamente movimiento ni animaciones.
+- El aprendizaje usa resultados acotados de -1 a 1, media acumulada y confianza progresiva.
+- GameState guarda y restaura `npc_mentes` dentro de `world_state.flags`; el guardado sigue siendo local por partida.
+- Se añadió una regresión headless específica y CI Godot 4.7 pasó **41/41 pasos** en run #1677.
+- No se modificó Supabase. No se reemplazaron horarios existentes ni se habilitó aún la autonomía en tiempo real.
+
+
+
+## NPC Mind — primera acción autónoma en Torres
+
+- `NPCScheduleSystem` ya consume el estado mental persistente para elegir entre alternativas de ocio en los días libres.
+- La selección depende de necesidades, rasgos, aprendizaje previo, coste y prioridad; cada NPC conserva un repertorio de acciones distinto.
+- Las acciones reutilizan navegación y ubicaciones existentes, por lo que pueden llevar al habitante a la plaza, panadería, forja, archivo, vivienda o castillo.
+- El tiempo del mundo modifica necesidades por intervalos; las actividades alivian necesidades asociadas y actualizan ánimo, estrés y energía.
+- Al terminar cada tramo se registra el resultado para aprendizaje incremental. La elección queda estable durante ese tramo.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1685.
+- Las rutinas laborales y los compromisos existentes siguen teniendo prioridad. La autonomía todavía está limitada a ocio de días libres; no hay simulación offline ni planes sociales autónomos complejos.
+
+
+
+## Objetivos sociales autónomos
+
+- En horas libres de días de descanso, la necesidad de socialización puede generar `buscar_compania` o `visitar_amigo`.
+- Los compañeros se seleccionan según vínculos, tensión y distancia; el NPC navega hasta ellos y registra el encuentro como una interacción social persistente.
+- El resultado reduce necesidades sociales, modifica gradualmente preferencias y actualiza el historial del vínculo.
+- Se respetan horarios, edificios, conversaciones y disponibilidad del compañero. Los objetivos se cancelan o esperan con límites claros.
+- El ciclo de objetivos repetidos y el reciclaje del historial se cubren con la prueba NPC Mind.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1694.
+- No hay generación de diálogo: se conservan textos escritos y escenas ambientales existentes.
+
+
+
+## Memoria social y asuntos entre habitantes
+
+- Las promesas y asuntos pendientes se guardan entre partidas. Los NPC pueden buscar a la persona implicada para cumplir una promesa o pedir/recibir ayuda.
+- Los habitantes comparten conocimientos marcados como públicos/compartibles cuando el otro aún no los conoce, conservando procedencia y cadena de transmisión.
+- La tensión entre dos habitantes puede provocar un encuentro para intentar resolver el desacuerdo; la resolución modifica tensión, confianza/amistad y recuerdos.
+- Los cambios dejan recuerdos individuales en ambos NPC y afectan sus vínculos futuros.
+- Los compromisos originados en recuerdos usan identificadores estables para no reaparecer tras resolverse.
+- Estos encuentros aún no presentan diálogo visual NPC-NPC; no hay generación de texto. La narración visible se mantiene escrita y queda pendiente conectar estos motivos a conversaciones ambientales.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run #1708.
+
+## Conversaciones visibles para encuentros sociales autónomos
+
+- Cuando un NPC termina de reunirse con otro por una promesa, un asunto pendiente, una noticia, un desacuerdo o una necesidad de compañía, `NPCScheduleSystem` solicita una conversación ambiental.
+- `NPCConversationSystem` presenta cuatro intervenciones escritas con las burbujas existentes y el perfil de voz de cada personaje.
+- La conversación avanza sin depender de la posición del jugador ni de que tenga cerrado el diálogo modal. Si el jugador se acerca, puede observar las intervenciones que aún estén en curso.
+- Los participantes quedan temporalmente fuera de la actualización de sus rutinas para evitar que se alejen durante la charla; al finalizar, recuperan el horario normal.
+- La presentación no vuelve a aplicar amistad, confianza, promesas, asuntos ni transmisión de conocimientos: esos efectos ya pertenecen al cierre del objetivo social.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1717](https://github.com/Franilover/Game/actions/runs/43940597598). La importación/compilación y la suite de regresión pasaron.
+- Alcance actual: líneas breves escritas por tipo de motivo, sin generación de texto. Sigue pendiente revisar la presentación en una partida real, especialmente Android.
+
+## Variedad contextual de conversaciones sociales
+
+- Los diálogos ambientales autónomos disponen de tres variantes por motivo social y alternan con el historial de interacciones de cada pareja.
+- El nivel de confianza/amistad y la tensión orientan el tono: cercano, cordial o tenso.
+- Cada personaje aplica ajustes de voz propios, conservando el registro ya definido para Elian, Bruna, Darven, Saira, Narel, Mara, Ivo y Nima.
+- Las conversaciones de compañía pueden retomar una ayuda, una promesa cumplida, una noticia o una conversación previa de la pareja.
+- Las noticias incorporan el título que el NPC realmente conoce; se conserva la cautela cuando no está confirmado.
+- CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1719](https://github.com/Franilover/Game/actions/runs/43941877535).
+
+
+## NPC Mind — objetivos y estado emocional en las decisiones
+
+- La evaluación de actividades ya considera objetivos personales activos cuando la actividad coincide con su identificador, una lista de actividades aceptadas o etiquetas compartidas.
+- La prioridad del objetivo modula su influencia; sólo se toma la mejor coincidencia para evitar que acumular objetivos multiplique artificialmente la puntuación.
+- Las actividades pueden declarar `afinidad_emocional` para que ánimo, estrés y energía influyan en su utilidad. Las afinidades usan escala 0–1.
+- Se amplió `test_npc_mind_core.gd` para comprobar que objetivos y estado emocional participan en la evaluación.
+- Cambios en la rama `fix/p0-godot47-crafting-token-type`; no se modificó `main` ni Supabase.
+- Pendiente: CI Godot 4.7 y revisión de los resultados dentro de una partida. La evaluación sigue siendo determinista y no genera texto.
+
+## Memoria episódica social y elección de compañía
+
+- Al finalizar una interacción autónoma entre NPC, ambos participantes reciben un recuerdo `experiencia_npc` con contraparte, tipo de encuentro, resultado, importancia y fecha de mundo.
+- La selección futura de compañía consulta hasta seis experiencias recientes relevantes con cada candidato. Las positivas aumentan su puntuación; las negativas la reducen.
+- Los recuerdos más recientes pesan más y la influencia total se limita a [-15, 15], por lo que no sustituye los valores persistentes de amistad, confianza, afecto o tensión.
+- Se añadieron pruebas para experiencias positivas, negativas y recuerdos de terceras personas.
+- La memoria utiliza el almacenamiento local de recuerdos sociales existente. No modifica Supabase ni genera texto.
+- Pendiente: ejecutar CI Godot 4.7 y validar en partida que los encuentros reflejen las experiencias sin crear preferencias rígidas.
+
+
+### Memoria contextual de lugares (2026-11-16)
+- `NPCMind` conserva por personaje resultados acumulados por `ubicacion_clave`.
+- La preferencia por lugar se calcula con media incremental y confianza progresiva; una experiencia aislada no crea una aversión o preferencia absoluta.
+- Las decisiones de ocio consultan esta memoria al puntuar actividades. El resultado del tramo anterior alimenta tanto el aprendizaje de la actividad como el del lugar visitado.
+- La memoria se guarda en `npc_mentes` dentro del guardado local y no requiere cambios de Supabase.

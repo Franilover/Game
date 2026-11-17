@@ -185,7 +185,12 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		# confunda con una baja del catálogo, pero nunca debe reanudar rutinas.
 		if not npc.is_alive:
 			continue
+		_actualizar_mente_npc(npc, minutos, tiempo)
+		if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+			continue
 		if _actualizar_actividad_social(npc, delta):
+			continue
+		if _actualizar_objetivo_social_npc(npc, delta, minutos):
 			continue
 		# Los NPC exteriores pueden estar ocultos porque el jugador está dentro
 		# de otro edificio. Sus horarios siguen avanzando en segundo plano.
@@ -678,6 +683,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			npc.set_meta("rutina_en_transito", false)
 		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
 			_zona.call("sacar_npc_del_interior", npc)
+		if (
+			is_instance_valid(_zona)
+			and not bool(_zona.get("_interior_activo"))
+			and _zona.has_method("restaurar_colision_npc")
+		):
+			_zona.call("restaurar_colision_npc", npc)
 		var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
 		if salida_variant is Dictionary:
 			var salida: Dictionary = salida_variant
@@ -1681,6 +1692,8 @@ func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
+	if is_instance_valid(_zona) and _zona.has_method("desactivar_colision_npc_exterior"):
+		_zona.call("desactivar_colision_npc_exterior", npc)
 	npc.set_meta("rutina_en_edificio", true)
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_edificio_id", edificio_id)
@@ -1706,19 +1719,8 @@ func _aplicar_variacion_tiempo_libre(
 		return rutina_base
 
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
-	var actividades_por_personaje: Dictionary = {
-		"elian": ["acomodar_pedidos", "conversar_con_vecinos", "compartir_pan"],
-		"bruna": ["revisar_herramientas", "observar_trabajos", "descansar_un_rato"],
-		"darven": ["vigilar_plaza", "revisar_avisos", "conversar_con_habitantes"],
-		"saira": ["saludar_comerciantes", "compartir_noticias", "escuchar_historias"],
-		"narel": ["tomar_notas", "observar_entorno", "leer_apuntes"],
-		"mara": ["pasear_sin_prisa", "observar_la_plaza", "visitar_un_puesto"],
-		"ivo": ["descansar_y_saludar", "sentarse_un_rato", "pasear_a_su_ritmo"],
-		"nima": ["tomar_notas", "observar_fenomenos", "conversar_con_vecinos"],
-		"abel": ["revisar_asuntos", "leer_informes", "conversar_con_guardias"],
-		"liam": ["ordenar_documentos", "recorrer_el_castillo", "descansar_un_rato"]
-	}
-	if not actividades_por_personaje.has(nombre):
+	var actividades_por_personaje: Dictionary = _obtener_opciones_ocio_npc(nombre)
+	if actividades_por_personaje.is_empty():
 		return rutina_base
 
 	var tramo := 0
@@ -1733,15 +1735,670 @@ func _aplicar_variacion_tiempo_libre(
 		str(tiempo.get("mes", 0)),
 		str(tiempo.get("dia", dia_semana))
 	]
-	var actividades: Array = actividades_por_personaje[nombre]
-	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo))) % actividades.size()
+	var clave_decision := clave_dia + "|" + str(tramo)
+	var decision_guardada: Variant = npc.get_meta("npc_mind_rutina_decidida", {})
+	if (
+		str(npc.get_meta("npc_mind_decision_key", "")) == clave_decision
+		and decision_guardada is Dictionary
+		and not (decision_guardada as Dictionary).is_empty()
+	):
+		return (decision_guardada as Dictionary).duplicate(true)
+
+	var mind := get_node_or_null("/root/NPCMind")
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		personaje_id = nombre
+
+	var opciones: Array = actividades_por_personaje.get("opciones", [])
+	var elegida: Dictionary = {}
+	if is_instance_valid(mind) and mind.has_method("elegir_actividad"):
+		var perfil: Dictionary = {}
+		if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_personalidad"):
+			var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
+			var rasgos: Dictionary = {}
+			for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
+				if personalidad.has(rasgo):
+					rasgos[rasgo] = float(personalidad[rasgo])
+			perfil["rasgos"] = rasgos
+		mind.call("registrar_personaje", personaje_id, perfil)
+
+		# La experiencia del tramo anterior modifica las próximas elecciones.
+		var clave_anterior := str(npc.get_meta("npc_mind_decision_key", ""))
+		if not clave_anterior.is_empty():
+			var actividad_anterior := str(npc.get_meta("npc_mind_actividad", ""))
+			var necesidad_anterior := str(npc.get_meta("npc_mind_necesidad_clave", ""))
+			var presion_inicial := float(npc.get_meta("npc_mind_necesidad_inicio", 0.0))
+			if not actividad_anterior.is_empty() and not necesidad_anterior.is_empty():
+				var necesidades_actuales: Dictionary = mind.call("obtener_necesidades", personaje_id)
+				var presion_final := float(necesidades_actuales.get(necesidad_anterior, presion_inicial))
+				var resultado := clampf((presion_inicial - presion_final) / 25.0, -1.0, 1.0)
+				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado)
+			var ubicacion_anterior := str(npc.get_meta("npc_mind_ubicacion", "")).strip_edges().to_lower()
+			if not ubicacion_anterior.is_empty() and mind.has_method("registrar_resultado_lugar"):
+				mind.call("registrar_resultado_lugar", personaje_id, ubicacion_anterior, resultado)
+
+		var resultado_eleccion: Dictionary = mind.call("elegir_actividad", personaje_id, opciones)
+		var actividad_elegida := str(resultado_eleccion.get("actividad", ""))
+		for opcion_variant in opciones:
+			if opcion_variant is Dictionary and str(opcion_variant.get("id", "")) == actividad_elegida:
+				elegida = (opcion_variant as Dictionary).duplicate(true)
+				break
+
+	if elegida.is_empty():
+		# Respaldo determinista si el servicio mental no está disponible.
+		var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo))) % opciones.size()
+		elegida = (opciones[indice] as Dictionary).duplicate(true)
 
 	var resultado := rutina_base.duplicate(true)
-	resultado["actividad_clave"] = str(actividades[indice])
-	resultado["variacion_posicion"] = _obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
+	var actividad := str(elegida.get("id", ""))
+	var ubicacion_elegida := str(elegida.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+	if not POSICIONES.has(ubicacion_elegida):
+		ubicacion_elegida = "plaza"
+	resultado["actividad_clave"] = actividad
+	resultado["ubicacion_clave"] = ubicacion_elegida
+	resultado["variacion_posicion"] = (
+		_obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
+		if ubicacion_elegida == "plaza"
+		else Vector2.ZERO
+	)
 	resultado["variacion_diaria"] = clave_dia
+	npc.set_meta("npc_mind_decision_key", clave_decision)
+	npc.set_meta("npc_mind_actividad", actividad)
+	npc.set_meta("npc_mind_ubicacion", ubicacion_elegida)
+	var necesidades_actividad: Dictionary = elegida.get("necesidades", {})
+	var necesidad_principal := ""
+	var mayor_peso := -1.0
+	for necesidad_variant in necesidades_actividad:
+		var peso := float(necesidades_actividad[necesidad_variant])
+		if peso > mayor_peso:
+			mayor_peso = peso
+			necesidad_principal = str(necesidad_variant)
+	npc.set_meta("npc_mind_necesidad_clave", necesidad_principal)
+	var mind_actual := get_node_or_null("/root/NPCMind")
+	if is_instance_valid(mind_actual) and mind_actual.has_method("obtener_necesidades"):
+		var necesidades_inicio: Dictionary = mind_actual.call("obtener_necesidades", personaje_id)
+		npc.set_meta("npc_mind_necesidad_inicio", float(necesidades_inicio.get(necesidad_principal, 0.0)))
+	npc.set_meta("npc_mind_rutina_decidida", resultado.duplicate(true))
 	return resultado
 
+
+func _obtener_opciones_ocio_npc(nombre: String) -> Dictionary:
+	var opciones_por_personaje: Dictionary = {
+		"elian": [
+			{"id":"acomodar_pedidos","ubicacion_clave":"panaderia","necesidades":{"autonomia":0.45,"curiosidad":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":8.0},
+			{"id":"conversar_con_vecinos","necesidades":{"socializacion":0.9,"diversion":0.3},"afinidad_rasgos":{"sociabilidad":0.85},"coste":5.0},
+			{"id":"compartir_pan","ubicacion_clave":"panaderia","necesidades":{"socializacion":0.65,"diversion":0.7},"afinidad_rasgos":{"generosidad":0.85,"sociabilidad":0.65},"coste":8.0}
+		],
+		"bruna": [
+			{"id":"revisar_herramientas","ubicacion_clave":"forja","necesidades":{"curiosidad":0.8,"autonomia":0.3},"afinidad_rasgos":{"curiosidad":0.7,"prudencia":0.7},"coste":8.0},
+			{"id":"observar_trabajos","necesidades":{"curiosidad":0.55,"socializacion":0.2},"afinidad_rasgos":{"curiosidad":0.65},"coste":5.0},
+			{"id":"descansar_un_rato","ubicacion_clave":"casa_bruna","necesidades":{"descanso":0.95,"diversion":0.2},"coste":2.0}
+		],
+		"darven": [
+			{"id":"vigilar_plaza","necesidades":{"seguridad":0.8,"autonomia":0.25},"afinidad_rasgos":{"prudencia":0.8},"coste":5.0},
+			{"id":"revisar_avisos","necesidades":{"curiosidad":0.6,"autonomia":0.2},"afinidad_rasgos":{"prudencia":0.65},"coste":4.0},
+			{"id":"conversar_con_habitantes","necesidades":{"socializacion":0.8,"diversion":0.2},"afinidad_rasgos":{"sociabilidad":0.75},"coste":5.0}
+		],
+		"saira": [
+			{"id":"saludar_comerciantes","necesidades":{"socializacion":0.8,"autonomia":0.25},"afinidad_rasgos":{"sociabilidad":0.85},"coste":5.0},
+			{"id":"compartir_noticias","necesidades":{"socializacion":0.55,"curiosidad":0.6},"afinidad_rasgos":{"curiosidad":0.75,"sociabilidad":0.65},"coste":6.0},
+			{"id":"escuchar_historias","necesidades":{"socializacion":0.7,"diversion":0.5},"afinidad_rasgos":{"sociabilidad":0.7},"coste":4.0}
+		],
+		"narel": [
+			{"id":"tomar_notas","ubicacion_clave":"archivo_real","necesidades":{"curiosidad":0.95,"autonomia":0.2},"afinidad_rasgos":{"curiosidad":0.9},"coste":7.0},
+			{"id":"observar_entorno","necesidades":{"curiosidad":0.8,"diversion":0.15},"afinidad_rasgos":{"curiosidad":0.8,"prudencia":0.6},"coste":5.0},
+			{"id":"leer_apuntes","ubicacion_clave":"archivo_real","necesidades":{"curiosidad":0.75,"descanso":0.1},"afinidad_rasgos":{"curiosidad":0.85},"coste":3.0}
+		],
+		"mara": [
+			{"id":"pasear_sin_prisa","necesidades":{"autonomia":0.75,"diversion":0.45},"afinidad_rasgos":{"independencia":0.8},"coste":4.0},
+			{"id":"observar_la_plaza","necesidades":{"curiosidad":0.55,"seguridad":0.15},"afinidad_rasgos":{"prudencia":0.6},"coste":3.0},
+			{"id":"visitar_un_puesto","ubicacion_clave":"casa_comercio","necesidades":{"diversion":0.65,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.55},"coste":6.0}
+		],
+		"ivo": [
+			{"id":"descansar_y_saludar","ubicacion_clave":"plaza","necesidades":{"descanso":0.8,"socializacion":0.35},"afinidad_rasgos":{"sociabilidad":0.45},"coste":2.0},
+			{"id":"sentarse_un_rato","ubicacion_clave":"vivienda_oeste_02","necesidades":{"descanso":0.95,"autonomia":0.2},"coste":1.0},
+			{"id":"pasear_a_su_ritmo","necesidades":{"autonomia":0.65,"diversion":0.35},"afinidad_rasgos":{"independencia":0.75},"coste":3.0}
+		],
+		"nima": [
+			{"id":"tomar_notas","necesidades":{"curiosidad":0.95,"autonomia":0.2},"afinidad_rasgos":{"curiosidad":0.9},"coste":7.0},
+			{"id":"observar_fenomenos","ubicacion_clave":"casa_estudio","necesidades":{"curiosidad":0.9,"diversion":0.2},"afinidad_rasgos":{"curiosidad":0.85},"coste":5.0},
+			{"id":"conversar_con_vecinos","necesidades":{"socializacion":0.65,"diversion":0.25},"afinidad_rasgos":{"sociabilidad":0.65},"coste":4.0}
+		],
+		"abel": [
+			{"id":"revisar_asuntos","ubicacion_clave":"castillo","necesidades":{"seguridad":0.55,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.8},"coste":5.0},
+			{"id":"leer_informes","ubicacion_clave":"castillo","necesidades":{"curiosidad":0.7,"autonomia":0.25},"afinidad_rasgos":{"curiosidad":0.65},"coste":4.0},
+			{"id":"conversar_con_guardias","ubicacion_clave":"castillo","necesidades":{"socializacion":0.65,"seguridad":0.25},"afinidad_rasgos":{"sociabilidad":0.55},"coste":5.0}
+		],
+		"liam": [
+			{"id":"ordenar_documentos","ubicacion_clave":"castillo","necesidades":{"curiosidad":0.45,"autonomia":0.35},"afinidad_rasgos":{"prudencia":0.65},"coste":4.0},
+			{"id":"recorrer_el_castillo","ubicacion_clave":"castillo","necesidades":{"seguridad":0.5,"autonomia":0.4},"afinidad_rasgos":{"prudencia":0.7},"coste":5.0},
+			{"id":"descansar_un_rato","necesidades":{"descanso":0.85,"diversion":0.15},"coste":2.0}
+		]
+	}
+	return {"opciones": opciones_por_personaje.get(nombre, [])}
+
+
+func _actualizar_mente_npc(npc: Creature, minutos: int, tiempo: Dictionary) -> void:
+	var mind := get_node_or_null("/root/NPCMind")
+	if not is_instance_valid(mind) or not mind.has_method("procesar_intervalo"):
+		return
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		personaje_id = npc.get_nombre_visual().strip_edges().to_lower()
+	if personaje_id.is_empty():
+		return
+
+	var personalidad: Dictionary = {}
+	if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_personalidad"):
+		personalidad = _relationship_system.obtener_personalidad(personaje_id)
+	var rasgos: Dictionary = {}
+	for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
+		if personalidad.has(rasgo):
+			rasgos[rasgo] = float(personalidad[rasgo])
+	mind.call("registrar_personaje", personaje_id, {"rasgos": rasgos})
+
+	var fecha := "%s:%s:%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("mes", 0)),
+		str(tiempo.get("dia", 1))
+	]
+	var fecha_anterior := str(npc.get_meta("npc_mind_fecha_procesada", ""))
+	if fecha_anterior.is_empty():
+		npc.set_meta("npc_mind_fecha_procesada", fecha)
+		npc.set_meta("npc_mind_minuto_procesado", minutos)
+		return
+	var minuto_anterior := int(npc.get_meta("npc_mind_minuto_procesado", minutos))
+	var delta_minutos := minutos - minuto_anterior
+	if fecha != fecha_anterior and delta_minutos < 0:
+		delta_minutos += 1440
+	if delta_minutos <= 0:
+		return
+	# Limita cada lote a dos horas. Si el salto fue mayor, el siguiente tick
+	# continúa desde el minuto realmente procesado.
+	delta_minutos = mini(delta_minutos, 120)
+	if delta_minutos < 5:
+		return
+
+	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).strip_edges().to_lower()
+	var satisfacciones := _obtener_satisfaccion_actividad(actividad)
+	mind.call("procesar_intervalo", personaje_id, float(delta_minutos) / 60.0, satisfacciones)
+	npc.set_meta("npc_mind_fecha_procesada", fecha)
+	npc.set_meta("npc_mind_minuto_procesado", posmod(minuto_anterior + delta_minutos, 1440))
+
+
+## Genera y ejecuta objetivos sociales a partir de necesidades y vínculos.
+## El NPC elige a quién acercarse; el objetivo no se impone desde el horario.
+func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) -> bool:
+	var mind := get_node_or_null("/root/NPCMind")
+	if not is_instance_valid(mind) or not is_instance_valid(_relationship_system):
+		return false
+	if not mind.has_method("obtener_necesidades") or not mind.has_method("establecer_objetivo"):
+		return false
+	if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+		return false
+	if bool(npc.get_meta("rutina_en_edificio", false)):
+		return false
+
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return false
+	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
+	if minutos < 540 or minutos >= 1200:
+		if not objetivo.is_empty():
+			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+		return false
+	if objetivo.is_empty():
+		var rutina_actual := str(npc.get_meta("rutina_actual", "")).strip_edges().to_lower()
+		if not rutina_actual.begins_with("dia_libre"):
+			return false
+		if str(npc.get_meta("npc_social_siguiente_intento", "")) == _clave_fecha_actual():
+			return false
+		var necesidades: Dictionary = mind.call("obtener_necesidades", personaje_id)
+		var presion_social := float(necesidades.get("socializacion", 0.0))
+		if presion_social < 68.0:
+			return false
+		var pareja := _seleccionar_companero_social(npc, presion_social)
+		if pareja == null:
+			return false
+		var pareja_id := pareja.get_personaje_game_id().strip_edges()
+		var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(personaje_id, pareja_id)
+		var motivo := _seleccionar_motivo_encuentro_social(personaje_id, pareja_id, relacion)
+		var tipo := str(motivo.get("tipo", "visitar_amigo" if (
+			float(relacion.get("amistad", 0.0)) >= 18.0
+			or float(relacion.get("afecto", 0.0)) >= 12.0
+		) else "buscar_compania"))
+		var objetivo_id := "%s:%s:%s" % [tipo, pareja_id.to_lower(), _clave_fecha_actual()]
+		objetivo = {
+			"id": objetivo_id,
+			"tipo": tipo,
+			"motivo": motivo.duplicate(true),
+			"objetivo_personaje": pareja_id,
+			"nombre_objetivo": pareja.get_nombre_visual(),
+			"prioridad": clampf(presion_social / 100.0, 0.55, 0.95),
+			"creado_dia": _clave_fecha_actual(),
+			"estado": "activo"
+		}
+		if not bool(mind.call("establecer_objetivo", personaje_id, objetivo)):
+			return false
+		npc.set_meta("npc_objetivo_social", objetivo.duplicate(true))
+		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
+		npc.set_meta("npc_objetivo_social_espera", 0.0)
+		npc.set_meta("npc_objetivo_social_en_curso", false)
+
+	var pareja_actual := _buscar_npc_por_id_social(str(objetivo.get("objetivo_personaje", "")))
+	if not is_instance_valid(pareja_actual) or not pareja_actual.is_alive:
+		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+		return false
+	if bool(pareja_actual.get_meta("rutina_en_edificio", false)) or bool(pareja_actual.get_meta("_conversacion_ambiental_activa", false)):
+		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+		return false
+	if bool(pareja_actual.get_meta("rutina_en_transito", false)):
+		var espera := float(npc.get_meta("npc_objetivo_social_espera", 0.0)) + maxf(delta, 0.0)
+		npc.set_meta("npc_objetivo_social_espera", espera)
+		if espera >= 45.0:
+			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+			return false
+		return true
+	npc.set_meta("npc_objetivo_social_espera", 0.0)
+
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento == null:
+		return false
+	var distancia := npc.global_position.distance_to(pareja_actual.global_position)
+	if movimiento.rutina_terminada():
+		npc.set_meta("rutina_en_transito", false)
+		npc.set_meta("npc_objetivo_social_en_curso", false)
+	if distancia > 78.0:
+		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
+		npc.set_meta("npc_objetivo_social_en_curso", false)
+		if not bool(npc.get_meta("rutina_en_transito", false)):
+			var ruta := _crear_ruta(npc.global_position, _obtener_punto_encuentro_social(npc, pareja_actual))
+			if ruta.is_empty():
+				_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+				return false
+			npc.set_meta("rutina_en_transito", true)
+			npc.set_meta("npc_objetivo_social_en_curso", true)
+			movimiento.establecer_ruta(ruta)
+		return true
+
+	if movimiento.rutina_terminada():
+		npc.set_meta("npc_objetivo_social_en_curso", false)
+		var tiempo_social := float(npc.get_meta("npc_objetivo_social_tiempo", 0.0)) + maxf(delta, 0.0)
+		npc.set_meta("npc_objetivo_social_tiempo", tiempo_social)
+		if tiempo_social >= 12.0:
+			_finalizar_objetivo_social_npc(npc, pareja_actual, mind, personaje_id, objetivo)
+	return true
+
+
+func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: String, relacion: Dictionary) -> Dictionary:
+	if not is_instance_valid(_relationship_system):
+		return {"tipo": "visitar_amigo"}
+	for conocimiento_promesa_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_promesa_variant is Dictionary:
+			continue
+		var conocimiento_promesa := conocimiento_promesa_variant as Dictionary
+		if str(conocimiento_promesa.get("promesa_para", "")) != pareja_id:
+			continue
+		var clave_promesa := str(conocimiento_promesa.get("clave_promesa", conocimiento_promesa.get("clave", ""))).strip_edges()
+		if not clave_promesa.is_empty():
+			_relationship_system.registrar_promesa_entre_npc(personaje_id, pareja_id, {
+				"id": "promesa_memoria:%s:%s" % [personaje_id, clave_promesa],
+				"clave": clave_promesa,
+				"descripcion": str(conocimiento_promesa.get("promesa", conocimiento_promesa.get("titulo", clave_promesa))),
+				"clave_conocimiento": str(conocimiento_promesa.get("clave_conocimiento", ""))
+			})
+	var promesas: Array = _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id)
+	if not promesas.is_empty():
+		var promesa: Dictionary = promesas[0]
+		return {
+			"tipo": "cumplir_promesa",
+			"promesa_id": str(promesa.get("id", "")),
+			"clave_conocimiento": str(promesa.get("clave_conocimiento", "")),
+			"descripcion": str(promesa.get("descripcion", promesa.get("titulo", "")))
+		}
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento_asunto := conocimiento_variant as Dictionary
+		if not bool(conocimiento_asunto.get("requiere_ayuda", false)):
+			continue
+		if str(conocimiento_asunto.get("personaje_relacionado", "")) != pareja_id:
+			continue
+		var clave_asunto := str(conocimiento_asunto.get("clave", "")).strip_edges()
+		if not clave_asunto.is_empty():
+			_relationship_system.registrar_asunto_pendiente_npc(personaje_id, {
+				"id": "asunto_memoria:%s:%s" % [personaje_id, clave_asunto],
+				"clave": clave_asunto,
+				"personaje_relacionado": pareja_id,
+				"descripcion": str(conocimiento_asunto.get("asunto", conocimiento_asunto.get("titulo", clave_asunto))),
+				"origen": "conocimiento_npc"
+			})
+	var asuntos: Array = _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id)
+	if not asuntos.is_empty():
+		var asunto: Dictionary = asuntos[0]
+		return {
+			"tipo": "resolver_asunto",
+			"asunto_id": str(asunto.get("id", "")),
+			"clave": str(asunto.get("clave", "")),
+			"descripcion": str(asunto.get("descripcion", asunto.get("asunto", "")))
+		}
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		var tipo_conocimiento := str(conocimiento.get("tipo", "")).to_lower()
+		var compartible := bool(conocimiento.get("compartible", false)) or tipo_conocimiento in ["noticia", "evento_publico", "conocimiento_compartible"]
+		var clave := str(conocimiento.get("clave", "")).strip_edges()
+		if not compartible or clave.is_empty():
+			continue
+		if _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+			continue
+		return {
+			"tipo": "compartir_noticia",
+			"clave_conocimiento": clave,
+			"titulo": str(conocimiento.get("titulo", conocimiento.get("descripcion", "")))
+		}
+	if float(relacion.get("tension", 0.0)) >= 18.0:
+		return {"tipo": "resolver_desacuerdo"}
+	return {
+		"tipo": "visitar_amigo" if (
+			float(relacion.get("amistad", 0.0)) >= 18.0
+			or float(relacion.get("afecto", 0.0)) >= 12.0
+		) else "buscar_compania"
+	}
+
+
+func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Creature:
+	var mejor: Creature = null
+	var mejor_puntuacion := -INF
+	var id_npc := npc.get_personaje_game_id().strip_edges()
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
+			continue
+		var candidato := candidato_variant as Creature
+		if candidato == npc or not candidato.is_alive:
+			continue
+		if bool(candidato.get_meta("rutina_en_edificio", false)):
+			continue
+		if bool(candidato.get_meta("rutina_en_transito", false)):
+			continue
+		var objetivo_candidato: Variant = candidato.get_meta("npc_objetivo_social", {})
+		if objetivo_candidato is Dictionary and not (objetivo_candidato as Dictionary).is_empty():
+			continue
+		if bool(candidato.get_meta("_conversacion_ambiental_activa", false)):
+			continue
+		if bool(candidato.get_meta("actividad_social_activa", false)):
+			continue
+		var movimiento_candidato := candidato.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento_candidato == null:
+			continue
+		var id_candidato := candidato.get_personaje_game_id().strip_edges()
+		if id_candidato.is_empty() or id_candidato == id_npc:
+			continue
+		if npc.global_position.distance_to(candidato.global_position) > 520.0:
+			continue
+		var relacion: Dictionary = _relationship_system.obtener_relacion_entre_npc(id_npc, id_candidato)
+		var amistad := float(relacion.get("amistad", 0.0))
+		var afecto := float(relacion.get("afecto", 0.0))
+		var confianza := float(relacion.get("confianza", 0.0))
+		var tension := float(relacion.get("tension", 0.0))
+		var colaboracion := float(relacion.get("colaboracion", 0.0))
+		var distancia := npc.global_position.distance_to(candidato.global_position)
+		var puntuacion := (
+			amistad * 0.22 + afecto * 0.18 + confianza * 0.08
+			+ colaboracion * 0.06 - tension * 0.2
+			+ clampf(520.0 - distancia, 0.0, 520.0) * 0.025
+			+ presion_social * 0.08
+		)
+		# Las experiencias recientes pueden reforzar o enfriar un vínculo,
+		# incluso antes de que sus valores sociales cambien mucho.
+		puntuacion += _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
+		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
+			puntuacion -= 8.0
+		if not _relationship_system.obtener_promesas_pendientes_npc(id_npc, id_candidato).is_empty():
+			puntuacion += 16.0
+		if not _relationship_system.obtener_asuntos_pendientes_npc(id_npc, id_candidato).is_empty():
+			puntuacion += 12.0
+		if _hay_noticia_compartible(id_npc, id_candidato):
+			puntuacion += 8.0
+		if puntuacion > mejor_puntuacion:
+			mejor_puntuacion = puntuacion
+			mejor = candidato
+	return mejor
+
+
+## Resume las últimas experiencias compartidas con una persona.
+## Los recuerdos recientes pesan más; la influencia queda acotada para que
+## una mala experiencia no borre por sí sola una relación consolidada.
+func _calcular_influencia_recuerdos_sociales(personaje_id: String, pareja_id: String) -> float:
+	if not is_instance_valid(_relationship_system) or not _relationship_system.has_method("obtener_recuerdos"):
+		return 0.0
+	var recuerdos: Array = _relationship_system.obtener_recuerdos(personaje_id)
+	var influencia := 0.0
+	var consideradas := 0
+	for indice in range(recuerdos.size() - 1, -1, -1):
+		var recuerdo_variant: Variant = recuerdos[indice]
+		if not recuerdo_variant is Dictionary:
+			continue
+		var recuerdo := recuerdo_variant as Dictionary
+		if str(recuerdo.get("tipo", "")) != "experiencia_npc":
+			continue
+		if str(recuerdo.get("con_personaje", "")).strip_edges().to_lower() != pareja_id.strip_edges().to_lower():
+			continue
+		var resultado := clampf(float(recuerdo.get("resultado", 0.0)), -1.0, 1.0)
+		var importancia := clampf(float(recuerdo.get("importancia", 1.0)) / 3.0, 0.25, 1.0)
+		influencia += resultado * importancia * (1.0 / (1.0 + float(consideradas) * 0.35)) * 5.0
+		consideradas += 1
+		if consideradas >= 6:
+			break
+	return clampf(influencia, -15.0, 15.0)
+
+
+func _registrar_experiencia_social_npc(
+	personaje_id: String,
+	pareja_id: String,
+	tipo_experiencia: String,
+	objetivo_id: String,
+	resultado: float
+) -> void:
+	if not is_instance_valid(_relationship_system) or not _relationship_system.has_method("registrar_recuerdo"):
+		return
+	for participante in [personaje_id, pareja_id]:
+		var otro := pareja_id if participante == personaje_id else personaje_id
+		_relationship_system.registrar_recuerdo(participante, {
+			"tipo": "experiencia_npc",
+			"evento": tipo_experiencia,
+			"actividad": tipo_experiencia,
+			"evento_id": objetivo_id,
+			"con_personaje": otro,
+			"resultado": clampf(resultado, -1.0, 1.0),
+			"importancia": 2.5,
+			"momento": _clave_fecha_actual()
+		})
+
+
+func _hay_noticia_compartible(personaje_id: String, pareja_id: String) -> bool:
+	if not is_instance_valid(_relationship_system):
+		return false
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		var tipo := str(conocimiento.get("tipo", "")).to_lower()
+		var compartible := bool(conocimiento.get("compartible", false)) or tipo in ["noticia", "evento_publico", "conocimiento_compartible"]
+		var clave := str(conocimiento.get("clave", "")).strip_edges()
+		if compartible and not clave.is_empty() and not _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+			return true
+	return false
+
+
+func _obtener_punto_encuentro_social(npc: Creature, pareja: Creature) -> Vector2:
+	var direccion := pareja.global_position.direction_to(npc.global_position)
+	if direccion.length_squared() < 0.001:
+		direccion = Vector2.RIGHT
+	var candidatos: Array[Vector2] = [
+		pareja.global_position + direccion * 58.0,
+		pareja.global_position + Vector2.RIGHT * 58.0,
+		pareja.global_position + Vector2.DOWN * 58.0,
+		pareja.global_position + Vector2.LEFT * 58.0,
+		pareja.global_position + Vector2.UP * 58.0
+	]
+	for punto in candidatos:
+		var ruta := _crear_ruta(npc.global_position, punto)
+		if not ruta.is_empty():
+			return punto
+	return pareja.global_position
+
+
+func _buscar_npc_por_id_social(personaje_id: String) -> Creature:
+	var buscado := personaje_id.strip_edges().to_lower()
+	if buscado.is_empty():
+		return null
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if candidato_variant is Creature and is_instance_valid(candidato_variant):
+			var candidato := candidato_variant as Creature
+			if candidato.get_personaje_game_id().strip_edges().to_lower() == buscado:
+				return candidato
+	return null
+
+
+func _finalizar_objetivo_social_npc(
+	npc: Creature,
+	pareja: Creature,
+	mind: Node,
+	personaje_id: String,
+	objetivo: Dictionary
+) -> void:
+	var pareja_id := pareja.get_personaje_game_id().strip_edges()
+	var objetivo_id := str(objetivo.get("id", ""))
+	var motivo: Dictionary = objetivo.get("motivo", {})
+	mind.call("aplicar_satisfaccion", personaje_id, {"socializacion": 22.0, "diversion": 8.0})
+	mind.call("registrar_resultado_actividad", personaje_id, str(objetivo.get("tipo", "buscar_compania")), 0.65)
+	mind.call("completar_objetivo", personaje_id, objetivo_id, true)
+	if is_instance_valid(_relationship_system) and not pareja_id.is_empty():
+		var tipo_motivo := str(motivo.get("tipo", objetivo.get("tipo", "buscar_compania")))
+		var cambios := {"amistad": 0.6, "confianza": 0.25, "afecto": 0.35}
+		var recuerdo := {
+			"tipo": tipo_motivo,
+			"objetivo": objetivo_id,
+			"momento": _clave_fecha_actual()
+		}
+		var interaccion_registrada := false
+		var evento_memoria := ""
+		match tipo_motivo:
+			"cumplir_promesa":
+				var promesa_id := str(motivo.get("promesa_id", ""))
+				if not promesa_id.is_empty():
+					interaccion_registrada = _relationship_system.resolver_promesa_entre_npc(promesa_id, true)
+				var clave_promesa := str(motivo.get("clave_conocimiento", ""))
+				if not clave_promesa.is_empty():
+					_relationship_system.transmitir_conocimiento_npc(personaje_id, pareja_id, clave_promesa, {"motivo": "promesa_cumplida"})
+			"resolver_asunto":
+				var asunto_id := str(motivo.get("asunto_id", ""))
+				if not asunto_id.is_empty():
+					_relationship_system.resolver_asunto_pendiente_npc(asunto_id, true)
+				cambios["amistad"] = 1.0
+				cambios["confianza"] = 0.8
+				evento_memoria = "ayudar"
+			"compartir_noticia":
+				var clave_noticia := str(motivo.get("clave_conocimiento", ""))
+				if not clave_noticia.is_empty() and _relationship_system.transmitir_conocimiento_npc(personaje_id, pareja_id, clave_noticia, {"motivo": "charla_entre_habitantes"}):
+					cambios["amistad"] = 1.1
+					cambios["respeto"] = 0.7
+					recuerdo["evento"] = "compartir_conocimiento"
+					evento_memoria = "compartir_conocimiento"
+				else:
+					cambios["amistad"] = 0.2
+			"resolver_desacuerdo":
+				cambios["amistad"] = 0.8
+				cambios["confianza"] = 0.6
+				cambios["tension"] = -4.0
+				evento_memoria = "apoyar"
+			_:
+				pass
+		recuerdo["tipo"] = tipo_motivo
+		if not interaccion_registrada:
+			_relationship_system.registrar_interaccion_entre_npc(personaje_id, pareja_id, cambios, recuerdo)
+		if not evento_memoria.is_empty():
+			for participante_id in [personaje_id, pareja_id]:
+				_relationship_system.registrar_recuerdo(participante_id, {
+					"tipo": "evento_social",
+					"evento": evento_memoria,
+					"evento_id": objetivo_id,
+					"con_personaje": pareja_id if participante_id == personaje_id else personaje_id,
+					"importancia": 3.0,
+					"momento": _clave_fecha_actual()
+				})
+		var resultado_experiencia := 0.35
+		match tipo_motivo:
+			"cumplir_promesa":
+				resultado_experiencia = 0.65
+			"resolver_asunto":
+				resultado_experiencia = 0.8
+			"compartir_noticia":
+				resultado_experiencia = 0.45
+			"resolver_desacuerdo":
+				resultado_experiencia = 0.15
+		_registrar_experiencia_social_npc(
+			personaje_id, pareja_id, tipo_motivo, objetivo_id, resultado_experiencia
+		)
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento != null:
+		movimiento.detener_por_rutina()
+	npc.remove_meta("npc_objetivo_social")
+	npc.remove_meta("npc_objetivo_social_tiempo")
+	npc.remove_meta("npc_objetivo_social_espera")
+	npc.remove_meta("npc_objetivo_social_en_curso")
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("rutina_firma", "")
+	npc.set_meta("npc_social_siguiente_intento", _clave_fecha_actual())
+	if is_instance_valid(pareja):
+		var sistema_conversaciones := get_tree().get_first_node_in_group("npc_conversation_system")
+		if is_instance_valid(sistema_conversaciones) and sistema_conversaciones.has_method("iniciar_conversacion_social_autonoma"):
+			sistema_conversaciones.call("iniciar_conversacion_social_autonoma", npc, pareja, motivo)
+
+
+func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: String) -> void:
+	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento != null:
+		movimiento.detener_por_rutina()
+	if not objetivo.is_empty():
+		mind.call("completar_objetivo", personaje_id, str(objetivo.get("id", "")), false)
+	npc.remove_meta("npc_objetivo_social")
+	npc.remove_meta("npc_objetivo_social_tiempo")
+	npc.remove_meta("npc_objetivo_social_en_curso")
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("rutina_firma", "")
+
+
+func _clave_fecha_actual() -> String:
+	if not is_instance_valid(_world_atmosphere):
+		return ""
+	var tiempo := _world_atmosphere.obtener_tiempo()
+	return "%s:%s:%s" % [
+		str(tiempo.get("anio", 0)),
+		str(tiempo.get("mes", 0)),
+		str(tiempo.get("dia", 1))
+	]
+
+
+func _obtener_satisfaccion_actividad(actividad: String) -> Dictionary:
+	var texto := actividad.to_lower()
+	var satisfacciones: Dictionary = {}
+	if texto.contains("descans") or texto.contains("dorm") or texto.contains("sentarse"):
+		satisfacciones["descanso"] = 2.0
+	if texto.contains("convers") or texto.contains("salud") or texto.contains("compart") or texto.contains("historia") or texto.contains("amigos"):
+		satisfacciones["socializacion"] = 1.8
+		satisfacciones["diversion"] = 0.6
+	if texto.contains("notas") or texto.contains("observar") or texto.contains("leer") or texto.contains("investig") or texto.contains("informes"):
+		satisfacciones["curiosidad"] = 1.8
+	if texto.contains("pasear") or texto.contains("visitar") or texto.contains("recorrer"):
+		satisfacciones["autonomia"] = 1.3
+		satisfacciones["diversion"] = 1.0
+	if texto.contains("vigilar") or texto.contains("revisar"):
+		satisfacciones["seguridad"] = 0.8
+	return satisfacciones
 
 func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int) -> Vector2:
 	# Desplazamientos cortos alrededor del punto habitual de cada habitante.

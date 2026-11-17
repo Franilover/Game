@@ -993,6 +993,19 @@ func guardar_relaciones_sociales(relaciones: Dictionary) -> void:
 	_al_cambio_guardable()
 
 
+## Estado interno, aprendizaje y objetivos persistentes de los habitantes.
+func obtener_mentes_npc() -> Dictionary:
+	var mentes_variant: Variant = world_state.flags.get("npc_mentes", {})
+	if mentes_variant is Dictionary:
+		return (mentes_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func guardar_mentes_npc(mentes: Dictionary) -> void:
+	world_state.flags["npc_mentes"] = mentes.duplicate(true)
+	_al_cambio_guardable()
+
+
 func _sincronizar_garumis_vinculados_desde_escena() -> void:
 	var por_id: Dictionary = {}
 	for registro in obtener_garumis_vinculados():

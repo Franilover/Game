@@ -253,9 +253,9 @@ const CONVERSACIONES_HABITANTES: Array[Dictionary] = [
 		"npc_a":"mara","npc_b":"ivo","tono_relacion":"prudente",
 		"solo_ambiental_local":true,
 		"efectos_etapa":[{"confianza":0.0,"tension":0.0,"colaboracion":0.5,"resumen":"Mara acompaña a Ivo sin tratarlo como alguien incapaz."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Ivo acepta que sus amigos lo acompañen cuando lo necesita."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Mara e Ivo encuentran una forma cómoda de compartir sus paseos."}],
-		"lineas":[{"npc":"mara","texto":"Ivo, llevas un rato sentado. ¿Te volvió a pasar?"},{"npc":"ivo","texto":"Un poco. Se me acabó la energía antes de llegar a la otra punta de la plaza."},{"npc":"mara","texto":"Podemos quedarnos aquí. No hace falta que sigas caminando para acompañarnos."},{"npc":"ivo","texto":"Gracias. Me gusta que me inviten, aunque a veces tenga que tomarme las cosas con calma."}],
-		"lineas_siguientes":[{"npc":"ivo","texto":"Hoy quería ir hasta la panadería, pero creo que voy a necesitar compañía para volver."},{"npc":"mara","texto":"Te acompaño. Y si te cansas, paramos. No hay ninguna prisa."},{"npc":"ivo","texto":"Trato hecho. Pero la próxima vez yo invito algo en la posada."},{"npc":"mara","texto":"No tienes que compensar cada favor, Ivo. A veces basta con pasar un buen rato."}],
-		"lineas_tercera_etapa":[{"npc":"mara","texto":"Parece que hoy tienes un poco más de ánimo."},{"npc":"ivo","texto":"Dormí mejor. No significa que ya esté bien, pero hoy puedo dar una vuelta más larga."},{"npc":"mara","texto":"Entonces vamos hasta la plaza y vemos cómo te sientes."},{"npc":"ivo","texto":"Me parece bien. Gracias por no hacer de cada paseo un asunto enorme."}]
+		"lineas":[{"npc":"mara","texto":"Ivo, ¿te cansaste otra vez? Si quieres, nos quedamos un rato."},{"npc":"ivo","texto":"Un poco. Pensé que llegaba hasta la plaza, pero me confié."},{"npc":"mara","texto":"No pasa nada. Yo también quería sentarme un rato."},{"npc":"ivo","texto":"Entonces no te estoy arruinando el paseo. Igual me gusta que me invites."}],
+		"lineas_siguientes":[{"npc":"ivo","texto":"Hoy sí quiero ir a la panadería, pero no sé si me alcance para volver caminando."},{"npc":"mara","texto":"Vamos juntos. Si te cansas, paramos y vemos qué hacemos."},{"npc":"ivo","texto":"Ya, trato. Pero esta vez el pan lo elijo yo."},{"npc":"mara","texto":"Mientras no elijas el más duro, acepto. Y no tienes que devolverme cada favor."}],
+		"lineas_tercera_etapa":[{"npc":"mara","texto":"Te veo con más ánimo hoy."},{"npc":"ivo","texto":"Dormí bien. No es que ya pueda correr hasta el castillo, pero la plaza no me queda tan lejos."},{"npc":"mara","texto":"Entonces vamos hasta allá. Y si después quieres volver, volvemos."},{"npc":"ivo","texto":"Hecho. Me gusta que podamos hacer planes sin convertirlos en un gran asunto."}]
 	},
 	{
 		"clave":"nima_ivo_investigacion",
@@ -263,9 +263,9 @@ const CONVERSACIONES_HABITANTES: Array[Dictionary] = [
 		"solo_ambiental_local":true,
 		"requiere_progreso":"mara_ivo_apoyo",
 		"efectos_etapa":[{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Nima comienza a registrar cuándo aparece el cansancio de Ivo."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Nima contrasta sus notas con observaciones de Ivo y sus amigos."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Nima decide consultar a otros conocedores antes de sacar conclusiones."}],
-		"lineas":[{"npc":"nima","texto":"Ivo, ¿te parece si anoto cuándo te cansas y qué estabas haciendo antes?"},{"npc":"ivo","texto":"Mientras no me conviertas en una de tus prácticas, adelante."},{"npc":"nima","texto":"No quiero inventar una explicación. Sólo reunir observaciones y ver si aparece algún patrón."},{"npc":"ivo","texto":"De acuerdo. Si sirve para entender qué me pasa, puedo ayudarte."}],
-		"lineas_siguientes":[{"npc":"nima","texto":"Revisé las notas. El cansancio no aparece siempre después del mismo esfuerzo."},{"npc":"ivo","texto":"Eso ya lo sabía por experiencia. Hay días buenos y días en que hasta cruzar la plaza cuesta."},{"npc":"nima","texto":"Por eso no quiero sacar conclusiones todavía. Necesito consultar a alguien con más experiencia en salud."},{"npc":"ivo","texto":"Me parece bien. Sólo prométeme que también vas a salir a divertirte de vez en cuando."}],
-		"lineas_tercera_etapa":[{"npc":"nima","texto":"He ordenado las observaciones y voy a preguntar a algunas personas que conozcan tratamientos."},{"npc":"ivo","texto":"Gracias por tomártelo en serio. Y por seguir invitándome a salir."},{"npc":"nima","texto":"Investigar no sirve de mucho si olvido a la persona de la que estoy aprendiendo."},{"npc":"ivo","texto":"Entonces hoy deja las notas en casa. Vamos a dar una vuelta."}]
+		"lineas":[{"npc":"nima","texto":"Ivo, ¿te puedo preguntar algo? Quiero anotar cuándo te cansas, si no te molesta."},{"npc":"ivo","texto":"Puedes preguntar. Pero si empiezas a llamarme 'caso de estudio', me voy."},{"npc":"nima","texto":"No pensaba hacerlo. Quiero entender qué cambia de un día a otro, no sacar conclusiones antes de tiempo."},{"npc":"ivo","texto":"Bueno, eso sí me sirve. Te cuento lo que recuerde."}],
+		"lineas_siguientes":[{"npc":"nima","texto":"Revisé lo que anoté. No hay una sola cosa que explique todos los días."},{"npc":"ivo","texto":"Eso te lo podría haber dicho yo. Hay días buenos y otros en que cruzar la plaza cuesta bastante."},{"npc":"nima","texto":"Lo sé. Quería comprobarlo y ver si se nos estaba escapando algún detalle. Todavía quiero hablar con alguien que sepa más del tema."},{"npc":"ivo","texto":"Está bien. Pero hoy cerramos el cuaderno y vamos a hacer algo."}],
+		"lineas_tercera_etapa":[{"npc":"nima","texto":"Hablé con alguien que sabe más de esto. Tengo algunas ideas, pero todavía no una respuesta."},{"npc":"ivo","texto":"No esperaba una solución de un día para otro. Gracias por no dejarlo ahí."},{"npc":"nima","texto":"Me importaba entenderlo, pero también saber cómo estás. No quiero que nuestras conversaciones sean sólo preguntas."},{"npc":"ivo","texto":"Entonces vamos a la plaza. Puedes contarme algo que no hayas investigado."}]
 	},
 	{
 		"clave":"saira_ivo_contacto",
@@ -273,9 +273,9 @@ const CONVERSACIONES_HABITANTES: Array[Dictionary] = [
 		"solo_ambiental_local":true,
 		"requiere_progreso":"nima_ivo_investigacion",
 		"efectos_etapa":[{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Saira ofrece consultar a un vendedor itinerante sobre un tratamiento para Ivo."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Saira consigue información sobre el vendedor y su próxima visita."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Saira comparte el contacto y acuerda ayudar a conseguir el remedio adecuado."}],
-		"lineas":[{"npc":"saira","texto":"Ivo, escuché que sigues teniendo esos episodios de cansancio. Quizá pueda averiguar algo."},{"npc":"ivo","texto":"No quiero que todos tengan que preocuparse por mí, Saira."},{"npc":"saira","texto":"No es una molestia. Conozco a un vendedor que trae preparados medicinales de otros lugares. Puedo preguntarle si conoce algo que te sirva."},{"npc":"ivo","texto":"Si puedes averiguar su nombre o cuándo vuelve, te lo agradecería."}],
-		"lineas_siguientes":[{"npc":"saira","texto":"Hablé con el vendedor. Dice que puede revisar qué preparados tiene cuando vuelva a pasar por Torres."},{"npc":"ivo","texto":"¿Y crees que alguno podría ayudarme?"},{"npc":"saira","texto":"No quiero prometerte una cura. Primero habrá que saber qué ofrece y si es apropiado para tu caso."},{"npc":"ivo","texto":"Eso me parece justo. Gracias por tomarte el tiempo."}],
-		"lineas_tercera_etapa":[{"npc":"saira","texto":"Ya tengo una forma de contactar al vendedor. Cuando vuelva, podré presentártelos."},{"npc":"ivo","texto":"No sé cómo agradecerte todo esto."},{"npc":"saira","texto":"No me agradezcas antes de saber si encontramos algo útil. Vamos paso a paso."},{"npc":"ivo","texto":"De acuerdo. Y cuando me encuentre mejor, te ayudaré con el comercio."}]
+		"lineas":[{"npc":"saira","texto":"Me contaron que sigues cansándote más de la cuenta. Conozco a alguien que quizá pueda orientarnos."},{"npc":"ivo","texto":"¿Ahora todo Torres está hablando de mí?"},{"npc":"saira","texto":"No. Me lo comentaron porque suelo preguntar por los viajeros. Si prefieres que no me meta, lo dejo."},{"npc":"ivo","texto":"No, está bien. Si puedes averiguar quién es, me gustaría saberlo."}],
+		"lineas_siguientes":[{"npc":"saira","texto":"Hablé con el vendedor. Va a revisar qué trae la próxima vez que pase por Torres."},{"npc":"ivo","texto":"¿Crees que tendrá algo que pueda servirme?"},{"npc":"saira","texto":"No te voy a prometer que tenga una solución. Primero veamos qué trae y después averiguamos si te sirve."},{"npc":"ivo","texto":"Me parece bien. Gracias por preguntar, Saira."}],
+		"lineas_tercera_etapa":[{"npc":"saira","texto":"Ya sé cómo encontrar al vendedor. Cuando vuelva, te aviso para que hables con él directamente."},{"npc":"ivo","texto":"Gracias por haberte movido para averiguar todo esto."},{"npc":"saira","texto":"Me lo agradeces cuando sepamos si sirvió de algo. Vamos paso a paso."},{"npc":"ivo","texto":"Ya. Y cuando pueda, te devuelvo la mano con el comercio."}]
 	}
 ]
 
@@ -2151,7 +2151,99 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	print("NPCConversationSystem: conversación ambiental iniciada: ", conversacion.get("clave", ""))
 
 
+## Inicia una conversación breve generada por un encuentro social ya resuelto
+## por NPCScheduleSystem. Sus efectos sociales no se vuelven a aplicar aquí.
+func iniciar_conversacion_social_autonoma(npc_a: Creature, npc_b: Creature, motivo: Dictionary) -> bool:
+	if not _conversacion_activa.is_empty():
+		return false
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
+		return false
+	if not npc_a.is_alive or not npc_b.is_alive:
+		return false
+	_obtener_npcs_torres()
+	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		return false
+	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
+		return false
+
+	var nombre_a := npc_a.get_nombre_visual().strip_edges().to_lower()
+	var nombre_b := npc_b.get_nombre_visual().strip_edges().to_lower()
+	var id_a := npc_a.get_personaje_game_id().strip_edges()
+	var id_b := npc_b.get_personaje_game_id().strip_edges()
+	if nombre_a.is_empty() or nombre_b.is_empty() or id_a.is_empty() or id_b.is_empty():
+		return false
+
+	var tipo := str(motivo.get("tipo", "buscar_compania"))
+	var relacion: Dictionary = {}
+	if is_instance_valid(_relationship_system):
+		relacion = _relationship_system.obtener_relacion_entre_npc(id_a, id_b)
+	var tono := "cordial"
+	var tension := float(relacion.get("tension", 0.0))
+	var confianza := float(relacion.get("confianza", 0.0))
+	var amistad := float(relacion.get("amistad", 0.0))
+	if tension >= 1.0:
+		tono = "tensa"
+	elif confianza >= 1.0 or amistad >= 2.0:
+		tono = "cercana"
+
+	var historial_variant: Variant = relacion.get("historial", [])
+	var historial: Array = historial_variant if historial_variant is Array else []
+	var indice_variante := int(relacion.get("interacciones", 0)) + historial.size()
+	var antecedente := _obtener_referencia_historial_social(historial, tipo)
+	var detalle := str(motivo.get("titulo", motivo.get("descripcion", "")))
+	var lineas := NPC_VOICE_PROFILE.construir_dialogo_social(
+		nombre_a,
+		nombre_b,
+		tipo,
+		indice_variante,
+		tono,
+		detalle,
+		antecedente
+	)
+	if lineas.is_empty():
+		return false
+
+	_iniciar_conversacion({
+		"clave": "social_autonoma_%s_%s_%s_%d" % [nombre_a, nombre_b, tipo, indice_variante],
+		"npc_a": nombre_a,
+		"npc_b": nombre_b,
+		"lineas": lineas,
+		"solo_ambiental_local": true,
+		"_sin_progreso_etapa": true,
+		"_sin_dinamica_social": true,
+		"_social_autonoma": true,
+		"_tono_social": tono,
+		"_variante_social": indice_variante
+	})
+	return not _conversacion_activa.is_empty()
+
+
+func _obtener_referencia_historial_social(historial: Array, tipo_actual: String) -> String:
+	for indice in range(historial.size() - 1, -1, -1):
+		if not historial[indice] is Dictionary:
+			continue
+		var recuerdo := historial[indice] as Dictionary
+		var evento := str(recuerdo.get("evento", recuerdo.get("tipo", ""))).strip_edges()
+		match evento:
+			"promesa_cumplida":
+				if tipo_actual not in ["cumplir_promesa"]:
+					return "Después de lo que resolvimos la otra vez, quería saber cómo estabas."
+			"ayudar", "resolver_asunto":
+				if tipo_actual != "resolver_asunto":
+					return "Me acordé de cuando te eché una mano. ¿Cómo siguió todo?"
+			"compartir_conocimiento", "compartir_noticia":
+				if tipo_actual != "compartir_noticia":
+					return "Me quedé pensando en lo que me contaste la última vez."
+			"apoyar", "resolver_desacuerdo":
+				if tipo_actual != "resolver_desacuerdo":
+					return "La otra vez me hizo bien que pudiéramos hablar con calma."
+	return ""
+
+
 func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+	if bool(_conversacion_activa.get("_social_autonoma", false)):
+		_actualizar_conversacion_social_autonoma(delta, jugador, dialogo)
+		return
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
 		_ocultar_burbujas()
 		_jugador_observando_conversacion = false
@@ -2205,6 +2297,46 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 			_finalizar_conversacion(true)
 			return
 		_mostrar_linea_actual()
+
+
+func _actualizar_conversacion_social_autonoma(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+	if _conversacion_activa.is_empty():
+		return
+	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
+	var npc_b := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
+	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		_finalizar_conversacion()
+		return
+	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 2.0:
+		_finalizar_conversacion()
+		return
+
+	var observando := false
+	if is_instance_valid(jugador) and jugador.is_inside_tree():
+		var distancia := minf(
+			jugador.global_position.distance_to(npc_a.global_position),
+			jugador.global_position.distance_to(npc_b.global_position)
+		)
+		observando = distancia <= DISTANCIA_ENTRADA_OBSERVACION
+	if is_instance_valid(dialogo) and dialogo.esta_abierto():
+		observando = false
+	if observando:
+		_jugador_observando_conversacion = true
+		_mostrar_linea_actual(false)
+	else:
+		_jugador_observando_conversacion = false
+		_ocultar_burbujas()
+
+	# El reloj social avanza aunque el jugador esté lejos o tenga otro diálogo abierto.
+	_temporizador_linea -= maxf(delta, 0.0)
+	if _temporizador_linea <= 0.0:
+		_indice_linea += 1
+		var lineas: Array = _conversacion_activa.get("lineas", [])
+		if _indice_linea >= lineas.size():
+			_finalizar_conversacion(true)
+			return
+		if observando:
+			_mostrar_linea_actual()
 
 
 func _mostrar_linea_actual(reiniciar_temporizador: bool = true) -> void:
@@ -2677,7 +2809,7 @@ func _registrar_dinamica_social_conversacion() -> void:
 
 
 func _finalizar_conversacion(completada: bool = false) -> void:
-	if completada and not _conversacion_activa.is_empty():
+	if completada and not _conversacion_activa.is_empty() and not bool(_conversacion_activa.get("_sin_dinamica_social", false)):
 		_registrar_dinamica_social_conversacion()
 		_registrar_rutina_compartida()
 	if completada and bool(_conversacion_activa.get("_acontecimiento_diario", false)):

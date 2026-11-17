@@ -19,7 +19,7 @@ func _run() -> void:
 	_expect(garumi_node is Garumi, "El scene debe crear una instancia de la clase Garumi separada.")
 	_expect(garumi_node.get_node_or_null("AIController") == null, "Los Garumis no deben heredar por accidente la IA de criaturas normales.")
 	_expect(garumi_node.get_node_or_null("CreatureMovement") != null, "El Garumi debe conservar el controlador de movimiento compartido.")
-	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Desel", "garumi_debug_preview": true})
+	garumi_node.call("configurar", {"id": "g-scene", "nombre": "Garumi scene test", "asset_key": "Desell", "garumi_debug_preview": true})
 	garumi_node.call("activar_como_proxy")
 	var datos_visual: Dictionary = garumi_node.get("datos")
 	var sprite_garumi := garumi_node.get_node("Sprite2D") as Sprite2D
@@ -32,7 +32,7 @@ func _run() -> void:
 
 	# Los sprites nuevos deben resolverse por nombre visible incluso cuando
 	# asset_key contiene una clave antigua o inexistente del catálogo.
-	for nombre_sprite in ["Velki", "Velkor"]:
+	for nombre_sprite in ["Velki", "Plava"]:
 		var garumi_sprite_test: Node = GARUMI_SCENE.instantiate()
 		get_tree().root.add_child(garumi_sprite_test)
 		garumi_sprite_test.call("configurar", {
@@ -52,6 +52,7 @@ func _run() -> void:
 		)
 		garumi_sprite_test.queue_free()
 
+	print("GarumiWorldPresence: sprites loaded")
 	var salud_antes := int(garumi_node.get("health"))
 	garumi_node.call("take_damage", 999, "test")
 	_expect(int(garumi_node.get("health")) == salud_antes and bool(garumi_node.get("is_alive")), "El daño común debe dejar vivo al Garumi hasta tener absorción específica.")
@@ -66,7 +67,7 @@ func _run() -> void:
 	if not guardados.is_empty():
 		var estado_guardado := guardados[0] as Dictionary
 		_expect(str(estado_guardado.get("categoria_entidad", "")) == "garumi", "El streaming debe conservar la categoría Garumi.")
-		_expect(str(estado_guardado.get("asset_key", "")) == "Desel", "El streaming debe conservar la clave del sprite.")
+		_expect(str(estado_guardado.get("asset_key", "")) == "Desell", "El streaming debe conservar la clave del sprite.")
 		_expect(str(estado_guardado.get("nombre", "")) == "Garumi scene test", "El streaming debe conservar el nombre visible del Garumi.")
 		_expect(bool(estado_guardado.get("garumi_debug_preview", false)), "El streaming debe conservar que la instancia es sólo un prototipo de depuración.")
 		_expect(str(estado_guardado.get("habitat_clave", "")) == "tierra", "El streaming debe conservar el entorno de tierra del Garumi.")
@@ -85,6 +86,7 @@ func _run() -> void:
 	personaje_persistente.queue_free()
 	manager.free()
 	await get_tree().process_frame
+	print("GarumiWorldPresence: chunk lifecycle passed")
 
 	var data: Node = WORLD_DATA_SCRIPT.new()
 	data.set("mundo", {
@@ -116,6 +118,7 @@ func _run() -> void:
 		(catalogo[0] as Dictionary)["nombre"] = "mutado"
 		var original: Dictionary = data.call("obtener_garumi_game", "test-garumi-001")
 		_expect(str(original.get("nombre", "")) == "Garumi de prueba", "El catálogo expuesto debe devolver copias, no referencias mutables.")
+	print("GarumiWorldPresence: catalog passed")
 	var diagnostico: Dictionary = data.call("obtener_diagnostico_garumis_game")
 	_expect(int(diagnostico.get("catalogo", 0)) == 1, "El diagnóstico debe contar el catálogo validado.")
 
@@ -163,6 +166,7 @@ func _run() -> void:
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "", 1)), "Sin ID de Original permitido no se debe habilitar ningún candidato.")
 	_expect(not bool(rules.call("garumi_cumple_filtro_generacional", normal_orumi_gen1, "orumi-test-id", 2)), "Esta fase sólo habilita la primera generación configurada.")
 
+	print("GarumiWorldPresence: spawn generation rules passed")
 	var bioma := {"id": "bioma-prueba"}
 	var ecosistema := {"id": "ecosistema-prueba"}
 	var habitats: Array = [
@@ -191,6 +195,7 @@ func _run() -> void:
 	_expect(str(elegido.get("id", "")) == "g-1", "La selección ponderada debe devolver el candidato válido.")
 	data.free()
 	rules.free()
+	print("GarumiWorldPresence: ecology rules passed")
 
 	if _failed:
 		get_tree().quit(1)

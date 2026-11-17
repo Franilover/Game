@@ -16,13 +16,20 @@ var _progreso: Dictionary = {}
 var _estado: Dictionary = {}
 var _origen_misiones: Dictionary = {}
 var _recompensas_reclamadas: Dictionary = {}
+var _entrega_recompensas_en_curso: bool = false
 var _entity_manager: WorldEntityManager = null
 var _world_data: WorldDataService = null
+var _world_items: GarliaWorldItems = null
 
 
-func configurar_dependencias(entity_manager: WorldEntityManager = null, world_data: WorldDataService = null) -> void:
+func configurar_dependencias(
+	entity_manager: WorldEntityManager = null,
+	world_data: WorldDataService = null,
+	world_items: GarliaWorldItems = null
+) -> void:
 	_entity_manager = entity_manager
 	_world_data = world_data
+	_world_items = world_items
 
 	if _world_data == null:
 		push_error("MissionManager: WorldDataService no configurado.")
@@ -654,7 +661,13 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 ## Entrega las recompensas de una misión de forma idempotente.
 ## Las recompensas de objeto deben incluir datos.item_data (definición de runtime)
 ## o los campos equivalentes dentro de datos. El inventario confirma cada inserción.
+func esta_entregando_recompensas() -> bool:
+	return _entrega_recompensas_en_curso
+
+
 func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> bool:
+	if _entrega_recompensas_en_curso:
+		return false
 	if inventario == null or not is_instance_valid(inventario):
 		return false
 	var estado_actual := str(_estado.get(mision_id, ""))
@@ -665,6 +678,21 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 	var mision := obtener_mision(mision_id)
 	if mision.is_empty():
 		return false
+
+	# La restauración transaccional del inventario también emite
+	# inventory_changed. Mantener este bloqueo durante toda la operación evita
+	# que Main programe otro reintento por el mismo rollback.
+	_entrega_recompensas_en_curso = true
+	var resultado := _entregar_recompensas_transaccional(mision_id, mision, inventario)
+	_entrega_recompensas_en_curso = false
+	return resultado
+
+
+func _entregar_recompensas_transaccional(
+	mision_id: String,
+	mision: Dictionary,
+	inventario: GarliaInventory
+) -> bool:
 	var recompensas_variant: Variant = mision.get("recompensas", [])
 	var recompensas: Array = recompensas_variant as Array if recompensas_variant is Array else []
 	var inventario_anterior := inventario.serializar_estado_partida()
@@ -688,7 +716,6 @@ func entregar_recompensas(mision_id: String, inventario: GarliaInventory) -> boo
 		Events.notification_pushed.emit("Recompensas recibidas: " + str(mision.get("nombre", "Misión")))
 	return true
 
-
 ## Reintenta entregas que quedaron pendientes cuando el inventario vuelve a tener espacio.
 func reintentar_recompensas_pendientes(inventario: GarliaInventory) -> void:
 	if inventario == null or not is_instance_valid(inventario):
@@ -709,8 +736,13 @@ func _construir_objeto_recompensa(recompensa: Dictionary) -> Dictionary:
 	var datos: Dictionary = datos_variant as Dictionary if datos_variant is Dictionary else {}
 	var objeto_variant: Variant = datos.get("item_data", datos.get("objeto", {}))
 	var objeto: Dictionary = objeto_variant.duplicate(true) if objeto_variant is Dictionary else {}
+	var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
 	if objeto.is_empty():
-		var item_id := str(recompensa.get("item_id", datos.get("item_id", ""))).strip_edges()
+		# Las recompensas canónicas suelen guardar solo el UUID del item.
+		# Resolverlo contra el catálogo ya cargado evita duplicar datos de Supabase.
+		if not item_id.is_empty() and _world_items != null and is_instance_valid(_world_items):
+			objeto = _world_items.buscar_item_por_id(item_id)
+	if objeto.is_empty():
 		var nombre := str(datos.get("nombre", "")).strip_edges()
 		if item_id.is_empty() or nombre.is_empty():
 			return {}

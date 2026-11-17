@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const MovementScript = preload("res://scripts/gameplay/player/player_movement_controller.gd")
 const CoordinatorScript = preload("res://scripts/gameplay/player/player_locomotion_coordinator.gd")
@@ -9,7 +9,7 @@ const InputScript = preload("res://scripts/gameplay/player/player_input_controll
 const PhysicsScript = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
@@ -26,11 +26,11 @@ func _run() -> void:
 	if not errores.is_empty():
 		for error in errores:
 			push_error("PlayerLocomotion: FAIL: " + error)
-		quit(1)
+		get_tree().quit(1)
 		return
 
 	print("PlayerLocomotion: PASS")
-	quit(0)
+	get_tree().quit(0)
 
 
 func _probar_intensidad_analogica(errores: Array[String]) -> void:
@@ -131,9 +131,14 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 
 	var raiz_visual := Node2D.new()
 	var sprite := Sprite2D.new()
+	sprite.name = "Sprite2D"
 	raiz_visual.add_child(sprite)
 	var marcador := ColorRect.new()
 	visual.configurar(raiz_visual, marcador, null)
+	if visual.sprite == null:
+		errores.append("El controlador visual no encontró el nodo Sprite2D.")
+	if visual.sprite_idle == null or visual.sprite_walk_left == null or visual.sprite_walk_back == null:
+		errores.append("El controlador visual no cargó todas las texturas importadas.")
 	visual.actualizar_direccion(Vector2.RIGHT)
 	if not marcador.position.is_equal_approx(Vector2(12.0, -26.0)):
 		errores.append("El marcador visual no conservó el desplazamiento lateral.")
@@ -204,7 +209,7 @@ func _probar_integracion_fisica(errores: Array[String]) -> void:
 func _textura_coincide_con_archivo(textura: Texture2D, ruta: String) -> bool:
 	if textura == null:
 		return false
-	var imagen := Image.new()
-	if imagen.load(ruta) != OK:
-		return false
-	return textura.get_image().get_data() == imagen.get_data()
+	# Comparar contra el recurso importado por el mismo ResourceLoader; los
+	# buffers del PNG fuente no son necesariamente idénticos al formato importado.
+	var esperada := ResourceLoader.load(ruta) as Texture2D
+	return esperada != null and textura == esperada

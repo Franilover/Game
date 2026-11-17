@@ -33,6 +33,9 @@ var _boton_preguntar_item: Button = null
 var _boton_tienda_mercado: Button = null
 var _tienda_mercado: PanelContainer = null
 var _dialogue_content_row: HBoxContainer = null
+var _dialogue_margin: MarginContainer = null
+var _dialogue_text_column: VBoxContainer = null
+var _dialogue_social_column: VBoxContainer = null
 var _selector_conversacion: PanelContainer = null
 var _selector_conversacion_grid: GridContainer = null
 var _selector_conversacion_titulo: Label = null
@@ -53,12 +56,16 @@ var _texto_completo: String = ""
 var _indice_caracter: int = 0
 var _temporizador_texto: float = 0.0
 var _intervalo_caracter: float = 0.006
+var _temporizador_lectura_transito: float = 0.0
+const INTERVALO_CARACTER_CAMINANDO: float = 0.028
+const TIEMPO_LECTURA_TRANSITO: float = 2.5
 var _ultimo_toque_dialogo_msec: int = -1000
 var _recuerdo_pendiente_mostrar: Dictionary = {}
 var _personaje_recuerdo_pendiente: String = ""
 var _variante_pendiente_mostrar: Dictionary = {}
 var _personaje_variante_pendiente: String = ""
 var _ciclo_variante_pendiente: String = ""
+var _contexto_rutina_conversacion: Dictionary = {}
 
 
 func _ready() -> void:
@@ -87,6 +94,11 @@ func _process(delta: float) -> void:
 		return
 
 	if _indice_caracter >= _texto_completo.length():
+		if _dialogo_en_transito and _indice_linea >= _lineas.size() - 1:
+			_temporizador_lectura_transito += delta
+			if _temporizador_lectura_transito >= TIEMPO_LECTURA_TRANSITO:
+				cerrar()
+			return
 		return
 
 	# Acumula tiempo y revela varios caracteres por fotograma cuando hace falta.
@@ -103,9 +115,7 @@ func _process(delta: float) -> void:
 	if _indice_caracter >= _texto_completo.length():
 		_marcar_recuerdo_pendiente_mostrado()
 		_marcar_variante_pendiente_mostrada()
-		if _dialogo_en_transito and _indice_linea >= _lineas.size() - 1:
-			cerrar()
-			return
+		# El cierre de una línea de tránsito se aplaza en _process para dejarla visible.
 
 
 func _input(event: InputEvent) -> void:
@@ -252,6 +262,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	_personaje_variante_pendiente = ""
 	_ciclo_variante_pendiente = ""
 	_fuente = fuente
+	_contexto_rutina_conversacion = _capturar_contexto_rutina_actual()
 
 	var datos_seleccionados := datos.duplicate(true) if iniciativa_directa else _seleccionar_dialogo(datos)
 	var lineas := _normalizar_lineas(datos_seleccionados)
@@ -416,6 +427,7 @@ func cerrar() -> void:
 
 	_fuente = null
 	_dialogo_en_transito = false
+	_contexto_rutina_conversacion.clear()
 	_acciones.clear()
 	_recuerdo_pendiente_mostrar.clear()
 	_personaje_recuerdo_pendiente = ""
@@ -597,6 +609,8 @@ func _mostrar_linea_actual() -> void:
 	_texto_completo = texto
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
+	_temporizador_lectura_transito = 0.0
+	_intervalo_caracter = INTERVALO_CARACTER_CAMINANDO if _dialogo_requiere_lectura_lenta() else 0.006
 	text_label.text = ""
 	if hint_label != null:
 		hint_label.text = "Toca para continuar" if DisplayServer.is_touchscreen_available() else "Clic / acción principal para continuar"
@@ -605,6 +619,15 @@ func _mostrar_linea_actual() -> void:
 
 ## Resuelve variantes declaradas en los datos narrativos usando el perfil social
 ## de Supabase y la relación guardada en la partida. Las claves son deterministas.
+## Los NPC que están caminando hablan con un ritmo más pausado para que el
+## jugador pueda leer el saludo sin que el diálogo desaparezca enseguida.
+func _dialogo_requiere_lectura_lenta() -> bool:
+	if _dialogo_en_transito:
+		return true
+	var actividad := str(_contexto_rutina_conversacion.get("actividad", "")).strip_edges()
+	return _actividad_es_desplazamiento(actividad)
+
+
 func _resolver_texto_por_personalidad(
 	texto_base: String,
 	variantes_personalidad_variant: Variant,
@@ -1081,23 +1104,36 @@ func _obtener_texto_rutina_personaje(
 	amable: bool
 ) -> String:
 	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
-	# Los diálogos de tránsito aprobados conservan la voz individual de cada NPC.
-	if en_transito:
+	# El movimiento dentro de un edificio es desplazamiento local, no un viaje
+	# hacia la ubicación siguiente de la rutina. Nunca anunciar un destino exterior.
+	if dentro_edificio and _actividad_es_desplazamiento(actividad):
 		match nombre:
 			"elian":
-				return ("¡Qué bueno verte! Llevo el pan todavía en la cabeza. Primero tengo que llegar a %s; búscame allí y te guardo un momento para conversar." if amable else "Disculpa, no puedo detenerme ahora. Tengo que llegar a %s antes de que se enfríe el trabajo. Allí podremos hablar.") % destino
+				return "Estoy dando una vuelta por aquí. ¿Qué necesitabas?" if amable else "Daba una vuelta por aquí. ¿Qué pasa?"
 			"bruna":
-				return ("¡Eh, me alegra encontrarte! Voy a %s a terminar un encargo. Cuando deje las herramientas, hablamos tranquilamente." if amable else "Ahora no puedo parar; tengo un encargo entre manos. Voy a %s. Si necesitas algo, espérame allí.") % destino
+				return "Solo estoy dando una vuelta por aquí. ¿Qué se te ofrece?" if amable else "Daba una vuelta por aquí. ¿Necesitas algo?"
 			"darven":
-				return ("Me alegra verte. Estoy siguiendo mi ronda hacia %s; cuando termine de asegurar la zona, tendrás toda mi atención." if amable else "En servicio. No puedo abandonar mi recorrido: me dirijo a %s. Si es importante, búscame allí.") % destino
+				return "Estoy revisando que todo esté en orden por aquí. ¿Ocurrió algo?"
+			_:
+				return "Estoy dando una vuelta por aquí. ¿Qué necesitabas?"
+
+	# Los diálogos de tránsito aprobados conservan la voz individual de cada NPC.
+	if en_transito and not dentro_edificio:
+		match nombre:
+			"elian":
+				return ("¡Qué bueno verte! Voy hacia %s a dejar algo listo. ¿Qué necesitabas?" if amable else "Voy hacia %s. ¿Necesitas algo antes de que siga?") % destino
+			"bruna":
+				return ("¡Eh, me alegra encontrarte! Voy a %s a terminar un encargo. ¿Qué necesitas?" if amable else "Tengo que llegar a %s para terminar un encargo. Dime, ¿qué pasa?") % destino
+			"darven":
+				return ("Me alegra verte. Sigo mi ronda hacia %s. ¿Ocurrió algo?" if amable else "Sigo mi ronda hacia %s. Dime, ¿hay algún problema?") % destino
 			"saira":
-				return ("¡Qué casualidad verte! Voy hacia %s, tengo unas cuentas que revisar. Si pasas por allí, podemos ponernos al día." if amable else "Ahora mismo voy con prisa; debo atender un asunto en %s. Allí estaré disponible cuando termine.") % destino
+				return ("¡Qué casualidad verte! Voy hacia %s a revisar unas cuentas. ¿Qué se te ofrece?" if amable else "Tengo que atender un asunto en %s. ¿Necesitas algo antes de que siga?") % destino
 			"narel":
-				return ("¡Ah, hola! Justo iba pensando en algo que debo consultar en %s. Acompáñame con la conversación allí; ahora temo perder el hilo." if amable else "Perdona, estoy intentando no olvidar una idea. Debo llegar a %s y dejar mis notas en orden. Hablemos después.") % destino
+				return ("¡Ah, hola! Voy hacia %s a consultar unas notas. ¿Qué querías contarme?" if amable else "Voy hacia %s a ordenar unas notas. Dime, ¿qué necesitas?") % destino
 			"abel":
-				return ("Me alegra que hayas venido. Me dirijo a %s; allí podremos hablar sin descuidar mis obligaciones." if amable else "Ahora debo continuar hacia %s. Cuando haya atendido mis responsabilidades, podremos conversar.") % destino
+				return ("Me alegra que hayas venido. Voy hacia %s. ¿Hay algo que quieras comentarme?" if amable else "Tengo que continuar hacia %s, pero dime qué necesitas.") % destino
 			"liam":
-				return ("¡Hola! Voy camino a %s. Si me encuentras allí, podremos conversar un poco más." if amable else "Disculpa, tengo que llegar a %s. Búscame allí cuando termine lo que debo hacer.") % destino
+				return ("¡Hola! Voy camino a %s. ¿Qué pasa?" if amable else "Voy hacia %s. ¿Necesitas algo antes de que continúe?") % destino
 			"ivo":
 				if rutina_clave == "ivo_paseo_sin_panadero":
 					return "Mejor doy una vuelta por la plaza; Elian no está atendiendo ahora." if amable else "No voy a la panadería si Elian no está. Seguiré por la plaza."
@@ -1209,7 +1245,7 @@ func _obtener_texto_rutina_personaje(
 		"bruna":
 			match actividad:
 				"forjar":
-					return "Estoy trabajando el metal. Necesito mantener el ritmo y la temperatura; hablaré contigo cuando termine esta pieza." if not amable else "Observa el color del metal. No golpeo hasta que está en el punto correcto; es cuestión de paciencia."
+					return "Estoy trabajando el metal. ¿Necesitabas algo?" if not amable else "Observa el color del metal. No golpeo hasta que está en el punto correcto; es cuestión de paciencia."
 				"revisar_herramientas":
 					return "Estoy comprobando las herramientas. Una pieza desgastada puede arruinar un trabajo entero." if not amable else "Estoy revisando mis herramientas. Si quieres, puedo enseñarte qué señales busco antes de volver a usarlas."
 		"darven":
@@ -1217,7 +1253,7 @@ func _obtener_texto_rutina_personaje(
 				"vigilar_acceso":
 					return "Estoy controlando el acceso al registro. Si vienes por un trámite, espera a que termine la inspección." if not amable else "Estoy revisando quién entra y sale. Ya conozco tu rostro, pero debo mantener el procedimiento."
 				"vigilar":
-					return "Este puesto requiere atención constante. No puedo apartarme mientras estoy de guardia." if not amable else "Todo está tranquilo por ahora. Aun así, no debo descuidar el puesto; podemos hablar mientras mantengo la vigilancia."
+					return "Estoy vigilando este puesto. ¿Vienes por algo relacionado con la guardia?" if not amable else "Todo está tranquilo por ahora. Aun así, no debo descuidar el puesto; podemos hablar mientras mantengo la vigilancia."
 				"patrullar":
 					return "Estoy recorriendo el camino. Si detecto algo fuera de lugar, debo informar al cuartel." if not amable else "La ronda está tranquila. Puedes acompañarme un tramo, pero mantente atento a los alrededores."
 				"recorrer_alrededores":
@@ -1233,7 +1269,7 @@ func _obtener_texto_rutina_personaje(
 		"narel":
 			match actividad:
 				"investigar_oris":
-					return "Estoy comparando observaciones sobre Oris. Necesito terminar esta anotación antes de cambiar de tema." if not amable else "Encontré una diferencia interesante en estas observaciones de Oris. Quiero enseñártela cuando termine de comprobarla."
+					return "Estoy comparando observaciones sobre Oris. ¿Qué querías comentarme?" if not amable else "Encontré una diferencia interesante en estas observaciones de Oris. Quiero enseñártela cuando termine de comprobarla."
 				"consultar_archivos":
 					return "Estoy consultando registros antiguos. Prefiero verificar las fuentes antes de aceptar una conclusión." if not amable else "He encontrado una referencia que podría aclarar una de mis observaciones. ¿Quieres ayudarme a revisarla?"
 				"registrar_observaciones":
@@ -1255,14 +1291,31 @@ func _obtener_texto_rutina_personaje(
 				"dormir":
 					return "Ya es hora de descansar. Mañana habrá más que hacer." if not amable else "Voy a descansar. Me alegra haberte visto antes de terminar el día."
 
+	# Mara, Ivo y Nima también tienen una respuesta propia cuando su
+	# actividad concreta no necesita una línea especial.
+	match nombre:
+		"mara":
+			return "Estaba tomando un rato para mí. ¿Qué pasó?" if not amable else "Me estaba dando un respiro. Qué bueno que pasaste, ¿cómo va tu día?"
+		"ivo":
+			return "Voy a mi ritmo, como siempre. ¿Qué necesitas?" if not amable else "Estoy aprovechando el día sin apurarme. ¿Tú cómo vas?"
+		"nima":
+			return "Estoy ordenando unas ideas antes de seguir. ¿Qué querías preguntarme?" if not amable else "Estaba pensando en algo que vi hoy. Si tienes un momento, te cuento."
+
+	# Caminar o desplazarse no es estar ocupado: el NPC puede responder sin
+	# describir una acción cotidiana como si fuera una obligación laboral.
+	if _actividad_es_desplazamiento(actividad):
+		if destino == "su próximo destino":
+			return "Voy dando una vuelta por aquí. ¿Qué necesitabas?" if not amable else "Estoy dando una vuelta por aquí. ¿Qué pasa?"
+		return ("Voy camino a %s. ¿Necesitabas algo?" if amable else "Voy hacia %s. Si no es urgente, hablamos cuando llegue.") % destino
+
 	# Respaldo contextual para actividades nuevas que lleguen desde datos sin
 	# necesidad de cambiar el motor de diálogo cada vez.
 	var verbo := actividad.replace("_", " ").strip_edges()
 	if verbo.is_empty():
 		verbo = "atender mis asuntos"
 	if dentro_edificio:
-		return ("Estoy ocupado con %s aquí. Cuando termine, podremos conversar." if not amable else "Estoy con %s, pero me alegra que hayas venido. Podemos hablar mientras continúo.") % verbo
-	return ("Estoy en %s y tengo que ocuparme de %s. Hablemos cuando termine." if not amable else "Estoy en %s con %s. Quédate un momento si quieres; podemos conversar.") % [destino, verbo]
+		return ("Estoy con %s aquí. ¿Qué necesitabas?" if not amable else "Estoy con %s, pero me alegra que hayas venido. Cuéntame, ¿qué pasa?") % verbo
+	return ("Estoy en %s con %s. ¿Necesitabas algo?" if not amable else "Voy por %s mientras me ocupo de %s. ¿Qué pasa?") % [destino, verbo]
 
 
 func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -> bool:
@@ -1436,11 +1489,22 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 		},
 		{
 			"texto": "Despedirme con amabilidad",
-			"jugador": "No quiero interrumpirte más. Nos vemos luego.",
+			"jugador": _obtener_frase_despedida_jugador_rutina(),
 			"respuesta": _obtener_reaccion_despedida_rutina(),
 		}
 	]
 	return respuestas
+
+
+func _obtener_frase_despedida_jugador_rutina() -> String:
+	var actividad := str(_contexto_rutina_conversacion.get("actividad", "")).strip_edges()
+	if bool(_contexto_rutina_conversacion.get("dentro_edificio", false)) and _actividad_es_desplazamiento(actividad):
+		return "Bueno, te dejo seguir con lo que hacías por aquí. Nos vemos luego."
+	if _actividad_es_desplazamiento(actividad):
+		return "Bueno, sigue con tu camino. Nos vemos luego."
+	if _actividad_impide_una_conversacion_larga(actividad):
+		return "Te dejo seguir con lo tuyo. Hablamos luego."
+	return "Bueno, no te quito más tiempo. Nos vemos luego."
 
 
 func _obtener_reaccion_pregunta_rutina() -> String:
@@ -1456,6 +1520,12 @@ func _obtener_reaccion_pregunta_rutina() -> String:
 			return "Bastante bien. Siempre hay algo que revisar: precios, encargos o mercancía que todavía no llega."
 		"narel":
 			return "He avanzado, aunque todavía necesito contrastar algunas observaciones antes de sacar conclusiones."
+		"mara":
+			return "Estoy bien. Me apetecía salir un rato, aunque hoy no tenía muchas ganas de hablar con todo el mundo."
+		"ivo":
+			return "Bien, aunque voy a descansar un poco antes de seguir. Hoy me pasé con el paseo."
+		"nima":
+			return "Bien. Avancé con unas notas, pero creo que ya toca descansar la cabeza."
 		"abel":
 			return "El reino sigue adelante. Mi tarea consiste en escuchar sus problemas antes de que se vuelvan más grandes."
 		"liam":
@@ -1476,6 +1546,12 @@ func _obtener_reaccion_apoyo_rutina() -> String:
 			return "Me alegra que lo notes. Mantener un comercio en marcha requiere más cuentas de las que parece."
 		"narel":
 			return "Gracias. Investigar puede ser solitario; se agradece que alguien valore el esfuerzo."
+		"mara":
+			return "Gracias. No siempre me resulta fácil dejar que alguien se acerque, así que lo valoro."
+		"ivo":
+			return "Gracias. A veces me cuesta pedir ayuda sin sentir que estoy dando trabajo a los demás."
+		"nima":
+			return "Gracias. Me ayuda que alguien se interese, incluso cuando todavía no tengo resultados."
 		"abel":
 			return "Te agradezco que lo digas. Gobernar también consiste en atender tareas que casi nadie llega a ver."
 		"liam":
@@ -1496,6 +1572,12 @@ func _obtener_reaccion_conocimiento_rutina() -> String:
 			return "Eso suena interesante. La información también tiene valor; cuéntame qué descubriste."
 		"narel":
 			return "¡Eso sí que me interesa! ¿Dónde lo aprendiste? Tal vez podamos comprobarlo juntos."
+		"mara":
+			return "Cuéntame. Puede que no sepa mucho del tema, pero me interesa escucharte."
+		"ivo":
+			return "¿En serio? Cuéntame. Me gusta aprender cosas nuevas, aunque no siempre pueda ir a comprobarlas contigo."
+		"nima":
+			return "¡Cuéntame! ¿Dónde lo viste? Quiero entenderlo antes de sacar conclusiones."
 		"abel":
 			return "Me interesa conocerlo. Las decisiones del reino mejoran cuando escuchamos nuevas perspectivas."
 		"liam":
@@ -1503,8 +1585,77 @@ func _obtener_reaccion_conocimiento_rutina() -> String:
 	return "Me interesa lo que dices. Cuéntame más cuando tengamos un momento."
 
 
+func _capturar_contexto_rutina_actual() -> Dictionary:
+	if not is_instance_valid(_fuente):
+		return {}
+	var ubicacion := str(_fuente.get_meta("rutina_ubicacion", "")).strip_edges().to_lower()
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower()
+	return {
+		"rutina_clave": str(_fuente.get_meta("rutina_actual", "")).strip_edges().to_lower(),
+		"ubicacion": ubicacion,
+		"destino": _nombre_ubicacion_rutina(ubicacion),
+		"actividad": actividad,
+		"en_transito": bool(_fuente.get_meta("rutina_en_transito", false)),
+		"dentro_edificio": bool(_fuente.get_meta("rutina_en_edificio", false)),
+		"amable": _relacion_amable_actual()
+	}
+
+
+func _actividad_es_desplazamiento(actividad: String) -> bool:
+	var clave := actividad.strip_edges().to_lower()
+	for termino in ["camin", "pase", "recorr", "desplaz", "dirig", "ir_a", "volv", "regres", "viaj", "andar"]:
+		if clave.contains(termino):
+			return true
+	return false
+
+
+func _actividad_impide_una_conversacion_larga(actividad: String) -> bool:
+	var clave := actividad.strip_edges().to_lower()
+	for termino in ["trabaj", "estudi", "investig", "repar", "vigilar", "atend", "forj", "horne", "comerci", "ordenar", "consult", "leer", "registrar", "inspeccion"]:
+		if clave.contains(termino):
+			return true
+	return false
+
+
 func _obtener_reaccion_despedida_rutina() -> String:
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var contexto := _contexto_rutina_conversacion
+	var actividad_contextual := str(contexto.get("actividad", "")).strip_edges().to_lower()
+	var destino_contextual := str(contexto.get("destino", "el pueblo"))
+	if bool(contexto.get("dentro_edificio", false)) and _actividad_es_desplazamiento(actividad_contextual):
+		return "Voy a seguir dando una vuelta por aquí. Nos vemos luego."
+	if _actividad_es_desplazamiento(actividad_contextual):
+		if destino_contextual == "su próximo destino":
+			return "Voy a seguir con mi recorrido. Nos vemos luego."
+		return "Voy a seguir hacia %s. Nos vemos luego." % destino_contextual
+	if bool(contexto.get("en_transito", false)):
+		match nombre:
+			"elian":
+				return "Tengo que llegar a %s. Nos vemos allí." % destino_contextual
+			"bruna":
+				return "Tengo que terminar mi encargo. Hablamos luego."
+			"darven":
+				return "Tengo que seguir con la ronda. Nos vemos luego."
+			"saira":
+				return "Tengo que atender ese asunto. Ya nos pondremos al día."
+			"narel":
+				return "Voy a ordenar mis notas antes de que se me olvide lo que estaba revisando. Hablamos después."
+			_:
+				return "Tengo que seguir con lo que iba a hacer. Hablamos después."
+	if _actividad_impide_una_conversacion_larga(actividad_contextual):
+		match nombre:
+			"elian":
+				return "Tengo que seguir con la panadería. Nos vemos luego."
+			"bruna":
+				return "Tengo que terminar esta pieza. Hablamos luego."
+			"darven":
+				return "Tengo que seguir atento a la guardia. Nos vemos luego."
+			"saira":
+				return "Tengo que seguir atendiendo el comercio. Nos vemos luego."
+			"narel":
+				return "Voy a terminar estas notas. Hablamos cuando pueda apartar la vista de ellas."
+			_:
+				return "Tengo que seguir con lo que estaba haciendo. Hablamos luego."
 	var relacion: Dictionary = {}
 	if relationship_system != null and is_instance_valid(_fuente):
 		relacion = relationship_system.obtener_relacion(_fuente.get_personaje_game_id())
@@ -1515,7 +1666,7 @@ func _obtener_reaccion_despedida_rutina() -> String:
 	var mucha_cercania := amistad >= 45.0 or confianza >= 45.0 or afecto >= 35.0
 	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
 	var esta_ocupado := false
-	for palabra in ["trabaj", "estudi", "investig", "repar", "vigilar", "atend", "descans"]:
+	for palabra in ["trabaj", "estudi", "investig", "repar", "vigilar", "atend", "forj", "horne", "comerci", "ordenar", "consult", "leer", "registrar", "inspeccion"]:
 		if actividad.contains(palabra):
 			esta_ocupado = true
 			break
@@ -2096,9 +2247,30 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 			preocupacion = "A veces siento que todavía tengo mucho que aprender. Quiero encontrar una forma de ayudar."
 			consejo = "No esperes a saberlo todo para intentar algo bueno. Aprende de cada paso y no tengas miedo de preguntar."
 			opinion_torres = "Me gusta que en Torres siempre haya alguien haciendo algo. A veces sólo hace falta salir y conocer mejor el lugar."
+		"mara":
+			planes = "Hoy quiero hacer mis cosas con calma. Si después me apetece, saldré a ver qué hay por la plaza."
+			cumplido = "Gracias. No siempre sé qué responder cuando me dicen algo así, pero lo aprecio."
+			aficiones = "Me gusta caminar sin tener que llegar a ninguna parte y encontrar algún rincón tranquilo."
+			preocupacion = "A veces me cuesta saber cuánto contar de mí. Prefiero conocer bien a alguien antes de confiar."
+			consejo = "No tienes que responder de inmediato. Date tiempo para pensar qué quieres hacer."
+			opinion_torres = "Torres puede ser un lugar tranquilo si uno encuentra su espacio. No todos necesitamos estar rodeados de gente."
+		"ivo":
+			planes = "Quiero pasar por la plaza y quizá comprar algo en la panadería. Si me canso, haré una pausa."
+			cumplido = "¡Gracias! Me alegra que lo digas. A veces uno necesita escuchar algo bueno en medio del día."
+			aficiones = "Me gusta conversar, probar algo rico y salir a pasear. No hace falta ir muy lejos para pasarlo bien."
+			preocupacion = "Me frustra tener que calcular cuánto puedo caminar algunos días. Igual intento no dejar de hacer mis planes."
+			consejo = "No te compares con el ritmo de los demás. Encuentra uno que puedas mantener y disfruta el camino."
+			opinion_torres = "Me gusta Torres porque siempre hay alguien con quien conversar. Hasta un paseo corto puede terminar siendo un buen día."
+		"nima":
+			planes = "Quiero revisar unas notas y después salir un rato. Llevo demasiado tiempo mirando los mismos apuntes."
+			cumplido = "Gracias. Me cuesta dejar de pensar en lo que falta, así que viene bien que alguien note lo que ya hice."
+			aficiones = "Me gusta investigar cosas que despiertan mi curiosidad, pero también disfruto conversar y salir con mis amigos."
+			preocupacion = "Me preocupa entusiasmarme con una idea y pasar por alto algo que la contradiga."
+			consejo = "Haz preguntas, pero escucha también las respuestas. A veces un detalle pequeño cambia lo que creías saber."
+			opinion_torres = "En Torres hay muchas cosas que todavía no entiendo. Lo mejor es que siempre encuentro a alguien dispuesto a contarme algo."
 
-	if not actividad.is_empty() and not planes.to_lower().contains(actividad.to_lower()):
-		planes += " Ahora mismo estoy con " + actividad + "."
+	# La actividad ya aparece en el saludo contextual. No concatenar aquí
+	# claves internas del horario como "estoy con pasear" o "estoy con hornear".
 	var opciones_generales: Array[Dictionary] = [
 		{"clave": "planes_hoy", "texto": "Preguntar por sus planes de hoy", "jugador": "¿Qué planes tienes para hoy?", "respuesta": planes, "evento": "interesarse", "importancia": 1.0},
 		{"clave": "cumplido", "texto": "Dar un cumplido", "jugador": "Quería decirte que haces un buen trabajo. Se nota el esfuerzo que pones.", "respuesta": cumplido, "evento": "apoyar", "importancia": 1.0},
@@ -2107,7 +2279,7 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 		{"clave": "consejo", "texto": "Pedirle un consejo", "jugador": "¿Qué consejo me darías?", "respuesta": consejo, "evento": "compartir_conocimiento", "importancia": 1.0},
 		{"clave": "opinion_torres", "texto": "Hablar sobre Torres", "jugador": "¿Qué opinas de vivir en Torres?", "respuesta": opinion_torres, "evento": "interesarse", "importancia": 1.0}
 	]
-	var estado := "Supongo que hoy estoy bien. Ha sido un día bastante normal, aunque siempre hay algo que pensar."
+	var estado := "Bien, gracias. ¿Y tú? Hoy ha sido un día bastante normal."
 	match nombre:
 		"elian":
 			estado = "Estoy bien, gracias. Ha sido un día tranquilo y eso me permite llevar el trabajo sin apuros."
@@ -2119,6 +2291,12 @@ func _crear_opciones_conversacion() -> Array[Dictionary]:
 			estado = "Bastante bien. Un poco ocupada, pero siempre aparece algo interesante que anima el día."
 		"narel":
 			estado = "Diría que bien. He tenido algunas ideas dando vueltas y todavía estoy ordenándolas."
+		"mara":
+			estado = "Estoy bien. Hoy necesitaba un poco de tranquilidad, nada más."
+		"ivo":
+			estado = "Bien, aunque hoy voy a tomarme las cosas con calma. ¿Y tú?"
+		"nima":
+			estado = "Bien. Tengo varias cosas en la cabeza, pero por ahora puedo dejarlas a un lado."
 	opciones_generales.append({
 		"clave": "estado_animo",
 		"texto": "Preguntar cómo se siente",
@@ -3211,16 +3389,8 @@ func _crear_interfaz() -> void:
 	dialogue_panel.visible = false
 	dialogue_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	dialogue_panel.z_index = 3000
-	# El HUD es el Control raíz dentro del CanvasLayer. Usamos
-	# coordenadas relativas al centro inferior para no depender de
-	# tamaños heredados de otros paneles del HUD.
+	# El tamaño final se adapta al viewport para evitar recortes en móviles.
 	dialogue_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	dialogue_panel.offset_left = -360.0
-	dialogue_panel.offset_top = -278.0
-	dialogue_panel.offset_right = 360.0
-	dialogue_panel.offset_bottom = -18.0
-	dialogue_panel.custom_minimum_size = Vector2(720.0, 260.0)
-	dialogue_panel.size = Vector2(720.0, 260.0)
 	dialogue_panel.clip_contents = false
 	dialogue_panel.z_as_relative = false
 
@@ -3239,6 +3409,7 @@ func _crear_interfaz() -> void:
 	)
 
 	var margin := MarginContainer.new()
+	_dialogue_margin = margin
 	margin.add_theme_constant_override("margin_left", 22)
 	margin.add_theme_constant_override("margin_top", 18)
 	margin.add_theme_constant_override("margin_right", 22)
@@ -3265,6 +3436,7 @@ func _crear_interfaz() -> void:
 	content_row.add_child(portrait_rect)
 
 	var column := VBoxContainer.new()
+	_dialogue_text_column = column
 	column.name = "DialogueText"
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
@@ -3334,6 +3506,7 @@ func _crear_interfaz() -> void:
 	column.add_child(_respuestas_container)
 
 	var columna_social := VBoxContainer.new()
+	_dialogue_social_column = columna_social
 	columna_social.name = "DialogueSocialActions"
 	columna_social.custom_minimum_size = Vector2(48, 0)
 	columna_social.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -3461,3 +3634,70 @@ func _crear_interfaz() -> void:
 	ui_root.add_child(dialogue_panel)
 	PIXEL_UI_THEME.apply(dialogue_panel)
 	dialogue_panel.visible = false
+	if not get_viewport().size_changed.is_connected(_adaptar_panel_dialogo):
+		get_viewport().size_changed.connect(_adaptar_panel_dialogo)
+	_adaptar_panel_dialogo()
+
+
+func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
+	if dialogue_panel == null or not is_instance_valid(dialogue_panel):
+		return
+	var viewport_size := tamano_viewport
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		viewport_size = get_viewport().get_visible_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+
+	var ancho := maxf(240.0, minf(720.0, viewport_size.x - 24.0))
+	var alto := maxf(180.0, minf(260.0, viewport_size.y - 24.0))
+	dialogue_panel.offset_left = -ancho * 0.5
+	dialogue_panel.offset_top = -alto - 12.0
+	dialogue_panel.offset_right = ancho * 0.5
+	dialogue_panel.offset_bottom = -12.0
+	dialogue_panel.custom_minimum_size = Vector2(ancho, alto)
+	dialogue_panel.size = Vector2(ancho, alto)
+
+	var compacto := viewport_size.x < 520.0
+	var movil := viewport_size.x < 720.0
+	if _dialogue_margin != null:
+		var margen := 8 if compacto else (12 if movil else 22)
+		for lado in ["margin_left", "margin_right"]:
+			_dialogue_margin.add_theme_constant_override(lado, margen)
+		_dialogue_margin.add_theme_constant_override("margin_top", 10 if movil else 18)
+		_dialogue_margin.add_theme_constant_override("margin_bottom", 8 if movil else 14)
+	if _dialogue_content_row != null:
+		_dialogue_content_row.add_theme_constant_override("separation", 6 if compacto else (10 if movil else 14))
+	if portrait_rect != null:
+		portrait_rect.visible = not compacto
+		var retrato := 80.0 if compacto else (120.0 if movil else 176.0)
+		portrait_rect.custom_minimum_size = Vector2(retrato, retrato)
+	if _dialogue_social_column != null:
+		var social_size := 36.0 if compacto else (40.0 if movil else 48.0)
+		_dialogue_social_column.custom_minimum_size = Vector2(social_size, 0.0)
+		for boton in [_boton_regalo, _boton_preguntar_item, _boton_tienda_mercado]:
+			if boton != null:
+				boton.custom_minimum_size = Vector2(social_size, social_size)
+	if _dialogue_text_column != null:
+		_dialogue_text_column.add_theme_constant_override("separation", 6 if movil else 8)
+	if speaker_label != null:
+		speaker_label.add_theme_font_size_override("font_size", 13 if movil else 14)
+	if text_label != null:
+		text_label.add_theme_font_size_override("font_size", 12 if compacto else 13)
+	if hint_label != null:
+		hint_label.add_theme_font_size_override("font_size", 8 if movil else 9)
+	if action_button != null:
+		action_button.custom_minimum_size = Vector2(110 if compacto else (140 if movil else 180), 32 if movil else 34)
+	if cancel_button != null:
+		cancel_button.custom_minimum_size = Vector2(76 if compacto else (100 if movil else 120), 32 if movil else 34)
+	if _selector_items != null:
+		var selector_ancho := minf(476.0, maxf(220.0, ancho - 24.0))
+		var selector_alto := minf(224.0, maxf(160.0, alto - 24.0))
+		_selector_items.offset_left = -selector_ancho * 0.5
+		_selector_items.offset_top = -selector_alto * 0.5
+		_selector_items.offset_right = selector_ancho * 0.5
+		_selector_items.offset_bottom = selector_alto * 0.5
+		_selector_items.custom_minimum_size = Vector2(selector_ancho, selector_alto)
+	if _selector_items_grid != null:
+		_selector_items_grid.columns = 1 if ancho < 360.0 else 2
+	if _selector_conversacion_grid != null:
+		_selector_conversacion_grid.columns = 1 if ancho < 380.0 else 2

@@ -53,6 +53,7 @@ static func _etiqueta_indica_arma(etiqueta: String) -> bool:
 	return (
 		normalizada == "arma"
 		or normalizada.begins_with("arma_")
+		or normalizada.begins_with("arma ")
 		or normalizada.begins_with("armas")
 		or "arma cuerpo" in normalizada
 		or "arma de " in normalizada

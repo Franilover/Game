@@ -24,6 +24,7 @@ const RPC_MUNDO := (
 const HTTP_TIMEOUT: float = 20.0
 const MAX_INTENTOS_INICIALES: int = 3
 const RETRASO_REINTENTO: float = 1.5
+const INTERVALO_REINTENTO_ESPECIES: float = 30.0
 const INTERVALO_SINCRONIZACION: float = 60.0
 const RPC_ETERIUM_RUNTIME := (
 	"/rest/v1/rpc/get_eterium_runtime_v1"
@@ -78,10 +79,38 @@ var _auth: GarliaAuth = null
 
 func configurar_dependencias(auth: GarliaAuth) -> void:
 	_auth = auth
+	if not _auth.login_succeeded.is_connected(_al_login_succeeded):
+		_auth.login_succeeded.connect(_al_login_succeeded)
+	if not _auth.session_restored.is_connected(_al_session_restored):
+		_auth.session_restored.connect(_al_session_restored)
+
 	# La dependencia puede inyectarse después del _ready del autoload.
-	# Reintentamos al recibirla para no perder la carga inicial del catálogo.
+	# La sesión puede terminar de restaurarse después de que los primeros
+	# intentos de carga hayan salido; cubrimos también ese orden de arranque.
 	if is_inside_tree():
 		call_deferred("cargar_especies_jugables")
+		if _auth.esta_autenticado():
+			call_deferred("_cargar_catalogos_autenticados")
+
+
+func _al_login_succeeded(_perfil: Dictionary) -> void:
+	_cargar_catalogos_autenticados()
+
+
+func _al_session_restored() -> void:
+	_cargar_catalogos_autenticados()
+
+
+func _cargar_catalogos_autenticados() -> void:
+	if _auth == null or not _auth.esta_autenticado():
+		return
+
+	cargar_eterium_runtime()
+	cargar_especie_eterium_game()
+	cargar_personaje_social()
+	cargar_personaje_regalos()
+	cargar_relaciones_ecologicas()
+	cargar_reinos_game()
 
 
 func establecer_mundo_activo(activo: bool) -> void:
@@ -242,6 +271,8 @@ func cargar_relaciones_ecologicas() -> void:
 	if _auth == null or not _auth.esta_autenticado():
 		return
 	if _http_relaciones_ecologicas == null:
+		return
+	if _http_relaciones_ecologicas.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
 
 	var headers := _crear_headers()
@@ -435,8 +466,13 @@ func _al_completar_especies_jugables(
 		if especie_variant is Dictionary:
 			especies.append((especie_variant as Dictionary).duplicate(true))
 
-	if especies.is_empty() and _intentos_especies_jugables < MAX_INTENTOS_INICIALES:
+	if especies.is_empty():
+		# Una respuesta vacía puede deberse a que el catálogo aún se está
+		# publicando o a una inconsistencia temporal. No la tratamos como éxito
+		# definitivo: notificamos el estado y mantenemos una comprobación lenta.
+		_especies_jugables.clear()
 		print("SupabaseClient: Supabase respondió sin especies activas; se comprobará de nuevo.")
+		especies_jugables_cargadas.emit([])
 		_reintentar_carga_especies_jugables("catálogo vacío")
 		return
 
@@ -452,13 +488,15 @@ func _al_completar_especies_jugables(
 func _reintentar_carga_especies_jugables(motivo: String) -> void:
 	if _reintento_especies_programado or not _especies_jugables.is_empty():
 		return
+	var espera := RETRASO_REINTENTO * float(maxi(_intentos_especies_jugables, 1))
 	if _intentos_especies_jugables >= MAX_INTENTOS_INICIALES:
-		print("SupabaseClient: agotados los intentos de especies jugables (%s)." % motivo)
-		return
+		# Tras los intentos rápidos iniciales, conservar recuperación automática
+		# sin martillar el endpoint: una comprobación cada 30 segundos.
+		_intentos_especies_jugables = 0
+		espera = INTERVALO_REINTENTO_ESPECIES
 
 	_reintento_especies_programado = true
-	var espera := RETRASO_REINTENTO * float(_intentos_especies_jugables)
-	print("SupabaseClient: reintentando especies jugables → intento %d/%d en %.1fs (%s)" % [_intentos_especies_jugables + 1, MAX_INTENTOS_INICIALES, espera, motivo])
+	print("SupabaseClient: reintentando especies jugables en %.1fs (%s)." % [espera, motivo])
 	await get_tree().create_timer(espera).timeout
 	_reintento_especies_programado = false
 	if not is_inside_tree() or not _especies_jugables.is_empty():
@@ -473,6 +511,8 @@ func cargar_personaje_regalos() -> void:
 		return
 
 	if not _personaje_regalos.is_empty() or _http_personaje_regalos == null:
+		return
+	if _http_personaje_regalos.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
 	var headers := _crear_headers()
 	var resultado := _http_personaje_regalos.request(
@@ -517,6 +557,8 @@ func cargar_personaje_social() -> void:
 		return
 
 	if not _personaje_social.is_empty() or _http_personaje_social == null:
+		return
+	if _http_personaje_social.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
 
 	var headers := _crear_headers()
@@ -577,6 +619,8 @@ func cargar_especie_eterium_game() -> void:
 		return
 	if _http_especie_eterium_game == null:
 		return
+	if _http_especie_eterium_game.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+		return
 	var headers := _crear_headers()
 	var resultado := _http_especie_eterium_game.request(
 		_auth.SUPABASE_URL + API_ESPECIE_ETERIUM_GAME,
@@ -627,6 +671,8 @@ func cargar_eterium_runtime() -> void:
 		return
 
 	if _http_eterium == null:
+		return
+	if _http_eterium.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		return
 
 	if _auth.SUPABASE_PUBLISHABLE_KEY.is_empty():

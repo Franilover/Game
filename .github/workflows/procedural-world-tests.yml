@@ -2,7 +2,7 @@ name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks", "refactor/p1-player-locomotion", "feat/torres-night-lanterns", "feat/dialogue-continuity-npcs"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks", "refactor/p1-player-locomotion", "feat/torres-night-lanterns", "feat/dialogue-continuity-npcs", "fix/p0-godot47-crafting-token-type"]
     paths:
       - "scenes/**"
       - "scripts/world/procedural/**"
@@ -16,6 +16,7 @@ on:
       - "scripts/world/npc_conversation_system.gd"
       - "scripts/gameplay/dialogue_system.gd"
       - "scripts/gameplay/relationship_system.gd"
+      - "scripts/gameplay/npc_mind.gd"
       - "scripts/gameplay/cutscene_director.gd"
       - "scripts/gameplay/cutscene_sequence.gd"
       - "scripts/world/world_*.gd"
@@ -52,9 +53,11 @@ on:
       - "scripts/ui/start_menu.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
+      - "tests/dialogue/**"
       - "tests/ui/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
+      - "docs/architecture/**"
       - "project.godot"
       - ".github/workflows/procedural-world-tests.yml"
   pull_request:
@@ -88,9 +91,11 @@ on:
       - "scripts/state/world_snapshot_validator.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
+      - "tests/dialogue/**"
       - "tests/ui/**"
       - "addons/TileMapDual/**"
       - "tests/world/**"
+      - "docs/architecture/**"
       - "project.godot"
       - ".github/workflows/procedural-world-tests.yml"
   workflow_dispatch:
@@ -129,8 +134,27 @@ jobs:
             exit 1
           fi
 
+      - name: Run NPC building doorway collision regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_npc_building_entry_collision.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NPCBuildingEntryCollision: FAIL:' <<<"$output"; then
+            echo "NPC building doorway collision regression test reported errors."
+            exit 1
+          fi
+
       - name: Run world climate and lighting regression test
-        run: timeout 45s godot --headless --path . --script res://tests/world/test_world_climate_system.gd
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/world/test_world_climate_system.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|World climate regression:' <<<"$output"; then
+            echo "World climate regression test reported script or assertion errors."
+            exit 1
+          fi
 
       - name: Run admin creature and object scroll contract test
         shell: bash
@@ -246,6 +270,28 @@ jobs:
             exit 1
           fi
 
+      - name: Run game state roundtrip persistence contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/persistence/test_game_state_roundtrip.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GameStateRoundtrip: FAIL:' <<<"$output"; then
+            echo "Game state roundtrip regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run NPC mind core regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/persistence/test_npc_mind_core.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NPCMindCore: FAIL:' <<<"$output"; then
+            echo "NPC mind core regression test reported errors."
+            exit 1
+          fi
+
       - name: Run mission manager persistence contract test
         shell: bash
         run: |
@@ -257,6 +303,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run mission reward delivery rollback regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/missions/test_mission_reward_delivery.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|MissionRewardDelivery: FAIL:' <<<"$output"; then
+            echo "Mission reward delivery regression test reported errors."
+            exit 1
+          fi
+
       - name: Run world snapshot validator contract test
         shell: bash
         run: |
@@ -265,6 +322,28 @@ jobs:
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|WorldSnapshotValidatorContract: FAIL:' <<<"$output"; then
             echo "World snapshot validator contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run Supabase species catalog retry regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_species_catalog_retry.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|SpeciesCatalogRetry: FAIL:' <<<"$output"; then
+            echo "Supabase species catalog retry regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run authenticated catalog reload regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_authenticated_catalog_reload.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|AuthenticatedCatalogReload: FAIL:' <<<"$output"; then
+            echo "Authenticated catalog reload regression test reported errors."
             exit 1
           fi
 
@@ -360,11 +439,44 @@ jobs:
       - name: Run TileMapDual terrain regression test
         run: godot --headless --path . --script res://tests/world/test_world_terrain_visual.gd
 
+      - name: Run dialogue social menu continuity regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/dialogue/test_dialogue_social_menu.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|DialogueSocialMenu: FAIL:' <<<"$output"; then
+            echo "Dialogue social menu regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run responsive mobile dialogue layout regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_dialogue_mobile_layout.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|DialogueMobileLayout: FAIL:' <<<"$output"; then
+            echo "Responsive dialogue layout regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run mobile dialogue touch and multitouch regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/ui/test_mobile_controls_dialogue_touch.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|MobileControlsDialogueTouch: FAIL:' <<<"$output"; then
+            echo "Mobile dialogue touch regression test reported errors."
+            exit 1
+          fi
+
       - name: Run Garumi world presence regression test
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . res://tests/world/test_garumi_world_presence.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          output="$(timeout 45s godot --headless --path . res://tests/world/test_garumi_world_presence.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiWorldPresence: FAIL:' <<<"$output"; then
             echo "Garumi world presence test reported script or assertion errors."
@@ -386,7 +498,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/player/test_player_locomotion.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          output="$(timeout 45s godot --headless --path . res://tests/player/test_player_locomotion.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerLocomotion: FAIL:' <<<"$output"; then
             echo "Player locomotion regression test reported errors."

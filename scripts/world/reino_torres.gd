@@ -1221,6 +1221,49 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 ## Registra NPCs creados después de entrar a un edificio. La entidad sigue
 ## perteneciendo al contenedor exterior y debe permanecer oculta/no interactuable
 ## hasta que el jugador vuelva a salir del interior.
+func desactivar_colision_npc_exterior(npc: Node) -> void:
+	if not is_instance_valid(npc) or not npc is CollisionObject2D:
+		return
+	var cuerpo := npc as CollisionObject2D
+	if not npc.has_meta("rutina_colision_original"):
+		npc.set_meta("rutina_colision_original", {
+			"layer": cuerpo.collision_layer,
+			"mask": cuerpo.collision_mask
+		})
+	cuerpo.collision_layer = 0
+	cuerpo.collision_mask = 0
+
+
+func restaurar_colision_npc(npc: Node) -> void:
+	if not is_instance_valid(npc) or not npc is CollisionObject2D:
+		return
+	var estado_variant: Variant = npc.get_meta("rutina_colision_original", {})
+	if not estado_variant is Dictionary:
+		return
+	var estado := estado_variant as Dictionary
+	var cuerpo := npc as CollisionObject2D
+	cuerpo.collision_layer = int(estado.get("layer", cuerpo.collision_layer))
+	cuerpo.collision_mask = int(estado.get("mask", cuerpo.collision_mask))
+	npc.remove_meta("rutina_colision_original")
+
+
+func _restaurar_formas_colision_npc(npc: Node) -> void:
+	if not is_instance_valid(npc):
+		return
+	for forma_variant in npc.find_children("*", "CollisionShape2D", true, false):
+		if not forma_variant is CollisionShape2D:
+			continue
+		var forma := forma_variant as CollisionShape2D
+		var deshabilitada := bool(_estados_colision_exterior.get(forma.get_instance_id(), forma.disabled))
+		forma.set_deferred("disabled", deshabilitada)
+	for poligono_variant in npc.find_children("*", "CollisionPolygon2D", true, false):
+		if not poligono_variant is CollisionPolygon2D:
+			continue
+		var poligono := poligono_variant as CollisionPolygon2D
+		var deshabilitado := bool(_estados_colision_exterior.get(poligono.get_instance_id(), poligono.disabled))
+		poligono.set_deferred("disabled", deshabilitado)
+
+
 func registrar_npc_materializado(npc: Node) -> void:
 	if not _interior_activo or not is_instance_valid(npc):
 		return
@@ -1228,6 +1271,7 @@ func registrar_npc_materializado(npc: Node) -> void:
 		_contenedor_npcs_exterior = npc.get_parent()
 	if is_instance_valid(_contenedor_npcs_exterior) and npc.get_parent() != _contenedor_npcs_exterior:
 		npc.reparent(_contenedor_npcs_exterior, true)
+	desactivar_colision_npc_exterior(npc)
 	if npc is CanvasItem:
 		(npc as CanvasItem).visible = false
 	npc.remove_from_group("interactable")
@@ -1255,6 +1299,10 @@ func _restaurar_npcs_exteriores() -> void:
 		var visual := npc as CanvasItem
 		var sigue_dentro := bool(npc.get_meta("rutina_en_edificio", false))
 		var visible_antes := bool(_visibilidad_npcs_exterior.get(visual.get_instance_id(), not sigue_dentro))
+		if sigue_dentro:
+			desactivar_colision_npc_exterior(npc)
+		else:
+			restaurar_colision_npc(npc)
 		visual.visible = not sigue_dentro and visible_antes
 		if visual.visible and npc is Creature:
 			npc.add_to_group("interactable")
@@ -1328,6 +1376,8 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 			continue
 		if npc.get_parent() != cuarto:
 			npc.reparent(cuarto, true)
+		restaurar_colision_npc(npc)
+		_restaurar_formas_colision_npc(npc)
 		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 		if movimiento != null:
 			movimiento.detener_por_rutina()
@@ -1408,6 +1458,7 @@ func sacar_npc_del_interior(npc: Node) -> void:
 	var edificio_id := str(npc.get_meta("rutina_edificio_id", ""))
 	var entrada := _obtener_entrada_por_id(edificio_id)
 	npc.reparent(_contenedor_npcs_exterior, true)
+	desactivar_colision_npc_exterior(npc)
 	if not entrada.is_empty() and npc is Node2D:
 		(npc as Node2D).global_position = _obtener_posicion_entrada_global(entrada) + Vector2(0.0, 28.0)
 	if npc is CanvasItem:
@@ -1424,6 +1475,7 @@ func _devolver_npcs_del_interior_al_exterior() -> void:
 		var edificio_id := str(npc.get_meta("rutina_edificio_id", ""))
 		var entrada := _obtener_entrada_por_id(edificio_id)
 		npc.reparent(_contenedor_npcs_exterior, true)
+		desactivar_colision_npc_exterior(npc)
 		if not entrada.is_empty() and npc is Node2D:
 			(npc as Node2D).global_position = _obtener_posicion_entrada_global(entrada) + Vector2(0.0, 28.0)
 		if npc is CanvasItem:
