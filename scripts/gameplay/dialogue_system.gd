@@ -1601,6 +1601,47 @@ func _capturar_contexto_rutina_actual() -> Dictionary:
 	}
 
 
+## Convierte identificadores internos de rutina en frases naturales.
+## Desplazarse o descansar no se presenta como una obligación laboral.
+func _obtener_descripcion_actividad_dialogo(actividad: String) -> String:
+	var clave := actividad.strip_edges().to_lower()
+	match clave:
+		"hornear":
+			return "preparando una hornada"
+		"atender":
+			return "atendiendo la panadería"
+		"limpiar":
+			return "limpiando la panadería"
+		"forjar":
+			return "trabajando en la forja"
+		"revisar_herramientas":
+			return "revisando las herramientas"
+		"vigilar_acceso":
+			return "controlando el acceso"
+		"vigilar":
+			return "de guardia"
+		"patrullar":
+			return "haciendo una ronda"
+		"comerciar":
+			return "atendiendo el comercio"
+		"ordenar_mercancia":
+			return "ordenando la mercancía"
+		"visitar_comerciantes":
+			return "visitando a otros comerciantes"
+		"investigar_oris":
+			return "investigando fenómenos Oris"
+		"consultar_archivos":
+			return "consultando los archivos"
+		"registrar_observaciones":
+			return "registrando mis observaciones"
+		"leer":
+			return "leyendo"
+		_:
+			if _actividad_es_desplazamiento(clave) or clave in ["descansar", "dormir", "reposar", "ocio"]:
+				return ""
+			return "ocupándome de una tarea" if _actividad_impide_una_conversacion_larga(clave) else ""
+
+
 func _actividad_es_desplazamiento(actividad: String) -> bool:
 	var clave := actividad.strip_edges().to_lower()
 	for termino in ["camin", "pase", "recorr", "desplaz", "dirig", "ir_a", "volv", "regres", "viaj", "andar"]:
@@ -1938,7 +1979,7 @@ func _crear_opcion_trabajo_social() -> Dictionary:
 					"¿Cómo van tus responsabilidades últimamente?",
 					"Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
 				)
-	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges() if is_instance_valid(_fuente) else ""
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
 	var respuesta := "Tengo algunas tareas pendientes, como cualquiera. Intento organizarme para que no se me acumulen."
 	match nombre:
 		"elian":
@@ -1951,8 +1992,9 @@ func _crear_opcion_trabajo_social() -> Dictionary:
 			respuesta = "El comercio nunca se queda quieto. Hay que revisar cuentas, atender a la gente y estar pendiente de lo que llega desde fuera."
 		"narel":
 			respuesta = "Paso bastante tiempo revisando documentos y comparando observaciones. Una investigación rara vez avanza en línea recta."
-	if not actividad.is_empty():
-		respuesta += " Ahora mismo estoy con " + actividad + "."
+	var descripcion_actividad := _obtener_descripcion_actividad_dialogo(actividad)
+	if not descripcion_actividad.is_empty():
+		respuesta += " Ahora mismo estoy " + descripcion_actividad + "."
 	match nombre:
 		"mara":
 			respuesta = "No tengo un trabajo aquí. Me ocupo de mis cosas y procuro pasar desapercibida. Por ahora eso me basta."
@@ -2109,9 +2151,10 @@ func _obtener_respuesta_ayuda_npc() -> String:
 			for detalle_disponible in lineas_disponibles:
 				texto += detalle_disponible + ". "
 		return texto.strip_edges()
-	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges()
-	if not actividad.is_empty():
-		return "Gracias por ofrecerte. Ahora mismo estoy con " + actividad + ", pero puedo arreglármelas por mi cuenta."
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower()
+	var descripcion_actividad := _obtener_descripcion_actividad_dialogo(actividad)
+	if not descripcion_actividad.is_empty():
+		return "Gracias por ofrecerte. Ahora mismo estoy " + descripcion_actividad + ", pero puedo arreglármelas por mi cuenta."
 	match _nombre_social_actual():
 		"elian":
 			return "Gracias por ofrecerte. Por ahora tengo la panadería bajo control, pero si surge algún encargo te lo diré."

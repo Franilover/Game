@@ -114,6 +114,30 @@ func _run() -> void:
 	if not dialogo._obtener_frase_despedida_jugador_rutina().contains("por aquí"):
 		errores.append("La despedida del jugador no reconoce que el NPC camina dentro del edificio.")
 
+	# Las opciones sociales no deben presentar caminar o pasear como trabajo.
+	npc.nombre_individual = "Bruna"
+	npc.datos["actividad_actual"] = "caminar"
+	dialogo._fuente = npc
+	var trabajo_caminando := dialogo._crear_opcion_trabajo_social()
+	if str(trabajo_caminando.get("respuesta", "")).contains("caminar") or str(trabajo_caminando.get("respuesta", "")).contains("pasear"):
+		errores.append("La pregunta por el trabajo presenta un desplazamiento como una obligación.")
+	var ayuda_caminando := dialogo._obtener_respuesta_ayuda_npc()
+	if ayuda_caminando.contains("estoy con caminar") or ayuda_caminando.contains("estoy con pasear"):
+		errores.append("La respuesta sobre ayuda presenta caminar como una tarea laboral.")
+	npc.datos["actividad_actual"] = "forjar"
+	var trabajo_forjando := dialogo._crear_opcion_trabajo_social()
+	if not str(trabajo_forjando.get("respuesta", "")).contains("trabajando en la forja"):
+		errores.append("La pregunta por el trabajo no traduce la actividad de forjar a una frase natural.")
+	var ayuda_forjando := dialogo._obtener_respuesta_ayuda_npc()
+	if not ayuda_forjando.contains("trabajando en la forja"):
+		errores.append("La respuesta sobre ayuda no conserva la actividad laboral real.")
+	npc.datos["actividad_actual"] = "pasear"
+	if not dialogo._obtener_descripcion_actividad_dialogo("pasear").is_empty():
+		errores.append("Pasear debe quedar fuera de las descripciones de trabajo.")
+	if dialogo._obtener_descripcion_actividad_dialogo("descansar") != "":
+		errores.append("Descansar no debe presentarse como una tarea laboral.")
+
+
 	# Al cerrar el selector Hablar/Preguntar debe reaparecer el menú social
 	# principal, incluso después de una conversación cotidiana.
 	dialogo._abierto = true
