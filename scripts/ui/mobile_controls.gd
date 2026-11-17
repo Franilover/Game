@@ -45,9 +45,6 @@ func _ready() -> void:
 
 	_botones_hud = {
 		"toggle_garumi_selector": $Actions/Garumis,
-		"garumi_slot_1": $Actions/Garumi1,
-		"garumi_slot_2": $Actions/Garumi2,
-		"garumi_slot_3": $Actions/Garumi3,
 	}
 	for accion in _botones:
 		_configurar_boton(_botones[accion] as BaseButton, str(accion))
@@ -94,7 +91,6 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 		"primary_action": "Mano I", "secondary_action": "Mano D",
 		"dash": "Dash", "inventory": "Bolsa",
 		"toggle_map": "Mapa", "toggle_missions": "Misiones", "toggle_garumi_selector": "Garumis",
-		"garumi_slot_1": "1", "garumi_slot_2": "2", "garumi_slot_3": "3",
 		"meditate": "Meditar", "pause_menu": "Pausa"
 	}
 	boton.text = str(nombres.get(accion, "•"))
@@ -155,12 +151,9 @@ func _calcular_layout_movil(viewport_size: Vector2) -> Dictionary:
 	layout["Movement/JoystickKnob"] = Rect2(knob_center - knob_size * 0.5 + _joystick_vector * joystick_size * 0.30, knob_size)
 
 	# La franja superior queda reservada para inventario y selector de Garumis.
-	var ancho_garumis := pequeno * 4.0 + gap * 3.0
 	layout["Actions/Inventory"] = Rect2(Vector2(margen, margen), Vector2.ONE * accion)
-	var x_garumis := right - ancho_garumis
+	var x_garumis := right - pequeno
 	layout["Actions/Garumis"] = Rect2(Vector2(x_garumis, margen), Vector2.ONE * pequeno)
-	for i in range(3):
-		layout["Actions/Garumi%d" % (i + 1)] = Rect2(Vector2(x_garumis + (pequeno + gap) * (i + 1), margen), Vector2.ONE * pequeno)
 
 	# Acciones esenciales: Dash arriba y las dos manos abajo.
 	# La interacción contextual ya tiene prioridad al usar cualquiera de las manos.
