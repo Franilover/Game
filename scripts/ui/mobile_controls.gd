@@ -31,6 +31,11 @@ func _ready() -> void:
 		return
 
 	_configurar_estilo_joystick()
+	# Estas acciones siguen disponibles mediante los menús/teclas del juego,
+	# pero no ocupan espacio en la interfaz táctil.
+	$Actions/Map.hide()
+	$Actions/Missions.hide()
+	$Actions/Pause.hide()
 	_botones = {
 		"primary_action": $Actions/Primary,
 		"secondary_action": $Actions/Secondary,
@@ -39,8 +44,6 @@ func _ready() -> void:
 	}
 
 	_botones_hud = {
-		"toggle_map": $Actions/Map,
-		"toggle_missions": $Actions/Missions,
 		"toggle_garumi_selector": $Actions/Garumis,
 		"garumi_slot_1": $Actions/Garumi1,
 		"garumi_slot_2": $Actions/Garumi2,
@@ -54,8 +57,6 @@ func _ready() -> void:
 		boton_hud.pressed.connect(_solicitar_hud.bind(str(accion)))
 		_estilizar_boton(boton_hud, str(accion))
 	_estilizar_boton($Actions/Meditate, "meditate")
-	_estilizar_boton($Actions/Pause, "pause_menu")
-	$Actions/Pause.pressed.connect(_alternar_pausa)
 	$Actions/Meditate.button_down.connect(_presionar_espacio)
 	$Actions/Meditate.button_up.connect(_soltar_espacio)
 	get_viewport().size_changed.connect(_distribuir_controles)
@@ -153,23 +154,9 @@ func _calcular_layout_movil(viewport_size: Vector2) -> Dictionary:
 	var knob_center := joystick_pos + Vector2.ONE * joystick_size * 0.5
 	layout["Movement/JoystickKnob"] = Rect2(knob_center - knob_size * 0.5 + _joystick_vector * joystick_size * 0.30, knob_size)
 
-	# Barra superior: se divide en dos filas cuando los grupos no caben juntos.
-	var ancho_utilidades := accion + gap + pequeno * 3.0 + 12.0
+	# La franja superior queda reservada para inventario y selector de Garumis.
 	var ancho_garumis := pequeno * 4.0 + gap * 3.0
-	var apilar_utilidades := viewport_size.x < ancho_utilidades + ancho_garumis + margen * 2.0 + gap
 	layout["Actions/Inventory"] = Rect2(Vector2(margen, margen), Vector2.ONE * accion)
-	if apilar_utilidades:
-		layout["Actions/Map"] = Rect2(Vector2(margen + accion + gap, margen), Vector2.ONE * pequeno)
-		layout["Actions/Missions"] = Rect2(Vector2(margen, margen + accion + gap), Vector2.ONE * pequeno)
-		layout["Actions/Pause"] = Rect2(Vector2(margen + pequeno + 6.0, margen + accion + gap), Vector2.ONE * pequeno)
-	else:
-		var x := margen + accion + gap
-		layout["Actions/Map"] = Rect2(Vector2(x, margen), Vector2.ONE * pequeno)
-		x += pequeno + 6.0
-		layout["Actions/Missions"] = Rect2(Vector2(x, margen), Vector2.ONE * pequeno)
-		x += pequeno + 6.0
-		layout["Actions/Pause"] = Rect2(Vector2(x, margen), Vector2.ONE * pequeno)
-
 	var x_garumis := right - ancho_garumis
 	layout["Actions/Garumis"] = Rect2(Vector2(x_garumis, margen), Vector2.ONE * pequeno)
 	for i in range(3):
