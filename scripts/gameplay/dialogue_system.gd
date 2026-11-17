@@ -676,7 +676,7 @@ func _buscar_npc_hablante(nombre_hablante: String) -> Creature:
 		var npc := nodo as Creature
 		if buscado in [npc.get_nombre().strip_edges().to_lower(), npc.get_nombre_visual().strip_edges().to_lower()]:
 			return npc
-	return _fuente if is_instance_valid(_fuente) else null
+	return null
 
 
 func _resolver_texto_por_personalidad(
