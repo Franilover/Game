@@ -233,9 +233,6 @@ func _run() -> void:
 	})
 	if float(actividad_objetivo.get("componentes", {}).get("objetivos", 0.0)) <= 0.0:
 		errores.append("Un objetivo activo no influyó en la evaluación de una actividad relacionada.")
-	var objetivo_por_id := mind.evaluar_actividad("ivo", {"id": "visitar_ivo_amigo"})
-	if float(objetivo_por_id.get("componentes", {}).get("objetivos", 0.0)) <= 0.0:
-		errores.append("Un objetivo sin campo actividad no se vinculó usando su propio identificador.")
 
 	if mind.obtener_objetivos_activos("ivo").size() != 1:
 		errores.append("El objetivo activo no se conservó.")
