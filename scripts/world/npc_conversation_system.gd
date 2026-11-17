@@ -27,6 +27,19 @@ const DURACION_LINEA_MAXIMA := 6.0
 const SEGUNDOS_POR_CARACTER := 0.045
 const FONT_PIXEL: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
+## Las cadenas con efectos y etapas forman parte del hilo narrativo; los
+## encuentros sin progresión son contenido ambiental opcional.
+static func es_conversacion_historia(conversacion: Dictionary) -> bool:
+	var tipo := str(conversacion.get("tipo_contenido", "")).strip_edges().to_lower()
+	if not tipo.is_empty():
+		return tipo == "historia"
+	return conversacion.has("efectos_etapa") and not bool(conversacion.get("_sin_progreso_etapa", false))
+
+
+static func es_conversacion_opcional(conversacion: Dictionary) -> bool:
+	return not es_conversacion_historia(conversacion)
+
+
 # Sucesos cotidianos breves. Se elige uno por día de forma determinista,
 # respetando quién está presente y evitando repetir los últimos acontecimientos.
 const ACONTECIMIENTOS_DIARIOS: Array[Dictionary] = [
@@ -48,6 +61,7 @@ const ACONTECIMIENTOS_DIARIOS: Array[Dictionary] = [
 # breve puesta en escena de cámara.
 const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_darven_saira_rumores",
 		"npc_a":"darven","npc_b":"saira","cinematica":true,
 		"conocimientos":[{"clave":"luces_cantera","tema":"luces_cerca_de_la_cantera","titulo":"las luces cerca de la cantera","detalle":"Viajeros reportaron luces cerca de la vieja cantera; los relatos no coinciden en la hora.","verificacion":"rumor_no_verificado","fuente":"viajeros","destinatario":"saira"}],
@@ -60,6 +74,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		]
 	},
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_bruna_narel_bomba",
 		"npc_a":"bruna","npc_b":"narel","cinematica":false,
 		"rutina_compartida":{"clave":"bruna_narel_revision","intervalo_dias":7,"lineas":[{"npc":"bruna","texto":"¿Trajiste las medidas que tomaste? Podemos revisar la unión antes de que empiece el trabajo."},{"npc":"narel","texto":"Sí. Las dejé ordenadas por pieza para que podamos comparar sin mezclar observaciones."},{"npc":"bruna","texto":"Bien. Revisamos primero la unión y después vemos si el resto necesita atención."}],"lineas_repetidas":[{"npc":"narel","texto":"He actualizado las medidas desde la última revisión."},{"npc":"bruna","texto":"Entonces comparemos los cambios. Así sabremos si hace falta intervenir otra vez."}]},
@@ -71,6 +86,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		]
 	},
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_mara_darven_puerta",
 		"npc_a":"mara","npc_b":"darven","cinematica":true,
 		"lineas":[
@@ -82,6 +98,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		]
 	},
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_nima_narel_oris",
 		"npc_a":"nima","npc_b":"narel","cinematica":false,
 		"lineas":[
@@ -93,6 +110,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		]
 	},
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_ivo_elian_mesa",
 		"npc_a":"ivo","npc_b":"elian","cinematica":true,
 		"lineas":[
@@ -103,6 +121,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		]
 	},
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_mara_nima_confianza",
 		"npc_a":"mara","npc_b":"nima","cinematica":false,
 		"rutina_compartida":{"clave":"mara_nima_paseo","intervalo_dias":7,"lineas":[{"npc":"nima","texto":"Me alegra que hayas podido venir. Podemos dar una vuelta por la plaza sin apurarnos."},{"npc":"mara","texto":"Sí. Me gusta que podamos pasar un rato juntas sin que todo gire alrededor de preguntas."},{"npc":"nima","texto":"Entonces podemos repetirlo cuando ambas tengamos tiempo."}],"lineas_repetidas":[{"npc":"mara","texto":"Hoy también tenía ganas de salir un rato."},{"npc":"nima","texto":"Me alegra que hayamos coincidido. No hace falta tener un plan complicado."}]},
@@ -114,6 +133,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		]
 	},
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_saira_ivo_viajes",
 		"npc_a":"saira","npc_b":"ivo","cinematica":false,
 		"rutina_compartida":{"clave":"saira_ivo_paseo","intervalo_dias":7,"lineas":[{"npc":"saira","texto":"Hoy podemos hacer ese paseo corto del que hablamos. Elegimos el camino y volvemos cuando quieras."},{"npc":"ivo","texto":"Me parece bien. Si necesito descansar, paramos un momento; no quiero que tengas que cambiar tus planes."},{"npc":"saira","texto":"No hay prisa. Podemos disfrutar el paseo a nuestro ritmo."}],"lineas_repetidas":[{"npc":"ivo","texto":"Me vino bien salir un rato. ¿Te apetece repetir el paseo?"},{"npc":"saira","texto":"Claro. No necesitamos ir lejos para aprovechar la tarde."}]},
@@ -125,6 +145,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		]
 	},
 	{
+		"tipo_contenido":"opcional",
 		"clave":"noche_abel_darven_guardia",
 		"npc_a":"abel","npc_b":"darven","cinematica":false,
 		"lineas":[
@@ -138,6 +159,7 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 
 const CONVERSACIONES: Array[Dictionary] = [
 	{
+		"tipo_contenido":"historia",
 		"clave": "elian_saira_hornada",
 		"tono_relacion": "cercana",
 		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Saira y Elian acuerdan coordinar los avisos de entrega."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"La entrega llega a tiempo y ambos comparten el resultado."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Su coordinación continúa incluso cuando no hay problemas con la ruta."}],
@@ -160,6 +182,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 
 	},
 	{
+		"tipo_contenido":"historia",
 		"clave": "bruna_darven_camino",
 		"tono_relacion": "tensa",
 		"efectos_etapa": [{"confianza":0.0,"tension":1.0,"colaboracion":0.5,"resumen":"Bruna insiste en reparar el tramo y Darven registra el problema."},{"confianza":0.5,"tension":-1.5,"colaboracion":1.0,"resumen":"La revisión conjunta reduce sus diferencias."},{"confianza":0.5,"tension":-1.0,"colaboracion":0.5,"resumen":"Ambos reconocen el valor del trabajo del otro."}],
@@ -182,6 +205,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 "lineas_tercera_tension": [{"npc":"darven","texto":"El registro sigue incompleto. No puedo dar por resuelto el tramo sólo porque ahora parezca firme."},{"npc":"bruna","texto":"Y yo no voy a repetir una inspección cada vez que alguien dude de las piezas."},{"npc":"darven","texto":"No cuestiono tu trabajo. Necesito que el informe y la reparación coincidan."},{"npc":"bruna","texto":"Entonces revisemos ambos juntos. Pero esta vez no decidas antes de mirar."}]
 	},
 	{
+		"tipo_contenido":"historia",
 		"clave": "bruna_narel_evidencia",
 		"tono_relacion": "cercana",
 		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Bruna y Narel acuerdan contrastar mediciones y observaciones."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Separan las causas del daño con mejores evidencias."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Conservan un registro compartido para futuras revisiones."}],
@@ -203,6 +227,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 		"lineas_tercera_etapa": [{"npc":"bruna","texto":"Guardé una copia de las medidas que tomaste. Pueden servir para la próxima revisión."},{"npc":"narel","texto":"Las ordené por fecha y condición del terreno. Así podremos compararlas sin mezclar resultados."},{"npc":"bruna","texto":"Bien. La próxima vez que algo se rompa, tendremos un punto de partida."},{"npc":"narel","texto":"Y una razón para comprobar primero las piezas antes de formular una explicación."}]
 	},
 	{
+		"tipo_contenido":"historia",
 		"clave": "darven_saira_avisos",
 		"tono_relacion": "prudente",
 		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Saira y Darven establecen un canal para transmitir avisos fiables."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Los comerciantes reciben información más clara."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"La cooperación permite distribuir mejor las tareas de vigilancia."}],
@@ -224,6 +249,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 		"lineas_tercera_etapa": [{"npc":"saira","texto":"Ya no tengo que repetir el mismo aviso a cada comerciante. La información está llegando por la ruta."},{"npc":"darven","texto":"Eso libera tiempo para vigilar otros tramos. Mantendré el registro abierto."},{"npc":"saira","texto":"Cuando encuentre una noticia útil, sabré dónde llevarla y qué detalles necesitas."},{"npc":"darven","texto":"Y yo sabré distinguir cuándo hace falta actuar y cuándo basta con informar. Es un buen acuerdo."}]
 	},
 	{
+		"tipo_contenido":"historia",
 		"clave": "elian_narel_hornada",
 		"tono_relacion": "cordial",
 		"efectos_etapa": [{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Elian y Narel comparten observaciones sobre la hornada."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Narel aporta notas y Elian explica el proceso práctico."},{"confianza":0.5,"tension":0.0,"colaboracion":0.5,"resumen":"Acuerdan preparar juntos una nueva hornada."}],
@@ -249,6 +275,7 @@ const CONVERSACIONES: Array[Dictionary] = [
 
 const CONVERSACIONES_HABITANTES: Array[Dictionary] = [
 	{
+		"tipo_contenido":"historia",
 		"clave":"mara_ivo_apoyo",
 		"npc_a":"mara","npc_b":"ivo","tono_relacion":"prudente",
 		"solo_ambiental_local":true,
@@ -258,6 +285,7 @@ const CONVERSACIONES_HABITANTES: Array[Dictionary] = [
 		"lineas_tercera_etapa":[{"npc":"mara","texto":"Te veo con más ánimo hoy."},{"npc":"ivo","texto":"Dormí bien. No es que ya pueda correr hasta el castillo, pero la plaza no me queda tan lejos."},{"npc":"mara","texto":"Entonces vamos hasta allá. Y si después quieres volver, volvemos."},{"npc":"ivo","texto":"Hecho. Me gusta que podamos hacer planes sin convertirlos en un gran asunto."}]
 	},
 	{
+		"tipo_contenido":"historia",
 		"clave":"nima_ivo_investigacion",
 		"npc_a":"nima","npc_b":"ivo","tono_relacion":"cercana",
 		"solo_ambiental_local":true,
@@ -268,6 +296,7 @@ const CONVERSACIONES_HABITANTES: Array[Dictionary] = [
 		"lineas_tercera_etapa":[{"npc":"nima","texto":"Hablé con alguien que conoce mejor el tema. Me dio algunas ideas, aunque todavía no hay una respuesta clara."},{"npc":"ivo","texto":"No esperaba que lo resolvieras tan rápido. Gracias por tomarte el tiempo."},{"npc":"nima","texto":"Me interesa entender qué te pasa, pero también quiero que podamos hablar de cualquier otra cosa."},{"npc":"ivo","texto":"Entonces cuéntame qué has hecho estos días. Hoy no hace falta tomar notas."}]
 	},
 	{
+		"tipo_contenido":"historia",
 		"clave":"saira_ivo_contacto",
 		"npc_a":"saira","npc_b":"ivo","tono_relacion":"cordial",
 		"solo_ambiental_local":true,
@@ -417,7 +446,7 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 			continue
 		var npc_a := _npc_por_nombre.get(str(conversacion.get("npc_a", ""))) as Creature
 		var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
-		if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+		if not _npc_puede_participar_historia(npc_a, npc_b):
 			continue
 		if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
 			continue
@@ -1726,7 +1755,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 				continue
 		var local_a := _npc_por_nombre.get(str(conversacion_local.get("npc_a", ""))) as Creature
 		var local_b := _npc_por_nombre.get(str(conversacion_local.get("npc_b", ""))) as Creature
-		if not _npc_puede_conversar(local_a) or not _npc_puede_conversar(local_b):
+		if not _npc_puede_participar_historia(local_a, local_b):
 			continue
 		if local_a.global_position.distance_to(local_b.global_position) > DISTANCIA_ENTRE_NPC:
 			continue
@@ -1748,7 +1777,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 				continue
 			var npc_a := _npc_por_nombre.get(str(conversacion.get("npc_a", ""))) as Creature
 			var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
-			if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+			if not _npc_puede_participar_historia(npc_a, npc_b):
 				continue
 			if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
 				continue
@@ -2045,6 +2074,28 @@ func _obtener_npcs_torres() -> Array[Creature]:
 	return resultado
 
 
+func _npc_puede_participar_historia(npc_a: Creature, npc_b: Creature) -> bool:
+	if _npc_puede_conversar(npc_a) and _npc_puede_conversar(npc_b):
+		return true
+	var zona: Node = _zone_manager.obtener_zona_actual() as Node if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo", false)):
+		return false
+	var edificio_actual := str(zona.get("_entrada_interior_id", "")).strip_edges()
+	if edificio_actual.is_empty():
+		return false
+	for npc in [npc_a, npc_b]:
+		if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+			return false
+		if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != edificio_actual:
+			return false
+		for meta_clave in ["rutina_en_transito", "actividad_social_activa", "acercamiento_social_activo", "conversacion_npc_bloqueada", "cinematica_npc_activa"]:
+			if bool(npc.get_meta(meta_clave, false)):
+				return false
+		if npc.velocity.length() > 5.0:
+			return false
+	return true
+
+
 func _npc_puede_conversar(npc: Creature) -> bool:
 	if bool(_conversacion_activa.get("_reunion_castillo", false)):
 		return _esta_en_reunion_castillo() and _npc_puede_participar_reunion(npc)
@@ -2148,6 +2199,18 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 	_indice_linea = 0
 	_temporizador_linea = 0.0
 	_mostrar_linea_actual()
+	if es_conversacion_historia(_conversacion_activa):
+		var npc_a_historia := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
+		var npc_b_historia := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
+		if is_instance_valid(npc_a_historia) and is_instance_valid(npc_b_historia):
+			var centro_historia := (npc_a_historia.global_position + npc_b_historia.global_position) * 0.5
+			cinematica_narrativa_solicitada.emit(
+				str(_conversacion_activa.get("clave", "")),
+				npc_a_historia.get_nombre_visual(),
+				npc_b_historia.get_nombre_visual(),
+				centro_historia,
+				etapa + 1
+			)
 	print("NPCConversationSystem: conversación ambiental iniciada: ", conversacion.get("clave", ""))
 
 
@@ -2265,10 +2328,15 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 	var npc_c: Creature = null
 	if not nombre_c.is_empty():
 		npc_c = _npc_por_nombre.get(nombre_c) as Creature
-	if not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
+	var es_historia_activa := es_conversacion_historia(_conversacion_activa)
+	if es_historia_activa:
+		if not _npc_puede_participar_historia(npc_a, npc_b):
+			_finalizar_conversacion()
+			return
+	elif not _npc_puede_conversar(npc_a) or not _npc_puede_conversar(npc_b):
 		_finalizar_conversacion()
 		return
-	if not nombre_c.is_empty() and not _npc_puede_conversar(npc_c):
+	if not nombre_c.is_empty() and not (es_historia_activa and _npc_puede_participar_historia(npc_a, npc_c)) and not _npc_puede_conversar(npc_c):
 		_finalizar_conversacion()
 		return
 	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 1.5:
@@ -2913,18 +2981,6 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 			_progreso_parejas[clave] = progreso
 			if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 				_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
-			if not bool(_conversacion_activa.get("_acontecimiento_diario", false)) and not bool(_conversacion_activa.get("solo_ambiental_local", false)) and etapa < 3:
-				var npc_a_cinematica := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
-				var npc_b_cinematica := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
-				if is_instance_valid(npc_a_cinematica) and is_instance_valid(npc_b_cinematica):
-					var centro_cinematica := (npc_a_cinematica.global_position + npc_b_cinematica.global_position) * 0.5
-					cinematica_narrativa_solicitada.emit(
-						clave,
-						npc_a_cinematica.get_nombre_visual(),
-						npc_b_cinematica.get_nombre_visual(),
-						centro_cinematica,
-						etapa + 1
-					)
 	for clave_participante in ["npc_a", "npc_b", "npc_c"]:
 		var nombre_participante := str(_conversacion_activa.get(clave_participante, "")).strip_edges().to_lower()
 		var participante := _npc_por_nombre.get(nombre_participante) as Creature
