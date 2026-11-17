@@ -280,6 +280,8 @@ func _run() -> void:
 		errores.append("No se pudo transmitir una noticia entre habitantes.")
 	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
+	if str(relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza").get("estado", "")) != "sospecha":
+		errores.append("Una noticia transmitida se registró como testimonio confirmado en vez de sospecha.")
 
 	# La asistencia a un evento comunitario produce conocimiento por observación directa.
 	var observacion_evento := {
