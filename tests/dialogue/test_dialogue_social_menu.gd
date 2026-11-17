@@ -106,6 +106,14 @@ func _run() -> void:
 	if not NPCConversationSystemScript.es_conversacion_opcional(acontecimiento):
 		errores.append("Los acontecimientos diarios deben ser opcionales.")
 
+	# Las historias pueden esperar a un día y una franja concretos.
+	var historia_programada := historia_local.duplicate(true)
+	historia_programada["activacion_historia"] = {"anio": 2, "dia": 7, "hora_desde": 9.0, "hora_hasta": 12.0}
+	if not NPCConversationSystemScript.cumple_activacion_historia(historia_programada, {"anio": 2, "dia": 7, "hora_del_dia": 10.0}):
+		errores.append("La historia programada no se activa dentro de su día y horario.")
+	if NPCConversationSystemScript.cumple_activacion_historia(historia_programada, {"anio": 2, "dia": 8, "hora_del_dia": 10.0}):
+		errores.append("La historia programada se activa fuera del día acordado.")
+
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
 	if npc == null or dialogo == null:

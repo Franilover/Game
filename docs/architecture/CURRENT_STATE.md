@@ -1013,6 +1013,6 @@ Al ejecutar una actividad dentro de un edificio abierto, el NPC busca primero un
 - Las conversaciones locales con progresión también son parte de la historia.
 - Los acontecimientos diarios, reuniones y rutinas compartidas siguen siendo contenido ambiental opcional y repetible.
 - Al comenzar una conversación de historia, se solicita el encuadre automático de cámara para que el jugador pueda verla.
-- Las cadenas narrativas pueden activarse cuando los participantes están en el mismo interior que el jugador, además de los encuentros exteriores.
+- Las cadenas narrativas pueden activarse cuando los participantes están en el mismo interior que el jugador, además de los encuentros exteriores. Cada etapa puede declarar `activacion_historia` con `anio`, `dia`, `hora_desde` y `hora_hasta`; también admite requisitos de progreso por clave y etapa.
 - Las solicitudes de cámara narrativas no caducan ni se descartan para hacer espacio a eventos opcionales; siguen la posición actual de los participantes.
 - No se alteran datos de Supabase; la clasificación y el progreso usan los datos locales existentes.
