@@ -262,6 +262,9 @@ func _cargar_sprite() -> void:
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null:
 		return
+	# Cada configuración parte de la escala neutra para no heredar ajustes
+	# de un habitante anterior cuando una instancia se reutiliza.
+	sprite.scale = Vector2.ONE
 
 	var rutas: Array[String] = []
 
