@@ -1370,10 +1370,10 @@ func transmitir_conocimiento_npc(
 			if cadena_destino_variant is Array and not (cadena_destino_variant as Array).is_empty():
 				rutas_destino.append((cadena_destino_variant as Array).duplicate(true))
 		for ruta_nueva in rutas_nuevas:
-			var firma_nueva := JSON.stringify(ruta_nueva)
+			var firma_nueva := _firma_ruta_transmision(ruta_nueva)
 			var repetida := false
 			for ruta_existente in rutas_destino:
-				if JSON.stringify(ruta_existente) == firma_nueva:
+				if _firma_ruta_transmision(ruta_existente) == firma_nueva:
 					repetida = true
 					break
 			if not repetida:
@@ -1410,6 +1410,21 @@ func transmitir_conocimiento_npc(
 		# La noticia se entregó aunque la evidencia del emisor ya estuviera registrada.
 		return true
 	return false
+
+
+func _firma_ruta_transmision(ruta: Array) -> String:
+	var firma := ""
+	for tramo_variant in ruta:
+		if not tramo_variant is Dictionary:
+			continue
+		var tramo := tramo_variant as Dictionary
+		if not firma.is_empty():
+			firma += "|"
+		firma += "%s>%s" % [
+			str(tramo.get("de", "")).strip_edges(),
+			str(tramo.get("a", "")).strip_edges()
+		]
+	return firma
 
 
 ## Los testimonios públicos se pueden repetir. La información privada requiere
