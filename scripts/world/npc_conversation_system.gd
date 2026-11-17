@@ -1804,6 +1804,22 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 		for conversacion in CONVERSACIONES:
 			if not cumple_activacion_historia(conversacion, tiempo):
 				continue
+			var requisito_variant: Variant = conversacion.get("requiere_progreso", "")
+			if requisito_variant is Dictionary:
+				var requisito_datos := requisito_variant as Dictionary
+				var requisito_clave := str(requisito_datos.get("clave", "")).strip_edges()
+				var etapa_requerida := maxi(1, int(requisito_datos.get("etapa", 1)))
+				if not requisito_clave.is_empty():
+					var progreso_requisito_variant: Variant = _progreso_parejas.get(requisito_clave, {})
+					var progreso_requisito: Dictionary = progreso_requisito_variant if progreso_requisito_variant is Dictionary else {}
+					if int(progreso_requisito.get("etapa", 0)) < etapa_requerida:
+						continue
+			elif not str(requisito_variant).strip_edges().is_empty():
+				var requisito_clave := str(requisito_variant).strip_edges()
+				var progreso_requisito_variant: Variant = _progreso_parejas.get(requisito_clave, {})
+				var progreso_requisito: Dictionary = progreso_requisito_variant if progreso_requisito_variant is Dictionary else {}
+				if int(progreso_requisito.get("etapa", 0)) < 1:
+					continue
 			var clave := str(conversacion.get("clave", ""))
 			var progreso_variant: Variant = _progreso_parejas.get(clave, {})
 			var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
