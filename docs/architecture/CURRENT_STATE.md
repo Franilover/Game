@@ -974,3 +974,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Los testimonios no verificados parten de una confianza menor y permanecen como sospechas hasta recibir evidencia independiente.
 - La evidencia de observación directa identifica al NPC testigo y al evento, para que compartir el recuerdo no lo convierta en una observación propia del receptor.
 - La transmisión conserva la cadena de procedencia y las evidencias que el receptor ya había reunido; no reemplaza sus recuerdos anteriores.
+
+
+## NPC: selección de ocio consciente de destinos
+
+- El catálogo de actividades de ocio se valida antes de que NPCMind puntúe las opciones: cada alternativa debe tener identificador y una ubicación existente en Torres.
+- Cuando la malla de navegación está lista, las alternativas cuyo destino no puede alcanzarse desde la posición actual se excluyen antes de elegir.
+- Si no queda ninguna alternativa válida, el NPC conserva su rutina base en lugar de recibir una ubicación sustituta.
+- Se añade una regresión para destinos desconocidos, identificadores vacíos y preservación de ubicaciones válidas.
+- Alcance: esta mejora cubre la selección de ocio en días libres; no cambia horarios laborales, datos canónicos ni Supabase.

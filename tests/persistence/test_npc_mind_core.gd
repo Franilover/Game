@@ -588,6 +588,19 @@ func _run() -> void:
 	if str(motivo_desacuerdo.get("tipo", "")) != "resolver_desacuerdo":
 		errores.append("Los NPC no detectaron un desacuerdo cuando no quedaban noticias pendientes.")
 
+	var opciones_ocio_mixtas: Array = ScheduleScript.filtrar_opciones_ocio_validas([
+		{"id": "pasear", "ubicacion_clave": "plaza"},
+		{"id": "leer", "ubicacion_clave": "archivo_real"},
+		{"id": "destino_inexistente", "ubicacion_clave": "bosque_que_no_existe"},
+		{"id": "", "ubicacion_clave": "plaza"},
+		{"id": "sin_destino_valido", "ubicacion_clave": " "}
+	])
+	if opciones_ocio_mixtas.size() != 2:
+		errores.append("El catálogo de ocio no descartó actividades inválidas o destinos inexistentes.")
+	else:
+		if str(opciones_ocio_mixtas[0].get("id", "")) != "pasear" or str(opciones_ocio_mixtas[1].get("ubicacion_clave", "")) != "archivo_real":
+			errores.append("La validación del catálogo alteró una actividad o su destino válido.")
+
 	var ocio_ivo: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "ivo")
 	var ocio_mara: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "mara")
 	var opciones_ivo: Array = ocio_ivo.get("opciones", [])

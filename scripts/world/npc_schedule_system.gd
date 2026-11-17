@@ -1713,6 +1713,45 @@ func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
 ## Añade variedad ambiental sin sustituir horarios ni destinos de trabajo.
 ## La elección depende del día del mundo y del tramo horario, por lo que no
 ## cambia en cada actualización del sistema.
+## Descarta opciones mal formadas o con destinos que no existen.
+## Una ubicación desconocida nunca debe convertirse silenciosamente en la plaza.
+static func filtrar_opciones_ocio_validas(opciones: Array) -> Array:
+	var validas: Array = []
+	for opcion_variant in opciones:
+		if not opcion_variant is Dictionary:
+			continue
+		var opcion: Dictionary = (opcion_variant as Dictionary).duplicate(true)
+		var actividad := str(opcion.get("id", "")).strip_edges().to_lower()
+		var ubicacion := str(opcion.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+		if actividad.is_empty() or not tiene_ubicacion(ubicacion):
+			continue
+		opcion["id"] = actividad
+		opcion["ubicacion_clave"] = ubicacion
+		validas.append(opcion)
+	return validas
+
+
+## Además de validar el catálogo, comprueba que el destino sea alcanzable
+## desde la posición actual cuando la malla de navegación ya está preparada.
+func _filtrar_opciones_ocio_alcanzables(npc: Creature, opciones: Array) -> Array:
+	var validas := filtrar_opciones_ocio_validas(opciones)
+	if not _malla_lista or _malla == null or not is_instance_valid(_zona):
+		return validas
+	var alcanzables: Array = []
+	for opcion_variant in validas:
+		var opcion: Dictionary = opcion_variant
+		var ubicacion := str(opcion.get("ubicacion_clave", "plaza"))
+		var destino_local: Vector2 = POSICIONES[ubicacion]
+		var destino_global := _zona.to_global(destino_local)
+		if npc.global_position.distance_to(destino_global) <= DISTANCIA_LLEGADA:
+			alcanzables.append(opcion)
+			continue
+		if _crear_ruta(npc.global_position, destino_global).is_empty():
+			continue
+		alcanzables.append(opcion)
+	return alcanzables
+
+
 func _aplicar_variacion_tiempo_libre(
 	npc: Creature,
 	rutina_base: Dictionary,
@@ -1758,7 +1797,12 @@ func _aplicar_variacion_tiempo_libre(
 	if personaje_id.is_empty():
 		personaje_id = nombre
 
-	var opciones: Array = (actividades_por_personaje.get("opciones", []) as Array).duplicate(true)
+	var opciones: Array = _filtrar_opciones_ocio_alcanzables(
+		npc,
+		(actividades_por_personaje.get("opciones", []) as Array)
+	)
+	if opciones.is_empty():
+		return rutina_base
 	var contexto_habito := "ocio_tramo_%s" % tramo
 	for opcion_variant in opciones:
 		if opcion_variant is Dictionary:
@@ -1816,7 +1860,7 @@ func _aplicar_variacion_tiempo_libre(
 	var actividad := str(elegida.get("id", ""))
 	var ubicacion_elegida := str(elegida.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	if not POSICIONES.has(ubicacion_elegida):
-		ubicacion_elegida = "plaza"
+		return rutina_base
 	resultado["actividad_clave"] = actividad
 	resultado["ubicacion_clave"] = ubicacion_elegida
 	resultado["variacion_posicion"] = (
