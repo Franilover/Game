@@ -2,6 +2,7 @@ extends Node
 class_name NPCConversationSystem
 
 const NPC_VOICE_PROFILE = preload("res://scripts/gameplay/npc_voice_profile.gd")
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 signal cinematica_acontecimiento_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
 signal cinematica_narrativa_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2, etapa: int, duracion: float)
@@ -2562,7 +2563,7 @@ func _obtener_burbuja(npc: Creature) -> PanelContainer:
 	panel.z_index = 100
 	# Las burbujas ambientales comparten la superficie de botón de la UI.
 	# La fuente queda heredada del tema normal del juego (Open Sans), no Pixelgrafia.
-	var estilo_boton := PIXEL_UI_THEME.button_surface_style()
+	var estilo_boton: StyleBox = PIXEL_UI_THEME.button_surface_style()
 	if estilo_boton != null:
 		panel.add_theme_stylebox_override("panel", estilo_boton)
 	else:
