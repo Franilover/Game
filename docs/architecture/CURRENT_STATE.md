@@ -948,3 +948,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - La misma fuente no gana peso por repetir la misma versión. La evaluación distingue sospecha, creencia firme, conocimiento sostenido y creencia refutada; no cambia la verdad global del mundo.
 - Las APIs nuevas son `registrar_evidencia_conocimiento_npc`, `evaluar_creencia_conocimiento_npc` y `obtener_evaluacion_creencia_npc`.
 - No se modificó Supabase ni se usa IA generativa. CI sigue pendiente de validación completa; hay fallos existentes de `NPCMindCore` que requieren aislarse antes de afirmar que la suite pasa.
+
+
+## Aprendizaje por observación de eventos comunitarios (2026-11-17)
+- Cuando un NPC participa en la rutina de un acontecimiento comunitario de Torres, registra una observación directa individual del evento.
+- La clave de conocimiento incluye evento, año y día; la evidencia usa ese identificador estable para impedir que cada actualización de rutina cuente como un nuevo testigo.
+- El registro conserva título, detalle, procedencia y momento. No se atribuye la observación a NPC sin identidad canónica ni a habitantes que no entraron en la rutina del evento.
+- La observación queda como conocimiento público compartible, sin afirmar nada sobre sucesos que el NPC no presenció.
+- Se añadió una regresión para confirmar la primera observación, la deduplicación y su estado epistemológico.
+- La integración cubre por ahora los eventos comunitarios del calendario de Torres; todavía falta conectar observaciones de incidentes, trabajo, acciones del jugador y pruebas materiales.
