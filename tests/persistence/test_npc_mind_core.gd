@@ -154,6 +154,33 @@ func _run() -> void:
 		errores.append("La memoria de lugares no sobrevivió a la recarga.")
 	mind_lugar_recargada.free()
 
+
+	var eleccion_variedad_1 := mind.elegir_actividad("ivo", [
+		{"id": "leer"},
+		{"id": "pasear"}
+	])
+	var eleccion_variedad_2 := mind.elegir_actividad("ivo", [
+		{"id": "leer"},
+		{"id": "pasear"}
+	])
+	if str(eleccion_variedad_1.get("actividad", "")) != "leer":
+		errores.append("La primera decisión de variedad no respetó el orden en empate.")
+	if str(eleccion_variedad_2.get("actividad", "")) != "pasear":
+		errores.append("La memoria reciente no favoreció una alternativa equivalente.")
+	var penalizacion_repeticion := mind.evaluar_actividad("ivo", {"id": "pasear"})
+	if float(penalizacion_repeticion.get("componentes", {}).get("variedad", 0.0)) >= 0.0:
+		errores.append("La actividad recién elegida no recibió una penalización de repetición.")
+	var historial_variedad: Array = mind.obtener_estado("ivo").get("historial_actividades", [])
+	if historial_variedad.size() > 4 or str(historial_variedad[0]) != "pasear":
+		errores.append("El historial reciente no conservó el orden o el límite esperado.")
+	mind.modificar_necesidad("ivo", "descanso", 80.0)
+	var eleccion_urgente := mind.elegir_actividad("ivo", [
+		{"id": "descansar_urgente", "necesidades": {"descanso": 1.0}},
+		{"id": "actividad_ligera"}
+	])
+	if str(eleccion_urgente.get("actividad", "")) != "descansar_urgente":
+		errores.append("La variedad desplazó una necesidad claramente urgente.")
+
 	var preferencia_inicial := mind.registrar_resultado_actividad("ivo", "charlar", 1.0)
 	if preferencia_inicial <= 0.0 or preferencia_inicial >= 1.0:
 		errores.append("Una experiencia positiva no produjo aprendizaje gradual.")
