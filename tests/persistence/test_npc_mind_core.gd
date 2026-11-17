@@ -233,6 +233,10 @@ func _run() -> void:
 	})
 	if float(actividad_objetivo.get("componentes", {}).get("objetivos", 0.0)) <= 0.0:
 		errores.append("Un objetivo activo no influyó en la evaluación de una actividad relacionada.")
+	var objetivo_por_id := mind.evaluar_actividad("ivo", {"id": "visitar_ivo_amigo"})
+	if float(objetivo_por_id.get("componentes", {}).get("objetivos", 0.0)) <= 0.0:
+		errores.append("Un objetivo sin campo actividad no se vinculó usando su propio identificador.")
+
 	if mind.obtener_objetivos_activos("ivo").size() != 1:
 		errores.append("El objetivo activo no se conservó.")
 	if not mind.completar_objetivo("ivo", "visitar_mara"):
@@ -261,8 +265,8 @@ func _run() -> void:
 		errores.append("El estado mental no sobrevivió a la recarga desde GameState.")
 
 	var cantidad_preferencias := (estado_recargado.get("aprendizaje", {}) as Dictionary).size()
-	if cantidad_preferencias != 1:
-		errores.append("Las preferencias aprendidas no se persistieron correctamente.")
+	if cantidad_preferencias != 2:
+		errores.append("Las dos preferencias aprendidas no se persistieron correctamente.")
 
 	var relationship := RelationshipScript.new() as RelationshipSystemService
 	relationship._game_state = game_state
@@ -351,6 +355,16 @@ func _run() -> void:
 	relationship.registrar_interaccion_entre_npc("ivo", "narel", {"confianza": 35.0})
 	if not relationship.transmitir_conocimiento_npc("ivo", "narel", "asunto_personal"):
 		errores.append("No se pudo compartir información personal con permiso y confianza suficientes.")
+
+	if relationship.transmitir_conocimiento_npc("ivo", "narel", "nota_sin_permiso"):
+		errores.append("Una nota personal sin metadatos de privacidad se retransmitió como noticia pública.")
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "nota_sin_permiso",
+		"tipo": "nota_personal",
+		"titulo": "Una nota privada"
+	})
+	if relationship.transmitir_conocimiento_npc("ivo", "narel", "nota_sin_permiso"):
+		errores.append("Una nota personal sin permiso se retransmitió automáticamente.")
 
 	# Los temas recordados quedan ligados a la persona con quien se hablaron.
 	relationship.registrar_tema_conversacion_npc("mara", "ivo", "la cantera", "2026-11-16T12:00:00")
