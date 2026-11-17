@@ -1549,7 +1549,7 @@ func _actualizar_layout_hud_superior() -> void:
 	var movil := _es_interfaz_movil()
 	if is_instance_valid(_clock_panel):
 		var clock_size := Vector2(112.0, 48.0)
-		_clock_panel.position = Vector2((viewport_size.x - clock_size.x) * 0.5, 12.0) if movil else Vector2(viewport_size.x - 260.0, 12.0)
+		_clock_panel.position = Vector2((viewport_size.x - clock_size.x) * 0.5, 12.0) if movil else Vector2(viewport_size.x - clock_size.x - 16.0, 12.0)
 		_clock_panel.size = clock_size
 		_clock_panel.custom_minimum_size = clock_size
 	if is_instance_valid(_coin_button):
