@@ -1507,16 +1507,22 @@ func _preparar_reloj_calendario() -> void:
 func _preparar_boton_monedas() -> void:
 	_coin_button = Button.new()
 	_coin_button.name = "CoinBalance"
-	_coin_button.custom_minimum_size = Vector2(132.0, 38.0)
-	_coin_button.text = "Monedas: %d" % GameState.obtener_dinero()
+	_coin_button.custom_minimum_size = Vector2(40.0, 28.0)
+	_coin_button.add_theme_font_size_override("font_size", 10)
 	PIXEL_UI_THEME.apply(_coin_button)
 	add_child(_coin_button)
 	_actualizar_boton_monedas()
 
 
 func _actualizar_boton_monedas() -> void:
-	if is_instance_valid(_coin_button):
-		_coin_button.text = "Monedas: %d" % GameState.obtener_dinero()
+	if not is_instance_valid(_coin_button):
+		return
+	var cantidad := str(GameState.obtener_dinero())
+	_coin_button.text = cantidad
+	var ancho := maxf(40.0, 20.0 + float(cantidad.length()) * 7.0)
+	_coin_button.custom_minimum_size = Vector2(ancho, 28.0)
+	_coin_button.size = Vector2(ancho, 28.0)
+	_actualizar_layout_hud_superior()
 
 
 func _al_cambiar_dinero(_cantidad: int) -> void:
@@ -1553,13 +1559,13 @@ func _actualizar_layout_hud_superior() -> void:
 		_clock_panel.size = clock_size
 		_clock_panel.custom_minimum_size = clock_size
 	if is_instance_valid(_coin_button):
-		var ancho_monedas := 132.0
-		var separacion_vertical := 8.0
+		var ancho_monedas := maxf(40.0, _coin_button.custom_minimum_size.x)
+		var alto_monedas := 28.0
 		var x_reloj := (viewport_size.x - 112.0) * 0.5 if movil else viewport_size.x - 112.0 - 16.0
 		x_reloj += (112.0 - ancho_monedas) * 0.5
-		var y_reloj := 12.0 + 48.0 + separacion_vertical
+		var y_reloj := 12.0 + 48.0 + 6.0
 		_coin_button.position = Vector2(x_reloj, y_reloj)
-		_coin_button.size = Vector2(ancho_monedas, 38.0)
+		_coin_button.size = Vector2(ancho_monedas, alto_monedas)
 
 
 
