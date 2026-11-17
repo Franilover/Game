@@ -1732,9 +1732,9 @@ func _obtener_reaccion_despedida_rutina() -> String:
 				return "Voy a sentarme un rato antes de seguir recorriendo Torres. ¡Gracias por pasar!"
 			return "Ha sido bueno conversar. Me quedaré un rato por aquí; seguro que nos vemos de nuevo."
 		"elian":
-			return "No interrumpes. Me alegra que hayas pasado; cuando vuelva a tener un momento, seguimos hablando."
+			return "Me alegra que hayas pasado. Cuando volvamos a encontrarnos, seguimos hablando."
 		"bruna":
-			return "Está bien. Tengo que terminar esto, pero podemos continuar la conversación otro día."
+			return "Me gustó conversar contigo. Nos vemos luego."
 		"darven":
 			return "De acuerdo. Mantente a salvo y avísame si ocurre algo que deba saber."
 		"saira":

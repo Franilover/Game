@@ -91,10 +91,25 @@ func _run() -> void:
 	dialogo._contexto_rutina_conversacion["actividad"] = "caminar"
 
 	dialogo._contexto_rutina_conversacion = {
+		"actividad": "",
+		"destino": "la plaza",
+		"en_transito": false
+	}
+	npc.nombre_individual = "Bruna"
+	var despedida_bruna_libre := dialogo._obtener_reaccion_despedida_rutina()
+	if despedida_bruna_libre.contains("terminar esto") or despedida_bruna_libre.contains("tengo que"):
+		errores.append("Bruna afirma que debe terminar un trabajo aunque no tiene una actividad laboral activa.")
+	npc.nombre_individual = "Elian"
+	var despedida_elian_libre := dialogo._obtener_reaccion_despedida_rutina()
+	if despedida_elian_libre.contains("No interrumpes") or despedida_elian_libre.contains("vuelva a tener un momento"):
+		errores.append("Elian responde como si estuviera ocupado aunque no tiene una tarea activa.")
+
+	dialogo._contexto_rutina_conversacion = {
 		"actividad": "forjar",
 		"destino": "la forja",
 		"en_transito": false
 	}
+	npc.nombre_individual = "Bruna"
 	var despedida_trabajando := dialogo._obtener_reaccion_despedida_rutina()
 	if not despedida_trabajando.contains("terminar esta pieza") or despedida_trabajando.contains("No interrumpes"):
 		errores.append("La despedida contradice el contexto de Bruna mientras trabaja en una pieza.")
