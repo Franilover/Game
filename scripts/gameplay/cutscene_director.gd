@@ -761,7 +761,8 @@ func _detener_animaciones_rutina_temporales(npc: Creature) -> void:
 		}
 	]
 	for animacion in animaciones:
-		var tween_variant: Variant = npc.get_meta(str(animacion.get("tween", "")), null)
+		var clave_tween := str(animacion.get("tween", ""))
+		var tween_variant: Variant = npc.get_meta(clave_tween) if npc.has_meta(clave_tween) else null
 		if tween_variant is Tween and is_instance_valid(tween_variant):
 			(tween_variant as Tween).kill()
 		if is_instance_valid(sprite):
