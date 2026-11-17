@@ -1,6 +1,8 @@
 extends Control
 class_name GarliaMobileControls
 
+const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+
 ## Capa táctil para dispositivos móviles. Reutiliza el InputMap del juego.
 ## El layout se calcula en píxeles de viewport y se adapta a orientación/tamaño.
 
@@ -17,6 +19,7 @@ var _joystick_touch_index: int = -1
 var _joystick_vector := Vector2.ZERO
 var _joystick_radio: float = 54.0
 var _meditar_presionado: bool = false
+var _layout_actual: Dictionary = {}
 
 
 func _ready() -> void:
@@ -32,7 +35,7 @@ func _ready() -> void:
 		"interact": $Actions/Interact,
 		"primary_action": $Actions/Primary,
 		"secondary_action": $Actions/Secondary,
-		"run": $Actions/Dash,
+		"dash": $Actions/Dash,
 		"jump": $Actions/Jump,
 		"inventory": $Actions/Inventory,
 	}
@@ -90,35 +93,105 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 		return
 	var nombres := {
 		"interact": "Usar", "primary_action": "Mano I", "secondary_action": "Mano D",
-		"run": "Dash", "jump": "Salto", "inventory": "Bolsa",
+		"dash": "Dash", "jump": "Salto", "inventory": "Bolsa",
 		"toggle_map": "Mapa", "toggle_missions": "Misiones", "toggle_garumi_selector": "Garumis",
 		"garumi_slot_1": "1", "garumi_slot_2": "2", "garumi_slot_3": "3",
 		"meditate": "Meditar", "pause_menu": "Pausa"
 	}
 	boton.text = str(nombres.get(accion, "•"))
-	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "pause_menu", "run", "jump"]
+	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "pause_menu", "dash", "jump"]
 	boton.add_theme_font_size_override("font_size", 10 if texto_largo else 18)
-	boton.add_theme_color_override("font_color", Color("#eee8d5"))
-	boton.add_theme_color_override("font_hover_color", Color("#ffffff"))
-	boton.add_theme_color_override("font_pressed_color", Color("#b4cbe0"))
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.075, 0.065, 0.055, 0.72)
-	normal.border_color = Color(0.72, 0.62, 0.43, 0.78)
-	normal.set_border_width_all(2)
-	normal.set_corner_radius_all(18)
-	normal.content_margin_left = 4
-	normal.content_margin_right = 4
-	normal.content_margin_top = 4
-	normal.content_margin_bottom = 4
-	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color(0.30, 0.25, 0.17, 0.94)
-	pressed.border_color = Color("#d8c08c")
+	boton.add_theme_color_override("font_color", Color("#FFF3D6"))
+	boton.add_theme_color_override("font_hover_color", Color("#FFFFFF"))
+	boton.add_theme_color_override("font_pressed_color", Color("#F2DDB8"))
+	boton.add_theme_color_override("font_disabled_color", Color("#D0C3A8"))
+	boton.add_theme_color_override("font_outline_color", Color("#302014"))
+	boton.add_theme_constant_override("outline_size", 2)
+	var normal: StyleBox = PIXEL_UI_THEME.button_surface_style()
+	var hover: StyleBox = PIXEL_UI_THEME.button_hover_style()
+	var pressed: StyleBox = PIXEL_UI_THEME.button_pressed_style()
+	var disabled: StyleBox = PIXEL_UI_THEME._texture_style("button_disabled.png", 5)
+	# Conserva un fallback legible si falta alguna textura opcional.
+	if normal == null:
+		var fallback := StyleBoxFlat.new()
+		fallback.bg_color = Color(0.075, 0.065, 0.055, 0.82)
+		fallback.border_color = Color(0.72, 0.62, 0.43, 0.9)
+		fallback.set_border_width_all(2)
+		fallback.set_corner_radius_all(12)
+		normal = fallback
+	if hover == null:
+		hover = normal
+	if pressed == null:
+		var fallback_pressed := (normal as StyleBox).duplicate()
+		if fallback_pressed is StyleBoxFlat:
+			(fallback_pressed as StyleBoxFlat).bg_color = Color("#66543A")
+		pressed = fallback_pressed
 	boton.add_theme_stylebox_override("normal", normal)
-	boton.add_theme_stylebox_override("hover", normal)
+	boton.add_theme_stylebox_override("hover", hover)
 	boton.add_theme_stylebox_override("pressed", pressed)
-	boton.add_theme_stylebox_override("focus", normal)
+	boton.add_theme_stylebox_override("disabled", disabled if disabled != null else normal)
+	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	boton.custom_minimum_size = Vector2(tamano_accion, tamano_accion)
 	boton.tooltip_text = ""
+
+
+func _calcular_layout_movil(viewport_size: Vector2) -> Dictionary:
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return {}
+	var margen := minf(float(margen_borde), minf(viewport_size.x, viewport_size.y) * 0.06)
+	var gap := clampf(float(separacion), 6.0, 12.0)
+	var joystick_size := minf(float(tamano_joystick), minf(viewport_size.x * 0.32, viewport_size.y * 0.36))
+	joystick_size = maxf(64.0, joystick_size)
+	var compacto := viewport_size.x < 700.0 or viewport_size.y < 420.0
+	var accion := clampf(minf(float(tamano_accion) - (8.0 if compacto else 0.0), viewport_size.x * 0.19, viewport_size.y * 0.22), 42.0, 68.0)
+	var pequeno := clampf(accion * 0.72, 34.0, 48.0)
+	var right := viewport_size.x - margen
+	var bottom := viewport_size.y - margen
+	var layout := {}
+
+	var joystick_pos := Vector2(margen, bottom - joystick_size)
+	layout["Movement/JoystickBase"] = Rect2(joystick_pos, Vector2.ONE * joystick_size)
+	var knob_size := Vector2.ONE * joystick_size * 0.42
+	var knob_center := joystick_pos + Vector2.ONE * joystick_size * 0.5
+	layout["Movement/JoystickKnob"] = Rect2(knob_center - knob_size * 0.5 + _joystick_vector * joystick_size * 0.30, knob_size)
+
+	# Barra superior: se divide en dos filas cuando los grupos no caben juntos.
+	var ancho_utilidades := accion + gap + pequeno * 3.0 + 12.0
+	var ancho_garumis := pequeno * 4.0 + gap * 3.0
+	var apilar_utilidades := viewport_size.x < ancho_utilidades + ancho_garumis + margen * 2.0 + gap
+	layout["Actions/Inventory"] = Rect2(Vector2(margen, margen), Vector2.ONE * accion)
+	if apilar_utilidades:
+		layout["Actions/Map"] = Rect2(Vector2(margen + accion + gap, margen), Vector2.ONE * pequeno)
+		layout["Actions/Missions"] = Rect2(Vector2(margen, margen + pequeno + gap), Vector2.ONE * pequeno)
+		layout["Actions/Pause"] = Rect2(Vector2(margen + pequeno + 6.0, margen + pequeno + gap), Vector2.ONE * pequeno)
+	else:
+		var x := margen + accion + gap
+		layout["Actions/Map"] = Rect2(Vector2(x, margen), Vector2.ONE * pequeno)
+		x += pequeno + 6.0
+		layout["Actions/Missions"] = Rect2(Vector2(x, margen), Vector2.ONE * pequeno)
+		x += pequeno + 6.0
+		layout["Actions/Pause"] = Rect2(Vector2(x, margen), Vector2.ONE * pequeno)
+
+	var x_garumis := right - ancho_garumis
+	layout["Actions/Garumis"] = Rect2(Vector2(x_garumis, margen), Vector2.ONE * pequeno)
+	for i in range(3):
+		layout["Actions/Garumi%d" % (i + 1)] = Rect2(Vector2(x_garumis + (pequeno + gap) * (i + 1), margen), Vector2.ONE * pequeno)
+
+	# Acciones de juego en una cuadrícula 3x2, sin botones que sobresalgan del borde.
+	var ancho_grupo := accion * 3.0 + gap * 2.0
+	var x_grupo := right - ancho_grupo
+	var y_inferior := bottom - accion
+	var y_superior := y_inferior - accion - gap
+	layout["Actions/Dash"] = Rect2(Vector2(x_grupo, y_superior), Vector2.ONE * accion)
+	layout["Actions/Jump"] = Rect2(Vector2(x_grupo + accion + gap, y_superior), Vector2.ONE * accion)
+	layout["Actions/Interact"] = Rect2(Vector2(x_grupo, y_inferior), Vector2.ONE * accion)
+	layout["Actions/Secondary"] = Rect2(Vector2(x_grupo + accion + gap, y_inferior), Vector2.ONE * accion)
+	layout["Actions/Primary"] = Rect2(Vector2(x_grupo + (accion + gap) * 2.0, y_inferior), Vector2.ONE * accion)
+
+	# Meditar queda encima del joystick, separado de la cuadrícula de combate.
+	var y_meditar := maxf(margen, joystick_pos.y - pequeno - gap)
+	layout["Actions/Meditate"] = Rect2(Vector2(margen, y_meditar), Vector2.ONE * pequeno)
+	return layout
 
 
 func _distribuir_controles() -> void:
@@ -127,38 +200,18 @@ func _distribuir_controles() -> void:
 	var viewport_size := get_viewport_rect().size
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
+	# Los dos contenedores usan coordenadas locales equivalentes al viewport.
 	_posicionar($Movement, Vector2.ZERO, viewport_size)
 	_posicionar($Actions, Vector2.ZERO, viewport_size)
-	var compacto := viewport_size.x < 700.0 or viewport_size.y < 420.0
-	var joystick_size := minf(float(tamano_joystick), minf(viewport_size.x * 0.32, viewport_size.y * 0.36))
-	joystick_size = maxf(96.0, joystick_size)
-	var margen := float(margen_borde)
-	var joystick_pos := Vector2(margen, viewport_size.y - margen - joystick_size)
-	_posicionar($Movement/JoystickBase, joystick_pos, Vector2(joystick_size, joystick_size))
-	$Movement/JoystickKnob.custom_minimum_size = Vector2(joystick_size * 0.42, joystick_size * 0.42)
-	$Movement/JoystickKnob.size = $Movement/JoystickKnob.custom_minimum_size
-	_joystick_radio = joystick_size * 0.30
+	_layout_actual = _calcular_layout_movil(viewport_size)
+	for ruta in _layout_actual:
+		var control := get_node_or_null(NodePath(str(ruta))) as Control
+		if not is_instance_valid(control):
+			continue
+		var rect: Rect2 = _layout_actual[ruta]
+		_posicionar(control, rect.position, rect.size)
+	_joystick_radio = ($Movement/JoystickBase.size.x * 0.30)
 	_actualizar_visual_joystick()
-	# Utilidades arriba a la izquierda; Garumis arriba a la derecha.
-	var a := clampf(float(tamano_accion) - (8.0 if compacto else 0.0), 48.0, 68.0)
-	var pequeno := clampf(a * 0.72, 38.0, 48.0)
-	var gap := maxf(float(separacion), 10.0)
-	var right := viewport_size.x - margen
-	var bottom := viewport_size.y - margen
-	_posicionar($Actions/Inventory, Vector2(margen, margen), Vector2(a, a))
-	_posicionar($Actions/Map, Vector2(margen + a + gap, margen), Vector2(pequeno, pequeno))
-	_posicionar($Actions/Missions, Vector2(margen + a + gap + pequeno + 6.0, margen), Vector2(pequeno, pequeno))
-	_posicionar($Actions/Pause, Vector2(margen + a + gap + (pequeno + 6.0) * 2.0, margen), Vector2(pequeno, pequeno))
-	_posicionar($Actions/Garumis, Vector2(right - pequeno, margen), Vector2(pequeno, pequeno))
-	for i in range(3):
-		var boton_garumi := _botones_hud["garumi_slot_%d" % (i + 1)] as Button
-		_posicionar(boton_garumi, Vector2(right - (pequeno + gap) * (i + 2), margen), Vector2(pequeno, pequeno))
-	_posicionar($Actions/Primary, Vector2(right - a, bottom - a), Vector2(a, a))
-	_posicionar($Actions/Jump, Vector2(right - a * 2.0 - gap, bottom - a * 1.65 - gap), Vector2(a, a))
-	_posicionar($Actions/Secondary, Vector2(right - a * 2.0 - gap, bottom - a * 0.45), Vector2(a, a))
-	_posicionar($Actions/Interact, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 0.45), Vector2(a, a))
-	_posicionar($Actions/Dash, Vector2(right - a * 3.0 - gap * 2.0, bottom - a * 1.65 - gap), Vector2(a, a))
-	_posicionar($Actions/Meditate, Vector2(margen + joystick_size + gap, bottom - pequeno), Vector2(pequeno, pequeno))
 
 
 func _input(event: InputEvent) -> void:
@@ -249,6 +302,9 @@ func _alternar_pausa() -> void:
 	evento.keycode = KEY_ESCAPE
 	evento.pressed = true
 	Input.parse_input_event(evento)
+	var liberacion := evento.duplicate() as InputEventKey
+	liberacion.pressed = false
+	Input.parse_input_event(liberacion)
 
 
 func _presionar_espacio() -> void:
