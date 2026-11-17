@@ -29,9 +29,11 @@ func _run() -> void:
 	var rutas_botones := [
 		"Actions/Inventory", "Actions/Map", "Actions/Missions", "Actions/Pause",
 		"Actions/Garumis", "Actions/Garumi1", "Actions/Garumi2", "Actions/Garumi3",
-		"Actions/Primary", "Actions/Secondary", "Actions/Interact", "Actions/Dash",
-		"Actions/Jump", "Actions/Meditate"
+		"Actions/Primary", "Actions/Secondary", "Actions/Dash",
+		"Actions/Meditate"
 	]
+	if controles.get_node_or_null("Actions/Jump") != null or controles.get_node_or_null("Actions/Interact") != null:
+		errores.append("Los controles móviles todavía contienen botones de salto o usar.")
 	for tamano_viewport in tamanos:
 		var layout := controles._calcular_layout_movil(tamano_viewport)
 		for ruta in rutas_botones:
