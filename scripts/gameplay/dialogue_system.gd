@@ -362,15 +362,14 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 						_fuente.get_personaje_game_id().strip_edges()
 					)
 	_dialogo_en_transito = _es_dialogo_en_transito(datos_seleccionados)
-	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_accion_exclusiva := _dialogo_tiene_accion_final_exclusiva(acciones_final_variant)
-	if not iniciativa_directa and not tiene_accion_exclusiva and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
-		# Las conversaciones cotidianas conservan el menú social aunque sus
-		# datos incluyan acciones auxiliares. Sólo las escenas que necesitan
-		# resolver una misión, un seguimiento o un evento mantienen su cierre propio.
-		_usa_menu_social = true
-		_respuestas = _crear_menu_principal_social()
+	_usa_menu_social = _debe_usar_menu_social(datos_seleccionados, iniciativa_directa, tiene_accion_exclusiva)
+	if _usa_menu_social:
+		# Las opciones propias del diálogo se conservan. El menú general sólo
+		# se usa como alternativa cuando el contenido no declara decisiones.
+		if _respuestas.is_empty():
+			_respuestas = _crear_menu_principal_social()
 		_acciones.clear()
 	_limpiar_botones_respuesta()
 
@@ -424,6 +423,20 @@ func abrir_iniciativa_npc(datos: Dictionary, fuente: Creature) -> bool:
 	if not is_instance_valid(fuente) or _abierto:
 		return false
 	return abrir(datos, fuente, true)
+
+
+func _debe_usar_menu_social(
+	datos_dialogo: Dictionary,
+	iniciativa_directa: bool,
+	tiene_accion_exclusiva: bool
+) -> bool:
+	if not is_instance_valid(_fuente) or _dialogo_en_transito or tiene_accion_exclusiva:
+		return false
+	if bool(datos_dialogo.get("_continuar_menu_social", false)):
+		return true
+	if iniciativa_directa or bool(datos_dialogo.get("_iniciativa_npc", false)):
+		return false
+	return true
 
 
 ## Estas acciones requieren una resolución propia y no deben mezclarse con
@@ -799,11 +812,9 @@ func _actualizar_retrato(hablante: String) -> void:
 
 ## Los encuentros durante un desplazamiento son breves: el NPC no se detiene a conversar.
 func _es_dialogo_en_transito(dialogo: Dictionary) -> bool:
-	# La marca de movimiento puede seguir activa mientras el NPC está pausado
-	# para conversar. Sólo el contenido elegido como diálogo de tránsito debe
-	# suprimir el menú social; no se consulta el estado físico de la rutina.
-	var clave := str(dialogo.get("clave", "")).strip_edges().to_lower()
-	return clave == "rutina_en_transito"
+	# El tránsito físico no debe convertir una conversación normal en un saludo
+	# que desaparece solo. El modo breve requiere una declaración explícita del dato.
+	return bool(dialogo.get("_dialogo_breve_sin_opciones", false))
 
 
 func _es_dialogo_cotidiano(dialogo: Dictionary) -> bool:
