@@ -618,6 +618,7 @@ func _run() -> void:
 			actividades_mara.append(str((opcion as Dictionary).get("id", "")))
 		if not actividades_mara.has("pasear_sin_prisa") or actividades_mara.has("sentarse_un_rato"):
 			errores.append("El perfil de ocio de Mara no conserva sus alternativas propias.")
+	mind_habito_recargada.free()
 	schedule.free()
 	relationship.free()
 	mind.free()
