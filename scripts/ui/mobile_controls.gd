@@ -97,7 +97,7 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 		"meditate": "Meditar", "pause_menu": "Pausa"
 	}
 	boton.text = str(nombres.get(accion, "•"))
-	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "pause_menu", "dash"]
+	var texto_largo := accion in ["primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "pause_menu", "dash"]
 	boton.add_theme_font_size_override("font_size", 10 if texto_largo else 18)
 	boton.add_theme_color_override("font_color", Color("#FFF3D6"))
 	boton.add_theme_color_override("font_hover_color", Color("#FFFFFF"))
