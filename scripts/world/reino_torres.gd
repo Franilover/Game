@@ -832,13 +832,14 @@ func _actualizar_decoracion_evento_torres() -> void:
 				var x := -104.0 + float(indice) * 104.0
 				var mesa := Sprite2D.new()
 				mesa.name = "MesaComunitaria_%02d" % indice
-				mesa.texture = MUEBLE_MESA
+				mesa.texture = MUEBLE_MESA_PLATOS
 				mesa.position = Vector2(x, 66.0)
 				mesa.scale = Vector2(0.9, 0.8)
 				mesa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				mesa.z_index = 4
 				_decoracion_evento_torres.add_child(mesa)
 				_crear_sprite_evento("ComidaMesa_%02d" % indice, "comida", variante + indice, Vector2(x, 54.0), Vector2.ONE, 5)
+				_agregar_sprite_mueble(_decoracion_evento_torres, "AsientoComida_%02d" % indice, MUEBLE_SILLA, Vector2(x, 112.0), Vector2.ONE, 5)
 		"temporada":
 			var estacion := str(tiempo.get("estacion", "temporada")).to_lower()
 			var variante_estacional := absi(estacion.hash()) % 4
@@ -1660,15 +1661,16 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA_PLATOS, Vector2(-130, -65), Vector2(1.0, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA, Vector2(0, 85), Vector2.ONE, 1)
 		"laboratorio":
-			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA, Vector2(-185, -105), Vector2(1.45, 1.2), 1)
+			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-185, -105), Vector2(1.35, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA, Vector2(-185, -55), Vector2.ONE, 1)
 			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-185, -55))
-			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA, Vector2(-35, -105), Vector2(1.35, 1.15), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA_PLATOS, Vector2(-35, -105), Vector2(1.2, 1.05), 1)
 			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(-35, -55))
 			_agregar_sprite_mueble(cuarto, "HornoTratamiento", MUEBLE_HORNO, Vector2(145, -105), Vector2(1.35, 1.35), 1)
 			_agregar_estacion_laboratorio(cuarto, "termica", "Aplicar tratamiento térmico", Vector2(145, -48))
-			_agregar_sprite_mueble(cuarto, "MesaObservacion", MUEBLE_MESA, Vector2(-125, 75), Vector2(1.35, 1.15), 1)
+			_agregar_sprite_mueble(cuarto, "MesaObservacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-125, 75), Vector2(1.25, 1.05), 1)
 			_agregar_estacion_laboratorio(cuarto, "observacion", "Observar estructuras", Vector2(-125, 120))
-			_agregar_sprite_mueble(cuarto, "MesaEterium", MUEBLE_MESA, Vector2(65, 75), Vector2(1.45, 1.15), 1)
+			_agregar_sprite_mueble(cuarto, "MesaEterium", MUEBLE_MESA_PLATOS, Vector2(65, 75), Vector2(1.25, 1.05), 1)
 			_agregar_estacion_laboratorio(cuarto, "eterium", "Estudiar Eterium", Vector2(65, 120))
 			_agregar_sprite_mueble(cuarto, "AlmacenMuestras", MUEBLE_COFRE, Vector2(220, 85), Vector2(0.9, 0.9), 1)
 		"comercio", "registro", "almacen":
