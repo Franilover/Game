@@ -858,6 +858,24 @@ func registrar_conocimiento_npc(personaje_id: String, conocimiento: Dictionary) 
 	registro["fuentes"] = fuentes
 	registro["conocido_desde"] = primera_vez if not primera_vez.is_empty() else Time.get_datetime_string_from_system(true)
 	registro["ultimo_contacto"] = Time.get_datetime_string_from_system(true)
+	# Los testimonios y rumores declarados por los diálogos empiezan como
+	# sospechas; no se promueven a hechos por el mero hecho de recibirlos.
+	var verificacion := str(registro.get("verificacion", "")).strip_edges().to_lower()
+	if verificacion in ["testimonio_no_verificado", "rumor_no_verificado"] and not registro.has("evidencias"):
+		var tipo_evidencia := "testimonio" if verificacion == "testimonio_no_verificado" else "rumor"
+		var fuente_evidencia := str(registro.get("fuente", "")).strip_edges()
+		if not fuente_evidencia.is_empty():
+			var evidencia_inicial := {
+				"fuente_id": fuente_evidencia,
+				"tipo": tipo_evidencia,
+				"direccion": "apoya",
+				"peso": 0.18 if tipo_evidencia == "testimonio" else 0.08,
+				"momento": str(registro.get("conocido_desde", ""))
+			}
+			registro["evidencias"] = [evidencia_inicial]
+			var evaluacion_inicial := evaluar_creencia_conocimiento_npc(registro)
+			registro["confianza_creencia"] = float(evaluacion_inicial.get("confianza", 0.5))
+			registro["estado_epistemico"] = str(evaluacion_inicial.get("estado", "sospecha"))
 	if conocimiento.has("cadena_transmision"):
 		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
 		if cadena_variant is Array:
