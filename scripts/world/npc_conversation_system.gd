@@ -469,7 +469,7 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 		var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
 		if not _npc_puede_participar_historia(npc_a, npc_b):
 			continue
-		if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
+		if not _distancia_historia_valida(npc_a, npc_b):
 			continue
 		if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR:
 			continue
@@ -1791,7 +1791,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 		var local_b := _npc_por_nombre.get(str(conversacion_local.get("npc_b", ""))) as Creature
 		if not _npc_puede_participar_historia(local_a, local_b):
 			continue
-		if local_a.global_position.distance_to(local_b.global_position) > DISTANCIA_ENTRE_NPC:
+		if not _distancia_historia_valida(local_a, local_b):
 			continue
 		if jugador.global_position.distance_to(local_a.global_position) > DISTANCIA_ACTIVACION_HISTORIA and jugador.global_position.distance_to(local_b.global_position) > DISTANCIA_ACTIVACION_HISTORIA:
 			continue
@@ -1831,7 +1831,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 			var npc_b := _npc_por_nombre.get(str(conversacion.get("npc_b", ""))) as Creature
 			if not _npc_puede_participar_historia(npc_a, npc_b):
 				continue
-			if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
+			if not _distancia_historia_valida(npc_a, npc_b):
 				continue
 			if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_ACTIVACION_HISTORIA and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_ACTIVACION_HISTORIA:
 				continue
@@ -2126,6 +2126,23 @@ func _obtener_npcs_torres() -> Array[Creature]:
 	return resultado
 
 
+func _distancia_historia_valida(npc_a: Creature, npc_b: Creature) -> bool:
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return false
+	if npc_a.global_position.distance_to(npc_b.global_position) <= DISTANCIA_ENTRE_NPC:
+		return true
+	var zona: Node = _zone_manager.obtener_zona_actual() as Node if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")):
+		return false
+	var edificio_actual := str(zona.get("_entrada_interior_id")).strip_edges()
+	if edificio_actual.is_empty():
+		return false
+	for npc in [npc_a, npc_b]:
+		if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != edificio_actual:
+			return false
+	return npc_a.global_position.distance_to(npc_b.global_position) <= 360.0
+
+
 func _npc_puede_participar_historia(npc_a: Creature, npc_b: Creature) -> bool:
 	if _npc_puede_conversar(npc_a) and _npc_puede_conversar(npc_b):
 		return true
@@ -2407,7 +2424,11 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 	if not nombre_c.is_empty() and not (es_historia_activa and _npc_puede_participar_historia(npc_a, npc_c)) and not _npc_puede_conversar(npc_c):
 		_finalizar_conversacion()
 		return
-	if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 1.5:
+	if es_historia_activa:
+		if not _distancia_historia_valida(npc_a, npc_b):
+			_finalizar_conversacion()
+			return
+	elif npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 1.5:
 		_finalizar_conversacion()
 		return
 	var distancia_a := jugador.global_position.distance_to(npc_a.global_position)
