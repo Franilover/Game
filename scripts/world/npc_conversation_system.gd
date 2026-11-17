@@ -1807,18 +1807,18 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 			var requisito_variant: Variant = conversacion.get("requiere_progreso", "")
 			if requisito_variant is Dictionary:
 				var requisito_datos := requisito_variant as Dictionary
-				var requisito_clave := str(requisito_datos.get("clave", "")).strip_edges()
+				var clave_requisito_dic := str(requisito_datos.get("clave", "")).strip_edges()
 				var etapa_requerida := maxi(1, int(requisito_datos.get("etapa", 1)))
-				if not requisito_clave.is_empty():
-					var progreso_requisito_variant: Variant = _progreso_parejas.get(requisito_clave, {})
-					var progreso_requisito: Dictionary = progreso_requisito_variant if progreso_requisito_variant is Dictionary else {}
-					if int(progreso_requisito.get("etapa", 0)) < etapa_requerida:
+				if not clave_requisito_dic.is_empty():
+					var progreso_requisito_dic_variant: Variant = _progreso_parejas.get(clave_requisito_dic, {})
+					var progreso_requisito_dic: Dictionary = progreso_requisito_dic_variant if progreso_requisito_dic_variant is Dictionary else {}
+					if int(progreso_requisito_dic.get("etapa", 0)) < etapa_requerida:
 						continue
 			elif not str(requisito_variant).strip_edges().is_empty():
-				var requisito_clave := str(requisito_variant).strip_edges()
-				var progreso_requisito_variant: Variant = _progreso_parejas.get(requisito_clave, {})
-				var progreso_requisito: Dictionary = progreso_requisito_variant if progreso_requisito_variant is Dictionary else {}
-				if int(progreso_requisito.get("etapa", 0)) < 1:
+				var clave_requisito_texto := str(requisito_variant).strip_edges()
+				var progreso_requisito_texto_variant: Variant = _progreso_parejas.get(clave_requisito_texto, {})
+				var progreso_requisito_texto: Dictionary = progreso_requisito_texto_variant if progreso_requisito_texto_variant is Dictionary else {}
+				if int(progreso_requisito_texto.get("etapa", 0)) < 1:
 					continue
 			var clave := str(conversacion.get("clave", ""))
 			var progreso_variant: Variant = _progreso_parejas.get(clave, {})
