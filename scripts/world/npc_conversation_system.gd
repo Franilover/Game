@@ -2191,6 +2191,12 @@ func iniciar_conversacion_social_autonoma(npc_a: Creature, npc_b: Creature, moti
 	var indice_variante := int(relacion.get("interacciones", 0)) + historial.size()
 	var antecedente := _obtener_referencia_historial_social(historial, tipo)
 	var detalle := str(motivo.get("titulo", motivo.get("descripcion", "")))
+	if antecedente.is_empty() and is_instance_valid(_relationship_system):
+		var tema_previo: Dictionary = _relationship_system.obtener_ultimo_tema_conversacion_npc(id_a, id_b)
+		if not tema_previo.is_empty():
+			var tema_recordado := str(tema_previo.get("tema", "")).strip_edges()
+			if not tema_recordado.is_empty():
+				antecedente = "La última vez que hablamos nos quedamos con el tema de %s." % tema_recordado
 	var lineas := NPC_VOICE_PROFILE.construir_dialogo_social(
 		nombre_a,
 		nombre_b,
@@ -2213,7 +2219,8 @@ func iniciar_conversacion_social_autonoma(npc_a: Creature, npc_b: Creature, moti
 		"_sin_dinamica_social": true,
 		"_social_autonoma": true,
 		"_tono_social": tono,
-		"_variante_social": indice_variante
+		"_variante_social": indice_variante,
+		"_tema_social": detalle if not detalle.is_empty() else tipo
 	})
 	return not _conversacion_activa.is_empty()
 
@@ -2808,7 +2815,28 @@ func _registrar_dinamica_social_conversacion() -> void:
 					_progreso_parejas[clave_social] = guardado[clave_social].duplicate(true)
 
 
+func _registrar_memoria_conversacional_autonoma() -> void:
+	if not is_instance_valid(_relationship_system):
+		return
+	var nombre_a := str(_conversacion_activa.get("npc_a", "")).strip_edges().to_lower()
+	var nombre_b := str(_conversacion_activa.get("npc_b", "")).strip_edges().to_lower()
+	var npc_a := _npc_por_nombre.get(nombre_a) as Creature
+	var npc_b := _npc_por_nombre.get(nombre_b) as Creature
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return
+	var id_a := npc_a.get_personaje_game_id().strip_edges()
+	var id_b := npc_b.get_personaje_game_id().strip_edges()
+	var tema := str(_conversacion_activa.get("_tema_social", "")).strip_edges()
+	if id_a.is_empty() or id_b.is_empty() or tema.is_empty():
+		return
+	var momento := Time.get_datetime_string_from_system(true)
+	_relationship_system.registrar_tema_conversacion_npc(id_a, id_b, tema, momento)
+	_relationship_system.registrar_tema_conversacion_npc(id_b, id_a, tema, momento)
+
+
 func _finalizar_conversacion(completada: bool = false) -> void:
+	if completada and bool(_conversacion_activa.get("_social_autonoma", false)):
+		_registrar_memoria_conversacional_autonoma()
 	if completada and not _conversacion_activa.is_empty() and not bool(_conversacion_activa.get("_sin_dinamica_social", false)):
 		_registrar_dinamica_social_conversacion()
 		_registrar_rutina_compartida()
