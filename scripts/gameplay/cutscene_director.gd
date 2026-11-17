@@ -124,7 +124,8 @@ func _resolver_parametros_cinematica(valor: Variant, parametros: Dictionary) -> 
 func ejecutar_recurso(
 	secuencia: CutsceneSequence,
 	parametros: Dictionary = {},
-	tipo_override: String = ""
+	tipo_override: String = "",
+	dialogo_extra: Dictionary = {}
 ) -> bool:
 	if not is_instance_valid(secuencia):
 		push_warning("CutsceneDirector: el recurso de secuencia no es válido.")
@@ -146,6 +147,14 @@ func ejecutar_recurso(
 		push_warning("CutsceneDirector [%s]: los pasos resueltos no forman una lista." % secuencia.clave)
 		return false
 	var pasos_resueltos: Array = pasos_variant
+	if not dialogo_extra.is_empty():
+		var datos_dialogo_variant: Variant = dialogo_extra.get("datos", {})
+		if datos_dialogo_variant is Dictionary and not (datos_dialogo_variant as Dictionary).is_empty():
+			pasos_resueltos.append({
+				"tipo": "dialogo",
+				"npc": str(dialogo_extra.get("npc", "")),
+				"datos": (datos_dialogo_variant as Dictionary).duplicate(true)
+			})
 	var clave_resuelta := str(_resolver_parametros_cinematica(secuencia.clave, parametros))
 	return await ejecutar(clave_resuelta, pasos_resueltos, modo_ejecucion)
 
