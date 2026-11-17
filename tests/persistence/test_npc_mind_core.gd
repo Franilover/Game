@@ -302,6 +302,43 @@ func _run() -> void:
 		errores.append("Un motivo concreto no permitió una excepción al perfil reservado.")
 	if schedule._obtener_umbral_social("mara") <= schedule._obtener_umbral_social("ivo"):
 		errores.append("La sociabilidad no modificó el umbral de necesidad social.")
+
+	# La memoria personal puede frenar encuentros casuales tras experiencias
+	# negativas repetidas, pero no bloquea resolver una promesa o un asunto.
+	for indice_recuerdo in range(3):
+		relationship.registrar_recuerdo("mara", {
+			"tipo": "experiencia_npc",
+			"evento": "mal_trato",
+			"con_personaje": "narel",
+			"resultado": -1.0,
+			"importancia": 3.0,
+			"momento": "2026:11:16"
+		})
+	var memoria_negativa_mara := schedule._calcular_influencia_recuerdos_sociales("mara", "narel", "2026:11:16")
+	if memoria_negativa_mara > -8.0:
+		errores.append("Las experiencias negativas repetidas no consolidaron cautela hacia esa persona.")
+	if schedule._puede_iniciar_encuentro_social("mara", vinculo_cercano, false, "narel"):
+		errores.append("Un NPC reservado ignoró recuerdos negativos repetidos al evaluar un encuentro.")
+	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido, true, "narel"):
+		errores.append("Un motivo concreto no permitió resolver una situación con alguien que generó desconfianza.")
+	var influencia_recuerdo_antiguo := schedule._calcular_influencia_recuerdos_sociales(
+		"mara", "bruna", "2026:11:16"
+	)
+	relationship.registrar_recuerdo("mara", {
+		"tipo": "experiencia_npc",
+		"evento": "ayuda_antigua",
+		"con_personaje": "bruna",
+		"resultado": 1.0,
+		"importancia": 3.0,
+		"momento": "2026:10:01"
+	})
+	var influencia_recuerdo_reciente := schedule._calcular_influencia_recuerdos_sociales(
+		"mara", "bruna", "2026:11:16"
+	)
+	if influencia_recuerdo_reciente <= influencia_recuerdo_antiguo:
+		errores.append("Un recuerdo antiguo conservó la misma influencia que uno reciente.")
+	if schedule._calcular_influencia_recuerdos_sociales("mara", "bruna", "fecha_invalida") <= 0.0:
+		errores.append("Una fecha inválida eliminó el recuerdo en lugar de usar su orden como respaldo.")
 	relationship.registrar_recuerdo("ivo", {
 		"tipo": "experiencia_npc",
 		"evento": "ayudar",
