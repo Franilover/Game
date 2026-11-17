@@ -117,10 +117,10 @@ func _actualizar_calendario() -> void:
 	var restante := maxi(0, duracion - dia_actual)
 	var siguiente := _obtener_siguiente_estacion(str(tiempo.get("estacion_id", "")))
 
-	var encabezado := estacion
+	var encabezado := "Estación: " + estacion
 	if not temporada.is_empty() and temporada.to_lower() != estacion.to_lower():
-		encabezado = temporada + " · " + estacion
-	_info.text = "%s\nDía %d de %d  ·  Quedan %d días\nAño %d  ·  Siguiente: %s" % [
+		encabezado = "Temporada: %s\\nEstación: %s" % [temporada, estacion]
+	_info.text = "%s\\nDía %d de %d  ·  Quedan %d días\\nAño %d  ·  Siguiente: %s" % [
 		encabezado, dia_actual, duracion, restante, anio, siguiente
 	]
 
