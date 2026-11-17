@@ -629,10 +629,12 @@ func _mostrar_linea_actual() -> void:
 			linea.get("text", "")
 		)
 	).strip_edges()
+	var npc_hablante := _buscar_npc_hablante(hablante)
 	var texto := _resolver_texto_por_personalidad(
 		texto_base,
 		linea.get("variantes_personalidad", {}),
-		linea.get("variantes_relacion", {})
+		linea.get("variantes_relacion", {}),
+		npc_hablante
 	)
 	var nombre_voz := hablante
 	if nombre_voz.is_empty() and is_instance_valid(_fuente):
@@ -661,13 +663,30 @@ func _dialogo_requiere_lectura_lenta() -> bool:
 	return _actividad_es_desplazamiento(actividad)
 
 
+func _buscar_npc_hablante(nombre_hablante: String) -> Creature:
+	var buscado := nombre_hablante.strip_edges().to_lower()
+	if buscado.is_empty():
+		return _fuente if is_instance_valid(_fuente) else null
+	if is_instance_valid(_fuente):
+		if buscado in [_fuente.get_nombre().strip_edges().to_lower(), _fuente.get_nombre_visual().strip_edges().to_lower()]:
+			return _fuente
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature or not is_instance_valid(nodo):
+			continue
+		var npc := nodo as Creature
+		if buscado in [npc.get_nombre().strip_edges().to_lower(), npc.get_nombre_visual().strip_edges().to_lower()]:
+			return npc
+	return _fuente if is_instance_valid(_fuente) else null
+
+
 func _resolver_texto_por_personalidad(
 	texto_base: String,
 	variantes_personalidad_variant: Variant,
-	variantes_relacion_variant: Variant
+	variantes_relacion_variant: Variant,
+	npc_hablante: Creature = null
 ) -> String:
 	var texto := texto_base
-	var personaje_id := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
+	var personaje_id := npc_hablante.get_personaje_game_id().strip_edges() if is_instance_valid(npc_hablante) else ""
 	if personaje_id.is_empty() or relationship_system == null:
 		return texto
 
@@ -734,16 +753,17 @@ func _actualizar_retrato(hablante: String) -> void:
 
 	var nombre := hablante.strip_edges()
 	var nombres_retrato: Array[String] = []
-	if is_instance_valid(_fuente):
-		var nombre_individual := _fuente.get_nombre_visual().strip_edges()
-		var nombre_registro := _fuente.get_nombre().strip_edges()
+	var npc_retrato := _buscar_npc_hablante(nombre)
+	if is_instance_valid(npc_retrato):
+		var nombre_individual := npc_retrato.get_nombre_visual().strip_edges()
+		var nombre_registro := npc_retrato.get_nombre().strip_edges()
 		var hablante_es_fuente := (
 			nombre.is_empty()
 			or nombre.to_lower() == nombre_individual.to_lower()
 			or nombre.to_lower() == nombre_registro.to_lower()
 		)
 		if hablante_es_fuente:
-			var sprite_key := str(_fuente.datos.get("sprite_key", "")).strip_edges()
+			var sprite_key := str(npc_retrato.datos.get("sprite_key", "")).strip_edges()
 			if not sprite_key.is_empty():
 				nombres_retrato.append(sprite_key)
 			if not nombre_individual.is_empty():
