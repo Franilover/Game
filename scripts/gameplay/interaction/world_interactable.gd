@@ -190,7 +190,7 @@ func _abrir_calendario() -> void:
 		escena = get_tree().root
 	escena.add_child(interfaz)
 	_calendar_ui = interfaz
-	interfaz.call("abrir", atmosfera)
+	interfaz.call("abrir", atmosfera, self)
 
 func _obtener_atmosfera() -> Node:
 	return get_tree().root.find_child("WorldAtmosphere", true, false)
