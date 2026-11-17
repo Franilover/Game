@@ -725,7 +725,8 @@ func _ocultar_elemento_ui(nodo: Node) -> void:
 	if not is_instance_valid(nodo):
 		return
 	var panel_dialogo: Node = _dialogue.dialogue_panel if is_instance_valid(_dialogue) else null
-	if nodo == panel_dialogo:
+	var fondo_dialogo: Node = _dialogue._dialogue_background if is_instance_valid(_dialogue) else null
+	if nodo == panel_dialogo or nodo == fondo_dialogo:
 		return
 	if is_instance_valid(panel_dialogo) and nodo.is_ancestor_of(panel_dialogo):
 		for hijo in nodo.get_children():
