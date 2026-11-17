@@ -2,6 +2,7 @@ extends PanelContainer
 class_name NPCMarketShop
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const ITEM_ICON_RESOLVER = preload("res://scripts/ui/item_icon_resolver.gd")
 const MAX_PRODUCTOS := 7
 const STOCK_MINIMO := 2
 const STOCK_MAXIMO := 5
@@ -14,6 +15,7 @@ var _world_items: GarliaWorldItems = null
 var _game_state: Node = null
 var _dia_clave := "1"
 var _modo := "comprar"
+var _tienda_config: Dictionary = {}
 var _productos: Array[Dictionary] = []
 var _stock: Dictionary = {}
 var _titulo: Label
@@ -24,10 +26,16 @@ var _boton_comprar: Button
 var _boton_vender: Button
 
 
-func configurar(npc: Creature, inventario: InventoryController, world_items: GarliaWorldItems) -> void:
+func configurar(
+	npc: Creature,
+	inventario: InventoryController,
+	world_items: GarliaWorldItems,
+	tienda_config: Dictionary = {}
+) -> void:
 	_npc = npc
 	_inventario = inventario
 	_world_items = world_items
+	_tienda_config = tienda_config.duplicate(true)
 	_game_state = get_node_or_null("/root/GameState")
 	_dia_clave = _obtener_dia_clave()
 	_generar_catalogo_personal()
@@ -115,7 +123,8 @@ func _actualizar_lista() -> void:
 		hijo.queue_free()
 	if not is_instance_valid(_npc):
 		return
-	_titulo.text = "Mercado de " + _npc.get_nombre_visual()
+	var nombre_tienda := str(_tienda_config.get("nombre", "Mercado")).strip_edges()
+	_titulo.text = "%s · %s" % [nombre_tienda, _npc.get_nombre_visual()]
 	_saldo.text = "Tus monedas: %d" % _obtener_saldo()
 	_boton_comprar.disabled = _modo == "comprar"
 	_boton_vender.disabled = _modo == "vender"
@@ -145,21 +154,56 @@ func _actualizar_lista() -> void:
 
 
 func _crear_fila_producto(producto: Dictionary, stock: int) -> void:
+	var tarjeta := PanelContainer.new()
+	tarjeta.name = "ShopProductCard"
+	tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color("#302719")
+	estilo.border_color = Color("#705638")
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(4)
+	estilo.content_margin_left = 8.0
+	estilo.content_margin_right = 8.0
+	estilo.content_margin_top = 5.0
+	estilo.content_margin_bottom = 5.0
+	tarjeta.add_theme_stylebox_override("panel", estilo)
+	_lista.add_child(tarjeta)
 	var fila := HBoxContainer.new()
-	fila.custom_minimum_size = Vector2(0, 32)
-	_lista.add_child(fila)
+	fila.add_theme_constant_override("separation", 10)
+	tarjeta.add_child(fila)
+	var item_completo := _world_items.buscar_item_por_id(str(producto.get("item_id", ""))) if is_instance_valid(_world_items) else {}
+	var icono := TextureRect.new()
+	icono.custom_minimum_size = Vector2(36, 36)
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.texture = ITEM_ICON_RESOLVER.obtener_icono(item_completo) if not item_completo.is_empty() else null
+	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(icono)
+	var datos := VBoxContainer.new()
+	datos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	datos.alignment = BoxContainer.ALIGNMENT_CENTER
+	datos.add_theme_constant_override("separation", 1)
+	fila.add_child(datos)
 	var nombre := Label.new()
-	nombre.text = "%s  ×%d" % [str(producto.get("nombre", "Objeto")), stock]
-	nombre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nombre.text = str(producto.get("nombre", "Objeto"))
+	nombre.add_theme_color_override("font_color", Color("#F0DFC0"))
+	nombre.add_theme_font_size_override("font_size", 12)
 	nombre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	fila.add_child(nombre)
+	datos.add_child(nombre)
+	var existencia := Label.new()
+	existencia.text = "Disponibles: %d" % stock
+	existencia.add_theme_color_override("font_color", Color("#BBA98A"))
+	existencia.add_theme_font_size_override("font_size", 9)
+	datos.add_child(existencia)
 	var precio := maxi(1, int(producto.get("precio", 1)))
 	var boton := Button.new()
-	boton.text = "Comprar · %d" % precio
-	boton.custom_minimum_size = Vector2(116, 28)
+	boton.name = "ShopBuyButton"
+	boton.text = "%d ¤" % precio
+	boton.custom_minimum_size = Vector2(92, 34)
 	boton.disabled = _obtener_saldo() < precio
 	boton.pressed.connect(_comprar.bind(str(producto.get("item_id", ""))))
 	fila.add_child(boton)
+	PIXEL_UI_THEME.apply(boton, false)
 
 
 func _crear_fila_venta(objeto: Dictionary, indice: int) -> void:
@@ -243,6 +287,28 @@ func _buscar_ultimo_item(item_id: String) -> int:
 func _generar_catalogo_personal() -> void:
 	_productos.clear()
 	if not is_instance_valid(_world_items):
+		return
+	# En un edificio de trabajo, el catálogo respeta el oficio del vendedor.
+	# En el mercado comunitario se conserva la selección personal del NPC.
+	var productos_tienda: Variant = _tienda_config.get("productos", [])
+	if productos_tienda is Array and not (productos_tienda as Array).is_empty():
+		var permitidos: Array[String] = []
+		for nombre_variant in productos_tienda as Array:
+			permitidos.append(str(nombre_variant).strip_edges().to_lower())
+		for item in _world_items.obtener_catalogo():
+			if item.is_empty() or not _es_comerciable(item):
+				continue
+			var nombre_item := str(item.get("nombre", "")).strip_edges().to_lower()
+			if not permitidos.has(nombre_item):
+				continue
+			_productos.append({
+				"item_id": str(item.get("item_id", "")),
+				"nombre": str(item.get("nombre", "Objeto")),
+				"precio": _precio_base(item)
+			})
+		_productos.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return str(a.get("nombre", "")) < str(b.get("nombre", ""))
+		)
 		return
 	var perfil := _perfil_comerciante()
 	var candidatos: Array[Dictionary] = []
