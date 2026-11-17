@@ -886,6 +886,48 @@ func obtener_conocimientos_npc(personaje_id: String) -> Array:
 	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
 
 
+## Registra el tema tratado con una persona concreta, no como un rasgo
+## general del NPC. Así recuerda de qué hablar con cada interlocutor.
+func registrar_tema_conversacion_npc(
+	personaje_id: String,
+	con_personaje: String,
+	tema: String,
+	momento: String = ""
+) -> void:
+	var id := personaje_id.strip_edges()
+	var otro := con_personaje.strip_edges()
+	var tema_limpio := tema.strip_edges()
+	if id.is_empty() or otro.is_empty() or id == otro or tema_limpio.is_empty():
+		return
+	var clave := "tema:%s:%s" % [otro.to_lower(), tema_limpio.to_lower()]
+	registrar_recuerdo(id, {
+		"tipo": "tema_conversacion",
+		"clave": clave,
+		"con_personaje": otro,
+		"tema": tema_limpio,
+		"momento": momento if not momento.is_empty() else Time.get_datetime_string_from_system(true),
+		"importancia": 1.0
+	})
+
+
+func obtener_ultimo_tema_conversacion_npc(personaje_id: String, con_personaje: String) -> Dictionary:
+	var id := personaje_id.strip_edges()
+	var otro := con_personaje.strip_edges()
+	if id.is_empty() or otro.is_empty():
+		return {}
+	var recuerdos := obtener_recuerdos(id)
+	for indice in range(recuerdos.size() - 1, -1, -1):
+		if not recuerdos[indice] is Dictionary:
+			continue
+		var recuerdo := recuerdos[indice] as Dictionary
+		if (
+			str(recuerdo.get("tipo", "")) == "tema_conversacion"
+			and str(recuerdo.get("con_personaje", "")).to_lower() == otro.to_lower()
+		):
+			return recuerdo.duplicate(true)
+	return {}
+
+
 ## Registra un asunto concreto que un habitante quiere resolver con otra persona.
 ## Los campos de contexto son datos del juego; este servicio no inventa narración.
 func registrar_asunto_pendiente_npc(personaje_id: String, asunto: Dictionary) -> String:
