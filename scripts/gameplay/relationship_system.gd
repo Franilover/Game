@@ -886,6 +886,112 @@ func obtener_conocimientos_npc(personaje_id: String) -> Array:
 	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
 
 
+## Registra evidencia para la creencia de un NPC sin convertirla en verdad
+## global. Cada personaje mantiene su propia evaluación del mismo hecho.
+func registrar_evidencia_conocimiento_npc(
+	personaje_id: String,
+	clave_conocimiento: String,
+	evidencia: Dictionary
+) -> bool:
+	var id := personaje_id.strip_edges()
+	var clave := clave_conocimiento.strip_edges()
+	var fuente := str(evidencia.get("fuente_id", evidencia.get("fuente", ""))).strip_edges()
+	var tipo := str(evidencia.get("tipo", "testimonio")).strip_edges().to_lower()
+	var direccion := str(evidencia.get("direccion", "apoya")).strip_edges().to_lower()
+	if id.is_empty() or clave.is_empty() or fuente.is_empty():
+		return false
+	if direccion not in ["apoya", "contradice"]:
+		return false
+	var conocimiento := obtener_conocimiento_npc(id, clave)
+	if conocimiento.is_empty():
+		return false
+	var evidencias_variant: Variant = conocimiento.get("evidencias", [])
+	var evidencias: Array = evidencias_variant.duplicate(true) if evidencias_variant is Array else []
+	# Una misma fuente no aumenta su credibilidad por repetir el mismo relato.
+	for existente_variant in evidencias:
+		if not existente_variant is Dictionary:
+			continue
+		var existente := existente_variant as Dictionary
+		if (
+			str(existente.get("fuente_id", "")) == fuente
+			and str(existente.get("direccion", "apoya")) == direccion
+		):
+			return false
+	var pesos := {
+		"rumor": 0.08,
+		"testimonio": 0.18,
+		"observacion": 0.38,
+		"prueba": 0.62
+	}
+	var peso := clampf(float(evidencia.get("peso", pesos.get(tipo, 0.12))), 0.0, 0.75)
+	evidencias.append({
+		"fuente_id": fuente,
+		"tipo": tipo,
+		"direccion": direccion,
+		"peso": peso,
+		"momento": str(evidencia.get("momento", Time.get_datetime_string_from_system(true))),
+		"detalle": str(evidencia.get("detalle", ""))
+	})
+	while evidencias.size() > 24:
+		evidencias.pop_front()
+	conocimiento["evidencias"] = evidencias
+	var evaluacion := evaluar_creencia_conocimiento_npc(conocimiento)
+	conocimiento["confianza_creencia"] = float(evaluacion.get("confianza", 0.5))
+	conocimiento["estado_epistemico"] = str(evaluacion.get("estado", "sospecha"))
+	return registrar_conocimiento_npc(id, conocimiento)
+
+
+## Calcula la confianza con fuentes independientes. Repetir una fuente no
+## añade peso; evidencia contraria reduce la confianza sin borrar el recuerdo.
+func evaluar_creencia_conocimiento_npc(conocimiento: Dictionary) -> Dictionary:
+	var evidencias_variant: Variant = conocimiento.get("evidencias", [])
+	var evidencias: Array = evidencias_variant if evidencias_variant is Array else []
+	var apoyo := 0.0
+	var contradiccion := 0.0
+	var fuentes_apoyo: Dictionary = {}
+	var fuentes_contrarias: Dictionary = {}
+	for evidencia_variant in evidencias:
+		if not evidencia_variant is Dictionary:
+			continue
+		var evidencia := evidencia_variant as Dictionary
+		var fuente := str(evidencia.get("fuente_id", "")).strip_edges()
+		if fuente.is_empty():
+			continue
+		var peso := clampf(float(evidencia.get("peso", 0.0)), 0.0, 0.75)
+		if str(evidencia.get("direccion", "apoya")) == "contradice":
+			fuentes_contrarias[fuente] = maxf(float(fuentes_contrarias.get(fuente, 0.0)), peso)
+		else:
+			fuentes_apoyo[fuente] = maxf(float(fuentes_apoyo.get(fuente, 0.0)), peso)
+	for fuente in fuentes_apoyo:
+		apoyo += float(fuentes_apoyo[fuente])
+	for fuente in fuentes_contrarias:
+		contradiccion += float(fuentes_contrarias[fuente])
+	var confianza := clampf(0.5 + apoyo - contradiccion, 0.0, 1.0)
+	var estado := "sospecha"
+	if confianza >= 0.82:
+		estado = "conocimiento_sostenido"
+	elif confianza >= 0.62:
+		estado = "creencia_firme"
+	elif confianza <= 0.25:
+		estado = "creencia_refutada"
+	return {
+		"confianza": confianza,
+		"estado": estado,
+		"fuentes_apoyo": fuentes_apoyo.size(),
+		"fuentes_contrarias": fuentes_contrarias.size()
+	}
+
+
+func obtener_evaluacion_creencia_npc(personaje_id: String, clave_conocimiento: String) -> Dictionary:
+	var conocimiento := obtener_conocimiento_npc(personaje_id, clave_conocimiento)
+	if conocimiento.is_empty():
+		return {}
+	var evaluacion := evaluar_creencia_conocimiento_npc(conocimiento)
+	evaluacion["clave"] = clave_conocimiento
+	evaluacion["tema"] = str(conocimiento.get("tema", ""))
+	return evaluacion
+
+
 ## Registra el tema tratado con una persona concreta, no como un rasgo
 ## general del NPC. Así recuerda de qué hablar con cada interlocutor.
 func registrar_tema_conversacion_npc(
