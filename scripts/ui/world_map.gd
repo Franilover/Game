@@ -30,6 +30,7 @@ var _ultima_posicion_mouse := Vector2.ZERO
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	clip_contents = true
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	set_process(true)
 	_actualizar_bloqueo_modal()
 
@@ -369,14 +370,7 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 		return nombre_a.to_lower() < nombre_b.to_lower()
 	)
 
-	var paleta := [
-		Color("#e5bd69"), Color("#8fc2a0"), Color("#d99579"),
-		Color("#a9a0d4"), Color("#8ebbd1"), Color("#d6a7c5"),
-		Color("#d1cf91")
-	]
-	var indice := 0
 	for aldeano in aldeanos:
-		var nombre: String = str(aldeano.call("get_nombre_visual")) if aldeano.has_method("get_nombre_visual") else aldeano.name
 		var posicion_local: Vector2
 		var tiene_edificio := (
 			bool(aldeano.get_meta("rutina_en_edificio", false))
@@ -392,16 +386,49 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 			posicion_local = _zona_fija.to_local((aldeano as Node2D).global_position)
 		if not Rect2(limites.position, limites.size).has_point(posicion_local):
 			continue
+
 		var punto := _punto_a_mapa(posicion_local, mapa_rect, limites)
-		var color: Color = paleta[indice % paleta.size()]
-		indice += 1
-		draw_circle(punto, 5.0, Color("#21170e"))
-		draw_circle(punto, 3.6, color)
-		draw_circle(punto, 1.2, Color("#fff2c2"))
-		var fuente := ThemeDB.fallback_font
-		if fuente != null:
-			draw_string(fuente, punto + Vector2(7.0, 3.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#21170e"))
-			draw_string(fuente, punto + Vector2(6.0, 2.0), nombre, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, Color("#f0dfbd"))
+		var textura := _obtener_textura_mapa_npc(aldeano)
+		if textura == null:
+			# Respaldo para NPC que todavía no tengan un sprite asignado.
+			draw_circle(punto, 3.0, Color("#21170e"))
+			draw_circle(punto, 2.0, Color("#e5bd69"))
+			continue
+
+		# El tamaño es deliberadamente pequeño y uniforme para que los sprites
+		# se lean como habitantes sin tapar edificios ni caminos del mapa.
+		var proporcion := textura.get_size()
+		if proporcion.x <= 0.0 or proporcion.y <= 0.0:
+			continue
+		var escala := minf(8.0 / proporcion.x, 10.0 / proporcion.y)
+		var tamano := proporcion * escala
+		var rect_sprite := Rect2(punto - tamano * 0.5, tamano)
+		draw_texture_rect(texture, rect_sprite, false)
+
+
+func _obtener_textura_mapa_npc(npc: Node) -> Texture2D:
+	# Los NPC pueden usar Sprite2D o AnimatedSprite2D. En ambos casos se toma
+	# el fotograma visible actual, sin modificar su animación en el mundo.
+	var sprites: Array[Node] = npc.find_children("*", "Sprite2D", true, false)
+	for nodo_sprite in sprites:
+		var sprite := nodo_sprite as Sprite2D
+		if sprite != null and sprite.texture != null and sprite.is_visible_in_tree():
+			return sprite.texture
+
+	var animados: Array[Node] = npc.find_children("*", "AnimatedSprite2D", true, false)
+	for nodo_animado in animados:
+		var sprite_animado := nodo_animado as AnimatedSprite2D
+		if sprite_animado == null or not sprite_animado.is_visible_in_tree():
+			continue
+		if sprite_animado.sprite_frames == null:
+			continue
+		var animacion := sprite_animado.animation
+		if not sprite_animado.sprite_frames.has_animation(animacion):
+			continue
+		var fotograma := sprite_animado.frame
+		if fotograma >= 0 and fotograma < sprite_animado.sprite_frames.get_frame_count(animacion):
+			return sprite_animado.sprite_frames.get_frame_texture(animacion, fotograma)
+	return null
 
 
 func _actualizar_limites_mapa_contenido() -> bool:
