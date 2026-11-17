@@ -1757,13 +1757,22 @@ func _aplicar_variacion_tiempo_libre(
 	var elegida: Dictionary = {}
 	if is_instance_valid(mind) and mind.has_method("elegir_actividad"):
 		var perfil: Dictionary = {}
-		if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_personalidad"):
-			var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
-			var rasgos: Dictionary = {}
-			for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
-				if personalidad.has(rasgo):
-					rasgos[rasgo] = float(personalidad[rasgo])
-			perfil["rasgos"] = rasgos
+		# No aplicar valores neutrales mientras Supabase carga ni para NPC
+		# que carecen de una fila propia en el catálogo social.
+		if (
+			is_instance_valid(_relationship_system)
+			and _relationship_system.has_method("esta_cargado")
+			and _relationship_system.esta_cargado()
+			and _relationship_system.has_method("obtener_reglas_sociales")
+		):
+			var reglas_sociales: Dictionary = _relationship_system.obtener_reglas_sociales()
+			if reglas_sociales.has(personaje_id):
+				var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
+				var rasgos: Dictionary = {}
+				for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
+					if personalidad.has(rasgo):
+						rasgos[rasgo] = float(personalidad[rasgo])
+				perfil["rasgos"] = rasgos
 		mind.call("registrar_personaje", personaje_id, perfil)
 
 		# La experiencia del tramo anterior modifica las próximas elecciones.
