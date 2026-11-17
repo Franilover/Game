@@ -406,7 +406,9 @@ func registrar_resultado_lugar(personaje_id: String, ubicacion: String, resultad
 	var muestras := maxi(0, int(registro.get("muestras", 0))) + 1
 	var anterior := float(registro.get("resultado_medio", 0.0))
 	var nuevo := clampf(resultado, -1.0, 1.0)
-	var media := anterior + (nuevo - anterior) / float(muestras)
+	# Las experiencias recientes pesan más que una media histórica rígida:
+	# el NPC puede cambiar de opinión cuando el lugar deja de ser agradable.
+	var media := nuevo if muestras == 1 else lerpf(anterior, nuevo, 0.6)
 	registro["muestras"] = muestras
 	registro["resultado_medio"] = media
 	registro["ultimo_resultado"] = nuevo
@@ -438,7 +440,7 @@ func _calcular_afinidad_objetivos(estado: Dictionary, actividad: Dictionary, cla
 		if str(objetivo.get("estado", "activo")) != "activo":
 			continue
 		var coincide := false
-		var actividad_objetivo := str(objetivo.get("actividad", objetivo.get("actividad_clave", ""))).strip_edges().to_lower()
+		var actividad_objetivo := str(objetivo.get("actividad", objetivo.get("actividad_clave", objetivo.get("id", "")))).strip_edges().to_lower()
 		if not actividad_objetivo.is_empty() and actividad_objetivo == clave_actividad:
 			coincide = true
 		var actividades_objetivo: Variant = objetivo.get("actividades", [])
