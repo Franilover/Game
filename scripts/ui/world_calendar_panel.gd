@@ -90,6 +90,14 @@ func _crear_interfaz() -> void:
 	_grid.add_theme_constant_override("h_separation", 4)
 	_grid.add_theme_constant_override("v_separation", 4)
 	desplazamiento.add_child(_grid)
+	for nombre_dia in ["L", "M", "X", "J", "V", "S", "D"]:
+		var cabecera := Label.new()
+		cabecera.text = nombre_dia
+		cabecera.custom_minimum_size = Vector2(_ancho_celda, 22.0)
+		cabecera.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cabecera.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_grid.add_child(cabecera)
+		PIXEL_UI_THEME.apply(cabecera, false)
 	PIXEL_UI_THEME.apply(raiz)
 
 
