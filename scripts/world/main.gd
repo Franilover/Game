@@ -1813,7 +1813,7 @@ func _al_cinematica_narrativa_solicitada(
 		"relacion_%s_etapa_%d" % [clave, etapa], nombre_a, nombre_b, centro_real,
 		zoom_actual * (1.08 if etapa == 1 else 1.14),
 		str(escena.get("gesto_a", "asentir")), str(escena.get("gesto_b", "asentir")),
-		0.75, 0.25, maxf(0.5, duracion - 3.8), 0.6,
+		0.75, 0.25, 0.25, 0.6,
 		{"npc": nombre_a, "datos": datos_dialogo_historia}
 	)
 	if completada and is_instance_valid(_npc_conversation_system):
@@ -1985,7 +1985,7 @@ func _ejecutar_cinematica_intercambio_social(
 	var secuencia := load(ruta_secuencia) as CutsceneSequence
 	if not is_instance_valid(secuencia):
 		push_warning("Main: no se pudo cargar la secuencia de intercambio social.")
-		return
+		return false
 	var centro_encuadre := centro
 	if usar_tercero:
 		# El tercer participante conserva la posición que tenía al capturar la escena.
