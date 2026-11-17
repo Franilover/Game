@@ -3637,6 +3637,29 @@ func _crear_interfaz() -> void:
 	column.add_theme_constant_override("separation", 8)
 	content_row.add_child(column)
 
+	# Nombre y parlamento comparten una única superficie Button, colocada
+	# junto al retrato y centrada verticalmente respecto a su marco.
+	var panel_texto := PanelContainer.new()
+	panel_texto.name = "SpeakerTextButtonSurface"
+	panel_texto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_texto.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var estilo_texto := PIXEL_UI_THEME.button_surface_style()
+	if estilo_texto != null:
+		panel_texto.add_theme_stylebox_override("panel", estilo_texto)
+	column.add_child(panel_texto)
+
+	var margen_texto := MarginContainer.new()
+	margen_texto.add_theme_constant_override("margin_left", 12)
+	margen_texto.add_theme_constant_override("margin_top", 10)
+	margen_texto.add_theme_constant_override("margin_right", 12)
+	margen_texto.add_theme_constant_override("margin_bottom", 10)
+	panel_texto.add_child(margen_texto)
+
+	var contenido_texto := VBoxContainer.new()
+	contenido_texto.name = "SpeakerTextContent"
+	contenido_texto.add_theme_constant_override("separation", 6)
+	margen_texto.add_child(contenido_texto)
+
 	speaker_label = Label.new()
 	speaker_label.name = "Speaker"
 	speaker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -3645,7 +3668,7 @@ func _crear_interfaz() -> void:
 		Color(0.93, 0.84, 0.65, 1.0)
 	)
 	speaker_label.add_theme_font_size_override("font_size", 14)
-	column.add_child(speaker_label)
+	contenido_texto.add_child(speaker_label)
 
 	text_label = Label.new()
 	text_label.name = "Text"
@@ -3657,7 +3680,7 @@ func _crear_interfaz() -> void:
 		Color(0.82, 0.75, 0.63, 1.0)
 	)
 	text_label.add_theme_font_size_override("font_size", 13)
-	column.add_child(text_label)
+	contenido_texto.add_child(text_label)
 
 	# La continuación se realiza con los controles habituales; no se muestra
 	# texto auxiliar que compita visualmente con el diálogo.
