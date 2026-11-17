@@ -134,6 +134,7 @@ func _run() -> void:
 	add_child(dialogo)
 	var conversacion_visual := NPCConversationSystemScript.new() as NPCConversationSystem
 	add_child(conversacion_visual)
+	npc.nombre_individual = "Mara"
 	conversacion_visual._npc_por_nombre = {"mara": npc}
 	conversacion_visual._conversacion_activa = {
 		"clave": "historia_dialogo_compartido_test",
