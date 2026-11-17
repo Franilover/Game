@@ -122,7 +122,7 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	if hover == null:
 		hover = normal
 	if pressed == null:
-		var fallback_pressed := (normal as StyleBox).duplicate()
+		var fallback_pressed: StyleBox = normal.duplicate() as StyleBox
 		if fallback_pressed is StyleBoxFlat:
 			(fallback_pressed as StyleBoxFlat).bg_color = Color("#66543A")
 		pressed = fallback_pressed
