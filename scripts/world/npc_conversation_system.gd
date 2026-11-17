@@ -1804,21 +1804,21 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 		for conversacion in CONVERSACIONES:
 			if not cumple_activacion_historia(conversacion, tiempo):
 				continue
-			var requisito_variant: Variant = conversacion.get("requiere_progreso", "")
-			if requisito_variant is Dictionary:
-				var requisito_datos := requisito_variant as Dictionary
-				var clave_requisito_dic := str(requisito_datos.get("clave", "")).strip_edges()
-				var etapa_requerida := maxi(1, int(requisito_datos.get("etapa", 1)))
-				if not clave_requisito_dic.is_empty():
-					var progreso_requisito_dic_variant: Variant = _progreso_parejas.get(clave_requisito_dic, {})
-					var progreso_requisito_dic: Dictionary = progreso_requisito_dic_variant if progreso_requisito_dic_variant is Dictionary else {}
-					if int(progreso_requisito_dic.get("etapa", 0)) < etapa_requerida:
+			var requisito_principal_variant: Variant = conversacion.get("requiere_progreso", "")
+			if requisito_principal_variant is Dictionary:
+				var requisito_principal_datos := requisito_principal_variant as Dictionary
+				var clave_requisito_principal_dic := str(requisito_principal_datos.get("clave", "")).strip_edges()
+				var etapa_requerida_principal := maxi(1, int(requisito_principal_datos.get("etapa", 1)))
+				if not clave_requisito_principal_dic.is_empty():
+					var progreso_requisito_principal_dic_variant: Variant = _progreso_parejas.get(clave_requisito_principal_dic, {})
+					var progreso_requisito_principal_dic: Dictionary = progreso_requisito_principal_dic_variant if progreso_requisito_principal_dic_variant is Dictionary else {}
+					if int(progreso_requisito_principal_dic.get("etapa", 0)) < etapa_requerida_principal:
 						continue
-			elif not str(requisito_variant).strip_edges().is_empty():
-				var clave_requisito_texto := str(requisito_variant).strip_edges()
-				var progreso_requisito_texto_variant: Variant = _progreso_parejas.get(clave_requisito_texto, {})
-				var progreso_requisito_texto: Dictionary = progreso_requisito_texto_variant if progreso_requisito_texto_variant is Dictionary else {}
-				if int(progreso_requisito_texto.get("etapa", 0)) < 1:
+			elif not str(requisito_principal_variant).strip_edges().is_empty():
+				var clave_requisito_principal_texto := str(requisito_principal_variant).strip_edges()
+				var progreso_requisito_principal_texto_variant: Variant = _progreso_parejas.get(clave_requisito_principal_texto, {})
+				var progreso_requisito_principal_texto: Dictionary = progreso_requisito_principal_texto_variant if progreso_requisito_principal_texto_variant is Dictionary else {}
+				if int(progreso_requisito_principal_texto.get("etapa", 0)) < 1:
 					continue
 			var clave := str(conversacion.get("clave", ""))
 			var progreso_variant: Variant = _progreso_parejas.get(clave, {})
