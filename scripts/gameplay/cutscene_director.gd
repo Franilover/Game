@@ -791,7 +791,11 @@ func _guardar_estado_npc(npc: Creature) -> void:
 	_detener_animaciones_rutina_temporales(npc)
 	var metas := {}
 	for clave in ["rutina_en_edificio", "rutina_en_transito", "actividad_social_activa", "acercamiento_social_activo", "conversacion_npc_bloqueada", "cinematica_npc_activa"]:
-		metas[clave] = {"tenia": npc.has_meta(clave), "valor": npc.get_meta(clave, null)}
+		var tenia_meta := npc.has_meta(clave)
+		# No llamar get_meta() para claves inexistentes: algunos NPC no inicializan
+		# metadatos opcionales y Godot reporta un error si se leen sin existir.
+		var valor_meta: Variant = npc.get_meta(clave) if tenia_meta else null
+		metas[clave] = {"tenia": tenia_meta, "valor": valor_meta}
 	_estado_npcs_cinematica[id] = {
 		"nodo": npc, "posicion": npc.global_position, "visible": npc.visible,
 		"velocity": npc.velocity, "process_mode": npc.process_mode, "metas": metas
