@@ -908,3 +908,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron pruebas para perfiles reservados/sociables, vínculos cercanos y excepciones por motivos concretos.
 - Se utilizan los campos actuales de Supabase; no se modificó el esquema ni se escribieron datos en Supabase.
 - Pendiente: ejecutar las pruebas con Godot 4.7 y validar en partida la frecuencia y selección de encuentros.
+
+
+## Memoria social bilateral y decaimiento temporal (2026-11-17)
+- La selección de encuentros casuales evalúa recuerdos desde la perspectiva de ambos participantes; una buena relación no se presupone simétrica si solo uno conserva experiencias positivas.
+- Los recuerdos sociales recientes tienen más influencia que los antiguos. La vigencia cae gradualmente con una semivida aproximada de 14 días de mundo; los recuerdos sin fecha válida conservan el peso basado en orden como mecanismo de compatibilidad.
+- Experiencias negativas repetidas pueden frenar encuentros casuales con una persona concreta, incluso para NPC sociables. Una promesa, una solicitud de ayuda o una noticia relevante permite una excepción para resolver el asunto.
+- Experiencias positivas repetidas pueden elevar la familiaridad efectiva antes de que amistad o confianza general hayan cambiado mucho.
+- La influencia está acotada y no cambia los rasgos base de personalidad ni reescribe los valores canónicos de Supabase.
+- Se añadieron pruebas para cautela por experiencias negativas, excepción por motivo concreto y decaimiento temporal.
+- Pendiente: ejecutar CI Godot 4.7 y validar el ritmo de decaimiento en días de mundo dentro de una partida.
