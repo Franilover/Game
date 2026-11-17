@@ -181,6 +181,25 @@ func _run() -> void:
 	if str(eleccion_urgente.get("actividad", "")) != "descansar_urgente":
 		errores.append("La variedad desplazó una necesidad claramente urgente.")
 
+
+	var fuerza_habito_inicial := mind.obtener_fuerza_habito("ivo", "pasear", "manana")
+	for dia_habito in ["2026:11:01", "2026:11:02", "2026:11:03"]:
+		mind.registrar_resultado_actividad("ivo", "pasear", 0.8, "manana", dia_habito)
+	var fuerza_habito_consolidado := mind.obtener_fuerza_habito("ivo", "pasear", "manana")
+	if fuerza_habito_inicial != 0.0 or fuerza_habito_consolidado <= 0.0:
+		errores.append("La repetición en días distintos no consolidó un hábito.")
+	if mind.obtener_fuerza_habito("ivo", "pasear", "noche") != 0.0:
+		errores.append("Un hábito de mañana influyó indebidamente en el contexto nocturno.")
+	var dias_antes_repeticion := int(mind.obtener_estado("ivo").get("habitos", {}).get("pasear|manana", {}).get("dias_practicados", 0))
+	mind.registrar_resultado_actividad("ivo", "pasear", 0.8, "manana", "2026:11:03")
+	var dias_despues_repeticion := int(mind.obtener_estado("ivo").get("habitos", {}).get("pasear|manana", {}).get("dias_practicados", 0))
+	if dias_antes_repeticion != dias_despues_repeticion:
+		errores.append("Varias ejecuciones en un mismo día contaron como días de hábito distintos.")
+	var mind_habito_recargada := MindScript.new() as NPCMindService
+	mind_habito_recargada.configurar(game_state)
+	if mind_habito_recargada.obtener_fuerza_habito("ivo", "pasear", "manana") <= 0.0:
+		errores.append("El hábito aprendido no sobrevivió a la recarga.")
+
 	var preferencia_inicial := mind.registrar_resultado_actividad("ivo", "charlar", 1.0)
 	if preferencia_inicial <= 0.0 or preferencia_inicial >= 1.0:
 		errores.append("Una experiencia positiva no produjo aprendizaje gradual.")
