@@ -223,9 +223,16 @@ func configurar_mapa_zona(tipo_zona: String, zona: Node = null, contexto: WorldC
 
 
 func _configurar_relationships(relationship_system: RelationshipSystemService) -> void:
-	var relaciones: RelationshipsUI = $Window/Margin/Column/Tabs/Relaciones
-	if relationship_system != null:
-		relaciones.configurar(relationship_system)
+	var relaciones := get_node_or_null("Window/Margin/Column/Tabs/Relaciones") as Control
+	if not is_instance_valid(relaciones) or relationship_system == null:
+		return
+	# La escena carga relationships.gd como script adjunto a un Control.
+	# Evitar tiparlo con el class_name global aquí impide que una caché de
+	# clases de Godot convierta la referencia del nodo en un Script resource.
+	if relaciones.has_method("configurar"):
+		relaciones.call("configurar", relationship_system)
+	else:
+		push_warning("Inventario: la pestaña Relaciones no tiene el método configurar().")
 
 
 func _configurar_crafting() -> void:
