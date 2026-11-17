@@ -2421,7 +2421,11 @@ func obtener_dialogo_historia(clave: String) -> Dictionary:
 		var texto := str(linea.get("texto", linea.get("text", ""))).strip_edges()
 		if nombre.is_empty() or texto.is_empty():
 			continue
-		lineas_dialogo.append({"hablante": nombre, "texto": texto})
+		var linea_dialogo: Dictionary = {"hablante": nombre, "texto": texto}
+		for clave_variante in ["variantes_personalidad", "variantes_relacion"]:
+			if linea.has(clave_variante) and linea[clave_variante] is Dictionary:
+				linea_dialogo[clave_variante] = (linea[clave_variante] as Dictionary).duplicate(true)
+		lineas_dialogo.append(linea_dialogo)
 	if lineas_dialogo.is_empty():
 		return {}
 	var datos: Dictionary = {
