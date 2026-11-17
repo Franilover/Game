@@ -927,3 +927,13 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Mientras las reglas cargan, o si el NPC no tiene una fila propia, no se aplica el perfil neutral de respaldo sobre el estado guardado.
 - Se añadió una prueba de regresión que cambia los rasgos canónicos y comprueba que el aprendizaje y los hábitos permanecen.
 - No se modificó el esquema ni se escribieron datos en Supabase.
+
+
+## Memoria conversacional y privacidad de conocimiento (2026-11-17)
+- Las conversaciones sociales autónomas registran el tema compartido en la memoria de cada participante, asociado al ID del otro NPC. En un siguiente encuentro pueden recuperar una referencia al último tema compartido; no se generaliza a otros interlocutores.
+- El registro se crea sólo al completar la conversación, no si se interrumpe.
+- La retransmisión de conocimiento respeta `compartible` y `privacidad`: los datos públicos conservan compatibilidad; los confidenciales no se retransmiten automáticamente; los personales/reservados requieren `permiso_transmision=true` y confianza >= 30 entre origen y destino.
+- La procedencia y cadena de transmisión continúan registrándose en el conocimiento del destinatario.
+- Se añadieron pruebas de aislamiento de temas por interlocutor y de las reglas de privacidad/consentimiento.
+- No se añaden columnas ni se modifica Supabase; la información sigue en el guardado local de conversaciones NPC.
+- Pendiente: ejecutar CI Godot 4.7 y comprobar el flujo en una partida real.
