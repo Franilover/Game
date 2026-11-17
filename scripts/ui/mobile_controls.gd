@@ -143,7 +143,7 @@ func _calcular_layout_movil(viewport_size: Vector2) -> Dictionary:
 	var joystick_size := minf(float(tamano_joystick), minf(viewport_size.x * 0.32, viewport_size.y * 0.36))
 	joystick_size = maxf(64.0, joystick_size)
 	var compacto := viewport_size.x < 700.0 or viewport_size.y < 420.0
-	var accion := clampf(minf(float(tamano_accion) - (8.0 if compacto else 0.0), viewport_size.x * 0.19, viewport_size.y * 0.17), 42.0, 68.0)
+	var accion := clampf(minf(minf(float(tamano_accion) - (8.0 if compacto else 0.0), viewport_size.x * 0.19), viewport_size.y * 0.17), 42.0, 68.0)
 	var pequeno := clampf(accion * 0.72, 34.0, 48.0)
 	var right := viewport_size.x - margen
 	var bottom := viewport_size.y - margen
