@@ -161,8 +161,42 @@ func _run() -> void:
 	if ResourceLoader.exists("res://assets/art/UI/Menus/button_normal.png"):
 		if not burbuja_prueba.get_theme_stylebox("panel") is StyleBoxTexture:
 			errores.append("Las burbujas ambientales no usan el fondo button_normal.")
-	npc.nombre_individual = "Ivo"
+	# Ivo, Mara y Nima deben recorrer la misma política de opciones que
+	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
 	dialogo._fuente = npc
+	dialogo._dialogo_en_transito = false
+	for nombre_iniciativa in ["Mara", "Ivo", "Nima"]:
+		npc.nombre_individual = nombre_iniciativa
+		var iniciativa_amigo := conversacion_visual._crear_dialogo_iniciativa_amigo(
+			npc,
+			{"anio": 1, "dia": 1, "hora_del_dia": 12.0}
+		)
+		var opciones_iniciativa: Array = iniciativa_amigo.get("respuestas", [])
+		if not bool(iniciativa_amigo.get("_continuar_menu_social", false)):
+			errores.append("%s no declara continuidad del menú social en su iniciativa." % nombre_iniciativa)
+		if not dialogo._debe_usar_menu_social(iniciativa_amigo, true, false):
+			errores.append("%s no conserva el menú común después de iniciar el diálogo." % nombre_iniciativa)
+		if opciones_iniciativa.size() < 3:
+			errores.append("%s no recibió las opciones iniciales de su iniciativa." % nombre_iniciativa)
+		else:
+			for indice_opcion in range(3):
+				if bool((opciones_iniciativa[indice_opcion] as Dictionary).get("despedida", false)):
+					errores.append("%s termina prematuramente una respuesta de conversación amistosa." % nombre_iniciativa)
+		var respuestas_mision := conversacion_visual._crear_respuestas_iniciativa(npc, "mision", false)
+		for respuesta_mision in respuestas_mision:
+			if not bool(respuesta_mision.get("despedida", false)):
+				errores.append("El seguimiento de misión de %s debe conservar su cierre explícito." % nombre_iniciativa)
+
+	# Una rutina en tránsito ya no fuerza el cierre automático ni suprime las opciones.
+	dialogo._dialogo_en_transito = dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"})
+	if dialogo._dialogo_en_transito or not dialogo._debe_usar_menu_social({"clave": "rutina_en_transito"}, false, false):
+		errores.append("Un NPC que camina sigue perdiendo el menú social y sus opciones.")
+	dialogo._dialogo_en_transito = dialogo._es_dialogo_en_transito({"_dialogo_breve_sin_opciones": true})
+	if not dialogo._dialogo_en_transito or dialogo._debe_usar_menu_social({"_dialogo_breve_sin_opciones": true}, false, false):
+		errores.append("El modo breve explícito no conserva su comportamiento especial.")
+	dialogo._dialogo_en_transito = false
+
+	npc.nombre_individual = "Ivo"
 	var recuerdo_ivo := dialogo._crear_dialogo_recuerdo_social({
 		"tipo": "tema_conversacion",
 		"titulo": "los viajes de Saira",
