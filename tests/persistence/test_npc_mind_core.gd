@@ -353,8 +353,6 @@ func _run() -> void:
 	if not relationship.transmitir_conocimiento_npc("ivo", "narel", "asunto_personal"):
 		errores.append("No se pudo compartir información personal con permiso y confianza suficientes.")
 
-	if relationship.transmitir_conocimiento_npc("ivo", "narel", "nota_sin_permiso"):
-		errores.append("Una nota personal sin metadatos de privacidad se retransmitió como noticia pública.")
 	relationship.registrar_conocimiento_npc("ivo", {
 		"clave": "nota_sin_permiso",
 		"tipo": "nota_personal",
