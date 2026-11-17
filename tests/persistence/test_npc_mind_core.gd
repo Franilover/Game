@@ -609,6 +609,7 @@ func _run() -> void:
 	relationship.free()
 	mind.free()
 	mind_recargada.free()
+	game_state.free()
 	if not errores.is_empty():
 		for error in errores:
 			push_error("NPCMindCore: FAIL: " + error)
