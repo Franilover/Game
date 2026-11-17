@@ -311,10 +311,6 @@ func _run() -> void:
 	var creencia_revisada := relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza")
 	if float(creencia_revisada.get("confianza", 1.0)) >= float(creencia_corroborrada.get("confianza", 0.0)):
 		errores.append("La evidencia contradictoria no redujo la confianza del NPC.")
-	if relationship.obtener_evaluacion_creencia_npc("ivo", "festival_plaza").is_empty():
-		# Ivo transmitió la noticia original, pero no heredó las pruebas que Mara reunió.
-		pass
-
 	# La privacidad y el consentimiento se respetan al retransmitir información.
 	relationship.registrar_conocimiento_npc("ivo", {
 		"clave": "secreto_mara",
