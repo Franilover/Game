@@ -303,9 +303,8 @@ func _comparten_entrada_destino(a: Creature, b: Creature) -> bool:
 	return not destino_a.is_empty() and destino_a == destino_b
 
 
-## Si el cuerpo deja de avanzar, alterna el rodeo sin cancelar su destino.
-## Esto evita que una colisión temporal o un NPC parado en una entrada
-## deje la rutina bloqueada para siempre.
+## Si el cuerpo deja de avanzar, busca un desvío libre y lo mantiene estable.
+## Si no hay espacio, espera sin vibrar y vuelve a probar cuando el bloqueo cambie.
 func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	if (
 		direccion.length_squared() <= 0.001
@@ -326,8 +325,7 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	var umbral_progreso := maxf(move_speed * maxf(delta, 0.0) * FACTOR_PROGRESO_NPC, 0.05)
 	if avance >= umbral_progreso:
 		_tiempo_sin_progreso = 0.0
-		_tiempo_cambio_lado = 0.0
-		_direccion_base_atasco = Vector2.ZERO
+			_direccion_base_atasco = Vector2.ZERO
 		_direccion_desvio_atasco = Vector2.ZERO
 		return direccion
 
@@ -365,7 +363,6 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 
 func _reiniciar_seguro_atasco() -> void:
 	_tiempo_sin_progreso = 0.0
-	_tiempo_cambio_lado = 0.0
 	_direccion_base_atasco = Vector2.ZERO
 	_direccion_desvio_atasco = Vector2.ZERO
 	if creature != null and is_instance_valid(creature):
