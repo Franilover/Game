@@ -2815,28 +2815,56 @@ func _registrar_dinamica_social_conversacion() -> void:
 					_progreso_parejas[clave_social] = guardado[clave_social].duplicate(true)
 
 
-func _registrar_memoria_conversacional_autonoma() -> void:
+func _registrar_memoria_conversacional_npc() -> void:
 	if not is_instance_valid(_relationship_system):
 		return
-	var nombre_a := str(_conversacion_activa.get("npc_a", "")).strip_edges().to_lower()
-	var nombre_b := str(_conversacion_activa.get("npc_b", "")).strip_edges().to_lower()
-	var npc_a := _npc_por_nombre.get(nombre_a) as Creature
-	var npc_b := _npc_por_nombre.get(nombre_b) as Creature
-	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+	if bool(_conversacion_activa.get("_sin_memoria_conversacional", false)):
 		return
-	var id_a := npc_a.get_personaje_game_id().strip_edges()
-	var id_b := npc_b.get_personaje_game_id().strip_edges()
-	var tema := str(_conversacion_activa.get("_tema_social", "")).strip_edges()
-	if id_a.is_empty() or id_b.is_empty() or tema.is_empty():
+
+	# Todas las conversaciones entre habitantes usan el mismo registro:
+	# encuentros autónomos, conversaciones guionizadas y grupos de tres.
+	var nombres: Array[String] = []
+	for clave_participante in ["npc_a", "npc_b", "npc_c"]:
+		var nombre := str(_conversacion_activa.get(clave_participante, "")).strip_edges().to_lower()
+		if nombre.is_empty() or nombres.has(nombre):
+			continue
+		var participante := _npc_por_nombre.get(nombre) as Creature
+		if is_instance_valid(participante) and not participante.get_personaje_game_id().strip_edges().is_empty():
+			nombres.append(nombre)
+	if nombres.size() < 2:
 		return
+
+	var tema := str(_conversacion_activa.get(
+		"tema_memoria",
+		_conversacion_activa.get("_tema_social", _conversacion_activa.get("tema", ""))
+	)).strip_edges()
+	if tema.is_empty():
+		var motivo_variant: Variant = _conversacion_activa.get("motivo", {})
+		if motivo_variant is Dictionary:
+			tema = str((motivo_variant as Dictionary).get("titulo", (motivo_variant as Dictionary).get("descripcion", ""))).strip_edges()
+	if tema.is_empty():
+		tema = str(_conversacion_activa.get("clave", "")).strip_edges()
+	if tema.is_empty():
+		return
+
 	var momento := Time.get_datetime_string_from_system(true)
-	_relationship_system.registrar_tema_conversacion_npc(id_a, id_b, tema, momento)
-	_relationship_system.registrar_tema_conversacion_npc(id_b, id_a, tema, momento)
+	for indice_a in range(nombres.size()):
+		var npc_a := _npc_por_nombre.get(nombres[indice_a]) as Creature
+		if not is_instance_valid(npc_a):
+			continue
+		var id_a := npc_a.get_personaje_game_id().strip_edges()
+		for indice_b in range(indice_a + 1, nombres.size()):
+			var npc_b := _npc_por_nombre.get(nombres[indice_b]) as Creature
+			if not is_instance_valid(npc_b):
+				continue
+			var id_b := npc_b.get_personaje_game_id().strip_edges()
+			_relationship_system.registrar_tema_conversacion_npc(id_a, id_b, tema, momento)
+			_relationship_system.registrar_tema_conversacion_npc(id_b, id_a, tema, momento)
 
 
 func _finalizar_conversacion(completada: bool = false) -> void:
-	if completada and bool(_conversacion_activa.get("_social_autonoma", false)):
-		_registrar_memoria_conversacional_autonoma()
+	if completada:
+		_registrar_memoria_conversacional_npc()
 	if completada and not _conversacion_activa.is_empty() and not bool(_conversacion_activa.get("_sin_dinamica_social", false)):
 		_registrar_dinamica_social_conversacion()
 		_registrar_rutina_compartida()
