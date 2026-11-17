@@ -3,6 +3,7 @@ extends Node
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const DialogueSystemScript = preload("res://scripts/gameplay/dialogue_system.gd")
 const NPCVoiceProfileScript = preload("res://scripts/gameplay/npc_voice_profile.gd")
+const NPCConversationSystemScript = preload("res://scripts/world/npc_conversation_system.gd")
 
 
 func _ready() -> void:
@@ -25,6 +26,46 @@ func _run() -> void:
 	var voz_darven := NPCVoiceProfileScript.adaptar("¿Te apetece hablar?", "Darven")
 	if voz_darven != "¿Te apetece hablar?":
 		errores.append("El perfil común impuso un modismo que no corresponde a todas las voces.")
+
+	# Las escenas de Ivo y Nima deben avanzar por consentimiento y hechos,
+	# no por amenazas o conflictos que ninguno de los dos ha provocado.
+	var conversaciones: Array = NPCConversationSystemScript.CONVERSACIONES_HABITANTES
+	var investigacion_ivo: Dictionary = {}
+	var contacto_saira_ivo: Dictionary = {}
+	for conversacion_variant in conversaciones:
+		if not conversacion_variant is Dictionary:
+			continue
+		var conversacion := conversacion_variant as Dictionary
+		match str(conversacion.get("clave", "")):
+			"nima_ivo_investigacion":
+				investigacion_ivo = conversacion
+			"saira_ivo_contacto":
+				contacto_saira_ivo = conversacion
+	if investigacion_ivo.is_empty() or contacto_saira_ivo.is_empty():
+		errores.append("No se encontraron las conversaciones de Ivo con Nima y Saira.")
+	else:
+		for etapa_clave in ["lineas", "lineas_siguientes", "lineas_tercera_etapa"]:
+			var etapa_variant: Variant = investigacion_ivo.get(etapa_clave, [])
+			if not etapa_variant is Array:
+				continue
+			var textos: Array[String] = []
+			for linea_variant in etapa_variant as Array:
+				if linea_variant is Dictionary:
+					textos.append(str((linea_variant as Dictionary).get("texto", "")))
+			var intercambio := " ".join(textos).to_lower()
+			if intercambio.contains("caso de estudio") or intercambio.contains("me voy"):
+				errores.append("La etapa %s de Nima e Ivo inventa una amenaza o una ofensa." % etapa_clave)
+		if not str(investigacion_ivo.get("lineas", [])).contains("te cuento lo que recuerde"):
+			errores.append("Ivo no responde con naturalidad a la petición respetuosa de Nima.")
+		var contacto_lineas: Array = contacto_saira_ivo.get("lineas", [])
+		var contacto_texto := ""
+		for linea_variant in contacto_lineas:
+			if linea_variant is Dictionary:
+				contacto_texto += " " + str((linea_variant as Dictionary).get("texto", ""))
+		if contacto_texto.contains("todo Torres está hablando de mí"):
+			errores.append("Ivo supone que todo el pueblo habla de él sin que la escena lo justifique.")
+		if not contacto_texto.contains("¿Quién te lo comentó?"):
+			errores.append("Ivo no pregunta de forma concreta por el origen de la información.")
 
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
