@@ -19,6 +19,8 @@ var relationship_system: RelationshipSystemService = null
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
 var portrait_rect: TextureRect = null
+var _portrait_frame: PanelContainer = null
+var _dialogue_background: TextureRect = null
 var text_label: Label = null
 var hint_label: Label = null
 var action_button: Button = null
@@ -306,6 +308,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		return false
 
 	_fuente = fuente
+	_actualizar_fondo_dialogo(datos_seleccionados)
 
 	if is_instance_valid(_fuente):
 		var personaje_id := _fuente.get_personaje_game_id().strip_edges()
@@ -473,6 +476,8 @@ func cerrar() -> void:
 	_cerrar_selector_conversacion()
 	if dialogue_panel != null:
 		dialogue_panel.visible = false
+	if is_instance_valid(_dialogue_background):
+		_dialogue_background.visible = false
 
 	dialogue_finished.emit()
 	Events.dialog_closed.emit()
@@ -709,6 +714,19 @@ func _resolver_texto_por_personalidad(
 	return texto
 
 
+func _actualizar_fondo_dialogo(datos_dialogo: Dictionary) -> void:
+	if not is_instance_valid(_dialogue_background):
+		return
+	var ruta := str(datos_dialogo.get("fondo", datos_dialogo.get("imagen_fondo", ""))).strip_edges()
+	if ruta.is_empty() or not ruta.begins_with("res://") or not ResourceLoader.exists(ruta):
+		_dialogue_background.texture = null
+		_dialogue_background.visible = false
+		return
+	var textura := ResourceLoader.load(ruta) as Texture2D
+	_dialogue_background.texture = textura
+	_dialogue_background.visible = textura != null
+
+
 func _actualizar_retrato(hablante: String) -> void:
 	if portrait_rect == null:
 		return
@@ -751,6 +769,8 @@ func _actualizar_retrato(hablante: String) -> void:
 
 	portrait_rect.texture = textura
 	portrait_rect.visible = textura != null
+	if is_instance_valid(_portrait_frame):
+		_portrait_frame.visible = textura != null
 
 
 
@@ -3491,6 +3511,17 @@ func _crear_interfaz() -> void:
 	if dialogue_panel != null and is_instance_valid(dialogue_panel):
 		return
 
+	if not is_instance_valid(_dialogue_background):
+		_dialogue_background = TextureRect.new()
+		_dialogue_background.name = "DialogueBackgroundImage"
+		_dialogue_background.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_dialogue_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_dialogue_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		_dialogue_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_dialogue_background.z_index = 2999
+		_dialogue_background.visible = false
+		ui_root.add_child(_dialogue_background)
+
 	dialogue_panel = PanelContainer.new()
 	dialogue_panel.name = "DialoguePanel"
 	dialogue_panel.visible = false
@@ -3530,17 +3561,33 @@ func _crear_interfaz() -> void:
 	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(content_row)
 
+	_portrait_frame = PanelContainer.new()
+	_portrait_frame.name = "SpeakerPortraitFrame"
+	_portrait_frame.custom_minimum_size = Vector2(188, 188)
+	_portrait_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_portrait_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var estilo_retrato := PIXEL_UI_THEME.button_surface_style()
+	if estilo_retrato != null:
+		_portrait_frame.add_theme_stylebox_override("panel", estilo_retrato)
+	content_row.add_child(_portrait_frame)
+
+	var margen_retrato := MarginContainer.new()
+	margen_retrato.add_theme_constant_override("margin_left", 5)
+	margen_retrato.add_theme_constant_override("margin_top", 5)
+	margen_retrato.add_theme_constant_override("margin_right", 5)
+	margen_retrato.add_theme_constant_override("margin_bottom", 5)
+	_portrait_frame.add_child(margen_retrato)
+
 	portrait_rect = TextureRect.new()
 	portrait_rect.name = "SpeakerPortrait"
-	# El retrato ocupa prácticamente toda la altura interior del panel.
-	# Al ser cuadrado y conservar el aspecto, el sprite crece sin deformarse.
+	# El sprite conserva su proporción dentro de un marco con el mismo diseño de Button.
 	portrait_rect.custom_minimum_size = Vector2(176, 176)
 	portrait_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	portrait_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	portrait_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	portrait_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content_row.add_child(portrait_rect)
+	margen_retrato.add_child(portrait_rect)
 
 	var column := VBoxContainer.new()
 	_dialogue_text_column = column
@@ -3773,6 +3820,10 @@ func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
 		portrait_rect.visible = not compacto
 		var retrato := 80.0 if compacto else (120.0 if movil else 176.0)
 		portrait_rect.custom_minimum_size = Vector2(retrato, retrato)
+	if is_instance_valid(_portrait_frame):
+		_portrait_frame.visible = not compacto and portrait_rect != null and portrait_rect.texture != null
+		var marco_retrato := 92.0 if compacto else (132.0 if movil else 188.0)
+		_portrait_frame.custom_minimum_size = Vector2(marco_retrato, marco_retrato)
 	if _dialogue_social_column != null:
 		var social_size := 36.0 if compacto else (40.0 if movil else 48.0)
 		_dialogue_social_column.custom_minimum_size = Vector2(social_size, 0.0)
