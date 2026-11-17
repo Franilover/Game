@@ -70,6 +70,8 @@ var _garumi_companero_actual: Node = null
 var _garumi_companero_slot: Button = null
 var _garumi_selector_panel: PanelContainer = null
 var _garumi_selector_lista: HBoxContainer = null
+var _garumi_mobile_menu: PanelContainer = null
+var _garumi_mobile_companions: HBoxContainer = null
 var _r_hold_activo := false
 var _r_hold_elapsed := 0.0
 var _r_selector_abierto := false
@@ -164,6 +166,7 @@ func _ready() -> void:
 	_preparar_location()
 	_preparar_aviso_descubrimiento()
 	_preparar_panel_garumis_vinculados()
+	_preparar_menu_garumis_movil()
 	_preparar_panel_interaccion()
 	_preparar_panel_misiones()
 	_preparar_reloj_calendario()
@@ -224,7 +227,7 @@ func _process(delta: float) -> void:
 			inventario_abierto = true
 			break
 	if is_instance_valid(_calendar_panel):
-		_calendar_panel.visible = not _modo_historia and not inventario_abierto and not _combate_garumi_activo and (not _es_interfaz_movil() or get_viewport_rect().size.y >= 280.0)
+		_calendar_panel.visible = not _modo_historia and not inventario_abierto and not _combate_garumi_activo and (not _es_interfaz_movil() or get_viewport_rect().size.y >= 280.0) and (not is_instance_valid(_garumi_mobile_menu) or not _garumi_mobile_menu.visible)
 	_calendar_elapsed += delta
 	if _calendar_elapsed >= 0.2:
 		_calendar_elapsed = 0.0
@@ -1300,7 +1303,9 @@ func accion_controles_moviles(accion: String) -> void:
 		"toggle_missions":
 			_toggle_panel_misiones()
 		"toggle_garumi_selector":
-			if _r_selector_abierto:
+			if _es_interfaz_movil():
+				_alternar_menu_garumis_movil()
+			elif _r_selector_abierto:
 				_cerrar_selector_companero()
 			else:
 				_abrir_selector_companero()
@@ -1424,6 +1429,8 @@ func establecer_modo_historia(activo: bool) -> void:
 		_garumi_companero_slot.visible = not activo and not _es_interfaz_movil()
 	if is_instance_valid(_garumi_selector_panel):
 		_garumi_selector_panel.visible = false if activo else _r_selector_abierto
+	if is_instance_valid(_garumi_mobile_menu) and activo:
+		_garumi_mobile_menu.hide()
 	if activo:
 		_r_hold_activo = false
 		_r_hold_elapsed = 0.0
@@ -1450,7 +1457,14 @@ func _actualizar_layout_hud_movil() -> void:
 	if is_instance_valid(_garumi_companero_slot):
 		_garumi_companero_slot.hide()
 
-	# El selector se despliega bajo el grupo Garumis, lejos de inventario y mapa.
+	# El desplegable táctil se abre debajo del único botón Garumis.
+	if is_instance_valid(_garumi_mobile_menu):
+		var menu_width := minf(224.0, viewport_size.x - 24.0)
+		_garumi_mobile_menu.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_garumi_mobile_menu.position = Vector2(maxf(12.0, viewport_size.x - menu_width - 12.0), 62.0)
+		_garumi_mobile_menu.size = Vector2(menu_width, _garumi_mobile_menu.get_combined_minimum_size().y)
+		_garumi_mobile_menu.custom_minimum_size.x = menu_width
+	# El selector R tradicional se conserva para escritorio.
 	if is_instance_valid(_garumi_selector_panel):
 		var selector_size := Vector2(minf(164.0, viewport_size.x - 24.0), 58.0)
 		_garumi_selector_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -1527,6 +1541,99 @@ func _actualizar_reloj_calendario() -> void:
 	var fecha := "Día %d · %s" % [dia_estacion, estacion] if dia_estacion > 0 else estacion
 	_calendar_label.text = "%s   %s\nMonedas: %d\n%s · Año %d" % [hora, periodo, GameState.obtener_dinero(), fecha, anio]
 
+
+
+func _preparar_menu_garumis_movil() -> void:
+	_garumi_mobile_menu = PanelContainer.new()
+	_garumi_mobile_menu.name = "MobileGarumiMenu"
+	_garumi_mobile_menu.visible = false
+	_garumi_mobile_menu.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_garumi_mobile_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	PIXEL_UI_THEME.apply(_garumi_mobile_menu, false)
+	var contenido := VBoxContainer.new()
+	contenido.add_theme_constant_override("separation", 6)
+	_garumi_mobile_menu.add_child(contenido)
+	var titulo_habilidades := Label.new()
+	titulo_habilidades.text = "Habilidades"
+	titulo_habilidades.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	contenido.add_child(titulo_habilidades)
+	var fila_habilidades := HBoxContainer.new()
+	fila_habilidades.alignment = BoxContainer.ALIGNMENT_CENTER
+	fila_habilidades.add_theme_constant_override("separation", 6)
+	contenido.add_child(fila_habilidades)
+	for i in range(3):
+		var boton := Button.new()
+		boton.text = "Don %d" % (i + 1)
+		boton.custom_minimum_size = Vector2(60.0, 40.0)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		PIXEL_UI_THEME.apply(boton)
+		boton.pressed.connect(_usar_don_desde_menu_movil.bind(i))
+		fila_habilidades.add_child(boton)
+	var titulo_companeros := Label.new()
+	titulo_companeros.text = "Compañero"
+	titulo_companeros.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	contenido.add_child(titulo_companeros)
+	_garumi_mobile_companions = HBoxContainer.new()
+	_garumi_mobile_companions.alignment = BoxContainer.ALIGNMENT_CENTER
+	_garumi_mobile_companions.add_theme_constant_override("separation", 6)
+	contenido.add_child(_garumi_mobile_companions)
+	add_child(_garumi_mobile_menu)
+	_actualizar_menu_garumis_movil()
+	_actualizar_layout_hud_movil()
+
+
+func _alternar_menu_garumis_movil() -> void:
+	if not is_instance_valid(_garumi_mobile_menu) or _modo_historia or _combate_garumi_activo:
+		return
+	if _garumi_mobile_menu.visible:
+		_garumi_mobile_menu.hide()
+	else:
+		_actualizar_menu_garumis_movil()
+		_garumi_mobile_menu.show()
+		_garumi_mobile_menu.move_to_front()
+
+
+func _actualizar_menu_garumis_movil() -> void:
+	if not is_instance_valid(_garumi_mobile_companions):
+		return
+	for hijo in _garumi_mobile_companions.get_children():
+		hijo.queue_free()
+	var cantidad := 0
+	for i in range(_garumis_vinculados_nodos.size()):
+		var garumi := _garumis_vinculados_nodos[i]
+		if not is_instance_valid(garumi):
+			continue
+		cantidad += 1
+		var boton := Button.new()
+		boton.name = "Companero%d" % (i + 1)
+		boton.custom_minimum_size = Vector2(48.0, 44.0)
+		boton.tooltip_text = ""
+		var textura := _buscar_textura_garumi(garumi)
+		if textura != null:
+			boton.icon = textura
+			boton.expand_icon = true
+		else:
+			boton.text = str(i + 1)
+		PIXEL_UI_THEME.apply(boton)
+		boton.pressed.connect(_seleccionar_companero_desde_menu_movil.bind(garumi))
+		_garumi_mobile_companions.add_child(boton)
+	if cantidad == 0:
+		var vacio := Label.new()
+		vacio.text = "Sin Garumis vinculados"
+		vacio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_garumi_mobile_companions.add_child(vacio)
+
+
+func _usar_don_desde_menu_movil(indice: int) -> void:
+	_usar_don_companero(indice)
+	if is_instance_valid(_garumi_mobile_menu):
+		_garumi_mobile_menu.hide()
+
+
+func _seleccionar_companero_desde_menu_movil(garumi: Node) -> void:
+	_seleccionar_companero(garumi)
+	if is_instance_valid(_garumi_mobile_menu):
+		_garumi_mobile_menu.hide()
 
 
 func _preparar_panel_garumis_vinculados() -> void:
@@ -1628,6 +1735,7 @@ func _agregar_garumi_vinculado(garumi: Node, _nombre: String) -> void:
 		if garumi.has_method("establecer_estado_companero"):
 			garumi.call("establecer_estado_companero", player, false)
 	_actualizar_selector_companero()
+	_actualizar_menu_garumis_movil()
 
 
 func _procesar_hold_companero(delta: float) -> void:
@@ -1847,6 +1955,7 @@ func eliminar_garumi_vinculado(garumi: Node) -> void:
 		if not _garumis_vinculados_nodos.is_empty():
 			_establecer_companero(_garumis_vinculados_nodos[0])
 	_actualizar_selector_companero()
+	_actualizar_menu_garumis_movil()
 
 
 func actualizar_estado_garumi(garumi: Node, _guardado: bool) -> void:
