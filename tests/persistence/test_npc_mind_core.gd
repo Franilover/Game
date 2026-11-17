@@ -282,6 +282,12 @@ func _run() -> void:
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
 	if str(relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza").get("estado", "")) != "sospecha":
 		errores.append("Una noticia transmitida se registró como testimonio confirmado en vez de sospecha.")
+	var confianza_testimonio_inicial := float(relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza").get("confianza", 0.0))
+	if not relationship.transmitir_conocimiento_npc("ivo", "mara", "festival_plaza", {"motivo": "repeticion"}):
+		errores.append("Repetir una noticia ya conocida se informó como fallo de transmisión.")
+	var confianza_testimonio_repetido := float(relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza").get("confianza", 0.0))
+	if not is_equal_approx(confianza_testimonio_inicial, confianza_testimonio_repetido):
+		errores.append("Repetir el testimonio de la misma persona aumentó la confianza.")
 
 	# La asistencia a un evento comunitario produce conocimiento por observación directa.
 	var observacion_evento := {
