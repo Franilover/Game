@@ -195,6 +195,10 @@ func _run() -> void:
 	if not dialogo._dialogo_en_transito or dialogo._debe_usar_menu_social({"_dialogo_breve_sin_opciones": true}, false, false):
 		errores.append("El modo breve explícito no conserva su comportamiento especial.")
 	dialogo._dialogo_en_transito = false
+	if dialogo._debe_usar_menu_social({"tipo_contenido": "historia"}, false, false):
+		errores.append("Una escena de historia terminó mostrando el menú social casual.")
+	if not dialogo._debe_usar_menu_social({"clave": "principal"}, false, false):
+		errores.append("Un diálogo cotidiano perdió el menú social compartido.")
 
 	npc.nombre_individual = "Ivo"
 	var recuerdo_ivo := dialogo._crear_dialogo_recuerdo_social({
