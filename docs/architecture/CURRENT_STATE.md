@@ -983,3 +983,10 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Si no queda ninguna alternativa válida, el NPC conserva su rutina base en lugar de recibir una ubicación sustituta.
 - Se añade una regresión para destinos desconocidos, identificadores vacíos y preservación de ubicaciones válidas.
 - Alcance: esta mejora cubre la selección de ocio en días libres; no cambia horarios laborales, datos canónicos ni Supabase.
+
+
+## NPC: autonomía durante huecos del calendario
+
+La selección de actividades ya no depende exclusivamente de los días libres. Cuando el selector de horarios no encuentra una rutina activa, el sistema comprueba que el NPC sí tenga un calendario definido y calcula cuánto falta para el siguiente compromiso dentro del ciclo semanal de cinco días. Si dispone de al menos una hora, puede elegir una actividad cotidiana compatible con sus necesidades, preferencias aprendidas y destinos alcanzables.
+
+Los turnos, guardias, citas y demás rutinas activas conservan prioridad. El hueco se vuelve a evaluar por hora y la rutina programada vuelve a tomar el control al comenzar. Los NPC sin calendario no reciben actividades improvisadas por este mecanismo.

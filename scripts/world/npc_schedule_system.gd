@@ -1758,13 +1758,25 @@ func _aplicar_variacion_tiempo_libre(
 	dia_semana: int,
 	minutos: int
 ) -> Dictionary:
+	var es_intervalo_libre := false
+	var minutos_hasta_compromiso := 0
 	if rutina_base.is_empty():
-		return rutina_base
-
-	var clave_base := str(rutina_base.get("clave", ""))
-	var ubicacion_base := str(rutina_base.get("ubicacion_clave", ""))
-	if not clave_base.begins_with("dia_libre") or ubicacion_base != "plaza":
-		return rutina_base
+		var rutinas_variant: Variant = npc.datos.get("rutinas", [])
+		if not rutinas_variant is Array or (rutinas_variant as Array).is_empty():
+			return rutina_base
+		minutos_hasta_compromiso = _obtener_minutos_hasta_siguiente_rutina(
+			rutinas_variant, dia_semana, minutos
+		)
+		# Sólo se ocupa un hueco real con margen suficiente. Una rutina activa
+		# (trabajo, guardia, cita o traslado) nunca llega a esta rama.
+		if minutos_hasta_compromiso < 60:
+			return rutina_base
+		es_intervalo_libre = true
+	else:
+		var clave_base := str(rutina_base.get("clave", ""))
+		var ubicacion_base := str(rutina_base.get("ubicacion_clave", ""))
+		if not clave_base.begins_with("dia_libre") or ubicacion_base != "plaza":
+			return rutina_base
 
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 	var actividades_por_personaje: Dictionary = _obtener_opciones_ocio_npc(nombre)
@@ -1772,7 +1784,11 @@ func _aplicar_variacion_tiempo_libre(
 		return rutina_base
 
 	var tramo := 0
-	if minutos >= 840 and minutos < 1020:
+	if es_intervalo_libre:
+		# Los huecos de días laborables se vuelven a evaluar por hora, sin
+		# cambiar de actividad en cada tick de navegación.
+		tramo = 10 + int(minutos / 60)
+	elif minutos >= 840 and minutos < 1020:
 		tramo = 1
 	elif minutos >= 1020:
 		tramo = 2
@@ -1803,7 +1819,7 @@ func _aplicar_variacion_tiempo_libre(
 	)
 	if opciones.is_empty():
 		return rutina_base
-	var contexto_habito := "ocio_tramo_%s" % tramo
+	var contexto_habito := "ocio_intervalo_laboral" if es_intervalo_libre else "ocio_tramo_%s" % tramo
 	for opcion_variant in opciones:
 		if opcion_variant is Dictionary:
 			(opcion_variant as Dictionary)["contexto_habito"] = contexto_habito
@@ -1857,6 +1873,12 @@ func _aplicar_variacion_tiempo_libre(
 		elegida = (opciones[indice] as Dictionary).duplicate(true)
 
 	var resultado := rutina_base.duplicate(true)
+	if es_intervalo_libre:
+		resultado = {
+			"clave": "ocio_intervalo_libre",
+			"activo": true,
+			"limite_intervalo_minutos": minutos_hasta_compromiso
+		}
 	var actividad := str(elegida.get("id", ""))
 	var ubicacion_elegida := str(elegida.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	if not POSICIONES.has(ubicacion_elegida):
@@ -1888,6 +1910,37 @@ func _aplicar_variacion_tiempo_libre(
 		npc.set_meta("npc_mind_necesidad_inicio", float(necesidades_inicio.get(necesidad_principal, 0.0)))
 	npc.set_meta("npc_mind_rutina_decidida", resultado.duplicate(true))
 	return resultado
+
+
+## Devuelve el tiempo real hasta el próximo inicio de rutina del calendario.
+## Recorre el ciclo de cinco días y no confunde un hueco con un horario inexistente.
+func _obtener_minutos_hasta_siguiente_rutina(
+	rutinas_variant: Variant,
+	dia_semana: int,
+	minutos: int
+) -> int:
+	if not rutinas_variant is Array or (rutinas_variant as Array).is_empty():
+		return 0
+	var mejor := 5 * 1440
+	for desplazamiento_dia in range(5):
+		var dia_candidato := posmod(dia_semana + desplazamiento_dia, 5)
+		for rutina_variant in rutinas_variant as Array:
+			if not rutina_variant is Dictionary:
+				continue
+			var rutina := rutina_variant as Dictionary
+			if not bool(rutina.get("activo", true)):
+				continue
+			if not _coincide_dia(rutina.get("dias_semana", []), dia_candidato):
+				continue
+			var inicio := _hora_a_minutos(rutina.get("hora_inicio", ""))
+			var fin := _hora_a_minutos(rutina.get("hora_fin", ""))
+			if inicio < 0 or fin < 0 or inicio == fin:
+				continue
+			var candidato := desplazamiento_dia * 1440 + inicio
+			if candidato <= minutos:
+				continue
+			mejor = mini(mejor, candidato - minutos)
+	return mejor if mejor < 5 * 1440 else 0
 
 
 func _obtener_opciones_ocio_npc(nombre: String) -> Dictionary:

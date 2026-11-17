@@ -588,6 +588,28 @@ func _run() -> void:
 	if str(motivo_desacuerdo.get("tipo", "")) != "resolver_desacuerdo":
 		errores.append("Los NPC no detectaron un desacuerdo cuando no quedaban noticias pendientes.")
 
+	# Los huecos entre compromisos laborales se aprovechan sin desplazar
+	# el siguiente turno. El cálculo respeta días concretos y el ciclo de cinco días.
+	var agenda_huecos := [
+		{"clave":"turno_manana","hora_inicio":"09:00","hora_fin":"12:00","dias_semana":[0]},
+		{"clave":"turno_tarde","hora_inicio":"15:00","hora_fin":"18:00","dias_semana":[0]}
+	]
+	var hueco_entre_turnos := int(schedule.call(
+		"_obtener_minutos_hasta_siguiente_rutina", agenda_huecos, 0, 12 * 60
+	))
+	if hueco_entre_turnos != 180:
+		errores.append("El sistema no detectó las tres horas libres entre dos turnos.")
+	var hueco_antes_del_turno := int(schedule.call(
+		"_obtener_minutos_hasta_siguiente_rutina", agenda_huecos, 0, 8 * 60
+	))
+	if hueco_antes_del_turno != 60:
+		errores.append("El sistema no detectó el margen previo al primer turno.")
+	var sin_compromisos_hoy := int(schedule.call(
+		"_obtener_minutos_hasta_siguiente_rutina", agenda_huecos, 1, 8 * 60
+	))
+	if sin_compromisos_hoy <= 0:
+		errores.append("El calendario no buscó el siguiente compromiso en el ciclo semanal.")
+
 	var opciones_ocio_mixtas: Array = ScheduleScript.filtrar_opciones_ocio_validas([
 		{"id": "pasear", "ubicacion_clave": "plaza"},
 		{"id": "leer", "ubicacion_clave": "archivo_real"},
