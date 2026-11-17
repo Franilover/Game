@@ -1555,7 +1555,8 @@ func _actualizar_layout_hud_superior() -> void:
 	if is_instance_valid(_coin_button):
 		var ancho_monedas := 132.0
 		var separacion_vertical := 8.0
-		var x_reloj := (viewport_size.x - ancho_monedas) * 0.5 if movil else viewport_size.x - 112.0 - 16.0
+		var x_reloj := (viewport_size.x - 112.0) * 0.5 if movil else viewport_size.x - 112.0 - 16.0
+		x_reloj += (112.0 - ancho_monedas) * 0.5
 		var y_reloj := 12.0 + 48.0 + separacion_vertical
 		_coin_button.position = Vector2(x_reloj, y_reloj)
 		_coin_button.size = Vector2(ancho_monedas, 38.0)
