@@ -1768,10 +1768,11 @@ func _aplicar_variacion_tiempo_libre(
 			var actividad_anterior := str(npc.get_meta("npc_mind_actividad", ""))
 			var necesidad_anterior := str(npc.get_meta("npc_mind_necesidad_clave", ""))
 			var presion_inicial := float(npc.get_meta("npc_mind_necesidad_inicio", 0.0))
+			var resultado := 0.0
 			if not actividad_anterior.is_empty() and not necesidad_anterior.is_empty():
 				var necesidades_actuales: Dictionary = mind.call("obtener_necesidades", personaje_id)
 				var presion_final := float(necesidades_actuales.get(necesidad_anterior, presion_inicial))
-				var resultado := clampf((presion_inicial - presion_final) / 25.0, -1.0, 1.0)
+				resultado = clampf((presion_inicial - presion_final) / 25.0, -1.0, 1.0)
 				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado)
 			var ubicacion_anterior := str(npc.get_meta("npc_mind_ubicacion", "")).strip_edges().to_lower()
 			if not ubicacion_anterior.is_empty() and mind.has_method("registrar_resultado_lugar"):
