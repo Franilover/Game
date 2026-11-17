@@ -1757,7 +1757,7 @@ func _al_cinematica_narrativa_solicitada(
 	if npc_a == npc_b or npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
 		return
 	var centro_real := (npc_a.global_position + npc_b.global_position) * 0.5
-	if _player.global_position.distance_to(centro_real) > 260.0:
+	if _player.global_position.distance_to(centro_real) > 520.0:
 		return
 
 	var escenas: Dictionary = {
