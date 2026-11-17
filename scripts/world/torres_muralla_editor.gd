@@ -36,7 +36,7 @@ func _inicializar_terreno_editor() -> void:
 		capa._update_cells(celdas, false)
 
 	# La muralla se genera como un nodo editable aparte.
-	await get_tree.process_frame
+	await get_tree().process_frame
 	await _generar_muralla_editable()
 
 
