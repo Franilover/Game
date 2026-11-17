@@ -13,7 +13,8 @@ const CATALOGO := {
 	"cama": {"nombre": "Cama", "ruta": "res://assets/art/places/Muebles/cama.png"},
 	"cofre": {"nombre": "Cofre", "ruta": "res://assets/art/places/Muebles/cofre.png"},
 	"horno": {"nombre": "Horno", "ruta": "res://assets/art/places/Muebles/horno.png"},
-	"mesa": {"nombre": "Mesa", "ruta": "res://assets/art/places/Muebles/mesa.png"}
+	"mesa": {"nombre": "Mesa", "ruta": "res://assets/art/places/Muebles/mesa.png"},
+	"calendario": {"nombre": "Calendario", "ruta": "res://assets/art/places/Muebles/calendario.svg"}
 }
 
 var _decoraciones: Array[Dictionary] = []
@@ -431,15 +432,17 @@ func _agregar_sprite(indice: int) -> void:
 	add_child(sprite)
 	_sprites.append(sprite)
 	var tipo := str(_decoraciones[indice].get("tipo", ""))
-	if tipo in ["cofre", "cama"]:
+	if tipo in ["cofre", "cama", "calendario"]:
 		var objetivo: Node2D = WORLD_INTERACTABLE_SCRIPT.new() as Node2D
 		if is_instance_valid(objetivo):
 			objetivo.name = "InteraccionMueble_" + str(indice)
 			objetivo.position = sprite.position
 			if tipo == "cofre":
 				objetivo.call("configurar_cofre", str(_decoraciones[indice].get("cofre_id", "hogar_interior_" + str(indice))), self, indice)
-			else:
+			elif tipo == "cama":
 				objetivo.call("configurar_cama", self, indice)
+			else:
+				objetivo.call("configurar_calendario", self, indice)
 			add_child(objetivo)
 		_objetivos_cofre.append(objetivo)
 	else:
