@@ -1111,6 +1111,8 @@ func transmitir_conocimiento_npc(
 		var conocimiento := (conocimiento_variant as Dictionary).duplicate(true)
 		if str(conocimiento.get("clave", "")) != clave:
 			continue
+		if not puede_compartir_conocimiento_npc(origen, destino, conocimiento):
+			return false
 		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
 		var cadena: Array = cadena_variant.duplicate(true) if cadena_variant is Array else []
 		cadena.append({
@@ -1124,6 +1126,45 @@ func transmitir_conocimiento_npc(
 		conocimiento["transmitido_por"] = origen
 		return registrar_conocimiento_npc(destino, conocimiento)
 	return false
+
+
+## Los testimonios públicos se pueden repetir. La información privada requiere
+## permiso explícito y un vínculo de confianza suficiente; lo confidencial no
+## se retransmite automáticamente aunque el receptor lo conozca.
+func puede_compartir_conocimiento_npc(
+	personaje_origen: String,
+	personaje_destino: String,
+	conocimiento: Dictionary
+) -> bool:
+	var origen := personaje_origen.strip_edges()
+	var destino := personaje_destino.strip_edges()
+	if origen.is_empty() or destino.is_empty() or origen == destino:
+		return false
+	if not bool(conocimiento.get("compartible", true)):
+		return false
+	var privacidad := str(conocimiento.get("privacidad", "publica")).strip_edges().to_lower()
+	if privacidad in ["publica", "publico", "rumor_publico"]:
+		return true
+	if privacidad == "confidencial":
+		return false
+	if privacidad in ["personal", "reservada", "privada"]:
+		if not bool(conocimiento.get("permiso_transmision", false)):
+			return false
+		var relacion := obtener_relacion_entre_npc(origen, destino)
+		return float(relacion.get("confianza", 0.0)) >= 30.0
+	return false
+
+
+## Devuelve sólo información que este NPC puede repetir a esa persona.
+func obtener_conocimientos_compartibles_npc(personaje_origen: String, personaje_destino: String) -> Array:
+	var resultado: Array = []
+	for conocimiento_variant in obtener_conocimientos_npc(personaje_origen):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		if puede_compartir_conocimiento_npc(personaje_origen, personaje_destino, conocimiento):
+			resultado.append(conocimiento.duplicate(true))
+	return resultado
 
 
 func _clave_pareja_npc(personaje_a: String, personaje_b: String) -> String:
