@@ -1737,10 +1737,11 @@ func _al_cinematica_narrativa_solicitada(
 	nombre_b: String,
 	posicion_global: Vector2,
 	etapa: int,
+	duracion: float = 12.0,
 	desde_cola: bool = false
 ) -> void:
 	if not desde_cola:
-		_encolar_cinematica_proximidad("narrativa", clave, nombre_a, nombre_b, posicion_global, etapa)
+		_encolar_cinematica_proximidad("narrativa", clave, nombre_a, nombre_b, posicion_global, etapa, duracion)
 		return
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
 		return
@@ -1774,7 +1775,7 @@ func _al_cinematica_narrativa_solicitada(
 		"relacion_%s_etapa_%d" % [clave, etapa], nombre_a, nombre_b, centro_real,
 		zoom_actual * (1.08 if etapa == 1 else 1.14),
 		str(escena.get("gesto_a", "asentir")), str(escena.get("gesto_b", "asentir")),
-		0.75, 0.25, 0.5, 0.6
+		0.75, 0.25, maxf(0.5, duracion - 3.8), 0.6
 	)
 
 
@@ -2010,7 +2011,8 @@ func _encolar_cinematica_proximidad(
 	nombre_a: String,
 	nombre_b: String,
 	posicion_global: Vector2,
-	etapa: int = 0
+	etapa: int = 0,
+	duracion: float = 12.0
 ) -> void:
 	var clave_pendiente := "%s|%s|%s|%s|%d" % [
 		tipo, clave, nombre_a.to_lower(), nombre_b.to_lower(), etapa
@@ -2027,6 +2029,7 @@ func _encolar_cinematica_proximidad(
 		"npc_b": nombre_b,
 		"posicion": posicion_global,
 		"etapa": etapa,
+		"duracion": maxf(1.0, duracion),
 		"prioridad": _prioridad_cinematica(tipo),
 		"creada_ms": creada_ms
 	})
@@ -2162,7 +2165,9 @@ func _procesar_cinematicas_pendientes() -> void:
 		"narrativa":
 			await _al_cinematica_narrativa_solicitada(
 				clave_elegida, nombre_a_elegido, nombre_b_elegido, posicion_elegida,
-				int(pendiente_elegida.get("etapa", 0)), true
+				int(pendiente_elegida.get("etapa", 0)),
+				float(pendiente_elegida.get("duracion", 12.0)),
+				true
 			)
 		"acontecimiento":
 			await _al_cinematica_acontecimiento_solicitada(
