@@ -130,6 +130,39 @@ func _run() -> void:
 
 	add_child(npc)
 	add_child(dialogo)
+	npc.nombre_individual = "Ivo"
+	dialogo._fuente = npc
+	var recuerdo_ivo := dialogo._crear_dialogo_recuerdo_social({
+		"tipo": "tema_conversacion",
+		"titulo": "los viajes de Saira",
+		"frase_jugador": "¿Crees que Saira debería viajar menos?",
+		"respuesta_npc": "No quiero decidir eso por ella."
+	})
+	var texto_recuerdo_ivo := str(recuerdo_ivo.get("lineas", [{}])[0].get("texto", ""))
+	if not texto_recuerdo_ivo.contains("los viajes de Saira") or not texto_recuerdo_ivo.contains("¿Cómo te fue con eso al final?"):
+		errores.append("Ivo no retoma el tema anterior con una pregunta cotidiana.")
+	if texto_recuerdo_ivo.contains("Dijiste:") or texto_recuerdo_ivo.contains("¿Crees que Saira debería viajar menos?"):
+		errores.append("Ivo repite literalmente la frase anterior en vez de continuar la charla.")
+	npc.nombre_individual = "Mara"
+	var recuerdo_mara := dialogo._crear_dialogo_recuerdo_social({
+		"tipo": "tema_conversacion",
+		"titulo": "su vida en Torres",
+		"frase_jugador": "Me gusta este pueblo.",
+		"respuesta_npc": "Me alegra que te sientas a gusto."
+	})
+	var texto_recuerdo_mara := str(recuerdo_mara.get("lineas", [{}])[0].get("texto", ""))
+	if not texto_recuerdo_mara.contains("Si todavía quieres hablar de eso, te escucho"):
+		errores.append("Mara no conserva su forma prudente de retomar un tema personal.")
+	npc.nombre_individual = "Nima"
+	var recuerdo_nima := dialogo._crear_dialogo_recuerdo_social({
+		"tipo": "tema_conversacion",
+		"titulo": "las observaciones Oris",
+		"frase_jugador": "Vi algo extraño cerca del río.",
+		"respuesta_npc": "Habría que comprobarlo."
+	})
+	var texto_recuerdo_nima := str(recuerdo_nima.get("lineas", [{}])[0].get("texto", ""))
+	if not texto_recuerdo_nima.contains("¿Averiguaste algo más?"):
+		errores.append("Nima no formula una continuación coherente con su curiosidad.")
 	npc.set_meta("rutina_en_transito", true)
 	dialogo._fuente = npc
 

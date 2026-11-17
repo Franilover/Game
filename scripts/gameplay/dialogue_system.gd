@@ -758,34 +758,45 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 			"elian":
 				texto = "Por cierto, todavía tengo presente el %s que me regalaste. Me ha alegrado tener ese detalle cerca." % item_nombre if reaccion in ["encanta", "gusta"] else "He estado pensando en el %s que me diste. Gracias por acordarte de mí." % item_nombre
 			"bruna":
-				texto = "Le encontré utilidad al %s que me trajiste. No suelo decirlo, pero fue un buen regalo." % item_nombre if reaccion in ["encanta", "gusta"] else "Sobre el %s que me diste: gracias por el gesto. Lo tengo presente."
+				texto = "Le encontré utilidad al %s que me trajiste. No suelo decirlo, pero fue un buen regalo." % item_nombre if reaccion in ["encanta", "gusta"] else "Sobre el %s que me diste: gracias por el gesto. Lo tengo presente." % item_nombre
 			"darven":
 				texto = "El %s que me entregaste me ha resultado útil. Aprecio que hayas pensado en ello." % item_nombre if reaccion in ["encanta", "gusta"] else "Quería agradecerte de nuevo el %s. Fue un gesto considerado." % item_nombre
 			"saira":
-				texto = "¡Ah! El %s que me regalaste. Me hizo ilusión; estas pequeñas cosas también cuentan historias." % item_nombre if reaccion in ["encanta", "gusta"] else "Me acuerdo del %s que me diste. Gracias, fue un detalle bonito." % item_nombre
+				texto = "Me acordé del %s que me regalaste. Me hizo ilusión; fue un detalle bonito." % item_nombre if reaccion in ["encanta", "gusta"] else "Me acuerdo del %s que me diste. Gracias por el detalle." % item_nombre
 			"narel":
 				texto = "He conservado el %s que me diste. Es interesante cómo un objeto puede adquirir significado por su contexto." % item_nombre if reaccion in ["encanta", "gusta"] else "Recuerdo el %s que me entregaste. Gracias por el detalle." % item_nombre
+			"ivo":
+				texto = "Sigo usando el %s que me regalaste. Gracias, me gustó que te acordaras de mí." % item_nombre
+			"nima":
+				texto = "Todavía tengo el %s que me regalaste. Me hizo ilusión que pensaras en mí." % item_nombre
+			"mara":
+				texto = "Quería agradecerte otra vez el %s. Fue un detalle considerado." % item_nombre
 			_:
-				texto = "Quería agradecerte otra vez el %s que me regalaste." % item_nombre
+				texto = "Quería agradecerte otra vez el %s." % item_nombre
 	elif tipo == "tema_conversacion":
 		var titulo_tema := str(recuerdo.get("titulo", "aquella conversación")).strip_edges()
 		var frase_jugador := str(recuerdo.get("frase_jugador", "")).strip_edges()
 		if frase_jugador.is_empty():
 			return {}
-		var respuesta_npc := str(recuerdo.get("respuesta_npc", "")).strip_edges()
 		match clave_nombre:
 			"elian":
-				texto = "Me acordé de lo que hablamos sobre %s. Te conté esto: %s ¿Has pensado algo más desde entonces?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Me he quedado pensando en nuestra conversación sobre %s. Recuerdo que dijiste: %s ¿Cómo lo ves ahora?" % [titulo_tema, frase_jugador]
+				texto = "Oye, me acordé de lo que hablamos sobre %s. ¿Has pensado algo más desde entonces?" % titulo_tema
 			"bruna":
-				texto = "Sobre lo que hablamos de %s: te expliqué cómo lo veía. %s ¿Has llegado a alguna conclusión?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Sobre lo que hablamos de %s: recuerdo tu punto de vista. Dijiste: %s ¿Sigues pensando igual?" % [titulo_tema, frase_jugador]
+				texto = "Volví a pensar en lo que hablamos de %s. ¿Llegaste a alguna conclusión?" % titulo_tema
 			"darven":
-				texto = "Quería retomar lo que hablamos sobre %s. Te comenté: %s ¿Has observado algo nuevo?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Quería retomar lo que hablamos sobre %s. Recuerdo que comentaste: %s ¿Ha cambiado algo desde entonces?" % [titulo_tema, frase_jugador]
+				texto = "Quería retomar nuestra charla sobre %s. ¿Has observado algo nuevo?" % titulo_tema
 			"saira":
-				texto = "¡Me acordé de nuestra charla sobre %s! Te conté: %s ¿Y tú, has descubierto algo más?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "¡Oye! Me acordé de nuestra charla sobre %s. Dijiste algo que se me quedó dando vueltas: %s ¿Todavía lo ves así?" % [titulo_tema, frase_jugador]
+				texto = "Me acordé de nuestra conversación sobre %s. ¿Supiste algo más?" % titulo_tema
 			"narel":
-				texto = "He vuelto sobre nuestra conversación acerca de %s. Mi respuesta entonces fue: %s ¿Has encontrado algo que cambie nuestra interpretación?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "He vuelto sobre nuestra conversación acerca de %s. Tu comentario fue: %s ¿Mantienes esa conclusión?" % [titulo_tema, frase_jugador]
+				texto = "He seguido dándole vueltas a lo que hablamos sobre %s. ¿Encontraste algo que cambie tu idea?" % titulo_tema
+			"ivo":
+				texto = "Oye, la otra vez hablamos de %s. ¿Cómo te fue con eso al final?" % titulo_tema
+			"nima":
+				texto = "Me quedé pensando en lo que comentaste sobre %s. ¿Averiguaste algo más?" % titulo_tema
+			"mara":
+				texto = "Me acordé de nuestra charla sobre %s. Si todavía quieres hablar de eso, te escucho." % titulo_tema
 			_:
-				texto = "Recuerdo que hablamos sobre %s y que dijiste: %s" % [titulo_tema, frase_jugador]
+				texto = "Me acordé de lo que hablamos sobre %s. ¿Ha cambiado algo desde entonces?" % titulo_tema
 	elif tipo == "evento_social":
 		var evento := str(recuerdo.get("evento", "")).strip_edges().to_lower()
 		var contexto_variant: Variant = recuerdo.get("contexto", {})
@@ -818,8 +829,8 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 				return {}
 		if not detalle.is_empty():
 			frase = detalle + ": " + frase
-		if not frase_jugador.is_empty():
-			frase = "Recuerdo que dijiste: %s %s" % [frase_jugador, frase]
+		if not frase_jugador.is_empty() and evento in ["mentir", "decir_verdad", "compartir_conocimiento"]:
+			frase += " También recuerdo lo que me dijiste."
 		match clave_nombre:
 			"elian":
 				texto = "Quería hablarte de algo que todavía recuerdo. " + frase
@@ -830,7 +841,13 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 			"saira":
 				texto = "Oye, hay algo de lo que pasó que todavía me ronda. " + frase
 			"narel":
-				texto = "He revisado mentalmente lo ocurrido y hay algo que quiero señalar. " + frase
+				texto = "He estado pensando en lo ocurrido. " + frase
+			"ivo":
+				texto = "Oye, quería decirte algo sobre lo que pasó. " + frase
+			"nima":
+				texto = "Hay algo de lo que pasó que sigo teniendo presente. " + frase
+			"mara":
+				texto = "Quería decirte que recuerdo lo que pasó entre nosotros. " + frase
 			_:
 				texto = frase
 	else:
@@ -841,7 +858,6 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 		"clave": "recuerdo_social",
 		"lineas": [{"hablante": nombre, "texto": texto}]
 	}
-
 
 func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	var variantes_variant: Variant = datos.get("variantes", [])
