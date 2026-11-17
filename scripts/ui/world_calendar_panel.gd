@@ -14,6 +14,10 @@ func abrir(atmosfera: Node) -> void:
 	layer = 120
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("modal_ui")
+	if _atmosfera.has_signal("dia_cambiado"):
+		_atmosfera.connect("dia_cambiado", _al_cambiar_dia)
+	if _atmosfera.has_signal("estacion_cambiada"):
+		_atmosfera.connect("estacion_cambiada", _al_cambiar_estacion)
 	_crear_interfaz()
 	_actualizar_calendario()
 
@@ -101,7 +105,9 @@ func _actualizar_calendario() -> void:
 	var duracion := maxi(int(tiempo.get("duracion_estacion_dias", 0)), 1)
 	var dia_actual := clampi(int(tiempo.get("dia_de_estacion", 1)), 1, duracion)
 	var estacion := str(tiempo.get("estacion", "Estación"))
-	var temporada := str(tiempo.get("temporada", "")).strip_edges()
+	var estacion_actual_variant: Variant = _atmosfera.get("estacion_actual")
+	var estacion_actual: Dictionary = estacion_actual_variant if estacion_actual_variant is Dictionary else {}
+	var temporada := str(estacion_actual.get("temporada", estacion_actual.get("nombre_temporada", ""))).strip_edges()
 	var anio := int(tiempo.get("anio", 0))
 	var restante := maxi(0, duracion - dia_actual)
 	var siguiente := _obtener_siguiente_estacion(str(tiempo.get("estacion_id", "")))
@@ -134,6 +140,14 @@ func _actualizar_calendario() -> void:
 		numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		celda.add_child(numero)
 		_grid.add_child(celda)
+
+
+func _al_cambiar_dia(_dia: int, _anio: int) -> void:
+	_actualizar_calendario()
+
+
+func _al_cambiar_estacion(_estacion: Dictionary) -> void:
+	_actualizar_calendario()
 
 
 func _obtener_siguiente_estacion(id_actual: String) -> String:
