@@ -1507,7 +1507,7 @@ func _preparar_reloj_calendario() -> void:
 func _preparar_boton_monedas() -> void:
 	_coin_button = Button.new()
 	_coin_button.name = "CoinBalance"
-	_coin_button.custom_minimum_size = Vector2(112.0, 38.0)
+	_coin_button.custom_minimum_size = Vector2(132.0, 38.0)
 	_coin_button.text = "Monedas: %d" % GameState.obtener_dinero()
 	PIXEL_UI_THEME.apply(_coin_button)
 	add_child(_coin_button)
@@ -1554,6 +1554,7 @@ func _actualizar_layout_hud_superior() -> void:
 		_clock_panel.custom_minimum_size = clock_size
 	if is_instance_valid(_coin_button):
 		_coin_button.position = Vector2(12.0, 76.0) if movil else Vector2(16.0, 16.0)
+		_coin_button.size = Vector2(132.0, 38.0)
 
 
 
