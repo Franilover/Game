@@ -328,6 +328,7 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 	# historial con copias idénticas. Se actualizan el último intercambio y
 	# el contador para que el selector pueda dar prioridad a temas menos usados.
 	if tipo == "tema_conversacion" and not clave.is_empty():
+		var pareja_tema := str(nuevo_recuerdo.get("con_personaje", "")).strip_edges().to_lower()
 		for i in range(lista.size()):
 			if not lista[i] is Dictionary:
 				continue
@@ -335,6 +336,7 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 			if (
 				str(candidato_existente.get("tipo", "")) == "tema_conversacion"
 				and str(candidato_existente.get("clave", "")).strip_edges() == clave
+				and str(candidato_existente.get("con_personaje", "")).strip_edges().to_lower() == pareja_tema
 			):
 				indice_existente = i
 				break
@@ -385,6 +387,134 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 	recuerdos[personaje_id] = lista
 	_game_state.call("guardar_recuerdos_sociales", recuerdos)
 	recuerdo_registrado.emit(personaje_id, nuevo_recuerdo.duplicate(true))
+
+
+## Registra un tema tratado entre dos habitantes. El historial es individual:
+## la familiaridad de A con B no se copia a la relación de A con C.
+func registrar_tema_conversacion_npc(
+	personaje_id: String,
+	pareja_id: String,
+	clave_tema: String,
+	resultado: float = 0.0,
+	momento: String = ""
+) -> bool:
+	var id := personaje_id.strip_edges()
+	var pareja := pareja_id.strip_edges()
+	var clave := clave_tema.strip_edges().to_lower()
+	if id.is_empty() or pareja.is_empty() or id == pareja or clave.is_empty():
+		return false
+	var fecha := momento.strip_edges()
+	if fecha.is_empty():
+		fecha = _obtener_clave_dia_actual()
+	registrar_recuerdo(id, {
+		"tipo": "tema_conversacion",
+		"clave": clave,
+		"con_personaje": pareja,
+		"resultado": clampf(resultado, -1.0, 1.0),
+		"importancia": 1.0,
+		"momento": fecha
+	})
+	return true
+
+
+func obtener_temas_conversacion_npc(personaje_id: String, pareja_id: String) -> Array:
+	var id := personaje_id.strip_edges()
+	var pareja := pareja_id.strip_edges().to_lower()
+	if id.is_empty() or pareja.is_empty():
+		return []
+	var resultado: Array = []
+	for recuerdo_variant in obtener_recuerdos(id):
+		if not recuerdo_variant is Dictionary:
+			continue
+		var recuerdo := recuerdo_variant as Dictionary
+		if (
+			str(recuerdo.get("tipo", "")) == "tema_conversacion"
+			and str(recuerdo.get("con_personaje", "")).strip_edges().to_lower() == pareja
+		):
+			resultado.append(recuerdo.duplicate(true))
+	return resultado
+
+
+## Devuelve una afinidad acotada para elegir si retomar un tema con esa persona.
+## Un valor alto significa que fue bien recibido; uno bajo aconseja no insistir.
+func evaluar_tema_conversacion_npc(
+	personaje_id: String,
+	pareja_id: String,
+	clave_tema: String
+) -> Dictionary:
+	var clave := clave_tema.strip_edges().to_lower()
+	for recuerdo_variant in obtener_temas_conversacion_npc(personaje_id, pareja_id):
+		if not recuerdo_variant is Dictionary:
+			continue
+		var recuerdo := recuerdo_variant as Dictionary
+		if str(recuerdo.get("clave", "")).strip_edges().to_lower() != clave:
+			continue
+		return {
+			"conocido": true,
+			"veces": maxi(1, int(recuerdo.get("veces_conversado", 1))),
+			"afinidad": clampf(float(recuerdo.get("resultado", 0.0)), -1.0, 1.0),
+			"ultimo_momento": str(recuerdo.get("momento", "")),
+			"recomendacion": "retomar" if float(recuerdo.get("resultado", 0.0)) >= 0.25 else ("evitar_insistir" if float(recuerdo.get("resultado", 0.0)) <= -0.25 else "alternar")
+		}
+	return {"conocido": false, "veces": 0, "afinidad": 0.0, "recomendacion": "presentar"}
+
+
+## Registra algo que un habitante confió a otro. Por defecto no puede
+## transmitirse: requiere autorización explícita del confidente.
+func registrar_confidencia_npc(
+	receptor_id: String,
+	confidente_id: String,
+	conocimiento: Dictionary
+) -> bool:
+	var receptor := receptor_id.strip_edges()
+	var confidente := confidente_id.strip_edges()
+	var clave := str(conocimiento.get("clave", "")).strip_edges()
+	if receptor.is_empty() or confidente.is_empty() or receptor == confidente or clave.is_empty():
+		return false
+	var confidencia := conocimiento.duplicate(true)
+	confidencia["privacidad"] = "confidencial"
+	confidencia["confidencia_de"] = confidente
+	confidencia["no_revelar"] = true
+	if not confidencia.has("destinatarios_autorizados"):
+		confidencia["destinatarios_autorizados"] = []
+	return registrar_conocimiento_npc(receptor, confidencia)
+
+
+func obtener_confidencias_npc(personaje_id: String, confidente_id: String = "") -> Array:
+	var resultado: Array = []
+	var confidente := confidente_id.strip_edges()
+	for conocimiento_variant in obtener_conocimientos_npc(personaje_id):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		if str(conocimiento.get("privacidad", "")).to_lower() != "confidencial":
+			continue
+		if not confidente.is_empty() and str(conocimiento.get("confidencia_de", "")) != confidente:
+			continue
+		resultado.append(conocimiento.duplicate(true))
+	return resultado
+
+
+func puede_compartir_conocimiento_npc(origen_id: String, destino_id: String, clave: String) -> bool:
+	var origen := origen_id.strip_edges()
+	var destino := destino_id.strip_edges()
+	if origen.is_empty() or destino.is_empty() or origen == destino:
+		return false
+	var conocimiento := obtener_conocimiento_npc(origen, clave)
+	if conocimiento.is_empty():
+		return false
+	var privacidad := str(conocimiento.get("privacidad", "publico")).strip_edges().to_lower()
+	if privacidad not in ["personal", "privado", "confidencial"]:
+		return true
+	if not bool(conocimiento.get("no_revelar", privacidad == "confidencial")):
+		return true
+	var autorizados_variant: Variant = conocimiento.get("destinatarios_autorizados", [])
+	if not autorizados_variant is Array:
+		return false
+	for autorizado_variant in autorizados_variant as Array:
+		if str(autorizado_variant).strip_edges() == destino:
+			return true
+	return false
 
 
 func obtener_recuerdos(personaje_id: String) -> Array:
@@ -1111,6 +1241,8 @@ func transmitir_conocimiento_npc(
 		var conocimiento := (conocimiento_variant as Dictionary).duplicate(true)
 		if str(conocimiento.get("clave", "")) != clave:
 			continue
+		if not puede_compartir_conocimiento_npc(origen, destino, clave):
+			return false
 		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
 		var cadena: Array = cadena_variant.duplicate(true) if cadena_variant is Array else []
 		cadena.append({
