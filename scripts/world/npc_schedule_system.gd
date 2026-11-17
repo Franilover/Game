@@ -540,6 +540,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			"activo": true
 		}
 		npc.set_meta("evento_comunitario_actual", clave_evento)
+		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
 		_notificar_evento_comunitario(evento_comunitario)
 	else:
 		npc.set_meta("evento_comunitario_actual", "")
@@ -2657,6 +2658,25 @@ func _obtener_desplazamiento_evento(
 	]
 	var indice := posmod(hash(nombre_npc.strip_edges().to_lower() + "|" + clave_evento + "|" + fecha), posiciones.size())
 	return posiciones[indice]
+
+
+func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(_relationship_system):
+		return
+	if not _relationship_system.has_method("registrar_observacion_evento_npc"):
+		return
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var anio := int(tiempo.get("anio", 0))
+	var dia := int(tiempo.get("dia", 0))
+	if anio <= 0 or dia <= 0:
+		return
+	var evento_con_fecha := evento.duplicate(true)
+	evento_con_fecha["evento_id"] = "%s:%d:%d" % [str(evento.get("clave", "evento")), anio, dia]
+	var momento := "%d:%d" % [anio, dia]
+	_relationship_system.call("registrar_observacion_evento_npc", personaje_id, evento_con_fecha, momento)
 
 
 func _notificar_evento_comunitario(evento: Dictionary) -> void:
