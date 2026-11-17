@@ -10,6 +10,7 @@ signal cinematica_reunion_nocturna_solicitada(clave: String, npc_a: String, npc_
 const INTERVALO_BUSQUEDA := 0.5
 const DISTANCIA_ENTRE_NPC := 180.0
 const DISTANCIA_JUGADOR := 220.0
+const DISTANCIA_ACTIVACION_HISTORIA := 520.0
 const DISTANCIA_ENTRADA_OBSERVACION := DISTANCIA_JUGADOR + 80.0
 const DISTANCIA_SALIDA_OBSERVACION := DISTANCIA_JUGADOR + 120.0
 const DISTANCIA_INICIATIVA := 112.0
@@ -1792,7 +1793,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 			continue
 		if local_a.global_position.distance_to(local_b.global_position) > DISTANCIA_ENTRE_NPC:
 			continue
-		if jugador.global_position.distance_to(local_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(local_b.global_position) > DISTANCIA_JUGADOR:
+		if jugador.global_position.distance_to(local_a.global_position) > DISTANCIA_ACTIVACION_HISTORIA and jugador.global_position.distance_to(local_b.global_position) > DISTANCIA_ACTIVACION_HISTORIA:
 			continue
 		_iniciar_conversacion(conversacion_local)
 		_vistas_por_dia[clave_local] = true
@@ -1816,7 +1817,7 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 				continue
 			if npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC:
 				continue
-			if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_JUGADOR and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_JUGADOR:
+			if jugador.global_position.distance_to(npc_a.global_position) > DISTANCIA_ACTIVACION_HISTORIA and jugador.global_position.distance_to(npc_b.global_position) > DISTANCIA_ACTIVACION_HISTORIA:
 				continue
 			_iniciar_conversacion(conversacion)
 			_vistas_por_dia[clave] = true
@@ -2398,12 +2399,17 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 			_finalizar_conversacion()
 			return
 		distancia_jugador = minf(distancia_jugador, jugador.global_position.distance_to(npc_c.global_position))
+	var distancia_entrada := DISTANCIA_ENTRADA_OBSERVACION
+	var distancia_salida := DISTANCIA_SALIDA_OBSERVACION
+	if es_historia_activa:
+		distancia_entrada = DISTANCIA_ACTIVACION_HISTORIA
+		distancia_salida = DISTANCIA_ACTIVACION_HISTORIA + 60.0
 	if _jugador_observando_conversacion:
-		if distancia_jugador > DISTANCIA_SALIDA_OBSERVACION:
+		if distancia_jugador > distancia_salida:
 			_ocultar_burbujas()
 			_jugador_observando_conversacion = false
 			return
-	elif distancia_jugador > DISTANCIA_ENTRADA_OBSERVACION:
+	elif distancia_jugador > distancia_entrada:
 		_ocultar_burbujas()
 		return
 	else:
