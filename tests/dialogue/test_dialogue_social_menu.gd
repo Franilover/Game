@@ -134,6 +134,25 @@ func _run() -> void:
 	add_child(dialogo)
 	var conversacion_visual := NPCConversationSystemScript.new() as NPCConversationSystem
 	add_child(conversacion_visual)
+	conversacion_visual._npc_por_nombre = {"mara": npc}
+	conversacion_visual._conversacion_activa = {
+		"clave": "historia_dialogo_compartido_test",
+		"tipo_contenido": "historia",
+		"lineas": [
+			{"npc": "mara", "texto": "Esta escena debe usar el diálogo normal."},
+			{"npc": "ivo", "texto": "Y conservar el cambio de hablante."}
+		],
+		"fondo": "res://assets/art/backgrounds/historia_test.png"
+	}
+	var datos_historia := conversacion_visual.obtener_dialogo_historia("historia_dialogo_compartido_test")
+	var lineas_historia: Array = datos_historia.get("lineas", [])
+	if lineas_historia.size() != 2:
+		errores.append("La historia no se convirtió en una secuencia completa de diálogo compartido.")
+	elif str(lineas_historia[0].get("hablante", "")) != "Mara" or str(lineas_historia[1].get("hablante", "")) != "ivo":
+		errores.append("La conversión de historia no conservó los hablantes de cada intervención.")
+	if str(datos_historia.get("fondo", "")) != "res://assets/art/backgrounds/historia_test.png":
+		errores.append("La conversión de historia perdió la referencia opcional a su imagen de fondo.")
+	conversacion_visual._conversacion_activa.clear()
 	var burbuja_prueba := conversacion_visual._obtener_burbuja(npc)
 	var texto_burbuja := burbuja_prueba.get_node_or_null("Text") as Label
 	if texto_burbuja == null or texto_burbuja.has_theme_font_override("font"):
