@@ -1421,7 +1421,7 @@ func establecer_modo_historia(activo: bool) -> void:
 		_calendar_panel.visible = not activo
 	# El selector de compañero no forma parte del HUD de Historia.
 	if is_instance_valid(_garumi_companero_slot):
-		_garumi_companero_slot.visible = not activo
+		_garumi_companero_slot.visible = not activo and not _es_interfaz_movil()
 	if is_instance_valid(_garumi_selector_panel):
 		_garumi_selector_panel.visible = false if activo else _r_selector_abierto
 	if activo:
