@@ -357,9 +357,17 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	retrato_cara.texture = textura_retrato
 	if textura_retrato == null:
-		retrato_cara.custom_minimum_size = Vector2(0.0, 94.0)
 		retrato_cara.tooltip_text = "Retrato no disponible"
-	columna_retrato.add_child(retrato_cara)
+		var iniciales_retrato := Label.new()
+		iniciales_retrato.name = "CharacterFaceFallback"
+		iniciales_retrato.custom_minimum_size = Vector2(0.0, 94.0)
+		iniciales_retrato.text = nombre.substr(0, 2).to_upper()
+		iniciales_retrato.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		iniciales_retrato.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		iniciales_retrato.add_theme_font_size_override("font_size", 20)
+		columna_retrato.add_child(iniciales_retrato)
+	else:
+		columna_retrato.add_child(retrato_cara)
 
 	var columna_mapa := VBoxContainer.new()
 	columna_mapa.name = "MapSpriteColumn"
@@ -385,7 +393,16 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	sprite_mapa.texture = textura_mapa
 	if textura_mapa == null:
 		sprite_mapa.tooltip_text = "Sprite de mapa no disponible"
-	columna_mapa.add_child(sprite_mapa)
+		var sin_sprite := Label.new()
+		sin_sprite.name = "MapSpriteFallback"
+		sin_sprite.custom_minimum_size = Vector2(0.0, 94.0)
+		sin_sprite.text = "—"
+		sin_sprite.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sin_sprite.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		sin_sprite.add_theme_font_size_override("font_size", 18)
+		columna_mapa.add_child(sin_sprite)
+	else:
+		columna_mapa.add_child(sprite_mapa)
 
 	var titulo := Button.new()
 	titulo.name = "CharacterName"
