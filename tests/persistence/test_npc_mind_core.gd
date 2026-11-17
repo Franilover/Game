@@ -280,6 +280,37 @@ func _run() -> void:
 	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
 
+ 	# La privacidad y el consentimiento se respetan al retransmitir información.
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "secreto_mara",
+		"tipo": "confidencia",
+		"compartible": true,
+		"privacidad": "confidencial",
+		"fuente": "mara"
+	})
+	if relationship.transmitir_conocimiento_npc("ivo", "narel", "secreto_mara"):
+		errores.append("Un NPC retransmitió una confidencia marcada como confidencial.")
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "asunto_personal",
+		"tipo": "noticia",
+		"compartible": true,
+		"privacidad": "personal",
+		"permiso_transmision": true,
+		"fuente": "ivo"
+	})
+	if relationship.transmitir_conocimiento_npc("ivo", "narel", "asunto_personal"):
+		errores.append("Se compartió información personal sin suficiente confianza.")
+	relationship.registrar_interaccion_entre_npc("ivo", "narel", {"confianza": 35.0})
+	if not relationship.transmitir_conocimiento_npc("ivo", "narel", "asunto_personal"):
+		errores.append("No se pudo compartir información personal con permiso y confianza suficientes.")
+
+	# Los temas recordados quedan ligados a la persona con quien se hablaron.
+	relationship.registrar_tema_conversacion_npc("mara", "ivo", "la cantera", "2026-11-16T12:00:00")
+	if relationship.obtener_ultimo_tema_conversacion_npc("mara", "ivo").get("tema", "") != "la cantera":
+		errores.append("Mara no recordó un tema conversado con Ivo.")
+	if not relationship.obtener_ultimo_tema_conversacion_npc("mara", "narel").is_empty():
+		errores.append("Mara atribuyó a Narel un tema que sólo conversó con Ivo.")
+
 	var promesa_id := relationship.registrar_promesa_entre_npc("ivo", "mara", {
 		"clave": "devolver_libro",
 		"descripcion": "Devolver el libro prestado"
