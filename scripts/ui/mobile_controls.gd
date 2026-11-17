@@ -162,8 +162,8 @@ func _calcular_layout_movil(viewport_size: Vector2) -> Dictionary:
 	layout["Actions/Inventory"] = Rect2(Vector2(margen, margen), Vector2.ONE * accion)
 	if apilar_utilidades:
 		layout["Actions/Map"] = Rect2(Vector2(margen + accion + gap, margen), Vector2.ONE * pequeno)
-		layout["Actions/Missions"] = Rect2(Vector2(margen, margen + pequeno + gap), Vector2.ONE * pequeno)
-		layout["Actions/Pause"] = Rect2(Vector2(margen + pequeno + 6.0, margen + pequeno + gap), Vector2.ONE * pequeno)
+		layout["Actions/Missions"] = Rect2(Vector2(margen, margen + accion + gap), Vector2.ONE * pequeno)
+		layout["Actions/Pause"] = Rect2(Vector2(margen + pequeno + 6.0, margen + accion + gap), Vector2.ONE * pequeno)
 	else:
 		var x := margen + accion + gap
 		layout["Actions/Map"] = Rect2(Vector2(x, margen), Vector2.ONE * pequeno)
@@ -189,8 +189,9 @@ func _calcular_layout_movil(viewport_size: Vector2) -> Dictionary:
 	layout["Actions/Primary"] = Rect2(Vector2(x_grupo + (accion + gap) * 2.0, y_inferior), Vector2.ONE * accion)
 
 	# Meditar queda encima del joystick, separado de la cuadrícula de combate.
-	var y_meditar := maxf(margen, joystick_pos.y - pequeno - gap)
-	layout["Actions/Meditate"] = Rect2(Vector2(margen, y_meditar), Vector2.ONE * pequeno)
+	var x_meditar := margen + joystick_size + gap
+	var y_meditar := maxf(margen, joystick_pos.y - pequeno - gap - 8.0)
+	layout["Actions/Meditate"] = Rect2(Vector2(x_meditar, y_meditar), Vector2.ONE * pequeno)
 	return layout
 
 
