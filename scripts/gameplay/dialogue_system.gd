@@ -3605,7 +3605,7 @@ func _crear_interfaz() -> void:
 	_portrait_frame = PanelContainer.new()
 	_portrait_frame.name = "SpeakerPortraitFrame"
 	_portrait_frame.custom_minimum_size = Vector2(188, 188)
-	_portrait_frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_portrait_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_portrait_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var estilo_retrato := PIXEL_UI_THEME.button_surface_style()
 	if estilo_retrato != null:
@@ -3642,7 +3642,7 @@ func _crear_interfaz() -> void:
 	var panel_texto := PanelContainer.new()
 	panel_texto.name = "SpeakerTextButtonSurface"
 	panel_texto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel_texto.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	panel_texto.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var estilo_texto := PIXEL_UI_THEME.button_surface_style()
 	if estilo_texto != null:
 		panel_texto.add_theme_stylebox_override("panel", estilo_texto)
