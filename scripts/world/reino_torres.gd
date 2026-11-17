@@ -17,6 +17,8 @@ const MUEBLE_ESTANTERIA_PAN: Texture2D = preload("res://assets/art/places/Mueble
 const MUEBLE_MESA_DOCUMENTOS: Texture2D = preload("res://assets/art/places/Muebles/mesa documentos.png")
 const MUEBLE_MESA_PLATOS: Texture2D = preload("res://assets/art/places/Muebles/mesa platos.png")
 const MERCADO_PUESTO: Texture2D = preload("res://assets/art/places/Mercado Puesto.png")
+const PRODUCTO_PAN: Texture2D = preload("res://assets/art/items/Pan.png")
+const PRODUCTO_MANZANA: Texture2D = preload("res://assets/art/items/Manzana.png")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
@@ -822,12 +824,16 @@ func _actualizar_decoracion_evento_torres() -> void:
 	var variante := posmod(dia, 4)
 	match evento:
 		"mercado":
-			# Dos puestos laterales mantienen libre el pozo y el eje central.
+			# Mercadería limitada a los sprites originales de pan y manzana.
 			_crear_puesto_evento("PuestoMercadoOeste", Vector2(-112.0, -54.0), false, 4)
-			_crear_sprite_evento("MercanciaMercadoOeste", "mercancia", variante, Vector2(-112.0, -42.0), Vector2.ONE, 5)
+			_crear_producto_puesto_evento("PanMercadoOeste", PRODUCTO_PAN, Vector2(-118.0, -42.0), 5)
+			_crear_producto_puesto_evento("ManzanaMercadoOeste", PRODUCTO_MANZANA, Vector2(-105.0, -42.0), 5)
 			_crear_puesto_evento("PuestoMercadoEste", Vector2(112.0, -54.0), true, 4)
-			_crear_sprite_evento("MercanciaMercadoEste", "mercancia", variante + 2, Vector2(112.0, -42.0), Vector2.ONE, 5)
+			_crear_producto_puesto_evento("PanMercadoEste", PRODUCTO_PAN, Vector2(105.0, -42.0), 5)
+			_crear_producto_puesto_evento("ManzanaMercadoEste", PRODUCTO_MANZANA, Vector2(118.0, -42.0), 5)
 		"comida":
+			# La mesa con platos ya contiene su comida: no se superponen
+			# raciones, adornos ni asientos generados por código.
 			for indice in range(3):
 				var x := -104.0 + float(indice) * 104.0
 				var mesa := Sprite2D.new()
@@ -838,15 +844,9 @@ func _actualizar_decoracion_evento_torres() -> void:
 				mesa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				mesa.z_index = 4
 				_decoracion_evento_torres.add_child(mesa)
-				_crear_sprite_evento("ComidaMesa_%02d" % indice, "comida", variante + indice, Vector2(x, 54.0), Vector2.ONE, 5)
-				_agregar_sprite_mueble(_decoracion_evento_torres, "AsientoComida_%02d" % indice, MUEBLE_SILLA, Vector2(x, 112.0), Vector2.ONE, 5)
 		"temporada":
-			var estacion := str(tiempo.get("estacion", "temporada")).to_lower()
-			var variante_estacional := absi(estacion.hash()) % 4
-			_crear_sprite_evento("GuirnaldaNorteOeste", "guirnalda", variante_estacional, Vector2(-112.0, -112.0), Vector2.ONE, 5)
-			_crear_sprite_evento("GuirnaldaNorteEste", "guirnalda", variante_estacional + 1, Vector2(112.0, -112.0), Vector2.ONE, 5)
-			_crear_sprite_evento("FloresOeste", "flores", variante_estacional, Vector2(-158.0, 108.0), Vector2.ONE, 5)
-			_crear_sprite_evento("FloresEste", "flores", variante_estacional + 2, Vector2(158.0, 108.0), Vector2.ONE, 5)
+			# La celebración se anuncia, pero sus adornos esperan sprites propios.
+			pass
 
 
 func _crear_puesto_evento(nombre: String, posicion: Vector2, invertir: bool, z: int) -> void:
@@ -869,23 +869,19 @@ func _crear_puesto_evento(nombre: String, posicion: Vector2, invertir: bool, z: 
 	_decoracion_evento_torres.add_child(sprite)
 
 
-func _crear_sprite_evento(
-	nombre: String,
-	tipo: String,
-	variante: int,
-	posicion: Vector2,
-	escala: Vector2,
-	z: int
-) -> void:
-	if not is_instance_valid(_decoracion_evento_torres):
+func _crear_producto_puesto_evento(nombre: String, textura: Texture2D, posicion: Vector2, z: int) -> void:
+	if not is_instance_valid(_decoracion_evento_torres) or textura == null:
 		return
 	var sprite := Sprite2D.new()
 	sprite.name = nombre
-	sprite.texture = TORRES_PIXEL_ART.crear_decoracion(tipo, variante)
+	sprite.texture = textura
 	sprite.position = posicion
-	sprite.scale = escala
 	sprite.centered = true
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var tamano := textura.get_size()
+	if tamano.x > 0.0 and tamano.y > 0.0:
+		var escala := minf(13.0 / tamano.x, 13.0 / tamano.y)
+		sprite.scale = Vector2.ONE * escala
 	sprite.z_index = z
 	_decoracion_evento_torres.add_child(sprite)
 
@@ -1037,29 +1033,62 @@ func _suavizar_luz(valor: float) -> float:
 
 
 func _cargar_puestos_pixelart() -> void:
-	_agrupar_poligonos_pixelart(
+	# Los puestos usan el sprite dibujado para Torres; no se rasterizan
+	# toldos, mostradores ni franjas mediante el generador procedural.
+	_agrupar_poligonos_con_textura(
 		["MarketCounter", "MarketCounterTop", "MarketAwningBase", "MarketAwningStripe1", "MarketAwningStripe2", "MarketAwningStripe3"],
-		"puesto", 0
+		MERCADO_PUESTO, false
 	)
-	_agrupar_poligonos_pixelart(
+	_agrupar_poligonos_con_textura(
 		["FishStall", "FishStallAwning", "FishStallStripe"],
-		"puesto_azul", 1
+		MERCADO_PUESTO, true
 	)
 	for indice in range(1, 5):
-		_agrupar_poligonos_pixelart(
+		_agrupar_poligonos_con_textura(
 			["MarketExtension%d" % indice, "MarketExtensionAwning%d" % indice, "MarketExtensionLegL%d" % indice, "MarketExtensionLegR%d" % indice],
-			"puesto" if indice % 2 == 0 else "puesto_azul", indice
+			MERCADO_PUESTO, indice % 2 == 1
 		)
+	# El pozo ya tiene sprite propio en la escena.
 	if get_node_or_null("Sprite_pozo") != null:
 		_ocultar_placeholder(["WellShadow", "WellOuter", "WellWater", "WellLipTop"])
-	else:
-		_agrupar_poligonos_pixelart(
-			["WellShadow", "WellOuter", "WellWater", "WellLipTop"],
-			"pozo", 0
-		)
 	_ocultar_placeholder(["LampWestPost", "LampEastPost"])
 	_agrupar_poligonos_pixelart(["LampWestGlow"], "lampara", 0)
 	_agrupar_poligonos_pixelart(["LampEastGlow"], "lampara", 1)
+
+
+func _agrupar_poligonos_con_textura(nombres: Array, textura: Texture2D, invertir: bool) -> void:
+	if textura == null:
+		return
+	var limites := Rect2()
+	var primero := true
+	var z_mayor := -100
+	var encontrados: Array[Polygon2D] = []
+	for valor: Variant in nombres:
+		var poligono := get_node_or_null(NodePath(String(valor))) as Polygon2D
+		if not is_instance_valid(poligono) or poligono.polygon.size() < 3:
+			continue
+		var limite_poligono := _limites_de_poligono(poligono)
+		if primero:
+			limites = limite_poligono
+			primero = false
+		else:
+			limites = limites.merge(limite_poligono)
+		z_mayor = maxi(z_mayor, poligono.z_index)
+		encontrados.append(poligono)
+	if primero:
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = "PuestoSprite_" + str(nombres[0])
+	sprite.texture = textura
+	sprite.position = limites.get_center()
+	sprite.centered = true
+	sprite.flip_h = invertir
+	sprite.scale = Vector2(limites.size.x / textura.get_width(), limites.size.y / textura.get_height())
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = z_mayor
+	add_child(sprite)
+	for poligono: Polygon2D in encontrados:
+		poligono.visible = false
 
 
 func _agrupar_poligonos_pixelart(nombres: Array, tipo: String, variante: int) -> void:
