@@ -702,7 +702,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Si la actividad cambia pero sigue en el mismo edificio, permanece dentro.
 	# Durante la reunión nocturna, además rota entre pequeños grupos del salón.
 	if esta_dentro and edificio_id == edificio_actual:
-		_actualizar_rutina_interior(npc, edificio_actual, minutos)
+		_actualizar_rutina_interior(npc, edificio_actual, minutos, actividad)
 		npc.set_meta("actividad_actual", actividad)
 		_actualizar_animacion_actividad_interior(npc)
 		if clave_rutina == "reunion_nocturna_castillo":
@@ -1242,7 +1242,7 @@ static func obtener_preferencias_mueble_actividad(actividad: String) -> Array[St
 
 ## Pequeños recorridos dentro del edificio: los NPC no quedan congelados
 ## durante toda una franja horaria. Se activan sólo al abrir ese interior.
-func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int) -> void:
+func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int, actividad: String) -> void:
 	if not is_instance_valid(npc):
 		return
 	if bool(npc.get_meta("cinematica_npc_activa", false)) or bool(npc.get_meta("_conversacion_ambiental_activa", false)):
@@ -1284,7 +1284,6 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	# Primero busca un puesto junto al mueble que corresponde a la tarea.
 	# Si el edificio no tiene ese mueble, conserva los puntos de paseo generales.
 	var puntos: Array[Vector2] = []
-	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", "")))
 	var preferencias := obtener_preferencias_mueble_actividad(actividad)
 	if not preferencias.is_empty():
 		for hijo in npc.get_parent().get_children():
