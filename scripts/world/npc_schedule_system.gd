@@ -1749,7 +1749,11 @@ func _aplicar_variacion_tiempo_libre(
 	if personaje_id.is_empty():
 		personaje_id = nombre
 
-	var opciones: Array = actividades_por_personaje.get("opciones", [])
+	var opciones: Array = (actividades_por_personaje.get("opciones", []) as Array).duplicate(true)
+	var contexto_habito := "ocio_tramo_%s" % tramo
+	for opcion_variant in opciones:
+		if opcion_variant is Dictionary:
+			(opcion_variant as Dictionary)["contexto_habito"] = contexto_habito
 	var elegida: Dictionary = {}
 	if is_instance_valid(mind) and mind.has_method("elegir_actividad"):
 		var perfil: Dictionary = {}
@@ -1773,7 +1777,7 @@ func _aplicar_variacion_tiempo_libre(
 				var necesidades_actuales: Dictionary = mind.call("obtener_necesidades", personaje_id)
 				var presion_final := float(necesidades_actuales.get(necesidad_anterior, presion_inicial))
 				resultado = clampf((presion_inicial - presion_final) / 25.0, -1.0, 1.0)
-				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado)
+				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado, str(npc.get_meta("npc_mind_contexto_habito", "general")), clave_dia)
 			var ubicacion_anterior := str(npc.get_meta("npc_mind_ubicacion", "")).strip_edges().to_lower()
 			if not ubicacion_anterior.is_empty() and mind.has_method("registrar_resultado_lugar"):
 				mind.call("registrar_resultado_lugar", personaje_id, ubicacion_anterior, resultado)
@@ -1805,6 +1809,7 @@ func _aplicar_variacion_tiempo_libre(
 	resultado["variacion_diaria"] = clave_dia
 	npc.set_meta("npc_mind_decision_key", clave_decision)
 	npc.set_meta("npc_mind_actividad", actividad)
+	npc.set_meta("npc_mind_contexto_habito", contexto_habito)
 	npc.set_meta("npc_mind_ubicacion", ubicacion_elegida)
 	var necesidades_actividad: Dictionary = elegida.get("necesidades", {})
 	var necesidad_principal := ""
