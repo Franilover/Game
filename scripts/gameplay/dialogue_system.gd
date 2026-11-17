@@ -3,6 +3,7 @@ class_name DialogueSystem
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const NPC_MARKET_SHOP_SCRIPT = preload("res://scripts/ui/npc_market_shop.gd")
+const GARLIA_SHOP_UI_SCRIPT = preload("res://scripts/ui/shop_ui.gd")
 const NPC_VOICE_PROFILE = preload("res://scripts/gameplay/npc_voice_profile.gd")
 
 
@@ -396,7 +397,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	if _boton_preguntar_item != null:
 		_boton_preguntar_item.visible = not _dialogo_en_transito
 	if _boton_tienda_mercado != null:
-		_boton_tienda_mercado.visible = not _dialogo_en_transito and _es_horario_mercado()
+		_boton_tienda_mercado.visible = not _dialogo_en_transito and _puede_abrir_tienda_con_npc()
 	if not recuerdo_para_mencionar.is_empty() and relationship_system != null:
 		_recuerdo_pendiente_mostrar = recuerdo_para_mencionar.duplicate(true)
 		_personaje_recuerdo_pendiente = _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
@@ -640,8 +641,6 @@ func _mostrar_linea_actual() -> void:
 	_temporizador_lectura_transito = 0.0
 	_intervalo_caracter = INTERVALO_CARACTER_CAMINANDO if _dialogo_requiere_lectura_lenta() else 0.006
 	text_label.text = ""
-	if hint_label != null:
-		hint_label.text = "Toca para continuar" if DisplayServer.is_touchscreen_available() else "Clic / acción principal para continuar"
 	_actualizar_boton_accion()
 
 
@@ -3064,8 +3063,16 @@ func _es_horario_mercado() -> bool:
 	return posmod(dia - 1, 5) == 4 and minutos >= 540 and minutos < 1020
 
 
+func _puede_abrir_tienda_con_npc() -> bool:
+	if _es_horario_mercado():
+		return true
+	if not is_instance_valid(_fuente):
+		return false
+	return not GARLIA_SHOP_UI_SCRIPT.tienda_para_npc(_fuente).is_empty()
+
+
 func _abrir_tienda_mercado() -> void:
-	if not _abierto or _dialogo_en_transito or not _es_horario_mercado() or not is_instance_valid(_fuente):
+	if not _abierto or _dialogo_en_transito or not _puede_abrir_tienda_con_npc() or not is_instance_valid(_fuente):
 		return
 	if not is_instance_valid(_inventario):
 		return
@@ -3088,7 +3095,8 @@ func _abrir_tienda_mercado() -> void:
 	_tienda_mercado.name = "NPCMarketShop"
 	_tienda_mercado.z_index = 40
 	_tienda_mercado.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_tienda_mercado.configurar(_fuente, _inventario, world_items)
+	var tienda_edificio := GARLIA_SHOP_UI_SCRIPT.tienda_para_npc(_fuente)
+	_tienda_mercado.configurar(_fuente, _inventario, world_items, tienda_edificio)
 	_tienda_mercado.solicitar_cierre.connect(_cerrar_tienda_mercado)
 	dialogue_panel.add_child(_tienda_mercado)
 	if _dialogue_content_row != null:
@@ -3563,14 +3571,9 @@ func _crear_interfaz() -> void:
 	text_label.add_theme_font_size_override("font_size", 13)
 	column.add_child(text_label)
 
-	hint_label = Label.new()
-	hint_label.name = "DialogueContinueHint"
-	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hint_label.add_theme_color_override("font_color", Color(0.62, 0.55, 0.43, 1.0))
-	hint_label.add_theme_font_size_override("font_size", 9)
-	column.add_child(hint_label)
+	# La continuación se realiza con los controles habituales; no se muestra
+	# texto auxiliar que compita visualmente con el diálogo.
+	hint_label = null
 
 	_botones_accion = HBoxContainer.new()
 	_botones_accion.name = "DialogueActions"
@@ -3782,8 +3785,6 @@ func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
 		speaker_label.add_theme_font_size_override("font_size", 13 if movil else 14)
 	if text_label != null:
 		text_label.add_theme_font_size_override("font_size", 12 if compacto else 13)
-	if hint_label != null:
-		hint_label.add_theme_font_size_override("font_size", 8 if movil else 9)
 	if action_button != null:
 		action_button.custom_minimum_size = Vector2(110 if compacto else (140 if movil else 180), 32 if movil else 34)
 	if cancel_button != null:
