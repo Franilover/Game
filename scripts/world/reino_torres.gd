@@ -1801,7 +1801,7 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 # La estancia usa el calendario jugable: un mes equivale a 30 días del mundo.
 # El vencimiento se guarda como día absoluto y nunca depende del reloj del dispositivo.
 func _obtener_dia_absoluto_mundo() -> int:
-	var atmosfera := get_node_or_null("/root/WorldAtmosphere") as WorldAtmosphere
+	var atmosfera := GameState._world_atmosphere as WorldAtmosphere
 	if not is_instance_valid(atmosfera) or not bool(atmosfera.obtener_tiempo().get("calendario_cargado", false)):
 		return -1
 	return atmosfera.anio * maxi(atmosfera.dias_por_anio, 1) + atmosfera.dia_del_anio
