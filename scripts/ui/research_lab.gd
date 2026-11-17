@@ -32,7 +32,7 @@ func configurar(inventario: InventoryController, estacion_id: String) -> void:
 
 
 func _crear_interfaz() -> void:
-	_titulo.text = str(TITULOS_ESTACION.get(_estacion_id, "LABORATORIO"))
+	_titulo.text = "ANÁLISIS DE OBJETOS"
 	_resultado_label.text = ""
 	_cargar_objetos()
 	_aplicar_estilo_laboratorio()
@@ -132,19 +132,17 @@ func _ejecutar_prueba() -> void:
 
 
 func _describir_analisis(objeto: Dictionary, nombre: String) -> String:
-		var descripcion := str(objeto.get("descripcion", "")).strip_edges()
-		var categoria := _obtener_categoria(objeto)
-		if categoria.is_empty() and descripcion.is_empty():
-			return "No hay datos."
-		var resultado := "Analizas %s." % nombre
-		if not categoria.is_empty():
-			resultado += " Está clasificado como %s." % categoria
-		if not descripcion.is_empty():
-			resultado += " " + descripcion
-		resultado += " La observación no modifica el objeto."
-		return resultado
-
-
+	var descripcion := str(objeto.get("descripcion", "")).strip_edges()
+	var categoria := _obtener_categoria(objeto)
+	if categoria.is_empty() and descripcion.is_empty():
+		return "No hay datos registrados sobre este objeto."
+	var resultado := "Analizas %s." % nombre
+	if not categoria.is_empty():
+		resultado += " Está clasificado como %s." % categoria
+	if not descripcion.is_empty():
+		resultado += " " + descripcion
+	resultado += " El análisis no modifica ni consume el objeto."
+	return resultado
 
 func _obtener_categoria(objeto: Dictionary) -> String:
 	var categoria: Variant = objeto.get("categoria", "")
