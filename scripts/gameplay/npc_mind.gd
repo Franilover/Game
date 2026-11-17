@@ -12,6 +12,7 @@ signal decision_evaluada(personaje_id: String, actividad: String, puntuacion: fl
 const VERSION_ESTADO: int = 1
 const CLAVE_GUARDADO: String = "npc_mentes"
 const MAX_OBJETIVOS: int = 5
+const MAX_HISTORIAL_ACTIVIDADES: int = 4
 const MAX_HORAS_POR_ACTUALIZACION: float = 48.0
 const NECESIDADES_INICIALES := {
 	"descanso": 20.0,
@@ -229,6 +230,7 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 		"objetivos": 0.0,
 		"estado_emocional": 0.0,
 		"memoria_lugar": 0.0,
+		"variedad": 0.0,
 		"prioridad": 0.0,
 		"coste": 0.0,
 		"riesgo": 0.0
@@ -258,6 +260,7 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 	componentes["estado_emocional"] = _calcular_afinidad_emocional(estado, actividad)
 	var ubicacion := str(actividad.get("ubicacion_clave", "")).strip_edges().to_lower()
 	componentes["memoria_lugar"] = obtener_preferencia_lugar(id, ubicacion) * 8.0
+	componentes["variedad"] = _calcular_penalizacion_repeticion(estado, clave)
 	componentes["prioridad"] = clampf(float(actividad.get("prioridad", 0.0)), 0.0, 100.0) * 0.1
 	componentes["coste"] = -clampf(float(actividad.get("coste", 0.0)), 0.0, 100.0) * 0.15
 	componentes["riesgo"] = -clampf(float(actividad.get("riesgo", 0.0)), 0.0, 100.0) * 0.2
@@ -271,6 +274,21 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 		"disponible": true,
 		"componentes": componentes
 	}
+
+
+## Penaliza suavemente actividades recientes para evitar rutinas repetitivas.
+## La penalización se desvanece con cada decisión y nunca bloquea una actividad.
+func _calcular_penalizacion_repeticion(estado: Dictionary, actividad: String) -> float:
+	var historial_variant: Variant = estado.get("historial_actividades", [])
+	if not historial_variant is Array:
+		return 0.0
+	var pesos := [7.0, 4.0, 2.0, 0.75]
+	var penalizacion := 0.0
+	var historial: Array = historial_variant
+	for indice in range(mini(historial.size(), MAX_HISTORIAL_ACTIVIDADES)):
+		if str(historial[indice]).strip_edges().to_lower() == actividad:
+			penalizacion -= float(pesos[indice])
+	return penalizacion
 
 
 ## La experiencia acumulada en un lugar influye gradualmente en futuras decisiones.
@@ -408,8 +426,15 @@ func elegir_actividad(personaje_id: String, actividades: Array) -> Dictionary:
 	if mejor.is_empty():
 		return {}
 	var estado := _obtener_estado_mutable(id)
+	var actividad_elegida := str(mejor.get("actividad", "")).strip_edges().to_lower()
+	var historial_variant: Variant = estado.get("historial_actividades", [])
+	var historial: Array = historial_variant.duplicate(true) if historial_variant is Array else []
+	historial.push_front(actividad_elegida)
+	while historial.size() > MAX_HISTORIAL_ACTIVIDADES:
+		historial.pop_back()
+	estado["historial_actividades"] = historial
 	estado["decisiones_tomadas"] = int(estado.get("decisiones_tomadas", 0)) + 1
-	estado["ultima_actividad_elegida"] = str(mejor.get("actividad", ""))
+	estado["ultima_actividad_elegida"] = actividad_elegida
 	_mentes[id] = estado
 	_guardar_mentes()
 	return mejor.duplicate(true)
@@ -545,6 +570,7 @@ func _crear_estado_inicial(perfil: Dictionary = {}) -> Dictionary:
 		"estado_emocional": {"animo": 0.0, "estres": 10.0, "energia": 75.0},
 		"aprendizaje": {},
 		"memoria_lugares": {},
+		"historial_actividades": [],
 		"objetivos": [],
 		"decisiones_tomadas": 0,
 		"ultima_actividad_elegida": ""
@@ -604,6 +630,18 @@ func _normalizar_estado(estado: Dictionary) -> void:
 	estado["rasgos"] = rasgos
 	if not estado.get("aprendizaje", {}) is Dictionary:
 		estado["aprendizaje"] = {}
+	if not estado.get("historial_actividades", []) is Array:
+		estado["historial_actividades"] = []
+	else:
+		var historial: Array = estado["historial_actividades"]
+		var normalizado: Array = []
+		for actividad_variant in historial:
+			var actividad := str(actividad_variant).strip_edges().to_lower()
+			if not actividad.is_empty():
+				normalizado.append(actividad)
+				if normalizado.size() >= MAX_HISTORIAL_ACTIVIDADES:
+					break
+		estado["historial_actividades"] = normalizado
 	if not estado.get("objetivos", []) is Array:
 		estado["objetivos"] = []
 	estado["version"] = VERSION_ESTADO
