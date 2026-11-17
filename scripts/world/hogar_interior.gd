@@ -20,6 +20,7 @@ const CATALOGO := {
 	"silla_derecha": {"nombre": "Silla de lado", "ruta": "res://assets/art/places/Muebles/Silla Derecha.png"},
 	"asiento": {"nombre": "Asiento", "ruta": "res://assets/art/places/Muebles/asiento.png"},
 	"estanteria_pan": {"nombre": "Estantería", "ruta": "res://assets/art/places/Muebles/estanteria con pan.png"},
+	"armario": {"nombre": "Armario", "ruta": "res://assets/art/places/Muebles/armario.png"},
 	"yunque": {"nombre": "Yunque", "ruta": "res://assets/art/places/Muebles/Yunque.png"},
 	"calendario": {"nombre": "Calendario", "ruta": "res://assets/art/places/Muebles/calendario.svg"}
 }
