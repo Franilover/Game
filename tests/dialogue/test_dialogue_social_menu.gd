@@ -376,6 +376,18 @@ func _run() -> void:
 	await get_tree().process_frame
 	camara_prueba.zoom = Vector2(2.0, 2.0)
 	director_prueba.configurar(jugador_prueba, dialogo, camara_prueba)
+	# Un NPC sin la metadata opcional cinematica_npc_activa debe poder
+	# congelarse y restaurarse sin provocar errores de Object.get_meta().
+	if npc.has_meta("cinematica_npc_activa"):
+		npc.remove_meta("cinematica_npc_activa")
+	director_prueba._guardar_estado_npc(npc)
+	if not npc.has_meta("cinematica_npc_activa"):
+		errores.append("La captura no marcó al NPC durante la cinemática.")
+	director_prueba._restaurar_estado_temporal()
+	if npc.has_meta("cinematica_npc_activa"):
+		errores.append("La restauración dejó metadata cinematica_npc_activa que antes no existía.")
+	if not npc.has_meta("rutina_en_transito") or not bool(npc.get_meta("rutina_en_transito")):
+		errores.append("La restauración no conservó la metadata previa de la rutina del NPC.")
 	# Incluso si un recurso antiguo solicita el modo en vivo, se normaliza a escena congelada.
 	if director_prueba._normalizar_modo_cinematica("en_vivo") != "planeada":
 		errores.append("El director todavía permite cinematográficas en tiempo real.")
