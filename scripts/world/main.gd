@@ -1802,13 +1802,22 @@ func _al_cinematica_narrativa_solicitada(
 	}
 	var escena_variant: Variant = escenas.get(clave, {"gesto_a":"asentir","gesto_b":"asentir"})
 	var escena: Dictionary = escena_variant
+	var datos_dialogo_historia: Dictionary = {}
+	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_method("obtener_dialogo_historia"):
+		datos_dialogo_historia = _npc_conversation_system.call("obtener_dialogo_historia", clave)
+	if datos_dialogo_historia.is_empty():
+		push_warning("Main: no se pudo preparar el diálogo de historia '%s'." % clave)
+		return
 	var zoom_actual := _camera.zoom.x
-	await _ejecutar_cinematica_intercambio_social(
+	var completada := await _ejecutar_cinematica_intercambio_social(
 		"relacion_%s_etapa_%d" % [clave, etapa], nombre_a, nombre_b, centro_real,
 		zoom_actual * (1.08 if etapa == 1 else 1.14),
 		str(escena.get("gesto_a", "asentir")), str(escena.get("gesto_b", "asentir")),
-		0.75, 0.25, maxf(0.5, duracion - 3.8), 0.6
+		0.75, 0.25, maxf(0.5, duracion - 3.8), 0.6,
+		{"npc": nombre_a, "datos": datos_dialogo_historia}
 	)
+	if completada and is_instance_valid(_npc_conversation_system):
+		_npc_conversation_system.call("finalizar_cinematica_historia", clave, true)
 
 
 
@@ -1937,10 +1946,11 @@ func _ejecutar_cinematica_intercambio_social(
 	duracion_camara: float,
 	pausa_antes: float,
 	pausa_despues: float,
-	duracion_gesto: float
-) -> void:
+	duracion_gesto: float,
+	dialogo_extra: Dictionary = {}
+) -> bool:
 	if not is_instance_valid(_cutscene_director):
-		return
+		return false
 	var es_encuentro_trio := clave.contains("encuentro_trio_mara_ivo_nima")
 	var tercero: Creature
 	if es_encuentro_trio:
@@ -1957,7 +1967,7 @@ func _ejecutar_cinematica_intercambio_social(
 		var centro_grupo := (npc_a_grupo.global_position + npc_b_grupo.global_position + tercero.global_position) / 3.0
 		var secuencia_grupo := load("res://resources/cutscenes/reunion_trio.tres") as CutsceneSequence
 		if is_instance_valid(secuencia_grupo):
-			await _cutscene_director.ejecutar_recurso(secuencia_grupo, {
+			return await _cutscene_director.ejecutar_recurso(secuencia_grupo, {
 				"clave": clave,
 				"npc_a": nombre_a,
 				"npc_b": nombre_b,
@@ -1966,8 +1976,8 @@ func _ejecutar_cinematica_intercambio_social(
 				"y": centro_grupo.y,
 				"zoom": zoom,
 				"duracion_camara": duracion_camara
-			}, "planeada")
-			return
+			}, "planeada", dialogo_extra)
+			return false
 	var ruta_secuencia := "res://resources/cutscenes/intercambio_con_tercero.tres" if usar_tercero else ("res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres")
 	var invertir_turno := posmod(hash(nombre_a + "|" + nombre_b + "|" + clave), 2) == 1
 	var interrumpe := nombre_a if invertir_turno else nombre_b
@@ -2000,7 +2010,7 @@ func _ejecutar_cinematica_intercambio_social(
 	}
 	if usar_tercero:
 		parametros["tercero"] = tercero.get_nombre_visual()
-	await _cutscene_director.ejecutar_recurso(secuencia, parametros, "planeada")
+	return await _cutscene_director.ejecutar_recurso(secuencia, parametros, "planeada", dialogo_extra)
 
 ## Las señales cinematográficas no se descartan por estar el jugador lejos,
 ## ocupado en otra escena o entrando a un interior. Se conservan hasta que
