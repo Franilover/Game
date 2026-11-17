@@ -219,6 +219,9 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	_actualizar_luces_faroles()
 	_actualizar_ambiente_torres(_delta)
+	if _interior_activo and _entrada_interior_id == "posada_habitacion" and not _posada_tiene_acceso():
+		_salir_del_interior()
+		Events.notification_pushed.emit("Tu estancia terminó. Tus pertenencias siguen guardadas.")
 	if not is_instance_valid(_jugador):
 		_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	if not is_instance_valid(_jugador) or not _interior_activo:
@@ -347,9 +350,6 @@ func _puede_interactuar_entrada(jugador: Node, entrada: Dictionary) -> bool:
 
 func _interactuar_entrada(jugador: Node, entrada: Dictionary) -> void:
 	if not _puede_interactuar_entrada(jugador, entrada):
-		return
-	if str(entrada.get("id", "")) == "posada":
-		_mostrar_menu_posada()
 		return
 	_entrar_al_interior(entrada.duplicate(true))
 
