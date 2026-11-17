@@ -280,6 +280,41 @@ func _run() -> void:
 	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
 
+	# Los temas se recuerdan por pareja: lo que Mara habla con Ivo no se
+	# generaliza a Narel, y la valoración del tema depende de cada vínculo.
+	relationship.registrar_tema_conversacion_npc("mara", "ivo", "familia", 0.8, "2026:11:16")
+	relationship.registrar_tema_conversacion_npc("mara", "ivo", "familia", 0.8, "2026:11:16")
+	relationship.registrar_tema_conversacion_npc("mara", "narel", "familia", -0.8, "2026:11:16")
+	var temas_ivo := relationship.obtener_temas_conversacion_npc("mara", "ivo")
+	var temas_narel := relationship.obtener_temas_conversacion_npc("mara", "narel")
+	if temas_ivo.size() != 1 or temas_narel.size() != 1:
+		errores.append("El historial de temas no se separó correctamente por pareja.")
+	var tema_ivo := relationship.evaluar_tema_conversacion_npc("mara", "ivo", "familia")
+	var tema_narel := relationship.evaluar_tema_conversacion_npc("mara", "narel", "familia")
+	if int(tema_ivo.get("veces", 0)) != 2 or str(tema_ivo.get("recomendacion", "")) != "retomar":
+		errores.append("Un tema bien recibido no se recordó como familiar para esa pareja.")
+	if str(tema_narel.get("recomendacion", "")) != "evitar_insistir":
+		errores.append("Un tema mal recibido no influyó en la conversación con esa persona.")
+
+	# Las confidencias no se transmiten por defecto. Sólo la autorización
+	# explícita del confidente permite que el receptor las comparta.
+	if not relationship.registrar_confidencia_npc("mara", "ivo", {
+		"clave": "problema_familiar_privado",
+		"tema": "familia",
+		"detalle": "Un asunto personal confiado en privado."
+	}):
+		errores.append("No se pudo registrar una confidencia entre dos habitantes.")
+	if relationship.obtener_confidencias_npc("mara", "ivo").size() != 1:
+		errores.append("La confidencia no quedó asociada a quien la confió.")
+	if relationship.transmitir_conocimiento_npc("mara", "narel", "problema_familiar_privado", {"motivo": "test"}):
+		errores.append("Un NPC reveló una confidencia sin autorización.")
+	relationship.registrar_conocimiento_npc("mara", {
+		"clave": "problema_familiar_privado",
+		"destinatarios_autorizados": ["narel"]
+	})
+	if not relationship.transmitir_conocimiento_npc("mara", "narel", "problema_familiar_privado", {"motivo": "autorizacion"}):
+		errores.append("Una confidencia autorizada no pudo compartirse con su destinatario permitido.")
+
 	var promesa_id := relationship.registrar_promesa_entre_npc("ivo", "mara", {
 		"clave": "devolver_libro",
 		"descripcion": "Devolver el libro prestado"
