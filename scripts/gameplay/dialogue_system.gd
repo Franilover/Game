@@ -3722,7 +3722,7 @@ func _crear_interfaz() -> void:
 	_dialogue_social_column = columna_social
 	columna_social.name = "DialogueSocialActions"
 	columna_social.custom_minimum_size = Vector2(48, 0)
-	columna_social.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	columna_social.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	columna_social.add_theme_constant_override("separation", 8)
 	content_row.add_child(columna_social)
 
