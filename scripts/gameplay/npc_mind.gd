@@ -230,6 +230,7 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 		"objetivos": 0.0,
 		"estado_emocional": 0.0,
 		"memoria_lugar": 0.0,
+		"habito": 0.0,
 		"variedad": 0.0,
 		"prioridad": 0.0,
 		"coste": 0.0,
@@ -260,6 +261,8 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 	componentes["estado_emocional"] = _calcular_afinidad_emocional(estado, actividad)
 	var ubicacion := str(actividad.get("ubicacion_clave", "")).strip_edges().to_lower()
 	componentes["memoria_lugar"] = obtener_preferencia_lugar(id, ubicacion) * 8.0
+	var contexto_habito := str(actividad.get("contexto_habito", "general")).strip_edges().to_lower()
+	componentes["habito"] = obtener_fuerza_habito(id, clave, contexto_habito) * 6.0
 	componentes["variedad"] = _calcular_penalizacion_repeticion(estado, clave)
 	componentes["prioridad"] = clampf(float(actividad.get("prioridad", 0.0)), 0.0, 100.0) * 0.1
 	componentes["coste"] = -clampf(float(actividad.get("coste", 0.0)), 0.0, 100.0) * 0.15
@@ -289,6 +292,85 @@ func _calcular_penalizacion_repeticion(estado: Dictionary, actividad: String) ->
 		if str(historial[indice]).strip_edges().to_lower() == actividad:
 			penalizacion -= float(pesos[indice])
 	return penalizacion
+
+
+## Los hábitos se consolidan con práctica en días distintos y un contexto estable.
+## Su fuerza baja cuando dejan de practicarse; nunca bloquean otras decisiones.
+func obtener_fuerza_habito(personaje_id: String, actividad: String, contexto: String = "general") -> float:
+	var id := personaje_id.strip_edges().to_lower()
+	var clave := actividad.strip_edges().to_lower()
+	var clave_contexto := contexto.strip_edges().to_lower()
+	if id.is_empty() or clave.is_empty() or clave_contexto.is_empty():
+		return 0.0
+	var estado := obtener_estado(id)
+	var habitos_variant: Variant = estado.get("habitos", {})
+	if not habitos_variant is Dictionary:
+		return 0.0
+	var registro_variant: Variant = (habitos_variant as Dictionary).get(clave + "|" + clave_contexto, {})
+	if not registro_variant is Dictionary:
+		return 0.0
+	var registro := registro_variant as Dictionary
+	var dias_practicados := maxi(0, int(registro.get("dias_practicados", 0)))
+	var dias_sin_practicar := maxi(0, int(registro.get("dias_sin_practicar", 0)))
+	var resultado_medio := clampf(float(registro.get("resultado_medio", 0.0)), -1.0, 1.0)
+	var consolidacion := minf(float(dias_practicados) / 8.0, 1.0)
+	var refuerzo := clampf(0.5 + resultado_medio * 0.5, 0.0, 1.0)
+	var vigencia := maxf(0.0, 1.0 - float(dias_sin_practicar) / 14.0)
+	return clampf(consolidacion * refuerzo * vigencia, 0.0, 1.0)
+
+
+func _actualizar_habito(
+	estado: Dictionary,
+	actividad: String,
+	contexto: String,
+	resultado: float,
+	dia_mundo: String
+) -> void:
+	if dia_mundo.strip_edges().is_empty():
+		return
+	var habitos_variant: Variant = estado.get("habitos", {})
+	var habitos: Dictionary = habitos_variant.duplicate(true) if habitos_variant is Dictionary else {}
+	var ultimo_dia_global := str(estado.get("ultimo_dia_habitos", ""))
+	if ultimo_dia_global != dia_mundo:
+		for clave_habito in habitos:
+			if not habitos[clave_habito] is Dictionary:
+				continue
+			var registro_dia: Dictionary = habitos[clave_habito]
+			registro_dia["dias_sin_practicar"] = mini(365, int(registro_dia.get("dias_sin_practicar", 0)) + 1)
+			habitos[clave_habito] = registro_dia
+		estado["ultimo_dia_habitos"] = dia_mundo
+	var clave := actividad + "|" + contexto
+	var registro_variant: Variant = habitos.get(clave, {})
+	var registro: Dictionary = registro_variant.duplicate(true) if registro_variant is Dictionary else {}
+	if str(registro.get("ultimo_dia", "")) != dia_mundo:
+		var muestras := maxi(0, int(registro.get("muestras", 0))) + 1
+		var dias_practicados := maxi(0, int(registro.get("dias_practicados", 0))) + 1
+		var anterior := float(registro.get("resultado_medio", 0.0))
+		var nuevo := clampf(resultado, -1.0, 1.0)
+		registro["muestras"] = muestras
+		registro["dias_practicados"] = dias_practicados
+		registro["resultado_medio"] = anterior + (nuevo - anterior) / float(muestras)
+		registro["ultimo_resultado"] = nuevo
+		registro["ultimo_dia"] = dia_mundo
+		registro["dias_sin_practicar"] = 0
+	habitos[clave] = registro
+	# Limita el tamaño del perfil para que no crezca indefinidamente.
+	while habitos.size() > 32:
+		var clave_mas_debil := ""
+		var fuerza_mas_debil := INF
+		for clave_candidata in habitos:
+			var dato: Variant = habitos[clave_candidata]
+			if not dato is Dictionary:
+				clave_mas_debil = str(clave_candidata)
+				break
+			var fuerza := float(dato.get("dias_practicados", 0)) - float(dato.get("dias_sin_practicar", 0)) * 0.25
+			if fuerza < fuerza_mas_debil:
+				fuerza_mas_debil = fuerza
+				clave_mas_debil = str(clave_candidata)
+		if clave_mas_debil.is_empty():
+			break
+		habitos.erase(clave_mas_debil)
+	estado["habitos"] = habitos
 
 
 ## La experiencia acumulada en un lugar influye gradualmente en futuras decisiones.
@@ -443,7 +525,13 @@ func elegir_actividad(personaje_id: String, actividades: Array) -> Dictionary:
 ## Aprende del resultado de una actividad sin permitir que una sola experiencia
 ## convierta una preferencia en una regla absoluta.
 ## resultado: -1.0 (muy malo) a 1.0 (muy bueno).
-func registrar_resultado_actividad(personaje_id: String, actividad: String, resultado: float) -> float:
+func registrar_resultado_actividad(
+	personaje_id: String,
+	actividad: String,
+	resultado: float,
+	contexto: String = "general",
+	dia_mundo: String = ""
+) -> float:
 	var id := personaje_id.strip_edges().to_lower()
 	var clave := actividad.strip_edges().to_lower()
 	if id.is_empty() or clave.is_empty():
@@ -464,6 +552,7 @@ func registrar_resultado_actividad(personaje_id: String, actividad: String, resu
 	registro["ultimo_resultado"] = nuevo_resultado
 	aprendizaje[clave] = registro
 	estado["aprendizaje"] = aprendizaje
+	_actualizar_habito(estado, clave, contexto.strip_edges().to_lower(), nuevo_resultado, dia_mundo)
 	_mentes[id] = estado
 	_guardar_mentes()
 	aprendizaje_actualizado.emit(id, clave, preferencia)
@@ -569,6 +658,8 @@ func _crear_estado_inicial(perfil: Dictionary = {}) -> Dictionary:
 		"rasgos": rasgos,
 		"estado_emocional": {"animo": 0.0, "estres": 10.0, "energia": 75.0},
 		"aprendizaje": {},
+		"habitos": {},
+		"ultimo_dia_habitos": "",
 		"memoria_lugares": {},
 		"historial_actividades": [],
 		"objetivos": [],
@@ -630,6 +721,10 @@ func _normalizar_estado(estado: Dictionary) -> void:
 	estado["rasgos"] = rasgos
 	if not estado.get("aprendizaje", {}) is Dictionary:
 		estado["aprendizaje"] = {}
+	if not estado.get("habitos", {}) is Dictionary:
+		estado["habitos"] = {}
+	if not estado.get("ultimo_dia_habitos", "") is String:
+		estado["ultimo_dia_habitos"] = ""
 	if not estado.get("historial_actividades", []) is Array:
 		estado["historial_actividades"] = []
 	else:
