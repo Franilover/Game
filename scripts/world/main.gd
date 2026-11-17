@@ -1642,6 +1642,9 @@ func _configurar_dialogo() -> void:
 		_cutscene_director.name = "CutsceneDirector"
 		add_child(_cutscene_director)
 	_cutscene_director.configurar(_player, _dialogue_system, _camera)
+	var callback_finalizada := Callable(self, "_al_cinematica_finalizada")
+	if not _cutscene_director.cinematica_finalizada.is_connected(callback_finalizada):
+		_cutscene_director.cinematica_finalizada.connect(callback_finalizada)
 	if not _cutscene_director.evento_solicitado.is_connected(_al_evento_cinematica_solicitado):
 		_cutscene_director.evento_solicitado.connect(_al_evento_cinematica_solicitado)
 	var admin_tab := get_node_or_null("UI/Inventory/Window/Margin/Column/Tabs/Admin") as AdminInventory
@@ -1661,6 +1664,18 @@ func _configurar_dialogo() -> void:
 			_npc_conversation_system.connect("cinematica_reunion_nocturna_solicitada", callback_reunion)
 	if _bienvenida_torres_pendiente and str(_zone_manager.obtener_tipo_actual()) == "reino_torres":
 		call_deferred("_iniciar_bienvenida_torres")
+
+
+## Sincroniza el caché de cámara del mundo después de cada escena.
+## Evita que _seguir_jugador conserve una posición anterior al paneo.
+func _al_cinematica_finalizada(_clave: String) -> void:
+	if not is_instance_valid(_player) or not is_instance_valid(_camera):
+		return
+	_camera.enabled = true
+	_camera.make_current()
+	_camera.global_position = _player.global_position
+	_camera.reset_smoothing()
+	_ultima_posicion_camara = _player.global_position
 
 
 func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void:

@@ -4,6 +4,8 @@ const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const DialogueSystemScript = preload("res://scripts/gameplay/dialogue_system.gd")
 const NPCVoiceProfileScript = preload("res://scripts/gameplay/npc_voice_profile.gd")
 const NPCConversationSystemScript = preload("res://scripts/world/npc_conversation_system.gd")
+const CutsceneDirectorScript = preload("res://scripts/gameplay/cutscene_director.gd")
+const PlayerScene = preload("res://scenes/characters/player.tscn")
 
 
 func _ready() -> void:
@@ -130,6 +132,15 @@ func _run() -> void:
 
 	add_child(npc)
 	add_child(dialogo)
+	var conversacion_visual := NPCConversationSystemScript.new() as NPCConversationSystem
+	add_child(conversacion_visual)
+	var burbuja_prueba := conversacion_visual._obtener_burbuja(npc)
+	var texto_burbuja := burbuja_prueba.get_node_or_null("Text") as Label
+	if texto_burbuja == null or texto_burbuja.has_theme_font_override("font"):
+		errores.append("Las burbujas ambientales deben heredar la tipografía normal, no Pixelgrafia.")
+	if ResourceLoader.exists("res://assets/art/UI/Menus/button_normal.png"):
+		if not burbuja_prueba.get_theme_stylebox("panel") is StyleBoxTexture:
+			errores.append("Las burbujas ambientales no usan el fondo button_normal.")
 	npc.nombre_individual = "Ivo"
 	dialogo._fuente = npc
 	var recuerdo_ivo := dialogo._crear_dialogo_recuerdo_social({
@@ -355,6 +366,36 @@ func _run() -> void:
 	if dialogo._respuestas.size() != 4 or dialogo._respuestas_container.get_child_count() != 4:
 		errores.append("El menú social no volvió tras responder a un tema cotidiano.")
 
+	# Una escena debe devolver la cámara, el estado de locomoción y el bloqueo modal.
+	var jugador_prueba := PlayerScene.instantiate() as Player
+	var camara_prueba := Camera2D.new()
+	var director_prueba := CutsceneDirectorScript.new() as CutsceneDirector
+	add_child(jugador_prueba)
+	add_child(camara_prueba)
+	add_child(director_prueba)
+	await get_tree().process_frame
+	camara_prueba.zoom = Vector2(2.0, 2.0)
+	director_prueba.configurar(jugador_prueba, dialogo, camara_prueba)
+	jugador_prueba.velocity = Vector2(25.0, 0.0)
+	jugador_prueba.state = Player.State.RUN
+	camara_prueba.global_position = Vector2(600.0, 400.0)
+	camara_prueba.zoom = Vector2(0.7, 0.7)
+	director_prueba._ocupado = true
+	director_prueba._clave_actual = "test_restauracion"
+	director_prueba._modo_cinematica = "en_vivo"
+	director_prueba.add_to_group("modal_ui")
+	director_prueba._finalizar()
+	if director_prueba.esta_activo() or director_prueba.is_in_group("modal_ui"):
+		errores.append("La finalización de la cinemática dejó activo el bloqueo modal.")
+	if camara_prueba.global_position.distance_to(jugador_prueba.global_position) > 0.01 or camara_prueba.zoom.distance_to(Vector2(2.0, 2.0)) > 0.01:
+		errores.append("La finalización no devolvió la cámara y su zoom al jugador.")
+	if jugador_prueba.velocity.length_squared() > 0.01 or jugador_prueba.state != Player.State.IDLE:
+		errores.append("La finalización no restableció la locomoción del jugador.")
+
+	conversacion_visual.queue_free()
+	director_prueba.queue_free()
+	camara_prueba.queue_free()
+	jugador_prueba.queue_free()
 	npc.queue_free()
 	dialogo.queue_free()
 	await get_tree().process_frame

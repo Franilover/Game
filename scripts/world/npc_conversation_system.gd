@@ -2556,29 +2556,30 @@ func _obtener_burbuja(npc: Creature) -> PanelContainer:
 
 	var panel := PanelContainer.new()
 	panel.name = "NPCConversationBubble"
-	panel.position = Vector2(-84.0, -74.0)
-	panel.custom_minimum_size = Vector2(168.0, 0.0)
+	panel.position = Vector2(-94.0, -82.0)
+	panel.custom_minimum_size = Vector2(188.0, 0.0)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.z_index = 100
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color("#2B211B")
-	estilo.border_color = Color("#A98A67")
-	estilo.set_border_width_all(1)
-	estilo.set_corner_radius_all(3)
-	estilo.content_margin_left = 6.0
-	estilo.content_margin_right = 6.0
-	estilo.content_margin_top = 4.0
-	estilo.content_margin_bottom = 4.0
-	panel.add_theme_stylebox_override("panel", estilo)
+	# Las burbujas ambientales comparten la superficie de botón de la UI.
+	# La fuente queda heredada del tema normal del juego (Open Sans), no Pixelgrafia.
+	var estilo_boton := PIXEL_UI_THEME.button_surface_style()
+	if estilo_boton != null:
+		panel.add_theme_stylebox_override("panel", estilo_boton)
+	else:
+		var estilo_respaldo := StyleBoxFlat.new()
+		estilo_respaldo.bg_color = Color("#4B3924")
+		estilo_respaldo.border_color = Color("#8A6842")
+		estilo_respaldo.set_border_width_all(2)
+		estilo_respaldo.set_corner_radius_all(5)
+		panel.add_theme_stylebox_override("panel", estilo_respaldo)
 
 	var etiqueta := Label.new()
 	etiqueta.name = "Text"
-	etiqueta.custom_minimum_size = Vector2(156.0, 0.0)
+	etiqueta.custom_minimum_size = Vector2(176.0, 0.0)
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta.add_theme_font_override("font", FONT_PIXEL)
 	etiqueta.add_theme_font_size_override("font_size", 8)
-	etiqueta.add_theme_color_override("font_color", Color("#F2E8D8"))
-	etiqueta.add_theme_color_override("font_outline_color", Color("#17110D"))
+	etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
+	etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
 	etiqueta.add_theme_constant_override("outline_size", 2)
 	panel.add_child(etiqueta)
 	npc.add_child(panel)

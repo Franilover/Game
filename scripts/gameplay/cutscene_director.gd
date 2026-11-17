@@ -160,9 +160,8 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	_tweens_actores.clear()
 	_jugador_movido_cinematica = false
 	_estado_rutas_npc.clear()
-	if is_instance_valid(_camera):
-		_zoom_original = _camera.zoom
-		_offset_original = _camera.offset
+	# El zoom y offset originales se capturan en configurar(). No volver a
+	# capturarlos aquí: una escena anterior no debe contaminar el siguiente retorno.
 	_clave_actual = clave_limpia
 	_modo_cinematica = "en_vivo" if tipo.strip_edges().to_lower() in ["en_vivo", "vivo", "live"] else "planeada"
 	if _modo_cinematica == "planeada":
@@ -992,7 +991,12 @@ func _restaurar_camara() -> void:
 	_tween_camara.tween_property(_camera, "zoom", _zoom_original, 0.65)
 	_tween_camara.tween_property(_camera, "offset", _offset_original, 0.65)
 	await _tween_camara.finished
-	if is_instance_valid(_camera):
+	if is_instance_valid(_camera) and is_instance_valid(_player):
+		_camera.global_position = _player.global_position
+		_camera.zoom = _zoom_original
+		_camera.offset = _offset_original
+		_camera.enabled = true
+		_camera.make_current()
 		_camera.reset_smoothing()
 
 
@@ -1002,9 +1006,19 @@ func _finalizar() -> void:
 	_restaurar_estado_temporal()
 	if is_instance_valid(_dialogue):
 		_dialogue.configurar_estilo_cinematica(false)
-	if is_instance_valid(_player) and _player is CharacterBody2D:
-		(_player as CharacterBody2D).velocity = Vector2.ZERO
+	if is_instance_valid(_player):
+		# Restablecer también el estado lógico de locomoción, no sólo velocity.
+		# Así una acción interrumpida no deja al jugador en RUN/JUMP/DASH.
+		_player.locomotion.reiniciar()
+		_player._movement_input_direction = Vector2.ZERO
+		_player.state = Player.State.IDLE
+		if _player is CharacterBody2D:
+			(_player as CharacterBody2D).velocity = Vector2.ZERO
 	if is_instance_valid(_camera):
+		if is_instance_valid(_player):
+			_camera.global_position = _player.global_position
+		_camera.zoom = _zoom_original
+		_camera.offset = _offset_original
 		_camera.enabled = true
 		_camera.make_current()
 		_camera.reset_smoothing()
@@ -1023,6 +1037,7 @@ func _finalizar() -> void:
 	_modo_cinematica = "planeada"
 	_seguimiento_camara_npcs.clear()
 	_estado_rutas_npc.clear()
-	if is_in_group("modal_ui"):
-		remove_from_group("modal_ui")
+	# El router de gameplay bloquea el movimiento mientras este nodo está
+	# en modal_ui. Liberarlo siempre evita dejar la entrada atrapada.
+	remove_from_group("modal_ui")
 	cinematica_finalizada.emit(clave_finalizada)
