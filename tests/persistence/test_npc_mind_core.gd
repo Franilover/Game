@@ -610,6 +610,17 @@ func _run() -> void:
 	if sin_compromisos_hoy <= 0:
 		errores.append("El calendario no buscó el siguiente compromiso en el ciclo semanal.")
 
+	# Las tareas interiores deben preferir puestos físicos coherentes con su intención.
+	var puestos_descanso := ScheduleScript.obtener_preferencias_mueble_actividad("descansar")
+	var puestos_estudio := ScheduleScript.obtener_preferencias_mueble_actividad("estudiar_documentos")
+	var puestos_trabajo := ScheduleScript.obtener_preferencias_mueble_actividad("hornear_pan")
+	if not puestos_descanso.has("cama") or not puestos_descanso.has("litera"):
+		errores.append("El descanso interior no reconoce camas ni literas.")
+	if not puestos_estudio.has("mesa") or not puestos_trabajo.has("horno"):
+		errores.append("Las tareas de estudio y trabajo no reconocen sus puestos de mobiliario.")
+	if not ScheduleScript.obtener_preferencias_mueble_actividad("pasear").is_empty():
+		errores.append("Un paseo interior recibió un mueble obligatorio sin corresponderle.")
+
 	var opciones_ocio_mixtas: Array = ScheduleScript.filtrar_opciones_ocio_validas([
 		{"id": "pasear", "ubicacion_clave": "plaza"},
 		{"id": "leer", "ubicacion_clave": "archivo_real"},

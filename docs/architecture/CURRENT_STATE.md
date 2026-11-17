@@ -990,3 +990,8 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 La selección de actividades ya no depende exclusivamente de los días libres. Cuando el selector de horarios no encuentra una rutina activa, el sistema comprueba que el NPC sí tenga un calendario definido y calcula cuánto falta para el siguiente compromiso dentro del ciclo semanal de cinco días. Si dispone de al menos una hora, puede elegir una actividad cotidiana compatible con sus necesidades, preferencias aprendidas y destinos alcanzables.
 
 Los turnos, guardias, citas y demás rutinas activas conservan prioridad. El hueco se vuelve a evaluar por hora y la rutina programada vuelve a tomar el control al comenzar. Los NPC sin calendario no reciben actividades improvisadas por este mecanismo.
+
+
+## NPC: actividades interiores vinculadas al mobiliario
+
+Al ejecutar una actividad dentro de un edificio abierto, el NPC busca primero un puesto junto al mueble compatible con su intención: camas/literas para descansar, mesas para leer o estudiar, hornos y bancos para cocinar, reparar o trabajar, y mesas/mostradores para atender o conversar. Si el edificio no contiene un mueble adecuado, conserva los puntos generales de movimiento interior. La animación de actividad existente se mantiene y se inicia cuando el NPC ya está en el edificio; no se altera el horario ni se fuerza la entrada a interiores cerrados.

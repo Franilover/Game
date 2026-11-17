@@ -1225,6 +1225,21 @@ func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 	return true
 
 
+## Traduce la intención de una actividad a tipos de mobiliario disponibles.
+## Se usa para escoger un puesto físico y probar la regla sin escenas.
+static func obtener_preferencias_mueble_actividad(actividad: String) -> Array[String]:
+	var texto := actividad.strip_edges().to_lower()
+	if texto.contains("descans") or texto.contains("dorm") or texto.contains("repos"):
+		return ["cama", "litera"]
+	if texto.contains("leer") or texto.contains("estudi") or texto.contains("investig") or texto.contains("observar") or texto.contains("nota") or texto.contains("informe"):
+		return ["mesa", "consulta", "estudio", "muestra"]
+	if texto.contains("hornear") or texto.contains("cocinar") or texto.contains("preparar") or texto.contains("forj") or texto.contains("repar") or texto.contains("herramient") or texto.contains("trabaj"):
+		return ["horno", "hogar", "banco", "mesa", "mostrador"]
+	if texto.contains("comer") or texto.contains("servir") or texto.contains("atender") or texto.contains("convers") or texto.contains("reunir"):
+		return ["mesa", "mostrador"]
+	return []
+
+
 ## Pequeños recorridos dentro del edificio: los NPC no quedan congelados
 ## durante toda una franja horaria. Se activan sólo al abrir ese interior.
 func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int) -> void:
@@ -1266,12 +1281,36 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		return
 	if posmod(minutos - siguiente, 1440) > 720:
 		return
-	# Puntos compactos para que funcionen en interiores pequeños y grandes.
+	# Primero busca un puesto junto al mueble que corresponde a la tarea.
+	# Si el edificio no tiene ese mueble, conserva los puntos de paseo generales.
+	var puntos: Array[Vector2] = []
+	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", "")))
+	var preferencias := obtener_preferencias_mueble_actividad(actividad)
+	if not preferencias.is_empty():
+		for hijo in npc.get_parent().get_children():
+			if not hijo is Sprite2D:
+				continue
+			var mueble := hijo as Sprite2D
+			var nombre_mueble := mueble.name.strip_edges().to_lower()
+			var coincide := false
+			for preferencia in preferencias:
+				if nombre_mueble.contains(preferencia):
+					coincide = true
+					break
+			if not coincide or not is_instance_valid(mueble.texture):
+				continue
+			var semiancho := mueble.texture.get_width() * absf(mueble.scale.x) * 0.5
+			var semialto := mueble.texture.get_height() * absf(mueble.scale.y) * 0.5
+			var puesto := mueble.position + Vector2(0.0, semialto + 12.0)
+			if nombre_mueble.contains("cama") or nombre_mueble.contains("litera"):
+				puesto = mueble.position + Vector2(semiancho + 12.0, 0.0)
+			puntos.append(puesto)
+	if puntos.is_empty():
+		puntos = [
+			Vector2(-42.0, 12.0), Vector2(42.0, 12.0),
+			Vector2(0.0, -18.0), Vector2(0.0, 38.0)
+		]
 	# Cada personaje usa un orden distinto y no todos parten al mismo tiempo.
-	var puntos: Array[Vector2] = [
-		Vector2(-42.0, 12.0), Vector2(42.0, 12.0),
-		Vector2(0.0, -18.0), Vector2(0.0, 38.0)
-	]
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 	var indice := posmod(hash(nombre + "|" + edificio_id + "|" + str(minutos / 5)), puntos.size())
 	var destino_local := Vector2.ZERO
