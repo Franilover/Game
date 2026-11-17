@@ -2069,10 +2069,11 @@ func _procesar_cinematicas_pendientes() -> void:
 			continue
 
 		var centro_actual := (npc_a.global_position + npc_b.global_position) * 0.5
-		# La escena sólo sigue vigente mientras sus participantes permanezcan
-		# cerca del lugar donde ocurrió el acontecimiento.
+		# Las escenas opcionales caducan si el acontecimiento ya pasó; las
+		# narrativas siguen a sus participantes para que el jugador no las pierda.
 		if centro_actual.distance_to(posicion) > 240.0:
 			if tipo == "narrativa":
+				posicion = centro_actual
 				pendiente["posicion"] = centro_actual
 				_cinematicas_pendientes[indice] = pendiente
 			else:
