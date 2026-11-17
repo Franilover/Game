@@ -177,7 +177,6 @@ func cerrar_cofre() -> void:
 
 func _abrir_calendario() -> void:
 	if is_instance_valid(_calendar_ui):
-		_calendar_ui.move_to_front()
 		return
 	var atmosfera := _obtener_atmosfera()
 	if not is_instance_valid(atmosfera) or not atmosfera.has_method("obtener_tiempo"):
