@@ -1,3 +1,4 @@
+@tool
 class_name TerrainDual
 extends Resource
 ##[br] Reads a TileSet and dictates which tiles in the display map
