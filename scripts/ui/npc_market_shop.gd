@@ -76,8 +76,12 @@ func _crear_interfaz() -> void:
 	cerrar.custom_minimum_size = Vector2(76, 28)
 	cerrar.pressed.connect(func() -> void: solicitar_cierre.emit())
 	encabezado.add_child(cerrar)
+	PIXEL_UI_THEME.apply(cerrar, false)
 
 	_saldo = Label.new()
+	_saldo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_saldo.add_theme_color_override("font_color", Color("#E8C98F"))
+	_saldo.add_theme_font_size_override("font_size", 11)
 	_saldo.add_theme_font_size_override("font_size", 11)
 	contenido.add_child(_saldo)
 
@@ -91,6 +95,7 @@ func _crear_interfaz() -> void:
 		_actualizar_lista()
 	)
 	pestanas.add_child(_boton_comprar)
+	PIXEL_UI_THEME.apply(_boton_comprar, false)
 	_boton_vender = Button.new()
 	_boton_vender.text = "Vender"
 	_boton_vender.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -99,6 +104,7 @@ func _crear_interfaz() -> void:
 		_actualizar_lista()
 	)
 	pestanas.add_child(_boton_vender)
+	PIXEL_UI_THEME.apply(_boton_vender, false)
 
 	var desplazamiento := ScrollContainer.new()
 	desplazamiento.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -207,21 +213,55 @@ func _crear_fila_producto(producto: Dictionary, stock: int) -> void:
 
 
 func _crear_fila_venta(objeto: Dictionary, indice: int) -> void:
+	var tarjeta := PanelContainer.new()
+	tarjeta.name = "ShopProductCard"
+	tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color("#302719")
+	estilo.border_color = Color("#705638")
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(4)
+	estilo.content_margin_left = 8.0
+	estilo.content_margin_right = 8.0
+	estilo.content_margin_top = 5.0
+	estilo.content_margin_bottom = 5.0
+	tarjeta.add_theme_stylebox_override("panel", estilo)
+	_lista.add_child(tarjeta)
 	var fila := HBoxContainer.new()
-	fila.custom_minimum_size = Vector2(0, 32)
-	_lista.add_child(fila)
+	fila.add_theme_constant_override("separation", 10)
+	tarjeta.add_child(fila)
+	var icono := TextureRect.new()
+	icono.custom_minimum_size = Vector2(36, 36)
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
+	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(icono)
+	var datos := VBoxContainer.new()
+	datos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	datos.alignment = BoxContainer.ALIGNMENT_CENTER
+	datos.add_theme_constant_override("separation", 1)
+	fila.add_child(datos)
 	var nombre := Label.new()
 	var cantidad := maxi(1, int(objeto.get("cantidad", 1)))
-	nombre.text = "%s  ×%d" % [str(objeto.get("nombre", "Objeto")), cantidad]
-	nombre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nombre.text = str(objeto.get("nombre", "Objeto"))
+	nombre.add_theme_color_override("font_color", Color("#F0DFC0"))
+	nombre.add_theme_font_size_override("font_size", 12)
 	nombre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	fila.add_child(nombre)
+	datos.add_child(nombre)
+	var existencia := Label.new()
+	existencia.text = "En inventario: %d" % cantidad
+	existencia.add_theme_color_override("font_color", Color("#BBA98A"))
+	existencia.add_theme_font_size_override("font_size", 9)
+	datos.add_child(existencia)
 	var precio := maxi(1, floori(float(_precio_base(objeto)) * 0.5))
 	var boton := Button.new()
-	boton.text = "Vender · %d" % precio
-	boton.custom_minimum_size = Vector2(116, 28)
+	boton.name = "ShopSellButton"
+	boton.text = "%d ¤" % precio
+	boton.custom_minimum_size = Vector2(92, 34)
 	boton.pressed.connect(_vender.bind(indice, str(objeto.get("item_id", objeto.get("id", ""))), precio))
 	fila.add_child(boton)
+	PIXEL_UI_THEME.apply(boton, false)
 
 
 func _comprar(item_id: String) -> void:
@@ -418,7 +458,8 @@ func _obtener_dia_clave() -> String:
 
 func _clave_stock() -> String:
 	var id_npc := _npc.get_personaje_game_id() if is_instance_valid(_npc) else "aldeano"
-	return "mercado:%s:%s" % [id_npc.to_lower(), _dia_clave]
+	var tipo_tienda := str(_tienda_config.get("ubicacion", "mercado")).strip_edges().to_lower()
+	return "tienda:%s:%s:%s" % [tipo_tienda, id_npc.to_lower(), _dia_clave]
 
 
 func _obtener_flags_partida() -> Dictionary:
@@ -439,11 +480,15 @@ func _cargar_stock_persistente() -> void:
 	var todos: Dictionary = todos_variant as Dictionary if todos_variant is Dictionary else {}
 	var stock_variant: Variant = todos.get(_clave_stock(), {})
 	_stock = stock_variant.duplicate(true) if stock_variant is Dictionary else {}
-	if _stock.is_empty():
-		var dia_numero := int(_dia_clave)
-		for producto in _productos:
-			var item_id := str(producto.get("item_id", ""))
-			_stock[item_id] = STOCK_MINIMO + posmod(item_id.hash() + dia_numero, STOCK_MAXIMO - STOCK_MINIMO + 1)
+	var dia_numero := int(_dia_clave)
+	var cambio_stock := false
+	for producto in _productos:
+		var item_id := str(producto.get("item_id", ""))
+		if item_id.is_empty() or _stock.has(item_id):
+			continue
+		_stock[item_id] = STOCK_MINIMO + posmod(item_id.hash() + dia_numero, STOCK_MAXIMO - STOCK_MINIMO + 1)
+		cambio_stock = true
+	if cambio_stock or _stock.is_empty():
 		_guardar_stock_persistente()
 
 
