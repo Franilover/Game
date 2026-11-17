@@ -1357,12 +1357,14 @@ func transmitir_conocimiento_npc(
 			return false
 		if evidencias_previas.is_empty():
 			return true
-		return registrar_evidencia_conocimiento_npc(destino, clave, {
+		registrar_evidencia_conocimiento_npc(destino, clave, {
 			"fuente_id": origen,
 			"tipo": "testimonio",
 			"direccion": "apoya",
 			"detalle": "Información transmitida por %s" % origen
 		})
+		# La noticia se entregó aunque la evidencia del emisor ya estuviera registrada.
+		return true
 	return false
 
 
