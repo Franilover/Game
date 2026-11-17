@@ -871,3 +871,10 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron pruebas para experiencias positivas, negativas y recuerdos de terceras personas.
 - La memoria utiliza el almacenamiento local de recuerdos sociales existente. No modifica Supabase ni genera texto.
 - Pendiente: ejecutar CI Godot 4.7 y validar en partida que los encuentros reflejen las experiencias sin crear preferencias rígidas.
+
+
+### Memoria contextual de lugares (2026-11-16)
+- `NPCMind` conserva por personaje resultados acumulados por `ubicacion_clave`.
+- La preferencia por lugar se calcula con media incremental y confianza progresiva; una experiencia aislada no crea una aversión o preferencia absoluta.
+- Las decisiones de ocio consultan esta memoria al puntuar actividades. El resultado del tramo anterior alimenta tanto el aprendizaje de la actividad como el del lugar visitado.
+- La memoria se guarda en `npc_mentes` dentro del guardado local y no requiere cambios de Supabase.

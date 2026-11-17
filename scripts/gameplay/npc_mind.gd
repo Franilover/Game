@@ -228,6 +228,7 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 		"aprendizaje": 0.0,
 		"objetivos": 0.0,
 		"estado_emocional": 0.0,
+		"memoria_lugar": 0.0,
 		"prioridad": 0.0,
 		"coste": 0.0,
 		"riesgo": 0.0
@@ -255,6 +256,8 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 	componentes["aprendizaje"] = obtener_preferencia_actividad(id, clave) * 12.0
 	componentes["objetivos"] = _calcular_afinidad_objetivos(estado, actividad, clave)
 	componentes["estado_emocional"] = _calcular_afinidad_emocional(estado, actividad)
+	var ubicacion := str(actividad.get("ubicacion_clave", "")).strip_edges().to_lower()
+	componentes["memoria_lugar"] = obtener_preferencia_lugar(id, ubicacion) * 8.0
 	componentes["prioridad"] = clampf(float(actividad.get("prioridad", 0.0)), 0.0, 100.0) * 0.1
 	componentes["coste"] = -clampf(float(actividad.get("coste", 0.0)), 0.0, 100.0) * 0.15
 	componentes["riesgo"] = -clampf(float(actividad.get("riesgo", 0.0)), 0.0, 100.0) * 0.2
@@ -273,6 +276,51 @@ func evaluar_actividad(personaje_id: String, actividad: Dictionary) -> Dictionar
 ## Los objetivos activos influyen en la elección sólo si describen una actividad
 ## concreta o comparten etiquetas con ella. La prioridad evita que un objetivo
 ## secundario domine necesidades urgentes.
+## La experiencia acumulada en un lugar influye gradualmente en futuras decisiones.
+## Una muestra aislada tiene poco peso; la preferencia se estabiliza con repetición.
+func obtener_preferencia_lugar(personaje_id: String, ubicacion: String) -> float:
+	var id := personaje_id.strip_edges().to_lower()
+	var clave := ubicacion.strip_edges().to_lower()
+	if id.is_empty() or clave.is_empty():
+		return 0.0
+	var estado := obtener_estado(id)
+	var memoria_variant: Variant = estado.get("memoria_lugares", {})
+	if not memoria_variant is Dictionary:
+		return 0.0
+	var registro_variant: Variant = (memoria_variant as Dictionary).get(clave, {})
+	if not registro_variant is Dictionary:
+		return 0.0
+	var registro := registro_variant as Dictionary
+	var muestras := maxi(0, int(registro.get("muestras", 0)))
+	var confianza := float(muestras) / (float(muestras) + 2.0)
+	return clampf(float(registro.get("resultado_medio", 0.0)) * confianza, -1.0, 1.0)
+
+
+func registrar_resultado_lugar(personaje_id: String, ubicacion: String, resultado: float) -> float:
+	var id := personaje_id.strip_edges().to_lower()
+	var clave := ubicacion.strip_edges().to_lower()
+	if id.is_empty() or clave.is_empty():
+		return 0.0
+	var estado := _obtener_estado_mutable(id)
+	var memoria_variant: Variant = estado.get("memoria_lugares", {})
+	var memoria: Dictionary = memoria_variant.duplicate(true) if memoria_variant is Dictionary else {}
+	var registro_variant: Variant = memoria.get(clave, {})
+	var registro: Dictionary = registro_variant.duplicate(true) if registro_variant is Dictionary else {}
+	var muestras := maxi(0, int(registro.get("muestras", 0))) + 1
+	var anterior := float(registro.get("resultado_medio", 0.0))
+	var nuevo := clampf(resultado, -1.0, 1.0)
+	var media := anterior + (nuevo - anterior) / float(muestras)
+	registro["muestras"] = muestras
+	registro["resultado_medio"] = media
+	registro["ultimo_resultado"] = nuevo
+	memoria[clave] = registro
+	estado["memoria_lugares"] = memoria
+	_mentes[id] = estado
+	_guardar_mentes()
+	_emitir_cambio(id)
+	return obtener_preferencia_lugar(id, clave)
+
+
 func _calcular_afinidad_objetivos(estado: Dictionary, actividad: Dictionary, clave_actividad: String) -> float:
 	var objetivos_variant: Variant = estado.get("objetivos", [])
 	if not objetivos_variant is Array:
@@ -495,6 +543,7 @@ func _crear_estado_inicial(perfil: Dictionary = {}) -> Dictionary:
 		"rasgos": rasgos,
 		"estado_emocional": {"animo": 0.0, "estres": 10.0, "energia": 75.0},
 		"aprendizaje": {},
+		"memoria_lugares": {},
 		"objetivos": [],
 		"decisiones_tomadas": 0,
 		"ultima_actividad_elegida": ""

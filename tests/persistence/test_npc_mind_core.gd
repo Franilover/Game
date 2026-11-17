@@ -125,6 +125,35 @@ func _run() -> void:
 	if float(afinidad_emocional.get("componentes", {}).get("estado_emocional", 0.0)) <= 0.0:
 		errores.append("El estado emocional no influyó en la afinidad de una actividad.")
 
+	var lugar_sin_experiencia := mind.evaluar_actividad("ivo", {
+		"id": "pasear",
+		"ubicacion_clave": "plaza"
+	})
+	var afinidad_lugar_inicial := float(lugar_sin_experiencia.get("componentes", {}).get("memoria_lugar", 0.0))
+	mind.registrar_resultado_lugar("ivo", "plaza", 1.0)
+	var afinidad_lugar_positiva := mind.evaluar_actividad("ivo", {
+		"id": "pasear_despues",
+		"ubicacion_clave": "plaza"
+})
+	var afinidad_lugar_negativa := mind.evaluar_actividad("ivo", {
+		"id": "visitar_otro_sitio",
+		"ubicacion_clave": "forja"
+	})
+	if afinidad_lugar_inicial != 0.0:
+		errores.append("Un NPC nuevo no debe tener preferencias previas por lugares.")
+	if float(afinidad_lugar_positiva.get("componentes", {}).get("memoria_lugar", 0.0)) <= 0.0:
+		errores.append("Una experiencia positiva no aumentó la afinidad por el lugar.")
+	if float(afinidad_lugar_negativa.get("componentes", {}).get("memoria_lugar", 0.0)) != 0.0:
+		errores.append("La experiencia en un lugar afectó a otro lugar distinto.")
+	mind.registrar_resultado_lugar("ivo", "plaza", -1.0)
+	if mind.obtener_preferencia_lugar("ivo", "plaza") >= 0.0:
+		errores.append("Una experiencia negativa no redujo la preferencia por el lugar.")
+	var mind_lugar_recargada := MindScript.new() as NPCMindService
+	mind_lugar_recargada.configurar(game_state)
+	if not is_equal_approx(mind_lugar_recargada.obtener_preferencia_lugar("ivo", "plaza"), mind.obtener_preferencia_lugar("ivo", "plaza")):
+		errores.append("La memoria de lugares no sobrevivió a la recarga.")
+	mind_lugar_recargada.free()
+
 	var preferencia_inicial := mind.registrar_resultado_actividad("ivo", "charlar", 1.0)
 	if preferencia_inicial <= 0.0 or preferencia_inicial >= 1.0:
 		errores.append("Una experiencia positiva no produjo aprendizaje gradual.")

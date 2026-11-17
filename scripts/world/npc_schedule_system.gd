@@ -1773,6 +1773,9 @@ func _aplicar_variacion_tiempo_libre(
 				var presion_final := float(necesidades_actuales.get(necesidad_anterior, presion_inicial))
 				var resultado := clampf((presion_inicial - presion_final) / 25.0, -1.0, 1.0)
 				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado)
+			var ubicacion_anterior := str(npc.get_meta("npc_mind_ubicacion", "")).strip_edges().to_lower()
+			if not ubicacion_anterior.is_empty() and mind.has_method("registrar_resultado_lugar"):
+				mind.call("registrar_resultado_lugar", personaje_id, ubicacion_anterior, resultado)
 
 		var resultado_eleccion: Dictionary = mind.call("elegir_actividad", personaje_id, opciones)
 		var actividad_elegida := str(resultado_eleccion.get("actividad", ""))
@@ -1801,6 +1804,7 @@ func _aplicar_variacion_tiempo_libre(
 	resultado["variacion_diaria"] = clave_dia
 	npc.set_meta("npc_mind_decision_key", clave_decision)
 	npc.set_meta("npc_mind_actividad", actividad)
+	npc.set_meta("npc_mind_ubicacion", ubicacion_elegida)
 	var necesidades_actividad: Dictionary = elegida.get("necesidades", {})
 	var necesidad_principal := ""
 	var mayor_peso := -1.0
