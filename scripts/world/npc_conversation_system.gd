@@ -2078,9 +2078,9 @@ func _npc_puede_participar_historia(npc_a: Creature, npc_b: Creature) -> bool:
 	if _npc_puede_conversar(npc_a) and _npc_puede_conversar(npc_b):
 		return true
 	var zona: Node = _zone_manager.obtener_zona_actual() as Node if is_instance_valid(_zone_manager) else null
-	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo", false)):
+	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")):
 		return false
-	var edificio_actual := str(zona.get("_entrada_interior_id", "")).strip_edges()
+	var edificio_actual := str(zona.get("_entrada_interior_id")).strip_edges()
 	if edificio_actual.is_empty():
 		return false
 	for npc in [npc_a, npc_b]:

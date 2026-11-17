@@ -1692,6 +1692,28 @@ func _buscar_npc_cinematica(nombre: String) -> Creature:
 	return null
 
 
+func _npc_libre_para_cinematica_historia(npc_a: Creature, npc_b: Creature) -> bool:
+	if _npc_libre_para_cinematica(npc_a) and _npc_libre_para_cinematica(npc_b):
+		return true
+	var zona: Node = _zone_manager.obtener_zona_actual() as Node if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")):
+		return false
+	var edificio_actual := str(zona.get("_entrada_interior_id")).strip_edges()
+	if edificio_actual.is_empty():
+		return false
+	for npc in [npc_a, npc_b]:
+		if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+			return false
+		if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != edificio_actual:
+			return false
+		for meta_clave in ["rutina_en_transito", "actividad_social_activa", "acercamiento_social_activo", "conversacion_npc_bloqueada", "cinematica_npc_activa"]:
+			if bool(npc.get_meta(meta_clave, false)):
+				return false
+		if npc.velocity.length() > 5.0:
+			return false
+	return true
+
+
 func _npc_libre_para_cinematica(npc: Creature, permitir_actividad_social: bool = false) -> bool:
 	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
 		return false
@@ -1730,7 +1752,7 @@ func _al_cinematica_narrativa_solicitada(
 		return
 	var npc_a := _buscar_npc_cinematica(nombre_a)
 	var npc_b := _buscar_npc_cinematica(nombre_b)
-	if not _npc_libre_para_cinematica(npc_a) or not _npc_libre_para_cinematica(npc_b):
+	if not _npc_libre_para_cinematica_historia(npc_a, npc_b):
 		return
 	if npc_a == npc_b or npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
 		return
@@ -2083,7 +2105,7 @@ func _procesar_cinematicas_pendientes() -> void:
 		var distancia_activacion := 0.0
 		match tipo:
 			"narrativa":
-				if not _npc_libre_para_cinematica(npc_a) or not _npc_libre_para_cinematica(npc_b):
+				if not _npc_libre_para_cinematica_historia(npc_a, npc_b):
 					continue
 				if npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
 					continue
