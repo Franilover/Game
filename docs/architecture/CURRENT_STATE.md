@@ -995,3 +995,13 @@ Los turnos, guardias, citas y demás rutinas activas conservan prioridad. El hue
 ## NPC: actividades interiores vinculadas al mobiliario
 
 Al ejecutar una actividad dentro de un edificio abierto, el NPC busca primero un puesto junto al mueble compatible con su intención: camas/literas para descansar, mesas para leer o estudiar, hornos y bancos para cocinar, reparar o trabajar, y mesas/mostradores para atender o conversar. Si el edificio no contiene un mueble adecuado, conserva los puntos generales de movimiento interior. La animación de actividad existente se mantiene y se inicia cuando el NPC ya está en el edificio; no se altera el horario ni se fuerza la entrada a interiores cerrados.
+
+
+## Diálogos: continuidad entre conversación y actividad
+
+- Las respuestas a «¿Cómo va tu día?» incorporan la actividad actual de los NPC con oficio y evitan presentar caminar o pasear como trabajo.
+- Las referencias temporales de esas respuestas se ajustan para no hablar de «la mañana» cuando ya pasó ese periodo.
+- Nima describe sus estudios según lo que está haciendo realmente; ya no afirma estar observando fenómenos Oris mientras camina o descansa.
+- Las descripciones de tareas laborales usan frases legibles en vez de exponer identificadores internos de rutina.
+- Se ampliaron las regresiones de `DialogueSocialMenu` para cubrir actividades reales y evitar contradicciones entre rutina y conversación.
+- No se modificaron datos narrativos de Supabase ni se introdujo generación de diálogo.
