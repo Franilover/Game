@@ -951,7 +951,7 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 
 
 ## Aprendizaje por observación de eventos comunitarios (2026-11-17)
-- Cuando un NPC participa en la rutina de un acontecimiento comunitario de Torres, registra una observación directa individual del evento.
+- Cuando un NPC llega realmente al punto de reunión de un acontecimiento comunitario de Torres, registra una observación directa individual. La asignación de la rutina o el trayecto no cuentan como presencia.
 - La clave de conocimiento incluye evento, año y día; la evidencia usa ese identificador estable para impedir que cada actualización de rutina cuente como un nuevo testigo.
 - El registro conserva título, detalle, procedencia y momento. No se atribuye la observación a NPC sin identidad canónica ni a habitantes que no entraron en la rutina del evento.
 - La observación queda como conocimiento público compartible, sin afirmar nada sobre sucesos que el NPC no presenció.
