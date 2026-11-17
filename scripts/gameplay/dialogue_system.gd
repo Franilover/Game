@@ -21,6 +21,7 @@ var speaker_label: Label = null
 var portrait_rect: TextureRect = null
 var _portrait_frame: PanelContainer = null
 var _dialogue_background: TextureRect = null
+var _dialogue_compacto: bool = false
 var text_label: Label = null
 var hint_label: Label = null
 var action_button: Button = null
@@ -768,9 +769,10 @@ func _actualizar_retrato(hablante: String) -> void:
 			break
 
 	portrait_rect.texture = textura
-	portrait_rect.visible = textura != null
+	var mostrar_retrato := textura != null and not _dialogue_compacto
+	portrait_rect.visible = mostrar_retrato
 	if is_instance_valid(_portrait_frame):
-		_portrait_frame.visible = textura != null
+		_portrait_frame.visible = mostrar_retrato
 
 
 
@@ -3807,6 +3809,7 @@ func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
 	dialogue_panel.size = Vector2(ancho, alto)
 
 	var compacto := viewport_size.x < 520.0
+	_dialogue_compacto = compacto
 	var movil := viewport_size.x < 720.0
 	if _dialogue_margin != null:
 		var margen := 8 if compacto else (12 if movil else 22)
