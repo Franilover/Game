@@ -5,6 +5,34 @@ const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/wo
 const WORLD_CALENDAR_PANEL_SCRIPT = preload("res://scripts/ui/world_calendar_panel.gd")
 
 
+class MockAtmosphere extends Node:
+	signal dia_cambiado(dia_del_anio: int, anio: int)
+	signal estacion_cambiada(estacion: Dictionary)
+
+	var estaciones: Array = [
+		{"id": "primavera", "nombre": "Primavera", "orden": 1, "duracion_dias": 4},
+		{"id": "verano", "nombre": "Verano", "orden": 2, "duracion_dias": 5}
+	]
+	var estacion_actual: Dictionary = {
+		"id": "primavera",
+		"nombre": "Primavera",
+		"temporada": "Verde",
+		"dia_de_estacion": 2,
+		"duracion_dias": 4
+	}
+	var dia_actual := 2
+
+	func obtener_tiempo() -> Dictionary:
+		return {
+			"calendario_cargado": true,
+			"dia_de_estacion": dia_actual,
+			"duracion_estacion_dias": 4,
+			"estacion": "Primavera",
+			"estacion_id": "primavera",
+			"anio": 5
+		}
+
+
 func _ready() -> void:
 	call_deferred("_run")
 
@@ -39,6 +67,29 @@ func _run() -> void:
 
 	if WORLD_CALENDAR_PANEL_SCRIPT == null:
 		errores.append("No se pudo cargar la interfaz visual del calendario.")
+	else:
+		var atmosfera := MockAtmosphere.new()
+		add_child(atmosfera)
+		var panel := WORLD_CALENDAR_PANEL_SCRIPT.new() as CanvasLayer
+		add_child(panel)
+		panel.call("abrir", atmosfera)
+		var informacion := panel.get("_info") as Label
+		var cuadricula := panel.get("_grid") as GridContainer
+		if not is_instance_valid(informacion) or not informacion.text.contains("Verde · Primavera"):
+			errores.append("El calendario no muestra la temporada y estación actuales.")
+		if is_instance_valid(informacion) and not informacion.text.contains("Quedan 2 días"):
+			errores.append("El calendario no calcula los días restantes.")
+		if is_instance_valid(informacion) and not informacion.text.contains("Siguiente: Verano"):
+			errores.append("El calendario no identifica la estación siguiente.")
+		if not is_instance_valid(cuadricula) or cuadricula.get_child_count() != 4:
+			errores.append("La cuadrícula no representa todos los días de la estación.")
+		atmosfera.dia_actual = 3
+		atmosfera.estacion_actual["dia_de_estacion"] = 3
+		atmosfera.dia_cambiado.emit(3, 5)
+		if is_instance_valid(informacion) and not informacion.text.contains("Día 3 de 4"):
+			errores.append("La vista no se actualiza al cambiar el día.")
+		panel.queue_free()
+		atmosfera.queue_free()
 
 	await get_tree().process_frame
 	if not errores.is_empty():
