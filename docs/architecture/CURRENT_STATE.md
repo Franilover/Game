@@ -828,6 +828,8 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 
 - Las promesas y asuntos pendientes se guardan entre partidas. Los NPC pueden buscar a la persona implicada para cumplir una promesa o pedir/recibir ayuda.
 - Los habitantes comparten conocimientos marcados como públicos/compartibles cuando el otro aún no los conoce, conservando procedencia y cadena de transmisión.
+- Si un mismo conocimiento llega por varias personas, se conservan hasta 12 rutas de transmisión distintas; la cadena más reciente sigue disponible para consumidores antiguos. La repetición de una misma ruta no crea otra copia.
+- La procedencia distingue el origen inicial de cada ruta y cada enlace posterior; el receptor mantiene sus propias evidencias y no hereda como observación propia lo que sólo presenció el emisor.
 - La tensión entre dos habitantes puede provocar un encuentro para intentar resolver el desacuerdo; la resolución modifica tensión, confianza/amistad y recuerdos.
 - Los cambios dejan recuerdos individuales en ambos NPC y afectan sus vínculos futuros.
 - Los compromisos originados en recuerdos usan identificadores estables para no reaparecer tras resolverse.
