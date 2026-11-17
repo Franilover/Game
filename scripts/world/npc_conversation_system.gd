@@ -4,7 +4,7 @@ class_name NPCConversationSystem
 const NPC_VOICE_PROFILE = preload("res://scripts/gameplay/npc_voice_profile.gd")
 
 signal cinematica_acontecimiento_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
-signal cinematica_narrativa_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2, etapa: int)
+signal cinematica_narrativa_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2, etapa: int, duracion: float)
 signal cinematica_reunion_nocturna_solicitada(clave: String, npc_a: String, npc_b: String, posicion_global: Vector2)
 
 const INTERVALO_BUSQUEDA := 0.5
@@ -2239,12 +2239,25 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 		var npc_b_historia := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
 		if is_instance_valid(npc_a_historia) and is_instance_valid(npc_b_historia):
 			var centro_historia := (npc_a_historia.global_position + npc_b_historia.global_position) * 0.5
+			var duracion_historia := 1.0
+			var lineas_historia: Array = _conversacion_activa.get("lineas", [])
+			for linea_variant in lineas_historia:
+				if not linea_variant is Dictionary:
+					continue
+				var linea_historia := linea_variant as Dictionary
+				var texto_historia := str(linea_historia.get("texto", ""))
+				duracion_historia += clampf(
+					1.2 + float(texto_historia.length()) * SEGUNDOS_POR_CARACTER,
+					DURACION_LINEA_MINIMA,
+					DURACION_LINEA_MAXIMA
+				)
 			cinematica_narrativa_solicitada.emit(
 				str(_conversacion_activa.get("clave", "")),
 				npc_a_historia.get_nombre_visual(),
 				npc_b_historia.get_nombre_visual(),
 				centro_historia,
-				etapa + 1
+				etapa + 1,
+				duracion_historia
 			)
 	print("NPCConversationSystem: conversación ambiental iniciada: ", conversacion.get("clave", ""))
 
