@@ -10,7 +10,8 @@ const MUEBLE_CAMA: Texture2D = preload("res://assets/art/places/Muebles/cama.png
 const MUEBLE_MESA: Texture2D = preload("res://assets/art/places/Muebles/mesa.png")
 const MUEBLE_HORNO: Texture2D = preload("res://assets/art/places/Muebles/horno.png")
 const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.png")
-const MUEBLE_SILLA: Texture2D = preload("res://assets/art/places/Muebles/Silla.png")
+const MUEBLE_SILLA_DERECHA: Texture2D = preload("res://assets/art/places/Muebles/Silla Derecha.png")
+const MUEBLE_SILLA_FRENTE: Texture2D = preload("res://assets/art/places/Muebles/Silla Frente.png")
 const MUEBLE_ASIENTO: Texture2D = preload("res://assets/art/places/Muebles/asiento.png")
 const MUEBLE_YUNQUE: Texture2D = preload("res://assets/art/places/Muebles/Yunque.png")
 const MUEBLE_ESTANTERIA_PAN: Texture2D = preload("res://assets/art/places/Muebles/estanteria con pan.png")
@@ -1663,12 +1664,12 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "EstanteriaPan", MUEBLE_ESTANTERIA_PAN, Vector2(85, -85), Vector2(1.5, 1.5), 1)
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA_PLATOS, Vector2(90, -5), Vector2(1.3, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaAmasado", MUEBLE_MESA, Vector2(70, 85), Vector2(1.3, 1), 1)
-			_agregar_sprite_mueble(cuarto, "SillaPanadero", MUEBLE_SILLA, Vector2(155, 95), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "SillaPanadero", MUEBLE_SILLA_DERECHA, Vector2(155, 95), Vector2.ONE, 1, true)
 		"posada":
 			for i in range(3):
 				var x := -110.0 + float(i) * 110.0
 				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, -15), Vector2(1.0, 0.9), 1)
-				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA, Vector2(x, 28), Vector2.ONE, 1)
+				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 28), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(2.0, 1), 1)
 			_agregar_sprite_mueble(cuarto, "AsientoBarra", MUEBLE_ASIENTO, Vector2(0, -52), Vector2.ONE, 1)
 		"forja":
@@ -1677,20 +1678,20 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA_DOCUMENTOS, Vector2(115, 105), Vector2(1.2, 1), 1)
 		"archivo":
 			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 65), Vector2(1.8, 1), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoConsulta", MUEBLE_SILLA, Vector2(0, 115), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "AsientoConsulta", MUEBLE_SILLA_FRENTE, Vector2(0, 115), Vector2.ONE, 1)
 		"consejo":
 			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.3, 1.5), 1)
 			for i in range(4):
 				var x := -150.0 + float(i % 2) * 300.0
 				var y := -95.0 if i < 2 else 95.0
-				_agregar_sprite_mueble(cuarto, "SillaConsejo%d" % i, MUEBLE_SILLA, Vector2(x, y), Vector2.ONE, 1)
+				_agregar_sprite_mueble(cuarto, "SillaConsejo%d" % i, MUEBLE_SILLA_DERECHA, Vector2(x, y), Vector2.ONE, 1, x > 0.0)
 		"oris":
 			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 25), Vector2(1.8, 1.3), 1)
 			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA_PLATOS, Vector2(-130, -65), Vector2(1.0, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA, Vector2(0, 85), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA_FRENTE, Vector2(0, 85), Vector2.ONE, 1)
 		"laboratorio":
 			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-185, -105), Vector2(1.35, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA, Vector2(-225, -55), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA_DERECHA, Vector2(-225, -55), Vector2.ONE, 1)
 			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-185, -55))
 			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA_PLATOS, Vector2(-35, -105), Vector2(1.2, 1.05), 1)
 			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(-35, -55))
@@ -1704,7 +1705,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 		"comercio", "registro", "almacen":
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -75), Vector2(2.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 55), Vector2(1.5, 1), 2)
-			_agregar_sprite_mueble(cuarto, "SillaInventario", MUEBLE_SILLA, Vector2(0, 105), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "SillaInventario", MUEBLE_SILLA_FRENTE, Vector2(0, 105), Vector2.ONE, 1)
 		"cuartel":
 			for i in range(4):
 				var posicion_litera := Vector2(-150 + (i % 2) * 300, -65 + int(i / 2) * 105)
@@ -1721,12 +1722,12 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			var posicion_cama := Vector2(-145, -55)
 			_agregar_sprite_mueble(cuarto, "Cama", MUEBLE_CAMA, posicion_cama, Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Mesa", MUEBLE_MESA_PLATOS, Vector2(75, 20), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Silla", MUEBLE_SILLA, Vector2(75, 65), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Silla", MUEBLE_SILLA_FRENTE, Vector2(75, 65), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(145, -75), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 70), Vector2.ONE, 1)
 
 
-func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1) -> void:
+func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1, flip_h: bool = false) -> void:
 	if textura == null:
 		push_warning("ReinoTorres: no se pudo cargar el sprite del mueble: " + nombre)
 		return
@@ -1736,6 +1737,7 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 	sprite.position = posicion
 	sprite.scale = escala
 	sprite.centered = true
+	sprite.flip_h = flip_h
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.z_index = z
 	padre.add_child(sprite)
