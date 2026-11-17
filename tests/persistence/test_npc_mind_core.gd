@@ -287,6 +287,21 @@ func _run() -> void:
 
 	var schedule := ScheduleScript.new() as NPCScheduleSystem
 	schedule._relationship_system = relationship
+	# Los valores sociales canónicos vienen del perfil Supabase, no del aprendizaje.
+	relationship._reglas["mara"] = {"sociabilidad": 30.0}
+	relationship._reglas["ivo"] = {"sociabilidad": 90.0}
+	var vinculo_desconocido := {"amistad": 0.0, "confianza": 0.0, "afecto": 0.0}
+	var vinculo_cercano := {"amistad": 15.0, "confianza": 8.0, "afecto": 10.0}
+	if schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido):
+		errores.append("Un NPC reservado aceptó buscar compañía sin vínculo ni motivo.")
+	if not schedule._puede_iniciar_encuentro_social("ivo", vinculo_desconocido):
+		errores.append("La sociabilidad alta no permitió iniciar un encuentro casual.")
+	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_cercano):
+		errores.append("Un NPC reservado no pudo buscar a alguien con quien tiene un vínculo.")
+	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido, true):
+		errores.append("Un motivo concreto no permitió una excepción al perfil reservado.")
+	if schedule._obtener_umbral_social("mara") <= schedule._obtener_umbral_social("ivo"):
+		errores.append("La sociabilidad no modificó el umbral de necesidad social.")
 	relationship.registrar_recuerdo("ivo", {
 		"tipo": "experiencia_npc",
 		"evento": "ayudar",
