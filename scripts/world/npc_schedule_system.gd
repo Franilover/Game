@@ -2102,16 +2102,12 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 			"clave": str(asunto.get("clave", "")),
 			"descripcion": str(asunto.get("descripcion", asunto.get("asunto", "")))
 		}
-	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_compartibles_npc(personaje_id, pareja_id):
 		if not conocimiento_variant is Dictionary:
 			continue
 		var conocimiento := conocimiento_variant as Dictionary
-		var tipo_conocimiento := str(conocimiento.get("tipo", "")).to_lower()
-		var compartible := bool(conocimiento.get("compartible", false)) or tipo_conocimiento in ["noticia", "evento_publico", "conocimiento_compartible"]
 		var clave := str(conocimiento.get("clave", "")).strip_edges()
-		if not compartible or clave.is_empty():
-			continue
-		if _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+		if clave.is_empty() or _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
 			continue
 		return {
 			"tipo": "compartir_noticia",
@@ -2289,7 +2285,7 @@ func _calcular_influencia_recuerdos_sociales(
 		var vigencia := 1.0 / (1.0 + antiguedad / 14.0)
 		influencia += (
 			resultado * importancia * vigencia
-			* (1.0 / (1.0 + float(consideradas) * 0.35)) * 5.0
+			* pow(0.65, float(consideradas)) * 5.0
 		)
 		consideradas += 1
 		if consideradas >= 6:
@@ -2351,14 +2347,11 @@ func _registrar_experiencia_social_npc(
 func _hay_noticia_compartible(personaje_id: String, pareja_id: String) -> bool:
 	if not is_instance_valid(_relationship_system):
 		return false
-	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_compartibles_npc(personaje_id, pareja_id):
 		if not conocimiento_variant is Dictionary:
 			continue
-		var conocimiento := conocimiento_variant as Dictionary
-		var tipo := str(conocimiento.get("tipo", "")).to_lower()
-		var compartible := bool(conocimiento.get("compartible", false)) or tipo in ["noticia", "evento_publico", "conocimiento_compartible"]
-		var clave := str(conocimiento.get("clave", "")).strip_edges()
-		if compartible and not clave.is_empty() and not _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+		var clave := str((conocimiento_variant as Dictionary).get("clave", "")).strip_edges()
+		if not clave.is_empty() and not _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
 			return true
 	return false
 
