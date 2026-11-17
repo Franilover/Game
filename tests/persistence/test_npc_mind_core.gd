@@ -280,7 +280,7 @@ func _run() -> void:
 	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
 
- 	# La privacidad y el consentimiento se respetan al retransmitir información.
+	# La privacidad y el consentimiento se respetan al retransmitir información.
 	relationship.registrar_conocimiento_npc("ivo", {
 		"clave": "secreto_mara",
 		"tipo": "confidencia",
