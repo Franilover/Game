@@ -6,9 +6,13 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 var _atmosfera: Node = null
 var _mueble_origen: Node = null
 var _panel: PanelContainer
-var _info: Label
 var _grid: GridContainer
-var _ancho_celda: float = 36.0
+var _boton_estacion: Button
+var _estaciones: Array = []
+var _indice_estacion_vista: int = 0
+var _ancho_celda: float = 48.0
+var _dia_actual: int = 1
+var _estacion_actual_id: String = ""
 
 
 func abrir(atmosfera: Node, mueble_origen: Node = null) -> void:
@@ -22,6 +26,8 @@ func abrir(atmosfera: Node, mueble_origen: Node = null) -> void:
 		_atmosfera.connect("dia_cambiado", _al_cambiar_dia)
 	if _atmosfera.has_signal("estacion_cambiada"):
 		_atmosfera.connect("estacion_cambiada", _al_cambiar_estacion)
+	_cargar_estaciones()
+	_seleccionar_estacion_actual()
 	_crear_interfaz()
 	_actualizar_calendario()
 
@@ -30,6 +36,39 @@ func _process(_delta: float) -> void:
 	if not is_instance_valid(_mueble_origen) or not _mueble_origen.is_visible_in_tree():
 		queue_free()
 
+
+func _cargar_estaciones() -> void:
+	_estaciones.clear()
+	if not is_instance_valid(_atmosfera):
+		return
+	var estaciones_variant: Variant = _atmosfera.get("estaciones")
+	if not estaciones_variant is Array:
+		return
+	_estaciones = (estaciones_variant as Array).duplicate(true)
+	_estaciones.sort_custom(
+		func(a: Variant, b: Variant) -> bool:
+			if not a is Dictionary:
+				return false
+			if not b is Dictionary:
+				return true
+			return int((a as Dictionary).get("orden", 0)) < int((b as Dictionary).get("orden", 0))
+	)
+
+
+func _seleccionar_estacion_actual() -> void:
+	if not is_instance_valid(_atmosfera):
+		return
+	var actual_variant: Variant = _atmosfera.get("estacion_actual")
+	if not actual_variant is Dictionary:
+		return
+	_estacion_actual_id = str((actual_variant as Dictionary).get("id", ""))
+	for indice in range(_estaciones.size()):
+		if not _estaciones[indice] is Dictionary:
+			continue
+		if str((_estaciones[indice] as Dictionary).get("id", "")) == _estacion_actual_id:
+			_indice_estacion_vista = indice
+			_dia_actual = maxi(1, int((actual_variant as Dictionary).get("dia_de_estacion", 1)))
+			return
 
 
 func _crear_interfaz() -> void:
@@ -49,7 +88,7 @@ func _crear_interfaz() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	var ancho_panel := minf(332.0, maxf(220.0, viewport_size.x - 24.0))
 	_panel.custom_minimum_size = Vector2(ancho_panel, minf(292.0, maxf(180.0, viewport_size.y - 24.0)))
-	_ancho_celda = clampf((ancho_panel - 64.0) / 7.0, 24.0, 36.0)
+	_ancho_celda = clampf((ancho_panel - 64.0) / 5.0, 30.0, 48.0)
 	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	centrador.add_child(_panel)
@@ -59,35 +98,43 @@ func _crear_interfaz() -> void:
 	_panel.add_child(contenido)
 
 	var encabezado := HBoxContainer.new()
+	encabezado.add_theme_constant_override("separation", 5)
 	contenido.add_child(encabezado)
-	var titulo := Label.new()
-	titulo.name = "CalendarTitle"
-	titulo.text = "CALENDARIO"
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	encabezado.add_child(titulo)
+
+	var anterior := Button.new()
+	anterior.name = "PreviousSeason"
+	anterior.text = "‹"
+	anterior.custom_minimum_size = Vector2(30.0, 30.0)
+	PIXEL_UI_THEME.apply(anterior, false)
+	anterior.pressed.connect(_cambiar_estacion_vista.bind(-1))
+	encabezado.add_child(anterior)
+
+	_boton_estacion = Button.new()
+	_boton_estacion.name = "CalendarSeason"
+	_boton_estacion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_boton_estacion.custom_minimum_size = Vector2(0.0, 30.0)
+	_boton_estacion.focus_mode = Control.FOCUS_NONE
+	PIXEL_UI_THEME.apply(_boton_estacion, false)
+	encabezado.add_child(_boton_estacion)
+
+	var siguiente := Button.new()
+	siguiente.name = "NextSeason"
+	siguiente.text = "›"
+	siguiente.custom_minimum_size = Vector2(30.0, 30.0)
+	PIXEL_UI_THEME.apply(siguiente, false)
+	siguiente.pressed.connect(_cambiar_estacion_vista.bind(1))
+	encabezado.add_child(siguiente)
 
 	var cerrar := Button.new()
+	cerrar.name = "CloseCalendar"
 	cerrar.text = "X"
-	cerrar.custom_minimum_size = Vector2(34.0, 30.0)
-	PIXEL_UI_THEME.apply(cerrar)
+	cerrar.custom_minimum_size = Vector2(30.0, 30.0)
+	PIXEL_UI_THEME.apply(cerrar, false)
 	cerrar.pressed.connect(queue_free)
 	encabezado.add_child(cerrar)
 
-	_info = Label.new()
-	_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	contenido.add_child(_info)
-
-	var separador := HSeparator.new()
-	contenido.add_child(separador)
-
-	var etiqueta_dias := Label.new()
-	etiqueta_dias.text = "DÍAS DE LA ESTACIÓN"
-	etiqueta_dias.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	contenido.add_child(etiqueta_dias)
-
 	var desplazamiento := ScrollContainer.new()
+	desplazamiento.name = "DaysScroll"
 	desplazamiento.custom_minimum_size = Vector2(maxf(180.0, ancho_panel - 40.0), maxf(80.0, minf(176.0, viewport_size.y - 140.0)))
 	desplazamiento.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	desplazamiento.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -95,107 +142,80 @@ func _crear_interfaz() -> void:
 
 	_grid = GridContainer.new()
 	_grid.name = "DaysGrid"
-	_grid.columns = 7
+	_grid.columns = 5
 	_grid.add_theme_constant_override("h_separation", 4)
 	_grid.add_theme_constant_override("v_separation", 4)
 	desplazamiento.add_child(_grid)
-	for nombre_dia in ["L", "M", "X", "J", "V", "S", "D"]:
-		var cabecera := Label.new()
-		cabecera.text = nombre_dia
-		cabecera.custom_minimum_size = Vector2(_ancho_celda, 22.0)
-		cabecera.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		cabecera.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_grid.add_child(cabecera)
-		PIXEL_UI_THEME.apply(cabecera, false)
 	PIXEL_UI_THEME.apply(raiz)
 
 
+func _cambiar_estacion_vista(direccion: int) -> void:
+	if _estaciones.is_empty():
+		return
+	_indice_estacion_vista = posmod(_indice_estacion_vista + direccion, _estaciones.size())
+	_actualizar_calendario()
+
+
 func _actualizar_calendario() -> void:
-	if not is_instance_valid(_grid) or not is_instance_valid(_info):
+	if not is_instance_valid(_grid) or not is_instance_valid(_boton_estacion):
 		return
 	for hijo in _grid.get_children():
+		_grid.remove_child(hijo)
 		hijo.queue_free()
-	if not is_instance_valid(_atmosfera) or not _atmosfera.has_method("obtener_tiempo"):
-		_info.text = "El calendario no está disponible."
+
+	if not is_instance_valid(_atmosfera) or _estaciones.is_empty():
+		_boton_estacion.text = "Calendario no disponible"
 		return
 
+	if not _atmosfera.has_method("obtener_tiempo"):
+		_boton_estacion.text = "Calendario no disponible"
+		return
 	var tiempo: Dictionary = _atmosfera.call("obtener_tiempo")
 	if not bool(tiempo.get("calendario_cargado", false)):
-		_info.text = "Cargando calendario…"
+		_boton_estacion.text = "Cargando calendario…"
 		return
 
-	var duracion := maxi(int(tiempo.get("duracion_estacion_dias", 0)), 1)
-	var dia_actual := clampi(int(tiempo.get("dia_de_estacion", 1)), 1, duracion)
-	var estacion := str(tiempo.get("estacion", "Estación"))
-	var estacion_actual_variant: Variant = _atmosfera.get("estacion_actual")
-	var estacion_actual: Dictionary = estacion_actual_variant if estacion_actual_variant is Dictionary else {}
-	var temporada := str(estacion_actual.get("temporada", estacion_actual.get("nombre_temporada", ""))).strip_edges()
-	var anio := int(tiempo.get("anio", 0))
-	var restante := maxi(0, duracion - dia_actual)
-	var siguiente := _obtener_siguiente_estacion(str(tiempo.get("estacion_id", "")))
+	_indice_estacion_vista = clampi(_indice_estacion_vista, 0, _estaciones.size() - 1)
+	var estacion_variant: Variant = _estaciones[_indice_estacion_vista]
+	if not estacion_variant is Dictionary:
+		_boton_estacion.text = "Estación"
+		return
+	var estacion := estacion_variant as Dictionary
+	var nombre_estacion := str(estacion.get("nombre", "Estación"))
+	_boton_estacion.text = nombre_estacion
 
-	var encabezado := "Estación: " + estacion
-	if not temporada.is_empty() and temporada.to_lower() != estacion.to_lower():
-		encabezado = "Temporada: %s\nEstación: %s" % [temporada, estacion]
-	_info.text = "%s\nDía %d de %d  ·  Quedan %d días\nAño %d  ·  Siguiente: %s" % [
-		encabezado, dia_actual, duracion, restante, anio, siguiente
-	]
+	var duracion := maxi(int(estacion.get("duracion_dias", 0)), 1)
+	var es_estacion_actual := str(estacion.get("id", "")) == str(tiempo.get("estacion_id", ""))
+	var dia_resaltado := int(tiempo.get("dia_de_estacion", 1)) if es_estacion_actual else -1
 
 	for dia in range(1, duracion + 1):
-		var celda := PanelContainer.new()
-		celda.custom_minimum_size = Vector2(_ancho_celda, 30.0)
-		if dia == dia_actual:
-			var resaltado := StyleBoxFlat.new()
-			resaltado.bg_color = Color("#9b5939")
-			resaltado.border_color = Color("#e7c99b")
-			resaltado.set_border_width_all(2)
-			celda.add_theme_stylebox_override("panel", resaltado)
-		else:
-			var normal := StyleBoxFlat.new()
-			normal.bg_color = Color("#493326")
-			normal.border_color = Color("#76503a")
-			normal.set_border_width_all(1)
-			celda.add_theme_stylebox_override("panel", normal)
-		var numero := Label.new()
+		var numero := Button.new()
+		numero.name = "Day%02d" % dia
 		numero.text = str(dia)
-		numero.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		numero.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		celda.add_child(numero)
+		numero.custom_minimum_size = Vector2(_ancho_celda, 32.0)
+		numero.focus_mode = Control.FOCUS_NONE
 		PIXEL_UI_THEME.apply(numero, false)
-		_grid.add_child(celda)
+		if dia == dia_resaltado:
+			var estilo_seleccionado := PIXEL_UI_THEME.button_pressed_style()
+			if estilo_seleccionado != null:
+				numero.add_theme_stylebox_override("normal", estilo_seleccionado)
+				numero.add_theme_stylebox_override("hover", estilo_seleccionado)
+				numero.add_theme_stylebox_override("pressed", estilo_seleccionado)
+		_grid.add_child(numero)
 
 
 func _al_cambiar_dia(_dia: int, _anio: int) -> void:
+	if not is_instance_valid(_atmosfera):
+		return
+	var tiempo: Dictionary = _atmosfera.call("obtener_tiempo")
+	_estacion_actual_id = str(tiempo.get("estacion_id", ""))
+	_dia_actual = int(tiempo.get("dia_de_estacion", 1))
 	_actualizar_calendario()
 
 
 func _al_cambiar_estacion(_estacion: Dictionary) -> void:
+	_seleccionar_estacion_actual()
 	_actualizar_calendario()
-
-
-func _obtener_siguiente_estacion(id_actual: String) -> String:
-	if not is_instance_valid(_atmosfera):
-		return "—"
-	var estaciones_variant: Variant = _atmosfera.get("estaciones")
-	if not estaciones_variant is Array:
-		return "—"
-	var estaciones: Array = (estaciones_variant as Array).duplicate(true)
-	estaciones.sort_custom(
-		func(a: Variant, b: Variant) -> bool:
-			if not a is Dictionary:
-				return false
-			if not b is Dictionary:
-				return true
-			return int((a as Dictionary).get("orden", 0)) < int((b as Dictionary).get("orden", 0))
-	)
-	for indice in range(estaciones.size()):
-		if not estaciones[indice] is Dictionary:
-			continue
-		if str((estaciones[indice] as Dictionary).get("id", "")) != id_actual:
-			continue
-		var siguiente: Dictionary = estaciones[(indice + 1) % estaciones.size()]
-		return str(siguiente.get("nombre", "—"))
-	return "—"
 
 
 func _unhandled_input(event: InputEvent) -> void:
