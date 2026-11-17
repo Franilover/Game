@@ -253,8 +253,10 @@ func _run() -> void:
 
 	if dialogo._es_dialogo_en_transito({"clave": "rutina_contextual"}):
 		errores.append("Una conversación cotidiana se clasificó como diálogo de tránsito por la marca de movimiento.")
-	if not dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"}):
-		errores.append("Un diálogo de tránsito explícito dejó de reconocerse.")
+	if dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"}):
+		errores.append("Una rutina en tránsito siguió tratándose como cierre automático sin declarar ese modo.")
+	if not dialogo._es_dialogo_en_transito({"_dialogo_breve_sin_opciones": true}):
+		errores.append("Un diálogo breve explícito dejó de reconocerse.")
 
 	# Las frases de rutina distinguen desplazarse de estar trabajando.
 	npc.nombre_individual = "Bruna"
