@@ -194,6 +194,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				if not datos_variant is Dictionary:
 					continue
 				var dialogo_abierto := false
+				_dialogue.configurar_estilo_cinematica(true)
 				if paso.has("npc"):
 					var fuente_dialogo := _buscar_npc(str(paso.get("npc", "")))
 					if _modo_cinematica == "planeada" and is_instance_valid(fuente_dialogo):
@@ -979,6 +980,8 @@ func _restaurar_camara() -> void:
 	_seguimiento_camara_npcs.clear()
 	if not is_instance_valid(_camera) or not is_instance_valid(_player):
 		return
+	_camera.enabled = true
+	_camera.make_current()
 	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
 		_tween_camara.kill()
 	_tween_camara = create_tween()
@@ -989,12 +992,22 @@ func _restaurar_camara() -> void:
 	_tween_camara.tween_property(_camera, "zoom", _zoom_original, 0.65)
 	_tween_camara.tween_property(_camera, "offset", _offset_original, 0.65)
 	await _tween_camara.finished
+	if is_instance_valid(_camera):
+		_camera.reset_smoothing()
 
 
 func _finalizar() -> void:
 	if not _ocupado:
 		return
 	_restaurar_estado_temporal()
+	if is_instance_valid(_dialogue):
+		_dialogue.configurar_estilo_cinematica(false)
+	if is_instance_valid(_player) and _player is CharacterBody2D:
+		(_player as CharacterBody2D).velocity = Vector2.ZERO
+	if is_instance_valid(_camera):
+		_camera.enabled = true
+		_camera.make_current()
+		_camera.reset_smoothing()
 	if is_instance_valid(_panel_fundido):
 		_panel_fundido.color = Color(0.0, 0.0, 0.0, 0.0)
 		_panel_fundido.hide()

@@ -66,6 +66,32 @@ var _variante_pendiente_mostrar: Dictionary = {}
 var _personaje_variante_pendiente: String = ""
 var _ciclo_variante_pendiente: String = ""
 var _contexto_rutina_conversacion: Dictionary = {}
+var _estilo_panel_dialogo_normal: StyleBox = null
+
+
+## Las escenas usan la misma tipografía y color de texto del diálogo habitual,
+## pero una superficie de botón para distinguir el cuadro sin perder legibilidad.
+func configurar_estilo_cinematica(activar: bool) -> void:
+	if not is_instance_valid(dialogue_panel):
+		return
+	if activar:
+		if _estilo_panel_dialogo_normal == null:
+			_estilo_panel_dialogo_normal = dialogue_panel.get_theme_stylebox("panel")
+		var fondo_boton := PIXEL_UI_THEME.button_surface_style()
+		if fondo_boton != null:
+			dialogue_panel.add_theme_stylebox_override("panel", fondo_boton)
+		else:
+			var fallback := StyleBoxFlat.new()
+			fallback.bg_color = Color("#4B3924")
+			fallback.border_color = Color("#8A6842")
+			fallback.set_border_width_all(2)
+			fallback.set_corner_radius_all(5)
+			dialogue_panel.add_theme_stylebox_override("panel", fallback)
+	else:
+		if _estilo_panel_dialogo_normal != null:
+			dialogue_panel.add_theme_stylebox_override("panel", _estilo_panel_dialogo_normal)
+		else:
+			dialogue_panel.remove_theme_stylebox_override("panel")
 
 
 func _ready() -> void:
