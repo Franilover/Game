@@ -610,6 +610,8 @@ func _run() -> void:
 	mind.free()
 	mind_recargada.free()
 	game_state.free()
+	# Permite que Godot procese las liberaciones diferidas antes de cerrar el test.
+	await get_tree().process_frame
 	if not errores.is_empty():
 		for error in errores:
 			push_error("NPCMindCore: FAIL: " + error)
