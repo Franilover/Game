@@ -25,8 +25,14 @@ var _hand_selector_activo: String = ""
 var _left_hand_display: Button = null
 var _right_hand_display: Button = null
 var _world_atmosphere_ref: WorldAtmosphere = null
+var _clock_panel: PanelContainer = null
+var _clock_label: Label = null
 var _calendar_panel: PanelContainer = null
-var _calendar_label: Label = null
+var _calendar_info: Label = null
+var _calendar_grid: GridContainer = null
+var _calendar_button: Button = null
+var _coin_button: Button = null
+var _calendar_open := false
 var _calendar_elapsed: float = 0.0
 var _modo_historia: bool = false
 var _eterium_ui_elapsed: float = 0.0
@@ -170,6 +176,8 @@ func _ready() -> void:
 	_preparar_panel_interaccion()
 	_preparar_panel_misiones()
 	_preparar_reloj_calendario()
+	_preparar_calendario_visual()
+	_preparar_boton_monedas()
 	if not get_viewport().size_changed.is_connected(_actualizar_layout_hud_movil):
 		get_viewport().size_changed.connect(_actualizar_layout_hud_movil)
 	_actualizar_layout_hud_movil()
@@ -226,12 +234,15 @@ func _process(delta: float) -> void:
 		if nodo is CanvasItem and (nodo as CanvasItem).visible:
 			inventario_abierto = true
 			break
-	if is_instance_valid(_calendar_panel):
-		_calendar_panel.visible = not _modo_historia and not inventario_abierto and not _combate_garumi_activo and (not _es_interfaz_movil() or get_viewport_rect().size.y >= 280.0) and (not is_instance_valid(_garumi_mobile_menu) or not _garumi_mobile_menu.visible)
+	if is_instance_valid(_calendar_panel) and _calendar_open and (inventario_abierto or _modo_historia or _combate_garumi_activo):
+		_cerrar_calendario_visual()
 	_calendar_elapsed += delta
 	if _calendar_elapsed >= 0.2:
 		_calendar_elapsed = 0.0
 		_actualizar_reloj_calendario()
+		_actualizar_boton_monedas()
+		if _calendar_open:
+			_actualizar_calendario_visual()
 
 	if discovery_notice != null and discovery_notice.visible:
 		_discovery_notice_timer -= delta
@@ -1475,71 +1486,199 @@ func _actualizar_layout_hud_movil() -> void:
 		_garumi_selector_panel.size = selector_size
 		_garumi_selector_panel.custom_minimum_size = selector_size
 
-	# En horizontal, el reloj ocupa el espacio central entre los controles.
-	# En vertical, baja de las filas superiores; en pantallas muy bajas se oculta
-	# para no tapar Dash ni las dos manos.
-	if not is_instance_valid(_calendar_panel):
-		return
-	if viewport_size.y < 280.0:
-		_calendar_panel.hide()
-		return
-	_calendar_panel.show()
-	_calendar_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	var calendar_size := Vector2(minf(190.0, viewport_size.x - 24.0), 64.0)
-	var calendar_position := Vector2((viewport_size.x - calendar_size.x) * 0.5, 124.0)
-	if viewport_size.x >= 560.0 and viewport_size.y >= 320.0:
-		calendar_size = Vector2(150.0, 76.0)
-		calendar_position = Vector2((viewport_size.x - calendar_size.x) * 0.5, 12.0)
-	_calendar_panel.position = calendar_position
-	_calendar_panel.size = calendar_size
-	_calendar_panel.custom_minimum_size = calendar_size
-	if is_instance_valid(_calendar_label):
-		_calendar_label.add_theme_font_size_override("font_size", 9 if viewport_size.x < 400.0 else 10)
+	_actualizar_layout_hud_superior()
 
 
 func _preparar_reloj_calendario() -> void:
-	_calendar_panel = CALENDAR_CLOCK_SCENE.instantiate() as PanelContainer
-	if _calendar_panel == null:
+	_clock_panel = CALENDAR_CLOCK_SCENE.instantiate() as PanelContainer
+	if _clock_panel == null:
 		push_error("HUD: no se pudo instanciar hud_calendar_clock.tscn.")
 		return
-	_calendar_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_calendar_panel.anchor_left = 1.0
-	_calendar_panel.anchor_right = 1.0
-	_calendar_panel.anchor_top = 0.0
-	_calendar_panel.anchor_bottom = 0.0
-	_calendar_panel.offset_left = -202.0
-	_calendar_panel.offset_top = 12.0
-	_calendar_panel.offset_right = -12.0
-	_calendar_panel.offset_bottom = 100.0
-	_calendar_label = _calendar_panel.get_node("CalendarText") as Label
+	_clock_panel.name = "WorldClock"
+	_clock_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_clock_label = _clock_panel.get_node("CalendarText") as Label
+	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_clock_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_clock_label.text = "--:--\nDía —"
+	add_child(_clock_panel)
+	PIXEL_UI_THEME.apply(_clock_panel)
+
+
+func _preparar_calendario_visual() -> void:
+	_calendar_button = Button.new()
+	_calendar_button.name = "CalendarButton"
+	_calendar_button.text = "Calendario"
+	_calendar_button.custom_minimum_size = Vector2(104.0, 38.0)
+	PIXEL_UI_THEME.apply(_calendar_button)
+	_calendar_button.pressed.connect(_alternar_calendario_visual)
+	add_child(_calendar_button)
+
+	_calendar_panel = PanelContainer.new()
+	_calendar_panel.name = "WorldCalendar"
+	_calendar_panel.visible = false
+	_calendar_panel.custom_minimum_size = Vector2(340.0, 300.0)
+	PIXEL_UI_THEME.apply(_calendar_panel, false)
+	var contenido := VBoxContainer.new()
+	contenido.add_theme_constant_override("separation", 8)
+	_calendar_panel.add_child(contenido)
+
+	var encabezado := HBoxContainer.new()
+	contenido.add_child(encabezado)
+	var titulo := Label.new()
+	titulo.text = "CALENDARIO"
+	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	encabezado.add_child(titulo)
+	var cerrar := Button.new()
+	cerrar.text = "X"
+	cerrar.custom_minimum_size = Vector2(32.0, 30.0)
+	PIXEL_UI_THEME.apply(cerrar)
+	cerrar.pressed.connect(_cerrar_calendario_visual)
+	encabezado.add_child(cerrar)
+
+	_calendar_info = Label.new()
+	_calendar_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_calendar_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	contenido.add_child(_calendar_info)
+
+	var separador := HSeparator.new()
+	contenido.add_child(separador)
+	_calendar_grid = GridContainer.new()
+	_calendar_grid.name = "DaysGrid"
+	_calendar_grid.columns = 7
+	_calendar_grid.add_theme_constant_override("h_separation", 4)
+	_calendar_grid.add_theme_constant_override("v_separation", 4)
+	contenido.add_child(_calendar_grid)
 	add_child(_calendar_panel)
-	PIXEL_UI_THEME.apply(_calendar_panel)
-	_actualizar_layout_hud_movil()
+	_actualizar_calendario_visual()
+	_actualizar_layout_hud_superior()
+
+
+func _preparar_boton_monedas() -> void:
+	_coin_button = Button.new()
+	_coin_button.name = "CoinBalance"
+	_coin_button.custom_minimum_size = Vector2(112.0, 38.0)
+	_coin_button.text = "Monedas: %d" % GameState.obtener_dinero()
+	_coin_button.disabled = true
+	PIXEL_UI_THEME.apply(_coin_button)
+	add_child(_coin_button)
+	_actualizar_boton_monedas()
+
+
+func _actualizar_boton_monedas() -> void:
+	if is_instance_valid(_coin_button):
+		_coin_button.text = "Monedas: %d" % GameState.obtener_dinero()
 
 
 func _al_cambiar_dinero(_cantidad: int) -> void:
-	_actualizar_reloj_calendario()
+	_actualizar_boton_monedas()
 
 
 func _actualizar_reloj_calendario() -> void:
-	if not is_instance_valid(_calendar_label):
+	if not is_instance_valid(_clock_label):
 		return
-	# En reinos fijos no existe WorldAtmosphere. Conservamos la última
-	# lectura válida en vez de reemplazar el reloj por "no disponible".
 	if not is_instance_valid(_world_atmosphere_ref):
-		_calendar_label.text = "GARLIA\nMonedas: %d" % GameState.obtener_dinero()
+		_clock_label.text = "--:--\nDía —"
 		return
 	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
-		_calendar_label.text = "GARLIA\nCargando calendario…\nMonedas: %d" % GameState.obtener_dinero()
+		_clock_label.text = "Cargando…\nDía —"
 		return
-	var hora := str(tiempo.get("hora", "--:--"))
-	var periodo := str(tiempo.get("periodo", ""))
-	var estacion := str(tiempo.get("estacion", "—"))
-	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
-	var anio := int(tiempo.get("anio", 0))
-	var fecha := "Día %d · %s" % [dia_estacion, estacion] if dia_estacion > 0 else estacion
-	_calendar_label.text = "%s   %s\nMonedas: %d\n%s · Año %d" % [hora, periodo, GameState.obtener_dinero(), fecha, anio]
+	_clock_label.text = "%s\nDía %d" % [
+		str(tiempo.get("hora", "--:--")),
+		int(tiempo.get("dia_de_estacion", tiempo.get("dia", 0)))
+	]
+
+
+func _alternar_calendario_visual() -> void:
+	if _calendar_open:
+		_cerrar_calendario_visual()
+	else:
+		_calendar_open = true
+		_actualizar_calendario_visual()
+		_calendar_panel.show()
+		_calendar_panel.move_to_front()
+
+
+func _cerrar_calendario_visual() -> void:
+	_calendar_open = false
+	if is_instance_valid(_calendar_panel):
+		_calendar_panel.hide()
+
+
+func _actualizar_calendario_visual() -> void:
+	if not is_instance_valid(_calendar_grid) or not is_instance_valid(_calendar_info):
+		return
+	for hijo in _calendar_grid.get_children():
+		hijo.queue_free()
+	var nombres_dias := ["L", "M", "X", "J", "V", "S", "D"]
+	for nombre_dia in nombres_dias:
+		var etiqueta := Label.new()
+		etiqueta.text = nombre_dia
+		etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		etiqueta.custom_minimum_size = Vector2(32.0, 24.0)
+		_calendar_grid.add_child(etiqueta)
+	if not is_instance_valid(_world_atmosphere_ref):
+		_calendar_info.text = "El calendario no está disponible en este reino."
+		return
+	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
+	if not bool(tiempo.get("calendario_cargado", false)):
+		_calendar_info.text = "Cargando calendario…"
+		return
+	var estaciones: Array = _world_atmosphere_ref.estaciones
+	var actual: Dictionary = _world_atmosphere_ref.estacion_actual
+	var duracion := maxi(int(tiempo.get("duracion_estacion_dias", 0)), 1)
+	var dia_actual := clampi(int(tiempo.get("dia_de_estacion", 1)), 1, duracion)
+	var estacion := str(tiempo.get("estacion", "Estación"))
+	var temporada := str(actual.get("temporada", actual.get("estacion", estacion)))
+	var indice_estacion := -1
+	for i in range(estaciones.size()):
+		if estaciones[i] is Dictionary and str((estaciones[i] as Dictionary).get("id", "")) == str(tiempo.get("estacion_id", "")):
+			indice_estacion = i
+			break
+	var siguiente := "—"
+	if indice_estacion >= 0 and not estaciones.is_empty():
+		var siguiente_datos: Dictionary = estaciones[(indice_estacion + 1) % estaciones.size()]
+		siguiente = str(siguiente_datos.get("nombre", "—"))
+	_calendar_info.text = "%s · %s\nDía %d de %d   |   Quedan %d días\nAño %d   ·   Siguiente: %s" % [
+		temporada, estacion, dia_actual, duracion, duracion - dia_actual,
+		int(tiempo.get("anio", 0)), siguiente
+	]
+	for dia in range(1, duracion + 1):
+		var boton := Button.new()
+		boton.text = str(dia)
+		boton.custom_minimum_size = Vector2(32.0, 30.0)
+		boton.disabled = true
+		PIXEL_UI_THEME.apply(boton)
+		if dia == dia_actual:
+			boton.add_theme_color_override("font_color", Color("#F2C879"))
+		_calendar_grid.add_child(boton)
+
+
+func _actualizar_layout_hud_superior() -> void:
+	if not is_inside_tree():
+		return
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var movil := _es_interfaz_movil()
+	if is_instance_valid(_clock_panel):
+		var clock_size := Vector2(112.0, 48.0)
+		_clock_panel.position = Vector2((viewport_size.x - clock_size.x) * 0.5, 12.0) if movil else Vector2(viewport_size.x - 260.0, 12.0)
+		_clock_panel.size = clock_size
+		_clock_panel.custom_minimum_size = clock_size
+	if is_instance_valid(_calendar_button):
+		_calendar_button.position = Vector2((viewport_size.x - 104.0) * 0.5, 64.0) if movil else Vector2(viewport_size.x - 136.0, 12.0)
+	if is_instance_valid(_coin_button):
+		_coin_button.position = Vector2(12.0, 76.0) if movil else Vector2(16.0, 16.0)
+	if is_instance_valid(_calendar_panel):
+		var panel_size := Vector2(minf(340.0, viewport_size.x - 24.0), minf(340.0, viewport_size.y - 24.0))
+		_calendar_panel.position = (viewport_size - panel_size) * 0.5
+		_calendar_panel.size = panel_size
+		_calendar_panel.custom_minimum_size = panel_size
+		if _calendar_open:
+			_calendar_panel.show()
+
 
 
 
