@@ -315,6 +315,7 @@ func _cargar_sprite() -> void:
 			var textura_personaje := recurso_personaje as Texture2D
 			if textura_personaje != null:
 				sprite.texture = textura_personaje
+				_normalizar_escala_sprite_personaje(sprite)
 				sprite.visible = true
 				remove_meta("sprite_placeholder_humano")
 				remove_meta("sprite_key_no_encontrado")
@@ -390,6 +391,8 @@ func _cargar_sprite() -> void:
 			continue
 
 		sprite.texture = textura
+		if _es_humano() and ruta.begins_with("res://assets/art/characters/"):
+			_normalizar_escala_sprite_personaje(sprite)
 		return
 
 	# Mientras cada NPC recibe su sprite propio, reutilizamos el cuerpo humano
@@ -400,10 +403,23 @@ func _cargar_sprite() -> void:
 			var textura_base := load(sprite_humano_base) as Texture2D
 			if textura_base != null:
 				sprite.texture = textura_base
+				_normalizar_escala_sprite_personaje(sprite)
 				set_meta("sprite_placeholder_humano", true)
 				return
 
 	sprite.texture = null
+
+
+func _normalizar_escala_sprite_personaje(sprite: Sprite2D) -> void:
+	if sprite == null or sprite.texture == null:
+		return
+
+	# Los sprites de habitantes usan una altura visual común de 48 px.
+	# Así se admiten dibujos con más resolución sin reducir sus píxeles ni
+	# alterar su proporción; los sprites clásicos de 32x48 conservan escala 1.
+	var altura_textura := maxf(float(sprite.texture.get_height()), 1.0)
+	var escala_uniforme := 48.0 / altura_textura
+	sprite.scale = Vector2.ONE * escala_uniforme
 
 
 func configurar_chunk(
