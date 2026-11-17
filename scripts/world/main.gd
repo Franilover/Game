@@ -2011,17 +2011,21 @@ func _encolar_cinematica_proximidad(
 	# Si la cola se llena, conserva las escenas importantes y descarta primero
 	# la petición menos prioritaria; entre iguales, la más antigua.
 	while _cinematicas_pendientes.size() > 16:
-		var indice_descartar := 0
+		var indice_descartar := -1
 		var prioridad_menor := 2147483647
 		var mas_antigua := 2147483647
 		for indice in range(_cinematicas_pendientes.size()):
 			var candidata: Dictionary = _cinematicas_pendientes[indice]
+			if str(candidata.get("tipo", "")) == "narrativa":
+				continue
 			var prioridad := int(candidata.get("prioridad", 0))
 			var momento := int(candidata.get("creada_ms", 0))
 			if prioridad < prioridad_menor or (prioridad == prioridad_menor and momento < mas_antigua):
 				prioridad_menor = prioridad
 				mas_antigua = momento
 				indice_descartar = indice
+		if indice_descartar < 0:
+			break
 		_cinematicas_pendientes.remove_at(indice_descartar)
 
 
@@ -2049,7 +2053,7 @@ func _procesar_cinematicas_pendientes() -> void:
 		var tipo := str(pendiente.get("tipo", ""))
 		var creada_ms := int(pendiente.get("creada_ms", ahora_ms))
 		var caducidad_ms := _caducidad_cinematica_ms(tipo)
-		if caducidad_ms <= 0 or ahora_ms - creada_ms > caducidad_ms:
+		if tipo != "narrativa" and (caducidad_ms <= 0 or ahora_ms - creada_ms > caducidad_ms):
 			_cinematicas_pendientes.remove_at(indice)
 			continue
 
@@ -2060,15 +2064,20 @@ func _procesar_cinematicas_pendientes() -> void:
 		var npc_a := _buscar_npc_cinematica(nombre_a)
 		var npc_b := _buscar_npc_cinematica(nombre_b)
 		if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
-			_cinematicas_pendientes.remove_at(indice)
+			if tipo != "narrativa":
+				_cinematicas_pendientes.remove_at(indice)
 			continue
 
 		var centro_actual := (npc_a.global_position + npc_b.global_position) * 0.5
 		# La escena sólo sigue vigente mientras sus participantes permanezcan
 		# cerca del lugar donde ocurrió el acontecimiento.
 		if centro_actual.distance_to(posicion) > 240.0:
-			_cinematicas_pendientes.remove_at(indice)
-			continue
+			if tipo == "narrativa":
+				pendiente["posicion"] = centro_actual
+				_cinematicas_pendientes[indice] = pendiente
+			else:
+				_cinematicas_pendientes.remove_at(indice)
+				continue
 
 		var distancia_activacion := 0.0
 		match tipo:
@@ -2077,7 +2086,7 @@ func _procesar_cinematicas_pendientes() -> void:
 					continue
 				if npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
 					continue
-				distancia_activacion = 260.0
+				distancia_activacion = 520.0
 			"acontecimiento":
 				if not _npc_libre_para_cinematica(npc_a, true) or not _npc_libre_para_cinematica(npc_b, true):
 					continue
