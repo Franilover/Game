@@ -878,3 +878,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - La preferencia por lugar se calcula con media incremental y confianza progresiva; una experiencia aislada no crea una aversión o preferencia absoluta.
 - Las decisiones de ocio consultan esta memoria al puntuar actividades. El resultado del tramo anterior alimenta tanto el aprendizaje de la actividad como el del lugar visitado.
 - La memoria se guarda en `npc_mentes` dentro del guardado local y no requiere cambios de Supabase.
+
+
+## Memoria de corto plazo y variedad de conducta (2026-11-16)
+- `NPCMind` conserva las últimas cuatro actividades elegidas por habitante dentro del guardado local.
+- La evaluación aplica una penalización decreciente a las actividades más recientes (7, 4, 2 y 0,75 puntos); no las bloquea.
+- La penalización se integra como componente visible de la puntuación, de modo que una necesidad urgente o un objetivo de mayor peso puede justificar repetir una actividad.
+- Se añadieron pruebas para alternancia entre opciones equivalentes, penalización de repetición, límite/orden del historial y prioridad de necesidades urgentes.
+- Se inicializa y normaliza el historial para conservar compatibilidad con partidas anteriores que todavía no tengan este campo.
+- El historial es local por partida; no requiere cambios en Supabase ni generación de texto.
