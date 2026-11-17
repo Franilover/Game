@@ -1654,7 +1654,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.3, 1.5), 1)
 			for i in range(4):
 				var x := -150.0 + float(i % 2) * 300.0
-				var y := -5.0 + float(i / 2) * 95.0
+				var y := -95.0 if i < 2 else 95.0
 				_agregar_sprite_mueble(cuarto, "SillaConsejo%d" % i, MUEBLE_SILLA, Vector2(x, y), Vector2.ONE, 1)
 		"oris":
 			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 25), Vector2(1.8, 1.3), 1)
@@ -1662,7 +1662,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA, Vector2(0, 85), Vector2.ONE, 1)
 		"laboratorio":
 			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-185, -105), Vector2(1.35, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA, Vector2(-185, -55), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA, Vector2(-225, -55), Vector2.ONE, 1)
 			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-185, -55))
 			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA_PLATOS, Vector2(-35, -105), Vector2(1.2, 1.05), 1)
 			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(-35, -55))
@@ -1674,7 +1674,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_estacion_laboratorio(cuarto, "eterium", "Estudiar Eterium", Vector2(65, 120))
 			_agregar_sprite_mueble(cuarto, "AlmacenMuestras", MUEBLE_COFRE, Vector2(220, 85), Vector2(0.9, 0.9), 1)
 		"comercio", "registro", "almacen":
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA_PLATOS, Vector2(0, -75), Vector2(1.8, 1.2), 1)
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -75), Vector2(2.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 55), Vector2(1.5, 1), 2)
 			_agregar_sprite_mueble(cuarto, "SillaInventario", MUEBLE_SILLA, Vector2(0, 105), Vector2.ONE, 1)
 		"cuartel":
