@@ -89,6 +89,23 @@ func _run() -> void:
 	if estado.get("aprendizaje", {}) != {}:
 		errores.append("Un personaje nuevo debe empezar sin preferencias aprendidas.")
 
+	# El perfil de identidad puede cambiar en Supabase sin borrar lo aprendido.
+	mind.registrar_personaje("perfil_actualizable", {"rasgos": {"sociabilidad": 20.0, "prudencia": 80.0}})
+	mind.registrar_resultado_actividad("perfil_actualizable", "leer", 0.8, "ocio", "2026-11-16")
+	var perfil_actualizado := mind.registrar_personaje(
+		"perfil_actualizable",
+		{"rasgos": {"sociabilidad": 75.0, "prudencia": 35.0}}
+	)
+	var rasgos_actualizados: Dictionary = perfil_actualizado.get("rasgos", {})
+	if not is_equal_approx(float(rasgos_actualizados.get("sociabilidad", 0.0)), 0.75):
+		errores.append("El perfil canónico no actualizó la sociabilidad tras cambiar en Supabase.")
+	if not is_equal_approx(float(rasgos_actualizados.get("prudencia", 0.0)), 0.35):
+		errores.append("El perfil canónico no actualizó la prudencia tras cambiar en Supabase.")
+	if not is_equal_approx(mind.obtener_preferencia_actividad("perfil_actualizable", "leer"), 0.2):
+		errores.append("Actualizar la identidad borró o alteró el aprendizaje acumulado.")
+	if mind.obtener_fuerza_habito("perfil_actualizable", "leer", "ocio") <= 0.0:
+		errores.append("Actualizar la identidad borró el hábito aprendido.")
+
 	mind.avanzar_tiempo("ivo", 2.0)
 	var tras_tiempo := mind.obtener_necesidades("ivo")
 	if float(tras_tiempo.get("descanso", 0.0)) <= 15.0:
