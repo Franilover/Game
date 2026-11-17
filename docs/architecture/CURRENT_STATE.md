@@ -918,3 +918,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - La influencia está acotada y no cambia los rasgos base de personalidad ni reescribe los valores canónicos de Supabase.
 - Se añadieron pruebas para cautela por experiencias negativas, excepción por motivo concreto y decaimiento temporal.
 - Pendiente: ejecutar CI Godot 4.7 y validar el ritmo de decaimiento en días de mundo dentro de una partida.
+
+
+## Sincronización de identidad canónica (2026-11-17)
+- Cuando `RelationshipSystem` confirma que terminó la carga y existe una fila social propia del NPC, `NPCScheduleSystem` entrega sus rasgos a `NPCMind`.
+- `NPCMind` actualiza los rasgos base con los valores recibidos de Supabase incluso si ya había valores anteriores en la partida.
+- La sincronización no sustituye necesidades, preferencias aprendidas, hábitos, objetivos ni recuerdos.
+- Mientras las reglas cargan, o si el NPC no tiene una fila propia, no se aplica el perfil neutral de respaldo sobre el estado guardado.
+- Se añadió una prueba de regresión que cambia los rasgos canónicos y comprueba que el aprendizaje y los hábitos permanecen.
+- No se modificó el esquema ni se escribieron datos en Supabase.
