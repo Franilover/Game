@@ -4,16 +4,19 @@ class_name WorldCalendarPanel
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 var _atmosfera: Node = null
+var _mueble_origen: Node = null
 var _panel: PanelContainer
 var _info: Label
 var _grid: GridContainer
 var _ancho_celda: float = 36.0
 
 
-func abrir(atmosfera: Node) -> void:
+func abrir(atmosfera: Node, mueble_origen: Node = null) -> void:
 	_atmosfera = atmosfera
+	_mueble_origen = mueble_origen
 	layer = 120
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process(is_instance_valid(_mueble_origen))
 	add_to_group("modal_ui")
 	if _atmosfera.has_signal("dia_cambiado"):
 		_atmosfera.connect("dia_cambiado", _al_cambiar_dia)
@@ -21,6 +24,12 @@ func abrir(atmosfera: Node) -> void:
 		_atmosfera.connect("estacion_cambiada", _al_cambiar_estacion)
 	_crear_interfaz()
 	_actualizar_calendario()
+
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(_mueble_origen) or not _mueble_origen.is_visible_in_tree():
+		queue_free()
+
 
 
 func _crear_interfaz() -> void:
