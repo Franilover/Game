@@ -403,7 +403,7 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 		var escala := minf(8.0 / proporcion.x, 10.0 / proporcion.y)
 		var tamano := proporcion * escala
 		var rect_sprite := Rect2(punto - tamano * 0.5, tamano)
-		draw_texture_rect(texture, rect_sprite, false)
+		draw_texture_rect(textura, rect_sprite, false)
 
 
 func _obtener_textura_mapa_npc(npc: Node) -> Texture2D:
