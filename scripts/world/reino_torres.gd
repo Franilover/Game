@@ -98,6 +98,10 @@ var _tiempo_ambiente_torres: float = 0.0
 var _aviso_evento_torres: Label = null
 var _decoracion_evento_torres: Node2D = null
 var _evento_decoracion_actual: String = ""
+var _menu_posada: PopupMenu = null
+const POSADA_COSTE_MENSUAL := 100
+const POSADA_DURACION_MES_DIAS := 30
+const POSADA_FLAG := "posada_estado"
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -343,6 +347,9 @@ func _puede_interactuar_entrada(jugador: Node, entrada: Dictionary) -> bool:
 
 func _interactuar_entrada(jugador: Node, entrada: Dictionary) -> void:
 	if not _puede_interactuar_entrada(jugador, entrada):
+		return
+	if str(entrada.get("id", "")) == "posada":
+		_mostrar_menu_posada()
 		return
 	_entrar_al_interior(entrada.duplicate(true))
 
@@ -1190,6 +1197,9 @@ func _cargar_sprites_de_torres() -> void:
 func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
 		return
+	if str(entrada.get("id", "")) == "posada_habitacion" and not _posada_tiene_acceso():
+		Events.notification_pushed.emit("Tu suscripción de la posada no está activa.")
+		return
 	_ocultar_npcs_exteriores()
 	_posicion_exterior = _jugador.global_position
 	_entrada_interior_id = str(entrada.get("id", ""))
@@ -1525,6 +1535,8 @@ func restaurar_estado_guardado(estado: Dictionary) -> void:
 		if str(entrada.get("id", "")) == entrada_id:
 			entrada_guardada = entrada
 			break
+	if entrada_id == "posada_habitacion":
+		entrada_guardada = {"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada"}
 	if entrada_guardada.is_empty():
 		push_warning("ReinoTorres: no se pudo restaurar el interior; entrada desconocida: " + entrada_id)
 		return
@@ -1673,13 +1685,19 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "SillaPanadero", MUEBLE_SILLA_DERECHA, Vector2(55, 105), Vector2.ONE, 1, true)
 			_agregar_sprite_mueble(cuarto, "AlmacenHarina", MUEBLE_ARMARIO, Vector2(-205, 65), Vector2(0.9, 0.9), 1)
 		"posada":
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -112), Vector2(1.8, 1), 1)
+			_agregar_sprite_mueble(cuarto, "MostradorRecepcion", MUEBLE_MESA, Vector2(0, -112), Vector2(1.8, 1), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioPosada", MUEBLE_ARMARIO, Vector2(-205, -110), Vector2(0.9, 0.9), 1)
+			_agregar_estacion_posada(cuarto, Vector2(0, -68))
 			for i in range(3):
 				var x := -112.0 + float(i) * 112.0
 				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, -12), Vector2(0.95, 0.9), 1)
 				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
 				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
+		"habitacion_posada":
+			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "CofreHabitacion", MUEBLE_COFRE, Vector2(155, 78), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaHabitacion", MUEBLE_MESA, Vector2(125, -85), Vector2(1.0, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "SillaHabitacion", MUEBLE_SILLA_FRENTE, Vector2(125, -38), Vector2.ONE, 1)
 		"forja":
 			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-175, -82), Vector2(1.8, 1.8), 1)
 			_agregar_sprite_mueble(cuarto, "Yunque", MUEBLE_YUNQUE, Vector2(65, -20), Vector2(1.3, 1.3), 1)
@@ -1778,6 +1796,131 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 		else:
 			objetivo.call("configurar_cofre", "torres:" + _entrada_interior_id + ":" + nombre)
 		padre.add_child(objetivo)
+
+
+# La estancia usa el calendario jugable: un mes equivale a 30 días del mundo.
+# El vencimiento se guarda como día absoluto y nunca depende del reloj del dispositivo.
+func _obtener_dia_absoluto_mundo() -> int:
+	var atmosfera := get_node_or_null("/root/WorldAtmosphere") as WorldAtmosphere
+	if not is_instance_valid(atmosfera) or not bool(atmosfera.obtener_tiempo().get("calendario_cargado", false)):
+		return -1
+	return atmosfera.anio * maxi(atmosfera.dias_por_anio, 1) + atmosfera.dia_del_anio
+
+
+func _obtener_estado_posada() -> Dictionary:
+	var estado_variant: Variant = GameState.world_state.flags.get(POSADA_FLAG, {})
+	if estado_variant is Dictionary:
+		return (estado_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func _guardar_estado_posada(estado: Dictionary) -> void:
+	GameState.world_state.flags[POSADA_FLAG] = estado.duplicate(true)
+	GameState.call_deferred("_ejecutar_guardado_rapido")
+
+
+func _posada_tiene_acceso() -> bool:
+	var estado := _obtener_estado_posada()
+	if not bool(estado.get("primer_mes_gratis_usado", false)):
+		return false
+	var hoy := _obtener_dia_absoluto_mundo()
+	return hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
+
+
+func _mostrar_menu_posada() -> void:
+	if _menu_posada == null or not is_instance_valid(_menu_posada):
+		_menu_posada = PopupMenu.new()
+		_menu_posada.name = "MenuRecepcionPosada"
+		get_tree().root.add_child(_menu_posada)
+		_menu_posada.id_pressed.connect(_al_elegir_menu_posada)
+	_menu_posada.clear()
+	_menu_posada.add_item("Comprar", 1)
+	_menu_posada.add_item("Ir a la habitación", 2)
+	_menu_posada.add_separator()
+	_menu_posada.add_item("Cerrar", 3)
+	_menu_posada.popup_centered()
+
+
+func _al_elegir_menu_posada(id: int) -> void:
+	match id:
+		1:
+			_mostrar_menu_compra_posada()
+		2:
+			if not _posada_tiene_acceso():
+				Events.notification_pushed.emit("Necesitas activar tu estancia en la recepción.")
+				return
+			_entrar_al_interior({"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada"})
+		3:
+			return
+		10:
+			_pagar_estancia_posada(true)
+			_mostrar_menu_posada()
+		11:
+			_pagar_estancia_posada(false)
+			_mostrar_menu_posada()
+		12:
+			Events.notification_pushed.emit("Tu habitación está disponible hasta el vencimiento de la estancia.")
+			_mostrar_menu_posada()
+		13:
+			_mostrar_menu_posada()
+
+
+func _mostrar_menu_compra_posada() -> void:
+	if _menu_posada == null or not is_instance_valid(_menu_posada):
+		return
+	_menu_posada.clear()
+	var estado := _obtener_estado_posada()
+	var hoy := _obtener_dia_absoluto_mundo()
+	var primer_mes_gratis := not bool(estado.get("primer_mes_gratis_usado", false))
+	var acceso_activo := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
+	if primer_mes_gratis:
+		_menu_posada.add_item("Activar primer mes gratis", 10)
+	elif acceso_activo:
+		_menu_posada.add_item("Estancia activa", 12)
+	else:
+		_menu_posada.add_item("Pagar mes: 100 monedas", 11)
+	_menu_posada.add_separator()
+	_menu_posada.add_item("Volver", 13)
+	_menu_posada.popup_centered()
+
+
+func _pagar_estancia_posada(gratis: bool) -> void:
+	var hoy := _obtener_dia_absoluto_mundo()
+	if hoy < 0:
+		Events.notification_pushed.emit("El calendario del mundo todavía no está disponible.")
+		return
+	var estado := _obtener_estado_posada()
+	if gratis:
+		if bool(estado.get("primer_mes_gratis_usado", false)):
+			return
+		estado["primer_mes_gratis_usado"] = true
+	else:
+		if not GameState.modificar_dinero(-POSADA_COSTE_MENSUAL):
+			Events.notification_pushed.emit("No tienes suficientes monedas. Necesitas 100.")
+			return
+	var vencimiento_actual := int(estado.get("vence_dia_absoluto", hoy))
+	estado["vence_dia_absoluto"] = maxi(hoy, vencimiento_actual) + POSADA_DURACION_MES_DIAS
+	_guardar_estado_posada(estado)
+	Events.notification_pushed.emit("Tu estancia en la posada está activa durante un mes.")
+
+
+func _agregar_estacion_posada(padre: Node, posicion: Vector2) -> void:
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "RecepcionPosada"
+	objetivo.position = posicion
+	objetivo.call("configurar", "Gestionar habitación", 56.0, Callable(self, "_puede_interactuar_recepcion_posada"), Callable(self, "_interactuar_recepcion_posada"))
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_recepcion_posada(_jugador: Node) -> bool:
+	return _interior_activo and _entrada_interior_id == "posada"
+
+
+func _interactuar_recepcion_posada(_jugador: Node) -> void:
+	if _puede_interactuar_recepcion_posada(_jugador):
+		_mostrar_menu_posada()
 
 
 func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: String, posicion: Vector2) -> void:
