@@ -40,7 +40,7 @@ func _crear_interfaz() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	var ancho_panel := minf(332.0, maxf(220.0, viewport_size.x - 24.0))
 	_panel.custom_minimum_size = Vector2(ancho_panel, minf(292.0, maxf(180.0, viewport_size.y - 24.0)))
-	_ancho_celda = clampf((ancho_panel - 56.0) / 7.0, 24.0, 36.0)
+	_ancho_celda = clampf((ancho_panel - 64.0) / 7.0, 24.0, 36.0)
 	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	centrador.add_child(_panel)
