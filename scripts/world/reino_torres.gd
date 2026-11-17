@@ -821,7 +821,6 @@ func _actualizar_decoracion_evento_torres() -> void:
 	if evento.is_empty():
 		return
 
-	var variante := posmod(dia, 4)
 	match evento:
 		"mercado":
 			# Mercadería limitada a los sprites originales de pan y manzana.
