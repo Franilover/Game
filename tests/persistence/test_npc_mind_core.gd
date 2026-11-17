@@ -316,6 +316,13 @@ func _run() -> void:
 		var firmas_rutas := JSON.stringify(rutas_variant)
 		if not firmas_rutas.contains("viajero_1") or not firmas_rutas.contains("guardia_2"):
 			errores.append("Las rutas conservadas no identifican ambas fuentes originales.")
+	if not relationship.transmitir_conocimiento_npc("ivo", "mara", "rutas_independientes"):
+		errores.append("Repetir una transmisión válida se informó como fallo.")
+	var rutas_tras_repeticion: Variant = relationship.obtener_conocimiento_npc(
+		"mara", "rutas_independientes"
+	).get("rutas_transmision", [])
+	if not rutas_tras_repeticion is Array or (rutas_tras_repeticion as Array).size() != 2:
+		errores.append("Repetir una ruta creó una procedencia duplicada.")
 
 	# La asistencia a un evento comunitario produce conocimiento por observación directa.
 	var observacion_evento := {
