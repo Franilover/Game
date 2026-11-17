@@ -888,42 +888,25 @@ func _crear_luces_faroles() -> void:
 	# norte/sur del centro; quedan sobre caminos y no en los extremos del mapa.
 	var faroles: Array[Dictionary] = [
 		{"nombre": "OesteNorte", "nodo": "Sprite_poste_oeste"},
-		{"nombre": "OesteCentroNorte", "posicion": Vector2(-600.0, -225.0)},
-		{"nombre": "OesteCentro", "posicion": Vector2(-600.0, 25.0)},
-		{"nombre": "OesteCentroSur", "posicion": Vector2(-600.0, 275.0)},
-		{"nombre": "OesteSur", "posicion": Vector2(-600.0, 500.0)},
+		{"nombre": "OesteCentroNorte", "nodo": "Sprite_poste_OesteCentroNorte"},
+		{"nombre": "OesteCentro", "nodo": "Sprite_poste_OesteCentro"},
+		{"nombre": "OesteCentroSur", "nodo": "Sprite_poste_OesteCentroSur"},
+		{"nombre": "OesteSur", "nodo": "Sprite_poste_OesteSur"},
 		{"nombre": "EsteNorte", "nodo": "Sprite_poste_este"},
-		{"nombre": "EsteCentroNorte", "posicion": Vector2(600.0, -225.0)},
-		{"nombre": "EsteCentro", "posicion": Vector2(600.0, 25.0)},
-		{"nombre": "EsteCentroSur", "posicion": Vector2(600.0, 275.0)},
-		{"nombre": "EsteSur", "posicion": Vector2(600.0, 500.0)},
-		{"nombre": "AccesoNorte", "posicion": Vector2(0.0, -500.0)},
-		{"nombre": "AccesoSur", "posicion": Vector2(0.0, 500.0)}
+		{"nombre": "EsteCentroNorte", "nodo": "Sprite_poste_EsteCentroNorte"},
+		{"nombre": "EsteCentro", "nodo": "Sprite_poste_EsteCentro"},
+		{"nombre": "EsteCentroSur", "nodo": "Sprite_poste_EsteCentroSur"},
+		{"nombre": "EsteSur", "nodo": "Sprite_poste_EsteSur"},
+		{"nombre": "AccesoNorte", "nodo": "Sprite_poste_AccesoNorte"},
+		{"nombre": "AccesoSur", "nodo": "Sprite_poste_AccesoSur"}
 	]
 
 	for farol_datos: Dictionary in faroles:
-		var farol: Sprite2D = null
-		var posicion_global := Vector2.ZERO
-		if farol_datos.has("nodo"):
-			farol = get_node_or_null(NodePath(str(farol_datos["nodo"]))) as Sprite2D
-			if not is_instance_valid(farol):
-				push_warning("ReinoTorres: no se encontró el farol: " + str(farol_datos["nodo"]))
-				continue
-			posicion_global = farol.to_global(Vector2(0.0, -8.0))
-		else:
-			var poste_existente := get_node_or_null("Sprite_poste_oeste") as Sprite2D
-			if not is_instance_valid(poste_existente):
-				continue
-			farol = Sprite2D.new()
-			farol.name = "Sprite_poste_" + str(farol_datos["nombre"])
-			farol.texture = poste_existente.texture
-			farol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			farol.centered = poste_existente.centered
-			farol.scale = poste_existente.scale
-			farol.z_index = poste_existente.z_index
-			farol.position = farol_datos["posicion"]
-			add_child(farol)
-			posicion_global = farol.to_global(Vector2(0.0, -8.0))
+		var farol := get_node_or_null(NodePath(str(farol_datos["nodo"]))) as Sprite2D
+		if not is_instance_valid(farol):
+			push_warning("ReinoTorres: falta el poste editable en la escena: " + str(farol_datos["nodo"]))
+			continue
+		var posicion_global := farol.to_global(Vector2(0.0, -8.0))
 
 		var nombre_farol := str(farol_datos["nombre"])
 		var posicion_local: Vector2 = to_local(posicion_global)
