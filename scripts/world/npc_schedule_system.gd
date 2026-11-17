@@ -540,10 +540,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			"activo": true
 		}
 		npc.set_meta("evento_comunitario_actual", clave_evento)
+		npc.set_meta("evento_comunitario_datos", evento_comunitario.duplicate(true))
 		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
 		_notificar_evento_comunitario(evento_comunitario)
 	else:
 		npc.set_meta("evento_comunitario_actual", "")
+		npc.remove_meta("evento_comunitario_datos")
 
 	# El encuentro de tres sólo puede usar tiempo libre que no esté reservado
 	# por invitaciones ni acontecimientos comunitarios.
@@ -2665,6 +2667,18 @@ func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary
 		return
 	if not _relationship_system.has_method("registrar_observacion_evento_npc"):
 		return
+	var clave_evento := str(evento.get("clave", "")).strip_edges()
+	# La asignación de una rutina no equivale a haber presenciado el evento.
+	# Sólo se registra cuando el NPC ya llegó a su punto de reunión.
+	if clave_evento.is_empty() or str(npc.get_meta("rutina_actual", "")) != clave_evento:
+		return
+	if bool(npc.get_meta("rutina_en_transito", true)):
+		return
+	var ancla_variant: Variant = npc.get_meta("rutina_ancla_ocio", null)
+	if not ancla_variant is Vector2:
+		return
+	if npc.global_position.distance_to(ancla_variant as Vector2) > DISTANCIA_LLEGADA:
+		return
 	var personaje_id := npc.get_personaje_game_id().strip_edges()
 	if personaje_id.is_empty():
 		return
@@ -2674,7 +2688,7 @@ func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary
 	if anio <= 0 or dia <= 0:
 		return
 	var evento_con_fecha := evento.duplicate(true)
-	evento_con_fecha["evento_id"] = "%s:%d:%d" % [str(evento.get("clave", "evento")), anio, dia]
+	evento_con_fecha["evento_id"] = "%s:%d:%d" % [clave_evento, anio, dia]
 	var momento := "%d:%d" % [anio, dia]
 	_relationship_system.call("registrar_observacion_evento_npc", personaje_id, evento_con_fecha, momento)
 
