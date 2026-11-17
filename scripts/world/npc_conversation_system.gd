@@ -992,7 +992,8 @@ func _crear_dialogo_iniciativa_amigo(npc: Creature, tiempo: Dictionary) -> Dicti
 		"clave": "iniciativa_amigo_" + npc.get_personaje_game_id(),
 		"lineas": [{"hablante": nombre, "texto": pregunta}],
 		"respuestas": respuestas,
-		"_iniciativa_npc": true
+		"_iniciativa_npc": true,
+		"_continuar_menu_social": true
 	}
 
 
@@ -1107,7 +1108,7 @@ func _crear_respuestas_iniciativa(npc: Creature, tipo: String, completada: bool)
 			"evento": "interesarse",
 			"clave": "iniciativa_" + tipo + "_va_bien",
 			"importancia": 1.0,
-			"despedida": true
+			"despedida": tipo != "amistad"
 		},
 		{
 			"texto": "Decir que ha sido difícil",
@@ -1116,7 +1117,7 @@ func _crear_respuestas_iniciativa(npc: Creature, tipo: String, completada: bool)
 			"evento": "apoyar",
 			"clave": "iniciativa_" + tipo + "_dificil",
 			"importancia": 1.0,
-			"despedida": true
+			"despedida": tipo != "amistad"
 		},
 		{
 			"texto": "Responder con calma",
@@ -1125,7 +1126,7 @@ func _crear_respuestas_iniciativa(npc: Creature, tipo: String, completada: bool)
 			"evento": "interesarse",
 			"clave": "iniciativa_" + tipo + "_calma",
 			"importancia": 1.0,
-			"despedida": true
+			"despedida": tipo != "amistad"
 		}
 	]
 
