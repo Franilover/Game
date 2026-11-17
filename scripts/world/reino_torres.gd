@@ -1706,19 +1706,11 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA_DOCUMENTOS, Vector2(65, 28), Vector2(1.5, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA_FRENTE, Vector2(65, 82), Vector2.ONE, 1)
 		"laboratorio":
-			# Tres estaciones de trabajo agrupadas en la pared norte.
-			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-165, -105), Vector2(1.2, 1.0), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoExaminacion", MUEBLE_SILLA_DERECHA, Vector2(-205, -55), Vector2.ONE, 1)
-			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-165, -55))
-			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA_PLATOS, Vector2(0, -105), Vector2(1.1, 1.0), 1)
-			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(0, -55))
-			_agregar_sprite_mueble(cuarto, "HornoTratamiento", MUEBLE_HORNO, Vector2(165, -105), Vector2(1.25, 1.25), 1)
-			_agregar_estacion_laboratorio(cuarto, "termica", "Aplicar tratamiento térmico", Vector2(165, -48))
-			_agregar_sprite_mueble(cuarto, "MesaObservacion", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 70), Vector2(1.15, 1.0), 1)
-			_agregar_estacion_laboratorio(cuarto, "observacion", "Observar estructuras", Vector2(-105, 112))
-			_agregar_sprite_mueble(cuarto, "MesaEterium", MUEBLE_MESA_PLATOS, Vector2(75, 70), Vector2(1.15, 1.0), 1)
-			_agregar_estacion_laboratorio(cuarto, "eterium", "Estudiar Eterium", Vector2(75, 112))
-			_agregar_sprite_mueble(cuarto, "AlmacenMuestras", MUEBLE_COFRE, Vector2(215, 78), Vector2(0.85, 0.85), 1)
+			# Una única mesa de análisis: el resto de procedimientos se integrará
+			# aquí cuando existan mecánicas reales que los justifiquen.
+			_agregar_sprite_mueble(cuarto, "MesaAnalisis", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -42), Vector2(1.45, 1.15), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoAnalisis", MUEBLE_SILLA_DERECHA, Vector2(-55, 18), Vector2.ONE, 1)
+			_agregar_estacion_laboratorio(cuarto, "examen", "Analizar objeto", Vector2(0, 18))
 		"comercio", "registro", "almacen":
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(1.9, 1), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-190, -95), Vector2(0.9, 0.9), 1)
@@ -1805,7 +1797,7 @@ func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: Stri
 
 
 func _puede_interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> bool:
-	return _interior_activo and _entrada_interior_id == "casa_estudio" and estacion_id in ["examen", "mezclas", "termica", "observacion", "eterium"]
+	return _interior_activo and _entrada_interior_id == "casa_estudio" and estacion_id == "examen"
 
 
 func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> void:
