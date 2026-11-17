@@ -1,3 +1,4 @@
+@tool
 class_name TerrainLayer
 extends Resource
 ## A set of _rules usable by a single DisplayLayer.
