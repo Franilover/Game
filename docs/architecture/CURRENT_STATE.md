@@ -937,3 +937,14 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron pruebas de aislamiento de temas por interlocutor y de las reglas de privacidad/consentimiento.
 - No se añaden columnas ni se modifica Supabase; la información sigue en el guardado local de conversaciones NPC.
 - Pendiente: ejecutar CI Godot 4.7 y comprobar el flujo en una partida real.
+
+
+## Cobertura general de memoria conversacional y creencias (2026-11-17)
+- La memoria de temas ya no depende de `_social_autonoma`: se registra al completar cualquier conversación entre dos o tres NPC que estén presentes en el registro del mundo y tengan `personaje_game_id`.
+- Incluye encuentros autónomos, conversaciones guionizadas y conversaciones grupales. Se puede excluir un caso excepcional con `_sin_memoria_conversacional=true`.
+- El tema se toma de `tema_memoria`, `_tema_social`, `tema` o `motivo`; en conversaciones antiguas sin esos campos se conserva la clave de la escena como referencia.
+- Cada pareja recibe recuerdos bilaterales, no un recuerdo global compartido.
+- Nueva evaluación epistemológica local por NPC: rumores y testimonios no verificados empiezan como sospechas; observaciones y pruebas pueden aumentar la confianza; evidencias contradictorias la reducen.
+- La misma fuente no gana peso por repetir la misma versión. La evaluación distingue sospecha, creencia firme, conocimiento sostenido y creencia refutada; no cambia la verdad global del mundo.
+- Las APIs nuevas son `registrar_evidencia_conocimiento_npc`, `evaluar_creencia_conocimiento_npc` y `obtener_evaluacion_creencia_npc`.
+- No se modificó Supabase ni se usa IA generativa. CI sigue pendiente de validación completa; hay fallos existentes de `NPCMindCore` que requieren aislarse antes de afirmar que la suite pasa.
