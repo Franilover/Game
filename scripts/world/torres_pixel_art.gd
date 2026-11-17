@@ -122,7 +122,13 @@ static func crear_decoracion(tipo: String, _variante: int = 0) -> Texture2D:
 		return null
 	var imagen := Image.create(12, 24, false, Image.FORMAT_RGBA8)
 	imagen.fill(TRANSPARENTE)
-	_dibujar_lampara(imagen)
+	_rect(imagen, 2, 20, 8, 3, Color(0.1451, 0.1529, 0.1216, 0.45))
+	_rect(imagen, 5, 7, 3, 15, Color("#493525"))
+	_rect(imagen, 4, 5, 5, 3, Color("#30271F"))
+	_rect(imagen, 3, 1, 7, 6, Color("#D1A452"))
+	_rect(imagen, 4, 2, 5, 4, Color("#F0CD78"))
+	_rect(imagen, 5, 3, 2, 2, Color("#F7E2A2"))
+	_rect(imagen, 4, 21, 5, 2, Color("#86603B"))
 	return ImageTexture.create_from_image(imagen)
 
 
