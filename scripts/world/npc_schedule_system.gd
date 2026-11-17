@@ -1749,17 +1749,30 @@ func _aplicar_variacion_tiempo_libre(
 	if personaje_id.is_empty():
 		personaje_id = nombre
 
-	var opciones: Array = actividades_por_personaje.get("opciones", [])
+	var opciones: Array = (actividades_por_personaje.get("opciones", []) as Array).duplicate(true)
+	var contexto_habito := "ocio_tramo_%s" % tramo
+	for opcion_variant in opciones:
+		if opcion_variant is Dictionary:
+			(opcion_variant as Dictionary)["contexto_habito"] = contexto_habito
 	var elegida: Dictionary = {}
 	if is_instance_valid(mind) and mind.has_method("elegir_actividad"):
 		var perfil: Dictionary = {}
-		if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_personalidad"):
-			var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
-			var rasgos: Dictionary = {}
-			for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
-				if personalidad.has(rasgo):
-					rasgos[rasgo] = float(personalidad[rasgo])
-			perfil["rasgos"] = rasgos
+		# No sustituir el perfil guardado por valores neutrales mientras Supabase
+		# aún carga reglas o cuando ese personaje no tiene una fila propia.
+		if (
+			is_instance_valid(_relationship_system)
+			and _relationship_system.has_method("esta_cargado")
+			and _relationship_system.esta_cargado()
+			and _relationship_system.has_method("obtener_reglas_sociales")
+		):
+			var reglas_sociales: Dictionary = _relationship_system.obtener_reglas_sociales()
+			if reglas_sociales.has(personaje_id):
+				var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
+				var rasgos: Dictionary = {}
+				for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
+					if personalidad.has(rasgo):
+						rasgos[rasgo] = float(personalidad[rasgo])
+				perfil["rasgos"] = rasgos
 		mind.call("registrar_personaje", personaje_id, perfil)
 
 		# La experiencia del tramo anterior modifica las próximas elecciones.
@@ -1773,7 +1786,7 @@ func _aplicar_variacion_tiempo_libre(
 				var necesidades_actuales: Dictionary = mind.call("obtener_necesidades", personaje_id)
 				var presion_final := float(necesidades_actuales.get(necesidad_anterior, presion_inicial))
 				resultado = clampf((presion_inicial - presion_final) / 25.0, -1.0, 1.0)
-				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado)
+				mind.call("registrar_resultado_actividad", personaje_id, actividad_anterior, resultado, str(npc.get_meta("npc_mind_contexto_habito", "general")), clave_dia)
 			var ubicacion_anterior := str(npc.get_meta("npc_mind_ubicacion", "")).strip_edges().to_lower()
 			if not ubicacion_anterior.is_empty() and mind.has_method("registrar_resultado_lugar"):
 				mind.call("registrar_resultado_lugar", personaje_id, ubicacion_anterior, resultado)
@@ -1805,6 +1818,7 @@ func _aplicar_variacion_tiempo_libre(
 	resultado["variacion_diaria"] = clave_dia
 	npc.set_meta("npc_mind_decision_key", clave_decision)
 	npc.set_meta("npc_mind_actividad", actividad)
+	npc.set_meta("npc_mind_contexto_habito", contexto_habito)
 	npc.set_meta("npc_mind_ubicacion", ubicacion_elegida)
 	var necesidades_actividad: Dictionary = elegida.get("necesidades", {})
 	var necesidad_principal := ""
@@ -1956,7 +1970,9 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 			return false
 		var necesidades: Dictionary = mind.call("obtener_necesidades", personaje_id)
 		var presion_social := float(necesidades.get("socializacion", 0.0))
-		if presion_social < 68.0:
+		# La sociabilidad del perfil Supabase regula la frecuencia de iniciativa.
+		# Una necesidad alta no convierte por sí sola a un NPC reservado en sociable.
+		if presion_social < _obtener_umbral_social(personaje_id):
 			return false
 		var pareja := _seleccionar_companero_social(npc, presion_social)
 		if pareja == null:
@@ -2144,6 +2160,16 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		var confianza := float(relacion.get("confianza", 0.0))
 		var tension := float(relacion.get("tension", 0.0))
 		var colaboracion := float(relacion.get("colaboracion", 0.0))
+		var motivo_concreto := (
+			_hay_motivo_social_concreto(id_npc, id_candidato)
+			or _hay_motivo_social_concreto(id_candidato, id_npc)
+		)
+		# Ambos perfiles cuentan: una persona muy sociable tampoco debe imponer
+		# encuentros casuales a alguien reservado con quien apenas tiene vínculo.
+		if not _puede_iniciar_encuentro_social(id_npc, relacion, motivo_concreto):
+			continue
+		if not _puede_iniciar_encuentro_social(id_candidato, relacion, motivo_concreto):
+			continue
 		var distancia := npc.global_position.distance_to(candidato.global_position)
 		var puntuacion := (
 			amistad * 0.22 + afecto * 0.18 + confianza * 0.08
@@ -2166,6 +2192,49 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 			mejor_puntuacion = puntuacion
 			mejor = candidato
 	return mejor
+
+
+## La sociabilidad se consulta desde personaje_social_v1 en Supabase.
+## NPC reservados requieren un vínculo o un motivo concreto para buscar/aceptar compañía.
+func _obtener_sociabilidad_social(personaje_id: String) -> float:
+	if not is_instance_valid(_relationship_system) or not _relationship_system.has_method("obtener_personalidad"):
+		return 50.0
+	var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
+	return clampf(float(personalidad.get("sociabilidad", 50.0)), 0.0, 100.0)
+
+
+func _obtener_umbral_social(personaje_id: String) -> float:
+	# 0 sociabilidad -> 84 de presión; 100 -> 58.
+	return lerpf(84.0, 58.0, _obtener_sociabilidad_social(personaje_id) / 100.0)
+
+
+func _puede_iniciar_encuentro_social(
+	personaje_id: String,
+	relacion: Dictionary,
+	motivo_concreto: bool = false
+) -> bool:
+	if motivo_concreto:
+		return true
+	var sociabilidad := _obtener_sociabilidad_social(personaje_id)
+	var vinculo := maxf(
+		float(relacion.get("amistad", 0.0)),
+		maxf(float(relacion.get("afecto", 0.0)), float(relacion.get("confianza", 0.0)))
+	)
+	if sociabilidad < 40.0:
+		return vinculo >= 12.0
+	if sociabilidad < 60.0:
+		return vinculo >= 5.0
+	return true
+
+
+func _hay_motivo_social_concreto(personaje_id: String, pareja_id: String) -> bool:
+	if not is_instance_valid(_relationship_system):
+		return false
+	if not _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id).is_empty():
+		return true
+	if not _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id).is_empty():
+		return true
+	return _hay_noticia_compartible(personaje_id, pareja_id)
 
 
 ## Resume las últimas experiencias compartidas con una persona.

@@ -89,6 +89,23 @@ func _run() -> void:
 	if estado.get("aprendizaje", {}) != {}:
 		errores.append("Un personaje nuevo debe empezar sin preferencias aprendidas.")
 
+	# El perfil de identidad puede cambiar en Supabase sin borrar lo aprendido.
+	mind.registrar_personaje("perfil_actualizable", {"rasgos": {"sociabilidad": 20.0, "prudencia": 80.0}})
+	mind.registrar_resultado_actividad("perfil_actualizable", "leer", 0.8, "ocio", "2026-11-16")
+	var perfil_actualizado := mind.registrar_personaje(
+		"perfil_actualizable",
+		{"rasgos": {"sociabilidad": 75.0, "prudencia": 35.0}}
+	)
+	var rasgos_actualizados: Dictionary = perfil_actualizado.get("rasgos", {})
+	if not is_equal_approx(float(rasgos_actualizados.get("sociabilidad", 0.0)), 0.75):
+		errores.append("El perfil canónico no actualizó la sociabilidad tras cambiar en Supabase.")
+	if not is_equal_approx(float(rasgos_actualizados.get("prudencia", 0.0)), 0.35):
+		errores.append("El perfil canónico no actualizó la prudencia tras cambiar en Supabase.")
+	if not is_equal_approx(mind.obtener_preferencia_actividad("perfil_actualizable", "leer"), 0.2):
+		errores.append("Actualizar la identidad borró o alteró el aprendizaje acumulado.")
+	if mind.obtener_fuerza_habito("perfil_actualizable", "leer", "ocio") <= 0.0:
+		errores.append("Actualizar la identidad borró el hábito aprendido.")
+
 	mind.avanzar_tiempo("ivo", 2.0)
 	var tras_tiempo := mind.obtener_necesidades("ivo")
 	if float(tras_tiempo.get("descanso", 0.0)) <= 15.0:
@@ -181,6 +198,25 @@ func _run() -> void:
 	if str(eleccion_urgente.get("actividad", "")) != "descansar_urgente":
 		errores.append("La variedad desplazó una necesidad claramente urgente.")
 
+
+	var fuerza_habito_inicial := mind.obtener_fuerza_habito("ivo", "pasear", "manana")
+	for dia_habito in ["2026:11:01", "2026:11:02", "2026:11:03"]:
+		mind.registrar_resultado_actividad("ivo", "pasear", 0.8, "manana", dia_habito)
+	var fuerza_habito_consolidado := mind.obtener_fuerza_habito("ivo", "pasear", "manana")
+	if fuerza_habito_inicial != 0.0 or fuerza_habito_consolidado <= 0.0:
+		errores.append("La repetición en días distintos no consolidó un hábito.")
+	if mind.obtener_fuerza_habito("ivo", "pasear", "noche") != 0.0:
+		errores.append("Un hábito de mañana influyó indebidamente en el contexto nocturno.")
+	var dias_antes_repeticion := int(mind.obtener_estado("ivo").get("habitos", {}).get("pasear|manana", {}).get("dias_practicados", 0))
+	mind.registrar_resultado_actividad("ivo", "pasear", 0.8, "manana", "2026:11:03")
+	var dias_despues_repeticion := int(mind.obtener_estado("ivo").get("habitos", {}).get("pasear|manana", {}).get("dias_practicados", 0))
+	if dias_antes_repeticion != dias_despues_repeticion:
+		errores.append("Varias ejecuciones en un mismo día contaron como días de hábito distintos.")
+	var mind_habito_recargada := MindScript.new() as NPCMindService
+	mind_habito_recargada.configurar(game_state)
+	if mind_habito_recargada.obtener_fuerza_habito("ivo", "pasear", "manana") <= 0.0:
+		errores.append("El hábito aprendido no sobrevivió a la recarga.")
+
 	var preferencia_inicial := mind.registrar_resultado_actividad("ivo", "charlar", 1.0)
 	if preferencia_inicial <= 0.0 or preferencia_inicial >= 1.0:
 		errores.append("Una experiencia positiva no produjo aprendizaje gradual.")
@@ -268,6 +304,21 @@ func _run() -> void:
 
 	var schedule := ScheduleScript.new() as NPCScheduleSystem
 	schedule._relationship_system = relationship
+	# Los valores sociales canónicos vienen del perfil Supabase, no del aprendizaje.
+	relationship._reglas["mara"] = {"sociabilidad": 30.0}
+	relationship._reglas["ivo"] = {"sociabilidad": 90.0}
+	var vinculo_desconocido := {"amistad": 0.0, "confianza": 0.0, "afecto": 0.0}
+	var vinculo_cercano := {"amistad": 15.0, "confianza": 8.0, "afecto": 10.0}
+	if schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido):
+		errores.append("Un NPC reservado aceptó buscar compañía sin vínculo ni motivo.")
+	if not schedule._puede_iniciar_encuentro_social("ivo", vinculo_desconocido):
+		errores.append("La sociabilidad alta no permitió iniciar un encuentro casual.")
+	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_cercano):
+		errores.append("Un NPC reservado no pudo buscar a alguien con quien tiene un vínculo.")
+	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido, true):
+		errores.append("Un motivo concreto no permitió una excepción al perfil reservado.")
+	if schedule._obtener_umbral_social("mara") <= schedule._obtener_umbral_social("ivo"):
+		errores.append("La sociabilidad no modificó el umbral de necesidad social.")
 	relationship.registrar_recuerdo("ivo", {
 		"tipo": "experiencia_npc",
 		"evento": "ayudar",

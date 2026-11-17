@@ -887,3 +887,33 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron pruebas para alternancia entre opciones equivalentes, penalización de repetición, límite/orden del historial y prioridad de necesidades urgentes.
 - Se inicializa y normaliza el historial para conservar compatibilidad con partidas anteriores que todavía no tengan este campo.
 - El historial es local por partida; no requiere cambios en Supabase ni generación de texto.
+
+
+## Hábitos individuales a largo plazo (2026-11-16)
+- `NPCMind` registra hábitos por actividad y contexto temporal, separados de las preferencias aprendidas.
+- Un hábito gana fuerza al practicarse en días distintos; varias ejecuciones el mismo día no inflan su consolidación.
+- La puntuación combina días practicados, resultado medio de la experiencia y días transcurridos sin repetirlo. El desuso reduce gradualmente su influencia.
+- Los hábitos aportan hasta 6 puntos a la elección de actividad y no bloquean alternativas ni desplazan necesidades urgentes.
+- La rutina de ocio aporta un contexto por tramo horario para que una costumbre matinal no se transfiera automáticamente a la noche.
+- El perfil conserva hasta 32 hábitos y se guarda en el estado local de cada NPC.
+- Se añadieron pruebas de consolidación, separación temporal, no duplicación diaria y persistencia.
+- Compatible con partidas anteriores: el campo se inicializa al normalizar estados antiguos.
+
+
+## Personalidad social como límite de autonomía (2026-11-16)
+- La sociabilidad de cada NPC se consulta desde el perfil social definido en Supabase (personaje_social_v1); no se aprende ni se incrementa por repetir conversaciones.
+- La sociabilidad regula el umbral de necesidad para iniciar encuentros: perfiles más reservados requieren una necesidad social mayor.
+- Los perfiles con sociabilidad baja solo buscan o aceptan encuentros casuales cuando existe un vínculo suficiente. Promesas, asuntos pendientes o noticias relevantes permiten encuentros justificados aunque el NPC sea reservado.
+- La selección considera la disposición de ambas personas, no solo la iniciativa de quien se acerca. Así, un NPC sociable no fuerza encuentros casuales con alguien reservado.
+- Se añadieron pruebas para perfiles reservados/sociables, vínculos cercanos y excepciones por motivos concretos.
+- Se utilizan los campos actuales de Supabase; no se modificó el esquema ni se escribieron datos en Supabase.
+- Pendiente: ejecutar las pruebas con Godot 4.7 y validar en partida la frecuencia y selección de encuentros.
+
+
+## Perfil canónico de NPC y refresco desde Supabase (2026-11-16)
+- Los rasgos base entregados por Supabase son autoritativos: al recibir una fila válida, `NPCMind` actualiza esos valores aunque exista una partida guardada con valores anteriores.
+- El refresco de identidad no reemplaza necesidades, recuerdos, preferencias aprendidas, hábitos ni objetivos; esos datos siguen siendo estado individual de la partida.
+- `NPCScheduleSystem` solo aplica el perfil cuando `RelationshipSystem` terminó de cargar reglas y existe una fila para ese personaje. Los valores neutrales de fallback no pisan un perfil previo mientras la carga está pendiente ni cuando el NPC no tiene regla propia.
+- Se añadieron regresiones para cambio de rasgos canónicos y conservación de aprendizaje/hábitos.
+- No se modificó el esquema ni se escribieron datos en Supabase.
+- Pendiente: ejecutar la suite Godot 4.7 y validar el refresco con la respuesta real del catálogo social.
