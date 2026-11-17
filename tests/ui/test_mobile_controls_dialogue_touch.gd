@@ -28,12 +28,17 @@ func _run() -> void:
 	var tamanos := [Vector2(360.0, 640.0), Vector2(640.0, 360.0), Vector2(320.0, 240.0), Vector2(480.0, 800.0)]
 	var rutas_botones := [
 		"Actions/Inventory",
-		"Actions/Garumis", "Actions/Garumi1", "Actions/Garumi2", "Actions/Garumi3",
+		"Actions/Garumis",
 		"Actions/Primary", "Actions/Secondary", "Actions/Dash",
 		"Actions/Meditate"
 	]
 	if controles.get_node_or_null("Actions/Jump") != null or controles.get_node_or_null("Actions/Interact") != null:
 		errores.append("Los controles móviles todavía contienen botones de salto o usar.")
+	for ruta_garumi in ["Actions/Garumi1", "Actions/Garumi2", "Actions/Garumi3"]:
+		if controles.get_node_or_null(ruta_garumi) != null:
+			errores.append("El selector móvil todavía muestra el botón individual %s." % ruta_garumi)
+	if not controles._botones_hud.has("toggle_garumi_selector") or controles._botones_hud.size() != 1:
+		errores.append("Debe existir un único botón táctil para abrir el menú de Garumis.")
 	for ruta_oculta in ["Actions/Map", "Actions/Missions", "Actions/Pause"]:
 		var boton_oculto := controles.get_node_or_null(ruta_oculta) as Control
 		if boton_oculto == null or boton_oculto.visible:
