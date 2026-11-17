@@ -887,3 +887,14 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron pruebas para alternancia entre opciones equivalentes, penalización de repetición, límite/orden del historial y prioridad de necesidades urgentes.
 - Se inicializa y normaliza el historial para conservar compatibilidad con partidas anteriores que todavía no tengan este campo.
 - El historial es local por partida; no requiere cambios en Supabase ni generación de texto.
+
+
+## Hábitos individuales a largo plazo (2026-11-16)
+- `NPCMind` registra hábitos por actividad y contexto temporal, separados de las preferencias aprendidas.
+- Un hábito gana fuerza al practicarse en días distintos; varias ejecuciones el mismo día no inflan su consolidación.
+- La puntuación combina días practicados, resultado medio de la experiencia y días transcurridos sin repetirlo. El desuso reduce gradualmente su influencia.
+- Los hábitos aportan hasta 6 puntos a la elección de actividad y no bloquean alternativas ni desplazan necesidades urgentes.
+- La rutina de ocio aporta un contexto por tramo horario para que una costumbre matinal no se transfiera automáticamente a la noche.
+- El perfil conserva hasta 32 hábitos y se guarda en el estado local de cada NPC.
+- Se añadieron pruebas de consolidación, separación temporal, no duplicación diaria y persistencia.
+- Compatible con partidas anteriores: el campo se inicializa al normalizar estados antiguos.
