@@ -1330,6 +1330,7 @@ func transmitir_conocimiento_npc(
 			continue
 		if not puede_compartir_conocimiento_npc(origen, destino, conocimiento):
 			return false
+		var conocimiento_previo := obtener_conocimiento_npc(destino, clave)
 		var momento_transmision := Time.get_datetime_string_from_system(true)
 		var enlace := {
 			"de": origen,
@@ -1384,7 +1385,6 @@ func transmitir_conocimiento_npc(
 		conocimiento["cadena_transmision"] = cadena
 		# El receptor no hereda como propia la observación del emisor:
 		# recibe un testimonio atribuible a esa persona.
-		var conocimiento_previo := obtener_conocimiento_npc(destino, clave)
 		var evidencias_previas_variant: Variant = conocimiento_previo.get("evidencias", [])
 		var evidencias_previas: Array = evidencias_previas_variant.duplicate(true) if evidencias_previas_variant is Array else []
 		conocimiento["cadena_transmision"] = cadena
