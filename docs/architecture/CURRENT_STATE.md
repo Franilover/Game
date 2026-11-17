@@ -965,3 +965,10 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - La selección de noticias y la puntuación de encuentros usan la misma lista de conocimientos realmente compartibles con el destinatario, evitando ofrecer información confidencial o reservada como tema casual.
 - El conocimiento sin metadatos explícitos sólo se considera público automáticamente para tipos reconocidos de noticia/evento público; una nota personal no se retransmite por defecto.
 - Se corrigió la expectativa de persistencia del test para contar las dos actividades aprendidas que efectivamente se registran.
+
+
+## Procedencia epistemológica en transmisiones entre NPC (2026-11-17)
+- Un NPC que recibe una noticia no hereda como propia la observación directa de quien se la contó: se registra como testimonio atribuido al emisor.
+- Los testimonios no verificados parten de una confianza menor y permanecen como sospechas hasta recibir evidencia independiente.
+- La evidencia de observación directa identifica al NPC testigo y al evento, para que compartir el recuerdo no lo convierta en una observación propia del receptor.
+- La transmisión conserva la cadena de procedencia y las evidencias que el receptor ya había reunido; no reemplaza sus recuerdos anteriores.
