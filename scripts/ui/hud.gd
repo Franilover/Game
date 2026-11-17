@@ -1534,15 +1534,32 @@ func _actualizar_reloj_calendario() -> void:
 		return
 	if not is_instance_valid(_world_atmosphere_ref):
 		_clock_label.text = "--:--\nDía —"
+		_ajustar_ancho_reloj()
 		return
 	var tiempo: Dictionary = _world_atmosphere_ref.obtener_tiempo()
 	if not bool(tiempo.get("calendario_cargado", false)):
 		_clock_label.text = "Cargando…\nDía —"
+		_ajustar_ancho_reloj()
 		return
 	_clock_label.text = "%s\nDía %d" % [
 		str(tiempo.get("hora", "--:--")),
 		int(tiempo.get("dia_de_estacion", tiempo.get("dia", 0)))
 	]
+	_ajustar_ancho_reloj()
+
+
+func _ajustar_ancho_reloj() -> void:
+	if not is_instance_valid(_clock_panel) or not is_instance_valid(_clock_label):
+		return
+	var lineas := _clock_label.text.split("\n")
+	var caracteres_maximos := 0
+	for linea in lineas:
+		caracteres_maximos = maxi(caracteres_maximos, linea.length())
+	# El ancho sigue el texto más largo (hora o número de día), con márgenes
+	# suficientes para conservar el marco y evitar que las cifras queden apretadas.
+	var ancho := maxf(48.0, 20.0 + float(caracteres_maximos) * 7.0)
+	_clock_panel.custom_minimum_size = Vector2(ancho, 48.0)
+	_actualizar_layout_hud_superior()
 
 
 
@@ -1553,16 +1570,17 @@ func _actualizar_layout_hud_superior() -> void:
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
 	var movil := _es_interfaz_movil()
+	var ancho_reloj := 48.0
 	if is_instance_valid(_clock_panel):
-		var clock_size := Vector2(112.0, 48.0)
+		ancho_reloj = maxf(48.0, _clock_panel.custom_minimum_size.x)
+		var clock_size := Vector2(ancho_reloj, 48.0)
 		_clock_panel.position = Vector2((viewport_size.x - clock_size.x) * 0.5, 12.0) if movil else Vector2(viewport_size.x - clock_size.x - 16.0, 12.0)
 		_clock_panel.size = clock_size
-		_clock_panel.custom_minimum_size = clock_size
 	if is_instance_valid(_coin_button):
 		var ancho_monedas := maxf(40.0, _coin_button.custom_minimum_size.x)
 		var alto_monedas := 28.0
-		var x_reloj := (viewport_size.x - 112.0) * 0.5 if movil else viewport_size.x - 112.0 - 16.0
-		x_reloj += (112.0 - ancho_monedas) * 0.5
+		var x_reloj := (viewport_size.x - ancho_reloj) * 0.5 if movil else viewport_size.x - ancho_reloj - 16.0
+		x_reloj += (ancho_reloj - ancho_monedas) * 0.5
 		var y_reloj := 12.0 + 48.0 + 6.0
 		_coin_button.position = Vector2(x_reloj, y_reloj)
 		_coin_button.size = Vector2(ancho_monedas, alto_monedas)
