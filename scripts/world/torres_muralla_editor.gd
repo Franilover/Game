@@ -19,10 +19,11 @@ func _generar_muralla_editable() -> void:
 	if scene_root.get_node_or_null("TerrenoMurallaMontana") != null:
 		return
 
-	var terreno := WORLD_TERRAIN_SCRIPT.new()
+	var terreno: WorldTerrainVisual = WORLD_TERRAIN_SCRIPT.new() as WorldTerrainVisual
 	terreno.name = "TerrenoMurallaMontana"
 	terreno.position = WALL_POSITION
 	scene_root.add_child(terreno)
+	terreno.owner = scene_root
 
 	# Reutilizar exactamente el compositor y el atlas que usa el gameplay.
 	terreno.configurar(TILE_SIZE)
