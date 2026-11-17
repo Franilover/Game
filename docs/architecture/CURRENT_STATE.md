@@ -1007,6 +1007,14 @@ Al ejecutar una actividad dentro de un edificio abierto, el NPC busca primero un
 - No se modificaron datos narrativos de Supabase ni se introdujo generación de diálogo.
 
 
+## Progresión encadenada de historias locales
+
+- La historia de Mara e Ivo debe completar sus tres etapas antes de desbloquear la investigación de Nima.
+- La investigación de Nima e Ivo debe completar sus tres etapas antes de desbloquear el contacto de Saira.
+- Los requisitos usan el progreso guardado de cada cadena (etapa 3), por lo que abandonar una escena o completar sólo su primera etapa no habilita la siguiente.
+- La comprobación se realiza antes de iniciar la escena; las cadenas ya iniciadas conservan su etapa guardada.
+- Se añadieron regresiones para impedir que estas historias se desbloqueen prematuramente.
+
 ## Separación de historia y contenido opcional
 
 - Las cadenas con etapas y efectos se clasifican como historia; cada etapa conserva el progreso guardado y no vuelve a reproducirse al completarse.

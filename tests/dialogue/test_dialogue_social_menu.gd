@@ -101,6 +101,14 @@ func _run() -> void:
 		errores.append("Las cadenas principales deben clasificarse como historia.")
 	if not NPCConversationSystemScript.es_conversacion_historia(historia_local):
 		errores.append("Las historias locales de habitantes deben clasificarse como historia.")
+	# Las historias de Ivo forman una cadena: cada hilo debe terminar sus
+	# tres etapas antes de desbloquear el siguiente, no basta con iniciarlo.
+	var requisito_nima: Dictionary = investigacion_ivo.get("requiere_progreso", {})
+	var requisito_saira: Dictionary = contacto_saira_ivo.get("requiere_progreso", {})
+	if str(requisito_nima.get("clave", "")) != "mara_ivo_apoyo" or int(requisito_nima.get("etapa", 0)) != 3:
+		errores.append("La investigación de Nima debe esperar a que concluya la historia de apoyo de Mara e Ivo.")
+	if str(requisito_saira.get("clave", "")) != "nima_ivo_investigacion" or int(requisito_saira.get("etapa", 0)) != 3:
+		errores.append("El contacto de Saira debe esperar a que concluya la investigación de Nima e Ivo.")
 	if not NPCConversationSystemScript.es_conversacion_opcional(charla_reunion):
 		errores.append("Las reuniones ambientales deben ser opcionales.")
 	if not NPCConversationSystemScript.es_conversacion_opcional(acontecimiento):
