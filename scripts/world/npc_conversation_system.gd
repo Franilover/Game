@@ -2268,7 +2268,10 @@ func _iniciar_conversacion(conversacion: Dictionary) -> void:
 
 	_indice_linea = 0
 	_temporizador_linea = 0.0
-	_mostrar_linea_actual()
+	if es_conversacion_historia(_conversacion_activa):
+		_ocultar_burbujas()
+	else:
+		_mostrar_linea_actual()
 	if es_conversacion_historia(_conversacion_activa):
 		var npc_a_historia := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
 		var npc_b_historia := _npc_por_nombre.get(str(_conversacion_activa.get("npc_b", ""))) as Creature
@@ -2396,6 +2399,52 @@ func _obtener_referencia_historial_social(historial: Array, tipo_actual: String)
 	return ""
 
 
+func obtener_dialogo_historia(clave: String) -> Dictionary:
+	if _conversacion_activa.is_empty():
+		return {}
+	if str(_conversacion_activa.get("clave", "")).strip_edges() != clave.strip_edges():
+		return {}
+	if not es_conversacion_historia(_conversacion_activa):
+		return {}
+	var lineas_origen: Variant = _conversacion_activa.get("lineas", [])
+	if not lineas_origen is Array or (lineas_origen as Array).is_empty():
+		return {}
+	var lineas_dialogo: Array[Dictionary] = []
+	for linea_variant in lineas_origen as Array:
+		if not linea_variant is Dictionary:
+			continue
+		var linea := linea_variant as Dictionary
+		var nombre := str(linea.get("npc", linea.get("hablante", ""))).strip_edges()
+		var npc := _npc_por_nombre.get(nombre.to_lower()) as Creature
+		if is_instance_valid(npc):
+			nombre = npc.get_nombre_visual()
+		var texto := str(linea.get("texto", linea.get("text", ""))).strip_edges()
+		if nombre.is_empty() or texto.is_empty():
+			continue
+		lineas_dialogo.append({"hablante": nombre, "texto": texto})
+	if lineas_dialogo.is_empty():
+		return {}
+	var datos: Dictionary = {
+		"clave": clave,
+		"tipo_contenido": "historia",
+		"lineas": lineas_dialogo
+	}
+	for clave_fondo in ["fondo", "imagen_fondo"]:
+		if _conversacion_activa.has(clave_fondo):
+			datos[clave_fondo] = _conversacion_activa[clave_fondo]
+	return datos
+
+
+func finalizar_cinematica_historia(clave: String, completada: bool = true) -> void:
+	if _conversacion_activa.is_empty():
+		return
+	if str(_conversacion_activa.get("clave", "")).strip_edges() != clave.strip_edges():
+		return
+	if not es_conversacion_historia(_conversacion_activa):
+		return
+	_finalizar_conversacion(completada)
+
+
 func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
 	if bool(_conversacion_activa.get("_social_autonoma", false)):
 		_actualizar_conversacion_social_autonoma(delta, jugador, dialogo)
@@ -2429,6 +2478,10 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 		if not _distancia_historia_valida(npc_a, npc_b):
 			_finalizar_conversacion()
 			return
+		# Las historias ya no usan burbujas ni temporizadores ambientales:
+		# Main las reproduce con CutsceneDirector + DialogueSystem.
+		_ocultar_burbujas()
+		return
 	elif npc_a.global_position.distance_to(npc_b.global_position) > DISTANCIA_ENTRE_NPC * 1.5:
 		_finalizar_conversacion()
 		return
