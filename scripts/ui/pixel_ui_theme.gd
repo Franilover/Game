@@ -3,7 +3,6 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
-const PANEL_BACKGROUND_MARGIN := 8
 const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
@@ -53,10 +52,9 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
-		# El panel de detalle del crafteo comparte exactamente la superficie
-		# de los botones. Mantener esta excepción aquí evita que una nueva
-		# aplicación global del tema restaure el marco clásico del panel.
-		var panel: StyleBox = button_surface_style() if control.name in ["DetailPanel", "SpeakerPortraitFrame"] else _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
+		# Todos los paneles de interfaz usan la misma textura que los botones.
+		# No aplicar panel_background.png en menús, diálogos ni Relaciones.
+		var panel: StyleBox = button_surface_style()
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
