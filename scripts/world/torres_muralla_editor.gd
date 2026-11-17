@@ -46,11 +46,10 @@ func _generar_muralla_editable() -> void:
 	terreno.flush()
 	# Hacer que los nodos generados pertenezcan a la escena y puedan
 	# guardarse, seleccionarse y editarse desde el árbol de Godot.
-	_asignar_owner_recursivo(terreno, scene_root)
-	print("ReinoTorres: muralla editable generada en el editor.")
-
-
-func _asignar_owner_recursivo(nodo: Node, scene_root: Node) -> void:
-	for hijo in nodo.get_children():
-		hijo.owner = scene_root
-		_asignar_owner_recursivo(hijo, scene_root)
+	# Sólo guardar el WorldTerrainVisual y sus TileMapDual de origen.
+	# Display/DisplayLayer son cachés regeneradas por TileMapDual._ready();
+	# serializarlas provocaría duplicados al volver a abrir la escena.
+	for capa in terreno.get_children():
+		capa.owner = scene_root
+	EditorInterface.mark_scene_as_unsaved()
+	print("ReinoTorres: muralla editable generada. Guarda reino_torres.tscn para persistirla.")
