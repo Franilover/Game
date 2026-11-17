@@ -1869,6 +1869,14 @@ func _crear_opcion_dia_social() -> Dictionary:
 			respuesta = "Bien, aunque hoy tuve que parar un par de veces para descansar. Igual alcancé a saludar a medio reino, así que no fue un mal día."
 		"nima":
 			respuesta = "Bastante bien. Avancé con unas notas sobre fenómenos Oris y después fui a conversar un rato. Necesitaba despejarme."
+	# Las respuestas no deben afirmar que sigue siendo de mañana cuando ya
+	# cambió el periodo, ni ignorar la actividad real del personaje.
+	if not es_manana:
+		respuesta = respuesta.replace("La mañana", "El día")
+	var actividad_actual := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var descripcion_actividad := _obtener_descripcion_actividad_dialogo(actividad_actual)
+	if nombre in ["elian", "bruna", "darven", "saira", "narel"] and not descripcion_actividad.is_empty():
+		respuesta += " Ahora mismo estoy " + descripcion_actividad + "."
 	return _crear_opcion_social("preguntar_dia", "Preguntar por su día", frase, respuesta)
 
 

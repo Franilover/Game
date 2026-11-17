@@ -146,6 +146,16 @@ func _run() -> void:
 	var ayuda_forjando := dialogo._obtener_respuesta_ayuda_npc()
 	if not ayuda_forjando.contains("trabajando en la forja"):
 		errores.append("La respuesta sobre ayuda no conserva la actividad laboral real.")
+	# Preguntar por el día debe reflejar la actividad actual y el momento.
+	npc.nombre_individual = "Bruna"
+	npc.datos["actividad_actual"] = "forjar"
+	var dia_forjando := dialogo._crear_opcion_dia_social()
+	if not str(dia_forjando.get("respuesta", "")).contains("trabajando en la forja"):
+		errores.append("La respuesta sobre el día ignora que Bruna está trabajando en la forja.")
+	npc.datos["actividad_actual"] = "caminar"
+	var dia_caminando := dialogo._crear_opcion_dia_social()
+	if str(dia_caminando.get("respuesta", "")).contains("estoy caminando"):
+		errores.append("La respuesta sobre el día presenta caminar como una tarea laboral.")
 	npc.datos["actividad_actual"] = "pasear"
 	if not dialogo._obtener_descripcion_actividad_dialogo("pasear").is_empty():
 		errores.append("Pasear debe quedar fuera de las descripciones de trabajo.")
