@@ -1536,7 +1536,7 @@ func restaurar_estado_guardado(estado: Dictionary) -> void:
 			entrada_guardada = entrada
 			break
 	if entrada_id == "posada_habitacion":
-		entrada_guardada = {"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada"}
+		entrada_guardada = {"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada", "pos": Vector2(360, -53)}
 	if entrada_guardada.is_empty():
 		push_warning("ReinoTorres: no se pudo restaurar el interior; entrada desconocida: " + entrada_id)
 		return
