@@ -30,6 +30,7 @@ var _clock_label: Label = null
 var _coin_button: Button = null
 var _modo_historia: bool = false
 var _eterium_ui_elapsed: float = 0.0
+var _hud_status_elapsed: float = 0.0
 
 var mostrar_contexto_mundo: bool = false
 
@@ -221,8 +222,9 @@ func _process(delta: float) -> void:
 	else:
 		_tiempo_contexto = 0.0
 
-	if _eterium_ui_elapsed >= 0.2:
-		_eterium_ui_elapsed = 0.0
+	_hud_status_elapsed += delta
+	if _hud_status_elapsed >= 0.2:
+		_hud_status_elapsed = 0.0
 		_actualizar_reloj_calendario()
 		_actualizar_boton_monedas()
 
@@ -1415,8 +1417,6 @@ func _input(event: InputEvent) -> void:
 
 func establecer_modo_historia(activo: bool) -> void:
 	_modo_historia = activo
-	if is_instance_valid(_calendar_panel):
-		_calendar_panel.visible = not activo
 	# El selector de compañero no forma parte del HUD de Historia.
 	if is_instance_valid(_garumi_companero_slot):
 		_garumi_companero_slot.visible = not activo and not _es_interfaz_movil()
@@ -1443,7 +1443,6 @@ func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
 		if not _world_atmosphere_ref.estacion_cambiada.is_connected(_al_cambiar_dia_calendario):
 			_world_atmosphere_ref.estacion_cambiada.connect(_al_cambiar_dia_calendario)
 	_actualizar_reloj_calendario()
-	_actualizar_calendario_visual()
 
 
 func _al_cambiar_dia_calendario(_dato = null, _anio: int = 0) -> void:
