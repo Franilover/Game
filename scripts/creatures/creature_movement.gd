@@ -25,9 +25,9 @@ var _rutina_completada: bool = false
 var _ultima_posicion_seguro: Vector2 = Vector2.ZERO
 var _seguro_inicializado: bool = false
 var _direccion_base_atasco: Vector2 = Vector2.ZERO
+var _direccion_desvio_atasco: Vector2 = Vector2.ZERO
 var _tiempo_sin_progreso: float = 0.0
 var _lado_desvio: float = 1.0
-var _tiempo_cambio_lado: float = 0.0
 
 var _rng := RandomNumberGenerator.new()
 
@@ -35,7 +35,7 @@ const DISTANCIA_SEPARACION_NPC := 34.0
 const DISTANCIA_CEDER_PASO_NPC := 27.0
 const FACTOR_PROGRESO_NPC := 0.25
 const TIEMPO_REACCION_ATASCO_NPC := 0.8
-const INTERVALO_CAMBIO_LADO_NPC := 0.75
+const DISTANCIA_PRUEBA_DESVIO_NPC := 8.0
 
 
 func configurar(
@@ -63,9 +63,9 @@ func configurar(
 	_ultima_posicion_seguro = nueva_criatura.global_position if is_instance_valid(nueva_criatura) else Vector2.ZERO
 	_seguro_inicializado = is_instance_valid(nueva_criatura)
 	_direccion_base_atasco = Vector2.ZERO
+	_direccion_desvio_atasco = Vector2.ZERO
 	_tiempo_sin_progreso = 0.0
 	_lado_desvio = -1.0 if posmod(semilla, 2) == 0 else 1.0
-	_tiempo_cambio_lado = 0.0
 
 
 func configurar_chunk(nuevos_limites: Rect2) -> void:
@@ -328,6 +328,7 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 		_tiempo_sin_progreso = 0.0
 		_tiempo_cambio_lado = 0.0
 		_direccion_base_atasco = Vector2.ZERO
+		_direccion_desvio_atasco = Vector2.ZERO
 		return direccion
 
 	_tiempo_sin_progreso += maxf(delta, 0.0)
@@ -337,19 +338,36 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	if _direccion_base_atasco.length_squared() <= 0.001:
 		_direccion_base_atasco = direccion.normalized()
 
-	_tiempo_cambio_lado += maxf(delta, 0.0)
-	if _tiempo_cambio_lado >= INTERVALO_CAMBIO_LADO_NPC:
-		_lado_desvio *= -1.0
-		_tiempo_cambio_lado = 0.0
+	# Mantener el mismo desvío mientras siga libre evita que dos NPC
+	# alternen el rodeo y vibren en el sitio.
+	if _direccion_desvio_atasco.length_squared() > 0.001:
+		var desplazamiento_desvio := _direccion_desvio_atasco * maxf(DISTANCIA_PRUEBA_DESVIO_NPC, move_speed * 0.25)
+		if not creature.test_move(creature.global_transform, desplazamiento_desvio):
+			return _direccion_desvio_atasco
+		_direccion_desvio_atasco = Vector2.ZERO
 
-	var lateral := _direccion_base_atasco.orthogonal() * _lado_desvio
-	return (lateral * 0.92 + _direccion_base_atasco * 0.08).normalized()
+	var rumbo := _direccion_base_atasco.normalized()
+	var lateral_preferido := rumbo.orthogonal() * _lado_desvio
+	var candidatos: Array[Vector2] = [
+		(lateral_preferido + rumbo * 0.25).normalized(),
+		(-lateral_preferido + rumbo * 0.25).normalized(),
+		rumbo
+	]
+	for candidato in candidatos:
+		var desplazamiento := candidato * maxf(DISTANCIA_PRUEBA_DESVIO_NPC, move_speed * 0.25)
+		if not creature.test_move(creature.global_transform, desplazamiento):
+			_direccion_desvio_atasco = candidato
+			return candidato
+
+	# Si no hay espacio, detenerse hasta que el personaje que bloquea se aparte.
+	return Vector2.ZERO
 
 
 func _reiniciar_seguro_atasco() -> void:
 	_tiempo_sin_progreso = 0.0
 	_tiempo_cambio_lado = 0.0
 	_direccion_base_atasco = Vector2.ZERO
+	_direccion_desvio_atasco = Vector2.ZERO
 	if creature != null and is_instance_valid(creature):
 		_ultima_posicion_seguro = creature.global_position
 		_seguro_inicializado = true
