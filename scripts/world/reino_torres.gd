@@ -445,6 +445,10 @@ func _crear_cesped_tilemap_dual() -> void:
 
 
 func _crear_muralla_montana() -> void:
+	# Si la muralla fue generada y guardada desde el editor, reutilizarla.
+	# Sólo crearla aquí como respaldo para escenas antiguas aún no guardadas.
+	if get_node_or_null("TerrenoMurallaMontana") != null:
+		return
 	# Reutiliza el mismo compositor procedural y el mismo atlas de Montaña
 	# que utiliza Mundo Abierto. El offset coincide con el límite del mapa.
 	var terreno := WorldTerrainVisual.new()
