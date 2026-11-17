@@ -908,3 +908,12 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron pruebas para perfiles reservados/sociables, vínculos cercanos y excepciones por motivos concretos.
 - Se utilizan los campos actuales de Supabase; no se modificó el esquema ni se escribieron datos en Supabase.
 - Pendiente: ejecutar las pruebas con Godot 4.7 y validar en partida la frecuencia y selección de encuentros.
+
+
+## Perfil canónico de NPC y refresco desde Supabase (2026-11-16)
+- Los rasgos base entregados por Supabase son autoritativos: al recibir una fila válida, `NPCMind` actualiza esos valores aunque exista una partida guardada con valores anteriores.
+- El refresco de identidad no reemplaza necesidades, recuerdos, preferencias aprendidas, hábitos ni objetivos; esos datos siguen siendo estado individual de la partida.
+- `NPCScheduleSystem` solo aplica el perfil cuando `RelationshipSystem` terminó de cargar reglas y existe una fila para ese personaje. Los valores neutrales de fallback no pisan un perfil previo mientras la carga está pendiente ni cuando el NPC no tiene regla propia.
+- Se añadieron regresiones para cambio de rasgos canónicos y conservación de aprendizaje/hábitos.
+- No se modificó el esquema ni se escribieron datos en Supabase.
+- Pendiente: ejecutar la suite Godot 4.7 y validar el refresco con la respuesta real del catálogo social.
