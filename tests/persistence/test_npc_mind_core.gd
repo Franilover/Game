@@ -280,6 +280,41 @@ func _run() -> void:
 	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
 
+	# La confianza de cada NPC depende de evidencias independientes, no de ecos.
+	if not relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "viajero_1",
+		"tipo": "rumor",
+		"direccion": "apoya"
+	}):
+		errores.append("No se registró la primera evidencia del rumor.")
+	if relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "viajero_1",
+		"tipo": "testimonio",
+		"direccion": "apoya"
+	}):
+		errores.append("Una misma fuente aumentó la confianza al repetir su relato.")
+	if not relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "guardia_2",
+		"tipo": "observacion",
+		"direccion": "apoya"
+	}):
+		errores.append("No se registró una observación independiente.")
+	var creencia_corroborrada := relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza")
+	if str(creencia_corroborrada.get("estado", "")) != "conocimiento_sostenido":
+		errores.append("Evidencias independientes no elevaron la creencia corroborada.")
+	if not relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "inspector_3",
+		"tipo": "prueba",
+		"direccion": "contradice"
+	}):
+		errores.append("No se registró evidencia contradictoria.")
+	var creencia_revisada := relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza")
+	if float(creencia_revisada.get("confianza", 1.0)) >= float(creencia_corroborrada.get("confianza", 0.0)):
+		errores.append("La evidencia contradictoria no redujo la confianza del NPC.")
+	if relationship.obtener_evaluacion_creencia_npc("ivo", "festival_plaza").is_empty():
+		# Ivo transmitió la noticia original, pero no heredó las pruebas que Mara reunió.
+		pass
+
 	# La privacidad y el consentimiento se respetan al retransmitir información.
 	relationship.registrar_conocimiento_npc("ivo", {
 		"clave": "secreto_mara",
