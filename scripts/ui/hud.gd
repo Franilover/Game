@@ -241,8 +241,6 @@ func _process(delta: float) -> void:
 		_calendar_elapsed = 0.0
 		_actualizar_reloj_calendario()
 		_actualizar_boton_monedas()
-		if _calendar_open:
-			_actualizar_calendario_visual()
 
 	if discovery_notice != null and discovery_notice.visible:
 		_discovery_notice_timer -= delta
@@ -1449,8 +1447,25 @@ func establecer_modo_historia(activo: bool) -> void:
 
 
 func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
+	if is_instance_valid(_world_atmosphere_ref):
+		if _world_atmosphere_ref.dia_cambiado.is_connected(_al_cambiar_dia_calendario):
+			_world_atmosphere_ref.dia_cambiado.disconnect(_al_cambiar_dia_calendario)
+		if _world_atmosphere_ref.estacion_cambiada.is_connected(_al_cambiar_dia_calendario):
+			_world_atmosphere_ref.estacion_cambiada.disconnect(_al_cambiar_dia_calendario)
 	_world_atmosphere_ref = atmosfera
+	if is_instance_valid(_world_atmosphere_ref):
+		if not _world_atmosphere_ref.dia_cambiado.is_connected(_al_cambiar_dia_calendario):
+			_world_atmosphere_ref.dia_cambiado.connect(_al_cambiar_dia_calendario)
+		if not _world_atmosphere_ref.estacion_cambiada.is_connected(_al_cambiar_dia_calendario):
+			_world_atmosphere_ref.estacion_cambiada.connect(_al_cambiar_dia_calendario)
 	_actualizar_reloj_calendario()
+	_actualizar_calendario_visual()
+
+
+func _al_cambiar_dia_calendario(_dato = null, _anio: int = 0) -> void:
+	_actualizar_reloj_calendario()
+	if _calendar_open:
+		_actualizar_calendario_visual()
 
 
 func _es_interfaz_movil() -> bool:
@@ -1672,7 +1687,7 @@ func _actualizar_layout_hud_superior() -> void:
 		_clock_panel.size = clock_size
 		_clock_panel.custom_minimum_size = clock_size
 	if is_instance_valid(_calendar_button):
-		_calendar_button.position = Vector2((viewport_size.x - 104.0) * 0.5, 64.0) if movil else Vector2(viewport_size.x - 136.0, 12.0)
+		_calendar_button.position = Vector2(12.0, 124.0) if movil else Vector2(viewport_size.x - 136.0, 12.0)
 	if is_instance_valid(_coin_button):
 		_coin_button.position = Vector2(12.0, 76.0) if movil else Vector2(16.0, 16.0)
 	if is_instance_valid(_calendar_panel):
