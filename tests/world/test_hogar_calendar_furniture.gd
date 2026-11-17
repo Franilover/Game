@@ -75,7 +75,7 @@ func _run() -> void:
 		panel.call("abrir", atmosfera)
 		var informacion := panel.get("_info") as Label
 		var cuadricula := panel.get("_grid") as GridContainer
-		if not is_instance_valid(informacion) or not informacion.text.contains("Verde · Primavera"):
+		if not is_instance_valid(informacion) or not informacion.text.contains("Temporada: Verde") or not informacion.text.contains("Estación: Primavera"):
 			errores.append("El calendario no muestra la temporada y estación actuales.")
 		if is_instance_valid(informacion) and not informacion.text.contains("Quedan 2 días"):
 			errores.append("El calendario no calcula los días restantes.")
