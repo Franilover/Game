@@ -27,15 +27,22 @@ func _run() -> void:
 	# Layout adaptable: ningún botón puede salir del viewport ni cubrir a otro.
 	var tamanos := [Vector2(360.0, 640.0), Vector2(640.0, 360.0), Vector2(320.0, 240.0), Vector2(480.0, 800.0)]
 	var rutas_botones := [
-		"Actions/Inventory", "Actions/Map", "Actions/Missions", "Actions/Pause",
+		"Actions/Inventory",
 		"Actions/Garumis", "Actions/Garumi1", "Actions/Garumi2", "Actions/Garumi3",
 		"Actions/Primary", "Actions/Secondary", "Actions/Dash",
 		"Actions/Meditate"
 	]
 	if controles.get_node_or_null("Actions/Jump") != null or controles.get_node_or_null("Actions/Interact") != null:
 		errores.append("Los controles móviles todavía contienen botones de salto o usar.")
+	for ruta_oculta in ["Actions/Map", "Actions/Missions", "Actions/Pause"]:
+		var boton_oculto := controles.get_node_or_null(ruta_oculta) as Control
+		if boton_oculto == null or boton_oculto.visible:
+			errores.append("El botón móvil %s debería estar oculto." % ruta_oculta)
 	for tamano_viewport in tamanos:
 		var layout := controles._calcular_layout_movil(tamano_viewport)
+		for ruta_oculta in ["Actions/Map", "Actions/Missions", "Actions/Pause"]:
+			if layout.has(ruta_oculta):
+				errores.append("El layout móvil todavía reserva espacio para %s." % ruta_oculta)
 		for ruta in rutas_botones:
 			var rect: Rect2 = layout.get(ruta, Rect2())
 			if rect.position.x < -0.1 or rect.position.y < -0.1 or rect.end.x > tamano_viewport.x + 0.1 or rect.end.y > tamano_viewport.y + 0.1:
