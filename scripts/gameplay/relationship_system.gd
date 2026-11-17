@@ -1357,7 +1357,9 @@ func puede_compartir_conocimiento_npc(
 	var destino := personaje_destino.strip_edges()
 	if origen.is_empty() or destino.is_empty() or origen == destino:
 		return false
-	if not bool(conocimiento.get("compartible", true)):
+	var tipo := str(conocimiento.get("tipo", "")).strip_edges().to_lower()
+	var tipo_publico := tipo in ["noticia", "evento_publico", "conocimiento_compartible", "evento_comunitario"]
+	if not bool(conocimiento.get("compartible", tipo_publico)):
 		return false
 	var privacidad := str(conocimiento.get("privacidad", "publica")).strip_edges().to_lower()
 	if privacidad in ["publica", "publico", "rumor_publico"]:
