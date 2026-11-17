@@ -1330,14 +1330,58 @@ func transmitir_conocimiento_npc(
 			continue
 		if not puede_compartir_conocimiento_npc(origen, destino, conocimiento):
 			return false
-		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
-		var cadena: Array = cadena_variant.duplicate(true) if cadena_variant is Array else []
-		cadena.append({
+		var momento_transmision := Time.get_datetime_string_from_system(true)
+		var enlace := {
 			"de": origen,
 			"a": destino,
-			"momento": Time.get_datetime_string_from_system(true),
+			"momento": momento_transmision,
 			"contexto": contexto.duplicate(true)
-		})
+		}
+		# Un conocimiento puede llegar por varias personas. No se debe borrar
+		# la ruta que el receptor ya conocía al recibir una segunda versión.
+		var rutas_origen: Array = []
+		var rutas_origen_variant: Variant = conocimiento.get("rutas_transmision", [])
+		if rutas_origen_variant is Array:
+			for ruta_variant in rutas_origen_variant:
+				if ruta_variant is Array:
+					rutas_origen.append(ruta_variant.duplicate(true))
+		if rutas_origen.is_empty():
+			var cadena_origen_variant: Variant = conocimiento.get("cadena_transmision", [])
+			if cadena_origen_variant is Array and not (cadena_origen_variant as Array).is_empty():
+				rutas_origen.append((cadena_origen_variant as Array).duplicate(true))
+		if rutas_origen.is_empty():
+			rutas_origen.append([])
+		var rutas_nuevas: Array = []
+		for ruta_variant in rutas_origen:
+			if not ruta_variant is Array:
+				continue
+			var ruta_nueva: Array = (ruta_variant as Array).duplicate(true)
+			ruta_nueva.append(enlace.duplicate(true))
+			rutas_nuevas.append(ruta_nueva)
+		var rutas_destino: Array = []
+		var rutas_destino_variant: Variant = conocimiento_previo.get("rutas_transmision", [])
+		if rutas_destino_variant is Array:
+			for ruta_variant in rutas_destino_variant:
+				if ruta_variant is Array:
+					rutas_destino.append((ruta_variant as Array).duplicate(true))
+		if rutas_destino.is_empty():
+			var cadena_destino_variant: Variant = conocimiento_previo.get("cadena_transmision", [])
+			if cadena_destino_variant is Array and not (cadena_destino_variant as Array).is_empty():
+				rutas_destino.append((cadena_destino_variant as Array).duplicate(true))
+		for ruta_nueva in rutas_nuevas:
+			var firma_nueva := JSON.stringify(ruta_nueva)
+			var repetida := false
+			for ruta_existente in rutas_destino:
+				if JSON.stringify(ruta_existente) == firma_nueva:
+					repetida = true
+					break
+			if not repetida:
+				rutas_destino.append(ruta_nueva)
+		while rutas_destino.size() > 12:
+			rutas_destino.pop_front()
+		var cadena: Array = rutas_destino.back().duplicate(true) if not rutas_destino.is_empty() else [enlace.duplicate(true)]
+		conocimiento["rutas_transmision"] = rutas_destino
+		conocimiento["cadena_transmision"] = cadena
 		# El receptor no hereda como propia la observación del emisor:
 		# recibe un testimonio atribuible a esa persona.
 		var conocimiento_previo := obtener_conocimiento_npc(destino, clave)
