@@ -53,7 +53,7 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
 		# Todos los paneles de interfaz usan la misma textura que los botones.
-		# No aplicar panel_background.png en menús, diálogos ni Relaciones.
+		# Esta es la superficie compartida para menús, diálogos y Relaciones.
 		var panel: StyleBox = button_surface_style()
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
