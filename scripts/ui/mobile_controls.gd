@@ -32,11 +32,9 @@ func _ready() -> void:
 
 	_configurar_estilo_joystick()
 	_botones = {
-		"interact": $Actions/Interact,
 		"primary_action": $Actions/Primary,
 		"secondary_action": $Actions/Secondary,
 		"dash": $Actions/Dash,
-		"jump": $Actions/Jump,
 		"inventory": $Actions/Inventory,
 	}
 
@@ -92,14 +90,14 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	if boton == null:
 		return
 	var nombres := {
-		"interact": "Usar", "primary_action": "Mano I", "secondary_action": "Mano D",
-		"dash": "Dash", "jump": "Salto", "inventory": "Bolsa",
+		"primary_action": "Mano I", "secondary_action": "Mano D",
+		"dash": "Dash", "inventory": "Bolsa",
 		"toggle_map": "Mapa", "toggle_missions": "Misiones", "toggle_garumi_selector": "Garumis",
 		"garumi_slot_1": "1", "garumi_slot_2": "2", "garumi_slot_3": "3",
 		"meditate": "Meditar", "pause_menu": "Pausa"
 	}
 	boton.text = str(nombres.get(accion, "•"))
-	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "pause_menu", "dash", "jump"]
+	var texto_largo := accion in ["interact", "primary_action", "secondary_action", "inventory", "toggle_map", "toggle_missions", "toggle_garumi_selector", "meditate", "pause_menu", "dash"]
 	boton.add_theme_font_size_override("font_size", 10 if texto_largo else 18)
 	boton.add_theme_color_override("font_color", Color("#FFF3D6"))
 	boton.add_theme_color_override("font_hover_color", Color("#FFFFFF"))
@@ -177,16 +175,15 @@ func _calcular_layout_movil(viewport_size: Vector2) -> Dictionary:
 	for i in range(3):
 		layout["Actions/Garumi%d" % (i + 1)] = Rect2(Vector2(x_garumis + (pequeno + gap) * (i + 1), margen), Vector2.ONE * pequeno)
 
-	# Acciones de juego en una cuadrícula 3x2, sin botones que sobresalgan del borde.
-	var ancho_grupo := accion * 3.0 + gap * 2.0
+	# Acciones esenciales: Dash arriba y las dos manos abajo.
+	# La interacción contextual ya tiene prioridad al usar cualquiera de las manos.
+	var ancho_grupo := accion * 2.0 + gap
 	var x_grupo := right - ancho_grupo
 	var y_inferior := bottom - accion
 	var y_superior := y_inferior - accion - gap
-	layout["Actions/Dash"] = Rect2(Vector2(x_grupo, y_superior), Vector2.ONE * accion)
-	layout["Actions/Jump"] = Rect2(Vector2(x_grupo + accion + gap, y_superior), Vector2.ONE * accion)
-	layout["Actions/Interact"] = Rect2(Vector2(x_grupo, y_inferior), Vector2.ONE * accion)
-	layout["Actions/Secondary"] = Rect2(Vector2(x_grupo + accion + gap, y_inferior), Vector2.ONE * accion)
-	layout["Actions/Primary"] = Rect2(Vector2(x_grupo + (accion + gap) * 2.0, y_inferior), Vector2.ONE * accion)
+	layout["Actions/Dash"] = Rect2(Vector2(x_grupo + accion + gap, y_superior), Vector2.ONE * accion)
+	layout["Actions/Secondary"] = Rect2(Vector2(x_grupo, y_inferior), Vector2.ONE * accion)
+	layout["Actions/Primary"] = Rect2(Vector2(x_grupo + accion + gap, y_inferior), Vector2.ONE * accion)
 
 	# Meditar queda encima del joystick, separado de la cuadrícula de combate.
 	var x_meditar := margen + joystick_size + gap
