@@ -165,7 +165,7 @@ func _run() -> void:
 	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
 	dialogo._fuente = npc
 	dialogo._dialogo_en_transito = false
-	for nombre_iniciativa in ["Mara", "Ivo", "Nima"]:
+	for nombre_iniciativa in ["Elian", "Bruna", "Darven", "Saira", "Narel", "Mara", "Ivo", "Nima", "Abel", "Liam"]:
 		npc.nombre_individual = nombre_iniciativa
 		var iniciativa_amigo := conversacion_visual._crear_dialogo_iniciativa_amigo(
 			npc,
