@@ -81,8 +81,8 @@ func _run() -> void:
 			errores.append("El calendario no calcula los días restantes.")
 		if is_instance_valid(informacion) and not informacion.text.contains("Siguiente: Verano"):
 			errores.append("El calendario no identifica la estación siguiente.")
-		if not is_instance_valid(cuadricula) or cuadricula.get_child_count() != 4:
-			errores.append("La cuadrícula no representa todos los días de la estación.")
+		if not is_instance_valid(cuadricula) or cuadricula.get_child_count() != 11:
+			errores.append("La cuadrícula no representa los encabezados semanales y todos los días de la estación.")
 		atmosfera.dia_actual = 3
 		atmosfera.estacion_actual["dia_de_estacion"] = 3
 		atmosfera.dia_cambiado.emit(3, 5)
