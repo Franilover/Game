@@ -437,6 +437,9 @@ func _debe_usar_menu_social(
 ) -> bool:
 	if not is_instance_valid(_fuente) or _dialogo_en_transito or tiene_accion_exclusiva:
 		return false
+	var tipo_contenido := str(datos_dialogo.get("tipo_contenido", "")).strip_edges().to_lower()
+	if tipo_contenido in ["historia", "story", "cinematica", "lineal"] or bool(datos_dialogo.get("_sin_menu_social", false)):
+		return false
 	if bool(datos_dialogo.get("_continuar_menu_social", false)):
 		return true
 	if iniciativa_directa or bool(datos_dialogo.get("_iniciativa_npc", false)):
