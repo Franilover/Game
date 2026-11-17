@@ -2157,9 +2157,9 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		)
 		# Ambos perfiles cuentan: una persona muy sociable tampoco debe imponer
 		# encuentros casuales a alguien reservado con quien apenas tiene vínculo.
-		if not _puede_iniciar_encuentro_social(id_npc, relacion, motivo_concreto):
+		if not _puede_iniciar_encuentro_social(id_npc, relacion, motivo_concreto, id_candidato):
 			continue
-		if not _puede_iniciar_encuentro_social(id_candidato, relacion, motivo_concreto):
+		if not _puede_iniciar_encuentro_social(id_candidato, relacion, motivo_concreto, id_npc):
 			continue
 		var distancia := npc.global_position.distance_to(candidato.global_position)
 		var puntuacion := (
@@ -2170,7 +2170,10 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		)
 		# Las experiencias recientes pueden reforzar o enfriar un vínculo,
 		# incluso antes de que sus valores sociales cambien mucho.
-		puntuacion += _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
+		# La evaluación es bilateral: importa tanto cómo ve el iniciador al
+		# candidato como la experiencia que el candidato conserva del iniciador.
+		puntuacion += _calcular_influencia_recuerdos_sociales(id_npc, id_candidato) * 0.7
+		puntuacion += _calcular_influencia_recuerdos_sociales(id_candidato, id_npc) * 0.45
 		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
 			puntuacion -= 8.0
 		if not _relationship_system.obtener_promesas_pendientes_npc(id_npc, id_candidato).is_empty():
@@ -2202,7 +2205,8 @@ func _obtener_umbral_social(personaje_id: String) -> float:
 func _puede_iniciar_encuentro_social(
 	personaje_id: String,
 	relacion: Dictionary,
-	motivo_concreto: bool = false
+	motivo_concreto: bool = false,
+	pareja_id: String = ""
 ) -> bool:
 	if motivo_concreto:
 		return true
@@ -2211,10 +2215,21 @@ func _puede_iniciar_encuentro_social(
 		float(relacion.get("amistad", 0.0)),
 		maxf(float(relacion.get("afecto", 0.0)), float(relacion.get("confianza", 0.0)))
 	)
+	var memoria_personal := 0.0
+	if not pareja_id.strip_edges().is_empty():
+		memoria_personal = _calcular_influencia_recuerdos_sociales(personaje_id, pareja_id)
+	# Un rechazo reiterado o una experiencia muy negativa puede frenar un
+	# encuentro casual incluso en alguien sociable. Los motivos concretos
+	# (promesas, ayuda o noticias) siguen permitiendo resolver la situación.
+	if memoria_personal <= -8.0:
+		return false
+	# Una experiencia positiva repetida puede crear familiaridad antes de que
+	# los valores generales de amistad/confianza hayan subido mucho.
+	var vinculo_efectivo := maxf(vinculo, maxf(0.0, memoria_personal * 0.8))
 	if sociabilidad < 40.0:
-		return vinculo >= 12.0
+		return vinculo_efectivo >= 12.0
 	if sociabilidad < 60.0:
-		return vinculo >= 5.0
+		return vinculo_efectivo >= 5.0
 	return true
 
 
@@ -2231,10 +2246,15 @@ func _hay_motivo_social_concreto(personaje_id: String, pareja_id: String) -> boo
 ## Resume las últimas experiencias compartidas con una persona.
 ## Los recuerdos recientes pesan más; la influencia queda acotada para que
 ## una mala experiencia no borre por sí sola una relación consolidada.
-func _calcular_influencia_recuerdos_sociales(personaje_id: String, pareja_id: String) -> float:
+func _calcular_influencia_recuerdos_sociales(
+	personaje_id: String,
+	pareja_id: String,
+	fecha_actual: String = ""
+) -> float:
 	if not is_instance_valid(_relationship_system) or not _relationship_system.has_method("obtener_recuerdos"):
 		return 0.0
 	var recuerdos: Array = _relationship_system.obtener_recuerdos(personaje_id)
+	var fecha_referencia := fecha_actual if not fecha_actual.strip_edges().is_empty() else _clave_fecha_actual()
 	var influencia := 0.0
 	var consideradas := 0
 	for indice in range(recuerdos.size() - 1, -1, -1):
@@ -2248,11 +2268,49 @@ func _calcular_influencia_recuerdos_sociales(personaje_id: String, pareja_id: St
 			continue
 		var resultado := clampf(float(recuerdo.get("resultado", 0.0)), -1.0, 1.0)
 		var importancia := clampf(float(recuerdo.get("importancia", 1.0)) / 3.0, 0.25, 1.0)
-		influencia += resultado * importancia * (1.0 / (1.0 + float(consideradas) * 0.35)) * 5.0
+		var antiguedad := _calcular_antiguedad_recuerdo_dias(
+			str(recuerdo.get("momento", "")),
+			fecha_referencia
+		)
+		# Sin fecha válida conservamos el peso por orden de memoria; con fecha
+		# válida la influencia disminuye gradualmente, con semivida aproximada de 14 días.
+		var vigencia := 1.0 / (1.0 + antiguedad / 14.0)
+		influencia += (
+			resultado * importancia * vigencia
+			* (1.0 / (1.0 + float(consideradas) * 0.35)) * 5.0
+		)
 		consideradas += 1
 		if consideradas >= 6:
 			break
 	return clampf(influencia, -15.0, 15.0)
+
+
+func _calcular_antiguedad_recuerdo_dias(momento: String, fecha_actual: String) -> float:
+	var fecha_recuerdo := _convertir_fecha_mundo_a_unix(momento)
+	var fecha_referencia := _convertir_fecha_mundo_a_unix(fecha_actual)
+	if fecha_recuerdo < 0.0 or fecha_referencia < 0.0:
+		return 0.0
+	return maxf(0.0, (fecha_referencia - fecha_recuerdo) / 86400.0)
+
+
+func _convertir_fecha_mundo_a_unix(fecha: String) -> float:
+	var partes := fecha.strip_edges().split(":")
+	if partes.size() != 3:
+		return -1.0
+	var anio := int(partes[0])
+	var mes := int(partes[1])
+	var dia := int(partes[2])
+	if anio < 1 or mes < 1 or mes > 12 or dia < 1 or dia > 31:
+		return -1.0
+	var fecha_dict := {
+		"year": anio,
+		"month": mes,
+		"day": dia,
+		"hour": 12,
+		"minute": 0,
+		"second": 0
+	}
+	return float(Time.get_unix_time_from_datetime_dict(fecha_dict))
 
 
 func _registrar_experiencia_social_npc(
