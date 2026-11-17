@@ -957,3 +957,11 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - La observación queda como conocimiento público compartible, sin afirmar nada sobre sucesos que el NPC no presenció.
 - Se añadió una regresión para confirmar la primera observación, la deduplicación y su estado epistemológico.
 - La integración cubre por ahora los eventos comunitarios del calendario de Torres; todavía falta conectar observaciones de incidentes, trabajo, acciones del jugador y pruebas materiales.
+
+
+## Correcciones de aprendizaje y privacidad en decisiones sociales (2026-11-17)
+- Las experiencias recientes ahora tienen más peso que las antiguas al ajustar la afinidad por un lugar; un historial previo favorable puede cambiar cuando se acumulan experiencias negativas.
+- Un objetivo cuyo identificador coincide con una actividad influye en su utilidad aunque el registro no repita el campo `actividad`.
+- La selección de noticias y la puntuación de encuentros usan la misma lista de conocimientos realmente compartibles con el destinatario, evitando ofrecer información confidencial o reservada como tema casual.
+- El conocimiento sin metadatos explícitos sólo se considera público automáticamente para tipos reconocidos de noticia/evento público; una nota personal no se retransmite por defecto.
+- Se corrigió la expectativa de persistencia del test para contar las dos actividades aprendidas que efectivamente se registran.
