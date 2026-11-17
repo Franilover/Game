@@ -167,6 +167,9 @@ func _ready() -> void:
 	_preparar_panel_interaccion()
 	_preparar_panel_misiones()
 	_preparar_reloj_calendario()
+	if not get_viewport().size_changed.is_connected(_actualizar_layout_hud_movil):
+		get_viewport().size_changed.connect(_actualizar_layout_hud_movil)
+	_actualizar_layout_hud_movil()
 	if not GameState.dinero_cambiado.is_connected(_al_cambiar_dinero):
 		GameState.dinero_cambiado.connect(_al_cambiar_dinero)
 	_conectar_senales_misiones()
@@ -221,7 +224,7 @@ func _process(delta: float) -> void:
 			inventario_abierto = true
 			break
 	if is_instance_valid(_calendar_panel):
-		_calendar_panel.visible = not _modo_historia and not inventario_abierto and not _combate_garumi_activo
+		_calendar_panel.visible = not _modo_historia and not inventario_abierto and not _combate_garumi_activo and (not _es_interfaz_movil() or get_viewport_rect().size.y >= 280.0)
 	_calendar_elapsed += delta
 	if _calendar_elapsed >= 0.2:
 		_calendar_elapsed = 0.0
@@ -1432,6 +1435,54 @@ func configurar_reloj_calendario(atmosfera: WorldAtmosphere) -> void:
 	_actualizar_reloj_calendario()
 
 
+func _es_interfaz_movil() -> bool:
+	return OS.has_feature("android") or OS.has_feature("ios")
+
+
+func _actualizar_layout_hud_movil() -> void:
+	if not is_inside_tree() or not _es_interfaz_movil():
+		return
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+
+	# El botón R de escritorio se sustituye por el control Garumis táctil.
+	if is_instance_valid(_garumi_companero_slot):
+		_garumi_companero_slot.hide()
+
+	# El selector se despliega bajo el grupo Garumis, lejos de inventario y mapa.
+	if is_instance_valid(_garumi_selector_panel):
+		var selector_size := Vector2(minf(164.0, viewport_size.x - 24.0), 58.0)
+		_garumi_selector_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_garumi_selector_panel.position = Vector2(
+			maxf(12.0, viewport_size.x - selector_size.x - 12.0),
+			62.0
+		)
+		_garumi_selector_panel.size = selector_size
+		_garumi_selector_panel.custom_minimum_size = selector_size
+
+	# En horizontal, el reloj ocupa el espacio central entre los controles.
+	# En vertical, baja de las filas superiores; en pantallas muy bajas se oculta
+	# para no tapar Dash ni las dos manos.
+	if not is_instance_valid(_calendar_panel):
+		return
+	if viewport_size.y < 280.0:
+		_calendar_panel.hide()
+		return
+	_calendar_panel.show()
+	_calendar_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	var calendar_size := Vector2(minf(190.0, viewport_size.x - 24.0), 64.0)
+	var calendar_position := Vector2((viewport_size.x - calendar_size.x) * 0.5, 124.0)
+	if viewport_size.x >= 560.0 and viewport_size.y >= 320.0:
+		calendar_size = Vector2(150.0, 76.0)
+		calendar_position = Vector2((viewport_size.x - calendar_size.x) * 0.5, 12.0)
+	_calendar_panel.position = calendar_position
+	_calendar_panel.size = calendar_size
+	_calendar_panel.custom_minimum_size = calendar_size
+	if is_instance_valid(_calendar_label):
+		_calendar_label.add_theme_font_size_override("font_size", 9 if viewport_size.x < 400.0 else 10)
+
+
 func _preparar_reloj_calendario() -> void:
 	_calendar_panel = CALENDAR_CLOCK_SCENE.instantiate() as PanelContainer
 	if _calendar_panel == null:
@@ -1449,6 +1500,7 @@ func _preparar_reloj_calendario() -> void:
 	_calendar_label = _calendar_panel.get_node("CalendarText") as Label
 	add_child(_calendar_panel)
 	PIXEL_UI_THEME.apply(_calendar_panel)
+	_actualizar_layout_hud_movil()
 
 
 func _al_cambiar_dinero(_cantidad: int) -> void:
@@ -1500,6 +1552,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 	if is_instance_valid(etiqueta):
 		etiqueta.text = "R"
 	_garumi_companero_slot.pressed.connect(_alternar_companero_actual)
+	_garumi_companero_slot.visible = not _es_interfaz_movil()
 	add_child(_garumi_companero_slot)
 
 	_garumi_selector_panel = PanelContainer.new()
@@ -1521,6 +1574,7 @@ func _preparar_panel_garumis_vinculados() -> void:
 	_garumi_selector_lista.add_theme_constant_override("separation", 5)
 	_garumi_selector_panel.add_child(_garumi_selector_lista)
 	add_child(_garumi_selector_panel)
+	_actualizar_layout_hud_movil()
 
 
 func mostrar_panel_garumis_durante_combate(_mostrar: bool) -> void:
