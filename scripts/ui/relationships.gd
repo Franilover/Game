@@ -428,9 +428,9 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var panel_amistad := PanelContainer.new()
 	panel_amistad.name = "FriendshipPanel"
 	panel_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var fondo_amistad: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
-	if fondo_amistad != null:
-		panel_amistad.add_theme_stylebox_override("panel", fondo_amistad)
+	# La superficie Button del panel derecho ya contiene toda la columna;
+	# la sección de amistad queda transparente para evitar un segundo recuadro.
+	panel_amistad.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	detalle.add_child(panel_amistad)
 
 	var margen_amistad := MarginContainer.new()
