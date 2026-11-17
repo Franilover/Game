@@ -273,7 +273,7 @@ func _cargar_sprite_mapa(sprite_key: String, nombre: String, tiene_personaje: bo
 		claves.append(nombre)
 	for clave in claves:
 		for extension in [".png", ".PNG"]:
-			var ruta := "res://assets/art/characters/" + clave + extension
+			var ruta: String = "res://assets/art/characters/" + clave + str(extension)
 			if not ResourceLoader.exists(ruta):
 				continue
 			var recurso: Resource = load(ruta)
