@@ -39,6 +39,26 @@ static func es_conversacion_historia(conversacion: Dictionary) -> bool:
 static func es_conversacion_opcional(conversacion: Dictionary) -> bool:
 	return not es_conversacion_historia(conversacion)
 
+## Ventanas opcionales de activación para una etapa de historia.
+## Si no se declara una ventana, la historia conserva su activación por proximidad.
+static func cumple_activacion_historia(conversacion: Dictionary, tiempo: Dictionary) -> bool:
+	var activacion_variant: Variant = conversacion.get("activacion_historia", {})
+	if not activacion_variant is Dictionary:
+		return true
+	var activacion := activacion_variant as Dictionary
+	if activacion.is_empty():
+		return true
+	if activacion.has("anio") and int(tiempo.get("anio", -1)) != int(activacion.get("anio")):
+		return false
+	if activacion.has("dia") and int(tiempo.get("dia", -1)) != int(activacion.get("dia")):
+		return false
+	var hora := float(tiempo.get("hora_del_dia", 0.0))
+	if activacion.has("hora_desde") and hora < float(activacion.get("hora_desde")):
+		return false
+	if activacion.has("hora_hasta") and hora >= float(activacion.get("hora_hasta")):
+		return false
+	return true
+
 
 # Sucesos cotidianos breves. Se elige uno por día de forma determinista,
 # respetando quién está presente y evitando repetir los últimos acontecimientos.
@@ -1742,17 +1762,30 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 	# Las historias cotidianas de los habitantes locales no dependen de la misión
 	# de la carreta ni de relaciones canónicas almacenadas en Supabase.
 	for conversacion_local in CONVERSACIONES_HABITANTES:
+		if not cumple_activacion_historia(conversacion_local, tiempo):
+			continue
 		var clave_local := str(conversacion_local.get("clave", ""))
 		var progreso_local_variant: Variant = _progreso_parejas.get(clave_local, {})
 		var progreso_local: Dictionary = progreso_local_variant if progreso_local_variant is Dictionary else {}
 		if int(progreso_local.get("etapa", 0)) >= 3 or bool(_vistas_por_dia.get(clave_local, false)):
 			continue
-		var requisito_local := str(conversacion_local.get("requiere_progreso", ""))
-		if not requisito_local.is_empty():
-			var requisito_variant: Variant = _progreso_parejas.get(requisito_local, {})
-			var requisito: Dictionary = requisito_variant if requisito_variant is Dictionary else {}
-			if int(requisito.get("etapa", 0)) < 1:
-				continue
+		var requisito_variant: Variant = conversacion_local.get("requiere_progreso", "")
+		if requisito_variant is Dictionary:
+			var requisito_datos := requisito_variant as Dictionary
+			var requisito_clave := str(requisito_datos.get("clave", "")).strip_edges()
+			var etapa_requerida := maxi(1, int(requisito_datos.get("etapa", 1)))
+			if not requisito_clave.is_empty():
+				var progreso_requisito_variant: Variant = _progreso_parejas.get(requisito_clave, {})
+				var progreso_requisito: Dictionary = progreso_requisito_variant if progreso_requisito_variant is Dictionary else {}
+				if int(progreso_requisito.get("etapa", 0)) < etapa_requerida:
+					continue
+		else:
+			var requisito_local := str(requisito_variant).strip_edges()
+			if not requisito_local.is_empty():
+				var progreso_requisito_variant: Variant = _progreso_parejas.get(requisito_local, {})
+				var progreso_requisito: Dictionary = progreso_requisito_variant if progreso_requisito_variant is Dictionary else {}
+				if int(progreso_requisito.get("etapa", 0)) < 1:
+					continue
 		var local_a := _npc_por_nombre.get(str(conversacion_local.get("npc_a", ""))) as Creature
 		var local_b := _npc_por_nombre.get(str(conversacion_local.get("npc_b", ""))) as Creature
 		if not _npc_puede_participar_historia(local_a, local_b):
@@ -1768,6 +1801,8 @@ func _buscar_conversacion(jugador: Node2D) -> void:
 	# Las cadenas narrativas principales conservan su condición de desbloqueo.
 	if _mision_carreta_completada(_mission_manager):
 		for conversacion in CONVERSACIONES:
+			if not cumple_activacion_historia(conversacion, tiempo):
+				continue
 			var clave := str(conversacion.get("clave", ""))
 			var progreso_variant: Variant = _progreso_parejas.get(clave, {})
 			var progreso: Dictionary = progreso_variant if progreso_variant is Dictionary else {}
