@@ -869,7 +869,7 @@ func registrar_conocimiento_npc(personaje_id: String, conocimiento: Dictionary) 
 				"fuente_id": fuente_evidencia,
 				"tipo": tipo_evidencia,
 				"direccion": "apoya",
-				"peso": 0.18 if tipo_evidencia == "testimonio" else 0.08,
+				"peso": 0.1 if tipo_evidencia == "testimonio" else 0.08,
 				"momento": str(registro.get("conocido_desde", ""))
 			}
 			registro["evidencias"] = [evidencia_inicial]
@@ -926,7 +926,7 @@ func registrar_observacion_evento_npc(
 					continue
 				var evidencia_existente := evidencia_variant as Dictionary
 				if (
-					str(evidencia_existente.get("fuente_id", "")) == evento_id
+					str(evidencia_existente.get("fuente_id", "")) == "observacion:%s:%s" % [evento_id, id]
 					and str(evidencia_existente.get("direccion", "apoya")) == "apoya"
 				):
 					return false
@@ -947,7 +947,7 @@ func registrar_observacion_evento_npc(
 	}):
 		return false
 	return registrar_evidencia_conocimiento_npc(id, clave_conocimiento, {
-		"fuente_id": evento_id,
+		"fuente_id": "observacion:%s:%s" % [evento_id, id],
 		"tipo": "observacion",
 		"direccion": "apoya",
 		"detalle": detalle,
@@ -988,7 +988,7 @@ func registrar_evidencia_conocimiento_npc(
 			return false
 	var pesos := {
 		"rumor": 0.08,
-		"testimonio": 0.18,
+		"testimonio": 0.1,
 		"observacion": 0.38,
 		"prueba": 0.62
 	}
@@ -1338,10 +1338,31 @@ func transmitir_conocimiento_npc(
 			"momento": Time.get_datetime_string_from_system(true),
 			"contexto": contexto.duplicate(true)
 		})
+		# El receptor no hereda como propia la observación del emisor:
+		# recibe un testimonio atribuible a esa persona.
+		var conocimiento_previo := obtener_conocimiento_npc(destino, clave)
+		var evidencias_previas_variant: Variant = conocimiento_previo.get("evidencias", [])
+		var evidencias_previas: Array = evidencias_previas_variant.duplicate(true) if evidencias_previas_variant is Array else []
 		conocimiento["cadena_transmision"] = cadena
 		conocimiento["fuente"] = origen
 		conocimiento["transmitido_por"] = origen
-		return registrar_conocimiento_npc(destino, conocimiento)
+		conocimiento["verificacion"] = "testimonio_no_verificado"
+		conocimiento.erase("confianza_creencia")
+		conocimiento.erase("estado_epistemico")
+		if evidencias_previas.is_empty():
+			conocimiento.erase("evidencias")
+		else:
+			conocimiento["evidencias"] = evidencias_previas
+		if not registrar_conocimiento_npc(destino, conocimiento):
+			return false
+		if evidencias_previas.is_empty():
+			return true
+		return registrar_evidencia_conocimiento_npc(destino, clave, {
+			"fuente_id": origen,
+			"tipo": "testimonio",
+			"direccion": "apoya",
+			"detalle": "Información transmitida por %s" % origen
+		})
 	return false
 
 
