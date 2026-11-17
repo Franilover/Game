@@ -219,21 +219,31 @@ func _actualizar() -> void:
 			iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			boton.add_child(iniciales)
 
+		var fondo_nombre := PanelContainer.new()
+		fondo_nombre.name = "NameButtonSurface"
+		fondo_nombre.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		fondo_nombre.offset_left = 2.0
+		fondo_nombre.offset_right = -2.0
+		fondo_nombre.offset_top = -16.0
+		fondo_nombre.offset_bottom = -1.0
+		fondo_nombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fondo_nombre.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+		var nombre_margen := MarginContainer.new()
+		nombre_margen.add_theme_constant_override("margin_left", 2)
+		nombre_margen.add_theme_constant_override("margin_right", 2)
+		nombre_margen.add_theme_constant_override("margin_top", 0)
+		nombre_margen.add_theme_constant_override("margin_bottom", 0)
 		var etiqueta := Label.new()
-		etiqueta.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-		etiqueta.offset_left = 2.0
-		etiqueta.offset_right = -2.0
-		etiqueta.offset_top = -15.0
-		etiqueta.offset_bottom = -1.0
 		etiqueta.text = nombre
 		etiqueta.clip_text = true
 		etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		etiqueta.add_theme_font_size_override("font_size", 8)
 		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
-		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
-		etiqueta.add_theme_constant_override("outline_size", 2)
 		etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		boton.add_child(etiqueta)
+		nombre_margen.add_child(etiqueta)
+		fondo_nombre.add_child(nombre_margen)
+		boton.add_child(fondo_nombre)
 
 		lista.add_child(boton)
 		_botones.append(boton)
@@ -327,6 +337,7 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 
 	# Las dos referencias visuales comparten el mismo ancho: retrato de perfil
 	# a la izquierda y sprite real de exploración a la derecha.
+	# Cada imagen tiene su propia superficie Button y no necesita rótulo.
 	var fila_imagenes := HBoxContainer.new()
 	fila_imagenes.name = "CharacterImagesRow"
 	fila_imagenes.custom_minimum_size = Vector2(0.0, 112.0)
@@ -334,22 +345,17 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	fila_imagenes.add_theme_constant_override("separation", 5)
 	detalle.add_child(fila_imagenes)
 
-	var columna_retrato := VBoxContainer.new()
-	columna_retrato.name = "PortraitColumn"
-	columna_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_retrato.size_flags_stretch_ratio = 1.0
-	columna_retrato.add_theme_constant_override("separation", 3)
-	fila_imagenes.add_child(columna_retrato)
-
-	var etiqueta_retrato := Label.new()
-	etiqueta_retrato.text = "Retrato"
-	etiqueta_retrato.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	etiqueta_retrato.add_theme_font_size_override("font_size", 8)
-	columna_retrato.add_child(etiqueta_retrato)
+	var marco_retrato := PanelContainer.new()
+	marco_retrato.name = "PortraitButtonSurface"
+	marco_retrato.custom_minimum_size = Vector2(0.0, 112.0)
+	marco_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	marco_retrato.size_flags_stretch_ratio = 1.0
+	marco_retrato.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+	fila_imagenes.add_child(marco_retrato)
 
 	var retrato_cara := TextureRect.new()
 	retrato_cara.name = "CharacterFace"
-	retrato_cara.custom_minimum_size = Vector2(0.0, 94.0)
+	retrato_cara.custom_minimum_size = Vector2(0.0, 102.0)
 	retrato_cara.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	retrato_cara.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	retrato_cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -357,34 +363,27 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	retrato_cara.texture = textura_retrato
 	if textura_retrato == null:
-		retrato_cara.tooltip_text = "Retrato no disponible"
 		var iniciales_retrato := Label.new()
 		iniciales_retrato.name = "CharacterFaceFallback"
-		iniciales_retrato.custom_minimum_size = Vector2(0.0, 94.0)
 		iniciales_retrato.text = nombre.substr(0, 2).to_upper()
 		iniciales_retrato.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		iniciales_retrato.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		iniciales_retrato.add_theme_font_size_override("font_size", 20)
-		columna_retrato.add_child(iniciales_retrato)
+		marco_retrato.add_child(iniciales_retrato)
 	else:
-		columna_retrato.add_child(retrato_cara)
+		marco_retrato.add_child(retrato_cara)
 
-	var columna_mapa := VBoxContainer.new()
-	columna_mapa.name = "MapSpriteColumn"
-	columna_mapa.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_mapa.size_flags_stretch_ratio = 1.0
-	columna_mapa.add_theme_constant_override("separation", 3)
-	fila_imagenes.add_child(columna_mapa)
-
-	var etiqueta_mapa := Label.new()
-	etiqueta_mapa.text = "En el mapa"
-	etiqueta_mapa.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	etiqueta_mapa.add_theme_font_size_override("font_size", 8)
-	columna_mapa.add_child(etiqueta_mapa)
+	var marco_mapa := PanelContainer.new()
+	marco_mapa.name = "MapSpriteButtonSurface"
+	marco_mapa.custom_minimum_size = Vector2(0.0, 112.0)
+	marco_mapa.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	marco_mapa.size_flags_stretch_ratio = 1.0
+	marco_mapa.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+	fila_imagenes.add_child(marco_mapa)
 
 	var sprite_mapa := TextureRect.new()
 	sprite_mapa.name = "CharacterMapSprite"
-	sprite_mapa.custom_minimum_size = Vector2(0.0, 94.0)
+	sprite_mapa.custom_minimum_size = Vector2(0.0, 102.0)
 	sprite_mapa.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sprite_mapa.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sprite_mapa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -392,17 +391,15 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	sprite_mapa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite_mapa.texture = textura_mapa
 	if textura_mapa == null:
-		sprite_mapa.tooltip_text = "Sprite de mapa no disponible"
 		var sin_sprite := Label.new()
 		sin_sprite.name = "MapSpriteFallback"
-		sin_sprite.custom_minimum_size = Vector2(0.0, 94.0)
 		sin_sprite.text = "—"
 		sin_sprite.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sin_sprite.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		sin_sprite.add_theme_font_size_override("font_size", 18)
-		columna_mapa.add_child(sin_sprite)
+		marco_mapa.add_child(sin_sprite)
 	else:
-		columna_mapa.add_child(sprite_mapa)
+		marco_mapa.add_child(sprite_mapa)
 
 	var titulo := Button.new()
 	titulo.name = "CharacterName"
