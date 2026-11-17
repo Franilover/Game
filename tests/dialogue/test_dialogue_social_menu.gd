@@ -67,6 +67,30 @@ func _run() -> void:
 		if not contacto_texto.contains("¿Quién te lo comentó?"):
 			errores.append("Ivo no pregunta de forma concreta por el origen de la información.")
 
+	# Las cinemáticas también deben evitar frases grandilocuentes que no
+	# corresponden a la situación concreta.
+	var reuniones: Array = NPCConversationSystemScript.CONVERSACIONES_REUNION_CASTILLO
+	var escena_mara_darven: Dictionary = {}
+	var escena_ivo_elian: Dictionary = {}
+	for reunion_variant in reuniones:
+		if not reunion_variant is Dictionary:
+			continue
+		var reunion := reunion_variant as Dictionary
+		match str(reunion.get("clave", "")):
+			"noche_mara_darven_puerta":
+				escena_mara_darven = reunion
+			"noche_ivo_elian_mesa":
+				escena_ivo_elian = reunion
+	if escena_mara_darven.is_empty() or escena_ivo_elian.is_empty():
+		errores.append("No se encontraron las cinemáticas de Mara-Darven e Ivo-Elian.")
+	else:
+		var escena_mara_texto := str(escena_mara_darven.get("lineas", []))
+		if escena_mara_texto.contains("entregues la vida de alguien") or escena_mara_texto.contains("No te pediré que mientas"):
+			errores.append("La escena de Mara y Darven dramatiza innecesariamente una petición de información.")
+		var escena_ivo_texto := str(escena_ivo_elian.get("lineas", []))
+		if escena_ivo_texto.contains("todos cambiaran sus planes por mí") or escena_ivo_texto.contains("la comida no se va a marchar"):
+			errores.append("La escena de Ivo y Elian conserva una respuesta demasiado escrita para la situación.")
+
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
 	if npc == null or dialogo == null:

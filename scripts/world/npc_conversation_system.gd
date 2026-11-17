@@ -75,10 +75,10 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		"npc_a":"mara","npc_b":"darven","cinematica":true,
 		"lineas":[
 			{"npc":"darven","texto":"Hoy preguntaron por una persona que llegó hace poco a Torres. No di ningún nombre."},
-			{"npc":"mara","texto":"¿Querían saber dónde vive?"},
-			{"npc":"darven","texto":"Querían que confirmara quién entra y quién sale. Les dije que no tenían motivo para exigirlo."},
-			{"npc":"mara","texto":"Gracias. No te pediré que mientas por mí. Sólo que no entregues la vida de alguien a cualquiera que pregunte."},
-			{"npc":"darven","texto":"Eso también forma parte de mi trabajo. Si vuelven, hablaré con ellos yo mismo."}
+			{"npc":"mara","texto":"¿Querían saber quién era?"},
+			{"npc":"darven","texto":"Sí. Les dije que no iba a dar nombres. Si tienen un motivo, pueden hablar con esa persona directamente."},
+			{"npc":"mara","texto":"Gracias. Prefiero que no compartas información personal sin permiso."},
+			{"npc":"darven","texto":"Lo entiendo. Si vuelven a preguntar, les diré que hablen contigo directamente."}
 		]
 	},
 	{
@@ -96,10 +96,10 @@ const CONVERSACIONES_REUNION_CASTILLO: Array[Dictionary] = [
 		"clave":"noche_ivo_elian_mesa",
 		"npc_a":"ivo","npc_b":"elian","cinematica":true,
 		"lineas":[
-			{"npc":"elian","texto":"Te guardé un sitio cerca de la mesa. Hoy casi no te vi durante la tarde."},
-			{"npc":"ivo","texto":"Me cansé antes de llegar al mercado. No quería que todos cambiaran sus planes por mí."},
-			{"npc":"elian","texto":"No tienes que seguir el ritmo de nadie para estar aquí. La comida no se va a marchar."},
-			{"npc":"ivo","texto":"A veces se me olvida que puedo venir, sentarme y ya está. Gracias por reservarme el sitio."}
+			{"npc":"elian","texto":"Te guardé un sitio. Hoy casi no coincidimos durante la tarde."},
+			{"npc":"ivo","texto":"Me cansé antes de llegar al mercado y preferí volver a casa."},
+			{"npc":"elian","texto":"Hiciste bien. Hay comida de sobra; puedes sentarte un rato si te apetece."},
+			{"npc":"ivo","texto":"Gracias. A veces me cuesta decidir si salir cuando no sé cómo voy a estar."}
 		]
 	},
 	{
