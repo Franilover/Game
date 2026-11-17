@@ -2741,6 +2741,36 @@ func _registrar_dinamica_social_conversacion() -> void:
 		}
 	)
 
+	# Cada pareja conserva sus propios temas. Si el evento no declara un tema
+	# narrativo, su clave sirve como identificador estable, no como texto visible.
+	var clave_tema := str(_conversacion_activa.get("tema", _conversacion_activa.get("clave", ""))).strip_edges()
+	var resultado_tema := 0.0
+	var efecto_tema_variant: Variant = _conversacion_activa.get("resultado_tema", null)
+	if efecto_tema_variant != null:
+		resultado_tema = clampf(float(efecto_tema_variant), -1.0, 1.0)
+	elif efectos_variant is Array and etapa >= 0 and etapa < (efectos_variant as Array).size():
+		var efecto_tema: Variant = (efectos_variant as Array)[etapa]
+		if efecto_tema is Dictionary:
+			resultado_tema = clampf(
+				float((efecto_tema as Dictionary).get("afinidad_tema", 0.0)),
+				-1.0,
+				1.0
+			)
+	if not clave_tema.is_empty() and _relationship_system.has_method("registrar_tema_conversacion_npc"):
+		var momento_tema := str(_conversacion_activa.get("momento", ""))
+		_relationship_system.registrar_tema_conversacion_npc(id_a, id_b, clave_tema, resultado_tema, momento_tema)
+		_relationship_system.registrar_tema_conversacion_npc(id_b, id_a, clave_tema, resultado_tema, momento_tema)
+	var temas_variant: Variant = _conversacion_activa.get("temas", [])
+	if temas_variant is Array:
+		for tema_variant in temas_variant as Array:
+			if tema_variant is Dictionary:
+				var tema_dato := tema_variant as Dictionary
+				var tema_clave := str(tema_dato.get("clave", "")).strip_edges()
+				var tema_resultado := clampf(float(tema_dato.get("resultado", resultado_tema)), -1.0, 1.0)
+				if not tema_clave.is_empty():
+					_relationship_system.registrar_tema_conversacion_npc(id_a, id_b, tema_clave, tema_resultado)
+					_relationship_system.registrar_tema_conversacion_npc(id_b, id_a, tema_clave, tema_resultado)
+
 	# En una escena de tres, se conserva el historial de cada vínculo sin
 	# conceder aumentos automáticos de amistad o confianza.
 	var nombre_c := str(_conversacion_activa.get("npc_c", "")).strip_edges().to_lower()
@@ -2765,8 +2795,25 @@ func _registrar_dinamica_social_conversacion() -> void:
 				continue
 			var conocimiento := (conocimiento_variant as Dictionary).duplicate(true)
 			var destinatario := str(conocimiento.get("destinatario", "")).strip_edges().to_lower()
+			var privacidad := str(conocimiento.get("privacidad", "publico")).strip_edges().to_lower()
+			var es_confidencial := privacidad in ["personal", "privado", "confidencial"] or bool(conocimiento.get("no_revelar", false))
 			conocimiento.erase("destinatario")
-			if destinatario.is_empty():
+			if es_confidencial:
+				# Una confidencia exige destinatario explícito; nunca se duplica
+				# automáticamente entre todos los participantes.
+				var npc_receptor := _npc_por_nombre.get(destinatario) as Creature
+				if not destinatario.is_empty() and is_instance_valid(npc_receptor):
+					var confidente_nombre := str(conocimiento.get("confidente", "")).strip_edges().to_lower()
+					var npc_confidente := _npc_por_nombre.get(confidente_nombre) as Creature
+					if not is_instance_valid(npc_confidente):
+						npc_confidente = npc_b if npc_receptor == npc_a else npc_a
+					if is_instance_valid(npc_confidente):
+						_relationship_system.registrar_confidencia_npc(
+							npc_receptor.get_personaje_game_id(),
+							npc_confidente.get_personaje_game_id(),
+							conocimiento
+						)
+			elif destinatario.is_empty():
 				_relationship_system.registrar_conocimiento_npc(id_a, conocimiento)
 				_relationship_system.registrar_conocimiento_npc(id_b, conocimiento)
 			else:
