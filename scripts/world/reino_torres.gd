@@ -1929,16 +1929,19 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 	for hijo in _menu_posada_contenido.get_children():
 		hijo.queue_free()
 
-	var titulo := Label.new()
-	titulo.name = "Title"
-	titulo.text = "POSADA"
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_menu_posada_contenido.add_child(titulo)
+	var panel_estado := PanelContainer.new()
+	panel_estado.name = "EstadoPosada"
+	panel_estado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var fondo_estado := PIXEL_UI_THEME.button_surface_style()
+	if fondo_estado != null:
+		panel_estado.add_theme_stylebox_override("panel", fondo_estado)
+	_menu_posada_contenido.add_child(panel_estado)
 
 	_menu_posada_estado = Label.new()
 	_menu_posada_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_menu_posada_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_menu_posada_contenido.add_child(_menu_posada_estado)
+	_menu_posada_estado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_estado.add_child(_menu_posada_estado)
 
 	var estado := _obtener_estado_posada()
 	var hoy := _obtener_dia_absoluto_mundo()
