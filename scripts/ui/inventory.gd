@@ -873,6 +873,10 @@ func _crear_slots_equipamiento() -> void:
 func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if objeto.is_empty():
 		return
+	var nombre_objeto := str(objeto.get("nombre", "")).strip_edges().to_lower()
+	if nombre_objeto.contains("espada") and not bool(GameState.world_state.flags.get("licencia_espadas", false)):
+		Events.notification_pushed.emit("Necesitas la licencia de espadas del Cuartel para equiparla.")
+		return
 	var source_index := _buscar_indice_objeto(objeto)
 	if source_index < 0:
 		return
