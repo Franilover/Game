@@ -131,6 +131,10 @@ func _al_ataque_solicitado(
 ) -> void:
 	if player == null or _tiempo_desde_ataque > 0.0:
 		return
+	var nombre_objeto := str(objeto.get("nombre", "")).strip_edges().to_lower()
+	if nombre_objeto.contains("espada") and not bool(GameState.world_state.flags.get("licencia_espadas", false)):
+		Events.notification_pushed.emit("Necesitas la licencia de espadas del Cuartel para usarla.")
+		return
 
 	var direccion_ataque := _normalizar_direccion_ataque(direccion)
 
