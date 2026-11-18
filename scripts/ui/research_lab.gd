@@ -5,11 +5,11 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 @onready var _panel: PanelContainer = $Panel
 @onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
-@onready var _items_columna: GridContainer = $Panel/Margin/Column/Body/ItemsPanel/ItemScroll/ItemsGrid
-@onready var _imagen_seleccionada: TextureRect = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/SelectedImage
-@onready var _nombre_seleccionado: Label = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/SelectedName
-@onready var _boton_analizar: Button = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/Run
-@onready var _resultado_label: Label = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/Result
+@onready var _items_columna: GridContainer = $Panel/Margin/Column/Body/ItemsPanel/ItemMargin/ItemsColumn/ItemScroll/ItemsGrid
+@onready var _imagen_seleccionada: TextureRect = $Panel/Margin/Column/Body/SelectionPanel/SelectionMargin/SelectionContent/SelectedImage
+@onready var _nombre_seleccionado: Label = $Panel/Margin/Column/Body/SelectionPanel/SelectionMargin/SelectionContent/SelectedName
+@onready var _boton_analizar: Button = $Panel/Margin/Column/Body/SelectionPanel/SelectionMargin/SelectionContent/Run
+@onready var _resultado_label: Label = $Panel/Margin/Column/Body/SelectionPanel/SelectionMargin/SelectionContent/Result
 @onready var _panel_items: PanelContainer = $Panel/Margin/Column/Body/ItemsPanel
 @onready var _panel_seleccion: PanelContainer = $Panel/Margin/Column/Body/SelectionPanel
 
