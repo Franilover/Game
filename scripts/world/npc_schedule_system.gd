@@ -3123,7 +3123,13 @@ func _aplicar_turno_comercio_rotativo(
 	)
 	if not actividad_libre:
 		return rutina_actual
-	if clave_actual.begins_with("evento_") or clave_actual.begins_with("invitacion_") or clave_actual.begins_with("encuentro_"):
+	if (
+		clave_actual.begins_with("evento_")
+		or clave_actual == "mercado_vecinal"
+		or clave_actual == "celebracion_estacional"
+		or clave_actual.begins_with("invitacion_")
+		or clave_actual.begins_with("encuentro_")
+	):
 		return rutina_actual
 
 	var franja := 0 if minutos < CAMBIO_TURNO_MERCADO else 1
