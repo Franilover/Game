@@ -1755,11 +1755,10 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_parcela_vivero(cuarto, "BancalEste", Vector2(155, -5), Vector2(112, 64))
 			_agregar_parcela_vivero(cuarto, "BancalSurOeste", Vector2(-155, 92), Vector2(112, 48))
 			_agregar_parcela_vivero(cuarto, "BancalSurCentro", Vector2(0, 92), Vector2(112, 48))
-			_agregar_sprite_mueble(cuarto, "DepositoAguaVivero", MUEBLE_BARRIL, Vector2(-220, -125), Vector2(0.9, 0.9), 1)
+			_agregar_deposito_agua_vivero(cuarto, Vector2(-220, -125))
 			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
 			_agregar_sprite_mueble(cuarto, "CofreSemillasVivero", MUEBLE_COFRE, Vector2(210, 105), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioHerramientasVivero", MUEBLE_ARMARIO, Vector2(-220, 105), Vector2(0.85, 0.85), 1)
-			_agregar_estacion_edificio(cuarto, "vivero", "Trabajar en el vivero", Vector2(115, -88))
 		"herbolario":
 			# Mesas de laboratorio y zona de muestras para el trabajo botánico.
 			_agregar_sprite_mueble(cuarto, "MesaInvestigacionHerbolario", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, -78), Vector2(1.35, 1.05), 1)
@@ -1767,7 +1766,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "ArmarioMuestrasHerbolario", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteHerbolario", MUEBLE_ARMARIO, Vector2(205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "SillaInvestigacionHerbolario", MUEBLE_SILLA_FRENTE, Vector2(-105, -25), Vector2.ONE, 1)
-			_agregar_estacion_edificio(cuarto, "herbolario", "Investigar y procesar plantas", Vector2(90, -35))
 		"habitacion_posada":
 			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "CofreHabitacion", MUEBLE_COFRE, Vector2(155, 78), Vector2(0.9, 0.9), 1)
@@ -2385,6 +2383,21 @@ func _al_confirmar_pasaje_exterior() -> void:
 	else:
 		GameState.modificar_dinero(10)
 		Events.notification_pushed.emit("No se pudo iniciar el viaje. Se devolvieron las 10 monedas.")
+
+
+func _agregar_deposito_agua_vivero(padre: Node, posicion: Vector2) -> void:
+	var deposito := Node2D.new()
+	deposito.name = "DepositoAguaVivero"
+	deposito.position = posicion
+	padre.add_child(deposito)
+	var base := Polygon2D.new()
+	base.color = Color("#69452D")
+	base.polygon = PackedVector2Array([Vector2(-25, -12), Vector2(25, -12), Vector2(25, 16), Vector2(-25, 16)])
+	deposito.add_child(base)
+	var agua := Polygon2D.new()
+	agua.color = Color("#527F91")
+	agua.polygon = PackedVector2Array([Vector2(-21, -8), Vector2(21, -8), Vector2(21, 11), Vector2(-21, 11)])
+	deposito.add_child(agua)
 
 
 func _agregar_parcela_vivero(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:
