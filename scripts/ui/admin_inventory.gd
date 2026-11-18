@@ -344,13 +344,24 @@ func _crear_celda_sprite(contenedor: GridContainer, nombre: String, textura: Tex
 	boton.custom_minimum_size = Vector2(52, 52)
 	boton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	boton.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	boton.icon = textura
-	boton.icon_max_width = 40
-	boton.expand_icon = true
-	boton.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boton.pressed.connect(_seleccionar.bind(datos))
 	PIXEL_UI_THEME.apply(boton, false)
 	contenedor.add_child(boton)
+
+	if textura != null:
+		var imagen := TextureRect.new()
+		imagen.name = "Sprite"
+		imagen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		imagen.offset_left = 6.0
+		imagen.offset_top = 6.0
+		imagen.offset_right = -6.0
+		imagen.offset_bottom = -6.0
+		imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		imagen.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		imagen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		imagen.texture = textura
+		boton.add_child(imagen)
 
 
 func _obtener_sprite_criatura(nombre: String) -> Texture2D:
