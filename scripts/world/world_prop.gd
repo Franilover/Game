@@ -15,7 +15,8 @@ var _world_items = null
 var _replica_red_cliente := false
 var _recoleccion_en_curso := false
 var _recoleccion_token: int = 0
-const TIEMPO_RECOLECCION_HERRAMIENTA: float = 0.42
+const TIEMPO_RECOLECCION_HERRAMIENTA: float = 1.25
+var _progreso_recoleccion: float = 0.0
 
 
 func _es_servidor_dedicado() -> bool:
@@ -283,10 +284,20 @@ func _ejecutar_recoleccion_con_herramienta(persona: Node, mano: String, token: i
 		sacudida.tween_property(sprite, "position", posicion_inicial + Vector2(-2.0, 0.0), 0.07)
 		sacudida.tween_property(sprite, "position", posicion_inicial, 0.07)
 
-	await get_tree().create_timer(TIEMPO_RECOLECCION_HERRAMIENTA).timeout
+	var tiempo_transcurrido := 0.0
+	while tiempo_transcurrido < TIEMPO_RECOLECCION_HERRAMIENTA:
+		if not is_instance_valid(self) or token != _recoleccion_token:
+			return
+		var paso := minf(0.05, TIEMPO_RECOLECCION_HERRAMIENTA - tiempo_transcurrido)
+		await get_tree().create_timer(paso).timeout
+		tiempo_transcurrido += paso
+		_progreso_recoleccion = clampf(tiempo_transcurrido / TIEMPO_RECOLECCION_HERRAMIENTA, 0.0, 1.0)
+		queue_redraw()
 	if not is_instance_valid(self) or token != _recoleccion_token:
 		return
 	_recoleccion_en_curso = false
+	_progreso_recoleccion = 0.0
+	queue_redraw()
 
 	if not is_instance_valid(persona) or not can_interact(persona):
 		return
@@ -385,7 +396,7 @@ func _obtener_item_id_recoleccion() -> String:
 
 	# Los árboles del catálogo actual no tienen item_id asociado. La tala
 	# entrega el recurso canónico Madera desde el catálogo de items_game.
-	if str(datos.get("tipo", tipo)).strip_edges().to_lower() == "arbol":
+	if _es_arbol():
 		if not is_instance_valid(_world_items):
 			return ""
 		var madera: Dictionary = _world_items.buscar_item_por_nombre("Madera")
@@ -706,6 +717,8 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_actualizar_profundidad()
+	if _recoleccion_en_curso:
+		queue_redraw()
 
 
 func _al_cargar_catalogo_items(_items: Array) -> void:
@@ -721,7 +734,15 @@ func _actualizar_estado_interaccion() -> void:
 
 
 func _draw() -> void:
-	# Los props del mundo ya no se dibujan con geometría generada.
-	# Su representación visual viene exclusivamente de asset_path,
-	# definido por Supabase en props_game.
-	pass
+	# La barra temporal representa el progreso de la acción sobre este prop;
+	# el sprite principal sigue viniendo exclusivamente de asset_path.
+	if not _recoleccion_en_curso:
+		return
+	var sprite := get_node_or_null("Sprite") as Sprite2D
+	var alto_sprite := 24.0
+	if is_instance_valid(sprite) and sprite.texture != null:
+		alto_sprite = float(sprite.texture.get_height()) * absf(sprite.scale.y)
+	var origen := Vector2(-18.0, -alto_sprite * 0.5 - 12.0)
+	var fondo := Rect2(origen, Vector2(36.0, 5.0))
+	draw_rect(fondo, Color(0.12, 0.10, 0.08, 0.95), true)
+	draw_rect(Rect2(origen + Vector2.ONE, Vector2(34.0 * _progreso_recoleccion, 3.0)), Color(0.82, 0.68, 0.43, 1.0), true)
