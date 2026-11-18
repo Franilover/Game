@@ -46,9 +46,14 @@ func _construir_interfaz() -> void:
 	add_child(centro)
 
 	_panel = PanelContainer.new()
-	_panel.custom_minimum_size = Vector2(570, 320)
+	_panel.custom_minimum_size = Vector2(0, 0)
 	_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.offset_left = 24
+	_panel.offset_top = 24
+	_panel.offset_right = -24
+	_panel.offset_bottom = -24
 	centro.add_child(_panel)
 	PIXEL_UI_THEME.apply(_panel, false)
 
@@ -355,24 +360,18 @@ func _mostrar_historia() -> void:
 	_lista.size_flags_stretch_ratio = 1.0
 	_limpiar(_lista)
 	_limpiar(_detalle)
-	var encabezado := Label.new()
-	encabezado.text = "HISTORIA DE TORRES"
-	_lista.add_child(encabezado)
-	var ayuda := Label.new()
-	ayuda.text = "Acontecimientos registrados en orden cronológico."
-	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_lista.add_child(ayuda)
 	var scroll := ScrollContainer.new()
 	scroll.name = "EventosScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_lista.add_child(scroll)
 	var eventos_lista := VBoxContainer.new()
 	eventos_lista.name = "EventosLista"
 	eventos_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	eventos_lista.add_theme_constant_override("separation", 10)
 	scroll.add_child(eventos_lista)
 	_renderizar_eventos()
 	_cargar_eventos_reino()
-
 
 func _cargar_eventos_reino() -> void:
 	_eventos.clear()
@@ -396,30 +395,46 @@ func _cargar_eventos_reino() -> void:
 func _renderizar_eventos() -> void:
 	if _vista != "historia":
 		return
-	var scroll := _lista.get_node_or_null("EventosScroll/EventosLista")
-	if scroll == null:
+	var eventos_lista := _lista.get_node_or_null("EventosScroll/EventosLista")
+	if eventos_lista == null:
 		return
-	_limpiar(scroll)
+	_limpiar(eventos_lista)
 	if _eventos.is_empty():
-		var vacio := Label.new()
-		vacio.text = "Este reino todavía no tiene acontecimientos registrados."
-		scroll.add_child(vacio)
 		return
 	for evento: Dictionary in _eventos:
 		var tarjeta := PanelContainer.new()
-		PIXEL_UI_THEME.apply(tarjeta, false)
-		scroll.add_child(tarjeta)
+		tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var fondo: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
+		if fondo != null:
+			tarjeta.add_theme_stylebox_override("panel", fondo.duplicate())
+		eventos_lista.add_child(tarjeta)
+		var margen := MarginContainer.new()
+		margen.add_theme_constant_override("margin_left", 10)
+		margen.add_theme_constant_override("margin_top", 8)
+		margen.add_theme_constant_override("margin_right", 10)
+		margen.add_theme_constant_override("margin_bottom", 8)
+		tarjeta.add_child(margen)
 		var bloque := VBoxContainer.new()
-		tarjeta.add_child(bloque)
-		var dia := Label.new()
-		dia.text = "Día %s" % str(evento.get("dia_absoluto", "—"))
-		bloque.add_child(dia)
+		bloque.add_theme_constant_override("separation", 5)
+		margen.add_child(bloque)
+		var fila := HBoxContainer.new()
+		fila.add_theme_constant_override("separation", 8)
+		bloque.add_child(fila)
 		var nombre := Label.new()
 		nombre.text = str(evento.get("titulo", "Acontecimiento"))
-		nombre.add_theme_font_size_override("font_size", 13)
+		nombre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nombre.add_theme_font_size_override("font_size", 17)
 		nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		bloque.add_child(nombre)
+		fila.add_child(nombre)
+		var fecha := Label.new()
+		fecha.text = "Día %s" % str(evento.get("dia_absoluto", "—"))
+		fecha.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		fecha.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		fecha.add_theme_font_size_override("font_size", 14)
+		fila.add_child(fecha)
 		var descripcion := Label.new()
 		descripcion.text = str(evento.get("descripcion", ""))
 		descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		descripcion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		descripcion.add_theme_font_size_override("font_size", 15)
 		bloque.add_child(descripcion)
