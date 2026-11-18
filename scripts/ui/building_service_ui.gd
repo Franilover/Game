@@ -3,6 +3,7 @@ class_name BuildingServiceUI
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const ITEM_ICON_RESOLVER = preload("res://scripts/ui/item_icon_resolver.gd")
+const BARRACKS_TRAINING_SCRIPT = preload("res://scripts/gameplay/barracks_training_session.gd")
 
 const ITEM_MADERA := "768a51e5-e34b-4f11-92e7-a6e7dd3bf55c"
 const ITEM_PIEDRA_MEDIANA := "0117d138-51ff-4b1b-a317-f8318bf161fa"
@@ -102,6 +103,7 @@ func _actualizar() -> void:
 			"carpinteria": titulo.text = "CARPINTERÍA"
 			"cuartel_licencia": titulo.text = "LICENCIAS · CUARTEL"
 			"cuartel_armas": titulo.text = "ARSENAL · CUARTEL"
+			"cuartel_entrenamiento": titulo.text = "ENTRENAMIENTO"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
 
@@ -118,6 +120,7 @@ func _actualizar() -> void:
 		"carpinteria": _construir_carpinteria()
 		"cuartel_licencia": _construir_cuartel_licencia()
 		"cuartel_armas": _construir_cuartel_armas()
+		"cuartel_entrenamiento": _construir_cuartel_entrenamiento()
 
 	_contenido.add_child(_estado)
 	var cerrar := Button.new()
@@ -438,6 +441,71 @@ func _construir_cuartel_armas() -> void:
 	_agregar_texto("Licencia verificada. Puedes adquirir estas armas:")
 	_agregar_boton_arma("Espada de Madera", ITEM_ESPADA_MADERA, PRECIO_ESPADA_MADERA)
 	_agregar_boton_arma("Espada de Piedra", ITEM_ESPADA_PIEDRA, PRECIO_ESPADA_PIEDRA)
+
+
+func _construir_cuartel_entrenamiento() -> void:
+	_agregar_texto("Elige una criatura o un aldeano presente en el mundo para practicar. El entrenamiento no causa muertes ni entrega botín.")
+	if not is_instance_valid(_jugador):
+		_agregar_texto("No se encontró al jugador.")
+		return
+	var candidatos: Array[Creature] = []
+	for nodo in get_tree().get_nodes_in_group("creatures"):
+		if not nodo is Creature or not is_instance_valid(nodo):
+			continue
+		var candidato := nodo as Creature
+		if candidato == _jugador or not candidato.is_alive or candidato.is_in_group("garumis"):
+			continue
+		if candidato.get_meta("barracks_training_target", false):
+			continue
+		candidatos.append(candidato)
+	candidatos.sort_custom(func(a: Creature, b: Creature) -> bool:
+		return _nombre_entrenamiento(a).to_lower() < _nombre_entrenamiento(b).to_lower()
+	)
+	if candidatos.is_empty():
+		_agregar_texto("No hay criaturas ni aldeanos disponibles en esta zona. Vuelve cuando haya alguien cerca.")
+		return
+	for candidato in candidatos:
+		var fila := HBoxContainer.new()
+		fila.add_theme_constant_override("separation", 8)
+		_contenido.add_child(fila)
+		var etiqueta := Label.new()
+		etiqueta.text = _nombre_entrenamiento(candidato)
+		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		fila.add_child(etiqueta)
+		var boton := Button.new()
+		boton.text = "Entrenar"
+		boton.pressed.connect(_iniciar_entrenamiento.bind(candidato))
+		fila.add_child(boton)
+		PIXEL_UI_THEME.apply(boton, false)
+
+
+func _nombre_entrenamiento(candidato: Creature) -> String:
+	var nombre := str(candidato.get("nombre_individual")).strip_edges()
+	if nombre.is_empty():
+		nombre = str(candidato.get("criatura_nombre")).strip_edges()
+	if nombre.is_empty():
+		nombre = str(candidato.name)
+	return nombre
+
+
+func _iniciar_entrenamiento(candidato: Creature) -> void:
+	if not is_instance_valid(candidato) or not candidato.is_alive or not is_instance_valid(_jugador):
+		_mostrar_estado("Ese contrincante ya no está disponible.")
+		return
+	if get_tree().get_first_node_in_group("barracks_training_session") != null:
+		_mostrar_estado("Ya hay un entrenamiento en curso.")
+		return
+	var sesion := BARRACKS_TRAINING_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(sesion):
+		_mostrar_estado("No se pudo iniciar el entrenamiento.")
+		return
+	get_tree().root.add_child(sesion)
+	if not bool(sesion.call("iniciar", _jugador, candidato)):
+		sesion.queue_free()
+		_mostrar_estado("No se pudo preparar el contrincante.")
+		return
+	cerrar_interfaz()
 
 
 func _solicitar_licencia() -> void:
