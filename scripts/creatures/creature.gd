@@ -270,6 +270,11 @@ func _cargar_sprite() -> void:
 	# Cada configuración parte de la escala neutra para no heredar ajustes
 	# de un habitante anterior cuando una instancia se reutiliza.
 	sprite.scale = Vector2.ONE
+	sprite.flip_h = false
+	_sprite_npc_base = null
+	_sprite_npc_lateral = null
+	_sprite_npc_espalda = null
+	_npc_direccion_anterior = Vector2.DOWN
 
 	var rutas: Array[String] = []
 
