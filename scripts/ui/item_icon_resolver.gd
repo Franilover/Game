@@ -105,7 +105,8 @@ static func obtener_icono(
 		"botasaoris": "Botas de Aoris.png",
 		"botasdeaoris": "Botas de Aoris.png",
 		"cartasaoris": "Carta Aoris.png",
-		"espadatopacio": "Espada de Topacio.png"
+		"espadatopacio": "Espada de Topacio.png",
+		"regadera": "regadera llena.png"
 	}
 	if alias_sprite.has(clave):
 		var ruta_alias := ITEMS_ASSET_ROOT.path_join(str(alias_sprite[clave]))
