@@ -313,6 +313,11 @@ func _cargar_sprite_personaje(personaje: Dictionary) -> Texture2D:
 		var ruta_sprite := "res://assets/art/characters/" + sprite_key
 		if ResourceLoader.exists(ruta_sprite):
 			return load(ruta_sprite) as Texture2D
+	# Mismo sprite de reserva que usa Relaciones cuando un habitante aún no
+	# tiene una ilustración individual registrada.
+	var ruta_base := "res://assets/art/characters/Sprite-0004.png"
+	if ResourceLoader.exists(ruta_base):
+		return load(ruta_base) as Texture2D
 	return null
 
 
