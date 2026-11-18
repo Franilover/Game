@@ -146,7 +146,7 @@ func _al_request_completed(id: int, resultado: int, codigo_http: int, _cabeceras
 					_reinos.append((fila as Dictionary).duplicate(true))
 			_seleccionar_reino_inicial()
 			if _vista == "historia":
-				_cargar_eventos_reino()
+				_mostrar_historia()
 		"eventos":
 			_eventos.clear()
 			for fila: Variant in json.data:
@@ -171,6 +171,9 @@ func _limpiar(contenedor: Node) -> void:
 
 func _mostrar_personajes() -> void:
 	_vista = "personajes"
+	_detalle.visible = true
+	_lista.size_flags_stretch_ratio = 1.0
+	_detalle.size_flags_stretch_ratio = 1.0
 	_limpiar(_lista)
 	_limpiar(_detalle)
 	var encabezado := Label.new()
@@ -339,6 +342,8 @@ func _cargar_imagen_personaje(url: String, destino: TextureRect) -> void:
 
 func _mostrar_historia() -> void:
 	_vista = "historia"
+	_detalle.visible = false
+	_lista.size_flags_stretch_ratio = 1.0
 	_limpiar(_lista)
 	_limpiar(_detalle)
 	var encabezado := Label.new()
