@@ -1519,7 +1519,6 @@ func _volver_al_lobby_posada() -> void:
 	_entrada_interior_id = "posada"
 	_construir_habitacion({"id": "posada", "nombre": "Posada", "tipo": "posada"})
 	_jugador.global_position = to_global(Vector2(0, 70))
-	_limitar_camara_a_interior()
 
 
 func _salir_del_interior() -> void:
@@ -2000,7 +1999,6 @@ func _cambiar_de_lobby_a_habitacion_posada() -> void:
 		"tipo": "habitacion_posada"
 	})
 	_jugador.global_position = to_global(Vector2(0, 70))
-	_limitar_camara_a_interior()
 
 
 func _comprar_estancia_posada(gratis: bool) -> void:
