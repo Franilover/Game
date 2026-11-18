@@ -152,13 +152,13 @@ func _construir_forja() -> void:
 		var nombre_material := "madera" if material_id == ITEM_MADERA else "piedra" if material_id == ITEM_PIEDRA_MEDIANA else "material no disponible"
 		reparar_material.text = "Yunque · 1 %s" % nombre_material
 		reparar_material.disabled = material_id.is_empty() or _contar_item(material_id) < 1
-		repar_material.pressed.connect(_reparar_con_material.bind(indice, material_id))
+		reparar_material.pressed.connect(_reparar_con_material.bind(indice, material_id))
 		fila.add_child(reparar_material)
 		PIXEL_UI_THEME.apply(reparar_material, false)
 		var reparar_bruna := Button.new()
-		repar_bruna.text = "Bruna · %d" % PRECIO_REPARACION_BRUNA
-		repar_bruna.disabled = GameState.obtener_dinero() < PRECIO_REPARACION_BRUNA
-		repar_bruna.pressed.connect(_reparar_con_bruna.bind(indice))
+		reparar_bruna.text = "Bruna · %d" % PRECIO_REPARACION_BRUNA
+		reparar_bruna.disabled = GameState.obtener_dinero() < PRECIO_REPARACION_BRUNA
+		reparar_bruna.pressed.connect(_reparar_con_bruna.bind(indice))
 		fila.add_child(reparar_bruna)
 		PIXEL_UI_THEME.apply(reparar_bruna, false)
 	if encontrados == 0:
