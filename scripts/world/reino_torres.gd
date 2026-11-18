@@ -1924,7 +1924,7 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 				_crear_boton_posada("Renovar por 100 monedas", Callable(self, "_comprar_estancia_posada").bind(false))
 			_crear_boton_posada("Tienda de muebles", Callable(self, "_mostrar_menu_posada").bind("muebles"))
 		"muebles":
-			_menu_posada_estado.text = "Compra muebles para tu habitación. Podrás colocarlos desde el modo de amueblado."
+			_menu_posada_estado.text = "Compra muebles para tu habitación. Las compras quedan guardadas en tu partida; falta conectar su colocación."
 			for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
 				var texto := "%s · %d monedas" % [str(mueble.nombre), int(mueble.precio)]
 				_crear_boton_posada(texto, Callable(self, "_comprar_mueble_posada").bind(str(mueble.id), int(mueble.precio)))
