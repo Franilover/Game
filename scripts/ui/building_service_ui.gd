@@ -91,24 +91,24 @@ func _actualizar() -> void:
 		return
 	for hijo in _contenido.get_children():
 		hijo.queue_free()
-	_estado = Label.new()
+	_estado = Button.new()
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_estado.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_estado.focus_mode = Control.FOCUS_NONE
 
-	if _tipo != "forja":
-		var titulo := Label.new()
-		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if _tipo not in ["forja", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
+		var titulo := Button.new()
+		titulo.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		titulo.focus_mode = Control.FOCUS_NONE
 		titulo.add_theme_font_size_override("font_size", 18)
 		match _tipo:
 			"carpinteria": titulo.text = "CARPINTERÍA"
-			"cuartel_licencia": titulo.text = "LICENCIAS · CUARTEL"
-			"cuartel_armas": titulo.text = "ARSENAL · CUARTEL"
-			"cuartel_entrenamiento": titulo.text = "ENTRENAMIENTO"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
+		PIXEL_UI_THEME.apply(titulo, false)
 
 	var saldo := Button.new()
-	saldo.text = "◈  %d" % GameState.obtener_dinero()
+	saldo.text = "%d" % GameState.obtener_dinero()
 	saldo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	saldo.focus_mode = Control.FOCUS_NONE
 	saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -444,7 +444,6 @@ func _construir_cuartel_armas() -> void:
 
 
 func _construir_cuartel_entrenamiento() -> void:
-	_agregar_texto("Elige una criatura o un aldeano presente en el mundo para practicar. El entrenamiento no causa muertes ni entrega botín.")
 	if not is_instance_valid(_jugador):
 		_agregar_texto("No se encontró al jugador.")
 		return
@@ -468,11 +467,13 @@ func _construir_cuartel_entrenamiento() -> void:
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 8)
 		_contenido.add_child(fila)
-		var etiqueta := Label.new()
+		var etiqueta := Button.new()
 		etiqueta.text = _nombre_entrenamiento(candidato)
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		etiqueta.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		etiqueta.focus_mode = Control.FOCUS_NONE
 		fila.add_child(etiqueta)
+		PIXEL_UI_THEME.apply(etiqueta, false)
 		var boton := Button.new()
 		boton.text = "Entrenar"
 		boton.pressed.connect(_iniciar_entrenamiento.bind(candidato))
@@ -521,10 +522,13 @@ func _solicitar_licencia() -> void:
 func _agregar_boton_arma(nombre: String, item_id: String, precio: int) -> void:
 	var fila := HBoxContainer.new()
 	_contenido.add_child(fila)
-	var etiqueta := Label.new()
+	var etiqueta := Button.new()
 	etiqueta.text = "%s · %d monedas" % [nombre, precio]
 	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	etiqueta.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	etiqueta.focus_mode = Control.FOCUS_NONE
 	fila.add_child(etiqueta)
+	PIXEL_UI_THEME.apply(etiqueta, false)
 	var boton := Button.new()
 	boton.text = "Comprar"
 	boton.disabled = GameState.obtener_dinero() < precio or not is_instance_valid(_world_items)
@@ -597,10 +601,13 @@ func _buscar_slot_item(item_id: String) -> int:
 
 
 func _agregar_texto(texto: String) -> void:
-	var etiqueta := Label.new()
+	var etiqueta := Button.new()
 	etiqueta.text = texto
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	etiqueta.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta.focus_mode = Control.FOCUS_NONE
 	_contenido.add_child(etiqueta)
+	PIXEL_UI_THEME.apply(etiqueta, false)
 
 
 func _mostrar_estado(texto: String) -> void:
