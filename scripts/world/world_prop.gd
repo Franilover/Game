@@ -57,7 +57,10 @@ func _normalizar_tipo_prop(valor: String) -> String:
 
 
 func _es_arbol() -> bool:
-	return _normalizar_tipo_prop(str(datos.get("tipo", tipo))) == "arbol"
+	var tipo_dato := _normalizar_tipo_prop(str(datos.get("tipo", tipo)))
+	var clave := _normalizar_tipo_prop(str(datos.get("clave", datos.get("prop_id", ""))))
+	var nombre := _normalizar_tipo_prop(str(datos.get("nombre", "")))
+	return tipo_dato == "arbol" or clave == "arbol" or nombre == "arbol"
 
 
 func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nueva_semilla: int, nuevos_datos: Dictionary = {}) -> void:
@@ -112,6 +115,8 @@ func get_interaction_distance() -> float:
 
 
 func get_interaction_priority() -> int:
+	if _es_arbol():
+		return 35
 	match tipo:
 		"recurso", "planta", "flor", "arbol":
 			return 30
