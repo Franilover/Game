@@ -36,6 +36,12 @@ const TEXTURAS_INCLUIDAS: Array[Texture2D] = [
 	preload("res://assets/art/items/Pico de Madera.png"),
 	preload("res://assets/art/items/Pico de Piedra.png"),
 	preload("res://assets/art/items/Pluma Aoris.png"),
+	preload("res://assets/art/items/regadera.png"),
+	preload("res://assets/art/items/regadera llena.png"),
+	preload("res://assets/art/items/regadera casi llena.png"),
+	preload("res://assets/art/items/regadera media.png"),
+	preload("res://assets/art/items/regadera casi vacia.png"),
+	preload("res://assets/art/items/regadera vacia.png"),
 	preload("res://assets/art/props/Arbusto Mediano.png"),
 	preload("res://assets/art/props/Arbusto Pequeño.png"),
 	preload("res://assets/art/props/Flor Azul.png"),
@@ -74,6 +80,10 @@ static func obtener_icono(
 
 	if icono is Texture2D:
 		return icono
+
+	var ruta_icono_estado := str(datos.get("icono_ruta", "")).strip_edges()
+	if not ruta_icono_estado.is_empty() and ResourceLoader.exists(ruta_icono_estado):
+		return _cargar_textura(ruta_icono_estado)
 
 	var nombre := str(
 		datos.get(
