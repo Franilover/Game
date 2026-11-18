@@ -1768,7 +1768,16 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaAnalisis", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -42), Vector2(1.45, 1.15), 1)
 			_agregar_sprite_mueble(cuarto, "AsientoAnalisis", MUEBLE_SILLA_DERECHA, Vector2(-55, 18), Vector2.ONE, 1)
 			_agregar_estacion_laboratorio(cuarto, "examen", "Analizar objeto", Vector2(0, 18))
-		"comercio", "registro", "almacen":
+		"comercio":
+			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-220, -125), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteComercioEste", MUEBLE_ARMARIO, Vector2(220, -125), Vector2(0.85, 0.85), 1)
+			var vendedores := ["Bruna", "Elian", "Darven", "Saira", "Narel", "Nima", "Mara", "Ivo"]
+			for i in range(vendedores.size()):
+				var columna := i % 4
+				var fila := int(i / 4)
+				var posicion_puesto := Vector2(-180.0 + columna * 120.0, -48.0 + fila * 142.0)
+				_agregar_puesto_comercio(cuarto, str(vendedores[i]), posicion_puesto)
+		"registro", "almacen":
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(1.9, 1), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-190, -95), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteComercioEste", MUEBLE_ARMARIO, Vector2(190, -95), Vector2(0.9, 0.9), 1)
@@ -2153,6 +2162,79 @@ func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> v
 		return
 	get_tree().root.add_child(interfaz)
 	interfaz.call("configurar", inventario, estacion_id)
+
+
+func _agregar_puesto_comercio(padre: Node, vendedor: String, posicion: Vector2) -> void:
+	_agregar_sprite_mueble(padre, "Puesto" + vendedor, MERCADO_PUESTO, posicion, Vector2(0.72, 0.72), 1)
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "InteraccionPuesto" + vendedor
+	objetivo.position = posicion + Vector2(0, 20)
+	objetivo.call(
+		"configurar",
+		"Puesto de " + vendedor,
+		54.0,
+		Callable(self, "_puede_interactuar_puesto_comercio").bind(vendedor),
+		Callable(self, "_interactuar_puesto_comercio").bind(vendedor)
+	)
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_puesto_comercio(_jugador_objetivo: Node, _vendedor: String) -> bool:
+	return _interior_activo and _entrada_interior_id == "casa_comercio"
+
+
+func _interactuar_puesto_comercio(_jugador_objetivo: Node, vendedor: String) -> void:
+	if not _puede_interactuar_puesto_comercio(_jugador_objetivo, vendedor):
+		return
+	if get_tree().get_first_node_in_group("npc_market_modal") != null:
+		return
+	var sistema := get_tree().get_first_node_in_group("interaction_system")
+	if not is_instance_valid(sistema):
+		Events.notification_pushed.emit("No se pudo acceder al sistema de comercio.")
+		return
+	var inventario := sistema.get("inventory") as InventoryController
+	var world_items := sistema.get("world_items") as GarliaWorldItems
+	if not is_instance_valid(inventario) or not is_instance_valid(world_items):
+		Events.notification_pushed.emit("No se pudo cargar el inventario o el catálogo.")
+		return
+	var npc_vendedor: Creature = null
+	for candidato in get_tree().get_nodes_in_group("creatures"):
+		if not candidato is Creature:
+			continue
+		var criatura := candidato as Creature
+		if criatura.get_nombre_visual().strip_edges().to_lower() == vendedor.to_lower():
+			npc_vendedor = criatura
+			break
+	if not is_instance_valid(npc_vendedor):
+		Events.notification_pushed.emit(vendedor + " no está disponible para atender su puesto.")
+		return
+	var capa := CanvasLayer.new()
+	capa.name = "MercadoNPC_" + vendedor
+	capa.layer = 46
+	capa.add_to_group("npc_market_modal")
+	var tienda := NPCMarketShop.new()
+	tienda.configurar(npc_vendedor, inventario, world_items, {"nombre": "Puesto de " + vendedor})
+	var fisica_previa := _jugador.is_physics_processing() if is_instance_valid(_jugador) else true
+	var input_previo := _jugador.is_processing_input() if is_instance_valid(_jugador) else true
+	var unhandled_previo := _jugador.is_processing_unhandled_input() if is_instance_valid(_jugador) else true
+	if is_instance_valid(_jugador):
+		_jugador.set_physics_process(false)
+		_jugador.set_process_input(false)
+		_jugador.set_process_unhandled_input(false)
+	tienda.solicitar_cierre.connect(_cerrar_puesto_comercio.bind(capa, fisica_previa, input_previo, unhandled_previo))
+	get_tree().root.add_child(capa)
+	capa.add_child(tienda)
+
+
+func _cerrar_puesto_comercio(capa: CanvasLayer, fisica_previa: bool, input_previo: bool, unhandled_previo: bool) -> void:
+	if is_instance_valid(_jugador):
+		_jugador.set_physics_process(fisica_previa)
+		_jugador.set_process_input(input_previo)
+		_jugador.set_process_unhandled_input(unhandled_previo)
+	if is_instance_valid(capa):
+		capa.queue_free()
 
 
 func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posicion: Vector2) -> void:
