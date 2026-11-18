@@ -75,20 +75,42 @@ func _construir_interfaz() -> void:
 	_cuerpo.add_theme_constant_override("separation", 10)
 	_contenido.add_child(_cuerpo)
 
+	var panel_lista := PanelContainer.new()
+	panel_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_cuerpo.add_child(panel_lista)
+	var margen_lista := MarginContainer.new()
+	margen_lista.add_theme_constant_override("margin_left", 8)
+	margen_lista.add_theme_constant_override("margin_top", 8)
+	margen_lista.add_theme_constant_override("margin_right", 8)
+	margen_lista.add_theme_constant_override("margin_bottom", 8)
+	panel_lista.add_child(margen_lista)
 	_lista = VBoxContainer.new()
 	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_cuerpo.add_child(_lista)
+	margen_lista.add_child(_lista)
 
+	var panel_detalle := PanelContainer.new()
+	panel_detalle.custom_minimum_size.x = 180
+	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_cuerpo.add_child(panel_detalle)
+	var margen_detalle := MarginContainer.new()
+	margen_detalle.add_theme_constant_override("margin_left", 8)
+	margen_detalle.add_theme_constant_override("margin_top", 8)
+	margen_detalle.add_theme_constant_override("margin_right", 8)
+	margen_detalle.add_theme_constant_override("margin_bottom", 8)
+	panel_detalle.add_child(margen_detalle)
 	_detalle = VBoxContainer.new()
-	_detalle.custom_minimum_size.x = 180
 	_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_cuerpo.add_child(_detalle)
+	margen_detalle.add_child(_detalle)
 
+	var fondo_button: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
+	if fondo_button != null:
+		panel_lista.add_theme_stylebox_override("panel", fondo_button.duplicate())
+		panel_detalle.add_theme_stylebox_override("panel", fondo_button.duplicate())
 	PIXEL_UI_THEME.apply(_contenido, false)
-	PIXEL_UI_THEME.apply(_lista, false)
-	PIXEL_UI_THEME.apply(_detalle, false)
 
 
 func _cargar_catalogos() -> void:
@@ -108,7 +130,7 @@ func _cargar_catalogos() -> void:
 	)
 	_registrar_solicitud(id_personajes, "personajes")
 	_registrar_solicitud(id_reinos, "reinos")
-	_estado.text = "Consultando los registros de Torres..."
+	_estado.text = ""
 
 
 func _registrar_solicitud(id: int, tipo: String) -> void:
@@ -136,7 +158,7 @@ func _al_request_completed(id: int, resultado: int, codigo_http: int, _cabeceras
 			for fila: Variant in json.data:
 				if fila is Dictionary:
 					_personajes.append((fila as Dictionary).duplicate(true))
-			_estado.text = "%d habitantes registrados en Torres." % _personajes.size()
+			_estado.text = ""
 			if _vista == "personajes":
 				_mostrar_personajes()
 		"reinos":
@@ -194,32 +216,19 @@ func _mostrar_personajes() -> void:
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 6)
 		filas.add_child(fila)
-		var imagen_url := str(personaje.get("img_url", "")).strip_edges()
-		var sprite_local := _cargar_sprite_personaje(personaje)
-		if sprite_local != null or not imagen_url.is_empty():
-			var retrato := TextureRect.new()
-			retrato.custom_minimum_size = Vector2(54, 64)
-			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			fila.add_child(retrato)
-			if sprite_local != null:
-				retrato.texture = sprite_local
-			else:
-				_cargar_imagen_personaje(imagen_url, retrato)
-		else:
-			var sin_retrato := Label.new()
-			sin_retrato.text = "Sin\nretrato"
-			sin_retrato.custom_minimum_size = Vector2(44, 44)
-			sin_retrato.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			sin_retrato.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			fila.add_child(sin_retrato)
 		var boton := Button.new()
-		boton.text = str(personaje.get("nombre", "Sin nombre"))
-		boton.custom_minimum_size.y = 44
+		boton.custom_minimum_size = Vector2(64, 68)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.tooltip_text = "Consultar ficha"
+		boton.expand_icon = true
+		boton.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		boton.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		var sprite_local := _cargar_sprite_personaje(personaje)
+		if sprite_local != null:
+			boton.icon = sprite_local
 		boton.pressed.connect(_mostrar_ficha_personaje.bind(personaje))
 		fila.add_child(boton)
+		PIXEL_UI_THEME.apply(boton, false)
 	var ayuda := Label.new()
 	ayuda.text = "Selecciona un nombre para consultar su ficha."
 	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -229,11 +238,6 @@ func _mostrar_personajes() -> void:
 func _mostrar_ficha_personaje(personaje: Dictionary) -> void:
 	_personaje_seleccionado = personaje.duplicate(true)
 	_limpiar(_detalle)
-	var titulo := Label.new()
-	titulo.text = str(personaje.get("nombre", "Sin nombre"))
-	titulo.add_theme_font_size_override("font_size", 15)
-	_detalle.add_child(titulo)
-
 	var url := str(personaje.get("img_url", "")).strip_edges()
 	_imagen_detalle = TextureRect.new()
 	_imagen_detalle.custom_minimum_size = Vector2(112, 112)
@@ -386,7 +390,7 @@ func _cargar_eventos_reino() -> void:
 		"select=id,dia_absoluto,titulo,descripcion,reino_id,source&reino_id=eq.%s&order=dia_absoluto.asc" % reino_id
 	)
 	_registrar_solicitud(id, "eventos")
-	_estado.text = "Cargando la historia de Torres..."
+	_estado.text = ""
 
 
 func _renderizar_eventos() -> void:
