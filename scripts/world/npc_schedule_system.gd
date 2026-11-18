@@ -1368,15 +1368,17 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 		_detener_animacion_actividad_interior(npc)
 		return
 	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).to_lower()
+	var postura_actual := str(npc.get_meta("postura_npc", ""))
+	var clave_animacion := actividad + "|" + postura_actual
 	if bool(npc.get_meta("animacion_actividad_interior_activa", false)):
-		if str(npc.get_meta("animacion_actividad_interior_clave", "")) == actividad:
+		if str(npc.get_meta("animacion_actividad_interior_clave", "")) == clave_animacion:
 			return
 		_detener_animacion_actividad_interior(npc)
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
 	if not is_instance_valid(sprite):
 		return
 	npc.set_meta("animacion_actividad_interior_activa", true)
-	npc.set_meta("animacion_actividad_interior_clave", actividad)
+	npc.set_meta("animacion_actividad_interior_clave", clave_animacion)
 	npc.set_meta("animacion_actividad_interior_posicion", sprite.position)
 	npc.set_meta("animacion_actividad_interior_rotacion", sprite.rotation)
 	npc.set_meta("animacion_actividad_interior_escala", sprite.scale)
@@ -1406,14 +1408,7 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 		var origen_sprite := sprite.position
 		tween.tween_property(sprite, "position", origen_sprite + Vector2(0.0, -10.0), 0.16)
 		tween.tween_property(sprite, "position", destino_sprite, 0.18)
-		if postura == "dormir":
-			tween.set_loops()
-			tween.tween_property(sprite, "scale:y", sprite.scale.y * 1.025, 1.1)
-			tween.tween_property(sprite, "scale:y", sprite.scale.y, 1.1)
-		else:
-			tween.set_loops()
-			tween.tween_property(sprite, "position:y", destino_sprite.y - 0.8, 0.65)
-			tween.tween_property(sprite, "position:y", destino_sprite.y, 0.65)
+		tween.tween_callback(Callable(self, "_iniciar_idle_postura_npc").bind(npc, sprite, postura, destino_sprite))
 	elif actividad.contains("leer") or actividad.contains("nota") or actividad.contains("estudi") or actividad.contains("investig"):
 		tween.tween_property(sprite, "rotation", 0.035, 0.9)
 		tween.tween_interval(0.8)
@@ -1433,6 +1428,22 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 		tween.tween_property(sprite, "position:y", sprite.position.y - 0.7, 0.8)
 		tween.tween_property(sprite, "position:y", sprite.position.y, 0.8)
 		tween.tween_interval(0.7)
+	npc.set_meta("animacion_actividad_interior_tween", tween)
+
+
+func _iniciar_idle_postura_npc(npc: Creature, sprite: Sprite2D, postura: String, destino: Vector2) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(sprite):
+		return
+	var tween := npc.create_tween()
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	if postura == "dormir":
+		tween.tween_property(sprite, "scale:y", sprite.scale.y * 1.025, 1.1)
+		tween.tween_property(sprite, "scale:y", sprite.scale.y / 1.025, 1.1)
+	else:
+		tween.tween_property(sprite, "position:y", destino.y - 0.8, 0.65)
+		tween.tween_property(sprite, "position:y", destino.y, 0.65)
 	npc.set_meta("animacion_actividad_interior_tween", tween)
 
 
