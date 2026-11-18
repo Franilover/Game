@@ -205,14 +205,21 @@ func _mostrar_personajes() -> void:
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 6)
 		filas.add_child(fila)
-		var retrato := TextureRect.new()
-		retrato.custom_minimum_size = Vector2(44, 44)
-		retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		fila.add_child(retrato)
 		var imagen_url := str(personaje.get("img_url", "")).strip_edges()
 		if not imagen_url.is_empty():
+			var retrato := TextureRect.new()
+			retrato.custom_minimum_size = Vector2(44, 44)
+			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			fila.add_child(retrato)
 			_cargar_imagen_personaje(imagen_url, retrato)
+		else:
+			var sin_retrato := Label.new()
+			sin_retrato.text = "Sin\nretrato"
+			sin_retrato.custom_minimum_size = Vector2(44, 44)
+			sin_retrato.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			sin_retrato.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			fila.add_child(sin_retrato)
 		var boton := Button.new()
 		boton.text = str(personaje.get("nombre", "Sin nombre"))
 		boton.custom_minimum_size.y = 44
@@ -233,14 +240,16 @@ func _mostrar_ficha_personaje(personaje: Dictionary) -> void:
 	titulo.add_theme_font_size_override("font_size", 15)
 	_detalle.add_child(titulo)
 
-	_imagen_detalle = TextureRect.new()
-	_imagen_detalle.custom_minimum_size = Vector2(112, 112)
-	_imagen_detalle.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	_imagen_detalle.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_detalle.add_child(_imagen_detalle)
 	var url := str(personaje.get("img_url", "")).strip_edges()
 	if not url.is_empty():
+		_imagen_detalle = TextureRect.new()
+		_imagen_detalle.custom_minimum_size = Vector2(112, 112)
+		_imagen_detalle.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		_imagen_detalle.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_detalle.add_child(_imagen_detalle)
 		_cargar_imagen_personaje(url, _imagen_detalle)
+	else:
+		_agregar_dato_ficha("Retrato", "Sin imagen registrada")
 
 	var nacimiento_variant: Variant = personaje.get("fecha_nacimiento", null)
 	var nacimiento := int(nacimiento_variant) if nacimiento_variant != null else -1
