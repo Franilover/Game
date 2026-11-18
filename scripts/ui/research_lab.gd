@@ -1,15 +1,17 @@
 extends CanvasLayer
-## Interfaz editable de trabajo del laboratorio.
-## El análisis es informativo: no consume objetos ni modifica sus datos.
+## Estudio Oris: selección visual de objetos y análisis informativo.
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 @onready var _panel: PanelContainer = $Panel
-@onready var _titulo: Label = $Panel/Margin/Column/Header/Title
 @onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
-@onready var _items_columna: VBoxContainer = $Panel/Margin/Column/Body/ItemsColumn/ItemScroll/ItemsList
-@onready var _resultado_label: Label = $Panel/Margin/Column/Body/AnalysisColumn/Result
-@onready var _boton_analizar: Button = $Panel/Margin/Column/Body/AnalysisColumn/Run
+@onready var _items_columna: GridContainer = $Panel/Margin/Column/Body/ItemsPanel/ItemScroll/ItemsGrid
+@onready var _imagen_seleccionada: TextureRect = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/SelectedImage
+@onready var _nombre_seleccionado: Label = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/SelectedName
+@onready var _boton_analizar: Button = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/Run
+@onready var _resultado_label: Label = $Panel/Margin/Column/Body/SelectionPanel/SelectionContent/Result
+@onready var _panel_items: PanelContainer = $Panel/Margin/Column/Body/ItemsPanel
+@onready var _panel_seleccion: PanelContainer = $Panel/Margin/Column/Body/SelectionPanel
 
 var _inventario: InventoryController = null
 var _indice_seleccionado := -1
@@ -22,43 +24,37 @@ func _ready() -> void:
 	add_to_group("research_lab_ui")
 	_boton_cerrar.pressed.connect(queue_free)
 	_boton_analizar.pressed.connect(_analizar_objeto)
-
-
-func configurar(inventario: InventoryController, _estacion_id: String = "examen") -> void:
-	# Se conserva el segundo argumento por compatibilidad con las estaciones existentes.
-	_inventario = inventario
-	_crear_interfaz()
-
-
-func _crear_interfaz() -> void:
-	_titulo.text = "ANÁLISIS DE OBJETOS"
-	_resultado_label.text = ""
-	_cargar_objetos()
+	_boton_analizar.disabled = true
 	_aplicar_estilo_laboratorio()
 
 
+func configurar(inventario: InventoryController, _estacion_id: String = "examen") -> void:
+	_inventario = inventario
+	_cargar_objetos()
+
+
 func _aplicar_estilo_laboratorio() -> void:
-	# El marco principal utiliza la misma superficie dibujada que los botones
-	# del resto de la interfaz, en lugar del panel genérico/transparente.
 	PIXEL_UI_THEME.apply(_panel)
 	var fondo_button := PIXEL_UI_THEME.button_surface_style()
 	if fondo_button != null:
 		_panel.add_theme_stylebox_override("panel", fondo_button)
+		_panel_items.add_theme_stylebox_override("panel", fondo_button.duplicate())
+		_panel_seleccion.add_theme_stylebox_override("panel", fondo_button.duplicate())
 
 
 func _cargar_objetos() -> void:
-	if not is_instance_valid(_items_columna):
-		return
 	for hijo in _items_columna.get_children():
 		_items_columna.remove_child(hijo)
 		hijo.queue_free()
 	_botones_items.clear()
 	_indice_seleccionado = -1
+	_imagen_seleccionada.texture = null
+	_nombre_seleccionado.text = ""
+	_resultado_label.text = ""
+	_boton_analizar.disabled = true
 
 	if not is_instance_valid(_inventario):
-		var aviso := Label.new()
-		aviso.text = "No se pudo acceder al inventario."
-		_items_columna.add_child(aviso)
+		_agregar_aviso("No se pudo acceder al inventario.")
 		return
 
 	var items: Array[Dictionary] = _inventario.runtime.state.items
@@ -70,61 +66,53 @@ func _cargar_objetos() -> void:
 		disponibles += 1
 		var boton := Button.new()
 		boton.toggle_mode = true
-		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.text = "%s  x%d" % [
-			str(objeto.get("nombre", "Objeto")),
-			maxi(1, int(objeto.get("cantidad", 1)))
-		]
+		boton.custom_minimum_size = Vector2(64, 64)
 		boton.icon = ItemIconResolver.obtener_icono(objeto)
-		boton.pressed.connect(_alternar_seleccion.bind(indice, boton))
+		boton.expand_icon = true
+		boton.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		boton.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		boton.tooltip_text = str(objeto.get("nombre", "Objeto"))
+		boton.pressed.connect(_seleccionar_objeto.bind(indice))
 		_items_columna.add_child(boton)
-		boton.icon_max_width = 36
-		boton.custom_minimum_size = Vector2(0, 42)
+		PIXEL_UI_THEME.apply(boton)
 		_botones_items[indice] = boton
 
 	if disponibles == 0:
-		var vacio := Label.new()
-		vacio.text = "No llevas objetos para examinar."
-		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_items_columna.add_child(vacio)
-	_actualizar_seleccion()
+		_agregar_aviso("No llevas objetos para examinar.")
 
 
-func _alternar_seleccion(indice: int, boton: Button) -> void:
-	if boton.button_pressed:
-		for otro_indice in _botones_items:
-			if int(otro_indice) != indice:
-				var otro_boton: Button = _botones_items[otro_indice]
-				otro_boton.button_pressed = false
-		_indice_seleccionado = indice
-	else:
-		_indice_seleccionado = -1
-	_actualizar_seleccion()
+func _agregar_aviso(texto: String) -> void:
+	var aviso := Label.new()
+	aviso.text = texto
+	aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_items_columna.add_child(aviso)
 
 
-func _actualizar_seleccion() -> void:
-	# Mantiene sincronizado el estado visual de los botones con la selección única.
-	for indice in _botones_items:
-		var boton: Button = _botones_items[indice]
-		boton.set_pressed_no_signal(int(indice) == _indice_seleccionado)
-	_boton_analizar.disabled = _indice_seleccionado < 0
+func _seleccionar_objeto(indice: int) -> void:
+	if not is_instance_valid(_inventario) or indice < 0 or indice >= _inventario.runtime.state.items.size():
+		return
+	var objeto: Dictionary = _inventario.obtener_item(indice)
+	if objeto.is_empty():
+		_cargar_objetos()
+		return
+	_indice_seleccionado = indice
+	for otro_indice in _botones_items:
+		var boton: Button = _botones_items[otro_indice]
+		boton.set_pressed_no_signal(int(otro_indice) == indice)
+	_imagen_seleccionada.texture = ItemIconResolver.obtener_icono(objeto)
+	_nombre_seleccionado.text = str(objeto.get("nombre", "Objeto"))
+	_resultado_label.text = ""
+	_boton_analizar.disabled = false
 
 
 func _analizar_objeto() -> void:
-	if not is_instance_valid(_inventario):
-		_resultado_label.text = "No se pudo acceder al inventario."
+	if not is_instance_valid(_inventario) or _indice_seleccionado < 0:
 		return
-	if _indice_seleccionado < 0:
-		_resultado_label.text = "Selecciona un objeto."
-		return
-
 	var objeto := _inventario.obtener_item(_indice_seleccionado)
 	if objeto.is_empty():
-		_resultado_label.text = "El inventario cambió. Vuelve a seleccionar el objeto."
+		_resultado_label.text = "El inventario cambió. Selecciona nuevamente el objeto."
 		_cargar_objetos()
 		return
-
 	var nombre := str(objeto.get("nombre", "Objeto"))
 	_resultado_label.text = _describir_analisis(objeto, nombre)
 
@@ -141,6 +129,7 @@ func _describir_analisis(objeto: Dictionary, nombre: String) -> String:
 		resultado += " " + descripcion
 	resultado += " El análisis no modifica ni consume el objeto."
 	return resultado
+
 
 func _obtener_categoria(objeto: Dictionary) -> String:
 	var categoria: Variant = objeto.get("categoria", "")
