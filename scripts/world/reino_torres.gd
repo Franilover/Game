@@ -26,6 +26,7 @@ const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interact
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const RESEARCH_LAB_UI_SCENE: PackedScene = preload("res://scenes/ui/research_lab.tscn")
 const ROYAL_ARCHIVE_UI_SCRIPT: Script = preload("res://scripts/ui/royal_archive.gd")
+const BUILDING_SERVICE_UI_SCRIPT: Script = preload("res://scripts/ui/building_service_ui.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 
@@ -1740,6 +1741,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA_DOCUMENTOS, Vector2(105, 92), Vector2(1.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "AlmacenForja", MUEBLE_ARMARIO, Vector2(-190, 95), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "MaterialesForja", MUEBLE_COFRE, Vector2(195, 95), Vector2(0.85, 0.85), 1)
+			_agregar_estacion_edificio(cuarto, "forja", "Reparar herramientas", Vector2(65, 20))
 		"archivo":
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(1.0, 1.0), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoCentro", MUEBLE_ARMARIO, Vector2(-95, -105), Vector2(1.0, 1.0), 1)
@@ -1778,12 +1780,17 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, posicion_litera, Vector2(0.82, 0.82), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioCuartelOeste", MUEBLE_ARMARIO, Vector2(-205, -118), Vector2(0.85, 0.85), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioCuartelEste", MUEBLE_ARMARIO, Vector2(205, -118), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "MesaLicencias", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 65), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "MesaArsenal", MUEBLE_MESA, Vector2(105, 65), Vector2(1.2, 1), 1)
+			_agregar_estacion_edificio(cuarto, "cuartel", "Licencias y arsenal", Vector2(-105, 32))
 		"taller", "carpinteria":
 			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA_DOCUMENTOS, Vector2(-25, 5), Vector2(1.6, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(180, 72), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioHerramientas", MUEBLE_ARMARIO, Vector2(-190, -105), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioMateriales", MUEBLE_ARMARIO, Vector2(190, -105), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "AsientoTrabajo", MUEBLE_ASIENTO, Vector2(-25, 65), Vector2.ONE, 1)
+			if tipo == "carpinteria":
+				_agregar_estacion_edificio(cuarto, "carpinteria", "Encargar muebles", Vector2(-25, 5))
 		"granero", "molino", "semillas":
 			_agregar_sprite_mueble(cuarto, "AlmacenOeste", MUEBLE_ARMARIO, Vector2(-190, -100), Vector2(0.95, 0.95), 1)
 			_agregar_sprite_mueble(cuarto, "AlmacenEste", MUEBLE_ARMARIO, Vector2(190, -100), Vector2(0.95, 0.95), 1)
@@ -2146,6 +2153,48 @@ func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> v
 		return
 	get_tree().root.add_child(interfaz)
 	interfaz.call("configurar", inventario, estacion_id)
+
+
+func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posicion: Vector2) -> void:
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "EstacionEdificio_" + tipo
+	objetivo.position = posicion
+	objetivo.call(
+		"configurar",
+		texto,
+		58.0,
+		Callable(self, "_puede_interactuar_estacion_edificio").bind(tipo),
+		Callable(self, "_interactuar_estacion_edificio").bind(tipo)
+	)
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> bool:
+	return _interior_activo and _entrada_interior_id == tipo
+
+
+func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> void:
+	if not _puede_interactuar_estacion_edificio(_jugador_objetivo, tipo):
+		return
+	if get_tree().get_first_node_in_group("building_service_ui") != null:
+		return
+	var sistema := get_tree().get_first_node_in_group("interaction_system")
+	if not is_instance_valid(sistema):
+		Events.notification_pushed.emit("No se pudo acceder al sistema de interacción.")
+		return
+	var inventario := sistema.get("inventory") as InventoryController
+	var world_items := sistema.get("world_items") as GarliaWorldItems
+	if not is_instance_valid(inventario):
+		Events.notification_pushed.emit("No se pudo acceder al inventario.")
+		return
+	var interfaz := BUILDING_SERVICE_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	interfaz.add_to_group("building_service_ui")
+	get_tree().root.add_child(interfaz)
+	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
