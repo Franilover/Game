@@ -412,11 +412,7 @@ func _mostrar_detalle() -> void:
 	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	if _modo == "criaturas":
-		var ruta := "res://assets/art/creatures/" + nombre + ".png"
-		if nombre.to_lower() == "humano":
-			ruta = "res://assets/art/creatures/Humano.png"
-		if ResourceLoader.exists(ruta):
-			icono.texture = load(ruta)
+		icono.texture = _obtener_sprite_criatura(nombre)
 	else:
 		icono.texture = ItemIconResolver.obtener_icono(_seleccion)
 
