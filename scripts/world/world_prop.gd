@@ -464,21 +464,14 @@ func _obtener_item_id_recoleccion() -> String:
 
 func _obtener_cantidad_recoleccion() -> int:
 	var cantidad: int = 1
-	var recoleccion_variant: Variant = datos.get(
-		"recoleccion",
-		{}
-	)
+	var recoleccion_variant: Variant = datos.get("recoleccion", {})
+	if not recoleccion_variant is Dictionary:
+		var propiedades_variant: Variant = datos.get("propiedades", {})
+		if propiedades_variant is Dictionary:
+			recoleccion_variant = (propiedades_variant as Dictionary).get("recoleccion", {})
 
 	if recoleccion_variant is Dictionary:
-		cantidad = maxi(
-			1,
-			int(
-				(recoleccion_variant as Dictionary).get(
-					"cantidad",
-					1
-				)
-			)
-		)
+		cantidad = maxi(1, int((recoleccion_variant as Dictionary).get("cantidad", 1)))
 
 	return cantidad
 
