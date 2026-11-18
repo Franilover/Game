@@ -60,19 +60,11 @@ func configurar(
 	_asset_path_por_prop.clear()
 	_data_context_por_chunk.clear()
 	if _world_data != null:
-		var props_catalogo := _world_data.obtener_props_game()
-		for prop_variant in props_catalogo:
-			if not prop_variant is Dictionary:
-				continue
-			var prop := prop_variant as Dictionary
-			var bioma_id := str(prop.get("bioma_id", "")).strip_edges()
-			var prop_id := str(prop.get("id", prop.get("clave", prop.get("nombre", "")))).strip_edges()
-			if bioma_id.is_empty() or prop_id.is_empty():
-				continue
-			if not _props_por_bioma.has(bioma_id):
-				_props_por_bioma[bioma_id] = []
-			(_props_por_bioma[bioma_id] as Array).append(prop)
-			_asset_path_por_prop[prop_id] = ""
+		if not _world_data.mundo_listo.is_connected(_al_catalogo_props_actualizado):
+			_world_data.mundo_listo.connect(_al_catalogo_props_actualizado)
+		if not _world_data.mundo_actualizado.is_connected(_al_catalogo_props_actualizado):
+			_world_data.mundo_actualizado.connect(_al_catalogo_props_actualizado)
+	_actualizar_catalogo_props()
 
 	if _entity_manager == null:
 		push_error("WorldEntitySpawner: Entity manager inválido.")
@@ -82,6 +74,58 @@ func configurar(
 		push_error("WorldEntitySpawner: Spawn rules inválidas.")
 	if _world_data == null:
 		push_error("WorldEntitySpawner: WorldDataService inválido.")
+
+
+func _al_catalogo_props_actualizado() -> void:
+	_actualizar_catalogo_props()
+
+
+func _actualizar_catalogo_props() -> void:
+	_props_por_bioma.clear()
+	_asset_path_por_prop.clear()
+	if _world_data == null or not is_instance_valid(_world_data):
+		return
+
+	var props_catalogo := _world_data.obtener_props_game()
+	var activos := 0
+	for prop_variant in props_catalogo:
+		if not prop_variant is Dictionary:
+			continue
+		var prop := (prop_variant as Dictionary).duplicate(true)
+		if not bool(prop.get("activo", true)):
+			continue
+		var bioma_id := str(prop.get("bioma_id", "")).strip_edges()
+		var prop_id := str(prop.get("id", prop.get("clave", prop.get("nombre", "")))).strip_edges()
+		if bioma_id.is_empty() or prop_id.is_empty():
+			continue
+		if not _props_por_bioma.has(bioma_id):
+			_props_por_bioma[bioma_id] = []
+		(_props_por_bioma[bioma_id] as Array).append(prop)
+		_asset_path_por_prop[prop_id] = ""
+		activos += 1
+
+	print("WorldEntitySpawner: catálogo de props actualizado → ", activos, " props en ", _props_por_bioma.size(), " biomas.")
+	if activos > 0:
+		_reintentar_props_en_chunks_cargados()
+
+
+func _reintentar_props_en_chunks_cargados() -> void:
+	if _terrain == null or _entity_manager == null:
+		return
+	for chunk_variant in _terrain.chunks_cargados():
+		if not chunk_variant is Vector2i:
+			continue
+		var chunk_coord := chunk_variant as Vector2i
+		var tiene_prop_real := false
+		for entidad in _entity_manager.obtener_por_chunk(chunk_coord):
+			if entidad is WorldProp and is_instance_valid(entidad):
+				tiene_prop_real = true
+				break
+		if tiene_prop_real:
+			continue
+			cancelar_prop_spawn_chunk(chunk_coord)
+			_entity_manager.despawn_props_chunk(chunk_coord)
+			spawn_props_chunk(chunk_coord)
 
 
 func configurar_render_manager(render_manager: Node) -> void:
@@ -479,7 +523,7 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 			var bioma := bioma_variant as Dictionary
 			var ecosistema := ecosistema_variant as Dictionary
 			var habitats := habitats_variant as Array
-			if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
+			if bioma.is_empty() or ecosistema.is_empty():
 				continue
 			var bioma_id := str(bioma.get("id", ""))
 			var ecosistema_id := str(ecosistema.get("id", ""))
@@ -489,7 +533,7 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 					var habitat_id := str((habitat_variant as Dictionary).get("id", ""))
 					if not habitat_id.is_empty() and habitat_id not in habitat_ids:
 						habitat_ids.append(habitat_id)
-			if bioma_id.is_empty() or ecosistema_id.is_empty() or habitat_ids.is_empty():
+			if bioma_id.is_empty() or ecosistema_id.is_empty():
 				continue
 
 			var candidatos: Array[Dictionary] = []
@@ -501,7 +545,10 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 				var nombre := str(prop.get("nombre", "")).strip_edges()
 				if nombre.is_empty():
 					continue
-				var coincide := str(prop.get("ecosistema_id", "")) == ecosistema_id and str(prop.get("habitat_id", "")) in habitat_ids
+				var coincide := (
+					str(prop.get("ecosistema_id", "")) == ecosistema_id
+					and (habitat_ids.is_empty() or str(prop.get("habitat_id", "")) in habitat_ids)
+				)
 				if coincide:
 					candidatos.append(prop)
 
@@ -1182,7 +1229,7 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	var bioma := _terrain.get_bioma_at(tile)
 	var ecosistema := _terrain.get_ecosistema_at(tile)
 	var habitats := _terrain.get_habitats_at(tile)
-	if bioma.is_empty() or ecosistema.is_empty() or habitats.is_empty():
+	if bioma.is_empty() or ecosistema.is_empty():
 		_diag_prop_sin_contexto += 1
 		return false
 	var bioma_id := str(bioma.get("id", ""))
@@ -1209,7 +1256,7 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 			continue
 		var coincide_contexto := (
 			str(prop.get("ecosistema_id", "")) == ecosistema_id
-			and str(prop.get("habitat_id", "")) in habitat_ids
+			and (habitat_ids.is_empty() or str(prop.get("habitat_id", "")) in habitat_ids)
 		)
 		if coincide_contexto:
 			candidatos.append(prop)
