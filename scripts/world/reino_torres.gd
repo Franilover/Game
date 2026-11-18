@@ -196,6 +196,18 @@ const ENTRADAS: Array[Dictionary] = [
 ]
 
 
+func _exit_tree() -> void:
+	# La interfaz de la posada vive en SceneTree.root, fuera de esta escena.
+	# Ocultarla y liberarla evita conservar botones con Callables a este nodo.
+	_cerrar_menu_posada()
+	if is_instance_valid(_menu_posada_layer):
+		_menu_posada_layer.queue_free()
+	_menu_posada_layer = null
+	_menu_posada_panel = null
+	_menu_posada_contenido = null
+	_menu_posada_estado = null
+
+
 func _ready() -> void:
 	_expedition_entrance.body_entered.connect(_al_entrar_entrada_expedicion)
 	_expedition_entrance.body_exited.connect(_al_salir_entrada_expedicion)
