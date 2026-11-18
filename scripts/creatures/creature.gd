@@ -769,6 +769,12 @@ func take_damage(
 ) -> void:
 	if not is_alive:
 		return
+	# Los sparrings del Cuartel nunca pueden morir: conservan 1 HP y
+	# recuperan su estado original al cerrar la sesión.
+	if bool(get_meta("barracks_training_target", false)):
+		cantidad = mini(cantidad, maxi(health - 1, 0))
+		if cantidad <= 0:
+			return
 
 	var salud_anterior := health
 
