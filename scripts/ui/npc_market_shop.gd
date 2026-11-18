@@ -134,7 +134,9 @@ func _actualizar_lista() -> void:
 	_saldo.text = "Tus monedas: %d" % _obtener_saldo()
 	_boton_comprar.disabled = _modo == "comprar"
 	_boton_vender.disabled = _modo == "vender"
-	_estado.text = ""
+	var intermediaria := str(_tienda_config.get("intermediaria_nombre", "")).strip_edges()
+	var recaudacion := _obtener_ingresos_vendedor()
+	_estado.text = (intermediaria + " atiende por " + _npc.get_nombre_visual() + ". Recaudado para el dueño: %d ¤." % recaudacion) if not intermediaria.is_empty() else ""
 	if _modo == "comprar":
 		var disponibles := 0
 		for producto in _productos:
@@ -292,6 +294,7 @@ func _comprar(item_id: String) -> void:
 		_estado.text = "No se pudo completar el pago."
 		return
 	_stock[item_id] = cantidad_stock - 1
+	_registrar_ingreso_vendedor(precio)
 	_guardar_stock_persistente()
 	_estado.text = "Compraste %s." % str(producto.get("nombre", "el objeto"))
 	_actualizar_lista()
@@ -446,6 +449,35 @@ func _precio_producto(item_id: String) -> int:
 
 func _obtener_saldo() -> int:
 	return int(_game_state.call("obtener_dinero")) if is_instance_valid(_game_state) else 0
+
+
+## La recaudación de cada puesto pertenece a su dueño aunque Saira atienda.
+## Se guarda en el estado local de la partida, separada del dinero del jugador.
+func _registrar_ingreso_vendedor(cantidad: int) -> void:
+	if cantidad <= 0 or not is_instance_valid(_npc):
+		return
+	var flags := _obtener_flags_partida()
+	var ingresos_variant: Variant = flags.get("mercado_ingresos_vendedores", {})
+	var ingresos: Dictionary = ingresos_variant.duplicate(true) if ingresos_variant is Dictionary else {}
+	var id_vendedor := _npc.get_personaje_game_id().strip_edges().to_lower()
+	if id_vendedor.is_empty():
+		id_vendedor = _npc.get_nombre_visual().strip_edges().to_lower()
+	ingresos[id_vendedor] = int(ingresos.get(id_vendedor, 0)) + cantidad
+	flags["mercado_ingresos_vendedores"] = ingresos
+	_game_state.call_deferred("_ejecutar_guardado_rapido")
+
+
+func _obtener_ingresos_vendedor() -> int:
+	if not is_instance_valid(_npc):
+		return 0
+	var flags := _obtener_flags_partida()
+	var ingresos_variant: Variant = flags.get("mercado_ingresos_vendedores", {})
+	if not ingresos_variant is Dictionary:
+		return 0
+	var id_vendedor := _npc.get_personaje_game_id().strip_edges().to_lower()
+	if id_vendedor.is_empty():
+		id_vendedor = _npc.get_nombre_visual().strip_edges().to_lower()
+	return int((ingresos_variant as Dictionary).get(id_vendedor, 0))
 
 
 func _obtener_dia_clave() -> String:
