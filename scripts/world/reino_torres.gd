@@ -211,9 +211,12 @@ func _exit_tree() -> void:
 
 
 func _ready() -> void:
-	_expedition_entrance.body_entered.connect(_al_entrar_entrada_expedicion)
-	_expedition_entrance.body_exited.connect(_al_salir_entrada_expedicion)
-	_crear_entrada_hogar_al_final_del_camino()
+	# Los dos accesos laterales quedan cerrados: no abren selector ni cambian de zona.
+	if is_instance_valid(_expedition_entrance):
+		_expedition_entrance.set_deferred("monitoring", false)
+		_expedition_entrance.set_deferred("monitorable", false)
+		_expedition_entrance.collision_layer = 0
+		_expedition_entrance.collision_mask = 0
 	_crear_selector_viajes()
 	_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	_capa_interior = Node2D.new()
@@ -2331,7 +2334,7 @@ func _mostrar_confirmacion_pasaje_exterior() -> void:
 	dialogo.name = "PasajeMundoExterior"
 	dialogo.add_to_group("travel_ticket_dialog")
 	dialogo.title = "Pasaje al mundo exterior"
-	dialogo.dialog_text = "¿Solicitar un pasaje para salir de Torres?\nDeberás regresar antes de las 22:00. A esa hora volverás automáticamente al reino."
+	dialogo.dialog_text = "El pasaje al mundo exterior cuesta 10 monedas.\nDeberás regresar antes de las 22:00; a esa hora volverás automáticamente a Torres.\n\n¿Comprar el pasaje?"
 	dialogo.ok_button_text = "Solicitar pasaje"
 	dialogo.cancel_button_text = "Cancelar"
 	dialogo.confirmed.connect(_al_confirmar_pasaje_exterior)
@@ -2346,11 +2349,15 @@ func _al_confirmar_pasaje_exterior() -> void:
 	if not is_instance_valid(zone_manager) or not zone_manager.has_method("iniciar_viaje_exterior"):
 		Events.notification_pushed.emit("No se pudo gestionar el pasaje.")
 		return
+	if not GameState.modificar_dinero(-10):
+		Events.notification_pushed.emit("No tienes suficientes monedas. El pasaje cuesta 10.")
+		return
 	var resultado: Variant = await zone_manager.call("iniciar_viaje_exterior")
 	if bool(resultado):
-		Events.notification_pushed.emit("Pasaje registrado. Regresarás a Torres a las 22:00.")
+		Events.notification_pushed.emit("Pasaje comprado por 10 monedas. Regresarás a Torres a las 22:00.")
 	else:
-		Events.notification_pushed.emit("No se pudo iniciar el viaje al mundo exterior.")
+		GameState.modificar_dinero(10)
+		Events.notification_pushed.emit("No se pudo iniciar el viaje. Se devolvieron las 10 monedas.")
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
