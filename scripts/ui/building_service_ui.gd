@@ -363,7 +363,7 @@ func _construir_carpinteria() -> void:
 		fila.add_child(icono)
 
 		var etiqueta := Label.new()
-		etiqueta.text = "%s\\n%d madera · %d monedas\\nEn inventario: %d" % [
+		etiqueta.text = "%s\n%d madera · %d monedas\nEn inventario: %d" % [
 			str(mueble.nombre), int(mueble.madera), int(mueble.precio),
 			_contar_item("carpinteria_mueble_" + str(mueble.id))
 		]
