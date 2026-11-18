@@ -25,6 +25,7 @@ const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const RESEARCH_LAB_UI_SCENE: PackedScene = preload("res://scenes/ui/research_lab.tscn")
+const ROYAL_ARCHIVE_UI_SCRIPT: Script = preload("res://scripts/ui/royal_archive.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 
@@ -1745,6 +1746,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoEste", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(1.0, 1.0), 1)
 			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA_DOCUMENTOS, Vector2(45, 38), Vector2(1.5, 1), 1)
 			_agregar_sprite_mueble(cuarto, "AsientoConsulta", MUEBLE_SILLA_FRENTE, Vector2(45, 88), Vector2.ONE, 1)
+			_agregar_estacion_archivo(cuarto, "documentos_personajes", "Consultar documentos", Vector2(45, 8))
 		"consejo":
 			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.0, 1.25), 1)
 			for i in range(6):
