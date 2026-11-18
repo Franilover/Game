@@ -62,6 +62,7 @@ func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nu
 		tipo == "recurso"
 		or tipo == "planta"
 		or tipo == "flor"
+		or tipo == "arbol"
 		or tipo == "cueva"
 		or tipo == "estructura"
 	)
@@ -100,7 +101,7 @@ func get_interaction_distance() -> float:
 
 func get_interaction_priority() -> int:
 	match tipo:
-		"recurso", "planta", "flor":
+		"recurso", "planta", "flor", "arbol":
 			return 30
 		"cueva", "estructura":
 			return 20
