@@ -199,9 +199,11 @@ func _reparar_con_material(indice: int, material_id: String) -> void:
 		_mostrar_estado("No se pudo entregar el material.")
 		return
 	if not _reparar_herramienta(indice):
-		_inventario.runtime.establecer_objeto(slot_material, material_antes)
-		_inventario.inventario_cambio.emit()
-		_mostrar_estado("No se pudo reparar; se devolvió el material.")
+		var devolver := material_antes.duplicate(true)
+		devolver["cantidad"] = 1
+		if not _inventario.agregar_objeto_desde_ui(devolver):
+			push_error("Forja: no se pudo devolver el material tras una reparación fallida.")
+		_mostrar_estado("No se pudo reparar; se intentó devolver el material.")
 		_actualizar()
 		return
 	_guardar_reparacion()
