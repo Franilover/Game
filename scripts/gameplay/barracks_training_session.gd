@@ -6,6 +6,7 @@ const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 var _jugador: Node2D
 var _contrincante: Creature
 var _posicion_original := Vector2.ZERO
+var _posicion_inicio_jugador := Vector2.ZERO
 var _vida_original := 1
 var _velocidad_original := Vector2.ZERO
 var _finalizando := false
@@ -25,6 +26,7 @@ func iniciar(jugador: Node2D, contrincante: Creature) -> bool:
 	_jugador = jugador
 	_contrincante = contrincante
 	_posicion_original = contrincante.global_position
+	_posicion_inicio_jugador = jugador.global_position
 	_vida_original = contrincante.health
 	_velocidad_original = contrincante.velocity
 	contrincante.set_meta("barracks_training_target", true)
@@ -70,7 +72,7 @@ func _process(_delta: float) -> void:
 	if not _jugador.get("is_alive") or not _contrincante.is_alive:
 		finalizar()
 		return
-	if _jugador.global_position.distance_to(_posicion_original) > 1800.0:
+	if _jugador.global_position.distance_to(_posicion_inicio_jugador) > 1200.0:
 		finalizar()
 
 
