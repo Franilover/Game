@@ -23,6 +23,7 @@ const PRODUCTO_PAN: Texture2D = preload("res://assets/art/items/Pan.png")
 const PRODUCTO_MANZANA: Texture2D = preload("res://assets/art/items/Manzana.png")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+const WATERING_INTERACTABLE_SCRIPT: Script = preload("res://scripts/gameplay/watering_interactable.gd")
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const RESEARCH_LAB_UI_SCENE: PackedScene = preload("res://scenes/ui/research_lab.tscn")
 const ROYAL_ARCHIVE_UI_SCRIPT: Script = preload("res://scripts/ui/royal_archive.gd")
@@ -237,6 +238,7 @@ func _ready() -> void:
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
+	_registrar_pozos_agua()
 	_crear_luces_faroles()
 	_crear_ventanas_hogares()
 	_crear_charcos_torres()
@@ -248,6 +250,23 @@ func _ready() -> void:
 	await _crear_cesped_tilemap_dual()
 	await _crear_muralla_montana()
 
+
+
+
+func _registrar_pozos_agua() -> void:
+	# El pozo de la plaza conserva su sprite de escena; añadimos un objetivo
+	# independiente para no alterar su textura ni sus colisiones.
+	for nodo_variant in find_children("*", "Sprite2D", true, false):
+		if not nodo_variant is Sprite2D:
+			continue
+		var sprite := nodo_variant as Sprite2D
+		if not sprite.name.to_lower().contains("pozo"):
+			continue
+		var objetivo := WATERING_INTERACTABLE_SCRIPT.new() as Node2D
+		objetivo.name = "InteraccionPozoAgua"
+		add_child(objetivo)
+		objetivo.global_position = sprite.global_position
+		objetivo.call("configurar_pozo")
 
 
 func _process(_delta: float) -> void:
@@ -2441,6 +2460,10 @@ func _agregar_parcela_vivero(padre: Node, nombre: String, posicion: Vector2, tam
 			Vector2(x, tamano.y / 2.0 - 5)
 		])
 		parcela.add_child(surco)
+
+	# Cada bancal es un objetivo contextual: solo aparece al llevar una regadera.
+	parcela.set_script(WATERING_INTERACTABLE_SCRIPT)
+	parcela.call("configurar_parcela", nombre)
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
