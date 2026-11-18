@@ -149,7 +149,7 @@ func _construir_forja() -> void:
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		fila.add_child(etiqueta)
 		var reparar_material := Button.new()
-		repar_material.text = "Yunque · 1 material"
+		reparar_material.text = "Yunque · 1 material"
 		repar_material.disabled = material_id.is_empty() or _contar_item(material_id) < 1
 		repar_material.pressed.connect(_reparar_con_material.bind(indice, material_id))
 		fila.add_child(reparar_material)
@@ -172,7 +172,11 @@ func _es_herramienta_reparable(objeto: Dictionary) -> bool:
 		return false
 	var propiedades := propiedades_variant as Dictionary
 	var maximo := int(propiedades.get("durabilidad", 0))
-	return maximo > 0 and (str(objeto.get("tipo", "")).to_lower().contains("herramienta") or str(propiedades.get("recoleccion", "")).length() > 0 or str(objeto.get("nombre", "")).to_lower().contains("pico") or str(objeto.get("nombre", "")).to_lower().contains("pala"))
+	var recoleccion_variant: Variant = propiedades.get("recoleccion", {})
+	var tiene_recoleccion := recoleccion_variant is Dictionary and not (recoleccion_variant as Dictionary).is_empty()
+	var nombre := str(objeto.get("nombre", "")).to_lower()
+	var tipo := str(objeto.get("tipo", "")).to_lower()
+	return maximo > 0 and (tipo.contains("herramienta") or tiene_recoleccion or nombre.contains("pico") or nombre.contains("pala"))
 
 
 func _material_reparacion(objeto: Dictionary) -> String:
