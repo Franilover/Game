@@ -1748,20 +1748,26 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
 				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
 		"vivero":
-			# Zona de cultivo y almacenamiento de semillas. El cofre usa el
-			# sistema persistente compartido de muebles e inventario.
-			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA_PLATOS, Vector2(-105, -82), Vector2(1.25, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "MesaTrasplante", MUEBLE_MESA, Vector2(82, -82), Vector2(1.25, 1.0), 1)
-			_agregar_sprite_mueble(cuarto, "CofreSemillasVivero", MUEBLE_COFRE, Vector2(190, 82), Vector2(0.9, 0.9), 1)
-			_agregar_sprite_mueble(cuarto, "ArmarioHerramientasVivero", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.85, 0.85), 1)
-			_agregar_sprite_mueble(cuarto, "SillaVivero", MUEBLE_SILLA_FRENTE, Vector2(-105, -28), Vector2.ONE, 1)
+			# Parcelas reales de cultivo: el suelo se prepara como bancales y
+			# cada uno queda disponible para plantar al conectar la interacción.
+			_agregar_parcela_vivero(cuarto, "BancalOeste", Vector2(-155, -5), Vector2(112, 64))
+			_agregar_parcela_vivero(cuarto, "BancalCentro", Vector2(0, -5), Vector2(112, 64))
+			_agregar_parcela_vivero(cuarto, "BancalEste", Vector2(155, -5), Vector2(112, 64))
+			_agregar_parcela_vivero(cuarto, "BancalSurOeste", Vector2(-155, 92), Vector2(112, 48))
+			_agregar_parcela_vivero(cuarto, "BancalSurCentro", Vector2(0, 92), Vector2(112, 48))
+			_agregar_sprite_mueble(cuarto, "DepositoAguaVivero", MUEBLE_BARRIL, Vector2(-220, -125), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "CofreSemillasVivero", MUEBLE_COFRE, Vector2(210, 105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioHerramientasVivero", MUEBLE_ARMARIO, Vector2(-220, 105), Vector2(0.85, 0.85), 1)
+			_agregar_estacion_edificio(cuarto, "vivero", "Trabajar en el vivero", Vector2(115, -88))
 		"herbolario":
-			# Mesas de observación y preparación para estudiar y procesar plantas.
+			# Mesas de laboratorio y zona de muestras para el trabajo botánico.
 			_agregar_sprite_mueble(cuarto, "MesaInvestigacionHerbolario", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, -78), Vector2(1.35, 1.05), 1)
 			_agregar_sprite_mueble(cuarto, "MesaProcesamientoHerbolario", MUEBLE_MESA_PLATOS, Vector2(90, -78), Vector2(1.25, 1.05), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioMuestrasHerbolario", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteHerbolario", MUEBLE_ARMARIO, Vector2(205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "SillaInvestigacionHerbolario", MUEBLE_SILLA_FRENTE, Vector2(-105, -25), Vector2.ONE, 1)
+			_agregar_estacion_edificio(cuarto, "herbolario", "Investigar y procesar plantas", Vector2(90, -35))
 		"habitacion_posada":
 			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "CofreHabitacion", MUEBLE_COFRE, Vector2(155, 78), Vector2(0.9, 0.9), 1)
@@ -2379,6 +2385,49 @@ func _al_confirmar_pasaje_exterior() -> void:
 	else:
 		GameState.modificar_dinero(10)
 		Events.notification_pushed.emit("No se pudo iniciar el viaje. Se devolvieron las 10 monedas.")
+
+
+func _agregar_parcela_vivero(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:
+	var parcela := Node2D.new()
+	parcela.name = nombre
+	parcela.position = posicion
+	parcela.z_index = -1
+	padre.add_child(parcela)
+
+	# Bancal de tierra oscura con borde de madera. Se construye con polígonos
+	# de pixel art sencillos para no depender de sprites inexistentes.
+	var borde := Polygon2D.new()
+	borde.name = "Borde"
+	borde.color = Color("#69452D")
+	borde.polygon = PackedVector2Array([
+		Vector2(-tamano.x / 2.0 - 3, -tamano.y / 2.0 - 3),
+		Vector2(tamano.x / 2.0 + 3, -tamano.y / 2.0 - 3),
+		Vector2(tamano.x / 2.0 + 3, tamano.y / 2.0 + 3),
+		Vector2(-tamano.x / 2.0 - 3, tamano.y / 2.0 + 3)
+	])
+	parcela.add_child(borde)
+
+	var tierra := Polygon2D.new()
+	tierra.name = "Tierra"
+	tierra.color = Color("#765039")
+	tierra.polygon = PackedVector2Array([
+		Vector2(-tamano.x / 2.0, -tamano.y / 2.0),
+		Vector2(tamano.x / 2.0, -tamano.y / 2.0),
+		Vector2(tamano.x / 2.0, tamano.y / 2.0),
+		Vector2(-tamano.x / 2.0, tamano.y / 2.0)
+	])
+	parcela.add_child(tierra)
+
+	for x in range(-int(tamano.x / 2.0) + 8, int(tamano.x / 2.0), 16):
+		var surco := Line2D.new()
+		surco.name = "Surco%d" % x
+		surco.width = 2.0
+		surco.default_color = Color("#513722")
+		surco.points = PackedVector2Array([
+			Vector2(x, -tamano.y / 2.0 + 5),
+			Vector2(x, tamano.y / 2.0 - 5)
+		])
+		parcela.add_child(surco)
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
