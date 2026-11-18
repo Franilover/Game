@@ -1949,9 +1949,27 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 func _ir_habitacion_posada() -> void:
 	if not _posada_tiene_acceso():
 		Events.notification_pushed.emit("Necesitas activar tu estancia en la recepción.")
+		_mostrar_menu_posada("principal")
 		return
+	if _interior_activo:
+		_cerrar_menu_posada()
+		return
+	if not is_instance_valid(_jugador):
+		_jugador = get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(_jugador):
+		Events.notification_pushed.emit("No se encontró al jugador para entrar a la habitación.")
+		return
+
 	_cerrar_menu_posada()
-	_entrar_al_interior({"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada"})
+	var entrada := {
+		"id": "posada_habitacion",
+		"nombre": "Habitación de la posada",
+		"tipo": "habitacion_posada"
+	}
+	# La transición se ejecuta después de terminar la señal del botón.
+	# Así evitamos cambiar visibilidad, colisiones y cámara mientras la UI
+	# de recepción todavía está procesando su evento de pulsación.
+	call_deferred("_entrar_al_interior", entrada)
 
 
 func _comprar_estancia_posada(gratis: bool) -> void:
