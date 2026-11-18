@@ -149,8 +149,9 @@ func _construir_forja() -> void:
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		fila.add_child(etiqueta)
 		var reparar_material := Button.new()
-		reparar_material.text = "Yunque · 1 material"
-		repar_material.disabled = material_id.is_empty() or _contar_item(material_id) < 1
+		var nombre_material := "madera" if material_id == ITEM_MADERA else "piedra" if material_id == ITEM_PIEDRA_MEDIANA else "material no disponible"
+		reparar_material.text = "Yunque · 1 %s" % nombre_material
+		reparar_material.disabled = material_id.is_empty() or _contar_item(material_id) < 1
 		repar_material.pressed.connect(_reparar_con_material.bind(indice, material_id))
 		fila.add_child(reparar_material)
 		PIXEL_UI_THEME.apply(reparar_material, false)
