@@ -470,7 +470,11 @@ func _actualizar_sprite_direccional_npc() -> void:
 
 	var textura := _sprite_npc_base
 	sprite.flip_h = false
-	if velocity.length_squared() > 0.25:
+	var postura := str(get_meta("postura_npc", ""))
+	if postura == "dormir":
+		if _sprite_npc_espalda != null:
+			textura = _sprite_npc_espalda
+	elif velocity.length_squared() > 0.25:
 		if _npc_direccion_anterior == Vector2.UP and _sprite_npc_espalda != null:
 			textura = _sprite_npc_espalda
 		elif absf(_npc_direccion_anterior.x) > 0.0 and _sprite_npc_lateral != null:
