@@ -584,6 +584,13 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
 	if actividad.is_empty():
 		actividad = "descansar"
+	# Cuando termina el horario y no hay una actividad especial, cada habitante
+	# regresa a su hogar al comenzar la noche. Las reuniones, invitaciones y
+	# turnos activos conservan prioridad porque ya producen una rutina propia.
+	if not esta_en_horario and (minutos >= 21 * 60 or minutos < 6 * 60):
+		clave_rutina = "dormir_en_hogar"
+		ubicacion = hogar
+		actividad = "dormir"
 	# Ivo sólo va a comprar pan si Elian tiene turno en la panadería en
 	# este mismo tramo. Si no coincide, aprovecha ese rato en la plaza.
 	if nombre_npc == "ivo" and ubicacion == "panaderia" and not _el_npc_tiene_rutina_en_ubicacion("elian", "panaderia", dia_semana, minutos):
