@@ -186,8 +186,19 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if not npc.is_alive:
 			continue
 		_actualizar_mente_npc(npc, minutos, tiempo)
-		if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
-			continue
+		var es_hora_de_dormir := minutos >= 21 * 60 or minutos < 6 * 60
+		if es_hora_de_dormir:
+			# Las conversaciones ambientales también podían retener al NPC antes
+			# de que el planificador aplicara su rutina de regreso al hogar.
+			if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+				npc.remove_meta("_conversacion_ambiental_activa")
+				var movimiento_nocturno := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+				if is_instance_valid(movimiento_nocturno):
+					movimiento_nocturno.detener_por_rutina()
+				npc.set_meta("rutina_en_transito", false)
+				npc.set_meta("rutina_firma", "")
+			if bool(npc.get_meta("actividad_social_activa", false)) or bool(npc.get_meta("acercamiento_social_activo", false)):
+				_finalizar_actividad_social(npc)
 		if _actualizar_actividad_social(npc, delta):
 			continue
 		if _actualizar_objetivo_social_npc(npc, delta, minutos):
