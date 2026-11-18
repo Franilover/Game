@@ -2,6 +2,7 @@ extends CanvasLayer
 class_name BuildingServiceUI
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const ITEM_ICON_RESOLVER = preload("res://scripts/ui/item_icon_resolver.gd")
 
 const ITEM_MADERA := "768a51e5-e34b-4f11-92e7-a6e7dd3bf55c"
 const ITEM_PIEDRA_MEDIANA := "0117d138-51ff-4b1b-a317-f8318bf161fa"
@@ -30,6 +31,7 @@ var _jugador: Node
 var _jugador_fisica_previa := true
 var _jugador_input_previo := true
 var _jugador_unhandled_previo := true
+var _herramienta_seleccionada := -1
 
 
 func configurar(tipo: String, inventario: InventoryController, world_items: GarliaWorldItems, jugador: Node = null) -> void:
@@ -92,21 +94,23 @@ func _actualizar() -> void:
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	var titulo := Label.new()
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.add_theme_font_size_override("font_size", 18)
-	match _tipo:
-		"forja": titulo.text = "FORJA"
-		"carpinteria": titulo.text = "CARPINTERÍA"
-		"cuartel_licencia": titulo.text = "LICENCIAS · CUARTEL"
-		"cuartel_armas": titulo.text = "ARSENAL · CUARTEL"
-		_: titulo.text = "EDIFICIO"
-	_contenido.add_child(titulo)
+	if _tipo != "forja":
+		var titulo := Label.new()
+		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		titulo.add_theme_font_size_override("font_size", 18)
+		match _tipo:
+			"carpinteria": titulo.text = "CARPINTERÍA"
+			"cuartel_licencia": titulo.text = "LICENCIAS · CUARTEL"
+			"cuartel_armas": titulo.text = "ARSENAL · CUARTEL"
+			_: titulo.text = "EDIFICIO"
+		_contenido.add_child(titulo)
 
-	var saldo := Label.new()
-	saldo.text = "Tus monedas: %d" % GameState.obtener_dinero()
-	saldo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var saldo := Button.new()
+	saldo.text = "◈  %d" % GameState.obtener_dinero()
+	saldo.disabled = true
+	saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_contenido.add_child(saldo)
+	PIXEL_UI_THEME.apply(saldo, false)
 
 	match _tipo:
 		"forja": _construir_forja()
@@ -124,45 +128,116 @@ func _actualizar() -> void:
 
 
 func _construir_forja() -> void:
-	_agregar_texto("Selecciona una herramienta dañada. El yunque consume material; Bruna cobra por el servicio.")
+	var distribucion := HBoxContainer.new()
+	distribucion.add_theme_constant_override("separation", 8)
+	distribucion.custom_minimum_size = Vector2(440, 260)
+	_contenido.add_child(distribucion)
+
+	var panel_herramientas := PanelContainer.new()
+	panel_herramientas.custom_minimum_size = Vector2(132, 0)
+	panel_herramientas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	distribucion.add_child(panel_herramientas)
+	PIXEL_UI_THEME.apply(panel_herramientas, false)
+
+	var lista := GridContainer.new()
+	lista.columns = 2
+	lista.add_theme_constant_override("h_separation", 5)
+	lista.add_theme_constant_override("v_separation", 5)
+	panel_herramientas.add_child(lista)
+
+	var panel_detalle := PanelContainer.new()
+	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	distribucion.add_child(panel_detalle)
+	PIXEL_UI_THEME.apply(panel_detalle, false)
+
+	var detalle := VBoxContainer.new()
+	detalle.alignment = BoxContainer.ALIGNMENT_CENTER
+	detalle.add_theme_constant_override("separation", 8)
+	panel_detalle.add_child(detalle)
+
 	if not is_instance_valid(_inventario):
-		_agregar_texto("No se encontró el inventario.")
 		return
-	var items: Array = _inventario.runtime.state.items
-	var encontrados := 0
-	for indice in range(items.size()):
-		var objeto: Dictionary = items[indice]
-		if not _es_herramienta_reparable(objeto):
-			continue
-		var propiedades: Dictionary = objeto.get("propiedades_game", {})
-		var maximo := int(propiedades.get("durabilidad", 0))
-		var actual := clampi(int(objeto.get("durabilidad_actual", maximo)), 0, maximo)
-		if actual >= maximo:
-			continue
-		encontrados += 1
-		var nombre := str(objeto.get("nombre", "Herramienta"))
-		var material_id := _material_reparacion(objeto)
-		var fila := HBoxContainer.new()
-		_contenido.add_child(fila)
-		var etiqueta := Label.new()
-		etiqueta.text = "%s · %d/%d" % [nombre, actual, maximo]
-		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		fila.add_child(etiqueta)
-		var reparar_material := Button.new()
-		var nombre_material := "madera" if material_id == ITEM_MADERA else "piedra" if material_id == ITEM_PIEDRA_MEDIANA else "material no disponible"
-		reparar_material.text = "Yunque · 1 %s" % nombre_material
-		reparar_material.disabled = material_id.is_empty() or _contar_item(material_id) < 1
-		reparar_material.pressed.connect(_reparar_con_material.bind(indice, material_id))
-		fila.add_child(reparar_material)
-		PIXEL_UI_THEME.apply(reparar_material, false)
-		var reparar_bruna := Button.new()
-		reparar_bruna.text = "Bruna · %d" % PRECIO_REPARACION_BRUNA
-		reparar_bruna.disabled = GameState.obtener_dinero() < PRECIO_REPARACION_BRUNA
-		reparar_bruna.pressed.connect(_reparar_con_bruna.bind(indice))
-		fila.add_child(reparar_bruna)
-		PIXEL_UI_THEME.apply(reparar_bruna, false)
-	if encontrados == 0:
-		_agregar_texto("No tienes herramientas dañadas en el inventario.")
+	var indices: Array[int] = []
+	for indice in range(_inventario.runtime.state.items.size()):
+		var objeto: Dictionary = _inventario.runtime.state.items[indice]
+		if _es_herramienta_reparable(objeto) and _puede_reparar(indice):
+			indices.append(indice)
+
+	if indices.is_empty():
+		var vacio := Label.new()
+		vacio.text = "Sin herramientas dañadas"
+		vacio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		detalle.add_child(vacio)
+		return
+
+	if not indices.has(_herramienta_seleccionada):
+		_herramienta_seleccionada = indices[0]
+
+	for indice in indices:
+		var objeto: Dictionary = _inventario.runtime.state.items[indice]
+		var boton_icono := Button.new()
+		boton_icono.custom_minimum_size = Vector2(52, 52)
+		boton_icono.icon = ITEM_ICON_RESOLVER.obtener_icono(objeto)
+		boton_icono.expand_icon = true
+		boton_icono.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		boton_icono.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		boton_icono.toggle_mode = true
+		boton_icono.button_pressed = indice == _herramienta_seleccionada
+		boton_icono.pressed.connect(_seleccionar_herramienta.bind(indice))
+		lista.add_child(boton_icono)
+		PIXEL_UI_THEME.apply(boton_icono, false)
+
+	var herramienta: Dictionary = _inventario.runtime.state.items[_herramienta_seleccionada]
+	var propiedades: Dictionary = herramienta.get("propiedades_game", {})
+	var maximo := maxi(1, int(propiedades.get("durabilidad", 1)))
+	var actual := clampi(int(herramienta.get("durabilidad_actual", maximo)), 0, maximo)
+	var icono := TextureRect.new()
+	icono.texture = ITEM_ICON_RESOLVER.obtener_icono(herramienta)
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.custom_minimum_size = Vector2(104, 104)
+	detalle.add_child(icono)
+
+	var desgaste := Label.new()
+	desgaste.text = "Desgastada · %d / %d" % [actual, maximo]
+	desgaste.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalle.add_child(desgaste)
+
+	var barra := ProgressBar.new()
+	barra.min_value = 0
+	barra.max_value = maximo
+	barra.value = actual
+	barra.show_percentage = false
+	barra.custom_minimum_size = Vector2(0, 12)
+	detalle.add_child(barra)
+	PIXEL_UI_THEME.apply(barra, false)
+
+	var acciones := HBoxContainer.new()
+	acciones.add_theme_constant_override("separation", 6)
+	detalle.add_child(acciones)
+
+	var material_id := _material_reparacion(herramienta)
+	var boton_yunque := Button.new()
+	boton_yunque.text = "Yunque"
+	boton_yunque.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton_yunque.disabled = material_id.is_empty() or _contar_item(material_id) < 1
+	boton_yunque.pressed.connect(_reparar_con_material.bind(_herramienta_seleccionada, material_id))
+	acciones.add_child(boton_yunque)
+	PIXEL_UI_THEME.apply(boton_yunque, false)
+
+	var boton_bruna := Button.new()
+	boton_bruna.text = "Bruna · %d" % PRECIO_REPARACION_BRUNA
+	boton_bruna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton_bruna.disabled = GameState.obtener_dinero() < PRECIO_REPARACION_BRUNA
+	boton_bruna.pressed.connect(_reparar_con_bruna.bind(_herramienta_seleccionada))
+	acciones.add_child(boton_bruna)
+	PIXEL_UI_THEME.apply(boton_bruna, false)
+
+
+func _seleccionar_herramienta(indice: int) -> void:
+	_herramienta_seleccionada = indice
+	_actualizar()
 
 
 func _es_herramienta_reparable(objeto: Dictionary) -> bool:
