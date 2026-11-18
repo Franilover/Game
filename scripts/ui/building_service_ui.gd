@@ -98,7 +98,8 @@ func _actualizar() -> void:
 	match _tipo:
 		"forja": titulo.text = "FORJA"
 		"carpinteria": titulo.text = "CARPINTERÍA"
-		"cuartel": titulo.text = "CUARTEL DE LA GUARDIA"
+		"cuartel_licencia": titulo.text = "LICENCIAS · CUARTEL"
+		"cuartel_armas": titulo.text = "ARSENAL · CUARTEL"
 		_: titulo.text = "EDIFICIO"
 	_contenido.add_child(titulo)
 
@@ -110,7 +111,8 @@ func _actualizar() -> void:
 	match _tipo:
 		"forja": _construir_forja()
 		"carpinteria": _construir_carpinteria()
-		"cuartel": _construir_cuartel()
+		"cuartel_licencia": _construir_cuartel_licencia()
+		"cuartel_armas": _construir_cuartel_armas()
 
 	_contenido.add_child(_estado)
 	var cerrar := Button.new()
@@ -253,21 +255,27 @@ func _encargar_mueble(mueble_id: String) -> void:
 	_actualizar()
 
 
-func _construir_cuartel() -> void:
+func _construir_cuartel_licencia() -> void:
 	var licencia := bool(GameState.world_state.flags.get("licencia_espadas", false))
-	if not licencia:
-		_agregar_texto("Solicita la licencia de espadas para poder comprar armas.")
-		var solicitar := Button.new()
-		solicitar.text = "Solicitar licencia · %d monedas" % PRECIO_LICENCIA_ESPADA
-		solicitar.disabled = GameState.obtener_dinero() < PRECIO_LICENCIA_ESPADA
-		solicitar.pressed.connect(_solicitar_licencia)
-		_contenido.add_child(solicitar)
-		PIXEL_UI_THEME.apply(solicitar, false)
+	if licencia:
+		_agregar_texto("Tu licencia de espadas ya está concedida.")
 		return
-	_agregar_texto("Licencia de espadas: concedida.")
+	_agregar_texto("Solicita aquí la licencia necesaria para portar y comprar espadas.")
+	var solicitar := Button.new()
+	solicitar.text = "Solicitar licencia · %d monedas" % PRECIO_LICENCIA_ESPADA
+	solicitar.disabled = GameState.obtener_dinero() < PRECIO_LICENCIA_ESPADA
+	solicitar.pressed.connect(_solicitar_licencia)
+	_contenido.add_child(solicitar)
+	PIXEL_UI_THEME.apply(solicitar, false)
+
+
+func _construir_cuartel_armas() -> void:
+	if not bool(GameState.world_state.flags.get("licencia_espadas", false)):
+		_agregar_texto("Necesitas obtener primero tu licencia en la mesa de solicitudes.")
+		return
+	_agregar_texto("Licencia verificada. Puedes adquirir estas armas:")
 	_agregar_boton_arma("Espada de Madera", ITEM_ESPADA_MADERA, PRECIO_ESPADA_MADERA)
 	_agregar_boton_arma("Espada de Piedra", ITEM_ESPADA_PIEDRA, PRECIO_ESPADA_PIEDRA)
-	_agregar_texto("El entrenamiento de combate se conectará a la pista y al sistema de duelos existente; esta mesa todavía no inicia combates ficticios.")
 
 
 func _solicitar_licencia() -> void:
