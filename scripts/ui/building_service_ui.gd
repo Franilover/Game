@@ -27,6 +27,9 @@ var _panel: PanelContainer
 var _contenido: VBoxContainer
 var _estado: Label
 var _jugador: Node
+var _jugador_fisica_previa := true
+var _jugador_input_previo := true
+var _jugador_unhandled_previo := true
 
 
 func configurar(tipo: String, inventario: InventoryController, world_items: GarliaWorldItems, jugador: Node = null) -> void:
@@ -34,6 +37,13 @@ func configurar(tipo: String, inventario: InventoryController, world_items: Garl
 	_inventario = inventario
 	_world_items = world_items
 	_jugador = jugador
+	if is_instance_valid(_jugador):
+		_jugador_fisica_previa = _jugador.is_physics_processing()
+		_jugador_input_previo = _jugador.is_processing_input()
+		_jugador_unhandled_previo = _jugador.is_processing_unhandled_input()
+		_jugador.set_physics_process(false)
+		_jugador.set_process_input(false)
+		_jugador.set_process_unhandled_input(false)
 	call_deferred("_actualizar")
 
 
@@ -71,9 +81,6 @@ func _crear_interfaz() -> void:
 	_contenido = VBoxContainer.new()
 	_contenido.add_theme_constant_override("separation", 7)
 	margen.add_child(_contenido)
-	_estado = Label.new()
-	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _actualizar() -> void:
@@ -81,6 +88,9 @@ func _actualizar() -> void:
 		return
 	for hijo in _contenido.get_children():
 		hijo.queue_free()
+	_estado = Label.new()
+	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	var titulo := Label.new()
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -343,9 +353,9 @@ func _mostrar_estado(texto: String) -> void:
 
 func cerrar_interfaz() -> void:
 	if is_instance_valid(_jugador):
-		_jugador.set_physics_process(true)
-		_jugador.set_process_input(true)
-		_jugador.set_process_unhandled_input(true)
+		_jugador.set_physics_process(_jugador_fisica_previa)
+		_jugador.set_process_input(_jugador_input_previo)
+		_jugador.set_process_unhandled_input(_jugador_unhandled_previo)
 	if is_in_group("modal_ui"):
 		remove_from_group("modal_ui")
 	queue_free()
