@@ -556,11 +556,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
 
-	# Reunión social nocturna: sólo invita a quienes ya terminaron sus tareas.
-	# La asistencia rota cada noche y no sustituye trabajo, guardias ni planes aceptados.
-	var reunion_castillo := _obtener_rutina_reunion_castillo(npc, rutina, minutos)
-	if not reunion_castillo.is_empty():
-		rutina = reunion_castillo
+	# Las reuniones nocturnas automáticas están desactivadas: al llegar la noche,
+	# los habitantes libres deben regresar a sus hogares para dormir.
 
 	var ubicacion_respaldo := str(npc.datos.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	var hogar := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
