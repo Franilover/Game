@@ -480,6 +480,9 @@ func _comprar_arma(item_id: String, precio: int) -> void:
 		GameState.modificar_dinero(precio)
 		_mostrar_estado("No tienes espacio en el inventario. Se revirtió el pago.")
 		return
+	# La compra modifica inventario y dinero de la partida local.
+	# Guardamos ambos inmediatamente para que el arma no se pierda al salir.
+	GameState.call_deferred("_ejecutar_guardado_rapido")
 	_mostrar_estado("Compraste %s." % str(objeto.get("nombre", "el arma")))
 	_actualizar()
 
