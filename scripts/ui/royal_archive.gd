@@ -8,13 +8,12 @@ var _cuerpo: HBoxContainer
 var _lista: VBoxContainer
 var _detalle: VBoxContainer
 var _estado: Label
-var _selector_reinos: OptionButton
 var _personajes: Array[Dictionary] = []
 var _reinos: Array[Dictionary] = []
 var _eventos: Array[Dictionary] = []
 var _reino_actual: Dictionary = {}
 var _solicitudes: Dictionary = {}
-var _vista := "inicio"
+var _vista := "personajes"
 var _personaje_seleccionado: Dictionary = {}
 var _imagen_detalle: TextureRect
 
@@ -23,6 +22,9 @@ func _ready() -> void:
 	layer = 46
 	_construir_interfaz()
 	_cargar_catalogos()
+
+func configurar_vista(vista: String) -> void:
+	_vista = "historia" if vista == "historia_torres" else "personajes"
 
 
 func _exit_tree() -> void:
@@ -56,11 +58,9 @@ func _construir_interfaz() -> void:
 
 	var encabezado := HBoxContainer.new()
 	_contenido.add_child(encabezado)
-	var titulo := Label.new()
-	titulo.text = "ARCHIVO REAL"
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	titulo.add_theme_font_size_override("font_size", 16)
-	encabezado.add_child(titulo)
+	var espacio := Control.new()
+	espacio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	encabezado.add_child(espacio)
 	var cerrar := Button.new()
 	cerrar.text = "Cerrar"
 	cerrar.pressed.connect(queue_free)
@@ -75,18 +75,6 @@ func _construir_interfaz() -> void:
 	_cuerpo.add_theme_constant_override("separation", 10)
 	_contenido.add_child(_cuerpo)
 
-	var menu := VBoxContainer.new()
-	menu.custom_minimum_size.x = 145
-	_cuerpo.add_child(menu)
-	var personajes_btn := Button.new()
-	personajes_btn.text = "Personajes"
-	personajes_btn.pressed.connect(_mostrar_personajes)
-	menu.add_child(personajes_btn)
-	var historia_btn := Button.new()
-	historia_btn.text = "Historia del reino"
-	historia_btn.pressed.connect(_mostrar_historia)
-	menu.add_child(historia_btn)
-
 	_lista = VBoxContainer.new()
 	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -99,7 +87,6 @@ func _construir_interfaz() -> void:
 	_cuerpo.add_child(_detalle)
 
 	PIXEL_UI_THEME.apply(_contenido, false)
-	PIXEL_UI_THEME.apply(menu, false)
 	PIXEL_UI_THEME.apply(_lista, false)
 	PIXEL_UI_THEME.apply(_detalle, false)
 
@@ -121,7 +108,7 @@ func _cargar_catalogos() -> void:
 	)
 	_registrar_solicitud(id_personajes, "personajes")
 	_registrar_solicitud(id_reinos, "reinos")
-	_estado.text = "Consultando los registros del reino..."
+	_estado.text = "Consultando los registros de Torres..."
 
 
 func _registrar_solicitud(id: int, tipo: String) -> void:
@@ -159,7 +146,7 @@ func _al_request_completed(id: int, resultado: int, codigo_http: int, _cabeceras
 					_reinos.append((fila as Dictionary).duplicate(true))
 			_seleccionar_reino_inicial()
 			if _vista == "historia":
-				_mostrar_historia()
+				_cargar_eventos_reino()
 		"eventos":
 			_eventos.clear()
 			for fila: Variant in json.data:
@@ -169,12 +156,11 @@ func _al_request_completed(id: int, resultado: int, codigo_http: int, _cabeceras
 
 
 func _seleccionar_reino_inicial() -> void:
+	_reino_actual.clear()
 	for reino: Dictionary in _reinos:
-		if str(reino.get("nombre", "")).to_lower() == "torres":
-			_reino_actual = reino
+		if str(reino.get("nombre", "")).strip_edges().to_lower() == "torres":
+			_reino_actual = reino.duplicate(true)
 			return
-	if not _reinos.is_empty():
-		_reino_actual = _reinos[0]
 
 
 func _limpiar(contenedor: Node) -> void:
@@ -206,13 +192,18 @@ func _mostrar_personajes() -> void:
 		fila.add_theme_constant_override("separation", 6)
 		filas.add_child(fila)
 		var imagen_url := str(personaje.get("img_url", "")).strip_edges()
-		if not imagen_url.is_empty():
+		var sprite_local := _cargar_sprite_personaje(personaje)
+		if sprite_local != null or not imagen_url.is_empty():
 			var retrato := TextureRect.new()
-			retrato.custom_minimum_size = Vector2(44, 44)
+			retrato.custom_minimum_size = Vector2(54, 64)
 			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			fila.add_child(retrato)
-			_cargar_imagen_personaje(imagen_url, retrato)
+			if sprite_local != null:
+				retrato.texture = sprite_local
+			else:
+				_cargar_imagen_personaje(imagen_url, retrato)
 		else:
 			var sin_retrato := Label.new()
 			sin_retrato.text = "Sin\nretrato"
@@ -241,15 +232,17 @@ func _mostrar_ficha_personaje(personaje: Dictionary) -> void:
 	_detalle.add_child(titulo)
 
 	var url := str(personaje.get("img_url", "")).strip_edges()
-	if not url.is_empty():
-		_imagen_detalle = TextureRect.new()
-		_imagen_detalle.custom_minimum_size = Vector2(112, 112)
-		_imagen_detalle.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-		_imagen_detalle.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		_detalle.add_child(_imagen_detalle)
+	_imagen_detalle = TextureRect.new()
+	_imagen_detalle.custom_minimum_size = Vector2(112, 112)
+	_imagen_detalle.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	_imagen_detalle.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_imagen_detalle.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_detalle.add_child(_imagen_detalle)
+	var sprite_personaje := _cargar_sprite_personaje(personaje)
+	if sprite_personaje != null:
+		_imagen_detalle.texture = sprite_personaje
+	elif not url.is_empty():
 		_cargar_imagen_personaje(url, _imagen_detalle)
-	else:
-		_agregar_dato_ficha("Retrato", "Sin imagen registrada")
 
 	var nacimiento_variant: Variant = personaje.get("fecha_nacimiento", null)
 	var nacimiento := int(nacimiento_variant) if nacimiento_variant != null else -1
@@ -288,6 +281,38 @@ func _calcular_edad(fecha_nacimiento: int) -> String:
 	return str(floori(float(dias_transcurridos) / float(dias_anio))) + " años"
 
 
+func _cargar_sprite_personaje(personaje: Dictionary) -> Texture2D:
+	var nombre := str(personaje.get("nombre", "")).strip_edges()
+	var asset_key := nombre
+	var sprite_key := ""
+	for dato: Dictionary in WorldData.obtener_personajes_game():
+		if str(dato.get("id", "")) == str(personaje.get("id", "")) or str(dato.get("nombre", "")).to_lower() == nombre.to_lower():
+			asset_key = str(dato.get("asset_key", nombre)).strip_edges()
+			sprite_key = str(dato.get("sprite_key", "")).strip_edges()
+			break
+	var claves: Array[String] = []
+	if not sprite_key.is_empty() and not sprite_key.contains("/") and not sprite_key.contains("\\"):
+		claves.append(sprite_key)
+	if not asset_key.is_empty() and not asset_key.contains("/") and not asset_key.contains("\\") and asset_key not in claves:
+		claves.append(asset_key)
+	if not nombre.is_empty() and nombre not in claves:
+		claves.append(nombre)
+	for clave in claves:
+		for ruta in [
+			"res://assets/art/characters/" + clave + ".png",
+			"res://assets/art/characters/skins/" + clave + ".png"
+		]:
+			if ResourceLoader.exists(ruta):
+				var recurso := load(ruta) as Texture2D
+				if recurso != null:
+					return recurso
+	if not sprite_key.is_empty():
+		var ruta_sprite := "res://assets/art/characters/" + sprite_key
+		if ResourceLoader.exists(ruta_sprite):
+			return load(ruta_sprite) as Texture2D
+	return null
+
+
 func _cargar_imagen_personaje(url: String, destino: TextureRect) -> void:
 	var solicitud := HTTPRequest.new()
 	solicitud.timeout = 15.0
@@ -316,20 +341,11 @@ func _mostrar_historia() -> void:
 	_vista = "historia"
 	_limpiar(_lista)
 	_limpiar(_detalle)
-	var titulo := Label.new()
-	titulo.text = "HISTORIA DEL REINO"
-	_lista.add_child(titulo)
-	_selector_reinos = OptionButton.new()
-	_selector_reinos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista.add_child(_selector_reinos)
-	_selector_reinos.clear()
-	for indice in range(_reinos.size()):
-		_selector_reinos.add_item(str(_reinos[indice].get("nombre", "Reino")))
-		if str(_reinos[indice].get("id", "")) == str(_reino_actual.get("id", "")):
-			_selector_reinos.select(indice)
-	_selector_reinos.item_selected.connect(_al_seleccionar_reino)
+	var encabezado := Label.new()
+	encabezado.text = "HISTORIA DE TORRES"
+	_lista.add_child(encabezado)
 	var ayuda := Label.new()
-	ayuda.text = "Los acontecimientos se muestran en orden cronológico desde la tabla eventos_mundo."
+	ayuda.text = "Acontecimientos registrados en orden cronológico."
 	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lista.add_child(ayuda)
 	var scroll := ScrollContainer.new()
@@ -344,16 +360,10 @@ func _mostrar_historia() -> void:
 	_cargar_eventos_reino()
 
 
-func _al_seleccionar_reino(indice: int) -> void:
-	if indice < 0 or indice >= _reinos.size():
-		return
-	_reino_actual = _reinos[indice].duplicate(true)
-	_cargar_eventos_reino()
-
-
 func _cargar_eventos_reino() -> void:
 	_eventos.clear()
 	_renderizar_eventos()
+	_seleccionar_reino_inicial()
 	var reino_id := str(_reino_actual.get("id", ""))
 	if reino_id.is_empty():
 		_estado.text = "No se encontró el identificador del reino."
@@ -366,7 +376,7 @@ func _cargar_eventos_reino() -> void:
 		"select=id,dia_absoluto,titulo,descripcion,reino_id,source&reino_id=eq.%s&order=dia_absoluto.asc" % reino_id
 	)
 	_registrar_solicitud(id, "eventos")
-	_estado.text = "Cargando la historia de %s..." % str(_reino_actual.get("nombre", "este reino"))
+	_estado.text = "Cargando la historia de Torres..."
 
 
 func _renderizar_eventos() -> void:
