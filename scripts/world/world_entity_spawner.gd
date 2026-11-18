@@ -1243,8 +1243,8 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 			var habitat_id := str(habitat.get("id", ""))
 			if not habitat_id.is_empty() and habitat_id not in habitat_ids:
 				habitat_ids.append(habitat_id)
-	if habitat_ids.is_empty():
-		return false
+	# Algunos ecosistemas no entregan hábitats en todos los tiles.
+	# El bioma y ecosistema siguen siendo suficientes para elegir sus props.
 	var candidatos: Array[Dictionary] = []
 	var candidatos_bioma: Array = _props_por_bioma.get(bioma_id, [])
 	for prop_variant in candidatos_bioma:
