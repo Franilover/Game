@@ -340,11 +340,16 @@ func iniciar_viaje_exterior() -> bool:
 	var estado_previo: Variant = flags.get("viaje_exterior_estado", {})
 	if estado_previo is Dictionary and bool((estado_previo as Dictionary).get("activo", false)):
 		return false
+	var posicion_retorno := jugador.global_position
+	if is_instance_valid(zona_actual) and zona_actual.has_method("obtener_posicion_exterior_para_viaje"):
+		var posicion_exterior: Variant = zona_actual.call("obtener_posicion_exterior_para_viaje")
+		if posicion_exterior is Vector2:
+			posicion_retorno = posicion_exterior
 	flags["viaje_exterior_estado"] = {
 		"activo": true,
 		"retorno_en_curso": false,
 		"retorno_pendiente": false,
-		"origen_posicion": {"x": jugador.global_position.x, "y": jugador.global_position.y}
+		"origen_posicion": {"x": posicion_retorno.x, "y": posicion_retorno.y}
 	}
 	GameState.marcar_reino_torres_visitado()
 	_salida_reino_pendiente = true
