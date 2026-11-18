@@ -13,6 +13,9 @@ var _world_context = null
 var _inventory = null
 var _world_items = null
 var _replica_red_cliente := false
+var _recoleccion_en_curso := false
+var _recoleccion_token: int = 0
+const TIEMPO_RECOLECCION_HERRAMIENTA: float = 0.42
 
 
 func _es_servidor_dedicado() -> bool:
@@ -109,6 +112,12 @@ func get_interaction_text() -> String:
 	if _tiene_recoleccion_canonica():
 		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
 			return "Recolección no sincronizada"
+		var requisito := _obtener_requisito_herramienta()
+		match str(requisito.get("tipo", "")).strip_edges().to_lower():
+			"hacha", "axe":
+				return "Cortar"
+			"pico", "pickaxe":
+				return "Minar"
 		return "Recolectar"
 
 	match tipo:
@@ -206,6 +215,10 @@ func get_interaction_details() -> Dictionary:
 
 
 func interact(persona: Node) -> bool:
+	return interactuar_con_herramienta(persona, "mano_secundaria")
+
+
+func interactuar_con_herramienta(persona: Node, mano: String) -> bool:
 	if not can_interact(persona):
 		return false
 
@@ -213,55 +226,64 @@ func interact(persona: Node) -> bool:
 		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
 			_emitir_notificacion("La recolección multijugador aún no está disponible.")
 			return true
-		if not _puede_recolectar(persona):
-			var requisito := _obtener_requisito_herramienta()
-			var tipo_herramienta: String = str(requisito.get("tipo", "herramienta"))
-			var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
-			_emitir_notificacion(
-				"Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido)
-			)
-			print(
-				"WorldProp: recolección bloqueada por herramienta → ",
-				tipo_herramienta,
-				" nivel ",
-				nivel_requerido
-			)
+
+		var requisito := _obtener_requisito_herramienta()
+		if not requisito.is_empty():
+			if not _puede_recolectar(persona, mano):
+				var tipo_herramienta := str(requisito.get("tipo", "herramienta"))
+				var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
+				_emitir_notificacion("Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido))
+				return true
+			if _recoleccion_en_curso:
+				return true
+			_recoleccion_en_curso = true
+			_recoleccion_token += 1
+			call_deferred("_ejecutar_recoleccion_con_herramienta", persona, mano, _recoleccion_token)
 			return true
 
-		if _recolectar(persona):
-			return true
-
-		# La interacción fue reconocida, pero la recolección falló.
-		# No dejamos que este caso caiga silenciosamente en combate.
+		_recolectar(persona)
 		return true
 
 	var accion := get_interaction_text()
 	var categoria: String = tipo.capitalize()
-
 	if tipo == "cueva":
 		categoria = "Entrada"
 	elif tipo == "recurso":
 		categoria = "Recurso"
-
 	var mensaje := accion + " " + categoria
-
 	if not bioma.is_empty():
 		mensaje += " · " + bioma
-
-	_emitir_notificacion(
-		mensaje
-	)
-
-	print(
-		"WorldProp: interacción → ",
-		accion,
-		" | tipo=",
-		tipo,
-		" | bioma=",
-		bioma
-	)
-
+	_emitir_notificacion(mensaje)
+	print("WorldProp: interacción → ", accion, " | tipo=", tipo, " | bioma=", bioma)
 	return true
+
+
+func _ejecutar_recoleccion_con_herramienta(persona: Node, mano: String, token: int) -> void:
+	var herramienta: Dictionary = _inventory.obtener_objeto_mano_activa(mano).duplicate(true)
+	if persona.has_method("reproducir_animacion_herramienta"):
+		persona.call("reproducir_animacion_herramienta", herramienta, global_position)
+
+	var sprite := get_node_or_null("Sprite") as Sprite2D
+	if is_instance_valid(sprite):
+		var posicion_inicial := sprite.position
+		var sacudida := create_tween()
+		sacudida.tween_property(sprite, "position", posicion_inicial + Vector2(2.0, 0.0), 0.07)
+		sacudida.tween_property(sprite, "position", posicion_inicial + Vector2(-2.0, 0.0), 0.07)
+		sacudida.tween_property(sprite, "position", posicion_inicial, 0.07)
+
+	await get_tree().create_timer(TIEMPO_RECOLECCION_HERRAMIENTA).timeout
+	if not is_instance_valid(self) or token != _recoleccion_token:
+		return
+	_recoleccion_en_curso = false
+
+	if not is_instance_valid(persona) or not can_interact(persona):
+		return
+	if not _puede_recolectar(persona, mano):
+		return
+
+	# El recurso sólo se entrega al completar la animación y si el inventario
+	# todavía puede recibirlo. _recolectar conserva el vínculo canónico prop → item.
+	_recolectar(persona)
 
 
 func _tiene_recoleccion_canonica() -> bool:
@@ -297,20 +319,21 @@ func _obtener_requisito_herramienta() -> Dictionary:
 	return {}
 
 
-func _puede_recolectar(persona: Node) -> bool:
+func _puede_recolectar(persona: Node, mano: String) -> bool:
 	var requisito := _obtener_requisito_herramienta()
 	if requisito.is_empty():
 		return true
-
-	var inventario: Node = _inventory
-	if inventario == null or not inventario.has_method("obtener_objeto_equipado"):
+	if not is_instance_valid(persona):
 		return false
 
-	var herramienta_variant: Variant = inventario.call(
-		"obtener_objeto_equipado",
-		"mano_secundaria"
-	)
+	var inventario: Node = _inventory
+	if inventario == null or not inventario.has_method("obtener_objeto_mano_activa"):
+		return false
+	if mano not in ["izquierda", "derecha", "mano_secundaria"]:
+		return false
 
+	var mano_inventario := "derecha" if mano == "mano_secundaria" else mano
+	var herramienta_variant: Variant = inventario.call("obtener_objeto_mano_activa", mano_inventario)
 	if not herramienta_variant is Dictionary:
 		return false
 
@@ -318,26 +341,17 @@ func _puede_recolectar(persona: Node) -> bool:
 	var propiedades_variant: Variant = herramienta.get("propiedades_game", {})
 	if not propiedades_variant is Dictionary:
 		return false
-
 	var propiedades := propiedades_variant as Dictionary
-	var herramienta_recoleccion_variant: Variant = propiedades.get(
-		"herramienta_recoleccion",
-		{}
-	)
+	var herramienta_recoleccion_variant: Variant = propiedades.get("herramienta_recoleccion", {})
 	if not herramienta_recoleccion_variant is Dictionary:
 		return false
 
 	var herramienta_recoleccion := herramienta_recoleccion_variant as Dictionary
 	var tipo_requerido := str(requisito.get("tipo", "")).strip_edges().to_lower()
 	var tipo_actual := str(herramienta_recoleccion.get("tipo", "")).strip_edges().to_lower()
-	var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
-	var nivel_actual: int = int(herramienta_recoleccion.get("nivel", 0))
-
-	return (
-		not tipo_requerido.is_empty()
-		and tipo_actual == tipo_requerido
-		and nivel_actual >= nivel_requerido
-	)
+	var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
+	var nivel_actual := int(herramienta_recoleccion.get("nivel", 0))
+	return not tipo_requerido.is_empty() and tipo_actual == tipo_requerido and nivel_actual >= nivel_requerido
 
 
 func _obtener_item_id_recoleccion() -> String:
@@ -499,6 +513,8 @@ func activar_como_proxy() -> void:
 
 
 func desactivar_como_proxy() -> void:
+	_recoleccion_token += 1
+	_recoleccion_en_curso = false
 	set_process(false)
 	remove_from_group("interactable")
 	remove_from_group("world_resource")
