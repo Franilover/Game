@@ -382,6 +382,11 @@ func construir_asset_path_prop(prop: Dictionary) -> String:
 	]
 
 	var clave := str(prop.get("clave", "")).strip_edges()
+	# El archivo que ya existe en el proyecto conserva el nombre histórico
+	# "Flor Verdel", mientras el nombre canónico del objeto es "Flor Verde".
+	if clave == "flor_verde" or clave.begins_with("flor_verde_"):
+		candidatos.append("res://assets/art/props/Flor Verdel.png")
+		candidatos.append("res://assets/art/props/Flor Verdel.PNG")
 	if not clave.is_empty():
 		var clave_base := clave
 		var separador_entorno := clave_base.find("_bosque_")
