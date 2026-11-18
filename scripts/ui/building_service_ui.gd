@@ -27,7 +27,7 @@ var _inventario: InventoryController
 var _world_items: GarliaWorldItems
 var _panel: PanelContainer
 var _contenido: VBoxContainer
-var _estado: Label
+var _estado: Button
 var _jugador: Node
 var _jugador_fisica_previa := true
 var _jugador_input_previo := true
