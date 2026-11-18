@@ -74,7 +74,7 @@ func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nu
 	if interactuable:
 		add_to_group("interactable")
 
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
@@ -306,16 +306,20 @@ func _tiene_recoleccion_canonica() -> bool:
 
 func _obtener_requisito_herramienta() -> Dictionary:
 	var requisito_variant: Variant = datos.get("herramienta_recoleccion", {})
-	if requisito_variant is Dictionary:
+	if requisito_variant is Dictionary and not (requisito_variant as Dictionary).is_empty():
 		return (requisito_variant as Dictionary).duplicate(true)
 
 	var propiedades_variant: Variant = datos.get("propiedades", {})
 	if propiedades_variant is Dictionary:
 		var propiedades := propiedades_variant as Dictionary
 		requisito_variant = propiedades.get("herramienta_recoleccion", {})
-		if requisito_variant is Dictionary:
+		if requisito_variant is Dictionary and not (requisito_variant as Dictionary).is_empty():
 			return (requisito_variant as Dictionary).duplicate(true)
 
+	# Los árboles actuales de props_game no tienen requisito explícito todavía.
+	# Su interacción de tala usa el hacha básica como herramienta mínima.
+	if str(datos.get("tipo", tipo)).strip_edges().to_lower() == "arbol":
+		return {"tipo": "hacha", "nivel": 1}
 	return {}
 
 
@@ -339,18 +343,26 @@ func _puede_recolectar(persona: Node, mano: String) -> bool:
 
 	var herramienta := herramienta_variant as Dictionary
 	var propiedades_variant: Variant = herramienta.get("propiedades_game", {})
-	if not propiedades_variant is Dictionary:
-		return false
-	var propiedades := propiedades_variant as Dictionary
+	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
 	var herramienta_recoleccion_variant: Variant = propiedades.get("herramienta_recoleccion", {})
-	if not herramienta_recoleccion_variant is Dictionary:
-		return false
+	var herramienta_recoleccion: Dictionary = herramienta_recoleccion_variant as Dictionary if herramienta_recoleccion_variant is Dictionary else {}
 
-	var herramienta_recoleccion := herramienta_recoleccion_variant as Dictionary
 	var tipo_requerido := str(requisito.get("tipo", "")).strip_edges().to_lower()
 	var tipo_actual := str(herramienta_recoleccion.get("tipo", "")).strip_edges().to_lower()
-	var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
 	var nivel_actual := int(herramienta_recoleccion.get("nivel", 0))
+
+	# Compatibilidad con las hachas ya registradas en items_game, cuyas
+	# propiedades todavía están vacías. El nombre del item determina tipo y nivel.
+	if tipo_actual.is_empty():
+		var nombre_herramienta := str(herramienta.get("nombre", "")).strip_edges().to_lower()
+		if nombre_herramienta.contains("hacha"):
+			tipo_actual = "hacha"
+			nivel_actual = 2 if nombre_herramienta.contains("piedra") else 1
+		elif nombre_herramienta.contains("pico"):
+			tipo_actual = "pico"
+			nivel_actual = 2 if nombre_herramienta.contains("piedra") else 1
+
+	var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
 	return not tipo_requerido.is_empty() and tipo_actual == tipo_requerido and nivel_actual >= nivel_requerido
 
 
@@ -358,6 +370,14 @@ func _obtener_item_id_recoleccion() -> String:
 	var item_id := str(datos.get("item_id", "")).strip_edges()
 	if not item_id.is_empty():
 		return item_id
+
+	# Los árboles del catálogo actual no tienen item_id asociado. La tala
+	# entrega el recurso canónico Madera desde el catálogo de items_game.
+	if str(datos.get("tipo", tipo)).strip_edges().to_lower() == "arbol":
+		if not is_instance_valid(_world_items):
+			return ""
+		var madera := _world_items.buscar_item_por_nombre("Madera")
+		return str(madera.get("item_id", madera.get("id", ""))).strip_edges()
 
 	# El snapshot de props_game puede conservar el vínculo en
 	# propiedades.item_id aunque item_id no haya sido proyectado al nodo.
@@ -535,7 +555,7 @@ func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	remove_from_group("world_cave")
 	remove_from_group("world_structure")
 
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
@@ -565,7 +585,7 @@ func aplicar_estado_red(posicion: Vector2) -> void:
 	visible = true
 	if interactuable:
 		add_to_group("interactable")
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
@@ -582,7 +602,7 @@ func reactivar_simulacion_local_red() -> void:
 	remove_from_group("world_structure")
 	if interactuable:
 		add_to_group("interactable")
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
