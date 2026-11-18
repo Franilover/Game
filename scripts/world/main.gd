@@ -345,6 +345,8 @@ func _process(delta: float) -> void:
 	if (
 		is_instance_valid(_zone_manager)
 		and is_instance_valid(_world_atmosphere)
+		and is_instance_valid(_world_generator)
+		and _world_generator.is_world_ready()
 		and _zone_manager.has_method("debe_regresar_viaje_exterior")
 		and bool(_zone_manager.call("debe_regresar_viaje_exterior"))
 		and _world_atmosphere.hora_del_dia >= 22.0
