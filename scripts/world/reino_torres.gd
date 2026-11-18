@@ -1747,6 +1747,21 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, -12), Vector2(0.95, 0.9), 1)
 				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
 				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
+		"vivero":
+			# Zona de cultivo y almacenamiento de semillas. El cofre usa el
+			# sistema persistente compartido de muebles e inventario.
+			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA_PLATOS, Vector2(-105, -82), Vector2(1.25, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "MesaTrasplante", MUEBLE_MESA, Vector2(82, -82), Vector2(1.25, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "CofreSemillasVivero", MUEBLE_COFRE, Vector2(190, 82), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioHerramientasVivero", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "SillaVivero", MUEBLE_SILLA_FRENTE, Vector2(-105, -28), Vector2.ONE, 1)
+		"herbolario":
+			# Mesas de observación y preparación para estudiar y procesar plantas.
+			_agregar_sprite_mueble(cuarto, "MesaInvestigacionHerbolario", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, -78), Vector2(1.35, 1.05), 1)
+			_agregar_sprite_mueble(cuarto, "MesaProcesamientoHerbolario", MUEBLE_MESA_PLATOS, Vector2(90, -78), Vector2(1.25, 1.05), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioMuestrasHerbolario", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteHerbolario", MUEBLE_ARMARIO, Vector2(205, 82), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "SillaInvestigacionHerbolario", MUEBLE_SILLA_FRENTE, Vector2(-105, -25), Vector2.ONE, 1)
 		"habitacion_posada":
 			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "CofreHabitacion", MUEBLE_COFRE, Vector2(155, 78), Vector2(0.9, 0.9), 1)
