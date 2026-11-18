@@ -124,7 +124,7 @@ func _actualizar() -> void:
 
 
 func _construir_forja() -> void:
-	_agregar_texto("Selecciona una herramienta dañada. Puedes repararla con material o pagarle a Bruna.")
+	_agregar_texto("Selecciona una herramienta dañada. El yunque consume material; Bruna cobra por el servicio.")
 	if not is_instance_valid(_inventario):
 		_agregar_texto("No se encontró el inventario.")
 		return
@@ -132,76 +132,127 @@ func _construir_forja() -> void:
 	var encontrados := 0
 	for indice in range(items.size()):
 		var objeto: Dictionary = items[indice]
-		if objeto.is_empty():
+		if not _es_herramienta_reparable(objeto):
 			continue
-		var propiedades: Variant = objeto.get("propiedades_game", {})
-		if not propiedades is Dictionary:
-			continue
-		var maximo := int((propiedades as Dictionary).get("durabilidad", 0))
-		if maximo <= 0:
-			continue
-		var actual := int(objeto.get("durabilidad_actual", maximo))
+		var propiedades: Dictionary = objeto.get("propiedades_game", {})
+		var maximo := int(propiedades.get("durabilidad", 0))
+		var actual := clampi(int(objeto.get("durabilidad_actual", maximo)), 0, maximo)
 		if actual >= maximo:
 			continue
 		encontrados += 1
 		var nombre := str(objeto.get("nombre", "Herramienta"))
+		var material_id := _material_reparacion(objeto)
 		var fila := HBoxContainer.new()
 		_contenido.add_child(fila)
 		var etiqueta := Label.new()
 		etiqueta.text = "%s · %d/%d" % [nombre, actual, maximo]
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		fila.add_child(etiqueta)
-		var material_id := ITEM_MADERA if nombre.to_lower().contains("madera") else ITEM_PIEDRA_MEDIANA if nombre.to_lower().contains("piedra") else ""
 		var reparar_material := Button.new()
-		reparar_material.text = "Material"
-		reparar_material.disabled = material_id.is_empty() or _contar_item(material_id) < 1
-		reparar_material.pressed.connect(_reparar_con_material.bind(indice, material_id))
+		repar_material.text = "Yunque · 1 material"
+		repar_material.disabled = material_id.is_empty() or _contar_item(material_id) < 1
+		repar_material.pressed.connect(_reparar_con_material.bind(indice, material_id))
 		fila.add_child(reparar_material)
 		PIXEL_UI_THEME.apply(reparar_material, false)
 		var reparar_bruna := Button.new()
-		reparar_bruna.text = "Bruna · %d" % PRECIO_REPARACION_BRUNA
-		reparar_bruna.disabled = GameState.obtener_dinero() < PRECIO_REPARACION_BRUNA
-		reparar_bruna.pressed.connect(_reparar_con_bruna.bind(indice))
+		repar_bruna.text = "Bruna · %d" % PRECIO_REPARACION_BRUNA
+		repar_bruna.disabled = GameState.obtener_dinero() < PRECIO_REPARACION_BRUNA
+		repar_bruna.pressed.connect(_reparar_con_bruna.bind(indice))
 		fila.add_child(reparar_bruna)
 		PIXEL_UI_THEME.apply(reparar_bruna, false)
 	if encontrados == 0:
 		_agregar_texto("No tienes herramientas dañadas en el inventario.")
 
 
+func _es_herramienta_reparable(objeto: Dictionary) -> bool:
+	if objeto.is_empty():
+		return false
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+	var propiedades := propiedades_variant as Dictionary
+	var maximo := int(propiedades.get("durabilidad", 0))
+	return maximo > 0 and (str(objeto.get("tipo", "")).to_lower().contains("herramienta") or str(propiedades.get("recoleccion", "")).length() > 0 or str(objeto.get("nombre", "")).to_lower().contains("pico") or str(objeto.get("nombre", "")).to_lower().contains("pala"))
+
+
+func _material_reparacion(objeto: Dictionary) -> String:
+	var nombre := str(objeto.get("nombre", "")).to_lower()
+	if nombre.contains("madera"):
+		return ITEM_MADERA
+	if nombre.contains("piedra"):
+		return ITEM_PIEDRA_MEDIANA
+	return ""
+
+
 func _reparar_con_material(indice: int, material_id: String) -> void:
-	if not is_instance_valid(_inventario) or material_id.is_empty():
+	if not is_instance_valid(_inventario) or material_id.is_empty() or not _puede_reparar(indice):
+		_mostrar_estado("La herramienta ya no necesita reparación o no es válida.")
+		_actualizar()
 		return
 	var slot_material := _buscar_slot_item(material_id)
-	if slot_material < 0 or not _inventario.quitar_cantidad_desde_ui(slot_material, 1):
+	if slot_material < 0:
 		_mostrar_estado("No tienes el material necesario.")
+		_actualizar()
 		return
-	_reparar_herramienta(indice)
-	_mostrar_estado("Herramienta reparada con material.")
+	var material_antes := _inventario.obtener_item(slot_material).duplicate(true)
+	if not _inventario.quitar_cantidad_desde_ui(slot_material, 1):
+		_mostrar_estado("No se pudo entregar el material.")
+		return
+	if not _reparar_herramienta(indice):
+		_inventario.runtime.establecer_objeto(slot_material, material_antes)
+		_inventario.inventario_cambio.emit()
+		_mostrar_estado("No se pudo reparar; se devolvió el material.")
+		_actualizar()
+		return
+	_guardar_reparacion()
+	_mostrar_estado("Herramienta reparada por completo en el yunque.")
 	_actualizar()
 
 
 func _reparar_con_bruna(indice: int) -> void:
+	if not _puede_reparar(indice):
+		_mostrar_estado("La herramienta ya no necesita reparación o no es válida.")
+		_actualizar()
+		return
 	if not GameState.modificar_dinero(-PRECIO_REPARACION_BRUNA):
 		_mostrar_estado("No tienes suficientes monedas.")
 		return
-	_reparar_herramienta(indice)
-	_mostrar_estado("Bruna reparó tu herramienta.")
+	if not _reparar_herramienta(indice):
+		GameState.modificar_dinero(PRECIO_REPARACION_BRUNA)
+		_mostrar_estado("No se pudo reparar; se revirtió el cobro.")
+		_actualizar()
+		return
+	_guardar_reparacion()
+	_mostrar_estado("Bruna reparó tu herramienta por completo.")
 	_actualizar()
 
 
-func _reparar_herramienta(indice: int) -> void:
+func _puede_reparar(indice: int) -> bool:
 	if not is_instance_valid(_inventario) or indice < 0 or indice >= _inventario.runtime.state.items.size():
-		return
+		return false
 	var objeto: Dictionary = _inventario.runtime.state.items[indice]
-	var propiedades: Variant = objeto.get("propiedades_game", {})
-	if not propiedades is Dictionary:
-		return
-	var maximo := int((propiedades as Dictionary).get("durabilidad", 0))
-	if maximo <= 0:
-		return
-	objeto["durabilidad_actual"] = maximo
+	if not _es_herramienta_reparable(objeto):
+		return false
+	var propiedades: Dictionary = objeto.get("propiedades_game", {})
+	var maximo := int(propiedades.get("durabilidad", 0))
+	return int(objeto.get("durabilidad_actual", maximo)) < maximo
+
+
+func _reparar_herramienta(indice: int) -> bool:
+	if not _puede_reparar(indice):
+		return false
+	var objeto: Dictionary = _inventario.runtime.state.items[indice].duplicate(true)
+	var propiedades: Dictionary = objeto.get("propiedades_game", {})
+	objeto["durabilidad_actual"] = int(propiedades.get("durabilidad", 0))
 	_inventario.runtime.state.items[indice] = objeto
 	_inventario.inventario_cambio.emit()
+	return true
+
+
+func _guardar_reparacion() -> void:
+	# El inventario forma parte del estado local de la partida; el guardado rápido
+	# evita depender únicamente del siguiente ciclo de autoguardado.
+	GameState.call_deferred("_ejecutar_guardado_rapido")
 
 
 func _construir_carpinteria() -> void:
