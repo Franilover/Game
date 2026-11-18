@@ -1935,7 +1935,7 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 	var panel_estado := PanelContainer.new()
 	panel_estado.name = "EstadoPosada"
 	panel_estado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var fondo_estado := PIXEL_UI_THEME.button_surface_style()
+	var fondo_estado: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
 	if fondo_estado != null:
 		panel_estado.add_theme_stylebox_override("panel", fondo_estado)
 	_menu_posada_contenido.add_child(panel_estado)
