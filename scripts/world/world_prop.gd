@@ -48,8 +48,19 @@ func configurar_dependencias(
 
 
 
+func _normalizar_tipo_prop(valor: String) -> String:
+	var tipo_normalizado := valor.strip_edges().to_lower()
+	if tipo_normalizado in ["árbol", "arboles", "árboles", "tree", "trees"]:
+		return "arbol"
+	return tipo_normalizado
+
+
+func _es_arbol() -> bool:
+	return _normalizar_tipo_prop(str(datos.get("tipo", tipo))) == "arbol"
+
+
 func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nueva_semilla: int, nuevos_datos: Dictionary = {}) -> void:
-	tipo = nuevo_tipo
+	tipo = _normalizar_tipo_prop(nuevo_tipo)
 	bioma = nuevo_bioma
 	variante = nueva_variante
 	semilla = nueva_semilla
@@ -319,7 +330,7 @@ func _obtener_requisito_herramienta() -> Dictionary:
 
 	# Los árboles actuales de props_game no tienen requisito explícito todavía.
 	# Su interacción de tala usa el hacha básica como herramienta mínima.
-	if str(datos.get("tipo", tipo)).strip_edges().to_lower() == "arbol":
+	if _es_arbol():
 		return {"tipo": "hacha", "nivel": 1}
 	return {}
 
@@ -378,6 +389,14 @@ func _obtener_item_id_recoleccion() -> String:
 		if not is_instance_valid(_world_items):
 			return ""
 		var madera: Dictionary = _world_items.buscar_item_por_nombre("Madera")
+		if madera.is_empty() and _world_items.has_method("obtener_catalogo"):
+			for item_variant in _world_items.obtener_catalogo():
+				if not item_variant is Dictionary:
+					continue
+				var item_catalogo := item_variant as Dictionary
+				if str(item_catalogo.get("nombre", "")).strip_edges().to_lower() == "madera":
+					madera = item_catalogo
+					break
 		return str(madera.get("item_id", madera.get("id", ""))).strip_edges()
 
 	# El snapshot de props_game puede conservar el vínculo en
@@ -547,7 +566,7 @@ func desactivar_como_proxy() -> void:
 func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	add_to_group("world_props")
 	datos = datos_game.duplicate(true)
-	tipo = str(datos.get("tipo", "decoracion"))
+	tipo = _normalizar_tipo_prop(str(datos.get("tipo", "decoracion")))
 	bioma = ""
 	var asset_path := str(datos.get("asset_path", "")).strip_edges()
 	_actualizar_estado_interaccion()
