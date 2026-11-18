@@ -24,6 +24,7 @@ const TEXTURAS_INCLUIDAS: Array[Texture2D] = [
 	preload("res://assets/art/items/Espada de Feliros.png"),
 	preload("res://assets/art/items/Espada de Topacio.png"),
 	preload("res://assets/art/items/Pechera Aoris.png"),
+	preload("res://assets/art/items/Botas de Aoris.png"),
 	preload("res://assets/art/items/Botas de Hierro.png"),
 	preload("res://assets/art/items/Escudo.png"),
 	preload("res://assets/art/items/Espada de Madera.png"),
@@ -89,6 +90,8 @@ static func obtener_icono(
 
 	# Nombres canónicos de Supabase que difieren ligeramente del archivo artístico.
 	var alias_sprite := {
+		"botasaoris": "Botas de Aoris.png",
+		"botasdeaoris": "Botas de Aoris.png",
 		"cartasaoris": "Carta Aoris.png",
 		"espadatopacio": "Espada de Topacio.png"
 	}
