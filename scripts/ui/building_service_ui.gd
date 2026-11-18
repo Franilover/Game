@@ -339,26 +339,31 @@ func _guardar_reparacion() -> void:
 
 
 func _construir_carpinteria() -> void:
-	_agregar_texto("Encarga muebles entregando madera y pagando el trabajo. Los encargos quedan guardados en esta partida.")
+	_agregar_texto("Entrega madera y monedas para recibir el mueble directamente en tu inventario.")
 	for mueble in CATALOGO_CARPINTERIA:
 		var fila := HBoxContainer.new()
+		fila.add_theme_constant_override("separation", 8)
 		_contenido.add_child(fila)
+		var icono := TextureRect.new()
+		icono.texture = ITEM_ICON_RESOLVER.obtener_icono({"nombre": str(mueble.nombre)})
+		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icono.custom_minimum_size = Vector2(42, 42)
+		fila.add_child(icono)
 		var etiqueta := Label.new()
-		etiqueta.text = "%s · %d madera · %d monedas" % [str(mueble.nombre), int(mueble.madera), int(mueble.precio)]
+		etiqueta.text = "%s\n%d madera · %d monedas\nEn inventario: %d" % [
+			str(mueble.nombre), int(mueble.madera), int(mueble.precio),
+			_contar_item("carpinteria_mueble_" + str(mueble.id))
+		]
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		fila.add_child(etiqueta)
 		var boton := Button.new()
 		boton.text = "Encargar"
-		boton.disabled = _contar_item(ITEM_MADERA) < int(mueble.madera) or GameState.obtener_dinero() < int(mueble.precio)
+		boton.disabled = not is_instance_valid(_inventario) or _contar_item(ITEM_MADERA) < int(mueble.madera) or GameState.obtener_dinero() < int(mueble.precio)
 		boton.pressed.connect(_encargar_mueble.bind(str(mueble.id)))
 		fila.add_child(boton)
 		PIXEL_UI_THEME.apply(boton, false)
-	var disponibles: Variant = GameState.world_state.flags.get("carpinteria_muebles_disponibles", {})
-	var total := 0
-	if disponibles is Dictionary:
-		for cantidad in (disponibles as Dictionary).values():
-			total += int(cantidad)
-	_agregar_texto("Muebles encargados en esta partida: %d" % total)
 
 
 func _encargar_mueble(mueble_id: String) -> void:
@@ -367,25 +372,48 @@ func _encargar_mueble(mueble_id: String) -> void:
 		if str(mueble.id) == mueble_id:
 			definicion = mueble
 			break
-	if definicion.is_empty():
+	if definicion.is_empty() or not is_instance_valid(_inventario):
 		return
-	var madera := int(definicion.madera)
-	var precio := int(definicion.precio)
-	if not is_instance_valid(_inventario) or _contar_item(ITEM_MADERA) < madera or GameState.obtener_dinero() < precio:
+	var madera := int(definicion.get("madera", 0))
+	var precio := int(definicion.get("precio", 0))
+	var item_id := "carpinteria_mueble_" + mueble_id
+	if madera <= 0 or precio < 0 or _contar_item(ITEM_MADERA) < madera or GameState.obtener_dinero() < precio:
 		_mostrar_estado("Te faltan madera o monedas.")
 		return
-	if not GameState.modificar_dinero(-precio):
+
+	# Primero se entrega el mueble; si no cabe, no se cobra ni se consume material.
+	var mueble_item := {
+		"id": item_id,
+		"item_id": item_id,
+		"nombre": str(definicion.get("nombre", "Mueble")),
+		"descripcion": "Mueble fabricado por encargo en la Carpintería de Torres.",
+		"tipo": "mueble",
+		"categoria_clave": "muebles",
+		"cantidad": 1,
+		"max_stack": 1,
+		"propiedades_game": {"origen": "carpinteria", "mueble_id": mueble_id}
+	}
+	if not _inventario.agregar_objeto_desde_ui(mueble_item):
+		_mostrar_estado("No tienes espacio en el inventario. No se cobró el encargo.")
 		return
+
+	if not GameState.modificar_dinero(-precio):
+		var slot_entregado := _buscar_slot_item(item_id)
+		if slot_entregado >= 0:
+			_inventario.quitar_cantidad_desde_ui(slot_entregado, 1)
+		_mostrar_estado("No se pudo cobrar el encargo; el mueble fue retirado.")
+		return
+
 	if not _consumir_item_total(ITEM_MADERA, madera):
 		GameState.modificar_dinero(precio)
-		_mostrar_estado("No se pudo entregar la madera; se revirtió el pago.")
+		var slot_entregado := _buscar_slot_item(item_id)
+		if slot_entregado >= 0:
+			_inventario.quitar_cantidad_desde_ui(slot_entregado, 1)
+		_mostrar_estado("No se pudo consumir la madera; se revirtió el pago.")
 		return
-	var disponibles_variant: Variant = GameState.world_state.flags.get("carpinteria_muebles_disponibles", {})
-	var disponibles: Dictionary = disponibles_variant.duplicate(true) if disponibles_variant is Dictionary else {}
-	disponibles[mueble_id] = int(disponibles.get(mueble_id, 0)) + 1
-	GameState.world_state.flags["carpinteria_muebles_disponibles"] = disponibles
+
 	GameState.call_deferred("_ejecutar_guardado_rapido")
-	_mostrar_estado("Encargo terminado: %s. Quedó registrado en tu partida." % str(definicion.nombre))
+	_mostrar_estado("Recibiste %s en tu inventario." % str(definicion.get("nombre", "el mueble")))
 	_actualizar()
 
 
