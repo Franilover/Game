@@ -106,6 +106,13 @@ var _menu_posada_vista := "principal"
 const POSADA_COSTE_MENSUAL := 100
 const POSADA_DURACION_MES_DIAS := 30
 const POSADA_FLAG := "posada_estado"
+# Precios iniciales de la tienda; se mantienen centralizados para poder ajustar la economía.
+const POSADA_CATALOGO_MUEBLES: Array[Dictionary] = [
+	{"id": "mesa", "nombre": "Mesa", "precio": 35},
+	{"id": "silla", "nombre": "Silla", "precio": 20},
+	{"id": "armario", "nombre": "Armario", "precio": 60},
+	{"id": "cofre", "nombre": "Cofre", "precio": 100}
+]
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -1892,36 +1899,36 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 	_menu_posada_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_menu_posada_contenido.add_child(_menu_posada_estado)
 
-	if vista == "principal":
-		var estado := _obtener_estado_posada()
-		var hoy := _obtener_dia_absoluto_mundo()
-		var gratis_disponible := not bool(estado.get("primer_mes_gratis_usado", false))
-		var activa := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
-		if gratis_disponible:
-			_menu_posada_estado.text = "Tu primera estancia de un mes es gratuita."
-		elif activa:
-			_menu_posada_estado.text = "Tu habitación está disponible."
-		else:
-			_menu_posada_estado.text = "Tu estancia ha terminado. Tus pertenencias siguen guardadas."
-		_crear_boton_posada("Comprar", Callable(self, "_mostrar_menu_posada").bind("comprar"))
-		_crear_boton_posada("Ir a la habitación", Callable(self, "_ir_habitacion_posada"), not activa and not gratis_disponible)
-	else:
-		_menu_posada_estado.text = "Estancia mensual y mobiliario."
-		var estado := _obtener_estado_posada()
-		var hoy := _obtener_dia_absoluto_mundo()
-		var gratis_disponible := not bool(estado.get("primer_mes_gratis_usado", false))
-		var activa := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
-		if gratis_disponible:
-			_crear_boton_posada("Activar primer mes gratis", Callable(self, "_comprar_estancia_posada").bind(true))
-		elif activa:
-			_crear_boton_posada("Estancia activa", Callable(self, "_mostrar_menu_posada").bind("comprar"), true)
-		else:
-			_crear_boton_posada("Renovar por 100 monedas", Callable(self, "_comprar_estancia_posada").bind(false))
-		_crear_boton_posada("Muebles", Callable(self, "_mostrar_menu_posada").bind("muebles"))
+	var estado := _obtener_estado_posada()
+	var hoy := _obtener_dia_absoluto_mundo()
+	var gratis_disponible := not bool(estado.get("primer_mes_gratis_usado", false))
+	var activa := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
 
-	if vista == "muebles":
-		_menu_posada_estado.text = "Los muebles que compres quedarán asociados a tu habitación."
-		_crear_boton_posada("Volver a compras", Callable(self, "_mostrar_menu_posada").bind("comprar"))
+	match vista:
+		"principal":
+			if gratis_disponible:
+				_menu_posada_estado.text = "Tu primera estancia de un mes es gratuita."
+			elif activa:
+				_menu_posada_estado.text = "Tu habitación está disponible."
+			else:
+				_menu_posada_estado.text = "Tu estancia ha terminado. Tus pertenencias siguen guardadas."
+			_crear_boton_posada("Comprar", Callable(self, "_mostrar_menu_posada").bind("comprar"))
+			_crear_boton_posada("Ir a la habitación", Callable(self, "_ir_habitacion_posada"), not activa)
+		"comprar":
+			_menu_posada_estado.text = "La estancia cuesta 100 monedas por mes."
+			if gratis_disponible:
+				_crear_boton_posada("Activar primer mes gratis", Callable(self, "_comprar_estancia_posada").bind(true))
+			elif activa:
+				_crear_boton_posada("Estancia activa", Callable(self, "_mostrar_menu_posada").bind("comprar"), true)
+			else:
+				_crear_boton_posada("Renovar por 100 monedas", Callable(self, "_comprar_estancia_posada").bind(false))
+			_crear_boton_posada("Tienda de muebles", Callable(self, "_mostrar_menu_posada").bind("muebles"))
+		"muebles":
+			_menu_posada_estado.text = "Compra muebles para tu habitación. Podrás colocarlos desde el modo de amueblado."
+			for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
+				var texto := "%s · %d monedas" % [str(mueble.nombre), int(mueble.precio)]
+				_crear_boton_posada(texto, Callable(self, "_comprar_mueble_posada").bind(str(mueble.id), int(mueble.precio)))
+			_crear_boton_posada("Volver", Callable(self, "_mostrar_menu_posada").bind("comprar"))
 
 	_crear_boton_posada("Cerrar", Callable(self, "_cerrar_menu_posada"))
 	_menu_posada_layer.visible = true
@@ -1943,6 +1950,19 @@ func _comprar_estancia_posada(gratis: bool) -> void:
 func _cerrar_menu_posada() -> void:
 	if is_instance_valid(_menu_posada_layer):
 		_menu_posada_layer.visible = false
+
+
+func _comprar_mueble_posada(mueble_id: String, precio: int) -> void:
+	if not GameState.modificar_dinero(-precio):
+		_menu_posada_estado.text = "No tienes suficientes monedas."
+		return
+	var estado := _obtener_estado_posada()
+	var comprados: Dictionary = estado.get("muebles_comprados", {})
+	comprados[mueble_id] = int(comprados.get(mueble_id, 0)) + 1
+	estado["muebles_comprados"] = comprados
+	_guardar_estado_posada(estado)
+	_menu_posada_estado.text = "Compraste: " + mueble_id.capitalize() + ". Ya está disponible para colocar."
+	_mostrar_menu_posada("muebles")
 
 
 func _pagar_estancia_posada(gratis: bool) -> void:
