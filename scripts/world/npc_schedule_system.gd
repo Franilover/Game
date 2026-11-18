@@ -15,6 +15,11 @@ const COSTE_CAMINO_TIERRA := 1.0
 const COSTE_OTRO_TERRENO := 1.55
 # Espera breve para agrupar varios cambios de posición/tamaño en una sola reconstrucción.
 const ESPERA_RECONSTRUCCION_NAVEGACION := 1.0
+# Saira coordina el mercado; dos de los otros vendedores se turnan por franja.
+const VENDEDORES_MERCADO_ROTATIVOS: Array[String] = ["bruna", "elian", "darven", "narel", "nima", "mara", "ivo"]
+const INICIO_TURNO_MERCADO := 9 * 60
+const CAMBIO_TURNO_MERCADO := 14 * 60
+const FIN_TURNO_MERCADO := 18 * 60
 
 # Coordenadas locales relativas al origen de cada edificio. El destino real
 # se sitúa 28 px al sur de este punto, en el umbral de la entrada.
@@ -566,6 +571,10 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var encuentro_trio := _obtener_rutina_encuentro_trio(npc, dia_semana, minutos, rutina)
 	if not encuentro_trio.is_empty():
 		rutina = encuentro_trio
+
+	# En horario comercial, algunos vecinos cubren puestos por turnos.
+	# Los trabajos esenciales y los eventos comunitarios conservan prioridad.
+	rutina = _aplicar_turno_comercio_rotativo(npc, rutina, dia_semana, minutos)
 
 	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
@@ -1287,6 +1296,8 @@ static func obtener_preferencias_mueble_actividad(actividad: String) -> Array[St
 		return ["mesa", "consulta", "estudio", "muestra"]
 	if texto.contains("hornear") or texto.contains("cocinar") or texto.contains("preparar") or texto.contains("forj") or texto.contains("repar") or texto.contains("herramient") or texto.contains("trabaj"):
 		return ["horno", "hogar", "banco", "mesa", "mostrador"]
+	if texto.contains("atender_puesto_comercio"):
+		return ["puesto"]
 	if texto.contains("comer") or texto.contains("servir") or texto.contains("atender") or texto.contains("convers") or texto.contains("reunir"):
 		return ["mesa", "mostrador"]
 	return []
@@ -3081,6 +3092,53 @@ func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
 		"clave": "regreso_nocturno_castillo",
 		"ubicacion_clave": "castillo",
 		"actividad_clave": "dormir",
+		"activo": true
+	}
+
+
+func _aplicar_turno_comercio_rotativo(
+	npc: Creature,
+	rutina_actual: Dictionary,
+	dia_semana: int,
+	minutos: int
+) -> Dictionary:
+	if not is_instance_valid(npc) or minutos < INICIO_TURNO_MERCADO or minutos >= FIN_TURNO_MERCADO:
+		return rutina_actual
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	if nombre == "saira" or not VENDEDORES_MERCADO_ROTATIVOS.has(nombre):
+		return rutina_actual
+
+	# No apartar a nadie de un oficio, guardia, investigación o compromiso.
+	var clave_actual := str(rutina_actual.get("clave", "")).strip_edges().to_lower()
+	var actividad_actual := str(rutina_actual.get("actividad_clave", "")).strip_edges().to_lower()
+	var actividad_libre := (
+		rutina_actual.is_empty()
+		or clave_actual.begins_with("dia_libre")
+		or actividad_actual.contains("descans")
+		or actividad_actual.contains("pase")
+		or actividad_actual.contains("convers")
+		or actividad_actual.contains("visitar")
+		or actividad_actual.contains("saludar")
+		or actividad_actual.contains("volver")
+	)
+	if not actividad_libre:
+		return rutina_actual
+	if clave_actual.begins_with("evento_") or clave_actual.begins_with("invitacion_") or clave_actual.begins_with("encuentro_"):
+		return rutina_actual
+
+	var franja := 0 if minutos < CAMBIO_TURNO_MERCADO else 1
+	var inicio := posmod(dia_semana * 2 + franja * 3, VENDEDORES_MERCADO_ROTATIVOS.size())
+	var asignados: Array[String] = [
+		VENDEDORES_MERCADO_ROTATIVOS[inicio],
+		VENDEDORES_MERCADO_ROTATIVOS[posmod(inicio + 1, VENDEDORES_MERCADO_ROTATIVOS.size())]
+	]
+	if not asignados.has(nombre):
+		return rutina_actual
+
+	return {
+		"clave": "turno_puesto_comercio",
+		"ubicacion_clave": "casa_comercio",
+		"actividad_clave": "atender_puesto_comercio",
 		"activo": true
 	}
 
