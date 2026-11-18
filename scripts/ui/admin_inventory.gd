@@ -306,8 +306,35 @@ func _cargar_aldeanos() -> void:
 	personajes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 	)
+	var cuadricula := _crear_cuadricula()
 	for personaje in personajes:
-		_crear_fila(str(personaje.get("nombre", "Personaje")), personaje)
+		var nombre := str(personaje.get("nombre", "Personaje"))
+		_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_aldeano(personaje), personaje)
+
+
+func _obtener_sprite_aldeano(personaje: Dictionary) -> Texture2D:
+	var claves: Array[String] = []
+	for campo in ["sprite_key", "nombre_individual", "nombre_personaje", "nombre_npc", "nombre"]:
+		var clave := str(personaje.get(campo, "")).strip_edges()
+		if not clave.is_empty() and not claves.has(clave):
+			claves.append(clave)
+
+	for clave in claves:
+		if clave.contains("/") or clave.contains("\\"):
+			continue
+		for extension in [".png", ".PNG"]:
+			var ruta := "res://assets/art/characters/" + clave + extension
+			if not ResourceLoader.exists(ruta):
+				continue
+			var textura := load(ruta) as Texture2D
+			if textura != null:
+				return textura
+
+	# Mismo respaldo humano que utiliza Creature cuando falta el retrato propio.
+	var ruta_base := "res://assets/art/characters/Sprite-0004.png"
+	if ResourceLoader.exists(ruta_base):
+		return load(ruta_base) as Texture2D
+	return null
 
 
 func _obtener_grupo_objeto(item: Dictionary) -> String:
@@ -470,6 +497,13 @@ func _mostrar_detalle_aldeano() -> void:
 	var nombre := str(_seleccion.get("nombre", "Personaje"))
 	var personaje_id := str(_seleccion.get("id", ""))
 	var npc := _buscar_npc_aldeano(personaje_id, nombre)
+	var retrato := TextureRect.new()
+	retrato.custom_minimum_size = Vector2(120, 120)
+	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	retrato.texture = _obtener_sprite_aldeano(_seleccion)
+	_detalle.add_child(retrato)
 	var titulo := Label.new()
 	titulo.text = nombre
 	titulo.add_theme_font_size_override("font_size", 18)
