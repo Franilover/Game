@@ -242,11 +242,10 @@ func _cargar_criaturas() -> void:
 		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 	)
 
+	var cuadricula := _crear_cuadricula()
 	for criatura in criaturas:
-		_crear_fila(
-			str(criatura.get("nombre", "Criatura")),
-			criatura
-		)
+		var nombre := str(criatura.get("nombre", "Criatura"))
+		_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_criatura(nombre), criatura)
 
 
 func _cargar_objetos() -> void:
@@ -296,8 +295,10 @@ func _cargar_objetos() -> void:
 			return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 		)
 
+		var cuadricula := _crear_cuadricula()
 		for item in objetos:
-			_crear_fila(str(item.get("nombre", "Objeto")), item)
+			var nombre := str(item.get("nombre", "Objeto"))
+			_crear_celda_sprite(cuadricula, nombre, ItemIconResolver.obtener_icono(item), item)
 
 
 func _cargar_aldeanos() -> void:
@@ -324,6 +325,53 @@ func _crear_fila(nombre: String, datos: Dictionary) -> void:
 	boton.pressed.connect(_seleccionar.bind(datos))
 	PIXEL_UI_THEME.apply(boton, false)
 	_lista.add_child(boton)
+
+
+func _crear_cuadricula() -> GridContainer:
+	var cuadricula := GridContainer.new()
+	cuadricula.columns = 4
+	cuadricula.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cuadricula.add_theme_constant_override("h_separation", 5)
+	cuadricula.add_theme_constant_override("v_separation", 5)
+	_lista.add_child(cuadricula)
+	return cuadricula
+
+
+func _crear_celda_sprite(contenedor: GridContainer, nombre: String, textura: Texture2D, datos: Dictionary) -> void:
+	var boton := Button.new()
+	boton.text = ""
+	boton.tooltip_text = nombre
+	boton.custom_minimum_size = Vector2(52, 52)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	boton.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	boton.icon = textura
+	boton.icon_max_width = 40
+	boton.expand_icon = true
+	boton.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boton.pressed.connect(_seleccionar.bind(datos))
+	PIXEL_UI_THEME.apply(boton, false)
+	contenedor.add_child(boton)
+
+
+func _obtener_sprite_criatura(nombre: String) -> Texture2D:
+	var rutas := [
+		"res://assets/art/creatures/" + nombre + ".png",
+		"res://assets/art/creatures/" + nombre + ".PNG",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + ".png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + ".PNG",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Idle.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Idle.PNG",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.PNG"
+	]
+	if nombre.to_lower() == "humano":
+		rutas.push_front("res://assets/art/creatures/Humano.png")
+	for ruta in rutas:
+		if ResourceLoader.exists(ruta):
+			var recurso: Resource = load(ruta)
+			if recurso is Texture2D:
+				return recurso as Texture2D
+	return null
 
 
 func _seleccionar(datos: Dictionary) -> void:
