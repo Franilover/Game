@@ -2183,7 +2183,26 @@ func _agregar_puesto_comercio(padre: Node, vendedor: String, posicion: Vector2) 
 
 
 func _puede_interactuar_puesto_comercio(_jugador_objetivo: Node, _vendedor: String) -> bool:
-	return _interior_activo and _entrada_interior_id == "casa_comercio"
+	return (
+		_interior_activo
+		and _entrada_interior_id == "casa_comercio"
+		and _saira_atiende_el_mercado()
+	)
+
+
+func _saira_atiende_el_mercado() -> bool:
+	for candidato in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not candidato is Creature or not is_instance_valid(candidato):
+			continue
+		var npc := candidato as Creature
+		if (
+			npc.is_alive
+			and npc.get_nombre_visual().strip_edges().to_lower() == "saira"
+			and bool(npc.get_meta("rutina_en_edificio", false))
+			and str(npc.get_meta("rutina_edificio_id", "")) == "casa_comercio"
+		):
+			return true
+	return false
 
 
 func _interactuar_puesto_comercio(_jugador_objetivo: Node, vendedor: String) -> void:
@@ -2209,14 +2228,14 @@ func _interactuar_puesto_comercio(_jugador_objetivo: Node, vendedor: String) -> 
 			npc_vendedor = criatura
 			break
 	if not is_instance_valid(npc_vendedor):
-		Events.notification_pushed.emit(vendedor + " no está disponible para atender su puesto.")
+		Events.notification_pushed.emit("No se pudo cargar el catálogo de " + vendedor + ".")
 		return
 	var capa := CanvasLayer.new()
 	capa.name = "MercadoNPC_" + vendedor
 	capa.layer = 46
 	capa.add_to_group("npc_market_modal")
 	var tienda := NPCMarketShop.new()
-	tienda.configurar(npc_vendedor, inventario, world_items, {"nombre": "Puesto de " + vendedor})
+	tienda.configurar(npc_vendedor, inventario, world_items, {"nombre": "Puesto de " + vendedor, "intermediaria_nombre": "Saira"})
 	var fisica_previa := _jugador.is_physics_processing() if is_instance_valid(_jugador) else true
 	var input_previo := _jugador.is_processing_input() if is_instance_valid(_jugador) else true
 	var unhandled_previo := _jugador.is_processing_unhandled_input() if is_instance_valid(_jugador) else true
