@@ -257,7 +257,10 @@ func _process(_delta: float) -> void:
 		and posicion_local.x >= -12.0 \
 		and posicion_local.x <= 132.0
 	if cerca_salida:
-		_salir_del_interior()
+		if _entrada_interior_id == "posada_habitacion":
+			_volver_al_lobby_posada()
+		else:
+			_salir_del_interior()
 
 
 func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
@@ -1510,6 +1513,15 @@ func _devolver_npcs_del_interior_al_exterior() -> void:
 			(npc as CanvasItem).visible = false
 
 
+func _volver_al_lobby_posada() -> void:
+	if not _interior_activo or _entrada_interior_id != "posada_habitacion" or not is_instance_valid(_jugador):
+		return
+	_entrada_interior_id = "posada"
+	_construir_habitacion({"id": "posada", "nombre": "Posada", "tipo": "posada"})
+	_jugador.global_position = to_global(Vector2(0, 70))
+	_limitar_camara_a_interior()
+
+
 func _salir_del_interior() -> void:
 	if not _interior_activo or not is_instance_valid(_jugador):
 		return
@@ -1952,7 +1964,11 @@ func _ir_habitacion_posada() -> void:
 		_mostrar_menu_posada("principal")
 		return
 	if _interior_activo:
-		_cerrar_menu_posada()
+		if _entrada_interior_id == "posada":
+			_cerrar_menu_posada()
+			call_deferred("_cambiar_de_lobby_a_habitacion_posada")
+		else:
+			_cerrar_menu_posada()
 		return
 	if not is_instance_valid(_jugador):
 		_jugador = get_tree().get_first_node_in_group("player") as Node2D
@@ -1970,6 +1986,21 @@ func _ir_habitacion_posada() -> void:
 	# Así evitamos cambiar visibilidad, colisiones y cámara mientras la UI
 	# de recepción todavía está procesando su evento de pulsación.
 	call_deferred("_entrar_al_interior", entrada)
+
+
+func _cambiar_de_lobby_a_habitacion_posada() -> void:
+	if not _interior_activo or _entrada_interior_id != "posada" or not _posada_tiene_acceso():
+		return
+	if not is_instance_valid(_jugador):
+		return
+	_entrada_interior_id = "posada_habitacion"
+	_construir_habitacion({
+		"id": "posada_habitacion",
+		"nombre": "Habitación de la posada",
+		"tipo": "habitacion_posada"
+	})
+	_jugador.global_position = to_global(Vector2(0, 70))
+	_limitar_camara_a_interior()
 
 
 func _comprar_estancia_posada(gratis: bool) -> void:
