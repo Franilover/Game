@@ -36,7 +36,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 15
-text = "LABORATORIO"
+text = "ANÁLISIS DE OBJETOS"
 
 [node name="Close" type="Button" parent="Panel/Margin/Column/Header"]
 custom_minimum_size = Vector2(82, 32)
@@ -68,7 +68,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 5
 
-[node name="ProcedureColumn" type="VBoxContainer" parent="Panel/Margin/Column/Body"]
+[node name="AnalysisColumn" type="VBoxContainer" parent="Panel/Margin/Column/Body"]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 size_flags_horizontal = 3
