@@ -183,15 +183,11 @@ func _atacar_con_herramienta(
 			_consumir_durabilidad_herramienta()
 		return
 
-	var alcance := _obtener_alcance_arma(herramienta)
-	var ancho := _obtener_ancho_arma(herramienta)
-	_crear_ataque_melee(
-		direccion,
-		alcance,
-		ancho,
-		herramienta
-	)
-	_consumir_durabilidad_herramienta()
+	# Las herramientas no son armas: hacha, pico, hoz, azada, etc.
+	# sólo ejecutan su acción contextual desde InteractionSystem.
+	# Si no hay un objetivo compatible, el clic no debe convertirse
+	# accidentalmente en un ataque cuerpo a cuerpo.
+	return
 
 func _usar_pala() -> bool:
 	if world_context == null or not is_instance_valid(world_context):
