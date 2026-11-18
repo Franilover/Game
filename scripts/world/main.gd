@@ -262,7 +262,10 @@ func _input(event: InputEvent) -> void:
 	var zona_actual := _zone_manager.obtener_tipo_actual()
 	if zona_actual == "mundo_abierto":
 		if _zone_manager.has_method("regresar_viaje_exterior"):
-			_zone_manager.call("regresar_viaje_exterior")
+			var regreso: Variant = await _zone_manager.call("regresar_viaje_exterior")
+			if bool(regreso):
+				return
+		_zone_manager.entrar_reino("torres")
 		return
 	if zona_actual.begins_with("expedicion:"):
 		if _zone_manager.has_method("salir_expedicion"):
