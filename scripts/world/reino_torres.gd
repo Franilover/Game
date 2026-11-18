@@ -1746,9 +1746,12 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(1.0, 1.0), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoCentro", MUEBLE_ARMARIO, Vector2(-95, -105), Vector2(1.0, 1.0), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoEste", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(1.0, 1.0), 1)
-			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA_DOCUMENTOS, Vector2(45, 38), Vector2(1.5, 1), 1)
-			_agregar_sprite_mueble(cuarto, "AsientoConsulta", MUEBLE_SILLA_FRENTE, Vector2(45, 88), Vector2.ONE, 1)
-			_agregar_estacion_archivo(cuarto, "documentos_personajes", "Consultar documentos", Vector2(45, 8))
+			_agregar_sprite_mueble(cuarto, "MesaDocumentosPersonajes", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 38), Vector2(1.35, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoPersonajes", MUEBLE_SILLA_FRENTE, Vector2(-105, 88), Vector2.ONE, 1)
+			_agregar_estacion_archivo(cuarto, "documentos_personajes", "Consultar personajes", Vector2(-105, 8))
+			_agregar_sprite_mueble(cuarto, "MesaHistoriaTorres", MUEBLE_MESA_DOCUMENTOS, Vector2(105, 38), Vector2(1.35, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoHistoria", MUEBLE_SILLA_FRENTE, Vector2(105, 88), Vector2.ONE, 1)
+			_agregar_estacion_archivo(cuarto, "historia_torres", "Consultar historia de Torres", Vector2(105, 8))
 		"consejo":
 			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.0, 1.25), 1)
 			for i in range(6):
@@ -2112,7 +2115,7 @@ func _agregar_estacion_archivo(padre: Node, estacion_id: String, texto: String, 
 
 
 func _puede_interactuar_estacion_archivo(_jugador: Node, estacion_id: String) -> bool:
-	return _interior_activo and _entrada_interior_id == "archivo_real" and estacion_id == "documentos_personajes"
+	return _interior_activo and _entrada_interior_id == "archivo_real" and estacion_id in ["documentos_personajes", "historia_torres"]
 
 
 func _interactuar_estacion_archivo(_jugador: Node, estacion_id: String) -> void:
@@ -2123,6 +2126,7 @@ func _interactuar_estacion_archivo(_jugador: Node, estacion_id: String) -> void:
 	var interfaz := ROYAL_ARCHIVE_UI_SCRIPT.new() as CanvasLayer
 	if not is_instance_valid(interfaz):
 		return
+	interfaz.call("configurar_vista", estacion_id)
 	interfaz.add_to_group("royal_archive_ui")
 	get_tree().root.add_child(interfaz)
 
