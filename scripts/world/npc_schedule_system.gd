@@ -1229,8 +1229,10 @@ func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 ## Se usa para escoger un puesto físico y probar la regla sin escenas.
 static func obtener_preferencias_mueble_actividad(actividad: String) -> Array[String]:
 	var texto := actividad.strip_edges().to_lower()
-	if texto.contains("descans") or texto.contains("dorm") or texto.contains("repos"):
+	if texto.contains("dorm"):
 		return ["cama", "litera"]
+	if texto.contains("sentar") or texto.contains("descans"):
+		return ["silla", "asiento"]
 	if texto.contains("leer") or texto.contains("estudi") or texto.contains("investig") or texto.contains("observar") or texto.contains("nota") or texto.contains("informe"):
 		return ["mesa", "consulta", "estudio", "muestra"]
 	if texto.contains("hornear") or texto.contains("cocinar") or texto.contains("preparar") or texto.contains("forj") or texto.contains("repar") or texto.contains("herramient") or texto.contains("trabaj"):
@@ -1284,7 +1286,18 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	# Primero busca un puesto junto al mueble que corresponde a la tarea.
 	# Si el edificio no tiene ese mueble, conserva los puntos de paseo generales.
 	var puntos: Array[Vector2] = []
-	var preferencias := obtener_preferencias_mueble_actividad(actividad)
+	var hora_de_dormir := minutos >= 21 * 60 or minutos < 6 * 60
+	var postura := ""
+	if actividad.to_lower().contains("dorm") or (actividad.to_lower().contains("descans") and hora_de_dormir):
+		postura = "dormir"
+	elif actividad.to_lower().contains("sentar") or actividad.to_lower().contains("descans"):
+		postura = "sentado"
+	npc.set_meta("postura_npc", postura)
+	if npc.has_method("_actualizar_sprite_direccional_npc"):
+		npc.call("_actualizar_sprite_direccional_npc")
+	var preferencias := obtener_preferencias_mueble_actividad(
+		"dormir" if postura == "dormir" else ("sentarse" if postura == "sentado" else actividad)
+	)
 	if not preferencias.is_empty():
 		for hijo in npc.get_parent().get_children():
 			if not hijo is Sprite2D:
@@ -1367,11 +1380,41 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 	npc.set_meta("animacion_actividad_interior_posicion", sprite.position)
 	npc.set_meta("animacion_actividad_interior_rotacion", sprite.rotation)
 	npc.set_meta("animacion_actividad_interior_escala", sprite.scale)
-	var tween := create_tween()
-	tween.set_loops()
+	var tween := npc.create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
-	if actividad.contains("leer") or actividad.contains("nota") or actividad.contains("estudi") or actividad.contains("investig"):
+	var postura := str(npc.get_meta("postura_npc", ""))
+	if postura == "dormir" or postura == "sentado":
+		var padre := npc.get_parent()
+		var tokens := ["cama", "litera"] if postura == "dormir" else ["silla", "asiento"]
+		var mueble_objetivo: Sprite2D = null
+		if is_instance_valid(padre):
+			for hijo in padre.get_children():
+				if not hijo is Sprite2D:
+					continue
+				var nombre_mueble := str(hijo.name).to_lower()
+				for token in tokens:
+					if nombre_mueble.contains(token):
+						mueble_objetivo = hijo as Sprite2D
+						break
+				if is_instance_valid(mueble_objetivo):
+					break
+		var destino_sprite := sprite.position
+		if is_instance_valid(mueble_objetivo):
+			destino_sprite = mueble_objetivo.position - npc.position
+			destino_sprite.y -= 5.0 if postura == "sentado" else 0.0
+		var origen_sprite := sprite.position
+		tween.tween_property(sprite, "position", origen_sprite + Vector2(0.0, -10.0), 0.16)
+		tween.tween_property(sprite, "position", destino_sprite, 0.18)
+		if postura == "dormir":
+			tween.set_loops()
+			tween.tween_property(sprite, "scale:y", sprite.scale.y * 1.025, 1.1)
+			tween.tween_property(sprite, "scale:y", sprite.scale.y, 1.1)
+		else:
+			tween.set_loops()
+			tween.tween_property(sprite, "position:y", destino_sprite.y - 0.8, 0.65)
+			tween.tween_property(sprite, "position:y", destino_sprite.y, 0.65)
+	elif actividad.contains("leer") or actividad.contains("nota") or actividad.contains("estudi") or actividad.contains("investig"):
 		tween.tween_property(sprite, "rotation", 0.035, 0.9)
 		tween.tween_interval(0.8)
 		tween.tween_property(sprite, "rotation", 0.0, 0.45)
@@ -1406,6 +1449,9 @@ func _detener_animacion_actividad_interior(npc: Creature) -> void:
 		sprite.position = posicion if posicion is Vector2 else sprite.position
 		sprite.scale = escala if escala is Vector2 else sprite.scale
 		sprite.rotation = float(npc.get_meta("animacion_actividad_interior_rotacion", sprite.rotation))
+	npc.remove_meta("postura_npc")
+	if npc.has_method("_actualizar_sprite_direccional_npc"):
+		npc.call("_actualizar_sprite_direccional_npc")
 	for clave in ["animacion_actividad_interior_activa", "animacion_actividad_interior_clave", "animacion_actividad_interior_posicion", "animacion_actividad_interior_rotacion", "animacion_actividad_interior_escala", "animacion_actividad_interior_tween"]:
 		npc.remove_meta(clave)
 
