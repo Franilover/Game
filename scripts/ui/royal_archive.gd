@@ -202,12 +202,23 @@ func _mostrar_personajes() -> void:
 	filas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(filas)
 	for personaje: Dictionary in _personajes:
+		var fila := HBoxContainer.new()
+		fila.add_theme_constant_override("separation", 6)
+		filas.add_child(fila)
+		var retrato := TextureRect.new()
+		retrato.custom_minimum_size = Vector2(44, 44)
+		retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		fila.add_child(retrato)
+		var imagen_url := str(personaje.get("img_url", "")).strip_edges()
+		if not imagen_url.is_empty():
+			_cargar_imagen_personaje(imagen_url, retrato)
 		var boton := Button.new()
 		boton.text = str(personaje.get("nombre", "Sin nombre"))
-		boton.custom_minimum_size.y = 36
+		boton.custom_minimum_size.y = 44
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.pressed.connect(_mostrar_ficha_personaje.bind(personaje))
-		filas.add_child(boton)
+		fila.add_child(boton)
 	var ayuda := Label.new()
 	ayuda.text = "Selecciona un nombre para consultar su ficha."
 	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -331,6 +342,8 @@ func _al_seleccionar_reino(indice: int) -> void:
 
 
 func _cargar_eventos_reino() -> void:
+	_eventos.clear()
+	_renderizar_eventos()
 	var reino_id := str(_reino_actual.get("id", ""))
 	if reino_id.is_empty():
 		_estado.text = "No se encontró el identificador del reino."
@@ -349,9 +362,7 @@ func _cargar_eventos_reino() -> void:
 func _renderizar_eventos() -> void:
 	if _vista != "historia":
 		return
-	var scroll := _lista.get_node_or_null("EventosScroll/ EventosLista")
-	if scroll == null:
-		scroll = _lista.get_node_or_null("EventosScroll/EventosLista")
+	var scroll := _lista.get_node_or_null("EventosScroll/EventosLista")
 	if scroll == null:
 		return
 	_limpiar(scroll)
