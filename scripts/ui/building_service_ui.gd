@@ -95,7 +95,7 @@ func _actualizar() -> void:
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	if _tipo not in ["forja", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
+	if _tipo not in ["forja", "carpinteria", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
 		var titulo := Label.new()
 		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		titulo.add_theme_font_size_override("font_size", 18)
@@ -117,6 +117,12 @@ func _actualizar() -> void:
 		"cuartel_entrenamiento": _construir_cuartel_entrenamiento()
 
 	_contenido.add_child(_estado)
+	# Los textos informativos conservan contraste aunque el tema global cambie.
+	for nodo in _contenido.find_children("*", "Label", true, false):
+		var etiqueta := nodo as Label
+		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
+		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
+		etiqueta.add_theme_constant_override("outline_size", 2)
 	var cerrar := Button.new()
 	cerrar.text = "Cerrar"
 	cerrar.custom_minimum_size = Vector2(0, 34)
@@ -338,25 +344,39 @@ func _guardar_reparacion() -> void:
 func _construir_carpinteria() -> void:
 	_agregar_texto("Entrega madera y monedas para recibir el mueble directamente en tu inventario.")
 	for mueble in CATALOGO_CARPINTERIA:
+		var tarjeta := PanelContainer.new()
+		tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var fondo := PIXEL_UI_THEME.button_surface_style()
+		if fondo != null:
+			tarjeta.add_theme_stylebox_override("panel", fondo)
+		_contenido.add_child(tarjeta)
+
 		var fila := HBoxContainer.new()
-		fila.add_theme_constant_override("separation", 8)
-		_contenido.add_child(fila)
+		fila.add_theme_constant_override("separation", 10)
+		tarjeta.add_child(fila)
+
 		var icono := TextureRect.new()
 		icono.texture = ITEM_ICON_RESOLVER.obtener_icono({"nombre": str(mueble.nombre)})
 		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icono.custom_minimum_size = Vector2(42, 42)
+		icono.custom_minimum_size = Vector2(54, 54)
 		fila.add_child(icono)
+
 		var etiqueta := Label.new()
-		etiqueta.text = "%s\n%d madera · %d monedas\nEn inventario: %d" % [
+		etiqueta.text = "%s\\n%d madera · %d monedas\\nEn inventario: %d" % [
 			str(mueble.nombre), int(mueble.madera), int(mueble.precio),
 			_contar_item("carpinteria_mueble_" + str(mueble.id))
 		]
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
+		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
+		etiqueta.add_theme_constant_override("outline_size", 2)
 		fila.add_child(etiqueta)
+
 		var boton := Button.new()
 		boton.text = "Encargar"
+		boton.custom_minimum_size = Vector2(82, 38)
 		boton.disabled = not is_instance_valid(_inventario) or _contar_item(ITEM_MADERA) < int(mueble.madera) or GameState.obtener_dinero() < int(mueble.precio)
 		boton.pressed.connect(_encargar_mueble.bind(str(mueble.id)))
 		fila.add_child(boton)
