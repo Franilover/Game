@@ -1791,7 +1791,8 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "ArmarioCuartelEste", MUEBLE_ARMARIO, Vector2(205, -118), Vector2(0.85, 0.85), 1)
 			_agregar_sprite_mueble(cuarto, "MesaLicencias", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 65), Vector2(1.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaArsenal", MUEBLE_MESA, Vector2(105, 65), Vector2(1.2, 1), 1)
-			_agregar_estacion_edificio(cuarto, "cuartel", "Licencias y arsenal", Vector2(-105, 32))
+			_agregar_estacion_edificio(cuarto, "cuartel_licencia", "Solicitar licencia", Vector2(-105, 32))
+			_agregar_estacion_edificio(cuarto, "cuartel_armas", "Comprar armas", Vector2(105, 32))
 		"taller", "carpinteria":
 			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA_DOCUMENTOS, Vector2(-25, 5), Vector2(1.6, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(180, 72), Vector2(0.9, 0.9), 1)
@@ -2254,7 +2255,11 @@ func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posici
 
 
 func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> bool:
-	return _interior_activo and _entrada_interior_id == tipo
+	if not _interior_activo:
+		return false
+	if tipo.begins_with("cuartel_"):
+		return _entrada_interior_id == "cuartel"
+	return _entrada_interior_id == tipo
 
 
 func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> void:
