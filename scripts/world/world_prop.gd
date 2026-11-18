@@ -397,7 +397,8 @@ func _puede_recolectar(persona: Node, mano: String) -> bool:
 
 
 func _obtener_item_id_recoleccion() -> String:
-	var item_id := str(datos.get("item_id", "")).strip_edges()
+	var item_id_variant: Variant = datos.get("item_id", null)
+	var item_id := "" if item_id_variant == null else str(item_id_variant).strip_edges()
 	if not item_id.is_empty():
 		return item_id
 
