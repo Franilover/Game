@@ -4,6 +4,7 @@ class_name ItemIconResolver
 
 const ITEMS_ASSET_ROOT: String = "res://assets/art/items"
 const PROPS_ASSET_ROOT: String = "res://assets/art/props"
+const FURNITURE_ASSET_ROOT: String = "res://assets/art/places/Muebles"
 
 const EXTENSIONES_IMAGEN: Array[String] = [
 	"png",
@@ -140,6 +141,9 @@ static func _asegurar_indice() -> void:
 	# Si no existe un icono específico en items/, usamos el PNG del prop.
 	_indexar_directorio(
 		PROPS_ASSET_ROOT
+	)
+	_indexar_directorio(
+		FURNITURE_ASSET_ROOT
 	)
 
 
