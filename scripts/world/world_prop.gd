@@ -377,7 +377,7 @@ func _obtener_item_id_recoleccion() -> String:
 	if str(datos.get("tipo", tipo)).strip_edges().to_lower() == "arbol":
 		if not is_instance_valid(_world_items):
 			return ""
-		var madera := _world_items.buscar_item_por_nombre("Madera")
+		var madera: Dictionary = _world_items.buscar_item_por_nombre("Madera")
 		return str(madera.get("item_id", madera.get("id", ""))).strip_edges()
 
 	# El snapshot de props_game puede conservar el vínculo en
