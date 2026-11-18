@@ -242,7 +242,8 @@ func _mostrar_ficha_personaje(personaje: Dictionary) -> void:
 	if not url.is_empty():
 		_cargar_imagen_personaje(url, _imagen_detalle)
 
-	var nacimiento := int(personaje.get("fecha_nacimiento", -1))
+	var nacimiento_variant: Variant = personaje.get("fecha_nacimiento", null)
+	var nacimiento := int(nacimiento_variant) if nacimiento_variant != null else -1
 	var edad := _calcular_edad(nacimiento)
 	_agregar_dato_ficha("Edad", edad)
 	_agregar_dato_ficha("Género", str(personaje.get("genero", "")).strip_edges())
