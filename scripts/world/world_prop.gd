@@ -255,6 +255,8 @@ func interactuar_con_herramienta(persona: Node, mano: String) -> bool:
 			if _recoleccion_en_curso:
 				return true
 			_recoleccion_en_curso = true
+			_progreso_recoleccion = 0.0
+			queue_redraw()
 			_recoleccion_token += 1
 			call_deferred("_ejecutar_recoleccion_con_herramienta", persona, mano, _recoleccion_token)
 			return true
