@@ -489,7 +489,11 @@ func _aplicar_preferencia_terreno(malla: AStarGrid2D, celda: Vector2i, posicion_
 
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
-	if bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
+	var horario_nocturno := minutos >= 21 * 60 or minutos < 6 * 60
+	if horario_nocturno and (bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false))):
+		# Cancela acercamientos y charlas iniciadas antes de la hora de dormir.
+		_finalizar_actividad_social(npc)
+	elif bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
 		return
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
