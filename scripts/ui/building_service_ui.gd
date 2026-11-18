@@ -115,6 +115,8 @@ func _actualizar() -> void:
 		"cuartel_licencia": _construir_cuartel_licencia()
 		"cuartel_armas": _construir_cuartel_armas()
 		"cuartel_entrenamiento": _construir_cuartel_entrenamiento()
+		"vivero": _construir_vivero()
+		"herbolario": _construir_herbolario()
 
 	_contenido.add_child(_estado)
 	# Los textos informativos conservan contraste aunque el tema global cambie.
@@ -432,6 +434,155 @@ func _encargar_mueble(mueble_id: String) -> void:
 	GameState.call_deferred("_ejecutar_guardado_rapido")
 	_mostrar_estado("Recibiste %s en tu inventario." % str(definicion.get("nombre", "el mueble")))
 	_actualizar()
+
+
+
+func _construir_vivero() -> void:
+	_panel.custom_minimum_size = Vector2(520, 0)
+	_agregar_texto("CUIDADO DE CULTIVOS")
+	_agregar_texto("Revisa los bancales, administra el agua y guarda tus semillas y herramientas en el cofre del vivero.")
+	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
+	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
+	var nombres := ["BancalOeste", "BancalCentro", "BancalEste", "BancalSurOeste", "BancalSurCentro"]
+	var rejilla := GridContainer.new()
+	rejilla.columns = 2
+	rejilla.add_theme_constant_override("h_separation", 8)
+	rejilla.add_theme_constant_override("v_separation", 8)
+	_contenido.add_child(rejilla)
+	for nombre in nombres:
+		var humedo := bool(estados.get(nombre, false))
+		var tarjeta := PanelContainer.new()
+		tarjeta.custom_minimum_size = Vector2(220, 48)
+		rejilla.add_child(tarjeta)
+		PIXEL_UI_THEME.apply(tarjeta, false)
+		var fila := HBoxContainer.new()
+		fila.add_theme_constant_override("separation", 8)
+		tarjeta.add_child(fila)
+		var indicador := ColorRect.new()
+		indicador.custom_minimum_size = Vector2(10, 10)
+		indicador.color = Color("#527F91") if humedo else Color("#765039")
+		fila.add_child(indicador)
+		var etiqueta := Label.new()
+		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		etiqueta.text = "%s\n%s" % [nombre.replace("Bancal", "Bancal "), "Húmedo" if humedo else "Seco"]
+		fila.add_child(etiqueta)
+	var regadera := _obtener_regadera_en_manos()
+	var agua := int(regadera.get("agua", -1))
+	_agregar_texto("Regadera en mano: %s" % ("Agua %d/4" % agua if agua >= 0 else "No detectada"))
+	_agregar_texto("Equipa la regadera y utiliza la interacción contextual sobre cada bancal. Rellénala en el depósito de agua.")
+	var actualizar := Button.new()
+	actualizar.text = "Actualizar estado"
+	actualizar.pressed.connect(_actualizar)
+	_contenido.add_child(actualizar)
+	PIXEL_UI_THEME.apply(actualizar, false)
+
+
+func _obtener_regadera_en_manos() -> Dictionary:
+	if not is_instance_valid(_inventario):
+		return {}
+	for mano in ["izquierda", "derecha"]:
+		var indice := _inventario.obtener_indice_mano_activa(mano)
+		var objeto := _inventario.obtener_item(indice)
+		if objeto.is_empty():
+			continue
+		var nombre := str(objeto.get("nombre", "")).to_lower()
+		var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+		var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
+		var herramienta_variant: Variant = propiedades.get("herramienta_recoleccion", {})
+		var herramienta: Dictionary = herramienta_variant if herramienta_variant is Dictionary else {}
+		if nombre.contains("regadera") or str(herramienta.get("tipo", "")).to_lower() == "regadera":
+			var estado_variant: Variant = propiedades.get("regadera", {})
+			var estado: Dictionary = estado_variant if estado_variant is Dictionary else {}
+			return {"agua": int(estado.get("agua", estado.get("agua_inicial", 4)))}
+	return {}
+
+
+func _construir_herbolario() -> void:
+	_panel.custom_minimum_size = Vector2(540, 0)
+	_agregar_texto("INVESTIGACIÓN BOTÁNICA")
+	_agregar_texto("Selecciona una muestra de tu inventario para consultar sus datos. Examinarla no consume el objeto.")
+	var cuerpo := HBoxContainer.new()
+	cuerpo.add_theme_constant_override("separation", 8)
+	cuerpo.custom_minimum_size = Vector2(500, 190)
+	_contenido.add_child(cuerpo)
+	var panel_lista := PanelContainer.new()
+	panel_lista.custom_minimum_size = Vector2(190, 0)
+	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cuerpo.add_child(panel_lista)
+	PIXEL_UI_THEME.apply(panel_lista, false)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel_lista.add_child(scroll)
+	var lista := VBoxContainer.new()
+	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(lista)
+	var panel_detalle := PanelContainer.new()
+	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cuerpo.add_child(panel_detalle)
+	PIXEL_UI_THEME.apply(panel_detalle, false)
+	var detalle := VBoxContainer.new()
+	panel_detalle.add_child(detalle)
+	var icono := TextureRect.new()
+	icono.custom_minimum_size = Vector2(0, 76)
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	detalle.add_child(icono)
+	var nombre_label := Label.new()
+	nombre_label.text = "Selecciona una muestra"
+	nombre_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nombre_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalle.add_child(nombre_label)
+	var descripcion := Label.new()
+	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	descripcion.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	detalle.add_child(descripcion)
+	var estado := Label.new()
+	estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalle.add_child(estado)
+	var cantidad := 0
+	if is_instance_valid(_inventario):
+		for indice in range(_inventario.runtime.state.items.size()):
+			var objeto: Dictionary = _inventario.runtime.state.items[indice]
+			if objeto.is_empty() or not _es_muestra_botanica(objeto):
+				continue
+			cantidad += 1
+			var boton := Button.new()
+			boton.text = str(objeto.get("nombre", "Muestra"))
+			boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			boton.pressed.connect(_seleccionar_muestra_herbolario.bind(objeto.duplicate(true), icono, nombre_label, descripcion, estado))
+			lista.add_child(boton)
+			PIXEL_UI_THEME.apply(boton, false)
+	if cantidad == 0:
+		var vacio := Label.new()
+		vacio.text = "No llevas flores, hojas, hierbas ni semillas para estudiar."
+		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lista.add_child(vacio)
+	_agregar_texto("PROCESAMIENTO")
+	_agregar_texto("La elaboración debe utilizar recetas registradas en el catálogo de Crafteo. Esta mesa separa la investigación del procesamiento y no consume materiales durante la inspección.")
+
+
+func _seleccionar_muestra_herbolario(objeto: Dictionary, icono: TextureRect, nombre: Label, descripcion: Label, estado: Label) -> void:
+	icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
+	nombre.text = str(objeto.get("nombre", "Muestra"))
+	descripcion.text = str(objeto.get("descripcion", "Sin descripción registrada."))
+	var categoria_variant: Variant = objeto.get("categoria", {})
+	var categoria := str(objeto.get("categoria_clave", ""))
+	if categoria_variant is Dictionary:
+		categoria = str((categoria_variant as Dictionary).get("nombre", categoria))
+	if not categoria.is_empty():
+		descripcion.text += "\n\nCategoría: " + categoria
+	estado.text = "Muestra seleccionada · No se ha consumido."
+
+
+func _es_muestra_botanica(objeto: Dictionary) -> bool:
+	var identidad := (str(objeto.get("nombre", "")) + " " + str(objeto.get("categoria_clave", ""))).to_lower()
+	for termino in ["flor", "planta", "hoja", "hierba", "semilla", "raiz", "raíz", "botan"]:
+		if identidad.contains(termino):
+			return true
+	return false
 
 
 func _construir_cuartel_licencia() -> void:
