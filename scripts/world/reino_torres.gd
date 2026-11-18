@@ -98,7 +98,11 @@ var _tiempo_ambiente_torres: float = 0.0
 var _aviso_evento_torres: Label = null
 var _decoracion_evento_torres: Node2D = null
 var _evento_decoracion_actual: String = ""
-var _menu_posada: PopupMenu = null
+var _menu_posada_layer: CanvasLayer = null
+var _menu_posada_panel: PanelContainer = null
+var _menu_posada_contenido: VBoxContainer = null
+var _menu_posada_estado: Label = null
+var _menu_posada_vista := "principal"
 const POSADA_COSTE_MENSUAL := 100
 const POSADA_DURACION_MES_DIAS := 30
 const POSADA_FLAG := "posada_estado"
@@ -1490,6 +1494,7 @@ func _devolver_npcs_del_interior_al_exterior() -> void:
 func _salir_del_interior() -> void:
 	if not _interior_activo or not is_instance_valid(_jugador):
 		return
+	_cerrar_menu_posada()
 	_devolver_npcs_del_interior_al_exterior()
 	_restaurar_npcs_exteriores()
 	_capa_interior.visible = false
@@ -1827,61 +1832,117 @@ func _posada_tiene_acceso() -> bool:
 	return hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
 
 
-func _mostrar_menu_posada() -> void:
-	if _menu_posada == null or not is_instance_valid(_menu_posada):
-		_menu_posada = PopupMenu.new()
-		_menu_posada.name = "MenuRecepcionPosada"
-		get_tree().root.add_child(_menu_posada)
-		_menu_posada.id_pressed.connect(_al_elegir_menu_posada)
-	_menu_posada.clear()
-	_menu_posada.add_item("Comprar", 1)
-	_menu_posada.add_item("Ir a la habitación", 2)
-	_menu_posada.add_separator()
-	_menu_posada.add_item("Cerrar", 3)
-	_menu_posada.popup_centered()
-
-
-func _al_elegir_menu_posada(id: int) -> void:
-	match id:
-		1:
-			_mostrar_menu_compra_posada()
-		2:
-			if not _posada_tiene_acceso():
-				Events.notification_pushed.emit("Necesitas activar tu estancia en la recepción.")
-				return
-			_entrar_al_interior({"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada"})
-		3:
-			return
-		10:
-			_pagar_estancia_posada(true)
-			_mostrar_menu_posada()
-		11:
-			_pagar_estancia_posada(false)
-			_mostrar_menu_posada()
-		12:
-			Events.notification_pushed.emit("Tu habitación está disponible hasta el vencimiento de la estancia.")
-			_mostrar_menu_posada()
-		13:
-			_mostrar_menu_posada()
-
-
-func _mostrar_menu_compra_posada() -> void:
-	if _menu_posada == null or not is_instance_valid(_menu_posada):
+func _crear_interfaz_posada() -> void:
+	if is_instance_valid(_menu_posada_layer):
 		return
-	_menu_posada.clear()
-	var estado := _obtener_estado_posada()
-	var hoy := _obtener_dia_absoluto_mundo()
-	var primer_mes_gratis := not bool(estado.get("primer_mes_gratis_usado", false))
-	var acceso_activo := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
-	if primer_mes_gratis:
-		_menu_posada.add_item("Activar primer mes gratis", 10)
-	elif acceso_activo:
-		_menu_posada.add_item("Estancia activa", 12)
+	_menu_posada_layer = CanvasLayer.new()
+	_menu_posada_layer.name = "InterfazPosada"
+	_menu_posada_layer.layer = 45
+	get_tree().root.add_child(_menu_posada_layer)
+
+	var raiz := Control.new()
+	raiz.name = "Raiz"
+	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	raiz.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_posada_layer.add_child(raiz)
+
+	var centrador := CenterContainer.new()
+	centrador.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	raiz.add_child(centrador)
+
+	_menu_posada_panel = PanelContainer.new()
+	_menu_posada_panel.name = "PanelPosada"
+	_menu_posada_panel.custom_minimum_size = Vector2(310, 0)
+	PIXEL_UI_THEME.apply(_menu_posada_panel, false)
+	centrador.add_child(_menu_posada_panel)
+
+	_menu_posada_contenido = VBoxContainer.new()
+	_menu_posada_contenido.add_theme_constant_override("separation", 8)
+	_menu_posada_panel.add_child(_menu_posada_contenido)
+
+
+func _crear_boton_posada(texto: String, accion: Callable, deshabilitado: bool = false) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(270, 38)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.disabled = deshabilitado
+	boton.pressed.connect(accion)
+	PIXEL_UI_THEME.apply(boton, false)
+	_menu_posada_contenido.add_child(boton)
+	return boton
+
+
+func _mostrar_menu_posada(vista: String = "principal") -> void:
+	_crear_interfaz_posada()
+	if not is_instance_valid(_menu_posada_contenido):
+		return
+	_menu_posada_vista = vista
+	for hijo in _menu_posada_contenido.get_children():
+		hijo.queue_free()
+
+	var titulo := Label.new()
+	titulo.name = "Title"
+	titulo.text = "POSADA"
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_menu_posada_contenido.add_child(titulo)
+
+	_menu_posada_estado = Label.new()
+	_menu_posada_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_menu_posada_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_menu_posada_contenido.add_child(_menu_posada_estado)
+
+	if vista == "principal":
+		var estado := _obtener_estado_posada()
+		var hoy := _obtener_dia_absoluto_mundo()
+		var gratis_disponible := not bool(estado.get("primer_mes_gratis_usado", false))
+		var activa := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
+		if gratis_disponible:
+			_menu_posada_estado.text = "Tu primera estancia de un mes es gratuita."
+		elif activa:
+			_menu_posada_estado.text = "Tu habitación está disponible."
+		else:
+			_menu_posada_estado.text = "Tu estancia ha terminado. Tus pertenencias siguen guardadas."
+		_crear_boton_posada("Comprar", Callable(self, "_mostrar_menu_posada").bind("comprar"))
+		_crear_boton_posada("Ir a la habitación", Callable(self, "_ir_habitacion_posada"), not activa and not gratis_disponible)
 	else:
-		_menu_posada.add_item("Pagar mes: 100 monedas", 11)
-	_menu_posada.add_separator()
-	_menu_posada.add_item("Volver", 13)
-	_menu_posada.popup_centered()
+		_menu_posada_estado.text = "Estancia mensual y mobiliario."
+		var estado := _obtener_estado_posada()
+		var hoy := _obtener_dia_absoluto_mundo()
+		var gratis_disponible := not bool(estado.get("primer_mes_gratis_usado", false))
+		var activa := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
+		if gratis_disponible:
+			_crear_boton_posada("Activar primer mes gratis", Callable(self, "_comprar_estancia_posada").bind(true))
+		elif activa:
+			_crear_boton_posada("Estancia activa", Callable(self, "_mostrar_menu_posada").bind("comprar"), true)
+		else:
+			_crear_boton_posada("Renovar por 100 monedas", Callable(self, "_comprar_estancia_posada").bind(false))
+		_crear_boton_posada("Muebles", Callable(self, "_mostrar_menu_posada").bind("muebles"))
+
+	if vista == "muebles":
+		_menu_posada_estado.text = "Los muebles que compres quedarán asociados a tu habitación."
+		_crear_boton_posada("Volver a compras", Callable(self, "_mostrar_menu_posada").bind("comprar"))
+
+	_crear_boton_posada("Cerrar", Callable(self, "_cerrar_menu_posada"))
+	_menu_posada_layer.visible = true
+
+
+func _ir_habitacion_posada() -> void:
+	if not _posada_tiene_acceso():
+		Events.notification_pushed.emit("Necesitas activar tu estancia en la recepción.")
+		return
+	_cerrar_menu_posada()
+	_entrar_al_interior({"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada"})
+
+
+func _comprar_estancia_posada(gratis: bool) -> void:
+	_pagar_estancia_posada(gratis)
+	_mostrar_menu_posada("principal")
+
+
+func _cerrar_menu_posada() -> void:
+	if is_instance_valid(_menu_posada_layer):
+		_menu_posada_layer.visible = false
 
 
 func _pagar_estancia_posada(gratis: bool) -> void:
@@ -1920,7 +1981,7 @@ func _puede_interactuar_recepcion_posada(_jugador: Node) -> bool:
 
 func _interactuar_recepcion_posada(_jugador: Node) -> void:
 	if _puede_interactuar_recepcion_posada(_jugador):
-		_mostrar_menu_posada()
+		_mostrar_menu_posada("principal")
 
 
 func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: String, posicion: Vector2) -> void:
