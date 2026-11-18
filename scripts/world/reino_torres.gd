@@ -2076,6 +2076,38 @@ func _interactuar_recepcion_posada(_jugador: Node) -> void:
 		_mostrar_menu_posada("principal")
 
 
+func _agregar_estacion_archivo(padre: Node, estacion_id: String, texto: String, posicion: Vector2) -> void:
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "EstacionArchivo_" + estacion_id
+	objetivo.position = posicion
+	objetivo.call(
+		"configurar",
+		texto,
+		58.0,
+		Callable(self, "_puede_interactuar_estacion_archivo").bind(estacion_id),
+		Callable(self, "_interactuar_estacion_archivo").bind(estacion_id)
+	)
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_estacion_archivo(_jugador: Node, estacion_id: String) -> bool:
+	return _interior_activo and _entrada_interior_id == "archivo_real" and estacion_id == "documentos_personajes"
+
+
+func _interactuar_estacion_archivo(_jugador: Node, estacion_id: String) -> void:
+	if not _puede_interactuar_estacion_archivo(_jugador, estacion_id):
+		return
+	if get_tree().get_first_node_in_group("royal_archive_ui") != null:
+		return
+	var interfaz := ROYAL_ARCHIVE_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	interfaz.add_to_group("royal_archive_ui")
+	get_tree().root.add_child(interfaz)
+
+
 func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: String, posicion: Vector2) -> void:
 	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
 	if not is_instance_valid(objetivo):
