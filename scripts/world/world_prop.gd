@@ -46,6 +46,8 @@ func configurar_dependencias(
 	_world_context = nuevo_world_context
 	_inventory = nuevo_inventory
 	_world_items = nuevo_world_items
+	_conectar_catalogo_items()
+	_actualizar_estado_interaccion()
 
 
 
@@ -107,7 +109,9 @@ func obtener_datos() -> Dictionary:
 
 
 func es_recolectable() -> bool:
-	return _tiene_recoleccion_canonica()
+	# La identidad del árbol es suficiente para seleccionarlo como objetivo.
+	# El item de salida se resuelve al completar la acción, no al buscar objetivo.
+	return _es_arbol() or _tiene_recoleccion_canonica()
 
 
 func get_interaction_distance() -> float:
@@ -317,21 +321,19 @@ func _ejecutar_recoleccion_con_herramienta(persona: Node, mano: String, token: i
 
 
 func _tiene_recoleccion_canonica() -> bool:
-	var item_id := _obtener_item_id_recoleccion()
-	if item_id.is_empty():
-		return false
-
-	# Supabase manda: un prop puede ser "decoracion" visualmente y aun así
-	# ser recolectable. La propiedad canónica es propiedades.recolectable.
+	# Supabase manda: respetar una declaración explícita, incluso si desactiva
+	# la recolección. Los árboles antiguos se reconocen por identidad mientras
+	# llega el snapshot actualizado con item_id y propiedades.
 	var propiedades_variant: Variant = datos.get("propiedades", {})
 	if propiedades_variant is Dictionary:
 		var propiedades := propiedades_variant as Dictionary
 		if propiedades.has("recolectable"):
 			return bool(propiedades.get("recolectable", false))
 
-	# Compatibilidad con snapshots donde la propiedad aún no viene incluida:
-	# si existe un item_id canónico, el vínculo prop → item sigue siendo válido.
-	return true
+	if _es_arbol():
+		return true
+
+	return not _obtener_item_id_recoleccion().is_empty()
 
 
 func _obtener_requisito_herramienta() -> Dictionary:
@@ -717,10 +719,16 @@ func _actualizar_profundidad() -> void:
 
 func _ready() -> void:
 	add_to_group("world_props")
-	if is_instance_valid(_world_items):
-		if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
-			_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
+	_conectar_catalogo_items()
+	_actualizar_estado_interaccion()
 	_actualizar_profundidad()
+
+
+func _conectar_catalogo_items() -> void:
+	if not is_instance_valid(_world_items):
+		return
+	if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
+		_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
 
 
 func _process(_delta: float) -> void:
