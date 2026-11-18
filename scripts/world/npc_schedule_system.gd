@@ -556,6 +556,37 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
 
+	# Prioridad nocturna global: ninguna rutina de ocio, evento comunitario,
+	# invitación o encuentro puede concentrar habitantes en la plaza/castillo.
+	# Cada NPC vuelve a su hogar para dormir; los turnos laborales explícitos
+	# se mantienen únicamente si están marcados como trabajo/guardia.
+	var hora_nocturna := minutos >= 21 * 60 or minutos < 6 * 60
+	if hora_nocturna:
+		var actividad_previa := str(rutina.get("actividad_clave", "")).strip_edges().to_lower()
+		var es_turno_esencial := (
+			actividad_previa.contains("trabaj")
+			or actividad_previa.contains("guard")
+			or actividad_previa.contains("vigilar")
+			or actividad_previa.contains("investig")
+		)
+		if not es_turno_esencial:
+			var hogar_nocturno := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
+			if not POSICIONES.has(hogar_nocturno):
+				hogar_nocturno = obtener_clave_hogar(npc.get_nombre_visual(), "plaza")
+			rutina = {
+				"clave": "dormir_en_hogar",
+				"ubicacion_clave": hogar_nocturno,
+				"actividad_clave": "dormir"
+			}
+			npc.set_meta("evento_comunitario_actual", "")
+			npc.remove_meta("evento_comunitario_datos")
+			npc.remove_meta("grupo_social_castillo_id")
+			npc.remove_meta("grupo_social_castillo_nombres")
+			npc.remove_meta("puesto_social_castillo")
+			npc.remove_meta("reunion_castillo_fase")
+			npc.remove_meta("reunion_castillo_firma_asistentes")
+			npc.remove_meta("reunion_castillo_dia")
+
 	# Las reuniones nocturnas automáticas están desactivadas: al llegar la noche,
 	# los habitantes libres deben regresar a sus hogares para dormir.
 
