@@ -252,16 +252,26 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 	var input_controller = PLAYER_INPUT_CONTROLLER_SCRIPT.new()
-	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo() and input_controller.es_combinacion_viaje(event):
-		get_viewport().set_input_as_handled()
-		return
 	if not input_controller.es_combinacion_viaje(event):
 		return
-	if _realm_menu == null or not is_instance_valid(_realm_menu):
+	get_viewport().set_input_as_handled()
+	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo():
 		return
-	if _realm_menu.has_method("alternar"):
-		_realm_menu.call("alternar", _supabase_client, GameState, _zone_manager.obtener_tipo_actual())
-		get_viewport().set_input_as_handled()
+	if not is_instance_valid(_zone_manager):
+		return
+	var zona_actual := _zone_manager.obtener_tipo_actual()
+	if zona_actual == "mundo_abierto":
+		if _zone_manager.has_method("regresar_viaje_exterior"):
+			_zone_manager.call("regresar_viaje_exterior")
+		return
+	if zona_actual.begins_with("expedicion:"):
+		if _zone_manager.has_method("salir_expedicion"):
+			_zone_manager.call("salir_expedicion")
+		else:
+			_zone_manager.entrar_reino("torres")
+		return
+	if zona_actual != "reino_torres":
+		_zone_manager.entrar_reino("torres")
 
 
 func _es_modo_historia() -> bool:
@@ -270,6 +280,9 @@ func _es_modo_historia() -> bool:
 
 func _al_solicitar_destino_reino(clave: String) -> void:
 	var clave_normalizada := clave.strip_edges().to_lower()
+	if clave_normalizada != "torres":
+		push_warning("Main: los viajes a otros destinos están deshabilitados; sólo se permite regresar a Torres.")
+		return
 	print("Main: destino solicitado desde RealmMenu → ", clave_normalizada)
 	if _zone_manager == null or not is_instance_valid(_zone_manager):
 		return
