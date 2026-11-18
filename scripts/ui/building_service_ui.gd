@@ -27,7 +27,7 @@ var _inventario: InventoryController
 var _world_items: GarliaWorldItems
 var _panel: PanelContainer
 var _contenido: VBoxContainer
-var _estado: Button
+var _estado: Label
 var _jugador: Node
 var _jugador_fisica_previa := true
 var _jugador_input_previo := true
@@ -98,23 +98,18 @@ func _actualizar() -> void:
 	PIXEL_UI_THEME.apply(_estado, false)
 
 	if _tipo not in ["forja", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
-		var titulo := Button.new()
+		var titulo := Label.new()
 		titulo.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		titulo.focus_mode = Control.FOCUS_NONE
 		titulo.add_theme_font_size_override("font_size", 18)
 		match _tipo:
 			"carpinteria": titulo.text = "CARPINTERÍA"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
-		PIXEL_UI_THEME.apply(titulo, false)
 
-	var saldo := Button.new()
+	var saldo := Label.new()
 	saldo.text = "%d" % GameState.obtener_dinero()
-	saldo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	saldo.focus_mode = Control.FOCUS_NONE
 	saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_contenido.add_child(saldo)
-	PIXEL_UI_THEME.apply(saldo, false)
 
 	match _tipo:
 		"forja": _construir_forja()
@@ -468,13 +463,10 @@ func _construir_cuartel_entrenamiento() -> void:
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 8)
 		_contenido.add_child(fila)
-		var etiqueta := Button.new()
+			var etiqueta := Label.new()
 		etiqueta.text = _nombre_entrenamiento(candidato)
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		etiqueta.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		etiqueta.focus_mode = Control.FOCUS_NONE
 		fila.add_child(etiqueta)
-		PIXEL_UI_THEME.apply(etiqueta, false)
 		var boton := Button.new()
 		boton.text = "Entrenar"
 		boton.pressed.connect(_iniciar_entrenamiento.bind(candidato))
@@ -523,13 +515,10 @@ func _solicitar_licencia() -> void:
 func _agregar_boton_arma(nombre: String, item_id: String, precio: int) -> void:
 	var fila := HBoxContainer.new()
 	_contenido.add_child(fila)
-	var etiqueta := Button.new()
+	var etiqueta := Label.new()
 	etiqueta.text = "%s · %d monedas" % [nombre, precio]
 	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	etiqueta.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	etiqueta.focus_mode = Control.FOCUS_NONE
 	fila.add_child(etiqueta)
-	PIXEL_UI_THEME.apply(etiqueta, false)
 	var boton := Button.new()
 	boton.text = "Comprar"
 	boton.disabled = GameState.obtener_dinero() < precio or not is_instance_valid(_world_items)
@@ -602,13 +591,11 @@ func _buscar_slot_item(item_id: String) -> int:
 
 
 func _agregar_texto(texto: String) -> void:
-	var etiqueta := Button.new()
+	var etiqueta := Label.new()
 	etiqueta.text = texto
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	etiqueta.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	etiqueta.focus_mode = Control.FOCUS_NONE
 	_contenido.add_child(etiqueta)
-	PIXEL_UI_THEME.apply(etiqueta, false)
 
 
 func _mostrar_estado(texto: String) -> void:
