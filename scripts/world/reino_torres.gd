@@ -1791,8 +1791,10 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "ArmarioCuartelEste", MUEBLE_ARMARIO, Vector2(205, -118), Vector2(0.85, 0.85), 1)
 			_agregar_sprite_mueble(cuarto, "MesaLicencias", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 65), Vector2(1.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaArsenal", MUEBLE_MESA, Vector2(105, 65), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "MesaEntrenamiento", MUEBLE_MESA, Vector2(0, -5), Vector2(1.45, 1.15), 1)
 			_agregar_estacion_edificio(cuarto, "cuartel_licencia", "Solicitar licencia", Vector2(-105, 32))
 			_agregar_estacion_edificio(cuarto, "cuartel_armas", "Comprar armas", Vector2(105, 32))
+			_agregar_estacion_edificio(cuarto, "cuartel_entrenamiento", "Entrenar", Vector2(0, -38))
 		"taller", "carpinteria":
 			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA_DOCUMENTOS, Vector2(-25, 5), Vector2(1.6, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(180, 72), Vector2(0.9, 0.9), 1)
