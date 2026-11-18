@@ -539,7 +539,11 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 		return false
 
 	var datos_prop := prop.duplicate(true)
-	datos_prop["asset_path"] = "res://assets/art/props/" + str(prop.get("nombre", "")) + ".png"
+	var clave_prop := str(prop.get("clave", "")).strip_edges()
+	if clave_prop == "flor_verde" or clave_prop.begins_with("flor_verde_"):
+		datos_prop["asset_path"] = "res://assets/art/props/Flor Verdel.png"
+	else:
+		datos_prop["asset_path"] = "res://assets/art/props/" + str(prop.get("nombre", "")) + ".png"
 	datos_prop["item_id"] = str(datos.get("item_id", datos.get("id", "")))
 	datos_prop["colocado_por_jugador"] = true
 
