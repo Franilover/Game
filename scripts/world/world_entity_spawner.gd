@@ -123,9 +123,9 @@ func _reintentar_props_en_chunks_cargados() -> void:
 				break
 		if tiene_prop_real:
 			continue
-			cancelar_prop_spawn_chunk(chunk_coord)
-			_entity_manager.despawn_props_chunk(chunk_coord)
-			spawn_props_chunk(chunk_coord)
+		cancelar_prop_spawn_chunk(chunk_coord)
+		_entity_manager.despawn_props_chunk(chunk_coord)
+		spawn_props_chunk(chunk_coord)
 
 
 func configurar_render_manager(render_manager: Node) -> void:
