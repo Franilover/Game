@@ -341,6 +341,24 @@ func _process(delta: float) -> void:
 		_reino_descubrimiento_elapsed = 0.0
 		_detectar_reinos_descubiertos()
 
+	# Los pasajes al exterior tienen hora de regreso obligatoria: 22:00 del reloj del mundo.
+	if (
+		is_instance_valid(_zone_manager)
+		and is_instance_valid(_world_atmosphere)
+		and _zone_manager.has_method("debe_regresar_viaje_exterior")
+		and bool(_zone_manager.call("debe_regresar_viaje_exterior"))
+		and _world_atmosphere.hora_del_dia >= 22.0
+	):
+		call_deferred("_regresar_de_viaje_exterior")
+
+
+func _regresar_de_viaje_exterior() -> void:
+	if not is_instance_valid(_zone_manager) or not _zone_manager.has_method("regresar_viaje_exterior"):
+		return
+	var resultado: Variant = await _zone_manager.call("regresar_viaje_exterior")
+	if bool(resultado):
+		Events.notification_pushed.emit("El pasaje ha vencido. Has regresado automáticamente a Torres.")
+
 
 func _detectar_reinos_descubiertos() -> void:
 	# En servidor dedicado el Player de Main es un ancla técnica oculta.
@@ -621,6 +639,13 @@ func _inicializar_runtime_de_zona() -> void:
 				var posicion_retorno: Variant = retorno.get("posicion", Vector2.ZERO)
 				if posicion_retorno is Vector2:
 					_player.global_position = posicion_retorno
+		if _zone_manager.has_method("consumir_retorno_viaje_exterior"):
+			var retorno_pasaje: Dictionary = _zone_manager.call("consumir_retorno_viaje_exterior")
+			if bool(retorno_pasaje.get("valido", false)):
+				var posicion_pasaje: Variant = retorno_pasaje.get("posicion", Vector2.ZERO)
+				if posicion_pasaje is Vector2:
+					_player.global_position = posicion_pasaje
+		_player.velocity = Vector2.ZERO
 		print("Main: reino activo → ", tipo_zona_actual)
 	else:
 		print("Main: mundo abierto listo.")
