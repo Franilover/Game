@@ -1767,8 +1767,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
 				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
 		"vivero":
-			# Parcelas reales de cultivo: el suelo se prepara como bancales y
-			# cada uno queda disponible para plantar al conectar la interacción.
 			_agregar_parcela_vivero(cuarto, "BancalOeste", Vector2(-155, -5), Vector2(112, 64))
 			_agregar_parcela_vivero(cuarto, "BancalCentro", Vector2(0, -5), Vector2(112, 64))
 			_agregar_parcela_vivero(cuarto, "BancalEste", Vector2(155, -5), Vector2(112, 64))
@@ -1776,14 +1774,17 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_parcela_vivero(cuarto, "BancalSurCentro", Vector2(0, 92), Vector2(112, 48))
 			_agregar_deposito_agua_vivero(cuarto, Vector2(-220, -125))
 			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
+			_agregar_estacion_edificio(cuarto, "vivero", "Revisar vivero", Vector2(115, -98))
 			_agregar_sprite_mueble(cuarto, "CofreSemillasVivero", MUEBLE_COFRE, Vector2(210, 105), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioHerramientasVivero", MUEBLE_ARMARIO, Vector2(-220, 105), Vector2(0.85, 0.85), 1)
 		"herbolario":
-			# Mesas de laboratorio y zona de muestras para el trabajo botánico.
 			_agregar_sprite_mueble(cuarto, "MesaInvestigacionHerbolario", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, -78), Vector2(1.35, 1.05), 1)
+			_agregar_estacion_edificio(cuarto, "herbolario", "Investigar muestras", Vector2(-105, -48))
 			_agregar_sprite_mueble(cuarto, "MesaProcesamientoHerbolario", MUEBLE_MESA_PLATOS, Vector2(90, -78), Vector2(1.25, 1.05), 1)
+			_agregar_estacion_edificio(cuarto, "herbolario", "Procesar muestras", Vector2(90, -48))
 			_agregar_sprite_mueble(cuarto, "ArmarioMuestrasHerbolario", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteHerbolario", MUEBLE_ARMARIO, Vector2(205, 82), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "CofreMuestrasHerbolario", MUEBLE_COFRE, Vector2(0, 115), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "SillaInvestigacionHerbolario", MUEBLE_SILLA_FRENTE, Vector2(-105, -25), Vector2.ONE, 1)
 		"habitacion_posada":
 			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
