@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Interfaz editable de trabajo del laboratorio.
-## Las pruebas preliminares no consumen objetos ni modifican sus datos.
+## El análisis es informativo: no consume objetos ni modifica sus datos.
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 
@@ -8,11 +8,10 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 @onready var _titulo: Label = $Panel/Margin/Column/Header/Title
 @onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
 @onready var _items_columna: VBoxContainer = $Panel/Margin/Column/Body/ItemsColumn/ItemScroll/ItemsList
-@onready var _resultado_label: Label = $Panel/Margin/Column/Body/ProcedureColumn/Result
-@onready var _boton_ejecutar: Button = $Panel/Margin/Column/Body/ProcedureColumn/Run
+@onready var _resultado_label: Label = $Panel/Margin/Column/Body/AnalysisColumn/Result
+@onready var _boton_analizar: Button = $Panel/Margin/Column/Body/AnalysisColumn/Run
 
 var _inventario: InventoryController = null
-var _estacion_id := "examen"
 var _indice_seleccionado := -1
 var _botones_items: Dictionary = {}
 
@@ -22,12 +21,12 @@ func _ready() -> void:
 	add_to_group("modal_ui")
 	add_to_group("research_lab_ui")
 	_boton_cerrar.pressed.connect(queue_free)
-	_boton_ejecutar.pressed.connect(_ejecutar_prueba)
+	_boton_analizar.pressed.connect(_analizar_objeto)
 
 
-func configurar(inventario: InventoryController, estacion_id: String) -> void:
+func configurar(inventario: InventoryController, _estacion_id: String = "examen") -> void:
+	# Se conserva el segundo argumento por compatibilidad con las estaciones existentes.
 	_inventario = inventario
-	_estacion_id = "examen"
 	_crear_interfaz()
 
 
@@ -73,7 +72,6 @@ func _cargar_objetos() -> void:
 		boton.toggle_mode = true
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.custom_minimum_size = Vector2(0, 34)
 		boton.text = "%s  x%d" % [
 			str(objeto.get("nombre", "Objeto")),
 			maxi(1, int(objeto.get("cantidad", 1)))
@@ -110,10 +108,10 @@ func _actualizar_seleccion() -> void:
 	for indice in _botones_items:
 		var boton: Button = _botones_items[indice]
 		boton.set_pressed_no_signal(int(indice) == _indice_seleccionado)
-	_boton_ejecutar.disabled = _indice_seleccionado < 0
+	_boton_analizar.disabled = _indice_seleccionado < 0
 
 
-func _ejecutar_prueba() -> void:
+func _analizar_objeto() -> void:
 	if not is_instance_valid(_inventario):
 		_resultado_label.text = "No se pudo acceder al inventario."
 		return
