@@ -251,18 +251,25 @@ func interactuar_con_herramienta(persona: Node, mano: String) -> bool:
 
 		var requisito := _obtener_requisito_herramienta()
 		if not requisito.is_empty():
-			if not _puede_recolectar(persona, mano):
-				var tipo_herramienta := str(requisito.get("tipo", "herramienta"))
-				var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
-				_emitir_notificacion("Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido))
-				return true
+			# El clic puede venir de cualquiera de las dos manos. Si la mano
+			# pulsada no lleva la herramienta, aceptar la otra mano equipada.
+			var mano_herramienta := mano
+			if not _puede_recolectar(persona, mano_herramienta):
+				var mano_alternativa := "derecha" if mano == "izquierda" else "izquierda"
+				if _puede_recolectar(persona, mano_alternativa):
+					mano_herramienta = mano_alternativa
+				else:
+					var tipo_herramienta := str(requisito.get("tipo", "herramienta"))
+					var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
+					_emitir_notificacion("Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido))
+					return true
 			if _recoleccion_en_curso:
 				return true
 			_recoleccion_en_curso = true
 			_progreso_recoleccion = 0.0
 			queue_redraw()
 			_recoleccion_token += 1
-			call_deferred("_ejecutar_recoleccion_con_herramienta", persona, mano, _recoleccion_token)
+			call_deferred("_ejecutar_recoleccion_con_herramienta", persona, mano_herramienta, _recoleccion_token)
 			return true
 
 		_recolectar(persona)
@@ -492,10 +499,11 @@ func _recolectar(persona: Node) -> bool:
 	var item_id := _obtener_item_id_recoleccion()
 	if item_id.is_empty():
 		print(
-			"WorldProp: no se puede recolectar → prop sin item_id canónico. ",
+			"WorldProp: no se puede recolectar → item de salida no disponible. ",
 			"datos=",
 			datos
 		)
+		_emitir_notificacion("El catálogo de recursos aún no está disponible. Inténtalo de nuevo en un momento.")
 		return false
 
 	var item: Dictionary = _world_items.buscar_item_por_id(
@@ -506,6 +514,7 @@ func _recolectar(persona: Node) -> bool:
 			"WorldProp: el item canónico no está cargado → ",
 			item_id
 		)
+		_emitir_notificacion("No se pudo cargar el recurso Madera. El árbol sigue intacto; inténtalo de nuevo.")
 		return false
 
 	item["cantidad"] = _obtener_cantidad_recoleccion()
