@@ -101,6 +101,8 @@ func _actualizar() -> void:
 		titulo.add_theme_font_size_override("font_size", 18)
 		match _tipo:
 			"carpinteria": titulo.text = "CARPINTERÍA"
+			"vivero": titulo.text = "VIVERO"
+			"herbolario": titulo.text = "HERBOLARIO"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
 
