@@ -91,15 +91,13 @@ func _actualizar() -> void:
 		return
 	for hijo in _contenido.get_children():
 		hijo.queue_free()
-	_estado = Button.new()
+	_estado = Label.new()
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_estado.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_estado.focus_mode = Control.FOCUS_NONE
-	PIXEL_UI_THEME.apply(_estado, false)
+	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 	if _tipo not in ["forja", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
 		var titulo := Label.new()
-		titulo.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		titulo.add_theme_font_size_override("font_size", 18)
 		match _tipo:
 			"carpinteria": titulo.text = "CARPINTERÍA"
@@ -463,7 +461,7 @@ func _construir_cuartel_entrenamiento() -> void:
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 8)
 		_contenido.add_child(fila)
-			var etiqueta := Label.new()
+		var etiqueta := Label.new()
 		etiqueta.text = _nombre_entrenamiento(candidato)
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		fila.add_child(etiqueta)
