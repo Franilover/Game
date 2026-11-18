@@ -1782,6 +1782,8 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_puesto_comercio(cuarto, str(vendedores[i]), posicion_puesto)
 		"registro", "almacen":
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(1.9, 1), 1)
+			if tipo == "registro":
+				_agregar_estacion_edificio(cuarto, "pasaje_exterior", "Solicitar pasaje al mundo exterior", Vector2(0, -42))
 			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-190, -95), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteComercioEste", MUEBLE_ARMARIO, Vector2(190, -95), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 55), Vector2(1.35, 1), 2)
@@ -2282,6 +2284,8 @@ func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posici
 func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> bool:
 	if not _interior_activo:
 		return false
+	if tipo == "pasaje_exterior":
+		return _entrada_interior_id == "registro"
 	if tipo.begins_with("cuartel_"):
 		return _entrada_interior_id == "cuartel"
 	return _entrada_interior_id == tipo
@@ -2289,6 +2293,9 @@ func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String)
 
 func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> void:
 	if not _puede_interactuar_estacion_edificio(_jugador_objetivo, tipo):
+		return
+	if tipo == "pasaje_exterior":
+		_mostrar_confirmacion_pasaje_exterior()
 		return
 	if get_tree().get_first_node_in_group("building_service_ui") != null:
 		return
@@ -2307,6 +2314,33 @@ func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> vo
 	interfaz.add_to_group("building_service_ui")
 	get_tree().root.add_child(interfaz)
 	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
+
+
+func _mostrar_confirmacion_pasaje_exterior() -> void:
+	if get_tree().get_first_node_in_group("travel_ticket_dialog") != null:
+		return
+	var dialogo := ConfirmationDialog.new()
+	dialogo.name = "PasajeMundoExterior"
+	dialogo.add_to_group("travel_ticket_dialog")
+	dialogo.title = "Pasaje al mundo exterior"
+	dialogo.dialog_text = "¿Solicitar un pasaje para salir de Torres?\nDeberás regresar antes de las 22:00. A esa hora volverás automáticamente al reino."
+	dialogo.ok_button_text = "Solicitar pasaje"
+	dialogo.cancel_button_text = "Cancelar"
+	dialogo.confirmed.connect(_al_confirmar_pasaje_exterior)
+	get_tree().root.add_child(dialogo)
+	dialogo.popup_centered()
+
+
+func _al_confirmar_pasaje_exterior() -> void:
+	var zone_manager := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(zone_manager) or not zone_manager.has_method("iniciar_viaje_exterior"):
+		Events.notification_pushed.emit("No se pudo gestionar el pasaje.")
+		return
+	var resultado: Variant = await zone_manager.call("iniciar_viaje_exterior")
+	if bool(resultado):
+		Events.notification_pushed.emit("Pasaje registrado. Regresarás a Torres a las 22:00.")
+	else:
+		Events.notification_pushed.emit("No se pudo iniciar el viaje al mundo exterior.")
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
