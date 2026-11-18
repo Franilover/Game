@@ -1222,6 +1222,14 @@ func _cargar_sprites_de_torres() -> void:
 
 
 
+func obtener_posicion_exterior_para_viaje() -> Vector2:
+	if _interior_activo:
+		return _posicion_exterior
+	if is_instance_valid(_jugador):
+		return _jugador.global_position
+	return Vector2.ZERO
+
+
 func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
 		return
@@ -2327,6 +2335,8 @@ func _mostrar_confirmacion_pasaje_exterior() -> void:
 	dialogo.ok_button_text = "Solicitar pasaje"
 	dialogo.cancel_button_text = "Cancelar"
 	dialogo.confirmed.connect(_al_confirmar_pasaje_exterior)
+	dialogo.confirmed.connect(dialogo.queue_free)
+	dialogo.canceled.connect(dialogo.queue_free)
 	get_tree().root.add_child(dialogo)
 	dialogo.popup_centered()
 
