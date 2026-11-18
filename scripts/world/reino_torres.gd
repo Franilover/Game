@@ -1939,7 +1939,7 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 			_menu_posada_estado.text = "Compra muebles para tu habitación. Las compras quedan guardadas en tu partida; falta conectar su colocación."
 			for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
 				var texto := "%s · %d monedas" % [str(mueble.nombre), int(mueble.precio)]
-				_crear_boton_posada(texto, Callable(self, "_comprar_mueble_posada").bind(str(mueble.id), int(mueble.precio)))
+				_crear_boton_posada(texto, Callable(self, "_comprar_mueble_posada").bind(str(mueble.id)))
 			_crear_boton_posada("Volver", Callable(self, "_mostrar_menu_posada").bind("comprar"))
 
 	_crear_boton_posada("Cerrar", Callable(self, "_cerrar_menu_posada"))
@@ -1964,16 +1964,27 @@ func _cerrar_menu_posada() -> void:
 		_menu_posada_layer.visible = false
 
 
-func _comprar_mueble_posada(mueble_id: String, precio: int) -> void:
+func _comprar_mueble_posada(mueble_id: String) -> void:
+	var precio := -1
+	for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
+		if str(mueble.get("id", "")) == mueble_id:
+			precio = int(mueble.get("precio", -1))
+			break
+	if precio < 0:
+		push_warning("Posada: intento de compra con un mueble desconocido: " + mueble_id)
+		return
 	if not GameState.modificar_dinero(-precio):
-		_menu_posada_estado.text = "No tienes suficientes monedas."
+		if is_instance_valid(_menu_posada_estado):
+			_menu_posada_estado.text = "No tienes suficientes monedas."
 		return
 	var estado := _obtener_estado_posada()
-	var comprados: Dictionary = estado.get("muebles_comprados", {})
-	comprados[mueble_id] = int(comprados.get(mueble_id, 0)) + 1
+	var comprados_variant: Variant = estado.get("muebles_comprados", {})
+	var comprados: Dictionary = comprados_variant.duplicate(true) if comprados_variant is Dictionary else {}
+	comprados[mueble_id] = maxi(0, int(comprados.get(mueble_id, 0))) + 1
 	estado["muebles_comprados"] = comprados
 	_guardar_estado_posada(estado)
-	_menu_posada_estado.text = "Compraste: " + mueble_id.capitalize() + ". Ya está disponible para colocar."
+	if is_instance_valid(_menu_posada_estado):
+		_menu_posada_estado.text = "Compraste: " + mueble_id.capitalize() + ". Ya está disponible para colocar."
 	_mostrar_menu_posada("muebles")
 
 
