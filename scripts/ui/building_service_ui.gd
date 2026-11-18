@@ -95,6 +95,7 @@ func _actualizar() -> void:
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_estado.focus_mode = Control.FOCUS_NONE
+	PIXEL_UI_THEME.apply(_estado, false)
 
 	if _tipo not in ["forja", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
 		var titulo := Button.new()
