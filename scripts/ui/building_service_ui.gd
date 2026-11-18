@@ -235,13 +235,12 @@ func _encargar_mueble(mueble_id: String) -> void:
 		return
 	var madera := int(definicion.madera)
 	var precio := int(definicion.precio)
-	var slot_madera := _buscar_slot_item(ITEM_MADERA)
-	if slot_madera < 0 or _contar_item(ITEM_MADERA) < madera or GameState.obtener_dinero() < precio:
+	if not is_instance_valid(_inventario) or _contar_item(ITEM_MADERA) < madera or GameState.obtener_dinero() < precio:
 		_mostrar_estado("Te faltan madera o monedas.")
 		return
 	if not GameState.modificar_dinero(-precio):
 		return
-	if not _inventario.quitar_cantidad_desde_ui(slot_madera, madera):
+	if not _consumir_item_total(ITEM_MADERA, madera):
 		GameState.modificar_dinero(precio)
 		_mostrar_estado("No se pudo entregar la madera; se revirtió el pago.")
 		return
@@ -326,6 +325,24 @@ func _contar_item(item_id: String) -> int:
 		if str(objeto.get("item_id", objeto.get("id", ""))) == item_id:
 			total += int(objeto.get("cantidad", 1))
 	return total
+
+
+func _consumir_item_total(item_id: String, cantidad: int) -> bool:
+	if not is_instance_valid(_inventario) or cantidad <= 0 or _contar_item(item_id) < cantidad:
+		return false
+	var restante := cantidad
+	for indice in range(_inventario.runtime.state.items.size()):
+		if restante <= 0:
+			break
+		var objeto: Dictionary = _inventario.runtime.state.items[indice]
+		if str(objeto.get("item_id", objeto.get("id", ""))) != item_id or objeto.is_empty():
+			continue
+		var disponible := maxi(1, int(objeto.get("cantidad", 1)))
+		var retirar := mini(restante, disponible)
+		if not _inventario.quitar_cantidad_desde_ui(indice, retirar):
+			return false
+		restante -= retirar
+	return restante == 0
 
 
 func _buscar_slot_item(item_id: String) -> int:
