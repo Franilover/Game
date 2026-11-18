@@ -1767,7 +1767,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			# aquí cuando existan mecánicas reales que los justifiquen.
 			_agregar_sprite_mueble(cuarto, "MesaAnalisis", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -42), Vector2(1.45, 1.15), 1)
 			_agregar_sprite_mueble(cuarto, "AsientoAnalisis", MUEBLE_SILLA_DERECHA, Vector2(-55, 18), Vector2.ONE, 1)
-			_agregar_estacion_laboratorio(cuarto, "examen", "Analizar objeto", Vector2(0, 18))
+			_agregar_estacion_laboratorio(cuarto, "examen", "Estudiar", Vector2(0, 18))
 		"comercio":
 			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-220, -125), Vector2(0.85, 0.85), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteComercioEste", MUEBLE_ARMARIO, Vector2(220, -125), Vector2(0.85, 0.85), 1)
