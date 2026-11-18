@@ -1784,9 +1784,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 55), Vector2(1.35, 1), 2)
 			_agregar_sprite_mueble(cuarto, "SillaInventario", MUEBLE_SILLA_FRENTE, Vector2(0, 103), Vector2.ONE, 1)
 		"cuartel":
-			for i in range(4):
-				var posicion_litera := Vector2(-145 + (i % 2) * 290, -72 + int(i / 2) * 112)
-				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, posicion_litera, Vector2(0.82, 0.82), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioCuartelOeste", MUEBLE_ARMARIO, Vector2(-205, -118), Vector2(0.85, 0.85), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioCuartelEste", MUEBLE_ARMARIO, Vector2(205, -118), Vector2(0.85, 0.85), 1)
 			_agregar_sprite_mueble(cuarto, "MesaLicencias", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 65), Vector2(1.2, 1), 1)
