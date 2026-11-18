@@ -32,12 +32,6 @@ theme_override_constants/separation = 8
 [node name="Header" type="HBoxContainer" parent="Panel/Margin/Column"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Panel/Margin/Column/Header"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 15
-text = "ESTUDIO ORIS"
-
 [node name="Close" type="Button" parent="Panel/Margin/Column/Header"]
 custom_minimum_size = Vector2(82, 32)
 layout_mode = 2
@@ -64,10 +58,6 @@ theme_override_constants/margin_bottom = 8
 [node name="ItemsColumn" type="VBoxContainer" parent="Panel/Margin/Column/Body/ItemsPanel/ItemMargin"]
 layout_mode = 2
 theme_override_constants/separation = 6
-
-[node name="ItemsTitle" type="Label" parent="Panel/Margin/Column/Body/ItemsPanel/ItemMargin/ItemsColumn"]
-layout_mode = 2
-text = "OBJETOS"
 
 [node name="ItemScroll" type="ScrollContainer" parent="Panel/Margin/Column/Body/ItemsPanel/ItemMargin/ItemsColumn"]
 layout_mode = 2
