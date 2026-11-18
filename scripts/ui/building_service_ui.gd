@@ -107,7 +107,8 @@ func _actualizar() -> void:
 
 	var saldo := Button.new()
 	saldo.text = "◈  %d" % GameState.obtener_dinero()
-	saldo.disabled = true
+	saldo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	saldo.focus_mode = Control.FOCUS_NONE
 	saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_contenido.add_child(saldo)
 	PIXEL_UI_THEME.apply(saldo, false)
@@ -200,7 +201,7 @@ func _construir_forja() -> void:
 	detalle.add_child(icono)
 
 	var desgaste := Label.new()
-	desgaste.text = "Desgastada · %d / %d" % [actual, maximo]
+	desgaste.text = "Durabilidad · %d / %d" % [actual, maximo]
 	desgaste.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.add_child(desgaste)
 
