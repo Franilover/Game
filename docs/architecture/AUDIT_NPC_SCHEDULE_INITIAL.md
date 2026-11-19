@@ -374,3 +374,10 @@ Se eliminó la primera eliminación redundante. La limpieza común sigue ejecut�
 Se amplió `test_npc_building_entry_collision.gd` para cubrir `ReinoTorres.sacar_npc_del_interior()`. La prueba coloca al NPC en una habitación, simula un cambio de destino y comprueba que vuelve al contenedor exterior, aparece en el umbral correcto, permanece oculto/no interactuable y conserva desactivadas las colisiones exteriores hasta que el planificador reanude su ruta.
 
 La prueba complementa la cobertura previa de captura/restauración de capas y máscaras de colisión. No cambia el comportamiento de producción.
+
+
+## 35. Una sola lectura del grupo al enriquecer habitantes locales
+
+`Main._materializar_habitantes_sin_oficio()` recorría el grupo `torres_game_npc` una vez para elegir una plantilla y volvía a recorrerlo para construir índices por clave local y nombre. Ambos pasos usaban la misma colección y el mismo orden.
+
+Se combinó en un único recorrido que conserva la primera criatura válida como plantilla, el primer NPC por nombre y las entradas por clave local. No cambian los criterios de identidad ni la prioridad entre habitantes canónicos y locales.
