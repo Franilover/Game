@@ -269,3 +269,19 @@ func _comprobar_satisfaccion_y_eventos(errores: Array[String]) -> void:
 		errores.append("Una rutina de trabajo no debe permitir participar en eventos.")
 	if Rules.puede_participar_en_evento({"clave": "guardia"}):
 		errores.append("Una rutina de guardia no debe permitir participar en eventos.")
+
+
+func _comprobar_respaldo_castillo(errores: Array[String]) -> void:
+	var antes := Rules.seleccionar_rutina_respaldo_castillo(479)
+	var inicio := Rules.seleccionar_rutina_respaldo_castillo(480)
+	var fin := Rules.seleccionar_rutina_respaldo_castillo(1199)
+	var despues := Rules.seleccionar_rutina_respaldo_castillo(1200)
+
+	if str(antes.get("clave", "")) != "regreso_nocturno_castillo":
+		errores.append("Antes de las 08:00 debe mantenerse el regreso nocturno al castillo.")
+	if str(inicio.get("clave", "")) != "salida_diurna_castillo":
+		errores.append("A las 08:00 debe comenzar la salida diurna del castillo.")
+	if str(fin.get("ubicacion_clave", "")) != "plaza":
+		errores.append("La salida diurna debe mantenerse hasta las 19:59.")
+	if str(despues.get("ubicacion_clave", "")) != "castillo":
+		errores.append("A las 20:00 debe volver el destino del castillo.")
