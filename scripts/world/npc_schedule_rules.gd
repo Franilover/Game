@@ -450,3 +450,34 @@ static func debe_asignar_turno_comercio(
 		VENDEDORES[posmod(inicio + 1, VENDEDORES.size())]
 	]
 	return asignados.has(nombre_npc)
+
+## Evalúa una invitación sin modificar el estado persistente ni el NPC.
+## La capa llamadora decide si debe guardar la caducidad o aplicar metadatos.
+static func evaluar_invitacion_npc(
+	invitacion: Dictionary,
+	anio_actual: int,
+	dia_actual: int,
+	minutos: int
+) -> Dictionary:
+	var anio_objetivo := int(invitacion.get("anio", -1))
+	var dia_objetivo := int(invitacion.get("dia", -1))
+	if anio_actual > anio_objetivo or (anio_actual == anio_objetivo and dia_actual > dia_objetivo):
+		return {"caducada": true}
+
+	if (
+		anio_objetivo != anio_actual
+		or dia_objetivo != dia_actual
+		or str(invitacion.get("estado", "")) != "aceptada"
+	):
+		return {}
+
+	var hora_inicio := float(invitacion.get("hora_inicio", 17.0))
+	var hora_fin := float(invitacion.get("hora_fin", 19.0))
+	var hora_actual := float(minutos) / 60.0
+	if hora_actual < hora_inicio or hora_actual >= hora_fin:
+		return {}
+
+	return {
+		"activa": true,
+		"ubicacion_clave": str(invitacion.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+	}
