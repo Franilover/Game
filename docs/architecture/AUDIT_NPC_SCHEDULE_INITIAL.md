@@ -485,3 +485,10 @@ La prueba unitaria de reglas ahora cubre límites y valores adyacentes: -1, 00:0
 `actualizar()` ya recorría todos los NPC de Torres para resolver sus rutinas. Durante ese mismo recorrido, el paseo interior volvía a consultar el grupo `torres_game_npc` por cada NPC que necesitaba elegir un puesto libre. Ahora el ciclo obtiene una instantánea una sola vez y la comparte con la búsqueda de ocupación interior mientras el tick está activo; fuera de ese ciclo, el método conserva la consulta directa como respaldo.
 
 La lista se limpia al terminar el recorrido para no retener referencias entre ticks. Se mantiene la misma validación de instancias, sala y distancia de ocupación; sólo se evita repetir la consulta al SceneTree y se usa una vista coherente del grupo durante el tick.
+
+
+## 48. Compartir las consultas de NPC y jugador en el ciclo de simulación
+
+La revisión del mismo ciclo encontró más consultas repetidas al grupo `torres_game_npc` en la selección de encuentros, objetivos sociales, separación y paseos ambientales. Se consolidó el acceso mediante `_obtener_npcs_torres()`: durante `actualizar()` devuelve la instantánea ya tomada para el tick; fuera del ciclo obtiene una lista actual del SceneTree. Así se evita repetir la consulta por cada NPC y se conserva el comportamiento de llamadas independientes.
+
+También se obtiene una sola vez el nodo del jugador al comenzar el tick y se reutiliza en la comprobación de proximidad del paseo ambiental. Ambas referencias se liberan al terminar el recorrido. El snapshot se comparte como contexto temporal, no se convierte en un catálogo persistente ni en una segunda fuente de verdad.
