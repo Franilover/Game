@@ -15,6 +15,7 @@ const COLOR_TIERRA_HUMEDA := Color("#52606A")
 
 var _tipo := "bancal"
 var _clave := ""
+var _clave_legacy := ""
 var _distancia := 76.0
 var _tierra: Polygon2D = null
 var _humedo := false
@@ -22,9 +23,10 @@ var _planta_sprite: Sprite2D = null
 var _planta: Dictionary = {}
 
 
-func configurar_parcela(clave: String) -> void:
+func configurar_parcela(clave: String, clave_legacy: String = "") -> void:
 	_tipo = "bancal"
 	_clave = clave.strip_edges()
+	_clave_legacy = clave_legacy.strip_edges()
 	_distancia = 23.0
 	_tierra = null
 	add_to_group("interactable")
@@ -244,7 +246,17 @@ func _regar_bancal(regadera: Dictionary) -> void:
 func _cargar_estado_parcela() -> void:
 	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
 	if estados_variant is Dictionary:
-		var estado: Variant = (estados_variant as Dictionary).get(_clave, {})
+		var estados := estados_variant as Dictionary
+		var estado: Variant = estados.get(_clave, {})
+		# Conserva cultivos de partidas anteriores: cada bancal antiguo se
+		# convierte en la celda central del nuevo TileMapDual.
+		if (not estado is Dictionary or (estado as Dictionary).is_empty()) and not _clave_legacy.is_empty() and estados.has(_clave_legacy):
+			estado = estados[_clave_legacy]
+			estados.erase(_clave_legacy)
+			estados[_clave] = estado.duplicate(true) if estado is Dictionary else estado
+			GameState.world_state.flags["vivero_bancales"] = estados
+			if not GameState.active_save_id.is_empty():
+				GameState.call_deferred("guardar_partida")
 		if estado is Dictionary:
 			_planta = (estado as Dictionary).duplicate(true)
 			_humedo = bool(_planta.get("humedo", false))
