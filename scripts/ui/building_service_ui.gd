@@ -1134,14 +1134,14 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 			estado.text = "Esta salida ya fue completada." if finalizada else "Hay una ruta de iniciación disponible. Prepara tus Garumis y lleva espacio para los materiales que encuentres."
 			estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			detalle.add_child(estado)
-			_agregar_boton_detalle(detalle, "Ver destinos y salir", _solicitar_selector_expediciones, finalizada)
+			_agregar_boton_detalle(detalle, "Ver destinos y salir", _emitir_solicitud_selector_expediciones, finalizada)
 		"rutas":
 			_agregar_titulo_detalle(detalle, "Rutas y destinos")
 			var destinos := Label.new()
 			destinos.text = "Desde aquí puedes volver a Torres, salir al Mundo Abierto o iniciar la Primera Expedición cuando esté disponible."
 			destinos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			detalle.add_child(destinos)
-			_agregar_boton_detalle(detalle, "Abrir selector de viajes", _solicitar_selector_expediciones)
+			_agregar_boton_detalle(detalle, "Abrir selector de viajes", _emitir_solicitud_selector_expediciones)
 		"bitacora":
 			_agregar_titulo_detalle(detalle, "Bitácora de campo")
 			var resumen := Label.new()
@@ -1237,6 +1237,10 @@ func _aplicar_tratamiento_clinica(completo: bool) -> void:
 	GameState.call_deferred("_ejecutar_guardado_rapido")
 	_mostrar_estado("Tratamiento completado. Ya puedes volver a la aventura.")
 	_actualizar()
+
+
+func _emitir_solicitud_selector_expediciones() -> void:
+	solicitar_selector_expediciones.emit()
 
 
 func _primera_expedicion_finalizada() -> bool:
