@@ -147,7 +147,7 @@ func _cargar_catalogo_reintentando(mensaje: String) -> void:
 
 	print("GarliaWorldItems: reintentando catálogo → intento ", str(_intentos_catalogo + 1), "/", str(MAX_CATALOG_RETRIES), " en ", str(CATALOG_RETRY_DELAY), "s")
 	await get_tree().create_timer(CATALOG_RETRY_DELAY).timeout
-	if not _cargando and catalogo.is_empty():
+	if not _cargando:
 		cargar_catalogo()
 
 
