@@ -1036,3 +1036,8 @@ La auditoría actual continúa priorizando rendimiento y unificación del sistem
 - La prueba de integración NPCScheduleContext protege el contexto compartido y la memoria diaria; está conectada al workflow headless.
 - Validación confirmada: Godot 4.7 **46/46 pasos correctos, 0 fallos**, run [#44622633288](https://github.com/Franilover/Game/actions/runs/44622633288); GDScript Quality **success**, run [#44622597880](https://github.com/Franilover/Game/actions/runs/44622597880).
 - Sigue pendiente una separación mayor de responsabilidades dentro de NPCScheduleSystem. No se extraerán módulos hasta fijar sus dependencias y contratos para evitar crear sistemas paralelos o capas innecesarias.
+
+
+## Movimiento NPC — optimización en curso (2026-11-19)
+
+Se optimizó el descarte de NPC lejanos en la separación física: primero se compara distancia al cuadrado y sólo se calcula la raíz para candidatos dentro del radio de 34 px. Se reutilizan la dirección normalizada y el ID del NPC actual. Las pruebas ahora protegen el caso de un vecino lejano y el límite exacto del radio. Esperando CI antes de declarar el cambio validado.
