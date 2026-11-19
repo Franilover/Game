@@ -44,6 +44,20 @@ func _run() -> void:
 	if absf(direccion.y) < 0.2:
 		errores.append("Un NPC que encuentra a otro delante no cede lateralmente.")
 
+	# Los NPC fuera del radio de separación no deben alterar el rumbo.
+	npc_b.global_position = npc_a.global_position + Vector2(1000.0, 0.0)
+	var direccion_lejos := movimiento._direccion_evitar_superposicion_npcs(Vector2.RIGHT)
+	if direccion_lejos.distance_to(Vector2.RIGHT) > 0.01:
+		errores.append("Un NPC lejano está alterando el rumbo de separación.")
+
+	# El límite es exclusivo: a 34 px exactos no se aplica repulsión.
+	npc_b.global_position = npc_a.global_position + Vector2(34.0, 0.0)
+	var direccion_limite := movimiento._direccion_evitar_superposicion_npcs(Vector2.RIGHT)
+	if direccion_limite.distance_to(Vector2.RIGHT) > 0.01:
+		errores.append("La separación se activa fuera del radio definido.")
+
+	npc_b.global_position = npc_a.global_position + Vector2(18.0, 0.0)
+
 	npc_a.set_meta("rutina_en_transito", true)
 	npc_b.set_meta("rutina_en_transito", true)
 	npc_a.set_meta("rutina_destino_es_edificio", true)
