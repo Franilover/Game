@@ -1228,13 +1228,14 @@ func _obtener_rutina_encuentro_trio(
 	# La evaluación de disponibilidad no debe caducar ni guardar invitaciones.
 	for nombre in nombres:
 		var participante := participantes[nombre] as Creature
-		var invitacion := _evaluar_invitacion_personaje(
+		var resultado_invitacion := _evaluar_invitacion_personaje(
 			participante.get_personaje_game_id().strip_edges(),
 			anio,
 			int(tiempo.get("dia", 1)),
 			minutos
 		)
-		if bool(invitacion.get("activa", false)):
+		var evaluacion_invitacion: Dictionary = resultado_invitacion.get("evaluacion", {})
+		if bool(evaluacion_invitacion.get("activa", false)):
 			return {}
 	var posiciones: Dictionary = {
 		"mara": Vector2(-42.0, 18.0),
@@ -2710,12 +2711,16 @@ func _evaluar_invitacion_personaje(
 	var invitacion_variant: Variant = (invitaciones_variant as Dictionary).get(personaje_id, {})
 	if not invitacion_variant is Dictionary:
 		return {}
-	return NPC_SCHEDULE_RULES.evaluar_invitacion_npc(
-		invitacion_variant as Dictionary,
-		anio_actual,
-		dia_actual,
-		minutos
-	)
+	var invitacion: Dictionary = (invitacion_variant as Dictionary).duplicate(true)
+	return {
+		"invitacion": invitacion,
+		"evaluacion": NPC_SCHEDULE_RULES.evaluar_invitacion_npc(
+			invitacion,
+			anio_actual,
+			dia_actual,
+			minutos
+		)
+	}
 
 
 ## Convierte una invitación aceptada en una visita breve a la plaza.
@@ -2728,21 +2733,21 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 	var personaje_id := npc.get_personaje_game_id().strip_edges()
 	if personaje_id.is_empty():
 		return {}
-	var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
-	if not invitaciones_variant is Dictionary:
-		return {}
-	var invitacion_variant: Variant = (invitaciones_variant as Dictionary).get(personaje_id, {})
-	if not invitacion_variant is Dictionary:
-		return {}
-	var invitacion: Dictionary = (invitacion_variant as Dictionary).duplicate(true)
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
-	var evaluacion := _evaluar_invitacion_personaje(
+	var resultado_invitacion := _evaluar_invitacion_personaje(
 		personaje_id,
 		int(tiempo.get("anio", 0)),
 		int(tiempo.get("dia", 1)),
 		minutos
 	)
+	if resultado_invitacion.is_empty():
+		return {}
+	var invitacion: Dictionary = resultado_invitacion.get("invitacion", {})
+	var evaluacion: Dictionary = resultado_invitacion.get("evaluacion", {})
 	if bool(evaluacion.get("caducada", false)):
+		var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
+		if not invitaciones_variant is Dictionary:
+			return {}
 		var invitaciones: Dictionary = (invitaciones_variant as Dictionary).duplicate(true)
 		invitacion["estado"] = "caducada"
 		invitaciones[personaje_id] = invitacion
