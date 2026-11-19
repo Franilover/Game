@@ -32,6 +32,23 @@ const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 const BUILDING_INTERIOR_STYLE_SCRIPT: Script = preload("res://scripts/world/building_interior_style.gd")
 const TORRES_VIVERO_BUILDER: Script = preload("res://scripts/world/torres_vivero_builder.gd")
+const POSICIONES_NPC_CASTILLO_INTERIOR: Array[Vector2] = [
+	Vector2(-210.0, -140.0), Vector2(-150.0, -140.0),
+	Vector2(-90.0, -140.0), Vector2(90.0, -140.0),
+	Vector2(150.0, -140.0), Vector2(210.0, -140.0),
+	Vector2(-225.0, -70.0), Vector2(-165.0, -70.0),
+	Vector2(165.0, -70.0), Vector2(225.0, -70.0),
+	Vector2(-225.0, 5.0), Vector2(-165.0, 5.0),
+	Vector2(165.0, 5.0), Vector2(225.0, 5.0),
+	Vector2(-225.0, 80.0), Vector2(-165.0, 80.0),
+	Vector2(165.0, 80.0), Vector2(225.0, 80.0),
+	Vector2(-180.0, 135.0), Vector2(-120.0, 135.0),
+	Vector2(120.0, 135.0), Vector2(180.0, 135.0)
+]
+const POSICIONES_NPC_INTERIOR: Array[Vector2] = [
+	Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
+	Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
+]
 
 # Dimensión base. Los edificios grandes usan perfiles ampliados en _obtener_dimensiones_interior().
 const INTERIOR_ANCHO := 512.0
@@ -1461,23 +1478,6 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 	# El castillo reúne a muchos más habitantes que una vivienda normal.
 	# Los distribuimos alrededor del perímetro, dejando libre el centro y las
 	# dos mesas para que puedan circular y conversar sin formar una pila.
-	var posiciones_castillo: Array[Vector2] = [
-		Vector2(-210.0, -140.0), Vector2(-150.0, -140.0),
-		Vector2(-90.0, -140.0), Vector2(90.0, -140.0),
-		Vector2(150.0, -140.0), Vector2(210.0, -140.0),
-		Vector2(-225.0, -70.0), Vector2(-165.0, -70.0),
-		Vector2(165.0, -70.0), Vector2(225.0, -70.0),
-		Vector2(-225.0, 5.0), Vector2(-165.0, 5.0),
-		Vector2(165.0, 5.0), Vector2(225.0, 5.0),
-		Vector2(-225.0, 80.0), Vector2(-165.0, 80.0),
-		Vector2(165.0, 80.0), Vector2(225.0, 80.0),
-		Vector2(-180.0, 135.0), Vector2(-120.0, 135.0),
-		Vector2(120.0, 135.0), Vector2(180.0, 135.0)
-	]
-	var posiciones_normales: Array[Vector2] = [
-		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
-		Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
-	]
 	# Las claves de rutina y los IDs de puerta no siempre tienen el mismo
 	# nombre (por ejemplo, casa_elian -> casa_oriente_a).
 	var ubicacion_rutina_esperada := str(UBICACION_RUTINA_POR_ENTRADA.get(entrada_id, ""))
@@ -1517,12 +1517,12 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 			npc.set_meta("actividad_actual", "conversando con los demás")
 		var actor := npc as Node2D
 		if entrada_id == "castillo":
-			if indice < posiciones_castillo.size():
-				actor.position = posiciones_castillo[indice]
+			if indice < POSICIONES_NPC_CASTILLO_INTERIOR.size():
+				actor.position = POSICIONES_NPC_CASTILLO_INTERIOR[indice]
 			else:
 				# Respaldo para reuniones con más asistentes que plazas
 				# predefinidas: añade filas laterales sin reutilizar coordenadas.
-				var extra := indice - posiciones_castillo.size()
+				var extra := indice - POSICIONES_NPC_CASTILLO_INTERIOR.size()
 				var columna := posmod(extra, 6)
 				var fila := int(extra / 6)
 				var lado := -1.0 if columna < 3 else 1.0
@@ -1536,9 +1536,9 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 				"ivo":
 					actor.position = Vector2(42.0, 34.0)
 				_:
-					actor.position = posiciones_normales[indice % posiciones_normales.size()]
+					actor.position = POSICIONES_NPC_INTERIOR[indice % POSICIONES_NPC_INTERIOR.size()]
 		else:
-			actor.position = posiciones_normales[indice % posiciones_normales.size()]
+			actor.position = POSICIONES_NPC_INTERIOR[indice % POSICIONES_NPC_INTERIOR.size()]
 		actor.visible = true
 		# Los NPC trasladados al cuarto sí pueden recibir interacciones.
 		npc.add_to_group("interactable")
@@ -1548,7 +1548,7 @@ func _ubicar_npcs_del_edificio_en_interior(entrada: Dictionary) -> void:
 func teletransportar_jugador_a_npc(npc: Node) -> bool:
 	if not is_instance_valid(npc) or not is_instance_valid(_jugador):
 		return false
-	if not get_tree().get_nodes_in_group("torres_game_npc").has(npc):
+	if not npc.is_in_group("torres_game_npc"):
 		return false
 
 	var esta_en_edificio := bool(npc.get_meta("rutina_en_edificio", false))
