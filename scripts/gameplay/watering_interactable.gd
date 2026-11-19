@@ -3,6 +3,7 @@ extends Node2D
 ## El nivel de agua viaja dentro de los datos del objeto y se guarda con el inventario.
 
 const AGUA_MAXIMA := 4
+const RANGO_PLANTAR_CLIC := 64.0
 const ICONOS_REGADERA := {
 	4: "res://assets/art/items/regadera llena.png",
 	3: "res://assets/art/items/regadera casi llena.png",
@@ -32,6 +33,37 @@ func configurar_parcela(clave: String, clave_legacy: String = "") -> void:
 	add_to_group("interactable")
 	_cargar_estado_parcela()
 	call_deferred("_conectar_reloj_mundo")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# Las semillas se plantan haciendo clic directamente sobre una celda de tierra.
+	# Al estar en _unhandled_input, los clics consumidos por inventario/menus no llegan aquí.
+	if _tipo != "bancal" or not event is InputEventMouseButton:
+		return
+	var clic := event as InputEventMouseButton
+	if not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT:
+		return
+	_actualizar_progreso_planta()
+	if not _planta.is_empty():
+		return
+	var semilla := _buscar_semilla()
+	if semilla.is_empty():
+		return
+	var jugador := get_tree().get_first_node_in_group("player")
+	if not is_instance_valid(jugador) or not jugador is Node2D:
+		return
+	if (jugador as Node2D).global_position.distance_to(global_position) > RANGO_PLANTAR_CLIC:
+		return
+	var punto_local := to_local(get_global_mouse_position())
+	if absf(punto_local.x) > 16.0 or absf(punto_local.y) > 16.0:
+		return
+	if plantar_semilla(
+		semilla.get("objeto", {}),
+		semilla.get("inventario"),
+		int(semilla.get("indice", -1)),
+		jugador
+	):
+		get_viewport().set_input_as_handled()
 
 
 func _conectar_reloj_mundo() -> void:
@@ -284,7 +316,7 @@ func _guardar_estado_parcela() -> void:
 func plantar_semilla(datos_semilla: Dictionary, inventario: Node, indice: int, jugador: Node) -> bool:
 	if _tipo != "bancal" or not is_instance_valid(jugador) or not jugador is Node2D:
 		return false
-	if (jugador as Node2D).global_position.distance_to(global_position) > _distancia:
+	if (jugador as Node2D).global_position.distance_to(global_position) > RANGO_PLANTAR_CLIC:
 		return false
 	if not _planta.is_empty():
 		return false
