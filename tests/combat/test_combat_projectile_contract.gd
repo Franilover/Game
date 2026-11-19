@@ -96,22 +96,21 @@ func _probar_contacto_con_danio_cero(errores: Array[String]) -> void:
 	var proyectil := _crear_proyectil(atacante, 0)
 	await get_tree().process_frame
 
-	var contactos := 0
-	var impactos := 0
+	var eventos := {"contactos": 0, "impactos": 0}
 	proyectil.contacto_detectado.connect(
 		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
-			contactos += 1
+			eventos["contactos"] = int(eventos["contactos"]) + 1
 	)
 	proyectil.objetivo_impactado.connect(
 		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
-			impactos += 1
+			eventos["impactos"] = int(eventos["impactos"]) + 1
 	)
 
 	var salud_inicial := objetivo.health
 	proyectil._procesar_objetivo(objetivo)
 	if objetivo.health != salud_inicial:
 		errores.append("Un proyectil con daño cero modificó la salud.")
-	if contactos != 1:
+	if int(eventos["contactos"]) != 1:
 		errores.append("El proyectil de daño cero no registró el contacto.")
 	if int(eventos["impactos"]) != 0:
 		errores.append("El proyectil de daño cero informó un impacto efectivo.")
