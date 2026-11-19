@@ -268,5 +268,5 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - La malla AStar, su construcción e invalidación, la detección de cambios de colisión, los costes de terreno y el cálculo de rutas ahora pertenecen a `NPCNavigationSystem`, como nodo de `Main/Systems`.
 - `NPCScheduleSystem` conserva rutinas, actividades, interiores y estado de movimiento; recibe navegación por inyección y delega las rutas.
 - La señal `malla_reconstruida` permite invalidar rutas de rutina desde el propietario de las decisiones NPC, sin transferir esa responsabilidad al servicio geométrico.
-- Se adaptaron las regresiones de límites del mapa y búsqueda de celda transitable. No se cambian puertas, escenas de edificios, datos guardados ni Supabase.
+- Se adaptaron las regresiones de límites del mapa y búsqueda de celda transitable. Se añadieron escenas ejecutables para los límites de Torres y la construcción/cálculo/invalidez de la malla real; ambas se incorporaron al workflow. No se cambian puertas, escenas de edificios, datos guardados ni Supabase.
 - CI Godot 4.7 y GDScript Quality: pendiente para este commit.
