@@ -1,5 +1,6 @@
 extends Node
 
+const NPCSchedule = preload("res://scripts/world/npc_schedule_system.gd")
 const NPCNavigation = preload("res://scripts/world/npc_navigation_system.gd")
 
 
