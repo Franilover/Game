@@ -591,3 +591,10 @@ El ciclo de actividad interior ahora distingue dos interrupciones con contratos 
 La animación de actividad interior también se detiene antes de ceder el control. La prueba de contexto de agenda configura una ruta real de `CreatureMovement`, activa una cinemática y comprueba que no quede locomoción activa ni se pierda el próximo horario.
 
 Validación CI pendiente para este cambio.
+
+
+### Complemento de la sección 59: reanudación del paseo
+
+La regresión ahora comprueba también el ciclo de vuelta: después de retirar la marca de cinemática, el planificador recibe el mismo minuto programado y debe reconstruir la ruta interior mediante `CreatureMovement`, restaurando `rutina_paseo_interior_activo` y `rutina_en_transito` sin modificar `rutina_paseo_interior_siguiente`. La prueba usa una habitación de prueba con el identificador real esperado por el planificador y un NPC con su componente de movimiento real.
+
+Validación CI de esta ampliación pendiente.
