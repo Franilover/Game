@@ -98,3 +98,14 @@ Contratos protegidos por pruebas:
 No se extrajeron todavía las reglas de ocio, invitaciones, eventos comunitarios, clima ni la resolución de destinos. Esas reglas consultan estado persistente o servicios y requieren contratos independientes antes de moverlas.
 
 **Validación:** la primera extracción ya pasó la prueba dedicada y la suite completa anterior. Esta segunda extracción está pendiente de CI.
+
+
+## 9. Tercera extracción: rutinas de día libre
+
+La selección de actividades del día libre se movió a `NPCScheduleRules.seleccionar_rutina_dia_libre(nombre_npc, minutos)`. Se conserva el mapa de hogares y las excepciones por personaje; `NPCScheduleSystem` sólo obtiene el nombre visible y delega la decisión.
+
+La prueba ahora cubre los diez habitantes con reglas específicas en la mañana y la tarde, además de los límites de encuentro (17:00), regreso al hogar (20:00) y normalización del nombre.
+
+Esta extracción es de reglas locales de simulación. No altera horarios de Supabase ni el catálogo de rutinas de WorldData.
+
+**Validación:** pendiente de CI para el commit que incorpora esta extracción y sus casos.
