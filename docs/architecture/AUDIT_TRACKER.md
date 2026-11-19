@@ -270,3 +270,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - La señal `malla_reconstruida` permite invalidar rutas de rutina desde el propietario de las decisiones NPC, sin transferir esa responsabilidad al servicio geométrico.
 - Se adaptaron las regresiones de límites del mapa y búsqueda de celda transitable. Se añadieron escenas ejecutables para los límites de Torres y la construcción/cálculo/invalidez de la malla real; ambas se incorporaron al workflow. No se cambian puertas, escenas de edificios, datos guardados ni Supabase.
 - CI Godot 4.7: **48/48 pasos completados, 0 fallos** ([run #44626438272](https://github.com/Franilover/Game/actions/runs/44626438272)); GDScript Quality: **success** ([run #44626236415](https://github.com/Franilover/Game/actions/runs/44626236415)).
+
+
+## Transición NPC entre edificios (2026-11-19)
+
+- Extraído `_salir_de_edificio_para_cambiar_rutina()` de `_aplicar_rutina()`; conserva cancelación de animaciones/paseos, reparentado, colisiones, metadatos y ocultación durante interiores activos.
+- `ReinoTorres.sacar_npc_del_interior()` queda como fuente única de la posición del umbral; se elimina el recálculo duplicado del planificador.
+- `test_npc_building_entry_collision` ejercita el helper real y comprueba umbral, reparentado, metadatos, visibilidad, interacción y colisiones.
+- CI Godot 4.7: **48/48 pasos, 0 fallos** ([run #44628441771](https://github.com/Franilover/Game/actions/runs/44628441771)); GDScript Quality: **success** ([run #44628441413](https://github.com/Franilover/Game/actions/runs/44628441413)).
