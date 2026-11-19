@@ -32,12 +32,9 @@ const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 const BUILDING_INTERIOR_STYLE_SCRIPT: Script = preload("res://scripts/world/building_interior_style.gd")
 
-# Ampliación moderada respecto al interior original (448x272).
-# Mantiene el espacio compacto y reduce los bordes visibles sin vaciar la sala.
+# Dimensión base. Los edificios grandes usan perfiles ampliados en _obtener_dimensiones_interior().
 const INTERIOR_ANCHO := 512.0
 const INTERIOR_ALTO := 320.0
-const INTERIOR_MEDIO_ANCHO := INTERIOR_ANCHO / 2.0
-const INTERIOR_MEDIO_ALTO := INTERIOR_ALTO / 2.0
 var _interior_ancho_actual: float = INTERIOR_ANCHO
 var _interior_alto_actual: float = INTERIOR_ALTO
 
@@ -1796,6 +1793,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	var acabado := Node2D.new()
 	acabado.name = "AcabadoInterior"
 	acabado.set_script(BUILDING_INTERIOR_STYLE_SCRIPT)
+	acabado.z_index = -10
 	acabado.call("configurar", tipo, dimensiones, _entrada_interior_id)
 	cuarto.add_child(acabado)
 
@@ -1860,29 +1858,31 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "CofreMuestrasHerbolario", MUEBLE_COFRE, Vector2(0, 115), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "SillaInvestigacionHerbolario", MUEBLE_SILLA_FRENTE, Vector2(-105, -25), Vector2.ONE, 1)
 		"taberna":
-			# Comedor amplio, con mostrador al fondo y mesas agrupadas sin cerrar el paso.
-			_agregar_sprite_mueble(cuarto, "BarraTaberna", MUEBLE_MESA_PLATOS, Vector2(0, -112), Vector2(2.0, 1.1), 1)
-			_agregar_sprite_mueble(cuarto, "EstanteTaberna", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.9, 0.9), 1)
-			_agregar_sprite_mueble(cuarto, "HogarTaberna", MUEBLE_HORNO, Vector2(205, -112), Vector2(1.25, 1.25), 1)
-			for i in range(3):
-				var x := -145.0 + float(i) * 145.0
-				_agregar_sprite_mueble(cuarto, "MesaTaberna%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, 8), Vector2(1.0, 0.95), 1)
-				_agregar_sprite_mueble(cuarto, "SillaTaberna%dA" % i, MUEBLE_SILLA_FRENTE, Vector2(x - 24, 52), Vector2.ONE, 1)
-				_agregar_sprite_mueble(cuarto, "SillaTaberna%dB" % i, MUEBLE_SILLA_FRENTE, Vector2(x + 24, -28), Vector2.ONE, 1)
-			_agregar_estacion_edificio(cuarto, "taberna", "Hablar en la taberna", Vector2(0, -70))
+			# Barra al fondo y cinco mesas en dos zonas para que los grupos
+			# puedan reunirse sin bloquear el acceso ni la circulación central.
+			_agregar_sprite_mueble(cuarto, "BarraTaberna", MUEBLE_MESA_PLATOS, Vector2(0, -135), Vector2(2.0, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteTaberna", MUEBLE_ARMARIO, Vector2(-255, -125), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "HogarTaberna", MUEBLE_HORNO, Vector2(255, -125), Vector2(1.25, 1.25), 1)
+			for i in range(5):
+				var x := -250.0 + float(i) * 125.0
+				var y := 12.0 if i % 2 == 0 else 82.0
+				_agregar_sprite_mueble(cuarto, "MesaTaberna%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, y), Vector2(0.95, 0.9), 1)
+				_agregar_sprite_mueble(cuarto, "SillaTaberna%dA" % i, MUEBLE_SILLA_FRENTE, Vector2(x - 24, y + 34), Vector2.ONE, 1)
+				_agregar_sprite_mueble(cuarto, "SillaTaberna%dB" % i, MUEBLE_SILLA_FRENTE, Vector2(x + 24, y - 34), Vector2.ONE, 1)
+			_agregar_estacion_edificio(cuarto, "taberna", "Hablar en la taberna", Vector2(0, -85))
 		"escuela":
-			# Aula con pizarra al frente, puestos separados y estanterías laterales.
-			_agregar_sprite_mueble(cuarto, "PizarraEscuela", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -125), Vector2(1.8, 0.8), 1)
-			_agregar_sprite_mueble(cuarto, "MesaDocenteEscuela", MUEBLE_MESA, Vector2(0, -78), Vector2(1.4, 0.9), 1)
+			# Aula ampliada: cuatro columnas de pupitres y un corredor central.
+			_agregar_sprite_mueble(cuarto, "PizarraEscuela", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -145), Vector2(1.8, 0.8), 1)
+			_agregar_sprite_mueble(cuarto, "MesaDocenteEscuela", MUEBLE_MESA, Vector2(0, -98), Vector2(1.4, 0.9), 1)
 			for fila in range(2):
-				for columna in range(3):
-					var x := -145.0 + float(columna) * 145.0
-					var y := -5.0 + float(fila) * 92.0
+				for columna in range(4):
+					var x := -225.0 + float(columna) * 150.0
+					var y := -12.0 + float(fila) * 100.0
 					_agregar_sprite_mueble(cuarto, "PupitreEscuela_%d_%d" % [fila, columna], MUEBLE_MESA_DOCUMENTOS, Vector2(x, y), Vector2(0.8, 0.7), 1)
 					_agregar_sprite_mueble(cuarto, "AsientoEscuela_%d_%d" % [fila, columna], MUEBLE_SILLA_FRENTE, Vector2(x, y + 28), Vector2(0.8, 0.8), 1)
-			_agregar_sprite_mueble(cuarto, "EstanteEscuelaOeste", MUEBLE_ARMARIO, Vector2(-215, 112), Vector2(0.85, 0.85), 1)
-			_agregar_sprite_mueble(cuarto, "EstanteEscuelaEste", MUEBLE_ARMARIO, Vector2(215, 112), Vector2(0.85, 0.85), 1)
-			_agregar_estacion_edificio(cuarto, "escuela", "Consultar lecciones", Vector2(0, -42))
+			_agregar_sprite_mueble(cuarto, "EstanteEscuelaOeste", MUEBLE_ARMARIO, Vector2(-275, 112), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteEscuelaEste", MUEBLE_ARMARIO, Vector2(275, 112), Vector2(0.85, 0.85), 1)
+			_agregar_estacion_edificio(cuarto, "escuela", "Consultar lecciones", Vector2(0, -62))
 		"habitacion_posada":
 			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "CofreHabitacion", MUEBLE_COFRE, Vector2(155, 78), Vector2(0.9, 0.9), 1)
@@ -1909,24 +1909,26 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "AsientoHistoria", MUEBLE_SILLA_FRENTE, Vector2(105, 88), Vector2.ONE, 1)
 			_agregar_estacion_archivo(cuarto, "historia_torres", "Consultar historia de Torres", Vector2(105, 8))
 		"biblioteca":
-			# Estanterías al fondo y dos puestos de lectura separados para
-			# mantener despejada la circulación desde la entrada.
-			_agregar_sprite_mueble(cuarto, "EstanteriaBibliotecaOeste", MUEBLE_ARMARIO, Vector2(-190, -122), Vector2(1.0, 1.0), 1)
-			_agregar_sprite_mueble(cuarto, "EstanteriaBibliotecaCentro", MUEBLE_ARMARIO, Vector2(0, -122), Vector2(1.0, 1.0), 1)
-			_agregar_sprite_mueble(cuarto, "EstanteriaBibliotecaEste", MUEBLE_ARMARIO, Vector2(190, -122), Vector2(1.0, 1.0), 1)
+			# Estanterías perimetrales, consulta central y dos puestos laterales
+			# que aprovechan el ancho extra sin cerrar el corredor de entrada.
+			for x in [-280.0, -140.0, 0.0, 140.0, 280.0]:
+				_agregar_sprite_mueble(cuarto, "EstanteriaBiblioteca_%d" % int(x), MUEBLE_ARMARIO, Vector2(x, -122), Vector2(0.95, 0.95), 1)
 			_agregar_sprite_mueble(cuarto, "MesaConsultaBiblioteca", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.45, 1.0), 1)
-			_agregar_sprite_mueble(cuarto, "MostradorBiblioteca", MUEBLE_MESA, Vector2(0, 82), Vector2(1.5, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MostradorBiblioteca", MUEBLE_MESA, Vector2(0, 105), Vector2(1.5, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaLecturaOeste", MUEBLE_MESA_DOCUMENTOS, Vector2(-230, 30), Vector2(0.9, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "MesaLecturaEste", MUEBLE_MESA_DOCUMENTOS, Vector2(230, 30), Vector2(0.9, 0.85), 1)
 			_agregar_sprite_mueble(cuarto, "SillaBibliotecaOeste", MUEBLE_SILLA_FRENTE, Vector2(-105, 55), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "SillaBibliotecaEste", MUEBLE_SILLA_FRENTE, Vector2(105, 55), Vector2.ONE, 1)
 		"centro_expediciones":
-			# La mesa central sirve como punto de planificación; los laterales
-			# reúnen equipo y provisiones sin bloquear la puerta.
+			# La mesa central organiza las rutas; las mesas laterales sirven para
+			# revisar mapas y preparar el equipo antes de salir.
 			_agregar_sprite_mueble(cuarto, "MesaPlanificacionGremio", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.8, 1.25), 1)
-			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesOeste", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.95, 0.95), 1)
-			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesEste", MUEBLE_ARMARIO, Vector2(205, -112), Vector2(0.95, 0.95), 1)
-			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesOeste", MUEBLE_COFRE, Vector2(-185, 92), Vector2(0.9, 0.9), 1)
-			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesEste", MUEBLE_COFRE, Vector2(185, 92), Vector2(0.9, 0.9), 1)
-			_agregar_sprite_mueble(cuarto, "BancoPreparacionExpediciones", MUEBLE_MESA, Vector2(0, 105), Vector2(1.35, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesOeste", MUEBLE_ARMARIO, Vector2(-270, -112), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesEste", MUEBLE_ARMARIO, Vector2(270, -112), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMapasOeste", MUEBLE_MESA_DOCUMENTOS, Vector2(-225, 8), Vector2(0.9, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMapasEste", MUEBLE_MESA_DOCUMENTOS, Vector2(225, 8), Vector2(0.9, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesOeste", MUEBLE_COFRE, Vector2(-185, 112), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesEste", MUEBLE_COFRE, Vector2(185, 112), Vector2(0.9, 0.9), 1)
 			_agregar_estacion_edificio(cuarto, "centro_expediciones", "Mesa de expediciones", Vector2(0, 12))
 		"clinica":
 			# La recepción queda al fondo; las camas se mantienen como decoración
@@ -1940,11 +1942,11 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "AsientoClinicaEste", MUEBLE_SILLA_FRENTE, Vector2(125, 72), Vector2.ONE, 1)
 		"consejo":
 			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.0, 1.25), 1)
-			for i in range(6):
-				var x := -180.0 + float(i % 3) * 180.0
-				var y := -95.0 if i < 3 else 85.0
+			for i in range(8):
+				var x := -240.0 + float(i % 4) * 160.0
+				var y := -105.0 if i < 4 else 92.0
 				_agregar_sprite_mueble(cuarto, "SillaConsejo%d" % i, MUEBLE_SILLA_DERECHA, Vector2(x, y), Vector2.ONE, 1, x > 0.0)
-			_agregar_sprite_mueble(cuarto, "ArmarioConsejo", MUEBLE_ARMARIO, Vector2(205, -120), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioConsejo", MUEBLE_ARMARIO, Vector2(275, -125), Vector2(0.85, 0.85), 1)
 		"oris":
 			_agregar_sprite_mueble(cuarto, "ArmarioOrisOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioOrisEste", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(0.9, 0.9), 1)
@@ -1964,7 +1966,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			for i in range(vendedores.size()):
 				var columna := i % 4
 				var fila := int(i / 4)
-				var posicion_puesto := Vector2(-180.0 + columna * 120.0, -48.0 + fila * 142.0)
+				var posicion_puesto := Vector2(-225.0 + columna * 150.0, -48.0 + fila * 142.0)
 				_agregar_puesto_comercio(cuarto, str(vendedores[i]), posicion_puesto)
 		"registro", "almacen":
 			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(1.9, 1), 1)
@@ -2684,34 +2686,6 @@ func _agregar_parcela_vivero(
 			parcela.call("configurar_parcela", parcela.name, nombre if celda_central else "", capa_humedad, celda)
 
 	tilemap.call_deferred("_update_cells", celdas, false)
-
-
-func _agregar_suelo_tilemap(padre: Node) -> void:
-	var textura := load("res://assets/tilesets/Suelo.png") as Texture2D
-	if textura == null:
-		push_warning("ReinoTorres: no se pudo cargar assets/tilesets/Suelo.png")
-		return
-
-	var tileset := TileSet.new()
-	tileset.tile_size = Vector2i(16, 16)
-	var atlas := TileSetAtlasSource.new()
-	atlas.texture = textura
-	atlas.texture_region_size = Vector2i(16, 16)
-	atlas.create_tile(Vector2i.ZERO)
-	tileset.add_source(atlas, 0)
-
-	var capa := TileMapLayer.new()
-	capa.name = "SueloTileMap"
-	capa.position = Vector2(-INTERIOR_MEDIO_ANCHO, -INTERIOR_MEDIO_ALTO)
-	capa.tile_set = tileset
-	capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	capa.z_index = -10
-	padre.add_child(capa)
-
-	# Los tiles cubren exactamente los 560 x 352 puntos del interior.
-	for y in range(int(INTERIOR_ALTO / 16.0)):
-		for x in range(int(INTERIOR_ANCHO / 16.0)):
-			capa.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
 
 
 func _agregar_colision_muro(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:
