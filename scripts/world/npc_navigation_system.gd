@@ -81,7 +81,7 @@ func _detectar_cambios_geometria(zona: Node2D, delta: float) -> bool:
 		return true
 	if _tiempo_cambio_colisiones < 0.0:
 		return false
-	_tiempo_cambio_colisiones += maxf(delta, 0.5)
+	_tiempo_cambio_colisiones += maxf(delta, INTERVALO_ACTUALIZACION)
 	if _tiempo_cambio_colisiones < ESPERA_RECONSTRUCCION_NAVEGACION:
 		return true
 	_tiempo_cambio_colisiones = -1.0
