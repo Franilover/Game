@@ -1390,10 +1390,13 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var indice := posmod(hash(nombre + "|" + edificio_id + "|" + str(minutos / 5)), puntos.size())
 	var destino_local := Vector2.ZERO
 	var destino_disponible := false
+	# La lista no cambia mientras se prueban los puntos: reutilizar una sola
+	# instantánea evita volver a consultar el grupo por cada mueble candidato.
+	var otros_npcs := get_tree().get_nodes_in_group("torres_game_npc")
 	for desplazamiento_punto in range(puntos.size()):
 		var candidato: Vector2 = puntos[posmod(indice + desplazamiento_punto, puntos.size())]
 		var ocupado := false
-		for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		for otro_variant in otros_npcs:
 			if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
 				continue
 			var otro := otro_variant as Creature
