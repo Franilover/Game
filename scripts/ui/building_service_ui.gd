@@ -1578,7 +1578,7 @@ func _agregar_texto(texto: String) -> void:
 	var etiqueta := Label.new()
 	etiqueta.text = texto
 	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_contenido.add_child(etiqueta)
 
 
