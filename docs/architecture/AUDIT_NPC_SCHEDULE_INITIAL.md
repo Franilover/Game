@@ -1,7 +1,8 @@
 # Auditoría inicial: NPCScheduleSystem
 
 **Fecha:** 2026-11-19  
-**Rama:** `feat/npc-relational-memory-decay`  
+**Rama de trabajo:** `work/design-and-architecture`  
+**Rama base protegida:** `feat/npc-relational-memory-decay`  
 **Archivo:** `scripts/world/npc_schedule_system.gd`  
 **Estado:** análisis estático; no se han extraído bloques en esta pasada.
 
@@ -63,3 +64,17 @@ El linter identifica métodos con más de seis retornos y numerosas líneas larg
 La prueba `tests/persistence/test_npc_mind_core.gd` detectó que `descansar` se clasificaba como mobiliario de silla/asiento. Se ajustó `obtener_preferencias_mueble_actividad()` para que `descansar` prefiera cama/litera y `sentarse` prefiera silla/asiento. La suite completa de Godot 4.7 pasó en CI después del cambio.
 
 No se extrajeron más responsabilidades ni se modificó Supabase.
+
+
+## 7. Primera extracción segura: reglas puras de horario
+
+En la rama `work/design-and-architecture` se extrajeron dos funciones sin estado a `scripts/world/npc_schedule_rules.gd`:
+
+- `hora_a_minutos(valor)`: interpreta `HH:MM` y devuelve `-1` si la hora no es válida.
+- `coincide_dia(dias, dia)`: conserva la compatibilidad con arrays numéricos enteros, decimales y cadenas numéricas recibidas desde WorldData.
+
+`NPCScheduleSystem` conserva la selección de rutina y sus diagnósticos; sólo delega estas dos operaciones puras. Así no se mueve todavía la lógica de prioridad, los cruces de medianoche ni el registro de errores.
+
+Se añadió `tests/world/test_npc_schedule_rules.tscn` para cubrir horas límite, entradas inválidas, arrays vacíos, números JSON decimales y cadenas numéricas. El workflow de regresión incluye el test y se habilitó para esta rama de trabajo.
+
+**Estado de validación:** cambios enviados a GitHub; falta el resultado de la ejecución de CI de esta rama. No se afirma que el test haya pasado hasta ver ese resultado.
