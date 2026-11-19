@@ -213,11 +213,6 @@ func _al_recibir_catalogo(
 		_cargar_catalogo_reintentando(mensaje)
 		return
 
-	if datos.is_empty() and not catalogo.is_empty():
-		_intentos_catalogo = 0
-		print("GarliaWorldItems: Supabase devolvió un catálogo vacío; se conserva la copia local.")
-		return
-
 	_intentos_catalogo = 0
 	_procesar_catalogo(datos, "Supabase", true)
 
@@ -265,7 +260,7 @@ func _procesar_catalogo(datos: Array, origen: String, guardar_cache: bool) -> vo
 
 		catalogo_nuevo.append(item)
 
-	if catalogo_nuevo.is_empty():
+	if catalogo_nuevo.is_empty() and not datos.is_empty():
 		print("GarliaWorldItems: ", origen, " no contiene objetos interpretables; se conserva el catálogo anterior.")
 		return
 
@@ -366,10 +361,6 @@ func _al_recibir_recetas(resultado: int, response_code: int, _headers: PackedStr
 	var datos: Variant = JSON.parse_string(texto)
 	if not datos is Array:
 		_reintentar_recetas("respuesta JSON de recetas inválida")
-		return
-	if (datos as Array).is_empty() and not recetas.is_empty():
-		_intentos_recetas = 0
-		print("GarliaWorldItems: Supabase devolvió recetas vacías; se conserva la caché.")
 		return
 	_procesar_recetas(datos as Array, "Supabase", true)
 
@@ -506,10 +497,6 @@ func _al_recibir_drops(resultado: int, response_code: int, _headers: PackedStrin
 	var datos: Variant = JSON.parse_string(texto)
 	if not datos is Array:
 		_reintentar_catalogo_drops("respuesta JSON de drops inválida")
-		return
-	if (datos as Array).is_empty() and not _reglas_drops_por_criatura.is_empty():
-		_intentos_catalogo_drops = 0
-		print("GarliaWorldItems: Supabase devolvió drops vacíos; se conserva la caché.")
 		return
 	_procesar_catalogo_drops(datos as Array, "Supabase", true)
 
