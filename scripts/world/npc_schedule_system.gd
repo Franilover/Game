@@ -2367,8 +2367,11 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		var confianza := float(relacion.get("confianza", 0.0))
 		var tension := float(relacion.get("tension", 0.0))
 		var colaboracion := float(relacion.get("colaboracion", 0.0))
+		var motivos_npc := _obtener_motivos_sociales_concretos(id_npc, id_candidato)
 		var motivo_concreto := (
-			_hay_motivo_social_concreto(id_npc, id_candidato)
+			bool(motivos_npc.get("promesa", false))
+			or bool(motivos_npc.get("asunto", false))
+			or bool(motivos_npc.get("noticia", false))
 			or _hay_motivo_social_concreto(id_candidato, id_npc)
 		)
 		# Ambos perfiles cuentan: una persona muy sociable tampoco debe imponer
@@ -2403,11 +2406,11 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		puntuacion += memoria_candidato * 0.45
 		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
 			puntuacion -= 8.0
-		if not _relationship_system.obtener_promesas_pendientes_npc(id_npc, id_candidato).is_empty():
+		if bool(motivos_npc.get("promesa", false)):
 			puntuacion += 16.0
-		if not _relationship_system.obtener_asuntos_pendientes_npc(id_npc, id_candidato).is_empty():
+		if bool(motivos_npc.get("asunto", false)):
 			puntuacion += 12.0
-		if _hay_noticia_compartible(id_npc, id_candidato):
+		if bool(motivos_npc.get("noticia", false)):
 			puntuacion += 8.0
 		if puntuacion > mejor_puntuacion:
 			mejor_puntuacion = puntuacion
@@ -2455,6 +2458,16 @@ func _puede_iniciar_encuentro_social(
 	if sociabilidad < 60.0:
 		return vinculo_efectivo >= 5.0
 	return true
+
+
+func _obtener_motivos_sociales_concretos(personaje_id: String, pareja_id: String) -> Dictionary:
+	if not is_instance_valid(_relationship_system):
+		return {"promesa": false, "asunto": false, "noticia": false}
+	return {
+		"promesa": not _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id).is_empty(),
+		"asunto": not _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id).is_empty(),
+		"noticia": _hay_noticia_compartible(personaje_id, pareja_id)
+	}
 
 
 func _hay_motivo_social_concreto(personaje_id: String, pareja_id: String) -> bool:
