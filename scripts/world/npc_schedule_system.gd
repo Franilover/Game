@@ -2752,21 +2752,7 @@ func _clave_fecha_actual() -> String:
 
 
 func _obtener_satisfaccion_actividad(actividad: String) -> Dictionary:
-	var texto := actividad.to_lower()
-	var satisfacciones: Dictionary = {}
-	if texto.contains("descans") or texto.contains("dorm") or texto.contains("sentarse"):
-		satisfacciones["descanso"] = 2.0
-	if texto.contains("convers") or texto.contains("salud") or texto.contains("compart") or texto.contains("historia") or texto.contains("amigos"):
-		satisfacciones["socializacion"] = 1.8
-		satisfacciones["diversion"] = 0.6
-	if texto.contains("notas") or texto.contains("observar") or texto.contains("leer") or texto.contains("investig") or texto.contains("informes"):
-		satisfacciones["curiosidad"] = 1.8
-	if texto.contains("pasear") or texto.contains("visitar") or texto.contains("recorrer"):
-		satisfacciones["autonomia"] = 1.3
-		satisfacciones["diversion"] = 1.0
-	if texto.contains("vigilar") or texto.contains("revisar"):
-		satisfacciones["seguridad"] = 0.8
-	return satisfacciones
+	return NPC_SCHEDULE_RULES.obtener_satisfaccion_actividad(actividad)
 
 func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int) -> Vector2:
 	# Desplazamientos cortos alrededor del punto habitual de cada habitante.
@@ -2849,10 +2835,7 @@ func _obtener_evento_comunitario(dia_semana: int, minutos: int) -> Dictionary:
 
 
 func _puede_participar_en_evento(rutina: Dictionary) -> bool:
-	if rutina.is_empty():
-		return true
-	var clave := str(rutina.get("clave", "")).strip_edges().to_lower()
-	return clave.begins_with("dia_libre")
+	return NPC_SCHEDULE_RULES.puede_participar_en_evento(rutina)
 
 
 func _obtener_desplazamiento_evento(
