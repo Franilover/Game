@@ -1273,11 +1273,49 @@ func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
 func _al_usar_seleccionado() -> void:
 	if indice_seleccionado < 0 or _player == null or not is_instance_valid(_player):
 		return
+	# Las semillas se plantan desde el botón Usar del inventario. El bancal
+	# más cercano debe estar vacío y dentro del alcance del personaje.
+	var datos_uso := _enriquecer_datos_objeto(obtener_objeto(indice_seleccionado))
+	if _es_semilla_vivero(datos_uso):
+		if _intentar_plantar_semilla(datos_uso):
+			_refrescar_objeto_seleccionado()
+		return
 	# La acción desde el inventario es explícita y no debe quedar bloqueada
 	# por el GameplayInputGate que el propio menú mantiene activo.
-	var datos_uso := _enriquecer_datos_objeto(obtener_objeto(indice_seleccionado))
 	if inventory_controller.usar_objeto_desde_ui(indice_seleccionado, _player, datos_uso):
 		_refrescar_objeto_seleccionado()
+
+
+func _es_semilla_vivero(datos: Dictionary) -> bool:
+	var item_id := str(datos.get("item_id", datos.get("id", ""))).strip_edges()
+	return item_id in [
+		"b1000000-0000-4000-8000-000000000001",
+		"b1000000-0000-4000-8000-000000000002",
+		"b1000000-0000-4000-8000-000000000003"
+	]
+
+
+func _intentar_plantar_semilla(datos: Dictionary) -> bool:
+	var bancales := get_tree().get_nodes_in_group("interactable")
+	var candidatos: Array[Node] = []
+	for nodo in bancales:
+		if not is_instance_valid(nodo) or not nodo.has_method("plantar_semilla"):
+			continue
+		if not nodo is Node2D:
+			continue
+		if _player.global_position.distance_to((nodo as Node2D).global_position) <= 82.0:
+			candidatos.append(nodo)
+	candidatos.sort_custom(func(a: Node, b: Node) -> bool:
+		return _player.global_position.distance_squared_to((a as Node2D).global_position) < _player.global_position.distance_squared_to((b as Node2D).global_position)
+	)
+	for bancal in candidatos:
+		if bool(bancal.call("plantar_semilla", datos, self, indice_seleccionado, _player)):
+			return true
+	if candidatos.is_empty():
+		Events.notification_pushed.emit("Acércate a un bancal vacío del vivero para plantar.")
+	else:
+		Events.notification_pushed.emit("No hay bancales vacíos cerca.")
+	return false
 
 
 func _al_soltar_seleccionado() -> void:
