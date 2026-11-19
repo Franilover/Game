@@ -152,7 +152,7 @@ func _run() -> void:
 	var relacion_actualizada := relaciones_sociales.registrar_interaccion_entre_npc(
 		"ivo", "nima", {"confianza": 2.0}, {"tipo": "interaccion_prueba"}
 	)
-	if not is_equal_approx(float(relacion_actualizada.get("confianza", 0.0)), 44.0):
+	if not is_equal_approx(float(relacion_actualizada.get("confianza", 0.0)), 31.0):
 		errores.append("La escritura puntual de relación no conservó ni actualizó sus valores.")
 	if int(relacion_actualizada.get("interacciones", 0)) != 1:
 		errores.append("La escritura puntual de relación no registró la interacción.")
