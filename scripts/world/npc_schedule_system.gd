@@ -528,7 +528,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Elian mantiene la panadería abierta durante la última hora de compras.
 	# Es un ajuste local de la simulación: no modifica horarios canónicos en Supabase.
 	if nombre_para_descanso == "elian" and rutinas_variant is Array:
-		var rutinas_elian: Array = (rutinas_variant as Array).duplicate(true)
+		# Sólo se reemplaza el diccionario de cierre; el resto del calendario se comparte en lectura.
+		var rutinas_elian: Array = (rutinas_variant as Array).duplicate()
 		for indice_rutina in range(rutinas_elian.size()):
 			var rutina_variant: Variant = rutinas_elian[indice_rutina]
 			if rutina_variant is Dictionary and str(rutina_variant.get("clave", "")) == "cerrar_panaderia":
@@ -597,8 +598,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# invitación o encuentro puede concentrar habitantes en la plaza/castillo.
 	# Cada NPC vuelve a su hogar para dormir; los turnos laborales explícitos
 	# se mantienen únicamente si están marcados como trabajo/guardia.
-	var hora_nocturna := minutos >= 21 * 60 or minutos < 6 * 60
-	if hora_nocturna:
+	if horario_nocturno:
 		var actividad_previa := str(rutina.get("actividad_clave", "")).strip_edges().to_lower()
 		var es_turno_esencial := (
 			actividad_previa.contains("trabaj")
