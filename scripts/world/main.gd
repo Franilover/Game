@@ -37,6 +37,7 @@ const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
+const NPC_SCHEDULE_SYSTEM_SCRIPT = preload("res://scripts/world/npc_schedule_system.gd")
 const HABITANTES_LOCALES: Array[Dictionary] = [
 	{
 		"clave":"mara", "nombre":"Mara", "sprite":"Mara", "hogar":"vivienda_oeste_01",
