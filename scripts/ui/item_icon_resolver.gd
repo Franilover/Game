@@ -89,10 +89,12 @@ static func obtener_icono(
 	if not ruta_icono_estado.is_empty() and ResourceLoader.exists(ruta_icono_estado):
 		return _cargar_textura(ruta_icono_estado)
 
+	# Los ejemplares únicos conservan el sprite del objeto base aunque
+	# tengan un nombre visible distinto (p. ej. "Carta Aoris de Elian").
 	var nombre := str(
 		datos.get(
-			"nombre",
-			""
+			"nombre_sprite",
+			datos.get("nombre", "")
 		)
 	).strip_edges()
 
