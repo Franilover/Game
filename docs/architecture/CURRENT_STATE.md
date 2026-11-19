@@ -1080,3 +1080,6 @@ La precedencia de órdenes es pausa temporal, ruta de rutina, restricción de cr
 
 
 La prueba `test_creature_movement_authority.tscn` protege la prioridad entre ruta de rutina, dirección externa y pausa temporal, y diferencia detener una rutina de liberar el control. Se ejecuta con la escena real de criatura en CI; validación pendiente.
+
+
+La cancelación de una iniciativa NPC detiene ahora siempre la ruta temporal y limpia tránsito/firma antes de intentar restaurar la rutina. Si el mundo, la zona, la navegación o el calendario aún no están disponibles, el NPC queda quieto en lugar de continuar hacia la posición anterior del jugador. Hay regresión automatizada en `test_npc_schedule_context`; CI pendiente.
