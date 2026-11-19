@@ -452,9 +452,11 @@ func _construir_vivero() -> void:
 	rejilla.add_theme_constant_override("v_separation", 8)
 	_contenido.add_child(rejilla)
 	for nombre in nombres:
-		var humedo := bool(estados.get(nombre, false))
+		var registro: Variant = estados.get(nombre, {})
+		var cultivo: Dictionary = registro if registro is Dictionary else {}
+		var humedo := bool(cultivo.get("humedo", false)) if not cultivo.is_empty() else bool(registro)
 		var tarjeta := PanelContainer.new()
-		tarjeta.custom_minimum_size = Vector2(220, 48)
+		tarjeta.custom_minimum_size = Vector2(220, 64)
 		rejilla.add_child(tarjeta)
 		PIXEL_UI_THEME.apply(tarjeta, false)
 		var fila := HBoxContainer.new()
@@ -467,12 +469,15 @@ func _construir_vivero() -> void:
 		var etiqueta := Label.new()
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		etiqueta.text = "%s\n%s" % [nombre.replace("Bancal", "Bancal "), "Húmedo" if humedo else "Seco"]
+		var estado_texto := "Húmedo" if humedo else "Seco"
+		if not cultivo.is_empty():
+			estado_texto += " · %s · Riegos %d/2" % [str(cultivo.get("nombre", "Cultivo")), int(cultivo.get("riegos", 0))]
+		etiqueta.text = "%s\\n%s" % [nombre.replace("Bancal", "Bancal "), estado_texto]
 		fila.add_child(etiqueta)
 	var regadera := _obtener_regadera_en_manos()
 	var agua := int(regadera.get("agua", -1))
 	_agregar_texto("Regadera en mano: %s" % ("Agua %d/4" % agua if agua >= 0 else "No detectada"))
-	_agregar_texto("Equipa la regadera y utiliza la interacción contextual sobre cada bancal. Rellénala en el depósito de agua.")
+	_agregar_texto("Usa una semilla desde el inventario junto a un bancal vacío. Después equipa la regadera y riégala una vez por día; cuando madure, interactúa para recoger la flor.")
 	var actualizar := Button.new()
 	actualizar.text = "Actualizar estado"
 	actualizar.pressed.connect(_actualizar)
