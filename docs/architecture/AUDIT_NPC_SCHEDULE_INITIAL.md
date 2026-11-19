@@ -329,3 +329,12 @@ La lectura devuelve una copia profunda de la relación solicitada. La escritura 
 `NPCScheduleSystem.obtener_clave_hogar()` reconstruía un diccionario de diez residentes en cada consulta. El contenido no dependía del estado de la partida ni cambiaba durante la ejecución, por lo que se convirtió en la constante `HOGARES_NPC`. La función conserva normalización del nombre, ubicación de respaldo y validación contra `POSICIONES`.
 
 Se amplió la prueba de reglas para cubrir los diez hogares, espacios en los nombres, NPC desconocidos, respaldo personalizado y respaldo inválido. No cambian destinos, identidades ni rutinas.
+
+
+## 31. Catálogo estático de paseos exteriores
+
+`_actualizar_paseo_ambiental_exterior()` reconstruía un diccionario con los desplazamientos preferidos de ocho NPC cada vez que actualizaba sus paseos. Esos puntos son constantes de diseño y no dependen del estado del mundo.
+
+El catálogo se trasladó a `DESPLAZAMIENTOS_PASEO_EXTERIOR`, junto a los demás datos estáticos del planificador. Se conservaron los puntos, su orden y el algoritmo que elige el desplazamiento según NPC, fecha y tramo horario. Los NPC fuera del catálogo mantienen el mismo conjunto de posiciones de respaldo.
+
+La prueba de reglas compara los ocho recorridos con sus coordenadas originales. El cambio elimina reconstrucciones repetidas de datos sin modificar la selección ni la navegación.
