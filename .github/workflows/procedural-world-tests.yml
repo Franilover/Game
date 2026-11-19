@@ -190,6 +190,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run Torres NPC navigation bounds regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_npc_schedule_torres_navigation_bounds.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NPCScheduleTorresNavigationBounds: FAIL:' <<<"$output"; then
+            echo "Torres NPC navigation bounds regression test reported errors."
+            exit 1
+          fi
+
       - name: Run world climate and lighting regression test
         shell: bash
         run: |
