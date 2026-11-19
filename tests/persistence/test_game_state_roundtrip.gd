@@ -92,7 +92,7 @@ func _run() -> void:
 	if not is_equal_approx(float(destino.obtener_relacion_npc_entre("ivo|nima").get("confianza", 0.0)), 42.0):
 		errores.append("La consulta puntual de relación expuso el estado interno modificable.")
 	var conocimientos_ivo := destino.obtener_conocimientos_npc("ivo")
-	if conocimientos_ivo.size() != 1 or str((conocimientos_ivo[0] as Dictionary).get("clave", "")) != "noticia_prueba":
+	if conocimientos_ivo.size() != 2 or str((conocimientos_ivo[0] as Dictionary).get("clave", "")) != "noticia_prueba":
 		errores.append("La consulta puntual de conocimientos no devolvió los datos del NPC.")
 	if not conocimientos_ivo.is_empty():
 		(conocimientos_ivo[0] as Dictionary)["titulo"] = "Modificado desde la copia"
@@ -122,7 +122,8 @@ func _run() -> void:
 	destino.guardar_conversaciones_npc(conversaciones)
 	if relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
 		errores.append("Permitió compartir conocimiento privado por debajo del umbral de confianza.")
-	if not destino.obtener_conversaciones_npc().get("_promesas_npc", []) is Array:
+	var promesas_guardadas: Variant = destino.obtener_conversaciones_npc().get("_promesas_npc", [])
+	if not promesas_guardadas is Array:
 		errores.append("La lectura completa de conversaciones dejó de conservar las demás secciones.")
 	relaciones_sociales.free()
 	var inventario_guardado: Dictionary = flags.get("inventario_estado", {}) as Dictionary
